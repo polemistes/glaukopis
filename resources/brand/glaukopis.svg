@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3d6467"/>
+      <stop offset="1" stop-color="#263f42"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="0.5" cy="0.45" r="0.6">
+      <stop offset="0" stop-color="#f1cf7c"/>
+      <stop offset="1" stop-color="#d39a36"/>
+    </radialGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="url(#ground)"/>
+  <!-- brow -->
+  <path d="M196 372 C 300 300, 430 330, 512 452 C 594 330, 724 300, 828 372"
+        fill="none" stroke="#e9f0ee" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- eyes -->
+  <g>
+    <circle cx="346" cy="560" r="150" fill="#e9f0ee"/>
+    <circle cx="346" cy="560" r="112" fill="url(#iris)"/>
+    <circle cx="346" cy="560" r="58" fill="#1b2a2c"/>
+    <circle cx="322" cy="536" r="18" fill="#e9f0ee"/>
+  </g>
+  <g>
+    <circle cx="678" cy="560" r="150" fill="#e9f0ee"/>
+    <circle cx="678" cy="560" r="112" fill="url(#iris)"/>
+    <circle cx="678" cy="560" r="58" fill="#1b2a2c"/>
+    <circle cx="654" cy="536" r="18" fill="#e9f0ee"/>
+  </g>
+  <!-- beak -->
+  <path d="M512 610 L 470 700 Q 512 790 554 700 Z" fill="#d39a36"/>
+</svg>

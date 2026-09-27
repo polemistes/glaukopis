@@ -1,0 +1,3 @@
+# The width the code was written to, with short things kept on one line.
+max_width = 120
+use_small_heuristics = "Max"

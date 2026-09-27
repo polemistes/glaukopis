@@ -1,0 +1,106 @@
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+  import { place, type Align, type RectLike, type Side } from './floating';
+
+  interface Props {
+    open: boolean;
+    anchor: HTMLElement | RectLike | null | undefined;
+    side?: Side;
+    align?: Align;
+    gap?: number;
+    width?: number;
+    /** When false, clicks outside do not close the popover. */
+    dismissable?: boolean;
+    onclose: () => void;
+    children: Snippet;
+    label?: string;
+  }
+
+  let {
+    open,
+    anchor,
+    side = 'bottom',
+    align = 'start',
+    gap = 6,
+    width,
+    dismissable = true,
+    onclose,
+    children,
+    label,
+  }: Props = $props();
+
+  let el = $state<HTMLDivElement>();
+
+  function reposition() {
+    if (!el || !anchor) return;
+    const rect = anchor instanceof HTMLElement ? anchor.getBoundingClientRect() : anchor;
+    place(el, rect, { side, align, gap });
+  }
+
+  $effect(() => {
+    if (!open || !el) return;
+    reposition();
+    const observer = new ResizeObserver(() => requestAnimationFrame(reposition));
+    observer.observe(el);
+    window.addEventListener('resize', reposition);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', reposition);
+    };
+  });
+
+  function onkeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      event.preventDefault();
+      onclose();
+    }
+  }
+</script>
+
+{#if open}
+  {#if dismissable}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="backdrop" onpointerdown={onclose}></div>
+  {/if}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    bind:this={el}
+    class="popover"
+    role="dialog"
+    tabindex="-1"
+    aria-label={label}
+    style:width={width ? `${width}px` : undefined}
+    {onkeydown}
+  >
+    {@render children()}
+  </div>
+{/if}
+
+<style>
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 799;
+  }
+  .popover {
+    position: fixed;
+    z-index: 800;
+    left: 0;
+    top: 0;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    overflow: auto;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    box-shadow: var(--shadow-3);
+    animation: appear var(--fast) var(--ease);
+  }
+  @keyframes appear {
+    from {
+      opacity: 0;
+      transform: translateY(-3px);
+    }
+  }
+</style>
