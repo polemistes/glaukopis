@@ -18,8 +18,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     format.sanitise();
     let found = tools::discover(&tools::Configured::default());
     let pandoc = found.pandoc()?;
-    let particulars =
-        Particulars { title: "A title".into(), authors: vec!["An author".into()], language: Some("en-GB".into()) };
+    let particulars = Particulars {
+        title: "A title".into(),
+        authors: vec!["An author".into()],
+        language: Some("en-GB".into()),
+        ..Default::default()
+    };
     let dir = Path::new(&dir);
     std::fs::create_dir_all(dir)?;
     for (name, make) in [
