@@ -1,0 +1,51 @@
+{
+  "id": "manuscript",
+  "name": "Manuscript",
+  "kind": "general",
+  "description": "What most publishers and journals accept where they state no layout of their own: 12-point serif type, double spacing, margins of 2.5 cm, text aligned left.",
+  "source": {
+    "name": "What the requirements of publishers and journals have in common",
+    "url": "",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "See docs/research/formats-publishers.md and formats-journals.md, under Observations. Paragraphs are indented rather than spaced, which is the more common of two conflicting conventions."
+  },
+  "page": { "size": "a4", "marginTop": "2.5cm", "marginBottom": "2.5cm", "marginLeft": "2.5cm", "marginRight": "2.5cm" },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "align": "center",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords"
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0 },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": { "title": "Bibliography", "hangingIndent": "1.27cm", "lineSpacing": 0, "entrySpacing": "0pt", "newPage": false },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none" },
+  "lineNumbers": false,
+  "style": "chicago-notes-bibliography"
+}
