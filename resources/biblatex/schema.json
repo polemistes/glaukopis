@@ -1,0 +1,1723 @@
+{
+ "fields": {
+  "author": {
+   "label": "Author",
+   "kind": "names",
+   "group": "People"
+  },
+  "editor": {
+   "label": "Editor",
+   "kind": "names",
+   "group": "People"
+  },
+  "translator": {
+   "label": "Translator",
+   "kind": "names",
+   "group": "People"
+  },
+  "bookauthor": {
+   "label": "Author of the book",
+   "kind": "names",
+   "group": "People"
+  },
+  "commentator": {
+   "label": "Commentator",
+   "kind": "names",
+   "group": "People"
+  },
+  "annotator": {
+   "label": "Annotator",
+   "kind": "names",
+   "group": "People"
+  },
+  "introduction": {
+   "label": "Author of introduction",
+   "kind": "names",
+   "group": "People"
+  },
+  "foreword": {
+   "label": "Author of foreword",
+   "kind": "names",
+   "group": "People"
+  },
+  "afterword": {
+   "label": "Author of afterword",
+   "kind": "names",
+   "group": "People"
+  },
+  "editora": {
+   "label": "Secondary editor",
+   "kind": "names",
+   "group": "People"
+  },
+  "editorb": {
+   "label": "Third editor",
+   "kind": "names",
+   "group": "People"
+  },
+  "editorc": {
+   "label": "Fourth editor",
+   "kind": "names",
+   "group": "People"
+  },
+  "holder": {
+   "label": "Patent holder",
+   "kind": "names",
+   "group": "People"
+  },
+  "editortype": {
+   "label": "Role of the editor",
+   "kind": "select",
+   "group": "People",
+   "options": [
+    [
+     "editor",
+     "Editor"
+    ],
+    [
+     "compiler",
+     "Compiler"
+    ],
+    [
+     "founder",
+     "Founding editor"
+    ],
+    [
+     "continuator",
+     "Continued by"
+    ],
+    [
+     "redactor",
+     "Redactor"
+    ],
+    [
+     "reviser",
+     "Reviser"
+    ],
+    [
+     "collaborator",
+     "Collaborator"
+    ],
+    [
+     "organizer",
+     "Organiser"
+    ]
+   ]
+  },
+  "editoratype": {
+   "label": "Role of the secondary editor",
+   "kind": "select",
+   "group": "People",
+   "options": [
+    [
+     "editor",
+     "Editor"
+    ],
+    [
+     "compiler",
+     "Compiler"
+    ],
+    [
+     "founder",
+     "Founding editor"
+    ],
+    [
+     "continuator",
+     "Continued by"
+    ],
+    [
+     "redactor",
+     "Redactor"
+    ],
+    [
+     "reviser",
+     "Reviser"
+    ],
+    [
+     "collaborator",
+     "Collaborator"
+    ],
+    [
+     "organizer",
+     "Organiser"
+    ]
+   ]
+  },
+  "shortauthor": {
+   "label": "Short form of the author",
+   "kind": "text",
+   "group": "People",
+   "hint": "For citations, when the full name is long"
+  },
+  "shorteditor": {
+   "label": "Short form of the editor",
+   "kind": "text",
+   "group": "People"
+  },
+  "authortype": {
+   "label": "Type of author",
+   "kind": "text",
+   "group": "People"
+  },
+  "title": {
+   "label": "Title",
+   "kind": "title",
+   "group": "Titles"
+  },
+  "subtitle": {
+   "label": "Subtitle",
+   "kind": "title",
+   "group": "Titles"
+  },
+  "titleaddon": {
+   "label": "Addition to the title",
+   "kind": "text",
+   "group": "Titles"
+  },
+  "shorttitle": {
+   "label": "Short title",
+   "kind": "title",
+   "group": "Titles",
+   "hint": "Used in later citations by note styles"
+  },
+  "booktitle": {
+   "label": "Title of the book",
+   "kind": "title",
+   "group": "Titles"
+  },
+  "booksubtitle": {
+   "label": "Subtitle of the book",
+   "kind": "title",
+   "group": "Titles"
+  },
+  "booktitleaddon": {
+   "label": "Addition to the book title",
+   "kind": "text",
+   "group": "Titles"
+  },
+  "maintitle": {
+   "label": "Title of the whole work",
+   "kind": "title",
+   "group": "Titles",
+   "hint": "For one volume of a multi-volume work"
+  },
+  "mainsubtitle": {
+   "label": "Subtitle of the whole work",
+   "kind": "title",
+   "group": "Titles"
+  },
+  "maintitleaddon": {
+   "label": "Addition to the main title",
+   "kind": "text",
+   "group": "Titles"
+  },
+  "journaltitle": {
+   "label": "Journal",
+   "kind": "title",
+   "group": "Titles"
+  },
+  "journalsubtitle": {
+   "label": "Subtitle of the journal",
+   "kind": "title",
+   "group": "Titles"
+  },
+  "shortjournal": {
+   "label": "Short form of the journal",
+   "kind": "text",
+   "group": "Titles"
+  },
+  "issuetitle": {
+   "label": "Title of the issue",
+   "kind": "title",
+   "group": "Titles"
+  },
+  "issuesubtitle": {
+   "label": "Subtitle of the issue",
+   "kind": "title",
+   "group": "Titles"
+  },
+  "eventtitle": {
+   "label": "Title of the conference",
+   "kind": "title",
+   "group": "Titles"
+  },
+  "origtitle": {
+   "label": "Original title",
+   "kind": "title",
+   "group": "Titles",
+   "hint": "Of a translated work"
+  },
+  "reprinttitle": {
+   "label": "Title of the reprint",
+   "kind": "title",
+   "group": "Titles"
+  },
+  "indextitle": {
+   "label": "Title for the index",
+   "kind": "text",
+   "group": "Titles"
+  },
+  "date": {
+   "label": "Date",
+   "kind": "date",
+   "group": "Publication",
+   "hint": "Year, or year-month-day: 1979, 1979-05, 1979/1985"
+  },
+  "year": {
+   "label": "Year",
+   "kind": "text",
+   "group": "Publication",
+   "hint": "Used when the date is not a calendar date"
+  },
+  "month": {
+   "label": "Month",
+   "kind": "text",
+   "group": "Publication"
+  },
+  "origdate": {
+   "label": "Original date",
+   "kind": "date",
+   "group": "Publication",
+   "hint": "Of the first edition or the original"
+  },
+  "eventdate": {
+   "label": "Date of the conference",
+   "kind": "date",
+   "group": "Publication"
+  },
+  "urldate": {
+   "label": "Accessed",
+   "kind": "date",
+   "group": "Publication"
+  },
+  "pubstate": {
+   "label": "State of publication",
+   "kind": "select",
+   "group": "Publication",
+   "options": [
+    [
+     "",
+     "Published"
+    ],
+    [
+     "forthcoming",
+     "Forthcoming"
+    ],
+    [
+     "inpress",
+     "In press"
+    ],
+    [
+     "inpreparation",
+     "In preparation"
+    ],
+    [
+     "submitted",
+     "Submitted"
+    ],
+    [
+     "prepublished",
+     "Pre-published"
+    ]
+   ]
+  },
+  "publisher": {
+   "label": "Publisher",
+   "kind": "list",
+   "group": "Publication",
+   "hint": "Separate several with \"and\""
+  },
+  "location": {
+   "label": "Place",
+   "kind": "list",
+   "group": "Publication",
+   "hint": "Separate several with \"and\""
+  },
+  "origpublisher": {
+   "label": "Original publisher",
+   "kind": "list",
+   "group": "Publication"
+  },
+  "origlocation": {
+   "label": "Original place",
+   "kind": "list",
+   "group": "Publication"
+  },
+  "institution": {
+   "label": "Institution",
+   "kind": "list",
+   "group": "Publication"
+  },
+  "organization": {
+   "label": "Organisation",
+   "kind": "list",
+   "group": "Publication"
+  },
+  "venue": {
+   "label": "Venue",
+   "kind": "text",
+   "group": "Publication"
+  },
+  "edition": {
+   "label": "Edition",
+   "kind": "text",
+   "group": "Publication",
+   "hint": "A number, or words such as \"Revised\""
+  },
+  "volume": {
+   "label": "Volume",
+   "kind": "text",
+   "group": "Publication"
+  },
+  "volumes": {
+   "label": "Number of volumes",
+   "kind": "text",
+   "group": "Publication"
+  },
+  "part": {
+   "label": "Part",
+   "kind": "text",
+   "group": "Publication"
+  },
+  "series": {
+   "label": "Series",
+   "kind": "title",
+   "group": "Publication"
+  },
+  "number": {
+   "label": "Number",
+   "kind": "text",
+   "group": "Publication",
+   "hint": "Issue of a journal, or number in a series"
+  },
+  "issue": {
+   "label": "Issue",
+   "kind": "text",
+   "group": "Publication",
+   "hint": "When the issue is named, not numbered: \"Spring\""
+  },
+  "chapter": {
+   "label": "Chapter",
+   "kind": "text",
+   "group": "Publication"
+  },
+  "pages": {
+   "label": "Pages",
+   "kind": "range",
+   "group": "Publication",
+   "hint": "45–67"
+  },
+  "pagetotal": {
+   "label": "Number of pages",
+   "kind": "text",
+   "group": "Publication"
+  },
+  "pagination": {
+   "label": "Kind of page numbering",
+   "kind": "select",
+   "group": "Publication",
+   "options": [
+    [
+     "",
+     "Pages"
+    ],
+    [
+     "column",
+     "Columns"
+    ],
+    [
+     "line",
+     "Lines"
+    ],
+    [
+     "verse",
+     "Verses"
+    ],
+    [
+     "section",
+     "Sections"
+    ],
+    [
+     "paragraph",
+     "Paragraphs"
+    ]
+   ]
+  },
+  "bookpagination": {
+   "label": "Kind of page numbering of the book",
+   "kind": "select",
+   "group": "Publication",
+   "options": [
+    [
+     "",
+     "Pages"
+    ],
+    [
+     "column",
+     "Columns"
+    ],
+    [
+     "line",
+     "Lines"
+    ],
+    [
+     "verse",
+     "Verses"
+    ],
+    [
+     "section",
+     "Sections"
+    ],
+    [
+     "paragraph",
+     "Paragraphs"
+    ]
+   ]
+  },
+  "type": {
+   "label": "Type",
+   "kind": "text",
+   "group": "Publication",
+   "hint": "Kind of thesis or report"
+  },
+  "version": {
+   "label": "Version",
+   "kind": "text",
+   "group": "Publication"
+  },
+  "howpublished": {
+   "label": "How published",
+   "kind": "text",
+   "group": "Publication"
+  },
+  "entrysubtype": {
+   "label": "Subtype",
+   "kind": "text",
+   "group": "Publication",
+   "hint": "For instance \"classical\", \"newspaper\", \"magazine\""
+  },
+  "doi": {
+   "label": "DOI",
+   "kind": "verbatim",
+   "group": "Identifiers"
+  },
+  "isbn": {
+   "label": "ISBN",
+   "kind": "verbatim",
+   "group": "Identifiers"
+  },
+  "issn": {
+   "label": "ISSN",
+   "kind": "verbatim",
+   "group": "Identifiers"
+  },
+  "url": {
+   "label": "URL",
+   "kind": "verbatim",
+   "group": "Identifiers"
+  },
+  "eprint": {
+   "label": "E-print identifier",
+   "kind": "verbatim",
+   "group": "Identifiers"
+  },
+  "eprinttype": {
+   "label": "E-print archive",
+   "kind": "text",
+   "group": "Identifiers",
+   "hint": "arxiv, jstor, hdl, pubmed"
+  },
+  "eprintclass": {
+   "label": "E-print class",
+   "kind": "text",
+   "group": "Identifiers"
+  },
+  "isrn": {
+   "label": "ISRN",
+   "kind": "verbatim",
+   "group": "Identifiers"
+  },
+  "eid": {
+   "label": "Article number",
+   "kind": "verbatim",
+   "group": "Identifiers"
+  },
+  "library": {
+   "label": "Library or archive",
+   "kind": "text",
+   "group": "Identifiers",
+   "hint": "Where a manuscript or rare item is held, with shelf mark"
+  },
+  "language": {
+   "label": "Language",
+   "kind": "list",
+   "group": "Language",
+   "hint": "Of the work"
+  },
+  "origlanguage": {
+   "label": "Original language",
+   "kind": "list",
+   "group": "Language",
+   "hint": "Of a translated work"
+  },
+  "langid": {
+   "label": "Language for hyphenation",
+   "kind": "text",
+   "group": "Language",
+   "hint": "As babel names it: english, german, greek, norsk"
+  },
+  "note": {
+   "label": "Note",
+   "kind": "text",
+   "group": "Notes",
+   "hint": "Printed in the bibliography"
+  },
+  "addendum": {
+   "label": "Addendum",
+   "kind": "text",
+   "group": "Notes",
+   "hint": "Printed at the end of the entry"
+  },
+  "annotation": {
+   "label": "Annotation",
+   "kind": "longtext",
+   "group": "Notes",
+   "hint": "Your own remarks; printed only in annotated bibliographies"
+  },
+  "abstract": {
+   "label": "Abstract",
+   "kind": "longtext",
+   "group": "Notes"
+  },
+  "keywords": {
+   "label": "Keywords",
+   "kind": "text",
+   "group": "Notes",
+   "hint": "Separated by commas"
+  },
+  "shorthand": {
+   "label": "Shorthand",
+   "kind": "text",
+   "group": "Notes",
+   "hint": "An abbreviation cited in place of author and title: LSJ, DK"
+  },
+  "shorthandintro": {
+   "label": "Introduction of the shorthand",
+   "kind": "text",
+   "group": "Notes"
+  },
+  "crossref": {
+   "label": "Parent entry",
+   "kind": "key",
+   "group": "Relations",
+   "hint": "The book or collection this belongs to; shared fields are inherited"
+  },
+  "xref": {
+   "label": "Related entry, without inheritance",
+   "kind": "key",
+   "group": "Relations"
+  },
+  "related": {
+   "label": "Related entries",
+   "kind": "verbatim",
+   "group": "Relations",
+   "hint": "Citation keys, separated by commas"
+  },
+  "relatedtype": {
+   "label": "Kind of relation",
+   "kind": "select",
+   "group": "Relations",
+   "options": [
+    [
+     "",
+     "None"
+    ],
+    [
+     "reprintof",
+     "Reprint of"
+    ],
+    [
+     "reprintas",
+     "Reprinted as"
+    ],
+    [
+     "reprintfrom",
+     "Reprinted from"
+    ],
+    [
+     "translationof",
+     "Translation of"
+    ],
+    [
+     "translatedas",
+     "Translated as"
+    ],
+    [
+     "reviewof",
+     "Review of"
+    ],
+    [
+     "origpubin",
+     "Originally published in"
+    ],
+    [
+     "origpubas",
+     "Originally published as"
+    ],
+    [
+     "multivolume",
+     "Volumes of"
+    ]
+   ]
+  },
+  "relatedstring": {
+   "label": "Wording of the relation",
+   "kind": "text",
+   "group": "Relations"
+  },
+  "ids": {
+   "label": "Other citation keys",
+   "kind": "verbatim",
+   "group": "Relations",
+   "hint": "Earlier keys by which this entry may still be cited"
+  },
+  "sortkey": {
+   "label": "Sort as",
+   "kind": "text",
+   "group": "Sorting"
+  },
+  "sortname": {
+   "label": "Sort name as",
+   "kind": "text",
+   "group": "Sorting"
+  },
+  "sorttitle": {
+   "label": "Sort title as",
+   "kind": "text",
+   "group": "Sorting"
+  },
+  "sortyear": {
+   "label": "Sort year as",
+   "kind": "text",
+   "group": "Sorting"
+  },
+  "presort": {
+   "label": "Sort before all else",
+   "kind": "text",
+   "group": "Sorting"
+  },
+  "options": {
+   "label": "Options",
+   "kind": "verbatim",
+   "group": "Sorting",
+   "hint": "BibLaTeX options for this entry"
+  }
+ },
+ "types": [
+  {
+   "id": "book",
+   "label": "Book",
+   "group": "Books",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "edition",
+    "location",
+    "publisher",
+    "date"
+   ],
+   "secondary": [
+    "editor",
+    "translator",
+    "series",
+    "number",
+    "volume",
+    "volumes",
+    "maintitle",
+    "origdate",
+    "origtitle",
+    "origlanguage",
+    "language",
+    "isbn",
+    "pagetotal",
+    "shorttitle",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A book by one or more authors"
+  },
+  {
+   "id": "collection",
+   "label": "Edited volume",
+   "group": "Books",
+   "primary": [
+    "editor",
+    "title",
+    "subtitle",
+    "edition",
+    "location",
+    "publisher",
+    "date"
+   ],
+   "secondary": [
+    "editortype",
+    "translator",
+    "series",
+    "number",
+    "volume",
+    "volumes",
+    "maintitle",
+    "language",
+    "isbn",
+    "pagetotal",
+    "shorttitle",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A book of contributions by different authors"
+  },
+  {
+   "id": "incollection",
+   "label": "Chapter in an edited volume",
+   "group": "Books",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "editor",
+    "booktitle",
+    "booksubtitle",
+    "location",
+    "publisher",
+    "date",
+    "pages"
+   ],
+   "secondary": [
+    "crossref",
+    "translator",
+    "edition",
+    "series",
+    "number",
+    "volume",
+    "maintitle",
+    "chapter",
+    "language",
+    "isbn",
+    "shorttitle",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A contribution to an edited volume"
+  },
+  {
+   "id": "inbook",
+   "label": "Part of a book",
+   "group": "Books",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "bookauthor",
+    "booktitle",
+    "booksubtitle",
+    "location",
+    "publisher",
+    "date",
+    "pages"
+   ],
+   "secondary": [
+    "crossref",
+    "editor",
+    "translator",
+    "edition",
+    "series",
+    "number",
+    "volume",
+    "maintitle",
+    "chapter",
+    "isbn",
+    "shorttitle",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A chapter or other part of a book by the same author"
+  },
+  {
+   "id": "mvbook",
+   "label": "Multi-volume book",
+   "group": "Books",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "volumes",
+    "edition",
+    "location",
+    "publisher",
+    "date"
+   ],
+   "secondary": [
+    "editor",
+    "translator",
+    "series",
+    "number",
+    "language",
+    "isbn",
+    "shorttitle",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "mvcollection",
+   "label": "Multi-volume edited work",
+   "group": "Books",
+   "primary": [
+    "editor",
+    "title",
+    "subtitle",
+    "volumes",
+    "edition",
+    "location",
+    "publisher",
+    "date"
+   ],
+   "secondary": [
+    "editortype",
+    "translator",
+    "series",
+    "number",
+    "language",
+    "isbn",
+    "shorttitle",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "suppbook",
+   "label": "Introduction, foreword or afterword",
+   "group": "Books",
+   "primary": [
+    "author",
+    "title",
+    "bookauthor",
+    "booktitle",
+    "booksubtitle",
+    "location",
+    "publisher",
+    "date",
+    "pages"
+   ],
+   "secondary": [
+    "type",
+    "editor",
+    "translator",
+    "edition",
+    "volume",
+    "isbn",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "Supplementary material in a book"
+  },
+  {
+   "id": "bookinbook",
+   "label": "Book within a book",
+   "group": "Books",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "bookauthor",
+    "booktitle",
+    "location",
+    "publisher",
+    "date",
+    "pages"
+   ],
+   "secondary": [
+    "editor",
+    "translator",
+    "volume",
+    "maintitle",
+    "origdate",
+    "isbn",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A work first published as a book, reprinted in collected works"
+  },
+  {
+   "id": "commentary",
+   "label": "Commentary",
+   "group": "Books",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "edition",
+    "location",
+    "publisher",
+    "date"
+   ],
+   "secondary": [
+    "editor",
+    "commentator",
+    "translator",
+    "series",
+    "number",
+    "volume",
+    "volumes",
+    "shorthand",
+    "isbn",
+    "shorttitle",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A commentary on a text"
+  },
+  {
+   "id": "reference",
+   "label": "Reference work",
+   "group": "Books",
+   "primary": [
+    "editor",
+    "title",
+    "subtitle",
+    "edition",
+    "volumes",
+    "location",
+    "publisher",
+    "date"
+   ],
+   "secondary": [
+    "shorthand",
+    "series",
+    "number",
+    "volume",
+    "isbn",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "An encyclopaedia, lexicon or dictionary"
+  },
+  {
+   "id": "inreference",
+   "label": "Entry in a reference work",
+   "group": "Books",
+   "primary": [
+    "author",
+    "title",
+    "editor",
+    "booktitle",
+    "edition",
+    "volume",
+    "location",
+    "publisher",
+    "date",
+    "pages"
+   ],
+   "secondary": [
+    "crossref",
+    "shorthand",
+    "pagination",
+    "isbn",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "An article in an encyclopaedia or lexicon"
+  },
+  {
+   "id": "booklet",
+   "label": "Booklet",
+   "group": "Books",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "howpublished",
+    "location",
+    "date"
+   ],
+   "secondary": [
+    "editor",
+    "type",
+    "pagetotal",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "Printed without a formal publisher"
+  },
+  {
+   "id": "article",
+   "label": "Journal article",
+   "group": "Periodicals",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "journaltitle",
+    "volume",
+    "number",
+    "date",
+    "pages",
+    "doi"
+   ],
+   "secondary": [
+    "translator",
+    "series",
+    "issue",
+    "issuetitle",
+    "eid",
+    "issn",
+    "language",
+    "origdate",
+    "shorttitle",
+    "pubstate",
+    "note",
+    "entrysubtype",
+    "url",
+    "urldate"
+   ],
+   "hint": "An article in a journal, magazine or newspaper"
+  },
+  {
+   "id": "review",
+   "label": "Review",
+   "group": "Periodicals",
+   "primary": [
+    "author",
+    "title",
+    "journaltitle",
+    "volume",
+    "number",
+    "date",
+    "pages",
+    "doi"
+   ],
+   "secondary": [
+    "related",
+    "relatedtype",
+    "issue",
+    "issn",
+    "note",
+    "url",
+    "urldate"
+   ],
+   "hint": "A review of a book or other work"
+  },
+  {
+   "id": "periodical",
+   "label": "Issue of a journal",
+   "group": "Periodicals",
+   "primary": [
+    "editor",
+    "title",
+    "issuetitle",
+    "volume",
+    "number",
+    "date"
+   ],
+   "secondary": [
+    "issuesubtitle",
+    "series",
+    "issn",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A whole issue, for instance a special issue"
+  },
+  {
+   "id": "thesis",
+   "label": "Thesis",
+   "group": "Academic",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "type",
+    "institution",
+    "location",
+    "date"
+   ],
+   "secondary": [
+    "pagetotal",
+    "language",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A doctoral or master’s thesis"
+  },
+  {
+   "id": "inproceedings",
+   "label": "Conference paper",
+   "group": "Academic",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "editor",
+    "booktitle",
+    "eventtitle",
+    "location",
+    "publisher",
+    "date",
+    "pages"
+   ],
+   "secondary": [
+    "crossref",
+    "eventdate",
+    "venue",
+    "organization",
+    "series",
+    "number",
+    "volume",
+    "isbn",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "proceedings",
+   "label": "Conference proceedings",
+   "group": "Academic",
+   "primary": [
+    "editor",
+    "title",
+    "subtitle",
+    "eventtitle",
+    "location",
+    "publisher",
+    "date"
+   ],
+   "secondary": [
+    "eventdate",
+    "venue",
+    "organization",
+    "series",
+    "number",
+    "volume",
+    "isbn",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "report",
+   "label": "Report",
+   "group": "Academic",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "type",
+    "number",
+    "institution",
+    "location",
+    "date"
+   ],
+   "secondary": [
+    "version",
+    "isrn",
+    "pagetotal",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A report, working paper or white paper"
+  },
+  {
+   "id": "unpublished",
+   "label": "Unpublished work",
+   "group": "Academic",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "howpublished",
+    "date",
+    "note"
+   ],
+   "secondary": [
+    "type",
+    "eventtitle",
+    "eventdate",
+    "venue",
+    "location",
+    "library",
+    "pubstate",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A manuscript, lecture or paper not formally published"
+  },
+  {
+   "id": "dataset",
+   "label": "Dataset",
+   "group": "Academic",
+   "primary": [
+    "author",
+    "title",
+    "version",
+    "publisher",
+    "date",
+    "doi"
+   ],
+   "secondary": [
+    "editor",
+    "organization",
+    "location",
+    "note",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "online",
+   "label": "Web page",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "organization",
+    "date",
+    "url",
+    "urldate"
+   ],
+   "secondary": [
+    "editor",
+    "version",
+    "note",
+    "language"
+   ],
+   "hint": "A page or document that exists only online"
+  },
+  {
+   "id": "misc",
+   "label": "Manuscript, archival source or other",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "howpublished",
+    "library",
+    "location",
+    "date",
+    "note"
+   ],
+   "secondary": [
+    "editor",
+    "type",
+    "organization",
+    "version",
+    "origdate",
+    "language",
+    "entrysubtype",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "Whatever fits nowhere else"
+  },
+  {
+   "id": "letter",
+   "label": "Letter",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "date",
+    "library",
+    "location",
+    "note"
+   ],
+   "secondary": [
+    "howpublished",
+    "language",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A letter or other personal correspondence"
+  },
+  {
+   "id": "manual",
+   "label": "Manual",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "subtitle",
+    "edition",
+    "organization",
+    "location",
+    "date"
+   ],
+   "secondary": [
+    "editor",
+    "type",
+    "version",
+    "series",
+    "number",
+    "isbn",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "software",
+   "label": "Software",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "version",
+    "organization",
+    "date",
+    "url"
+   ],
+   "secondary": [
+    "editor",
+    "note",
+    "doi",
+    "urldate"
+   ]
+  },
+  {
+   "id": "patent",
+   "label": "Patent",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "number",
+    "holder",
+    "type",
+    "location",
+    "date"
+   ],
+   "secondary": [
+    "version",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "artwork",
+   "label": "Artwork",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "date",
+    "library",
+    "location",
+    "note"
+   ],
+   "secondary": [
+    "type",
+    "howpublished",
+    "doi",
+    "url",
+    "urldate"
+   ],
+   "hint": "A painting, sculpture or other work of visual art"
+  },
+  {
+   "id": "audio",
+   "label": "Audio recording",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "publisher",
+    "date",
+    "note"
+   ],
+   "secondary": [
+    "editor",
+    "type",
+    "howpublished",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "video",
+   "label": "Video",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "publisher",
+    "date",
+    "url",
+    "urldate"
+   ],
+   "secondary": [
+    "editor",
+    "type",
+    "howpublished",
+    "note",
+    "doi"
+   ]
+  },
+  {
+   "id": "movie",
+   "label": "Film",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "publisher",
+    "date",
+    "note"
+   ],
+   "secondary": [
+    "editor",
+    "type",
+    "howpublished",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "music",
+   "label": "Musical score or recording",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "publisher",
+    "location",
+    "date",
+    "note"
+   ],
+   "secondary": [
+    "editor",
+    "type",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "performance",
+   "label": "Performance",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "venue",
+    "location",
+    "date",
+    "note"
+   ],
+   "secondary": [
+    "editor",
+    "type",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "image",
+   "label": "Image",
+   "group": "Other",
+   "primary": [
+    "author",
+    "title",
+    "date",
+    "library",
+    "url",
+    "urldate"
+   ],
+   "secondary": [
+    "type",
+    "note",
+    "doi"
+   ]
+  },
+  {
+   "id": "legislation",
+   "label": "Legislation",
+   "group": "Other",
+   "primary": [
+    "title",
+    "number",
+    "location",
+    "date",
+    "pages"
+   ],
+   "secondary": [
+    "author",
+    "type",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "jurisdiction",
+   "label": "Court decision",
+   "group": "Other",
+   "primary": [
+    "title",
+    "number",
+    "institution",
+    "location",
+    "date",
+    "pages"
+   ],
+   "secondary": [
+    "author",
+    "type",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  },
+  {
+   "id": "standard",
+   "label": "Standard",
+   "group": "Other",
+   "primary": [
+    "title",
+    "number",
+    "organization",
+    "publisher",
+    "date"
+   ],
+   "secondary": [
+    "author",
+    "type",
+    "note",
+    "doi",
+    "url",
+    "urldate"
+   ]
+  }
+ ],
+ "typeAliases": {
+  "phdthesis": {
+   "type": "thesis",
+   "set": {
+    "type": "phdthesis"
+   }
+  },
+  "mastersthesis": {
+   "type": "thesis",
+   "set": {
+    "type": "mathesis"
+   }
+  },
+  "techreport": {
+   "type": "report",
+   "set": {
+    "type": "techreport"
+   }
+  },
+  "conference": {
+   "type": "inproceedings"
+  },
+  "electronic": {
+   "type": "online"
+  },
+  "www": {
+   "type": "online"
+  },
+  "webpage": {
+   "type": "online"
+  },
+  "suppcollection": {
+   "type": "suppbook"
+  },
+  "suppperiodical": {
+   "type": "article"
+  },
+  "mvreference": {
+   "type": "reference"
+  },
+  "mvproceedings": {
+   "type": "proceedings"
+  },
+  "legal": {
+   "type": "legislation"
+  }
+ },
+ "fieldAliases": {
+  "journal": "journaltitle",
+  "address": "location",
+  "school": "institution",
+  "annote": "annotation",
+  "archiveprefix": "eprinttype",
+  "primaryclass": "eprintclass",
+  "key": "sortkey",
+  "pdf": "file",
+  "hyphenation": "langid"
+ },
+ "groups": [
+  "Books",
+  "Periodicals",
+  "Academic",
+  "Other"
+ ],
+ "fieldGroups": [
+  "People",
+  "Titles",
+  "Publication",
+  "Identifiers",
+  "Language",
+  "Notes",
+  "Relations",
+  "Sorting",
+  "Other"
+ ]
+}

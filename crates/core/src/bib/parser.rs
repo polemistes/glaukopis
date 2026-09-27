@@ -1,0 +1,547 @@
+//! A forgiving parser for BibTeX and BibLaTeX files.
+//!
+//! It follows BibTeX's own rules: text outside entries is ignored; an entry is
+//! delimited by braces or parentheses; a value is a concatenation, with `#`,
+//! of braced text, quoted text, numbers and macro names; braces are counted
+//! without regard to backslashes. A malformed entry is reported and skipped,
+//! and parsing resumes at the next `@` that begins a line.
+
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawEntry {
+    /// Lower-cased: `book`, `article`, …
+    pub entry_type: String,
+    pub key: String,
+    /// Field names lower-cased, values raw with macros resolved and whitespace
+    /// normalised. When a field is repeated, the last one stands.
+    pub fields: Vec<(String, String)>,
+    /// The line on which the entry begins, from 1.
+    pub line: usize,
+}
+
+impl RawEntry {
+    pub fn get(&self, name: &str) -> Option<&str> {
+        self.fields.iter().find(|(n, _)| n == name).map(|(_, v)| v.as_str())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BibItem {
+    Entry(RawEntry),
+    Preamble(String),
+    Comment(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParseWarning {
+    pub line: usize,
+    pub message: String,
+}
+
+#[derive(Debug, Default)]
+pub struct Parsed {
+    pub items: Vec<BibItem>,
+    pub strings: HashMap<String, String>,
+    pub warnings: Vec<ParseWarning>,
+}
+
+impl Parsed {
+    pub fn entries(&self) -> impl Iterator<Item = &RawEntry> {
+        self.items.iter().filter_map(|item| match item {
+            BibItem::Entry(e) => Some(e),
+            _ => None,
+        })
+    }
+
+    pub fn into_entries(self) -> Vec<RawEntry> {
+        self.items
+            .into_iter()
+            .filter_map(|item| match item {
+                BibItem::Entry(e) => Some(e),
+                _ => None,
+            })
+            .collect()
+    }
+}
+
+pub fn parse(source: &str) -> Parsed {
+    let source = source.strip_prefix('\u{feff}').unwrap_or(source);
+    let mut parser = Parser { src: source.as_bytes(), text: source, pos: 0, out: Parsed::default() };
+    for (name, value) in MONTHS {
+        parser.out.strings.insert((*name).to_owned(), (*value).to_owned());
+    }
+    parser.run();
+    parser.out
+}
+
+const MONTHS: &[(&str, &str)] = &[
+    ("jan", "1"),
+    ("feb", "2"),
+    ("mar", "3"),
+    ("apr", "4"),
+    ("may", "5"),
+    ("jun", "6"),
+    ("jul", "7"),
+    ("aug", "8"),
+    ("sep", "9"),
+    ("oct", "10"),
+    ("nov", "11"),
+    ("dec", "12"),
+];
+
+struct Parser<'a> {
+    src: &'a [u8],
+    text: &'a str,
+    pos: usize,
+    out: Parsed,
+}
+
+type PResult<T> = Result<T, String>;
+
+impl<'a> Parser<'a> {
+    fn run(&mut self) {
+        while let Some(at) = self.find_next_at() {
+            self.pos = at + 1;
+            let line = self.line_of(at);
+            if let Err(message) = self.item(line) {
+                self.out.warnings.push(ParseWarning { line: self.line_of(self.pos.min(self.src.len())), message });
+                self.recover();
+            }
+        }
+    }
+
+    /// The next `@` outside an entry.
+    fn find_next_at(&self) -> Option<usize> {
+        self.src[self.pos.min(self.src.len())..].iter().position(|&b| b == b'@').map(|i| i + self.pos)
+    }
+
+    /// After an error: continue from the next `@` that begins a line.
+    fn recover(&mut self) {
+        let mut i = self.pos;
+        while i < self.src.len() {
+            if self.src[i] == b'\n' {
+                let mut j = i + 1;
+                while j < self.src.len() && (self.src[j] == b' ' || self.src[j] == b'\t') {
+                    j += 1;
+                }
+                if j < self.src.len() && self.src[j] == b'@' {
+                    self.pos = j;
+                    return;
+                }
+            }
+            i += 1;
+        }
+        self.pos = self.src.len();
+    }
+
+    fn line_of(&self, pos: usize) -> usize {
+        self.src[..pos.min(self.src.len())].iter().filter(|&&b| b == b'\n').count() + 1
+    }
+
+    fn peek(&self) -> Option<u8> {
+        self.src.get(self.pos).copied()
+    }
+
+    fn skip_ws(&mut self) {
+        while let Some(b) = self.peek() {
+            if b.is_ascii_whitespace() {
+                self.pos += 1;
+            } else if b == b'%' {
+                // A comment to the end of the line, as many files have them between fields.
+                while let Some(c) = self.peek() {
+                    if c == b'\n' {
+                        break;
+                    }
+                    self.pos += 1;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    fn word(&mut self, stop: impl Fn(u8) -> bool) -> &'a str {
+        let start = self.pos;
+        while let Some(b) = self.peek() {
+            if b.is_ascii_whitespace() || stop(b) {
+                break;
+            }
+            self.pos += 1;
+        }
+        &self.text[start..self.pos]
+    }
+
+    fn item(&mut self, line: usize) -> PResult<()> {
+        self.skip_ws();
+        let kind = self.word(|b| matches!(b, b'{' | b'(' | b'@' | b',' | b'=' | b'"' | b'}' | b')'));
+        if kind.is_empty() {
+            // A stray `@`, as in an e-mail address in free text.
+            return Ok(());
+        }
+        let kind = kind.to_ascii_lowercase();
+        self.skip_ws();
+        let open = match self.peek() {
+            Some(b @ (b'{' | b'(')) => b,
+            _ => return Ok(()), // not an entry after all
+        };
+        let close = if open == b'{' { b'}' } else { b')' };
+        self.pos += 1;
+
+        match kind.as_str() {
+            "comment" => {
+                let text = self.balanced_body(open, close)?;
+                self.out.items.push(BibItem::Comment(text));
+            }
+            "preamble" => {
+                self.skip_ws();
+                let value = self.value()?;
+                self.skip_ws();
+                self.expect(close)?;
+                self.out.items.push(BibItem::Preamble(value));
+            }
+            "string" => {
+                self.skip_ws();
+                let name = self.word(|b| matches!(b, b'=' | b'{' | b'}' | b'"' | b',' | b'#')).to_ascii_lowercase();
+                if name.is_empty() {
+                    return Err("a @string without a name".into());
+                }
+                self.skip_ws();
+                self.expect(b'=')?;
+                self.skip_ws();
+                let value = self.value()?;
+                self.skip_ws();
+                if self.peek() == Some(b',') {
+                    self.pos += 1;
+                    self.skip_ws();
+                }
+                self.expect(close)?;
+                self.out.strings.insert(name, value);
+            }
+            _ => {
+                let entry = self.entry(kind, close, line)?;
+                self.out.items.push(BibItem::Entry(entry));
+            }
+        }
+        Ok(())
+    }
+
+    fn expect(&mut self, byte: u8) -> PResult<()> {
+        match self.peek() {
+            Some(b) if b == byte => {
+                self.pos += 1;
+                Ok(())
+            }
+            Some(b) => {
+                Err(format!("expected `{}` but found `{}`", byte as char, self.char_at(self.pos).unwrap_or(b as char)))
+            }
+            None => Err(format!("expected `{}` but the file ended", byte as char)),
+        }
+    }
+
+    fn char_at(&self, pos: usize) -> Option<char> {
+        // `pos` may fall inside a multi-byte character only if the input was cut there.
+        self.text.get(pos..).and_then(|s| s.chars().next())
+    }
+
+    /// The text of a `@comment{…}`, with the closing delimiter consumed.
+    fn balanced_body(&mut self, open: u8, close: u8) -> PResult<String> {
+        let start = self.pos;
+        let mut depth = 1usize;
+        while let Some(b) = self.peek() {
+            if b == open {
+                depth += 1;
+            } else if b == close {
+                depth -= 1;
+                if depth == 0 {
+                    let text = self.text[start..self.pos].to_owned();
+                    self.pos += 1;
+                    return Ok(text);
+                }
+            }
+            self.pos += 1;
+        }
+        Err("a comment that is never closed".into())
+    }
+
+    fn entry(&mut self, entry_type: String, close: u8, line: usize) -> PResult<RawEntry> {
+        self.skip_ws();
+        let key_start = self.pos;
+        // A key runs to the first comma. Keys with spaces in them occur in files
+        // written by hand, and are read as they stand.
+        while let Some(b) = self.peek() {
+            if b == b',' || b == close || b == b'\n' || b == b'{' || b == b'=' {
+                break;
+            }
+            self.pos += 1;
+        }
+        let mut key = self.text[key_start..self.pos].trim().to_owned();
+        if self.peek() == Some(b'=') {
+            // There is no key: what was read is the name of the first field.
+            self.pos = key_start;
+            key.clear();
+        }
+        self.skip_ws();
+
+        let mut fields: Vec<(String, String)> = Vec::new();
+        loop {
+            self.skip_ws();
+            match self.peek() {
+                None => return Err(format!("the entry `{key}` is never closed")),
+                Some(b) if b == close => {
+                    self.pos += 1;
+                    break;
+                }
+                Some(b',') => {
+                    self.pos += 1;
+                    continue;
+                }
+                Some(_) => {}
+            }
+            let name_start = self.pos;
+            let name =
+                self.word(|b| matches!(b, b'=' | b'{' | b'}' | b'"' | b',' | b'#' | b'(' | b')')).to_ascii_lowercase();
+            if name.is_empty() {
+                return Err(format!(
+                    "in `{key}`: expected a field name but found `{}`",
+                    self.char_at(name_start).unwrap_or(' ')
+                ));
+            }
+            self.skip_ws();
+            if self.peek() != Some(b'=') {
+                return Err(format!("in `{key}`: the field `{name}` has no value"));
+            }
+            self.pos += 1;
+            self.skip_ws();
+            let value = self.value().map_err(|e| format!("in `{key}`, field `{name}`: {e}"))?;
+            if let Some(existing) = fields.iter_mut().find(|(n, _)| *n == name) {
+                existing.1 = value;
+            } else {
+                fields.push((name, value));
+            }
+        }
+        Ok(RawEntry { entry_type, key, fields, line })
+    }
+
+    /// A value: parts joined by `#`.
+    fn value(&mut self) -> PResult<String> {
+        let mut out = String::new();
+        loop {
+            self.skip_ws();
+            match self.peek() {
+                Some(b'{') => {
+                    self.pos += 1;
+                    let start = self.pos;
+                    let mut depth = 1usize;
+                    loop {
+                        match self.peek() {
+                            Some(b'{') => depth += 1,
+                            Some(b'}') => {
+                                depth -= 1;
+                                if depth == 0 {
+                                    break;
+                                }
+                            }
+                            Some(_) => {}
+                            None => return Err("a brace that is never closed".into()),
+                        }
+                        self.pos += 1;
+                    }
+                    out.push_str(&self.text[start..self.pos]);
+                    self.pos += 1;
+                }
+                Some(b'"') => {
+                    self.pos += 1;
+                    let start = self.pos;
+                    let mut depth = 0usize;
+                    loop {
+                        match self.peek() {
+                            Some(b'{') => depth += 1,
+                            Some(b'}') => depth = depth.saturating_sub(1),
+                            Some(b'"') if depth == 0 => break,
+                            Some(_) => {}
+                            None => return Err("a quotation mark that is never closed".into()),
+                        }
+                        self.pos += 1;
+                    }
+                    out.push_str(&self.text[start..self.pos]);
+                    self.pos += 1;
+                }
+                Some(b) if b.is_ascii_digit() => {
+                    let digits = self.word(|b| !b.is_ascii_digit());
+                    out.push_str(digits);
+                }
+                Some(_) => {
+                    let name = self.word(|b| matches!(b, b'#' | b',' | b'}' | b')' | b'{' | b'"' | b'='));
+                    if name.is_empty() {
+                        return Err(format!("expected a value but found `{}`", self.char_at(self.pos).unwrap_or(' ')));
+                    }
+                    match self.out.strings.get(&name.to_ascii_lowercase()) {
+                        Some(v) => out.push_str(v),
+                        None => {
+                            // An unknown macro: keep its name, as BibTeX warns and goes on.
+                            let line = self.line_of(self.pos);
+                            self.out.warnings.push(ParseWarning {
+                                line,
+                                message: format!("the abbreviation `{name}` is not defined"),
+                            });
+                            out.push_str(name);
+                        }
+                    }
+                }
+                None => return Err("the file ended in the middle of a value".into()),
+            }
+            self.skip_ws();
+            if self.peek() == Some(b'#') {
+                self.pos += 1;
+            } else {
+                break;
+            }
+        }
+        Ok(normalise_space(&out))
+    }
+}
+
+/// Collapses runs of whitespace, including line breaks, to single spaces.
+pub fn normalise_space(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut pending = false;
+    for c in s.chars() {
+        // A non-breaking space is content, not layout.
+        if c.is_whitespace() && c != '\u{a0}' && c != '\u{202f}' {
+            pending = !out.is_empty();
+        } else {
+            if pending {
+                out.push(' ');
+                pending = false;
+            }
+            out.push(c);
+        }
+    }
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn one(src: &str) -> RawEntry {
+        let parsed = parse(src);
+        assert!(parsed.warnings.is_empty(), "{:?}", parsed.warnings);
+        let mut entries = parsed.into_entries();
+        assert_eq!(entries.len(), 1);
+        entries.remove(0)
+    }
+
+    #[test]
+    fn a_plain_entry() {
+        let e = one(r#"@Book{nagy1979,
+  author    = {Nagy, Gregory},
+  title     = {The Best of the {Achaeans}: Concepts of the Hero
+               in Archaic Greek Poetry},
+  year      = 1979,
+  publisher = "Johns Hopkins University Press",
+  address   = {Baltimore},
+}"#);
+        assert_eq!(e.entry_type, "book");
+        assert_eq!(e.key, "nagy1979");
+        assert_eq!(e.get("author"), Some("Nagy, Gregory"));
+        assert_eq!(e.get("title"), Some("The Best of the {Achaeans}: Concepts of the Hero in Archaic Greek Poetry"));
+        assert_eq!(e.get("year"), Some("1979"));
+        assert_eq!(e.get("publisher"), Some("Johns Hopkins University Press"));
+        assert_eq!(e.line, 1);
+    }
+
+    #[test]
+    fn strings_months_and_concatenation() {
+        let e = one(r#"@string{jhs = "Journal of Hellenic Studies"}
+@STRING(up = {University Press})
+@article{x, journal = jhs, month = mar, publisher = "Oxford " # up # {, Oxford}}"#);
+        assert_eq!(e.get("journal"), Some("Journal of Hellenic Studies"));
+        assert_eq!(e.get("month"), Some("3"));
+        assert_eq!(e.get("publisher"), Some("Oxford University Press, Oxford"));
+    }
+
+    #[test]
+    fn parentheses_quotes_and_nested_braces() {
+        let e = one(r#"@misc(k, title = "A {"}quoted{"} word", note = {a {b {c}} d})"#);
+        assert_eq!(e.get("title"), Some(r#"A {"}quoted{"} word"#));
+        assert_eq!(e.get("note"), Some("a {b {c}} d"));
+    }
+
+    #[test]
+    fn comments_and_junk_are_skipped() {
+        let parsed = parse(
+            "This file was made by hand. Write to me@example.org\n\
+             % a comment\n\
+             @comment{jabref-meta: databaseType:biblatex;}\n\
+             @preamble{\"\\newcommand{\\noop}[1]{}\"}\n\
+             @book{a, title={A}}\n",
+        );
+        assert!(parsed.warnings.is_empty(), "{:?}", parsed.warnings);
+        assert_eq!(parsed.entries().count(), 1);
+        assert_eq!(parsed.items.len(), 3);
+    }
+
+    #[test]
+    fn recovery_after_a_broken_entry() {
+        let parsed = parse(
+            "@book{broken, title = {Never closed,\n author = {X}\n\n@book{good, title = {Fine}}\n@article{also, title={Good}}",
+        );
+        // The broken entry swallows text up to where braces balance or the file
+        // ends; what matters is that a warning is given and nothing panics.
+        assert!(!parsed.warnings.is_empty());
+
+        let parsed = parse("@book{bad, title = }\n@book{good, title = {Fine}}\n");
+        assert_eq!(parsed.warnings.len(), 1);
+        let keys: Vec<_> = parsed.entries().map(|e| e.key.clone()).collect();
+        assert_eq!(keys, vec!["good"]);
+    }
+
+    #[test]
+    fn unicode_and_repeated_fields() {
+        let e = one("@book{κ, title = {Ἰλιάς}, title = {Ὀδύσσεια}, author = {Ὅμηρος}}");
+        assert_eq!(e.key, "κ");
+        assert_eq!(e.get("title"), Some("Ὀδύσσεια"));
+        assert_eq!(e.fields.len(), 2);
+    }
+
+    #[test]
+    fn a_byte_order_mark_and_no_trailing_newline() {
+        let e = one("\u{feff}@book{a,title={T}}");
+        assert_eq!(e.key, "a");
+    }
+
+    #[test]
+    fn comments_between_fields() {
+        let e = one("@book{a,\n  title = {T}, % the title\n  % year = {1900},\n  year = {2000}\n}");
+        assert_eq!(e.get("year"), Some("2000"));
+    }
+
+    #[test]
+    fn undefined_macro_is_kept_with_a_warning() {
+        let parsed = parse("@article{a, journal = cq}");
+        assert_eq!(parsed.warnings.len(), 1);
+        assert_eq!(parsed.entries().next().unwrap().get("journal"), Some("cq"));
+    }
+}
+
+#[cfg(test)]
+mod key_tests {
+    use super::*;
+
+    #[test]
+    fn odd_keys() {
+        let parsed = parse(
+            "@book{bad key!, title={A}}\n@book{title={No key}, year=2000}\n@book{,title={Empty}}\n@book{ k ,title={Spaced}}",
+        );
+        assert!(parsed.warnings.is_empty(), "{:?}", parsed.warnings);
+        let e: Vec<_> = parsed.entries().collect();
+        assert_eq!(e[0].key, "bad key!");
+        assert_eq!(e[1].key, "");
+        assert_eq!(e[1].get("title"), Some("No key"));
+        assert_eq!(e[1].get("year"), Some("2000"));
+        assert_eq!(e[2].key, "");
+        assert_eq!(e[3].key, "k");
+    }
+}
