@@ -130,6 +130,25 @@ try {
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog');
 
+  // --- What there is to remark can be read in full ---
+  if (await app.exists('.preview footer .issues')) {
+    await app.click('.preview footer .issues');
+    await app.waitFor('.remarks', 3000);
+    await sleep(250);
+    const fits = await app.exec(
+      `const r = document.querySelector('.remarks');
+       const box = r.getBoundingClientRect();
+       return Array.from(r.querySelectorAll('p')).every((p) => {
+         const b = p.getBoundingClientRect();
+         return p.scrollWidth <= p.clientWidth + 1 && b.left >= box.left && b.right <= box.right + 1;
+       }) && box.right <= innerWidth && box.left >= 0;`,
+    );
+    check('the remarks are shown whole', fits, (await app.text('.remarks')).replace(/\s+/g, ' ').slice(0, 100));
+    await app.screenshot('preview-5b-remarks');
+    await app.press('Escape');
+    await app.waitGone('.remarks');
+  }
+
   // --- The preview rests when nothing changes ---
   await sleep(3000);
   const watch = (ms) =>

@@ -94,14 +94,23 @@ export class CitationView implements NodeView {
   }
 }
 
-/** The number of the note at a position: its place among the notes of the text. */
-export function noteNumber(doc: Node, pos: number): number {
+/**
+ * The number a note is shown with: its place among the notes that are
+ * counted with it. In the text of a map those are the notes of the map; of
+ * an element that is left out of the document, or loose, its own.
+ */
+export function noteNumberOf(mark: HTMLElement): number {
+  const own = mark.closest<HTMLElement>('.section.excluded, .section.loose');
+  const scope =
+    own ?? mark.closest<HTMLElement>('[data-notes]') ?? mark.closest<HTMLElement>('.prose');
+  if (!scope) return 0;
   let n = 0;
-  doc.descendants((node, at) => {
-    if (node.type.name === 'footnote' && at <= pos) n++;
-    return at <= pos;
-  });
-  return n;
+  for (const other of scope.querySelectorAll<HTMLElement>('.footnote')) {
+    if (!own && other.closest('.section.excluded, .section.loose')) continue;
+    n++;
+    if (other === mark) return n;
+  }
+  return 0;
 }
 
 const noteRules = inputRules({
@@ -131,13 +140,15 @@ export class FootnoteView implements NodeView {
     this.#number();
   }
 
+  /**
+   * The number is not written into the text: it is counted by the page, from
+   * where the notes stand (see app.css), so that the notes of a map are
+   * numbered through all its elements.
+   */
   #number() {
-    const pos = this.#getPos();
-    const n = pos === undefined ? 0 : noteNumber(this.#outer.state.doc, pos);
-    this.dom.textContent = n ? String(n) : '*';
     this.dom.classList.toggle('blank', this.#node.content.size === 0);
     const heading = this.#panel?.querySelector('.note-number');
-    if (heading) heading.textContent = `Note ${n || ''}`.trim();
+    if (heading) heading.textContent = `Note ${noteNumberOf(this.dom) || ''}`.trim();
   }
 
   selectNode() {

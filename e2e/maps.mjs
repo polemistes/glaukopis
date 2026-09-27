@@ -200,6 +200,29 @@ try {
   await app.waitGone('.editor');
   await sleep(200);
   check('the tool for citing cites', /Lord 1960, 99/.test((await written()).replace(/<[^>]+>/g, '')), (await written()).replace(/<[^>]+>/g, ''));
+  // The tool for notes opens a note that stays open to be written in.
+  await app.clickText('.text-view .tools button', 'Note');
+  await app.waitFor('.note-panel .prose', 3000);
+  await sleep(700);
+  check('the tool for notes opens a note, which stays open', await app.exists('.note-panel .prose'));
+  await app.keys('Thus Lord.');
+  await app.press('Escape');
+  await app.waitGone('.note-panel');
+  await sleep(200);
+  // What the page counts cannot be asked for; what it counts by can.
+  const counted = await app.exec(
+    `const notes = Array.from(document.querySelectorAll('.text-view .column .footnote'));
+     const sections = new Set(notes.map((n) => n.closest('.section')));
+     const resets = notes.map((n) => getComputedStyle(n.closest('.prose')).counterReset);
+     return { notes: notes.length, sections: sections.size, resets, column: getComputedStyle(document.querySelector('.text-view .column')).counterReset };`,
+  );
+  check(
+    'the notes of a map are numbered through its elements',
+    counted.notes === 2 && counted.sections === 2 && counted.resets.every((r) => r === 'none') && /^note\b/.test(counted.column),
+    JSON.stringify(counted),
+  );
+  await app.screenshot('maps-11a-notes');
+
   await app.click('.text-view .tools .style');
   await app.clickText('[role="menuitem"]', 'Quotation');
   await sleep(200);

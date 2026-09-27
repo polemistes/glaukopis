@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { place, type Align, type RectLike, type Side } from './floating';
+  import { onTop } from './top';
 
   interface Props {
     open: boolean;
@@ -59,29 +60,41 @@
 </script>
 
 {#if open}
-  {#if dismissable}
+  <!-- What is within is moved to where it lies over everything; this stays. -->
+  <div class="holder">
+    {#if dismissable}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="backdrop" use:onTop onpointerdown={onclose}></div>
+    {/if}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="backdrop" onpointerdown={onclose}></div>
-  {/if}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div
-    bind:this={el}
-    class="popover"
-    role="dialog"
-    tabindex="-1"
-    aria-label={label}
-    style:width={width ? `${width}px` : undefined}
-    {onkeydown}
-  >
-    {@render children()}
+    <div
+      bind:this={el}
+      class="popover"
+      use:onTop
+      role="dialog"
+      tabindex="-1"
+      aria-label={label}
+      style:width={width ? `${width}px` : undefined}
+      {onkeydown}
+    >
+      {@render children()}
+    </div>
   </div>
 {/if}
 
 <style>
+  .holder {
+    display: contents;
+  }
   .backdrop {
     position: fixed;
     inset: 0;
     z-index: 799;
+    width: 100vw;
+    height: 100vh;
+    padding: 0;
+    border: none;
+    background: transparent;
   }
   .popover {
     position: fixed;
@@ -90,6 +103,7 @@
     top: 0;
     max-width: calc(100vw - 16px);
     max-height: calc(100vh - 16px);
+    padding: 0;
     overflow: auto;
     background: var(--paper-raised);
     border: 1px solid var(--line);

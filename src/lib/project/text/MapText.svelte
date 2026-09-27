@@ -672,7 +672,7 @@
         {/if}
       </div>
 
-      <div class="column" bind:this={column}>
+      <div class="column" bind:this={column} data-notes>
         {#each rows as row, i (row.id)}
           {@const node = project.nodes.get(row.id)}
           {#if i === firstLoose}

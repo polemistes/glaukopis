@@ -35,7 +35,8 @@ function inlines(list: Inline[], notes: { n: number }): string {
         break;
       case 'footnote':
         notes.n++;
-        out += `<sup class="footnote" title="${escape(plain(i.content))}">${notes.n}</sup>`;
+        // The number is counted by the page, from where the note stands.
+        out += `<sup class="footnote" title="${escape(plain(i.content))}"></sup>`;
         break;
     }
   }

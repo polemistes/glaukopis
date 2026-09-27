@@ -3,6 +3,7 @@
   import Check from '@lucide/svelte/icons/check';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import { place, type Align, type RectLike, type Side } from './floating';
+  import { onTop } from './top';
   import type { MenuItem } from './menu.svelte';
   import Self from './MenuList.svelte';
 
@@ -171,6 +172,7 @@
 <div
   bind:this={el}
   class="menu"
+  use:onTop
   role="menu"
   tabindex="-1"
   style:min-width={minWidth ? `${minWidth}px` : undefined}

@@ -2,6 +2,7 @@
   import type { Snippet } from 'svelte';
   import X from '@lucide/svelte/icons/x';
   import IconButton from './IconButton.svelte';
+  import { dialogClosed, dialogOpened } from './top';
 
   interface Props {
     open: boolean;
@@ -48,6 +49,14 @@
       (first ?? el).focus();
     }
     if (!open && el.open) el.close();
+  });
+
+  // What floats is put into the dialog that lies over the others (see top.ts).
+  $effect(() => {
+    if (!open || !el) return;
+    const dialog = el;
+    dialogOpened(dialog);
+    return () => dialogClosed(dialog);
   });
 
   // The scrollbars of what lies behind are drawn over the dialog by WebKitGTK;

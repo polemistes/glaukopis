@@ -82,6 +82,12 @@
     view.focus();
   }
 
+  /** A note opens a panel of its own, which takes the cursor: it is not taken back. */
+  function note() {
+    const view = s?.view;
+    if (view) insertFootnote(view.state, view.dispatch, view);
+  }
+
   function cite() {
     const view = s?.view;
     if (view) hooksOf.get(view)?.cite?.(view, false);
@@ -228,7 +234,7 @@
       shortcut: 'Ctrl+Alt+F',
       side: 'bottom',
     }}
-    onclick={() => run(insertFootnote)}
+    onclick={note}
   >
     <StickyNote size={13} />
     Note

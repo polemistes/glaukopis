@@ -15,6 +15,7 @@
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openMenu } from '$lib/ui/menu.svelte';
+  import Popover from '$lib/ui/Popover.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, toasts } from '$lib/ui/toast.svelte';
   import DocumentDetails from './DocumentDetails.svelte';
@@ -189,40 +190,8 @@
 
   const over = $derived(!!format?.limits.words && words.text > format.limits.words);
 
-  function problems(event: MouseEvent) {
-    openMenu(
-      event.currentTarget as HTMLElement,
-      [
-        ...(substitute
-          ? [
-              { kind: 'heading' as const, label: 'Font' },
-              {
-                label: `${format?.font.family} is not installed`,
-                hint: `${substitute} is used in its place. In a document you export, the font is named as the format asks.`,
-                action: () => {},
-              },
-            ]
-          : []),
-        ...(missing.length
-          ? [
-              { kind: 'heading' as const, label: 'References' },
-              {
-                label: `${plural(missing.length, 'work')} cited ${missing.length === 1 ? 'was' : 'were'} not found`,
-                hint: 'Neither in your library nor in the project. They are marked in the text.',
-                action: () => {},
-              },
-            ]
-          : []),
-        ...(warnings.length
-          ? [{ kind: 'heading' as const, label: 'Said while the document was made' }]
-          : []),
-        ...warnings
-          .slice(0, 8)
-          .map((w) => ({ label: w.length > 90 ? `${w.slice(0, 90)}…` : w, action: () => {} })),
-      ],
-      { side: 'top', align: 'start' },
-    );
-  }
+  /** The button the remarks are shown beside, while they are shown. */
+  let remarking = $state<HTMLElement | null>(null);
 
   const issueCount = $derived(warnings.length + missing.length + (substitute ? 1 : 0));
 </script>
@@ -345,13 +314,56 @@
       <span>{words.withNotes.toLocaleString()} with notes</span>
     {/if}
     {#if issueCount}
-      <button type="button" class="issues" onclick={problems}>
+      <button type="button" class="issues" onclick={(e) => (remarking = e.currentTarget)}>
         <TriangleAlert size={12} />
         {plural(issueCount, 'remark')}
       </button>
     {/if}
   </footer>
 </aside>
+
+<Popover
+  open={!!remarking}
+  anchor={remarking}
+  side="top"
+  align="start"
+  width={400}
+  label="Remarks"
+  onclose={() => (remarking = null)}
+>
+  <div class="remarks selectable">
+    {#if substitute}
+      <section>
+        <h3 class="overline">Font</h3>
+        <p><strong>{format?.font.family} is not installed.</strong></p>
+        <p>
+          {substitute} is used in its place, here in the preview and in a PDF that is made. In a document
+          that is exported for Word, LibreOffice or LaTeX, the font is named as the format asks, and is
+          there for whoever opens the document and has it.
+        </p>
+      </section>
+    {/if}
+    {#if missing.length}
+      <section>
+        <h3 class="overline">References</h3>
+        <p>
+          <strong>
+            {plural(missing.length, 'work')} cited {missing.length === 1 ? 'was' : 'were'} not found,
+          </strong>
+          neither in your library nor in the project. They are marked in the text.
+        </p>
+      </section>
+    {/if}
+    {#if warnings.length}
+      <section>
+        <h3 class="overline">Said while the document was made</h3>
+        {#each warnings as warning}
+          <p>{warning}</p>
+        {/each}
+      </section>
+    {/if}
+  </div>
+</Popover>
 
 {#if browsing}
   <StyleBrowser
@@ -404,6 +416,33 @@
 {/if}
 
 <style>
+  .remarks {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 60vh;
+    padding: 14px 16px;
+    overflow-y: auto;
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+  .remarks section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .remarks h3 {
+    margin: 0 0 2px;
+  }
+  .remarks p {
+    margin: 0;
+    color: var(--ink-2);
+    overflow-wrap: anywhere;
+  }
+  .remarks strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
   .preview {
     display: flex;
     flex-direction: column;

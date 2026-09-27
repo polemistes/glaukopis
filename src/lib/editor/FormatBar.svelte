@@ -32,6 +32,12 @@
     view.focus();
   }
 
+  /** A note opens a panel of its own, which takes the cursor: it is not taken back. */
+  function note() {
+    const view = editorUi.selection?.view;
+    if (view) insertFootnote(view.state, view.dispatch, view);
+  }
+
   function cite() {
     const view = editorUi.selection?.view;
     if (!view) return;
@@ -127,7 +133,7 @@
       <button
         class="word"
         use:tooltip={{ text: 'Make the selection a note', shortcut: 'Ctrl+Alt+F', side: 'top' }}
-        onclick={() => run(insertFootnote)}
+        onclick={note}
       >
         Note
       </button>

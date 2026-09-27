@@ -28,6 +28,22 @@ try {
   await app.type(field('location'), 'Austin');
   await app.type(field('publisher'), 'University of Texas Press');
   await app.type(field('date'), '1996');
+
+  // A menu opened in a dialog lies over the dialog, and can be chosen from.
+  await app.clickText('dialog button', 'Add field');
+  await app.waitFor('[role="menu"]', 3000);
+  await sleep(200);
+  const over = await app.exec(
+    `const item = Array.from(document.querySelectorAll('[role="menuitem"]')).find((e) => e.textContent.includes('Series'));
+     const r = item.getBoundingClientRect();
+     const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+     return !!at && (at === item || item.contains(at));`,
+  );
+  check('the menu of fields lies over the dialog', over);
+  await app.screenshot('library-2b-field-menu');
+  await app.clickText('[role="menuitem"]', 'Series');
+  await app.waitFor('dialog [data-field="series"]', 3000);
+  check('and a field can be chosen from it', true);
   await sleep(600);
   const suggested = await app.attr('dialog [data-field="key"] input', 'placeholder');
   check('a citation key is suggested', suggested === 'nagy1996', suggested);

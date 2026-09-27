@@ -4,9 +4,19 @@
   import CircleCheck from '@lucide/svelte/icons/circle-check';
   import X from '@lucide/svelte/icons/x';
   import { toasts } from './toast.svelte';
+  import { lower, raise } from './top';
+
+  let el = $state<HTMLDivElement>();
+
+  // A message lies over whatever is open when it comes.
+  $effect(() => {
+    if (!el) return;
+    if (toasts.list.length) raise(el);
+    else lower(el);
+  });
 </script>
 
-<div class="toaster" aria-live="polite">
+<div class="toaster" aria-live="polite" bind:this={el}>
   {#each toasts.list as toast (toast.id)}
     <div class="toast {toast.kind}" role="status" transition:fly={{ y: 12, duration: 180 }}>
       {#if toast.kind === 'error'}
@@ -39,12 +49,17 @@
     position: fixed;
     z-index: 950;
     left: 50%;
+    top: auto;
     bottom: 22px;
     transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
+    padding: 0;
+    border: none;
+    overflow: visible;
+    background: transparent;
     pointer-events: none;
   }
   .toast {

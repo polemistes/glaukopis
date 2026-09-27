@@ -7,6 +7,7 @@
  */
 
 import { place, type Side } from './floating';
+import { lower, raise } from './top';
 
 export type TooltipOptions = string | { text: string; shortcut?: string; side?: Side } | null;
 
@@ -41,6 +42,7 @@ export function tooltip(node: HTMLElement | SVGElement, options: TooltipOptions)
       k.textContent = opts.shortcut;
       el.append(k);
     }
+    raise(el);
     el.dataset.show = 'true';
     place(el, node.getBoundingClientRect(), { side: opts.side ?? 'bottom', gap: 7 });
     shown = true;
@@ -56,6 +58,7 @@ export function tooltip(node: HTMLElement | SVGElement, options: TooltipOptions)
     clearTimeout(timer);
     if (shown && bubble) {
       bubble.dataset.show = 'false';
+      lower(bubble);
       lastHidden = performance.now();
       shown = false;
     }

@@ -277,6 +277,18 @@ kbd {
   }
 }
 
+/* What floats in the top layer (see lib/ui/top.ts): what the browser gives
+   such an element by itself is taken back, and the element is as it was made. */
+.on-top {
+  margin: 0;
+  right: auto;
+  bottom: auto;
+  color: var(--ink);
+}
+.on-top::backdrop {
+  display: none;
+}
+
 /* The shared tooltip (see lib/ui/tooltip.ts) */
 .tooltip-bubble {
   position: fixed;
@@ -285,7 +297,9 @@ kbd {
   top: 0;
   max-width: 320px;
   padding: 4px 8px;
+  border: none;
   border-radius: var(--radius-s);
+  overflow: visible;
   background: var(--ink);
   color: var(--paper);
   font-size: var(--text-sm);
@@ -405,6 +419,29 @@ body.dragging * {
   color: var(--danger);
 }
 
+/* Notes are numbered by where they stand: within a text, and in the text of
+   a map through all its elements. An element that is left out of the
+   document, or loose, numbers its own. */
+.prose,
+.tip {
+  counter-reset: note;
+}
+[data-notes] {
+  counter-reset: note;
+}
+[data-notes] .prose {
+  counter-reset: none;
+}
+[data-notes] .section.excluded .prose,
+[data-notes] .section.loose .prose {
+  counter-reset: note;
+}
+.footnote {
+  counter-increment: note;
+}
+.footnote::before {
+  content: counter(note);
+}
 .footnote {
   display: inline-block;
   min-width: 1.1em;
