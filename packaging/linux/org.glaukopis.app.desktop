@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Glaukopis
+GenericName=Research and writing
+GenericName[nb]=Forskning og skriving
+Comment=References, ideas in mind maps, writing, and the manuscript
+Comment[nb]=Referanser, ideer i tankekart, skriving og manuskript
+Exec=glaukopis %F
+Icon=org.glaukopis.app
+Terminal=false
+Categories=Office;
+Keywords=research;writing;references;bibliography;mind map;citation;biblatex;
+MimeType=text/x-bibtex;
+StartupNotify=true
+StartupWMClass=glaukopis

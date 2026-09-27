@@ -1,0 +1,93 @@
+# Maintainer: The Glaukopis contributors
+#
+# Builds the application and the collaboration server from the tree this file
+# is in. Run `makepkg` in this directory; see README.md beside this file.
+#
+# For a release, replace what prepare() copies by a `source=` with the
+# archive of the release, and its checksum.
+
+pkgbase=glaukopis
+pkgname=(glaukopis glaukopis-server)
+pkgver=0.1.0
+pkgrel=1
+arch=(x86_64 aarch64)
+license=(GPL-3.0-or-later)
+makedepends=(cargo nodejs pnpm rsync webkit2gtk-4.1 gtk3 openssl sqlite)
+checkdepends=(pandoc-cli typst)
+# Link-time optimisation is set in Cargo.toml; that of makepkg breaks the
+# building of the C that some crates bring along.
+options=(!lto !debug)
+
+_tree="$(realpath "${startdir:-.}/../..")"
+
+prepare() {
+  # A copy, so that nothing is built in the tree itself, and nothing that was
+  # built there comes along.
+  rsync -a --delete \
+    --exclude=/target --exclude=/node_modules --exclude=/dist --exclude=/.git \
+    --exclude=/e2e/output --exclude=/packaging/arch --exclude=/src-tauri/gen \
+    "$_tree/" "$srcdir/$pkgbase-$pkgver/"
+  cd "$srcdir/$pkgbase-$pkgver"
+  export CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
+  pnpm install --frozen-lockfile
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+  cd "$srcdir/$pkgbase-$pkgver"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  pnpm build
+  cargo build --release --frozen -p glaukopis --features custom-protocol
+  cargo build --release --frozen -p glaukopis-server
+}
+
+check() {
+  cd "$srcdir/$pkgbase-$pkgver"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  pnpm test
+  cargo test --release --frozen -p glaukopis-core -p glaukopis-server
+}
+
+package_glaukopis() {
+  pkgdesc='A hub for scholarly work: references, ideas in mind maps, writing, and the manuscript'
+  depends=(webkit2gtk-4.1 gtk3 glib2 openssl sqlite gcc-libs glibc hicolor-icon-theme pandoc-cli typst)
+  optdepends=(
+    'texlive-latex: to make PDF from the LaTeX that is exported'
+    'libreoffice-fresh: to open what is exported as ODT or DOCX'
+  )
+
+  cd "$srcdir/$pkgbase-$pkgver"
+  install -Dm755 "$srcdir/target/release/glaukopis" "$pkgdir/usr/bin/glaukopis"
+
+  install -d "$pkgdir/usr/share/glaukopis"
+  cp -r resources "$pkgdir/usr/share/glaukopis/resources"
+  find "$pkgdir/usr/share/glaukopis" -type d -exec chmod 755 {} +
+  find "$pkgdir/usr/share/glaukopis" -type f -exec chmod 644 {} +
+
+  install -Dm644 packaging/linux/org.glaukopis.app.desktop \
+    "$pkgdir/usr/share/applications/org.glaukopis.app.desktop"
+  install -Dm644 packaging/linux/org.glaukopis.app.metainfo.xml \
+    "$pkgdir/usr/share/metainfo/org.glaukopis.app.metainfo.xml"
+  install -Dm644 src-tauri/icons/32x32.png "$pkgdir/usr/share/icons/hicolor/32x32/apps/org.glaukopis.app.png"
+  install -Dm644 src-tauri/icons/128x128.png "$pkgdir/usr/share/icons/hicolor/128x128/apps/org.glaukopis.app.png"
+  install -Dm644 'src-tauri/icons/128x128@2x.png' "$pkgdir/usr/share/icons/hicolor/256x256/apps/org.glaukopis.app.png"
+  install -Dm644 resources/brand/glaukopis.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.glaukopis.app.svg"
+
+  install -Dm644 docs/guide.md "$pkgdir/usr/share/doc/glaukopis/guide.md"
+}
+
+package_glaukopis-server() {
+  pkgdesc='The collaboration server of Glaukopis: keeps shared projects the same for everyone'
+  depends=(gcc-libs glibc)
+  optdepends=('caddy: to encrypt what is sent to and from the server')
+  backup=(etc/glaukopis-server.conf)
+
+  cd "$srcdir/$pkgbase-$pkgver"
+  install -Dm755 "$srcdir/target/release/glaukopis-server" "$pkgdir/usr/bin/glaukopis-server"
+  install -Dm644 packaging/server/glaukopis-server.service \
+    "$pkgdir/usr/lib/systemd/system/glaukopis-server.service"
+  install -Dm640 packaging/server/glaukopis-server.conf "$pkgdir/etc/glaukopis-server.conf"
+  install -Dm644 packaging/server/Caddyfile.example \
+    "$pkgdir/usr/share/doc/glaukopis-server/Caddyfile.example"
+  install -Dm644 docs/server.md "$pkgdir/usr/share/doc/glaukopis-server/server.md"
+}

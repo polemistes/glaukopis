@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.glaukopis.app</id>
+  <name>Glaukopis</name>
+  <summary>References, ideas in mind maps, writing, and the manuscript</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="org.glaukopis">
+    <name>The Glaukopis contributors</name>
+  </developer>
+  <description>
+    <p>
+      Glaukopis is where the work on an academic book or article is done. It is made for scholars in the
+      humanities and the social sciences, and for a way of working that starts from references and ideas.
+    </p>
+    <ul>
+      <li>Ideas are developed in mind maps, which are read as diagrams or as text, and grow into the manuscript.</li>
+      <li>References are kept in one BibLaTeX file, which other tools can read, with their files.</li>
+      <li>The manuscript is previewed as it is written, and exported to PDF, LaTeX, ODT and DOCX in the reference
+        style and the format that a publisher asks for.</li>
+      <li>A project can be shared through a server of one's own, and written in by several at the same time.</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">org.glaukopis.app.desktop</launchable>
+  <categories>
+    <category>Office</category>
+    <category>Education</category>
+    <category>Science</category>
+  </categories>
+  <provides>
+    <binary>glaukopis</binary>
+  </provides>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="0.1.0" date="2026-09-27" />
+  </releases>
+</component>
