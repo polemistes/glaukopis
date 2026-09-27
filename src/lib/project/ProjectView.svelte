@@ -1,0 +1,717 @@
+<script lang="ts">
+  import { onDestroy, onMount } from 'svelte';
+  import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+  import BookMarked from '@lucide/svelte/icons/book-marked';
+  import BookOpenText from '@lucide/svelte/icons/book-open-text';
+  import CircleAlert from '@lucide/svelte/icons/circle-alert';
+  import CloudDownload from '@lucide/svelte/icons/cloud-download';
+  import FileText from '@lucide/svelte/icons/file-text';
+  import Network from '@lucide/svelte/icons/network';
+  import Redo2 from '@lucide/svelte/icons/redo-2';
+  import Undo2 from '@lucide/svelte/icons/undo-2';
+  import Users from '@lucide/svelte/icons/users';
+  import X from '@lucide/svelte/icons/x';
+  import { projectSaveView } from '$lib/api/projects';
+  import { sharingRename } from '$lib/api/sharing';
+  import Presence from '$lib/sharing/Presence.svelte';
+  import SharePanel from '$lib/sharing/SharePanel.svelte';
+  import { ProjectSharing } from '$lib/sharing/sharing.svelte';
+  import { importDropped } from '$lib/library/references.svelte';
+  import { confirm } from '$lib/ui/confirm.svelte';
+  import { dropTarget, type DropEvent } from '$lib/ui/drag.svelte';
+  import { notify } from '$lib/ui/toast.svelte';
+  import EditorHost from '$lib/editor/EditorHost.svelte';
+  import { beforeClose } from '$lib/state/closing';
+  import { library } from '$lib/state/library.svelte';
+  import { openProject, projects } from '$lib/state/projects.svelte';
+  import { router, type MapMode } from '$lib/state/router.svelte';
+  import Button from '$lib/ui/Button.svelte';
+  import EmptyState from '$lib/ui/EmptyState.svelte';
+  import IconButton from '$lib/ui/IconButton.svelte';
+  import Segmented from '$lib/ui/Segmented.svelte';
+  import Spinner from '$lib/ui/Spinner.svelte';
+  import { describeError } from '$lib/ui/toast.svelte';
+  import { tooltip } from '$lib/ui/tooltip';
+  import MapDiagram, { type Camera } from './diagram/MapDiagram.svelte';
+  import MapTabs from './MapTabs.svelte';
+  import type { Project } from './model/project.svelte';
+  import ReferencePanel from './ReferencePanel.svelte';
+  import MapText from './text/MapText.svelte';
+  import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
+  import { documentReadable } from '$lib/api/documents';
+  import { buildDocument } from './model/document';
+  import { afterSave } from '$lib/state/projects.svelte';
+
+  let { projectId }: { projectId: string } = $props();
+
+  interface Pane {
+    map: string;
+    mode: MapMode;
+  }
+
+  interface StoredView {
+    panes?: Pane[];
+    cameras?: Record<string, Camera>;
+    references?: boolean;
+    preview?: boolean;
+  }
+
+  let project = $state<Project | null>(null);
+  let failure = $state<string | null>(null);
+  let panes = $state<Pane[]>([]);
+  let focused = $state(0);
+  let cameras = $state<Record<string, Camera>>({});
+  let showReferences = $state(false);
+  let showPreview = $state(false);
+  let renaming = $state<string | null>(null);
+  let host = $state<ReturnType<typeof EditorHost>>();
+  /** An element to show when a map is opened by a jump. */
+  let reveal = $state<string | null>(null);
+  let release: (() => void) | undefined;
+  let shared = $state<ProjectSharing | null>(null);
+  let showShare = $state(false);
+  /** What was kept of the view, until there are maps to show. */
+  let stored: StoredView = {};
+
+  const pane = $derived(panes[Math.min(focused, panes.length - 1)]);
+
+  /** Beside the project, every map is kept as Markdown, to be read without this application. */
+  // The view is made anew for every project, so the id is the same throughout;
+  // it is kept here because it is needed after the view has gone.
+  // svelte-ignore state_referenced_locally
+  const ownId = projectId;
+
+  function writeReadable(id: string, p: Project) {
+    if (id !== ownId) return;
+    const maps = p.maps.map((m): [string, ReturnType<typeof buildDocument>] => [
+      m.name,
+      buildDocument(p, m.id),
+    ]);
+    documentReadable(id, maps).catch((error) =>
+      console.warn('the readable copies were not written', error),
+    );
+  }
+
+  onMount(async () => {
+    afterSave.push(writeReadable);
+    library.load();
+    try {
+      // svelte-ignore state_referenced_locally
+      const opened = await openProject(projectId);
+      stored = (opened.info.view ?? {}) as StoredView;
+      const p = opened.project;
+      // A project that was joined and has not been fetched has no maps yet.
+      if (p.maps.length) arrange(p);
+      shared = new ProjectSharing(ownId, p, opened.info);
+      project = p;
+      release = beforeClose(() => leave(p));
+    } catch (error) {
+      failure = describeError(error) ?? 'The project could not be opened.';
+    }
+  });
+
+  /** Lays out the view as it was left, or as a project is first met. */
+  function arrange(p: Project) {
+    const known = (m: string | undefined) => (m && p.map(m) ? m : undefined);
+    const route = router.route.view === 'project' ? router.route : null;
+    const first: Pane = {
+      map: known(route?.map) ?? known(stored.panes?.[0]?.map) ?? p.maps[0].id,
+      mode: route?.mode ?? stored.panes?.[0]?.mode ?? 'diagram',
+    };
+    const list = [first];
+    const second = stored.panes?.[1];
+    if (!route?.map && second && known(second.map))
+      list.push({ map: second.map, mode: second.mode });
+    panes = list;
+    cameras = stored.cameras ?? {};
+    showReferences = stored.references ?? false;
+    showPreview = stored.preview ?? false;
+  }
+
+  // What a joined project holds has arrived.
+  $effect(() => {
+    if (project && !panes.length && project.maps.length) arrange(project);
+  });
+
+  // The sharing has ended from the other side.
+  $effect(() => {
+    const why = shared?.ended;
+    if (!why || !shared) return;
+    shared.ended = null;
+    showShare = false;
+    const fetched = (project?.maps.length ?? 0) > 0;
+    if (!fetched) {
+      // There is nothing here to keep.
+      projects.remove(ownId).catch(() => {});
+      notify(
+        why === 'deleted'
+          ? 'The project is no longer shared'
+          : 'You are no longer among the collaborators',
+        'It had not been fetched, so there is nothing of it on this computer.',
+      );
+      router.go({ view: 'projects' });
+      return;
+    }
+    void confirm({
+      title:
+        why === 'deleted'
+          ? 'This project is no longer shared'
+          : 'You are no longer among the collaborators',
+      message:
+        why === 'deleted'
+          ? 'The one who shared it has taken it off the server. You keep the project as it is now, and can go on working on it on your own.'
+          : 'You keep the project as it is now, and can go on working on it on your own. What the others write after this does not reach you.',
+      confirm: 'Understood',
+      cancel: '',
+    });
+  });
+
+  async function leave(p: Project) {
+    shared?.close();
+    await saveView();
+    await p.close();
+  }
+
+  onDestroy(() => {
+    release?.();
+    const done = () => {
+      const at = afterSave.indexOf(writeReadable);
+      if (at >= 0) afterSave.splice(at, 1);
+    };
+    if (project)
+      void leave(project)
+        .then(() => projects.load())
+        .finally(done);
+    else done();
+  });
+
+  function viewToStore(): StoredView {
+    // Only the cameras of maps that exist.
+    const kept: Record<string, Camera> = {};
+    for (const [id, c] of Object.entries(cameras)) if (project?.map(id)) kept[id] = c;
+    return {
+      panes: $state.snapshot(panes),
+      cameras: kept,
+      references: showReferences,
+      preview: showPreview,
+    };
+  }
+
+  let viewTimer: ReturnType<typeof setTimeout> | undefined;
+  async function saveView() {
+    clearTimeout(viewTimer);
+    if (!project) return;
+    try {
+      await projectSaveView(ownId, viewToStore());
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  $effect(() => {
+    if (!project) return;
+    void panes.map((p) => `${p.map}${p.mode}`);
+    void showReferences;
+    void showPreview;
+    void cameras;
+    clearTimeout(viewTimer);
+    viewTimer = setTimeout(saveView, 1500);
+  });
+
+  // The place in the application follows the first pane.
+  $effect(() => {
+    if (!project || !panes.length) return;
+    router.replace({ view: 'project', project: projectId, map: panes[0].map, mode: panes[0].mode });
+  });
+
+  // A map that is gone cannot be shown.
+  $effect(() => {
+    if (!project) return;
+    const maps = project.maps;
+    if (!maps.length) return;
+    let changed = false;
+    const next = panes.filter((p, i) => {
+      if (maps.some((m) => m.id === p.map)) return true;
+      changed = true;
+      return i === 0;
+    });
+    if (next[0] && !maps.some((m) => m.id === next[0].map)) {
+      next[0] = { ...next[0], map: maps[0].id };
+      changed = true;
+    }
+    if (changed) {
+      panes = next;
+      focused = Math.min(focused, next.length - 1);
+    }
+  });
+
+  function show(map: string, options: { pane?: number; element?: string } = {}) {
+    const i = options.pane ?? focused;
+    if (!panes[i]) return;
+    reveal = options.element ?? null;
+    panes[i] = { ...panes[i], map };
+    focused = i;
+  }
+
+  function beside(map: string) {
+    if (panes.length > 1) {
+      panes[1] = { ...panes[1], map };
+    } else {
+      // The map asked for goes beside; if it is the one in view, another takes its place here.
+      const other = project?.maps.find((m) => m.id !== map);
+      if (panes[0].map === map && other) panes[0] = { ...panes[0], map: other.id };
+      panes = [panes[0], { map, mode: panes[0].mode }];
+    }
+    focused = 1;
+  }
+
+  function closePane(i: number) {
+    panes = panes.filter((_, j) => j !== i);
+    focused = 0;
+  }
+
+  function keep(id: string) {
+    host?.keep(id);
+  }
+
+  function commitName() {
+    if (renaming === null || !project) return;
+    const name = renaming.trim();
+    renaming = null;
+    if (name && name !== project.name) {
+      project.setName(name);
+      projects.rename(projectId, name).catch(() => {});
+      // Those who join later are told the name by the server.
+      if (shared?.sharing?.owner) sharingRename(projectId, name).catch(() => {});
+    }
+  }
+
+  /**
+   * Files dropped from the desktop are taken into the library, and their
+   * references attached to the element they were dropped on.
+   */
+  async function filesDropped(event: DropEvent) {
+    const at = document
+      .elementFromPoint(event.x, event.y)
+      ?.closest<HTMLElement>('[data-node], [data-section]');
+    const element = at?.dataset.node ?? at?.dataset.section ?? null;
+    const outcome = await importDropped(event.payload.data as string[]);
+    const p = project;
+    if (!outcome?.concerned?.length || !element || !p || !p.node(element)) return;
+    p.checkpoint();
+    for (const id of outcome.concerned) {
+      p.attach(element, id);
+      keep(id);
+    }
+    p.checkpoint();
+    const name = p.node(element)?.title || 'the element';
+    notify(
+      outcome.concerned.length === 1
+        ? `The reference was attached to “${name}”`
+        : `${outcome.concerned.length} references were attached to “${name}”`,
+    );
+  }
+
+  /** When the user turns to something else, what is there is put in order on disk. */
+  function onblur() {
+    if (project) void project.snapshot();
+    void saveView();
+  }
+
+  function onkeydown(event: KeyboardEvent) {
+    if (!project) return;
+    const mod = event.ctrlKey || event.metaKey;
+    if (!mod || event.altKey) return;
+    const target = event.target as HTMLElement;
+    const typing = target.closest('input, textarea, .prose');
+    const key = event.key.toLowerCase();
+    if (key === 'd' && !event.shiftKey) {
+      // Between the two views of the map.
+      event.preventDefault();
+      if (pane) panes[focused] = { ...pane, mode: pane.mode === 'diagram' ? 'text' : 'diagram' };
+    } else if (key === 'r' && event.shiftKey) {
+      event.preventDefault();
+      showReferences = !showReferences;
+    } else if (key === 'p' && !event.shiftKey) {
+      event.preventDefault();
+      showPreview = !showPreview;
+    } else if (!typing && key === 'z') {
+      event.preventDefault();
+      if (event.shiftKey) project.redo();
+      else project.undo();
+    } else if (!typing && key === 'y') {
+      event.preventDefault();
+      project.redo();
+    }
+  }
+</script>
+
+<svelte:window {onkeydown} {onblur} />
+
+{#if failure}
+  <EmptyState icon={CircleAlert} title="The project could not be opened" text={failure}>
+    <Button onclick={() => router.go({ view: 'projects' })}>Back to the projects</Button>
+  </EmptyState>
+{:else if project && !pane && shared?.shared}
+  <EmptyState
+    icon={CloudDownload}
+    title="Fetching the project"
+    text={shared.connection?.status === 'offline'
+      ? 'The server cannot be reached. The project is fetched when it can be.'
+      : 'It is on its way from the server.'}
+  >
+    <Button onclick={() => router.go({ view: 'projects' })}>Back to the projects</Button>
+  </EmptyState>
+{:else if !project || !pane}
+  <div class="centre"><Spinner size={22} /></div>
+{:else}
+  <div class="project">
+    <header>
+      <IconButton label="All projects" onclick={() => router.go({ view: 'projects' })}>
+        <ArrowLeft size={16} />
+      </IconButton>
+
+      {#if renaming !== null}
+        <input
+          class="name editing"
+          bind:value={renaming}
+          aria-label="Name of the project"
+          size={Math.max(10, renaming.length + 1)}
+          onblur={commitName}
+          onkeydown={(e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') commitName();
+            else if (e.key === 'Escape') renaming = null;
+          }}
+          {@attach (el: HTMLInputElement) => el.select()}
+        />
+      {:else}
+        <button
+          type="button"
+          class="name serif truncate"
+          use:tooltip={'Rename the project'}
+          onclick={() => (renaming = project?.name ?? '')}
+        >
+          {project.name}
+        </button>
+      {/if}
+
+      <span class="divider"></span>
+
+      <div class="tabs">
+        <MapTabs
+          {project}
+          current={pane.map}
+          beside={panes.length > 1 ? panes[1 - focused]?.map : null}
+          onselect={(id) => show(id)}
+          onbeside={beside}
+        />
+      </div>
+
+      <div class="status" aria-live="polite">
+        {#if project.status === 'error'}
+          <span class="failed" use:tooltip={project.saveError ?? ''}>
+            <CircleAlert size={14} /> Not saved
+          </span>
+        {/if}
+      </div>
+
+      <IconButton
+        label="Undo"
+        shortcut="Ctrl+Z"
+        disabled={!project.canUndo}
+        onclick={() => project?.undo()}
+      >
+        <Undo2 size={16} />
+      </IconButton>
+      <IconButton
+        label="Redo"
+        shortcut="Ctrl+Shift+Z"
+        disabled={!project.canRedo}
+        onclick={() => project?.redo()}
+      >
+        <Redo2 size={16} />
+      </IconButton>
+
+      <span class="divider"></span>
+
+      <Segmented
+        value={pane.mode}
+        label="View of the map"
+        options={[
+          { value: 'diagram', label: 'Diagram', icon: Network },
+          { value: 'text', label: 'Text', icon: FileText },
+        ]}
+        onchange={(mode) => (panes[focused] = { ...pane, mode })}
+      />
+
+      <IconButton
+        label="References"
+        shortcut="Ctrl+Shift+R"
+        active={showReferences}
+        onclick={() => (showReferences = !showReferences)}
+      >
+        <BookMarked size={16} />
+      </IconButton>
+      <IconButton
+        label="Preview and export"
+        shortcut="Ctrl+P"
+        active={showPreview}
+        onclick={() => (showPreview = !showPreview)}
+      >
+        <BookOpenText size={16} />
+      </IconButton>
+
+      {#if shared?.connection}
+        <Presence people={project.others} />
+      {/if}
+      <span
+        class="share"
+        class:shared={shared?.shared}
+        data-status={shared?.connection?.status ?? 'none'}
+      >
+        <IconButton
+          label={!shared?.shared
+            ? 'Share'
+            : shared.connection?.status === 'connected'
+              ? 'Shared'
+              : 'Shared · the server cannot be reached'}
+          onclick={() => (showShare = true)}
+        >
+          <Users size={16} />
+        </IconButton>
+      </span>
+    </header>
+
+    <div class="work" use:dropTarget={{ accepts: ['files'], ondrop: filesDropped }}>
+      <div class="panes" class:two={panes.length > 1}>
+        {#each panes as p, i (i)}
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
+            class="pane"
+            class:focused={panes.length > 1 && i === focused}
+            onpointerdowncapture={() => (focused = i)}
+            onfocusin={() => (focused = i)}
+          >
+            {#if panes.length > 1}
+              <div class="pane-head">
+                <span class="pane-name truncate">{project.map(p.map)?.name}</span>
+                <Segmented
+                  value={p.mode}
+                  label="View of this map"
+                  size="sm"
+                  options={[
+                    { value: 'diagram', label: 'Diagram', icon: Network, iconOnly: true },
+                    { value: 'text', label: 'Text', icon: FileText, iconOnly: true },
+                  ]}
+                  onchange={(mode) => (panes[i] = { ...p, mode })}
+                />
+                <IconButton label="Close this side" size="sm" onclick={() => closePane(i)}>
+                  <X size={14} />
+                </IconButton>
+              </div>
+            {/if}
+            <div class="pane-body">
+              {#key `${p.map}:${p.mode}`}
+                {#if p.mode === 'diagram'}
+                  <MapDiagram
+                    {project}
+                    mapId={p.map}
+                    camera={cameras[p.map] ?? null}
+                    oncamera={(c) => (cameras[p.map] = c)}
+                    onkeep={keep}
+                    onopenmap={(id) => show(id, { pane: i })}
+                    reveal={i === focused ? reveal : null}
+                  />
+                {:else}
+                  <MapText
+                    {project}
+                    mapId={p.map}
+                    onkeep={keep}
+                    onopenmap={(id) => show(id, { pane: i })}
+                    reveal={i === focused ? reveal : null}
+                  />
+                {/if}
+              {/key}
+            </div>
+          </div>
+        {/each}
+      </div>
+
+      {#if showPreview}
+        <div class="side wide">
+          <PreviewPanel
+            {project}
+            {projectId}
+            mapId={pane.map}
+            onclose={() => (showPreview = false)}
+          />
+        </div>
+      {/if}
+      {#if showReferences}
+        <div class="side">
+          <ReferencePanel {project} mapId={pane.map} onclose={() => (showReferences = false)} />
+        </div>
+      {/if}
+    </div>
+  </div>
+
+  <EditorHost bind:this={host} {project} />
+{/if}
+
+{#if showShare && shared && project}
+  <SharePanel {shared} {projectId} projectName={project.name} onclose={() => (showShare = false)} />
+{/if}
+
+<style>
+  .centre {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+  .project {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: var(--bar-h);
+    flex: none;
+    padding: 0 10px 0 8px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .name {
+    max-width: 260px;
+    flex: none;
+    padding: 3px 8px;
+    border: none;
+    border-radius: var(--radius-s);
+    background: transparent;
+    font-size: 15.5px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+  }
+  .name:hover {
+    background: var(--paper-hover);
+  }
+  input.name {
+    font-family: var(--font-text);
+    background: var(--paper-raised);
+    outline: none;
+    box-shadow: 0 0 0 1.5px var(--accent);
+    cursor: text;
+  }
+  .divider {
+    width: 1px;
+    height: 18px;
+    margin: 0 6px;
+    flex: none;
+    background: var(--line);
+  }
+  .tabs {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+  }
+  .status {
+    flex: none;
+    font-size: var(--text-sm);
+  }
+  .failed {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-right: 6px;
+    color: var(--danger);
+    font-weight: 500;
+  }
+  .share {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+  }
+  /* A dot that tells whether the others are within reach. */
+  .share.shared::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 3px;
+    width: 7px;
+    height: 7px;
+    border: 1.5px solid var(--paper);
+    border-radius: 50%;
+    background: var(--ink-4);
+    pointer-events: none;
+  }
+  .share.shared[data-status='connected']::after {
+    background: var(--ok);
+  }
+  .share.shared[data-status='offline']::after {
+    background: var(--warn);
+  }
+  .work {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+  .panes {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .panes.two {
+    grid-template-columns: 1fr 1fr;
+  }
+  .pane {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+  .panes.two .pane + .pane {
+    border-left: 1px solid var(--line-strong);
+  }
+  .pane-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    flex: none;
+    padding: 0 6px 0 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper-sunken);
+  }
+  .pane.focused .pane-head {
+    background: var(--accent-softer);
+  }
+  .pane-name {
+    flex: 1;
+    font-weight: 550;
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+  }
+  .pane.focused .pane-name {
+    color: var(--accent-strong);
+  }
+  .pane-body {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+  }
+  .side {
+    width: 340px;
+    flex: none;
+    min-height: 0;
+  }
+  .side.wide {
+    width: min(46%, 640px);
+  }
+</style>
