@@ -33,7 +33,10 @@
 
   let { project, projectId, mapId, onclose }: Props = $props();
 
-  let pages = $state.raw<string[]>([]);
+  /** The pages as they are shown: what each holds, and the address it is shown from. */
+  let pages = $state.raw<{ svg: string; url: string }[]>([]);
+  /** What the pages that are shown were made from. */
+  let shownFrom = '';
   let status = $state<'waiting' | 'working' | 'shown' | 'failed'>('waiting');
   let error = $state<{ kind: string; message: string } | null>(null);
   let warnings = $state.raw<string[]>([]);
@@ -68,19 +71,35 @@
     };
   }
 
-  async function refresh() {
+  /**
+   * Makes the pages anew, if what they are made from has changed. Much that
+   * changes in a project changes nothing in the document: where an element
+   * stands in the diagram, whether a branch is folded.
+   */
+  async function refresh(force = false) {
     const mine = ++round;
-    status = pages.length ? 'working' : 'waiting';
     try {
       const r = await request();
       if (mine !== round) return;
+      const from = JSON.stringify(r);
+      if (!force && from === shownFrom && status === 'shown') return;
+      status = pages.length ? 'working' : 'waiting';
       format = r.format;
       const preview = await documentPreview(r);
       if (mine !== round) return;
-      release();
-      pages = preview.pages.map((svg) =>
-        URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })),
+      // A page that is as it was is left as it is, so that only what has
+      // changed is drawn again.
+      const before = pages;
+      pages = preview.pages.map((svg, i) =>
+        before[i]?.svg === svg
+          ? before[i]
+          : { svg, url: URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })) },
       );
+      const kept = new Set(pages.map((p) => p.url));
+      // The pages that were replaced are let go when those in their place have been drawn.
+      const gone = before.filter((p) => !kept.has(p.url));
+      if (gone.length) setTimeout(() => gone.forEach((p) => URL.revokeObjectURL(p.url)), 2000);
+      shownFrom = from;
       warnings = preview.warnings;
       missing = preview.missing;
       substitute = preview.substitute;
@@ -96,7 +115,7 @@
   }
 
   function release() {
-    for (const url of pages) URL.revokeObjectURL(url);
+    for (const page of pages) URL.revokeObjectURL(page.url);
   }
 
   // The preview follows the text, a moment behind it.
@@ -107,7 +126,10 @@
     void choice.format;
     void documents.loaded;
     if (!documents.loaded) return;
-    const timer = setTimeout(() => untrack(refresh), pages.length ? 900 : 50);
+    // The pages themselves must not be among what the effect follows: it
+    // would then follow its own doing, and never rest.
+    const wait = untrack(() => (pages.length ? 900 : 50));
+    const timer = setTimeout(() => untrack(() => refresh()), wait);
     return () => clearTimeout(timer);
   });
 
@@ -293,19 +315,20 @@
           title={error.message.replace(' or could not be found', '')}
           text="Preview and export are made with Pandoc and Typst. Install them with the package manager of your system, or say in the settings where they are."
         >
-          <Button onclick={() => documents.lookAgain().then(refresh)}>Look again</Button>
+          <Button onclick={() => documents.lookAgain().then(() => refresh(true))}>Look again</Button
+          >
         </EmptyState>
       {:else}
         <EmptyState icon={TriangleAlert} title="The preview could not be made">
           <pre class="selectable">{error.message}</pre>
-          <Button onclick={refresh}>Try again</Button>
+          <Button onclick={() => refresh(true)}>Try again</Button>
         </EmptyState>
       {/if}
     {:else if !pages.length}
       <div class="centre"><Spinner size={22} /></div>
     {:else}
-      {#each pages as url, i (url)}
-        <img src={url} alt="Page {i + 1}" class="page" draggable="false" />
+      {#each pages as page, i (i)}
+        <img src={page.url} alt="Page {i + 1}" class="page" draggable="false" />
       {/each}
     {/if}
   </div>
@@ -356,7 +379,8 @@
     onsaved={(id) => {
       editingFormat = null;
       project.setDocument(mapId, { format: id });
-      void refresh();
+      // What a style or a format holds may have changed under the same name.
+      void refresh(true);
     }}
     onclose={() => (editingFormat = null)}
   />
@@ -369,7 +393,8 @@
     onsaved={(id) => {
       editingStyle = null;
       project.setDocument(mapId, { style: id || undefined });
-      void refresh();
+      // What a style or a format holds may have changed under the same name.
+      void refresh(true);
     }}
     onclose={() => (editingStyle = null)}
   />
@@ -444,9 +469,6 @@
     align-items: center;
     gap: 16px;
     transition: opacity var(--slow) var(--ease);
-  }
-  .pages.working {
-    opacity: 0.75;
   }
   .page {
     display: block;

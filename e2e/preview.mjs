@@ -130,18 +130,73 @@ try {
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog');
 
-  // --- The readable copy, written when the project is put in order ---
+  // --- The preview rests when nothing changes ---
+  await sleep(3000);
+  const watch = (ms) =>
+    app.execAsync(
+      `const drawn = [];
+       const pages = document.querySelector('.preview .pages');
+       const observer = new MutationObserver((records) => {
+         for (const r of records) {
+           if (r.type === 'attributes') drawn.push(Array.from(pages.querySelectorAll('img')).indexOf(r.target) + 1);
+           else for (const n of r.addedNodes) if (n.tagName === 'IMG') drawn.push(Array.from(pages.querySelectorAll('img')).indexOf(n) + 1);
+         }
+       });
+       observer.observe(pages, { subtree: true, childList: true, attributes: true, attributeFilter: ['src'] });
+       await new Promise((r) => setTimeout(r, arguments[0]));
+       observer.disconnect();
+       return drawn;`,
+      ms,
+    );
+  let drawn = await watch(5000);
+  check('nothing is drawn again while nothing changes', drawn.length === 0, JSON.stringify(drawn));
+
+  // What changes nothing in the document: folding a branch in the diagram.
+  await app.keys(['Control', 'd']);
+  await app.waitFor('.diagram .node');
+  await sleep(1500);
+  const folding = watch(4000);
+  await sleep(300);
+  await app.exec(`document.querySelector('.diagram .node .fold')?.click()`);
+  drawn = await folding;
+  check('nor when the map changes and the document does not', drawn.length === 0, JSON.stringify(drawn));
+
+  // Pages enough that a change on the last leaves the first as it is.
+  await app.keys(['Control', 'd']);
+  await app.waitFor('.text-view .section');
+  await sleep(500);
+  await app.click('.text-view .section:last-child .heading');
+  await sleep(200);
+  await app.press('ArrowDown');
+  await app.keys(['Control', 'End']);
+  for (let i = 0; i < 9; i++) {
+    await app.press('Enter');
+    await app.exec(
+      `const v = document.querySelector('.text-view .ProseMirror-focused');
+       document.execCommand('insertText', false, arguments[0]);`,
+      'The wrath is sung, and the song is of what the wrath brought about among the Achaeans, whose dead were many. '.repeat(9),
+    );
+  }
+  await sleep(4000);
+  const many = await app.count('.preview .page');
+  const writing = watch(4500);
+  await sleep(300);
+  await app.keys(' And so it ends.');
+  drawn = await writing;
+  check(
+    'when the text changes on one page, only that page is drawn again',
+    many >= 3 && new Set(drawn).size === 1 && drawn[0] > 1,
+    `${many} pages, drawn again: ${JSON.stringify(drawn)}`,
+  );
+  await app.screenshot('preview-6-many-pages');
+
+  // --- No copies are written beside the project ---
   await app.click('header button[aria-label="All projects"]');
   await app.waitFor('.card', 5000);
   await sleep(1500);
   const projects = join(app.dataDir, 'projects');
   const id = readdirSync(projects).find((n) => !n.startsWith('.'));
-  const copy = join(projects, id, 'maps', 'Wrath and the hero.md');
-  check('a readable copy of the map is kept', existsSync(copy));
-  if (existsSync(copy)) {
-    const text = readFileSync(copy, 'utf8');
-    check('it holds the text and the citations', /# The word/.test(text) && /@nagy1979/.test(text), text.slice(0, 200).replace(/\n/g, ' '));
-  }
+  check('the project is kept, and no copies of it beside it', existsSync(join(projects, id, 'state.bin')) && !existsSync(join(projects, id, 'maps')));
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));
