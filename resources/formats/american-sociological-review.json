@@ -1,0 +1,73 @@
+{
+  "id": "american-sociological-review",
+  "name": "American Sociological Review",
+  "kind": "journal",
+  "description": "Articles for the American Sociological Review: Times New Roman 12, everything double-spaced, notes and references included, margins of at least one inch, endnotes under the heading NOTES, no page numbers, ASA references; anonymised, at most 15,000 words.",
+  "source": {
+    "name": "American Sociological Review, author instructions (Sage, for the American Sociological Association)",
+    "url": "https://journals.sagepub.com/author-instructions/ASR",
+    "checked": "2025-07-18",
+    "confidence": "medium",
+    "notes": "Read from an Internet Archive snapshot of 2025-07-18; the live page refused automated requests, so the values may have changed. The ASA Style Guide itself was not read. Not specified, and taken from the general default: alignment, paragraph indent, hyphenation, the typographic form of headings ('three heading levels are sufficient', with recent issues as the example), block quotations, the layout of the reference list, line numbers. The page size is not stated: letter was chosen for a North American journal. Margins are 'at least 1 inch'. The size of notes is not stated apart from that of the manuscript, 12 points, which is entered. Each note has at most 100 words. Page numbers are to be removed, the submission system adding its own. The title page is a file of its own, with title, authors, acknowledgements, funding, key words and word count; the manuscript is uploaded without it, and the abstract is uploaded separately. The source gives the abstract as '150 to 200 words' and elsewhere as '200 words or fewer'. Reference style: the ASA Style Guide, 7th ed. (2022)."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "1in",
+    "marginBottom": "1in",
+    "marginLeft": "1in",
+    "marginRight": "1in"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "endnotes", "size": 12, "lineSpacing": 2, "title": "NOTES" },
+  "bibliography": {
+    "title": "References",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 2,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": false, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "american-sociological-association",
+  "limits": {
+    "words": 15000,
+    "abstractWords": 200,
+    "keywords": 5,
+    "note": "At most 15,000 words including text, references and footnotes, excluding tables and figures. Abstract of 150 to 200 words; four or five key words."
+  }
+}

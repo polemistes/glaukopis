@@ -1,0 +1,71 @@
+{
+  "id": "classical-quarterly",
+  "name": "The Classical Quarterly",
+  "kind": "journal",
+  "description": "Articles for The Classical Quarterly: Times New Roman 12 throughout, footnotes included, double-spaced and justified; section titles in capitals and centred, sub-section titles in italics, nothing in bold; footnotes and no bibliography; anonymised.",
+  "source": {
+    "name": "The Classical Quarterly, Guidance for Contributors (before submission) and detailed house style (Cambridge University Press)",
+    "url": "https://www.cambridge.org/core/journals/classical-quarterly/information/author-instructions/preparing-your-materials",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Only six points are required before submission: Times New Roman for the Roman alphabet, New Athena Unicode for Greek, another Unicode font for other alphabets, 12 pt throughout, double spacing throughout, footnotes numbered consecutively. The rest of the house style (justified margins, the form of titles, indentation) applies after acceptance. Not specified, and taken from the general default: margins, the amount of indentation, hyphenation, whether headings are numbered, space around headings, the block-quotation threshold and indent, page numbers, line numbers. The page size is not stated: A4 was chosen for a British journal. The first paragraph of the article or of a section is not indented; later ones are. Block quotations are never in italics. There is no bibliography, references being given in footnotes: the bibliography values are the general default. In the house style the author's affiliation and name stand at the end of the article and acknowledgements in a first footnote marked with an asterisk, which cannot be expressed here. The reference style is the journal's own, and the index holds none under its name, so none is given. UK spelling with -ize; single quotation marks."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "justified",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 12, "bold": false, "italic": false, "align": "center", "case": "upper", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 12,
+    "bold": false,
+    "italic": false,
+    "align": "center",
+    "case": "upper",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "footnotes", "size": 12, "lineSpacing": 2, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "limits": {
+    "words": 12000,
+    "abstractWords": 250,
+    "keywords": 8,
+    "note": "At most 12,000 words, footnotes and abstract included: 'a maximum, not a target'. Abstract of up to 250 words; six to eight keywords."
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "id": "nature",
+  "name": "Nature",
+  "kind": "journal",
+  "description": "Manuscripts for Nature: a standard font, preferably Times New Roman 12, double-spaced, with line numbers; a summary paragraph of ideally no more than 200 words in place of an abstract, and numbered references in the journal's own style.",
+  "source": {
+    "name": "Nature, Formatting guide",
+    "url": "https://www.nature.com/nature/for-authors/formatting-guide",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: margins, alignment, paragraph indent, hyphenation, the form and numbering of headings (subheadings have at most 40 characters, spaces included; short bold headings in Methods), block quotations, notes, the layout of the reference list (the source speaks of 'references'; 'References' is entered), page numbers, keywords, anonymisation. The page size is not stated: A4 was chosen for a British journal. There are no footnotes in the sense of the humanities: the values for notes are the general default. The summary paragraph is the first paragraph, in bold and with references, and has no label of its own, which cannot be expressed here. The title has at most 75 characters, spaces included. Linked fields from reference managers are to be removed. Word is preferred; LaTeX is accepted. Spelling as the Oxford English Dictionary."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "References",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": true,
+  "style": "nature",
+  "limits": {
+    "abstractWords": 200,
+    "note": "No word limit is entered: the typical text has 2,500 words for an article of 6 pages and 4,300 for one of 8, not counting title, authors, acknowledgements and references. Methods typically at most 3,000 words; about 50 references. Summary paragraph ideally of no more than 200 words."
+  }
+}

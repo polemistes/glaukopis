@@ -1,0 +1,123 @@
+{
+  "id": "routledge-books",
+  "name": "Routledge / Taylor & Francis (books)",
+  "kind": "publisher",
+  "description": "Book chapters for Routledge and Taylor & Francis: a blank line between paragraphs and no indent, at most three levels of unnumbered subheading, notes as endnotes numbered by chapter, and an abstract of 100 to 200 words for every chapter.",
+  "source": {
+    "name": "Routledge / Taylor & Francis, Manuscript preparation guide (PDF of December 2024)",
+    "url": "https://www.routledge.com/rsc/downloads/Manuscript_preparation_guide_1.pdf",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The publisher says that line spacing, font size and the like 'only need to be clear and consistent rather than following any requirements'. Not specified, and taken from the general default: margins, font size, line spacing, alignment, the form of headings (Word's Heading 1-3 are recommended), block quotations, size and spacing of notes, layout of the reference list, position of page numbers, anonymisation. The page size is not stated: A4 was chosen for a British publisher. The source asks for a Unicode font 'such as Arial or Times New Roman'. The blank line between paragraphs is entered as 12pt. Headings are not to be numbered unless that is usual in the field. Each chapter is a file of its own, its pages numbered from 1, with 'a bibliography or reference list' at its end. There is no house style for references or spelling: any suitable style, applied consistently, so no reference style is given. Epigraphs are as a rule not allowed. Of the fonts the source permits, Times New Roman is entered, being the one most manuscripts in the humanities are set in; any of the others may be chosen in its place."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": {
+    "family": "Times New Roman",
+    "size": 12
+  },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "spaced",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "12pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      {
+        "size": 14,
+        "bold": true,
+        "italic": false,
+        "align": "left",
+        "case": "none",
+        "runIn": false,
+        "indent": false,
+        "spaceBefore": "24pt",
+        "spaceAfter": "12pt"
+      },
+      {
+        "size": 12,
+        "bold": true,
+        "italic": false,
+        "align": "left",
+        "case": "none",
+        "runIn": false,
+        "indent": false,
+        "spaceBefore": "18pt",
+        "spaceAfter": "6pt"
+      },
+      {
+        "size": 12,
+        "bold": false,
+        "italic": true,
+        "align": "left",
+        "case": "none",
+        "runIn": false,
+        "indent": false,
+        "spaceBefore": "12pt",
+        "spaceAfter": "6pt"
+      }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0,
+    "italic": false
+  },
+  "notes": {
+    "kind": "endnotes",
+    "size": 10,
+    "lineSpacing": 1,
+    "title": "Notes"
+  },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": {
+    "show": true,
+    "position": "bottom-center",
+    "firstPage": true
+  },
+  "runningHead": {
+    "content": "none",
+    "text": "",
+    "align": "left",
+    "case": "none"
+  },
+  "lineNumbers": false,
+  "limits": {
+    "abstractWords": 200,
+    "note": "An abstract of 100-200 words is required for every chapter, introduction and conclusion included. The contracted word count includes notes and references."
+  }
+}

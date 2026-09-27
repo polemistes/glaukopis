@@ -1,0 +1,75 @@
+{
+  "id": "yale-university-press",
+  "name": "Yale University Press (books)",
+  "kind": "publisher",
+  "description": "Book manuscripts for Yale University Press: endnotes numbered anew in each chapter, subheads used sparingly and never numbered, quotations set off as a block only from 100 words, and Chicago notes and bibliography.",
+  "source": {
+    "name": "Yale University Press, Manuscript Preparation Guidelines (with Preparing Your Manuscript Files and PDFs, and Assembling Notes and Documentation)",
+    "url": "https://yalebooks.yale.edu/manuscript-preparation-guidelines/",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The Press asks for structure, not appearance. Not specified for ordinary manuscripts, and taken from the general default: margins, typeface and size (a Unicode font where special characters occur), line spacing, paragraph style, alignment, hyphenation, the typographic form of headings (Word's Heading 1, 2 and 3 for A, B and C heads, in title-style capitals), the indent of block quotations, size and spacing of notes, layout of the bibliography, page numbers, running head, abstract and keywords. The page size is not stated: letter was chosen for a North American publisher. The source runs in quotations 'of fewer than 100 words' and sets off those 'longer than 100 words'; from 100 is entered. Footnotes are generally not used. A half-title page and a title page open the manuscript. A bibliography is optional where the notes give full citations. The Press prefers the notes and bibliography system of the Chicago Manual, 18th ed. No ibid., op. cit., supra or infra; no bold or underlining for emphasis; no cross-references to pages. Word (preferred) or RTF, with a PDF of every file."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0,
+    "italic": false,
+    "fromWords": 100
+  },
+  "notes": { "kind": "endnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "chicago-notes-bibliography",
+  "limits": { "note": "Length and the number of illustrations are as the contract stipulates." }
+}

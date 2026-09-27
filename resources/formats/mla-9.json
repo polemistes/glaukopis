@@ -1,0 +1,74 @@
+{
+  "id": "mla-9",
+  "name": "MLA 9 (research paper)",
+  "kind": "style-guide",
+  "description": "The research paper format of the MLA Handbook, 9th edition: everything double-spaced, one-inch margins, no title page, the writer's surname before the page number at the top right, and a list headed Works Cited.",
+  "source": {
+    "name": "MLA Handbook, 9th ed., chapter 1, Formatting Your Research Project (MLA Handbook Plus)",
+    "url": "https://mlahandbookplus.org/books/book/5/chapter/56249/Margins-and-Text-Formatting",
+    "checked": "2025-01-19",
+    "confidence": "high",
+    "notes": "Read from Internet Archive snapshots of the official pages, taken between 2025-01-19 and 2026-02-15 (the live site refuses automated requests); the date given is that of the snapshot of sections 1.1-1.2. Only chapter 1 is free; chapters 6 and 7 were not read. The block-quotation threshold (more than four lines, entered as from five lines) is therefore from 8th-edition material and of low confidence, and the form and placement of notes are not known: footnotes are the general default, in the size and spacing of the text as section 1.2 requires for the whole paper. The source asks for an easily readable typeface at 11 to 13 points and names Times New Roman as one example; 12 is entered. Letter is the size named for printed papers. Headings: the source gives only the principle (flush left, descending prominence by size and style, no capitals, generally not numbered, a line space above and below); the three levels are the general default, which keeps to that principle, with the line space entered as 24pt. Not specified, and taken from the general default: abstract and keywords. Not expressible here: the first page begins, flush left, with the writer's name, the instructor's name, the course and the date, before the centred title; and the running head is the surname only."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "1in",
+    "marginBottom": "1in",
+    "marginLeft": "1in",
+    "marginRight": "1in"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "0.5in",
+    "indentFirst": true,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "24pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "24pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "24pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 12,
+    "bold": false,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": false,
+    "showDate": true,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": {
+    "indentLeft": "0.5in",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 2,
+    "italic": false,
+    "fromLines": 5
+  },
+  "notes": { "kind": "footnotes", "size": 12, "lineSpacing": 2, "title": "Notes" },
+  "bibliography": {
+    "title": "Works Cited",
+    "hangingIndent": "0.5in",
+    "lineSpacing": 2,
+    "entrySpacing": "0pt",
+    "newPage": true,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "top-right", "firstPage": true },
+  "runningHead": { "content": "author", "text": "", "align": "right", "case": "none" },
+  "lineNumbers": false,
+  "style": "modern-language-association"
+}

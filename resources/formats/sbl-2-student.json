@@ -1,0 +1,76 @@
+{
+  "id": "sbl-2-student",
+  "name": "SBL Handbook of Style 2 (student paper)",
+  "kind": "style-guide",
+  "description": "The term paper of the Student Supplement to the SBL Handbook of Style, 2nd edition: 12-point type, double-spaced text with single-spaced block quotations and bibliography, footnotes, a title page in capitals, and five forms of heading.",
+  "source": {
+    "name": "Student Supplement for The SBL Handbook of Style, Second Edition (SBL Press, revised February 2015)",
+    "url": "https://www.sbl-site.org/assets/pdfs/pubs/sblhssupp2015-02.pdf",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "For student papers only; it says nothing of manuscripts sent to SBL Press. It dates from 2015 and refers onward to Turabian 7th ed. and Chicago 16th ed. Not specified, and taken from the general default: the typeface (only '12-point scalable font' is asked for), hyphenation, whether headings are numbered, space around headings, the hanging indent of the bibliography (shown only in samples), the spacing within footnotes, running head, abstract. The page size is not stated: letter was chosen for a North American source. Footnotes of 10 points are 'acceptable for most term papers', though some institutions require 12. The blank line between bibliography entries is entered as 12pt. Not expressible here: margins of 2 inches at the top and bottom of the title page and at the top of the first page of the bibliography; page numbers at the bottom centre on the first page of the text, of each appendix and of the bibliography, and at the top right elsewhere (top right entered), with none on the title page; the title page also names the institution, the course and the professor."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "1in",
+    "marginBottom": "1in",
+    "marginLeft": "1in",
+    "marginRight": "1in"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "0.5in",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 12, "bold": false, "italic": false, "align": "center", "case": "upper", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "center", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": false, "align": "center", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": true, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 12,
+    "bold": false,
+    "italic": false,
+    "align": "center",
+    "case": "upper",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": {
+    "indentLeft": "0.5in",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 1,
+    "italic": false,
+    "fromLines": 5
+  },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 1,
+    "entrySpacing": "12pt",
+    "newPage": true,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "top-right", "firstPage": false },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "society-of-biblical-literature-fullnote-bibliography"
+}

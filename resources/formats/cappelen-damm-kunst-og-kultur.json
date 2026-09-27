@@ -1,0 +1,80 @@
+{
+  "id": "cappelen-damm-kunst-og-kultur",
+  "name": "Cappelen Damm Forskning: Kunst og kultur i opplæring",
+  "kind": "publisher",
+  "description": "The series Kunst og kultur i opplæring from Cappelen Damm Forskning (NOASP): Calibri 11, double-spaced and justified, headings in the APA form in at most three levels, quotations of over 40 words set off, and APA 7 references.",
+  "source": {
+    "name": "Cappelen Damm Forskning, Retningslinjer for innsending av prosjektbeskrivelser og manus, Kunst og kultur i opplæring (PDF of September 2025)",
+    "url": "https://cdforskning.no/cdf/libraryFiles/downloadPublic/32",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "These are the rules of one series. The publisher's general guide for authors prescribes no layout, and its other series (Libelli) differs on almost every value. Not specified, and taken from the general default: top and bottom margins (only left and right, 2.5 cm, are stated), the amount of indentation, hyphenation, size of headings and title, the indent of block quotations, size and spacing of notes, the heading and layout of the reference list, page numbers. The page size is not stated: A4 was chosen for a Norwegian publisher. The text has 'straight margins on each side', entered as justified. New paragraphs are shown by a line break and a tab indent. Quotations of over 40 words (entered as from 41) are indented, with a blank line above and below and no quotation marks. Footnotes are allowed but to be kept few. The author's name, affiliation and e-mail stand first in the text; it is the editor who sends an anonymised version to the reviewers. The abstract is in italics, between the title and the keywords; texts in Scandinavian languages also need an English title and abstract. The labels for abstract and keywords are the general default, in English. Captions are in Calibri 11 and stand above the figure. The series follows APA 7; the index also holds 'norsk-apa-manual' for texts in Norwegian."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Calibri", "size": 11 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "justified",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 11, "bold": true, "italic": false, "align": "center", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 11, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 11, "bold": true, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0,
+    "italic": false,
+    "fromWords": 41
+  },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "apa",
+  "limits": {
+    "words": 7000,
+    "abstractWords": 250,
+    "keywords": 6,
+    "note": "Chapters of anthologies 5000-7000 words; monographs up to 300 pages. Abstract of 150-250 words; 4-6 keywords."
+  }
+}

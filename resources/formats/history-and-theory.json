@@ -1,0 +1,79 @@
+{
+  "id": "history-and-theory",
+  "name": "History and Theory",
+  "kind": "journal",
+  "description": "Articles for History and Theory: footnotes in a house style based on the Chicago Manual, with no bibliography; quotations of more than seventy words set off; an abstract of 200 to 300 words and six to eight keywords. The journal prescribes no page layout.",
+  "source": {
+    "name": "History and Theory, Author guidelines: Articles, and House Style Guide",
+    "url": "https://historyandtheory.org/articles",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The journal states no page layout. Not specified, and taken from the general default: margins, typeface and size, line spacing, alignment, paragraph indent, hyphenation, headings, the indent of block quotations, size and spacing of notes, page numbers, line numbers. The page size is not stated: letter was chosen for a North American journal. Quotations are set off when they 'exceed seventy words' (entered as from 71), run to two or more paragraphs, or are more than three lines of poetry. Discursive footnotes are allowed; the field codes of citation managers are to be removed. There is no bibliography: the bibliography values are the general default. The manuscript begins with the title and the names and contact details of all authors; whether it is anonymised for review the source does not say, and it is entered as not. Reference style: a house style based on the Chicago Manual, 18th ed., notes form (publisher and year without place); the journal says it 'does not maintain a CSL style', and the style the index holds under its name dates from 2012, so Chicago 18th ed. notes is given instead. American spelling; dates as 1 January 1900."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0,
+    "italic": false,
+    "fromWords": 71
+  },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "chicago-notes-bibliography",
+  "limits": {
+    "abstractWords": 300,
+    "keywords": 8,
+    "note": "No word limit as such; successful articles are generally of 8,000-10,000 words, including notes, abstract and keywords. Abstract of 200-300 words; 6 to 8 keywords."
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "id": "psychological-review",
+  "name": "Psychological Review",
+  "kind": "journal",
+  "description": "Manuscripts for Psychological Review (American Psychological Association): the professional paper of APA 7, double-spaced throughout with five levels of unnumbered headings, an abstract of at most 250 words on a page of its own and up to five keywords.",
+  "source": {
+    "name": "Psychological Review, submission guidelines (American Psychological Association), with the APA Style pages on paper format",
+    "url": "https://www.apa.org/pubs/journals/rev",
+    "checked": "2025-09-06",
+    "confidence": "medium",
+    "notes": "Read from Internet Archive snapshots, the journal page of 2025-09-06 and the APA Style pages of 2025-06-27 to 2025-10-04 (the APA sites refuse automated requests), so the values may have changed; those of the journal itself (review, length, abstract) are most at risk. The journal page says little of layout and refers to the Publication Manual, 7th ed.; the layout is therefore that of APA Style. Three values are not on the pages read for this journal and are taken from the later snapshots of APA Style read for the format 'APA 7 (professional paper)': the block-quotation threshold of 40 words, page numbers at the top right, and the running head of the shortened title in capitals (at most 50 characters; here the title itself is used). The page size is not stated: letter was chosen for a North American journal. APA permits several fonts; the pages read for this journal list 11 pt Calibri, 11 pt Arial, 10 pt Lucida Sans Unicode, 12 pt Times New Roman, 11 pt Georgia, 10 pt Computer Modern, and the first is entered. Headings are in the type of the text; extra blank lines above or below them are not allowed, which is entered as 15.4pt, the distance between double-spaced lines of 11-point type. Footnotes are left to the word processor's defaults: 10 pt and single spacing are the general default. Review is open by default; masked review is given on request, so the format is not anonymous. Word or Open Office format; LaTeX as a ZIP of sources with a PDF. Of the fonts the source permits, Times New Roman is entered, being the one most manuscripts in the humanities are set in; any of the others may be chosen in its place."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "1in",
+    "marginBottom": "1in",
+    "marginLeft": "1in",
+    "marginRight": "1in"
+  },
+  "font": {
+    "family": "Times New Roman",
+    "size": 12
+  },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "0.5in",
+    "indentFirst": true,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      {
+        "size": 12,
+        "bold": true,
+        "italic": false,
+        "align": "center",
+        "case": "none",
+        "runIn": false,
+        "indent": false,
+        "spaceBefore": "15.4pt",
+        "spaceAfter": "15.4pt"
+      },
+      {
+        "size": 12,
+        "bold": true,
+        "italic": false,
+        "align": "left",
+        "case": "none",
+        "runIn": false,
+        "indent": false,
+        "spaceBefore": "15.4pt",
+        "spaceAfter": "15.4pt"
+      },
+      {
+        "size": 12,
+        "bold": true,
+        "italic": true,
+        "align": "left",
+        "case": "none",
+        "runIn": false,
+        "indent": false,
+        "spaceBefore": "15.4pt",
+        "spaceAfter": "15.4pt"
+      },
+      {
+        "size": 12,
+        "bold": true,
+        "italic": false,
+        "align": "left",
+        "case": "none",
+        "runIn": true,
+        "indent": true,
+        "spaceBefore": "15.4pt",
+        "spaceAfter": "15.4pt"
+      },
+      {
+        "size": 12,
+        "bold": true,
+        "italic": true,
+        "align": "left",
+        "case": "none",
+        "runIn": true,
+        "indent": true,
+        "spaceBefore": "15.4pt",
+        "spaceAfter": "15.4pt"
+      }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 12,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": {
+    "indentLeft": "0.5in",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 2,
+    "italic": false,
+    "fromWords": 40
+  },
+  "notes": {
+    "kind": "footnotes",
+    "size": 10,
+    "lineSpacing": 1,
+    "title": "Notes"
+  },
+  "bibliography": {
+    "title": "References",
+    "hangingIndent": "0.5in",
+    "lineSpacing": 2,
+    "entrySpacing": "0pt",
+    "newPage": true,
+    "size": 0
+  },
+  "pageNumbers": {
+    "show": true,
+    "position": "top-right",
+    "firstPage": true
+  },
+  "runningHead": {
+    "content": "title",
+    "text": "",
+    "align": "left",
+    "case": "upper"
+  },
+  "lineNumbers": false,
+  "style": "apa",
+  "limits": {
+    "abstractWords": 250,
+    "keywords": 5,
+    "note": "No upper bound on length, but authors of texts longer than 15,000 words are asked to justify it. Abstract of at most 250 words, on a separate page; up to five keywords."
+  }
+}

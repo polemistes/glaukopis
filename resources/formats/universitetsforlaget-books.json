@@ -1,0 +1,75 @@
+{
+  "id": "universitetsforlaget-books",
+  "name": "Universitetsforlaget (books, general guide)",
+  "kind": "publisher",
+  "description": "Book manuscripts for Universitetsforlaget (Scandinavian University Press) by its general guide for authors: the simplest possible formatting, a blank line between paragraphs, a ragged right margin, no hyphenation, and quotations of more than two lines set off as paragraphs of their own.",
+  "source": {
+    "name": "Universitetsforlaget, Forfatterveiledning",
+    "url": "https://www.universitetsforlaget.no/forfatter/forfatterveiledning",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The guide says that type size, line spacing and the like are 'not important', since the publisher styles the manuscript: typeface, size and line spacing here are therefore the general default, as are margins, the form, number and numbering of headings (they are only to be short), the indent of block quotations, size and spacing of notes, the heading and layout of the reference list, page numbers, title page, abstract and keywords. The page size is not stated: A4 was chosen for a Norwegian publisher. The blank line between paragraphs is entered as 12pt; tabs are not to be used for indents. Quotations that run to more than two lines (about 40 words) are set off, which is entered as from 3 lines and from 40 words. Notes may be footnotes or endnotes, chosen at the outset and used sparingly (footnotes entered). References: the author's customary system, used consistently; APA is recommended to those who have none, and is given here. The publisher's guide for open access research books differs (Times New Roman 12, spacing 1.5): see the format of that name. The guide for journals could not be read."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "spaced",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "12pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0,
+    "italic": false,
+    "fromWords": 40,
+    "fromLines": 3
+  },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "apa"
+}

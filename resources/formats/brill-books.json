@@ -1,0 +1,71 @@
+{
+  "id": "brill-books",
+  "name": "Brill (books)",
+  "kind": "publisher",
+  "description": "Book manuscripts for Brill: indented paragraphs, headings numbered decimally in arabic numerals, footnotes numbered anew in every chapter, a separate bibliography, and a manuscript anonymised for review.",
+  "source": {
+    "name": "Brill's Author Guide (PDF of April 2026)",
+    "url": "https://brill.com/fileasset/downloads_static/static_publishingbooks_authorguide.pdf",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: margins, font size, line spacing, alignment, the amount of indentation, the typographic form of headings (only a clear and consistent distinction, in title case, is asked for; more than four levels are to be avoided), the block-quotation threshold ('larger sections of quoted text'), size and spacing of notes, layout of the bibliography, page numbers. The page size is not stated: A4 was chosen for a European publisher. Brill encourages its own typeface, 'Brill', and otherwise asks for Unicode fonts. The first line of a paragraph is indented, except after a blank line, a heading or a block quotation. Block quotations have a blank line before and after. A running title of at most 60 characters is supplied for each chapter, apart from the manuscript. Abstract and keywords: about 200 words and about 6-10 keywords for each contribution to an edited volume; for monographs a short abstract of each chapter, in a separate file. Brill has no single house style for references: it recommends the Chicago Manual of Style or the Oxford Style Manual, and by field Harvard or MLA (arts), Bluebook or OSCOLA (law), APA (social sciences and linguistics); so no reference style is given. Repeated authors' names in the bibliography are not replaced by dashes. A PDF identical to the Word file is always wanted."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Brill", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": true,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "limits": {
+    "abstractWords": 200,
+    "keywords": 10,
+    "note": "For contributions to edited volumes: an abstract of about 200 words and about 6-10 keywords. The total word count, bibliography and footnotes included, is reported with the proposal."
+  }
+}

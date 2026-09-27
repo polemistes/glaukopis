@@ -1,0 +1,72 @@
+{
+  "id": "universitetsforlaget-open-access",
+  "name": "Universitetsforlaget (open access research books)",
+  "kind": "publisher",
+  "description": "Chapters for open access monographs and anthologies from Universitetsforlaget (Scandinavian University Press): Times New Roman 12 with spacing of 1.5, at most three levels of unnumbered heading, and for every chapter an English abstract of 150 to 250 words and four or five keywords.",
+  "source": {
+    "name": "Universitetsforlaget, Forfatterveiledning for forskningsbøker med åpen tilgang",
+    "url": "https://www.universitetsforlaget.no/forfatter/forfatterveiledning/manusmal-for-apen-tilgang",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: margins, paragraph style, alignment, hyphenation, the typographic form of headings (Word's standard heading styles are asked for), block quotations, size and spacing of notes, the heading and layout of the reference list, page numbers, anonymisation. The page size is not stated: A4 was chosen for a Norwegian publisher. The font is 'Times New Roman or equivalent'. Of the three levels of heading the first is the title of the chapter. Headings are 'as a main rule' not numbered. Emphasis is by italics, not bold or underlining. Notes may be footnotes or endnotes, numbered in arabic numerals (footnotes entered). The abstract stands between the title and the introduction, the keywords below it; chapters in Norwegian, Swedish or Danish have both in the original language as well. Reference lists are alphabetical and stand at the end of each chapter. The reference style is chosen by the editor of the volume or the author, so none is given. The publisher's general guide for authors differs: there layout is declared unimportant and paragraphs are parted by blank lines."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 1.5,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "limits": {
+    "words": 8000,
+    "abstractWords": 250,
+    "keywords": 5,
+    "note": "A chapter should as a rule be 6000-8000 words; the length of the whole is agreed with the publisher. English abstract of 150-250 words and 4-5 English keywords for every chapter."
+  }
+}

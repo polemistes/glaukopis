@@ -1,0 +1,79 @@
+{
+  "id": "journal-of-biblical-literature",
+  "name": "Journal of Biblical Literature",
+  "kind": "journal",
+  "description": "Articles for the Journal of Biblical Literature: a standard 12-point font, double-spaced, footnotes included; block quotations of five or more lines single-spaced; footnotes in SBL style with no bibliography and no cover page; anonymised, at most 10,000 words.",
+  "source": {
+    "name": "Journal of Biblical Literature, Submission Guidelines (rev. 2026-03-27)",
+    "url": "https://jbl.scholasticahq.com/for-authors",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: alignment, paragraph indent, hyphenation, headings, the indent of block quotations, keywords, page numbers, line numbers. The page size is not stated: letter was chosen for a North American journal. Margins are '1 to 1.25 inches on all sides' (1 inch entered). The font is 'a standard 12-point font ... such as Times New Roman'. Block quotations are in the font and size of the text, without quotation marks. One note per sentence, at its end; no endnotes. No bibliography is sent in with the submission, full details being given at the first citation of each source: the bibliography values are the general default. The abstract is entered at submission. The author's own work is not cited and acknowledgements are left out. Reference style: the SBL Handbook of Style, 2nd ed., traditional footnote style, supplemented by the Chicago Manual, 17th ed.; manuscripts using author-date are returned. Hebrew and Greek in Unicode fonts such as SBL Hebrew and SBL Greek. Submission as searchable PDF, not Word. American spelling."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "1in",
+    "marginBottom": "1in",
+    "marginLeft": "1in",
+    "marginRight": "1in"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 1,
+    "italic": false,
+    "fromLines": 5
+  },
+  "notes": { "kind": "footnotes", "size": 12, "lineSpacing": 2, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "society-of-biblical-literature-fullnote-bibliography",
+  "limits": {
+    "words": 10000,
+    "abstractWords": 200,
+    "note": "At most 10,000 words including footnotes, roughly 38-40 pages. Abstract of no more than 200 words."
+  }
+}

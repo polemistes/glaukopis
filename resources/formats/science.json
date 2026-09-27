@@ -1,0 +1,72 @@
+{
+  "id": "science",
+  "name": "Science",
+  "kind": "journal",
+  "description": "Research articles for Science: letter paper, Times New Roman, single-spaced throughout, references and notes in one numbered list, an abstract of 125 words or less and at most 3,000 words of main text.",
+  "source": {
+    "name": "Science, Instructions for preparing an initial manuscript (AAAS)",
+    "url": "https://www.science.org/content/page/instructions-preparing-initial-manuscript",
+    "checked": "2025-08-10",
+    "confidence": "medium",
+    "notes": "Read from Internet Archive snapshots of 2025-08-10 (this page) and 2025-05-31 (general information for authors); the live pages refused automated requests, so the values may have changed. Not specified, and taken from the general default: margins (a Word template is provided), font size, alignment, paragraph indent, hyphenation, the form and numbering of headings (the main text is divided into sections 'with brief subheadings'), block quotations, size of notes, page numbers, line numbers, keywords, anonymisation. Times New Roman is recommended ('For best results'). Spacing is single throughout, captions and reference list included. Notes are not set at the foot of the page: they stand with the references in one numbered list, 'References and Notes'. That single list cannot be expressed here: notes are entered as endnotes, under the general default heading, and the list of references bears the journal's heading. There is no separate title page: title, authors and affiliations stand at the top of the first page, and each part opens with a fixed label ('Title:', 'Authors:', 'Abstract:', 'Main Text:'). The title has at most 96 characters. Word (.docx) is preferred."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 1,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "endnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "References and Notes",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 1,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "science",
+  "limits": {
+    "words": 3000,
+    "abstractWords": 125,
+    "note": "Research Articles at most 3,000 words of main text, with 3 to 5 display items and about 50 references; up to 6,000 words in the extended online format. Abstract of 125 words or less."
+  }
+}

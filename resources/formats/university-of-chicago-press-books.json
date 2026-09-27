@@ -1,0 +1,67 @@
+{
+  "id": "university-of-chicago-press-books",
+  "name": "University of Chicago Press (books)",
+  "kind": "publisher",
+  "description": "Book manuscripts for the University of Chicago Press: minimal formatting, headings told apart by size (18, 16 and 14 points, bold), notes made with the word processor's note function, a title page, and Chicago style for references.",
+  "source": {
+    "name": "University of Chicago Press, Manuscript Preparation Guidelines",
+    "url": "https://press.uchicago.edu/resource/emsguide.html",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The Press page states almost no layout values; confidence is high only for what it states: the heading sizes (a recommendation, given for 12-point text), left-indented extracts, linked notes, the title page, and Chicago style. Two values are not from the Press page but from the Chicago Manual's free Q&A pages, which speak of manuscripts in general: margins of 1 inch ('a typical default setting') and double spacing of everything, 'even notes and block quotations'. Not specified, and taken from the general default: typeface and size, paragraph indent, alignment, hyphenation, alignment and numbering of headings, the block-quotation threshold, the size of notes, position of page numbers (every page must be numbered), running head. The page size is not stated: letter was chosen for a North American publisher. Notes may be footnotes or endnotes (footnotes entered). References may be notes or author-date, not mixed (notes entered; 'chicago-author-date' is the other). Abstracts are to be removed from the chapters of edited volumes, so none is shown. All text goes in one Word file; each table and figure in a file of its own."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "1in",
+    "marginBottom": "1in",
+    "marginLeft": "1in",
+    "marginRight": "1in"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 18, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 16, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": false,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 2, "italic": false },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 2, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "chicago-notes-bibliography"
+}

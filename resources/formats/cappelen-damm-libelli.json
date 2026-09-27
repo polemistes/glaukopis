@@ -1,0 +1,79 @@
+{
+  "id": "cappelen-damm-libelli",
+  "name": "Cappelen Damm Forskning: Libelli",
+  "kind": "publisher",
+  "description": "The series Libelli from Cappelen Damm Forskning (NOASP): Calibri 12 with spacing of 1.5, headings of 16 and 14 points, endnotes, quotations of over three lines set off in single-spaced 10-point type, and Chicago short notes with a full bibliography.",
+  "source": {
+    "name": "Cappelen Damm Forskning, Forfatterveiledning Libelli",
+    "url": "https://cdforskning.no/cdf/libelli_forfatterveiledning",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "These are the rules of one series. The publisher's general guide for authors prescribes no layout, and its other series (Kunst og kultur i opplæring) differs on almost every value. Not specified, and taken from the general default: margins, the amount of indentation, hyphenation, the weight and numbering of headings (only their sizes are stated: headings 16, subheadings 14), the indent of block quotations, size and spacing of notes, layout of the bibliography, the position of page numbers (pages must be numbered). The page size is not stated: A4 was chosen for a Norwegian publisher. The font is 'Calibri or equivalent'. The left margin is straight. Every new paragraph is indented, but not the one after a heading. Quotations of over three lines, unless a single sentence, are set off (entered as from 4 lines). An anonymised manuscript is sent in together with the original. The abstract is in English, in italics, before the introduction. Double quotation marks for the titles of articles; single for a quotation within a quotation."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Calibri", "size": 12 },
+  "text": {
+    "lineSpacing": 1.5,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 16, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 10,
+    "lineSpacing": 1,
+    "italic": false,
+    "fromLines": 4
+  },
+  "notes": { "kind": "endnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "chicago-shortened-notes-bibliography",
+  "limits": {
+    "words": 35000,
+    "abstractWords": 250,
+    "keywords": 7,
+    "note": "50-100 standard pages (17,500-35,000 words), notes, bibliography and illustrations included. English abstract of 150-250 words; 5-7 English keywords."
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "id": "taylor-francis-journals",
+  "name": "Taylor & Francis journals",
+  "kind": "publisher",
+  "description": "The general layout for articles sent to Taylor & Francis journals: Times New Roman 12, double spacing, margins of at least 2.5 cm, and five levels of heading of which the fourth and fifth run into the paragraph.",
+  "source": {
+    "name": "Taylor & Francis Author Services, Journal manuscript layout guide",
+    "url": "https://authorservices.taylorandfrancis.com/publishing-your-research/writing-your-paper/journal-manuscript-layout-guide/",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The instructions of the journal itself take precedence, and many Taylor & Francis journals accept submissions in any format. Not specified, and taken from the general default: paragraph style, alignment, hyphenation, size and numbering of headings, size of the title, block quotations, notes, layout of the reference list, page numbers, anonymisation. The page size is not stated: A4 was chosen for a British publisher. Margins are 'at least 2.5cm (1 inch)'. Headings and title take capitals only for the first word and proper nouns. The abstract is marked by a heading or a smaller size of type. Keywords: 'aim for five or six' where the journal gives no number. Running heads are not required at submission. Reference style and spelling are the journal's own, so no reference style is given."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": true, "italic": true, "align": "left", "case": "none", "runIn": true, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": true, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "limits": {
+    "keywords": 6,
+    "note": "Five or six keywords where the journal gives no number. Limits on length and abstract are the journal's own."
+  }
+}

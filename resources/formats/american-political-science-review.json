@@ -1,0 +1,71 @@
+{
+  "id": "american-political-science-review",
+  "name": "American Political Science Review",
+  "kind": "journal",
+  "description": "Manuscripts for the American Political Science Review: 12-point type, double-spaced main text, footnotes and not endnotes, page numbers on all pages, Chicago author-date references; anonymised, with an abstract of 150 words or less.",
+  "source": {
+    "name": "American Political Science Review, author instructions: Preparing your materials (Cambridge University Press)",
+    "url": "https://www.cambridge.org/core/journals/american-political-science-review/information/author-instructions/preparing-your-materials",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The journal does not require first submissions to keep to its stylistic requirements. Not specified, and taken from the general default: margins, typeface, alignment, paragraph indent, hyphenation, headings, block quotations, size and spacing of notes (double spacing is 'not necessary' for footnotes and references), the heading and layout of the reference list (the source speaks of the 'reference list'; 'References' is entered), the position of page numbers, keywords, line numbers. The page size is not stated: letter was chosen for a North American journal. The type is 12 points for the main text and appendices. Footnotes are not for simple citations. A word count stands on the front page. Own work is cited sparingly and in the third person, and self-citations are not redacted. Reference style: the Chicago Manual, 17th ed., author-date."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "References",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "chicago-author-date-17th-edition",
+  "limits": {
+    "abstractWords": 150,
+    "note": "No strict limit on length: most articles are under 11,000 words and research notes under 7,000. The count includes tables, figures and footnotes, and excludes the reference list and supplementary material. Abstract of 150 words or less."
+  }
+}

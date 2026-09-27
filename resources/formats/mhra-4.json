@@ -1,0 +1,73 @@
+{
+  "id": "mhra-4",
+  "name": "MHRA Style Guide 4",
+  "kind": "style-guide",
+  "description": "Copy prepared as the MHRA Style Guide, 4th edition (2024) asks: a serif font in one size throughout, double or one-and-a-half spacing, few levels of heading, and prose quotations of more than forty words set off as a block without quotation marks.",
+  "source": {
+    "name": "MHRA Style Guide, 4th ed. (2024), chapters 1, 2, 7 and 8",
+    "url": "https://www.mhra.org.uk/style/",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The guide is deliberately sparing about layout ('Do not overdesign your copy'). Not specified, and taken from the general default: margins, font size (12), alignment, hyphenation, the amount of indentation, whether headings are numbered, the position of page numbers (which must be visible), the layout of the bibliography, title page, abstract and keywords (left to the journal or series). The page size is not stated: A4 was chosen for a British source. The source asks for 'a serif font such as Times New Roman', in one size throughout, notes and long quotations included: hence 12 for notes, headings and title. Line spacing may be double or 1.5 (double entered). A new paragraph may be shown by indentation or by more space (indentation entered). Headings are to be told apart 'for instance, by putting headings in bold and subheadings in italics'; excessive levels are to be avoided. Quotations: prose of more than forty words (entered as from 41) or verse of more than two lines. Notes may be footnotes or endnotes, as the publisher decides (footnotes entered). References may be in notes or author-date, on an equal footing; the notes style is given, and 'mhra-author-date' is the other."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 12,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0,
+    "italic": false,
+    "fromWords": 41
+  },
+  "notes": { "kind": "footnotes", "size": 12, "lineSpacing": 2, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "mhra-notes"
+}

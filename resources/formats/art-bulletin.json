@@ -1,0 +1,77 @@
+{
+  "id": "art-bulletin",
+  "name": "The Art Bulletin",
+  "kind": "journal",
+  "description": "Articles for The Art Bulletin (College Art Association): Times New Roman 12 for everything, all copy double-spaced and aligned left, endnotes in Chicago style with no bibliography, quotations of 50 words or more set off; anonymised, at most 16,000 words.",
+  "source": {
+    "name": "College Art Association, The Art Bulletin submissions, Preparing an Accepted Manuscript for Publication, and CAA Publications Style Guide (2021)",
+    "url": "https://www.collegeart.org/publications/art-bulletin/submissions",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: margins, paragraph indent, the number, size and numbering of heading levels, the weight of the title, the indent of block quotations, the position of page numbers (all pages must be numbered), keywords, line numbers. The page size is not stated: letter was chosen for a North American journal. Headings: the source says only that bold may be used for section subheads, and that 'Introduction' and 'Conclusion' are not used as subheads; one level is entered. Everything is double-spaced: abstract, text, block quotations, notes, captions. Notes are always endnotes. No bibliography is wanted: the bibliography values are the general default. The author's name stands only on a separate cover sheet (with a biography of 50 words, addresses and the word count); the title is repeated on the first page of the text, so the title is placed at the top. Reference style: the Chicago Manual, notes form, with CAA's exceptions. The two CAA documents disagree on the edition: the preparation page, which is the newer, names the 18th, the style guide of 2021 the 17th; the 18th is given. Word files only. American spelling."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 12,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 2,
+    "italic": false,
+    "fromWords": 50
+  },
+  "notes": { "kind": "endnotes", "size": 12, "lineSpacing": 2, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "chicago-notes-bibliography",
+  "limits": {
+    "words": 16000,
+    "abstractWords": 100,
+    "note": "At most 16,000 words including endnotes. Abstract of 100 words. The title, subtitle included, has at most 85 characters. At most 20 figures."
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "id": "language-submission",
+  "name": "Language (submission for review)",
+  "kind": "journal",
+  "description": "Manuscripts sent to Language (Linguistic Society of America) for review: double-spaced throughout and anonymised, with an abstract of at most 200 words and five to seven keywords; at most 18,000 words.",
+  "source": {
+    "name": "Language, author instructions (Cambridge University Press), with the LSA Journals Style Sheet",
+    "url": "https://www.cambridge.org/core/journals/language/information/author-instructions/preparing-your-materials",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The Cambridge page governs submission: double spacing throughout, anonymisation, abstract, keywords and length are from it. Page size, margins, 12-point type, alignment to the left, the form of headings, the quotation rule, endnotes and the place of page numbers are from the LSA Journals Style Sheet, which governs the accepted manuscript and says of itself that it need not be followed in manuscripts submitted for review; they are entered so that little has to change after acceptance. Not specified, and taken from the general default: typeface (the style sheet asks for a simple roman face and prefers Doulos SIL for phonetic symbols), paragraph indent, hyphenation, the weight of the title, the indent of block quotations, the layout of the reference list, line numbers. Headings: at most two numbered levels (1, 2.3); the number and its period are bold, the heading itself is in small capitals with only the first word capitalised, and it runs into the first line of the section. Quotations of 'more than about forty words' are indented, without quotation marks (entered as from 40). Notes are endnotes, placed after the references, and not for citations alone. Pages are numbered at the upper right, with no other headers or footers. Reference style: the journal's pages call it the 'LSA Journals Referencing Style'; the style the index holds under the title 'Language' is given. Whether it is the same as the Unified Style Sheet for Linguistics was not checked. American spelling; single quotation marks. Submission is as PDF, with figures and tables in place."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "1in",
+    "marginBottom": "1in",
+    "marginLeft": "1in",
+    "marginRight": "1in"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": true,
+    "levels": [
+      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "smallcaps", "runIn": true, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": false, "italic": false, "align": "left", "case": "smallcaps", "runIn": true, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 12,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0,
+    "italic": false,
+    "fromWords": 40
+  },
+  "notes": { "kind": "endnotes", "size": 12, "lineSpacing": 2, "title": "Notes" },
+  "bibliography": {
+    "title": "References",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "top-right", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "language",
+  "limits": {
+    "words": 18000,
+    "abstractWords": 200,
+    "keywords": 7,
+    "note": "Research articles ideally at most 12,000 words and never more than 18,000, including notes, charts, tables and appendices but excluding references; research reports under 9,000. Abstract of at most 200 words; 5-7 keywords."
+  }
+}

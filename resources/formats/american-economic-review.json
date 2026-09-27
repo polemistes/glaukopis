@@ -1,0 +1,71 @@
+{
+  "id": "american-economic-review",
+  "name": "American Economic Review",
+  "kind": "journal",
+  "description": "Manuscripts for the American Economic Review: 11-point type with spacing of 1.5 and one-inch margins, the layout by which the journal measures length; sections numbered in roman numerals, footnotes, no title page, and an abstract of 100 words or fewer.",
+  "source": {
+    "name": "American Economic Association, AER Submission Guidelines, Style Guide, and Accepted Articles: Manuscript Preparation Guidelines",
+    "url": "https://www.aeaweb.org/journals/aer/submissions",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The style guide is required for accepted articles and optional at submission. Margins, type size and line spacing are not rules in themselves: they are the layout in which the journal states its recommended length, '40 pages when formatted using 11-point font, 1.5 spacing, and 1-inch margins, or 45 pages when formatted using 12-point font' (the first is entered). Not specified, and taken from the general default: typeface, alignment, paragraph indent, hyphenation, the typographic form of headings, block quotations, size and spacing of notes, the heading and layout of the reference list (the source speaks of 'references'; 'References' is entered), page numbers, keywords, line numbers. The page size is not stated: letter was chosen for a North American journal. Headings are numbered in outline form, roman numerals for main sections and capital letters for the first subsections; numbering here is in the application's own form. The introduction has no heading. There is no title page: title, byline and affiliations stand at the top of the first page, with a footnote of acknowledgement. The source does not speak of anonymisation. Appendices in the paper come before the references. Reference style: 'Chicago Manual Author-Date', the edition not named. Submission as PDF."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "1in",
+    "marginBottom": "1in",
+    "marginLeft": "1in",
+    "marginRight": "1in"
+  },
+  "font": { "family": "Times New Roman", "size": 11 },
+  "text": {
+    "lineSpacing": 1.5,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": true,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "References",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "chicago-author-date",
+  "limits": {
+    "abstractWords": 100,
+    "note": "The limit is stated in pages: it is strongly recommended that manuscripts not exceed 40 pages in 11-point type, or 45 in 12-point, with 1.5 spacing and 1-inch margins, figures, tables, references and appendices included. Abstract of 100 words or fewer."
+  }
+}

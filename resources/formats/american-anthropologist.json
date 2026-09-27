@@ -1,0 +1,72 @@
+{
+  "id": "american-anthropologist",
+  "name": "American Anthropologist",
+  "kind": "journal",
+  "description": "Manuscripts for American Anthropologist: Times New Roman 12, double-spaced and aligned left, endnotes and not footnotes, Chicago author-date references; anonymised, and at most 8,000 words at first submission.",
+  "source": {
+    "name": "American Anthropologist, Submitting to the Journal",
+    "url": "https://www.americananthropologist.org/how-to-submit",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: margins, paragraph indent, hyphenation, headings, block quotations, size and spacing of notes, the heading and layout of the reference list (the source speaks of 'references'; 'References' is entered), page numbers, keywords, line numbers. The page size is not stated: letter was chosen for a North American journal. The title page, with the authors' details, is a file of its own. The list of references must not be embedded in the endnotes. For review the author's own citations are replaced by 'Author', as in '(Author 2003, 13)', and the entries themselves are removed from the list; this must be done by hand. The file name must not contain the author's name. Reference style: any format at submission; for accepted papers the Chicago Manual, author-date, the edition not named. The AAA's own style guide was not read, and the style the index holds under the Association's name was not compared with it. Word files. Figures and tables preferably at the end of sections; captions and alternative text after the references."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "endnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "References",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "chicago-author-date",
+  "limits": {
+    "words": 8000,
+    "abstractWords": 200,
+    "note": "Research articles at most 8,000 words at first submission, including figures, tables, references and notes, and excluding transcriptions and the abstract; up to 10,500 after acceptance. Abstract of 200 words."
+  }
+}

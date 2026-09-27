@@ -1,0 +1,77 @@
+{
+  "id": "mind",
+  "name": "Mind",
+  "kind": "journal",
+  "description": "Papers for Mind: line spacing of 1.15 or 1.5 and never double, continuous line numbers, sections numbered in arabic numerals with bold headings and italic sub-headings, quotations of about thirty words or more set off; anonymised.",
+  "source": {
+    "name": "Mind, General Instructions (Oxford University Press)",
+    "url": "https://academic.oup.com/mind/pages/General_Instructions",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Read live through an extraction tool and in full from a snapshot of 2026-07-19, which agree. At first submission only a readable manuscript is asked for ('a sensible font, font-size, and margins'), with line numbers and without double spacing; the form of headings, quotations and references is the house style for accepted papers. Not specified, and taken from the general default: margins, typeface and size, alignment, paragraph indent, hyphenation, size of headings, the indent of block quotations, size and spacing of notes, the heading and layout of the reference list, keywords, page numbers at submission (the final file other than the PDF must have no page numbers, headers or footers). The page size is not stated: A4 was chosen for a British journal. Line spacing is 'such as 1.15 or 1.5' (the first is entered). Headings are in sentence case; sub-sub-sections are discouraged and, where used, run into the text: their italic is the general default, not the journal's. Block quotations have extra space above and below and no quotation marks. Footnotes are not for routine citation and should not be long. Review is triple-anonymous: own work is cited in the third person, placeholders such as 'ANONYMIZED' are not accepted, and own works make up at most 25% of the bibliography. Acknowledgements stand in a footnote after the last sentence. Reference style: any consistent format at first submission, the journal's own author-date form after acceptance; the index holds no style under the journal's name, so none is given. British English; single quotation marks."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 1.15,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": true,
+    "levels": [
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": true, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0,
+    "italic": false,
+    "fromWords": 30
+  },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": true,
+  "limits": {
+    "abstractWords": 200,
+    "note": "No formal limit on length (until recently 8,000 words); Discussions about 4,000 words. Abstract of 50-200 words."
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "id": "american-historical-review",
+  "name": "The American Historical Review",
+  "kind": "journal",
+  "description": "Articles for the American Historical Review: Times New Roman 12, double-spaced, on letter paper with one-inch margins; no headings, only section breaks; all references in footnotes of 10 points, with no bibliography; fully anonymised.",
+  "source": {
+    "name": "American Historical Association, AHR article submission page and Style Sheet for Article Authors",
+    "url": "https://www.historians.org/news-publications/american-historical-review/how-to-submit/article-submission/",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The submission page was read live and in a snapshot of 2026-07-10, which agree; the style sheet was read in a snapshot of 2026-03-12. The journal uses NO headings or subheadings, only section breaks marked with #: the heading levels here are the general default and should not be used. Not specified, and taken from the general default: alignment, paragraph indent (the source says only that there is no space between paragraphs), the block-quotation threshold and form, the position of page numbers (pages must be numbered), line numbers. The title page is uploaded as a file of its own, before the main document; the abstract and keywords are entered in the submission form and not in the manuscript, so no abstract is shown. No bibliography or list of works cited is wanted: the bibliography values are the general default. One note per sentence, at its end; notes are not for building on the argument. Reference style: a house style that 'generally follows' the Chicago Manual, 17th ed., notes form, which is given here; the house style adds 'here' before the page cited within a range, and says that the publisher is omitted from book citations, though three of its four examples of books include one. Figures and tables go in separate files; at most 8 figures."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "1in",
+    "marginBottom": "1in",
+    "marginLeft": "1in",
+    "marginRight": "1in"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": false,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "chicago-notes-bibliography-17th-edition",
+  "limits": {
+    "words": 8000,
+    "abstractWords": 200,
+    "keywords": 5,
+    "note": "At most 8,000 words, not counting notes, tables and charts; footnotes should be between 4,000 and 5,000 words. Abstract of 150-200 words and four or five keywords, entered in the submission form."
+  }
+}

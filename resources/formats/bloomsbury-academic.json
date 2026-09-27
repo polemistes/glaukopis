@@ -1,0 +1,74 @@
+{
+  "id": "bloomsbury-academic",
+  "name": "Bloomsbury Academic (books)",
+  "kind": "publisher",
+  "description": "Typescripts for Bloomsbury Academic: at least double-spaced throughout, margins of at least 2.5 cm, page numbers centred at the foot in one sequence, endnotes, and quotations of over sixty words set off as a block.",
+  "source": {
+    "name": "Bloomsbury, Academic House Style for Authors and Editors (PDF of 2016)",
+    "url": "https://www.bloomsbury.com/media/qufna2uj/ba-house-style-for-authors-and-editorssept16.pdf",
+    "checked": "2026-09-27",
+    "confidence": "medium",
+    "notes": "The document dates from 2016 and cites the Chicago Manual's 16th edition, but is still the one Bloomsbury serves; the page that links to it could be confirmed only in an archived copy of 2025-02-19. Lists and imprints 'may have more detailed specifications'. Not specified, and taken from the general default: typeface and size (a Unicode font where possible), alignment, hyphenation, the amount of indentation, the form and numbering of headings (three kinds are named: chapter headings, subheadings, sub-subheadings, with a minimum of capitals), size of notes, layout of the reference list, title page, abstract, keywords. The page size is not stated: A4 was chosen for a British publisher. Spacing is 'at least double', notes and bibliography included, with about 28 lines to a page. The first line of a paragraph is indented, except after a heading. Quotations over sixty words (entered as from 61; forty for poetry and plays) are indented, with space above and below and no quotation marks. Notes are endnotes at the end of the book, or of the chapter in contributed volumes; footnotes only by agreement. References follow Harvard (author-date), with a list headed 'References', or Chicago (short-title notes), with a 'Bibliography' or 'Select Bibliography'; the first is entered, and the reference style is the one the index holds under Bloomsbury's name, which was not compared with the house style. Spelling is UK or US, with -ize in both."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0,
+    "italic": false,
+    "fromWords": 61
+  },
+  "notes": { "kind": "endnotes", "size": 10, "lineSpacing": 2, "title": "Notes" },
+  "bibliography": {
+    "title": "References",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 2,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": false,
+  "style": "bloomsbury-academic"
+}

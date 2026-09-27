@@ -1,0 +1,127 @@
+{
+  "id": "journal-of-hellenic-studies",
+  "name": "The Journal of Hellenic Studies",
+  "kind": "journal",
+  "description": "Articles for The Journal of Hellenic Studies: a generic font, three levels of heading numbered by hand, footnotes with author-date references and a bibliography, quotations of more than four lines set off; anonymised, at most 9,000 words.",
+  "source": {
+    "name": "The Journal of Hellenic Studies, Style Guide (January 2023) and author instructions (Cambridge University Press)",
+    "url": "https://www.hellenicsociety.org.uk/wp-content/uploads/2023/02/JHS-style-guide-2023.pdf",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: margins (only 'ample'), font size, line spacing, alignment, hyphenation, the typographic form of headings, the indent of block quotations, size and spacing of notes, the layout of the bibliography, the position of page numbers (the style guide calls pagination 'essential'), line numbers. The page size is not stated: A4 was chosen for a British journal. The source asks for 'a generic font, such as Arial or Times New Roman'. It says that automatic formatting 'such as paragraph indenting' should be avoided and does not say how paragraphs are to be shown: space between them, of 12pt, is our choice. Headings are numbered by hand as 'I.', 'i.', '1.', and only main headings are required; numbering here is in the application's own form. Quotations of more than four lines of typescript (entered as from 5 lines) are indented, without quotation marks. Long footnotes are to be avoided. The file holds, in order: title, abstract and keywords, text, appendices, bibliography, captions. The file's properties must not name the author. Word files only, not PDF. British spelling with -ize; single quotation marks; no serial comma. Of the fonts the source permits, Times New Roman is entered, being the one most manuscripts in the humanities are set in; any of the others may be chosen in its place."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": {
+    "family": "Times New Roman",
+    "size": 12
+  },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "spaced",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "12pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": true,
+    "levels": [
+      {
+        "size": 14,
+        "bold": true,
+        "italic": false,
+        "align": "left",
+        "case": "none",
+        "runIn": false,
+        "indent": false,
+        "spaceBefore": "24pt",
+        "spaceAfter": "12pt"
+      },
+      {
+        "size": 12,
+        "bold": true,
+        "italic": false,
+        "align": "left",
+        "case": "none",
+        "runIn": false,
+        "indent": false,
+        "spaceBefore": "18pt",
+        "spaceAfter": "6pt"
+      },
+      {
+        "size": 12,
+        "bold": false,
+        "italic": true,
+        "align": "left",
+        "case": "none",
+        "runIn": false,
+        "indent": false,
+        "spaceBefore": "12pt",
+        "spaceAfter": "6pt"
+      }
+    ]
+  },
+  "title": {
+    "placement": "top",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": true
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0,
+    "italic": false,
+    "fromLines": 5
+  },
+  "notes": {
+    "kind": "footnotes",
+    "size": 10,
+    "lineSpacing": 1,
+    "title": "Notes"
+  },
+  "bibliography": {
+    "title": "Bibliography",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": {
+    "show": true,
+    "position": "bottom-center",
+    "firstPage": true
+  },
+  "runningHead": {
+    "content": "none",
+    "text": "",
+    "align": "left",
+    "case": "none"
+  },
+  "lineNumbers": false,
+  "style": "the-journal-of-hellenic-studies",
+  "limits": {
+    "words": 9000,
+    "abstractWords": 200,
+    "keywords": 5,
+    "note": "Normally at most 9,000 words including footnotes. Abstract of at most 200 words; up to 5 keywords."
+  }
+}

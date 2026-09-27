@@ -1,0 +1,68 @@
+{
+  "id": "plos-one",
+  "name": "PLOS ONE",
+  "kind": "journal",
+  "description": "Manuscripts for PLOS ONE: double-spaced in any standard font, with page numbers and continuous line numbers, a title page as the first page, at most three levels of heading, no footnotes, and an abstract of at most 300 words.",
+  "source": {
+    "name": "PLOS ONE, Submission Guidelines",
+    "url": "https://journals.plos.org/plosone/s/submission-guidelines",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: margins, typeface and size ('a standard font size and any standard font, except for the font named Symbol'), alignment, paragraph indent, hyphenation, the form and numbering of headings, block quotations, the layout of the reference list (the source speaks of the 'reference list'; 'References' is entered), the position of page numbers, keywords. The page size is not stated: letter was chosen for a North American journal. FOOTNOTES ARE NOT PERMITTED: what would be a note goes into the text or the reference list; the values for notes are the general default and should not be used. The text is in one column. The title page bears title, authors and affiliations; the full title has at most 250 characters and is in sentence case. The source does not speak of anonymisation. Figures are not included in the manuscript file. Reference style: Vancouver, numbered in order of citation, numbers in square brackets. DOC, DOCX or RTF; LaTeX as PDF. Submissions are not copyedited."
+  },
+  "page": {
+    "size": "letter",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": { "family": "Times New Roman", "size": 12 },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      { "size": 14, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "24pt", "spaceAfter": "12pt" },
+      { "size": 12, "bold": true, "italic": false, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "18pt", "spaceAfter": "6pt" },
+      { "size": 12, "bold": false, "italic": true, "align": "left", "case": "none", "runIn": false, "indent": false, "spaceBefore": "12pt", "spaceAfter": "6pt" }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 16,
+    "bold": true,
+    "italic": false,
+    "align": "center",
+    "case": "none",
+    "showAuthors": true,
+    "showAffiliations": true,
+    "showDate": false,
+    "showAbstract": true,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords",
+    "anonymous": false
+  },
+  "quote": { "indentLeft": "1.27cm", "indentRight": "0pt", "size": 0, "lineSpacing": 0, "italic": false },
+  "notes": { "kind": "footnotes", "size": 10, "lineSpacing": 1, "title": "Notes" },
+  "bibliography": {
+    "title": "References",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": false,
+    "size": 0
+  },
+  "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
+  "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
+  "lineNumbers": true,
+  "style": "plos",
+  "limits": { "abstractWords": 300, "note": "Manuscripts can be of any length. Abstract of at most 300 words." }
+}
