@@ -11,7 +11,6 @@ import Link2 from '@lucide/svelte/icons/link-2';
 import MoveRight from '@lucide/svelte/icons/move-right';
 import Pencil from '@lucide/svelte/icons/pencil';
 import Plus from '@lucide/svelte/icons/plus';
-import Quote from '@lucide/svelte/icons/quote';
 import Scissors from '@lucide/svelte/icons/scissors';
 import Trash2 from '@lucide/svelte/icons/trash-2';
 import Unlink from '@lucide/svelte/icons/unlink';
@@ -39,8 +38,6 @@ export interface ElementActions {
   select?: (ids: string[]) => void;
   /** Begin an association from the element: the next element clicked is its other end. */
   link?: (id: string) => void;
-  /** Attach a reference: asks which. */
-  attach?: (id: string, anchor: HTMLElement | null) => void;
   /** Show a map, after elements went to it or it was made. */
   openMap?: (id: string) => void;
 }
@@ -173,12 +170,6 @@ export function elementMenu(
       });
     if (actions.rename)
       items.push({ label: 'Rename', shortcut: 'F2', action: () => actions.rename!(one.id) });
-    if (actions.attach)
-      items.push({
-        label: 'Attach a reference…',
-        icon: Quote,
-        action: () => actions.attach!(one.id, anchor),
-      });
     if (actions.link)
       items.push({
         label: 'Associate with…',

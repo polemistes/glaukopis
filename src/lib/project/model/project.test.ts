@@ -180,6 +180,39 @@ describe('working across maps', () => {
   });
 });
 
+describe('references', () => {
+  it('are those that are cited, in the map and in the project', () => {
+    const { p, map, root } = project();
+    const a = p.addChild(root, { title: 'A', body: 'The wrath is sung' })!;
+    const other = p.createMap('Article');
+    const b = p.addChild(p.map(other)!.root, { title: 'B' })!;
+
+    p.cite(a, ['nagy', 'lord']);
+    p.cite(b, ['west']);
+    p.cite(b, ['nagy']);
+    expect(p.node(a)!.cited).toEqual(['nagy', 'lord']);
+    expect(p.node(a)!.words).toBe(4);
+    expect(p.usedReferences(map).sort()).toEqual(['lord', 'nagy']);
+    expect(p.usedReferences(other).sort()).toEqual(['nagy', 'west']);
+    expect(p.usedReferences().sort()).toEqual(['lord', 'nagy', 'west']);
+    expect(p.summary().references).toBe(3);
+
+    // Cited after the text that is there, with a space between; in a text of its own where there is none.
+    const body = p.fragment(a, 'body')!.toString();
+    expect(body).toMatch(/The wrath is sung <citation/);
+    expect(p.fragment(b, 'body')!.toString()).toMatch(
+      /^<paragraph><citation[^>]*><\/citation> ?<citation/,
+    );
+  });
+
+  it('that were attached to elements by an earlier version are passed over', () => {
+    const { p, map, root } = project();
+    p.doc.transact(() => p.yNodes.get(root)!.set('refs', ['nagy', 'c:homer']));
+    expect(p.usedReferences(map)).toEqual([]);
+    expect(p.summary().references).toBe(0);
+  });
+});
+
 describe('undo', () => {
   it('undoes and redoes changes of structure', () => {
     const { p, map, root } = project();

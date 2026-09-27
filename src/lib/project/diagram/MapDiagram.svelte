@@ -5,7 +5,6 @@
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
   import type { KeyAction } from '$lib/editor/plugins';
-  import { editorUi } from '$lib/editor/ui.svelte';
   import { plural } from '$lib/library/format';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import type { RectLike } from '$lib/ui/floating';
@@ -489,10 +488,12 @@
     if (payload.kind === 'references') {
       const target = hit(world);
       if (!target) return;
-      for (const ref of payload.data as string[]) {
-        project.attach(target, ref);
-        onkeep(ref);
-      }
+      // A reference dropped on an element is cited at the end of its text.
+      const refs = payload.data as string[];
+      project.checkpoint();
+      project.cite(target, refs);
+      project.checkpoint();
+      for (const ref of refs) onkeep(ref);
       select([target]);
       return;
     }
@@ -702,21 +703,6 @@
     edit: (id) => open(id),
     select,
     link: (id) => (linkFrom = id),
-    attach: (id, anchor) => {
-      const p = lay.placed.get(id);
-      editorUi.pick({
-        anchor:
-          anchor?.getBoundingClientRect() ??
-          (p ? screenRect(p) : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 }),
-        exclude: project.node(id)?.refs ?? [],
-        purpose: 'Attach a reference to this element',
-        onpick: (ref) => {
-          editorUi.closePicker(false);
-          project.attach(id, ref);
-          onkeep(ref);
-        },
-      });
-    },
     openMap: (id) => onopenmap(id),
   };
 

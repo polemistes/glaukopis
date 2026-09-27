@@ -38,9 +38,6 @@
   import ReferencePanel from './ReferencePanel.svelte';
   import MapText from './text/MapText.svelte';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
-  import { documentReadable } from '$lib/api/documents';
-  import { buildDocument } from './model/document';
-  import { afterSave } from '$lib/state/projects.svelte';
 
   let { projectId }: { projectId: string } = $props();
 
@@ -75,25 +72,12 @@
 
   const pane = $derived(panes[Math.min(focused, panes.length - 1)]);
 
-  /** Beside the project, every map is kept as Markdown, to be read without this application. */
   // The view is made anew for every project, so the id is the same throughout;
   // it is kept here because it is needed after the view has gone.
   // svelte-ignore state_referenced_locally
   const ownId = projectId;
 
-  function writeReadable(id: string, p: Project) {
-    if (id !== ownId) return;
-    const maps = p.maps.map((m): [string, ReturnType<typeof buildDocument>] => [
-      m.name,
-      buildDocument(p, m.id),
-    ]);
-    documentReadable(id, maps).catch((error) =>
-      console.warn('the readable copies were not written', error),
-    );
-  }
-
   onMount(async () => {
-    afterSave.push(writeReadable);
     library.load();
     try {
       // svelte-ignore state_referenced_locally
@@ -174,15 +158,7 @@
 
   onDestroy(() => {
     release?.();
-    const done = () => {
-      const at = afterSave.indexOf(writeReadable);
-      if (at >= 0) afterSave.splice(at, 1);
-    };
-    if (project)
-      void leave(project)
-        .then(() => projects.load())
-        .finally(done);
-    else done();
+    if (project) void leave(project).then(() => projects.load());
   });
 
   function viewToStore(): StoredView {
@@ -287,8 +263,8 @@
   }
 
   /**
-   * Files dropped from the desktop are taken into the library, and their
-   * references attached to the element they were dropped on.
+   * Files dropped from the desktop are taken into the library. Dropped on an
+   * element, their references are cited at the end of its text.
    */
   async function filesDropped(event: DropEvent) {
     const at = document
@@ -299,16 +275,14 @@
     const p = project;
     if (!outcome?.concerned?.length || !element || !p || !p.node(element)) return;
     p.checkpoint();
-    for (const id of outcome.concerned) {
-      p.attach(element, id);
-      keep(id);
-    }
+    p.cite(element, outcome.concerned);
     p.checkpoint();
+    for (const id of outcome.concerned) keep(id);
     const name = p.node(element)?.title || 'the element';
     notify(
       outcome.concerned.length === 1
-        ? `The reference was attached to “${name}”`
-        : `${outcome.concerned.length} references were attached to “${name}”`,
+        ? `The reference is cited in “${name}”`
+        : `${outcome.concerned.length} references are cited in “${name}”`,
     );
   }
 

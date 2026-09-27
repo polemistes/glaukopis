@@ -102,13 +102,14 @@
       <EmptyState
         compact
         title="No references yet"
-        text={'Type @ while writing to cite a work, or drag references from the library onto an element.'}
+        text={'What you cite while writing is listed here. To cite, choose Cite over the text, or type @.'}
       />
     {/if}
   </div>
 
   <footer>
-    Drag a reference into the text to cite it, or onto an element to attach it.
+    Drag a reference into a text to cite it there, or onto an element to cite it at the end of its
+    text.
     {#if foreign && scope !== 'library'}
       <br />{foreign} in this project {foreign === 1 ? 'is' : 'are'} not in your library.
     {/if}

@@ -333,7 +333,6 @@ export class Project {
       elements.set(n.map, (elements.get(n.map) ?? 0) + 1);
       words += n.words;
       for (const id of n.cited) references.add(id);
-      for (const id of n.refs) if (!id.startsWith('c:')) references.add(id);
     }
     return {
       name: this.name || undefined,
@@ -391,7 +390,6 @@ export class Project {
     const facts = bodyFacts(readBody(n.get('body') as Y.XmlFragment | undefined));
     const pos = n.get('pos') as Position | null | undefined;
     const side = n.get('side');
-    const refs = n.get('refs');
     const origin = n.get('origin') as NodeRecord['origin'] | undefined;
     this.nodes.set(id, {
       id,
@@ -404,7 +402,6 @@ export class Project {
       heading: n.get('heading') !== false,
       excluded: n.get('excluded') === true,
       include: (n.get('include') as string | null | undefined) || null,
-      refs: Array.isArray(refs) ? (refs as string[]).filter((r) => typeof r === 'string') : [],
       origin: origin && origin.map && origin.node ? origin : null,
       title: inlineText(title).trim(),
       titleHtml: titleHtml(title),
@@ -484,13 +481,12 @@ export class Project {
     return this.links.filter((l) => l.from === nodeId || l.to === nodeId);
   }
 
-  /** Ids of all references the project uses: cited, attached, or added to the project. */
+  /** Ids of the references that are cited in the project, or in one of its maps. */
   usedReferences(mapId?: string): string[] {
     const out = new Set<string>();
     for (const n of this.nodes.values()) {
       if (mapId && n.map !== mapId) continue;
       for (const id of n.cited) out.add(id);
-      for (const id of n.refs) if (!id.startsWith('c:')) out.add(id);
     }
     return [...out];
   }
@@ -1079,25 +1075,32 @@ export class Project {
     return doomed.size;
   }
 
-  // ---- references on elements ----
+  // ---- references ----
 
-  attach(id: string, ref: string) {
-    const n = this.yNodes.get(id);
-    if (!n) return;
-    const current = this.node(id)?.refs ?? [];
-    if (current.includes(ref)) return;
-    this.transact(() => n.set('refs', [...current, ref]));
-  }
-
-  detach(id: string, ref: string) {
-    const n = this.yNodes.get(id);
-    if (!n) return;
-    const current = this.node(id)?.refs ?? [];
-    if (!current.includes(ref)) return;
+  /**
+   * Cites works at the end of the text of an element: for a reference that
+   * is dropped on an element, where there is no cursor to say where.
+   */
+  cite(id: string, refs: string[]) {
+    const body = this.fragment(id, 'body');
+    if (!body || !refs.length) return;
     this.transact(() => {
-      const next = current.filter((r) => r !== ref);
-      if (next.length) n.set('refs', next);
-      else n.delete('refs');
+      let last = body.length ? body.get(body.length - 1) : null;
+      if (!(last instanceof Y.XmlElement) || last.nodeName !== 'paragraph') {
+        last = new Y.XmlElement('paragraph');
+        body.insert(body.length, [last]);
+      }
+      const paragraph = last as Y.XmlElement;
+      const end = paragraph.length ? paragraph.get(paragraph.length - 1) : null;
+      if (end instanceof Y.XmlText) {
+        if (end.length && !/\s$/.test(end.toString())) end.insert(end.length, ' ', {});
+      } else if (end) {
+        paragraph.insert(paragraph.length, [new Y.XmlText(' ')]);
+      }
+      const citation = new Y.XmlElement('citation');
+      citation.setAttribute('items', refs.map((ref) => ({ id: ref })) as unknown as string);
+      citation.setAttribute('mode', 'normal');
+      paragraph.insert(paragraph.length, [citation]);
     });
   }
 

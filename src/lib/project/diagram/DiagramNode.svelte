@@ -76,7 +76,7 @@
   });
 
   const title = $derived(project.fragment(node.id, 'title'));
-  const attached = $derived(node.refs.length + node.cited.length);
+  const cited = $derived(node.cited.length);
 
   function action(a: KeyAction, _view: EditorView): boolean {
     if (a === 'enter' || a === 'escape' || a === 'tab') {
@@ -128,11 +128,11 @@
     {/if}
   </div>
 
-  {#if !renaming && (!node.empty || attached || node.include || node.excluded)}
+  {#if !renaming && (!node.empty || cited || node.include || node.excluded)}
     <div class="marks">
       {#if node.include}<span class="mark include"><FileInput size={11} /></span>{/if}
       {#if !node.empty}<span class="mark"><AlignLeft size={11} /></span>{/if}
-      {#if attached}<span class="mark"><Quote size={10} />{attached}</span>{/if}
+      {#if cited}<span class="mark"><Quote size={10} />{cited}</span>{/if}
       {#if node.excluded}<span class="mark"><EyeOff size={11} /></span>{/if}
     </div>
   {/if}

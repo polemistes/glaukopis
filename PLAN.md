@@ -92,7 +92,10 @@ is the same map, maturing. What this needs in order to work in practice:
 - Each entry has a stable identity that survives changes of citation key.
 - **Collections** hold links to entries, never copies. Editing an entry changes
   it everywhere. Collections can be nested.
-- References and collections can be attached to projects and to elements.
+- What is cited in a text is thereby a reference of its map and of the
+  project. (The brief asked for references and collections to be added to
+  projects and elements by hand as well; this was tried, and taken out on
+  2026-09-28 as complexity without use.)
 - **The form** shows the usual fields for the publication type; every other
   BibLaTeX field is one menu away. The raw entry can be edited behind a
   discreet "Source" disclosure.
@@ -180,8 +183,7 @@ library/library.bib          the references
 library/collections.json     collections
 library/attachments/         stored files, by content
 styles/  formats/            the user's own styles and formats
-projects/<id>/               project state, its change log, snapshots,
-                             and a readable Markdown copy of every map
+projects/<id>/               project state, its change log, snapshots
 ```
 
 ## 8. Milestones

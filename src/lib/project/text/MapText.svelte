@@ -19,14 +19,9 @@
   import { pointRect } from '$lib/ui/floating';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
-  import {
-    elementMenu,
-    removeElements,
-    type ElementActions,
-    type ElementsPayload,
-  } from '../elements';
+  import { elementMenu, type ElementActions, type ElementsPayload } from '../elements';
   import type { Project } from '../model/project.svelte';
-  import { isAncestor, subtree } from '../model/tree';
+  import { isAncestor } from '../model/tree';
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import TextSection, { type Part } from './TextSection.svelte';
 
@@ -356,18 +351,6 @@
     edit: (id) => go(id, 'body', 'end'),
     select: (ids) => ids[0] && go(ids[0], 'title', 'start'),
     link: (id) => (linkFrom = id),
-    attach: (id, anchor) => {
-      editorUi.pick({
-        anchor: anchor?.getBoundingClientRect() ?? pointRect(200, 200),
-        exclude: project.node(id)?.refs ?? [],
-        purpose: 'Attach a reference to this element',
-        onpick: (ref) => {
-          editorUi.closePicker(false);
-          project.attach(id, ref);
-          onkeep(ref);
-        },
-      });
-    },
     openMap: (id) => onopenmap(id),
   };
 

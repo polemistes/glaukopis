@@ -66,8 +66,6 @@ export interface NodeRecord {
   excluded: boolean;
   /** A map whose content stands in this element's place in the document. */
   include: string | null;
-  /** References and collections attached to the element: ids, collections prefixed "c:". */
-  refs: string[];
   /** Where the element was copied from. */
   origin: Origin | null;
 

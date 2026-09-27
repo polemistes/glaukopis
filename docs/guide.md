@@ -64,8 +64,8 @@ are curved. To make one, right-click an element, choose **Associate with…**,
 and click the other element. An association can be given a few words that say
 what it is.
 
-An element that has text shows a small mark. One that has references
-attached shows how many.
+An element that has text shows a small mark, and the number of works its
+text cites.
 
 ## The text
 
@@ -86,7 +86,7 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Cite a reference | **Cite**, or type **@**, and begin to type an author or a title |
 | Give the page | Type it when the citation has been chosen: `73`, `73–75` |
 | Write a note | **Note**, or **Ctrl+Alt+F** |
-| Set words in italics or bold | **Ctrl+I**, **Ctrl+B**; or type `*so*`, `**so**` |
+| Set words in italics or bold | The tools, or **Ctrl+I**, **Ctrl+B** |
 | Begin a quotation or a list | Type `> `, `- ` or `1. ` at the start of a line |
 | Make a dash | Type `--` for –, `---` for — |
 | Divide an element in two | Right-click where it is to be divided: **Split here** |
@@ -114,10 +114,12 @@ Click a citation to give it more:
   given;
 - further references, to cite several in one place.
 
-References can also be **attached to an element** without being cited in its
-text: what you mean to read for it, or have read and not yet used. Right-click
-the element and choose **Attach a reference…**, or drag a reference onto it
-from the panel of references (**Ctrl+Shift+R**).
+What you cite is thereby among the references of the map and of the
+project: there is nothing else to do to put it there. The panel of
+references (**Ctrl+Shift+R**) lists them, for this map, for the project, and
+the whole library. A reference dragged from the panel is cited where it is
+dropped in a text; dropped on an element of the diagram, it is cited at the
+end of that element's text.
 
 ## The library
 
@@ -188,7 +190,7 @@ Where the file is dropped decides what becomes of it:
 | --- | --- |
 | The library | A reference is made of it, in the collection in view |
 | A reference that is open | The file is attached to that reference |
-| An element of a map | A reference is made of it, and attached to the element |
+| An element of a map | A reference is made of it, and cited at the end of the element's text |
 
 ### Importing
 
@@ -294,9 +296,9 @@ Files attached to references are not shared; the references themselves are.
 - **Deleted projects** can be brought back, from the line under the projects.
 - **Everything is in one folder**, shown under *Settings*. To keep a copy of
   your work, copy the folder.
-- **Your text can be read without Glaukopis.** Beside each project, in its
-  folder `maps`, every map is kept as a Markdown file, with its headings,
-  notes and citations, and written anew whenever the project is saved.
+- **To read your text without Glaukopis**, export it. The references are in
+  `library.bib` at all times, which other tools can read; the text of a
+  project is in a form that only Glaukopis reads.
 
 ## Keys
 

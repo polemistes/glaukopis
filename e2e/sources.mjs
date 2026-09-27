@@ -321,13 +321,26 @@ try {
     await drop([join(desk, 'article.pdf')], place.x, place.y);
     // It is in the library already: there is nothing to ask.
     const mark = await until(
-      'the reference to be attached',
+      'the reference to be cited',
       () => app.exec(`const m = document.querySelector('.diagram .node.root .marks'); return m ? m.textContent.trim() : null`),
       60000,
     );
     check('without a question where there is nothing to decide', !(await app.exists('dialog[open]')));
-    check('a file dropped on an element attaches its reference to it', mark === '1', mark);
-    await app.screenshot('sources-9-attached');
+    await app.doubleClick('.diagram .node.root');
+    await app.waitFor('.box .text .prose');
+    await sleep(300);
+    const cited = await app.text('.box .text .prose');
+    check('a file dropped on an element is cited in its text', mark === '1' && /Kossinets and Watts 2009/.test(cited), `${mark} · ${cited}`);
+    check('and nothing is attached to the element besides', !(await app.exists('.box .attach, .box .chip')));
+    await app.screenshot('sources-9-cited');
+    await app.press('Escape');
+    await app.waitGone('.box');
+    await app.keys(['Control', 'Shift', 'r']);
+    await app.waitFor('.panel .reference-row, .panel [role="row"], .panel .row', 5000);
+    await sleep(300);
+    await app.screenshot('sources-10-panel');
+    const listed = await app.exec(`return document.querySelector('.panel .body').textContent`);
+    check('what is cited is among the references of the project', /Kossinets/.test(listed) && /Homophily/.test(listed), listed.replace(/\s+/g, ' ').slice(0, 120));
   }
 
   const errors = await app.pageErrors();

@@ -3,10 +3,7 @@
   import GripVertical from '@lucide/svelte/icons/grip-vertical';
   import type { EditorView } from 'prosemirror-view';
   import type { KeyAction } from '$lib/editor/plugins';
-  import { lookup } from '$lib/editor/references.svelte';
   import RichText, { type FocusAt } from '$lib/editor/RichText.svelte';
-  import { shortLabel } from '$lib/library/format';
-  import { library } from '$lib/state/library.svelte';
   import { blocksHtml } from '../model/html';
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
@@ -85,15 +82,6 @@
     return body ? blocksHtml(readBody(body)) : '';
   });
   const included = $derived(node.include ? project.map(node.include) : undefined);
-  const attached = $derived(
-    node.refs
-      .map((r) =>
-        r.startsWith('c:')
-          ? (library.collection(r.slice(2))?.name ?? '')
-          : ((l) => (l ? shortLabel(l) : ''))(lookup(r)),
-      )
-      .filter(Boolean),
-  );
 
   $effect(() => {
     onready?.(node.id, active ? { title: titleEditor, body: bodyEditor } : null);
@@ -198,10 +186,6 @@
         <div class="prose body static blank">&nbsp;</div>
       {/if}
     </div>
-
-    {#if attached.length}
-      <div class="attached">{attached.join(' · ')}</div>
-    {/if}
   </div>
 </section>
 
@@ -452,15 +436,5 @@
   }
   .include:hover {
     background: var(--paper-hover);
-  }
-  .attached {
-    margin-top: 0.35em;
-    font-family: var(--font-ui);
-    font-size: 11.5px;
-    color: var(--ink-4);
-  }
-  .attached::before {
-    content: '❝ ';
-    color: var(--ink-4);
   }
 </style>

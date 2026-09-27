@@ -13,7 +13,8 @@
 
   // Files dragged in from the desktop. Where they are dropped decides what
   // becomes of them: on a reference they are attached to it, on an element of
-  // a map their references are; anywhere else they are taken into the library.
+  // a map their references are cited in it; anywhere else they are taken
+  // into the library.
   onMount(() => {
     if (!inTauri) return;
     let files: DragPayload | null = null;

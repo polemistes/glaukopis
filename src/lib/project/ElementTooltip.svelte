@@ -1,8 +1,5 @@
 <script lang="ts">
   import * as Y from 'yjs';
-  import { lookup } from '$lib/editor/references.svelte';
-  import { shortLabel } from '$lib/library/format';
-  import { library } from '$lib/state/library.svelte';
   import { place, type RectLike } from '$lib/ui/floating';
   import { blocksHtml, excerpt } from './model/html';
   import type { Project } from './model/project.svelte';
@@ -28,18 +25,7 @@
     return { html: blocksHtml(blocks), cut };
   });
   const included = $derived(node?.include ? project.map(node.include) : undefined);
-  const refs = $derived(
-    (node?.refs ?? [])
-      .map((r) =>
-        r.startsWith('c:')
-          ? (library.collection(r.slice(2))?.name ?? '')
-          : ((l) => (l ? shortLabel(l) : ''))(lookup(r)),
-      )
-      .filter(Boolean),
-  );
-  const worth = $derived(
-    !!node && (!node.empty || !!included || refs.length > 0 || !node.heading || node.excluded),
-  );
+  const worth = $derived(!!node && (!node.empty || !!included || !node.heading || node.excluded));
 
   $effect(() => {
     if (el && worth) place(el, anchor, { side: 'bottom', align: 'center', gap: 10 });
@@ -54,10 +40,9 @@
       <div class="prose">{@html content.html}</div>
       {#if content.cut}<div class="more">Double-click to read on</div>{/if}
     {/if}
-    {#if included || refs.length || !node.heading || node.excluded}
+    {#if included || !node.heading || node.excluded}
       <div class="facts" class:alone={!content.html}>
         {#if included}<div>Stands for the map “{included.name}”</div>{/if}
-        {#if refs.length}<div>{refs.join(' · ')}</div>{/if}
         {#if !node.heading}<div>The name is not printed</div>{/if}
         {#if node.excluded}<div>Left out of the document</div>{/if}
       </div>

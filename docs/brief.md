@@ -47,3 +47,17 @@ What this settles:
 - The editor is to keep the feel it has.
 
 Earlier the same day: commits are made when a piece of work is whole, without asking; packages are made for Arch Linux only, for now.
+
+## 2026-09-28 — three simplifications
+
+> If we are not using Markdown as the main format, we do not need to write Markdown either. I think adding references to the map elements just creates complexity. Just let any reference added in a text add it to the project and the relevant map. When previewing now, it seems the display is redrawing the view every second or something. Is it not sufficient to redraw it when something changes?
+
+Asked which Markdown was meant, the files beside the projects or the signs typed in the editor, the answer was: both.
+
+What this settles:
+
+- No Markdown copies of maps are written. Markdown remains as one of the formats a document can be exported to.
+- Signs such as `*so*` are not turned into italics as they are typed.
+- References are not attached to elements. A reference belongs to a map and to the project by being cited in a text. This replaces "References and collections of references can also be added to projects, and to elements in the mind map" in the initial description.
+- The preview is drawn again when the document changes, and not otherwise.
+

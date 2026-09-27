@@ -1,16 +1,11 @@
 <script lang="ts">
-  import Quote from '@lucide/svelte/icons/quote';
   import X from '@lucide/svelte/icons/x';
   import type { EditorView } from 'prosemirror-view';
   import type { KeyAction } from '$lib/editor/plugins';
-  import { lookup } from '$lib/editor/references.svelte';
   import RichText from '$lib/editor/RichText.svelte';
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import { editorUi } from '$lib/editor/ui.svelte';
-  import { plural, shortLabel } from '$lib/library/format';
-  import { editReference } from '$lib/library/references.svelte';
-  import { library } from '$lib/state/library.svelte';
-  import { dropTarget } from '$lib/ui/drag.svelte';
+  import { plural } from '$lib/library/format';
   import { place, type RectLike } from '$lib/ui/floating';
   import IconButton from '$lib/ui/IconButton.svelte';
   import type { Project } from './model/project.svelte';
@@ -80,25 +75,6 @@
     }
     return false;
   }
-
-  function attach(event: MouseEvent) {
-    editorUi.pick({
-      anchor: (event.currentTarget as HTMLElement).getBoundingClientRect(),
-      exclude: node?.refs ?? [],
-      purpose: 'Attach a reference to this element',
-      onpick: (ref) => {
-        editorUi.closePicker(false);
-        project.attach(id, ref);
-        onkeep(ref);
-      },
-    });
-  }
-
-  function label(ref: string): string {
-    if (ref.startsWith('c:')) return library.collection(ref.slice(2))?.name ?? 'A collection';
-    const found = lookup(ref);
-    return found ? shortLabel(found) : 'Not found';
-  }
 </script>
 
 {#if node && title && text}
@@ -109,15 +85,6 @@
     role="dialog"
     aria-label="Element"
     tabindex="-1"
-    use:dropTarget={{
-      accepts: ['references'],
-      ondrop: (e) => {
-        for (const ref of e.payload.data as string[]) {
-          project.attach(id, ref);
-          onkeep(ref);
-        }
-      },
-    }}
     onkeydown={(e) => e.stopPropagation()}
   >
     <header>
@@ -150,36 +117,9 @@
       />
     </div>
 
-    <footer>
-      <div class="refs">
-        {#each node.refs as ref (ref)}
-          <span class="chip">
-            <button
-              type="button"
-              class="open truncate"
-              onclick={() => !ref.startsWith('c:') && lookup(ref)?.inLibrary && editReference(ref)}
-            >
-              {label(ref)}
-            </button>
-            <button
-              type="button"
-              class="drop"
-              aria-label="Detach {label(ref)}"
-              onclick={() => project.detach(id, ref)}
-            >
-              <X size={11} />
-            </button>
-          </span>
-        {/each}
-        <button type="button" class="attach" onclick={attach}>
-          <Quote size={12} />
-          {node.refs.length ? 'Attach' : 'Attach a reference'}
-        </button>
-      </div>
-      {#if node.words}
-        <span class="count">{plural(node.words, 'word')}</span>
-      {/if}
-    </footer>
+    {#if node.words}
+      <footer><span class="count">{plural(node.words, 'word')}</span></footer>
+    {/if}
   </div>
 {/if}
 
@@ -250,63 +190,6 @@
     border-top: 1px solid var(--line);
     background: var(--paper);
     border-radius: 0 0 var(--radius-l) var(--radius-l);
-  }
-  .refs {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 5px;
-  }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    max-width: 220px;
-    height: 22px;
-    padding-left: 9px;
-    border-radius: 11px;
-    background: var(--accent-softer);
-    color: var(--accent-strong);
-    font-size: var(--text-sm);
-  }
-  .chip button {
-    border: none;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-    padding: 0;
-  }
-  .chip .open:hover {
-    text-decoration: underline;
-  }
-  .chip .drop {
-    display: inline-flex;
-    margin: 0 3px 0 2px;
-    padding: 2px;
-    border-radius: 50%;
-    opacity: 0.6;
-  }
-  .chip .drop:hover {
-    opacity: 1;
-    background: var(--accent-soft);
-  }
-  .attach {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    height: 22px;
-    padding: 0 8px;
-    border: none;
-    border-radius: 11px;
-    background: transparent;
-    color: var(--ink-3);
-    font-size: var(--text-sm);
-    cursor: pointer;
-  }
-  .attach:hover {
-    background: var(--paper-hover);
-    color: var(--ink);
   }
   .count {
     flex: none;
