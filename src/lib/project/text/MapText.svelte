@@ -27,6 +27,7 @@
   } from '../elements';
   import type { Project } from '../model/project.svelte';
   import { isAncestor, subtree } from '../model/tree';
+  import WritingTools from '$lib/editor/WritingTools.svelte';
   import TextSection, { type Part } from './TextSection.svelte';
 
   interface Props {
@@ -42,6 +43,7 @@
 
   const KEPT_ACTIVE = 10;
 
+  let root = $state<HTMLDivElement>();
   let scroller = $state<HTMLDivElement>();
   let column = $state<HTMLDivElement>();
   /** Elements whose editors are there, the most recently used last. */
@@ -630,7 +632,8 @@
   }}
 />
 
-<div class="text-view">
+<div class="text-view" bind:this={root} style:--margin="{marginWidth}px">
+  <div class="tools"><div class="inner"><WritingTools scope={root} /></div></div>
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     bind:this={scroller}
@@ -643,7 +646,49 @@
     onkeydowncapture={onkeydown}
     {oncontextmenu}
   >
-    <div class="page" style:--margin="{marginWidth}px">
+    <div class="page">
+      <!-- The associations stand in the left margin, beside the names they join. -->
+      <div class="margin" aria-label="Associations">
+        <svg width={marginWidth} height={columnHeight} aria-hidden="true">
+          <!-- Drawn from the edge of the text outwards: mirrored, so that the edge is at nought. -->
+          <g transform="translate({marginWidth} 0) scale(-1 1)">
+            {#each brackets as b (b.id)}
+              <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+              <g
+                class="bracket"
+                class:hot={hoveredLink === b.id || current === b.from || current === b.to}
+                onpointerenter={() => (hoveredLink = b.id)}
+                onpointerleave={() => (hoveredLink = null)}
+                onclick={(e) => linkMenu(e, b)}
+                oncontextmenu={(e) => linkMenu(e, b)}
+                use:tooltip={{ text: linkWords(b), side: 'right' }}
+              >
+                <path d={b.path} class="hit" />
+                <path d={b.path} class="line" />
+                <circle cx="1.5" cy={b.top} r="2.2" />
+                <circle cx="1.5" cy={b.bottom} r="2.2" />
+              </g>
+            {/each}
+          </g>
+        </svg>
+        {#if labelling}
+          <input
+            class="label-input"
+            style:top="{labelling.top - 13}px"
+            bind:value={labelling.value}
+            placeholder="How they are related"
+            aria-label="Label of the association"
+            onblur={commitLabel}
+            onkeydown={(e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter') commitLabel();
+              else if (e.key === 'Escape') labelling = null;
+            }}
+            {@attach (el: HTMLInputElement) => el.focus()}
+          />
+        {/if}
+      </div>
+
       <div class="column" bind:this={column}>
         {#each rows as row, i (row.id)}
           {@const node = project.nodes.get(row.id)}
@@ -682,44 +727,6 @@
           {/if}
         {/each}
       </div>
-
-      <div class="margin" aria-label="Associations">
-        <svg width={marginWidth} height={columnHeight} aria-hidden="true">
-          {#each brackets as b (b.id)}
-            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-            <g
-              class="bracket"
-              class:hot={hoveredLink === b.id || current === b.from || current === b.to}
-              onpointerenter={() => (hoveredLink = b.id)}
-              onpointerleave={() => (hoveredLink = null)}
-              onclick={(e) => linkMenu(e, b)}
-              oncontextmenu={(e) => linkMenu(e, b)}
-              use:tooltip={{ text: linkWords(b), side: 'left' }}
-            >
-              <path d={b.path} class="hit" />
-              <path d={b.path} class="line" />
-              <circle cx="1.5" cy={b.top} r="2.2" />
-              <circle cx="1.5" cy={b.bottom} r="2.2" />
-            </g>
-          {/each}
-        </svg>
-        {#if labelling}
-          <input
-            class="label-input"
-            style:top="{labelling.top - 13}px"
-            bind:value={labelling.value}
-            placeholder="How they are related"
-            aria-label="Label of the association"
-            onblur={commitLabel}
-            onkeydown={(e) => {
-              e.stopPropagation();
-              if (e.key === 'Enter') commitLabel();
-              else if (e.key === 'Escape') labelling = null;
-            }}
-            {@attach (el: HTMLInputElement) => el.focus()}
-          />
-        {/if}
-      </div>
     </div>
   </div>
 
@@ -732,11 +739,7 @@
       <span>{plural(totals.words, 'word')}</span>
       {#if totals.cited}<span>{plural(totals.cited, 'work')} cited</span>{/if}
       {#if totals.notes}<span>{plural(totals.notes, 'note')}</span>{/if}
-      <span class="keys">
-        <kbd>Ctrl</kbd>+<kbd>Enter</kbd> new element · <kbd>@</kbd> cite · <kbd>Ctrl</kbd>+<kbd
-          >Alt</kbd
-        >+<kbd>F</kbd> note
-      </span>
+      <span class="keys"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> new element · <kbd>@</kbd> cite</span>
     {/if}
   </footer>
 </div>
@@ -749,6 +752,17 @@
     min-height: 0;
     background: var(--paper);
   }
+  /* The tools stand over the text, and begin where the text begins. */
+  .tools {
+    flex: none;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .tools .inner {
+    max-width: calc(780px + var(--margin));
+    margin: 0 auto;
+    padding: 5px 40px 5px calc(12px + var(--margin) + 35px);
+  }
   .scroller {
     flex: 1;
     min-height: 0;
@@ -758,10 +772,10 @@
   }
   .page {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--margin);
+    grid-template-columns: var(--margin) minmax(0, 1fr);
     max-width: calc(780px + var(--margin));
     margin: 0 auto;
-    padding: 56px 28px 40vh 12px;
+    padding: 56px 40px 40vh 12px;
     font-size: var(--text-size, 17px);
   }
   .column {
@@ -769,7 +783,6 @@
   }
   .margin {
     position: relative;
-    padding-left: 14px;
   }
   .margin svg {
     display: block;
@@ -807,7 +820,8 @@
   }
   .label-input {
     position: absolute;
-    right: 0;
+    z-index: 2;
+    left: 0;
     width: 200px;
     height: 26px;
     padding: 0 8px;

@@ -5,6 +5,7 @@
   import type { KeyAction } from '$lib/editor/plugins';
   import { lookup } from '$lib/editor/references.svelte';
   import RichText from '$lib/editor/RichText.svelte';
+  import WritingTools from '$lib/editor/WritingTools.svelte';
   import { editorUi } from '$lib/editor/ui.svelte';
   import { plural, shortLabel } from '$lib/library/format';
   import { editReference } from '$lib/library/references.svelte';
@@ -134,6 +135,8 @@
       >
     </header>
 
+    <div class="tools"><WritingTools scope={el} /></div>
+
     <div class="text">
       <RichText
         bind:this={body}
@@ -222,11 +225,17 @@
     font-size: 20px;
     letter-spacing: -0.005em;
   }
+  .tools {
+    flex: none;
+    margin: 2px 12px 0 13px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--line);
+  }
   .text {
     flex: 1;
     min-height: 120px;
     overflow-y: auto;
-    padding: 6px 22px 16px;
+    padding: 12px 22px 16px;
     cursor: text;
   }
   .text :global(.prose) {

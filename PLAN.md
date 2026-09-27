@@ -57,7 +57,7 @@ elements plus associative links between them.
   double-clicking opens the edit box.
 - In **Text** view the same map reads as a manuscript. Element names are the
   headings, the hierarchy is the section structure, and associations are narrow
-  lines in the right margin. Text is edited in place.
+  lines in the left margin. Text is edited in place.
 - **Preview** shows the map as the formatted, paginated document, in a panel
   that is hidden until asked for.
 

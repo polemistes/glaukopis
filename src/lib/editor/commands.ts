@@ -45,6 +45,40 @@ export function toggleList(name: 'bullet_list' | 'ordered_list'): Command {
   };
 }
 
+/** The kinds of paragraph there are. */
+export type ParagraphStyle = 'text' | 'quote' | 'list' | 'numbered';
+
+export function styleOf(state: EditorState): ParagraphStyle {
+  const { $from } = state.selection;
+  for (let d = $from.depth; d > 0; d--) {
+    const name = $from.node(d).type.name;
+    if (name === 'ordered_list') return 'numbered';
+    if (name === 'bullet_list') return 'list';
+    if (name === 'blockquote') return 'quote';
+  }
+  return 'text';
+}
+
+/** Makes the paragraphs that are selected of one kind, whatever they were. */
+export function setStyle(style: ParagraphStyle): Command {
+  return (state, dispatch, view) => {
+    const { blockquote, bullet_list, ordered_list, list_item } = state.schema.nodes;
+    if (!blockquote || !bullet_list || !ordered_list || !list_item) return false;
+    if (!dispatch || !view) return true;
+    // Back to plain text first: out of whatever list or quotation it is in.
+    for (let i = 0; i < 6 && styleOf(view.state) !== 'text'; i++) {
+      const lifted = insideNode(view.state, list_item)
+        ? liftListItem(list_item)(view.state, view.dispatch)
+        : lift(view.state, view.dispatch);
+      if (!lifted) break;
+    }
+    if (style === 'quote') wrapIn(blockquote)(view.state, view.dispatch);
+    else if (style === 'list') wrapInList(bullet_list)(view.state, view.dispatch);
+    else if (style === 'numbered') wrapInList(ordered_list)(view.state, view.dispatch);
+    return true;
+  };
+}
+
 export function insertCitation(items: CiteItem[], mode: CiteMode = 'normal'): Command {
   return (state, dispatch) => {
     const type = state.schema.nodes.citation;

@@ -35,3 +35,15 @@ file wins. Later instructions that settle something are appended at the end, dat
 > 1) Simplicity. Do not show the user functionality until it is needed. When needed it should be there almost without any thought.
 > 2) Intuitiveness. The functionality should appear in the way users would expect, where expected and when expected.
 > 3) Attractiveness. An elegeant, but still simple, user interface is one of the most important features of an app that has a goal to incite academic creativity.
+
+## 2026-09-27 — after the first look at the application
+
+> When I look at it now, I think the assosiative links in text mode should be on the left side. When writing text, I am not sure how to add citations to references in the text itself. Also formating and styles should be easier to make. I notice that standard key-codes work like ctrl-b for bold, but There should be some tool for it. How is the text itself stored now? Markdown could be a good option, if you don't see limitations with that. But I really like the way the editor feels now, so do not make big changes to that.
+
+What this settles:
+
+- In the text, associations are drawn in the **left** margin. This replaces "in the right border of the text" in the initial description.
+- Citing, the marks and the kinds of paragraph have tools that are in view while writing, besides the keys.
+- The editor is to keep the feel it has.
+
+Earlier the same day: commits are made when a piece of work is whole, without asking; packages are made for Arch Linux only, for now.

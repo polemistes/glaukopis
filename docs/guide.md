@@ -73,18 +73,29 @@ attached shows how many.
 is a section: its name is the heading, and the depth of the heading is the
 depth of the element in the map.
 
-Write as in any editor. The bar over the text appears when you select
-something. Besides that:
+Write as in any editor. The tools are over the text: the kind of paragraph
+(text, quotation, list, numbered list), italics, bold and small capitals,
+**Cite** and **Note**. They act where the cursor is. The same tools are in
+the box that opens when an element is double-clicked in the diagram, and a
+bar with them appears over whatever you select.
+
+Everything the tools do can be done from the keys, and much of it by typing:
 
 | To | Do this |
 | --- | --- |
-| Cite a reference | Type **@** and begin to type an author or a title |
+| Cite a reference | **Cite**, or type **@**, and begin to type an author or a title |
 | Give the page | Type it when the citation has been chosen: `73`, `73–75` |
-| Write a note | **Ctrl+Alt+F** |
+| Write a note | **Note**, or **Ctrl+Alt+F** |
+| Set words in italics or bold | **Ctrl+I**, **Ctrl+B**; or type `*so*`, `**so**` |
+| Begin a quotation or a list | Type `> `, `- ` or `1. ` at the start of a line |
+| Make a dash | Type `--` for –, `---` for — |
 | Divide an element in two | Right-click where it is to be divided: **Split here** |
 | Join an element to the one above | Right-click: **Join to the element above** |
 
-Associations are shown as narrow lines in the right margin, between the
+What a sign has done is undone by **Backspace**, should the sign have been
+meant as a sign.
+
+Associations are shown as narrow lines in the left margin, between the
 sections they join. Click one to go to either end of it, to give it a few
 words, or to remove it.
 
@@ -282,8 +293,10 @@ Files attached to references are not shared; the references themselves are.
   open one as a project of its own.
 - **Deleted projects** can be brought back, from the line under the projects.
 - **Everything is in one folder**, shown under *Settings*. To keep a copy of
-  your work, copy the folder. Beside each project, every map is also kept as
-  plain text that can be read without Glaukopis.
+  your work, copy the folder.
+- **Your text can be read without Glaukopis.** Beside each project, in its
+  folder `maps`, every map is kept as a Markdown file, with its headings,
+  notes and citations, and written anew whenever the project is saved.
 
 ## Keys
 

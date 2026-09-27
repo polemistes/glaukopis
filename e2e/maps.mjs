@@ -80,6 +80,7 @@ try {
   await app.doubleClick(mênis);
   await app.waitFor('.box .text .prose');
   await sleep(250);
+  check('the box for writing has the tools too', await app.exists('.box .tools button[aria-label="Italic"]:not(:disabled)'));
   await app.keys('The first word of the Iliad names a wrath that is more than anger ');
   await app.keys('@');
   await app.waitFor('.picker input');
@@ -145,6 +146,12 @@ try {
     headings.join(' | '),
   );
   check('the association is a line in the margin', (await app.count('.text-view .bracket')) === 1);
+  const margin = await app.exec(
+    `const line = document.querySelector('.text-view .bracket .line').getBoundingClientRect();
+     const name = document.querySelector('.text-view .section .heading').getBoundingClientRect();
+     return { line: Math.round(line.right), name: Math.round(name.left) };`,
+  );
+  check('which is the left one, beside the names', margin.line <= margin.name && margin.name - margin.line < 80, JSON.stringify(margin));
   await app.screenshot('maps-10-text');
 
   // Writing in the text, and making a new element from what follows the cursor.
@@ -168,6 +175,42 @@ try {
   );
   check('Ctrl+Enter begins a new element after the one written in', after[4] === 'The prize of Briseis', after.join(' | '));
   await app.screenshot('maps-11-text-written');
+
+  // --- The tools over the text ---
+  const written = () =>
+    app.exec(
+      `const s = Array.from(document.querySelectorAll('.text-view .section')).find((e) => e.querySelector('.heading').textContent.includes('Briseis'));
+       return s.querySelector('.body .prose').innerHTML;`,
+    );
+  await app.keys(' So *Iliad* 1 has it, **plainly**.');
+  check('signs around words set them as they are typed', /<em>Iliad<\/em>/.test(await written()) && /<strong>plainly<\/strong>/.test(await written()), await written());
+  await app.click('.text-view .tools button[aria-label="Italic"]');
+  await app.keys('kleos');
+  await app.click('.text-view .tools button[aria-label="Italic"]');
+  await app.keys(' is what is at stake.');
+  check('the tools set what is typed next', /<em>kleos<\/em> is what/.test(await written()), await written());
+  await app.clickText('.text-view .tools button', 'Cite');
+  await app.waitFor('.picker input', 3000);
+  await app.keys('lord singer');
+  await sleep(250);
+  await app.press('Enter');
+  await app.waitFor('.editor .locator input');
+  await app.keys('99');
+  await app.press('Enter');
+  await app.waitGone('.editor');
+  await sleep(200);
+  check('the tool for citing cites', /Lord 1960, 99/.test((await written()).replace(/<[^>]+>/g, '')), (await written()).replace(/<[^>]+>/g, ''));
+  await app.click('.text-view .tools .style');
+  await app.clickText('[role="menuitem"]', 'Quotation');
+  await sleep(200);
+  check('the kind of paragraph is chosen from a list', /<blockquote>/.test(await written()));
+  await app.waitForText('.text-view .tools .style', 'Quotation', 3000);
+  check('and shown', true);
+  await app.screenshot('maps-11b-tools');
+  await app.click('.text-view .tools .style');
+  await app.clickText('[role="menuitem"]', 'Text');
+  await sleep(200);
+  check('and changed back', !/<blockquote>/.test(await written()));
 
   // --- Back in the diagram, the new element is there ---
   await app.keys(['Control', 'd']);
