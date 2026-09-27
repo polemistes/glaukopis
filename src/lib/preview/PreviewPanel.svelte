@@ -449,7 +449,6 @@
     height: 100%;
     min-width: 0;
     background: var(--paper-sunken);
-    border-left: 1px solid var(--line);
   }
   header {
     display: flex;

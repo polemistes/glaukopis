@@ -123,7 +123,6 @@
     height: 100%;
     min-width: 0;
     background: var(--paper-raised);
-    border-left: 1px solid var(--line);
   }
   header {
     display: flex;

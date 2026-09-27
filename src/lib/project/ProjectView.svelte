@@ -5,6 +5,7 @@
   import BookOpenText from '@lucide/svelte/icons/book-open-text';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import CloudDownload from '@lucide/svelte/icons/cloud-download';
+  import Columns2 from '@lucide/svelte/icons/columns-2';
   import FileText from '@lucide/svelte/icons/file-text';
   import Network from '@lucide/svelte/icons/network';
   import Redo2 from '@lucide/svelte/icons/redo-2';
@@ -27,6 +28,7 @@
   import { router, type MapMode } from '$lib/state/router.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
+  import Divider from '$lib/ui/Divider.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
@@ -46,7 +48,18 @@
     mode: MapMode;
   }
 
+  /** How the room is shared between the parts of the view. Nought for what is given. */
+  interface Sizes {
+    /** The part of the width the first of two maps has. */
+    split: number;
+    preview: number;
+    references: number;
+  }
+
+  const GIVEN: Sizes = { split: 0.5, preview: 0, references: 0 };
+
   interface StoredView {
+    sizes?: Partial<Sizes>;
     panes?: Pane[];
     cameras?: Record<string, Camera>;
     references?: boolean;
@@ -60,6 +73,10 @@
   let cameras = $state<Record<string, Camera>>({});
   let showReferences = $state(false);
   let showPreview = $state(false);
+  let sizes = $state<Sizes>({ ...GIVEN });
+  let work = $state<HTMLDivElement>();
+  let previewEl = $state<HTMLDivElement>();
+  let referencesEl = $state<HTMLDivElement>();
   let renaming = $state<string | null>(null);
   let host = $state<ReturnType<typeof EditorHost>>();
   /** An element to show when a map is opened by a jump. */
@@ -110,6 +127,7 @@
     cameras = stored.cameras ?? {};
     showReferences = stored.references ?? false;
     showPreview = stored.preview ?? false;
+    sizes = { ...GIVEN, ...stored.sizes };
   }
 
   // What a joined project holds has arrived.
@@ -166,6 +184,7 @@
     const kept: Record<string, Camera> = {};
     for (const [id, c] of Object.entries(cameras)) if (project?.map(id)) kept[id] = c;
     return {
+      sizes: $state.snapshot(sizes),
       panes: $state.snapshot(panes),
       cameras: kept,
       references: showReferences,
@@ -190,6 +209,9 @@
     void showReferences;
     void showPreview;
     void cameras;
+    void sizes.split;
+    void sizes.preview;
+    void sizes.references;
     clearTimeout(viewTimer);
     viewTimer = setTimeout(saveView, 1500);
   });
@@ -239,6 +261,40 @@
       panes = [panes[0], { map, mode: panes[0].mode }];
     }
     focused = 1;
+  }
+
+  /** Two side by side: the map in view as diagram and as text, until another is chosen for a side. */
+  function sideBySide() {
+    if (panes.length > 1) {
+      closePane(1 - focused);
+      return;
+    }
+    const one = panes[0];
+    panes = [one, { map: one.map, mode: one.mode === 'diagram' ? 'text' : 'diagram' }];
+    focused = 0;
+  }
+
+  // ---- the room each part has ----
+
+  const clamp = (value: number, least: number, most: number) =>
+    Math.min(Math.max(value, least), most);
+
+  function moveSplit(dx: number) {
+    const width = work?.querySelector<HTMLElement>('.panes')?.offsetWidth ?? 0;
+    if (width) sizes.split = clamp(sizes.split + dx / width, 0.2, 0.8);
+  }
+
+  /** The panels at the side are measured when the dragging begins: until then they have what they are given. */
+  function measure(which: 'preview' | 'references') {
+    const el = which === 'preview' ? previewEl : referencesEl;
+    if (el && !sizes[which]) sizes[which] = el.offsetWidth;
+  }
+
+  function moveSide(which: 'preview' | 'references', dx: number) {
+    const all = work?.offsetWidth ?? 1200;
+    const least = which === 'preview' ? 320 : 240;
+    const most = Math.max(least, which === 'preview' ? all * 0.7 : Math.min(640, all * 0.5));
+    sizes[which] = clamp(sizes[which] - dx, least, most);
   }
 
   function closePane(i: number) {
@@ -420,6 +476,13 @@
       />
 
       <IconButton
+        label={panes.length > 1 ? 'One at a time' : 'Two side by side'}
+        active={panes.length > 1}
+        onclick={sideBySide}
+      >
+        <Columns2 size={16} />
+      </IconButton>
+      <IconButton
         label="References"
         shortcut="Ctrl+Shift+R"
         active={showReferences}
@@ -457,12 +520,24 @@
       </span>
     </header>
 
-    <div class="work" use:dropTarget={{ accepts: ['files'], ondrop: filesDropped }}>
+    <div
+      class="work"
+      bind:this={work}
+      use:dropTarget={{ accepts: ['files'], ondrop: filesDropped }}
+    >
       <div class="panes" class:two={panes.length > 1}>
         {#each panes as p, i (i)}
+          {#if i === 1}
+            <Divider
+              label="Between the two maps"
+              onmove={moveSplit}
+              onreset={() => (sizes.split = GIVEN.split)}
+            />
+          {/if}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
             class="pane"
+            style:flex-grow={panes.length > 1 ? (i === 0 ? sizes.split : 1 - sizes.split) : 1}
             class:focused={panes.length > 1 && i === focused}
             onpointerdowncapture={() => (focused = i)}
             onfocusin={() => (focused = i)}
@@ -513,7 +588,17 @@
       </div>
 
       {#if showPreview}
-        <div class="side wide">
+        <Divider
+          label="Between the map and the preview"
+          onstart={() => measure('preview')}
+          onmove={(dx) => moveSide('preview', dx)}
+          onreset={() => (sizes.preview = 0)}
+        />
+        <div
+          class="side wide"
+          bind:this={previewEl}
+          style:width={sizes.preview ? `${sizes.preview}px` : undefined}
+        >
           <PreviewPanel
             {project}
             {projectId}
@@ -523,7 +608,17 @@
         </div>
       {/if}
       {#if showReferences}
-        <div class="side">
+        <Divider
+          label="Between the map and the references"
+          onstart={() => measure('references')}
+          onmove={(dx) => moveSide('references', dx)}
+          onreset={() => (sizes.references = 0)}
+        />
+        <div
+          class="side"
+          bind:this={referencesEl}
+          style:width={sizes.references ? `${sizes.references}px` : undefined}
+        >
           <ReferencePanel {project} mapId={pane.map} onclose={() => (showReferences = false)} />
         </div>
       {/if}
@@ -637,21 +732,15 @@
   }
   .panes {
     flex: 1;
-    min-width: 0;
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-  .panes.two {
-    grid-template-columns: 1fr 1fr;
+    min-width: 240px;
+    display: flex;
   }
   .pane {
     display: flex;
     flex-direction: column;
+    flex: 1 1 0;
     min-width: 0;
     min-height: 0;
-  }
-  .panes.two .pane + .pane {
-    border-left: 1px solid var(--line-strong);
   }
   .pane-head {
     display: flex;
@@ -682,6 +771,7 @@
   }
   .side {
     width: 340px;
+    max-width: 70%;
     flex: none;
     min-height: 0;
   }

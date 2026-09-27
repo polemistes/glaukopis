@@ -13,6 +13,7 @@ function check(name, ok, detail = '') {
 const titles = (app) =>
   app.exec(`return Array.from(document.querySelectorAll('.diagram .node .caption')).map((e) => e.textContent.trim())`);
 
+let kept = [];
 let app = await App.launch({ keepData: true });
 const dataDir = app.dataDir;
 try {
@@ -255,6 +256,39 @@ try {
   check('two maps side by side', (await app.count('.pane')) === 2);
   await app.screenshot('maps-13-beside');
 
+  // --- The room each has can be changed ---
+  const widths = () =>
+    app.exec(`return Array.from(document.querySelectorAll('.pane')).map((p) => Math.round(p.getBoundingClientRect().width))`);
+  const even = await widths();
+  await app.drag('.panes .divider', { dx: -180, dy: 0 });
+  await sleep(300);
+  const uneven = await widths();
+  check(
+    'the line between two maps can be moved',
+    Math.abs(even[0] - even[1]) < 4 && even[0] - uneven[0] > 150 && uneven[1] - even[1] > 150,
+    `${even.join('/')} → ${uneven.join('/')}`,
+  );
+  await app.doubleClick('.panes .divider');
+  await sleep(300);
+  const again = await widths();
+  check('and put back by a double click', Math.abs(again[0] - again[1]) < 4, again.join('/'));
+  await app.drag('.panes .divider', { dx: 120, dy: 0 });
+  await sleep(200);
+  kept = await widths();
+  await app.screenshot('maps-13b-resized');
+
+  // One at a time, and two again: the same map as diagram and as text.
+  await app.click('header button[aria-label="One at a time"]');
+  await sleep(300);
+  check('one at a time', (await app.count('.pane')) === 1);
+  await app.click('header button[aria-label="Two side by side"]');
+  await sleep(500);
+  const two = await app.exec(
+    `return Array.from(document.querySelectorAll('.pane')).map((p) => (p.querySelector('.diagram') ? 'diagram' : p.querySelector('.text-view') ? 'text' : '?') + ':' + p.querySelector('.pane-name').textContent.trim())`,
+  );
+  check('two side by side: the map as diagram and as text', new Set(two.map((t) => t.split(':')[1])).size === 1 && two.map((t) => t.split(':')[0]).sort().join() === 'diagram,text', two.join(' | '));
+  await app.screenshot('maps-13c-diagram-and-text');
+
   // Leaving the project puts it in order on disk.
   await app.click('header button[aria-label="All projects"]');
   await app.waitFor('.card', 5000);
@@ -283,6 +317,8 @@ try {
   await app.waitFor('.pane', 8000);
   await sleep(600);
   const count = await app.exec(`return document.querySelectorAll('.diagram .node, .text-view .section').length`);
+  const reopened = await app.exec(`return Array.from(document.querySelectorAll('.pane')).map((p) => Math.round(p.getBoundingClientRect().width))`);
+  check('with the room each part had', reopened.length === 2 && Math.abs(reopened[0] - kept[0]) < 6, `${kept.join('/')} → ${reopened.join('/')}`);
   check('the project opens as it was left', (await app.count('.pane')) === 2 && count >= 9, `${count} elements shown`);
   const errors = await app.pageErrors();
   check('no errors after reopening', errors.length === 0, errors.join(' | '));
