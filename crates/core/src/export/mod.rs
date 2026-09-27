@@ -16,7 +16,7 @@ use serde_json::{Map, Value, json};
 
 use crate::document::bibliography::{Bibliography, gather};
 use crate::document::pandoc::{Converter, meta_blocks, meta_inlines, meta_list, meta_string, meta_text};
-use crate::document::{Document, Inline};
+use crate::document::{Document, Inline, NotePlace};
 use crate::error::{Error, IoContext, Result};
 use crate::formats::typst::{Particulars, preamble};
 use crate::formats::{DocumentFormat, NoteKind, TitlePlacement};
@@ -136,12 +136,19 @@ fn safe_key(key: &str) -> String {
     if k.is_empty() { "document".into() } else { k }
 }
 
-fn particulars(doc: &Document) -> Particulars {
+fn particulars(doc: &Document, f: &DocumentFormat) -> Particulars {
     Particulars {
         title: doc.title_plain(),
         authors: doc.authors.iter().map(|a| a.name.trim().to_owned()).filter(|n| !n.is_empty()).collect(),
         language: doc.language.clone(),
+        lettered_footnotes: f.notes.kind == NoteKind::Endnotes && doc.placed_notes().contains(&NotePlace::Foot),
     }
+}
+
+/// Whether the notes have to be placed by the filter: the format has them at
+/// the end, or single ones have been set to stand there.
+fn notes_are_placed(doc: &Document, f: &DocumentFormat) -> bool {
+    f.notes.kind == NoteKind::Endnotes || !doc.placed_notes().is_empty()
 }
 
 fn div(id: &str, blocks: Vec<Value>) -> Value {
@@ -187,6 +194,10 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         meta.insert("lang".into(), meta_string(lang.trim()));
     }
     meta.insert("gk-notes-title".into(), meta_string(&f.notes.title));
+    meta.insert(
+        "gk-notes-kind".into(),
+        meta_string(if f.notes.kind == NoteKind::Endnotes { "endnotes" } else { "footnotes" }),
+    );
 
     let title = converter.inlines(&doc.title);
     let authors: Vec<&crate::document::Author> = if f.title.anonymous || !f.title.show_authors {
@@ -338,9 +349,9 @@ fn arguments(
         args.push(bib.display().to_string());
     }
     let filters = ctx.resources.join("pandoc");
-    if request.format.notes.kind == NoteKind::Endnotes {
+    if notes_are_placed(&request.document, &request.format) {
         args.push("--lua-filter".into());
-        args.push(filters.join("endnotes.lua").display().to_string());
+        args.push(filters.join("notes.lua").display().to_string());
     }
     if matches!(target, Target::Docx | Target::Odt) {
         args.push("--lua-filter".into());
@@ -379,7 +390,7 @@ fn typst_source(ctx: &Context, request: &Request, dir: &Path) -> Result<(String,
     let input = serde_json::to_vec(&prepared.json)?;
     let out = tools::run(&pandoc.path, "Pandoc", &args, Some(&input), Some(dir))?;
     let body = String::from_utf8_lossy(&out.stdout).into_owned();
-    let mut source = preamble(&request.format, &particulars(&request.document));
+    let mut source = preamble(&request.format, &particulars(&request.document, &request.format));
     source.push_str(&body);
     Ok((source, prepared, warnings_of(&out.messages)))
 }
@@ -450,7 +461,7 @@ pub fn export(
     let pandoc = ctx.tools.pandoc()?;
     let dir = work_dir(ctx, &request.key, "export")?;
     let mut exported = Exported { path: path.display().to_string(), ..Default::default() };
-    let p = particulars(&request.document);
+    let p = particulars(&request.document, &request.format);
 
     if matches!(target, Target::Pdf | Target::Typst) {
         let (source, prepared, warnings) = typst_source(ctx, request, &dir)?;
@@ -654,7 +665,7 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
             match i {
                 Inline::Text { text, .. } => out.push_str(text),
                 Inline::Break => out.push(' '),
-                Inline::Footnote { content } if with_notes => {
+                Inline::Footnote { content, .. } if with_notes => {
                     out.push(' ');
                     inlines(content, with_notes, out);
                     out.push(' ');
@@ -789,6 +800,80 @@ mod tests {
         assert!(source.contains("<gk-notes>"));
         // The note made by the citation and the note written by hand are both there.
         assert!(source.contains("#super[1]") && source.contains("#super[2]"), "{source}");
+    }
+
+    /// The first note written by hand in the sample, set to a place.
+    fn place_first_note(r: &mut Request, place: NotePlace) {
+        for section in &mut r.document.sections {
+            for block in &mut section.blocks {
+                if let crate::document::Block::Paragraph { content } = block {
+                    for inline in content.iter_mut() {
+                        if let Inline::Footnote { place: p, .. } = inline {
+                            *p = Some(place);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        panic!("the sample has no note");
+    }
+
+    #[test]
+    fn a_note_set_against_the_format() {
+        let Some(s) = setup() else { return };
+
+        // The format has its notes at the foot; one is set to stand at the end.
+        let mut r = request("chicago-author-date");
+        place_first_note(&mut r, NotePlace::End);
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let source = fs::read_to_string(s.work.join("test/preview/document.typ")).unwrap();
+        assert!(source.contains("<gk-notes>") && source.contains("#super[a]"), "{source}");
+        assert!(source.contains("a. So the scholia") || source.contains("a. "), "{source}");
+        assert!(!source.contains("numbering: \"a\""), "the notes at the foot, if any, keep their numbers");
+
+        // The format has its notes at the end; one is set to stand at the foot.
+        let mut r = request("chicago-notes-bibliography");
+        r.format.notes.kind = NoteKind::Endnotes;
+        place_first_note(&mut r, NotePlace::Foot);
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let source = fs::read_to_string(s.work.join("test/preview/document.typ")).unwrap();
+        assert!(source.contains("#footnote["), "{source}");
+        assert!(source.contains("#set footnote(numbering: \"a\")"));
+        assert!(source.contains("#super[1]"), "the notes of the reference style are at the end, numbered");
+        assert_eq!(source.matches("#footnote[").count(), 1);
+
+        // In the documents that are exported the notes at the foot are lettered as well.
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let docx = out.join("mixed.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        assert!(unzip(&docx, "word/document.xml").contains("w:numFmt w:val=\"lowerLetter\""));
+        assert!(unzip(&docx, "word/footnotes.xml").contains("So the scholia"));
+        let odt = out.join("mixed.odt");
+        export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        let styles = unzip(&odt, "styles.xml");
+        let settings: Vec<&str> = styles
+            .split("<text:notes-configuration")
+            .skip(1)
+            .map(|rest| rest.split('>').next().unwrap_or(""))
+            .filter(|tag| tag.contains("text:note-class=\"footnote\""))
+            .collect();
+        assert_eq!(settings.len(), 1, "{settings:?}");
+        assert!(settings[0].contains("style:num-format=\"a\""), "{settings:?}");
+        let tex = out.join("mixed.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        assert!(fs::read_to_string(&tex).unwrap().contains("\\alph{footnote}"));
+
+        // A note set to where the format has its notes anyway changes nothing.
+        let mut r = request("chicago-author-date");
+        place_first_note(&mut r, NotePlace::Foot);
+        preview(&s.ctx(), &r).unwrap();
+        let source = fs::read_to_string(s.work.join("test/preview/document.typ")).unwrap();
+        assert!(source.contains("#footnote["));
+        assert!(!source.contains("#super[a]") && !source.contains("numbering: \"a\""), "{source}");
     }
 
     #[test]

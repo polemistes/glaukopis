@@ -156,7 +156,10 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
     );
 
     // Notes.
-    if f.notes.kind == NoteKind::Footnotes {
+    if p.lettered_footnotes {
+        let _ = writeln!(h, "\\renewcommand{{\\thefootnote}}{{\\alph{{footnote}}}}");
+    }
+    if f.notes.kind == NoteKind::Footnotes || p.lettered_footnotes {
         let _ = writeln!(
             h,
             "\\renewcommand{{\\footnotesize}}{{\\fontsize{{{}}}{{{}}}\\selectfont}}",

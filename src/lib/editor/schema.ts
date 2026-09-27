@@ -190,13 +190,31 @@ const bodyNodes: Record<string, NodeSpec> = {
     inline: true,
     atom: true,
     content: 'inline*',
+    // Where the note stands, when not where the format has its notes: 'foot' or 'end'.
+    attrs: { place: { default: '' } },
     // A note within a note is not a thing.
-    parseDOM: [{ tag: 'span[data-footnote]', contentElement: 'span' }],
-    toDOM: () => ['span', { 'data-footnote': '', class: 'footnote' }, ['span', 0]],
+    parseDOM: [
+      {
+        tag: 'span[data-footnote]',
+        contentElement: 'span',
+        getAttrs: (el) => ({ place: notePlace((el as HTMLElement).getAttribute('data-place')) }),
+      },
+    ],
+    toDOM: (node) => [
+      'span',
+      { 'data-footnote': '', 'data-place': node.attrs.place || null, class: 'footnote' },
+      ['span', 0],
+    ],
   },
 };
 
 export const bodySchema = new Schema({ nodes: bodyNodes, marks });
+
+export type NotePlace = '' | 'foot' | 'end';
+
+export function notePlace(value: unknown): NotePlace {
+  return value === 'foot' || value === 'end' ? value : '';
+}
 
 const titleMarks: Record<string, MarkSpec> = {
   em: marks.em,

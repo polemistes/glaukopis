@@ -8,7 +8,7 @@ use std::sync::OnceLock;
 
 use serde_json::{Value, json};
 
-use super::{Block, CiteItem, CiteMode, Document, Inline, Section};
+use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, Section};
 
 const TERMS_JSON: &str = include_str!("../../../../resources/csl/locator-terms.json");
 
@@ -203,10 +203,17 @@ impl Converter<'_> {
                     Some(c) => out.push(c),
                     None => out.push(json!({"t": "Strong", "c": [{"t": "Str", "c": "[reference not found]"}]})),
                 },
-                Inline::Footnote { content } => {
+                Inline::Footnote { content, place } => {
                     let inner = self.inlines(content);
                     if !inner.is_empty() {
-                        out.push(json!({"t": "Note", "c": [{"t": "Para", "c": inner}]}));
+                        let note = json!({"t": "Note", "c": [{"t": "Para", "c": inner}]});
+                        // A note that has been set to a place is held by what says
+                        // which: read by the filter that places the notes.
+                        out.push(match place {
+                            None => note,
+                            Some(NotePlace::Foot) => json!({"t": "Span", "c": [["", ["gk-note-foot"], []], [note]]}),
+                            Some(NotePlace::End) => json!({"t": "Span", "c": [["", ["gk-note-end"], []], [note]]}),
+                        });
                     }
                 }
                 Inline::Break => out.push(json!({"t": "LineBreak"})),

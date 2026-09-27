@@ -11,7 +11,7 @@ import { place } from '$lib/ui/floating';
 import { toggle, updateCitation } from './commands';
 import { placeholder, type EditorHooks } from './plugins';
 import { citationLabel, isMissing } from './references.svelte';
-import type { CiteItem, CiteMode } from './schema';
+import { notePlace, type CiteItem, type CiteMode } from './schema';
 import { editorUi } from './ui.svelte';
 
 /** What each editor was given to reach the world outside it. Notes use their editor's. */
@@ -104,14 +104,34 @@ export function noteNumberOf(mark: HTMLElement): number {
   const scope =
     own ?? mark.closest<HTMLElement>('[data-notes]') ?? mark.closest<HTMLElement>('.prose');
   if (!scope) return 0;
+  // Those that have been set to a place of their own are counted by themselves.
+  const placed = mark.hasAttribute('data-place');
   let n = 0;
   for (const other of scope.querySelectorAll<HTMLElement>('.footnote')) {
     if (!own && other.closest('.section.excluded, .section.loose')) continue;
+    if (other.hasAttribute('data-place') !== placed) continue;
     n++;
     if (other === mark) return n;
   }
   return 0;
 }
+
+/** a, b, … z, aa, ab, … */
+export function letters(n: number): string {
+  let out = '';
+  while (n > 0) {
+    const r = (n - 1) % 26;
+    out = String.fromCharCode(97 + r) + out;
+    n = (n - 1 - r) / 26;
+  }
+  return out;
+}
+
+const PLACES: [string, string][] = [
+  ['', 'Where the format has its notes'],
+  ['foot', 'At the foot of the page'],
+  ['end', 'At the end of the text'],
+];
 
 const noteRules = inputRules({
   rules: [new InputRule(/–-$/, '—'), new InputRule(/--$/, '–'), new InputRule(/\.\.\.$/, '…')],
@@ -147,8 +167,17 @@ export class FootnoteView implements NodeView {
    */
   #number() {
     this.dom.classList.toggle('blank', this.#node.content.size === 0);
-    const heading = this.#panel?.querySelector('.note-number');
-    if (heading) heading.textContent = `Note ${noteNumberOf(this.dom) || ''}`.trim();
+    const place = notePlace(this.#node.attrs.place);
+    if (place) this.dom.dataset.place = place;
+    else delete this.dom.dataset.place;
+    if (!this.#panel) return;
+    if (place) this.#panel.dataset.place = place;
+    else delete this.#panel.dataset.place;
+    const n = noteNumberOf(this.dom);
+    const heading = this.#panel.querySelector('.note-number');
+    if (heading) heading.textContent = `Note ${n ? (place ? letters(n) : n) : ''}`.trim();
+    const select = this.#panel.querySelector<HTMLSelectElement>('.note-place');
+    if (select && select.value !== place) select.value = place;
   }
 
   selectNode() {
@@ -169,9 +198,33 @@ export class FootnoteView implements NodeView {
     panel.className = 'note-panel';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'Note');
+    const head = document.createElement('div');
+    head.className = 'note-head';
     const heading = document.createElement('div');
     heading.className = 'note-number';
-    panel.append(heading);
+    // Most notes stand where the format has its notes. One that must stand
+    // elsewhere, as when the author's own notes are kept at the foot of the
+    // page and the sources at the end, is told here where.
+    const select = document.createElement('select');
+    select.className = 'note-place';
+    select.setAttribute('aria-label', 'Where the note stands');
+    for (const [value, words] of PLACES) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = words;
+      select.append(option);
+    }
+    select.addEventListener('change', () => {
+      const pos = this.#getPos();
+      if (pos === undefined) return;
+      const place = notePlace(select.value);
+      const tr = outer.state.tr.setNodeMarkup(pos, undefined, { ...this.#node.attrs, place });
+      // The note stays the one that is selected, and so stays open.
+      outer.dispatch(tr.setSelection(NodeSelection.create(tr.doc, pos)));
+      this.#inner?.focus();
+    });
+    head.append(heading, select);
+    panel.append(head);
     const body = document.createElement('div');
     panel.append(body);
     document.body.append(panel);

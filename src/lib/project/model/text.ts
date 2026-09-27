@@ -21,6 +21,8 @@ export interface InlineCitation {
 export interface InlineFootnote {
   kind: 'footnote';
   content: Inline[];
+  /** Where the note stands, when not where the format has its notes. */
+  place?: 'foot' | 'end';
 }
 export interface InlineBreak {
   kind: 'break';
@@ -62,9 +64,15 @@ function inlinesOf(parent: Y.XmlElement | Y.XmlFragment): Inline[] {
           });
           break;
         }
-        case 'footnote':
-          out.push({ kind: 'footnote', content: inlinesOf(child) });
+        case 'footnote': {
+          const place = child.getAttribute('place') as unknown;
+          out.push({
+            kind: 'footnote',
+            content: inlinesOf(child),
+            ...(place === 'foot' || place === 'end' ? { place } : {}),
+          });
           break;
+        }
         case 'hard_break':
           out.push({ kind: 'break' });
           break;

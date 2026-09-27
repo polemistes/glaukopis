@@ -442,6 +442,29 @@ body.dragging * {
 .footnote::before {
   content: counter(note);
 }
+/* A note that has been set to a place of its own is lettered, as it is in
+   the document when that place is not where the format has its notes. */
+.prose,
+.tip,
+[data-notes] {
+  counter-reset: note placed-note;
+}
+[data-notes] .section.excluded .prose,
+[data-notes] .section.loose .prose {
+  counter-reset: note placed-note;
+}
+.footnote[data-place] {
+  counter-increment: placed-note;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.footnote[data-place]::before {
+  content: counter(placed-note, lower-alpha);
+}
+.footnote[data-place]:hover,
+.footnote[data-place].selected {
+  box-shadow: 0 0 0 1px var(--accent);
+}
 .footnote {
   display: inline-block;
   min-width: 1.1em;
@@ -545,6 +568,39 @@ body.dragging * {
   border-top: 2px solid var(--gold);
   border-radius: var(--radius-m);
   box-shadow: var(--shadow-3);
+}
+.note-panel .note-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.note-panel .note-head .note-number {
+  flex: 1;
+  margin-bottom: 0;
+}
+.note-panel .note-place {
+  max-width: 60%;
+  padding: 0 2px;
+  border: none;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+.note-panel .note-place:hover,
+.note-panel .note-place:focus-visible {
+  color: var(--ink);
+  background: var(--paper-hover);
+  outline: none;
+}
+.note-panel[data-place] {
+  border-top-color: var(--accent);
+}
+.note-panel[data-place] .note-number {
+  color: var(--accent-strong);
 }
 .note-panel .note-number {
   margin-bottom: 4px;

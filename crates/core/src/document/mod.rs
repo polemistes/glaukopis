@@ -44,8 +44,21 @@ pub enum Inline {
     },
     Footnote {
         content: Vec<Inline>,
+        /// Where the note stands, when it is not where the format has notes.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        place: Option<NotePlace>,
     },
     Break,
+}
+
+/// Where a note stands.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum NotePlace {
+    /// At the foot of the page.
+    Foot,
+    /// At the end of the text.
+    End,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -133,6 +146,42 @@ pub struct Document {
 }
 
 impl Document {
+    /// The places that notes have been set to, one for each note that has
+    /// been set to a place, in the order of the text.
+    pub fn placed_notes(&self) -> Vec<NotePlace> {
+        fn inlines(list: &[Inline], out: &mut Vec<NotePlace>) {
+            for i in list {
+                if let Inline::Footnote { place: Some(place), content } = i
+                    && !content.is_empty()
+                {
+                    out.push(*place);
+                }
+            }
+        }
+        fn blocks(list: &[Block], out: &mut Vec<NotePlace>) {
+            for b in list {
+                match b {
+                    Block::Paragraph { content } => inlines(content, out),
+                    Block::Blockquote { content } => blocks(content, out),
+                    Block::BulletList { items } | Block::OrderedList { items, .. } => {
+                        for item in items {
+                            blocks(item, out);
+                        }
+                    }
+                }
+            }
+        }
+        let mut out = Vec::new();
+        inlines(&self.title, &mut out);
+        for s in &self.sections {
+            if let Some(h) = &s.heading {
+                inlines(h, &mut out);
+            }
+            blocks(&s.blocks, &mut out);
+        }
+        out
+    }
+
     /// The ids of all works cited, each once, in the order of first citation.
     pub fn cited(&self) -> Vec<String> {
         let mut out: Vec<String> = Vec::new();
@@ -146,7 +195,7 @@ impl Document {
                             }
                         }
                     }
-                    Inline::Footnote { content } => inlines(content, out),
+                    Inline::Footnote { content, .. } => inlines(content, out),
                     _ => {}
                 }
             }
@@ -308,7 +357,10 @@ pub(crate) mod fixtures {
                             text("A wrath that is *more* than anger "),
                             cite("r1", Some("73")),
                             text(". It belongs to gods."),
-                            Inline::Footnote { content: vec![text("So the scholia; "), cite("r2", None), text(".")] },
+                            Inline::Footnote {
+                                content: vec![text("So the scholia; "), cite("r2", None), text(".")],
+                                place: None,
+                            },
                         ]),
                         Block::Blockquote { content: vec![para(vec![text("Sing, goddess, the wrath.")])] },
                     ],

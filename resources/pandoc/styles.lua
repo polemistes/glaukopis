@@ -1,6 +1,6 @@
 -- Gives the bibliography and the notes gathered at the end the paragraph
 -- styles that the pattern document defines for them. Run after citeproc, and
--- after endnotes.lua.
+-- after notes.lua.
 
 local function style_blocks(blocks, name)
   local out = {}

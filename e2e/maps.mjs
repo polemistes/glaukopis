@@ -224,6 +224,31 @@ try {
   );
   await app.screenshot('maps-11a-notes');
 
+  // A single note can be set to stand elsewhere than the format has its notes.
+  await app.click('.text-view .column .ProseMirror .footnote');
+  await app.waitFor('.note-panel .note-place', 3000);
+  await app.exec(
+    `const s = document.querySelector('.note-panel .note-place');
+     s.value = 'end';
+     s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
+  await sleep(400);
+  const set = await app.exec(
+    `return {
+       open: !!document.querySelector('.note-panel .prose'),
+       heading: document.querySelector('.note-panel .note-number')?.textContent,
+       marks: Array.from(document.querySelectorAll('.text-view .column .footnote')).map((e) => e.dataset.place || ''),
+     }`,
+  );
+  check(
+    'a note can be set to a place of its own, and is then lettered',
+    set.open && set.heading === 'Note a' && set.marks.join(',') === ',end',
+    JSON.stringify(set),
+  );
+  await app.screenshot('maps-11a2-note-placed');
+  await app.press('Escape');
+  await app.waitGone('.note-panel');
+
   await app.click('.text-view .tools .style');
   await app.clickText('[role="menuitem"]', 'Quotation');
   await sleep(200);

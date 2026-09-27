@@ -480,7 +480,7 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
         &Para { left: f.quote.indent_left.twips(), line: Some(line(f.notes.line_spacing)), ..Default::default() },
         &note_run(),
     ));
-    // Notes gathered at the end (see resources/pandoc/endnotes.lua).
+    // Notes gathered at the end (see resources/pandoc/notes.lua).
     s.push_str(&paragraph_style(
         "Endnotes",
         "Endnotes",
@@ -684,7 +684,11 @@ pub fn docx(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u
         let (w, h) = f.page.dimensions();
         let mut section = String::from("<w:sectPr>");
         section.push_str(&references);
-        section.push_str("<w:footnotePr><w:numRestart w:val=\"continuous\"/></w:footnotePr>");
+        section.push_str(if p.lettered_footnotes {
+            "<w:footnotePr><w:numFmt w:val=\"lowerLetter\"/><w:numRestart w:val=\"continuous\"/></w:footnotePr>"
+        } else {
+            "<w:footnotePr><w:numRestart w:val=\"continuous\"/></w:footnotePr>"
+        });
         let _ = write!(
             section,
             "<w:pgSz w:w=\"{}\" w:h=\"{}\"/><w:pgMar w:top=\"{}\" w:right=\"{}\" w:bottom=\"{}\" w:left=\"{}\" w:header=\"{}\" w:footer=\"{}\" w:gutter=\"0\"/>",
@@ -1199,10 +1203,42 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
 }
 
 /// The pattern for ODT.
+/// Has the notes at the foot of the page lettered: see `Particulars`.
+fn odt_lettered_footnotes(styles: &str) -> String {
+    // The settings for the notes at the foot, wherever among its attributes it says that it is that.
+    let mut from = 0;
+    while let Some(found) = styles[from..].find("<text:notes-configuration") {
+        let at = from + found;
+        let Some(len) = styles[at..].find('>') else { break };
+        let tag = &styles[at..at + len + 1];
+        if tag.contains("text:note-class=\"footnote\"") {
+            let lettered = match tag.find("style:num-format=\"") {
+                Some(n) => {
+                    let value = n + "style:num-format=\"".len();
+                    let end = tag[value..].find('"').map(|e| value + e).unwrap_or(value);
+                    format!("{}a{}", &tag[..value], &tag[end..])
+                }
+                None => {
+                    tag.replacen("<text:notes-configuration", "<text:notes-configuration style:num-format=\"a\"", 1)
+                }
+            };
+            return format!("{}{}{}", &styles[..at], lettered, &styles[at + len + 1..]);
+        }
+        from = at + len + 1;
+    }
+    const LETTERED: &str = "<text:notes-configuration text:note-class=\"footnote\" style:num-format=\"a\" text:start-numbering-at=\"document\" text:footnotes-position=\"page\"/>";
+    match styles.find("</office:styles>") {
+        Some(at) => format!("{}{}{}", &styles[..at], LETTERED, &styles[at..]),
+        None => styles.to_owned(),
+    }
+}
+
 pub fn odt(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u8>> {
     rewrite(default, |files| {
         let styles = text_of(files, "styles.xml")?;
-        put(files, "styles.xml", odt_styles(&styles, f, p));
+        let styles = odt_styles(&styles, f, p);
+        let styles = if p.lettered_footnotes { odt_lettered_footnotes(&styles) } else { styles };
+        put(files, "styles.xml", styles);
         Ok(())
     })
 }
@@ -1244,6 +1280,7 @@ mod tests {
             title: "Wrath & the hero".into(),
             authors: vec!["A. Scholar".into()],
             language: Some("en-GB".into()),
+            ..Default::default()
         }
     }
 

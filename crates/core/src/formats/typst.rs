@@ -16,6 +16,10 @@ pub struct Particulars {
     pub title: String,
     pub authors: Vec<String>,
     pub language: Option<String>,
+    /// The notes at the foot of the page are those that were set against the
+    /// format, which has its notes at the end: they are lettered, to be told
+    /// from the numbered ones.
+    pub lettered_footnotes: bool,
 }
 
 /// A string of Typst code.
@@ -309,8 +313,12 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
         gap = format!("{body_leading} + 0.6em"),
     );
 
-    // Notes at the foot of the page.
-    if f.notes.kind == NoteKind::Footnotes {
+    // Notes at the foot of the page: those of the format, or single ones in a
+    // format that has its notes at the end.
+    if p.lettered_footnotes {
+        let _ = writeln!(out, "#set footnote(numbering: \"a\")");
+    }
+    if f.notes.kind == NoteKind::Footnotes || p.lettered_footnotes {
         let _ = writeln!(
             out,
             "#set footnote.entry(gap: 0.5em, separator: line(length: 30%, stroke: 0.5pt))
@@ -455,6 +463,7 @@ mod tests {
             title: "Wrath \"and\" the hero".into(),
             authors: vec!["A. Scholar".into()],
             language: Some("en-GB".into()),
+            ..Default::default()
         };
         let out = preamble(&f, &p);
         assert!(out.contains("paper: \"us-letter\""));
