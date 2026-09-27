@@ -8,6 +8,8 @@
   import ImportDialog from './ImportDialog.svelte';
   import PasteDialog from './PasteDialog.svelte';
   import ReferenceDialog from './ReferenceDialog.svelte';
+  import { notesUi } from './notes.svelte';
+  import NotesPanel from './NotesPanel.svelte';
   import { dialogs, importDropped } from './references.svelte';
   import ZoteroDialog from './ZoteroDialog.svelte';
 
@@ -72,6 +74,12 @@
 {#if dialogs.importing}
   {#key dialogs.importing}
     <ImportDialog request={dialogs.importing} onclose={() => (dialogs.importing = null)} />
+  {/key}
+{/if}
+
+{#if notesUi.open}
+  {#key notesUi.open}
+    <NotesPanel request={notesUi.open} onclose={() => (notesUi.open = null)} />
   {/key}
 {/if}
 

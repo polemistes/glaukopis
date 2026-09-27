@@ -313,7 +313,7 @@ impl<'a> Parser<'a> {
             }
             self.pos += 1;
             self.skip_ws();
-            let value = self.value().map_err(|e| format!("in `{key}`, field `{name}`: {e}"))?;
+            let value = self.value_of(&name).map_err(|e| format!("in `{key}`, field `{name}`: {e}"))?;
             if let Some(existing) = fields.iter_mut().find(|(n, _)| *n == name) {
                 existing.1 = value;
             } else {
@@ -325,6 +325,12 @@ impl<'a> Parser<'a> {
 
     /// A value: parts joined by `#`.
     fn value(&mut self) -> PResult<String> {
+        self.value_of("")
+    }
+
+    /// The value of a field. In the fields that hold running text, where one
+    /// paragraph ends and the next begins is part of the value.
+    fn value_of(&mut self, field: &str) -> PResult<String> {
         let mut out = String::new();
         loop {
             self.skip_ws();
@@ -398,8 +404,37 @@ impl<'a> Parser<'a> {
                 break;
             }
         }
-        Ok(normalise_space(&out))
+        Ok(if has_paragraphs(field) { normalise_paragraphs(&out) } else { normalise_space(&out) })
     }
+}
+
+/// The fields that hold running text, which may be of several paragraphs.
+pub fn has_paragraphs(field: &str) -> bool {
+    matches!(field, "annotation" | "annote" | "abstract")
+}
+
+/// As `normalise_space`, within each paragraph. Paragraphs, which an empty
+/// line sets apart in TeX, are set apart by one empty line.
+pub fn normalise_paragraphs(s: &str) -> String {
+    let unified = s.replace("\r\n", "\n").replace('\r', "\n");
+    let mut paragraphs: Vec<String> = Vec::new();
+    let mut current = String::new();
+    for line in unified.split('\n') {
+        if line.trim().is_empty() {
+            if !current.is_empty() {
+                paragraphs.push(normalise_space(&current));
+                current.clear();
+            }
+        } else {
+            current.push_str(line);
+            current.push(' ');
+        }
+    }
+    if !current.is_empty() {
+        paragraphs.push(normalise_space(&current));
+    }
+    paragraphs.retain(|p| !p.is_empty());
+    paragraphs.join("\n\n")
 }
 
 /// Collapses runs of whitespace, including line breaks, to single spaces.

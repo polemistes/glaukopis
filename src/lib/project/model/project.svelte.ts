@@ -90,6 +90,8 @@ export class Project {
   readonly yNodes: Y.Map<YNode>;
   readonly yLinks: Y.Map<YNode>;
   readonly yRefs: Y.Map<RefRecord>;
+  /** What is written about the works cited, for this project: by the id of the reference. */
+  readonly yNotes: Y.Map<Y.Text>;
   readonly undoManager: Y.UndoManager;
   #awareness: Awareness | null = null;
 
@@ -99,6 +101,8 @@ export class Project {
   readonly nodes = new SvelteMap<string, NodeRecord>();
   links = $state.raw<LinkRecord[]>([]);
   readonly refs = new SvelteMap<string, RefRecord>();
+  /** The notes on references that belong to this project. Those without text are not among them. */
+  readonly notes = new SvelteMap<string, string>();
   /** Rises when the shape of any tree changes. */
   structure = $state(0);
   /** Rises with every change to the project, whoever made it. */
@@ -127,6 +131,7 @@ export class Project {
     this.yNodes = this.doc.getMap('nodes');
     this.yLinks = this.doc.getMap('links');
     this.yRefs = this.doc.getMap('refs');
+    this.yNotes = this.doc.getMap('notes');
 
     this.undoManager = new Y.UndoManager([this.yMeta, this.yMaps, this.yNodes, this.yLinks], {
       trackedOrigins: new Set<unknown>([LOCAL, ySyncPluginKey]),
@@ -157,6 +162,7 @@ export class Project {
       }
     });
     this.yNodes.observeDeep((events) => this.#nodesChanged(events));
+    this.yNotes.observeDeep(() => this.#readNotes());
 
     this.doc.on('update', (update: Uint8Array, origin: unknown) => {
       if (origin === LOAD || this.#closed) return;
@@ -247,6 +253,7 @@ export class Project {
     for (const id of this.yNodes.keys()) this.#readNode(id);
     this.refs.clear();
     for (const [id, value] of this.yRefs) this.refs.set(id, value);
+    this.#readNotes();
     this.structure++;
   }
 
@@ -1102,6 +1109,51 @@ export class Project {
       citation.setAttribute('mode', 'normal');
       paragraph.insert(paragraph.length, [citation]);
     });
+  }
+
+  #readNotes() {
+    const seen = new Set<string>();
+    for (const [id, text] of this.yNotes) {
+      const value = text instanceof Y.Text ? text.toString() : '';
+      if (!value.trim()) continue;
+      seen.add(id);
+      if (this.notes.get(id) !== value) this.notes.set(id, value);
+    }
+    for (const id of [...this.notes.keys()]) if (!seen.has(id)) this.notes.delete(id);
+  }
+
+  /**
+   * What is written about a work, for this project. It is changed where it
+   * differs, and not replaced, so that two who write in it at once keep what
+   * both wrote. Not part of undo: the field it is written in has its own.
+   */
+  setNote(ref: string, text: string) {
+    const existing = this.yNotes.get(ref);
+    const before = existing instanceof Y.Text ? existing.toString() : '';
+    if (before === text) return;
+    this.doc.transact(() => {
+      if (!text.trim()) {
+        this.yNotes.delete(ref);
+        return;
+      }
+      let note = existing instanceof Y.Text ? existing : null;
+      if (!note) {
+        note = new Y.Text();
+        this.yNotes.set(ref, note);
+      }
+      let start = 0;
+      const most = Math.min(before.length, text.length);
+      while (start < most && before[start] === text[start]) start++;
+      let end = 0;
+      while (
+        end < most - start &&
+        before[before.length - 1 - end] === text[text.length - 1 - end]
+      ) {
+        end++;
+      }
+      if (before.length - start - end > 0) note.delete(start, before.length - start - end);
+      if (text.length - start - end > 0) note.insert(start, text.slice(start, text.length - end));
+    }, 'notes');
   }
 
   /** Keeps a copy of a reference in the project. Not part of undo: it is not the user's writing. */

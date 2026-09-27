@@ -213,6 +213,35 @@ describe('references', () => {
   });
 });
 
+describe('notes on references', () => {
+  it('are kept in the project, and changed where they differ', () => {
+    const { p } = project();
+    const undoable = p.undoManager.undoStack.length;
+    p.setNote('nagy', 'The best is a title.');
+    expect(p.notes.get('nagy')).toBe('The best is a title.');
+    const note = p.yNotes.get('nagy')!;
+    p.setNote('nagy', 'The best is a title, not praise.');
+    expect(p.yNotes.get('nagy')).toBe(note);
+    expect(p.notes.get('nagy')).toBe('The best is a title, not praise.');
+    p.setNote('nagy', '   ');
+    expect(p.notes.has('nagy')).toBe(false);
+    expect(p.undoManager.undoStack.length).toBe(undoable);
+  });
+
+  it('written by two at once hold what both wrote', () => {
+    const a = new Project(null);
+    const b = new Project(null);
+    a.setNote('nagy', 'On kleos.');
+    Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+    a.setNote('nagy', 'On kleos. See chapter 2.');
+    b.setNote('nagy', 'Read again: On kleos.');
+    Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+    Y.applyUpdate(a.doc, Y.encodeStateAsUpdate(b.doc));
+    expect(a.notes.get('nagy')).toBe('Read again: On kleos. See chapter 2.');
+    expect(b.notes.get('nagy')).toBe(a.notes.get('nagy'));
+  });
+});
+
 describe('undo', () => {
   it('undoes and redoes changes of structure', () => {
     const { p, map, root } = project();

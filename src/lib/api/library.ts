@@ -22,6 +22,8 @@ export interface Summary {
   title: string;
   container: string;
   attachments: number;
+  /** Whether the user has written something about the work, for all projects. */
+  hasNote: boolean;
   added: string;
   modified: string;
   /** Folded text for searching. */
@@ -154,6 +156,8 @@ export const libraryGetMany = (ids: string[]) => call<Reference[]>('library_get_
 export const libraryAdd = (draft: Draft) => call<Reference>('library_add', { draft });
 export const libraryUpdate = (id: string, draft: Draft) =>
   call<Reference>('library_update', { id, draft });
+export const librarySetNote = (id: string, text: string) =>
+  call<Reference>('library_set_note', { id, text });
 export const libraryRemove = (ids: string[]) => call<number>('library_remove', { ids });
 export const librarySource = (id: string) => call<string>('library_source', { id });
 export const libraryUpdateSource = (id: string, source: string) =>

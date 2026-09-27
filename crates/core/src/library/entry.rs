@@ -176,6 +176,7 @@ impl Entry {
             title,
             container,
             attachments: self.attachments().len(),
+            has_note: self.get("annotation").is_some(),
             added: self.added.clone(),
             modified: self.modified.clone(),
             search: hay,
@@ -280,6 +281,8 @@ pub struct Summary {
     pub title: String,
     pub container: String,
     pub attachments: usize,
+    /// Whether the user has written something about the work: its `annotation`.
+    pub has_note: bool,
     pub added: String,
     pub modified: String,
     pub search: String,
@@ -401,9 +404,14 @@ impl Draft {
             if name.starts_with("glaukopis-") || self.names.contains_key(name) {
                 continue;
             }
-            let value = crate::bib::parser::normalise_space(value);
+            let name = name.to_ascii_lowercase();
+            let value = if crate::bib::parser::has_paragraphs(&name) {
+                crate::bib::parser::normalise_paragraphs(value)
+            } else {
+                crate::bib::parser::normalise_space(value)
+            };
             if !value.is_empty() {
-                out.push((name.to_ascii_lowercase(), value));
+                out.push((name, value));
             }
         }
         out

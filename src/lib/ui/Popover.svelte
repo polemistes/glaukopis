@@ -1,3 +1,8 @@
+<script lang="ts" module>
+  /** The popovers that are open, the one that lies over the others last. */
+  const opened: symbol[] = [];
+</script>
+
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { place, type Align, type RectLike, type Side } from './floating';
@@ -57,6 +62,28 @@
       onclose();
     }
   }
+
+  // Escape closes the popover also when nothing in it has the cursor, as
+  // after a button in it was used; of several, the one that lies over the others.
+  $effect(() => {
+    if (!open) return;
+    const me = Symbol('popover');
+    opened.push(me);
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || opened[opened.length - 1] !== me) return;
+      if (el?.contains(event.target as Node)) return;
+      if ((event.target as HTMLElement | null)?.closest?.('.menu')) return;
+      event.stopPropagation();
+      event.preventDefault();
+      onclose();
+    };
+    window.addEventListener('keydown', escape, true);
+    return () => {
+      window.removeEventListener('keydown', escape, true);
+      const at = opened.indexOf(me);
+      if (at >= 0) opened.splice(at, 1);
+    };
+  });
 </script>
 
 {#if open}

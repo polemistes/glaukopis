@@ -315,6 +315,24 @@ impl Library {
         Ok(entry)
     }
 
+    /// What the user has written about a work: their reflections and
+    /// comments, which are not part of what is cited. Kept in the field
+    /// `annotation`, which is what BibLaTeX has for it. Nothing, or only
+    /// blanks, takes the note away.
+    pub fn set_note(&mut self, id: &str, text: &str) -> Result<Entry> {
+        self.refresh()?;
+        let mut draft = Draft::from_entry(self.require(id)?);
+        let text = tidy_note(text);
+        if text.is_empty() {
+            draft.fields.remove("annotation");
+        } else {
+            draft.fields.insert("annotation".into(), text);
+        }
+        let entry = self.apply(id, &draft)?;
+        self.save()?;
+        Ok(entry)
+    }
+
     pub(crate) fn apply(&mut self, id: &str, draft: &Draft) -> Result<Entry> {
         let index = *self.by_id.get(id).ok_or_else(|| Error::not_found("the reference"))?;
         let entry_type = Self::check_type(&draft.entry_type)?;
@@ -675,9 +693,56 @@ pub fn draft_from_source(source: &str) -> Result<Draft> {
     }
 }
 
+/// A note as it is kept. What the user writes as lines are paragraphs to
+/// BibLaTeX, which an empty line sets apart: a line break alone is no more
+/// than a space there, and would be lost the next time the file is read.
+fn tidy_note(text: &str) -> String {
+    text.replace("\r\n", "\n")
+        .replace('\r', "\n")
+        .lines()
+        .map(crate::bib::parser::normalise_space)
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn what_the_user_writes_about_a_work() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut lib = Library::open_at(&tmp.path().join("library")).unwrap();
+        let e = lib
+            .add(
+                &draft_from_source(
+                    "@book{nagy1979, author={Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}}",
+                )
+                .unwrap(),
+            )
+            .unwrap();
+        assert!(!e.summary().has_note);
+
+        let note = "On mênis & kleos: 100% of chapter 5 {sic}.  \r\n\r\n\r\nRead again: “best” is a title, not praise.\nCf. #12 in my notebook_2.\n";
+        let e = lib.set_note(&e.id, note).unwrap();
+        assert!(e.summary().has_note);
+        let kept = "On mênis & kleos: 100% of chapter 5 {sic}.\n\nRead again: “best” is a title, not praise.\n\nCf. #12 in my notebook_2.";
+        assert_eq!(Draft::from_entry(&e).get("annotation"), Some(kept));
+        assert_eq!(e.key, "nagy1979");
+        assert_eq!(e.get("title"), Some("The Best of the Achaeans"));
+
+        // As it is read from the file again, by this application or another.
+        let again = Library::open_at(&tmp.path().join("library")).unwrap();
+        assert_eq!(Draft::from_entry(again.require(&e.id).unwrap()).get("annotation"), Some(kept));
+        assert!(again.summaries().iter().any(|s| s.id == e.id && s.has_note));
+        assert!(again.summaries()[0].search.contains("kleos"), "a note is found by what it says");
+
+        let e = lib.set_note(&e.id, "  \n ").unwrap();
+        assert!(!e.summary().has_note);
+        assert!(!lib.source(&e.id).unwrap().contains("annotation"));
+        assert!(lib.set_note("nothing", "x").is_err());
+    }
 
     fn draft(src: &str) -> Draft {
         draft_from_source(src).unwrap()

@@ -4,6 +4,7 @@
   import Search from '@lucide/svelte/icons/search';
   import type { Summary } from '$lib/api/library';
   import { importFile, newReference } from '$lib/library/references.svelte';
+  import NoteButton from '$lib/library/NoteButton.svelte';
   import TypeIcon from '$lib/library/TypeIcon.svelte';
   import { library, search, sortEntries } from '$lib/state/library.svelte';
   import Popover from '$lib/ui/Popover.svelte';
@@ -159,6 +160,7 @@
             </div>
             <div class="title truncate">{entry.title}</div>
           </div>
+          <NoteButton id={entry.id} />
         </div>
       {:else}
         <p class="none">

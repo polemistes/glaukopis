@@ -5,6 +5,7 @@
   import X from '@lucide/svelte/icons/x';
   import { editReference } from '$lib/library/references.svelte';
   import { truncate } from '$lib/library/format';
+  import NoteButton from '$lib/library/NoteButton.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import Popover from '$lib/ui/Popover.svelte';
   import { lookup } from './references.svelte';
@@ -114,6 +115,7 @@
               <span class="gone">This reference is not in your library.</span>
             {/if}
           </div>
+          <NoteButton id={item.id} always />
           {#if ref?.inLibrary}
             <IconButton label="Edit the reference" size="sm" onclick={() => edit(item.id)}>
               <Pencil size={13} />

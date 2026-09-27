@@ -104,6 +104,8 @@
     border-radius: var(--radius-s);
   }
   .action {
+    flex: none;
+    white-space: nowrap;
     padding: 1px 8px;
     font-weight: 600;
     color: #a9d6d2;

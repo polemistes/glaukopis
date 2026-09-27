@@ -52,6 +52,8 @@
     for (const name of added) rest.add(name);
     for (const name of primary) rest.delete(name);
     rest.delete('file');
+    // What the user writes about the work has a place of its own (see notes.svelte.ts).
+    rest.delete('annotation');
     const others = [...rest].sort((a, b) => {
       const ia = schemaOrder.indexOf(a);
       const ib = schemaOrder.indexOf(b);
@@ -88,7 +90,9 @@
       hint: fieldDef(name).hint,
       action: () => addField(name),
     });
-    const suggested = (typeDef(draft.type)?.secondary ?? []).filter((f) => !visible.has(f));
+    const suggested = (typeDef(draft.type)?.secondary ?? []).filter(
+      (f) => !visible.has(f) && f !== 'annotation',
+    );
     const items: MenuItem[] = [];
     if (suggested.length) {
       items.push({ kind: 'heading', label: 'Often used' });
@@ -97,7 +101,11 @@
     }
     for (const group of schema.fieldGroups) {
       const fields = schemaOrder.filter(
-        (f) => schema.fields[f].group === group && !visible.has(f) && !suggested.includes(f),
+        (f) =>
+          schema.fields[f].group === group &&
+          f !== 'annotation' &&
+          !visible.has(f) &&
+          !suggested.includes(f),
       );
       if (fields.length) items.push({ kind: 'submenu', label: group, items: fields.map(item) });
     }

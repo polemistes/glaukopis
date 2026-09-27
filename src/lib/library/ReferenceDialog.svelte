@@ -19,6 +19,8 @@
   import { describeError } from '$lib/ui/toast.svelte';
   import DuplicateNotice from './DuplicateNotice.svelte';
   import Lookup from './Lookup.svelte';
+  import NoteButton from './NoteButton.svelte';
+  import { withNoteAsItIs } from './notes.svelte';
   import ReferenceForm from './ReferenceForm.svelte';
   import { rememberType, type FormRequest } from './references.svelte';
 
@@ -107,7 +109,10 @@
       const snapshot = $state.snapshot(draft);
       const saved = isNew
         ? await libraryAdd(snapshot)
-        : await libraryUpdate(request.reference!.id, snapshot);
+        : await libraryUpdate(
+            request.reference!.id,
+            await withNoteAsItIs(request.reference!.id, snapshot, request.reference!),
+          );
       library.put(saved);
       rememberType(saved.type);
       if (isNew && request.collection) {
@@ -208,6 +213,9 @@
         {#snippet icon()}<Code size={14} />{/snippet}
         {source === null ? 'Source' : 'Back to the form'}
       </Button>
+      {#if !isNew && request.reference}
+        <NoteButton id={request.reference.id} size={14} always />
+      {/if}
     </div>
     <Button variant="ghost" onclick={close}>Cancel</Button>
     <Button variant="primary" disabled={saving || (!hasContent && source === null)} onclick={save}>
@@ -250,6 +258,9 @@
     box-shadow: 0 0 0 3px var(--focus-ring);
   }
   .left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     margin-right: auto;
   }
 </style>

@@ -37,6 +37,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import { dateWords, fileSize } from './format';
+  import { toLines, withNoteAsItIs } from './notes.svelte';
   import ReferenceForm from './ReferenceForm.svelte';
 
   interface Props {
@@ -65,6 +66,42 @@
       load(wanted);
     });
   });
+
+  // What is changed elsewhere, such as a note written from the list, is
+  // taken up when nothing here is waiting to be saved.
+  $effect(() => {
+    const now = library.get(id)?.modified;
+    untrack(() => {
+      if (!now || !reference || reference.id !== id || status !== 'saved') return;
+      if (now !== reference.modified) load(id);
+    });
+  });
+
+  // ---- what the user writes about the work ----
+
+  const note = $derived(toLines(draft?.fields.annotation));
+
+  function writeNote(text: string) {
+    if (!draft) return;
+    // Lines here are paragraphs in the file.
+    const lines = text.split('\n');
+    const field = lines
+      .map((line, i) => (i === lines.length - 1 ? line : line.trimEnd()))
+      .join('\n\n')
+      .replace(/\n{3,}/g, '\n\n');
+    if (field.trim()) draft.fields.annotation = field;
+    else delete draft.fields.annotation;
+    onchange();
+  }
+
+  function growNote(node: HTMLTextAreaElement, _value: string) {
+    const fit = () => {
+      node.style.height = '0';
+      node.style.height = `${Math.min(Math.max(node.scrollHeight + 2, 72), 360)}px`;
+    };
+    fit();
+    return { update: fit };
+  }
 
   // Save what is pending when the pane goes away.
   $effect(() => () => flush());
@@ -112,7 +149,7 @@
     // An emptied key means: make one.
     status = 'saving';
     try {
-      const saved = await libraryUpdate(forId, snapshot);
+      const saved = await libraryUpdate(forId, await withNoteAsItIs(forId, snapshot, reference));
       library.put(saved);
       if (forId !== loadedId) return;
       reference = saved;
@@ -279,6 +316,20 @@
 
       <section>
         <div class="section-head">
+          <h3 class="overline">Your notes</h3>
+        </div>
+        <textarea
+          class="note"
+          value={note}
+          use:growNote={note}
+          placeholder="What you make of it. For yourself: it is not part of what is cited."
+          aria-label="Your notes on this work"
+          spellcheck="true"
+          oninput={(e) => writeNote(e.currentTarget.value)}></textarea>
+      </section>
+
+      <section>
+        <div class="section-head">
           <h3 class="overline">Files</h3>
           <Button variant="ghost" size="sm" onclick={() => attach()}>
             {#snippet icon()}<Paperclip size={13} />{/snippet}
@@ -376,6 +427,28 @@
 {/if}
 
 <style>
+  textarea.note {
+    display: block;
+    width: 100%;
+    min-height: 72px;
+    padding: 9px 11px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background: var(--paper-raised);
+    color: var(--ink);
+    font-family: var(--font-text);
+    font-size: 14.5px;
+    line-height: 1.55;
+    resize: none;
+    outline: none;
+  }
+  textarea.note:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
+  textarea.note::placeholder {
+    color: var(--ink-4);
+  }
   .pane {
     display: flex;
     flex-direction: column;

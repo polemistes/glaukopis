@@ -66,6 +66,14 @@ try {
   await owner.installErrorHook();
   await guest.installErrorHook();
 
+  // A work in the library of the owner, with what the owner has written about it.
+  await owner.execAsync(
+    `const invoke = window.__TAURI_INTERNALS__.invoke;
+     const plan = await invoke('import_bib_text', { text: arguments[0] });
+     await invoke('import_apply', { plan });`,
+    '@book{lord1960, author={Lord, Albert B.}, title={The Singer of Tales}, date={1960}, annotation={Formula and theme.}}',
+  );
+
   // ---- the owner makes a project and shares it ----
   await owner.clickText('button', 'Begin a project');
   await owner.waitFor('dialog input');
@@ -205,6 +213,63 @@ try {
   await guest.press('Escape');
   await owner.waitGone('.box');
   await guest.waitGone('.box');
+
+  // ---- what the owner has written about a work goes with the project ----
+  await owner.doubleClick(await owner.findByText('.diagram .node', 'Reception'));
+  await owner.waitFor('.box .text .prose');
+  await sleep(300);
+  await owner.clickText('.box .tools button', 'Cite');
+  await owner.waitFor('.picker input');
+  await owner.keys('singer');
+  await sleep(400);
+  await owner.press('Enter');
+  await owner.waitFor('.editor .locator input');
+  await owner.press('Enter');
+  await owner.waitGone('.editor');
+  await sleep(300);
+  await owner.press('Escape');
+  await owner.waitGone('.box');
+  await guest.doubleClick(await guest.findByText('.diagram .node', 'Reception'));
+  await guest.waitFor('.box .text .citation', 8000);
+  await sleep(500);
+  await guest.click('.box .text .citation');
+  await guest.waitFor('.editor .note-button.has', 5000);
+  await guest.exec(`document.querySelector('.editor .note-button').click()`);
+  await guest.waitFor('.notes textarea', 3000);
+  await sleep(300);
+  const came = await guest.exec(
+    `return Array.from(document.querySelectorAll('.notes textarea')).map((t) => t.dataset.scope + ':' + t.value)`,
+  );
+  check('a note of the owner comes with the project, as a note of the project', came.join('|') === 'project:Formula and theme.', came.join('|'));
+  await guest.click('.notes textarea');
+  await guest.keys([ 'Control', 'End' ]);
+  await guest.keys(' And the singer?');
+  await guest.screenshot('sharing-7b-note');
+  await guest.press('Escape');
+  await guest.waitGone('.notes');
+  await guest.press('Escape');
+  await sleep(200);
+  await guest.press('Escape');
+  await guest.waitGone('.box');
+  // The owner sees what the guest wrote, as a note of the project; the owner's own is as it was.
+  await owner.keys(['Control', 'Shift', 'r']);
+  await owner.waitFor('.panel .item', 5000);
+  await sleep(300);
+  await owner.exec(`document.querySelector('.panel .item .note-button').click()`);
+  await owner.waitFor('.notes textarea', 3000);
+  await sleep(400);
+  const back = await owner.exec(
+    `return Array.from(document.querySelectorAll('.notes textarea')).map((t) => t.dataset.scope + ':' + t.value)`,
+  );
+  check(
+    'what a collaborator adds is a note of the project for both',
+    back.join('|') === 'project:Formula and theme. And the singer?|all:Formula and theme.',
+    back.join('|'),
+  );
+  await owner.press('Escape');
+  await owner.waitGone('.notes');
+  await owner.keys(['Control', 'Shift', 'r']);
+  await sleep(300);
 
   // ---- without the server ----
   server.kill('SIGTERM');

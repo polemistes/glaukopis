@@ -93,6 +93,14 @@ pub fn library_update(state: State<'_, AppState>, id: String, draft: Draft) -> C
     Ok(full(&library, &entry))
 }
 
+/// Keeps what the user has written about a work, for all projects.
+#[tauri::command(async)]
+pub fn library_set_note(state: State<'_, AppState>, id: String, text: String) -> CommandResult<EntryFull> {
+    let mut library = state.library();
+    let entry = library.set_note(&id, &text)?;
+    Ok(full(&library, &entry))
+}
+
 #[tauri::command(async)]
 pub fn library_remove(state: State<'_, AppState>, ids: Vec<String>) -> CommandResult<usize> {
     Ok(state.library().remove(&ids)?)

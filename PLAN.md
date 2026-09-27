@@ -203,7 +203,7 @@ new parts exercised in the running application.
 | 7 | Collaboration | The server, sharing panel, invitation codes, presence. |
 | 8 | Packaging | Arch package, user guide; then deb, rpm, AppImage, macOS, Windows. |
 
-### Where the work stands (2026-09-27)
+### Where the work stands (2026-09-28)
 
 Milestones 0 to 7 are built, and each is exercised in the running application
 by a script in `e2e/`. Of milestone 8, the settings, the package for Arch

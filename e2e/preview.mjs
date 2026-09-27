@@ -131,7 +131,33 @@ try {
   await app.waitGone('dialog');
 
   // --- What there is to remark can be read in full ---
-  if (await app.exists('.preview footer .issues')) {
+  // A format of the user's own, which asks for a font that no computer has.
+  const own = await app.execAsync(
+    `const invoke = window.__TAURI_INTERNALS__.invoke;
+     const format = await invoke('formats_get', { id: 'manuscript' });
+     format.id = '';
+     format.name = 'With a font that is not there';
+     format.font.family = 'Porson of the Clarendon Press, 1806';
+     const saved = await invoke('formats_save', { format });
+     const map = JSON.parse(JSON.stringify(saved));
+     return map.id;`,
+  );
+  await app.click('header button[aria-label="Preview and export"]');
+  await sleep(300);
+  await app.click('header button[aria-label="Preview and export"]');
+  await app.waitFor('.preview select[aria-label="Document format"]', 8000);
+  await sleep(500);
+  await app.exec(
+    `const s = document.querySelector('.preview select[aria-label="Document format"]');
+     if (!Array.from(s.options).some((o) => o.value === arguments[0])) {
+       const o = document.createElement('option'); o.value = arguments[0]; o.textContent = 'x'; s.append(o);
+     }
+     s.value = arguments[0];
+     s.dispatchEvent(new Event('change', { bubbles: true }));`,
+    own,
+  );
+  await app.waitFor('.preview footer .issues', 15000);
+  {
     await app.click('.preview footer .issues');
     await app.waitFor('.remarks', 3000);
     await sleep(250);
@@ -143,7 +169,8 @@ try {
          return p.scrollWidth <= p.clientWidth + 1 && b.left >= box.left && b.right <= box.right + 1;
        }) && box.right <= innerWidth && box.left >= 0;`,
     );
-    check('the remarks are shown whole', fits, (await app.text('.remarks')).replace(/\s+/g, ' ').slice(0, 100));
+    const said = (await app.text('.remarks')).replace(/\s+/g, ' ');
+    check('the remarks are shown whole', fits && /Porson of the Clarendon Press, 1806 is not installed/.test(said) && /has it\.$/.test(said.trim()), said.slice(0, 120));
     await app.screenshot('preview-5b-remarks');
     await app.press('Escape');
     await app.waitGone('.remarks');

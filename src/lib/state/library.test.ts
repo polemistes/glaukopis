@@ -14,6 +14,7 @@ function entry(partial: Partial<Summary>): Summary {
     title: '',
     container: '',
     attachments: 0,
+    hasNote: false,
     added: '',
     modified: '',
     search: '',

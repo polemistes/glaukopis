@@ -22,10 +22,15 @@ export interface RefLabel {
 }
 
 /** The project whose references the editors look up. Set by the project view. */
-let current: Project | null = null;
+let current = $state.raw<Project | null>(null);
 
 export function setProject(project: Project | null) {
   current = project;
+}
+
+/** The project that is open, if one is. */
+export function currentProject(): Project | null {
+  return current;
 }
 
 export function lookup(id: string): RefLabel | null {

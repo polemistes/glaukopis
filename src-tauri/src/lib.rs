@@ -31,6 +31,7 @@ pub fn run() {
             commands::library::library_get_many,
             commands::library::library_add,
             commands::library::library_update,
+            commands::library::library_set_note,
             commands::library::library_remove,
             commands::library::library_source,
             commands::library::library_update_source,

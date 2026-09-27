@@ -99,6 +99,20 @@ Associations are shown as narrow lines in the left margin, between the
 sections they join. Click one to go to either end of it, to give it a few
 words, or to remove it.
 
+### Notes
+
+A note is written in a small panel that opens where the note stands, and is
+shown in the text as its number. In the text of a map the notes are numbered
+through the whole map, as they will be in the document. An element that is
+left out of the document numbers its own.
+
+Whether notes stand at the foot of the page or at the end of the text is
+said by the document format. Some books keep two kinds of notes apart: the
+author's remarks at the foot of the page, say, and the sources at the end.
+For that, a single note can be set to stand at the other place, in the panel
+it is written in. Such notes are lettered, *a*, *b*, *c*, in the text and in
+the document, so that they are told from the numbered ones.
+
 ## Citations
 
 A citation is not text: it is a link to a reference in your library. How it is
@@ -120,6 +134,33 @@ references (**Ctrl+Shift+R**) lists them, for this map, for the project, and
 the whole library. A reference dragged from the panel is cited where it is
 dropped in a text; dropped on an element of the diagram, it is cited at the
 end of that element's text.
+
+### What you think of a work
+
+Beside what is cited there is what you make of it: a summary, a doubt, where
+it bears on your argument. Such notes belong to the reference, not to the
+document. The small notebook that is shown with a reference opens them,
+wherever the reference is shown: in the library, in the references of a
+project, where a work is chosen to be cited, and in a citation in the text.
+Where something is written, the notebook is in view; where nothing is, it
+appears when the pointer is near.
+
+There are two kinds:
+
+| | Kept | Seen |
+| --- | --- | --- |
+| **In all projects** | With the reference, in `library.bib` | Wherever you cite the work |
+| **In this project** | In the project | In this project, by everyone it is shared with |
+
+What is written in the library is for all projects. What is written in a
+project is for that project, until you choose **Keep it for all projects**.
+
+When a project is shared, the notes you have on the works it cites go with
+it. To those you share it with they are notes of the project, to read and to
+add to; your own stay as you wrote them.
+
+References are found by what is written about them, as by their authors and
+titles.
 
 ## The library
 
@@ -222,8 +263,12 @@ consumed by the writing:
 - An element can have **another map take its place in the document**. The map
   of the book then has one element for each chapter, each of which stands for
   the map of that chapter. The preview of the book shows the book.
-- **Open beside** shows two maps side by side, or the same map as diagram and
-  as text.
+- **Two side by side**, in the bar over the map, shows the map as diagram and
+  as text beside one another. Click a side and then a tab to show another
+  map there; each side can be diagram or text.
+
+The line between the two sides can be dragged, as can those beside the
+preview and the references. A double click on a line puts it back.
 
 ## What goes into the document
 
@@ -259,6 +304,13 @@ came with Glaukopis stay as they were.
 
 **Export** makes the manuscript: PDF, Word, OpenDocument, LaTeX, Markdown, or
 a web page.
+
+What there is to remark about a document, such as a font the format asks for
+and the computer does not have, is said at the foot of the preview.
+
+Two programs do the work. Pandoc turns the text into the document, and sets
+every citation and the bibliography in the reference style. Typst sets the
+pages: those of the preview, and those of the PDF, which are the same.
 
 ## Working together
 
