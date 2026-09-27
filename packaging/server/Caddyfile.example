@@ -1,0 +1,11 @@
+# Caddy in front of the Glaukopis collaboration server. Caddy gets the
+# certificate by itself, and renews it.
+#
+# Replace the name by that of your server, put this in /etc/caddy/Caddyfile,
+# and: systemctl reload caddy
+#
+# In Glaukopis, the address of the server is then: glaukopis.example.org
+
+glaukopis.example.org {
+	reverse_proxy 127.0.0.1:8375
+}

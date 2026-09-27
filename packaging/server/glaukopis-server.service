@@ -1,0 +1,43 @@
+[Unit]
+Description=Glaukopis collaboration server
+Documentation=file:///usr/share/doc/glaukopis-server/server.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=-/etc/glaukopis-server.conf
+Environment=GLAUKOPIS_SERVER_DATA=%S/glaukopis-server
+ExecStart=/usr/bin/glaukopis-server
+Restart=on-failure
+RestartSec=3
+
+# The server needs its own directory, and the network. Nothing else.
+DynamicUser=yes
+StateDirectory=glaukopis-server
+StateDirectoryMode=0700
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+CapabilityBoundingSet=
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
