@@ -5,7 +5,6 @@ use std::path::Path;
 use serde::Serialize;
 use tauri::State;
 
-use glaukopis_core::document::Document;
 use glaukopis_core::export::{self, Context, ExportOptions, Exported, Preview, Request, Target, Tools};
 use glaukopis_core::formats::{DocumentFormat, FormatSummary};
 use glaukopis_core::styles::{Found, StyleSummary};
@@ -143,24 +142,6 @@ pub fn style_sample(
     language: Option<String>,
 ) -> CommandResult<String> {
     with_context(&state, true, |ctx| export::style_sample(ctx, &xml, &references, language.as_deref()))
-}
-
-/// Writes the readable copies of the maps of a project.
-#[tauri::command(async)]
-pub fn document_readable(
-    state: State<'_, AppState>,
-    project: String,
-    maps: Vec<(String, Document)>,
-) -> CommandResult<usize> {
-    let copies = with_context(&state, true, |ctx| {
-        let mut out = Vec::with_capacity(maps.len());
-        for (name, document) in &maps {
-            out.push((name.clone(), export::readable(ctx, document)?));
-        }
-        Ok(out)
-    })?;
-    state.projects.write_readable(&project, &copies)?;
-    Ok(copies.len())
 }
 
 /// Opens a file that was made, in the program the system uses for its kind.

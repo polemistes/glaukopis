@@ -79,7 +79,6 @@ pub fn run() {
             commands::projects::project_save_view,
             commands::projects::project_history,
             commands::projects::project_history_state,
-            commands::projects::project_write_readable,
             commands::sharing::sharing_server,
             commands::sharing::sharing_read_invitation,
             commands::sharing::sharing_publish,
@@ -108,7 +107,6 @@ pub fn run() {
             commands::documents::formats_delete,
             commands::documents::document_preview,
             commands::documents::document_export,
-            commands::documents::document_readable,
             commands::documents::open_path,
         ])
         .run(tauri::generate_context!())

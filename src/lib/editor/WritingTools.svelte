@@ -140,12 +140,6 @@
         { kind: 'separator' as const },
         { kind: 'heading' as const, label: 'While typing' },
         {
-          label: '*italic*  **bold**',
-          hint: 'Signs around words set them',
-          disabled: true,
-          action: () => {},
-        },
-        {
           label: '>  -  1.',
           hint: 'At the start of a line: quotation, list, numbered list',
           disabled: true,

@@ -130,12 +130,3 @@ pub fn project_history(state: State<'_, AppState>, id: String) -> CommandResult<
 pub fn project_history_state(state: State<'_, AppState>, id: String, entry: String) -> CommandResult<String> {
     Ok(B64.encode(state.projects.history_state(&id, &entry)?))
 }
-
-#[tauri::command(async)]
-pub fn project_write_readable(
-    state: State<'_, AppState>,
-    id: String,
-    maps: Vec<(String, String)>,
-) -> CommandResult<()> {
-    Ok(state.projects.write_readable(&id, &maps)?)
-}

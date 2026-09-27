@@ -291,8 +291,7 @@
           <div class="hint path-text">{system?.dataDir ?? ''}</div>
           <div class="hint">
             Your references are in <code>library/library.bib</code>, which any BibLaTeX tool can
-            read; your maps are also kept as plain text beside each project. To keep a copy of your
-            work, copy this folder.
+            read. To keep a copy of your work, copy this folder.
           </div>
         </div>
         <Button size="sm" disabled={!system} onclick={() => system && openPath(system.dataDir)}>

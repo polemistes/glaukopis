@@ -8,7 +8,6 @@
 //! projects/<id>/state.bin      the document as one update
 //! projects/<id>/updates.log    changes since, each preceded by its length
 //! projects/<id>/history/       earlier states, thinned as they age
-//! projects/<id>/maps/          readable copies of the maps
 //! ```
 //!
 //! A deleted project is moved to `projects/.trash/` and can be brought back.
@@ -20,7 +19,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, IoContext, Result};
-use crate::fsutil::{safe_file_name, write_atomic};
+use crate::fsutil::write_atomic;
 use crate::library::now;
 use crate::paths::DataDir;
 
@@ -256,6 +255,7 @@ impl Projects {
         let dir = self.existing_dir(id)?;
         self.keep_history(&dir)?;
         write_atomic(&dir.join(STATE), state)?;
+        remove_copies(&dir);
         // Only now may the log go: the state holds what it held.
         match fs::remove_file(dir.join(LOG)) {
             Ok(()) => {}
@@ -457,32 +457,6 @@ impl Projects {
         Self::write_info(&to, &copy)?;
         Ok(copy)
     }
-
-    /// Writes the readable copies of the maps, replacing those that were there.
-    pub fn write_readable(&self, id: &str, maps: &[(String, String)]) -> Result<()> {
-        let dir = self.existing_dir(id)?.join("maps");
-        fs::create_dir_all(&dir).context(|| format!("creating {}", dir.display()))?;
-        let mut written = Vec::new();
-        for (name, text) in maps {
-            let mut file_name = format!("{}.md", safe_file_name(name, "map"));
-            let mut n = 2;
-            while written.contains(&file_name.to_lowercase()) {
-                file_name = format!("{} {n}.md", safe_file_name(name, "map"));
-                n += 1;
-            }
-            write_atomic(&dir.join(&file_name), text.as_bytes())?;
-            written.push(file_name.to_lowercase());
-        }
-        if let Ok(entries) = fs::read_dir(&dir) {
-            for entry in entries.flatten() {
-                let name = entry.file_name().to_string_lossy().to_lowercase();
-                if name.ends_with(".md") && !written.contains(&name) {
-                    let _ = fs::remove_file(entry.path());
-                }
-            }
-        }
-        Ok(())
-    }
 }
 
 /// What the interface reports about the document when it saves its state.
@@ -493,6 +467,22 @@ pub struct Summary {
     pub maps: Vec<MapInfo>,
     pub words: usize,
     pub references: usize,
+}
+
+/// Earlier versions wrote every map as Markdown beside the project. Those
+/// copies are no longer written, and one that is left would show the project
+/// as it once was: they are removed, and nothing else.
+fn remove_copies(dir: &Path) {
+    let copies = dir.join("maps");
+    let Ok(entries) = fs::read_dir(&copies) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_file() && path.extension().is_some_and(|e| e == "md") {
+            let _ = fs::remove_file(path);
+        }
+    }
+    // Goes only if nothing else was in it.
+    let _ = fs::remove_dir(&copies);
 }
 
 fn checksum(bytes: &[u8]) -> u32 {
@@ -765,21 +755,23 @@ mod tests {
     }
 
     #[test]
-    fn readable_copies() {
+    fn copies_written_by_earlier_versions_are_removed() {
         let (_tmp, p) = projects();
         let a = p.create("A").unwrap();
-        p.write_readable(
-            &a.id,
-            &[("Book".into(), "# Book".into()), ("book".into(), "# other".into()), ("Ch/1".into(), "x".into())],
-        )
-        .unwrap();
-        let dir = p.dir(&a.id).unwrap().join("maps");
-        let mut names: Vec<String> =
-            fs::read_dir(&dir).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
-        names.sort();
-        assert_eq!(names, vec!["Book.md", "Ch 1.md", "book 2.md"]);
-        p.write_readable(&a.id, &[("Book".into(), "# Book".into())]).unwrap();
-        assert_eq!(fs::read_dir(&dir).unwrap().count(), 1);
+        let b = p.create("B").unwrap();
+        for (id, other) in [(&a.id, false), (&b.id, true)] {
+            let maps = p.dir(id).unwrap().join("maps");
+            fs::create_dir_all(&maps).unwrap();
+            fs::write(maps.join("Book.md"), "# Book").unwrap();
+            if other {
+                fs::write(maps.join("mine.txt"), "put here by the user").unwrap();
+            }
+            p.save_state(id, b"state", None).unwrap();
+        }
+        assert!(!p.dir(&a.id).unwrap().join("maps").exists());
+        let kept = p.dir(&b.id).unwrap().join("maps");
+        assert!(!kept.join("Book.md").exists());
+        assert_eq!(fs::read_to_string(kept.join("mine.txt")).unwrap(), "put here by the user");
     }
 
     #[test]

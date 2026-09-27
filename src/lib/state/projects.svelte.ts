@@ -64,27 +64,16 @@ export interface OpenProject {
   project: Project;
 }
 
-/** Hooks for what happens beside saving: the readable copies are written by the export side. */
-export const afterSave: ((id: string, project: Project) => void)[] = [];
-
 export async function openProject(id: string): Promise<OpenProject> {
   const loaded = await projectLoad(id);
-  let project: Project;
   const persistence: Persistence = {
     append: (update: Uint8Array) => projectAppend(id, toBase64(update)),
     saveState: async (state: Uint8Array, summary: Summary) => {
       const info = await projectSaveState(id, toBase64(state), summary);
       projects.put(info);
-      for (const hook of afterSave) {
-        try {
-          hook(id, project);
-        } catch (error) {
-          console.error(error);
-        }
-      }
     },
   };
-  project = new Project(persistence);
+  const project = new Project(persistence);
   project.load(loaded.state ? fromBase64(loaded.state) : null, loaded.updates.map(fromBase64));
   if (!project.maps.length) {
     // A new project begins with one map, named after it. One that was joined

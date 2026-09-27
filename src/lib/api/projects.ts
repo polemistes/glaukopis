@@ -79,5 +79,3 @@ export const projectSaveView = (id: string, view: unknown) =>
 export const projectHistory = (id: string) => call<HistoryEntry[]>('project_history', { id });
 export const projectHistoryState = (id: string, entry: string) =>
   call<string>('project_history_state', { id, entry });
-export const projectWriteReadable = (id: string, maps: [string, string][]) =>
-  call<void>('project_write_readable', { id, maps });

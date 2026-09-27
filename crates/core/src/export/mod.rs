@@ -646,34 +646,6 @@ pub fn style_sample(
     Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
-/// A map as Markdown, for the copy that is kept beside the project so that
-/// the work can be read without this application.
-pub fn readable(ctx: &Context, document: &Document) -> Result<String> {
-    let pandoc = ctx.tools.pandoc()?;
-    let request = Request {
-        document: document.clone(),
-        style: String::new(),
-        format: DocumentFormat::default(),
-        key: String::new(),
-    };
-    let prepared = prepare(ctx, &request, Target::Markdown, true);
-    let input = serde_json::to_vec(&prepared.json)?;
-    let out = tools::run(
-        &pandoc.path,
-        "Pandoc",
-        ["-f", "json", "-t", "markdown", "--standalone", "--wrap=none"],
-        Some(&input),
-        None,
-    )?;
-    let mut text = String::from_utf8_lossy(&out.stdout).into_owned();
-    if !prepared.bibliography.text.is_empty() {
-        text.push_str("\n<!-- The works cited, as BibLaTeX:\n\n");
-        text.push_str(&prepared.bibliography.text.replace("-->", "--\u{200b}>"));
-        text.push_str("-->\n");
-    }
-    Ok(text)
-}
-
 /// Counts the words of a document as it would be printed: the text, with
 /// notes or without.
 pub fn count_words(document: &Document, with_notes: bool) -> usize {
@@ -921,11 +893,6 @@ mod tests {
         let pdf = out.join("wrath.pdf");
         export(&s.ctx(), &r, Target::Pdf, &pdf, &ExportOptions::default()).unwrap();
         assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"));
-
-        let copy = readable(&s.ctx(), &r.document).unwrap();
-        assert!(copy.contains("title: Wrath and the hero"));
-        assert!(copy.contains("@west1988"));
-        assert!(copy.contains("@article{west1988,"));
     }
 
     #[test]

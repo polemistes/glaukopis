@@ -24,8 +24,11 @@ it (a state file plus a log of changes) without interpreting it.
   the tree is read: the element with the lowest id in the cycle is treated as
   loose.
 - One undo manager per project covers structure and text together.
-- A readable Markdown copy of every map is written beside the state file on
-  save, so that the work never depends on this application to be read.
+- *Changed 2026-09-28:* at first a Markdown copy of every map was written
+  beside the state file on save, so that the work could be read without this
+  application. It was taken out at the owner's wish: Markdown is not the
+  format of the text, and a second form of it on disk was one thing more to
+  keep right. The text is read elsewhere by exporting it.
 
 ## Consequences
 

@@ -10,9 +10,9 @@ be the same in the preview and in every export.
 
 ## Decision
 
-- The interface hands the core a map as JSON. The core writes Pandoc Markdown
-  from it. That Markdown is both the readable copy kept on disk and the input to
-  every export.
+- The interface hands the core a map as JSON. The core turns it into
+  Pandoc's own tree, which is the input to every export. (At first Pandoc
+  Markdown was written from it; the tree cannot be misread as Markdown can.)
 - Pandoc with citeproc formats citations from a CSL style and a BibLaTeX file
   holding only the entries cited. One citation engine serves preview and export.
 - Inside the editor a citation is shown in a neutral short form (author, year,

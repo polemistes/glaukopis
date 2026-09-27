@@ -182,8 +182,8 @@ try {
       `const s = Array.from(document.querySelectorAll('.text-view .section')).find((e) => e.querySelector('.heading').textContent.includes('Briseis'));
        return s.querySelector('.body .prose').innerHTML;`,
     );
-  await app.keys(' So *Iliad* 1 has it, **plainly**.');
-  check('signs around words set them as they are typed', /<em>Iliad<\/em>/.test(await written()) && /<strong>plainly<\/strong>/.test(await written()), await written());
+  await app.keys(' So *Iliad* 1 has it.');
+  check('signs are left as they are typed', /\*Iliad\* 1 has it/.test(await written()), await written());
   await app.click('.text-view .tools button[aria-label="Italic"]');
   await app.keys('kleos');
   await app.click('.text-view .tools button[aria-label="Italic"]');

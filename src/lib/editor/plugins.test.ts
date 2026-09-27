@@ -50,39 +50,11 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('signs that set words as they are typed', () => {
-  it('sets italics and bold', () => {
+describe('what is put right as it is typed', () => {
+  it('leaves the signs of Markdown as they are typed', () => {
     const v = editor();
     type(v, 'The *mênis* of **Achilles** and _so_ on');
-    expect(written(v)).toBe('The <em>mênis</> of <strong>Achilles</> and <em>so</> on');
-  });
-
-  it('goes on in plain text after the last sign', () => {
-    const v = editor();
-    type(v, '*so* then');
-    expect(written(v)).toBe('<em>so</> then');
-  });
-
-  it('sets several words, and at the beginning of a parenthesis', () => {
-    const v = editor();
-    type(v, '(*The Best of the Achaeans*)');
-    expect(written(v)).toBe('(<em>The Best of the Achaeans</>)');
-  });
-
-  it('leaves alone the asterisk of a reconstructed form', () => {
-    const v = editor();
-    type(v, 'from *bher- and *dhe- ');
-    expect(written(v)).toBe('from *bher- and *dhe- ');
-    const w = editor();
-    type(w, 'and 2*3*4 is 24');
-    expect(written(w)).toBe('and 2*3*4 is 24');
-    w.destroy();
-  });
-
-  it('leaves alone the underscore in a name', () => {
-    const v = editor();
-    type(v, 'the file my_notes_final and a_b');
-    expect(written(v)).toBe('the file my_notes_final and a_b');
+    expect(written(v)).toBe('The *mênis* of **Achilles** and _so_ on');
   });
 
   it('makes dashes', () => {

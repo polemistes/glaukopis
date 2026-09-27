@@ -228,6 +228,4 @@ export const documentExport = (
   path: string,
   options: { biblatex?: boolean } = {},
 ) => call<Exported>('document_export', { request, target, path, options });
-export const documentReadable = (project: string, maps: [string, ExportDocument][]) =>
-  call<number>('document_readable', { project, maps });
 export const openPath = (path: string, reveal = false) => call<void>('open_path', { path, reveal });

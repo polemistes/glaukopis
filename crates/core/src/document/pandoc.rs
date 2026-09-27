@@ -1,7 +1,7 @@
 //! A document as Pandoc's own JSON, which Pandoc reads without any guessing.
 //!
 //! Markdown would have to be escaped; this cannot be misread. Pandoc makes
-//! every output from it, the readable Markdown copies included.
+//! every output from it.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

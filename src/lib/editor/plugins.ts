@@ -21,7 +21,7 @@ import {
   wrappingInputRule,
 } from 'prosemirror-inputrules';
 import { keymap } from 'prosemirror-keymap';
-import type { MarkType, Schema } from 'prosemirror-model';
+import type { Schema } from 'prosemirror-model';
 import { liftListItem, sinkListItem, splitListItem } from 'prosemirror-schema-list';
 import {
   Plugin,
@@ -59,40 +59,6 @@ const dashes = [
   new InputRule(/--$/, '–'),
   new InputRule(/\.\.\.$/, '…'),
 ];
-
-/**
- * Text between two signs is given a mark, and the signs go: `*so*` is set in
- * italics as the last sign is typed. The signs must stand where a word could
- * begin and end, so that an asterisk before a reconstructed form, or an
- * underscore in a name, is left alone.
- */
-function markRule(sign: string, type: MarkType): InputRule {
-  const s = sign.replace(/[*_]/g, '\\$&');
-  const one = sign[0] === '*' ? '\\*' : '_';
-  const pattern = new RegExp(
-    `(^|[\\s(\\[“"'‘—–])${s}([^\\s${one}](?:[^${one}]*[^\\s${one}])?)${s}$`,
-  );
-  return new InputRule(pattern, (state, match, start, end) => {
-    const [, lead, text] = match;
-    const from = start + lead.length;
-    // The last sign has been typed and is not in the text yet.
-    const closing = sign.length - 1;
-    const tr = state.tr;
-    if (closing) tr.delete(end - closing, end);
-    tr.delete(from, from + sign.length);
-    tr.addMark(from, from + text.length, type.create());
-    tr.removeStoredMark(type);
-    return tr;
-  });
-}
-
-function markRules(schema: Schema): InputRule[] {
-  const { strong, em } = schema.marks;
-  const rules: InputRule[] = [];
-  if (strong) rules.push(markRule('**', strong), markRule('__', strong));
-  if (em) rules.push(markRule('*', em), markRule('_', em));
-  return rules;
-}
 
 function blockRules(schema: Schema): InputRule[] {
   const rules: InputRule[] = [];
@@ -238,7 +204,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
   });
 
   return [
-    inputRules({ rules: [...dashes, ...markRules(schema), ...blockRules(schema)] }),
+    inputRules({ rules: [...dashes, ...blockRules(schema)] }),
     cite,
     keymap(keys),
     keymap(baseKeymap),
