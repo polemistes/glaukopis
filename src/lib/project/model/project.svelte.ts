@@ -6,7 +6,7 @@
  * write the text of elements through y-prosemirror.
  */
 
-import { newTextLanguage } from '$lib/i18n';
+import { newTextLanguage, t } from '$lib/i18n';
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 import { SvelteMap } from 'svelte/reactivity';
 import * as Y from 'yjs';
@@ -392,7 +392,7 @@ export class Project {
       if (!(m instanceof Y.Map)) continue;
       list.push({
         id,
-        name: str(m.get('name'), 'Untitled'),
+        name: str(m.get('name'), t('project-untitled')),
         root: str(m.get('root')),
         order: str(m.get('order'), 'a0'),
         created: str(m.get('created')),
@@ -639,7 +639,7 @@ export class Project {
   // ---- maps ----
 
   createMap(name: string, options: { title?: string } = {}): string {
-    const clean = name.replace(/\s+/g, ' ').trim() || 'Untitled';
+    const clean = name.replace(/\s+/g, ' ').trim() || t('project-untitled');
     const id = newId();
     const root = newId();
     this.transact(() => {
@@ -676,7 +676,7 @@ export class Project {
     fill: (part: number, title: Y.XmlFragment, body: Y.XmlFragment) => void,
     document: DocumentSettings = {},
   ): { map: string; nodes: string[] } {
-    const clean = name.replace(/\s+/g, ' ').trim() || 'Untitled';
+    const clean = name.replace(/\s+/g, ' ').trim() || t('project-untitled');
     const id = newId();
     const nodes = parts.length ? parts.map(() => newId()) : [newId()];
     // Under what each stands, and the others that stand there, in their order.
@@ -786,7 +786,7 @@ export class Project {
       const ids = new Map<string, string>();
       for (const old of tree.sequence) ids.set(old, newId());
       const m = new Y.Map<unknown>();
-      m.set('name', name?.trim() || `${source.name}, copy`);
+      m.set('name', name?.trim() || t('project-map-copy', { name: source.name }));
       m.set('root', ids.get(source.root) ?? newId());
       const index = this.maps.findIndex((x) => x.id === id);
       const next = this.maps[index + 1]?.order ?? null;
@@ -824,7 +824,7 @@ export class Project {
       for (const old of branch) ids.set(old, newId());
       const last = this.maps.length ? this.maps[this.maps.length - 1].order : null;
       const m = new Y.Map<unknown>();
-      m.set('name', name?.trim() || node.title || 'Untitled');
+      m.set('name', name?.trim() || node.title || t('project-untitled'));
       m.set('root', ids.get(nodeId)!);
       m.set('order', generateKeyBetween(last, null));
       m.set('created', nowIso());
