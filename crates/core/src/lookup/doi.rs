@@ -21,6 +21,7 @@ use crate::bib::names::Person;
 use crate::duplicates::normalise_isbns;
 use crate::error::{Error, Result};
 use crate::net::{Client, encode, host};
+use crate::tr;
 
 use super::csl::{self, Converted};
 use super::{
@@ -31,7 +32,9 @@ const CSL_JSON: &str = "application/vnd.citationstyles.csl+json";
 const UNIXREF: &str = "application/vnd.crossref.unixref+xml";
 
 /// What is said of a part that came without the names of those who wrote it.
-const NO_CREATOR: &str = "The record names no author or editor.";
+fn no_creator() -> String {
+    tr!("core-lookup-no-creators")
+}
 
 enum Answer {
     Record(String),
@@ -51,9 +54,9 @@ fn ask(client: &Client, url: &str, accept: &str) -> Result<Answer> {
     match response.status {
         200..=299 => Ok(Answer::Record(response.body)),
         404 | 410 => Ok(Answer::Nothing),
-        406 => Err(Error::Network(format!("{host} does not give the record in the form asked for"))),
-        429 => Err(Error::Network(format!("{host} asks us to wait before asking again"))),
-        status => Err(Error::Network(format!("{host} answered with an error ({status})"))),
+        406 => Err(Error::Network(tr!("core-lookup-wrong-form", host = &host))),
+        429 => Err(Error::Network(tr!("network-wait", host = &host))),
+        status => Err(Error::Network(tr!("network-status", host = &host, status = status))),
     }
 }
 
@@ -97,7 +100,7 @@ pub(crate) fn lookup(client: &Client, doi: &str) -> Result<Outcome> {
     let record: Value = match serde_json::from_str(&body) {
         Ok(v) => v,
         Err(_) => {
-            failures.push(format!("{service}: the answer was not a record that could be read."));
+            failures.push(tr!("core-lookup-not-a-record", service = service));
             return Err(Error::Network(failures.join(" ")));
         }
     };
@@ -110,17 +113,13 @@ pub(crate) fn lookup(client: &Client, doi: &str) -> Result<Outcome> {
         match ask(client, url, UNIXREF) {
             Ok(Answer::Record(xml)) => {
                 if !with_book(&mut converted, &xml, doi) {
-                    converted.remarks.push(
-                        "What Crossref has about the book could not be read: its editors may be missing.".to_owned(),
-                    );
+                    converted.remarks.push(tr!("core-lookup-book-unreadable"));
                 }
             }
             Ok(Answer::Nothing) => {}
             Err(e) => {
-                failures.push(failure("Crossref, for the book", &e));
-                converted.remarks.push(
-                    "What Crossref has about the book could not be fetched: its editors may be missing.".to_owned(),
-                );
+                failures.push(failure(&tr!("core-lookup-crossref-for-book"), &e));
+                converted.remarks.push(tr!("core-lookup-book-not-fetched"));
             }
         }
     }
@@ -247,10 +246,7 @@ pub(crate) fn with_book(converted: &mut Converted, xml: &str, doi: &str) -> bool
         if !draft.names.contains_key("author") {
             let of_part = part.map(|p| contributors(p, "author", remarks)).unwrap_or_default();
             if of_part.is_empty() {
-                remarks.push(
-                    "Crossref names no author for the chapter. The author of the book has been entered as its author."
-                        .to_owned(),
-                );
+                remarks.push(tr!("core-lookup-chapter-author"));
                 draft.names.insert("author".to_owned(), authors.clone());
             } else {
                 draft.names.insert("author".to_owned(), of_part);
@@ -259,7 +255,8 @@ pub(crate) fn with_book(converted: &mut Converted, xml: &str, doi: &str) -> bool
         draft.names.insert("bookauthor".to_owned(), authors);
     }
     if draft.names.contains_key("author") || draft.names.contains_key("editor") {
-        remarks.retain(|r| r != NO_CREATOR);
+        let no_creator = no_creator();
+        remarks.retain(|r| *r != no_creator);
     }
     true
 }

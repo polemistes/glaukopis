@@ -14,6 +14,7 @@ use serde_json::Value;
 
 use crate::error::{Error, Result};
 use crate::net::{Client, encode};
+use crate::tr;
 
 use super::{Hit, csl, doi, pace};
 
@@ -42,7 +43,7 @@ pub(crate) fn search(client: &Client, words: &str, rows: usize) -> Result<Vec<Hi
 
 /// The records of an answer to a search.
 pub(crate) fn hits(body: &str) -> Result<Vec<Hit>> {
-    let unreadable = || Error::Network("api.crossref.org answered with something that could not be read".to_owned());
+    let unreadable = || Error::Network(tr!("core-lookup-unreadable", service = "api.crossref.org"));
     let answer: Value = serde_json::from_str(body).map_err(|_| unreadable())?;
     let items = answer.get("message").and_then(|m| m.get("items")).and_then(Value::as_array).ok_or_else(unreadable)?;
     Ok(items
@@ -51,9 +52,7 @@ pub(crate) fn hits(body: &str) -> Result<Vec<Hit>> {
         .map(|mut converted| {
             converted.agency = Some(SOURCE);
             if converted.in_book {
-                converted.remarks.push(
-                    "A search does not give the editors and the ISBN of the book. Looking up the DOI does.".to_owned(),
-                );
+                converted.remarks.push(tr!("core-lookup-crossref-in-book"));
             }
             doi::hit(converted, SOURCE)
         })

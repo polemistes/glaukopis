@@ -142,14 +142,14 @@ pub fn import_pdfs(state: State<'_, AppState>, paths: Vec<String>, ask: Option<b
 
 #[derive(Serialize)]
 pub struct Acknowledgement {
-    pub service: &'static str,
-    pub words: &'static str,
+    pub service: String,
+    pub words: String,
 }
 
 /// What the services that are asked want said of them.
 #[tauri::command]
 pub fn lookup_acknowledgements() -> Vec<Acknowledgement> {
-    lookup::ACKNOWLEDGEMENTS.iter().map(|(service, words)| Acknowledgement { service, words }).collect()
+    lookup::acknowledgements().into_iter().map(|(service, words)| Acknowledgement { service, words }).collect()
 }
 
 /// The libraries of Zotero on this computer.
