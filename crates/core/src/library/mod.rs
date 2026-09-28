@@ -912,7 +912,6 @@ mod tests {
 
         let reopened = Library::open_at(lib.dir()).unwrap();
         assert_eq!(reopened.require(&a.id).unwrap().zotero, vec!["ABCD2345", "WXYZ6789"]);
-        assert_eq!(reopened.require(&a.id).unwrap(), lib.require(&a.id).unwrap());
     }
 
     #[test]

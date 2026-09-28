@@ -646,9 +646,20 @@ mod tests {
         draft(kind, fields, creators).entry_type
     }
 
-    /// The fields of the entry made of an item that has these fields and nothing else.
+    /// The fields of the entry made of an item that has these fields and
+    /// nothing else. The key of the item, which every entry has, is not
+    /// among them.
     fn mapped(kind: &str, fields: &[(&str, &str)]) -> Vec<(String, String)> {
-        draft(kind, fields, &[]).fields.into_iter().collect()
+        draft(kind, fields, &[]).fields.into_iter().filter(|(name, _)| name != FIELD_ZOTERO).collect()
+    }
+
+    #[test]
+    fn the_key_of_the_item_is_kept() {
+        let d = draft("book", &[("title", "Iliad")], &[]);
+        assert_eq!(d.get(FIELD_ZOTERO), Some("ABCD2345"));
+        assert_eq!(d.zotero(), vec!["ABCD2345"]);
+        assert_eq!(d.to_entry().zotero, vec!["ABCD2345"]);
+        assert_eq!(d.to_entry().get(FIELD_ZOTERO), None);
     }
 
     fn pairs(fields: &[(&str, &str)]) -> Vec<(String, String)> {
@@ -997,14 +1008,17 @@ mod tests {
         ));
         assert_eq!(d.entry_type, "article");
         assert_eq!(
-            d.fields.into_iter().collect::<Vec<_>>(),
+            d.fields.into_iter().filter(|(name, _)| name != FIELD_ZOTERO).collect::<Vec<_>>(),
             pairs(&[("doi", "10.48550/arXiv.2301.12345"), ("eprint", "2301.12345"), ("eprinttype", "arxiv")])
         );
         assert!(notes.is_empty(), "{notes:?}");
 
         let d = draft("preprint", &[("repository", "SSRN"), ("archiveID", "4012345")], &[]);
         assert_eq!(d.entry_type, "online");
-        assert_eq!(d.fields.into_iter().collect::<Vec<_>>(), pairs(&[("eprint", "4012345"), ("eprinttype", "SSRN")]));
+        assert_eq!(
+            d.fields.into_iter().filter(|(name, _)| name != FIELD_ZOTERO).collect::<Vec<_>>(),
+            pairs(&[("eprint", "4012345"), ("eprinttype", "SSRN")])
+        );
 
         assert_eq!(
             mapped("preprint", &[("repository", "OSF Preprints"), ("archiveID", "abc12")]),
@@ -1017,7 +1031,10 @@ mod tests {
             pairs(&[("eprint", "12345"), ("eprinttype", "pubmed")])
         );
         let (d, notes) = entry(&item("journalArticle", &[("PMID", "12345"), ("PMCID", "PMC99")], &[]));
-        assert_eq!(d.fields.into_iter().collect::<Vec<_>>(), pairs(&[("eprint", "12345"), ("eprinttype", "pubmed")]));
+        assert_eq!(
+            d.fields.into_iter().filter(|(name, _)| name != FIELD_ZOTERO).collect::<Vec<_>>(),
+            pairs(&[("eprint", "12345"), ("eprinttype", "pubmed")])
+        );
         assert_eq!(notes, vec!["Zotero’s field “PMCID” has no counterpart in BibLaTeX and was left out: PMC99"]);
     }
     #[test]

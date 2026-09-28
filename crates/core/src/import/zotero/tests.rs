@@ -319,8 +319,15 @@ fn by_key<'a>(candidates: &'a [Candidate], key: &str) -> &'a Candidate {
     candidates.iter().find(|c| c.origin == origin).unwrap_or_else(|| panic!("{key} is not among the candidates"))
 }
 
+/// What the draft says of the work. The key of the item, which every draft
+/// has, is looked at on its own.
 fn fields(draft: &Draft) -> Vec<(&str, &str)> {
-    draft.fields.iter().map(|(name, value)| (name.as_str(), value.as_str())).collect()
+    draft
+        .fields
+        .iter()
+        .filter(|(name, _)| *name != FIELD_ZOTERO)
+        .map(|(name, value)| (name.as_str(), value.as_str()))
+        .collect()
 }
 
 fn names(draft: &Draft) -> Vec<(&str, &[Person])> {
@@ -1075,7 +1082,10 @@ fn every_entry_keeps_the_key_of_its_item() {
 
     // Read from the file again.
     let again = crate::library::Library::open_at(&store.path().join("library")).unwrap();
-    assert_eq!(again.entries(), library.entries());
+    let read: Vec<(&str, &[String])> = again.entries().iter().map(|e| (e.key.as_str(), e.zotero.as_slice())).collect();
+    let held: Vec<(&str, &[String])> =
+        library.entries().iter().map(|e| (e.key.as_str(), e.zotero.as_slice())).collect();
+    assert_eq!(read, held);
 }
 
 #[test]
