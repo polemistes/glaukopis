@@ -135,8 +135,8 @@ export function around(text: string, start: number, end: number): [string, strin
 /**
  * Where text that was proposed stands now. Where it stood, if what stands
  * there is still what was proposed. Where something was written before it,
- * it has moved: it is known again if the same text stands once in the
- * passage, with what stood around it on one side at least.
+ * it has moved: it is known again by what stood around it, on one side at
+ * least, if the same text stands so in one place of the passage and no more.
  */
 export function standing(place: Place, target: Target): { start: number; end: number } | Trouble {
   const length = target.text.length;
@@ -147,17 +147,17 @@ export function standing(place: Place, target: Target): { start: number; end: nu
         'gone'
       : { start: target.start, end: target.end };
   }
-  const first = place.text.indexOf(target.text);
-  if (first < 0 || place.text.indexOf(target.text, first + 1) >= 0 || !target.around)
-    return 'changed';
-  if (overlaps(place.taken, first, first + length)) return 'changed';
+  if (!target.around) return 'changed';
   const [before, after] = target.around;
-  const same =
-    (before ? place.text.slice(0, first).endsWith(before) : first === 0) ||
-    (after
-      ? place.text.slice(first + length).startsWith(after)
-      : first + length === place.text.length);
-  return same ? { start: first, end: first + length } : 'changed';
+  const same: number[] = [];
+  for (let at = place.text.indexOf(target.text); at >= 0;) {
+    const alike =
+      (before ? place.text.slice(0, at).endsWith(before) : at === 0) ||
+      (after ? place.text.slice(at + length).startsWith(after) : at + length === place.text.length);
+    if (alike && !overlaps(place.taken, at, at + length)) same.push(at);
+    at = place.text.indexOf(target.text, at + 1);
+  }
+  return same.length === 1 ? { start: same[0], end: same[0] + length } : 'changed';
 }
 
 function find(project: Project, target: Target): Found | Trouble {

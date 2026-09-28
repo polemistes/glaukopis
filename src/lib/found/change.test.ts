@@ -337,12 +337,33 @@ describe('text that was proposed as a citation', () => {
     ]);
   });
 
-  it('not where the same words stand twice and none of them where they stood', () => {
-    const { pr, map, elements } = project([p(t('(Nagy 1979) and (Nagy 1979).'))]);
+  it('where the same words stand twice, it is the one with the same words around it', () => {
+    const { pr, map, elements } = project([
+      p(t('(Nagy 1979) and (Nagy 1979).')),
+      p(t('(Nagy 1979) and (Nagy 1979) and (Nagy 1979) and so on.')),
+    ]);
+    const { places } = gather(pr, map);
     const at = proposed(pr, map, '(Nagy 1979)');
-    const words = (pr.fragment(elements[0], 'body')!.get(0) as Y.XmlElement).get(0) as Y.XmlText;
-    pr.transact(() => words.insert(0, 'So ', {}));
-    expect(makeCitation(pr, at, [{ id: 'r1' }], 'normal')).toEqual({ done: false, why: 'changed' });
+    const words = (n: number) =>
+      (pr.fragment(elements[0], 'body')!.get(n) as Y.XmlElement).get(0) as Y.XmlText;
+    pr.transact(() => {
+      words(0).insert(0, 'So ', {});
+      words(1).insert(0, 'So ', {});
+    });
+    expect(makeCitation(pr, at, [{ id: 'r1' }], 'normal')).toEqual({ done: true });
+    expect(text(pr, elements[0])[0]).toEqual(p(t('So '), cited('r1'), t(' and (Nagy 1979).')));
+    // Not where several have the same around them: it cannot be told which was meant.
+    const among = {
+      passage: places[1].id,
+      start: 0,
+      end: 11,
+      text: '(Nagy 1979)',
+      around: around(places[1].text, 0, 11),
+    };
+    expect(makeCitation(pr, among, [{ id: 'r1' }], 'normal')).toEqual({
+      done: false,
+      why: 'changed',
+    });
     expect(
       makeCitation(pr, { ...at, passage: `${elements[0]}/1.99999` }, [{ id: 'r1' }], 'normal'),
     ).toEqual({
