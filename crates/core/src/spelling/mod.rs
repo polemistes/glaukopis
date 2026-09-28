@@ -34,6 +34,7 @@ use spellbook::Dictionary;
 
 use crate::error::{Error, IoContext, Result};
 use crate::paths::DataDir;
+use crate::tr;
 
 pub use found::{Found, Place, Source};
 pub use own::OwnWords;
@@ -156,7 +157,7 @@ impl Spelling {
         let dictionaries = self.chosen(language);
         if dictionaries.is_empty() {
             let language = language.filter(|l| !l.trim().is_empty()).unwrap_or("en");
-            return Err(Error::not_found(format!("a dictionary for “{language}”")));
+            return Err(Error::not_found(tr!("spelling-dictionary-for", language = language)));
         }
         dictionaries.iter().map(|f| self.read(f)).collect()
     }
@@ -183,12 +184,11 @@ impl Spelling {
         let started = Instant::now();
         let aff_path = found.aff();
         let dic_path = found.dic();
-        let aff_bytes = fs::read(&aff_path).context(|| format!("reading {}", aff_path.display()))?;
-        let dic_bytes = fs::read(&dic_path).context(|| format!("reading {}", dic_path.display()))?;
+        let aff_bytes = fs::read(&aff_path).context(|| tr!("spelling-reading", path = &aff_path))?;
+        let dic_bytes = fs::read(&dic_path).context(|| tr!("spelling-reading", path = &dic_path))?;
         let extra_bytes = fs::read(found.extra()).ok();
-        let encoding = encoding_of(&aff_bytes).ok_or_else(|| {
-            Error::invalid(format!("The dictionary {} is written in an encoding that cannot be read.", found.name))
-        })?;
+        let encoding =
+            encoding_of(&aff_bytes).ok_or_else(|| Error::invalid(tr!("spelling-encoding", name = &found.name)))?;
         let (aff, _, _) = encoding.decode(&aff_bytes);
         let (mut dic, _, _) = encoding.decode(&dic_bytes);
         if let Some(extra) = &extra_bytes {
@@ -196,7 +196,7 @@ impl Spelling {
             dic = Cow::Owned(joined(&dic, &extra));
         }
         let mut dictionary = Dictionary::new(&aff, &dic)
-            .map_err(|e| Error::invalid(format!("The dictionary {} could not be read: {e}.", found.name)))?;
+            .map_err(|e| Error::invalid(tr!("spelling-unreadable", name = &found.name, message = e.to_string())))?;
         let script = dictionary_script(&aff, &dic);
         let own = self.own.list(found::primary(&found.tag));
         for word in &own {

@@ -11,6 +11,7 @@ use std::path::PathBuf;
 
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
+use crate::tr;
 
 #[derive(Debug, Clone)]
 pub struct OwnWords {
@@ -23,7 +24,7 @@ fn check_language(language: &str) -> Result<()> {
     if (2..=3).contains(&language.len()) && language.chars().all(|c| c.is_ascii_lowercase()) {
         Ok(())
     } else {
-        Err(Error::invalid(format!("“{language}” is not a language that words can be kept for.")))
+        Err(Error::invalid(tr!("spelling-not-a-language", language = language)))
     }
 }
 
@@ -31,7 +32,7 @@ fn check_language(language: &str) -> Result<()> {
 /// without the signs that a line of a dictionary gives its flags by.
 pub fn check_word(word: &str) -> Result<()> {
     if word.is_empty() || word.chars().any(|c| c.is_whitespace() || c.is_control() || c == '/' || c == '\\') {
-        Err(Error::invalid(format!("“{word}” cannot be added to your words.")))
+        Err(Error::invalid(tr!("spelling-not-a-word", word = word)))
     } else {
         Ok(())
     }
@@ -79,7 +80,7 @@ impl OwnWords {
     }
 
     fn write(&self, language: &str, words: &[String]) -> Result<()> {
-        fs::create_dir_all(&self.dir).context(|| format!("creating {}", self.dir.display()))?;
+        fs::create_dir_all(&self.dir).context(|| tr!("spelling-creating", path = &self.dir))?;
         let mut text = words.join("\n");
         text.push('\n');
         write_atomic(&self.file(language), text.as_bytes())

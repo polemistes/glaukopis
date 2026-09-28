@@ -7,5 +7,6 @@ pub mod projects;
 pub mod reading;
 pub mod sharing;
 pub mod sources;
+pub mod spelling;
 pub mod system;
 pub mod tables;
