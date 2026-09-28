@@ -45,8 +45,10 @@ of document there are.
 - **Pictures go into the store of pictures** (ADR 0010) when the file is
   read, and are taken out again if nothing is made of it.
 - **Citations by key become citations where the key is in the library.**
-  Where it is not, and in files that have their citations as text, they stay
-  the text they were written as. No reference is made from a document.
+  Where it is not, and where a program that keeps references made them,
+  they stay the text they were written as, under a mark that says what is
+  known of them, to be gone through by the writer (ADR 0015). No reference
+  is made from a document without the writer saying so.
 - **What has no place in a map is kept as text where it has text**, and
   otherwise left out: code, lists of terms, lines across the page, what is
   written for one kind of document only. What was done is said in words,
