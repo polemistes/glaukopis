@@ -21,7 +21,16 @@ impl DataDir {
 
     pub fn open(root: impl Into<PathBuf>) -> Result<Self> {
         let dir = DataDir { root: root.into() };
-        for sub in [dir.library(), dir.attachments(), dir.pictures(), dir.styles(), dir.formats(), dir.projects()] {
+        for sub in [
+            dir.library(),
+            dir.attachments(),
+            dir.pictures(),
+            dir.styles(),
+            dir.formats(),
+            dir.projects(),
+            // So that the writer finds where a dictionary of their own goes.
+            dir.dictionaries(),
+        ] {
             fs::create_dir_all(&sub).context(|| format!("creating {}", sub.display()))?;
         }
         Ok(dir)
@@ -71,6 +80,17 @@ impl DataDir {
     /// For what can be made again: documents on their way to preview and export.
     pub fn work(&self) -> PathBuf {
         self.root.join("work")
+    }
+
+    /// Dictionaries the writer has put here, which are used before those of
+    /// the application and of the system: see `spelling`.
+    pub fn dictionaries(&self) -> PathBuf {
+        self.root.join("dictionaries")
+    }
+
+    /// The writer's own words, a list for each language: see `spelling`.
+    pub fn words(&self) -> PathBuf {
+        self.root.join("words")
     }
 
     pub fn settings_file(&self) -> PathBuf {
