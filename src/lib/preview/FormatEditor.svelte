@@ -17,6 +17,7 @@
     type HeadingLevel,
     type Position,
   } from '$lib/api/documents';
+  import { languages, t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
@@ -60,9 +61,10 @@
         original = JSON.stringify(loaded);
         format = loaded;
         betweenOther = {};
-        name = loaded.kind === 'own' ? loaded.name : `${loaded.name}, changed`;
+        name =
+          loaded.kind === 'own' ? loaded.name : t('format-name-changed', { name: loaded.name });
       } catch (e) {
-        error = describeError(e) ?? 'The format could not be read.';
+        error = describeError(e) ?? t('format-read-failed');
       }
       fontsList()
         .then((list) => (fonts = list))
@@ -95,7 +97,7 @@
       );
       previewError = null;
     } catch (e) {
-      if (mine === round) previewError = describeError(e) ?? 'The sample could not be made.';
+      if (mine === round) previewError = describeError(e) ?? t('format-sample-failed');
     } finally {
       if (mine === round) previewing = false;
     }
@@ -116,10 +118,10 @@
       const saved = await formatsSave(snapshot);
       documents.forgetFormat(saved.id);
       await documents.reload();
-      notifyOk(`“${saved.name}” is saved among your own formats`);
+      notifyOk(t('format-saved', { name: saved.name }));
       onsaved(saved.id);
     } catch (e) {
-      error = describeError(e) ?? 'The format could not be saved.';
+      error = describeError(e) ?? t('format-save-failed');
     } finally {
       saving = false;
     }
@@ -128,9 +130,9 @@
   async function remove() {
     if (!format || !own) return;
     const ok = await confirm({
-      title: `Delete the format “${format.name}”?`,
-      message: 'Maps that use it will use the general manuscript format instead.',
-      confirm: 'Delete format',
+      title: t('format-delete-title', { name: format.name }),
+      message: t('format-delete-message'),
+      confirm: t('format-delete-confirm'),
       danger: true,
     });
     if (!ok) return;
@@ -140,62 +142,62 @@
       await documents.reload();
       onsaved(format.basedOn ?? 'manuscript');
     } catch (e) {
-      error = describeError(e) ?? 'The format could not be deleted.';
+      error = describeError(e) ?? t('format-delete-failed');
     }
   }
 
   async function close() {
     if (changed) {
       const ok = await confirm({
-        title: 'Leave without saving?',
-        message: 'The changes you have made to the format will be lost.',
-        confirm: 'Leave',
-        cancel: 'Go on editing',
+        title: t('format-leave-title'),
+        message: t('format-leave-message'),
+        confirm: t('format-leave-confirm'),
+        cancel: t('format-leave-cancel'),
       });
       if (!ok) return;
     }
     onclose();
   }
 
-  const sections: [string, string][] = [
-    ['page', 'Page'],
-    ['type', 'Type and spacing'],
-    ['paragraphs', 'Paragraphs'],
-    ['headings', 'Headings'],
-    ['title', 'Title and abstract'],
-    ['quotations', 'Quotations'],
-    ['notes', 'Notes'],
-    ['bibliography', 'Bibliography'],
-    ['figures', 'Figures, tables, equations'],
-    ['margins', 'Page numbers and running head'],
-    ['limits', 'Limits'],
-    ['about', 'About this format'],
-  ];
+  const sections: [string, string][] = $derived([
+    ['page', t('format-section-page')],
+    ['type', t('format-section-type')],
+    ['paragraphs', t('format-section-paragraphs')],
+    ['headings', t('format-section-headings')],
+    ['title', t('format-section-title')],
+    ['quotations', t('format-section-quotations')],
+    ['notes', t('format-section-notes')],
+    ['bibliography', t('format-section-bibliography')],
+    ['figures', t('format-section-figures')],
+    ['margins', t('format-section-margins')],
+    ['limits', t('format-section-limits')],
+    ['about', t('format-section-about')],
+  ]);
 
-  const aligns: [Align, string][] = [
-    ['left', 'Left'],
-    ['center', 'Centred'],
-    ['right', 'Right'],
-  ];
-  const cases: [Case, string][] = [
-    ['none', 'As written'],
-    ['upper', 'CAPITALS'],
-    ['smallcaps', 'Small capitals'],
-  ];
-  const positions: [Position, string][] = [
-    ['top-left', 'Top, left'],
-    ['top-center', 'Top, centre'],
-    ['top-right', 'Top, right'],
-    ['bottom-left', 'Foot, left'],
-    ['bottom-center', 'Foot, centre'],
-    ['bottom-right', 'Foot, right'],
-  ];
-  const spacings: [number, string][] = [
-    [1, 'Single'],
-    [1.15, '1.15'],
-    [1.5, 'One and a half'],
-    [2, 'Double'],
-  ];
+  const aligns: [Align, string][] = $derived([
+    ['left', t('format-align-left')],
+    ['center', t('format-align-center')],
+    ['right', t('format-align-right')],
+  ]);
+  const cases: [Case, string][] = $derived([
+    ['none', t('format-case-none')],
+    ['upper', t('format-case-upper')],
+    ['smallcaps', t('format-case-smallcaps')],
+  ]);
+  const positions: [Position, string][] = $derived([
+    ['top-left', t('format-position-top-left')],
+    ['top-center', t('format-position-top-center')],
+    ['top-right', t('format-position-top-right')],
+    ['bottom-left', t('format-position-bottom-left')],
+    ['bottom-center', t('format-position-bottom-center')],
+    ['bottom-right', t('format-position-bottom-right')],
+  ]);
+  const spacings: [number, string][] = $derived([
+    [1, t('format-spacing-single')],
+    [1.15, (1.15).toLocaleString(languages.current)],
+    [1.5, t('format-spacing-one-and-a-half')],
+    [2, t('format-spacing-double')],
+  ]);
   const usual = [
     'Times New Roman',
     'Arial',
@@ -242,18 +244,18 @@
     c.separator = words.replaceAll('\n', '') + (ownLine ? '\n' : '');
   }
 
-  const stands: ['left' | 'center' | 'right', string][] = [
-    ['left', 'To the left'],
-    ['center', 'In the middle'],
-    ['right', 'To the right'],
-  ];
+  const stands: ['left' | 'center' | 'right', string][] = $derived([
+    ['left', t('format-stands-left')],
+    ['center', t('format-stands-center')],
+    ['right', t('format-stands-right')],
+  ]);
 
-  function betweenChoices(called: string): [Between, string][] {
+  function betweenChoices(called: string, kind: CaptionedKind): [Between, string][] {
     return [
-      ['stop', `Full stop (${called}. Caption)`],
-      ['colon', `Colon (${called}: Caption)`],
-      ['line', 'Caption on a line of its own'],
-      ['other', 'Other…'],
+      ['stop', t('format-between-stop', { called, kind })],
+      ['colon', t('format-between-colon', { called, kind })],
+      ['line', t('format-between-line', { kind })],
+      ['other', t('format-between-other')],
     ];
   }
 
@@ -269,12 +271,20 @@
 
   function levelWords(l: HeadingLevel): string {
     return [
-      `${l.size} pt`,
-      l.bold ? 'bold' : '',
-      l.italic ? 'italic' : '',
-      l.case === 'upper' ? 'capitals' : l.case === 'smallcaps' ? 'small capitals' : '',
-      l.align === 'center' ? 'centred' : l.align === 'right' ? 'right' : '',
-      l.runIn ? 'runs into the text' : '',
+      t('format-level-size', { size: l.size }),
+      l.bold ? t('format-level-bold') : '',
+      l.italic ? t('format-level-italic') : '',
+      l.case === 'upper'
+        ? t('format-level-capitals')
+        : l.case === 'smallcaps'
+          ? t('format-level-small-caps')
+          : '',
+      l.align === 'center'
+        ? t('format-level-centred')
+        : l.align === 'right'
+          ? t('format-level-right')
+          : '',
+      l.runIn ? t('format-level-run-in') : '',
     ]
       .filter(Boolean)
       .join(', ');
@@ -372,132 +382,135 @@
 {#snippet captioned(c: Captioned, kind: CaptionedKind)}
   {@const called = c.label.trim() ? `${c.label.trim()} 1` : '1'}
   {@const line = c.placeholder}
-  {@const many = kind === 'figure' ? 'figures' : 'tables'}
-  {@const Many = kind === 'figure' ? 'Figures' : 'Tables'}
   {@render text(
-    `A ${kind} is called`,
+    t('format-captioned-called', { kind }),
     () => c.label,
     (v) => (c.label = v),
-    kind === 'figure' ? 'Figure, Fig., Abbildung' : 'Table, Tab., Tabelle',
+    t('format-captioned-called-hint', { kind }),
   )}
   {@render text(
-    'Where the text points to it',
+    t('format-captioned-reference'),
     () => c.reference ?? '',
     (v) => (c.reference = v),
-    kind === 'figure'
-      ? 'fig., figure; empty for the same word'
-      : 'tab., table; empty for the same word',
+    t('format-captioned-reference-hint', { kind }),
   )}
   {@render toggle(
-    'The word and number in bold',
+    t('format-captioned-label-bold'),
     () => c.labelBold,
     (v) => (c.labelBold = v),
   )}
   {@render toggle(
-    'The word and number in italic',
+    t('format-captioned-label-italic'),
     () => c.labelItalic,
     (v) => (c.labelItalic = v),
   )}
   {@render choice(
-    'Between the number and the caption',
+    t('format-captioned-between', { kind }),
     () => between(c.separator, kind),
     (v) => setBetween(c, v, kind),
-    betweenChoices(called),
+    betweenChoices(called, kind),
   )}
   {#if between(c.separator, kind) === 'other'}
     {@render text(
-      'What stands between them',
+      t('format-captioned-separator'),
       () => c.separator.replaceAll('\n', ''),
       (v) => setSeparator(c, v, c.separator.includes('\n'), kind),
-      'Spaces count: write them where they are wanted',
+      t('format-captioned-separator-hint'),
     )}
     {@render toggle(
-      'Then the caption on a line of its own',
+      t('format-captioned-own-line', { kind }),
       () => c.separator.includes('\n'),
       (v) => setSeparator(c, c.separator, v, kind),
     )}
   {/if}
-  <h4>Caption</h4>
+  <h4>{t('format-caption', { kind })}</h4>
   {@render choice(
-    'The caption stands',
+    t('format-caption-stands', { kind }),
     () => c.captionPosition,
     (v) => (c.captionPosition = v),
     [
-      ['below', kind === 'figure' ? 'Below the picture' : 'Below the table'],
-      ['above', kind === 'figure' ? 'Above the picture' : 'Above the table'],
+      ['below', t('format-caption-below', { kind })],
+      ['above', t('format-caption-above', { kind })],
     ],
   )}
   {@render choice(
-    'Alignment',
+    t('format-alignment'),
     () => c.captionAlign,
     (v) => (c.captionAlign = v),
-    [...aligns, ['justified', 'Justified']],
-    `Of a ${kind} that stands at a side, the caption stands at that side`,
+    [...aligns, ['justified', t('format-align-justified')]],
+    t('format-caption-align-hint', { kind }),
   )}
   {@render number(
-    'Size',
+    t('format-size'),
     () => c.captionSize,
     (v) => (c.captionSize = v),
-    { max: 36, unit: 'pt', zero: 'as the text', hint: '0 for the size of the text' },
+    {
+      max: 36,
+      unit: 'pt',
+      zero: t('format-as-the-text-zero'),
+      hint: t('format-size-zero-hint'),
+    },
   )}
   {@render toggle(
-    'Italic',
+    t('format-italic'),
     () => c.captionItalic,
     (v) => (c.captionItalic = v),
   )}
   {@render choice(
-    'Line spacing',
+    t('format-line-spacing'),
     () => c.captionLineSpacing,
     (v) => (c.captionLineSpacing = v),
-    [[0, 'As the text'], ...spacings],
+    [[0, t('format-as-the-text')], ...spacings],
   )}
   <div class="row">
-    <span class="what">As it will stand</span>
+    <span class="what">{t('format-as-it-will-stand')}</span>
     <span class="example"
       ><span class:bold={c.labelBold} class:italic={c.labelItalic}>{called}</span>{c.separator}<span
-        class:italic={c.captionItalic}>Caption</span
+        class:italic={c.captionItalic}>{t('format-caption-example', { kind })}</span
       ></span
     >
   </div>
-  <h4>Where {many} stand</h4>
+  <h4>{t('format-captioned-where', { kind })}</h4>
   {@render choice(
-    `${Many} stand`,
+    t('format-captioned-stand', { kind }),
     () => c.align,
     (v) => (c.align = v),
     stands,
-    'Unless something else is said of one',
+    t('format-unless-said'),
   )}
   {#if c.align !== 'center'}
     {@render toggle(
-      'The text flows around them',
+      t('format-captioned-wrap'),
       () => c.wrap,
       (v) => (c.wrap = v),
-      'Unless something else is said of one',
+      t('format-unless-said'),
     )}
   {/if}
   {@render choice(
-    'In the document',
+    t('format-captioned-placement'),
     () => c.placement,
     (v) => (c.placement = v),
     [
-      ['in-text', 'In the text'],
-      ['at-end', 'Gathered at the end'],
+      ['in-text', t('format-captioned-in-text')],
+      ['at-end', t('format-captioned-at-end')],
     ],
-    'Many journals ask for them at the end of a manuscript',
+    t('format-captioned-placement-hint'),
   )}
   {#if c.placement === 'at-end'}
     {@render text(
-      `Heading over the ${many}`,
+      t('format-captioned-end-title', { kind }),
       () => c.endTitle,
       (v) => (c.endTitle = v),
-      kind === 'figure' ? 'Figures, Illustrations; empty for none' : 'Tables; empty for none',
+      t('format-captioned-end-title-hint', { kind }),
     )}
     <label class="row">
       <span class="what"
-        >Line left in the text<small
+        >{t('format-captioned-placeholder')}<small
           >{line.includes('{}')
-            ? `{} stands for the word and number: ${line.replace('{}', () => called)}`
-            : 'It must hold {}, where the word and number go'}</small
+            ? t('format-captioned-placeholder-shown', {
+                line: line.replace('{}', () => called),
+              })
+            : t('format-captioned-placeholder-missing')}</small
         ></span
       >
       <input class:invalid={!line.includes('{}')} bind:value={c.placeholder} spellcheck="false" />
@@ -516,7 +529,7 @@
 
 <Dialog
   open
-  title="Document format"
+  title={t('format-editor')}
   width={1180}
   tall
   padded={false}
@@ -525,12 +538,12 @@
 >
   {#snippet header()}
     <div class="head">
-      <h2>Document format</h2>
+      <h2>{t('format-editor')}</h2>
       <input
         class="name"
         bind:value={name}
-        aria-label="Name of the format"
-        placeholder="Name of the format"
+        aria-label={t('format-name')}
+        placeholder={t('format-name')}
       />
     </div>
   {/snippet}
@@ -542,7 +555,7 @@
   {:else}
     {@const f = format}
     <div class="editor" class:with-sample={!!request}>
-      <nav aria-label="Parts of the format">
+      <nav aria-label={t('format-sections')}>
         {#each sections as [key, words] (key)}
           <button type="button" class:current={section === key} onclick={() => (section = key)}
             >{words}</button
@@ -554,9 +567,9 @@
         {#if error}<p class="error selectable" role="alert">{error}</p>{/if}
 
         {#if section === 'page'}
-          <h3>Page</h3>
+          <h3>{t('format-section-page')}</h3>
           {@render choice(
-            'Size',
+            t('format-size'),
             () => f.page.size,
             (v) => (f.page.size = v),
             [
@@ -565,55 +578,54 @@
               ['a5', 'A5'],
               ['b5', 'B5'],
               ['legal', 'US Legal'],
-              ['custom', 'Another size'],
+              ['custom', t('format-page-custom')],
             ],
           )}
           {#if f.page.size === 'custom'}
             {@render length(
-              'Width',
+              t('format-page-width'),
               () => f.page.width,
               (v) => (f.page.width = v),
             )}
             {@render length(
-              'Height',
+              t('format-page-height'),
               () => f.page.height,
               (v) => (f.page.height = v),
             )}
           {/if}
-          <h4>Margins</h4>
+          <h4>{t('format-margins')}</h4>
           {@render length(
-            'Top',
+            t('format-margin-top'),
             () => f.page.marginTop,
             (v) => (f.page.marginTop = v),
           )}
           {@render length(
-            'Bottom',
+            t('format-margin-bottom'),
             () => f.page.marginBottom,
             (v) => (f.page.marginBottom = v),
           )}
           {@render length(
-            'Left',
+            t('format-margin-left'),
             () => f.page.marginLeft,
             (v) => (f.page.marginLeft = v),
           )}
           {@render length(
-            'Right',
+            t('format-margin-right'),
             () => f.page.marginRight,
             (v) => (f.page.marginRight = v),
           )}
-          <p class="hint">Lengths are written with their unit: 2.5cm, 1in, 25mm, 12pt.</p>
+          <p class="hint">{t('format-lengths-hint')}</p>
           {@render toggle(
-            'Number the lines',
+            t('format-line-numbers'),
             () => f.lineNumbers,
             (v) => (f.lineNumbers = v),
-            'As some journals ask for review',
+            t('format-line-numbers-hint'),
           )}
         {:else if section === 'type'}
-          <h3>Type and spacing</h3>
+          <h3>{t('format-section-type')}</h3>
           <label class="row">
             <span class="what"
-              >Typeface<small>Where it is not installed, the nearest is used in the preview</small
-              ></span
+              >{t('format-typeface')}<small>{t('format-typeface-hint')}</small></span
             >
             <input list="fonts" bind:value={f.font.family} />
             <datalist id="fonts">
@@ -621,65 +633,65 @@
             </datalist>
           </label>
           {@render number(
-            'Size',
+            t('format-size'),
             () => f.font.size,
             (v) => (f.font.size = v),
             { min: 6, max: 36, unit: 'pt' },
           )}
           {@render choice(
-            'Line spacing',
+            t('format-line-spacing'),
             () => f.text.lineSpacing,
             (v) => (f.text.lineSpacing = v),
             spacings,
           )}
           {@render choice(
-            'Alignment',
+            t('format-alignment'),
             () => f.text.align,
             (v) => (f.text.align = v),
             [
-              ['left', 'Left, ragged right'],
-              ['justified', 'Justified'],
+              ['left', t('format-align-ragged')],
+              ['justified', t('format-align-justified')],
             ],
           )}
           {@render toggle(
-            'Divide words at the ends of lines',
+            t('format-hyphenate'),
             () => f.text.hyphenate,
             (v) => (f.text.hyphenate = v),
           )}
         {:else if section === 'paragraphs'}
-          <h3>Paragraphs</h3>
+          <h3>{t('format-section-paragraphs')}</h3>
           {@render choice(
-            'Paragraphs are told apart by',
+            t('format-paragraphs'),
             () => f.text.paragraphs,
             (v) => (f.text.paragraphs = v),
             [
-              ['indent', 'An indented first line'],
-              ['spaced', 'Space between them'],
+              ['indent', t('format-paragraphs-indent')],
+              ['spaced', t('format-paragraphs-spaced')],
             ],
           )}
           {#if f.text.paragraphs === 'indent'}
             {@render length(
-              'Indent',
+              t('format-indent'),
               () => f.text.indent,
               (v) => (f.text.indent = v),
             )}
             {@render toggle(
-              'Also after a heading',
+              t('format-indent-first'),
               () => f.text.indentFirst,
               (v) => (f.text.indentFirst = v),
-              'Typographic custom leaves the first paragraph unindented; APA and others indent it',
+              t('format-indent-first-hint'),
             )}
           {:else}
             {@render length(
-              'Space between paragraphs',
+              t('format-space-between'),
               () => f.text.spaceBetween,
               (v) => (f.text.spaceBetween = v),
             )}
           {/if}
         {:else if section === 'headings'}
-          <h3>Headings</h3>
+          <h3>{t('format-section-headings')}</h3>
           {@render toggle(
-            'Numbered',
+            t('format-numbered'),
             () => f.headings.numbered,
             (v) => (f.headings.numbered = v),
             '1, 1.1, 1.1.1',
@@ -687,56 +699,56 @@
           {#each f.headings.levels as level, i (i)}
             <details open={i === 0}>
               <summary>
-                <strong>Level {i + 1}</strong>
+                <strong>{t('format-level', { number: i + 1 })}</strong>
                 <span>{levelWords(level)}</span>
               </summary>
               {@render number(
-                'Size',
+                t('format-size'),
                 () => level.size,
                 (v) => (level.size = v),
                 { min: 6, max: 72, unit: 'pt' },
               )}
               {@render toggle(
-                'Bold',
+                t('format-bold'),
                 () => level.bold,
                 (v) => (level.bold = v),
               )}
               {@render toggle(
-                'Italic',
+                t('format-italic'),
                 () => level.italic,
                 (v) => (level.italic = v),
               )}
               {@render choice(
-                'Letters',
+                t('format-letters'),
                 () => level.case,
                 (v) => (level.case = v),
                 cases,
               )}
               {@render choice(
-                'Alignment',
+                t('format-alignment'),
                 () => level.align,
                 (v) => (level.align = v),
                 aligns,
               )}
               {@render toggle(
-                'Indented as a paragraph is',
+                t('format-level-indent'),
                 () => level.indent,
                 (v) => (level.indent = v),
               )}
               {@render toggle(
-                'Runs into the text',
+                t('format-level-run-in-label'),
                 () => level.runIn,
                 (v) => (level.runIn = v),
-                'The heading begins the paragraph and ends with a full stop',
+                t('format-level-run-in-hint'),
               )}
               {#if !level.runIn}
                 {@render length(
-                  'Space before',
+                  t('format-space-before'),
                   () => level.spaceBefore,
                   (v) => (level.spaceBefore = v),
                 )}
                 {@render length(
-                  'Space after',
+                  t('format-space-after'),
                   () => level.spaceAfter,
                   (v) => (level.spaceAfter = v),
                 )}
@@ -746,7 +758,7 @@
           <div class="levels">
             <Button size="sm" disabled={f.headings.levels.length >= 6} onclick={addLevel}>
               {#snippet icon()}<Plus size={13} />{/snippet}
-              A deeper level
+              {t('format-level-add')}
             </Button>
             <Button
               size="sm"
@@ -754,210 +766,217 @@
               onclick={() => f.headings.levels.pop()}
             >
               {#snippet icon()}<Minus size={13} />{/snippet}
-              Remove the deepest
+              {t('format-level-remove')}
             </Button>
           </div>
-          <p class="hint">
-            Headings deeper than the deepest level described are printed as that level.
-          </p>
+          <p class="hint">{t('format-levels-hint')}</p>
         {:else if section === 'title'}
-          <h3>Title and abstract</h3>
+          <h3>{t('format-section-title')}</h3>
           {@render choice(
-            'The title stands',
+            t('format-title-placement'),
             () => f.title.placement,
             (v) => (f.title.placement = v),
             [
-              ['top', 'At the top of the first page'],
-              ['own-page', 'On a page of its own'],
+              ['top', t('format-title-top')],
+              ['own-page', t('format-title-own-page')],
             ],
           )}
           {@render number(
-            'Size',
+            t('format-size'),
             () => f.title.size,
             (v) => (f.title.size = v),
             { min: 6, max: 72, unit: 'pt' },
           )}
           {@render toggle(
-            'Bold',
+            t('format-bold'),
             () => f.title.bold,
             (v) => (f.title.bold = v),
           )}
           {@render toggle(
-            'Italic',
+            t('format-italic'),
             () => f.title.italic,
             (v) => (f.title.italic = v),
           )}
           {@render choice(
-            'Letters',
+            t('format-letters'),
             () => f.title.case,
             (v) => (f.title.case = v),
             cases,
           )}
           {@render choice(
-            'Alignment',
+            t('format-alignment'),
             () => f.title.align,
             (v) => (f.title.align = v),
             aligns,
           )}
-          <h4>What is shown</h4>
+          <h4>{t('format-title-shown')}</h4>
           {@render toggle(
-            'Without the names of the authors',
+            t('format-title-anonymous'),
             () => f.title.anonymous,
             (v) => (f.title.anonymous = v),
-            'For review: the authors are left out everywhere, the running head too',
+            t('format-title-anonymous-hint'),
           )}
           {#if !f.title.anonymous}
             {@render toggle(
-              'Authors',
+              t('format-title-authors'),
               () => f.title.showAuthors,
               (v) => (f.title.showAuthors = v),
             )}
             {@render toggle(
-              'Their affiliations',
+              t('format-title-affiliations'),
               () => f.title.showAffiliations,
               (v) => (f.title.showAffiliations = v),
             )}
           {/if}
           {@render toggle(
-            'Date',
+            t('format-title-date'),
             () => f.title.showDate,
             (v) => (f.title.showDate = v),
           )}
           {@render toggle(
-            'Abstract and keywords',
+            t('format-title-abstract'),
             () => f.title.showAbstract,
             (v) => (f.title.showAbstract = v),
           )}
           {#if f.title.showAbstract}
             {@render text(
-              'Heading of the abstract',
+              t('format-title-abstract-label'),
               () => f.title.abstractLabel,
               (v) => (f.title.abstractLabel = v),
             )}
             {@render text(
-              'Word before the keywords',
+              t('format-title-keywords-label'),
               () => f.title.keywordsLabel,
               (v) => (f.title.keywordsLabel = v),
             )}
           {/if}
         {:else if section === 'quotations'}
-          <h3>Quotations set off from the text</h3>
+          <h3>{t('format-quotations')}</h3>
           {@render length(
-            'Indent on the left',
+            t('format-quote-indent-left'),
             () => f.quote.indentLeft,
             (v) => (f.quote.indentLeft = v),
           )}
           {@render length(
-            'Indent on the right',
+            t('format-quote-indent-right'),
             () => f.quote.indentRight,
             (v) => (f.quote.indentRight = v),
           )}
           {@render number(
-            'Size',
+            t('format-size'),
             () => f.quote.size,
             (v) => (f.quote.size = v),
-            { max: 36, unit: 'pt', zero: 'as the text', hint: '0 for the size of the text' },
+            {
+              max: 36,
+              unit: 'pt',
+              zero: t('format-as-the-text-zero'),
+              hint: t('format-size-zero-hint'),
+            },
           )}
           {@render choice(
-            'Line spacing',
+            t('format-line-spacing'),
             () => f.quote.lineSpacing,
             (v) => (f.quote.lineSpacing = v),
-            [[0, 'As the text'], ...spacings],
+            [[0, t('format-as-the-text')], ...spacings],
           )}
           {@render toggle(
-            'Italic',
+            t('format-italic'),
             () => f.quote.italic,
             (v) => (f.quote.italic = v),
           )}
-          <h4>When a quotation is set off</h4>
+          <h4>{t('format-quote-when')}</h4>
           {@render number(
-            'From this many words',
+            t('format-quote-from-words'),
             () => f.quote.fromWords ?? 0,
             (v) => (f.quote.fromWords = v || null),
-            { max: 500, step: 1, zero: 'not said', hint: 'A reminder: the writer decides' },
+            {
+              max: 500,
+              step: 1,
+              zero: t('format-not-said'),
+              hint: t('format-quote-from-words-hint'),
+            },
           )}
           {@render number(
-            'Or this many lines',
+            t('format-quote-from-lines'),
             () => f.quote.fromLines ?? 0,
             (v) => (f.quote.fromLines = v || null),
-            { max: 50, step: 1, zero: 'not said' },
+            { max: 50, step: 1, zero: t('format-not-said') },
           )}
         {:else if section === 'notes'}
-          <h3>Notes</h3>
+          <h3>{t('format-section-notes')}</h3>
           {@render choice(
-            'Notes stand',
+            t('format-notes-kind'),
             () => f.notes.kind,
             (v) => (f.notes.kind = v),
             [
-              ['footnotes', 'At the foot of the page'],
-              ['endnotes', 'At the end of the text'],
+              ['footnotes', t('format-notes-footnotes')],
+              ['endnotes', t('format-notes-endnotes')],
             ],
           )}
           {@render number(
-            'Size',
+            t('format-size'),
             () => f.notes.size,
             (v) => (f.notes.size = v),
             { min: 5, max: 36, unit: 'pt' },
           )}
           {@render choice(
-            'Line spacing',
+            t('format-line-spacing'),
             () => f.notes.lineSpacing,
             (v) => (f.notes.lineSpacing = v),
             spacings,
           )}
           {#if f.notes.kind === 'endnotes'}
             {@render text(
-              'Heading of the notes',
+              t('format-notes-title'),
               () => f.notes.title,
               (v) => (f.notes.title = v),
             )}
           {/if}
         {:else if section === 'bibliography'}
-          <h3>Bibliography</h3>
+          <h3>{t('format-section-bibliography')}</h3>
           {@render text(
-            'Heading',
+            t('format-bibliography-title'),
             () => f.bibliography.title,
             (v) => (f.bibliography.title = v),
-            'Bibliography, References, Works Cited',
+            t('format-bibliography-title-hint'),
           )}
           {@render toggle(
-            'Begins on a new page',
+            t('format-bibliography-new-page'),
             () => f.bibliography.newPage,
             (v) => (f.bibliography.newPage = v),
           )}
           {@render length(
-            'Hanging indent',
+            t('format-bibliography-hanging-indent'),
             () => f.bibliography.hangingIndent,
             (v) => (f.bibliography.hangingIndent = v),
           )}
           {@render choice(
-            'Line spacing',
+            t('format-line-spacing'),
             () => f.bibliography.lineSpacing,
             (v) => (f.bibliography.lineSpacing = v),
-            [[0, 'As the text'], ...spacings],
+            [[0, t('format-as-the-text')], ...spacings],
           )}
           {@render length(
-            'Space between entries',
+            t('format-bibliography-entry-spacing'),
             () => f.bibliography.entrySpacing,
             (v) => (f.bibliography.entrySpacing = v),
           )}
           {@render number(
-            'Size',
+            t('format-size'),
             () => f.bibliography.size,
             (v) => (f.bibliography.size = v),
-            { max: 36, unit: 'pt', zero: 'as the text' },
+            { max: 36, unit: 'pt', zero: t('format-as-the-text-zero') },
           )}
           <label class="row">
             <span class="what"
-              >Reference style<small
-                >The one this format goes with; it is taken when the format is chosen</small
+              >{t('format-bibliography-style')}<small>{t('format-bibliography-style-hint')}</small
               ></span
             >
             <select
               value={f.style ?? ''}
               onchange={(e) => (f.style = e.currentTarget.value || undefined)}
             >
-              <option value="">None in particular</option>
+              <option value="">{t('format-bibliography-style-none')}</option>
               {#each documents.styles as s (s.id)}
                 <option value={s.id}>{s.title}</option>
               {/each}
@@ -966,156 +985,158 @@
             </select>
           </label>
         {:else if section === 'figures'}
-          <h3>Figures</h3>
+          <h3>{t('format-figures')}</h3>
           {@render captioned(f.figures, 'figure')}
-          <h3>Tables</h3>
+          <h3>{t('format-tables')}</h3>
           {@render captioned(f.tables, 'table')}
-          <h4>The table itself</h4>
+          <h4>{t('format-table-itself')}</h4>
           {@render choice(
-            'Lines',
+            t('format-table-rules'),
             () => f.tables.rules,
             (v) => (f.tables.rules = v),
             [
-              ['horizontal', 'Over, under, and under the headings'],
-              ['grid', 'Around every cell'],
-              ['none', 'None'],
+              ['horizontal', t('format-table-rules-horizontal')],
+              ['grid', t('format-table-rules-grid')],
+              ['none', t('format-table-rules-none')],
             ],
-            'Books and journals have the first',
+            t('format-table-rules-hint'),
           )}
           {@render toggle(
-            'Headings in bold',
+            t('format-table-header-bold'),
             () => f.tables.headerBold,
             (v) => (f.tables.headerBold = v),
           )}
           {@render number(
-            'Size',
+            t('format-size'),
             () => f.tables.size,
             (v) => (f.tables.size = v),
-            { max: 36, unit: 'pt', zero: 'as the text', hint: '0 for the size of the text' },
+            {
+              max: 36,
+              unit: 'pt',
+              zero: t('format-as-the-text-zero'),
+              hint: t('format-size-zero-hint'),
+            },
           )}
           {@render choice(
-            'Line spacing',
+            t('format-line-spacing'),
             () => f.tables.lineSpacing,
             (v) => (f.tables.lineSpacing = v),
-            [[0, 'As the text'], ...spacings],
+            [[0, t('format-as-the-text')], ...spacings],
           )}
-          <h3>Equations</h3>
+          <h3>{t('format-equations')}</h3>
           {@render choice(
-            'Equations stand',
+            t('format-equations-stand'),
             () => f.equations.align,
             (v) => (f.equations.align = v),
             stands,
-            'Unless something else is said of one',
+            t('format-unless-said'),
           )}
           {@render text(
-            'Before the number',
+            t('format-equations-before'),
             () => f.equations.beforeNumber,
             (v) => (f.equations.beforeNumber = v),
           )}
           {@render text(
-            'After the number',
+            t('format-equations-after'),
             () => f.equations.afterNumber,
             (v) => (f.equations.afterNumber = v),
           )}
           <div class="row">
-            <span class="what">As it will stand</span>
+            <span class="what">{t('format-as-it-will-stand')}</span>
             <span class="example">{f.equations.beforeNumber}1{f.equations.afterNumber}</span>
           </div>
         {:else if section === 'margins'}
-          <h3>Page numbers</h3>
+          <h3>{t('format-page-numbers')}</h3>
           {@render toggle(
-            'Pages are numbered',
+            t('format-page-numbers-show'),
             () => f.pageNumbers.show,
             (v) => (f.pageNumbers.show = v),
           )}
           {#if f.pageNumbers.show}
             {@render choice(
-              'Where',
+              t('format-page-numbers-where'),
               () => f.pageNumbers.position,
               (v) => (f.pageNumbers.position = v),
               positions,
             )}
             {@render toggle(
-              'On the first page too',
+              t('format-page-numbers-first'),
               () => f.pageNumbers.firstPage,
               (v) => (f.pageNumbers.firstPage = v),
             )}
           {/if}
-          <h3>Running head</h3>
+          <h3>{t('format-running-head')}</h3>
           {@render choice(
-            'At the top of every page',
+            t('format-running-head-content'),
             () => f.runningHead.content,
             (v) => (f.runningHead.content = v),
             [
-              ['none', 'Nothing'],
-              ['title', 'The title'],
-              ['author', 'The authors'],
-              ['author-title', 'Authors and title'],
-              ['text', 'Words of my own'],
+              ['none', t('format-running-head-none')],
+              ['title', t('format-running-head-title')],
+              ['author', t('format-running-head-author')],
+              ['author-title', t('format-running-head-author-title')],
+              ['text', t('format-running-head-text')],
             ],
           )}
           {#if f.runningHead.content === 'text'}
             {@render text(
-              'The words',
+              t('format-running-head-words'),
               () => f.runningHead.text,
               (v) => (f.runningHead.text = v),
             )}
           {/if}
           {#if f.runningHead.content !== 'none'}
             {@render choice(
-              'Alignment',
+              t('format-alignment'),
               () => f.runningHead.align,
               (v) => (f.runningHead.align = v),
               aligns,
             )}
             {@render choice(
-              'Letters',
+              t('format-letters'),
               () => f.runningHead.case,
               (v) => (f.runningHead.case = v),
               cases.slice(0, 2),
             )}
           {/if}
         {:else if section === 'limits'}
-          <h3>Limits</h3>
-          <p class="hint top">
-            The preview counts the words of the text against these, and the dialog for title and
-            abstract counts against the others. Nothing is cut.
-          </p>
+          <h3>{t('format-section-limits')}</h3>
+          <p class="hint top">{t('format-limits-hint')}</p>
           {@render number(
-            'Words of text',
+            t('format-limits-words'),
             () => f.limits.words ?? 0,
             (v) => (f.limits.words = v || null),
-            { max: 1000000, step: 500, zero: 'no limit' },
+            { max: 1000000, step: 500, zero: t('format-no-limit') },
           )}
           {@render number(
-            'Words of abstract',
+            t('format-limits-abstract-words'),
             () => f.limits.abstractWords ?? 0,
             (v) => (f.limits.abstractWords = v || null),
-            { max: 5000, step: 10, zero: 'no limit' },
+            { max: 5000, step: 10, zero: t('format-no-limit') },
           )}
           {@render number(
-            'Keywords',
+            t('format-limits-keywords'),
             () => f.limits.keywords ?? 0,
             (v) => (f.limits.keywords = v || null),
-            { max: 50, step: 1, zero: 'no limit' },
+            { max: 50, step: 1, zero: t('format-no-limit') },
           )}
           <label class="row tall">
-            <span class="what">What the limits count</span>
+            <span class="what">{t('format-limits-note')}</span>
             <textarea
               rows="3"
               bind:value={f.limits.note}
-              placeholder="Notes included; bibliography not"></textarea>
+              placeholder={t('format-limits-note-placeholder')}></textarea>
           </label>
         {:else if section === 'about'}
-          <h3>About this format</h3>
+          <h3>{t('format-section-about')}</h3>
           <label class="row tall">
-            <span class="what">Description</span>
+            <span class="what">{t('format-description')}</span>
             <textarea rows="3" bind:value={f.description}></textarea>
           </label>
           {#if f.source?.name}
             {@const s = f.source}
             <div class="source selectable">
-              <p class="overline">Where the requirements are from</p>
+              <p class="overline">{t('format-source')}</p>
               <p class="serif">{s.name}</p>
               {#if s.url}
                 <button type="button" class="link" onclick={() => openPath(s.url).catch(() => {})}>
@@ -1124,20 +1145,18 @@
                 </button>
               {/if}
               <p class="read">
-                Read {s.checked}.
+                {t('format-source-read', { date: s.checked })}
                 {s.confidence === 'high'
-                  ? 'The values are those of the source.'
+                  ? t('format-source-high')
                   : s.confidence === 'medium'
-                    ? 'The source could only be read in part or in an earlier state: check what matters to you.'
-                    : 'Little could be verified: treat the values as a beginning.'}
+                    ? t('format-source-medium')
+                    : t('format-source-low')}
               </p>
               {#if s.notes}<p class="notes">{s.notes}</p>{/if}
-              {#if own}<p class="notes">
-                  You have changed this format; the source describes what it was made from.
-                </p>{/if}
+              {#if own}<p class="notes">{t('format-source-changed')}</p>{/if}
             </div>
           {:else}
-            <p class="hint top">This format follows no publisher’s requirements in particular.</p>
+            <p class="hint top">{t('format-source-none')}</p>
           {/if}
         {/if}
       </div>
@@ -1150,7 +1169,7 @@
             <div class="centre"><Spinner size={20} /></div>
           {:else}
             {#each pages as url, i (url)}
-              <img src={url} alt="Sample page {i + 1}" draggable="false" />
+              <img src={url} alt={t('format-sample-page', { number: i + 1 })} draggable="false" />
             {/each}
           {/if}
         </div>
@@ -1160,20 +1179,19 @@
 
   {#snippet footer()}
     {#if own}
-      <div class="left"><Button variant="danger" onclick={remove}>Delete this format</Button></div>
-    {:else}
-      <div class="left note">
-        Formats that come with Glaukopis stay as they are. Your changes are saved as a format of
-        your own.
+      <div class="left">
+        <Button variant="danger" onclick={remove}>{t('format-delete')}</Button>
       </div>
+    {:else}
+      <div class="left note">{t('format-bundled')}</div>
     {/if}
-    <Button variant="ghost" onclick={close}>Cancel</Button>
+    <Button variant="ghost" onclick={close}>{t('common-cancel')}</Button>
     <Button
       variant="primary"
       disabled={saving || !format || !name.trim() || (own && !changed && name === format.name)}
       onclick={save}
     >
-      {own ? 'Save' : 'Save as my own'}
+      {own ? t('common-save') : t('format-save-own')}
     </Button>
   {/snippet}
 </Dialog>
