@@ -10,6 +10,7 @@ import { refForm } from '$lib/project/model/text';
 import { showFormula } from './math.svelte';
 import { numbering, pointerText } from './numbering.svelte';
 import { pictures } from './pictures.svelte';
+import { dress } from '$lib/tables/look';
 import { figureLabel } from './views.svelte';
 
 export interface Shown {
@@ -55,7 +56,10 @@ function fill(root: HTMLElement, shown: Shown) {
     if (label) said.dataset.label = label;
     else delete said.dataset.label;
   });
+  const format = numbering.formatOf(shown.project, map);
   root.querySelectorAll<HTMLElement>('figure.tabular').forEach((table, i) => {
+    // Its lines, and where what is said of it stands, as the format has them.
+    dress(table, format);
     const said = table.querySelector<HTMLElement>('figcaption');
     if (!said) return;
     const label = figureLabel(

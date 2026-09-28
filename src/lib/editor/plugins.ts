@@ -32,6 +32,7 @@ import {
   type Transaction,
 } from 'prosemirror-state';
 import { ySyncPluginKey } from 'y-prosemirror';
+import { tablePlugins } from '$lib/tables/plugins';
 import { newId } from '$lib/util/id';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import {
@@ -75,7 +76,7 @@ export interface EditorHooks {
 }
 
 /**
- * A figure or an equation is pointed to by its id. One that has none, or
+ * A figure, a table or an equation is pointed to by its id. One that has none, or
  * has that of another in the same text, as when it was copied, is given one
  * of its own. What others have written is left to them.
  */
@@ -87,7 +88,8 @@ function ids(): Plugin {
       let tr: Transaction | null = null;
       state.doc.descendants((node, pos) => {
         const name = node.type.name;
-        if (name !== 'figure' && name !== 'equation') return !node.isTextblock;
+        if (name !== 'figure' && name !== 'equation' && name !== 'tabular')
+          return !node.isTextblock;
         const id = String(node.attrs.id ?? '');
         if (!id || seen.has(id)) {
           tr ??= state.tr;
@@ -268,6 +270,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     inputRules({ rules: [...dashes, ...blockRules(schema)] }),
     cite,
     ids(),
+    // Tables: before the keys of the text, since Tab and the arrows mean something of their own in them.
+    ...tablePlugins(),
     keymap(keys),
     keymap(baseKeymap),
     dropCursor({ color: 'var(--accent)', width: 2 }),

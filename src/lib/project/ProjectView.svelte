@@ -19,6 +19,7 @@
   import SharePanel from '$lib/sharing/SharePanel.svelte';
   import { ProjectSharing } from '$lib/sharing/sharing.svelte';
   import { importDropped } from '$lib/library/references.svelte';
+  import { tablesDropped } from '$lib/tables/ask';
   import { insertFigure, widthFor } from '$lib/editor/commands';
   import { viewsByDom } from '$lib/editor/ui.svelte';
   import { isPicturePath, pictures } from '$lib/figures/pictures.svelte';
@@ -403,7 +404,18 @@
         }
       }
     }
-    const others = all.filter((path) => !isPicturePath(path));
+    // Files that hold tables become tables, in the same places.
+    const written = under?.closest('.ProseMirror.body');
+    const text = written ? viewsByDom.get(written) : undefined;
+    const others = await tablesDropped(
+      all.filter((path) => !isPicturePath(path)),
+      {
+        view: text,
+        at: text?.posAtCoords({ left: event.x, top: event.y })?.pos,
+        project: p,
+        element,
+      },
+    );
     if (!others.length) return;
     const outcome = await importDropped(others);
     if (!outcome?.concerned?.length || !element || !p || !p.node(element)) return;

@@ -658,6 +658,143 @@ span.math.selected {
   margin-left: 0;
 }
 
+/* Tables, as they will be in a book: lines over and under the table and
+   under its headings, unless the format of the document has others. The
+   word and the number, where what is said of the table stands, and the
+   lines are those of the document: see tables/look.ts. */
+/* Over a table there is room for its tools, which are shown over it while
+   the cursor is in it: see tables/views.svelte.ts. */
+.tabular {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 2.2em 0 1.4em;
+  padding: 0;
+  white-space: normal;
+}
+.tabular > figcaption {
+  display: block;
+  align-self: stretch;
+  min-height: 1.5em;
+  margin: 0 0 0.5em;
+  color: var(--ink-2);
+  font-size: 0.9em;
+  line-height: 1.5;
+  text-align: center;
+  white-space: pre-wrap;
+}
+.tabular[data-caption='below'] > figcaption {
+  order: 2;
+  margin: 0.55em 0 0;
+}
+.tabular > figcaption[data-label]::before {
+  content: attr(data-label);
+  color: var(--ink-3);
+}
+.prose:not(.static) .tabular.uncaptioned > figcaption::after {
+  content: 'What is said of the table';
+  margin-left: 0.5em;
+  color: var(--ink-4);
+  font-style: italic;
+  pointer-events: none;
+}
+.prose:not(.static) .tabular.uncaptioned > figcaption:not([data-label])::after {
+  margin-left: 0;
+}
+.prose.static .tabular.uncaptioned > figcaption:not([data-label]) {
+  display: none;
+}
+.tabular table {
+  max-width: 100%;
+  border-collapse: collapse;
+  border-top: 1.5px solid var(--ink-2);
+  border-bottom: 1.5px solid var(--ink-2);
+  font-size: 0.92em;
+  line-height: 1.4;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.tabular[data-width] table {
+  width: var(--table-width, auto);
+}
+.tabular th,
+.tabular td {
+  position: relative;
+  min-width: 2.6em;
+  padding: 0.32em 0.75em;
+  border: none;
+  text-align: left;
+  vertical-align: top;
+  white-space: pre-wrap;
+}
+.tabular th {
+  color: var(--ink);
+  font-weight: inherit;
+}
+.tabular[data-bold-headings] th {
+  font-weight: 600;
+}
+/* Where it is written, the headings are told from the rest, whatever the format makes of them. */
+.prose:not(.static) .tabular th {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.tabular th p + p,
+.tabular td p + p {
+  margin-top: 0.2em;
+}
+/* Under the headings of the columns, which are the rows that hold nothing else. */
+.tabular tr:has(> th):not(:has(> td)) > th {
+  border-bottom: 1px solid var(--ink-3);
+}
+.tabular[data-rules='grid'] table {
+  border: 1px solid var(--ink-3);
+}
+.tabular[data-rules='grid'] :is(th, td) {
+  border: 1px solid var(--line-strong);
+}
+.tabular[data-rules='grid'] tr:has(> th):not(:has(> td)) > th {
+  border-bottom-color: var(--ink-3);
+}
+.tabular[data-rules='none'] table,
+.tabular[data-rules='none'] tr:has(> th):not(:has(> td)) > th {
+  border-color: transparent;
+}
+/* Where it is written, the cells are told apart by the faintest of lines. */
+.prose:not(.static) .tabular:not([data-rules='grid']) :is(th, td) {
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--line) 70%, transparent);
+}
+.tabular .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--selection);
+  pointer-events: none;
+}
+.tabular.selected,
+.tabular.ProseMirror-selectednode {
+  outline: none;
+  border-radius: var(--radius-s);
+  box-shadow:
+    0 0 0 4px var(--paper),
+    0 0 0 5px var(--accent);
+}
+/* The tools of the table the cursor is in: see tables/views.svelte.ts. */
+.table-bar {
+  position: fixed;
+  z-index: 650;
+  left: 0;
+  top: 0;
+}
+.table-bar[hidden] {
+  display: none;
+}
+.note-panel.table-panel {
+  width: min(380px, calc(100vw - 32px));
+  border-top-color: var(--accent);
+}
+.note-panel.table-panel .note-number {
+  color: var(--accent-strong);
+}
+
 /* Words that point to a figure, an equation or a part of the document. */
 .crossref {
   padding: 0.02em 0.16em;
