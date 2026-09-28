@@ -27,6 +27,7 @@
   import TextField from '$lib/ui/TextField.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
   import Mark from '$lib/shell/Mark.svelte';
+  import OcrSettings from '$lib/ocr/OcrSettings.svelte';
 
   let system = $state<SystemInfo | null>(null);
   let tools = $state<ToolsInfo | null>(null);
@@ -301,6 +302,7 @@
           </div>
         </div>
       {/each}
+      <OcrSettings {tools} onlooked={(found) => (tools = found)} />
       {#if tools && tools.pandoc && !tools.latex.length}
         <p class="hint note">
           No LaTeX was found. It is not needed: LaTeX source can be exported without it, and PDF is

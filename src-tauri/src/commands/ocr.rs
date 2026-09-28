@@ -79,9 +79,11 @@ fn stem(name: &str) -> String {
 }
 
 /// Looks at a PDF or a picture before it is read: its pages, and how many
-/// of them have text.
+/// of them have text. With `stored`, the path is that of a file of the
+/// library, within its store.
 #[tauri::command(async)]
-pub fn ocr_look(state: State<'_, AppState>, path: PathBuf) -> CommandResult<Looked> {
+pub fn ocr_look(state: State<'_, AppState>, path: String, stored: Option<bool>) -> CommandResult<Looked> {
+    let path = if stored.unwrap_or(false) { state.library().attachment_path(&path)? } else { PathBuf::from(path) };
     Ok(ocr::look(&path, &state.tools())?)
 }
 

@@ -13,6 +13,12 @@ export interface ToolsInfo {
   typst: Tool | null;
   latex: string[];
   pandocApi: number[];
+  /** Reads text in pictures: see `api/ocr.ts`. */
+  tesseract: Tool | null;
+  /** The languages Tesseract has data for, by its names for them: `eng`, `nor`. */
+  ocrLanguages: string[];
+  /** Draws the pages of PDFs that cannot be drawn otherwise. */
+  pdftoppm: Tool | null;
   resources: string;
 }
 

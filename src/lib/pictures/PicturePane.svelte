@@ -19,6 +19,9 @@
   import CaptionField from './CaptionField.svelte';
   import { kindWords, noteKey, removePicture, usersOf } from './store.svelte';
   import Thumb from './Thumb.svelte';
+  import ScanText from '@lucide/svelte/icons/scan-text';
+  import { t } from '$lib/i18n';
+  import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
 
   interface Props {
     /** The name the store keeps the picture by. */
@@ -55,6 +58,8 @@
   /** Whether the note for all projects is shown though nothing is in it yet. */
   let showAll = $state(!inProject);
   let root = $state<HTMLDivElement>();
+  /** Whether the text in the picture is being read (`ocr/PictureTextDialog.svelte`). */
+  let reading = $state(false);
 
   /** What has been written here and is not kept yet. */
   const waiting = new Set<Field>();
@@ -239,6 +244,15 @@
         oninput={() => wrote('alt')}
         onblur={() => void keep('alt')}></textarea>
     </label>
+
+    {#if picture.extension !== 'svg'}
+      <div class="read">
+        <Button size="sm" variant="ghost" onclick={() => (reading = true)} data-ocr-picture>
+          {#snippet icon()}<ScanText size={13} />{/snippet}
+          {t('ocr-picture-read')}
+        </Button>
+      </div>
+    {/if}
   {:else}
     <div class="absent">
       <p class="called serif">{named?.name || 'A picture'}</p>
@@ -355,7 +369,21 @@
   {/if}
 </div>
 
+{#if reading && picture}
+  <PictureTextDialog
+    hash={own}
+    name={picture.name}
+    project={inProject}
+    {onopenmap}
+    onclose={() => (reading = false)}
+  />
+{/if}
+
 <style>
+  .read {
+    display: flex;
+    margin-top: calc(-1 * var(--space-2));
+  }
   .picture-pane {
     display: flex;
     flex-direction: column;

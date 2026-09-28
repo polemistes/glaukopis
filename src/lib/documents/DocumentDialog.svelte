@@ -14,6 +14,8 @@
   import TextField from '$lib/ui/TextField.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
+  import { isReadPath } from '$lib/api/ocr';
+  import ReadStep from '$lib/ocr/ReadStep.svelte';
   import { keepReferences, type Bringing, type Brought } from './bringing.svelte';
 
   let { request, onclose }: { request: Bringing; onclose: () => void } = $props();
@@ -21,6 +23,9 @@
   // svelte-ignore state_referenced_locally
   const file = request.path.split(/[\\/]/).pop() ?? request.path;
   const ticket = newId();
+  /** A PDF or a picture, whose text is read by Tesseract (`ocr/ReadStep.svelte`). */
+  // svelte-ignore state_referenced_locally
+  const scanned = isReadPath(request.path);
 
   let read = $state.raw<Imported | null>(null);
   let title = $state('');
@@ -30,7 +35,7 @@
   let left = false;
 
   onMount(() => {
-    void begin();
+    if (!scanned) void begin();
   });
 
   async function begin() {
@@ -174,6 +179,14 @@
 >
   {#if failure && !read}
     <p class="failure selectable" role="alert"><CircleAlert size={15} /> <span>{failure}</span></p>
+  {:else if !read && scanned}
+    <ReadStep
+      path={request.path}
+      onread={(imported) => {
+        read = imported;
+        title = titleOf(imported);
+      }}
+    />
   {:else if !read}
     <div class="reading" aria-live="polite">
       <Spinner size={18} />
