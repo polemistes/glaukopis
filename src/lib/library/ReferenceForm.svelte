@@ -3,10 +3,21 @@
   import Plus from '@lucide/svelte/icons/plus';
   import X from '@lucide/svelte/icons/x';
   import type { Draft } from '$lib/api/library';
+  import { t } from '$lib/i18n';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import Select from '$lib/ui/Select.svelte';
   import NamesField from './NamesField.svelte';
-  import { fieldDef, isNameField, primaryFields, schema, typeDef, typeOptions } from './schema';
+  import {
+    fieldDef,
+    fieldGroupLabel,
+    isNameField,
+    primaryFields,
+    schema,
+    typeDef,
+    typeGroupLabel,
+    typeHint,
+    typeOptions,
+  } from './schema';
 
   interface Props {
     draft: Draft;
@@ -36,8 +47,11 @@
   // A type the schema does not know is offered under its own name.
   const types = $derived(
     typeDef(draft.type) || !draft.type
-      ? typeOptions
-      : [...typeOptions, { value: draft.type, label: `@${draft.type}`, group: 'Other' }],
+      ? typeOptions()
+      : [
+          ...typeOptions(),
+          { value: draft.type, label: `@${draft.type}`, group: typeGroupLabel('Other') },
+        ],
   );
 
   const schemaOrder = Object.keys(schema.fields);
@@ -97,7 +111,7 @@
     );
     const items: MenuItem[] = [];
     if (suggested.length) {
-      items.push({ kind: 'heading', label: 'Often used' });
+      items.push({ kind: 'heading', label: t('library-form-often-used') });
       items.push(...suggested.map(item));
       items.push({ kind: 'separator' });
     }
@@ -109,7 +123,8 @@
           !visible.has(f) &&
           !suggested.includes(f),
       );
-      if (fields.length) items.push({ kind: 'submenu', label: group, items: fields.map(item) });
+      if (fields.length)
+        items.push({ kind: 'submenu', label: fieldGroupLabel(group), items: fields.map(item) });
     }
     openMenu(event.currentTarget as HTMLElement, items, {
       side: 'top',
@@ -133,7 +148,7 @@
     const point = String.raw`-?[0-9X]{4}(-(0[1-9]|1[0-2]|2[1-4])(-(0[1-9]|[12][0-9]|3[01]))?)?[~?%]?`;
     return new RegExp(`^${point}(/(${point}|\\.\\.)?)?$`).test(v)
       ? null
-      : 'Write a date as 1979, 1979-05 or 1979-05-12; a range as 1979/1985.';
+      : t('library-form-date-problem');
   }
 
   $effect(() => {
@@ -216,7 +231,7 @@
       <button
         type="button"
         class="remove"
-        aria-label="Remove {def.label}"
+        aria-label={t('library-form-remove-field', { field: def.label })}
         tabindex="-1"
         onclick={() => removeField(name)}
       >
@@ -236,7 +251,7 @@
         onchange();
       }}
     />
-    {#if typeDef(draft.type)?.hint}<p class="type-hint">{typeDef(draft.type)?.hint}</p>{/if}
+    {#if typeHint(draft.type)}<p class="type-hint">{typeHint(draft.type)}</p>{/if}
   </div>
 
   <div class="fields">
@@ -250,18 +265,18 @@
 
   <button type="button" class="add-field" onclick={addMenu}>
     <Plus size={13} />
-    <span>Add field</span>
+    <span>{t('library-form-add-field')}</span>
   </button>
 
   <div class="field key" data-field="key">
-    <label for="{uid}-key">Citation key</label>
+    <label for="{uid}-key">{t('library-form-citation-key')}</label>
     <div class="control">
       <input
         id="{uid}-key"
         class="mono"
         class:invalid={!!keyError}
         value={draft.key}
-        placeholder={suggestedKey || 'made from author and year'}
+        placeholder={suggestedKey || t('library-form-key-made')}
         spellcheck="false"
         autocomplete="off"
         oninput={(e) => {
