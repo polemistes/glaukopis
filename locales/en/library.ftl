@@ -243,3 +243,76 @@ library-collection-delete-message = { $inside ->
    *[other] The collections inside it are deleted as well. The references stay in your library.
 }
 library-collection-delete-failed = The collection could not be deleted
+library-collection-count = { $count ->
+    [one] { $count } collection
+   *[other] { $count } collections
+}
+
+## Bringing references in, from anywhere in the application.
+
+library-files = { $count ->
+    [one] { $count } file
+   *[other] { $count } files
+}
+library-open-failed = The reference could not be opened
+library-known = { $count ->
+    [one] It is in your library already
+   *[other] They are in your library already
+}
+library-nothing-to-import = Nothing to import
+library-none-found = No references were found.
+library-import-kinds = References are read from .bib files, and made of PDF files.
+library-filter-bib = BibLaTeX and BibTeX
+library-filter-all = All files
+library-files-read-failed = { $count ->
+    [one] The file could not be read
+   *[other] The files could not be read
+}
+library-text-read-failed = The text could not be read
+library-add-pdfs-title = Add PDF files
+library-pdfs-working = { $count ->
+    [one] Finding out what the file is…
+   *[other] Finding out what { $count } files are…
+}
+# What came of an import, as a list: “3 references added, 1 completed, 2 files stored”.
+library-imported-added = { $count ->
+    [one] { $count } reference added
+   *[other] { $count } references added
+}
+library-imported-completed = { $count } completed
+library-imported-skipped = { $count } already in the library
+library-imported-files = { $count ->
+    [one] { $count } file stored
+   *[other] { $count } files stored
+}
+library-imported-nothing = Nothing was changed
+library-paste-title = Paste references
+library-paste-subtitle = BibLaTeX or BibTeX, as many entries as you like
+library-paste-continue = Continue
+library-source-label = BibLaTeX source
+
+## Importing from Zotero.
+
+library-zotero-title = Import from Zotero
+# The file is the database of Zotero, zotero.sqlite, shown as code.
+library-zotero-not-found = No Zotero was found on this computer in the places where it usually keeps its data. If it keeps it elsewhere, show where: the folder that holds { $file }.
+library-zotero-lead = What is imported is copied into your library, with its files. Zotero is only read, and nothing of it is changed; it may be running meanwhile.
+library-zotero-choose = The data directory of Zotero
+library-zotero-none-there = There is no Zotero there.
+library-zotero-unread = Zotero could not be read.
+library-zotero-library = Library
+# A library of Zotero, with the number of its references.
+library-zotero-library-option = { $name } ({ $count })
+library-zotero-my-library = My library
+library-zotero-what = What to import
+library-zotero-everything = Everything
+library-zotero-with-files = With the files that are attached
+library-zotero-with-notes = With the notes, as annotations
+library-zotero-elsewhere = Another place…
+library-zotero-show-where = Show where…
+library-zotero-reading = Reading…
+library-zotero-read = { $count ->
+    [0] Read
+    [one] Read { $count } reference
+   *[other] Read { $count } references
+}

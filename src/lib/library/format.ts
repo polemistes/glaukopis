@@ -1,7 +1,19 @@
 /** Words for things of the library. */
 
 import type { Reason, SummaryLite } from '$lib/api/library';
-import { languages, t } from '$lib/i18n';
+import { languages, t, type Args } from '$lib/i18n';
+
+/**
+ * A message one of whose variables is shown otherwise than as words, as a
+ * piece of code or in bold: the words before it and after it, which the
+ * language puts where they belong.
+ */
+export function wordsAround(id: string, variable: string, args: Args = {}): [string, string] {
+  const mark = '\u{E000}';
+  const said = t(id, { ...args, [variable]: mark });
+  const at = said.indexOf(mark);
+  return at < 0 ? [said, ''] : [said.slice(0, at), said.slice(at + mark.length)];
+}
 
 /** "Nagy 1979", "Nagy and Lord 1996", "The Oxford Classical Dictionary 2012". */
 export function shortLabel(s: { authors: string; year: string; title: string }): string {

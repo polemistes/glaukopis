@@ -236,3 +236,73 @@ library-collection-delete-message = { $inside ->
    *[other] Samlingene inni den slettes også. Referansene blir værende i biblioteket ditt.
 }
 library-collection-delete-failed = Samlingen kunne ikke slettes
+library-collection-count = { $count ->
+    [one] { $count } samling
+   *[other] { $count } samlinger
+}
+
+## Å hente inn referanser, fra hvor som helst i programmet.
+
+library-files = { $count ->
+    [one] { $count } fil
+   *[other] { $count } filer
+}
+library-open-failed = Referansen kunne ikke åpnes
+library-known = { $count ->
+    [one] Den er allerede i biblioteket ditt
+   *[other] De er allerede i biblioteket ditt
+}
+library-nothing-to-import = Ingenting å importere
+library-none-found = Ingen referanser ble funnet.
+library-import-kinds = Referanser leses fra .bib-filer og lages av PDF-filer.
+library-filter-bib = BibLaTeX og BibTeX
+library-filter-all = Alle filer
+library-files-read-failed = { $count ->
+    [one] Filen kunne ikke leses
+   *[other] Filene kunne ikke leses
+}
+library-text-read-failed = Teksten kunne ikke leses
+library-add-pdfs-title = Legg til PDF-filer
+library-pdfs-working = { $count ->
+    [one] Finner ut hva filen er …
+   *[other] Finner ut hva { $count } filer er …
+}
+library-imported-added = { $count ->
+    [one] { $count } referanse lagt til
+   *[other] { $count } referanser lagt til
+}
+library-imported-completed = { $count } fikk flere opplysninger
+library-imported-skipped = { $count } allerede i biblioteket
+library-imported-files = { $count ->
+    [one] { $count } fil lagret
+   *[other] { $count } filer lagret
+}
+library-imported-nothing = Ingenting ble endret
+library-paste-title = Lim inn referanser
+library-paste-subtitle = BibLaTeX eller BibTeX, så mange oppføringer du vil
+library-paste-continue = Fortsett
+library-source-label = BibLaTeX-kode
+
+## Import fra Zotero.
+
+library-zotero-title = Importer fra Zotero
+library-zotero-not-found = Fant ingen Zotero på denne datamaskinen der den vanligvis har dataene sine. Har den dem et annet sted, så vis hvor: mappen med { $file }.
+library-zotero-lead = Det som importeres, kopieres inn i biblioteket ditt, med filene sine. Zotero blir bare lest, og ingenting i den endres; den kan gjerne være i gang imens.
+library-zotero-choose = Datamappen til Zotero
+library-zotero-none-there = Det er ingen Zotero der.
+library-zotero-unread = Zotero kunne ikke leses.
+library-zotero-library = Bibliotek
+library-zotero-library-option = { $name } ({ $count })
+library-zotero-my-library = Mitt bibliotek
+library-zotero-what = Hva som skal importeres
+library-zotero-everything = Alt
+library-zotero-with-files = Med filene som er vedlagt
+library-zotero-with-notes = Med notatene, som annotasjoner
+library-zotero-elsewhere = Et annet sted …
+library-zotero-show-where = Vis hvor …
+library-zotero-reading = Leser …
+library-zotero-read = { $count ->
+    [0] Les
+    [one] Les { $count } referanse
+   *[other] Les { $count } referanser
+}

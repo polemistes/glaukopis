@@ -2,9 +2,9 @@
   import { onMount } from 'svelte';
   import { getCurrentWebview } from '@tauri-apps/api/webview';
   import { inTauri } from '$lib/api/backend';
+  import { t } from '$lib/i18n';
   import { outsideDrop, outsideLeave, outsideOver, type DragPayload } from '$lib/ui/drag.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { plural } from './format';
   import ImportDialog from './ImportDialog.svelte';
   import PasteDialog from './PasteDialog.svelte';
   import ReferenceDialog from './ReferenceDialog.svelte';
@@ -27,7 +27,11 @@
     const stop = getCurrentWebview().onDragDropEvent((event) => {
       const e = event.payload;
       if (e.type === 'enter') {
-        files = { kind: 'files', data: e.paths, label: plural(e.paths.length, 'file') };
+        files = {
+          kind: 'files',
+          data: e.paths,
+          label: t('library-files', { count: e.paths.length }),
+        };
         const { x, y } = at(e.position);
         outsideOver(files, x, y);
       } else if (e.type === 'over') {
@@ -38,7 +42,7 @@
         const dropped: DragPayload = {
           kind: 'files',
           data: e.paths,
-          label: plural(e.paths.length, 'file'),
+          label: t('library-files', { count: e.paths.length }),
         };
         files = null;
         // Not over a dialog: what is open there is in the middle of something else.
