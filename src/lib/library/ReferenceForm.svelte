@@ -54,6 +54,8 @@
     rest.delete('file');
     // What the user writes about the work has a place of its own (see notes.svelte.ts).
     rest.delete('annotation');
+    // What identifies the entry to the application is kept with it, and is nothing to fill in.
+    for (const name of [...rest]) if (name.startsWith('glaukopis-')) rest.delete(name);
     const others = [...rest].sort((a, b) => {
       const ia = schemaOrder.indexOf(a);
       const ib = schemaOrder.indexOf(b);

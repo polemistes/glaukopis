@@ -337,12 +337,33 @@ describe('text that was proposed as a citation', () => {
     ]);
   });
 
-  it('not where the same words stand twice and none of them where they stood', () => {
-    const { pr, map, elements } = project([p(t('(Nagy 1979) and (Nagy 1979).'))]);
+  it('where the same words stand twice, it is the one with the same words around it', () => {
+    const { pr, map, elements } = project([
+      p(t('(Nagy 1979) and (Nagy 1979).')),
+      p(t('(Nagy 1979) and (Nagy 1979) and (Nagy 1979) and so on.')),
+    ]);
+    const { places } = gather(pr, map);
     const at = proposed(pr, map, '(Nagy 1979)');
-    const words = (pr.fragment(elements[0], 'body')!.get(0) as Y.XmlElement).get(0) as Y.XmlText;
-    pr.transact(() => words.insert(0, 'So ', {}));
-    expect(makeCitation(pr, at, [{ id: 'r1' }], 'normal')).toEqual({ done: false, why: 'changed' });
+    const words = (n: number) =>
+      (pr.fragment(elements[0], 'body')!.get(n) as Y.XmlElement).get(0) as Y.XmlText;
+    pr.transact(() => {
+      words(0).insert(0, 'So ', {});
+      words(1).insert(0, 'So ', {});
+    });
+    expect(makeCitation(pr, at, [{ id: 'r1' }], 'normal')).toEqual({ done: true });
+    expect(text(pr, elements[0])[0]).toEqual(p(t('So '), cited('r1'), t(' and (Nagy 1979).')));
+    // Not where several have the same around them: it cannot be told which was meant.
+    const among = {
+      passage: places[1].id,
+      start: 0,
+      end: 11,
+      text: '(Nagy 1979)',
+      around: around(places[1].text, 0, 11),
+    };
+    expect(makeCitation(pr, among, [{ id: 'r1' }], 'normal')).toEqual({
+      done: false,
+      why: 'changed',
+    });
     expect(
       makeCitation(pr, { ...at, passage: `${elements[0]}/1.99999` }, [{ id: 'r1' }], 'normal'),
     ).toEqual({
@@ -421,7 +442,7 @@ describe('a citation in a note', () => {
     expect(text(pr, elements[0])).toMatchObject([
       {
         content: [
-          t('The wrath'),
+          t('The wrath '),
           {
             kind: 'citation',
             items: [
@@ -430,7 +451,7 @@ describe('a citation in a note', () => {
             ],
             mode: 'normal',
           },
-          t(' is sung'),
+          t(' is sung '),
           cited('r3', { locator: '12' }),
           t(' and '),
           { kind: 'footnote' },
@@ -481,7 +502,7 @@ describe('a citation in a note', () => {
       },
     );
     expect(text(two.pr, two.elements[0])).toEqual([
-      p(t('Said'), cited('r1', { suffix: '; cf. Lord 1960' })),
+      p(t('Said '), cited('r1', { suffix: '; cf. Lord 1960' })),
     ]);
     // In the text, there is no note to become one.
     const three = project(wrath);
@@ -531,7 +552,7 @@ describe('a citation in a note', () => {
       makeCitation(one.pr, whole, [{ id: 'r1', locator: '73', prefix: 'See' }], 'normal', 'note'),
     ).toEqual({ done: true });
     expect(text(one.pr, one.elements[0])).toEqual([
-      p(t('Said'), cited('r1', { locator: '73', prefix: 'See' }), t(' and done.')),
+      p(t('Said '), cited('r1', { locator: '73', prefix: 'See' }), t(' and done.')),
     ]);
     const two = project(plain);
     makeCitation(two.pr, whole2(two), [{ id: 'r1' }], 'normal', 'here');
@@ -541,6 +562,46 @@ describe('a citation in a note', () => {
     function whole2(of: typeof two) {
       return proposed(of.pr, of.map, 'See Nagy, Best of the Achaeans, 73.');
     }
+  });
+});
+
+describe('a citation that was made of a note', () => {
+  it('stands apart from the word the note stood close to, and nowhere else', () => {
+    const N = (id: string) => note(t('Nagy 1979', { found: zotero(id) }));
+    const { pr, map, elements } = project([
+      p(
+        N('a1b2c3d4e5f6'),
+        t('At the start, after room '),
+        N('b1b2c3d4e5f6'),
+        t(' and ('),
+        N('c1b2c3d4e5f6'),
+        t(') and close'),
+        N('d1b2c3d4e5f6'),
+        t('.'),
+      ),
+    ]);
+    const done = makeCitations(
+      pr,
+      gather(pr, map).marked.map((m) => ({
+        target: target(m),
+        items: [{ id: 'r1' }],
+        mode: 'normal',
+        how: 'note',
+      })),
+    );
+    expect(done.every((d) => d.done)).toBe(true);
+    expect(text(pr, elements[0])).toEqual([
+      p(
+        cited('r1'),
+        t('At the start, after room '),
+        cited('r1'),
+        t(' and ('),
+        cited('r1'),
+        t(') and close '),
+        cited('r1'),
+        t('.'),
+      ),
+    ]);
   });
 });
 
@@ -596,7 +657,7 @@ describe('while the text is being written in', () => {
     });
     expect(v.state.doc.child(0).child(1).type.name).toBe('citation');
     expect(v.state.doc.child(0).child(1).attrs.items).toEqual([{ id: 'r1', prefix: 'See' }]);
-    expect(v.state.doc.child(0).textContent).toBe('Said and done.');
+    expect(v.state.doc.child(0).textContent).toBe('Said  and done.');
   });
 });
 

@@ -616,8 +616,12 @@ What becomes of what is in the document:
 - **Mathematics** is kept as it is written, in the line or as equations.
 - **Citations** written by key (Markdown `[@homer]`, LaTeX `\cite{homer}`)
   become citations when the key is in your library, with page and words
-  before and after. Those that are not, and citations in Word and
-  OpenDocument files, stay the text they were written as.
+  before and after. Those that are not, and citations made by Zotero or
+  Mendeley in Word and OpenDocument files, stay the text they were written
+  as, and are marked as citations that were *found*. You are told how many
+  there are, and choose whether those that Zotero made of works your
+  library has are made citations at once, and whether the rest are gone
+  through when the map is made: see *Citations that were found*.
 - **A list of works cited** is brought in as text. The map makes its own
   from what is cited in it, so the part can be left out of the document or
   deleted.

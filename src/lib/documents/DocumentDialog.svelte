@@ -145,11 +145,13 @@
     return `${parts.join(', ')}.`;
   });
 
-  /** The citations that were found, and wait to be tied to references. */
+  /**
+   * The citations that were found, in a line over what is to be done with
+   * them. What they are is said once, among what there is to know.
+   */
   const found = $derived.by(() => {
     if (!read?.counts.found) return '';
     const { found: all, foundMade: made } = read.counts;
-    const were = all === 1 ? 'One citation was' : `${all.toLocaleString()} citations were`;
     const by =
       made === 0
         ? ''
@@ -158,13 +160,7 @@
             ? ', made by a program that keeps references'
             : ', all made by a program that keeps references'
           : `, ${made.toLocaleString()} of them made by a program that keeps references`;
-    return `${were} found that ${all === 1 ? 'is' : 'are'} not yet tied to ${
-      all === 1 ? 'a reference' : 'references'
-    } of your library${by}. ${
-      all === 1 ? 'It stands' : 'They stand'
-    } in the text as the text ${all === 1 ? 'it was' : 'they were'}, with a line of dots under ${
-      all === 1 ? 'it' : 'them'
-    }.`;
+    return `${all === 1 ? 'One citation was' : `${all.toLocaleString()} citations were`} found${by}.`;
   });
 </script>
 
@@ -216,7 +212,7 @@
     {#if cited}<p class="cited" data-fact="cited">{cited}</p>{/if}
     {#if found}
       <p class="cited" data-fact="found">{found}</p>
-      <div class="found">
+      <div class="choices">
         {#if read.counts.foundMade}
           <label class="check">
             <input
@@ -239,11 +235,6 @@
           />
           Go through the citations when the {request.project ? 'map' : 'project'} is made
         </label>
-        <p class="hint">
-          They can be gone through at any time, a few now and the rest later: <em
-            >Citations that were found…</em
-          >, in the menu of the map.
-        </p>
       </div>
     {/if}
 
@@ -335,7 +326,7 @@
     margin: var(--space-3) 0 0;
     color: var(--ink-2);
   }
-  .found {
+  .choices {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -350,9 +341,6 @@
   }
   .check input {
     accent-color: var(--accent);
-    margin: 0;
-  }
-  .found .hint {
     margin: 0;
   }
   .overline {

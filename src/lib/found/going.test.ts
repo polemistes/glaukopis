@@ -335,6 +335,36 @@ describe('what the writer does', () => {
 describe('text that was proposed', () => {
   const plain: Block[] = [p(t('Said (Nagy 1979, 73) and (Lord 1960) and (Nagy 1979, 73).'))];
 
+  it('taken back, is proposed anew, and is what is looked at', async () => {
+    const { g, pr } = going(
+      [plain],
+      { Nagy: likely('r-nagy'), Lord: likely('r-lord') },
+      { years: true },
+    );
+    pr.undoManager.clear();
+    await g.open();
+    g.show(g.entries[1].key);
+    expect(g.make()).toBe(true);
+    expect(g.current?.target.text).toBe('(Nagy 1979, 73)');
+    g.show(g.entries[0].key);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(texts(g)).toEqual(['(Nagy 1979, 73)', '(Nagy 1979, 73)']);
+    pr.undo();
+    g.undone();
+    // Until the library has answered, it is not there; what was proposed beside it is, where it stands now.
+    expect(texts(g)).toEqual(['(Nagy 1979, 73)', '(Nagy 1979, 73)']);
+    expect(g.entries.map((e) => e.target.start)).toEqual([5, 41]);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(texts(g)).toEqual(['(Nagy 1979, 73)', '(Lord 1960)', '(Nagy 1979, 73)']);
+    expect(g.current?.target.text).toBe('(Lord 1960)');
+    // What another writes meanwhile does not take the writer elsewhere.
+    g.show(g.entries[2].key);
+    pr.transact(() => pr.setTitle(pr.map(g.map)!.root, 'Another name'));
+    g.changed();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(g.index).toBe(2);
+  });
+
   it('is made a citation, and what was proposed after it is where it now stands', async () => {
     const { g, pr, elements, calls } = going(
       [plain],
@@ -451,14 +481,14 @@ describe('a citation in a note', () => {
     expect(body(pr.fragment(elements[0], 'body')!)).toMatchObject([
       {
         content: [
-          t('The wrath'),
+          t('The wrath '),
           {
             kind: 'citation',
             items: [
               { id: 'r-nagy', locator: '73', prefix: 'See', suffix: '; but he argues otherwise' },
             ],
           },
-          t(' is sung'),
+          t(' is sung '),
           { kind: 'citation', items: [{ id: 'r-lord', locator: '73' }] },
           t(' and told'),
           {
@@ -491,7 +521,7 @@ describe('a citation in a note', () => {
     expect(g.make()).toBe(true);
     expect(body(pr.fragment(elements[0], 'body')!)).toEqual([
       p(
-        t('Said'),
+        t('Said '),
         {
           kind: 'citation',
           items: [{ id: 'r-nagy', locator: '73', prefix: 'See' }],

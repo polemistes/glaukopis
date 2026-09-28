@@ -238,6 +238,7 @@
       event.stopPropagation();
       if (key === 'y' || event.shiftKey) project.redo();
       else project.undo();
+      going.undone();
       return;
     }
     if (mod || event.altKey) return;

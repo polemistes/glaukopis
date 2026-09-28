@@ -144,6 +144,8 @@ export class Going {
   #places = new Map<string, Place>();
   #round = 0;
   #timer: ReturnType<typeof setTimeout> | undefined;
+  /** What there was when something was taken back: what is proposed anew then is what came back. */
+  #before: Set<string> | null = null;
   /** The state of the project that was last looked at. */
   seen = -1;
 
@@ -354,6 +356,10 @@ export class Going {
       if (round !== this.#round) return;
       works.forEach((w, i) => this.#answer(w, answers[i] ?? []));
       this.#proposed(proposals ?? []);
+      const before = this.#before;
+      this.#before = null;
+      const back = before ? this.entries.find((e) => !before.has(e.key)) : null;
+      if (back) this.at = back.key;
       this.asked = true;
     } catch (error) {
       if (round !== this.#round) return;
@@ -449,15 +455,27 @@ export class Going {
    * The project has changed, by the writer elsewhere, by another, or by
    * undo: what there is is read anew, and the library asked in a moment.
    */
-  changed(wait = 400) {
+  changed(wait = 400): boolean {
     // Before it was looked at for the first time, there is nothing to read anew.
-    if (this.seen < 0 || this.project.revision === this.seen) return;
+    if (this.seen < 0 || this.project.revision === this.seen) return false;
     const known = new Set(this.entries.map((e) => e.key));
     this.look();
     // What has come back, as by undo, is what is looked at.
     const back = this.entries.find((e) => !known.has(e.key));
     if (back) this.at = back.key;
     this.#later(wait);
+    return !!back;
+  }
+
+  /**
+   * The writer has taken something back, or done it again, in the window.
+   * What comes back is what is looked at: at once where it has the mark,
+   * and when the library has answered where it was only proposed.
+   */
+  undone() {
+    const known = new Set(this.entries.map((e) => e.key));
+    const back = this.changed(150);
+    this.#before = !back && this.proposing ? known : null;
   }
 
   #later(wait: number) {
