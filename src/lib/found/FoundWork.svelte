@@ -51,8 +51,10 @@
       work.item.key ||
       work.words,
   );
-  /** The file says what the work is, and the library does not have it for certain. */
-  const addable = $derived(!!work.item.data && !certain(work.suggestions));
+  /** The file says what the work is, and neither the library nor the writer has said which it is. */
+  const addable = $derived(
+    !!work.item.data && !certain(work.suggestions) && !(work.chosen && work.reference),
+  );
 </script>
 
 <CitationItem reference={work.reference} bind:said={work} {mode} {index} {onremove} {onedit}>

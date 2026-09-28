@@ -76,18 +76,27 @@ function paragraph(...pieces) {
 }
 
 function fill(el, pieces) {
+  // As the editors write it: the pieces of text that follow one another are one text,
+  // each with its marks.
   const children = [];
-  let text = null;
+  let run = null;
+  const close = () => {
+    if (!run) return;
+    const text = new Y.XmlText();
+    text.applyDelta(run);
+    children.push(text);
+    run = null;
+  };
   for (const piece of pieces) {
     if (piece instanceof Y.XmlElement) {
+      close();
       children.push(piece);
-      text = null;
       continue;
     }
-    if (!text) children.push((text = new Y.XmlText()));
     const [words, marks = {}] = Array.isArray(piece) ? piece : [piece];
-    text.insert(text.length, words, marks);
+    (run ??= []).push({ insert: words, attributes: marks });
   }
+  close();
   el.insert(0, children);
 }
 
@@ -376,7 +385,7 @@ try {
   check('it is kept with the settings', kept.found?.years === true && kept.found?.notes === false, JSON.stringify(kept.found));
 
   // ---- closed, and opened by pressing what was found ----
-  const left = await rows();
+  let left = await rows();
   await app.press('Escape');
   await app.waitGone('dialog[open]');
   await sleep(300);
@@ -385,6 +394,31 @@ try {
   await sleep(500);
   check('pressing what was found in the text opens the window at that one', (await current()) === '[@parry1971, 12]', await current());
   check('with what was left', JSON.stringify(await rows()) === JSON.stringify(left), JSON.stringify(await rows()));
+  await app.press('Escape');
+  await app.waitGone('dialog[open]');
+
+  // ---- while the text is being written in ----
+  await app.click('.text-view .section .prose.body p:first-child');
+  await app.waitFor('.text-view .ProseMirror.body', 5000);
+  await sleep(400);
+  check('where the text is written, what was found is marked as well', (await app.count('.text-view .ProseMirror.body .found:not(.left)')) === 3);
+  await app.click('.text-view .ProseMirror.body .found[data-by="key"]');
+  await app.waitFor('dialog .found-window .row', 8000);
+  await sleep(500);
+  check('pressed there, it opens the window at that one', (await current()) === '[@parry1971, 12]', await current());
+  if (!(await app.exists('dialog .found-window .item .authors'))) await find({ query: 'parry1971', title: 'The Making of Homeric Verse' });
+  await press(await button('Make it a citation'));
+  await sleep(600);
+  const inEditor = await app.exec(`return Array.from(document.querySelectorAll('.text-view .ProseMirror.body .citation')).map((e) => e.textContent)`);
+  check('the citation is made in the text that is being written in', inEditor.includes('(Parry 1971, 12)'), JSON.stringify(inEditor));
+  check('whose marks are those that are left', (await app.count('.text-view .ProseMirror.body .found:not(.left)')) === 2);
+  await app.keys(['Control', 'z']);
+  await sleep(700);
+  check('and taken back by Ctrl+Z', (await app.count('.text-view .ProseMirror.body .found:not(.left)')) === 3 && (await current()) === '[@parry1971, 12]', await current());
+  await app.keys(['Control', 'Shift', 'z']);
+  await sleep(700);
+  left = await rows();
+  check('and made again', left.length === 3 && (await app.count('.text-view .ProseMirror.body .found:not(.left)')) === 2, JSON.stringify(left));
   await app.press('Escape');
   await app.waitGone('dialog[open]');
 
