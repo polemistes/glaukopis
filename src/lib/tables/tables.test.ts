@@ -18,6 +18,7 @@ import * as Y from 'yjs';
 import { insertCitation, insertEquation, insertMath, leaveCaption } from '$lib/editor/commands';
 import { bodyPlugins } from '$lib/editor/plugins';
 import { bodySchema } from '$lib/editor/schema';
+import { languages, t } from '$lib/i18n';
 import { buildDocument } from '$lib/project/model/document';
 import { blocksHtml } from '$lib/project/model/html';
 import { Project } from '$lib/project/model/project.svelte';
@@ -707,5 +708,24 @@ describe('a table in the project', () => {
     p.undo();
     expect(readBody(p.fragment(a, 'body')!).map((b) => b.kind)).toEqual(['paragraph']);
     expect(addTable(p, 'no such element', POEMS)).toBe(false);
+  });
+});
+
+describe('the size of a table', () => {
+  afterEach(() => {
+    languages.current = 'en';
+  });
+
+  it('is said in the language of the interface, one or many', () => {
+    expect(t('tables-size', { rows: 1, columns: 1 })).toBe('1 row, 1 column');
+    expect(t('tables-size', { rows: 4, columns: 3 })).toBe('4 rows, 3 columns');
+    expect(t('tables-size-shown', { rows: 20, columns: 3, shown: 8 })).toBe(
+      '20 rows, 3 columns. The first 8 are shown.',
+    );
+    languages.current = 'nb';
+    expect(t('tables-size', { rows: 1, columns: 2 })).toBe('1 rad, 2 kolonner');
+    expect(t('tables-size-shown', { rows: 20, columns: 1, shown: 8 })).toBe(
+      '20 rader, 1 kolonne. De første 8 vises.',
+    );
   });
 });
