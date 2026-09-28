@@ -25,6 +25,7 @@ import {
   type PictureChange,
   type UsedPicture,
 } from '$lib/api/pictures';
+import { t } from '$lib/i18n';
 import { notify, notifyError } from '$lib/ui/toast.svelte';
 
 export type { Picture, PictureChange, UsedPicture };
@@ -105,7 +106,7 @@ class Pictures {
       for (const hash of [...this.#known.keys()]) if (!seen.has(hash)) this.#known.delete(hash);
       this.loaded = true;
     } catch (error) {
-      notifyError('The pictures could not be read', error);
+      notifyError(t('figures-pictures-unread'), error);
     } finally {
       this.#loading = null;
     }
@@ -135,7 +136,7 @@ class Pictures {
     try {
       return this.#took(await pictureAddFile(path));
     } catch (error) {
-      notifyError('The picture could not be taken in', error);
+      notifyError(t('figures-picture-not-taken'), error);
       return null;
     }
   }
@@ -146,7 +147,7 @@ class Pictures {
       const content = await toBase64(blob);
       return this.#took(await pictureAdd(name, content));
     } catch (error) {
-      notifyError('The picture could not be taken in', error);
+      notifyError(t('figures-picture-not-taken'), error);
       return null;
     }
   }
@@ -158,7 +159,7 @@ class Pictures {
       this.#known.set(picture.hash, picture);
       return picture;
     } catch (error) {
-      notifyError('What was said of the picture could not be kept', error);
+      notifyError(t('figures-picture-not-kept'), error);
       return null;
     }
   }
@@ -184,7 +185,7 @@ class Pictures {
     try {
       await pictureRemove(hash);
     } catch (error) {
-      notifyError('The picture could not be removed', error);
+      notifyError(t('figures-picture-not-removed'), error);
       return false;
     }
     this.#known.delete(hash);
