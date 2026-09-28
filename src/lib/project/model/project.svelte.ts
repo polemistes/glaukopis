@@ -120,6 +120,11 @@ export class Project {
   readonly yRefs: Y.Map<RefRecord>;
   /** What is written about the works cited, for this project: by the id of the reference. */
   readonly yNotes: Y.Map<Y.Text>;
+  /**
+   * Words whose spelling is not to be checked in this project, as they
+   * were written: a set, which is the same for all it is shared with.
+   */
+  readonly yIgnored: Y.Map<true>;
   readonly undoManager: Y.UndoManager;
   #awareness: Awareness | null = null;
 
@@ -131,6 +136,8 @@ export class Project {
   readonly refs = new SvelteMap<string, RefRecord>();
   /** The notes on references that belong to this project. Those without text are not among them. */
   readonly notes = new SvelteMap<string, string>();
+  /** The words ignored in this project by spelling. A new set whenever they change. */
+  ignored = $state.raw<ReadonlySet<string>>(new Set());
   /** Rises when the shape of any tree changes. */
   structure = $state(0);
   /** Rises with every change to the project, whoever made it. */
@@ -160,6 +167,7 @@ export class Project {
     this.yLinks = this.doc.getMap('links');
     this.yRefs = this.doc.getMap('refs');
     this.yNotes = this.doc.getMap('notes');
+    this.yIgnored = this.doc.getMap('ignored');
 
     this.undoManager = new Y.UndoManager([this.yMeta, this.yMaps, this.yNodes, this.yLinks], {
       trackedOrigins: new Set<unknown>([LOCAL, ySyncPluginKey]),
@@ -191,6 +199,7 @@ export class Project {
     });
     this.yNodes.observeDeep((events) => this.#nodesChanged(events));
     this.yNotes.observeDeep(() => this.#readNotes());
+    this.yIgnored.observe(() => this.#readIgnored());
 
     this.doc.on('update', (update: Uint8Array, origin: unknown) => {
       if (origin === LOAD || this.#closed) return;
@@ -282,6 +291,7 @@ export class Project {
     this.refs.clear();
     for (const [id, value] of this.yRefs) this.refs.set(id, value);
     this.#readNotes();
+    this.#readIgnored();
     this.structure++;
   }
 
@@ -1343,6 +1353,34 @@ export class Project {
       if (before.length - start - end > 0) note.delete(start, before.length - start - end);
       if (text.length - start - end > 0) note.insert(start, text.slice(start, text.length - end));
     }, 'notes');
+  }
+
+  #readIgnored() {
+    this.ignored = new Set(this.yIgnored.keys());
+  }
+
+  /**
+   * Has spelling leave a word alone in this project, for all it is shared
+   * with. Not part of undo: it is not the user's writing.
+   */
+  ignoreWord(word: string) {
+    const clean = word.trim();
+    if (!clean || this.yIgnored.has(clean)) return;
+    this.doc.transact(() => this.yIgnored.set(clean, true), 'spelling');
+  }
+
+  /** Has spelling check a word again that was ignored in this project. */
+  unignoreWord(word: string) {
+    if (!this.yIgnored.has(word)) return;
+    this.doc.transact(() => this.yIgnored.delete(word), 'spelling');
+  }
+
+  /** The element whose name or text a piece of the document is. */
+  ownerOf(fragment: Y.XmlFragment): string | null {
+    const parent = fragment.parent;
+    if (!(parent instanceof Y.Map)) return null;
+    for (const [id, n] of this.yNodes) if (n === parent) return id;
+    return null;
   }
 
   /** Keeps a copy of a reference in the project. Not part of undo: it is not the user's writing. */

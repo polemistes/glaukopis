@@ -70,6 +70,8 @@ export interface Settings {
   defaultStyle: string;
   defaultFormat: string;
   found: FoundSettings;
+  /** Whether spelling is checked as one writes. */
+  spelling: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -85,6 +87,7 @@ export const defaultSettings: Settings = {
   defaultStyle: 'chicago-notes-bibliography',
   defaultFormat: 'manuscript',
   found: { years: false, named: false, notes: false, atOnce: true, goThrough: true, inNotes: '' },
+  spelling: true,
 };
 
 export const settingsLoad = () => call<Partial<Settings>>('settings_load');

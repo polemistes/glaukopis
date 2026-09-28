@@ -1,0 +1,24 @@
+/*
+ * A misspelt word: a wavy line under it, quiet, in the colour the theme
+ * gives what is wrong, light or dark. In an editor the word is wrapped in a
+ * span; in the text drawn without one, it is a highlight of the page
+ * (`CSS.highlights`), which marks words without changing the page.
+ */
+
+.misspelt {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: color-mix(in srgb, var(--danger) 62%, transparent);
+  text-decoration-thickness: 1px;
+  text-decoration-skip-ink: none;
+  text-underline-offset: 0.2em;
+}
+
+::highlight(misspelt) {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: color-mix(in srgb, var(--danger) 62%, transparent);
+  text-decoration-thickness: 1px;
+  text-decoration-skip-ink: none;
+  text-underline-offset: 0.2em;
+}
