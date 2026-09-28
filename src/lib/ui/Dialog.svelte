@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import X from '@lucide/svelte/icons/x';
+  import { t } from '$lib/i18n';
   import IconButton from './IconButton.svelte';
   import { dialogClosed, dialogOpened } from './top';
 
@@ -111,7 +112,9 @@
             {/if}
           </div>
           {#if dismissable}
-            <IconButton label="Close" shortcut="Esc" onclick={onclose}><X size={16} /></IconButton>
+            <IconButton label={t('common-close')} shortcut="Esc" onclick={onclose}
+              ><X size={16} /></IconButton
+            >
           {/if}
         </header>
       {/if}
