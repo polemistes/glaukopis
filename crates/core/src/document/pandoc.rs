@@ -3,12 +3,14 @@
 //! Markdown would have to be escaped; this cannot be misread. Pandoc makes
 //! every output from it.
 
-use std::collections::HashMap;
+use std::cell::{Cell, RefCell};
+use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
 use serde_json::{Value, json};
 
 use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, Section};
+use crate::formats::{Align, CaptionPosition, Equations, FigurePlacement, Figures};
 
 const TERMS_JSON: &str = include_str!("../../../../resources/csl/locator-terms.json");
 
@@ -114,6 +116,88 @@ pub struct RunIn {
     pub italic: bool,
 }
 
+/// What is written, as far as figures and equations must know: each kind
+/// of document has its own way of setting a picture with its caption, and
+/// of numbering an equation.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum Flavour {
+    Typst,
+    Latex,
+    /// DOCX and ODT: what is set is named by styles.
+    Styled,
+    #[default]
+    Plain,
+}
+
+/// Figures and equations: how they are set, and what was met on the way.
+#[derive(Debug, Default)]
+pub struct Extras {
+    pub flavour: Flavour,
+    pub figures: Figures,
+    pub equations: Equations,
+    /// The directory the files of the figures are in, as the document names it.
+    pub files: String,
+    /// The names of the files that are there, as `<hash>.<extension>`.
+    pub present: HashSet<String>,
+    /// Whether the format has the first paragraph after a heading begin
+    /// further in, as those that follow it do.
+    pub first_indented: bool,
+    figure: Cell<u32>,
+    equation: Cell<u32>,
+    /// Figures that stand at the end of the document, in their order.
+    held: RefCell<Vec<Value>>,
+    /// The names of figures whose files are not there.
+    absent: RefCell<Vec<String>>,
+}
+
+impl Extras {
+    pub fn new(
+        flavour: Flavour,
+        figures: Figures,
+        equations: Equations,
+        files: String,
+        present: HashSet<String>,
+    ) -> Self {
+        Extras { flavour, figures, equations, files, present, ..Default::default() }
+    }
+
+    /// The figures that were kept for the end of the document.
+    pub fn held(&self) -> Vec<Value> {
+        self.held.borrow().clone()
+    }
+
+    pub fn absent(&self) -> Vec<String> {
+        self.absent.borrow().clone()
+    }
+}
+
+/// A line of text in the middle, by the means of each kind of document.
+fn centred(flavour: Flavour, id: &str, style: &str, blocks: Vec<Value>) -> Vec<Value> {
+    match flavour {
+        Flavour::Typst => vec![json!({"t": "Div", "c": [[id, [], []], blocks]})],
+        Flavour::Latex => {
+            let mut out = vec![json!({"t": "RawBlock", "c": ["latex", "\\begin{center}"]})];
+            out.extend(blocks);
+            out.push(json!({"t": "RawBlock", "c": ["latex", "\\end{center}"]}));
+            out
+        }
+        Flavour::Styled => vec![json!({"t": "Div", "c": [["", [], [["custom-style", style]]], blocks]})],
+        Flavour::Plain => vec![json!({"t": "Div", "c": [["", [id], []], blocks]})],
+    }
+}
+
+/// Text as Typst takes it within square brackets.
+fn typst_text(text: &str) -> String {
+    let mut out = String::with_capacity(text.len() + 4);
+    for c in text.chars() {
+        if matches!(c, '\\' | '#' | '[' | ']' | '$' | '*' | '_' | '`' | '<' | '>' | '@') {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
+}
+
 pub struct Converter<'a> {
     /// From the id of a reference to its key in the bibliography.
     pub keys: &'a HashMap<String, String>,
@@ -122,9 +206,204 @@ pub struct Converter<'a> {
     pub run_in: Vec<RunIn>,
     /// Headings deeper than this are printed at this level.
     pub deepest: u8,
+    pub extras: Extras,
 }
 
 impl Converter<'_> {
+    /// A label and its number, as "Figure 1": the words as tokens, in the
+    /// weight the format gives them.
+    fn figure_label(&self, number: Option<u32>) -> Vec<Value> {
+        let f = &self.extras.figures;
+        let words = match number {
+            Some(n) if !f.label.trim().is_empty() => format!("{}\u{a0}{n}", f.label.trim()),
+            Some(n) => n.to_string(),
+            None => String::new(),
+        };
+        if words.is_empty() {
+            return Vec::new();
+        }
+        let mut label = Vec::new();
+        tokens(&words, &mut label);
+        if f.label_italic {
+            label = vec![json!({"t": "Emph", "c": label})];
+        }
+        if f.label_bold {
+            label = vec![json!({"t": "Strong", "c": label})];
+        }
+        label
+    }
+
+    /// A picture with what is said of it.
+    ///
+    /// It is put together here, and not left to what each kind of document
+    /// has for figures: so the number, the words and the order are the same
+    /// in all of them, and are what the format says.
+    #[allow(clippy::too_many_arguments)]
+    fn figure(
+        &self,
+        file: &str,
+        extension: &str,
+        name: &str,
+        caption: &[Inline],
+        alt: &str,
+        width: u8,
+        numbered: bool,
+        out: &mut Vec<Value>,
+    ) {
+        let x = &self.extras;
+        let f = &x.figures;
+        let number = numbered.then(|| {
+            x.figure.set(x.figure.get() + 1);
+            x.figure.get()
+        });
+        let label = self.figure_label(number);
+
+        let stored = format!("{file}.{}", extension.trim_start_matches('.').to_ascii_lowercase());
+        let safe = file.len() == 64 && file.chars().all(|c| c.is_ascii_hexdigit());
+        let picture = if safe && x.present.contains(&stored) {
+            let mut described = Vec::new();
+            tokens(alt.trim(), &mut described);
+            let width = format!("{}%", width.clamp(5, 100));
+            let source = if x.files.is_empty() { stored } else { format!("{}/{stored}", x.files) };
+            json!({"t": "Para", "c": [{"t": "Image", "c": [["", [], [["width", width]]], described, [source, ""]]}]})
+        } else {
+            let said = if name.trim().is_empty() { "the file" } else { name.trim() };
+            x.absent.borrow_mut().push(said.to_owned());
+            let mut words = Vec::new();
+            tokens(&format!("[The picture is not here: {said}]"), &mut words);
+            json!({"t": "Para", "c": words})
+        };
+
+        let mut words = label.clone();
+        let said = self.inlines(caption);
+        if !words.is_empty() && !said.is_empty() {
+            for (i, part) in f.separator.split('\n').enumerate() {
+                if i > 0 {
+                    words.push(json!({"t": "LineBreak"}));
+                }
+                tokens(part, &mut words);
+                // A space at the end of the separator is a space, not nothing.
+                if part.ends_with(' ') && !matches!(words.last(), Some(v) if v["t"] == "Space") {
+                    words.push(json!({"t": "Space"}));
+                }
+            }
+        }
+        let mut said = said;
+        if f.caption_italic && !said.is_empty() {
+            said = vec![json!({"t": "Emph", "c": said})];
+        }
+        words.extend(said);
+
+        let caption = (!words.is_empty()).then(|| match x.flavour {
+            Flavour::Typst => vec![json!({"t": "Div", "c": [["gk-caption", [], []], [{"t": "Para", "c": words}]]})],
+            Flavour::Latex => {
+                let size = if f.caption_size > 0.0 {
+                    format!("\\fontsize{{{}}}{{{}}}\\selectfont", f.caption_size, (f.caption_size * 12.0).round() / 10.0)
+                } else {
+                    String::new()
+                };
+                let align = match f.caption_align {
+                    Align::Center => "\\centering",
+                    Align::Right => "\\raggedleft",
+                    Align::Left | Align::Justified => "\\raggedright",
+                };
+                vec![
+                    json!({"t": "RawBlock", "c": ["latex", format!("{{{align}{size}\\setlength{{\\parindent}}{{0pt}}")]}),
+                    json!({"t": "Para", "c": words}),
+                    json!({"t": "RawBlock", "c": ["latex", "\\par}"]}),
+                ]
+            }
+            Flavour::Styled => {
+                vec![json!({"t": "Div", "c": [["", [], [["custom-style", "Figure Caption"]]], [{"t": "Para", "c": words}]]})]
+            }
+            Flavour::Plain => vec![json!({"t": "Div", "c": [["", ["gk-caption"], []], [{"t": "Para", "c": words}]]})],
+        });
+
+        let picture = match x.flavour {
+            Flavour::Styled => vec![json!({"t": "Div", "c": [["", [], [["custom-style", "Figure"]]], [picture]]})],
+            _ => vec![picture],
+        };
+        let mut parts = Vec::new();
+        match (f.caption_position, caption) {
+            (CaptionPosition::Above, Some(c)) => {
+                parts.extend(c);
+                parts.extend(picture);
+            }
+            (CaptionPosition::Below, Some(c)) => {
+                parts.extend(picture);
+                parts.extend(c);
+            }
+            (_, None) => parts.extend(picture),
+        }
+        let whole = match x.flavour {
+            Flavour::Typst => vec![json!({"t": "Div", "c": [["gk-figure", [], []], parts]})],
+            Flavour::Latex => {
+                let mut all = vec![json!({"t": "RawBlock", "c": ["latex", "\\begin{figure}[H]\n\\centering"]})];
+                all.extend(parts);
+                all.push(json!({"t": "RawBlock", "c": ["latex", "\\end{figure}"]}));
+                all
+            }
+            Flavour::Styled => parts,
+            Flavour::Plain => vec![json!({"t": "Div", "c": [["", ["gk-figure"], []], parts]})],
+        };
+
+        if f.placement == FigurePlacement::AtEnd {
+            // In the text, a line that says where the figure belongs.
+            let which = if label.is_empty() { name.trim().to_owned() } else { String::new() };
+            let mut line = Vec::new();
+            let (before, after) = f.placeholder.split_once("{}").unwrap_or(("[", " about here]"));
+            tokens(before, &mut line);
+            if label.is_empty() {
+                tokens(if which.is_empty() { "The figure" } else { &which }, &mut line);
+            } else {
+                line.extend(self.figure_label(number));
+            }
+            tokens(after, &mut line);
+            out.extend(centred(x.flavour, "gk-caption", "Figure Caption", vec![json!({"t": "Para", "c": line})]));
+            x.held.borrow_mut().extend(whole);
+        } else {
+            out.extend(whole);
+        }
+    }
+
+    /// Mathematics on a line of its own.
+    fn equation(&self, tex: &str, numbered: bool, out: &mut Vec<Value>) {
+        let tex = tex.trim();
+        if tex.is_empty() {
+            return;
+        }
+        let x = &self.extras;
+        let display = |tex: &str| json!({"t": "Para", "c": [{"t": "Math", "c": [{"t": "DisplayMath"}, tex]}]});
+        if !numbered {
+            out.push(display(tex));
+            return;
+        }
+        x.equation.set(x.equation.get() + 1);
+        let number = format!("{}{}{}", x.equations.before_number, x.equation.get(), x.equations.after_number);
+        match x.flavour {
+            Flavour::Typst => {
+                // The number is given to this equation alone: what is set
+                // between the brackets holds for what is between them.
+                let set = format!("#[#set math.equation(numbering: (..n) => [{}])", typst_text(&number));
+                out.push(json!({"t": "RawBlock", "c": ["typst", set]}));
+                out.push(display(tex));
+                out.push(json!({"t": "RawBlock", "c": ["typst", "]"]}));
+            }
+            Flavour::Latex => {
+                let set = format!(
+                    "\\begin{{equation*}}\n{tex}\n\\tag*{{{}}}\n\\end{{equation*}}",
+                    crate::export::latex::escape(&number)
+                );
+                out.push(json!({"t": "RawBlock", "c": ["latex", set]}));
+            }
+            Flavour::Styled | Flavour::Plain => {
+                // Where an equation cannot be given a number, the number is part of it.
+                let text = number.replace('\\', "").replace(['{', '}'], "");
+                out.push(display(&format!("{tex} \\qquad \\text{{{text}}}")));
+            }
+        }
+    }
+
     fn citation(&self, items: &[CiteItem], mode: CiteMode) -> Option<Value> {
         let mut citations = Vec::new();
         for (i, item) in items.iter().enumerate() {
@@ -203,6 +482,11 @@ impl Converter<'_> {
                     Some(c) => out.push(c),
                     None => out.push(json!({"t": "Strong", "c": [{"t": "Str", "c": "[reference not found]"}]})),
                 },
+                Inline::Math { tex } => {
+                    if !tex.trim().is_empty() {
+                        out.push(json!({"t": "Math", "c": [{"t": "InlineMath"}, tex.trim()]}));
+                    }
+                }
                 Inline::Footnote { content, place } => {
                     let inner = self.inlines(content);
                     if !inner.is_empty() {
@@ -222,13 +506,31 @@ impl Converter<'_> {
         out
     }
 
+    /// A paragraph that follows a figure or an equation: it begins as the
+    /// first paragraph under a heading does, in every kind of document.
+    fn paragraph_after(&self, mut inner: Vec<Value>) -> Value {
+        match self.extras.flavour {
+            Flavour::Latex if !self.extras.first_indented => {
+                inner.insert(0, json!({"t": "RawInline", "c": ["latex", "\\noindent "]}));
+                json!({"t": "Para", "c": inner})
+            }
+            Flavour::Styled => json!({
+                "t": "Div",
+                "c": [["", [], [["custom-style", "First Paragraph"]]], [{"t": "Para", "c": inner}]],
+            }),
+            _ => json!({"t": "Para", "c": inner}),
+        }
+    }
+
     pub fn blocks(&self, list: &[Block], out: &mut Vec<Value>) {
+        let mut set_off = false;
         for block in list {
+            let after = std::mem::replace(&mut set_off, matches!(block, Block::Equation { .. } | Block::Figure { .. }));
             match block {
                 Block::Paragraph { content } => {
                     let inner = self.inlines(content);
                     if !inner.is_empty() {
-                        out.push(json!({"t": "Para", "c": inner}));
+                        out.push(if after { self.paragraph_after(inner) } else { json!({"t": "Para", "c": inner}) });
                     }
                 }
                 Block::Blockquote { content } => {
@@ -252,6 +554,10 @@ impl Converter<'_> {
                             "c": [[start, {"t": "Decimal"}, {"t": "Period"}], list],
                         }));
                     }
+                }
+                Block::Equation { tex, numbered } => self.equation(tex, *numbered, out),
+                Block::Figure { file, extension, name, caption, alt, width, numbered } => {
+                    self.figure(file, extension, name, caption, alt, *width, *numbered, out);
                 }
             }
         }
@@ -399,7 +705,7 @@ mod tests {
     use super::*;
 
     fn converter(keys: &HashMap<String, String>) -> Converter<'_> {
-        Converter { keys, language: Some("en-GB"), run_in: vec![], deepest: 6 }
+        Converter { keys, language: Some("en-GB"), run_in: vec![], deepest: 6, extras: Extras::default() }
     }
 
     #[test]

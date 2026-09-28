@@ -15,6 +15,7 @@ pub mod library;
 pub mod lookup;
 pub mod net;
 pub mod paths;
+pub mod pictures;
 pub mod projects;
 pub mod settings;
 pub mod sharing;

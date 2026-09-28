@@ -9,7 +9,9 @@ use std::io::{Cursor, Read, Write};
 
 use crate::error::{Error, Result};
 use crate::formats::typst::Particulars;
-use crate::formats::{Align, Case, DocumentFormat, HeadContent, HeadingLevel, Length, NoteKind, Paragraphs, fallbacks};
+use crate::formats::{
+    Align, CaptionPosition, Case, DocumentFormat, HeadContent, HeadingLevel, Length, NoteKind, Paragraphs, fallbacks,
+};
 
 fn xml(text: &str) -> String {
     text.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
@@ -422,6 +424,42 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
         &none(),
     ));
 
+    let fig = &f.figures;
+    let caption_line = if fig.caption_line_spacing > 0.0 { line(fig.caption_line_spacing) } else { body_line };
+    let caption_above = fig.caption_position == CaptionPosition::Above;
+    s.push_str(&paragraph_style(
+        "Figure",
+        "Figure",
+        Some("Normal"),
+        Some("BodyText"),
+        None,
+        &Para {
+            before: if caption_above { 60 } else { 240 + between },
+            after: if caption_above { 240 + between } else { 60 },
+            line: Some(line(1.0)),
+            align: Some(Align::Center),
+            keep_next: !caption_above,
+            ..Default::default()
+        },
+        &none(),
+    ));
+    s.push_str(&paragraph_style(
+        "FigureCaption",
+        "Figure Caption",
+        Some("Normal"),
+        Some("BodyText"),
+        None,
+        &Para {
+            before: if caption_above { 240 + between } else { 60 },
+            after: if caption_above { 60 } else { 240 + between },
+            line: Some(caption_line),
+            align: Some(fig.caption_align),
+            keep_next: caption_above,
+            ..Default::default()
+        },
+        &Run { size: (fig.caption_size > 0.0).then_some(fig.caption_size), bold: None, italic: None, case: Case::None },
+    ));
+
     s.push_str(&paragraph_style(
         "Bibliography",
         "Bibliography",
@@ -504,7 +542,6 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
         ("Caption", "caption"),
         ("TableCaption", "Table Caption"),
         ("ImageCaption", "Image Caption"),
-        ("Figure", "Figure"),
         ("CaptionedFigure", "Captioned Figure"),
         ("TOCHeading", "TOC Heading"),
     ] {
@@ -1102,6 +1139,47 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
         outline: None,
         paragraph: odt_paragraph(12.0, 12.0, body, f.text.align, 0.0, 0.0, 0.0, false),
         text: String::new(),
+    });
+
+    let fig = &f.figures;
+    let caption_line = if fig.caption_line_spacing > 0.0 { fig.caption_line_spacing } else { body };
+    let caption_above = fig.caption_position == CaptionPosition::Above;
+    let (near, far) = (3.0, 12.0 + between);
+    put(OdtStyle {
+        name: "Figure",
+        display: None,
+        parent: Some("Standard"),
+        next: None,
+        outline: None,
+        paragraph: odt_paragraph(
+            if caption_above { near } else { far },
+            if caption_above { far } else { near },
+            1.0,
+            Align::Center,
+            0.0,
+            0.0,
+            0.0,
+            !caption_above,
+        ),
+        text: String::new(),
+    });
+    put(OdtStyle {
+        name: "Figure_20_Caption",
+        display: Some("Figure Caption"),
+        parent: Some("Standard"),
+        next: None,
+        outline: None,
+        paragraph: odt_paragraph(
+            if caption_above { far } else { near },
+            if caption_above { near } else { far },
+            caption_line,
+            fig.caption_align,
+            0.0,
+            0.0,
+            0.0,
+            caption_above,
+        ),
+        text: odt_text((fig.caption_size > 0.0).then_some(fig.caption_size), None, None, Case::None),
     });
 
     // The page, and what stands in its margins.

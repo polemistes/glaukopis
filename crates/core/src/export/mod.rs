@@ -5,6 +5,7 @@
 //! makes into pages. See ADR 0005.
 
 pub mod latex;
+pub mod math;
 pub mod reference;
 pub mod tools;
 
@@ -15,13 +16,16 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
 use crate::document::bibliography::{Bibliography, gather};
-use crate::document::pandoc::{Converter, meta_blocks, meta_inlines, meta_list, meta_string, meta_text};
+use crate::document::pandoc::{
+    Converter, Extras, Flavour, meta_blocks, meta_inlines, meta_list, meta_string, meta_text,
+};
 use crate::document::{Document, Inline, NotePlace};
 use crate::error::{Error, IoContext, Result};
 use crate::formats::typst::{Particulars, preamble};
 use crate::formats::{DocumentFormat, NoteKind, TitlePlacement};
 use crate::fsutil::write_atomic;
 use crate::library::Library;
+use crate::pictures::Pictures;
 use crate::styles::Styles;
 
 pub use tools::{Tool, Tools};
@@ -132,6 +136,46 @@ pub struct Context<'a> {
     pub work: PathBuf,
     /// The fonts Typst finds, if they have been asked for.
     pub fonts: &'a [String],
+    /// Where the projects are kept: the files of the figures of a document
+    /// are with the project it is made from.
+    pub projects: Option<&'a Path>,
+}
+
+/// The files of the figures of a document, where the program that makes the
+/// document finds them.
+#[derive(Debug, Default)]
+struct Placed {
+    /// The directory they are in, as the document names it.
+    name: String,
+    /// Those that are there, as `<hash>.<extension>`.
+    present: std::collections::HashSet<String>,
+}
+
+/// Puts the files of the figures into a directory beside what is made.
+fn place_files(ctx: &Context, request: &Request, into: &Path, name: &str) -> Placed {
+    let mut placed = Placed { name: name.to_owned(), ..Default::default() };
+    let wanted = request.document.figure_files();
+    let Some(projects) = ctx.projects else { return placed };
+    if wanted.is_empty() {
+        return placed;
+    }
+    let pictures = Pictures::of(&projects.join(safe_key(&request.key)));
+    let to = into.join(name);
+    if fs::create_dir_all(&to).is_err() {
+        return placed;
+    }
+    for (hash, extension) in wanted {
+        let Ok(source) = pictures.path(&hash, &extension) else { continue };
+        let file = format!("{hash}.{extension}");
+        let target = to.join(&file);
+        // A file is what its name says: one that is there need not be copied again.
+        let there =
+            target.is_file() && target.metadata().ok().map(|m| m.len()) == source.metadata().ok().map(|m| m.len());
+        if there || fs::copy(&source, &target).is_ok() {
+            placed.present.insert(file);
+        }
+    }
+    placed
 }
 
 fn safe_key(key: &str) -> String {
@@ -167,10 +211,12 @@ struct Prepared {
     json: Value,
     bibliography: Bibliography,
     has_citations: bool,
+    /// What there is to say of the document that was prepared.
+    remarks: Vec<String>,
 }
 
 /// Makes the document that Pandoc reads.
-fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: bool) -> Prepared {
+fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: bool, placed: Placed) -> Prepared {
     let doc = &request.document;
     let f = &request.format;
     let bibliography = gather(doc, ctx.library);
@@ -178,7 +224,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     let style_has_bibliography =
         ctx.styles.get(&request.style).map(|s| s.bibliography).unwrap_or(true) || keep_citations;
 
-    let converter = Converter {
+    let mut converter = Converter {
         keys: &bibliography.keys,
         language: doc.language.as_deref(),
         run_in: f
@@ -190,7 +236,20 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
             .map(|(i, l)| crate::document::pandoc::RunIn { level: i as u8 + 1, bold: l.bold, italic: l.italic })
             .collect(),
         deepest: f.headings.levels.len().clamp(1, 6) as u8,
+        extras: Extras::new(
+            match target {
+                Target::Pdf | Target::Typst => Flavour::Typst,
+                Target::Latex | Target::PdfLatex => Flavour::Latex,
+                Target::Docx | Target::Odt => Flavour::Styled,
+                Target::Markdown | Target::Html => Flavour::Plain,
+            },
+            f.figures.clone(),
+            f.equations.clone(),
+            placed.name,
+            placed.present,
+        ),
     };
+    converter.extras.first_indented = f.text.indent_first;
 
     let mut meta = Map::new();
     if let Some(lang) = doc.language.as_deref().filter(|l| !l.trim().is_empty()) {
@@ -329,7 +388,28 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         blocks.push(div("refs", vec![]));
     }
 
-    Prepared { json, bibliography, has_citations }
+    // The figures, where the format has them at the end.
+    let held = converter.extras.held();
+    if !held.is_empty() {
+        if let Some(b) = target.page_break() {
+            blocks.push(b);
+        }
+        if !f.figures.end_title.trim().is_empty() {
+            blocks.push(json!({
+                "t": "Header",
+                "c": [1, ["figures", ["unnumbered"], []], meta_text(f.figures.end_title.trim())["c"]],
+            }));
+        }
+        blocks.extend(held);
+    }
+    let remarks: Vec<String> = converter
+        .extras
+        .absent()
+        .into_iter()
+        .map(|name| format!("The picture “{name}” is not on this computer, and is left out of the document."))
+        .collect();
+
+    Prepared { json, bibliography, has_citations, remarks }
 }
 
 /// The arguments for Pandoc that are the same for every target.
@@ -385,10 +465,35 @@ fn work_dir(ctx: &Context, key: &str, what: &str) -> Result<PathBuf> {
     Ok(dir)
 }
 
+/// The name of the directory for the files of the figures: `files` where
+/// the document is made here, and a name after the document where they go
+/// beside one that is given away as it is written.
+fn files_name(target: Target, path: Option<&Path>) -> String {
+    match (target, path) {
+        (Target::Typst | Target::Latex | Target::Markdown, Some(path)) => {
+            let stem = path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+            let stem: String =
+                stem.chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '-' }).collect();
+            if stem.is_empty() { "files".into() } else { format!("{stem}-files") }
+        }
+        _ => "files".into(),
+    }
+}
+
+/// The files of the figures, put beside a document that names them.
+fn files_beside(ctx: &Context, request: &Request, path: &Path, name: &str, exported: &mut Exported) {
+    let Some(parent) = path.parent() else { return };
+    let placed = place_files(ctx, request, parent, name);
+    if !placed.present.is_empty() {
+        exported.also.push(parent.join(name).display().to_string());
+    }
+}
+
 /// The document as Typst, whole.
-fn typst_source(ctx: &Context, request: &Request, dir: &Path) -> Result<(String, Prepared, Vec<String>)> {
+fn typst_source(ctx: &Context, request: &Request, dir: &Path, files: &str) -> Result<(String, Prepared, Vec<String>)> {
     let pandoc = ctx.tools.pandoc()?;
-    let prepared = prepare(ctx, request, Target::Typst, false);
+    let placed = place_files(ctx, request, dir, files);
+    let prepared = prepare(ctx, request, Target::Typst, false, placed);
     let bib = dir.join("references.bib");
     write_atomic(&bib, prepared.bibliography.text.as_bytes())?;
     let args = arguments(ctx, request, Target::Typst, &prepared, &bib, false)?;
@@ -397,14 +502,16 @@ fn typst_source(ctx: &Context, request: &Request, dir: &Path) -> Result<(String,
     let body = String::from_utf8_lossy(&out.stdout).into_owned();
     let mut source = preamble(&request.format, &particulars(&request.document, &request.format));
     source.push_str(&body);
-    Ok((source, prepared, warnings_of(&out.messages)))
+    let mut warnings = prepared.remarks.clone();
+    warnings.extend(warnings_of(&out.messages));
+    Ok((source, prepared, warnings))
 }
 
 pub fn preview(ctx: &Context, request: &Request) -> Result<Preview> {
     ctx.tools.pandoc()?;
     let typst = ctx.tools.typst()?;
     let dir = work_dir(ctx, &request.key, "preview")?;
-    let (source, prepared, mut warnings) = typst_source(ctx, request, &dir)?;
+    let (source, prepared, mut warnings) = typst_source(ctx, request, &dir, "files")?;
     write_atomic(&dir.join("document.typ"), source.as_bytes())?;
 
     // Pages of an earlier run must not be taken for pages of this one.
@@ -469,11 +576,13 @@ pub fn export(
     let p = particulars(&request.document, &request.format);
 
     if matches!(target, Target::Pdf | Target::Typst) {
-        let (source, prepared, warnings) = typst_source(ctx, request, &dir)?;
+        let files = files_name(target, Some(path));
+        let (source, prepared, warnings) = typst_source(ctx, request, &dir, &files)?;
         exported.warnings = warnings;
         exported.missing = prepared.bibliography.missing;
         if target == Target::Typst {
             write_atomic(path, source.as_bytes())?;
+            files_beside(ctx, request, path, &files, &mut exported);
             return Ok(exported);
         }
         let typst = ctx.tools.typst()?;
@@ -487,7 +596,10 @@ pub fn export(
     }
 
     let keep_citations = target == Target::Latex && options.biblatex || target == Target::Markdown;
-    let prepared = prepare(ctx, request, target, keep_citations);
+    let files = files_name(target, Some(path));
+    let placed = place_files(ctx, request, &dir, &files);
+    let prepared = prepare(ctx, request, target, keep_citations, placed);
+    exported.warnings.extend(prepared.remarks.iter().cloned());
     let bib = dir.join("references.bib");
     write_atomic(&bib, prepared.bibliography.text.as_bytes())?;
     let mut args = arguments(ctx, request, target, &prepared, &bib, keep_citations)?;
@@ -608,6 +720,9 @@ pub fn export(
     exported.missing = prepared.bibliography.missing;
     let bytes = fs::read(&made).context(|| "reading the document that was made".to_owned())?;
     write_atomic(path, &bytes)?;
+    if matches!(target, Target::Latex | Target::Markdown) {
+        files_beside(ctx, request, path, &files, &mut exported);
+    }
     Ok(exported)
 }
 
@@ -668,7 +783,8 @@ pub fn style_sample(
     let bib = dir.join("references.bib");
     write_atomic(&bib, bibliography.text.as_bytes())?;
 
-    let converter = Converter { keys: &bibliography.keys, language, run_in: Vec::new(), deepest: 6 };
+    let converter =
+        Converter { keys: &bibliography.keys, language, run_in: Vec::new(), deepest: 6, extras: Default::default() };
     let mut meta = Map::new();
     if let Some(l) = language.filter(|l| !l.trim().is_empty()) {
         meta.insert("lang".into(), meta_string(l.trim()));
@@ -714,6 +830,8 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
                     inlines(content, with_notes, out);
                     out.push(' ');
                 }
+                // Mathematics in the line stands for a word.
+                Inline::Math { .. } => out.push_str(" x "),
                 _ => {}
             }
         }
@@ -723,6 +841,8 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
         for b in list {
             match b {
                 Block::Paragraph { content } => inlines(content, with_notes, out),
+                Block::Figure { caption, .. } => inlines(caption, with_notes, out),
+                Block::Equation { .. } => {}
                 Block::Blockquote { content } => blocks(content, with_notes, out),
                 Block::BulletList { items } | Block::OrderedList { items, .. } => {
                     for item in items {
@@ -757,6 +877,7 @@ mod tests {
         resources: PathBuf,
         styles: Styles,
         work: PathBuf,
+        projects: PathBuf,
     }
 
     /// Nothing, when Pandoc and Typst are not installed: the tests that need
@@ -771,7 +892,8 @@ mod tests {
         let resources = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources");
         let styles = Styles::new(&resources, &tmp.path().join("styles"));
         let work = tmp.path().join("work");
-        Some(Setup { _tmp: tmp, tools, resources, styles, work })
+        let projects = tmp.path().join("projects");
+        Some(Setup { _tmp: tmp, tools, resources, styles, work, projects })
     }
 
     impl Setup {
@@ -783,6 +905,7 @@ mod tests {
                 library: None,
                 work: self.work.clone(),
                 fonts: &[],
+                projects: Some(&self.projects),
             }
         }
     }
@@ -1034,6 +1157,159 @@ mod tests {
         }
     }
 
+    /// The sample, with a drawing, a photograph that is not there, and mathematics.
+    fn with_figures(s: &Setup) -> Request {
+        use crate::document::Block;
+        use crate::document::fixtures::text;
+        use crate::pictures::fixtures::{PNG, SVG};
+        let mut r = request("chicago-author-date");
+        r.key = "p1".into();
+        let pictures = Pictures::of(&s.projects.join("p1"));
+        let drawing = pictures.add("circle.svg", SVG.as_bytes()).unwrap();
+        let picture = pictures.add("vase.png", &PNG).unwrap();
+        let blocks = &mut r.document.sections[1].blocks;
+        blocks.push(Block::Figure {
+            file: drawing.hash,
+            extension: "svg".into(),
+            name: drawing.name,
+            caption: vec![text("The shield, as "), cite_of("r2"), text(" has it")],
+            alt: "A circle".into(),
+            width: 40,
+            numbered: true,
+        });
+        blocks.push(Block::Paragraph {
+            content: vec![text("Where "), Inline::Math { tex: "x_i \\leq \\alpha".into() }, text(" holds:")],
+        });
+        blocks.push(Block::Equation { tex: "a^2 + b^2 = c^2".into(), numbered: true });
+        blocks.push(Block::Equation { tex: "e^{i\\pi} = -1".into(), numbered: false });
+        blocks.push(Block::Equation { tex: "\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}".into(), numbered: true });
+        blocks.push(Block::Figure {
+            file: picture.hash,
+            extension: "png".into(),
+            name: picture.name,
+            caption: vec![text("A vase")],
+            alt: String::new(),
+            width: 100,
+            numbered: true,
+        });
+        blocks.push(Block::Figure {
+            file: "c".repeat(64),
+            extension: "jpg".into(),
+            name: "lost.jpg".into(),
+            caption: vec![],
+            alt: String::new(),
+            width: 100,
+            numbered: false,
+        });
+        r
+    }
+
+    fn cite_of(id: &str) -> Inline {
+        Inline::Citation {
+            items: vec![crate::document::CiteItem { id: id.into(), ..Default::default() }],
+            mode: Default::default(),
+        }
+    }
+
+    #[test]
+    fn figures_and_equations() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let r = with_figures(&s);
+        let drawing = r.document.figure_files()[0].0.clone();
+        assert_eq!(r.document.figure_files().len(), 3);
+
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(!p.pages.is_empty());
+        assert_eq!(p.warnings.iter().filter(|w| w.contains("lost.jpg")).count(), 1, "{:?}", p.warnings);
+        assert_eq!(p.warnings.len(), 1, "{:?}", p.warnings);
+        assert!(p.missing.is_empty());
+
+        // The document as Typst, with its pictures beside it.
+        let typ = out.join("with figures.typ");
+        let e = export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let text = fs::read_to_string(&typ).unwrap();
+        assert!(text.contains(&format!("image(\"with-figures-files/{drawing}.svg\", width: 40")), "{text}");
+        assert!(text.contains("alt: \"A circle\""));
+        assert!(text.contains("] <gk-figure>") && text.contains("] <gk-caption>"));
+        assert!(text.contains("Figure~1. The shield, as \\(West 1988) has it"), "{text}");
+        assert!(text.contains("Figure~2. A vase"));
+        assert!(text.contains("#[#set math.equation(numbering: (..n) => [(1)])"));
+        assert!(text.contains("(..n) => [(2)]"));
+        assert!(text.contains("$x_i lt.eq alpha$") || text.contains("$x_i <= alpha$"), "{text}");
+        assert!(text.contains("The picture is not here: lost.jpg"));
+        assert!(out.join("with-figures-files").join(format!("{drawing}.svg")).is_file());
+        assert_eq!(e.also, vec![out.join("with-figures-files").display().to_string()]);
+
+        // For LaTeX.
+        let tex = out.join("figures.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let text = fs::read_to_string(&tex).unwrap();
+        assert!(text.contains("\\usepackage{float}"));
+        assert!(text.contains("\\begin{figure}[H]"));
+        assert!(text.contains(&format!("figures-files/{drawing}.svg")), "{text}");
+        assert!(text.contains("\\begin{equation*}\na^2 + b^2 = c^2\n\\tag*{(1)}"), "{text}");
+        assert!(text.contains("\\[e^{i\\pi} = -1\\]"));
+        assert!(text.contains("\\(x_i \\leq \\alpha\\)"));
+        assert!(out.join("figures-files").is_dir());
+
+        // For word processors.
+        let docx = out.join("figures.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let document = unzip(&docx, "word/document.xml");
+        assert!(document.contains("<w:pStyle w:val=\"FigureCaption\""), "{document}");
+        assert!(document.contains("<w:pStyle w:val=\"Figure\""));
+        assert!(document.contains("<m:oMath"));
+        assert!(document.contains("<pic:pic"));
+        assert!(unzip(&docx, "word/styles.xml").contains("w:styleId=\"FigureCaption\""));
+
+        let odt = out.join("figures.odt");
+        export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        let content = unzip(&odt, "content.xml");
+        assert!(content.contains("text:style-name=\"Figure_20_Caption\""), "{content}");
+        assert!(content.contains("<draw:image"));
+        assert!(unzip(&odt, "styles.xml").contains("style:name=\"Figure_20_Caption\""));
+
+        let html = out.join("figures.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let text = fs::read_to_string(&html).unwrap();
+        assert!(text.contains("class=\"gk-figure\""));
+        assert!(text.contains("data:image/png;base64,") || text.contains("<svg"), "the pictures are in the document");
+
+        let pdf = out.join("figures.pdf");
+        export(&s.ctx(), &r, Target::Pdf, &pdf, &ExportOptions::default()).unwrap();
+        assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"));
+        if s.tools.latex_engine().is_ok() {
+            let by_latex = out.join("figures-latex.pdf");
+            export(&s.ctx(), &r, Target::PdfLatex, &by_latex, &ExportOptions::default()).unwrap();
+            assert!(fs::read(&by_latex).unwrap().starts_with(b"%PDF"));
+        }
+    }
+
+    #[test]
+    fn figures_at_the_end() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = with_figures(&s);
+        r.format.figures.placement = crate::formats::FigurePlacement::AtEnd;
+        r.format.figures.caption_position = crate::formats::CaptionPosition::Above;
+        r.format.figures.label = "Fig.".into();
+        r.format.figures.separator = ": ".into();
+        r.format.figures.label_bold = true;
+        let typ = out.join("end.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let text = fs::read_to_string(&typ).unwrap();
+        let place = text.find("about here").expect("a line says where the figure belongs");
+        let refs = text.find("] <refs>").unwrap();
+        let picture = text.find("image(").unwrap();
+        let caption = text.find("#strong[Fig.~1]: The shield").expect("the caption");
+        assert!(place < refs && refs < caption && caption < picture, "{text}");
+        assert!(text.contains("[Figures]"), "{text}");
+        assert!(preview(&s.ctx(), &r).unwrap().pages.len() >= 2);
+    }
+
     #[test]
     fn a_sample_of_a_style() {
         let Some(s) = setup() else { return };
@@ -1062,6 +1338,23 @@ mod tests {
         let d = sample();
         assert_eq!(count_words(&d, false), 22);
         assert_eq!(count_words(&d, true), 25);
+
+        // What is said of a figure is counted, and a formula in the line is a word.
+        let mut d = d;
+        d.sections[1].blocks.push(crate::document::Block::Figure {
+            file: "a".repeat(64),
+            extension: "png".into(),
+            name: "vase.png".into(),
+            caption: vec![crate::document::fixtures::text("A vase, seen from above")],
+            alt: "not counted".into(),
+            width: 100,
+            numbered: true,
+        });
+        d.sections[1].blocks.push(crate::document::Block::Equation { tex: "a = b".into(), numbered: true });
+        d.sections[1].blocks.push(crate::document::Block::Paragraph {
+            content: vec![crate::document::fixtures::text("where"), Inline::Math { tex: "x".into() }],
+        });
+        assert_eq!(count_words(&d, false), 22 + 5 + 2);
     }
 
     #[test]
@@ -1077,6 +1370,7 @@ mod tests {
             library: None,
             work: tmp.path().join("w"),
             fonts: &[],
+            projects: None,
         };
         let e = preview(&ctx, &request("apa")).unwrap_err();
         assert_eq!(e.kind(), "missing-program");

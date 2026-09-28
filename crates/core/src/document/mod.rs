@@ -42,6 +42,10 @@ pub enum Inline {
         #[serde(default)]
         mode: CiteMode,
     },
+    /// Mathematics in the line, in the notation of TeX.
+    Math {
+        tex: String,
+    },
     Footnote {
         content: Vec<Inline>,
         /// Where the note stands, when it is not where the format has notes.
@@ -87,6 +91,41 @@ pub enum Block {
         start: u32,
         items: Vec<Vec<Block>>,
     },
+    /// Mathematics on a line of its own, in the notation of TeX.
+    Equation {
+        tex: String,
+        #[serde(default)]
+        numbered: bool,
+    },
+    /// A picture, with what is said of it.
+    Figure {
+        /// The file, by the SHA-256 of what it holds.
+        file: String,
+        /// The kind of file: png, jpg, svg.
+        #[serde(default)]
+        extension: String,
+        /// What the file was called, for saying which is meant.
+        #[serde(default)]
+        name: String,
+        #[serde(default)]
+        caption: Vec<Inline>,
+        /// What the picture shows, in words, for those who do not see it.
+        #[serde(default)]
+        alt: String,
+        /// In hundredths of the width of the text.
+        #[serde(default = "full_width")]
+        width: u8,
+        #[serde(default = "yes")]
+        numbered: bool,
+    },
+}
+
+fn full_width() -> u8 {
+    100
+}
+
+fn yes() -> bool {
+    true
 }
 
 fn one() -> u32 {
@@ -146,6 +185,34 @@ pub struct Document {
 }
 
 impl Document {
+    /// The files of the figures, each once, as `(hash, extension)`.
+    pub fn figure_files(&self) -> Vec<(String, String)> {
+        fn blocks(list: &[Block], out: &mut Vec<(String, String)>) {
+            for b in list {
+                match b {
+                    Block::Figure { file, extension, .. } => {
+                        let one = (file.clone(), extension.trim_start_matches('.').to_ascii_lowercase());
+                        if !out.contains(&one) {
+                            out.push(one);
+                        }
+                    }
+                    Block::Blockquote { content } => blocks(content, out),
+                    Block::BulletList { items } | Block::OrderedList { items, .. } => {
+                        for item in items {
+                            blocks(item, out);
+                        }
+                    }
+                    Block::Paragraph { .. } | Block::Equation { .. } => {}
+                }
+            }
+        }
+        let mut out = Vec::new();
+        for s in &self.sections {
+            blocks(&s.blocks, &mut out);
+        }
+        out
+    }
+
     /// The places that notes have been set to, one for each note that has
     /// been set to a place, in the order of the text.
     pub fn placed_notes(&self) -> Vec<NotePlace> {
@@ -168,6 +235,8 @@ impl Document {
                             blocks(item, out);
                         }
                     }
+                    Block::Figure { caption, .. } => inlines(caption, out),
+                    Block::Equation { .. } => {}
                 }
             }
         }
@@ -210,6 +279,8 @@ impl Document {
                             blocks(item, out);
                         }
                     }
+                    Block::Figure { caption, .. } => inlines(caption, out),
+                    Block::Equation { .. } => {}
                 }
             }
         }

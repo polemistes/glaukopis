@@ -25,6 +25,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources"));
     let found = tools::discover(&tools::Configured::default());
     let styles = Styles::new(&resources, &work.join("styles"));
+    // Where the projects are, for the files of figures.
+    let projects = std::env::var_os("GLAUKOPIS_PROJECTS").map(PathBuf::from);
     let ctx = Context {
         tools: &found,
         resources: &resources,
@@ -32,6 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         library: None,
         work: work.clone(),
         fonts: &[],
+        projects: projects.as_deref(),
     };
     let done = export::export(&ctx, &request, target, Path::new(&args[2]), &ExportOptions::default())?;
     println!("{}", done.path);

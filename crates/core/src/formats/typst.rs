@@ -355,6 +355,39 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
         hanging = f.bibliography.hanging_indent,
     );
 
+    // Figures: a picture with what is said of it, put together before Typst sees it.
+    let caption_leading = if f.figures.caption_line_spacing > 0.0 {
+        leading(f.figures.caption_line_spacing)
+    } else {
+        body_leading.clone()
+    };
+    let _ = writeln!(
+        out,
+        "#show <gk-figure>: it => {{
+  set par(first-line-indent: 0pt, justify: false)
+  set align(center)
+  block(width: 100%, above: {body_leading} + 1.2em, below: {body_leading} + 1.2em, breakable: false, it.body)
+}}
+#show <gk-caption>: it => {{
+  set text({size}hyphenate: false)
+  set par(leading: {caption_leading}, spacing: {caption_leading}, first-line-indent: 0pt, justify: {caption_justify})
+  set align({caption_align})
+  block(width: 100%, above: 0.9em, below: 0.9em, it.body)
+}}",
+        size = if f.figures.caption_size > 0.0 {
+            format!("size: {}, ", pt(f.figures.caption_size))
+        } else {
+            String::new()
+        },
+        caption_justify = f.figures.caption_align == Align::Justified,
+        caption_align = align(f.figures.caption_align),
+    );
+    // Equations on a line of their own, with room about them.
+    let _ = writeln!(
+        out,
+        "#show math.equation.where(block: true): set block(above: {body_leading} + 0.8em, below: {body_leading} + 0.8em)"
+    );
+
     // The title block.
     let t = &f.title;
     let block_leading = leading(f.text.line_spacing.min(1.5));

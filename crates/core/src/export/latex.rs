@@ -171,10 +171,7 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
         "\\preauthor{{\\begin{{{around}}}\\normalsize\\lineskip 0.4em\\begin{{tabular}}[t]{{@{{}}{column}@{{}}}}}}\n\\postauthor{{\\end{{tabular}}\\par\\end{{{around}}}}}"
     );
     if f.title.show_date {
-        let _ = writeln!(
-            h,
-            "\\predate{{\\begin{{{around}}}\\normalsize}}\n\\postdate{{\\par\\end{{{around}}}}}"
-        );
+        let _ = writeln!(h, "\\predate{{\\begin{{{around}}}\\normalsize}}\n\\postdate{{\\par\\end{{{around}}}}}");
     } else {
         // Without a date there is no room left for one.
         let _ = writeln!(h, "\\predate{{}}\n\\postdate{{}}\n\\date{{}}");
@@ -293,6 +290,9 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
     if f.line_numbers {
         let _ = writeln!(h, "\\usepackage{{lineno}}\n\\linenumbers");
     }
+
+    // Figures stand where they are written, and mathematics has what it needs.
+    let _ = writeln!(h, "\\usepackage{{float}}\n\\usepackage{{amsmath}}\n\\usepackage{{graphicx}}");
 
     Settings { variables: v, header: h, number_sections: f.headings.numbered }
 }

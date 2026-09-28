@@ -8,6 +8,7 @@
 //! projects/<id>/state.bin      the document as one update
 //! projects/<id>/updates.log    changes since, each preceded by its length
 //! projects/<id>/history/       earlier states, thinned as they age
+//! projects/<id>/files/         the pictures of its figures: see `pictures`
 //! ```
 //!
 //! A deleted project is moved to `projects/.trash/` and can be brought back.
@@ -22,6 +23,7 @@ use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::library::now;
 use crate::paths::DataDir;
+use crate::pictures::Pictures;
 
 const INFO: &str = "project.json";
 const STATE: &str = "state.bin";
@@ -121,6 +123,11 @@ impl Projects {
     pub fn dir(&self, id: &str) -> Result<PathBuf> {
         check_id(id)?;
         Ok(self.root.join(id))
+    }
+
+    /// The pictures of a project.
+    pub fn pictures(&self, id: &str) -> Result<Pictures> {
+        Ok(Pictures::of(&self.existing_dir(id)?))
     }
 
     fn existing_dir(&self, id: &str) -> Result<PathBuf> {
@@ -433,6 +440,8 @@ impl Projects {
         let mut copy = self.create(name)?;
         let to = self.dir(&copy.id)?;
         write_atomic(&to.join(STATE), &state)?;
+        // What the project held then may show pictures; those it has now are all it ever had.
+        Pictures::of(&to).copy_from(&self.pictures(id)?)?;
         copy.description = source.description;
         Self::write_info(&to, &copy)?;
         Ok(copy)
@@ -450,6 +459,7 @@ impl Projects {
                 fs::copy(&path, to.join(file)).context(|| format!("copying {}", path.display()))?;
             }
         }
+        Pictures::of(&to).copy_from(&Pictures::of(&from))?;
         copy.description = source.description;
         copy.maps = source.maps;
         copy.words = source.words;

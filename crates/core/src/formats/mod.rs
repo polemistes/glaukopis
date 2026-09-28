@@ -416,6 +416,85 @@ pub struct Limits {
     pub note: String,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum CaptionPosition {
+    Above,
+    #[default]
+    Below,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum FigurePlacement {
+    /// Where they stand in the text.
+    #[default]
+    InText,
+    /// Gathered at the end, with a line in the text that says where each
+    /// belongs: what many journals ask of a manuscript.
+    AtEnd,
+}
+
+/// How figures are set: the picture, and what is said of it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Figures {
+    /// What a figure is called: "Figure", "Fig.", "Abbildung".
+    pub label: String,
+    /// What stands between the number and the caption: ". ", ": ". A line
+    /// break in it sets the caption on a line of its own.
+    pub separator: String,
+    pub label_bold: bool,
+    pub label_italic: bool,
+    pub caption_position: CaptionPosition,
+    pub caption_align: Align,
+    /// In points; 0 for the size of the text.
+    pub caption_size: f32,
+    pub caption_italic: bool,
+    /// 0 for the spacing of the text.
+    pub caption_line_spacing: f32,
+    pub placement: FigurePlacement,
+    /// The heading over the figures, when they are gathered at the end.
+    pub end_title: String,
+    /// What the line in the text says, with `{}` for the label and number:
+    /// "[{} about here]".
+    pub placeholder: String,
+}
+
+impl Default for Figures {
+    fn default() -> Self {
+        Figures {
+            label: "Figure".into(),
+            separator: ". ".into(),
+            label_bold: false,
+            label_italic: false,
+            caption_position: CaptionPosition::Below,
+            caption_align: Align::Center,
+            caption_size: 0.0,
+            caption_italic: false,
+            caption_line_spacing: 1.0,
+            placement: FigurePlacement::InText,
+            end_title: "Figures".into(),
+            placeholder: "[{} about here]".into(),
+        }
+    }
+}
+
+/// How equations that stand on a line of their own are numbered.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Equations {
+    /// What stands around the number: "(1)" is "(" and ")".
+    pub before_number: String,
+    pub after_number: String,
+}
+
+impl Default for Equations {
+    fn default() -> Self {
+        Equations { before_number: "(".into(), after_number: ")".into() }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct DocumentFormat {
@@ -436,6 +515,8 @@ pub struct DocumentFormat {
     pub quote: Quote,
     pub notes: Notes,
     pub bibliography: BibliographyFormat,
+    pub figures: Figures,
+    pub equations: Equations,
     pub page_numbers: PageNumbers,
     pub running_head: RunningHead,
     pub line_numbers: bool,
@@ -472,6 +553,11 @@ impl DocumentFormat {
         clamp(&mut self.quote.line_spacing, 0.0, 4.0, 0.0);
         clamp(&mut self.bibliography.size, 0.0, 36.0, 0.0);
         clamp(&mut self.bibliography.line_spacing, 0.0, 4.0, 0.0);
+        clamp(&mut self.figures.caption_size, 0.0, 36.0, 0.0);
+        clamp(&mut self.figures.caption_line_spacing, 0.0, 4.0, 1.0);
+        if !self.figures.placeholder.contains("{}") {
+            self.figures.placeholder = Figures::default().placeholder;
+        }
         for l in &mut self.headings.levels {
             clamp(&mut l.size, 6.0, 72.0, 12.0);
         }
