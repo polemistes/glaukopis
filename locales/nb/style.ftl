@@ -26,6 +26,209 @@ style-browser-import-title = Importer en referansestil
 style-browser-fetch-failed = Stilen kunne ikke hentes.
 style-browser-file-unread = Filen kunne ikke leses.
 
+## Redigeringen av en stil.
+
+style-editor = Referansestil
+style-name = Navnet på stilen
+# Navnet en egen stil først får, laget av navnet på stilen den lages av.
+style-name-changed = { $name }, endret
+style-depth = Hvor dypt
+style-depth-options = Vanlige endringer
+style-depth-parts = Del for del
+style-depth-source = Kilde
+style-scope = Hva som skal endres
+style-scope-citations = Henvisninger
+style-scope-notes = Noter
+style-scope-bibliography = Litteraturliste
+style-bundled = Stilene som følger med Glaukopis, forblir som de er. Endringene dine lagres som en egen stil.
+style-delete = Slett denne stilen
+style-save-own = Lagre som min egen
+style-saved = «{ $name }» er lagret blant dine egne stiler
+style-read-failed = Stilen kunne ikke leses.
+style-save-failed = Stilen kunne ikke lagres.
+style-delete-failed = Stilen kunne ikke slettes.
+style-delete-title = Slette stilen «{ $name }»?
+style-delete-message = Kart som bruker den, vil bruke en annen stil i stedet.
+style-delete-confirm = Slett stilen
+style-leave-title = Gå ut uten å lagre?
+style-leave-message = Endringene du har gjort i stilen, går tapt.
+style-leave-confirm = Gå ut
+style-leave-cancel = Fortsett å redigere
+
+## Vanlige endringer: navn.
+
+style-names = Navn
+# En setning med to felt i, der tall skrives: det minste antallet forfattere
+# der «et al.» brukes, og hvor mange som nevnes før det.
+style-et-al = Med { $min } forfattere eller flere, nevn de { $first } første og «et al.»
+style-et-al-min = Fra hvor mange forfattere et al. brukes
+style-et-al-first = Hvor mange forfattere som nevnes før et al.
+style-et-al-empty = Står feltet tomt, nevnes alle
+# Som den forrige, for et verk som er vist til før.
+style-et-al-again = Ved senere henvisninger, med { $min } eller flere, nevn de { $first } første
+style-et-al-again-min = Fra hvor mange forfattere et al. brukes i senere henvisninger
+style-et-al-again-first = Hvor mange forfattere som nevnes i senere henvisninger
+style-et-al-again-empty = Står feltet tomt, som første gang
+style-before-last-name = Foran det siste navnet
+# Ordet stilen skriver ut der, på dokumentets språk.
+style-and-word = og
+style-and-nothing = Ingenting
+style-as-the-style-has-it = Slik stilen har det
+style-comma-before-last = Komma foran det
+style-comma-contextual = Med tre navn eller flere: A, B, og C
+style-comma-always = Alltid: A, og B
+style-comma-never = Aldri: A, B og C
+style-comma-after-inverted = Etter et navn som er snudd
+style-given-names = Fornavn
+style-given-full = Fullt ut: John Miles
+style-given-spaced = Initialer: J. M.
+style-given-close = Initialer, tett: J.M.
+style-given-bare = Initialer uten punktum: JM
+style-given-bare-spaced = Initialer uten punktum: J M
+style-family-first = Etternavnet først
+style-family-first-none = For ingen: John Foley
+style-family-first-first = For den første forfatteren: Foley, John, og Robert Fowler
+style-family-first-all = For alle: Foley, John, og Fowler, Robert
+style-sort-separator = Mellom etternavn og fornavn
+style-sort-separator-hint = Når etternavnet står først
+
+## Vanlige endringer: henvisningen, eller noten, og oppføringene i litteraturlisten.
+
+style-the-citation = Henvisningen
+style-the-note = Noten
+style-begins-with = Begynner med
+style-ends-with = Slutter med
+style-between-works = Mellom verk det vises til sammen
+style-collapse = Flere verk av samme forfatter
+style-collapse-none = Hvert fullt ut
+style-collapse-year = Navnet én gang: Nagy 1979, 1996
+style-collapse-year-suffix = Og året én gang: Nagy 1979a, b
+style-collapse-year-suffix-ranged = Med intervaller: Nagy 1979a–c
+style-collapse-citation-number = Numre som intervaller: [1–3]
+style-disambiguate = Når to verk ville blitt henvist til likt
+style-disambiguate-year-suffix = Legg til en bokstav etter året
+style-disambiguate-names = Nevn flere forfattere
+style-disambiguate-given-names = Legg til fornavn eller initialer
+style-near-note = En note regnes som nær innenfor
+style-near-note-hint = Noter; for stiler som forkorter det som nylig er vist til
+style-entries = Oppføringene
+style-entry-ends-with = Hver slutter med
+style-author-repeated = For en gjentatt forfatter
+style-author-repeated-hint = I stedet for navnet, i oppføringene etter den første
+style-hanging-indent = Hengende innrykk
+style-hanging-indent-hint = Dokumentformatet bestemmer hvor dypt
+style-second-field = Numre eller etiketter står
+style-second-field-line = På linjen
+style-second-field-column = I en egen kolonne
+style-second-field-margin = I margen
+style-second-field-hint = For stiler som nummererer oppføringene
+
+## Vanlige endringer: i hele stilen.
+
+style-throughout = I hele stilen
+style-page-ranges = Sideintervaller
+style-page-ranges-as-entered = Slik de er skrevet inn
+style-page-ranges-expanded = Fullt ut: 321–328
+style-page-ranges-minimal = Kortest mulig: 321–8
+style-page-ranges-minimal-two = Minst to sifre: 321–28
+style-page-ranges-chicago = Slik Chicago Manual har det
+style-particles = «van», «de», «von» foran et etternavn
+style-particles-never = Blir stående, og sorteres under v, d
+style-particles-sort-only = Blir stående, men sorteres ikke etter
+style-particles-display-and-sort = Flyttes etter fornavnet: Gogh, Vincent van
+style-hyphen = Bindestrek mellom initialer
+style-hyphen-hint = J.-P. Sartre, ikke J.P. Sartre
+style-locale = Ordene i stilen er på
+style-locale-document = Dokumentets språk
+style-locale-hint = «red.», «i», «lest», månedene
+
+## Del for del.
+
+# Scope er citation eller bibliography.
+style-parts-of = { $scope ->
+    [citation] Delene av henvisningen
+   *[bibliography] Delene av litteraturlisten
+}
+style-parts-none = { $scope ->
+    [citation] Denne stilen har ingen henvisning.
+   *[bibliography] Denne stilen har ingen litteraturliste.
+}
+style-parts-hint = Velg en del til venstre for å endre hvordan den skrives ut: det som står foran og etter den, skriften, de store bokstavene. Delene kan åpnes for å vise hva de består av.
+style-part-unfold = Brett ut
+style-part-fold = Brett sammen
+style-part-up = Flytt opp
+style-part-down = Flytt ned
+style-part-add-after = Legg til etter
+style-part-take-away = Ta bort
+style-part-add-within = Legg til inni
+# En del av en makro: en del av stilen som brukes flere steder.
+style-part-shared = Dette hører til «{ $macro }», som brukes { $count } steder. En endring her vises alle stedene.
+style-add-words = Egne ord
+style-add-words-hint = Som «i», «lest» eller tegnsetting
+# Over feltene i en referanse som en del kan skrive ut.
+style-add-from-reference = Fra referansen
+style-part-words = Ordene
+style-part-before = Foran
+style-part-before-hint = Skrives bare ut når selve delen skrives ut
+style-part-after = Etter
+style-part-between = Mellom delene
+style-slant = Helling
+style-slant-upright = Rett
+style-slant-italic = Kursiv
+style-weight = Vekt
+style-weight-regular = Normal
+style-weight-bold = Fet
+style-letters = Bokstaver
+style-letters-as-written = Som skrevet
+style-letters-small-caps = Kapitéler
+style-case = Store bokstaver
+style-case-as-entered = Slik det er skrevet inn
+style-case-title = Engelsk tittelform
+style-case-sentence = Setningsform
+style-case-capitalize-first = Stor forbokstav
+style-case-capitalize-all = Stor Forbokstav I Hvert Ord
+style-case-uppercase = STORE BOKSTAVER
+style-case-lowercase = små bokstaver
+style-height = Høyde
+style-height-baseline = På linjen
+style-height-raised = Hevet
+style-height-lowered = Senket
+style-quotes = I anførselstegn
+style-strip-periods = Uten punktum
+style-strip-periods-hint = For forkortelser: «red» for «red.»
+style-text-form = Form
+style-text-form-long = Fullt ut
+style-text-form-short = Kort, der referansen har en kort form
+style-term-form = Ordets form
+style-term-form-long = Fullt ut: redaktør, side
+style-term-form-short = Kort: red., s.
+style-term-form-verb = Som verb: redigert av
+style-term-form-verb-short = Som verb, kort: red. av
+style-term-form-symbol = Som tegn: §
+style-date-parts = Datoen oppgis
+style-date-parts-year = Bare som år
+style-date-parts-year-month = Som år og måned
+style-date-parts-full = Fullt ut
+
+## Kilden til stilen, og prøven den testes på.
+
+style-source = Kilden til stilen
+style-source-try = Prøv
+style-source-unread = Kilden kunne ikke leses.
+style-sample-unusable = Stilen kan ikke brukes slik den er
+style-sample-failed = Stilen kunne ikke prøves.
+style-sample-in-text = I teksten
+style-sample-in-notes = I notene
+style-sample-in-bibliography = I litteraturlisten
+style-sample-cited = Et verk det vises til
+style-sample-same-page = Det samme, med sidetall
+style-sample-another = Et annet, med ord foran
+style-sample-first-again = Det første igjen, med kapittel
+style-sample-together = To verk sammen
+style-sample-in-sentence = Med forfatteren i setningen
+style-sample-examples = Vist med eksempler: biblioteket ditt er tomt.
+style-sample-library = Vist med verk fra biblioteket ditt.
+
 ## Kilden til en stil, der den ikke kan leses som en stil.
 
 style-source-not-xml = Kilden er ikke velformet XML.
