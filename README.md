@@ -7,15 +7,15 @@ writing, and producing the manuscript.
 It is made for a way of working that begins with references and ideas, and
 for scholars in the humanities first, the social sciences second.
 
-- **Maps that are documents.** Ideas are elements of a map, with text and
-  citations. The same map is read as a diagram, as text, and as the
-  manuscript.
+- **Maps that are documents.** Ideas are elements of a map, with text,
+  citations, notes, figures and mathematics. The same map is read as a
+  diagram, as text, and as the manuscript.
 - **One library** for all projects, kept as a BibLaTeX file that other tools
   can read. References are looked up by DOI, ISBN or title, made from PDF
   files, and imported from `.bib` files and from Zotero.
 - **The manuscript as the publisher wants it.** Reference styles and
-  document formats can be chosen and changed; export to PDF, Word,
-  OpenDocument, LaTeX, Markdown and HTML.
+  document formats can be chosen and changed; export to PDF, set by Typst
+  or by LaTeX, and to Word, OpenDocument, LaTeX, Markdown and HTML.
 - **Working together**, through a small server of one's own.
 
 How to use it is told in [docs/guide.md](docs/guide.md); how to run a server

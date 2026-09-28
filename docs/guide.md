@@ -75,7 +75,8 @@ depth of the element in the map.
 
 Write as in any editor. The tools are over the text: the kind of paragraph
 (text, quotation, list, numbered list), italics, bold and small capitals,
-**Cite** and **Note**. They act where the cursor is. The same tools are in
+**Cite**, **Note** and **Insert**, which has pictures and mathematics. They
+act where the cursor is. The same tools are in
 the box that opens when an element is double-clicked in the diagram, and a
 bar with them appears over whatever you select.
 
@@ -86,6 +87,9 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Cite a reference | **Cite**, or type **@**, and begin to type an author or a title |
 | Give the page | Type it when the citation has been chosen: `73`, `73–75` |
 | Write a note | **Note**, or **Ctrl+Alt+F** |
+| Put in a picture | **Insert**, or **Ctrl+Alt+P**; or drop the file on the text; or paste |
+| Write a formula in the line | **Insert**, or **Ctrl+Alt+M** |
+| Write an equation on a line of its own | **Insert**, or **Ctrl+Alt+E** |
 | Set words in italics or bold | The tools, or **Ctrl+I**, **Ctrl+B** |
 | Begin a quotation or a list | Type `> `, `- ` or `1. ` at the start of a line |
 | Make a dash | Type `--` for –, `---` for — |
@@ -112,6 +116,49 @@ author's remarks at the foot of the page, say, and the sources at the end.
 For that, a single note can be set to stand at the other place, in the panel
 it is written in. Such notes are lettered, *a*, *b*, *c*, in the text and in
 the document, so that they are told from the numbered ones.
+
+### Figures
+
+A picture in the text is a figure: the picture, and what is said of it. Put
+one in with **Insert**, by dropping a file on the text where it is to stand,
+or by pasting a picture that was copied. A file dropped on an element in the
+diagram becomes a figure at the end of its text.
+
+What is said of the figure is written under the picture, where the cursor is
+when the figure has been put in. It can hold citations and formulas. **Enter**
+leaves the figure, and the writing goes on under it.
+
+Pressing the picture opens the rest that can be said of it:
+
+- **How wide it is**, as a share of the width of the text in the document.
+- **What it shows**, in words, for those who cannot see it. This goes into
+  the documents that can hold it.
+- Whether it is **numbered**. The figures of a map are numbered through the
+  map, as the notes are.
+- **Another picture** in its place, or the figure removed.
+
+The word before the number, where what is said of the figure stands and how
+it is set, are said by the document format: *Figure 1.* under the picture in
+one, **Figure 1** over it in another. A format can also have the figures
+gathered at the end of the document, as many journals ask of a manuscript;
+a line in the text then says where each belongs.
+
+Pictures are kept with the project. PNG, JPEG and SVG are kept as they are.
+GIF, WebP, TIFF and BMP are made into PNG when they are put in, since not
+every kind of document can hold them. One picture may hold 50 MB.
+
+### Mathematics
+
+Mathematics is written in the notation of TeX, which is what journals and
+publishers take: `x_i` is *x* with a lowered *i*, `\frac{1}{2}` a half. It
+is written in a small panel, which shows what is written as it will stand
+while you write, and says so when it cannot be read. The signs that are most
+often wanted are in the panel, to be put in by pressing them; what is
+selected goes into what is put in.
+
+A **formula** stands in the line, among the words. An **equation** stands on
+a line of its own, and can be numbered; what stands around the number,
+as in (1), is said by the document format. Pressing either opens it again.
 
 ## Citations
 
@@ -303,7 +350,8 @@ rest. What you change is kept as a format or a style of your own; those that
 came with Glaukopis stay as they were.
 
 **Export** makes the manuscript: PDF, Word, OpenDocument, LaTeX, Markdown, or
-a web page.
+a web page. Where the document is given as it is written, in LaTeX, Typst or
+Markdown, its pictures are put in a folder beside it, named after it.
 
 There are two kinds of PDF. **PDF** is what the preview shows. **PDF, set by
 LaTeX** is the same document in the typesetting of LaTeX, for those who
@@ -345,6 +393,9 @@ From then on:
   sharing. Those who are removed keep the project as it was then.
 
 Files attached to references are not shared; the references themselves are.
+The pictures of the figures are shared: they are sent to the server when
+they are put in, and fetched by the others from there. A picture that has
+not arrived yet is shown as an empty frame until it has.
 
 ## Keeping things safe
 
@@ -372,6 +423,8 @@ Files attached to references are not shared; the references themselves are.
 | **F2** | Rename |
 | **@** | In the text: cite |
 | **Ctrl+Alt+F** | In the text: a note |
+| **Ctrl+Alt+P** | In the text: a picture |
+| **Ctrl+Alt+M**, **Ctrl+Alt+E** | In the text: a formula in the line, an equation |
 | **Ctrl+F**, **Ctrl+N** | In the library: search, new reference |
 
 ## What Glaukopis needs
@@ -384,3 +437,7 @@ LaTeX is needed only for the PDF that is set by it. LuaLaTeX is used where
 it is installed, since it knows the fonts of the computer and can turn to
 another font for letters that the font of the document lacks, such as Greek
 with its accents.
+
+A drawing (SVG) in a PDF set by LaTeX, or in a Word document, is made into
+what those can hold by `rsvg-convert`, which comes with librsvg and is on
+most computers.

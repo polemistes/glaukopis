@@ -210,6 +210,11 @@ by a script in `e2e/`. Of milestone 8, the settings, the package for Arch
 Linux (`packaging/arch`), the guide (`docs/guide.md`) and the guide to the
 server (`docs/server.md`) are done. The packages for other systems are not.
 
+Added since, at the wish of the one the application is made for, and recorded
+in `docs/brief.md`: notes on references (ADR 0008), a PDF that is set by
+LaTeX, and figures and mathematics (ADR 0009). Tables, and pointing to a
+figure or an equation by its number, are the next of that kind.
+
 ## 9. Not in the first version
 
 Annotation of PDFs inside the application; synchronising the library itself

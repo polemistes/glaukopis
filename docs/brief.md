@@ -72,3 +72,15 @@ What this settles:
 - A single note can be set to stand elsewhere than the format has its notes.
 - Notes on references, of two kinds, as described (docs/adr/0008).
 
+## 2026-09-28 — new features
+
+> Great! Now for new features! I think it would be a good idea to be able to export a pdf based on LateX. And we should also be able to add images, figures and equations. These should be part of elements and the text, of course, and they should be part of the preview and export, formated as the reference style or the format requires, or as the author requests. I am not sure exactly how this should be handled, but please suggest what you think.
+
+What was suggested, and built as a suggestion that can be changed (docs/adr/0009):
+
+- A PDF that is set by LaTeX, beside the one that is set by Typst.
+- Pictures as figures in the text, with what is said of them; kept with the project, and sent between those who share it.
+- Mathematics in the notation of TeX, in the line and on a line of its own.
+- The document format says how figures and the numbers of equations are set; the author says how wide a figure is and whether it is numbered.
+- Not yet: tables, and pointing to a figure or an equation by its number.
+
