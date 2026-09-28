@@ -98,3 +98,15 @@ What this settles:
 - Nothing connects to services outside, such as Google Drive.
 
 Words: a *picture* is the file; a *figure* is a picture as it stands in a text, with what is said of it there and its number in the document.
+
+## 2026-09-28 — tables, documents brought in, and where things stand on the page
+
+> Yes, there should be a tables feaure. I think we should have an import feature for tables, csv, ods and Excel, perhaps. Let us also have a document import from odt, docx and  markdown, as well as other relevant formats. These should be imported as their own maps. Also, figures and equations are now centered on the page. It should be possible to choose orientation and whether text flows around the image or not. The default should be whatever the reference style or format says, if anything. The same goes for tables. It should be possible to have more than one figure, table or equation beside each other. One thing to fix somehow. When resizing a figure, the whole display moves because the picture changes size, while the mouse click is still on the resize bar, which then is moved rapidly to max or min, so it is difficult to actually set the size with the bar.
+
+What this settles:
+
+- There are tables, which can be written, and brought in from CSV, ODS and Excel.
+- A document can be brought in from ODT, DOCX, Markdown and other formats, and becomes a map of its own.
+- Figures, equations and tables stand to the left, in the middle or to the right, and text may flow around a figure or a table. What the format says holds until the writer says otherwise.
+- Several figures, tables or equations can stand beside each other.
+- The width of a figure must be settable without what is shown moving under the pointer.

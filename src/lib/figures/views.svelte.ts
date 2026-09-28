@@ -32,10 +32,18 @@ interface Written {
 class Panel {
   readonly el: HTMLElement;
   #anchor: HTMLElement;
+  /** What the panel keeps clear of, when that is wider than what it belongs to. */
+  #beside: HTMLElement | null;
   #watch: ResizeObserver | null = null;
 
-  constructor(anchor: HTMLElement, label: string, kind: string) {
+  /**
+   * With `beside`, the panel stands at the side of that, level with its
+   * top, where there is room: so it stays where it is while what it belongs
+   * to is made larger and smaller, and does not lie over it.
+   */
+  constructor(anchor: HTMLElement, label: string, kind: string, beside: HTMLElement | null = null) {
     this.#anchor = anchor;
+    this.#beside = beside;
     this.el = document.createElement('div');
     this.el.className = `note-panel ${kind}`;
     this.el.setAttribute('role', 'dialog');
@@ -49,6 +57,15 @@ class Panel {
   }
 
   place() {
+    const wide = this.#beside?.getBoundingClientRect();
+    if (wide) {
+      const needed = this.el.offsetWidth + 12 + 8;
+      const right = window.innerWidth - wide.right >= needed;
+      if (right || wide.left >= needed) {
+        place(this.el, wide, { side: right ? 'right' : 'left', align: 'start', gap: 12 });
+        return;
+      }
+    }
     place(this.el, this.#anchor.getBoundingClientRect(), {
       side: 'bottom',
       align: 'start',
@@ -415,7 +432,7 @@ export class FigureView implements NodeView {
   }
 
   #open() {
-    const panel = new Panel(this.#picture, 'Figure', 'figure-panel');
+    const panel = new Panel(this.#picture, 'Figure', 'figure-panel', this.dom);
     this.#panel = panel;
     const a = this.#node.attrs;
     this.#mounted = mount(FigurePanel, {
@@ -425,14 +442,12 @@ export class FigureView implements NodeView {
         alt: String(a.alt ?? ''),
         width: figureWidth(a.width),
         numbered: !!a.numbered,
+        // The panel stays where it is while the width is set: if it went
+        // with the picture, the bar would go from under the pointer.
         ontry: (width: number) => {
           this.#picture.style.width = `${figureWidth(width)}%`;
-          this.#again();
         },
-        onchange: (change) => {
-          this.#change(change);
-          this.#again();
-        },
+        onchange: (change) => this.#change(change),
         kept: () => {
           const said = pictures.get(String(this.#node.attrs.file))?.caption ?? [];
           return JSON.stringify(said) === JSON.stringify(captionOf(this.#node));

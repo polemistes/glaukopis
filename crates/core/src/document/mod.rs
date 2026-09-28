@@ -13,6 +13,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 use crate::bib::names::Person;
+use crate::formats::Stand;
 
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -123,6 +124,15 @@ pub enum Block {
         tex: String,
         #[serde(default)]
         numbered: bool,
+        /// Where it stands, when not where the format has equations.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        align: Option<Stand>,
+    },
+    /// A table, with what is said of it.
+    Table(Table),
+    /// Figures, tables and equations that stand beside each other.
+    Row {
+        items: Vec<Block>,
     },
     /// A picture, with what is said of it.
     Figure {
@@ -147,7 +157,114 @@ pub enum Block {
         width: u8,
         #[serde(default = "yes")]
         numbered: bool,
+        /// Where it stands, when not where the format has figures.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        align: Option<Stand>,
+        /// Whether the text flows around it, when not as the format says.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        wrap: Option<bool>,
     },
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
+#[serde(default)]
+pub struct Table {
+    /// By which words in the text point to it.
+    pub id: String,
+    pub caption: Vec<Inline>,
+    pub rows: Vec<Vec<Cell>>,
+    #[serde(default = "yes")]
+    pub numbered: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub align: Option<Stand>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wrap: Option<bool>,
+    /// In hundredths of the width of the text; nought for as wide as it needs to be.
+    pub width: u8,
+}
+
+/// A cell of a table.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(default)]
+pub struct Cell {
+    pub content: Vec<Block>,
+    pub colspan: u16,
+    pub rowspan: u16,
+    /// Whether it is a heading of its column or its row.
+    pub header: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub align: Option<Stand>,
+}
+
+impl Default for Cell {
+    fn default() -> Self {
+        Cell { content: Vec::new(), colspan: 1, rowspan: 1, header: false, align: None }
+    }
+}
+
+impl Table {
+    /// How many columns the table has: the most cells a row of it spans.
+    pub fn columns(&self) -> usize {
+        self.rows.iter().map(|row| row.iter().map(|c| c.colspan.max(1) as usize).sum()).max().unwrap_or(0)
+    }
+
+    /// The share of the width of the text that each column has, where the
+    /// columns are given widths: when the table has been given one, or holds
+    /// more than fits on a line. Nothing, where each column is as wide as
+    /// what it holds.
+    pub fn widths(&self) -> Vec<f64> {
+        fn length(blocks: &[Block]) -> usize {
+            let mut longest = 0usize;
+            walk(blocks, &mut |_| {}, &mut |line| {
+                let here: usize = line
+                    .iter()
+                    .map(|i| match i {
+                        Inline::Text { text, .. } => text.chars().count(),
+                        Inline::Math { tex } => tex.chars().count() / 2 + 1,
+                        Inline::Citation { .. } => 14,
+                        Inline::CrossRef { .. } => 8,
+                        _ => 1,
+                    })
+                    .sum();
+                longest = longest.max(here);
+            });
+            longest
+        }
+        let columns = self.columns();
+        if columns == 0 {
+            return Vec::new();
+        }
+        let mut longest = vec![0usize; columns];
+        for row in &self.rows {
+            let mut at = 0usize;
+            for cell in row {
+                let span = cell.colspan.max(1) as usize;
+                if span == 1 && at < columns {
+                    longest[at] = longest[at].max(length(&cell.content));
+                }
+                at += span;
+            }
+        }
+        // About so many letters go on a line of a page.
+        const LINE: usize = 78;
+        let needed: usize = longest.iter().map(|l| l + 3).sum();
+        let whole = match self.width {
+            0 if needed <= LINE => return Vec::new(),
+            0 => 1.0,
+            w => f64::from(w.min(100)) / 100.0,
+        };
+        // No column so narrow that a word does not fit, none so wide that the others have no room.
+        let shares: Vec<f64> = longest.iter().map(|l| (*l).clamp(6, 60) as f64).collect();
+        let sum: f64 = shares.iter().sum();
+        shares.iter().map(|s| (s / sum * whole * 1000.0).round() / 1000.0).collect()
+    }
+
+    /// How many rows at the top are headings: those whose cells all are.
+    pub fn heading_rows(&self) -> usize {
+        let count = self.rows.iter().take_while(|row| !row.is_empty() && row.iter().all(|c| c.header)).count();
+        // A table of nothing but headings has none.
+        if count == self.rows.len() { 0 } else { count }
+    }
 }
 
 fn full_width() -> u8 {
@@ -214,76 +331,82 @@ pub struct Document {
     pub references: Vec<CarriedReference>,
 }
 
-impl Document {
-    /// The files of the figures, each once, as `(hash, extension)`.
-    pub fn figure_files(&self) -> Vec<(String, String)> {
-        fn blocks(list: &[Block], out: &mut Vec<(String, String)>) {
-            for b in list {
-                match b {
-                    Block::Figure { file, extension, .. } => {
-                        let one = (file.clone(), extension.trim_start_matches('.').to_ascii_lowercase());
-                        if !out.contains(&one) {
-                            out.push(one);
-                        }
-                    }
-                    Block::Blockquote { content } => blocks(content, out),
-                    Block::BulletList { items } | Block::OrderedList { items, .. } => {
-                        for item in items {
-                            blocks(item, out);
-                        }
-                    }
-                    Block::Paragraph { .. } | Block::Equation { .. } => {}
+/// Goes through blocks and what they hold, in the order of the text: every
+/// block is shown to `block`, and every line of text to `line`.
+pub fn walk<'a>(list: &'a [Block], block: &mut dyn FnMut(&'a Block), line: &mut dyn FnMut(&'a [Inline])) {
+    for b in list {
+        block(b);
+        match b {
+            Block::Paragraph { content } => line(content),
+            Block::Blockquote { content } => walk(content, block, line),
+            Block::BulletList { items } | Block::OrderedList { items, .. } => {
+                for item in items {
+                    walk(item, block, line);
                 }
             }
+            Block::Figure { caption, .. } => line(caption),
+            Block::Equation { .. } => {}
+            Block::Table(table) => {
+                line(&table.caption);
+                for row in &table.rows {
+                    for cell in row {
+                        walk(&cell.content, block, line);
+                    }
+                }
+            }
+            Block::Row { items } => walk(items, block, line),
         }
-        let mut out = Vec::new();
+    }
+}
+
+impl Document {
+    /// Goes through the document in the order of the text: the title, and
+    /// of every section its heading and its blocks.
+    pub fn walk<'a>(&'a self, block: &mut dyn FnMut(&'a Block), line: &mut dyn FnMut(&'a [Inline])) {
+        line(&self.title);
         for s in &self.sections {
-            blocks(&s.blocks, &mut out);
+            if let Some(h) = &s.heading {
+                line(h);
+            }
+            walk(&s.blocks, block, line);
         }
+    }
+
+    /// The files of the figures, each once, as `(hash, extension)`.
+    pub fn figure_files(&self) -> Vec<(String, String)> {
+        let mut out: Vec<(String, String)> = Vec::new();
+        self.walk(
+            &mut |b| {
+                if let Block::Figure { file, extension, .. } = b {
+                    let one = (file.clone(), extension.trim_start_matches('.').to_ascii_lowercase());
+                    if !out.contains(&one) {
+                        out.push(one);
+                    }
+                }
+            },
+            &mut |_| {},
+        );
         out
     }
 
     /// The places that notes have been set to, one for each note that has
     /// been set to a place, in the order of the text.
     pub fn placed_notes(&self) -> Vec<NotePlace> {
-        fn inlines(list: &[Inline], out: &mut Vec<NotePlace>) {
-            for i in list {
+        let mut out = Vec::new();
+        self.walk(&mut |_| {}, &mut |line| {
+            for i in line {
                 if let Inline::Footnote { place: Some(place), content } = i
                     && !content.is_empty()
                 {
                     out.push(*place);
                 }
             }
-        }
-        fn blocks(list: &[Block], out: &mut Vec<NotePlace>) {
-            for b in list {
-                match b {
-                    Block::Paragraph { content } => inlines(content, out),
-                    Block::Blockquote { content } => blocks(content, out),
-                    Block::BulletList { items } | Block::OrderedList { items, .. } => {
-                        for item in items {
-                            blocks(item, out);
-                        }
-                    }
-                    Block::Figure { caption, .. } => inlines(caption, out),
-                    Block::Equation { .. } => {}
-                }
-            }
-        }
-        let mut out = Vec::new();
-        inlines(&self.title, &mut out);
-        for s in &self.sections {
-            if let Some(h) = &s.heading {
-                inlines(h, &mut out);
-            }
-            blocks(&s.blocks, &mut out);
-        }
+        });
         out
     }
 
     /// The ids of all works cited, each once, in the order of first citation.
     pub fn cited(&self) -> Vec<String> {
-        let mut out: Vec<String> = Vec::new();
         fn inlines(list: &[Inline], out: &mut Vec<String>) {
             for i in list {
                 match i {
@@ -299,28 +422,8 @@ impl Document {
                 }
             }
         }
-        fn blocks(list: &[Block], out: &mut Vec<String>) {
-            for b in list {
-                match b {
-                    Block::Paragraph { content } => inlines(content, out),
-                    Block::Blockquote { content } => blocks(content, out),
-                    Block::BulletList { items } | Block::OrderedList { items, .. } => {
-                        for item in items {
-                            blocks(item, out);
-                        }
-                    }
-                    Block::Figure { caption, .. } => inlines(caption, out),
-                    Block::Equation { .. } => {}
-                }
-            }
-        }
-        inlines(&self.title, &mut out);
-        for s in &self.sections {
-            if let Some(h) = &s.heading {
-                inlines(h, &mut out);
-            }
-            blocks(&s.blocks, &mut out);
-        }
+        let mut out: Vec<String> = Vec::new();
+        self.walk(&mut |_| {}, &mut |line| inlines(line, &mut out));
         out
     }
 

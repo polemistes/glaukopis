@@ -16,7 +16,7 @@ import { walkDocument } from '$lib/project/model/document';
 import type { Project } from '$lib/project/model/project.svelte';
 import type { RefForm } from '$lib/project/model/text';
 
-export type PointedKind = 'figure' | 'equation' | 'part';
+export type PointedKind = 'figure' | 'table' | 'equation' | 'part';
 
 /** Something that stands in the document and can be pointed to. */
 export interface Pointed {
@@ -33,12 +33,18 @@ export interface Pointed {
   extension?: string;
 }
 
+export interface Within {
+  figure: (string | null)[];
+  table: (string | null)[];
+  equation: (string | null)[];
+}
+
 export interface Numbers {
   /** What can be pointed to, in the order of the document. */
   all: Pointed[];
   byId: Map<string, Pointed>;
-  /** The numbers of the figures and the equations of each element, in the order they stand in. */
-  within: Map<string, { figure: (string | null)[]; equation: (string | null)[] }>;
+  /** The numbers of the figures, the tables and the equations of each element, in the order they stand in. */
+  within: Map<string, Within>;
 }
 
 /** What of the format the numbers and the words depend on. */
@@ -51,6 +57,10 @@ export interface Counting {
   label: string;
   reference: string;
   separator: string;
+  /** The same for a table. */
+  tableLabel: string;
+  tableReference: string;
+  tableSeparator: string;
   before: string;
   after: string;
 }
@@ -62,6 +72,9 @@ const PLAIN: Counting = {
   label: 'Figure',
   reference: '',
   separator: '. ',
+  tableLabel: 'Table',
+  tableReference: '',
+  tableSeparator: '. ',
   before: '(',
   after: ')',
 };
@@ -76,6 +89,9 @@ export function countingOf(format: DocumentFormat | undefined): Counting {
     label: format.figures?.label ?? PLAIN.label,
     reference: format.figures?.reference ?? '',
     separator: format.figures?.separator ?? PLAIN.separator,
+    tableLabel: format.tables?.label ?? PLAIN.tableLabel,
+    tableReference: format.tables?.reference ?? '',
+    tableSeparator: format.tables?.separator ?? PLAIN.tableSeparator,
     before: format.equations?.beforeNumber ?? PLAIN.before,
     after: format.equations?.afterNumber ?? PLAIN.after,
   };
@@ -91,8 +107,7 @@ export function count(project: Project, mapId: string, counting: Counting = PLAI
     // What stands twice in a document is pointed to where it stands first.
     if (p.id && !byId.has(p.id)) byId.set(p.id, p);
   };
-  let figure = 0;
-  let equation = 0;
+  const counted = { figure: 0, table: 0, equation: 0 };
   const levels = [0, 0, 0, 0, 0, 0];
 
   walkDocument(project, mapId, (placed) => {
@@ -111,9 +126,9 @@ export function count(project: Project, mapId: string, counting: Counting = PLAI
     // The same element may stand twice in a document, where a map stands in
     // the place of an element of another: its numbers are those of the first.
     const first = !within.has(placed.id);
-    const numbers = { figure: [] as (string | null)[], equation: [] as (string | null)[] };
+    const numbers: Within = { figure: [], table: [], equation: [] };
     for (const s of node.set) {
-      const number = s.numbered ? String(s.kind === 'figure' ? ++figure : ++equation) : null;
+      const number = s.numbered ? String(++counted[s.kind]) : null;
       numbers[s.kind].push(number);
       put({
         id: s.id,
@@ -134,8 +149,12 @@ export function count(project: Project, mapId: string, counting: Counting = PLAI
 export function pointerText(pointed: Pointed | undefined, form: RefForm, c: Counting): string {
   if (!pointed) return '';
   switch (pointed.kind) {
-    case 'figure': {
-      const called = (c.reference.trim() || c.label).trim();
+    case 'figure':
+    case 'table': {
+      const called =
+        pointed.kind === 'figure'
+          ? (c.reference.trim() || c.label).trim()
+          : (c.tableReference.trim() || c.tableLabel).trim();
       if (pointed.number === null) return called;
       if (form === 'number' || !called) return pointed.number;
       return `${called} ${pointed.number}`;
@@ -152,6 +171,7 @@ export function pointerText(pointed: Pointed | undefined, form: RefForm, c: Coun
 export function formsOf(kind: PointedKind, numbered: boolean): { form: RefForm; label: string }[] {
   switch (kind) {
     case 'figure':
+    case 'table':
       return [
         { form: 'full', label: 'The word and the number' },
         { form: 'number', label: 'The number alone' },

@@ -128,6 +128,9 @@ export interface DocumentFormat {
     label: string;
     /** What a figure is called where the text points to it, when not the same. */
     reference: string;
+    /** Where figures stand, and whether the text flows around them, unless something else is said of one. */
+    align: 'left' | 'center' | 'right';
+    wrap: boolean;
     /** A line break in it sets the caption on a line of its own. */
     separator: string;
     labelBold: boolean;
@@ -144,7 +147,35 @@ export interface DocumentFormat {
     /** With `{}` for the label and number. */
     placeholder: string;
   };
-  equations: { beforeNumber: string; afterNumber: string };
+  equations: { beforeNumber: string; afterNumber: string; align: 'left' | 'center' | 'right' };
+  tables: {
+    label: string;
+    reference: string;
+    /** A line break in it sets the caption on a line of its own. */
+    separator: string;
+    labelBold: boolean;
+    labelItalic: boolean;
+    captionPosition: 'above' | 'below';
+    captionAlign: Align;
+    /** In points; 0 for the size of the text. */
+    captionSize: number;
+    captionItalic: boolean;
+    /** 0 for the spacing of the text. */
+    captionLineSpacing: number;
+    placement: 'in-text' | 'at-end';
+    endTitle: string;
+    /** With `{}` for the label and number. */
+    placeholder: string;
+    align: 'left' | 'center' | 'right';
+    wrap: boolean;
+    /** The size of what stands in the table, in points; 0 for the size of the text. */
+    size: number;
+    /** 0 for the spacing of the text. */
+    lineSpacing: number;
+    /** The lines of a table: over and under it and under its headings; around every cell; none. */
+    rules: 'horizontal' | 'grid' | 'none';
+    headerBold: boolean;
+  };
   pageNumbers: { show: boolean; position: Position; firstPage: boolean };
   runningHead: {
     content: 'none' | 'title' | 'author' | 'author-title' | 'text';

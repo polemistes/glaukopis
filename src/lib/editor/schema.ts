@@ -8,6 +8,7 @@
  */
 
 import { Schema, type MarkSpec, type NodeSpec } from 'prosemirror-model';
+import { tableNodes } from 'prosemirror-tables';
 
 /** One work cited, with what is said about the place in it. */
 export interface CiteItem {
@@ -215,6 +216,32 @@ export function figureWidth(value: unknown): number {
 }
 
 /**
+ * Where something that stands by itself stands: to the left, in the middle,
+ * to the right. Nothing, for where the format of the document has it.
+ */
+export type Stand = '' | 'left' | 'center' | 'right';
+
+export function stand(value: unknown): Stand {
+  return value === 'left' || value === 'center' || value === 'right' ? value : '';
+}
+
+/** Whether the text flows around it. Nothing, for what the format says. */
+export type Flow = '' | 'around' | 'apart';
+
+export function flow(value: unknown): Flow {
+  return value === 'around' || value === 'apart' ? value : '';
+}
+
+/** How wide a table is, in hundredths of the width of the text. Nought for as wide as it needs to be. */
+export function tableWidth(value: unknown): number {
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) && n > 0 ? Math.min(100, Math.max(10, n)) : 0;
+}
+
+/** What is said of a figure or a table, in the line that is its caption. */
+const SAID = '(text | hard_break | citation | math | crossref)*';
+
+/**
  * Mathematics, in the notation of TeX, and figures. The picture of a figure
  * is a file of the project, named by what it holds; the text of the figure
  * is what is said of it under or over the picture.
@@ -239,7 +266,12 @@ const figureNodes: Record<string, NodeSpec> = {
     atom: true,
     selectable: true,
     // The id is that by which words in the text point to the equation.
-    attrs: { id: { default: '' }, tex: { default: '' }, numbered: { default: false } },
+    attrs: {
+      id: { default: '' },
+      tex: { default: '' },
+      numbered: { default: false },
+      align: { default: '' },
+    },
     parseDOM: [
       {
         tag: 'div[data-equation]',
@@ -247,6 +279,7 @@ const figureNodes: Record<string, NodeSpec> = {
           id: (el as HTMLElement).getAttribute('data-id') ?? '',
           tex: (el as HTMLElement).getAttribute('data-equation') ?? '',
           numbered: (el as HTMLElement).hasAttribute('data-numbered'),
+          align: stand((el as HTMLElement).getAttribute('data-align')),
         }),
       },
     ],
@@ -256,6 +289,7 @@ const figureNodes: Record<string, NodeSpec> = {
         'data-id': node.attrs.id || null,
         'data-equation': node.attrs.tex,
         'data-numbered': node.attrs.numbered ? '' : null,
+        'data-align': node.attrs.align || null,
         class: 'equation',
       },
       node.attrs.tex,
@@ -287,7 +321,7 @@ const figureNodes: Record<string, NodeSpec> = {
     group: 'block',
     // What is said of a figure is a line of text. A note has no place in it:
     // not every kind of document can set one there.
-    content: '(text | hard_break | citation | math | crossref)*',
+    content: SAID,
     isolating: true,
     defining: true,
     attrs: {
@@ -298,6 +332,8 @@ const figureNodes: Record<string, NodeSpec> = {
       alt: { default: '' },
       width: { default: 100 },
       numbered: { default: true },
+      align: { default: '' },
+      flow: { default: '' },
     },
     parseDOM: [
       {
@@ -315,6 +351,8 @@ const figureNodes: Record<string, NodeSpec> = {
             alt: el.getAttribute('data-alt') ?? '',
             width: figureWidth(el.getAttribute('data-width')),
             numbered: !el.hasAttribute('data-unnumbered'),
+            align: stand(el.getAttribute('data-align')),
+            flow: flow(el.getAttribute('data-flow')),
           };
         },
       },
@@ -328,6 +366,8 @@ const figureNodes: Record<string, NodeSpec> = {
         'data-alt': node.attrs.alt || null,
         'data-width': String(figureWidth(node.attrs.width)),
         'data-unnumbered': node.attrs.numbered ? null : '',
+        'data-align': node.attrs.align || null,
+        'data-flow': node.attrs.flow || null,
         class: 'figure',
       },
       ['figcaption', 0],
@@ -335,7 +375,92 @@ const figureNodes: Record<string, NodeSpec> = {
   },
 };
 
-export const bodySchema = new Schema({ nodes: { ...bodyNodes, ...figureNodes }, marks });
+/**
+ * Tables. A table stands in the text as a `tabular`: what is said of it, and
+ * the table itself, whose rows and cells are those of prosemirror-tables. A
+ * cell holds paragraphs. A cell of the kind `table_header` is a heading of
+ * its column or its row.
+ */
+const cells = tableNodes({
+  cellContent: 'paragraph+',
+  cellAttributes: {
+    // Where what the cell holds stands in it: nothing for the left, or as the column has it.
+    align: {
+      default: '',
+      getFromDOM: (dom) => stand(dom.style.textAlign),
+      setDOMAttr: (value, attrs) => {
+        if (value)
+          attrs.style = `${(attrs.style as string | undefined) ?? ''}text-align: ${value as string};`;
+      },
+    },
+  },
+});
+
+const tableNodesOfOurs: Record<string, NodeSpec> = {
+  ...cells,
+  table_caption: {
+    content: SAID,
+    isolating: true,
+    parseDOM: [{ tag: 'figure[data-table] > figcaption' }],
+    toDOM: () => ['figcaption', 0],
+  },
+  tabular: {
+    group: 'block',
+    content: 'table_caption table',
+    isolating: true,
+    defining: true,
+    attrs: {
+      id: { default: '' },
+      numbered: { default: true },
+      align: { default: '' },
+      flow: { default: '' },
+      // In hundredths of the width of the text; nought for as wide as it needs to be.
+      width: { default: 0 },
+    },
+    parseDOM: [
+      {
+        tag: 'figure[data-table]',
+        getAttrs: (node) => {
+          const el = node as HTMLElement;
+          return {
+            id: el.getAttribute('data-id') ?? '',
+            numbered: !el.hasAttribute('data-unnumbered'),
+            align: stand(el.getAttribute('data-align')),
+            flow: flow(el.getAttribute('data-flow')),
+            width: tableWidth(el.getAttribute('data-width')),
+          };
+        },
+      },
+    ],
+    toDOM: (node) => [
+      'figure',
+      {
+        'data-table': '',
+        'data-id': node.attrs.id || null,
+        'data-unnumbered': node.attrs.numbered ? null : '',
+        'data-align': node.attrs.align || null,
+        'data-flow': node.attrs.flow || null,
+        'data-width': tableWidth(node.attrs.width) ? String(tableWidth(node.attrs.width)) : null,
+        class: 'tabular',
+      },
+      0,
+    ],
+  },
+  /** Figures, tables and equations that stand beside each other. */
+  row: {
+    group: 'block',
+    content: '(figure | equation | tabular)+',
+    isolating: true,
+    defining: true,
+    parseDOM: [{ tag: 'div[data-row]' }],
+    toDOM: () => ['div', { 'data-row': '', class: 'row-of' }, 0],
+  },
+};
+
+export const bodySchema = new Schema({
+  nodes: { ...bodyNodes, ...figureNodes, ...tableNodesOfOurs },
+  marks,
+});
 
 export type NotePlace = '' | 'foot' | 'end';
 

@@ -163,6 +163,14 @@ function noteWords(block: import('./text').Block): number {
     case 'figure':
     case 'equation':
       return 0;
+    case 'row':
+      return block.items.reduce((n, b) => n + noteWords(b), 0);
+    case 'table':
+      return block.rows.reduce(
+        (n, row) =>
+          n + row.reduce((m, cell) => m + cell.content.reduce((k, b) => k + noteWords(b), 0), 0),
+        0,
+      );
     default:
       return block.items.reduce((n, item) => n + item.reduce((m, b) => m + noteWords(b), 0), 0);
   }

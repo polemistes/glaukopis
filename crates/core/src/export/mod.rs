@@ -263,6 +263,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                 Target::Markdown | Target::Html => Flavour::Plain,
             },
             f.figures.clone(),
+            f.tables.clone(),
             f.equations.clone(),
             placed.name,
             placed.present,
@@ -876,6 +877,16 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
                 Block::Paragraph { content } => inlines(content, with_notes, out),
                 Block::Figure { caption, .. } => inlines(caption, with_notes, out),
                 Block::Equation { .. } => {}
+                Block::Row { items } => blocks(items, with_notes, out),
+                Block::Table(table) => {
+                    inlines(&table.caption, with_notes, out);
+                    for row in &table.rows {
+                        for cell in row {
+                            out.push('\n');
+                            blocks(&cell.content, with_notes, out);
+                        }
+                    }
+                }
                 Block::Blockquote { content } => blocks(content, with_notes, out),
                 Block::BulletList { items } | Block::OrderedList { items, .. } => {
                     for item in items {
@@ -1204,6 +1215,8 @@ mod tests {
         let blocks = &mut r.document.sections[1].blocks;
         blocks.push(Block::Figure {
             id: "fig-shield".into(),
+            align: None,
+            wrap: None,
             file: drawing.hash,
             extension: "svg".into(),
             name: drawing.name,
@@ -1215,15 +1228,23 @@ mod tests {
         blocks.push(Block::Paragraph {
             content: vec![text("Where "), Inline::Math { tex: "x_i \\leq \\alpha".into() }, text(" holds:")],
         });
-        blocks.push(Block::Equation { id: "eq-sum".into(), tex: "a^2 + b^2 = c^2".into(), numbered: true });
-        blocks.push(Block::Equation { id: "".into(), tex: "e^{i\\pi} = -1".into(), numbered: false });
         blocks.push(Block::Equation {
+            align: None,
+            id: "eq-sum".into(),
+            tex: "a^2 + b^2 = c^2".into(),
+            numbered: true,
+        });
+        blocks.push(Block::Equation { align: None, id: "".into(), tex: "e^{i\\pi} = -1".into(), numbered: false });
+        blocks.push(Block::Equation {
+            align: None,
             id: "eq-series".into(),
             tex: "\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}".into(),
             numbered: true,
         });
         blocks.push(Block::Figure {
             id: "fig-vase".into(),
+            align: None,
+            wrap: None,
             file: picture.hash,
             extension: "png".into(),
             name: picture.name,
@@ -1234,6 +1255,8 @@ mod tests {
         });
         blocks.push(Block::Figure {
             id: "".into(),
+            align: None,
+            wrap: None,
             file: "c".repeat(64),
             extension: "jpg".into(),
             name: "lost.jpg".into(),
@@ -1435,6 +1458,8 @@ mod tests {
         assert!(kept.size > 200_000);
         r.document.sections[1].blocks.push(crate::document::Block::Figure {
             id: String::new(),
+            align: None,
+            wrap: None,
             file: kept.hash.clone(),
             extension: "png".into(),
             name: kept.name.clone(),
@@ -1518,6 +1543,8 @@ mod tests {
         let mut d = d;
         d.sections[1].blocks.push(crate::document::Block::Figure {
             id: String::new(),
+            align: None,
+            wrap: None,
             file: "a".repeat(64),
             extension: "png".into(),
             name: "vase.png".into(),
@@ -1527,6 +1554,7 @@ mod tests {
             numbered: true,
         });
         d.sections[1].blocks.push(crate::document::Block::Equation {
+            align: None,
             id: String::new(),
             tex: "a = b".into(),
             numbered: true,

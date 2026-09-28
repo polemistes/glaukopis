@@ -6,7 +6,14 @@
  */
 
 import * as Y from 'yjs';
-import { figureWidth, type CiteItem, type CiteMode } from '$lib/editor/schema';
+import {
+  figureWidth,
+  flow,
+  stand,
+  tableWidth,
+  type CiteItem,
+  type CiteMode,
+} from '$lib/editor/schema';
 
 export interface InlineText {
   kind: 'text';
@@ -52,10 +59,17 @@ export function refForm(value: unknown): RefForm {
 }
 
 /** A picture with what is said of it. The picture is a file of the project. */
+/** Where something stands, when it is not where the format has it: see `editor/schema.ts`. */
+export type Stand = 'left' | 'center' | 'right';
+
 export interface FigureBlock {
   kind: 'figure';
   /** By which words in the text point to it. */
   id: string;
+  /** Where it stands, when not where the format has figures. */
+  align?: Stand;
+  /** Whether the text flows around it, when not as the format says. */
+  wrap?: boolean;
   /** The SHA-256 of what the file holds. */
   file: string;
   extension: string;
@@ -72,8 +86,33 @@ export type Block =
   | { kind: 'blockquote'; content: Block[] }
   | { kind: 'bullet_list'; items: Block[][] }
   | { kind: 'ordered_list'; start: number; items: Block[][] }
-  | { kind: 'equation'; id: string; tex: string; numbered: boolean }
-  | FigureBlock;
+  | { kind: 'equation'; id: string; tex: string; numbered: boolean; align?: Stand }
+  | FigureBlock
+  | TableBlock
+  | { kind: 'row'; items: Block[] };
+
+/** A cell of a table. */
+export interface TableCell {
+  content: Block[];
+  colspan: number;
+  rowspan: number;
+  /** Whether it is a heading of its column or its row. */
+  header: boolean;
+  align?: Stand;
+}
+
+/** A table, with what is said of it. */
+export interface TableBlock {
+  kind: 'table';
+  id: string;
+  caption: Inline[];
+  rows: TableCell[][];
+  numbered: boolean;
+  align?: Stand;
+  wrap?: boolean;
+  /** In hundredths of the width of the text; nought for as wide as it needs to be. */
+  width: number;
+}
 
 /**
  * Something that stands in a text by itself and may have a number in the
@@ -81,7 +120,7 @@ export type Block =
  * they stand in, so that they can be numbered without reading the texts.
  */
 export interface SetOff {
-  kind: 'figure' | 'equation';
+  kind: 'figure' | 'equation' | 'table';
   id: string;
   numbered: boolean;
   /** What tells it from the others, in words: what is said of a figure, the formula of an equation. */
@@ -178,18 +217,68 @@ function blocksOf(parent: Y.XmlElement | Y.XmlFragment): Block[] {
         break;
       case 'equation': {
         const tex = text(child.getAttribute('tex') as unknown).trim();
+        const to = stand(child.getAttribute('align') as unknown);
         if (tex)
           out.push({
             kind: 'equation',
             id: text(child.getAttribute('id') as unknown),
             tex,
             numbered: !!child.getAttribute('numbered'),
+            ...(to ? { align: to } : {}),
           });
         break;
       }
-      case 'figure':
+      case 'tabular': {
+        const parts = child.toArray().filter((c): c is Y.XmlElement => c instanceof Y.XmlElement);
+        const said = parts.find((c) => c.nodeName === 'table_caption');
+        const table = parts.find((c) => c.nodeName === 'table');
+        const rows = (table?.toArray() ?? [])
+          .filter((r): r is Y.XmlElement => r instanceof Y.XmlElement)
+          .map((row) =>
+            row
+              .toArray()
+              .filter((c): c is Y.XmlElement => c instanceof Y.XmlElement)
+              .map((cell): TableCell => {
+                const to = stand(cell.getAttribute('align') as unknown);
+                return {
+                  content: blocksOf(cell),
+                  colspan: Math.max(1, Number(cell.getAttribute('colspan') as unknown) || 1),
+                  rowspan: Math.max(1, Number(cell.getAttribute('rowspan') as unknown) || 1),
+                  header: cell.nodeName === 'table_header',
+                  ...(to ? { align: to } : {}),
+                };
+              }),
+          )
+          .filter((row) => row.length);
+        if (!rows.length) break;
+        const to = stand(child.getAttribute('align') as unknown);
+        const around = flow(child.getAttribute('flow') as unknown);
+        out.push({
+          kind: 'table',
+          id: text(child.getAttribute('id') as unknown),
+          caption: said ? inlinesOf(said).filter((i) => i.kind !== 'footnote') : [],
+          rows,
+          numbered: (child.getAttribute('numbered') as unknown) !== false,
+          width: tableWidth(child.getAttribute('width') as unknown),
+          ...(to ? { align: to } : {}),
+          ...(around ? { wrap: around === 'around' } : {}),
+        });
+        break;
+      }
+      case 'row': {
+        const items = blocksOf(child);
+        // One alone stands as it would without the row.
+        if (items.length === 1) out.push(items[0]);
+        else if (items.length) out.push({ kind: 'row', items });
+        break;
+      }
+      case 'figure': {
+        const to = stand(child.getAttribute('align') as unknown);
+        const around = flow(child.getAttribute('flow') as unknown);
         out.push({
           kind: 'figure',
+          ...(to ? { align: to } : {}),
+          ...(around ? { wrap: around === 'around' } : {}),
           id: text(child.getAttribute('id') as unknown),
           file: text(child.getAttribute('file') as unknown),
           extension: text(child.getAttribute('extension') as unknown),
@@ -201,6 +290,7 @@ function blocksOf(parent: Y.XmlElement | Y.XmlFragment): Block[] {
           numbered: (child.getAttribute('numbered') as unknown) !== false,
         });
         break;
+      }
       default:
         // Something a later version added: keep its text.
         out.push({ kind: 'paragraph', content: inlinesOf(child) });
@@ -252,7 +342,12 @@ export function blocksText(blocks: Block[], withNotes = false): string {
     else if (b.kind === 'blockquote') parts.push(blocksText(b.content, withNotes));
     else if (b.kind === 'figure') parts.push(inlineText(b.caption, withNotes));
     else if (b.kind === 'equation') parts.push(b.tex);
-    else for (const item of b.items) parts.push(blocksText(item, withNotes));
+    else if (b.kind === 'row') parts.push(blocksText(b.items, withNotes));
+    else if (b.kind === 'table') {
+      parts.push(inlineText(b.caption, withNotes));
+      for (const row of b.rows)
+        parts.push(row.map((cell) => blocksText(cell.content, withNotes)).join('\t'));
+    } else for (const item of b.items) parts.push(blocksText(item, withNotes));
   }
   return parts.join('\n');
 }
@@ -336,7 +431,18 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
       } else if (b.kind === 'equation') {
         set++;
         setOff.push({ kind: 'equation', id: b.id, numbered: b.numbered, words: b.tex });
-      } else for (const item of b.items) visit(item);
+      } else if (b.kind === 'table') {
+        set++;
+        setOff.push({
+          kind: 'table',
+          id: b.id,
+          numbered: b.numbered,
+          words: inlineText(b.caption).trim(),
+        });
+        visitInlines(b.caption);
+        for (const row of b.rows) for (const cell of row) visit(cell.content);
+      } else if (b.kind === 'row') visit(b.items);
+      else for (const item of b.items) visit(item);
       text += '\n';
     }
   };

@@ -416,6 +416,28 @@ pub struct Limits {
     pub note: String,
 }
 
+/// Where something that stands by itself stands: a figure, a table, an equation.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Stand {
+    Left,
+    #[default]
+    Center,
+    Right,
+}
+
+/// The lines of a table.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Rules {
+    /// Over the table, under it, and under its headings: as books have them.
+    #[default]
+    Horizontal,
+    /// Around every cell.
+    Grid,
+    None,
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum CaptionPosition {
@@ -462,6 +484,123 @@ pub struct Figures {
     /// What the line in the text says, with `{}` for the label and number:
     /// "[{} about here]".
     pub placeholder: String,
+    /// Where figures stand, unless something else is said of one.
+    pub align: Stand,
+    /// Whether the text flows around figures that stand to the left or the
+    /// right, unless something else is said of one.
+    pub wrap: bool,
+}
+
+/// How tables are set. What is said of a table is set as what is said of a
+/// figure is, by settings of the same names.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Tables {
+    /// What a table is called: "Table", "Tab.", "Tabelle".
+    pub label: String,
+    pub reference: String,
+    pub separator: String,
+    pub label_bold: bool,
+    pub label_italic: bool,
+    pub caption_position: CaptionPosition,
+    pub caption_align: Align,
+    pub caption_size: f32,
+    pub caption_italic: bool,
+    pub caption_line_spacing: f32,
+    pub placement: FigurePlacement,
+    pub end_title: String,
+    pub placeholder: String,
+    pub align: Stand,
+    pub wrap: bool,
+    /// The size of what stands in the table, in points; 0 for the size of the text.
+    pub size: f32,
+    /// 0 for the spacing of the text.
+    pub line_spacing: f32,
+    pub rules: Rules,
+    /// Whether the headings of columns and rows are set in bold.
+    pub header_bold: bool,
+}
+
+impl Default for Tables {
+    fn default() -> Self {
+        Tables {
+            label: "Table".into(),
+            reference: String::new(),
+            separator: ". ".into(),
+            label_bold: false,
+            label_italic: false,
+            // What is said of a table stands over it, by old custom.
+            caption_position: CaptionPosition::Above,
+            caption_align: Align::Center,
+            caption_size: 0.0,
+            caption_italic: false,
+            caption_line_spacing: 1.0,
+            placement: FigurePlacement::InText,
+            end_title: "Tables".into(),
+            placeholder: "[{} about here]".into(),
+            align: Stand::Center,
+            wrap: false,
+            size: 0.0,
+            line_spacing: 1.0,
+            rules: Rules::Horizontal,
+            header_bold: false,
+        }
+    }
+}
+
+/// How what is said of a figure or a table is set, and where they stand:
+/// what the settings for the two have in common.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Captioned {
+    pub label: String,
+    pub reference: String,
+    pub separator: String,
+    pub label_bold: bool,
+    pub label_italic: bool,
+    pub caption_position: CaptionPosition,
+    pub caption_align: Align,
+    pub caption_size: f32,
+    pub caption_italic: bool,
+    pub caption_line_spacing: f32,
+    pub placement: FigurePlacement,
+    pub end_title: String,
+    pub placeholder: String,
+    pub align: Stand,
+    pub wrap: bool,
+}
+
+macro_rules! captioned {
+    ($from:expr) => {
+        Captioned {
+            label: $from.label.clone(),
+            reference: $from.reference.clone(),
+            separator: $from.separator.clone(),
+            label_bold: $from.label_bold,
+            label_italic: $from.label_italic,
+            caption_position: $from.caption_position,
+            caption_align: $from.caption_align,
+            caption_size: $from.caption_size,
+            caption_italic: $from.caption_italic,
+            caption_line_spacing: $from.caption_line_spacing,
+            placement: $from.placement,
+            end_title: $from.end_title.clone(),
+            placeholder: $from.placeholder.clone(),
+            align: $from.align,
+            wrap: $from.wrap,
+        }
+    };
+}
+
+impl Figures {
+    pub fn captioned(&self) -> Captioned {
+        captioned!(self)
+    }
+}
+
+impl Tables {
+    pub fn captioned(&self) -> Captioned {
+        captioned!(self)
+    }
 }
 
 impl Default for Figures {
@@ -480,6 +619,8 @@ impl Default for Figures {
             placement: FigurePlacement::InText,
             end_title: "Figures".into(),
             placeholder: "[{} about here]".into(),
+            align: Stand::Center,
+            wrap: false,
         }
     }
 }
@@ -491,11 +632,13 @@ pub struct Equations {
     /// What stands around the number: "(1)" is "(" and ")".
     pub before_number: String,
     pub after_number: String,
+    /// Where equations stand, unless something else is said of one.
+    pub align: Stand,
 }
 
 impl Default for Equations {
     fn default() -> Self {
-        Equations { before_number: "(".into(), after_number: ")".into() }
+        Equations { before_number: "(".into(), after_number: ")".into(), align: Stand::Center }
     }
 }
 
@@ -520,6 +663,7 @@ pub struct DocumentFormat {
     pub notes: Notes,
     pub bibliography: BibliographyFormat,
     pub figures: Figures,
+    pub tables: Tables,
     pub equations: Equations,
     pub page_numbers: PageNumbers,
     pub running_head: RunningHead,
@@ -559,6 +703,13 @@ impl DocumentFormat {
         clamp(&mut self.bibliography.line_spacing, 0.0, 4.0, 0.0);
         clamp(&mut self.figures.caption_size, 0.0, 36.0, 0.0);
         clamp(&mut self.figures.caption_line_spacing, 0.0, 4.0, 1.0);
+        clamp(&mut self.tables.caption_size, 0.0, 36.0, 0.0);
+        clamp(&mut self.tables.caption_line_spacing, 0.0, 4.0, 1.0);
+        clamp(&mut self.tables.size, 0.0, 36.0, 0.0);
+        clamp(&mut self.tables.line_spacing, 0.0, 4.0, 1.0);
+        if !self.tables.placeholder.contains("{}") {
+            self.tables.placeholder = Tables::default().placeholder;
+        }
         if !self.figures.placeholder.contains("{}") {
             self.figures.placeholder = Figures::default().placeholder;
         }

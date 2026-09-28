@@ -55,10 +55,10 @@ describe('the numbers of a document', () => {
     expect(['q1', 'q2', 'q3'].map(called)).toEqual(['1', null, '2']);
     // One in which nothing is written is nothing.
     expect(n.byId.has('q4')).toBe(false);
-    expect(n.within.get(root)).toEqual({ figure: ['1'], equation: [] });
-    expect(n.within.get(a)).toEqual({ figure: ['2'], equation: ['1', null] });
-    expect(n.within.get(a1)).toEqual({ figure: [null], equation: ['2'] });
-    expect(n.within.get(b)).toEqual({ figure: ['3'], equation: [] });
+    expect(n.within.get(root)).toEqual({ figure: ['1'], table: [], equation: [] });
+    expect(n.within.get(a)).toEqual({ figure: ['2'], table: [], equation: ['1', null] });
+    expect(n.within.get(a1)).toEqual({ figure: [null], table: [], equation: ['2'] });
+    expect(n.within.get(b)).toEqual({ figure: ['3'], table: [], equation: [] });
     expect(n.byId.get('f1')).toMatchObject({ kind: 'figure', words: 'A vase', element: a });
     expect(n.byId.get('f1')?.file).toBe(HASH('b'));
     expect(n.byId.get('q1')).toMatchObject({ kind: 'equation', words: 'a = b' });
@@ -117,7 +117,7 @@ describe('the numbers of a document', () => {
     write(p, b, fig('f1', 'z', 'A copy'), fig('f3', 'd', 'The shield'));
     const n = count(p, map, plain);
     expect(n.byId.get('f1')).toMatchObject({ number: '2', words: 'A vase' });
-    expect(n.within.get(b)).toEqual({ figure: ['3', '4'], equation: [] });
+    expect(n.within.get(b)).toEqual({ figure: ['3', '4'], table: [], equation: [] });
   });
 });
 

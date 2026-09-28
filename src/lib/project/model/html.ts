@@ -1,7 +1,7 @@
 /** The text of an element as HTML, for showing it where it is not being written. */
 
 import { citationLabel, isMissing } from '$lib/editor/references.svelte';
-import { figureWidth } from '$lib/editor/schema';
+import { figureWidth, tableWidth } from '$lib/editor/schema';
 import { isPictureName } from '$lib/figures/pictures.svelte';
 import type { Block, Inline } from './text';
 
@@ -67,6 +67,14 @@ function plain(list: Inline[]): string {
     .join('');
 }
 
+/** Where it stands and whether the text flows around it, where that is said of it. */
+function placing(b: { align?: string; wrap?: boolean }): string {
+  return (
+    (b.align ? ` data-align="${b.align}"` : '') +
+    (b.wrap === undefined ? '' : ` data-flow="${b.wrap ? 'around' : 'apart'}"`)
+  );
+}
+
 function blocks(list: Block[], notes: { n: number }): string {
   let out = '';
   for (const b of list) {
@@ -85,14 +93,40 @@ function blocks(list: Block[], notes: { n: number }): string {
           .map((i) => `<li>${blocks(i, notes)}</li>`)
           .join('')}</ol>`;
         break;
+      case 'row':
+        out += `<div class="row-of" data-row>${blocks(b.items, notes)}</div>`;
+        break;
+      case 'table': {
+        const said = inlines(b.caption, notes);
+        const width = tableWidth(b.width);
+        out +=
+          `<figure class="tabular${said ? '' : ' uncaptioned'}" data-table${placing(b)}${b.id ? ` data-id="${escape(b.id)}"` : ''}${b.numbered ? '' : ' data-unnumbered'}${width ? ` data-width="${width}" style="--table-width: ${width}%"` : ''}>` +
+          `<figcaption>${said}</figcaption><table><tbody>` +
+          b.rows
+            .map(
+              (row) =>
+                `<tr>${row
+                  .map((cell) => {
+                    const tag = cell.header ? 'th' : 'td';
+                    return (
+                      `<${tag}${cell.colspan > 1 ? ` colspan="${cell.colspan}"` : ''}${cell.rowspan > 1 ? ` rowspan="${cell.rowspan}"` : ''}${cell.align ? ` style="text-align: ${cell.align}"` : ''}>` +
+                      `${blocks(cell.content, notes)}</${tag}>`
+                    );
+                  })
+                  .join('')}</tr>`,
+            )
+            .join('') +
+          `</tbody></table></figure>`;
+        break;
+      }
       case 'equation':
-        out += `<div class="equation"${b.id ? ` data-id="${escape(b.id)}"` : ''}${b.numbered ? ' data-numbered' : ''}><span class="equation-body math" data-math="${escape(b.tex)}" data-display>${escape(b.tex)}</span></div>`;
+        out += `<div class="equation"${placing(b)}${b.id ? ` data-id="${escape(b.id)}"` : ''}${b.numbered ? ' data-numbered' : ''}><span class="equation-body math" data-math="${escape(b.tex)}" data-display>${escape(b.tex)}</span></div>`;
         break;
       case 'figure': {
         const said = inlines(b.caption, notes);
         const named = isPictureName(b.file, b.extension);
         out +=
-          `<figure class="figure${said ? '' : ' uncaptioned'}"${b.id ? ` data-id="${escape(b.id)}"` : ''}${b.numbered ? '' : ' data-unnumbered'}>` +
+          `<figure class="figure${said ? '' : ' uncaptioned'}"${placing(b)}${b.id ? ` data-id="${escape(b.id)}"` : ''}${b.numbered ? '' : ' data-unnumbered'}>` +
           `<div class="picture" style="width: ${figureWidth(b.width)}%">` +
           (named
             ? `<img data-picture="${b.file}.${b.extension}" alt="${escape(b.alt)}" draggable="false">`
@@ -123,7 +157,12 @@ export function excerpt(list: Block[], characters = 600): { blocks: Block[]; cut
             plain(b.caption).length + 240
           : b.kind === 'equation'
             ? 80
-            : b.items.reduce((n, item) => n + item.reduce((m, c) => m + size(c), 0), 0);
+            : b.kind === 'row'
+              ? b.items.reduce((n, c) => n + size(c), 0)
+              : b.kind === 'table'
+                ? // A row takes the room of a line.
+                  plain(b.caption).length + b.rows.length * 70
+                : b.items.reduce((n, item) => n + item.reduce((m, c) => m + size(c), 0), 0);
   for (const b of list) {
     if (count >= characters) return { blocks: out, cut: true };
     const s = size(b);

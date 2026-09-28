@@ -9,8 +9,8 @@ use std::sync::OnceLock;
 
 use serde_json::{Value, json};
 
-use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, RefForm, Section};
-use crate::formats::{Align, CaptionPosition, Equations, FigurePlacement, Figures};
+use super::{Block, Cell as TableCell, CiteItem, CiteMode, Document, Inline, NotePlace, RefForm, Section, Table};
+use crate::formats::{Align, CaptionPosition, Equations, FigurePlacement, Figures, Stand, Tables};
 
 const TERMS_JSON: &str = include_str!("../../../../resources/csl/locator-terms.json");
 
@@ -134,6 +134,7 @@ pub enum Flavour {
 pub struct Extras {
     pub flavour: Flavour,
     pub figures: Figures,
+    pub tables: Tables,
     pub equations: Equations,
     /// The directory the files of the figures are in, as the document names it.
     pub files: String,
@@ -160,11 +161,12 @@ impl Extras {
     pub fn new(
         flavour: Flavour,
         figures: Figures,
+        tables: Tables,
         equations: Equations,
         files: String,
         present: HashSet<String>,
     ) -> Self {
-        Extras { flavour, figures, equations, files, present, ..Default::default() }
+        Extras { flavour, figures, tables, equations, files, present, ..Default::default() }
     }
 
     /// The figures that were kept for the end of the document.
@@ -196,6 +198,7 @@ impl Extras {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PointedKind {
     Figure,
+    Table,
     Equation,
     Part,
 }
@@ -418,6 +421,60 @@ impl Converter<'_> {
         }
     }
 
+    /// A table as Pandoc has tables: its rows and cells, without what is
+    /// said of it.
+    fn table(&self, table: &Table) -> Value {
+        let columns = table.columns().max(1);
+        let cell = |c: &TableCell| -> Value {
+            let mut inner = Vec::new();
+            self.blocks(&c.content, &mut inner);
+            // One paragraph alone is a line, and takes no room around it.
+            if inner.len() == 1 && inner[0]["t"] == "Para" {
+                inner[0]["t"] = json!("Plain");
+            }
+            let align = match c.align {
+                Some(Stand::Left) => "AlignLeft",
+                Some(Stand::Center) => "AlignCenter",
+                Some(Stand::Right) => "AlignRight",
+                None => "AlignDefault",
+            };
+            json!([attr(), {"t": align}, c.rowspan.max(1), c.colspan.max(1), inner])
+        };
+        let row = |cells: &Vec<TableCell>| -> Value { json!([attr(), cells.iter().map(cell).collect::<Vec<_>>()]) };
+        let head = table.heading_rows();
+        let body = &table.rows[head..];
+        // The columns at the left that are headings of their rows.
+        let mut stub = 0usize;
+        while stub < columns
+            && !body.is_empty()
+            && body.iter().all(|r| {
+                let mut at = 0usize;
+                r.iter().any(|c| {
+                    let here = at == stub && c.header;
+                    at += c.colspan.max(1) as usize;
+                    here
+                })
+            })
+        {
+            stub += 1;
+        }
+        let widths = table.widths();
+        let specs: Vec<Value> = (0..columns)
+            .map(|i| match widths.get(i) {
+                Some(w) => json!([{"t": "AlignDefault"}, {"t": "ColWidth", "c": w}]),
+                None => json!([{"t": "AlignDefault"}, {"t": "ColWidthDefault"}]),
+            })
+            .collect();
+        json!({"t": "Table", "c": [
+            attr(),
+            [null, []],
+            specs,
+            [attr(), table.rows[..head].iter().map(row).collect::<Vec<_>>()],
+            [[attr(), stub.min(columns.saturating_sub(1)), [], body.iter().map(row).collect::<Vec<_>>()]],
+            [attr(), []],
+        ]})
+    }
+
     /// Mathematics on a line of its own.
     fn equation(&self, id: &str, tex: &str, numbered: bool, out: &mut Vec<Value>) {
         let tex = tex.trim();
@@ -489,6 +546,7 @@ impl Converter<'_> {
         }
         struct Counted<'a> {
             figure: u32,
+            table: u32,
             equation: u32,
             found: HashMap<String, Pointed>,
             to: &'a mut HashSet<String>,
@@ -503,7 +561,29 @@ impl Converter<'_> {
                             blocks(item, c);
                         }
                     }
-                    Block::Equation { id, tex, numbered } => {
+                    Block::Row { items } => blocks(items, c),
+                    Block::Table(table) => {
+                        inlines(&table.caption, c.to);
+                        let number = table.numbered.then(|| {
+                            c.table += 1;
+                            c.table.to_string()
+                        });
+                        if !table.id.is_empty() {
+                            c.found.entry(table.id.clone()).or_insert(Pointed {
+                                kind: PointedKind::Table,
+                                number,
+                                name: Vec::new(),
+                                anchor: anchor_of(&table.id),
+                                pointed_to: false,
+                            });
+                        }
+                        for row in &table.rows {
+                            for cell in row {
+                                blocks(&cell.content, c);
+                            }
+                        }
+                    }
+                    Block::Equation { id, tex, numbered, .. } => {
                         if tex.trim().is_empty() {
                             continue;
                         }
@@ -542,7 +622,7 @@ impl Converter<'_> {
         }
 
         let mut to = HashSet::new();
-        let mut counted = Counted { figure: 0, equation: 0, found: HashMap::new(), to: &mut to };
+        let mut counted = Counted { figure: 0, table: 0, equation: 0, found: HashMap::new(), to: &mut to };
         // The numbers of the parts, as those who set the pages count them:
         // a heading counts on at its level, and begins the levels under it anew.
         let mut levels = [0u32; 6];
@@ -585,9 +665,12 @@ impl Converter<'_> {
             return vec![json!({"t": "Strong", "c": words})];
         };
         match pointed.kind {
-            PointedKind::Figure => {
-                let called =
-                    if x.figures.reference.trim().is_empty() { &x.figures.label } else { &x.figures.reference };
+            PointedKind::Figure | PointedKind::Table => {
+                let (label, reference) = match pointed.kind {
+                    PointedKind::Figure => (&x.figures.label, &x.figures.reference),
+                    _ => (&x.tables.label, &x.tables.reference),
+                };
+                let called = if reference.trim().is_empty() { label } else { reference };
                 let text = match (&pointed.number, form) {
                     (Some(n), RefForm::Number) => n.clone(),
                     (Some(n), _) if called.trim().is_empty() => n.clone(),
@@ -754,7 +837,10 @@ impl Converter<'_> {
     pub fn blocks(&self, list: &[Block], out: &mut Vec<Value>) {
         let mut set_off = false;
         for block in list {
-            let after = std::mem::replace(&mut set_off, matches!(block, Block::Equation { .. } | Block::Figure { .. }));
+            let after = std::mem::replace(
+                &mut set_off,
+                matches!(block, Block::Equation { .. } | Block::Figure { .. } | Block::Table(_) | Block::Row { .. }),
+            );
             match block {
                 Block::Paragraph { content } => {
                     let inner = self.inlines(content);
@@ -784,10 +870,12 @@ impl Converter<'_> {
                         }));
                     }
                 }
-                Block::Equation { id, tex, numbered } => self.equation(id, tex, *numbered, out),
-                Block::Figure { id, file, extension, name, caption, alt, width, numbered } => {
+                Block::Equation { id, tex, numbered, .. } => self.equation(id, tex, *numbered, out),
+                Block::Figure { id, file, extension, name, caption, alt, width, numbered, .. } => {
                     self.figure(id, file, extension, name, caption, alt, *width, *numbered, out);
                 }
+                Block::Table(table) => out.push(self.table(table)),
+                Block::Row { items } => self.blocks(items, out),
             }
         }
     }
