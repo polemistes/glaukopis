@@ -62,6 +62,8 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Untitled
+# The name of a copy of a map.
+project-map-copy = { $name }, copy
 project-maps = Maps
 project-map-name = Name of the map
 project-new-map = New map

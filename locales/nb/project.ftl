@@ -59,6 +59,7 @@ project-cited-in-element = { $count ->
 ## Fanene til kartene
 
 project-untitled = Uten navn
+project-map-copy = { $name }, kopi
 project-maps = Kart
 project-map-name = Navnet på kartet
 project-new-map = Nytt kart
