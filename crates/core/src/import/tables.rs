@@ -17,6 +17,7 @@ use calamine::{Data, Range, Reader, SheetType, SheetVisible, open_workbook_auto}
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, IoContext, Result};
+use crate::tr;
 
 /// The most rows a table may have.
 pub const MAX_ROWS: usize = 2000;
@@ -60,32 +61,29 @@ pub fn read_unsure(path: &Path) -> Result<Vec<Sheet>> {
 
 fn read_as(path: &Path, sure: bool) -> Result<Vec<Sheet>> {
     let ending = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
-    let size = fs::metadata(path).context(|| format!("reading {}", path.display()))?.len();
+    let size = fs::metadata(path).context(|| tr!("io-reading", path = path))?.len();
     if size > MAX_BYTES {
-        return Err(Error::invalid(format!(
-            "The file holds {} MB. A table is read from a file of {} MB at most.",
-            size / (1024 * 1024),
-            MAX_BYTES / (1024 * 1024)
+        return Err(Error::invalid(tr!(
+            "core-import-table-too-large",
+            size = size / (1024 * 1024),
+            most = MAX_BYTES / (1024 * 1024)
         )));
     }
     let sheets = if SHEET_ENDINGS.contains(&ending.as_str()) {
         read_sheets(path)?
     } else if TEXT_ENDINGS.contains(&ending.as_str()) {
-        let bytes = fs::read(path).context(|| format!("reading {}", path.display()))?;
+        let bytes = fs::read(path).context(|| tr!("io-reading", path = path))?;
         let name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
         let tabs = ending == "tsv" || ending == "tab" || (ending == "txt" && !sure);
         let sign = if tabs { Some('\t') } else { None };
         vec![from_text(&name, &bytes, sign)]
     } else {
-        return Err(Error::invalid(
-            "Tables are read from CSV and other text with the values parted by commas, semicolons or tabs, \
-             and from the sheets of LibreOffice (.ods) and Excel (.xlsx, .xls).",
-        ));
+        return Err(Error::invalid(tr!("core-import-table-kinds")));
     };
 
     let sheets: Vec<Sheet> = sheets.into_iter().filter(|s| !s.rows.is_empty() || s.problem.is_some()).collect();
     if sheets.is_empty() {
-        return Err(Error::invalid("There is nothing in the file."));
+        return Err(Error::invalid(tr!("core-import-table-empty")));
     }
     // Where no sheet can become a table, the file is refused with what the first of them lacks.
     if sheets.iter().all(|s| s.problem.is_some()) {
@@ -97,15 +95,9 @@ fn read_as(path: &Path, sure: bool) -> Result<Vec<Sheet>> {
 /// Says why a table of this size cannot stand in a text, if it cannot.
 fn too_large(rows: usize, columns: usize) -> Option<String> {
     if rows > MAX_ROWS {
-        Some(format!(
-            "The table has {} rows. A table in a text can have {MAX_ROWS} at most: it is not a spreadsheet.",
-            counted(rows)
-        ))
+        Some(tr!("core-import-table-rows", rows = counted(rows), most = MAX_ROWS))
     } else if columns > MAX_COLUMNS {
-        Some(format!(
-            "The table has {} columns. A table in a text can have {MAX_COLUMNS} at most: it is not a spreadsheet.",
-            counted(columns)
-        ))
+        Some(tr!("core-import-table-columns", columns = counted(columns), most = MAX_COLUMNS))
     } else {
         None
     }
@@ -114,7 +106,7 @@ fn too_large(rows: usize, columns: usize) -> Option<String> {
 /// More than this many, where the counting was given up.
 fn counted(n: usize) -> String {
     if n > MAX_ROWS.max(MAX_COLUMNS) * 5 {
-        format!("more than {}", MAX_ROWS.max(MAX_COLUMNS) * 5)
+        tr!("core-import-table-more-than", count = MAX_ROWS.max(MAX_COLUMNS) * 5)
     } else {
         n.to_string()
     }

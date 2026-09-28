@@ -83,7 +83,10 @@ pub fn sharing_join(
             p.sharing.as_ref().is_some_and(|s| s.owner && s.server == remote.server()) && code_is_of(&state, p, &read)
         })
     {
-        return Err(Error::invalid(tr!("core-sharing-own-code", name = &here.name)).into());
+        // A kind of its own, by which the interface shows it under the code.
+        return Err(
+            Error::Refused { kind: "own-code", message: tr!("core-sharing-own-code", name = &here.name) }.into()
+        );
     }
     let joined = remote.join(&code, &name)?;
     let sharing = Sharing {
