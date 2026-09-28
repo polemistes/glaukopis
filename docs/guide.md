@@ -406,6 +406,68 @@ consumed by the writing:
 The line between the two sides can be dragged, as can those beside the
 preview and the references. A double click on a line puts it back.
 
+### A map from a document you have written
+
+A text that was written elsewhere can be brought in, and becomes a map of its
+own. The file it came from is read and not changed.
+
+- In a project, the button beside **+** over the map, **A map from a
+  document…**, or drop the file on the window.
+- Among the projects, **A project from a document…**, or drop the file
+  there. The project is named after the document.
+
+The title becomes the centre of the map. Every heading becomes an element
+under the heading above it, with the text under the heading as its text; what
+stands before the first heading becomes the text of the centre. Author, date,
+abstract, keywords and language go where the document of the map has them.
+
+Before anything is made you are shown what was found: the title, which you
+can change, how many parts, words, notes, figures, tables and citations, and
+under **To know** what could not be brought in as it was. **Cancel** leaves
+everything as it was; **Undo** takes the map away again as one step.
+
+| Kind of file | Endings |
+| --- | --- |
+| Word | `.docx` |
+| OpenDocument | `.odt` |
+| Markdown | `.md`, `.markdown` |
+| HTML | `.html`, `.htm` |
+| LaTeX | `.tex` |
+| Rich Text | `.rtf` |
+| EPUB | `.epub` |
+| Org, reStructuredText, Typst | `.org`, `.rst`, `.typ` |
+| Plain text | `.txt` |
+
+AsciiDoc, DocBook, JATS, FictionBook, OPML, MediaWiki, Textile, Djot, Muse
+and Jupyter notebooks can be chosen in the dialog for files as well. All but
+plain text are read by Pandoc.
+
+What becomes of what is in the document:
+
+- **Notes** become notes. A note on a heading stands at the beginning of the
+  text under it.
+- **Pictures** are taken into the store of pictures, and stand in the text as
+  figures, with what is said of them. A picture that is to be fetched from
+  the network is left out: nothing is fetched.
+- **Tables** become tables, with their headings, cells that span, and what
+  is said of them.
+- **Mathematics** is kept as it is written, in the line or as equations.
+- **Citations** written by key (Markdown `[@homer]`, LaTeX `\cite{homer}`)
+  become citations when the key is in your library, with page and words
+  before and after. Those that are not, and citations in Word and
+  OpenDocument files, stay the text they were written as.
+- **A list of works cited** is brought in as text. The map makes its own
+  from what is cited in it, so the part can be left out of the document or
+  deleted.
+- **Code, lists of terms, lines across the page** and what is written for
+  one kind of document only have no place in a map: what has text is kept as
+  paragraphs, the rest is left out, and you are told.
+
+A Word file with changes that are tracked is brought in as it stands when
+all of them are accepted; comments in the margin are left out. You are told
+of both. OpenDocument files lose their
+mathematics in the reading, which is a limit of Pandoc.
+
 ## What goes into the document
 
 Everything under the centre of a map, in the order of the map. Three things

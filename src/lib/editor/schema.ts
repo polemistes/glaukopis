@@ -72,12 +72,13 @@ const marks: Record<string, MarkSpec> = {
     toDOM: () => ['span', { class: 'smallcaps' }, 0],
   },
   sup: {
-    excludes: 'sub',
+    // Itself as well: a mark that does not exclude itself is kept under a changed name by y-prosemirror.
+    excludes: 'sup sub',
     parseDOM: [{ tag: 'sup' }, { style: 'vertical-align=super' }],
     toDOM: () => ['sup', 0],
   },
   sub: {
-    excludes: 'sup',
+    excludes: 'sup sub',
     parseDOM: [{ tag: 'sub' }, { style: 'vertical-align=sub' }],
     toDOM: () => ['sub', 0],
   },

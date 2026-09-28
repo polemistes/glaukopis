@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { blocksToDoc, nameToDoc, writeBody, writeName } from './blocks';
-import { readBody, readTitle, type Block, type Inline } from './text';
+import { bodyFacts, readBody, readTitle, type Block, type Inline } from './text';
 
 const HASH = 'a'.repeat(64);
 
@@ -142,27 +142,9 @@ const everything: Block[] = [
   p(t('After it all.')),
 ];
 
-/**
- * The text as it is read, with the marks by their names. Raised and lowered
- * text is kept by y-prosemirror under names such as "sup--2fdnO0KL", since
- * those marks do not exclude themselves, and `readBody` gives the names as
- * they are kept.
- */
+/** The text as it is read. */
 function read(fragment: Y.XmlFragment): Block[] {
-  const named = (value: unknown): unknown => {
-    if (Array.isArray(value)) return value.map(named);
-    if (!value || typeof value !== 'object') return value;
-    const out: Record<string, unknown> = {};
-    for (const [key, inner] of Object.entries(value))
-      out[key] =
-        key === 'marks'
-          ? Object.fromEntries(
-              Object.entries(inner as object).map(([name, v]) => [name.split('--')[0], v]),
-            )
-          : named(inner);
-    return out;
-  };
-  return named(readBody(fragment)) as Block[];
+  return readBody(fragment);
 }
 
 function written(blocks: Block[]): Y.XmlFragment {
@@ -194,6 +176,28 @@ describe('text written without an editor', () => {
     );
     // Raised and lowered at once is not a thing: the last said holds.
     expect(back).toEqual([p(t('so', { em: {}, sub: {} }))]);
+  });
+
+  it('reads raised and lowered text by the names they were once kept under', () => {
+    const doc = new Y.Doc();
+    const fragment = doc.getXmlFragment('body');
+    const paragraph = new Y.XmlElement('paragraph');
+    const text = new Y.XmlText();
+    fragment.insert(0, [paragraph]);
+    paragraph.insert(0, [text]);
+    text.insert(0, 'H', {});
+    text.insert(1, '2', { 'sub--2fdnO0KL': {} });
+    text.insert(2, 'O', {});
+    text.insert(3, '2', { sup: {} });
+    expect(readBody(fragment)).toEqual([
+      p(t('H'), t('2', { sub: {} }), t('O'), t('2', { sup: {} })),
+    ]);
+  });
+
+  it('counts what is said of a table apart from what stands in it', () => {
+    const table = everything.find((b) => b.kind === 'table')!;
+    // Forms of the word; Form, Where, mênis, 12, lines, 3, Iliad.
+    expect(bodyFacts([table]).words).toBe(11);
   });
 
   it('gives what stands by itself an id where it has none', () => {

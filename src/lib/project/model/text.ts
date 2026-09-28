@@ -133,6 +133,15 @@ export interface SetOff {
 
 const text = (value: unknown): string => (typeof value === 'string' ? value : '');
 
+/**
+ * The name of a mark as the schema has it. y-prosemirror keeps a mark that may
+ * overlap itself under its name and eight signs after `--`; raised and lowered
+ * text were once kept so.
+ */
+function plainMark(name: string): string {
+  return /^(.*)--[a-zA-Z0-9+/=]{8}$/.exec(name)?.[1] ?? name;
+}
+
 function inlinesOf(parent: Y.XmlElement | Y.XmlFragment): Inline[] {
   const out: Inline[] = [];
   for (const child of parent.toArray()) {
@@ -145,7 +154,8 @@ function inlinesOf(parent: Y.XmlElement | Y.XmlFragment): Inline[] {
         const marks: InlineText['marks'] = {};
         for (const [name, value] of Object.entries(op.attributes ?? {})) {
           if (value == null || value === false) continue;
-          marks[name] = typeof value === 'object' ? (value as Record<string, unknown>) : true;
+          marks[plainMark(name)] =
+            typeof value === 'object' ? (value as Record<string, unknown>) : true;
         }
         out.push({ kind: 'text', text: op.insert, marks });
       }
@@ -440,6 +450,7 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
           words: inlineText(b.caption).trim(),
         });
         visitInlines(b.caption);
+        text += '\n';
         for (const row of b.rows) for (const cell of row) visit(cell.content);
       } else if (b.kind === 'row') visit(b.items);
       else for (const item of b.items) visit(item);

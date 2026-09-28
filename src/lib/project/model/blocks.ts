@@ -20,8 +20,8 @@ type Line = 'text' | 'note' | 'said';
 function marksOf(schema: Schema, marks: InlineText['marks']): readonly Mark[] {
   let set: readonly Mark[] = Mark.none;
   for (const [named, value] of Object.entries(marks ?? {})) {
-    // Marks that do not exclude themselves are kept by y-prosemirror under
-    // their name and something more: "sup--2fdn…".
+    // Raised and lowered text was once kept by y-prosemirror under its name
+    // and something more: "sup--2fdn…".
     const name = named.split('--')[0];
     const type = schema.marks[name];
     if (!type || value == null || (value as unknown) === false) continue;
