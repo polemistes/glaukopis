@@ -6,7 +6,7 @@
    */
   import type { Snippet } from 'svelte';
   import Pencil from '@lucide/svelte/icons/pencil';
-  import X from '@lucide/svelte/icons/x';
+  import Trash2 from '@lucide/svelte/icons/trash-2';
   import { truncate } from '$lib/library/format';
   import NoteButton from '$lib/library/NoteButton.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
@@ -75,9 +75,6 @@
         </IconButton>
       {/if}
     {/if}
-    <IconButton label="Remove from the citation" size="sm" onclick={onremove}>
-      <X size={13} />
-    </IconButton>
   </div>
 
   {#if more}{@render more()}{/if}
@@ -108,12 +105,18 @@
     </label>
   </div>
 
-  {#if mode === 'normal'}
-    <label class="check">
-      <input type="checkbox" bind:checked={said.suppressAuthor} {onchange} />
-      The author is named in my sentence: give the year only
-    </label>
-  {/if}
+  <!-- What takes the work out stands last, and is no cross in the corner, which reads as closing. -->
+  <div class="last">
+    {#if mode === 'normal'}
+      <label class="check">
+        <input type="checkbox" bind:checked={said.suppressAuthor} {onchange} />
+        The author is named in my sentence: give the year only
+      </label>
+    {/if}
+    <button type="button" class="out" data-remove onclick={onremove}>
+      <Trash2 size={13} /> Remove this work
+    </button>
+  </div>
 </div>
 
 <style>
@@ -190,14 +193,38 @@
   .fields input::placeholder {
     color: var(--ink-4);
   }
+  .last {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
   .check {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 8px;
     font-size: var(--text-sm);
     color: var(--ink-2);
     cursor: pointer;
+  }
+  .out {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    padding: 3px 7px;
+    border: none;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--ink-3);
+    font: inherit;
+    font-size: var(--text-sm);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .out:hover {
+    background: var(--danger-soft);
+    color: var(--danger);
   }
   .check input {
     accent-color: var(--accent);

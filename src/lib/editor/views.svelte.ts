@@ -9,11 +9,11 @@ import { StepMap } from 'prosemirror-transform';
 import { EditorView, type NodeView } from 'prosemirror-view';
 import { place } from '$lib/ui/floating';
 import { insertMath, toggle, updateCitation } from './commands';
-import { placeholder } from './plugins';
+import { openSelected, passes, placeholder } from './plugins';
 import { pressedFound } from '$lib/found/found.svelte';
 import { citationLabel, currentProject, isMissing } from './references.svelte';
 import { notePlace, type CiteItem, type CiteMode } from './schema';
-import { editorUi, hooksOf } from './ui.svelte';
+import { editorUi, hooksOf, OPEN, passing } from './ui.svelte';
 import { CrossRefView, FormulaView } from '$lib/figures/views.svelte';
 
 export { hooksOf };
@@ -47,6 +47,8 @@ export class CitationView implements NodeView {
     });
 
     this.dom.addEventListener('click', this.#open);
+    // Selected, it is opened by Enter.
+    this.dom.addEventListener(OPEN, this.#open);
   }
 
   #open = (event?: Event) => {
@@ -91,6 +93,7 @@ export class CitationView implements NodeView {
 
   destroy() {
     this.dom.removeEventListener('click', this.#open);
+    this.dom.removeEventListener(OPEN, this.#open);
     this.#stop();
   }
 }
@@ -158,6 +161,7 @@ export class FootnoteView implements NodeView {
     this.dom = document.createElement('sup');
     this.dom.className = 'footnote';
     this.dom.contentEditable = 'false';
+    this.dom.addEventListener(OPEN, this.#asked);
     this.#number();
   }
 
@@ -183,8 +187,15 @@ export class FootnoteView implements NodeView {
 
   selectNode() {
     this.dom.classList.add('selected');
+    // The cursor on its way through the text selects the note and does not
+    // open it: Enter does, and pressing it.
+    if (passing(this.#outer)) return;
     if (!this.#inner && this.#outer.editable) this.#open();
   }
+
+  #asked = () => {
+    if (!this.#inner && this.#outer.editable) this.#open();
+  };
 
   deselectNode() {
     this.dom.classList.remove('selected');
@@ -273,8 +284,10 @@ export class FootnoteView implements NodeView {
       state: EditorState.create({
         doc: this.#node,
         plugins: [
+          passes(),
           noteRules,
           cite,
+          keymap({ Enter: openSelected }),
           keymap(keys),
           keymap(baseKeymap),
           placeholder(() => 'The text of the note'),
@@ -408,6 +421,7 @@ export class FootnoteView implements NodeView {
   }
 
   destroy() {
+    this.dom.removeEventListener(OPEN, this.#asked);
     this.#close();
   }
 }

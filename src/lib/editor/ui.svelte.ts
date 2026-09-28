@@ -104,6 +104,34 @@ class EditorUi {
 
 export const editorUi = new EditorUi();
 
+/**
+ * The editors in which the cursor is being moved by a key, for as long as
+ * the key is seen to. What the cursor selects on its way (a note, a
+ * formula, a figure) is selected and not opened: see `passing`. Backspace
+ * and Delete select what they come to before they take it away, and so
+ * are among these keys.
+ */
+const moving = new WeakSet<EditorView>();
+
+/** A key went down in an editor. */
+export function keyWent(view: EditorView, event: KeyboardEvent) {
+  if (!/^(Arrow|Home$|End$|PageUp$|PageDown$|Backspace$|Delete$)/.test(event.key)) return;
+  moving.add(view);
+  setTimeout(() => moving.delete(view), 0);
+}
+
+/**
+ * Whether what is selected now was selected by the cursor passing, moved by
+ * the arrows. It is then not opened: the writer is on the way through the
+ * text, and Enter opens what the cursor has stopped at.
+ */
+export function passing(view: EditorView): boolean {
+  return moving.has(view);
+}
+
+/** The name of what is said to what is selected, to have it opened: see `openSelected`. */
+export const OPEN = 'glaukopis-open';
+
 /** What each editor was given to reach the world outside it. Notes use their editor's. */
 export const hooksOf = new WeakMap<EditorView, EditorHooks>();
 

@@ -9,7 +9,7 @@ import { captionOf, captionNodes } from '$lib/editor/commands';
 import { currentProject } from '$lib/editor/references.svelte';
 import type { DocumentFormat } from '$lib/api/documents';
 import { figureWidth, flow, stand, tableWidth } from '$lib/editor/schema';
-import { hooksOf } from '$lib/editor/ui.svelte';
+import { hooksOf, OPEN, passing } from '$lib/editor/ui.svelte';
 import { refForm } from '$lib/project/model/text';
 import { openMenu } from '$lib/ui/menu.svelte';
 import { place } from '$lib/ui/floating';
@@ -239,6 +239,7 @@ export class FormulaView implements NodeView {
       this.#body = this.dom;
     }
     this.dom.contentEditable = 'false';
+    this.dom.addEventListener(OPEN, this.#asked);
     this.#read();
     this.#stop = $effect.root(() => {
       $effect(() => showFormula(this.#body, this.#tex, this.#display));
@@ -269,8 +270,15 @@ export class FormulaView implements NodeView {
 
   selectNode() {
     this.dom.classList.add('selected');
+    // The cursor on its way through the text selects it and does not open
+    // it: Enter does, and pressing it.
+    if (passing(this.#view)) return;
     if (!this.#panel && this.#view.editable) this.#open();
   }
+
+  #asked = () => {
+    if (!this.#panel && this.#view.editable) this.#open();
+  };
 
   deselectNode() {
     this.dom.classList.remove('selected');
@@ -402,6 +410,7 @@ export class FormulaView implements NodeView {
   }
 
   destroy() {
+    this.dom.removeEventListener(OPEN, this.#asked);
     this.#close();
     this.#stop();
   }
@@ -452,6 +461,7 @@ export class FigureView implements NodeView {
     this.#picture.append(this.#img);
     this.contentDOM = document.createElement('figcaption');
     this.dom.append(this.#picture, this.contentDOM);
+    this.dom.addEventListener(OPEN, this.#asked);
     this.#read();
 
     this.#stop = $effect.root(() => {
@@ -514,8 +524,15 @@ export class FigureView implements NodeView {
 
   selectNode() {
     this.dom.classList.add('selected');
+    // The cursor on its way through the text selects it and does not open
+    // it: Enter does, and pressing it.
+    if (passing(this.#view)) return;
     if (!this.#panel && this.#view.editable) this.#open();
   }
+
+  #asked = () => {
+    if (!this.#panel && this.#view.editable) this.#open();
+  };
 
   deselectNode() {
     this.dom.classList.remove('selected');
@@ -708,6 +725,7 @@ export class FigureView implements NodeView {
 
   destroy() {
     this.#picture.removeEventListener('mousedown', this.#press);
+    this.dom.removeEventListener(OPEN, this.#asked);
     this.#close();
     this.#stop();
   }
@@ -771,6 +789,8 @@ export class CrossRefView implements NodeView {
       });
     });
     this.dom.addEventListener('click', this.#open);
+    // Selected, it is opened by Enter.
+    this.dom.addEventListener(OPEN, this.#open);
   }
 
   #set(change: Record<string, unknown> | null) {
@@ -861,6 +881,7 @@ export class CrossRefView implements NodeView {
 
   destroy() {
     this.dom.removeEventListener('click', this.#open);
+    this.dom.removeEventListener(OPEN, this.#open);
     this.#stop();
   }
 }

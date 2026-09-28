@@ -131,7 +131,7 @@
           onclose();
         }}
       >
-        <Trash2 size={14} /> Remove
+        <Trash2 size={14} /> Remove the citation
       </button>
     </div>
   </div>

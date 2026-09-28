@@ -24,6 +24,7 @@ import { keymap } from 'prosemirror-keymap';
 import type { Schema } from 'prosemirror-model';
 import { liftListItem, sinkListItem, splitListItem } from 'prosemirror-schema-list';
 import {
+  NodeSelection,
   Plugin,
   PluginKey,
   TextSelection,
@@ -35,6 +36,7 @@ import { ySyncPluginKey } from 'y-prosemirror';
 import { rows } from '$lib/figures/placing';
 import { tablePlugins } from '$lib/tables/plugins';
 import { newId } from '$lib/util/id';
+import { keyWent, OPEN } from './ui.svelte';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import {
   insertEquation,
@@ -183,6 +185,36 @@ function onEdgeLine(view: EditorView, edge: 'top' | 'bottom'): boolean {
   }
 }
 
+/** What is opened by Enter when it is selected: what has a box of its own. */
+const OPENED = ['citation', 'footnote', 'math', 'equation', 'figure', 'crossref'];
+
+/**
+ * Opens what is selected, if it is something that has a box of its own. The
+ * arrows select such things on their way through the text without opening
+ * them; Enter opens the one the cursor has stopped at.
+ */
+export const openSelected: Command = (state, _dispatch, view) => {
+  const { selection } = state;
+  if (!(selection instanceof NodeSelection) || !OPENED.includes(selection.node.type.name))
+    return false;
+  const dom = view?.nodeDOM(selection.from);
+  if (!dom) return false;
+  dom.dispatchEvent(new CustomEvent(OPEN));
+  return true;
+};
+
+/** Sees the keys that move the cursor, so that what it passes is not opened. */
+export function passes(): Plugin {
+  return new Plugin({
+    props: {
+      handleKeyDown(view, event) {
+        keyWent(view, event);
+        return false;
+      },
+    },
+  });
+}
+
 export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
   const item = schema.nodes.list_item;
   const br = schema.nodes.hard_break;
@@ -236,6 +268,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
   };
   if (item) {
     keys.Enter = chainCommands(
+      openSelected,
       leaveCaption,
       splitListItem(item),
       createParagraphNear,
@@ -268,6 +301,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
   });
 
   return [
+    passes(),
     inputRules({ rules: [...dashes, ...blockRules(schema)] }),
     cite,
     ids(),
@@ -290,8 +324,11 @@ export function titlePlugins(hooks: EditorHooks): Plugin[] {
     'Mod-.': toggle('sup'),
     'Mod-,': toggle('sub'),
     'Shift-Mod-k': toggle('smallcaps'),
-    Enter: (_state, _dispatch, view) =>
-      (view && hooks.action ? hooks.action('enter', view) : false) || true,
+    Enter: chainCommands(
+      openSelected,
+      (_state, _dispatch, view) =>
+        (view && hooks.action ? hooks.action('enter', view) : false) || true,
+    ),
     'Shift-Enter': () => true,
     Escape: act(hooks, 'escape'),
     Tab: act(hooks, 'tab'),
@@ -303,5 +340,5 @@ export function titlePlugins(hooks: EditorHooks): Plugin[] {
       act(hooks, 'backspace-at-start', (state) => isAtStart(state)),
     ),
   };
-  return [inputRules({ rules: dashes }), keymap(keys), keymap(baseKeymap)];
+  return [passes(), inputRules({ rules: dashes }), keymap(keys), keymap(baseKeymap)];
 }
