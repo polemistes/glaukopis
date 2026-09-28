@@ -269,6 +269,15 @@ try {
   await sleep(200);
   check('dropped again, it is read again', (await facts()).parts === '6');
   await app.clickText('dialog footer button', 'Make the map');
+  // The document has a citation that was found: the window in which such are gone through opens.
+  await app.waitFor('dialog .found-window', 15000);
+  await sleep(300);
+  const through = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog .found-window .list [role="option"], dialog .found-window .list button, dialog .found-window .list li')).map((e) => e.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean)`,
+  );
+  check('the citations that were found are there to be gone through', through.some((t) => t.includes('[@nokey, 12]')), JSON.stringify(through));
+  await app.screenshot('documents-2-found');
+  await app.press('Escape');
   await app.waitGone('dialog[open]', 15000);
   await app.waitFor('.text-view .section', 8000);
   await sleep(600);
