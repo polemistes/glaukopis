@@ -208,7 +208,11 @@ new parts exercised in the running application.
 Milestones 0 to 7 are built, and each is exercised in the running application
 by a script in `e2e/`. Of milestone 8, the settings, the package for Arch
 Linux (`packaging/arch`), the guide (`docs/guide.md`) and the guide to the
-server (`docs/server.md`) are done. The packages for other systems are not.
+server (`docs/server.md`) are done. The packages for other systems are not;
+installers for Windows and macOS wait, by the decision recorded in
+`docs/brief.md` (2026-09-28): nothing closed beyond what a system itself
+needs, and Servo, an open engine, may take the place of the web views of
+the systems when it can do what the application needs.
 
 Added since, at the wish of the one the application is made for, and recorded
 in `docs/brief.md`: notes on references (ADR 0008), a PDF that is set by

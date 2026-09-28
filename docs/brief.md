@@ -143,3 +143,20 @@ What this settles:
 - What takes a work out of a citation is not a cross in the corner, which reads as closing, but a sign that reads as taking away, in another place.
 - The arrows go through a citation in the text without opening its box: it is selected, and Enter opens it.
 - A document of more than a hundred thousand words is to be written in without lag, with the preview closed and with it open.
+
+## 2026-09-28 — on GitHub, and Windows and macOS
+
+> How difficult is it to make windows and mac packages of this now? Could you push this to github in the polemistes/glaukopis. Wipe the previous version residing there completely first, so nothing form that intrude into this version.
+
+> I moved the old glaukopis repo away and created a new one. I really don't want you to get infected by any of that code.  So now it is just to push it to polemistes/glaukopis.
+
+> Using WebView2 on windows, will it be in conflict with the GPL-3 license. Is there an open source alternative on windows? I would not like to distribute a program that depends on closed source programs.
+
+> No, I just prefer not depending on more closed-source parts than necessary. Of course running on Windows and Mac will depend on closed source parts, as does running on Linux on machiens with closed source bios and hardware firmware everywhere. So, no worries. In the future when Servo is mature, we might change, but until then, we stay the course. We are not building any windows of mac installs yet.
+
+What this settles:
+
+- The code is at github.com/polemistes/glaukopis, a repository made new for it. The repository of the first attempt was moved away, and nothing of it is to be looked at.
+- No closed parts are depended on beyond what is necessary. What a system itself brings, such as the web view of Windows or macOS, is acceptable.
+- Installers for Windows and macOS are not built yet.
+- When Servo, an open web engine, is mature enough to run the application, it may take the place of the web views of the systems.
