@@ -2,6 +2,7 @@
   import { sharingJoin, sharingReadInvitation } from '$lib/api/sharing';
   import type { ProjectInfo } from '$lib/api/projects';
   import { isBackendError } from '$lib/api/backend';
+  import { t } from '$lib/i18n';
   import { projects } from '$lib/state/projects.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -55,7 +56,7 @@
       projects.put(info);
       onjoined(info);
     } catch (error) {
-      const message = describeError(error) ?? 'That did not work.';
+      const message = describeError(error) ?? t('sharing-failed');
       const kind = isBackendError(error) ? error.kind : '';
       if (kind === 'bad-code' || kind === 'too-many') codeProblem = message;
       else if (message.includes('code is for')) codeProblem = message;
@@ -68,8 +69,8 @@
 
 <Dialog
   open
-  title="Join a shared project"
-  subtitle="With the server and the code you were sent"
+  title={t('sharing-join-title')}
+  subtitle={t('sharing-join-about')}
   width={440}
   {onclose}
 >
@@ -81,7 +82,7 @@
   >
     <TextField
       bind:value={server}
-      label="Server"
+      label={t('sharing-server')}
       name="server"
       placeholder="glaukopis.example.org"
       spellcheck="false"
@@ -93,7 +94,7 @@
     />
     <TextField
       bind:value={code}
-      label="Code"
+      label={t('sharing-code')}
       name="code"
       placeholder="XXXX-XXXX-XXXX"
       spellcheck="false"
@@ -104,21 +105,21 @@
     />
     <TextField
       bind:value={name}
-      label="Your name"
-      hint="Shown to the others in the project."
-      placeholder="As the others know you"
+      label={t('sharing-your-name')}
+      hint={t('sharing-your-name-join-hint')}
+      placeholder={t('sharing-your-name-placeholder')}
     />
     <!-- So that Enter in a field joins. -->
     <button type="submit" hidden aria-hidden="true" tabindex="-1"></button>
   </form>
   {#snippet footer()}
-    <Button variant="ghost" onclick={onclose}>Cancel</Button>
+    <Button variant="ghost" onclick={onclose}>{t('common-cancel')}</Button>
     <Button
       variant="primary"
       disabled={busy || !server.trim() || code.trim().length < 12}
       onclick={join}
     >
-      {busy ? 'Joining…' : 'Join'}
+      {busy ? t('sharing-joining') : t('sharing-join')}
     </Button>
   {/snippet}
 </Dialog>
