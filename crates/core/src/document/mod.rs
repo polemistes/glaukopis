@@ -7,6 +7,7 @@
 
 pub mod bibliography;
 pub mod pandoc;
+mod placing;
 
 use std::collections::BTreeMap;
 
@@ -209,10 +210,11 @@ impl Table {
     }
 
     /// The share of the width of the text that each column has, where the
-    /// columns are given widths: when the table has been given one, or holds
-    /// more than fits on a line. Nothing, where each column is as wide as
-    /// what it holds.
-    pub fn widths(&self) -> Vec<f64> {
+    /// columns are given widths: when the table has been given one, when it
+    /// holds more than fits in the room it has, or when `told` says that
+    /// they must be. Nothing, where each column is as wide as what it
+    /// holds. `room` is the share of the width of the text the table may take.
+    pub fn widths(&self, room: f64, told: bool) -> Vec<f64> {
         fn length(blocks: &[Block]) -> usize {
             let mut longest = 0usize;
             walk(blocks, &mut |_| {}, &mut |line| {
@@ -246,15 +248,17 @@ impl Table {
             }
         }
         // About so many letters go on a line of a page.
-        const LINE: usize = 78;
-        let needed: usize = longest.iter().map(|l| l + 3).sum();
+        const LINE: f64 = 78.0;
+        let room = room.clamp(0.1, 1.0);
+        let needed: f64 = longest.iter().map(|l| (l + 3) as f64).sum::<f64>() / LINE;
         let whole = match self.width {
-            0 if needed <= LINE => return Vec::new(),
-            0 => 1.0,
-            w => f64::from(w.min(100)) / 100.0,
+            0 if needed <= room && !told => return Vec::new(),
+            // As wide as what it holds needs, and no wider than its room.
+            0 => needed.clamp(0.05, room),
+            w => (f64::from(w.min(100)) / 100.0).min(room),
         };
         // No column so narrow that a word does not fit, none so wide that the others have no room.
-        let shares: Vec<f64> = longest.iter().map(|l| (*l).clamp(6, 60) as f64).collect();
+        let shares: Vec<f64> = longest.iter().map(|l| (*l).clamp(4, 60) as f64 + 3.0).collect();
         let sum: f64 = shares.iter().sum();
         shares.iter().map(|s| (s / sum * whole * 1000.0).round() / 1000.0).collect()
     }
@@ -370,6 +374,45 @@ impl Document {
             }
             walk(&s.blocks, block, line);
         }
+    }
+
+    /// Whether the text flows around something, where the format has
+    /// figures and tables as `figures` and `tables` say; and whether there
+    /// are tables.
+    pub fn flows_and_tables(&self, figures: (Stand, bool), tables: (Stand, bool)) -> (bool, bool) {
+        let mut flows = false;
+        let mut has_tables = false;
+        let around = |usual: (Stand, bool), align: Option<Stand>, wrap: Option<bool>| {
+            wrap.unwrap_or(usual.1) && align.unwrap_or(usual.0) != Stand::Center
+        };
+        fn rows<'a>(list: &'a [Block], out: &mut Vec<&'a Block>) {
+            // What stands in a row stands beside others, and nothing flows around it.
+            for b in list {
+                if let Block::Row { items } = b {
+                    out.extend(items.iter());
+                }
+            }
+        }
+        let mut in_rows: Vec<&Block> = Vec::new();
+        for s in &self.sections {
+            rows(&s.blocks, &mut in_rows);
+        }
+        self.walk(
+            &mut |b| match b {
+                Block::Table(t) => {
+                    has_tables = true;
+                    if !in_rows.iter().any(|r| std::ptr::eq(*r, b)) {
+                        flows |= around(tables, t.align, t.wrap);
+                    }
+                }
+                Block::Figure { align, wrap, .. } if !in_rows.iter().any(|r| std::ptr::eq(*r, b)) => {
+                    flows |= around(figures, *align, *wrap);
+                }
+                _ => {}
+            },
+            &mut |_| {},
+        );
+        (flows, has_tables)
     }
 
     /// The files of the figures, each once, as `(hash, extension)`.

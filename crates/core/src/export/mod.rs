@@ -4,6 +4,7 @@
 //! writes the output; for the preview and for PDF it writes Typst, which Typst
 //! makes into pages. See ADR 0005.
 
+pub mod after;
 pub mod latex;
 pub mod math;
 pub mod reference;
@@ -203,11 +204,14 @@ fn safe_key(key: &str) -> String {
 }
 
 fn particulars(doc: &Document, f: &DocumentFormat) -> Particulars {
+    let (flows, tables) = doc.flows_and_tables((f.figures.align, f.figures.wrap), (f.tables.align, f.tables.wrap));
     Particulars {
         title: doc.title_plain(),
         authors: doc.authors.iter().map(|a| a.name.trim().to_owned()).filter(|n| !n.is_empty()).collect(),
         language: doc.language.clone(),
         lettered_footnotes: f.notes.kind == NoteKind::Endnotes && doc.placed_notes().contains(&NotePlace::Foot),
+        flows,
+        tables,
     }
 }
 
@@ -259,7 +263,8 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
             match target {
                 Target::Pdf | Target::Typst => Flavour::Typst,
                 Target::Latex | Target::PdfLatex => Flavour::Latex,
-                Target::Docx | Target::Odt => Flavour::Styled,
+                Target::Docx => Flavour::Docx,
+                Target::Odt => Flavour::Odt,
                 Target::Markdown | Target::Html => Flavour::Plain,
             },
             f.figures.clone(),
@@ -270,6 +275,8 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         ),
     };
     converter.extras.first_indented = f.text.indent_first;
+    converter.extras.text_width =
+        f64::from(f.page.dimensions().0 - f.page.margin_left.points() - f.page.margin_right.points()).max(72.0);
     converter.extras.targets = converter.targets(doc, f.headings.numbered);
 
     let mut meta = Map::new();
@@ -423,6 +430,20 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         }
         blocks.extend(held);
     }
+    // And the tables.
+    let held = converter.extras.held_tables();
+    if !held.is_empty() {
+        if let Some(b) = target.page_break() {
+            blocks.push(b);
+        }
+        if !f.tables.end_title.trim().is_empty() {
+            blocks.push(json!({
+                "t": "Header",
+                "c": [1, ["tables", ["unnumbered"], []], meta_text(f.tables.end_title.trim())["c"]],
+            }));
+        }
+        blocks.extend(held);
+    }
     let remarks: Vec<String> = converter
         .extras
         .absent()
@@ -467,6 +488,10 @@ fn arguments(
     if matches!(target, Target::Docx | Target::Odt) {
         args.push("--lua-filter".into());
         args.push(filters.join("styles.lua").display().to_string());
+    }
+    if matches!(target, Target::Latex | Target::PdfLatex) {
+        args.push("--lua-filter".into());
+        args.push(filters.join("tables.lua").display().to_string());
     }
     if request.format.headings.numbered
         && !matches!(target, Target::Pdf | Target::Typst | Target::Latex | Target::PdfLatex)
@@ -729,6 +754,11 @@ pub fn export(
         }
         Target::Html => {
             args.push("--embed-resources".into());
+            // How what stands by itself is set on a page of the web.
+            let header = dir.join("header.html");
+            write_atomic(&header, format!("<style>\n{}</style>\n", html_styles(&request.format)).as_bytes())?;
+            args.push("--include-in-header".into());
+            args.push(header.display().to_string());
         }
         Target::Pdf | Target::Typst => unreachable!(),
     }
@@ -753,11 +783,64 @@ pub fn export(
     }));
     exported.missing = prepared.bibliography.missing;
     let bytes = fs::read(&made).context(|| "reading the document that was made".to_owned())?;
+    // What Pandoc cannot be told, of a document for a word processor, is set right after.
+    let bytes = match target {
+        Target::Docx => after::docx(&bytes)?,
+        Target::Odt => after::odt(&bytes, &request.format)?,
+        _ => bytes,
+    };
     write_atomic(path, &bytes)?;
     if matches!(target, Target::Latex | Target::Markdown) {
         files_beside(ctx, request, path, &files, &mut exported);
     }
     Ok(exported)
+}
+
+/// The styles of figures, tables and rows for a page of the web.
+fn html_styles(f: &DocumentFormat) -> String {
+    use crate::formats::{Align, CaptionPosition, Rules};
+    let to = |a: Align| match a {
+        Align::Left => "left",
+        Align::Center => "center",
+        Align::Right => "right",
+        Align::Justified => "justify",
+    };
+    let line = match f.tables.rules {
+        Rules::Horizontal => {
+            "table { border-collapse: collapse; border-top: 1.5px solid; border-bottom: 1.5px solid; }\n\
+             thead th, thead td { border-bottom: 1px solid; }\n"
+        }
+        Rules::Grid => "table { border-collapse: collapse; }\nth, td { border: 1px solid; }\n",
+        Rules::None => "table { border-collapse: collapse; }\nthead th, thead td { border: none; }\n",
+    };
+    let above = |c: CaptionPosition| if c == CaptionPosition::Above { "0.2em" } else { "0.6em" };
+    format!(
+        ".gk-figure, .gk-table {{ margin: 1.5em 0; }}\n\
+         .gk-figure img {{ max-width: 100%; height: auto; }}\n\
+         .gk-figure.gk-center, .gk-table.gk-center {{ text-align: center; }}\n\
+         .gk-figure.gk-right, .gk-table.gk-right {{ text-align: right; }}\n\
+         .gk-table table {{ display: inline-table; width: auto; margin: 0; text-align: left; }}\n\
+         .gk-around {{ width: var(--gk-share, 40%); margin-top: 0.3em; margin-bottom: 0.6em; text-align: center; }}\n\
+         .gk-around.gk-left {{ float: left; margin-right: 1.4em; }}\n\
+         .gk-around.gk-right {{ float: right; margin-left: 1.4em; }}\n\
+         .gk-around img {{ width: 100% !important; }}\n\
+         .gk-figure-caption {{ text-align: {figure}; margin-top: {figure_above}; }}\n\
+         .gk-table-caption {{ text-align: {table}; margin-top: {table_above}; }}\n\
+         .gk-figure-caption p, .gk-table-caption p {{ margin: 0.3em 0; }}\n\
+         .gk-row {{ display: grid; grid-template-columns: repeat(var(--gk-columns, 2), 1fr); gap: 0.5em 4%; \
+         margin: 1.5em 0; text-align: center; clear: both; }}\n\
+         .gk-row .gk-above, .gk-row .gk-body {{ align-self: end; }}\n\
+         .gk-row .gk-below {{ align-self: start; }}\n\
+         .gk-equation.gk-left {{ text-align: left; padding-left: 2em; }}\n\
+         .gk-equation.gk-right {{ text-align: right; }}\n\
+         .gk-equation .math.display {{ display: inline-block; }}\n\
+         th, td {{ padding: 0.25em 0.6em; vertical-align: top; }}\n\
+         {line}",
+        figure = to(f.figures.caption_align),
+        table = to(f.tables.caption_align),
+        figure_above = above(f.figures.caption_position),
+        table_above = above(f.tables.caption_position),
+    )
 }
 
 fn add_odt_break(odt: &[u8]) -> Result<Vec<u8>> {
@@ -1296,7 +1379,7 @@ mod tests {
         let text = fs::read_to_string(&typ).unwrap();
         assert!(text.contains(&format!("image(\"with-figures-files/{drawing}.svg\", width: 40")), "{text}");
         assert!(text.contains("alt: \"A circle\""));
-        assert!(text.contains("] <gk-figure>") && text.contains("] <gk-caption>"));
+        assert!(text.contains("] <gk-figure-center>") && text.contains("] <gk-figure-caption>"));
         assert!(text.contains("Figure~1. The shield, as \\(West 1988) has it"), "{text}");
         assert!(text.contains("Figure~2. A vase"));
         assert!(text.contains("#[#set math.equation(numbering: (..n) => [(1)])"));
@@ -1338,7 +1421,7 @@ mod tests {
         let html = out.join("figures.html");
         export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
         let text = fs::read_to_string(&html).unwrap();
-        assert!(text.contains("class=\"gk-figure\""));
+        assert!(text.contains("class=\"gk-figure gk-center\""), "{text}");
         assert!(text.contains("data:image/png;base64,") || text.contains("<svg"), "the pictures are in the document");
 
         let pdf = out.join("figures.pdf");
@@ -1349,6 +1432,210 @@ mod tests {
             export(&s.ctx(), &r, Target::PdfLatex, &by_latex, &ExportOptions::default()).unwrap();
             assert!(fs::read(&by_latex).unwrap().starts_with(b"%PDF"));
         }
+    }
+
+    /// A table of poems.
+    fn poems(id: &str, said: &str) -> crate::document::Table {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, Cell, Table};
+        use crate::formats::Stand;
+        let cell = |words: &str, header: bool, to: Option<Stand>| Cell {
+            content: vec![Block::Paragraph { content: vec![text(words)] }],
+            header,
+            align: to,
+            ..Default::default()
+        };
+        let right = Some(Stand::Right);
+        Table {
+            id: id.into(),
+            caption: if said.is_empty() { vec![] } else { vec![text(said)] },
+            rows: vec![
+                vec![cell("Poem", true, None), cell("Lines", true, right)],
+                vec![cell("Iliad", false, None), cell("15 693", false, right)],
+                vec![cell("Odyssey", false, None), cell("12 109", false, right)],
+            ],
+            numbered: true,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn tables_and_where_things_stand() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, RefForm, Table};
+        use crate::formats::{Rules, Stand};
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = with_figures(&s);
+        let para = |words: &str| Block::Paragraph { content: vec![text(words)] };
+        let long = "The wrath of Achilles is the first word of the poem and its subject. ".repeat(6);
+        {
+            let blocks = &mut r.document.sections[1].blocks;
+            // The first figure to the left; the second to the right, with the text flowing around it.
+            for block in blocks.iter_mut() {
+                match block {
+                    Block::Figure { id, align, .. } if id == "fig-shield" => *align = Some(Stand::Left),
+                    Block::Figure { id, align, wrap, width, .. } if id == "fig-vase" => {
+                        *align = Some(Stand::Right);
+                        *wrap = Some(true);
+                        *width = 40;
+                    }
+                    Block::Equation { id, align, .. } if id == "eq-sum" => *align = Some(Stand::Left),
+                    _ => {}
+                }
+            }
+            blocks.push(para(&long));
+            blocks.push(Block::Paragraph {
+                content: vec![
+                    text("See "),
+                    Inline::CrossRef { target: "t-poems".into(), form: RefForm::Full },
+                    text("."),
+                ],
+            });
+            blocks.push(Block::Table(poems("t-poems", "The poems")));
+            blocks.push(para(&long));
+            blocks.push(Block::Table(Table {
+                align: Some(Stand::Left),
+                wrap: Some(true),
+                ..poems("t-left", "The poems again")
+            }));
+            blocks.push(para(&long));
+            blocks.push(Block::Row {
+                items: vec![
+                    Block::Table(poems("t-row", "In a row")),
+                    Block::Equation { align: None, id: "eq-row".into(), tex: "x = 1".into(), numbered: true },
+                ],
+            });
+            blocks.push(para("After."));
+        }
+
+        // As Typst.
+        let typ = out.join("stands.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("] <gk-figure-left>") && t.contains("] <gk-figure-caption-left>"), "{t}");
+        assert!(t.contains("#gk-around(right, 40.0%, ["), "{t}");
+        assert!(t.contains("] <gk-figure-within>"));
+        assert!(t.contains("#let gk-around(side, width, fixed, body)"), "what makes the text flow is in the opening");
+        assert!(t.contains("#show math.equation: set align(left)"));
+        assert!(
+            t.contains("Table~1. The poems")
+                && t.contains("Table~2. The poems again")
+                && t.contains("Table~3. In a row")
+        );
+        assert!(t.contains("See #link(<gk-to-t-poems>)[Table~1]."), "{t}");
+        assert!(t.contains("] <gk-table-center>") && t.contains("#gk-around(left, 45.0%, ["));
+        // What is said of the table over it, the table and the equation on their feet.
+        assert!(t.contains("#gk-row(2, (bottom, bottom,), ["), "{t}");
+        assert!(t.contains("table.header(table.cell(align: left)[Poem], table.cell(align: right)[Lines],)"), "{t}");
+        assert!(t.contains("align: (left,left,)"));
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.iter().all(|w| w.contains("lost.jpg")), "{:?}", p.warnings);
+
+        // For LaTeX.
+        let tex = out.join("stands.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&tex).unwrap();
+        assert!(t.contains("\\usepackage{wrapfig}") && t.contains("\\usepackage{longtable,booktabs,array}"));
+        assert!(t.contains("\\begin{figure}[H]\n\\raggedright"), "{t}");
+        assert!(t.contains("\\begin{wrapfigure}{r}{0.400\\linewidth}"), "{t}");
+        assert!(t.contains("\\begin{wrapfigure}{l}{0.450\\linewidth}"));
+        assert!(t.contains("\\begin{flalign*}"));
+        // A table by itself may go over pages; within something it may not.
+        assert_eq!(t.matches("\\begin{longtable}").count(), 1, "{t}");
+        assert_eq!(t.matches("\\begin{tabular}{@{}").count(), 2, "{t}");
+        assert_eq!(t.matches("\\bottomrule").count(), 3);
+        assert!(!t.contains("\\endlastfoot\n\\end{tabular}") && !t.contains("endhead\nIliad"), "{t}");
+        assert!(t.contains("\\begin{minipage}[b]{0.4800\\linewidth}\\centering"), "{t}");
+        assert!(t.contains("\\end{minipage}%\n\\hfill\\begin{minipage}"), "{t}");
+        if s.tools.latex_engine().is_ok() {
+            let pdf = out.join("stands-latex.pdf");
+            export(&s.ctx(), &r, Target::PdfLatex, &pdf, &ExportOptions::default()).unwrap();
+            assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"));
+        }
+
+        // For word processors.
+        let docx = out.join("stands.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let document = unzip(&docx, "word/document.xml");
+        assert!(!document.contains("<!--gk"), "{document}");
+        assert!(
+            document.contains("<w:pStyle w:val=\"FigureLeft\"")
+                && document.contains("<w:pStyle w:val=\"FigureCaptionLeft\"")
+        );
+        assert!(document.contains("w:tblpXSpec=\"right\"") && document.contains("w:tblpXSpec=\"left\""));
+        assert!(document.contains("<w:pStyle w:val=\"TableCaption\""));
+        assert!(document.contains("<w:jc w:val=\"center\"/>"));
+        assert!(document.contains("<m:jc m:val=\"left\""));
+        assert!(document.contains("<w:pStyle w:val=\"TableText\""));
+        let styles = unzip(&docx, "word/styles.xml");
+        assert_eq!(styles.matches("w:styleId=\"TableCaption\"").count(), 1);
+        assert!(styles.contains("w:styleId=\"Layout\"") && styles.contains("<w:tblStylePr w:type=\"firstRow\">"));
+
+        let odt = out.join("stands.odt");
+        export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        let content = unzip(&odt, "content.xml");
+        assert!(!content.contains("<!--gk"), "{content}");
+        assert!(
+            content.contains("draw:style-name=\"GkAroundRight\"")
+                && content.contains("draw:style-name=\"GkAroundLeft\"")
+        );
+        assert!(content.contains("text:style-name=\"Figure_20_Left\""));
+        assert!(
+            content.contains("table:style-name=\"GkCellHead\"") && content.contains("table:style-name=\"GkCellLast\"")
+        );
+        assert!(
+            content.contains("table:style-name=\"GkRow\"") && content.contains("draw:style-name=\"GkFormulaLeft\"")
+        );
+        assert!(unzip(&odt, "styles.xml").contains("style:name=\"GkAroundRight\""));
+
+        let html = out.join("stands.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let text = fs::read_to_string(&html).unwrap();
+        assert!(text.contains("gk-around") && text.contains("class=\"gk-row\""), "{text}");
+        assert!(text.contains(".gk-around"), "the page says how they are set");
+
+        // The format says where things stand when nothing is said of them, and what lines a table has.
+        let mut f = with_figures(&s);
+        f.format.figures.align = Stand::Right;
+        f.format.figures.wrap = true;
+        f.format.tables.rules = Rules::Grid;
+        f.format.tables.label = "Tab.".into();
+        f.format.equations.align = Stand::Left;
+        f.document.sections[1].blocks.push(Block::Table(poems("t", "Poems")));
+        f.document.sections[1].blocks.push(para(&long));
+        let typ = out.join("format.typ");
+        export(&s.ctx(), &f, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("#gk-around(right, 40.0%, ["), "{t}");
+        assert!(t.contains("#set table(stroke: 0.5pt"));
+        assert!(t.contains("Tab.~1. Poems"));
+        assert_eq!(t.matches("#show math.equation: set align(left)").count(), 3);
+        assert!(!preview(&s.ctx(), &f).unwrap().pages.is_empty());
+    }
+
+    #[test]
+    fn tables_at_the_end() {
+        use crate::document::Block;
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = request("chicago-author-date");
+        r.format.tables.placement = crate::formats::FigurePlacement::AtEnd;
+        r.document.sections[1]
+            .blocks
+            .push(Block::Row { items: vec![Block::Table(poems("a", "One")), Block::Table(poems("b", "Another"))] });
+        let typ = out.join("tables-end.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        let here = t.find("Table~1 about here").expect("a line says where the table belongs");
+        assert!(t.contains("Table~2 about here"));
+        let heading = t.find("[Tables]").expect("the tables have a heading at the end");
+        let table = t.find("#table(").unwrap();
+        assert!(here < heading && heading < table, "{t}");
+        assert!(!t.contains("#gk-row("), "what stands at the end stands by itself");
+        assert_eq!(t.matches("#table(").count(), 2);
     }
 
     #[test]

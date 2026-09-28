@@ -10,7 +10,8 @@ use std::io::{Cursor, Read, Write};
 use crate::error::{Error, Result};
 use crate::formats::typst::Particulars;
 use crate::formats::{
-    Align, CaptionPosition, Case, DocumentFormat, HeadContent, HeadingLevel, Length, NoteKind, Paragraphs, fallbacks,
+    Align, CaptionPosition, Case, DocumentFormat, HeadContent, HeadingLevel, Length, NoteKind, Paragraphs, Rules,
+    fallbacks,
 };
 
 fn xml(text: &str) -> String {
@@ -22,7 +23,10 @@ fn zip_error(e: zip::result::ZipError) -> Error {
 }
 
 /// Reads a zip, lets `change` alter, add or drop files, and writes it again.
-fn rewrite(source: &[u8], mut change: impl FnMut(&mut Vec<(String, Vec<u8>)>) -> Result<()>) -> Result<Vec<u8>> {
+pub(crate) fn rewrite(
+    source: &[u8],
+    mut change: impl FnMut(&mut Vec<(String, Vec<u8>)>) -> Result<()>,
+) -> Result<Vec<u8>> {
     let mut archive = zip::ZipArchive::new(Cursor::new(source)).map_err(zip_error)?;
     let mut files: Vec<(String, Vec<u8>)> = Vec::with_capacity(archive.len());
     for i in 0..archive.len() {
@@ -48,14 +52,14 @@ fn rewrite(source: &[u8], mut change: impl FnMut(&mut Vec<(String, Vec<u8>)>) ->
     Ok(out.finish().map_err(zip_error)?.into_inner())
 }
 
-fn put(files: &mut Vec<(String, Vec<u8>)>, name: &str, content: String) {
+pub(crate) fn put(files: &mut Vec<(String, Vec<u8>)>, name: &str, content: String) {
     match files.iter_mut().find(|(n, _)| n == name) {
         Some(f) => f.1 = content.into_bytes(),
         None => files.push((name.to_owned(), content.into_bytes())),
     }
 }
 
-fn text_of(files: &[(String, Vec<u8>)], name: &str) -> Result<String> {
+pub(crate) fn text_of(files: &[(String, Vec<u8>)], name: &str) -> Result<String> {
     files
         .iter()
         .find(|(n, _)| n == name)
@@ -424,40 +428,75 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
         &none(),
     ));
 
-    let fig = &f.figures;
-    let caption_line = if fig.caption_line_spacing > 0.0 { line(fig.caption_line_spacing) } else { body_line };
-    let caption_above = fig.caption_position == CaptionPosition::Above;
+    // Figures and tables: the picture, where it stands; what is said of
+    // them, as the format says, and at the side of what stands at a side.
+    let picture_above = f.figures.caption_position == CaptionPosition::Above;
+    for (id, name, to) in [
+        ("Figure", "Figure", Align::Center),
+        ("FigureLeft", "Figure Left", Align::Left),
+        ("FigureRight", "Figure Right", Align::Right),
+    ] {
+        s.push_str(&paragraph_style(
+            id,
+            name,
+            Some("Normal"),
+            Some("BodyText"),
+            None,
+            &Para {
+                before: if picture_above { 60 } else { 240 + between },
+                after: if picture_above { 240 + between } else { 60 },
+                line: Some(line(1.0)),
+                align: Some(to),
+                keep_next: !picture_above,
+                ..Default::default()
+            },
+            &none(),
+        ));
+    }
+    for (kind, c) in [("Figure", f.figures.captioned()), ("Table", f.tables.captioned())] {
+        let caption_line = if c.caption_line_spacing > 0.0 { line(c.caption_line_spacing) } else { body_line };
+        let above = c.caption_position == CaptionPosition::Above;
+        for (side, to) in [("", c.caption_align), (" Left", Align::Left), (" Right", Align::Right)] {
+            let name = format!("{kind} Caption{side}");
+            s.push_str(&paragraph_style(
+                &name.replace(' ', ""),
+                &name,
+                Some("Normal"),
+                Some("BodyText"),
+                None,
+                &Para {
+                    before: if above { 240 + between } else { 60 },
+                    after: if above { 60 } else { 240 + between },
+                    line: Some(caption_line),
+                    align: Some(to),
+                    keep_next: above,
+                    ..Default::default()
+                },
+                &Run {
+                    size: (c.caption_size > 0.0).then_some(c.caption_size),
+                    bold: None,
+                    italic: None,
+                    case: Case::None,
+                },
+            ));
+        }
+    }
+    // What stands in a table.
+    let tables = &f.tables;
     s.push_str(&paragraph_style(
-        "Figure",
-        "Figure",
+        "TableText",
+        "Table Text",
         Some("Normal"),
-        Some("BodyText"),
+        None,
         None,
         &Para {
-            before: if caption_above { 60 } else { 240 + between },
-            after: if caption_above { 240 + between } else { 60 },
-            line: Some(line(1.0)),
-            align: Some(Align::Center),
-            keep_next: !caption_above,
+            before: 20,
+            after: 20,
+            line: Some(if tables.line_spacing > 0.0 { line(tables.line_spacing) } else { body_line }),
+            align: Some(Align::Left),
             ..Default::default()
         },
-        &none(),
-    ));
-    s.push_str(&paragraph_style(
-        "FigureCaption",
-        "Figure Caption",
-        Some("Normal"),
-        Some("BodyText"),
-        None,
-        &Para {
-            before: if caption_above { 240 + between } else { 60 },
-            after: if caption_above { 60 } else { 240 + between },
-            line: Some(caption_line),
-            align: Some(fig.caption_align),
-            keep_next: caption_above,
-            ..Default::default()
-        },
-        &Run { size: (fig.caption_size > 0.0).then_some(fig.caption_size), bold: None, italic: None, case: Case::None },
+        &Run { size: (tables.size > 0.0).then_some(tables.size), bold: None, italic: None, case: Case::None },
     ));
 
     s.push_str(&paragraph_style(
@@ -540,16 +579,13 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
         ("DefinitionTerm", "Definition Term"),
         ("Definition", "Definition"),
         ("Caption", "caption"),
-        ("TableCaption", "Table Caption"),
         ("ImageCaption", "Image Caption"),
         ("CaptionedFigure", "Captioned Figure"),
         ("TOCHeading", "TOC Heading"),
     ] {
         let run = match id {
             "DefinitionTerm" | "TOCHeading" => Run { size: None, bold: Some(true), italic: None, case: Case::None },
-            "Caption" | "TableCaption" | "ImageCaption" => {
-                Run { size: None, bold: None, italic: Some(true), case: Case::None }
-            }
+            "Caption" | "ImageCaption" => Run { size: None, bold: None, italic: Some(true), case: Case::None },
             _ => none(),
         };
         s.push_str(&paragraph_style(
@@ -585,9 +621,30 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
         "<w:vertAlign w:val=\"superscript\"/>",
     ));
     s.push_str(&character_style("Hyperlink", "Hyperlink", None, "<w:color w:val=\"1F4E79\"/>"));
-    s.push_str(
+    // The lines of a table: over it, under it and under its headings, as
+    // books have them; around every cell; or none.
+    let rule =
+        |side: &str, size: u8| format!("<w:{side} w:val=\"single\" w:sz=\"{size}\" w:space=\"0\" w:color=\"auto\"/>");
+    let (borders, under_headings) = match f.tables.rules {
+        Rules::Horizontal => (format!("{}{}", rule("top", 8), rule("bottom", 8)), rule("bottom", 4)),
+        Rules::Grid => (
+            ["top", "left", "bottom", "right", "insideH", "insideV"].iter().map(|side| rule(side, 4)).collect(),
+            rule("bottom", 4),
+        ),
+        Rules::None => (String::new(), String::new()),
+    };
+    let _ = write!(
+        s,
         "<w:style w:type=\"table\" w:default=\"1\" w:styleId=\"Table\"><w:name w:val=\"Table\"/><w:semiHidden/><w:unhideWhenUsed/><w:qFormat/>\
-         <w:tblPr><w:tblInd w:w=\"0\" w:type=\"dxa\"/><w:tblCellMar><w:top w:w=\"0\" w:type=\"dxa\"/><w:left w:w=\"108\" w:type=\"dxa\"/><w:bottom w:w=\"0\" w:type=\"dxa\"/><w:right w:w=\"108\" w:type=\"dxa\"/></w:tblCellMar></w:tblPr></w:style>",
+         <w:tblPr><w:tblInd w:w=\"0\" w:type=\"dxa\"/><w:tblBorders>{borders}</w:tblBorders>\
+         <w:tblCellMar><w:top w:w=\"30\" w:type=\"dxa\"/><w:left w:w=\"108\" w:type=\"dxa\"/><w:bottom w:w=\"30\" w:type=\"dxa\"/><w:right w:w=\"108\" w:type=\"dxa\"/></w:tblCellMar></w:tblPr>\
+         <w:tblStylePr w:type=\"firstRow\"><w:tcPr><w:tcBorders>{under_headings}</w:tcBorders></w:tcPr></w:tblStylePr></w:style>"
+    );
+    // A table without lines, which holds what stands together: things
+    // beside each other, and what the text flows around.
+    s.push_str(
+        "<w:style w:type=\"table\" w:customStyle=\"1\" w:styleId=\"Layout\"><w:name w:val=\"Layout\"/><w:qFormat/>\
+         <w:tblPr><w:tblInd w:w=\"0\" w:type=\"dxa\"/><w:tblCellMar><w:top w:w=\"0\" w:type=\"dxa\"/><w:left w:w=\"57\" w:type=\"dxa\"/><w:bottom w:w=\"0\" w:type=\"dxa\"/><w:right w:w=\"57\" w:type=\"dxa\"/></w:tblCellMar></w:tblPr></w:style>",
     );
     s.push_str("</w:styles>");
     s
@@ -1141,46 +1198,118 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
         text: String::new(),
     });
 
-    let fig = &f.figures;
-    let caption_line = if fig.caption_line_spacing > 0.0 { fig.caption_line_spacing } else { body };
-    let caption_above = fig.caption_position == CaptionPosition::Above;
+    // Figures and tables: as in the pattern for Word.
+    let picture_above = f.figures.caption_position == CaptionPosition::Above;
     let (near, far) = (3.0, 12.0 + between);
+    for (name, display, to) in [
+        ("Figure", None, Align::Center),
+        ("Figure_20_Left", Some("Figure Left"), Align::Left),
+        ("Figure_20_Right", Some("Figure Right"), Align::Right),
+    ] {
+        put(OdtStyle {
+            name,
+            display,
+            parent: Some("Standard"),
+            next: None,
+            outline: None,
+            paragraph: odt_paragraph(
+                if picture_above { near } else { far },
+                if picture_above { far } else { near },
+                1.0,
+                to,
+                0.0,
+                0.0,
+                0.0,
+                !picture_above,
+            ),
+            text: String::new(),
+        });
+    }
+    for (kind, c) in [("Figure", f.figures.captioned()), ("Table", f.tables.captioned())] {
+        let caption_line = if c.caption_line_spacing > 0.0 { c.caption_line_spacing } else { body };
+        let above = c.caption_position == CaptionPosition::Above;
+        for (side, to) in [("", c.caption_align), (" Left", Align::Left), (" Right", Align::Right)] {
+            let display = format!("{kind} Caption{side}");
+            let name = display.replace(' ', "_20_");
+            put(OdtStyle {
+                name: &name,
+                display: Some(&display),
+                parent: Some("Standard"),
+                next: None,
+                outline: None,
+                paragraph: odt_paragraph(
+                    if above { far } else { near },
+                    if above { near } else { far },
+                    caption_line,
+                    to,
+                    0.0,
+                    0.0,
+                    0.0,
+                    above,
+                ),
+                text: odt_text((c.caption_size > 0.0).then_some(c.caption_size), None, None, Case::None),
+            });
+        }
+    }
+    // What stands in a table, and its headings.
+    let tables = &f.tables;
+    let table_line = if tables.line_spacing > 0.0 { tables.line_spacing } else { body };
+    let table_size = (tables.size > 0.0).then_some(tables.size);
     put(OdtStyle {
-        name: "Figure",
+        name: "Table_20_Contents",
+        display: Some("Table Contents"),
+        parent: Some("Standard"),
+        next: None,
+        outline: None,
+        paragraph: odt_paragraph(1.0, 1.0, table_line, Align::Left, 0.0, 0.0, 0.0, false),
+        text: odt_text(table_size, None, None, Case::None),
+    });
+    put(OdtStyle {
+        name: "Table_20_Heading",
+        display: Some("Table Heading"),
+        parent: Some("Table_20_Contents"),
+        next: None,
+        outline: None,
+        paragraph: odt_paragraph(1.0, 1.0, table_line, Align::Left, 0.0, 0.0, 0.0, false),
+        text: odt_text(table_size, Some(false), None, Case::None),
+    });
+    // A paragraph that takes no room, for what is fastened to it.
+    put(OdtStyle {
+        name: "GkAnchor",
         display: None,
         parent: Some("Standard"),
         next: None,
         outline: None,
-        paragraph: odt_paragraph(
-            if caption_above { near } else { far },
-            if caption_above { far } else { near },
-            1.0,
-            Align::Center,
-            0.0,
-            0.0,
-            0.0,
-            !caption_above,
-        ),
-        text: String::new(),
+        paragraph: "fo:margin-top=\"0in\" fo:margin-bottom=\"0in\" fo:line-height=\"0.02in\" fo:text-indent=\"0in\" "
+            .to_owned(),
+        text: "fo:font-size=\"2pt\" style:font-size-asian=\"2pt\" style:font-size-complex=\"2pt\" ".to_owned(),
     });
+    // The room after a table.
     put(OdtStyle {
-        name: "Figure_20_Caption",
-        display: Some("Figure Caption"),
+        name: "GkAfterTable",
+        display: None,
         parent: Some("Standard"),
         next: None,
         outline: None,
-        paragraph: odt_paragraph(
-            if caption_above { far } else { near },
-            if caption_above { near } else { far },
-            caption_line,
-            fig.caption_align,
-            0.0,
-            0.0,
-            0.0,
-            caption_above,
-        ),
-        text: odt_text((fig.caption_size > 0.0).then_some(fig.caption_size), None, None, Case::None),
+        paragraph: "fo:margin-top=\"0in\" fo:margin-bottom=\"0in\" fo:line-height=\"0.14in\" fo:text-indent=\"0in\" "
+            .to_owned(),
+        text: "fo:font-size=\"2pt\" style:font-size-asian=\"2pt\" style:font-size-complex=\"2pt\" ".to_owned(),
     });
+    // What the text flows around: a frame at the side of the text.
+    for (name, side, clear) in [("GkAroundLeft", "left", "right"), ("GkAroundRight", "right", "left")] {
+        replace_style(
+            &mut s,
+            name,
+            &format!(
+                "<style:style style:name=\"{name}\" style:family=\"graphic\"><style:graphic-properties \
+                 style:wrap=\"parallel\" style:number-wrapped-paragraphs=\"no-limit\" style:wrap-contour=\"false\" \
+                 style:vertical-pos=\"top\" style:vertical-rel=\"paragraph\" style:horizontal-pos=\"{side}\" \
+                 style:horizontal-rel=\"paragraph\" fo:margin-{clear}=\"0.17in\" fo:margin-{side}=\"0in\" \
+                 fo:margin-top=\"0.04in\" fo:margin-bottom=\"0.08in\" fo:padding=\"0in\" fo:border=\"none\" \
+                 draw:fill=\"none\" style:shadow=\"none\"/></style:style>"
+            ),
+        );
+    }
 
     // The page, and what stands in its margins.
     let (w, h) = f.page.dimensions();

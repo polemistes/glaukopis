@@ -7,7 +7,8 @@
 use std::fmt::Write;
 
 use super::{
-    Align, Case, DocumentFormat, HeadContent, HeadingLevel, NoteKind, Paragraphs, Position, TitlePlacement, fallbacks,
+    Align, Case, DocumentFormat, HeadContent, HeadingLevel, NoteKind, Paragraphs, Position, Rules, TitlePlacement,
+    fallbacks,
 };
 
 /// What the running head and the properties of the file are made from.
@@ -20,7 +21,14 @@ pub struct Particulars {
     /// format, which has its notes at the end: they are lettered, to be told
     /// from the numbered ones.
     pub lettered_footnotes: bool,
+    /// Text flows around something in the document.
+    pub flows: bool,
+    /// The document has tables.
+    pub tables: bool,
 }
+
+/// What makes text flow around what stands at its side: see the file.
+const AROUND: &str = include_str!("../../../../resources/typst/wrap-it.typ");
 
 /// A string of Typst code.
 pub fn string(text: &str) -> String {
@@ -356,32 +364,111 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
     );
 
     // Figures: a picture with what is said of it, put together before Typst sees it.
-    let caption_leading = if f.figures.caption_line_spacing > 0.0 {
-        leading(f.figures.caption_line_spacing)
-    } else {
-        body_leading.clone()
-    };
-    let _ = writeln!(
-        out,
-        "#show <gk-figure>: it => {{
+    // A figure stands where it is put; what is said of it is set as the format says.
+    for side in ["left", "center", "right"] {
+        let _ = writeln!(
+            out,
+            "#show <gk-figure-{side}>: it => {{
   set par(first-line-indent: 0pt, justify: false)
-  set align(center)
+  set align({side})
   block(width: 100%, above: {body_leading} + 1.2em, below: {body_leading} + 1.2em, breakable: false, it.body)
 }}
-#show <gk-caption>: it => {{
-  set text({size}hyphenate: false)
-  set par(leading: {caption_leading}, spacing: {caption_leading}, first-line-indent: 0pt, justify: {caption_justify})
-  set align({caption_align})
-  block(width: 100%, above: 0.9em, below: 0.9em, it.body)
-}}",
-        size = if f.figures.caption_size > 0.0 {
-            format!("size: {}, ", pt(f.figures.caption_size))
-        } else {
-            String::new()
-        },
-        caption_justify = f.figures.caption_align == Align::Justified,
-        caption_align = align(f.figures.caption_align),
+#show <gk-table-{side}>: it => {{
+  set par(first-line-indent: 0pt, justify: false)
+  show figure: set align({side})
+  block(width: 100%, above: {body_leading} + 1.2em, below: {body_leading} + 1.2em, it.body)
+}}"
+        );
+    }
+    // Within a row, or with the text flowing around it, it fills the room it is given.
+    let _ = writeln!(
+        out,
+        "#show <gk-figure-within>: it => {{
+  set par(first-line-indent: 0pt, justify: false)
+  set align(center)
+  block(width: 100%, above: 0pt, below: 0pt, it.body)
+}}
+#show <gk-table-within>: it => {{
+  set par(first-line-indent: 0pt, justify: false)
+  show figure: set align(center)
+  block(width: 100%, above: 0pt, below: 0pt, it.body)
+}}
+#show <gk-within>: it => {{
+  set par(first-line-indent: 0pt, justify: false)
+  show figure: set align(center)
+  block(width: 100%, above: 0pt, below: 0pt, it.body)
+}}"
     );
+    for (name, c) in [("figure", f.figures.captioned()), ("table", f.tables.captioned())] {
+        let leading_of_caption =
+            if c.caption_line_spacing > 0.0 { leading(c.caption_line_spacing) } else { body_leading.clone() };
+        // What stands at a side has what is said of it at that side.
+        for (at, to) in [("", c.caption_align), ("-left", Align::Left), ("-right", Align::Right)] {
+            let _ = writeln!(
+                out,
+                "#show <gk-{name}-caption{at}>: it => {{
+  set text({size}hyphenate: false)
+  set par(leading: {leading_of_caption}, spacing: {leading_of_caption}, first-line-indent: 0pt, justify: {justify})
+  set align({to})
+  block(width: 100%, above: 0.9em, below: 0.9em, sticky: {sticky}, it.body)
+}}",
+                sticky = c.caption_position == super::CaptionPosition::Above,
+                size = if c.caption_size > 0.0 { format!("size: {}, ", pt(c.caption_size)) } else { String::new() },
+                justify = to == Align::Justified,
+                to = align(to),
+            );
+        }
+    }
+
+    // Tables. Pandoc writes each as a figure, set in the middle; here it
+    // is the table alone, which stands where it is put.
+    let t = &f.tables;
+    let line = "0.7pt";
+    let (stroke, frame, under) = match t.rules {
+        Rules::Horizontal => ("none", format!("(top: {line}, bottom: {line})"), "0.5pt"),
+        Rules::Grid => ("0.5pt", "none".to_owned(), "0.5pt"),
+        Rules::None => ("none", "none".to_owned(), "none"),
+    };
+    let table_leading = if t.line_spacing > 0.0 { leading(t.line_spacing) } else { body_leading.clone() };
+    let _ = writeln!(
+        out,
+        "#set table(stroke: {stroke}, inset: (x: 0.6em, y: 0.42em))
+#set table.hline(stroke: {under})
+#show figure.where(kind: table): it => if it.body.has(\"body\") {{ it.body.body }} else {{ it.body }}
+#show table: it => {{
+  set text({size}hyphenate: false)
+  set par(leading: {table_leading}, spacing: {table_leading}, first-line-indent: 0pt, justify: false)
+  block(stroke: {frame}, it)
+}}",
+        size = if t.size > 0.0 { format!("size: {}, ", pt(t.size)) } else { String::new() },
+    );
+
+    // Things that stand beside each other: each line of them on its foot or
+    // its head, as it is said of the line.
+    let _ = writeln!(
+        out,
+        "#let gk-row(n, feet, ..cells) = block(
+  width: 100%, above: {body_leading} + 1.2em, below: {body_leading} + 1.2em, breakable: false,
+  grid(
+    columns: (1fr,) * n, column-gutter: 4%, row-gutter: 0.5em,
+    ..cells.pos().enumerate().map(((i, cell)) => grid.cell(align: center + feet.at(calc.quo(i, n)), cell)),
+  ),
+)"
+    );
+    if p.flows {
+        out.push_str(AROUND);
+        let _ = writeln!(
+            out,
+            "#let gk-around(side, width, fixed, body) = layout(size => wrap-content(
+  align: top + side,
+  size: size,
+  column-gutter: 1.2em,
+  box(width: size.width * width, inset: (top: 0.35em, bottom: 0.5em), fixed),
+  body,
+))"
+        );
+    }
+
     // Equations on a line of their own, with room about them.
     let _ = writeln!(
         out,

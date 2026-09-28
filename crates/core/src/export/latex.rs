@@ -293,6 +293,17 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
 
     // Figures stand where they are written, and mathematics has what it needs.
     let _ = writeln!(h, "\\usepackage{{float}}\n\\usepackage{{amsmath}}\n\\usepackage{{graphicx}}");
+    if p.flows {
+        let _ = writeln!(h, "\\usepackage{{wrapfig}}");
+    }
+    if p.tables {
+        // What Pandoc asks for when it writes a table itself: here the
+        // tables are written before it sees them.
+        let _ = writeln!(
+            h,
+            "\\usepackage{{longtable,booktabs,array}}\n\\newcounter{{none}}\n\\usepackage{{calc}}\n\\usepackage{{etoolbox}}\n\\makeatletter\n\\patchcmd\\longtable{{\\par}}{{\\if@noskipsec\\mbox{{}}\\fi\\par}}{{}}{{}}\n\\makeatother\n\\IfFileExists{{footnotehyper.sty}}{{\\usepackage{{footnotehyper}}}}{{\\usepackage{{footnote}}}}\n\\makesavenoteenv{{longtable}}"
+        );
+    }
 
     Settings { variables: v, header: h, number_sections: f.headings.numbered }
 }
