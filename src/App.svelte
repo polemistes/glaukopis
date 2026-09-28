@@ -10,6 +10,7 @@
   import Rail from '$lib/shell/Rail.svelte';
   import ProjectsView from '$lib/home/ProjectsView.svelte';
   import LibraryView from '$lib/library/LibraryView.svelte';
+  import PicturesView from '$lib/pictures/PicturesView.svelte';
   import ProjectView from '$lib/project/ProjectView.svelte';
   import SettingsView from '$lib/settings/SettingsView.svelte';
 
@@ -32,6 +33,7 @@
     if (!mod || event.altKey || event.shiftKey) return;
     if (event.key === '1') router.go({ view: 'projects' });
     else if (event.key === '2') router.go({ view: 'library' });
+    else if (event.key === '3') router.go({ view: 'pictures' });
     else if (event.key === ',') router.go({ view: 'settings' });
     else return;
     event.preventDefault();
@@ -47,6 +49,8 @@
       <ProjectsView />
     {:else if route.view === 'library'}
       <LibraryView />
+    {:else if route.view === 'pictures'}
+      <PicturesView />
     {:else if route.view === 'project'}
       {#key route.project}
         <ProjectView projectId={route.project} />

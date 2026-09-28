@@ -41,6 +41,11 @@
   --ok-soft: #e5f0e3;
   --warn: #a8741a;
 
+  /* The ground under a picture that is shown by itself, in squares of two
+     shades, so that a drawing with no ground of its own is seen. */
+  --picture-ground: #f4f2ed;
+  --picture-ground-2: #eae7df;
+
   --selection: rgba(63, 113, 116, 0.22);
   --focus-ring: rgba(63, 113, 116, 0.45);
   --scrim: rgba(31, 37, 40, 0.32);
@@ -116,6 +121,10 @@
   --ok: #8fbf8c;
   --ok-soft: #223222;
   --warn: #dcae5c;
+
+  /* Pictures are made for paper: on a dark ground a drawing in dark lines is lost. */
+  --picture-ground: #b3b8b6;
+  --picture-ground-2: #a7acaa;
 
   --selection: rgba(127, 181, 177, 0.28);
   --focus-ring: rgba(127, 181, 177, 0.5);

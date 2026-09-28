@@ -10,6 +10,7 @@
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import ImagePlus from '@lucide/svelte/icons/image-plus';
+  import Images from '@lucide/svelte/icons/images';
   import Italic from '@lucide/svelte/icons/italic';
   import Link2 from '@lucide/svelte/icons/link-2';
   import Plus from '@lucide/svelte/icons/plus';
@@ -26,6 +27,7 @@
   import TextQuote from '@lucide/svelte/icons/text-quote';
   import type { Command } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
+  import { showPictures } from '$lib/pictures/store.svelte';
   import { openMenu } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import {
@@ -117,11 +119,21 @@
         ...(body
           ? [
               {
-                label: 'Picture…',
+                label: 'Picture from a file…',
                 hint: 'A figure, with what is said of it',
                 icon: ImagePlus,
                 shortcut: 'Ctrl+Alt+P',
                 action: () => hooks?.picture?.(view),
+              },
+              {
+                label: 'Picture from the store…',
+                hint: 'Those you have are shown at the side',
+                icon: Images,
+                action: () => {
+                  // The cursor stays where the picture is to go.
+                  showPictures('store');
+                  view.focus();
+                },
               },
               {
                 label: 'Equation',

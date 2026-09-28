@@ -1,5 +1,6 @@
 <script lang="ts">
   import FolderOpen from '@lucide/svelte/icons/folder-open';
+  import Images from '@lucide/svelte/icons/images';
   import LibraryBig from '@lucide/svelte/icons/library-big';
   import Settings from '@lucide/svelte/icons/settings';
   import { router } from '$lib/state/router.svelte';
@@ -36,6 +37,15 @@
     use:tooltip={{ text: 'Library', shortcut: 'Ctrl+2', side: 'right' }}
   >
     <LibraryBig size={19} strokeWidth={1.7} />
+  </a>
+  <a
+    href="#/pictures"
+    class="place"
+    class:current={view === 'pictures'}
+    aria-label="Pictures"
+    use:tooltip={{ text: 'Pictures', shortcut: 'Ctrl+3', side: 'right' }}
+  >
+    <Images size={19} strokeWidth={1.7} />
   </a>
 
   <div class="spring"></div>
