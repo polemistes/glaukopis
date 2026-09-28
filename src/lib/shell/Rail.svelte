@@ -3,6 +3,7 @@
   import Images from '@lucide/svelte/icons/images';
   import LibraryBig from '@lucide/svelte/icons/library-big';
   import Settings from '@lucide/svelte/icons/settings';
+  import { t } from '$lib/i18n';
   import { router } from '$lib/state/router.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import Mark from './Mark.svelte';
@@ -24,8 +25,8 @@
     href="#/"
     class="place"
     class:current={view === 'projects' || view === 'project'}
-    aria-label="Projects"
-    use:tooltip={{ text: 'Projects', shortcut: 'Ctrl+1', side: 'right' }}
+    aria-label={t('shell-projects')}
+    use:tooltip={{ text: t('shell-projects'), shortcut: 'Ctrl+1', side: 'right' }}
   >
     <FolderOpen size={19} strokeWidth={1.7} />
   </a>
@@ -33,8 +34,8 @@
     href="#/library"
     class="place"
     class:current={view === 'library'}
-    aria-label="Library"
-    use:tooltip={{ text: 'Library', shortcut: 'Ctrl+2', side: 'right' }}
+    aria-label={t('shell-library')}
+    use:tooltip={{ text: t('shell-library'), shortcut: 'Ctrl+2', side: 'right' }}
   >
     <LibraryBig size={19} strokeWidth={1.7} />
   </a>
@@ -42,8 +43,8 @@
     href="#/pictures"
     class="place"
     class:current={view === 'pictures'}
-    aria-label="Pictures"
-    use:tooltip={{ text: 'Pictures', shortcut: 'Ctrl+3', side: 'right' }}
+    aria-label={t('shell-pictures')}
+    use:tooltip={{ text: t('shell-pictures'), shortcut: 'Ctrl+3', side: 'right' }}
   >
     <Images size={19} strokeWidth={1.7} />
   </a>
@@ -54,8 +55,8 @@
     href="#/settings"
     class="place"
     class:current={view === 'settings'}
-    aria-label="Settings"
-    use:tooltip={{ text: 'Settings', shortcut: 'Ctrl+,', side: 'right' }}
+    aria-label={t('shell-settings')}
+    use:tooltip={{ text: t('shell-settings'), shortcut: 'Ctrl+,', side: 'right' }}
   >
     <Settings size={19} strokeWidth={1.7} />
   </a>
