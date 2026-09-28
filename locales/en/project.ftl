@@ -185,3 +185,15 @@ project-pictures-absent-project = { $count ->
     [one] { $count } in this project is not on this computer.
    *[other] { $count } in this project are not on this computer.
 }
+
+## Shared by the diagram and the text
+
+# A count of elements that stands alone, as a label of what is dragged.
+project-elements = { $count ->
+    [one] { $count } element
+   *[other] { $count } elements
+}
+# One of the others who work on a shared project is at an element.
+project-other-here = { $name } is here
+project-link-placeholder = How they are related
+project-link-label = Label of the association

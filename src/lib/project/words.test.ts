@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { languages, t } from '$lib/i18n';
+import { pieces } from './pieces';
 
 afterEach(() => {
   languages.current = 'en';
@@ -49,5 +50,31 @@ describe('the words of a project', () => {
     expect(t('project-deleted-many', { count: 1 })).toBe('1 element ble slettet');
     expect(t('project-deleted-many', { count: 1200 })).toMatch(/^1\s200 elementer ble slettet$/);
     expect(t('project-untitled')).toBe('Uten navn');
+  });
+});
+
+describe('the words of a diagram', () => {
+  it('have the keys where the language puts them', () => {
+    const hint = () => pieces((m) => t('diagram-hint-empty', m), { tab: 'Tab', enter: 'Enter' });
+    expect(
+      hint()
+        .map((p) => p.text)
+        .join(''),
+    ).toBe(
+      'Tab adds an idea under the one selected · Enter adds one beside it · double-click to write',
+    );
+    expect(hint().filter((p) => p.name)).toEqual([
+      { text: 'Tab', name: 'tab' },
+      { text: 'Enter', name: 'enter' },
+    ]);
+    languages.current = 'nb';
+    expect(hint()[0]).toEqual({ text: 'Tab', name: 'tab' });
+    expect(hint().filter((p) => p.name)).toHaveLength(2);
+  });
+
+  it('say how large the map is shown in the way of the language', () => {
+    expect(t('diagram-zoom', { percent: 100 })).toBe('100%');
+    languages.current = 'nb';
+    expect(t('diagram-zoom', { percent: 100 })).toBe('100 %');
   });
 });

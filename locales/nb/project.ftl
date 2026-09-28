@@ -164,3 +164,13 @@ project-no-pictures-project = Bildene i figurene i prosjektet står her. Bildene
 project-pictures-drag = Dra et bilde inn i en tekst for å lage en figur av det der, eller til et element for å sette det inn på slutten av teksten.
 project-pictures-absent-map = { $count } i dette kartet er ikke på denne datamaskinen.
 project-pictures-absent-project = { $count } i dette prosjektet er ikke på denne datamaskinen.
+
+## Felles for diagrammet og teksten
+
+project-elements = { $count ->
+    [one] { $count } element
+   *[other] { $count } elementer
+}
+project-other-here = { $name } er her
+project-link-placeholder = Hvordan de henger sammen
+project-link-label = Merkelapp på assosiasjonen
