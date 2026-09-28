@@ -283,6 +283,11 @@
             Free software under the GNU General Public License, version 3 or later. It comes without
             warranty.
           </div>
+          <div class="hint credit">
+            The owl is drawn by Robert Emil Berge, after a photograph of an Athenian tetradrachm by
+            Classical Numismatic Group, Inc. (http://www.cngcoins.com). The drawing is under the
+            Creative Commons Attribution-Share Alike 3.0 Unported licence.
+          </div>
         </div>
       </div>
       <div class="row top">
@@ -373,6 +378,9 @@
     color: var(--ink-3);
     font-size: var(--text-sm);
     line-height: 1.5;
+  }
+  .hint.credit {
+    margin-top: 4px;
   }
   .hint code {
     font-family: var(--font-mono);

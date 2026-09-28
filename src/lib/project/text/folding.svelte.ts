@@ -1,6 +1,7 @@
 /**
- * What is folded away in the text of a project: the elements under which
- * nothing is shown but that there is something.
+ * What is folded away in the text of a project: the elements of which the
+ * name is shown and nothing else, neither their own text nor what is under
+ * them.
  *
  * It is about the one who reads, and not about the document: it is kept
  * with the view of the project on this computer, and not in the project,
@@ -19,20 +20,28 @@ export interface Hidden {
 }
 
 export class Folding {
-  /** The elements that are folded, whether they have something under them or not. */
+  /** The elements that are folded, whether they have something to fold away or not. */
   readonly folded = new SvelteSet<string>();
+  /** Whether an element has text of its own. */
+  holds: (id: string) => boolean;
 
-  constructor(folded: Iterable<string> = []) {
+  constructor(folded: Iterable<string> = [], holds: (id: string) => boolean = () => false) {
     for (const id of folded) this.folded.add(id);
+    this.holds = holds;
   }
 
   has(id: string): boolean {
     return this.folded.has(id);
   }
 
-  /** Whether an element hides what is under it: it is folded, and there is something. */
+  /** Whether there is something to fold away: text of its own, or something under it. */
+  can(tree: Tree, id: string): boolean {
+    return (tree.children.get(id)?.length ?? 0) > 0 || this.holds(id);
+  }
+
+  /** Whether an element hides something: it is folded, and there is something. */
   hides(tree: Tree, id: string): boolean {
-    return this.folded.has(id) && (tree.children.get(id)?.length ?? 0) > 0;
+    return this.folded.has(id) && this.can(tree, id);
   }
 
   fold(id: string) {
@@ -45,7 +54,7 @@ export class Folding {
 
   toggle(tree: Tree, id: string) {
     if (this.hides(tree, id)) this.open(id);
-    else if ((tree.children.get(id)?.length ?? 0) > 0) this.fold(id);
+    else if (this.can(tree, id)) this.fold(id);
   }
 
   /** All that is under an element, however deep, in the order of the text. */
@@ -66,11 +75,14 @@ export class Folding {
     return this.hides(tree, id) || this.under(tree, id).some((one) => this.hides(tree, one));
   }
 
+  /** Whether anything under the element is folded and hides something. */
+  anyFoldedUnder(tree: Tree, id: string): boolean {
+    return this.under(tree, id).some((one) => this.hides(tree, one));
+  }
+
   /** Whether something under the element could be folded and is not. */
   anyOpen(tree: Tree, id: string): boolean {
-    return this.under(tree, id).some(
-      (one) => (tree.children.get(one)?.length ?? 0) > 0 && !this.folded.has(one),
-    );
+    return this.under(tree, id).some((one) => this.can(tree, one) && !this.folded.has(one));
   }
 
   /** Opens the element and all that is folded under it. */
@@ -81,12 +93,12 @@ export class Folding {
 
   /**
    * Folds all that can be folded under the element, which itself stays
-   * open: what is directly under it is shown, and nothing deeper.
+   * open: of what is directly under it the names are shown, and nothing
+   * deeper.
    */
   foldAll(tree: Tree, id: string) {
     this.folded.delete(id);
-    for (const one of this.under(tree, id))
-      if ((tree.children.get(one)?.length ?? 0) > 0) this.folded.add(one);
+    for (const one of this.under(tree, id)) if (this.can(tree, one)) this.folded.add(one);
   }
 
   /** The element an element is hidden under: the outermost that is folded over it. */

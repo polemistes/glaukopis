@@ -4,8 +4,9 @@ Date: 2026-09-28. Status: accepted.
 
 ## Context
 
-In the text of a map, what is under an element can be folded away, and is
-to be as it was left when the project is opened again. The diagram already
+In the text of a map, an element can be folded away, so that its name is
+shown and neither its own text nor what is under it, and is to be as it
+was left when the project is opened again. The diagram already
 folds (`collapsed` of an element), and keeps that in the project, where
 everyone the project is shared with has it as well.
 

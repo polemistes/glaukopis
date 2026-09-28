@@ -36,13 +36,13 @@
     linkable: boolean;
     /** Those of the others who are at this element. */
     others?: Other[];
-    /** Whether there is something under it, which can be folded away. */
+    /** Whether it has text or something under it, which can be folded away. */
     foldable?: boolean;
-    /** What is folded away under it, when it is folded. */
-    hidden?: { parts: number; words: number } | null;
-    /** Whether it, or something under it, is folded. */
+    /** What is folded away of it, when it is folded: the elements under it, its own text, the words of all of it. */
+    hidden?: { parts: number; text: boolean; words: number } | null;
+    /** Whether something under it is folded. */
     openable?: boolean;
-    /** Folds away what is under it, or opens it; with `all`, opens all that is folded under it. */
+    /** Folds it away, or opens it; with `all`, opens all that is folded under it as well. */
     onfold?: (id: string, all: boolean) => void;
     onactivate: (id: string, part: Part, at: FocusAt) => void;
     onaction: (id: string, part: Part, action: KeyAction, view: EditorView) => boolean;
@@ -100,7 +100,22 @@
   const included = $derived(node.include ? project.map(node.include) : undefined);
 
   $effect(() => {
-    onready?.(node.id, active ? { title: titleEditor, body: bodyEditor } : null);
+    const id = node.id;
+    onready?.(id, active ? { title: titleEditor, body: bodyEditor } : null);
+    // Folded away or taken away, its editors are no longer there.
+    return () => onready?.(id, null);
+  });
+
+  /** What is folded away, in words. */
+  const away = $derived.by(() => {
+    if (!hidden) return '';
+    const what = [
+      ...(hidden.text ? ['its text'] : []),
+      ...(hidden.parts ? [plural(hidden.parts, 'element')] : []),
+    ].join(' and ');
+    return `${what.charAt(0).toUpperCase()}${what.slice(1)} folded away${
+      hidden.words ? `, ${plural(hidden.words, 'word')}` : ''
+    }`;
   });
 
   function press(event: MouseEvent, part: Part) {
@@ -134,14 +149,16 @@
         type="button"
         class="fold"
         aria-expanded={!hidden}
-        aria-label={hidden ? 'Open what is under it' : 'Fold away what is under it'}
+        aria-label={hidden ? 'Open it' : 'Fold it away'}
         tabindex="-1"
         use:tooltip={{
           text: hidden
-            ? 'Open what is under it · with Shift, all that is folded under it'
+            ? openable
+              ? 'Open it · with Shift, all that is folded under it as well'
+              : 'Open it'
             : openable
-              ? 'Fold away what is under it · with Shift, open all that is folded under it'
-              : 'Fold away what is under it',
+              ? 'Fold away its text and what is under it · with Shift, open all that is folded under it'
+              : 'Fold away its text and what is under it',
           side: 'top',
         }}
         onmousedown={(e) => e.preventDefault()}
@@ -193,7 +210,7 @@
       {/if}
     </div>
 
-    {#if included}
+    {#if included && !hidden}
       <button type="button" class="include" onclick={() => onopenmap(included.id)}>
         <FileInput size={14} />
         <span>In the document, the map <strong>{included.name}</strong> stands here.</span>
@@ -201,45 +218,41 @@
       </button>
     {/if}
 
-    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-    <div class="body" data-part="body" onmousedown={(e) => press(e, 'body')}>
-      {#if active && body}
-        <RichText
-          bind:this={bodyEditor}
-          {project}
-          fragment={body}
-          kind="body"
-          element={node.id}
-          placeholder={level === 0 && !loose
-            ? 'Write here, or press Ctrl+Enter to begin the first section.'
-            : ''}
-          autofocus={focus?.part === 'body' ? focus.at : null}
-          onaction={(a, v) => onaction(node.id, 'body', a, v)}
-          onfocus={() => onfocused(node.id, 'body')}
-          oncite={onkeep}
-        />
-      {:else if html}
-        <!-- Made by blocksHtml, which escapes all text. -->
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        <div class="prose body static" use:hydrate={{ html, project, element: node.id }}>
-          {@html html}
-        </div>
-      {:else}
-        <div class="prose body static blank">&nbsp;</div>
-      {/if}
-    </div>
-
-    {#if hidden}
+    {#if !hidden}
+      <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+      <div class="body" data-part="body" onmousedown={(e) => press(e, 'body')}>
+        {#if active && body}
+          <RichText
+            bind:this={bodyEditor}
+            {project}
+            fragment={body}
+            kind="body"
+            element={node.id}
+            placeholder={level === 0 && !loose
+              ? 'Write here, or press Ctrl+Enter to begin the first section.'
+              : ''}
+            autofocus={focus?.part === 'body' ? focus.at : null}
+            onaction={(a, v) => onaction(node.id, 'body', a, v)}
+            onfocus={() => onfocused(node.id, 'body')}
+            oncite={onkeep}
+          />
+        {:else if html}
+          <!-- Made by blocksHtml, which escapes all text. -->
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          <div class="prose body static" use:hydrate={{ html, project, element: node.id }}>
+            {@html html}
+          </div>
+        {:else}
+          <div class="prose body static blank">&nbsp;</div>
+        {/if}
+      </div>
+    {:else}
       <div class="away">
         <button type="button" class="open" onclick={(e) => onfold?.(node.id, e.shiftKey)}>
           <ChevronRight size={13} />
-          <span
-            >{plural(hidden.parts, 'element')} folded away{hidden.words
-              ? `, ${plural(hidden.words, 'word')}`
-              : ''}</span
-          >
+          <span>{away}</span>
         </button>
-        {#if hidden.parts > 1}
+        {#if openable}
           <button type="button" class="all" onclick={() => onfold?.(node.id, true)}>
             Open all
           </button>
@@ -288,7 +301,8 @@
     background: transparent;
     color: var(--ink-4);
     cursor: pointer;
-    opacity: 0;
+    /* Seen faintly at all times, so that it is known what can be folded. */
+    opacity: 0.4;
     transition: opacity var(--fast) var(--ease);
   }
   .section:hover > .gutter .fold,

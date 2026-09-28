@@ -11,7 +11,7 @@ pkgname=(glaukopis glaukopis-server)
 pkgver=0.1.0
 pkgrel=1
 arch=(x86_64 aarch64)
-license=(GPL-3.0-or-later)
+license=(GPL-3.0-or-later CC-BY-SA-3.0)
 makedepends=(cargo nodejs pnpm rsync webkit2gtk-4.1 gtk3 openssl sqlite)
 checkdepends=(pandoc-cli typst)
 # Link-time optimisation is set in Cargo.toml; that of makepkg breaks the
@@ -79,6 +79,9 @@ package_glaukopis() {
   done
 
   install -Dm644 docs/guide.md "$pkgdir/usr/share/doc/glaukopis/guide.md"
+  # The owl has a licence of its own.
+  install -Dm644 resources/brand/README.md "$pkgdir/usr/share/licenses/glaukopis/the-owl.md"
+  install -Dm644 resources/brand/LICENSE "$pkgdir/usr/share/licenses/glaukopis/CC-BY-SA-3.0.txt"
 }
 
 package_glaukopis-server() {

@@ -121,8 +121,11 @@
       // svelte-ignore state_referenced_locally
       const opened = await openProject(projectId);
       stored = (opened.info.view ?? {}) as StoredView;
-      folding = new Folding(Array.isArray(stored.folded) ? stored.folded : []);
       const p = opened.project;
+      folding = new Folding(Array.isArray(stored.folded) ? stored.folded : [], (id) => {
+        const node = p.nodes.get(id);
+        return !!node && (!node.empty || !!node.include);
+      });
       // A project that was joined and has not been fetched has no maps yet.
       if (p.maps.length) arrange(p);
       shared = new ProjectSharing(ownId, p, opened.info);

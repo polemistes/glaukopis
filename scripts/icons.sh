@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Makes the icons of the application from the drawing of its author.
+# Makes the icons of the application from the drawing of its author. The
+# drawing and what is made of it are under CC BY-SA 3.0 Unported, and not
+# under the licence of the program: see resources/brand/README.md.
 #
 #     scripts/icons.sh [the drawing]
 #

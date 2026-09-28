@@ -75,10 +75,13 @@
     level: number;
     excluded: boolean;
     loose: boolean;
-    /** Whether there is something under it, which can be folded away. */
+    /** Whether it has text of its own or something under it, which can be folded away. */
     foldable: boolean;
-    /** What is folded away under it: how many elements, and how many words they hold. */
-    hidden: { ids: string[]; words: number } | null;
+    /**
+     * What is folded away of it: the elements under it, whether it has text
+     * of its own, and how many words there are in all of it.
+     */
+    hidden: { ids: string[]; text: boolean; words: number } | null;
     /** Whether it is folded away itself, under another. */
     away: boolean;
   }
@@ -98,14 +101,16 @@
       if (!node) return;
       const out_ = excluded || node.excluded;
       const under = tree.children.get(id) ?? [];
-      const hides = !away && under.length > 0 && folding.has(id);
+      const text = !node.empty || !!node.include;
+      const foldable = under.length > 0 || text;
+      const hides = !away && foldable && folding.has(id);
       const row: Row = {
         id,
         level,
         excluded: out_,
         loose: loose && top,
-        foldable: under.length > 0,
-        hidden: hides ? { ids: [], words: 0 } : null,
+        foldable,
+        hidden: hides ? { ids: [], text, words: node.words } : null,
         away,
       };
       out.push(row);
@@ -165,7 +170,12 @@
   async function go(id: string | undefined | null, part: Part, at: FocusAt) {
     if (!id) return;
     // What is folded away is shown before the cursor goes there.
-    if (folding.reveal(tree, id)) await tick();
+    let opened = folding.reveal(tree, id);
+    if (part === 'body' && folding.has(id)) {
+      folding.open(id);
+      opened = true;
+    }
+    if (opened) await tick();
     activate(id, part, at);
     await tick();
     scroller
@@ -198,14 +208,19 @@
     else folding.toggle(tree, id);
     if (!folding.hides(tree, id)) return;
     // The cursor does not stay in what is no longer shown.
-    const under = folding.under(tree, id);
-    if (current && under.includes(current)) {
-      (document.activeElement as HTMLElement | null)?.blur?.();
+    if (current && (current === id || folding.under(tree, id).includes(current))) {
+      const at = document.activeElement as HTMLElement | null;
+      if (at && scroller?.contains(at)) at.blur();
       current = id;
     }
     tick().then(() =>
       scroller?.querySelector(`[data-section="${id}"]`)?.scrollIntoView({ block: 'nearest' }),
     );
+  }
+
+  /** Where the cursor lands in an element it comes to from below: at the end of its text, or of its name when that is all that is shown. */
+  function endOf(id: string): Part {
+    return folding.hides(tree, id) ? 'title' : 'body';
   }
 
   /** Those of the others who are at an element, or at what is folded away under it. */
@@ -325,13 +340,14 @@
         }
         return false;
       case 'down-out':
-        if (part === 'title') go(id, 'body', 'start');
+        // Past a text that is folded away, which the arrows do not open.
+        if (part === 'title' && !folding.hides(tree, id)) go(id, 'body', 'start');
         else if (rows[i + 1]) go(rows[i + 1].id, 'title', 'start');
         else return false;
         return true;
       case 'up-out':
         if (part === 'body') go(id, 'title', 'end');
-        else if (rows[i - 1]) go(rows[i - 1].id, 'body', 'end');
+        else if (rows[i - 1]) go(rows[i - 1].id, endOf(rows[i - 1].id), 'end');
         else return false;
         return true;
       case 'backspace-at-start': {
@@ -352,11 +368,11 @@
           project.checkpoint();
           project.remove([id]);
           project.checkpoint();
-          if (previous) go(previous.id, 'body', 'end');
+          if (previous) go(previous.id, endOf(previous.id), 'end');
           return true;
         }
         if (rows[i - 1]) {
-          go(rows[i - 1].id, 'body', 'end');
+          go(rows[i - 1].id, endOf(rows[i - 1].id), 'end');
           return true;
         }
         return false;
@@ -460,10 +476,10 @@
     }
     if (extra.length) extra.push({ kind: 'separator' });
     const folds: MenuItem[] = [];
-    if ((tree.children.get(id)?.length ?? 0) > 0) {
+    if (folding.can(tree, id)) {
       const folded = folding.hides(tree, id);
       folds.push({
-        label: folded ? 'Open what is under it' : 'Fold away what is under it',
+        label: folded ? 'Open it' : 'Fold it away',
         icon: folded ? UnfoldVertical : FoldVertical,
         shortcut: 'Ctrl+Alt+U',
         action: () => fold(id),
@@ -479,7 +495,7 @@
         folds.push({
           label: 'Fold away all under it',
           icon: ChevronsDownUp,
-          hint: 'What is directly under it is shown, and nothing deeper',
+          hint: 'Of what is directly under it the names are shown, and nothing deeper',
           action: () => folding.foldAll(tree, id),
         });
       folds.push({ kind: 'separator' });
@@ -547,6 +563,8 @@
         if (picture) project.addFigure(target.id, picture, widthFor(picture));
       }
       project.checkpoint();
+      // What was put into a text that is folded away is shown.
+      folding.open(target.id);
       current = target.id;
       return;
     }
@@ -556,6 +574,7 @@
       project.cite(target.id, ids);
       project.checkpoint();
       for (const id of ids) onkeep(id);
+      folding.open(target.id);
       current = target.id;
       return;
     }
@@ -835,8 +854,10 @@
               linkable={!!linkFrom && linkFrom !== row.id}
               others={othersAt(row)}
               foldable={row.foldable}
-              hidden={row.hidden ? { parts: row.hidden.ids.length, words: row.hidden.words } : null}
-              openable={row.foldable && folding.anyFolded(tree, row.id)}
+              hidden={row.hidden
+                ? { parts: row.hidden.ids.length, text: row.hidden.text, words: row.hidden.words }
+                : null}
+              openable={row.foldable && folding.anyFoldedUnder(tree, row.id)}
               onfold={fold}
               onactivate={activate}
               {onaction}

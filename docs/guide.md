@@ -103,20 +103,19 @@ Associations are shown as narrow lines in the left margin, between the
 sections they join. Click one to go to either end of it, to give it a few
 words, or to remove it.
 
-### Folding away what is under an element
+### Folding elements away
 
 A long text is easier to work in when what you are not working on is out of
-the way. An element that has others under it has a small arrow beside its
-name, which shows when the pointer is over the element. Press it, and what
-is under the element is folded away: the element itself stays, with its
-own text, and a line under it says how much is folded away. Press the
-arrow or the line to open it again. **Ctrl+Alt+U** does the same for the
-element the cursor is in.
+the way. Every element that has text, or other elements under it, has a
+small arrow beside its name. Press it, and the element is folded away: its
+name stays, and its own text and all that is under it are hidden. A line
+under the name says how much that is. Press the arrow or the line to open
+it again. **Ctrl+Alt+U** does the same for the element the cursor is in.
 
 Each element is folded by itself. What was folded under an element is
 folded still when the element over it is folded and opened again, so the
-text stays as you arranged it. To open everything under an element at
-once, however deep:
+text stays as you arranged it. To open an element with everything under
+it at once, however deep:
 
 - **Open all**, in the line that says what is folded away; or
 - press the arrow with **Shift** held down; or
@@ -124,10 +123,13 @@ once, however deep:
 - **Open all that is folded under it**, in the menu of the element. From
   the title of the document, that opens the whole text.
 
-**Fold away all under it**, in the same menu, does the opposite: what is
-directly under the element is shown, and nothing deeper. From the title,
-that leaves the parts of the document with their names and their own text,
-to be opened one at a time.
+**Fold away all under it**, in the same menu, does the opposite: the
+element stays open, and all under it is folded. From the title, that leaves
+the parts of the document by their names, to be opened one at a time.
+
+The name of a folded element can be changed as any other. **Enter** in the
+name opens the element, and the cursor goes into its text; the arrows up
+and down go past a text that is folded away.
 
 What is folded away is remembered with the project on this computer, and is
 as you left it when you open the project again. It is about what you see,
@@ -682,7 +684,7 @@ has not arrived yet is shown as an empty frame until it has.
 | **Ctrl+Alt+T** | In the text: a table |
 | **Ctrl+Alt+M**, **Ctrl+Alt+E** | In the text: a formula in the line, an equation |
 | **Ctrl+Alt+R** | In the text: words that point to a figure, a table, an equation, a part |
-| **Ctrl+Alt+U**, **Ctrl+Alt+Shift+U** | In the text: fold away what is under the element, or open it; open all that is folded under it |
+| **Ctrl+Alt+U**, **Ctrl+Alt+Shift+U** | In the text: fold the element away, or open it; open all that is folded under it |
 | **Ctrl+F**, **Ctrl+N** | In the library: search, new reference |
 
 ## What Glaukopis needs

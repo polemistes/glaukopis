@@ -39,13 +39,25 @@ describe('what is folded away in the text', () => {
     expect(f.hides(tree, 'one')).toBe(false);
   });
 
-  it('an element with nothing under it is not folded', () => {
+  it('an element with no text and nothing under it is not folded', () => {
     const f = new Folding();
     f.toggle(tree, 'three');
     expect(f.has('three')).toBe(false);
-    // One that was folded and has lost what was under it hides nothing.
+    // One that was folded and has lost what it held hides nothing.
     const g = new Folding(['three']);
     expect(g.hides(tree, 'three')).toBe(false);
+  });
+
+  it('an element with text of its own is folded, though nothing is under it', () => {
+    const f = new Folding([], (id) => id === 'three' || id === 'one-b');
+    expect(f.can(tree, 'three')).toBe(true);
+    f.toggle(tree, 'three');
+    expect(f.hides(tree, 'three')).toBe(true);
+    // And is among what is folded when all under an element is.
+    f.foldAll(tree, 'one');
+    expect(f.kept(() => true)).toEqual(['one-a', 'one-b', 'three']);
+    expect(f.anyFoldedUnder(tree, 'one')).toBe(true);
+    expect(f.anyFoldedUnder(tree, 'three')).toBe(false);
   });
 
   it('what is folded under a folded element is as it was when that is opened', () => {
