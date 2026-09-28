@@ -63,7 +63,7 @@ const ARTICLES: &[&str] = &[
     "lo ", "i ", "gli ", "el ", "los ", "las ", "den ", "det ", "de ", "en ", "et ",
 ];
 
-fn without_article(folded: &str) -> &str {
+pub(crate) fn without_article(folded: &str) -> &str {
     for a in ARTICLES {
         if let Some(rest) = folded.strip_prefix(a)
             && !rest.is_empty()

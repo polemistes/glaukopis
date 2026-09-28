@@ -8,7 +8,7 @@ use rusqlite::{Connection, params};
 
 use super::*;
 use crate::bib::names::Person;
-use crate::library::entry::Draft;
+use crate::library::entry::{Draft, FIELD_ZOTERO};
 
 /// The tables that are read, as Zotero's `userdata.sql` and `system.sql`
 /// define them.
@@ -319,8 +319,15 @@ fn by_key<'a>(candidates: &'a [Candidate], key: &str) -> &'a Candidate {
     candidates.iter().find(|c| c.origin == origin).unwrap_or_else(|| panic!("{key} is not among the candidates"))
 }
 
+/// What the draft says of the work. The key of the item, which every draft
+/// has, is looked at on its own.
 fn fields(draft: &Draft) -> Vec<(&str, &str)> {
-    draft.fields.iter().map(|(name, value)| (name.as_str(), value.as_str())).collect()
+    draft
+        .fields
+        .iter()
+        .filter(|(name, _)| *name != FIELD_ZOTERO)
+        .map(|(name, value)| (name.as_str(), value.as_str()))
+        .collect()
 }
 
 fn names(draft: &Draft) -> Vec<(&str, &[Person])> {
@@ -1049,6 +1056,74 @@ fn what_is_read_can_be_added_to_the_library() {
         "{:?}",
         again.items.iter().map(|item| &item.action).collect::<Vec<_>>()
     );
+}
+
+#[test]
+fn every_entry_keeps_the_key_of_its_item() {
+    let z = a_library();
+    let (candidates, warnings) = read_all(&z);
+    let keys: Vec<String> = candidates.iter().map(|c| c.origin.trim_start_matches("Zotero, ").to_owned()).collect();
+    for (candidate, key) in candidates.iter().zip(&keys) {
+        assert_eq!(candidate.draft.zotero(), vec![key.clone()], "{}", candidate.origin);
+    }
+
+    let store = tempfile::tempdir().unwrap();
+    let mut library = crate::library::Library::open_at(&store.path().join("library")).unwrap();
+    let plan = crate::import::plan(&library, candidates, "Zotero", warnings);
+    // The plan goes to the interface and comes back.
+    let plan: crate::import::Plan = serde_json::from_str(&serde_json::to_string(&plan).unwrap()).unwrap();
+    crate::import::apply(&mut library, &plan).unwrap();
+    let mut kept: Vec<String> = library.entries().iter().flat_map(|e| e.zotero.clone()).collect();
+    let mut keys = keys;
+    kept.sort();
+    keys.sort();
+    assert_eq!(kept, keys);
+    assert!(library.entries().iter().all(|e| e.zotero.len() == 1 && e.get(FIELD_ZOTERO).is_none()));
+
+    // Read from the file again.
+    let again = crate::library::Library::open_at(&store.path().join("library")).unwrap();
+    let read: Vec<(&str, &[String])> = again.entries().iter().map(|e| (e.key.as_str(), e.zotero.as_slice())).collect();
+    let held: Vec<(&str, &[String])> =
+        library.entries().iter().map(|e| (e.key.as_str(), e.zotero.as_slice())).collect();
+    assert_eq!(read, held);
+}
+
+#[test]
+fn what_came_from_zotero_before_gets_its_key_when_it_is_brought_in_again() {
+    let z = a_library();
+    let (candidates, _) = read_all(&z);
+    let store = tempfile::tempdir().unwrap();
+    let mut library = crate::library::Library::open_at(&store.path().join("library")).unwrap();
+    // As they were brought in when no key was kept.
+    let mut before = candidates.clone();
+    for candidate in &mut before {
+        candidate.draft.fields.remove(FIELD_ZOTERO);
+    }
+    let plan = crate::import::plan(&library, before, "Zotero", vec![]);
+    crate::import::apply(&mut library, &plan).unwrap();
+    assert!(library.entries().iter().all(|e| e.zotero.is_empty()));
+    let text_before: Vec<String> = library.entries().iter().map(|e| e.to_bib(false, true)).collect();
+
+    let plan = crate::import::plan(&library, candidates, "Zotero", vec![]);
+    for item in &plan.items {
+        let first = &item.matches[0];
+        assert_eq!(first.gains, vec![FIELD_ZOTERO], "{}", item.candidate.origin);
+        assert_eq!(item.action, crate::import::Action::Merge { into: first.id.clone() });
+    }
+    let outcome = crate::import::apply(&mut library, &plan).unwrap();
+    assert_eq!((outcome.added.len(), outcome.updated.len()), (0, 7));
+    for item in &plan.items {
+        let entry = library.get(&item.matches[0].id).unwrap();
+        assert_eq!(format!("Zotero, {}", entry.zotero.join(" ")), item.candidate.origin);
+    }
+    // Nothing else of them is changed.
+    let text_after: Vec<String> = library.entries().iter().map(|e| e.to_bib(false, true)).collect();
+    assert_eq!(text_before, text_after);
+
+    // And a third time there is nothing to gain.
+    let (candidates, _) = read_all(&z);
+    let again = crate::import::plan(&library, candidates, "Zotero", vec![]);
+    assert!(again.items.iter().all(|item| item.action == crate::import::Action::Skip));
 }
 
 /// Reads the Zotero of whoever runs the test, if there is one, and says

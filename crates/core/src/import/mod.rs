@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 use crate::duplicates::{self, Certainty, Reason};
 use crate::error::Result;
 use crate::library::Library;
-use crate::library::entry::{Draft, Entry, Summary};
+use crate::library::entry::{Draft, Entry, FIELD_ZOTERO, Summary};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -171,8 +171,25 @@ pub fn fill_missing(existing: &Entry, incoming: &Draft) -> (Draft, Vec<String>) 
         draft.names.insert(name.clone(), people.clone());
         gains.push(name.clone());
     }
+    // What the entry is in Zotero is no field that a draft of it has: the
+    // keys it has are kept, and those it lacks are gained.
+    let mut keys = existing.zotero.clone();
+    for key in incoming.zotero() {
+        if !keys.contains(&key) {
+            keys.push(key);
+        }
+    }
+    if keys.len() > existing.zotero.len() {
+        gains.push(FIELD_ZOTERO.to_owned());
+    }
+    if !keys.is_empty() {
+        draft.fields.insert(FIELD_ZOTERO.to_owned(), keys.join(" "));
+    }
     for (name, value) in &incoming.fields {
         if value.trim().is_empty() || draft.fields.get(name).is_some_and(|v| !v.trim().is_empty()) {
+            continue;
+        }
+        if name.starts_with("glaukopis-") {
             continue;
         }
         if matches!(name.as_str(), "date" | "year" | "month") && has_date {
