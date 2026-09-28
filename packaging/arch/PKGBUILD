@@ -26,6 +26,7 @@ prepare() {
   rsync -a --delete \
     --exclude=/target --exclude=/node_modules --exclude=/dist --exclude=/.git \
     --exclude=/e2e/output --exclude=/packaging/arch --exclude=/src-tauri/gen \
+    --exclude=/.claude \
     "$_tree/" "$srcdir/$pkgbase-$pkgver/"
   cd "$srcdir/$pkgbase-$pkgver"
   export CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
