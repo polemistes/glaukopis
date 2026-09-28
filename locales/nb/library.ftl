@@ -35,6 +35,7 @@ library-names-suffix-of = { $role }: etterledd
 library-untitled = Uten tittel
 library-no-author = Ingen forfatter
 library-no-title = Ingen tittel
+library-in-library = I biblioteket ditt
 
 ## Hvorfor en referanse tas for en annen: «samme DOI og samme fil».
 
@@ -107,7 +108,6 @@ library-import-repeated = { $count ->
     [one] { $count } referanse som gjentas i importen
    *[other] { $count } referanser som gjentas i importen
 }
-library-import-in-library = I biblioteket ditt
 library-import-would-gain = Vil få: { $fields }
 library-import-gains-file = Fil
 library-import-gains-zotero = Nøkkelen i Zotero
@@ -133,6 +133,7 @@ library-import-failed = Importen mislyktes.
 ## Biblioteket: listen over referanser, og det som kan gjøres med dem.
 
 library-references = Referanser
+library-unread = Biblioteket kunne ikke leses
 library-all-references = Alle referanser
 library-count = { $count ->
     [one] { $count } referanse
@@ -306,3 +307,86 @@ library-zotero-read = { $count ->
     [one] Les { $count } referanse
    *[other] Les { $count } referanser
 }
+
+## Å skrive en referanse.
+
+library-dialog-edit = Rediger referanse
+library-dialog-add = Legg til referanse
+library-dialog-back = Tilbake til skjemaet
+library-dialog-open-failed = Referansen kunne ikke åpnes.
+library-dialog-save-failed = Referansen kunne ikke lagres.
+library-source = Kildekode
+library-source-unread = Kildekoden kunne ikke leses.
+
+## En referanse, ved siden av listen.
+
+library-pane-label = Referanse
+library-pane-more = Mer
+library-pane-saved = Lagret
+library-pane-editing = Redigerer …
+library-pane-not-saved = Ikke lagret
+library-pane-unread = Referansen kunne ikke leses.
+library-pane-save-failed = Endringene kunne ikke lagres.
+library-pane-note-placeholder = Det du tenker om verket. For deg selv: det hører ikke med når det vises til.
+library-pane-files = Filer
+library-pane-attach = Legg ved
+library-pane-attach-title = Legg ved filer
+library-pane-attach-failed = Filen kunne ikke legges ved
+library-pane-missing = mangler
+library-pane-reveal = Vis i filbehandleren
+library-pane-reveal-failed = Mappen kunne ikke åpnes
+library-pane-no-files = Ingen filer. Legg ved en PDF, eller slipp en her.
+library-pane-detach = Fjern filen
+library-pane-detach-title = Fjerne «{ $name }»?
+library-pane-detach-message = Filen slettes fra lageret til biblioteket, med mindre en annen referanse bruker den.
+library-pane-detach-failed = Filen kunne ikke fjernes
+library-pane-leave-collection = Fjern fra { $name }
+library-pane-duplicate = Dupliser
+    .hint = En ny referanse som begynner med disse opplysningene
+library-pane-edit-source = Rediger kildekoden …
+library-pane-source-subtitle = Referansen som BibLaTeX. Det meste er lettere i skjemaet.
+library-pane-source-failed = Kildekoden kunne ikke vises
+library-pane-added = Lagt til { $date }
+library-pane-added-changed = Lagt til { $added } · endret { $changed }
+
+## Å slå opp en referanse.
+
+library-lookup-placeholder = Slå den opp: en DOI, et ISBN eller ord fra tittelen og forfatteren
+library-lookup-label = Slå opp en referanse
+library-lookup-failed = Ingenting kunne slås opp.
+library-lookup-filled = Fylt ut fra { $source }.
+library-lookup-others = { $count ->
+    [one] { $count } annen post
+   *[other] { $count } andre poster
+}
+library-lookup-scope = Hva du leter etter
+library-lookup-any = Alt
+library-lookup-books = Bøker
+library-lookup-articles = Artikler
+library-lookup-none = Ingenting ble funnet. Færre ord kan finne mer: forfatterens etternavn og et ord eller to fra tittelen.
+library-lookup-unknown = Ingenting er kjent om { $kind ->
+        [doi] denne DOI-en
+        [isbn] dette ISBN-nummeret
+        [arxiv] dette arXiv-nummeret
+       *[pmid] dette PubMed-nummeret
+    } der det ble spurt. Referansen kan skrives inn for hånd nedenfor.
+
+## Det du skriver om et verk.
+
+library-notes = Notater
+library-notes-yours = Notatene dine
+library-notes-on-work = Notatene dine om dette verket
+library-notes-read = Les notatene dine
+library-notes-write = Skriv et notat
+library-notes-write-on-work = Skriv et notat om dette verket
+library-notes-not-in-library = En referanse som ikke er i biblioteket ditt
+library-notes-this-project = I dette prosjektet
+library-notes-all-projects = I alle prosjekter
+library-notes-project-placeholder = Det du tenker om verket, i dette arbeidet
+library-notes-all-placeholder = Det du tenker om verket, hvor du enn viser til det
+library-notes-keep-for-all = Behold det for alle prosjekter
+library-notes-write-for-all = Skriv for alle prosjekter
+library-notes-carried = Referansen fulgte med prosjektet og er ikke i biblioteket ditt. Det som skrives her, har alle som har prosjektet.
+library-notes-kept = Lagres med referansen i biblioteket ditt. Det følger med et prosjekt som viser til verket.
+library-notes-unread = Notatene dine kunne ikke leses
+library-notes-unsaved = Notatet ditt kunne ikke lagres

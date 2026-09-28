@@ -157,7 +157,7 @@
                     {@const match = item.matches[0]}
                     <div class="against">
                       <div class="overline">
-                        {t('library-import-in-library')} · {reasonWords(match.reasons)}
+                        {t('library-in-library')} · {reasonWords(match.reasons)}
                       </div>
                       <div class="existing selectable">
                         <span class="authors">{match.summary.authors || '—'}</span>

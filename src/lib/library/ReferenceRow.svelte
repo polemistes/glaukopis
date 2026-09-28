@@ -1,6 +1,7 @@
 <script lang="ts">
   import Paperclip from '@lucide/svelte/icons/paperclip';
   import type { Summary } from '$lib/api/library';
+  import { t } from '$lib/i18n';
   import NoteButton from './NoteButton.svelte';
   import TypeIcon from './TypeIcon.svelte';
 
@@ -28,9 +29,8 @@
       </span>
     </div>
     <div class="second truncate">
-      <span class="title">{entry.title || 'Untitled'}</span>{#if entry.container && !compact}<span
-          class="container">{entry.container}</span
-        >{/if}
+      <span class="title">{entry.title || t('library-untitled')}</span
+      >{#if entry.container && !compact}<span class="container">{entry.container}</span>{/if}
     </div>
   </div>
 </div>

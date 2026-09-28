@@ -2,6 +2,7 @@
   import { tick, untrack } from 'svelte';
   import { libraryGet, librarySetNote } from '$lib/api/library';
   import { currentProject, lookup, recordOf } from '$lib/editor/references.svelte';
+  import { t } from '$lib/i18n';
   import { library } from '$lib/state/library.svelte';
   import Popover from '$lib/ui/Popover.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
@@ -38,7 +39,7 @@
         const reference = await libraryGet(id);
         global = saved = toLines(reference.fields.annotation);
       } catch (error) {
-        notifyError('Your notes could not be read', error);
+        notifyError(t('library-notes-unread'), error);
       } finally {
         loading = false;
       }
@@ -76,7 +77,7 @@
         // The copy that the project carries is to say the same.
         if (project?.refs.has(id)) project.putReference(recordOf(reference));
       } catch (error) {
-        notifyError('Your note could not be kept', error);
+        notifyError(t('library-notes-unsaved'), error);
       }
     });
     return writing;
@@ -118,7 +119,7 @@
   align="end"
   gap={6}
   width={400}
-  label="Notes"
+  label={t('library-notes')}
   onclose={close}
 >
   <div class="notes" bind:this={root}>
@@ -127,7 +128,7 @@
         <span class="who">{about.authors || '—'} {about.year}</span>
         <span class="title serif">{truncate(about.title, 80)}</span>
       {:else}
-        <span class="who">A reference that is not in your library</span>
+        <span class="who">{t('library-notes-not-in-library')}</span>
       {/if}
     </header>
 
@@ -136,11 +137,11 @@
     {:else}
       {#if project}
         <label class="note">
-          <span class="overline">In this project</span>
+          <span class="overline">{t('library-notes-this-project')}</span>
           <textarea
             bind:value={local}
             use:grow={local}
-            placeholder="What you make of it, for this work"
+            placeholder={t('library-notes-project-placeholder')}
             spellcheck="true"
             data-scope="project"
             data-autofocus
@@ -152,29 +153,28 @@
         {#if inLibrary}
           <div class="under">
             <button type="button" class="link" disabled={!local.trim()} onclick={forAll}>
-              Keep it for all projects
+              {t('library-notes-keep-for-all')}
             </button>
             {#if !showGlobal && !global.trim()}
               <button type="button" class="link quiet" onclick={() => (showGlobal = true)}>
-                Write for all projects
+                {t('library-notes-write-for-all')}
               </button>
             {/if}
           </div>
         {:else}
-          <p class="hint">
-            The reference came with the project, and is not in your library. What is written here is
-            with everyone who has the project.
-          </p>
+          <p class="hint">{t('library-notes-carried')}</p>
         {/if}
       {/if}
 
       {#if inLibrary && (showGlobal || global.trim())}
         <label class="note">
-          <span class="overline">{project ? 'In all projects' : 'Your notes'}</span>
+          <span class="overline"
+            >{project ? t('library-notes-all-projects') : t('library-notes-yours')}</span
+          >
           <textarea
             bind:value={global}
             use:grow={global}
-            placeholder="What you make of it, wherever you cite it"
+            placeholder={t('library-notes-all-placeholder')}
             spellcheck="true"
             data-scope="all"
             oninput={writeGlobal}
@@ -184,9 +184,7 @@
             }}></textarea>
         </label>
         {#if project}
-          <p class="hint">
-            Kept with the reference in your library. It goes with a project that cites the work.
-          </p>
+          <p class="hint">{t('library-notes-kept')}</p>
         {/if}
       {/if}
     {/if}

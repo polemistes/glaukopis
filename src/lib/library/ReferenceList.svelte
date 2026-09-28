@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { Summary } from '$lib/api/library';
+  import { t } from '$lib/i18n';
   import { startDrag } from '$lib/ui/drag.svelte';
-  import { plural, shortLabel } from './format';
+  import { shortLabel } from './format';
   import ReferenceRow from './ReferenceRow.svelte';
 
   interface Props {
@@ -22,7 +23,7 @@
     onopen,
     oncontext,
     ondelete,
-    label = 'References',
+    label,
   }: Props = $props();
 
   const ROW = 56;
@@ -107,7 +108,7 @@
         return {
           kind: 'references',
           data: ids,
-          label: ids.length === 1 ? shortLabel(entry) : plural(ids.length, 'reference'),
+          label: ids.length === 1 ? shortLabel(entry) : t('library-count', { count: ids.length }),
         };
       },
       () => {},
@@ -201,7 +202,7 @@
   bind:this={viewport}
   class="list"
   role="listbox"
-  aria-label={label}
+  aria-label={label ?? t('library-references')}
   aria-multiselectable="true"
   tabindex="0"
   onscroll={() => (scrollTop = viewport!.scrollTop)}

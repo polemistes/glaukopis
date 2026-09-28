@@ -36,6 +36,7 @@ library-names-suffix-of = { $role }: suffix
 library-untitled = Untitled
 library-no-author = No author
 library-no-title = No title
+library-in-library = In your library
 
 ## Why a reference is taken for another: “the same DOI and the same file”.
 
@@ -110,7 +111,6 @@ library-import-repeated = { $count ->
     [one] { $count } reference repeated within the import
    *[other] { $count } references repeated within the import
 }
-library-import-in-library = In your library
 # The fields a reference of the library would be given: “Would gain: Publisher, Place”.
 library-import-would-gain = Would gain: { $fields }
 library-import-gains-file = File
@@ -138,6 +138,7 @@ library-import-failed = The import failed.
 ## The library: the list of references, and what can be done with them.
 
 library-references = References
+library-unread = The library could not be read
 library-all-references = All references
 library-count = { $count ->
     [one] { $count } reference
@@ -316,3 +317,90 @@ library-zotero-read = { $count ->
     [one] Read { $count } reference
    *[other] Read { $count } references
 }
+
+## Writing a reference.
+
+library-dialog-edit = Edit reference
+library-dialog-add = Add reference
+library-dialog-back = Back to the form
+library-dialog-open-failed = The reference could not be opened.
+library-dialog-save-failed = The reference could not be saved.
+# The entry as BibLaTeX, as against the form.
+library-source = Source
+library-source-unread = The source could not be read.
+
+## A reference, beside the list.
+
+library-pane-label = Reference
+library-pane-more = More
+library-pane-saved = Saved
+library-pane-editing = Editing…
+library-pane-not-saved = Not saved
+library-pane-unread = The reference could not be read.
+library-pane-save-failed = The changes could not be saved.
+library-pane-note-placeholder = What you make of it. For yourself: it is not part of what is cited.
+library-pane-files = Files
+library-pane-attach = Attach
+library-pane-attach-title = Attach files
+library-pane-attach-failed = The file could not be attached
+# Of a file that is attached, and not where it should be.
+library-pane-missing = missing
+library-pane-reveal = Show in the file manager
+library-pane-reveal-failed = The folder could not be opened
+library-pane-no-files = No files. Attach a PDF, or drop one here.
+library-pane-detach = Remove file
+library-pane-detach-title = Remove “{ $name }”?
+library-pane-detach-message = The file is deleted from the library’s store, unless another reference uses it.
+library-pane-detach-failed = The file could not be removed
+library-pane-leave-collection = Remove from { $name }
+library-pane-duplicate = Duplicate
+    .hint = A new reference beginning with these details
+library-pane-edit-source = Edit the source…
+library-pane-source-subtitle = The entry as BibLaTeX. Most things are easier in the form.
+library-pane-source-failed = The source could not be shown
+library-pane-added = Added { $date }
+library-pane-added-changed = Added { $added } · changed { $changed }
+
+## Looking up a reference.
+
+library-lookup-placeholder = Look it up: a DOI, an ISBN, or words of the title and the author
+library-lookup-label = Look up a reference
+library-lookup-failed = Nothing could be looked up.
+# Where the reference came from: a service such as Crossref.
+library-lookup-filled = Filled in from { $source }.
+library-lookup-others = { $count ->
+    [one] { $count } other record
+   *[other] { $count } other records
+}
+library-lookup-scope = What to look for
+library-lookup-any = Anything
+library-lookup-books = Books
+library-lookup-articles = Articles
+library-lookup-none = Nothing was found. Fewer words may find more: the family name of the author and a word or two of the title.
+# What was asked for: a DOI, an ISBN, a number of arXiv or of PubMed.
+library-lookup-unknown = Nothing is known of this { $kind ->
+        [doi] DOI
+        [isbn] ISBN
+        [arxiv] arXiv number
+       *[pmid] PubMed number
+    } where it was asked for. The reference can be entered by hand below.
+
+## What the writer writes about a work.
+
+library-notes = Notes
+library-notes-yours = Your notes
+library-notes-on-work = Your notes on this work
+library-notes-read = Read your notes
+library-notes-write = Write a note
+library-notes-write-on-work = Write a note on this work
+library-notes-not-in-library = A reference that is not in your library
+library-notes-this-project = In this project
+library-notes-all-projects = In all projects
+library-notes-project-placeholder = What you make of it, for this work
+library-notes-all-placeholder = What you make of it, wherever you cite it
+library-notes-keep-for-all = Keep it for all projects
+library-notes-write-for-all = Write for all projects
+library-notes-carried = The reference came with the project, and is not in your library. What is written here is with everyone who has the project.
+library-notes-kept = Kept with the reference in your library. It goes with a project that cites the work.
+library-notes-unread = Your notes could not be read
+library-notes-unsaved = Your note could not be kept
