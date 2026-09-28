@@ -1,0 +1,2937 @@
+//! Bringing a document in from a file, to become a map of its own.
+//!
+//! Pandoc reads the file and gives the document in its own shapes, as JSON.
+//! That is turned into the shapes of `crate::document`, in sections: what
+//! stands before the first heading, and then every heading with what stands
+//! under it. The interface makes the map of them: the title the centre, every
+//! heading an element under the heading above it.
+//!
+//! What the application has no place for is kept as text where it has text,
+//! and otherwise left out; what was done is said in the remarks, in words
+//! for the one who wrote the document.
+//!
+//! The pictures of the document are taken into the store of pictures. A file
+//! that holds its pictures itself (DOCX, ODT, EPUB) has them taken out by
+//! Pandoc, which is then kept from reading anything but the file; a file
+//! that names its pictures (Markdown, HTML, LaTeX) has them read from where
+//! it says, beside it. Nothing is fetched from the network.
+
+use std::collections::{BTreeMap, HashSet};
+use std::fs;
+use std::io::Read;
+use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
+
+use base64::Engine;
+use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
+
+use crate::document::{self, Author, Block, Cell, CiteItem, CiteMode, Inline, Table};
+use crate::error::{Error, IoContext, Result};
+use crate::export::Tools;
+use crate::export::tools;
+use crate::formats::Stand;
+use crate::pictures::{Picture, Pictures};
+
+/// The largest file that is read.
+pub const MAX_BYTES: u64 = 50 * 1024 * 1024;
+
+const TERMS_JSON: &str = include_str!("../../../../resources/csl/locator-terms.json");
+
+/// The kinds of file that are read.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Format {
+    Docx,
+    Odt,
+    Markdown,
+    Html,
+    Latex,
+    Rtf,
+    Epub,
+    Org,
+    Rst,
+    Typst,
+    /// Text without any marks: read here, without Pandoc.
+    Plain,
+    AsciiDoc,
+    DocBook,
+    Jats,
+    FictionBook,
+    Opml,
+    MediaWiki,
+    Textile,
+    Djot,
+    Muse,
+    Notebook,
+}
+
+/// The endings of the files that are read, in small letters.
+pub const ENDINGS: [&str; 33] = [
+    "docx",
+    "odt",
+    "md",
+    "markdown",
+    "mdown",
+    "mkd",
+    "html",
+    "htm",
+    "xhtml",
+    "tex",
+    "latex",
+    "ltx",
+    "rtf",
+    "epub",
+    "org",
+    "rst",
+    "typ",
+    "txt",
+    "text",
+    "adoc",
+    "asciidoc",
+    "dbk",
+    "docbook",
+    "jats",
+    "fb2",
+    "opml",
+    "mediawiki",
+    "wiki",
+    "textile",
+    "dj",
+    "djot",
+    "muse",
+    "ipynb",
+];
+
+impl Format {
+    /// The kind of a file, told from the ending of its name and nothing else.
+    pub fn of(path: &Path) -> Option<Format> {
+        let ending = path.extension()?.to_str()?.to_ascii_lowercase();
+        Some(match ending.as_str() {
+            "docx" => Format::Docx,
+            "odt" => Format::Odt,
+            "md" | "markdown" | "mdown" | "mkd" => Format::Markdown,
+            "html" | "htm" | "xhtml" => Format::Html,
+            "tex" | "latex" | "ltx" => Format::Latex,
+            "rtf" => Format::Rtf,
+            "epub" => Format::Epub,
+            "org" => Format::Org,
+            "rst" => Format::Rst,
+            "typ" => Format::Typst,
+            "txt" | "text" => Format::Plain,
+            "adoc" | "asciidoc" => Format::AsciiDoc,
+            "dbk" | "docbook" => Format::DocBook,
+            "jats" => Format::Jats,
+            "fb2" => Format::FictionBook,
+            "opml" => Format::Opml,
+            "mediawiki" | "wiki" => Format::MediaWiki,
+            "textile" => Format::Textile,
+            "dj" | "djot" => Format::Djot,
+            "muse" => Format::Muse,
+            "ipynb" => Format::Notebook,
+            _ => return None,
+        })
+    }
+
+    /// What Pandoc calls it. Nothing for what is read without Pandoc.
+    fn reader(self) -> Option<&'static str> {
+        Some(match self {
+            Format::Docx => "docx",
+            Format::Odt => "odt",
+            Format::Markdown => "markdown",
+            Format::Html => "html",
+            Format::Latex => "latex",
+            Format::Rtf => "rtf",
+            Format::Epub => "epub",
+            Format::Org => "org",
+            Format::Rst => "rst",
+            Format::Typst => "typst",
+            Format::Plain => return None,
+            Format::AsciiDoc => "asciidoc",
+            Format::DocBook => "docbook",
+            Format::Jats => "jats",
+            Format::FictionBook => "fb2",
+            Format::Opml => "opml",
+            Format::MediaWiki => "mediawiki",
+            Format::Textile => "textile",
+            Format::Djot => "djot",
+            Format::Muse => "muse",
+            Format::Notebook => "ipynb",
+        })
+    }
+
+    /// What it is called, in words.
+    pub fn name(self) -> &'static str {
+        match self {
+            Format::Docx => "Word (DOCX)",
+            Format::Odt => "OpenDocument (ODT)",
+            Format::Markdown => "Markdown",
+            Format::Html => "HTML",
+            Format::Latex => "LaTeX",
+            Format::Rtf => "Rich Text (RTF)",
+            Format::Epub => "EPUB",
+            Format::Org => "Org",
+            Format::Rst => "reStructuredText",
+            Format::Typst => "Typst",
+            Format::Plain => "plain text",
+            Format::AsciiDoc => "AsciiDoc",
+            Format::DocBook => "DocBook",
+            Format::Jats => "JATS",
+            Format::FictionBook => "FictionBook",
+            Format::Opml => "OPML",
+            Format::MediaWiki => "MediaWiki",
+            Format::Textile => "Textile",
+            Format::Djot => "Djot",
+            Format::Muse => "Muse",
+            Format::Notebook => "Jupyter notebook",
+        }
+    }
+
+    /// Whether the file holds its pictures itself.
+    fn holds_pictures(self) -> bool {
+        matches!(self, Format::Docx | Format::Odt | Format::Epub | Format::Rtf | Format::FictionBook | Format::Notebook)
+    }
+}
+
+/// A part of the document: a heading with what stands under it. The first
+/// may be without a heading, and is then what stands before the first one.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Section {
+    /// 1 for the parts directly under the title; 0 for what stands before the first heading.
+    pub level: u8,
+    pub heading: Vec<Inline>,
+    pub blocks: Vec<Block>,
+}
+
+/// How much there is of everything, for saying so before the map is made.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Counts {
+    /// The parts that have a heading.
+    pub parts: usize,
+    /// The words of the text, with those of the notes and without those of the headings.
+    pub words: usize,
+    pub notes: usize,
+    pub figures: usize,
+    pub tables: usize,
+    pub equations: usize,
+    /// Works cited that are in the library, as often as they are cited.
+    pub cited: usize,
+    /// Works cited by keys that the library does not have, as often as they are cited.
+    pub not_found: usize,
+}
+
+/// A document as it was read.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Imported {
+    /// What the file is called.
+    pub file: String,
+    /// The kind of file, in words.
+    pub kind: String,
+    /// With the marks a name can have.
+    pub title: Vec<Inline>,
+    pub subtitle: Option<String>,
+    pub authors: Vec<Author>,
+    pub date: Option<String>,
+    #[serde(rename = "abstract")]
+    pub abstract_text: Option<String>,
+    pub keywords: Vec<String>,
+    /// BCP 47: en-GB, nb, de, el.
+    pub language: Option<String>,
+    pub sections: Vec<Section>,
+    /// What the one who brings the document in should know.
+    pub remarks: Vec<String>,
+    pub counts: Counts,
+    /// The pictures that were taken into the store for this document and
+    /// were not there before, by the names they are kept by: to be taken
+    /// out again if no map is made of it.
+    pub pictures: Vec<String>,
+}
+
+/// What a file says of itself besides its text, where Pandoc does not tell.
+#[derive(Debug, Clone, Default)]
+pub struct Properties {
+    pub title: Option<String>,
+    pub authors: Vec<String>,
+    pub keywords: Vec<String>,
+    pub language: Option<String>,
+}
+
+/// A picture of the document, by what the document calls it.
+pub type TakeIn<'a> = dyn FnMut(&str) -> std::result::Result<Picture, String> + 'a;
+/// The id of the reference of the library that has a key, if one has.
+pub type Keys<'a> = dyn Fn(&str) -> Option<String> + 'a;
+
+// =========================================================================
+// Reading a file
+// =========================================================================
+
+fn stopped() -> Error {
+    Error::invalid("The reading was stopped.")
+}
+
+/// Runs Pandoc to its end, unless it is stopped before. What it writes goes
+/// to files, so that nothing has to be listened to meanwhile.
+fn pandoc(tools: &Tools, args: &[String], dir: &Path, work: &Path, stop: &AtomicBool) -> Result<Vec<u8>> {
+    let program = &tools.pandoc()?.path;
+    let out = work.join("document.json");
+    let said = work.join("messages.txt");
+    let failed = |e: std::io::Error| Error::Program { program: "Pandoc".into(), message: e.to_string() };
+    let mut child = tools::command(program)
+        .args(args)
+        .arg("-o")
+        .arg(&out)
+        .current_dir(dir)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(fs::File::create(&said).context(|| format!("writing {}", said.display()))?)
+        .spawn()
+        .map_err(failed)?;
+    let status = loop {
+        if stop.load(Ordering::Relaxed) {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(stopped());
+        }
+        match child.try_wait().map_err(failed)? {
+            Some(status) => break status,
+            None => std::thread::sleep(Duration::from_millis(30)),
+        }
+    };
+    if !status.success() {
+        let messages = fs::read_to_string(&said).unwrap_or_default();
+        // What it says can be long, and is not written for the one who reads this: the beginning is enough.
+        let message: String = messages.trim().lines().take(3).collect::<Vec<_>>().join(" ");
+        let message = if message.chars().count() > 300 {
+            format!("{}…", message.chars().take(300).collect::<String>().trim_end())
+        } else {
+            message
+        };
+        return Err(Error::Program {
+            program: "Pandoc".into(),
+            message: if message.is_empty() { format!("it ended with {status}") } else { message },
+        });
+    }
+    fs::read(&out).context(|| format!("reading {}", out.display()))
+}
+
+/// Reads a document. `work` is where what is made on the way is put, in a
+/// directory of its own that is gone afterwards; `keys` finds the reference
+/// of the library that has a key; `stop` is set from elsewhere to end the
+/// reading.
+pub fn read(
+    path: &Path,
+    tools: &Tools,
+    pictures: &Pictures,
+    work: &Path,
+    keys: &Keys,
+    stop: &AtomicBool,
+) -> Result<Imported> {
+    fs::create_dir_all(work).context(|| format!("creating {}", work.display()))?;
+    let place = tempfile::Builder::new()
+        .prefix("document-")
+        .tempdir_in(work)
+        .context(|| format!("creating a directory in {}", work.display()))?;
+    let work = place.path();
+    let file = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let Some(format) = Format::of(path) else {
+        return Err(Error::invalid(format!(
+            "“{file}” is not of a kind that can be brought in as a document. Those that can are Word (DOCX), \
+             OpenDocument (ODT), Markdown, HTML, LaTeX, RTF, EPUB, Org, reStructuredText, Typst and plain text."
+        )));
+    };
+    let size = fs::metadata(path).context(|| format!("reading {}", path.display()))?.len();
+    if size > MAX_BYTES {
+        return Err(Error::invalid(format!(
+            "“{file}” is larger than 50 MB, which is more than can be brought in as a document."
+        )));
+    }
+    let stem = path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let beside = path.parent().map(Path::to_owned).unwrap_or_default();
+
+    let before: HashSet<String> = pictures.list().into_iter().map(|p| p.hash).collect();
+    let mut taken: Vec<String> = Vec::new();
+    let media = work.join("media");
+    let mut take_in = |named: &str| -> std::result::Result<Picture, String> {
+        let bytes = picture_bytes(named, &beside, &media, format.holds_pictures())?;
+        let picture = pictures.add(&name_of(named), &bytes).map_err(|_| match kind_of_name(named) {
+            Some(kind) => format!("it is of a kind that is not read ({kind})"),
+            None => "it is not a picture of a kind that is read".to_owned(),
+        })?;
+        if !before.contains(&picture.hash) && !taken.contains(&picture.hash) {
+            taken.push(picture.hash.clone());
+        }
+        Ok(picture)
+    };
+
+    let mut imported = match format.reader() {
+        None => {
+            let bytes = fs::read(path).context(|| format!("reading {}", path.display()))?;
+            plain(&decode(&bytes), &stem)
+        }
+        Some(reader) => {
+            let mut args: Vec<String> = vec!["-f".into(), reader.into(), "-t".into(), "json".into()];
+            if format == Format::Docx {
+                args.push("--track-changes=accept".into());
+            }
+            // Where the file holds its pictures, Pandoc takes them out, and
+            // is kept from reading anything else, on this computer or from
+            // the network. Otherwise it works where the file is, so that
+            // what the file names as parts of it is found.
+            let dir = if format.holds_pictures() {
+                args.push("--sandbox".into());
+                args.push(format!("--extract-media={}", media.display()));
+                work
+            } else {
+                beside.as_path()
+            };
+            args.push(path.display().to_string());
+            let json = pandoc(tools, &args, dir, work, stop).map_err(|e| match e {
+                Error::Program { message, .. } => Error::invalid(format!(
+                    "“{file}” could not be read as {}. It may be damaged, or of another kind than its name says. \
+                     Pandoc, which reads it, said: {message}",
+                    format.name()
+                )),
+                other => other,
+            })?;
+            let value: Value = serde_json::from_slice(&json)
+                .map_err(|e| Error::invalid(format!("what Pandoc made of “{file}” could not be read: {e}")))?;
+            let properties = if format == Format::Odt { odt_properties(path) } else { Properties::default() };
+            convert(&value, &stem, &properties, keys, &mut take_in)
+        }
+    };
+    if stop.load(Ordering::Relaxed) {
+        for hash in &taken {
+            let _ = pictures.remove(hash);
+        }
+        return Err(stopped());
+    }
+    if format == Format::Docx {
+        imported.remarks.extend(docx_remarks(path));
+    }
+    imported.file = file;
+    imported.kind = format.name().to_owned();
+    imported.pictures = taken;
+    Ok(imported)
+}
+
+/// Takes pictures out of the store again: those that were taken in for a
+/// document of which no map was made.
+pub fn forget(pictures: &Pictures, hashes: &[String]) {
+    for hash in hashes {
+        let _ = pictures.remove(hash);
+    }
+}
+
+fn name_of(named: &str) -> String {
+    let last = named.rsplit(['/', '\\']).next().unwrap_or(named);
+    let last = last.split(['?', '#']).next().unwrap_or(last);
+    let name = unescape(last);
+    if name.trim().is_empty() || named.starts_with("data:") { "picture".to_owned() } else { name }
+}
+
+fn kind_of_name(named: &str) -> Option<String> {
+    let name = name_of(named);
+    let (_, ending) = name.rsplit_once('.')?;
+    (!ending.is_empty() && ending.len() <= 5 && ending.chars().all(|c| c.is_ascii_alphanumeric()))
+        .then(|| ending.to_ascii_uppercase())
+}
+
+/// `%20` and its like, as addresses have them.
+fn unescape(text: &str) -> String {
+    let bytes = text.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%'
+            && i + 2 < bytes.len()
+            && let Some(byte) =
+                std::str::from_utf8(&bytes[i + 1..i + 3]).ok().and_then(|h| u8::from_str_radix(h, 16).ok())
+        {
+            out.push(byte);
+            i += 3;
+            continue;
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8(out).unwrap_or_else(|_| text.to_owned())
+}
+
+/// What a picture holds, by what the document calls it.
+fn picture_bytes(named: &str, beside: &Path, media: &Path, held: bool) -> std::result::Result<Vec<u8>, String> {
+    let lower = named.to_ascii_lowercase();
+    if let Some(rest) = named.strip_prefix("data:") {
+        let (kind, content) = rest.split_once(',').ok_or("it could not be read")?;
+        return if kind.ends_with(";base64") {
+            let clean: String = content.chars().filter(|c| !c.is_whitespace()).collect();
+            base64::engine::general_purpose::STANDARD.decode(clean).map_err(|_| "it could not be read".to_owned())
+        } else {
+            Ok(unescape(content).into_bytes())
+        };
+    }
+    if lower.starts_with("http://") || lower.starts_with("https://") || lower.starts_with("//") {
+        return Err("it is on the network, and nothing is fetched from there".to_owned());
+    }
+    let plain = named.strip_prefix("file://").unwrap_or(named);
+    let plain = unescape(plain.split(['?', '#']).next().unwrap_or(plain));
+    let path = PathBuf::from(&plain);
+    let candidates: Vec<PathBuf> = if path.is_absolute() {
+        vec![path]
+    } else if held {
+        vec![media.join(&path), media.parent().unwrap_or(media).join(&path)]
+    } else {
+        vec![beside.join(&path)]
+    };
+    let found = candidates.into_iter().find(|c| c.is_file());
+    let Some(found) = found else {
+        return Err(if held {
+            "it could not be taken out of the file".to_owned()
+        } else {
+            "the file was not found where the document says it is".to_owned()
+        });
+    };
+    match fs::metadata(&found) {
+        Ok(m) if m.len() > crate::pictures::MAX_BYTES => return Err("it is larger than 50 MB".to_owned()),
+        _ => {}
+    }
+    fs::read(&found).map_err(|_| "the file could not be read".to_owned())
+}
+
+/// Text as it is, whatever it was written in: UTF-8, UTF-16 where it says
+/// so, and otherwise the letters of Western Europe.
+fn decode(bytes: &[u8]) -> String {
+    if let Some(rest) = bytes.strip_prefix(&[0xef, 0xbb, 0xbf])
+        && let Ok(text) = std::str::from_utf8(rest)
+    {
+        return text.to_owned();
+    }
+    for (mark, big) in [([0xff_u8, 0xfe], false), ([0xfe, 0xff], true)] {
+        if let Some(rest) = bytes.strip_prefix(&mark) {
+            let units: Vec<u16> = rest
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| if big { u16::from_be_bytes(*c) } else { u16::from_le_bytes(*c) })
+                .collect();
+            return String::from_utf16_lossy(&units);
+        }
+    }
+    match std::str::from_utf8(bytes) {
+        Ok(text) => text.to_owned(),
+        Err(_) => bytes.iter().map(|b| western(*b)).collect(),
+    }
+}
+
+/// A letter of Windows-1252, which is Latin-1 but for a few.
+fn western(byte: u8) -> char {
+    const HIGH: [char; 32] = [
+        '€', '\u{81}', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\u{8d}', 'Ž', '\u{8f}', '\u{90}', '‘',
+        '’', '“', '”', '•', '–', '—', '˜', '™', 'š', '›', 'œ', '\u{9d}', 'ž', 'Ÿ',
+    ];
+    match byte {
+        0x80..=0x9f => HIGH[usize::from(byte - 0x80)],
+        _ => char::from(byte),
+    }
+}
+
+/// Text without marks: paragraphs are set apart by empty lines; where there
+/// are none, every line is a paragraph.
+fn plain(text: &str, stem: &str) -> Imported {
+    let text = text.replace("\r\n", "\n").replace('\r', "\n");
+    let apart = text.trim().contains("\n\n");
+    let paragraphs: Vec<String> = if apart {
+        let mut out = Vec::new();
+        let mut current: Vec<&str> = Vec::new();
+        for line in text.lines() {
+            if line.trim().is_empty() {
+                if !current.is_empty() {
+                    out.push(current.join(" "));
+                    current.clear();
+                }
+            } else {
+                current.push(line.trim());
+            }
+        }
+        if !current.is_empty() {
+            out.push(current.join(" "));
+        }
+        out
+    } else {
+        text.lines().map(|l| l.trim().to_owned()).filter(|l| !l.is_empty()).collect()
+    };
+    let blocks: Vec<Block> = paragraphs
+        .into_iter()
+        .map(|p| Block::Paragraph { content: vec![Inline::Text { text: clean(&p), marks: BTreeMap::new() }] })
+        .collect();
+    let sections = if blocks.is_empty() { Vec::new() } else { vec![Section { level: 0, heading: Vec::new(), blocks }] };
+    let counts = count(&sections, 0, 0);
+    Imported { title: vec![text_of(stem)], sections, counts, ..Default::default() }
+}
+
+/// Without the signs that are not text.
+fn clean(text: &str) -> String {
+    text.chars().filter(|c| !c.is_control() || *c == '\t').map(|c| if c == '\t' { ' ' } else { c }).collect()
+}
+
+fn text_of(text: &str) -> Inline {
+    Inline::Text { text: text.to_owned(), marks: BTreeMap::new() }
+}
+
+/// What an ODT says of itself, which Pandoc does not read.
+fn odt_properties(path: &Path) -> Properties {
+    let mut out = Properties::default();
+    let Some(xml) = zipped(path, "meta.xml", 4 * 1024 * 1024) else { return out };
+    let Ok(parsed) = roxmltree::Document::parse(&xml) else { return out };
+    for node in parsed.descendants().filter(|n| n.is_element()) {
+        let said = node.text().map(str::trim).filter(|t| !t.is_empty());
+        let Some(said) = said else { continue };
+        match node.tag_name().name() {
+            "title" => out.title = Some(said.to_owned()),
+            "initial-creator" => out.authors = vec![said.to_owned()],
+            "keyword" => out.keywords.push(said.to_owned()),
+            "language" => out.language = Some(said.to_owned()),
+            _ => {}
+        }
+    }
+    out
+}
+
+/// A part of a file that is a ZIP, as text, if it is there and not too large.
+fn zipped(path: &Path, name: &str, most: u64) -> Option<String> {
+    let file = fs::File::open(path).ok()?;
+    let mut archive = zip::ZipArchive::new(file).ok()?;
+    let part = archive.by_name(name).ok()?;
+    let mut text = String::new();
+    part.take(most).read_to_string(&mut text).ok()?;
+    Some(text)
+}
+
+/// What a DOCX holds that is not brought in as it is: changes that are
+/// tracked, and comments.
+fn docx_remarks(path: &Path) -> Vec<String> {
+    let mut out = Vec::new();
+    if let Some(xml) = zipped(path, "word/document.xml", MAX_BYTES)
+        && ["<w:ins ", "<w:del ", "<w:moveFrom ", "<w:moveTo "].iter().any(|mark| xml.contains(mark))
+    {
+        out.push(
+            "The document has changes that are tracked. The text is brought in as it stands when all of them are \
+             accepted."
+                .to_owned(),
+        );
+    }
+    if let Some(xml) = zipped(path, "word/comments.xml", MAX_BYTES)
+        && xml.contains("<w:comment ")
+    {
+        out.push("The document has comments in the margin, which are left out.".to_owned());
+    }
+    out
+}
+
+// =========================================================================
+// From the shapes of Pandoc to ours
+// =========================================================================
+
+type Marks = BTreeMap<String, Value>;
+
+/// Something that stands in a line, or something that the line is divided by.
+enum Piece {
+    Inline(Inline),
+    Block(Block),
+}
+
+#[derive(Default)]
+struct Tally {
+    code: usize,
+    definitions: usize,
+    rules: usize,
+    raw: usize,
+    /// Notes on headings, which stand in the text under them.
+    moved: usize,
+    /// Notes in what is said of figures and tables, which stand there in brackets.
+    bracketed: usize,
+    /// Headings where a map has none: in quotations, lists, tables.
+    headings: usize,
+    /// Pictures that were left out, with why.
+    lost: Vec<(String, String)>,
+    /// Keys the library does not have, each once.
+    unknown: Vec<String>,
+    cited: usize,
+    not_found: usize,
+}
+
+struct Part {
+    /// The level the file gives the heading; 0 for what stands before the first.
+    level: i64,
+    heading: Vec<Inline>,
+    /// The notes of the heading.
+    notes: Vec<Inline>,
+    blocks: Vec<Block>,
+}
+
+struct Reading<'a, 'b> {
+    keys: &'a Keys<'a>,
+    take_in: &'a mut TakeIn<'b>,
+    /// The words that say what a locator counts, with what they say.
+    terms: Vec<(String, String)>,
+    /// In a name, where a citation is the text it was written as.
+    naming: bool,
+    /// Figures that stood where none can stand, to stand after it.
+    hoisted: Vec<Block>,
+    tally: Tally,
+}
+
+fn tag(v: &Value) -> &str {
+    v.get("t").and_then(Value::as_str).unwrap_or("")
+}
+
+fn inner(v: &Value) -> &Value {
+    v.get("c").unwrap_or(&Value::Null)
+}
+
+fn list(v: &Value) -> &[Value] {
+    v.as_array().map(Vec::as_slice).unwrap_or(&[])
+}
+
+/// The classes and the named values of what Pandoc calls attributes.
+fn classes(attr: &Value) -> Vec<&str> {
+    list(&attr[1]).iter().filter_map(Value::as_str).collect()
+}
+
+fn named<'v>(attr: &'v Value, name: &str) -> Option<&'v str> {
+    list(&attr[2]).iter().find(|pair| pair[0].as_str() == Some(name)).and_then(|pair| pair[1].as_str())
+}
+
+fn with(marks: &Marks, name: &str, value: Value) -> Marks {
+    let mut out = marks.clone();
+    // Raised and lowered at once is not a thing.
+    match name {
+        "sup" => {
+            out.remove("sub");
+        }
+        "sub" => {
+            out.remove("sup");
+        }
+        _ => {}
+    }
+    out.insert(name.to_owned(), value);
+    out
+}
+
+fn push_text(out: &mut Vec<Piece>, text: &str, marks: &Marks) {
+    if text.is_empty() {
+        return;
+    }
+    if let Some(Piece::Inline(Inline::Text { text: before, marks: same })) = out.last_mut()
+        && same == marks
+    {
+        before.push_str(text);
+        return;
+    }
+    out.push(Piece::Inline(Inline::Text { text: clean(text), marks: marks.clone() }));
+}
+
+/// The text of inline content of Pandoc as it was written, with what was
+/// written raw.
+fn written(inlines: &[Value]) -> String {
+    let mut out = String::new();
+    for v in inlines {
+        let c = inner(v);
+        match tag(v) {
+            "Str" => out.push_str(c.as_str().unwrap_or("")),
+            "Space" | "SoftBreak" | "LineBreak" => out.push(' '),
+            "Emph" | "Underline" | "Strong" | "Strikeout" | "Superscript" | "Subscript" | "SmallCaps" => {
+                out.push_str(&written(list(c)));
+            }
+            "Quoted" => {
+                let double = tag(&c[0]) != "SingleQuote";
+                out.push(if double { '“' } else { '‘' });
+                out.push_str(&written(list(&c[1])));
+                out.push(if double { '”' } else { '’' });
+            }
+            "Cite" => out.push_str(&written(list(&c[1]))),
+            "Code" | "Math" | "RawInline" => out.push_str(c[1].as_str().unwrap_or("")),
+            "Link" | "Image" | "Span" => out.push_str(&written(list(&c[1]))),
+            _ => {}
+        }
+    }
+    out
+}
+
+/// Without the room at the ends, and without the texts that hold nothing.
+fn trim(line: &mut Vec<Inline>) {
+    while let Some(first) = line.first_mut() {
+        match first {
+            Inline::Text { text, .. } => {
+                let kept = text.trim_start();
+                if kept.is_empty() {
+                    line.remove(0);
+                } else {
+                    if kept.len() != text.len() {
+                        *text = kept.to_owned();
+                    }
+                    break;
+                }
+            }
+            Inline::Break => {
+                line.remove(0);
+            }
+            _ => break,
+        }
+    }
+    while let Some(last) = line.last_mut() {
+        match last {
+            Inline::Text { text, .. } => {
+                let kept = text.trim_end();
+                if kept.is_empty() {
+                    line.pop();
+                } else {
+                    if kept.len() != text.len() {
+                        *text = kept.to_owned();
+                    }
+                    break;
+                }
+            }
+            Inline::Break => {
+                line.pop();
+            }
+            _ => break,
+        }
+    }
+}
+
+/// Puts texts that follow each other with the same marks together.
+fn join(line: Vec<Inline>) -> Vec<Inline> {
+    let mut out: Vec<Inline> = Vec::with_capacity(line.len());
+    for i in line {
+        if let Inline::Text { text, marks } = &i
+            && let Some(Inline::Text { text: before, marks: same }) = out.last_mut()
+            && same == marks
+        {
+            before.push_str(text);
+            continue;
+        }
+        out.push(i);
+    }
+    out
+}
+
+/// Blocks as one line: the paragraphs joined. Figures cannot stand in a
+/// line, and are set aside.
+fn line_of(blocks: Vec<Block>, aside: &mut Vec<Block>) -> Vec<Inline> {
+    fn walk(blocks: Vec<Block>, out: &mut Vec<Inline>, aside: &mut Vec<Block>) {
+        let apart = |out: &mut Vec<Inline>| {
+            if !out.is_empty() {
+                out.push(text_of(" "));
+            }
+        };
+        for b in blocks {
+            match b {
+                Block::Paragraph { content } => {
+                    if !content.is_empty() {
+                        apart(out);
+                        out.extend(content);
+                    }
+                }
+                Block::Blockquote { content } => walk(content, out, aside),
+                Block::BulletList { items } | Block::OrderedList { items, .. } => {
+                    for item in items {
+                        walk(item, out, aside);
+                    }
+                }
+                Block::Equation { tex, .. } => {
+                    apart(out);
+                    out.push(Inline::Math { tex });
+                }
+                Block::Table(table) => {
+                    if !table.caption.is_empty() {
+                        apart(out);
+                        out.extend(table.caption);
+                    }
+                    for row in table.rows {
+                        for cell in row {
+                            walk(cell.content, out, aside);
+                        }
+                    }
+                }
+                Block::Row { items } => walk(items, out, aside),
+                figure @ Block::Figure { .. } => aside.push(figure),
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(blocks, &mut out, aside);
+    join(out)
+}
+
+/// What a cell of a table can hold: paragraphs.
+fn paragraphs_of(blocks: Vec<Block>, aside: &mut Vec<Block>) -> Vec<Block> {
+    let mut out = Vec::new();
+    for b in blocks {
+        match b {
+            paragraph @ Block::Paragraph { .. } => out.push(paragraph),
+            Block::Blockquote { content } => out.extend(paragraphs_of(content, aside)),
+            Block::BulletList { items } | Block::OrderedList { items, .. } => {
+                for item in items {
+                    out.extend(paragraphs_of(item, aside));
+                }
+            }
+            Block::Equation { tex, .. } => out.push(Block::Paragraph { content: vec![Inline::Math { tex }] }),
+            Block::Row { items } => out.extend(paragraphs_of(items, aside)),
+            other => {
+                let line = line_of(vec![other], aside);
+                if !line.is_empty() {
+                    out.push(Block::Paragraph { content: line });
+                }
+            }
+        }
+    }
+    out
+}
+
+/// How wide a figure is when the file does not say: as suits what the
+/// picture holds. As `widthFor` in `src/lib/editor/commands.ts`.
+fn width_for(picture: &Picture) -> u8 {
+    match picture.width {
+        None | Some(0) => {
+            if picture.extension == "svg" {
+                60
+            } else {
+                100
+            }
+        }
+        Some(width) => {
+            let share = (f64::from(width) / 9.5 / 5.0).round() * 5.0;
+            share.clamp(25.0, 100.0) as u8
+        }
+    }
+}
+
+/// A width in hundredths, where the file gives one so.
+fn percent(attr: &Value) -> Option<u8> {
+    let said = named(attr, "width")?.trim();
+    let number: f64 = said.strip_suffix('%')?.trim().parse().ok()?;
+    (number.is_finite() && number > 0.0).then(|| number.round().clamp(10.0, 100.0) as u8)
+}
+
+fn stand_of(align: &Value) -> Option<Stand> {
+    match tag(align) {
+        "AlignCenter" => Some(Stand::Center),
+        "AlignRight" => Some(Stand::Right),
+        // To the left is where what a cell holds stands when nothing is said.
+        _ => None,
+    }
+}
+
+/// For every language, the words for every kind of locator, in their forms.
+type Terms = BTreeMap<String, BTreeMap<String, BTreeMap<String, Vec<String>>>>;
+
+fn terms() -> &'static Terms {
+    static TERMS: OnceLock<Terms> = OnceLock::new();
+    TERMS.get_or_init(|| serde_json::from_str(TERMS_JSON).unwrap_or_default())
+}
+
+/// The kinds of locator the application knows, as CSL names them.
+const LABELS: [&str; 15] = [
+    "page",
+    "chapter",
+    "section",
+    "paragraph",
+    "line",
+    "verse",
+    "book",
+    "volume",
+    "part",
+    "column",
+    "folio",
+    "figure",
+    "note",
+    "number",
+    "sub-verbo",
+];
+
+/// The words that say what a locator counts, in English and in the
+/// language of the document, the longest first.
+fn terms_for(language: Option<&str>) -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = Vec::new();
+    let mut add = |word: &str, label: &str| {
+        let word = word.trim().to_lowercase();
+        if !word.is_empty() && !out.iter().any(|(w, _)| *w == word) {
+            out.push((word, label.to_owned()));
+        }
+    };
+    let all = terms();
+    let mut locales: Vec<&str> = vec!["en-US", "en-GB"];
+    if let Some(language) = language.map(str::trim).filter(|l| !l.is_empty()) {
+        let short = language.split('-').next().unwrap_or(language).to_lowercase();
+        if let Some(found) = all.keys().find(|k| k.eq_ignore_ascii_case(language)) {
+            locales.insert(0, found);
+        } else if let Some(found) = all.keys().find(|k| k.to_lowercase().split('-').next() == Some(short.as_str())) {
+            locales.insert(0, found);
+        }
+    }
+    for locale in locales {
+        let Some(of_locale) = all.get(locale) else { continue };
+        for label in LABELS {
+            let Some(forms) = of_locale.get(label) else { continue };
+            for words in forms.values() {
+                for word in words {
+                    add(word, label);
+                }
+            }
+        }
+    }
+    for (word, label) in [("chap.", "chapter"), ("chaps.", "chapter"), ("sect.", "section"), ("§", "section")] {
+        add(word, label);
+    }
+    out.sort_by_key(|(word, _)| std::cmp::Reverse(word.chars().count()));
+    out
+}
+
+fn is_roman(word: &str) -> bool {
+    !word.is_empty() && word.chars().all(|c| "ivxlcdmIVXLCDM".contains(c))
+}
+
+/// What is said after a work that is cited, in its parts: the locator, what
+/// it counts, and the words after it.
+fn locator(suffix: &str, terms: &[(String, String)]) -> (Option<String>, Option<String>, Option<String>) {
+    let some = |text: &str| {
+        let text = text.trim().trim_start_matches([',', ';']).trim();
+        (!text.is_empty()).then(|| text.to_owned())
+    };
+    let clean = suffix.replace('\u{a0}', " ");
+    let rest = clean.trim().trim_start_matches(',').trim_start();
+    if rest.is_empty() {
+        return (None, None, None);
+    }
+    let label_of = |text: &str| -> (Option<String>, usize) {
+        let lower = text.to_lowercase();
+        for (word, label) in terms {
+            if !lower.starts_with(word.as_str()) {
+                continue;
+            }
+            // The word whole, and something counted after it.
+            let after = &text[lower.char_indices().nth(word.chars().count()).map_or(lower.len(), |(i, _)| i)..];
+            let next = after.chars().next();
+            let whole = word.ends_with('.') || word == "§" || next.is_none_or(|c| c.is_whitespace());
+            if whole && after.trim_start().chars().next().is_some_and(|c| c.is_alphanumeric()) {
+                return (Some(label.clone()), text.len() - after.len());
+            }
+        }
+        (None, 0)
+    };
+    // In braces, it is the locator and nothing else.
+    if let Some(within) = rest.strip_prefix('{')
+        && let Some(end) = within.find('}')
+    {
+        let said = within[..end].trim();
+        let (label, at) = label_of(said);
+        let label = label.filter(|l| l != "page");
+        return (some(&said[at..]), label, some(&within[end + 1..]));
+    }
+    let (label, at) = label_of(rest);
+    let after = rest[at..].trim_start();
+    let mut taken = 0usize;
+    let mut words = 0usize;
+    for word in after.split_whitespace() {
+        let bare = word.trim_end_matches([',', ';', '.', ':']);
+        let counted = bare.chars().any(|c| c.is_ascii_digit());
+        let fits = if words == 0 {
+            match label {
+                Some(_) => counted || is_roman(bare),
+                None => bare.chars().next().is_some_and(|c| c.is_ascii_digit()),
+            }
+        } else {
+            counted || matches!(bare, "f" | "ff" | "sq" | "sqq")
+        };
+        if !fits {
+            break;
+        }
+        // Where the word ends in what was written.
+        let start = after[taken..].find(word).map_or(taken, |i| taken + i);
+        taken = start + word.len();
+        words += 1;
+        // A full stop or a colon ends the locator; a comma may go on to another number.
+        if word.ends_with(['.', ':', ';']) && !matches!(bare, "f" | "ff" | "sq" | "sqq") {
+            break;
+        }
+    }
+    if words == 0 {
+        return (None, None, some(rest));
+    }
+    let found = after[..taken].trim_end_matches([',', ';', ':']);
+    // "f." and "ff." keep their stop; a number does not.
+    let found = if found.ends_with('.') && !found.ends_with("f.") && !found.ends_with("q.") {
+        found.trim_end_matches('.')
+    } else {
+        found
+    };
+    (some(found), label.filter(|l| l != "page"), some(&after[taken..]))
+}
+
+impl Reading<'_, '_> {
+    fn inlines(&mut self, inlines: &[Value], marks: &Marks, out: &mut Vec<Piece>) {
+        for v in inlines {
+            let c = inner(v);
+            match tag(v) {
+                "Str" => push_text(out, c.as_str().unwrap_or(""), marks),
+                "Space" | "SoftBreak" => push_text(out, " ", marks),
+                "LineBreak" => out.push(Piece::Inline(Inline::Break)),
+                "Emph" => self.inlines(list(c), &with(marks, "em", Value::Bool(true)), out),
+                "Strong" => self.inlines(list(c), &with(marks, "strong", Value::Bool(true)), out),
+                "Strikeout" => self.inlines(list(c), &with(marks, "strike", Value::Bool(true)), out),
+                "Superscript" => self.inlines(list(c), &with(marks, "sup", Value::Bool(true)), out),
+                "Subscript" => self.inlines(list(c), &with(marks, "sub", Value::Bool(true)), out),
+                "SmallCaps" => self.inlines(list(c), &with(marks, "smallcaps", Value::Bool(true)), out),
+                "Underline" => self.inlines(list(c), marks, out),
+                "Quoted" => {
+                    let double = tag(&c[0]) != "SingleQuote";
+                    push_text(out, if double { "“" } else { "‘" }, marks);
+                    self.inlines(list(&c[1]), marks, out);
+                    push_text(out, if double { "”" } else { "’" }, marks);
+                }
+                "Code" => push_text(out, c[1].as_str().unwrap_or(""), marks),
+                "Math" => {
+                    let tex = c[1].as_str().unwrap_or("").trim().to_owned();
+                    if tex.is_empty() {
+                        continue;
+                    }
+                    if tag(&c[0]) == "DisplayMath" {
+                        out.push(Piece::Block(Block::Equation {
+                            id: String::new(),
+                            tex,
+                            numbered: false,
+                            align: None,
+                        }));
+                    } else {
+                        out.push(Piece::Inline(Inline::Math { tex }));
+                    }
+                }
+                "RawInline" => self.tally.raw += 1,
+                "Link" => {
+                    let href = c[2][0].as_str().unwrap_or("").trim();
+                    // A link to a place in the document itself leads nowhere in a map.
+                    if href.is_empty() || href.starts_with('#') {
+                        self.inlines(list(&c[1]), marks, out);
+                    } else {
+                        self.inlines(list(&c[1]), &with(marks, "link", json!({ "href": href })), out);
+                    }
+                }
+                "Span" => {
+                    if classes(&c[0]).contains(&"smallcaps") {
+                        self.inlines(list(&c[1]), &with(marks, "smallcaps", Value::Bool(true)), out);
+                    } else {
+                        self.inlines(list(&c[1]), marks, out);
+                    }
+                }
+                "Image" => {
+                    let shows = written(list(&c[1]));
+                    let shows = if shows.trim().is_empty() { c[2][1].as_str().unwrap_or("") } else { shows.trim() };
+                    let shows = shows.trim().trim_start_matches("fig:").to_owned();
+                    if let Some(figure) = self.figure(&c[0], &shows, c[2][0].as_str().unwrap_or("")) {
+                        out.push(Piece::Block(figure));
+                    }
+                }
+                "Note" => {
+                    let blocks = self.blocks(list(c));
+                    let mut content = line_of(blocks, &mut self.hoisted);
+                    // A note within a note is not a thing.
+                    content.retain(|i| !matches!(i, Inline::Footnote { .. }));
+                    trim(&mut content);
+                    if !content.is_empty() {
+                        out.push(Piece::Inline(Inline::Footnote { content, place: None }));
+                    }
+                }
+                "Cite" => self.cite(c, marks, out),
+                _ => {}
+            }
+        }
+    }
+
+    fn cite(&mut self, c: &Value, marks: &Marks, out: &mut Vec<Piece>) {
+        let citations = list(&c[0]);
+        let as_written = written(list(&c[1]));
+        if self.naming {
+            push_text(out, &as_written, marks);
+            return;
+        }
+        let found: Vec<Option<String>> =
+            citations.iter().map(|one| (self.keys)(one["citationId"].as_str().unwrap_or(""))).collect();
+        for (one, id) in citations.iter().zip(&found) {
+            if id.is_some() {
+                self.tally.cited += 1;
+            } else {
+                self.tally.not_found += 1;
+                let key = one["citationId"].as_str().unwrap_or("").to_owned();
+                if !self.tally.unknown.contains(&key) {
+                    self.tally.unknown.push(key);
+                }
+            }
+        }
+        if found.iter().all(Option::is_none) {
+            push_text(out, &as_written, marks);
+            return;
+        }
+        let mut items: Vec<CiteItem> = Vec::new();
+        let mut mode = CiteMode::Normal;
+        let mut missing: Vec<String> = Vec::new();
+        for (one, id) in citations.iter().zip(found) {
+            let prefix = written(list(&one["citationPrefix"]));
+            let suffix = written(list(&one["citationSuffix"]));
+            let how = tag(&one["citationMode"]);
+            let Some(id) = id else {
+                let mut text = String::new();
+                if !prefix.trim().is_empty() {
+                    text.push_str(prefix.trim());
+                    text.push(' ');
+                }
+                if how == "SuppressAuthor" {
+                    text.push('-');
+                }
+                text.push('@');
+                text.push_str(one["citationId"].as_str().unwrap_or(""));
+                text.push_str(suffix.trim_end());
+                missing.push(text);
+                continue;
+            };
+            if items.is_empty() && how == "AuthorInText" {
+                mode = CiteMode::Intext;
+            }
+            let (locator, label, after) = locator(&suffix, &self.terms);
+            let prefix = prefix.replace('\u{a0}', " ");
+            items.push(CiteItem {
+                id,
+                locator,
+                label,
+                prefix: Some(prefix.trim().to_owned()).filter(|p| !p.is_empty()),
+                suffix: after,
+                suppress_author: how == "SuppressAuthor",
+            });
+        }
+        if !missing.is_empty() {
+            push_text(out, &format!("[{}] ", missing.join("; ")), marks);
+        }
+        out.push(Piece::Inline(Inline::Citation { items, mode }));
+    }
+
+    /// A picture of the document as a figure, if it can be taken in.
+    fn figure(&mut self, attr: &Value, shows: &str, named: &str) -> Option<Block> {
+        match (self.take_in)(named) {
+            Ok(picture) => Some(Block::Figure {
+                id: String::new(),
+                width: percent(attr).unwrap_or_else(|| width_for(&picture)),
+                file: picture.hash,
+                extension: picture.extension,
+                name: picture.name,
+                caption: Vec::new(),
+                alt: shows.to_owned(),
+                // One of which nothing is said has no number either.
+                numbered: false,
+                align: None,
+                wrap: None,
+            }),
+            Err(why) => {
+                self.tally.lost.push((name_of(named), why));
+                None
+            }
+        }
+    }
+
+    /// A line of Pandoc as blocks: paragraphs, and what divides them.
+    fn paragraph(&mut self, inlines: &[Value], marks: &Marks, out: &mut Vec<Block>) {
+        let mut pieces = Vec::new();
+        self.inlines(inlines, marks, &mut pieces);
+        let mut line: Vec<Inline> = Vec::new();
+        let end = |line: &mut Vec<Inline>, out: &mut Vec<Block>| {
+            let mut content = std::mem::take(line);
+            trim(&mut content);
+            if !content.is_empty() {
+                out.push(Block::Paragraph { content });
+            }
+        };
+        for piece in pieces {
+            match piece {
+                Piece::Inline(i) => line.push(i),
+                Piece::Block(b) => {
+                    end(&mut line, out);
+                    out.push(b);
+                }
+            }
+        }
+        end(&mut line, out);
+    }
+
+    fn blocks(&mut self, blocks: &[Value]) -> Vec<Block> {
+        let mut out = Vec::new();
+        for b in blocks {
+            self.block(b, &mut out);
+        }
+        out
+    }
+
+    fn block(&mut self, b: &Value, out: &mut Vec<Block>) {
+        let c = inner(b);
+        match tag(b) {
+            "Para" | "Plain" => self.paragraph(list(c), &Marks::new(), out),
+            "LineBlock" => {
+                let mut lines: Vec<Value> = Vec::new();
+                for (i, line) in list(c).iter().enumerate() {
+                    if i > 0 {
+                        lines.push(json!({ "t": "LineBreak" }));
+                    }
+                    lines.extend(list(line).iter().cloned());
+                }
+                self.paragraph(&lines, &Marks::new(), out);
+            }
+            "Header" => {
+                // Not where a map has its headings: in a quotation, a list, a table.
+                self.tally.headings += 1;
+                self.paragraph(list(&c[2]), &with(&Marks::new(), "strong", Value::Bool(true)), out);
+            }
+            "BlockQuote" => {
+                let content = self.blocks(list(c));
+                if !content.is_empty() {
+                    out.push(Block::Blockquote { content });
+                }
+            }
+            "BulletList" => {
+                let items = self.items(list(c));
+                if !items.is_empty() {
+                    out.push(Block::BulletList { items });
+                }
+            }
+            "OrderedList" => {
+                let items = self.items(list(&c[1]));
+                let start = c[0][0].as_u64().and_then(|n| u32::try_from(n).ok()).filter(|n| *n > 0).unwrap_or(1);
+                if !items.is_empty() {
+                    out.push(Block::OrderedList { start, items });
+                }
+            }
+            "DefinitionList" => {
+                self.tally.definitions += 1;
+                for entry in list(c) {
+                    self.paragraph(list(&entry[0]), &with(&Marks::new(), "strong", Value::Bool(true)), out);
+                    for definition in list(&entry[1]) {
+                        for b in list(definition) {
+                            self.block(b, out);
+                        }
+                    }
+                }
+            }
+            "CodeBlock" => {
+                self.tally.code += 1;
+                for line in c[1].as_str().unwrap_or("").lines().filter(|l| !l.trim().is_empty()) {
+                    out.push(Block::Paragraph { content: vec![text_of(&clean(line))] });
+                }
+            }
+            "HorizontalRule" => self.tally.rules += 1,
+            "RawBlock" => self.tally.raw += 1,
+            "Table" => self.table(c, out),
+            "Figure" => self.pandoc_figure(c, out),
+            "Div" => {
+                for b in list(&c[1]) {
+                    self.block(b, out);
+                }
+            }
+            _ => {}
+        }
+        out.append(&mut self.hoisted);
+    }
+
+    fn items(&mut self, items: &[Value]) -> Vec<Vec<Block>> {
+        items.iter().map(|item| self.blocks(list(item))).filter(|item| !item.is_empty()).collect()
+    }
+
+    /// What is said of a figure or a table: a line, in which no note stands.
+    fn said(&mut self, blocks: &[Value]) -> Vec<Inline> {
+        let converted = self.blocks(blocks);
+        let line = line_of(converted, &mut self.hoisted);
+        let mut out = Vec::new();
+        for i in line {
+            match i {
+                Inline::Footnote { content, .. } => {
+                    self.tally.bracketed += 1;
+                    out.push(text_of(" ("));
+                    out.extend(content.into_iter().filter(|i| !matches!(i, Inline::Footnote { .. })));
+                    out.push(text_of(")"));
+                }
+                other => out.push(other),
+            }
+        }
+        let mut out = join(out);
+        trim(&mut out);
+        out
+    }
+
+    /// What Pandoc calls a figure: something with a caption, most often a picture.
+    fn pandoc_figure(&mut self, c: &Value, out: &mut Vec<Block>) {
+        let caption = self.said(list(&c[1][1]));
+        let mut within = self.blocks(list(&c[2]));
+        let figures = within.iter().filter(|b| matches!(b, Block::Figure { .. })).count();
+        if figures == 1 {
+            for b in &mut within {
+                if let Block::Figure { caption: said, alt, numbered, .. } = b {
+                    // What is said of it twice is said once.
+                    if alt.trim() == document::plain(&caption) {
+                        alt.clear();
+                    }
+                    *numbered = !caption.is_empty();
+                    *said = caption.clone();
+                }
+            }
+        } else if !caption.is_empty() {
+            within.push(Block::Paragraph { content: caption });
+        }
+        out.extend(within);
+    }
+
+    fn table(&mut self, c: &Value, out: &mut Vec<Block>) {
+        let caption = self.said(list(&c[1][1]));
+        let columns: Vec<Option<Stand>> = list(&c[2]).iter().map(|spec| stand_of(&spec[0])).collect();
+        let shares: f64 = list(&c[2]).iter().filter_map(|spec| inner(&spec[1]).as_f64()).sum();
+        let mut rows: Vec<Vec<Cell>> = Vec::new();
+        self.rows(list(&c[3][1]), true, 0, &columns, &mut rows);
+        for body in list(&c[4]) {
+            let heads = body[1].as_u64().unwrap_or(0) as usize;
+            self.rows(list(&body[2]), true, 0, &columns, &mut rows);
+            self.rows(list(&body[3]), false, heads, &columns, &mut rows);
+        }
+        self.rows(list(&c[5][1]), false, 0, &columns, &mut rows);
+        if rows.is_empty() {
+            if !caption.is_empty() {
+                out.push(Block::Paragraph { content: caption });
+            }
+            return;
+        }
+        out.push(Block::Table(Table {
+            id: String::new(),
+            numbered: !caption.is_empty(),
+            caption,
+            rows,
+            align: None,
+            wrap: None,
+            width: if shares > 0.0 { (shares * 100.0).round().clamp(10.0, 100.0) as u8 } else { 0 },
+        }));
+    }
+
+    /// Rows of one part of a table. `heads` are the columns at the left
+    /// whose cells are headings of their rows.
+    fn rows(
+        &mut self,
+        rows: &[Value],
+        header: bool,
+        heads: usize,
+        columns: &[Option<Stand>],
+        out: &mut Vec<Vec<Cell>>,
+    ) {
+        // For every column, how many rows a cell from above still takes.
+        let mut taken: Vec<usize> = Vec::new();
+        for row in rows {
+            let mut cells: Vec<Cell> = Vec::new();
+            let mut at = 0usize;
+            for cell in list(&row[1]) {
+                while taken.get(at).is_some_and(|rows| *rows > 0) {
+                    at += 1;
+                }
+                let rowspan = cell[2].as_u64().unwrap_or(1).clamp(1, 1000) as u16;
+                let colspan = cell[3].as_u64().unwrap_or(1).clamp(1, 1000) as u16;
+                let blocks = self.blocks(list(&cell[4]));
+                let mut content = paragraphs_of(blocks, &mut self.hoisted);
+                if content.is_empty() {
+                    content.push(Block::Paragraph { content: Vec::new() });
+                }
+                cells.push(Cell {
+                    content,
+                    colspan,
+                    rowspan,
+                    header: header || at < heads,
+                    align: stand_of(&cell[1]).or_else(|| columns.get(at).copied().flatten()),
+                });
+                for column in at..at + usize::from(colspan) {
+                    if taken.len() <= column {
+                        taken.resize(column + 1, 0);
+                    }
+                    taken[column] = usize::from(rowspan);
+                }
+                at += usize::from(colspan);
+            }
+            for rows in &mut taken {
+                *rows = rows.saturating_sub(1);
+            }
+            if !cells.is_empty() {
+                out.push(cells);
+            }
+        }
+    }
+
+    /// A name: text with the marks a name can have. The notes that stood
+    /// in it are given beside it.
+    fn name(&mut self, inlines: &[Value]) -> (Vec<Inline>, Vec<Inline>) {
+        let mut pieces = Vec::new();
+        self.naming = true;
+        self.inlines(inlines, &Marks::new(), &mut pieces);
+        self.naming = false;
+        let mut line: Vec<Inline> = Vec::new();
+        let mut notes: Vec<Inline> = Vec::new();
+        for piece in pieces {
+            match piece {
+                Piece::Inline(Inline::Text { text, marks }) => {
+                    let marks = marks
+                        .into_iter()
+                        .filter(|(name, _)| matches!(name.as_str(), "em" | "smallcaps" | "sup" | "sub"))
+                        .collect();
+                    line.push(Inline::Text { text, marks });
+                }
+                Piece::Inline(Inline::Break) => line.push(text_of(" ")),
+                Piece::Inline(Inline::Math { tex }) | Piece::Block(Block::Equation { tex, .. }) => {
+                    line.push(text_of(&tex));
+                }
+                Piece::Inline(note @ Inline::Footnote { .. }) => {
+                    self.tally.moved += 1;
+                    notes.push(note);
+                }
+                Piece::Block(figure @ Block::Figure { .. }) => self.hoisted.push(figure),
+                _ => {}
+            }
+        }
+        let mut line = join(line);
+        trim(&mut line);
+        (line, notes)
+    }
+
+    /// The document in its parts, as the file has them.
+    fn parts(&mut self, blocks: &[Value], parts: &mut Vec<Part>) {
+        for b in blocks {
+            match tag(b) {
+                "Header" => {
+                    let c = inner(b);
+                    let (heading, notes) = self.name(list(&c[2]));
+                    if heading.is_empty() {
+                        // A heading that says nothing divides nothing.
+                        if let Some(part) = parts.last_mut() {
+                            part.notes.extend(notes);
+                        }
+                        continue;
+                    }
+                    parts.push(Part { level: c[0].as_i64().unwrap_or(1).max(1), heading, notes, blocks: Vec::new() });
+                }
+                "Div" => self.parts(list(&inner(b)[1]), parts),
+                _ => {
+                    let mut out = Vec::new();
+                    self.block(b, &mut out);
+                    if let Some(part) = parts.last_mut() {
+                        part.blocks.extend(out);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// The text of what a file says of itself.
+fn meta_text(v: &Value) -> String {
+    let c = inner(v);
+    let text = match tag(v) {
+        "MetaString" => c.as_str().unwrap_or("").to_owned(),
+        "MetaBool" => String::new(),
+        "MetaInlines" => written(list(c)),
+        "MetaBlocks" => {
+            list(c).iter().map(meta_block).filter(|p| !p.trim().is_empty()).collect::<Vec<_>>().join("\n\n")
+        }
+        "MetaList" => list(c).iter().map(meta_text).filter(|p| !p.is_empty()).collect::<Vec<_>>().join(", "),
+        _ => String::new(),
+    };
+    text.replace('\u{a0}', " ").trim().to_owned()
+}
+
+fn meta_block(b: &Value) -> String {
+    let c = inner(b);
+    match tag(b) {
+        "Para" | "Plain" => written(list(c)),
+        "LineBlock" => list(c).iter().map(|l| written(list(l))).collect::<Vec<_>>().join("\n"),
+        "BlockQuote" => list(c).iter().map(meta_block).collect::<Vec<_>>().join("\n\n"),
+        "Div" => list(&c[1]).iter().map(meta_block).collect::<Vec<_>>().join("\n\n"),
+        _ => String::new(),
+    }
+}
+
+fn meta_list(v: &Value) -> Vec<&Value> {
+    match tag(v) {
+        "MetaList" => list(inner(v)).iter().collect(),
+        "" => Vec::new(),
+        _ => vec![v],
+    }
+}
+
+fn authors_of(meta: &Value) -> Vec<Author> {
+    let mut out = Vec::new();
+    let given = meta.get("author").or_else(|| meta.get("authors"));
+    for one in given.map(meta_list).unwrap_or_default() {
+        let author = if tag(one) == "MetaMap" {
+            let of = |name: &str| inner(one).get(name).map(meta_text).filter(|t| !t.is_empty());
+            Author {
+                name: of("name").unwrap_or_default(),
+                affiliation: of("affiliation").or_else(|| of("institute")),
+                email: of("email"),
+                orcid: of("orcid"),
+            }
+        } else {
+            Author { name: meta_text(one), ..Default::default() }
+        };
+        if !author.name.is_empty() {
+            out.push(author);
+        }
+    }
+    out
+}
+
+/// The headings under which a document has the list of what it cites.
+const BIBLIOGRAPHIES: [&str; 22] = [
+    "references",
+    "reference list",
+    "list of references",
+    "bibliography",
+    "select bibliography",
+    "selected bibliography",
+    "works cited",
+    "literature",
+    "literature cited",
+    "sources",
+    "litteratur",
+    "litteraturliste",
+    "referanser",
+    "referenser",
+    "kilder",
+    "literatur",
+    "literaturverzeichnis",
+    "bibliographie",
+    "références",
+    "bibliografia",
+    "bibliografía",
+    "referencias",
+];
+
+fn is_bibliography(heading: &str) -> bool {
+    let said = heading.trim().trim_end_matches([':', '.']).trim();
+    // Without a number before it.
+    let said = said.trim_start_matches(|c: char| c.is_ascii_digit() || c == '.' || c.is_whitespace());
+    let lower = said.to_lowercase();
+    BIBLIOGRAPHIES.contains(&lower.as_str())
+}
+
+fn is_word_char(c: char) -> bool {
+    c.is_alphabetic() || c.is_numeric()
+}
+
+/// The words of a text, as the application counts them: letters and
+/// digits in runs, with apostrophes and hyphens inside them.
+pub fn count_words(text: &str) -> usize {
+    let chars: Vec<char> = text.chars().collect();
+    let mut count = 0;
+    let mut i = 0;
+    while i < chars.len() {
+        if !is_word_char(chars[i]) {
+            i += 1;
+            continue;
+        }
+        count += 1;
+        while i < chars.len() {
+            if is_word_char(chars[i]) {
+                i += 1;
+            } else if matches!(chars[i], '\'' | '’' | '-') && chars.get(i + 1).is_some_and(|c| is_word_char(*c)) {
+                i += 2;
+            } else {
+                break;
+            }
+        }
+    }
+    count
+}
+
+fn count(sections: &[Section], cited: usize, not_found: usize) -> Counts {
+    fn line(inlines: &[Inline], text: &mut String, notes: &mut usize) {
+        for i in inlines {
+            match i {
+                Inline::Text { text: t, .. } => text.push_str(t),
+                Inline::Break => text.push(' '),
+                Inline::Math { .. } | Inline::CrossRef { .. } => text.push_str(" x "),
+                Inline::Footnote { content, .. } => {
+                    *notes += 1;
+                    text.push(' ');
+                    line(content, text, notes);
+                    text.push(' ');
+                }
+                Inline::Citation { .. } => {}
+            }
+        }
+    }
+    let mut counts =
+        Counts { parts: sections.iter().filter(|s| s.level > 0).count(), cited, not_found, ..Default::default() };
+    let mut text = String::new();
+    let mut notes = 0usize;
+    for section in sections {
+        document::walk(
+            &section.blocks,
+            &mut |b| match b {
+                Block::Figure { .. } => counts.figures += 1,
+                Block::Table(_) => counts.tables += 1,
+                Block::Equation { .. } => counts.equations += 1,
+                _ => {}
+            },
+            &mut |l| {
+                line(l, &mut text, &mut notes);
+                text.push('\n');
+            },
+        );
+    }
+    counts.words = count_words(&text);
+    counts.notes = notes;
+    counts
+}
+
+fn several(n: usize, one: &str, more: &str) -> String {
+    if n == 1 { format!("1 {one}") } else { format!("{n} {more}") }
+}
+
+/// Turns what Pandoc has read into a document in parts. `stem` is what the
+/// file is called, without its ending: the title where the document has none.
+pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, take_in: &mut TakeIn) -> Imported {
+    let empty = json!({});
+    let meta = doc.get("meta").unwrap_or(&empty);
+    let of = |names: &[&str]| names.iter().find_map(|n| meta.get(*n)).map(meta_text).filter(|t| !t.is_empty());
+    let language = of(&["lang", "language"]).or_else(|| properties.language.clone());
+
+    let mut reading = Reading {
+        keys,
+        take_in,
+        terms: terms_for(language.as_deref()),
+        naming: false,
+        hoisted: Vec::new(),
+        tally: Tally::default(),
+    };
+
+    let mut parts = vec![Part { level: 0, heading: Vec::new(), notes: Vec::new(), blocks: Vec::new() }];
+    // The title the document gives itself.
+    let mut title: Vec<Inline> = Vec::new();
+    if let Some(given) = meta.get("title") {
+        let (name, notes) = match tag(given) {
+            "MetaInlines" => reading.name(list(inner(given))),
+            "MetaBlocks" => {
+                let lines: Vec<Value> = list(inner(given))
+                    .iter()
+                    .filter(|b| matches!(tag(b), "Para" | "Plain"))
+                    .flat_map(|b| {
+                        let mut line = list(inner(b)).to_vec();
+                        line.push(json!({ "t": "Space" }));
+                        line
+                    })
+                    .collect();
+                reading.name(&lines)
+            }
+            _ => (vec![text_of(&meta_text(given))], Vec::new()),
+        };
+        title = name;
+        parts[0].notes = notes;
+    }
+    title.retain(|i| !matches!(i, Inline::Text { text, .. } if text.is_empty()));
+    let mut from_properties = !title.is_empty();
+    if title.is_empty()
+        && let Some(given) = properties.title.as_deref().map(str::trim).filter(|t| !t.is_empty())
+    {
+        title = vec![text_of(given)];
+        from_properties = true;
+    }
+
+    reading.parts(list(doc.get("blocks").unwrap_or(&Value::Null)), &mut parts);
+    // What was set aside at the very end.
+    let left = std::mem::take(&mut reading.hoisted);
+    if let Some(last) = parts.last_mut() {
+        last.blocks.extend(left);
+    }
+
+    // One heading alone at the top, in a document without a title, is the title.
+    if title.is_empty() && parts.len() > 1 {
+        let top = parts.iter().skip(1).map(|p| p.level).min().unwrap_or(1);
+        let alone = parts.iter().skip(1).filter(|p| p.level == top).count() == 1;
+        if alone && parts[1].level == top {
+            let first = parts.remove(1);
+            title = first.heading;
+            parts[0].notes.extend(first.notes);
+            parts[0].blocks.extend(first.blocks);
+        }
+    }
+    if title.is_empty() {
+        title = vec![text_of(if stem.trim().is_empty() { "Untitled" } else { stem.trim() })];
+    } else if from_properties {
+        // The title as it is set at the top of the page is not part of the
+        // text, nor a part of the document: as a paragraph, or as a heading
+        // before all others.
+        let said = document::plain(&title);
+        if let Some(Block::Paragraph { content }) = parts[0].blocks.first()
+            && document::plain(content) == said
+            && !content.iter().any(|i| matches!(i, Inline::Footnote { .. } | Inline::Citation { .. }))
+        {
+            parts[0].blocks.remove(0);
+        } else if parts.len() > 1 && document::plain(&parts[1].heading) == said {
+            let first = parts.remove(1);
+            parts[0].notes.extend(first.notes);
+            parts[0].blocks.extend(first.blocks);
+        }
+    }
+
+    // The levels, made to begin at one and to go down by one at a time.
+    let mut above: Vec<i64> = Vec::new();
+    let mut sections: Vec<Section> = Vec::new();
+    let mut bibliography: Option<String> = None;
+    for mut part in parts {
+        if !part.notes.is_empty() {
+            match part.blocks.first_mut() {
+                Some(Block::Paragraph { content }) => {
+                    let mut with_notes = std::mem::take(&mut part.notes);
+                    with_notes.append(content);
+                    *content = with_notes;
+                }
+                _ => part.blocks.insert(0, Block::Paragraph { content: std::mem::take(&mut part.notes) }),
+            }
+        }
+        if part.level == 0 {
+            if !part.blocks.is_empty() {
+                sections.push(Section { level: 0, heading: Vec::new(), blocks: part.blocks });
+            }
+            continue;
+        }
+        while above.last().is_some_and(|l| *l >= part.level) {
+            above.pop();
+        }
+        above.push(part.level);
+        let said = document::plain(&part.heading);
+        if bibliography.is_none() && !part.blocks.is_empty() && is_bibliography(&said) {
+            bibliography = Some(said);
+        }
+        sections.push(Section { level: above.len().min(12) as u8, heading: part.heading, blocks: part.blocks });
+    }
+
+    let tally = reading.tally;
+    let mut remarks: Vec<String> = Vec::new();
+    if !tally.unknown.is_empty() {
+        remarks.push(format!(
+            "{} that {} not in your library: {}. Where {} cited, the citation stands as the text it was written \
+             as.",
+            several(tally.unknown.len(), "work is cited by a key", "works are cited by keys"),
+            if tally.unknown.len() == 1 { "is" } else { "are" },
+            tally.unknown.join(", "),
+            if tally.unknown.len() == 1 { "it is" } else { "they are" }
+        ));
+    }
+    if let Some(heading) = &bibliography {
+        remarks.push(format!(
+            "The document has a list of what it cites, under “{heading}”. It is brought in as text, like the rest. \
+             The map makes a bibliography of its own from what is cited in it."
+        ));
+    }
+    for (name, why) in &tally.lost {
+        remarks.push(format!("The picture “{name}” is left out: {why}."));
+    }
+    if tally.moved > 0 {
+        remarks.push(format!(
+            "{} at the beginning of the text under it: a heading cannot have a note.",
+            if tally.moved == 1 {
+                "A note on a heading stands".to_owned()
+            } else {
+                format!("{} notes on headings stand", tally.moved)
+            }
+        ));
+    }
+    if tally.bracketed > 0 {
+        remarks.push(format!(
+            "{} there in brackets.",
+            if tally.bracketed == 1 {
+                "A note in what is said of a figure or a table stands".to_owned()
+            } else {
+                format!("{} notes in what is said of figures or tables stand", tally.bracketed)
+            }
+        ));
+    }
+    if tally.headings > 0 {
+        remarks.push(format!(
+            "{} in a quotation, a list or a table {} brought in as a paragraph in bold.",
+            several(tally.headings, "heading", "headings"),
+            if tally.headings == 1 { "is" } else { "are" }
+        ));
+    }
+    if tally.code > 0 {
+        remarks.push(format!(
+            "{} of code {} brought in as plain paragraphs, a line to each.",
+            several(tally.code, "block", "blocks"),
+            if tally.code == 1 { "is" } else { "are" }
+        ));
+    }
+    if tally.definitions > 0 {
+        remarks.push(format!(
+            "{} of terms with what they mean {} brought in as paragraphs, the terms in bold.",
+            several(tally.definitions, "list", "lists"),
+            if tally.definitions == 1 { "is" } else { "are" }
+        ));
+    }
+    if tally.rules > 0 {
+        remarks.push(format!(
+            "{} across the page {} left out.",
+            several(tally.rules, "line", "lines"),
+            if tally.rules == 1 { "is" } else { "are" }
+        ));
+    }
+    if tally.raw > 0 {
+        remarks.push(format!(
+            "{} written in HTML or TeX for the one kind of document only {} left out.",
+            several(tally.raw, "piece", "pieces"),
+            if tally.raw == 1 { "is" } else { "are" }
+        ));
+    }
+
+    let keywords: Vec<String> = match meta.get("keywords").or_else(|| meta.get("keyword")).or_else(|| meta.get("tags"))
+    {
+        Some(given) if tag(given) == "MetaList" => {
+            list(inner(given)).iter().map(meta_text).filter(|k| !k.is_empty()).collect()
+        }
+        Some(given) => {
+            meta_text(given).split([',', ';']).map(|k| k.trim().to_owned()).filter(|k| !k.is_empty()).collect()
+        }
+        None => properties.keywords.clone(),
+    };
+    let mut authors = authors_of(meta);
+    if authors.is_empty() {
+        authors = properties
+            .authors
+            .iter()
+            .filter(|a| !a.trim().is_empty())
+            .map(|a| Author { name: a.trim().to_owned(), ..Default::default() })
+            .collect();
+    }
+
+    Imported {
+        file: String::new(),
+        kind: String::new(),
+        title,
+        subtitle: of(&["subtitle"]),
+        authors,
+        date: of(&["date"]),
+        abstract_text: of(&["abstract"]),
+        keywords,
+        language,
+        counts: count(&sections, tally.cited, tally.not_found),
+        sections,
+        remarks,
+        pictures: Vec::new(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pictures::fixtures::PNG;
+
+    fn none(_: &str) -> Option<String> {
+        None
+    }
+
+    fn library(key: &str) -> Option<String> {
+        match key {
+            "nagy1979" => Some("r1".to_owned()),
+            "west1988" => Some("r2".to_owned()),
+            _ => None,
+        }
+    }
+
+    fn a_picture(named: &str) -> std::result::Result<Picture, String> {
+        if named.ends_with(".emf") {
+            return Err("it is of a kind that is not read (EMF)".to_owned());
+        }
+        Ok(Picture {
+            hash: "a".repeat(64),
+            extension: "png".into(),
+            name: name_of(named),
+            width: Some(480),
+            height: Some(300),
+            ..Default::default()
+        })
+    }
+
+    fn read_json(json: &str, keys: &Keys) -> Imported {
+        let value: Value = serde_json::from_str(json).unwrap();
+        convert(&value, "the file", &Properties::default(), keys, &mut a_picture)
+    }
+
+    fn words(text: &str) -> String {
+        let tokens: Vec<String> =
+            text.split(' ').map(|w| format!(r#"{{"t":"Str","c":{}}}"#, serde_json::to_string(w).unwrap())).collect();
+        tokens.join(r#",{"t":"Space"},"#)
+    }
+
+    fn para(text: &str) -> String {
+        format!(r#"{{"t":"Para","c":[{}]}}"#, words(text))
+    }
+
+    fn header(level: u8, text: &str) -> String {
+        format!(r#"{{"t":"Header","c":[{level},["",[],[]],[{}]]}}"#, words(text))
+    }
+
+    fn doc(meta: &str, blocks: &[String]) -> String {
+        format!(r#"{{"pandoc-api-version":[1,23,1],"meta":{meta},"blocks":[{}]}}"#, blocks.join(","))
+    }
+
+    fn text(s: &str) -> Inline {
+        text_of(s)
+    }
+
+    fn marked(s: &str, marks: &[&str]) -> Inline {
+        Inline::Text { text: s.into(), marks: marks.iter().map(|m| ((*m).to_owned(), Value::Bool(true))).collect() }
+    }
+
+    fn paragraph(content: Vec<Inline>) -> Block {
+        Block::Paragraph { content }
+    }
+
+    #[test]
+    fn the_kind_is_told_from_the_ending() {
+        assert_eq!(Format::of(Path::new("/a/b/Thesis.DOCX")), Some(Format::Docx));
+        assert_eq!(Format::of(Path::new("notes.markdown")), Some(Format::Markdown));
+        assert_eq!(Format::of(Path::new("notes.txt")), Some(Format::Plain));
+        assert_eq!(Format::of(Path::new("paper.pdf")), None);
+        assert_eq!(Format::of(Path::new("no ending")), None);
+        for ending in ENDINGS {
+            assert!(Format::of(Path::new(&format!("x.{ending}"))).is_some(), "{ending}");
+        }
+    }
+
+    #[test]
+    fn headings_become_parts_in_their_order() {
+        let read = read_json(
+            &doc(
+                r#"{"title":{"t":"MetaInlines","c":[{"t":"Str","c":"Wrath"}]}}"#,
+                &[
+                    para("Before the first."),
+                    header(2, "One"),
+                    para("Under one."),
+                    header(4, "Deep"),
+                    header(3, "Less deep"),
+                    header(2, "Two"),
+                    header(1, "Above"),
+                    header(3, "Under it"),
+                ],
+            ),
+            &none,
+        );
+        assert_eq!(read.title, vec![text("Wrath")]);
+        let shape: Vec<(u8, String)> = read.sections.iter().map(|s| (s.level, document::plain(&s.heading))).collect();
+        assert_eq!(
+            shape,
+            vec![
+                (0, String::new()),
+                (1, "One".into()),
+                (2, "Deep".into()),
+                (2, "Less deep".into()),
+                (1, "Two".into()),
+                (1, "Above".into()),
+                (2, "Under it".into()),
+            ]
+        );
+        assert_eq!(read.sections[0].blocks, vec![paragraph(vec![text("Before the first.")])]);
+        assert_eq!(read.sections[1].blocks, vec![paragraph(vec![text("Under one.")])]);
+        assert_eq!(read.counts.parts, 6);
+        assert_eq!(read.counts.words, 5);
+    }
+
+    #[test]
+    fn one_heading_alone_at_the_top_is_the_title() {
+        let read = read_json(
+            &doc(
+                "{}",
+                &[
+                    header(1, "The wrath"),
+                    para("Of the centre."),
+                    header(2, "One"),
+                    header(3, "Within"),
+                    header(2, "Two"),
+                ],
+            ),
+            &none,
+        );
+        assert_eq!(read.title, vec![text("The wrath")]);
+        let shape: Vec<(u8, String)> = read.sections.iter().map(|s| (s.level, document::plain(&s.heading))).collect();
+        assert_eq!(shape, vec![(0, String::new()), (1, "One".into()), (2, "Within".into()), (1, "Two".into())]);
+
+        // Two at the top: neither is the title, which is then what the file is called.
+        let read = read_json(&doc("{}", &[header(1, "One"), header(1, "Two")]), &none);
+        assert_eq!(read.title, vec![text("the file")]);
+        assert_eq!(read.sections.len(), 2);
+
+        // One at the top that is not the first is a part like the others.
+        let read = read_json(&doc("{}", &[header(2, "One"), header(1, "Two")]), &none);
+        assert_eq!(read.title, vec![text("the file")]);
+        assert_eq!(read.sections.iter().map(|s| s.level).collect::<Vec<_>>(), vec![1, 1]);
+    }
+
+    #[test]
+    fn marks_breaks_and_links() {
+        let read = read_json(
+            &doc(
+                "{}",
+                &[r##"{"t":"Para","c":[
+                    {"t":"Emph","c":[{"t":"Str","c":"mênis"},{"t":"Space"},{"t":"Strong","c":[{"t":"Str","c":"both"}]}]},
+                    {"t":"Space"},
+                    {"t":"SmallCaps","c":[{"t":"Str","c":"Small"}]},
+                    {"t":"Str","c":"H"},{"t":"Subscript","c":[{"t":"Str","c":"2"}]},
+                    {"t":"Superscript","c":[{"t":"Str","c":"3"}]},
+                    {"t":"Strikeout","c":[{"t":"Str","c":"gone"}]},
+                    {"t":"LineBreak"},
+                    {"t":"Link","c":[["",[],[]],[{"t":"Str","c":"a"},{"t":"Space"},{"t":"Str","c":"link"}],["https://example.org",""]]},
+                    {"t":"Link","c":[["",[],[]],[{"t":"Str","c":"within"}],["#part",""]]},
+                    {"t":"Quoted","c":[{"t":"DoubleQuote"},[{"t":"Str","c":"said"}]]},
+                    {"t":"RawInline","c":["html","<br>"]},
+                    {"t":"Code","c":[["",[],[]],"x = 1"]}
+                ]}"##
+                .to_owned()],
+            ),
+            &none,
+        );
+        let mut link = BTreeMap::new();
+        link.insert("link".to_owned(), json!({ "href": "https://example.org" }));
+        assert_eq!(
+            read.sections[0].blocks,
+            vec![paragraph(vec![
+                marked("mênis ", &["em"]),
+                marked("both", &["em", "strong"]),
+                text(" "),
+                marked("Small", &["smallcaps"]),
+                text("H"),
+                marked("2", &["sub"]),
+                marked("3", &["sup"]),
+                marked("gone", &["strike"]),
+                Inline::Break,
+                Inline::Text { text: "a link".into(), marks: link },
+                text("within“said”x = 1"),
+            ])]
+        );
+        assert!(read.remarks.iter().any(|r| r.starts_with("1 piece written in HTML or TeX")), "{:?}", read.remarks);
+    }
+
+    #[test]
+    fn notes_are_one_line() {
+        let read = read_json(
+            &doc(
+                "{}",
+                &[format!(
+                    r#"{{"t":"Para","c":[{{"t":"Str","c":"Text."}},{{"t":"Note","c":[{},{}]}}]}}"#,
+                    para("The note."),
+                    para("And more.")
+                )],
+            ),
+            &none,
+        );
+        assert_eq!(
+            read.sections[0].blocks,
+            vec![paragraph(vec![
+                text("Text."),
+                Inline::Footnote { content: vec![text("The note. And more.")], place: None },
+            ])]
+        );
+        assert_eq!(read.counts.notes, 1);
+        assert_eq!(read.counts.words, 5);
+    }
+
+    #[test]
+    fn a_note_on_a_heading_stands_under_it() {
+        let read = read_json(
+            &doc(
+                "{}",
+                &[
+                    header(1, "One"),
+                    format!(
+                        r#"{{"t":"Header","c":[1,["",[],[]],[{{"t":"Str","c":"Two"}},{{"t":"Note","c":[{}]}}]]}}"#,
+                        para("With thanks.")
+                    ),
+                    para("The text."),
+                ],
+            ),
+            &none,
+        );
+        assert_eq!(read.sections[1].heading, vec![text("Two")]);
+        assert_eq!(
+            read.sections[1].blocks,
+            vec![paragraph(vec![
+                Inline::Footnote { content: vec![text("With thanks.")], place: None },
+                text("The text."),
+            ])]
+        );
+        assert!(read.remarks.iter().any(|r| r.starts_with("A note on a heading")), "{:?}", read.remarks);
+    }
+
+    #[test]
+    fn mathematics_in_the_line_and_by_itself() {
+        let read = read_json(
+            &doc(
+                "{}",
+                &[r#"{"t":"Para","c":[{"t":"Str","c":"Where"},{"t":"Space"},
+                    {"t":"Math","c":[{"t":"InlineMath"},"x_i \\leq \\alpha"]},
+                    {"t":"Space"},{"t":"Str","c":"and"},
+                    {"t":"Math","c":[{"t":"DisplayMath"},"a^2 + b^2 = c^2"]},
+                    {"t":"Str","c":"holds."}]}"#
+                    .to_owned()],
+            ),
+            &none,
+        );
+        assert_eq!(
+            read.sections[0].blocks,
+            vec![
+                paragraph(vec![text("Where "), Inline::Math { tex: "x_i \\leq \\alpha".into() }, text(" and")]),
+                Block::Equation { id: String::new(), tex: "a^2 + b^2 = c^2".into(), numbered: false, align: None },
+                paragraph(vec![text("holds.")]),
+            ]
+        );
+        assert_eq!(read.counts.equations, 1);
+    }
+
+    #[test]
+    fn lists_quotations_and_what_has_no_place() {
+        let read = read_json(
+            &doc(
+                "{}",
+                &[
+                    format!(r#"{{"t":"BlockQuote","c":[{}]}}"#, para("Sing, goddess.")),
+                    format!(
+                        r#"{{"t":"BulletList","c":[[{}],[{},{{"t":"OrderedList","c":[[3,{{"t":"Decimal"}},{{"t":"Period"}}],[[{}]]]}}]]}}"#,
+                        para("one"),
+                        para("two"),
+                        para("nested")
+                    ),
+                    r#"{"t":"CodeBlock","c":[["",[],[]],"first line\n\nsecond line"]}"#.to_owned(),
+                    format!(r#"{{"t":"DefinitionList","c":[[[{}],[[{}]]]]}}"#, words("Term"), para("What it means.")),
+                    r#"{"t":"HorizontalRule"}"#.to_owned(),
+                    r#"{"t":"RawBlock","c":["html","<hr>"]}"#.to_owned(),
+                    format!(r#"{{"t":"Div","c":[["",[],[]],[{}]]}}"#, para("In a division.")),
+                    r#"{"t":"LineBlock","c":[[{"t":"Str","c":"A"}],[{"t":"Str","c":"B"}]]}"#.to_owned(),
+                ],
+            ),
+            &none,
+        );
+        assert_eq!(
+            read.sections[0].blocks,
+            vec![
+                Block::Blockquote { content: vec![paragraph(vec![text("Sing, goddess.")])] },
+                Block::BulletList {
+                    items: vec![
+                        vec![paragraph(vec![text("one")])],
+                        vec![
+                            paragraph(vec![text("two")]),
+                            Block::OrderedList { start: 3, items: vec![vec![paragraph(vec![text("nested")])]] },
+                        ],
+                    ],
+                },
+                paragraph(vec![text("first line")]),
+                paragraph(vec![text("second line")]),
+                paragraph(vec![marked("Term", &["strong"])]),
+                paragraph(vec![text("What it means.")]),
+                paragraph(vec![text("In a division.")]),
+                paragraph(vec![text("A"), Inline::Break, text("B")]),
+            ]
+        );
+        let all = read.remarks.join("\n");
+        assert!(all.contains("1 block of code is brought in as plain paragraphs"), "{all}");
+        assert!(all.contains("1 list of terms"), "{all}");
+        assert!(all.contains("1 line across the page is left out"), "{all}");
+        assert!(all.contains("1 piece written in HTML or TeX"), "{all}");
+    }
+
+    #[test]
+    fn pictures_become_figures() {
+        let image = |src: &str, width: &str| {
+            format!(r#"{{"t":"Image","c":[["",[],[{width}]],[{}],["{src}",""]]}}"#, words("A round shield"))
+        };
+        let read = read_json(
+            &doc(
+                "{}",
+                &[
+                    format!(
+                        r#"{{"t":"Figure","c":[["",[],[]],[null,[{}]],[{{"t":"Plain","c":[{}]}}]]}}"#,
+                        para("The shield of Achilles"),
+                        image("pictures/The%20shield.png", r#"["width","50%"]"#)
+                    ),
+                    format!(r#"{{"t":"Para","c":[{}]}}"#, image("media/image2.png", r#"["width","3in"]"#)),
+                    format!(
+                        r#"{{"t":"Figure","c":[["",[],[]],[null,[{}]],[{{"t":"Plain","c":[{}]}}]]}}"#,
+                        para("A drawing from Word"),
+                        image("media/image1.emf", "")
+                    ),
+                ],
+            ),
+            &none,
+        );
+        assert_eq!(
+            read.sections[0].blocks,
+            vec![
+                Block::Figure {
+                    id: String::new(),
+                    file: "a".repeat(64),
+                    extension: "png".into(),
+                    name: "The shield.png".into(),
+                    caption: vec![text("The shield of Achilles")],
+                    alt: "A round shield".into(),
+                    width: 50,
+                    numbered: true,
+                    align: None,
+                    wrap: None,
+                },
+                Block::Figure {
+                    id: String::new(),
+                    file: "a".repeat(64),
+                    extension: "png".into(),
+                    name: "image2.png".into(),
+                    caption: vec![],
+                    alt: "A round shield".into(),
+                    // As suits a picture of 480 points.
+                    width: 50,
+                    numbered: false,
+                    align: None,
+                    wrap: None,
+                },
+                paragraph(vec![text("A drawing from Word")]),
+            ]
+        );
+        assert_eq!(read.counts.figures, 2);
+        assert!(
+            read.remarks
+                .contains(&"The picture “image1.emf” is left out: it is of a kind that is not read (EMF).".to_owned()),
+            "{:?}",
+            read.remarks
+        );
+    }
+
+    #[test]
+    fn tables_with_headings_and_spans() {
+        let cell = |align: &str, rows: u8, columns: u8, text: &str| {
+            format!(
+                r#"[["",[],[]],{{"t":"{align}"}},{rows},{columns},[{}]]"#,
+                if text.is_empty() { String::new() } else { format!(r#"{{"t":"Plain","c":[{}]}}"#, words(text)) }
+            )
+        };
+        let row = |cells: &[String]| format!(r#"[["",[],[]],[{}]]"#, cells.join(","));
+        let table = format!(
+            r#"{{"t":"Table","c":[["",[],[]],[null,[{}]],
+                [[{{"t":"AlignLeft"}},{{"t":"ColWidth","c":0.3}}],[{{"t":"AlignRight"}},{{"t":"ColWidth","c":0.3}}],[{{"t":"AlignDefault"}},{{"t":"ColWidth","c":0.2}}]],
+                [["",[],[]],[{}]],
+                [[["",[],[]],1,[],[{},{}]]],
+                [["",[],[]],[]]]}}"#,
+            para("Forms of the word"),
+            row(&[cell("AlignDefault", 1, 1, "Form"), cell("AlignDefault", 1, 2, "Where")]),
+            row(&[
+                cell("AlignDefault", 2, 1, "mênis"),
+                cell("AlignDefault", 1, 1, "12"),
+                cell("AlignCenter", 1, 1, "Iliad")
+            ]),
+            row(&[cell("AlignDefault", 1, 1, "3"), cell("AlignDefault", 1, 1, "")]),
+        );
+        let read = read_json(&doc("{}", &[table]), &none);
+        let Block::Table(table) = &read.sections[0].blocks[0] else { panic!("{:?}", read.sections[0].blocks) };
+        assert_eq!(table.caption, vec![text("Forms of the word")]);
+        assert!(table.numbered);
+        assert_eq!(table.width, 80);
+        type Shape = (String, u16, u16, bool, Option<Stand>);
+        let shape: Vec<Vec<Shape>> = table
+            .rows
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .map(|c| {
+                        let said = match &c.content[0] {
+                            Block::Paragraph { content } => document::plain(content),
+                            other => panic!("{other:?}"),
+                        };
+                        (said, c.colspan, c.rowspan, c.header, c.align)
+                    })
+                    .collect()
+            })
+            .collect();
+        assert_eq!(
+            shape,
+            vec![
+                vec![("Form".into(), 1, 1, true, None), ("Where".into(), 2, 1, true, Some(Stand::Right))],
+                vec![
+                    ("mênis".into(), 1, 2, true, None),
+                    ("12".into(), 1, 1, false, Some(Stand::Right)),
+                    ("Iliad".into(), 1, 1, false, Some(Stand::Center)),
+                ],
+                // The first column is taken from above: these stand in the second and the third.
+                vec![("3".into(), 1, 1, false, Some(Stand::Right)), (String::new(), 1, 1, false, None)],
+            ]
+        );
+        assert_eq!(table.columns(), 3);
+        assert_eq!(read.counts.tables, 1);
+    }
+
+    #[test]
+    fn citations_by_key() {
+        let citation = |key: &str, prefix: &str, suffix: &str, mode: &str| {
+            format!(
+                r#"{{"citationId":"{key}","citationPrefix":[{}],"citationSuffix":[{}],"citationMode":{{"t":"{mode}"}},"citationNoteNum":1,"citationHash":0}}"#,
+                if prefix.is_empty() { String::new() } else { words(prefix) },
+                if suffix.is_empty() { String::new() } else { words(suffix) },
+            )
+        };
+        let cite = |citations: &[String], as_written: &str| {
+            format!(r#"{{"t":"Cite","c":[[{}],[{}]]}}"#, citations.join(","), words(as_written))
+        };
+        let read = read_json(
+            &doc(
+                "{}",
+                &[format!(
+                    r#"{{"t":"Para","c":[{},{{"t":"Space"}},{},{{"t":"Space"}},{},{{"t":"Space"}},{}]}}"#,
+                    cite(
+                        &[citation("nagy1979", "see", ", 73–75 and passim", "NormalCitation")],
+                        "[see @nagy1979, 73–75 and passim]"
+                    ),
+                    cite(&[citation("west1988", "", "chap. 3", "AuthorInText")], "@west1988 [chap. 3]"),
+                    cite(&[citation("nokey", "", ", 12", "NormalCitation")], "[@nokey, 12]"),
+                    cite(
+                        &[
+                            citation("other", "cf.", "", "NormalCitation"),
+                            citation("nagy1979", "", "", "SuppressAuthor"),
+                        ],
+                        "[cf. @other; -@nagy1979]"
+                    ),
+                )],
+            ),
+            &library,
+        );
+        assert_eq!(
+            read.sections[0].blocks,
+            vec![paragraph(vec![
+                Inline::Citation {
+                    items: vec![CiteItem {
+                        id: "r1".into(),
+                        locator: Some("73–75".into()),
+                        prefix: Some("see".into()),
+                        suffix: Some("and passim".into()),
+                        ..Default::default()
+                    }],
+                    mode: CiteMode::Normal,
+                },
+                text(" "),
+                Inline::Citation {
+                    items: vec![CiteItem {
+                        id: "r2".into(),
+                        locator: Some("3".into()),
+                        label: Some("chapter".into()),
+                        ..Default::default()
+                    }],
+                    mode: CiteMode::Intext,
+                },
+                text(" [@nokey, 12] [cf. @other] "),
+                Inline::Citation {
+                    items: vec![CiteItem { id: "r1".into(), suppress_author: true, ..Default::default() }],
+                    mode: CiteMode::Normal,
+                },
+            ])]
+        );
+        assert_eq!((read.counts.cited, read.counts.not_found), (3, 2));
+        assert!(
+            read.remarks[0].starts_with("2 works are cited by keys that are not in your library: nokey, other."),
+            "{:?}",
+            read.remarks
+        );
+    }
+
+    #[test]
+    fn locators_in_their_parts() {
+        let terms = terms_for(Some("nb"));
+        let parts = |suffix: &str| {
+            let (locator, label, after) = locator(suffix, &terms);
+            (locator.unwrap_or_default(), label.unwrap_or_default(), after.unwrap_or_default())
+        };
+        assert_eq!(parts(", 73"), ("73".into(), String::new(), String::new()));
+        assert_eq!(parts(", pp. 33-35, 38"), ("33-35, 38".into(), String::new(), String::new()));
+        assert_eq!(parts(" p.\u{a0}5"), ("5".into(), String::new(), String::new()));
+        assert_eq!(parts(", 12 f."), ("12 f.".into(), String::new(), String::new()));
+        assert_eq!(parts(", vol. 2, for the rest"), ("2".into(), "volume".into(), "for the rest".into()));
+        assert_eq!(parts(", ch. iv"), ("iv".into(), "chapter".into(), String::new()));
+        assert_eq!(parts(", kap. 3"), ("3".into(), "chapter".into(), String::new()));
+        assert_eq!(parts(", and passim"), (String::new(), String::new(), "and passim".into()));
+        assert_eq!(parts(" {ii, A}, as said"), ("ii, A".into(), String::new(), "as said".into()));
+        assert_eq!(parts(", part of it"), (String::new(), String::new(), "part of it".into()));
+        assert_eq!(parts(""), (String::new(), String::new(), String::new()));
+    }
+
+    #[test]
+    fn what_the_document_says_of_itself() {
+        let read = read_json(
+            &doc(
+                r#"{
+                  "title":{"t":"MetaInlines","c":[{"t":"Str","c":"Wrath"},{"t":"Space"},{"t":"Emph","c":[{"t":"Str","c":"and"}]},{"t":"Space"},{"t":"Strong","c":[{"t":"Str","c":"hero"}]}]},
+                  "subtitle":{"t":"MetaInlines","c":[{"t":"Str","c":"A"},{"t":"Space"},{"t":"Str","c":"study"}]},
+                  "author":{"t":"MetaList","c":[
+                    {"t":"MetaMap","c":{"name":{"t":"MetaInlines","c":[{"t":"Str","c":"A."},{"t":"Space"},{"t":"Str","c":"Scholar"}]},"affiliation":{"t":"MetaInlines","c":[{"t":"Str","c":"Oslo"}]}}},
+                    {"t":"MetaInlines","c":[{"t":"Str","c":"B."},{"t":"Space"},{"t":"Str","c":"Other"}]}]},
+                  "date":{"t":"MetaInlines","c":[{"t":"Str","c":"2026-01-02"}]},
+                  "abstract":{"t":"MetaBlocks","c":[{"t":"Para","c":[{"t":"Str","c":"Short."}]},{"t":"Para","c":[{"t":"Str","c":"Two."}]}]},
+                  "keywords":{"t":"MetaList","c":[{"t":"MetaInlines","c":[{"t":"Str","c":"wrath"}]},{"t":"MetaInlines","c":[{"t":"Str","c":"epic"}]}]},
+                  "lang":{"t":"MetaInlines","c":[{"t":"Str","c":"en-GB"}]}
+                }"#,
+                &[para("Wrath and hero"), para("The text.")],
+            ),
+            &none,
+        );
+        assert_eq!(read.title, vec![text("Wrath "), marked("and", &["em"]), text(" hero")]);
+        assert_eq!(read.subtitle.as_deref(), Some("A study"));
+        assert_eq!(
+            read.authors,
+            vec![
+                Author { name: "A. Scholar".into(), affiliation: Some("Oslo".into()), ..Default::default() },
+                Author { name: "B. Other".into(), ..Default::default() },
+            ]
+        );
+        assert_eq!(read.date.as_deref(), Some("2026-01-02"));
+        assert_eq!(read.abstract_text.as_deref(), Some("Short.\n\nTwo."));
+        assert_eq!(read.keywords, vec!["wrath", "epic"]);
+        assert_eq!(read.language.as_deref(), Some("en-GB"));
+        // The title as it is set at the top of the page is not part of the text.
+        assert_eq!(read.sections[0].blocks, vec![paragraph(vec![text("The text.")])]);
+    }
+
+    #[test]
+    fn the_title_set_as_a_heading_is_no_part() {
+        let read = read_json(
+            &doc(
+                r#"{"title":{"t":"MetaInlines","c":[{"t":"Str","c":"Wrath"}]}}"#,
+                &[para("Before."), header(1, "Wrath"), para("Under the title."), header(2, "One"), header(1, "Two")],
+            ),
+            &none,
+        );
+        assert_eq!(read.title, vec![text("Wrath")]);
+        let shape: Vec<(u8, String)> = read.sections.iter().map(|s| (s.level, document::plain(&s.heading))).collect();
+        assert_eq!(shape, vec![(0, String::new()), (1, "One".into()), (1, "Two".into())]);
+        assert_eq!(
+            read.sections[0].blocks,
+            vec![paragraph(vec![text("Before.")]), paragraph(vec![text("Under the title.")])]
+        );
+    }
+
+    #[test]
+    fn a_list_of_what_is_cited_is_kept_and_said() {
+        let read = read_json(
+            &doc("{}", &[header(1, "One"), header(1, "Works Cited:"), para("Nagy, G. 1979."), header(1, "Literature")]),
+            &none,
+        );
+        assert_eq!(read.sections.len(), 3);
+        assert_eq!(read.sections[1].blocks.len(), 1);
+        assert_eq!(read.remarks.iter().filter(|r| r.contains("a list of what it cites")).count(), 1);
+        assert!(read.remarks[0].contains("under “Works Cited:”"), "{:?}", read.remarks);
+    }
+
+    #[test]
+    fn words_are_counted_as_the_application_counts_them() {
+        assert_eq!(count_words("The hero's well-known wrath — 24 books; l'ire."), 7);
+        assert_eq!(count_words("μῆνιν ἄειδε θεά"), 3);
+        assert_eq!(count_words(" - ' "), 0);
+    }
+
+    #[test]
+    fn text_without_marks() {
+        let read = plain("One line\nof a paragraph.\r\n\r\nAnother.\n\n\n", "notes");
+        assert_eq!(
+            read.sections[0].blocks,
+            vec![paragraph(vec![text("One line of a paragraph.")]), paragraph(vec![text("Another.")])]
+        );
+        assert_eq!(read.title, vec![text("notes")]);
+        let read = plain("A paragraph to a line.\nAnd another.\n", "notes");
+        assert_eq!(read.sections[0].blocks.len(), 2);
+        assert_eq!(decode(b"\xef\xbb\xbfna\xc3\xafve"), "naïve");
+        assert_eq!(decode(b"na\xefve \x93so\x94"), "naïve “so”");
+        assert_eq!(decode(&[0xff, 0xfe, b'a', 0, 0xe5, 0]), "aå");
+        assert!(plain("", "empty").sections.is_empty());
+    }
+
+    // ---- with Pandoc ----
+
+    struct Setup {
+        tmp: tempfile::TempDir,
+        tools: Tools,
+        pictures: Pictures,
+    }
+
+    /// Nothing, when Pandoc is not installed: the tests that need it are
+    /// then passed over.
+    fn setup() -> Option<Setup> {
+        let tools = tools::discover(&tools::Configured::default());
+        if tools.pandoc.is_none() {
+            eprintln!("Pandoc is not installed; the test is passed over");
+            return None;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let pictures = Pictures::open(tmp.path().join("pictures")).unwrap();
+        Some(Setup { tmp, tools, pictures })
+    }
+
+    impl Setup {
+        fn desk(&self) -> PathBuf {
+            let desk = self.tmp.path().join("desk");
+            fs::create_dir_all(&desk).unwrap();
+            desk
+        }
+
+        fn read(&self, path: &Path) -> Result<Imported> {
+            let work = self.tmp.path().join("work");
+            let _ = fs::remove_dir_all(&work);
+            fs::create_dir_all(&work).unwrap();
+            read(path, &self.tools, &self.pictures, &work, &library, &AtomicBool::new(false))
+        }
+
+        fn pandoc(&self, args: &[&str]) {
+            let program = &self.tools.pandoc.as_ref().unwrap().path;
+            tools::run(program, "Pandoc", args, None, Some(&self.desk())).unwrap();
+        }
+    }
+
+    const EVERYTHING: &str = r#"---
+title: Wrath and the *hero*
+subtitle: A study
+author:
+  - A. Scholar
+date: 2026-01-02
+lang: en-GB
+---
+
+Before the first heading, with a note.[^1]
+
+# The word
+
+A wrath [@nagy1979, 73] that @west1988 [chap. 3] knows and [@nokey, 12] does not.
+It is *more* than **anger**, H~2~O, x^2^, ~~gone~~, [a link](https://example.org).
+Where $x_i \leq \alpha$ holds:
+
+$$a^2 + b^2 = c^2$$
+
+> Sing, goddess, the wrath.
+
+- one
+- two
+    1. nested
+
+### Deep
+
+| Form  | Lines |
+|:------|------:|
+| mênis |    12 |
+
+: Forms of the word
+
+![The shield of Achilles](shield.png){width=50%}
+
+## Less deep
+
+```
+a line of code
+```
+
+# References
+
+Nagy, G. 1979. The Best of the Achaeans.
+
+[^1]: The note.
+
+    In two paragraphs.
+"#;
+
+    fn everything(setup: &Setup) -> PathBuf {
+        let desk = setup.desk();
+        fs::write(desk.join("shield.png"), PNG).unwrap();
+        let path = desk.join("wrath.md");
+        fs::write(&path, EVERYTHING).unwrap();
+        path
+    }
+
+    fn shape(read: &Imported) -> Vec<(u8, String)> {
+        read.sections.iter().map(|s| (s.level, document::plain(&s.heading))).collect()
+    }
+
+    fn kinds(blocks: &[Block]) -> Vec<&'static str> {
+        blocks
+            .iter()
+            .map(|b| match b {
+                Block::Paragraph { .. } => "paragraph",
+                Block::Blockquote { .. } => "blockquote",
+                Block::BulletList { .. } => "bullet_list",
+                Block::OrderedList { .. } => "ordered_list",
+                Block::Equation { .. } => "equation",
+                Block::Table(_) => "table",
+                Block::Row { .. } => "row",
+                Block::Figure { .. } => "figure",
+            })
+            .collect()
+    }
+
+    #[test]
+    fn markdown_with_everything_in_it() {
+        let Some(s) = setup() else { return };
+        let read = s.read(&everything(&s)).unwrap();
+        assert_eq!(read.file, "wrath.md");
+        assert_eq!(read.kind, "Markdown");
+        assert_eq!(read.title, vec![text("Wrath and the "), marked("hero", &["em"])]);
+        assert_eq!(read.subtitle.as_deref(), Some("A study"));
+        assert_eq!(read.authors.len(), 1);
+        assert_eq!(read.language.as_deref(), Some("en-GB"));
+        assert_eq!(
+            shape(&read),
+            vec![
+                (0, String::new()),
+                (1, "The word".into()),
+                (2, "Deep".into()),
+                (2, "Less deep".into()),
+                (1, "References".into()),
+            ]
+        );
+        assert_eq!(
+            read.sections[0].blocks,
+            vec![paragraph(vec![
+                text("Before the first heading, with a note."),
+                Inline::Footnote { content: vec![text("The note. In two paragraphs.")], place: None },
+            ])]
+        );
+        assert_eq!(kinds(&read.sections[1].blocks), vec!["paragraph", "equation", "blockquote", "bullet_list"]);
+        let Block::Paragraph { content } = &read.sections[1].blocks[0] else { panic!() };
+        assert_eq!(
+            content[1],
+            Inline::Citation {
+                items: vec![CiteItem { id: "r1".into(), locator: Some("73".into()), ..Default::default() }],
+                mode: CiteMode::Normal,
+            }
+        );
+        assert_eq!(
+            content[3],
+            Inline::Citation {
+                items: vec![CiteItem {
+                    id: "r2".into(),
+                    locator: Some("3".into()),
+                    label: Some("chapter".into()),
+                    ..Default::default()
+                }],
+                mode: CiteMode::Intext,
+            }
+        );
+        assert_eq!(content[4], text(" knows and [@nokey, 12] does not. It is "));
+        assert!(content.contains(&Inline::Math { tex: "x_i \\leq \\alpha".into() }));
+        assert_eq!(kinds(&read.sections[2].blocks), vec!["table", "figure"]);
+        let Block::Figure { caption, alt, width, numbered, file, extension, name, .. } = &read.sections[2].blocks[1]
+        else {
+            panic!()
+        };
+        assert_eq!(caption, &vec![text("The shield of Achilles")]);
+        assert_eq!((alt.as_str(), *width, *numbered), ("", 50, true));
+        assert_eq!(name, "shield.png");
+        assert!(s.pictures.has(file, extension));
+        assert_eq!(read.pictures, vec![file.clone()]);
+        assert_eq!(
+            read.counts,
+            Counts { parts: 4, words: 65, notes: 1, figures: 1, tables: 1, equations: 1, cited: 2, not_found: 1 }
+        );
+        let all = read.remarks.join("\n");
+        assert!(all.contains("1 work is cited by a key that is not in your library: nokey."), "{all}");
+        assert!(all.contains("under “References”"), "{all}");
+        assert!(all.contains("1 block of code"), "{all}");
+
+        // Read again, the picture is in the store already, and is not one to be taken out.
+        let again = s.read(&everything(&s)).unwrap();
+        assert!(again.pictures.is_empty());
+        assert_eq!(again.sections, read.sections);
+    }
+
+    #[test]
+    fn word_and_opendocument_made_of_the_same() {
+        let Some(s) = setup() else { return };
+        let source = everything(&s);
+        for (ending, kind) in [("docx", "Word (DOCX)"), ("odt", "OpenDocument (ODT)")] {
+            let made = s.desk().join(format!("wrath.{ending}"));
+            s.pandoc(&[source.to_str().unwrap(), "-o", made.to_str().unwrap()]);
+            let read = s.read(&made).unwrap();
+            assert_eq!(read.kind, kind);
+            assert_eq!(document::plain(&read.title), "Wrath and the hero", "{ending}");
+            let headings: Vec<(u8, String)> = shape(&read).into_iter().filter(|(level, _)| *level > 0).collect();
+            assert_eq!(
+                headings,
+                vec![(1, "The word".into()), (2, "Deep".into()), (2, "Less deep".into()), (1, "References".into()),],
+                "{ending}"
+            );
+            assert_eq!(read.counts.notes, 1, "{ending}");
+            assert_eq!(read.counts.tables, 1, "{ending}");
+            assert_eq!(read.counts.figures, 1, "{ending}: {:?}", read.remarks);
+            // Citations that are text stay text.
+            assert_eq!((read.counts.cited, read.counts.not_found), (0, 0), "{ending}");
+            let word = read.sections.iter().find(|s| document::plain(&s.heading) == "The word").unwrap();
+            let Block::Paragraph { content } = &word.blocks[0] else { panic!("{ending}") };
+            assert!(document::plain(content).starts_with("A wrath [@nagy1979, 73] that @west1988"), "{ending}");
+            assert!(kinds(&word.blocks).contains(&"blockquote"), "{ending}");
+            assert!(kinds(&word.blocks).contains(&"bullet_list"), "{ending}");
+            let figure = read
+                .sections
+                .iter()
+                .flat_map(|s| &s.blocks)
+                .find_map(|b| match b {
+                    Block::Figure { file, extension, .. } => Some((file.clone(), extension.clone())),
+                    _ => None,
+                })
+                .unwrap();
+            assert!(s.pictures.has(&figure.0, &figure.1), "{ending}");
+            assert!(read.remarks.iter().any(|r| r.contains("under “References”")), "{ending}");
+        }
+    }
+
+    #[test]
+    fn the_other_kinds_are_read() {
+        let Some(s) = setup() else { return };
+        let desk = s.desk();
+        let small = "---\ntitle: Wrath\n---\n\nBefore.\n\n# One\n\nUnder *one*.[^1]\n\n## Within\n\nDeeper.\n\n# Two\n\nUnder two.\n\n[^1]: A note.\n";
+        fs::write(desk.join("small.md"), small).unwrap();
+        let writers = [
+            ("html", "html"),
+            ("tex", "latex"),
+            ("rtf", "rtf"),
+            ("epub", "epub"),
+            ("org", "org"),
+            ("rst", "rst"),
+            ("adoc", "asciidoc"),
+            ("dbk", "docbook"),
+            ("jats", "jats"),
+            ("fb2", "fb2"),
+            ("opml", "opml"),
+            ("mediawiki", "mediawiki"),
+            ("textile", "textile"),
+            ("dj", "djot"),
+            ("muse", "muse"),
+            ("ipynb", "ipynb"),
+        ];
+        for (ending, writer) in writers {
+            let made = desk.join(format!("small.{ending}"));
+            s.pandoc(&["small.md", "-s", "-t", writer, "-o", made.to_str().unwrap()]);
+            check(&s, &made, ending);
+        }
+        // Typst as it is written by hand: what Pandoc writes around a whole
+        // document of that kind, it does not read itself.
+        let made = desk.join("small.typ");
+        fs::write(
+            &made,
+            "#set document(title: \"Wrath\")\n\nBefore.\n\n= One\nUnder _one_.#footnote[A note.]\n\n== Within\nDeeper.\n\n= Two\nUnder two.\n",
+        )
+        .unwrap();
+        check(&s, &made, "typ");
+
+        fn check(s: &Setup, made: &Path, ending: &str) {
+            let read = s.read(made).unwrap_or_else(|e| panic!("{ending}: {e}"));
+            let headings: Vec<String> =
+                read.sections.iter().filter(|s| s.level > 0).map(|s| document::plain(&s.heading)).collect();
+            assert!(headings.contains(&"Within".to_owned()), "{ending}: {headings:?}");
+            let all: String = read
+                .sections
+                .iter()
+                .map(|s| {
+                    let mut text = String::new();
+                    document::walk(&s.blocks, &mut |_| {}, &mut |l| {
+                        text.push_str(&document::plain(l));
+                        text.push(' ');
+                    });
+                    text
+                })
+                .collect();
+            assert!(all.contains("Deeper."), "{ending}: {all}");
+            assert!(all.contains("Under two."), "{ending}: {all}");
+        }
+    }
+
+    #[test]
+    fn latex_with_citations_and_parts_of_its_own() {
+        let Some(s) = setup() else { return };
+        let desk = s.desk();
+        fs::write(desk.join("part.tex"), "\\section{From another file}\nRead from beside it.\n").unwrap();
+        let path = desk.join("paper.tex");
+        fs::write(
+            &path,
+            "\\documentclass{article}\n\\title{Wrath}\n\\author{A. Scholar \\and B. Other}\n\\begin{document}\n\\maketitle\n\\section{One}\nAs \\cite[73]{nagy1979} and \\cite{nokey} say.\\footnote{A note.}\n\\input{part}\n\\end{document}\n",
+        )
+        .unwrap();
+        let read = s.read(&path).unwrap();
+        assert_eq!(document::plain(&read.title), "Wrath");
+        assert_eq!(read.authors.len(), 2);
+        assert_eq!(shape(&read), vec![(1, "One".into()), (1, "From another file".into())]);
+        let Block::Paragraph { content } = &read.sections[0].blocks[0] else { panic!() };
+        assert_eq!(
+            content[1],
+            Inline::Citation {
+                items: vec![CiteItem { id: "r1".into(), locator: Some("73".into()), ..Default::default() }],
+                mode: CiteMode::Normal,
+            }
+        );
+        assert!(document::plain(content).contains("\\cite{nokey}"), "{content:?}");
+        assert_eq!((read.counts.cited, read.counts.not_found, read.counts.notes), (1, 1, 1));
+    }
+
+    #[test]
+    fn failures_in_plain_words() {
+        let Some(s) = setup() else { return };
+        let desk = s.desk();
+        let broken = desk.join("broken.docx");
+        fs::write(&broken, "This only says that it is one.").unwrap();
+        let said = s.read(&broken).unwrap_err().to_string();
+        assert!(said.starts_with("“broken.docx” could not be read as Word (DOCX)."), "{said}");
+
+        let unknown = desk.join("paper.pdf");
+        fs::write(&unknown, "%PDF").unwrap();
+        let said = s.read(&unknown).unwrap_err().to_string();
+        assert!(said.contains("is not of a kind that can be brought in as a document"), "{said}");
+
+        let large = desk.join("large.md");
+        let file = fs::File::create(&large).unwrap();
+        file.set_len(MAX_BYTES + 1).unwrap();
+        let said = s.read(&large).unwrap_err().to_string();
+        assert!(said.contains("is larger than 50 MB"), "{said}");
+
+        // Without Pandoc, text without marks is read all the same, and the rest is not.
+        let none = Tools::default();
+        let work = s.tmp.path().join("work");
+        let text = desk.join("notes.txt");
+        fs::write(&text, "A line.\n").unwrap();
+        let stop = AtomicBool::new(false);
+        assert!(read(&text, &none, &s.pictures, &work, &library, &stop).is_ok());
+        let error = read(&everything(&s), &none, &s.pictures, &work, &library, &stop).unwrap_err();
+        assert_eq!(error.kind(), "missing-program");
+
+        // Stopped before it began, nothing is read.
+        let stop = AtomicBool::new(true);
+        let error = read(&everything(&s), &s.tools, &s.pictures, &work, &library, &stop).unwrap_err();
+        assert_eq!(error.to_string(), "The reading was stopped.");
+    }
+
+    #[test]
+    fn pictures_that_cannot_be_taken_in() {
+        let Some(s) = setup() else { return };
+        let desk = s.desk();
+        fs::write(desk.join("drawing.emf"), b"not read").unwrap();
+        let path = desk.join("pictures.md");
+        fs::write(
+            &path,
+            "![Far away](https://example.org/far.png)\n\n![Not there](missing.png)\n\n![From Word](drawing.emf)\n",
+        )
+        .unwrap();
+        let read = s.read(&path).unwrap();
+        assert_eq!(read.counts.figures, 0);
+        assert_eq!(
+            read.remarks,
+            vec![
+                "The picture “far.png” is left out: it is on the network, and nothing is fetched from there.",
+                "The picture “missing.png” is left out: the file was not found where the document says it is.",
+                "The picture “drawing.emf” is left out: it is of a kind that is not read (EMF).",
+            ]
+        );
+        // What was said of them is kept.
+        assert_eq!(kinds(&read.sections[0].blocks), vec!["paragraph", "paragraph", "paragraph"]);
+    }
+}

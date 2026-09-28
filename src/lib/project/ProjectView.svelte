@@ -19,6 +19,9 @@
   import SharePanel from '$lib/sharing/SharePanel.svelte';
   import { ProjectSharing } from '$lib/sharing/sharing.svelte';
   import { importDropped } from '$lib/library/references.svelte';
+  import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
+  import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
+  import DocumentHost from '$lib/documents/DocumentHost.svelte';
   import { insertFigure, widthFor } from '$lib/editor/commands';
   import { viewsByDom } from '$lib/editor/ui.svelte';
   import { isPicturePath, pictures } from '$lib/figures/pictures.svelte';
@@ -403,7 +406,10 @@
         }
       }
     }
-    const others = all.filter((path) => !isPicturePath(path));
+    // Documents become maps of their own; text without marks is one when nothing else claims it.
+    const written = (path: string) => isDocumentPath(path) || isPlainTextPath(path);
+    if (p) await documentsIn(all.filter((path) => !isPicturePath(path) && written(path)));
+    const others = all.filter((path) => !isPicturePath(path) && !written(path));
     if (!others.length) return;
     const outcome = await importDropped(others);
     if (!outcome?.concerned?.length || !element || !p || !p.node(element)) return;
@@ -417,6 +423,15 @@
         ? `The reference is cited in “${name}”`
         : `${outcome.concerned.length} references are cited in “${name}”`,
     );
+  }
+
+  /** Maps are made of documents, one after another, and the last that was made is shown as text. */
+  async function documentsIn(paths: (string | null)[]) {
+    for (const path of paths) {
+      if (!path || !project) continue;
+      const brought = await bringIn(path, project);
+      if (brought && panes.length) panes[focused] = { map: brought.map, mode: 'text' };
+    }
   }
 
   /** When the user turns to something else, what is there is put in order on disk. */
@@ -516,6 +531,7 @@
           beside={panes.length > 1 ? panes[1 - focused]?.map : null}
           onselect={(id) => show(id)}
           onbeside={beside}
+          ondocument={async () => documentsIn([await chooseDocument()])}
         />
       </div>
 
@@ -727,6 +743,7 @@
   </div>
 
   <EditorHost bind:this={host} {project} />
+  <DocumentHost />
 {/if}
 
 {#if showShare && shared && project}

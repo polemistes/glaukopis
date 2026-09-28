@@ -6,6 +6,8 @@
 //! The user may change the plan. Then the plan is **applied**.
 
 pub mod bibfile;
+/// Documents, which become maps: apart from the references, and not in three steps.
+pub mod document;
 pub mod pdf;
 pub mod zotero;
 

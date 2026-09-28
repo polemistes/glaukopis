@@ -2,6 +2,7 @@
   import { tick } from 'svelte';
   import Columns2 from '@lucide/svelte/icons/columns-2';
   import Copy from '@lucide/svelte/icons/copy';
+  import FileInput from '@lucide/svelte/icons/file-input';
   import Pencil from '@lucide/svelte/icons/pencil';
   import Plus from '@lucide/svelte/icons/plus';
   import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -23,9 +24,11 @@
     beside?: string | null;
     onselect: (id: string) => void;
     onbeside: (id: string) => void;
+    /** A map is to be made of a document. */
+    ondocument?: () => void;
   }
 
-  let { project, current, beside = null, onselect, onbeside }: Props = $props();
+  let { project, current, beside = null, onselect, onbeside, ondocument }: Props = $props();
 
   let naming = $state<{ id: string; value: string } | null>(null);
   let input = $state<HTMLInputElement>();
@@ -182,6 +185,17 @@
   >
     <Plus size={15} />
   </button>
+  {#if ondocument}
+    <button
+      type="button"
+      class="add"
+      aria-label="A map from a document…"
+      use:tooltip={{ text: 'A map from a document…' }}
+      onclick={ondocument}
+    >
+      <FileInput size={15} />
+    </button>
+  {/if}
   {#if drag.payload?.kind === 'elements'}
     <span class="dropping">Drop on a map to move there · hold Ctrl to copy</span>
   {/if}
