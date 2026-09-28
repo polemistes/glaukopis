@@ -15,7 +15,9 @@
 
 mod arxiv;
 mod crossref;
-mod csl;
+// What a program that keeps references writes into a document is of this
+// form too, and is read where citations that were found are looked up.
+pub(crate) mod csl;
 mod doi;
 mod marc;
 mod pubmed;
