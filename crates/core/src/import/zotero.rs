@@ -22,6 +22,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, Result};
+use crate::tr;
 
 use super::Candidate;
 use database::{Attachment, Collection, Database};
@@ -161,8 +162,8 @@ fn library_of(db: &Database, wanted: Option<i64>) -> Result<database::Library> {
         None => !library.group,
     });
     found.ok_or_else(|| match wanted {
-        Some(id) => Error::not_found(format!("the library {id} in Zotero")),
-        None => Error::not_found("the user’s own library in Zotero"),
+        Some(id) => Error::not_found(tr!("core-import-zotero-the-library", id = id)),
+        None => Error::not_found(tr!("core-import-zotero-own-library")),
     })
 }
 
@@ -231,7 +232,7 @@ fn is_file(attachment: &Attachment) -> bool {
 /// when it is not there.
 fn file_of(dir: &Path, attachment: &Attachment, bases: &[PathBuf]) -> std::result::Result<PathBuf, String> {
     let path = attachment.path.trim();
-    let missing = |name: &str| format!("The file “{name}” was not found.");
+    let missing = |name: &str| tr!("core-import-file-not-found", name = name);
     if let Some(name) = path.strip_prefix("storage:") {
         // Zotero keeps each file in a directory named by the key of the attachment.
         let file = dir.join("storage").join(&attachment.key).join(name);
@@ -239,12 +240,11 @@ fn file_of(dir: &Path, attachment: &Attachment, bases: &[PathBuf]) -> std::resul
         return if plain && file.is_file() { Ok(file) } else { Err(missing(name)) };
     }
     if let Some(relative) = path.strip_prefix("attachments:") {
-        return bases.iter().map(|base| base.join(relative)).find(|file| file.is_file()).ok_or_else(|| {
-            format!(
-                "The file “{relative}” was not found. Zotero links to it from a directory of its own choosing, \
-                 which is not known here."
-            )
-        });
+        return bases
+            .iter()
+            .map(|base| base.join(relative))
+            .find(|file| file.is_file())
+            .ok_or_else(|| tr!("core-import-zotero-unknown-base", name = relative));
     }
     let file = PathBuf::from(path);
     if file.is_absolute() && file.is_file() { Ok(file) } else { Err(missing(path)) }
@@ -259,7 +259,9 @@ fn candidates(
     let library = library_of(db, options.library)?;
     let tree = Tree::new(db.collections(library.id)?);
     let within = match &options.collection {
-        Some(key) => Some(tree.within(key).ok_or_else(|| Error::not_found(format!("the collection {key} in Zotero")))?),
+        Some(key) => Some(
+            tree.within(key).ok_or_else(|| Error::not_found(tr!("core-import-zotero-the-collection", key = key)))?,
+        ),
         None => None,
     };
 
@@ -300,7 +302,7 @@ fn candidates(
         let attached = attached.remove(&item.id).unwrap_or_default();
         let remarks = remarks.remove(&item.id).unwrap_or_default();
         if item.fields.is_empty() && item.creators.is_empty() && attached.is_empty() && remarks.is_empty() {
-            warnings.push(format!("The item {} in Zotero is empty and was left out.", item.key));
+            warnings.push(tr!("core-import-zotero-empty-item", key = &item.key));
             continue;
         }
 
@@ -329,11 +331,7 @@ fn candidates(
     if within.is_none() {
         let alone = db.count_alone(library.id)?;
         if alone > 0 {
-            warnings.push(format!(
-                "{alone} {} in Zotero under no reference, and {} left out.",
-                if alone == 1 { "file or note stands" } else { "files and notes stand" },
-                if alone == 1 { "was" } else { "were" },
-            ));
+            warnings.push(tr!("core-import-zotero-alone", count = alone));
         }
     }
     Ok(out)

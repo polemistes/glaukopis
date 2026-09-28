@@ -8,6 +8,8 @@
 
 use std::collections::HashMap;
 
+use crate::tr;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RawEntry {
     /// Lower-cased: `book`, `article`, …
@@ -204,7 +206,7 @@ impl<'a> Parser<'a> {
                 self.skip_ws();
                 let name = self.word(|b| matches!(b, b'=' | b'{' | b'}' | b'"' | b',' | b'#')).to_ascii_lowercase();
                 if name.is_empty() {
-                    return Err("a @string without a name".into());
+                    return Err(tr!("core-bib-string-without-name"));
                 }
                 self.skip_ws();
                 self.expect(b'=')?;
@@ -232,10 +234,12 @@ impl<'a> Parser<'a> {
                 self.pos += 1;
                 Ok(())
             }
-            Some(b) => {
-                Err(format!("expected `{}` but found `{}`", byte as char, self.char_at(self.pos).unwrap_or(b as char)))
-            }
-            None => Err(format!("expected `{}` but the file ended", byte as char)),
+            Some(b) => Err(tr!(
+                "core-bib-expected-found",
+                expected = (byte as char).to_string(),
+                found = self.char_at(self.pos).unwrap_or(b as char).to_string()
+            )),
+            None => Err(tr!("core-bib-expected-end", expected = (byte as char).to_string())),
         }
     }
 
@@ -261,7 +265,7 @@ impl<'a> Parser<'a> {
             }
             self.pos += 1;
         }
-        Err("a comment that is never closed".into())
+        Err(tr!("core-bib-comment-not-closed"))
     }
 
     fn entry(&mut self, entry_type: String, close: u8, line: usize) -> PResult<RawEntry> {
@@ -287,7 +291,7 @@ impl<'a> Parser<'a> {
         loop {
             self.skip_ws();
             match self.peek() {
-                None => return Err(format!("the entry `{key}` is never closed")),
+                None => return Err(tr!("core-bib-entry-not-closed", key = &key)),
                 Some(b) if b == close => {
                     self.pos += 1;
                     break;
@@ -302,18 +306,20 @@ impl<'a> Parser<'a> {
             let name =
                 self.word(|b| matches!(b, b'=' | b'{' | b'}' | b'"' | b',' | b'#' | b'(' | b')')).to_ascii_lowercase();
             if name.is_empty() {
-                return Err(format!(
-                    "in `{key}`: expected a field name but found `{}`",
-                    self.char_at(name_start).unwrap_or(' ')
+                return Err(tr!(
+                    "core-bib-expected-field",
+                    key = &key,
+                    found = self.char_at(name_start).unwrap_or(' ').to_string()
                 ));
             }
             self.skip_ws();
             if self.peek() != Some(b'=') {
-                return Err(format!("in `{key}`: the field `{name}` has no value"));
+                return Err(tr!("core-bib-field-without-value", key = &key, field = &name));
             }
             self.pos += 1;
             self.skip_ws();
-            let value = self.value_of(&name).map_err(|e| format!("in `{key}`, field `{name}`: {e}"))?;
+            let value =
+                self.value_of(&name).map_err(|e| tr!("core-bib-in-field", key = &key, field = &name, message = e))?;
             if let Some(existing) = fields.iter_mut().find(|(n, _)| *n == name) {
                 existing.1 = value;
             } else {
@@ -349,7 +355,7 @@ impl<'a> Parser<'a> {
                                 }
                             }
                             Some(_) => {}
-                            None => return Err("a brace that is never closed".into()),
+                            None => return Err(tr!("core-bib-brace-not-closed")),
                         }
                         self.pos += 1;
                     }
@@ -366,7 +372,7 @@ impl<'a> Parser<'a> {
                             Some(b'}') => depth = depth.saturating_sub(1),
                             Some(b'"') if depth == 0 => break,
                             Some(_) => {}
-                            None => return Err("a quotation mark that is never closed".into()),
+                            None => return Err(tr!("core-bib-quote-not-closed")),
                         }
                         self.pos += 1;
                     }
@@ -380,22 +386,24 @@ impl<'a> Parser<'a> {
                 Some(_) => {
                     let name = self.word(|b| matches!(b, b'#' | b',' | b'}' | b')' | b'{' | b'"' | b'='));
                     if name.is_empty() {
-                        return Err(format!("expected a value but found `{}`", self.char_at(self.pos).unwrap_or(' ')));
+                        return Err(tr!(
+                            "core-bib-expected-value",
+                            found = self.char_at(self.pos).unwrap_or(' ').to_string()
+                        ));
                     }
                     match self.out.strings.get(&name.to_ascii_lowercase()) {
                         Some(v) => out.push_str(v),
                         None => {
                             // An unknown macro: keep its name, as BibTeX warns and goes on.
                             let line = self.line_of(self.pos);
-                            self.out.warnings.push(ParseWarning {
-                                line,
-                                message: format!("the abbreviation `{name}` is not defined"),
-                            });
+                            self.out
+                                .warnings
+                                .push(ParseWarning { line, message: tr!("core-bib-abbreviation", name = name) });
                             out.push_str(name);
                         }
                     }
                 }
-                None => return Err("the file ended in the middle of a value".into()),
+                None => return Err(tr!("core-bib-ended-in-value")),
             }
             self.skip_ws();
             if self.peek() == Some(b'#') {

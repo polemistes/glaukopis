@@ -3,6 +3,7 @@
 use std::time::Duration;
 
 use crate::error::{Error, Result};
+use crate::tr;
 
 /// What Glaukopis calls itself to the services it asks. Services that want a
 /// way to reach the person behind the requests are given the address the user
@@ -145,7 +146,7 @@ impl Client {
                 }
                 request.send_json(body.unwrap_or(&serde_json::Value::Object(Default::default())))
             }
-            other => return Err(Error::invalid(format!("{other} is not a way of asking that is used here"))),
+            other => return Err(Error::invalid(tr!("network-method", method = other))),
         };
         let mut response = result.map_err(|e| Error::Network(describe(url, &e)))?;
         let status = response.status().as_u16();
@@ -165,9 +166,9 @@ impl Client {
         let r = self.get(url, accept)?;
         match r.status {
             200..=299 => Ok(r.body),
-            404 | 410 => Err(Error::not_found(format!("{} has nothing at that address", host(url)))),
-            429 => Err(Error::Network(format!("{} asks us to wait before asking again", host(url)))),
-            s => Err(Error::Network(format!("{} answered with an error ({s})", host(url)))),
+            404 | 410 => Err(Error::not_found(tr!("network-nothing-there", host = host(url)))),
+            429 => Err(Error::Network(tr!("network-wait", host = host(url)))),
+            s => Err(Error::Network(tr!("network-status", host = host(url), status = s))),
         }
     }
 }
@@ -179,10 +180,10 @@ pub fn host(url: &str) -> String {
 fn describe(url: &str, error: &ureq::Error) -> String {
     let host = host(url);
     match error {
-        ureq::Error::Timeout(_) => format!("{host} did not answer in time"),
-        ureq::Error::HostNotFound => format!("{host} could not be found; is there a connection to the network?"),
-        ureq::Error::ConnectionFailed => format!("{host} could not be reached"),
-        ureq::Error::Io(e) => format!("{host} could not be reached: {e}"),
+        ureq::Error::Timeout(_) => tr!("network-timeout", host = host),
+        ureq::Error::HostNotFound => tr!("network-host-not-found", host = host),
+        ureq::Error::ConnectionFailed => tr!("network-unreachable", host = host),
+        ureq::Error::Io(e) => tr!("network-unreachable-because", host = host, error = e.to_string()),
         other => format!("{host}: {other}"),
     }
 }

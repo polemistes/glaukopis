@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
+use crate::tr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -45,7 +46,7 @@ impl Collections {
                 Ok(c)
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Collections::default()),
-            Err(e) => Err(e).context(|| format!("reading {}", path.display())),
+            Err(e) => Err(e).context(|| tr!("io-reading", path = path)),
         }
     }
 
@@ -80,7 +81,7 @@ impl Collections {
     }
 
     fn require_mut(&mut self, id: &str) -> Result<&mut Collection> {
-        self.get_mut(id).ok_or_else(|| Error::not_found("the collection"))
+        self.get_mut(id).ok_or_else(|| Error::not_found(tr!("core-library-the-collection")))
     }
 
     /// Whether `id` lies within `ancestor`, at any depth.
@@ -119,7 +120,7 @@ impl Collections {
     fn check_name(&self, name: &str, parent: Option<&str>, except: Option<&str>) -> Result<String> {
         let name = name.trim();
         if name.is_empty() {
-            return Err(Error::invalid("A collection needs a name."));
+            return Err(Error::invalid(tr!("core-library-collection-needs-name")));
         }
         let clash = self.list.iter().any(|c| {
             Some(c.id.as_str()) != except
@@ -127,7 +128,7 @@ impl Collections {
                 && c.name.to_lowercase() == name.to_lowercase()
         });
         if clash {
-            return Err(Error::invalid(format!("There is already a collection named “{name}” here.")));
+            return Err(Error::invalid(tr!("core-library-collection-exists", name = name)));
         }
         Ok(name.to_owned())
     }
@@ -136,7 +137,7 @@ impl Collections {
         if let Some(p) = parent
             && self.get(p).is_none()
         {
-            return Err(Error::not_found("the collection to put it in"));
+            return Err(Error::not_found(tr!("core-library-the-collection-to-put-in")));
         }
         let name = self.check_name(name, parent, None)?;
         let c = Collection {
@@ -151,20 +152,20 @@ impl Collections {
     }
 
     pub fn rename(&mut self, id: &str, name: &str) -> Result<()> {
-        let parent = self.get(id).ok_or_else(|| Error::not_found("the collection"))?.parent.clone();
+        let parent = self.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-collection")))?.parent.clone();
         let name = self.check_name(name, parent.as_deref(), Some(id))?;
         self.require_mut(id)?.name = name;
         Ok(())
     }
 
     pub fn move_to(&mut self, id: &str, parent: Option<&str>) -> Result<()> {
-        let name = self.get(id).ok_or_else(|| Error::not_found("the collection"))?.name.clone();
+        let name = self.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-collection")))?.name.clone();
         if let Some(p) = parent {
             if p == id || self.is_within(p, id) {
-                return Err(Error::invalid("A collection cannot be placed inside itself."));
+                return Err(Error::invalid(tr!("core-library-collection-in-itself")));
             }
             if self.get(p).is_none() {
-                return Err(Error::not_found("the collection to move it to"));
+                return Err(Error::not_found(tr!("core-library-the-collection-to-move-to")));
             }
         }
         self.check_name(&name, parent, Some(id))?;
@@ -175,7 +176,7 @@ impl Collections {
     /// Removes the collection and those within it. The entries stay in the library.
     pub fn delete(&mut self, id: &str) -> Result<()> {
         if self.get(id).is_none() {
-            return Err(Error::not_found("the collection"));
+            return Err(Error::not_found(tr!("core-library-the-collection")));
         }
         let doomed = self.with_descendants(id);
         self.list.retain(|c| !doomed.contains(&c.id));

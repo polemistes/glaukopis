@@ -5,20 +5,21 @@ use std::io::Write;
 use std::path::Path;
 
 use crate::error::{Error, IoContext, Result};
+use crate::tr;
 
 /// Writes `bytes` to `path` by way of a temporary file in the same directory,
 /// flushed to disk and then renamed over the target.
 pub fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
-    let dir = path.parent().ok_or_else(|| Error::invalid(format!("{} has no directory", path.display())))?;
-    fs::create_dir_all(dir).context(|| format!("creating {}", dir.display()))?;
+    let dir = path.parent().ok_or_else(|| Error::invalid(tr!("io-no-directory", path = path)))?;
+    fs::create_dir_all(dir).context(|| tr!("io-creating", path = dir))?;
 
     let mut tmp = tempfile::Builder::new()
         .prefix(".tmp-")
         .tempfile_in(dir)
-        .context(|| format!("creating a temporary file in {}", dir.display()))?;
-    tmp.write_all(bytes).context(|| format!("writing {}", path.display()))?;
-    tmp.as_file().sync_all().context(|| format!("flushing {}", path.display()))?;
-    tmp.persist(path).map_err(|e| Error::io(format!("replacing {}", path.display()), e.error))?;
+        .context(|| tr!("io-creating-temporary-in", path = dir))?;
+    tmp.write_all(bytes).context(|| tr!("io-writing", path = path))?;
+    tmp.as_file().sync_all().context(|| tr!("io-flushing", path = path))?;
+    tmp.persist(path).map_err(|e| Error::io(tr!("io-replacing", path = path), e.error))?;
 
     // Make the rename itself durable.
     #[cfg(unix)]
@@ -36,7 +37,7 @@ pub fn write_atomic_with_backup(path: &Path, bytes: &[u8]) -> Result<()> {
         let mut name = path.file_name().unwrap_or_default().to_os_string();
         name.push(".bak");
         let backup = path.with_file_name(name);
-        fs::copy(path, &backup).context(|| format!("backing up {}", path.display()))?;
+        fs::copy(path, &backup).context(|| tr!("io-backing-up", path = path))?;
     }
     write_atomic(path, bytes)
 }

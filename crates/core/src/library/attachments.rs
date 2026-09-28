@@ -10,6 +10,7 @@ use sha2::{Digest, Sha256};
 
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::safe_file_name;
+use crate::tr;
 
 /// The directory name under the library directory.
 pub const DIR: &str = "attachments";
@@ -26,11 +27,11 @@ pub struct StoredFile {
 }
 
 pub fn hash_file(path: &Path) -> Result<String> {
-    let mut file = fs::File::open(path).context(|| format!("opening {}", path.display()))?;
+    let mut file = fs::File::open(path).context(|| tr!("io-opening", path = path))?;
     let mut hasher = Sha256::new();
     let mut buffer = vec![0u8; 1 << 16];
     loop {
-        let n = file.read(&mut buffer).context(|| format!("reading {}", path.display()))?;
+        let n = file.read(&mut buffer).context(|| tr!("io-reading", path = path))?;
         if n == 0 {
             break;
         }
@@ -74,7 +75,7 @@ pub fn absolute(library_dir: &Path, relative: &str) -> Result<PathBuf> {
     let rel = Path::new(relative);
     let safe = rel.components().all(|c| matches!(c, Component::Normal(_)));
     if !safe || relative.is_empty() {
-        return Err(Error::invalid(format!("“{relative}” is not a path within the library")));
+        return Err(Error::invalid(tr!("core-library-not-in-library", path = relative)));
     }
     Ok(library_dir.join(rel))
 }
@@ -94,9 +95,9 @@ pub fn find_by_hash(library_dir: &Path, hash: &str) -> Option<String> {
 /// Copies a file into the store and returns its stored path. When the content
 /// is already there, nothing is copied and the existing path is returned.
 pub fn store_file(library_dir: &Path, source: &Path, name: &str) -> Result<String> {
-    let meta = fs::metadata(source).context(|| format!("reading {}", source.display()))?;
+    let meta = fs::metadata(source).context(|| tr!("io-reading", path = source))?;
     if !meta.is_file() {
-        return Err(Error::invalid(format!("{} is not a file", source.display())));
+        return Err(Error::invalid(tr!("core-library-not-a-file", path = source)));
     }
     let hash = hash_file(source)?;
     if let Some(existing) = find_by_hash(library_dir, &hash) {
@@ -104,13 +105,13 @@ pub fn store_file(library_dir: &Path, source: &Path, name: &str) -> Result<Strin
     }
     let dir = hash_dir(&hash);
     let target_dir = library_dir.join(&dir);
-    fs::create_dir_all(&target_dir).context(|| format!("creating {}", target_dir.display()))?;
+    fs::create_dir_all(&target_dir).context(|| tr!("io-creating", path = &target_dir))?;
     let name = file_name_for(name, source);
     let target = target_dir.join(&name);
     // Copy to a temporary name first: a crash must not leave half a file under its final name.
     let tmp = target_dir.join(format!(".tmp-{}", uuid::Uuid::new_v4()));
-    fs::copy(source, &tmp).context(|| format!("copying {}", source.display()))?;
-    fs::rename(&tmp, &target).context(|| format!("storing {}", target.display()))?;
+    fs::copy(source, &tmp).context(|| tr!("io-copying", path = source))?;
+    fs::rename(&tmp, &target).context(|| tr!("io-storing", path = &target))?;
     Ok(format!("{dir}/{name}"))
 }
 
@@ -159,7 +160,7 @@ pub fn delete(library_dir: &Path, relative: &str) -> Result<()> {
     match fs::remove_file(&path) {
         Ok(()) => {}
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-        Err(e) => return Err(e).context(|| format!("removing {}", path.display())),
+        Err(e) => return Err(e).context(|| tr!("io-removing", path = &path)),
     }
     let root = library_dir.join(DIR);
     let mut dir = path.parent().map(Path::to_owned);

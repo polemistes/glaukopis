@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use crate::bib;
 use crate::error::{IoContext, Result};
 use crate::library::entry::Draft;
+use crate::tr;
 
 use super::Candidate;
 
@@ -61,7 +62,7 @@ fn windows_1252(b: u8) -> char {
 }
 
 pub fn read_file(path: &Path) -> Result<(Vec<Candidate>, Vec<String>)> {
-    let bytes = std::fs::read(path).context(|| format!("reading {}", path.display()))?;
+    let bytes = std::fs::read(path).context(|| tr!("io-reading", path = path))?;
     let text = decode_bytes(&bytes);
     Ok(read_text(&text, path.parent()))
 }
@@ -69,8 +70,11 @@ pub fn read_file(path: &Path) -> Result<(Vec<Candidate>, Vec<String>)> {
 /// Reads BibLaTeX source. Paths of attached files are resolved against `base`.
 pub fn read_text(text: &str, base: Option<&Path>) -> (Vec<Candidate>, Vec<String>) {
     let parsed = bib::parse(text);
-    let mut warnings: Vec<String> =
-        parsed.warnings.iter().map(|w| format!("Line {}: {}.", w.line, w.message)).collect();
+    let mut warnings: Vec<String> = parsed
+        .warnings
+        .iter()
+        .map(|w| tr!("core-library-line-sentence", line = w.line, message = &w.message))
+        .collect();
     let mut out = Vec::new();
 
     for raw in parsed.entries() {
@@ -85,7 +89,7 @@ pub fn read_text(text: &str, base: Option<&Path>) -> (Vec<Candidate>, Vec<String
             for named in parse_file_field(&value) {
                 match resolve(&named, base) {
                     Some(p) => files.push(p.display().to_string()),
-                    None => notes.push(format!("The file “{named}” was not found.")),
+                    None => notes.push(tr!("core-import-file-not-found", name = &named)),
                 }
             }
         }
@@ -95,15 +99,15 @@ pub fn read_text(text: &str, base: Option<&Path>) -> (Vec<Candidate>, Vec<String
             .unwrap_or_default();
 
         if draft.fields.is_empty() && draft.names.is_empty() {
-            warnings.push(format!("Line {}: the entry “{}” is empty and was left out.", raw.line, raw.key));
+            warnings.push(tr!("core-import-empty-entry", line = raw.line, key = &raw.key));
             continue;
         }
 
         out.push(Candidate {
             origin: if raw.key.is_empty() {
-                format!("line {}", raw.line)
+                tr!("core-import-origin-line", line = raw.line)
             } else {
-                format!("{}, line {}", raw.key, raw.line)
+                tr!("core-import-origin-key-line", key = &raw.key, line = raw.line)
             },
             draft,
             files,
