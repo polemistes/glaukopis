@@ -178,7 +178,7 @@ export function intoCitation(
   place: Place,
   start: number,
   end: number,
-  others: Marked[] = [],
+  others: Pick<Marked, 'passage' | 'start' | 'end'>[] = [],
 ): IntoCitation {
   if (!place.note) return { possible: false, why: 'It does not stand in a note.' };
   for (const child of place.holder.toArray()) {

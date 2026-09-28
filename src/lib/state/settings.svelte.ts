@@ -1,8 +1,14 @@
-import { defaultSettings, settingsLoad, settingsSave, type Settings } from '$lib/api/system';
+import {
+  defaultSettings,
+  settingsLoad,
+  settingsSave,
+  type FoundSettings,
+  type Settings,
+} from '$lib/api/system';
 import { notifyError } from '$lib/ui/toast.svelte';
 
 class SettingsState {
-  value = $state<Settings>({ ...defaultSettings });
+  value = $state<Settings>({ ...defaultSettings, found: { ...defaultSettings.found } });
   loaded = $state(false);
   #systemDark = $state(false);
   #saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -18,7 +24,13 @@ class SettingsState {
     this.#systemDark = media.matches;
     media.addEventListener('change', (e) => (this.#systemDark = e.matches));
     try {
-      this.value = { ...defaultSettings, ...(await settingsLoad()) };
+      const kept = await settingsLoad();
+      // What was kept by a version that knew less of it has the rest as it is given.
+      this.value = {
+        ...defaultSettings,
+        ...kept,
+        found: { ...defaultSettings.found, ...(kept.found ?? {}) },
+      };
     } catch (error) {
       notifyError('The settings could not be read', error);
     }
@@ -29,6 +41,11 @@ class SettingsState {
   async saveNow() {
     clearTimeout(this.#saveTimer);
     await settingsSave($state.snapshot(this.value));
+  }
+
+  /** What is done with citations that are found, changed in part. */
+  setFound(change: Partial<FoundSettings>) {
+    this.set('found', { ...$state.snapshot(this.value.found), ...change });
   }
 
   set<K extends keyof Settings>(key: K, value: Settings[K]) {
