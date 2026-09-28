@@ -13,3 +13,4 @@
 /.tools
 /packaging/**/*.log
 /packaging/**/try
+/.claude/worktrees

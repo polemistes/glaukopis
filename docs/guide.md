@@ -119,10 +119,14 @@ the document, so that they are told from the numbered ones.
 
 ### Figures
 
-A picture in the text is a figure: the picture, and what is said of it. Put
-one in with **Insert**, by dropping a file on the text where it is to stand,
-or by pasting a picture that was copied. A file dropped on an element in the
-diagram becomes a figure at the end of its text.
+A *picture* is a file: a photograph, a drawing. A *figure* is a picture as
+it stands in a text, with what is said of it there, its caption, and its
+number in the document. The same picture can be a figure in many texts.
+
+Put a figure in with **Insert**, by dropping a file on the text where it is
+to stand, by pasting a picture that was copied, or by dragging a picture
+from the pictures of the project (see *Pictures* below). A picture dropped
+on an element in the diagram becomes a figure at the end of its text.
 
 What is said of the figure is written under the picture, where the cursor is
 when the figure has been put in. It can hold citations and formulas. **Enter**
@@ -133,8 +137,11 @@ Pressing the picture opens the rest that can be said of it:
 - **How wide it is**, as a share of the width of the text in the document.
 - **What it shows**, in words, for those who cannot see it. This goes into
   the documents that can hold it.
-- Whether it is **numbered**. The figures of a map are numbered through the
-  map, as the notes are.
+- Whether it is **numbered**. The figures are numbered through the document:
+  the number shown where you write is the one the figure has there.
+- **Keep the caption with the picture**, so that figures made with the same
+  picture later begin with the same words; and **Use the picture's own**,
+  which says of this figure what is kept with the picture.
 - **Another picture** in its place, or the figure removed.
 
 The word before the number, where what is said of the figure stands and how
@@ -143,9 +150,9 @@ one, **Figure 1** over it in another. A format can also have the figures
 gathered at the end of the document, as many journals ask of a manuscript;
 a line in the text then says where each belongs.
 
-Pictures are kept with the project. PNG, JPEG and SVG are kept as they are.
-GIF, WebP, TIFF and BMP are made into PNG when they are put in, since not
-every kind of document can hold them. One picture may hold 50 MB.
+PNG, JPEG and SVG are kept as they are. GIF, WebP, TIFF and BMP are made
+into PNG when they are put in, since not every kind of document can hold
+them. One picture may hold 50 MB.
 
 ### Mathematics
 
@@ -159,6 +166,61 @@ selected goes into what is put in.
 A **formula** stands in the line, among the words. An **equation** stands on
 a line of its own, and can be numbered; what stands around the number,
 as in (1), is said by the document format. Pressing either opens it again.
+
+### Pointing to figures, equations and parts
+
+Where the text says *see figure 2*, the number should follow the figure: if
+another figure is put in before it, the text is to say *figure 3*. Write
+such words with **Insert › Pointer…**, or **Ctrl+Alt+R**, and choose what
+they point to: a figure, a numbered equation, or a part of the document,
+which is an element whose name is printed as a heading. They can be found
+by what is said of them.
+
+The words then say what the document calls the thing:
+
+- a **figure** by the word the format has for it and its number, *Figure 2*,
+  or by the number alone;
+- an **equation** by its number as it stands beside it, *(1)*, or by the
+  number alone;
+- a **part** by its number where the format numbers the headings, *2.1*, and
+  by its name where it does not, or whenever you choose the name.
+
+Words like *see* and *section* you write yourself. Press the pointer to
+change how it points, to go to what it points to, or to point it elsewhere.
+
+In a PDF and on a web page the words lead to what they point to when they
+are pressed. If what they point to is taken away, or left out of the
+document, they are shown as **?** in red where you write and as **[?]** in
+the document, and the preview remarks on it.
+
+## Pictures
+
+Pictures are kept in one store for the whole of Glaukopis, as references are
+kept in the library. A picture that is used in several texts, maps or
+projects is the same picture in all of them, and is kept once.
+
+**Ctrl+3**, or the pictures in the rail at the left, shows the store: every
+picture, to be searched by what it is called and by what is said of it. Add
+pictures with **Add pictures…**, or drop files on the view.
+
+In a project, **Ctrl+Shift+I** opens the pictures beside the map, where the
+references are otherwise. They can be shown for **this map**, for the
+**project**, or for the whole **store**. Drag one into a text to make a
+figure of it there.
+
+Of each picture you can say:
+
+- what it is **called**;
+- its **caption**: what figures made with it begin with. What is said of a
+  figure can be changed where the figure stands, without changing this;
+- what it **shows**, in words, for those who cannot see it;
+- **notes**, which are for you, and are part of no document. As with
+  references, a note is for all projects when it is written in the store,
+  and for the project when it is written in a project, where it is with
+  everyone the project is shared with, until you keep it for all projects.
+
+The store also says in which projects a picture is used. A picture that is
+removed from the store leaves the figures made with it without a picture.
 
 ## Citations
 
@@ -393,9 +455,10 @@ From then on:
   sharing. Those who are removed keep the project as it was then.
 
 Files attached to references are not shared; the references themselves are.
-The pictures of the figures are shared: they are sent to the server when
-they are put in, and fetched by the others from there. A picture that has
-not arrived yet is shown as an empty frame until it has.
+The pictures of the figures of the project are shared: they are sent to the
+server when they are put in, and fetched by the others from there, into
+their own stores. No other picture of your store is sent. A picture that
+has not arrived yet is shown as an empty frame until it has.
 
 ## Keeping things safe
 
@@ -413,11 +476,12 @@ not arrived yet is shown as an empty frame until it has.
 
 | | |
 | --- | --- |
-| **Ctrl+1**, **Ctrl+2** | The projects, the library |
+| **Ctrl+1**, **Ctrl+2**, **Ctrl+3** | The projects, the library, the pictures |
 | **Ctrl+,** | Settings |
 | **Ctrl+D** | Diagram or text |
 | **Ctrl+P** | The preview |
 | **Ctrl+Shift+R** | The references of the map |
+| **Ctrl+Shift+I** | The pictures of the map |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
 | **Tab**, **Enter** | In the diagram: a new element under, or beside |
 | **F2** | Rename |
@@ -425,6 +489,7 @@ not arrived yet is shown as an empty frame until it has.
 | **Ctrl+Alt+F** | In the text: a note |
 | **Ctrl+Alt+P** | In the text: a picture |
 | **Ctrl+Alt+M**, **Ctrl+Alt+E** | In the text: a formula in the line, an equation |
+| **Ctrl+Alt+R** | In the text: words that point to a figure, an equation, a part |
 | **Ctrl+F**, **Ctrl+N** | In the library: search, new reference |
 
 ## What Glaukopis needs

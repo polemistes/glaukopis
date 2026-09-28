@@ -493,7 +493,17 @@ export class FigureView implements NodeView {
     this.#close();
     if (pos !== undefined) {
       const node = view.state.doc.nodeAt(pos);
-      if (node) view.dispatch(view.state.tr.delete(pos, pos + node.nodeSize));
+      if (node) {
+        const tr = view.state.tr.delete(pos, pos + node.nodeSize);
+        // The cursor goes into the text beside where the figure stood, and
+        // not onto what stands by itself there, which would open it.
+        const at = tr.doc.resolve(Math.min(pos, tr.doc.content.size));
+        const beside =
+          Selection.findFrom(at, -1, true) ??
+          Selection.findFrom(at, 1, true) ??
+          Selection.near(at, -1);
+        view.dispatch(tr.setSelection(beside));
+      }
     }
     view.focus();
   }

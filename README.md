@@ -10,6 +10,8 @@ for scholars in the humanities first, the social sciences second.
 - **Maps that are documents.** Ideas are elements of a map, with text,
   citations, notes, figures and mathematics. The same map is read as a
   diagram, as text, and as the manuscript.
+- **One store of pictures** for all projects, with what you have said of
+  each: its caption, what it shows, your notes.
 - **One library** for all projects, kept as a BibLaTeX file that other tools
   can read. References are looked up by DOI, ISBN or title, made from PDF
   files, and imported from `.bib` files and from Zotero.

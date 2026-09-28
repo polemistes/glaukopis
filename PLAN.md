@@ -212,8 +212,9 @@ server (`docs/server.md`) are done. The packages for other systems are not.
 
 Added since, at the wish of the one the application is made for, and recorded
 in `docs/brief.md`: notes on references (ADR 0008), a PDF that is set by
-LaTeX, and figures and mathematics (ADR 0009). Tables, and pointing to a
-figure or an equation by its number, are the next of that kind.
+LaTeX, figures and mathematics (ADR 0009), a store of pictures for the whole
+application, and words that point to figures, equations and parts of the
+document (ADR 0010). Tables are the next of that kind.
 
 ## 9. Not in the first version
 

@@ -138,7 +138,9 @@ export function placeholder(text: () => string): Plugin {
       decorations(state: EditorState) {
         const { doc } = state;
         const first = doc.firstChild;
-        if (doc.childCount !== 1 || !first?.isTextblock || first.content.size > 0) return null;
+        // A figure of which nothing is said yet is not an empty text.
+        if (doc.childCount !== 1 || first?.type.name === 'figure') return null;
+        if (!first?.isTextblock || first.content.size > 0) return null;
         const words = text();
         if (!words) return null;
         return DecorationSet.create(doc, [

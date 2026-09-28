@@ -1,6 +1,7 @@
 # 0009 — Figures and mathematics
 
-Date: 2026-09-28. Status: accepted.
+Date: 2026-09-28. Status: accepted; where pictures are kept, and how figures
+are numbered where the text is written, were changed the same day by ADR 0010.
 
 ## Context
 
@@ -38,8 +39,9 @@ and are documents of changes (ADR 0002), in which a picture has no place.
 - **An equation is numbered by the application**, for the same reason as
   figures are. In PDF the number stands at the margin; in Word and
   OpenDocument, which have no place for it there, it follows the equation.
-- **A picture is a file of the project, named by the SHA-256 of what it
-  holds**: `projects/<id>/files/<hash>.<extension>`. The text names the
+- **A picture is a file named by the SHA-256 of what it holds.** At first it
+  was kept with the project, `projects/<id>/files/<hash>.<extension>`; it is
+  now kept in the store of pictures (ADR 0010). The text names the
   picture by that name. The same picture is kept once; a picture that was
   changed is another picture; and what comes from someone else can be told
   to be what it is said to be.
@@ -56,13 +58,9 @@ and are documents of changes (ADR 0002), in which a picture has no place.
 
 ## Consequences
 
-- A picture that is no longer in any text stays with the project. It may
-  come back by undo, or be in an earlier version. Nothing removes it yet.
-- A figure copied from one project to another names a picture the other
-  project does not have, and is shown without it.
-- There are no tables yet, and the text cannot point to a figure or an
-  equation by its number ("see figure 2"). Both belong here, and the second
-  follows from the first decision: the application knows the numbers.
+- There are no tables yet.
+- The text can point to a figure or an equation by its number (ADR 0010),
+  which follows from the first decision: the application knows the numbers.
 - A formula that LaTeX can read and Pandoc cannot is set by LaTeX all the
   same, and is shown as it was written everywhere else.
 - A note cannot stand in what is said of a figure: not every kind of
