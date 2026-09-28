@@ -1,0 +1,12 @@
+#+title: The wrath, cited by tags
+
+* The word
+
+The wrath of Achilles is what the poem is of [cite:@nagy1979 p. 73], as [cite/t:@west1988 chap. 3] says.
+
+Much is written of it [cite:see @nagy1979 chap. 2; @lord1960; @west1988 p. 12 and elsewhere].
+The singer [cite:@lord1960 p. 12] is another matter.
+
+Not all agree.[fn:1] And so it stands.
+
+[fn:1] See [cite:@nagy1979 p. 73; @parry1971]; but he says otherwise elsewhere.

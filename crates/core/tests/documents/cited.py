@@ -5,18 +5,22 @@ There is no Zotero where the tests are written, so the files are made as
 Zotero makes them, by writing what it writes: see `ReferenceMark.java`,
 `Bookmark.java` and `Properties.java` of zotero-libreoffice-integration, and
 `field.cpp` and `document.cpp` of zotero-word-for-windows-integration.
+What EndNote writes is written here as it is remembered from files of
+EndNote, and as Pandoc reads it: its plugin cannot be looked into.
 
     python3 cited.py texts       writes cited.fodt, bookmarks.fodt and plain.fodt
     soffice --headless -env:UserInstallation=file://<a directory of its own> \
         --convert-to odt cited.fodt        (and bookmarks.fodt; and --convert-to docx)
     python3 cited.py fields      writes cited.docx anew, with the fields as
-                                 Word has them, and bookmarks.docx with bookmarks
+                                 Word has them, bookmarks.docx with bookmarks,
+                                 and endnote.docx with fields of EndNote
 
 `cited.odt` is what LibreOffice made of `cited.fodt`, as it is. `cited.docx`
 is what LibreOffice made of `plain.fodt` (the same text without anything of
 Zotero), with the fields written into it as the plugin for Word writes them.
 """
 
+import base64
 import json
 import re
 import sys
@@ -293,6 +297,54 @@ def word_properties():
     )
 
 
+def endnote(shown, record, more=""):
+    """What EndNote says of a citation, in its own form."""
+    number, author, year, title, place, publisher = record
+    return (
+        f"<EndNote><Cite><Author>{author.split(',')[0]}</Author><Year>{year}</Year><RecNum>{number}</RecNum>{more}"
+        f"<DisplayText>{escape(shown)}</DisplayText><record><rec-number>{number}</rec-number>"
+        f'<foreign-keys><key app="EN" db-id="9a2tzx5ep0fxe2e5vwcv0a5uvd2ad0fzs05v" timestamp="1600000000">{number}</key></foreign-keys>'
+        f'<ref-type name="Book">6</ref-type><contributors><authors><author>{author}</author></authors></contributors>'
+        f"<titles><title>{title}</title></titles><dates><year>{year}</year></dates>"
+        f"<pub-location>{place}</pub-location><publisher>{publisher}</publisher><urls></urls></record></Cite></EndNote>"
+    )
+
+
+ENDNOTE = {
+    # What is said stands in the code of the field.
+    "one": endnote(
+        "(see Nagy 1979, 73)",
+        (12, "Nagy, Gregory", "1979", "The Best of the Achaeans", "Baltimore", "Johns Hopkins University Press"),
+        "<Prefix>see </Prefix><Pages>73</Pages>",
+    ),
+    # What is said is kept with the field, as EndNote keeps what is long.
+    "italics": endnote(
+        "(Lord, The Singer of Tales, 12)",
+        (7, "Lord, Albert B.", "1960", "The Singer of Tales", "Cambridge, Mass.", "Harvard University Press"),
+        "<Pages>12</Pages>",
+    ),
+}
+
+
+def word_endnote(name):
+    pieces, _ = CITED[name]
+    said = ENDNOTE[name]
+    if name == "one":
+        return field(f" ADDIN EN.CITE {said} ", [("(see Nagy 1979, 73)", False)], cut=2)
+    data = base64.b64encode(said.encode()).decode()
+    begin = run(f'<w:fldChar w:fldCharType="begin"><w:fldData xml:space="preserve">{data}</w:fldData></w:fldChar>')
+    return (
+        begin
+        + run('<w:instrText xml:space="preserve"> ADDIN EN.CITE </w:instrText>')
+        + begin
+        + run('<w:instrText xml:space="preserve"> ADDIN EN.CITE.DATA </w:instrText>')
+        + run('<w:fldChar w:fldCharType="end"/>')
+        + run('<w:fldChar w:fldCharType="separate"/>')
+        + "".join(text(t, i) for t, i in pieces)
+        + run('<w:fldChar w:fldCharType="end"/>')
+    )
+
+
 def shown_runs(part, name):
     """Where the runs stand that show a citation, in a part that LibreOffice wrote: from the first to the last."""
     pieces, _ = CITED[name]
@@ -318,6 +370,8 @@ def word(how):
     notes = parts["word/footnotes.xml"].decode()
     number = 100
     for name in CITED:
+        if how == "endnote" and name not in ENDNOTE:
+            continue
         where = "notes" if name == "note" else "document"
         part = notes if where == "notes" else document
         start, end, held = shown_runs(part, name)
@@ -330,6 +384,8 @@ def word(how):
         if how == "bookmarks":
             new = word_bookmark(name, number)
             number += 1
+        elif how == "endnote":
+            new = word_endnote(name)
         else:
             # The second is cut, as Word cuts a code that is long.
             new = word_field(name, cut=3 if name == "three" else 1)
@@ -378,7 +434,7 @@ def word(how):
             'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties" '
             'Target="docProps/custom.xml"/></Relationships>',
         ).encode()
-    to = HERE / ("cited.docx" if how == "fields" else "bookmarks.docx")
+    to = HERE / {"fields": "cited.docx", "bookmarks": "bookmarks.docx", "endnote": "endnote.docx"}[how]
     with zipfile.ZipFile(to, "w", zipfile.ZIP_DEFLATED) as out:
         for name in names:
             out.writestr(zipfile.ZipInfo(name, date_time=(2026, 9, 28, 12, 0, 0)), parts[name], zipfile.ZIP_DEFLATED)
@@ -388,7 +444,6 @@ def word(how):
 def main():
     what = sys.argv[1] if len(sys.argv) > 1 else ""
     if what == "texts":
-        pass
         (HERE / "cited.fodt").write_text(fodt("marks"), encoding="utf-8")
         (HERE / "bookmarks.fodt").write_text(fodt("bookmarks"), encoding="utf-8")
         (HERE / "plain.fodt").write_text(fodt("plain"), encoding="utf-8")
@@ -396,6 +451,7 @@ def main():
     elif what == "fields":
         word("fields")
         word("bookmarks")
+        word("endnote")
     else:
         print(__doc__)
         sys.exit(2)

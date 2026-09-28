@@ -68,7 +68,8 @@ pub(super) struct Made {
     /// Citations that are kept in bookmarks, and of which the file does
     /// not say what they cite.
     pub dark: usize,
-    /// Citations of EndNote, which says what it cites in a form of its own.
+    /// Citations of EndNote, which says what it cites in a form of its
+    /// own. They are not read here: Pandoc reads them, where it can.
     pub endnote: usize,
 }
 
@@ -85,14 +86,6 @@ impl Made {
                 if self.dark == 1 { "it cites" } else { "they cite" },
                 if self.dark == 1 { "it is text" } else { "they are text" },
                 if self.dark == 1 { "it stands" } else { "they stand" }
-            ));
-        }
-        if self.endnote > 0 {
-            out.push(format!(
-                "{} made by EndNote {} brought in as the text {}: what EndNote says of the works is not read.",
-                several(self.endnote, "citation", "citations"),
-                if self.endnote == 1 { "is" } else { "are" },
-                if self.endnote == 1 { "it shows" } else { "they show" }
             ));
         }
         out
@@ -198,7 +191,7 @@ fn item(one: &Value) -> FoundItem {
 
 /// What a program says of a work, without what says nothing of which work
 /// it is. Nothing, where nothing is left.
-fn data(given: &Value) -> Option<Value> {
+pub(super) fn data(given: &Value) -> Option<Value> {
     let kept: serde_json::Map<String, Value> = given
         .as_object()?
         .iter()
