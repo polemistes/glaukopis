@@ -52,9 +52,8 @@ const LABELS: [&str; 15] = [
 
 /// The languages whose words for locators come first, where a word counts
 /// one thing in one language and another in another.
-const FIRST: [&str; 13] = [
-    "en-US", "en-GB", "nb-NO", "nn-NO", "da-DK", "sv-SE", "de-DE", "fr-FR", "it-IT", "es-ES", "pt-PT", "nl-NL", "la",
-];
+const FIRST: [&str; 13] =
+    ["en-US", "en-GB", "nb-NO", "nn-NO", "da-DK", "sv-SE", "de-DE", "fr-FR", "it-IT", "es-ES", "pt-PT", "nl-NL", "la"];
 
 /// What is said before a work that is cited, as it is compared: in small
 /// letters and without full stops.
@@ -378,7 +377,13 @@ fn tidy(locator: &[char]) -> String {
             }
             let between = out.chars().last().is_some_and(char::is_alphanumeric)
                 && locator.get(next).is_some_and(|c| c.is_alphanumeric());
-            out.push(if dashes && between { '–' } else if dashes { c } else { ' ' });
+            out.push(if dashes && between {
+                '–'
+            } else if dashes {
+                c
+            } else {
+                ' '
+            });
             i = if dashes && !between { i + 1 } else { next };
         } else {
             out.push(c);
@@ -845,7 +850,8 @@ impl Text {
             if end > to || !word.iter().zip(&self.chars[at..end]).all(|(w, c)| *w == small(*c)) {
                 continue;
             }
-            let whole = !word.last().is_some_and(|c| c.is_alphabetic()) || end == to || !self.chars[end].is_alphabetic();
+            let whole =
+                !word.last().is_some_and(|c| c.is_alphabetic()) || end == to || !self.chars[end].is_alphabetic();
             let counted = self.blank(end, to);
             if whole && counted < to && self.chars[counted].is_alphanumeric() {
                 return Some((label, end));
@@ -1177,7 +1183,8 @@ impl Text {
         let next = self.blank(names.end, to);
         let one =
             names.keys.len() == 1 && !names.others && !self.chars[at..names.end].iter().any(|c| c.is_whitespace());
-        let paged = next > names.end && next < to && self.chars[next].is_ascii_digit();
+        let numbers = self.chars[next.min(to)..to].iter().take_while(|c| c.is_ascii_digit()).count();
+        let paged = next > names.end && (1..=4).contains(&numbers);
         (alone && one && paged && names.known).then_some((names, None))
     }
 
@@ -1272,11 +1279,8 @@ impl Text {
             work.from = from;
             return self.tail(&mut work, names.end, to).then(|| (vec![work], Some(names)));
         };
-        let written = if own {
-            self.said(names.start, year.end)
-        } else {
-            format!("{who} {}", self.said(year.start, year.end))
-        };
+        let written =
+            if own { self.said(names.start, year.end) } else { format!("{who} {}", self.said(year.start, year.end)) };
         let mut work = work_of(Some(&year), written, if own { names.start } else { year.start });
         work.from = from;
 
@@ -1491,7 +1495,9 @@ impl Text {
                     begun = at + 1;
                 }
                 '.' if depth == 0 && self.ends_a_sentence(at, from, to) => {
-                    parts.push((begun, at));
+                    // The stop of what is written short is of the word.
+                    let of_the_word = at > from && self.chars[at - 1].is_alphabetic() && self.is_short(at, from);
+                    parts.push((begun, if of_the_word { at + 1 } else { at }));
                     begun = at + 1;
                 }
                 _ => {}
@@ -1500,6 +1506,17 @@ impl Text {
         }
         parts.push((begun, to));
         parts.into_iter().map(|(from, to)| self.trimmed(from, to)).filter(|(from, to)| to > from).collect()
+    }
+
+    /// Whether the word before the full stop here is written short: "cf.",
+    /// "ibid.", the letter of a given name.
+    fn is_short(&self, at: usize, from: usize) -> bool {
+        let mut start = at;
+        while start > from && (self.chars[start - 1].is_alphabetic() || self.chars[start - 1] == '.') {
+            start -= 1;
+        }
+        let word = self.lower(start, at);
+        word.chars().count() == 1 || word.contains('.') || written_short().contains(fold(&word).as_str())
     }
 
     /// Whether the full stop here ends a sentence: a capital follows, and
@@ -1531,7 +1548,8 @@ impl Text {
         }
         // After "ibid." and "et al." a sentence may end all the same, if
         // what follows is said before a work: "Ibid. See also …".
-        let closes = matches!(word.as_str(), "ibid" | "ibidem" | "cit" | "id" | "idem" | "al" | "f" | "ff" | "sq" | "sqq");
+        let closes =
+            matches!(word.as_str(), "ibid" | "ibidem" | "cit" | "id" | "idem" | "al" | "f" | "ff" | "sq" | "sqq");
         closes && self.prefixed(begins, to) > begins
     }
 
@@ -1676,8 +1694,14 @@ impl Text {
         let end;
         if most > 0 {
             let mut stop = ends[most - 1];
-            while stop < to && matches!(self.chars[stop], '”' | '’' | '"' | '\'' | '»' | '“') {
-                stop += 1;
+            // The marks that close the title, and the comma that some set
+            // within them: “Singer of Tales,” 12.
+            let closes = |at: usize| at < to && matches!(self.chars[at], '”' | '’' | '"' | '\'' | '»' | '“');
+            let mut closed =
+                if stop < to && matches!(self.chars[stop], ',' | '.') && closes(stop + 1) { stop + 1 } else { stop };
+            while closes(closed) {
+                closed += 1;
+                stop = closed;
             }
             work.words = self.said(named, stop);
             // The year after it: in brackets, with where it came out or
@@ -1812,7 +1836,8 @@ impl Text {
                 if n + 1 == parts.len() && end > part_from && self.chars[end - 1] == '.' {
                     let word = self.lower(part_from, end - 1);
                     let short = word.rsplit(|c: char| !c.is_alphabetic()).next().is_some_and(|w| {
-                        matches!(w, "f" | "ff" | "sq" | "sqq") || AS_BEFORE.iter().any(|b| b.ends_with(w) && !w.is_empty())
+                        matches!(w, "f" | "ff" | "sq" | "sqq")
+                            || AS_BEFORE.iter().any(|b| b.ends_with(w) && !w.is_empty())
                     });
                     if !short {
                         end -= 1;
@@ -1898,4 +1923,676 @@ pub(super) fn propose(library: &Library, passages: &[Passage], options: &Options
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::library::draft_from_source;
+
+    /// A small library, such as a classicist may have.
+    fn library() -> (tempfile::TempDir, Library) {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut library = Library::open_at(&tmp.path().join("library")).unwrap();
+        let drafts: Vec<_> = [
+            "@book{nagy1979, author={Nagy, Gregory}, title={The Best of the Achaeans}, subtitle={Concepts of the Hero in Archaic Greek Poetry}, date={1979}}",
+            "@book{nagy1990, author={Nagy, Gregory}, title={Pindar's Homer}, subtitle={The Lyric Possession of an Epic Past}, date={1990}}",
+            "@book{lord1960, author={Lord, Albert B.}, title={The Singer of Tales}, date={1960}}",
+            "@book{lord2000, author={Lord, Albert B.}, title={The Singer of Tales}, edition={2}, date={2000}, origdate={1960}}",
+            "@book{nagylord1991, author={Nagy, Gregory and Lord, Albert B.}, title={Epic Singers and Oral Tradition}, date={1991}}",
+            "@article{west1988, author={West, M. L.}, title={The Rise of the Greek Epic}, journaltitle={JHS}, volume={108}, date={1988}, pages={151--172}}",
+            "@book{valk1963, author={van der Valk, Marchinus}, title={Researches on the Text and Scholia of the Iliad}, date={1963}}",
+            "@article{march1991, author={March, James G.}, title={Exploration and Exploitation in Organizational Learning}, date={1991}}",
+            "@collection{morris1997, editor={Morris, Ian and Powell, Barry}, title={A New Companion to Homer}, date={1997}}",
+            "@book{bm1893, author={{British Museum}}, title={A Catalogue of the Greek Vases}, date={1893}}",
+            "@thesis{bjornson2004, author={Bjørnson, Åse}, title={Sangeren og sangen}, date={2004}}",
+            "@book{levi1962, author={Lévi-Strauss, Claude}, title={La pensée sauvage}, date={1962}}",
+        ]
+        .iter()
+        .map(|source| draft_from_source(source).unwrap())
+        .collect();
+        library.add_many(&drafts).unwrap();
+        (tmp, library)
+    }
+
+    const YEARS: Options = Options { years: true, notes: false };
+    const NOTES: Options = Options { years: true, notes: true };
+
+    fn line(text: &str) -> Passage {
+        Passage { id: "p".into(), text: text.into(), ..Default::default() }
+    }
+
+    fn note(text: &str) -> Passage {
+        Passage { id: "n".into(), text: text.into(), note: true, ..Default::default() }
+    }
+
+    /// What stands between two places of a text, in units of UTF-16.
+    fn between(text: &str, start: usize, end: usize) -> String {
+        let units: Vec<u16> = text.encode_utf16().collect();
+        String::from_utf16(&units[start..end]).unwrap()
+    }
+
+    /// The texts of what is proposed in a line.
+    fn proposed(library: &Library, text: &str) -> Vec<String> {
+        propose(library, &[line(text)], &YEARS).iter().map(|p| between(text, p.start, p.end)).collect()
+    }
+
+    /// The one citation that is proposed in a line.
+    fn one(library: &Library, text: &str) -> Proposal {
+        let mut found = propose(library, &[line(text)], &YEARS);
+        assert_eq!(found.len(), 1, "in “{text}”: {found:#?}");
+        found.remove(0)
+    }
+
+    /// An item in its parts: the words, the locator, what it counts, what
+    /// is said before and after.
+    fn parts(item: &ProposedItem) -> (&str, Option<&str>, Option<&str>, Option<&str>, Option<&str>) {
+        (
+            item.words.as_str(),
+            item.locator.as_deref(),
+            item.label.as_deref(),
+            item.prefix.as_deref(),
+            item.suffix.as_deref(),
+        )
+    }
+
+    /// The references that are given for an item, by their keys.
+    fn keys(library: &Library, item: &ProposedItem) -> Vec<(String, Sure)> {
+        item.suggestions.iter().map(|s| (library.get(&s.reference).unwrap().key.clone(), s.sure)).collect()
+    }
+
+    fn likely(key: &str) -> (String, Sure) {
+        (key.to_owned(), Sure::Likely)
+    }
+
+    fn possible(key: &str) -> (String, Sure) {
+        (key.to_owned(), Sure::Possible)
+    }
+
+    #[test]
+    fn brackets_with_a_name_and_a_year() {
+        let (_tmp, library) = library();
+        let text = "The hero is the best (Nagy 1979, 73) of them.";
+        let found = one(&library, text);
+        assert_eq!(between(text, found.start, found.end), "(Nagy 1979, 73)");
+        assert_eq!(found.passage, "p");
+        assert_eq!(found.mode, CiteMode::Normal);
+        assert_eq!(found.items.len(), 1);
+        let item = &found.items[0];
+        assert_eq!(parts(item), ("Nagy 1979", Some("73"), None, None, None));
+        assert_eq!(between(text, item.start, item.end), "Nagy 1979, 73");
+        assert!(!item.suppress_author);
+        assert_eq!(keys(&library, item), vec![likely("nagy1979")]);
+        assert_eq!(item.suggestions[0].why, "Nagy, 1979");
+
+        assert_eq!(parts(&one(&library, "(Nagy 1979)").items[0]), ("Nagy 1979", None, None, None, None));
+        assert_eq!(parts(&one(&library, "[Nagy 1979, 73]").items[0]), ("Nagy 1979", Some("73"), None, None, None));
+        // As the APA writes.
+        assert_eq!(parts(&one(&library, "(Nagy, 1979, p. 73)").items[0]), ("Nagy, 1979", Some("73"), None, None, None));
+        assert_eq!(
+            parts(&one(&library, "(cf. Nagy, 1979, pp. 73-75)").items[0]),
+            ("Nagy, 1979", Some("73–75"), None, Some("cf."), None)
+        );
+        // As Harvard writes.
+        assert_eq!(parts(&one(&library, "(Nagy 1979: 73)").items[0]), ("Nagy 1979", Some("73"), None, None, None));
+        assert_eq!(parts(&one(&library, "(Nagy 1979:73f.)").items[0]), ("Nagy 1979", Some("73f."), None, None, None));
+    }
+
+    #[test]
+    fn several_works_in_one_pair_of_brackets() {
+        let (_tmp, library) = library();
+        let text = "So it is said (see Nagy 1979, 73–75; Lord 1960: 12), and often.";
+        let found = one(&library, text);
+        assert_eq!(between(text, found.start, found.end), "(see Nagy 1979, 73–75; Lord 1960: 12)");
+        assert_eq!(found.items.len(), 2);
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", Some("73–75"), None, Some("see"), None));
+        assert_eq!(parts(&found.items[1]), ("Lord 1960", Some("12"), None, None, None));
+        assert_eq!(between(text, found.items[0].start, found.items[0].end), "see Nagy 1979, 73–75");
+        assert_eq!(between(text, found.items[1].start, found.items[1].end), "Lord 1960: 12");
+        assert_eq!(keys(&library, &found.items[0]), vec![likely("nagy1979")]);
+        // Two have the name and the year: the one whose year it is comes first.
+        assert_eq!(keys(&library, &found.items[1]), vec![likely("lord1960"), likely("lord2000")]);
+
+        // Two works of the same author.
+        let found = one(&library, "(Nagy 1979, 1990)");
+        assert_eq!(found.items.len(), 2);
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", None, None, None, None));
+        assert_eq!(parts(&found.items[1]), ("Nagy 1990", None, None, None, None));
+        assert_eq!(keys(&library, &found.items[1]), vec![likely("nagy1990")]);
+        let found = one(&library, "(Nagy 1979, 73; 1990, 12)");
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", Some("73"), None, None, None));
+        assert_eq!(parts(&found.items[1]), ("Nagy 1990", Some("12"), None, None, None));
+        let found = one(&library, "(Nagy 1979a, b)");
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979a", None, None, None, None));
+        assert_eq!(parts(&found.items[1]), ("Nagy 1979b", None, None, None, None));
+
+        // A few words at the end say something of the last work.
+        let found = one(&library, "(Nagy 1979, 73; emphasis added)");
+        assert_eq!(found.items.len(), 1);
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", Some("73"), None, None, Some("; emphasis added")));
+    }
+
+    #[test]
+    fn several_authors() {
+        let (_tmp, library) = library();
+        let found = one(&library, "(Nagy and Lord 1991)");
+        assert_eq!(parts(&found.items[0]), ("Nagy and Lord 1991", None, None, None, None));
+        assert_eq!(keys(&library, &found.items[0]), vec![likely("nagylord1991")]);
+        assert_eq!(found.items[0].suggestions[0].why, "Nagy and Lord, 1991");
+        assert_eq!(parts(&one(&library, "(Nagy & Lord, 1991, p. 5)").items[0]).0, "Nagy & Lord, 1991");
+        assert_eq!(parts(&one(&library, "(Morris, Powell and Nagy 1997)").items[0]).0, "Morris, Powell and Nagy 1997");
+
+        let found = one(&library, "(Nagy et al. 1979a)");
+        assert_eq!(parts(&found.items[0]), ("Nagy et al. 1979a", None, None, None, None));
+        // The letter after the year is not looked at.
+        assert_eq!(keys(&library, &found.items[0]), vec![likely("nagy1979")]);
+        assert_eq!(parts(&one(&library, "(Nagy et al., 1979)").items[0]).0, "Nagy et al., 1979");
+
+        // The editors of a work that has no authors.
+        let found = one(&library, "(Morris and Powell, eds., 1997, 101)");
+        assert_eq!(parts(&found.items[0]), ("Morris and Powell, eds., 1997", Some("101"), None, None, None));
+        assert_eq!(keys(&library, &found.items[0]), vec![likely("morris1997")]);
+
+        // Names of several words, and with what stands before them.
+        assert_eq!(keys(&library, &one(&library, "(van der Valk 1963, 12)").items[0]), vec![likely("valk1963")]);
+        assert_eq!(keys(&library, &one(&library, "(Valk 1963)").items[0]), vec![likely("valk1963")]);
+        assert_eq!(keys(&library, &one(&library, "(British Museum 1893)").items[0]), vec![likely("bm1893")]);
+        assert_eq!(keys(&library, &one(&library, "(M. L. West 1988, 151)").items[0]), vec![likely("west1988")]);
+        assert_eq!(keys(&library, &one(&library, "(Gregory Nagy 1990)").items[0]), vec![likely("nagy1990")]);
+        // Without regard to capitals and accents.
+        assert_eq!(keys(&library, &one(&library, "(Levi-Strauss 1962)").items[0]), vec![likely("levi1962")]);
+        assert_eq!(keys(&library, &one(&library, "(LÉVI-STRAUSS 1962)").items[0]), vec![likely("levi1962")]);
+        assert_eq!(keys(&library, &one(&library, "(Bjornson 2004)").items[0]), vec![likely("bjornson2004")]);
+    }
+
+    #[test]
+    fn years_of_other_kinds() {
+        let (_tmp, library) = library();
+        let found = one(&library, "(Lord [1960] 2000, 14)");
+        assert_eq!(parts(&found.items[0]), ("Lord [1960] 2000", Some("14"), None, None, None));
+        assert_eq!(keys(&library, &found.items[0]), vec![likely("lord2000"), likely("lord1960")]);
+        assert_eq!(parts(&one(&library, "(Lord 2000 [1960])").items[0]).0, "Lord 2000 [1960]");
+
+        // No year: the name alone is what is known.
+        let found = one(&library, "(West n.d.)");
+        assert_eq!(parts(&found.items[0]), ("West n.d.", None, None, None, None));
+        assert_eq!(keys(&library, &found.items[0]), vec![possible("west1988")]);
+        assert_eq!(parts(&one(&library, "(West forthcoming)").items[0]).0, "West forthcoming");
+        assert_eq!(parts(&one(&library, "(West, in press)").items[0]).0, "West, in press");
+
+        // Another year than the library has.
+        let found = one(&library, "(West 1997, 3)");
+        assert_eq!(keys(&library, &found.items[0]), vec![possible("west1988")]);
+        assert_eq!(found.items[0].suggestions[0].why, "West, another year");
+
+        // The year, and a name that is a little otherwise.
+        let found = one(&library, "(Nagi 1990)");
+        assert_eq!(keys(&library, &found.items[0]), vec![possible("nagy1990")]);
+
+        // A work the library does not have is for the writer to find.
+        let found = one(&library, "(Finkelberg 1998, 20)");
+        assert_eq!(parts(&found.items[0]), ("Finkelberg 1998", Some("20"), None, None, None));
+        assert!(found.items[0].suggestions.is_empty());
+    }
+
+    #[test]
+    fn the_author_in_the_sentence() {
+        let (_tmp, library) = library();
+        let text = "As Nagy (1979, 73) has shown, the hero is the best.";
+        let found = one(&library, text);
+        assert_eq!(found.mode, CiteMode::Intext);
+        assert_eq!(between(text, found.start, found.end), "Nagy (1979, 73)");
+        let item = &found.items[0];
+        assert_eq!(parts(item), ("Nagy 1979", Some("73"), None, None, None));
+        assert!(!item.suppress_author);
+        assert_eq!(between(text, item.start, item.end), "Nagy (1979, 73");
+        assert_eq!(keys(&library, item), vec![likely("nagy1979")]);
+
+        let text = "Both Nagy and Lord (1991) say so.";
+        let found = one(&library, text);
+        assert_eq!(between(text, found.start, found.end), "Nagy and Lord (1991)");
+        assert_eq!(found.items[0].words, "Nagy and Lord 1991");
+        assert_eq!(keys(&library, &found.items[0]), vec![likely("nagylord1991")]);
+
+        assert_eq!(proposed(&library, "Thus van der Valk (1963: 12)."), vec!["van der Valk (1963: 12)"]);
+        assert_eq!(proposed(&library, "The British Museum (1893) has it."), vec!["British Museum (1893)"]);
+        assert_eq!(proposed(&library, "Gregory Nagy (1990) says."), vec!["Nagy (1990)"]);
+        assert_eq!(proposed(&library, "Nagy et al. (1979) say."), vec!["Nagy et al. (1979)"]);
+        assert_eq!(proposed(&library, "Nagy (1979; 1990) says."), vec!["Nagy (1979; 1990)"]);
+
+        // More works within the brackets, of others.
+        let found = one(&library, "Nagy (1979, 73; see also Lord 1960)");
+        assert_eq!(found.mode, CiteMode::Intext);
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", Some("73"), None, None, None));
+        assert_eq!(parts(&found.items[1]), ("Lord 1960", None, None, Some("see also"), None));
+
+        // One the library does not have, where something says that it is cited.
+        assert_eq!(proposed(&library, "Finkelberg (1998, 20) says."), vec!["Finkelberg (1998, 20)"]);
+        assert_eq!(proposed(&library, "Finkelberg (1998a) says."), vec!["Finkelberg (1998a)"]);
+        assert_eq!(proposed(&library, "Finkelberg et al. (1998) say."), vec!["Finkelberg et al. (1998)"]);
+
+        // What is theirs: the brackets are the citation, and the name stays.
+        let text = "Nagy’s (1979, 73) reading of it.";
+        let found = one(&library, text);
+        assert_eq!(found.mode, CiteMode::Normal);
+        assert_eq!(between(text, found.start, found.end), "(1979, 73)");
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", Some("73"), None, None, None));
+        assert!(found.items[0].suppress_author);
+        assert_eq!(keys(&library, &found.items[0]), vec![likely("nagy1979")]);
+    }
+
+    #[test]
+    fn what_is_no_citation() {
+        let (_tmp, library) = library();
+        for text in [
+            "It came out late (1979).",
+            "It came out (in 1979) and was read.",
+            "The poet (born 1950) wrote it.",
+            "The work (3 vols., 1979) is long.",
+            "The battle (ca. 450 BC) was lost.",
+            "The treaty (Rome 1957) was signed.",
+            "The treaty of Rome (1957) was signed.",
+            "Napoleon (1769–1821) was there.",
+            "Romeo and Juliet (1597) is a play.",
+            "It was then (May 1979) that it began.",
+            "In January (1979) it began.",
+            "Then (In 1979) it began.",
+            "He came (Oxford, 1979) and went.",
+            "It was shown (this was in the long summer of 1979, when all was well) to many.",
+            "As was said (Nagy 1979 was a good year for the study of Homer) by some.",
+            "See the table (Table 1979).",
+            "He wrote [sic] and [12] and (12) and (a) and ().",
+            "A year alone 1979 and a name alone Nagy.",
+            "Finkelberg (1998) says.",
+            "(see 1979)",
+            "(Finkelberg 979)",
+            "(Finkelberg 2179)",
+            "(Nagy 19790)",
+            "(nagy 1979)",
+        ] {
+            assert_eq!(proposed(&library, text), Vec::<String>::new(), "in “{text}”");
+        }
+        // Without the years, nothing in the line is looked for.
+        let none = Options { years: false, notes: true };
+        assert!(propose(&library, &[line("(Nagy 1979, 73)")], &none).is_empty());
+    }
+
+    #[test]
+    fn a_word_that_is_no_name_is_one_where_the_library_has_the_author() {
+        let (_tmp, library) = library();
+        let found = one(&library, "(March 1991, 71)");
+        assert_eq!(keys(&library, &found.items[0]), vec![likely("march1991")]);
+        assert_eq!(proposed(&library, "March (1991) says."), vec!["March (1991)"]);
+        assert_eq!(proposed(&library, "(June 1991)"), Vec::<String>::new());
+    }
+
+    #[test]
+    fn what_is_said_before_and_after() {
+        let (_tmp, library) = library();
+        for (text, before) in [
+            ("(see Nagy 1979)", "see"),
+            ("(See also Nagy 1979)", "See also"),
+            ("(cf. Nagy 1979)", "cf."),
+            ("(e.g. Nagy 1979)", "e.g."),
+            ("(e.g., Nagy 1979)", "e.g.,"),
+            ("(see e.g. Nagy 1979)", "see e.g."),
+            ("(but see Nagy 1979)", "but see"),
+            ("(contra Nagy 1979)", "contra"),
+            ("(quoted in Nagy 1979)", "quoted in"),
+            // What is not of the words that are said before works, where
+            // the library has the work.
+            ("(as argued by Nagy 1979)", "as argued by"),
+        ] {
+            assert_eq!(
+                parts(&one(&library, text).items[0]),
+                ("Nagy 1979", None, None, Some(before), None),
+                "in “{text}”"
+            );
+        }
+        // And not where it does not have it.
+        assert_eq!(proposed(&library, "(as argued by Finkelberg 1998)"), Vec::<String>::new());
+
+        let found = one(&library, "(Nagy 1979, 73, with further references)");
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", Some("73"), None, None, Some(", with further references")));
+        let found = one(&library, "(Nagy 1979, passim)");
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", None, None, None, Some(", passim")));
+        let found = one(&library, "(Nagy 1979, 2nd ed.)");
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", None, None, None, Some(", 2nd ed.")));
+    }
+
+    #[test]
+    fn locators_and_what_they_count() {
+        let (_tmp, library) = library();
+        for (text, locator, label) in [
+            ("(Nagy 1979, p. 73)", "73", None),
+            ("(Nagy 1979, pp. 73–75)", "73–75", None),
+            ("(Nagy 1979, pp. 73--75)", "73–75", None),
+            ("(Nagy 1979, 73 – 75)", "73–75", None),
+            ("(Nagy 1979, 73—75)", "73–75", None),
+            ("(Nagy 1979, 73, 75, 80–82)", "73, 75, 80–82", None),
+            ("(Nagy 1979, 73ff.)", "73ff.", None),
+            ("(Nagy 1979, 73 f.)", "73 f.", None),
+            ("(Nagy 1979, 73 n. 4)", "73 n. 4", None),
+            ("(Nagy 1979, xii–xv)", "xii–xv", None),
+            ("(Nagy 1979, 327a–c)", "327a–c", None),
+            ("(Nagy 1979 p. 73)", "73", None),
+            ("(Nagy 1979, ch. 3)", "3", Some("chapter")),
+            ("(Nagy 1979, chap. 3)", "3", Some("chapter")),
+            ("(Nagy 1979, chapter 3)", "3", Some("chapter")),
+            ("(Nagy 1979, §4)", "4", Some("section")),
+            ("(Nagy 1979, § 4)", "4", Some("section")),
+            ("(Nagy 1979, vol. 2)", "2", Some("volume")),
+            ("(Nagy 1979, n. 12)", "12", Some("note")),
+            ("(Nagy 1979, l. 5)", "5", Some("line")),
+            ("(Nagy 1979, v. 10)", "10", Some("verse")),
+            ("(Nagy 1979, fig. 2)", "2", Some("figure")),
+            ("(Nagy 1979, ch. IV)", "IV", Some("chapter")),
+        ] {
+            let found = one(&library, text);
+            assert_eq!(parts(&found.items[0]), ("Nagy 1979", Some(locator), label, None, None), "in “{text}”");
+        }
+    }
+
+    #[test]
+    fn a_name_and_a_page_and_no_year() {
+        let (_tmp, library) = library();
+        // As the MLA writes.
+        let found = one(&library, "The hero is the best (West 73).");
+        assert_eq!(parts(&found.items[0]), ("West", Some("73"), None, None, None));
+        assert_eq!(keys(&library, &found.items[0]), vec![possible("west1988")]);
+        assert_eq!(found.items[0].suggestions[0].why, "West");
+        assert_eq!(parts(&one(&library, "(West 151–52)").items[0]), ("West", Some("151–52"), None, None, None));
+        // All the works of the author may be meant.
+        let found = one(&library, "(Lord 12)");
+        assert_eq!(keys(&library, &found.items[0]), vec![possible("lord1960"), possible("lord2000")]);
+
+        for text in ["(Finkelberg 73)", "(see West 73)", "(West and Nagy 73)", "(Chapter 73)", "(West 73 times)"] {
+            assert_eq!(proposed(&library, text), Vec::<String>::new(), "in “{text}”");
+        }
+    }
+
+    #[test]
+    fn in_german_and_in_norwegian() {
+        let (_tmp, library) = library();
+        let found = one(&library, "So ist es (vgl. Nagy 1979, S. 73).");
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", Some("73"), None, Some("vgl."), None));
+        let found = one(&library, "(siehe auch Nagy 1979, S. 73f.; Lord 1960, Kap. 2)");
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", Some("73f."), None, Some("siehe auch"), None));
+        assert_eq!(parts(&found.items[1]), ("Lord 1960", Some("2"), Some("chapter"), None, None));
+        assert_eq!(parts(&one(&library, "(z.B. Nagy 1979)").items[0]).3, Some("z.B."));
+        assert_eq!(parts(&one(&library, "(Nagy und Lord 1991, S. 5)").items[0]).0, "Nagy und Lord 1991");
+        assert_eq!(parts(&one(&library, "(Nagy u.a. 1979)").items[0]).0, "Nagy u.a. 1979");
+        assert_eq!(parts(&one(&library, "(West o.J.)").items[0]).0, "West o.J.");
+
+        let found = one(&library, "Slik er det (se Bjørnson 2004, s. 73).");
+        assert_eq!(parts(&found.items[0]), ("Bjørnson 2004", Some("73"), None, Some("se"), None));
+        assert_eq!(keys(&library, &found.items[0]), vec![likely("bjornson2004")]);
+        assert_eq!(parts(&one(&library, "(jf. Nagy 1979, s. 73)").items[0]).3, Some("jf."));
+        assert_eq!(parts(&one(&library, "(se også Nagy 1979, kap. 3)").items[0]).2, Some("chapter"));
+        assert_eq!(parts(&one(&library, "(Nagy og Lord 1991)").items[0]).0, "Nagy og Lord 1991");
+        assert_eq!(parts(&one(&library, "(Nagy m.fl. 1979)").items[0]).0, "Nagy m.fl. 1979");
+        assert_eq!(proposed(&library, "Bjørnson (2004, s. 12) sier det."), vec!["Bjørnson (2004, s. 12)"]);
+    }
+
+    #[test]
+    fn places_are_in_units_of_utf16() {
+        let (_tmp, library) = library();
+        // Letters outside ASCII, and outside the BMP, which are two units each.
+        let text = "Μῆνιν ἄειδε 𝔄𝔅 😀 (se Bjørnson 2004, s. 73–75; Lévi-Strauss 1962) 𝔄 og Bjørnson (2004).";
+        let found = propose(&library, &[line(text)], &YEARS);
+        assert_eq!(found.len(), 2);
+        let first = &found[0];
+        assert_eq!(first.start, text.encode_utf16().position(|unit| unit == u16::from(b'(')).unwrap());
+        assert_eq!(between(text, first.start, first.end), "(se Bjørnson 2004, s. 73–75; Lévi-Strauss 1962)");
+        assert_eq!(between(text, first.items[0].start, first.items[0].end), "se Bjørnson 2004, s. 73–75");
+        assert_eq!(between(text, first.items[1].start, first.items[1].end), "Lévi-Strauss 1962");
+        assert_eq!(between(text, found[1].start, found[1].end), "Bjørnson (2004)");
+        assert_eq!(found[1].end, text.encode_utf16().count() - 1);
+    }
+
+    #[test]
+    fn what_is_taken_and_what_is_no_text_is_not_looked_at() {
+        let (_tmp, library) = library();
+        let text = "One (Nagy 1979, 73) and two (Lord 1960) and three (West 1988).";
+        let at = |said: &str| {
+            let start = text[..text.find(said).unwrap()].encode_utf16().count();
+            (start, start + said.encode_utf16().count())
+        };
+        let taken = |taken: Vec<(usize, usize)>| -> Vec<String> {
+            let passage = Passage { taken, ..line(text) };
+            propose(&library, &[passage], &YEARS).iter().map(|p| between(text, p.start, p.end)).collect()
+        };
+        assert_eq!(taken(vec![at("(Lord 1960)")]), vec!["(Nagy 1979, 73)", "(West 1988)"]);
+        // What is taken in part is not proposed in part.
+        assert_eq!(taken(vec![at("Nagy"), at("1988")]), vec!["(Lord 1960)"]);
+        assert_eq!(taken(vec![at("One"), at(" and two ")]), vec!["(Nagy 1979, 73)", "(Lord 1960)", "(West 1988)"]);
+
+        // A citation, a formula, a note: one U+FFFC each.
+        assert_eq!(
+            proposed(&library, "One (Nagy 1979\u{fffc}) and (see \u{fffc} and Lord 1960)."),
+            Vec::<String>::new()
+        );
+        assert_eq!(proposed(&library, "Nagy\u{fffc} (1979) and Nagy \u{fffc}(1979)."), Vec::<String>::new());
+        let text = "One\u{fffc} (Nagy 1979, 73)\u{fffc} and Lord\u{fffc} and Nagy (1990).";
+        let found = propose(&library, &[line(text)], &YEARS);
+        assert_eq!(found.len(), 2);
+        assert_eq!(between(text, found[0].start, found[0].end), "(Nagy 1979, 73)");
+        assert_eq!(between(text, found[1].start, found[1].end), "Nagy (1990)");
+    }
+
+    #[test]
+    fn the_end_of_a_line_is_a_blank() {
+        let (_tmp, library) = library();
+        let text =
+            "One\n(see Nagy\n1979,\np. 73;\nLord 1960)\nand Nagy and\nLord\n(1991) \u{fffc}\nand 𝔄 (West\n1988).";
+        let found = propose(&library, &[line(text)], &YEARS);
+        assert_eq!(found.len(), 3, "{found:#?}");
+        assert_eq!(between(text, found[0].start, found[0].end), "(see Nagy\n1979,\np. 73;\nLord 1960)");
+        assert_eq!(parts(&found[0].items[0]), ("Nagy 1979", Some("73"), None, Some("see"), None));
+        assert_eq!(parts(&found[0].items[1]), ("Lord 1960", None, None, None, None));
+        assert_eq!(between(text, found[0].items[0].start, found[0].items[0].end), "see Nagy\n1979,\np. 73");
+        assert_eq!(between(text, found[1].start, found[1].end), "Nagy and\nLord\n(1991)");
+        assert_eq!(found[1].mode, CiteMode::Intext);
+        assert_eq!(found[1].items[0].words, "Nagy and Lord 1991");
+        assert_eq!(keys(&library, &found[1].items[0]), vec![likely("nagylord1991")]);
+        assert_eq!(between(text, found[2].start, found[2].end), "(West\n1988)");
+        assert_eq!(found[2].items[0].words, "West 1988");
+    }
+
+    #[test]
+    fn a_note_that_names_works_of_the_library() {
+        let (_tmp, library) = library();
+        // As Chicago writes its notes.
+        let text = "See Nagy, Best of the Achaeans, 73; but cf. Lord, Singer of Tales, 12, who argues otherwise.";
+        let found = propose(&library, &[note(text)], &YEARS);
+        assert_eq!(found.len(), 1);
+        let found = &found[0];
+        assert_eq!((found.passage.as_str(), found.start, found.end), ("n", 0, text.encode_utf16().count()));
+        assert_eq!(found.mode, CiteMode::Normal);
+        assert_eq!(found.items.len(), 2);
+        assert_eq!(parts(&found.items[0]), ("Nagy, Best of the Achaeans", Some("73"), None, Some("See"), None));
+        assert_eq!(
+            parts(&found.items[1]),
+            ("Lord, Singer of Tales", Some("12"), None, Some("but cf."), Some(", who argues otherwise"))
+        );
+        assert_eq!(between(text, found.items[0].start, found.items[0].end), "See Nagy, Best of the Achaeans, 73");
+        assert_eq!(
+            between(text, found.items[1].start, found.items[1].end),
+            "but cf. Lord, Singer of Tales, 12, who argues otherwise."
+        );
+        assert_eq!(keys(&library, &found.items[0]), vec![likely("nagy1979")]);
+        assert_eq!(found.items[0].suggestions[0].why, "Nagy, The Best of the Achaeans");
+        assert_eq!(keys(&library, &found.items[1]), vec![likely("lord1960"), likely("lord2000")]);
+    }
+
+    #[test]
+    fn the_forms_of_a_work_in_a_note() {
+        let (_tmp, library) = library();
+        let first = |text: &str| -> ProposedItem {
+            let mut found = propose(&library, &[note(text)], &YEARS);
+            assert_eq!(found.len(), 1, "in “{text}”");
+            found.remove(0).items.remove(0)
+        };
+        // In full, the first time.
+        let item = first(
+            "Gregory Nagy, The Best of the Achaeans: Concepts of the Hero in Archaic Greek Poetry (Baltimore: Johns Hopkins University Press, 1979), 73–75.",
+        );
+        assert_eq!(
+            parts(&item),
+            (
+                "Gregory Nagy, The Best of the Achaeans: Concepts of the Hero in Archaic Greek Poetry (Baltimore: Johns Hopkins University Press, 1979)",
+                Some("73–75"),
+                None,
+                None,
+                None
+            )
+        );
+        assert_eq!(keys(&library, &item), vec![likely("nagy1979")]);
+        assert_eq!(item.suggestions[0].why, "Nagy, 1979");
+
+        assert_eq!(
+            parts(&first("G. Nagy, Pindar’s Homer, 12.")),
+            ("G. Nagy, Pindar’s Homer", Some("12"), None, None, None)
+        );
+        assert_eq!(parts(&first("Lord, Singer, 12.")), ("Lord, Singer", Some("12"), None, None, None));
+        assert_eq!(parts(&first("Lord, “Singer of Tales,” 12.")).1, Some("12"));
+        assert_eq!(parts(&first("Cf. Nagy 1979, 73.")), ("Nagy 1979", Some("73"), None, Some("Cf."), None));
+        assert_eq!(parts(&first("Nagy (1979), 73.")), ("Nagy 1979", Some("73"), None, None, None));
+        assert_eq!(parts(&first("Nagy (1979, 73) says so.")), ("Nagy 1979", Some("73"), None, None, Some("says so")));
+        assert_eq!(
+            parts(&first("Nagy’s Best of the Achaeans, ch. 2, is the place.")),
+            ("Nagy’s Best of the Achaeans", Some("2"), Some("chapter"), None, Some(", is the place"))
+        );
+        let item = first("Morris and Powell (eds.), A New Companion to Homer, 101.");
+        assert_eq!(parts(&item), ("Morris and Powell (eds.), A New Companion to Homer", Some("101"), None, None, None));
+        assert_eq!(keys(&library, &item), vec![likely("morris1997")]);
+        let item = first("Vgl. van der Valk, Researches, S. 12.");
+        assert_eq!(parts(&item), ("van der Valk, Researches", Some("12"), None, Some("Vgl."), None));
+
+        // Two works in one sentence.
+        let found = propose(&library, &[note("Nagy, Best, 73 and Lord, Singer, 12.")], &YEARS);
+        assert_eq!(found[0].items.len(), 2);
+        assert_eq!(parts(&found[0].items[0]), ("Nagy, Best", Some("73"), None, None, None));
+        assert_eq!(parts(&found[0].items[1]), ("Lord, Singer", Some("12"), None, Some("and"), None));
+    }
+
+    #[test]
+    fn what_a_note_says_beside_its_works() {
+        let (_tmp, library) = library();
+        let text = "This is contested. See Nagy, Best of the Achaeans, 73. The matter is not closed; cf. Lord, Singer of Tales, 12. More will be said.";
+        let found = propose(&library, &[note(text)], &YEARS);
+        let items = &found[0].items;
+        assert_eq!(items.len(), 2);
+        assert_eq!(
+            parts(&items[0]),
+            (
+                "Nagy, Best of the Achaeans",
+                Some("73"),
+                None,
+                Some("This is contested. See"),
+                Some(". The matter is not closed")
+            )
+        );
+        assert_eq!(
+            parts(&items[1]),
+            ("Lord, Singer of Tales", Some("12"), None, Some("cf."), Some(". More will be said"))
+        );
+        assert_eq!(
+            between(text, items[0].start, items[0].end),
+            "This is contested. See Nagy, Best of the Achaeans, 73. The matter is not closed"
+        );
+        assert_eq!(between(text, items[1].start, items[1].end), "cf. Lord, Singer of Tales, 12. More will be said.");
+    }
+
+    #[test]
+    fn a_note_in_which_nothing_of_the_library_is_found() {
+        let (_tmp, library) = library();
+        for text in [
+            "This is a remark and nothing else.",
+            "Nagy was born in Budapest.",
+            "Finkelberg, The Birth of Literary Fiction, 20.",
+            "See Finkelberg 1998, 20.",
+            "West 1997, 3.",
+            "",
+            "  ",
+        ] {
+            assert!(propose(&library, &[note(text)], &YEARS).is_empty(), "in “{text}”");
+        }
+        // Where every note cites, it is proposed all the same: as one work
+        // for the writer to find, or in its parts where it has the form.
+        let found = propose(&library, &[note(" Finkelberg, The Birth of Literary Fiction, 20. ")], &NOTES);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].items.len(), 1);
+        assert_eq!(
+            parts(&found[0].items[0]),
+            ("Finkelberg, The Birth of Literary Fiction, 20.", None, None, None, None)
+        );
+        assert!(found[0].items[0].suggestions.is_empty());
+        assert_eq!((found[0].start, found[0].end), (0, 48));
+        assert_eq!((found[0].items[0].start, found[0].items[0].end), (1, 47));
+
+        let found = propose(&library, &[note("See Finkelberg 1998, 20.")], &NOTES);
+        assert_eq!(parts(&found[0].items[0]), ("Finkelberg 1998", Some("20"), None, Some("See"), None));
+        assert!(propose(&library, &[note("")], &NOTES).is_empty());
+
+        // The brackets in a note that is not proposed as a whole.
+        let text = "This is a remark (see Nagy 1979, 73), and \u{fffc} is no text.";
+        let found = propose(&library, &[note(text)], &YEARS);
+        assert_eq!(found.len(), 1);
+        assert_eq!(between(text, found[0].start, found[0].end), "(see Nagy 1979, 73)");
+    }
+
+    #[test]
+    fn the_work_that_was_cited_before() {
+        let (_tmp, library) = library();
+        let notes = [
+            note("Nagy, Best of the Achaeans, 73."),
+            note("Ibid., 75."),
+            note("Lord, Singer of Tales, 12; ibid., 14."),
+            note("Nagy, op. cit., 80."),
+            note("Ibid. See also West, “The Rise of the Greek Epic,” 151."),
+        ];
+        let found = propose(&library, &notes, &YEARS);
+        assert_eq!(found.len(), 5);
+        let ibid = &found[1].items[0];
+        assert_eq!(parts(ibid), ("Ibid.", Some("75"), None, None, None));
+        assert_eq!(keys(&library, ibid), vec![likely("nagy1979")]);
+        assert_eq!(ibid.suggestions[0].why, "the work cited before this: Nagy, The Best of the Achaeans");
+
+        assert_eq!(found[2].items.len(), 2);
+        assert_eq!(parts(&found[2].items[1]), ("ibid.", Some("14"), None, None, None));
+        assert_eq!(keys(&library, &found[2].items[1]), vec![likely("lord1960"), likely("lord2000")]);
+
+        // The work of the author that was cited last, not the last work.
+        let again = &found[3].items[0];
+        assert_eq!(parts(again), ("Nagy, op. cit.", Some("80"), None, None, None));
+        assert_eq!(keys(&library, again), vec![likely("nagy1979")]);
+
+        assert_eq!(found[4].items.len(), 2);
+        assert_eq!(parts(&found[4].items[0]), ("Ibid.", None, None, None, None));
+        assert_eq!(keys(&library, &found[4].items[0]), vec![likely("nagy1979")]);
+        assert_eq!(parts(&found[4].items[1]).3, Some("See also"));
+        assert_eq!(keys(&library, &found[4].items[1]), vec![likely("west1988")]);
+
+        // In the line, within brackets.
+        let text = "It is so (Nagy 1979, 73), and so again (ibid., 75).";
+        let found = propose(&library, &[line(text)], &YEARS);
+        assert_eq!(found.len(), 2);
+        assert_eq!(parts(&found[1].items[0]), ("ibid.", Some("75"), None, None, None));
+        assert_eq!(keys(&library, &found[1].items[0]), vec![likely("nagy1979")]);
+        // Nothing was cited before it.
+        assert!(propose(&library, &[line("It is so (ibid., 75).")], &YEARS).is_empty());
+        assert!(propose(&library, &[note("Ibid., 75.")], &YEARS).is_empty());
+    }
+
+    #[test]
+    fn a_library_that_has_nothing() {
+        let tmp = tempfile::tempdir().unwrap();
+        let library = Library::open_at(&tmp.path().join("library")).unwrap();
+        let found = one(&library, "It is so (see Nagy 1979, 73).");
+        assert_eq!(parts(&found.items[0]), ("Nagy 1979", Some("73"), None, Some("see"), None));
+        assert!(found.items[0].suggestions.is_empty());
+        assert!(propose(&library, &[note("Nagy, Best of the Achaeans, 73.")], &YEARS).is_empty());
+        assert_eq!(propose(&library, &[note("Nagy, Best of the Achaeans, 73.")], &NOTES).len(), 1);
+    }
 }

@@ -302,6 +302,11 @@ impl Shelf {
                 }
             }
         }
+        // A work is cited by the one who stands first in it: where the
+        // first name is the first of some works, it is one of those.
+        if near.iter().any(|&i| self.works[i].named(said.names).1) {
+            near.retain(|&i| self.works[i].named(said.names).1);
+        }
         // (the work, how sure, the order among those as sure, why)
         let mut found: Vec<(usize, Sure, (usize, usize, usize, i32), String)> = Vec::new();
         for i in near {
@@ -322,7 +327,10 @@ impl Shelf {
             } else {
                 (Sure::Possible, format!("{}, another year", work.people))
             };
-            found.push((i, sure, (names, titled, 0, -away.unwrap_or(0)), why));
+            // The year that is said first is that of what is cited; the
+            // other is the year the work first came out.
+            let main = said.years.first().is_some_and(|year| work.years.first() == Some(year));
+            found.push((i, sure, (names, titled, usize::from(main), -away.unwrap_or(0)), why));
         }
         if found.is_empty()
             && let Some(name) = said.names.first()
@@ -339,7 +347,8 @@ impl Shelf {
                         .flatten()
                         .map(|form| strsim::normalized_levenshtein(form, name))
                         .fold(0.0, f64::max);
-                    if !(behind || alike >= 0.8) || found.iter().any(|(w, ..)| *w == i) {
+                    // One letter of four may be another: "Nagi".
+                    if !(behind || alike >= 0.75) || found.iter().any(|(w, ..)| *w == i) {
                         continue;
                     }
                     let why = if behind {
@@ -350,6 +359,11 @@ impl Shelf {
                     found.push((i, Sure::Possible, (usize::from(behind), 0, (alike * 100.0) as usize, 0), why));
                 }
             }
+        }
+        // Where a work has the name and the year, the other works of the
+        // author are not what is meant.
+        if found.iter().any(|(_, sure, ..)| *sure == Sure::Likely) {
+            found.retain(|(_, sure, ..)| *sure == Sure::Likely);
         }
         found.sort_by(|a, b| b.1.cmp(&a.1).then(b.2.cmp(&a.2)).then(a.0.cmp(&b.0)));
         found.truncate(MOST);
