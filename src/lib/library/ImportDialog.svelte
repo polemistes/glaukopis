@@ -97,7 +97,10 @@
   }
 
   function gains(names: string[]): string {
-    return names.map((n) => (n === 'file' ? 'File' : fieldLabel(n))).join(', ');
+    // What an entry is in Zotero is no field of the form, and has no name there.
+    const named = (n: string) =>
+      n === 'file' ? 'File' : n === 'glaukopis-zotero' ? 'Its key in Zotero' : fieldLabel(n);
+    return names.map(named).join(', ');
   }
 </script>
 
