@@ -1,4 +1,6 @@
 import { describe as group, expect, it } from 'vitest';
+import { FluentResource } from '@fluent/bundle';
+import { languages } from '$lib/i18n';
 import {
   add,
   describe,
@@ -18,6 +20,8 @@ import {
   setNameOption,
   title,
   usesOf,
+  variableName,
+  variableWords,
 } from './csl';
 
 const STYLE = `<?xml version="1.0" encoding="utf-8"?>
@@ -263,5 +267,81 @@ group('the parts of a style', () => {
     const out = serialise(s);
     expect(() => parse(out)).not.toThrow();
     expect(out).toContain('<text variable="publisher-place" suffix=":"/>');
+  });
+});
+
+group('the words for a style', () => {
+  const CONDITIONS = STYLE.replace(
+    '<text variable="locator"/>',
+    '<choose><if type="book chapter thesis" match="any"><text variable="title"/></if>' +
+      '<else-if variable="title editor" match="none"><text value="x"/></else-if>' +
+      '<else-if locator="page chapter" is-numeric="volume"><text value="y"/></else-if></choose>',
+  );
+  const conditions = (s: ReturnType<typeof parse>) =>
+    Array.from(s.root.querySelectorAll('citation if, citation else-if')).map(describe);
+
+  /** What is said while the interface is in a language. */
+  function saidIn<T>(tag: string, say: () => T): T {
+    languages.current = tag;
+    try {
+      return say();
+    } finally {
+      languages.current = 'en';
+    }
+  }
+
+  it('join what is said of a condition as the language does', () => {
+    const s = parse(CONDITIONS);
+    expect(conditions(s)).toEqual([
+      'If the work is a book, a chapter or a thesis',
+      'Or else, if it has no title and editor',
+      'Or else, if the volume is a number and the place cited is a page or a chapter',
+    ]);
+    expect(saidIn('nb', () => conditions(s))).toEqual([
+      'Hvis verket er en bok, et kapittel eller en avhandling',
+      'Ellers, hvis det mangler tittel og redaktør',
+      'Ellers, hvis bindet er et tall og det vises til en side eller et kapittel',
+    ]);
+  });
+
+  it('are in the language of the interface', () => {
+    const s = parse(STYLE);
+    const l = layout(s, 'bibliography')!;
+    const parts = partsOf(s, partsOf(s, l)[0]);
+    expect(saidIn('nb', () => parts.map(describe))).toEqual([
+      '«author»',
+      'Datoen',
+      '«title»',
+      'Forlaget',
+    ]);
+    expect(saidIn('nb', () => formWords(l))).toBe('foran «.»');
+    expect(variableWords('author editor')).toBe('the author, or else the editor');
+    expect(saidIn('nb', () => variableWords('author editor'))).toBe(
+      'forfatteren, ellers redaktøren',
+    );
+    expect(variableName('container-title')).toBe('title of the journal or book');
+    expect(saidIn('nb', () => variableName('container-title'))).toBe(
+      'tittel på tidsskrift eller bok',
+    );
+    // What has no words is shown by its name.
+    expect(variableWords('no-such')).toBe('“no-such”');
+    expect(variableName('no-such')).toBe('no-such');
+  });
+
+  it('name every variable with its article and without it, in every language', () => {
+    const files = import.meta.glob('/locales/*/style.ftl', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    }) as Record<string, string>;
+    expect(Object.keys(files).length).toBeGreaterThan(1);
+    for (const [path, text] of Object.entries(files)) {
+      const variables = new FluentResource(text).body.filter((m) =>
+        m.id.startsWith('style-variable-'),
+      );
+      expect(variables.length, path).toBeGreaterThan(50);
+      const lacking = variables.filter((m) => !m.attributes.bare).map((m) => m.id);
+      expect(lacking, path).toEqual([]);
+    }
   });
 });
