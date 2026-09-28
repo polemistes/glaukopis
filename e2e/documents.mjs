@@ -248,7 +248,11 @@ try {
     found.cited,
   );
   const told = await remarks();
-  check('the key that was not found is named', told.some((r) => /not in your library: nokey\./.test(r)), told.join(' ‖ '));
+  check(
+    'the citation by a key that the library has not is said to be found, and that it can be gone through',
+    told.some((r) => /^1 citation was found that is not yet tied to a reference of your library\. .* can be gone through/.test(r)),
+    told.join(' ‖ '),
+  );
   check('the list of references of the document is said to be there', told.some((r) => /under “References”/.test(r)));
   check('nothing is said in the words of programs', told.every((r) => !/pandoc|json|ast\b/i.test(r)), told.join(' ‖ '));
   await app.screenshot('documents-2-read');
@@ -308,10 +312,12 @@ try {
        equation: s.querySelectorAll('.equation math').length,
        quote: (s.querySelector('blockquote') || {}).textContent,
        items: Array.from(s.querySelectorAll('ul li')).map((e) => e.textContent.trim()),
+       found: Array.from(s.querySelectorAll('.found')).map((e) => [e.dataset.by, e.textContent]),
      };`,
   );
   check('the citation whose key is in the library is a citation of that work', word.citations === 1 && /Nagy/.test(word.citation) && /73/.test(word.citation) && word.missing === false, JSON.stringify(word));
   check('the one whose key is not stays the text it was written as', word.text.includes('as [@nokey, 12] does not say'), word.text);
+  check('and is marked as a citation that was found, by its tag', JSON.stringify(word.found) === '[["key","[@nokey, 12]"]]', JSON.stringify(word.found));
   check('the formula is a formula, in the line and by itself', word.math === 1 && word.equation === 1, JSON.stringify(word));
   check('the quotation is a quotation', word.quote === 'Sing, goddess, the wrath.', String(word.quote));
   check('the list is a list', JSON.stringify(word.items) === '["of gods","of heroes"]', JSON.stringify(word.items));
