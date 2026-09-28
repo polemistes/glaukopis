@@ -38,6 +38,8 @@ pub(super) struct Work {
     /// The same of those who stand behind them: the editors of a work that
     /// has authors.
     behind: Vec<Vec<String>>,
+    /// The words of the given names of those who stand first, folded.
+    given: Vec<String>,
     /// The year, and the year it first came out where that is another.
     years: Vec<i32>,
     /// The title without its subtitle, the short title, and the whole
@@ -48,6 +50,12 @@ pub(super) struct Work {
     /// The title as it is shown, cut short.
     title: String,
 }
+
+/// The order of works that are as sure as one another, the greatest first:
+/// how well the names agree, how much of the title was said, whether the
+/// year is that of the work and not of its first coming out, and how near
+/// the year is.
+type Order = (usize, usize, usize, i32);
 
 /// A word that follows a name in a text, folded.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,7 +171,9 @@ impl Work {
                 titles.push(words);
             }
         }
-        Work { names, behind, years, titles, people: short_list(&creators), title: cut(&main, 48) }
+        let given: Vec<String> =
+            creators.iter().flat_map(|p| fold(&p.given).split(' ').map(str::to_owned).collect::<Vec<_>>()).collect();
+        Work { names, behind, given, years, titles, people: short_list(&creators), title: cut(&main, 48) }
     }
 
     /// How many of the names stand first in the work, and whether the first
@@ -237,6 +247,12 @@ impl Shelf {
         self.by_name.get(name).map_or(&[], Vec::as_slice)
     }
 
+    /// Whether a word, folded, is a given name of one who stands first in
+    /// one of these works.
+    pub(super) fn is_given(&self, works: &[usize], word: &str) -> bool {
+        works.iter().filter_map(|&i| self.works.get(i)).any(|work| work.given.iter().any(|given| given == word))
+    }
+
     /// Whether one so named has a work of one of these years.
     pub(super) fn has(&self, name: &str, years: &[i32]) -> bool {
         self.named(name).iter().any(|&i| self.works[i].year_away(years) == Some(0))
@@ -292,8 +308,12 @@ impl Shelf {
                 }
             }
         }
-        // (the work, how sure, the order among those as sure, why)
-        let mut found: Vec<(usize, Sure, (usize, usize, usize, i32), String)> = Vec::new();
+        // A work is cited by the one who stands first in it: where the
+        // first name is the first of some works, it is one of those.
+        if near.iter().any(|&i| self.works[i].named(said.names).1) {
+            near.retain(|&i| self.works[i].named(said.names).1);
+        }
+        let mut found: Vec<(usize, Sure, Order, String)> = Vec::new();
         for i in near {
             let work = &self.works[i];
             let (agree, first) = work.named(said.names);
@@ -312,7 +332,10 @@ impl Shelf {
             } else {
                 (Sure::Possible, format!("{}, another year", work.people))
             };
-            found.push((i, sure, (names, titled, 0, -away.unwrap_or(0)), why));
+            // The year that is said first is that of what is cited; the
+            // other is the year the work first came out.
+            let main = said.years.first().is_some_and(|year| work.years.first() == Some(year));
+            found.push((i, sure, (names, titled, usize::from(main), -away.unwrap_or(0)), why));
         }
         if found.is_empty()
             && let Some(name) = said.names.first()
@@ -329,7 +352,8 @@ impl Shelf {
                         .flatten()
                         .map(|form| strsim::normalized_levenshtein(form, name))
                         .fold(0.0, f64::max);
-                    if !(behind || alike >= 0.8) || found.iter().any(|(w, ..)| *w == i) {
+                    // One letter of four may be another: "Nagi".
+                    if !(behind || alike >= 0.75) || found.iter().any(|(w, ..)| *w == i) {
                         continue;
                     }
                     let why = if behind {
@@ -340,6 +364,11 @@ impl Shelf {
                     found.push((i, Sure::Possible, (usize::from(behind), 0, (alike * 100.0) as usize, 0), why));
                 }
             }
+        }
+        // Where a work has the name and the year, the other works of the
+        // author are not what is meant.
+        if found.iter().any(|(_, sure, ..)| *sure == Sure::Likely) {
+            found.retain(|(_, sure, ..)| *sure == Sure::Likely);
         }
         found.sort_by(|a, b| b.1.cmp(&a.1).then(b.2.cmp(&a.2)).then(a.0.cmp(&b.0)));
         found.truncate(MOST);
@@ -359,15 +388,25 @@ impl Shelf {
         let said: Vec<String> = titles.iter().filter(|t| !t.is_empty()).map(|t| t.join(" ")).collect();
 
         let mut near: Vec<usize> = Vec::new();
-        let lists = names
-            .iter()
-            .filter_map(|name| self.by_name.get(name))
-            .chain(titles.iter().flatten().filter(|w| tells(w)).filter_map(|word| self.by_title_word.get(word)));
-        for list in lists {
-            for &i in list {
-                if !near.contains(&i) {
-                    near.push(i);
-                }
+        for &i in names.iter().filter_map(|name| self.by_name.get(name)).flatten() {
+            if !near.contains(&i) {
+                near.push(i);
+            }
+        }
+        // Of those that share words of the title, the ones that share most:
+        // a word such as "Homer" is in many titles of one library.
+        let mut telling: Vec<&String> = titles.iter().flatten().filter(|word| tells(word)).collect();
+        telling.sort_unstable();
+        telling.dedup();
+        let mut shared: HashMap<usize, usize> = HashMap::new();
+        for &i in telling.iter().filter_map(|word| self.by_title_word.get(*word)).flatten() {
+            *shared.entry(i).or_default() += 1;
+        }
+        let mut shared: Vec<(usize, usize)> = shared.into_iter().collect();
+        shared.sort_unstable_by_key(|(i, count)| (std::cmp::Reverse(*count), *i));
+        for (i, _) in shared.into_iter().take(40) {
+            if !near.contains(&i) {
+                near.push(i);
             }
         }
 
@@ -525,8 +564,12 @@ pub(super) fn suggest(library: &Library, item: &FoundItem) -> Vec<Suggestion> {
         gathered.add(vec![(i, Sure::Certain, why.to_owned())]);
     }
 
-    // What the file says of the work.
-    if let Some(said) = item.data.as_ref().and_then(csl::convert) {
+    // What the file says of the work: looked at where the key and the tag
+    // have not said which work it is. It is what takes time, and beside
+    // what is certain the rest is of no use.
+    if gathered.certain.is_none()
+        && let Some(said) = item.data.as_ref().and_then(csl::convert)
+    {
         let entry = said.draft.to_entry();
         let hits = shelf.prints.find(&duplicates::fingerprint(&entry), None);
         gathered.add(
@@ -545,7 +588,7 @@ pub(super) fn suggest(library: &Library, item: &FoundItem) -> Vec<Suggestion> {
 
     let mut found = gathered.found;
     // The order within those that are as sure is that of what is most certain.
-    found.sort_by(|a, b| b.1.cmp(&a.1));
+    found.sort_by_key(|(_, sure, _)| std::cmp::Reverse(*sure));
     found.truncate(MOST);
     found.into_iter().map(|(i, sure, why)| Suggestion { reference: shelf.ids[i].clone(), sure, why }).collect()
 }
@@ -713,13 +756,10 @@ mod tests {
         let found = suggest(&library, &item);
         assert_eq!(keys(&library, &found), vec![("west1988".into(), Sure::Likely), ("west1988b".into(), Sure::Likely)]);
 
-        // The tag says which of them is meant.
+        // The tag says which of them is meant, and then nothing else is looked for.
         let item = FoundItem { key: Some("west1988b".into()), ..item };
         let found = suggest(&library, &item);
-        assert_eq!(
-            keys(&library, &found),
-            vec![("west1988b".into(), Sure::Certain), ("west1988".into(), Sure::Likely)]
-        );
+        assert_eq!(keys(&library, &found), vec![("west1988b".into(), Sure::Certain)]);
     }
 
     #[test]
