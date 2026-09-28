@@ -60,7 +60,7 @@ tables-numbered-as = Nummerert, som «Tabell 1»
 
 ## En tabell bedt om etter størrelse.
 
-tables-ask = En tabell av hvilken størrelse
+tables-ask = Hvor stor tabellen skal være
 tables-ask-heading = En tabell
 tables-ask-grid = Pek på størrelsen på tabellen
 tables-ask-by = { $rows } ganger { $columns }
