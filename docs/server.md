@@ -71,6 +71,8 @@ glaukopis-server --listen 127.0.0.1:8375 --data /var/lib/glaukopis-server --trus
 | `--password-file` | `GLAUKOPIS_SERVER_PASSWORD_FILE` | A file that holds the password, in place of the above. |
 | `--trust-proxy` | `GLAUKOPIS_SERVER_TRUST_PROXY` | Take the addresses of callers from what the proxy says. Use it behind a proxy, and only there. |
 | `--max-rooms` | `GLAUKOPIS_SERVER_MAX_ROOMS` | The most projects the server will hold. |
+| `--max-file-mb` | `GLAUKOPIS_SERVER_MAX_FILE_MB` | The most one figure of a project may hold, in megabytes. `50` if not given. |
+| `--max-room-mb` | `GLAUKOPIS_SERVER_MAX_ROOM_MB` | The most the figures of one project may hold together, in megabytes. `1024` if not given. |
 
 How much is written to the log is set with `GLAUKOPIS_SERVER_LOG`: `warn`,
 `info` (the default) or `debug`.
@@ -85,8 +87,15 @@ location / {
     proxy_set_header Connection "upgrade";
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_read_timeout 1h;
+    client_max_body_size 50m;
 }
 ```
+
+A proxy may have a limit of its own on how much may be sent to it at a time,
+and a figure is sent whole. Caddy has none unless it is given one. nginx
+takes 1 MB unless told otherwise, which is less than many figures hold: the
+last line above lets through what the server itself takes. If `--max-file-mb`
+is changed, change it there as well.
 
 On a network of your own, at home or in a department, the server can be used
 without a proxy: start it with `--listen 0.0.0.0:8375` and give its address as
@@ -101,7 +110,10 @@ Everything is in the data directory, one directory for each project:
 rooms/<id of the project>/room.json    the name, the collaborators, the codes
 rooms/<id of the project>/state.bin    the project itself
 rooms/<id of the project>/state.bak    as it was when it was last opened
+rooms/<id of the project>/files/       its figures, each named by the SHA-256 of what it holds
 ```
+
+A project that is taken off the server by its owner goes with all of this.
 
 To keep a copy of the server, copy the directory. To move the server, move
 the directory. Every collaborator also has each project whole on their own
@@ -113,6 +125,8 @@ shared anew from any copy.
 - The server can read the projects it keeps. They are not encrypted on its
   disk. Run it yourself, or have it run by someone you trust with your
   manuscripts.
+- The figures of a project are sent to the server and kept there, so that
+  they reach everyone who has the project. They are not encrypted either.
 - Tokens, by which the server knows the owner and the collaborators of a
   project, are not kept: only their hashes are. Invitation codes are kept as
   they are, so that the owner can be shown them again; they can be made to
@@ -129,4 +143,5 @@ shared anew from any copy.
 | Glaukopis says that there is no Glaukopis server at the address | The address; whether the proxy passes on to the right port. `curl https://…/api/info` shows what answers. |
 | Sharing works, but the project is never "connected" | The proxy does not pass WebSocket on. See the lines for nginx above. |
 | "Too many attempts have been made from here" for everyone at once | The server is behind a proxy and was started without `--trust-proxy`, so that all callers seem to be the proxy. |
+| A figure is refused as too large, or does not reach the others | The limits `--max-file-mb` and `--max-room-mb`. Behind nginx, `client_max_body_size`. |
 | The server does not start | `journalctl -u glaukopis-server` says why. Most often the port is in use, or the data directory cannot be written to. |

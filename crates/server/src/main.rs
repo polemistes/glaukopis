@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use clap::Parser;
-use glaukopis_server::{Config, Server, serve};
+use glaukopis_server::{Config, MAX_FILE_BYTES, MAX_ROOM_BYTES, Server, serve};
 
 /// The collaboration server of Glaukopis.
 ///
@@ -38,6 +38,14 @@ struct Args {
     /// The most projects the server will hold.
     #[arg(long, env = "GLAUKOPIS_SERVER_MAX_ROOMS")]
     max_rooms: Option<usize>,
+
+    /// The most one file of a project may hold, in megabytes.
+    #[arg(long, env = "GLAUKOPIS_SERVER_MAX_FILE_MB", value_name = "MB", default_value_t = MAX_FILE_BYTES >> 20)]
+    max_file_mb: u64,
+
+    /// The most the files of one project may hold together, in megabytes.
+    #[arg(long, env = "GLAUKOPIS_SERVER_MAX_ROOM_MB", value_name = "MB", default_value_t = MAX_ROOM_BYTES >> 20)]
+    max_room_mb: u64,
 }
 
 fn default_data() -> PathBuf {
@@ -94,6 +102,8 @@ async fn run(args: Args) -> Result<(), String> {
         password: password(&args)?,
         trust_proxy: args.trust_proxy,
         max_rooms: args.max_rooms,
+        max_file_bytes: args.max_file_mb.saturating_mul(1 << 20),
+        max_room_bytes: args.max_room_mb.saturating_mul(1 << 20),
     };
     let open_to_all = config.password.is_none();
     let server =

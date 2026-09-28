@@ -8,8 +8,12 @@
 //! Who may do what is decided by tokens. Publishing a project yields the
 //! owner's token; the owner makes invitation codes; presenting a code yields a
 //! member's token. Only hashes of tokens are kept.
+//!
+//! The figures of a project are files, which the project names by what they
+//! hold. They are sent apart from the project and kept beside it.
 
 pub mod api;
+pub mod files;
 pub mod registry;
 pub mod rooms;
 pub mod secrets;
@@ -22,6 +26,7 @@ use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio::sync::Mutex;
 
+pub use files::{Files, MAX_FILE_BYTES, MAX_ROOM_BYTES};
 pub use registry::Registry;
 pub use rooms::Rooms;
 
@@ -34,11 +39,22 @@ pub struct Config {
     pub trust_proxy: bool,
     /// The most rooms the server will hold. None for no limit.
     pub max_rooms: Option<usize>,
+    /// The most one file of a room may hold.
+    pub max_file_bytes: u64,
+    /// The most the files of one room may hold together.
+    pub max_room_bytes: u64,
 }
 
 impl Config {
     pub fn new(data: impl Into<PathBuf>) -> Self {
-        Config { data: data.into(), password: None, trust_proxy: false, max_rooms: None }
+        Config {
+            data: data.into(),
+            password: None,
+            trust_proxy: false,
+            max_rooms: None,
+            max_file_bytes: MAX_FILE_BYTES,
+            max_room_bytes: MAX_ROOM_BYTES,
+        }
     }
 }
 
@@ -46,6 +62,7 @@ pub struct Server {
     pub config: Config,
     pub registry: Mutex<Registry>,
     pub rooms: Rooms,
+    pub files: Files,
     pub limiter: Mutex<api::Limiter>,
     pub tickets: Mutex<api::Tickets>,
 }
@@ -57,10 +74,13 @@ impl Server {
         std::fs::create_dir_all(&config.data)?;
         let registry = Registry::open(&config.data)?;
         let rooms = Rooms::new(config.data.clone());
+        let files = Files::new(config.data.clone(), config.max_file_bytes, config.max_room_bytes);
+        files.sweep();
         Ok(Arc::new(Server {
             config,
             registry: Mutex::new(registry),
             rooms,
+            files,
             limiter: Mutex::new(api::Limiter::default()),
             tickets: Mutex::new(api::Tickets::default()),
         }))

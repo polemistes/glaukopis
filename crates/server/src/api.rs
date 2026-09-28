@@ -1,6 +1,7 @@
 //! What the server answers: a handful of calls over HTTP for publishing,
 //! inviting and joining, and the WebSocket over which a project is kept the
-//! same for everyone.
+//! same for everyone. The files of a project, its figures, are sent and
+//! fetched over HTTP, each by the name the project has for it.
 //!
 //! The token of an owner or a member is sent in the `Authorization` header and
 //! never in an address, where it would end up in the logs of whatever stands
@@ -8,10 +9,11 @@
 //! it is opened with a ticket: good for one connection, and for a minute.
 
 use std::collections::HashMap;
+use std::io;
 use std::net::{IpAddr, SocketAddr};
 use std::time::{Duration, Instant};
 
-use axum::body::Bytes;
+use axum::body::{Body, Bytes};
 use axum::extract::ws::{CloseFrame, Message as Frame, WebSocket, WebSocketUpgrade};
 use axum::extract::{ConnectInfo, Path, Query, State};
 use axum::http::{HeaderMap, StatusCode, header};
@@ -20,7 +22,10 @@ use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
+use tokio::io::AsyncReadExt;
+use tokio::sync::mpsc;
 
+use crate::files::{Begun, Kept, Refused};
 use crate::registry::{self, Invitation, Refusal, Registry, RoomMeta, Who};
 use crate::rooms::{EnterError, Outgoing};
 use crate::{Shared, secrets};
@@ -81,6 +86,22 @@ impl From<Refusal> for Failure {
             }
         };
         Failure::new(status, kind, refusal.to_string())
+    }
+}
+
+impl From<Refused> for Failure {
+    fn from(refused: Refused) -> Self {
+        let (status, kind) = match &refused {
+            Refused::NoRoom => (StatusCode::NOT_FOUND, "no-room"),
+            Refused::NoFile => (StatusCode::NOT_FOUND, "no-file"),
+            Refused::BadName | Refused::NotAsNamed => (StatusCode::BAD_REQUEST, "invalid"),
+            Refused::FileTooLarge(_) | Refused::RoomFull(_) => (StatusCode::PAYLOAD_TOO_LARGE, "too-large"),
+            Refused::Io(e) => {
+                tracing::error!(%e, "the disk could not be used for a file");
+                (StatusCode::INTERNAL_SERVER_ERROR, "server")
+            }
+        };
+        Failure::new(status, kind, refused.to_string())
     }
 }
 
@@ -500,6 +521,165 @@ async fn join(
 }
 
 // ---------------------------------------------------------------------------
+// The files of a room
+
+/// How much of a file is read from the disk at a time when it is sent.
+const PIECE: usize = 64 << 10;
+
+/// How many pieces of a file that arrives may wait to be written. When the
+/// disk is slower than the network, the network is made to wait.
+const UNWRITTEN: usize = 16;
+
+/// Does what is done on the disk on a thread for such work, so that the
+/// others who are served are not kept waiting for it.
+async fn aside<T: Send + 'static>(work: impl FnOnce() -> Result<T, Refused> + Send + 'static) -> Answer<T> {
+    let done = tokio::task::spawn_blocking(work).await.unwrap_or_else(|e| Err(Refused::Io(io::Error::other(e))));
+    Ok(done?)
+}
+
+#[derive(Serialize)]
+struct FilesView {
+    files: Vec<Kept>,
+}
+
+async fn files(State(server): State<Shared>, Path(room): Path<String>, headers: HeaderMap) -> Answer<Json<FilesView>> {
+    server.registry.lock().await.admit(&room, bearer(&headers)?)?;
+    let files = aside(move || server.files.list(&room)).await?;
+    Ok(Json(FilesView { files }))
+}
+
+async fn file(
+    State(server): State<Shared>,
+    Path((room, hash)): Path<(String, String)>,
+    headers: HeaderMap,
+) -> Answer<Response> {
+    server.registry.lock().await.admit(&room, bearer(&headers)?)?;
+    let (file, size) = aside(move || server.files.open(&room, &hash)).await?;
+    // Sent as it is read, a piece at a time: no file is held in memory whole.
+    let pieces = futures_util::stream::unfold(tokio::fs::File::from_std(file), |mut file| async move {
+        let mut piece = vec![0; PIECE];
+        match file.read(&mut piece).await {
+            Ok(0) => None,
+            Ok(read) => {
+                piece.truncate(read);
+                Some((Ok(Bytes::from(piece)), file))
+            }
+            Err(e) => Some((Err(e), file)),
+        }
+    });
+    let told =
+        [(header::CONTENT_TYPE, "application/octet-stream".to_owned()), (header::CONTENT_LENGTH, size.to_string())];
+    Ok((told, Body::from_stream(pieces)).into_response())
+}
+
+#[derive(Serialize)]
+struct FileStored {
+    hash: String,
+    size: u64,
+    /// Whether it was stored now. If not, the room had it already.
+    stored: bool,
+}
+
+impl FileStored {
+    fn answer(kept: Kept, stored: bool) -> (StatusCode, Json<FileStored>) {
+        let status = if stored { StatusCode::CREATED } else { StatusCode::OK };
+        (status, Json(FileStored { hash: kept.hash, size: kept.size, stored }))
+    }
+}
+
+/// Takes in a file of a room.
+///
+/// What is sent is taken as it comes, and not by way of axum, whose limit on
+/// what it takes in is for what it collects in memory. The limits here are
+/// those of the store, which counts what it writes and takes no more when one
+/// of them is passed.
+async fn store(
+    State(server): State<Shared>,
+    Path((room, hash)): Path<(String, String)>,
+    headers: HeaderMap,
+    body: Body,
+) -> Answer<(StatusCode, Json<FileStored>)> {
+    let token = bearer(&headers)?;
+    let announced = headers.get(header::CONTENT_LENGTH).and_then(|v| v.to_str().ok()).and_then(|v| v.parse().ok());
+    let begun = {
+        // The list of rooms is held while the file is begun, and again while
+        // it is given its name, so that the room is not taken off the server
+        // meanwhile. It is not held while the file arrives, which may take long.
+        let registry = server.registry.lock().await;
+        registry.admit(&room, token)?;
+        let (server, room, hash) = (server.clone(), room.clone(), hash.clone());
+        aside(move || server.files.begin(&room, &hash, announced)).await?
+    };
+    let mut body = body.into_data_stream();
+    let mut arriving = match begun {
+        Begun::Had(kept) => {
+            // What is sent is let come, and let go: an answer given to one
+            // who is still sending may never be heard. No more is let come
+            // than a file may hold, and nothing from one who waits to be
+            // told whether to send.
+            let mut came = 0;
+            while !headers.contains_key(header::EXPECT)
+                && came <= server.config.max_file_bytes
+                && let Some(Ok(piece)) = body.next().await
+            {
+                came += piece.len() as u64;
+            }
+            return Ok(FileStored::answer(kept, false));
+        }
+        Begun::Arriving(arriving) => arriving,
+    };
+
+    // Counting and writing are done on a thread of their own, which is handed
+    // the pieces as they come.
+    let (coming, mut came) = mpsc::channel::<Bytes>(UNWRITTEN);
+    let writing = tokio::task::spawn_blocking(move || {
+        while let Some(piece) = came.blocking_recv() {
+            arriving.take(&piece)?;
+        }
+        Ok(arriving)
+    });
+    let mut whole = true;
+    loop {
+        let piece = tokio::select! {
+            // The one who writes has given up, and tells why below. No more
+            // is read, and what may be on its way is not waited for.
+            _ = coming.closed() => break,
+            piece = body.next() => piece,
+        };
+        match piece {
+            Some(Ok(piece)) => {
+                if coming.send(piece).await.is_err() {
+                    break;
+                }
+            }
+            Some(Err(_)) => {
+                whole = false;
+                break;
+            }
+            None => break,
+        }
+    }
+    drop(coming);
+    let arriving = writing.await.unwrap_or_else(|e| Err(Refused::Io(io::Error::other(e))))?;
+    if !whole {
+        return Err(Failure::new(StatusCode::BAD_REQUEST, "invalid", "the file did not arrive whole"));
+    }
+
+    let registry = server.registry.lock().await;
+    // The room may be gone since, or the one who sends no longer among its collaborators.
+    registry.admit(&room, token)?;
+    let (kept, stored) = {
+        let server = server.clone();
+        aside(move || server.files.keep(arriving)).await?
+    };
+    drop(registry);
+    if stored {
+        tracing::debug!(%room, hash = %kept.hash, size = kept.size, "a file was stored");
+    }
+    Ok(FileStored::answer(kept, stored))
+}
+
+// ---------------------------------------------------------------------------
 // The WebSocket
 
 /// Codes for closing that are the server's own, besides those of the rooms.
@@ -624,6 +804,8 @@ pub fn router(server: Shared) -> Router {
         .route("/api/rooms/{room}/invitations", post(invite))
         .route("/api/rooms/{room}/invitations/{code}", delete(withdraw))
         .route("/api/rooms/{room}/members/{member}", delete(remove_member))
+        .route("/api/rooms/{room}/files", get(files))
+        .route("/api/rooms/{room}/files/{hash}", get(file).put(store))
         .route("/api/join", post(join))
         .route("/ws/{room}", get(socket))
         .with_state(server)
