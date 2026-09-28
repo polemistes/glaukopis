@@ -393,6 +393,66 @@ add to; your own stay as you wrote them.
 References are found by what is written about them, as by their authors and
 titles.
 
+### Citations that were found
+
+A text that was written elsewhere has its citations as they were made
+there: by Zotero or Mendeley, by a tag such as `[@nagy1979]`, or as words
+and nothing else. When such a text is brought in, what could not be made a
+citation at once stands in the text as the text it was, with a line of dots
+under it. It is a citation that was *found*, and waits to be tied to a
+reference of your library.
+
+**Citations that were found…** opens the window in which they are gone
+through. It is in the menu **More** of the tools over the text and in the
+menu of the tab of a map, where it says how many there are; and pressing
+found text in the text opens the window at that one.
+
+The window shows one at a time, in the sentence it stands in, with the
+citation that is proposed for it: for each work the reference, how sure it
+is that this is the work and why, the page, and the words before and after.
+All of it can be changed as in any citation. Where the library has several
+references that it may be, the others are listed; **Another…** looks for
+the work in the library. A work that the library does not have, and that
+the file tells of, can be **added to the library** from what the file says.
+
+| To | Do this |
+| --- | --- |
+| Make it a citation | **Make it a citation**, or **Enter** |
+| Leave it as the text it is | **Leave it as text** |
+| Go on to the next, and decide later | **Later** |
+| Go through the list | The arrows up and down |
+| Take back what was done | **Ctrl+Z**, one step for each |
+
+A citation that is made takes the place of its text, and reads from then
+on as the reference style has it. What is left as text is no longer marked,
+and not asked about again. What is put off stays as it was: the marks are
+kept in the project, so the citations can be gone through a few today and
+the rest another day, and by anyone the project is shared with.
+
+Where the library has every work of a citation for certain, as by the key
+of the item in Zotero, the tag, the DOI or the ISBN, a button at the top
+makes citations of **all that are certain** at once. It is undone as one
+step.
+
+Text that only looks like a citation is not marked. It is looked for while
+the window is open, if you say so at the top: **Parentheses with a year in
+them**, such as *(Nagy 1979, 73)*, and **Every note**. What you leave as
+text of these is not proposed again.
+
+Of a citation in a note you choose what becomes of the note:
+
+- **The note becomes a citation.** The note is taken away, and the citation
+  stands where it stood; what the note said beside its works becomes the
+  words before and after them. The reference style then sets the citation
+  in the line or in a note. This is right for a note that is a citation and
+  nothing else. It is not offered where the note holds what a citation
+  cannot, such as a formula.
+- **The citation stands in the note**, which stays a note with what else it
+  says. This is right for a note that says something and cites on the way.
+
+What stood in italics in the words of a note stands upright in a citation
+that is made of them.
+
 ## The library
 
 The library is one file, `library.bib`, in BibLaTeX. Other tools can read it;

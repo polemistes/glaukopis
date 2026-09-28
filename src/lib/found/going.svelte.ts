@@ -450,7 +450,8 @@ export class Going {
    * undo: what there is is read anew, and the library asked in a moment.
    */
   changed(wait = 400) {
-    if (this.project.revision === this.seen) return;
+    // Before it was looked at for the first time, there is nothing to read anew.
+    if (this.seen < 0 || this.project.revision === this.seen) return;
     const known = new Set(this.entries.map((e) => e.key));
     this.look();
     // What has come back, as by undo, is what is looked at.

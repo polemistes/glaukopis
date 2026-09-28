@@ -59,7 +59,10 @@
     // svelte-ignore state_referenced_locally
     void library.load().then(() => {
       libraryAt = library.revision;
-      return going.open(at);
+      const asked = going.open(at);
+      // The keys are those of the list from the beginning.
+      focusList();
+      return asked;
     });
     return () => going.close();
   });
