@@ -29,6 +29,26 @@ export function goThroughWhenOpen(project: string, map: string) {
   foundUi.waiting = { project, map };
 }
 
+/**
+ * A citation that was found was pressed, in a text of a map: the window
+ * opens at that one. Returns whether it was one.
+ */
+export function pressedFound(target: EventTarget | null, map: string | null | undefined): boolean {
+  const el = target instanceof Element ? target.closest<HTMLElement>('.found:not(.left)') : null;
+  if (!el || !map) return false;
+  let id = el.dataset.foundId ?? '';
+  if (!id && el.dataset.found) {
+    try {
+      id = String((JSON.parse(el.dataset.found) as { id?: unknown }).id ?? '');
+    } catch {
+      // Not what the mark writes: it is no citation that was found.
+    }
+  }
+  if (!id) return false;
+  goThrough(map, id);
+  return true;
+}
+
 /** What was asked for while the project was not open yet. */
 export function takeWaiting(project: string): string | null {
   const waiting = foundUi.waiting;

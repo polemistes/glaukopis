@@ -104,7 +104,7 @@
       >
     </header>
 
-    <div class="tools"><WritingTools scope={el} /></div>
+    <div class="tools"><WritingTools scope={el} map={node?.map} /></div>
 
     <div class="text">
       <RichText

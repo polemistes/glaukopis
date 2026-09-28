@@ -8,6 +8,7 @@
   import RichText, { type FocusAt } from '$lib/editor/RichText.svelte';
   import { blocksHtml } from '../model/html';
   import { hydrate } from '$lib/figures/hydrate.svelte';
+  import { pressedFound } from '$lib/found/found.svelte';
   import { plural } from '$lib/library/format';
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
@@ -125,6 +126,11 @@
       return;
     }
     if (active) return;
+    // A citation that was found is gone through where it is pressed, as a citation is changed.
+    if (part === 'body' && event.button === 0 && pressedFound(event.target, node.map)) {
+      event.preventDefault();
+      return;
+    }
     onactivate(node.id, part, { left: event.clientX, top: event.clientY });
   }
 </script>

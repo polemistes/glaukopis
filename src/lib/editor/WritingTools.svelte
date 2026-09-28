@@ -27,8 +27,11 @@
   import Subscript from '@lucide/svelte/icons/subscript';
   import Superscript from '@lucide/svelte/icons/superscript';
   import TextQuote from '@lucide/svelte/icons/text-quote';
+  import TextSearch from '@lucide/svelte/icons/text-search';
   import type { Command } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
+  import { goThrough } from '$lib/found/found.svelte';
+  import { countFound } from '$lib/found/gather';
   import { showPictures } from '$lib/pictures/store.svelte';
   import { askForTable, chooseTable } from '$lib/tables/ask';
   import { openMenu } from '$lib/ui/menu.svelte';
@@ -42,15 +45,18 @@
     toggle,
     type ParagraphStyle,
   } from './commands';
+  import { currentProject } from './references.svelte';
   import { editorUi } from './ui.svelte';
   import { hooksOf } from './ui.svelte';
 
   interface Props {
     /** The part of the window whose texts the tools are for. */
     scope?: HTMLElement | null;
+    /** The map whose texts they are. */
+    map?: string | null;
   }
 
-  let { scope = null }: Props = $props();
+  let { scope = null, map = null }: Props = $props();
 
   const s = $derived.by(() => {
     const selection = editorUi.selection;
@@ -216,27 +222,33 @@
   function more(event: MouseEvent) {
     const view = s?.view;
     const marks = s?.marks ?? {};
-    if (!view) return;
+    const project = currentProject();
+    const of = map && project?.map(map) ? map : null;
+    if (!view && !of) return;
+    const found = of && project ? countFound(project, of) : 0;
     openMenu(
       event.currentTarget as HTMLElement,
       [
-        {
-          label: 'Superscript',
-          icon: Superscript,
-          shortcut: 'Ctrl+.',
-          checked: marks.sup,
-          action: () => run(toggle('sup'), view),
-        },
-        {
-          label: 'Subscript',
-          icon: Subscript,
-          shortcut: 'Ctrl+,',
-          checked: marks.sub,
-          action: () => run(toggle('sub'), view),
-        },
-        ...(s?.kind === 'title'
-          ? []
-          : [
+        ...(view
+          ? [
+              {
+                label: 'Superscript',
+                icon: Superscript,
+                shortcut: 'Ctrl+.',
+                checked: marks.sup,
+                action: () => run(toggle('sup'), view),
+              },
+              {
+                label: 'Subscript',
+                icon: Subscript,
+                shortcut: 'Ctrl+,',
+                checked: marks.sub,
+                action: () => run(toggle('sub'), view),
+              },
+            ]
+          : []),
+        ...(view && s?.kind !== 'title'
+          ? [
               {
                 label: 'Struck through',
                 icon: Strikethrough,
@@ -244,7 +256,21 @@
                 checked: marks.strike,
                 action: () => run(toggle('strike'), view),
               },
-            ]),
+            ]
+          : []),
+        ...(of
+          ? [
+              { kind: 'separator' as const },
+              {
+                label: 'Citations that were found…',
+                hint: found
+                  ? `${found.toLocaleString()} to go through, and make citations of`
+                  : 'And text that looks like citations, in this map',
+                icon: TextSearch,
+                action: () => goThrough(of),
+              },
+            ]
+          : []),
         { kind: 'separator' as const },
         { kind: 'heading' as const, label: 'While typing' },
         {
@@ -357,7 +383,7 @@
 
   <button
     type="button"
-    disabled={!s}
+    disabled={!s && !map}
     aria-label="More"
     use:tooltip={{ text: 'More, and what can be typed', side: 'bottom' }}
     onclick={more}

@@ -432,6 +432,7 @@ body.dragging * {
    text it was until it is tied to a reference. What was left as text is
    not told from other text. */
 .found:not(.left) {
+  cursor: pointer;
   border-bottom: 1.5px dotted var(--gold);
   background: color-mix(in srgb, var(--gold) 9%, transparent);
   border-radius: 2px 2px 0 0;
