@@ -12,6 +12,7 @@ pub mod tools;
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
@@ -94,11 +95,27 @@ pub struct Request {
     pub key: String,
 }
 
+/// A page of the preview.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Page {
+    /// Which page it is, the first being 1.
+    pub number: u32,
+    /// The page, as SVG.
+    pub svg: String,
+}
+
+/// At most so many pages are given at once: a page is a quarter of a
+/// megabyte, and those that are looked at are few.
+pub const MOST_PAGES: usize = 12;
+
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Preview {
-    /// The pages, each an SVG.
-    pub pages: Vec<String>,
+    /// How many pages the document has.
+    pub count: usize,
+    /// The pages that were asked for, in their order.
+    pub pages: Vec<Page>,
     /// The size of a page in points.
     pub width: f32,
     pub height: f32,
@@ -552,13 +569,21 @@ fn typst_source(
     light: bool,
 ) -> Result<(String, Prepared, Vec<String>)> {
     let pandoc = ctx.tools.pandoc()?;
+    let began = std::time::Instant::now();
     let placed = place_files(ctx, request, dir, files, light);
     let prepared = prepare(ctx, request, Target::Typst, false, placed);
     let bib = dir.join("references.bib");
     write_atomic(&bib, prepared.bibliography.text.as_bytes())?;
     let args = arguments(ctx, request, Target::Typst, &prepared, &bib, false)?;
     let input = serde_json::to_vec(&prepared.json)?;
+    let readied = began.elapsed();
     let out = tools::run(&pandoc.path, "Pandoc", &args, Some(&input), Some(dir))?;
+    tracing::debug!(
+        readied = ?readied,
+        pandoc = ?(began.elapsed() - readied),
+        given = input.len(),
+        "the document as Typst"
+    );
     let body = String::from_utf8_lossy(&out.stdout).into_owned();
     let mut source = preamble(&request.format, &particulars(&request.document, &request.format));
     source.push_str(&body);
@@ -567,44 +592,70 @@ fn typst_source(
     Ok((source, prepared, warnings))
 }
 
+/// All the pages of a document. For a document of many pages, see
+/// [`preview_ready`], [`preview_made`] and [`preview_pages`], which give the
+/// pages that are asked for and can be stopped.
 pub fn preview(ctx: &Context, request: &Request) -> Result<Preview> {
+    let readied = preview_ready(ctx, request)?;
+    preview_made(ctx, request, readied, &[], &AtomicBool::new(false))
+}
+
+/// What the making of the pages needs of the library and of the pictures,
+/// gathered at once, so that the library need not be held while the pages
+/// are made, which takes long of a long document.
+pub struct Readied {
+    dir: PathBuf,
+    prepared: Prepared,
+    args: Vec<String>,
+    input: Vec<u8>,
+}
+
+/// The first part of making the pages: what is cited is looked up, the
+/// pictures are put where they are found, and the document is written as
+/// Pandoc reads it.
+pub fn preview_ready(ctx: &Context, request: &Request) -> Result<Readied> {
     ctx.tools.pandoc()?;
-    let typst = ctx.tools.typst()?;
+    ctx.tools.typst()?;
+    let began = std::time::Instant::now();
     let dir = work_dir(ctx, &request.key, "preview")?;
-    let (source, prepared, mut warnings) = typst_source(ctx, request, &dir, "files", true)?;
+    let placed = place_files(ctx, request, &dir, "files", true);
+    let prepared = prepare(ctx, request, Target::Typst, false, placed);
+    let bib = dir.join("references.bib");
+    write_atomic(&bib, prepared.bibliography.text.as_bytes())?;
+    let args = arguments(ctx, request, Target::Typst, &prepared, &bib, false)?;
+    let input = serde_json::to_vec(&prepared.json)?;
+    tracing::debug!(took = ?began.elapsed(), given = input.len(), "the document is readied for the preview");
+    Ok(Readied { dir, prepared, args, input })
+}
+
+/// The second part: Pandoc writes the document as Typst, and Typst sets the
+/// pages, of which those that are wanted are given; all of them where none
+/// is named. The library is not needed for it. It ends when `stop` is set,
+/// with an error of the kind [`tools::STOPPED`].
+pub fn preview_made(
+    ctx: &Context,
+    request: &Request,
+    readied: Readied,
+    wanted: &[u32],
+    stop: &AtomicBool,
+) -> Result<Preview> {
+    let pandoc = ctx.tools.pandoc()?;
+    let Readied { dir, prepared, args, input } = readied;
+    let began = std::time::Instant::now();
+    let out = tools::run_until(&pandoc.path, "Pandoc", &args, Some(&input), Some(&dir), stop)?;
+    let written = began.elapsed();
+    let mut source = preamble(&request.format, &particulars(&request.document, &request.format));
+    source.push_str(&String::from_utf8_lossy(&out.stdout));
+    let mut warnings = prepared.remarks.clone();
+    warnings.extend(warnings_of(&out.messages));
     write_atomic(&dir.join("document.typ"), source.as_bytes())?;
 
-    // Pages of an earlier run must not be taken for pages of this one.
-    if let Ok(entries) = fs::read_dir(&dir) {
-        for e in entries.flatten() {
-            let name = e.file_name().to_string_lossy().into_owned();
-            if name.starts_with("page-") && name.ends_with(".svg") {
-                let _ = fs::remove_file(e.path());
-            }
-        }
-    }
-    let out = tools::run(
-        &typst.path,
-        "Typst",
-        ["compile", "--format", "svg", "document.typ", "page-{0p}.svg"],
-        None,
-        Some(&dir),
-    )?;
-    warnings.extend(typst_warnings(&out.messages));
-
-    let mut names: Vec<String> = fs::read_dir(&dir)
-        .context(|| format!("reading {}", dir.display()))?
-        .flatten()
-        .map(|e| e.file_name().to_string_lossy().into_owned())
-        .filter(|n| n.starts_with("page-") && n.ends_with(".svg"))
-        .collect();
-    names.sort_by_key(|n| n.trim_start_matches("page-").trim_end_matches(".svg").parse::<u32>().unwrap_or(0));
-    let mut pages = Vec::with_capacity(names.len());
-    for n in &names {
-        pages.push(fs::read_to_string(dir.join(n)).context(|| format!("reading {n}"))?);
-    }
+    let (count, pages, said) = pages_of(ctx, &dir, wanted, stop)?;
+    warnings.extend(typst_warnings(&said));
+    tracing::debug!(pandoc = ?written, typst = ?(began.elapsed() - written), count, "the pages of the preview are made");
     let (width, height) = request.format.page.dimensions();
     Ok(Preview {
+        count,
         pages,
         width,
         height,
@@ -612,6 +663,92 @@ pub fn preview(ctx: &Context, request: &Request) -> Result<Preview> {
         missing: prepared.bibliography.missing,
         substitute: reference::substitute(&request.format, ctx.fonts),
     })
+}
+
+/// Pages of the document that was made last for a key: those that come into
+/// view when the preview is moved through. How many pages there are, and
+/// the pages.
+pub fn preview_pages(ctx: &Context, key: &str, wanted: &[u32], stop: &AtomicBool) -> Result<(usize, Vec<Page>)> {
+    let dir = work_dir(ctx, key, "preview")?;
+    if !dir.join("document.typ").is_file() {
+        return Err(Error::NotFound("the document of the preview".into()));
+    }
+    let (count, pages, _) = pages_of(ctx, &dir, wanted, stop)?;
+    Ok((count, pages))
+}
+
+/// Has Typst set the document that stands in a directory, and gives the
+/// pages that are wanted, with how many there are and what Typst said.
+/// Pages that are wanted and are not there are passed over.
+fn pages_of(ctx: &Context, dir: &Path, wanted: &[u32], stop: &AtomicBool) -> Result<(usize, Vec<Page>, String)> {
+    let typst = ctx.tools.typst()?;
+    // Each making has a place of its own for its pages, so that two that
+    // are made at once do not take each other's.
+    let into = tempfile::Builder::new()
+        .prefix("pages-")
+        .tempdir_in(dir)
+        .context(|| format!("creating a directory in {}", dir.display()))?;
+    let mut wanted: Vec<u32> = wanted.iter().copied().filter(|n| *n > 0).collect();
+    wanted.sort_unstable();
+    wanted.dedup();
+    wanted.truncate(MOST_PAGES);
+    let template = into.path().join("page-{p}-of-{t}.svg").display().to_string();
+
+    let run = |pages: Option<String>| {
+        let mut args: Vec<String> = vec!["compile".into(), "--format".into(), "svg".into()];
+        if let Some(pages) = pages {
+            args.push("--pages".into());
+            args.push(pages);
+        }
+        args.push("document.typ".into());
+        args.push(template.clone());
+        tools::run_until(&typst.path, "Typst", &args, None, Some(dir), stop)
+    };
+    let list = |pages: &[u32]| pages.iter().map(u32::to_string).collect::<Vec<_>>().join(",");
+    let out = if wanted.is_empty() {
+        run(None)?
+    } else {
+        // A page that is wanted may not be there, the document having grown shorter: Typst
+        // refuses then, or gives nothing. The first page says how many there are, and those
+        // that are there are asked for again.
+        let first = match run(Some(list(&wanted))) {
+            Ok(out) if read_pages(into.path())?.0 > 0 => Some(out),
+            Ok(_) | Err(Error::Program { .. }) => None,
+            Err(e) => return Err(e),
+        };
+        match first {
+            Some(out) => out,
+            None => {
+                let first = run(Some("1".into()))?;
+                let count = read_pages(into.path())?.0;
+                let there: Vec<u32> = wanted.iter().copied().filter(|n| (*n as usize) <= count && *n != 1).collect();
+                if there.is_empty() { first } else { run(Some(list(&there)))? }
+            }
+        }
+    };
+    let (count, pages) = read_pages(into.path())?;
+    Ok((count, pages, out.messages))
+}
+
+/// The pages that stand in a directory, named `page-<number>-of-<count>.svg`.
+fn read_pages(dir: &Path) -> Result<(usize, Vec<Page>)> {
+    let mut count = 0usize;
+    let mut found: Vec<(u32, PathBuf)> = Vec::new();
+    for entry in fs::read_dir(dir).context(|| format!("reading {}", dir.display()))?.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        let Some(rest) = name.strip_prefix("page-").and_then(|n| n.strip_suffix(".svg")) else { continue };
+        let Some((number, of)) = rest.split_once("-of-") else { continue };
+        let (Ok(number), Ok(of)) = (number.parse::<u32>(), of.parse::<usize>()) else { continue };
+        count = count.max(of);
+        found.push((number, entry.path()));
+    }
+    found.sort_by_key(|(number, _)| *number);
+    let mut pages = Vec::with_capacity(found.len());
+    for (number, path) in found {
+        let svg = fs::read_to_string(&path).context(|| format!("reading {}", path.display()))?;
+        pages.push(Page { number, svg });
+    }
+    Ok((count, pages))
 }
 
 fn typst_warnings(messages: &str) -> Vec<String> {
@@ -1056,7 +1193,9 @@ mod tests {
         let Some(s) = setup() else { return };
         let p = preview(&s.ctx(), &request("chicago-author-date")).unwrap();
         assert!(!p.pages.is_empty());
-        assert!(p.pages[0].starts_with("<svg"));
+        assert!(p.pages[0].svg.starts_with("<svg"));
+        assert_eq!(p.count, p.pages.len());
+        assert_eq!(p.pages[0].number, 1);
         assert!(p.missing.is_empty());
         assert!(p.warnings.is_empty(), "{:?}", p.warnings);
         assert_eq!((p.width, p.height), (595.28, 841.89));
@@ -1773,6 +1912,58 @@ mod tests {
         export(&s.ctx(), &r, Target::Pdf, &out.join("large.pdf"), &ExportOptions::default()).unwrap();
         let whole = s.work.join("p2").join("export").join("files").join(&file);
         assert_eq!(fs::metadata(&whole).unwrap().len(), kept.size);
+    }
+
+    #[test]
+    fn the_pages_that_are_wanted_are_given_and_no_others() {
+        let Some(s) = setup() else { return };
+        let mut r = with_figures(&s);
+        // Figures at the end make a document of two pages at the least.
+        r.format.figures.placement = crate::formats::FigurePlacement::AtEnd;
+        let go = AtomicBool::new(false);
+        let ctx = s.ctx();
+        let all = preview(&ctx, &r).unwrap();
+        assert!(all.count >= 2 && all.pages.len() == all.count);
+
+        let last = all.count as u32;
+        let readied = preview_ready(&ctx, &r).unwrap();
+        let some = preview_made(&ctx, &r, readied, &[last, last], &go).unwrap();
+        assert_eq!(some.count, all.count);
+        assert_eq!(some.pages.iter().map(|p| p.number).collect::<Vec<_>>(), vec![last]);
+        assert_eq!(some.pages[0].svg, all.pages[last as usize - 1].svg);
+
+        // As they come into view; one that is not there is passed over.
+        let (count, pages) = preview_pages(&ctx, &r.key, &[1, 999], &go).unwrap();
+        assert_eq!(count, all.count);
+        assert_eq!(pages.iter().map(|p| p.number).collect::<Vec<_>>(), vec![1]);
+        assert_eq!(pages[0].svg, all.pages[0].svg);
+        let (count, none) = preview_pages(&ctx, &r.key, &[999], &go).unwrap();
+        assert_eq!(count, all.count, "how many there are is known, though the page that was wanted is not there");
+        assert!(none.iter().all(|p| p.number == 1), "only the page that says how many there are");
+
+        // Nothing is left behind of the pages that were made.
+        let dir = s.work.join(&r.key).join("preview");
+        let left: Vec<String> = fs::read_dir(&dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n.starts_with("page"))
+            .collect();
+        assert!(left.is_empty(), "{left:?}");
+
+        // Of a document that was never made there are no pages.
+        assert!(preview_pages(&ctx, "never", &[1], &go).is_err());
+    }
+
+    #[test]
+    fn what_is_stopped_ends_and_says_so() {
+        let Some(s) = setup() else { return };
+        let r = with_figures(&s);
+        let ctx = s.ctx();
+        let readied = preview_ready(&ctx, &r).unwrap();
+        let stop = AtomicBool::new(true);
+        let e = preview_made(&ctx, &r, readied, &[1], &stop).unwrap_err();
+        assert_eq!(e.kind(), tools::STOPPED, "{e}");
     }
 
     #[test]

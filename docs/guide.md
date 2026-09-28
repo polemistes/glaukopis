@@ -99,6 +99,13 @@ Everything the tools do can be done from the keys, and much of it by typing:
 What a sign has done is undone by **Backspace**, should the sign have been
 meant as a sign.
 
+Notes, citations, formulas, figures and words that point each have a box of
+their own, which opens when they are pressed. The arrows go through the
+text without opening them: what the cursor comes to is selected, and
+**Enter** opens it. **Backspace** at the beginning of a paragraph selects a
+figure or a table that stands before it, and a second **Backspace** takes it
+away.
+
 Associations are shown as narrow lines in the left margin, between the
 sections they join. Click one to go to either end of it, to give it a few
 words, or to remove it.
@@ -672,7 +679,11 @@ change that, all in the menu of an element:
 ## The preview, and the manuscript
 
 **Ctrl+P** opens the preview beside the map, and closes it. It shows the pages
-as they will be, and follows as you write.
+as they will be, and follows as you write, a moment behind: it waits until
+the writing pauses. Of a long document the pages take a few seconds to be
+made, and the preview waits the longer for it; the writing is not held up
+meanwhile. The pages that are looked at are the ones that are drawn, and
+the others as they are moved to.
 
 Over the preview, two things are chosen:
 

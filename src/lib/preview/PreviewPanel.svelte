@@ -7,9 +7,22 @@
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import X from '@lucide/svelte/icons/x';
   import { isBackendError } from '$lib/api/backend';
-  import { documentPreview, type DocumentFormat, type DocumentRequest } from '$lib/api/documents';
+  import {
+    documentPreview,
+    documentPreviewPages,
+    documentPreviewStop,
+    type DocumentFormat,
+    type DocumentRequest,
+    type Preview,
+    type PreviewPage,
+  } from '$lib/api/documents';
   import { plural } from '$lib/library/format';
-  import { buildDocument, countWords } from '$lib/project/model/document';
+  import {
+    buildDocument,
+    countWords,
+    documentMark,
+    leanDocument,
+  } from '$lib/project/model/document';
   import type { Project } from '$lib/project/model/project.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -34,10 +47,34 @@
 
   let { project, projectId, mapId, onclose }: Props = $props();
 
-  /** The pages as they are shown: what each holds, and the address it is shown from. */
-  let pages = $state.raw<{ svg: string; url: string }[]>([]);
+  /** A page as it is shown: what it holds, the address it is shown from, and the making it is of. */
+  interface Shown {
+    svg: string;
+    url: string;
+    made: number;
+  }
+
+  /** At most so many pages are kept: those nearest to what is looked at. */
+  const KEPT = 40;
+  /** So many pages before and after those in view are fetched with them. */
+  const BESIDE = 2;
+
+  /** How many pages the document has. */
+  let count = $state(0);
+  /** The size of a page, in points. */
+  let size = $state.raw({ width: 595, height: 842 });
+  /**
+   * The pages that are there, by their numbers. Only those that are looked
+   * at, and those near them, are fetched and drawn: a long document has
+   * hundreds of pages, each a quarter of a megabyte.
+   */
+  let shown = $state.raw(new Map<number, Shown>());
+  /** Rises with every making of the document: pages of an earlier one are shown until those of this one are there. */
+  let made = 0;
   /** What the pages that are shown were made from. */
   let shownFrom = '';
+  /** The stamps of the texts that were sent, and are kept where the pages are made. */
+  let sent = new Set<string>();
   let status = $state<'waiting' | 'working' | 'shown' | 'failed'>('waiting');
   let error = $state<{ kind: string; message: string } | null>(null);
   let warnings = $state.raw<string[]>([]);
@@ -49,19 +86,39 @@
   let exporting = $state(false);
   let editingFormat = $state<string | null>(null);
   let editingStyle = $state<string | null>(null);
-  let round = 0;
+  let scroller = $state<HTMLDivElement>();
+  /** Whether the pages are being made. Never twice at once. */
+  let making = false;
+  /** Whether something has changed while the pages were being made. */
+  let again = false;
+  /** Whether the preview has been closed. */
+  let gone = false;
+  /** How long the last making took, in milliseconds. */
+  let took = 0;
 
   const map = $derived(project.map(mapId));
   const choice = $derived(documents.choice(map?.document ?? {}));
-  const words = $derived.by(() => {
+  /**
+   * The words of the document, a moment behind the writing: what is shown
+   * under the pages is not written anew at every key, which would have the
+   * window paint all between the line that is written and the count.
+   */
+  let words = $state.raw(untrack(() => countWords(project, mapId)));
+  $effect(() => {
     void project.revision;
-    return countWords(project, mapId);
+    void mapId;
+    const timer = setTimeout(() => {
+      const now = untrack(() => countWords(project, mapId));
+      if (now.text !== words.text || now.withNotes !== words.withNotes) words = now;
+    }, 600);
+    return () => clearTimeout(timer);
   });
 
   $effect(() => {
     documents.load();
   });
 
+  /** The document whole, for what is made of all of it: an export, the sample of a format. */
   async function request(): Promise<DocumentRequest> {
     const f = await documents.format(choice.format);
     return {
@@ -72,71 +129,213 @@
     };
   }
 
+  /** The room between two pages, and around all of them, as the style sheet has them. */
+  const GAP = 16;
+  const AROUND = { top: 20, side: 22 };
+  /** The widest a page is shown. */
+  const WIDEST = 820;
+
+  /** How far the pages have been moved, and the room they are shown in. */
+  let moved = $state(0);
+  let room = $state.raw({ width: 0, height: 0 });
+
+  $effect(() => {
+    const el = scroller;
+    if (!el) return;
+    const watch = new ResizeObserver(() => {
+      if (el.clientWidth !== room.width || el.clientHeight !== room.height)
+        room = { width: el.clientWidth, height: el.clientHeight };
+    });
+    watch.observe(el);
+    return () => watch.disconnect();
+  });
+
+  /** How high a page is as it is shown, with the room after it. */
+  const each = $derived.by(() => {
+    const wide = Math.max(1, Math.min(WIDEST, room.width - 2 * AROUND.side));
+    return (wide * size.height) / Math.max(1, size.width) + GAP;
+  });
+
+  /**
+   * The pages that have a place in the window: those in view and those
+   * beside them. Of a long document the others have none, and empty room
+   * stands for them: hundreds of places, though empty, are felt in all
+   * that the window does.
+   */
+  const span = $derived.by(() => {
+    if (!count || !room.height) return { from: 1, to: Math.min(count, 3) };
+    const top = moved - AROUND.top;
+    const from = Math.max(1, Math.floor(top / each) + 1 - BESIDE);
+    const to = Math.min(count, Math.floor((top + room.height) / each) + 1 + BESIDE);
+    return { from: Math.min(from, Math.max(1, to)), to: Math.max(to, 1) };
+  });
+
+  /** The pages that are in view, and those beside them. */
+  function near(): number[] {
+    const out: number[] = [];
+    for (let n = span.from; n <= span.to && out.length < 10; n++) out.push(n);
+    // Before the pages have their places, the first are what is looked at.
+    return out.length ? out : [1, 2, 3].filter((n) => !count || n <= count);
+  }
+
+  /** Takes pages that were made. A page that is as it was is left as it is, so that only what has changed is drawn again. */
+  function take(pages: PreviewPage[]) {
+    const next = new Map(shown);
+    const let_go: string[] = [];
+    for (const page of pages) {
+      const before = next.get(page.number);
+      if (before?.svg === page.svg) {
+        next.set(page.number, { ...before, made });
+        continue;
+      }
+      if (before) let_go.push(before.url);
+      const url = URL.createObjectURL(new Blob([page.svg], { type: 'image/svg+xml' }));
+      next.set(page.number, { svg: page.svg, url, made });
+    }
+    // Pages that are no longer there, and those farthest from what is looked at.
+    const wanted = near();
+    const middle = wanted[Math.floor(wanted.length / 2)] ?? 1;
+    const far = [...next.keys()]
+      .filter((n) => n > count || !wanted.includes(n))
+      .sort((x, y) => Math.abs(y - middle) - Math.abs(x - middle));
+    for (const n of far) {
+      if (n <= count && next.size <= KEPT) break;
+      let_go.push(next.get(n)!.url);
+      next.delete(n);
+    }
+    shown = next;
+    // What was replaced is let go when what is in its place has been drawn.
+    if (let_go.length) setTimeout(() => let_go.forEach((url) => URL.revokeObjectURL(url)), 2000);
+  }
+
   /**
    * Makes the pages anew, if what they are made from has changed. Much that
    * changes in a project changes nothing in the document: where an element
    * stands in the diagram, whether a branch is folded.
+   *
+   * The pages are never made twice at once: what changes while they are
+   * made is seen to when they are there.
    */
   async function refresh(force = false) {
-    const mine = ++round;
+    if (making) {
+      again = true;
+      forced ||= force;
+      return;
+    }
+    making = true;
     try {
-      const r = await request();
-      if (mine !== round) return;
-      const from = JSON.stringify(r);
-      if (!force && from === shownFrom && status === 'shown') return;
-      status = pages.length ? 'working' : 'waiting';
-      format = r.format;
-      const preview = await documentPreview(r);
-      if (mine !== round) return;
-      // A page that is as it was is left as it is, so that only what has
-      // changed is drawn again.
-      const before = pages;
-      pages = preview.pages.map((svg, i) =>
-        before[i]?.svg === svg
-          ? before[i]
-          : { svg, url: URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })) },
-      );
-      const kept = new Set(pages.map((p) => p.url));
-      // The pages that were replaced are let go when those in their place have been drawn.
-      const gone = before.filter((p) => !kept.has(p.url));
-      if (gone.length) setTimeout(() => gone.forEach((p) => URL.revokeObjectURL(p.url)), 2000);
-      shownFrom = from;
-      warnings = preview.warnings;
-      missing = preview.missing;
-      substitute = preview.substitute;
-      error = null;
-      status = 'shown';
+      do {
+        const must = force || forced;
+        again = false;
+        forced = false;
+        force = false;
+        const f = $state.snapshot(await documents.format(choice.format)) as DocumentFormat;
+        let document = leanDocument(project, mapId, sent);
+        const from = `${choice.style}\n${JSON.stringify(f)}\n${documentMark(document)}`;
+        if (!must && from === shownFrom && status === 'shown') continue;
+        status = count ? 'working' : 'waiting';
+        format = f;
+        const began = performance.now();
+        const asked = { style: choice.style, format: f, key: projectId };
+        let preview: Preview;
+        try {
+          preview = await documentPreview({ ...asked, document }, near());
+        } catch (e) {
+          if (!isBackendError(e) || e.kind !== 'lacking') throw e;
+          // What was sent before is not kept: all of it is sent.
+          sent = new Set();
+          document = leanDocument(project, mapId, sent);
+          preview = await documentPreview({ ...asked, document }, near());
+        }
+        if (gone) return;
+        took = performance.now() - began;
+        sent = new Set(document.sections.map((s) => s.stamp).filter((s) => !s.startsWith('?')));
+        made++;
+        count = preview.count;
+        size = { width: preview.width, height: preview.height };
+        take(preview.pages);
+        shownFrom = from;
+        warnings = preview.warnings;
+        missing = preview.missing;
+        substitute = preview.substitute;
+        error = null;
+        status = 'shown';
+        // The pages may have been moved through meanwhile.
+        void fetchNear();
+      } while (again && !gone);
     } catch (e) {
-      if (mine !== round) return;
+      if (gone || (isBackendError(e) && e.kind === 'stopped')) return;
       error = isBackendError(e)
         ? e
         : { kind: 'unknown', message: describeError(e) ?? 'The preview could not be made.' };
       status = 'failed';
+    } finally {
+      making = false;
     }
+  }
+  let forced = false;
+
+  /** Fetches the pages that have come into view and are not there, or are of an earlier making. */
+  let fetching = false;
+  async function fetchNear() {
+    if (fetching || gone || !count) return;
+    const lacking = near().filter((n) => shown.get(n)?.made !== made);
+    if (!lacking.length) return;
+    fetching = true;
+    const of = made;
+    try {
+      const got = await documentPreviewPages(projectId, lacking);
+      if (gone) return;
+      // Made anew meanwhile: the pages are of what was, and are asked for again.
+      if (of === made) {
+        count = got.count;
+        take(got.pages);
+        // A page that was asked for and is not there is not asked for again and again.
+        const came = new Set(got.pages.map((p) => p.number));
+        if (lacking.some((n) => !came.has(n))) return;
+      }
+    } catch {
+      // The pages stay as they are; they are asked for again when the preview is moved.
+      return;
+    } finally {
+      fetching = false;
+    }
+    void fetchNear();
+  }
+
+  let settled: ReturnType<typeof setTimeout> | undefined;
+  function onscroll() {
+    if (scroller) moved = scroller.scrollTop;
+    clearTimeout(settled);
+    settled = setTimeout(() => void fetchNear(), 120);
   }
 
   function release() {
-    for (const page of pages) URL.revokeObjectURL(page.url);
+    for (const page of shown.values()) URL.revokeObjectURL(page.url);
   }
 
-  // The preview follows the text, a moment behind it.
+  // The preview follows the text, a moment behind it: the longer the pages
+  // take to make, the longer it waits for the writing to pause.
   $effect(() => {
     void project.revision;
     void mapId;
     void choice.style;
     void choice.format;
     void documents.loaded;
+    void documents.changed;
     if (!documents.loaded) return;
-    // The pages themselves must not be among what the effect follows: it
-    // would then follow its own doing, and never rest.
-    const wait = untrack(() => (pages.length ? 900 : 50));
+    // What the effect waits by is not among what it follows: it would then follow its own doing.
+    const wait = untrack(() => (count ? Math.max(900, Math.min(2500, took * 0.4)) : 50));
     const timer = setTimeout(() => untrack(() => refresh()), wait);
     return () => clearTimeout(timer);
   });
 
   $effect(() => () => {
-    round++;
+    gone = true;
+    clearTimeout(settled);
     release();
+    // What is being made is no longer wanted.
+    void documentPreviewStop(projectId).catch(() => {});
   });
 
   function setStyle(id: string) {
@@ -276,7 +475,13 @@
     >
   </header>
 
-  <div class="pages" class:working={status === 'working'}>
+  <div
+    class="pages"
+    class:working={status === 'working'}
+    data-count={count}
+    bind:this={scroller}
+    {onscroll}
+  >
     {#if status === 'failed' && error}
       {#if error.kind === 'missing-program'}
         <EmptyState
@@ -293,18 +498,34 @@
           <Button onclick={() => refresh(true)}>Try again</Button>
         </EmptyState>
       {/if}
-    {:else if !pages.length}
+    {:else if !count}
       <div class="centre"><Spinner size={22} /></div>
     {:else}
-      {#each pages as page, i (i)}
-        <img src={page.url} alt="Page {i + 1}" class="page" draggable="false" />
+      <!-- The pages that are looked at have their places; room stands for those before and after. -->
+      {#if span.from > 1}
+        <div class="room" style:height="{(span.from - 1) * each - GAP}px"></div>
+      {/if}
+      {#each { length: span.to - span.from + 1 } as _, i (span.from + i)}
+        {@const n = span.from + i}
+        {@const page = shown.get(n)}
+        <div
+          class="page"
+          data-page={n}
+          style:aspect-ratio="{size.width} / {size.height}"
+          aria-label="Page {n}"
+        >
+          {#if page}<img src={page.url} alt="Page {n}" draggable="false" />{/if}
+        </div>
       {/each}
+      {#if span.to < count}
+        <div class="room" style:height="{(count - span.to) * each - GAP}px"></div>
+      {/if}
     {/if}
   </div>
 
   <footer>
     {#if status === 'working'}<Spinner size={11} />{/if}
-    {#if pages.length}<span>{plural(pages.length, 'page')}</span>{/if}
+    {#if count}<span>{plural(count, 'page')}</span>{/if}
     <span class:over>
       {words.text.toLocaleString()}{format?.limits.words
         ? ` of ${format.limits.words.toLocaleString()}`
@@ -497,7 +718,11 @@
   select:focus-visible {
     border-bottom-color: var(--accent);
   }
+  /* The pages are a region of their own: what is written in the text
+     beside them changes nothing in them, and they are not laid out and
+     painted again for it. */
   .pages {
+    contain: strict;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
@@ -508,15 +733,31 @@
     gap: 16px;
     transition: opacity var(--slow) var(--ease);
   }
+  /* A page that is not looked at is not drawn. It has its size of the
+     width it is given and the shape of the page. */
   .page {
+    contain: layout paint style;
+    flex: none;
     display: block;
     width: 100%;
     max-width: 820px;
     height: auto;
     background: #fff;
+    /* A line and a light shadow: a wide soft one is painted anew whenever
+       anything near it changes, which is felt where the pages are many. */
     box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.12),
-      0 8px 24px rgba(0, 0, 0, 0.08);
+      0 0 0 1px rgba(0, 0, 0, 0.07),
+      0 1px 3px rgba(0, 0, 0, 0.14);
+    user-select: none;
+  }
+  .room {
+    flex: none;
+    width: 1px;
+  }
+  .page img {
+    display: block;
+    width: 100%;
+    height: 100%;
     user-select: none;
   }
   .centre {

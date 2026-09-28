@@ -77,6 +77,8 @@ export interface NodeRecord {
   words: number;
   cited: string[];
   notes: number;
+  /** The words that stand in notes, which are among the words. */
+  noteWords: number;
   /** The figures and equations of the text, in the order they stand in. */
   set: SetOff[];
 }

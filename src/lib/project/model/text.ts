@@ -395,11 +395,15 @@ export interface BodyFacts {
   /** Ids of the references cited, each once, in the order of first citation. */
   cited: string[];
   notes: number;
+  /** The words that stand in notes, which are among the words. */
+  noteWords: number;
 }
 
 export function bodyFacts(blocks: Block[]): BodyFacts {
   const cited: string[] = [];
   let notes = 0;
+  /** What the notes say. */
+  let noted = '';
   /** Figures and formulas. */
   let set = 0;
   const setOff: SetOff[] = [];
@@ -417,7 +421,9 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
       } else if (i.kind === 'footnote') {
         notes++;
         text += ' ';
+        const from = text.length;
         visitInlines(i.content);
+        noted += ` ${text.slice(from)}`;
         text += ' ';
       }
     }
@@ -464,6 +470,7 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
     words: countWords(text),
     cited,
     notes,
+    noteWords: notes ? countWords(noted) : 0,
   };
 }
 

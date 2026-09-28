@@ -12,9 +12,15 @@
  *   deepen what is under it.
  */
 
-import type { ExportDocument, ExportReference, ExportSection } from '$lib/api/documents';
+import type {
+  ExportDocument,
+  ExportReference,
+  ExportSection,
+  LeanDocument,
+  LeanSection,
+} from '$lib/api/documents';
 import type { Project } from './project.svelte';
-import { readBody, readTitle, type Inline } from './text';
+import { readTitle, type Inline } from './text';
 
 const DEEPEST = 12;
 
@@ -73,7 +79,7 @@ export function buildDocument(project: Project, mapId: string): ExportDocument {
 
   walkDocument(project, mapId, (placed) => {
     for (const ref of project.node(placed.id)?.cited ?? []) cited.add(ref);
-    const blocks = readBody(project.fragment(placed.id, 'body') ?? undefined);
+    const blocks = project.blocksOf(placed.id);
     if (placed.root) {
       // The text of the centre, before the first section. Its name is the
       // title of the document, or the heading of what included the map.
@@ -120,6 +126,48 @@ export function buildDocument(project: Project, mapId: string): ExportDocument {
   };
 }
 
+/**
+ * A document as it is sent for the preview: the text of a part is sent only
+ * if it was not sent before, which `sent` says, by the stamps of the texts.
+ * Of a long document in which a word was changed, the part with the word
+ * is what is sent.
+ */
+export function leanDocument(
+  project: Project,
+  mapId: string,
+  sent: ReadonlySet<string> = new Set(),
+): LeanDocument {
+  const whole = buildDocument(project, mapId);
+  let n = 0;
+  const sections: LeanSection[] = whole.sections.map((section) => {
+    // A part that is of no element, or of one that is read as it is asked for, is sent as it is.
+    const stamp = (section.element && project.stampOf(section.element)) || `?.${n++}`;
+    const known = !stamp.startsWith('?') && sent.has(stamp);
+    return {
+      level: section.level,
+      heading: section.heading,
+      element: section.element,
+      stamp,
+      blocks: known ? null : section.blocks,
+    };
+  });
+  return { ...whole, sections };
+}
+
+/**
+ * What a document is made of, in few words: whatever changes in the
+ * document changes this, and what changes nothing in the document (where an
+ * element stands in the diagram, whether a branch is folded) changes it
+ * not, unless the element itself is changed.
+ */
+export function documentMark(document: LeanDocument): string {
+  const { sections, ...head } = document;
+  const parts = sections.map(
+    (s) => `${s.stamp}/${s.level}/${s.heading ? JSON.stringify(s.heading) : ''}`,
+  );
+  return `${JSON.stringify(head)}\n${parts.join('\n')}`;
+}
+
 /** The words of a document, as they would be counted by a publisher: without the notes, and with them. */
 export function countWords(project: Project, mapId: string): { text: number; withNotes: number } {
   // The count of each element includes its notes; the notes are counted apart to take them off.
@@ -131,9 +179,7 @@ export function countWords(project: Project, mapId: string): { text: number; wit
       const node = project.node(nodeId);
       if (!node || node.excluded) return;
       withNotes += node.words;
-      for (const block of readBody(project.fragment(nodeId, 'body') ?? undefined)) {
-        notes += noteWords(block);
-      }
+      notes += node.noteWords;
       if (node.include && !within.has(node.include) && project.map(node.include)) {
         const inner = new Set(within);
         inner.add(node.include);
@@ -145,33 +191,4 @@ export function countWords(project: Project, mapId: string): { text: number; wit
   };
   visit(mapId, new Set([mapId]));
   return { text: withNotes - notes, withNotes };
-}
-
-function noteWords(block: import('./text').Block): number {
-  const count = (text: string) =>
-    text.match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
-  const inlines = (list: Inline[]): number =>
-    list.reduce((n, i) => {
-      if (i.kind !== 'footnote') return n;
-      return n + count(i.content.map((c) => (c.kind === 'text' ? c.text : ' ')).join(''));
-    }, 0);
-  switch (block.kind) {
-    case 'paragraph':
-      return inlines(block.content);
-    case 'blockquote':
-      return block.content.reduce((n, b) => n + noteWords(b), 0);
-    case 'figure':
-    case 'equation':
-      return 0;
-    case 'row':
-      return block.items.reduce((n, b) => n + noteWords(b), 0);
-    case 'table':
-      return block.rows.reduce(
-        (n, row) =>
-          n + row.reduce((m, cell) => m + cell.content.reduce((k, b) => k + noteWords(b), 0), 0),
-        0,
-      );
-    default:
-      return block.items.reduce((n, item) => n + item.reduce((m, b) => m + noteWords(b), 0), 0);
-  }
 }

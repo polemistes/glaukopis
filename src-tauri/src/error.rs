@@ -10,7 +10,12 @@ pub struct CommandError {
 
 impl From<glaukopis_core::Error> for CommandError {
     fn from(error: glaukopis_core::Error) -> Self {
-        tracing::warn!(%error, "command failed");
+        // What was stopped, or is to be sent again, has not failed: it is what was asked for.
+        if matches!(error.kind(), "stopped" | "lacking") {
+            tracing::debug!(%error, "a command was ended");
+        } else {
+            tracing::warn!(%error, "command failed");
+        }
         CommandError { kind: error.kind(), message: error.to_string() }
     }
 }

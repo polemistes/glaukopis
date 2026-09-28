@@ -117,6 +117,8 @@ pub fn run() {
             commands::documents::formats_save,
             commands::documents::formats_delete,
             commands::documents::document_preview,
+            commands::documents::document_preview_pages,
+            commands::documents::document_preview_stop,
             commands::documents::document_export,
             commands::documents::open_path,
             commands::found::found_suggest,

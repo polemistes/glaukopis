@@ -133,3 +133,13 @@ What this settles:
 - What is found: citations made by Zotero in Word and LibreOffice files; tags in Markdown, Org, LaTeX and their like; and, where the writer says so, parentheses with a year in them, and notes.
 - Citations by Zotero of works that are in the library and came there from Zotero can be brought in without asking.
 - Of a citation in a note the writer chooses whether it becomes a citation, which the reference style sets in the line or in a note, or stays in its note.
+
+## 2026-09-28 — the citation box, the arrows, and a large document that lags
+
+> This looks quite good. A couple of things: When opening a citation window from the text, there is a close window symbol in the corner of each citation in the note. This deletes the citation. The delete citation button should be placed elsewhere and have a more idiomatic symbol for delete. When moving around in the text with the arrow keys, the citation edit box opens when the cursor traverses the citation note. It should only select it and open on pressing enter, so it is possible to move around in the text without opening the citation window. I am quite sure there has been some kind of regression after the last pass or so. I imported a huge document with more then 100 000 words. When I first opened it, I noticed no lag, only the first time the preview was made. Writing in the text was reflected in the preview as I wrote without much delay, and I noteced no lag in the typing at all. Now the whole system becomes lagging, even without the preview open. Could you see if I am right, and in any case see if it is possible to make it less laggy to work with a large document?
+
+What this settles:
+
+- What takes a work out of a citation is not a cross in the corner, which reads as closing, but a sign that reads as taking away, in another place.
+- The arrows go through a citation in the text without opening its box: it is selected, and Enter opens it.
+- A document of more than a hundred thousand words is to be written in without lag, with the preview closed and with it open.

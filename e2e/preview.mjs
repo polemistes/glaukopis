@@ -74,8 +74,10 @@ try {
   await app.click('header button[aria-label="Preview and export"]');
   await app.waitFor('.preview .page', 20000);
   await sleep(500);
-  const pages = await app.count('.preview .page');
-  check('the preview shows pages', pages >= 1, `${pages}`);
+  /** How many pages the document has. Of many, only those that are looked at have a place in the window. */
+  const counted = () => app.exec(`return Number(document.querySelector('.preview .pages').dataset.count)`);
+  const pages = await counted();
+  check('the preview shows pages', pages >= 1 && (await app.count('.preview .page img')) >= 1, `${pages}`);
   await app.screenshot('preview-1-manuscript');
 
   const source = () => {
@@ -184,8 +186,10 @@ try {
        const pages = document.querySelector('.preview .pages');
        const observer = new MutationObserver((records) => {
          for (const r of records) {
-           if (r.type === 'attributes') drawn.push(Array.from(pages.querySelectorAll('img')).indexOf(r.target) + 1);
-           else for (const n of r.addedNodes) if (n.tagName === 'IMG') drawn.push(Array.from(pages.querySelectorAll('img')).indexOf(n) + 1);
+           // Which page it is, is said by the place the page has.
+           const page = (e) => Number(e.closest('.page')?.dataset.page ?? 0);
+           if (r.type === 'attributes') drawn.push(page(r.target));
+           else for (const n of r.addedNodes) if (n.tagName === 'IMG') drawn.push(page(n));
          }
        });
        observer.observe(pages, { subtree: true, childList: true, attributes: true, attributeFilter: ['src'] });
@@ -224,7 +228,14 @@ try {
     );
   }
   await sleep(4000);
-  const many = await app.count('.preview .page');
+  const many = await counted();
+  // Only the pages that are looked at are drawn: the first, and those beside them.
+  const first = await app.exec(`return Array.from(document.querySelectorAll('.preview .page')).filter((p) => p.querySelector('img')).map((p) => Number(p.dataset.page))`);
+  check('of many pages, those that are looked at are drawn, and the others have their place', many >= 6 && first.length < many && first[0] === 1, `${many} pages, drawn: ${JSON.stringify(first)}`);
+  // The end of the document is looked at, where the text is about to change.
+  await app.exec(`const p = document.querySelector('.preview .pages'); p.scrollTop = p.scrollHeight;`);
+  await app.waitFor(`.preview .page[data-page="${many}"] img`, 10000);
+  await sleep(1500);
   const writing = watch(4500);
   await sleep(300);
   await app.keys(' And so it ends.');

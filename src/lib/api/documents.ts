@@ -234,8 +234,40 @@ export interface DocumentRequest {
   key: string;
 }
 
+/** A part of a document as it is sent for the preview: its text is sent once, and named by its stamp from then on. */
+export interface LeanSection {
+  level: number;
+  heading: Inline[] | null;
+  element: string | null;
+  /** Tells the text from every other, and from itself as it was before it was changed. */
+  stamp: string;
+  /** The text. Nothing, where it was sent before. */
+  blocks: Block[] | null;
+}
+
+export interface LeanDocument extends Omit<ExportDocument, 'sections'> {
+  sections: LeanSection[];
+}
+
+export interface PreviewRequest {
+  document: LeanDocument;
+  style: string;
+  format: DocumentFormat;
+  key: string;
+}
+
+/** A page of the preview. */
+export interface PreviewPage {
+  /** Which page it is, the first being 1. */
+  number: number;
+  svg: string;
+}
+
 export interface Preview {
-  pages: string[];
+  /** How many pages the document has. */
+  count: number;
+  /** The pages that were asked for. */
+  pages: PreviewPage[];
   width: number;
   height: number;
   warnings: string[];
@@ -272,8 +304,34 @@ export const formatsSave = (format: DocumentFormat) =>
   call<DocumentFormat>('formats_save', { format });
 export const formatsDelete = (id: string) => call<void>('formats_delete', { id });
 
-export const documentPreview = (request: DocumentRequest) =>
-  call<Preview>('document_preview', { request });
+/**
+ * The pages of a document: how many there are, and those that are asked
+ * for, which are those that are looked at. It fails with the kind `lacking`
+ * where texts were not sent and are not kept: the document is then to be
+ * sent whole. With the kind `stopped` it was stopped.
+ */
+export const documentPreview = (request: PreviewRequest, pages: number[]) =>
+  call<Preview>('document_preview', { request, pages });
+
+/** The same of a document that is sent whole. */
+export const documentPreviewWhole = (request: DocumentRequest, pages: number[]) =>
+  documentPreview(
+    {
+      ...request,
+      document: {
+        ...request.document,
+        sections: request.document.sections.map((s, i) => ({ ...s, stamp: `?.${i}` })),
+      },
+    },
+    pages,
+  );
+
+/** Pages of the document that was made last for a key, as they come into view. */
+export const documentPreviewPages = (key: string, pages: number[]) =>
+  call<{ count: number; pages: PreviewPage[] }>('document_preview_pages', { key, pages });
+
+/** Stops what is being made for a key: the preview was closed. */
+export const documentPreviewStop = (key: string) => call<void>('document_preview_stop', { key });
 export const documentExport = (
   request: DocumentRequest,
   target: Target,

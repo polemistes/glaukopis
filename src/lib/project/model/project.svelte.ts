@@ -20,6 +20,7 @@ import {
   readBody,
   readTitle,
   titleHtml,
+  type Block,
   type Inline,
 } from './text';
 import { buildTree, isAncestor, subtree, topmost, type FlatNode, type Tree } from './tree';
@@ -92,6 +93,21 @@ function holdsWorkOfOthers(type: Y.AbstractType<any>, me: number): boolean {
       return true;
   }
   return false;
+}
+
+/**
+ * A text in few signs, by which it is told whether two texts are the same:
+ * its length, and two numbers made of all its signs.
+ */
+function printOf(text: string): string {
+  let a = 0x811c9dc5;
+  let b = 0x01000193;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    a = Math.imul(a ^ c, 0x01000193);
+    b = Math.imul(b + c, 0x85ebca6b) ^ (b >>> 13);
+  }
+  return `${text.length}.${(a >>> 0).toString(36)}.${(b >>> 0).toString(36)}`;
 }
 
 export class Project {
@@ -399,18 +415,26 @@ export class Project {
     this.links = list;
   }
 
+  /** The text of each element as it was read, and what it is known by: see `#readNode`. */
+  #texts = new WeakMap<NodeRecord, { blocks: Block[]; stamp: string }>();
+  /** For each element, what its text was when it was last read, in few signs, and the stamp it has. */
+  #stamps = new Map<string, { print: string; stamp: string }>();
+  #stamped = 0;
+
   #readNode(id: string) {
     const n = this.yNodes.get(id);
     if (!(n instanceof Y.Map)) {
       this.nodes.delete(id);
+      this.#stamps.delete(id);
       return;
     }
     const title = readTitle(n.get('title') as Y.XmlFragment | undefined);
-    const facts = bodyFacts(readBody(n.get('body') as Y.XmlFragment | undefined));
+    const blocks = readBody(n.get('body') as Y.XmlFragment | undefined);
+    const facts = bodyFacts(blocks);
     const pos = n.get('pos') as Position | null | undefined;
     const side = n.get('side');
     const origin = n.get('origin') as NodeRecord['origin'] | undefined;
-    this.nodes.set(id, {
+    const record: NodeRecord = {
       id,
       map: str(n.get('map')),
       parent: (n.get('parent') as string | null | undefined) ?? null,
@@ -428,8 +452,37 @@ export class Project {
       words: facts.words,
       cited: facts.cited,
       notes: facts.notes,
+      noteWords: facts.noteWords,
       set: facts.set,
-    });
+    };
+    // The text as it was read is kept with the record, which is made anew
+    // whenever the element is changed: a document is then made of what was
+    // read already, and only what was changed is read again. The stamp of
+    // a text stays the same while the text does, whatever else of the
+    // element is changed: where it stands in the diagram, whether it is folded.
+    const print = printOf(JSON.stringify(blocks));
+    const before = this.#stamps.get(id);
+    const stamp = before?.print === print ? before.stamp : `${id}.${++this.#stamped}`;
+    this.#stamps.set(id, { print, stamp });
+    this.#texts.set(record, { blocks, stamp });
+    this.nodes.set(id, record);
+  }
+
+  /** The text of an element, as it was read when the element was last changed. */
+  blocksOf(id: string): Block[] {
+    const record = this.nodes.get(id);
+    const kept = record && this.#texts.get(record);
+    return kept ? kept.blocks : readBody(this.fragment(id, 'body') ?? undefined);
+  }
+
+  /**
+   * What tells the text of an element from every other, and from itself as
+   * it was before the element was changed. Nothing, of an element that is
+   * not there.
+   */
+  stampOf(id: string): string | null {
+    const record = this.nodes.get(id);
+    return (record && this.#texts.get(record)?.stamp) ?? null;
   }
 
   #nodesChanged(events: Y.YEvent<Y.AbstractType<unknown>>[]) {

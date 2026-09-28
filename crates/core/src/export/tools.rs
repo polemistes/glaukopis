@@ -3,9 +3,11 @@
 //! the path, then beside the application.
 
 use std::ffi::OsStr;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
 
 use serde::Serialize;
 
@@ -115,6 +117,84 @@ where
         return Err(Error::Program { program: name.into(), message });
     }
     Ok(Output { stdout: out.stdout, messages })
+}
+
+/// The kind of the error of a program that was ended before its end.
+pub const STOPPED: &str = "stopped";
+
+/// Runs a program to its end, unless `stop` is set before: then the program
+/// is ended, and the error says so by its kind. What the program is given
+/// is written, and what it writes is read, each by a thread of its own, so
+/// that it is never kept waiting while it is watched.
+pub fn run_until<I, S>(
+    program: &Path,
+    name: &str,
+    args: I,
+    input: Option<&[u8]>,
+    dir: Option<&Path>,
+    stop: &AtomicBool,
+) -> Result<Output>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let failed = |e: std::io::Error| Error::Program { program: name.into(), message: e.to_string() };
+    let mut c = command(program);
+    c.args(args).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    if let Some(d) = dir {
+        c.current_dir(d);
+    }
+    let mut child = c.spawn().map_err(failed)?;
+    let stdin = child.stdin.take().expect("stdin was asked for");
+    let mut stdout = child.stdout.take().expect("stdout was asked for");
+    let mut stderr = child.stderr.take().expect("stderr was asked for");
+
+    let (status, written, said) = std::thread::scope(|scope| {
+        scope.spawn(move || {
+            let mut stdin = stdin;
+            if let Some(bytes) = input {
+                // A program that ends before reading everything is reported by its status.
+                let _ = stdin.write_all(bytes);
+            }
+        });
+        let written = scope.spawn(move || {
+            let mut all = Vec::new();
+            let _ = stdout.read_to_end(&mut all);
+            all
+        });
+        let said = scope.spawn(move || {
+            let mut all = Vec::new();
+            let _ = stderr.read_to_end(&mut all);
+            all
+        });
+        let status = loop {
+            if stop.load(Ordering::Relaxed) {
+                let _ = child.kill();
+                let _ = child.wait();
+                break None;
+            }
+            match child.try_wait() {
+                Ok(Some(status)) => break Some(Ok(status)),
+                Ok(None) => std::thread::sleep(Duration::from_millis(15)),
+                Err(e) => break Some(Err(e)),
+            }
+        };
+        (status, written.join().unwrap_or_default(), said.join().unwrap_or_default())
+    });
+    let Some(status) = status else {
+        return Err(Error::Refused { kind: STOPPED, message: format!("{name} was stopped.") });
+    };
+    let status = status.map_err(failed)?;
+    let messages = String::from_utf8_lossy(&said).trim().to_owned();
+    if !status.success() {
+        let message = if messages.is_empty() {
+            format!("it ended with {status}")
+        } else {
+            messages.lines().take(12).collect::<Vec<_>>().join("\n")
+        };
+        return Err(Error::Program { program: name.into(), message });
+    }
+    Ok(Output { stdout: written, messages })
 }
 
 fn version_of(path: &Path, name: &str) -> String {

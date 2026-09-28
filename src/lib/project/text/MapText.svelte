@@ -151,6 +151,20 @@
     return { words, notes, cited: cited.size };
   });
 
+  /**
+   * What is counted, as it is shown under the text: a moment behind the
+   * writing, so that the window does not paint at every key all that
+   * stands between the line that is written and the count.
+   */
+  let counted = $state.raw(untrack(() => totals));
+  $effect(() => {
+    const now = totals;
+    if (now.words === counted.words && now.notes === counted.notes && now.cited === counted.cited)
+      return;
+    const timer = setTimeout(() => (counted = now), 500);
+    return () => clearTimeout(timer);
+  });
+
   // ---- activation and focus ----
 
   function activate(id: string, part: Part, at: FocusAt) {
@@ -884,9 +898,9 @@
         >Click the name of the element to associate with · <kbd>Esc</kbd> to leave it</span
       >
     {:else}
-      <span>{plural(totals.words, 'word')}</span>
-      {#if totals.cited}<span>{plural(totals.cited, 'work')} cited</span>{/if}
-      {#if totals.notes}<span>{plural(totals.notes, 'note')}</span>{/if}
+      <span>{plural(counted.words, 'word')}</span>
+      {#if counted.cited}<span>{plural(counted.cited, 'work')} cited</span>{/if}
+      {#if counted.notes}<span>{plural(counted.notes, 'note')}</span>{/if}
       <span class="keys"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> new element · <kbd>@</kbd> cite</span>
     {/if}
   </footer>
@@ -911,7 +925,12 @@
     margin: 0 auto;
     padding: 5px 40px 5px calc(12px + var(--margin) + 35px);
   }
+  /* The text is a region of its own: how large it is does not follow from
+     what is written in it, and what is written changes nothing outside
+     it. Without this being said, every key has the whole window laid out
+     and painted anew, the preview beside the text with it. */
   .scroller {
+    contain: strict;
     flex: 1;
     min-height: 0;
     overflow-y: auto;

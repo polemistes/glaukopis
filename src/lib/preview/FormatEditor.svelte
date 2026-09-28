@@ -4,7 +4,7 @@
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
   import {
-    documentPreview,
+    documentPreviewWhole,
     fontsList,
     formatsDelete,
     formatsGet,
@@ -86,12 +86,13 @@
       const r = await request();
       r.format = JSON.parse(snapshot);
       r.key = `${r.key}-format`;
-      const preview = await documentPreview(r);
+      // The first pages are what is shown: no others are made.
+      const preview = await documentPreviewWhole(r, [1, 2, 3, 4, 5, 6]);
       if (mine !== round) return;
       for (const url of pages) URL.revokeObjectURL(url);
-      pages = preview.pages
-        .slice(0, 6)
-        .map((svg) => URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })));
+      pages = preview.pages.map((page) =>
+        URL.createObjectURL(new Blob([page.svg], { type: 'image/svg+xml' })),
+      );
       previewError = null;
     } catch (e) {
       if (mine === round) previewError = describeError(e) ?? 'The sample could not be made.';
