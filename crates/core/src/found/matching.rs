@@ -51,6 +51,12 @@ pub(super) struct Work {
     title: String,
 }
 
+/// The order of works that are as sure as one another, the greatest first:
+/// how well the names agree, how much of the title was said, whether the
+/// year is that of the work and not of its first coming out, and how near
+/// the year is.
+type Order = (usize, usize, usize, i32);
+
 /// A word that follows a name in a text, folded.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct Said {
@@ -307,8 +313,7 @@ impl Shelf {
         if near.iter().any(|&i| self.works[i].named(said.names).1) {
             near.retain(|&i| self.works[i].named(said.names).1);
         }
-        // (the work, how sure, the order among those as sure, why)
-        let mut found: Vec<(usize, Sure, (usize, usize, usize, i32), String)> = Vec::new();
+        let mut found: Vec<(usize, Sure, Order, String)> = Vec::new();
         for i in near {
             let work = &self.works[i];
             let (agree, first) = work.named(said.names);
@@ -383,15 +388,25 @@ impl Shelf {
         let said: Vec<String> = titles.iter().filter(|t| !t.is_empty()).map(|t| t.join(" ")).collect();
 
         let mut near: Vec<usize> = Vec::new();
-        let lists = names
-            .iter()
-            .filter_map(|name| self.by_name.get(name))
-            .chain(titles.iter().flatten().filter(|w| tells(w)).filter_map(|word| self.by_title_word.get(word)));
-        for list in lists {
-            for &i in list {
-                if !near.contains(&i) {
-                    near.push(i);
-                }
+        for &i in names.iter().filter_map(|name| self.by_name.get(name)).flatten() {
+            if !near.contains(&i) {
+                near.push(i);
+            }
+        }
+        // Of those that share words of the title, the ones that share most:
+        // a word such as "Homer" is in many titles of one library.
+        let mut telling: Vec<&String> = titles.iter().flatten().filter(|word| tells(word)).collect();
+        telling.sort_unstable();
+        telling.dedup();
+        let mut shared: HashMap<usize, usize> = HashMap::new();
+        for &i in telling.iter().filter_map(|word| self.by_title_word.get(*word)).flatten() {
+            *shared.entry(i).or_default() += 1;
+        }
+        let mut shared: Vec<(usize, usize)> = shared.into_iter().collect();
+        shared.sort_unstable_by_key(|(i, count)| (std::cmp::Reverse(*count), *i));
+        for (i, _) in shared.into_iter().take(40) {
+            if !near.contains(&i) {
+                near.push(i);
             }
         }
 
@@ -549,8 +564,12 @@ pub(super) fn suggest(library: &Library, item: &FoundItem) -> Vec<Suggestion> {
         gathered.add(vec![(i, Sure::Certain, why.to_owned())]);
     }
 
-    // What the file says of the work.
-    if let Some(said) = item.data.as_ref().and_then(csl::convert) {
+    // What the file says of the work: looked at where the key and the tag
+    // have not said which work it is. It is what takes time, and beside
+    // what is certain the rest is of no use.
+    if gathered.certain.is_none()
+        && let Some(said) = item.data.as_ref().and_then(csl::convert)
+    {
         let entry = said.draft.to_entry();
         let hits = shelf.prints.find(&duplicates::fingerprint(&entry), None);
         gathered.add(
@@ -569,7 +588,7 @@ pub(super) fn suggest(library: &Library, item: &FoundItem) -> Vec<Suggestion> {
 
     let mut found = gathered.found;
     // The order within those that are as sure is that of what is most certain.
-    found.sort_by(|a, b| b.1.cmp(&a.1));
+    found.sort_by_key(|(_, sure, _)| std::cmp::Reverse(*sure));
     found.truncate(MOST);
     found.into_iter().map(|(i, sure, why)| Suggestion { reference: shelf.ids[i].clone(), sure, why }).collect()
 }
@@ -737,13 +756,10 @@ mod tests {
         let found = suggest(&library, &item);
         assert_eq!(keys(&library, &found), vec![("west1988".into(), Sure::Likely), ("west1988b".into(), Sure::Likely)]);
 
-        // The tag says which of them is meant.
+        // The tag says which of them is meant, and then nothing else is looked for.
         let item = FoundItem { key: Some("west1988b".into()), ..item };
         let found = suggest(&library, &item);
-        assert_eq!(
-            keys(&library, &found),
-            vec![("west1988b".into(), Sure::Certain), ("west1988".into(), Sure::Likely)]
-        );
+        assert_eq!(keys(&library, &found), vec![("west1988b".into(), Sure::Certain)]);
     }
 
     #[test]

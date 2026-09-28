@@ -211,14 +211,17 @@ fn written_short() -> &'static HashSet<&'static str> {
 /// For every language, the words for every kind of locator, in their forms.
 type Terms = BTreeMap<String, BTreeMap<String, BTreeMap<String, Vec<String>>>>;
 
-/// The words that say what a locator counts, in small letters, by the
-/// letter they begin with, the longest first; each with what it counts.
-fn labels() -> &'static HashMap<char, Vec<(Vec<char>, &'static str)>> {
-    static WORDS: OnceLock<HashMap<char, Vec<(Vec<char>, &'static str)>>> = OnceLock::new();
+/// Words in small letters, by the letter they begin with; each with what it
+/// counts.
+type Counted = HashMap<char, Vec<(Vec<char>, &'static str)>>;
+
+/// The words that say what a locator counts, the longest first.
+fn labels() -> &'static Counted {
+    static WORDS: OnceLock<Counted> = OnceLock::new();
     WORDS.get_or_init(|| {
         let all: Terms = serde_json::from_str(TERMS_JSON).unwrap_or_default();
         let mut seen: HashSet<String> = HashSet::new();
-        let mut words: HashMap<char, Vec<(Vec<char>, &'static str)>> = HashMap::new();
+        let mut words: Counted = HashMap::new();
         let mut add = |word: &str, label: &'static str| {
             let word = word.trim().to_lowercase();
             if let Some(first) = word.chars().next()
@@ -2594,5 +2597,305 @@ mod tests {
         assert!(found.items[0].suggestions.is_empty());
         assert!(propose(&library, &[note("Nagy, Best of the Achaeans, 73.")], &YEARS).is_empty());
         assert_eq!(propose(&library, &[note("Nagy, Best of the Achaeans, 73.")], &NOTES).len(), 1);
+    }
+
+    /// Numbers that look thrown, and are the same every time.
+    struct Dice(u64);
+
+    impl Dice {
+        fn roll(&mut self, sides: usize) -> usize {
+            self.0 = self.0.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
+            ((self.0 >> 33) as usize) % sides.max(1)
+        }
+    }
+
+    /// What holds of all that is proposed, whatever the text.
+    fn is_sound(passage: &Passage, found: &[Proposal]) {
+        let text = passage.text.as_str();
+        let units = text.encode_utf16().count();
+        let mut floor = 0;
+        for proposal in found {
+            assert!(floor <= proposal.start && proposal.start < proposal.end && proposal.end <= units, "in “{text}”");
+            floor = proposal.end;
+            // Places that part a letter in two would make this fail.
+            let said = between(text, proposal.start, proposal.end);
+            assert!(!said.contains(NOTHING), "“{said}” in “{text}”");
+            assert!(
+                passage.taken.iter().all(|(from, to)| proposal.end <= *from || proposal.start >= *to),
+                "in “{text}”"
+            );
+            assert!(!proposal.items.is_empty(), "in “{text}”");
+            let mut within = proposal.start;
+            for item in &proposal.items {
+                assert!(within <= item.start && item.start <= item.end && item.end <= proposal.end, "in “{text}”");
+                within = item.start;
+                between(text, item.start, item.end);
+                assert!(!item.words.trim().is_empty(), "in “{text}”");
+                assert!(item.suggestions.iter().all(|s| s.sure < Sure::Certain), "in “{text}”");
+                assert!(item.suggestions.len() <= 8, "in “{text}”");
+                for said in [&item.locator, &item.prefix, &item.suffix, &item.label].into_iter().flatten() {
+                    assert!(!said.trim().is_empty() && !said.contains(NOTHING), "in “{text}”");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn text_of_any_kind_is_looked_through_without_fault() {
+        let (_tmp, library) = library();
+        let pieces = [
+            "Nagy",
+            "Lord",
+            "West",
+            "van der Valk",
+            "Finkelberg",
+            "March",
+            "In",
+            "1979",
+            "1979a",
+            "1960",
+            "[1960]",
+            "2000",
+            "(",
+            "(",
+            ")",
+            ")",
+            "[",
+            "]",
+            ";",
+            ",",
+            ",",
+            ".",
+            ":",
+            " ",
+            " ",
+            " ",
+            "\n",
+            "\u{a0}",
+            "\u{fffc}",
+            "see",
+            "See",
+            "cf.",
+            "vgl.",
+            "et al.",
+            "and",
+            "&",
+            "ibid.",
+            "Ibid.",
+            "op. cit.",
+            "p.",
+            "pp.",
+            "S.",
+            "ch.",
+            "73",
+            "73–75",
+            "12-14",
+            "f.",
+            "ff.",
+            "n.",
+            "§",
+            "’s",
+            "'",
+            "“",
+            "”",
+            "𝔄",
+            "😀",
+            "é",
+            "ß",
+            "İ",
+            "ǅ",
+            "Best of the Achaeans",
+            "Singer",
+            "The",
+            "G.",
+            "M. L.",
+            "n.d.",
+            "forthcoming",
+            "-",
+            "–",
+            "xii",
+            "e.g.",
+            "(eds.)",
+            "ed.",
+            "b",
+            "a",
+        ];
+        let mut dice = Dice(7);
+        for round in 0..4000 {
+            let text: String = (0..dice.roll(28)).map(|_| pieces[dice.roll(pieces.len())]).collect();
+            let units = text.encode_utf16().count();
+            let mut taken = Vec::new();
+            if round % 3 == 0 && units > 0 {
+                let from = dice.roll(units);
+                taken.push((from, (from + 1 + dice.roll(4)).min(units)));
+            }
+            for is_note in [false, true] {
+                let passage = Passage { id: "p".into(), text: text.clone(), note: is_note, taken: taken.clone() };
+                for options in [YEARS, NOTES, Options { years: false, notes: false }] {
+                    is_sound(&passage, &propose(&library, std::slice::from_ref(&passage), &options));
+                }
+            }
+        }
+    }
+
+    /// Text of 200 000 words in 3 000 passages, against a library of 2 000
+    /// entries. It says how long it took:
+    ///
+    ///     cargo test -p glaukopis-core --release much_text -- --ignored --nocapture
+    #[test]
+    #[ignore = "measures time; to be run in a release build"]
+    fn much_text_against_a_large_library() {
+        use std::time::{Duration, Instant};
+
+        use crate::bib::names::Person;
+        use crate::found::{FoundItem, suggest};
+        use crate::library::entry::Draft;
+
+        let first = ["Na", "Lor", "Wes", "Par", "Kir", "Bur", "Ver", "Det", "Fol", "Mar", "Jan", "Gri", "Hai", "Mue"];
+        let second =
+            ["gy", "d", "t", "ry", "k", "kert", "nant", "ienne", "ey", "tin", "ko", "ffin", "nsworth", "llner"];
+        let third = ["", "son", "sen", "berg", "stein", "er", "mann", "ini", "ova", "ez"];
+        let sounds = ["ka", "lo", "mi", "ne", "ru", "sa", "te", "vo", "phi", "the", "xe", "ly"];
+        let words = [
+            "the",
+            "of",
+            "and",
+            "hero",
+            "song",
+            "is",
+            "in",
+            "epic",
+            "poetry",
+            "that",
+            "singer",
+            "tradition",
+            "was",
+            "it",
+            "oral",
+            "tale",
+            "as",
+            "formula",
+            "to",
+            "wrath",
+            "glory",
+            "with",
+            "theme",
+            "verse",
+            "by",
+            "cult",
+        ];
+
+        let mut dice = Dice(1);
+        let mut drafts = Vec::new();
+        let mut authors: Vec<(String, i32, String)> = Vec::new();
+        for _ in 0..2000 {
+            let family = format!("{}{}{}", first[dice.roll(14)], second[dice.roll(14)], third[dice.roll(10)]);
+            let year = 1900 + dice.roll(120) as i32;
+            // Words that many titles have, and words that few have.
+            let mut title: Vec<String> =
+                (0..2 + dice.roll(3)).map(|_| words[dice.roll(words.len())].to_owned()).collect();
+            for _ in 0..2 + dice.roll(3) {
+                let at = dice.roll(title.len() + 1);
+                title
+                    .insert(at, format!("{}{}{}", sounds[dice.roll(12)], sounds[dice.roll(12)], sounds[dice.roll(12)]));
+            }
+            let title = format!("On {}", title.join(" "));
+            let mut draft = Draft { entry_type: "book".into(), ..Default::default() };
+            draft.fields.insert("title".into(), title.clone());
+            draft.fields.insert("date".into(), year.to_string());
+            draft.names.insert("author".into(), vec![Person::new(family.clone(), "Anna Maria")]);
+            authors.push((family, year, title));
+            drafts.push(draft);
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let mut library = Library::open_at(&tmp.path().join("library")).unwrap();
+        library.add_many(&drafts).unwrap();
+
+        let mut passages = Vec::new();
+        let mut count = 0;
+        for n in 0..3000 {
+            let mut text = String::new();
+            let mut said = 0;
+            while said < 67 {
+                match dice.roll(30) {
+                    0 => {
+                        let (family, year, _) = &authors[dice.roll(authors.len())];
+                        text.push_str(&format!(
+                            "(see {family} {year}, {}–{}) ",
+                            10 + dice.roll(80),
+                            100 + dice.roll(80)
+                        ));
+                        said += 4;
+                    }
+                    1 => {
+                        let (family, year, _) = &authors[dice.roll(authors.len())];
+                        text.push_str(&format!("{family} ({year}) "));
+                        said += 2;
+                    }
+                    2 => {
+                        let (family, _, title) = &authors[dice.roll(authors.len())];
+                        text.push_str(&format!("{family}, {title}, {}; ", 1 + dice.roll(300)));
+                        said += 3 + title.split(' ').count();
+                    }
+                    3 => {
+                        text.push_str(&format!("(in {}) It ", 1000 + dice.roll(1000)));
+                        said += 3;
+                    }
+                    _ => {
+                        text.push_str(words[dice.roll(words.len())]);
+                        text.push(' ');
+                        said += 1;
+                    }
+                }
+            }
+            count += said;
+            passages.push(Passage { id: n.to_string(), text, note: n % 5 == 0, ..Default::default() });
+        }
+        assert!(count >= 200_000, "{count} words");
+
+        // The first time what the library has is laid out; after that it is kept.
+        let begun = Instant::now();
+        let found = propose(&library, &passages, &NOTES);
+        let laid_out = begun.elapsed();
+        let begun = Instant::now();
+        let again = propose(&library, &passages, &NOTES);
+        let kept = begun.elapsed();
+        assert_eq!(found, again);
+        for passage in &passages {
+            let of_it: Vec<Proposal> = found.iter().filter(|p| p.passage == passage.id).cloned().collect();
+            is_sound(passage, &of_it);
+        }
+        let works: usize = found.iter().map(|p| p.items.len()).sum();
+        let known: usize = found.iter().flat_map(|p| &p.items).filter(|item| !item.suggestions.is_empty()).count();
+
+        let items: Vec<FoundItem> = authors
+            .iter()
+            .take(300)
+            .map(|(family, year, title)| FoundItem {
+                data: Some(serde_json::json!({
+                    "type": "book", "title": title, "author": [{"family": family, "given": "Anna Maria"}],
+                    "issued": {"date-parts": [[year]]}
+                })),
+                ..Default::default()
+            })
+            .collect();
+        let begun = Instant::now();
+        let suggested: usize = items.iter().map(|item| suggest(&library, item).len()).sum();
+        let looked_up = begun.elapsed();
+
+        println!(
+            "{count} words in {} passages against {} entries: {} citations of {works} works ({known} with \
+             references) in {laid_out:?} the first time, {kept:?} after that; {} works looked up in {looked_up:?} \
+             ({suggested} references)",
+            passages.len(),
+            library.len(),
+            found.len(),
+            items.len(),
+        );
+        assert!(found.len() > 3000);
+        if !cfg!(debug_assertions) {
+            assert!(laid_out < Duration::from_millis(1000), "{laid_out:?}");
+            assert!(looked_up < Duration::from_millis(1000), "{looked_up:?}");
+        }
     }
 }
