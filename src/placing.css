@@ -55,6 +55,10 @@
   margin-right: 0;
   margin-left: 1.4em;
 }
+/* Where it is written, a table keeps the room over it for its tools. */
+.prose:not(.static) .tabular[data-around] {
+  margin-top: 2.2em;
+}
 .figure[data-around] .picture {
   width: 100% !important;
 }
@@ -104,6 +108,17 @@
   margin-top: 0;
   margin-bottom: 0;
   min-width: 0;
+}
+/* Tables beside each other have less room each: smaller type, as in the
+   document, and words that break where they must. */
+.row-of > .tabular table {
+  font-size: 0.82em;
+}
+.row-of > .tabular :is(th, td) {
+  min-width: 1.6em;
+  padding-left: 0.45em;
+  padding-right: 0.45em;
+  overflow-wrap: anywhere;
 }
 .row-of > .equation {
   align-self: center;

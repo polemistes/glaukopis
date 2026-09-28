@@ -27,13 +27,20 @@ writeFileSync(
   '﻿Leader;Ships;Share;From\nAgamemnon;100;8,4;Mycenae\nNestor;90;7,6;Pylos\n"Aias, son of Telamon";12;1,0;Salamis\nOdysseus;12;1,0;Ithaca\n',
 );
 writeFileSync(join(desk, 'a letter.txt'), 'Dear friend,\nthis is no table.\n');
-writeFileSync(join(desk, 'too many.csv'), Array.from({ length: 2001 }, (_, i) => `${i},x`).join('\n'));
+writeFileSync(
+  join(desk, 'too many.csv'),
+  Array.from({ length: 2001 }, (_, i) => `${i},x`).join('\n'),
+);
 
 const app = await App.launch({ width: 1360, height: 900 });
 try {
   await app.installErrorHook();
   const invoke = (command, args = {}) =>
-    app.execAsync(`return await window.__TAURI_INTERNALS__.invoke(arguments[0], arguments[1]);`, command, args);
+    app.execAsync(
+      `return await window.__TAURI_INTERNALS__.invoke(arguments[0], arguments[1]);`,
+      command,
+      args,
+    );
   const drop = (paths, x, y) =>
     app.execAsync(
       `const emit = (event, payload) => window.__TAURI_INTERNALS__.invoke('plugin:event|emit', { event, payload });
@@ -91,7 +98,10 @@ try {
   const choose = async (words) => {
     await app.waitFor('.menu');
     await sleep(120);
-    await app.clickText('.menu [role="menuitem"], .menu [role="menuitemcheckbox"], .menu button', words);
+    await app.clickText(
+      '.menu [role="menuitem"], .menu [role="menuitemcheckbox"], .menu button',
+      words,
+    );
     await sleep(200);
   };
   const tool = async (name, words) => {
@@ -158,29 +168,55 @@ try {
     `const n = document.querySelectorAll('.popover .size input[type="number"]');
      return n[0].value + 'x' + n[1].value + ':' + document.querySelector('.popover .size input[type="checkbox"]').checked + ':' + document.querySelectorAll('.popover .grid button.on').length`,
   );
-  check('Insert › Table… asks for rows and columns: three by three, the first row headings', asked === '3x3:true:9', asked);
+  check(
+    'Insert › Table… asks for rows and columns: three by three, the first row headings',
+    asked === '3x3:true:9',
+    asked,
+  );
   await app.screenshot('tables-1-size');
   await app.press('Enter');
   await app.waitGone('.popover');
   await until('the table', () => app.exists(`${text} figure.tabular table`));
-  check('the table stands after the paragraph', (await tables(text)).join('') === 'Table 1 [*,*,* / ,, / ,,]', (await tables(text)).join(''));
-  check('the cursor is in its first cell', (await focusIn()) === 'cell:' && (await app.exec(`const s = getSelection(); const c = s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement).closest('th'); return !!c && c === document.querySelector(arguments[0] + ' th')`, text)));
+  check(
+    'the table stands after the paragraph',
+    (await tables(text)).join('') === 'Table 1 [*,*,* / ,, / ,,]',
+    (await tables(text)).join(''),
+  );
+  check(
+    'the cursor is in its first cell',
+    (await focusIn()) === 'cell:' &&
+      (await app.exec(
+        `const s = getSelection(); const c = s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement).closest('th'); return !!c && c === document.querySelector(arguments[0] + ' th')`,
+        text,
+      )),
+  );
   await until('the tools of the table', () => app.exists('.table-bar .bar'));
   check('the tools of the table are shown while the cursor is in it', true);
 
   // ---- writing in cells ----
   for (const word of ['Work', 'Lines', 'Books', 'Iliad', '15693', '24', 'Odyssey', '12109', '24']) {
     await app.keys(word);
-    if (word !== '24' || !(await tables(text)).join('').includes('12109,24')) await app.press('Tab');
+    if (word !== '24' || !(await tables(text)).join('').includes('12109,24'))
+      await app.press('Tab');
     await sleep(60);
   }
-  check('Tab goes from cell to cell', (await tables(text)).join('') === 'Table 1 [*Work,*Lines,*Books / Iliad,15693,24 / Odyssey,12109,24]', (await tables(text)).join(''));
+  check(
+    'Tab goes from cell to cell',
+    (await tables(text)).join('') ===
+      'Table 1 [*Work,*Lines,*Books / Iliad,15693,24 / Odyssey,12109,24]',
+    (await tables(text)).join(''),
+  );
   await app.press('Tab');
   await sleep(150);
   await app.keys('Both');
   await app.press('Tab');
   await app.keys('27802');
-  check('and from the last cell to a new row', (await tables(text)).join('') === 'Table 1 [*Work,*Lines,*Books / Iliad,15693,24 / Odyssey,12109,24 / Both,27802,]', (await tables(text)).join(''));
+  check(
+    'and from the last cell to a new row',
+    (await tables(text)).join('') ===
+      'Table 1 [*Work,*Lines,*Books / Iliad,15693,24 / Odyssey,12109,24 / Both,27802,]',
+    (await tables(text)).join(''),
+  );
 
   // ---- a citation in a cell ----
   await app.press('Tab');
@@ -195,7 +231,10 @@ try {
   await app.press('Enter');
   await app.waitGone('.editor');
   await sleep(200);
-  const cited = await app.exec(`const c = document.querySelector(arguments[0] + ' tr:nth-child(4) td:nth-child(3) .citation'); return c ? c.textContent : null`, text);
+  const cited = await app.exec(
+    `const c = document.querySelector(arguments[0] + ' tr:nth-child(4) td:nth-child(3) .citation'); return c ? c.textContent : null`,
+    text,
+  );
   check('a work is cited in a cell, by @', /Nagy 1979, 12/.test(cited ?? ''), String(cited));
   await app.keys(['Shift', 'Tab']);
   await sleep(100);
@@ -204,12 +243,25 @@ try {
   // ---- what is said of it ----
   await app.click(`${text} figure.tabular figcaption`);
   await sleep(200);
-  check('nothing is said of it yet, and the place for it says so', await app.exec(`return document.querySelector(arguments[0] + ' figure.tabular').classList.contains('uncaptioned') && getComputedStyle(document.querySelector(arguments[0] + ' figure.tabular figcaption'), '::after').content.includes('What is said of the table')`, text));
+  check(
+    'nothing is said of it yet, and the place for it says so',
+    await app.exec(
+      `return document.querySelector(arguments[0] + ' figure.tabular').classList.contains('uncaptioned') && getComputedStyle(document.querySelector(arguments[0] + ' figure.tabular figcaption'), '::after').content.includes('What is said of the table')`,
+      text,
+    ),
+  );
   await app.keys('The poems and their lines');
   const label = await until('the word and the number', () =>
-    app.exec(`return document.querySelector(arguments[0] + ' figure.tabular figcaption').dataset.label || null`, text),
+    app.exec(
+      `return document.querySelector(arguments[0] + ' figure.tabular figcaption').dataset.label || null`,
+      text,
+    ),
   );
-  check('before what is said of it stand the word and the number', label === 'Table 1. ', JSON.stringify(label));
+  check(
+    'before what is said of it stand the word and the number',
+    label === 'Table 1. ',
+    JSON.stringify(label),
+  );
   const over = await app.exec(
     `const f = document.querySelector(arguments[0] + ' figure.tabular'); return f.querySelector('figcaption').getBoundingClientRect().bottom <= f.querySelector('table').getBoundingClientRect().top + 1`,
     text,
@@ -218,7 +270,11 @@ try {
   await app.screenshot('tables-2-written');
   await app.press('Tab');
   await sleep(100);
-  check('Tab in what is said of it goes to the first cell', (await focusIn()) === 'cell:Work', await focusIn());
+  check(
+    'Tab in what is said of it goes to the first cell',
+    (await focusIn()) === 'cell:Work',
+    await focusIn(),
+  );
   await app.keys(['Shift', 'Tab']);
   await sleep(100);
   check('and Shift-Tab from there back', (await focusIn()) === 'caption', await focusIn());
@@ -234,40 +290,70 @@ try {
   // ---- the arrows ----
   await app.press('ArrowUp');
   await sleep(150);
-  check('the arrow up from the text under it goes into the table', /^cell:/.test(await focusIn()), await focusIn());
+  check(
+    'the arrow up from the text under it goes into the table',
+    /^cell:/.test(await focusIn()),
+    await focusIn(),
+  );
   await app.click(`${text} tr:last-child td`);
   await sleep(150);
   await app.press('ArrowDown');
   await sleep(150);
-  check('the arrow down from its last row leaves it', (await focusIn()) === 'p:After the table.', await focusIn());
+  check(
+    'the arrow down from its last row leaves it',
+    (await focusIn()) === 'p:After the table.',
+    await focusIn(),
+  );
   await app.click(`${text} th`);
   await sleep(150);
   await app.press('ArrowUp');
   await sleep(150);
-  check('the arrow up from its first row goes to what is said of it', (await focusIn()) === 'caption', await focusIn());
+  check(
+    'the arrow up from its first row goes to what is said of it',
+    (await focusIn()) === 'caption',
+    await focusIn(),
+  );
   await app.press('ArrowUp');
   await sleep(150);
-  check('and from there to the text over it', (await focusIn()) === 'p:The poems, counted.', await focusIn());
+  check(
+    'and from there to the text over it',
+    (await focusIn()) === 'p:The poems, counted.',
+    await focusIn(),
+  );
 
   // ---- rows and columns ----
   await app.click(`${text} tr:nth-child(2) td:nth-child(2)`);
   await sleep(200);
   await tool('rows', 'A row above');
   await tool('columns', 'A column after');
-  check('a row above and a column after', (await tables(text)).join('') === 'Table 1. The poems and their lines [*Work,*Lines,*,*Books / ,,, / Iliad,15693,,24 / Odyssey,12109,,24 / Both,27802,,@]', (await tables(text)).join(''));
+  check(
+    'a row above and a column after',
+    (await tables(text)).join('') ===
+      'Table 1. The poems and their lines [*Work,*Lines,*,*Books / ,,, / Iliad,15693,,24 / Odyssey,12109,,24 / Both,27802,,@]',
+    (await tables(text)).join(''),
+  );
   await app.click(`${text} tr:nth-child(2) td:nth-child(3)`);
   await sleep(200);
   await tool('rows', 'Remove the row');
   await app.click(`${text} tr:nth-child(2) td:nth-child(3)`);
   await sleep(200);
   await tool('columns', 'Remove the column');
-  check('and removed again', (await tables(text)).join('') === 'Table 1. The poems and their lines [*Work,*Lines,*Books / Iliad,15693,24 / Odyssey,12109,24 / Both,27802,@]', (await tables(text)).join(''));
+  check(
+    'and removed again',
+    (await tables(text)).join('') ===
+      'Table 1. The poems and their lines [*Work,*Lines,*Books / Iliad,15693,24 / Odyssey,12109,24 / Both,27802,@]',
+    (await tables(text)).join(''),
+  );
 
   // ---- where what the cells hold stands ----
   await app.click(`${text} tr:nth-child(2) td:nth-child(2)`);
   await sleep(200);
   await tool('right');
-  check('what a cell holds is set to the right', (await tables(text)).join('').includes('Iliad,15693>right,24'), (await tables(text)).join(''));
+  check(
+    'what a cell holds is set to the right',
+    (await tables(text)).join('').includes('Iliad,15693>right,24'),
+    (await tables(text)).join(''),
+  );
   check('and the tool says so', await app.exists('.table-bar [data-tool="right"].on'));
 
   // ---- cells joined and split ----
@@ -278,29 +364,59 @@ try {
   await app.click(`${text} tr:nth-child(4) td:nth-child(2)`);
   await app.press('End');
   await app.keys(['Shift', 'ArrowRight']);
-  await until('two cells to be selected', async () => (await app.count(`${text} .selectedCell`)) === 2);
+  await until(
+    'two cells to be selected',
+    async () => (await app.count(`${text} .selectedCell`)) === 2,
+  );
   check('cells are selected with Shift and the arrows', true);
   await app.screenshot('tables-3-selected');
   await tool('join');
-  check('and joined', (await tables(text)).join('').endsWith('/ Both,27802@×2]'), (await tables(text)).join(''));
+  check(
+    'and joined',
+    (await tables(text)).join('').endsWith('/ Both,27802@×2]'),
+    (await tables(text)).join(''),
+  );
   await app.click(`${text} tr:nth-child(4) td:nth-child(2)`);
   await sleep(200);
   await tool('split');
-  check('a cell that was joined is split', (await tables(text)).join('').endsWith('/ Both,27802@,]'), (await tables(text)).join(''));
+  check(
+    'a cell that was joined is split',
+    (await tables(text)).join('').endsWith('/ Both,27802@,]'),
+    (await tables(text)).join(''),
+  );
 
   // ---- headings ----
   await tool('headings');
   await app.waitFor('.menu');
   await sleep(150);
-  const ticked = await app.exec(`return Array.from(document.querySelectorAll('.menu .item')).map((i) => (i.querySelector('.check svg') ? '✓' : '') + i.textContent.trim()).join(' | ')`);
-  check('the first row is headings, the first column is not', ticked === '✓The first row is headings | The first column is headings', ticked);
+  const ticked = await app.exec(
+    `return Array.from(document.querySelectorAll('.menu .item')).map((i) => (i.querySelector('.check svg') ? '✓' : '') + i.textContent.trim()).join(' | ')`,
+  );
+  check(
+    'the first row is headings, the first column is not',
+    ticked === '✓The first row is headings | The first column is headings',
+    ticked,
+  );
   await choose('The first column is headings');
-  check('the first column is made headings', (await tables(text)).join('') === 'Table 1. The poems and their lines [*Work,*Lines,*Books / *Iliad,15693>right,24 / *Odyssey,12109,24 / *Both,27802@,]', (await tables(text)).join(''));
+  check(
+    'the first column is made headings',
+    (await tables(text)).join('') ===
+      'Table 1. The poems and their lines [*Work,*Lines,*Books / *Iliad,15693>right,24 / *Odyssey,12109,24 / *Both,27802@,]',
+    (await tables(text)).join(''),
+  );
   await tool('headings', 'The first row is headings');
-  check('and the first row is not', (await tables(text)).join('').includes('[*Work,Lines,Books / *Iliad'), (await tables(text)).join(''));
+  check(
+    'and the first row is not',
+    (await tables(text)).join('').includes('[*Work,Lines,Books / *Iliad'),
+    (await tables(text)).join(''),
+  );
   await tool('headings', 'The first row is headings');
   await tool('headings', 'The first column is headings');
-  check('and as it was', (await tables(text)).join('').includes('[*Work,*Lines,*Books / Iliad,'), (await tables(text)).join(''));
+  check(
+    'and as it was',
+    (await tables(text)).join('').includes('[*Work,*Lines,*Books / Iliad,'),
+    (await tables(text)).join(''),
+  );
 
   // ---- the menu on a cell ----
   await app.rightClick(`${text} tr:nth-child(3) td:nth-child(1)`);
@@ -315,16 +431,27 @@ try {
   );
   await app.screenshot('tables-4-menu');
   await choose('A row below');
-  check('and does it to the cell it was asked for on', (await tables(text)).join('').includes('/ Odyssey,12109,24 / ,, / Both,27802@,]'), (await tables(text)).join(''));
+  check(
+    'and does it to the cell it was asked for on',
+    (await tables(text)).join('').includes('/ Odyssey,12109,24 / ,, / Both,27802@,]'),
+    (await tables(text)).join(''),
+  );
   await app.keys(['Control', 'z']);
   await sleep(250);
-  check('what was done is undone', (await tables(text)).join('').includes('/ Odyssey,12109,24 / Both,27802@,]'), (await tables(text)).join(''));
+  check(
+    'what was done is undone',
+    (await tables(text)).join('').includes('/ Odyssey,12109,24 / Both,27802@,]'),
+    (await tables(text)).join(''),
+  );
 
   // ---- the tools for writing, in a cell ----
   await app.click(`${text} tr:nth-child(4) td:nth-child(1)`);
   await sleep(200);
   await app.press('End');
-  check('the tools for writing act in a cell', await app.exists('.text-view .tools button[aria-label="Italic"]:not(:disabled)'));
+  check(
+    'the tools for writing act in a cell',
+    await app.exists('.text-view .tools button[aria-label="Italic"]:not(:disabled)'),
+  );
   await app.clickText('.text-view .tools button', 'Note');
   await app.waitFor('.note-panel .prose');
   await sleep(150);
@@ -339,14 +466,21 @@ try {
   await app.keys('a=b');
   await app.press('Enter');
   await app.waitGone('.formula-panel');
-  check('a formula stands in a cell', await until('the formula', () => app.exists(`${text} td .math math`)));
+  check(
+    'a formula stands in a cell',
+    await until('the formula', () => app.exists(`${text} td .math math`)),
+  );
 
   // ---- what can be said of the whole table ----
   await tool('table');
   await app.waitFor('.table-panel', 3000);
   await sleep(250);
   const size = await app.text('.table-panel .size');
-  check('of the whole table: how large it is', size.replace(/\s+/g, ' ') === '4 rows, 3 columns', size);
+  check(
+    'of the whole table: how large it is',
+    size.replace(/\s+/g, ' ') === '4 rows, 3 columns',
+    size,
+  );
   // Where it stands: to the right, and as the format has it again.
   const stands = () =>
     app.exec(
@@ -371,7 +505,13 @@ try {
   check('how wide it is, as a share of the width of the text', wide === '75:75', wide);
   await app.click('.table-panel .check input');
   await sleep(250);
-  check('whether it is numbered', await app.exec(`const f = document.querySelector(arguments[0] + ' figure.tabular'); return f.hasAttribute('data-unnumbered') && !f.querySelector('figcaption').dataset.label`, text));
+  check(
+    'whether it is numbered',
+    await app.exec(
+      `const f = document.querySelector(arguments[0] + ' figure.tabular'); return f.hasAttribute('data-unnumbered') && !f.querySelector('figcaption').dataset.label`,
+      text,
+    ),
+  );
   await app.screenshot('tables-5-panel');
   await app.click('.table-panel .check input');
   await app.clickText('.table-panel .choices button', 'As it needs');
@@ -382,7 +522,13 @@ try {
   check('the panel is within the window', within);
   await app.clickText('.table-panel button', 'Done');
   await app.waitGone('.table-panel');
-  check('and as it was', await app.exec(`const f = document.querySelector(arguments[0] + ' figure.tabular'); return !f.hasAttribute('data-width') && f.querySelector('figcaption').dataset.label.startsWith('Table')`, text));
+  check(
+    'and as it was',
+    await app.exec(
+      `const f = document.querySelector(arguments[0] + ' figure.tabular'); return !f.hasAttribute('data-width') && f.querySelector('figcaption').dataset.label.startsWith('Table')`,
+      text,
+    ),
+  );
 
   // ---- a second table ----
   await app.click(`${text} > p:last-of-type`);
@@ -406,16 +552,31 @@ try {
     const all = await tables(text);
     return all[1]?.startsWith('Table 2') ? all[1] : null;
   });
-  check('a second table, by Ctrl+Alt+T, has the next number', second === 'Table 2 [*ships,*,*,* / ,,,]', second);
+  check(
+    'a second table, by Ctrl+Alt+T, has the next number',
+    second === 'Table 2 [*ships,*,*,* / ,,,]',
+    second,
+  );
 
   // Backspace in a table in which nothing is written.
   for (let i = 0; i < 5; i++) await app.press('Backspace');
   await sleep(200);
-  check('Backspace in a table in which something is written leaves the table', (await tables(text))[1] === 'Table 2 [*,*,*,* / ,,,]', (await tables(text))[1]);
+  check(
+    'Backspace in a table in which something is written leaves the table',
+    (await tables(text))[1] === 'Table 2 [*,*,*,* / ,,,]',
+    (await tables(text))[1],
+  );
   await app.press('Backspace');
   await sleep(250);
-  check('in one in which nothing is written, it takes the table away', (await app.count(`${text} figure.tabular`)) === 1, String(await app.count(`${text} figure.tabular`)));
-  const left = await app.exec(`return Array.from(document.querySelectorAll(arguments[0] + ' > p')).map((p) => p.textContent).join('|')`, text);
+  check(
+    'in one in which nothing is written, it takes the table away',
+    (await app.count(`${text} figure.tabular`)) === 1,
+    String(await app.count(`${text} figure.tabular`)),
+  );
+  const left = await app.exec(
+    `return Array.from(document.querySelectorAll(arguments[0] + ' > p')).map((p) => p.textContent).join('|')`,
+    text,
+  );
   check('and nothing else', left === 'The poems, counted.|After the table.', left);
 
   // ---- pasted from a spreadsheet ----
@@ -434,7 +595,11 @@ try {
     const all = await tables(text);
     return all[1]?.startsWith('Table 2') ? all[1] : null;
   });
-  check('a table copied from a spreadsheet is a table, with nothing said of it', pasted === 'Table 2 [Hero,Ships / Achilles,50>right]', pasted);
+  check(
+    'a table copied from a spreadsheet is a table, with nothing said of it',
+    pasted === 'Table 2 [Hero,Ships / Achilles,50>right]',
+    pasted,
+  );
   // Text with tabs, pasted into a cell.
   await app.click(`${text} figure.tabular:nth-of-type(2) tr:nth-child(2) td:nth-child(1)`);
   await sleep(200);
@@ -445,7 +610,11 @@ try {
     text,
   );
   await sleep(300);
-  check('text with tabs that is pasted into a cell fills the cells from there', (await tables(text))[1] === 'Table 2 [Hero,Ships / Aias,12 / Odysseus,12]', (await tables(text))[1]);
+  check(
+    'text with tabs that is pasted into a cell fills the cells from there',
+    (await tables(text))[1] === 'Table 2 [Hero,Ships / Aias,12 / Odysseus,12]',
+    (await tables(text))[1],
+  );
   await app.click(`${text} figure.tabular:nth-of-type(2) figcaption`);
   await sleep(150);
   await app.keys('heroes');
@@ -460,7 +629,12 @@ try {
   const targets = await app.exec(
     `return Array.from(document.querySelectorAll('.targets .row')).map((r) => r.dataset.kind + ':' + r.querySelector('.called').textContent.replace(/\\u00a0/g, ' ').trim() + ':' + r.querySelector('.words').textContent.trim())`,
   );
-  check('the tables can be pointed to', targets.slice(0, 2).join(' | ') === 'table:Table 1:The poems and their lines | table:Table 2:heroes', targets.join(' | '));
+  check(
+    'the tables can be pointed to',
+    targets.slice(0, 2).join(' | ') ===
+      'table:Table 1:The poems and their lines | table:Table 2:heroes',
+    targets.join(' | '),
+  );
   await app.screenshot('tables-6-pointer');
   await app.keys('heroes');
   await sleep(250);
@@ -468,7 +642,10 @@ try {
   await app.waitGone('.targets');
   await app.keys('.');
   await sleep(250);
-  const line = await app.exec(`return document.querySelector(arguments[0] + ' > p:last-of-type').textContent.replace(/\\u00a0/g, ' ')`, text);
+  const line = await app.exec(
+    `return document.querySelector(arguments[0] + ' > p:last-of-type').textContent.replace(/\\u00a0/g, ' ')`,
+    text,
+  );
   check('the words say what the document calls it', line === 'as is seen in Table 2.', line);
 
   // ---- a table from a file ----
@@ -486,9 +663,22 @@ try {
        Array.from(d.querySelectorAll('.check input')).map((i) => i.checked).join(','),
      ]`,
   );
-  check('a file that is dropped on the text is shown as it was read', read[1] === '*Leader,*Ships>,*Share>,*From / Agamemnon,100>,8,4>,Mycenae / Nestor,90>,7,6>,Pylos / Aias, son of Telamon,12>,1,0>,Salamis / Odysseus,12>,1,0>,Ithaca', read[1]);
-  check('with how large it is', read[0] === 'Ships of the Achaeans.csv' && read[2] === '5 rows, 4 columns', `${read[0]} | ${read[2]}`);
-  check('what the file is called is what is said of the table; the first row holds the headings', read[3] === 'Ships of the Achaeans' && read[4] === 'true,false', `${read[3]} | ${read[4]}`);
+  check(
+    'a file that is dropped on the text is shown as it was read',
+    read[1] ===
+      '*Leader,*Ships>,*Share>,*From / Agamemnon,100>,8,4>,Mycenae / Nestor,90>,7,6>,Pylos / Aias, son of Telamon,12>,1,0>,Salamis / Odysseus,12>,1,0>,Ithaca',
+    read[1],
+  );
+  check(
+    'with how large it is',
+    read[0] === 'Ships of the Achaeans.csv' && read[2] === '5 rows, 4 columns',
+    `${read[0]} | ${read[2]}`,
+  );
+  check(
+    'what the file is called is what is said of the table; the first row holds the headings',
+    read[3] === 'Ships of the Achaeans' && read[4] === 'true,false',
+    `${read[3]} | ${read[4]}`,
+  );
   await app.screenshot('tables-7-from-file');
   await app.setTheme('dark');
   await sleep(200);
@@ -496,18 +686,33 @@ try {
   await app.setTheme('light');
   await app.clickText('dialog footer button', 'Put it into the text');
   await app.waitGone('dialog .from-file');
-  await until('the table from the file', async () => (await app.count(`${text} figure.tabular`)) === 3);
+  await until(
+    'the table from the file',
+    async () => (await app.count(`${text} figure.tabular`)) === 3,
+  );
   const ships = await until('the numbers anew', async () => {
     const all = await tables(text);
     return all[0]?.startsWith('Table 1') && all[2]?.startsWith('Table 3') ? all : null;
   });
   check(
     'it stands where the file was dropped, its numbers to the right',
-    ships[0] === 'Table 1. Ships of the Achaeans [*Leader,*Ships>right,*Share>right,*From / Agamemnon,100>right,8,4>right,Mycenae / Nestor,90>right,7,6>right,Pylos / Aias, son of Telamon,12>right,1,0>right,Salamis / Odysseus,12>right,1,0>right,Ithaca]',
+    ships[0] ===
+      'Table 1. Ships of the Achaeans [*Leader,*Ships>right,*Share>right,*From / Agamemnon,100>right,8,4>right,Mycenae / Nestor,90>right,7,6>right,Pylos / Aias, son of Telamon,12>right,1,0>right,Salamis / Odysseus,12>right,1,0>right,Ithaca]',
     ships[0],
   );
-  check('the tables after it are counted anew, and the words that point follow', ships[1].startsWith('Table 2. The poems') && (await app.exec(`return document.querySelector(arguments[0] + ' .crossref').textContent.replace(/\\u00a0/g, ' ')`, text)) === 'Table 3', ships.join(' ‖ '));
-  check('what is said of it is selected, to be changed', (await app.exec(`return String(getSelection())`)) === 'Ships of the Achaeans');
+  check(
+    'the tables after it are counted anew, and the words that point follow',
+    ships[1].startsWith('Table 2. The poems') &&
+      (await app.exec(
+        `return document.querySelector(arguments[0] + ' .crossref').textContent.replace(/\\u00a0/g, ' ')`,
+        text,
+      )) === 'Table 3',
+    ships.join(' ‖ '),
+  );
+  check(
+    'what is said of it is selected, to be changed',
+    (await app.exec(`return String(getSelection())`)) === 'Ships of the Achaeans',
+  );
   await sleep(300);
   await app.screenshot('tables-8-text');
   await app.setTheme('dark');
@@ -527,10 +732,22 @@ try {
          Array.from(d.querySelectorAll('.shown tr')).map((tr) => Array.from(tr.children).map((c) => (c.tagName === 'TH' ? '*' : '') + c.textContent + (c.style.textAlign ? '>' : '')).join(',')).join(' / ') + ' | ' +
          d.querySelector('.count').textContent.replace(/\\s+/g, ' ').trim()`,
     );
-  check('of a file of sheets, the sheets are offered, and the first is shown: dates as they are read, numbers without needless decimals', (await sheetShown()) === 'Heroes,Ships | *Name,*Born,*Height> / Aias,1250-05-17,2.1> / Teukros,1248-01-02,1.85> | 3 rows, 3 columns', await sheetShown());
-  await app.exec(`const s = document.querySelector('dialog select'); s.value = '1'; s.dispatchEvent(new Event('change', { bubbles: true }));`);
+  check(
+    'of a file of sheets, the sheets are offered, and the first is shown: dates as they are read, numbers without needless decimals',
+    (await sheetShown()) ===
+      'Heroes,Ships | *Name,*Born,*Height> / Aias,1250-05-17,2.1> / Teukros,1248-01-02,1.85> | 3 rows, 3 columns',
+    await sheetShown(),
+  );
+  await app.exec(
+    `const s = document.querySelector('dialog select'); s.value = '1'; s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
   await sleep(250);
-  check('another sheet is chosen', (await sheetShown()) === 'Heroes,Ships | *From,*Ships> / Salamis,12> / Pylos,90> | 3 rows, 2 columns', await sheetShown());
+  check(
+    'another sheet is chosen',
+    (await sheetShown()) ===
+      'Heroes,Ships | *From,*Ships> / Salamis,12> / Pylos,90> | 3 rows, 2 columns',
+    await sheetShown(),
+  );
   await app.screenshot('tables-7-sheets');
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog .from-file');
@@ -542,13 +759,19 @@ try {
   await drop([join(desk, 'a letter.txt')], where.x, where.y);
   // It is a document then, of which a map can be made.
   await app.waitForText('dialog', 'A map from a document', 8000);
-  check('a text that holds no table is not taken for one', !(await app.exists('dialog .from-file')));
+  check(
+    'a text that holds no table is not taken for one',
+    !(await app.exists('dialog .from-file')),
+  );
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]');
   await sleep(600);
   await drop([join(desk, 'too many.csv')], where.x, where.y);
   await app.waitForText('.toaster', 'A table in a text can have 2000 at most', 5000);
-  check('a table that is too large is refused in plain words', (await app.count(`${text} figure.tabular`)) === 3);
+  check(
+    'a table that is too large is refused in plain words',
+    (await app.count(`${text} figure.tabular`)) === 3,
+  );
 
   // ---- a file dropped on an element whose text is not being written ----
   await mark();
@@ -574,12 +797,14 @@ try {
   });
   check(
     'where the text is only shown, the tables are there with their numbers',
-    shown[1] === 'Table 2. The poems and their lines [*Work,*Lines,*Books / Iliad,15693>right,24 / Odyssey,12109,24 / Both°$,27802@,]',
+    shown[1] ===
+      'Table 2. The poems and their lines [*Work,*Lines,*Books / Iliad,15693>right,24 / Odyssey,12109,24 / Both°$,27802@,]',
     shown[1],
   );
   check(
     'a file dropped on an element is a table at the end of its text, the first column headings as was said',
-    shown[3] === 'Table 4. the fleet [*Leader,*Ships>right,*Share>right,*From / *Agamemnon,100>right,8,4>right,Mycenae / *Nestor,90>right,7,6>right,Pylos / *Aias, son of Telamon,12>right,1,0>right,Salamis / *Odysseus,12>right,1,0>right,Ithaca]',
+    shown[3] ===
+      'Table 4. the fleet [*Leader,*Ships>right,*Share>right,*From / *Agamemnon,100>right,8,4>right,Mycenae / *Nestor,90>right,7,6>right,Pylos / *Aias, son of Telamon,12>right,1,0>right,Salamis / *Odysseus,12>right,1,0>right,Ithaca]',
     shown[3],
   );
   const look = await app.exec(
@@ -587,7 +812,11 @@ try {
      const s = getComputedStyle(t); const h = getComputedStyle(t.querySelector('th')); const d = getComputedStyle(t.querySelector('td'));
      return [s.borderTopWidth, s.borderBottomWidth, h.borderBottomWidth, d.borderBottomWidth, h.fontWeight].join(' ')`,
   );
-  check('lines over and under the table and under its headings', /^1(\.5)?px 1(\.5)?px 1px 0px \d+$/.test(look), look);
+  check(
+    'lines over and under the table and under its headings',
+    /^1(\.5)?px 1(\.5)?px 1px 0px \d+$/.test(look),
+    look,
+  );
   await sleep(300);
   await app.screenshot('tables-9-shown');
   await app.setTheme('dark');
@@ -601,15 +830,137 @@ try {
   await sleep(1500);
   const work = join(app.dataDir, 'work', project, 'preview', 'document.typ');
   const typ = () => readFileSync(work, 'utf8');
-  await until('the document to hold the tables', () => (typ().match(/#table\(/g) ?? []).length >= 4, 15000);
+  await until(
+    'the document to hold the tables',
+    () => (typ().match(/#table\(/g) ?? []).length >= 4,
+    15000,
+  );
   const made = typ();
-  check('the document has the tables', (made.match(/#table\(/g) ?? []).length === 4, String((made.match(/#table\(/g) ?? []).length));
-  check('with what they hold, headings and numbers to the right', /table\.header\((table\.cell\(align: left\))?\[Leader\], table\.cell\(align: right\)\[Ships\]/.test(made) && /\[Agamemnon\], table\.cell\(align: right\)\[100\]/.test(made) && made.includes('[15693]'), made.slice(made.indexOf('#table('), made.indexOf('#table(') + 300).replace(/\s+/g, ' '));
-  check('what is said of them, with the word and the number', /Table[~ ]2[\s\S]{0,80}The poems and their lines/.test(made), made.slice(Math.max(0, made.indexOf('The poems and their lines') - 200), made.indexOf('The poems and their lines') + 40).replace(/\s+/g, ' '));
-  check('and the words that point lead to the table', /#link\(<gk-to-[^>]+>\)\[Table[\s~]*3\]/.test(made) && /<gk-to-/.test(made.replace(/#link\(<gk-to-[^>]+>\)/g, '')), (made.match(/#link\(<gk-to-[^\]]+\]/) ?? ['no link'])[0]);
-  const remarks = await app.exec(`const r = document.querySelector('.preview .remarks, .preview .warnings'); return r ? r.textContent.trim() : ''`);
+  check(
+    'the document has the tables',
+    (made.match(/#table\(/g) ?? []).length === 4,
+    String((made.match(/#table\(/g) ?? []).length),
+  );
+  check(
+    'with what they hold, headings and numbers to the right',
+    /table\.header\((table\.cell\(align: left\))?\[Leader\], table\.cell\(align: right\)\[Ships\]/.test(
+      made,
+    ) &&
+      /\[Agamemnon\], table\.cell\(align: right\)\[100\]/.test(made) &&
+      made.includes('[15693]'),
+    made.slice(made.indexOf('#table('), made.indexOf('#table(') + 300).replace(/\s+/g, ' '),
+  );
+  check(
+    'what is said of them, with the word and the number',
+    /Table[~ ]2[\s\S]{0,80}The poems and their lines/.test(made),
+    made
+      .slice(
+        Math.max(0, made.indexOf('The poems and their lines') - 200),
+        made.indexOf('The poems and their lines') + 40,
+      )
+      .replace(/\s+/g, ' '),
+  );
+  check(
+    'and the words that point lead to the table',
+    /#link\(<gk-to-[^>]+>\)\[Table[\s~]*3\]/.test(made) &&
+      /<gk-to-/.test(made.replace(/#link\(<gk-to-[^>]+>\)/g, '')),
+    (made.match(/#link\(<gk-to-[^\]]+\]/) ?? ['no link'])[0],
+  );
+  const remarks = await app.exec(
+    `const r = document.querySelector('.preview .remarks, .preview .warnings'); return r ? r.textContent.trim() : ''`,
+  );
   check('and nothing is said to be lacking of them', !/table/i.test(remarks), remarks);
   await app.screenshot('tables-10-preview');
+
+  // ---- beside each other, and with the text around it ----
+  await mark();
+  await app.click(`${section('The catalogue')} .body figure.tabular td`);
+  await app.waitFor(`${text} figure.tabular`, 5000);
+  await sleep(300);
+  // The second of the tables, which stands after the first with nothing between them.
+  await app.exec(
+    `const t = document.querySelectorAll(arguments[0] + ' figure.tabular')[1]; t.scrollIntoView({ block: 'center' });`,
+    text,
+  );
+  await sleep(200);
+  const cellOfSecond = await app.exec(
+    `const r = document.querySelectorAll(arguments[0] + ' figure.tabular')[1].querySelector('td').getBoundingClientRect(); return { x: Math.round(r.left + 8), y: Math.round(r.top + 8) }`,
+    text,
+  );
+  await app.cmd('POST', '/actions', {
+    actions: [
+      {
+        type: 'pointer',
+        id: 'mouse',
+        parameters: { pointerType: 'mouse' },
+        actions: [
+          { type: 'pointerMove', origin: 'viewport', x: cellOfSecond.x, y: cellOfSecond.y },
+          { type: 'pointerDown', button: 0 },
+          { type: 'pointerUp', button: 0 },
+        ],
+      },
+    ],
+  });
+  await app.cmd('DELETE', '/actions');
+  await sleep(300);
+  await tool('table');
+  await app.waitFor('.table-panel', 3000);
+  await sleep(250);
+  await app.clickText('.table-panel button', 'Put it beside the one before it');
+  await sleep(400);
+  const inRow = await app.exec(
+    `const r = document.querySelector(arguments[0] + ' .row-of'); if (!r) return null;
+     return Array.from(r.children).map((c) => { const b = c.getBoundingClientRect(); return { tag: c.className.split(' ')[0], left: Math.round(b.left), right: Math.round(b.right), top: Math.round(b.top), label: c.querySelector('figcaption').dataset.label } })`,
+    text,
+  );
+  check(
+    'two tables stand beside each other, each with its number',
+    !!inRow &&
+      inRow.length === 2 &&
+      inRow[0].right <= inRow[1].left + 1 &&
+      /^Table\s1/.test(inRow[0].label) &&
+      /^Table\s2/.test(inRow[1].label),
+    JSON.stringify(inRow),
+  );
+  check(
+    'the panel says so, and is still there',
+    /beside others, in a row/.test(await app.text('.table-panel')),
+  );
+  await app.screenshot('tables-11-beside');
+  await until('the document to have them in a row', () => /#gk-row\(2, /.test(typ()), 15000);
+  check('and so in the document', /#gk-row\(2, /.test(typ()));
+  await sleep(1500);
+  await app.screenshot('tables-11-beside-preview');
+  await app.clickText('.table-panel button', 'By itself again');
+  await sleep(400);
+  check(
+    'by itself again, the row is gone',
+    (await app.count(`${text} .row-of`)) === 0 && (await app.count(`${text} figure.tabular`)) === 3,
+  );
+  await app.clickText('.table-panel [role="radiogroup"] button', 'Left');
+  await sleep(200);
+  await app.clickText('.table-panel button', 'Flows around it');
+  await sleep(400);
+  const flowing = await app.exec(
+    `const f = document.querySelectorAll(arguments[0] + ' figure.tabular')[1]; const p = f.nextElementSibling; const a = f.getBoundingClientRect(); const b = p.getBoundingClientRect(); const t = f.querySelector('table').getBoundingClientRect();
+     return { float: getComputedStyle(f).float, beside: b.top < a.bottom, fills: Math.abs(t.width - a.width) < 2, next: p.tagName }`,
+    text,
+  );
+  check(
+    'the text flows around a table at the left',
+    flowing.float === 'left' && flowing.beside && flowing.fills,
+    JSON.stringify(flowing),
+  );
+  await app.screenshot('tables-12-around');
+  await until('the document to have the text around it', () => /#gk-around\(/.test(typ()), 15000);
+  check('and so in the document', /#gk-around\(/.test(typ()));
+  await sleep(1500);
+  await app.screenshot('tables-12-around-preview');
+  await app.clickText('.table-panel [role="radiogroup"] button', 'As the format');
+  await app.clickText('.table-panel button', 'Stands apart');
+  await sleep(200);
+  await app.clickText('.table-panel button', 'Done');
+  await app.waitGone('.table-panel');
 
   // ---- the table is removed ----
   await mark();
@@ -633,26 +984,50 @@ try {
      return (f.querySelector('figcaption').getBoundingClientRect().top >= f.querySelector('table').getBoundingClientRect().bottom - 1) + ':' + getComputedStyle(f.querySelector('td')).borderLeftWidth + ':' + f.getAttribute('data-caption') + f.getAttribute('data-rules')`,
     text,
   );
-  check('as a format has it, what is said of the table stands under it, and lines are around every cell', under === 'true:1px:belowgrid', under);
+  check(
+    'as a format has it, what is said of the table stands under it, and lines are around every cell',
+    under === 'true:1px:belowgrid',
+    under,
+  );
   await app.click(`${text} figure.tabular tr:last-child td`);
   await sleep(150);
   await app.press('ArrowDown');
   await sleep(150);
-  check('then the arrow down from the last row goes to what is said of it', (await saidAt()) === 'caption:Ships of the Achaeans', await saidAt());
+  check(
+    'then the arrow down from the last row goes to what is said of it',
+    (await saidAt()) === 'caption:Ships of the Achaeans',
+    await saidAt(),
+  );
   await app.press('ArrowDown');
   await sleep(150);
-  check('and from there out of the table, to what comes after', (await saidAt()) === 'caption:The poems and their lines', await saidAt());
+  check(
+    'and from there out of the table, to what comes after',
+    (await saidAt()) === 'caption:The poems and their lines',
+    await saidAt(),
+  );
   await app.press('ArrowUp');
   await sleep(150);
-  check('the arrow up from what comes after goes to what is said of it', (await saidAt()) === 'caption:Ships of the Achaeans', await saidAt());
+  check(
+    'the arrow up from what comes after goes to what is said of it',
+    (await saidAt()) === 'caption:Ships of the Achaeans',
+    await saidAt(),
+  );
   await app.press('ArrowUp');
   await sleep(150);
-  check('and from there into the last row', (await saidAt()) === 'cell' && (await focusIn()) === 'cell:Odysseus', `${await saidAt()} ${await focusIn()}`);
+  check(
+    'and from there into the last row',
+    (await saidAt()) === 'cell' && (await focusIn()) === 'cell:Odysseus',
+    `${await saidAt()} ${await focusIn()}`,
+  );
   await app.click(`${text} figure.tabular th`);
   await sleep(150);
   await app.press('ArrowUp');
   await sleep(150);
-  check('the arrow up from the first row leaves the table', (await saidAt()) === 'p:The poems, counted.', await saidAt());
+  check(
+    'the arrow up from the first row leaves the table',
+    (await saidAt()) === 'p:The poems, counted.',
+    await saidAt(),
+  );
   await app.screenshot('tables-11-under');
   await app.exec(
     `const f = document.querySelector(arguments[0] + ' figure.tabular'); f.removeAttribute('data-caption'); f.removeAttribute('data-rules');`,
@@ -664,8 +1039,14 @@ try {
   await app.waitFor('.table-panel', 3000);
   await sleep(200);
   await app.clickText('.table-panel button', 'Remove the table');
-  await until('the table to be gone', async () => (await app.count(`${text} figure.tabular`)) === 2);
-  check('a table is removed, and its tools with it', !(await app.exists('.table-panel')) && !(await app.exists('.table-bar')));
+  await until(
+    'the table to be gone',
+    async () => (await app.count(`${text} figure.tabular`)) === 2,
+  );
+  check(
+    'a table is removed, and its tools with it',
+    !(await app.exists('.table-panel')) && !(await app.exists('.table-bar')),
+  );
   check('the cursor is in the text', /^p:|^caption|^cell:/.test(await focusIn()), await focusIn());
 
   const errors = (await app.pageErrors()).filter((e) => !/could not be read as a table/.test(e));
