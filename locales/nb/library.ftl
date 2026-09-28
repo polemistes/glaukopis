@@ -129,3 +129,110 @@ library-import-counts = { $add } legges til{ $merge ->
        *[other] , { $skip } utelates
     }
 library-import-failed = Importen mislyktes.
+
+## Biblioteket: listen over referanser, og det som kan gjøres med dem.
+
+library-references = Referanser
+library-all-references = Alle referanser
+library-count = { $count ->
+    [one] { $count } referanse
+   *[other] { $count } referanser
+}
+library-selected = { $count ->
+    [one] { $count } referanse valgt
+   *[other] { $count } referanser valgt
+}
+library-selected-of = { $count ->
+    [one] { $selected } av { $count } referanse valgt
+   *[other] { $selected } av { $count } referanser valgt
+}
+library-new-reference = Ny referanse
+library-search = Søk i biblioteket
+library-search-in = Søk i { $name }
+library-search-clear = Tøm søket
+library-sort = Sorter
+library-sort-author = Forfatter
+library-sort-year = År
+library-sort-title = Tittel
+library-sort-added = Dato lagt til
+library-sort-modified = Dato endret
+library-sort-descending = Synkende
+library-import-export = Importer og eksporter
+library-import-file = Importer en fil …
+    .hint = BibLaTeX eller BibTeX
+library-paste = Lim inn referanser …
+library-add-pdfs = Legg til PDF-filer …
+    .hint = Hver av dem slås opp og tas vare på
+library-import-zotero = Importer fra Zotero …
+library-find-duplicates = Finn duplikater …
+library-export-library = Eksporter biblioteket …
+library-export-collection = Eksporter «{ $name }» …
+library-export-one = Eksporter …
+library-export-many = { $count ->
+    [one] Eksporter { $count } referanse …
+   *[other] Eksporter { $count } referanser …
+}
+library-export-title = Eksporter referanser
+library-export-file-references = referanser
+library-export-file-library = bibliotek
+library-exported = { $count ->
+    [one] { $count } referanse eksportert
+   *[other] { $count } referanser eksportert
+}
+library-export-failed = Eksporten mislyktes
+library-empty = Biblioteket ditt er tomt
+    .text = Referanser du legger til her, kan brukes i alle prosjektene dine. Begynn med én, eller hent inn dem du allerede har.
+library-collection-empty = Ingenting i denne samlingen ennå
+    .text = Dra referanser hit fra biblioteket, eller legg til en ny.
+library-nothing-found = Ingenting funnet
+    .text = Ingen referanse har alle disse ordene.
+library-open-file = Åpne filen
+library-file-open-failed = Filen kunne ikke åpnes
+library-add-to-collection = Legg til i samling
+library-remove-from = Fjern fra «{ $name }»
+library-copy-key = Kopier referansenøkkelen
+library-copied-key = Kopierte «{ $key }»
+library-copy-biblatex = Kopier som BibLaTeX
+library-copied = Kopiert
+library-delete-one-title = Slette «{ $name }»?
+library-delete-many-title = { $count ->
+    [one] Slette { $count } referanse?
+   *[other] Slette { $count } referanser?
+}
+library-delete-one = Referansen fjernes fra biblioteket ditt og fra alle samlinger{ $files ->
+        [0] {""}
+        [one] , sammen med { $files } vedlegg
+       *[other] , sammen med { $files } vedlegg
+    }. Kildehenvisninger til den i prosjektene dine vil ikke lenger finne referansen sin.
+library-delete-many = Referansene fjernes fra biblioteket ditt og fra alle samlinger{ $files ->
+        [0] {""}
+        [one] , sammen med { $files } vedlegg
+       *[other] , sammen med { $files } vedlegg
+    }. Kildehenvisninger til dem i prosjektene dine vil ikke lenger finne referansene sine.
+library-delete-failed = Referansene kunne ikke slettes
+library-not-done = Det lot seg ikke gjøre
+
+## Samlinger.
+
+library-collections = Samlinger
+library-collections-hint = Samlinger samler referanser til et emne eller et arbeid. En referanse kan være med i så mange av dem du vil.
+library-collection-new = Ny samling
+library-collection-new-inside = Ny samling inni
+library-collection-name = Navn på samlingen
+library-collection-name-failed = Samlingen kunne ikke få navn
+library-collection-expand = Brett ut
+library-collection-collapse = Brett sammen
+library-collection-to-top = Flytt til øverste nivå
+library-collection-move-failed = Samlingen kunne ikke flyttes
+library-collection-added = { $count ->
+    [one] { $count } referanse lagt til i «{ $name }»
+   *[other] { $count } referanser lagt til i «{ $name }»
+}
+library-collection-already = Allerede i «{ $name }»
+library-collection-delete = Slett samlingen
+library-collection-delete-title = Slette samlingen «{ $name }»?
+library-collection-delete-message = { $inside ->
+    [0] Referansene blir værende i biblioteket ditt.
+   *[other] Samlingene inni den slettes også. Referansene blir værende i biblioteket ditt.
+}
+library-collection-delete-failed = Samlingen kunne ikke slettes

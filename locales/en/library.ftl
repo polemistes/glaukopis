@@ -134,3 +134,112 @@ library-import-counts = { $add } to add{ $merge ->
        *[other] , { $skip } left out
     }
 library-import-failed = The import failed.
+
+## The library: the list of references, and what can be done with them.
+
+library-references = References
+library-all-references = All references
+library-count = { $count ->
+    [one] { $count } reference
+   *[other] { $count } references
+}
+library-selected = { $count ->
+    [one] { $count } reference selected
+   *[other] { $count } references selected
+}
+library-selected-of = { $count ->
+    [one] { $selected } of { $count } reference selected
+   *[other] { $selected } of { $count } references selected
+}
+library-new-reference = New reference
+library-search = Search the library
+library-search-in = Search in { $name }
+library-search-clear = Clear the search
+library-sort = Sort
+library-sort-author = Author
+library-sort-year = Year
+library-sort-title = Title
+library-sort-added = Date added
+library-sort-modified = Date changed
+library-sort-descending = Descending
+library-import-export = Import and export
+library-import-file = Import a file…
+    .hint = BibLaTeX or BibTeX
+library-paste = Paste references…
+library-add-pdfs = Add PDF files…
+    .hint = Each is looked up, and kept
+library-import-zotero = Import from Zotero…
+library-find-duplicates = Find duplicates…
+library-export-library = Export the library…
+library-export-collection = Export “{ $name }”…
+library-export-one = Export…
+library-export-many = { $count ->
+    [one] Export { $count } reference…
+   *[other] Export { $count } references…
+}
+library-export-title = Export references
+# What a file of exported references is called, before it is given a name.
+library-export-file-references = references
+library-export-file-library = library
+library-exported = { $count ->
+    [one] { $count } reference exported
+   *[other] { $count } references exported
+}
+library-export-failed = The export failed
+library-empty = Your library is empty
+    .text = References you add here are available in all your projects. Begin with one, or bring in those you already have.
+library-collection-empty = Nothing in this collection yet
+    .text = Drag references here from the library, or add a new one.
+library-nothing-found = Nothing found
+    .text = No reference holds all of these words.
+library-open-file = Open the file
+library-file-open-failed = The file could not be opened
+library-add-to-collection = Add to collection
+library-remove-from = Remove from “{ $name }”
+library-copy-key = Copy citation key
+library-copied-key = Copied “{ $key }”
+library-copy-biblatex = Copy as BibLaTeX
+library-copied = Copied
+library-delete-one-title = Delete “{ $name }”?
+library-delete-many-title = { $count ->
+    [one] Delete { $count } reference?
+   *[other] Delete { $count } references?
+}
+library-delete-one = This removes the reference from your library, from every collection{ $files ->
+        [0] {""}
+        [one] , together with { $files } attached file
+       *[other] , together with { $files } attached files
+    }. Citations of it in your projects will no longer resolve.
+library-delete-many = This removes them from your library, from every collection{ $files ->
+        [0] {""}
+        [one] , together with { $files } attached file
+       *[other] , together with { $files } attached files
+    }. Citations of them in your projects will no longer resolve.
+library-delete-failed = The references could not be deleted
+library-not-done = That could not be done
+
+## Collections.
+
+library-collections = Collections
+library-collections-hint = Collections gather references for a subject or a piece of work. A reference can be in any number of them.
+library-collection-new = New collection
+library-collection-new-inside = New collection inside
+library-collection-name = Name of the collection
+library-collection-name-failed = The collection could not be named
+library-collection-expand = Expand
+library-collection-collapse = Collapse
+library-collection-to-top = Move to the top level
+library-collection-move-failed = The collection could not be moved
+library-collection-added = { $count ->
+    [one] { $count } reference added to “{ $name }”
+   *[other] { $count } references added to “{ $name }”
+}
+library-collection-already = Already in “{ $name }”
+library-collection-delete = Delete collection
+library-collection-delete-title = Delete the collection “{ $name }”?
+# The number is that of the collections inside the one that is deleted.
+library-collection-delete-message = { $inside ->
+    [0] The references stay in your library.
+   *[other] The collections inside it are deleted as well. The references stay in your library.
+}
+library-collection-delete-failed = The collection could not be deleted
