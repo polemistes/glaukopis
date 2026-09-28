@@ -136,6 +136,9 @@ leaves the figure, and the writing goes on under it.
 Pressing the picture opens the rest that can be said of it:
 
 - **How wide it is**, as a share of the width of the text in the document.
+- **Where it stands**: to the left, in the middle or to the right; and, of a
+  figure at a side, whether **the text flows around it**. See *Where things
+  stand* below.
 - **What it shows**, in words, for those who cannot see it. This goes into
   the documents that can hold it.
 - Whether it is **numbered**. The figures are numbered through the document:
@@ -167,6 +170,29 @@ selected goes into what is put in.
 A **formula** stands in the line, among the words. An **equation** stands on
 a line of its own, and can be numbered; what stands around the number,
 as in (1), is said by the document format. Pressing either opens it again.
+
+### Where things stand
+
+A figure, a table and an equation each stand to the left, in the middle or
+to the right. The text can flow around a figure or a table that stands at a
+side, as it does in books; in the middle, nothing flows around it.
+
+What the document format says holds for all of them: a format may have its
+figures in the middle and its tables at the left margin. Of any one of them
+you can say something else, in the panel that opens when it is pressed;
+**As the format** takes what you said back. The panel tells what the format
+says.
+
+Several can stand **beside each other**: open the panel of the second, and
+choose **Put it beside the one before it**. A third and a fourth can join
+them. Each has its share of the width, its own caption and its own number;
+the pictures stand with their feet on one line. **By itself again** takes
+one out of the row.
+
+Where you write, things stand as they will in the document. How the text
+breaks around a figure differs a little between the kinds of document, as
+each has its own way of doing it; the PDF that is set by Typst is what the
+preview shows.
 
 ### Pointing to figures, equations and parts
 
