@@ -8,8 +8,11 @@ It is made for a way of working that begins with references and ideas, and
 for scholars in the humanities first, the social sciences second.
 
 - **Maps that are documents.** Ideas are elements of a map, with text,
-  citations, notes, figures and mathematics. The same map is read as a
-  diagram, as text, and as the manuscript.
+  citations, notes, figures, tables and mathematics. The same map is read
+  as a diagram, as text, and as the manuscript.
+- **What you have written already** is brought in as a map of its own, from
+  Word, OpenDocument, Markdown, LaTeX, HTML and other kinds of file; tables
+  from CSV files and from spreadsheets.
 - **One store of pictures** for all projects, with what you have said of
   each: its caption, what it shows, your notes.
 - **One library** for all projects, kept as a BibLaTeX file that other tools

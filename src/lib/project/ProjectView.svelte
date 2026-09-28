@@ -22,6 +22,7 @@
   import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
   import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
+  import { tablesDropped } from '$lib/tables/ask';
   import { insertFigure, widthFor } from '$lib/editor/commands';
   import { viewsByDom } from '$lib/editor/ui.svelte';
   import { isPicturePath, pictures } from '$lib/figures/pictures.svelte';
@@ -406,10 +407,22 @@
         }
       }
     }
+    // Files that hold tables become tables, in the same places.
+    const body = under?.closest('.ProseMirror.body');
+    const text = body ? viewsByDom.get(body) : undefined;
+    const rest = await tablesDropped(
+      all.filter((path) => !isPicturePath(path)),
+      {
+        view: text,
+        at: text?.posAtCoords({ left: event.x, top: event.y })?.pos,
+        project: p,
+        element,
+      },
+    );
     // Documents become maps of their own; text without marks is one when nothing else claims it.
     const written = (path: string) => isDocumentPath(path) || isPlainTextPath(path);
-    if (p) await documentsIn(all.filter((path) => !isPicturePath(path) && written(path)));
-    const others = all.filter((path) => !isPicturePath(path) && !written(path));
+    if (p) await documentsIn(rest.filter(written));
+    const others = rest.filter((path) => !written(path));
     if (!others.length) return;
     const outcome = await importDropped(others);
     if (!outcome?.concerned?.length || !element || !p || !p.node(element)) return;

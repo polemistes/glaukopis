@@ -16,6 +16,8 @@
   import Plus from '@lucide/svelte/icons/plus';
   import Sigma from '@lucide/svelte/icons/sigma';
   import SquareFunction from '@lucide/svelte/icons/square-function';
+  import Sheet from '@lucide/svelte/icons/sheet';
+  import Table from '@lucide/svelte/icons/table';
   import List from '@lucide/svelte/icons/list';
   import ListOrdered from '@lucide/svelte/icons/list-ordered';
   import Pilcrow from '@lucide/svelte/icons/pilcrow';
@@ -28,6 +30,7 @@
   import type { Command } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
   import { showPictures } from '$lib/pictures/store.svelte';
+  import { askForTable, chooseTable } from '$lib/tables/ask';
   import { openMenu } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import {
@@ -143,6 +146,19 @@
                 // It opens a panel of its own, which takes the cursor.
                 action: () => void insertEquation(view.state, view.dispatch, view),
               },
+              {
+                label: 'Table…',
+                hint: 'Of so many rows and columns',
+                icon: Table,
+                shortcut: 'Ctrl+Alt+T',
+                action: () => void askForTable(view),
+              },
+              {
+                label: 'Table from a file…',
+                hint: 'CSV, or a sheet of LibreOffice or Excel',
+                icon: Sheet,
+                action: () => void chooseTable(view),
+              },
             ]
           : []),
         {
@@ -157,7 +173,7 @@
               { kind: 'separator' as const },
               {
                 label: 'Pointer…',
-                hint: 'To a figure, an equation or a part: “see figure 2”',
+                hint: 'To a figure, a table, an equation or a part: “see figure 2”',
                 icon: Link2,
                 shortcut: 'Ctrl+Alt+R',
                 action: () => hooks.point?.(view),
@@ -168,7 +184,7 @@
           ? [
               { kind: 'separator' as const },
               {
-                label: 'A picture can also be dropped on the text, or pasted',
+                label: 'A picture or a table can also be dropped on the text, or pasted',
                 disabled: true,
                 action: () => {},
               },
@@ -330,7 +346,7 @@
     type="button"
     class="word"
     disabled={!s || s.kind === 'title'}
-    use:tooltip={{ text: 'A picture, mathematics, a pointer to a figure', side: 'bottom' }}
+    use:tooltip={{ text: 'A picture, a table, mathematics, a pointer to a figure', side: 'bottom' }}
     onclick={insert}
   >
     <Plus size={13} />

@@ -173,9 +173,12 @@ export const insertMath: Command = (state, dispatch) => {
 /**
  * Where something that stands by itself goes: in place of the paragraph the
  * cursor is in when that is empty, and after it otherwise. Within what is
- * said of a figure, after the figure.
+ * said of a figure, after the figure; within a table, after the table.
  */
-function placeForBlock(state: EditorState, type: NodeType): { from: number; to: number } | null {
+export function placeForBlock(
+  state: EditorState,
+  type: NodeType,
+): { from: number; to: number } | null {
   const { selection } = state;
   if (selection instanceof NodeSelection && selection.node.isBlock) {
     const $after = state.doc.resolve(selection.to);
@@ -185,8 +188,14 @@ function placeForBlock(state: EditorState, type: NodeType): { from: number; to: 
   }
   const { $from } = selection;
   for (let d = $from.depth; d > 0; d--) {
-    const node = $from.node(d);
+    let node = $from.node(d);
     if (!node.isTextblock && node.type.name !== 'figure') continue;
+    // A table holds no tables, nor anything else that stands by itself.
+    for (let up = d - 1; up > 0; up--) {
+      if ($from.node(up).type.name !== 'tabular') continue;
+      d = up;
+      node = $from.node(up);
+    }
     const parent = $from.node(d - 1);
     const index = $from.index(d - 1);
     const empty = node.type.name === 'paragraph' && node.content.size === 0;
@@ -322,13 +331,27 @@ export function insertCrossRef(target: string, form: RefForm = 'full'): Command 
   };
 }
 
-/** Enter in what is said of a figure: the writing goes on after the figure. */
+/**
+ * Enter in what is said of a figure or of a table: the writing goes on
+ * after the figure or the table.
+ */
 export const leaveCaption: Command = (state, dispatch) => {
   const { $from, empty } = state.selection;
-  if (!empty || $from.parent.type.name !== 'figure') return false;
+  const said = $from.parent.type.name;
+  if (!empty || (said !== 'figure' && said !== 'table_caption')) return false;
   const paragraph = state.schema.nodes.paragraph;
   if (!paragraph) return false;
-  const after = $from.after();
+  // What is said of a table is part of the table. And what stands beside
+  // others in a row is left together with the row, which holds no text.
+  let depth = said === 'figure' ? $from.depth : $from.depth - 1;
+  while (
+    depth > 1 &&
+    !$from
+      .node(depth - 1)
+      .canReplaceWith($from.indexAfter(depth - 1), $from.indexAfter(depth - 1), paragraph)
+  )
+    depth--;
+  const after = $from.after(depth);
   const $after = state.doc.resolve(after);
   if (dispatch) {
     const tr = state.tr;

@@ -158,6 +158,62 @@ PNG, JPEG and SVG are kept as they are. GIF, WebP, TIFF and BMP are made
 into PNG when they are put in, since not every kind of document can hold
 them. One picture may hold 50 MB.
 
+### Tables
+
+Put a table in with **Insert › Table…**: point at how many rows and columns
+it is to have, or write the numbers, and say whether the first row is
+headings. The cursor then stands in the first cell.
+
+- **Tab** goes to the next cell and **Shift+Tab** to the one before; **Tab**
+  in the last cell makes a new row. The arrows go from cell to cell where a
+  cell ends.
+- What is said of the table, its caption, is written over it. It can hold
+  citations and formulas, as a cell can. **Enter** there leaves the table.
+- While the cursor is in the table, a small bar stands over it: rows and
+  columns are added and removed, cells joined and split, the first row and
+  the first column made headings, and what the cells hold set to the left,
+  in the middle or to the right. Drag over cells to select several. The
+  same is in the menu that opens by the right button of the mouse.
+- **Table** in the bar opens what can be said of the whole table: how wide
+  it is, as wide as it needs or a share of the width of the text; whether
+  it is numbered; where it stands and whether the text flows around it
+  (see *Where things stand* below); and the table removed.
+- **Backspace** at the beginning of a table in which nothing is written
+  takes the table away.
+
+The tables are numbered through the document, as the figures are, and can be
+pointed to. The word before the number, whether what is said of the table
+stands over or under it, the lines of the table and the size of its type are
+said by the document format: most have a line over the table, one under its
+headings and one under the table, and no lines between the columns.
+
+A table that was copied, from a web page or a document, becomes a table
+when it is pasted into the text. Rows copied from a spreadsheet and pasted
+into a cell fill the cells from there, and the table grows as it must.
+
+#### Tables from files
+
+**Insert › Table from a file…**, or a file dropped on the text where the
+table is to stand, brings in a table that was made elsewhere. A file
+dropped on an element in the diagram becomes a table at the end of its text.
+
+| Kind of file | Endings |
+| --- | --- |
+| Values parted by commas, semicolons or tabs | `.csv`, `.tsv`, `.tab`, `.txt` |
+| OpenDocument spreadsheet | `.ods` |
+| Excel | `.xlsx`, `.xlsm`, `.xlsb`, `.xls` |
+
+You are shown the first rows as they will be, and say which sheet it is to
+be where the file has several, whether the first row and the first column
+are headings, and what is said of the table. Columns that hold numbers are
+set to the right.
+
+What is brought in is what the cells hold, as text: a formula comes as what
+it gave, a date as `2024-03-01`. How a cell was set to be shown is not
+read, so a share shown as 25 % comes as 0.25. A table is a copy: it does not
+follow the file when the file is changed. One table may have 2000 rows and
+100 columns.
+
 ### Mathematics
 
 Mathematics is written in the notation of TeX, which is what journals and
@@ -194,19 +250,19 @@ breaks around a figure differs a little between the kinds of document, as
 each has its own way of doing it; the PDF that is set by Typst is what the
 preview shows.
 
-### Pointing to figures, equations and parts
+### Pointing to figures, tables, equations and parts
 
 Where the text says *see figure 2*, the number should follow the figure: if
 another figure is put in before it, the text is to say *figure 3*. Write
 such words with **Insert › Pointer…**, or **Ctrl+Alt+R**, and choose what
-they point to: a figure, a numbered equation, or a part of the document,
+they point to: a figure, a table, a numbered equation, or a part of the document,
 which is an element whose name is printed as a heading. They can be found
 by what is said of them.
 
 The words then say what the document calls the thing:
 
-- a **figure** by the word the format has for it and its number, *Figure 2*,
-  or by the number alone;
+- a **figure** or a **table** by the word the format has for it and its
+  number, *Figure 2*, *Table 1*, or by the number alone;
 - an **equation** by its number as it stands beside it, *(1)*, or by the
   number alone;
 - a **part** by its number where the format numbers the headings, *2.1*, and
@@ -577,8 +633,9 @@ has not arrived yet is shown as an empty frame until it has.
 | **@** | In the text: cite |
 | **Ctrl+Alt+F** | In the text: a note |
 | **Ctrl+Alt+P** | In the text: a picture |
+| **Ctrl+Alt+T** | In the text: a table |
 | **Ctrl+Alt+M**, **Ctrl+Alt+E** | In the text: a formula in the line, an equation |
-| **Ctrl+Alt+R** | In the text: words that point to a figure, an equation, a part |
+| **Ctrl+Alt+R** | In the text: words that point to a figure, a table, an equation, a part |
 | **Ctrl+F**, **Ctrl+N** | In the library: search, new reference |
 
 ## What Glaukopis needs

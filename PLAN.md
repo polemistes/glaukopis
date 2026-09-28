@@ -214,7 +214,10 @@ Added since, at the wish of the one the application is made for, and recorded
 in `docs/brief.md`: notes on references (ADR 0008), a PDF that is set by
 LaTeX, figures and mathematics (ADR 0009), a store of pictures for the whole
 application, and words that point to figures, equations and parts of the
-document (ADR 0010). Tables are the next of that kind.
+document (ADR 0010); tables, where figures, tables and equations stand and
+whether the text flows around them, and several beside each other (ADR
+0011); tables from CSV files and spreadsheets, and documents brought in from
+files as maps of their own (ADR 0012, 0013).
 
 ## 9. Not in the first version
 

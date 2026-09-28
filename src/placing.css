@@ -12,6 +12,13 @@
 .tabular[data-stand='right'] {
   text-align: right;
 }
+/* A table is set in a column with what is said of it. */
+.tabular[data-stand='left'] {
+  align-items: flex-start;
+}
+.tabular[data-stand='right'] {
+  align-items: flex-end;
+}
 .figure[data-stand='left'] .picture {
   margin-left: 0;
 }
@@ -50,6 +57,12 @@
 }
 .figure[data-around] .picture {
   width: 100% !important;
+}
+.tabular[data-around] {
+  align-items: stretch;
+}
+.tabular[data-around] table {
+  width: 100%;
 }
 /* What comes after something that stands apart begins under what the text flowed around. */
 .prose .figure:not([data-around]),

@@ -10,6 +10,7 @@ import { refForm } from '$lib/project/model/text';
 import { showFormula } from './math.svelte';
 import { numbering, pointerText } from './numbering.svelte';
 import { pictures } from './pictures.svelte';
+import { dress } from '$lib/tables/look';
 import { usualOf } from './placing';
 import { figureLabel, showPlacing } from './views.svelte';
 
@@ -76,6 +77,8 @@ function fill(root: HTMLElement, shown: Shown) {
     else delete said.dataset.label;
   });
   root.querySelectorAll<HTMLElement>('figure.tabular').forEach((table, i) => {
+    // Its lines, and where what is said of it stands, as the format has them.
+    dress(table, format);
     const said = table.querySelector<HTMLElement>('figcaption');
     if (!said) return;
     const label = figureLabel(
