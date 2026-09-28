@@ -71,7 +71,8 @@ describe('the search through everything', () => {
       elementName: 'Part 1',
       before: 'Sing the ',
       text: 'wrath',
-      after: ' of Achilles',
+      // What is no text is shown as the text shows it.
+      after: ' of Achilles (Nagy 1979, 73)',
     });
   });
 

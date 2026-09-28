@@ -15,7 +15,7 @@ import type { Project } from '$lib/project/model/project.svelte';
 import { quietly, SHOW, type ShowIn } from '$lib/editor/ui.svelte';
 import { editorOf, Marking, rangeOf, readEditor, type Shown } from './marking';
 import { Matcher, NO_OPTIONS, type SearchOptions } from './matching';
-import { pieceAt, type Labels, type Passage } from './passages';
+import { pieceAt, translate, type Labels } from './passages';
 import { offsetOf, positionOf, readLine } from './prosemirror';
 import { replaceAll, type Replacing } from './replacing';
 import {
@@ -552,15 +552,4 @@ export class TextSearch {
       this.#from.focus();
     }
   }
-}
-
-/** A place of a passage read without what stands outside the text, in the same passage read with it. */
-export function translate(plain: Passage, shown: Passage, offset: number): number {
-  if (!plain.pieces.length || plain.pieces.length !== shown.pieces.length) return offset;
-  const k = pieceAt(plain, offset);
-  const a = plain.pieces[k];
-  const b = shown.pieces[k];
-  if (a.kind === 'text' || a.kind === 'break')
-    return b.start + Math.min(offset - a.start, b.length);
-  return offset <= a.start ? b.start : b.start + b.length;
 }

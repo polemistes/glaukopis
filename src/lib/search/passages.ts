@@ -213,3 +213,18 @@ export function pieceAt(passage: Passage, offset: number): number {
   }
   return low;
 }
+
+/**
+ * A place of a passage read without what stands outside the text, in the
+ * same passage read with it: the pieces are the same, and only what is no
+ * text is longer.
+ */
+export function translate(plain: Passage, shown: Passage, offset: number): number {
+  if (!plain.pieces.length || plain.pieces.length !== shown.pieces.length) return offset;
+  const k = pieceAt(plain, offset);
+  const a = plain.pieces[k];
+  const b = shown.pieces[k];
+  if (a.kind === 'text' || a.kind === 'break')
+    return b.start + Math.min(offset - a.start, b.length);
+  return offset <= a.start ? b.start : b.start + b.length;
+}

@@ -27,7 +27,14 @@ import {
 import { buildTree, type FlatNode, type Tree } from '$lib/project/model/tree';
 import type { DocumentSettings, RefRecord } from '$lib/project/model/types';
 import { Matcher, type SearchOptions } from './matching';
-import { bodyPassages, NO_TEXT, titlePassage, type Labels, type Passage } from './passages';
+import {
+  bodyPassages,
+  NO_TEXT,
+  titlePassage,
+  translate,
+  type Labels,
+  type Passage,
+} from './passages';
 
 /** An element, as it is searched. */
 interface ElementRead {
@@ -331,23 +338,28 @@ export function searchProject(
   if ('error' in made) return made;
   const matcher = made.matcher;
   const out: ProjectFound = { project: project.id, name: project.name, count: 0, found: [] };
-  const put = (found: Omit<Found, 'before' | 'text' | 'after'>, text: string) => {
+  /** Keeps what was found, with the words around it in a text, where it stands there. */
+  const put = (
+    found: Omit<Found, 'before' | 'text' | 'after'>,
+    text: string,
+    start = found.start,
+    end = found.end,
+  ) => {
     out.count++;
     if (out.found.length >= most) return;
-    const [before, middle, after] = around(text, found.start, found.end);
+    const [before, middle, after] = around(text, start, end);
     out.found.push({ ...found, before, text: middle, after });
   };
 
   for (const map of project.maps) {
-    let labels: Labels | null = null;
-    if (options.labels) {
-      let pointers: ReturnType<typeof pointersOf> | null = null;
-      labels = {
-        citation: (items, mode) => citationOf(project, items, mode),
-        crossref: (target, form) =>
-          pointerOf((pointers ??= pointersOf(project, map)).get(target), refForm(form)),
-      };
-    }
+    let pointers: ReturnType<typeof pointersOf> | null = null;
+    // What stands outside the text, as the text shows it: searched where that is asked for,
+    // and shown in the words around what is found in any case.
+    const labels: Labels = {
+      citation: (items, mode) => citationOf(project, items, mode),
+      crossref: (target, form) =>
+        pointerOf((pointers ??= pointersOf(project, map)).get(target), refForm(form)),
+    };
     for (const e of map.elements) {
       const base = {
         where: 'text' as const,
@@ -358,11 +370,23 @@ export function searchProject(
       };
       for (const hit of matcher.find(e.title.text))
         put({ ...base, part: 'title', passage: 0, start: hit.start, end: hit.end }, e.title.text);
-      const body = labels ? (e.shown ??= bodyPassages(e.blocks, labels)) : e.body;
-      for (const p of body) {
+      const shown = () => (e.shown ??= bodyPassages(e.blocks, labels));
+      for (const p of options.labels ? shown() : e.body) {
         if (!p.text) continue;
-        for (const hit of matcher.find(p.text))
-          put({ ...base, part: 'body', passage: p.index, start: hit.start, end: hit.end }, p.text);
+        for (const hit of matcher.find(p.text)) {
+          const found = {
+            ...base,
+            part: 'body' as const,
+            passage: p.index,
+            start: hit.start,
+            end: hit.end,
+          };
+          if (options.labels) put(found, p.text);
+          else {
+            const seen = shown()[p.index] ?? p;
+            put(found, seen.text, translate(p, seen, hit.start), translate(p, seen, hit.end));
+          }
+        }
       }
     }
     if (!options.labels) continue;

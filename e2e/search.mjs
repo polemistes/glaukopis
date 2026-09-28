@@ -300,6 +300,65 @@ try {
   await sleep(300);
   check('and closes the box after it', !(await app.exists('.box')));
 
+  // ---- through everything: a second project, and both searched ----
+  await app.keys(['Control', '1']);
+  await app.waitFor('.home', 8000);
+  await sleep(600);
+  await app.clickText('button', 'New project');
+  await app.waitFor('dialog input');
+  await app.type('dialog input', 'Second');
+  await app.clickText('dialog footer button', 'Create');
+  await app.waitFor('.diagram .node.root', 8000);
+  await app.keys(['Control', 'd']);
+  await app.waitFor('.text-view .section');
+  await app.click('.text-view .section .body');
+  await sleep(300);
+  await app.keys('The anger of Achilles, and his wrath.');
+  await sleep(800);
+  await app.keys(['Control', 'Shift', 'f']);
+  await app.waitFor('.search-view input', 5000);
+  check('Ctrl+Shift+F opens the search through everything', await app.exec(`return document.activeElement === document.querySelector('.search-view input')`));
+  const results = () =>
+    app.exec(`return Array.from(document.querySelectorAll('.search-view .project')).map((p) => ({ name: p.querySelector('.name').textContent.trim(), hits: Array.from(p.querySelectorAll('.hit')).map((h) => h.textContent.replace(/\\s+/g, ' ').trim()) }))`);
+  const everythingSaid = () => app.exec(`return document.querySelector('.search-view .said').textContent.replace(/\\s+/g, ' ').trim()`);
+  await app.keys('wrath');
+  await until('what was found', async () => (await results()).length > 0, 15000);
+  let r = await results();
+  check('the project opened last is searched', r.length === 1 && r[0].name === 'Second' && r[0].hits.length === 1, JSON.stringify(r));
+  check('what was found is shown with the words around it', r[0].hits[0].includes('The anger of Achilles, and his wrath.'), JSON.stringify(r[0].hits));
+  await app.clickText('.search-view [role="radio"]', 'All projects');
+  await until('both projects', async () => (await results()).length === 2, 20000);
+  await sleep(500);
+  r = await results();
+  const wrathProject = r.find((p) => p.name === 'Wrath');
+  // The first map of the project is named after it, and so is its centre: "Wrath".
+  check('all projects are searched, those not open read from disk', wrathProject?.hits.length === 6, JSON.stringify(r));
+  check('and it is said how much was found where', (await everythingSaid()) === '7 found in 2 projects', await everythingSaid());
+  check('with citations in the words around what was found, as the text shows them', wrathProject?.hits.some((h) => h.includes('the wrath of Achilles (Nagy 1979, 73).')), JSON.stringify(wrathProject?.hits));
+  await app.screenshot('search-8-everything');
+  check('what stands outside the texts is not searched', (await (async () => { await app.exec(`const i = document.querySelector('.search-view input'); i.focus(); i.select();`); await app.keys('Nagy'); await sleep(1500); return everythingSaid(); })()) === 'Nothing found', await everythingSaid());
+  await app.click('.search-view button[aria-label="What stands outside the texts as well"]');
+  await until('the citation', async () => (await results()).length > 0, 10000);
+  r = await results();
+  check('unless that is asked for', r.length === 1 && r[0].hits.some((h) => h.includes('Nagy 1979')), JSON.stringify(r));
+  await app.click('.search-view button[aria-label="What stands outside the texts as well"]');
+  await app.exec(`const i = document.querySelector('.search-view input'); i.focus(); i.select();`);
+  await app.keys('wrath');
+  await until('the projects again', async () => (await results()).length === 2, 15000);
+  await sleep(400);
+  // Choosing what was found in the element that was folded opens the map at it.
+  await app.exec(`Array.from(document.querySelectorAll('.search-view .hit')).find((h) => h.textContent.includes('Deep under')).dataset.pick = '1'`);
+  const chosen = await app.exec(`return document.querySelector('.search-view .hit[data-pick]').textContent.replace(/\\s+/g, ' ').trim()`);
+  await app.click('.search-view .hit[data-pick]');
+  await app.waitFor('.text-view .section', 10000);
+  await until('the match', async () => /of 5$/.test((await said()) ?? ''), 10000);
+  const there = await app.exec(`
+    let marked = null; for (const r of CSS.highlights.get('search-current') ?? []) marked = r;
+    const section = marked && marked.startContainer.parentElement.closest('[data-section]');
+    return { said: document.querySelector('.search-bar .said').textContent.trim(), text: marked && marked.toString(), element: section && section.querySelector('.heading').textContent.trim() };`);
+  check('choosing what was found opens the map at it, with the search in the bar', there.text === 'wrath' && there.element === 'One A' && there.said === '5 of 5', `${chosen} → ${JSON.stringify(there)}`);
+  await app.screenshot('search-9-gone-to');
+
   const errors = await app.pageErrors();
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));
 } catch (error) {
