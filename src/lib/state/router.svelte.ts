@@ -8,6 +8,7 @@ export type MapMode = 'diagram' | 'text';
 export type Route =
   | { view: 'projects' }
   | { view: 'library'; collection?: string; entry?: string }
+  | { view: 'pictures'; picture?: string }
   | { view: 'project'; project: string; map?: string; mode?: MapMode }
   | { view: 'settings'; section?: string };
 
@@ -22,6 +23,8 @@ export function parseRoute(hash: string): Route {
         collection: params.get('collection') ?? undefined,
         entry: params.get('entry') ?? undefined,
       };
+    case 'pictures':
+      return { view: 'pictures', picture: params.get('picture') ?? undefined };
     case 'project':
       if (!parts[1]) return { view: 'projects' };
       return {
@@ -54,6 +57,8 @@ export function formatRoute(route: Route): string {
       const q = params.toString();
       return '#/library' + (q ? `?${q}` : '');
     }
+    case 'pictures':
+      return '#/pictures' + (route.picture ? `?picture=${e(route.picture)}` : '');
     case 'project': {
       let s = `#/project/${e(route.project)}`;
       if (route.map) s += `/${e(route.map)}`;

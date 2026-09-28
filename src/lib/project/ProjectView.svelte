@@ -7,6 +7,7 @@
   import CloudDownload from '@lucide/svelte/icons/cloud-download';
   import Columns2 from '@lucide/svelte/icons/columns-2';
   import FileText from '@lucide/svelte/icons/file-text';
+  import Images from '@lucide/svelte/icons/images';
   import Network from '@lucide/svelte/icons/network';
   import Redo2 from '@lucide/svelte/icons/redo-2';
   import Undo2 from '@lucide/svelte/icons/undo-2';
@@ -21,6 +22,7 @@
   import { insertFigure, widthFor } from '$lib/editor/commands';
   import { viewsByDom } from '$lib/editor/ui.svelte';
   import { isPicturePath, pictures } from '$lib/figures/pictures.svelte';
+  import { picturesUi, type PictureScope } from '$lib/pictures/store.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
   import { dropTarget, type DropEvent } from '$lib/ui/drag.svelte';
   import { notify } from '$lib/ui/toast.svelte';
@@ -40,6 +42,7 @@
   import MapDiagram, { type Camera } from './diagram/MapDiagram.svelte';
   import MapTabs from './MapTabs.svelte';
   import type { Project } from './model/project.svelte';
+  import PicturePanel from './PicturePanel.svelte';
   import ReferencePanel from './ReferencePanel.svelte';
   import MapText from './text/MapText.svelte';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
@@ -56,6 +59,7 @@
     /** The part of the width the first of two maps has. */
     split: number;
     preview: number;
+    /** The panel at the side, whether it shows the references or the pictures. */
     references: number;
   }
 
@@ -66,6 +70,8 @@
     panes?: Pane[];
     cameras?: Record<string, Camera>;
     references?: boolean;
+    /** The panel at the side shows the pictures. Not both: they have the same place. */
+    pictures?: boolean;
     preview?: boolean;
   }
 
@@ -75,6 +81,9 @@
   let focused = $state(0);
   let cameras = $state<Record<string, Camera>>({});
   let showReferences = $state(false);
+  let showPictures = $state(false);
+  /** Which pictures the panel shows. */
+  let pictureScope = $state<PictureScope>('project');
   let showPreview = $state(false);
   let sizes = $state<Sizes>({ ...GIVEN });
   let work = $state<HTMLDivElement>();
@@ -131,6 +140,7 @@
     panes = list;
     cameras = stored.cameras ?? {};
     showReferences = stored.references ?? false;
+    showPictures = !showReferences && (stored.pictures ?? false);
     showPreview = stored.preview ?? false;
     sizes = { ...GIVEN, ...stored.sizes };
   }
@@ -209,6 +219,7 @@
       panes: $state.snapshot(panes),
       cameras: kept,
       references: showReferences,
+      pictures: showPictures,
       preview: showPreview,
     };
   }
@@ -228,6 +239,7 @@
     if (!project) return;
     void panes.map((p) => `${p.map}${p.mode}`);
     void showReferences;
+    void showPictures;
     void showPreview;
     void cameras;
     void sizes.split;
@@ -317,6 +329,24 @@
     const most = Math.max(least, which === 'preview' ? all * 0.7 : Math.min(640, all * 0.5));
     sizes[which] = clamp(sizes[which] - dx, least, most);
   }
+
+  /** The references and the pictures have the same place at the side: one at a time. */
+  function side(which: 'references' | 'pictures', shown?: boolean) {
+    const open = shown ?? !(which === 'references' ? showReferences : showPictures);
+    showReferences = which === 'references' && open;
+    showPictures = which === 'pictures' && open;
+  }
+
+  // The pictures are asked for from elsewhere, as from the tools for writing.
+  $effect(() => {
+    const wanted = picturesUi.wanted;
+    if (!wanted) return;
+    untrack(() => {
+      picturesUi.wanted = null;
+      pictureScope = wanted.scope;
+      side('pictures', true);
+    });
+  });
 
   function closePane(i: number) {
     panes = panes.filter((_, j) => j !== i);
@@ -408,7 +438,10 @@
       if (pane) panes[focused] = { ...pane, mode: pane.mode === 'diagram' ? 'text' : 'diagram' };
     } else if (key === 'r' && event.shiftKey) {
       event.preventDefault();
-      showReferences = !showReferences;
+      side('references');
+    } else if (key === 'i' && event.shiftKey) {
+      event.preventDefault();
+      side('pictures');
     } else if (key === 'p' && !event.shiftKey) {
       event.preventDefault();
       showPreview = !showPreview;
@@ -533,9 +566,17 @@
         label="References"
         shortcut="Ctrl+Shift+R"
         active={showReferences}
-        onclick={() => (showReferences = !showReferences)}
+        onclick={() => side('references')}
       >
         <BookMarked size={16} />
+      </IconButton>
+      <IconButton
+        label="Pictures"
+        shortcut="Ctrl+Shift+I"
+        active={showPictures}
+        onclick={() => side('pictures')}
+      >
+        <Images size={16} />
       </IconButton>
       <IconButton
         label="Preview and export"
@@ -654,9 +695,11 @@
           />
         </div>
       {/if}
-      {#if showReferences}
+      {#if showReferences || showPictures}
         <Divider
-          label="Between the map and the references"
+          label={showPictures
+            ? 'Between the map and the pictures'
+            : 'Between the map and the references'}
           onstart={() => measure('references')}
           onmove={(dx) => moveSide('references', dx)}
           onreset={() => (sizes.references = 0)}
@@ -666,7 +709,17 @@
           bind:this={referencesEl}
           style:width={sizes.references ? `${sizes.references}px` : undefined}
         >
-          <ReferencePanel {project} mapId={pane.map} onclose={() => (showReferences = false)} />
+          {#if showPictures}
+            <PicturePanel
+              {project}
+              mapId={pane.map}
+              bind:scope={pictureScope}
+              onclose={() => (showPictures = false)}
+              onopenmap={(id) => show(id)}
+            />
+          {:else}
+            <ReferencePanel {project} mapId={pane.map} onclose={() => (showReferences = false)} />
+          {/if}
         </div>
       {/if}
     </div>

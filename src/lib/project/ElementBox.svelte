@@ -49,6 +49,8 @@
       const target = event.target as HTMLElement | null;
       if (!target || !el || el.contains(target)) return;
       if (target.closest('.popover, .menu, dialog, .backdrop, .note-panel, .bar, .toaster')) return;
+      // What stands at the side to be put into the text is part of the writing.
+      if (target.closest('[data-beside-text]')) return;
       onclose();
     };
     window.addEventListener('pointerdown', outside, true);

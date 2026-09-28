@@ -4,7 +4,9 @@
   import Maximize from '@lucide/svelte/icons/maximize';
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
+  import { widthFor } from '$lib/editor/commands';
   import type { KeyAction } from '$lib/editor/plugins';
+  import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
   import { plural } from '$lib/library/format';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import type { RectLike } from '$lib/ui/floating';
@@ -125,7 +127,8 @@
   const dropOn = $derived.by(() => {
     const p = drag.payload;
     if (!p || !drag.welcome || drag.copy === undefined) return null;
-    if (p.kind !== 'elements' && p.kind !== 'references') return null;
+    if (p.kind !== 'elements' && p.kind !== 'references' && p.kind !== PICTURES_DRAGGED)
+      return null;
     if (!pointerInside(drag.x, drag.y)) return null;
     const world = toWorld(drag.x, drag.y);
     return hit(world, p.kind === 'elements' ? lifted : new Set());
@@ -498,6 +501,20 @@
       return;
     }
 
+    if (payload.kind === PICTURES_DRAGGED) {
+      const target = hit(world);
+      if (!target) return;
+      // A picture dropped on an element is a figure at the end of its text.
+      project.checkpoint();
+      for (const hash of payload.data as string[]) {
+        const picture = pictures.get(hash);
+        if (picture) project.addFigure(target, picture, widthFor(picture));
+      }
+      project.checkpoint();
+      select([target]);
+      return;
+    }
+
     if (payload.kind !== 'elements') return;
     const data = payload.data as ElementsPayload;
     if (data.project !== project) return;
@@ -851,7 +868,8 @@
   use:dropTarget={{
     accepts: (p) =>
       (p.kind === 'elements' && (p.data as ElementsPayload).project === project) ||
-      p.kind === 'references',
+      p.kind === 'references' ||
+      p.kind === PICTURES_DRAGGED,
     ondrop,
     quiet: (p) => p.kind === 'elements' && (p.data as ElementsPayload).map === mapId,
   }}

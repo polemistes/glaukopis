@@ -9,11 +9,13 @@
   import Pencil from '@lucide/svelte/icons/pencil';
   import SplitSquareVertical from '@lucide/svelte/icons/split-square-vertical';
   import Trash2 from '@lucide/svelte/icons/trash-2';
+  import { widthFor } from '$lib/editor/commands';
   import type { KeyAction } from '$lib/editor/plugins';
   import type RichText from '$lib/editor/RichText.svelte';
   import type { FocusAt } from '$lib/editor/RichText.svelte';
   import { bodySchema } from '$lib/editor/schema';
   import { editorUi } from '$lib/editor/ui.svelte';
+  import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
   import { plural, truncate } from '$lib/library/format';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import { pointRect } from '$lib/ui/floating';
@@ -411,6 +413,8 @@
     const el = document.elementFromPoint(event.x, event.y)?.closest<HTMLElement>('[data-section]');
     const id = el?.dataset.section;
     if (!el || !id) return null;
+    // A picture goes to the end of the text of the element it is dropped on.
+    if (event.payload.kind === PICTURES_DRAGGED) return { id, where: 'after' };
     const payload = event.payload.data as ElementsPayload;
     if (payload.map === mapId) {
       for (const dragged of payload.ids) {
@@ -429,6 +433,17 @@
     const target = drop ?? targetAt(event);
     drop = null;
     if (!target) return;
+    if (event.payload.kind === PICTURES_DRAGGED) {
+      // Where a text is being written, the text itself takes the picture.
+      project.checkpoint();
+      for (const hash of event.payload.data as string[]) {
+        const picture = pictures.get(hash);
+        if (picture) project.addFigure(target.id, picture, widthFor(picture));
+      }
+      project.checkpoint();
+      current = target.id;
+      return;
+    }
     const payload = event.payload.data as ElementsPayload;
     if (payload.project !== project) return;
     const parent = target.where === 'inside' ? target.id : (tree.parent.get(target.id) ?? null);
@@ -622,7 +637,9 @@
     bind:this={scroller}
     class="scroller"
     use:dropTarget={{
-      accepts: (p) => p.kind === 'elements' && (p.data as ElementsPayload).project === project,
+      accepts: (p) =>
+        (p.kind === 'elements' && (p.data as ElementsPayload).project === project) ||
+        p.kind === PICTURES_DRAGGED,
       ondrop,
       onover: (e) => (drop = e ? targetAt(e) : null),
     }}
