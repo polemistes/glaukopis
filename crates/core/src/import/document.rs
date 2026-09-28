@@ -26,11 +26,12 @@
 //! stands as the text it was in the file, under the mark `found`, which
 //! holds what is known of it (`cited.rs`, and `crate::found`): one by a tag
 //! that names a work the library does not have, and every one that was made
-//! by a program that keeps references.
+//! by a program that keeps references (`made.rs`).
 
 mod captions;
 mod cited;
 mod lifting;
+mod made;
 
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
@@ -441,7 +442,7 @@ pub fn read(
             })?;
             let value: Value = serde_json::from_slice(&json)
                 .map_err(|e| Error::invalid(format!("what Pandoc made of “{file}” could not be read: {e}")))?;
-            convert(&value, &stem, &prepared.properties, keys, &mut take_in)
+            convert_with(&value, &stem, &prepared.properties, &prepared.made, keys, &mut take_in)
         }
     };
     if stop.load(Ordering::Relaxed) {
@@ -678,6 +679,11 @@ struct Reading<'a, 'b> {
     terms: Vec<(String, String)>,
     /// In a name, where a citation is the text it was written as.
     naming: bool,
+    /// What programs that keep references made in the file.
+    made: &'a [made::Citation],
+    /// The mark of the citation that the text now read is of: it stands
+    /// between the signs that were set around it before Pandoc read.
+    within: Option<Value>,
     /// Figures that stood where none can stand, to stand after it.
     hoisted: Vec<Block>,
     tally: Tally,
@@ -740,7 +746,7 @@ fn written(inlines: &[Value]) -> String {
     for v in inlines {
         let c = inner(v);
         match tag(v) {
-            "Str" => out.push_str(c.as_str().unwrap_or("")),
+            "Str" => out.push_str(&made::without_signs(c.as_str().unwrap_or(""))),
             "Space" | "SoftBreak" | "LineBreak" => out.push(' '),
             "Emph" | "Underline" | "Strong" | "Strikeout" | "Superscript" | "Subscript" | "SmallCaps" => {
                 out.push_str(&written(list(c)));
@@ -1072,12 +1078,44 @@ fn locator(suffix: &str, terms: &[(String, String)]) -> (Option<String>, Option<
 }
 
 impl Reading<'_, '_> {
+    /// Text, under the mark of the citation it is of, if it is of one.
+    fn push(&self, out: &mut Vec<Piece>, text: &str, marks: &Marks) {
+        match &self.within {
+            Some(mark) => push_text(out, text, &with(marks, found::MARK, mark.clone())),
+            None => push_text(out, text, marks),
+        }
+    }
+
+    /// Text of the file, in which the signs may stand that a citation made
+    /// by a program is set between.
+    fn text(&mut self, text: &str, marks: &Marks, out: &mut Vec<Piece>) {
+        let mut rest = text;
+        while let Some(at) = rest.find([made::BEGIN, made::END]) {
+            self.push(out, &rest[..at], marks);
+            let begins = rest[at..].starts_with(made::BEGIN);
+            rest = &rest[at + if begins { made::BEGIN } else { made::END }.len_utf8()..];
+            self.within = None;
+            if !begins {
+                continue;
+            }
+            // Which of them it is.
+            let Some(end) = rest.find(made::NUMBERED) else { continue };
+            let citation = rest[..end].parse::<usize>().ok().and_then(|number| self.made.get(number));
+            rest = &rest[end + made::NUMBERED.len_utf8()..];
+            // A name has no marks but those of names.
+            if let Some(citation) = citation.filter(|_| !self.naming) {
+                self.within = Some(cited::mark(citation.by, citation.items.clone(), CiteMode::Normal));
+            }
+        }
+        self.push(out, rest, marks);
+    }
+
     fn inlines(&mut self, inlines: &[Value], marks: &Marks, out: &mut Vec<Piece>) {
         for v in inlines {
             let c = inner(v);
             match tag(v) {
-                "Str" => push_text(out, c.as_str().unwrap_or(""), marks),
-                "Space" | "SoftBreak" => push_text(out, " ", marks),
+                "Str" => self.text(c.as_str().unwrap_or(""), marks, out),
+                "Space" | "SoftBreak" => self.push(out, " ", marks),
                 "LineBreak" => out.push(Piece::Inline(Inline::Break)),
                 "Emph" => self.inlines(list(c), &with(marks, "em", Value::Bool(true)), out),
                 "Strong" => self.inlines(list(c), &with(marks, "strong", Value::Bool(true)), out),
@@ -1088,11 +1126,11 @@ impl Reading<'_, '_> {
                 "Underline" => self.inlines(list(c), marks, out),
                 "Quoted" => {
                     let double = tag(&c[0]) != "SingleQuote";
-                    push_text(out, if double { "“" } else { "‘" }, marks);
+                    self.push(out, if double { "“" } else { "‘" }, marks);
                     self.inlines(list(&c[1]), marks, out);
-                    push_text(out, if double { "”" } else { "’" }, marks);
+                    self.push(out, if double { "”" } else { "’" }, marks);
                 }
-                "Code" => push_text(out, c[1].as_str().unwrap_or(""), marks),
+                "Code" => self.text(c[1].as_str().unwrap_or(""), marks, out),
                 "Math" => {
                     let tex = c[1].as_str().unwrap_or("").trim().to_owned();
                     if tex.is_empty() {
@@ -1160,7 +1198,10 @@ impl Reading<'_, '_> {
                     }
                 }
                 "Note" => {
+                    // What a note holds is not of the citation the note stands in.
+                    let around = self.within.take();
                     let blocks = self.blocks(list(c));
+                    self.within = around;
                     let mut content = line_of(blocks, &mut self.hoisted);
                     // A note within a note is not a thing.
                     content.retain(|i| !matches!(i, Inline::Footnote { .. }));
@@ -1266,6 +1307,8 @@ impl Reading<'_, '_> {
     fn paragraph(&mut self, inlines: &[Value], marks: &Marks, out: &mut Vec<Block>) {
         let mut pieces = Vec::new();
         self.inlines(inlines, marks, &mut pieces);
+        // A citation ends where the paragraph does, whatever the signs say.
+        self.within = None;
         // A paragraph that is marked as saying something of a figure or a
         // table may hold the picture itself, before its words: the mark is
         // of the words.
@@ -1497,6 +1540,7 @@ impl Reading<'_, '_> {
         self.naming = true;
         self.inlines(inlines, &Marks::new(), &mut pieces);
         self.naming = false;
+        self.within = None;
         let mut line: Vec<Inline> = Vec::new();
         let mut notes: Vec<Inline> = Vec::new();
         for piece in pieces {
@@ -1757,6 +1801,19 @@ fn found_remark(counts: &Counts) -> Option<String> {
 /// Turns what Pandoc has read into a document in parts. `stem` is what the
 /// file is called, without its ending: the title where the document has none.
 pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, take_in: &mut TakeIn) -> Imported {
+    convert_with(doc, stem, properties, &made::Made::default(), keys, take_in)
+}
+
+/// As `convert`, of a file in which programs that keep references made
+/// something, which was read before Pandoc read the file.
+fn convert_with(
+    doc: &Value,
+    stem: &str,
+    properties: &Properties,
+    made: &made::Made,
+    keys: &Keys,
+    take_in: &mut TakeIn,
+) -> Imported {
     let empty = json!({});
     let meta = doc.get("meta").unwrap_or(&empty);
     let of = |names: &[&str]| names.iter().find_map(|n| meta.get(*n)).map(meta_text).filter(|t| !t.is_empty());
@@ -1767,6 +1824,8 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
         take_in,
         terms: terms_for(language.as_deref()),
         naming: false,
+        made: &made.citations,
+        within: None,
         hoisted: Vec::new(),
         tally: Tally::default(),
     };
@@ -1912,6 +1971,12 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
             "The document has a list of what it cites, under “{heading}”. It is brought in as text, like the rest. \
              The map makes a bibliography of its own from what is cited in it."
         ));
+    } else if made.list {
+        remarks.push(
+            "The document has a list of what it cites, made by the program that keeps its references. It is brought \
+             in as text, like the rest. The map makes a bibliography of its own from what is cited in it."
+                .to_owned(),
+        );
     }
     for (name, why) in &tally.lost {
         remarks.push(format!("The picture “{name}” is left out: {why}."));
@@ -3377,7 +3442,7 @@ Nagy, G. 1979. The Best of the Achaeans.
         let to = from + content[from..].find("</draw:frame>").unwrap() + "</draw:frame>".len();
         content.replace_range(from..to, "");
         let made = s.desk().join("wanting.odt");
-        lifting::write_copy(&mut archive, &made, "content.xml", &content).unwrap();
+        lifting::write_copy(&mut archive, &made, &[("content.xml".to_owned(), content)]).unwrap();
 
         let read = s.read(&made).unwrap();
         assert_eq!(read.counts.figures, 1);
@@ -3494,6 +3559,215 @@ Text between.
         let Block::Table(table) = &blocks[1] else { panic!() };
         assert_eq!((document::plain(&table.caption).as_str(), table.numbered), ("Ringene", true));
         assert_eq!(blocks[2], paragraph(vec![text("Tabell 1 viser ringene.")]));
+    }
+
+    // ---- citations that programs made ----
+
+    fn zotero(key: &str) -> Vec<String> {
+        vec![format!("http://zotero.org/users/1234567/items/{key}")]
+    }
+
+    /// What the documents say of the works they cite: see `cited.py` beside them.
+    fn nagy() -> Value {
+        json!({
+            "type": "book",
+            "event-place": "Baltimore",
+            "ISBN": "978-0-8018-2200-6",
+            "publisher": "Johns Hopkins University Press",
+            "publisher-place": "Baltimore",
+            "title": "The Best of the Achaeans: Concepts of the Hero in Archaic Greek Poetry",
+            "author": [{ "family": "Nagy", "given": "Gregory" }],
+            "issued": { "date-parts": [["1979"]] }
+        })
+    }
+
+    fn west() -> Value {
+        json!({
+            "type": "article-journal",
+            "container-title": "The Journal of Hellenic Studies",
+            "DOI": "10.2307/632637",
+            "page": "151-172",
+            "title": "The Rise of the Greek Epic",
+            "volume": "108",
+            "author": [{ "family": "West", "given": "M. L." }],
+            "issued": { "date-parts": [["1988"]] }
+        })
+    }
+
+    fn lord() -> Value {
+        json!({
+            "type": "book",
+            "event-place": "Cambridge, Mass.",
+            "publisher": "Harvard University Press",
+            "title": "The Singer of Tales",
+            "author": [{ "family": "Lord", "given": "Albert B." }],
+            "issued": { "date-parts": [["1960"]] }
+        })
+    }
+
+    #[test]
+    fn what_zotero_made_is_found_with_all_that_the_file_says_of_it() {
+        let Some(s) = setup() else { return };
+        // As fields and as reference marks, and as bookmarks with what is
+        // cited in the properties of the document.
+        for name in ["cited.docx", "cited.odt", "bookmarks.docx", "bookmarks.odt"] {
+            let read = s.read(&written(name)).unwrap();
+            let found = all_found(&read);
+            let shown: Vec<&str> = found.iter().map(|(text, _)| text.as_str()).collect();
+            let mut expected = vec![
+                "(Nagy 1979, 73)",
+                "(see Nagy 1979, chap. 2; West 1988; 1960, 12 and elsewhere)",
+                "(Lord, The Singer of Tales, 12)",
+                "Nagy, The Best of the Achaeans, 73",
+            ];
+            if name == "cited.docx" {
+                expected.push("(West 1988)");
+            }
+            assert_eq!(shown, expected, "{name}");
+            for (_, found) in &found[..4] {
+                assert_eq!((found.by, found.mode, found.left), (By::Zotero, CiteMode::Normal, false), "{name}");
+            }
+            let nagy_73 = FoundItem {
+                uris: zotero("ABCD2345"),
+                data: Some(nagy()),
+                locator: Some("73".into()),
+                ..Default::default()
+            };
+            let lord_12 = FoundItem {
+                uris: zotero("QRST2345"),
+                data: Some(lord()),
+                locator: Some("12".into()),
+                ..Default::default()
+            };
+            assert_eq!(found[0].1.items, vec![nagy_73.clone()], "{name}");
+            // Three works, in a field whose code is cut into several runs.
+            assert_eq!(
+                found[1].1.items,
+                vec![
+                    FoundItem {
+                        uris: zotero("ABCD2345"),
+                        data: Some(nagy()),
+                        locator: Some("2".into()),
+                        label: Some("chapter".into()),
+                        prefix: Some("see".into()),
+                        ..Default::default()
+                    },
+                    FoundItem { uris: zotero("WXYZ6789"), data: Some(west()), ..Default::default() },
+                    FoundItem { suffix: Some("and elsewhere".into()), suppress_author: true, ..lord_12.clone() },
+                ],
+                "{name}"
+            );
+            assert_eq!(found[2].1.items, vec![lord_12], "{name}");
+            assert_eq!(found[3].1.items, vec![nagy_73], "{name}");
+
+            // What stands in italics within a citation is a piece of it, and is in italics.
+            let word = read.sections.iter().find(|s| document::plain(&s.heading) == "The word").unwrap();
+            let Block::Paragraph { content } = &word.blocks[1] else { panic!("{name}") };
+            let pieces: Vec<(&str, Vec<&str>)> = content
+                .iter()
+                .filter_map(|i| match i {
+                    Inline::Text { text, marks } => Some((text.as_str(), marks.keys().map(String::as_str).collect())),
+                    _ => None,
+                })
+                .collect();
+            assert_eq!(
+                pieces,
+                vec![
+                    ("Much is written of it ", vec![]),
+                    ("(see Nagy 1979, chap. 2; West 1988; 1960, 12 and elsewhere)", vec!["found"]),
+                    (". The singer ", vec![]),
+                    ("(Lord, ", vec!["found"]),
+                    ("The Singer of Tales", vec!["em", "found"]),
+                    (", 12)", vec!["found"]),
+                    (" is another matter.", vec![]),
+                ],
+                "{name}"
+            );
+
+            // In a note, with what else the note says.
+            let Block::Paragraph { content } = &word.blocks[2] else { panic!("{name}") };
+            assert_eq!(content[0], text("Not all agree."), "{name}");
+            let Inline::Footnote { content: note, .. } = &content[1] else { panic!("{name}") };
+            assert_eq!(note.len(), 5, "{name}: {note:?}");
+            assert_eq!(note[0], text("See "), "{name}");
+            assert_eq!(note[4], text("; but he says otherwise elsewhere."), "{name}");
+            assert!(note[1..4].iter().all(|piece| found_of(piece).is_some_and(|f| f.id == found[3].1.id)), "{name}");
+            assert_eq!(content[2], text(" And so it stands."), "{name}");
+
+            let made = expected.len();
+            assert_eq!((read.counts.found, read.counts.found_made), (made, made), "{name}");
+            assert_eq!((read.counts.cited, read.counts.not_found, read.counts.notes), (0, 0, 1), "{name}");
+            assert!(
+                read.remarks[0].starts_with(&format!(
+                    "{made} citations were found that are not yet tied to references of your library, all made by a \
+                     program that keeps references."
+                )),
+                "{name}: {:?}",
+                read.remarks
+            );
+            // The list of the works is text, and is told of where a program made it.
+            let works = read.sections.iter().find(|s| document::plain(&s.heading) == "Works").unwrap();
+            assert_eq!(works.blocks.len(), 3, "{name}");
+            assert!(all_found(&Imported { sections: vec![works.clone()], ..Default::default() }).is_empty());
+            let told =
+                read.remarks.iter().filter(|r| r.contains("a list of what it cites, made by the program")).count();
+            assert_eq!(told, usize::from(name.starts_with("cited")), "{name}: {:?}", read.remarks);
+            assert_eq!(read.remarks.len(), 1 + told, "{name}: {:?}", read.remarks);
+            let all = all_text(&read);
+            assert!(!all.contains([made::BEGIN, made::NUMBERED, made::END]), "{name}: {all}");
+        }
+    }
+
+    #[test]
+    fn what_mendeley_made_is_found_as_well() {
+        let Some(s) = setup() else { return };
+        let read = s.read(&written("cited.docx")).unwrap();
+        let found = all_found(&read);
+        let (shown, found) = found.last().unwrap();
+        assert_eq!(shown, "(West 1988)");
+        assert_eq!(found.by, By::Mendeley);
+        assert_eq!(
+            found.items,
+            vec![FoundItem {
+                uris: vec!["http://www.mendeley.com/documents/?uuid=0c6e6bd1-9f3b-4f2a-8b1e-2f4f3c1d9a77".into()],
+                data: Some(west()),
+                ..Default::default()
+            }]
+        );
+    }
+
+    #[test]
+    fn the_same_text_without_anything_of_a_program_has_nothing_found() {
+        let Some(s) = setup() else { return };
+        let read = s.read(&written("plain.docx")).unwrap();
+        assert!(all_found(&read).is_empty());
+        assert_eq!((read.counts.found, read.counts.found_made), (0, 0));
+        assert!(read.remarks.is_empty(), "{:?}", read.remarks);
+        assert!(all_text(&read).contains("is what the poem is of (Nagy 1979, 73), as is often said."));
+    }
+
+    #[test]
+    fn signs_that_do_not_end_and_signs_in_a_name() {
+        use made::{BEGIN, END, NUMBERED};
+        let made = made::Made {
+            citations: vec![made::Citation { by: By::Zotero, items: vec![FoundItem::default()] }],
+            ..Default::default()
+        };
+        let value: Value = serde_json::from_str(&doc(
+            "{}",
+            &[
+                header(1, &format!("One {BEGIN}0{NUMBERED}(Nagy 1979){END}")),
+                para(&format!("Open {BEGIN}0{NUMBERED}(Nagy 1979) to the end")),
+                para(&format!("The next, {BEGIN}7{NUMBERED}unknown{END} and {END}closed.")),
+            ],
+        ))
+        .unwrap();
+        let read = convert_with(&value, "the file", &Properties::default(), &made, &none, &mut a_picture);
+        assert_eq!(read.title, vec![text("One (Nagy 1979)")]);
+        let found = all_found(&read);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].0, "(Nagy 1979) to the end");
+        assert_eq!(read.sections[0].blocks[1], paragraph(vec![text("The next, unknown and closed.")]));
     }
 
     #[test]
