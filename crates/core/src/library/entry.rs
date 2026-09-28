@@ -13,6 +13,20 @@ pub const FIELD_ID: &str = "glaukopis-id";
 pub const FIELD_ADDED: &str = "glaukopis-added";
 pub const FIELD_MODIFIED: &str = "glaukopis-modified";
 pub const FIELD_MERGED: &str = "glaukopis-merged";
+pub use crate::found::FIELD_ZOTERO;
+
+/// The keys of items in Zotero that a field holds, parted by spaces. What is
+/// no key of Zotero's is left out.
+pub fn zotero_keys(field: &str) -> Vec<String> {
+    let mut keys: Vec<String> = Vec::new();
+    for word in field.split(|c: char| c.is_whitespace() || c == ',') {
+        let key = word.to_ascii_uppercase();
+        if key.len() == 8 && key.chars().all(|c| c.is_ascii_alphanumeric()) && !keys.contains(&key) {
+            keys.push(key);
+        }
+    }
+    keys
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Entry {
@@ -27,6 +41,10 @@ pub struct Entry {
     /// Ids of entries that were merged into this one. A citation of one of
     /// them resolves to this entry.
     pub merged: Vec<String>,
+    /// The keys of the items in Zotero that the entry was made of, by which a
+    /// citation that Zotero made finds it. Several, of an entry that others
+    /// were merged into.
+    pub zotero: Vec<String>,
 }
 
 impl Entry {
@@ -213,6 +231,7 @@ impl Entry {
     pub fn to_bib(&self, with_internal: bool, with_files: bool) -> String {
         let mut out = String::new();
         let merged = self.merged.join(",");
+        let zotero = self.zotero.join(" ");
         let mut fields: Vec<(&str, &str)> = self
             .fields
             .iter()
@@ -225,6 +244,9 @@ impl Entry {
             fields.push((FIELD_MODIFIED, &self.modified));
             if !merged.is_empty() {
                 fields.push((FIELD_MERGED, &merged));
+            }
+            if !zotero.is_empty() {
+                fields.push((FIELD_ZOTERO, &zotero));
             }
         }
         crate::bib::write_entry(&mut out, &self.entry_type, &self.key, fields);
@@ -339,6 +361,16 @@ impl Draft {
         }
 
         for (name, value) in &raw.fields {
+            if name == FIELD_ZOTERO {
+                // What the entry is in Zotero goes with it wherever it is
+                // brought in. The other fields of the application are those
+                // of the library they were written in.
+                let keys = zotero_keys(value);
+                if !keys.is_empty() {
+                    draft.fields.insert(name.clone(), keys.join(" "));
+                }
+                continue;
+            }
             if name.starts_with("glaukopis-") {
                 continue;
             }
@@ -391,6 +423,12 @@ impl Draft {
         self.fields.get(name).map(String::as_str).filter(|v| !v.trim().is_empty())
     }
 
+    /// The keys of the items in Zotero the draft was made of. They are no
+    /// field of the entry that is made of the draft, but a member of it.
+    pub fn zotero(&self) -> Vec<String> {
+        self.fields.get(FIELD_ZOTERO).map(|v| zotero_keys(v)).unwrap_or_default()
+    }
+
     /// All fields as they are stored, names formatted.
     pub fn stored_fields(&self) -> Vec<(String, String)> {
         let mut out: Vec<(String, String)> = Vec::new();
@@ -427,6 +465,7 @@ impl Draft {
             added: String::new(),
             modified: String::new(),
             merged: Vec::new(),
+            zotero: self.zotero(),
         }
     }
 }

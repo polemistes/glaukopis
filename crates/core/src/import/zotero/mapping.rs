@@ -10,7 +10,7 @@ use std::collections::{BTreeMap, HashSet};
 use crate::bib::is_name_field;
 use crate::bib::names::{Person, parse_list};
 use crate::bib::parser::normalise_space;
-use crate::library::entry::Draft;
+use crate::library::entry::{Draft, FIELD_ZOTERO};
 
 use super::database::{Creator, Item};
 use super::dates::{self, Date};
@@ -599,6 +599,10 @@ pub(super) fn entry(item: &Item) -> (Draft, Vec<String>) {
     fields.take(&["libraryCatalog", "rights"]);
     let left: Vec<String> = fields.left().map(|(name, value)| left_out(name, value)).collect();
     notes.extend(left);
+
+    // What the entry is in Zotero: by this a citation that Zotero made, in a
+    // text that is brought in, finds the entry.
+    set(&mut draft, FIELD_ZOTERO, item.key.trim());
 
     (draft, notes)
 }

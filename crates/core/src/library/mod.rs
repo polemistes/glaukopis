@@ -301,6 +301,7 @@ impl Library {
             added: stamp.clone(),
             modified: stamp,
             merged: Vec::new(),
+            zotero: draft.zotero(),
         };
         self.by_id.insert(entry.id.clone(), self.entries.len());
         self.entries.push(entry.clone());
@@ -349,6 +350,13 @@ impl Library {
         }
         if old_key != entry.key {
             remember_key(entry, &old_key);
+        }
+        // What the entry is in Zotero is not taken away by a draft that does
+        // not say it, as that of the form does not: it is only added to.
+        for key in draft.zotero() {
+            if !entry.zotero.contains(&key) {
+                entry.zotero.push(key);
+            }
         }
         entry.modified = now();
         Ok(entry.clone())
@@ -429,6 +437,12 @@ impl Library {
         entry.merged.extend(gone.merged.iter().cloned());
         entry.merged.sort();
         entry.merged.dedup();
+        // A citation that Zotero made of either finds the one that is kept.
+        for key in &gone.zotero {
+            if !entry.zotero.contains(key) {
+                entry.zotero.push(key.clone());
+            }
+        }
         if gone.added < entry.added && !gone.added.is_empty() {
             entry.added = gone.added.clone();
         }
@@ -673,6 +687,7 @@ fn stored_entry(raw: &RawEntry) -> Entry {
         .get(entry::FIELD_MERGED)
         .map(|v| v.split(',').map(|s| s.trim().to_owned()).filter(|s| !s.is_empty()).collect())
         .unwrap_or_default();
+    entry.zotero = raw.get(entry::FIELD_ZOTERO).map(entry::zotero_keys).unwrap_or_default();
     if let Some(files) = raw.get("file") {
         entry.set("file", files.trim());
     }
@@ -864,6 +879,40 @@ mod tests {
         // The trail survives a restart.
         let reopened = Library::open_at(lib.dir()).unwrap();
         assert_eq!(reopened.resolve(&b.id).unwrap().id, a.id);
+    }
+
+    #[test]
+    fn what_an_entry_is_in_zotero_is_kept_and_not_shown() {
+        let (_tmp, mut lib) = library();
+        let mut d = draft("@book{nagy1979, author={Nagy, G.}, title={Best}, date={1979}}");
+        d.fields.insert(entry::FIELD_ZOTERO.into(), "abcd2345".into());
+        let a = lib.add(&d).unwrap();
+        assert_eq!(a.zotero, vec!["ABCD2345"]);
+        assert_eq!(a.get(entry::FIELD_ZOTERO), None);
+        assert!(fs::read_to_string(lib.file()).unwrap().contains("glaukopis-zotero = {ABCD2345}"));
+
+        // Not in the form, not in the source, not in what is exported.
+        assert!(!a.view().fields.contains_key(entry::FIELD_ZOTERO));
+        assert!(!lib.source(&a.id).unwrap().contains("glaukopis"));
+        assert!(!lib.export(None, true).contains("glaukopis"));
+
+        // What the form hands back does not say it, and does not take it away.
+        let mut changed = Draft::from_entry(&a);
+        changed.fields.insert("edition".into(), "2".into());
+        assert_eq!(lib.update(&a.id, &changed).unwrap().zotero, vec!["ABCD2345"]);
+        let source = lib.source(&a.id).unwrap().replace("{Best}", "{The Best}");
+        assert_eq!(lib.update_from_source(&a.id, &source).unwrap().zotero, vec!["ABCD2345"]);
+
+        // When entries are merged, the keys of both are kept.
+        let mut d = draft("@book{nagy1979b, author={Nagy, Gregory}, title={The Best}, date={1979}}");
+        d.fields.insert(entry::FIELD_ZOTERO.into(), "WXYZ6789".into());
+        let b = lib.add(&d).unwrap();
+        let kept = lib.merge(&a.id, &b.id, &Draft::from_entry(lib.require(&a.id).unwrap())).unwrap();
+        assert_eq!(kept.zotero, vec!["ABCD2345", "WXYZ6789"]);
+
+        let reopened = Library::open_at(lib.dir()).unwrap();
+        assert_eq!(reopened.require(&a.id).unwrap().zotero, vec!["ABCD2345", "WXYZ6789"]);
+        assert_eq!(reopened.require(&a.id).unwrap(), lib.require(&a.id).unwrap());
     }
 
     #[test]
