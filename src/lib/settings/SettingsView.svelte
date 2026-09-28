@@ -18,6 +18,7 @@
     type ToolsInfo,
   } from '$lib/api/documents';
   import { lookupAcknowledgements } from '$lib/api/sources';
+  import { languageName, languages, t, TEXT_LANGUAGES } from '$lib/i18n';
   import { systemInfo, type Settings, type SystemInfo, type Theme } from '$lib/api/system';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -99,6 +100,25 @@
     await lookAgain();
   }
 
+  const interfaceOptions = $derived([
+    {
+      value: 'system',
+      label: t('settings-language-system', {
+        language:
+          languages.interface.find((l) => l.tag === languages.interfaceDefault)?.name ??
+          languages.interfaceDefault,
+      }),
+    },
+    ...languages.interface.map((l) => ({ value: l.tag, label: l.name })),
+  ]);
+  const textOptions = $derived([
+    {
+      value: 'system',
+      label: t('settings-language-system', { language: languageName(languages.textDefault) }),
+    },
+    ...TEXT_LANGUAGES.map((tag) => ({ value: tag, label: languageName(tag) })),
+  ]);
+
   const styleOptions = $derived(
     [...styles]
       .sort((a, b) => a.title.localeCompare(b.title))
@@ -156,6 +176,28 @@
         Sing, goddess, the wrath of Achilles, son of Peleus — <span lang="grc">μῆνιν ἄειδε θεά</span
         >.
       </p>
+    </section>
+
+    <section>
+      <h2>{t('settings-language')}</h2>
+      <p class="about">
+        {t('settings-language-interface-hint')}
+        {t('settings-language-texts-hint')}
+      </p>
+      <div class="pair">
+        <Select
+          value={settings.value.language}
+          label={t('settings-language-interface')}
+          options={interfaceOptions}
+          onchange={(tag) => settings.set('language', tag)}
+        />
+        <Select
+          value={settings.value.textLanguage}
+          label={t('settings-language-texts')}
+          options={textOptions}
+          onchange={(tag) => settings.set('textLanguage', tag)}
+        />
+      </div>
     </section>
 
     <section>

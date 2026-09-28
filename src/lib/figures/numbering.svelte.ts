@@ -9,6 +9,7 @@
  * kept of each element, without reading the texts.
  */
 
+import { documentWord } from '$lib/i18n';
 import { SvelteMap } from 'svelte/reactivity';
 import type { DocumentFormat } from '$lib/api/documents';
 import { documents } from '$lib/preview/documents.svelte';
@@ -79,18 +80,23 @@ const PLAIN: Counting = {
   after: ')',
 };
 
-export function countingOf(format: DocumentFormat | undefined): Counting {
-  if (!format) return PLAIN;
+/**
+ * What of the format the numbers and the words depend on, with the words in
+ * the language of the document (ADR 0020).
+ */
+export function countingOf(format: DocumentFormat | undefined, language?: string): Counting {
+  const say = (word: string) => documentWord(language, word);
+  if (!format) return { ...PLAIN, label: say(PLAIN.label), tableLabel: say(PLAIN.tableLabel) };
   const levels = format.headings?.levels ?? [];
   return {
     numberedHeadings: !!format.headings?.numbered,
     runIn: levels.flatMap((l, i) => (l.runIn ? [i + 1] : [])),
     deepest: Math.min(6, Math.max(1, levels.length)),
-    label: format.figures?.label ?? PLAIN.label,
-    reference: format.figures?.reference ?? '',
+    label: say(format.figures?.label ?? PLAIN.label),
+    reference: say(format.figures?.reference ?? ''),
     separator: format.figures?.separator ?? PLAIN.separator,
-    tableLabel: format.tables?.label ?? PLAIN.tableLabel,
-    tableReference: format.tables?.reference ?? '',
+    tableLabel: say(format.tables?.label ?? PLAIN.tableLabel),
+    tableReference: say(format.tables?.reference ?? ''),
     tableSeparator: format.tables?.separator ?? PLAIN.tableSeparator,
     before: format.equations?.beforeNumber ?? PLAIN.before,
     after: format.equations?.afterNumber ?? PLAIN.after,
@@ -216,7 +222,7 @@ class Numbering {
   }
 
   countingOf(project: Project, mapId: string): Counting {
-    return countingOf(this.formatOf(project, mapId));
+    return countingOf(this.formatOf(project, mapId), project.map(mapId)?.document.language);
   }
 
   /**
@@ -225,7 +231,7 @@ class Numbering {
    */
   of(project: Project, mapId: string): Numbers {
     const counting = this.countingOf(project, mapId);
-    const at = `${project.revision}:${project.structure}:${counting.numberedHeadings}:${counting.runIn}:${counting.deepest}`;
+    const at = `${project.revision}:${project.structure}:${counting.numberedHeadings}:${counting.runIn}:${counting.deepest}:${counting.label}:${counting.tableLabel}`;
     const known = this.#counted.get(mapId);
     if (known && known.at === at) return known.numbers;
     const numbers = count(project, mapId, counting);

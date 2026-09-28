@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { languageSet, languagesInfo } from '$lib/api/system';
+  import { languages } from '$lib/i18n';
   import { router } from '$lib/state/router.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import ConfirmHost from '$lib/ui/ConfirmHost.svelte';
@@ -16,8 +18,38 @@
 
   const route = $derived(router.route);
 
-  onMount(() => {
-    settings.load();
+  /** Whether the settings and the languages are known: nothing is shown before, lest it be shown in another language first. */
+  let ready = $state(false);
+
+  onMount(async () => {
+    const known = languagesInfo()
+      .then((info) => {
+        languages.system = info.system;
+        languages.interface = info.interface;
+        languages.interfaceDefault = info.interfaceDefault;
+        languages.texts = info.texts;
+        languages.textDefault = info.textDefault;
+      })
+      .catch(() => {});
+    await Promise.all([settings.load(), known]);
+    ready = true;
+  });
+
+  // The language of the interface: the one chosen, or that of the system.
+  $effect(() => {
+    const chosen = settings.value.language;
+    const tag = languages.interface.some((l) => l.tag === chosen)
+      ? chosen
+      : languages.interfaceDefault;
+    languages.current = tag;
+    document.documentElement.lang = tag;
+    languageSet(tag).catch(() => {});
+  });
+
+  // The language new texts are given.
+  $effect(() => {
+    const chosen = settings.value.textLanguage;
+    languages.newTexts = chosen && chosen !== 'system' ? chosen : languages.textDefault;
   });
 
   $effect(() => {
@@ -42,29 +74,31 @@
 
 <svelte:window {onkeydown} oncontextmenu={(e) => e.preventDefault()} />
 
-<div class="app">
-  <Rail />
-  <main>
-    {#if route.view === 'projects'}
-      <ProjectsView />
-    {:else if route.view === 'library'}
-      <LibraryView />
-    {:else if route.view === 'pictures'}
-      <PicturesView />
-    {:else if route.view === 'project'}
-      {#key route.project}
-        <ProjectView projectId={route.project} />
-      {/key}
-    {:else if route.view === 'settings'}
-      <SettingsView />
-    {/if}
-  </main>
-</div>
+{#if ready}
+  <div class="app">
+    <Rail />
+    <main>
+      {#if route.view === 'projects'}
+        <ProjectsView />
+      {:else if route.view === 'library'}
+        <LibraryView />
+      {:else if route.view === 'pictures'}
+        <PicturesView />
+      {:else if route.view === 'project'}
+        {#key route.project}
+          <ProjectView projectId={route.project} />
+        {/key}
+      {:else if route.view === 'settings'}
+        <SettingsView />
+      {/if}
+    </main>
+  </div>
 
-<ReferenceHost />
-<ConfirmHost />
-<MenuHost />
-<DragGhost />
+  <ReferenceHost />
+  <ConfirmHost />
+  <MenuHost />
+  <DragGhost />
+{/if}
 <Toaster />
 
 <style>
