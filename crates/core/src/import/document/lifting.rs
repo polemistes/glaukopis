@@ -13,6 +13,8 @@
 //!   are known again when Pandoc has read them. See `captions.rs`.
 //! - **Headings written as paragraphs**, as LibreOffice has them in what it
 //!   took from HTML, are made headings.
+//! - **Citations made by a program that keeps references** are set between
+//!   signs, and what the file says of them is read. See `made.rs`.
 //!
 //! Here is also read what the file says of itself where Pandoc does not
 //! tell: who wrote it, its title, its keywords; whether changes are tracked
@@ -27,6 +29,7 @@ use std::path::{Path, PathBuf};
 
 use roxmltree::{Document, Node};
 
+use super::made::{self, Made};
 use super::{Format, MAX_BYTES, Properties};
 
 /// What marks a paragraph that says something of a figure or a table: two
@@ -49,6 +52,8 @@ pub(super) struct Prepared {
     pub remarks: Vec<String>,
     /// How many pictures the file holds.
     pub held: usize,
+    /// What programs that keep references made in it.
+    pub made: Made,
 }
 
 /// Looks at a file before it is read, and makes a copy of it in `work`
@@ -68,16 +73,22 @@ pub(super) fn prepare(path: &Path, format: Format, work: &Path) -> Prepared {
     out.held = archive.file_names().filter(|name| name.starts_with(pictures) && is_picture(name)).count();
 
     let written = part(&mut archive, text);
-    let changed = match format {
+    // The parts that are written anew, by what they are called in the file.
+    let mut anew: Vec<(String, String)> = Vec::new();
+    match format {
         Format::Odt => {
+            let mut kept = made::Kept::new();
             if let Some(meta) = part(&mut archive, "meta.xml") {
                 out.properties = odt_properties(&meta);
+                kept = made::kept(&meta);
             }
             if written.as_deref().is_some_and(|xml| xml.contains(":changed-region")) {
                 out.remarks.push(TRACKED.to_owned());
             }
             let styles = part(&mut archive, "styles.xml");
-            written.as_deref().and_then(|xml| odt_text(xml, styles.as_deref()))
+            let lifted = written.as_deref().and_then(|xml| odt_text(xml, styles.as_deref()));
+            let cited = lifted.as_deref().or(written.as_deref()).and_then(|xml| made::odt(xml, &kept, &mut out.made));
+            anew.extend(cited.or(lifted).map(|now| (text.to_owned(), now)));
         }
         _ => {
             if let Some(core) = part(&mut archive, "docProps/core.xml") {
@@ -91,18 +102,29 @@ pub(super) fn prepare(path: &Path, format: Format, work: &Path) -> Prepared {
             if part(&mut archive, "word/comments.xml").is_some_and(|xml| xml.contains("<w:comment ")) {
                 out.remarks.push("The document has comments in the margin, which are left out.".to_owned());
             }
+            let kept = part(&mut archive, "docProps/custom.xml").map(|custom| made::kept(&custom)).unwrap_or_default();
             let styles = part(&mut archive, "word/styles.xml");
-            written.as_deref().and_then(|xml| docx_text(xml, styles.as_deref()))
+            let lifted = written.as_deref().and_then(|xml| docx_text(xml, styles.as_deref()));
+            let cited = lifted.as_deref().or(written.as_deref()).and_then(|xml| made::docx(xml, &kept, &mut out.made));
+            anew.extend(cited.or(lifted).map(|now| (text.to_owned(), now)));
+            // The notes are parts of their own.
+            for notes in ["word/footnotes.xml", "word/endnotes.xml"] {
+                let cited = part(&mut archive, notes).and_then(|xml| made::docx(&xml, &kept, &mut out.made));
+                anew.extend(cited.map(|now| (notes.to_owned(), now)));
+            }
         }
-    };
-    if let Some(changed) = changed
+    }
+    out.remarks.extend(out.made.remarks());
+    if !anew.is_empty()
         && let Some(name) = path.file_name()
     {
         let copy = work.join("copy").join(name);
-        if fs::create_dir_all(work.join("copy")).is_ok() && write_copy(&mut archive, &copy, text, &changed).is_some() {
+        if fs::create_dir_all(work.join("copy")).is_ok() && write_copy(&mut archive, &copy, &anew).is_some() {
             out.copy = Some(copy);
         } else {
             tracing::warn!(file = %path.display(), "the copy to be read could not be made; the file is read as it is");
+            // What was made is known by the signs in the copy, and by nothing else.
+            out.made.citations.clear();
         }
     }
     out
@@ -131,20 +153,20 @@ fn part<R: Read + Seek>(archive: &mut zip::ZipArchive<R>, name: &str) -> Option<
     Some(text.strip_prefix('\u{feff}').map(str::to_owned).unwrap_or(text))
 }
 
-/// The file again, with one part of it written anew.
+/// The file again, with some parts of it written anew: each by what it is
+/// called, with its text.
 pub(super) fn write_copy<R: Read + Seek>(
     archive: &mut zip::ZipArchive<R>,
     to: &Path,
-    name: &str,
-    text: &str,
+    anew: &[(String, String)],
 ) -> Option<()> {
     let mut writer = zip::ZipWriter::new(fs::File::create(to).ok()?);
     for i in 0..archive.len() {
         let file = archive.by_index_raw(i).ok()?;
-        if file.name() == name {
+        if let Some((name, text)) = anew.iter().find(|(name, _)| file.name() == name) {
             drop(file);
             let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
-            writer.start_file(name, options).ok()?;
+            writer.start_file(name.as_str(), options).ok()?;
             writer.write_all(text.as_bytes()).ok()?;
         } else {
             writer.raw_copy_file(file).ok()?;
@@ -217,14 +239,14 @@ fn keywords(said: &str) -> Vec<String> {
 
 /// Something to be written in the place of a stretch of the text; where
 /// the stretch is empty, something to be put in.
-struct Change {
-    at: Range<usize>,
-    with: String,
+pub(super) struct Change {
+    pub at: Range<usize>,
+    pub with: String,
 }
 
 /// The text with the changes made. They must not reach into each other;
 /// those at the same place are made in the order they were given in.
-fn changed(source: &str, mut changes: Vec<Change>) -> Option<String> {
+pub(super) fn changed(source: &str, mut changes: Vec<Change>) -> Option<String> {
     changes.sort_by_key(|c| c.at.start);
     let mut out = String::with_capacity(source.len() + changes.iter().map(|c| c.with.len()).sum::<usize>());
     let mut at = 0usize;
@@ -240,23 +262,23 @@ fn changed(source: &str, mut changes: Vec<Change>) -> Option<String> {
     Some(out)
 }
 
-fn parse(source: &str) -> Option<Document<'_>> {
+pub(super) fn parse(source: &str) -> Option<Document<'_>> {
     Document::parse_with_options(source, roxmltree::ParsingOptions { allow_dtd: false, ..Default::default() }).ok()
 }
 
-fn is(node: &Node, space: &str, name: &str) -> bool {
+pub(super) fn is(node: &Node, space: &str, name: &str) -> bool {
     node.is_element()
         && node.tag_name().name() == name
         && node.tag_name().namespace().is_some_and(|ns| ns.contains(space))
 }
 
-fn attribute<'a>(node: &Node<'a, '_>, name: &str) -> Option<&'a str> {
+pub(super) fn attribute<'a>(node: &Node<'a, '_>, name: &str) -> Option<&'a str> {
     node.attributes().find(|a| a.name() == name).map(|a| a.value())
 }
 
 /// What an element is called in the text, with what stands before the
 /// colon: `text:p`.
-fn called<'a>(source: &'a str, node: &Node) -> &'a str {
+pub(super) fn called<'a>(source: &'a str, node: &Node) -> &'a str {
     let from = node.range().start + 1;
     let rest = source.get(from..).unwrap_or("");
     let end = rest.find(|c: char| c.is_whitespace() || c == '>' || c == '/').unwrap_or(rest.len());
@@ -264,7 +286,7 @@ fn called<'a>(source: &'a str, node: &Node) -> &'a str {
 }
 
 /// Where the tag that begins an element ends, and whether the element ends with it.
-fn opening(source: &str, node: &Node) -> Option<(usize, bool)> {
+pub(super) fn opening(source: &str, node: &Node) -> Option<(usize, bool)> {
     let bytes = source.as_bytes();
     let mut quote: Option<u8> = None;
     let mut i = node.range().start;
@@ -332,7 +354,7 @@ fn lifted(source: &str, boxes: &dyn Fn(&str, &Document) -> Vec<Lift>) -> Option<
 // OpenDocument
 // =========================================================================
 
-const TEXT: &str = "opendocument:xmlns:text:";
+pub(super) const TEXT: &str = "opendocument:xmlns:text:";
 const DRAW: &str = "opendocument:xmlns:drawing:";
 const STYLE: &str = "opendocument:xmlns:style:";
 const OFFICE: &str = "opendocument:xmlns:office:";
@@ -456,7 +478,7 @@ fn odt_text(content: &str, styles: Option<&str>) -> Option<String> {
 // Word
 // =========================================================================
 
-const WORD: &str = "wordprocessingml";
+pub(super) const WORD: &str = "wordprocessingml";
 const COMPATIBLE: &str = "markup-compatibility";
 
 /// The styles of a DOCX that are of what is said of figures and tables, by

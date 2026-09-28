@@ -21,9 +21,17 @@
 //! made for it (`lifting.rs`). What is said of figures and tables, which
 //! such files have as paragraphs beside them, is given to them
 //! (`captions.rs`).
+//!
+//! A citation that cannot be made a citation of the application at once
+//! stands as the text it was in the file, under the mark `found`, which
+//! holds what is known of it (`cited.rs`, and `crate::found`): one by a tag
+//! that names a work the library does not have, and every one that was made
+//! by a program that keeps references (`made.rs`).
 
 mod captions;
+mod cited;
 mod lifting;
+mod made;
 
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
@@ -41,6 +49,7 @@ use crate::error::{Error, IoContext, Result};
 use crate::export::Tools;
 use crate::export::tools;
 use crate::formats::Stand;
+use crate::found::{self, By, FoundItem};
 use crate::pictures::{Picture, Pictures};
 
 /// The largest file that is read.
@@ -225,7 +234,7 @@ pub struct Counts {
     pub figures: usize,
     pub tables: usize,
     pub equations: usize,
-    /// Works cited that are in the library, as often as they are cited.
+    /// Works cited by keys that the library has, as often as they are cited.
     pub cited: usize,
     /// Works cited by keys that the library does not have, as often as they are cited.
     pub not_found: usize,
@@ -404,7 +413,12 @@ pub fn read(
             plain(&decode(&bytes), &stem)
         }
         Some(reader) => {
-            let mut args: Vec<String> = vec!["-f".into(), reader.into(), "-t".into(), "json".into()];
+            let prepared = lifting::prepare(path, format, work);
+            // What EndNote made, Pandoc reads where it is asked to. What
+            // Zotero and Mendeley made is read already, and stands in the
+            // copy as text between signs.
+            let reader = if prepared.made.endnote > 0 { format!("{reader}+citations") } else { reader.to_owned() };
+            let mut args: Vec<String> = vec!["-f".into(), reader, "-t".into(), "json".into()];
             if format == Format::Docx {
                 args.push("--track-changes=accept".into());
             }
@@ -419,7 +433,6 @@ pub fn read(
             } else {
                 beside.as_path()
             };
-            let prepared = lifting::prepare(path, format, work);
             held = prepared.held;
             told = prepared.remarks;
             args.push(prepared.copy.as_deref().unwrap_or(path).display().to_string());
@@ -433,7 +446,7 @@ pub fn read(
             })?;
             let value: Value = serde_json::from_slice(&json)
                 .map_err(|e| Error::invalid(format!("what Pandoc made of “{file}” could not be read: {e}")))?;
-            convert(&value, &stem, &prepared.properties, keys, &mut take_in)
+            convert_with(&value, &stem, &prepared.properties, &prepared.made, keys, &mut take_in)
         }
     };
     if stop.load(Ordering::Relaxed) {
@@ -650,10 +663,10 @@ struct Tally {
     headings: usize,
     /// Pictures that were left out, with why.
     lost: Vec<(String, String)>,
-    /// Keys the library does not have, each once.
-    unknown: Vec<String>,
     cited: usize,
     not_found: usize,
+    /// Citations of EndNote that Pandoc read.
+    endnote: usize,
 }
 
 struct Part {
@@ -672,6 +685,15 @@ struct Reading<'a, 'b> {
     terms: Vec<(String, String)>,
     /// In a name, where a citation is the text it was written as.
     naming: bool,
+    /// What programs that keep references made in the file.
+    made: &'a [made::Citation],
+    /// The mark of the citation that the text now read is of: it stands
+    /// between the signs that were set around it before Pandoc read.
+    within: Option<Value>,
+    /// What the file says of the works that a program cites in it, by what
+    /// the citations call them, where Pandoc read citations that a program
+    /// made. Tags are not read in such a file.
+    told: Option<Vec<(String, Value)>>,
     /// Figures that stood where none can stand, to stand after it.
     hoisted: Vec<Block>,
     tally: Tally,
@@ -734,7 +756,7 @@ fn written(inlines: &[Value]) -> String {
     for v in inlines {
         let c = inner(v);
         match tag(v) {
-            "Str" => out.push_str(c.as_str().unwrap_or("")),
+            "Str" => out.push_str(&made::without_signs(c.as_str().unwrap_or(""))),
             "Space" | "SoftBreak" | "LineBreak" => out.push(' '),
             "Emph" | "Underline" | "Strong" | "Strikeout" | "Superscript" | "Subscript" | "SmallCaps" => {
                 out.push_str(&written(list(c)));
@@ -1066,12 +1088,44 @@ fn locator(suffix: &str, terms: &[(String, String)]) -> (Option<String>, Option<
 }
 
 impl Reading<'_, '_> {
+    /// Text, under the mark of the citation it is of, if it is of one.
+    fn push(&self, out: &mut Vec<Piece>, text: &str, marks: &Marks) {
+        match &self.within {
+            Some(mark) => push_text(out, text, &with(marks, found::MARK, mark.clone())),
+            None => push_text(out, text, marks),
+        }
+    }
+
+    /// Text of the file, in which the signs may stand that a citation made
+    /// by a program is set between.
+    fn text(&mut self, text: &str, marks: &Marks, out: &mut Vec<Piece>) {
+        let mut rest = text;
+        while let Some(at) = rest.find([made::BEGIN, made::END]) {
+            self.push(out, &rest[..at], marks);
+            let begins = rest[at..].starts_with(made::BEGIN);
+            rest = &rest[at + if begins { made::BEGIN } else { made::END }.len_utf8()..];
+            self.within = None;
+            if !begins {
+                continue;
+            }
+            // Which of them it is.
+            let Some(end) = rest.find(made::NUMBERED) else { continue };
+            let citation = rest[..end].parse::<usize>().ok().and_then(|number| self.made.get(number));
+            rest = &rest[end + made::NUMBERED.len_utf8()..];
+            // A name has no marks but those of names.
+            if let Some(citation) = citation.filter(|_| !self.naming) {
+                self.within = Some(cited::mark(citation.by, citation.items.clone(), CiteMode::Normal));
+            }
+        }
+        self.push(out, rest, marks);
+    }
+
     fn inlines(&mut self, inlines: &[Value], marks: &Marks, out: &mut Vec<Piece>) {
         for v in inlines {
             let c = inner(v);
             match tag(v) {
-                "Str" => push_text(out, c.as_str().unwrap_or(""), marks),
-                "Space" | "SoftBreak" => push_text(out, " ", marks),
+                "Str" => self.text(c.as_str().unwrap_or(""), marks, out),
+                "Space" | "SoftBreak" => self.push(out, " ", marks),
                 "LineBreak" => out.push(Piece::Inline(Inline::Break)),
                 "Emph" => self.inlines(list(c), &with(marks, "em", Value::Bool(true)), out),
                 "Strong" => self.inlines(list(c), &with(marks, "strong", Value::Bool(true)), out),
@@ -1082,11 +1136,11 @@ impl Reading<'_, '_> {
                 "Underline" => self.inlines(list(c), marks, out),
                 "Quoted" => {
                     let double = tag(&c[0]) != "SingleQuote";
-                    push_text(out, if double { "“" } else { "‘" }, marks);
+                    self.push(out, if double { "“" } else { "‘" }, marks);
                     self.inlines(list(&c[1]), marks, out);
-                    push_text(out, if double { "”" } else { "’" }, marks);
+                    self.push(out, if double { "”" } else { "’" }, marks);
                 }
-                "Code" => push_text(out, c[1].as_str().unwrap_or(""), marks),
+                "Code" => self.text(c[1].as_str().unwrap_or(""), marks, out),
                 "Math" => {
                     let tex = c[1].as_str().unwrap_or("").trim().to_owned();
                     if tex.is_empty() {
@@ -1154,7 +1208,10 @@ impl Reading<'_, '_> {
                     }
                 }
                 "Note" => {
+                    // What a note holds is not of the citation the note stands in.
+                    let around = self.within.take();
                     let blocks = self.blocks(list(c));
+                    self.within = around;
                     let mut content = line_of(blocks, &mut self.hoisted);
                     // A note within a note is not a thing.
                     content.retain(|i| !matches!(i, Inline::Footnote { .. }));
@@ -1169,6 +1226,17 @@ impl Reading<'_, '_> {
         }
     }
 
+    /// A work in a citation of Pandoc, in its parts: the words before it,
+    /// where in it, what that counts, the words after, and whether its
+    /// author is left out.
+    fn cited(&self, one: &Value) -> (Option<String>, Option<String>, Option<String>, Option<String>, bool) {
+        let prefix = written(list(&one["citationPrefix"])).replace('\u{a0}', " ");
+        let suffix = written(list(&one["citationSuffix"]));
+        let (locator, label, after) = locator(&suffix, &self.terms);
+        let prefix = Some(prefix.trim().to_owned()).filter(|p| !p.is_empty());
+        (prefix, locator, label, after, tag(&one["citationMode"]) == "SuppressAuthor")
+    }
+
     fn cite(&mut self, c: &Value, marks: &Marks, out: &mut Vec<Piece>) {
         let citations = list(&c[0]);
         let as_written = written(list(&c[1]));
@@ -1176,62 +1244,66 @@ impl Reading<'_, '_> {
             push_text(out, &as_written, marks);
             return;
         }
-        let found: Vec<Option<String>> =
-            citations.iter().map(|one| (self.keys)(one["citationId"].as_str().unwrap_or(""))).collect();
-        for (one, id) in citations.iter().zip(&found) {
+        let key = |one: &Value| one["citationId"].as_str().unwrap_or("").to_owned();
+        let mode = match citations.first() {
+            Some(first) if tag(&first["citationMode"]) == "AuthorInText" => CiteMode::Intext,
+            _ => CiteMode::Normal,
+        };
+        if let Some(told) = &self.told {
+            // Made by a program, and read by Pandoc: the text it showed,
+            // with what the file says of each work.
+            let items = citations
+                .iter()
+                .map(|one| {
+                    let (prefix, locator, label, suffix, suppress_author) = self.cited(one);
+                    let data = told.iter().find(|(id, _)| *id == key(one)).map(|(_, data)| data.clone());
+                    FoundItem { data, locator, label, prefix, suffix, suppress_author, ..Default::default() }
+                })
+                .collect();
+            self.tally.endnote += 1;
+            let around = self.within.replace(cited::mark(By::Mendeley, items, mode));
+            self.inlines(list(&c[1]), marks, out);
+            self.within = around;
+            return;
+        }
+        let known: Vec<Option<String>> = citations.iter().map(|one| (self.keys)(&key(one))).collect();
+        for id in &known {
             if id.is_some() {
                 self.tally.cited += 1;
             } else {
                 self.tally.not_found += 1;
-                let key = one["citationId"].as_str().unwrap_or("").to_owned();
-                if !self.tally.unknown.contains(&key) {
-                    self.tally.unknown.push(key);
-                }
             }
         }
-        if found.iter().all(Option::is_none) {
-            push_text(out, &as_written, marks);
+        if known.iter().any(Option::is_none) {
+            // Not a citation until every work of it is known: it stands as
+            // it was written, with what it says of each work, of those the
+            // library has as well.
+            let items = citations
+                .iter()
+                .map(|one| {
+                    let (prefix, locator, label, suffix, suppress_author) = self.cited(one);
+                    FoundItem {
+                        key: Some(key(one)),
+                        locator,
+                        label,
+                        prefix,
+                        suffix,
+                        suppress_author,
+                        ..Default::default()
+                    }
+                })
+                .collect();
+            push_text(out, &as_written, &with(marks, found::MARK, cited::mark(By::Key, items, mode)));
             return;
         }
-        let mut items: Vec<CiteItem> = Vec::new();
-        let mut mode = CiteMode::Normal;
-        let mut missing: Vec<String> = Vec::new();
-        for (one, id) in citations.iter().zip(found) {
-            let prefix = written(list(&one["citationPrefix"]));
-            let suffix = written(list(&one["citationSuffix"]));
-            let how = tag(&one["citationMode"]);
-            let Some(id) = id else {
-                let mut text = String::new();
-                if !prefix.trim().is_empty() {
-                    text.push_str(prefix.trim());
-                    text.push(' ');
-                }
-                if how == "SuppressAuthor" {
-                    text.push('-');
-                }
-                text.push('@');
-                text.push_str(one["citationId"].as_str().unwrap_or(""));
-                text.push_str(suffix.trim_end());
-                missing.push(text);
-                continue;
-            };
-            if items.is_empty() && how == "AuthorInText" {
-                mode = CiteMode::Intext;
-            }
-            let (locator, label, after) = locator(&suffix, &self.terms);
-            let prefix = prefix.replace('\u{a0}', " ");
-            items.push(CiteItem {
-                id,
-                locator,
-                label,
-                prefix: Some(prefix.trim().to_owned()).filter(|p| !p.is_empty()),
-                suffix: after,
-                suppress_author: how == "SuppressAuthor",
-            });
-        }
-        if !missing.is_empty() {
-            push_text(out, &format!("[{}] ", missing.join("; ")), marks);
-        }
+        let items = citations
+            .iter()
+            .zip(known)
+            .filter_map(|(one, id)| {
+                let (prefix, locator, label, suffix, suppress_author) = self.cited(one);
+                Some(CiteItem { id: id?, locator, label, prefix, suffix, suppress_author })
+            })
+            .collect();
         out.push(Piece::Inline(Inline::Citation { items, mode }));
     }
 
@@ -1262,6 +1334,8 @@ impl Reading<'_, '_> {
     fn paragraph(&mut self, inlines: &[Value], marks: &Marks, out: &mut Vec<Block>) {
         let mut pieces = Vec::new();
         self.inlines(inlines, marks, &mut pieces);
+        // A citation ends where the paragraph does, whatever the signs say.
+        self.within = None;
         // A paragraph that is marked as saying something of a figure or a
         // table may hold the picture itself, before its words: the mark is
         // of the words.
@@ -1493,6 +1567,7 @@ impl Reading<'_, '_> {
         self.naming = true;
         self.inlines(inlines, &Marks::new(), &mut pieces);
         self.naming = false;
+        self.within = None;
         let mut line: Vec<Inline> = Vec::new();
         let mut notes: Vec<Inline> = Vec::new();
         for piece in pieces {
@@ -1671,16 +1746,26 @@ pub fn count_words(text: &str) -> usize {
 }
 
 fn count(sections: &[Section], cited: usize, not_found: usize) -> Counts {
-    fn line(inlines: &[Inline], text: &mut String, notes: &mut usize) {
+    /// The citations that were found, by their ids, with whether a program made them.
+    type Found = Vec<(String, bool)>;
+    fn line(inlines: &[Inline], text: &mut String, notes: &mut usize, found: &mut Found) {
         for i in inlines {
             match i {
-                Inline::Text { text: t, .. } => text.push_str(t),
+                Inline::Text { text: t, marks } => {
+                    text.push_str(t);
+                    // The pieces of one citation have one id, and are counted once.
+                    if let Some((id, made)) = marks.get(found::MARK).and_then(cited::counted)
+                        && !found.iter().any(|(has, _)| has == id)
+                    {
+                        found.push((id.to_owned(), made));
+                    }
+                }
                 Inline::Break => text.push(' '),
                 Inline::Math { .. } | Inline::CrossRef { .. } => text.push_str(" x "),
                 Inline::Footnote { content, .. } => {
                     *notes += 1;
                     text.push(' ');
-                    line(content, text, notes);
+                    line(content, text, notes, found);
                     text.push(' ');
                 }
                 Inline::Citation { .. } => {}
@@ -1691,6 +1776,7 @@ fn count(sections: &[Section], cited: usize, not_found: usize) -> Counts {
         Counts { parts: sections.iter().filter(|s| s.level > 0).count(), cited, not_found, ..Default::default() };
     let mut text = String::new();
     let mut notes = 0usize;
+    let mut found = Found::new();
     for section in sections {
         document::walk(
             &section.blocks,
@@ -1701,13 +1787,15 @@ fn count(sections: &[Section], cited: usize, not_found: usize) -> Counts {
                 _ => {}
             },
             &mut |l| {
-                line(l, &mut text, &mut notes);
+                line(l, &mut text, &mut notes, &mut found);
                 text.push('\n');
             },
         );
     }
     counts.words = count_words(&text);
     counts.notes = notes;
+    counts.found = found.len();
+    counts.found_made = found.iter().filter(|(_, made)| *made).count();
     counts
 }
 
@@ -1715,9 +1803,91 @@ fn several(n: usize, one: &str, more: &str) -> String {
     if n == 1 { format!("1 {one}") } else { format!("{n} {more}") }
 }
 
+/// What Pandoc gives of what a file says of itself, as JSON is written.
+fn meta_value(v: &Value) -> Value {
+    let c = inner(v);
+    match tag(v) {
+        "MetaBool" => c.clone(),
+        "MetaList" => Value::Array(list(c).iter().map(meta_value).collect()),
+        "MetaMap" => Value::Object(
+            c.as_object()
+                .map(|all| all.iter().map(|(name, v)| (name.clone(), meta_value(v))).collect())
+                .unwrap_or_default(),
+        ),
+        _ => Value::String(meta_text(v)),
+    }
+}
+
+/// A date as Pandoc writes it (1979, 1979-05, 1979-05-02), in the form of
+/// CSL. What is written otherwise is kept as it is written.
+fn csl_date(said: &str) -> Value {
+    let parts: Vec<&str> = said.trim().split('-').collect();
+    let numbers = !parts.is_empty()
+        && parts.len() <= 3
+        && parts.iter().all(|part| !part.is_empty() && part.chars().all(|c| c.is_ascii_digit()));
+    if numbers { json!({ "date-parts": [parts] }) } else { json!({ "raw": said.trim() }) }
+}
+
+/// What a file says of the works that are cited in it by a program, as
+/// Pandoc read it, in the form of CSL: by what the citations call the works.
+fn told_of(meta: &Value) -> Vec<(String, Value)> {
+    const DATES: [&str; 5] = ["issued", "accessed", "original-date", "event-date", "submitted"];
+    let mut out = Vec::new();
+    for one in meta.get("references").map(meta_list).unwrap_or_default() {
+        let Value::Object(mut said) = meta_value(one) else { continue };
+        let Some(id) = said.get("id").and_then(Value::as_str).map(str::to_owned) else { continue };
+        for name in DATES {
+            if let Some(date) = said.get_mut(name)
+                && let Some(text) = date.as_str()
+            {
+                *date = csl_date(text);
+            }
+        }
+        if let Some(data) = made::data(&Value::Object(said)) {
+            out.push((id, data));
+        }
+    }
+    out
+}
+
+/// What is said of the citations that were found, where there are any.
+fn found_remark(counts: &Counts) -> Option<String> {
+    if counts.found == 0 {
+        return None;
+    }
+    let one = counts.found == 1;
+    let made = match counts.found_made {
+        0 => String::new(),
+        all if all == counts.found && one => ", made by a program that keeps references".to_owned(),
+        all if all == counts.found => ", all made by a program that keeps references".to_owned(),
+        some => format!(", {some} of them made by a program that keeps references"),
+    };
+    Some(format!(
+        "{} found that {} of your library{made}. {} as the text {} written as, and can be gone through when the \
+         map is made, and later.",
+        if one { "1 citation was".to_owned() } else { format!("{} citations were", counts.found) },
+        if one { "is not yet tied to a reference" } else { "are not yet tied to references" },
+        if one { "It stands" } else { "They stand" },
+        if one { "it was" } else { "they were" }
+    ))
+}
+
 /// Turns what Pandoc has read into a document in parts. `stem` is what the
 /// file is called, without its ending: the title where the document has none.
 pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, take_in: &mut TakeIn) -> Imported {
+    convert_with(doc, stem, properties, &made::Made::default(), keys, take_in)
+}
+
+/// As `convert`, of a file in which programs that keep references made
+/// something, which was read before Pandoc read the file.
+fn convert_with(
+    doc: &Value,
+    stem: &str,
+    properties: &Properties,
+    made: &made::Made,
+    keys: &Keys,
+    take_in: &mut TakeIn,
+) -> Imported {
     let empty = json!({});
     let meta = doc.get("meta").unwrap_or(&empty);
     let of = |names: &[&str]| names.iter().find_map(|n| meta.get(*n)).map(meta_text).filter(|t| !t.is_empty());
@@ -1728,6 +1898,9 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
         take_in,
         terms: terms_for(language.as_deref()),
         naming: false,
+        made: &made.citations,
+        within: None,
+        told: (made.endnote > 0).then(|| told_of(meta)),
         hoisted: Vec::new(),
         tally: Tally::default(),
     };
@@ -1864,14 +2037,20 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
 
     let tally = reading.tally;
     let mut remarks: Vec<String> = Vec::new();
-    if !tally.unknown.is_empty() {
+    let counts = count(&sections, tally.cited, tally.not_found);
+    if let Some(remark) = found_remark(&counts) {
+        remarks.push(remark);
+    }
+    // Where EndNote keeps what it says apart from the field, Pandoc does not read it.
+    let unread = made.endnote.saturating_sub(tally.endnote);
+    if unread > 0 {
         remarks.push(format!(
-            "{} that {} not in your library: {}. Where {} cited, the citation stands as the text it was written \
-             as.",
-            several(tally.unknown.len(), "work is cited by a key", "works are cited by keys"),
-            if tally.unknown.len() == 1 { "is" } else { "are" },
-            tally.unknown.join(", "),
-            if tally.unknown.len() == 1 { "it is" } else { "they are" }
+            "{} made by EndNote {} brought in as the text {}, and {} not among those that were found: what EndNote \
+             says of the works could not be read.",
+            several(unread, "citation", "citations"),
+            if unread == 1 { "is" } else { "are" },
+            if unread == 1 { "it shows" } else { "they show" },
+            if unread == 1 { "is" } else { "are" }
         ));
     }
     if let Some(heading) = &bibliography {
@@ -1879,6 +2058,12 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
             "The document has a list of what it cites, under “{heading}”. It is brought in as text, like the rest. \
              The map makes a bibliography of its own from what is cited in it."
         ));
+    } else if made.list {
+        remarks.push(
+            "The document has a list of what it cites, made by the program that keeps its references. It is brought \
+             in as text, like the rest. The map makes a bibliography of its own from what is cited in it."
+                .to_owned(),
+        );
     }
     for (name, why) in &tally.lost {
         remarks.push(format!("The picture “{name}” is left out: {why}."));
@@ -1979,7 +2164,7 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
         abstract_text: of(&["abstract"]),
         keywords,
         language,
-        counts: count(&sections, tally.cited, tally.not_found),
+        counts,
         sections,
         remarks,
         pictures: Vec::new(),
@@ -2050,6 +2235,73 @@ mod tests {
 
     fn paragraph(content: Vec<Inline>) -> Block {
         Block::Paragraph { content }
+    }
+
+    /// What the mark of a citation that was found holds, of a piece of text.
+    fn found_of(inline: &Inline) -> Option<found::Found> {
+        let Inline::Text { marks, .. } = inline else { return None };
+        serde_json::from_value(marks.get(found::MARK)?.clone()).ok()
+    }
+
+    /// The citations that were found in a line, each once, in the order
+    /// they stand in, with their text: all its pieces together.
+    fn found_in(line: &[Inline]) -> Vec<(String, found::Found)> {
+        let mut out: Vec<(String, found::Found)> = Vec::new();
+        for inline in line {
+            match inline {
+                Inline::Text { text, .. } => {
+                    let Some(found) = found_of(inline) else { continue };
+                    assert_eq!(found.id.len(), 12, "{found:?}");
+                    assert!(found.id.chars().all(|c| c.is_ascii_alphanumeric()), "{found:?}");
+                    match out.iter_mut().find(|(_, has)| has.id == found.id) {
+                        Some((all, has)) => {
+                            assert_eq!(*has, found, "the pieces of one citation hold the same");
+                            all.push_str(text);
+                        }
+                        None => out.push((text.clone(), found)),
+                    }
+                }
+                Inline::Footnote { content, .. } => out.extend(found_in(content)),
+                _ => {}
+            }
+        }
+        out
+    }
+
+    /// The citations that were found in a document.
+    fn all_found(read: &Imported) -> Vec<(String, found::Found)> {
+        let mut out = Vec::new();
+        for section in &read.sections {
+            document::walk(&section.blocks, &mut |_| {}, &mut |l| out.extend(found_in(l)));
+        }
+        out
+    }
+
+    /// A text as it is written, without the ids of the citations that were
+    /// found in it, which are made anew every time a file is read.
+    fn without_ids(sections: &[Section]) -> Value {
+        fn walk(value: &mut Value) {
+            match value {
+                Value::Object(fields) => {
+                    if let Some(Value::Object(found)) = fields.get_mut(found::MARK)
+                        && found.contains_key("id")
+                    {
+                        found.insert("id".into(), Value::String(String::new()));
+                    }
+                    fields.values_mut().for_each(walk);
+                }
+                Value::Array(all) => all.iter_mut().for_each(walk),
+                _ => {}
+            }
+        }
+        let mut written = serde_json::to_value(sections).unwrap();
+        walk(&mut written);
+        written
+    }
+
+    /// A work as a tag cites it.
+    fn by_key(key: &str) -> FoundItem {
+        FoundItem { key: Some(key.into()), ..Default::default() }
     }
 
     #[test]
@@ -2479,7 +2731,7 @@ mod tests {
             &doc(
                 "{}",
                 &[format!(
-                    r#"{{"t":"Para","c":[{},{{"t":"Space"}},{},{{"t":"Space"}},{},{{"t":"Space"}},{}]}}"#,
+                    r#"{{"t":"Para","c":[{},{{"t":"Space"}},{},{{"t":"Space"}},{},{{"t":"Space"}},{},{{"t":"Space"}},{}]}}"#,
                     cite(
                         &[citation("nagy1979", "see", ", 73–75 and passim", "NormalCitation")],
                         "[see @nagy1979, 73–75 and passim]"
@@ -2493,13 +2745,15 @@ mod tests {
                         ],
                         "[cf. @other; -@nagy1979]"
                     ),
+                    cite(&[citation("nokey", "", "p. 5", "AuthorInText")], "@nokey [p. 5]"),
                 )],
             ),
             &library,
         );
+        let Block::Paragraph { content } = &read.sections[0].blocks[0] else { panic!() };
         assert_eq!(
-            read.sections[0].blocks,
-            vec![paragraph(vec![
+            content[..4],
+            [
                 Inline::Citation {
                     items: vec![CiteItem {
                         id: "r1".into(),
@@ -2520,19 +2774,103 @@ mod tests {
                     }],
                     mode: CiteMode::Intext,
                 },
-                text(" [@nokey, 12] [cf. @other] "),
-                Inline::Citation {
-                    items: vec![CiteItem { id: "r1".into(), suppress_author: true, ..Default::default() }],
-                    mode: CiteMode::Normal,
-                },
-            ])]
+                text(" "),
+            ]
         );
-        assert_eq!((read.counts.cited, read.counts.not_found), (3, 2));
-        assert!(
-            read.remarks[0].starts_with("2 works are cited by keys that are not in your library: nokey, other."),
-            "{:?}",
-            read.remarks
+        // Where the library has not every work, the whole is the text it
+        // was written as, with what it says of each work: of the one the
+        // library has as well.
+        assert_eq!(document::plain(&content[4..]), "[@nokey, 12] [cf. @other; -@nagy1979] @nokey [p. 5]");
+        assert_eq!(content.len(), 9);
+        assert_eq!(content[5], text(" "));
+        let found = found_in(content);
+        let told: Vec<(&str, By, CiteMode, &[FoundItem])> =
+            found.iter().map(|(text, found)| (text.as_str(), found.by, found.mode, found.items.as_slice())).collect();
+        assert_eq!(
+            told,
+            vec![
+                (
+                    "[@nokey, 12]",
+                    By::Key,
+                    CiteMode::Normal,
+                    &[FoundItem { locator: Some("12".into()), ..by_key("nokey") }][..]
+                ),
+                (
+                    "[cf. @other; -@nagy1979]",
+                    By::Key,
+                    CiteMode::Normal,
+                    &[
+                        FoundItem { prefix: Some("cf.".into()), ..by_key("other") },
+                        FoundItem { suppress_author: true, ..by_key("nagy1979") },
+                    ][..]
+                ),
+                (
+                    "@nokey [p. 5]",
+                    By::Key,
+                    CiteMode::Intext,
+                    &[FoundItem { locator: Some("5".into()), ..by_key("nokey") }][..]
+                ),
+            ]
         );
+        assert!(!found.iter().any(|(_, found)| found.left));
+        assert_eq!((read.counts.cited, read.counts.not_found), (3, 3));
+        assert_eq!((read.counts.found, read.counts.found_made), (3, 0));
+        assert_eq!(
+            read.remarks,
+            vec![
+                "3 citations were found that are not yet tied to references of your library. They stand as the text \
+                 they were written as, and can be gone through when the map is made, and later."
+            ]
+        );
+    }
+
+    #[test]
+    fn a_citation_that_was_found_keeps_the_marks_it_stands_in_and_is_text_in_a_name() {
+        let cite = r#"{"t":"Cite","c":[[{"citationId":"nokey","citationPrefix":[],"citationSuffix":[],"citationMode":{"t":"NormalCitation"},"citationNoteNum":1,"citationHash":0}],[{"t":"Str","c":"[@nokey]"}]]}"#;
+        let read = read_json(
+            &doc(
+                "{}",
+                &[
+                    format!(r#"{{"t":"Header","c":[1,["",[],[]],[{},{{"t":"Space"}},{cite}]]}}"#, words("One")),
+                    format!(
+                        r#"{{"t":"Para","c":[{{"t":"Emph","c":[{},{{"t":"Space"}},{cite}]}},{{"t":"Note","c":[{{"t":"Para","c":[{cite}]}}]}}]}}"#,
+                        words("As")
+                    ),
+                ],
+            ),
+            &library,
+        );
+        assert_eq!(read.title, vec![text("One [@nokey]")]);
+        let Block::Paragraph { content } = &read.sections[0].blocks[0] else { panic!() };
+        assert_eq!(content[0], marked("As ", &["em"]));
+        let Inline::Text { text: said, marks } = &content[1] else { panic!() };
+        assert_eq!(said, "[@nokey]");
+        assert_eq!(marks.keys().collect::<Vec<_>>(), vec!["em", "found"]);
+        let found = all_found(&read);
+        assert_eq!(found.len(), 2);
+        assert_ne!(found[0].1.id, found[1].1.id);
+        // In the name nothing was found; in the text and in the note, one each.
+        assert_eq!((read.counts.found, read.counts.found_made, read.counts.notes), (2, 0, 1));
+        assert!(read.remarks[0].starts_with("2 citations were found"), "{:?}", read.remarks);
+    }
+
+    #[test]
+    fn what_is_said_of_the_citations_that_were_found() {
+        let said = |found: usize, found_made: usize| {
+            found_remark(&Counts { found, found_made, ..Default::default() }).unwrap_or_default()
+        };
+        assert_eq!(said(0, 0), "");
+        assert_eq!(
+            said(1, 0),
+            "1 citation was found that is not yet tied to a reference of your library. It stands as the text it was \
+             written as, and can be gone through when the map is made, and later."
+        );
+        assert!(said(1, 1).starts_with(
+            "1 citation was found that is not yet tied to a reference of your library, made by a program that keeps \
+             references. It stands"
+        ));
+        assert!(said(4, 4).contains("of your library, all made by a program that keeps references. They stand"));
+        assert!(said(4, 1).contains("of your library, 1 of them made by a program that keeps references. They"));
     }
 
     #[test]
@@ -2811,7 +3149,13 @@ Nagy, G. 1979. The Best of the Achaeans.
                 mode: CiteMode::Intext,
             }
         );
-        assert_eq!(content[4], text(" knows and [@nokey, 12] does not. It is "));
+        assert_eq!(content[4], text(" knows and "));
+        assert_eq!(content[6], text(" does not. It is "));
+        let found = found_in(content);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].0, "[@nokey, 12]");
+        assert_eq!(found[0].1.by, By::Key);
+        assert_eq!(found[0].1.items, vec![FoundItem { locator: Some("12".into()), ..by_key("nokey") }]);
         assert!(content.contains(&Inline::Math { tex: "x_i \\leq \\alpha".into() }));
         assert_eq!(kinds(&read.sections[2].blocks), vec!["table", "figure"]);
         let Block::Figure { caption, alt, width, numbered, file, extension, name, .. } = &read.sections[2].blocks[1]
@@ -2834,18 +3178,21 @@ Nagy, G. 1979. The Best of the Achaeans.
                 equations: 1,
                 cited: 2,
                 not_found: 1,
-                ..Default::default()
+                found: 1,
+                found_made: 0,
             }
         );
         let all = read.remarks.join("\n");
-        assert!(all.contains("1 work is cited by a key that is not in your library: nokey."), "{all}");
+        assert!(all.contains("1 citation was found that is not yet tied to a reference of your library."), "{all}");
         assert!(all.contains("under “References”"), "{all}");
         assert!(all.contains("1 block of code"), "{all}");
 
         // Read again, the picture is in the store already, and is not one to be taken out.
         let again = s.read(&everything(&s)).unwrap();
         assert!(again.pictures.is_empty());
-        assert_eq!(again.sections, read.sections);
+        // What was found gets an id of its own every time.
+        assert_eq!(without_ids(&again.sections), without_ids(&read.sections));
+        assert_ne!(again.sections, read.sections);
     }
 
     #[test]
@@ -2869,6 +3216,7 @@ Nagy, G. 1979. The Best of the Achaeans.
             assert_eq!(read.counts.figures, 1, "{ending}: {:?}", read.remarks);
             // Citations that are text stay text.
             assert_eq!((read.counts.cited, read.counts.not_found), (0, 0), "{ending}");
+            assert_eq!((read.counts.found, read.counts.found_made), (0, 0), "{ending}");
             let word = read.sections.iter().find(|s| document::plain(&s.heading) == "The word").unwrap();
             let Block::Paragraph { content } = &word.blocks[0] else { panic!("{ending}") };
             assert!(document::plain(content).starts_with("A wrath [@nagy1979, 73] that @west1988"), "{ending}");
@@ -2957,7 +3305,7 @@ Nagy, G. 1979. The Best of the Achaeans.
         let path = desk.join("paper.tex");
         fs::write(
             &path,
-            "\\documentclass{article}\n\\title{Wrath}\n\\author{A. Scholar \\and B. Other}\n\\begin{document}\n\\maketitle\n\\section{One}\nAs \\cite[73]{nagy1979} and \\cite{nokey} say.\\footnote{A note.}\n\\input{part}\n\\end{document}\n",
+            "\\documentclass{article}\n\\title{Wrath}\n\\author{A. Scholar \\and B. Other}\n\\begin{document}\n\\maketitle\n\\section{One}\nAs \\cite[73]{nagy1979} and \\cite{nokey} say.\\footnote{A note.} And \\textcite[see][chap. 3]{nagy1979,other}.\n\\input{part}\n\\end{document}\n",
         )
         .unwrap();
         let read = s.read(&path).unwrap();
@@ -2972,8 +3320,22 @@ Nagy, G. 1979. The Best of the Achaeans.
                 mode: CiteMode::Normal,
             }
         );
-        assert!(document::plain(content).contains("\\cite{nokey}"), "{content:?}");
-        assert_eq!((read.counts.cited, read.counts.not_found, read.counts.notes), (1, 1, 1));
+        let found = found_in(content);
+        assert_eq!(found.len(), 2, "{content:?}");
+        assert_eq!(found[0].0, "\\cite{nokey}");
+        assert_eq!(found[0].1.items, vec![by_key("nokey")]);
+        // One of two that the library has, and one that is named as the author is: all of it is text.
+        assert_eq!(found[1].0, "\\textcite[see][chap. 3]{nagy1979,other}");
+        assert_eq!((found[1].1.by, found[1].1.mode), (By::Key, CiteMode::Intext));
+        assert_eq!(
+            found[1].1.items,
+            vec![
+                FoundItem { prefix: Some("see".into()), ..by_key("nagy1979") },
+                FoundItem { locator: Some("3".into()), label: Some("chapter".into()), ..by_key("other") },
+            ]
+        );
+        assert_eq!((read.counts.cited, read.counts.not_found, read.counts.notes), (2, 2, 1));
+        assert_eq!((read.counts.found, read.counts.found_made), (2, 0));
     }
 
     #[test]
@@ -3167,7 +3529,7 @@ Nagy, G. 1979. The Best of the Achaeans.
         let to = from + content[from..].find("</draw:frame>").unwrap() + "</draw:frame>".len();
         content.replace_range(from..to, "");
         let made = s.desk().join("wanting.odt");
-        lifting::write_copy(&mut archive, &made, "content.xml", &content).unwrap();
+        lifting::write_copy(&mut archive, &made, &[("content.xml".to_owned(), content)]).unwrap();
 
         let read = s.read(&made).unwrap();
         assert_eq!(read.counts.figures, 1);
@@ -3284,6 +3646,380 @@ Text between.
         let Block::Table(table) = &blocks[1] else { panic!() };
         assert_eq!((document::plain(&table.caption).as_str(), table.numbered), ("Ringene", true));
         assert_eq!(blocks[2], paragraph(vec![text("Tabell 1 viser ringene.")]));
+    }
+
+    // ---- citations that programs made ----
+
+    fn zotero(key: &str) -> Vec<String> {
+        vec![format!("http://zotero.org/users/1234567/items/{key}")]
+    }
+
+    /// What the documents say of the works they cite: see `cited.py` beside them.
+    fn nagy() -> Value {
+        json!({
+            "type": "book",
+            "event-place": "Baltimore",
+            "ISBN": "978-0-8018-2200-6",
+            "publisher": "Johns Hopkins University Press",
+            "publisher-place": "Baltimore",
+            "title": "The Best of the Achaeans: Concepts of the Hero in Archaic Greek Poetry",
+            "author": [{ "family": "Nagy", "given": "Gregory" }],
+            "issued": { "date-parts": [["1979"]] }
+        })
+    }
+
+    fn west() -> Value {
+        json!({
+            "type": "article-journal",
+            "container-title": "The Journal of Hellenic Studies",
+            "DOI": "10.2307/632637",
+            "page": "151-172",
+            "title": "The Rise of the Greek Epic",
+            "volume": "108",
+            "author": [{ "family": "West", "given": "M. L." }],
+            "issued": { "date-parts": [["1988"]] }
+        })
+    }
+
+    fn lord() -> Value {
+        json!({
+            "type": "book",
+            "event-place": "Cambridge, Mass.",
+            "publisher": "Harvard University Press",
+            "title": "The Singer of Tales",
+            "author": [{ "family": "Lord", "given": "Albert B." }],
+            "issued": { "date-parts": [["1960"]] }
+        })
+    }
+
+    #[test]
+    fn what_zotero_made_is_found_with_all_that_the_file_says_of_it() {
+        let Some(s) = setup() else { return };
+        // As fields and as reference marks, and as bookmarks with what is
+        // cited in the properties of the document.
+        for name in ["cited.docx", "cited.odt", "bookmarks.docx", "bookmarks.odt"] {
+            let read = s.read(&written(name)).unwrap();
+            let found = all_found(&read);
+            let shown: Vec<&str> = found.iter().map(|(text, _)| text.as_str()).collect();
+            let mut expected = vec![
+                "(Nagy 1979, 73)",
+                "(see Nagy 1979, chap. 2; West 1988; 1960, 12 and elsewhere)",
+                "(Lord, The Singer of Tales, 12)",
+                "Nagy, The Best of the Achaeans, 73",
+            ];
+            if name == "cited.docx" {
+                expected.push("(West 1988)");
+            }
+            assert_eq!(shown, expected, "{name}");
+            for (_, found) in &found[..4] {
+                assert_eq!((found.by, found.mode, found.left), (By::Zotero, CiteMode::Normal, false), "{name}");
+            }
+            let nagy_73 = FoundItem {
+                uris: zotero("ABCD2345"),
+                data: Some(nagy()),
+                locator: Some("73".into()),
+                ..Default::default()
+            };
+            let lord_12 = FoundItem {
+                uris: zotero("QRST2345"),
+                data: Some(lord()),
+                locator: Some("12".into()),
+                ..Default::default()
+            };
+            assert_eq!(found[0].1.items, vec![nagy_73.clone()], "{name}");
+            // Three works, in a field whose code is cut into several runs.
+            assert_eq!(
+                found[1].1.items,
+                vec![
+                    FoundItem {
+                        uris: zotero("ABCD2345"),
+                        data: Some(nagy()),
+                        locator: Some("2".into()),
+                        label: Some("chapter".into()),
+                        prefix: Some("see".into()),
+                        ..Default::default()
+                    },
+                    FoundItem { uris: zotero("WXYZ6789"), data: Some(west()), ..Default::default() },
+                    FoundItem { suffix: Some("and elsewhere".into()), suppress_author: true, ..lord_12.clone() },
+                ],
+                "{name}"
+            );
+            assert_eq!(found[2].1.items, vec![lord_12], "{name}");
+            assert_eq!(found[3].1.items, vec![nagy_73], "{name}");
+
+            // What stands in italics within a citation is a piece of it, and is in italics.
+            let word = read.sections.iter().find(|s| document::plain(&s.heading) == "The word").unwrap();
+            let Block::Paragraph { content } = &word.blocks[1] else { panic!("{name}") };
+            let pieces: Vec<(&str, Vec<&str>)> = content
+                .iter()
+                .filter_map(|i| match i {
+                    Inline::Text { text, marks } => Some((text.as_str(), marks.keys().map(String::as_str).collect())),
+                    _ => None,
+                })
+                .collect();
+            assert_eq!(
+                pieces,
+                vec![
+                    ("Much is written of it ", vec![]),
+                    ("(see Nagy 1979, chap. 2; West 1988; 1960, 12 and elsewhere)", vec!["found"]),
+                    (". The singer ", vec![]),
+                    ("(Lord, ", vec!["found"]),
+                    ("The Singer of Tales", vec!["em", "found"]),
+                    (", 12)", vec!["found"]),
+                    (" is another matter.", vec![]),
+                ],
+                "{name}"
+            );
+
+            // In a note, with what else the note says.
+            let Block::Paragraph { content } = &word.blocks[2] else { panic!("{name}") };
+            assert_eq!(content[0], text("Not all agree."), "{name}");
+            let Inline::Footnote { content: note, .. } = &content[1] else { panic!("{name}") };
+            assert_eq!(note.len(), 5, "{name}: {note:?}");
+            assert_eq!(note[0], text("See "), "{name}");
+            assert_eq!(note[4], text("; but he says otherwise elsewhere."), "{name}");
+            assert!(note[1..4].iter().all(|piece| found_of(piece).is_some_and(|f| f.id == found[3].1.id)), "{name}");
+            assert_eq!(content[2], text(" And so it stands."), "{name}");
+
+            let made = expected.len();
+            assert_eq!((read.counts.found, read.counts.found_made), (made, made), "{name}");
+            assert_eq!((read.counts.cited, read.counts.not_found, read.counts.notes), (0, 0, 1), "{name}");
+            assert!(
+                read.remarks[0].starts_with(&format!(
+                    "{made} citations were found that are not yet tied to references of your library, all made by a \
+                     program that keeps references."
+                )),
+                "{name}: {:?}",
+                read.remarks
+            );
+            // The list of the works is text, and is told of where a program made it.
+            let works = read.sections.iter().find(|s| document::plain(&s.heading) == "Works").unwrap();
+            assert_eq!(works.blocks.len(), 3, "{name}");
+            assert!(all_found(&Imported { sections: vec![works.clone()], ..Default::default() }).is_empty());
+            let told =
+                read.remarks.iter().filter(|r| r.contains("a list of what it cites, made by the program")).count();
+            assert_eq!(told, usize::from(name.starts_with("cited")), "{name}: {:?}", read.remarks);
+            assert_eq!(read.remarks.len(), 1 + told, "{name}: {:?}", read.remarks);
+            let all = all_text(&read);
+            assert!(!all.contains([made::BEGIN, made::NUMBERED, made::END]), "{name}: {all}");
+        }
+    }
+
+    #[test]
+    fn what_mendeley_made_is_found_as_well() {
+        let Some(s) = setup() else { return };
+        let read = s.read(&written("cited.docx")).unwrap();
+        let found = all_found(&read);
+        let (shown, found) = found.last().unwrap();
+        assert_eq!(shown, "(West 1988)");
+        assert_eq!(found.by, By::Mendeley);
+        assert_eq!(
+            found.items,
+            vec![FoundItem {
+                uris: vec!["http://www.mendeley.com/documents/?uuid=0c6e6bd1-9f3b-4f2a-8b1e-2f4f3c1d9a77".into()],
+                data: Some(west()),
+                ..Default::default()
+            }]
+        );
+    }
+
+    #[test]
+    fn tags_that_the_library_has_and_has_not_in_files_of_text() {
+        let Some(s) = setup() else { return };
+        // As each kind of file writes them; the library has `nagy1979` and `west1988`.
+        let files = [
+            (
+                "tags.md",
+                vec![
+                    "[see @nagy1979, chap. 2; @lord1960; -@west1988, 12 and elsewhere]",
+                    "[@lord1960, 12]",
+                    "@lord1960",
+                    "[@nagy1979, 73; @parry1971]",
+                ],
+            ),
+            (
+                "tags.tex",
+                vec![
+                    "\\parencite[see][chap. 2]{nagy1979,lord1960}",
+                    "\\cite[12]{lord1960}",
+                    "\\citeauthor{lord1960}",
+                    "\\cite[73]{nagy1979,parry1971}",
+                ],
+            ),
+            (
+                "tags.org",
+                vec![
+                    "[cite:see @nagy1979 chap. 2; @lord1960; @west1988 p. 12 and elsewhere]",
+                    "[cite:@lord1960 p. 12]",
+                    "[cite:@nagy1979 p. 73; @parry1971]",
+                ],
+            ),
+        ];
+        for (name, expected) in files {
+            let read = s.read(&written(name)).unwrap();
+            let found = all_found(&read);
+            let shown: Vec<&str> = found.iter().map(|(text, _)| text.as_str()).collect();
+            assert_eq!(shown, expected, "{name}");
+            assert!(found.iter().all(|(_, found)| found.by == By::Key && !found.left), "{name}");
+            let keys = |at: usize| -> Vec<&str> { found[at].1.items.iter().filter_map(|i| i.key.as_deref()).collect() };
+            assert_eq!(keys(1), vec!["lord1960"], "{name}");
+            assert_eq!(found[1].1.items[0].locator.as_deref(), Some("12"), "{name}");
+            // The one in the note names a work the library has, and one it has not.
+            assert_eq!(keys(found.len() - 1), vec!["nagy1979", "parry1971"], "{name}");
+            let word = &read.sections[0];
+            let Block::Paragraph { content } = &word.blocks[2] else { panic!("{name}") };
+            let Inline::Footnote { content: note, .. } = &content[1] else { panic!("{name}") };
+            assert_eq!(note[0], text("See "), "{name}");
+            assert_eq!(found_of(&note[1]).map(|f| f.id), Some(found[found.len() - 1].1.id.clone()), "{name}");
+            assert_eq!(note[2], text("; but he says otherwise elsewhere."), "{name}");
+            // Those of which the library has every work are citations.
+            let Block::Paragraph { content } = &word.blocks[0] else { panic!("{name}") };
+            let cited: Vec<(&str, Option<&str>, CiteMode)> = content
+                .iter()
+                .filter_map(|i| match i {
+                    Inline::Citation { items, mode } => {
+                        Some((items[0].id.as_str(), items[0].locator.as_deref(), *mode))
+                    }
+                    _ => None,
+                })
+                .collect();
+            assert_eq!(
+                cited,
+                vec![("r1", Some("73"), CiteMode::Normal), ("r2", Some("3"), CiteMode::Intext)],
+                "{name}"
+            );
+            assert!(found_in(content).is_empty(), "{name}");
+            assert_eq!((read.counts.found, read.counts.found_made), (expected.len(), 0), "{name}");
+            assert_eq!(read.counts.cited + read.counts.not_found, if name == "tags.md" { 9 } else { 8 }, "{name}");
+            assert_eq!(
+                read.remarks,
+                vec![format!(
+                    "{} citations were found that are not yet tied to references of your library. They stand as \
+                     the text they were written as, and can be gone through when the map is made, and later.",
+                    expected.len()
+                )],
+                "{name}"
+            );
+        }
+        // Three works, of which the library has two: what is said of each is kept.
+        let read = s.read(&written("tags.md")).unwrap();
+        assert_eq!(
+            all_found(&read)[0].1.items,
+            vec![
+                FoundItem {
+                    locator: Some("2".into()),
+                    label: Some("chapter".into()),
+                    prefix: Some("see".into()),
+                    ..by_key("nagy1979")
+                },
+                by_key("lord1960"),
+                FoundItem {
+                    locator: Some("12".into()),
+                    suffix: Some("and elsewhere".into()),
+                    suppress_author: true,
+                    ..by_key("west1988")
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn what_endnote_made_is_found_where_pandoc_reads_it() {
+        let Some(s) = setup() else { return };
+        let read = s.read(&written("endnote.docx")).unwrap();
+        let found = all_found(&read);
+        assert_eq!(found.len(), 1, "{found:?}");
+        let (shown, found) = &found[0];
+        assert_eq!(shown, "(see Nagy 1979, 73)");
+        assert_eq!((found.by, found.mode), (By::Mendeley, CiteMode::Normal));
+        assert_eq!(
+            found.items,
+            vec![FoundItem {
+                data: Some(json!({
+                    "type": "book",
+                    "title": "The Best of the Achaeans",
+                    "author": [{ "family": "Nagy", "given": "Gregory" }],
+                    "issued": { "date-parts": [["1979"]] },
+                    "publisher": "Johns Hopkins University Press",
+                    "publisher-place": "Baltimore"
+                })),
+                locator: Some("73".into()),
+                prefix: Some("see".into()),
+                ..Default::default()
+            }]
+        );
+        let word = read.sections.iter().find(|s| document::plain(&s.heading) == "The word").unwrap();
+        let Block::Paragraph { content } = &word.blocks[0] else { panic!() };
+        assert_eq!(content[0], text("The wrath of Achilles is what the poem is of "));
+        assert_eq!(content[2], text(", as is often said."));
+        // Where EndNote keeps what it says apart from the field, the text is text, and that is said.
+        assert!(all_text(&read).contains("The singer (Lord, The Singer of Tales, 12) is another matter."));
+        assert_eq!((read.counts.found, read.counts.found_made), (1, 1));
+        assert_eq!((read.counts.cited, read.counts.not_found), (0, 0));
+        assert_eq!(read.remarks.len(), 2, "{:?}", read.remarks);
+        assert_eq!(
+            read.remarks[1],
+            "1 citation made by EndNote is brought in as the text it shows, and is not among those that were found: \
+             what EndNote says of the works could not be read."
+        );
+    }
+
+    #[test]
+    fn what_pandoc_says_of_works_in_the_form_of_csl() {
+        assert_eq!(csl_date("1979"), json!({ "date-parts": [["1979"]] }));
+        assert_eq!(csl_date("1979-05-02"), json!({ "date-parts": [["1979", "05", "02"]] }));
+        assert_eq!(csl_date("spring 1979"), json!({ "raw": "spring 1979" }));
+        let meta: Value = serde_json::from_str(
+            r#"{"references":{"t":"MetaList","c":[{"t":"MetaMap","c":{
+                "id":{"t":"MetaString","c":"12"},
+                "abstract":{"t":"MetaInlines","c":[{"t":"Str","c":"Long."}]},
+                "issued":{"t":"MetaString","c":"1979-05"},
+                "title":{"t":"MetaInlines","c":[{"t":"Str","c":"The"},{"t":"Space"},{"t":"Emph","c":[{"t":"Str","c":"Best"}]}]},
+                "author":{"t":"MetaList","c":[{"t":"MetaMap","c":{"family":{"t":"MetaString","c":"Nagy"}}}]}
+            }},{"t":"MetaMap","c":{"title":{"t":"MetaString","c":"Without what it is called by"}}}]}}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            told_of(&meta),
+            vec![(
+                "12".to_owned(),
+                json!({ "issued": { "date-parts": [["1979", "05"]] }, "title": "The Best", "author": [{ "family": "Nagy" }] })
+            )]
+        );
+    }
+
+    #[test]
+    fn the_same_text_without_anything_of_a_program_has_nothing_found() {
+        let Some(s) = setup() else { return };
+        let read = s.read(&written("plain.docx")).unwrap();
+        assert!(all_found(&read).is_empty());
+        assert_eq!((read.counts.found, read.counts.found_made), (0, 0));
+        assert!(read.remarks.is_empty(), "{:?}", read.remarks);
+        assert!(all_text(&read).contains("is what the poem is of (Nagy 1979, 73), as is often said."));
+    }
+
+    #[test]
+    fn signs_that_do_not_end_and_signs_in_a_name() {
+        use made::{BEGIN, END, NUMBERED};
+        let made = made::Made {
+            citations: vec![made::Citation { by: By::Zotero, items: vec![FoundItem::default()] }],
+            ..Default::default()
+        };
+        let value: Value = serde_json::from_str(&doc(
+            "{}",
+            &[
+                header(1, &format!("One {BEGIN}0{NUMBERED}(Nagy 1979){END}")),
+                para(&format!("Open {BEGIN}0{NUMBERED}(Nagy 1979) to the end")),
+                para(&format!("The next, {BEGIN}7{NUMBERED}unknown{END} and {END}closed.")),
+            ],
+        ))
+        .unwrap();
+        let read = convert_with(&value, "the file", &Properties::default(), &made, &none, &mut a_picture);
+        assert_eq!(read.title, vec![text("One (Nagy 1979)")]);
+        let found = all_found(&read);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].0, "(Nagy 1979) to the end");
+        assert_eq!(read.sections[0].blocks[1], paragraph(vec![text("The next, unknown and closed.")]));
     }
 
     #[test]
