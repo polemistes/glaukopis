@@ -63,3 +63,108 @@ core-import-zotero-no-attachments = vedlagte filer ble ikke lest
 core-import-zotero-no-notes = notatene ble ikke lest
 core-import-zotero-no-keywords = nøkkelordene ble ikke lest
 core-import-zotero-no-group-names = navnene på gruppebibliotekene er ikke kjent
+
+## PDF-filer, slik de leses for en referanse.
+
+core-import-pdf-empty = Filen «{ $name }» er tom.
+core-import-pdf-not-a-pdf = Filen «{ $name }» er ikke en PDF.
+core-import-pdf-unreadable = Filen kunne ikke leses: den er skadet, beskyttet med passord eller for stor.
+core-import-pdf-scan = Filen har ikke noe tekstlag: den er skannet.
+core-import-pdf-from-file = Opplysningene er hentet fra selve filen, ikke fra en katalog, og bør kontrolleres.
+core-import-pdf-from-metadata = Ingen DOI eller ISBN ble funnet i filen; opplysningene er hentet fra filens egne metadata og bør kontrolleres.
+core-import-pdf-unknown = Ingen DOI eller ISBN ble funnet i filen, og metadataene sier ikke hva den er: opplysningene må fylles inn.
+
+## Tabeller, fra tekstfiler og regneark.
+
+core-import-table-too-large = Filen er på { $size } MB. En tabell leses fra en fil på høyst { $most } MB.
+core-import-table-kinds = Tabeller leses fra CSV og annen tekst der verdiene er skilt med komma, semikolon eller tabulator, og fra arkene i LibreOffice (.ods) og Excel (.xlsx, .xls).
+core-import-table-empty = Det står ingenting i filen.
+core-import-table-rows = Tabellen har { $rows } rader. En tabell i en tekst kan ha høyst { $most }: den er ikke et regneark.
+core-import-table-columns = Tabellen har { $columns } kolonner. En tabell i en tekst kan ha høyst { $most }: den er ikke et regneark.
+core-import-table-more-than = mer enn { $count }
+
+## Dokumenter som hentes inn for å bli kart.
+
+core-import-document-stopped = Lesingen ble stoppet.
+core-import-document-ended = det sluttet med { $status }
+core-import-document-kind = «{ $file }» er ikke av en type som kan hentes inn som dokument. De som kan, er Word (DOCX), OpenDocument (ODT), Markdown, HTML, LaTeX, RTF, EPUB, Org, reStructuredText, Typst og ren tekst.
+core-import-document-too-large = «{ $file }» er større enn 50 MB, og det er mer enn det som kan hentes inn som dokument.
+core-import-document-unreadable = «{ $file }» kunne ikke leses som { $kind }. Filen kan være skadet, eller av en annen type enn navnet sier. Pandoc, som leser den, sa: { $message }
+core-import-document-pandoc-unreadable = det Pandoc gjorde av «{ $file }», kunne ikke leses: { $error }
+core-import-document-plain-text = ren tekst
+core-import-document-notebook = Jupyter-notatbok
+
+## Det den som henter inn et dokument, bør vite om det.
+
+core-import-document-found = { $count ->
+    [one] { $made ->
+        [all] Det ble funnet én kildehenvisning som ennå ikke er knyttet til en referanse i biblioteket ditt, laget av et referanseprogram. Den står slik den ble skrevet, og kan gås gjennom når kartet lages, og senere.
+       *[none] Det ble funnet én kildehenvisning som ennå ikke er knyttet til en referanse i biblioteket ditt. Den står slik den ble skrevet, og kan gås gjennom når kartet lages, og senere.
+    }
+   *[other] { $made ->
+        [all] Det ble funnet { $count } kildehenvisninger som ennå ikke er knyttet til referanser i biblioteket ditt, alle laget av et referanseprogram. De står slik de ble skrevet, og kan gås gjennom når kartet lages, og senere.
+        [some] Det ble funnet { $count } kildehenvisninger som ennå ikke er knyttet til referanser i biblioteket ditt, { $some } av dem laget av et referanseprogram. De står slik de ble skrevet, og kan gås gjennom når kartet lages, og senere.
+       *[none] Det ble funnet { $count } kildehenvisninger som ennå ikke er knyttet til referanser i biblioteket ditt. De står slik de ble skrevet, og kan gås gjennom når kartet lages, og senere.
+    }
+}
+core-import-document-endnote = { $count ->
+    [one] Én kildehenvisning laget av EndNote er hentet inn som teksten den viser, og er ikke blant dem som ble funnet: det EndNote sier om verkene, kunne ikke leses.
+   *[other] { $count } kildehenvisninger laget av EndNote er hentet inn som teksten de viser, og er ikke blant dem som ble funnet: det EndNote sier om verkene, kunne ikke leses.
+}
+core-import-document-bookmarks = { $count ->
+    [one] Dokumentet har én kildehenvisning i et bokmerke, og det den viser til, kunne ikke leses: den står som tekst. Zotero lagrer dem på en annen måte når dokumentinnstillingene sier det.
+   *[other] Dokumentet har { $count } kildehenvisninger i bokmerker, og det de viser til, kunne ikke leses: de står som tekst. Zotero lagrer dem på en annen måte når dokumentinnstillingene sier det.
+}
+core-import-document-bibliography = Dokumentet har en liste over det det viser til, under «{ $heading }». Den hentes inn som tekst, som resten. Kartet lager sin egen litteraturliste av det som vises til i det.
+core-import-document-bibliography-made = Dokumentet har en liste over det det viser til, laget av programmet som holder orden på referansene. Den hentes inn som tekst, som resten. Kartet lager sin egen litteraturliste av det som vises til i det.
+core-import-document-tracked = Dokumentet har sporede endringer. Teksten hentes inn slik den står når alle er godtatt.
+core-import-document-comments = Dokumentet har kommentarer i margen, og de utelates.
+core-import-document-heading-notes = { $count ->
+    [one] En note til en overskrift står i begynnelsen av teksten under den: en overskrift kan ikke ha en note.
+   *[other] { $count } noter til overskrifter står i begynnelsen av teksten under dem: en overskrift kan ikke ha en note.
+}
+core-import-document-labels = { $count ->
+    [one] Én bildetekst begynte med et ord og et tall, som «{ $first }». Det er utelatt: kartet nummererer figurene og tabellene sine selv. Der teksten viser til en av dem med nummeret, er det tekst slik den ble skrevet, og det følger ikke nummerne i kartet.
+   *[other] { $count } bildetekster begynte med et ord og et tall, som «{ $first }». Det er utelatt: kartet nummererer figurene og tabellene sine selv. Der teksten viser til en av dem med nummeret, er det tekst slik den ble skrevet, og det følger ikke nummerne i kartet.
+}
+core-import-document-label-example = Figur 1:
+core-import-document-caption-notes = { $count ->
+    [one] En note i det som sies om en figur eller en tabell, står der i parentes.
+   *[other] { $count } noter i det som sies om figurer eller tabeller, står der i parentes.
+}
+core-import-document-headings = { $count ->
+    [one] Én overskrift i et sitat, en liste eller en tabell er hentet inn som et avsnitt i fet skrift.
+   *[other] { $count } overskrifter i et sitat, en liste eller en tabell er hentet inn som avsnitt i fet skrift.
+}
+core-import-document-code = { $count ->
+    [one] Én kodeblokk er hentet inn som vanlige avsnitt, ett for hver linje.
+   *[other] { $count } kodeblokker er hentet inn som vanlige avsnitt, ett for hver linje.
+}
+core-import-document-definitions = { $count ->
+    [one] Én liste med begreper og hva de betyr, er hentet inn som avsnitt, med begrepene i fet skrift.
+   *[other] { $count } lister med begreper og hva de betyr, er hentet inn som avsnitt, med begrepene i fet skrift.
+}
+core-import-document-rules = { $count ->
+    [one] Én linje tvers over siden er utelatt.
+   *[other] { $count } linjer tvers over siden er utelatt.
+}
+core-import-document-raw = { $count ->
+    [one] Én bit skrevet i HTML eller TeX for bare én type dokument er utelatt.
+   *[other] { $count } biter skrevet i HTML eller TeX for bare én type dokument er utelatt.
+}
+core-import-document-pictures-wanting = { $count ->
+    [one] Ett bilde som filen inneholder, er ikke med i teksten som ble lest, og er utelatt. Det kan stå i toppteksten eller bunnteksten på sidene, eller i en tegning.
+   *[other] { $count } bilder som filen inneholder, er ikke med i teksten som ble lest, og er utelatt. De kan stå i toppteksten eller bunnteksten på sidene, eller i en tegning.
+}
+
+## Et bilde i et dokument som er utelatt, og hvorfor.
+
+core-import-document-picture-left-out = Bildet «{ $name }» er utelatt: { $why }.
+core-import-document-picture-kind = det er av en type som ikke leses ({ $kind })
+core-import-document-picture-not-read = det er ikke et bilde av en type som leses
+core-import-document-picture-unreadable = det kunne ikke leses
+core-import-document-picture-network = det ligger på nettet, og ingenting hentes derfra
+core-import-document-picture-not-taken-out = det kunne ikke tas ut av filen
+core-import-document-picture-not-found = filen ble ikke funnet der dokumentet sier den er
+core-import-document-picture-too-large = det er større enn 50 MB
+core-import-document-picture-file-unreadable = filen kunne ikke leses
