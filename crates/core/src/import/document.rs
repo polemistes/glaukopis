@@ -229,6 +229,12 @@ pub struct Counts {
     pub cited: usize,
     /// Works cited by keys that the library does not have, as often as they are cited.
     pub not_found: usize,
+    /// Citations that were found and are not yet tied to references: they
+    /// stand in the text as the text they were, under the mark `found`
+    /// (see `crate::found`). Each is counted once, however many works it cites.
+    pub found: usize,
+    /// Those of them that were made by a program that keeps references.
+    pub found_made: usize,
 }
 
 /// A document as it was read.
@@ -2819,7 +2825,17 @@ Nagy, G. 1979. The Best of the Achaeans.
         assert_eq!(read.pictures, vec![file.clone()]);
         assert_eq!(
             read.counts,
-            Counts { parts: 4, words: 65, notes: 1, figures: 1, tables: 1, equations: 1, cited: 2, not_found: 1 }
+            Counts {
+                parts: 4,
+                words: 65,
+                notes: 1,
+                figures: 1,
+                tables: 1,
+                equations: 1,
+                cited: 2,
+                not_found: 1,
+                ..Default::default()
+            }
         );
         let all = read.remarks.join("\n");
         assert!(all.contains("1 work is cited by a key that is not in your library: nokey."), "{all}");

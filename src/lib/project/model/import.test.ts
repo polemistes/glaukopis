@@ -34,6 +34,8 @@ function imported(sections: ImportedSection[], more: Partial<Imported> = {}): Im
       equations: 0,
       cited: 0,
       notFound: 0,
+      found: 0,
+      foundMade: 0,
     },
     pictures: [],
     ...more,

@@ -24,6 +24,10 @@ export interface ImportedCounts {
   cited: number;
   /** Works cited by keys that the library does not have, as often as they are cited. */
   notFound: number;
+  /** Citations that were found and are not yet tied to references: see `api/found.ts`. */
+  found: number;
+  /** Those of them that were made by a program that keeps references. */
+  foundMade: number;
 }
 
 /** A document as it was read. See `crates/core/src/import/document.rs`. */
