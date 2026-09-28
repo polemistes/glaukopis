@@ -3,6 +3,7 @@
   import Plus from '@lucide/svelte/icons/plus';
   import Search from '@lucide/svelte/icons/search';
   import type { Summary } from '$lib/api/library';
+  import { t } from '$lib/i18n';
   import { importFile, newReference } from '$lib/library/references.svelte';
   import NoteButton from '$lib/library/NoteButton.svelte';
   import TypeIcon from '$lib/library/TypeIcon.svelte';
@@ -43,12 +44,12 @@
     if (inProject.length) {
       return {
         entries: sortEntries(inProject, 'authors', false).slice(0, LIMIT),
-        heading: 'In this project',
+        heading: t('editor-picker-in-project'),
       };
     }
     return {
       entries: sortEntries(pool, 'added', true).slice(0, 12),
-      heading: pool.length ? 'Recently added' : '',
+      heading: pool.length ? t('editor-picker-recent') : '',
     };
   });
 
@@ -122,7 +123,7 @@
   align="start"
   gap={8}
   width={460}
-  label="Choose a reference"
+  label={t('editor-picker')}
   onclose={() => onclose(true)}
 >
   <div class="picker">
@@ -131,15 +132,15 @@
       <input
         bind:this={input}
         bind:value={query}
-        placeholder={request.purpose ?? 'Cite: author, title, year'}
-        aria-label="Search references"
+        placeholder={request.purpose ?? t('editor-picker-placeholder')}
+        aria-label={t('editor-picker-search')}
         spellcheck="false"
         autocomplete="off"
         {onkeydown}
       />
     </div>
 
-    <div class="results" bind:this={list} role="listbox" aria-label="References">
+    <div class="results" bind:this={list} role="listbox" aria-label={t('editor-picker-results')}>
       {#if results.heading}<div class="heading">{results.heading}</div>{/if}
       {#each results.entries as entry, i (entry.id)}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -166,19 +167,21 @@
       {:else}
         <p class="none">
           {#if !library.entries.length}
-            Your library is empty.
+            {t('editor-picker-empty')}
           {:else if query.trim()}
-            Nothing in your library holds these words.
+            {t('editor-picker-no-match')}
           {:else}
-            Type to search your library.
+            {t('editor-picker-type')}
           {/if}
         </p>
       {/each}
     </div>
 
     <div class="actions">
-      <button type="button" onclick={create}><Plus size={14} /> New reference…</button>
-      <button type="button" onclick={bringIn}><FileUp size={14} /> Import…</button>
+      <button type="button" onclick={create}><Plus size={14} /> {t('editor-picker-new')}</button>
+      <button type="button" onclick={bringIn}
+        ><FileUp size={14} /> {t('editor-picker-import')}</button
+      >
       <span class="keys"><kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd></span>
     </div>
   </div>
