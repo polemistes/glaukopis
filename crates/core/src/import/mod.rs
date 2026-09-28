@@ -4,9 +4,13 @@
 //! into **candidates**. A **plan** is made, in which each candidate is compared
 //! with the library and with the candidates before it, and given an action.
 //! The user may change the plan. Then the plan is **applied**.
+//!
+//! Tables are brought in as well, into a text and not into the library: see
+//! [`tables`].
 
 pub mod bibfile;
 pub mod pdf;
+pub mod tables;
 pub mod zotero;
 
 use std::path::Path;

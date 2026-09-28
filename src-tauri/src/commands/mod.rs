@@ -6,3 +6,4 @@ pub mod projects;
 pub mod sharing;
 pub mod sources;
 pub mod system;
+pub mod tables;

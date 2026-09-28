@@ -89,6 +89,7 @@ pub fn run() {
             commands::pictures::picture_remove,
             commands::pictures::picture_sync,
             commands::pictures::math_render,
+            commands::tables::table_read,
             commands::sharing::sharing_server,
             commands::sharing::sharing_read_invitation,
             commands::sharing::sharing_publish,
