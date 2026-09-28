@@ -1,15 +1,10 @@
 <script lang="ts">
-  import Pencil from '@lucide/svelte/icons/pencil';
   import Plus from '@lucide/svelte/icons/plus';
   import Trash2 from '@lucide/svelte/icons/trash-2';
-  import X from '@lucide/svelte/icons/x';
   import { editReference } from '$lib/library/references.svelte';
-  import { truncate } from '$lib/library/format';
-  import NoteButton from '$lib/library/NoteButton.svelte';
-  import IconButton from '$lib/ui/IconButton.svelte';
   import Popover from '$lib/ui/Popover.svelte';
-  import { lookup } from './references.svelte';
-  import { LOCATOR_LABELS, type CiteItem, type CiteMode } from './schema';
+  import CitationItem from './CitationItem.svelte';
+  import type { CiteItem, CiteMode } from './schema';
   import { editorUi, type CitationRequest } from './ui.svelte';
 
   interface Props {
@@ -103,62 +98,15 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="editor" bind:this={root} {onkeydown}>
     {#each items as item, i (item.id)}
-      {@const ref = lookup(item.id)}
-      <div class="item" data-item={i}>
-        <div class="work">
-          <div class="what">
-            {#if ref}
-              <span class="authors">{ref.authors || '—'}</span>
-              <span class="year">{ref.year}</span>
-              <span class="title serif">{truncate(ref.title, 70)}</span>
-            {:else}
-              <span class="gone">This reference is not in your library.</span>
-            {/if}
-          </div>
-          <NoteButton id={item.id} always />
-          {#if ref?.inLibrary}
-            <IconButton label="Edit the reference" size="sm" onclick={() => edit(item.id)}>
-              <Pencil size={13} />
-            </IconButton>
-          {/if}
-          <IconButton label="Remove from the citation" size="sm" onclick={() => remove(i)}>
-            <X size={13} />
-          </IconButton>
-        </div>
-
-        <div class="fields">
-          <label class="prefix">
-            <span>Before</span>
-            <input bind:value={item.prefix} placeholder="see, cf." oninput={commit} />
-          </label>
-          <label class="locator">
-            <select
-              aria-label="Kind of place"
-              value={item.label ?? 'page'}
-              onchange={(e) => {
-                item.label = e.currentTarget.value;
-                commit();
-              }}
-            >
-              {#each LOCATOR_LABELS as [value, label] (value)}
-                <option {value}>{label}</option>
-              {/each}
-            </select>
-            <input bind:value={item.locator} placeholder="45–67" oninput={commit} />
-          </label>
-          <label class="suffix">
-            <span>After</span>
-            <input bind:value={item.suffix} placeholder="and passim" oninput={commit} />
-          </label>
-        </div>
-
-        {#if mode === 'normal'}
-          <label class="check">
-            <input type="checkbox" bind:checked={item.suppressAuthor} onchange={commit} />
-            The author is named in my sentence: give the year only
-          </label>
-        {/if}
-      </div>
+      <CitationItem
+        reference={item.id}
+        bind:said={items[i]}
+        {mode}
+        index={i}
+        onchange={commit}
+        onremove={() => remove(i)}
+        onedit={edit}
+      />
     {/each}
 
     <div class="foot">
@@ -193,79 +141,6 @@
   .editor {
     display: flex;
     flex-direction: column;
-  }
-  .item {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--line);
-  }
-  .work {
-    display: flex;
-    align-items: flex-start;
-    gap: 2px;
-  }
-  .what {
-    flex: 1;
-    min-width: 0;
-    line-height: 1.4;
-  }
-  .authors {
-    font-weight: 550;
-  }
-  .year {
-    color: var(--ink-2);
-    margin: 0 4px;
-  }
-  .title {
-    color: var(--ink-2);
-  }
-  .gone {
-    color: var(--danger);
-  }
-  .fields {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr 1fr;
-    gap: 6px;
-    margin-top: 8px;
-    align-items: end;
-  }
-  .fields label {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-  .fields span {
-    font-size: var(--text-xs);
-    color: var(--ink-3);
-  }
-  .fields select {
-    appearance: none;
-    -webkit-appearance: none;
-    height: 17px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    font-size: var(--text-xs);
-    color: var(--accent-strong);
-    font-weight: 500;
-    cursor: pointer;
-    outline: none;
-  }
-  .fields input {
-    width: 100%;
-    height: 28px;
-    padding: 0 8px;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-s);
-    background: var(--paper-raised);
-    outline: none;
-  }
-  .fields input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--focus-ring);
-  }
-  .fields input::placeholder {
-    color: var(--ink-4);
   }
   .check {
     display: flex;

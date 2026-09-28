@@ -4,6 +4,8 @@
   import { documentForget, documentRead, documentReadStop, type Imported } from '$lib/api/imported';
   import { isBackendError } from '$lib/api/backend';
   import { pictures } from '$lib/figures/pictures.svelte';
+  import { citeAtOnceIn } from '$lib/found/atonce';
+  import { settings } from '$lib/state/settings.svelte';
   import { makeMap, titleOf } from '$lib/project/model/import';
   import { openProject, projects } from '$lib/state/projects.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -63,6 +65,21 @@
     done(null);
   }
 
+  /**
+   * What was read, with citations where they are made at once: of those
+   * Zotero made, of works the library has, if the writer has said so.
+   */
+  async function withCitations(imported: Imported): Promise<Imported> {
+    if (!imported.counts.foundMade || !settings.value.found.atOnce) return imported;
+    try {
+      return (await citeAtOnceIn(imported)).imported;
+    } catch (error) {
+      // They wait to be gone through, as the others do.
+      console.error('the library could not be asked for what is cited', error);
+      return imported;
+    }
+  }
+
   async function make() {
     if (!read || making) return;
     making = true;
@@ -71,10 +88,13 @@
       // What is shown stays while the map is made.
       await new Promise((resolve) => setTimeout(resolve, 0));
       if (read.pictures.length) await pictures.reload();
+      const text = await withCitations(read);
+      // Those that are left are gone through when the map is made, if the writer has said so.
+      const goThrough = text.counts.found > 0 && settings.value.found.goThrough;
       if (request.project) {
-        const made = makeMap(request.project, read, title);
+        const made = makeMap(request.project, text, title);
         await keepReferences(request.project, made.cited);
-        done({ map: made.map });
+        done({ map: made.map, goThrough });
         return;
       }
       // A project of its own, named after the document, with the map in it.
@@ -82,12 +102,12 @@
       const info = await projects.create(name);
       const opened = await openProject(info.id);
       const first = opened.project.maps.map((m) => m.id);
-      const made = makeMap(opened.project, read, title);
+      const made = makeMap(opened.project, text, title);
       // The map a project begins with gives way to that of the document.
       for (const id of first) opened.project.deleteMap(id);
       await keepReferences(opened.project, made.cited);
       await opened.project.close();
-      done({ map: made.map, project: info });
+      done({ map: made.map, project: info, goThrough });
     } catch (error) {
       failure = describeError(error) ?? 'The map could not be made.';
       making = false;
@@ -123,6 +143,28 @@
           : `Works that are not in your library are cited ${times(notFound)}`,
       );
     return `${parts.join(', ')}.`;
+  });
+
+  /** The citations that were found, and wait to be tied to references. */
+  const found = $derived.by(() => {
+    if (!read?.counts.found) return '';
+    const { found: all, foundMade: made } = read.counts;
+    const were = all === 1 ? 'One citation was' : `${all.toLocaleString()} citations were`;
+    const by =
+      made === 0
+        ? ''
+        : made === all
+          ? all === 1
+            ? ', made by a program that keeps references'
+            : ', all made by a program that keeps references'
+          : `, ${made.toLocaleString()} of them made by a program that keeps references`;
+    return `${were} found that ${all === 1 ? 'is' : 'are'} not yet tied to ${
+      all === 1 ? 'a reference' : 'references'
+    } of your library${by}. ${
+      all === 1 ? 'It stands' : 'They stand'
+    } in the text as the text ${all === 1 ? 'it was' : 'they were'}, with a line of dots under ${
+      all === 1 ? 'it' : 'them'
+    }.`;
   });
 </script>
 
@@ -172,6 +214,38 @@
       {/each}
     </dl>
     {#if cited}<p class="cited" data-fact="cited">{cited}</p>{/if}
+    {#if found}
+      <p class="cited" data-fact="found">{found}</p>
+      <div class="found">
+        {#if read.counts.foundMade}
+          <label class="check">
+            <input
+              type="checkbox"
+              data-choice="at-once"
+              checked={settings.value.found.atOnce}
+              disabled={making}
+              onchange={(e) => settings.setFound({ atOnce: e.currentTarget.checked })}
+            />
+            Make citations at once of those made by Zotero of works your library has
+          </label>
+        {/if}
+        <label class="check">
+          <input
+            type="checkbox"
+            data-choice="go-through"
+            checked={settings.value.found.goThrough}
+            disabled={making}
+            onchange={(e) => settings.setFound({ goThrough: e.currentTarget.checked })}
+          />
+          Go through the citations when the {request.project ? 'map' : 'project'} is made
+        </label>
+        <p class="hint">
+          They can be gone through at any time, a few now and the rest later: <em
+            >Citations that were found…</em
+          >, in the menu of the map.
+        </p>
+      </div>
+    {/if}
 
     {#if read.remarks.length}
       <div class="overline">To know</div>
@@ -260,6 +334,26 @@
   .cited {
     margin: var(--space-3) 0 0;
     color: var(--ink-2);
+  }
+  .found {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: var(--space-2);
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .check input {
+    accent-color: var(--accent);
+    margin: 0;
+  }
+  .found .hint {
+    margin: 0;
   }
   .overline {
     margin-top: var(--space-4);

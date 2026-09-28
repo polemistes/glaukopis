@@ -10,7 +10,8 @@ import { EditorView, type NodeView } from 'prosemirror-view';
 import { place } from '$lib/ui/floating';
 import { insertMath, toggle, updateCitation } from './commands';
 import { placeholder } from './plugins';
-import { citationLabel, isMissing } from './references.svelte';
+import { pressedFound } from '$lib/found/found.svelte';
+import { citationLabel, currentProject, isMissing } from './references.svelte';
 import { notePlace, type CiteItem, type CiteMode } from './schema';
 import { editorUi, hooksOf } from './ui.svelte';
 import { CrossRefView, FormulaView } from '$lib/figures/views.svelte';
@@ -280,6 +281,13 @@ export class FootnoteView implements NodeView {
         ],
       }),
       attributes: { class: 'prose note', spellcheck: 'true' },
+      // A citation that was found is gone through where it is pressed.
+      handleClick: (_v, _pos, event) =>
+        event.button === 0 &&
+        pressedFound(
+          event.target,
+          hooks?.element ? currentProject()?.node(hooks.element)?.map : null,
+        ),
       nodeViews: {
         citation: (node, v, getPos) => new CitationView(node, v, getPos),
         math: (node, v, getPos) => new FormulaView(node, v, getPos),

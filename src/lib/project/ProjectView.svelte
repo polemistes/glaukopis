@@ -23,6 +23,8 @@
   import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
   import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
+  import { goThrough, takeWaiting } from '$lib/found/found.svelte';
+  import FoundHost from '$lib/found/FoundHost.svelte';
   import { tablesDropped } from '$lib/tables/ask';
   import { insertFigure, widthFor } from '$lib/editor/commands';
   import { viewsByDom } from '$lib/editor/ui.svelte';
@@ -133,6 +135,9 @@
       void pictures.nameFrom(p.usedPictures());
       project = p;
       release = beforeClose(() => leave(p));
+      // The citations of a document the project was made of are gone through, where that was asked for.
+      const found = takeWaiting(ownId);
+      if (found && p.map(found)) goThrough(found);
     } catch (error) {
       failure = describeError(error) ?? 'The project could not be opened.';
     }
@@ -456,6 +461,7 @@
       if (!path || !project) continue;
       const brought = await bringIn(path, project);
       if (brought && panes.length) panes[focused] = { map: brought.map, mode: 'text' };
+      if (brought?.goThrough) goThrough(brought.map);
     }
   }
 
@@ -770,6 +776,7 @@
 
   <EditorHost bind:this={host} {project} />
   <DocumentHost />
+  <FoundHost {project} onkeep={keep} />
 {/if}
 
 {#if showShare && shared && project}

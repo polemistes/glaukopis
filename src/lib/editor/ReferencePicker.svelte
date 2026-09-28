@@ -19,7 +19,8 @@
 
   let { request, used, onclose }: Props = $props();
 
-  let query = $state('');
+  // svelte-ignore state_referenced_locally
+  let query = $state(request.query ?? '');
   let active = $state(0);
   let input = $state<HTMLInputElement>();
   let list = $state<HTMLDivElement>();

@@ -11,6 +11,7 @@
   import FileInput from '@lucide/svelte/icons/file-input';
   import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
   import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
+  import { goThroughWhenOpen } from '$lib/found/found.svelte';
   import { dropTarget } from '$lib/ui/drag.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
   import { projectTrash, type ProjectInfo, type Trashed } from '$lib/api/projects';
@@ -68,6 +69,8 @@
   async function fromDocument(dropped?: string) {
     const path = dropped ?? (await chooseDocument());
     const brought = path ? await bringIn(path, null) : null;
+    // The citations that were found in it are gone through when the project is open.
+    if (brought?.project && brought.goThrough) goThroughWhenOpen(brought.project.id, brought.map);
     if (brought?.project)
       router.go({ view: 'project', project: brought.project.id, map: brought.map, mode: 'text' });
   }

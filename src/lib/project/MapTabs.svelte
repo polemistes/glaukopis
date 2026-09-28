@@ -4,8 +4,11 @@
   import Copy from '@lucide/svelte/icons/copy';
   import FileInput from '@lucide/svelte/icons/file-input';
   import Pencil from '@lucide/svelte/icons/pencil';
+  import TextSearch from '@lucide/svelte/icons/text-search';
   import Plus from '@lucide/svelte/icons/plus';
   import Trash2 from '@lucide/svelte/icons/trash-2';
+  import { goThrough } from '$lib/found/found.svelte';
+  import { countFound } from '$lib/found/gather';
   import { plural } from '$lib/library/format';
   import { confirm } from '$lib/ui/confirm.svelte';
   import { drag, dropTarget, startDrag } from '$lib/ui/drag.svelte';
@@ -73,6 +76,7 @@
   }
 
   function context(event: MouseEvent, m: MapRecord) {
+    const found = countFound(project, m.id);
     openContextMenu(event, [
       { label: 'Rename', icon: Pencil, action: () => rename(m) },
       {
@@ -92,6 +96,15 @@
         hint: 'Two maps side by side, to move elements between them',
         disabled: m.id === current && project.maps.length < 2,
         action: () => onbeside(m.id),
+      },
+      { kind: 'separator' },
+      {
+        label: 'Citations that were found…',
+        icon: TextSearch,
+        hint: found
+          ? `${found.toLocaleString()} to go through, and make citations of`
+          : 'And text that looks like citations',
+        action: () => goThrough(m.id),
       },
       { kind: 'separator' },
       {

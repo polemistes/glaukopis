@@ -23,6 +23,7 @@
   import { choosePicture, CrossRefView, FigureView, FormulaView } from '$lib/figures/views.svelte';
   import { insertCrossRef, insertFigure } from './commands';
   import { hooksOf, viewsByDom } from './ui.svelte';
+  import { pressedFound } from '$lib/found/found.svelte';
 
   interface Props {
     project: Project;
@@ -258,6 +259,14 @@
           spellcheck: 'true',
         },
         handlePaste: (v, event) => kind === 'body' && pasted(v, event),
+        // A citation that was found is gone through where it is pressed.
+        handleClick: (_v, _pos, event) =>
+          kind === 'body' &&
+          event.button === 0 &&
+          pressedFound(
+            event.target,
+            untrack(() => (element ? project.node(element)?.map : null)),
+          ),
         handleDOMEvents: {
           focus: (v) => {
             onfocus?.(v);

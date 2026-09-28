@@ -772,7 +772,7 @@
 />
 
 <div class="text-view" bind:this={root} style:--margin="{marginWidth}px">
-  <div class="tools"><div class="inner"><WritingTools scope={root} /></div></div>
+  <div class="tools"><div class="inner"><WritingTools scope={root} map={mapId} /></div></div>
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     bind:this={scroller}

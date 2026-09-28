@@ -10,6 +10,24 @@ export const systemInfo = () => call<SystemInfo>('system_info');
 
 export type Theme = 'system' | 'light' | 'dark';
 
+/** What is done with citations that are found in texts written elsewhere: see `api/found.ts`. */
+export interface FoundSettings {
+  /** Parentheses with a year in them are taken for citations. */
+  years: boolean;
+  /** Every note is taken for one. */
+  notes: boolean;
+  /** When a text is brought in, citations made by Zotero of works the library has are made citations at once. */
+  atOnce: boolean;
+  /** The citations are gone through when a map has been made of a text. */
+  goThrough: boolean;
+  /**
+   * What becomes of a citation in a note, for all that follow: the note
+   * becomes a citation, or the citation stands within the note. Nothing,
+   * for what is given for each.
+   */
+  inNotes: '' | 'citation' | 'within';
+}
+
 /** Settings kept in `settings.json` in the data directory. */
 export interface Settings {
   theme: Theme;
@@ -27,6 +45,7 @@ export interface Settings {
   /** The style and format that new maps start with. */
   defaultStyle: string;
   defaultFormat: string;
+  found: FoundSettings;
 }
 
 export const defaultSettings: Settings = {
@@ -39,6 +58,7 @@ export const defaultSettings: Settings = {
   server: null,
   defaultStyle: 'chicago-notes-bibliography',
   defaultFormat: 'manuscript',
+  found: { years: false, notes: false, atOnce: true, goThrough: true, inNotes: '' },
 };
 
 export const settingsLoad = () => call<Partial<Settings>>('settings_load');
