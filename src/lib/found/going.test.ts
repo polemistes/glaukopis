@@ -451,14 +451,14 @@ describe('a citation in a note', () => {
     expect(body(pr.fragment(elements[0], 'body')!)).toMatchObject([
       {
         content: [
-          t('The wrath'),
+          t('The wrath '),
           {
             kind: 'citation',
             items: [
               { id: 'r-nagy', locator: '73', prefix: 'See', suffix: '; but he argues otherwise' },
             ],
           },
-          t(' is sung'),
+          t(' is sung '),
           { kind: 'citation', items: [{ id: 'r-lord', locator: '73' }] },
           t(' and told'),
           {
@@ -491,7 +491,7 @@ describe('a citation in a note', () => {
     expect(g.make()).toBe(true);
     expect(body(pr.fragment(elements[0], 'body')!)).toEqual([
       p(
-        t('Said'),
+        t('Said '),
         {
           kind: 'citation',
           items: [{ id: 'r-nagy', locator: '73', prefix: 'See' }],

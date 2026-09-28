@@ -22,6 +22,7 @@ import { bodySchema, type CiteItem, type CiteMode } from '$lib/editor/schema';
 import type { Project } from '$lib/project/model/project.svelte';
 import { newId } from '$lib/util/id';
 import {
+  NO_TEXT,
   elementOf,
   gatherElement,
   markName,
@@ -276,7 +277,11 @@ function cite(project: Project, making: Making): Outcome {
       const note = node.nodeAt(pos);
       if (note?.type.name !== 'footnote') return { done: false, why: 'changed' };
       const made = citation.create({ items: withWords(items, can.before, can.after), mode });
-      write(project, outer, new Transform(node).replaceWith(pos, pos + note.nodeSize, made).doc);
+      // A note stands close to the word it is a note to, a citation apart from it: where
+      // the style of the references sets the citation as a note, it takes the room away again.
+      const close = pos > 0 && /[^\s(\[“‘"']/.test(node.textBetween(pos - 1, pos, '', NO_TEXT));
+      const put = close ? [bodySchema.text(' '), made] : [made];
+      write(project, outer, new Transform(node).replaceWith(pos, pos + note.nodeSize, put).doc);
       return { done: true };
     }
     const node = nodeOf(at.place.holder);
