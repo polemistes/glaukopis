@@ -32,6 +32,7 @@ import {
   type Transaction,
 } from 'prosemirror-state';
 import { ySyncPluginKey } from 'y-prosemirror';
+import { rows } from '$lib/figures/placing';
 import { newId } from '$lib/util/id';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import {
@@ -268,6 +269,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     inputRules({ rules: [...dashes, ...blockRules(schema)] }),
     cite,
     ids(),
+    rows(),
     keymap(keys),
     keymap(baseKeymap),
     dropCursor({ color: 'var(--accent)', width: 2 }),

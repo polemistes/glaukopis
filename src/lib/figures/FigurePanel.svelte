@@ -3,15 +3,32 @@
   import ImageUp from '@lucide/svelte/icons/image-up';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import { untrack } from 'svelte';
+  import type { Flow, Stand } from '$lib/editor/schema';
+  import Placing from './Placing.svelte';
+  import type { Usual } from './placing';
 
   interface Props {
     name: string;
     alt: string;
     width: number;
     numbered: boolean;
+    /** Where it stands, and whether the text flows around it, where that is said of it. */
+    align: Stand;
+    flow: Flow;
+    /** What the format says of figures. */
+    usual: Usual;
+    beside: 'in' | 'can' | 'no';
+    onbeside: () => void;
+    onalone: () => void;
     /** While the width is being set: shown, and not yet kept. */
     ontry: (width: number) => void;
-    onchange: (change: { alt?: string; width?: number; numbered?: boolean }) => void;
+    onchange: (change: {
+      alt?: string;
+      width?: number;
+      numbered?: boolean;
+      align?: Stand;
+      flow?: Flow;
+    }) => void;
     /** Whether what is said of the figure is what is kept with the picture. */
     kept: () => boolean;
     /** Whether anything is kept with the picture to be said of its figures. */
@@ -30,6 +47,12 @@
     alt,
     width,
     numbered,
+    align,
+    flow,
+    usual,
+    beside,
+    onbeside,
+    onalone,
     ontry,
     onchange,
     kept,
@@ -113,7 +136,13 @@
       {/each}
     </div>
   </div>
-  <div class="hint indent">Of the width of the text, in the document.</div>
+  <div class="hint indent">
+    {beside === 'in'
+      ? 'Of the room it has in the row.'
+      : 'Of the width of the text, in the document.'}
+  </div>
+
+  <Placing kind="figure" {align} {flow} {usual} {beside} {onchange} {onbeside} {onalone} />
 
   <div class="row">
     <label for="figure-alt">Shows</label>

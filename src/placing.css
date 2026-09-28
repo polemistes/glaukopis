@@ -1,0 +1,109 @@
+/* Where what stands by itself stands, where the text is written and where
+   it is shown: to the left, in the middle, to the right; with the text
+   flowing around it; beside others. What says so is set on each by
+   `showPlacing` of lib/figures/views.svelte.ts, from what is said of it and
+   what the format of the document says. */
+
+.figure[data-stand='left'],
+.tabular[data-stand='left'] {
+  text-align: left;
+}
+.figure[data-stand='right'],
+.tabular[data-stand='right'] {
+  text-align: right;
+}
+.figure[data-stand='left'] .picture {
+  margin-left: 0;
+}
+.figure[data-stand='right'] .picture {
+  margin-right: 0;
+}
+/* What is said of it stands at its side. */
+.figure[data-stand='left']:not([data-around]) figcaption,
+.tabular[data-stand='left']:not([data-around]) figcaption {
+  text-align: left;
+}
+.figure[data-stand='right']:not([data-around]) figcaption,
+.tabular[data-stand='right']:not([data-around]) figcaption {
+  text-align: right;
+}
+
+/* The text flows around it. */
+.figure[data-around],
+.tabular[data-around] {
+  width: var(--around, 40%);
+  margin-top: 0.35em;
+  margin-bottom: 0.6em;
+  text-align: center;
+}
+.figure[data-around][data-stand='left'],
+.tabular[data-around][data-stand='left'] {
+  float: left;
+  margin-left: 0;
+  margin-right: 1.4em;
+}
+.figure[data-around][data-stand='right'],
+.tabular[data-around][data-stand='right'] {
+  float: right;
+  margin-right: 0;
+  margin-left: 1.4em;
+}
+.figure[data-around] .picture {
+  width: 100% !important;
+}
+/* What comes after something that stands apart begins under what the text flowed around. */
+.prose .figure:not([data-around]),
+.prose .tabular:not([data-around]),
+.prose .equation,
+.prose .row-of,
+.prose blockquote,
+.prose ul,
+.prose ol {
+  clear: both;
+}
+.prose::after {
+  content: '';
+  display: block;
+  clear: both;
+}
+
+.equation[data-stand='left'] {
+  justify-content: flex-start;
+  padding-left: 2em;
+}
+.equation[data-stand='right'] {
+  justify-content: flex-end;
+}
+
+/* Beside each other: each has its share of the width, and they stand on one line. */
+.row-of {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: end;
+  gap: 0 4%;
+  margin: 1.1em 0;
+  clear: both;
+}
+.row-of > .figure,
+.row-of > .tabular,
+.row-of > .equation {
+  margin-top: 0;
+  margin-bottom: 0;
+  min-width: 0;
+}
+.row-of > .equation {
+  align-self: center;
+  padding-left: 0.4em;
+  padding-right: 2.6em;
+}
+.prose:not(.static) .row-of {
+  border-radius: var(--radius-s);
+  outline: 1px dashed transparent;
+  outline-offset: 4px;
+  transition: outline-color var(--fast) var(--ease);
+}
+.prose:not(.static) .row-of:hover,
+.prose:not(.static) .row-of:focus-within {
+  outline-color: var(--line-strong);
+}

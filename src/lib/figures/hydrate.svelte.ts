@@ -10,7 +10,8 @@ import { refForm } from '$lib/project/model/text';
 import { showFormula } from './math.svelte';
 import { numbering, pointerText } from './numbering.svelte';
 import { pictures } from './pictures.svelte';
-import { figureLabel } from './views.svelte';
+import { usualOf } from './placing';
+import { figureLabel, showPlacing } from './views.svelte';
 
 export interface Shown {
   /** What was put into the element: given anew, its content is seen to anew. */
@@ -37,9 +38,28 @@ function fill(root: HTMLElement, shown: Shown) {
     }
   }
 
-  // The numbers, and what the document calls things.
+  // The numbers, what the document calls things, and where they stand.
   const map = shown.project.node(shown.element)?.map;
   if (!map) return;
+  const format = numbering.formatOf(shown.project, map);
+  for (const [selector, kind] of [
+    ['figure.figure', 'figure'],
+    ['figure.tabular', 'table'],
+    ['.equation', 'equation'],
+  ] as const) {
+    for (const el of root.querySelectorAll<HTMLElement>(selector)) {
+      showPlacing(
+        el,
+        {
+          align: el.dataset.align,
+          flow: el.dataset.flow,
+          width: el.dataset.width ?? el.querySelector<HTMLElement>('.picture')?.dataset.width,
+        },
+        usualOf(format, kind),
+        kind,
+      );
+    }
+  }
   const numbers = numbering.of(shown.project, map);
   const counting = numbering.countingOf(shown.project, map);
   const within = numbers.within.get(shown.element);

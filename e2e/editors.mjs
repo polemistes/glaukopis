@@ -64,7 +64,7 @@ try {
   await sleep(300);
   await app.screenshot('editors-2-format-headings');
   // What a figure is called, and where the figures stand.
-  await app.clickText('dialog nav button', 'Figures and equations');
+  await app.clickText('dialog nav button', 'Figures, tables, equations');
   await sleep(300);
   await app.exec(
     `const set = (el, value) => { el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); };

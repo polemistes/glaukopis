@@ -2,12 +2,13 @@
 
 import { open as openFile } from '@tauri-apps/plugin-dialog';
 import type { Node } from 'prosemirror-model';
-import { NodeSelection, Selection, TextSelection } from 'prosemirror-state';
+import { NodeSelection, Selection, TextSelection, type Command } from 'prosemirror-state';
 import type { EditorView, NodeView } from 'prosemirror-view';
 import { mount, unmount } from 'svelte';
 import { captionOf, captionNodes } from '$lib/editor/commands';
 import { currentProject } from '$lib/editor/references.svelte';
-import { figureWidth } from '$lib/editor/schema';
+import type { DocumentFormat } from '$lib/api/documents';
+import { figureWidth, flow, stand, tableWidth } from '$lib/editor/schema';
 import { hooksOf } from '$lib/editor/ui.svelte';
 import { refForm } from '$lib/project/model/text';
 import { openMenu } from '$lib/ui/menu.svelte';
@@ -17,6 +18,15 @@ import FormulaPanel from './FormulaPanel.svelte';
 import { showFormula } from './math.svelte';
 import { formsOf, numbering, pointerText, type Counting, type Numbers } from './numbering.svelte';
 import { pictures, PICTURE_ENDINGS } from './pictures.svelte';
+import {
+  canStandBeside,
+  inRow,
+  placed,
+  standAlone,
+  standBeside,
+  usualOf,
+  type Usual,
+} from './placing';
 import { notifyOk } from '$lib/ui/toast.svelte';
 
 /** What the panel of a formula can be asked. */
@@ -88,7 +98,7 @@ function belongs(target: HTMLElement, panel: HTMLElement, dom: HTMLElement): boo
 /** The numbers of the document the text of an editor is part of, and what the document calls things. */
 function documentOf(
   view: EditorView,
-): { numbers: Numbers; counting: Counting; element: string } | null {
+): { numbers: Numbers; counting: Counting; element: string; format?: DocumentFormat } | null {
   const element = hooksOf.get(view)?.element;
   const project = currentProject();
   const map = element ? project?.node(element)?.map : undefined;
@@ -97,7 +107,52 @@ function documentOf(
     numbers: numbering.of(project, map),
     counting: numbering.countingOf(project, map),
     element,
+    format: numbering.formatOf(project, map),
   };
+}
+
+/** What the format of the document says of where things of a kind stand. */
+export function usualIn(view: EditorView, kind: 'figure' | 'table' | 'equation'): Usual {
+  return usualOf(documentOf(view)?.format, kind);
+}
+
+/** Whether what stands at a position stands in a row, or could stand beside what is before it. */
+export function besideAt(view: EditorView, pos: number | undefined): 'in' | 'can' | 'no' {
+  if (pos === undefined) return 'no';
+  if (inRow(view.state, pos)) return 'in';
+  return canStandBeside(view.state, pos) ? 'can' : 'no';
+}
+
+/**
+ * Shows on an element where it stands and whether the text flows around
+ * it, as it will in the document: what is said of it, or what the format
+ * says. The styles are in `placing.css`.
+ */
+export function showPlacing(
+  el: HTMLElement,
+  attrs: { align?: unknown; flow?: unknown; width?: unknown },
+  usual: Usual,
+  kind: 'figure' | 'table' | 'equation',
+) {
+  const now = placed(attrs, usual);
+  const beside = el.parentElement?.classList.contains('row-of') ?? false;
+  const set = (name: string, value: string | null) => {
+    if (value === null) el.removeAttribute(name);
+    else if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+  };
+  set('data-stand', beside ? null : now.stand);
+  const around = now.around && !beside && kind !== 'equation';
+  set('data-around', around ? '' : null);
+  // With the text flowing around it, it is as wide as it was said to be, and leaves room for the text.
+  const share =
+    kind === 'figure'
+      ? Math.min(60, figureWidth(attrs.width))
+      : Math.min(70, tableWidth(attrs.width) || 45);
+  const width = around ? `${share}%` : '';
+  if (el.style.getPropertyValue('--around') !== width) {
+    if (width) el.style.setProperty('--around', width);
+    else el.style.removeProperty('--around');
+  }
 }
 
 /**
@@ -190,6 +245,10 @@ export class FormulaView implements NodeView {
       if (this.#display) {
         $effect(() => {
           void this.#moved;
+          showPlacing(this.dom, this.#node.attrs, usualIn(this.#view, 'equation'), 'equation');
+        });
+        $effect(() => {
+          void this.#moved;
           const { number, counting } = numberOf(this.#view, 'equation', this.#getPos());
           const shown =
             number && counting && this.#node.attrs.numbered
@@ -227,6 +286,12 @@ export class FormulaView implements NodeView {
         tex: this.#tex,
         display: this.#display,
         numbered: !!this.#node.attrs.numbered,
+        align: stand(this.#node.attrs.align),
+        usual: usualIn(this.#view, 'equation'),
+        beside: besideAt(this.#view, this.#getPos()),
+        onplace: (change: { align?: string }) => this.#place(change),
+        onbeside: () => this.#move(standBeside),
+        onalone: () => this.#move(standAlone),
         ondone: (tex: string, numbered: boolean) => this.#leave(tex, numbered),
         oncancel: () => this.#leave(this.#tex, !!this.#node.attrs.numbered),
       },
@@ -237,6 +302,33 @@ export class FormulaView implements NodeView {
       if (this.#panel === panel) this.#written?.focus();
     });
     window.addEventListener('pointerdown', this.#outside, true);
+  }
+
+  /** Says where the equation stands. What is being written is kept first. */
+  #place(change: { align?: string }) {
+    const written = this.#written?.written();
+    const pos = this.#getPos();
+    if (pos === undefined) return;
+    const view = this.#view;
+    const node = view.state.doc.nodeAt(pos);
+    if (!node || node.type !== this.#node.type) return;
+    const tr = view.state.tr.setNodeMarkup(pos, undefined, {
+      ...node.attrs,
+      ...(written?.tex ? { tex: written.tex, numbered: written.numbered } : {}),
+      ...change,
+    });
+    // The equation stays the one that is selected, and its panel open.
+    view.dispatch(tr.setSelection(NodeSelection.create(tr.doc, pos)));
+  }
+
+  /** Puts the equation beside what is before it, or by itself again. */
+  #move(how: (pos: number) => Command) {
+    const written = this.#written?.written();
+    const view = this.#view;
+    this.#close();
+    if (written && !this.#keep(written.tex, written.numbered)) return;
+    const pos = this.#getPos();
+    if (pos !== undefined) how(pos)(view.state, view.dispatch);
   }
 
   #outside = (event: PointerEvent) => {
@@ -374,6 +466,11 @@ export class FigureView implements NodeView {
           this.#picture.dataset.state = shown.state;
         }
       });
+      // Where it stands, as the document has it.
+      $effect(() => {
+        void this.#moved;
+        showPlacing(this.dom, this.#node.attrs, usualIn(this.#view, 'figure'), 'figure');
+      });
       // The word and the number before what is said of it, as the document has them.
       $effect(() => {
         void this.#moved;
@@ -447,6 +544,12 @@ export class FigureView implements NodeView {
         alt: String(a.alt ?? ''),
         width: figureWidth(a.width),
         numbered: !!a.numbered,
+        align: stand(a.align),
+        flow: flow(a.flow),
+        usual: usualIn(this.#view, 'figure'),
+        beside: besideAt(this.#view, this.#getPos()),
+        onbeside: () => this.#move(standBeside),
+        onalone: () => this.#move(standAlone),
         // The panel stays where it is while the width is set: if it went
         // with the picture, the bar would go from under the pointer.
         ontry: (width: number) => {
@@ -467,6 +570,26 @@ export class FigureView implements NodeView {
     });
     requestAnimationFrame(() => this.#again());
     window.addEventListener('pointerdown', this.#outside, true);
+    window.addEventListener('keydown', this.#escape, true);
+  }
+
+  /** Escape closes the panel wherever the cursor is: nothing in the panel need have it. */
+  #escape = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || !this.#panel) return;
+    const target = event.target as HTMLElement | null;
+    // What lies over the panel is closed first, and a field in the panel says what it wants itself.
+    if (target?.closest('.popover, .menu, dialog') || this.#panel.el.contains(target)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.#leave();
+  };
+
+  /** Puts the figure beside what is before it, or by itself again. */
+  #move(how: (pos: number) => Command) {
+    const pos = this.#getPos();
+    const view = this.#view;
+    this.#close();
+    if (pos !== undefined) how(pos)(view.state, view.dispatch);
   }
 
   /** The panel follows the picture as it grows and shrinks. */
@@ -554,6 +677,7 @@ export class FigureView implements NodeView {
 
   #close() {
     window.removeEventListener('pointerdown', this.#outside, true);
+    window.removeEventListener('keydown', this.#escape, true);
     if (this.#mounted) void unmount(this.#mounted);
     this.#mounted = null;
     this.#panel?.remove();

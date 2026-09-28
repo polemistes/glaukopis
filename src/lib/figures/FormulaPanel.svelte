@@ -4,19 +4,41 @@
    * like shown beneath while it is written.
    */
   import { untrack } from 'svelte';
+  import type { Stand } from '$lib/editor/schema';
   import { mathematics } from './math.svelte';
+  import Placing from './Placing.svelte';
+  import type { Usual } from './placing';
 
   interface Props {
     tex: string;
     /** On a line of its own, and not in the line. */
     display: boolean;
     numbered: boolean;
+    /** Of an equation: where it stands, where that is said of it; what the format says; the row. */
+    align?: Stand;
+    usual?: Usual;
+    beside?: 'in' | 'can' | 'no';
+    onplace?: (change: { align?: Stand }) => void;
+    onbeside?: () => void;
+    onalone?: () => void;
     /** With what was written, when it is to be kept. */
     ondone: (tex: string, numbered: boolean) => void;
     oncancel: () => void;
   }
 
-  let { tex, display, numbered, ondone, oncancel }: Props = $props();
+  let {
+    tex,
+    display,
+    numbered,
+    align = '',
+    usual = { align: 'center', wrap: false },
+    beside = 'no',
+    onplace,
+    onbeside,
+    onalone,
+    ondone,
+    oncancel,
+  }: Props = $props();
 
   let draft = $state(untrack(() => tex));
   let counted = $state(untrack(() => numbered));
@@ -146,6 +168,18 @@
     <span class="quiet">…</span>
   {/if}
 </div>
+
+{#if display && onplace}
+  <Placing
+    kind="equation"
+    {align}
+    {usual}
+    {beside}
+    onchange={(change) => onplace?.(change)}
+    onbeside={() => onbeside?.()}
+    onalone={() => onalone?.()}
+  />
+{/if}
 
 <div class="hint">
   Written as in TeX. Enter when done{display ? ', Shift+Enter for a new line' : ''}, Escape to leave

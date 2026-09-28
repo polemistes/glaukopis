@@ -59,7 +59,7 @@
         const loaded = await formatsGet(wanted);
         original = JSON.stringify(loaded);
         format = loaded;
-        betweenOther = false;
+        betweenOther = {};
         name = loaded.kind === 'own' ? loaded.name : `${loaded.name}, changed`;
       } catch (e) {
         error = describeError(e) ?? 'The format could not be read.';
@@ -165,7 +165,7 @@
     ['quotations', 'Quotations'],
     ['notes', 'Notes'],
     ['bibliography', 'Bibliography'],
-    ['figures', 'Figures and equations'],
+    ['figures', 'Figures, tables, equations'],
     ['margins', 'Page numbers and running head'],
     ['limits', 'Limits'],
     ['about', 'About this format'],
@@ -218,24 +218,34 @@
   ];
   // Holds the field open while something is written in it that happens to
   // be one of the usual ones.
-  let betweenOther = $state(false);
+  let betweenOther = $state<Record<string, boolean>>({});
 
-  function between(separator: string): Between {
-    if (betweenOther) return 'other';
+  /** What figures and tables are both told: how what is said of them is set, and where they stand. */
+  type Captioned = DocumentFormat['figures'] | DocumentFormat['tables'];
+  type CaptionedKind = 'figure' | 'table';
+
+  function between(separator: string, kind: CaptionedKind): Between {
+    if (betweenOther[kind]) return 'other';
     return usualBetween.find(([, s]) => s === separator)?.[0] ?? 'other';
   }
 
-  function setBetween(f: DocumentFormat, v: Between) {
-    betweenOther = v === 'other';
+  function setBetween(c: Captioned, v: Between, kind: CaptionedKind) {
+    betweenOther[kind] = v === 'other';
     const found = usualBetween.find(([k]) => k === v);
-    if (found) f.figures.separator = found[1];
+    if (found) c.separator = found[1];
   }
 
   /** The separator as the words of it and whether a line break follows them. */
-  function setSeparator(f: DocumentFormat, words: string, ownLine: boolean) {
-    betweenOther = true;
-    f.figures.separator = words.replaceAll('\n', '') + (ownLine ? '\n' : '');
+  function setSeparator(c: Captioned, words: string, ownLine: boolean, kind: CaptionedKind) {
+    betweenOther[kind] = true;
+    c.separator = words.replaceAll('\n', '') + (ownLine ? '\n' : '');
   }
+
+  const stands: ['left' | 'center' | 'right', string][] = [
+    ['left', 'To the left'],
+    ['center', 'In the middle'],
+    ['right', 'To the right'],
+  ];
 
   function betweenChoices(called: string): [Between, string][] {
     return [
@@ -356,6 +366,142 @@
       {/if}
     </select>
   </label>
+{/snippet}
+
+{#snippet captioned(c: Captioned, kind: CaptionedKind)}
+  {@const called = c.label.trim() ? `${c.label.trim()} 1` : '1'}
+  {@const line = c.placeholder}
+  {@const many = kind === 'figure' ? 'figures' : 'tables'}
+  {@const Many = kind === 'figure' ? 'Figures' : 'Tables'}
+  {@render text(
+    `A ${kind} is called`,
+    () => c.label,
+    (v) => (c.label = v),
+    kind === 'figure' ? 'Figure, Fig., Abbildung' : 'Table, Tab., Tabelle',
+  )}
+  {@render text(
+    'Where the text points to it',
+    () => c.reference ?? '',
+    (v) => (c.reference = v),
+    kind === 'figure'
+      ? 'fig., figure; empty for the same word'
+      : 'tab., table; empty for the same word',
+  )}
+  {@render toggle(
+    'The word and number in bold',
+    () => c.labelBold,
+    (v) => (c.labelBold = v),
+  )}
+  {@render toggle(
+    'The word and number in italic',
+    () => c.labelItalic,
+    (v) => (c.labelItalic = v),
+  )}
+  {@render choice(
+    'Between the number and the caption',
+    () => between(c.separator, kind),
+    (v) => setBetween(c, v, kind),
+    betweenChoices(called),
+  )}
+  {#if between(c.separator, kind) === 'other'}
+    {@render text(
+      'What stands between them',
+      () => c.separator.replaceAll('\n', ''),
+      (v) => setSeparator(c, v, c.separator.includes('\n'), kind),
+      'Spaces count: write them where they are wanted',
+    )}
+    {@render toggle(
+      'Then the caption on a line of its own',
+      () => c.separator.includes('\n'),
+      (v) => setSeparator(c, c.separator, v, kind),
+    )}
+  {/if}
+  <h4>Caption</h4>
+  {@render choice(
+    'The caption stands',
+    () => c.captionPosition,
+    (v) => (c.captionPosition = v),
+    [
+      ['below', kind === 'figure' ? 'Below the picture' : 'Below the table'],
+      ['above', kind === 'figure' ? 'Above the picture' : 'Above the table'],
+    ],
+  )}
+  {@render choice(
+    'Alignment',
+    () => c.captionAlign,
+    (v) => (c.captionAlign = v),
+    [...aligns, ['justified', 'Justified']],
+    `Of a ${kind} that stands at a side, the caption stands at that side`,
+  )}
+  {@render number(
+    'Size',
+    () => c.captionSize,
+    (v) => (c.captionSize = v),
+    { max: 36, unit: 'pt', zero: 'as the text', hint: '0 for the size of the text' },
+  )}
+  {@render toggle(
+    'Italic',
+    () => c.captionItalic,
+    (v) => (c.captionItalic = v),
+  )}
+  {@render choice(
+    'Line spacing',
+    () => c.captionLineSpacing,
+    (v) => (c.captionLineSpacing = v),
+    [[0, 'As the text'], ...spacings],
+  )}
+  <div class="row">
+    <span class="what">As it will stand</span>
+    <span class="example"
+      ><span class:bold={c.labelBold} class:italic={c.labelItalic}>{called}</span>{c.separator}<span
+        class:italic={c.captionItalic}>Caption</span
+      ></span
+    >
+  </div>
+  <h4>Where {many} stand</h4>
+  {@render choice(
+    `${Many} stand`,
+    () => c.align,
+    (v) => (c.align = v),
+    stands,
+    'Unless something else is said of one',
+  )}
+  {#if c.align !== 'center'}
+    {@render toggle(
+      'The text flows around them',
+      () => c.wrap,
+      (v) => (c.wrap = v),
+      'Unless something else is said of one',
+    )}
+  {/if}
+  {@render choice(
+    'In the document',
+    () => c.placement,
+    (v) => (c.placement = v),
+    [
+      ['in-text', 'In the text'],
+      ['at-end', 'Gathered at the end'],
+    ],
+    'Many journals ask for them at the end of a manuscript',
+  )}
+  {#if c.placement === 'at-end'}
+    {@render text(
+      `Heading over the ${many}`,
+      () => c.endTitle,
+      (v) => (c.endTitle = v),
+      kind === 'figure' ? 'Figures, Illustrations; empty for none' : 'Tables; empty for none',
+    )}
+    <label class="row">
+      <span class="what"
+        >Line left in the text<small
+          >{line.includes('{}')
+            ? `{} stands for the word and number: ${line.replace('{}', () => called)}`
+            : 'It must hold {}, where the word and number go'}</small
+        ></span
+      >
+      <input class:invalid={!line.includes('{}')} bind:value={c.placeholder} spellcheck="false" />
+    </label>
+  {/if}
 {/snippet}
 
 {#snippet text(label: string, get: () => string, set: (v: string) => void, hint = '')}
@@ -819,126 +965,47 @@
             </select>
           </label>
         {:else if section === 'figures'}
-          {@const called = f.figures.label.trim() ? `${f.figures.label.trim()} 1` : '1'}
-          {@const line = f.figures.placeholder}
           <h3>Figures</h3>
-          {@render text(
-            'A figure is called',
-            () => f.figures.label,
-            (v) => (f.figures.label = v),
-            'Figure, Fig., Abbildung',
-          )}
-          {@render text(
-            'Where the text points to it',
-            () => f.figures.reference ?? '',
-            (v) => (f.figures.reference = v),
-            'fig., figure; empty for the same word',
-          )}
-          {@render toggle(
-            'The word and number in bold',
-            () => f.figures.labelBold,
-            (v) => (f.figures.labelBold = v),
-          )}
-          {@render toggle(
-            'The word and number in italic',
-            () => f.figures.labelItalic,
-            (v) => (f.figures.labelItalic = v),
-          )}
+          {@render captioned(f.figures, 'figure')}
+          <h3>Tables</h3>
+          {@render captioned(f.tables, 'table')}
+          <h4>The table itself</h4>
           {@render choice(
-            'Between the number and the caption',
-            () => between(f.figures.separator),
-            (v) => setBetween(f, v),
-            betweenChoices(called),
-          )}
-          {#if between(f.figures.separator) === 'other'}
-            {@render text(
-              'What stands between them',
-              () => f.figures.separator.replaceAll('\n', ''),
-              (v) => setSeparator(f, v, f.figures.separator.includes('\n')),
-              'Spaces count: write them where they are wanted',
-            )}
-            {@render toggle(
-              'Then the caption on a line of its own',
-              () => f.figures.separator.includes('\n'),
-              (v) => setSeparator(f, f.figures.separator, v),
-            )}
-          {/if}
-          <h4>Caption</h4>
-          {@render choice(
-            'The caption stands',
-            () => f.figures.captionPosition,
-            (v) => (f.figures.captionPosition = v),
+            'Lines',
+            () => f.tables.rules,
+            (v) => (f.tables.rules = v),
             [
-              ['below', 'Below the picture'],
-              ['above', 'Above the picture'],
+              ['horizontal', 'Over, under, and under the headings'],
+              ['grid', 'Around every cell'],
+              ['none', 'None'],
             ],
+            'Books and journals have the first',
           )}
-          {@render choice(
-            'Alignment',
-            () => f.figures.captionAlign,
-            (v) => (f.figures.captionAlign = v),
-            [...aligns, ['justified', 'Justified']],
+          {@render toggle(
+            'Headings in bold',
+            () => f.tables.headerBold,
+            (v) => (f.tables.headerBold = v),
           )}
           {@render number(
             'Size',
-            () => f.figures.captionSize,
-            (v) => (f.figures.captionSize = v),
+            () => f.tables.size,
+            (v) => (f.tables.size = v),
             { max: 36, unit: 'pt', zero: 'as the text', hint: '0 for the size of the text' },
-          )}
-          {@render toggle(
-            'Italic',
-            () => f.figures.captionItalic,
-            (v) => (f.figures.captionItalic = v),
           )}
           {@render choice(
             'Line spacing',
-            () => f.figures.captionLineSpacing,
-            (v) => (f.figures.captionLineSpacing = v),
+            () => f.tables.lineSpacing,
+            (v) => (f.tables.lineSpacing = v),
             [[0, 'As the text'], ...spacings],
           )}
-          <div class="row">
-            <span class="what">As it will stand</span>
-            <span class="example"
-              ><span class:bold={f.figures.labelBold} class:italic={f.figures.labelItalic}
-                >{called}</span
-              >{f.figures.separator}<span class:italic={f.figures.captionItalic}>Caption</span
-              ></span
-            >
-          </div>
-          <h4>Where figures stand</h4>
-          {@render choice(
-            'Figures stand',
-            () => f.figures.placement,
-            (v) => (f.figures.placement = v),
-            [
-              ['in-text', 'In the text'],
-              ['at-end', 'Gathered at the end'],
-            ],
-            'Many journals ask for them at the end of a manuscript',
-          )}
-          {#if f.figures.placement === 'at-end'}
-            {@render text(
-              'Heading over the figures',
-              () => f.figures.endTitle,
-              (v) => (f.figures.endTitle = v),
-              'Figures, Illustrations; empty for none',
-            )}
-            <label class="row">
-              <span class="what"
-                >Line left in the text<small
-                  >{line.includes('{}')
-                    ? `{} stands for the word and number: ${line.replace('{}', () => called)}`
-                    : 'It must hold {}, where the word and number go'}</small
-                ></span
-              >
-              <input
-                class:invalid={!line.includes('{}')}
-                bind:value={f.figures.placeholder}
-                spellcheck="false"
-              />
-            </label>
-          {/if}
           <h3>Equations</h3>
+          {@render choice(
+            'Equations stand',
+            () => f.equations.align,
+            (v) => (f.equations.align = v),
+            stands,
+            'Unless something else is said of one',
+          )}
           {@render text(
             'Before the number',
             () => f.equations.beforeNumber,

@@ -2,6 +2,7 @@ import '@fontsource-variable/inter/wght.css';
 import '@fontsource-variable/literata/wght.css';
 import '@fontsource-variable/literata/wght-italic.css';
 import './app.css';
+import './placing.css';
 import { mount } from 'svelte';
 import App from './App.svelte';
 

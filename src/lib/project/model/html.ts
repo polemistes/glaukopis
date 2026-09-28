@@ -127,7 +127,7 @@ function blocks(list: Block[], notes: { n: number }): string {
         const named = isPictureName(b.file, b.extension);
         out +=
           `<figure class="figure${said ? '' : ' uncaptioned'}"${placing(b)}${b.id ? ` data-id="${escape(b.id)}"` : ''}${b.numbered ? '' : ' data-unnumbered'}>` +
-          `<div class="picture" style="width: ${figureWidth(b.width)}%">` +
+          `<div class="picture" style="width: ${figureWidth(b.width)}%" data-width="${figureWidth(b.width)}">` +
           (named
             ? `<img data-picture="${b.file}.${b.extension}" alt="${escape(b.alt)}" draggable="false">`
             : '') +
