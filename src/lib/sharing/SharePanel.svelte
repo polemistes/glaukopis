@@ -15,6 +15,7 @@
     type ServerInfo,
   } from '$lib/api/sharing';
   import { isBackendError } from '$lib/api/backend';
+  import { t } from '$lib/i18n';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { ask, confirm } from '$lib/ui/confirm.svelte';
@@ -25,6 +26,7 @@
   import TextField from '$lib/ui/TextField.svelte';
   import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import { ago } from '$lib/util/time';
+  import { apart, PLACE } from '$lib/util/words';
   import { colourOf, initials } from './connection.svelte';
   import type { ProjectSharing } from './sharing.svelte';
 
@@ -54,7 +56,7 @@
       return found;
     } catch (error) {
       found = null;
-      problem = describeError(error) ?? 'The server could not be reached.';
+      problem = describeError(error) ?? t('sharing-unreachable');
       return null;
     }
   }
@@ -73,7 +75,7 @@
       await refresh();
     } catch (error) {
       if (isBackendError(error) && error.kind === 'password') wrongPassword = error.message;
-      else problem = describeError(error) ?? 'The project could not be shared.';
+      else problem = describeError(error) ?? t('sharing-share-failed');
     } finally {
       busy = false;
     }
@@ -116,10 +118,10 @@
 
   function invitationText(code: string): string {
     return [
-      `Join “${projectName}” in Glaukopis: choose “Join a shared project” and enter`,
+      t('sharing-invitation', { project: projectName, join: t('home-join') }),
       '',
-      `Server: ${sharing?.server ?? ''}`,
-      `Code: ${code}`,
+      t('sharing-invitation-server', { server: sharing?.server ?? '' }),
+      t('sharing-invitation-code', { code }),
     ].join('\n');
   }
 
@@ -131,7 +133,7 @@
       copied = false;
       await refresh();
     } catch (error) {
-      notifyError('The invitation could not be made', error);
+      notifyError(t('sharing-invite-failed'), error);
     } finally {
       busy = false;
     }
@@ -141,9 +143,9 @@
     try {
       await navigator.clipboard.writeText(invitationText(code));
       copied = true;
-      notifyOk('The invitation was copied', 'Paste it into a message to the one you invite.');
+      notifyOk(t('sharing-copied'), t('sharing-copied-detail'));
     } catch (error) {
-      notifyError('The invitation could not be copied', error);
+      notifyError(t('sharing-copy-failed'), error);
     }
   }
 
@@ -153,15 +155,15 @@
       if (fresh?.code === invitation.code) fresh = null;
       await refresh();
     } catch (error) {
-      notifyError('The invitation could not be withdrawn', error);
+      notifyError(t('sharing-withdraw-failed'), error);
     }
   }
 
   async function removeMember(id: string, who: string) {
     const ok = await confirm({
-      title: `Remove ${who}?`,
-      message: `${who} keeps the project as it is now, and is no longer given what is written after this.`,
-      confirm: 'Remove',
+      title: t('sharing-remove-title', { name: who }),
+      message: t('sharing-remove-message', { name: who }),
+      confirm: t('common-remove'),
       danger: true,
     });
     if (!ok) return;
@@ -169,7 +171,7 @@
       await sharingRemoveMember(projectId, id);
       await refresh();
     } catch (error) {
-      notifyError(`${who} could not be removed`, error);
+      notifyError(t('sharing-remove-failed', { name: who }), error);
     }
   }
 
@@ -177,17 +179,15 @@
     const ok = await confirm(
       owner
         ? {
-            title: 'Stop sharing this project?',
-            message:
-              'The project is taken off the server. You and everyone you have shared it with keep it as it is now, each on their own.',
-            confirm: 'Stop sharing',
+            title: t('sharing-stop-title'),
+            message: t('sharing-stop-message'),
+            confirm: t('sharing-stop'),
             danger: true,
           }
         : {
-            title: 'Leave this project?',
-            message:
-              'You keep the project as it is now. You are no longer given what the others write, nor they what you write.',
-            confirm: 'Leave',
+            title: t('sharing-leave-title'),
+            message: t('sharing-leave-message'),
+            confirm: t('sharing-leave'),
             danger: true,
           },
     );
@@ -198,13 +198,13 @@
       room = null;
       fresh = null;
       onclose();
-      notifyOk(owner ? 'The project is no longer shared' : 'You have left the project');
+      notifyOk(owner ? t('sharing-stopped') : t('sharing-left'));
     } catch (error) {
       const answer = await ask({
-        title: 'The server could not be told',
-        message: `${describeError(error) ?? ''} You can end the sharing on this computer all the same; the project then stays on the server until it can be told.`,
-        confirm: 'End it here',
-        cancel: 'Keep sharing',
+        title: t('sharing-untold-title'),
+        message: t('sharing-untold-message', { error: describeError(error) ?? '' }),
+        confirm: t('sharing-end-here'),
+        cancel: t('sharing-keep'),
         danger: true,
       });
       if (answer === 'confirm') {
@@ -212,7 +212,7 @@
           await shared.end(true);
           onclose();
         } catch (again) {
-          notifyError('The sharing could not be ended', again);
+          notifyError(t('sharing-end-failed'), again);
         }
       }
     } finally {
@@ -223,18 +223,27 @@
   function expires(i: Invitation): string {
     const parts = [
       i.usesLeft === null
-        ? 'for several'
+        ? t('sharing-for-several')
         : i.usesLeft === 1
-          ? 'for one person'
-          : `for ${i.usesLeft} more`,
+          ? t('sharing-for-one')
+          : t('sharing-for-more', { count: i.usesLeft }),
     ];
     if (i.expires !== null) {
       const hours = Math.max(1, Math.round((i.expires * 1000 - Date.now()) / 3_600_000));
-      parts.push(hours < 48 ? `${hours} h left` : `${Math.round(hours / 24)} days left`);
+      parts.push(
+        hours < 48
+          ? t('sharing-hours-left', { count: hours })
+          : t('sharing-days-left', { count: Math.round(hours / 24) }),
+      );
     }
-    if (i.used) parts.push(`used ${i.used === 1 ? 'once' : `${i.used} times`}`);
+    if (i.used) parts.push(t('sharing-used', { count: i.used }));
     return parts.join(' · ');
   }
+
+  // The name of the button the one invited chooses is in italics, where the language puts it.
+  const [beforeJoin, afterJoin] = $derived(
+    apart(t('sharing-invite-hint', { join: PLACE, expires: fresh ? expires(fresh) : '' })),
+  );
 
   function commitName() {
     const clean = name.trim();
@@ -246,8 +255,8 @@
 
 <Dialog
   open
-  title={shared.shared ? 'Shared project' : 'Share this project'}
-  subtitle={shared.shared ? `Through ${host}` : undefined}
+  title={shared.shared ? t('sharing-shared-title') : t('sharing-share-title')}
+  subtitle={shared.shared ? t('sharing-through', { server: host }) : undefined}
   width={500}
   {onclose}
 >
@@ -260,12 +269,11 @@
       }}
     >
       <p class="lead">
-        Others can then work on the project with you, at the same time, through a server. It stays
-        on your computer as well, and can be worked on without the server.
+        {t('sharing-lead')}
       </p>
       <TextField
         bind:value={server}
-        label="Server"
+        label={t('sharing-server')}
         placeholder="glaukopis.example.org"
         spellcheck="false"
         autocapitalize="off"
@@ -284,24 +292,24 @@
       {#if found && !found.encrypted}
         <p class="warning">
           <TriangleAlert size={14} />
-          What is sent to this server is not encrypted on its way. Use it on a network you trust.
+          {t('sharing-unencrypted')}
         </p>
       {/if}
       {#if found?.passwordRequired}
         <TextField
           bind:value={password}
           type="password"
-          label="Password of the server"
-          hint="Asked of those who share projects through it. Those you invite need none."
+          label={t('sharing-password')}
+          hint={t('sharing-password-hint')}
           error={wrongPassword}
           oninput={() => (wrongPassword = null)}
         />
       {/if}
       <TextField
         bind:value={name}
-        label="Your name"
-        hint="Shown to those you share the project with."
-        placeholder="As the others know you"
+        label={t('sharing-your-name')}
+        hint={t('sharing-your-name-hint')}
+        placeholder={t('sharing-your-name-placeholder')}
       />
     </form>
   {:else}
@@ -309,20 +317,20 @@
       <div class="state" class:off={connection?.status !== 'connected'}>
         <span class="dot"></span>
         {#if connection?.status === 'connected'}
-          Connected. What is written is with the others at once.
+          {t('sharing-connected')}
         {:else if connection?.status === 'connecting'}
-          Connecting…
+          {t('sharing-connecting')}
         {:else}
-          The server cannot be reached. What you write is kept here, and brought along when it can.
+          {t('sharing-offline')}
         {/if}
       </div>
 
       {#if owner}
         <section>
-          <h3 class="overline">Invite</h3>
+          <h3 class="overline">{t('sharing-invite')}</h3>
           {#if fresh}
             <div class="fresh">
-              <div class="code" aria-label="Invitation code">{fresh.code}</div>
+              <div class="code" aria-label={t('sharing-code-label')}>{fresh.code}</div>
               <Button
                 variant={copied ? 'secondary' : 'primary'}
                 onclick={() => fresh && copy(fresh.code)}
@@ -330,42 +338,41 @@
                 {#snippet icon()}{#if copied}<Check size={14} />{:else}<Copy
                       size={14}
                     />{/if}{/snippet}
-                {copied ? 'Copied' : 'Copy invitation'}
+                {copied ? t('sharing-copied-button') : t('sharing-copy')}
               </Button>
             </div>
             <p class="hint">
-              Send it to the one you invite, who chooses <em>Join a shared project</em> and enters
-              the server and the code. It is {expires(fresh)}.
+              {beforeJoin}<em>{t('home-join')}</em>{afterJoin}
             </p>
           {/if}
           <div class="invite">
             <Button disabled={busy} onclick={invite}
-              >{fresh ? 'Make another code' : 'Make an invitation code'}</Button
+              >{fresh ? t('sharing-make-another') : t('sharing-make-code')}</Button
             >
             <button type="button" class="link" onclick={() => (options = !options)}>
-              {options ? 'Fewer options' : 'Options'}
+              {options ? t('sharing-fewer-options') : t('sharing-options')}
             </button>
           </div>
           {#if options}
             <div class="options">
               <Select
                 bind:value={uses}
-                label="For"
+                label={t('sharing-for')}
                 size="sm"
                 options={[
-                  { value: 'one', label: 'One person' },
-                  { value: 'many', label: 'Several people' },
+                  { value: 'one', label: t('sharing-one-person') },
+                  { value: 'many', label: t('sharing-several-people') },
                 ]}
               />
               <Select
                 bind:value={valid}
-                label="Good for"
+                label={t('sharing-good-for')}
                 size="sm"
                 options={[
-                  { value: 'day', label: 'A day' },
-                  { value: 'week', label: 'A week' },
-                  { value: 'month', label: 'A month' },
-                  { value: 'ever', label: 'Until withdrawn' },
+                  { value: 'day', label: t('sharing-a-day') },
+                  { value: 'week', label: t('sharing-a-week') },
+                  { value: 'month', label: t('sharing-a-month') },
+                  { value: 'ever', label: t('sharing-until-withdrawn') },
                 ]}
               />
             </div>
@@ -376,10 +383,10 @@
                 <li>
                   <span class="small-code">{i.code}</span>
                   <span class="about truncate">{expires(i)}</span>
-                  <IconButton label="Copy invitation" size="sm" onclick={() => copy(i.code)}>
+                  <IconButton label={t('sharing-copy')} size="sm" onclick={() => copy(i.code)}>
                     <Copy size={13} />
                   </IconButton>
-                  <IconButton label="Withdraw" size="sm" onclick={() => withdraw(i)}
+                  <IconButton label={t('sharing-withdraw')} size="sm" onclick={() => withdraw(i)}
                     ><X size={13} /></IconButton
                   >
                 </li>
@@ -390,10 +397,10 @@
       {/if}
 
       <section>
-        <h3 class="overline">Who has the project</h3>
+        <h3 class="overline">{t('sharing-who')}</h3>
         {#if !room}
           {#if roomProblem}
-            <p class="hint">The list is with the server, which cannot be reached.</p>
+            <p class="hint">{t('sharing-list-unreachable')}</p>
           {:else}
             <div class="waiting"><Spinner size={16} /></div>
           {/if}
@@ -401,27 +408,35 @@
           <ul class="people">
             <li>
               <span class="avatar" style:background={colourOf(`owner:${room.room}`)}>
-                {initials(owner ? shared.name : 'Owner')}
+                {initials(owner ? shared.name : t('sharing-owner'))}
               </span>
               <span class="who">
-                <span class="name">{owner ? `${shared.name} (you)` : 'The one who shares it'}</span>
-                <span class="about">{room.ownerPresent ? 'Here now' : 'Not here now'}</span>
+                <span class="name"
+                  >{owner ? t('sharing-you', { name: shared.name }) : t('sharing-the-owner')}</span
+                >
+                <span class="about"
+                  >{room.ownerPresent ? t('sharing-here') : t('sharing-not-here')}</span
+                >
               </span>
             </li>
             {#each room.members as m (m.id)}
               <li>
                 <span class="avatar" style:background={colourOf(m.id)}>{initials(m.name)}</span>
                 <span class="who">
-                  <span class="name truncate">{m.name}{m.id === room.you ? ' (you)' : ''}</span>
+                  <span class="name truncate"
+                    >{m.id === room.you ? t('sharing-you', { name: m.name }) : m.name}</span
+                  >
                   <span class="about">
                     {m.present
-                      ? 'Here now'
-                      : `Last here ${ago(new Date(m.lastSeen * 1000).toISOString())}`}
+                      ? t('sharing-here')
+                      : t('sharing-last-here', {
+                          ago: ago(new Date(m.lastSeen * 1000).toISOString()),
+                        })}
                   </span>
                 </span>
                 {#if owner}
                   <IconButton
-                    label="Remove {m.name}"
+                    label={t('sharing-remove-member', { name: m.name })}
                     size="sm"
                     onclick={() => removeMember(m.id, m.name)}
                   >
@@ -432,7 +447,7 @@
             {/each}
           </ul>
           {#if owner && !room.members.length}
-            <p class="hint">No one has joined yet.</p>
+            <p class="hint">{t('sharing-none-joined')}</p>
           {/if}
         {/if}
       </section>
@@ -440,9 +455,9 @@
       <section>
         <TextField
           bind:value={name}
-          label="Your name"
+          label={t('sharing-your-name')}
           size="sm"
-          hint="As the others see you."
+          hint={t('sharing-your-name-seen')}
           onblur={commitName}
           onkeydown={(e) => e.key === 'Enter' && commitName()}
         />
@@ -452,20 +467,20 @@
 
   {#snippet footer()}
     {#if !shared.shared}
-      <Button variant="ghost" onclick={onclose}>Cancel</Button>
+      <Button variant="ghost" onclick={onclose}>{t('common-cancel')}</Button>
       <Button
         variant="primary"
         disabled={busy || !server.trim() || (found?.passwordRequired && !password)}
         onclick={publish}
       >
-        {busy ? 'Sharing…' : 'Share'}
+        {busy ? t('sharing-sharing') : t('sharing-share')}
       </Button>
     {:else}
       <Button variant="ghost" disabled={busy} onclick={end}
-        >{owner ? 'Stop sharing' : 'Leave the project'}</Button
+        >{owner ? t('sharing-stop') : t('sharing-leave-project')}</Button
       >
       <span class="spring"></span>
-      <Button variant="primary" onclick={onclose}>Done</Button>
+      <Button variant="primary" onclick={onclose}>{t('common-done')}</Button>
     {/if}
   {/snippet}
 </Dialog>

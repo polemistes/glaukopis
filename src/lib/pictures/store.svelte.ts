@@ -13,7 +13,7 @@ import {
   PICTURE_ENDINGS,
   type Picture,
 } from '$lib/figures/pictures.svelte';
-import { plural } from '$lib/library/format';
+import { t } from '$lib/i18n';
 import type { Project } from '$lib/project/model/project.svelte';
 import { inlineText, titleHtml } from '$lib/project/model/text';
 import { projects } from '$lib/state/projects.svelte';
@@ -60,18 +60,13 @@ export async function takeIn(paths: string[]): Promise<Picture[]> {
 /** Asks for pictures among the files of this computer, and takes them in. */
 export async function addPictures(): Promise<Picture[]> {
   const chosen = await open({
-    title: 'Add pictures',
+    title: t('pictures-add-title'),
     multiple: true,
-    filters: [{ name: 'Pictures', extensions: PICTURE_ENDINGS }],
+    filters: [{ name: t('pictures-files'), extensions: PICTURE_ENDINGS }],
   });
   if (!chosen) return [];
   const taken = await takeIn(Array.isArray(chosen) ? chosen : [chosen]);
-  if (taken.length)
-    notifyOk(
-      taken.length === 1
-        ? `“${taken[0].name}” is in the store`
-        : `${plural(taken.length, 'picture')} are in the store`,
-    );
+  if (taken.length) notifyOk(t('pictures-taken-in', { count: taken.length, name: taken[0].name }));
   return taken;
 }
 
@@ -92,24 +87,19 @@ export function usersOf(hash: string, open?: Project | null): ProjectInfo[] {
 export async function removePicture(picture: Picture, open?: Project | null): Promise<boolean> {
   const users = usersOf(picture.hash, open).length;
   const ok = await confirm({
-    title: `Remove “${picture.name}” from the store?`,
-    message: users
-      ? `${plural(users, 'project')} ${users === 1 ? 'uses' : 'use'} the picture. ` +
-        `${users === 1 ? 'Its' : 'Their'} figures will be left without the picture. ` +
-        'What is said of it here, and your notes on it, are removed with it.'
-      : 'No project uses the picture. What is said of it here, and your notes on it, are removed with it.',
-    confirm: 'Remove',
+    title: t('pictures-remove-title', { name: picture.name }),
+    message: users ? t('pictures-remove-used', { count: users }) : t('pictures-remove-unused'),
+    confirm: t('common-remove'),
     danger: true,
   });
   if (!ok) return false;
   return pictures.remove(picture.hash);
 }
 
-const KINDS: Record<string, string> = { png: 'PNG', jpg: 'JPEG', svg: 'SVG, a drawing' };
-
 /** What kind of file a picture is, in words. */
 export function kindWords(extension: string): string {
-  return KINDS[extension] ?? extension.toUpperCase();
+  const kinds: Record<string, string> = { png: 'PNG', jpg: 'JPEG', svg: t('pictures-kind-svg') };
+  return kinds[extension] ?? extension.toUpperCase();
 }
 
 /**

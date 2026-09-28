@@ -17,7 +17,7 @@
   import { projectTrash, type ProjectInfo, type Trashed } from '$lib/api/projects';
   import HistoryDialog from './HistoryDialog.svelte';
   import TrashDialog from './TrashDialog.svelte';
-  import { plural } from '$lib/library/format';
+  import { t } from '$lib/i18n';
   import { projects } from '$lib/state/projects.svelte';
   import { router } from '$lib/state/router.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -79,7 +79,7 @@
     if (!naming || busy) return;
     const name = naming.value.trim();
     if (!name) {
-      naming.error = 'Give the project a name.';
+      naming.error = t('home-name-missing');
       return;
     }
     busy = true;
@@ -96,7 +96,7 @@
         naming = null;
       }
     } catch (error) {
-      if (naming) naming.error = describeError(error) ?? 'That did not work.';
+      if (naming) naming.error = describeError(error) ?? t('home-failed');
     } finally {
       busy = false;
     }
@@ -104,53 +104,58 @@
 
   async function remove(p: ProjectInfo) {
     const ok = await confirm({
-      title: `Delete “${p.name}”?`,
+      title: t('home-delete-title', { name: p.name }),
       message: p.sharing
         ? p.sharing.owner
-          ? 'The project is moved to the trash of Glaukopis, from which it can be brought back. It stays on the server and with those you share it with; to take it off the server, open it and stop sharing it first.'
-          : 'The project is moved to the trash of Glaukopis, from which it can be brought back. The others keep theirs.'
-        : 'The project is moved to the trash of Glaukopis, from which it can be brought back. Your references are not touched.',
-      confirm: 'Delete project',
+          ? t('home-delete-owner')
+          : t('home-delete-member')
+        : t('home-delete-message'),
+      confirm: t('home-delete-confirm'),
       danger: true,
     });
     if (!ok) return;
     try {
       await projects.remove(p.id);
-      notifyOk(`“${p.name}” was moved to the trash`);
+      notifyOk(t('home-deleted', { name: p.name }));
       readTrash();
     } catch (error) {
-      notifyError('The project could not be deleted', error);
+      notifyError(t('home-delete-failed'), error);
     }
   }
 
   function items(p: ProjectInfo): MenuItem[] {
     return [
-      { label: 'Open', action: () => open(p) },
+      { label: t('common-open'), action: () => open(p) },
       { kind: 'separator' },
       {
-        label: 'Rename…',
+        label: t('home-menu-rename'),
         icon: Pencil,
         action: () => (naming = { purpose: 'rename', project: p, value: p.name, error: null }),
       },
       {
-        label: 'Duplicate…',
+        label: t('home-menu-duplicate'),
         icon: Copy,
         action: () =>
-          (naming = { purpose: 'copy', project: p, value: `${p.name}, copy`, error: null }),
+          (naming = {
+            purpose: 'copy',
+            project: p,
+            value: t('home-copy-name', { name: p.name }),
+            error: null,
+          }),
       },
-      { label: 'Earlier versions…', icon: History, action: () => (earlier = p) },
+      { label: t('home-menu-history'), icon: History, action: () => (earlier = p) },
       { kind: 'separator' },
-      { label: 'Delete', icon: Trash2, danger: true, action: () => remove(p) },
+      { label: t('common-delete'), icon: Trash2, danger: true, action: () => remove(p) },
     ];
   }
 
   function facts(p: ProjectInfo): string {
     const parts: string[] = [];
-    if (p.maps.length > 1) parts.push(plural(p.maps.length, 'map'));
+    if (p.maps.length > 1) parts.push(t('home-maps', { count: p.maps.length }));
     const elements = p.maps.reduce((n, m) => n + m.elements, 0);
-    if (elements > 1) parts.push(plural(elements, 'element'));
-    if (p.words) parts.push(plural(p.words, 'word'));
-    if (p.references) parts.push(plural(p.references, 'reference'));
+    if (elements > 1) parts.push(t('home-elements', { count: elements }));
+    if (p.words) parts.push(t('home-words', { count: p.words }));
+    if (p.references) parts.push(t('home-references', { count: p.references }));
     return parts.join(' · ');
   }
 </script>
@@ -165,24 +170,24 @@
   <div class="inner">
     <header>
       <div class="title">
-        <h1>Projects</h1>
+        <h1>{t('home-title')}</h1>
       </div>
       {#if projects.list.length}
         <div class="actions">
           <Button variant="ghost" onclick={() => (joining = true)}>
             {#snippet icon()}<Users size={15} />{/snippet}
-            Join a shared project
+            {t('home-join')}
           </Button>
           <Button variant="ghost" onclick={() => fromDocument()}>
             {#snippet icon()}<FileInput size={15} />{/snippet}
-            A project from a document…
+            {t('home-from-document')}
           </Button>
           <Button
             variant="primary"
             onclick={() => (naming = { purpose: 'new', value: '', error: null })}
           >
             {#snippet icon()}<Plus size={15} />{/snippet}
-            New project
+            {t('home-new')}
           </Button>
         </div>
       {/if}
@@ -193,23 +198,22 @@
     {:else if !projects.list.length}
       <div class="welcome">
         <Mark size={120} />
-        <h2>Welcome to Glaukopis</h2>
+        <h2>{t('home-welcome')}</h2>
         <p>
-          A project holds the work on one book or article: the maps of your ideas, the texts you
-          write into them, and the references they rest on.
+          {t('home-welcome-text')}
         </p>
         <Button
           variant="primary"
           size="lg"
           onclick={() => (naming = { purpose: 'new', value: '', error: null })}
         >
-          Begin a project
+          {t('home-begin')}
         </Button>
         <button type="button" class="quiet" onclick={() => (joining = true)}>
-          or join a project that is shared with you
+          {t('home-or-join')}
         </button>
         <button type="button" class="quiet" onclick={() => fromDocument()}>
-          or make one from a document you have written
+          {t('home-or-from-document')}
         </button>
       </div>
     {:else}
@@ -236,22 +240,25 @@
                 {#each p.maps.slice(0, 4) as m (m.id)}
                   <li class="truncate">{m.name}</li>
                 {/each}
-                {#if p.maps.length > 4}<li class="more">and {p.maps.length - 4} more</li>{/if}
+                {#if p.maps.length > 4}<li class="more">
+                    {t('home-more-maps', { count: p.maps.length - 4 })}
+                  </li>{/if}
               </ul>
             {/if}
             <div class="spring"></div>
             <div class="foot">
               <div class="meta">
-                <div class="facts truncate">{facts(p) || 'Not begun'}</div>
+                <div class="facts truncate">{facts(p) || t('home-not-begun')}</div>
                 <div class="when">
-                  {#if p.sharing}<span class="shared"><Users size={11} /> Shared ·</span>{/if}
-                  Changed {ago(p.modified)}
+                  {#if p.sharing}<span class="shared"><Users size={11} /> {t('home-shared')} ·</span
+                    >{/if}
+                  {t('home-changed', { ago: ago(p.modified) })}
                 </div>
               </div>
               <button
                 type="button"
                 class="menu"
-                aria-label="More for {p.name}"
+                aria-label={t('home-more-for', { name: p.name })}
                 onclick={(e) => {
                   e.stopPropagation();
                   openMenu(e.currentTarget, items(p), { align: 'end' });
@@ -268,7 +275,7 @@
       <div class="under">
         <button type="button" class="quiet" onclick={() => (showTrash = true)}>
           <Trash2 size={13} />
-          {plural(trash.length, 'deleted project')}
+          {t('home-deleted-projects', { count: trash.length })}
         </button>
       </div>
     {/if}
@@ -313,10 +320,10 @@
   <Dialog
     open
     title={naming.purpose === 'new'
-      ? 'New project'
+      ? t('home-new')
       : naming.purpose === 'rename'
-        ? 'Rename project'
-        : 'Duplicate project'}
+        ? t('home-rename-title')
+        : t('home-duplicate-title')}
     width={440}
     onclose={() => (naming = null)}
   >
@@ -328,23 +335,23 @@
     >
       <TextField
         bind:value={naming.value}
-        label="Name"
+        label={t('home-name')}
         size="lg"
         serif
-        placeholder="The working title of the book or article"
+        placeholder={t('home-name-placeholder')}
         error={naming.error}
         data-autofocus
         oninput={() => naming && (naming.error = null)}
       />
     </form>
     {#snippet footer()}
-      <Button variant="ghost" onclick={() => (naming = null)}>Cancel</Button>
+      <Button variant="ghost" onclick={() => (naming = null)}>{t('common-cancel')}</Button>
       <Button variant="primary" disabled={busy || !naming?.value.trim()} onclick={commit}>
         {naming?.purpose === 'new'
-          ? 'Create'
+          ? t('home-create')
           : naming?.purpose === 'rename'
-            ? 'Rename'
-            : 'Duplicate'}
+            ? t('common-rename')
+            : t('home-duplicate')}
       </Button>
     {/snippet}
   </Dialog>
