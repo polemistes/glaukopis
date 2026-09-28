@@ -4,22 +4,27 @@ import { Project } from '$lib/project/model/project.svelte';
 import { citationLabel, languageOf, locatorWord, setProject } from './references.svelte';
 import { LOCATOR_LABELS, type CiteItem } from './schema';
 
-/** A project with one map, in a language, and a reference of its own. */
+/** A project with one map, in a language, and references of its own: one of them without a year. */
 function project(language?: string) {
   const p = new Project(null);
   const map = p.createMap('Wrath');
   if (language) p.setDocument(map, { language });
+  const reference = { type: 'book', fields: {}, names: {}, modified: '2026-01-01', container: '' };
   p.putReference({
+    ...reference,
     id: 'nagy',
     key: 'nagy1979',
-    type: 'book',
-    fields: {},
-    names: {},
-    modified: '2026-01-01',
     authors: 'Nagy',
     year: '1979',
     title: 'The Best of the Achaeans',
-    container: '',
+  });
+  p.putReference({
+    ...reference,
+    id: 'hymn',
+    key: 'hymn',
+    authors: '',
+    year: '',
+    title: 'Hymn to Demeter',
   });
   setProject(p);
   return p.map(map)!.root;
@@ -78,6 +83,7 @@ describe('a citation in the text', () => {
     const element = project();
     expect(citationLabel(items, 'normal')).toBe('(Nagy 1979, ch. 3)');
     expect(citationLabel(items, 'normal', languageOf(element))).toBe('(Nagy 1979, ch. 3)');
+    expect(citationLabel([{ id: 'hymn' }], 'normal', 'en-GB')).toBe('(Hymn to Demeter n.d.)');
   });
 
   it('tells in the language of the interface what is wrong with it', () => {

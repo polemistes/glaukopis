@@ -6,7 +6,7 @@
 
 import { untrack } from 'svelte';
 import type { Reference, Summary } from '$lib/api/library';
-import { primary, t } from '$lib/i18n';
+import { documentWord, primary, t } from '$lib/i18n';
 import { library } from '$lib/state/library.svelte';
 import type { Project } from '$lib/project/model/project.svelte';
 import type { RefRecord } from '$lib/project/model/types';
@@ -168,7 +168,8 @@ export function itemLabel(
   const who = ref.authors.replace(/ \(eds?\.\)$/, '') || shortTitle(ref.title) || ref.key;
   const parts: string[] = [];
   if (item.prefix) parts.push(item.prefix.trim());
-  const year = ref.year || 'n.d.';
+  // A word of the text, as documents have it in its language, where they have it.
+  const year = ref.year || documentWord(options.language, 'n.d.');
   parts.push(item.suppressAuthor || options.suppressAuthor ? year : `${who} ${year}`);
   let out = parts.join(' ');
   const locator = locatorText(item, options.language);
