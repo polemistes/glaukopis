@@ -568,6 +568,48 @@ try {
   await closeWindow();
 
   // =====================================================================
+  // A project that is made of a document
+  // =====================================================================
+  await app.click('header button[aria-label="All projects"]');
+  await app.waitForText('h1', 'Projects');
+  await sleep(900);
+  {
+    const among = await app.exec(
+      `const r = document.querySelector('.home').getBoundingClientRect();
+       return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };`,
+    );
+    await drop([join(documents, 'cited.docx')], among.x, among.y);
+    await app.waitFor('dialog [data-fact="words"]', 20000);
+    await sleep(250);
+  }
+  check('among the projects, what was said of making citations at once is as it was left', (await choice('at-once')) === false && (await choice('go-through')) === true);
+  await press(await app.exec(`return document.querySelector('dialog input[data-choice="at-once"]')`));
+  await sleep(300);
+  await app.clickText('dialog footer button', 'Make the project');
+  await app.waitFor(W, 20000);
+  await sleep(900);
+  const named = await app.exec(`return document.querySelector('.project header .name').textContent.trim()`);
+  list = await rows();
+  text = await inText();
+  check(
+    'when a project is made of a document, the window opens in it for what is left',
+    named === 'The wrath, cited' && JSON.stringify(list) === '["(see Nagy 1979, chap. 2; West 1988; 1960, 12 and elsewhere) | likely","(West 1988) | likely"]',
+    JSON.stringify([named, list]),
+  );
+  check(
+    'and what was certain is cited: more now, since the library has another of the works',
+    JSON.stringify(text.citations) === '["(Nagy 1979, 73)","(Lord 1960, 12)"]' && text.notes.includes('See (Nagy 1979, 73); but he says otherwise elsewhere.'),
+    JSON.stringify(text),
+  );
+  await closeWindow();
+  await app.click('header button[aria-label="All projects"]');
+  await app.waitForText('h1', 'Projects');
+  await sleep(900);
+  await app.clickText('.card h3', 'Homer');
+  await app.waitFor('.tabs .tab', 8000);
+  await sleep(600);
+
+  // =====================================================================
   // What only looks like a citation: when `found_propose` answers
   // =====================================================================
   const proposes =
