@@ -15,10 +15,18 @@
 //! Pandoc, which is then kept from reading anything but the file; a file
 //! that names its pictures (Markdown, HTML, LaTeX) has them read from where
 //! it says, beside it. Nothing is fetched from the network.
+//!
+//! An OpenDocument or a Word file is looked at before Pandoc reads it, and
+//! where Pandoc would lose something of it, Pandoc reads a copy that is
+//! made for it (`lifting.rs`). What is said of figures and tables, which
+//! such files have as paragraphs beside them, is given to them
+//! (`captions.rs`).
+
+mod captions;
+mod lifting;
 
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -252,12 +260,13 @@ pub struct Imported {
 }
 
 /// What a file says of itself besides its text, where Pandoc does not tell.
+/// Not the language: what such files say of that is what the program that
+/// wrote them was set to, and not what the text is written in.
 #[derive(Debug, Clone, Default)]
 pub struct Properties {
     pub title: Option<String>,
     pub authors: Vec<String>,
     pub keywords: Vec<String>,
-    pub language: Option<String>,
 }
 
 /// A picture of the document, by what the document calls it.
@@ -336,6 +345,9 @@ pub fn read(
         .tempdir_in(work)
         .context(|| format!("creating a directory in {}", work.display()))?;
     let work = place.path();
+    // Pandoc works elsewhere than here: the file is named from the root.
+    let named = std::path::absolute(path).unwrap_or_else(|_| path.to_owned());
+    let path = named.as_path();
     let file = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     let Some(format) = Format::of(path) else {
         return Err(Error::invalid(format!(
@@ -354,8 +366,13 @@ pub fn read(
 
     let before: HashSet<String> = pictures.list().into_iter().map(|p| p.hash).collect();
     let mut taken: Vec<String> = Vec::new();
+    // The pictures that were asked for, by what the document calls them.
+    let mut asked: HashSet<String> = HashSet::new();
+    let mut held = 0usize;
+    let mut told: Vec<String> = Vec::new();
     let media = work.join("media");
     let mut take_in = |named: &str| -> std::result::Result<Picture, String> {
+        asked.insert(named.to_owned());
         let bytes = picture_bytes(named, &beside, &media, format.holds_pictures())?;
         let picture = pictures.add(&name_of(named), &bytes).map_err(|_| match kind_of_name(named) {
             Some(kind) => format!("it is of a kind that is not read ({kind})"),
@@ -388,7 +405,10 @@ pub fn read(
             } else {
                 beside.as_path()
             };
-            args.push(path.display().to_string());
+            let prepared = lifting::prepare(path, format, work);
+            held = prepared.held;
+            told = prepared.remarks;
+            args.push(prepared.copy.as_deref().unwrap_or(path).display().to_string());
             let json = pandoc(tools, &args, dir, work, stop).map_err(|e| match e {
                 Error::Program { message, .. } => Error::invalid(format!(
                     "“{file}” could not be read as {}. It may be damaged, or of another kind than its name says. \
@@ -399,8 +419,7 @@ pub fn read(
             })?;
             let value: Value = serde_json::from_slice(&json)
                 .map_err(|e| Error::invalid(format!("what Pandoc made of “{file}” could not be read: {e}")))?;
-            let properties = if format == Format::Odt { odt_properties(path) } else { Properties::default() };
-            convert(&value, &stem, &properties, keys, &mut take_in)
+            convert(&value, &stem, &prepared.properties, keys, &mut take_in)
         }
     };
     if stop.load(Ordering::Relaxed) {
@@ -409,9 +428,19 @@ pub fn read(
         }
         return Err(stopped());
     }
-    if format == Format::Docx {
-        imported.remarks.extend(docx_remarks(path));
+    // Never without a word: the pictures that the file holds and the text that was read has not.
+    let wanting = held.saturating_sub(asked.len());
+    if wanting > 0 {
+        imported.remarks.push(format!(
+            "{} that the file holds {} not in the text that was read, and {} left out. {} stand in the head or the \
+             foot of the pages, or in a drawing.",
+            several(wanting, "picture", "pictures"),
+            if wanting == 1 { "is" } else { "are" },
+            if wanting == 1 { "is" } else { "are" },
+            if wanting == 1 { "It may" } else { "They may" }
+        ));
     }
+    imported.remarks.extend(told);
     imported.file = file;
     imported.kind = format.name().to_owned();
     imported.pictures = taken;
@@ -581,56 +610,6 @@ fn text_of(text: &str) -> Inline {
     Inline::Text { text: text.to_owned(), marks: BTreeMap::new() }
 }
 
-/// What an ODT says of itself, which Pandoc does not read.
-fn odt_properties(path: &Path) -> Properties {
-    let mut out = Properties::default();
-    let Some(xml) = zipped(path, "meta.xml", 4 * 1024 * 1024) else { return out };
-    let Ok(parsed) = roxmltree::Document::parse(&xml) else { return out };
-    for node in parsed.descendants().filter(|n| n.is_element()) {
-        let said = node.text().map(str::trim).filter(|t| !t.is_empty());
-        let Some(said) = said else { continue };
-        match node.tag_name().name() {
-            "title" => out.title = Some(said.to_owned()),
-            "initial-creator" => out.authors = vec![said.to_owned()],
-            "keyword" => out.keywords.push(said.to_owned()),
-            "language" => out.language = Some(said.to_owned()),
-            _ => {}
-        }
-    }
-    out
-}
-
-/// A part of a file that is a ZIP, as text, if it is there and not too large.
-fn zipped(path: &Path, name: &str, most: u64) -> Option<String> {
-    let file = fs::File::open(path).ok()?;
-    let mut archive = zip::ZipArchive::new(file).ok()?;
-    let part = archive.by_name(name).ok()?;
-    let mut text = String::new();
-    part.take(most).read_to_string(&mut text).ok()?;
-    Some(text)
-}
-
-/// What a DOCX holds that is not brought in as it is: changes that are
-/// tracked, and comments.
-fn docx_remarks(path: &Path) -> Vec<String> {
-    let mut out = Vec::new();
-    if let Some(xml) = zipped(path, "word/document.xml", MAX_BYTES)
-        && ["<w:ins ", "<w:del ", "<w:moveFrom ", "<w:moveTo "].iter().any(|mark| xml.contains(mark))
-    {
-        out.push(
-            "The document has changes that are tracked. The text is brought in as it stands when all of them are \
-             accepted."
-                .to_owned(),
-        );
-    }
-    if let Some(xml) = zipped(path, "word/comments.xml", MAX_BYTES)
-        && xml.contains("<w:comment ")
-    {
-        out.push("The document has comments in the margin, which are left out.".to_owned());
-    }
-    out
-}
-
 // =========================================================================
 // From the shapes of Pandoc to ours
 // =========================================================================
@@ -651,8 +630,8 @@ struct Tally {
     raw: usize,
     /// Notes on headings, which stand in the text under them.
     moved: usize,
-    /// Notes in what is said of figures and tables, which stand there in brackets.
-    bracketed: usize,
+    /// What is said of figures and tables: what was made of it.
+    said: captions::Taken,
     /// Headings where a map has none: in quotations, lists, tables.
     headings: usize,
     /// Pictures that were left out, with why.
@@ -1128,11 +1107,36 @@ impl Reading<'_, '_> {
                     }
                 }
                 "Image" => {
-                    let shows = written(list(&c[1]));
-                    let shows = if shows.trim().is_empty() { c[2][1].as_str().unwrap_or("") } else { shows.trim() };
-                    let shows = shows.trim().trim_start_matches("fig:").to_owned();
-                    if let Some(figure) = self.figure(&c[0], &shows, c[2][0].as_str().unwrap_or("")) {
-                        out.push(Piece::Block(figure));
+                    let named = c[2][0].as_str().unwrap_or("");
+                    let title = c[2][1].as_str().unwrap_or("").trim();
+                    if let Some(title) = title.strip_prefix("fig:") {
+                        // As Pandoc once said that a picture is a figure: what
+                        // stands with it is what is said of it.
+                        let mut pieces = Vec::new();
+                        self.inlines(list(&c[1]), &Marks::new(), &mut pieces);
+                        let line: Vec<Inline> = pieces
+                            .into_iter()
+                            .filter_map(|p| match p {
+                                Piece::Inline(i) => Some(i),
+                                Piece::Block(_) => None,
+                            })
+                            .collect();
+                        let line = captions::said(line, &mut self.tally.said);
+                        if let Some(mut figure) = self.figure(&c[0], title.trim(), named) {
+                            if let Block::Figure { caption, numbered, .. } = &mut figure {
+                                *numbered = !line.is_empty();
+                                *caption = line;
+                            }
+                            out.push(Piece::Block(figure));
+                        } else if !line.is_empty() {
+                            out.push(Piece::Block(Block::Paragraph { content: line }));
+                        }
+                    } else {
+                        let shows = written(list(&c[1]));
+                        let shows = if shows.trim().is_empty() { title } else { shows.trim() };
+                        if let Some(figure) = self.figure(&c[0], shows, named) {
+                            out.push(Piece::Block(figure));
+                        }
                     }
                 }
                 "Note" => {
@@ -1244,11 +1248,25 @@ impl Reading<'_, '_> {
     fn paragraph(&mut self, inlines: &[Value], marks: &Marks, out: &mut Vec<Block>) {
         let mut pieces = Vec::new();
         self.inlines(inlines, marks, &mut pieces);
+        // A paragraph that is marked as saying something of a figure or a
+        // table may hold the picture itself, before its words: the mark is
+        // of the words.
+        let marked = match pieces.first_mut() {
+            Some(Piece::Inline(Inline::Text { text, .. })) if text.starts_with(lifting::MARK) => {
+                *text = text[lifting::MARK.len()..].to_owned();
+                true
+            }
+            _ => false,
+        };
         let mut line: Vec<Inline> = Vec::new();
         let end = |line: &mut Vec<Inline>, out: &mut Vec<Block>| {
             let mut content = std::mem::take(line);
             trim(&mut content);
             if !content.is_empty() {
+                if marked {
+                    content.insert(0, text_of(lifting::MARK));
+                    content = join(content);
+                }
                 out.push(Block::Paragraph { content });
             }
         };
@@ -1345,25 +1363,12 @@ impl Reading<'_, '_> {
         items.iter().map(|item| self.blocks(list(item))).filter(|item| !item.is_empty()).collect()
     }
 
-    /// What is said of a figure or a table: a line, in which no note stands.
+    /// What is said of a figure or a table: a line, in which no note
+    /// stands, and without a word and a number before it.
     fn said(&mut self, blocks: &[Value]) -> Vec<Inline> {
         let converted = self.blocks(blocks);
         let line = line_of(converted, &mut self.hoisted);
-        let mut out = Vec::new();
-        for i in line {
-            match i {
-                Inline::Footnote { content, .. } => {
-                    self.tally.bracketed += 1;
-                    out.push(text_of(" ("));
-                    out.extend(content.into_iter().filter(|i| !matches!(i, Inline::Footnote { .. })));
-                    out.push(text_of(")"));
-                }
-                other => out.push(other),
-            }
-        }
-        let mut out = join(out);
-        trim(&mut out);
-        out
+        captions::said(line, &mut self.tally.said)
     }
 
     /// What Pandoc calls a figure: something with a caption, most often a picture.
@@ -1375,7 +1380,7 @@ impl Reading<'_, '_> {
             for b in &mut within {
                 if let Block::Figure { caption: said, alt, numbered, .. } = b {
                     // What is said of it twice is said once.
-                    if alt.trim() == document::plain(&caption) {
+                    if captions::said_twice(alt, &document::plain(&caption)) {
                         alt.clear();
                     }
                     *numbered = !caption.is_empty();
@@ -1702,7 +1707,7 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
     let empty = json!({});
     let meta = doc.get("meta").unwrap_or(&empty);
     let of = |names: &[&str]| names.iter().find_map(|n| meta.get(*n)).map(meta_text).filter(|t| !t.is_empty());
-    let language = of(&["lang", "language"]).or_else(|| properties.language.clone());
+    let language = of(&["lang", "language"]);
 
     let mut reading = Reading {
         keys,
@@ -1738,11 +1743,14 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
     }
     title.retain(|i| !matches!(i, Inline::Text { text, .. } if text.is_empty()));
     let mut from_properties = !title.is_empty();
+    // Whether the title is what the file says of itself, which is without marks.
+    let mut bare = false;
     if title.is_empty()
         && let Some(given) = properties.title.as_deref().map(str::trim).filter(|t| !t.is_empty())
     {
         title = vec![text_of(given)];
         from_properties = true;
+        bare = true;
     }
 
     reading.parts(list(doc.get("blocks").unwrap_or(&Value::Null)), &mut parts);
@@ -1774,7 +1782,29 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
             && document::plain(content) == said
             && !content.iter().any(|i| matches!(i, Inline::Footnote { .. } | Inline::Citation { .. }))
         {
-            parts[0].blocks.remove(0);
+            let set = parts[0].blocks.remove(0);
+            // As it is set there, it has the marks the writer gave it.
+            if bare && let Block::Paragraph { content } = set {
+                let mut name: Vec<Inline> = content
+                    .into_iter()
+                    .filter_map(|i| match i {
+                        Inline::Text { text, marks } => Some(Inline::Text {
+                            text,
+                            marks: marks
+                                .into_iter()
+                                .filter(|(name, _)| matches!(name.as_str(), "em" | "smallcaps" | "sup" | "sub"))
+                                .collect(),
+                        }),
+                        Inline::Break => Some(text_of(" ")),
+                        _ => None,
+                    })
+                    .collect();
+                name = join(name);
+                trim(&mut name);
+                if document::plain(&name) == said {
+                    title = name;
+                }
+            }
         } else if parts.len() > 1 && document::plain(&parts[1].heading) == said {
             let first = parts.remove(1);
             parts[0].notes.extend(first.notes);
@@ -1787,6 +1817,10 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
     let mut sections: Vec<Section> = Vec::new();
     let mut bibliography: Option<String> = None;
     for mut part in parts {
+        captions::attach(&mut part.blocks, &mut reading.tally.said);
+        part.heading = captions::unmarked(part.heading);
+        part.notes = captions::unmarked(part.notes);
+        captions::unmark(&mut part.blocks);
         if !part.notes.is_empty() {
             match part.blocks.first_mut() {
                 Some(Block::Paragraph { content }) => {
@@ -1845,13 +1879,23 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
             }
         ));
     }
-    if tally.bracketed > 0 {
+    if tally.said.labels > 0 {
+        remarks.push(format!(
+            "{} began with a word and a number, such as “{}”. {} left out: the map numbers its figures and tables \
+             itself. Where the text names one of them by its number, that is text as it was written, and does not \
+             follow the numbers of the map.",
+            several(tally.said.labels, "caption", "captions"),
+            tally.said.first.as_deref().unwrap_or("Figure 1:"),
+            if tally.said.labels == 1 { "It is" } else { "They are" }
+        ));
+    }
+    if tally.said.bracketed > 0 {
         remarks.push(format!(
             "{} there in brackets.",
-            if tally.bracketed == 1 {
+            if tally.said.bracketed == 1 {
                 "A note in what is said of a figure or a table stands".to_owned()
             } else {
-                format!("{} notes in what is said of figures or tables stand", tally.bracketed)
+                format!("{} notes in what is said of figures or tables stand", tally.said.bracketed)
             }
         ));
     }
@@ -1914,7 +1958,7 @@ pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, ta
     Imported {
         file: String::new(),
         kind: String::new(),
-        title,
+        title: captions::unmarked(title),
         subtitle: of(&["subtitle"]),
         authors,
         date: of(&["date"]),
@@ -2307,6 +2351,40 @@ mod tests {
             "{:?}",
             read.remarks
         );
+    }
+
+    #[test]
+    fn what_stands_with_a_picture_that_is_said_to_be_a_figure_is_said_of_it() {
+        // As Pandoc gives a picture in a frame of an ODT that it reads as it is.
+        let read = read_json(
+            &doc(
+                "{}",
+                &[format!(
+                    r#"{{"t":"Para","c":[{{"t":"Image","c":[["",[],[["width","6cm"]]],[{}],["Pictures/1.png","fig:"]]}},{{"t":"Str","c":"After."}}]}}"#,
+                    words("Figure 1: The shield")
+                )],
+            ),
+            &none,
+        );
+        assert_eq!(
+            read.sections[0].blocks,
+            vec![
+                Block::Figure {
+                    id: String::new(),
+                    file: "a".repeat(64),
+                    extension: "png".into(),
+                    name: "1.png".into(),
+                    caption: vec![text("The shield")],
+                    alt: String::new(),
+                    width: 50,
+                    numbered: true,
+                    align: None,
+                    wrap: None,
+                },
+                paragraph(vec![text("After.")]),
+            ]
+        );
+        assert!(read.remarks[0].starts_with("1 caption began with a word and a number, such as “Figure 1:”. It is"));
     }
 
     #[test]
@@ -2908,6 +2986,287 @@ Nagy, G. 1979. The Best of the Achaeans.
         let stop = AtomicBool::new(true);
         let error = read(&everything(&s), &s.tools, &s.pictures, &work, &library, &stop).unwrap_err();
         assert_eq!(error.to_string(), "The reading was stopped.");
+    }
+
+    // ---- files as word processors write them ----
+
+    /// A document of `crates/core/tests/documents`. Those of LibreOffice
+    /// were made of the `.fodt` beside them, which was written by hand, by
+    /// `soffice --headless --convert-to odt` and `--convert-to docx`.
+    fn written(name: &str) -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/documents").join(name)
+    }
+
+    fn all_text(read: &Imported) -> String {
+        let mut text = String::new();
+        for section in &read.sections {
+            text.push_str(&document::plain(&section.heading));
+            text.push('\n');
+            document::walk(&section.blocks, &mut |_| {}, &mut |l| {
+                text.push_str(&document::plain(l));
+                text.push('\n');
+            });
+        }
+        text
+    }
+
+    const CAPTIONS: &str = "3 captions began with a word and a number, such as “Figure 1:”. They are left out: the map \
+                            numbers its figures and tables itself. Where the text names one of them by its number, \
+                            that is text as it was written, and does not follow the numbers of the map.";
+    const TRACKED: &str = "The document has changes that are tracked. The text is brought in as it stands when all of \
+                           them are accepted.";
+
+    #[test]
+    fn a_picture_in_a_frame_with_what_is_said_of_it() {
+        let Some(s) = setup() else { return };
+        for (name, keywords, shows) in [
+            ("captions.odt", vec!["Homer", "the shield"], ["", ""]),
+            // LibreOffice writes the keywords of a DOCX with nothing but room between them.
+            ("captions.docx", vec!["Homer", "the", "shield"], ["A round shield", "The river round the rim"]),
+        ] {
+            let read = s.read(&written(name)).unwrap();
+            assert_eq!(read.title, vec![text("The shield of "), marked("Achilles", &["em"])], "{name}");
+            assert_eq!(read.authors, vec![Author { name: "A. Scholar".into(), ..Default::default() }], "{name}");
+            assert_eq!(read.keywords, keywords, "{name}");
+            // What the file says of the language is what the computer was set to.
+            assert_eq!(read.language, None, "{name}");
+            assert_eq!(
+                shape(&read),
+                vec![
+                    (0, String::new()),
+                    (1, "The shield".into()),
+                    // Written as a paragraph of the style of a heading.
+                    (2, "What is on it".into()),
+                    (1, "The river".into()),
+                ],
+                "{name}"
+            );
+            assert_eq!(read.remarks, vec![CAPTIONS, TRACKED], "{name}");
+
+            // The frame stood in the paragraph that is before it now.
+            assert_eq!(kinds(&read.sections[1].blocks), vec!["paragraph", "paragraph", "figure"], "{name}");
+            assert_eq!(
+                read.sections[1].blocks[..2],
+                [
+                    paragraph(vec![text("Hephaestus makes it, as Figure 1 shows. This was put in. The end.")]),
+                    paragraph(vec![text("He looks at the shield.")]),
+                ],
+                "{name}"
+            );
+            let Block::Figure { caption, numbered, alt, file, extension, .. } = &read.sections[1].blocks[2] else {
+                panic!("{name}")
+            };
+            assert_eq!(caption, &vec![text("The shield, with its "), marked("rings", &["em"])], "{name}");
+            assert!(*numbered, "{name}");
+            assert_eq!(alt, shows[0], "{name}");
+            assert!(s.pictures.has(file, extension), "{name}");
+            assert_eq!(s.pictures.get(file).unwrap().width, Some(120), "{name}");
+
+            // What is said of the table stood over it.
+            assert_eq!(kinds(&read.sections[2].blocks), vec!["table", "paragraph"], "{name}");
+            let Block::Table(table) = &read.sections[2].blocks[0] else { panic!("{name}") };
+            assert_eq!(table.caption, vec![text("What the shield shows")], "{name}");
+            assert!(table.numbered, "{name}");
+            assert_eq!(table.rows.len(), 3, "{name}");
+            assert!(table.rows[0].iter().all(|c| c.header), "{name}");
+            // What names the table is text, and no caption.
+            assert_eq!(
+                read.sections[2].blocks[1],
+                paragraph(vec![text("Table 1 shows that the rings are many.")]),
+                "{name}"
+            );
+
+            // A picture in the line, and what is said of it in the paragraph under it.
+            assert_eq!(kinds(&read.sections[3].blocks), vec!["figure", "paragraph"], "{name}");
+            let Block::Figure { caption, numbered, alt, file, extension, .. } = &read.sections[3].blocks[0] else {
+                panic!("{name}")
+            };
+            assert_eq!(caption, &vec![text("Ocean, the river")], "{name}");
+            assert!(*numbered, "{name}");
+            assert_eq!(alt, shows[1], "{name}");
+            assert!(s.pictures.has(file, extension), "{name}");
+            assert_eq!(s.pictures.get(file).unwrap().width, Some(60), "{name}");
+
+            assert_eq!(read.counts.figures, 2, "{name}");
+            let all = all_text(&read);
+            // What was taken out with the changes tracked is not in the text; what was put in is.
+            assert!(!all.contains("taken out"), "{name}: {all}");
+            assert!(all.contains("This was put in."), "{name}: {all}");
+            assert!(!all.contains(lifting::MARK), "{name}: {all}");
+            assert!(!all.contains("Figure 1:") && !all.contains("Table 1:"), "{name}: {all}");
+        }
+    }
+
+    #[test]
+    fn a_frame_that_holds_text_alone() {
+        let Some(s) = setup() else { return };
+        // In these the picture was lost when LibreOffice read what they were made of: they hold none.
+        for name in ["book.odt", "book.docx"] {
+            let read = s.read(&written(name)).unwrap();
+            assert_eq!(document::plain(&read.title), "The wrath of Achilles", "{name}");
+            assert_eq!(read.authors, vec![Author { name: "Robert Emil Berge".into(), ..Default::default() }], "{name}");
+            assert_eq!(read.keywords, vec!["Homer", "wrath"], "{name}");
+            assert_eq!(read.language, None, "{name}");
+            let forms = read.sections.iter().find(|s| document::plain(&s.heading) == "Its forms").unwrap();
+            assert_eq!(kinds(&forms.blocks), vec!["table", "paragraph"], "{name}");
+            let Block::Table(table) = &forms.blocks[0] else { panic!("{name}") };
+            assert_eq!(table.caption, vec![text("Forms of the word")], "{name}");
+            assert!(table.numbered, "{name}");
+            let iliad = read.sections.iter().find(|s| document::plain(&s.heading) == "In the Iliad").unwrap();
+            assert_eq!(
+                iliad.blocks,
+                vec![
+                    paragraph(vec![text("He looks at the shield.")]),
+                    paragraph(vec![text("Figure : The shield of Achilles")]),
+                ],
+                "{name}"
+            );
+            assert_eq!(read.counts.figures, 0, "{name}");
+            assert_eq!(read.remarks.len(), 2, "{name}: {:?}", read.remarks);
+            assert!(read.remarks[0].starts_with("1 caption began with a word and a number, such as “Table 1:”. It is"));
+            assert_eq!(read.remarks[1], TRACKED, "{name}");
+        }
+    }
+
+    #[test]
+    fn pictures_that_the_file_holds_and_the_text_has_not_are_told_of() {
+        let Some(s) = setup() else { return };
+        // The same, with the second picture taken out of the text and left in the file.
+        let source = written("captions.odt");
+        let mut archive = zip::ZipArchive::new(fs::File::open(&source).unwrap()).unwrap();
+        let mut content = String::new();
+        std::io::Read::read_to_string(&mut archive.by_name("content.xml").unwrap(), &mut content).unwrap();
+        let from = content.find(r#"<draw:frame draw:style-name="fr3""#).unwrap();
+        let to = from + content[from..].find("</draw:frame>").unwrap() + "</draw:frame>".len();
+        content.replace_range(from..to, "");
+        let made = s.desk().join("wanting.odt");
+        lifting::write_copy(&mut archive, &made, "content.xml", &content).unwrap();
+
+        let read = s.read(&made).unwrap();
+        assert_eq!(read.counts.figures, 1);
+        assert_eq!(
+            read.remarks,
+            vec![
+                "2 captions began with a word and a number, such as “Figure 1:”. They are left out: the map numbers \
+                 its figures and tables itself. Where the text names one of them by its number, that is text as it \
+                 was written, and does not follow the numbers of the map.",
+                "1 picture that the file holds is not in the text that was read, and is left out. It may stand in \
+                 the head or the foot of the pages, or in a drawing.",
+                TRACKED,
+            ]
+        );
+        // What was said of it had nothing to be said of, and stands as it was written.
+        let river = read.sections.iter().find(|s| document::plain(&s.heading) == "The river").unwrap();
+        assert_eq!(river.blocks[0], paragraph(vec![text("Figure 1. Ocean, the river")]));
+    }
+
+    #[test]
+    fn what_is_said_of_figures_and_tables_as_word_has_it() {
+        let Some(s) = setup() else { return };
+        let desk = s.desk();
+        fs::write(desk.join("shield.png"), PNG).unwrap();
+        // A paragraph of the style of captions under a picture in the line,
+        // and over a table; and the ways of Pandoc itself.
+        fs::write(
+            desk.join("word.md"),
+            r#"---
+title: The shield
+---
+
+Before it, Figure 1 is named.
+
+![A round shield](shield.png)\
+
+::: {custom-style="Caption"}
+Figure 1: The shield of *Achilles*
+:::
+
+::: {custom-style="Caption"}
+Table 1 Rings
+:::
+
+| Ring  | Shows |
+|-------|-------|
+| first | stars |
+
+::: {custom-style="Caption"}
+Of nothing that stands here
+:::
+
+Text between.
+
+| Ring   | Shows  |
+|--------|--------|
+| second | cities |
+
+: Table 2: As Pandoc writes what is said of a table
+
+![Figure 2. As Pandoc writes what is said of a figure](shield.png)
+"#,
+        )
+        .unwrap();
+        s.pandoc(&["word.md", "-o", "word.docx"]);
+        let read = s.read(&desk.join("word.docx")).unwrap();
+        let blocks = &read.sections[0].blocks;
+        assert_eq!(
+            kinds(blocks),
+            vec!["paragraph", "figure", "table", "paragraph", "paragraph", "table", "figure"],
+            "{blocks:?}"
+        );
+        let said: Vec<(String, bool)> = blocks
+            .iter()
+            .filter_map(|b| match b {
+                Block::Figure { caption, numbered, .. } => Some((document::plain(caption), *numbered)),
+                Block::Table(table) => Some((document::plain(&table.caption), table.numbered)),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            said,
+            vec![
+                ("The shield of Achilles".to_owned(), true),
+                ("Rings".to_owned(), true),
+                ("As Pandoc writes what is said of a table".to_owned(), true),
+                ("As Pandoc writes what is said of a figure".to_owned(), true),
+            ]
+        );
+        let Block::Figure { caption, alt, .. } = &blocks[1] else { panic!() };
+        assert_eq!(caption, &vec![text("The shield of "), marked("Achilles", &["em"])]);
+        assert_eq!(alt, "A round shield");
+        assert_eq!(blocks[0], paragraph(vec![text("Before it, Figure 1 is named.")]));
+        assert_eq!(blocks[3], paragraph(vec![text("Of nothing that stands here")]));
+        assert_eq!(blocks[4], paragraph(vec![text("Text between.")]));
+        assert_eq!(read.remarks.len(), 1);
+        assert!(read.remarks[0].starts_with("4 captions began with a word and a number, such as “"));
+        assert!(!all_text(&read).contains(lifting::MARK));
+        // What the second shows was said in the words that are said of it.
+        let Block::Figure { alt, .. } = &blocks[6] else { panic!() };
+        assert_eq!(alt, "");
+
+        // The same in Markdown, where nothing says what a paragraph is but its shape and its place.
+        fs::write(
+            desk.join("shape.md"),
+            "![](shield.png)\\\n\nFigur 1 – Skjoldet\n\nTabell 1. Ringene\n\n| Ring  | Shows |\n|-------|-------|\n| first | stars |\n\nTabell 1 viser ringene.\n",
+        )
+        .unwrap();
+        let read = s.read(&desk.join("shape.md")).unwrap();
+        let blocks = &read.sections[0].blocks;
+        assert_eq!(kinds(blocks), vec!["figure", "table", "paragraph"], "{blocks:?}");
+        let Block::Figure { caption, numbered, .. } = &blocks[0] else { panic!() };
+        assert_eq!((document::plain(caption).as_str(), *numbered), ("Skjoldet", true));
+        let Block::Table(table) = &blocks[1] else { panic!() };
+        assert_eq!((document::plain(&table.caption).as_str(), table.numbered), ("Ringene", true));
+        assert_eq!(blocks[2], paragraph(vec![text("Tabell 1 viser ringene.")]));
+    }
+
+    #[test]
+    fn a_file_named_from_where_the_work_is_done() {
+        let Some(s) = setup() else { return };
+        let here = std::env::current_dir().unwrap();
+        let source = written("captions.odt");
+        let Ok(named) = source.strip_prefix(&here) else { return };
+        let read = s.read(named).unwrap();
+        assert_eq!(read.counts.figures, 2);
     }
 
     #[test]
