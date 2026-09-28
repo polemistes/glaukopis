@@ -166,6 +166,12 @@ describe('the passages of a text', () => {
     );
     expect(offsetOf(read, positionOf(read, 10, last))).toEqual({ passage: 10, offset: last });
     expect(offsetOf(read, from)).toEqual({ passage: 1, offset: inNote });
+    // Between passages, as where all is selected: the beginning of the next, or the end of the one before.
+    expect(offsetOf(read, 0)).toEqual({ passage: 0, offset: 0 });
+    expect(offsetOf(read, doc.content.size, 'to')).toEqual({
+      passage: 10,
+      offset: read.passages[10].text.length,
+    });
   });
 });
 

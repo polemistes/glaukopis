@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TextSelection } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
-  import { tick, untrack } from 'svelte';
+  import { onDestroy, tick, untrack } from 'svelte';
   import { prosemirrorToYXmlFragment } from 'y-prosemirror';
   import * as Y from 'yjs';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
@@ -18,8 +18,12 @@
   import type RichText from '$lib/editor/RichText.svelte';
   import type { FocusAt } from '$lib/editor/RichText.svelte';
   import { bodySchema } from '$lib/editor/schema';
-  import { editorUi } from '$lib/editor/ui.svelte';
+  import { editorUi, viewsByDom } from '$lib/editor/ui.svelte';
+  import { citationLabel } from '$lib/editor/references.svelte';
+  import { numbering, pointerText } from '$lib/figures/numbering.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
+  import SearchBar from '$lib/search/SearchBar.svelte';
+  import { TextSearch, type Surface } from '$lib/search/text.svelte';
   import { plural, truncate } from '$lib/library/format';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import { pointRect } from '$lib/ui/floating';
@@ -401,6 +405,11 @@
         return false;
       case 'escape':
         if (editorUi.picking || editorUi.citation) return false;
+        // The search over the text is closed first; the cursor stays where it is.
+        if (searching) {
+          closeSearch(false);
+          return true;
+        }
         (view.dom as HTMLElement).blur();
         return true;
     }
@@ -409,6 +418,17 @@
 
   function onkeydown(event: KeyboardEvent) {
     const mod = event.ctrlKey || event.metaKey;
+    // Ctrl+F searches the text and Ctrl+H replaces; F3 goes on to the next that is found.
+    const letter = event.key.toLowerCase();
+    if (event.key === 'F3' || (mod && !event.altKey && (letter === 'f' || letter === 'h'))) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.key !== 'F3') find(letter === 'h');
+      else if (!searching) find(false);
+      else if (event.shiftKey) searching.previous();
+      else searching.next();
+      return;
+    }
     const section = (event.target as HTMLElement).closest<HTMLElement>('[data-section]');
     const id = section?.dataset.section;
     if (!id) return;
@@ -454,6 +474,116 @@
       }
     }
   }
+
+  // ---- searching the text ----
+
+  let searching = $state<TextSearch | null>(null);
+  let bar = $state<ReturnType<typeof SearchBar>>();
+
+  /** The elements that are in view, and those a screen above and below it: only they are marked. */
+  function inView(): Set<string> {
+    const out = new Set<string>();
+    if (!column || !scroller) return out;
+    const box = scroller.getBoundingClientRect();
+    const top = box.top - box.height;
+    const bottom = box.bottom + box.height;
+    const list = column.children;
+    let low = 0;
+    let high = list.length - 1;
+    let first = list.length;
+    while (low <= high) {
+      const mid = (low + high) >> 1;
+      if (list[mid].getBoundingClientRect().bottom >= top) {
+        first = mid;
+        high = mid - 1;
+      } else low = mid + 1;
+    }
+    for (let i = first; i < list.length; i++) {
+      const el = list[i] as HTMLElement;
+      if (el.getBoundingClientRect().top > bottom) break;
+      if (el.dataset.section) out.add(el.dataset.section);
+    }
+    return out;
+  }
+
+  /**
+   * Shows an element in which something was found: what it is folded away
+   * under is opened, and it is given its editors, without the cursor.
+   */
+  async function editorFor(id: string, part: Part): Promise<EditorView | null> {
+    let opened = folding.reveal(tree, id);
+    if (part === 'body' && folding.has(id)) {
+      folding.open(id);
+      opened = true;
+    }
+    if (opened) await tick();
+    current = id;
+    if (!active.includes(id)) {
+      const kept = [...active];
+      while (kept.length >= KEPT_ACTIVE) kept.shift();
+      active = [...kept, id];
+    }
+    for (let i = 0; i < 40; i++) {
+      await tick();
+      const view = editors.get(id)?.[part]?.getView();
+      if (view) return view;
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    return null;
+  }
+
+  const surface: Surface = {
+    get project() {
+      return project;
+    },
+    elements: () => project.tree(mapId).sequence,
+    labels: () => ({
+      citation: citationLabel,
+      crossref: (target, form) =>
+        pointerText(
+          numbering.of(project, mapId).byId.get(target),
+          form,
+          numbering.countingOf(project, mapId),
+        ),
+    }),
+    holder: (element, part) =>
+      scroller?.querySelector<HTMLElement>(`[data-section="${element}"] [data-part="${part}"]`) ??
+      null,
+    inView,
+    reveal: editorFor,
+    where: (view) => {
+      if (!scroller?.contains(view.dom)) return null;
+      const element = view.dom.closest<HTMLElement>('[data-section]')?.dataset.section;
+      const part = view.dom.closest<HTMLElement>('[data-part]')?.dataset.part;
+      return element && (part === 'title' || part === 'body') ? { element, part } : null;
+    },
+    looked: () => current ?? [...inView()][0] ?? null,
+    scroller: () => scroller ?? null,
+  };
+
+  /** Opens the search over the text, or turns to it; with `replacing`, to the field of what replaces. */
+  export function find(replacing = false) {
+    const at = document.activeElement?.closest('.ProseMirror');
+    const view = at && scroller?.contains(at) ? (viewsByDom.get(at) ?? null) : null;
+    if (!searching) searching = new TextSearch(surface);
+    searching.open(replacing, view);
+    tick().then(() => (replacing ? bar?.focusReplace() : bar?.focusQuery()));
+  }
+
+  function closeSearch(focus: boolean) {
+    const s = searching;
+    searching = null;
+    void s?.close(focus);
+  }
+
+  // What is marked follows what is shown: an element folded or opened, one given its editors.
+  $effect(() => {
+    void rows;
+    void active.length;
+    searching?.scrolled();
+  });
+
+  onDestroy(() => void searching?.close(false));
 
   // ---- the menu of an element ----
 
@@ -787,10 +917,14 @@
 
 <div class="text-view" bind:this={root} style:--margin="{marginWidth}px">
   <div class="tools"><div class="inner"><WritingTools scope={root} map={mapId} /></div></div>
+  {#if searching}
+    <SearchBar bind:this={bar} search={searching} onclose={() => closeSearch(true)} />
+  {/if}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     bind:this={scroller}
     class="scroller"
+    onscroll={() => searching?.scrolled()}
     use:dropTarget={{
       accepts: (p) =>
         (p.kind === 'elements' && (p.data as ElementsPayload).project === project) ||

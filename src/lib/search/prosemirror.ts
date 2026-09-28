@@ -147,8 +147,8 @@ export function readTitleDoc(doc: Node): ReadDoc {
 }
 
 /** The passage of one line of inline content, as the content of a node that is a document of its own. */
-export function readLine(node: Node, kind: 'line' | 'note'): ReadDoc {
-  const reader = new Reader(null);
+export function readLine(node: Node, kind: 'line' | 'note', labels: Labels | null = null): ReadDoc {
+  const reader = new Reader(labels);
   reader.line(node, 0, kind);
   return reader.read;
 }
@@ -170,41 +170,53 @@ export function positionOf(read: ReadDoc, passage: number, offset: number, end =
   return offset >= piece.start + piece.length ? at.pos + at.node.nodeSize : at.pos;
 }
 
+/** Where the content of a passage ends in the document. */
+function endOf(read: ReadDoc, p: Passage): number {
+  const last = p.pieces.length - 1;
+  if (last < 0) return read.starts[p.index] ?? 0;
+  const at = read.refs[p.index][last];
+  return p.pieces[last].kind === 'text'
+    ? at.pos + p.pieces[last].length
+    : at.pos + at.node.nodeSize;
+}
+
+/** How far into a passage a position within it is. Within something that is no text, before it. */
+function within(read: ReadDoc, p: Passage, pos: number): number {
+  const refs = read.refs[p.index];
+  for (let i = 0; i < p.pieces.length; i++) {
+    const piece = p.pieces[i];
+    const at = refs[i];
+    if (pos <= at.pos) return piece.start;
+    if (piece.kind === 'text') {
+      if (pos <= at.pos + piece.length) return piece.start + (pos - at.pos);
+    } else if (pos < at.pos + at.node.nodeSize) return piece.start;
+  }
+  return p.text.length;
+}
+
 /**
  * The place of a passage a position of the document is at: the passage in
- * which the position is, and how far into it. Nothing, of a position in no
- * passage, as between two paragraphs.
+ * which it is, the innermost, and how far into it. A position between
+ * passages, as between two paragraphs, is at the beginning of the next;
+ * with `side: 'to'`, as the end of a selection, at the end of the one before.
  */
-export function offsetOf(read: ReadDoc, pos: number): { passage: number; offset: number } | null {
-  let best: { passage: number; offset: number } | null = null;
+export function offsetOf(
+  read: ReadDoc,
+  pos: number,
+  side: 'from' | 'to' = 'from',
+): { passage: number; offset: number } | null {
+  let inside: { passage: number; offset: number } | null = null;
+  let next: { passage: number; offset: number } | null = null;
+  let before: { passage: number; offset: number } | null = null;
   for (const p of read.passages) {
-    // Notes are within the passage they stand in; what is found in them is theirs.
     const start = read.starts[p.index] ?? 0;
-    if (pos < start) continue;
-    const refs = read.refs[p.index];
-    let end = start;
-    let offset = 0;
-    let inside = false;
-    for (let i = 0; i < p.pieces.length; i++) {
-      const piece = p.pieces[i];
-      const at = refs[i];
-      if (pos < at.pos) break;
-      if (piece.kind === 'text' && pos <= at.pos + piece.length) {
-        offset = piece.start + (pos - at.pos);
-        inside = true;
-        break;
-      }
-      offset = piece.start + piece.length;
-      end = at.pos + at.node.nodeSize;
-      inside = pos <= end;
-      if (piece.kind !== 'text' && pos < end) {
-        // Within something that is no text: before it.
-        offset = piece.start;
-        break;
-      }
-    }
-    if (p.pieces.length === 0) inside = pos === start;
-    if (inside || pos === start) best = { passage: p.index, offset };
+    const end = endOf(read, p);
+    // A note is within the passage it stands in, and comes after it: the innermost is the last.
+    if (pos >= start && pos <= end) inside = { passage: p.index, offset: within(read, p, pos) };
+    else if (p.within) continue;
+    else if (pos < start) next ??= { passage: p.index, offset: 0 };
+    else before = { passage: p.index, offset: p.text.length };
   }
-  return best;
+  if (inside) return inside;
+  return side === 'from' ? (next ?? before) : (before ?? next);
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount, untrack } from 'svelte';
+  import { onDestroy, onMount, tick, untrack } from 'svelte';
   import ArrowLeft from '@lucide/svelte/icons/arrow-left';
   import BookMarked from '@lucide/svelte/icons/book-marked';
   import BookOpenText from '@lucide/svelte/icons/book-open-text';
@@ -109,6 +109,8 @@
   let stored: StoredView = {};
   /** What is folded away in the text: as it was left, and for every map of the project. */
   let folding = $state.raw(new Folding());
+  /** The texts of the maps in the panes, where a pane shows the text: to be searched. */
+  let texts = $state<(ReturnType<typeof MapText> | undefined)[]>([]);
 
   const pane = $derived(panes[Math.min(focused, panes.length - 1)]);
 
@@ -492,6 +494,12 @@
     } else if (key === 'p' && !event.shiftKey) {
       event.preventDefault();
       showPreview = !showPreview;
+    } else if ((key === 'f' || key === 'h') && !event.shiftKey) {
+      // The text of the map is searched; from the diagram, the text is turned to first.
+      event.preventDefault();
+      const i = focused;
+      if (pane && pane.mode !== 'text') panes[i] = { ...pane, mode: 'text' };
+      tick().then(() => texts[i]?.find(key === 'h'));
     } else if (!typing && key === 'z') {
       event.preventDefault();
       if (event.shiftKey) project.redo();
@@ -710,6 +718,7 @@
                   />
                 {:else}
                   <MapText
+                    bind:this={texts[i]}
                     {project}
                     mapId={p.map}
                     onkeep={keep}
