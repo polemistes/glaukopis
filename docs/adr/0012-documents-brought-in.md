@@ -28,6 +28,16 @@ of document there are.
 - **The map is made in one step**, which can be undone as one, and only
   when the one who brought the document in has seen what was found and said
   so. Nothing is made while the file is read.
+- **Where Pandoc reads badly, it is given a copy that it reads well.** What
+  stands in frames and text boxes of a Word or OpenDocument file, which is
+  where LibreOffice puts a picture with its caption, is lifted out into the
+  text in a copy in the work directory, and captions are marked there by
+  their style, so that they are known afterwards. Pandoc reads the copy.
+- **A caption belongs to what it speaks of**: a paragraph that stands
+  directly beside a figure or a table, and is a caption by its style or by
+  its shape (a word, a number, a sign, and then words), becomes what is said
+  of it, without the word and the number. No list of words is kept: they
+  are in every language.
 - **The file is not changed, and nothing is fetched.** Files that hold their
   pictures are read with Pandoc kept from everything but the file; files
   that name their pictures have them read from beside the file. A picture
@@ -57,9 +67,14 @@ of document there are.
 
 - Without Pandoc, only plain text can be brought in; the application says
   that Pandoc is missing.
-- What Pandoc cannot read is lost: mathematics and the properties of an
-  OpenDocument file (the properties are read by the application itself),
-  notes in some Rich Text files.
+- What Pandoc cannot read is lost, where the application does not read it
+  itself (the properties of Word and OpenDocument files, frames, captions):
+  the mathematics of an OpenDocument file, notes in some Rich Text files.
+- The language is not read from Word and OpenDocument files, which hold the
+  language of the machine they were written on.
+- The shape of a caption can be that of a paragraph that is none, directly
+  beside a table or figure without a caption. That is rare, and seen before
+  the map is made only in the count of what was found.
 - A file over 50 MB is not read.
 - Where things stand, and the width of a figure where the file gives none,
   are as the format says (ADR 0011).

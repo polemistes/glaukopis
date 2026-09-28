@@ -503,10 +503,17 @@ What becomes of what is in the document:
 - **Notes** become notes. A note on a heading stands at the beginning of the
   text under it.
 - **Pictures** are taken into the store of pictures, and stand in the text as
-  figures, with what is said of them. A picture that is to be fetched from
+  figures, with what is said of them. Those that a Word or OpenDocument file
+  holds are called after the document. A picture that is to be fetched from
   the network is left out: nothing is fetched.
 - **Tables** become tables, with their headings, cells that span, and what
   is said of them.
+- **Captions** are found where the document has them: with the figure or
+  the table, or as a paragraph beside it, as Word and LibreOffice write
+  them, also where the picture stands in a frame. *Figure 1:* before the
+  words is left out, since the map numbers its figures and tables itself.
+  Where the running text says *see Figure 1*, that stays text as it was
+  written; put a pointer in its place if the number is to follow.
 - **Mathematics** is kept as it is written, in the line or as equations.
 - **Citations** written by key (Markdown `[@homer]`, LaTeX `\cite{homer}`)
   become citations when the key is in your library, with page and words
@@ -519,10 +526,12 @@ What becomes of what is in the document:
   one kind of document only have no place in a map: what has text is kept as
   paragraphs, the rest is left out, and you are told.
 
-A Word file with changes that are tracked is brought in as it stands when
-all of them are accepted; comments in the margin are left out. You are told
-of both. OpenDocument files lose their
-mathematics in the reading, which is a limit of Pandoc.
+A file with changes that are tracked is brought in as it stands when all of
+them are accepted; comments in the margin of a Word file are left out. You
+are told of both. The language of the text is not taken from Word and
+OpenDocument files, which say what language the computer had, and not
+always that of the text. OpenDocument files lose their mathematics in the
+reading, which is a limit of Pandoc.
 
 ## What goes into the document
 

@@ -374,7 +374,15 @@ pub fn read(
     let mut take_in = |named: &str| -> std::result::Result<Picture, String> {
         asked.insert(named.to_owned());
         let bytes = picture_bytes(named, &beside, &media, format.holds_pictures())?;
-        let picture = pictures.add(&name_of(named), &bytes).map_err(|_| match kind_of_name(named) {
+        // What a file that holds its pictures calls them says nothing (image1.png): they are called after
+        // the document, and counted.
+        let called = if format.holds_pictures() {
+            let ending = kind_of_name(named).map(|e| format!(".{}", e.to_lowercase())).unwrap_or_default();
+            format!("{stem} {}{ending}", asked.len())
+        } else {
+            name_of(named)
+        };
+        let picture = pictures.add(&called, &bytes).map_err(|_| match kind_of_name(named) {
             Some(kind) => format!("it is of a kind that is not read ({kind})"),
             None => "it is not a picture of a kind that is read".to_owned(),
         })?;
@@ -3086,6 +3094,9 @@ Nagy, G. 1979. The Best of the Achaeans.
             assert_eq!(alt, shows[1], "{name}");
             assert!(s.pictures.has(file, extension), "{name}");
             assert_eq!(s.pictures.get(file).unwrap().width, Some(60), "{name}");
+            // Called after the document, and not what the file calls it within.
+            let called = s.pictures.get(file).unwrap().name;
+            assert!(called.starts_with("captions ") && !called.contains("1000"), "{name}: {called}");
 
             assert_eq!(read.counts.figures, 2, "{name}");
             let all = all_text(&read);
