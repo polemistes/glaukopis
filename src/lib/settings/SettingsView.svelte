@@ -27,6 +27,7 @@
   import TextField from '$lib/ui/TextField.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
   import Mark from '$lib/shell/Mark.svelte';
+  import SpellingSettings from '$lib/spelling/SpellingSettings.svelte';
 
   let system = $state<SystemInfo | null>(null);
   let tools = $state<ToolsInfo | null>(null);
@@ -199,6 +200,8 @@
         />
       </div>
     </section>
+
+    <SpellingSettings />
 
     <section>
       <h2>New documents</h2>

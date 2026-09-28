@@ -421,6 +421,12 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
   }
 }
 
+/** The word that stands at a place of an editor, or touches it, if any. */
+export function wordAtPlace(state: EditorState, pos: number): Word | null {
+  const at = blockOf(state.doc.resolve(Math.min(pos, state.doc.content.size)));
+  return at ? wordAt(wordsOf(at.block, at.pos, '', null), pos) : null;
+}
+
 /** Has an editor look at all its text again, as when the language of its map has changed. */
 export function lookAgain(view: EditorView) {
   if (view.isDestroyed || !spellingKey.getState(view.state)) return;

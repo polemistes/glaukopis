@@ -26,6 +26,8 @@
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { elementMenu, type ElementActions, type ElementsPayload } from '../elements';
+  import { openDrawnWordMenu } from '$lib/spelling/highlights';
+  import { replaceWhenShown } from '$lib/spelling/menu';
   import type { Project } from '../model/project.svelte';
   import { isAncestor } from '../model/tree';
   import WritingTools from '$lib/editor/WritingTools.svelte';
@@ -524,6 +526,13 @@
   }
 
   function oncontextmenu(event: MouseEvent) {
+    // A misspelt word in text that is not being written has its own menu. What
+    // is chosen in its place is put in by the editor, which is opened there.
+    const spelt = openDrawnWordMenu(event, (drawn, at, word, by) => {
+      activate(drawn.element, drawn.part, at);
+      replaceWhenShown(() => editors.get(drawn.element)?.[drawn.part]?.getView(), at, word, by);
+    });
+    if (spelt) return;
     const section = (event.target as HTMLElement).closest<HTMLElement>('[data-section]');
     if (!section) return;
     // Within text that is selected, the menu is about the text: left to the system.

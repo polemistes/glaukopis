@@ -18,7 +18,7 @@ import type { Project } from '$lib/project/model/project.svelte';
 import { pointRect, type RectLike } from '$lib/ui/floating';
 import { menuState, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
-import type { Misspelt, SpellingOptions, Why } from './plugin';
+import { wordAtPlace, type Misspelt, type SpellingOptions, type Why } from './plugin';
 import { spelling } from './spelling.svelte';
 
 /** How long the menu waits for what a word may be before it opens without it, in milliseconds. */
@@ -121,6 +121,34 @@ export function replaceIn(view: EditorView, at: Misspelt, by: string) {
     tr.setSelection(TextSelection.create(tr.doc, at.from + by.length)).scrollIntoView(),
   );
   view.focus();
+}
+
+/**
+ * Puts a word in place of a misspelt one that was drawn without an editor,
+ * in the editor that is being opened where it stood: when the editor has its
+ * text, which comes a moment after it is made, the word under the point is
+ * replaced, if it is that word.
+ */
+export function replaceWhenShown(
+  view: () => EditorView | undefined,
+  at: { left: number; top: number },
+  word: string,
+  by: string,
+) {
+  const until = performance.now() + 1500;
+  const attempt = () => {
+    const v = view();
+    if (v && !v.isDestroyed && v.state.doc.textContent.includes(word)) {
+      const pos = v.posAtCoords(at)?.pos;
+      const found = pos === undefined ? null : wordAtPlace(v.state, pos);
+      if (found?.word === word) {
+        replaceIn(v, found, by);
+        return;
+      }
+    }
+    if (performance.now() < until) setTimeout(attempt, 40);
+  };
+  setTimeout(attempt, 0);
 }
 
 /**
