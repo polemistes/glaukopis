@@ -62,7 +62,9 @@ export class App {
    */
   static async launch(options = {}) {
     const app = new App();
-    app.binary = options.binary ?? join(root, 'target', 'debug', 'glaukopis');
+    // Another program than the one that was built here, as the one of a package: GLAUKOPIS_E2E_BINARY.
+    app.binary =
+      options.binary ?? process.env.GLAUKOPIS_E2E_BINARY ?? join(root, 'target', 'debug', 'glaukopis');
     if (!existsSync(app.binary)) throw new Error(`No application at ${app.binary}. Build it first.`);
     app.ownsData = !options.dataDir && !options.keepData;
     app.dataDir = options.dataDir ?? mkdtempSync(join(tmpdir(), 'glaukopis-e2e-'));
