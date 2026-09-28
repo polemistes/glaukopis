@@ -14,3 +14,4 @@
 /packaging/**/*.log
 /packaging/**/try
 /.claude/worktrees
+/.claude/briefs
