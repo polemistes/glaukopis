@@ -105,15 +105,20 @@ function documentOf(
  * its kind in the text it stands in. Nothing, when the text is not part of
  * the document, or the thing has no number.
  */
-function numberOf(view: EditorView, kind: 'figure' | 'equation', pos: number | undefined) {
+export function numberOf(
+  view: EditorView,
+  kind: 'figure' | 'table' | 'equation',
+  pos: number | undefined,
+) {
   const of = documentOf(view);
   if (!of || pos === undefined) return { number: null, counting: of?.counting ?? null };
   let index = 0;
   view.state.doc.nodesBetween(0, Math.min(pos, view.state.doc.content.size), (node, at) => {
     if (at >= pos) return false;
-    if (node.type.name !== kind) return !node.isTextblock;
+    // A table is a `tabular` in the text.
+    if (node.type.name !== (kind === 'table' ? 'tabular' : kind)) return !node.isTextblock;
     // An equation in which nothing is written yet is not counted.
-    if (kind === 'figure' || String(node.attrs.tex ?? '').trim()) index++;
+    if (kind !== 'equation' || String(node.attrs.tex ?? '').trim()) index++;
     return false;
   });
   return {
@@ -593,8 +598,14 @@ export function figureLabel(
   number: string | null,
   said: boolean,
   counting: Counting | null,
+  kind: 'figure' | 'table' = 'figure',
 ): string {
   if (!numbered) return '';
+  if (kind === 'table') {
+    const label = [(counting?.tableLabel ?? 'Table').trim(), number].filter(Boolean).join('\u00a0');
+    if (!label) return '';
+    return said ? `${label}${counting?.tableSeparator ?? '. '}` : label;
+  }
   const word = (counting?.label ?? 'Figure').trim();
   // One that is not part of the document has no number there.
   const label = [word, number].filter(Boolean).join('\u00a0');

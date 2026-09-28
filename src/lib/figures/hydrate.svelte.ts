@@ -55,6 +55,19 @@ function fill(root: HTMLElement, shown: Shown) {
     if (label) said.dataset.label = label;
     else delete said.dataset.label;
   });
+  root.querySelectorAll<HTMLElement>('figure.tabular').forEach((table, i) => {
+    const said = table.querySelector<HTMLElement>('figcaption');
+    if (!said) return;
+    const label = figureLabel(
+      !table.hasAttribute('data-unnumbered'),
+      within?.table[i] ?? null,
+      !table.classList.contains('uncaptioned'),
+      counting,
+      'table',
+    );
+    if (label) said.dataset.label = label;
+    else delete said.dataset.label;
+  });
   root.querySelectorAll<HTMLElement>('.equation').forEach((equation, i) => {
     const number = within?.equation[i] ?? null;
     if (number && equation.hasAttribute('data-numbered'))

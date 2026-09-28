@@ -7,6 +7,7 @@
   import Image from '@lucide/svelte/icons/image';
   import Search from '@lucide/svelte/icons/search';
   import Sigma from '@lucide/svelte/icons/sigma';
+  import Table from '@lucide/svelte/icons/table';
   import type { TargetRequest } from '$lib/editor/ui.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
   import Popover from '$lib/ui/Popover.svelte';
@@ -31,6 +32,7 @@
 
   const GROUPS: { kind: Pointed['kind']; heading: string }[] = [
     { kind: 'figure', heading: 'Figures' },
+    { kind: 'table', heading: 'Tables' },
     { kind: 'equation', heading: 'Equations' },
     { kind: 'part', heading: 'Parts of the document' },
   ];
@@ -101,7 +103,7 @@
       <input
         bind:this={input}
         bind:value={query}
-        placeholder="Point to a figure, an equation, a part"
+        placeholder="Point to a figure, a table, an equation, a part"
         aria-label="Search what can be pointed to"
         spellcheck="false"
         autocomplete="off"
@@ -135,6 +137,8 @@
               <img src={shown.url} alt="" draggable="false" />
             {:else if row.kind === 'figure'}
               <Image size={15} />
+            {:else if row.kind === 'table'}
+              <Table size={15} />
             {:else if row.kind === 'equation'}
               <Sigma size={15} />
             {:else}
@@ -143,7 +147,12 @@
           </span>
           <span class="called">{called(row)}</span>
           <span class="words truncate" class:formula={row.kind === 'equation'}>
-            {row.words || (row.kind === 'figure' ? 'A figure of which nothing is said' : '')}
+            {row.words ||
+              (row.kind === 'figure'
+                ? 'A figure of which nothing is said'
+                : row.kind === 'table'
+                  ? 'A table of which nothing is said'
+                  : '')}
           </span>
         </div>
       {:else}
@@ -151,7 +160,8 @@
           {#if query.trim()}
             Nothing in the document answers to these words.
           {:else}
-            There is nothing to point to yet: no figure, no numbered equation, no part with a name.
+            There is nothing to point to yet: no figure, no table, no numbered equation, no part
+            with a name.
           {/if}
         </p>
       {/each}
