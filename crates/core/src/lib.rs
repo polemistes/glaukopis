@@ -15,6 +15,7 @@ pub mod import;
 pub mod library;
 pub mod lookup;
 pub mod net;
+pub mod ocr;
 pub mod paths;
 pub mod pictures;
 pub mod projects;
