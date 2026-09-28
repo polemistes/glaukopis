@@ -1,6 +1,8 @@
 /** The text of an element as HTML, for showing it where it is not being written. */
 
 import { citationLabel, isMissing } from '$lib/editor/references.svelte';
+import { figureWidth } from '$lib/editor/schema';
+import { isPictureName } from '$lib/figures/pictures.svelte';
 import type { Block, Inline } from './text';
 
 function escape(text: string): string {
@@ -33,6 +35,10 @@ function inlines(list: Inline[], notes: { n: number }): string {
       case 'citation':
         out += `<span class="citation${isMissing(i.items) ? ' missing' : ''}">${escape(citationLabel(i.items, i.mode))}</span>`;
         break;
+      case 'math':
+        // Shown as it was written until it is shown as mathematics: see `figures/hydrate.ts`.
+        out += `<span class="math" data-math="${escape(i.tex)}">${escape(i.tex)}</span>`;
+        break;
       case 'footnote':
         notes.n++;
         // The number is counted by the page, from where the note stands.
@@ -46,7 +52,13 @@ function inlines(list: Inline[], notes: { n: number }): string {
 function plain(list: Inline[]): string {
   return list
     .map((i) =>
-      i.kind === 'text' ? i.text : i.kind === 'citation' ? citationLabel(i.items, i.mode) : ' ',
+      i.kind === 'text'
+        ? i.text
+        : i.kind === 'citation'
+          ? citationLabel(i.items, i.mode)
+          : i.kind === 'math'
+            ? i.tex
+            : ' ',
     )
     .join('');
 }
@@ -69,6 +81,21 @@ function blocks(list: Block[], notes: { n: number }): string {
           .map((i) => `<li>${blocks(i, notes)}</li>`)
           .join('')}</ol>`;
         break;
+      case 'equation':
+        out += `<div class="equation"${b.numbered ? ' data-numbered' : ''}><span class="equation-body math" data-math="${escape(b.tex)}" data-display>${escape(b.tex)}</span></div>`;
+        break;
+      case 'figure': {
+        const said = inlines(b.caption, notes);
+        const named = isPictureName(b.file, b.extension);
+        out +=
+          `<figure class="figure${said ? '' : ' uncaptioned'}"${b.numbered ? '' : ' data-unnumbered'}>` +
+          `<div class="picture" style="width: ${figureWidth(b.width)}%">` +
+          (named
+            ? `<img data-picture="${b.file}.${b.extension}" alt="${escape(b.alt)}" draggable="false">`
+            : '') +
+          `</div><figcaption>${said}</figcaption></figure>`;
+        break;
+      }
     }
   }
   return out;
@@ -87,7 +114,12 @@ export function excerpt(list: Block[], characters = 600): { blocks: Block[]; cut
       ? plain(b.content).length
       : b.kind === 'blockquote'
         ? b.content.reduce((n, c) => n + size(c), 0)
-        : b.items.reduce((n, item) => n + item.reduce((m, c) => m + size(c), 0), 0);
+        : b.kind === 'figure'
+          ? // A picture takes the room of some lines.
+            plain(b.caption).length + 240
+          : b.kind === 'equation'
+            ? 80
+            : b.items.reduce((n, item) => n + item.reduce((m, c) => m + size(c), 0), 0);
   for (const b of list) {
     if (count >= characters) return { blocks: out, cut: true };
     const s = size(b);

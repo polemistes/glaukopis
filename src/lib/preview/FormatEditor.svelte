@@ -59,6 +59,7 @@
         const loaded = await formatsGet(wanted);
         original = JSON.stringify(loaded);
         format = loaded;
+        betweenOther = false;
         name = loaded.kind === 'own' ? loaded.name : `${loaded.name}, changed`;
       } catch (e) {
         error = describeError(e) ?? 'The format could not be read.';
@@ -164,6 +165,7 @@
     ['quotations', 'Quotations'],
     ['notes', 'Notes'],
     ['bibliography', 'Bibliography'],
+    ['figures', 'Figures and equations'],
     ['margins', 'Page numbers and running head'],
     ['limits', 'Limits'],
     ['about', 'About this format'],
@@ -205,6 +207,44 @@
     'New Athena Unicode',
   ];
   const fontChoices = $derived([...new Set([...usual, ...fonts])]);
+
+  // What stands between the number of a figure and its caption: the usual
+  // ones are chosen by name, anything else is written out.
+  type Between = 'stop' | 'colon' | 'line' | 'other';
+  const usualBetween: [Between, string][] = [
+    ['stop', '. '],
+    ['colon', ': '],
+    ['line', '\n'],
+  ];
+  // Holds the field open while something is written in it that happens to
+  // be one of the usual ones.
+  let betweenOther = $state(false);
+
+  function between(separator: string): Between {
+    if (betweenOther) return 'other';
+    return usualBetween.find(([, s]) => s === separator)?.[0] ?? 'other';
+  }
+
+  function setBetween(f: DocumentFormat, v: Between) {
+    betweenOther = v === 'other';
+    const found = usualBetween.find(([k]) => k === v);
+    if (found) f.figures.separator = found[1];
+  }
+
+  /** The separator as the words of it and whether a line break follows them. */
+  function setSeparator(f: DocumentFormat, words: string, ownLine: boolean) {
+    betweenOther = true;
+    f.figures.separator = words.replaceAll('\n', '') + (ownLine ? '\n' : '');
+  }
+
+  function betweenChoices(called: string): [Between, string][] {
+    return [
+      ['stop', `Full stop (${called}. Caption)`],
+      ['colon', `Colon (${called}: Caption)`],
+      ['line', 'Caption on a line of its own'],
+      ['other', 'Other…'],
+    ];
+  }
 
   function lengthOk(value: string): boolean {
     return /^\s*-?\d+([.,]\d+)?\s*(pt|mm|cm|in)\s*$/i.test(value);
@@ -778,6 +818,135 @@
                 >{/if}
             </select>
           </label>
+        {:else if section === 'figures'}
+          {@const called = f.figures.label.trim() ? `${f.figures.label.trim()} 1` : '1'}
+          {@const line = f.figures.placeholder}
+          <h3>Figures</h3>
+          {@render text(
+            'A figure is called',
+            () => f.figures.label,
+            (v) => (f.figures.label = v),
+            'Figure, Fig., Abbildung',
+          )}
+          {@render toggle(
+            'The word and number in bold',
+            () => f.figures.labelBold,
+            (v) => (f.figures.labelBold = v),
+          )}
+          {@render toggle(
+            'The word and number in italic',
+            () => f.figures.labelItalic,
+            (v) => (f.figures.labelItalic = v),
+          )}
+          {@render choice(
+            'Between the number and the caption',
+            () => between(f.figures.separator),
+            (v) => setBetween(f, v),
+            betweenChoices(called),
+          )}
+          {#if between(f.figures.separator) === 'other'}
+            {@render text(
+              'What stands between them',
+              () => f.figures.separator.replaceAll('\n', ''),
+              (v) => setSeparator(f, v, f.figures.separator.includes('\n')),
+              'Spaces count: write them where they are wanted',
+            )}
+            {@render toggle(
+              'Then the caption on a line of its own',
+              () => f.figures.separator.includes('\n'),
+              (v) => setSeparator(f, f.figures.separator, v),
+            )}
+          {/if}
+          <h4>Caption</h4>
+          {@render choice(
+            'The caption stands',
+            () => f.figures.captionPosition,
+            (v) => (f.figures.captionPosition = v),
+            [
+              ['below', 'Below the picture'],
+              ['above', 'Above the picture'],
+            ],
+          )}
+          {@render choice(
+            'Alignment',
+            () => f.figures.captionAlign,
+            (v) => (f.figures.captionAlign = v),
+            [...aligns, ['justified', 'Justified']],
+          )}
+          {@render number(
+            'Size',
+            () => f.figures.captionSize,
+            (v) => (f.figures.captionSize = v),
+            { max: 36, unit: 'pt', zero: 'as the text', hint: '0 for the size of the text' },
+          )}
+          {@render toggle(
+            'Italic',
+            () => f.figures.captionItalic,
+            (v) => (f.figures.captionItalic = v),
+          )}
+          {@render choice(
+            'Line spacing',
+            () => f.figures.captionLineSpacing,
+            (v) => (f.figures.captionLineSpacing = v),
+            [[0, 'As the text'], ...spacings],
+          )}
+          <div class="row">
+            <span class="what">As it will stand</span>
+            <span class="example"
+              ><span class:bold={f.figures.labelBold} class:italic={f.figures.labelItalic}
+                >{called}</span
+              >{f.figures.separator}<span class:italic={f.figures.captionItalic}>Caption</span
+              ></span
+            >
+          </div>
+          <h4>Where figures stand</h4>
+          {@render choice(
+            'Figures stand',
+            () => f.figures.placement,
+            (v) => (f.figures.placement = v),
+            [
+              ['in-text', 'In the text'],
+              ['at-end', 'Gathered at the end'],
+            ],
+            'Many journals ask for them at the end of a manuscript',
+          )}
+          {#if f.figures.placement === 'at-end'}
+            {@render text(
+              'Heading over the figures',
+              () => f.figures.endTitle,
+              (v) => (f.figures.endTitle = v),
+              'Figures, Illustrations; empty for none',
+            )}
+            <label class="row">
+              <span class="what"
+                >Line left in the text<small
+                  >{line.includes('{}')
+                    ? `{} stands for the word and number: ${line.replace('{}', () => called)}`
+                    : 'It must hold {}, where the word and number go'}</small
+                ></span
+              >
+              <input
+                class:invalid={!line.includes('{}')}
+                bind:value={f.figures.placeholder}
+                spellcheck="false"
+              />
+            </label>
+          {/if}
+          <h3>Equations</h3>
+          {@render text(
+            'Before the number',
+            () => f.equations.beforeNumber,
+            (v) => (f.equations.beforeNumber = v),
+          )}
+          {@render text(
+            'After the number',
+            () => f.equations.afterNumber,
+            (v) => (f.equations.afterNumber = v),
+          )}
+          <div class="row">
+            <span class="what">As it will stand</span>
+            <span class="example">{f.equations.beforeNumber}1{f.equations.afterNumber}</span>
+          </div>
         {:else if section === 'margins'}
           <h3>Page numbers</h3>
           {@render toggle(
@@ -1106,6 +1275,20 @@
     font-style: normal;
     font-size: var(--text-sm);
     color: var(--ink-3);
+  }
+  .example {
+    min-width: 0;
+    font-family: var(--font-text);
+    font-size: 15px;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .example .bold {
+    font-weight: 700;
+  }
+  .example .italic {
+    font-style: italic;
   }
   .hint {
     margin-top: 10px;

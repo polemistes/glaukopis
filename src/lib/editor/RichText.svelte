@@ -18,6 +18,10 @@
   import { sharedUndo } from './undo';
   import { markActive, insideNode } from './commands';
   import { CitationView, FootnoteView, hooksOf } from './views.svelte';
+  import { pictures } from '$lib/figures/pictures.svelte';
+  import { choosePicture, FigureView, FormulaView } from '$lib/figures/views.svelte';
+  import { insertFigure } from './commands';
+  import { viewsByDom } from './ui.svelte';
 
   interface Props {
     project: Project;
@@ -99,6 +103,33 @@
     });
   }
 
+  /** Asks for a picture among the files, and puts a figure with it where the cursor is. */
+  async function picture(v: EditorView) {
+    const chosen = await choosePicture();
+    if (!chosen || v.isDestroyed) return;
+    insertFigure(chosen)(v.state, v.dispatch);
+    v.focus();
+  }
+
+  /** Pictures that were pasted become figures. Returns whether there were any. */
+  function pasted(v: EditorView, event: ClipboardEvent): boolean {
+    const files = [...(event.clipboardData?.files ?? [])].filter((f) =>
+      f.type.startsWith('image/'),
+    );
+    if (!files.length) return false;
+    // With text beside them, as when something is copied from a page, the text is what is wanted.
+    if (event.clipboardData?.getData('text/plain')?.trim()) return false;
+    event.preventDefault();
+    void (async () => {
+      for (const file of files) {
+        const taken = await pictures.addBlob(file, file.name || 'picture');
+        if (!taken || v.isDestroyed) continue;
+        insertFigure(taken)(v.state, v.dispatch);
+      }
+    })();
+    return true;
+  }
+
   /** Tells the interface what is selected, for the bar that formats it. */
   function report(v: EditorView) {
     const { state } = v;
@@ -159,6 +190,7 @@
       redo: () => project.redo(),
       action: (action: KeyAction, v: EditorView) => untrack(() => onaction?.(action, v) ?? false),
       cite: kind === 'body' ? cite : undefined,
+      picture: kind === 'body' ? picture : undefined,
     };
 
     const created = untrack(() => {
@@ -177,12 +209,16 @@
             ? {
                 citation: (node, v, getPos) => new CitationView(node, v, getPos),
                 footnote: (node, v, getPos) => new FootnoteView(node, v, getPos),
+                math: (node, v, getPos) => new FormulaView(node, v, getPos),
+                equation: (node, v, getPos) => new FormulaView(node, v, getPos),
+                figure: (node, v, getPos) => new FigureView(node, v, getPos),
               }
             : {},
         attributes: {
           class: `prose ${kind}`,
           spellcheck: 'true',
         },
+        handlePaste: (v, event) => kind === 'body' && pasted(v, event),
         handleDOMEvents: {
           focus: (v) => {
             onfocus?.(v);
@@ -218,6 +254,7 @@
     });
     view = created;
     hooksOf.set(created, hooks);
+    viewsByDom.set(created.dom, created);
 
     const how = untrack(() => autofocus);
     if (how) {

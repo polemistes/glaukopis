@@ -9,7 +9,11 @@
   import Bold from '@lucide/svelte/icons/bold';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
+  import ImagePlus from '@lucide/svelte/icons/image-plus';
   import Italic from '@lucide/svelte/icons/italic';
+  import Plus from '@lucide/svelte/icons/plus';
+  import Sigma from '@lucide/svelte/icons/sigma';
+  import SquareFunction from '@lucide/svelte/icons/square-function';
   import List from '@lucide/svelte/icons/list';
   import ListOrdered from '@lucide/svelte/icons/list-ordered';
   import Pilcrow from '@lucide/svelte/icons/pilcrow';
@@ -23,7 +27,15 @@
   import type { EditorView } from 'prosemirror-view';
   import { openMenu } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
-  import { insertFootnote, setStyle, styleOf, toggle, type ParagraphStyle } from './commands';
+  import {
+    insertEquation,
+    insertFootnote,
+    insertMath,
+    setStyle,
+    styleOf,
+    toggle,
+    type ParagraphStyle,
+  } from './commands';
   import { editorUi } from './ui.svelte';
   import { hooksOf } from './views.svelte';
 
@@ -91,6 +103,55 @@
   function cite() {
     const view = s?.view;
     if (view) hooksOf.get(view)?.cite?.(view, false);
+  }
+
+  /** What stands in the text and is not text: pictures and mathematics. */
+  function insert(event: MouseEvent) {
+    const view = s?.view;
+    if (!view) return;
+    const hooks = hooksOf.get(view);
+    openMenu(
+      event.currentTarget as HTMLElement,
+      [
+        ...(body
+          ? [
+              {
+                label: 'Picture…',
+                hint: 'A figure, with what is said of it',
+                icon: ImagePlus,
+                shortcut: 'Ctrl+Alt+P',
+                action: () => hooks?.picture?.(view),
+              },
+              {
+                label: 'Equation',
+                hint: 'Mathematics on a line of its own',
+                icon: SquareFunction,
+                shortcut: 'Ctrl+Alt+E',
+                // It opens a panel of its own, which takes the cursor.
+                action: () => void insertEquation(view.state, view.dispatch, view),
+              },
+            ]
+          : []),
+        {
+          label: 'Formula',
+          hint: 'Mathematics in the line',
+          icon: Sigma,
+          shortcut: 'Ctrl+Alt+M',
+          action: () => void insertMath(view.state, view.dispatch, view),
+        },
+        ...(body
+          ? [
+              { kind: 'separator' as const },
+              {
+                label: 'A picture can also be dropped on the text, or pasted',
+                disabled: true,
+                action: () => {},
+              },
+            ]
+          : []),
+      ],
+      { align: 'start' },
+    );
   }
 
   function styles(event: MouseEvent) {
@@ -238,6 +299,17 @@
   >
     <StickyNote size={13} />
     Note
+  </button>
+
+  <button
+    type="button"
+    class="word"
+    disabled={!s || s.kind === 'title'}
+    use:tooltip={{ text: 'A picture, an equation, a formula', side: 'bottom' }}
+    onclick={insert}
+  >
+    <Plus size={13} />
+    Insert
   </button>
 
   <span class="spring"></span>

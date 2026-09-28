@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as Y from 'yjs';
   import { place, type RectLike } from '$lib/ui/floating';
+  import { hydrate } from '$lib/figures/hydrate.svelte';
   import { blocksHtml, excerpt } from './model/html';
   import type { Project } from './model/project.svelte';
   import { readBody } from './model/text';
@@ -37,7 +38,7 @@
     {#if content.html}
       <!-- Made by blocksHtml, which escapes all text. -->
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      <div class="prose">{@html content.html}</div>
+      <div class="prose static" use:hydrate={content.html}>{@html content.html}</div>
       {#if content.cut}<div class="more">Double-click to read on</div>{/if}
     {/if}
     {#if included || !node.heading || node.excluded}

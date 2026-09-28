@@ -8,7 +8,7 @@
     "url": "https://mlahandbookplus.org/books/book/5/chapter/56249/Margins-and-Text-Formatting",
     "checked": "2025-01-19",
     "confidence": "high",
-    "notes": "Read from Internet Archive snapshots of the official pages, taken between 2025-01-19 and 2026-02-15 (the live site refuses automated requests); the date given is that of the snapshot of sections 1.1-1.2. Only chapter 1 is free; chapters 6 and 7 were not read. The block-quotation threshold (more than four lines, entered as from five lines) is therefore from 8th-edition material and of low confidence, and the form and placement of notes are not known: footnotes are the general default, in the size and spacing of the text as section 1.2 requires for the whole paper. The source asks for an easily readable typeface at 11 to 13 points and names Times New Roman as one example; 12 is entered. Letter is the size named for printed papers. Headings: the source gives only the principle (flush left, descending prominence by size and style, no capitals, generally not numbered, a line space above and below); the three levels are the general default, which keeps to that principle, with the line space entered as 24pt. Not specified, and taken from the general default: abstract and keywords. Not expressible here: the first page begins, flush left, with the writer's name, the instructor's name, the course and the date, before the centred title; and the running head is the surname only."
+    "notes": "Read from Internet Archive snapshots of the official pages, taken between 2025-01-19 and 2026-02-15 (the live site refuses automated requests); the date given is that of the snapshot of sections 1.1-1.2. Only chapter 1 is free; chapters 6 and 7 were not read. The block-quotation threshold (more than four lines, entered as from five lines) is therefore from 8th-edition material and of low confidence, and the form and placement of notes are not known: footnotes are the general default, in the size and spacing of the text as section 1.2 requires for the whole paper. The source asks for an easily readable typeface at 11 to 13 points and names Times New Roman as one example; 12 is entered. Letter is the size named for printed papers. Headings: the source gives only the principle (flush left, descending prominence by size and style, no capitals, generally not numbered, a line space above and below); the three levels are the general default, which keeps to that principle, with the line space entered as 24pt. Not specified, and taken from the general default: abstract and keywords. Not expressible here: the first page begins, flush left, with the writer's name, the instructor's name, the course and the date, before the centred title; and the running head is the surname only. Figures are set as the MLA Handbook has them, which the pages named here do not cover: labelled Fig. with a number, the caption directly below the illustration."
   },
   "page": {
     "size": "letter",
@@ -66,6 +66,20 @@
     "entrySpacing": "0pt",
     "newPage": true,
     "size": 0
+  },
+  "figures": {
+    "label": "Fig.",
+    "separator": ". ",
+    "labelBold": false,
+    "labelItalic": false,
+    "captionPosition": "below",
+    "captionAlign": "left",
+    "captionSize": 0,
+    "captionItalic": false,
+    "captionLineSpacing": 2.0,
+    "placement": "in-text",
+    "endTitle": "Figures",
+    "placeholder": "[{} about here]"
   },
   "pageNumbers": { "show": true, "position": "top-right", "firstPage": true },
   "runningHead": { "content": "author", "text": "", "align": "right", "case": "none" },

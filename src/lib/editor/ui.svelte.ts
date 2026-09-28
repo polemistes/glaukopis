@@ -78,6 +78,9 @@ class EditorUi {
 
 export const editorUi = new EditorUi();
 
+/** The editor that a part of the page belongs to, for what is dropped on it. */
+export const viewsByDom = new WeakMap<Element, EditorView>();
+
 export function rectAt(view: EditorView, pos: number): RectLike {
   const c = view.coordsAtPos(pos);
   return {

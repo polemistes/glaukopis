@@ -18,6 +18,9 @@
   import SharePanel from '$lib/sharing/SharePanel.svelte';
   import { ProjectSharing } from '$lib/sharing/sharing.svelte';
   import { importDropped } from '$lib/library/references.svelte';
+  import { insertFigure, widthFor } from '$lib/editor/commands';
+  import { viewsByDom } from '$lib/editor/ui.svelte';
+  import { isPicturePath, pictures } from '$lib/figures/pictures.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
   import { dropTarget, type DropEvent } from '$lib/ui/drag.svelte';
   import { notify } from '$lib/ui/toast.svelte';
@@ -104,6 +107,7 @@
       // A project that was joined and has not been fetched has no maps yet.
       if (p.maps.length) arrange(p);
       shared = new ProjectSharing(ownId, p, opened.info);
+      pictures.open(ownId);
       project = p;
       release = beforeClose(() => leave(p));
     } catch (error) {
@@ -176,7 +180,16 @@
 
   onDestroy(() => {
     release?.();
+    if (pictures.project === ownId) pictures.open(null);
     if (project) void leave(project).then(() => projects.load());
+  });
+
+  // The pictures of a project that is shared are with the others as well:
+  // when the connection is there, what either side lacks is sent and fetched.
+  $effect(() => {
+    if (!project) return;
+    pictures.shared = !!shared?.sharing;
+    if (shared?.sharing && shared.connection?.synced) void pictures.sync();
   });
 
   function viewToStore(): StoredView {
@@ -323,12 +336,38 @@
    * element, their references are cited at the end of its text.
    */
   async function filesDropped(event: DropEvent) {
-    const at = document
-      .elementFromPoint(event.x, event.y)
-      ?.closest<HTMLElement>('[data-node], [data-section]');
+    const under = document.elementFromPoint(event.x, event.y);
+    const at = under?.closest<HTMLElement>('[data-node], [data-section]');
     const element = at?.dataset.node ?? at?.dataset.section ?? null;
-    const outcome = await importDropped(event.payload.data as string[]);
+    const all = event.payload.data as string[];
+    const shown = all.filter(isPicturePath);
     const p = project;
+    if (shown.length && p) {
+      // Pictures become figures: where they were dropped, in a text that is
+      // being written; otherwise at the end of the element they were dropped on.
+      const written = under?.closest('.ProseMirror.body');
+      const view = written ? viewsByDom.get(written) : undefined;
+      if (!view && !(element && p.node(element))) {
+        notify('Drop a picture on the element it belongs to');
+      } else {
+        let where = view?.posAtCoords({ left: event.x, top: event.y })?.pos;
+        for (const path of shown) {
+          const picture = await pictures.addFile(path);
+          if (!picture) continue;
+          if (view && !view.isDestroyed) {
+            insertFigure(picture, where)(view.state, view.dispatch);
+            where = undefined;
+          } else if (element) {
+            p.checkpoint();
+            p.addFigure(element, picture, widthFor(picture));
+            p.checkpoint();
+          }
+        }
+      }
+    }
+    const others = all.filter((path) => !isPicturePath(path));
+    if (!others.length) return;
+    const outcome = await importDropped(others);
     if (!outcome?.concerned?.length || !element || !p || !p.node(element)) return;
     p.checkpoint();
     p.cite(element, outcome.concerned);

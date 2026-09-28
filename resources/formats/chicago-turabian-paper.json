@@ -8,7 +8,7 @@
     "url": "https://www.chicagomanualofstyle.org/turabian/Student-Tip-Sheets.html",
     "checked": "2026-09-27",
     "confidence": "high",
-    "notes": "Tip sheets 1, 2, 6, 7, 10, 11, 12 and 14 were read; 3, 4, 5, 8, 9 and 13 were not. They are of 2018 and follow Turabian 9th ed. and the Chicago Manual 17th ed., though the Manual is now in its 18th. Not specified, and taken from the general default: hyphenation, whether headings are numbered, the number of heading levels (the examples show two), running head, abstract. The page size is not stated: letter was chosen for a North American source. Margins are 'at least' 1 inch. The source allows 12 pt Times New Roman or Calibri, or 11 pt Arial; the first is entered. Headings may be centred or flush left (centred entered), the first level 'such as bold' and the second 'such as italic'; the source asks for two blank lines before a heading and one after, entered here as 24pt and 12pt. The title 'may be two or three points larger than the main text': 14 entered. Notes may be footnotes or endnotes (footnotes entered) and in 'regular text or smaller' (12 entered). The blank line between notes and between bibliography entries is entered as 12pt. Page numbers may be top right or bottom centre (top right entered). With the author-date system the list is headed 'Reference List', not 'Bibliography'. Reference style: the tip sheets are 'fully compatible' with Chicago 17th ed., so that style is given; the index also holds 'turabian-notes-bibliography' and 'turabian-author-date'. The source adds that directions from a teacher or dissertation office overrule these guidelines."
+    "notes": "Tip sheets 1, 2, 6, 7, 10, 11, 12 and 14 were read; 3, 4, 5, 8, 9 and 13 were not. They are of 2018 and follow Turabian 9th ed. and the Chicago Manual 17th ed., though the Manual is now in its 18th. Not specified, and taken from the general default: hyphenation, whether headings are numbered, the number of heading levels (the examples show two), running head, abstract. The page size is not stated: letter was chosen for a North American source. Margins are 'at least' 1 inch. The source allows 12 pt Times New Roman or Calibri, or 11 pt Arial; the first is entered. Headings may be centred or flush left (centred entered), the first level 'such as bold' and the second 'such as italic'; the source asks for two blank lines before a heading and one after, entered here as 24pt and 12pt. The title 'may be two or three points larger than the main text': 14 entered. Notes may be footnotes or endnotes (footnotes entered) and in 'regular text or smaller' (12 entered). The blank line between notes and between bibliography entries is entered as 12pt. Page numbers may be top right or bottom centre (top right entered). With the author-date system the list is headed 'Reference List', not 'Bibliography'. Reference style: the tip sheets are 'fully compatible' with Chicago 17th ed., so that style is given; the index also holds 'turabian-notes-bibliography' and 'turabian-author-date'. The source adds that directions from a teacher or dissertation office overrule these guidelines. Figures are set as Turabian's manual has them, which the source named here may not cover: the caption below the figure, flush left, single-spaced."
   },
   "page": {
     "size": "letter",
@@ -65,6 +65,20 @@
     "entrySpacing": "12pt",
     "newPage": true,
     "size": 0
+  },
+  "figures": {
+    "label": "Figure",
+    "separator": ". ",
+    "labelBold": false,
+    "labelItalic": false,
+    "captionPosition": "below",
+    "captionAlign": "left",
+    "captionSize": 0,
+    "captionItalic": false,
+    "captionLineSpacing": 1.0,
+    "placement": "in-text",
+    "endTitle": "Figures",
+    "placeholder": "[{} about here]"
   },
   "pageNumbers": { "show": true, "position": "top-right", "firstPage": false },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },

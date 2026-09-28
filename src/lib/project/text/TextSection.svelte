@@ -5,6 +5,7 @@
   import type { KeyAction } from '$lib/editor/plugins';
   import RichText, { type FocusAt } from '$lib/editor/RichText.svelte';
   import { blocksHtml } from '../model/html';
+  import { hydrate } from '$lib/figures/hydrate.svelte';
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import type { Other, Project } from '../model/project.svelte';
@@ -181,7 +182,7 @@
       {:else if html}
         <!-- Made by blocksHtml, which escapes all text. -->
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        <div class="prose body static">{@html html}</div>
+        <div class="prose body static" use:hydrate={html}>{@html html}</div>
       {:else}
         <div class="prose body static blank">&nbsp;</div>
       {/if}

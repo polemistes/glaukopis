@@ -6,7 +6,7 @@
  */
 
 import * as Y from 'yjs';
-import type { CiteItem, CiteMode } from '$lib/editor/schema';
+import { figureWidth, type CiteItem, type CiteMode } from '$lib/editor/schema';
 
 export interface InlineText {
   kind: 'text';
@@ -27,13 +27,36 @@ export interface InlineFootnote {
 export interface InlineBreak {
   kind: 'break';
 }
-export type Inline = InlineText | InlineCitation | InlineFootnote | InlineBreak;
+/** Mathematics in the line, in the notation of TeX. */
+export interface InlineMath {
+  kind: 'math';
+  tex: string;
+}
+export type Inline = InlineText | InlineCitation | InlineFootnote | InlineBreak | InlineMath;
+
+/** A picture with what is said of it. The picture is a file of the project. */
+export interface FigureBlock {
+  kind: 'figure';
+  /** The SHA-256 of what the file holds. */
+  file: string;
+  extension: string;
+  name: string;
+  caption: Inline[];
+  alt: string;
+  /** In hundredths of the width of the text. */
+  width: number;
+  numbered: boolean;
+}
 
 export type Block =
   | { kind: 'paragraph'; content: Inline[] }
   | { kind: 'blockquote'; content: Block[] }
   | { kind: 'bullet_list'; items: Block[][] }
-  | { kind: 'ordered_list'; start: number; items: Block[][] };
+  | { kind: 'ordered_list'; start: number; items: Block[][] }
+  | { kind: 'equation'; tex: string; numbered: boolean }
+  | FigureBlock;
+
+const text = (value: unknown): string => (typeof value === 'string' ? value : '');
 
 function inlinesOf(parent: Y.XmlElement | Y.XmlFragment): Inline[] {
   const out: Inline[] = [];
@@ -76,6 +99,11 @@ function inlinesOf(parent: Y.XmlElement | Y.XmlFragment): Inline[] {
         case 'hard_break':
           out.push({ kind: 'break' });
           break;
+        case 'math': {
+          const tex = text(child.getAttribute('tex') as unknown).trim();
+          if (tex) out.push({ kind: 'math', tex });
+          break;
+        }
         default:
           out.push(...inlinesOf(child));
       }
@@ -104,6 +132,24 @@ function blocksOf(parent: Y.XmlElement | Y.XmlFragment): Block[] {
           kind: 'ordered_list',
           start: Number(child.getAttribute('start') as unknown) || 1,
           items: itemsOf(child),
+        });
+        break;
+      case 'equation': {
+        const tex = text(child.getAttribute('tex') as unknown).trim();
+        if (tex) out.push({ kind: 'equation', tex, numbered: !!child.getAttribute('numbered') });
+        break;
+      }
+      case 'figure':
+        out.push({
+          kind: 'figure',
+          file: text(child.getAttribute('file') as unknown),
+          extension: text(child.getAttribute('extension') as unknown),
+          name: text(child.getAttribute('name') as unknown),
+          // A note cannot stand in what is said of a figure.
+          caption: inlinesOf(child).filter((i) => i.kind !== 'footnote'),
+          alt: text(child.getAttribute('alt') as unknown),
+          width: figureWidth(child.getAttribute('width') as unknown),
+          numbered: (child.getAttribute('numbered') as unknown) !== false,
         });
         break;
       default:
@@ -144,6 +190,7 @@ export function inlineText(inlines: Inline[], withNotes = false): string {
   for (const i of inlines) {
     if (i.kind === 'text') out += i.text;
     else if (i.kind === 'break') out += '\n';
+    else if (i.kind === 'math') out += i.tex;
     else if (i.kind === 'footnote' && withNotes) out += ` [${inlineText(i.content, true)}]`;
   }
   return out;
@@ -154,6 +201,8 @@ export function blocksText(blocks: Block[], withNotes = false): string {
   for (const b of blocks) {
     if (b.kind === 'paragraph') parts.push(inlineText(b.content, withNotes));
     else if (b.kind === 'blockquote') parts.push(blocksText(b.content, withNotes));
+    else if (b.kind === 'figure') parts.push(inlineText(b.caption, withNotes));
+    else if (b.kind === 'equation') parts.push(b.tex);
     else for (const item of b.items) parts.push(blocksText(item, withNotes));
   }
   return parts.join('\n');
@@ -184,6 +233,7 @@ export function countWords(text: string): number {
 }
 
 export interface BodyFacts {
+  /** Without text, and without anything else that is part of a document. */
   empty: boolean;
   words: number;
   /** Ids of the references cited, each once, in the order of first citation. */
@@ -194,12 +244,18 @@ export interface BodyFacts {
 export function bodyFacts(blocks: Block[]): BodyFacts {
   const cited: string[] = [];
   let notes = 0;
+  /** Figures and formulas. */
+  let set = 0;
   let text = '';
   const visitInlines = (inlines: Inline[]) => {
     for (const i of inlines) {
       if (i.kind === 'text') text += i.text;
       else if (i.kind === 'break') text += ' ';
-      else if (i.kind === 'citation') {
+      else if (i.kind === 'math') {
+        // A formula in the line stands for a word.
+        text += ' x ';
+        set++;
+      } else if (i.kind === 'citation') {
         for (const item of i.items) if (!cited.includes(item.id)) cited.push(item.id);
       } else if (i.kind === 'footnote') {
         notes++;
@@ -213,13 +269,17 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
     for (const b of list) {
       if (b.kind === 'paragraph') visitInlines(b.content);
       else if (b.kind === 'blockquote') visit(b.content);
+      else if (b.kind === 'figure') {
+        set++;
+        visitInlines(b.caption);
+      } else if (b.kind === 'equation') set++;
       else for (const item of b.items) visit(item);
       text += '\n';
     }
   };
   visit(blocks);
   return {
-    empty: !text.trim() && !cited.length && !notes,
+    empty: !text.trim() && !cited.length && !notes && !set,
     words: countWords(text),
     cited,
     notes,

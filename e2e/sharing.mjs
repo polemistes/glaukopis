@@ -2,7 +2,7 @@
 // each with a data directory of its own.
 
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { App, root, sleep } from './harness.mjs';
@@ -270,6 +270,55 @@ try {
   await owner.waitGone('.notes');
   await owner.keys(['Control', 'Shift', 'r']);
   await sleep(300);
+
+  // ---- a picture of one reaches the other ----
+  const desk = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-desk-'));
+  const drawing =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="120" viewBox="0 0 240 120"><rect width="240" height="120" fill="#f4efe6"/><circle cx="120" cy="60" r="40" fill="#7a2e2e"/></svg>';
+  writeFileSync(join(desk, 'The shield.svg'), drawing);
+  const dropOn = async (app, path, words) => {
+    const at = await app.exec(
+      `const n = Array.from(document.querySelectorAll('.diagram .node')).find((e) => e.textContent.includes(arguments[0]));
+       const r = n.getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };`,
+      words,
+    );
+    await app.execAsync(
+      `const emit = (event, payload) => window.__TAURI_INTERNALS__.invoke('plugin:event|emit', { event, payload });
+       const position = { x: arguments[1] * devicePixelRatio, y: arguments[2] * devicePixelRatio };
+       await emit('tauri://drag-enter', { paths: [arguments[0]], position });
+       await emit('tauri://drag-over', { position });
+       await emit('tauri://drag-drop', { paths: [arguments[0]], position });`,
+      path,
+      at.x,
+      at.y,
+    );
+  };
+  const room = JSON.parse(told)[0].id;
+  const kept = (dir) => (existsSync(dir) ? readdirSync(dir).filter((f) => !f.startsWith('.')) : []);
+  await dropOn(owner, join(desk, 'The shield.svg'), 'Virgil');
+  await until('the server to be given the picture', () => kept(join(serverData, 'rooms', room, 'files')).length === 1, 15000);
+  check('a picture put into a shared project is sent to the server', true);
+  await guest.doubleClick(await guest.findByText('.diagram .node', 'Virgil'));
+  await guest.waitFor('.box .text figure.figure', 10000);
+  await until('the picture to be shown to the guest', () =>
+    guest.exec(`const i = document.querySelector('.box .text figure img'); return !!i && /^blob:/.test(i.src) && i.complete && i.naturalWidth > 0`),
+    30000,
+  );
+  check('and is shown to the one who did not have it', true);
+  const theirs = kept(join(guest.dataDir, 'projects', room, 'files'));
+  check(
+    'who has it as it was, under the name of what it holds',
+    theirs.length === 1 && /^[0-9a-f]{64}\.svg$/.test(theirs[0]) && readFileSync(join(guest.dataDir, 'projects', room, 'files', theirs[0]), 'utf8') === drawing,
+    theirs.join(', '),
+  );
+  await guest.click('.box .text figure figcaption');
+  await guest.keys('The shield');
+  await guest.screenshot('sharing-7c-figure');
+  await guest.press('Escape');
+  await sleep(200);
+  await guest.press('Escape');
+  await guest.waitGone('.box');
+  rmSync(desk, { recursive: true, force: true });
 
   // ---- without the server ----
   server.kill('SIGTERM');

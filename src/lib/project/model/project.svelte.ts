@@ -1111,6 +1111,31 @@ export class Project {
     });
   }
 
+  /**
+   * A figure at the end of the text of an element: for a picture that is
+   * dropped on an element, where there is no cursor to say where.
+   */
+  addFigure(id: string, picture: { hash: string; extension: string; name: string }, width = 100) {
+    const body = this.fragment(id, 'body');
+    if (!body) return;
+    this.transact(() => {
+      // An empty paragraph at the end gives way.
+      const last = body.length ? body.get(body.length - 1) : null;
+      const at =
+        last instanceof Y.XmlElement && last.nodeName === 'paragraph' && last.length === 0
+          ? body.length - 1
+          : body.length;
+      const figure = new Y.XmlElement('figure');
+      figure.setAttribute('file', picture.hash);
+      figure.setAttribute('extension', picture.extension);
+      figure.setAttribute('name', picture.name);
+      figure.setAttribute('alt', '');
+      figure.setAttribute('width', width as unknown as string);
+      figure.setAttribute('numbered', true as unknown as string);
+      body.insert(at, [figure]);
+    });
+  }
+
   #readNotes() {
     const seen = new Set<string>();
     for (const [id, text] of this.yNotes) {

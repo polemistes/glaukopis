@@ -124,6 +124,25 @@ export interface DocumentFormat {
     newPage: boolean;
     size: number;
   };
+  figures: {
+    label: string;
+    /** A line break in it sets the caption on a line of its own. */
+    separator: string;
+    labelBold: boolean;
+    labelItalic: boolean;
+    captionPosition: 'above' | 'below';
+    captionAlign: Align;
+    /** In points; 0 for the size of the text. */
+    captionSize: number;
+    captionItalic: boolean;
+    /** 0 for the spacing of the text. */
+    captionLineSpacing: number;
+    placement: 'in-text' | 'at-end';
+    endTitle: string;
+    /** With `{}` for the label and number. */
+    placeholder: string;
+  };
+  equations: { beforeNumber: string; afterNumber: string };
   pageNumbers: { show: boolean; position: Position; firstPage: boolean };
   runningHead: {
     content: 'none' | 'title' | 'author' | 'author-title' | 'text';

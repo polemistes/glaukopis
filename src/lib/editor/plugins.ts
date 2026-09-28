@@ -31,7 +31,17 @@ import {
   type EditorState,
 } from 'prosemirror-state';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
-import { insertFootnote, isAtEnd, isAtStart, toggle, toggleList, toggleQuote } from './commands';
+import {
+  insertEquation,
+  insertFootnote,
+  insertMath,
+  isAtEnd,
+  isAtStart,
+  leaveCaption,
+  toggle,
+  toggleList,
+  toggleQuote,
+} from './commands';
 
 export type KeyAction =
   | 'enter'
@@ -50,6 +60,8 @@ export interface EditorHooks {
   action?: (action: KeyAction, view: EditorView) => boolean;
   /** Asks for a work to cite. `typed` is true when the user typed "@". */
   cite?: (view: EditorView, typed: boolean) => void;
+  /** Asks for a picture, and puts a figure with it where the cursor is. */
+  picture?: (view: EditorView) => void;
 }
 
 const dashes = [
@@ -148,6 +160,12 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     'Shift-Mod-8': toggleList('bullet_list'),
     'Shift-Mod-7': toggleList('ordered_list'),
     'Mod-Alt-f': insertFootnote,
+    'Mod-Alt-m': insertMath,
+    'Mod-Alt-e': insertEquation,
+    'Mod-Alt-p': (_state, _dispatch, view) => {
+      if (view && hooks.picture) hooks.picture(view);
+      return !!hooks.picture;
+    },
     'Shift-Mod-c': (_state, _dispatch, view) => {
       if (view && hooks.cite) hooks.cite(view, false);
       return !!hooks.cite;
@@ -173,6 +191,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
   };
   if (item) {
     keys.Enter = chainCommands(
+      leaveCaption,
       splitListItem(item),
       createParagraphNear,
       liftEmptyBlock,

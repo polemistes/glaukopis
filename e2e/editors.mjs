@@ -63,6 +63,21 @@ try {
   await app.clickText('dialog nav button', 'Headings');
   await sleep(300);
   await app.screenshot('editors-2-format-headings');
+  // What a figure is called, and where the figures stand.
+  await app.clickText('dialog nav button', 'Figures and equations');
+  await sleep(300);
+  await app.exec(
+    `const set = (el, value) => { el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); };
+     const fields = Array.from(document.querySelectorAll('dialog .form input[type="text"], dialog .form input:not([type])'));
+     set(fields.find((i) => i.value === 'Figure'), 'Fig.');
+     const selects = Array.from(document.querySelectorAll('dialog .form select'));
+     set(selects.find((s) => Array.from(s.options).some((o) => o.value === 'at-end')), 'at-end');`,
+  );
+  await sleep(400);
+  const told = await app.text('dialog .form');
+  check('the format says what a figure is called, and shows it', /Fig\. 1/.test(told), told.replace(/\s+/g, ' ').slice(0, 300));
+  check('and where the figures stand', /Heading over the figures/.test(told) && /about here/.test(told));
+  await app.screenshot('editors-2b-format-figures');
   await app.clickText('dialog nav button', 'About this format');
   await sleep(200);
   await app.screenshot('editors-3-format-about');
@@ -76,6 +91,7 @@ try {
   check('a changed format is saved as one’s own and taken into use', format === 'my-publisher', format);
   const saved = JSON.parse(readFileSync(join(app.dataDir, 'formats', 'my-publisher.json'), 'utf8'));
   check('it holds the change and remembers what it was made from', saved.text.lineSpacing === 1.5 && saved.basedOn === 'manuscript', `${saved.text.lineSpacing} ${saved.basedOn}`);
+  check('with what was said of figures', saved.figures.label === 'Fig.' && saved.figures.placement === 'at-end' && saved.equations.beforeNumber === '(', JSON.stringify(saved.figures));
   const work = join(app.dataDir, 'work');
   const typ = () => readFileSync(join(work, readdirSync(work).find((n) => !n.includes('-') || n.length > 30), 'preview', 'document.typ'), 'utf8');
   check('the preview is in the new format', /leading: 0\.8em/.test(typ()));

@@ -136,6 +136,9 @@ function noteWords(block: import('./text').Block): number {
       return inlines(block.content);
     case 'blockquote':
       return block.content.reduce((n, b) => n + noteWords(b), 0);
+    case 'figure':
+    case 'equation':
+      return 0;
     default:
       return block.items.reduce((n, item) => n + item.reduce((m, b) => m + noteWords(b), 0), 0);
   }

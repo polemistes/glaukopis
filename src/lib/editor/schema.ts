@@ -208,7 +208,106 @@ const bodyNodes: Record<string, NodeSpec> = {
   },
 };
 
-export const bodySchema = new Schema({ nodes: bodyNodes, marks });
+/** How wide a picture is, in hundredths of the width of the text. */
+export function figureWidth(value: unknown): number {
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) && n > 0 ? Math.min(100, Math.max(10, n)) : 100;
+}
+
+/**
+ * Mathematics, in the notation of TeX, and figures. The picture of a figure
+ * is a file of the project, named by what it holds; the text of the figure
+ * is what is said of it under or over the picture.
+ */
+const figureNodes: Record<string, NodeSpec> = {
+  math: {
+    group: 'inline',
+    inline: true,
+    atom: true,
+    draggable: true,
+    attrs: { tex: { default: '' } },
+    parseDOM: [
+      {
+        tag: 'span[data-math]',
+        getAttrs: (el) => ({ tex: (el as HTMLElement).getAttribute('data-math') ?? '' }),
+      },
+    ],
+    toDOM: (node) => ['span', { 'data-math': node.attrs.tex, class: 'math' }, node.attrs.tex],
+  },
+  equation: {
+    group: 'block',
+    atom: true,
+    selectable: true,
+    attrs: { tex: { default: '' }, numbered: { default: false } },
+    parseDOM: [
+      {
+        tag: 'div[data-equation]',
+        getAttrs: (el) => ({
+          tex: (el as HTMLElement).getAttribute('data-equation') ?? '',
+          numbered: (el as HTMLElement).hasAttribute('data-numbered'),
+        }),
+      },
+    ],
+    toDOM: (node) => [
+      'div',
+      {
+        'data-equation': node.attrs.tex,
+        'data-numbered': node.attrs.numbered ? '' : null,
+        class: 'equation',
+      },
+      node.attrs.tex,
+    ],
+  },
+  figure: {
+    group: 'block',
+    // What is said of a figure is a line of text. A note has no place in it:
+    // not every kind of document can set one there.
+    content: '(text | hard_break | citation | math)*',
+    isolating: true,
+    defining: true,
+    attrs: {
+      file: { default: '' },
+      extension: { default: '' },
+      name: { default: '' },
+      alt: { default: '' },
+      width: { default: 100 },
+      numbered: { default: true },
+    },
+    parseDOM: [
+      {
+        tag: 'figure[data-picture]',
+        contentElement: 'figcaption',
+        getAttrs: (node) => {
+          const el = node as HTMLElement;
+          const [file, extension] = (el.getAttribute('data-picture') ?? '').split('.');
+          if (!/^[0-9a-f]{64}$/.test(file ?? '')) return false;
+          return {
+            file,
+            extension: extension ?? '',
+            name: el.getAttribute('data-name') ?? '',
+            alt: el.getAttribute('data-alt') ?? '',
+            width: figureWidth(el.getAttribute('data-width')),
+            numbered: !el.hasAttribute('data-unnumbered'),
+          };
+        },
+      },
+    ],
+    toDOM: (node) => [
+      'figure',
+      {
+        'data-picture': `${node.attrs.file}.${node.attrs.extension}`,
+        'data-name': node.attrs.name || null,
+        'data-alt': node.attrs.alt || null,
+        'data-width': String(figureWidth(node.attrs.width)),
+        'data-unnumbered': node.attrs.numbered ? null : '',
+        class: 'figure',
+      },
+      ['figcaption', 0],
+    ],
+  },
+};
+
+export const bodySchema = new Schema({ nodes: { ...bodyNodes, ...figureNodes }, marks });
 
 export type NotePlace = '' | 'foot' | 'end';
 

@@ -447,11 +447,11 @@ body.dragging * {
 .prose,
 .tip,
 [data-notes] {
-  counter-reset: note placed-note;
+  counter-reset: note placed-note figure equation;
 }
 [data-notes] .section.excluded .prose,
 [data-notes] .section.loose .prose {
-  counter-reset: note placed-note;
+  counter-reset: note placed-note figure equation;
 }
 .footnote[data-place] {
   counter-increment: placed-note;
@@ -488,6 +488,183 @@ body.dragging * {
 }
 .footnote.blank {
   opacity: 0.6;
+}
+
+/* Mathematics. The font comes with the application: see figures/math.svelte.ts. */
+math {
+  font-family: 'STIX Two Math', 'Latin Modern Math', 'Cambria Math', math;
+  font-size: 1.04em;
+  /* What the text around it asks of its letters is not for formulas. */
+  font-feature-settings: normal;
+  font-variant-numeric: normal;
+  font-variant-caps: normal;
+  font-style: normal;
+  font-weight: normal;
+  letter-spacing: normal;
+  hanging-punctuation: none;
+  white-space: nowrap;
+}
+.math {
+  white-space: normal;
+  font-variant-numeric: lining-nums;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background var(--fast) var(--ease);
+}
+span.math:not(.equation-body) {
+  padding: 0 0.12em;
+}
+.prose:not(.static) span.math:not(.equation-body):hover,
+span.math.selected {
+  background: var(--accent-softer);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+/* What was written, where it cannot be shown as mathematics. */
+.math.waiting,
+.math.unread,
+.math.blank {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--ink-3);
+}
+.math.unread {
+  color: var(--danger);
+  text-decoration: underline wavy color-mix(in srgb, var(--danger) 60%, transparent);
+  text-underline-offset: 3px;
+}
+.math.blank {
+  font-family: var(--font-ui);
+  font-style: italic;
+  color: var(--ink-4);
+}
+.equation {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: 0.8em 0;
+  padding: 0.35em 3.2em;
+  border-radius: var(--radius-s);
+  white-space: normal;
+  overflow-x: auto;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
+}
+.equation[data-numbered] {
+  counter-increment: equation;
+}
+.equation[data-numbered]::after {
+  content: '(' counter(equation) ')';
+  position: absolute;
+  right: 0.4em;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-2);
+  font-variant-numeric: lining-nums;
+}
+.prose:not(.static) .equation:hover,
+.equation.selected,
+.equation.ProseMirror-selectednode {
+  background: var(--accent-softer);
+  box-shadow: 0 0 0 1px var(--accent);
+  outline: none;
+}
+
+/* Figures. The word and the number are counted by the page, as the notes
+   are: through the map, where its text is shown whole. */
+.figure {
+  margin: 1.1em 0;
+  padding: 0;
+  text-align: center;
+}
+.figure:not([data-unnumbered]) {
+  counter-increment: figure;
+}
+.figure .picture {
+  position: relative;
+  display: block;
+  max-width: 100%;
+  margin: 0 auto;
+  border-radius: var(--radius-s);
+  line-height: 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.figure .picture img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-s);
+}
+.figure .picture img:not([src]) {
+  display: none;
+}
+.figure .picture[data-state] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  border: 1px dashed var(--line-strong);
+  background: var(--paper-sunken);
+  color: var(--ink-4);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  white-space: normal;
+}
+.figure .picture[data-state='reading']::after {
+  content: '…';
+}
+.figure .picture[data-state='absent']::after {
+  content: 'The picture is not on this computer';
+}
+.prose:not(.static) .figure .picture:hover,
+.figure.selected .picture,
+.figure.ProseMirror-selectednode .picture {
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 3px var(--accent);
+}
+.figure.ProseMirror-selectednode {
+  outline: none;
+}
+.figure figcaption {
+  display: block;
+  min-height: 1.5em;
+  margin-top: 0.55em;
+  color: var(--ink-2);
+  font-size: 0.9em;
+  line-height: 1.5;
+  text-align: center;
+  white-space: pre-wrap;
+}
+.figure:not([data-unnumbered]) figcaption::before {
+  content: var(--figure-label, 'Figure') '\00a0' counter(figure) var(--figure-separator, '. ');
+  color: var(--ink-3);
+}
+.figure.uncaptioned:not([data-unnumbered]) figcaption::before {
+  content: var(--figure-label, 'Figure') '\00a0' counter(figure);
+}
+.prose:not(.static) .figure.uncaptioned figcaption::after {
+  content: 'What is said of the picture';
+  margin-left: 0.5em;
+  color: var(--ink-4);
+  font-style: italic;
+  pointer-events: none;
+}
+.prose:not(.static) .figure.uncaptioned[data-unnumbered] figcaption::after {
+  margin-left: 0;
+}
+.note-panel.formula-panel,
+.note-panel.figure-panel {
+  border-top-color: var(--accent);
+}
+.note-panel.formula-panel .note-number,
+.note-panel.figure-panel .note-number {
+  color: var(--accent-strong);
+}
+.note-panel.figure-panel {
+  width: min(380px, calc(100vw - 32px));
 }
 
 .ProseMirror-gapcursor {

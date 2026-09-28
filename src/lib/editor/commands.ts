@@ -3,7 +3,13 @@
 import { lift, toggleMark, wrapIn } from 'prosemirror-commands';
 import { Fragment, type MarkType, type NodeType } from 'prosemirror-model';
 import { liftListItem, wrapInList } from 'prosemirror-schema-list';
-import { NodeSelection, TextSelection, type Command, type EditorState } from 'prosemirror-state';
+import {
+  NodeSelection,
+  Selection,
+  TextSelection,
+  type Command,
+  type EditorState,
+} from 'prosemirror-state';
 import { bodySchema, type CiteItem, type CiteMode } from './schema';
 
 export function markActive(state: EditorState, type: MarkType): boolean {
@@ -144,6 +150,140 @@ export const insertFootnote: Command = (state, dispatch) => {
   return true;
 };
 
+/** A formula in the line, where the cursor is. What is selected becomes what it holds. */
+export const insertMath: Command = (state, dispatch) => {
+  const type = state.schema.nodes.math;
+  if (!type) return false;
+  const { $from, $to, empty } = state.selection;
+  if (!$from.sameParent($to) || !$from.parent.inlineContent) return false;
+  if (!$from.parent.canReplaceWith($from.index(), $to.index(), type)) return false;
+  if (dispatch) {
+    const tex = empty ? '' : state.doc.textBetween($from.pos, $to.pos, ' ').trim();
+    const tr = state.tr.replaceSelectionWith(type.create({ tex }), false);
+    const at = tr.mapping.map($from.pos, -1);
+    // Left selected, which opens it.
+    if (tr.doc.nodeAt(at)?.type === type) tr.setSelection(NodeSelection.create(tr.doc, at));
+    dispatch(tr.scrollIntoView());
+  }
+  return true;
+};
+
+/**
+ * Where something that stands by itself goes: in place of the paragraph the
+ * cursor is in when that is empty, and after it otherwise. Within what is
+ * said of a figure, after the figure.
+ */
+function placeForBlock(state: EditorState, type: NodeType): { from: number; to: number } | null {
+  const { selection } = state;
+  if (selection instanceof NodeSelection && selection.node.isBlock) {
+    const $after = state.doc.resolve(selection.to);
+    return $after.parent.canReplaceWith($after.index(), $after.index(), type)
+      ? { from: selection.to, to: selection.to }
+      : null;
+  }
+  const { $from } = selection;
+  for (let d = $from.depth; d > 0; d--) {
+    const node = $from.node(d);
+    if (!node.isTextblock && node.type.name !== 'figure') continue;
+    const parent = $from.node(d - 1);
+    const index = $from.index(d - 1);
+    const empty = node.type.name === 'paragraph' && node.content.size === 0;
+    if (empty && parent.canReplaceWith(index, index + 1, type))
+      return { from: $from.before(d), to: $from.after(d) };
+    if (parent.canReplaceWith(index + 1, index + 1, type))
+      return { from: $from.after(d), to: $from.after(d) };
+    return null;
+  }
+  return null;
+}
+
+/** An equation on a line of its own. It is left selected, which opens it. */
+export const insertEquation: Command = (state, dispatch) => {
+  const type = state.schema.nodes.equation;
+  if (!type) return false;
+  const at = placeForBlock(state, type);
+  if (!at) return false;
+  if (dispatch) {
+    const tr = state.tr.replaceWith(at.from, at.to, type.create());
+    tr.setSelection(NodeSelection.create(tr.doc, at.from));
+    dispatch(tr.scrollIntoView());
+  }
+  return true;
+};
+
+export interface FigureOf {
+  hash: string;
+  extension: string;
+  name: string;
+  /** How many points the picture itself is wide, where that is known. */
+  width?: number | null;
+}
+
+/**
+ * How wide a picture is set when nothing has been said: as wide as the text
+ * if it is large, and less if it is small, so that it is not made coarse.
+ */
+export function widthFor(picture: FigureOf): number {
+  if (!picture.width) return picture.extension === 'svg' ? 60 : 100;
+  const share = Math.round(picture.width / 9.5 / 5) * 5;
+  return Math.max(25, Math.min(100, share));
+}
+
+/**
+ * A figure with this picture. `at` is where in the text, when that is not
+ * where the cursor is. The cursor is put into what is said of the figure.
+ */
+export function insertFigure(picture: FigureOf, at?: number): Command {
+  return (state, dispatch) => {
+    const type = state.schema.nodes.figure;
+    if (!type) return false;
+    let from = state;
+    if (at !== undefined) {
+      try {
+        const $at = state.doc.resolve(Math.max(0, Math.min(at, state.doc.content.size)));
+        from = state.apply(state.tr.setSelection(Selection.near($at)));
+      } catch {
+        return false;
+      }
+    }
+    const where = placeForBlock(from, type);
+    if (!where) return false;
+    if (dispatch) {
+      const node = type.create({
+        file: picture.hash,
+        extension: picture.extension,
+        name: picture.name,
+        width: widthFor(picture),
+      });
+      const tr = state.tr.replaceWith(where.from, where.to, node);
+      tr.setSelection(TextSelection.create(tr.doc, where.from + 1));
+      dispatch(tr.scrollIntoView());
+    }
+    return true;
+  };
+}
+
+/** Enter in what is said of a figure: the writing goes on after the figure. */
+export const leaveCaption: Command = (state, dispatch) => {
+  const { $from, empty } = state.selection;
+  if (!empty || $from.parent.type.name !== 'figure') return false;
+  const paragraph = state.schema.nodes.paragraph;
+  if (!paragraph) return false;
+  const after = $from.after();
+  const $after = state.doc.resolve(after);
+  if (dispatch) {
+    const tr = state.tr;
+    const next = $after.nodeAfter;
+    if (!next || next.type !== paragraph || next.content.size > 0) {
+      if (!$after.parent.canReplaceWith($after.index(), $after.index(), paragraph)) return false;
+      tr.insert(after, paragraph.create());
+    }
+    tr.setSelection(TextSelection.create(tr.doc, after + 1));
+    dispatch(tr.scrollIntoView());
+  }
+  return true;
+};
+
 /** The cursor to the very beginning or end of the text. */
 export function cursorTo(where: 'start' | 'end'): Command {
   return (state, dispatch) => {
@@ -171,6 +311,6 @@ export function isEmptyDoc(state: EditorState): boolean {
   return (
     doc.childCount <= 1 &&
     (doc.firstChild?.content.size ?? 0) === 0 &&
-    doc.firstChild?.type.name !== 'blockquote'
+    (doc.firstChild?.type.name ?? 'paragraph') === 'paragraph'
   );
 }
