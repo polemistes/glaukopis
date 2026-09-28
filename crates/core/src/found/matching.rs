@@ -38,6 +38,8 @@ pub(super) struct Work {
     /// The same of those who stand behind them: the editors of a work that
     /// has authors.
     behind: Vec<Vec<String>>,
+    /// The words of the given names of those who stand first, folded.
+    given: Vec<String>,
     /// The year, and the year it first came out where that is another.
     years: Vec<i32>,
     /// The title without its subtitle, the short title, and the whole
@@ -163,7 +165,9 @@ impl Work {
                 titles.push(words);
             }
         }
-        Work { names, behind, years, titles, people: short_list(&creators), title: cut(&main, 48) }
+        let given: Vec<String> =
+            creators.iter().flat_map(|p| fold(&p.given).split(' ').map(str::to_owned).collect::<Vec<_>>()).collect();
+        Work { names, behind, given, years, titles, people: short_list(&creators), title: cut(&main, 48) }
     }
 
     /// How many of the names stand first in the work, and whether the first
@@ -235,6 +239,12 @@ impl Shelf {
     /// The works in which one of this name, folded, stands first.
     pub(super) fn named(&self, name: &str) -> &[usize] {
         self.by_name.get(name).map_or(&[], Vec::as_slice)
+    }
+
+    /// Whether a word, folded, is a given name of one who stands first in
+    /// one of these works.
+    pub(super) fn is_given(&self, works: &[usize], word: &str) -> bool {
+        works.iter().filter_map(|&i| self.works.get(i)).any(|work| work.given.iter().any(|given| given == word))
     }
 
     /// Whether one so named has a work of one of these years.
