@@ -55,11 +55,11 @@ preview-remarks = Merknader
 preview-remarks-font = Skrift
 preview-font-missing = { $font } er ikke installert.
 # Det første navnet er skriften formatet ber om; dette er den som brukes i stedet.
-preview-font-substitute = { $font } brukes i stedet, her i forhåndsvisningen og i en PDF som lages. I et dokument som eksporteres for Word, LibreOffice eller LaTeX, oppgis skriften slik formatet ber om, og den er der for den som åpner dokumentet og har den.
+preview-font-substitute = { $font } brukes i stedet, her i forhåndsvisningen og i en PDF som lages. I et dokument som eksporteres til Word, LibreOffice eller LaTeX, oppgis skriften slik formatet ber om, og den er der for den som åpner dokumentet og har den.
 preview-remarks-references = Referanser
 # Med fet skrift, og det neste følger etter i samme setning.
 preview-works-missing = { $count } verk det vises til, ble ikke funnet,
-preview-works-missing-where = verken i biblioteket ditt eller i prosjektet. Det er merket i teksten.
+preview-works-missing-where = verken i biblioteket ditt eller i prosjektet. Stedene er merket i teksten.
 # Over det Pandoc og Typst sa mens de laget dokumentet.
 preview-remarks-warnings = Meldinger mens dokumentet ble laget
 
@@ -100,7 +100,7 @@ preview-export = Eksporter
 preview-export-kind = Filtype
 preview-export-pdf-about = Slik forhåndsvisningen viser det
 preview-export-pdflatex = PDF, satt med LaTeX
-preview-export-pdflatex-about = Det samme dokumentet, satt av LaTeX. Det tar litt lenger tid.
+preview-export-pdflatex-about = Det samme dokumentet, satt med LaTeX. Det tar litt lenger tid.
 preview-export-docx-about = Det de fleste forlag og tidsskrifter ber om
 preview-export-odt-about = For LibreOffice Writer og andre
 preview-export-latex-about = Til å settes med LuaLaTeX eller XeLaTeX
