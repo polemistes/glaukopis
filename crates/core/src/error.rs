@@ -1,42 +1,81 @@
 //! One error type for the core.
 
+use std::fmt;
 use std::path::PathBuf;
+
+use crate::tr;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug, thiserror::Error)]
+/// What went wrong. What it says is said in the language of the interface
+/// (see `i18n`).
+#[derive(Debug)]
 pub enum Error {
-    #[error("{context}: {source}")]
     Io {
         context: String,
-        #[source]
         source: std::io::Error,
     },
 
-    #[error("could not read {path}: {message}")]
-    Parse { path: PathBuf, message: String },
+    Parse {
+        path: PathBuf,
+        message: String,
+    },
 
-    #[error("{0}")]
     Invalid(String),
 
-    #[error("not found: {0}")]
     NotFound(String),
 
-    #[error("{program} is not installed or could not be found")]
-    MissingProgram { program: String },
+    MissingProgram {
+        program: String,
+    },
 
-    #[error("{program} failed: {message}")]
-    Program { program: String, message: String },
+    Program {
+        program: String,
+        message: String,
+    },
 
-    #[error("network: {0}")]
     Network(String),
 
     /// A server of ours has said no. The kind is the one the server names.
-    #[error("{message}")]
-    Refused { kind: &'static str, message: String },
+    Refused {
+        kind: &'static str,
+        message: String,
+    },
 
-    #[error("{0}")]
-    Json(#[from] serde_json::Error),
+    Json(serde_json::Error),
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::Io { context, source } => write!(f, "{context}: {source}"),
+            Error::Parse { path, message } => f.write_str(&tr!("error-parse", path = path, message = message)),
+            Error::Invalid(message) | Error::Refused { message, .. } => f.write_str(message),
+            Error::NotFound(what) => f.write_str(&tr!("error-not-found", what = what)),
+            Error::MissingProgram { program } => f.write_str(&tr!("program-missing", program = program)),
+            Error::Program { program, message } => {
+                f.write_str(&tr!("program-failed", program = program, message = message))
+            }
+            Error::Network(message) => f.write_str(&tr!("error-network", message = message)),
+            Error::Json(error) => write!(f, "{error}"),
+        }
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Error::Io { source, .. } => Some(source),
+            Error::Json(error) => Some(error),
+            _ => None,
+        }
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(error: serde_json::Error) -> Self {
+        Error::Json(error)
+    }
 }
 
 impl Error {

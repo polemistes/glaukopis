@@ -6,6 +6,7 @@
  * write the text of elements through y-prosemirror.
  */
 
+import { newTextLanguage } from '$lib/i18n';
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 import { SvelteMap } from 'svelte/reactivity';
 import * as Y from 'yjs';
@@ -648,7 +649,9 @@ export class Project {
       m.set('root', root);
       m.set('order', generateKeyBetween(last, null));
       m.set('created', nowIso());
-      m.set('document', {});
+      // The language is written into the map, so that it is the same for
+      // everyone the project is shared with (ADR 0020).
+      m.set('document', { language: newTextLanguage() });
       this.yMaps.set(id, m);
       this.#makeNode(root, {
         map: id,
@@ -689,7 +692,10 @@ export class Project {
       const keys = generateNKeysBetween(null, null, list.length);
       list.forEach((part, i) => orders.set(part, keys[i]));
     }
-    const settings: Record<string, unknown> = { ...document };
+    const settings: Record<string, unknown> = {
+      ...document,
+      language: document.language || newTextLanguage(),
+    };
     for (const [k, v] of Object.entries(settings)) {
       if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length))
         delete settings[k];
@@ -822,7 +828,9 @@ export class Project {
       m.set('root', ids.get(nodeId)!);
       m.set('order', generateKeyBetween(last, null));
       m.set('created', nowIso());
-      m.set('document', {});
+      // The text is the text of the map it comes from, in its language.
+      const language = this.maps.find((x) => x.id === node.map)?.document.language;
+      m.set('document', language ? { language } : {});
       this.yMaps.set(mapId, m);
       for (const old of branch) {
         const parent = old === nodeId ? null : (tree.parent.get(old) ?? null);

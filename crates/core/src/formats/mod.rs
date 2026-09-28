@@ -684,6 +684,30 @@ impl DocumentFormat {
         levels[level.clamp(1, levels.len()) - 1].clone()
     }
 
+    /// Gives the words the format prints in the language of the document
+    /// (ADR 0020): those it has as they are in English ("Notes",
+    /// "Bibliography", "Figure") are given in the language of the document,
+    /// where documents have words in it; its own are kept.
+    pub fn speak(&mut self, language: Option<&str>) {
+        let words = [
+            &mut self.title.abstract_label,
+            &mut self.title.keywords_label,
+            &mut self.notes.title,
+            &mut self.bibliography.title,
+            &mut self.figures.label,
+            &mut self.figures.reference,
+            &mut self.figures.end_title,
+            &mut self.figures.placeholder,
+            &mut self.tables.label,
+            &mut self.tables.reference,
+            &mut self.tables.end_title,
+            &mut self.tables.placeholder,
+        ];
+        for word in words {
+            *word = crate::i18n::in_language(language, word);
+        }
+    }
+
     /// Puts values that make no sense back within bounds, so that a format
     /// made by hand cannot break the making of a document.
     pub fn sanitise(&mut self) {

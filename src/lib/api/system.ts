@@ -8,6 +8,24 @@ export interface SystemInfo {
 
 export const systemInfo = () => call<SystemInfo>('system_info');
 
+/** The languages of the application, and what the system says: see `i18n`. */
+export interface LanguagesInfo {
+  /** What the system says its language is: `nb-NO`. */
+  system: string;
+  /** The languages the interface is in, each with its name in itself. */
+  interface: { tag: string; name: string }[];
+  /** The language the interface has when none is chosen. */
+  interfaceDefault: string;
+  /** The languages documents have words of their own in. */
+  texts: string[];
+  /** The language new texts are given when none is chosen. */
+  textDefault: string;
+}
+
+export const languagesInfo = () => call<LanguagesInfo>('languages');
+/** Sets the language the core speaks in, which is that of the interface. */
+export const languageSet = (tag: string) => call<void>('language_set', { tag });
+
 export type Theme = 'system' | 'light' | 'dark';
 
 /** What is done with citations that are found in texts written elsewhere: see `api/found.ts`. */
@@ -33,6 +51,10 @@ export interface FoundSettings {
 /** Settings kept in `settings.json` in the data directory. */
 export interface Settings {
   theme: Theme;
+  /** The language of the interface: a tag, or "system" for that of the system. */
+  language: string;
+  /** The language new texts are given: a tag, or "system" for that of the system. */
+  textLanguage: string;
   /** Size of the researcher's text in the editor, in pixels. */
   textSize: number;
   /** Paths to external programs, when not found automatically. */
@@ -52,6 +74,8 @@ export interface Settings {
 
 export const defaultSettings: Settings = {
   theme: 'system',
+  language: 'system',
+  textLanguage: 'system',
   textSize: 17,
   pandocPath: null,
   typstPath: null,
