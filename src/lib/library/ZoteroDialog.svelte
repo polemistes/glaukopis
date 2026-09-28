@@ -109,7 +109,7 @@
     {#if found === null}
       <div class="waiting"><Spinner size={18} /></div>
     {:else if !info}
-      {@const [before, after] = wordsAround('library-zotero-not-found', 'file')}
+      {@const [before, after] = wordsAround((file) => t('library-zotero-not-found', { file }))}
       <p class="lead">{before}<code>zotero.sqlite</code>{after}</p>
     {:else}
       <p class="lead">{t('library-zotero-lead')}</p>

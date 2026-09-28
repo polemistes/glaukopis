@@ -1,16 +1,19 @@
 /** Words for things of the library. */
 
 import type { Reason, SummaryLite } from '$lib/api/library';
-import { languages, t, type Args } from '$lib/i18n';
+import { languages, t } from '$lib/i18n';
 
 /**
  * A message one of whose variables is shown otherwise than as words, as a
  * piece of code or in bold: the words before it and after it, which the
- * language puts where they belong.
+ * language puts where they belong. `say` says the message with what it is
+ * given in place of that variable:
+ *
+ *     wordsAround((file) => t('library-zotero-not-found', { file }))
  */
-export function wordsAround(id: string, variable: string, args: Args = {}): [string, string] {
+export function wordsAround(say: (variable: string) => string): [string, string] {
   const mark = '\u{E000}';
-  const said = t(id, { ...args, [variable]: mark });
+  const said = say(mark);
   const at = said.indexOf(mark);
   return at < 0 ? [said, ''] : [said.slice(0, at), said.slice(at + mark.length)];
 }

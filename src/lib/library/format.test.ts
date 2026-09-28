@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { languages } from '$lib/i18n';
+import { languages, t } from '$lib/i18n';
 import { fileSize, reasonWords, wordsAround } from './format';
 
 afterEach(() => {
@@ -29,11 +29,12 @@ describe('the words for things of the library', () => {
   });
 
   it('give the words around what is shown otherwise than as words', () => {
-    const [before, after] = wordsAround('library-zotero-not-found', 'file');
+    const notFound = () => wordsAround((file) => t('library-zotero-not-found', { file }));
+    const [before, after] = notFound();
     expect(before).toMatch(/^No Zotero was found .* the folder that holds $/);
     expect(after).toBe('.');
     languages.current = 'nb';
-    expect(wordsAround('library-zotero-not-found', 'file')[0]).toMatch(/mappen med $/);
-    expect(wordsAround('library-no-title', 'file')).toEqual(['Ingen tittel', '']);
+    expect(notFound()[0]).toMatch(/mappen med $/);
+    expect(wordsAround(() => t('library-no-title'))).toEqual(['Ingen tittel', '']);
   });
 });

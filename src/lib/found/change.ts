@@ -19,6 +19,7 @@ import { Transform } from 'prosemirror-transform';
 import { updateYFragment } from 'y-prosemirror';
 import * as Y from 'yjs';
 import { bodySchema, type CiteItem, type CiteMode } from '$lib/editor/schema';
+import { t } from '$lib/i18n';
 import type { Project } from '$lib/project/model/project.svelte';
 import { newId } from '$lib/util/id';
 import {
@@ -187,13 +188,6 @@ function find(project: Project, target: Target): Found | Trouble {
 export type IntoCitation =
   { possible: true; before: string; after: string } | { possible: false; why: string };
 
-const KINDS: Record<string, string> = {
-  math: 'a formula',
-  crossref: 'words that point to something',
-  citation: 'a citation',
-  hard_break: 'a second line',
-};
-
 /**
  * Whether a note can become a citation, with what stands at a place in it
  * as its works: all else the note says must be words, which become the
@@ -205,20 +199,14 @@ export function intoCitation(
   end: number,
   others: Pick<Marked, 'passage' | 'start' | 'end'>[] = [],
 ): IntoCitation {
-  if (!place.note) return { possible: false, why: 'It does not stand in a note.' };
+  if (!place.note) return { possible: false, why: t('found-note-not') };
   for (const child of place.holder.toArray()) {
     if (!(child instanceof Y.XmlElement)) continue;
-    const what = KINDS[child.nodeName] ?? 'something that is no text';
-    return {
-      possible: false,
-      why: `The note holds ${what}, which the words before and after a work cannot hold.`,
-    };
+    // The words say what it is by the name of the node: a formula, a second line.
+    return { possible: false, why: t('found-note-holds', { what: child.nodeName }) };
   }
   if (others.some((m) => m.passage === place.id && (m.end <= start || m.start >= end)))
-    return {
-      possible: false,
-      why: 'The note holds another citation that was found, which would be lost in the words after this one.',
-    };
+    return { possible: false, why: t('found-note-another') };
   return {
     possible: true,
     before: place.text.slice(0, start).trim(),
