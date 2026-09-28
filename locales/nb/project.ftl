@@ -117,3 +117,14 @@ project-deleted-many = { $count ->
     [one] { $count } element ble slettet
    *[other] { $count } elementer ble slettet
 }
+
+## Et element, åpent for skriving, og slik det vises når pekeren hviler på det
+
+project-element = Element
+project-name-placeholder = Navn
+project-write-here = Skriv her. Skriv @ for å henvise til en kilde.
+project-words = { $count } ord
+project-read-on = Dobbeltklikk for å lese videre
+project-stands-for-map = Står for kartet «{ $name }»
+project-name-not-printed = Navnet skrives ikke ut
+project-left-out-of-document = Utelatt fra dokumentet

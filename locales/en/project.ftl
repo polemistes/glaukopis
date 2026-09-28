@@ -123,3 +123,17 @@ project-deleted-many = { $count ->
     [one] { $count } element deleted
    *[other] { $count } elements deleted
 }
+
+## An element, open for writing, and as it is shown when the pointer rests on it
+
+project-element = Element
+project-name-placeholder = Name
+project-write-here = Write here. Type @ to cite.
+project-words = { $count ->
+    [one] { $count } word
+   *[other] { $count } words
+}
+project-read-on = Double-click to read on
+project-stands-for-map = Stands for the map “{ $name }”
+project-name-not-printed = The name is not printed
+project-left-out-of-document = Left out of the document
