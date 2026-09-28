@@ -160,3 +160,15 @@ What this settles:
 - No closed parts are depended on beyond what is necessary. What a system itself brings, such as the web view of Windows or macOS, is acceptable.
 - Installers for Windows and macOS are not built yet.
 - When Servo, an open web engine, is mature enough to run the application, it may take the place of the web views of the systems.
+
+## 2026-09-28 — search, OCR, spelling, and languages
+
+> Now I will describe four new major features we should implement. The first is search and replace functions. The editors that may edit a considerable amount of text, such as the map text editor and each editor of elements in the diagram view, should have search, as well as search and replace functions. For search, there should be an option whether or not to include citations, and all other labels outside the text itself. This should obviously not be an option for replace. Another option is to search only within the selected text. There should also be a system wide search function, with the option to search only one project or all projects. No search and replace for this, I think. An option to search content outside the texts themselves should also be here. Next, I really would like include an ocr function for pdfs and images. For pdfs, the text could either be extracted or be embedded into the pdf, like the app pdfsandwich does. Feel free to look at that, or if you know of better cross platform solutions, do what you think is best. I think Tesseract is the best open source ocr engine around for all platforms. Third, we should also implement spell checking. Unless you know of some viable and well functioning open source solution for grammar that I have not heard about, we will not offer grammer checks. I am not sure what open source spell check solution is best, so feel free to suggest. Last, the program should have localization features, both for the interface and the documents. The interface and text languages should be the language of system locale by default, or English if that is not available. The user can change language manually also. For now, let us implement Norsk bokmål in addition to English.
+
+What this settles:
+
+- The editors where much is written, the text of a map and the edit box of an element in the diagram, can search, and search and replace. A search can take in the citations and the other labels that stand outside the text itself; a replace cannot. Both can be kept to the selected text.
+- There is a search through everything, in one project or in all, without replacing, which can take in what stands outside the texts.
+- Text is read from PDFs and pictures by OCR, with Tesseract. The text of a PDF is either taken out of it, or laid into it unseen under its pages, so that the PDF can be searched and its text copied.
+- Spelling is checked as one writes. Grammar is not, unless a free checker is found that works well.
+- The interface and the texts have a language. Both are that of the system where the application has it, and English where it does not, and both can be changed. The interface is in English and in Norwegian Bokmål.
