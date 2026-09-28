@@ -162,6 +162,25 @@ fn prepared(bytes: &[u8]) -> Result<Prepared> {
     }
 }
 
+/// A picture made smaller, for where it is only looked at: no wider than
+/// `widest` points. Nothing, when it is small already, is a drawing, or
+/// cannot be read.
+pub fn lighter(bytes: &[u8], extension: &str, widest: u32) -> Option<Vec<u8>> {
+    let format = match extension {
+        "png" => ImageFormat::Png,
+        "jpg" => ImageFormat::Jpeg,
+        _ => return None,
+    };
+    let (width, _) = dimensions(bytes, format)?;
+    if width <= widest {
+        return None;
+    }
+    let (picture, _) = decode(bytes, format).ok()?;
+    let height = (u64::from(picture.height()) * u64::from(widest) / u64::from(picture.width())).max(1) as u32;
+    let small = picture.resize_exact(widest, height, image::imageops::FilterType::Triangle);
+    encode(&small, format).ok()
+}
+
 pub fn is_hash(text: &str) -> bool {
     text.len() == 64 && text.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
@@ -397,6 +416,23 @@ mod tests {
         assert_eq!(kept.extension, "jpg");
         assert_eq!(kept.name, "photo.jpg");
         assert_eq!(p.read(&kept.hash, "jpg").unwrap(), *bytes.get_ref());
+    }
+
+    #[test]
+    fn a_large_picture_is_made_lighter_for_looking_at() {
+        let picture = DynamicImage::ImageRgb8(image::RgbImage::from_fn(900, 600, |x, y| {
+            image::Rgb([(x % 256) as u8, (y % 256) as u8, ((x + y) % 256) as u8])
+        }));
+        for (format, extension) in [(ImageFormat::Png, "png"), (ImageFormat::Jpeg, "jpg")] {
+            let mut bytes = Cursor::new(Vec::new());
+            picture.write_to(&mut bytes, format).unwrap();
+            let small = lighter(bytes.get_ref(), extension, 300).unwrap();
+            assert_eq!(dimensions(&small, format), Some((300, 200)), "{extension}");
+            assert!(small.len() < bytes.get_ref().len());
+            assert_eq!(lighter(bytes.get_ref(), extension, 900), None, "it is small enough as it is");
+        }
+        assert_eq!(lighter(fixtures::SVG.as_bytes(), "svg", 10), None);
+        assert_eq!(lighter(b"nothing", "png", 10), None);
     }
 
     #[test]

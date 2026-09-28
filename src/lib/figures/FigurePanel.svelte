@@ -97,7 +97,7 @@
       id="figure-alt"
       type="text"
       bind:value={described}
-      placeholder="What the picture shows, for those who cannot see it"
+      placeholder="In words, for those who cannot see it"
       onblur={() => described !== alt && onchange({ alt: described.trim() })}
     />
   </div>

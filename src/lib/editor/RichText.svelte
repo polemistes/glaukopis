@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { EditorState, TextSelection, AllSelection } from 'prosemirror-state';
+  import { EditorState, NodeSelection, TextSelection, AllSelection } from 'prosemirror-state';
   import { EditorView } from 'prosemirror-view';
   import { untrack } from 'svelte';
   import { ySyncPlugin, yCursorPlugin } from 'y-prosemirror';
@@ -157,7 +157,9 @@
     const nodes = state.schema.nodes;
     editorUi.selection = {
       view: v,
-      empty,
+      // A figure, a formula, a note or a citation that is selected is not
+      // text that can be set in italics: each has a panel of its own.
+      empty: empty || state.selection instanceof NodeSelection,
       rect,
       marks,
       quote: !!nodes.blockquote && insideNode(state, nodes.blockquote),

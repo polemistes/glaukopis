@@ -606,6 +606,26 @@ mod tests {
     }
 
     #[test]
+    fn the_pictures_of_a_project_go_with_its_copies() {
+        let (_tmp, p) = projects();
+        let a = p.create("A").unwrap();
+        p.save_state(&a.id, b"state", None).unwrap();
+        let picture = p.pictures(&a.id).unwrap().add("vase.png", &crate::pictures::fixtures::PNG).unwrap();
+        assert!(p.dir(&a.id).unwrap().join("files").join(format!("{}.png", picture.hash)).is_file());
+        assert!(p.pictures("nonexistent").is_err());
+
+        let copy = p.duplicate(&a.id, "A, again").unwrap();
+        assert_eq!(p.pictures(&copy.id).unwrap().list(), p.pictures(&a.id).unwrap().list());
+        assert_eq!(p.pictures(&copy.id).unwrap().read(&picture.hash, "png").unwrap(), crate::pictures::fixtures::PNG);
+
+        // Deleted and brought back, the project has them still.
+        p.delete(&a.id).unwrap();
+        let (trashed, _) = p.trash().unwrap().into_iter().next().unwrap();
+        let back = p.restore(&trashed).unwrap();
+        assert_eq!(p.pictures(&back.id).unwrap().list().len(), 1);
+    }
+
+    #[test]
     fn changes_and_states() {
         let (_tmp, p) = projects();
         let a = p.create("A").unwrap();

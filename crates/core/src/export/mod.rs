@@ -151,8 +151,16 @@ struct Placed {
     present: std::collections::HashSet<String>,
 }
 
+/// The widest a picture is in the preview, in points of the picture: a
+/// page is looked at there, at the size of a window.
+const WIDEST_SHOWN: u32 = 1400;
+
 /// Puts the files of the figures into a directory beside what is made.
-fn place_files(ctx: &Context, request: &Request, into: &Path, name: &str) -> Placed {
+///
+/// With `light`, large pictures are put there smaller than they are: the
+/// preview is made again and again as the text is written, and shows its
+/// pages at the size of a window.
+fn place_files(ctx: &Context, request: &Request, into: &Path, name: &str, light: bool) -> Placed {
     let mut placed = Placed { name: name.to_owned(), ..Default::default() };
     let wanted = request.document.figure_files();
     let Some(projects) = ctx.projects else { return placed };
@@ -168,10 +176,24 @@ fn place_files(ctx: &Context, request: &Request, into: &Path, name: &str) -> Pla
         let Ok(source) = pictures.path(&hash, &extension) else { continue };
         let file = format!("{hash}.{extension}");
         let target = to.join(&file);
-        // A file is what its name says: one that is there need not be copied again.
-        let there =
-            target.is_file() && target.metadata().ok().map(|m| m.len()) == source.metadata().ok().map(|m| m.len());
-        if there || fs::copy(&source, &target).is_ok() {
+        let size = |path: &Path| path.metadata().ok().filter(|m| m.is_file()).map(|m| m.len());
+        let Some(whole) = size(&source) else { continue };
+        // A file is what its name says: one that is there need not be made
+        // again. A lighter one is known by being there at all.
+        let there = match size(&target) {
+            Some(n) if light => n > 0,
+            Some(n) => n == whole,
+            None => false,
+        };
+        let made = there
+            || (light
+                && whole > 200_000
+                && fs::read(&source)
+                    .ok()
+                    .and_then(|bytes| crate::pictures::lighter(&bytes, &extension, WIDEST_SHOWN))
+                    .is_some_and(|small| write_atomic(&target, &small).is_ok()))
+            || fs::copy(&source, &target).is_ok();
+        if made {
             placed.present.insert(file);
         }
     }
@@ -483,16 +505,22 @@ fn files_name(target: Target, path: Option<&Path>) -> String {
 /// The files of the figures, put beside a document that names them.
 fn files_beside(ctx: &Context, request: &Request, path: &Path, name: &str, exported: &mut Exported) {
     let Some(parent) = path.parent() else { return };
-    let placed = place_files(ctx, request, parent, name);
+    let placed = place_files(ctx, request, parent, name, false);
     if !placed.present.is_empty() {
         exported.also.push(parent.join(name).display().to_string());
     }
 }
 
 /// The document as Typst, whole.
-fn typst_source(ctx: &Context, request: &Request, dir: &Path, files: &str) -> Result<(String, Prepared, Vec<String>)> {
+fn typst_source(
+    ctx: &Context,
+    request: &Request,
+    dir: &Path,
+    files: &str,
+    light: bool,
+) -> Result<(String, Prepared, Vec<String>)> {
     let pandoc = ctx.tools.pandoc()?;
-    let placed = place_files(ctx, request, dir, files);
+    let placed = place_files(ctx, request, dir, files, light);
     let prepared = prepare(ctx, request, Target::Typst, false, placed);
     let bib = dir.join("references.bib");
     write_atomic(&bib, prepared.bibliography.text.as_bytes())?;
@@ -511,7 +539,7 @@ pub fn preview(ctx: &Context, request: &Request) -> Result<Preview> {
     ctx.tools.pandoc()?;
     let typst = ctx.tools.typst()?;
     let dir = work_dir(ctx, &request.key, "preview")?;
-    let (source, prepared, mut warnings) = typst_source(ctx, request, &dir, "files")?;
+    let (source, prepared, mut warnings) = typst_source(ctx, request, &dir, "files", true)?;
     write_atomic(&dir.join("document.typ"), source.as_bytes())?;
 
     // Pages of an earlier run must not be taken for pages of this one.
@@ -577,7 +605,7 @@ pub fn export(
 
     if matches!(target, Target::Pdf | Target::Typst) {
         let files = files_name(target, Some(path));
-        let (source, prepared, warnings) = typst_source(ctx, request, &dir, &files)?;
+        let (source, prepared, warnings) = typst_source(ctx, request, &dir, &files, false)?;
         exported.warnings = warnings;
         exported.missing = prepared.bibliography.missing;
         if target == Target::Typst {
@@ -597,7 +625,7 @@ pub fn export(
 
     let keep_citations = target == Target::Latex && options.biblatex || target == Target::Markdown;
     let files = files_name(target, Some(path));
-    let placed = place_files(ctx, request, &dir, &files);
+    let placed = place_files(ctx, request, &dir, &files, false);
     let prepared = prepare(ctx, request, target, keep_citations, placed);
     exported.warnings.extend(prepared.remarks.iter().cloned());
     let bib = dir.join("references.bib");
@@ -1285,6 +1313,46 @@ mod tests {
             export(&s.ctx(), &r, Target::PdfLatex, &by_latex, &ExportOptions::default()).unwrap();
             assert!(fs::read(&by_latex).unwrap().starts_with(b"%PDF"));
         }
+    }
+
+    #[test]
+    fn the_preview_has_large_pictures_lighter() {
+        let Some(s) = setup() else { return };
+        let mut r = request("chicago-author-date");
+        r.key = "p2".into();
+        let large = image::DynamicImage::ImageRgb8(image::RgbImage::from_fn(2400, 1600, |x, y| {
+            image::Rgb([(x / 10) as u8, (y / 7) as u8, ((x * y) % 251) as u8])
+        }));
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        large.write_to(&mut bytes, image::ImageFormat::Png).unwrap();
+        let kept = Pictures::of(&s.projects.join("p2")).add("large.png", bytes.get_ref()).unwrap();
+        assert!(kept.size > 200_000);
+        r.document.sections[1].blocks.push(crate::document::Block::Figure {
+            file: kept.hash.clone(),
+            extension: "png".into(),
+            name: kept.name.clone(),
+            caption: vec![],
+            alt: String::new(),
+            width: 100,
+            numbered: true,
+        });
+        let file = format!("{}.png", kept.hash);
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let shown = s.work.join("p2").join("preview").join("files").join(&file);
+        let small = fs::metadata(&shown).unwrap().len();
+        assert!(small < kept.size / 2, "{small} of {}", kept.size);
+        // Made once, and not again.
+        let made = fs::metadata(&shown).unwrap().modified().unwrap();
+        preview(&s.ctx(), &r).unwrap();
+        assert_eq!(fs::metadata(&shown).unwrap().modified().unwrap(), made);
+
+        // What is given away has the picture as it is.
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        export(&s.ctx(), &r, Target::Pdf, &out.join("large.pdf"), &ExportOptions::default()).unwrap();
+        let whole = s.work.join("p2").join("export").join("files").join(&file);
+        assert_eq!(fs::metadata(&whole).unwrap().len(), kept.size);
     }
 
     #[test]
