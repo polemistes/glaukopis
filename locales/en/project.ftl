@@ -57,3 +57,69 @@ project-cited-in-element = { $count ->
     [one] The reference is cited in “the element”
    *[other] { $count } references are cited in “the element”
 }
+
+## The tabs of the maps
+
+# The name of a map, or of an element, that has none.
+project-untitled = Untitled
+project-maps = Maps
+project-map-name = Name of the map
+project-new-map = New map
+project-map-from-document = A map from a document…
+project-drop-on-map = Drop on a map to move there · hold Ctrl to copy
+project-duplicate = Duplicate
+project-duplicate-hint = A copy to work on; this one stays as it is
+project-open-beside = Open beside
+project-open-beside-hint = Two maps side by side, to move elements between them
+project-found = Citations that were found…
+# The count is of those found in the map.
+project-found-hint = { $count } to go through, and make citations of
+project-found-none = And text that looks like citations
+project-delete-map = Delete map
+project-delete-map-title = Delete the map “{ $name }”?
+project-delete-map-message = { $count ->
+    [one] { $count } element and the text in it will go. This can be undone while the project is open.
+   *[other] { $count } elements and the text in them will go. This can be undone while the project is open.
+}
+project-copied-to = Copied to “{ $name }”
+project-moved-to = Moved to “{ $name }”
+
+## What is done to elements, in the diagram and in the text
+
+project-add-under = Add an element under it
+project-add = Add an element
+project-add-after = Add an element after it
+project-write-text = Write its text
+project-double-click = Double-click
+project-associate = Associate with…
+project-associate-hint = Then click the other element
+project-heading = Print the name as a heading
+project-heading-hint = Off: the name is a label for you; only the text is printed
+project-leave-out = Leave out of the document
+project-leave-out-hint = With everything under it
+# An element that stands for another map: in the document, that map is in its place.
+project-stands-for = Stands for “{ $name }”
+project-stand-for = Stand for another map
+project-stand-for-heading = In the document, this map takes its place
+project-stand-for-none = None
+project-copy-to-map = Copy to map
+project-move-to-map = Move to map
+project-map-from-branch = New map from this branch
+project-map-from-branch-hint = A copy to work on; this one stays
+project-detach = Detach from its parent
+project-detach-hint = A loose element, to be placed later
+project-tidy-branch = Tidy this branch
+project-place-automatically = Place automatically
+project-delete-keeping = Delete, keeping what is under it
+project-centre-stays = The centre of a map stays
+project-centre-stays-detail = Delete the map itself from its tab.
+# One element was deleted, with the elements that were under it.
+project-deleted = { $under ->
+    [0] “{ $name }” was deleted
+    [one] “{ $name }” was deleted, with { $under } element under it
+   *[other] “{ $name }” was deleted, with { $under } elements under it
+}
+project-deleted-many = { $count ->
+    [one] { $count } element deleted
+   *[other] { $count } elements deleted
+}

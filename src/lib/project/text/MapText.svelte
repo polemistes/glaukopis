@@ -21,6 +21,7 @@
   import { editorUi } from '$lib/editor/ui.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
   import { plural, truncate } from '$lib/library/format';
+  import { t } from '$lib/i18n';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import { pointRect } from '$lib/ui/floating';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
@@ -467,7 +468,9 @@
 
   function menuFor(id: string, anchor: HTMLElement | null): MenuItem[] {
     const base = elementMenu(project, [id], actions, anchor).filter(
-      (item) => !('label' in item) || (item.label !== 'Write its text' && item.label !== 'Rename'),
+      (item) =>
+        !('label' in item) ||
+        (item.label !== t('project-write-text') && item.label !== t('common-rename')),
     );
     const i = indexOf(id);
     const view = editors.get(id)?.body?.getView();
