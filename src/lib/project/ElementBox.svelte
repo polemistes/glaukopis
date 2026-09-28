@@ -122,13 +122,16 @@
     const mod = event.ctrlKey || event.metaKey;
     const letter = event.key.toLowerCase();
     // Ctrl+F searches the name and the text, Ctrl+H replaces; F3 goes on to the next.
-    if (event.key === 'F3' || (mod && !event.altKey && (letter === 'f' || letter === 'h'))) {
+    const plain = mod && !event.altKey && !event.shiftKey;
+    if (event.key === 'F3' || (plain && (letter === 'f' || letter === 'h'))) {
       event.preventDefault();
       if (event.key !== 'F3') find(letter === 'h');
       else if (!searching) find(false);
       else if (event.shiftKey) searching.previous();
       else searching.next();
     }
+    // The search through everything is reached from here as from anywhere.
+    if (mod && event.shiftKey && letter === 'f') return;
     event.stopPropagation();
   }
 

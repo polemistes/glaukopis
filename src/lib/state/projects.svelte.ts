@@ -18,6 +18,24 @@ import { fromBase64, toBase64 } from '$lib/util/base64';
 class ProjectsState {
   list = $state.raw<ProjectInfo[]>([]);
   loaded = $state(false);
+  /** The project that was opened last while the application has run. */
+  lastOpened = $state<string | null>(null);
+  /** Projects that are being closed, until what was written in them is on disk. */
+  #closing = new Map<string, Promise<unknown>>();
+
+  /** A project is being closed: what reads it from disk waits for this. */
+  closing(id: string, done: Promise<unknown>) {
+    const settled = done.catch(() => {});
+    this.#closing.set(id, settled);
+    void settled.then(() => {
+      if (this.#closing.get(id) === settled) this.#closing.delete(id);
+    });
+  }
+
+  /** When a project that is being closed is on disk; at once, for one that is not. */
+  async closed(id: string): Promise<void> {
+    await this.#closing.get(id);
+  }
 
   async load() {
     try {
@@ -65,6 +83,7 @@ export interface OpenProject {
 }
 
 export async function openProject(id: string): Promise<OpenProject> {
+  projects.lastOpened = id;
   const loaded = await projectLoad(id);
   const persistence: Persistence = {
     append: (update: Uint8Array) => projectAppend(id, toBase64(update)),

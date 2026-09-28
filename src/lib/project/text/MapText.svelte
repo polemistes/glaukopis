@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TextSelection } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
-  import { onDestroy, tick, untrack } from 'svelte';
+  import { onDestroy, onMount, tick, untrack } from 'svelte';
   import { prosemirrorToYXmlFragment } from 'y-prosemirror';
   import * as Y from 'yjs';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
@@ -22,8 +22,9 @@
   import { citationLabel } from '$lib/editor/references.svelte';
   import { numbering, pointerText } from '$lib/figures/numbering.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
+  import { takeJump, type Jump } from '$lib/search/everything.svelte';
   import SearchBar from '$lib/search/SearchBar.svelte';
-  import { TextSearch, type Surface } from '$lib/search/text.svelte';
+  import { remembered, TextSearch, type Surface } from '$lib/search/text.svelte';
   import { plural, truncate } from '$lib/library/format';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import { pointRect } from '$lib/ui/floating';
@@ -420,7 +421,8 @@
     const mod = event.ctrlKey || event.metaKey;
     // Ctrl+F searches the text and Ctrl+H replaces; F3 goes on to the next that is found.
     const letter = event.key.toLowerCase();
-    if (event.key === 'F3' || (mod && !event.altKey && (letter === 'f' || letter === 'h'))) {
+    const plain = mod && !event.altKey && !event.shiftKey;
+    if (event.key === 'F3' || (plain && (letter === 'f' || letter === 'h'))) {
       event.preventDefault();
       event.stopPropagation();
       if (event.key !== 'F3') find(letter === 'h');
@@ -584,6 +586,30 @@
   });
 
   onDestroy(() => void searching?.close(false));
+
+  // What was found by the search through everything is gone to when the map is shown.
+  onMount(() => {
+    const jump = takeJump(mapId);
+    if (jump) void tick().then(() => jumpTo(jump));
+  });
+
+  async function jumpTo(jump: Jump) {
+    if (!jump.element) return;
+    if (!jump.part) {
+      // Not in a text, as an association: the element is shown.
+      if (folding.reveal(tree, jump.element)) await tick();
+      scroller
+        ?.querySelector(`[data-section="${jump.element}"]`)
+        ?.scrollIntoView({ block: 'center' });
+      current = jump.element;
+      return;
+    }
+    remembered.query = jump.words;
+    Object.assign(remembered.options, jump.options);
+    searching = new TextSearch(surface);
+    searching.open(false, null);
+    searching.beginAt(jump.element, jump.part, jump.passage, jump.start);
+  }
 
   // ---- the menu of an element ----
 

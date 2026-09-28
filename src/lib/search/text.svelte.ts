@@ -88,6 +88,8 @@ export class TextSearch {
   #timer: ReturnType<typeof setTimeout> | undefined;
   /** Where the search began: what was found at or after it is shown first. */
   #origin: number[] | null = null;
+  /** What is to be shown first, where it is known: as what the search through everything found. */
+  #target: { element: string; part: Part; passage: number; start: number } | null = null;
   /** What was searched last: the words and options, and the state of the project. */
   #searched = { key: '', revision: -1 };
   /** Rises with every showing, so that one that is overtaken stops. */
@@ -158,6 +160,12 @@ export class TextSearch {
     }
     this.#searched.key = '';
     this.later(0, true);
+  }
+
+  /** Begins the search at what was found at a place, or at what comes after it. */
+  beginAt(element: string, part: Part, passage: number, start: number) {
+    this.#target = { element, part, passage, start };
+    this.#origin = this.#order(element, part, passage, start);
   }
 
   /** Where in the order of the text a place is. */
@@ -248,7 +256,18 @@ export class TextSearch {
     this.#searched = { key, revision: this.project.revision };
     this.matches = matches;
     if (go) {
-      this.index = this.#firstFrom(this.#origin);
+      const target = this.#target;
+      this.#target = null;
+      const exact = target
+        ? this.matches.findIndex(
+            (m) =>
+              m.element === target.element &&
+              m.part === target.part &&
+              m.passage === target.passage &&
+              m.start === target.start,
+          )
+        : -1;
+      this.index = exact >= 0 ? exact : this.#firstFrom(this.#origin);
       if (this.index >= 0) void this.show(this.index);
       else this.#mark();
     } else {

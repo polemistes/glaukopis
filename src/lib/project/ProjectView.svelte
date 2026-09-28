@@ -37,6 +37,7 @@
   import { beforeClose } from '$lib/state/closing';
   import { library } from '$lib/state/library.svelte';
   import { openProject, projects } from '$lib/state/projects.svelte';
+  import { jumpFor } from '$lib/search/everything.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -132,6 +133,8 @@
       });
       // A project that was joined and has not been fetched has no maps yet.
       if (p.maps.length) arrange(p);
+      // What was found through everything in what is written about a work is shown with the references.
+      if (jumpFor(ownId)?.references) side('references', true);
       shared = new ProjectSharing(ownId, p, opened.info);
       pictures.open(ownId, () => p.usedPictures());
       void pictures.nameFrom(p.usedPictures());
@@ -212,7 +215,12 @@
   onDestroy(() => {
     release?.();
     if (pictures.project === ownId) pictures.open(null);
-    if (project) void leave(project).then(() => projects.load());
+    // What reads the project from disk meanwhile, as the search through everything, waits for it.
+    if (project)
+      projects.closing(
+        ownId,
+        leave(project).then(() => projects.load()),
+      );
   });
 
   // The pictures of a project that is shared are with the others as well:

@@ -118,10 +118,10 @@
       event.preventDefault();
       if (mod && event.altKey) search.replaceAll();
       else search.replace();
-    } else if (mod && !event.altKey && event.key.toLowerCase() === 'h') {
+    } else if (mod && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'h') {
       event.preventDefault();
       focusReplace();
-    } else if (mod && !event.altKey && event.key.toLowerCase() === 'f') {
+    } else if (mod && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'f') {
       event.preventDefault();
       focusQuery();
     } else return;
