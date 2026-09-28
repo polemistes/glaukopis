@@ -72,10 +72,11 @@ package_glaukopis() {
     "$pkgdir/usr/share/applications/org.glaukopis.app.desktop"
   install -Dm644 packaging/linux/org.glaukopis.app.metainfo.xml \
     "$pkgdir/usr/share/metainfo/org.glaukopis.app.metainfo.xml"
-  install -Dm644 src-tauri/icons/32x32.png "$pkgdir/usr/share/icons/hicolor/32x32/apps/org.glaukopis.app.png"
-  install -Dm644 src-tauri/icons/128x128.png "$pkgdir/usr/share/icons/hicolor/128x128/apps/org.glaukopis.app.png"
-  install -Dm644 'src-tauri/icons/128x128@2x.png' "$pkgdir/usr/share/icons/hicolor/256x256/apps/org.glaukopis.app.png"
-  install -Dm644 resources/brand/glaukopis.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.glaukopis.app.svg"
+  local size
+  for size in 16 24 32 48 64 128 256 512; do
+    install -Dm644 "src-tauri/icons/${size}x${size}.png" \
+      "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/org.glaukopis.app.png"
+  done
 
   install -Dm644 docs/guide.md "$pkgdir/usr/share/doc/glaukopis/guide.md"
 }

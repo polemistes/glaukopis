@@ -5,6 +5,10 @@
   import { prosemirrorToYXmlFragment } from 'y-prosemirror';
   import * as Y from 'yjs';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
+  import ChevronsDownUp from '@lucide/svelte/icons/chevrons-down-up';
+  import ChevronsUpDown from '@lucide/svelte/icons/chevrons-up-down';
+  import FoldVertical from '@lucide/svelte/icons/fold-vertical';
+  import UnfoldVertical from '@lucide/svelte/icons/unfold-vertical';
   import Merge from '@lucide/svelte/icons/merge';
   import Pencil from '@lucide/svelte/icons/pencil';
   import SplitSquareVertical from '@lucide/svelte/icons/split-square-vertical';
@@ -25,6 +29,7 @@
   import type { Project } from '../model/project.svelte';
   import { isAncestor } from '../model/tree';
   import WritingTools from '$lib/editor/WritingTools.svelte';
+  import type { Folding } from './folding.svelte';
   import TextSection, { type Part } from './TextSection.svelte';
 
   interface Props {
@@ -34,9 +39,11 @@
     onopenmap: (id: string) => void;
     /** An element to bring into view when the map appears. */
     reveal?: string | null;
+    /** What is folded away in the text of the project. */
+    folding: Folding;
   }
 
-  let { project, mapId, onkeep, onopenmap, reveal = null }: Props = $props();
+  let { project, mapId, onkeep, onopenmap, reveal = null, folding }: Props = $props();
 
   const KEPT_ACTIVE = 10;
 
@@ -68,23 +75,58 @@
     level: number;
     excluded: boolean;
     loose: boolean;
+    /** Whether there is something under it, which can be folded away. */
+    foldable: boolean;
+    /** What is folded away under it: how many elements, and how many words they hold. */
+    hidden: { ids: string[]; words: number } | null;
+    /** Whether it is folded away itself, under another. */
+    away: boolean;
   }
 
-  const rows = $derived.by(() => {
+  /** Every element of the map, those that are folded away as well. */
+  const all = $derived.by(() => {
     const out: Row[] = [];
-    const walk = (id: string, level: number, excluded: boolean, loose: boolean, top: boolean) => {
+    const walk = (
+      id: string,
+      level: number,
+      excluded: boolean,
+      loose: boolean,
+      top: boolean,
+      away: boolean,
+    ) => {
       const node = project.nodes.get(id);
       if (!node) return;
       const out_ = excluded || node.excluded;
-      out.push({ id, level, excluded: out_, loose: loose && top });
+      const under = tree.children.get(id) ?? [];
+      const hides = !away && under.length > 0 && folding.has(id);
+      const row: Row = {
+        id,
+        level,
+        excluded: out_,
+        loose: loose && top,
+        foldable: under.length > 0,
+        hidden: hides ? { ids: [], words: 0 } : null,
+        away,
+      };
+      out.push(row);
       // An element whose name is not printed does not deepen what is under it.
       const next = top && !loose ? 1 : node.heading ? level + 1 : level;
-      for (const c of tree.children.get(id) ?? []) walk(c, Math.max(1, next), out_, loose, false);
+      const from = out.length;
+      for (const c of under) walk(c, Math.max(1, next), out_, loose, false, away || hides);
+      if (row.hidden) {
+        for (const r of out.slice(from)) {
+          row.hidden.ids.push(r.id);
+          row.hidden.words += project.nodes.get(r.id)?.words ?? 0;
+        }
+      }
     };
-    if (tree.root) walk(tree.root, 0, false, false, true);
-    for (const id of tree.loose) walk(id, 2, true, true, true);
+    if (tree.root) walk(tree.root, 0, false, false, true, false);
+    for (const id of tree.loose) walk(id, 2, true, true, true, false);
     return out;
   });
+
+  /** The elements that are shown. */
+  const rows = $derived(all.filter((r) => !r.away));
 
   const firstLoose = $derived(rows.findIndex((r) => r.loose));
 
@@ -92,7 +134,8 @@
     let words = 0;
     let notes = 0;
     const cited = new Set<string>();
-    for (const r of rows) {
+    // What is folded away is counted as well: it is in the document.
+    for (const r of all) {
       if (r.excluded) continue;
       const n = project.nodes.get(r.id);
       if (!n) continue;
@@ -121,6 +164,8 @@
 
   async function go(id: string | undefined | null, part: Part, at: FocusAt) {
     if (!id) return;
+    // What is folded away is shown before the cursor goes there.
+    if (folding.reveal(tree, id)) await tick();
     activate(id, part, at);
     await tick();
     scroller
@@ -138,11 +183,37 @@
     const id = reveal;
     if (!id) return;
     untrack(async () => {
+      folding.reveal(tree, id);
       await tick();
       scroller?.querySelector(`[data-section="${id}"]`)?.scrollIntoView({ block: 'start' });
       current = id;
     });
   });
+
+  // ---- folding away what is under an element ----
+
+  /** Folds what is under an element away, or opens it; with `all`, opens all that is folded under it. */
+  function fold(id: string, everything = false) {
+    if (everything) folding.openAll(tree, id);
+    else folding.toggle(tree, id);
+    if (!folding.hides(tree, id)) return;
+    // The cursor does not stay in what is no longer shown.
+    const under = folding.under(tree, id);
+    if (current && under.includes(current)) {
+      (document.activeElement as HTMLElement | null)?.blur?.();
+      current = id;
+    }
+    tick().then(() =>
+      scroller?.querySelector(`[data-section="${id}"]`)?.scrollIntoView({ block: 'nearest' }),
+    );
+  }
+
+  /** Those of the others who are at an element, or at what is folded away under it. */
+  function othersAt(row: Row) {
+    const own = project.othersAt(row.id);
+    if (!row.hidden || !project.others.length) return own;
+    return [...own, ...row.hidden.ids.flatMap((id) => project.othersAt(id))];
+  }
 
   function indexOf(id: string): number {
     return rows.findIndex((r) => r.id === id);
@@ -329,6 +400,14 @@
       return;
     }
 
+    // Ctrl+Alt+U folds away what is under the element, or opens it; with Shift, opens all under it.
+    if (mod && event.altKey && event.code === 'KeyU') {
+      event.preventDefault();
+      event.stopPropagation();
+      fold(id, event.shiftKey);
+      return;
+    }
+
     if (event.altKey && event.shiftKey) {
       let done = false;
       if (event.key === 'ArrowUp') done = shift(id, -1);
@@ -380,7 +459,32 @@
       });
     }
     if (extra.length) extra.push({ kind: 'separator' });
-    return [...extra, ...base];
+    const folds: MenuItem[] = [];
+    if ((tree.children.get(id)?.length ?? 0) > 0) {
+      const folded = folding.hides(tree, id);
+      folds.push({
+        label: folded ? 'Open what is under it' : 'Fold away what is under it',
+        icon: folded ? UnfoldVertical : FoldVertical,
+        shortcut: 'Ctrl+Alt+U',
+        action: () => fold(id),
+      });
+      if (folding.anyFolded(tree, id))
+        folds.push({
+          label: 'Open all that is folded under it',
+          icon: ChevronsUpDown,
+          shortcut: 'Ctrl+Alt+Shift+U',
+          action: () => fold(id, true),
+        });
+      if (folding.anyOpen(tree, id))
+        folds.push({
+          label: 'Fold away all under it',
+          icon: ChevronsDownUp,
+          hint: 'What is directly under it is shown, and nothing deeper',
+          action: () => folding.foldAll(tree, id),
+        });
+      folds.push({ kind: 'separator' });
+    }
+    return [...extra, ...folds, ...base];
   }
 
   function onmenu(id: string, event: MouseEvent, anchor: HTMLElement) {
@@ -469,6 +573,7 @@
     project.checkpoint();
     if (made[0]) {
       current = made[0];
+      folding.reveal(project.tree(mapId), made[0]);
       tick().then(() =>
         scroller
           ?.querySelector(`[data-section="${made[0]}"]`)
@@ -529,14 +634,19 @@
   const FIRST = 10;
 
   const brackets = $derived.by(() => {
+    // The end of an association is the element itself, or what it is folded away under.
+    const shown = (id: string) => folding.hiddenUnder(tree, id) ?? id;
     const spans = project
       .linksOf(mapId)
       .map((l) => {
-        const a = anchors.get(l.from);
-        const b = anchors.get(l.to);
+        const from = shown(l.from);
+        const to = shown(l.to);
+        if (from === to) return null;
+        const a = anchors.get(from);
+        const b = anchors.get(to);
         if (a === undefined || b === undefined) return null;
-        const upper = a <= b ? l.from : l.to;
-        const lower = a <= b ? l.to : l.from;
+        const upper = a <= b ? from : to;
+        const lower = a <= b ? to : from;
         return {
           id: l.id,
           from: upper,
@@ -590,7 +700,8 @@
     const end = (id: string): MenuItem => ({
       label: `Go to “${truncate(project.node(id)?.title || 'Untitled', 36)}”`,
       icon: ArrowRight,
-      action: () => {
+      action: async () => {
+        if (folding.reveal(tree, id)) await tick();
         scroller
           ?.querySelector(`[data-section="${id}"]`)
           ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -722,7 +833,11 @@
               loose={row.loose}
               drop={drop?.id === row.id && drag.payload ? drop.where : null}
               linkable={!!linkFrom && linkFrom !== row.id}
-              others={project.othersAt(row.id)}
+              others={othersAt(row)}
+              foldable={row.foldable}
+              hidden={row.hidden ? { parts: row.hidden.ids.length, words: row.hidden.words } : null}
+              openable={row.foldable && folding.anyFolded(tree, row.id)}
+              onfold={fold}
               onactivate={activate}
               {onaction}
               onfocused={(id) => (current = id)}

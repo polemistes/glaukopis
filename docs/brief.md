@@ -110,3 +110,13 @@ What this settles:
 - Figures, equations and tables stand to the left, in the middle or to the right, and text may flow around a figure or a table. What the format says holds until the writer says otherwise.
 - Several figures, tables or equations can stand beside each other.
 - The width of a figure must be settable without what is shown moving under the pointer.
+
+## 2026-09-28 — the icon, and parts of the text that can be folded
+
+> Letting a AI model code for me is fine, but it is not ok to use AI to make art. So I have made a new icon for the appliction. You can find it here: /home/proteus/glaukopis-logo/glaukopis-logo.png . Please use this instead. It is not finished yet, but it will do for now. An then, a new feature: Collapsible elements in text view. Let it be possible to collapse sub-elements under an element. Remember the collaps state of the elements being colapsed, but let there be a simple way to open all collapsed elements under an element.
+
+What this settles:
+
+- Nothing that is drawn is made by a machine. The icon of the application is the owl its author has drawn, and replaces the mark that was there; it is not finished, and will be replaced by the author.
+- In the text, what stands under an element can be folded away, and is as it was left when the text is opened again.
+- All that is folded under an element can be opened at once.

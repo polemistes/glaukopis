@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ChevronDown from '@lucide/svelte/icons/chevron-down';
+  import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import FileInput from '@lucide/svelte/icons/file-input';
   import GripVertical from '@lucide/svelte/icons/grip-vertical';
   import type { EditorView } from 'prosemirror-view';
@@ -6,6 +8,7 @@
   import RichText, { type FocusAt } from '$lib/editor/RichText.svelte';
   import { blocksHtml } from '../model/html';
   import { hydrate } from '$lib/figures/hydrate.svelte';
+  import { plural } from '$lib/library/format';
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import type { Other, Project } from '../model/project.svelte';
@@ -33,6 +36,14 @@
     linkable: boolean;
     /** Those of the others who are at this element. */
     others?: Other[];
+    /** Whether there is something under it, which can be folded away. */
+    foldable?: boolean;
+    /** What is folded away under it, when it is folded. */
+    hidden?: { parts: number; words: number } | null;
+    /** Whether it, or something under it, is folded. */
+    openable?: boolean;
+    /** Folds away what is under it, or opens it; with `all`, opens all that is folded under it. */
+    onfold?: (id: string, all: boolean) => void;
     onactivate: (id: string, part: Part, at: FocusAt) => void;
     onaction: (id: string, part: Part, action: KeyAction, view: EditorView) => boolean;
     onfocused: (id: string, part: Part) => void;
@@ -57,6 +68,10 @@
     excluded,
     loose,
     others = [],
+    foldable = false,
+    hidden = null,
+    openable = false,
+    onfold,
     drop,
     linkable,
     onactivate,
@@ -109,9 +124,32 @@
   class:drop-before={drop === 'before'}
   class:drop-after={drop === 'after'}
   class:drop-inside={drop === 'inside'}
+  class:folded={!!hidden}
   data-section={node.id}
+  data-folded={hidden ? '' : undefined}
 >
   <div class="gutter">
+    {#if foldable}
+      <button
+        type="button"
+        class="fold"
+        aria-expanded={!hidden}
+        aria-label={hidden ? 'Open what is under it' : 'Fold away what is under it'}
+        tabindex="-1"
+        use:tooltip={{
+          text: hidden
+            ? 'Open what is under it · with Shift, all that is folded under it'
+            : openable
+              ? 'Fold away what is under it · with Shift, open all that is folded under it'
+              : 'Fold away what is under it',
+          side: 'top',
+        }}
+        onmousedown={(e) => e.preventDefault()}
+        onclick={(e) => onfold?.(node.id, e.shiftKey)}
+      >
+        {#if hidden}<ChevronRight size={15} />{:else}<ChevronDown size={15} />{/if}
+      </button>
+    {/if}
     <button
       type="button"
       class="grip"
@@ -190,6 +228,24 @@
         <div class="prose body static blank">&nbsp;</div>
       {/if}
     </div>
+
+    {#if hidden}
+      <div class="away">
+        <button type="button" class="open" onclick={(e) => onfold?.(node.id, e.shiftKey)}>
+          <ChevronRight size={13} />
+          <span
+            >{plural(hidden.parts, 'element')} folded away{hidden.words
+              ? `, ${plural(hidden.words, 'word')}`
+              : ''}</span
+          >
+        </button>
+        {#if hidden.parts > 1}
+          <button type="button" class="all" onclick={() => onfold?.(node.id, true)}>
+            Open all
+          </button>
+        {/if}
+      </div>
+    {/if}
   </div>
 </section>
 
@@ -217,7 +273,68 @@
   .gutter {
     display: flex;
     justify-content: flex-end;
-    padding: 0 8px 0 0;
+    padding: 0 4px 0 0;
+  }
+  .fold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 26px;
+    margin-top: var(--grip-top, 4px);
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--ink-4);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--fast) var(--ease);
+  }
+  .section:hover > .gutter .fold,
+  .section.selected > .gutter .fold,
+  .section.folded > .gutter .fold {
+    opacity: 1;
+  }
+  .section.folded > .gutter .fold {
+    color: var(--accent-strong);
+  }
+  .fold:hover {
+    background: var(--paper-hover);
+    color: var(--ink);
+  }
+  .away {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0.35em 0 0.2em;
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+  }
+  .away button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding: 0 9px 0 6px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--ink-3);
+    font: inherit;
+    cursor: pointer;
+  }
+  .away .open {
+    border-color: var(--line);
+    background: var(--paper-raised, var(--paper));
+  }
+  .away .all {
+    padding: 0 8px;
+    color: var(--accent-strong);
+  }
+  .away button:hover {
+    background: var(--paper-hover);
+    color: var(--ink);
   }
   .grip {
     display: inline-flex;

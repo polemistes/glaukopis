@@ -189,7 +189,7 @@
       <div class="centre"><Spinner size={22} /></div>
     {:else if !projects.list.length}
       <div class="welcome">
-        <Mark size={64} />
+        <Mark size={120} />
         <h2>Welcome to Glaukopis</h2>
         <p>
           A project holds the work on one book or article: the maps of your ideas, the texts you

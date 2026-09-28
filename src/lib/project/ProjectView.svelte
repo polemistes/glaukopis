@@ -14,6 +14,7 @@
   import Users from '@lucide/svelte/icons/users';
   import X from '@lucide/svelte/icons/x';
   import { projectSaveView } from '$lib/api/projects';
+  import { Folding } from './text/folding.svelte';
   import { sharingRename } from '$lib/api/sharing';
   import Presence from '$lib/sharing/Presence.svelte';
   import SharePanel from '$lib/sharing/SharePanel.svelte';
@@ -77,6 +78,8 @@
     /** The panel at the side shows the pictures. Not both: they have the same place. */
     pictures?: boolean;
     preview?: boolean;
+    /** The elements under which the text is folded away. */
+    folded?: string[];
   }
 
   let project = $state<Project | null>(null);
@@ -102,6 +105,8 @@
   let showShare = $state(false);
   /** What was kept of the view, until there are maps to show. */
   let stored: StoredView = {};
+  /** What is folded away in the text: as it was left, and for every map of the project. */
+  let folding = $state.raw(new Folding());
 
   const pane = $derived(panes[Math.min(focused, panes.length - 1)]);
 
@@ -116,6 +121,7 @@
       // svelte-ignore state_referenced_locally
       const opened = await openProject(projectId);
       stored = (opened.info.view ?? {}) as StoredView;
+      folding = new Folding(Array.isArray(stored.folded) ? stored.folded : []);
       const p = opened.project;
       // A project that was joined and has not been fetched has no maps yet.
       if (p.maps.length) arrange(p);
@@ -225,6 +231,7 @@
       references: showReferences,
       pictures: showPictures,
       preview: showPreview,
+      folded: folding.kept((id) => !!project?.node(id)),
     };
   }
 
@@ -249,6 +256,8 @@
     void sizes.split;
     void sizes.preview;
     void sizes.references;
+    void folding.folded.size;
+    void [...folding.folded];
     clearTimeout(viewTimer);
     viewTimer = setTimeout(saveView, 1500);
   });
@@ -697,6 +706,7 @@
                     onkeep={keep}
                     onopenmap={(id) => show(id, { pane: i })}
                     reveal={i === focused ? reveal : null}
+                    {folding}
                   />
                 {/if}
               {/key}

@@ -33,6 +33,7 @@ in [docs/server.md](docs/server.md).
 | `docs/brief.md` | What was asked for, in the words of the one who asked. |
 | `PLAN.md` | The plan: the stack, the central idea, the milestones. |
 | `docs/adr/` | The decisions, one in each file, with their reasons. |
+| `resources/brand/` | The owl, as the author of the application has drawn it. `scripts/icons.sh` makes the icons of it; nothing in the application that is drawn is made by a machine. |
 | `docs/research/` | What was found out about publishers' requirements and about the services that are asked for references. |
 | `crates/core/` | Everything that is data and not interface: the library, BibLaTeX, duplicates, import, lookup, projects on disk, export. Does not depend on Tauri. |
 | `crates/server/` | The collaboration server. |
