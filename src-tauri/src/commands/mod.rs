@@ -2,6 +2,7 @@ pub mod documents;
 pub mod found;
 pub mod import;
 pub mod library;
+pub mod ocr;
 pub mod pictures;
 pub mod projects;
 pub mod reading;

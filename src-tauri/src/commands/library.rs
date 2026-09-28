@@ -32,7 +32,7 @@ pub struct EntryFull {
     pub collections: Vec<String>,
 }
 
-fn full(library: &Library, entry: &Entry) -> EntryFull {
+pub(crate) fn full(library: &Library, entry: &Entry) -> EntryFull {
     EntryFull {
         view: entry.view(),
         files: library.attachments_of(&entry.id).unwrap_or_default(),

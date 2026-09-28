@@ -137,6 +137,11 @@ pub fn run() {
             commands::reading::document_read,
             commands::reading::document_read_stop,
             commands::reading::document_forget,
+            commands::ocr::ocr_look,
+            commands::ocr::ocr_read,
+            commands::ocr::ocr_stop,
+            commands::ocr::ocr_searchable,
+            commands::ocr::ocr_picture,
         ])
         .run(tauri::generate_context!())
         .expect("the application could not start");
