@@ -608,6 +608,62 @@ export class Project {
     return id;
   }
 
+  /**
+   * A map made whole, in one step that undo takes back as one: for a
+   * document that is brought in. The first of the parts is the centre; every
+   * other says which part it stands under, by the place of that part in the
+   * list, and stands after it. `fill` writes the name and the text of each.
+   */
+  buildMap(
+    name: string,
+    parts: { under: number }[],
+    fill: (part: number, title: Y.XmlFragment, body: Y.XmlFragment) => void,
+    document: DocumentSettings = {},
+  ): { map: string; nodes: string[] } {
+    const clean = name.replace(/\s+/g, ' ').trim() || 'Untitled';
+    const id = newId();
+    const nodes = parts.length ? parts.map(() => newId()) : [newId()];
+    // Under what each stands, and the others that stand there, in their order.
+    const under = parts.map((p, i) => (i > 0 && p.under > 0 && p.under < i ? p.under : 0));
+    const beside = new Map<number, number[]>();
+    for (let i = 1; i < parts.length; i++) {
+      const list = beside.get(under[i]);
+      if (list) list.push(i);
+      else beside.set(under[i], [i]);
+    }
+    const orders = new Map<number, string>();
+    for (const list of beside.values()) {
+      const keys = generateNKeysBetween(null, null, list.length);
+      list.forEach((part, i) => orders.set(part, keys[i]));
+    }
+    const settings: Record<string, unknown> = { ...document };
+    for (const [k, v] of Object.entries(settings)) {
+      if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length))
+        delete settings[k];
+    }
+    this.transact(() => {
+      const last = this.maps.length ? this.maps[this.maps.length - 1].order : null;
+      const m = new Y.Map<unknown>();
+      m.set('name', clean);
+      m.set('root', nodes[0]);
+      m.set('order', generateKeyBetween(last, null));
+      m.set('created', nowIso());
+      m.set('document', settings);
+      this.yMaps.set(id, m);
+      nodes.forEach((node, i) => {
+        const n = this.#makeNode(node, {
+          map: id,
+          parent: i === 0 ? null : nodes[under[i]],
+          order: orders.get(i) ?? 'a0',
+          title: i === 0 && !parts.length ? clean : '',
+          pos: i === 0 ? { x: 0, y: 0 } : null,
+        });
+        if (parts.length) fill(i, n.get('title') as Y.XmlFragment, n.get('body') as Y.XmlFragment);
+      });
+    });
+    return { map: id, nodes };
+  }
+
   renameMap(id: string, name: string) {
     const clean = name.replace(/\s+/g, ' ').trim();
     const m = this.yMaps.get(id);

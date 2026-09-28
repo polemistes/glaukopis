@@ -8,6 +8,11 @@
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import Users from '@lucide/svelte/icons/users';
   import JoinDialog from '$lib/sharing/JoinDialog.svelte';
+  import FileInput from '@lucide/svelte/icons/file-input';
+  import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
+  import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
+  import { dropTarget } from '$lib/ui/drag.svelte';
+  import DocumentHost from '$lib/documents/DocumentHost.svelte';
   import { projectTrash, type ProjectInfo, type Trashed } from '$lib/api/projects';
   import HistoryDialog from './HistoryDialog.svelte';
   import TrashDialog from './TrashDialog.svelte';
@@ -52,6 +57,19 @@
 
   function open(p: ProjectInfo) {
     router.go({ view: 'project', project: p.id });
+  }
+
+  const written = (path: string) => isDocumentPath(path) || isPlainTextPath(path);
+
+  /**
+   * A project is made of a document, named after it, with the document as
+   * its map: of the file that is chosen, or of one that was dropped here.
+   */
+  async function fromDocument(dropped?: string) {
+    const path = dropped ?? (await chooseDocument());
+    const brought = path ? await bringIn(path, null) : null;
+    if (brought?.project)
+      router.go({ view: 'project', project: brought.project.id, map: brought.map, mode: 'text' });
   }
 
   async function commit() {
@@ -134,7 +152,13 @@
   }
 </script>
 
-<div class="home">
+<div
+  class="home"
+  use:dropTarget={{
+    accepts: (p) => p.kind === 'files' && (p.data as string[]).some(written),
+    ondrop: (e) => fromDocument((e.payload.data as string[]).find(written)),
+  }}
+>
   <div class="inner">
     <header>
       <div class="title">
@@ -145,6 +169,10 @@
           <Button variant="ghost" onclick={() => (joining = true)}>
             {#snippet icon()}<Users size={15} />{/snippet}
             Join a shared project
+          </Button>
+          <Button variant="ghost" onclick={() => fromDocument()}>
+            {#snippet icon()}<FileInput size={15} />{/snippet}
+            A project from a document…
           </Button>
           <Button
             variant="primary"
@@ -176,6 +204,9 @@
         </Button>
         <button type="button" class="quiet" onclick={() => (joining = true)}>
           or join a project that is shared with you
+        </button>
+        <button type="button" class="quiet" onclick={() => fromDocument()}>
+          or make one from a document you have written
         </button>
       </div>
     {:else}
@@ -262,6 +293,8 @@
     onclose={() => (showTrash = false)}
   />
 {/if}
+
+<DocumentHost />
 
 {#if joining}
   <JoinDialog
