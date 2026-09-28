@@ -8,6 +8,7 @@ import { bodySchema } from '$lib/editor/schema';
 import { Project } from '$lib/project/model/project.svelte';
 import { readBody, type Block, type Inline } from '$lib/project/model/text';
 import {
+  around,
   intoCitation,
   leaveAsText,
   makeCitation,
@@ -49,7 +50,8 @@ const target = (m: Marked): Target => ({
 function proposed(pr: Project, map: string, words: string): Target {
   const place = gather(pr, map).places.find((x) => x.text.includes(words))!;
   const start = place.text.indexOf(words);
-  return { passage: place.id, start, end: start + words.length, text: words };
+  const end = start + words.length;
+  return { passage: place.id, start, end, text: words, around: around(place.text, start, end) };
 }
 
 const text = (pr: Project, element: string) => readBody(pr.fragment(element, 'body')!);

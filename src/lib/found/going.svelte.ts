@@ -23,10 +23,12 @@ import type { Draft } from '$lib/api/library';
 import type { CiteMode } from '$lib/editor/schema';
 import type { Project } from '$lib/project/model/project.svelte';
 import {
+  around,
   intoCitation,
   leaveAsText,
   makeCitation,
   makeCitations,
+  standing,
   type How,
   type IntoCitation,
   type Making,
@@ -264,14 +266,8 @@ export class Going {
   /** Where text that was proposed stands now, if it stands. */
   #still(target: Target): { start: number; end: number } | null {
     const place = this.#places.get(target.passage);
-    if (!place || !target.text) return null;
-    const free = (start: number) =>
-      !place.taken.some(([a, b]) => a < start + target.text.length && start < b);
-    if (place.text.slice(target.start, target.end) === target.text)
-      return free(target.start) ? { start: target.start, end: target.end } : null;
-    const first = place.text.indexOf(target.text);
-    if (first < 0 || place.text.indexOf(target.text, first + 1) >= 0 || !free(first)) return null;
-    return { start: first, end: first + target.text.length };
+    const at = place ? standing(place, target) : 'gone';
+    return typeof at === 'string' ? null : at;
   }
 
   #settle(entry: Entry) {
@@ -318,6 +314,8 @@ export class Going {
       if (!still) continue;
       old.target.start = still.start;
       old.target.end = still.end;
+      const place = this.#places.get(old.target.passage);
+      if (place) old.target.around = around(place.text, still.start, still.end);
       next.push(old);
     }
     for (const entry of next) this.#settle(entry);
@@ -387,6 +385,7 @@ export class Going {
         start: proposal.start,
         end: proposal.end,
         text,
+        around: around(place.text, proposal.start, proposal.end),
       };
       // The text may have changed while the library was asked.
       if (!this.#still(target)) continue;

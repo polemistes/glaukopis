@@ -39,6 +39,8 @@ export interface Target {
   text: string;
   /** Of one with the mark: the id the mark holds. */
   id?: string;
+  /** Of text that was proposed: a few signs of what stood before and after it, by which it is known again. */
+  around?: [string, string];
 }
 
 /**
@@ -124,6 +126,39 @@ interface Found {
 const overlaps = (taken: [number, number][], start: number, end: number) =>
   taken.some(([a, b]) => a < end && start < b);
 
+/** A few signs of what stands before and after a part of a text. */
+export function around(text: string, start: number, end: number): [string, string] {
+  return [text.slice(Math.max(0, start - 12), start), text.slice(end, end + 12)];
+}
+
+/**
+ * Where text that was proposed stands now. Where it stood, if what stands
+ * there is still what was proposed. Where something was written before it,
+ * it has moved: it is known again if the same text stands once in the
+ * passage, with what stood around it on one side at least.
+ */
+export function standing(place: Place, target: Target): { start: number; end: number } | Trouble {
+  const length = target.text.length;
+  if (!length || target.end <= target.start) return 'changed';
+  if (place.text.slice(target.start, target.end) === target.text) {
+    return overlaps(place.taken, target.start, target.end)
+      ? // It was made a citation, or left as text, by another.
+        'gone'
+      : { start: target.start, end: target.end };
+  }
+  const first = place.text.indexOf(target.text);
+  if (first < 0 || place.text.indexOf(target.text, first + 1) >= 0 || !target.around)
+    return 'changed';
+  if (overlaps(place.taken, first, first + length)) return 'changed';
+  const [before, after] = target.around;
+  const same =
+    (before ? place.text.slice(0, first).endsWith(before) : first === 0) ||
+    (after
+      ? place.text.slice(first + length).startsWith(after)
+      : first + length === place.text.length);
+  return same ? { start: first, end: first + length } : 'changed';
+}
+
 function find(project: Project, target: Target): Found | Trouble {
   const element = elementOf(target.passage);
   if (!project.yNodes.has(element)) return 'gone';
@@ -142,19 +177,8 @@ function find(project: Project, target: Target): Found | Trouble {
 
   const place = all.places.find((p) => p.id === target.passage);
   if (!place) return 'gone';
-  if (!target.text || target.end <= target.start) return 'changed';
-  const free = (start: number) => !overlaps(place.taken, start, start + target.text.length);
-  if (place.text.slice(target.start, target.end) === target.text) {
-    return free(target.start)
-      ? { place, start: target.start, end: target.end, all }
-      : // It was made a citation, or left as text, by another.
-        'gone';
-  }
-  // Something was written before it: it is the same text still, where it stands alone.
-  const first = place.text.indexOf(target.text);
-  if (first < 0 || place.text.indexOf(target.text, first + 1) >= 0 || !free(first))
-    return 'changed';
-  return { place, start: first, end: first + target.text.length, all };
+  const at = standing(place, target);
+  return typeof at === 'string' ? at : { place, ...at, all };
 }
 
 // ---- the note that becomes a citation ----
