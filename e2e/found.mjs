@@ -70,12 +70,13 @@ writeFileSync(
 title: What looks like citations
 ---
 
-The wrath is that of a hero (Nagy 1979, 73), and the verse is made of formulas (Parry 1971).
+The wrath is that of a hero (Nagy 1979, 73), and the verse is made of formulas (Parry 1971). As Janko (1998, 3) says, it was written down.
 
-It was written down.[^1] And sung.[^2]
+Not all agree.[^1] And so it stands.[^2] Or so it is said.[^3]
 
-[^1]: See Janko, The Homeric Poems as Oral Dictated Texts, 3; but others say otherwise.
+[^1]: See Nagy, Best of the Achaeans, 73; but cf. Lord, Singer of Tales, 12, who argues otherwise.
 [^2]: West, The Rise of the Greek Epic, 151.
+[^3]: A note that says something, and cites nothing at all.
 `,
 );
 
@@ -176,7 +177,8 @@ try {
        return {
          citations: all('.citation').map((e) => e.textContent),
          found: [...new Set(all('.found:not(.left)').map((e) => e.dataset.foundId || e.dataset.found))].length,
-         notes: all('.footnote').map((e) => e.getAttribute('title') || ''),
+         // A blank that does not break, as Pandoc sets after "cf.", is a blank.
+         notes: all('.footnote').map((e) => (e.getAttribute('title') || '').replace(/\\s+/g, ' ')),
          text: body.map((b) => b.textContent).join(' ').replace(/\\s+/g, ' '),
        };`,
     );
@@ -610,67 +612,168 @@ try {
   await sleep(600);
 
   // =====================================================================
-  // What only looks like a citation: when `found_propose` answers
+  // What only looks like a citation
   // =====================================================================
-  const proposes =
-    (
-      await invoke('found_propose', {
-        passages: [{ id: 'a', text: 'It is said (Nagy 1979, 73).', note: false, taken: [] }],
-        options: { years: true, notes: false },
-      })
-    ).length > 0;
-  if (!proposes) {
-    console.log('      what looks like a citation is not proposed yet: parentheses with years and notes are not tried');
-  } else {
-    await dropOnProject(join(desk, 'looks.md'));
-    check('of a text without citations, nothing is said to be found', (await fact('found')) === null, await fact('found'));
-    await app.clickText('dialog footer button', 'Make the map');
-    await app.waitGone('dialog[open]', 15000);
-    await app.waitFor('.text-view .section', 8000);
-    await sleep(600);
-    await openWindow();
-    check('the window has nothing to go through, and says what could be turned on', /Parentheses with a year in them/.test(await app.text(`${W} .nothing`)), await app.text(`${W} .nothing`));
-    const boxes = `${W} .taken label.check input`;
-    await press(await app.exec(`return document.querySelectorAll('${boxes}')[0]`));
-    await until('parentheses with years to be proposed', async () => (await rows()).length > 0);
+  await dropOnProject(join(desk, 'looks.md'));
+  check('of a text in which nothing was found, nothing is said of it, and nothing asked', (await fact('found')) === null && (await choice('go-through')) === null);
+  await app.clickText('dialog footer button', 'Make the map');
+  await app.waitGone('dialog[open]', 15000);
+  await app.waitFor('.text-view .section', 8000);
+  await sleep(600);
+  check('and no window opens when the map is made', !(await app.exists(W)));
+  await openWindow();
+  const nothing = await app.text(`${W} .nothing`);
+  check('opened for it, the window has nothing to go through, and says what could be turned on', /Nothing to go through/.test(nothing) && /“Parentheses with a year in them” or “Every note”/.test(nothing), nothing);
+  const boxes = `${W} .taken label.check input`;
+  const turn = async (n) => press(await app.exec(`return document.querySelectorAll('${boxes}')[${n}]`));
+  const settled = async (what, n) => {
+    await until(what, async () => (await rows()).length === n).catch(() => {});
     await sleep(400);
-    list = await rows();
-    check(
-      'parentheses with a year in them are proposed when that is turned on',
-      list.length === 2 && /^\(Nagy 1979, 73\) \| /.test(list[0]) && /^\(Parry 1971\) \| /.test(list[1]),
-      JSON.stringify(list),
-    );
-    check('by how they look', /by how it looks/.test(await app.text(`${W} .by`)));
-    w = await works();
-    check('with the reference the library has for the words, and the page', /^Nagy 1979/.test(w[0].what) && w[0].locator === '73' && /^Likely/.test(w[0].sure), JSON.stringify(w[0]));
-    await app.exec(`document.querySelector('${W} .list').focus()`);
-    await app.press('Enter');
-    await sleep(700);
-    text = await inText();
-    check('one is accepted', JSON.stringify(text.citations) === '["(Nagy 1979, 73)"]', JSON.stringify(text.citations));
-    await press(await button('Leave it as text'));
-    await sleep(700);
-    check('one is left as text, and is not proposed again', (await rows()).length === 0 && /formulas \(Parry 1971\)/.test((await inText()).text));
-    await press(await app.exec(`return document.querySelectorAll('${boxes}')[1]`));
-    await until('the notes to be proposed', async () => (await rows()).length > 0);
-    await sleep(400);
-    list = await rows();
-    check('every note is proposed when that is turned on', list.length === 2 && /^See Janko/.test(list[0]) && /^West, The Rise/.test(list[1]), JSON.stringify(list));
-    check('a note that was proposed as a whole is given to become a citation', JSON.stringify(await ways()) === '["x","-"]', JSON.stringify(await ways()));
-    await app.screenshot('found-doc-8-looks');
-    if ((await disabled('Make it a citation')) === false) {
-      await app.exec(`document.querySelector('${W} .list').focus()`);
-      await app.press('Enter');
-      await sleep(700);
-      text = await inText();
-      check('and becomes one', text.notes.length === 1 && text.citations.some((c) => /Janko 1998/.test(c)), JSON.stringify(text));
-    }
-    for (let i = 0; i < 2; i++) {
-      await press(await app.exec(`return document.querySelectorAll('${boxes}')[${i}]`));
-      await sleep(500);
-    }
-    await closeWindow();
-  }
+    return rows();
+  };
+
+  // ---- parentheses with a year in them ----
+  await turn(0);
+  list = await settled('parentheses with years to be proposed', 5);
+  check(
+    'with parentheses with a year turned on, they are proposed, and the notes in which a work of the library is named',
+    JSON.stringify(list) ===
+      JSON.stringify([
+        '(Nagy 1979, 73) | likely',
+        '(Parry 1971) | likely',
+        'Janko (1998, 3) | likely',
+        'See Nagy, Best of the Achaeans, 73; but cf. Lord, Singer of… | likely',
+        'West, The Rise of the Greek Epic, 151. | likely',
+      ]),
+    JSON.stringify(list),
+  );
+  check('they are taken for citations by how they look, which is said', (await app.text(`${W} .by`)) === 'Taken for a citation by how it looks');
+  check('nothing is marked in the text for it', (await inText()).found === 0);
+  w = await works();
+  check(
+    'the reference is the one the library has for the words, which is likely and never certain, with the page',
+    w.length === 1 && /^Nagy 1979 The Best of the Achaeans/.test(w[0].what) && /^Likely · Nagy, 1979 for “Nagy 1979”/.test(w[0].sure) && w[0].locator === '73',
+    JSON.stringify(w),
+  );
+  check('so none can be made at once', (await atOnce()) === null);
+  await app.screenshot('found-doc-8-looks');
+  await app.exec(`document.querySelector('${W} .list').focus()`);
+  await app.press('Enter');
+  await sleep(700);
+  text = await inText();
+  check('one is accepted', JSON.stringify(text.citations) === '["(Nagy 1979, 73)"]' && /a hero \(Nagy 1979, 73\), and the verse/.test(text.text), JSON.stringify(text));
+  check('and the next is shown, where it now stands', (await current()) === '(Parry 1971)' && /formulas \(Parry 1971\)\. As Janko/.test(await app.text(`${W} .passage`)), await app.text(`${W} .passage`));
+
+  // ---- one is left as text ----
+  await press(await button('Leave it as text'));
+  await sleep(700);
+  text = await inText();
+  check('one is left as text: it stands as it stood, and is not marked', /formulas \(Parry 1971\)\. As/.test(text.text) && text.found === 0 && text.citations.length === 1, JSON.stringify(text));
+
+  // ---- the author in the sentence ----
+  check('the next has the author in the sentence', (await current()) === 'Janko (1998, 3)', await current());
+  const inSentence = () => app.exec(`return document.querySelector('${W} .proposed .foot input[type=checkbox]').checked`);
+  w = await works();
+  check(
+    'which the citation is to have as well: the name is part of it, and the page is there',
+    (await inSentence()) === true && /^Janko 1998/.test(w[0].what) && w[0].locator === '3' && w[0].year === false,
+    JSON.stringify([await inSentence(), w]),
+  );
+  await app.exec(`document.querySelector('${W} .list').focus()`);
+  await app.press('Enter');
+  await sleep(700);
+  text = await inText();
+  check('made a citation, it reads as the sentence did', text.citations.includes('Janko (1998, 3)') && /\. As Janko \(1998, 3\) says, it was written down\./.test(text.text), JSON.stringify(text));
+
+  // ---- a note of a style of notes, both ways ----
+  check('the next is a note that names two works', /^See Nagy, Best of the Achaeans, 73; but cf\. Lord/.test(await current()), await current());
+  w = await works();
+  check(
+    'parted at its semicolon into its works, each with its page and the words before and after it',
+    w.length === 2 &&
+      /^Nagy 1979 The Best/.test(w[0].what) && w[0].prefix === 'See' && w[0].locator === '73' && w[0].suffix === '' &&
+      /^Lord 1960 The Singer/.test(w[1].what) && w[1].prefix === 'but cf.' && w[1].locator === '12' && w[1].suffix === ', who argues otherwise',
+    JSON.stringify(w.map((x) => [x.what, x.sure, x.prefix, x.locator, x.suffix])),
+  );
+  check('as a note that was proposed as a whole, it is given to become a citation', JSON.stringify(await ways()) === '["x","-"]', JSON.stringify(await ways()));
+  await app.screenshot('found-doc-9-note');
+  const notesBefore = (await inText()).notes.length;
+  await press(await app.exec(`return document.querySelectorAll('${W} .in-note input[type=radio]')[1]`));
+  await sleep(250);
+  await press(await button('Make it a citation'));
+  await sleep(700);
+  text = await inText();
+  check(
+    'one way, the citation stands in the note, which holds nothing else',
+    text.notes.length === notesBefore && /^\(See Nagy 1979, 73; but cf\. Lord 1960, 12 ?, who argues otherwise\)$/.test(text.notes[0]),
+    JSON.stringify(text.notes),
+  );
+  await app.exec(`document.querySelector('${W} .list').focus()`);
+  await app.keys(['Control', 'z']);
+  await until('the note to be proposed again', async () => /^See Nagy, Best of the Achaeans/.test((await current()) ?? ''), 6000).catch(() => {});
+  await sleep(400);
+  text = await inText();
+  check('taken back, the note is as it was, and is looked at again', text.notes[0] === 'See Nagy, Best of the Achaeans, 73; but cf. Lord, Singer of Tales, 12, who argues otherwise.' && /^See Nagy, Best of the Achaeans/.test(await current()), JSON.stringify([text.notes, await current()]));
+  check('as it was given', JSON.stringify(await ways()) === '["x","-"]', JSON.stringify(await ways()));
+  await press(await button('Make it a citation'));
+  await sleep(700);
+  text = await inText();
+  check(
+    'the other way, the note becomes a citation of its two works',
+    text.notes.length === notesBefore - 1 && text.citations.some((c) => /^\(See Nagy 1979, 73; but cf\. Lord 1960, 12 ?, who argues otherwise\)$/.test(c)) && /Not all agree\. \(See Nagy/.test(text.text),
+    JSON.stringify(text),
+  );
+
+  // ---- every note ----
+  list = await settled('what is left', 1);
+  check('of the notes, those in which no work is named were not proposed', JSON.stringify(list) === '["West, The Rise of the Greek Epic, 151. | likely"]', JSON.stringify(list));
+  await turn(1);
+  list = await settled('every note to be proposed', 2);
+  check(
+    'with every note turned on, a note in which no work of the library is found is proposed as well, for the writer to find its work',
+    JSON.stringify(list) === '["West, The Rise of the Greek Epic, 151. | likely","A note that says something, and cites nothing at all. | none"]',
+    JSON.stringify(list),
+  );
+  await show('A note that says something');
+  w = await works();
+  check('with all its words as what names the work', w.length === 1 && /^A note that says something, and cites nothing at all\. was not found/.test(w[0].what) && (await disabled('Make it a citation')) === true, JSON.stringify(w));
+  await press(await button('Leave it as text'));
+  await sleep(700);
+  check('left as text, the note stays a note', (await inText()).notes.includes('A note that says something, and cites nothing at all.') && (await rows()).length === 1, JSON.stringify(await inText()));
+  const kept = JSON.parse(readFileSync(join(app.dataDir, 'settings.json'), 'utf8')).found;
+  check('what is taken for citations is kept with the settings', kept.years === true && kept.notes === true, JSON.stringify(kept));
+
+  // ---- the preview ----
+  await closeWindow();
+  await app.click('header button[aria-label="Preview and export"]');
+  await app.waitFor('.preview .page', 30000);
+  await until('the preview of this map', async () => /What looks like citations/.test(source()), 20000).catch(() => {});
+  await sleep(1200);
+  typ = source().replace(/\s+/g, ' ');
+  const shown = typ.slice(typ.indexOf('The wrath is that'), typ.indexOf('The wrath is that') + 900);
+  console.log(`      the preview: ${shown}`);
+  check(
+    'the preview has the citations, as notes where the style has notes, and what was left as text as text',
+    /a hero,?#footnote\[Gregory Nagy,.*?73\.?\]/.test(typ) && /Janko#footnote\[/.test(typ) && /Not all agree\.#footnote\[See (Gregory )?Nagy,.*?but cf\. (Albert B\. )?Lord,.*?12 ?, who argues otherwise\.?\]/.test(typ) && /formulas \(Parry 1971\)/.test(typ),
+    shown,
+  );
+  await app.screenshot('found-doc-10-preview');
+  await app.click('header button[aria-label="Preview and export"]');
+  await sleep(300);
+
+  // ---- opened anew ----
+  await openWindow();
+  list = await settled('what is left', 1);
+  check(
+    'opened anew, the window has what was put off, and what was left as text is not proposed again',
+    JSON.stringify(list) === '["West, The Rise of the Greek Epic, 151. | likely"]',
+    JSON.stringify(list),
+  );
+  await turn(0);
+  await turn(1);
+  await sleep(900);
+  check('turned off again, nothing is looked for', (await rows()).length === 0 && /Nothing to go through/.test(await app.text(`${W} .nothing`)));
+  await closeWindow();
 
   const errors = await app.pageErrors();
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));
