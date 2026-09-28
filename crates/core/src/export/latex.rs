@@ -294,7 +294,7 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
     // Figures stand where they are written, and mathematics has what it needs.
     let _ = writeln!(h, "\\usepackage{{float}}\n\\usepackage{{amsmath}}\n\\usepackage{{graphicx}}");
     if p.flows {
-        let _ = writeln!(h, "\\usepackage{{wrapfig}}");
+        let _ = writeln!(h, "\\usepackage{{wrapfig}}\n\\usepackage{{needspace}}");
     }
     if p.tables {
         // What Pandoc asks for when it writes a table itself: here the

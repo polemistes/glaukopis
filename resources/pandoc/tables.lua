@@ -95,7 +95,8 @@ function Div(el)
       local a = el.attributes
       local open = '{' .. size_of(a)
       if a.kind == 'fixed' then
-        tex = ruled(fixed(tex), a.rules == 'grid' and 'none' or a.rules)
+        -- Within something, a table that has lines around every cell has the lines of a book.
+        tex = ruled(fixed(tex), a.rules == 'grid' and 'horizontal' or a.rules)
       else
         tex = ruled(tex, a.rules)
         local left, right = '\\fill', '\\fill'

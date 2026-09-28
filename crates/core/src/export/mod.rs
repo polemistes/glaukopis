@@ -275,6 +275,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         ),
     };
     converter.extras.first_indented = f.text.indent_first;
+    converter.extras.flows = particulars(doc, f).flows;
     converter.extras.text_width =
         f64::from(f.page.dimensions().0 - f.page.margin_left.points() - f.page.margin_right.points()).max(72.0);
     converter.extras.targets = converter.targets(doc, f.headings.numbered);
@@ -1539,7 +1540,7 @@ mod tests {
         let t = fs::read_to_string(&tex).unwrap();
         assert!(t.contains("\\usepackage{wrapfig}") && t.contains("\\usepackage{longtable,booktabs,array}"));
         assert!(t.contains("\\begin{figure}[H]\n\\raggedright"), "{t}");
-        assert!(t.contains("\\begin{wrapfigure}{r}{0.400\\linewidth}"), "{t}");
+        assert!(t.contains("\\needspace{9\\baselineskip}\n\\begin{wrapfigure}{r}{0.400\\linewidth}"), "{t}");
         assert!(t.contains("\\begin{wrapfigure}{l}{0.450\\linewidth}"));
         assert!(t.contains("\\begin{flalign*}"));
         // A table by itself may go over pages; within something it may not.

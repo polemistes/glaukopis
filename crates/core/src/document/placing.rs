@@ -137,6 +137,14 @@ impl Converter<'_> {
         Place { stand, around, beside: false, share: share.clamp(0.1, 1.0) }
     }
 
+    /// For LaTeX: what ends the flowing of text around something that
+    /// stands before, where something stands apart. Without it, what
+    /// follows a figure at a side too closely is made as narrow as the text
+    /// beside the figure.
+    fn apart(&self) -> &'static str {
+        if self.extras.flows { "\\WFclear\n" } else { "" }
+    }
+
     /// A label and its number, as "Figure 1": the words as tokens, in the
     /// weight the format gives them.
     fn label(&self, kind: Kind, number: Option<u32>) -> Vec<Value> {
@@ -565,10 +573,12 @@ impl Converter<'_> {
             Flavour::Typst => vec![named(&format!("gk-{name}-{}", word(place.stand)), parts.all())],
             Flavour::Latex if place.around => {
                 let side = if place.stand == Stand::Left { "l" } else { "r" };
+                // What the text flows around does not move to where there is room,
+                // as other figures do: near the foot of a page it is begun on the next.
                 let mut out = vec![raw(
                     "latex",
                     format!(
-                        "\\begin{{wrapfigure}}{{{side}}}{{{share:.3}\\linewidth}}\n\\centering\\vspace{{-0.6\\baselineskip}}"
+                        "\\needspace{{9\\baselineskip}}\n\\begin{{wrapfigure}}{{{side}}}{{{share:.3}\\linewidth}}\n\\centering\\vspace{{-0.6\\baselineskip}}"
                     ),
                 )];
                 out.extend(parts.all());
@@ -584,14 +594,15 @@ impl Converter<'_> {
                 };
                 match kind {
                     Kind::Figure => {
-                        let mut out = vec![raw("latex", format!("\\begin{{figure}}[H]\n{side}"))];
+                        let mut out = vec![raw("latex", format!("{}\\begin{{figure}}[H]\n{side}", self.apart()))];
                         out.extend(parts.all());
                         out.push(raw("latex", "\\end{figure}"));
                         out
                     }
                     // A table may go over several pages, and stands in nothing.
                     Kind::Table => {
-                        let mut out = vec![raw("latex", "\\par\\addvspace{\\bigskipamount}")];
+                        let mut out =
+                            vec![raw("latex", format!("{}\\par\\addvspace{{\\bigskipamount}}", self.apart()))];
                         out.extend(parts.all());
                         out.push(raw("latex", "\\par\\addvspace{\\bigskipamount}"));
                         out
@@ -693,11 +704,15 @@ impl Converter<'_> {
                 // Pandoc parts the blocks it writes by empty lines, and an
                 // empty line between two of these would end the line they
                 // stand on: where one ends, the next begins in the same breath.
-                let mut open = String::from("\\par\\addvspace{\\bigskipamount}{\\setlength{\\parindent}{0pt}%\n");
+                let mut open = format!(
+                    "{}\\par\\addvspace{{\\bigskipamount}}{{\\setlength{{\\parindent}}{{0pt}}%\n",
+                    self.apart()
+                );
                 for (at, &i) in used.iter().enumerate() {
                     let foot = if i == 2 { "t" } else { "b" };
                     if at > 0 {
-                        open.push_str("\\par\\nointerlineskip\\vspace{0.5em}%\n");
+                        // The lines of a row stay on one page.
+                        open.push_str("\\par\\nopagebreak\\nointerlineskip\\vspace{0.5em}%\n");
                     }
                     for (j, cell) in lines[i].iter().enumerate() {
                         open.push_str(&format!(

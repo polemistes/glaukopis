@@ -149,6 +149,8 @@ pub struct Extras {
     pub targets: HashMap<String, Pointed>,
     /// How wide the text is on the page, in points.
     pub text_width: f64,
+    /// Text flows around something in the document.
+    pub flows: bool,
     /// What has been given a place that can be gone to.
     anchored: RefCell<HashSet<String>>,
     /// How many pointers point to nothing that is in the document.
