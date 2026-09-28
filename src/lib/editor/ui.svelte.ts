@@ -16,6 +16,8 @@ export interface PickRequest {
   exclude?: string[];
   /** What the panel is for, in a few words: shown above the field. */
   purpose?: string;
+  /** Words that are written in the search already, to be changed. */
+  query?: string;
   onpick: (id: string) => void;
   oncancel?: () => void;
 }
