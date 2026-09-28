@@ -30,6 +30,14 @@ describe('the words of a project', () => {
     );
     expect(t('project-copied-to', { name: 'Wrath' })).toBe('Copied to “Wrath”');
     expect(t('project-found-hint', { count: 12 })).toBe('12 to go through, and make citations of');
+    expect(t('project-words', { count: 1 })).toBe('1 word');
+    expect(t('project-words', { count: 12345 })).toBe('12,345 words');
+    expect(t('project-references-foreign', { count: 1 })).toBe(
+      '1 in this project is not in your library.',
+    );
+    expect(t('project-pictures-absent-map', { count: 3 })).toBe(
+      '3 in this map are not on this computer.',
+    );
   });
 
   it('are said in Norwegian, with its plurals and its way of writing numbers', () => {

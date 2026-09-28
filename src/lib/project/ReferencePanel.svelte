@@ -5,6 +5,7 @@
   import Search from '@lucide/svelte/icons/search';
   import X from '@lucide/svelte/icons/x';
   import type { Summary } from '$lib/api/library';
+  import { t } from '$lib/i18n';
   import ReferenceList from '$lib/library/ReferenceList.svelte';
   import { editReference, importFile, newReference } from '$lib/library/references.svelte';
   import { library, search, sortEntries } from '$lib/state/library.svelte';
@@ -41,32 +42,34 @@
   function context(event: MouseEvent, entries: Summary[]) {
     const one = entries.length === 1 ? entries[0] : null;
     openContextMenu(event, [
-      ...(one ? [{ label: 'Edit the reference…', action: () => void editReference(one.id) }] : []),
+      ...(one
+        ? [{ label: t('project-edit-reference'), action: () => void editReference(one.id) }]
+        : []),
     ]);
   }
 </script>
 
-<aside class="panel" aria-label="References">
+<aside class="panel" aria-label={t('project-references')}>
   <header>
-    <h2>References</h2>
-    <IconButton label="New reference" size="sm" onclick={() => newReference()}
+    <h2>{t('project-references')}</h2>
+    <IconButton label={t('project-new-reference')} size="sm" onclick={() => newReference()}
       ><Plus size={15} /></IconButton
     >
-    <IconButton label="Import a file" size="sm" onclick={() => importFile()}
+    <IconButton label={t('project-import-file')} size="sm" onclick={() => importFile()}
       ><FileUp size={14} /></IconButton
     >
-    <IconButton label="Close" size="sm" onclick={onclose}><X size={15} /></IconButton>
+    <IconButton label={t('common-close')} size="sm" onclick={onclose}><X size={15} /></IconButton>
   </header>
 
   <div class="tools">
     <Segmented
       bind:value={scope}
-      label="Which references"
+      label={t('project-which-references')}
       size="sm"
       options={[
-        { value: 'map', label: 'This map' },
-        { value: 'project', label: 'Project' },
-        { value: 'library', label: 'Library' },
+        { value: 'map', label: t('project-this-map') },
+        { value: 'project', label: t('project-project') },
+        { value: 'library', label: t('project-library') },
       ]}
     />
     <div class="search">
@@ -74,8 +77,8 @@
       <input
         bind:value={query}
         type="search"
-        placeholder="Search"
-        aria-label="Search references"
+        placeholder={t('common-search')}
+        aria-label={t('project-search-references')}
         spellcheck="false"
       />
     </div>
@@ -91,27 +94,26 @@
         oncontext={context}
       />
     {:else if query}
-      <EmptyState compact title="Nothing found" />
+      <EmptyState compact title={t('project-nothing-found')} />
     {:else if scope === 'library'}
       <EmptyState
         compact
-        title="Your library is empty"
-        text="Add a reference, or import those you have."
+        title={t('project-library-empty')}
+        text={t('project-library-empty-hint')}
       />
     {:else}
       <EmptyState
         compact
-        title="No references yet"
-        text={'What you cite while writing is listed here. To cite, choose Cite over the text, or type @.'}
+        title={t('project-no-references')}
+        text={t('project-no-references-hint')}
       />
     {/if}
   </div>
 
   <footer>
-    Drag a reference into a text to cite it there, or onto an element to cite it at the end of its
-    text.
+    {t('project-references-drag')}
     {#if foreign && scope !== 'library'}
-      <br />{foreign} in this project {foreign === 1 ? 'is' : 'are'} not in your library.
+      <br />{t('project-references-foreign', { count: foreign })}
     {/if}
   </footer>
 </aside>

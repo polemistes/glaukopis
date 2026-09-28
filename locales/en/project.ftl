@@ -137,3 +137,51 @@ project-read-on = Double-click to read on
 project-stands-for-map = Stands for the map “{ $name }”
 project-name-not-printed = The name is not printed
 project-left-out-of-document = Left out of the document
+
+## The panels at the side: the references and the pictures
+
+project-this-map = This map
+project-project = Project
+project-library = Library
+project-nothing-found = Nothing found
+project-edit-reference = Edit the reference…
+project-new-reference = New reference
+project-import-file = Import a file
+project-which-references = Which references
+project-search-references = Search references
+project-library-empty = Your library is empty
+project-library-empty-hint = Add a reference, or import those you have.
+project-no-references = No references yet
+project-no-references-hint = What you cite while writing is listed here. To cite, choose Cite over the text, or type @.
+project-references-drag = Drag a reference into a text to cite it there, or onto an element to cite it at the end of its text.
+# The count is of the references the project cites that the library lacks.
+project-references-foreign = { $count ->
+    [one] { $count } in this project is not in your library.
+   *[other] { $count } in this project are not in your library.
+}
+# The store of pictures.
+project-store = Store
+project-open-picture = Open…
+project-put-into-text = Put it into the text
+project-add-pictures = Add pictures from files
+project-which-pictures = Which pictures
+project-search-pictures = Search pictures
+project-a-picture = A picture
+project-with-notes = With notes
+project-not-on-computer = Not on this computer
+project-nothing-said = Nothing is said of it yet
+project-store-empty = The store is empty
+project-store-empty-hint = Add pictures from files, or drop them on a text.
+project-no-pictures = No pictures yet
+project-no-pictures-map = The pictures of the figures of this map are listed here. Those of the store are under Store.
+project-no-pictures-project = The pictures of the figures of the project are listed here. Those of the store are under Store.
+project-pictures-drag = Drag a picture into a text to make a figure of it there, or onto an element to put it at the end of its text.
+# The count is of the pictures that are used and are not in the store of this computer.
+project-pictures-absent-map = { $count ->
+    [one] { $count } in this map is not on this computer.
+   *[other] { $count } in this map are not on this computer.
+}
+project-pictures-absent-project = { $count ->
+    [one] { $count } in this project is not on this computer.
+   *[other] { $count } in this project are not on this computer.
+}
