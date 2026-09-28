@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use glaukopis_core::net::Client;
 use glaukopis_core::pictures::Pictures;
-use glaukopis_core::sharing::Remote;
+use glaukopis_core::sharing::{Remote, Used};
 use glaukopis_server::{Config, Server, serve};
 use tokio::sync::oneshot;
 
@@ -42,39 +42,53 @@ async fn the_pictures_of_a_project_are_brought_to_be_the_same() {
         let code = remote.invite(ROOM, &owner, "", None, None).unwrap().code;
         let joined = remote.join(&code, "Another").unwrap();
 
-        let hers = Pictures::of(&root.join("hers"));
-        let his = Pictures::of(&root.join("his"));
+        // Each has a store of pictures, in which there is more than the project uses.
+        let hers = Pictures::open(root.join("hers")).unwrap();
+        let his = Pictures::open(root.join("his")).unwrap();
         let vase = hers.add("vase.png", &PNG).unwrap();
         let circle = his.add("circle.svg", SVG.as_bytes()).unwrap();
+        let apart = hers.add("of another project.svg", SVG.replace("4", "2").as_bytes()).unwrap();
+        let used = |pictures: &[&glaukopis_core::pictures::Picture]| -> Vec<Used> {
+            pictures
+                .iter()
+                .map(|p| Used { hash: p.hash.clone(), extension: p.extension.clone(), name: p.name.clone() })
+                .collect()
+        };
 
-        // Nothing is there: what she has is sent.
+        // Nothing is there: what the project uses of hers is sent, and nothing else.
         assert_eq!(remote.files(ROOM, &owner).unwrap(), (vec![], 300));
-        let done = remote.sync_pictures(ROOM, &owner, &hers).unwrap();
+        let done = remote.sync_pictures(ROOM, &owner, &hers, &used(&[&vase])).unwrap();
         assert_eq!((done.sent, done.fetched, done.problems.len()), (1, 0, 0), "{:?}", done.problems);
+        let there: Vec<String> = remote.files(ROOM, &owner).unwrap().0.into_iter().map(|f| f.hash).collect();
+        assert_eq!(there, vec![vase.hash.clone()]);
+        assert!(!there.contains(&apart.hash));
 
-        // He sends his, and fetches hers.
-        let done = remote.sync_pictures(ROOM, &joined.token, &his).unwrap();
+        // He sends his, and fetches hers, which is called what the project calls it.
+        let done = remote.sync_pictures(ROOM, &joined.token, &his, &used(&[&vase, &circle])).unwrap();
         assert_eq!((done.sent, done.fetched, done.problems.len()), (1, 1, 0), "{:?}", done.problems);
         assert_eq!(his.read(&vase.hash, "png").unwrap(), PNG);
+        assert_eq!(his.get(&vase.hash).unwrap().name, "vase.png");
 
         // She fetches his, and is told what kind it is by what it holds.
-        let done = remote.sync_pictures(ROOM, &owner, &hers).unwrap();
+        let done = remote.sync_pictures(ROOM, &owner, &hers, &used(&[&vase])).unwrap();
         assert_eq!((done.sent, done.fetched), (0, 1));
         assert_eq!(hers.read(&circle.hash, "svg").unwrap(), SVG.as_bytes());
+        assert_eq!(hers.get(&circle.hash).unwrap().name, "");
 
         // Then there is nothing to do.
-        let done = remote.sync_pictures(ROOM, &owner, &hers).unwrap();
+        let done = remote.sync_pictures(ROOM, &owner, &hers, &used(&[&vase, &circle])).unwrap();
         assert_eq!((done.sent, done.fetched, done.problems.len()), (0, 0, 0));
-        assert_eq!(hers.list(), his.list());
+        assert_eq!(his.list().len(), 2);
+        assert_eq!(hers.list().len(), 3);
 
         // A picture the server does not take is said to be that, once, and
         // does not keep the rest from being seen to.
         let large = format!("<svg xmlns=\"http://www.w3.org/2000/svg\"><!--{}--></svg>", "x".repeat(400));
         let larger = format!("<svg xmlns=\"http://www.w3.org/2000/svg\"><!--{}--></svg>", "y".repeat(500));
-        his.add("large.svg", large.as_bytes()).unwrap();
-        his.add("larger.svg", larger.as_bytes()).unwrap();
+        let a = his.add("large.svg", large.as_bytes()).unwrap();
+        let b = his.add("larger.svg", larger.as_bytes()).unwrap();
         let small = his.add("small.svg", SVG.replace("4", "3").as_bytes()).unwrap();
-        let done = remote.sync_pictures(ROOM, &joined.token, &his).unwrap();
+        let done = remote.sync_pictures(ROOM, &joined.token, &his, &used(&[&a, &b, &small, &small])).unwrap();
         assert_eq!(done.sent, 1);
         assert_eq!(done.problems.len(), 1, "{:?}", done.problems);
         assert!(done.problems[0].starts_with("A picture is larger than 127.0.0.1"), "{:?}", done.problems);
@@ -86,7 +100,7 @@ async fn the_pictures_of_a_project_are_brought_to_be_the_same() {
         assert!(refused.to_string().starts_with("The file is larger than this server takes"), "{refused}");
 
         // One who is not of the project is given nothing, and takes nothing in.
-        let refused = remote.sync_pictures(ROOM, "not-a-token", &hers).unwrap_err();
+        let refused = remote.sync_pictures(ROOM, "not-a-token", &hers, &used(&[&vase])).unwrap_err();
         assert_eq!(refused.kind(), "not-admitted");
         assert!(remote.fetch_file(ROOM, "not-a-token", &vase.hash).is_err());
         assert!(remote.send_file(ROOM, "not-a-token", &vase.hash, &PNG).is_err());

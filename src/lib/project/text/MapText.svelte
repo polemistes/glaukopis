@@ -14,7 +14,6 @@
   import type { FocusAt } from '$lib/editor/RichText.svelte';
   import { bodySchema } from '$lib/editor/schema';
   import { editorUi } from '$lib/editor/ui.svelte';
-  import { documents } from '$lib/preview/documents.svelte';
   import { plural, truncate } from '$lib/library/format';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import { pointRect } from '$lib/ui/floating';
@@ -61,29 +60,6 @@
   >();
 
   const tree = $derived(project.tree(mapId));
-
-  /**
-   * What a figure is called in the text is what the format of the document
-   * calls it: "Figure 1." in one, "Fig. 1:" in another.
-   */
-  let figures = $state<{ label: string; separator: string } | null>(null);
-  $effect(() => {
-    const chosen = documents.choice(project.map(mapId)?.document ?? {}).format;
-    let current = true;
-    documents
-      .format(chosen)
-      .then((format) => {
-        if (current && format.figures)
-          figures = { label: format.figures.label, separator: format.figures.separator };
-      })
-      .catch(() => {});
-    return () => {
-      current = false;
-    };
-  });
-  /** A text as CSS takes it. */
-  const quoted = (text: string) =>
-    `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, ' ')}"`;
 
   interface Row {
     id: string;
@@ -696,13 +672,7 @@
         {/if}
       </div>
 
-      <div
-        class="column"
-        bind:this={column}
-        data-notes
-        style:--figure-label={figures ? quoted(figures.label) : null}
-        style:--figure-separator={figures ? quoted(figures.separator) : null}
-      >
+      <div class="column" bind:this={column} data-notes>
         {#each rows as row, i (row.id)}
           {@const node = project.nodes.get(row.id)}
           {#if i === firstLoose}

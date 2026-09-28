@@ -12,13 +12,37 @@
     /** While the width is being set: shown, and not yet kept. */
     ontry: (width: number) => void;
     onchange: (change: { alt?: string; width?: number; numbered?: boolean }) => void;
+    /** Whether what is said of the figure is what is kept with the picture. */
+    kept: () => boolean;
+    /** Whether anything is kept with the picture to be said of its figures. */
+    own: () => boolean;
+    /** Keeps what is said of the figure with the picture. */
+    onkeep: () => void;
+    /** Says of the figure what is kept with the picture. */
+    ontake: () => void;
     onreplace: () => void;
     onremove: () => void;
     onclose: () => void;
   }
 
-  let { name, alt, width, numbered, ontry, onchange, onreplace, onremove, onclose }: Props =
-    $props();
+  let {
+    name,
+    alt,
+    width,
+    numbered,
+    ontry,
+    onchange,
+    kept,
+    own,
+    onkeep,
+    ontake,
+    onreplace,
+    onremove,
+    onclose,
+  }: Props = $props();
+
+  /** Asked again when either has been done. */
+  let same = $state(untrack(() => kept()));
 
   let wide = $state(untrack(() => width));
   let described = $state(untrack(() => alt));
@@ -112,6 +136,36 @@
       />
       Numbered, as “Figure 1”
     </label>
+  </div>
+
+  <div class="row">
+    <span></span>
+    <div class="caption">
+      <button
+        type="button"
+        class="link"
+        disabled={same}
+        title="Figures made with this picture then begin with what is said here"
+        onclick={() => {
+          onkeep();
+          same = true;
+        }}
+      >
+        Keep the caption with the picture
+      </button>
+      <button
+        type="button"
+        class="link"
+        disabled={same || !own()}
+        title="What is kept with the picture is said here, in place of what is said now"
+        onclick={() => {
+          ontake();
+          same = kept();
+        }}
+      >
+        Use the picture’s own
+      </button>
+    </div>
   </div>
 
   <div class="actions">
@@ -228,6 +282,28 @@
     align-items: center;
     gap: 6px;
     cursor: pointer;
+  }
+  .caption {
+    grid-column: 2 / 4;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 14px;
+  }
+  .link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent-strong);
+    font: inherit;
+    font-size: var(--text-xs);
+    cursor: pointer;
+  }
+  .link:hover:not(:disabled) {
+    text-decoration: underline;
+  }
+  .link:disabled {
+    color: var(--ink-4);
+    cursor: default;
   }
   .actions {
     display: flex;

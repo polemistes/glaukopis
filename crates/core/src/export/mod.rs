@@ -25,7 +25,6 @@ use crate::formats::typst::{Particulars, preamble};
 use crate::formats::{DocumentFormat, NoteKind, TitlePlacement};
 use crate::fsutil::write_atomic;
 use crate::library::Library;
-use crate::pictures::Pictures;
 use crate::styles::Styles;
 
 pub use tools::{Tool, Tools};
@@ -136,9 +135,8 @@ pub struct Context<'a> {
     pub work: PathBuf,
     /// The fonts Typst finds, if they have been asked for.
     pub fonts: &'a [String],
-    /// Where the projects are kept: the files of the figures of a document
-    /// are with the project it is made from.
-    pub projects: Option<&'a Path>,
+    /// The store of pictures, where the files of the figures are.
+    pub pictures: Option<&'a Path>,
 }
 
 /// The files of the figures of a document, where the program that makes the
@@ -163,17 +161,16 @@ const WIDEST_SHOWN: u32 = 1400;
 fn place_files(ctx: &Context, request: &Request, into: &Path, name: &str, light: bool) -> Placed {
     let mut placed = Placed { name: name.to_owned(), ..Default::default() };
     let wanted = request.document.figure_files();
-    let Some(projects) = ctx.projects else { return placed };
+    let Some(pictures) = ctx.pictures else { return placed };
     if wanted.is_empty() {
         return placed;
     }
-    let pictures = Pictures::of(&projects.join(safe_key(&request.key)));
     let to = into.join(name);
     if fs::create_dir_all(&to).is_err() {
         return placed;
     }
     for (hash, extension) in wanted {
-        let Ok(source) = pictures.path(&hash, &extension) else { continue };
+        let Ok(source) = crate::pictures::file_in(pictures, &hash, &extension) else { continue };
         let file = format!("{hash}.{extension}");
         let target = to.join(&file);
         let size = |path: &Path| path.metadata().ok().filter(|m| m.is_file()).map(|m| m.len());
@@ -272,6 +269,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         ),
     };
     converter.extras.first_indented = f.text.indent_first;
+    converter.extras.targets = converter.targets(doc, f.headings.numbered);
 
     let mut meta = Map::new();
     if let Some(lang) = doc.language.as_deref().filter(|l| !l.trim().is_empty()) {
@@ -429,6 +427,13 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         .absent()
         .into_iter()
         .map(|name| format!("The picture “{name}” is not on this computer, and is left out of the document."))
+        .chain(match converter.extras.astray() {
+            0 => None,
+            1 => Some("Words in the text point to something that is not in the document. They are set as [?].".into()),
+            n => Some(format!(
+                "Words in the text point, in {n} places, to what is not in the document. They are set as [?]."
+            )),
+        })
         .collect();
 
     Prepared { json, bibliography, has_citations, remarks }
@@ -858,8 +863,8 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
                     inlines(content, with_notes, out);
                     out.push(' ');
                 }
-                // Mathematics in the line stands for a word.
-                Inline::Math { .. } => out.push_str(" x "),
+                // A formula in the line stands for a word, and so do words that point.
+                Inline::Math { .. } | Inline::CrossRef { .. } => out.push_str(" x "),
                 _ => {}
             }
         }
@@ -898,6 +903,7 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
 mod tests {
     use super::*;
     use crate::document::fixtures::sample;
+    use crate::pictures::Pictures;
 
     struct Setup {
         _tmp: tempfile::TempDir,
@@ -905,7 +911,7 @@ mod tests {
         resources: PathBuf,
         styles: Styles,
         work: PathBuf,
-        projects: PathBuf,
+        pictures: PathBuf,
     }
 
     /// Nothing, when Pandoc and Typst are not installed: the tests that need
@@ -920,8 +926,8 @@ mod tests {
         let resources = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources");
         let styles = Styles::new(&resources, &tmp.path().join("styles"));
         let work = tmp.path().join("work");
-        let projects = tmp.path().join("projects");
-        Some(Setup { _tmp: tmp, tools, resources, styles, work, projects })
+        let pictures = tmp.path().join("pictures");
+        Some(Setup { _tmp: tmp, tools, resources, styles, work, pictures })
     }
 
     impl Setup {
@@ -933,7 +939,7 @@ mod tests {
                 library: None,
                 work: self.work.clone(),
                 fonts: &[],
-                projects: Some(&self.projects),
+                pictures: Some(&self.pictures),
             }
         }
     }
@@ -1192,11 +1198,12 @@ mod tests {
         use crate::pictures::fixtures::{PNG, SVG};
         let mut r = request("chicago-author-date");
         r.key = "p1".into();
-        let pictures = Pictures::of(&s.projects.join("p1"));
+        let pictures = Pictures::open(&s.pictures).unwrap();
         let drawing = pictures.add("circle.svg", SVG.as_bytes()).unwrap();
         let picture = pictures.add("vase.png", &PNG).unwrap();
         let blocks = &mut r.document.sections[1].blocks;
         blocks.push(Block::Figure {
+            id: "fig-shield".into(),
             file: drawing.hash,
             extension: "svg".into(),
             name: drawing.name,
@@ -1208,10 +1215,15 @@ mod tests {
         blocks.push(Block::Paragraph {
             content: vec![text("Where "), Inline::Math { tex: "x_i \\leq \\alpha".into() }, text(" holds:")],
         });
-        blocks.push(Block::Equation { tex: "a^2 + b^2 = c^2".into(), numbered: true });
-        blocks.push(Block::Equation { tex: "e^{i\\pi} = -1".into(), numbered: false });
-        blocks.push(Block::Equation { tex: "\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}".into(), numbered: true });
+        blocks.push(Block::Equation { id: "eq-sum".into(), tex: "a^2 + b^2 = c^2".into(), numbered: true });
+        blocks.push(Block::Equation { id: "".into(), tex: "e^{i\\pi} = -1".into(), numbered: false });
+        blocks.push(Block::Equation {
+            id: "eq-series".into(),
+            tex: "\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}".into(),
+            numbered: true,
+        });
         blocks.push(Block::Figure {
+            id: "fig-vase".into(),
             file: picture.hash,
             extension: "png".into(),
             name: picture.name,
@@ -1221,6 +1233,7 @@ mod tests {
             numbered: true,
         });
         blocks.push(Block::Figure {
+            id: "".into(),
             file: "c".repeat(64),
             extension: "jpg".into(),
             name: "lost.jpg".into(),
@@ -1316,6 +1329,99 @@ mod tests {
     }
 
     #[test]
+    fn words_that_point() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, RefForm, Section};
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = with_figures(&s);
+        r.format.headings.numbered = true;
+        let to = |target: &str, form: RefForm| Inline::CrossRef { target: target.into(), form };
+        r.document.sections.push(Section {
+            level: 2,
+            heading: Some(vec![text("Under the word")]),
+            blocks: vec![Block::Paragraph {
+                content: vec![
+                    text("See "),
+                    to("fig-vase", RefForm::Full),
+                    text(", and "),
+                    to("fig-shield", RefForm::Number),
+                    text("; by "),
+                    to("eq-series", RefForm::Full),
+                    text(" and "),
+                    to("eq-sum", RefForm::Number),
+                    text("; in "),
+                    to("e1", RefForm::Full),
+                    text(", that is “"),
+                    to("e1", RefForm::Name),
+                    text("”, and here in "),
+                    to("e2", RefForm::Full),
+                    text("; and "),
+                    to("gone", RefForm::Full),
+                    text("."),
+                ],
+            }],
+            element: Some("e2".into()),
+        });
+
+        let typ = out.join("points.typ");
+        let e = export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("See #link(<gk-to-fig-vase>)[Figure~2], and #link(<gk-to-fig-shield>)[1]\\;"), "{t}");
+        assert!(t.contains("by #link(<gk-to-eq-series>)[\\(2)] and #link(<gk-to-eq-sum>)[1]\\;"), "{t}");
+        assert!(t.contains("in #link(<gk-to-e1>)[1], that is “#link(<gk-to-e1>)[The word #emph[mênis]]”"), "{t}");
+        assert!(t.contains("and here in #link(<gk-to-e2>)[1.1]\\; and #strong[\\[?\\]]."), "{t}");
+        // What is pointed to has a place; what is not has none.
+        for place in [
+            "\u{200b}<gk-to-fig-vase>",
+            "\u{200b}<gk-to-fig-shield>",
+            "\n<gk-to-eq-series>\n",
+            "\n<gk-to-eq-sum>\n",
+            "\n<gk-to-e1>\n",
+        ] {
+            assert_eq!(t.matches(place).count(), 1, "{place}\n{t}");
+        }
+        assert!(t.contains("$ a^2 + b^2 = c^2 $\n\n<gk-to-eq-sum>"), "{t}");
+        assert_eq!(
+            e.warnings.iter().filter(|w| w.contains("point to something that is not in the document")).count(),
+            1
+        );
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.iter().all(|w| !w.contains("label")), "{:?}", p.warnings);
+        assert!(!p.pages.is_empty());
+
+        // The format says what a figure is called where it is pointed to.
+        r.format.figures.reference = "fig.".into();
+        r.format.headings.numbered = false;
+        r.format.equations.before_number = "[".into();
+        r.format.equations.after_number = "]".into();
+        let tex = out.join("points.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&tex).unwrap();
+        assert!(t.contains("\\hyperref[gk-to-fig-vase]{fig.~2}"), "{t}");
+        assert!(
+            t.contains("\\hyperref[gk-to-eq-series]{{[}2{]}}") || t.contains("\\hyperref[gk-to-eq-series]{[2]}"),
+            "{t}"
+        );
+        assert!(t.contains("here in \\hyperref[gk-to-e2]{Under the word}"), "{t}");
+        assert!(t.contains("\\label{gk-to-eq-sum}%\n\\begin{equation*}"), "{t}");
+        assert!(t.contains("\\label{gk-to-e1}"), "{t}");
+        if s.tools.latex_engine().is_ok() {
+            let pdf = out.join("points.pdf");
+            export(&s.ctx(), &r, Target::PdfLatex, &pdf, &ExportOptions::default()).unwrap();
+            assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"));
+        }
+
+        // In a document for a word processor they are words, and not links.
+        let docx = out.join("points.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let document = unzip(&docx, "word/document.xml");
+        assert!(!document.contains("w:anchor=\"gk-to-"), "{document}");
+        assert!(document.contains("fig.\u{a0}2") || document.contains("fig. 2"), "{document}");
+    }
+
+    #[test]
     fn the_preview_has_large_pictures_lighter() {
         let Some(s) = setup() else { return };
         let mut r = request("chicago-author-date");
@@ -1325,9 +1431,10 @@ mod tests {
         }));
         let mut bytes = std::io::Cursor::new(Vec::new());
         large.write_to(&mut bytes, image::ImageFormat::Png).unwrap();
-        let kept = Pictures::of(&s.projects.join("p2")).add("large.png", bytes.get_ref()).unwrap();
+        let kept = Pictures::open(&s.pictures).unwrap().add("large.png", bytes.get_ref()).unwrap();
         assert!(kept.size > 200_000);
         r.document.sections[1].blocks.push(crate::document::Block::Figure {
+            id: String::new(),
             file: kept.hash.clone(),
             extension: "png".into(),
             name: kept.name.clone(),
@@ -1410,6 +1517,7 @@ mod tests {
         // What is said of a figure is counted, and a formula in the line is a word.
         let mut d = d;
         d.sections[1].blocks.push(crate::document::Block::Figure {
+            id: String::new(),
             file: "a".repeat(64),
             extension: "png".into(),
             name: "vase.png".into(),
@@ -1418,7 +1526,11 @@ mod tests {
             width: 100,
             numbered: true,
         });
-        d.sections[1].blocks.push(crate::document::Block::Equation { tex: "a = b".into(), numbered: true });
+        d.sections[1].blocks.push(crate::document::Block::Equation {
+            id: String::new(),
+            tex: "a = b".into(),
+            numbered: true,
+        });
         d.sections[1].blocks.push(crate::document::Block::Paragraph {
             content: vec![crate::document::fixtures::text("where"), Inline::Math { tex: "x".into() }],
         });
@@ -1438,7 +1550,7 @@ mod tests {
             library: None,
             work: tmp.path().join("w"),
             fonts: &[],
-            projects: None,
+            pictures: None,
         };
         let e = preview(&ctx, &request("apa")).unwrap_err();
         assert_eq!(e.kind(), "missing-program");

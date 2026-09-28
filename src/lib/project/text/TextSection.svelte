@@ -171,6 +171,7 @@
           {project}
           fragment={body}
           kind="body"
+          element={node.id}
           placeholder={level === 0 && !loose
             ? 'Write here, or press Ctrl+Enter to begin the first section.'
             : ''}
@@ -182,7 +183,9 @@
       {:else if html}
         <!-- Made by blocksHtml, which escapes all text. -->
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        <div class="prose body static" use:hydrate={html}>{@html html}</div>
+        <div class="prose body static" use:hydrate={{ html, project, element: node.id }}>
+          {@html html}
+        </div>
       {:else}
         <div class="prose body static blank">&nbsp;</div>
       {/if}

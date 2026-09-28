@@ -126,6 +126,8 @@ export interface DocumentFormat {
   };
   figures: {
     label: string;
+    /** What a figure is called where the text points to it, when not the same. */
+    reference: string;
     /** A line break in it sets the caption on a line of its own. */
     separator: string;
     labelBold: boolean;

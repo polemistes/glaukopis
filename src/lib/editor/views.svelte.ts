@@ -9,14 +9,13 @@ import { StepMap } from 'prosemirror-transform';
 import { EditorView, type NodeView } from 'prosemirror-view';
 import { place } from '$lib/ui/floating';
 import { insertMath, toggle, updateCitation } from './commands';
-import { placeholder, type EditorHooks } from './plugins';
+import { placeholder } from './plugins';
 import { citationLabel, isMissing } from './references.svelte';
 import { notePlace, type CiteItem, type CiteMode } from './schema';
-import { editorUi } from './ui.svelte';
-import { FormulaView } from '$lib/figures/views.svelte';
+import { editorUi, hooksOf } from './ui.svelte';
+import { CrossRefView, FormulaView } from '$lib/figures/views.svelte';
 
-/** What each editor was given to reach the world outside it. Notes use their editor's. */
-export const hooksOf = new WeakMap<EditorView, EditorHooks>();
+export { hooksOf };
 
 export class CitationView implements NodeView {
   dom: HTMLElement;
@@ -245,6 +244,10 @@ export class FootnoteView implements NodeView {
       'Mod-,': toggle('sub'),
       'Shift-Mod-k': toggle('smallcaps'),
       'Mod-Alt-m': insertMath,
+      'Mod-Alt-r': (_s, _d, v) => {
+        if (v && hooks?.point) hooks.point(v);
+        return true;
+      },
       'Shift-Mod-c': (_s, _d, v) => {
         if (v && hooks?.cite) hooks.cite(v, false);
         return true;
@@ -280,6 +283,7 @@ export class FootnoteView implements NodeView {
       nodeViews: {
         citation: (node, v, getPos) => new CitationView(node, v, getPos),
         math: (node, v, getPos) => new FormulaView(node, v, getPos),
+        crossref: (node, v, getPos) => new CrossRefView(node, v, getPos),
       },
       dispatchTransaction: (tr) => {
         const inner = this.#inner;

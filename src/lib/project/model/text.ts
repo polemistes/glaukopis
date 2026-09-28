@@ -32,11 +32,30 @@ export interface InlineMath {
   kind: 'math';
   tex: string;
 }
-export type Inline = InlineText | InlineCitation | InlineFootnote | InlineBreak | InlineMath;
+/** How words point to what they point to. */
+export type RefForm = 'full' | 'number' | 'name';
+/**
+ * Words that point to something that stands in the document: a figure, an
+ * equation, or a part of it. What they say is what the document calls it.
+ */
+export interface InlineCrossRef {
+  kind: 'crossref';
+  /** The id of the figure or the equation, or of the element the part is made from. */
+  target: string;
+  form: RefForm;
+}
+export type Inline =
+  InlineText | InlineCitation | InlineFootnote | InlineBreak | InlineMath | InlineCrossRef;
+
+export function refForm(value: unknown): RefForm {
+  return value === 'number' || value === 'name' ? value : 'full';
+}
 
 /** A picture with what is said of it. The picture is a file of the project. */
 export interface FigureBlock {
   kind: 'figure';
+  /** By which words in the text point to it. */
+  id: string;
   /** The SHA-256 of what the file holds. */
   file: string;
   extension: string;
@@ -53,8 +72,25 @@ export type Block =
   | { kind: 'blockquote'; content: Block[] }
   | { kind: 'bullet_list'; items: Block[][] }
   | { kind: 'ordered_list'; start: number; items: Block[][] }
-  | { kind: 'equation'; tex: string; numbered: boolean }
+  | { kind: 'equation'; id: string; tex: string; numbered: boolean }
   | FigureBlock;
+
+/**
+ * Something that stands in a text by itself and may have a number in the
+ * document: a figure or an equation. Kept with each element, in the order
+ * they stand in, so that they can be numbered without reading the texts.
+ */
+export interface SetOff {
+  kind: 'figure' | 'equation';
+  id: string;
+  numbered: boolean;
+  /** What tells it from the others, in words: what is said of a figure, the formula of an equation. */
+  words: string;
+  /** Of a figure: its picture. */
+  file?: string;
+  extension?: string;
+  name?: string;
+}
 
 const text = (value: unknown): string => (typeof value === 'string' ? value : '');
 
@@ -104,6 +140,12 @@ function inlinesOf(parent: Y.XmlElement | Y.XmlFragment): Inline[] {
           if (tex) out.push({ kind: 'math', tex });
           break;
         }
+        case 'crossref': {
+          const target = text(child.getAttribute('target') as unknown);
+          if (target)
+            out.push({ kind: 'crossref', target, form: refForm(child.getAttribute('form')) });
+          break;
+        }
         default:
           out.push(...inlinesOf(child));
       }
@@ -136,12 +178,19 @@ function blocksOf(parent: Y.XmlElement | Y.XmlFragment): Block[] {
         break;
       case 'equation': {
         const tex = text(child.getAttribute('tex') as unknown).trim();
-        if (tex) out.push({ kind: 'equation', tex, numbered: !!child.getAttribute('numbered') });
+        if (tex)
+          out.push({
+            kind: 'equation',
+            id: text(child.getAttribute('id') as unknown),
+            tex,
+            numbered: !!child.getAttribute('numbered'),
+          });
         break;
       }
       case 'figure':
         out.push({
           kind: 'figure',
+          id: text(child.getAttribute('id') as unknown),
           file: text(child.getAttribute('file') as unknown),
           extension: text(child.getAttribute('extension') as unknown),
           name: text(child.getAttribute('name') as unknown),
@@ -233,6 +282,8 @@ export function countWords(text: string): number {
 }
 
 export interface BodyFacts {
+  /** The figures and equations, in the order they stand in. */
+  set: SetOff[];
   /** Without text, and without anything else that is part of a document. */
   empty: boolean;
   words: number;
@@ -246,13 +297,14 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
   let notes = 0;
   /** Figures and formulas. */
   let set = 0;
+  const setOff: SetOff[] = [];
   let text = '';
   const visitInlines = (inlines: Inline[]) => {
     for (const i of inlines) {
       if (i.kind === 'text') text += i.text;
       else if (i.kind === 'break') text += ' ';
-      else if (i.kind === 'math') {
-        // A formula in the line stands for a word.
+      else if (i.kind === 'math' || i.kind === 'crossref') {
+        // A formula in the line stands for a word, and so do words that point.
         text += ' x ';
         set++;
       } else if (i.kind === 'citation') {
@@ -271,14 +323,26 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
       else if (b.kind === 'blockquote') visit(b.content);
       else if (b.kind === 'figure') {
         set++;
+        setOff.push({
+          kind: 'figure',
+          id: b.id,
+          numbered: b.numbered,
+          words: inlineText(b.caption).trim(),
+          file: b.file,
+          extension: b.extension,
+          name: b.name,
+        });
         visitInlines(b.caption);
-      } else if (b.kind === 'equation') set++;
-      else for (const item of b.items) visit(item);
+      } else if (b.kind === 'equation') {
+        set++;
+        setOff.push({ kind: 'equation', id: b.id, numbered: b.numbered, words: b.tex });
+      } else for (const item of b.items) visit(item);
       text += '\n';
     }
   };
   visit(blocks);
   return {
+    set: setOff,
     empty: !text.trim() && !cited.length && !notes && !set,
     words: countWords(text),
     cited,

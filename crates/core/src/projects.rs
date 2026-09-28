@@ -8,7 +8,6 @@
 //! projects/<id>/state.bin      the document as one update
 //! projects/<id>/updates.log    changes since, each preceded by its length
 //! projects/<id>/history/       earlier states, thinned as they age
-//! projects/<id>/files/         the pictures of its figures: see `pictures`
 //! ```
 //!
 //! A deleted project is moved to `projects/.trash/` and can be brought back.
@@ -23,7 +22,6 @@ use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::library::now;
 use crate::paths::DataDir;
-use crate::pictures::Pictures;
 
 const INFO: &str = "project.json";
 const STATE: &str = "state.bin";
@@ -72,6 +70,10 @@ pub struct ProjectInfo {
     pub maps: Vec<MapInfo>,
     pub words: usize,
     pub references: usize,
+    /// The pictures the project uses, by the names the store keeps them by:
+    /// so that the store can say where a picture is used.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub pictures: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sharing: Option<Sharing>,
     /// What the interface wants to find again: the map that was open, the view.
@@ -125,9 +127,17 @@ impl Projects {
         Ok(self.root.join(id))
     }
 
-    /// The pictures of a project.
-    pub fn pictures(&self, id: &str) -> Result<Pictures> {
-        Ok(Pictures::of(&self.existing_dir(id)?))
+    /// Where projects kept their pictures when each kept its own: the
+    /// directories that are still there, of projects and of those that were
+    /// deleted. The store of pictures takes in what they hold.
+    pub fn picture_directories(&self) -> Vec<PathBuf> {
+        let mut out = Vec::new();
+        for root in [self.root.clone(), self.root.join(TRASH)] {
+            let Ok(entries) = fs::read_dir(&root) else { continue };
+            out.extend(entries.flatten().map(|e| e.path().join("files")).filter(|p| p.is_dir()));
+        }
+        out.sort();
+        out
     }
 
     fn existing_dir(&self, id: &str) -> Result<PathBuf> {
@@ -275,6 +285,7 @@ impl Projects {
                 info.maps = s.maps;
                 info.words = s.words;
                 info.references = s.references;
+                info.pictures = s.pictures;
                 if let Some(name) = s.name.filter(|n| !n.trim().is_empty()) {
                     info.name = name;
                 }
@@ -440,8 +451,6 @@ impl Projects {
         let mut copy = self.create(name)?;
         let to = self.dir(&copy.id)?;
         write_atomic(&to.join(STATE), &state)?;
-        // What the project held then may show pictures; those it has now are all it ever had.
-        Pictures::of(&to).copy_from(&self.pictures(id)?)?;
         copy.description = source.description;
         Self::write_info(&to, &copy)?;
         Ok(copy)
@@ -459,7 +468,6 @@ impl Projects {
                 fs::copy(&path, to.join(file)).context(|| format!("copying {}", path.display()))?;
             }
         }
-        Pictures::of(&to).copy_from(&Pictures::of(&from))?;
         copy.description = source.description;
         copy.maps = source.maps;
         copy.words = source.words;
@@ -477,6 +485,8 @@ pub struct Summary {
     pub maps: Vec<MapInfo>,
     pub words: usize,
     pub references: usize,
+    /// The pictures of the figures, each by the name it is kept by.
+    pub pictures: Vec<String>,
 }
 
 /// Earlier versions wrote every map as Markdown beside the project. Those
@@ -606,23 +616,20 @@ mod tests {
     }
 
     #[test]
-    fn the_pictures_of_a_project_go_with_its_copies() {
+    fn where_projects_kept_pictures_of_their_own() {
         let (_tmp, p) = projects();
         let a = p.create("A").unwrap();
-        p.save_state(&a.id, b"state", None).unwrap();
-        let picture = p.pictures(&a.id).unwrap().add("vase.png", &crate::pictures::fixtures::PNG).unwrap();
-        assert!(p.dir(&a.id).unwrap().join("files").join(format!("{}.png", picture.hash)).is_file());
-        assert!(p.pictures("nonexistent").is_err());
-
-        let copy = p.duplicate(&a.id, "A, again").unwrap();
-        assert_eq!(p.pictures(&copy.id).unwrap().list(), p.pictures(&a.id).unwrap().list());
-        assert_eq!(p.pictures(&copy.id).unwrap().read(&picture.hash, "png").unwrap(), crate::pictures::fixtures::PNG);
-
-        // Deleted and brought back, the project has them still.
-        p.delete(&a.id).unwrap();
-        let (trashed, _) = p.trash().unwrap().into_iter().next().unwrap();
-        let back = p.restore(&trashed).unwrap();
-        assert_eq!(p.pictures(&back.id).unwrap().list().len(), 1);
+        let b = p.create("B").unwrap();
+        p.create("C").unwrap();
+        assert!(p.picture_directories().is_empty());
+        for id in [&a.id, &b.id] {
+            fs::create_dir_all(p.dir(id).unwrap().join("files")).unwrap();
+        }
+        p.delete(&b.id).unwrap();
+        let found = p.picture_directories();
+        assert_eq!(found.len(), 2, "{found:?}");
+        assert!(found.iter().any(|d| d.starts_with(p.dir(&a.id).unwrap())));
+        assert!(found.iter().any(|d| d.to_string_lossy().contains(".trash")));
     }
 
     #[test]
@@ -645,6 +652,7 @@ mod tests {
             maps: vec![MapInfo { id: "m".into(), name: "Map".into(), elements: 3 }],
             words: 120,
             references: 4,
+            ..Default::default()
         };
         let info = p.save_state(&a.id, b"STATE", Some(summary)).unwrap();
         assert_eq!(info.name, "A better name");

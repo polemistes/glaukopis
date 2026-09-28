@@ -84,3 +84,17 @@ What was suggested, and built as a suggestion that can be changed (docs/adr/0009
 - The document format says how figures and the numbers of equations are set; the author says how wide a figure is and whether it is numbered.
 - Not yet: tables, and pointing to a figure or an equation by its number.
 
+
+## 2026-09-28 — a store of pictures, and cross-references
+
+> We do not want to connect to Google drive. There should be a store of pictures, which can be seen per map, per project or all pictures in the application, somehow like references. It should be possible to add default captions, as well as notes, like in references, which will not be shown. Why does the figure not arrive with the picture? All projects and maps using an imported picure, should share the same in the picture store. And yes, what do you mean with "figure" then? We do need to be able to refer to the insertions, as well as create cross references in the document.
+
+What this settles:
+
+- Pictures are kept in one store for the whole application, as references are in the library, and not in each project. Every project and map that uses a picture uses the one in the store. This replaces the first form of the feature, in which each project kept its own.
+- The store can be looked at for the map, for the project, and whole.
+- A picture has a caption that is given to a figure made with it, and notes, which are not part of any document.
+- What stands in the text by itself, figures and equations, can be referred to from the text, and so can the parts of the document.
+- Nothing connects to services outside, such as Google Drive.
+
+Words: a *picture* is the file; a *figure* is a picture as it stands in a text, with what is said of it there and its number in the document.

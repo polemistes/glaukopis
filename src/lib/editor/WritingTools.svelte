@@ -11,6 +11,7 @@
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import ImagePlus from '@lucide/svelte/icons/image-plus';
   import Italic from '@lucide/svelte/icons/italic';
+  import Link2 from '@lucide/svelte/icons/link-2';
   import Plus from '@lucide/svelte/icons/plus';
   import Sigma from '@lucide/svelte/icons/sigma';
   import SquareFunction from '@lucide/svelte/icons/square-function';
@@ -37,7 +38,7 @@
     type ParagraphStyle,
   } from './commands';
   import { editorUi } from './ui.svelte';
-  import { hooksOf } from './views.svelte';
+  import { hooksOf } from './ui.svelte';
 
   interface Props {
     /** The part of the window whose texts the tools are for. */
@@ -139,6 +140,18 @@
           shortcut: 'Ctrl+Alt+M',
           action: () => void insertMath(view.state, view.dispatch, view),
         },
+        ...(hooks?.point
+          ? [
+              { kind: 'separator' as const },
+              {
+                label: 'Pointer…',
+                hint: 'To a figure, an equation or a part: “see figure 2”',
+                icon: Link2,
+                shortcut: 'Ctrl+Alt+R',
+                action: () => hooks.point?.(view),
+              },
+            ]
+          : []),
         ...(body
           ? [
               { kind: 'separator' as const },
@@ -305,7 +318,7 @@
     type="button"
     class="word"
     disabled={!s || s.kind === 'title'}
-    use:tooltip={{ text: 'A picture, an equation, a formula', side: 'bottom' }}
+    use:tooltip={{ text: 'A picture, mathematics, a pointer to a figure', side: 'bottom' }}
     onclick={insert}
   >
     <Plus size={13} />

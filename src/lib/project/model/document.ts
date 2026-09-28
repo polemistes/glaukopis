@@ -18,41 +18,39 @@ import { readBody, readTitle, type Inline } from './text';
 
 const DEEPEST = 12;
 
-export function buildDocument(project: Project, mapId: string): ExportDocument {
-  const map = project.map(mapId);
-  const sections: ExportSection[] = [];
-  const cited = new Set<string>();
+/** An element as it stands in the document. */
+export interface Placed {
+  id: string;
+  /** The level of its heading; 0 for what stands before the first section. */
+  level: number;
+  /** Whether its name is printed as a heading. */
+  printed: boolean;
+  /** The centre of a map: of the map itself, or of one that stands in the place of an element. */
+  root: boolean;
+  /** The centre of the map the document is made of, whose name is the title. */
+  top: boolean;
+}
 
-  const note = (id: string) => {
-    for (const ref of project.node(id)?.cited ?? []) cited.add(ref);
-  };
-
+/**
+ * The elements of a map in the order of the document, each with its place
+ * there. What is excluded is passed over with everything under it; a map
+ * that stands in the place of an element is walked in that place.
+ */
+export function walkDocument(project: Project, mapId: string, visit: (placed: Placed) => void) {
   const walkMap = (id: string, level: number, within: Set<string>, withRoot: boolean) => {
     const tree = project.tree(id);
     if (!tree.root) return;
     const walk = (nodeId: string, at: number, isRoot: boolean) => {
       const node = project.node(nodeId);
       if (!node || node.excluded) return;
-      note(nodeId);
-      const blocks = readBody(project.fragment(nodeId, 'body') ?? undefined);
-      const heading = readTitle(project.fragment(nodeId, 'title') ?? undefined);
-      const printed = !isRoot && node.heading && heading.length > 0;
-
-      if (isRoot) {
-        // The text of the centre, before the first section. Its name is the
-        // title of the document, or the heading of what included the map.
-        if (blocks.length && withRoot)
-          sections.push({ level: 0, heading: null, blocks, element: nodeId });
-        else if (blocks.length)
-          sections.push({ level: Math.max(at, 1), heading: null, blocks, element: nodeId });
-      } else {
-        sections.push({
-          level: Math.min(at, DEEPEST),
-          heading: printed ? heading : null,
-          blocks,
-          element: nodeId,
-        });
-      }
+      const printed = !isRoot && node.heading && node.titleHtml.length > 0;
+      visit({
+        id: nodeId,
+        level: isRoot ? (withRoot ? 0 : Math.max(at, 1)) : Math.min(at, DEEPEST),
+        printed,
+        root: isRoot,
+        top: isRoot && withRoot,
+      });
 
       const next = isRoot ? at + (withRoot ? 1 : 0) : printed ? at + 1 : at;
 
@@ -65,8 +63,34 @@ export function buildDocument(project: Project, mapId: string): ExportDocument {
     };
     walk(tree.root, level, true);
   };
-
   walkMap(mapId, 0, new Set([mapId]), true);
+}
+
+export function buildDocument(project: Project, mapId: string): ExportDocument {
+  const map = project.map(mapId);
+  const sections: ExportSection[] = [];
+  const cited = new Set<string>();
+
+  walkDocument(project, mapId, (placed) => {
+    for (const ref of project.node(placed.id)?.cited ?? []) cited.add(ref);
+    const blocks = readBody(project.fragment(placed.id, 'body') ?? undefined);
+    if (placed.root) {
+      // The text of the centre, before the first section. Its name is the
+      // title of the document, or the heading of what included the map.
+      if (blocks.length)
+        sections.push({ level: placed.level, heading: null, blocks, element: placed.id });
+      return;
+    }
+    const heading = placed.printed
+      ? readTitle(project.fragment(placed.id, 'title') ?? undefined)
+      : [];
+    sections.push({
+      level: placed.level,
+      heading: heading.length ? heading : null,
+      blocks,
+      element: placed.id,
+    });
+  });
 
   const root = map ? project.node(map.root) : undefined;
   const settings = map?.document ?? {};

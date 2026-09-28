@@ -1,7 +1,7 @@
 /** What can be done to the text, as ProseMirror commands. */
 
 import { lift, toggleMark, wrapIn } from 'prosemirror-commands';
-import { Fragment, type MarkType, type NodeType } from 'prosemirror-model';
+import { Fragment, type MarkType, type Node, type NodeType, type Schema } from 'prosemirror-model';
 import { liftListItem, wrapInList } from 'prosemirror-schema-list';
 import {
   NodeSelection,
@@ -10,6 +10,8 @@ import {
   type Command,
   type EditorState,
 } from 'prosemirror-state';
+import type { Inline, RefForm } from '$lib/project/model/text';
+import { newId } from '$lib/util/id';
 import { bodySchema, type CiteItem, type CiteMode } from './schema';
 
 export function markActive(state: EditorState, type: MarkType): boolean {
@@ -131,7 +133,7 @@ export const insertFootnote: Command = (state, dispatch) => {
     let content = Fragment.empty;
     if (!empty) {
       const slice = state.doc.slice($from.pos, $to.pos).content;
-      const kept: import('prosemirror-model').Node[] = [];
+      const kept: Node[] = [];
       slice.forEach((n) => {
         if (n.type !== type) kept.push(n);
       });
@@ -204,7 +206,7 @@ export const insertEquation: Command = (state, dispatch) => {
   const at = placeForBlock(state, type);
   if (!at) return false;
   if (dispatch) {
-    const tr = state.tr.replaceWith(at.from, at.to, type.create());
+    const tr = state.tr.replaceWith(at.from, at.to, type.create({ id: newId() }));
     tr.setSelection(NodeSelection.create(tr.doc, at.from));
     dispatch(tr.scrollIntoView());
   }
@@ -217,6 +219,41 @@ export interface FigureOf {
   name: string;
   /** How many points the picture itself is wide, where that is known. */
   width?: number | null;
+  /** What the store has of the picture, which the figure begins with. */
+  alt?: string;
+  caption?: Inline[];
+}
+
+/** What is said of a picture in the store, as the content of a figure. */
+export function captionNodes(schema: Schema, caption: Inline[] | undefined): Node[] {
+  const out: Node[] = [];
+  for (const i of caption ?? []) {
+    if (i.kind === 'math' && schema.nodes.math) out.push(schema.nodes.math.create({ tex: i.tex }));
+    if (i.kind !== 'text' || !i.text) continue;
+    const marks = Object.keys(i.marks).flatMap((name) => {
+      const type = schema.marks[name];
+      return type && name !== 'link' ? [type.create()] : [];
+    });
+    out.push(schema.text(i.text, marks));
+  }
+  return out;
+}
+
+/** What is said of a figure, as the store keeps what is said of a picture: text and its marks, and formulas. */
+export function captionOf(figure: Node): Inline[] {
+  const out: Inline[] = [];
+  figure.forEach((child) => {
+    if (child.isText && child.text) {
+      const marks: Record<string, true> = {};
+      for (const m of child.marks) if (m.type.name !== 'link') marks[m.type.name] = true;
+      out.push({ kind: 'text', text: child.text, marks });
+    } else if (child.type.name === 'math' && child.attrs.tex) {
+      out.push({ kind: 'math', tex: child.attrs.tex });
+    } else if (child.type.name === 'hard_break') {
+      out.push({ kind: 'text', text: ' ', marks: {} });
+    }
+  });
+  return out;
 }
 
 /**
@@ -249,16 +286,38 @@ export function insertFigure(picture: FigureOf, at?: number): Command {
     const where = placeForBlock(from, type);
     if (!where) return false;
     if (dispatch) {
-      const node = type.create({
-        file: picture.hash,
-        extension: picture.extension,
-        name: picture.name,
-        width: widthFor(picture),
-      });
+      const node = type.create(
+        {
+          id: newId(),
+          file: picture.hash,
+          extension: picture.extension,
+          name: picture.name,
+          alt: picture.alt ?? '',
+          width: widthFor(picture),
+        },
+        captionNodes(state.schema, picture.caption),
+      );
       const tr = state.tr.replaceWith(where.from, where.to, node);
-      tr.setSelection(TextSelection.create(tr.doc, where.from + 1));
+      // The cursor is at the end of what is said of it.
+      tr.setSelection(TextSelection.create(tr.doc, where.from + node.nodeSize - 1));
       dispatch(tr.scrollIntoView());
     }
+    return true;
+  };
+}
+
+/** Words that point to something that stands in the document, where the cursor is. */
+export function insertCrossRef(target: string, form: RefForm = 'full'): Command {
+  return (state, dispatch) => {
+    const type = state.schema.nodes.crossref;
+    if (!type || !target) return false;
+    const { $from, $to } = state.selection;
+    if (!$from.sameParent($to) || !$from.parent.inlineContent) return false;
+    if (!$from.parent.canReplaceWith($from.index(), $to.index(), type)) return false;
+    if (dispatch)
+      dispatch(
+        state.tr.replaceSelectionWith(type.create({ target, form }), false).scrollIntoView(),
+      );
     return true;
   };
 }

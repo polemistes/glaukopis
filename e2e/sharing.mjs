@@ -305,10 +305,10 @@ try {
     30000,
   );
   check('and is shown to the one who did not have it', true);
-  const theirs = kept(join(guest.dataDir, 'projects', room, 'files'));
+  const theirs = kept(join(guest.dataDir, 'pictures', 'files'));
   check(
     'who has it as it was, under the name of what it holds',
-    theirs.length === 1 && /^[0-9a-f]{64}\.svg$/.test(theirs[0]) && readFileSync(join(guest.dataDir, 'projects', room, 'files', theirs[0]), 'utf8') === drawing,
+    theirs.length === 1 && /^[0-9a-f]{64}\.svg$/.test(theirs[0]) && readFileSync(join(guest.dataDir, 'pictures', 'files', theirs[0]), 'utf8') === drawing,
     theirs.join(', '),
   );
   await guest.click('.box .text figure figcaption');

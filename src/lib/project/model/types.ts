@@ -1,3 +1,4 @@
+import type { SetOff } from './text';
 /** The records of a project, as the interface reads them from the document. */
 
 export interface Position {
@@ -76,6 +77,8 @@ export interface NodeRecord {
   words: number;
   cited: string[];
   notes: number;
+  /** The figures and equations of the text, in the order they stand in. */
+  set: SetOff[];
 }
 
 export interface LinkRecord {

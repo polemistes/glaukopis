@@ -46,6 +46,16 @@ pub enum Inline {
     Math {
         tex: String,
     },
+    /// Words that point to something that stands in the document: a figure,
+    /// an equation, or a part of it. What they say is what the document
+    /// calls what they point to.
+    CrossRef {
+        /// The id of the figure or the equation, or of the element the part
+        /// was made from.
+        target: String,
+        #[serde(default)]
+        form: RefForm,
+    },
     Footnote {
         content: Vec<Inline>,
         /// Where the note stands, when it is not where the format has notes.
@@ -53,6 +63,20 @@ pub enum Inline {
         place: Option<NotePlace>,
     },
     Break,
+}
+
+/// What words point by.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RefForm {
+    /// As it is called: "Figure 2", "(1)"; a part by its number, where the
+    /// parts are numbered, and by its name where they are not.
+    #[default]
+    Full,
+    /// By the number alone: "2", "1".
+    Number,
+    /// A part by its name.
+    Name,
 }
 
 /// Where a note stands.
@@ -93,12 +117,18 @@ pub enum Block {
     },
     /// Mathematics on a line of its own, in the notation of TeX.
     Equation {
+        /// By which words in the text point to it.
+        #[serde(default)]
+        id: String,
         tex: String,
         #[serde(default)]
         numbered: bool,
     },
     /// A picture, with what is said of it.
     Figure {
+        /// By which words in the text point to it.
+        #[serde(default)]
+        id: String,
         /// The file, by the SHA-256 of what it holds.
         file: String,
         /// The kind of file: png, jpg, svg.

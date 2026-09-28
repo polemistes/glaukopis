@@ -6,6 +6,8 @@
 
 import type { EditorView } from 'prosemirror-view';
 import type { RectLike } from '$lib/ui/floating';
+import type { Pointed } from '$lib/figures/numbering.svelte';
+import type { EditorHooks } from './plugins';
 import type { CiteItem, CiteMode } from './schema';
 
 export interface PickRequest {
@@ -15,6 +17,15 @@ export interface PickRequest {
   /** What the panel is for, in a few words: shown above the field. */
   purpose?: string;
   onpick: (id: string) => void;
+  oncancel?: () => void;
+}
+
+/** A request for something to point to, in the document of a map. */
+export interface TargetRequest {
+  anchor: RectLike;
+  /** The map whose document it is. */
+  map: string;
+  onpick: (target: Pointed) => void;
   oncancel?: () => void;
 }
 
@@ -43,6 +54,7 @@ export interface ActiveSelection {
 class EditorUi {
   picking = $state.raw<PickRequest | null>(null);
   citation = $state.raw<CitationRequest | null>(null);
+  pointing = $state.raw<TargetRequest | null>(null);
   selection = $state.raw<ActiveSelection | null>(null);
   /** True while the pointer is held down in an editor: the bar waits for the selection to be made. */
   selecting = $state(false);
@@ -55,6 +67,17 @@ class EditorUi {
   closePicker(cancelled = true) {
     const p = this.picking;
     this.picking = null;
+    if (cancelled) p?.oncancel?.();
+  }
+
+  pickTarget(request: TargetRequest) {
+    this.pointing?.oncancel?.();
+    this.pointing = request;
+  }
+
+  closeTargets(cancelled = true) {
+    const p = this.pointing;
+    this.pointing = null;
     if (cancelled) p?.oncancel?.();
   }
 
@@ -71,12 +94,16 @@ class EditorUi {
 
   closeAll() {
     this.closePicker();
+    this.closeTargets();
     this.closeCitation();
     this.selection = null;
   }
 }
 
 export const editorUi = new EditorUi();
+
+/** What each editor was given to reach the world outside it. Notes use their editor's. */
+export const hooksOf = new WeakMap<EditorView, EditorHooks>();
 
 /** The editor that a part of the page belongs to, for what is dropped on it. */
 export const viewsByDom = new WeakMap<Element, EditorView>();

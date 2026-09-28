@@ -441,6 +441,9 @@ pub enum FigurePlacement {
 pub struct Figures {
     /// What a figure is called: "Figure", "Fig.", "Abbildung".
     pub label: String,
+    /// What it is called where the text points to it, when that is not the
+    /// same: "fig." in the text, "Figure" under the picture. Empty for the same.
+    pub reference: String,
     /// What stands between the number and the caption: ". ", ": ". A line
     /// break in it sets the caption on a line of its own.
     pub separator: String,
@@ -465,6 +468,7 @@ impl Default for Figures {
     fn default() -> Self {
         Figures {
             label: "Figure".into(),
+            reference: String::new(),
             separator: ". ".into(),
             label_bold: false,
             label_italic: false,

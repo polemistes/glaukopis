@@ -9,7 +9,7 @@ use std::sync::OnceLock;
 
 use serde_json::{Value, json};
 
-use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, Section};
+use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, RefForm, Section};
 use crate::formats::{Align, CaptionPosition, Equations, FigurePlacement, Figures};
 
 const TERMS_JSON: &str = include_str!("../../../../resources/csl/locator-terms.json");
@@ -142,6 +142,12 @@ pub struct Extras {
     /// Whether the format has the first paragraph after a heading begin
     /// further in, as those that follow it do.
     pub first_indented: bool,
+    /// What can be pointed to, by its id.
+    pub targets: HashMap<String, Pointed>,
+    /// What has been given a place that can be gone to.
+    anchored: RefCell<HashSet<String>>,
+    /// How many pointers point to nothing that is in the document.
+    astray: Cell<u32>,
     figure: Cell<u32>,
     equation: Cell<u32>,
     /// Figures that stand at the end of the document, in their order.
@@ -169,6 +175,49 @@ impl Extras {
     pub fn absent(&self) -> Vec<String> {
         self.absent.borrow().clone()
     }
+
+    /// How many pointers point to nothing that is in the document.
+    pub fn astray(&self) -> u32 {
+        self.astray.get()
+    }
+
+    /// The place of something that is pointed to, the first time it is
+    /// asked for: what stands twice in a document can be gone to once.
+    fn anchor(&self, id: &str) -> Option<Value> {
+        let pointed = self.targets.get(id).filter(|p| p.pointed_to)?;
+        if !self.anchored.borrow_mut().insert(id.to_owned()) {
+            return None;
+        }
+        Some(json!({"t": "Span", "c": [[pointed.anchor, [], []], []]}))
+    }
+}
+
+/// The kinds of what can be pointed to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PointedKind {
+    Figure,
+    Equation,
+    Part,
+}
+
+/// Something that stands in the document and can be pointed to.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Pointed {
+    pub kind: PointedKind,
+    /// Its number in the document, if it has one.
+    pub number: Option<String>,
+    /// Of a part: its heading.
+    pub name: Vec<Inline>,
+    /// The name of its place, for going there.
+    pub anchor: String,
+    /// Whether anything points to it.
+    pub pointed_to: bool,
+}
+
+/// The name of the place of something, from its id.
+fn anchor_of(id: &str) -> String {
+    let safe: String = id.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '-' }).take(80).collect();
+    format!("gk-to-{safe}")
 }
 
 /// A line of text in the middle, by the means of each kind of document.
@@ -241,6 +290,7 @@ impl Converter<'_> {
     #[allow(clippy::too_many_arguments)]
     fn figure(
         &self,
+        id: &str,
         file: &str,
         extension: &str,
         name: &str,
@@ -260,19 +310,19 @@ impl Converter<'_> {
 
         let stored = format!("{file}.{}", extension.trim_start_matches('.').to_ascii_lowercase());
         let safe = file.len() == 64 && file.chars().all(|c| c.is_ascii_hexdigit());
-        let picture = if safe && x.present.contains(&stored) {
+        let mut shown: Vec<Value> = x.anchor(id).into_iter().collect();
+        if safe && x.present.contains(&stored) {
             let mut described = Vec::new();
             tokens(alt.trim(), &mut described);
             let width = format!("{}%", width.clamp(5, 100));
             let source = if x.files.is_empty() { stored } else { format!("{}/{stored}", x.files) };
-            json!({"t": "Para", "c": [{"t": "Image", "c": [["", [], [["width", width]]], described, [source, ""]]}]})
+            shown.push(json!({"t": "Image", "c": [["", [], [["width", width]]], described, [source, ""]]}));
         } else {
             let said = if name.trim().is_empty() { "the file" } else { name.trim() };
             x.absent.borrow_mut().push(said.to_owned());
-            let mut words = Vec::new();
-            tokens(&format!("[The picture is not here: {said}]"), &mut words);
-            json!({"t": "Para", "c": words})
+            tokens(&format!("[The picture is not here: {said}]"), &mut shown);
         };
+        let picture = json!({"t": "Para", "c": shown});
 
         let mut words = label.clone();
         let said = self.inlines(caption);
@@ -369,15 +419,31 @@ impl Converter<'_> {
     }
 
     /// Mathematics on a line of its own.
-    fn equation(&self, tex: &str, numbered: bool, out: &mut Vec<Value>) {
+    fn equation(&self, id: &str, tex: &str, numbered: bool, out: &mut Vec<Value>) {
         let tex = tex.trim();
         if tex.is_empty() {
             return;
         }
         let x = &self.extras;
-        let display = |tex: &str| json!({"t": "Para", "c": [{"t": "Math", "c": [{"t": "DisplayMath"}, tex]}]});
+        // Its place, for what points to it. In Typst the equation itself is
+        // given the name, after it; elsewhere the place is in the paragraph
+        // the equation stands in, since a paragraph of its own would be a
+        // line of its own.
+        let place = x.anchor(id);
+        let name = place.as_ref().and_then(|p| p["c"][0][0].as_str()).map(str::to_owned);
+        let typst = x.flavour == Flavour::Typst;
+        let latex_place =
+            name.as_ref().map(|n| format!("\\protect\\phantomsection\\label{{{n}}}%\n")).unwrap_or_default();
+        let display = |tex: &str, out: &mut Vec<Value>| {
+            let mut inner: Vec<Value> = place.clone().filter(|_| !typst).into_iter().collect();
+            inner.push(json!({"t": "Math", "c": [{"t": "DisplayMath"}, tex]}));
+            out.push(json!({"t": "Para", "c": inner}));
+            if let Some(n) = name.as_ref().filter(|_| typst) {
+                out.push(json!({"t": "RawBlock", "c": ["typst", format!("<{n}>")]}));
+            }
+        };
         if !numbered {
-            out.push(display(tex));
+            display(tex, out);
             return;
         }
         x.equation.set(x.equation.get() + 1);
@@ -388,12 +454,12 @@ impl Converter<'_> {
                 // between the brackets holds for what is between them.
                 let set = format!("#[#set math.equation(numbering: (..n) => [{}])", typst_text(&number));
                 out.push(json!({"t": "RawBlock", "c": ["typst", set]}));
-                out.push(display(tex));
+                display(tex, out);
                 out.push(json!({"t": "RawBlock", "c": ["typst", "]"]}));
             }
             Flavour::Latex => {
                 let set = format!(
-                    "\\begin{{equation*}}\n{tex}\n\\tag*{{{}}}\n\\end{{equation*}}",
+                    "{latex_place}\\begin{{equation*}}\n{tex}\n\\tag*{{{}}}\n\\end{{equation*}}",
                     crate::export::latex::escape(&number)
                 );
                 out.push(json!({"t": "RawBlock", "c": ["latex", set]}));
@@ -401,8 +467,168 @@ impl Converter<'_> {
             Flavour::Styled | Flavour::Plain => {
                 // Where an equation cannot be given a number, the number is part of it.
                 let text = number.replace('\\', "").replace(['{', '}'], "");
-                out.push(display(&format!("{tex} \\qquad \\text{{{text}}}")));
+                display(&format!("{tex} \\qquad \\text{{{text}}}"), out);
             }
+        }
+    }
+
+    /// What can be pointed to in a document, with the numbers it has there.
+    /// The order is that in which the document is written, and the numbers
+    /// those that are given as it is written.
+    pub fn targets(&self, doc: &Document, numbered_headings: bool) -> HashMap<String, Pointed> {
+        fn inlines(list: &[Inline], to: &mut HashSet<String>) {
+            for inline in list {
+                match inline {
+                    Inline::CrossRef { target, .. } => {
+                        to.insert(target.clone());
+                    }
+                    Inline::Footnote { content, .. } => inlines(content, to),
+                    _ => {}
+                }
+            }
+        }
+        struct Counted<'a> {
+            figure: u32,
+            equation: u32,
+            found: HashMap<String, Pointed>,
+            to: &'a mut HashSet<String>,
+        }
+        fn blocks(list: &[Block], c: &mut Counted) {
+            for block in list {
+                match block {
+                    Block::Paragraph { content } => inlines(content, c.to),
+                    Block::Blockquote { content } => blocks(content, c),
+                    Block::BulletList { items } | Block::OrderedList { items, .. } => {
+                        for item in items {
+                            blocks(item, c);
+                        }
+                    }
+                    Block::Equation { id, tex, numbered } => {
+                        if tex.trim().is_empty() {
+                            continue;
+                        }
+                        let number = numbered.then(|| {
+                            c.equation += 1;
+                            c.equation.to_string()
+                        });
+                        if !id.is_empty() {
+                            c.found.entry(id.clone()).or_insert(Pointed {
+                                kind: PointedKind::Equation,
+                                number,
+                                name: Vec::new(),
+                                anchor: anchor_of(id),
+                                pointed_to: false,
+                            });
+                        }
+                    }
+                    Block::Figure { id, caption, numbered, .. } => {
+                        inlines(caption, c.to);
+                        let number = numbered.then(|| {
+                            c.figure += 1;
+                            c.figure.to_string()
+                        });
+                        if !id.is_empty() {
+                            c.found.entry(id.clone()).or_insert(Pointed {
+                                kind: PointedKind::Figure,
+                                number,
+                                name: Vec::new(),
+                                anchor: anchor_of(id),
+                                pointed_to: false,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut to = HashSet::new();
+        let mut counted = Counted { figure: 0, equation: 0, found: HashMap::new(), to: &mut to };
+        // The numbers of the parts, as those who set the pages count them:
+        // a heading counts on at its level, and begins the levels under it anew.
+        let mut levels = [0u32; 6];
+        for section in &doc.sections {
+            if let Some(heading) = section.heading.as_deref().filter(|h| !h.is_empty() && section.level > 0) {
+                inlines(heading, counted.to);
+                let level = section.level.clamp(1, self.deepest.max(1)) as usize;
+                let set_as_heading = !self.run_in.iter().any(|r| r.level as usize == level);
+                let number = (numbered_headings && set_as_heading).then(|| {
+                    levels[level - 1] += 1;
+                    levels[level..].fill(0);
+                    levels[..level].iter().map(u32::to_string).collect::<Vec<_>>().join(".")
+                });
+                if let Some(id) = section.element.as_deref().filter(|id| !id.is_empty()) {
+                    counted.found.entry(id.to_owned()).or_insert(Pointed {
+                        kind: PointedKind::Part,
+                        number,
+                        name: heading.to_vec(),
+                        anchor: anchor_of(id),
+                        pointed_to: false,
+                    });
+                }
+            }
+            blocks(&section.blocks, &mut counted);
+        }
+        let mut found = counted.found;
+        for (id, pointed) in found.iter_mut() {
+            pointed.pointed_to = to.contains(id);
+        }
+        found
+    }
+
+    /// The words that point to something, as the document calls it.
+    fn pointer(&self, target: &str, form: RefForm) -> Vec<Value> {
+        let x = &self.extras;
+        let mut words = Vec::new();
+        let Some(pointed) = x.targets.get(target) else {
+            x.astray.set(x.astray.get() + 1);
+            tokens("[?]", &mut words);
+            return vec![json!({"t": "Strong", "c": words})];
+        };
+        match pointed.kind {
+            PointedKind::Figure => {
+                let called =
+                    if x.figures.reference.trim().is_empty() { &x.figures.label } else { &x.figures.reference };
+                let text = match (&pointed.number, form) {
+                    (Some(n), RefForm::Number) => n.clone(),
+                    (Some(n), _) if called.trim().is_empty() => n.clone(),
+                    (Some(n), _) => format!("{}\u{a0}{n}", called.trim()),
+                    // One that has no number is pointed to by what figures are called.
+                    (None, _) => called.trim().to_owned(),
+                };
+                tokens(&text, &mut words);
+            }
+            PointedKind::Equation => {
+                let text = match (&pointed.number, form) {
+                    (Some(n), RefForm::Number) => n.clone(),
+                    (Some(n), _) => format!("{}{n}{}", x.equations.before_number, x.equations.after_number),
+                    (None, _) => String::new(),
+                };
+                tokens(&text, &mut words);
+            }
+            PointedKind::Part => match (&pointed.number, form) {
+                (Some(n), RefForm::Full | RefForm::Number) => tokens(n, &mut words),
+                // The words of the heading, without what points from it.
+                _ => {
+                    let plain: Vec<Inline> = pointed
+                        .name
+                        .iter()
+                        .filter(|i| matches!(i, Inline::Text { .. } | Inline::Math { .. }))
+                        .cloned()
+                        .collect();
+                    words = self.inlines(&plain);
+                }
+            },
+        }
+        if words.is_empty() {
+            x.astray.set(x.astray.get() + 1);
+            tokens("[?]", &mut words);
+            return vec![json!({"t": "Strong", "c": words})];
+        }
+        match x.flavour {
+            // In a document for a word processor a link is set in colour,
+            // which a manuscript is not to have.
+            Flavour::Styled => words,
+            _ => vec![json!({"t": "Link", "c": [attr(), words, [format!("#{}", pointed.anchor), ""]]})],
         }
     }
 
@@ -489,6 +715,7 @@ impl Converter<'_> {
                         out.push(json!({"t": "Math", "c": [{"t": "InlineMath"}, tex.trim()]}));
                     }
                 }
+                Inline::CrossRef { target, form } => out.extend(self.pointer(target, *form)),
                 Inline::Footnote { content, place } => {
                     let inner = self.inlines(content);
                     if !inner.is_empty() {
@@ -557,9 +784,9 @@ impl Converter<'_> {
                         }));
                     }
                 }
-                Block::Equation { tex, numbered } => self.equation(tex, *numbered, out),
-                Block::Figure { file, extension, name, caption, alt, width, numbered } => {
-                    self.figure(file, extension, name, caption, alt, *width, *numbered, out);
+                Block::Equation { id, tex, numbered } => self.equation(id, tex, *numbered, out),
+                Block::Figure { id, file, extension, name, caption, alt, width, numbered } => {
+                    self.figure(id, file, extension, name, caption, alt, *width, *numbered, out);
                 }
             }
         }
@@ -588,6 +815,9 @@ impl Converter<'_> {
         let run_in = self.run_in.iter().find(|r| r.level == level).copied();
         match (heading, run_in) {
             (Some(mut h), Some(form)) if section.level > 0 => {
+                if let Some(place) = section.element.as_deref().and_then(|id| self.extras.anchor(id)) {
+                    h.insert(0, place);
+                }
                 // The heading begins the first paragraph, in bold, and ends with a full stop.
                 let ends = matches!(h.last(), Some(v) if v["t"] == "Str"
                     && v["c"].as_str().is_some_and(|s| s.ends_with(['.', '?', '!', ':'])));
@@ -612,7 +842,12 @@ impl Converter<'_> {
                 }
             }
             (Some(h), None) if section.level > 0 => {
-                out.push(json!({"t": "Header", "c": [level, attr(), h]}));
+                let place = section.element.as_deref().and_then(|id| self.extras.anchor(id));
+                let named = match place.as_ref().and_then(|p| p["c"][0][0].as_str()) {
+                    Some(name) => json!([name, [], []]),
+                    None => attr(),
+                };
+                out.push(json!({"t": "Header", "c": [level, named, h]}));
             }
             _ => {}
         }

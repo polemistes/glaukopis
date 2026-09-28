@@ -17,16 +17,18 @@
   import { editorUi, rectAt } from './ui.svelte';
   import { sharedUndo } from './undo';
   import { markActive, insideNode } from './commands';
-  import { CitationView, FootnoteView, hooksOf } from './views.svelte';
-  import { pictures } from '$lib/figures/pictures.svelte';
-  import { choosePicture, FigureView, FormulaView } from '$lib/figures/views.svelte';
-  import { insertFigure } from './commands';
-  import { viewsByDom } from './ui.svelte';
+  import { CitationView, FootnoteView } from './views.svelte';
+  import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
+  import { choosePicture, CrossRefView, FigureView, FormulaView } from '$lib/figures/views.svelte';
+  import { insertCrossRef, insertFigure } from './commands';
+  import { hooksOf, viewsByDom } from './ui.svelte';
 
   interface Props {
     project: Project;
     fragment: Y.XmlFragment;
     kind: 'body' | 'title';
+    /** The element whose text it is: what stands in the text is numbered by it. */
+    element?: string;
     placeholder?: string;
     /** Where to put the cursor when the editor appears: at an end, or at a point of the window. */
     autofocus?: FocusAt | null;
@@ -46,6 +48,7 @@
     project,
     fragment,
     kind,
+    element,
     placeholder = '',
     autofocus = null,
     editable = true,
@@ -109,6 +112,32 @@
     if (!chosen || v.isDestroyed) return;
     insertFigure(chosen)(v.state, v.dispatch);
     v.focus();
+  }
+
+  /**
+   * Asks what the text is to point to, and puts the words where the cursor
+   * is; or, with `at`, in place of the words that stand there.
+   */
+  function point(v: EditorView, at?: number) {
+    const map = element ? project.node(element)?.map : undefined;
+    if (!map) return;
+    const from = at ?? v.state.selection.from;
+    editorUi.pickTarget({
+      anchor: rectAt(v, from),
+      map,
+      onpick: (target) => {
+        editorUi.closeTargets(false);
+        if (v.isDestroyed) return;
+        v.focus();
+        const there = at === undefined ? null : v.state.doc.nodeAt(at);
+        if (at !== undefined && there?.type.name === 'crossref') {
+          v.dispatch(v.state.tr.setNodeMarkup(at, undefined, { target: target.id, form: 'full' }));
+        } else {
+          insertCrossRef(target.id)(v.state, v.dispatch);
+        }
+      },
+      oncancel: () => v.focus(),
+    });
   }
 
   /** Pictures that were pasted become figures. Returns whether there were any. */
@@ -193,6 +222,8 @@
       action: (action: KeyAction, v: EditorView) => untrack(() => onaction?.(action, v) ?? false),
       cite: kind === 'body' ? cite : undefined,
       picture: kind === 'body' ? picture : undefined,
+      point: kind === 'body' ? point : undefined,
+      element: untrack(() => element),
     };
 
     const created = untrack(() => {
@@ -214,6 +245,7 @@
                 math: (node, v, getPos) => new FormulaView(node, v, getPos),
                 equation: (node, v, getPos) => new FormulaView(node, v, getPos),
                 figure: (node, v, getPos) => new FigureView(node, v, getPos),
+                crossref: (node, v, getPos) => new CrossRefView(node, v, getPos),
               }
             : {},
         attributes: {
@@ -309,12 +341,23 @@
   bind:this={host}
   class="rich-text {className}"
   use:dropTarget={{
-    accepts: ['references'],
+    accepts: ['references', PICTURES_DRAGGED],
     disabled: kind !== 'body',
     ondrop: (event) => {
-      // A reference dropped into the text is cited where it was dropped.
       if (!view) return;
       const at = view.posAtCoords({ left: event.x, top: event.y });
+      if (event.payload.kind === PICTURES_DRAGGED) {
+        // A picture of the store dropped into the text is a figure where it was dropped.
+        let where = at?.pos;
+        for (const hash of event.payload.data as string[]) {
+          const known = pictures.get(hash);
+          if (known) insertFigure(known, where)(view.state, view.dispatch);
+          where = undefined;
+        }
+        view.focus();
+        return;
+      }
+      // A reference dropped into the text is cited where it was dropped.
       const ids = event.payload.data as string[];
       const pos = at?.pos ?? view.state.selection.from;
       const node = view.state.schema.nodes.citation.create({

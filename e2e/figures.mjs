@@ -107,10 +107,9 @@ try {
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   const project = (await invoke('project_list'))[0].id;
-  const files = () => {
-    const dir = join(app.dataDir, 'projects', project, 'files');
-    return existsSync(dir) ? readdirSync(dir).sort() : [];
-  };
+  // The pictures are in the store of the application, and not with the project.
+  const store = join(app.dataDir, 'pictures', 'files');
+  const files = () => (existsSync(store) ? readdirSync(store).sort() : []);
 
   await app.doubleClick('.diagram .node.root');
   await app.waitFor('.box .text .prose');
@@ -168,10 +167,10 @@ try {
   await app.press('Enter');
   await app.waitGone('.formula-panel');
   await until('the equation in the text', () => app.exists('.box .text .equation[data-numbered] math'));
-  const number = await app.exec(
-    `return getComputedStyle(document.querySelector('.box .text .equation'), '::after').content`,
+  const number = await until('the number of the equation', () =>
+    app.exec(`return document.querySelector('.box .text .equation').dataset.number || null`),
   );
-  check('it stands on a line of its own, with its number', /counter\(equation\)/.test(number) || /1/.test(number), number);
+  check('it stands on a line of its own, with its number', number === '(1)', number);
   await app.keys('And so on.');
   const after = await app.exec(
     `const e = document.querySelector('.box .text .equation'); return e.nextElementSibling ? e.nextElementSibling.textContent : null`,
@@ -199,14 +198,17 @@ try {
   check('a picture dropped on the text is a figure there', true);
   const given = await app.exec(`return document.querySelector('.box .text figure .picture').style.width`);
   check('as wide as suits what it holds', given === '50%', given);
-  check('it is kept with the project, by what it holds', files().length === 1 && /^[0-9a-f]{64}\.png$/.test(files()[0]), files().join(', '));
-  check('as it was', readFileSync(join(app.dataDir, 'projects', project, 'files', files()[0])).equals(readFileSync(join(desk, 'The shield.png'))));
+  check('it is kept in the store of pictures, by what it holds', files().length === 1 && /^[0-9a-f]{64}\.png$/.test(files()[0]), files().join(', '));
+  check('as it was', readFileSync(join(store, files()[0])).equals(readFileSync(join(desk, 'The shield.png'))));
+  check('and not with the project', !existsSync(join(app.dataDir, 'projects', project, 'files')));
   await sleep(200);
   await app.keys('The shield of Achilles, as the poem has it');
   const caption = await app.text('.box .text figure figcaption');
   check('what is typed then is what is said of it', caption === 'The shield of Achilles, as the poem has it', caption);
-  const label = await app.exec(`return getComputedStyle(document.querySelector('.box .text figure figcaption'), '::before').content`);
-  check('before which stand the word and the number', /Figure/.test(label) && /counter\(figure\)/.test(label), label);
+  const label = await until('the word and the number', () =>
+    app.exec(`return document.querySelector('.box .text figure figcaption').dataset.label || null`),
+  );
+  check('before which stand the word and the number', label === 'Figure\u00a01. ', JSON.stringify(label));
   await app.press('Enter');
   await app.keys('After the figure.');
   const under = await app.exec(
@@ -289,10 +291,13 @@ try {
   await until('the figures in the text of the map', async () => (await app.count('.text-view figure img[src^="blob:"]')) === 3, 10000);
   check('in the text of the map the figures are shown', true);
   check('and the mathematics', (await app.count('.text-view .math math')) === 2, String(await app.count('.text-view .math math')));
-  const counted = await app.exec(
-    `return Array.from(document.querySelectorAll('.text-view figure')).map((f) => getComputedStyle(f).counterIncrement).join('|')`,
-  );
-  check('the figures are counted through the map', counted === 'figure 1|figure 1|figure 1', counted);
+  const counted = await until('the numbers of the figures', async () => {
+    const labels = await app.exec(
+      `return Array.from(document.querySelectorAll('.text-view figure figcaption')).map((f) => (f.dataset.label || '').replace(/\u00a0/g, ' ').trim()).join('|')`,
+    );
+    return labels.split('|').every(Boolean) ? labels : null;
+  });
+  check('the figures are counted through the map', counted === 'Figure 1.|Figure 2.|Figure 3', counted);
   await sleep(400);
   await app.screenshot('figures-6-text');
 

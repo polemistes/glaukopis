@@ -38,7 +38,9 @@
     {#if content.html}
       <!-- Made by blocksHtml, which escapes all text. -->
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      <div class="prose static" use:hydrate={content.html}>{@html content.html}</div>
+      <div class="prose static" use:hydrate={{ html: content.html, project, element: id }}>
+        {@html content.html}
+      </div>
       {#if content.cut}<div class="more">Double-click to read on</div>{/if}
     {/if}
     {#if included || !node.heading || node.excluded}

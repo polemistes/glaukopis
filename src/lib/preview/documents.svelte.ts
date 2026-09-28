@@ -18,6 +18,8 @@ class Documents {
   formats = $state.raw<FormatSummary[]>([]);
   tools = $state.raw<ToolsInfo | null>(null);
   loaded = $state(false);
+  /** Rises when a format has been changed: what was made of it is made anew. */
+  changed = $state(0);
   #formats = new Map<string, DocumentFormat>();
   #loading: Promise<void> | null = null;
 
@@ -71,6 +73,7 @@ class Documents {
   }
 
   forgetFormat(id: string) {
+    this.changed++;
     this.#formats.delete(id);
   }
 

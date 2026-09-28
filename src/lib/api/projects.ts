@@ -26,6 +26,8 @@ export interface ProjectInfo {
   maps: MapInfo[];
   words: number;
   references: number;
+  /** The pictures the project uses, by the names the store keeps them by. */
+  pictures?: string[];
   sharing?: Sharing;
   view?: unknown;
 }
@@ -35,6 +37,7 @@ export interface ProjectSummary {
   maps: MapInfo[];
   words: number;
   references: number;
+  pictures?: string[];
 }
 
 export interface LoadedProject {

@@ -238,11 +238,13 @@ const figureNodes: Record<string, NodeSpec> = {
     group: 'block',
     atom: true,
     selectable: true,
-    attrs: { tex: { default: '' }, numbered: { default: false } },
+    // The id is that by which words in the text point to the equation.
+    attrs: { id: { default: '' }, tex: { default: '' }, numbered: { default: false } },
     parseDOM: [
       {
         tag: 'div[data-equation]',
         getAttrs: (el) => ({
+          id: (el as HTMLElement).getAttribute('data-id') ?? '',
           tex: (el as HTMLElement).getAttribute('data-equation') ?? '',
           numbered: (el as HTMLElement).hasAttribute('data-numbered'),
         }),
@@ -251,6 +253,7 @@ const figureNodes: Record<string, NodeSpec> = {
     toDOM: (node) => [
       'div',
       {
+        'data-id': node.attrs.id || null,
         'data-equation': node.attrs.tex,
         'data-numbered': node.attrs.numbered ? '' : null,
         class: 'equation',
@@ -258,14 +261,37 @@ const figureNodes: Record<string, NodeSpec> = {
       node.attrs.tex,
     ],
   },
+  crossref: {
+    group: 'inline',
+    inline: true,
+    atom: true,
+    draggable: true,
+    attrs: { target: { default: '' }, form: { default: 'full' } },
+    parseDOM: [
+      {
+        tag: 'span[data-crossref]',
+        getAttrs: (el) => {
+          const target = (el as HTMLElement).getAttribute('data-crossref') ?? '';
+          if (!target) return false;
+          const form = (el as HTMLElement).getAttribute('data-form');
+          return { target, form: form === 'number' || form === 'name' ? form : 'full' };
+        },
+      },
+    ],
+    toDOM: (node) => [
+      'span',
+      { 'data-crossref': node.attrs.target, 'data-form': node.attrs.form, class: 'crossref' },
+    ],
+  },
   figure: {
     group: 'block',
     // What is said of a figure is a line of text. A note has no place in it:
     // not every kind of document can set one there.
-    content: '(text | hard_break | citation | math)*',
+    content: '(text | hard_break | citation | math | crossref)*',
     isolating: true,
     defining: true,
     attrs: {
+      id: { default: '' },
       file: { default: '' },
       extension: { default: '' },
       name: { default: '' },
@@ -282,6 +308,7 @@ const figureNodes: Record<string, NodeSpec> = {
           const [file, extension] = (el.getAttribute('data-picture') ?? '').split('.');
           if (!/^[0-9a-f]{64}$/.test(file ?? '')) return false;
           return {
+            id: el.getAttribute('data-id') ?? '',
             file,
             extension: extension ?? '',
             name: el.getAttribute('data-name') ?? '',
@@ -295,6 +322,7 @@ const figureNodes: Record<string, NodeSpec> = {
     toDOM: (node) => [
       'figure',
       {
+        'data-id': node.attrs.id || null,
         'data-picture': `${node.attrs.file}.${node.attrs.extension}`,
         'data-name': node.attrs.name || null,
         'data-alt': node.attrs.alt || null,

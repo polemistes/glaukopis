@@ -5,12 +5,19 @@ import type { Node } from 'prosemirror-model';
 import { NodeSelection, Selection, TextSelection } from 'prosemirror-state';
 import type { EditorView, NodeView } from 'prosemirror-view';
 import { mount, unmount } from 'svelte';
+import { captionOf, captionNodes } from '$lib/editor/commands';
+import { currentProject } from '$lib/editor/references.svelte';
 import { figureWidth } from '$lib/editor/schema';
+import { hooksOf } from '$lib/editor/ui.svelte';
+import { refForm } from '$lib/project/model/text';
+import { openMenu } from '$lib/ui/menu.svelte';
 import { place } from '$lib/ui/floating';
 import FigurePanel from './FigurePanel.svelte';
 import FormulaPanel from './FormulaPanel.svelte';
 import { showFormula } from './math.svelte';
+import { formsOf, numbering, pointerText, type Counting, type Numbers } from './numbering.svelte';
 import { pictures, PICTURE_ENDINGS } from './pictures.svelte';
+import { notifyOk } from '$lib/ui/toast.svelte';
 
 /** What the panel of a formula can be asked. */
 interface Written {
@@ -61,6 +68,43 @@ function belongs(target: HTMLElement, panel: HTMLElement, dom: HTMLElement): boo
   return !!target.closest('.popover, .menu, dialog, .backdrop');
 }
 
+/** The numbers of the document the text of an editor is part of, and what the document calls things. */
+function documentOf(
+  view: EditorView,
+): { numbers: Numbers; counting: Counting; element: string } | null {
+  const element = hooksOf.get(view)?.element;
+  const project = currentProject();
+  const map = element ? project?.node(element)?.map : undefined;
+  if (!element || !project || !map) return null;
+  return {
+    numbers: numbering.of(project, map),
+    counting: numbering.countingOf(project, map),
+    element,
+  };
+}
+
+/**
+ * The number of a figure or an equation: that of its place among those of
+ * its kind in the text it stands in. Nothing, when the text is not part of
+ * the document, or the thing has no number.
+ */
+function numberOf(view: EditorView, kind: 'figure' | 'equation', pos: number | undefined) {
+  const of = documentOf(view);
+  if (!of || pos === undefined) return { number: null, counting: of?.counting ?? null };
+  let index = 0;
+  view.state.doc.nodesBetween(0, Math.min(pos, view.state.doc.content.size), (node, at) => {
+    if (at >= pos) return false;
+    if (node.type.name !== kind) return !node.isTextblock;
+    // An equation in which nothing is written yet is not counted.
+    if (kind === 'figure' || String(node.attrs.tex ?? '').trim()) index++;
+    return false;
+  });
+  return {
+    number: of.numbers.within.get(of.element)?.[kind][index] ?? null,
+    counting: of.counting,
+  };
+}
+
 /** Puts the cursor after a block, in a paragraph that is made if there is none. */
 function cursorAfter(view: EditorView, pos: number) {
   const { state } = view;
@@ -94,6 +138,8 @@ export class FormulaView implements NodeView {
   #getPos: () => number | undefined;
   #display: boolean;
   #tex = $state('');
+  /** Rises when the text around the equation has changed, and its number may have. */
+  #moved = $state(0);
   #stop: () => void;
   #panel: Panel | null = null;
   #written: Written | null = null;
@@ -119,12 +165,25 @@ export class FormulaView implements NodeView {
     this.#read();
     this.#stop = $effect.root(() => {
       $effect(() => showFormula(this.#body, this.#tex, this.#display));
+      if (this.#display) {
+        $effect(() => {
+          void this.#moved;
+          const { number, counting } = numberOf(this.#view, 'equation', this.#getPos());
+          const shown =
+            number && counting && this.#node.attrs.numbered
+              ? `${counting.before}${number}${counting.after}`
+              : '';
+          if (!shown) delete this.dom.dataset.number;
+          else if (this.dom.dataset.number !== shown) this.dom.dataset.number = shown;
+        });
+      }
     });
   }
 
   #read() {
     this.#tex = String(this.#node.attrs.tex ?? '');
     if (this.#display) this.dom.toggleAttribute('data-numbered', !!this.#node.attrs.numbered);
+    this.#moved++;
   }
 
   selectNode() {
@@ -179,7 +238,7 @@ export class FormulaView implements NodeView {
       return false;
     }
     if (tex !== node.attrs.tex || (this.#display && numbered !== !!node.attrs.numbered)) {
-      const attrs = this.#display ? { tex, numbered } : { tex };
+      const attrs = this.#display ? { ...node.attrs, tex, numbered } : { tex };
       view.dispatch(view.state.tr.setNodeMarkup(pos, undefined, attrs));
     }
     return true;
@@ -259,6 +318,8 @@ export class FigureView implements NodeView {
   #view: EditorView;
   #getPos: () => number | undefined;
   #file = $state.raw<{ file: string; extension: string }>({ file: '', extension: '' });
+  /** Rises when the figure or the text around it has changed, and its number may have. */
+  #moved = $state(0);
   #stop: () => void;
   #panel: Panel | null = null;
   #mounted: Record<string, unknown> | null = null;
@@ -291,6 +352,19 @@ export class FigureView implements NodeView {
           this.#picture.dataset.state = shown.state;
         }
       });
+      // The word and the number before what is said of it, as the document has them.
+      $effect(() => {
+        void this.#moved;
+        const { number, counting } = numberOf(this.#view, 'figure', this.#getPos());
+        const label = figureLabel(
+          !!this.#node.attrs.numbered,
+          number,
+          this.#node.content.size > 0,
+          counting,
+        );
+        if (!label) delete this.contentDOM.dataset.label;
+        else if (this.contentDOM.dataset.label !== label) this.contentDOM.dataset.label = label;
+      });
     });
     this.#picture.addEventListener('mousedown', this.#press);
   }
@@ -304,6 +378,7 @@ export class FigureView implements NodeView {
     this.#img.alt = String(a.alt ?? '');
     this.dom.toggleAttribute('data-unnumbered', !a.numbered);
     this.dom.classList.toggle('uncaptioned', this.#node.content.size === 0);
+    this.#moved++;
   }
 
   #press = (event: MouseEvent) => {
@@ -358,6 +433,13 @@ export class FigureView implements NodeView {
           this.#change(change);
           this.#again();
         },
+        kept: () => {
+          const said = pictures.get(String(this.#node.attrs.file))?.caption ?? [];
+          return JSON.stringify(said) === JSON.stringify(captionOf(this.#node));
+        },
+        own: () => !!pictures.get(String(this.#node.attrs.file))?.caption?.length,
+        onkeep: () => void this.#keepCaption(),
+        ontake: () => this.#takeCaption(),
         onreplace: () => void this.#replace(),
         onremove: () => this.#remove(),
         onclose: () => this.#leave(),
@@ -370,6 +452,32 @@ export class FigureView implements NodeView {
   /** The panel follows the picture as it grows and shrinks. */
   #again() {
     this.#panel?.place();
+  }
+
+  /** What is said of the figure is kept with the picture, for the figures that are made with it after. */
+  async #keepCaption() {
+    const hash = String(this.#node.attrs.file);
+    const kept = await pictures.update(hash, {
+      caption: captionOf(this.#node),
+      ...(this.#node.attrs.alt ? { alt: String(this.#node.attrs.alt) } : {}),
+    });
+    if (kept) notifyOk('Kept with the picture', 'Figures made with it begin with these words.');
+  }
+
+  /** What is kept with the picture is said of the figure, in place of what is said now. */
+  #takeCaption() {
+    const pos = this.#getPos();
+    const picture = pictures.get(String(this.#node.attrs.file));
+    if (pos === undefined || !picture) return;
+    const view = this.#view;
+    const node = view.state.doc.nodeAt(pos);
+    if (!node || node.type !== this.#node.type) return;
+    const tr = view.state.tr.replaceWith(
+      pos + 1,
+      pos + node.nodeSize - 1,
+      captionNodes(view.state.schema, picture.caption),
+    );
+    view.dispatch(tr.setSelection(NodeSelection.create(tr.doc, pos)));
   }
 
   async #replace() {
@@ -437,14 +545,162 @@ export class FigureView implements NodeView {
   }
 
   ignoreMutation(mutation: { type: string; target: globalThis.Node }): boolean {
-    // What is written in the caption is the editor's to read; the rest is set here.
+    // What is written in the caption is the editor's to read; the rest is
+    // set here, and so is the word and the number before the caption.
     if (mutation.type === 'selection') return false;
+    if (mutation.type === 'attributes' && mutation.target === this.contentDOM) return true;
     return !this.contentDOM.contains(mutation.target);
   }
 
   destroy() {
     this.#picture.removeEventListener('mousedown', this.#press);
     this.#close();
+    this.#stop();
+  }
+}
+
+/**
+ * What stands before what is said of a figure: the word and the number, as
+ * the document has them, and what parts them from what follows.
+ */
+export function figureLabel(
+  numbered: boolean,
+  number: string | null,
+  said: boolean,
+  counting: Counting | null,
+): string {
+  if (!numbered) return '';
+  const word = (counting?.label ?? 'Figure').trim();
+  // One that is not part of the document has no number there.
+  const label = [word, number].filter(Boolean).join('\u00a0');
+  if (!label) return '';
+  return said ? `${label}${counting?.separator ?? '. '}` : label;
+}
+
+/**
+ * Words that point to a figure, an equation or a part of the document. What
+ * they say follows what they point to: its number, and what the format
+ * calls it.
+ */
+export class CrossRefView implements NodeView {
+  dom: HTMLElement;
+  #node: Node;
+  #view: EditorView;
+  #getPos: () => number | undefined;
+  #attrs = $state.raw<{ target: string; form: string }>({ target: '', form: 'full' });
+  #stop: () => void;
+
+  constructor(node: Node, view: EditorView, getPos: () => number | undefined) {
+    this.#node = node;
+    this.#view = view;
+    this.#getPos = getPos;
+    this.dom = document.createElement('span');
+    this.dom.className = 'crossref';
+    this.dom.setAttribute('role', 'button');
+    this.dom.contentEditable = 'false';
+    this.#attrs = { target: node.attrs.target, form: node.attrs.form };
+    this.#stop = $effect.root(() => {
+      $effect(() => {
+        const { target, form } = this.#attrs;
+        const of = documentOf(this.#view);
+        const text = of ? pointerText(of.numbers.byId.get(target), refForm(form), of.counting) : '';
+        this.dom.textContent = text || '?';
+        this.dom.classList.toggle('missing', !text);
+        if (text) this.dom.removeAttribute('title');
+        else this.dom.title = 'What this pointed to is not in the document';
+      });
+    });
+    this.dom.addEventListener('click', this.#open);
+  }
+
+  #set(change: Record<string, unknown> | null) {
+    const pos = this.#getPos();
+    if (pos === undefined) return;
+    const view = this.#view;
+    const node = view.state.doc.nodeAt(pos);
+    if (!node || node.type !== this.#node.type) return;
+    view.dispatch(
+      change
+        ? view.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...change })
+        : view.state.tr.delete(pos, pos + node.nodeSize),
+    );
+    view.focus();
+  }
+
+  #open = (event: Event) => {
+    event.preventDefault();
+    if (!this.#view.editable) return;
+    const of = documentOf(this.#view);
+    const pointed = of?.numbers.byId.get(this.#attrs.target);
+    const form = refForm(this.#attrs.form);
+    openMenu(
+      this.dom,
+      [
+        ...(pointed && of
+          ? [
+              { kind: 'heading' as const, label: 'Points by' },
+              ...formsOf(pointed.kind, pointed.number !== null).map((f) => ({
+                label: f.label,
+                hint: pointerText(pointed, f.form, of.counting),
+                checked:
+                  f.form === form ||
+                  (f.form === 'full' && form === 'number' && pointed.kind === 'part'),
+                action: () => this.#set({ form: f.form }),
+              })),
+              { kind: 'separator' as const },
+              {
+                label: 'Go to what it points to',
+                action: () => {
+                  const at =
+                    document.querySelector(`[data-id="${CSS.escape(pointed.id)}"]`) ??
+                    document.querySelector(`[data-section="${CSS.escape(pointed.element)}"]`) ??
+                    document.querySelector(`[data-node="${CSS.escape(pointed.element)}"]`);
+                  at?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                },
+              },
+            ]
+          : [
+              {
+                label: 'What this pointed to is not in the document',
+                disabled: true,
+                action: () => {},
+              },
+            ]),
+        {
+          label: 'Point to something else…',
+          action: () => hooksOf.get(this.#view)?.point?.(this.#view, this.#getPos()),
+        },
+        { label: 'Remove', action: () => this.#set(null) },
+      ],
+      { align: 'start' },
+    );
+  };
+
+  update(node: Node): boolean {
+    if (node.type !== this.#node.type) return false;
+    this.#node = node;
+    this.#attrs = { target: node.attrs.target, form: node.attrs.form };
+    return true;
+  }
+
+  selectNode() {
+    this.dom.classList.add('selected');
+  }
+
+  deselectNode() {
+    this.dom.classList.remove('selected');
+  }
+
+  stopEvent(event: Event): boolean {
+    return event.type === 'click' || event.type === 'mousedown';
+  }
+
+  ignoreMutation(): boolean {
+    return true;
+  }
+
+  destroy() {
+    this.dom.removeEventListener('click', this.#open);
     this.#stop();
   }
 }

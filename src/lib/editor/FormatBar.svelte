@@ -11,7 +11,7 @@
   import { tooltip } from '$lib/ui/tooltip';
   import { insertFootnote, toggle, toggleList, toggleQuote } from './commands';
   import { editorUi } from './ui.svelte';
-  import { hooksOf } from './views.svelte';
+  import { hooksOf } from './ui.svelte';
 
   let el = $state<HTMLDivElement>();
 

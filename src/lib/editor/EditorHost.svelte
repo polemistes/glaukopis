@@ -1,6 +1,7 @@
 <script lang="ts">
   import { libraryGet } from '$lib/api/library';
   import type { Project } from '$lib/project/model/project.svelte';
+  import TargetPicker from '$lib/figures/TargetPicker.svelte';
   import CitationEditor from './CitationEditor.svelte';
   import FormatBar from './FormatBar.svelte';
   import ReferencePicker from './ReferencePicker.svelte';
@@ -43,6 +44,16 @@
       }}
       {used}
       onclose={(cancelled) => editorUi.closePicker(cancelled)}
+    />
+  {/key}
+{/if}
+
+{#if editorUi.pointing}
+  {#key editorUi.pointing}
+    <TargetPicker
+      {project}
+      request={editorUi.pointing}
+      onclose={(cancelled) => editorUi.closeTargets(cancelled)}
     />
   {/key}
 {/if}

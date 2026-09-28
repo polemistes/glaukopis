@@ -301,6 +301,7 @@ describe('saving', () => {
       maps: [{ id: map, name: 'Wrath', elements: 2 }],
       words: 4,
       references: 0,
+      pictures: [],
     });
     p.setTitle(a, 'A, renamed');
     await p.flush();

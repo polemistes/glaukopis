@@ -29,7 +29,10 @@ import {
   TextSelection,
   type Command,
   type EditorState,
+  type Transaction,
 } from 'prosemirror-state';
+import { ySyncPluginKey } from 'y-prosemirror';
+import { newId } from '$lib/util/id';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import {
   insertEquation,
@@ -62,6 +65,39 @@ export interface EditorHooks {
   cite?: (view: EditorView, typed: boolean) => void;
   /** Asks for a picture, and puts a figure with it where the cursor is. */
   picture?: (view: EditorView) => void;
+  /**
+   * Asks what the text is to point to, and puts the words where the cursor
+   * is; or, with `at`, in place of the words that stand there.
+   */
+  point?: (view: EditorView, at?: number) => void;
+  /** The element whose text the editor holds, by which what stands in it is numbered. */
+  element?: string;
+}
+
+/**
+ * A figure or an equation is pointed to by its id. One that has none, or
+ * has that of another in the same text, as when it was copied, is given one
+ * of its own. What others have written is left to them.
+ */
+function ids(): Plugin {
+  return new Plugin({
+    appendTransaction(transactions, _before, state) {
+      if (!transactions.some((tr) => tr.docChanged && !tr.getMeta(ySyncPluginKey))) return null;
+      const seen = new Set<string>();
+      let tr: Transaction | null = null;
+      state.doc.descendants((node, pos) => {
+        const name = node.type.name;
+        if (name !== 'figure' && name !== 'equation') return !node.isTextblock;
+        const id = String(node.attrs.id ?? '');
+        if (!id || seen.has(id)) {
+          tr ??= state.tr;
+          tr.setNodeMarkup(pos, undefined, { ...node.attrs, id: newId() });
+        } else seen.add(id);
+        return false;
+      });
+      return tr;
+    },
+  });
 }
 
 const dashes = [
@@ -166,6 +202,10 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
       if (view && hooks.picture) hooks.picture(view);
       return !!hooks.picture;
     },
+    'Mod-Alt-r': (_state, _dispatch, view) => {
+      if (view && hooks.point) hooks.point(view);
+      return !!hooks.point;
+    },
     'Shift-Mod-c': (_state, _dispatch, view) => {
       if (view && hooks.cite) hooks.cite(view, false);
       return !!hooks.cite;
@@ -225,6 +265,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
   return [
     inputRules({ rules: [...dashes, ...blockRules(schema)] }),
     cite,
+    ids(),
     keymap(keys),
     keymap(baseKeymap),
     dropCursor({ color: 'var(--accent)', width: 2 }),

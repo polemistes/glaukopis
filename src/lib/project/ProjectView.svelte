@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, untrack } from 'svelte';
   import ArrowLeft from '@lucide/svelte/icons/arrow-left';
   import BookMarked from '@lucide/svelte/icons/book-marked';
   import BookOpenText from '@lucide/svelte/icons/book-open-text';
@@ -107,7 +107,8 @@
       // A project that was joined and has not been fetched has no maps yet.
       if (p.maps.length) arrange(p);
       shared = new ProjectSharing(ownId, p, opened.info);
-      pictures.open(ownId);
+      pictures.open(ownId, () => p.usedPictures());
+      void pictures.load();
       project = p;
       release = beforeClose(() => leave(p));
     } catch (error) {
@@ -189,7 +190,14 @@
   $effect(() => {
     if (!project) return;
     pictures.shared = !!shared?.sharing;
-    if (shared?.sharing && shared.connection?.synced) void pictures.sync();
+    // Again whenever the project uses a picture it did not use before.
+    const used = project
+      .usedPictures()
+      .map((p) => p.hash)
+      .sort()
+      .join(' ');
+    if (shared?.sharing && shared.connection?.synced && used !== undefined)
+      untrack(() => void pictures.sync());
   });
 
   function viewToStore(): StoredView {

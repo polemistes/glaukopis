@@ -408,6 +408,16 @@ pub struct RemoteFile {
     pub size: u64,
 }
 
+/// A picture that a project uses, as the project names it.
+#[derive(Debug, Clone, Default, PartialEq, Deserialize)]
+#[serde(default)]
+pub struct Used {
+    pub hash: String,
+    pub extension: String,
+    /// What it is called in the project, for one who is given it.
+    pub name: String,
+}
+
 /// What came of bringing the pictures of a project and those the server has
 /// of it to be the same.
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
@@ -464,12 +474,13 @@ impl Remote<'_> {
         if (200..300).contains(&answer.status) { Ok(()) } else { Err(self.refusal(answer.status, &answer.body)) }
     }
 
-    /// Sends the pictures the server lacks, and fetches those that are
-    /// lacking here. What cannot be done with one picture does not keep the
+    /// Sends the pictures of a project that the server lacks, and fetches
+    /// those the server has of it that are lacking here. `used` are the
+    /// pictures of the figures of the project: no other picture of the store
+    /// is sent. What cannot be done with one picture does not keep the
     /// others from being seen to.
-    pub fn sync_pictures(&self, room: &str, token: &str, pictures: &Pictures) -> Result<Synced> {
+    pub fn sync_pictures(&self, room: &str, token: &str, pictures: &Pictures, used: &[Used]) -> Result<Synced> {
         let (there, most) = self.files(room, token)?;
-        let here = pictures.list();
         let mut done = Synced::default();
         let mut problems: Vec<String> = Vec::new();
         let mut say = |problem: String| {
@@ -477,11 +488,19 @@ impl Remote<'_> {
                 problems.push(problem);
             }
         };
-        for (hash, extension, size) in &here {
-            if there.iter().any(|f| &f.hash == hash) {
+        let mut sent: Vec<&str> = Vec::new();
+        for picture in used {
+            if !pictures::is_hash(&picture.hash)
+                || sent.contains(&picture.hash.as_str())
+                || there.iter().any(|f| f.hash == picture.hash)
+            {
                 continue;
             }
-            if *size > most {
+            // One that is not here either is with someone else, who sends it.
+            let Ok(path) = pictures.path(&picture.hash, &picture.extension) else { continue };
+            let Some(size) = path.metadata().ok().filter(|m| m.is_file()).map(|m| m.len()) else { continue };
+            sent.push(&picture.hash);
+            if size > most {
                 // Said before it is sent: a server that refuses what is on
                 // its way may not be heard.
                 say(format!(
@@ -491,8 +510,9 @@ impl Remote<'_> {
                 ));
                 continue;
             }
-            let sending =
-                pictures.read(hash, extension).and_then(|content| self.send_file(room, token, hash, &content));
+            let sending = pictures
+                .read(&picture.hash, &picture.extension)
+                .and_then(|content| self.send_file(room, token, &picture.hash, &content));
             match sending {
                 Ok(()) => done.sent += 1,
                 Err(Error::Refused { message, .. }) => say(message),
@@ -500,13 +520,13 @@ impl Remote<'_> {
             }
         }
         for file in &there {
-            if !pictures::is_hash(&file.hash) || here.iter().any(|(hash, _, _)| hash == &file.hash) {
+            if !pictures::is_hash(&file.hash) || file.size > pictures::MAX_BYTES || pictures.get(&file.hash).is_ok() {
                 continue;
             }
-            if file.size > pictures::MAX_BYTES {
-                continue;
-            }
-            match self.fetch_file(room, token, &file.hash).and_then(|content| pictures.keep(&file.hash, &content)) {
+            let name = used.iter().find(|u| u.hash == file.hash).map(|u| u.name.as_str()).unwrap_or("");
+            let fetching =
+                self.fetch_file(room, token, &file.hash).and_then(|content| pictures.keep(&file.hash, &content, name));
+            match fetching {
                 Ok(_) => done.fetched += 1,
                 // What is on the server and is no picture is nothing to the project.
                 Err(Error::Invalid(_)) => {}

@@ -12,7 +12,16 @@ import * as Y from 'yjs';
 import { ySyncPluginKey } from 'y-prosemirror';
 import { Awareness } from 'y-protocols/awareness';
 import { newId } from '$lib/util/id';
-import { bodyFacts, fillBody, fillTitle, inlineText, readBody, readTitle, titleHtml } from './text';
+import {
+  bodyFacts,
+  fillBody,
+  fillTitle,
+  inlineText,
+  readBody,
+  readTitle,
+  titleHtml,
+  type Inline,
+} from './text';
 import { buildTree, isAncestor, subtree, topmost, type FlatNode, type Tree } from './tree';
 import type {
   DocumentSettings,
@@ -38,6 +47,8 @@ export interface Summary {
   maps: { id: string; name: string; elements: number }[];
   words: number;
   references: number;
+  /** The pictures the project uses, by the names the store keeps them by. */
+  pictures: string[];
 }
 
 /** Someone else who has the project open. */
@@ -346,6 +357,7 @@ export class Project {
       maps: this.maps.map((m) => ({ id: m.id, name: m.name, elements: elements.get(m.id) ?? 0 })),
       words,
       references: references.size,
+      pictures: this.usedPictures().map((p) => p.hash),
     };
   }
 
@@ -416,6 +428,7 @@ export class Project {
       words: facts.words,
       cited: facts.cited,
       notes: facts.notes,
+      set: facts.set,
     });
   }
 
@@ -496,6 +509,22 @@ export class Project {
       for (const id of n.cited) out.add(id);
     }
     return [...out];
+  }
+
+  /**
+   * The pictures of the figures of the project, or of one of its maps, each
+   * once, as the project names them.
+   */
+  usedPictures(mapId?: string): { hash: string; extension: string; name: string }[] {
+    const out = new Map<string, { hash: string; extension: string; name: string }>();
+    for (const n of this.nodes.values()) {
+      if (mapId && n.map !== mapId) continue;
+      for (const s of n.set) {
+        if (s.kind !== 'figure' || !s.file || out.has(s.file)) continue;
+        out.set(s.file, { hash: s.file, extension: s.extension ?? '', name: s.name ?? '' });
+      }
+    }
+    return [...out.values()];
   }
 
   // =====================================================================
@@ -1115,7 +1144,11 @@ export class Project {
    * A figure at the end of the text of an element: for a picture that is
    * dropped on an element, where there is no cursor to say where.
    */
-  addFigure(id: string, picture: { hash: string; extension: string; name: string }, width = 100) {
+  addFigure(
+    id: string,
+    picture: { hash: string; extension: string; name: string; alt?: string; caption?: Inline[] },
+    width = 100,
+  ) {
     const body = this.fragment(id, 'body');
     if (!body) return;
     this.transact(() => {
@@ -1126,12 +1159,21 @@ export class Project {
           ? body.length - 1
           : body.length;
       const figure = new Y.XmlElement('figure');
+      figure.setAttribute('id', newId());
       figure.setAttribute('file', picture.hash);
       figure.setAttribute('extension', picture.extension);
       figure.setAttribute('name', picture.name);
-      figure.setAttribute('alt', '');
+      figure.setAttribute('alt', picture.alt ?? '');
       figure.setAttribute('width', width as unknown as string);
       figure.setAttribute('numbered', true as unknown as string);
+      // What is said of the picture in the store is said of the figure, to begin with.
+      const said = (picture.caption ?? []).flatMap((i) => {
+        if (i.kind !== 'text' || !i.text) return [];
+        const text = new Y.XmlText();
+        text.insert(0, i.text, i.marks);
+        return [text];
+      });
+      if (said.length) figure.insert(0, said);
       body.insert(at, [figure]);
     });
   }

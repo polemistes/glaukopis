@@ -828,6 +828,12 @@
             (v) => (f.figures.label = v),
             'Figure, Fig., Abbildung',
           )}
+          {@render text(
+            'Where the text points to it',
+            () => f.figures.reference ?? '',
+            (v) => (f.figures.reference = v),
+            'fig., figure; empty for the same word',
+          )}
           {@render toggle(
             'The word and number in bold',
             () => f.figures.labelBold,

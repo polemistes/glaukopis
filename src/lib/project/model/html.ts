@@ -39,6 +39,10 @@ function inlines(list: Inline[], notes: { n: number }): string {
         // Shown as it was written until it is shown as mathematics: see `figures/hydrate.ts`.
         out += `<span class="math" data-math="${escape(i.tex)}">${escape(i.tex)}</span>`;
         break;
+      case 'crossref':
+        // What the words say is put in where they are shown: see `figures/hydrate.svelte.ts`.
+        out += `<span class="crossref" data-crossref="${escape(i.target)}" data-form="${i.form}"></span>`;
+        break;
       case 'footnote':
         notes.n++;
         // The number is counted by the page, from where the note stands.
@@ -82,13 +86,13 @@ function blocks(list: Block[], notes: { n: number }): string {
           .join('')}</ol>`;
         break;
       case 'equation':
-        out += `<div class="equation"${b.numbered ? ' data-numbered' : ''}><span class="equation-body math" data-math="${escape(b.tex)}" data-display>${escape(b.tex)}</span></div>`;
+        out += `<div class="equation"${b.id ? ` data-id="${escape(b.id)}"` : ''}${b.numbered ? ' data-numbered' : ''}><span class="equation-body math" data-math="${escape(b.tex)}" data-display>${escape(b.tex)}</span></div>`;
         break;
       case 'figure': {
         const said = inlines(b.caption, notes);
         const named = isPictureName(b.file, b.extension);
         out +=
-          `<figure class="figure${said ? '' : ' uncaptioned'}"${b.numbered ? '' : ' data-unnumbered'}>` +
+          `<figure class="figure${said ? '' : ' uncaptioned'}"${b.id ? ` data-id="${escape(b.id)}"` : ''}${b.numbered ? '' : ' data-unnumbered'}>` +
           `<div class="picture" style="width: ${figureWidth(b.width)}%">` +
           (named
             ? `<img data-picture="${b.file}.${b.extension}" alt="${escape(b.alt)}" draggable="false">`

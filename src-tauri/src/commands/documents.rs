@@ -102,7 +102,7 @@ fn with_context<T>(
     let tools = state.tools();
     let fonts = state.fonts();
     let guard = library.then(|| state.library());
-    let projects = state.data.projects();
+    let pictures = state.data.pictures();
     let ctx = Context {
         tools: &tools,
         resources: &state.resources,
@@ -110,7 +110,7 @@ fn with_context<T>(
         library: guard.as_deref(),
         work: state.data.work(),
         fonts: &fonts,
-        projects: Some(&projects),
+        pictures: Some(&pictures),
     };
     Ok(work(&ctx)?)
 }

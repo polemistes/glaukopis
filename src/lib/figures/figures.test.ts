@@ -116,7 +116,7 @@ describe('figures and formulas in the text', () => {
 
     const blocks = readBody(p.fragment(a, 'body')!);
     expect(blocks.map((b) => b.kind)).toEqual(['paragraph', 'equation', 'figure']);
-    expect(blocks[1]).toEqual({ kind: 'equation', tex: 'a = b', numbered: true });
+    expect(blocks[1]).toEqual({ kind: 'equation', id: '', tex: 'a = b', numbered: true });
     expect(blocks[2]).toMatchObject({
       kind: 'figure',
       file: HASH,
@@ -150,6 +150,7 @@ describe('figures and formulas in the text', () => {
     const html = blocksHtml([
       {
         kind: 'figure',
+        id: '',
         file: '../../etc/passwd',
         extension: 'png',
         name: '',

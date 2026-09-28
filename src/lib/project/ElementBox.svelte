@@ -110,6 +110,7 @@
         {project}
         fragment={text}
         kind="body"
+        element={id}
         placeholder="Write here. Type @ to cite."
         autofocus={begin === 'body' ? 'end' : null}
         onaction={bodyAction}

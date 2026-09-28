@@ -21,7 +21,7 @@ impl DataDir {
 
     pub fn open(root: impl Into<PathBuf>) -> Result<Self> {
         let dir = DataDir { root: root.into() };
-        for sub in [dir.library(), dir.attachments(), dir.styles(), dir.formats(), dir.projects()] {
+        for sub in [dir.library(), dir.attachments(), dir.pictures(), dir.styles(), dir.formats(), dir.projects()] {
             fs::create_dir_all(&sub).context(|| format!("creating {}", sub.display()))?;
         }
         Ok(dir)
@@ -45,6 +45,11 @@ impl DataDir {
 
     pub fn attachments(&self) -> PathBuf {
         self.library().join("attachments")
+    }
+
+    /// The store of pictures: see `pictures`.
+    pub fn pictures(&self) -> PathBuf {
+        self.root.join("pictures")
     }
 
     pub fn styles(&self) -> PathBuf {

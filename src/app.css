@@ -447,11 +447,11 @@ body.dragging * {
 .prose,
 .tip,
 [data-notes] {
-  counter-reset: note placed-note figure equation;
+  counter-reset: note placed-note;
 }
 [data-notes] .section.excluded .prose,
 [data-notes] .section.loose .prose {
-  counter-reset: note placed-note figure equation;
+  counter-reset: note placed-note;
 }
 .footnote[data-place] {
   counter-increment: placed-note;
@@ -549,11 +549,10 @@ span.math.selected {
   cursor: pointer;
   transition: background var(--fast) var(--ease);
 }
-.equation[data-numbered] {
-  counter-increment: equation;
-}
-.equation[data-numbered]::after {
-  content: '(' counter(equation) ')';
+/* The number is that of the document, and is put in where the equation is
+   shown: see figures/numbering.svelte.ts. */
+.equation[data-number]::after {
+  content: attr(data-number);
   position: absolute;
   right: 0.4em;
   top: 50%;
@@ -569,15 +568,12 @@ span.math.selected {
   outline: none;
 }
 
-/* Figures. The word and the number are counted by the page, as the notes
-   are: through the map, where its text is shown whole. */
+/* Figures. The word and the number are those of the document, and are put
+   in where the figure is shown: see figures/numbering.svelte.ts. */
 .figure {
   margin: 1.1em 0;
   padding: 0;
   text-align: center;
-}
-.figure:not([data-unnumbered]) {
-  counter-increment: figure;
 }
 .figure .picture {
   position: relative;
@@ -638,12 +634,9 @@ span.math.selected {
   text-align: center;
   white-space: pre-wrap;
 }
-.figure:not([data-unnumbered]) figcaption::before {
-  content: var(--figure-label, 'Figure') '\00a0' counter(figure) var(--figure-separator, '. ');
+.figure figcaption[data-label]::before {
+  content: attr(data-label);
   color: var(--ink-3);
-}
-.figure.uncaptioned:not([data-unnumbered]) figcaption::before {
-  content: var(--figure-label, 'Figure') '\00a0' counter(figure);
 }
 .prose:not(.static) .figure.uncaptioned figcaption::after {
   content: 'What is said of the picture';
@@ -652,8 +645,30 @@ span.math.selected {
   font-style: italic;
   pointer-events: none;
 }
-.prose:not(.static) .figure.uncaptioned[data-unnumbered] figcaption::after {
+.prose:not(.static) .figure.uncaptioned figcaption:not([data-label])::after {
   margin-left: 0;
+}
+
+/* Words that point to a figure, an equation or a part of the document. */
+.crossref {
+  padding: 0.02em 0.16em;
+  border-radius: 4px;
+  background: var(--accent-softer);
+  color: var(--accent-strong);
+  font-variant-numeric: lining-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
+}
+.prose:not(.static) .crossref:hover,
+.crossref.selected,
+.crossref.ProseMirror-selectednode {
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.crossref.missing {
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 .note-panel.formula-panel,
 .note-panel.figure-panel {

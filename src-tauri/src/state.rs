@@ -9,6 +9,7 @@ use glaukopis_core::formats::Formats;
 use glaukopis_core::library::Library;
 use glaukopis_core::net::Client;
 use glaukopis_core::paths::DataDir;
+use glaukopis_core::pictures::Pictures;
 use glaukopis_core::projects::Projects;
 use glaukopis_core::settings;
 use glaukopis_core::styles::Styles;
@@ -16,6 +17,8 @@ use glaukopis_core::styles::Styles;
 pub struct AppState {
     pub data: DataDir,
     pub projects: Projects,
+    /// The store of pictures.
+    pub pictures: Pictures,
     /// What comes with the application: styles, formats, filters.
     pub resources: PathBuf,
     pub styles: Styles,
@@ -66,12 +69,20 @@ impl AppState {
         }
         tracing::info!(entries = library.len(), "library read");
         let projects = Projects::new(&data);
+        let pictures = Pictures::open(data.pictures())?;
+        // Projects once kept their pictures by themselves: the store takes them in.
+        let taken: usize = projects.picture_directories().iter().map(|dir| pictures.adopt(dir)).sum();
+        if taken > 0 {
+            tracing::info!(pictures = taken, "pictures of projects taken into the store");
+        }
+        tracing::info!(pictures = pictures.list().len(), "store of pictures read");
         let resources = find_resources(installed_resources);
         tracing::info!(resources = %resources.display(), "resources");
         let styles = Styles::new(&resources, &data.styles());
         let formats = Formats::new(&resources, &data.formats());
         let state = AppState {
             projects,
+            pictures,
             resources,
             styles,
             formats,

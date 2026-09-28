@@ -1,10 +1,14 @@
-//! The pictures of a project.
+//! The store of pictures.
 //!
-//! A figure names its picture by the SHA-256 of what the file holds, and the
-//! file lies with the project:
+//! Pictures are kept in one place for the whole application, as references
+//! are in the library. A figure in a text names its picture by the SHA-256
+//! of what the file holds, and every project and map that uses a picture
+//! uses the one that is here:
 //!
 //! ```text
-//! projects/<id>/files/<hash>.<extension>
+//! pictures/pictures.json            what is known of each picture
+//! pictures/files/<hash>.<extension> the pictures themselves
+//! pictures/small/<hash>.<extension> lighter copies, for lists; made when asked for
 //! ```
 //!
 //! So the same picture is kept once however often it is used, a picture that
@@ -14,35 +18,67 @@
 //! Three kinds are kept: PNG, JPEG and SVG, which every kind of document
 //! that is made can hold. Pictures of other kinds are made into PNG when
 //! they are taken in.
+//!
+//! Besides the file, the store keeps what the user has said of a picture:
+//! what it is called, what is said of it where it becomes a figure, what it
+//! shows, and notes, which are part of no document.
 
 use std::fs;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, MutexGuard};
 
 use image::{DynamicImage, ImageDecoder, ImageFormat, ImageReader};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::library::attachments::hash_bytes;
+use crate::library::now;
 
-/// The directory name under the directory of the project.
-pub const DIR: &str = "files";
+const INDEX: &str = "pictures.json";
+const FILES: &str = "files";
+const SMALL: &str = "small";
+
+/// How wide the lighter copies are, in points of the picture.
+const SMALL_WIDTH: u32 = 480;
 
 /// The most one picture may hold: what a server takes, unless it says otherwise.
 pub const MAX_BYTES: u64 = 50 * 1024 * 1024;
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct Picture {
     pub hash: String,
     pub extension: String,
-    /// What the file was called when it was taken in.
+    /// What the picture is called: at first, what the file was called.
     pub name: String,
     pub size: u64,
     /// In points of the picture itself, where that can be told.
     pub width: Option<u32>,
     pub height: Option<u32>,
+    /// When it was taken in.
+    pub added: String,
+    /// What is said of the picture where it becomes a figure, until
+    /// something else is said there: text as the interface keeps it, which
+    /// is not read here.
+    #[serde(skip_serializing_if = "Value::is_null")]
+    pub caption: Value,
+    /// What the picture shows, in words, for those who do not see it.
+    pub alt: String,
+    /// What the user makes of it. Part of no document.
+    pub note: String,
+}
+
+/// What is said anew of a picture. What is not given stays as it is.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Change {
+    pub name: Option<String>,
+    pub caption: Option<Value>,
+    pub alt: Option<String>,
+    pub note: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -189,31 +225,108 @@ fn is_extension(text: &str) -> bool {
     matches!(text, "png" | "jpg" | "svg")
 }
 
-/// The pictures of one project.
-#[derive(Debug, Clone)]
+/// The store. What is known of the pictures is held in memory and written
+/// whenever it changes; the files are read and written as they are asked
+/// for, without anything being held meanwhile.
+#[derive(Debug)]
 pub struct Pictures {
     dir: PathBuf,
+    known: Mutex<Vec<Picture>>,
+}
+
+/// The file of a picture in a store at `dir`, if it is named as pictures are.
+pub fn file_in(dir: &Path, hash: &str, extension: &str) -> Result<PathBuf> {
+    if !is_hash(hash) || !is_extension(extension) {
+        return Err(Error::invalid("this does not name a picture"));
+    }
+    Ok(dir.join(FILES).join(format!("{hash}.{extension}")))
+}
+
+fn trimmed(text: &str, most: usize) -> String {
+    text.trim().chars().filter(|c| !c.is_control() || *c == '\n').take(most).collect()
 }
 
 impl Pictures {
-    /// `project` is the directory of the project.
-    pub fn of(project: &Path) -> Self {
-        Pictures { dir: project.join(DIR) }
+    /// Opens the store at `dir`, which is made if it is not there. Files
+    /// that are there and not known are made known; what is known and has
+    /// no file is forgotten.
+    pub fn open(dir: impl Into<PathBuf>) -> Result<Self> {
+        let dir = dir.into();
+        let files = dir.join(FILES);
+        fs::create_dir_all(&files).context(|| format!("creating {}", files.display()))?;
+        let index = dir.join(INDEX);
+        let mut known: Vec<Picture> = match fs::read_to_string(&index) {
+            Ok(text) => {
+                serde_json::from_str(&text).map_err(|e| Error::Parse { path: index, message: e.to_string() })?
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Vec::new(),
+            Err(e) => return Err(Error::io(format!("reading {}", index.display()), e)),
+        };
+        let before = known.len();
+        known.retain(|p| file_in(&dir, &p.hash, &p.extension).is_ok_and(|f| f.is_file()));
+        let mut changed = known.len() != before;
+        if let Ok(entries) = fs::read_dir(&files) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().into_owned();
+                let Some((hash, extension)) = name.split_once('.') else { continue };
+                if !is_hash(hash) || !is_extension(extension) || known.iter().any(|p| p.hash == hash) {
+                    continue;
+                }
+                let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
+                let measured = match extension {
+                    "png" => fs::read(entry.path()).ok().and_then(|b| dimensions(&b, ImageFormat::Png)),
+                    "jpg" => fs::read(entry.path()).ok().and_then(|b| dimensions(&b, ImageFormat::Jpeg)),
+                    _ => None,
+                };
+                known.push(Picture {
+                    hash: hash.to_owned(),
+                    extension: extension.to_owned(),
+                    name: String::new(),
+                    size,
+                    width: measured.map(|m| m.0),
+                    height: measured.map(|m| m.1),
+                    added: now(),
+                    ..Default::default()
+                });
+                changed = true;
+            }
+        }
+        let store = Pictures { dir, known: Mutex::new(known) };
+        if changed {
+            store.write(&store.known())?;
+        }
+        Ok(store)
     }
 
     pub fn dir(&self) -> &Path {
         &self.dir
     }
 
+    fn known(&self) -> MutexGuard<'_, Vec<Picture>> {
+        self.known.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    fn write(&self, known: &[Picture]) -> Result<()> {
+        write_atomic(&self.dir.join(INDEX), serde_json::to_string_pretty(known)?.as_bytes())
+    }
+
     pub fn path(&self, hash: &str, extension: &str) -> Result<PathBuf> {
-        if !is_hash(hash) || !is_extension(extension) {
-            return Err(Error::invalid("this does not name a picture"));
-        }
-        Ok(self.dir.join(format!("{hash}.{extension}")))
+        file_in(&self.dir, hash, extension)
     }
 
     pub fn has(&self, hash: &str, extension: &str) -> bool {
         self.path(hash, extension).is_ok_and(|p| p.is_file())
+    }
+
+    /// The pictures, the one taken in last first.
+    pub fn list(&self) -> Vec<Picture> {
+        let mut all = self.known().clone();
+        all.reverse();
+        all
+    }
+
+    pub fn get(&self, hash: &str) -> Result<Picture> {
+        self.known().iter().find(|p| p.hash == hash).cloned().ok_or_else(|| Error::not_found("the picture"))
     }
 
     pub fn read(&self, hash: &str, extension: &str) -> Result<Vec<u8>> {
@@ -223,6 +336,58 @@ impl Pictures {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Err(Error::not_found("the picture")),
             Err(e) => Err(Error::io(format!("reading {}", path.display()), e)),
         }
+    }
+
+    /// The picture as it is shown in a list: no larger than it need be. It
+    /// is made once and kept, and can be made again.
+    pub fn small(&self, hash: &str, extension: &str) -> Result<Vec<u8>> {
+        let whole = self.path(hash, extension)?;
+        let small = self.dir.join(SMALL).join(format!("{hash}.{extension}"));
+        if let Ok(bytes) = fs::read(&small) {
+            return Ok(bytes);
+        }
+        let bytes = self.read(hash, extension)?;
+        match lighter(&bytes, extension, SMALL_WIDTH) {
+            Some(made) => {
+                if fs::create_dir_all(self.dir.join(SMALL)).is_ok() {
+                    // If it cannot be kept it is made again the next time.
+                    let _ = write_atomic(&small, &made);
+                }
+                Ok(made)
+            }
+            None => {
+                let _ = whole;
+                Ok(bytes)
+            }
+        }
+    }
+
+    /// Makes a picture known, or gives what is known of it already. What is
+    /// in the store stays as it is when the same picture is taken in again.
+    fn note_down(&self, new: Picture) -> Result<Picture> {
+        let mut known = self.known();
+        if let Some(there) = known.iter_mut().find(|p| p.hash == new.hash) {
+            // One that came without a name is given the name it is met by.
+            if there.name.is_empty() && !new.name.is_empty() {
+                there.name = new.name;
+                let there = there.clone();
+                self.write(&known)?;
+                return Ok(there);
+            }
+            return Ok(there.clone());
+        }
+        known.push(new.clone());
+        self.write(&known)?;
+        Ok(new)
+    }
+
+    fn store(&self, hash: &str, extension: &str, content: &[u8]) -> Result<()> {
+        let path = self.path(hash, extension)?;
+        if !path.is_file() {
+            fs::create_dir_all(self.dir.join(FILES)).context(|| format!("creating {}", self.dir.display()))?;
+            write_atomic(&path, content)?;
+        }
+        Ok(())
     }
 
     /// Takes a picture in. The name is what it was called, and is not what
@@ -236,18 +401,16 @@ impl Pictures {
             return Err(too_large());
         }
         let hash = hash_bytes(&content);
-        let path = self.path(&hash, extension)?;
-        if !path.is_file() {
-            fs::create_dir_all(&self.dir).context(|| format!("creating {}", self.dir.display()))?;
-            write_atomic(&path, &content)?;
-        }
-        Ok(Picture {
+        self.store(&hash, extension, &content)?;
+        self.note_down(Picture {
             hash,
             extension: extension.to_owned(),
             name: shown_name(name, extension),
             size: content.len() as u64,
             width: size.map(|s| s.0),
             height: size.map(|s| s.1),
+            added: now(),
+            ..Default::default()
         })
     }
 
@@ -262,8 +425,9 @@ impl Pictures {
     }
 
     /// Keeps what came from elsewhere under the name it was asked for by, if
-    /// it is that: a picture of a kind that is kept, holding what the name says.
-    pub fn keep(&self, hash: &str, bytes: &[u8]) -> Result<Picture> {
+    /// it is that: a picture of a kind that is kept, holding what the name
+    /// says. `name` is what it is called where it came from.
+    pub fn keep(&self, hash: &str, bytes: &[u8], name: &str) -> Result<Picture> {
         if !is_hash(hash) || hash_bytes(bytes) != hash {
             return Err(Error::invalid("what arrived is not the picture that was asked for"));
         }
@@ -273,48 +437,86 @@ impl Pictures {
             Some(Kind::Svg) => ("svg", None),
             _ => return Err(not_a_picture()),
         };
-        let path = self.path(hash, extension)?;
-        if !path.is_file() {
-            fs::create_dir_all(&self.dir).context(|| format!("creating {}", self.dir.display()))?;
-            write_atomic(&path, bytes)?;
-        }
-        Ok(Picture {
+        self.store(hash, extension, bytes)?;
+        self.note_down(Picture {
             hash: hash.to_owned(),
             extension: extension.to_owned(),
-            name: String::new(),
+            name: if name.trim().is_empty() { String::new() } else { shown_name(name, extension) },
             size: bytes.len() as u64,
             width: size.map(|s| s.0),
             height: size.map(|s| s.1),
+            added: now(),
+            ..Default::default()
         })
     }
 
-    /// The pictures that are here, as `(hash, extension, size)`, in order.
-    pub fn list(&self) -> Vec<(String, String, u64)> {
-        let Ok(entries) = fs::read_dir(&self.dir) else { return Vec::new() };
-        let mut out: Vec<(String, String, u64)> = entries
-            .flatten()
-            .filter_map(|e| {
-                let name = e.file_name().to_string_lossy().into_owned();
-                let (hash, extension) = name.split_once('.')?;
-                (is_hash(hash) && is_extension(extension))
-                    .then(|| (hash.to_owned(), extension.to_owned(), e.metadata().map(|m| m.len()).unwrap_or(0)))
-            })
-            .collect();
-        out.sort();
-        out
+    /// Says something anew of a picture.
+    pub fn update(&self, hash: &str, change: Change) -> Result<Picture> {
+        let mut known = self.known();
+        let picture = known.iter_mut().find(|p| p.hash == hash).ok_or_else(|| Error::not_found("the picture"))?;
+        if let Some(name) = change.name {
+            let name = trimmed(&name.replace('\n', " "), 200);
+            if name.is_empty() {
+                return Err(Error::invalid("a picture must be called something"));
+            }
+            picture.name = name;
+        }
+        if let Some(caption) = change.caption {
+            // Nothing, or a line of text in parts: no more is known of it here.
+            picture.caption = match caption {
+                Value::Array(parts) if !parts.is_empty() => Value::Array(parts),
+                _ => Value::Null,
+            };
+        }
+        if let Some(alt) = change.alt {
+            picture.alt = trimmed(&alt.replace('\n', " "), 2000);
+        }
+        if let Some(note) = change.note {
+            picture.note = trimmed(&note, 100_000);
+        }
+        let picture = picture.clone();
+        self.write(&known)?;
+        Ok(picture)
     }
 
-    /// Copies the pictures of another project here.
-    pub fn copy_from(&self, other: &Pictures) -> Result<()> {
-        for (hash, extension, _) in other.list() {
-            let to = self.path(&hash, &extension)?;
-            if !to.is_file() {
-                fs::create_dir_all(&self.dir).context(|| format!("creating {}", self.dir.display()))?;
-                let from = other.path(&hash, &extension)?;
-                fs::copy(&from, &to).context(|| format!("copying {}", from.display()))?;
+    /// Takes a picture out of the store, with what is known of it. A figure
+    /// that names it is left without its picture.
+    pub fn remove(&self, hash: &str) -> Result<()> {
+        let mut known = self.known();
+        let at = known.iter().position(|p| p.hash == hash).ok_or_else(|| Error::not_found("the picture"))?;
+        let picture = known.remove(at);
+        self.write(&known)?;
+        let file = self.path(&picture.hash, &picture.extension)?;
+        match fs::remove_file(&file) {
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(Error::io(format!("removing {}", file.display()), e)),
+        }
+        let _ = fs::remove_file(self.dir.join(SMALL).join(format!("{}.{}", picture.hash, picture.extension)));
+        Ok(())
+    }
+
+    /// Takes in the pictures that a project kept by itself, as projects
+    /// first did, and removes them from there. Returns how many there were.
+    pub fn adopt(&self, files_of_project: &Path) -> usize {
+        let Ok(entries) = fs::read_dir(files_of_project) else { return 0 };
+        let mut taken = 0;
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let Some((hash, _)) = name.split_once('.') else { continue };
+            if !is_hash(hash) {
+                continue;
+            }
+            let kept = fs::read(&path).ok().and_then(|bytes| self.keep(hash, &bytes, "").ok());
+            if kept.is_some() {
+                taken += 1;
+                let _ = fs::remove_file(&path);
             }
         }
-        Ok(())
+        // Goes only if nothing else was in it.
+        let _ = fs::remove_dir(files_of_project);
+        taken
     }
 }
 
@@ -350,12 +552,14 @@ pub(crate) mod fixtures {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use super::fixtures::{PNG, SVG};
     use super::*;
 
     fn pictures() -> (tempfile::TempDir, Pictures) {
         let tmp = tempfile::tempdir().unwrap();
-        let p = Pictures::of(&tmp.path().join("project"));
+        let p = Pictures::open(tmp.path().join("pictures")).unwrap();
         (tmp, p)
     }
 
@@ -367,18 +571,82 @@ mod tests {
         assert_eq!(a.name, "A vase.png");
         assert_eq!((a.width, a.height), (Some(4), Some(3)));
         assert_eq!(a.hash, hash_bytes(&PNG));
+        assert!(!a.added.is_empty());
         assert!(p.has(&a.hash, "png"));
         assert_eq!(p.read(&a.hash, "png").unwrap(), PNG);
+        assert!(p.dir().join("files").join(format!("{}.png", a.hash)).is_file());
 
-        // The same again is the same.
+        // The same again is the same, and is called what it was called.
         let b = p.add("other.png", &PNG).unwrap();
-        assert_eq!(b.hash, a.hash);
+        assert_eq!(b, a);
         assert_eq!(p.list().len(), 1);
 
         let s = p.add("circle.svg", SVG.as_bytes()).unwrap();
         assert_eq!(s.extension, "svg");
         assert_eq!(s.width, None);
-        assert_eq!(p.list().len(), 2);
+        assert_eq!(p.list().iter().map(|x| x.name.as_str()).collect::<Vec<_>>(), ["circle.svg", "A vase.png"]);
+        assert_eq!(p.get(&s.hash).unwrap(), s);
+        assert_eq!(p.get(&"0".repeat(64)).unwrap_err().kind(), "not-found");
+    }
+
+    #[test]
+    fn what_is_said_of_a_picture_is_kept() {
+        let (tmp, p) = pictures();
+        let a = p.add("vase.png", &PNG).unwrap();
+        let caption = json!([{"kind": "text", "text": "A vase, ", "marks": {}}, {"kind": "text", "text": "krater", "marks": {"em": true}}]);
+        let changed = p
+            .update(
+                &a.hash,
+                Change {
+                    name: Some("  The François vase \n".into()),
+                    caption: Some(caption.clone()),
+                    alt: Some("A large vase with figures in bands".into()),
+                    note: Some("Florence, 4209.\nAsk for the photograph.".into()),
+                },
+            )
+            .unwrap();
+        assert_eq!(changed.name, "The François vase");
+        assert_eq!(changed.caption, caption);
+        assert_eq!(changed.note, "Florence, 4209.\nAsk for the photograph.");
+        assert_eq!((changed.hash.as_str(), changed.size), (a.hash.as_str(), a.size));
+
+        // What is not given stays; a caption of nothing is none.
+        let again = p.update(&a.hash, Change { caption: Some(json!([])), ..Default::default() }).unwrap();
+        assert_eq!(again.caption, Value::Null);
+        assert_eq!(again.name, "The François vase");
+        assert_eq!(again.alt, "A large vase with figures in bands");
+        assert!(p.update(&a.hash, Change { name: Some("  ".into()), ..Default::default() }).is_err());
+        assert!(p.update(&"0".repeat(64), Change::default()).is_err());
+
+        // It is there when the store is opened again.
+        let q = Pictures::open(tmp.path().join("pictures")).unwrap();
+        assert_eq!(q.list(), p.list());
+        assert_eq!(q.get(&a.hash).unwrap().note, "Florence, 4209.\nAsk for the photograph.");
+
+        q.remove(&a.hash).unwrap();
+        assert!(q.list().is_empty());
+        assert!(!q.has(&a.hash, "png"));
+        assert!(q.remove(&a.hash).is_err());
+    }
+
+    #[test]
+    fn the_store_knows_what_it_holds() {
+        let (tmp, p) = pictures();
+        let a = p.add("vase.png", &PNG).unwrap();
+        let b = p.add("circle.svg", SVG.as_bytes()).unwrap();
+        // A file that is gone is forgotten; one that is there and not known is made known.
+        fs::remove_file(p.path(&a.hash, "png").unwrap()).unwrap();
+        let other = SVG.replace("30", "20");
+        let hash = hash_bytes(other.as_bytes());
+        fs::write(p.dir().join("files").join(format!("{hash}.svg")), &other).unwrap();
+        fs::write(p.dir().join("files").join("notes.txt"), "not a picture").unwrap();
+        let q = Pictures::open(tmp.path().join("pictures")).unwrap();
+        let mut hashes: Vec<String> = q.list().into_iter().map(|x| x.hash).collect();
+        hashes.sort();
+        let mut expected = vec![b.hash.clone(), hash];
+        expected.sort();
+        assert_eq!(hashes, expected);
+        assert_eq!(q.get(&b.hash).unwrap().name, "circle.svg");
     }
 
     #[test]
@@ -402,10 +670,10 @@ mod tests {
         for format in [ImageFormat::Gif, ImageFormat::Bmp, ImageFormat::Tiff, ImageFormat::WebP] {
             let mut bytes = Cursor::new(Vec::new());
             picture.write_to(&mut bytes, format).unwrap();
-            let kept = p.add("picture.xyz", bytes.get_ref()).unwrap();
+            let kept = p.add(&format!("picture of {format:?}.xyz"), bytes.get_ref()).unwrap();
             assert_eq!(kept.extension, "png", "{format:?}");
             assert_eq!((kept.width, kept.height), (Some(6), Some(5)));
-            assert_eq!(kept.name, "picture.png");
+            assert!(kept.name.ends_with(".png"), "{}", kept.name);
             let read = image::load_from_memory(&p.read(&kept.hash, "png").unwrap()).unwrap();
             assert_eq!(read.to_rgb8().get_pixel(3, 3).0, [10, 120, 200], "{format:?}");
         }
@@ -433,21 +701,56 @@ mod tests {
         }
         assert_eq!(lighter(fixtures::SVG.as_bytes(), "svg", 10), None);
         assert_eq!(lighter(b"nothing", "png", 10), None);
+
+        // In a list a picture is shown lighter, and the lighter one is kept.
+        let (_tmp, p) = pictures();
+        let mut bytes = Cursor::new(Vec::new());
+        picture.write_to(&mut bytes, ImageFormat::Png).unwrap();
+        let kept = p.add("large.png", bytes.get_ref()).unwrap();
+        let small = p.small(&kept.hash, "png").unwrap();
+        assert_eq!(dimensions(&small, ImageFormat::Png), Some((SMALL_WIDTH, SMALL_WIDTH * 2 / 3)));
+        assert_eq!(fs::read(p.dir().join("small").join(format!("{}.png", kept.hash))).unwrap(), small);
+        assert_eq!(p.small(&kept.hash, "png").unwrap(), small);
+        let little = p.add("vase.png", &PNG).unwrap();
+        assert_eq!(p.small(&little.hash, "png").unwrap(), PNG);
+        p.remove(&kept.hash).unwrap();
+        assert!(!p.dir().join("small").join(format!("{}.png", kept.hash)).exists());
     }
 
     #[test]
     fn what_comes_from_elsewhere_is_checked() {
         let (_tmp, p) = pictures();
         let hash = hash_bytes(&PNG);
-        assert!(p.keep(&hash, b"something else").is_err());
-        assert!(p.keep(&hash_bytes(b"something else"), b"something else").is_err(), "not a picture");
-        let kept = p.keep(&hash, &PNG).unwrap();
-        assert_eq!(kept.extension, "png");
+        assert!(p.keep(&hash, b"something else", "").is_err());
+        assert!(p.keep(&hash_bytes(b"something else"), b"something else", "").is_err(), "not a picture");
+        let kept = p.keep(&hash, &PNG, "").unwrap();
+        assert_eq!((kept.extension.as_str(), kept.name.as_str()), ("png", ""));
         assert!(p.has(&hash, "png"));
+        // Met again with a name, it is called that; and what it is called stays.
+        assert_eq!(p.keep(&hash, &PNG, "The shield.png").unwrap().name, "The shield.png");
+        assert_eq!(p.keep(&hash, &PNG, "another.png").unwrap().name, "The shield.png");
+        assert_eq!(p.add("a third.png", &PNG).unwrap().name, "The shield.png");
+    }
 
-        let (_other, q) = pictures();
-        q.copy_from(&p).unwrap();
-        assert_eq!(q.list(), p.list());
+    #[test]
+    fn the_pictures_a_project_kept_by_itself_are_taken_in() {
+        let (tmp, p) = pictures();
+        let old = tmp.path().join("projects").join("p1").join("files");
+        fs::create_dir_all(&old).unwrap();
+        fs::write(old.join(format!("{}.png", hash_bytes(&PNG))), PNG).unwrap();
+        fs::write(old.join(format!("{}.svg", hash_bytes(SVG.as_bytes()))), SVG).unwrap();
+        // What is not what its name says stays where it is.
+        fs::write(old.join(format!("{}.png", "0".repeat(64))), PNG).unwrap();
+        assert_eq!(p.adopt(&old), 2);
+        assert_eq!(p.list().len(), 2);
+        assert!(p.has(&hash_bytes(&PNG), "png"));
+        assert_eq!(fs::read_dir(&old).unwrap().count(), 1);
+        assert_eq!(p.adopt(&tmp.path().join("nowhere")), 0);
+
+        let empty = tmp.path().join("projects").join("p2").join("files");
+        fs::create_dir_all(&empty).unwrap();
+        assert_eq!(p.adopt(&empty), 0);
+        assert!(!empty.exists());
     }
 
     #[test]
