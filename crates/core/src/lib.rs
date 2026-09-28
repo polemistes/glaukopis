@@ -9,6 +9,7 @@ pub mod duplicates;
 pub mod error;
 pub mod export;
 pub mod formats;
+pub mod found;
 pub mod fsutil;
 pub mod import;
 pub mod library;

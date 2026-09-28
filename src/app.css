@@ -428,6 +428,15 @@ body.dragging * {
   color: var(--danger);
 }
 
+/* A citation that was found in a text written elsewhere, and stands as the
+   text it was until it is tied to a reference. What was left as text is
+   not told from other text. */
+.found:not(.left) {
+  border-bottom: 1.5px dotted var(--gold);
+  background: color-mix(in srgb, var(--gold) 9%, transparent);
+  border-radius: 2px 2px 0 0;
+}
+
 /* Notes are numbered by where they stand: within a text, and in the text of
    a map through all its elements. An element that is left out of the
    document, or loose, numbers its own. */

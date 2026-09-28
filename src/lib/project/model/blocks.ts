@@ -10,7 +10,7 @@
 import { Mark, type Node, type Schema } from 'prosemirror-model';
 import { prosemirrorToYXmlFragment } from 'y-prosemirror';
 import type * as Y from 'yjs';
-import { bodySchema, figureWidth, tableWidth, titleSchema } from '$lib/editor/schema';
+import { bodySchema, figureWidth, foundAttrs, tableWidth, titleSchema } from '$lib/editor/schema';
 import { newId } from '$lib/util/id';
 import { blocksText, type Block, type Inline, type InlineText, type TableCell } from './text';
 
@@ -29,6 +29,10 @@ function marksOf(schema: Schema, marks: InlineText['marks']): readonly Mark[] {
       const href = typeof value === 'object' ? value.href : undefined;
       if (typeof href !== 'string' || !href) continue;
       set = type.create({ href }).addToSet(set);
+    } else if (name === 'found') {
+      // A citation that was found: what is known of it goes with the text.
+      const held = foundAttrs(value);
+      if (held) set = type.create(held).addToSet(set);
     } else set = type.create().addToSet(set);
   }
   return set;

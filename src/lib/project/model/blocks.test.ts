@@ -200,6 +200,39 @@ describe('text written without an editor', () => {
     expect(bodyFacts([table]).words).toBe(11);
   });
 
+  it('keeps what is known of a citation that was found with its text', () => {
+    const found = {
+      id: 'a1b2c3d4e5f6',
+      by: 'zotero',
+      items: [{ uris: ['http://zotero.org/users/1/items/ABCD2345'], locator: '73' }],
+      mode: 'normal',
+      left: false,
+    };
+    const back = readBody(
+      written([
+        p(
+          t('As was said '),
+          t('(Nagy 1979, ', { found }),
+          t('73', { found, em: {} }),
+          t(')', { found }),
+          t('.'),
+        ),
+        // Without an id it is nothing.
+        p(t('(Lord 1960)', { found: { by: 'form' } })),
+      ]),
+    );
+    expect(back).toEqual([
+      p(
+        t('As was said '),
+        t('(Nagy 1979, ', { found }),
+        t('73', { em: {}, found }),
+        t(')', { found }),
+        t('.'),
+      ),
+      p(t('(Lord 1960)')),
+    ]);
+  });
+
   it('gives what stands by itself an id where it has none', () => {
     const back = readBody(
       written([

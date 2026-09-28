@@ -102,7 +102,66 @@ const marks: Record<string, MarkSpec> = {
     ],
     toDOM: (mark) => ['a', { href: mark.attrs.href, rel: 'noopener' }, 0],
   },
+  // A citation that was found in a text written elsewhere, and stands as
+  // the text it was until it is tied to a reference: see `api/found.ts`.
+  // With `left`, text that the writer has said is none, which is not shown
+  // as something found.
+  found: {
+    attrs: {
+      id: { default: '' },
+      by: { default: 'form' },
+      items: { default: [] },
+      mode: { default: 'normal' },
+      left: { default: false },
+    },
+    // What is written beside it is not part of it.
+    inclusive: false,
+    parseDOM: [
+      {
+        tag: 'span[data-found]',
+        getAttrs: (node) => {
+          try {
+            const held = JSON.parse((node as HTMLElement).getAttribute('data-found') ?? '');
+            return foundAttrs(held) ?? false;
+          } catch {
+            return false;
+          }
+        },
+      },
+    ],
+    toDOM: (mark) => [
+      'span',
+      {
+        'data-found': JSON.stringify(mark.attrs),
+        'data-by': mark.attrs.by,
+        class: mark.attrs.left ? 'found left' : 'found',
+      },
+      0,
+    ],
+  },
 };
+
+/** What the mark `found` holds, from what may be it. Nothing, where it has no id. */
+export function foundAttrs(value: unknown): {
+  id: string;
+  by: string;
+  items: unknown[];
+  mode: CiteMode;
+  left: boolean;
+} | null {
+  if (!value || typeof value !== 'object') return null;
+  const held = value as Record<string, unknown>;
+  if (typeof held.id !== 'string' || !held.id) return null;
+  return {
+    id: held.id,
+    by: ['zotero', 'mendeley', 'key', 'form'].includes(held.by as string)
+      ? (held.by as string)
+      : 'form',
+    items: Array.isArray(held.items) ? held.items : [],
+    mode: held.mode === 'intext' ? 'intext' : 'normal',
+    left: held.left === true,
+  };
+}
 
 const bodyNodes: Record<string, NodeSpec> = {
   doc: { content: 'block+' },

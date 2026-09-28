@@ -1,7 +1,7 @@
 /** The text of an element as HTML, for showing it where it is not being written. */
 
 import { citationLabel, isMissing } from '$lib/editor/references.svelte';
-import { figureWidth, tableWidth } from '$lib/editor/schema';
+import { figureWidth, foundAttrs, tableWidth } from '$lib/editor/schema';
 import { isPictureName } from '$lib/figures/pictures.svelte';
 import type { Block, Inline } from './text';
 
@@ -26,6 +26,10 @@ function inlines(list: Inline[], notes: { n: number }): string {
         if (i.marks.sub) html = `<sub>${html}</sub>`;
         if (i.marks.strike) html = `<s>${html}</s>`;
         if (i.marks.link) html = `<a>${html}</a>`;
+        // A citation that was found, and is not yet tied to a reference.
+        const found = foundAttrs(i.marks.found);
+        if (found && !found.left)
+          html = `<span class="found" data-by="${escape(found.by)}" data-found-id="${escape(found.id)}">${html}</span>`;
         out += html;
         break;
       }
