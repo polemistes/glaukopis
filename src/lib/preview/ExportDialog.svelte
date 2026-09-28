@@ -30,6 +30,7 @@
     extension: string;
     about: string;
     needsTypst?: boolean;
+    needsLatex?: boolean;
   }
 
   const kinds: Kind[] = [
@@ -39,6 +40,13 @@
       extension: 'pdf',
       about: 'As the preview shows it',
       needsTypst: true,
+    },
+    {
+      target: 'pdflatex',
+      label: 'PDF, set by LaTeX',
+      extension: 'pdf',
+      about: 'The same document in the typesetting of LaTeX. It takes a little longer.',
+      needsLatex: true,
     },
     {
       target: 'docx',
@@ -80,6 +88,7 @@
 
   const kind = $derived(kinds.find((k) => k.target === chosen)!);
   const typstMissing = $derived(!documents.tools?.typst);
+  const latexMissing = $derived(!documents.tools?.latex.length);
 
   async function run() {
     error = null;
@@ -148,7 +157,7 @@
   {:else}
     <div class="kinds" role="radiogroup" aria-label="Kind of file">
       {#each kinds as k (k.target)}
-        {@const unavailable = !!k.needsTypst && typstMissing}
+        {@const unavailable = (!!k.needsTypst && typstMissing) || (!!k.needsLatex && latexMissing)}
         <label class="kind" class:chosen={chosen === k.target} class:unavailable>
           <input
             type="radio"
@@ -157,9 +166,15 @@
             disabled={unavailable || working}
           />
           <span class="name">{k.label}<small>.{k.extension}</small></span>
-          <span class="about"
-            >{unavailable ? 'Typst is needed for this, and was not found' : k.about}</span
-          >
+          <span class="about">
+            {#if !unavailable}
+              {k.about}
+            {:else if k.needsLatex}
+              LaTeX is needed for this, and was not found. It is installed as TeX Live.
+            {:else}
+              Typst is needed for this, and was not found
+            {/if}
+          </span>
         </label>
       {/each}
     </div>

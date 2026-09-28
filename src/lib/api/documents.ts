@@ -191,7 +191,7 @@ export interface Preview {
   substitute: string | null;
 }
 
-export type Target = 'pdf' | 'docx' | 'odt' | 'latex' | 'markdown' | 'html' | 'typst';
+export type Target = 'pdf' | 'pdflatex' | 'docx' | 'odt' | 'latex' | 'markdown' | 'html' | 'typst';
 
 export interface Exported {
   path: string;

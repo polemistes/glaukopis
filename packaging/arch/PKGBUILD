@@ -52,7 +52,9 @@ package_glaukopis() {
   pkgdesc='A hub for scholarly work: references, ideas in mind maps, writing, and the manuscript'
   depends=(webkit2gtk-4.1 gtk3 glib2 openssl sqlite gcc-libs glibc hicolor-icon-theme pandoc-cli typst)
   optdepends=(
-    'texlive-latex: to make PDF from the LaTeX that is exported'
+    'texlive-luatex: for PDF set by LaTeX'
+    'texlive-latexextra: for PDF set by LaTeX'
+    'texlive-fontsrecommended: for PDF set by LaTeX'
     'libreoffice-fresh: to open what is exported as ODT or DOCX'
   )
 

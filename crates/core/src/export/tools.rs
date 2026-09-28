@@ -159,7 +159,41 @@ pub fn discover(configured: &Configured) -> Tools {
     tools
 }
 
+/// The names of the fonts of the system, in small letters. Nothing, where
+/// that cannot be asked.
+pub fn system_fonts() -> Option<Vec<String>> {
+    let program = find("fc-list", None, &[])?;
+    let out = run(&program, "fc-list", [":", "family"], None, None).ok()?;
+    let mut names: Vec<String> = String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .flat_map(|line| line.split(','))
+        .map(|name| name.trim().to_lowercase())
+        .filter(|name| !name.is_empty())
+        .collect();
+    names.sort();
+    names.dedup();
+    Some(names)
+}
+
+/// Whether a font is among those of the system. Where that cannot be asked,
+/// it is taken to be.
+pub fn has_font(fonts: &Option<Vec<String>>, family: &str) -> bool {
+    match fonts {
+        Some(names) => names.binary_search(&family.trim().to_lowercase()).is_ok(),
+        None => !family.trim().is_empty(),
+    }
+}
+
 impl Tools {
+    /// The program that sets LaTeX: one that knows the fonts of the system and
+    /// all of Unicode before one that does not.
+    pub fn latex_engine(&self) -> Result<&str> {
+        ["lualatex", "xelatex", "pdflatex"]
+            .into_iter()
+            .find(|e| self.latex.iter().any(|l| l == e))
+            .ok_or_else(|| Error::MissingProgram { program: "LaTeX".into() })
+    }
+
     pub fn pandoc(&self) -> Result<&Tool> {
         self.pandoc.as_ref().ok_or_else(|| Error::MissingProgram { program: "Pandoc".into() })
     }

@@ -29,7 +29,10 @@ pub use tools::{Tool, Tools};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Target {
+    /// Pages set by Typst: what the preview shows.
     Pdf,
+    /// Pages set by LaTeX, for those who want its typesetting or are asked for it.
+    PdfLatex,
     Docx,
     Odt,
     Latex,
@@ -41,7 +44,7 @@ pub enum Target {
 impl Target {
     pub fn extension(self) -> &'static str {
         match self {
-            Target::Pdf => "pdf",
+            Target::Pdf | Target::PdfLatex => "pdf",
             Target::Docx => "docx",
             Target::Odt => "odt",
             Target::Latex => "tex",
@@ -56,7 +59,7 @@ impl Target {
             Target::Pdf | Target::Typst => "typst",
             Target::Docx => "docx",
             Target::Odt => "odt",
-            Target::Latex => "latex",
+            Target::Latex | Target::PdfLatex => "latex",
             Target::Markdown => "markdown",
             Target::Html => "html",
         }
@@ -69,7 +72,7 @@ impl Target {
             Target::Pdf | Target::Typst => Some(raw("typst", "#pagebreak(weak: true)")),
             Target::Docx => Some(raw("openxml", "<w:p><w:r><w:br w:type=\"page\"/></w:r></w:p>")),
             Target::Odt => Some(raw("opendocument", "<text:p text:style-name=\"Pagebreak\"/>")),
-            Target::Latex => Some(raw("latex", "\\clearpage")),
+            Target::Latex | Target::PdfLatex => Some(raw("latex", "\\clearpage")),
             Target::Markdown | Target::Html => None,
         }
     }
@@ -357,7 +360,9 @@ fn arguments(
         args.push("--lua-filter".into());
         args.push(filters.join("styles.lua").display().to_string());
     }
-    if request.format.headings.numbered && !matches!(target, Target::Pdf | Target::Typst | Target::Latex) {
+    if request.format.headings.numbered
+        && !matches!(target, Target::Pdf | Target::Typst | Target::Latex | Target::PdfLatex)
+    {
         args.push("--number-sections".into());
     }
     Ok(args)
@@ -510,9 +515,36 @@ pub fn export(
             args.push("--reference-doc".into());
             args.push(pattern_path.display().to_string());
         }
-        Target::Latex => {
+        Target::Latex | Target::PdfLatex => {
             let settings = latex::settings(&request.format, &p);
+            let mut without_font = false;
+            if target == Target::PdfLatex {
+                let engine = ctx.tools.latex_engine()?;
+                args.push(format!("--pdf-engine={engine}"));
+                let fonts = tools::system_fonts();
+                // LaTeX ends with an error where it does not find the font.
+                // The document is then set in the font LaTeX has of its own,
+                // and that is said.
+                without_font = engine == "pdflatex" || !tools::has_font(&fonts, &request.format.font.family);
+                if without_font && engine != "pdflatex" {
+                    exported.warnings.push(format!(
+                        "{} is not installed. The document is set in Latin Modern, the font that LaTeX has of its own.",
+                        request.format.font.family
+                    ));
+                }
+                // A font has the letters it has. For those it lacks, as many
+                // lack Greek with its accents, others are asked in turn.
+                if engine == "lualatex" {
+                    for fallback in latex::FALLBACK_FONTS.iter().filter(|f| tools::has_font(&fonts, f)).take(4) {
+                        args.push("-V".into());
+                        args.push(format!("mainfontfallback={fallback}:"));
+                    }
+                }
+            }
             for (name, value) in &settings.variables {
+                if without_font && name == "mainfont" {
+                    continue;
+                }
                 args.push("-V".into());
                 args.push(format!("{name}={value}"));
             }
@@ -523,7 +555,7 @@ pub fn export(
             if settings.number_sections {
                 args.push("--number-sections".into());
             }
-            if options.biblatex && prepared.has_citations {
+            if target == Target::Latex && options.biblatex && prepared.has_citations {
                 let kind = ctx.styles.get(&request.style).map(|s| s.kind).unwrap_or_default();
                 let target_bib = beside_bib();
                 args.push("--biblatex".into());
@@ -554,13 +586,25 @@ pub fn export(
         }
         Target::Pdf | Target::Typst => unreachable!(),
     }
+    // In a PDF the citations are always set by the reference style.
+    debug_assert!(target != Target::PdfLatex || !keep_citations);
 
     let made = dir.join(format!("document.{}", target.extension()));
     args.push("-o".into());
     args.push(made.display().to_string());
     let input = serde_json::to_vec(&prepared.json)?;
-    let out = tools::run(&pandoc.path, "Pandoc", &args, Some(&input), Some(&dir))?;
-    exported.warnings = warnings_of(&out.messages);
+    let out = tools::run(&pandoc.path, "Pandoc", &args, Some(&input), Some(&dir)).map_err(|e| match e {
+        // What LaTeX says when it fails is long, and the first of it says little.
+        Error::Program { message, .. } if target == Target::PdfLatex => {
+            Error::Program { program: "LaTeX".into(), message: latex::what_went_wrong(&message) }
+        }
+        other => other,
+    })?;
+    exported.warnings.extend(warnings_of(&out.messages).into_iter().filter(|w| {
+        // What LaTeX says of its own packages is of no use to the one who writes.
+        target != Target::PdfLatex
+            || !(w.contains("LaTeX Warning: Command") || w.contains("Check if current package is valid"))
+    }));
     exported.missing = prepared.bibliography.missing;
     let bytes = fs::read(&made).context(|| "reading the document that was made".to_owned())?;
     write_atomic(path, &bytes)?;
@@ -978,6 +1022,16 @@ mod tests {
         let pdf = out.join("wrath.pdf");
         export(&s.ctx(), &r, Target::Pdf, &pdf, &ExportOptions::default()).unwrap();
         assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"));
+
+        // The same by LaTeX, where there is one.
+        if s.tools.latex_engine().is_ok() {
+            let by_latex = out.join("wrath-latex.pdf");
+            let e = export(&s.ctx(), &r, Target::PdfLatex, &by_latex, &ExportOptions { biblatex: true }).unwrap();
+            assert!(fs::read(&by_latex).unwrap().starts_with(b"%PDF"));
+            assert!(e.also.is_empty(), "the references are in the document, not beside it");
+        } else {
+            eprintln!("no LaTeX: the PDF by LaTeX is not tested");
+        }
     }
 
     #[test]

@@ -305,6 +305,12 @@ came with Glaukopis stay as they were.
 **Export** makes the manuscript: PDF, Word, OpenDocument, LaTeX, Markdown, or
 a web page.
 
+There are two kinds of PDF. **PDF** is what the preview shows. **PDF, set by
+LaTeX** is the same document in the typesetting of LaTeX, for those who
+prefer its pages or are asked for them; it needs LaTeX (TeX Live) on the
+computer, and takes a little longer. The two are alike in everything the
+format says, and differ in how lines and pages are broken.
+
 What there is to remark about a document, such as a font the format asks for
 and the computer does not have, is said at the foot of the preview.
 
@@ -373,3 +379,8 @@ Files attached to references are not shared; the references themselves are.
 Pandoc makes the documents, and Typst the pages of the preview and the PDF.
 Both are installed with Glaukopis when it is installed as a package. Where
 they are found is shown under *Settings*.
+
+LaTeX is needed only for the PDF that is set by it. LuaLaTeX is used where
+it is installed, since it knows the fonts of the computer and can turn to
+another font for letters that the font of the document lacks, such as Greek
+with its accents.

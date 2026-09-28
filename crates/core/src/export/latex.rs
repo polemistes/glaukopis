@@ -24,6 +24,43 @@ pub fn escape(text: &str) -> String {
     out
 }
 
+/// What LaTeX said when it failed, brought down to what went wrong: the
+/// lines that begin with an exclamation mark, and the line that says where.
+pub fn what_went_wrong(messages: &str) -> String {
+    let lines: Vec<&str> = messages.lines().collect();
+    let mut out: Vec<String> = Vec::new();
+    for (i, line) in lines.iter().enumerate() {
+        if let Some(said) = line.strip_prefix('!') {
+            let mut text = said.trim().to_owned();
+            // "l.42 …" follows within a few lines, and says where in the source.
+            if let Some(at) = lines.iter().skip(i + 1).take(6).find(|l| l.starts_with("l.")) {
+                text.push_str(&format!(" ({})", at.trim()));
+            }
+            if !out.contains(&text) {
+                out.push(text);
+            }
+        }
+    }
+    if out.is_empty() {
+        return messages.lines().take(12).collect::<Vec<_>>().join("\n");
+    }
+    out.truncate(6);
+    out.join("\n")
+}
+
+/// Fonts that have many letters, asked for those the font of the document
+/// lacks. Only LuaLaTeX can be told of them.
+pub const FALLBACK_FONTS: [&str; 8] = [
+    "Noto Serif",
+    "Libertinus Serif",
+    "Gentium Plus",
+    "GFS Didot",
+    "DejaVu Serif",
+    "FreeSerif",
+    "Noto Sans",
+    "DejaVu Sans",
+];
+
 pub struct Settings {
     /// Pairs for `-V name=value`.
     pub variables: Vec<(String, String)>,
@@ -110,6 +147,45 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
     if !f.text.hyphenate {
         let _ = writeln!(h, "\\hyphenpenalty=10000\n\\exhyphenpenalty=10000");
     }
+
+    // The title.
+    let around = match f.title.align {
+        Align::Center => "center",
+        Align::Right => "flushright",
+        Align::Left | Align::Justified => "flushleft",
+    };
+    let column = match f.title.align {
+        Align::Center => "c",
+        Align::Right => "r",
+        Align::Left | Align::Justified => "l",
+    };
+    let title_font = font_command(f.title.size, f.title.bold, f.title.italic, f.title.case, Align::Left)
+        .replace("\\raggedright", "");
+    let _ = writeln!(h, "\\usepackage{{titling}}\n\\setlength{{\\droptitle}}{{-3em}}");
+    let _ = writeln!(
+        h,
+        "\\pretitle{{\\begin{{{around}}}{title_font}}}\n\\posttitle{{\\par\\end{{{around}}}\\vskip 0.4em}}"
+    );
+    let _ = writeln!(
+        h,
+        "\\preauthor{{\\begin{{{around}}}\\normalsize\\lineskip 0.4em\\begin{{tabular}}[t]{{@{{}}{column}@{{}}}}}}\n\\postauthor{{\\end{{tabular}}\\par\\end{{{around}}}}}"
+    );
+    if f.title.show_date {
+        let _ = writeln!(
+            h,
+            "\\predate{{\\begin{{{around}}}\\normalsize}}\n\\postdate{{\\par\\end{{{around}}}}}"
+        );
+    } else {
+        // Without a date there is no room left for one.
+        let _ = writeln!(h, "\\predate{{}}\n\\postdate{{}}\n\\date{{}}");
+    }
+
+    // The bibliography, as the reference style sets it.
+    let _ = writeln!(
+        h,
+        "\\AtBeginDocument{{\\ifdefined\\cslhangindent\\setlength{{\\cslhangindent}}{{{}}}\\fi}}",
+        f.bibliography.hanging_indent
+    );
 
     // Headings.
     let _ = writeln!(h, "\\usepackage{{titlesec}}");
