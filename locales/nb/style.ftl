@@ -254,7 +254,7 @@ style-part-et-al = «et al.»
 # Variablene er en eller flere av dem nedenfor: «sidene».
 style-part-label = Ordet foran { $variables } («s.», «red.»)
 style-part-role = Ordet for rollen («red.», «overs.»)
-style-part-substitute = Når navnet mangler, står i stedet
+style-part-substitute = I stedet for navnet, når det mangler
 # Navnet er day, month eller year, slik CSL har dem, eller part.
 style-part-date-part = { $name ->
     [day] Dagen
