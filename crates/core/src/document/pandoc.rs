@@ -460,13 +460,16 @@ impl Converter<'_> {
             let mut suffix = Vec::new();
             let locator = locator_token(item, self.language);
             let after = item.suffix.as_deref().map(str::trim).filter(|s| !s.is_empty());
-            if locator.is_some() || after.is_some() {
+            // Words that begin with a sign of their own (", who argues
+            // otherwise", "; but see below") stand close to what is before them.
+            let close = after.is_some_and(|s| s.starts_with([',', ';', ':', '.', '!', '?', ')']));
+            if locator.is_some() || (after.is_some() && !close) {
                 suffix.push(json!({"t": "Str", "c": ","}));
                 suffix.push(json!({"t": "Space"}));
             }
             if let Some(l) = locator {
                 suffix.push(json!({"t": "Str", "c": l}));
-                if after.is_some() {
+                if after.is_some() && !close {
                     suffix.push(json!({"t": "Space"}));
                 }
             }

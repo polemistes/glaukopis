@@ -435,9 +435,30 @@ makes citations of **all that are certain** at once. It is undone as one
 step.
 
 Text that only looks like a citation is not marked. It is looked for while
-the window is open, if you say so at the top: **Parentheses with a year in
-them**, such as *(Nagy 1979, 73)*, and **Every note**. What you leave as
-text of these is not proposed again.
+the window is open, if you say so at the top:
+
+- **Parentheses with a year in them**, such as *(Nagy 1979, 73)*, and
+  with the author in the sentence, *Nagy (1979, 73)*.
+- **Notes that name a work of the library**, such as *See Nagy, Best of
+  the Achaeans, 73; but cf. Lord, Singer of Tales, 12.*
+- **Every note**, those as well in which no work of the library is found,
+  for you to find the work.
+
+What is found by how it looks is never certain: a reference is proposed
+where the library has one that fits the name and the year, or the name and
+the title, and you say whether it is the one. What you leave as text of
+these is not proposed again.
+
+Works are told apart most surely by the key of the item in Zotero, which a
+reference keeps when the library is brought in from Zotero. References that
+came from Zotero before that was so have no key, and are found by their DOI
+or ISBN, or by author, year and title. Bringing the library in from Zotero
+again gives them their keys; nothing is added twice by it.
+
+Citations made by Zotero are read from Word and OpenDocument files, in the
+text, in notes, and where Zotero keeps them in bookmarks; those made by the
+Mendeley that writes fields into Word files are read as well. Citations
+made by Mendeley Cite, the newer one, are not read, and stay text.
 
 Of a citation in a note you choose what becomes of the note:
 

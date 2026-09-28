@@ -103,7 +103,9 @@ export function itemLabel(item: CiteItem, options: { suppressAuthor?: boolean } 
   let out = parts.join(' ');
   const locator = locatorText(item);
   if (locator) out += `, ${locator}`;
-  if (item.suffix) out += ` ${item.suffix.trim()}`;
+  // Words that begin with a sign of their own stand close to what is before them.
+  const after = item.suffix?.trim();
+  if (after) out += /^[,;:.!?)]/.test(after) ? after : ` ${after}`;
   return out;
 }
 

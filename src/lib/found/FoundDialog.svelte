@@ -281,6 +281,15 @@
       <label class="check">
         <input
           type="checkbox"
+          checked={going.kept.named || going.kept.notes}
+          disabled={going.kept.notes}
+          onchange={(e) => void going.take({ named: e.currentTarget.checked })}
+        />
+        Notes that name a work of the library
+      </label>
+      <label class="check">
+        <input
+          type="checkbox"
           checked={going.kept.notes}
           onchange={(e) => void going.take({ notes: e.currentTarget.checked })}
         />
@@ -315,10 +324,8 @@
             text={going.proposing
               ? going.kept.years && going.kept.notes
                 ? 'No citation that was found is left in this map, and nothing in it looks like one.'
-                : `No citation that was found is left in this map, and nothing in it looks like one. ${
-                    going.kept.years ? '“Every note”' : '“Parentheses with a year in them”'
-                  } can be turned on as well, above.`
-              : 'No citation that was found is left in this map. Text that only looks like a citation is looked for when you turn on “Parentheses with a year in them” or “Every note”, above.'}
+                : 'No citation that was found is left in this map, and nothing in it looks like one. More can be taken for citations, above.'
+              : 'No citation that was found is left in this map. Text that only looks like a citation is looked for when you say above what is to be taken for one: parentheses with a year in them, or notes.'}
           />
         {/if}
       </div>

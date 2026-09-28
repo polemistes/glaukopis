@@ -14,6 +14,8 @@ export type Theme = 'system' | 'light' | 'dark';
 export interface FoundSettings {
   /** Parentheses with a year in them are taken for citations. */
   years: boolean;
+  /** Notes that name a work of the library are taken for citations. */
+  named: boolean;
   /** Every note is taken for one. */
   notes: boolean;
   /** When a text is brought in, citations made by Zotero of works the library has are made citations at once. */
@@ -58,7 +60,7 @@ export const defaultSettings: Settings = {
   server: null,
   defaultStyle: 'chicago-notes-bibliography',
   defaultFormat: 'manuscript',
-  found: { years: false, notes: false, atOnce: true, goThrough: true, inNotes: '' },
+  found: { years: false, named: false, notes: false, atOnce: true, goThrough: true, inNotes: '' },
 };
 
 export const settingsLoad = () => call<Partial<Settings>>('settings_load');

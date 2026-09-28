@@ -377,7 +377,11 @@ pub(crate) fn convert(item: &Value) -> Option<Converted> {
         }
     }
     if !matches!(entry_type.as_str(), "article" | "review" | "periodical")
+        // Crossref says `publisher-location`, CSL itself `publisher-place`; Zotero has written the
+        // place of a book as `event-place` as well.
         && let Some(place) = string(item, "publisher-location")
+            .or_else(|| string(item, "publisher-place"))
+            .or_else(|| string(item, "event-place"))
     {
         put(&mut draft, "location", place);
     }

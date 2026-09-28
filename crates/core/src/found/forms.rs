@@ -1858,8 +1858,11 @@ impl Text {
             }
         }
 
+        // A note is proposed as a whole only where the writer has said that notes cite: all of
+        // them, or those that name a work of the library. With parentheses alone asked for,
+        // parentheses are what is proposed, in notes as elsewhere.
         let likely = works.iter().any(|work| work.suggestions.iter().any(|s| s.sure >= Sure::Likely));
-        if !(likely || options.notes) {
+        if !(options.notes || (options.named && likely)) {
             return None;
         }
         let whole = |items: Vec<ProposedItem>| Proposal {
@@ -1958,8 +1961,10 @@ mod tests {
         (tmp, library)
     }
 
-    const YEARS: Options = Options { years: true, notes: false };
-    const NOTES: Options = Options { years: true, notes: true };
+    const YEARS: Options = Options { years: true, named: false, notes: false };
+    /// With the notes that name a work of the library.
+    const NAMED: Options = Options { years: true, named: true, notes: false };
+    const NOTES: Options = Options { years: true, named: true, notes: true };
 
     fn line(text: &str) -> Passage {
         Passage { id: "p".into(), text: text.into(), ..Default::default() }
@@ -2216,7 +2221,7 @@ mod tests {
             assert_eq!(proposed(&library, text), Vec::<String>::new(), "in “{text}”");
         }
         // Without the years, nothing in the line is looked for.
-        let none = Options { years: false, notes: true };
+        let none = Options { years: false, named: false, notes: true };
         assert!(propose(&library, &[line("(Nagy 1979, 73)")], &none).is_empty());
     }
 
@@ -2407,7 +2412,7 @@ mod tests {
         let (_tmp, library) = library();
         // As Chicago writes its notes.
         let text = "See Nagy, Best of the Achaeans, 73; but cf. Lord, Singer of Tales, 12, who argues otherwise.";
-        let found = propose(&library, &[note(text)], &YEARS);
+        let found = propose(&library, &[note(text)], &NAMED);
         assert_eq!(found.len(), 1);
         let found = &found[0];
         assert_eq!((found.passage.as_str(), found.start, found.end), ("n", 0, text.encode_utf16().count()));
@@ -2432,7 +2437,7 @@ mod tests {
     fn the_forms_of_a_work_in_a_note() {
         let (_tmp, library) = library();
         let first = |text: &str| -> ProposedItem {
-            let mut found = propose(&library, &[note(text)], &YEARS);
+            let mut found = propose(&library, &[note(text)], &NAMED);
             assert_eq!(found.len(), 1, "in “{text}”");
             found.remove(0).items.remove(0)
         };
@@ -2473,7 +2478,7 @@ mod tests {
         assert_eq!(parts(&item), ("van der Valk, Researches", Some("12"), None, Some("Vgl."), None));
 
         // Two works in one sentence.
-        let found = propose(&library, &[note("Nagy, Best, 73 and Lord, Singer, 12.")], &YEARS);
+        let found = propose(&library, &[note("Nagy, Best, 73 and Lord, Singer, 12.")], &NAMED);
         assert_eq!(found[0].items.len(), 2);
         assert_eq!(parts(&found[0].items[0]), ("Nagy, Best", Some("73"), None, None, None));
         assert_eq!(parts(&found[0].items[1]), ("Lord, Singer", Some("12"), None, Some("and"), None));
@@ -2483,7 +2488,7 @@ mod tests {
     fn what_a_note_says_beside_its_works() {
         let (_tmp, library) = library();
         let text = "This is contested. See Nagy, Best of the Achaeans, 73. The matter is not closed; cf. Lord, Singer of Tales, 12. More will be said.";
-        let found = propose(&library, &[note(text)], &YEARS);
+        let found = propose(&library, &[note(text)], &NAMED);
         let items = &found[0].items;
         assert_eq!(items.len(), 2);
         assert_eq!(
@@ -2519,7 +2524,7 @@ mod tests {
             "",
             "  ",
         ] {
-            assert!(propose(&library, &[note(text)], &YEARS).is_empty(), "in “{text}”");
+            assert!(propose(&library, &[note(text)], &NAMED).is_empty(), "in “{text}”");
         }
         // Where every note cites, it is proposed all the same: as one work
         // for the writer to find, or in its parts where it has the form.
@@ -2540,7 +2545,7 @@ mod tests {
 
         // The brackets in a note that is not proposed as a whole.
         let text = "This is a remark (see Nagy 1979, 73), and \u{fffc} is no text.";
-        let found = propose(&library, &[note(text)], &YEARS);
+        let found = propose(&library, &[note(text)], &NAMED);
         assert_eq!(found.len(), 1);
         assert_eq!(between(text, found[0].start, found[0].end), "(see Nagy 1979, 73)");
     }
@@ -2555,7 +2560,7 @@ mod tests {
             note("Nagy, op. cit., 80."),
             note("Ibid. See also West, “The Rise of the Greek Epic,” 151."),
         ];
-        let found = propose(&library, &notes, &YEARS);
+        let found = propose(&library, &notes, &NAMED);
         assert_eq!(found.len(), 5);
         let ibid = &found[1].items[0];
         assert_eq!(parts(ibid), ("Ibid.", Some("75"), None, None, None));
@@ -2585,7 +2590,7 @@ mod tests {
         assert_eq!(keys(&library, &found[1].items[0]), vec![likely("nagy1979")]);
         // Nothing was cited before it.
         assert!(propose(&library, &[line("It is so (ibid., 75).")], &YEARS).is_empty());
-        assert!(propose(&library, &[note("Ibid., 75.")], &YEARS).is_empty());
+        assert!(propose(&library, &[note("Ibid., 75.")], &NAMED).is_empty());
     }
 
     #[test]
@@ -2595,7 +2600,7 @@ mod tests {
         let found = one(&library, "It is so (see Nagy 1979, 73).");
         assert_eq!(parts(&found.items[0]), ("Nagy 1979", Some("73"), None, Some("see"), None));
         assert!(found.items[0].suggestions.is_empty());
-        assert!(propose(&library, &[note("Nagy, Best of the Achaeans, 73.")], &YEARS).is_empty());
+        assert!(propose(&library, &[note("Nagy, Best of the Achaeans, 73.")], &NAMED).is_empty());
         assert_eq!(propose(&library, &[note("Nagy, Best of the Achaeans, 73.")], &NOTES).len(), 1);
     }
 
@@ -2731,7 +2736,7 @@ mod tests {
             }
             for is_note in [false, true] {
                 let passage = Passage { id: "p".into(), text: text.clone(), note: is_note, taken: taken.clone() };
-                for options in [YEARS, NOTES, Options { years: false, notes: false }] {
+                for options in [YEARS, NAMED, NOTES, Options::default()] {
                     is_sound(&passage, &propose(&library, std::slice::from_ref(&passage), &options));
                 }
             }

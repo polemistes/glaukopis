@@ -62,6 +62,8 @@ export interface Passage {
 export interface FoundOptions {
   /** Parentheses with a year in them are citations. */
   years: boolean;
+  /** A note that names a work of the library cites it. */
+  named: boolean;
   /** Every note cites. */
   notes: boolean;
 }

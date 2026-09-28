@@ -91,6 +91,7 @@ export interface Entry {
 /** What is kept of what the writer has said, between the times the window is open. */
 export interface Kept {
   years: boolean;
+  named: boolean;
   notes: boolean;
   inNotes: '' | 'citation' | 'within';
 }
@@ -129,7 +130,7 @@ export class Going {
   entries = $state<Entry[]>([]);
   /** The one that is looked at, by its key. */
   at = $state<string | null>(null);
-  kept = $state<Kept>({ years: false, notes: false, inNotes: '' });
+  kept = $state<Kept>({ years: false, named: false, notes: false, inNotes: '' });
   /** Whether the library is being asked. */
   asking = $state(false);
   /** Whether it has been asked at all: until then, nothing is said of what there is. */
@@ -164,7 +165,7 @@ export class Going {
     this.#commands = options.commands ?? COMMANDS;
     this.#keep = options.keep ?? (() => {});
     this.#remember = options.remember ?? (() => {});
-    this.kept = { years: false, notes: false, inNotes: '', ...options.kept };
+    this.kept = { years: false, named: false, notes: false, inNotes: '', ...options.kept };
   }
 
   // ---- what there is ----
@@ -180,7 +181,7 @@ export class Going {
 
   /** Whether text that only looks like a citation is looked for. */
   get proposing(): boolean {
-    return this.kept.years || this.kept.notes;
+    return this.kept.years || this.kept.named || this.kept.notes;
   }
 
   /** Whether every work has a reference: only then can a citation be made. */
@@ -346,7 +347,11 @@ export class Going {
     try {
       const works = this.entries.filter((e) => e.marked).flatMap((e) => e.works);
       const items = works.map((w) => $state.snapshot(w.item) as FoundItem);
-      const options: FoundOptions = { years: this.kept.years, notes: this.kept.notes };
+      const options: FoundOptions = {
+        years: this.kept.years,
+        named: this.kept.named || this.kept.notes,
+        notes: this.kept.notes,
+      };
       const passages = this.proposing ? [...this.#places.values()].map(passageOf) : [];
       const [answers, proposals] = await Promise.all([
         items.length ? this.#commands.suggest(items) : Promise.resolve([]),
@@ -484,7 +489,7 @@ export class Going {
   }
 
   /** What is taken for citations. Changing it looks again. */
-  async take(change: Partial<Pick<Kept, 'years' | 'notes'>>): Promise<void> {
+  async take(change: Partial<Pick<Kept, 'years' | 'named' | 'notes'>>): Promise<void> {
     this.kept = { ...this.kept, ...change };
     this.#remember($state.snapshot(this.kept));
     this.look();

@@ -378,7 +378,7 @@ try {
 
   // ---- what is taken for citations ----
   const boxes = await app.exec(`return Array.from(document.querySelectorAll('dialog .found-window .taken label.check')).map((l) => l.textContent.trim() + ':' + l.querySelector('input').checked)`);
-  check('what is taken for citations is said at the top, and is what the writer has said', JSON.stringify(boxes) === '["Parentheses with a year in them:false","Every note:false"]', JSON.stringify(boxes));
+  check('what is taken for citations is said at the top, and is what the writer has said', JSON.stringify(boxes) === '["Parentheses with a year in them:false","Notes that name a work of the library:false","Every note:false"]', JSON.stringify(boxes));
   await press(await app.exec(`return document.querySelector('dialog .found-window .taken label.check input')`));
   await sleep(900);
   const kept = JSON.parse(readFileSync(join(app.dataDir, 'settings.json'), 'utf8'));
@@ -443,7 +443,7 @@ try {
   }
   await app.waitForText('dialog .found-window', 'Nothing to go through', 5000);
   const nothing = await app.text('dialog .found-window .nothing');
-  check('when nothing is left, the window says so, and what could be turned on', /Nothing to go through/.test(nothing) && /“Every note” can be turned on as well/.test(nothing), nothing);
+  check('when nothing is left, the window says so, and what could be turned on', /Nothing to go through/.test(nothing) && /More can be taken for citations/.test(nothing), nothing);
   await app.screenshot('found-6-nothing');
   await app.setTheme('dark');
   await sleep(200);

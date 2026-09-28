@@ -159,9 +159,11 @@ pub struct Options {
     /// Parentheses with a year in them are citations: "(Nagy 1979, 73)",
     /// and "Nagy (1979)".
     pub years: bool,
+    /// A note that names a work of the library cites it: the note is
+    /// proposed as a whole where a work of the library is likely in it.
+    pub named: bool,
     /// Every note cites, whether a work of the library is found in it or
-    /// not. Without this, a note is proposed when a work of the library is
-    /// found in it.
+    /// not.
     pub notes: bool,
 }
 

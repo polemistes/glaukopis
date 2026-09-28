@@ -623,7 +623,7 @@ try {
   check('and no window opens when the map is made', !(await app.exists(W)));
   await openWindow();
   const nothing = await app.text(`${W} .nothing`);
-  check('opened for it, the window has nothing to go through, and says what could be turned on', /Nothing to go through/.test(nothing) && /“Parentheses with a year in them” or “Every note”/.test(nothing), nothing);
+  check('opened for it, the window has nothing to go through, and says what could be turned on', /Nothing to go through/.test(nothing) && /parentheses with a year in them, or notes/.test(nothing), nothing);
   const boxes = `${W} .taken label.check input`;
   const turn = async (n) => press(await app.exec(`return document.querySelectorAll('${boxes}')[${n}]`));
   const settled = async (what, n) => {
@@ -634,9 +634,16 @@ try {
 
   // ---- parentheses with a year in them ----
   await turn(0);
-  list = await settled('parentheses with years to be proposed', 5);
+  list = await settled('parentheses with years to be proposed', 3);
   check(
-    'with parentheses with a year turned on, they are proposed, and the notes in which a work of the library is named',
+    'with parentheses with a year turned on, they are proposed, and no notes',
+    JSON.stringify(list) === JSON.stringify(['(Nagy 1979, 73) | likely', '(Parry 1971) | likely', 'Janko (1998, 3) | likely']),
+    JSON.stringify(list),
+  );
+  await turn(1);
+  list = await settled('notes that name a work to be proposed', 5);
+  check(
+    'with notes that name a work of the library turned on, those are proposed as well',
     JSON.stringify(list) ===
       JSON.stringify([
         '(Nagy 1979, 73) | likely',
@@ -727,7 +734,7 @@ try {
   // ---- every note ----
   list = await settled('what is left', 1);
   check('of the notes, those in which no work is named were not proposed', JSON.stringify(list) === '["West, The Rise of the Greek Epic, 151. | likely"]', JSON.stringify(list));
-  await turn(1);
+  await turn(2);
   list = await settled('every note to be proposed', 2);
   check(
     'with every note turned on, a note in which no work of the library is found is proposed as well, for the writer to find its work',
@@ -741,7 +748,7 @@ try {
   await sleep(700);
   check('left as text, the note stays a note', (await inText()).notes.includes('A note that says something, and cites nothing at all.') && (await rows()).length === 1, JSON.stringify(await inText()));
   const kept = JSON.parse(readFileSync(join(app.dataDir, 'settings.json'), 'utf8')).found;
-  check('what is taken for citations is kept with the settings', kept.years === true && kept.notes === true, JSON.stringify(kept));
+  check('what is taken for citations is kept with the settings', kept.years === true && kept.named === true && kept.notes === true, JSON.stringify(kept));
 
   // ---- the preview ----
   await closeWindow();
@@ -770,6 +777,9 @@ try {
     JSON.stringify(list),
   );
   await turn(0);
+  // Every note first: while it is on, the notes that name a work are taken with it.
+  await turn(2);
+  await sleep(300);
   await turn(1);
   await sleep(900);
   check('turned off again, nothing is looked for', (await rows()).length === 0 && /Nothing to go through/.test(await app.text(`${W} .nothing`)));

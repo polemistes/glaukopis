@@ -155,8 +155,8 @@ describe('what there is to go through', () => {
     const { g, calls, remembered } = going([wrath], { Finley: likely('r-finley') });
     await g.open();
     await g.take({ years: true });
-    expect(calls.options).toEqual([{ years: true, notes: false }]);
-    expect(remembered).toEqual([{ years: true, notes: false, inNotes: '' }]);
+    expect(calls.options).toEqual([{ years: true, named: false, notes: false }]);
+    expect(remembered).toEqual([{ years: true, named: false, notes: false, inNotes: '' }]);
     expect(texts(g)).toEqual([
       '(Nagy 1979, 73)',
       '(Finley 1954, 12)',
@@ -471,7 +471,7 @@ describe('a citation in a note', () => {
     expect(g.entries.map((e) => g.how(e))).toEqual(['note', 'note', 'here']);
     expect(remembered).toEqual([]);
     g.choice(g.entries[1], 'here', true);
-    expect(remembered).toEqual([{ years: false, notes: false, inNotes: 'within' }]);
+    expect(remembered).toEqual([{ years: false, named: false, notes: false, inNotes: 'within' }]);
     // What was chosen for one before gives way to what is said for all.
     expect(g.entries.map((e) => g.how(e))).toEqual(['here', 'here', 'here']);
     g.choice(g.entries[1], 'note', true);
