@@ -123,9 +123,10 @@ A *picture* is a file: a photograph, a drawing. A *figure* is a picture as
 it stands in a text, with what is said of it there, its caption, and its
 number in the document. The same picture can be a figure in many texts.
 
-Put a figure in with **Insert**, by dropping a file on the text where it is
-to stand, by pasting a picture that was copied, or by dragging a picture
-from the pictures of the project (see *Pictures* below). A picture dropped
+Put a figure in with **Insert**, from a file or from the store of pictures;
+by dropping a file on the text where it is to stand; by pasting a picture
+that was copied; or by dragging a picture from the pictures beside the map
+(see *Pictures* below). A picture dropped
 on an element in the diagram becomes a figure at the end of its text.
 
 What is said of the figure is written under the picture, where the cursor is
@@ -203,7 +204,7 @@ projects is the same picture in all of them, and is kept once.
 picture, to be searched by what it is called and by what is said of it. Add
 pictures with **Add pictures…**, or drop files on the view.
 
-In a project, **Ctrl+Shift+I** opens the pictures beside the map, where the
+In a project, **Ctrl+Shift+P** opens the pictures beside the map, where the
 references are otherwise. They can be shown for **this map**, for the
 **project**, or for the whole **store**. Drag one into a text to make a
 figure of it there.
@@ -481,7 +482,7 @@ has not arrived yet is shown as an empty frame until it has.
 | **Ctrl+D** | Diagram or text |
 | **Ctrl+P** | The preview |
 | **Ctrl+Shift+R** | The references of the map |
-| **Ctrl+Shift+I** | The pictures of the map |
+| **Ctrl+Shift+P** | The pictures of the map |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
 | **Tab**, **Enter** | In the diagram: a new element under, or beside |
 | **F2** | Rename |

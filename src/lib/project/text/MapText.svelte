@@ -415,6 +415,8 @@
     if (!el || !id) return null;
     // A picture goes to the end of the text of the element it is dropped on.
     if (event.payload.kind === PICTURES_DRAGGED) return { id, where: 'after' };
+    // And so does a reference, which is cited there.
+    if (event.payload.kind === 'references') return { id, where: 'after' };
     const payload = event.payload.data as ElementsPayload;
     if (payload.map === mapId) {
       for (const dragged of payload.ids) {
@@ -441,6 +443,15 @@
         if (picture) project.addFigure(target.id, picture, widthFor(picture));
       }
       project.checkpoint();
+      current = target.id;
+      return;
+    }
+    if (event.payload.kind === 'references') {
+      const ids = event.payload.data as string[];
+      project.checkpoint();
+      project.cite(target.id, ids);
+      project.checkpoint();
+      for (const id of ids) onkeep(id);
       current = target.id;
       return;
     }
@@ -639,7 +650,8 @@
     use:dropTarget={{
       accepts: (p) =>
         (p.kind === 'elements' && (p.data as ElementsPayload).project === project) ||
-        p.kind === PICTURES_DRAGGED,
+        p.kind === PICTURES_DRAGGED ||
+        p.kind === 'references',
       ondrop,
       onover: (e) => (drop = e ? targetAt(e) : null),
     }}

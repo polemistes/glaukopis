@@ -1167,7 +1167,12 @@ export class Project {
       figure.setAttribute('width', width as unknown as string);
       figure.setAttribute('numbered', true as unknown as string);
       // What is said of the picture in the store is said of the figure, to begin with.
-      const said = (picture.caption ?? []).flatMap((i) => {
+      const said = (picture.caption ?? []).flatMap((i): (Y.XmlElement | Y.XmlText)[] => {
+        if (i.kind === 'math' && i.tex) {
+          const formula = new Y.XmlElement('math');
+          formula.setAttribute('tex', i.tex);
+          return [formula];
+        }
         if (i.kind !== 'text' || !i.text) return [];
         const text = new Y.XmlText();
         text.insert(0, i.text, i.marks);

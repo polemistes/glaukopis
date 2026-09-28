@@ -103,12 +103,7 @@ try {
   const tile = (name) => app.findByText('.pictures .tile', name);
   const row = (name) => app.findByText('.panel .list .row', name);
   const selectAll = () => app.keys(['Control', 'a']);
-  // Where the window can be looked into, as it can where the application is built to be tried, these
-  // keys open what looks into it as well, which takes a part of the window. The key is given to the page alone.
-  const picturesKey = () =>
-    app.exec(
-      `document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'I', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }))`,
-    );
+  const picturesKey = () => app.keys(['Control', 'Shift', 'p']);
   const both = async (name) => {
     await sleep(250);
     await app.screenshot(name);

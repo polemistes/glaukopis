@@ -117,7 +117,7 @@
       if (p.maps.length) arrange(p);
       shared = new ProjectSharing(ownId, p, opened.info);
       pictures.open(ownId, () => p.usedPictures());
-      void pictures.load();
+      void pictures.nameFrom(p.usedPictures());
       project = p;
       release = beforeClose(() => leave(p));
     } catch (error) {
@@ -439,7 +439,8 @@
     } else if (key === 'r' && event.shiftKey) {
       event.preventDefault();
       side('references');
-    } else if (key === 'i' && event.shiftKey) {
+    } else if (key === 'p' && event.shiftKey) {
+      // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
       event.preventDefault();
       side('pictures');
     } else if (key === 'p' && !event.shiftKey) {
@@ -572,7 +573,7 @@
       </IconButton>
       <IconButton
         label="Pictures"
-        shortcut="Ctrl+Shift+I"
+        shortcut="Ctrl+Shift+P"
         active={showPictures}
         onclick={() => side('pictures')}
       >

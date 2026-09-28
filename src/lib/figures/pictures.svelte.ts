@@ -163,6 +163,21 @@ class Pictures {
     }
   }
 
+  /**
+   * A picture that came without a name, from a project that kept its own or
+   * from someone else, is called what a project calls it.
+   */
+  async nameFrom(used: UsedPicture[]) {
+    await this.load();
+    for (const u of used) {
+      const known = this.#known.get(u.hash);
+      if (known && !known.name.trim() && u.name.trim())
+        await pictureUpdate(u.hash, { name: u.name })
+          .then((picture) => this.#known.set(picture.hash, picture))
+          .catch(() => {});
+    }
+  }
+
   /** Takes a picture out of the store. Figures that name it are left without it. */
   async remove(hash: string): Promise<boolean> {
     const picture = this.#known.get(hash);
@@ -310,6 +325,7 @@ class Pictures {
           if (done.fetched) {
             await this.reload();
             await this.#retry();
+            await this.nameFrom(this.#used());
           }
         } catch {
           // Not connected: it is done when the connection is there again.

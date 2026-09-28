@@ -170,11 +170,37 @@ describe('figures and formulas in the text', () => {
     const map = p.createMap('Wrath');
     const a = p.addChild(p.map(map)!.root, { title: 'A', body: 'Text.' })!;
     p.checkpoint();
-    p.addFigure(a, picture, 50);
+    p.addFigure(
+      a,
+      {
+        ...picture,
+        alt: 'A vase',
+        caption: [
+          { kind: 'text', text: 'The ', marks: {} },
+          { kind: 'text', text: 'krater', marks: { em: true } },
+          { kind: 'text', text: ', where ', marks: {} },
+          { kind: 'math', tex: 'x_i' },
+        ],
+      },
+      50,
+    );
     p.checkpoint();
     const blocks = readBody(p.fragment(a, 'body')!);
     expect(blocks.map((b) => b.kind)).toEqual(['paragraph', 'figure']);
-    expect(blocks[1]).toMatchObject({ file: HASH, width: 50, numbered: true, caption: [] });
+    // It begins with what is said of the picture in the store, and can be pointed to.
+    expect(blocks[1]).toMatchObject({
+      file: HASH,
+      width: 50,
+      numbered: true,
+      alt: 'A vase',
+      caption: [
+        { kind: 'text', text: 'The ', marks: {} },
+        { kind: 'text', text: 'krater', marks: { em: true } },
+        { kind: 'text', text: ', where ', marks: {} },
+        { kind: 'math', tex: 'x_i' },
+      ],
+    });
+    expect(blocks[1].kind === 'figure' && blocks[1].id).toMatch(/^[0-9A-Za-z]{12}$/);
     p.undo();
     expect(readBody(p.fragment(a, 'body')!).map((b) => b.kind)).toEqual(['paragraph']);
   });
