@@ -3,6 +3,7 @@ pub mod import;
 pub mod library;
 pub mod pictures;
 pub mod projects;
+pub mod reading;
 pub mod sharing;
 pub mod sources;
 pub mod system;
