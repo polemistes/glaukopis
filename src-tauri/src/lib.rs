@@ -17,6 +17,14 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let state = state::AppState::open(app.path().resource_dir().ok())?;
+            // The core speaks the language of the interface from the start: the
+            // one chosen in the settings, or that of the system.
+            let chosen = glaukopis_core::settings::load(&state.data.settings_file())
+                .ok()
+                .and_then(|settings| glaukopis_core::settings::string(&settings, "language"))
+                .filter(|language| language != "system");
+            glaukopis_core::i18n::set_language(&chosen.unwrap_or_else(glaukopis_core::i18n::system_tag));
+            tracing::info!(language = glaukopis_core::i18n::language(), "language of the interface");
             tracing::info!(data = %state.data.root().display(), "data directory");
             app.manage(state);
             Ok(())
@@ -25,6 +33,8 @@ pub fn run() {
             commands::system::system_info,
             commands::system::settings_load,
             commands::system::settings_save,
+            commands::system::languages,
+            commands::system::language_set,
             commands::library::library_list,
             commands::library::library_refresh,
             commands::library::library_get,

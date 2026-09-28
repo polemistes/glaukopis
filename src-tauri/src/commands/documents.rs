@@ -237,7 +237,9 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
         sections,
         references: request.document.references,
     };
-    Ok((Request { document, style: request.style, format: request.format, key: request.key }, kept.stop.clone()))
+    let mut format = request.format;
+    format.speak(document.language.as_deref());
+    Ok((Request { document, style: request.style, format, key: request.key }, kept.stop.clone()))
 }
 
 /// The pages of a document: how many there are, and those that are asked
@@ -295,6 +297,7 @@ pub fn document_export(
     options: Option<ExportOptions>,
 ) -> CommandResult<Exported> {
     request.format.sanitise();
+    request.format.speak(request.document.language.as_deref());
     with_context(&state, true, |ctx| {
         export::export(ctx, &request, target, Path::new(&path), &options.unwrap_or_default())
     })
