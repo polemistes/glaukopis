@@ -188,7 +188,9 @@
             <li>
               <button type="button" class="hit" onclick={() => everything.go(project, found)}>
                 {#if where !== null}<span class="where">{where}</span>{/if}
-                <span class="words serif">{found.before}<mark>{found.text}</mark>{found.after}</span
+                <span class="words serif"
+                  >{#if found.note}<span class="in-note">{t('search-in-note')}</span
+                    >{/if}{found.before}<mark>{found.text}</mark>{found.after}</span
                 >
               </button>
             </li>
@@ -380,6 +382,17 @@
     font-size: 15px;
     line-height: 1.5;
     color: var(--ink-2);
+  }
+  .in-note {
+    margin-right: 6px;
+    padding: 0 5px;
+    border-radius: 0.6em;
+    background: var(--gold-soft);
+    color: var(--gold);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    vertical-align: 1px;
   }
   mark {
     padding: 0 1px;

@@ -66,5 +66,7 @@ search-where-details = The details of the document
 search-where-association = An association
 search-where-note = What you think of { $work }
 search-where-name = The name
+# Said before what was found in a note.
+search-in-note = note
 search-untitled = Untitled
 search-could-not-read = { $name } could not be read.

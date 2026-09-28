@@ -281,6 +281,8 @@ export interface Found {
   elementName: string;
   part: 'title' | 'body' | null;
   passage: number;
+  /** Whether it is in a note. */
+  note?: boolean;
   start: number;
   end: number;
   before: string;
