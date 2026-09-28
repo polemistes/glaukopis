@@ -12,6 +12,7 @@
 use std::io::Write;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
 use hayro::hayro_interpret::InterpreterSettings;
@@ -21,6 +22,7 @@ use hayro::{RenderCache, RenderSettings};
 
 use crate::error::{Error, IoContext, Result};
 use crate::export::tools::{self, Tool};
+use crate::tr;
 
 /// Tesseract reads best what is drawn at 300 dots to the inch.
 pub const DPI: f32 = 300.0;
@@ -57,7 +59,7 @@ impl Drawn {
     /// turned upright where it says it is to be turned.
     pub fn of_picture(bytes: &[u8]) -> Result<Drawn> {
         use image::ImageDecoder;
-        let unreadable = |e: image::ImageError| Error::invalid(format!("the picture could not be read: {e}"));
+        let unreadable = |e: image::ImageError| Error::invalid(tr!("ocr-picture-unreadable", message = e.to_string()));
         let reader = image::ImageReader::new(std::io::Cursor::new(bytes))
             .with_guessed_format()
             .context(|| "reading the picture".to_owned())?;
@@ -107,15 +109,15 @@ pub enum Pages {
 
 impl Pages {
     /// Opens a PDF for drawing: by hayro, and by Poppler where hayro cannot
-    /// and Poppler is there.
-    pub fn open(path: &Path, bytes: Vec<u8>, pdftoppm: Option<&Tool>) -> Result<Pages> {
-        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    /// and Poppler is there. `bytes` are what the file at `path` holds.
+    pub fn open(path: &Path, bytes: Arc<Vec<u8>>, pdftoppm: Option<&Tool>) -> Result<Pages> {
+        let file = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
         let opened = catch_unwind(AssertUnwindSafe(|| Pdf::new(bytes)));
-        let why = match opened {
+        let locked = match opened {
             Ok(Ok(pdf)) if !pdf.pages().is_empty() => return Ok(Pages::Hayro(Box::new(pdf))),
-            Ok(Ok(_)) => return Err(Error::invalid(format!("“{name}” has no pages."))),
-            Ok(Err(hayro::hayro_syntax::LoadPdfError::Decryption(_))) => Locked::Yes,
-            Ok(Err(_)) | Err(_) => Locked::No,
+            Ok(Ok(_)) => return Err(Error::invalid(tr!("ocr-no-pages", file = &file))),
+            Ok(Err(hayro::hayro_syntax::LoadPdfError::Decryption(_))) => true,
+            Ok(Err(_)) | Err(_) => false,
         };
         if let Some(pdftoppm) = pdftoppm
             && let Some(sizes) = poppler_sizes(&pdftoppm.path, path)
@@ -123,10 +125,7 @@ impl Pages {
         {
             return Ok(Pages::Poppler { pdftoppm: pdftoppm.path.clone(), file: path.to_owned(), sizes });
         }
-        Err(Error::invalid(match why {
-            Locked::Yes => format!("“{name}” is locked with a password, and its pages cannot be drawn."),
-            Locked::No => format!("“{name}” could not be read as a PDF. It may be damaged."),
-        }))
+        Err(Error::invalid(if locked { tr!("ocr-locked", file = &file) } else { tr!("ocr-unreadable", file = &file) }))
     }
 
     pub fn count(&self) -> usize {
@@ -147,7 +146,8 @@ impl Pages {
                 Ok((path, drawn.dpi))
             }
             Pages::Poppler { pdftoppm, file, sizes } => {
-                let (width, height) = sizes.get(index).copied().ok_or_else(|| Error::not_found("the page"))?;
+                let not_drawn = || Error::invalid(tr!("ocr-page-not-drawn", page = index + 1));
+                let (width, height) = sizes.get(index).copied().ok_or_else(not_drawn)?;
                 let dpi = resolution(width, height).floor();
                 let base = dir.join(format!("page-{}", index + 1));
                 let number = (index + 1).to_string();
@@ -172,15 +172,11 @@ impl Pages {
     }
 }
 
-enum Locked {
-    Yes,
-    No,
-}
-
 /// Draws a page with hayro. A page it loses itself in is an error of that
 /// page, and not of the others.
 pub fn draw_with_hayro(pdf: &Pdf, index: usize) -> Result<Drawn> {
-    let page = pdf.pages().get(index).ok_or_else(|| Error::not_found("the page"))?;
+    let not_drawn = || Error::invalid(tr!("ocr-page-not-drawn", page = index + 1));
+    let page = pdf.pages().get(index).ok_or_else(not_drawn)?;
     let (width, height) = page.render_dimensions();
     let dpi = resolution(width, height).floor();
     let scale = dpi / 72.0;
@@ -189,7 +185,7 @@ pub fn draw_with_hayro(pdf: &Pdf, index: usize) -> Result<Drawn> {
         let cache = RenderCache::new();
         hayro::render(page, &cache, &InterpreterSettings::default(), &settings)
     }))
-    .map_err(|_| Error::invalid(format!("page {} could not be drawn", index + 1)))?;
+    .map_err(|_| not_drawn())?;
     let grey = drawn.data_as_u8_slice().as_chunks::<4>().0.iter().map(|p| luma(p[0], p[1], p[2])).collect();
     Ok(Drawn { width: u32::from(drawn.width()), height: u32::from(drawn.height()), dpi: dpi as u32, grey })
 }

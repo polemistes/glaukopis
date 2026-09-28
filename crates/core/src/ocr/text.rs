@@ -115,7 +115,7 @@ pub fn by_place(lines: Vec<Line>) -> Vec<Vec<Line>> {
             Some(before) => {
                 let height = before.height().max(line.height()).max(1.0);
                 let down = line.top - before.top;
-                let wide = step.is_some_and(|step| down > 1.6 * step);
+                let wide = step.is_some_and(|step| down > 1.3 * step);
                 let up = down < -0.5 * height;
                 let beside = line.left > before.right && down.abs() < height;
                 let sized = (line.height() - before.height()).abs() > 0.25 * height;
