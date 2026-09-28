@@ -542,7 +542,8 @@ Drop a PDF on the window, or choose **Add PDF files…** in the menu beside
 the file is then kept in the library with its reference.
 
 A file that says nothing of what it is, such as a scan, is kept under its
-name, for you to fill in the details.
+name, for you to fill in the details. A scan can be made searchable: see
+*Text in scans and pictures*.
 
 Where the file is dropped decides what becomes of it:
 
@@ -663,6 +664,68 @@ are told of both. The language of the text is not taken from Word and
 OpenDocument files, which say what language the computer had, and not
 always that of the text. OpenDocument files lose their mathematics in the
 reading, which is a limit of Pandoc.
+
+A PDF or a picture can be brought in the same way, and has its text read:
+see *Text in scans and pictures*.
+
+## Text in scans and pictures
+
+A scan is a picture of a page: its text cannot be searched, copied or
+quoted until it is read. Glaukopis reads it with Tesseract, a program that
+reads text in pictures, in three places.
+
+- **A PDF or a picture becomes a map.** In a project, choose **A map from a
+  document…** beside **+** over the map, and choose the file; among the
+  projects, **A project from a document…**, or drop the file there. Each
+  page of a PDF becomes an element under the centre, named by its number as
+  it is printed where the file tells it (*xiv*, *23*), and holding what was
+  read of the page, so that what you quote can be found on its page. The
+  title is the one the PDF gives itself, or its name. The text of a picture
+  becomes the text of the centre.
+- **A PDF of the library is made searchable.** In the files of a reference,
+  the button beside a PDF, **Make searchable…**, reads its pages and lays
+  their text unseen under what is shown. The PDF looks as it did, and its
+  text can be searched, selected and copied in any program that shows PDFs.
+  The file in the library is replaced by the searchable one, which the
+  reference then points to, as does every other reference that had the same
+  file.
+- **The text of a picture of the store is read.** **Read the text in it…**,
+  in the pane of a picture, shows the text, to be copied. Where the picture
+  is looked at in a project, beside a map, **Make a map of it** makes a map
+  of it there.
+
+Pages that have text already, as the pages of a PDF made from a written
+document have, are taken as they are and not read. A page with only a little
+text, such as a scan with a line of text at its foot, is read. **Read the
+pages that have text as well** reads those too: into a map, what is read
+then takes the place of their text; in a searchable PDF, it is laid over
+their text, which stays.
+
+Before anything is read, you are asked for the languages of the text, the
+likeliest first. Those chosen under *Settings* are given at first; where
+none are chosen there, the language of the text, as far as it is known (that
+of new texts, of the project, or of the reference), and that of the
+interface. Tesseract reads only the
+languages it has data for, and each one more makes the reading slower, and
+not always better. A page takes a few seconds; several are read at a time,
+and you are shown how many are read. **Cancel** stops the reading, and
+nothing is made or changed.
+
+What is read is set in paragraphs. A word broken with a hyphen at the end of
+a line is joined again when the next line begins with a small letter and the
+part before the hyphen does not look like a name: *for-* and *skning* make
+*forskning*, but *Oslo-* and *avtalen* make *Oslo-avtalen*. A number that
+stands alone at the head or the foot of a page, which is its number, is left
+out, and so are lines without a letter or a digit, which are what is read
+of a rule or a picture on the page.
+
+Reading is not faultless: letters that are faint, worn, or in a type or a
+script the data of the language does not know are misread. Check what is
+read against the page where it matters.
+
+A PDF that is locked with a password cannot be made searchable, since what
+is added would have to be locked in the same way. Its text can still be
+brought into a project as a map, where its pages can be drawn.
 
 ## What goes into the document
 
@@ -819,3 +882,13 @@ with its accents.
 A drawing (SVG) in a PDF set by LaTeX, or in a Word document, is made into
 what those can hold by `rsvg-convert`, which comes with librsvg and is on
 most computers.
+
+Tesseract reads the text of scans and pictures. It is installed with
+Glaukopis as a package, with the data for English; the data of other
+languages are packages of their own, such as `tesseract-data-nor` for
+Norwegian, `tesseract-data-grc` for Ancient Greek and `tesseract-data-lat`
+for Latin on Arch. Where it is found, and which languages it reads, is shown
+under *Settings*, where you can also choose the languages to read in at
+first. The pages of a PDF that cannot be drawn otherwise, such as some that
+are locked, are drawn by `pdftoppm`, which comes with Poppler, where it is
+installed.
