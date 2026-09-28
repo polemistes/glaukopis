@@ -493,7 +493,8 @@ async fn the_figures_of_a_project_reach_those_who_have_it() {
     let small = b"a smaller one".to_vec();
 
     let (status, body) = server.call("GET", &files, Some(&owner), None).await;
-    assert_eq!((status, &body), (200, &json!({ "files": [] })));
+    assert_eq!((status, &body["files"]), (200, &json!([])));
+    assert_eq!(body["maxFileBytes"], json!(50 << 20));
 
     // The owner puts it; a member who puts it again is told that it is there.
     let put = server.put(&format!("{files}/{hash}"), Some(&owner), &figure).await;
@@ -519,7 +520,7 @@ async fn the_figures_of_a_project_reach_those_who_have_it() {
     let mut expected =
         vec![json!({ "hash": hash, "size": 3_000_000 }), json!({ "hash": hash_of(&small), "size": small.len() })];
     expected.sort_by_key(|f| f["hash"].as_str().unwrap().to_owned());
-    assert_eq!((status, body), (200, json!({ "files": expected })));
+    assert_eq!((status, &body["files"]), (200, &json!(expected)));
     assert_eq!(server.get(&format!("{files}/{}", hash_of(&small)), Some(&owner)).await.body, small);
 
     // Nothing for one without a token, or with one that is not of the room.
@@ -535,7 +536,7 @@ async fn the_figures_of_a_project_reach_those_who_have_it() {
     // The files of one room are not those of another, and a room that is not there has none.
     let elsewhere = format!("/api/rooms/{OTHER}/files");
     assert_eq!(server.get(&format!("{elsewhere}/{hash}"), Some(&stranger)).await.refused(), refused(404, "no-file"));
-    assert_eq!(server.get(&elsewhere, Some(&stranger)).await.json(), json!({ "files": [] }));
+    assert_eq!(server.get(&elsewhere, Some(&stranger)).await.json()["files"], json!([]));
     assert_eq!(server.get("/api/rooms/nowhere/files", Some(&owner)).await.refused(), refused(404, "no-room"));
     let nowhere = format!("/api/rooms/nowhere/files/{hash}");
     assert_eq!(server.get(&nowhere, Some(&owner)).await.refused(), refused(404, "no-room"));
@@ -700,7 +701,7 @@ async fn what_happens_while_a_file_arrives() {
     let hash = hash_of(&figure);
     let sending = begin_to_put(&server, ROOM, &hash, &anna, "Content-Length: 30", first).await;
     until_there_are(&kept, 1).await;
-    assert_eq!(server.get(&format!("{room}/files"), Some(&owner)).await.json(), json!({ "files": [] }));
+    assert_eq!(server.get(&format!("{room}/files"), Some(&owner)).await.json()["files"], json!([]));
     assert_eq!(server.get(&format!("{room}/files/{hash}"), Some(&owner)).await.refused(), refused(404, "no-file"));
     drop(sending);
     until_there_are(&kept, 0).await;

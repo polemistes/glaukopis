@@ -305,7 +305,9 @@ impl Converter<'_> {
                 let align = match f.caption_align {
                     Align::Center => "\\centering",
                     Align::Right => "\\raggedleft",
-                    Align::Left | Align::Justified => "\\raggedright",
+                    Align::Left => "\\raggedright",
+                    // As the text is, which LaTeX sets so by itself.
+                    Align::Justified => "",
                 };
                 vec![
                     json!({"t": "RawBlock", "c": ["latex", format!("{{{align}{size}\\setlength{{\\parindent}}{{0pt}}")]}),

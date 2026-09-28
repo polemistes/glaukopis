@@ -95,7 +95,7 @@ fn kind_of(bytes: &[u8]) -> Option<Kind> {
 }
 
 fn not_a_picture() -> Error {
-    Error::invalid("this is not a picture that can be used: PNG, JPEG, SVG, GIF, WebP, TIFF and BMP can")
+    Error::invalid("the file is not a picture of a kind that can be used: PNG, JPEG, SVG, GIF, WebP, TIFF or BMP")
 }
 
 fn unreadable(e: image::ImageError) -> Error {

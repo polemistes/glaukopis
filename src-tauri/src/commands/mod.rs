@@ -1,6 +1,7 @@
 pub mod documents;
 pub mod import;
 pub mod library;
+pub mod pictures;
 pub mod projects;
 pub mod sharing;
 pub mod sources;

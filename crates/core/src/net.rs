@@ -18,7 +18,15 @@ pub fn user_agent(contact: Option<&str>) -> String {
 #[derive(Clone)]
 pub struct Client {
     agent: ureq::Agent,
+    /// For files, which take the time they take.
+    patient: ureq::Agent,
     user_agent: String,
+}
+
+/// What came of asking for a file, or of sending one.
+pub struct Bytes {
+    pub status: u16,
+    pub body: Vec<u8>,
 }
 
 pub struct Response {
@@ -38,7 +46,55 @@ impl Client {
             .max_redirects(8)
             .build()
             .new_agent();
-        Client { agent, user_agent: user_agent(contact) }
+        let tls = ureq::tls::TlsConfig::builder().provider(ureq::tls::TlsProvider::NativeTls).build();
+        let patient = ureq::Agent::config_builder()
+            .tls_config(tls)
+            .timeout_global(Some(Duration::from_secs(20 * 60)))
+            .timeout_connect(Some(Duration::from_secs(10)))
+            .http_status_as_error(false)
+            .max_redirects(0)
+            .build()
+            .new_agent();
+        Client { agent, patient, user_agent: user_agent(contact) }
+    }
+
+    /// Fetches a file from a server of our own. No more than `limit` is taken.
+    pub fn fetch(&self, url: &str, bearer: &str, limit: u64) -> Result<Bytes> {
+        let mut response = self
+            .patient
+            .get(url)
+            .header("User-Agent", &self.user_agent)
+            .header("Authorization", &format!("Bearer {bearer}"))
+            .call()
+            .map_err(|e| Error::Network(describe(url, &e)))?;
+        let status = response.status().as_u16();
+        let body = response
+            .body_mut()
+            .with_config()
+            .limit(limit)
+            .read_to_vec()
+            .map_err(|e| Error::Network(describe(url, &e)))?;
+        Ok(Bytes { status, body })
+    }
+
+    /// Sends a file to a server of our own.
+    pub fn put(&self, url: &str, bearer: &str, content: &[u8]) -> Result<Bytes> {
+        let mut response = self
+            .patient
+            .put(url)
+            .header("User-Agent", &self.user_agent)
+            .header("Authorization", &format!("Bearer {bearer}"))
+            .header("Content-Type", "application/octet-stream")
+            .send(content)
+            .map_err(|e| Error::Network(describe(url, &e)))?;
+        let status = response.status().as_u16();
+        let body = response
+            .body_mut()
+            .with_config()
+            .limit(1024 * 1024)
+            .read_to_vec()
+            .map_err(|e| Error::Network(describe(url, &e)))?;
+        Ok(Bytes { status, body })
     }
 
     /// Gets a page. `accept` says which form is wanted, where the service offers several.

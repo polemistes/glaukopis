@@ -2,14 +2,16 @@
 //!
 //! The project itself travels over a WebSocket that the interface opens. What
 //! is here is the rest: publishing, inviting, joining, and the tickets that
-//! open the socket. The token of a project is used here and nowhere else; the
-//! interface never holds it. See ADR 0006.
+//! open the socket, and the pictures of the figures, which are files and are
+//! sent and fetched one by one. The token of a project is used here and
+//! nowhere else; the interface never holds it. See ADR 0006.
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::error::{Error, Result};
 use crate::net::{self, Client};
+use crate::pictures::{self, Pictures};
 
 /// The version of what is said between the application and the server that
 /// this application speaks.
@@ -215,6 +217,8 @@ fn kind(named: &str, status: u16) -> &'static str {
         "password" => "password",
         "too-many" => "too-many",
         "invalid" => "invalid",
+        "no-file" => "no-file",
+        "too-large" => "too-large",
         _ => match status {
             401 => "not-admitted",
             404 => "no-room",
@@ -240,6 +244,7 @@ fn explain(kind: &str, from_server: &str, host: &str) -> String {
         }
         "password" => "The password is not the one the server asks for.".into(),
         "too-many" => "Too many attempts have been made from here. Try again in ten minutes.".into(),
+        "no-file" => "The server does not have the picture.".into(),
         _ if from_server.is_empty() => format!("{host} answered with an error."),
         _ => {
             let mut text = from_server.to_owned();
@@ -393,6 +398,124 @@ impl<'a> Remote<'a> {
     pub fn remove_member(&self, room: &str, token: &str, member: &str) -> Result<()> {
         let path = format!("{}/members/{}", Self::room_path(room), net::encode(member));
         self.ask("DELETE", &path, Some(token), None).map(|_| ())
+    }
+}
+
+/// A picture as the server has it.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct RemoteFile {
+    pub hash: String,
+    pub size: u64,
+}
+
+/// What came of bringing the pictures of a project and those the server has
+/// of it to be the same.
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Synced {
+    pub sent: usize,
+    pub fetched: usize,
+    /// What could not be done, in words for the user. Each is said once.
+    pub problems: Vec<String>,
+}
+
+impl Remote<'_> {
+    fn refusal(&self, status: u16, body: &[u8]) -> Error {
+        let host = net::host(&self.server);
+        let value: Value = serde_json::from_slice(body).unwrap_or(Value::Null);
+        let message = value.get("message").and_then(Value::as_str).unwrap_or("");
+        match value.get("error").and_then(Value::as_str) {
+            Some(named) => {
+                let kind = kind(named, status);
+                Error::Refused { kind, message: explain(kind, message, &host) }
+            }
+            // A proxy that takes less than the server does says so by itself.
+            None if status == 413 => Error::Refused {
+                kind: "too-large",
+                message: format!("{host} does not take a picture as large as this."),
+            },
+            None if status == 404 => not_a_server(&host),
+            None => Error::Network(format!("{host} answered with an error ({status})")),
+        }
+    }
+
+    /// The pictures the server has of a project, and the most it lets one hold.
+    pub fn files(&self, room: &str, token: &str) -> Result<(Vec<RemoteFile>, u64)> {
+        let value = self.ask("GET", &format!("{}/files", Self::room_path(room)), Some(token), None)?;
+        let most = value.get("maxFileBytes").and_then(Value::as_u64).unwrap_or(pictures::MAX_BYTES);
+        Ok((self.read(value.get("files").cloned().unwrap_or(Value::Null))?, most))
+    }
+
+    fn file_url(&self, room: &str, hash: &str) -> String {
+        format!("{}{}/files/{}", self.server, Self::room_path(room), net::encode(hash))
+    }
+
+    pub fn fetch_file(&self, room: &str, token: &str, hash: &str) -> Result<Vec<u8>> {
+        let answer = self.client.fetch(&self.file_url(room, hash), token, pictures::MAX_BYTES)?;
+        if (200..300).contains(&answer.status) {
+            Ok(answer.body)
+        } else {
+            Err(self.refusal(answer.status, &answer.body))
+        }
+    }
+
+    pub fn send_file(&self, room: &str, token: &str, hash: &str, content: &[u8]) -> Result<()> {
+        let answer = self.client.put(&self.file_url(room, hash), token, content)?;
+        if (200..300).contains(&answer.status) { Ok(()) } else { Err(self.refusal(answer.status, &answer.body)) }
+    }
+
+    /// Sends the pictures the server lacks, and fetches those that are
+    /// lacking here. What cannot be done with one picture does not keep the
+    /// others from being seen to.
+    pub fn sync_pictures(&self, room: &str, token: &str, pictures: &Pictures) -> Result<Synced> {
+        let (there, most) = self.files(room, token)?;
+        let here = pictures.list();
+        let mut done = Synced::default();
+        let mut problems: Vec<String> = Vec::new();
+        let mut say = |problem: String| {
+            if !problems.contains(&problem) {
+                problems.push(problem);
+            }
+        };
+        for (hash, extension, size) in &here {
+            if there.iter().any(|f| &f.hash == hash) {
+                continue;
+            }
+            if *size > most {
+                // Said before it is sent: a server that refuses what is on
+                // its way may not be heard.
+                say(format!(
+                    "A picture is larger than {} takes ({} MB at the most), and does not reach the others.",
+                    net::host(&self.server),
+                    most >> 20
+                ));
+                continue;
+            }
+            let sending =
+                pictures.read(hash, extension).and_then(|content| self.send_file(room, token, hash, &content));
+            match sending {
+                Ok(()) => done.sent += 1,
+                Err(Error::Refused { message, .. }) => say(message),
+                Err(e) => say(format!("A picture could not be sent: {e}.")),
+            }
+        }
+        for file in &there {
+            if !pictures::is_hash(&file.hash) || here.iter().any(|(hash, _, _)| hash == &file.hash) {
+                continue;
+            }
+            if file.size > pictures::MAX_BYTES {
+                continue;
+            }
+            match self.fetch_file(room, token, &file.hash).and_then(|content| pictures.keep(&file.hash, &content)) {
+                Ok(_) => done.fetched += 1,
+                // What is on the server and is no picture is nothing to the project.
+                Err(Error::Invalid(_)) => {}
+                Err(Error::Refused { message, .. }) => say(message),
+                Err(e) => say(format!("A picture could not be fetched: {e}.")),
+            }
+        }
+        done.problems = problems;
+        Ok(done)
     }
 }
 

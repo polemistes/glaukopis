@@ -538,14 +538,18 @@ async fn aside<T: Send + 'static>(work: impl FnOnce() -> Result<T, Refused> + Se
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct FilesView {
     files: Vec<Kept>,
+    /// The most one file may hold here, so that none is sent in vain.
+    max_file_bytes: u64,
 }
 
 async fn files(State(server): State<Shared>, Path(room): Path<String>, headers: HeaderMap) -> Answer<Json<FilesView>> {
     server.registry.lock().await.admit(&room, bearer(&headers)?)?;
+    let max_file_bytes = server.config.max_file_bytes;
     let files = aside(move || server.files.list(&room)).await?;
-    Ok(Json(FilesView { files }))
+    Ok(Json(FilesView { files, max_file_bytes }))
 }
 
 async fn file(
