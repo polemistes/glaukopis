@@ -20,6 +20,8 @@ export interface Brought {
   map: string;
   /** The project that was made of it, where one was. */
   project?: ProjectInfo;
+  /** Whether the citations that were found in it are to be gone through now. */
+  goThrough?: boolean;
 }
 
 export interface Bringing {

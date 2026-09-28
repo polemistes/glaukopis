@@ -219,6 +219,11 @@ export class Going {
     return this.#places.get(entry.target.passage) ?? null;
   }
 
+  /** A passage by what it is known by, as it was when last looked at. */
+  placeOf(passage: string): Place | null {
+    return this.#places.get(passage) ?? null;
+  }
+
   /** Whether the note it stands in can become a citation, and why not. */
   can(entry: Entry): IntoCitation {
     const place = this.place(entry);
