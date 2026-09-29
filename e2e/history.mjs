@@ -126,8 +126,14 @@ try {
   check('the room it takes is known', room > 0, `${room} bytes`);
 
   // ---- the panel ----
-  await app.keys(' Of Achilles.');
-  await sleep(1200);
+  const writeAtEnd = async (words) => {
+    await app.click('.text-view .section .body');
+    await sleep(400);
+    await app.keys(['Control', 'End']);
+    await app.keys(words);
+    await sleep(1200);
+  };
+  await writeAtEnd(' Of Achilles.');
   await app.click('button[aria-label="History"]');
   await app.waitFor('.history-panel .moment', 10000);
   await sleep(600);
@@ -158,6 +164,7 @@ try {
   await app.click('.past .bar button.primary');
   await app.waitFor('.text-view .section .body', 5000);
   await app.click('.text-view .section .body');
+  await sleep(400);
   await app.keys(['Control', 'a']);
   await app.press('Backspace');
   await app.keys('Nothing.');
@@ -199,15 +206,18 @@ try {
   );
   const after = await ask(app, `return (await h.sessions()).length;`);
   check('history before a moment is archived into a file that can be read again', existsSync(archive) && archived > 0 && after < before, `${before} → ${after} sessions, ${archived} bytes`);
-  check('what is left begins with the project as it was', (await ask(app, `return (await h.sessions())[0].first;`)) === 0 && (await bodyText(app)) === 'Nothing.');
+  const first = await ask(app, `const s = await h.sessions(); return [s[0].first, s[0].person];`);
+  check('what is left begins with the project as it was', first[0] === 0 && first[1] === null && (await bodyText(app)) === 'Nothing.', JSON.stringify(first));
 
-  // Deleted before a moment, from the settings.
+  // Deleted before a moment, from the settings: the moment of what is written now.
+  await writeAtEnd(' And more.');
   await app.click('button[aria-label="History"]');
   await app.click('button[aria-label="History"]');
-  await app.waitFor('.history-panel .moment', 10000);
-  const moments = await app.findAll('.history-panel .moment');
-  await app.click(moments[Math.max(0, moments.length - 2)]);
+  await app.waitFor('.history-panel .moment:not(.named)', 10000);
+  await sleep(600);
+  await app.click('.history-panel .moment:not(.named)');
   await app.waitFor('.past .text', 8000);
+  const beforeDeleting = await ask(app, `return (await h.sessions()).length;`);
   await app.click('button[aria-label="Settings of the history"]');
   await app.clickText('.history-panel button', 'Delete');
   await app.waitForText('dialog h2', 'Delete the history before', 5000);
@@ -216,7 +226,7 @@ try {
   await app.waitGone('dialog[open]', 8000);
   await sleep(800);
   const left = await ask(app, `return (await h.sessions()).length;`);
-  check('history before a moment is deleted', left < after, `${after} → ${left} sessions`);
+  check('history before a moment is deleted', left < beforeDeleting, `${beforeDeleting} → ${left} sessions`);
 
   // ---- turned off ----
   await app.click('.history-panel input[type="checkbox"]');

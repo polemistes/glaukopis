@@ -213,7 +213,7 @@
     </div>
   {/if}
 
-  {#if showSettings && !archive}
+  {#if showSettings && !archive && on}
     <HistorySettings {project} {history} {looking} onlook={(l) => onlook(l)} />
   {:else if !on && !archive}
     <div class="off">
