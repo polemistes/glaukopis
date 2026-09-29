@@ -67,6 +67,8 @@ class Everything {
   unread = $state.raw<string[]>([]);
   /** Whether what was found is for the words as they are. */
   done = $state(false);
+  /** Whether there were no projects to search. */
+  none = $state(false);
 
   #engine: Engine | null = null;
   /** What was read of each project: its time of change when it was read. */
@@ -102,6 +104,7 @@ class Everything {
     this.error = null;
     this.unread = [];
     this.done = false;
+    this.none = false;
     if (!words) {
       this.reading = null;
       return;
@@ -109,7 +112,9 @@ class Everything {
     this.#engine ??= new Engine();
     const engine = this.#engine;
     if (!projects.loaded) await projects.load();
-    for (const target of this.targets()) {
+    const targets = this.targets();
+    this.none = !targets.length;
+    for (const target of targets) {
       if (round !== this.#round) return;
       // A project that is being closed is read when what was written in it is on disk.
       await projects.closed(target.id);

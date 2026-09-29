@@ -127,7 +127,8 @@ export function readProject(
     if (!(m instanceof Y.Map)) continue;
     listed.push({
       id: mapId,
-      name: str(m.get('name'), 'Untitled'),
+      // A map without a name is called so by the interface, in its language.
+      name: str(m.get('name')),
       root: str(m.get('root')),
       order: str(m.get('order'), 'a0'),
       document: (m.get('document') as DocumentSettings | undefined) ?? {},

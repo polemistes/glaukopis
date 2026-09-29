@@ -63,9 +63,9 @@ search-everything-found = { $count ->
    *[other] i { $projects } prosjekter
 }
 search-where-details = Opplysningene om dokumentet
-search-where-association = En assosiasjon
+# En assosiasjon som har et navn, med elementene i endene: «Del 1 ↔ Del 2».
+search-where-association = Assosiasjonen { $ends }
 search-where-note = Det du tenker om { $work }
-search-where-name = Navnet
 # Står foran det som ble funnet i en note.
 search-in-note = note
 search-untitled = Uten navn

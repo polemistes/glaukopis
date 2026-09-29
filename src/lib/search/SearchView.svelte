@@ -63,7 +63,7 @@
       case 'details':
         return t('search-where-details');
       case 'association':
-        return `${t('search-where-association')}: ${found.elementName}`;
+        return t('search-where-association', { ends: found.elementName });
       case 'note':
         return t('search-where-note', { work: found.work || '?' });
       default:
@@ -74,6 +74,7 @@
   const said = $derived.by(() => {
     if (everything.error) return t('search-invalid');
     if (!everything.words) return '';
+    if (everything.none) return t('search-no-projects');
     const count = everything.count;
     if (!count) return everything.done ? t('search-nothing') : '';
     return t('search-everything-found', { count, projects: everything.found.length });
@@ -183,7 +184,7 @@
         <ul>
           {#each grouped(project) as { found, map, where }, i (i)}
             {#if map !== null}
-              <li class="map">{map}</li>
+              <li class="map">{map || t('search-untitled')}</li>
             {/if}
             <li>
               <button type="button" class="hit" onclick={() => everything.go(project, found)}>
