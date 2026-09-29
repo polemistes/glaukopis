@@ -809,6 +809,28 @@ server when they are put in, and fetched by the others from there, into
 their own stores. No other picture of your store is sent. A picture that
 has not arrived yet is shown as an empty frame until it has.
 
+## Languages
+
+Glaukopis speaks English and Norwegian Bokmål. At first it speaks the
+language of the computer, where it has it, and English where it does not;
+a computer set to Nynorsk is spoken to in Bokmål. *Settings* › *Language*
+changes it, at once.
+
+Your texts have a language of their own, which need not be that of
+Glaukopis: each map is written in one, which is shown, and can be changed,
+with the details of its document (**Title, authors, abstract** over the
+preview). A new map is given the language of new texts, which is set under
+*Settings* › *Language* as well: at first that of the computer, where
+documents have words in it (English, Bokmål and Nynorsk), and English
+otherwise. The language is written into the map, so that those you share the
+project with make the same document of it.
+
+The language of a map decides what its document prints in words of its own:
+the headings of the notes, the abstract and the bibliography, what a figure
+and a table are called, and the words of the reference style, such as
+"and", "p." and "edited by". A format that has words of its own keeps them;
+those it has as they are in English are printed in the language of the map.
+
 ## Keeping things safe
 
 - **Earlier versions.** A version of each project is kept every now and then

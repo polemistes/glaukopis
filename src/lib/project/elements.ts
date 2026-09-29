@@ -14,7 +14,8 @@ import Plus from '@lucide/svelte/icons/plus';
 import Scissors from '@lucide/svelte/icons/scissors';
 import Trash2 from '@lucide/svelte/icons/trash-2';
 import Unlink from '@lucide/svelte/icons/unlink';
-import { plural, truncate } from '$lib/library/format';
+import { t } from '$lib/i18n';
+import { truncate } from '$lib/library/format';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { notify, toasts } from '$lib/ui/toast.svelte';
 import type { Project } from './model/project.svelte';
@@ -50,10 +51,10 @@ export function removeElements(project: Project, ids: string[], keepChildren = f
   const tops = topmost(tree, ids).filter((id) => id !== tree.root);
   if (!tops.length) {
     if (ids.includes(tree.root ?? ''))
-      notify('The centre of a map stays', 'Delete the map itself from its tab.');
+      notify(t('project-centre-stays'), t('project-centre-stays-detail'));
     return 0;
   }
-  const name = project.node(tops[0])?.title || 'Untitled';
+  const name = project.node(tops[0])?.title || t('project-untitled');
   const under = keepChildren ? 0 : tops.reduce((n, id) => n + subtree(tree, id).length - 1, 0);
   project.checkpoint();
   const gone = project.remove(tops, { keepChildren });
@@ -64,9 +65,9 @@ export function removeElements(project: Project, ids: string[], keepChildren = f
         kind: 'info',
         message:
           tops.length === 1
-            ? `“${truncate(name, 40)}” was deleted${under ? `, with ${plural(under, 'element')} under it` : ''}`
-            : `${plural(gone, 'element')} deleted`,
-        action: { label: 'Undo', run: () => project.undo() },
+            ? t('project-deleted', { name: truncate(name, 40), under })
+            : t('project-deleted-many', { count: gone }),
+        action: { label: t('common-undo'), run: () => project.undo() },
       },
       7000,
     );
@@ -106,8 +107,10 @@ export function elementMenu(
         if (made.length) {
           toasts.show({
             kind: 'ok',
-            message: `${copy ? 'Copied' : 'Moved'} to “${m.name}”`,
-            action: { label: 'Show', run: () => actions.openMap?.(m.id) },
+            message: copy
+              ? t('project-copied-to', { name: m.name })
+              : t('project-moved-to', { name: m.name }),
+            action: { label: t('common-show'), run: () => actions.openMap?.(m.id) },
           });
         }
       },
@@ -134,7 +137,7 @@ export function elementMenu(
   if (one) {
     items.push(
       {
-        label: 'Add an element under it',
+        label: t('project-add-under'),
         icon: CornerDownRight,
         shortcut: 'Tab',
         action: () => {
@@ -147,7 +150,7 @@ export function elementMenu(
         },
       },
       {
-        label: isRoot ? 'Add an element' : 'Add an element after it',
+        label: isRoot ? t('project-add') : t('project-add-after'),
         icon: Plus,
         shortcut: 'Enter',
         action: () => {
@@ -163,18 +166,22 @@ export function elementMenu(
     );
     if (actions.edit)
       items.push({
-        label: 'Write its text',
+        label: t('project-write-text'),
         icon: Pencil,
-        shortcut: 'Double-click',
+        shortcut: t('project-double-click'),
         action: () => actions.edit!(one.id),
       });
     if (actions.rename)
-      items.push({ label: 'Rename', shortcut: 'F2', action: () => actions.rename!(one.id) });
+      items.push({
+        label: t('common-rename'),
+        shortcut: 'F2',
+        action: () => actions.rename!(one.id),
+      });
     if (actions.link)
       items.push({
-        label: 'Associate with…',
+        label: t('project-associate'),
         icon: Link2,
-        hint: 'Then click the other element',
+        hint: t('project-associate-hint'),
         action: () => actions.link!(one.id),
       });
     items.push({ kind: 'separator' });
@@ -185,17 +192,17 @@ export function elementMenu(
     const allOut = nodes.every((n) => n.excluded);
     items.push(
       {
-        label: 'Print the name as a heading',
+        label: t('project-heading'),
         icon: Heading,
-        hint: 'Off: the name is a label for you; only the text is printed',
+        hint: t('project-heading-hint'),
         checked: !allPlain,
         action: () =>
           project.transact(() => nodes.forEach((n) => project.setHeading(n.id, allPlain))),
       },
       {
-        label: 'Leave out of the document',
+        label: t('project-leave-out'),
         icon: EyeOff,
-        hint: 'With everything under it',
+        hint: t('project-leave-out-hint'),
         checked: allOut,
         action: () =>
           project.transact(() => nodes.forEach((n) => project.setExcluded(n.id, !allOut))),
@@ -205,16 +212,19 @@ export function elementMenu(
       items.push({
         kind: 'submenu',
         label: one.include
-          ? `Stands for “${project.map(one.include)?.name ?? '?'}”`
-          : 'Stand for another map',
+          ? t('project-stands-for', { name: project.map(one.include)?.name ?? '?' })
+          : t('project-stand-for'),
         icon: FileInput,
         items: [
-          { kind: 'heading', label: 'In the document, this map takes its place' },
+          { kind: 'heading', label: t('project-stand-for-heading') },
           ...includes,
           ...(one.include
             ? ([
                 { kind: 'separator' },
-                { label: 'None', action: () => project.setInclude(one.id, null) },
+                {
+                  label: t('project-stand-for-none'),
+                  action: () => project.setInclude(one.id, null),
+                },
               ] as MenuItem[])
             : []),
         ],
@@ -226,10 +236,10 @@ export function elementMenu(
   if (movable.length || (one && !otherMaps.length)) {
     if (otherMaps.length) {
       items.push(
-        { kind: 'submenu', label: 'Copy to map', icon: Copy, items: toMap(true) },
+        { kind: 'submenu', label: t('project-copy-to-map'), icon: Copy, items: toMap(true) },
         {
           kind: 'submenu',
-          label: 'Move to map',
+          label: t('project-move-to-map'),
           icon: MoveRight,
           disabled: !movable.length,
           items: toMap(false),
@@ -239,9 +249,9 @@ export function elementMenu(
   }
   if (one && !isRoot) {
     items.push({
-      label: 'New map from this branch',
+      label: t('project-map-from-branch'),
       icon: GitBranchPlus,
-      hint: 'A copy to work on; this one stays',
+      hint: t('project-map-from-branch-hint'),
       action: () => {
         const id = project.mapFromBranch(one.id);
         if (id) actions.openMap?.(id);
@@ -250,9 +260,9 @@ export function elementMenu(
   }
   if (one && !isRoot && tree.parent.get(one.id)) {
     items.push({
-      label: 'Detach from its parent',
+      label: t('project-detach'),
       icon: Unlink,
-      hint: 'A loose element, to be placed later',
+      hint: t('project-detach-hint'),
       action: () => {
         project.checkpoint();
         project.move([one.id], null);
@@ -262,7 +272,7 @@ export function elementMenu(
   }
   if (branchPinned) {
     items.push({
-      label: one && hasChildren ? 'Tidy this branch' : 'Place automatically',
+      label: one && hasChildren ? t('project-tidy-branch') : t('project-place-automatically'),
       icon: LayoutGrid,
       action: () => {
         project.checkpoint();
@@ -276,13 +286,13 @@ export function elementMenu(
     items.push({ kind: 'separator' });
     if (one && hasChildren) {
       items.push({
-        label: 'Delete, keeping what is under it',
+        label: t('project-delete-keeping'),
         icon: Scissors,
         action: () => removeElements(project, ids, true),
       });
     }
     items.push({
-      label: 'Delete',
+      label: t('common-delete'),
       icon: Trash2,
       danger: true,
       shortcut: 'Del',

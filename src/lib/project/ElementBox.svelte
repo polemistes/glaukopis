@@ -8,9 +8,9 @@
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import { editorUi } from '$lib/editor/ui.svelte';
   import { numbering, pointerText } from '$lib/figures/numbering.svelte';
+  import { t } from '$lib/i18n';
   import SearchBar from '$lib/search/SearchBar.svelte';
   import { TextSearch, type Surface } from '$lib/search/text.svelte';
-  import { plural } from '$lib/library/format';
   import { place, type RectLike } from '$lib/ui/floating';
   import IconButton from '$lib/ui/IconButton.svelte';
   import type { Project } from './model/project.svelte';
@@ -162,19 +162,26 @@
 
 {#if node && title && text}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div bind:this={el} class="box" role="dialog" aria-label="Element" tabindex="-1" {onkeydown}>
+  <div
+    bind:this={el}
+    class="box"
+    role="dialog"
+    aria-label={t('project-element')}
+    tabindex="-1"
+    {onkeydown}
+  >
     <header>
       <RichText
         bind:this={name}
         {project}
         fragment={title}
         kind="title"
-        placeholder="Name"
+        placeholder={t('project-name-placeholder')}
         autofocus={begin === 'title' ? 'all' : null}
         onaction={titleAction}
         class="box-title"
       />
-      <IconButton label="Close" shortcut="Esc" size="sm" onclick={onclose}
+      <IconButton label={t('common-close')} shortcut="Esc" size="sm" onclick={onclose}
         ><X size={14} /></IconButton
       >
     </header>
@@ -193,7 +200,7 @@
         fragment={text}
         kind="body"
         element={id}
-        placeholder="Write here. Type @ to cite."
+        placeholder={t('project-write-here')}
         autofocus={begin === 'body' ? 'end' : null}
         onaction={bodyAction}
         oncite={onkeep}
@@ -201,7 +208,7 @@
     </div>
 
     {#if node.words}
-      <footer><span class="count">{plural(node.words, 'word')}</span></footer>
+      <footer><span class="count">{t('project-words', { count: node.words })}</span></footer>
     {/if}
   </div>
 {/if}

@@ -11,6 +11,7 @@ import {
   projectSaveState,
   type ProjectInfo,
 } from '$lib/api/projects';
+import { t } from '$lib/i18n';
 import { Project, type Persistence, type Summary } from '$lib/project/model/project.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
 import { fromBase64, toBase64 } from '$lib/util/base64';
@@ -41,7 +42,7 @@ class ProjectsState {
     try {
       this.list = await projectList();
     } catch (error) {
-      notifyError('The projects could not be read', error);
+      notifyError(t('project-list-unreadable'), error);
     }
     this.loaded = true;
   }

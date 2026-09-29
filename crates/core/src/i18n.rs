@@ -335,7 +335,8 @@ mod tests {
                         assert!(out.insert(id.clone(), BTreeSet::new()).is_none(), "{id} is given twice in {tag}");
                     }
                 }
-                if let Some(id) = &current {
+                // What a comment says of a variable is not a variable.
+                if let Some(id) = current.as_ref().filter(|_| !line.starts_with('#')) {
                     let vars = out.get_mut(id).unwrap();
                     let mut rest = line;
                     while let Some(at) = rest.find('$') {

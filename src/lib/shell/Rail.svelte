@@ -12,7 +12,7 @@
   const view = $derived(router.route.view);
 </script>
 
-<nav class="rail" aria-label="Main">
+<nav class="rail" aria-label={t('shell-main')}>
   <a
     class="mark"
     href="#/"

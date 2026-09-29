@@ -21,6 +21,7 @@
     PICTURES_DRAGGED,
     type Picture,
   } from '$lib/figures/pictures.svelte';
+  import { t } from '$lib/i18n';
   import { importDropped } from '$lib/library/references.svelte';
   import PicturePane from '$lib/pictures/PicturePane.svelte';
   import {
@@ -167,9 +168,9 @@
     selected = row.hash;
     const picture = row.picture;
     openContextMenu(event, [
-      { label: 'Open…', icon: SquarePen, action: () => (opened = row.hash) },
+      { label: t('project-open-picture'), icon: SquarePen, action: () => (opened = row.hash) },
       ...(picture && text()
-        ? [{ label: 'Put it into the text', icon: ImagePlus, action: () => put(picture) }]
+        ? [{ label: t('project-put-into-text'), icon: ImagePlus, action: () => put(picture) }]
         : []),
     ]);
   }
@@ -211,7 +212,7 @@
 
 <aside
   class="panel"
-  aria-label="Pictures"
+  aria-label={t('project-pictures')}
   data-beside-text
   use:dropTarget={{
     accepts: (p) => p.kind === 'files' && (p.data as string[]).some(isPicturePath),
@@ -219,22 +220,22 @@
   }}
 >
   <header>
-    <h2>Pictures</h2>
-    <IconButton label="Add pictures from files" size="sm" onclick={add}>
+    <h2>{t('project-pictures')}</h2>
+    <IconButton label={t('project-add-pictures')} size="sm" onclick={add}>
       <Plus size={15} />
     </IconButton>
-    <IconButton label="Close" size="sm" onclick={onclose}><X size={15} /></IconButton>
+    <IconButton label={t('common-close')} size="sm" onclick={onclose}><X size={15} /></IconButton>
   </header>
 
   <div class="tools">
     <Segmented
       bind:value={scope}
-      label="Which pictures"
+      label={t('project-which-pictures')}
       size="sm"
       options={[
-        { value: 'map', label: 'This map' },
-        { value: 'project', label: 'Project' },
-        { value: 'store', label: 'Store' },
+        { value: 'map', label: t('project-this-map') },
+        { value: 'project', label: t('project-project') },
+        { value: 'store', label: t('project-store') },
       ]}
     />
     <div class="search">
@@ -242,8 +243,8 @@
       <input
         bind:value={query}
         type="search"
-        placeholder="Search"
-        aria-label="Search pictures"
+        placeholder={t('common-search')}
+        aria-label={t('project-search-pictures')}
         spellcheck="false"
       />
     </div>
@@ -256,7 +257,7 @@
         bind:this={list}
         class="list"
         role="listbox"
-        aria-label="Pictures"
+        aria-label={t('project-pictures')}
         tabindex="0"
         {onkeydown}
       >
@@ -282,20 +283,22 @@
             </div>
             <div class="text">
               <div class="first">
-                <span class="name truncate">{row.name || 'A picture'}</span>
+                <span class="name truncate">{row.name || t('project-a-picture')}</span>
                 {#if pictureHasNotes(row.hash, project)}
-                  <span class="noted" aria-label="With notes"><NotebookPen size={12} /></span>
+                  <span class="noted" aria-label={t('project-with-notes')}
+                    ><NotebookPen size={12} /></span
+                  >
                 {/if}
               </div>
               <div class="second truncate">
                 {#if !row.picture}
-                  <span class="missing">Not on this computer</span>
+                  <span class="missing">{t('project-not-on-computer')}</span>
                 {:else if said}
                   <!-- Made by captionHtml, which escapes all text. -->
                   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
                   <span class="said">{@html captionHtml(row.picture)}</span>
                 {:else}
-                  <span class="unsaid">Nothing is said of it yet</span>
+                  <span class="unsaid">{t('project-nothing-said')}</span>
                 {/if}
               </div>
             </div>
@@ -303,30 +306,24 @@
         {/each}
       </div>
     {:else if query}
-      <EmptyState compact title="Nothing found" />
+      <EmptyState compact title={t('project-nothing-found')} />
     {:else if scope === 'store'}
-      <EmptyState
-        compact
-        title="The store is empty"
-        text="Add pictures from files, or drop them on a text."
-      />
+      <EmptyState compact title={t('project-store-empty')} text={t('project-store-empty-hint')} />
     {:else}
       <EmptyState
         compact
-        title="No pictures yet"
-        text={scope === 'map'
-          ? 'The pictures of the figures of this map are listed here. Those of the store are under Store.'
-          : 'The pictures of the figures of the project are listed here. Those of the store are under Store.'}
+        title={t('project-no-pictures')}
+        text={scope === 'map' ? t('project-no-pictures-map') : t('project-no-pictures-project')}
       />
     {/if}
   </div>
 
   <footer>
-    Drag a picture into a text to make a figure of it there, or onto an element to put it at the end
-    of its text.
+    {t('project-pictures-drag')}
     {#if absent}
-      <br />{absent} in this {scope === 'map' ? 'map' : 'project'}
-      {absent === 1 ? 'is' : 'are'} not on this computer.
+      <br />{scope === 'map'
+        ? t('project-pictures-absent-map', { count: absent })
+        : t('project-pictures-absent-project', { count: absent })}
     {/if}
   </footer>
 </aside>
@@ -334,7 +331,7 @@
 {#if opened}
   <Dialog
     open
-    title={openedRow?.name || 'A picture'}
+    title={openedRow?.name || t('project-a-picture')}
     width={560}
     padded={false}
     onclose={() => (opened = null)}
