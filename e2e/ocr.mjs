@@ -277,6 +277,13 @@ try {
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));
+} catch (error) {
+  // What was shown when it went wrong.
+  await app.screenshot('ocr-failed').catch(() => {});
+  const shown = await app.exec(`return document.querySelector('dialog[open]')?.textContent ?? document.body.textContent.slice(0, 400)`).catch(() => '');
+  console.log(`shown: ${shown}`);
+  console.log(`errors: ${(await app.pageErrors().catch(() => [])).join(' | ')}`);
+  throw error;
 } finally {
   await app.close();
 }

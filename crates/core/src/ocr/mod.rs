@@ -435,6 +435,28 @@ pub fn read_picture(
     Ok(text::page_paragraphs(text::tsv_paragraphs(read.tsv.as_deref().unwrap_or_default()), is_word))
 }
 
+/// The text of the first pages of a PDF, as Tesseract reads it in the first
+/// language it has, line by line: to find in it what the file is, its DOI
+/// or its ISBN, where it has no text (`import::pdf::identify_scan`).
+/// Nothing, where Tesseract is not there or the pages cannot be drawn.
+pub fn first_pages(path: &Path, tools: &Tools, work: &Path, count: usize, stop: &AtomicBool) -> Vec<String> {
+    let Ok((tesseract, languages)) = ready(tools, &Asked::default()) else { return Vec::new() };
+    let Ok(bytes) = read_pdf_file(path) else { return Vec::new() };
+    let Ok(pages) = Pages::open(path, bytes, tools.pdftoppm.as_ref()) else { return Vec::new() };
+    let Ok(place) = place_in(work) else { return Vec::new() };
+    let wanted: Vec<usize> = (0..count.min(pages.count())).collect();
+    let one = |index: usize| {
+        let read = draw_and_read(&pages, index, place.path(), tesseract, &languages, (true, false), stop)?;
+        let paragraphs = text::tsv_paragraphs(read.tsv.as_deref().unwrap_or_default());
+        Ok(paragraphs
+            .iter()
+            .map(|lines| lines.iter().map(|l| l.text.as_str()).collect::<Vec<_>>().join("\n"))
+            .collect::<Vec<_>>()
+            .join("\n\n"))
+    };
+    several(&wanted, &one, &mut |_| {}, stop).into_iter().map(|(_, read)| read.unwrap_or_default()).collect()
+}
+
 /// Makes a PDF searchable: the pages that have no text are read, and what
 /// is read is laid over them, unseen. Pages that have text are left as they
 /// are, unless all are asked to be read. The file itself is not touched: the

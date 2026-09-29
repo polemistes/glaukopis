@@ -413,6 +413,44 @@ fn a_reading_can_be_stopped_and_asks_for_languages_there_are() {
 }
 
 #[test]
+fn a_scan_is_known_by_the_doi_and_the_isbn_printed_in_it() {
+    let Some(kit) = kit(true) else { return };
+    kit.typeset(
+        "title.png",
+        &PAGE.replace("The wrath", "Classical Quarterly 69.1 (2019), doi:10.1017/S0009838819000235\n\nThe wrath"),
+    );
+    kit.typeset(
+        "imprint.png",
+        "#set page(width: 150mm, height: 100mm, margin: 14mm)\n#set text(size: 11pt)\n\
+         Printed in the United States of America.\n\nISBN 978-0-8018-2388-6\n",
+    );
+    let scan = kit.typeset(
+        "scan.pdf",
+        "#set page(width: 150mm, height: 100mm, margin: 0pt)\n#image(\"title.png\", width: 100%, height: 100%)\n\
+         #pagebreak()\n#image(\"imprint.png\", width: 100%, height: 100%)\n",
+    );
+    // Without its text, the file says nothing of what it is.
+    let unknown = crate::import::pdf::identify(&scan).unwrap();
+    assert_eq!((unknown.doi.as_deref(), unknown.isbns.len(), unknown.has_text), (None, 0, false));
+
+    let mut asked = 0;
+    let facts = crate::import::pdf::identify_scan(&scan, |count| {
+        asked = count;
+        first_pages(&scan, &kit.tools, &kit.work(), count, &never())
+    })
+    .unwrap();
+    assert_eq!(asked, 2);
+    assert_eq!(facts.doi.as_deref(), Some("10.1017/s0009838819000235"));
+    assert_eq!(facts.isbns, vec!["9780801823886"]);
+    assert!(!facts.has_text, "it is still a scan");
+    assert!(facts.beginning.starts_with("Classical Quarterly"), "{}", facts.beginning);
+
+    // A file with text is not read.
+    let text = kit.typeset("text.pdf", PAGE);
+    crate::import::pdf::identify_scan(&text, |_| panic!("a file with text was read")).unwrap();
+}
+
+#[test]
 fn what_is_not_a_pdf_is_said_to_be_none() {
     let tmp = tempfile::tempdir().unwrap();
     let path = tmp.path().join("letter.pdf");
