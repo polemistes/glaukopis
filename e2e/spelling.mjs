@@ -122,6 +122,10 @@ try {
   );
   check('with a wavy line', /wavy/.test(style) && /underline/.test(style), style);
   await app.screenshot('spelling-2-english');
+  await app.setTheme('dark');
+  await sleep(200);
+  await app.screenshot('spelling-2b-english-dark');
+  await app.setTheme('light');
 
   // The word at the cursor is left alone while it is written.
   await app.keys('Achilees');
@@ -201,6 +205,34 @@ try {
   await app.clickText('.menu [role="menuitem"]', 'the');
   await until('the word to be put in there', async () => (await app.text('.text-view .section .body')).includes('by the gods'));
   check('its menu puts in what is chosen', true);
+
+  // ---- the settings ----
+  const openWrath = async () => {
+    await app.keys(['Control', '1']);
+    await app.clickText('.card', 'The wrath');
+    await app.waitFor('.text-view .section .body .static', 8000);
+    await sleep(800);
+  };
+  await app.keys(['Control', ',']);
+  await app.waitFor('[data-words="en"] li', 8000);
+  const listed = await app.exec(
+    `return Array.from(document.querySelectorAll('[data-words="en"] li')).map((l) => l.textContent.trim())`,
+  );
+  check('one’s own words are listed in the settings', listed.join(' ') === 'Glaukopis', listed.join(' '));
+  await app.click('[data-words="en"] li button[aria-label="Take away “Glaukopis”"]');
+  await until('the word to be taken away', async () => !readFileSync(own, 'utf8').includes('Glaukopis'));
+  check('and can be taken away', !(await app.exists('[data-words="en"]')));
+  await app.click('[role="radiogroup"][aria-label="Check spelling as you write"] button[aria-label="Off"]');
+  await openWrath();
+  check('with checking turned off, nothing is underlined', (await drawnUnderlined()).length === 0 && (await underlined()).length === 0);
+  await app.keys(['Control', ',']);
+  await app.click('[role="radiogroup"][aria-label="Check spelling as you write"] button[aria-label="On"]');
+  await openWrath();
+  const again = await until('the words to be marked again', async () => {
+    const words = await drawnUnderlined();
+    return words.includes('Glaukopis') ? words : null;
+  });
+  check('turned on again, it is; and a word taken away from one’s words is wrong again', again.includes('Achilees'), again.join(' '));
 
   // ---- Norwegian ----
   await newProject('Vreden');
