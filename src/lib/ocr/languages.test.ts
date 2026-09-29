@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { languages } from '$lib/i18n';
 import { byName, firstLanguages, ocrLanguageName, tesseractLanguage } from './languages';
 
 describe('the languages Tesseract reads', () => {
@@ -19,6 +20,19 @@ describe('the languages Tesseract reads', () => {
     expect(ocrLanguageName('frk')).toBe('German, Fraktur');
     expect(ocrLanguageName('script/Latin')).toBe('Latin script');
     expect(byName(['nor', 'grc', 'eng'])).toEqual(['grc', 'eng', 'nor']);
+  });
+
+  it('are written in a sentence as the language of the interface writes them there', () => {
+    const was = languages.current;
+    try {
+      languages.current = 'nb';
+      expect(ocrLanguageName('eng')).toBe('Engelsk');
+      expect(ocrLanguageName('eng', true)).toBe('engelsk');
+      languages.current = 'en';
+      expect(ocrLanguageName('eng', true)).toBe('English');
+    } finally {
+      languages.current = was;
+    }
   });
 
   it('are read with at first as chosen, or as the text and the interface are written', () => {

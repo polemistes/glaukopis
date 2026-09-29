@@ -6,7 +6,7 @@
  * of the interface (ADR 0018).
  */
 
-import { languageName, primary, t } from '$lib/i18n';
+import { languageName, languages, primary, t } from '$lib/i18n';
 
 /** Tesseract's names for the languages of texts, by the first part of their tags. */
 const OF_TAG: Record<string, string> = {
@@ -104,14 +104,25 @@ const AS_TAG: Record<string, string> = {
 };
 
 /** The name of a language Tesseract reads, in the language of the interface. */
-export function ocrLanguageName(code: string): string {
+export function ocrLanguageName(code: string, inText = false): string {
   if (code.startsWith('script/')) return t('ocr-language-script', { script: code.slice(7) });
   const tag = AS_TAG[code] ?? code.split('_')[0];
-  const name = languageName(tag);
+  // Standing alone, a name begins with a capital; in a sentence, it is as
+  // the language writes it there: "English", but "engelsk".
+  const name = inText ? inSentence(tag) : languageName(tag);
   if (code === 'frk' || code === 'deu_latf') return t('ocr-language-fraktur', { language: name });
   if (code.endsWith('_old')) return t('ocr-language-old', { language: name });
   if (code.endsWith('_vert')) return t('ocr-language-vertical', { language: name });
   return name;
+}
+
+/** The name of a language as it is written in a sentence of the interface. */
+function inSentence(tag: string): string {
+  try {
+    return new Intl.DisplayNames([languages.current], { type: 'language' }).of(tag) ?? tag;
+  } catch {
+    return tag;
+  }
 }
 
 /** The languages Tesseract has, in the order of their names. */

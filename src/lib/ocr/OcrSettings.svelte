@@ -9,7 +9,7 @@
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import { open as chooseFile } from '@tauri-apps/plugin-dialog';
   import { toolsInfo, type ToolsInfo } from '$lib/api/documents';
-  import { t } from '$lib/i18n';
+  import { languages, t } from '$lib/i18n';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import TextField from '$lib/ui/TextField.svelte';
@@ -71,6 +71,12 @@
   const found = $derived(tools?.tesseract ?? null);
   const installed = $derived(byName(tools?.ocrLanguages ?? []));
   const first = $derived((settings.value.ocrLanguages ?? []).filter((c) => installed.includes(c)));
+  /** The languages it reads, in a sentence: "Danish, English and Latin". */
+  const listed = $derived(
+    new Intl.ListFormat(languages.current, { type: 'conjunction' }).format(
+      installed.map((code) => ocrLanguageName(code, true)),
+    ),
+  );
 </script>
 
 <div class="program" data-program="tesseract">
@@ -114,7 +120,7 @@
     <div class="languages">
       <p class="hint">
         {installed.length
-          ? t('ocr-settings-has', { languages: installed.map(ocrLanguageName).join(', ') })
+          ? t('ocr-settings-has', { languages: listed })
           : t('ocr-settings-has-none')}
       </p>
       {#if installed.length}
