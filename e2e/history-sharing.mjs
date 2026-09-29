@@ -26,8 +26,12 @@ async function until(what, fn, ms = 10000) {
 
 const ask = (app, body, ...args) =>
   app.execAsync(`const { history: h, positions } = window.__glaukopisHistory; ${body}`, ...args);
+/** The text of the centre, without the cursors of the others, which carry their names. */
 const bodyText = (app) =>
-  app.exec(`return document.querySelector('.text-view .section .body')?.textContent.trim() ?? ''`);
+  app.exec(`const b = document.querySelector('.text-view .section .body')?.cloneNode(true);
+            if (!b) return '';
+            b.querySelectorAll('.ProseMirror-yjs-cursor').forEach((c) => c.remove());
+            return b.textContent.replace(/\u2060/g, '').trim();`);
 const person = (app) => JSON.parse(readFileSync(join(app.dataDir, 'settings.json'), 'utf8')).person;
 
 /** What changed in the paragraph of the centre since a moment, as [status, text, name of who]. */
@@ -126,23 +130,25 @@ try {
   await guest.keys(' Of Achilles.');
   await until('the owner to have what the guest wrote', async () => (await bodyText(owner)).includes('Of Achilles.'));
   await owner.click('.text-view .section .body');
-  await sleep(200);
-  await owner.press('End');
-  await owner.press('Backspace');
+  await sleep(500);
+  // The owner takes away words that were there, and writes others.
   await owner.press('Home');
-  await owner.keys('O ');
-  await until('the guest to have what the owner changed', async () => (await bodyText(guest)) === 'O Sing, goddess, the wrath. Of Achilles');
+  for (let i = 0; i < 6; i++) await owner.press('Delete');
+  await owner.keys('O muse, ');
+  await until('the guest to have what the owner changed', async () => (await bodyText(guest)) === 'O muse, goddess, the wrath. Of Achilles.');
   await sleep(1500);
 
   // ---- who did what, on both computers ----
-  const expected = JSON.stringify([
-    ['added', 'O ', 'Robert'],
-    ['added', ' Of Achilles', 'Anna Lind'],
-    ['removed', '.', 'Robert'],
-  ]);
-  const seenByOwner = await changes(owner, since);
+  const expected = JSON.stringify(
+    [
+      ['added', 'O muse, ', 'Robert'],
+      ['removed', 'Sing, ', 'Robert'],
+      ['added', ' Of Achilles.', 'Anna Lind'],
+    ].sort(),
+  );
+  const seenByOwner = (await changes(owner, since)).sort();
   check("the owner's history knows each one's changes", JSON.stringify(seenByOwner) === expected, JSON.stringify(seenByOwner));
-  const seenByGuest = await changes(guest, since);
+  const seenByGuest = (await changes(guest, since)).sort();
   check("and so does the guest's, from the same moment", JSON.stringify(seenByGuest) === expected, JSON.stringify(seenByGuest));
   check(
     'each installation is a person of its own',
@@ -172,6 +178,8 @@ try {
   }
 } catch (error) {
   console.error(error);
+  for (const [who, app] of [['owner', owner], ['guest', guest]])
+    if (app) console.log(`      the text of the ${who}: ${JSON.stringify(await bodyText(app).catch(() => '?'))}`);
   check('the script ran to its end', false, String(error.message ?? error));
   await owner?.screenshot('history-sharing-failure-owner').catch(() => {});
   await guest?.screenshot('history-sharing-failure-guest').catch(() => {});
