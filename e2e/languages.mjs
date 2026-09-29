@@ -81,7 +81,7 @@ try {
   await sleep(300);
   const rail = () =>
     app.exec(`return Array.from(document.querySelectorAll('.rail a.place')).map((a) => a.getAttribute('aria-label'))`);
-  check('the interface is in the language of the system', (await rail()).join(' ') === 'Prosjekter Bibliotek Bilder Innstillinger', (await rail()).join(' '));
+  check('the interface is in the language of the system', (await rail()).join(' ') === 'Prosjekter Bibliotek Bilder Søk Innstillinger', (await rail()).join(' '));
   check('and the page says so', (await app.exec(`return document.documentElement.lang`)) === 'nb');
   await english('the projects');
   await app.screenshot('languages-1-projects');
@@ -173,6 +173,10 @@ try {
   await app.keys(['Control', '3']);
   await sleep(500);
   await english('the pictures');
+  await app.keys(['Control', 'Shift', 'F']);
+  await sleep(500);
+  await english('the search through everything');
+  await app.screenshot('languages-5b-search');
   await app.keys(['Control', ',']);
   await app.waitForText('h2', 'Språk');
   await sleep(300);
@@ -196,7 +200,7 @@ try {
      const s = f.querySelector('select'); s.value = 'en'; s.dispatchEvent(new Event('change', { bubbles: true }));`,
   );
   await sleep(300);
-  check('English is chosen, and the interface changes at once', (await rail()).join(' ') === 'Projects Library Pictures Settings', (await rail()).join(' '));
+  check('English is chosen, and the interface changes at once', (await rail()).join(' ') === 'Projects Library Pictures Search Settings', (await rail()).join(' '));
   check('the page says so', (await app.exec(`return document.documentElement.lang`)) === 'en');
   check('and the settings themselves', (await app.exists('h2')) && (await app.text('h1')) === 'Settings', await app.text('h1'));
   await sleep(500);

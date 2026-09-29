@@ -386,7 +386,11 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
         for (let i = 0; i < (doc.inlineContent ? 0 : ranges.length); i++) {
           const range = ranges[i];
           let stoppedAt: number | null = null;
-          doc.nodesBetween(range.from, Math.max(range.to, range.from + 1), (node, pos) => {
+          // Within the document as it is: at its very end, an empty range made one wider would pass it.
+          const size = doc.content.size;
+          const from = Math.min(range.from, size);
+          const to = Math.min(size, Math.max(range.to, range.from + 1));
+          doc.nodesBetween(from, to, (node, pos) => {
             if (stoppedAt !== null) return false;
             if (!node.inlineContent) return true;
             if (performance.now() > until) {
