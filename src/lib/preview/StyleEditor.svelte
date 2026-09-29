@@ -53,7 +53,12 @@
   let source = $state('');
   let sourceError = $state<string | null>(null);
 
-  let sample = $state.raw<{ citations: string[]; bibliography: string[] } | null>(null);
+  let sample = $state.raw<{
+    citations: string[];
+    bibliography: string[];
+    /** How many works it was made of: the sample of two works together needs three. */
+    works: number;
+  } | null>(null);
   let sampleError = $state<string | null>(null);
   let sampling = $state(false);
   let works = $state.raw<ExportReference[]>([]);
@@ -212,7 +217,7 @@
     try {
       const html = await styleSample(text, list, language);
       if (mine !== round) return;
-      sample = read(html);
+      sample = { ...read(html), works: list.length };
       sampleError = null;
     } catch (e) {
       if (mine === round) sampleError = describeError(e) ?? t('style-sample-failed');
@@ -276,12 +281,15 @@
     return { citations, bibliography };
   }
 
+  // In the order the core makes the citations of the sample
+  // (`samples::document`), which leaves out the two works together where
+  // there are fewer than three.
   const captions = $derived([
     t('style-sample-cited'),
     t('style-sample-same-page'),
     t('style-sample-another'),
     t('style-sample-first-again'),
-    t('style-sample-together'),
+    ...((sample?.works ?? 0) > 2 ? [t('style-sample-together')] : []),
     t('style-sample-in-sentence'),
   ]);
 
