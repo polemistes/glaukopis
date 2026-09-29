@@ -53,6 +53,7 @@
   import { captionNodes, captionOf, markActive, toggle } from '$lib/editor/commands';
   import { placeholder as placeholderPlugin } from '$lib/editor/plugins';
   import { showFormula } from '$lib/figures/math.svelte';
+  import { t } from '$lib/i18n';
   import type { Inline } from '$lib/project/model/text';
   import { tooltip } from '$lib/ui/tooltip';
 
@@ -66,7 +67,7 @@
     label?: string;
   }
 
-  let { value, onchange, onkeep, placeholder = '', label = 'Caption' }: Props = $props();
+  let { value, onchange, onkeep, placeholder = '', label }: Props = $props();
 
   let host = $state<HTMLDivElement>();
   let view: EditorView | undefined;
@@ -162,7 +163,7 @@
             class: 'prose caption',
             spellcheck: 'true',
             role: 'textbox',
-            'aria-label': label,
+            'aria-label': label ?? t('pictures-caption'),
           },
           nodeViews: { math: (node) => new Formula(node) },
           transformPasted: oneLine,
@@ -248,10 +249,10 @@
     <button
       type="button"
       class:on={marks.em}
-      aria-label="Italic"
+      aria-label={t('pictures-italic')}
       aria-pressed={!!marks.em}
       tabindex="-1"
-      use:tooltip={{ text: 'Italic', shortcut: 'Ctrl+I', side: 'bottom' }}
+      use:tooltip={{ text: t('pictures-italic'), shortcut: 'Ctrl+I', side: 'bottom' }}
       onclick={() => mark('em')}
     >
       <Italic size={14} />
@@ -260,10 +261,10 @@
       type="button"
       class="caps"
       class:on={marks.smallcaps}
-      aria-label="Small capitals"
+      aria-label={t('pictures-small-caps')}
       aria-pressed={!!marks.smallcaps}
       tabindex="-1"
-      use:tooltip={{ text: 'Small capitals', shortcut: 'Ctrl+Shift+K', side: 'bottom' }}
+      use:tooltip={{ text: t('pictures-small-caps'), shortcut: 'Ctrl+Shift+K', side: 'bottom' }}
       onclick={() => mark('smallcaps')}
     >
       <span>Sc</span>

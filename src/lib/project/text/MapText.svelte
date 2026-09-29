@@ -20,7 +20,8 @@
   import { bodySchema } from '$lib/editor/schema';
   import { editorUi } from '$lib/editor/ui.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
-  import { plural, truncate } from '$lib/library/format';
+  import { truncate } from '$lib/library/format';
+  import { t } from '$lib/i18n';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import { pointRect } from '$lib/ui/floating';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
@@ -30,6 +31,7 @@
   import { replaceWhenShown } from '$lib/spelling/menu';
   import type { Project } from '../model/project.svelte';
   import { isAncestor } from '../model/tree';
+  import { pieces } from '../pieces';
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import type { Folding } from './folding.svelte';
   import TextSection, { type Part } from './TextSection.svelte';
@@ -166,6 +168,12 @@
     const timer = setTimeout(() => (counted = now), 500);
     return () => clearTimeout(timer);
   });
+
+  // What is said under the text besides the count, with the keys shown as keys.
+  const keysHint = $derived(
+    pieces((m) => t('text-keys', m), { ctrl: 'Ctrl', enter: 'Enter', at: '@' }),
+  );
+  const linkingHint = $derived(pieces((m) => t('text-hint-linking', m), { esc: 'Esc' }));
 
   // ---- activation and focus ----
 
@@ -469,23 +477,25 @@
 
   function menuFor(id: string, anchor: HTMLElement | null): MenuItem[] {
     const base = elementMenu(project, [id], actions, anchor).filter(
-      (item) => !('label' in item) || (item.label !== 'Write its text' && item.label !== 'Rename'),
+      (item) =>
+        !('label' in item) ||
+        (item.label !== t('project-write-text') && item.label !== t('common-rename')),
     );
     const i = indexOf(id);
     const view = editors.get(id)?.body?.getView();
     const extra: MenuItem[] = [];
     if (view && view.hasFocus()) {
       extra.push({
-        label: 'Split here',
+        label: t('text-split'),
         icon: SplitSquareVertical,
         shortcut: 'Ctrl+Enter',
-        hint: 'What follows the cursor becomes a new element',
+        hint: t('text-split-hint'),
         action: () => split(id, view),
       });
     }
     if (i > 0 && id !== tree.root && !(tree.children.get(id)?.length ?? 0)) {
       extra.push({
-        label: 'Join to the element above',
+        label: t('text-join'),
         icon: Merge,
         action: () => merge(id),
       });
@@ -495,23 +505,23 @@
     if (folding.can(tree, id)) {
       const folded = folding.hides(tree, id);
       folds.push({
-        label: folded ? 'Open it' : 'Fold it away',
+        label: folded ? t('text-open') : t('text-fold'),
         icon: folded ? UnfoldVertical : FoldVertical,
         shortcut: 'Ctrl+Alt+U',
         action: () => fold(id),
       });
       if (folding.anyFolded(tree, id))
         folds.push({
-          label: 'Open all that is folded under it',
+          label: t('text-open-all-under'),
           icon: ChevronsUpDown,
           shortcut: 'Ctrl+Alt+Shift+U',
           action: () => fold(id, true),
         });
       if (folding.anyOpen(tree, id))
         folds.push({
-          label: 'Fold away all under it',
+          label: t('text-fold-all-under'),
           icon: ChevronsDownUp,
-          hint: 'Of what is directly under it the names are shown, and nothing deeper',
+          hint: t('text-fold-all-under-hint'),
           action: () => folding.foldAll(tree, id),
         });
       folds.push({ kind: 'separator' });
@@ -548,7 +558,7 @@
     startDrag(event, () => {
       if (id === tree.root) return null;
       const data: ElementsPayload = { project, map: mapId, ids: [id], grab: { x: 0, y: 0 } };
-      return { kind: 'elements', data, label: project.node(id)?.title || 'Untitled' };
+      return { kind: 'elements', data, label: project.node(id)?.title || t('project-untitled') };
     });
   }
 
@@ -732,15 +742,17 @@
   let hoveredLink = $state<string | null>(null);
 
   function linkWords(b: Bracket): string {
-    const a = project.node(b.from)?.title || 'Untitled';
-    const z = project.node(b.to)?.title || 'Untitled';
+    const a = project.node(b.from)?.title || t('project-untitled');
+    const z = project.node(b.to)?.title || t('project-untitled');
     return `${truncate(a, 40)} ↔ ${truncate(z, 40)}${b.label ? ` · ${b.label}` : ''}`;
   }
 
   function linkMenu(event: MouseEvent, b: Bracket) {
     event.preventDefault();
     const end = (id: string): MenuItem => ({
-      label: `Go to “${truncate(project.node(id)?.title || 'Untitled', 36)}”`,
+      label: t('text-go-to', {
+        name: truncate(project.node(id)?.title || t('project-untitled'), 36),
+      }),
       icon: ArrowRight,
       action: async () => {
         if (folding.reveal(tree, id)) await tick();
@@ -755,12 +767,12 @@
       end(b.to),
       { kind: 'separator' },
       {
-        label: b.label ? 'Change the label…' : 'Add a label…',
+        label: b.label ? t('text-change-label') : t('text-add-label'),
         icon: Pencil,
         action: () => (labelling = { id: b.id, value: b.label, top: (b.top + b.bottom) / 2 }),
       },
       {
-        label: 'Remove the association',
+        label: t('text-remove-association'),
         icon: Trash2,
         danger: true,
         action: () => {
@@ -813,7 +825,7 @@
   >
     <div class="page">
       <!-- The associations stand in the left margin, beside the names they join. -->
-      <div class="margin" aria-label="Associations">
+      <div class="margin" aria-label={t('text-associations')}>
         <svg width={marginWidth} height={columnHeight} aria-hidden="true">
           <!-- Drawn from the edge of the text outwards: mirrored, so that the edge is at nought. -->
           <g transform="translate({marginWidth} 0) scale(-1 1)">
@@ -841,8 +853,8 @@
             class="label-input"
             style:top="{labelling.top - 13}px"
             bind:value={labelling.value}
-            placeholder="How they are related"
-            aria-label="Label of the association"
+            placeholder={t('project-link-placeholder')}
+            aria-label={t('project-link-label')}
             onblur={commitLabel}
             onkeydown={(e) => {
               e.stopPropagation();
@@ -859,8 +871,8 @@
           {@const node = project.nodes.get(row.id)}
           {#if i === firstLoose}
             <div class="loose-heading">
-              <span class="overline">Loose elements</span>
-              <span>Thoughts that have no place yet. They are not part of the document.</span>
+              <span class="overline">{t('text-loose')}</span>
+              <span>{t('text-loose-hint')}</span>
             </div>
           {/if}
           {#if node}
@@ -903,14 +915,20 @@
 
   <footer>
     {#if linkFrom}
-      <span class="linking"
-        >Click the name of the element to associate with · <kbd>Esc</kbd> to leave it</span
-      >
+      <span class="linking">
+        {#each linkingHint as piece, i (i)}
+          {#if piece.name}<kbd>{piece.text}</kbd>{:else}{piece.text}{/if}
+        {/each}
+      </span>
     {:else}
-      <span>{plural(counted.words, 'word')}</span>
-      {#if counted.cited}<span>{plural(counted.cited, 'work')} cited</span>{/if}
-      {#if counted.notes}<span>{plural(counted.notes, 'note')}</span>{/if}
-      <span class="keys"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> new element · <kbd>@</kbd> cite</span>
+      <span>{t('project-words', { count: counted.words })}</span>
+      {#if counted.cited}<span>{t('text-cited', { count: counted.cited })}</span>{/if}
+      {#if counted.notes}<span>{t('text-notes', { count: counted.notes })}</span>{/if}
+      <span class="keys">
+        {#each keysHint as piece, i (i)}
+          {#if piece.name}<kbd>{piece.text}</kbd>{:else}{piece.text}{/if}
+        {/each}
+      </span>
     {/if}
   </footer>
 </div>

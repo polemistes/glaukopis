@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as Y from 'yjs';
+  import { t } from '$lib/i18n';
   import { place, type RectLike } from '$lib/ui/floating';
   import { hydrate } from '$lib/figures/hydrate.svelte';
   import { blocksHtml, excerpt } from './model/html';
@@ -41,13 +42,13 @@
       <div class="prose static" use:hydrate={{ html: content.html, project, element: id }}>
         {@html content.html}
       </div>
-      {#if content.cut}<div class="more">Double-click to read on</div>{/if}
+      {#if content.cut}<div class="more">{t('project-read-on')}</div>{/if}
     {/if}
     {#if included || !node.heading || node.excluded}
       <div class="facts" class:alone={!content.html}>
-        {#if included}<div>Stands for the map “{included.name}”</div>{/if}
-        {#if !node.heading}<div>The name is not printed</div>{/if}
-        {#if node.excluded}<div>Left out of the document</div>{/if}
+        {#if included}<div>{t('project-stands-for-map', { name: included.name })}</div>{/if}
+        {#if !node.heading}<div>{t('project-name-not-printed')}</div>{/if}
+        {#if node.excluded}<div>{t('project-left-out-of-document')}</div>{/if}
       </div>
     {/if}
   </div>

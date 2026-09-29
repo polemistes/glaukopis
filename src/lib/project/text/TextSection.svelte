@@ -9,13 +9,14 @@
   import { blocksHtml } from '../model/html';
   import { hydrate } from '$lib/figures/hydrate.svelte';
   import { pressedFound } from '$lib/found/found.svelte';
-  import { plural } from '$lib/library/format';
+  import { t } from '$lib/i18n';
   import { drawnWordAt, spellingMarks } from '$lib/spelling/highlights';
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import type { Other, Project } from '../model/project.svelte';
   import { readBody } from '../model/text';
   import type { NodeRecord } from '../model/types';
+  import { pieces } from '../pieces';
 
   export type Part = 'title' | 'body';
 
@@ -100,6 +101,10 @@
     return body ? blocksHtml(readBody(body)) : '';
   });
   const included = $derived(node.include ? project.map(node.include) : undefined);
+  /** Where the map it stands for is in the document, with the map's name in bold. */
+  const includedWords = $derived(
+    included ? pieces((m) => t('text-include', m), { map: included.name }) : [],
+  );
   /** The language of the map, whose spelling the text is checked by. */
   const language = $derived(project.map(node.map)?.document.language ?? null);
 
@@ -113,13 +118,11 @@
   /** What is folded away, in words. */
   const away = $derived.by(() => {
     if (!hidden) return '';
-    const what = [
-      ...(hidden.text ? ['its text'] : []),
-      ...(hidden.parts ? [plural(hidden.parts, 'element')] : []),
-    ].join(' and ');
-    return `${what.charAt(0).toUpperCase()}${what.slice(1)} folded away${
-      hidden.words ? `, ${plural(hidden.words, 'word')}` : ''
-    }`;
+    return t('text-folded', {
+      text: hidden.text ? 'yes' : 'no',
+      parts: hidden.parts,
+      words: hidden.words,
+    });
   });
 
   function press(event: MouseEvent, part: Part) {
@@ -160,16 +163,16 @@
         type="button"
         class="fold"
         aria-expanded={!hidden}
-        aria-label={hidden ? 'Open it' : 'Fold it away'}
+        aria-label={hidden ? t('text-open') : t('text-fold')}
         tabindex="-1"
         use:tooltip={{
           text: hidden
             ? openable
-              ? 'Open it · with Shift, all that is folded under it as well'
-              : 'Open it'
+              ? t('text-open-shift')
+              : t('text-open')
             : openable
-              ? 'Fold away its text and what is under it · with Shift, open all that is folded under it'
-              : 'Fold away its text and what is under it',
+              ? t('text-fold-shift')
+              : t('text-fold-hint'),
           side: 'top',
         }}
         onmousedown={(e) => e.preventDefault()}
@@ -181,7 +184,7 @@
     <button
       type="button"
       class="grip"
-      aria-label="Move or change this element"
+      aria-label={t('text-grip')}
       tabindex="-1"
       onpointerdown={(e) => ongrip(node.id, e)}
       onclick={(e) => onmenu(node.id, e, e.currentTarget)}
@@ -189,8 +192,10 @@
       <GripVertical size={15} />
     </button>
     {#each others.slice(0, 3) as o (o.client)}
-      <span class="other" style:background={o.color} use:tooltip={`${o.name} is here`}
-        >{initials(o.name)}</span
+      <span
+        class="other"
+        style:background={o.color}
+        use:tooltip={t('project-other-here', { name: o.name })}>{initials(o.name)}</span
       >
     {/each}
   </div>
@@ -198,14 +203,14 @@
   <div class="content">
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div class="heading" data-part="title" onmousedown={(e) => press(e, 'title')}>
-      {#if !node.heading && level > 0}<span class="tag">not printed</span>{/if}
+      {#if !node.heading && level > 0}<span class="tag">{t('text-not-printed')}</span>{/if}
       {#if active && title}
         <RichText
           bind:this={titleEditor}
           {project}
           fragment={title}
           kind="title"
-          placeholder={level === 0 ? 'Title' : 'Name of the element'}
+          placeholder={level === 0 ? t('text-title') : t('text-name')}
           autofocus={focus?.part === 'title' ? focus.at : null}
           onaction={(a, v) => onaction(node.id, 'title', a, v)}
           onfocus={() => onfocused(node.id, 'title')}
@@ -228,7 +233,7 @@
         </div>
       {:else}
         <div class="prose title static unnamed">
-          {level === 0 ? 'Title' : 'Name of the element'}
+          {level === 0 ? t('text-title') : t('text-name')}
         </div>
       {/if}
     </div>
@@ -236,8 +241,12 @@
     {#if included && !hidden}
       <button type="button" class="include" onclick={() => onopenmap(included.id)}>
         <FileInput size={14} />
-        <span>In the document, the map <strong>{included.name}</strong> stands here.</span>
-        <span class="go">Open it</span>
+        <span>
+          {#each includedWords as piece, i (i)}
+            {#if piece.name}<strong>{piece.text}</strong>{:else}{piece.text}{/if}
+          {/each}
+        </span>
+        <span class="go">{t('text-include-open')}</span>
       </button>
     {/if}
 
@@ -251,9 +260,7 @@
             fragment={body}
             kind="body"
             element={node.id}
-            placeholder={level === 0 && !loose
-              ? 'Write here, or press Ctrl+Enter to begin the first section.'
-              : ''}
+            placeholder={level === 0 && !loose ? t('text-first-section') : ''}
             autofocus={focus?.part === 'body' ? focus.at : null}
             onaction={(a, v) => onaction(node.id, 'body', a, v)}
             onfocus={() => onfocused(node.id, 'body')}
@@ -288,7 +295,7 @@
         </button>
         {#if openable}
           <button type="button" class="all" onclick={() => onfold?.(node.id, true)}>
-            Open all
+            {t('text-open-all')}
           </button>
         {/if}
       </div>

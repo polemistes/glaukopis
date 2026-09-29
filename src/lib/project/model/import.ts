@@ -7,6 +7,7 @@
  */
 
 import type { Imported } from '$lib/api/imported';
+import { t } from '$lib/i18n';
 import { writeBody, writeName } from './blocks';
 import type { Project } from './project.svelte';
 import { inlineText, type Block, type Inline } from './text';
@@ -53,7 +54,7 @@ function citedIn(blocks: Block[], out: Set<string>) {
  */
 export function makeMap(project: Project, imported: Imported, title?: string): Made {
   const given = titleOf(imported);
-  const wanted = title?.replace(/\s+/g, ' ').trim() || given || 'Untitled';
+  const wanted = title?.replace(/\s+/g, ' ').trim() || given || t('project-untitled');
   const name: Inline[] =
     wanted === given ? imported.title : [{ kind: 'text', text: wanted, marks: {} }];
 

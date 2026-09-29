@@ -19,6 +19,7 @@
   } from '$lib/api/documents';
   import { lookupAcknowledgements } from '$lib/api/sources';
   import { languageName, languages, t, TEXT_LANGUAGES } from '$lib/i18n';
+  import { apart, PLACE } from '$lib/util/words';
   import { systemInfo, type Settings, type SystemInfo, type Theme } from '$lib/api/system';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -44,7 +45,7 @@
 
   const contactProblem = $derived(
     contact.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim())
-      ? 'That does not look like an address.'
+      ? t('settings-contact-problem')
       : null,
   );
 
@@ -65,7 +66,7 @@
       ]);
       thanks = await lookupAcknowledgements();
     } catch (error) {
-      notifyError('Something about the application could not be read', error);
+      notifyError(t('settings-error-system'), error);
     }
   });
 
@@ -84,7 +85,7 @@
       await settings.saveNow();
       tools = await toolsInfo(true);
     } catch (error) {
-      notifyError('The programs could not be looked for', error);
+      notifyError(t('settings-error-programs'), error);
     } finally {
       looking = false;
     }
@@ -92,7 +93,7 @@
 
   async function choose(which: 'pandoc' | 'typst') {
     const chosen = await chooseFile({
-      title: `Where ${which === 'pandoc' ? 'Pandoc' : 'Typst'} is`,
+      title: t('settings-program-where', { program: which === 'pandoc' ? 'Pandoc' : 'Typst' }),
       multiple: false,
     });
     if (typeof chosen !== 'string') return;
@@ -130,34 +131,37 @@
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((f) => ({ value: f.id, label: f.name })),
   );
+
+  // The name of the file of the library is shown as code, where the language puts it.
+  const [beforeFile, afterFile] = $derived(apart(t('settings-data-hint', { file: PLACE })));
 </script>
 
 <div class="settings">
   <div class="inner">
-    <h1>Settings</h1>
+    <h1>{t('settings-title')}</h1>
 
     <section>
-      <h2>Appearance</h2>
+      <h2>{t('settings-appearance')}</h2>
       <div class="row">
         <div class="what">
-          <div class="label">Light or dark</div>
+          <div class="label">{t('settings-theme')}</div>
         </div>
         <Segmented
           value={settings.value.theme}
-          label="Light or dark"
+          label={t('settings-theme')}
           options={[
-            { value: 'system', label: 'As the system', icon: Monitor },
-            { value: 'light', label: 'Light', icon: Sun },
-            { value: 'dark', label: 'Dark', icon: Moon },
+            { value: 'system', label: t('settings-theme-system'), icon: Monitor },
+            { value: 'light', label: t('settings-theme-light'), icon: Sun },
+            { value: 'dark', label: t('settings-theme-dark'), icon: Moon },
           ]}
           onchange={(theme: Theme) => settings.set('theme', theme)}
         />
       </div>
       <div class="row top">
         <div class="what">
-          <label class="label" for="text-size">Size of your text</label>
+          <label class="label" for="text-size">{t('settings-text-size')}</label>
           <div class="hint">
-            In the maps and the text view. What is exported follows the document format.
+            {t('settings-text-size-hint')}
           </div>
         </div>
         <div class="size">
@@ -174,8 +178,7 @@
         </div>
       </div>
       <p class="sample serif" style:font-size="{settings.value.textSize}px">
-        Sing, goddess, the wrath of Achilles, son of Peleus — <span lang="grc">μῆνιν ἄειδε θεά</span
-        >.
+        {t('settings-sample')} — <span lang="grc">μῆνιν ἄειδε θεά</span>.
       </p>
     </section>
 
@@ -204,13 +207,13 @@
     <SpellingSettings />
 
     <section>
-      <h2>New documents</h2>
-      <p class="about">What a map begins with. Each map can be given another, in the preview.</p>
+      <h2>{t('settings-new-documents')}</h2>
+      <p class="about">{t('settings-new-documents-hint')}</p>
       <div class="pair">
         {#if styleOptions.length}
           <Select
             value={settings.value.defaultStyle}
-            label="Reference style"
+            label={t('settings-reference-style')}
             options={styleOptions}
             onchange={(id) => settings.set('defaultStyle', id)}
           />
@@ -218,7 +221,7 @@
         {#if formatOptions.length}
           <Select
             value={settings.value.defaultFormat}
-            label="Document format"
+            label={t('settings-document-format')}
             options={formatOptions}
             onchange={(id) => settings.set('defaultFormat', id)}
           />
@@ -227,19 +230,19 @@
     </section>
 
     <section>
-      <h2>You</h2>
+      <h2>{t('settings-you')}</h2>
       <div class="fields">
         <TextField
           bind:value={name}
-          label="Name"
-          hint="Shown to those you share projects with. Not used otherwise."
+          label={t('settings-name')}
+          hint={t('settings-name-hint')}
           onblur={() => keep('displayName', name)}
         />
         <TextField
           bind:value={contact}
           type="email"
-          label="Address for bibliographic services"
-          hint="Services such as Crossref answer more readily to those who say how they can be reached. If you enter an address, it is sent to them with each lookup, and to no one else. Leave it empty to send none."
+          label={t('settings-contact')}
+          hint={t('settings-contact-hint')}
           error={contactProblem}
           spellcheck="false"
           onblur={() => !contactProblem && keep('contactEmail', contact)}
@@ -248,12 +251,11 @@
     </section>
 
     <section>
-      <h2>Programs</h2>
+      <h2>{t('settings-programs')}</h2>
       <p class="about">
-        Glaukopis makes documents with Pandoc, and pages to preview and print with Typst. They are
-        found by themselves where they are installed in the usual way.
+        {t('settings-programs-about')}
       </p>
-      {#each [{ id: 'pandoc', name: 'Pandoc', found: tools?.pandoc, need: 'Needed for the preview and for every export.' }, { id: 'typst', name: 'Typst', found: tools?.typst, need: 'Needed for the preview of pages, and for PDF.' }] as const as program (program.id)}
+      {#each [{ id: 'pandoc', name: 'Pandoc', found: tools?.pandoc, need: t('settings-pandoc-need') }, { id: 'typst', name: 'Typst', found: tools?.typst, need: t('settings-typst-need') }] as const as program (program.id)}
         <div class="program">
           <div class="state" class:missing={tools && !program.found}>
             {#if !tools}
@@ -270,12 +272,11 @@
               </div>
               <div class="hint">
                 {#if !tools}
-                  Looking…
+                  {t('settings-looking')}
                 {:else if program.found}
                   {program.found.path}
                 {:else}
-                  Not found. {program.need} Install it with the package manager of your system, or say
-                  below where it is.
+                  {t('settings-program-missing', { need: program.need })}
                 {/if}
               </div>
             </div>
@@ -285,8 +286,8 @@
               <TextField
                 bind:value={pandoc}
                 size="sm"
-                placeholder="Found by itself"
-                aria-label="Where Pandoc is"
+                placeholder={t('settings-program-found-by-itself')}
+                aria-label={t('settings-program-where', { program: 'Pandoc' })}
                 spellcheck="false"
                 onblur={() => keep('pandocPath', pandoc) && lookAgain()}
               />
@@ -294,68 +295,60 @@
               <TextField
                 bind:value={typst}
                 size="sm"
-                placeholder="Found by itself"
-                aria-label="Where Typst is"
+                placeholder={t('settings-program-found-by-itself')}
+                aria-label={t('settings-program-where', { program: 'Typst' })}
                 spellcheck="false"
                 onblur={() => keep('typstPath', typst) && lookAgain()}
               />
             {/if}
-            <Button size="sm" onclick={() => choose(program.id)}>Choose…</Button>
+            <Button size="sm" onclick={() => choose(program.id)}>{t('common-choose')}</Button>
           </div>
         </div>
       {/each}
       {#if tools && tools.pandoc && !tools.latex.length}
         <p class="hint note">
-          No LaTeX was found. It is not needed: LaTeX source can be exported without it, and PDF is
-          made with Typst.
+          {t('settings-no-latex')}
         </p>
       {/if}
       <div>
         <Button size="sm" disabled={looking} onclick={lookAgain}>
           {#snippet icon()}<RefreshCw size={13} />{/snippet}
-          Look again
+          {t('settings-look-again')}
         </Button>
       </div>
     </section>
 
     <section class="last">
-      <h2>About</h2>
+      <h2>{t('settings-about')}</h2>
       <div class="aboutus">
         <Mark size={44} />
         <div>
           <div class="label">Glaukopis {system?.version ?? ''}</div>
           <div class="hint">
-            Free software under the GNU General Public License, version 3 or later. It comes without
-            warranty.
+            {t('settings-licence')}
           </div>
           <div class="hint credit">
-            The owl is drawn by Robert Emil Berge, after a photograph of an Athenian tetradrachm by
-            Classical Numismatic Group, Inc. (http://www.cngcoins.com). The drawing is under the
-            Creative Commons Attribution-Share Alike 3.0 Unported licence.
+            {t('settings-owl')}
           </div>
         </div>
       </div>
       <div class="row top">
         <div class="what">
-          <div class="label">Where everything is kept</div>
+          <div class="label">{t('settings-data')}</div>
           <div class="hint path-text">{system?.dataDir ?? ''}</div>
           <div class="hint">
-            Your references are in <code>library/library.bib</code>, which any BibLaTeX tool can
-            read. To keep a copy of your work, copy this folder.
+            {beforeFile}<code>library/library.bib</code>{afterFile}
           </div>
         </div>
         <Button size="sm" disabled={!system} onclick={() => system && openPath(system.dataDir)}>
           {#snippet icon()}<FolderOpen size={13} />{/snippet}
-          Open
+          {t('common-open')}
         </Button>
       </div>
       <div>
-        <div class="label">Where references are looked up</div>
+        <div class="label">{t('settings-lookup')}</div>
         <div class="hint">
-          DOIs at doi.org, Crossref and DataCite; books in the catalogues K10plus, of the Norwegian
-          academic libraries, of the Deutsche Nationalbibliothek and of the Library of Congress;
-          preprints at arXiv; medical literature at PubMed. Only what you type into the lookup is
-          sent to them.
+          {t('settings-lookup-about')}
         </div>
         {#each thanks as t (t.service)}
           <div class="hint">{t.words}</div>

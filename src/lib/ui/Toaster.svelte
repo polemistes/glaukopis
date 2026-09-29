@@ -3,6 +3,7 @@
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import CircleCheck from '@lucide/svelte/icons/circle-check';
   import X from '@lucide/svelte/icons/x';
+  import { t } from '$lib/i18n';
   import { toasts } from './toast.svelte';
   import { lower, raise } from './top';
 
@@ -37,7 +38,7 @@
           }}>{toast.action.label}</button
         >
       {/if}
-      <button class="close" aria-label="Dismiss" onclick={() => toasts.dismiss(toast.id)}>
+      <button class="close" aria-label={t('ui-dismiss')} onclick={() => toasts.dismiss(toast.id)}>
         <X size={14} />
       </button>
     </div>
