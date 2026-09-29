@@ -65,9 +65,7 @@
       if (gone) return;
       looked = found;
       chosen = reader.first(newTextLanguage(), languages.current);
-      // Where every page has text, nothing is asked.
-      if (!found.picture && found.withText === found.pages) void read();
-      else phase = 'asking';
+      phase = 'asking';
     } catch (error) {
       if (!gone) fail(error);
     }
@@ -91,17 +89,27 @@
   }
 
   const without = $derived(looked ? looked.pages - looked.withText : 0);
-  /** Whether anything can be read: Tesseract is there, or some pages have text. */
+  /** Whether Tesseract is to read pages: those without text, or all where all are asked for. */
+  const scanning = $derived(!!looked && (looked.picture || without > 0 || all));
+  /**
+   * Whether anything can be done: pages read by Tesseract, or the text taken
+   * as the file has it, where Tesseract is not there, from the pages that have it.
+   */
   const readable = $derived(
     !!looked &&
-      (reader.installed ? chosen.length > 0 : !looked.picture && looked.withText > 0 && !all),
+      (!scanning ||
+        (reader.installed ? chosen.length > 0 : !looked.picture && looked.withText > 0 && !all)),
   );
   const about = $derived.by(() => {
     if (!looked) return '';
     if (looked.picture) return t('ocr-about-picture');
     if (looked.withText === 0) return t('ocr-about-scan', { pages: looked.pages });
+    if (without === 0) return t('ocr-about-text', { pages: looked.pages });
     return t('ocr-about-some', { pages: looked.pages, without });
   });
+  const go = $derived(
+    !scanning ? t('ocr-take-text') : reader.installed ? t('ocr-read') : t('ocr-read-text-pages'),
+  );
 </script>
 
 <div class="step" data-ocr={phase}>
@@ -112,7 +120,7 @@
     </div>
   {:else if phase === 'asking' && looked}
     <p class="about">{about}</p>
-    {#if reader.installed}
+    {#if scanning && reader.installed}
       <LanguagePicker
         value={chosen}
         installed={reader.languages}
@@ -120,21 +128,22 @@
         hint={t('ocr-languages-hint')}
         onchange={(value) => (chosen = value)}
       />
-    {:else}
+    {:else if scanning}
       <p class="failure selectable" role="alert">
         <CircleAlert size={15} /> <span>{t('ocr-no-tesseract')}</span>
       </p>
     {/if}
-    {#if looked.withText > 0 && without > 0 && reader.installed}
+    {#if looked.withText > 0 && reader.installed}
       <label class="check">
         <input type="checkbox" data-choice="all" bind:checked={all} />
         {t('ocr-read-all')}
       </label>
+      {#if all}<p class="hint">{t('ocr-read-all-map-hint')}</p>{/if}
     {/if}
     <div class="go">
       <Button variant="primary" disabled={!readable} onclick={read} data-ocr-read>
         {#snippet icon()}<ScanText size={14} />{/snippet}
-        {reader.installed ? t('ocr-read') : t('ocr-read-text-pages')}
+        {go}
       </Button>
     </div>
   {:else if phase === 'reading'}

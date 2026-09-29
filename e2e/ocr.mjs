@@ -76,6 +76,13 @@ const scan = scanOf('wrath.pdf', ['one.png', 'two.png'], 'The Wrath of Achilles'
 const long = scanOf('long.pdf', Array.from({ length: 12 }, (_, i) => (i % 2 ? 'two.png' : 'one.png')));
 const forLibrary = scanOf('nagy.pdf', ['two.png', 'one.png']);
 const picture = join(desk, 'one.png');
+// A PDF with text of its own, as one made from a written document is.
+const written = typst(
+  'written.pdf',
+  PAGE(
+    'The wrath of Achilles is the subject of the Iliad. Homer sings of the quarrel between the king and the hero, and of all that came of it.',
+  ),
+);
 
 const app = await App.launch({ width: 1360, height: 900 });
 try {
@@ -217,6 +224,22 @@ try {
     fromPicture.length === 1 && fromPicture[0].name === 'one' && /Many a brave soul/.test(fromPicture[0].text),
     JSON.stringify(fromPicture),
   );
+
+  // ---- a PDF that has text: taken as it is, or read anew ----
+  await dropOnTabs(written);
+  await app.waitFor('dialog [data-ocr="asking"]', 15000);
+  const aboutText = await app.text('dialog [data-ocr="asking"] .about');
+  check('a PDF that has text is said to be taken as it is', /The page has text, which is taken as it is/.test(aboutText), aboutText);
+  check('no languages are asked for', !(await app.exists('dialog [data-languages]')));
+  await app.click('dialog [data-choice="all"]');
+  check('unless its pages are to be read anew', await app.exists('dialog [data-languages]'));
+  await app.click('dialog [data-choice="all"]');
+  check('as it is, its text is taken', (await app.text('dialog [data-ocr-read]')).trim() === 'Take the text');
+  await app.click('dialog [data-ocr-read]');
+  await app.waitFor('dialog [data-fact="words"]', 30000);
+  check('and it is read at once', (await facts()).parts === '1' && (await remarks()).length === 0, JSON.stringify(await facts()));
+  await app.clickText('dialog footer button', 'Cancel');
+  await app.waitGone('dialog[open]', 5000);
 
   // ---- a reading stopped ----
   await dropOnTabs(long);

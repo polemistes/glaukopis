@@ -17,10 +17,16 @@ ocr-about-some = { $without ->
     [one] One of the { $pages } pages has no text, and is read from a picture of it; the others are taken as they are.
    *[other] { $without } of the { $pages } pages have no text, and are read from pictures of them; the others are taken as they are.
 }
+ocr-about-text = { $pages ->
+    [one] The page has text, which is taken as it is.
+   *[other] Every page has text, which is taken as it is.
+}
 ocr-read-all = Read the pages that have text as well
 ocr-read-all-hint = Their text stays, and what is read is laid over it.
+ocr-read-all-map-hint = What is read takes the place of their text: for when it is poor, or cannot be read.
 ocr-read = Read the text
 ocr-read-text-pages = Take the pages that have text
+ocr-take-text = Take the text
 ocr-reading = Reading { $file }…
 ocr-reading-pages = { $done } of { $total } pages read
 ocr-reading-hint = A page takes a few seconds. Cancel stops the reading.

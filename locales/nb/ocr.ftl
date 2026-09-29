@@ -17,10 +17,16 @@ ocr-about-some = { $without ->
     [one] Én av de { $pages } sidene har ingen tekst, og leses fra et bilde av den; de andre tas som de er.
    *[other] { $without } av de { $pages } sidene har ingen tekst, og leses fra bilder av dem; de andre tas som de er.
 }
+ocr-about-text = { $pages ->
+    [one] Siden har tekst, som tas slik den er.
+   *[other] Alle sidene har tekst, som tas slik den er.
+}
 ocr-read-all = Les også sidene som har tekst
 ocr-read-all-hint = Teksten deres blir stående, og det som leses, legges over den.
+ocr-read-all-map-hint = Det som leses, tar plassen til teksten deres: når den er dårlig, eller ikke kan leses.
 ocr-read = Les teksten
 ocr-read-text-pages = Ta sidene som har tekst
+ocr-take-text = Ta teksten
 ocr-reading = Leser { $file }…
 ocr-reading-pages = { $done } av { $total } sider lest
 ocr-reading-hint = En side tar noen sekunder. Avbryt stopper lesingen.
