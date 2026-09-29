@@ -874,6 +874,79 @@ server when they are put in, and fetched by the others from there, into
 their own stores. No other picture of your store is sent. A picture that
 has not arrived yet is shown as an empty frame until it has.
 
+## The history of a project
+
+A project can keep its whole history: every change, with who made it and
+when. The project can then be looked at as it was at any moment, and what
+stood there brought back. It is off at first, and turned on for one project
+at a time.
+
+**To open the history**, click the clock at the top right, or press
+**Ctrl+Shift+H**. It takes the place at the side that the references and the
+pictures share. While the history is not kept, the panel says so and has one
+button, **Keep the history**: from that moment the history begins with the
+project as it is, and nothing written after it is thrown away. The setting
+is in the project, so in a shared project the others keep the history too.
+
+The panel lists the moments, the newest first:
+
+- **What one person wrote before a pause**, with when they began and ended
+  and how much was written and deleted. In a shared project each has the
+  colour they have while they write.
+- **Moments with a name**, marked with a bookmark.
+- **The history begins**, at the bottom.
+
+**Choosing a moment** shows the map as it was then, in the place of the map
+as it is; it cannot be written in. What changed since the moment before is
+marked in the colour of who changed it: what was added is underlined and lies
+on their colour, what was removed is struck through, and what only had its
+marks changed is underlined more faintly. **Back to the present** at the top
+leaves it, and so does choosing the same moment again.
+
+From a moment:
+
+- **Name this moment**, the bookmark at the top. A named moment is easy to
+  find again, is never merged away, and is seen by those you share the
+  project with.
+- **Bring this element back as it was**, the arrow that comes up beside the
+  heading of an element; or **Bring the map back as it was**, the arrow at
+  the top. What is brought back is a change of yours like any other: undo
+  takes it back, and the others see it.
+- **Open as a project of its own**: a new project, named after the day it
+  was, which you can read and write in without touching this one.
+
+### The room it takes, and taking some of it out
+
+**Settings of the history**, at the top of the panel, shows how much room
+the history takes, and holds:
+
+- **Keep the history**, which turns it off again. What was kept is then
+  deleted, after it has asked — in a shared project, on every computer. The
+  project itself stays as it is.
+- **Older history**, which is merged so that it takes less room and is read
+  sooner: everything within an hour into one after some weeks, everything
+  within a day into one after some months; four weeks and six months at
+  first. Moments within what is merged can no longer be told apart. Named
+  moments, and those a review compares with, are always kept. It is done
+  once each time the project is opened.
+- **What came before**: choose a moment in the list first, then open the
+  settings, and the history before that moment can be put in a file of its
+  own (**Archive…**) or **deleted**. What is left begins with the project as
+  it was at that moment. Where named or reviewed moments lie before it, it
+  says how many before it asks.
+
+An archive is a file ending in `.glaukopis-history`. **Open an archive…**, at
+the top of the panel, shows it in the place of the project's own history: the
+moments in it can be looked at, and opened as projects of their own, though
+not named or brought back. **Close** goes back to the history of the project.
+
+The history is kept beside the project on your own computer, and holds the
+project and all its changes: a project of two hundred thousand words takes
+some megabytes when the history is turned on. Keeping it does not make
+writing slower, and a project with a long history opens as quickly as one
+without: the history is read only when you open the panel, and that takes
+well under a second.
+
 ## Languages
 
 Glaukopis speaks English and Norwegian Bokmål. At first it speaks the
@@ -946,6 +1019,8 @@ Norwegian is checked: the first underlines of a session come after a moment.
 - **Earlier versions.** A version of each project is kept every now and then
   while you work. Right-click a project and choose **Earlier versions…** to
   open one as a project of its own.
+- **The whole history.** A project can keep every change, with who made it
+  and when: see *The history of a project*.
 - **Deleted projects** can be brought back, from the line under the projects.
 - **Everything is in one folder**, shown under *Settings*. To keep a copy of
   your work, copy the folder.
@@ -963,6 +1038,7 @@ Norwegian is checked: the first underlines of a session come after a moment.
 | **Ctrl+P** | The preview |
 | **Ctrl+Shift+R** | The references of the map |
 | **Ctrl+Shift+P** | The pictures of the map |
+| **Ctrl+Shift+H** | The history of the project |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
 | **Tab**, **Enter** | In the diagram: a new element under, or beside |
 | **F2** | Rename |
