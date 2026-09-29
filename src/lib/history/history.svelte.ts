@@ -9,10 +9,12 @@
  * the same way.
  */
 
-import { historyRead, historyRoom } from '$lib/api/history';
+import * as Y from 'yjs';
+import { historyCut, historyRead, historyRoom } from '$lib/api/history';
 import { citationLabel } from '$lib/editor/references.svelte';
 import type { CiteItem, CiteMode } from '$lib/editor/schema';
 import { HISTORY, type Project } from '$lib/project/model/project.svelte';
+import { toBase64 } from '$lib/util/base64';
 import { newId } from '$lib/util/id';
 import { applyEdits } from './applying';
 import { Engine, type Edit, type When } from './engine';
@@ -53,10 +55,22 @@ export class ProjectHistory implements History {
   /** Where the history is read from, where it is not the project's own: an archive. */
   readonly #read: () => Promise<Uint8Array>;
 
-  constructor(project: Project, id: string, read?: () => Promise<Uint8Array>) {
+  /** An archive, which is read and not followed: its project may be another, and it changes no more. */
+  readonly archive: string | null;
+
+  /**
+   * With `archive`, the history is that of an archive, named so; `read`
+   * reads it from elsewhere than the project's store.
+   */
+  constructor(
+    project: Project,
+    id: string,
+    options: { archive?: string; read?: () => Promise<Uint8Array> } = {},
+  ) {
     this.project = project;
     this.id = id;
-    this.#read = read ?? (() => historyRead(id));
+    this.archive = options.archive ?? null;
+    this.#read = options.read ?? (() => historyRead(id));
   }
 
   /** Whether the project keeps its history. */
@@ -103,10 +117,11 @@ export class ProjectHistory implements History {
         );
       // Followed before it is read: what is written meanwhile is both on disk
       // and told, and the engine takes it once.
-      this.#unfollow = this.project.follow({
-        change: (update, here) => this.#post({ kind: 'change', update, here }),
-        written: (time, here, changes) => this.#post({ kind: 'written', time, here, changes }),
-      });
+      if (!this.archive)
+        this.#unfollow = this.project.follow({
+          change: (update, here) => this.#post({ kind: 'change', update, here }),
+          written: (time, here, changes) => this.#post({ kind: 'written', time, here, changes }),
+        });
       const records = readRecords(await this.#read());
       this.#post({ kind: 'load', records, me: this.project.me?.id ?? null });
       this.ready = true;
@@ -220,6 +235,57 @@ export class ProjectHistory implements History {
   /** The whole project as it was at a moment, as one update. */
   stateAt(when: When): Promise<Uint8Array> {
     return this.#ask('stateAt', when);
+  }
+
+  /**
+   * The moments that must not be thinned away: those given a name, and
+   * those the review compares with (`KeptReview` in `reviews`).
+   */
+  kept(): Uint8Array[] {
+    const out: Uint8Array[] = [];
+    for (const value of this.project.doc.getMap('moments').values()) {
+      const snapshot = (value as { snapshot?: unknown }).snapshot;
+      if (snapshot instanceof Uint8Array) out.push(snapshot);
+    }
+    for (const value of this.project.doc.getMap('reviews').values()) {
+      const moment =
+        value instanceof Y.Map ? value.get('moment') : (value as { moment?: unknown })?.moment;
+      if (moment instanceof Uint8Array) out.push(moment);
+    }
+    return out;
+  }
+
+  /**
+   * What taking out the history before the moment after a record would take,
+   * once what the log holds is in the store. Nothing, where it cannot be done.
+   */
+  async cutting(record: number): Promise<{ count: number; before: number } | null> {
+    await this.project.snapshot(true);
+    await this.restart();
+    return this.#ask('cut', record, this.kept());
+  }
+
+  /**
+   * Takes out the history before the moment after a record: into an archive
+   * where a path is given, or for good. What is left begins with the project
+   * as it was then.
+   */
+  async cut(record: number, archive: string | null): Promise<void> {
+    const cut = await this.#ask<{ count: number; time: number; until: number } | null>(
+      'cut',
+      record,
+      this.kept(),
+    );
+    if (!cut) throw new Error('the history cannot be taken out there');
+    const start = await this.#ask<Uint8Array>('startAt', record);
+    await historyCut(
+      this.id,
+      { first: 0, count: cut.count, time: cut.time, until: cut.until },
+      toBase64(start),
+      cut.until,
+      archive,
+    );
+    await this.restart();
   }
 
   /** How much room the history takes on disk, in bytes. */

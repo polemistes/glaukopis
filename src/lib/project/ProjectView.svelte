@@ -7,6 +7,7 @@
   import CloudDownload from '@lucide/svelte/icons/cloud-download';
   import Columns2 from '@lucide/svelte/icons/columns-2';
   import FileText from '@lucide/svelte/icons/file-text';
+  import HistoryIcon from '@lucide/svelte/icons/history';
   import Images from '@lucide/svelte/icons/images';
   import Network from '@lucide/svelte/icons/network';
   import Redo2 from '@lucide/svelte/icons/redo-2';
@@ -59,6 +60,9 @@
   import { historyOf } from '$lib/history/history.svelte';
   import { me } from '$lib/history/me.svelte';
   import * as positions from '$lib/history/positions';
+  import HistoryPanel from '$lib/history/HistoryPanel.svelte';
+  import PastView from '$lib/history/PastView.svelte';
+  import type { Looking } from '$lib/history/looking';
 
   let { projectId }: { projectId: string } = $props();
 
@@ -85,6 +89,8 @@
     references?: boolean;
     /** The panel at the side shows the pictures. Not both: they have the same place. */
     pictures?: boolean;
+    /** The panel at the side shows the history. */
+    history?: boolean;
     preview?: boolean;
     /** The elements under which the text is folded away. */
     folded?: string[];
@@ -97,6 +103,9 @@
   let cameras = $state<Record<string, Camera>>({});
   let showReferences = $state(false);
   let showPictures = $state(false);
+  let showHistory = $state(false);
+  /** A moment of the history that is looked at, in place of the map as it is. */
+  let looking = $state.raw<Looking | null>(null);
   /** Which pictures the panel shows. */
   let pictureScope = $state<PictureScope>('project');
   let showPreview = $state(false);
@@ -170,6 +179,7 @@
     cameras = stored.cameras ?? {};
     showReferences = stored.references ?? false;
     showPictures = !showReferences && (stored.pictures ?? false);
+    showHistory = !showReferences && !showPictures && (stored.history ?? false);
     showPreview = stored.preview ?? false;
     sizes = { ...GIVEN, ...stored.sizes };
   }
@@ -260,6 +270,7 @@
       cameras: kept,
       references: showReferences,
       pictures: showPictures,
+      history: showHistory,
       preview: showPreview,
       folded: folding.kept((id) => !!project?.node(id)),
     };
@@ -281,6 +292,7 @@
     void panes.map((p) => `${p.map}${p.mode}`);
     void showReferences;
     void showPictures;
+    void showHistory;
     void showPreview;
     void cameras;
     void sizes.split;
@@ -373,11 +385,15 @@
     sizes[which] = clamp(sizes[which] - dx, least, most);
   }
 
-  /** The references and the pictures have the same place at the side: one at a time. */
-  function side(which: 'references' | 'pictures', shown?: boolean) {
-    const open = shown ?? !(which === 'references' ? showReferences : showPictures);
+  /** The references, the pictures and the history have the same place at the side: one at a time. */
+  function side(which: 'references' | 'pictures' | 'history', shown?: boolean) {
+    const now =
+      which === 'references' ? showReferences : which === 'pictures' ? showPictures : showHistory;
+    const open = shown ?? !now;
     showReferences = which === 'references' && open;
     showPictures = which === 'pictures' && open;
+    showHistory = which === 'history' && open;
+    if (!showHistory) looking = null;
   }
 
   // The pictures are asked for from elsewhere, as from the tools for writing.
@@ -514,6 +530,9 @@
     } else if (key === 'r' && event.shiftKey) {
       event.preventDefault();
       side('references');
+    } else if (key === 'h' && event.shiftKey) {
+      event.preventDefault();
+      side('history');
     } else if (key === 'p' && event.shiftKey) {
       // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
       event.preventDefault();
@@ -673,6 +692,14 @@
         <Images size={16} />
       </IconButton>
       <IconButton
+        label={t('history-title')}
+        shortcut="Ctrl+Shift+H"
+        active={showHistory}
+        onclick={() => side('history')}
+      >
+        <HistoryIcon size={16} />
+      </IconButton>
+      <IconButton
         label={t('project-preview')}
         shortcut="Ctrl+P"
         active={showPreview}
@@ -749,7 +776,9 @@
             {/if}
             <div class="pane-body">
               {#key `${p.map}:${p.mode}`}
-                {#if p.mode === 'diagram'}
+                {#if looking && looking.pane === i}
+                  <PastView {project} map={p.map} {looking} onback={() => (looking = null)} />
+                {:else if p.mode === 'diagram'}
                   <MapDiagram
                     {project}
                     mapId={p.map}
@@ -796,9 +825,13 @@
           />
         </div>
       {/if}
-      {#if showReferences || showPictures}
+      {#if showReferences || showPictures || showHistory}
         <Divider
-          label={showPictures ? t('project-between-pictures') : t('project-between-references')}
+          label={showPictures
+            ? t('project-between-pictures')
+            : showHistory
+              ? t('history-between')
+              : t('project-between-references')}
           onstart={() => measure('references')}
           onmove={(dx) => moveSide('references', dx)}
           onreset={() => (sizes.references = 0)}
@@ -808,7 +841,16 @@
           bind:this={referencesEl}
           style:width={sizes.references ? `${sizes.references}px` : undefined}
         >
-          {#if showPictures}
+          {#if showHistory}
+            <HistoryPanel
+              {project}
+              history={historyOf(project, ownId)}
+              {looking}
+              pane={focused}
+              onlook={(l) => (looking = l)}
+              onclose={() => side('history', false)}
+            />
+          {:else if showPictures}
             <PicturePanel
               {project}
               mapId={pane.map}

@@ -18,6 +18,8 @@ export type Method =
   | 'restore'
   | 'bringBack'
   | 'stateAt'
+  | 'startAt'
+  | 'cut'
   | 'records';
 
 export type Message =

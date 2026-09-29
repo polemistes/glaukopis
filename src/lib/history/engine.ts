@@ -422,6 +422,34 @@ export class Engine {
     return atSnapshot(typeof when === 'number' ? this.snapshot(when) : Y.decodeSnapshot(when));
   }
 
+  /**
+   * What taking out the history before the moment after a record would take:
+   * the records, their times, and how many of the moments given (named,
+   * reviewed) are at or before it and could no longer be looked at. Nothing,
+   * where the record is not yet in the store on disk.
+   */
+  cut(record: number, kept: Uint8Array[]) {
+    const r = this.records[record];
+    if (!r || !r.stored || record < 1) return null;
+    const sv = this.snapshot(record).sv;
+    let before = 0;
+    for (const encoded of kept) {
+      const s = Y.decodeSnapshot(encoded);
+      if ([...s.sv].every(([client, clock]) => clock <= (sv.get(client) ?? 0))) before++;
+    }
+    return { count: record + 1, time: this.records[0].time, until: r.until, before };
+  }
+
+  /**
+   * The project at a moment as a history begins with it: what was deleted
+   * by then is not kept, as a project that is worked in does not keep it.
+   */
+  startAt(when: When): Uint8Array {
+    const lean = new Y.Doc();
+    Y.applyUpdate(lean, this.stateAt(when));
+    return Y.encodeStateAsUpdate(lean);
+  }
+
   /** The whole project as it was at a moment, as one update: to be opened as a project of its own. */
   stateAt(when: When): Uint8Array {
     const snapshot = typeof when === 'number' ? this.snapshot(when) : Y.decodeSnapshot(when);

@@ -356,7 +356,7 @@ describe('the history of a project that is open', () => {
     const { a, b, ann, map, root, flush } = await two();
     paragraph(a, root, 'Sing, goddess, the wrath.');
     await flush();
-    const history = new ProjectHistory(a, 'p', async () => writeRecords(ann.read()));
+    const history = new ProjectHistory(a, 'p', { read: async () => writeRecords(ann.read()) });
     const since = await history.now();
     // Written after the history was read: followed as it is made, before and after it is written.
     b.transact(() => textOf(b, root).insert(0, 'O '));
