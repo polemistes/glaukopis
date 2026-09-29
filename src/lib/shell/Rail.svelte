@@ -2,6 +2,7 @@
   import FolderOpen from '@lucide/svelte/icons/folder-open';
   import Images from '@lucide/svelte/icons/images';
   import LibraryBig from '@lucide/svelte/icons/library-big';
+  import Search from '@lucide/svelte/icons/search';
   import Settings from '@lucide/svelte/icons/settings';
   import { t } from '$lib/i18n';
   import { router } from '$lib/state/router.svelte';
@@ -47,6 +48,15 @@
     use:tooltip={{ text: t('shell-pictures'), shortcut: 'Ctrl+3', side: 'right' }}
   >
     <Images size={19} strokeWidth={1.7} />
+  </a>
+  <a
+    href="#/search"
+    class="place"
+    class:current={view === 'search'}
+    aria-label={t('search-everything')}
+    use:tooltip={{ text: t('search-everything-title'), shortcut: 'Ctrl+Shift+F', side: 'right' }}
+  >
+    <Search size={19} strokeWidth={1.7} />
   </a>
 
   <div class="spring"></div>

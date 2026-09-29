@@ -10,6 +10,7 @@ export type Route =
   | { view: 'library'; collection?: string; entry?: string }
   | { view: 'pictures'; picture?: string }
   | { view: 'project'; project: string; map?: string; mode?: MapMode }
+  | { view: 'search' }
   | { view: 'settings'; section?: string };
 
 export function parseRoute(hash: string): Route {
@@ -40,6 +41,8 @@ export function parseRoute(hash: string): Route {
       };
     case 'settings':
       return { view: 'settings', section: parts[1] };
+    case 'search':
+      return { view: 'search' };
     default:
       return { view: 'projects' };
   }
@@ -67,6 +70,8 @@ export function formatRoute(route: Route): string {
     }
     case 'settings':
       return '#/settings' + (route.section ? `/${e(route.section)}` : '');
+    case 'search':
+      return '#/search';
   }
 }
 

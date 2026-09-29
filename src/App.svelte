@@ -14,6 +14,7 @@
   import LibraryView from '$lib/library/LibraryView.svelte';
   import PicturesView from '$lib/pictures/PicturesView.svelte';
   import ProjectView from '$lib/project/ProjectView.svelte';
+  import SearchView from '$lib/search/SearchView.svelte';
   import SettingsView from '$lib/settings/SettingsView.svelte';
 
   const route = $derived(router.route);
@@ -71,6 +72,12 @@
 
   function onkeydown(event: KeyboardEvent) {
     const mod = event.ctrlKey || event.metaKey;
+    // The search through everything, from wherever one is.
+    if (mod && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'f') {
+      event.preventDefault();
+      router.go({ view: 'search' });
+      return;
+    }
     if (!mod || event.altKey || event.shiftKey) return;
     if (event.key === '1') router.go({ view: 'projects' });
     else if (event.key === '2') router.go({ view: 'library' });
@@ -97,6 +104,8 @@
         {#key route.project}
           <ProjectView projectId={route.project} />
         {/key}
+      {:else if route.view === 'search'}
+        <SearchView />
       {:else if route.view === 'settings'}
         <SettingsView />
       {/if}

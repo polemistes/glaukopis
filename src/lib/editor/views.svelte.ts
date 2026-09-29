@@ -14,8 +14,9 @@ import { openSelected, passes, placeholder } from './plugins';
 import { pressedFound } from '$lib/found/found.svelte';
 import { citationLabel, currentProject, isMissing, languageOf } from './references.svelte';
 import { notePlace, type CiteItem, type CiteMode } from './schema';
-import { editorUi, hooksOf, OPEN, passing } from './ui.svelte';
+import { editorUi, hooksOf, OPEN, passing, SHOW, viewsByDom, type ShowIn } from './ui.svelte';
 import { CrossRefView, FormulaView } from '$lib/figures/views.svelte';
+import { markIn, searchMarks } from '$lib/search/decorations';
 
 export { hooksOf };
 
@@ -165,6 +166,7 @@ export class FootnoteView implements NodeView {
     this.dom.className = 'footnote';
     this.dom.contentEditable = 'false';
     this.dom.addEventListener(OPEN, this.#asked);
+    this.dom.addEventListener(SHOW, this.#shown);
     this.#number();
   }
 
@@ -203,12 +205,31 @@ export class FootnoteView implements NodeView {
     if (!this.#inner && this.#outer.editable) this.#open();
   };
 
+  /** Opened by a search, with what it found selected; the cursor goes there only when asked. */
+  #shown = (event: Event) => {
+    const { from, to, focus } = (event as CustomEvent<ShowIn>).detail;
+    if (!this.#inner && this.#outer.editable) this.#open(focus);
+    const inner = this.#inner;
+    if (!inner) return;
+    const size = inner.state.doc.content.size;
+    const at = (n: number) => Math.max(0, Math.min(n, size));
+    inner.dispatch(
+      inner.state.tr
+        .setSelection(TextSelection.create(inner.state.doc, at(from), at(to)))
+        .scrollIntoView()
+        .setMeta('fromOutside', true),
+    );
+    // Marked while the cursor is elsewhere; where the cursor goes, it is seen selected.
+    markIn(inner, focus ? [] : [{ from: at(from), to: at(to), current: true }]);
+    if (focus) inner.focus();
+  };
+
   deselectNode() {
     this.dom.classList.remove('selected');
     this.#close();
   }
 
-  #open() {
+  #open(focus = true) {
     const outer = this.#outer;
     const hooks = hooksOf.get(outer);
 
@@ -297,6 +318,7 @@ export class FootnoteView implements NodeView {
           keymap(keys),
           keymap(baseKeymap),
           placeholder(() => t('editor-note-placeholder')),
+          searchMarks(),
         ],
       }),
       attributes: { class: 'prose note', spellcheck: 'true' },
@@ -348,6 +370,8 @@ export class FootnoteView implements NodeView {
       },
     });
     if (hooks) hooksOf.set(this.#inner, hooks);
+    // What is found in the note by a search is marked where it is written.
+    viewsByDom.set(this.#inner.dom, this.#inner);
 
     this.#number();
     place(panel, this.dom.getBoundingClientRect(), { side: 'bottom', align: 'start', gap: 8 });
@@ -357,7 +381,7 @@ export class FootnoteView implements NodeView {
         .setSelection(TextSelection.atEnd(inner.state.doc))
         .setMeta('fromOutside', true),
     );
-    inner.focus();
+    if (focus) inner.focus();
     window.addEventListener('pointerdown', this.#outside, true);
   }
 
@@ -428,6 +452,7 @@ export class FootnoteView implements NodeView {
 
   destroy() {
     this.dom.removeEventListener(OPEN, this.#asked);
+    this.dom.removeEventListener(SHOW, this.#shown);
     this.#close();
   }
 }

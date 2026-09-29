@@ -25,6 +25,7 @@
   import { insertCrossRef, insertFigure } from './commands';
   import { hooksOf, viewsByDom } from './ui.svelte';
   import { pressedFound } from '$lib/found/found.svelte';
+  import { searchMarks } from '$lib/search/decorations';
 
   interface Props {
     project: Project;
@@ -240,6 +241,8 @@
         sharedUndo(project.undoManager),
         ...(kind === 'body' ? bodyPlugins(schema, hooks) : titlePlugins(hooks)),
         placeholderPlugin(() => placeholder),
+        // What a search found, where the editor is to draw it: see `search/decorations.ts`.
+        searchMarks(),
       ];
       return new EditorView(target, {
         state: EditorState.create({ schema, plugins }),

@@ -729,6 +729,66 @@ A PDF that is locked with a password cannot be made searchable, since what
 is added would have to be locked in the same way. Its text can still be
 brought into a project as a map, where its pages can be drawn.
 
+## Searching
+
+**Ctrl+F** searches the text of the map, where you write, and **Ctrl+H**
+searches and replaces. A bar opens over the text. Type the words: what is
+found is marked where it stands, the one that is shown more strongly, and
+the bar says which it is of how many: *3 of 17*. **Enter** or **F3** shows
+the next, **Shift+Enter** or **Shift+F3** the one before. **Escape** closes
+the bar and leaves the cursor at what was found, selected.
+
+All of the text is searched, not only what is in view: the names of the
+elements, their text, the notes, what is said of figures and tables, and
+their cells, in elements that are folded away and in those left out of the
+document as well. What is shown is opened: what it is folded away under,
+and the note it is in.
+
+Beside the words are the options:
+
+| | |
+| --- | --- |
+| **Aa** | Capitals as they are written; otherwise *wrath* finds *Wrath* |
+| **ab** | Whole words only; otherwise *wrath* finds *wrathful* |
+| **é=e** | Letters with and without accents alike: *αειδε* finds *ἄειδε*, *Pelee* finds *Pelée* |
+| **.\*** | A regular expression |
+| The dashed frame | Only in the text you selected before you searched |
+| The label | Citations as they are shown, formulas and words that point as well |
+
+Words are found as they are written, but room of any kind is room, as a
+space that does not break, and an apostrophe or a quotation mark may be
+straight or curly.
+
+To replace, write what replaces in the second field. **Replace**, or
+**Enter** in that field, replaces the one that is shown and shows the next;
+**Replace all** replaces all that is found. What is put in has the marks of
+what it replaces: a word in italics stays in italics. Only text is replaced:
+citations, formulas and words that point are not, and the option to search
+them is not there while you replace. All that one **Replace all** did is
+taken back at once, by **Undo** or by **Ctrl+Z** in the text. With a
+regular expression, `$1` in what replaces stands for what its first group
+found, `$2` for the second, and so on.
+
+The edit box of an element in the diagram can be searched in the same way,
+its name and its text. In the diagram itself, **Ctrl+F** turns to the text
+and searches it.
+
+### Searching through everything
+
+**Ctrl+Shift+F**, or the magnifying glass at the left edge of the window,
+searches all you have written: the project you had open last, or all
+projects. What is found is listed by project and map, each with the words
+around it; choose one, and the map opens there, with the words in the bar
+over the text.
+
+With the last of the options, what stands outside the texts is searched as
+well: citations as they are shown, formulas and words that point, the
+details of the documents, what you have written about the works cited in
+each project, and the words that name associations.
+
+A project that is not open is read for the search, which takes a moment for
+a large one. It is read again only when it has changed.
+
 ## What goes into the document
 
 Everything under the centre of a map, in the order of the map. Three things
@@ -868,6 +928,9 @@ those it has as they are in English are printed in the language of the map.
 | **Ctrl+Alt+M**, **Ctrl+Alt+E** | In the text: a formula in the line, an equation |
 | **Ctrl+Alt+R** | In the text: words that point to a figure, a table, an equation, a part |
 | **Ctrl+Alt+U**, **Ctrl+Alt+Shift+U** | In the text: fold the element away, or open it; open all that is folded under it |
+| **Ctrl+F**, **Ctrl+H** | In the text and in the edit box of an element: search; search and replace |
+| **Enter**, **Shift+Enter** | In the search: the next that is found, the one before; **F3** and **Shift+F3** as well |
+| **Ctrl+Shift+F** | Search through everything |
 | **Ctrl+F**, **Ctrl+N** | In the library: search, new reference |
 
 ## What Glaukopis needs

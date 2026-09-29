@@ -129,8 +129,34 @@ export function passing(view: EditorView): boolean {
   return moving.has(view);
 }
 
+/**
+ * Selects without opening what is selected: as the cursor passing does, for
+ * a search that shows where something was found (`search/`).
+ */
+export function quietly(view: EditorView, change: () => void) {
+  moving.add(view);
+  try {
+    change();
+  } finally {
+    moving.delete(view);
+  }
+}
+
 /** The name of what is said to what is selected, to have it opened: see `openSelected`. */
 export const OPEN = 'glaukopis-open';
+
+/**
+ * The name of what is said to a note to have it opened with a part of its
+ * text selected, `{ from, to, focus }` in the note's own positions; with
+ * `focus`, the cursor goes there. A search shows so what it found in a note.
+ */
+export const SHOW = 'glaukopis-show';
+
+export interface ShowIn {
+  from: number;
+  to: number;
+  focus: boolean;
+}
 
 /** What each editor was given to reach the world outside it. Notes use their editor's. */
 export const hooksOf = new WeakMap<EditorView, EditorHooks>();

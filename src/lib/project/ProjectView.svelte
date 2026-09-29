@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount, untrack } from 'svelte';
+  import { onDestroy, onMount, tick, untrack } from 'svelte';
   import ArrowLeft from '@lucide/svelte/icons/arrow-left';
   import BookMarked from '@lucide/svelte/icons/book-marked';
   import BookOpenText from '@lucide/svelte/icons/book-open-text';
@@ -38,6 +38,7 @@
   import { beforeClose } from '$lib/state/closing';
   import { library } from '$lib/state/library.svelte';
   import { openProject, projects } from '$lib/state/projects.svelte';
+  import { jumpFor } from '$lib/search/everything.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -111,6 +112,8 @@
   let stored: StoredView = {};
   /** What is folded away in the text: as it was left, and for every map of the project. */
   let folding = $state.raw(new Folding());
+  /** The texts of the maps in the panes, where a pane shows the text: to be searched. */
+  let texts = $state<(ReturnType<typeof MapText> | undefined)[]>([]);
 
   const pane = $derived(panes[Math.min(focused, panes.length - 1)]);
 
@@ -132,6 +135,8 @@
       });
       // A project that was joined and has not been fetched has no maps yet.
       if (p.maps.length) arrange(p);
+      // What was found through everything in what is written about a work is shown with the references.
+      if (jumpFor(ownId)?.references) side('references', true);
       shared = new ProjectSharing(ownId, p, opened.info);
       pictures.open(ownId, () => p.usedPictures());
       void pictures.nameFrom(p.usedPictures());
@@ -205,7 +210,12 @@
   onDestroy(() => {
     release?.();
     if (pictures.project === ownId) pictures.open(null);
-    if (project) void leave(project).then(() => projects.load());
+    // What reads the project from disk meanwhile, as the search through everything, waits for it.
+    if (project)
+      projects.closing(
+        ownId,
+        leave(project).then(() => projects.load()),
+      );
   });
 
   // The pictures of a project that is shared are with the others as well:
@@ -494,6 +504,12 @@
     } else if (key === 'p' && !event.shiftKey) {
       event.preventDefault();
       showPreview = !showPreview;
+    } else if ((key === 'f' || key === 'h') && !event.shiftKey) {
+      // The text of the map is searched; from the diagram, the text is turned to first.
+      event.preventDefault();
+      const i = focused;
+      if (pane && pane.mode !== 'text') panes[i] = { ...pane, mode: 'text' };
+      tick().then(() => texts[i]?.find(key === 'h'));
     } else if (!typing && key === 'z') {
       event.preventDefault();
       if (event.shiftKey) project.redo();
@@ -728,6 +744,7 @@
                   />
                 {:else}
                   <MapText
+                    bind:this={texts[i]}
                     {project}
                     mapId={p.map}
                     onkeep={keep}

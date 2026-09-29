@@ -1,11 +1,16 @@
 <script lang="ts">
   import X from '@lucide/svelte/icons/x';
   import type { EditorView } from 'prosemirror-view';
+  import { onDestroy, tick } from 'svelte';
   import type { KeyAction } from '$lib/editor/plugins';
+  import { citationLabel } from '$lib/editor/references.svelte';
   import RichText from '$lib/editor/RichText.svelte';
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import { editorUi } from '$lib/editor/ui.svelte';
+  import { numbering, pointerText } from '$lib/figures/numbering.svelte';
   import { t } from '$lib/i18n';
+  import SearchBar from '$lib/search/SearchBar.svelte';
+  import { TextSearch, type Surface } from '$lib/search/text.svelte';
   import { place, type RectLike } from '$lib/ui/floating';
   import IconButton from '$lib/ui/IconButton.svelte';
   import type { Project } from './model/project.svelte';
@@ -23,6 +28,7 @@
   let { project, id, anchor, begin = 'body', onkeep, onclose }: Props = $props();
 
   let el = $state<HTMLDivElement>();
+  let name = $state<ReturnType<typeof RichText>>();
   let body = $state<ReturnType<typeof RichText>>();
 
   const node = $derived(project.node(id));
@@ -57,13 +63,86 @@
     return () => window.removeEventListener('pointerdown', outside, true);
   });
 
+  // ---- searching the name and the text ----
+
+  let searching = $state<TextSearch | null>(null);
+  let bar = $state<ReturnType<typeof SearchBar>>();
+
+  const surface: Surface = {
+    get project() {
+      return project;
+    },
+    elements: () => [id],
+    labels: () => {
+      const map = project.node(id)?.map ?? '';
+      return {
+        citation: citationLabel,
+        crossref: (target, form) =>
+          pointerText(
+            numbering.of(project, map).byId.get(target),
+            form,
+            numbering.countingOf(project, map),
+          ),
+      };
+    },
+    holder: (_element, part) =>
+      el?.querySelector<HTMLElement>(part === 'title' ? 'header .rich-text' : '.text .rich-text') ??
+      null,
+    inView: () => null,
+    // The box stands over the page, where the web view does not draw highlights.
+    editorsDraw: true,
+    reveal: async (_element, part) => (part === 'title' ? name : body)?.getView() ?? null,
+    where: (view) =>
+      view === name?.getView()
+        ? { element: id, part: 'title' }
+        : view === body?.getView()
+          ? { element: id, part: 'body' }
+          : null,
+    looked: () => id,
+    scroller: () => el?.querySelector<HTMLElement>('.text') ?? null,
+  };
+
+  /** Opens the search in the box, or turns to it; with `replacing`, to the field of what replaces. */
+  function find(replacing: boolean) {
+    const view = [name?.getView(), body?.getView()].find((v) => v?.hasFocus()) ?? null;
+    if (!searching) searching = new TextSearch(surface);
+    searching.open(replacing, view);
+    tick().then(() => (replacing ? bar?.focusReplace() : bar?.focusQuery()));
+  }
+
+  function closeSearch(focus: boolean) {
+    const s = searching;
+    searching = null;
+    void s?.close(focus);
+  }
+
+  onDestroy(() => void searching?.close(false));
+
+  function onkeydown(event: KeyboardEvent) {
+    const mod = event.ctrlKey || event.metaKey;
+    const letter = event.key.toLowerCase();
+    // Ctrl+F searches the name and the text, Ctrl+H replaces; F3 goes on to the next.
+    const plain = mod && !event.altKey && !event.shiftKey;
+    if (event.key === 'F3' || (plain && (letter === 'f' || letter === 'h'))) {
+      event.preventDefault();
+      if (event.key !== 'F3') find(letter === 'h');
+      else if (!searching) find(false);
+      else if (event.shiftKey) searching.previous();
+      else searching.next();
+    }
+    // The search through everything is reached from here as from anywhere.
+    if (mod && event.shiftKey && letter === 'f') return;
+    event.stopPropagation();
+  }
+
   function titleAction(action: KeyAction): boolean {
     if (action === 'enter' || action === 'down-out' || action === 'tab') {
       body?.focus('start');
       return true;
     }
     if (action === 'escape') {
-      onclose();
+      if (searching) closeSearch(false);
+      else onclose();
       return true;
     }
     return false;
@@ -72,7 +151,9 @@
   function bodyAction(action: KeyAction, _view: EditorView): boolean {
     if (action === 'escape') {
       if (editorUi.picking || editorUi.citation) return false;
-      onclose();
+      // The search is closed first; the box stays.
+      if (searching) closeSearch(false);
+      else onclose();
       return true;
     }
     return false;
@@ -87,10 +168,11 @@
     role="dialog"
     aria-label={t('project-element')}
     tabindex="-1"
-    onkeydown={(e) => e.stopPropagation()}
+    {onkeydown}
   >
     <header>
       <RichText
+        bind:this={name}
         {project}
         fragment={title}
         kind="title"
@@ -105,6 +187,11 @@
     </header>
 
     <div class="tools"><WritingTools scope={el} map={node?.map} /></div>
+    {#if searching}
+      <div class="find">
+        <SearchBar bind:this={bar} search={searching} compact onclose={() => closeSearch(true)} />
+      </div>
+    {/if}
 
     <div class="text">
       <RichText
@@ -173,6 +260,14 @@
     margin: 2px 12px 0 13px;
     padding-bottom: 5px;
     border-bottom: 1px solid var(--line);
+  }
+  .find {
+    flex: none;
+    margin: 0 12px;
+  }
+  .find :global(.search-bar) {
+    padding: 5px 0;
+    background: transparent;
   }
   .text {
     flex: 1;
