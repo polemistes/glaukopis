@@ -20,3 +20,5 @@ document-tables = Tables
 # Where a figure or table that is gathered at the end belongs in the text;
 # the braces stand for its label and number.
 document-about-here = [{"{}"} about here]
+# A work that has no year, where the year of a citation stands.
+document-no-date = n.d.

@@ -88,3 +88,7 @@ tables-files = Tabeller
 tables-unreadable = { $file } kunne ikke leses som en tabell
 tables-cannot-stand = En tabell kan ikke stå her
 tables-drop-on-text = Slipp tabellen på teksten den hører til
+
+## Vist av stilarket, der siden ikke har noe element for ordene.
+
+tables-caption-empty = Tabelltekst

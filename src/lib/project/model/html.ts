@@ -37,7 +37,7 @@ function inlines(list: Inline[], notes: { n: number }): string {
         out += '<br>';
         break;
       case 'citation':
-        out += `<span class="citation${isMissing(i.items) ? ' missing' : ''}">${escape(citationLabel(i.items, i.mode))}</span>`;
+        out += `<span class="citation${isMissing(i.items) ? ' missing' : ''}">${escape(citationLabel(i.items, i.mode, speaking))}</span>`;
         break;
       case 'math':
         // Shown as it was written until it is shown as mathematics: see `figures/hydrate.ts`.
@@ -63,7 +63,7 @@ function plain(list: Inline[]): string {
       i.kind === 'text'
         ? i.text
         : i.kind === 'citation'
-          ? citationLabel(i.items, i.mode)
+          ? citationLabel(i.items, i.mode, speaking)
           : i.kind === 'math'
             ? i.tex
             : ' ',
@@ -143,8 +143,19 @@ function blocks(list: Block[], notes: { n: number }): string {
   return out;
 }
 
-export function blocksHtml(list: Block[]): string {
-  return blocks(list, { n: 0 });
+/**
+ * The language of the map whose text is being made, which the words of its
+ * citations are in ("kap. 3"): set while `blocksHtml` makes it.
+ */
+let speaking: string | null | undefined;
+
+export function blocksHtml(list: Block[], language?: string | null): string {
+  speaking = language;
+  try {
+    return blocks(list, { n: 0 });
+  } finally {
+    speaking = undefined;
+  }
 }
 
 /** The beginning of a text, cut at a block boundary once it is long enough. */

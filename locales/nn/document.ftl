@@ -15,3 +15,4 @@ document-table = Tabell
 document-tab = Tab.
 document-tables = Tabellar
 document-about-here = [{"{}"} om lag her]
+document-no-date = u.å.
