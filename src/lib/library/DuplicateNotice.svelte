@@ -1,6 +1,7 @@
 <script lang="ts">
   import Copy from '@lucide/svelte/icons/copy';
   import type { Match } from '$lib/api/library';
+  import { t } from '$lib/i18n';
   import { describe, reasonWords } from './format';
 
   interface Props {
@@ -10,7 +11,7 @@
     onuse?: (match: Match) => void;
   }
 
-  let { matches, action = 'Use this one', onuse }: Props = $props();
+  let { matches, action, onuse }: Props = $props();
 </script>
 
 {#if matches.length}
@@ -19,8 +20,8 @@
     <div class="body">
       <p class="lead">
         {matches[0].certainty === 'certain'
-          ? 'This is already in your library.'
-          : 'This may already be in your library.'}
+          ? t('library-duplicate-certain')
+          : t('library-duplicate-probable')}
       </p>
       {#each matches.slice(0, 3) as match (match.id)}
         <div class="match">
@@ -29,7 +30,9 @@
             <span class="why">{reasonWords(match.reasons)}</span>
           </div>
           {#if onuse}
-            <button type="button" onclick={() => onuse(match)}>{action}</button>
+            <button type="button" onclick={() => onuse(match)}
+              >{action ?? t('library-duplicate-use')}</button
+            >
           {/if}
         </div>
       {/each}

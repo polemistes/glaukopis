@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import { importText, type PasteRequest } from './references.svelte';
@@ -27,8 +28,8 @@
 
 <Dialog
   open
-  title="Paste references"
-  subtitle="BibLaTeX or BibTeX, as many entries as you like"
+  title={t('library-paste-title')}
+  subtitle={t('library-paste-subtitle')}
   width={640}
   onclose={close}
 >
@@ -37,10 +38,12 @@
     bind:value={text}
     spellcheck="false"
     placeholder={'@book{nagy1979,\n  author = {Nagy, Gregory},\n  title = {The Best of the Achaeans},\n  date = {1979},\n}'}
-    aria-label="BibLaTeX source"></textarea>
+    aria-label={t('library-source-label')}></textarea>
   {#snippet footer()}
-    <Button variant="ghost" onclick={close}>Cancel</Button>
-    <Button variant="primary" disabled={!text.includes('@')} onclick={go}>Continue</Button>
+    <Button variant="ghost" onclick={close}>{t('common-cancel')}</Button>
+    <Button variant="primary" disabled={!text.includes('@')} onclick={go}
+      >{t('library-paste-continue')}</Button
+    >
   {/snippet}
 </Dialog>
 

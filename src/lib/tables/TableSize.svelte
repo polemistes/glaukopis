@@ -3,6 +3,7 @@
    * Where a table is asked for by its size: a grid to point at, or two
    * numbers, and whether its first row is headings.
    */
+  import { t } from '$lib/i18n';
   import type { RectLike } from '$lib/ui/floating';
   import Popover from '$lib/ui/Popover.svelte';
   import { MOST_COLUMNS, MOST_ROWS } from './commands';
@@ -51,16 +52,16 @@
   align="start"
   gap={8}
   width={264}
-  label="A table of what size"
+  label={t('tables-ask')}
   {onclose}
 >
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="size" {onkeydown}>
-    <div class="head">A table</div>
+    <div class="head">{t('tables-ask-heading')}</div>
     <div
       class="grid"
       role="group"
-      aria-label="Point at the size of the table"
+      aria-label={t('tables-ask-grid')}
       style:grid-template-columns="repeat({GRID_COLUMNS}, 1fr)"
     >
       {#each { length: GRID_ROWS } as _, r (r)}
@@ -71,7 +72,7 @@
             class:on={r < rows && c < columns}
             class:heading={headings && r === 0 && c < columns}
             data-size="{r + 1}x{c + 1}"
-            aria-label="{r + 1} by {c + 1}"
+            aria-label={t('tables-ask-by', { rows: r + 1, columns: c + 1 })}
             onpointerenter={() => {
               rows = r + 1;
               columns = c + 1;
@@ -88,30 +89,41 @@
 
     <div class="numbers">
       <label>
-        Rows
+        {t('tables-ask-rows')}
         <input
           bind:this={first}
           type="number"
           min="1"
           max={MOST_ROWS}
           bind:value={rows}
-          aria-label="Rows"
+          aria-label={t('tables-ask-rows')}
         />
       </label>
       <label>
-        Columns
-        <input type="number" min="1" max={MOST_COLUMNS} bind:value={columns} aria-label="Columns" />
+        {t('tables-ask-columns')}
+        <input
+          type="number"
+          min="1"
+          max={MOST_COLUMNS}
+          bind:value={columns}
+          aria-label={t('tables-ask-columns')}
+        />
       </label>
     </div>
 
     <label class="check">
       <input type="checkbox" bind:checked={headings} />
-      The first row is headings
+      {t('tables-first-row-headings')}
     </label>
 
     <div class="actions">
-      <span class="hint">{within(rows, MOST_ROWS)} by {within(columns, MOST_COLUMNS)}</span>
-      <button type="button" class="put" onclick={put}>Put it in</button>
+      <span class="hint"
+        >{t('tables-ask-by', {
+          rows: within(rows, MOST_ROWS),
+          columns: within(columns, MOST_COLUMNS),
+        })}</span
+      >
+      <button type="button" class="put" onclick={put}>{t('tables-ask-put')}</button>
     </div>
   </div>
 </Popover>

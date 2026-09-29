@@ -19,9 +19,9 @@ import {
   type Reference,
 } from '$lib/api/library';
 import { importPdfs } from '$lib/api/sources';
+import { t } from '$lib/i18n';
 import { library } from '$lib/state/library.svelte';
 import { notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
-import { plural } from './format';
 
 export interface FormRequest {
   mode: 'new' | 'edit';
@@ -89,7 +89,7 @@ export async function editReference(id: string): Promise<Reference | null> {
   try {
     reference = await libraryGet(id);
   } catch (error) {
-    notifyError('The reference could not be opened', error);
+    notifyError(t('library-open-failed'), error);
     return null;
   }
   return new Promise((resolve) => {
@@ -133,9 +133,7 @@ function review(
   const known = options.quietWhenKnown ? allKnown(plan) : null;
   if (known) {
     // There is nothing to decide.
-    notify(
-      known.length === 1 ? 'It is in your library already' : 'They are in your library already',
-    );
+    notify(t('library-known', { count: known.length }));
     return Promise.resolve({
       added: [],
       updated: [],
@@ -147,8 +145,8 @@ function review(
   }
   if (!plan.items.length) {
     notify(
-      'Nothing to import',
-      plan.warnings.length ? plan.warnings.slice(0, 3).join(' ') : 'No references were found.',
+      t('library-nothing-to-import'),
+      plan.warnings.length ? plan.warnings.slice(0, 3).join(' ') : t('library-none-found'),
     );
     return Promise.resolve(null);
   }
@@ -161,11 +159,11 @@ function review(
 /** Asks for a `.bib` file and imports it. */
 export async function importFile(collection?: string | null): Promise<ImportOutcome | null> {
   const path = await open({
-    title: 'Import references',
+    title: t('library-import-title'),
     multiple: false,
     filters: [
-      { name: 'BibLaTeX and BibTeX', extensions: ['bib', 'bibtex', 'biblatex'] },
-      { name: 'All files', extensions: ['*'] },
+      { name: t('library-filter-bib'), extensions: ['bib', 'bibtex', 'biblatex'] },
+      { name: t('library-filter-all'), extensions: ['*'] },
     ],
   });
   if (!path || Array.isArray(path)) return null;
@@ -182,7 +180,7 @@ export async function importPath(
     dialogs.busy = false;
     return review(plan, collection);
   } catch (error) {
-    notifyError('The file could not be read', error);
+    notifyError(t('library-files-read-failed', { count: 1 }), error);
     return null;
   } finally {
     dialogs.busy = false;
@@ -204,7 +202,7 @@ export async function importText(
   try {
     return review(await importBibText(text), collection);
   } catch (error) {
-    notifyError('The text could not be read', error);
+    notifyError(t('library-text-read-failed'), error);
     return null;
   }
 }
@@ -221,7 +219,7 @@ export async function importPdfFiles(
   let files = paths;
   if (!files) {
     const chosen = await open({
-      title: 'Add PDF files',
+      title: t('library-add-pdfs-title'),
       multiple: true,
       filters: [{ name: 'PDF', extensions: ['pdf'] }],
     });
@@ -229,19 +227,13 @@ export async function importPdfFiles(
     files = Array.isArray(chosen) ? chosen : [chosen];
   }
   if (!files.length) return null;
-  dialogs.working =
-    files.length === 1
-      ? 'Finding out what the file is…'
-      : `Finding out what ${files.length} files are…`;
+  dialogs.working = t('library-pdfs-working', { count: files.length });
   try {
     const plan = await importPdfs(files);
     dialogs.working = null;
     return review(plan, collection, { quietWhenKnown: true });
   } catch (error) {
-    notifyError(
-      files.length === 1 ? 'The file could not be read' : 'The files could not be read',
-      error,
-    );
+    notifyError(t('library-files-read-failed', { count: files.length }), error);
     return null;
   } finally {
     dialogs.working = null;
@@ -257,7 +249,7 @@ export async function importDropped(
   const pdfs = paths.filter((p) => kind(p) === 'pdf');
   const bibs = paths.filter((p) => ['bib', 'bibtex', 'biblatex'].includes(kind(p)));
   if (!pdfs.length && !bibs.length) {
-    notify('Nothing to import', 'References are read from .bib files, and made of PDF files.');
+    notify(t('library-nothing-to-import'), t('library-import-kinds'));
     return null;
   }
   let outcome: ImportOutcome | null = null;
@@ -321,12 +313,15 @@ export async function carryOut(
   );
   outcome.concerned = [...new Set([...outcome.added, ...outcome.updated, ...known])];
   await library.reload();
+  // What came of it, as a list of what was done.
   const parts: string[] = [];
-  if (outcome.added.length) parts.push(`${plural(outcome.added.length, 'reference')} added`);
-  if (outcome.updated.length) parts.push(`${outcome.updated.length} completed`);
-  if (outcome.skipped) parts.push(`${outcome.skipped} already in the library`);
-  if (outcome.files) parts.push(`${plural(outcome.files, 'file')} stored`);
-  const summary = parts.join(', ') || 'Nothing was changed';
+  if (outcome.added.length)
+    parts.push(t('library-imported-added', { count: outcome.added.length }));
+  if (outcome.updated.length)
+    parts.push(t('library-imported-completed', { count: outcome.updated.length }));
+  if (outcome.skipped) parts.push(t('library-imported-skipped', { count: outcome.skipped }));
+  if (outcome.files) parts.push(t('library-imported-files', { count: outcome.files }));
+  const summary = parts.join(', ') || t('library-imported-nothing');
   if (outcome.problems.length) {
     notifyError(summary, outcome.problems.slice(0, 4).join('\n'));
   } else {

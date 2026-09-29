@@ -7,6 +7,7 @@
   import { untrack } from 'svelte';
   import type { Flow, Stand } from '$lib/editor/schema';
   import Placing from '$lib/figures/Placing.svelte';
+  import { t } from '$lib/i18n';
   import type { TableTools } from './views.svelte';
 
   interface Props {
@@ -41,12 +42,12 @@
     counted = now?.numbered ?? true;
   });
 
-  const WIDTHS = [
-    { value: 0, label: 'As it needs' },
-    { value: 50, label: 'Half' },
-    { value: 75, label: 'Three quarters' },
-    { value: 100, label: 'Whole' },
-  ];
+  const WIDTHS = $derived([
+    { value: 0, label: t('tables-width-needed') },
+    { value: 50, label: t('tables-width-half') },
+    { value: 75, label: t('tables-width-three-quarters') },
+    { value: 100, label: t('tables-width-whole') },
+  ]);
 
   function set(width: number) {
     wide = width;
@@ -68,16 +69,14 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="table-settings" {onkeydown}>
   <div class="head">
-    <div class="note-number">Table</div>
+    <div class="note-number">{t('tables-table')}</div>
     <span class="size">
-      {now?.rows ?? 0}
-      {now?.rows === 1 ? 'row' : 'rows'}, {now?.columns ?? 0}
-      {now?.columns === 1 ? 'column' : 'columns'}
+      {t('tables-size', { rows: now?.rows ?? 0, columns: now?.columns ?? 0 })}
     </span>
   </div>
 
   <div class="row">
-    <label for="table-width">Width</label>
+    <label for="table-width">{t('tables-width')}</label>
     <input
       id="table-width"
       type="range"
@@ -105,9 +104,9 @@
   </div>
   <div class="hint indent">
     {#if wide}
-      Of the width of the text, in the document.
+      {t('tables-width-of-text')}
     {:else}
-      As wide as what it holds needs it to be.
+      {t('tables-width-as-needed')}
     {/if}
   </div>
 
@@ -119,7 +118,7 @@
         bind:checked={counted}
         onchange={() => onchange({ numbered: counted })}
       />
-      Numbered, as “Table 1”
+      {t('tables-numbered-as')}
     </label>
   </div>
 
@@ -135,11 +134,11 @@
   />
 
   <div class="actions">
-    <button type="button" onclick={onclose}>Done</button>
+    <button type="button" onclick={onclose}>{t('common-done')}</button>
     <span class="spring"></span>
     <button type="button" class="danger" onclick={onremove}>
       <Trash2 size={14} />
-      Remove the table
+      {t('tables-remove')}
     </button>
   </div>
 </div>

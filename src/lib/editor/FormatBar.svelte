@@ -7,6 +7,7 @@
   import Subscript from '@lucide/svelte/icons/subscript';
   import Superscript from '@lucide/svelte/icons/superscript';
   import { TextSelection, type Command } from 'prosemirror-state';
+  import { t } from '$lib/i18n';
   import { place } from '$lib/ui/floating';
   import { tooltip } from '$lib/ui/tooltip';
   import { insertFootnote, toggle, toggleList, toggleQuote } from './commands';
@@ -54,14 +55,14 @@
     class="bar"
     bind:this={el}
     role="toolbar"
-    aria-label="Format"
+    aria-label={t('editor-format')}
     tabindex="-1"
     onmousedown={(e) => e.preventDefault()}
   >
     <button
       class:on={s.marks.em}
-      aria-label="Italic"
-      use:tooltip={{ text: 'Italic', shortcut: 'Ctrl+I', side: 'top' }}
+      aria-label={t('editor-italic')}
+      use:tooltip={{ text: t('editor-italic'), shortcut: 'Ctrl+I', side: 'top' }}
       onclick={() => run(toggle('em'))}
     >
       <Italic size={15} />
@@ -69,8 +70,8 @@
     {#if s.kind !== 'title'}
       <button
         class:on={s.marks.strong}
-        aria-label="Bold"
-        use:tooltip={{ text: 'Bold', shortcut: 'Ctrl+B', side: 'top' }}
+        aria-label={t('editor-bold')}
+        use:tooltip={{ text: t('editor-bold'), shortcut: 'Ctrl+B', side: 'top' }}
         onclick={() => run(toggle('strong'))}
       >
         <Bold size={15} />
@@ -79,24 +80,24 @@
     <button
       class:on={s.marks.smallcaps}
       class="caps"
-      aria-label="Small capitals"
-      use:tooltip={{ text: 'Small capitals', shortcut: 'Ctrl+Shift+K', side: 'top' }}
+      aria-label={t('editor-small-capitals')}
+      use:tooltip={{ text: t('editor-small-capitals'), shortcut: 'Ctrl+Shift+K', side: 'top' }}
       onclick={() => run(toggle('smallcaps'))}
     >
       <span>Sc</span>
     </button>
     <button
       class:on={s.marks.sup}
-      aria-label="Superscript"
-      use:tooltip={{ text: 'Superscript', shortcut: 'Ctrl+.', side: 'top' }}
+      aria-label={t('editor-superscript')}
+      use:tooltip={{ text: t('editor-superscript'), shortcut: 'Ctrl+.', side: 'top' }}
       onclick={() => run(toggle('sup'))}
     >
       <Superscript size={15} />
     </button>
     <button
       class:on={s.marks.sub}
-      aria-label="Subscript"
-      use:tooltip={{ text: 'Subscript', shortcut: 'Ctrl+,', side: 'top' }}
+      aria-label={t('editor-subscript')}
+      use:tooltip={{ text: t('editor-subscript'), shortcut: 'Ctrl+,', side: 'top' }}
       onclick={() => run(toggle('sub'))}
     >
       <Subscript size={15} />
@@ -104,8 +105,8 @@
     {#if s.kind !== 'title'}
       <button
         class:on={s.marks.strike}
-        aria-label="Struck through"
-        use:tooltip={{ text: 'Struck through', shortcut: 'Ctrl+Shift+X', side: 'top' }}
+        aria-label={t('editor-struck')}
+        use:tooltip={{ text: t('editor-struck'), shortcut: 'Ctrl+Shift+X', side: 'top' }}
         onclick={() => run(toggle('strike'))}
       >
         <Strikethrough size={15} />
@@ -115,16 +116,16 @@
       <span class="rule"></span>
       <button
         class:on={s.quote}
-        aria-label="Quotation"
-        use:tooltip={{ text: 'Block quotation', shortcut: "Ctrl+'", side: 'top' }}
+        aria-label={t('editor-quotation')}
+        use:tooltip={{ text: t('editor-block-quotation'), shortcut: "Ctrl+'", side: 'top' }}
         onclick={() => run(toggleQuote)}
       >
         <Quote size={15} />
       </button>
       <button
         class:on={s.list}
-        aria-label="List"
-        use:tooltip={{ text: 'List', shortcut: 'Ctrl+Shift+8', side: 'top' }}
+        aria-label={t('editor-list')}
+        use:tooltip={{ text: t('editor-list'), shortcut: 'Ctrl+Shift+8', side: 'top' }}
         onclick={() => run(toggleList('bullet_list'))}
       >
         <List size={15} />
@@ -132,17 +133,17 @@
       <span class="rule"></span>
       <button
         class="word"
-        use:tooltip={{ text: 'Make the selection a note', shortcut: 'Ctrl+Alt+F', side: 'top' }}
+        use:tooltip={{ text: t('editor-note-selection'), shortcut: 'Ctrl+Alt+F', side: 'top' }}
         onclick={note}
       >
-        Note
+        {t('editor-note')}
       </button>
     {/if}
     {#if s.kind !== 'title'}
       <button
         class="word"
-        use:tooltip={{ text: 'Cite a work here', shortcut: '@', side: 'top' }}
-        onclick={cite}>Cite</button
+        use:tooltip={{ text: t('editor-cite-here'), shortcut: '@', side: 'top' }}
+        onclick={cite}>{t('editor-cite')}</button
       >
     {/if}
   </div>

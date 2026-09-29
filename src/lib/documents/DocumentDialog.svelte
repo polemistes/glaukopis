@@ -5,6 +5,7 @@
   import { isBackendError } from '$lib/api/backend';
   import { pictures } from '$lib/figures/pictures.svelte';
   import { citeAtOnceIn } from '$lib/found/atonce';
+  import { languages, t } from '$lib/i18n';
   import { settings } from '$lib/state/settings.svelte';
   import { makeMap, titleOf } from '$lib/project/model/import';
   import { openProject, projects } from '$lib/state/projects.svelte';
@@ -51,8 +52,8 @@
       if (left) return;
       failure =
         isBackendError(error) && error.kind === 'missing-program'
-          ? 'Documents of this kind are read by Pandoc, which is not installed or could not be found. Where it is can be said in the settings.'
-          : (describeError(error) ?? 'The file could not be read.');
+          ? t('documents-no-pandoc')
+          : (describeError(error) ?? t('documents-unread'));
     }
   }
 
@@ -103,7 +104,7 @@
         return;
       }
       // A project of its own, named after the document, with the map in it.
-      const name = title.replace(/\s+/g, ' ').trim() || titleOf(read) || 'Untitled';
+      const name = title.replace(/\s+/g, ' ').trim() || titleOf(read) || t('documents-untitled');
       const info = await projects.create(name);
       const opened = await openProject(info.id);
       const first = opened.project.maps.map((m) => m.id);
@@ -114,7 +115,7 @@
       await opened.project.close();
       done({ map: made.map, project: info, goThrough });
     } catch (error) {
-      failure = describeError(error) ?? 'The map could not be made.';
+      failure = describeError(error) ?? t('documents-map-failed');
       making = false;
     }
   }
@@ -123,12 +124,12 @@
     if (!read) return [];
     const c = read.counts;
     const all: [string, string, number, boolean][] = [
-      ['parts', c.parts === 1 ? 'Part' : 'Parts', c.parts, true],
-      ['words', c.words === 1 ? 'Word' : 'Words', c.words, true],
-      ['notes', c.notes === 1 ? 'Note' : 'Notes', c.notes, false],
-      ['figures', c.figures === 1 ? 'Figure' : 'Figures', c.figures, false],
-      ['tables', c.tables === 1 ? 'Table' : 'Tables', c.tables, false],
-      ['equations', c.equations === 1 ? 'Equation' : 'Equations', c.equations, false],
+      ['parts', t('documents-parts', { count: c.parts }), c.parts, true],
+      ['words', t('documents-words', { count: c.words }), c.words, true],
+      ['notes', t('documents-notes', { count: c.notes }), c.notes, false],
+      ['figures', t('documents-figures', { count: c.figures }), c.figures, false],
+      ['tables', t('documents-tables', { count: c.tables }), c.tables, false],
+      ['equations', t('documents-equations', { count: c.equations }), c.equations, false],
     ];
     return all.filter(([, , n, always]) => always || n > 0);
   });
@@ -136,18 +137,10 @@
   const cited = $derived.by(() => {
     if (!read) return '';
     const { cited: found, notFound } = read.counts;
-    if (!found && !notFound) return '';
-    const times = (n: number) =>
-      n === 1 ? 'once' : n === 2 ? 'twice' : `${n.toLocaleString()} times`;
-    const parts: string[] = [];
-    if (found) parts.push(`Works of your library are cited ${times(found)}`);
-    if (notFound)
-      parts.push(
-        found
-          ? `works that are not in it ${times(notFound)}`
-          : `Works that are not in your library are cited ${times(notFound)}`,
-      );
-    return `${parts.join(', ')}.`;
+    if (found && notFound) return t('documents-cited-both', { cited: found, missing: notFound });
+    if (found) return t('documents-cited-in-library', { cited: found });
+    if (notFound) return t('documents-cited-not-in-library', { missing: notFound });
+    return '';
   });
 
   /**
@@ -157,21 +150,15 @@
   const found = $derived.by(() => {
     if (!read?.counts.found) return '';
     const { found: all, foundMade: made } = read.counts;
-    const by =
-      made === 0
-        ? ''
-        : made === all
-          ? all === 1
-            ? ', made by a program that keeps references'
-            : ', all made by a program that keeps references'
-          : `, ${made.toLocaleString()} of them made by a program that keeps references`;
-    return `${all === 1 ? 'One citation was' : `${all.toLocaleString()} citations were`} found${by}.`;
+    if (made === 0) return t('documents-found', { count: all });
+    if (made === all) return t('documents-found-made', { count: all });
+    return t('documents-found-some-made', { count: all, made });
   });
 </script>
 
 <Dialog
   open
-  title={request.project ? 'A map from a document' : 'A project from a document'}
+  title={request.project ? t('documents-title-map') : t('documents-title-project')}
   subtitle={read ? `${read.file} · ${read.kind}` : file}
   width={560}
   dismissable={!making}
@@ -191,8 +178,8 @@
     <div class="reading" aria-live="polite">
       <Spinner size={18} />
       <div>
-        <div class="doing">Reading {file}…</div>
-        <div class="hint">A long document takes a moment.</div>
+        <div class="doing">{t('documents-reading', { file })}</div>
+        <div class="hint">{t('documents-reading-hint')}</div>
       </div>
     </div>
   {:else}
@@ -204,12 +191,10 @@
     >
       <TextField
         bind:value={title}
-        label="Title"
+        label={t('documents-title')}
         size="lg"
         serif
-        hint={request.project
-          ? 'The name of the map, and of the element at its centre.'
-          : 'The name of the project, of its map, and of the element at the centre of the map.'}
+        hint={request.project ? t('documents-title-hint-map') : t('documents-title-hint-project')}
         data-autofocus
       />
     </form>
@@ -217,7 +202,7 @@
     <dl class="facts">
       {#each facts as [id, label, n] (id)}
         <div data-fact={id}>
-          <dd>{n.toLocaleString()}</dd>
+          <dd>{n.toLocaleString(languages.current)}</dd>
           <dt>{label}</dt>
         </div>
       {/each}
@@ -235,7 +220,7 @@
               disabled={making}
               onchange={(e) => settings.setFound({ atOnce: e.currentTarget.checked })}
             />
-            Make citations at once of those made by Zotero of works your library has
+            {t('documents-at-once')}
           </label>
         {/if}
         <label class="check">
@@ -246,13 +231,13 @@
             disabled={making}
             onchange={(e) => settings.setFound({ goThrough: e.currentTarget.checked })}
           />
-          Go through the citations when the {request.project ? 'map' : 'project'} is made
+          {request.project ? t('documents-go-through-map') : t('documents-go-through-project')}
         </label>
       </div>
     {/if}
 
     {#if read.remarks.length}
-      <div class="overline">To know</div>
+      <div class="overline">{t('documents-to-know')}</div>
       <ul class="remarks selectable">
         {#each read.remarks as remark}
           <li>{remark}</li>
@@ -268,14 +253,14 @@
 
   {#snippet footer()}
     {#if making}
-      <div class="working"><Spinner /> Making the map…</div>
+      <div class="working"><Spinner /> {t('documents-making')}</div>
     {/if}
     {#if failure && !read}
-      <Button variant="primary" onclick={cancel}>Close</Button>
+      <Button variant="primary" onclick={cancel}>{t('common-close')}</Button>
     {:else}
-      <Button variant="ghost" disabled={making} onclick={cancel}>Cancel</Button>
+      <Button variant="ghost" disabled={making} onclick={cancel}>{t('common-cancel')}</Button>
       <Button variant="primary" disabled={!read || making || !title.trim()} onclick={make}>
-        {request.project ? 'Make the map' : 'Make the project'}
+        {request.project ? t('documents-make-map') : t('documents-make-project')}
       </Button>
     {/if}
   {/snippet}

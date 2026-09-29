@@ -4,14 +4,17 @@ import { prosemirrorToYXmlFragment } from 'y-prosemirror';
 import { afterEach, describe, expect, it } from 'vitest';
 import { bodyPlugins } from '$lib/editor/plugins';
 import { bodySchema } from '$lib/editor/schema';
+import { languages, t } from '$lib/i18n';
 import { blocksHtml } from '$lib/project/model/html';
 import { Project } from '$lib/project/model/project.svelte';
 import { readBody } from '$lib/project/model/text';
 import {
   canStandBeside,
+  flows,
   inRow,
   MOST_BESIDE,
   placed,
+  sides,
   standAlone,
   standBeside,
   usualOf,
@@ -187,5 +190,28 @@ describe('where something stands', () => {
       stand: 'left',
       around: true,
     });
+  });
+
+  it('is told of the format in one sentence, in the language of the interface', () => {
+    const said = (kind: string, side: string, flow: string) =>
+      t('figures-usual', { kind, side, flow });
+    expect(said('figure', 'left', 'around')).toBe(
+      'The format has figures to the left, with the text flowing around them.',
+    );
+    expect(said('table', 'right', 'apart')).toBe(
+      'The format has tables to the right, apart from the text.',
+    );
+    expect(said('equation', 'center', 'none')).toBe('The format has equations in the middle.');
+    languages.current = 'nb';
+    expect(said('table', 'left', 'apart')).toBe(
+      'Formatet har tabeller til venstre, atskilt fra teksten.',
+    );
+    expect(sides().map((s) => s.label)).toEqual(['Som formatet', 'Venstre', 'Midten', 'Høyre']);
+    languages.current = 'en';
+    expect(flows().map((f) => f.label)).toEqual([
+      'As the format',
+      'Flows around it',
+      'Stands apart',
+    ]);
   });
 });

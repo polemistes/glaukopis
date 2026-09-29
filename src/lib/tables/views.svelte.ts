@@ -22,6 +22,7 @@ import { hooksOf } from '$lib/editor/ui.svelte';
 import { numbering } from '$lib/figures/numbering.svelte';
 import { standAlone, standBeside, usualOf, type Usual } from '$lib/figures/placing';
 import { figureLabel, numberOf, showPlacing } from '$lib/figures/views.svelte';
+import { t } from '$lib/i18n';
 import { place, type RectLike } from '$lib/ui/floating';
 import { openContextMenu, type MenuItem } from '$lib/ui/menu.svelte';
 import {
@@ -345,7 +346,7 @@ export class TableTools {
     const panel = document.createElement('div');
     panel.className = 'note-panel table-panel';
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'Table');
+    panel.setAttribute('aria-label', t('tables-table'));
     document.body.append(panel);
     this.#panel = panel;
     this.#panelMounted = mount(TablePanel, {
@@ -434,11 +435,11 @@ export class TableTools {
   rows(): MenuItem[] {
     const cells = !!this.now?.cells;
     return [
-      { label: 'A row above', disabled: !cells, action: () => this.run(addRowBefore) },
-      { label: 'A row below', disabled: !cells, action: () => this.run(addRowAfter) },
+      { label: t('tables-row-above'), disabled: !cells, action: () => this.run(addRowBefore) },
+      { label: t('tables-row-below'), disabled: !cells, action: () => this.run(addRowAfter) },
       { kind: 'separator' },
       {
-        label: 'Remove the row',
+        label: t('tables-row-remove'),
         disabled: !cells || (this.now?.rows ?? 0) < 2,
         action: () => this.run(deleteRow),
       },
@@ -448,11 +449,19 @@ export class TableTools {
   columns(): MenuItem[] {
     const cells = !!this.now?.cells;
     return [
-      { label: 'A column before', disabled: !cells, action: () => this.run(addColumnBefore) },
-      { label: 'A column after', disabled: !cells, action: () => this.run(addColumnAfter) },
+      {
+        label: t('tables-column-before'),
+        disabled: !cells,
+        action: () => this.run(addColumnBefore),
+      },
+      {
+        label: t('tables-column-after'),
+        disabled: !cells,
+        action: () => this.run(addColumnAfter),
+      },
       { kind: 'separator' },
       {
-        label: 'Remove the column',
+        label: t('tables-column-remove'),
         disabled: !cells || (this.now?.columns ?? 0) < 2,
         action: () => this.run(deleteColumn),
       },
@@ -462,12 +471,12 @@ export class TableTools {
   headings(): MenuItem[] {
     return [
       {
-        label: 'The first row is headings',
+        label: t('tables-first-row-headings'),
         checked: !!this.now?.headerRow,
         action: () => this.run(headingRow),
       },
       {
-        label: 'The first column is headings',
+        label: t('tables-first-column-headings'),
         checked: !!this.now?.headerColumn,
         action: () => this.run(headingColumn),
       },
@@ -495,23 +504,27 @@ export class TableTools {
       { kind: 'separator' },
       ...this.columns().filter((i) => i.kind !== 'separator'),
       { kind: 'separator' },
-      { label: 'Join the cells', disabled: !now?.canJoin, action: () => this.join() },
-      { label: 'Split the cell', disabled: !now?.canSplit, action: () => this.split() },
+      { label: t('tables-join'), disabled: !now?.canJoin, action: () => this.join() },
+      { label: t('tables-split'), disabled: !now?.canSplit, action: () => this.split() },
       { kind: 'separator' },
       ...this.headings(),
       { kind: 'separator' },
-      { kind: 'heading', label: 'What the cell holds stands' },
-      { label: 'To the left', checked: at === 'left', action: () => this.align('left') },
-      { label: 'In the middle', checked: at === 'center', action: () => this.align('center') },
-      { label: 'To the right', checked: at === 'right', action: () => this.align('right') },
+      { kind: 'heading', label: t('tables-cell-stands') },
+      { label: t('tables-left'), checked: at === 'left', action: () => this.align('left') },
+      { label: t('tables-middle'), checked: at === 'center', action: () => this.align('center') },
+      { label: t('tables-right'), checked: at === 'right', action: () => this.align('right') },
       { kind: 'separator' },
       {
-        label: 'Numbered',
+        label: t('tables-numbered'),
         checked: !!now?.numbered,
         action: () => this.run(setTable({ numbered: !now?.numbered })),
       },
-      { label: 'The table…', hint: 'How wide it is', action: () => this.openPanel() },
-      { label: 'Remove the table', danger: true, action: () => this.run(removeTable) },
+      {
+        label: t('tables-the-table'),
+        hint: t('tables-the-table-hint'),
+        action: () => this.openPanel(),
+      },
+      { label: t('tables-remove'), danger: true, action: () => this.run(removeTable) },
     ];
   }
 

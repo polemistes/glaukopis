@@ -27,6 +27,7 @@
     type StoredFile,
   } from '$lib/api/library';
   import { isBackendError } from '$lib/api/backend';
+  import { t } from '$lib/i18n';
   import { library } from '$lib/state/library.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
@@ -40,7 +41,6 @@
   import { toLines, withNoteAsItIs } from './notes.svelte';
   import ReferenceForm from './ReferenceForm.svelte';
   import ScanText from '@lucide/svelte/icons/scan-text';
-  import { t } from '$lib/i18n';
   import SearchableDialog from '$lib/ocr/SearchableDialog.svelte';
 
   interface Props {
@@ -124,7 +124,7 @@
       if (wanted !== id) return;
       reference = null;
       draft = null;
-      error = describeError(e) ?? 'The reference could not be read.';
+      error = describeError(e) ?? t('library-pane-unread');
       status = 'error';
     }
   }
@@ -163,7 +163,7 @@
       if (status === 'saving') status = 'saved';
     } catch (e) {
       if (forId !== loadedId) return;
-      const message = describeError(e) ?? 'The changes could not be saved.';
+      const message = describeError(e) ?? t('library-pane-save-failed');
       if (isBackendError(e) && /citation key/i.test(e.message)) keyError = message;
       else error = message;
       status = 'error';
@@ -174,7 +174,7 @@
     if (!reference) return;
     let chosen = paths;
     if (!chosen) {
-      const picked = await open({ title: 'Attach files', multiple: true });
+      const picked = await open({ title: t('library-pane-attach-title'), multiple: true });
       if (!picked) return;
       chosen = Array.isArray(picked) ? picked : [picked];
     }
@@ -182,16 +182,16 @@
       reference = await attachmentAdd(reference.id, chosen);
       library.put(reference);
     } catch (e) {
-      notifyError('The file could not be attached', e);
+      notifyError(t('library-pane-attach-failed'), e);
     }
   }
 
   async function detach(file: StoredFile) {
     if (!reference) return;
     const ok = await confirm({
-      title: `Remove “${file.name}”?`,
-      message: 'The file is deleted from the library’s store, unless another reference uses it.',
-      confirm: 'Remove file',
+      title: t('library-pane-detach-title', { name: file.name }),
+      message: t('library-pane-detach-message'),
+      confirm: t('library-pane-detach'),
       danger: true,
     });
     if (!ok) return;
@@ -199,7 +199,7 @@
       reference = await attachmentRemove(reference.id, file.path);
       library.put(reference);
     } catch (e) {
-      notifyError('The file could not be removed', e);
+      notifyError(t('library-pane-detach-failed'), e);
     }
   }
 
@@ -213,7 +213,7 @@
       library.setCollections(await collectionList());
       reference.collections = reference.collections.filter((c) => c !== collectionId);
     } catch (e) {
-      notifyError('That could not be done', e);
+      notifyError(t('library-not-done'), e);
     }
   }
 
@@ -229,7 +229,7 @@
       source = await librarySource(reference.id);
       sourceError = null;
     } catch (e) {
-      notifyError('The source could not be shown', e);
+      notifyError(t('library-pane-source-failed'), e);
     }
   }
 
@@ -243,7 +243,7 @@
       source = null;
       status = 'saved';
     } catch (e) {
-      sourceError = describeError(e) ?? 'The source could not be read.';
+      sourceError = describeError(e) ?? t('library-source-unread');
     }
   }
 
@@ -254,33 +254,33 @@
       event.currentTarget as HTMLElement,
       [
         {
-          label: 'Copy citation key',
+          label: t('library-copy-key'),
           icon: Copy,
           action: () => {
             navigator.clipboard.writeText(r.key);
-            notifyOk(`Copied “${r.key}”`);
+            notifyOk(t('library-copied-key', { key: r.key }));
           },
         },
         {
-          label: 'Copy as BibLaTeX',
+          label: t('library-copy-biblatex'),
           action: async () => {
             navigator.clipboard.writeText(await librarySource(r.id));
-            notifyOk('Copied');
+            notifyOk(t('library-copied'));
           },
         },
         { kind: 'separator' },
         {
-          label: 'Duplicate',
-          hint: 'A new reference beginning with these details',
+          label: t('library-pane-duplicate'),
+          hint: t('library-pane-duplicate.hint'),
           action: () => {
             const copy = draftOf(r);
             copy.key = '';
             onduplicate?.(copy);
           },
         },
-        { label: 'Edit the source…', icon: Code, action: editSource },
+        { label: t('library-pane-edit-source'), icon: Code, action: editSource },
         { kind: 'separator' },
-        { label: 'Delete', icon: Trash2, danger: true, action: () => ondelete(r.id) },
+        { label: t('common-delete'), icon: Trash2, danger: true, action: () => ondelete(r.id) },
       ],
       { align: 'end' },
     );
@@ -289,7 +289,7 @@
 
 <aside
   class="pane"
-  aria-label="Reference"
+  aria-label={t('library-pane-label')}
   use:dropTarget={{
     accepts: ['files'],
     ondrop: (e) => attach(e.payload.data as string[]),
@@ -300,17 +300,18 @@
       {#if status === 'saving' || status === 'loading'}
         <Spinner size={12} />
       {:else if status === 'saved'}
-        <span class="saved"><Check size={13} /> Saved</span>
+        <span class="saved"><Check size={13} /> {t('library-pane-saved')}</span>
       {:else if status === 'changed'}
-        <span class="muted">Editing…</span>
+        <span class="muted">{t('library-pane-editing')}</span>
       {:else if status === 'error'}
-        <span class="failed">Not saved</span>
+        <span class="failed">{t('library-pane-not-saved')}</span>
       {/if}
     </div>
-    <IconButton label="More" onclick={menu} disabled={!reference}><Ellipsis size={16} /></IconButton
+    <IconButton label={t('library-pane-more')} onclick={menu} disabled={!reference}
+      ><Ellipsis size={16} /></IconButton
     >
     {#if onclose}
-      <IconButton label="Close" onclick={onclose}><X size={16} /></IconButton>
+      <IconButton label={t('common-close')} onclick={onclose}><X size={16} /></IconButton>
     {/if}
   </header>
 
@@ -322,24 +323,24 @@
 
       <section>
         <div class="section-head">
-          <h3 class="overline">Your notes</h3>
+          <h3 class="overline">{t('library-notes-yours')}</h3>
         </div>
         <textarea
           class="note"
           value={note}
           use:growNote={note}
-          placeholder="What you make of it. For yourself: it is not part of what is cited."
-          aria-label="Your notes on this work"
+          placeholder={t('library-pane-note-placeholder')}
+          aria-label={t('library-notes-on-work')}
           spellcheck="true"
           oninput={(e) => writeNote(e.currentTarget.value)}></textarea>
       </section>
 
       <section>
         <div class="section-head">
-          <h3 class="overline">Files</h3>
+          <h3 class="overline">{t('library-pane-files')}</h3>
           <Button variant="ghost" size="sm" onclick={() => attach()}>
             {#snippet icon()}<Paperclip size={13} />{/snippet}
-            Attach
+            {t('library-pane-attach')}
           </Button>
         </div>
         {#each reference.files as file (file.path)}
@@ -350,20 +351,22 @@
               disabled={!file.exists}
               onclick={() =>
                 attachmentOpen(file.path).catch((e) =>
-                  notifyError('The file could not be opened', e),
+                  notifyError(t('library-file-open-failed'), e),
                 )}
             >
               <FileText size={15} strokeWidth={1.6} />
               <span class="name truncate">{file.name}</span>
-              <span class="size">{file.exists ? fileSize(file.size) : 'missing'}</span>
+              <span class="size"
+                >{file.exists ? fileSize(file.size) : t('library-pane-missing')}</span
+              >
             </button>
             <IconButton
-              label="Show in the file manager"
+              label={t('library-pane-reveal')}
               size="sm"
               disabled={!file.exists}
               onclick={() =>
                 attachmentReveal(file.path).catch((e) =>
-                  notifyError('The folder could not be opened', e),
+                  notifyError(t('library-pane-reveal-failed'), e),
                 )}
             >
               <FolderOpen size={13} />
@@ -378,18 +381,18 @@
                 <ScanText size={13} />
               </IconButton>
             {/if}
-            <IconButton label="Remove" size="sm" onclick={() => detach(file)}
+            <IconButton label={t('common-remove')} size="sm" onclick={() => detach(file)}
               ><X size={13} /></IconButton
             >
           </div>
         {:else}
-          <p class="none">No files. Attach a PDF, or drop one here.</p>
+          <p class="none">{t('library-pane-no-files')}</p>
         {/each}
       </section>
 
       {#if reference.collections.length}
         <section>
-          <div class="section-head"><h3 class="overline">Collections</h3></div>
+          <div class="section-head"><h3 class="overline">{t('library-collections')}</h3></div>
           <div class="chips">
             {#each reference.collections as c (c)}
               {@const collection = library.collection(c)}
@@ -398,7 +401,7 @@
                   {collection.name}
                   <button
                     type="button"
-                    aria-label="Remove from {collection.name}"
+                    aria-label={t('library-pane-leave-collection', { name: collection.name })}
                     onclick={() => leaveCollection(c)}
                   >
                     <X size={11} />
@@ -411,10 +414,14 @@
       {/if}
 
       <p class="dates">
-        Added {dateWords(
-          reference.added,
-        )}{#if reference.modified.slice(0, 10) !== reference.added.slice(0, 10)}
-          · changed {dateWords(reference.modified)}{/if}
+        {#if reference.modified.slice(0, 10) !== reference.added.slice(0, 10)}
+          {t('library-pane-added-changed', {
+            added: dateWords(reference.added),
+            changed: dateWords(reference.modified),
+          })}
+        {:else}
+          {t('library-pane-added', { date: dateWords(reference.added) })}
+        {/if}
       </p>
     {/if}
   </div>
@@ -423,8 +430,8 @@
 {#if source !== null}
   <Dialog
     open
-    title="Source"
-    subtitle="The entry as BibLaTeX. Most things are easier in the form."
+    title={t('library-source')}
+    subtitle={t('library-pane-source-subtitle')}
     width={680}
     onclose={() => (source = null)}
   >
@@ -432,12 +439,12 @@
       class="source"
       bind:value={source}
       spellcheck="false"
-      aria-label="BibLaTeX source"
+      aria-label={t('library-source-label')}
       oninput={() => (sourceError = null)}></textarea>
     {#if sourceError}<p class="error selectable" role="alert">{sourceError}</p>{/if}
     {#snippet footer()}
-      <Button variant="ghost" onclick={() => (source = null)}>Cancel</Button>
-      <Button variant="primary" onclick={applySource}>Apply</Button>
+      <Button variant="ghost" onclick={() => (source = null)}>{t('common-cancel')}</Button>
+      <Button variant="primary" onclick={applySource}>{t('common-apply')}</Button>
     {/snippet}
   </Dialog>
 {/if}

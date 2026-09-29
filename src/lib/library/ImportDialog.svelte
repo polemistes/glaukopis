@@ -2,11 +2,12 @@
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import type { ImportAction, PlanItem } from '$lib/api/library';
+  import { t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
-  import { plural, reasonWords } from './format';
+  import { reasonWords } from './format';
   import { carryOut, type ImportRequest } from './references.svelte';
   import { fieldLabel } from './schema';
   import TypeIcon from './TypeIcon.svelte';
@@ -52,12 +53,11 @@
   });
 
   const titles: Record<Group, (n: number) => string> = {
-    review: (n) => `${plural(n, 'reference')} may already be in your library`,
-    new: (n) => `${plural(n, 'new reference')}`,
-    complete: (n) =>
-      `${plural(n, 'reference')} already in your library ${n === 1 ? 'gains' : 'gain'} details`,
-    known: (n) => `${plural(n, 'reference')} already in your library`,
-    repeated: (n) => `${plural(n, 'reference')} repeated within the import`,
+    review: (n) => t('library-import-review', { count: n }),
+    new: (n) => t('library-import-new', { count: n }),
+    complete: (n) => t('library-import-complete', { count: n }),
+    known: (n) => t('library-import-known', { count: n }),
+    repeated: (n) => t('library-import-repeated', { count: n }),
   };
 
   function set(index: number, action: ImportAction) {
@@ -85,7 +85,7 @@
       request.resolve(outcome);
       onclose();
     } catch (e) {
-      error = describeError(e) ?? 'The import failed.';
+      error = describeError(e) ?? t('library-import-failed');
     } finally {
       working = false;
     }
@@ -99,7 +99,11 @@
   function gains(names: string[]): string {
     // What an entry is in Zotero is no field of the form, and has no name there.
     const named = (n: string) =>
-      n === 'file' ? 'File' : n === 'glaukopis-zotero' ? 'Its key in Zotero' : fieldLabel(n);
+      n === 'file'
+        ? t('library-import-gains-file')
+        : n === 'glaukopis-zotero'
+          ? t('library-import-gains-zotero')
+          : fieldLabel(n);
     return names.map(named).join(', ');
   }
 </script>
@@ -112,15 +116,15 @@
         <span class="authors">{item.summary.authors || '—'}</span>
         <span class="year">{item.summary.year}</span>
       </div>
-      <div class="serif title">{item.summary.title || 'Untitled'}</div>
+      <div class="serif title">{item.summary.title || t('library-untitled')}</div>
     </div>
   </div>
 {/snippet}
 
 <Dialog
   open
-  title="Import references"
-  subtitle="{plural(items.length, 'reference')} in {request.plan.source}"
+  title={t('library-import-title')}
+  subtitle={t('library-import-subtitle', { count: items.length, source: request.plan.source })}
   width={720}
   dismissable={!working}
   padded={false}
@@ -152,17 +156,25 @@
                   {#if group === 'review' || group === 'complete' || group === 'known'}
                     {@const match = item.matches[0]}
                     <div class="against">
-                      <div class="overline">In your library · {reasonWords(match.reasons)}</div>
+                      <div class="overline">
+                        {t('library-in-library')} · {reasonWords(match.reasons)}
+                      </div>
                       <div class="existing selectable">
                         <span class="authors">{match.summary.authors || '—'}</span>
                         <span class="year">{match.summary.year}</span>
                         <span class="serif">{match.summary.title}</span>
                       </div>
                       {#if match.gains.length}
-                        <div class="gains">Would gain: {gains(match.gains)}</div>
+                        <div class="gains">
+                          {t('library-import-would-gain', { fields: gains(match.gains) })}
+                        </div>
                       {/if}
                     </div>
-                    <div class="choices" role="radiogroup" aria-label="What to do">
+                    <div
+                      class="choices"
+                      role="radiogroup"
+                      aria-label={t('library-import-what-to-do')}
+                    >
                       <label>
                         <input
                           type="radio"
@@ -170,7 +182,7 @@
                           disabled={!match.gains.length}
                           onchange={() => choose(index, 'merge')}
                         />
-                        Same work: complete the one I have
+                        {t('library-import-merge')}
                       </label>
                       <label>
                         <input
@@ -178,7 +190,7 @@
                           checked={choice(item) === 'skip'}
                           onchange={() => choose(index, 'skip')}
                         />
-                        Same work: leave mine as it is
+                        {t('library-import-skip')}
                       </label>
                       <label>
                         <input
@@ -186,7 +198,7 @@
                           checked={choice(item) === 'add'}
                           onchange={() => choose(index, 'add')}
                         />
-                        A different work: add it
+                        {t('library-import-add')}
                       </label>
                     </div>
                   {:else if group === 'new'}
@@ -196,7 +208,7 @@
                         checked={item.action.kind === 'add'}
                         onchange={(e) => choose(index, e.currentTarget.checked ? 'add' : 'skip')}
                       />
-                      Import
+                      {t('library-import')}
                     </label>
                   {/if}
 
@@ -206,7 +218,7 @@
                 </div>
               {/each}
               {#if list.length > 400}
-                <p class="more">…and {list.length - 400} more.</p>
+                <p class="more">{t('library-import-more', { count: list.length - 400 })}</p>
               {/if}
             </div>
           {/if}
@@ -223,7 +235,7 @@
           onclick={() => (open.warnings = !open.warnings)}
         >
           <span class="twisty" class:open={open.warnings}><ChevronRight size={14} /></span>
-          <span>{plural(request.plan.warnings.length, 'part')} of the file could not be read</span>
+          <span>{t('library-import-unread', { count: request.plan.warnings.length })}</span>
         </button>
         {#if open.warnings}
           <ul class="warnings selectable">
@@ -239,16 +251,14 @@
   {#snippet footer()}
     <div class="summary">
       {#if working}
-        <Spinner /> Importing…
+        <Spinner /> {t('library-import-importing')}
       {:else}
-        {counts.add} to add{counts.merge ? `, ${counts.merge} to complete` : ''}{counts.skip
-          ? `, ${counts.skip} left out`
-          : ''}
+        {t('library-import-counts', counts)}
       {/if}
     </div>
-    <Button variant="ghost" disabled={working} onclick={close}>Cancel</Button>
+    <Button variant="ghost" disabled={working} onclick={close}>{t('common-cancel')}</Button>
     <Button variant="primary" disabled={working || counts.add + counts.merge === 0} onclick={run}>
-      Import
+      {t('library-import')}
     </Button>
   {/snippet}
 </Dialog>

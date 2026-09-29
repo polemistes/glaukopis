@@ -1,10 +1,27 @@
 /** Words for things of the library. */
 
 import type { Reason, SummaryLite } from '$lib/api/library';
+import { languages, t } from '$lib/i18n';
+
+/**
+ * A message one of whose variables is shown otherwise than as words, as a
+ * piece of code or in bold: the words before it and after it, which the
+ * language puts where they belong. `say` says the message with what it is
+ * given in place of that variable:
+ *
+ *     wordsAround((file) => t('library-zotero-not-found', { file }))
+ */
+export function wordsAround(say: (variable: string) => string): [string, string] {
+  const mark = '\u{E000}';
+  const said = say(mark);
+  const at = said.indexOf(mark);
+  return at < 0 ? [said, ''] : [said.slice(0, at), said.slice(at + mark.length)];
+}
 
 /** "Nagy 1979", "Nagy and Lord 1996", "The Oxford Classical Dictionary 2012". */
 export function shortLabel(s: { authors: string; year: string; title: string }): string {
-  const who = s.authors.replace(/ \(eds?\.\)$/, '') || truncate(s.title, 32) || 'Untitled';
+  const who =
+    s.authors.replace(/ \(eds?\.\)$/, '') || truncate(s.title, 32) || t('library-untitled');
   return s.year ? `${who} ${s.year}` : who;
 }
 
@@ -17,15 +34,18 @@ export function truncate(text: string, length: number): string {
 
 export function reasonWords(reasons: Reason[]): string {
   const words: Record<Reason, string> = {
-    doi: 'the same DOI',
-    isbn: 'the same ISBN',
-    identical: 'alike in all that tells one work from another',
-    'title-author-year': 'the same title, author and year',
-    file: 'the same file',
+    doi: t('library-reason-doi'),
+    isbn: t('library-reason-isbn'),
+    identical: t('library-reason-identical'),
+    'title-author-year': t('library-reason-title-author-year'),
+    file: t('library-reason-file'),
   };
   const list = reasons.map((r) => words[r]);
   if (list.length <= 1) return list[0] ?? '';
-  return `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
+  return t('library-reasons', {
+    others: list.slice(0, -1).join(', '),
+    last: list[list.length - 1],
+  });
 }
 
 export function describe(s: SummaryLite): string {
@@ -34,16 +54,28 @@ export function describe(s: SummaryLite): string {
 }
 
 export function fileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} kB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  // Written in the way of the language, with as many decimals as before, and not grouped.
+  const size = (n: number, decimals = 0) =>
+    n.toLocaleString(languages.current, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+      useGrouping: false,
+    });
+  if (bytes < 1024) return t('library-size-bytes', { size: size(bytes) });
+  if (bytes < 1024 * 1024)
+    return t('library-size-kilobytes', { size: size(Math.round(bytes / 1024)) });
+  return t('library-size-megabytes', { size: size(bytes / 1024 / 1024, 1) });
 }
 
 export function dateWords(iso: string): string {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  return d.toLocaleDateString(languages.current, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 }
 
 export function plural(n: number, one: string, many = `${one}s`): string {

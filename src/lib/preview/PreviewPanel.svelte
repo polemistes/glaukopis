@@ -16,7 +16,7 @@
     type Preview,
     type PreviewPage,
   } from '$lib/api/documents';
-  import { plural } from '$lib/library/format';
+  import { t } from '$lib/i18n';
   import {
     buildDocument,
     countWords,
@@ -58,6 +58,8 @@
   const KEPT = 40;
   /** So many pages before and after those in view are fetched with them. */
   const BESIDE = 2;
+  /** The programs the core may say are missing, by the names it gives them in every language. */
+  const PROGRAMS = ['Pandoc', 'Typst', 'LaTeX'];
 
   /** How many pages the document has. */
   let count = $state(0);
@@ -267,7 +269,7 @@
       if (gone || (isBackendError(e) && e.kind === 'stopped')) return;
       error = isBackendError(e)
         ? e
-        : { kind: 'unknown', message: describeError(e) ?? 'The preview could not be made.' };
+        : { kind: 'unknown', message: describeError(e) ?? t('preview-failed-message') };
       status = 'failed';
     } finally {
       making = false;
@@ -353,10 +355,10 @@
         project.setDocument(mapId, { style: f.style });
         toasts.show({
           kind: 'info',
-          message: `The reference style is now ${documents.style(f.style)?.title}`,
-          detail: 'It is the one this format goes with.',
+          message: t('preview-style-taken', { style: documents.style(f.style)?.title ?? '' }),
+          detail: t('preview-style-taken-why'),
           action: {
-            label: 'Keep the other',
+            label: t('preview-style-keep-other'),
             run: () => project.setDocument(mapId, { style: before }),
           },
         });
@@ -369,11 +371,15 @@
 
   const styleGroups = $derived.by(() => {
     const groups = new Map<string, typeof documents.styles>();
+    const other = t('style-kind-other');
     for (const s of documents.styles) {
-      const name = kindWords[s.kind] || 'Other';
+      const name = kindWords(s.kind) || other;
       groups.set(name, [...(groups.get(name) ?? []), s]);
     }
-    const order = ['Notes', 'Author and date', 'Numbers', 'Labels', 'Author', 'Other'];
+    const order = [
+      ...['note', 'author-date', 'numeric', 'label', 'author'].map((kind) => kindWords(kind)),
+      other,
+    ];
     return [...groups].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
   });
 
@@ -381,7 +387,7 @@
     const order = ['own', 'general', 'style-guide', 'publisher', 'journal'];
     return order
       .map((kind) => ({
-        name: formatKindWords[kind],
+        name: formatKindWords(kind) ?? kind,
         formats: documents.formats.filter((f) => f.kind === kind),
       }))
       .filter((g) => g.formats.length);
@@ -395,15 +401,15 @@
   const issueCount = $derived(warnings.length + missing.length + (substitute ? 1 : 0));
 </script>
 
-<aside class="preview" aria-label="Preview">
+<aside class="preview" aria-label={t('preview')}>
   <header>
     <div class="choices">
       <label>
-        <span>Format</span>
+        <span>{t('preview-format')}</span>
         <select
           value={choice.format}
           onchange={(e) => setFormat(e.currentTarget.value)}
-          aria-label="Document format"
+          aria-label={t('preview-format-label')}
         >
           {#each formatGroups as group (group.name)}
             <optgroup label={group.name}>
@@ -415,7 +421,7 @@
         </select>
       </label>
       <label>
-        <span>References</span>
+        <span>{t('preview-style')}</span>
         <select
           value={choice.style}
           onchange={(e) => {
@@ -425,7 +431,7 @@
               browsing = true;
             } else setStyle(v);
           }}
-          aria-label="Reference style"
+          aria-label={t('preview-style-label')}
         >
           {#each styleGroups as [name, styles] (name)}
             <optgroup label={name}>
@@ -437,24 +443,24 @@
           {#if !documents.style(choice.style)}
             <option value={choice.style}>{choice.style}</option>
           {/if}
-          <option value="…">More styles…</option>
+          <option value="…">{t('preview-style-more')}</option>
         </select>
       </label>
     </div>
     <IconButton
-      label="Change the format or the style"
+      label={t('preview-change')}
       onclick={(e) =>
         openMenu(
           e.currentTarget as HTMLElement,
           [
             {
-              label: 'Change this format…',
-              hint: 'Page, type, spacing, headings',
+              label: t('preview-change-format'),
+              hint: t('preview-change-format-hint'),
               action: () => (editingFormat = choice.format),
             },
             {
-              label: 'Change this reference style…',
-              hint: 'To a publisher’s wishes',
+              label: t('preview-change-style'),
+              hint: t('preview-change-style-hint'),
               action: () => (editingStyle = choice.style),
             },
           ],
@@ -463,14 +469,14 @@
     >
       <SlidersHorizontal size={15} />
     </IconButton>
-    <IconButton label="Title, authors, abstract" onclick={() => (detailing = true)}>
+    <IconButton label={t('preview-details')} onclick={() => (detailing = true)}>
       <FileText size={15} />
     </IconButton>
     <Button variant="primary" size="sm" onclick={() => (exporting = true)}>
       {#snippet icon()}<Share size={13} />{/snippet}
-      Export
+      {t('preview-export')}
     </Button>
-    <IconButton label="Hide the preview" shortcut="Ctrl+P" onclick={onclose}
+    <IconButton label={t('preview-hide')} shortcut="Ctrl+P" onclick={onclose}
       ><X size={15} /></IconButton
     >
   </header>
@@ -484,18 +490,20 @@
   >
     {#if status === 'failed' && error}
       {#if error.kind === 'missing-program'}
+        {@const program = PROGRAMS.find((p) => error?.message.includes(p))}
         <EmptyState
           icon={PackageX}
-          title={error.message.replace(' or could not be found', '')}
-          text="Preview and export are made with Pandoc and Typst. Install them with the package manager of your system, or say in the settings where they are."
+          title={program ? t('preview-program-missing', { program }) : error.message}
+          text={t('preview-programs-needed')}
         >
-          <Button onclick={() => documents.lookAgain().then(() => refresh(true))}>Look again</Button
+          <Button onclick={() => documents.lookAgain().then(() => refresh(true))}
+            >{t('preview-look-again')}</Button
           >
         </EmptyState>
       {:else}
-        <EmptyState icon={TriangleAlert} title="The preview could not be made">
+        <EmptyState icon={TriangleAlert} title={t('preview-failed')}>
           <pre class="selectable">{error.message}</pre>
-          <Button onclick={() => refresh(true)}>Try again</Button>
+          <Button onclick={() => refresh(true)}>{t('common-try-again')}</Button>
         </EmptyState>
       {/if}
     {:else if !count}
@@ -512,9 +520,13 @@
           class="page"
           data-page={n}
           style:aspect-ratio="{size.width} / {size.height}"
-          aria-label="Page {n}"
+          aria-label={t('preview-page', { number: String(n) })}
         >
-          {#if page}<img src={page.url} alt="Page {n}" draggable="false" />{/if}
+          {#if page}<img
+              src={page.url}
+              alt={t('preview-page', { number: String(n) })}
+              draggable="false"
+            />{/if}
         </div>
       {/each}
       {#if span.to < count}
@@ -525,19 +537,19 @@
 
   <footer>
     {#if status === 'working'}<Spinner size={11} />{/if}
-    {#if count}<span>{plural(count, 'page')}</span>{/if}
+    {#if count}<span>{t('preview-pages', { count })}</span>{/if}
     <span class:over>
-      {words.text.toLocaleString()}{format?.limits.words
-        ? ` of ${format.limits.words.toLocaleString()}`
-        : ''} words
+      {format?.limits.words
+        ? t('preview-words-of', { count: words.text, limit: format.limits.words })
+        : t('preview-words', { count: words.text })}
     </span>
     {#if words.withNotes !== words.text}
-      <span>{words.withNotes.toLocaleString()} with notes</span>
+      <span>{t('preview-words-with-notes', { count: words.withNotes })}</span>
     {/if}
     {#if issueCount}
       <button type="button" class="issues" onclick={(e) => (remarking = e.currentTarget)}>
         <TriangleAlert size={12} />
-        {plural(issueCount, 'remark')}
+        {t('preview-remarks-count', { count: issueCount })}
       </button>
     {/if}
   </footer>
@@ -549,35 +561,29 @@
   side="top"
   align="start"
   width={400}
-  label="Remarks"
+  label={t('preview-remarks')}
   onclose={() => (remarking = null)}
 >
   <div class="remarks selectable">
     {#if substitute}
       <section>
-        <h3 class="overline">Font</h3>
-        <p><strong>{format?.font.family} is not installed.</strong></p>
-        <p>
-          {substitute} is used in its place, here in the preview and in a PDF that is made. In a document
-          that is exported for Word, LibreOffice or LaTeX, the font is named as the format asks, and is
-          there for whoever opens the document and has it.
-        </p>
+        <h3 class="overline">{t('preview-remarks-font')}</h3>
+        <p><strong>{t('preview-font-missing', { font: format?.font.family ?? '' })}</strong></p>
+        <p>{t('preview-font-substitute', { font: substitute })}</p>
       </section>
     {/if}
     {#if missing.length}
       <section>
-        <h3 class="overline">References</h3>
+        <h3 class="overline">{t('preview-remarks-references')}</h3>
         <p>
-          <strong>
-            {plural(missing.length, 'work')} cited {missing.length === 1 ? 'was' : 'were'} not found,
-          </strong>
-          neither in your library nor in the project. They are marked in the text.
+          <strong>{t('preview-works-missing', { count: missing.length })}</strong>
+          {t('preview-works-missing-where')}
         </p>
       </section>
     {/if}
     {#if warnings.length}
       <section>
-        <h3 class="overline">Said while the document was made</h3>
+        <h3 class="overline">{t('preview-remarks-warnings')}</h3>
         {#each warnings as warning}
           <p>{warning}</p>
         {/each}
@@ -633,7 +639,11 @@
   />
 {/if}
 {#if exporting}
-  <ExportDialog {request} name={map?.name ?? 'document'} onclose={() => (exporting = false)} />
+  <ExportDialog
+    {request}
+    name={map?.name ?? t('preview-file-name')}
+    onclose={() => (exporting = false)}
+  />
 {/if}
 
 <style>

@@ -4,6 +4,7 @@
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import { untrack } from 'svelte';
   import type { Flow, Stand } from '$lib/editor/schema';
+  import { t } from '$lib/i18n';
   import Placing from './Placing.svelte';
   import type { Usual } from './placing';
 
@@ -79,12 +80,12 @@
     counted = numbered;
   });
 
-  const WIDTHS = [
-    { value: 33, label: 'A third' },
-    { value: 50, label: 'Half' },
-    { value: 75, label: 'Three quarters' },
-    { value: 100, label: 'Whole' },
-  ];
+  const WIDTHS = $derived([
+    { value: 33, label: t('figures-width-third') },
+    { value: 50, label: t('figures-width-half') },
+    { value: 75, label: t('figures-width-three-quarters') },
+    { value: 100, label: t('figures-width-whole') },
+  ]);
 
   function onkeydown(event: KeyboardEvent) {
     if (event.key === 'Escape' || (event.key === 'Enter' && !event.shiftKey)) {
@@ -101,12 +102,12 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="figure-settings" {onkeydown}>
   <div class="head">
-    <div class="note-number">Figure</div>
+    <div class="note-number">{t('figures-figure')}</div>
     <span class="name truncate" title={name}>{name}</span>
   </div>
 
   <div class="row">
-    <label for="figure-width">Width</label>
+    <label for="figure-width">{t('figures-width')}</label>
     <input
       id="figure-width"
       type="range"
@@ -137,20 +138,18 @@
     </div>
   </div>
   <div class="hint indent">
-    {beside === 'in'
-      ? 'Of the room it has in the row.'
-      : 'Of the width of the text, in the document.'}
+    {beside === 'in' ? t('figures-width-of-row') : t('figures-width-of-text')}
   </div>
 
   <Placing kind="figure" {align} {flow} {usual} {beside} {onchange} {onbeside} {onalone} />
 
   <div class="row">
-    <label for="figure-alt">Shows</label>
+    <label for="figure-alt">{t('figures-shows')}</label>
     <input
       id="figure-alt"
       type="text"
       bind:value={described}
-      placeholder="In words, for those who cannot see it"
+      placeholder={t('figures-shows-placeholder')}
       onblur={() => described !== alt && onchange({ alt: described.trim() })}
     />
   </div>
@@ -163,7 +162,7 @@
         bind:checked={counted}
         onchange={() => onchange({ numbered: counted })}
       />
-      Numbered, as “Figure 1”
+      {t('figures-numbered')}
     </label>
   </div>
 
@@ -174,25 +173,25 @@
         type="button"
         class="link"
         disabled={same}
-        title="Figures made with this picture then begin with what is said here"
+        title={t('figures-keep-caption-hint')}
         onclick={() => {
           onkeep();
           same = true;
         }}
       >
-        Keep the caption with the picture
+        {t('figures-keep-caption')}
       </button>
       <button
         type="button"
         class="link"
         disabled={same || !own()}
-        title="What is kept with the picture is said here, in place of what is said now"
+        title={t('figures-take-caption-hint')}
         onclick={() => {
           ontake();
           same = kept();
         }}
       >
-        Use the picture’s own
+        {t('figures-take-caption')}
       </button>
     </div>
   </div>
@@ -200,12 +199,12 @@
   <div class="actions">
     <button type="button" onclick={onreplace}>
       <ImageUp size={14} />
-      Another picture…
+      {t('figures-another-picture')}
     </button>
     <span class="spring"></span>
     <button type="button" class="danger" onclick={onremove}>
       <Trash2 size={14} />
-      Remove the figure
+      {t('figures-remove')}
     </button>
   </div>
 </div>

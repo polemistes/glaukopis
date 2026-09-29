@@ -5,6 +5,7 @@
 
 import type { FoundItem, Suggestion } from '$lib/api/found';
 import type { CiteItem } from '$lib/editor/schema';
+import { t } from '$lib/i18n';
 
 /** What is said of the place in a work, and around it. */
 export interface Said {
@@ -40,20 +41,25 @@ interface Named {
   literal?: unknown;
 }
 
-/** Those who made a work, as the file says: "Nagy", "Nagy and Lord", "Nagy et al." */
-function people(data: Record<string, unknown>): string {
+/** The names of those who made a work, as the file says: its authors, or else its editors or translators. */
+function names(data: Record<string, unknown>): string[] {
   for (const role of ['author', 'editor', 'translator']) {
     const list = data[role];
     if (!Array.isArray(list) || !list.length) continue;
     const names = (list as Named[])
       .map((n) => text(n?.family) || text(n?.literal) || text(n?.given))
       .filter(Boolean);
-    if (!names.length) continue;
-    if (names.length === 1) return names[0];
-    if (names.length === 2) return `${names[0]} and ${names[1]}`;
-    return `${names[0]} et al.`;
+    if (names.length) return names;
   }
-  return '';
+  return [];
+}
+
+/** Those who made a work, as the file says: "Nagy", "Nagy and Lord", "Nagy et al." */
+function people(data: Record<string, unknown>): string {
+  const all = names(data);
+  if (all.length <= 1) return all[0] ?? '';
+  if (all.length === 2) return t('found-people-two', { first: all[0], second: all[1] });
+  return t('found-people-more', { first: all[0] });
 }
 
 /** The year a work is of, as the file says. */
@@ -77,7 +83,9 @@ export function describeItem(item: FoundItem): { who: string; year: string; titl
  */
 export function wordsOf(item: FoundItem): string {
   const said = describeItem(item);
-  const who = said.who.replace(/ and | et al\.$/g, ' ').trim();
+  // By the names, whatever the language of the interface joins them with.
+  const all = names(item.data ?? {});
+  const who = (all.length > 2 ? all.slice(0, 1) : all).join(' ');
   if (who) return [who, said.year].filter(Boolean).join(' ');
   if (said.title) return said.title.split(/\s+/).slice(0, 4).join(' ');
   return item.key ?? '';
