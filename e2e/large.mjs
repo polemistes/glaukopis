@@ -275,16 +275,23 @@ async function measure() {
          let at = performance.now();
          const sessions = await h.sessions();
          const reading = Math.round(performance.now() - at);
-         at = performance.now();
          const begins = await h.begins();
-         const c = await h.compare(h.project.maps[0].id, { moment: begins.snapshot, accepted: [] });
+         at = performance.now();
+         let passages = 0;
+         // Every map of the project, since the text that was written in is in one of them.
+         for (const map of h.project.maps) {
+           const c = await h.compare(map.id, { moment: begins.snapshot, accepted: [] });
+           passages += c.passages.length;
+         }
          const comparing = Math.round(performance.now() - at);
-         return { reading, comparing, sessions: sessions.length, passages: c.passages.length, room: await h.room() };`,
+         return { reading, comparing, sessions: sessions.length, passages, room: await h.room() };`,
       );
       console.log(
-        `      the history (${Math.round(read.room / 1024)} kB, ${read.sessions} sessions) is read in ${read.reading} ms; the whole map compared with where it began in ${read.comparing} ms, ${read.passages} passages changed`,
+        `      the history (${Math.round(read.room / 1024)} kB, ${read.sessions} sessions) is read in ${read.reading} ms; the whole project compared with where it began in ${read.comparing} ms, ${read.passages} passages changed`,
       );
       check('the history of a large project is read in seconds', read.reading < 10000 && read.comparing < 10000, `${read.reading} ms, ${read.comparing} ms`);
+      // Without this a history that kept nothing would be read quickly and look well.
+      check('what was written is kept in the history', read.sessions > 1 && read.passages > 0, `${read.sessions} sessions, ${read.passages} passages`);
     }
 
     // ---- from the text to the diagram and back ----
