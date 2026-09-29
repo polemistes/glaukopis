@@ -19,7 +19,8 @@ try {
   await sleep(300);
   await app.screenshot('settings-1');
 
-  check('the programs that are installed are found', (await app.count('.program .mark.ok')) === 2);
+  // Pandoc, Typst and Tesseract.
+  check('the programs that are installed are found', (await app.count('.program .mark.ok')) === 3);
   check('with their versions', /\d+\.\d+/.test(await app.text('.program .version')));
 
   await app.clickText('.segmented button', 'Dark');
