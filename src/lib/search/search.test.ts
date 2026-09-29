@@ -306,6 +306,11 @@ describe('searching elements', () => {
     expect(again[1]).toBe(b);
     // Other words are looked for anew everywhere.
     expect(search(texts, elements, matcher('wrath', { wholeWords: true }))[1]).not.toBe(b);
+    // And so are the same words where letters with and without accents are alike.
+    const { pr: other, elements: those } = project([p(t('Pelée'))]);
+    const accents = new Texts(other);
+    expect(search(accents, those, matcher('pelee'))).toEqual([]);
+    expect(search(accents, those, matcher('pelee', { accentsAlike: true })).length).toBe(1);
   });
 
   it('reads again only what was changed', () => {

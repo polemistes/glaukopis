@@ -126,7 +126,8 @@ export class Matcher {
   private constructor(re: RegExp, options: SearchOptions) {
     this.#re = re;
     this.options = options;
-    this.key = `${re.flags}/${re.source}`;
+    // Letters with and without accents alike are found in the text folded, with the same expression.
+    this.key = `${options.accentsAlike ? 'folded ' : ''}${re.flags}/${re.source}`;
   }
 
   /**
