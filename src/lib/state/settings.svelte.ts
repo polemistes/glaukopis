@@ -5,6 +5,7 @@ import {
   type FoundSettings,
   type Settings,
 } from '$lib/api/system';
+import { t } from '$lib/i18n';
 import { notifyError } from '$lib/ui/toast.svelte';
 
 class SettingsState {
@@ -32,7 +33,7 @@ class SettingsState {
         found: { ...defaultSettings.found, ...(kept.found ?? {}) },
       };
     } catch (error) {
-      notifyError('The settings could not be read', error);
+      notifyError(t('settings-error-read'), error);
     }
     this.loaded = true;
   }
@@ -53,7 +54,7 @@ class SettingsState {
     clearTimeout(this.#saveTimer);
     this.#saveTimer = setTimeout(() => {
       settingsSave($state.snapshot(this.value)).catch((error) =>
-        notifyError('The settings could not be saved', error),
+        notifyError(t('settings-error-save'), error),
       );
     }, 300);
   }

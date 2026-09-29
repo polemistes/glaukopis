@@ -1,5 +1,6 @@
 <script lang="ts">
   import { projectPurge, projectRestore, type Trashed } from '$lib/api/projects';
+  import { t } from '$lib/i18n';
   import { projects } from '$lib/state/projects.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
@@ -21,53 +22,52 @@
     return m ? ago(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`) : '';
   }
 
-  async function restore(t: Trashed) {
+  async function restore(gone: Trashed) {
     try {
-      projects.put(await projectRestore(t.entry));
-      notifyOk(`“${t.info.name}” is back among the projects`);
+      projects.put(await projectRestore(gone.entry));
+      notifyOk(t('home-restored', { name: gone.info.name }));
       onchange();
     } catch (error) {
-      notifyError('The project could not be brought back', error);
+      notifyError(t('home-restore-failed'), error);
     }
   }
 
-  async function purge(t: Trashed) {
+  async function purge(gone: Trashed) {
     const ok = await confirm({
-      title: `Remove “${t.info.name}” for good?`,
-      message:
-        'What the project holds cannot be brought back after this. Your references are not touched.',
-      confirm: 'Remove for good',
+      title: t('home-purge-title', { name: gone.info.name }),
+      message: t('home-purge-message'),
+      confirm: t('home-purge'),
       danger: true,
     });
     if (!ok) return;
     try {
-      await projectPurge(t.entry);
+      await projectPurge(gone.entry);
       onchange();
     } catch (error) {
-      notifyError('The project could not be removed', error);
+      notifyError(t('home-purge-failed'), error);
     }
   }
 </script>
 
-<Dialog open title="Deleted projects" width={520} {onclose}>
+<Dialog open title={t('home-trash-title')} width={520} {onclose}>
   {#if !trash.length}
-    <p class="none">There are none.</p>
+    <p class="none">{t('home-trash-none')}</p>
   {:else}
     <ul>
-      {#each trash as t (t.entry)}
+      {#each trash as gone (gone.entry)}
         <li>
           <div class="what">
-            <div class="name serif truncate">{t.info.name}</div>
-            <div class="when">Deleted {deleted(t.entry)}</div>
+            <div class="name serif truncate">{gone.info.name}</div>
+            <div class="when">{t('home-deleted-ago', { ago: deleted(gone.entry) })}</div>
           </div>
-          <Button size="sm" variant="ghost" onclick={() => purge(t)}>Remove for good</Button>
-          <Button size="sm" onclick={() => restore(t)}>Bring back</Button>
+          <Button size="sm" variant="ghost" onclick={() => purge(gone)}>{t('home-purge')}</Button>
+          <Button size="sm" onclick={() => restore(gone)}>{t('home-restore')}</Button>
         </li>
       {/each}
     </ul>
   {/if}
   {#snippet footer()}
-    <Button variant="ghost" onclick={onclose}>Close</Button>
+    <Button variant="ghost" onclick={onclose}>{t('common-close')}</Button>
   {/snippet}
 </Dialog>
 

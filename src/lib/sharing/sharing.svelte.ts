@@ -2,6 +2,7 @@
 
 import type { ProjectInfo, Sharing } from '$lib/api/projects';
 import { sharingEnd, sharingForget, sharingPublish, sharingTicket } from '$lib/api/sharing';
+import { t } from '$lib/i18n';
 import type { Project } from '$lib/project/model/project.svelte';
 import { projects } from '$lib/state/projects.svelte';
 import { settings } from '$lib/state/settings.svelte';
@@ -34,7 +35,8 @@ export class ProjectSharing {
   /** The name this user goes by among the others. */
   get name(): string {
     return (
-      settings.value.displayName?.trim() || (this.sharing?.owner ? 'The owner' : 'A collaborator')
+      settings.value.displayName?.trim() ||
+      (this.sharing?.owner ? t('sharing-name-owner') : t('sharing-name-member'))
     );
   }
 

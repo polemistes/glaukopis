@@ -272,23 +272,31 @@ export class App {
     await this.cmd('DELETE', '/actions');
   }
 
+  /**
+   * Right-clicks the middle of an element. The events are those the page
+   * sees of a right-click, sent in the page: a right-click sent as an action
+   * of WebDriver leaves the keyboard of WebKitWebDriver without Shift and
+   * without the letters that are not on an American keyboard ("Aø: B" is
+   * typed "a; b" ever after).
+   */
   async rightClick(target) {
     const id = await this.el(target);
-    await this.cmd('POST', '/actions', {
-      actions: [
-        {
-          type: 'pointer',
-          id: 'mouse',
-          parameters: { pointerType: 'mouse' },
-          actions: [
-            { type: 'pointerMove', origin: { [ELEMENT]: id }, x: 0, y: 0 },
-            { type: 'pointerDown', button: 2 },
-            { type: 'pointerUp', button: 2 },
-          ],
-        },
-      ],
-    });
-    await this.cmd('DELETE', '/actions');
+    await this.exec(
+      `const box = arguments[0].getBoundingClientRect();
+       const x = box.left + box.width / 2, y = box.top + box.height / 2;
+       const common = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, screenX: x, screenY: y, view: window };
+       // Each goes to what is under the pointer then, as the events of a real
+       // click do: what is pressed may be replaced by another (text drawn
+       // without an editor is given one). The menu comes when the button is
+       // pressed, as with GTK.
+       const send = (event) => (document.elementFromPoint(x, y) ?? arguments[0]).dispatchEvent(event);
+       send(new PointerEvent('pointerdown', { ...common, button: 2, buttons: 2, pointerType: 'mouse', isPrimary: true }));
+       send(new MouseEvent('mousedown', { ...common, button: 2, buttons: 2 }));
+       send(new MouseEvent('contextmenu', { ...common, button: 2, buttons: 2 }));
+       send(new PointerEvent('pointerup', { ...common, button: 2, buttons: 0, pointerType: 'mouse', isPrimary: true }));
+       send(new MouseEvent('mouseup', { ...common, button: 2, buttons: 0 }));`,
+      { [ELEMENT]: id },
+    );
   }
 
   async hover(target, dx = 0, dy = 0) {

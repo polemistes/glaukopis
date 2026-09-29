@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n';
   import { tooltip } from '$lib/ui/tooltip';
   import type { Other } from '$lib/project/model/project.svelte';
   import { initials } from './connection.svelte';
@@ -20,10 +21,15 @@
 </script>
 
 {#if persons.length}
-  <div class="presence" aria-label="Here now: {persons.map((p) => p.name).join(', ')}">
+  <div
+    class="presence"
+    aria-label={t('sharing-present', { names: persons.map((p) => p.name).join(', ') })}
+  >
     {#each shown as p (p.client)}
-      <span class="avatar" style:background={p.color} use:tooltip={`${p.name} is here`}
-        >{initials(p.name)}</span
+      <span
+        class="avatar"
+        style:background={p.color}
+        use:tooltip={t('sharing-is-here', { name: p.name })}>{initials(p.name)}</span
       >
     {/each}
     {#if more.length}
