@@ -58,6 +58,7 @@
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
   import { historyOf } from '$lib/history/history.svelte';
   import { me } from '$lib/history/me.svelte';
+  import * as positions from '$lib/history/positions';
 
   let { projectId }: { projectId: string } = $props();
 
@@ -210,7 +211,10 @@
     if (!p) return;
     untrack(() => p.setMe(who));
     // For the tests of the running application, which ask the history as the review does.
-    (window as unknown as Record<string, unknown>).__glaukopisHistory = historyOf(p, ownId);
+    (window as unknown as Record<string, unknown>).__glaukopisHistory = {
+      history: historyOf(p, ownId),
+      positions,
+    };
   });
 
   async function leave(p: Project) {
