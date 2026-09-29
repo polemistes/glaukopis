@@ -16,6 +16,19 @@ import type { Accepted, Items, Piece, Place } from '$lib/history/types';
 
 /** The block of a text a place names, in the name or the text of an element. */
 export function blockAt(fragment: Y.XmlFragment | null, place: Place): Y.XmlElement | null {
+  const at = nodeAt(fragment, place);
+  // The text of a table as a whole is what is said of it.
+  if (at?.nodeName === 'tabular') {
+    const said = at
+      .toArray()
+      .find((c): c is Y.XmlElement => c instanceof Y.XmlElement && c.nodeName === 'table_caption');
+    return said ?? null;
+  }
+  return at;
+}
+
+/** The node a place names, as it stands in the tree of blocks: a figure or a table as a whole. */
+export function nodeAt(fragment: Y.XmlFragment | null, place: Place): Y.XmlElement | null {
   if (!fragment) return null;
   // The name of an element is one line.
   const path = place.part === 'title' && !place.path.length ? [0] : place.path;
@@ -37,15 +50,7 @@ export function blockAt(fragment: Y.XmlFragment | null, place: Place): Y.XmlElem
     if (!(child instanceof Y.XmlElement)) return null;
     at = child;
   }
-  if (!(at instanceof Y.XmlElement)) return null;
-  // The text of a table as a whole is what is said of it.
-  if (at.nodeName === 'tabular') {
-    const said = at
-      .toArray()
-      .find((c): c is Y.XmlElement => c instanceof Y.XmlElement && c.nodeName === 'table_caption');
-    return said ?? null;
-  }
-  return at;
+  return at instanceof Y.XmlElement ? at : null;
 }
 
 /** An item of the text of a block, in order: a sign of it, or formatting that stands between signs. */
