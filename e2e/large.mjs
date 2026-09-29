@@ -12,7 +12,8 @@
 // With GLAUKOPIS_E2E_BINARY another build of the application is measured,
 // so that two can be compared on the same project. With GLAUKOPIS_E2E_HISTORY
 // the full history of the project is kept while it is measured (ADR 0021),
-// and how long the history takes to be read is measured as well.
+// and how long the history takes to be read is measured as well, with the
+// panel of changes open beside the text (ADR 0022).
 
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -292,6 +293,31 @@ async function measure() {
       check('the history of a large project is read in seconds', read.reading < 10000 && read.comparing < 10000, `${read.reading} ms, ${read.comparing} ms`);
       // Without this a history that kept nothing would be read quickly and look well.
       check('what was written is kept in the history', read.sessions > 1 && read.passages > 0, `${read.sessions} sessions, ${read.passages} passages`);
+
+      // ---- with the panel of changes open (ADR 0022) ----
+      await app.keys(['Control', 'Shift', 'e']);
+      await app.waitFor('.review-panel', 15000);
+      const opened = Date.now();
+      const changes = await app.execAsync(
+        `const r = window.__glaukopisHistory.review;
+         // One person alone made the text, so their own changes are counted too.
+         r.setOwn(true);
+         await r.upToDate();
+         return { count: r.changes.length, marked: r.marked.text.size };`,
+      );
+      await sleep(1500);
+      const spans = await app.exec(
+        `return document.querySelectorAll('.text-view .review-added, .text-view .review-removed').length`,
+      );
+      console.log(
+        `      the panel of changes: ${changes.count} changes in ${changes.marked} elements, worked out and marked in ${Date.now() - opened} ms, ${spans} marks drawn`,
+      );
+      check('the changes of a large map are worked out in seconds', Date.now() - opened < 20000, `${Date.now() - opened} ms`);
+      check('and they are there to review', changes.count > 0, `${changes.count} changes`);
+      await write('with the review', 80);
+      await app.keys(['Control', 'Shift', 'e']);
+      await app.waitGone('.review-panel', 5000);
+      await sleep(500);
     }
 
     // ---- from the text to the diagram and back ----

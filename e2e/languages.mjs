@@ -188,6 +188,37 @@ try {
   await app.keys(['Control', 'Shift', 'h']);
   await sleep(300);
 
+  // ---- the changes to review (ADR 0022) ----
+  await app.keys(['Control', 'Shift', 'e']);
+  await app.waitFor('.review-panel', 8000);
+  await sleep(600);
+  await english('the panel of changes, with nothing to review');
+  // One person alone writes here, so it is their own changes that are shown.
+  await app.exec(`window.__glaukopisHistory.review.setOwn(true);`);
+  await app.click('.text-view .section .body');
+  await sleep(300);
+  await app.press('End');
+  await app.keys(' Og vreden ble til sorg.');
+  await app.waitFor('.review-panel .list li', 20000);
+  await sleep(800);
+  await english('a change to review');
+  await app.click('.review-panel .since');
+  await app.waitFor('.menu', 5000);
+  await sleep(300);
+  await english('the moments to review from');
+  await app.press('Escape');
+  await sleep(300);
+  if (await app.exists('.review-panel .versions-toggle')) {
+    await app.click('.review-panel .versions-toggle');
+    await app.waitFor('.review-panel .versions li, .review-panel .versions .quiet', 10000);
+    await sleep(400);
+    await english('the history of a change');
+  }
+  await app.screenshot('languages-4c-review');
+  await app.keys(['Control', 'Shift', 'e']);
+  await app.waitGone('.review-panel', 5000);
+  await sleep(300);
+
   // ---- the library, the pictures, the settings ----
   await app.keys(['Control', '2']);
   await app.waitFor('.reference-row, .row', 8000);
