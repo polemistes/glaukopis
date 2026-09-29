@@ -124,8 +124,8 @@ core-import-document-heading-notes = { $count ->
    *[other] { $count } noter til overskrifter står i begynnelsen av teksten under dem: en overskrift kan ikke ha en note.
 }
 core-import-document-labels = { $count ->
-    [one] Én bildetekst begynte med et ord og et tall, som «{ $first }». Det er utelatt: kartet nummererer figurene og tabellene sine selv. Der teksten viser til en av dem med nummeret, er det tekst slik den ble skrevet, og det følger ikke nummerne i kartet.
-   *[other] { $count } bildetekster begynte med et ord og et tall, som «{ $first }». Det er utelatt: kartet nummererer figurene og tabellene sine selv. Der teksten viser til en av dem med nummeret, er det tekst slik den ble skrevet, og det følger ikke nummerne i kartet.
+    [one] Én bildetekst begynte med et ord og et tall, som «{ $first }». Ordet og tallet er utelatt: kartet nummererer figurene og tabellene sine selv. Der teksten viser til en av dem med nummeret, er det tekst slik den ble skrevet, og det følger ikke nummerne i kartet.
+   *[other] { $count } bildetekster begynte med et ord og et tall, som «{ $first }». Ordene og tallene er utelatt: kartet nummererer figurene og tabellene sine selv. Der teksten viser til en av dem med nummeret, er det tekst slik den ble skrevet, og det følger ikke nummerne i kartet.
 }
 core-import-document-label-example = Figur 1:
 core-import-document-caption-notes = { $count ->
