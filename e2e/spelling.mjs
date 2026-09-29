@@ -269,6 +269,26 @@ try {
   await until('the note to be checked', async () => (await underlined('.note-panel')).includes('feill'));
   check('the text of a note is checked', (await underlined('.note-panel')).join(' ') === 'feill', (await underlined('.note-panel')).join(' '));
   await app.screenshot('spelling-6-note');
+  await app.press('Escape');
+  await app.waitGone('.note-panel');
+
+  // A language without a dictionary: nothing is underlined, and F7 says why.
+  await app.keys(['Control', 'p']);
+  await app.waitFor('.preview', 8000);
+  await app.click('.preview button[aria-label="Title, authors, abstract"]');
+  await app.waitFor('dialog select');
+  await app.exec(`const s = document.querySelector('dialog select'); s.value = 'la'; s.dispatchEvent(new Event('change', { bubbles: true }));`);
+  await app.clickText('dialog footer button', 'Save');
+  await app.waitGone('dialog');
+  await app.keys(['Control', 'p']);
+  await until('the underlines to go', async () => (await underlined()).length === 0);
+  await app.click('.text-view .section .body');
+  await app.keys([F7]);
+  await until('what F7 says', async () => (await menuItems()).length > 0);
+  const said = await app.exec(`return document.querySelector('.menu').textContent.trim()`);
+  check('in a language without a dictionary nothing is underlined, and F7 says why', /no dictionary for Latin/.test(said), said);
+  await app.screenshot('spelling-7-latin');
+  await app.press('Escape');
 
   const errors = await app.pageErrors();
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));
