@@ -24,8 +24,14 @@ import {
   NOW,
   split,
   splitAt,
+  children,
+  keysOf as keysOfMap,
+  valueAt,
   type At,
 } from './moments';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyType = Y.AbstractType<any>;
 import { addItems, has, readMap, readPieces, units, type Unit, type Who } from './reading';
 import type { HistoryRecord, RecordKind } from './records';
 import type {
@@ -90,7 +96,24 @@ export type Edit =
       /** The item of the block that is gone, which still stands in the list where it stood. */
       at: string;
       node: NodeJSON;
-    };
+    }
+  /** The name or the text of an element made what `node` (a document) says. */
+  | { kind: 'fragment'; element: string; part: 'title' | 'body'; node: NodeJSON }
+  /** An element that is gone made anew, under its own id, with what it held. */
+  | {
+      kind: 'element';
+      element: string;
+      values: Record<string, unknown>;
+      title: NodeJSON;
+      body: NodeJSON;
+    }
+  /** An element put back under what it stood under, where it stood. */
+  | { kind: 'place'; element: string; parent: string | null; order: string }
+  /** An element that was not there, taken away. */
+  | { kind: 'remove'; element: string };
+
+/** A moment as the window names it: after a record of the history, or a snapshot. */
+export type When = number | Uint8Array;
 
 /** A session is a person's until they pause this long, in milliseconds. */
 export const PAUSE = 10 * 60 * 1000;
@@ -395,10 +418,78 @@ export class Engine {
     return result;
   }
 
+  #at(when: When): At {
+    return atSnapshot(typeof when === 'number' ? this.snapshot(when) : Y.decodeSnapshot(when));
+  }
+
+  /** The whole project as it was at a moment, as one update: to be opened as a project of its own. */
+  stateAt(when: When): Uint8Array {
+    const snapshot = typeof when === 'number' ? this.snapshot(when) : Y.decodeSnapshot(when);
+    return Y.encodeStateAsUpdate(Y.createDocFromSnapshot(this.doc, snapshot));
+  }
+
+  /**
+   * Brings an element back as it was at a moment: its name and its text,
+   * and where it was gone, the element itself. Without an element, the
+   * whole map: every element as it was, where it was, and those that were
+   * not there taken away.
+   */
+  bringBack(map: string, element: string | null, when: When): Edit[] {
+    const then = this.#at(when);
+    const edits: Edit[] = [];
+    this.doc.transact((transaction) => {
+      split(transaction, then);
+      const nodes = this.doc.getMap('nodes') as unknown as AnyType;
+      const ids = element ? [element] : keysOfMap(nodes);
+      for (const id of ids) {
+        const was = valueAt(nodes, id, then);
+        const is = valueAt(nodes, id, NOW);
+        const wasHere =
+          was instanceof Y.Map && valueAt(was as unknown as AnyType, 'map', then) === map;
+        const isHere = is instanceof Y.Map && valueAt(is as unknown as AnyType, 'map', NOW) === map;
+        if (!wasHere) {
+          if (isHere && !element) edits.push({ kind: 'remove', element: id });
+          continue;
+        }
+        const node = was as unknown as AnyType;
+        const fragments = {} as Record<'title' | 'body', NodeJSON>;
+        for (const part of ['title', 'body'] as const) {
+          const fragment = valueAt(node, part, then);
+          fragments[part] =
+            fragment instanceof Y.XmlFragment ? fragmentJSON(fragment, then) : { type: 'doc' };
+        }
+        if (!isHere || is !== was) {
+          const values: Record<string, unknown> = {};
+          for (const key of keysOfMap(node)) {
+            if (key === 'title' || key === 'body') continue;
+            const value = valueAt(node, key, then);
+            if (value !== undefined) values[key] = value;
+          }
+          edits.push({ kind: 'element', element: id, values, ...fragments });
+          continue;
+        }
+        for (const part of ['title', 'body'] as const)
+          edits.push({ kind: 'fragment', element: id, part, node: fragments[part] });
+        if (!element) {
+          const parent = valueAt(node, 'parent', then);
+          const order = valueAt(node, 'order', then);
+          if (parent !== valueAt(node, 'parent', NOW) || order !== valueAt(node, 'order', NOW))
+            edits.push({
+              kind: 'place',
+              element: id,
+              parent: typeof parent === 'string' ? parent : null,
+              order: typeof order === 'string' ? order : 'a0',
+            });
+        }
+      }
+    });
+    return edits;
+  }
+
   /** The whole map at one moment, compared with another: for looking at the history. */
-  mapAt(map: string, record: number, since: number | null) {
-    const after = atSnapshot(this.snapshot(record));
-    const before = since === null ? after : atSnapshot(this.snapshot(since));
+  mapAt(map: string, when: When, since: When | null) {
+    const after = this.#at(when);
+    const before = since === null ? after : this.#at(since);
     let result!: ReturnType<typeof readMap>;
     this.doc.transact((transaction) => {
       split(transaction, after);
@@ -717,4 +808,33 @@ export function blockJSON(
     attrs: attributesAt(block, own),
     ...(content.length ? { content } : {}),
   };
+}
+
+/** Blocks whose content is text, and not other blocks. */
+const TEXTBLOCKS = new Set(['paragraph', 'title', 'figure', 'table_caption']);
+
+/** A name or a text as it was at a moment, as ProseMirror's JSON of a document. */
+export function fragmentJSON(fragment: Y.XmlFragment, at: At): NodeJSON {
+  return { type: 'doc', content: childrenJSON(fragment, at) };
+}
+
+function childrenJSON(container: Y.XmlFragment, at: At): NodeJSON[] {
+  const out: NodeJSON[] = [];
+  for (const item of children(container)) {
+    if (!at.seen(item) || !(item.content instanceof Y.ContentType)) continue;
+    const element = item.content.type;
+    if (!(element instanceof Y.XmlElement)) continue;
+    const name = element.nodeName;
+    if (TEXTBLOCKS.has(name)) {
+      out.push(blockJSON(element, (u) => (at.seen(u.item) ? { at } : null), at));
+      continue;
+    }
+    const content = childrenJSON(element, at);
+    out.push({
+      type: name,
+      attrs: attributesAt(element, at),
+      ...(content.length ? { content } : {}),
+    });
+  }
+  return out;
 }

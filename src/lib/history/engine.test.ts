@@ -305,6 +305,52 @@ describe('the history of a project', () => {
   });
 });
 
+describe('bringing back', () => {
+  it('an element as it was, and the whole map', async () => {
+    const { a, b, ann, map, root, flush } = await two();
+    const achilles = a.addChild(root, { title: 'Achilles' })!;
+    const hector = a.addChild(root, { title: 'Hector' })!;
+    paragraph(a, achilles, 'Son of Peleus.');
+    paragraph(a, hector, 'Tamer of horses.');
+    await flush();
+    const e0 = engineOf(ann, 'ann');
+    const then = e0.records.length - 1;
+    b.transact(() => textOf(b, achilles).insert(0, 'Swift '));
+    b.remove([hector]);
+    const priam = b.addChild(root, { title: 'Priam' })!;
+    await flush();
+
+    let e = engineOf(ann, 'ann', a);
+    // The element that is gone comes back, under its own id, with its text.
+    applyEdits(a, e.bringBack(map, hector, then));
+    expect(a.node(hector)?.title).toBe('Hector');
+    expect(textOf(a, hector).toString()).toBe('Tamer of horses.');
+    expect(a.tree(map).parent.get(hector)).toBe(root);
+    // One that is there has its text as it was.
+    applyEdits(a, e.bringBack(map, achilles, then));
+    expect(textOf(a, achilles).toString()).toBe('Son of Peleus.');
+    expect(a.node(priam)).toBeTruthy();
+    // The whole map: what was not there goes.
+    await flush();
+    e = engineOf(ann, 'ann', a);
+    applyEdits(a, e.bringBack(map, null, then));
+    expect(a.node(priam)).toBeUndefined();
+    expect(a.tree(map).sequence.map((id) => a.node(id)!.title)).toEqual([
+      'Wrath',
+      'Achilles',
+      'Hector',
+    ]);
+    // And it is one change, which undo takes back.
+    a.undo();
+    expect(a.node(priam)).toBeTruthy();
+    // A copy of the project as it was.
+    const copy = new Y.Doc();
+    Y.applyUpdate(copy, e.stateAt(then));
+    expect(copy.getMap('nodes').has(priam)).toBe(false);
+    expect(copy.getMap('nodes').has(hector)).toBe(true);
+  });
+});
+
 describe('the history of a project that is open', () => {
   it('is read when it is first asked, follows what is written, and changes the project', async () => {
     const { a, b, ann, map, root, flush } = await two();

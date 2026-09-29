@@ -26,6 +26,16 @@ function fill(doc: Y.Doc, element: Y.XmlElement, node: NodeJSON, part: 'title' |
   updateYFragment(doc, element, made, { mapping: new Map(), isOMark: new Map() });
 }
 
+/** Makes the name or text of an element what a document says, keeping what is the same. */
+function fillFragment(doc: Y.Doc, fragment: Y.XmlFragment, node: NodeJSON, part: 'title' | 'body') {
+  const schema = part === 'title' ? titleSchema : bodySchema;
+  // A name is always one line; a text that had nothing has nothing.
+  const content =
+    node.content?.length || part === 'body' ? (node.content ?? []) : [{ type: 'title' }];
+  const made = schema.nodeFromJSON({ ...node, content });
+  updateYFragment(doc, fragment, made, { mapping: new Map(), isOMark: new Map() });
+}
+
 /** Does edits in the project, as one change of this person's. Returns how many were done. */
 export function applyEdits(project: Project, edits: Edit[]): number {
   let done = 0;
@@ -33,6 +43,44 @@ export function applyEdits(project: Project, edits: Edit[]): number {
   project.transact(() => {
     for (const edit of edits) {
       try {
+        if (edit.kind === 'fragment') {
+          const fragment = project.fragment(edit.element, edit.part);
+          if (!fragment) continue;
+          fillFragment(project.doc, fragment, edit.node, edit.part);
+          done++;
+          continue;
+        }
+        if (edit.kind === 'element') {
+          const node = new Y.Map<unknown>();
+          for (const [key, value] of Object.entries(edit.values))
+            node.set(key, value instanceof Y.AbstractType ? value.clone() : structuredClone(value));
+          const title = new Y.XmlFragment();
+          const body = new Y.XmlFragment();
+          node.set('title', title);
+          node.set('body', body);
+          project.yNodes.set(edit.element, node);
+          fillFragment(project.doc, title, edit.title, 'title');
+          fillFragment(project.doc, body, edit.body, 'body');
+          done++;
+          continue;
+        }
+        if (edit.kind === 'place') {
+          const node = project.yNodes.get(edit.element);
+          if (!node) continue;
+          node.set('parent', edit.parent);
+          node.set('order', edit.order);
+          done++;
+          continue;
+        }
+        if (edit.kind === 'remove') {
+          if (!project.yNodes.has(edit.element)) continue;
+          project.yNodes.delete(edit.element);
+          for (const [id, link] of project.yLinks)
+            if (link.get('from') === edit.element || link.get('to') === edit.element)
+              project.yLinks.delete(id);
+          done++;
+          continue;
+        }
         if (edit.kind === 'block') {
           const element = typeOf(project.doc, edit.block);
           if (!element) continue;

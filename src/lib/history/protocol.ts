@@ -16,6 +16,8 @@ export type Method =
   | 'versions'
   | 'revert'
   | 'restore'
+  | 'bringBack'
+  | 'stateAt'
   | 'records';
 
 export type Message =

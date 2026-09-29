@@ -15,7 +15,7 @@ import type { CiteItem, CiteMode } from '$lib/editor/schema';
 import { HISTORY, type Project } from '$lib/project/model/project.svelte';
 import { newId } from '$lib/util/id';
 import { applyEdits } from './applying';
-import { Engine, type Edit } from './engine';
+import { Engine, type Edit, type When } from './engine';
 import { Host, type Message, type Method, type Reply } from './protocol';
 import { readRecords } from './records';
 import type {
@@ -204,10 +204,22 @@ export class ProjectHistory implements History {
   // ---- for looking at the history ----
 
   /** The whole map after a record, compared with it after another. */
-  async mapAt(map: string, record: number, since: number | null): Promise<MapAt> {
-    const reading = await this.#ask<MapAt>('mapAt', map, record, since);
+  async mapAt(map: string, when: When, since: When | null): Promise<MapAt> {
+    const reading = await this.#ask<MapAt>('mapAt', map, when, since);
     for (const p of reading.all) label(p.pieces, this.project);
     return reading;
+  }
+
+  /** Brings an element (or, with none, the whole map) back as it was at a moment. */
+  async bringBack(map: string, element: string | null, when: When): Promise<number> {
+    await this.project.flush();
+    const edits = await this.#ask<Edit[]>('bringBack', map, element, when);
+    return applyEdits(this.project, edits);
+  }
+
+  /** The whole project as it was at a moment, as one update. */
+  stateAt(when: When): Promise<Uint8Array> {
+    return this.#ask('stateAt', when);
   }
 
   /** How much room the history takes on disk, in bytes. */
