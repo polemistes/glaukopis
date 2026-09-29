@@ -108,14 +108,7 @@
   }
 </script>
 
-<Dialog
-  open
-  title={t('ocr-picture-title')}
-  subtitle={name}
-  width={560}
-  tall={phase === 'shown'}
-  onclose={cancel}
->
+<Dialog open title={t('ocr-picture-title')} subtitle={name} width={560} onclose={cancel}>
   <div class="body" data-ocr={phase}>
     {#if phase === 'asking'}
       <p class="about">{t('ocr-about-picture')}</p>
@@ -201,6 +194,9 @@
     line-height: 1.5;
   }
   .text {
+    /* A long text scrolls within the dialog. */
+    max-height: 55vh;
+    overflow-y: auto;
     padding: 12px 14px;
     border: 1px solid var(--line);
     border-radius: var(--radius-m);

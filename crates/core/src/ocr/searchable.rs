@@ -383,15 +383,20 @@ pub fn holds(bytes: &[u8], pages: usize, layers: &[Layer]) -> bool {
     let read = doc.get_pages();
     read.len() == pages
         && layers.iter().all(|layer| {
-            read.get(&(layer.page as u32 + 1)).and_then(|id| doc.get_dictionary(*id).ok()).is_some_and(|page| {
-                inherited(&doc, page, b"Resources")
-                    .and_then(|r| r.as_dict().ok())
-                    .and_then(|r| r.get(b"XObject").ok())
-                    .and_then(|x| doc.dereference(x).ok())
-                    .and_then(|(_, x)| x.as_dict().ok())
-                    .is_some_and(|x| x.iter().any(|(name, _)| name.starts_with(NAME.as_bytes())))
-            })
+            read.get(&(layer.page as u32 + 1))
+                .and_then(|id| doc.get_dictionary(*id).ok())
+                .is_some_and(|page| has_laid(&doc, page))
         })
+}
+
+/// Whether a page has the text that was laid over it here.
+pub fn has_laid(doc: &Document, page: &Dictionary) -> bool {
+    inherited(doc, page, b"Resources")
+        .and_then(|r| r.as_dict().ok())
+        .and_then(|r| r.get(b"XObject").ok())
+        .and_then(|x| doc.dereference(x).ok())
+        .and_then(|(_, x)| x.as_dict().ok())
+        .is_some_and(|x| x.iter().any(|(name, _)| name.starts_with(NAME.as_bytes())))
 }
 
 #[cfg(test)]

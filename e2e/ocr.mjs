@@ -82,16 +82,29 @@ try {
   await app.installErrorHook();
   const invoke = (command, args = {}) =>
     app.execAsync(`return await window.__TAURI_INTERNALS__.invoke(arguments[0], arguments[1]);`, command, args);
-  // The file chooser of the system answers with what the script puts here.
-  await app.exec(
-    `const real = window.__TAURI_INTERNALS__.invoke;
-     window.__chosen = null;
-     window.__TAURI_INTERNALS__.invoke = (command, args, options) =>
-       command === 'plugin:dialog|open' && window.__chosen
-         ? Promise.resolve(window.__chosen)
-         : real(command, args, options);`,
-  );
-  const choose = (path) => app.exec(`window.__chosen = arguments[0];`, path);
+  // Files are dropped as the window tells of files dropped from the desktop.
+  const drop = (paths, x, y) =>
+    app.execAsync(
+      `const emit = (event, payload) => window.__TAURI_INTERNALS__.invoke('plugin:event|emit', { event, payload });
+       const position = { x: arguments[1] * devicePixelRatio, y: arguments[2] * devicePixelRatio };
+       await emit('tauri://drag-enter', { paths: arguments[0], position });
+       await emit('tauri://drag-over', { position });
+       await emit('tauri://drag-drop', { paths: arguments[0], position });`,
+      paths,
+      x,
+      y,
+    );
+  const middleOf = (selector) =>
+    app.exec(
+      `const r = document.querySelector(arguments[0]).getBoundingClientRect();
+       return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };`,
+      selector,
+    );
+  /** Drops a file on the tabs of the maps, where it becomes a map of its own. */
+  const dropOnTabs = async (path) => {
+    const at = await middleOf('.project header .tabs');
+    await drop([path], at.x, at.y);
+  };
   const tabs = () =>
     app.exec(`return Array.from(document.querySelectorAll('.tabs .tab .name')).map((e) => e.textContent.trim())`);
   const facts = () =>
@@ -119,17 +132,35 @@ try {
   const bib = readFileSync(join(root, 'e2e/fixtures/sample.bib'), 'utf8');
   await invoke('import_apply', { plan: await invoke('import_bib_text', { text: bib }) });
 
-  // ---- a scanned PDF becomes a map ----
+  // ---- a scanned PDF becomes a project, among the projects ----
   await app.waitForText('h2', 'Welcome to Glaukopis');
-  await app.clickText('button', 'Begin a project');
+  const onProjects = await middleOf('.home');
+  await drop([scan], onProjects.x, onProjects.y);
+  await app.waitFor('dialog [data-ocr="asking"]', 15000);
+  check(
+    'a scan dropped among the projects is to be read, to be a project of its own',
+    /A project from a document/.test(await app.exec(`return document.querySelector('dialog').textContent`)),
+  );
+  await app.click('dialog [data-ocr-read]');
+  await app.waitFor('dialog [data-fact="words"]', 60000);
+  await sleep(200);
+  await app.clickText('dialog footer button', 'Make the project');
+  await app.waitFor('.text-view .section', 20000);
+  await sleep(500);
+  check('the project is made, and its map is the scan', JSON.stringify(await tabs()) === '["The Wrath of Achilles"]', JSON.stringify(await tabs()));
+  await app.keys(['Control', '1']);
+  await app.waitFor('.home', 5000);
+  await sleep(300);
+
+  // ---- a scanned PDF becomes a map, in a project ----
+  await app.clickText('button', 'New project');
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Homer');
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
 
-  await choose(scan);
-  await app.click('.tabs button[aria-label="A map from a document…"]');
+  await dropOnTabs(scan);
   await app.waitFor('dialog [data-ocr="asking"]', 15000);
   await sleep(300);
   const about = await app.text('dialog [data-ocr="asking"] .about');
@@ -170,8 +201,7 @@ try {
   await app.screenshot('ocr-3-map');
 
   // ---- a picture becomes a map ----
-  await choose(picture);
-  await app.click('.tabs button[aria-label="A map from a document…"]');
+  await dropOnTabs(picture);
   await app.waitFor('dialog [data-ocr="asking"]', 15000);
   check('a picture is to be read as it is', /The text is read from the picture/.test(await app.text('dialog [data-ocr="asking"] .about')));
   await app.click('dialog [data-ocr-read]');
@@ -189,8 +219,7 @@ try {
   );
 
   // ---- a reading stopped ----
-  await choose(long);
-  await app.click('.tabs button[aria-label="A map from a document…"]');
+  await dropOnTabs(long);
   await app.waitFor('dialog [data-ocr="asking"]', 15000);
   await app.click('dialog [data-ocr-read]');
   const shown = await until(
@@ -242,11 +271,14 @@ try {
   check('the file of the reference is shown, and can be made searchable again', await app.exists('.pane [data-searchable]'));
 
   // ---- the text of a picture of the store ----
-  const taken = await invoke('picture_add_file', { path: picture });
   await app.keys(['Control', '3']);
   await app.waitFor('.pictures', 5000);
   await sleep(500);
-  await app.click(`.pictures [data-hash="${taken.hash}"]`);
+  const onStore = await middleOf('.pictures');
+  await drop([picture], onStore.x, onStore.y);
+  await app.waitFor('.pictures [data-hash]', 8000);
+  await sleep(300);
+  await app.click('.pictures [data-hash]');
   await app.waitFor('.picture-pane [data-ocr-picture]', 5000);
   await app.click('.picture-pane [data-ocr-picture]');
   await app.waitFor('dialog [data-ocr="asking"]', 5000);
@@ -273,6 +305,8 @@ try {
   await sleep(800);
   const kept = await invoke('settings_load');
   check('a language to read in at first is kept', JSON.stringify(kept.ocrLanguages) === '["grc"]', JSON.stringify(kept.ocrLanguages));
+  await app.exec(`document.querySelector('[data-program="tesseract"]').scrollIntoView({ block: 'center' })`);
+  await sleep(300);
   await app.screenshot('ocr-7-settings');
 
   const errors = await app.pageErrors();

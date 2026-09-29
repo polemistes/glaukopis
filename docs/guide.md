@@ -675,8 +675,10 @@ quoted until it is read. Glaukopis reads it with Tesseract, a program that
 reads text in pictures, in three places.
 
 - **A PDF or a picture becomes a map.** In a project, choose **A map from a
-  document…** beside **+** over the map, and choose the file; among the
-  projects, **A project from a document…**, or drop the file there. Each
+  document…** beside **+** over the map, and choose the file, or drop the
+  file on the tabs of the maps; dropped elsewhere in a project, a PDF is
+  taken into the library and a picture becomes a figure. Among the projects,
+  **A project from a document…**, or drop the file there. Each
   page of a PDF becomes an element under the centre, named by its number as
   it is printed where the file tells it (*xiv*, *23*), and holding what was
   read of the page, so that what you quote can be found on its page. The

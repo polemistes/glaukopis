@@ -262,6 +262,31 @@ fn a_scan_made_searchable_looks_the_same_and_its_text_can_be_read() {
     assert_eq!((made.pdf.is_none(), made.read, made.with_text), (true, 0, 1));
 }
 
+#[test]
+fn a_page_of_little_text_is_made_searchable_once() {
+    let Some(kit) = kit(true) else { return };
+    kit.typeset(
+        "title.png",
+        "#set page(width: 150mm, height: 100mm, margin: 14mm)\n#set text(size: 20pt)\n#align(center)[The Iliad]\n",
+    );
+    let scan = kit.typeset(
+        "title.pdf",
+        "#set page(width: 150mm, height: 100mm, margin: 0pt)\n#image(\"title.png\", width: 100%, height: 100%)\n",
+    );
+    let made = make_searchable(&scan, &kit.tools, &kit.work(), &kit.asked(), &mut nothing, &never()).unwrap();
+    assert_eq!(made.read, 1);
+    let once = kit.path("once.pdf");
+    std::fs::write(&once, made.pdf.unwrap()).unwrap();
+    let text = pdf_extract::extract_text(&once).unwrap();
+    assert!(has(&text, "The Iliad"), "{text}");
+
+    // It has text now, if little: it is not read again.
+    let looked = look(&once, &kit.tools).unwrap();
+    assert_eq!(looked.with_text, 1);
+    let made = make_searchable(&once, &kit.tools, &kit.work(), &kit.asked(), &mut nothing, &never()).unwrap();
+    assert_eq!((made.pdf.is_none(), made.read), (true, 0));
+}
+
 /// Sets what a page says of itself, and writes the PDF anew.
 fn with_page(pdf: &Path, change: impl FnOnce(&mut lopdf::Dictionary)) {
     let mut doc = Document::load(pdf).unwrap();

@@ -21,6 +21,7 @@
   import { ProjectSharing } from '$lib/sharing/sharing.svelte';
   import { importDropped } from '$lib/library/references.svelte';
   import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
+  import { isReadPath } from '$lib/api/ocr';
   import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
   import { goThrough, takeWaiting } from '$lib/found/found.svelte';
@@ -448,6 +449,14 @@
     );
   }
 
+  /**
+   * What becomes a map when it is dropped on the tabs of the maps: a
+   * document, and a PDF or a picture, whose text is read. Elsewhere a PDF is
+   * taken into the library, and a picture becomes a figure.
+   */
+  const mapOfIt = (path: string) =>
+    isDocumentPath(path) || isPlainTextPath(path) || isReadPath(path);
+
   /** Maps are made of documents, one after another, and the last that was made is shown as text. */
   async function documentsIn(paths: (string | null)[]) {
     for (const path of paths) {
@@ -552,7 +561,13 @@
 
       <span class="divider"></span>
 
-      <div class="tabs">
+      <div
+        class="tabs"
+        use:dropTarget={{
+          accepts: (p) => p.kind === 'files' && (p.data as string[]).some(mapOfIt),
+          ondrop: (e) => documentsIn((e.payload.data as string[]).filter(mapOfIt)),
+        }}
+      >
         <MapTabs
           {project}
           current={pane.map}

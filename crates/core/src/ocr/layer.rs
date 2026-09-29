@@ -3,7 +3,9 @@
 //!
 //! Which pages have text decides which are read by Tesseract. A page that
 //! has only a little, such as a scan with a stamp or a line at its foot in
-//! text, as some archives add, is read all the same.
+//! text, as some archives add, is read all the same; but one that has the
+//! text that was laid over it here (`searchable.rs`) has text, however
+//! little, so that it is not read and laid over again.
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
@@ -32,14 +34,17 @@ pub struct Layer {
     pub labels: Vec<String>,
     /// Whether the file is locked with a password. Its text is then not read.
     pub locked: bool,
+    /// The pages that have the text that was laid over them here.
+    pub laid: Vec<bool>,
 }
 
 impl Layer {
     /// Whether a page has text enough not to be read by Tesseract.
     pub fn has_text(&self, index: usize) -> bool {
-        self.pages.get(index).and_then(Option::as_ref).is_some_and(|lines| {
-            lines.iter().map(|l| l.text.chars().filter(|c| c.is_alphanumeric()).count()).sum::<usize>() >= TEXT_PAGE
-        })
+        self.laid.get(index).copied().unwrap_or(false)
+            || self.pages.get(index).and_then(Option::as_ref).is_some_and(|lines| {
+                lines.iter().map(|l| l.text.chars().filter(|c| c.is_alphanumeric()).count()).sum::<usize>() >= TEXT_PAGE
+            })
     }
 
     /// The label of a page, counted from nought.
@@ -299,11 +304,17 @@ fn read_into(bytes: &[u8], layer: &Mutex<Layer>) {
             stream.content = Vec::new();
         }
     }
-    let count = doc.get_pages().len();
+    let pages = doc.get_pages();
+    let count = pages.len();
     let labels = labels(&doc, count);
+    let laid = pages
+        .values()
+        .map(|id| doc.get_dictionary(*id).is_ok_and(|page| super::searchable::has_laid(&doc, page)))
+        .collect();
     keep(layer, |l| {
         l.labels = labels;
         l.pages = vec![None; count];
+        l.laid = laid;
     });
     for number in 1..=count {
         let lines = page_lines(&doc, number as u32);
