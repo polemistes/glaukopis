@@ -15,6 +15,7 @@
 
 import * as Y from 'yjs';
 import type { Mark } from './marks';
+import './review.css';
 
 /** The spans put in here. */
 const OURS = 'review-mark';

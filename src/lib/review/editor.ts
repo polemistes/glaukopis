@@ -12,6 +12,7 @@ import { Mapping, StepMap } from 'prosemirror-transform';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import { ySyncPluginKey } from 'y-prosemirror';
 import type { Mark } from './marks';
+import './review.css';
 
 const key = new PluginKey<DecorationSet>('review-marks');
 
