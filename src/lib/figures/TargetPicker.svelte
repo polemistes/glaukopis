@@ -9,6 +9,7 @@
   import Sigma from '@lucide/svelte/icons/sigma';
   import Table from '@lucide/svelte/icons/table';
   import type { TargetRequest } from '$lib/editor/ui.svelte';
+  import { t } from '$lib/i18n';
   import type { Project } from '$lib/project/model/project.svelte';
   import Popover from '$lib/ui/Popover.svelte';
   import { numbering, pointerText, type Pointed } from './numbering.svelte';
@@ -30,12 +31,12 @@
   const counting = $derived(numbering.countingOf(project, request.map));
   const numbers = $derived(numbering.of(project, request.map));
 
-  const GROUPS: { kind: Pointed['kind']; heading: string }[] = [
-    { kind: 'figure', heading: 'Figures' },
-    { kind: 'table', heading: 'Tables' },
-    { kind: 'equation', heading: 'Equations' },
-    { kind: 'part', heading: 'Parts of the document' },
-  ];
+  const GROUPS = $derived<{ kind: Pointed['kind']; heading: string }[]>([
+    { kind: 'figure', heading: t('figures-targets-figures') },
+    { kind: 'table', heading: t('figures-targets-tables') },
+    { kind: 'equation', heading: t('figures-targets-equations') },
+    { kind: 'part', heading: t('figures-targets-parts') },
+  ]);
 
   /** What is called what: "Figure 2", "(1)", "2.1". */
   const called = (p: Pointed) =>
@@ -94,7 +95,7 @@
   align="start"
   gap={8}
   width={440}
-  label="Choose what to point to"
+  label={t('figures-targets')}
   onclose={() => onclose(true)}
 >
   <div class="picker targets">
@@ -103,15 +104,15 @@
       <input
         bind:this={input}
         bind:value={query}
-        placeholder="Point to a figure, a table, an equation, a part"
-        aria-label="Search what can be pointed to"
+        placeholder={t('figures-targets-placeholder')}
+        aria-label={t('figures-targets-search')}
         spellcheck="false"
         autocomplete="off"
         {onkeydown}
       />
     </div>
 
-    <div class="results" bind:this={list} role="listbox" aria-label="What can be pointed to">
+    <div class="results" bind:this={list} role="listbox" aria-label={t('figures-targets-results')}>
       {#each rows as row, i (row.id)}
         {#if i === 0 || rows[i - 1].kind !== row.kind}
           <div class="heading">{GROUPS.find((g) => g.kind === row.kind)?.heading}</div>
@@ -149,28 +150,25 @@
           <span class="words truncate" class:formula={row.kind === 'equation'}>
             {row.words ||
               (row.kind === 'figure'
-                ? 'A figure of which nothing is said'
+                ? t('figures-targets-figure-unsaid')
                 : row.kind === 'table'
-                  ? 'A table of which nothing is said'
+                  ? t('figures-targets-table-unsaid')
                   : '')}
           </span>
         </div>
       {:else}
         <p class="none">
           {#if query.trim()}
-            Nothing in the document answers to these words.
+            {t('figures-targets-no-match')}
           {:else}
-            There is nothing to point to yet: no figure, no table, no numbered equation, no part
-            with a name.
+            {t('figures-targets-none')}
           {/if}
         </p>
       {/each}
     </div>
 
     <div class="actions">
-      <span class="hint"
-        >The words follow what they point to: its number, and what the format calls it.</span
-      >
+      <span class="hint">{t('figures-targets-hint')}</span>
       <span class="keys"><kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd></span>
     </div>
   </div>

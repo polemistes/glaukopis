@@ -1,6 +1,7 @@
 <script lang="ts">
   import Plus from '@lucide/svelte/icons/plus';
   import Trash2 from '@lucide/svelte/icons/trash-2';
+  import { t } from '$lib/i18n';
   import { editReference } from '$lib/library/references.svelte';
   import Popover from '$lib/ui/Popover.svelte';
   import CitationItem from './CitationItem.svelte';
@@ -54,7 +55,7 @@
     editorUi.pick({
       anchor: (event.currentTarget as HTMLElement).getBoundingClientRect(),
       exclude: items.map((i) => i.id),
-      purpose: 'Add a work to the citation',
+      purpose: t('editor-citation-add-purpose'),
       onpick: (id) => {
         editorUi.closePicker(false);
         adding = false;
@@ -92,7 +93,7 @@
   align="start"
   gap={8}
   width={440}
-  label="Citation"
+  label={t('editor-citation')}
   {onclose}
 >
   <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -110,7 +111,7 @@
     {/each}
 
     <div class="foot">
-      <button type="button" onclick={add}><Plus size={14} /> Add a work</button>
+      <button type="button" onclick={add}><Plus size={14} /> {t('editor-citation-add')}</button>
       <label class="check inline">
         <input
           type="checkbox"
@@ -120,7 +121,7 @@
             commit();
           }}
         />
-        Author in the text: Nagy (1979)
+        {t('editor-citation-in-text')}
       </label>
       <button
         type="button"
@@ -131,7 +132,8 @@
           onclose();
         }}
       >
-        <Trash2 size={14} /> Remove the citation
+        <Trash2 size={14} />
+        {t('editor-citation-remove')}
       </button>
     </div>
   </div>

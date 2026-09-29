@@ -5,6 +5,7 @@
    * them are headings; and what is said of the table.
    */
   import { untrack } from 'svelte';
+  import { t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import Select from '$lib/ui/Select.svelte';
@@ -51,14 +52,17 @@
   }
 </script>
 
-<Dialog open title="A table from a file" subtitle={file} width={680} {onclose}>
+<Dialog open title={t('tables-from-file')} subtitle={file} width={680} {onclose}>
   <div class="from-file">
     {#if sheets.length > 1}
       <div class="sheet">
         <Select
           bind:value={chosen}
-          label="Sheet"
-          options={sheets.map((s, i) => ({ value: String(i), label: s.name || `Sheet ${i + 1}` }))}
+          label={t('tables-sheet')}
+          options={sheets.map((s, i) => ({
+            value: String(i),
+            label: s.name || t('tables-sheet-number', { number: i + 1 }),
+          }))}
         />
       </div>
     {/if}
@@ -66,7 +70,7 @@
     {#if sheet?.problem}
       <p class="problem selectable" role="alert">{sheet.problem}</p>
     {:else}
-      <div class="shown prose static" aria-label="The first rows, as they will be">
+      <div class="shown prose static" aria-label={t('tables-first-rows')}>
         <figure class="tabular">
           <table>
             <tbody>
@@ -86,18 +90,18 @@
         </figure>
       </div>
       <p class="count">
-        {rows.length}
-        {rows.length === 1 ? 'row' : 'rows'}, {columns}
-        {columns === 1 ? 'column' : 'columns'}{#if rows.length > SHOWN}. The first {SHOWN} are shown.{/if}
+        {rows.length > SHOWN
+          ? t('tables-size-shown', { rows: rows.length, columns, shown: SHOWN })
+          : t('tables-size', { rows: rows.length, columns })}
       </p>
 
       <div class="said">
-        <label for="table-said">What is said of the table</label>
+        <label for="table-said">{t('tables-caption')}</label>
         <input
           id="table-said"
           type="text"
           bind:value={said}
-          placeholder="Its caption, which can be changed in the text"
+          placeholder={t('tables-caption-placeholder')}
           onkeydown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -109,22 +113,22 @@
 
       <label class="check">
         <input type="checkbox" bind:checked={headerRow} />
-        The first row holds the headings
+        {t('tables-header-row')}
       </label>
       <label class="check">
         <input type="checkbox" bind:checked={headerColumn} />
-        The first column holds the headings
+        {t('tables-header-column')}
       </label>
       {#if numbers.some(Boolean)}
-        <p class="hint">Columns that hold numbers are set to the right.</p>
+        <p class="hint">{t('tables-numbers-right')}</p>
       {/if}
     {/if}
   </div>
 
   {#snippet footer()}
-    <Button variant="ghost" onclick={onclose}>Cancel</Button>
+    <Button variant="ghost" onclick={onclose}>{t('common-cancel')}</Button>
     <Button variant="primary" disabled={!rows.length || !!sheet?.problem} onclick={put}>
-      Put it into the text
+      {t('tables-put')}
     </Button>
   {/snippet}
 </Dialog>

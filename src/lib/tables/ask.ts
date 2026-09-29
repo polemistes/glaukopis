@@ -12,6 +12,7 @@ import { tableRead, type Sheet } from '$lib/api/tables';
 import { placeForBlock } from '$lib/editor/commands';
 import { bodySchema } from '$lib/editor/schema';
 import { rectAt } from '$lib/editor/ui.svelte';
+import { t } from '$lib/i18n';
 import type { Project } from '$lib/project/model/project.svelte';
 import { notify, notifyError } from '$lib/ui/toast.svelte';
 import { emptyTable, insertTable, tableNode, type TableOf } from './commands';
@@ -57,7 +58,7 @@ export async function askForTable(view: EditorView) {
   const type = view.state.schema.nodes.tabular;
   if (!type || !view.editable) return;
   if (!placeForBlock(view.state, type)) {
-    notify('A table cannot stand here');
+    notify(t('tables-cannot-stand'));
     return;
   }
   const anchor = rectAt(view, view.state.selection.from);
@@ -142,7 +143,7 @@ export async function tableFromFile(path: string, place: Place): Promise<boolean
   try {
     sheets = await tableRead(path);
   } catch (error) {
-    notifyError(`${nameOf(path)} could not be read as a table`, error);
+    notifyError(t('tables-unreadable', { file: nameOf(path) }), error);
     return false;
   }
   const given = await review(path, sheets);
@@ -151,16 +152,16 @@ export async function tableFromFile(path: string, place: Place): Promise<boolean
     return false;
   }
   if (put(given, place)) return true;
-  notify('A table cannot stand here');
+  notify(t('tables-cannot-stand'));
   return false;
 }
 
 /** Asks for a file among those of this computer, and makes a table of it where the cursor is. */
 export async function chooseTable(view: EditorView) {
   const path = await openFile({
-    title: 'A table',
+    title: t('tables-choose'),
     multiple: false,
-    filters: [{ name: 'Tables', extensions: TABLE_ENDINGS }],
+    filters: [{ name: t('tables-files'), extensions: TABLE_ENDINGS }],
   });
   if (typeof path !== 'string' || view.isDestroyed) return;
   await tableFromFile(path, { view });
@@ -185,7 +186,7 @@ export async function tablesDropped(paths: string[], place: Place): Promise<stri
       sheets = await tableRead(path, true);
     } catch (error) {
       if (ending(path) === 'txt') others.push(path);
-      else notifyError(`${nameOf(path)} could not be read as a table`, error);
+      else notifyError(t('tables-unreadable', { file: nameOf(path) }), error);
       continue;
     }
     if (ending(path) === 'txt' && (sheets[0]?.rows[0]?.length ?? 0) < 2) {
@@ -195,12 +196,12 @@ export async function tablesDropped(paths: string[], place: Place): Promise<stri
     if (!written && !known) {
       // Text that was dropped beside every text is a document rather than a table.
       if (ending(path) === 'txt') others.push(path);
-      else notify('Drop a table on the text it belongs to');
+      else notify(t('tables-drop-on-text'));
       continue;
     }
     const given = await review(path, sheets);
     if (!given) continue;
-    if (!put(given, place)) notify('A table cannot stand here');
+    if (!put(given, place)) notify(t('tables-cannot-stand'));
     // Those that follow stand after it.
     place = { ...place, at: undefined };
   }

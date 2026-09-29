@@ -7,7 +7,8 @@
    */
   import { untrack } from 'svelte';
   import type { Flow, Stand } from '$lib/editor/schema';
-  import { FLOWS, placed, SIDES, sideWords, type Usual } from './placing';
+  import { t } from '$lib/i18n';
+  import { flows, placed, sides, type Usual } from './placing';
 
   interface Props {
     kind: 'figure' | 'table' | 'equation';
@@ -34,23 +35,25 @@
   });
 
   const now = $derived(placed({ align: to, flow: text }, usual));
-  const what = $derived(kind === 'figure' ? 'figures' : kind === 'table' ? 'tables' : 'equations');
-  const it = $derived(kind === 'equation' ? 'equation' : kind);
+  /** Whether the format has the text flow around things of the kind; nothing for what cannot have it. */
+  const flowing = $derived(
+    kind !== 'equation' && usual.align !== 'center' ? (usual.wrap ? 'around' : 'apart') : 'none',
+  );
 </script>
 
 {#if beside === 'in'}
   <div class="row">
-    <span class="label">Stands</span>
+    <span class="label">{t('figures-stands')}</span>
     <div class="choices">
-      <span class="said">beside others, in a row</span>
-      <button type="button" class="link" onclick={onalone}>By itself again</button>
+      <span class="said">{t('figures-stands-in-row')}</span>
+      <button type="button" class="link" onclick={onalone}>{t('figures-stands-alone')}</button>
     </div>
   </div>
 {:else}
   <div class="row">
-    <span class="label">Stands</span>
-    <div class="choices" role="radiogroup" aria-label="Where the {it} stands">
-      {#each SIDES as side (side.value)}
+    <span class="label">{t('figures-stands')}</span>
+    <div class="choices" role="radiogroup" aria-label={t('figures-stands-where', { kind })}>
+      {#each sides() as side (side.value)}
         <button
           type="button"
           role="radio"
@@ -67,17 +70,14 @@
     </div>
   </div>
   <div class="hint indent">
-    The format has {what}
-    {sideWords[usual.align]}{#if kind !== 'equation' && usual.align !== 'center'}, {usual.wrap
-        ? 'with the text flowing around them'
-        : 'apart from the text'}{/if}.
+    {t('figures-usual', { kind, side: usual.align, flow: flowing })}
   </div>
 
   {#if kind !== 'equation'}
     <div class="row">
-      <span class="label">Text</span>
-      <div class="choices" role="radiogroup" aria-label="Whether the text flows around the {it}">
-        {#each FLOWS as f (f.value)}
+      <span class="label">{t('figures-text')}</span>
+      <div class="choices" role="radiogroup" aria-label={t('figures-flows-where', { kind })}>
+        {#each flows() as f (f.value)}
           <button
             type="button"
             role="radio"
@@ -95,7 +95,7 @@
       </div>
     </div>
     {#if now.stand === 'center'}
-      <div class="hint indent">The text flows around what stands at a side.</div>
+      <div class="hint indent">{t('figures-flow-at-side')}</div>
     {/if}
   {/if}
 
@@ -104,7 +104,7 @@
       <span></span>
       <div class="choices">
         <button type="button" class="link" onclick={onbeside}>
-          Put it beside the one before it
+          {t('figures-beside')}
         </button>
       </div>
     </div>

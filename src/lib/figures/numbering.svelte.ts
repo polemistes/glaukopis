@@ -9,7 +9,7 @@
  * kept of each element, without reading the texts.
  */
 
-import { documentWord } from '$lib/i18n';
+import { documentWord, t } from '$lib/i18n';
 import { SvelteMap } from 'svelte/reactivity';
 import type { DocumentFormat } from '$lib/api/documents';
 import { documents } from '$lib/preview/documents.svelte';
@@ -173,27 +173,27 @@ export function pointerText(pointed: Pointed | undefined, form: RefForm, c: Coun
   }
 }
 
-/** The forms words can point by, for each kind, with what each is called. */
+/** The forms words can point by, for each kind, with what each is called in the interface. */
 export function formsOf(kind: PointedKind, numbered: boolean): { form: RefForm; label: string }[] {
   switch (kind) {
     case 'figure':
     case 'table':
       return [
-        { form: 'full', label: 'The word and the number' },
-        { form: 'number', label: 'The number alone' },
+        { form: 'full', label: t('figures-form-full') },
+        { form: 'number', label: t('figures-form-number') },
       ];
     case 'equation':
       return [
-        { form: 'full', label: 'The number as it stands by the equation' },
-        { form: 'number', label: 'The number alone' },
+        { form: 'full', label: t('figures-form-equation') },
+        { form: 'number', label: t('figures-form-number') },
       ];
     case 'part':
       return numbered
         ? [
-            { form: 'full', label: 'Its number' },
-            { form: 'name', label: 'Its name' },
+            { form: 'full', label: t('figures-form-its-number') },
+            { form: 'name', label: t('figures-form-its-name') },
           ]
-        : [{ form: 'full', label: 'Its name' }];
+        : [{ form: 'full', label: t('figures-form-its-name') }];
   }
 }
 

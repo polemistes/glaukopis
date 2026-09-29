@@ -28,23 +28,28 @@ export interface CiteItem {
 
 export type CiteMode = 'normal' | 'intext';
 
-/** Kinds of locator, as CSL names them, with the words shown for them. */
-export const LOCATOR_LABELS: [string, string, string][] = [
-  ['page', 'Page', 'p.'],
-  ['chapter', 'Chapter', 'ch.'],
-  ['section', 'Section', '§'],
-  ['paragraph', 'Paragraph', '¶'],
-  ['line', 'Line', 'l.'],
-  ['verse', 'Verse', 'v.'],
-  ['book', 'Book', 'bk.'],
-  ['volume', 'Volume', 'vol.'],
-  ['part', 'Part', 'pt.'],
-  ['column', 'Column', 'col.'],
-  ['folio', 'Folio', 'fol.'],
-  ['figure', 'Figure', 'fig.'],
-  ['note', 'Note', 'n.'],
-  ['number', 'Number', 'no.'],
-  ['sub-verbo', 'Sub verbo', 's.v.'],
+/**
+ * Kinds of locator, as CSL names them, with the short form a text in English
+ * shows for each. The menu of a citation names them in the language of the
+ * interface (`editor-locator-<kind>`); a text in another language shows the
+ * words of CSL for them (`locatorWord` in `references.svelte.ts`).
+ */
+export const LOCATOR_LABELS: [string, string][] = [
+  ['page', 'p.'],
+  ['chapter', 'ch.'],
+  ['section', '§'],
+  ['paragraph', '¶'],
+  ['line', 'l.'],
+  ['verse', 'v.'],
+  ['book', 'bk.'],
+  ['volume', 'vol.'],
+  ['part', 'pt.'],
+  ['column', 'col.'],
+  ['folio', 'fol.'],
+  ['figure', 'fig.'],
+  ['note', 'n.'],
+  ['number', 'no.'],
+  ['sub-verbo', 's.v.'],
 ];
 
 const marks: Record<string, MarkSpec> = {

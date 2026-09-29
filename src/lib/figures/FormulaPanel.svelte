@@ -5,6 +5,7 @@
    */
   import { untrack } from 'svelte';
   import type { Stand } from '$lib/editor/schema';
+  import { t } from '$lib/i18n';
   import { mathematics } from './math.svelte';
   import Placing from './Placing.svelte';
   import type { Usual } from './placing';
@@ -55,30 +56,30 @@
   const shown = $derived(mathematics.of(settled, display));
 
   /** What can be put in by pressing, for those who do not know it by heart. */
-  const SIGNS: { label: string; hint: string; put: string; into?: number }[] = [
-    { label: 'x²', hint: 'Raised', put: '^{}', into: 2 },
-    { label: 'xᵢ', hint: 'Lowered', put: '_{}', into: 2 },
-    { label: '½', hint: 'Fraction', put: '\\frac{}{}', into: 6 },
-    { label: '√', hint: 'Root', put: '\\sqrt{}', into: 6 },
-    { label: '∑', hint: 'Sum', put: '\\sum_{}^{}', into: 6 },
-    { label: '∫', hint: 'Integral', put: '\\int_{}^{}', into: 6 },
-    { label: '( )', hint: 'Brackets that grow', put: '\\left(  \\right)', into: 7 },
-    { label: 'α', hint: 'alpha', put: '\\alpha ' },
-    { label: 'β', hint: 'beta', put: '\\beta ' },
-    { label: 'γ', hint: 'gamma', put: '\\gamma ' },
-    { label: 'λ', hint: 'lambda', put: '\\lambda ' },
-    { label: 'π', hint: 'pi', put: '\\pi ' },
-    { label: 'σ', hint: 'sigma', put: '\\sigma ' },
-    { label: '≤', hint: 'Less than or equal', put: '\\leq ' },
-    { label: '≥', hint: 'Greater than or equal', put: '\\geq ' },
-    { label: '≠', hint: 'Not equal', put: '\\neq ' },
-    { label: '≈', hint: 'Nearly equal', put: '\\approx ' },
-    { label: '×', hint: 'Times', put: '\\times ' },
-    { label: '±', hint: 'Plus or minus', put: '\\pm ' },
-    { label: '→', hint: 'Arrow', put: '\\to ' },
-    { label: '∞', hint: 'Without end', put: '\\infty ' },
-    { label: 'ab', hint: 'Words within a formula', put: '\\text{}', into: 6 },
-  ];
+  const SIGNS = $derived<{ label: string; hint: string; put: string; into?: number }[]>([
+    { label: 'x²', hint: t('figures-sign-raised'), put: '^{}', into: 2 },
+    { label: 'xᵢ', hint: t('figures-sign-lowered'), put: '_{}', into: 2 },
+    { label: '½', hint: t('figures-sign-fraction'), put: '\\frac{}{}', into: 6 },
+    { label: '√', hint: t('figures-sign-root'), put: '\\sqrt{}', into: 6 },
+    { label: '∑', hint: t('figures-sign-sum'), put: '\\sum_{}^{}', into: 6 },
+    { label: '∫', hint: t('figures-sign-integral'), put: '\\int_{}^{}', into: 6 },
+    { label: '( )', hint: t('figures-sign-brackets'), put: '\\left(  \\right)', into: 7 },
+    { label: 'α', hint: t('figures-sign-alpha'), put: '\\alpha ' },
+    { label: 'β', hint: t('figures-sign-beta'), put: '\\beta ' },
+    { label: 'γ', hint: t('figures-sign-gamma'), put: '\\gamma ' },
+    { label: 'λ', hint: t('figures-sign-lambda'), put: '\\lambda ' },
+    { label: 'π', hint: t('figures-sign-pi'), put: '\\pi ' },
+    { label: 'σ', hint: t('figures-sign-sigma'), put: '\\sigma ' },
+    { label: '≤', hint: t('figures-sign-less-or-equal'), put: '\\leq ' },
+    { label: '≥', hint: t('figures-sign-greater-or-equal'), put: '\\geq ' },
+    { label: '≠', hint: t('figures-sign-not-equal'), put: '\\neq ' },
+    { label: '≈', hint: t('figures-sign-nearly-equal'), put: '\\approx ' },
+    { label: '×', hint: t('figures-sign-times'), put: '\\times ' },
+    { label: '±', hint: t('figures-sign-plus-or-minus'), put: '\\pm ' },
+    { label: '→', hint: t('figures-sign-arrow'), put: '\\to ' },
+    { label: '∞', hint: t('figures-sign-infinity'), put: '\\infty ' },
+    { label: 'ab', hint: t('figures-sign-words'), put: '\\text{}', into: 6 },
+  ]);
 
   function put(sign: (typeof SIGNS)[number]) {
     const el = field;
@@ -125,11 +126,11 @@
 </script>
 
 <div class="head">
-  <div class="note-number">{display ? 'Equation' : 'Formula'}</div>
+  <div class="note-number">{display ? t('figures-equation') : t('figures-formula')}</div>
   {#if display}
     <label class="counted">
       <input type="checkbox" bind:checked={counted} />
-      Numbered
+      {t('figures-equation-numbered')}
     </label>
   {/if}
 </div>
@@ -140,7 +141,7 @@
   rows={display ? 3 : 2}
   spellcheck="false"
   autocomplete="off"
-  aria-label="The formula, in the notation of TeX"
+  aria-label={t('figures-formula-field')}
   placeholder={display ? 'a^2 + b^2 = c^2' : 'x_i'}
   {onkeydown}></textarea>
 
@@ -155,7 +156,7 @@
 
 <div class="shown" class:display aria-live="polite">
   {#if !settled.trim()}
-    <span class="quiet">What is written is shown here as it will stand.</span>
+    <span class="quiet">{t('figures-formula-empty')}</span>
   {:else if shown?.mathml}
     <!-- Made by `sanitise`: mathematics and nothing else. -->
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -182,8 +183,7 @@
 {/if}
 
 <div class="hint">
-  Written as in TeX. Enter when done{display ? ', Shift+Enter for a new line' : ''}, Escape to leave
-  it as it was.
+  {display ? t('figures-equation-hint') : t('figures-formula-hint')}
 </div>
 
 <style>
