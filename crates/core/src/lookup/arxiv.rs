@@ -2,7 +2,7 @@
 //!
 //! arXiv asks that it be asked no more than once in three seconds, and that
 //! products which use it say: "Thank you to arXiv for use of its open access
-//! interoperability." (see [`super::ACKNOWLEDGEMENTS`]).
+//! interoperability." (see [`super::acknowledgements`]).
 
 use std::time::Duration;
 
@@ -10,6 +10,7 @@ use crate::duplicates::normalise_doi;
 use crate::error::{Error, Result};
 use crate::library::entry::Draft;
 use crate::net::{Client, encode};
+use crate::tr;
 
 use super::{Hit, pace, text, xml_child, xml_child_text};
 
@@ -48,20 +49,18 @@ fn identifier(address: &str) -> Option<(String, Option<String>)> {
 /// preprint as such, with the date it was first sent in.
 pub(crate) fn hits(xml: &str, versioned: bool) -> Result<Vec<Hit>> {
     let document = roxmltree::Document::parse_with_options(xml, super::xml_options())
-        .map_err(|_| Error::Network("export.arxiv.org answered with something that could not be read".to_owned()))?;
+        .map_err(|_| Error::Network(tr!("core-lookup-unreadable", service = "export.arxiv.org")))?;
     let root = document.root_element();
     if root.tag_name().name() != "feed" {
-        return Err(Error::Network(
-            "export.arxiv.org answered with something that is not a list of preprints".to_owned(),
-        ));
+        return Err(Error::Network(tr!("core-lookup-not-preprints", service = "export.arxiv.org")));
     }
     let mut out = Vec::new();
     // The list has a title of its own; titles are read within entries only.
     for entry in root.children().filter(|n| n.is_element() && n.tag_name().name() == "entry") {
         let address = xml_child_text(entry, "id").unwrap_or_default();
         if address.contains("/api/errors") {
-            let said = xml_child_text(entry, "summary").unwrap_or_else(|| "no reason given".to_owned());
-            return Err(Error::Network(format!("arXiv could not answer the question: {said}")));
+            let said = xml_child_text(entry, "summary").unwrap_or_else(|| tr!("core-lookup-no-reason"));
+            return Err(Error::Network(tr!("core-lookup-could-not-answer", service = "arXiv", said = said)));
         }
         let Some((id, version)) = identifier(&address) else { continue };
         let mut remarks = Vec::new();
@@ -106,11 +105,9 @@ pub(crate) fn hits(xml: &str, versioned: bool) -> Result<Vec<Hit>> {
         match (&published, &journal) {
             (Some(doi), _) => {
                 put("doi", doi.clone());
-                remarks.push(format!(
-                    "This preprint has since been published. The DOI entered is that of the published version: look up {doi} to cite that instead."
-                ));
+                remarks.push(tr!("core-lookup-arxiv-published-doi", doi = doi));
             }
-            (None, Some(journal)) => remarks.push(format!("This preprint has since been published: {journal}.")),
+            (None, Some(journal)) => remarks.push(tr!("core-lookup-arxiv-published", journal = journal)),
             (None, None) => {}
         }
 

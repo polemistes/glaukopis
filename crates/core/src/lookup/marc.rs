@@ -12,6 +12,7 @@ use crate::bib::latex::fold;
 use crate::bib::names::Person;
 use crate::duplicates::{normalise_doi, normalise_isbns};
 use crate::library::entry::Draft;
+use crate::tr;
 
 use super::text::{self, without_isbd};
 
@@ -1012,15 +1013,10 @@ fn titles(record: &Record, langid: Option<&str>, draft: &mut Draft, remarks: &mu
         }
     }
     if let Some(parallel) = parallel.filter(|p| !p.is_empty()) {
-        remarks.push(format!(
-            "The record gives the title in another language as well, which has not been entered: “{}”.",
-            text::without_isbd_spacing(&parallel)
-        ));
+        remarks.push(tr!("core-lookup-parallel-title", title = text::without_isbd_spacing(&parallel)));
     }
     if let Some(original) = in_original_script(record) {
-        remarks.push(format!(
-            "The title is entered as the catalogue writes it in Latin letters. In its own script it is “{original}”."
-        ));
+        remarks.push(tr!("core-lookup-original-script", title = original));
     }
 }
 
@@ -1065,7 +1061,7 @@ fn names(record: &Record, draft: &mut Draft, remarks: &mut Vec<String>) {
         }
     }
     for name in unplaced {
-        remarks.push(format!("The record names {name} without saying as what. The name has not been entered."));
+        remarks.push(tr!("core-lookup-unplaced-name", name = &name));
     }
 }
 
@@ -1163,7 +1159,7 @@ pub(crate) fn describe(record: &Record, asked: Option<&str>) -> Option<Described
         } else {
             let said: Vec<String> =
                 ['a', 'b', 'c', 'd'].iter().filter_map(|c| field.get(*c)).map(without_isbd).collect();
-            remarks.push(format!("The book is also a thesis: {}.", said.join(", ")));
+            remarks.push(tr!("core-lookup-thesis", said = said.join(", ")));
         }
     }
 
@@ -1294,13 +1290,10 @@ pub(crate) fn describe(record: &Record, asked: Option<&str>) -> Option<Described
 
     // What the user should know of the kind of record.
     match kind {
-        Kind::Book if online => {
-            remarks.push("An e-book record: place, publisher and year are those of the electronic edition.".to_owned())
-        }
-        Kind::Sound if own_isbns.is_empty() => remarks.push("A sound recording.".to_owned()),
-        Kind::Sound => remarks.push("A record of an audio book.".to_owned()),
-        Kind::Other => remarks
-            .push("The record is not of a text. It has been entered as it could be: choose the right type.".to_owned()),
+        Kind::Book if online => remarks.push(tr!("core-lookup-ebook")),
+        Kind::Sound if own_isbns.is_empty() => remarks.push(tr!("core-lookup-sound")),
+        Kind::Sound => remarks.push(tr!("core-lookup-audio-book")),
+        Kind::Other => remarks.push(tr!("core-lookup-not-text")),
         _ => {}
     }
 
@@ -1840,7 +1833,7 @@ mod tests {
         assert_eq!(d.draft.get("title"), Some("Ilias und Odyssee"));
         assert_eq!(d.draft.get("subtitle"), Some("Die Gesänge der Griechen"));
         assert_eq!(d.remarks.len(), 2);
-        assert_eq!(d.remarks[0], text::CAPITALS_REMARK);
+        assert_eq!(d.remarks[0], text::capitals_remark());
         assert!(d.remarks[1].contains("“HARRIS”"));
     }
 

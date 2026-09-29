@@ -7,6 +7,7 @@ use serde::Serialize;
 use tauri::State;
 
 use glaukopis_core::Error;
+use glaukopis_core::i18n::tr;
 use glaukopis_core::projects::{ProjectInfo, Sharing};
 use glaukopis_core::sharing::{self, Invitation, Remote, Room, ServerInfo};
 
@@ -55,7 +56,7 @@ pub fn sharing_publish(
 ) -> CommandResult<ProjectInfo> {
     let info = state.projects.info(&id)?;
     if info.sharing.is_some() {
-        return Err(Error::invalid("The project is shared already.").into());
+        return Err(Error::invalid(tr!("core-sharing-shared-already")).into());
     }
     let client = state.client();
     let remote = Remote::new(&client, &server)?;
@@ -82,11 +83,10 @@ pub fn sharing_join(
             p.sharing.as_ref().is_some_and(|s| s.owner && s.server == remote.server()) && code_is_of(&state, p, &read)
         })
     {
-        return Err(Error::invalid(format!(
-            "The code is for “{}”, which is shared from this computer: you have it already.",
-            here.name
-        ))
-        .into());
+        // A kind of its own, by which the interface shows it under the code.
+        return Err(
+            Error::Refused { kind: "own-code", message: tr!("core-sharing-own-code", name = &here.name) }.into()
+        );
     }
     let joined = remote.join(&code, &name)?;
     let sharing = Sharing {

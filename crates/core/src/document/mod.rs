@@ -16,6 +16,12 @@ use serde::{Deserialize, Serialize};
 use crate::bib::names::Person;
 use crate::formats::Stand;
 
+/// A word the document prints, in the language of the document; in English
+/// where documents have no words in that language (ADR 0020).
+pub(crate) fn term(language: Option<&str>, id: &str) -> String {
+    crate::i18n::term(language, id).or_else(|| crate::i18n::term(None, id)).unwrap_or_else(|| id.to_owned())
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct CiteItem {
@@ -513,7 +519,11 @@ pub(crate) mod fixtures_for_samples {
             blocks.push(cite(vec![item(at(0))], CiteMode::Normal));
             blocks.push(cite(vec![CiteItem { locator: Some("45".into()), ..item(at(0)) }], CiteMode::Normal));
             blocks.push(cite(
-                vec![CiteItem { prefix: Some("see".into()), locator: Some("12–14".into()), ..item(at(1)) }],
+                vec![CiteItem {
+                    prefix: Some(term(language, "document-sample-see")),
+                    locator: Some("12–14".into()),
+                    ..item(at(1))
+                }],
                 CiteMode::Normal,
             ));
             blocks.push(cite(
@@ -526,7 +536,7 @@ pub(crate) mod fixtures_for_samples {
             blocks.push(Block::Paragraph {
                 content: vec![
                     Inline::Citation { items: vec![item(at(ids.len().min(3) - 1))], mode: CiteMode::Intext },
-                    text(" argues otherwise."),
+                    text(&format!(" {}", term(language, "document-sample-argues"))),
                 ],
             });
             // The rest, so that the bibliography shows every kind of work given.

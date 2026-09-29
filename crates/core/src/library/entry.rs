@@ -8,6 +8,7 @@ use crate::bib::date::{display_year, entry_year};
 use crate::bib::latex::{fold, plain};
 use crate::bib::names::{Person, format_list, parse_list, short_list};
 use crate::bib::{RawEntry, is_name_field};
+use crate::tr;
 
 pub const FIELD_ID: &str = "glaukopis-id";
 pub const FIELD_ADDED: &str = "glaukopis-added";
@@ -137,7 +138,7 @@ impl Entry {
         let is_editor = self.get("author").is_none() && self.get("editor").is_some();
         let mut authors = short_list(&creators);
         if is_editor && !authors.is_empty() {
-            authors.push_str(if creators.len() > 1 { " (eds.)" } else { " (ed.)" });
+            authors = tr!("core-library-edited", names = &authors, count = creators.len());
         }
         let authors_sort =
             creators.iter().map(|p| fold(&format!("{} {}", p.family, p.given))).collect::<Vec<_>>().join(" ");

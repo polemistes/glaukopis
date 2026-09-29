@@ -12,6 +12,7 @@ use crate::bib::latex::fold;
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::net::Client;
+use crate::tr;
 
 const REPOSITORY: &str = "https://raw.githubusercontent.com/citation-style-language/styles/master";
 
@@ -66,7 +67,7 @@ fn check_id(id: &str) -> Result<()> {
         && id.len() <= 120
         && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
         && !id.starts_with('-');
-    if ok { Ok(()) } else { Err(Error::invalid(format!("“{id}” cannot be the id of a style"))) }
+    if ok { Ok(()) } else { Err(Error::invalid(tr!("core-export-style-bad-id", id = id))) }
 }
 
 /// What a style says about itself, read from its beginning.
@@ -101,15 +102,14 @@ pub fn escape(text: &str) -> String {
 
 /// Whether the text is a style at all, and one that stands on its own.
 fn check_style(xml: &str) -> Result<()> {
-    let doc = roxmltree::Document::parse(xml).map_err(|e| Error::invalid(format!("This is not a style: {e}.")))?;
+    let doc = roxmltree::Document::parse(xml)
+        .map_err(|e| Error::invalid(tr!("core-export-not-a-style", error = e.to_string())))?;
     let root = doc.root_element();
     if root.tag_name().name() != "style" {
-        return Err(Error::invalid("This is not a style: it does not begin with <style>."));
+        return Err(Error::invalid(tr!("core-export-not-a-style-begin")));
     }
     if !root.children().any(|c| c.tag_name().name() == "citation") {
-        return Err(Error::invalid(
-            "This style only names another style, which it takes its form from. Fetch it by its name instead.",
-        ));
+        return Err(Error::invalid(tr!("core-export-dependent-style")));
     }
     Ok(())
 }
@@ -158,25 +158,28 @@ impl Styles {
                 return Ok(path);
             }
         }
-        Err(Error::not_found(format!("the reference style “{id}”")))
+        Err(Error::not_found(tr!("core-export-the-reference-style", id = id)))
     }
 
     /// The path of a style, or of the one used when it is not there.
     pub fn path_or_default(&self, id: &str) -> Result<PathBuf> {
         self.path(id).or_else(|_| self.path("chicago-notes-bibliography")).or_else(|_| {
-            self.list().first().ok_or_else(|| Error::not_found("any reference style")).and_then(|s| self.path(&s.id))
+            self.list()
+                .first()
+                .ok_or_else(|| Error::not_found(tr!("core-export-any-reference-style")))
+                .and_then(|s| self.path(&s.id))
         })
     }
 
     pub fn get(&self, id: &str) -> Result<StyleSummary> {
         let path = self.path(id)?;
         let own = path.starts_with(&self.own);
-        Self::summarise(&path, own).ok_or_else(|| Error::not_found(format!("the reference style “{id}”")))
+        Self::summarise(&path, own).ok_or_else(|| Error::not_found(tr!("core-export-the-reference-style", id = id)))
     }
 
     pub fn read(&self, id: &str) -> Result<String> {
         let path = self.path(id)?;
-        fs::read_to_string(&path).context(|| format!("reading {}", path.display()))
+        fs::read_to_string(&path).context(|| tr!("io-reading", path = &path))
     }
 
     fn index(&self) -> &'static [IndexEntry] {
@@ -244,8 +247,8 @@ impl Styles {
                 // has meanwhile become a name for another.
                 client.get_ok(&format!("{REPOSITORY}/dependent/{id}.csl"), None).map_err(|_| first).and_then(
                     |dependent| {
-                        let parent =
-                            parent_of(&dependent).ok_or_else(|| Error::not_found(format!("the style “{id}”")))?;
+                        let parent = parent_of(&dependent)
+                            .ok_or_else(|| Error::not_found(tr!("core-export-the-style", id = id)))?;
                         check_id(&parent)?;
                         let form = client.get_ok(&format!("{REPOSITORY}/{parent}.csl"), None)?;
                         Ok(rename(&form, id, &describe(&dependent).0))
@@ -261,12 +264,12 @@ impl Styles {
         check_id(id)?;
         let path = self.own.join(format!("{id}.csl"));
         write_atomic(&path, xml.as_bytes())?;
-        Self::summarise(&path, true).ok_or_else(|| Error::invalid("The style could not be read back."))
+        Self::summarise(&path, true).ok_or_else(|| Error::invalid(tr!("core-export-style-unreadable")))
     }
 
     /// Takes a style from a file.
     pub fn import(&self, file: &Path) -> Result<StyleSummary> {
-        let xml = fs::read_to_string(file).context(|| format!("reading {}", file.display()))?;
+        let xml = fs::read_to_string(file).context(|| tr!("io-reading", path = file))?;
         check_style(&xml)?;
         let stem = file.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
         let id = self.free_id(&crate::formats::slug(&stem));
@@ -289,7 +292,7 @@ impl Styles {
         check_style(xml)?;
         let title = title.split_whitespace().collect::<Vec<_>>().join(" ");
         if title.is_empty() {
-            return Err(Error::invalid("A style needs a name."));
+            return Err(Error::invalid(tr!("core-export-style-needs-name")));
         }
         let own_already = !id.is_empty() && self.own.join(format!("{id}.csl")).is_file();
         let id = if own_already { id.to_owned() } else { self.free_id(&crate::formats::slug(&title)) };
@@ -300,9 +303,9 @@ impl Styles {
         check_id(id)?;
         let path = self.own.join(format!("{id}.csl"));
         if !path.is_file() {
-            return Err(Error::invalid("Only your own styles can be deleted."));
+            return Err(Error::invalid(tr!("core-export-style-own-only")));
         }
-        fs::remove_file(&path).context(|| format!("removing {}", path.display()))
+        fs::remove_file(&path).context(|| tr!("io-removing", path = &path))
     }
 }
 

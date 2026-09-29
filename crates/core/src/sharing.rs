@@ -12,6 +12,7 @@ use serde_json::{Value, json};
 use crate::error::{Error, Result};
 use crate::net::{self, Client};
 use crate::pictures::{self, Pictures};
+use crate::tr;
 
 /// The version of what is said between the application and the server that
 /// this application speaks.
@@ -86,17 +87,17 @@ pub struct Room {
 pub fn normalise_server(typed: &str) -> Result<String> {
     let typed = typed.trim();
     if typed.is_empty() {
-        return Err(Error::invalid("Enter the address of the server."));
+        return Err(Error::invalid(tr!("core-sharing-enter-address")));
     }
     if typed.contains(char::is_whitespace) {
-        return Err(Error::invalid("The address of a server has no spaces in it."));
+        return Err(Error::invalid(tr!("core-sharing-no-spaces")));
     }
     let (scheme, rest) = match typed.split_once("://") {
         Some((scheme, rest)) => match scheme.to_lowercase().as_str() {
             "http" | "ws" => ("http", rest),
             "https" | "wss" => ("https", rest),
             other => {
-                return Err(Error::invalid(format!("A server is reached by http or https, not by “{other}”.")));
+                return Err(Error::invalid(tr!("core-sharing-scheme", scheme = other)));
             }
         },
         None => (if is_this_computer(typed) { "http" } else { "https" }, typed),
@@ -104,7 +105,7 @@ pub fn normalise_server(typed: &str) -> Result<String> {
     let rest = rest.trim_end_matches('/');
     let host = rest.split('/').next().unwrap_or("");
     if !is_host(host) || rest.contains(['?', '#']) {
-        return Err(Error::invalid("That does not look like the address of a server."));
+        return Err(Error::invalid(tr!("core-sharing-not-an-address")));
     }
     // The name of the host in small letters; the path as it was typed.
     let (host, path) = rest.split_at(host.len());
@@ -231,22 +232,23 @@ fn kind(named: &str, status: u16) -> &'static str {
 /// What the user is told, in whole sentences.
 fn explain(kind: &str, from_server: &str, host: &str) -> String {
     match kind {
-        "no-room" => "The project is no longer on the server.".into(),
-        "not-admitted" => "The server does not admit this copy of the project any more.".into(),
-        "not-owner" => "Only the one who shares the project can do this.".into(),
-        "bad-code" => {
-            "The code is not valid. It may have been mistyped, used already, withdrawn, or it has expired.".into()
-        }
-        "exists" => "The project is on the server already.".into(),
-        "full" => "The server holds as many projects as it is set to hold.".into(),
+        "no-room" => tr!("core-sharing-no-room"),
+        "not-admitted" => tr!("core-sharing-not-admitted"),
+        "not-owner" => tr!("core-sharing-not-owner"),
+        "bad-code" => tr!("core-sharing-bad-code"),
+        "exists" => tr!("core-sharing-exists"),
+        "full" => tr!("core-sharing-full"),
         "password" if from_server.contains("asks for a password") => {
-            "This server asks for a password from those who share projects through it.".into()
+            tr!("core-sharing-password-asked")
         }
-        "password" => "The password is not the one the server asks for.".into(),
-        "too-many" => "Too many attempts have been made from here. Try again in ten minutes.".into(),
-        "no-file" => "The server does not have the picture.".into(),
-        _ if from_server.is_empty() => format!("{host} answered with an error."),
+        "password" => tr!("core-sharing-password-wrong"),
+        "too-many" => tr!("core-sharing-too-many"),
+        "no-file" => tr!("core-sharing-no-file"),
+        _ if from_server.is_empty() => tr!("core-sharing-server-error", host = host),
         _ => {
+            if let Some(said) = in_own_words(from_server) {
+                return said;
+            }
             let mut text = from_server.to_owned();
             if let Some(first) = text.get(..1) {
                 text = first.to_uppercase() + &text[1..];
@@ -257,6 +259,33 @@ fn explain(kind: &str, from_server: &str, host: &str) -> String {
             text
         }
     }
+}
+
+/// What the server says in its own words, which are English, said in the
+/// language of the interface where the words are known. Words that are not
+/// known are passed on as the server said them.
+fn in_own_words(from_server: &str) -> Option<String> {
+    let said = from_server.trim().trim_end_matches('.');
+    let most = |before: &str, after: &str| said.strip_prefix(before)?.strip_suffix(after).map(str::to_owned);
+    let words = match said {
+        "the project has no name" => tr!("core-sharing-no-name"),
+        "the id of the project is not one the server can use" => tr!("core-sharing-bad-id"),
+        "there are fifty open invitations already; withdraw some" => tr!("core-sharing-many-invitations"),
+        "there is no such collaborator" => tr!("core-sharing-no-collaborator"),
+        "the file did not arrive whole" => tr!("core-sharing-not-whole"),
+        _ => {
+            if let Some(most) = most("the file is larger than this server takes: one file may hold ", " at the most") {
+                tr!("core-sharing-file-too-large", most = most)
+            } else {
+                let most = most(
+                    "there is not room for the file: the files of one project may hold ",
+                    " together at the most on this server",
+                )?;
+                tr!("core-sharing-project-full", most = most)
+            }
+        }
+    };
+    Some(words)
 }
 
 /// A server, and the client by which it is reached.
@@ -301,9 +330,9 @@ impl<'a> Remote<'a> {
             }
             None if response.status == 404 => Err(not_a_server(&host)),
             None if matches!(response.status, 502..=504) => {
-                Err(Error::Network(format!("{host} is there, but the server behind it does not answer")))
+                Err(Error::Network(tr!("core-sharing-no-answer-behind", host = &host)))
             }
-            None => Err(Error::Network(format!("{host} answered with an error ({})", response.status))),
+            None => Err(Error::Network(tr!("network-status", host = &host, status = response.status))),
         }
     }
 
@@ -319,9 +348,7 @@ impl<'a> Remote<'a> {
         }
         let mut info: ServerInfo = self.read(value)?;
         if info.protocol > PROTOCOL {
-            return Err(Error::invalid(
-                "The server is newer than this version of Glaukopis, which must be brought up to date to use it.",
-            ));
+            return Err(Error::invalid(tr!("core-sharing-newer")));
         }
         info.server = self.server.clone();
         info.encrypted = is_encrypted(&self.server);
@@ -440,12 +467,11 @@ impl Remote<'_> {
                 Error::Refused { kind, message: explain(kind, message, &host) }
             }
             // A proxy that takes less than the server does says so by itself.
-            None if status == 413 => Error::Refused {
-                kind: "too-large",
-                message: format!("{host} does not take a picture as large as this."),
-            },
+            None if status == 413 => {
+                Error::Refused { kind: "too-large", message: tr!("core-sharing-picture-too-large", host = &host) }
+            }
             None if status == 404 => not_a_server(&host),
-            None => Error::Network(format!("{host} answered with an error ({status})")),
+            None => Error::Network(tr!("network-status", host = &host, status = status)),
         }
     }
 
@@ -503,11 +529,7 @@ impl Remote<'_> {
             if size > most {
                 // Said before it is sent: a server that refuses what is on
                 // its way may not be heard.
-                say(format!(
-                    "A picture is larger than {} takes ({} MB at the most), and does not reach the others.",
-                    net::host(&self.server),
-                    most >> 20
-                ));
+                say(tr!("core-sharing-picture-larger", host = net::host(&self.server), most = most >> 20));
                 continue;
             }
             let sending = pictures
@@ -516,7 +538,7 @@ impl Remote<'_> {
             match sending {
                 Ok(()) => done.sent += 1,
                 Err(Error::Refused { message, .. }) => say(message),
-                Err(e) => say(format!("A picture could not be sent: {e}.")),
+                Err(e) => say(tr!("core-sharing-picture-not-sent", error = e.to_string())),
             }
         }
         for file in &there {
@@ -531,7 +553,7 @@ impl Remote<'_> {
                 // What is on the server and is no picture is nothing to the project.
                 Err(Error::Invalid(_)) => {}
                 Err(Error::Refused { message, .. }) => say(message),
-                Err(e) => say(format!("A picture could not be fetched: {e}.")),
+                Err(e) => say(tr!("core-sharing-picture-not-fetched", error = e.to_string())),
             }
         }
         done.problems = problems;
@@ -540,10 +562,7 @@ impl Remote<'_> {
 }
 
 fn not_a_server(host: &str) -> Error {
-    Error::Refused {
-        kind: "no-server",
-        message: format!("There is no Glaukopis server at {host}. Check the address with the one who gave it to you."),
-    }
+    Error::Refused { kind: "no-server", message: tr!("core-sharing-no-server", host = host) }
 }
 
 #[cfg(test)]
@@ -598,5 +617,20 @@ mod tests {
         assert_eq!(explain("server", "", "example.org"), "example.org answered with an error.");
         assert_eq!(kind("something new", 401), "not-admitted");
         assert_eq!(kind("something new", 500), "server");
+    }
+
+    #[test]
+    fn the_words_of_the_server_are_said_as_it_says_them_where_they_are_known() {
+        assert_eq!(
+            explain("too-large", "the file is larger than this server takes: one file may hold 25 MB at the most", "h"),
+            "The file is larger than this server takes: one file may hold 25 MB at the most."
+        );
+        assert_eq!(
+            in_own_words("there is not room for the file: the files of one project may hold 1 GB together at the most on this server").as_deref(),
+            Some("There is not room for the file: the files of one project may hold 1 GB together at the most on this server.")
+        );
+        assert_eq!(in_own_words("the file did not arrive whole").as_deref(), Some("The file did not arrive whole."));
+        assert_eq!(in_own_words("something new"), None);
+        assert_eq!(explain("invalid", "something new", "h"), "Something new.");
     }
 }
