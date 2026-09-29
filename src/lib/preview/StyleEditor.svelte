@@ -14,6 +14,7 @@
   } from '$lib/api/documents';
   import { libraryGetMany } from '$lib/api/library';
   import { languageName, primary, t } from '$lib/i18n';
+  import { pieces } from '$lib/project/pieces';
   import { library, sortEntries } from '$lib/state/library.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
@@ -565,21 +566,6 @@
       return [tag, languageName(alone ? primary(tag) : tag)];
     }),
   );
-
-  /**
-   * A sentence with fields in it, as the language orders it: its words, and
-   * between them the fields, by name. The message is given marks for the
-   * fields that no words have, and is cut at them.
-   */
-  function sentence(
-    say: (marks: Record<string, string>) => string,
-    fields: string[],
-  ): { words: string; field?: string }[] {
-    const marks = Object.fromEntries(fields.map((f, i) => [f, `\u{E000}${i}\u{E001}`]));
-    return say(marks)
-      .split(/\u{E000}(\d+)\u{E001}/u)
-      .map((part, i) => (i % 2 ? { words: '', field: fields[Number(part)] } : { words: part }));
-  }
 </script>
 
 {#snippet pick(
@@ -713,8 +699,8 @@
             <h3>{t('style-names')}</h3>
             <div class="row sentence">
               <span class="what">
-                {#each sentence((marks) => t('style-et-al', marks), ['min', 'first']) as piece, i (i)}
-                  {#if piece.field === 'min'}
+                {#each pieces( (marks) => t('style-et-al', marks), { min: '', first: '' } ) as piece, i (i)}
+                  {#if piece.name === 'min'}
                     <input
                       class="inline"
                       type="number"
@@ -725,7 +711,7 @@
                       oninput={(e) => setNameOpt('et-al-min', e.currentTarget.value)}
                       aria-label={t('style-et-al-min')}
                     />
-                  {:else if piece.field === 'first'}
+                  {:else if piece.name === 'first'}
                     <input
                       class="inline"
                       type="number"
@@ -736,7 +722,7 @@
                       oninput={(e) => setNameOpt('et-al-use-first', e.currentTarget.value)}
                       aria-label={t('style-et-al-first')}
                     />
-                  {:else}{piece.words}{/if}
+                  {:else}{piece.text}{/if}
                 {/each}
                 <small>{t('style-et-al-empty')}</small>
               </span>
@@ -744,8 +730,8 @@
             {#if scope === 'citation'}
               <div class="row sentence">
                 <span class="what">
-                  {#each sentence((marks) => t('style-et-al-again', marks), ['min', 'first']) as piece, i (i)}
-                    {#if piece.field === 'min'}
+                  {#each pieces( (marks) => t('style-et-al-again', marks), { min: '', first: '' } ) as piece, i (i)}
+                    {#if piece.name === 'min'}
                       <input
                         class="inline"
                         type="number"
@@ -756,7 +742,7 @@
                         oninput={(e) => setNameOpt('et-al-subsequent-min', e.currentTarget.value)}
                         aria-label={t('style-et-al-again-min')}
                       />
-                    {:else if piece.field === 'first'}
+                    {:else if piece.name === 'first'}
                       <input
                         class="inline"
                         type="number"
@@ -768,7 +754,7 @@
                           setNameOpt('et-al-subsequent-use-first', e.currentTarget.value)}
                         aria-label={t('style-et-al-again-first')}
                       />
-                    {:else}{piece.words}{/if}
+                    {:else}{piece.text}{/if}
                   {/each}
                   <small>{t('style-et-al-again-empty')}</small>
                 </span>
