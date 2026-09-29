@@ -6,6 +6,7 @@
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import CloudDownload from '@lucide/svelte/icons/cloud-download';
   import Columns2 from '@lucide/svelte/icons/columns-2';
+  import FileDiff from '@lucide/svelte/icons/file-diff';
   import FileText from '@lucide/svelte/icons/file-text';
   import Images from '@lucide/svelte/icons/images';
   import Network from '@lucide/svelte/icons/network';
@@ -56,6 +57,10 @@
   import ReferencePanel from './ReferencePanel.svelte';
   import MapText from './text/MapText.svelte';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
+  import { provideReviewing } from '$lib/review/context';
+  import { Review } from '$lib/review/review.svelte';
+  import ReviewPanel from '$lib/review/ReviewPanel.svelte';
+  import { sourceFor } from '$lib/review/source';
 
   let { projectId }: { projectId: string } = $props();
 
@@ -116,6 +121,40 @@
   let texts = $state<(ReturnType<typeof MapText> | undefined)[]>([]);
 
   const pane = $derived(panes[Math.min(focused, panes.length - 1)]);
+
+  /** The review of the changes of the map in view, while its panel is open (ADR 0022). */
+  let review = $state<Review | null>(null);
+  provideReviewing({
+    get review() {
+      return review;
+    },
+  });
+
+  /** Opens the panel of changes beside the text, or closes it. */
+  function toggleReview(open = !review) {
+    if (!open || !project || !pane) {
+      review?.close();
+      review = null;
+      return;
+    }
+    if (review) return;
+    // The changes are shown in the text: the pane shows it.
+    if (pane.mode !== 'text') panes[focused] = { ...pane, mode: 'text' };
+    showReferences = false;
+    showPictures = false;
+    review = new Review(project, sourceFor(project), pane.map);
+    review.later(0);
+  }
+
+  // The review follows the map in view, and what is written.
+  $effect(() => {
+    const map = pane?.map;
+    if (map) untrack(() => review?.turnTo(map));
+  });
+  $effect(() => {
+    void project?.revision;
+    untrack(() => review?.noticeChange());
+  });
 
   // The view is made anew for every project, so the id is the same throughout;
   // it is kept here because it is needed after the view has gone.
@@ -208,6 +247,7 @@
   }
 
   onDestroy(() => {
+    review?.close();
     release?.();
     if (pictures.project === ownId) pictures.open(null);
     // What reads the project from disk meanwhile, as the search through everything, waits for it.
@@ -361,6 +401,7 @@
     const open = shown ?? !(which === 'references' ? showReferences : showPictures);
     showReferences = which === 'references' && open;
     showPictures = which === 'pictures' && open;
+    if (open) toggleReview(false);
   }
 
   // The pictures are asked for from elsewhere, as from the tools for writing.
@@ -486,6 +527,30 @@
   function onkeydown(event: KeyboardEvent) {
     if (!project) return;
     const mod = event.ctrlKey || event.metaKey;
+    // The review of changes: its panel, and what is done with the change looked at.
+    if (mod && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'e') {
+      event.preventDefault();
+      toggleReview();
+      return;
+    }
+    if (review && event.key === 'F8' && !mod && !event.altKey) {
+      event.preventDefault();
+      if (event.shiftKey) review.previous();
+      else review.next();
+      return;
+    }
+    if (
+      review &&
+      mod &&
+      event.altKey &&
+      !event.shiftKey &&
+      (event.code === 'KeyY' || event.code === 'KeyN')
+    ) {
+      event.preventDefault();
+      if (event.code === 'KeyY') void review.accept();
+      else void review.reject();
+      return;
+    }
     if (!mod || event.altKey) return;
     const target = event.target as HTMLElement;
     const typing = target.closest('input, textarea, .prose');
@@ -656,6 +721,14 @@
         <Images size={16} />
       </IconButton>
       <IconButton
+        label={t('review-open')}
+        shortcut="Ctrl+Shift+E"
+        active={!!review}
+        onclick={() => toggleReview()}
+      >
+        <FileDiff size={16} />
+      </IconButton>
+      <IconButton
         label={t('project-preview')}
         shortcut="Ctrl+P"
         active={showPreview}
@@ -779,7 +852,7 @@
           />
         </div>
       {/if}
-      {#if showReferences || showPictures}
+      {#if review || showReferences || showPictures}
         <Divider
           label={showPictures ? t('project-between-pictures') : t('project-between-references')}
           onstart={() => measure('references')}
@@ -791,7 +864,9 @@
           bind:this={referencesEl}
           style:width={sizes.references ? `${sizes.references}px` : undefined}
         >
-          {#if showPictures}
+          {#if review}
+            <ReviewPanel {review} onclose={() => toggleReview(false)} />
+          {:else if showPictures}
             <PicturePanel
               {project}
               mapId={pane.map}

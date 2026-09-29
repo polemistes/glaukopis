@@ -346,7 +346,14 @@ export function reviewDrawn(el: HTMLElement, given: DrawnMarks) {
     shown = true;
     apply();
   });
-  observer().observe(el);
+  // A text is watched for coming into view only once it has marks.
+  let watched = false;
+  const watch = () => {
+    if (watched || !now.marks.length) return;
+    watched = true;
+    observer().observe(el);
+  };
+  watch();
 
   return {
     update(next: DrawnMarks) {
@@ -354,6 +361,7 @@ export function reviewDrawn(el: HTMLElement, given: DrawnMarks) {
       // What was put in anew swept the spans away with the old text; it is
       // marked once it has been put in, which may be after this is told.
       if (done && next.html !== done.html) made = [];
+      watch();
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(apply);
     },

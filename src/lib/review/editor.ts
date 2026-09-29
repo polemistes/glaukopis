@@ -8,13 +8,12 @@
 
 import type { Node } from 'prosemirror-model';
 import { Plugin, PluginKey, type EditorState } from 'prosemirror-state';
-import { Mapping, StepMap } from 'prosemirror-transform';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import { ySyncPluginKey } from 'y-prosemirror';
 import type { Mark } from './marks';
 import './review.css';
 
-const key = new PluginKey<DecorationSet>('review-marks');
+const key = new PluginKey<State>('review-marks');
 
 /** Where a block of the text is in a document of an editor: before it, and the node. */
 export function blockIn(
@@ -163,31 +162,31 @@ function decorate(state: EditorState, marks: Mark[], part: Mark['part']): Decora
   return DecorationSet.create(state.doc, list);
 }
 
+interface State {
+  marks: Mark[];
+  set: DecorationSet;
+}
+
 /** The plugin that draws the marks of a review in an editor of a name or a text. */
-export function reviewMarks(part: Mark['part']): Plugin<DecorationSet> {
-  return new Plugin<DecorationSet>({
+export function reviewMarks(part: Mark['part']): Plugin<State> {
+  return new Plugin<State>({
     key,
     state: {
-      init: () => DecorationSet.empty,
-      apply: (tr, set, _before, state) => {
+      init: () => ({ marks: [], set: DecorationSet.empty }),
+      apply: (tr, value, _before, state) => {
         const marks = tr.getMeta(key) as Mark[] | undefined;
-        if (marks) return marks.length ? decorate(state, marks, part) : DecorationSet.empty;
-        if (!tr.docChanged) return set;
+        if (marks)
+          return { marks, set: marks.length ? decorate(state, marks, part) : DecorationSet.empty };
+        if (!tr.docChanged || !value.marks.length) return value;
         // y-prosemirror puts the whole text in anew for what comes through the
-        // document: there, how places moved is found by comparing.
-        if (!tr.getMeta(ySyncPluginKey)) return set.map(tr.mapping, tr.doc);
-        const start = _before.doc.content.findDiffStart(tr.doc.content);
-        if (start == null) return set;
-        let { a, b } = _before.doc.content.findDiffEnd(tr.doc.content)!;
-        const overlap = start - Math.min(a, b);
-        if (overlap > 0) {
-          a += overlap;
-          b += overlap;
-        }
-        return set.map(new Mapping([new StepMap([start, a - start, b - start])]), tr.doc);
+        // document, as the text when it first arrives: the marks, which are
+        // said in the terms of the history, are drawn anew there.
+        if (tr.getMeta(ySyncPluginKey))
+          return { marks: value.marks, set: decorate(state, value.marks, part) };
+        return { marks: value.marks, set: value.set.map(tr.mapping, tr.doc) };
       },
     },
-    props: { decorations: (state) => key.getState(state) },
+    props: { decorations: (state) => key.getState(state)?.set },
   });
 }
 

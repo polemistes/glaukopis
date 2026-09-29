@@ -17,6 +17,10 @@
   import { readBody } from '../model/text';
   import type { NodeRecord } from '../model/types';
   import { pieces } from '../pieces';
+  import { reviewing } from '$lib/review/context';
+  import { reviewDrawn } from '$lib/review/drawn';
+  import { markReview } from '$lib/review/editor';
+  import { marksIn } from '$lib/review/marks';
 
   export type Part = 'title' | 'body';
 
@@ -115,6 +119,23 @@
     return () => onready?.(id, null);
   });
 
+  // The changes that are reviewed, where they are in the name and the text.
+  const review = reviewing();
+  const marks = $derived(marksIn(review?.review?.marked ?? null, node.id));
+  const changedAsElement = $derived(review?.review?.marked.elements.get(node.id)?.[0] ?? null);
+  $effect(() => {
+    const given = marks;
+    if (!active) return;
+    // The editors are made a moment after the section is.
+    const frame = requestAnimationFrame(() => {
+      for (const editor of [titleEditor, bodyEditor]) {
+        const view = editor?.getView();
+        if (view) markReview(view, given);
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  });
+
   /** What is folded away, in words. */
   const away = $derived.by(() => {
     if (!hidden) return '';
@@ -156,6 +177,10 @@
   class:folded={!!hidden}
   data-section={node.id}
   data-folded={hidden ? '' : undefined}
+  data-review={changedAsElement?.kind}
+  data-change={changedAsElement?.change}
+  class:review-current={changedAsElement?.current}
+  style:--by={changedAsElement?.colour}
 >
   <div class="gutter">
     {#if foldable}
@@ -228,6 +253,7 @@
             ignored: project.ignored,
             html: node.titleHtml,
           }}
+          use:reviewDrawn={{ marks, part: 'title', fragment: title, html: node.titleHtml }}
         >
           {@html node.titleHtml}
         </div>
@@ -280,6 +306,7 @@
               ignored: project.ignored,
               html,
             }}
+            use:reviewDrawn={{ marks, part: 'body', fragment: body, html }}
           >
             {@html html}
           </div>

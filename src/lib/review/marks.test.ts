@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { EditorState } from 'prosemirror-state';
-import type { DecorationSet } from 'prosemirror-view';
 import type { MapChanges, Piece } from '$lib/history/types';
 import { bodySchema } from '$lib/editor/schema';
 import { blockIn, placeIn, reviewMarks } from './editor';
@@ -113,7 +112,7 @@ describe('in an editor', () => {
     let state = EditorState.create({ doc, plugins: [plugin] });
     const marks = marksIn(markChanges(group(changes()), null, colour), 'a');
     state = state.apply(state.tr.setMeta(plugin.spec.key!, marks));
-    const set = plugin.getState(state) as DecorationSet;
+    const set = plugin.getState(state)!.set;
     const found = set.find();
     const inline = found.filter((d) => d.from !== d.to);
     expect(inline).toHaveLength(1);

@@ -67,3 +67,11 @@
   outline-width: 2.5px;
   outline-color: var(--by);
 }
+
+/* An element changed as an element: added, moved, set out of the document. */
+section[data-review] > .gutter {
+  box-shadow: inset -3px 0 0 color-mix(in srgb, var(--by) 55%, transparent);
+}
+section[data-review].review-current > .gutter {
+  box-shadow: inset -4px 0 0 var(--by);
+}
