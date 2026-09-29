@@ -94,6 +94,8 @@ core-import-document-too-large = “{ $file }” is larger than 50 MB, which is 
 # The kind is the kind of file: Word (DOCX), plain text.
 core-import-document-unreadable = “{ $file }” could not be read as { $kind }. It may be damaged, or of another kind than its name says. Pandoc, which reads it, said: { $message }
 core-import-document-pandoc-unreadable = what Pandoc made of “{ $file }” could not be read: { $error }
+# The title of a map made of a document that has none, nor a name of its file.
+core-import-document-untitled = Untitled
 core-import-document-plain-text = plain text
 core-import-document-notebook = Jupyter notebook
 

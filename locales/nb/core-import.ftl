@@ -90,6 +90,7 @@ core-import-document-kind = «{ $file }» er ikke av en type som kan hentes inn 
 core-import-document-too-large = «{ $file }» er større enn 50 MB, og det er mer enn det som kan hentes inn som dokument.
 core-import-document-unreadable = «{ $file }» kunne ikke leses som { $kind }. Filen kan være skadet, eller av en annen type enn navnet sier. Pandoc, som leser den, sa: { $message }
 core-import-document-pandoc-unreadable = det Pandoc gjorde av «{ $file }», kunne ikke leses: { $error }
+core-import-document-untitled = Uten navn
 core-import-document-plain-text = ren tekst
 core-import-document-notebook = Jupyter-notatbok
 

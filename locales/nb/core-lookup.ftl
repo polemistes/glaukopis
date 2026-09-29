@@ -22,7 +22,7 @@ core-lookup-crossref-for-book = Crossref, for boken
 ## En tjeneste som ikke svarte som den skulle. Vises etter «nettverket: ».
 
 core-lookup-unreadable = { $service } svarte med noe som ikke kunne leses
-core-lookup-not-preprints = { $service } svarte med noe som ikke er en liste over preprinter
+core-lookup-not-preprints = { $service } svarte med noe som ikke er en liste over forhåndstrykk
 core-lookup-not-articles = { $service } svarte med noe som ikke er en liste over artikler
 core-lookup-could-not-answer = { $service } kunne ikke svare på spørsmålet: { $said }
 core-lookup-catalogue-could-not-answer = katalogen kunne ikke svare på spørsmålet: { $said }
@@ -35,9 +35,9 @@ core-lookup-not-a-record = { $service }: svaret var ikke en post som kunne leses
 
 ## Det den som tar en post, bør vite om den.
 
-core-lookup-arxiv-published-doi = Denne preprinten er publisert senere. DOI-en som er ført inn, er den publiserte versjonens: slå opp { $doi } for å vise til den i stedet.
-core-lookup-arxiv-published = Denne preprinten er publisert senere: { $journal }.
-core-lookup-arxiv-year-only = Bare året er oppgitt her. Et oppslag på arXiv:{ $id } gir dagen preprinten ble sendt inn.
+core-lookup-arxiv-published-doi = Dette forhåndstrykket er publisert senere. DOI-en som er ført inn, er den publiserte versjonens: slå opp { $doi } for å vise til den i stedet.
+core-lookup-arxiv-published = Dette forhåndstrykket er publisert senere: { $journal }.
+core-lookup-arxiv-year-only = Bare året er oppgitt her. Et oppslag på arXiv:{ $id } gir dagen forhåndstrykket ble sendt inn.
 core-lookup-crossref-in-book = Et søk gir ikke redaktørene og ISBN-et til boken. Det gjør et oppslag på DOI-en.
 core-lookup-book-unreadable = Det Crossref har om boken, kunne ikke leses: redaktørene kan mangle.
 core-lookup-book-not-fetched = Det Crossref har om boken, kunne ikke hentes: redaktørene kan mangle.

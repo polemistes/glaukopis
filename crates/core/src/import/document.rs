@@ -1941,7 +1941,8 @@ fn convert_with(
         }
     }
     if title.is_empty() {
-        title = vec![text_of(if stem.trim().is_empty() { "Untitled" } else { stem.trim() })];
+        let untitled = tr!("core-import-document-untitled");
+        title = vec![text_of(if stem.trim().is_empty() { &untitled } else { stem.trim() })];
     } else if from_properties {
         // The title as it is set at the top of the page is not part of the
         // text, nor a part of the document: as a paragraph, or as a heading
