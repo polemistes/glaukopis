@@ -513,3 +513,28 @@ describe('likeness', () => {
     expect(likeness('', 'a')).toBe(0);
   });
 });
+
+describe('a map much written anew', () => {
+  it('is grouped in little time', () => {
+    const passages: Passage[] = [];
+    const sentence = (n: number) =>
+      `Sentence ${n} of the passage says something about wrath and song. `;
+    for (let i = 0; i < 2000; i++) passages.push(written('a', [i], sentence(i).repeat(6)));
+    for (let i = 0; i < 2000; i++)
+      passages.push(deleted('b', [i], sentence(i + 5000).repeat(6)));
+    for (let i = 0; i < 1000; i++)
+      passages.push(
+        passage('c', [i], [
+          same(sentence(i).repeat(3)),
+          added('New words here. '),
+          same(sentence(i).repeat(3)),
+        ]),
+      );
+    const started = performance.now();
+    const found = group(changes(passages), { language: 'en', sequence: ['a', 'b', 'c'] });
+    const took = performance.now() - started;
+    expect(found.length).toBeGreaterThan(1000);
+    expect(took).toBeLessThan(2000);
+    console.log(`grouped ${passages.length} passages into ${found.length} changes in ${Math.round(took)} ms`);
+  });
+});

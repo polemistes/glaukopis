@@ -417,22 +417,38 @@ function words(text: string): string[] {
 
 /** How nearly two texts have the same words: from nought to one. */
 export function likeness(a: string, b: string): number {
-  const x = words(a);
-  const y = words(b);
-  if (!x.length && !y.length) return a.trim() === b.trim() ? 1 : 0;
-  if (!x.length || !y.length) return 0;
-  const counts = new Map<string, number>();
-  for (const w of x) counts.set(w, (counts.get(w) ?? 0) + 1);
-  let common = 0;
-  for (const w of y) {
-    const n = counts.get(w) ?? 0;
-    if (n > 0) {
-      common++;
-      counts.set(w, n - 1);
-    }
-  }
-  return (2 * common) / (x.length + y.length);
+  return alike(bagOf(a), bagOf(b));
 }
+
+/** The words of a text, each with how often it stands in it. */
+interface Bag {
+  text: string;
+  count: number;
+  words: Map<string, number>;
+}
+
+function bagOf(text: string): Bag {
+  const list = words(text);
+  const bag = new Map<string, number>();
+  for (const w of list) bag.set(w, (bag.get(w) ?? 0) + 1);
+  return { text, count: list.length, words: bag };
+}
+
+function alike(x: Bag, y: Bag): number {
+  if (!x.count && !y.count) return x.text.trim() === y.text.trim() ? 1 : 0;
+  if (!x.count || !y.count) return 0;
+  const [small, large] = x.words.size <= y.words.size ? [x, y] : [y, x];
+  let common = 0;
+  for (const [w, n] of small.words) common += Math.min(n, large.words.get(w) ?? 0);
+  return (2 * common) / (x.count + y.count);
+}
+
+/**
+ * How many passages deleted and written are compared at most, to find the
+ * paragraphs moved: beyond it, as where most of a map was written anew,
+ * what was moved is shown as deleted and written.
+ */
+const COMPARED = 40_000;
 
 /** How nearly the same a passage deleted and one written must be to be a paragraph moved. */
 const MOVED = 0.8;
@@ -529,14 +545,27 @@ export function group(map: MapChanges, options: Options = {}): Change[] {
   const removed = joined.filter((c) => c.kind === 'removed' && c.stretches.every((s) => s.whole));
   const added = joined.filter((c) => c.kind === 'added' && c.stretches.every((s) => s.whole));
   const pairs: { from: Change; to: Change; like: number }[] = [];
+  // Only those of nearly the same length are compared: the written ones by their length.
+  const written = added
+    .map((to) => ({ to, bag: bagOf(textOf(to, 'added')) }))
+    .sort((x, y) => x.bag.text.length - y.bag.text.length);
+  let compared = 0;
   for (const from of removed) {
-    const a = textOf(from, 'removed');
-    for (const to of added) {
-      const b = textOf(to, 'added');
-      const shorter = Math.min(a.length, b.length);
-      const longer = Math.max(a.length, b.length);
-      if (!longer || shorter / longer < MOVED) continue;
-      const like = likeness(a, b);
+    const a = bagOf(textOf(from, 'removed'));
+    const least = a.text.length * MOVED;
+    const most = a.text.length / MOVED;
+    let low = 0;
+    let high = written.length;
+    while (low < high) {
+      const mid = (low + high) >> 1;
+      if (written[mid].bag.text.length < least) low = mid + 1;
+      else high = mid;
+    }
+    for (let i = low; i < written.length && written[i].bag.text.length <= most; i++) {
+      if (++compared > COMPARED) break;
+      const { to, bag } = written[i];
+      if (!bag.text.length && !a.text.length) continue;
+      const like = alike(a, bag);
       if (like >= MOVED) pairs.push({ from, to, like });
     }
   }
