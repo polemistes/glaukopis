@@ -12,6 +12,9 @@ pub struct SystemInfo {
     pub version: &'static str,
     pub data_dir: String,
     pub platform: &'static str,
+    /// The name the system gives the user: the history of a project names
+    /// them so where they have not given a name of their own.
+    pub user: String,
 }
 
 #[tauri::command]
@@ -20,7 +23,26 @@ pub fn system_info(state: State<'_, AppState>) -> CommandResult<SystemInfo> {
         version: env!("CARGO_PKG_VERSION"),
         data_dir: state.data.root().display().to_string(),
         platform: std::env::consts::OS,
+        user: user_name(),
     })
+}
+
+/// The user's full name where the system keeps one, and their login otherwise.
+fn user_name() -> String {
+    let login = std::env::var("USER").or_else(|_| std::env::var("USERNAME")).unwrap_or_default();
+    #[cfg(unix)]
+    if let Ok(passwd) = std::fs::read_to_string("/etc/passwd") {
+        let full = passwd
+            .lines()
+            .map(|line| line.split(':').collect::<Vec<_>>())
+            .find(|fields| fields.first() == Some(&login.as_str()))
+            .and_then(|fields| fields.get(4).map(|gecos| gecos.split(',').next().unwrap_or("").trim().to_owned()))
+            .filter(|name| !name.is_empty());
+        if let Some(full) = full {
+            return full;
+        }
+    }
+    login
 }
 
 #[tauri::command]

@@ -101,19 +101,31 @@ pub fn project_load(state: State<'_, AppState>, id: String) -> CommandResult<Loa
     })
 }
 
+/// Adds a change to the log: made here or received from another, and when it
+/// was written, in milliseconds since 1970 (now, where it is not said).
 #[tauri::command(async)]
-pub fn project_append(state: State<'_, AppState>, id: String, update: String) -> CommandResult<()> {
-    Ok(state.projects.append(&id, &decode(&update)?)?)
+pub fn project_append(
+    state: State<'_, AppState>,
+    id: String,
+    update: String,
+    here: Option<bool>,
+    time: Option<i64>,
+) -> CommandResult<()> {
+    let time = time.unwrap_or_else(glaukopis_core::history::now_ms);
+    Ok(state.projects.append_change(&id, &decode(&update)?, here.unwrap_or(true), time)?)
 }
 
+/// Saves the whole state. With `keep`, where the full history of the project
+/// is on, what the log held is kept in it.
 #[tauri::command(async)]
 pub fn project_save_state(
     state: State<'_, AppState>,
     id: String,
     document: String,
     summary: Option<Summary>,
+    keep: Option<bool>,
 ) -> CommandResult<ProjectInfo> {
-    Ok(state.projects.save_state(&id, &decode(&document)?, summary)?)
+    Ok(state.projects.save_state_keeping(&id, &decode(&document)?, summary, keep.unwrap_or(false))?)
 }
 
 /// Remembers where the user was in the project.

@@ -11,6 +11,7 @@ pub mod export;
 pub mod formats;
 pub mod found;
 pub mod fsutil;
+pub mod history;
 pub mod i18n;
 pub mod import;
 pub mod library;

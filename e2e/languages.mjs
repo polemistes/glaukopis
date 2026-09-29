@@ -162,6 +162,32 @@ try {
   await app.keys(['Control', 'p']);
   await sleep(300);
 
+  // ---- the history of the project ----
+  await app.keys(['Control', 'Shift', 'h']);
+  await app.waitFor('.history-panel', 8000);
+  await sleep(300);
+  await english('the history, before it is kept');
+  await app.clickText('.history-panel button', 'Ta vare på historikken');
+  await app.waitFor('.history-panel .moments li', 15000);
+  await sleep(400);
+  await english('the moments of the history');
+  const wheel = '.history-panel header button[aria-label="Innstillinger for historikken"]';
+  await app.click(wheel);
+  await app.waitFor('.history-panel input[type="number"]', 8000);
+  await sleep(300);
+  await english('the settings of the history');
+  await app.screenshot('languages-4b-history');
+  await app.click(wheel);
+  await app.waitFor('.history-panel .moments li', 8000);
+  await app.click('.history-panel .moments li button');
+  await app.waitFor('.past', 15000);
+  await sleep(600);
+  await english('the map as it was');
+  await app.clickText('.past .bar button', 'Tilbake til nå');
+  await app.waitGone('.past', 8000);
+  await app.keys(['Control', 'Shift', 'h']);
+  await sleep(300);
+
   // ---- the library, the pictures, the settings ----
   await app.keys(['Control', '2']);
   await app.waitFor('.reference-row, .row', 8000);
