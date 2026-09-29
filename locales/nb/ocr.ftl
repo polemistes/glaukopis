@@ -55,6 +55,7 @@ ocr-searchable-has-text = { $pages ->
     [one] Siden har tekst: PDF-en er søkbar allerede.
    *[other] Alle sidene har tekst: PDF-en er søkbar allerede.
 }
+ocr-searchable-damaged = PDF-en kunne ikke tas fra hverandre for å endres: den kan være skadet. Teksten kan likevel tas inn i et prosjekt som et kart.
 ocr-searchable-make = Gjør søkbar
 ocr-searchable-done = { $count ->
     [one] PDF-en er søkbar: én side ble lest

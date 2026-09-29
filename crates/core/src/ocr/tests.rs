@@ -487,6 +487,37 @@ fn what_is_not_a_pdf_is_said_to_be_none() {
 }
 
 #[test]
+fn a_pdf_that_opens_without_a_password_but_is_locked_is_read_and_not_changed() {
+    let Some(kit) = kit(true) else { return };
+    let scan = kit.scan("scan.pdf");
+    let mut doc = Document::load(&scan).unwrap();
+    if doc.trailer.get(b"ID").is_err() {
+        let id = Object::String(b"0123456789abcdef".to_vec(), lopdf::StringFormat::Hexadecimal);
+        doc.trailer.set("ID", vec![id.clone(), id]);
+    }
+    // Locked against being changed, with a password for that; none to open it.
+    let version = lopdf::EncryptionVersion::V2 {
+        document: &doc,
+        owner_password: "owner",
+        user_password: "",
+        key_length: 128,
+        permissions: lopdf::Permissions::default(),
+    };
+    let state = lopdf::EncryptionState::try_from(version).unwrap();
+    doc.encrypt(&state).unwrap();
+    let locked = kit.path("locked.pdf");
+    doc.save(&locked).unwrap();
+
+    let looked = look(&locked, &kit.tools).unwrap();
+    assert_eq!((looked.locked, looked.searchable, looked.pages, looked.with_text), (true, false, 1, 0));
+    let read = read_pdf(&locked, &kit.tools, &kit.work(), &kit.asked(), None, &mut nothing, &never()).unwrap();
+    assert!(has(&read.pages[0].paragraphs.join(" "), "Milman Parry"), "{:?}", read.pages);
+    let err = make_searchable(&locked, &kit.tools, &kit.work(), &kit.asked(), &mut nothing, &never()).unwrap_err();
+    assert_eq!(err.kind(), "locked");
+    assert_eq!(err.to_string(), tr!("ocr-searchable-locked"));
+}
+
+#[test]
 fn a_locked_pdf_is_not_made_searchable() {
     // Encryption named in the trailer is enough for lopdf to take the file as locked.
     let mut doc = Document::with_version("1.7");

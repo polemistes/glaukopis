@@ -135,7 +135,8 @@
     {:else if phase === 'asking' && looked}
       {#if !looked.searchable}
         <p class="failure selectable" role="alert">
-          <CircleAlert size={15} /> <span>{t('ocr-searchable-locked')}</span>
+          <CircleAlert size={15} />
+          <span>{looked.locked ? t('ocr-searchable-locked') : t('ocr-searchable-damaged')}</span>
         </p>
       {:else}
         <p class="about">{about}</p>

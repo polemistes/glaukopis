@@ -55,6 +55,7 @@ ocr-searchable-has-text = { $pages ->
     [one] The page has text: the PDF can be searched already.
    *[other] Every page has text: the PDF can be searched already.
 }
+ocr-searchable-damaged = The PDF could not be taken apart to be changed: it may be damaged. Its text can still be brought into a project as a map.
 ocr-searchable-make = Make searchable
 ocr-searchable-done = { $count ->
     [one] The PDF is searchable: one page was read

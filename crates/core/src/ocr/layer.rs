@@ -32,7 +32,9 @@ pub struct Layer {
     /// The number each page has in print, where the file tells it: `xiv`,
     /// `A-3`. The number of the page, counted from one, where it does not.
     pub labels: Vec<String>,
-    /// Whether the file is locked with a password. Its text is then not read.
+    /// Whether the file is locked (encrypted): what is added to it would have
+    /// to be locked in the same way. One that opens without a password has
+    /// its text read; one that asks for a password has not.
     pub locked: bool,
     /// The pages that have the text that was laid over them here.
     pub laid: Vec<bool>,
@@ -292,10 +294,13 @@ fn keep(layer: &Mutex<Layer>, change: impl FnOnce(&mut Layer)) {
 
 fn read_into(bytes: &[u8], layer: &Mutex<Layer>) {
     let mut doc = match catch_unwind(|| Document::load_mem(bytes)) {
+        // It asks for a password.
         Ok(Ok(doc)) if doc.is_encrypted() => return keep(layer, |l| l.locked = true),
         Ok(Ok(doc)) => doc,
         _ => return,
     };
+    // It opened without one, and is locked all the same.
+    let locked = doc.was_encrypted();
     // The pictures of a scan are most of the file and of no use here.
     for object in doc.objects.values_mut() {
         if let Object::Stream(stream) = object
@@ -315,6 +320,7 @@ fn read_into(bytes: &[u8], layer: &Mutex<Layer>) {
         l.labels = labels;
         l.pages = vec![None; count];
         l.laid = laid;
+        l.locked = locked;
     });
     for number in 1..=count {
         let lines = page_lines(&doc, number as u32);

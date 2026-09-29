@@ -78,8 +78,11 @@ pub struct Looked {
     pub with_text: usize,
     /// The title the file gives itself, where it looks like one.
     pub title: Option<String>,
-    /// Whether it can be made searchable: a PDF that is not locked.
+    /// Whether it can be made searchable: a PDF that is not locked, and can
+    /// be taken apart to be changed.
     pub searchable: bool,
+    /// Whether it is locked (encrypted), and cannot be made searchable for that.
+    pub locked: bool,
 }
 
 /// A page with what was read of it.
@@ -270,7 +273,7 @@ pub fn look(path: &Path, tools: &Tools) -> Result<Looked> {
     let with_text = (0..pages).filter(|i| layer.has_text(*i)).count();
     let title = crate::import::pdf::identify(path).ok().and_then(|facts| facts.title);
     let searchable = !layer.locked && !layer.pages.is_empty();
-    Ok(Looked { file, picture: false, pages, with_text, title, searchable })
+    Ok(Looked { file, picture: false, pages, with_text, title, searchable, locked: layer.locked })
 }
 
 // ---------------------------------------------------------------------------

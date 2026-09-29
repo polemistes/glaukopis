@@ -32,8 +32,10 @@ export interface Looked {
   withText: number;
   /** The title the file gives itself, where it looks like one. */
   title: string | null;
-  /** Whether it can be made searchable: a PDF that is not locked. */
+  /** Whether it can be made searchable: a PDF that is not locked, and can be taken apart to be changed. */
   searchable: boolean;
+  /** Whether it is locked (encrypted), and cannot be made searchable for that. */
+  locked: boolean;
 }
 
 /** What came of making a PDF of the library searchable. */
