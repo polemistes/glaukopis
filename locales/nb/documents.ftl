@@ -13,7 +13,7 @@ documents-unread = Filen kunne ikke leses.
 documents-title = Tittel
 documents-title-hint-map = Navnet på kartet, og på elementet i midten av det.
 documents-title-hint-project = Navnet på prosjektet, på kartet i det, og på elementet i midten av kartet.
-documents-untitled = Uten tittel
+documents-untitled = Uten navn
 
 ## Det dokumentet har, under antallet av hvert.
 
