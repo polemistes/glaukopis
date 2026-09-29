@@ -22,6 +22,7 @@ pub mod pictures;
 pub mod projects;
 pub mod settings;
 pub mod sharing;
+pub mod spelling;
 pub mod styles;
 
 pub use error::{Error, Result};

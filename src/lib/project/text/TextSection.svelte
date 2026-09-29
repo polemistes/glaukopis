@@ -10,6 +10,7 @@
   import { hydrate } from '$lib/figures/hydrate.svelte';
   import { pressedFound } from '$lib/found/found.svelte';
   import { t } from '$lib/i18n';
+  import { drawnWordAt, spellingMarks } from '$lib/spelling/drawn';
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import type { Other, Project } from '../model/project.svelte';
@@ -104,6 +105,8 @@
   const includedWords = $derived(
     included ? pieces((m) => t('text-include', m), { map: included.name }) : [],
   );
+  /** The language of the map, whose spelling the text is checked by. */
+  const language = $derived(project.map(node.map)?.document.language ?? null);
 
   $effect(() => {
     const id = node.id;
@@ -129,6 +132,8 @@
       return;
     }
     if (active) return;
+    // A misspelt word has its menu where it stands.
+    if (event.button === 2 && drawnWordAt(event.clientX, event.clientY)) return;
     // A citation that was found is gone through where it is pressed, as a citation is changed.
     if (part === 'body' && event.button === 0 && pressedFound(event.target, node.map)) {
       event.preventDefault();
@@ -213,7 +218,19 @@
       {:else if node.titleHtml}
         <!-- The name holds only the marks a name can have; its text is escaped. -->
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        <div class="prose title static">{@html node.titleHtml}</div>
+        <div
+          class="prose title static"
+          use:spellingMarks={{
+            project,
+            element: node.id,
+            part: 'title',
+            language,
+            ignored: project.ignored,
+            html: node.titleHtml,
+          }}
+        >
+          {@html node.titleHtml}
+        </div>
       {:else}
         <div class="prose title static unnamed">
           {level === 0 ? t('text-title') : t('text-name')}
@@ -252,7 +269,18 @@
         {:else if html}
           <!-- Made by blocksHtml, which escapes all text. -->
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-          <div class="prose body static" use:hydrate={{ html, project, element: node.id }}>
+          <div
+            class="prose body static"
+            use:hydrate={{ html, project, element: node.id }}
+            use:spellingMarks={{
+              project,
+              element: node.id,
+              part: 'body',
+              language,
+              ignored: project.ignored,
+              html,
+            }}
+          >
             {@html html}
           </div>
         {:else}

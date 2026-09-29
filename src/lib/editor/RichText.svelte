@@ -26,6 +26,8 @@
   import { hooksOf, viewsByDom } from './ui.svelte';
   import { pressedFound } from '$lib/found/found.svelte';
   import { searchMarks } from '$lib/search/decorations';
+  import { spellingOptions } from '$lib/spelling/menu';
+  import { lookAgain, spellingPlugin } from '$lib/spelling/plugin';
 
   interface Props {
     project: Project;
@@ -68,6 +70,23 @@
 
   let host = $state<HTMLDivElement>();
   let view: EditorView | undefined;
+
+  /** The element whose name or text this is: its map has the language the spelling is checked in. */
+  const owner = $derived(element ?? project.ownerOf(fragment));
+  const language = $derived(project.map(project.node(owner)?.map)?.document.language ?? null);
+
+  // The spelling is looked at again when the language of the map changes, or
+  // the words ignored in the project do.
+  let lookedWith: { language: string | null; ignored: ReadonlySet<string> } | null = null;
+  $effect(() => {
+    const now = { language, ignored: project.ignored };
+    untrack(() => {
+      const before = lookedWith;
+      lookedWith = now;
+      if (view && before && (before.language !== now.language || before.ignored !== now.ignored))
+        lookAgain(view);
+    });
+  });
 
   function cite(v: EditorView, typed: boolean) {
     const from = v.state.selection.from;
@@ -243,6 +262,12 @@
         placeholderPlugin(() => placeholder),
         // What a search found, where the editor is to draw it: see `search/decorations.ts`.
         searchMarks(),
+        spellingPlugin(
+          spellingOptions(
+            () => project,
+            () => owner,
+          ),
+        ),
       ];
       return new EditorView(target, {
         state: EditorState.create({ schema, plugins }),
@@ -260,7 +285,8 @@
             : {},
         attributes: {
           class: `prose ${kind}`,
-          spellcheck: 'true',
+          // Spelling is checked by the application, in the language of the map (ADR 0019).
+          spellcheck: 'false',
         },
         handlePaste: (v, event) => kind === 'body' && pasted(v, event),
         // A citation that was found is gone through where it is pressed.

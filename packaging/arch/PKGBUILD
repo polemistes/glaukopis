@@ -11,7 +11,9 @@ pkgname=(glaukopis glaukopis-server)
 pkgver=0.1.0
 pkgrel=1
 arch=(x86_64 aarch64)
-license=(GPL-3.0-or-later CC-BY-SA-3.0)
+# The program, the owl, and the dictionaries (see resources/dictionaries/README.md).
+license=(GPL-3.0-or-later CC-BY-SA-3.0
+  CC-BY-4.0 GPL-2.0-only LGPL-2.1-or-later LicenseRef-SCOWL LicenseRef-CLARIN-PUB-BY)
 makedepends=(cargo nodejs pnpm rsync webkit2gtk-4.1 gtk3 openssl sqlite)
 checkdepends=(pandoc-cli typst tesseract tesseract-data-eng)
 # Link-time optimisation is set in Cargo.toml; that of makepkg breaks the
@@ -94,6 +96,9 @@ package_glaukopis() {
   # The owl has a licence of its own.
   install -Dm644 resources/brand/README.md "$pkgdir/usr/share/licenses/glaukopis/the-owl.md"
   install -Dm644 resources/brand/LICENSE "$pkgdir/usr/share/licenses/glaukopis/CC-BY-SA-3.0.txt"
+  # So have the dictionaries, each its own.
+  install -Dm644 -t "$pkgdir/usr/share/licenses/glaukopis/dictionaries" \
+    resources/dictionaries/{README.md,README_NO.txt,README_en_US.txt,README_en_GB.txt,COPYING,LGPL-2.1.txt,license.txt}
 }
 
 package_glaukopis-server() {

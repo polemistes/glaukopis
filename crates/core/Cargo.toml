@@ -32,6 +32,8 @@ encoding_rs = "0.8"
 fluent-bundle = "0.16"
 unic-langid = "0.9"
 sys-locale = "0.3"
+spellbook = "0.4"
+icu_properties = "2"
 
 [features]
 # Compile SQLite in, where the system has none to link to.

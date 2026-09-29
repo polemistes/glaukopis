@@ -142,6 +142,13 @@ pub fn run() {
             commands::ocr::ocr_stop,
             commands::ocr::ocr_searchable,
             commands::ocr::ocr_picture,
+            commands::spelling::spelling_languages,
+            commands::spelling::spelling_prepare,
+            commands::spelling::spelling_check,
+            commands::spelling::spelling_suggest,
+            commands::spelling::spelling_words,
+            commands::spelling::spelling_add_word,
+            commands::spelling::spelling_remove_word,
         ])
         .run(tauri::generate_context!())
         .expect("the application could not start");

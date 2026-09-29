@@ -17,6 +17,8 @@ import { notePlace, type CiteItem, type CiteMode } from './schema';
 import { editorUi, hooksOf, OPEN, passing, SHOW, viewsByDom, type ShowIn } from './ui.svelte';
 import { CrossRefView, FormulaView } from '$lib/figures/views.svelte';
 import { markIn, searchMarks } from '$lib/search/decorations';
+import { spellingOptions } from '$lib/spelling/menu';
+import { spellingPlugin } from '$lib/spelling/plugin';
 
 export { hooksOf };
 
@@ -319,9 +321,16 @@ export class FootnoteView implements NodeView {
           keymap(baseKeymap),
           placeholder(() => t('editor-note-placeholder')),
           searchMarks(),
+          // In the language of the map of the element the note is in.
+          spellingPlugin(
+            spellingOptions(
+              () => currentProject(),
+              () => hooks?.element,
+            ),
+          ),
         ],
       }),
-      attributes: { class: 'prose note', spellcheck: 'true' },
+      attributes: { class: 'prose note', spellcheck: 'false' },
       // A citation that was found is gone through where it is pressed.
       handleClick: (_v, _pos, event) =>
         event.button === 0 &&
