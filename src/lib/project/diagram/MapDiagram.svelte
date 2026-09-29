@@ -7,7 +7,7 @@
   import { widthFor } from '$lib/editor/commands';
   import type { KeyAction } from '$lib/editor/plugins';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
-  import { plural } from '$lib/library/format';
+  import { t } from '$lib/i18n';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import type { RectLike } from '$lib/ui/floating';
   import { openContextMenu } from '$lib/ui/menu.svelte';
@@ -23,6 +23,7 @@
   import type { Project } from '../model/project.svelte';
   import { isAncestor, subtree } from '../model/tree';
   import type { Position } from '../model/types';
+  import { pieces } from '../pieces';
   import DiagramNode from './DiagramNode.svelte';
   import {
     associationCurve,
@@ -372,11 +373,11 @@
         ids: ordered,
         grab: { x: start.x - (p?.x ?? start.x), y: start.y - (p?.y ?? start.y) },
       };
-      const name = project.node(id)?.title || 'Untitled';
+      const name = project.node(id)?.title || t('project-untitled');
       return {
         kind: 'elements',
         data,
-        label: ordered.length === 1 ? name : plural(ordered.length, 'element'),
+        label: ordered.length === 1 ? name : t('project-elements', { count: ordered.length }),
       };
     });
     if (!additive && was) {
@@ -821,8 +822,8 @@
       const world = toWorld(event.clientX, event.clientY);
       openContextMenu(event, [
         {
-          label: 'New loose element here',
-          hint: 'A thought that has no place yet',
+          label: t('diagram-new-loose'),
+          hint: t('diagram-new-loose-hint'),
           action: () => {
             project.checkpoint();
             const id = project.addLoose(mapId, world);
@@ -834,10 +835,10 @@
           },
         },
         { kind: 'separator' },
-        { label: 'Show the whole map', shortcut: 'Ctrl+0', action: fit },
+        { label: t('diagram-show-all'), shortcut: 'Ctrl+0', action: fit },
         {
-          label: 'Tidy the whole map',
-          hint: 'Every element goes back to its automatic place',
+          label: t('diagram-tidy'),
+          hint: t('diagram-tidy-hint'),
           action: () => {
             project.checkpoint();
             project.tidy(tree.sequence);
@@ -854,6 +855,12 @@
   }
 
   const empty = $derived(tree.sequence.length <= 1);
+
+  // What is said at the foot of the map, with the keys shown as keys.
+  const emptyHint = $derived(
+    pieces((m) => t('diagram-hint-empty', m), { tab: 'Tab', enter: 'Enter' }),
+  );
+  const linkingHint = $derived(pieces((m) => t('diagram-hint-linking', m), { esc: 'Esc' }));
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
@@ -863,7 +870,7 @@
   class:panning
   class:linking={!!linking || !!linkFrom}
   role="application"
-  aria-label="Map"
+  aria-label={t('diagram-map')}
   tabindex="0"
   use:dropTarget={{
     accepts: (p) =>
@@ -924,8 +931,8 @@
           class="link-label editing"
           style:transform="translate(-50%, -50%) translate({c.middle.x}px, {c.middle.y}px)"
           bind:value={labelling.value}
-          placeholder="How they are related"
-          aria-label="Label of the association"
+          placeholder={t('project-link-placeholder')}
+          aria-label={t('project-link-label')}
           onblur={commitLabel}
           onkeydown={(e) => {
             e.stopPropagation();
@@ -1000,19 +1007,24 @@
 
   {#if empty && !renaming}
     <div class="hint">
-      <kbd>Tab</kbd> adds an idea under the one selected · <kbd>Enter</kbd> adds one beside it · double-click
-      to write
+      {#each emptyHint as piece, i (i)}
+        {#if piece.name}<kbd>{piece.text}</kbd>{:else}{piece.text}{/if}
+      {/each}
     </div>
   {/if}
   {#if linkFrom}
-    <div class="hint strong">Click the element to associate with · <kbd>Esc</kbd> to leave it</div>
+    <div class="hint strong">
+      {#each linkingHint as piece, i (i)}
+        {#if piece.name}<kbd>{piece.text}</kbd>{:else}{piece.text}{/if}
+      {/each}
+    </div>
   {/if}
 
-  <div class="controls" role="group" aria-label="View">
+  <div class="controls" role="group" aria-label={t('diagram-view')}>
     <button
       type="button"
-      aria-label="Zoom out"
-      use:tooltip={{ text: 'Zoom out', shortcut: 'Ctrl+−', side: 'top' }}
+      aria-label={t('diagram-zoom-out')}
+      use:tooltip={{ text: t('diagram-zoom-out'), shortcut: 'Ctrl+−', side: 'top' }}
       onclick={() => zoomBy(1 / 1.25)}
     >
       <Minus size={14} />
@@ -1020,16 +1032,16 @@
     <button
       type="button"
       class="level"
-      aria-label="Actual size"
-      use:tooltip={{ text: 'Actual size', side: 'top' }}
+      aria-label={t('diagram-actual-size')}
+      use:tooltip={{ text: t('diagram-actual-size'), side: 'top' }}
       onclick={() => zoomBy(1 / cam.k)}
     >
-      {Math.round(cam.k * 100)}%
+      {t('diagram-zoom', { percent: Math.round(cam.k * 100) })}
     </button>
     <button
       type="button"
-      aria-label="Zoom in"
-      use:tooltip={{ text: 'Zoom in', shortcut: 'Ctrl+=', side: 'top' }}
+      aria-label={t('diagram-zoom-in')}
+      use:tooltip={{ text: t('diagram-zoom-in'), shortcut: 'Ctrl+=', side: 'top' }}
       onclick={() => zoomBy(1.25)}
     >
       <Plus size={14} />
@@ -1037,8 +1049,8 @@
     <span class="rule"></span>
     <button
       type="button"
-      aria-label="Show the whole map"
-      use:tooltip={{ text: 'Show the whole map', shortcut: 'Ctrl+0', side: 'top' }}
+      aria-label={t('diagram-show-all')}
+      use:tooltip={{ text: t('diagram-show-all'), shortcut: 'Ctrl+0', side: 'top' }}
       onclick={fit}
     >
       <Maximize size={14} />

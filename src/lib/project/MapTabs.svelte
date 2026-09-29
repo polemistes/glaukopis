@@ -9,7 +9,7 @@
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import { goThrough } from '$lib/found/found.svelte';
   import { countFound } from '$lib/found/gather';
-  import { plural } from '$lib/library/format';
+  import { t } from '$lib/i18n';
   import { confirm } from '$lib/ui/confirm.svelte';
   import { drag, dropTarget, startDrag } from '$lib/ui/drag.svelte';
   import { openContextMenu } from '$lib/ui/menu.svelte';
@@ -51,7 +51,7 @@
 
   async function add() {
     project.checkpoint();
-    const id = project.createMap('Untitled');
+    const id = project.createMap(t('project-untitled'));
     project.checkpoint();
     onselect(id);
     const made = project.map(id);
@@ -61,9 +61,9 @@
   async function remove(m: MapRecord) {
     const count = project.tree(m.id).sequence.length;
     const ok = await confirm({
-      title: `Delete the map “${m.name}”?`,
-      message: `${plural(count, 'element')} and the text in ${count === 1 ? 'it' : 'them'} will go. This can be undone while the project is open.`,
-      confirm: 'Delete map',
+      title: t('project-delete-map-title', { name: m.name }),
+      message: t('project-delete-map-message', { count }),
+      confirm: t('project-delete-map'),
       danger: true,
     });
     if (!ok) return;
@@ -78,11 +78,11 @@
   function context(event: MouseEvent, m: MapRecord) {
     const found = countFound(project, m.id);
     openContextMenu(event, [
-      { label: 'Rename', icon: Pencil, action: () => rename(m) },
+      { label: t('common-rename'), icon: Pencil, action: () => rename(m) },
       {
-        label: 'Duplicate',
+        label: t('project-duplicate'),
         icon: Copy,
-        hint: 'A copy to work on; this one stays as it is',
+        hint: t('project-duplicate-hint'),
         action: () => {
           project.checkpoint();
           const id = project.duplicateMap(m.id);
@@ -91,24 +91,22 @@
         },
       },
       {
-        label: 'Open beside',
+        label: t('project-open-beside'),
         icon: Columns2,
-        hint: 'Two maps side by side, to move elements between them',
+        hint: t('project-open-beside-hint'),
         disabled: m.id === current && project.maps.length < 2,
         action: () => onbeside(m.id),
       },
       { kind: 'separator' },
       {
-        label: 'Citations that were found…',
+        label: t('project-found'),
         icon: TextSearch,
-        hint: found
-          ? `${found.toLocaleString()} to go through, and make citations of`
-          : 'And text that looks like citations',
+        hint: found ? t('project-found-hint', { count: found }) : t('project-found-none'),
         action: () => goThrough(m.id),
       },
       { kind: 'separator' },
       {
-        label: 'Delete map',
+        label: t('project-delete-map'),
         icon: Trash2,
         danger: true,
         disabled: project.maps.length <= 1,
@@ -125,21 +123,23 @@
     if (made.length) {
       toasts.show({
         kind: 'ok',
-        message: `${copy ? 'Copied' : 'Moved'} to “${m.name}”`,
-        action: { label: 'Show', run: () => onselect(m.id) },
+        message: copy
+          ? t('project-copied-to', { name: m.name })
+          : t('project-moved-to', { name: m.name }),
+        action: { label: t('common-show'), run: () => onselect(m.id) },
       });
     }
   }
 </script>
 
-<div class="tabs" role="tablist" aria-label="Maps">
+<div class="tabs" role="tablist" aria-label={t('project-maps')}>
   {#each project.maps as m (m.id)}
     {#if naming?.id === m.id}
       <div class="tab current naming">
         <input
           bind:this={input}
           bind:value={naming.value}
-          aria-label="Name of the map"
+          aria-label={t('project-map-name')}
           size={Math.max(8, naming.value.length + 1)}
           onblur={commit}
           onkeydown={(e) => {
@@ -188,8 +188,8 @@
   <button
     type="button"
     class="add"
-    aria-label="New map"
-    use:tooltip={{ text: 'New map' }}
+    aria-label={t('project-new-map')}
+    use:tooltip={{ text: t('project-new-map') }}
     use:dropTarget={{
       accepts: (p) => p.kind === 'map',
       ondrop: (e) => project.moveMap(e.payload.data as string, null),
@@ -202,15 +202,15 @@
     <button
       type="button"
       class="add"
-      aria-label="A map from a document…"
-      use:tooltip={{ text: 'A map from a document…' }}
+      aria-label={t('project-map-from-document')}
+      use:tooltip={{ text: t('project-map-from-document') }}
       onclick={ondocument}
     >
       <FileInput size={15} />
     </button>
   {/if}
   {#if drag.payload?.kind === 'elements'}
-    <span class="dropping">Drop on a map to move there · hold Ctrl to copy</span>
+    <span class="dropping">{t('project-drop-on-map')}</span>
   {/if}
 </div>
 

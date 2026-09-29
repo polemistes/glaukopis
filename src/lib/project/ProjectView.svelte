@@ -46,6 +46,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import { t } from '$lib/i18n';
   import MapDiagram, { type Camera } from './diagram/MapDiagram.svelte';
   import MapTabs from './MapTabs.svelte';
   import type { Project } from './model/project.svelte';
@@ -139,7 +140,8 @@
       const found = takeWaiting(ownId);
       if (found && p.map(found)) goThrough(found);
     } catch (error) {
-      failure = describeError(error) ?? 'The project could not be opened.';
+      // What is said of it is looked up when it is shown, in the language of that moment.
+      failure = describeError(error) ?? '';
     }
   });
 
@@ -179,24 +181,16 @@
       // There is nothing here to keep.
       projects.remove(ownId).catch(() => {});
       notify(
-        why === 'deleted'
-          ? 'The project is no longer shared'
-          : 'You are no longer among the collaborators',
-        'It had not been fetched, so there is nothing of it on this computer.',
+        why === 'deleted' ? t('project-unshared') : t('project-left-out'),
+        t('project-unshared-unfetched'),
       );
       router.go({ view: 'projects' });
       return;
     }
     void confirm({
-      title:
-        why === 'deleted'
-          ? 'This project is no longer shared'
-          : 'You are no longer among the collaborators',
-      message:
-        why === 'deleted'
-          ? 'The one who shared it has taken it off the server. You keep the project as it is now, and can go on working on it on your own.'
-          : 'You keep the project as it is now, and can go on working on it on your own. What the others write after this does not reach you.',
-      confirm: 'Understood',
+      title: why === 'deleted' ? t('project-unshared-this') : t('project-left-out'),
+      message: why === 'deleted' ? t('project-unshared-kept') : t('project-left-out-kept'),
+      confirm: t('project-understood'),
       cancel: '',
     });
   });
@@ -407,7 +401,7 @@
       const written = under?.closest('.ProseMirror.body');
       const view = written ? viewsByDom.get(written) : undefined;
       if (!view && !(element && p.node(element))) {
-        notify('Drop a picture on the element it belongs to');
+        notify(t('project-drop-picture'));
       } else {
         let where = view?.posAtCoords({ left: event.x, top: event.y })?.pos;
         for (const path of shown) {
@@ -447,11 +441,10 @@
     p.cite(element, outcome.concerned);
     p.checkpoint();
     for (const id of outcome.concerned) keep(id);
-    const name = p.node(element)?.title || 'the element';
+    const name = p.node(element)?.title;
+    const count = outcome.concerned.length;
     notify(
-      outcome.concerned.length === 1
-        ? `The reference is cited in “${name}”`
-        : `${outcome.concerned.length} references are cited in “${name}”`,
+      name ? t('project-cited-in', { count, name }) : t('project-cited-in-element', { count }),
     );
   }
 
@@ -505,26 +498,30 @@
 
 <svelte:window {onkeydown} {onblur} />
 
-{#if failure}
-  <EmptyState icon={CircleAlert} title="The project could not be opened" text={failure}>
-    <Button onclick={() => router.go({ view: 'projects' })}>Back to the projects</Button>
+{#if failure !== null}
+  <EmptyState
+    icon={CircleAlert}
+    title={t('project-open-failed')}
+    text={failure || t('project-open-failed-detail')}
+  >
+    <Button onclick={() => router.go({ view: 'projects' })}>{t('project-back')}</Button>
   </EmptyState>
 {:else if project && !pane && shared?.shared}
   <EmptyState
     icon={CloudDownload}
-    title="Fetching the project"
+    title={t('project-fetching')}
     text={shared.connection?.status === 'offline'
-      ? 'The server cannot be reached. The project is fetched when it can be.'
-      : 'It is on its way from the server.'}
+      ? t('project-fetching-offline')
+      : t('project-fetching-on-the-way')}
   >
-    <Button onclick={() => router.go({ view: 'projects' })}>Back to the projects</Button>
+    <Button onclick={() => router.go({ view: 'projects' })}>{t('project-back')}</Button>
   </EmptyState>
 {:else if !project || !pane}
   <div class="centre"><Spinner size={22} /></div>
 {:else}
   <div class="project">
     <header>
-      <IconButton label="All projects" onclick={() => router.go({ view: 'projects' })}>
+      <IconButton label={t('project-all-projects')} onclick={() => router.go({ view: 'projects' })}>
         <ArrowLeft size={16} />
       </IconButton>
 
@@ -532,7 +529,7 @@
         <input
           class="name editing"
           bind:value={renaming}
-          aria-label="Name of the project"
+          aria-label={t('project-name')}
           size={Math.max(10, renaming.length + 1)}
           onblur={commitName}
           onkeydown={(e) => {
@@ -546,7 +543,7 @@
         <button
           type="button"
           class="name serif truncate"
-          use:tooltip={'Rename the project'}
+          use:tooltip={t('project-rename')}
           onclick={() => (renaming = project?.name ?? '')}
         >
           {project.name}
@@ -569,13 +566,14 @@
       <div class="status" aria-live="polite">
         {#if project.status === 'error'}
           <span class="failed" use:tooltip={project.saveError ?? ''}>
-            <CircleAlert size={14} /> Not saved
+            <CircleAlert size={14} />
+            {t('project-not-saved')}
           </span>
         {/if}
       </div>
 
       <IconButton
-        label="Undo"
+        label={t('common-undo')}
         shortcut="Ctrl+Z"
         disabled={!project.canUndo}
         onclick={() => project?.undo()}
@@ -583,7 +581,7 @@
         <Undo2 size={16} />
       </IconButton>
       <IconButton
-        label="Redo"
+        label={t('project-redo')}
         shortcut="Ctrl+Shift+Z"
         disabled={!project.canRedo}
         onclick={() => project?.redo()}
@@ -595,23 +593,23 @@
 
       <Segmented
         value={pane.mode}
-        label="View of the map"
+        label={t('project-view')}
         options={[
-          { value: 'diagram', label: 'Diagram', icon: Network },
-          { value: 'text', label: 'Text', icon: FileText },
+          { value: 'diagram', label: t('project-diagram'), icon: Network },
+          { value: 'text', label: t('project-text'), icon: FileText },
         ]}
         onchange={(mode) => (panes[focused] = { ...pane, mode })}
       />
 
       <IconButton
-        label={panes.length > 1 ? 'One at a time' : 'Two side by side'}
+        label={panes.length > 1 ? t('project-one-at-a-time') : t('project-side-by-side')}
         active={panes.length > 1}
         onclick={sideBySide}
       >
         <Columns2 size={16} />
       </IconButton>
       <IconButton
-        label="References"
+        label={t('project-references')}
         shortcut="Ctrl+Shift+R"
         active={showReferences}
         onclick={() => side('references')}
@@ -619,7 +617,7 @@
         <BookMarked size={16} />
       </IconButton>
       <IconButton
-        label="Pictures"
+        label={t('project-pictures')}
         shortcut="Ctrl+Shift+P"
         active={showPictures}
         onclick={() => side('pictures')}
@@ -627,7 +625,7 @@
         <Images size={16} />
       </IconButton>
       <IconButton
-        label="Preview and export"
+        label={t('project-preview')}
         shortcut="Ctrl+P"
         active={showPreview}
         onclick={() => (showPreview = !showPreview)}
@@ -645,10 +643,10 @@
       >
         <IconButton
           label={!shared?.shared
-            ? 'Share'
+            ? t('project-share')
             : shared.connection?.status === 'connected'
-              ? 'Shared'
-              : 'Shared · the server cannot be reached'}
+              ? t('project-shared')
+              : t('project-shared-offline')}
           onclick={() => (showShare = true)}
         >
           <Users size={16} />
@@ -665,7 +663,7 @@
         {#each panes as p, i (i)}
           {#if i === 1}
             <Divider
-              label="Between the two maps"
+              label={t('project-between-maps')}
               onmove={moveSplit}
               onreset={() => (sizes.split = GIVEN.split)}
             />
@@ -683,15 +681,20 @@
                 <span class="pane-name truncate">{project.map(p.map)?.name}</span>
                 <Segmented
                   value={p.mode}
-                  label="View of this map"
+                  label={t('project-view-this')}
                   size="sm"
                   options={[
-                    { value: 'diagram', label: 'Diagram', icon: Network, iconOnly: true },
-                    { value: 'text', label: 'Text', icon: FileText, iconOnly: true },
+                    {
+                      value: 'diagram',
+                      label: t('project-diagram'),
+                      icon: Network,
+                      iconOnly: true,
+                    },
+                    { value: 'text', label: t('project-text'), icon: FileText, iconOnly: true },
                   ]}
                   onchange={(mode) => (panes[i] = { ...p, mode })}
                 />
-                <IconButton label="Close this side" size="sm" onclick={() => closePane(i)}>
+                <IconButton label={t('project-close-side')} size="sm" onclick={() => closePane(i)}>
                   <X size={14} />
                 </IconButton>
               </div>
@@ -726,7 +729,7 @@
 
       {#if showPreview}
         <Divider
-          label="Between the map and the preview"
+          label={t('project-between-preview')}
           onstart={() => measure('preview')}
           onmove={(dx) => moveSide('preview', dx)}
           onreset={() => (sizes.preview = 0)}
@@ -746,9 +749,7 @@
       {/if}
       {#if showReferences || showPictures}
         <Divider
-          label={showPictures
-            ? 'Between the map and the pictures'
-            : 'Between the map and the references'}
+          label={showPictures ? t('project-between-pictures') : t('project-between-references')}
           onstart={() => measure('references')}
           onmove={(dx) => moveSide('references', dx)}
           onreset={() => (sizes.references = 0)}
