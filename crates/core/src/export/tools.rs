@@ -77,8 +77,14 @@ pub fn find(program: &str, configured: Option<&str>, beside: &[PathBuf]) -> Opti
 }
 
 pub fn command(program: &Path) -> Command {
-    #[cfg_attr(not(windows), allow(unused_mut))]
     let mut c = Command::new(program);
+    // Tesseract that comes with the application, on Windows and macOS, has
+    // the data of its languages beside it, where it does not look by itself.
+    let bundled = program.parent().map(|dir| dir.join("tessdata")).filter(|dir| dir.is_dir());
+    let is_tesseract = program.file_stem().is_some_and(|n| n.eq_ignore_ascii_case("tesseract"));
+    if let Some(data) = bundled.filter(|_| is_tesseract && std::env::var_os("TESSDATA_PREFIX").is_none()) {
+        c.env("TESSDATA_PREFIX", data);
+    }
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;

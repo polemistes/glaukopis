@@ -172,3 +172,13 @@ What this settles:
 - Text is read from PDFs and pictures by OCR, with Tesseract. The text of a PDF is either taken out of it, or laid into it unseen under its pages, so that the PDF can be searched and its text copied.
 - Spelling is checked as one writes. Grammar is not, unless a free checker is found that works well.
 - The interface and the texts have a language. Both are that of the system where the application has it, and English where it does not, and both can be changed. The interface is in English and in Norwegian Bokmål.
+
+## 2026-09-29 — installers for Windows and macOS
+
+> Could you build the windows and mac versions now?
+
+Asked whether they should be built on GitHub's machines, which means pushing the work there, the answer was yes.
+
+What this settles:
+
+- Installers for Windows and macOS are made, on GitHub's machines, by `.github/workflows/installers.yml`. They carry Pandoc, Typst and Tesseract with them. They are not signed.

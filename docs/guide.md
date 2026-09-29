@@ -982,6 +982,16 @@ Norwegian is checked: the first underlines of a session come after a moment.
 
 ## What Glaukopis needs
 
+On Windows and macOS, Pandoc, Typst and Tesseract come with Glaukopis, with
+the data for reading English, Norwegian, Danish, Swedish, German, French,
+Italian, Spanish, Latin, Greek and Ancient Greek.
+
+The installers for Windows and macOS are not signed. On Windows, the
+installer is let run with **More info** › **Run anyway**. On macOS, open
+Glaukopis the first time by right-clicking it in *Applications* and choosing
+**Open**; if macOS says it is damaged, run `xattr -cr
+/Applications/Glaukopis.app` in the Terminal and try again.
+
 Pandoc makes the documents, and Typst the pages of the preview and the PDF.
 Both are installed with Glaukopis when it is installed as a package. Where
 they are found is shown under *Settings*.

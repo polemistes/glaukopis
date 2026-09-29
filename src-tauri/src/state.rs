@@ -121,6 +121,14 @@ impl AppState {
             beside.push(dir.join("bin"));
         }
         beside.push(self.resources.join("bin"));
+        // Tesseract comes with its libraries and data in a folder of its own.
+        beside.push(self.resources.join("bin").join("tesseract"));
+        // A program started from the Finder has not the path of the shell,
+        // and misses what Homebrew installs.
+        if cfg!(target_os = "macos") {
+            beside.push("/opt/homebrew/bin".into());
+            beside.push("/usr/local/bin".into());
+        }
         let found = tools::discover(&Configured {
             pandoc: self.setting("pandocPath"),
             typst: self.setting("typstPath"),

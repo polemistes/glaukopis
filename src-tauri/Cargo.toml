@@ -33,3 +33,5 @@ tracing-subscriber.workspace = true
 default = []
 # Serve the built interface from inside the executable instead of the dev server.
 custom-protocol = ["tauri/custom-protocol"]
+# SQLite compiled in, where the system has none to link to: Windows, macOS.
+bundled-sqlite = ["glaukopis-core/bundled-sqlite"]

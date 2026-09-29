@@ -1,0 +1,132 @@
+# Installers for Windows and macOS, made on GitHub's machines, since macOS
+# can only be built on a Mac. They are not signed: Windows asks once whether
+# to run the installer; macOS needs the app to be opened with a right-click
+# the first time (see docs/guide.md). The installers are kept as artifacts of
+# the run, not published as a release.
+#
+# Pandoc, Typst and Tesseract come with the application, in resources/bin,
+# where it looks for them after the settings and the path.
+
+name: Installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+            bundles: nsis,msi
+          - os: macos-latest
+            name: macos
+            bundles: app,dmg
+    runs-on: ${{ matrix.os }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.26.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install the interface's packages
+        run: pnpm install --frozen-lockfile
+
+      # ---- the programs that come with the application ----
+
+      - name: Pandoc and Typst for Windows
+        if: matrix.name == 'windows'
+        run: |
+          mkdir -p resources/bin/licenses work
+          gh release download -R jgm/pandoc --pattern '*-windows-x86_64.zip' -D work
+          7z x -owork/pandoc work/pandoc-*.zip > /dev/null
+          cp work/pandoc/*/pandoc.exe resources/bin/
+          cp work/pandoc/*/COPYRIGHT.txt resources/bin/licenses/pandoc-COPYRIGHT.txt
+          gh release download -R typst/typst --pattern 'typst-x86_64-pc-windows-msvc.zip' -D work
+          7z x -owork/typst work/typst-*.zip > /dev/null
+          cp work/typst/*/typst.exe resources/bin/
+          cp work/typst/*/LICENSE resources/bin/licenses/typst-LICENSE.txt
+
+      - name: Tesseract for Windows
+        if: matrix.name == 'windows'
+        run: |
+          gh release download -R UB-Mannheim/tesseract --pattern 'tesseract-ocr-w64-setup-*.exe' -D work
+          7z x -oresources/bin/tesseract work/tesseract-ocr-w64-setup-*.exe > /dev/null
+          rm -rf 'resources/bin/tesseract/$PLUGINSDIR' resources/bin/tesseract/*.nsis resources/bin/tesseract/uninstall*
+          ls resources/bin/tesseract
+
+      - name: Pandoc and Typst for macOS
+        if: matrix.name == 'macos'
+        run: |
+          mkdir -p resources/bin/licenses work
+          gh release download -R jgm/pandoc --pattern '*-arm64-macOS.zip' -D work
+          unzip -q work/pandoc-*.zip -d work/pandoc
+          cp work/pandoc/*/bin/pandoc resources/bin/
+          cp work/pandoc/*/share/doc/pandoc/COPYRIGHT* resources/bin/licenses/ 2>/dev/null || true
+          gh release download -R typst/typst --pattern 'typst-aarch64-apple-darwin.tar.xz' -D work
+          tar -xf work/typst-*.tar.xz -C work
+          cp work/typst-aarch64-apple-darwin/typst resources/bin/
+          cp work/typst-aarch64-apple-darwin/LICENSE resources/bin/licenses/typst-LICENSE.txt
+
+      # Homebrew's Tesseract, with the libraries it needs copied beside it and
+      # pointed to there, so that it runs on a Mac without Homebrew.
+      - name: Tesseract for macOS
+        if: matrix.name == 'macos'
+        continue-on-error: true
+        run: |
+          brew install tesseract dylibbundler
+          mkdir -p resources/bin/tesseract/tessdata
+          cp "$(brew --prefix tesseract)/bin/tesseract" resources/bin/tesseract/
+          chmod u+w resources/bin/tesseract/tesseract
+          dylibbundler -od -b -x resources/bin/tesseract/tesseract -d resources/bin/tesseract/libs -p @executable_path/libs/
+          for f in resources/bin/tesseract/tesseract resources/bin/tesseract/libs/*; do codesign --force -s - "$f"; done
+          cp "$(brew --prefix tesseract)/share/tessdata/osd.traineddata" resources/bin/tesseract/tessdata/ || true
+          cp "$(brew --prefix tesseract)/share/tessdata/eng.traineddata" resources/bin/tesseract/tessdata/ || true
+          resources/bin/tesseract/tesseract --version
+
+      - name: The languages Tesseract reads, besides English
+        run: |
+          mkdir -p resources/bin/tesseract/tessdata
+          for lang in eng nor dan swe deu fra ita spa lat grc ell; do
+            [ -f resources/bin/tesseract/tessdata/$lang.traineddata ] ||
+              curl -fsSL -o resources/bin/tesseract/tessdata/$lang.traineddata \
+                https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/$lang.traineddata
+          done
+          ls -la resources/bin/tesseract/tessdata
+
+      # ---- the application ----
+
+      - name: Test the core
+        continue-on-error: true
+        run: cargo test -p glaukopis-core --features bundled-sqlite
+
+      - name: Build the installers
+        run: pnpm tauri build --bundles ${{ matrix.bundles }} --features bundled-sqlite
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: glaukopis-${{ matrix.name }}
+          if-no-files-found: error
+          path: |
+            target/release/bundle/nsis/*.exe
+            target/release/bundle/msi/*.msi
+            target/release/bundle/dmg/*.dmg
