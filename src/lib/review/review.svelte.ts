@@ -85,6 +85,8 @@ export class Review {
   #sessionSettled: Settled[] = [];
   #closed = false;
   #working: Promise<void> | null = null;
+  /** Whether something was decided since it was last seen whether anything is left. */
+  #decided = false;
 
   constructor(project: Project, source: Source, map: string) {
     this.project = project;
@@ -244,6 +246,11 @@ export class Review {
       this.changes = changes;
       this.failure = null;
       this.ready = true;
+      // Nothing left here, after something was decided: perhaps nothing anywhere.
+      if (!changes.length && this.#decided) {
+        this.#decided = false;
+        void this.#settleIfDone();
+      }
       // What was written while they were worked out is worked out next.
       if (this.project.revision !== revision) this.later();
     } catch (error) {
@@ -329,7 +336,10 @@ export class Review {
     const me = this.me;
     const from = this.since ?? this.#now;
     const settled = settles(change) ? [{ key: change.key, state: stateOf(change) }] : [];
+    // What is kept of the review changes no text: the changes are still those of the text.
+    const fresh = this.fresh;
     if (me && from) accept(this.project.doc, me, from, accepted, settled);
+    if (fresh) this.#revision = this.project.revision;
     if (this.chosen) {
       this.#session = [...this.#session, ...accepted];
       this.#sessionSettled = [...this.#sessionSettled, ...settled];
@@ -339,6 +349,7 @@ export class Review {
 
   /** Takes a change from the list, and looks at the one after it. */
   #drop(change: Change) {
+    this.#decided = true;
     const i = this.changes.indexOf(change);
     const rest = this.changes.filter((c) => c !== change);
     this.changes = rest;
@@ -358,7 +369,10 @@ export class Review {
       standing,
       standing.stretches.map((s) => this.#accepted(s)),
     );
-    if (!this.changes.length) await this.#settleIfDone();
+    if (!this.changes.length) {
+      this.#decided = false;
+      await this.#settleIfDone();
+    }
     this.later();
   }
 
@@ -526,7 +540,9 @@ export class Review {
       });
       if (left.length) return;
     }
+    const fresh = this.fresh;
     settle(this.project.doc, me, now);
+    if (fresh) this.#revision = this.project.revision;
   }
 
   close() {
