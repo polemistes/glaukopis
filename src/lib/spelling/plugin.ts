@@ -315,6 +315,9 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
       };
       lookers.set(view, looker);
 
+      // The text there is from the start, as a note's is, is looked at at once.
+      schedule(0);
+
       const stop = spelling.listen((change) => {
         if (change === 'anew') looker.anew();
         else if (waiting.length || todo.length) {
