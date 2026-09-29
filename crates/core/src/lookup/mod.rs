@@ -37,6 +37,7 @@ use crate::duplicates::{normalise_doi, normalise_isbns};
 use crate::error::{Error, Result};
 use crate::library::entry::Draft;
 use crate::net::Client;
+use crate::tr;
 
 /// What is to be looked up.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -114,14 +115,14 @@ pub fn classify(input: &str) -> Query {
 }
 
 /// What the services ask to have said of them where their records are used:
-/// the name of the service, as hits have it in `source`, and the words.
-pub const ACKNOWLEDGEMENTS: &[(&str, &str)] = &[
-    ("arXiv", "Thank you to arXiv for use of its open access interoperability."),
-    (
-        "Norwegian academic libraries (Sikt)",
-        "Contains records from the library catalogue of Sikt, made available under the Norwegian Licence for Open Government Data (NLOD).",
-    ),
-];
+/// the name of the service, as hits have it in `source`, and the words, in
+/// the language of the interface.
+pub fn acknowledgements() -> Vec<(String, String)> {
+    vec![
+        (arxiv::SOURCE.to_owned(), tr!("core-lookup-thanks-arxiv")),
+        ((sru::NORWAY.name)(), tr!("core-lookup-thanks-sikt")),
+    ]
+}
 
 /// How many records a search in words asks each service for.
 const ROWS: usize = 10;
@@ -144,18 +145,17 @@ const ROWS: usize = 10;
 pub fn lookup(client: &Client, query: &Query, scope: Scope) -> Result<Outcome> {
     match query {
         Query::Doi(doi) => {
-            let doi = normalise_doi(doi).ok_or_else(|| Error::invalid(format!("“{doi}” is not a DOI.")))?;
+            let doi = normalise_doi(doi).ok_or_else(|| Error::invalid(tr!("core-lookup-not-a-doi", doi = doi)))?;
             doi::lookup(client, &doi)
         }
         Query::Isbn(isbn) => by_isbn(client, isbn),
         Query::Arxiv(id) => {
-            let id =
-                arxiv_id(id.trim()).ok_or_else(|| Error::invalid(format!("“{id}” is not an identifier of arXiv.")))?;
+            let id = arxiv_id(id.trim()).ok_or_else(|| Error::invalid(tr!("core-lookup-not-arxiv", id = id)))?;
             alone(arxiv::SOURCE, arxiv::lookup(client, &id))
         }
         Query::Pmid(id) => {
             let id = pmid(&format!("pmid:{}", id.trim()))
-                .ok_or_else(|| Error::invalid(format!("“{id}” is not a number of PubMed.")))?;
+                .ok_or_else(|| Error::invalid(tr!("core-lookup-not-pubmed", id = id)))?;
             alone(pubmed::SOURCE, pubmed::lookup(client, &id))
         }
         Query::Text(text) => by_words(client, text, scope),
@@ -176,17 +176,12 @@ fn checked_isbn(isbn: &str) -> Result<String> {
     let digits: String =
         isbn.chars().filter(|c| c.is_ascii_digit() || matches!(c, 'X' | 'x')).map(|c| c.to_ascii_uppercase()).collect();
     if !matches!(digits.len(), 10 | 13) {
-        return Err(Error::invalid(format!(
-            "“{isbn}” is not an ISBN: an ISBN has 10 or 13 digits, and this has {}.",
-            digits.len()
-        )));
+        return Err(Error::invalid(tr!("core-lookup-isbn-length", isbn = isbn, count = digits.len())));
     }
     if !isbn_is_valid(&digits) {
-        return Err(Error::invalid(format!(
-            "“{isbn}” is not an ISBN: its last digit is reckoned from the others, and does not agree with them. Is a digit mistyped?"
-        )));
+        return Err(Error::invalid(tr!("core-lookup-isbn-check", isbn = isbn)));
     }
-    normalise_isbns(&digits).into_iter().next().ok_or_else(|| Error::invalid(format!("“{isbn}” is not an ISBN.")))
+    normalise_isbns(&digits).into_iter().next().ok_or_else(|| Error::invalid(tr!("core-lookup-not-isbn", isbn = isbn)))
 }
 
 fn by_isbn(client: &Client, isbn: &str) -> Result<Outcome> {
@@ -197,7 +192,7 @@ fn by_isbn(client: &Client, isbn: &str) -> Result<Outcome> {
         match catalogue.by_isbn(client, &isbn) {
             Ok(hits) if !hits.is_empty() => return Ok(Outcome { hits, failures }),
             Ok(_) => {}
-            Err(e) => failures.push(failure(catalogue.name, &e)),
+            Err(e) => failures.push(failure(&(catalogue.name)(), &e)),
         }
     }
     if failures.len() == catalogues.len() {
@@ -209,13 +204,11 @@ fn by_isbn(client: &Client, isbn: &str) -> Result<Outcome> {
 fn by_words(client: &Client, text: &str, scope: Scope) -> Result<Outcome> {
     let text = tidy(text);
     if is_address(&text) {
-        return Err(Error::invalid(
-            "An address can be looked up when it holds a DOI, an identifier of arXiv or a number of PubMed. This one does not: search for the title instead.",
-        ));
+        return Err(Error::invalid(tr!("core-lookup-address")));
     }
     let words = text::search_words(&text);
     if words.is_empty() {
-        return Err(Error::invalid("There is nothing to look for."));
+        return Err(Error::invalid(tr!("core-lookup-nothing")));
     }
     // A year narrows nothing in a catalogue, where it is neither title nor
     // name. It counts when the hits are put in order.
@@ -232,7 +225,7 @@ fn by_words(client: &Client, text: &str, scope: Scope) -> Result<Outcome> {
             asked += 1;
             match catalogue.by_words(client, &asked_for, ROWS) {
                 Ok(found) => hits.extend(found),
-                Err(e) => failures.push(failure(catalogue.name, &e)),
+                Err(e) => failures.push(failure(&(catalogue.name)(), &e)),
             }
         }
     }
@@ -950,8 +943,8 @@ mod tests {
             assert_eq!(entry.year(), hit.draft.get("date").and_then(|d| d[..4].parse().ok()));
             assert!(crate::bib::parse(&entry.to_bib(false, false)).warnings.is_empty());
         }
-        assert!(ACKNOWLEDGEMENTS.iter().any(|(service, _)| *service == arxiv::SOURCE));
-        assert!(ACKNOWLEDGEMENTS.iter().any(|(service, _)| *service == sru::NORWAY.name));
+        assert!(acknowledgements().iter().any(|(service, _)| *service == arxiv::SOURCE));
+        assert!(acknowledgements().iter().any(|(service, _)| *service == (sru::NORWAY.name)()));
     }
 
     // The tests below ask the services themselves, once each. They are run with

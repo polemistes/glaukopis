@@ -22,6 +22,7 @@ use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::library::now;
 use crate::paths::DataDir;
+use crate::tr;
 
 const INFO: &str = "project.json";
 const STATE: &str = "state.bin";
@@ -110,7 +111,7 @@ fn check_id(id: &str) -> Result<()> {
         && id.len() <= 64
         && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
         && !id.starts_with('-');
-    if ok { Ok(()) } else { Err(Error::invalid(format!("“{id}” is not the id of a project"))) }
+    if ok { Ok(()) } else { Err(Error::invalid(tr!("core-projects-bad-id", id = id))) }
 }
 
 impl Projects {
@@ -142,12 +143,12 @@ impl Projects {
 
     fn existing_dir(&self, id: &str) -> Result<PathBuf> {
         let dir = self.dir(id)?;
-        if dir.join(INFO).is_file() { Ok(dir) } else { Err(Error::not_found("the project")) }
+        if dir.join(INFO).is_file() { Ok(dir) } else { Err(Error::not_found(tr!("core-projects-the-project"))) }
     }
 
     fn read_info(dir: &Path) -> Result<ProjectInfo> {
         let path = dir.join(INFO);
-        let text = fs::read_to_string(&path).context(|| format!("reading {}", path.display()))?;
+        let text = fs::read_to_string(&path).context(|| tr!("io-reading", path = &path))?;
         serde_json::from_str(&text).map_err(|e| Error::Parse { path, message: e.to_string() })
     }
 
@@ -161,7 +162,7 @@ impl Projects {
         let entries = match fs::read_dir(&self.root) {
             Ok(e) => e,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(out),
-            Err(e) => return Err(e).context(|| format!("reading {}", self.root.display())),
+            Err(e) => return Err(e).context(|| tr!("io-reading", path = &self.root)),
         };
         for entry in entries.flatten() {
             let dir = entry.path();
@@ -184,10 +185,10 @@ impl Projects {
     fn check_name(name: &str) -> Result<String> {
         let name = name.split_whitespace().collect::<Vec<_>>().join(" ");
         if name.is_empty() {
-            return Err(Error::invalid("A project needs a name."));
+            return Err(Error::invalid(tr!("core-projects-needs-name")));
         }
         if name.chars().count() > 200 {
-            return Err(Error::invalid("That name is too long."));
+            return Err(Error::invalid(tr!("core-projects-name-too-long")));
         }
         Ok(name)
     }
@@ -202,9 +203,9 @@ impl Projects {
         let name = Self::check_name(name)?;
         let dir = self.dir(id)?;
         if dir.exists() {
-            return Err(Error::invalid("There is already a project with that id."));
+            return Err(Error::invalid(tr!("core-projects-id-taken")));
         }
-        fs::create_dir_all(&dir).context(|| format!("creating {}", dir.display()))?;
+        fs::create_dir_all(&dir).context(|| tr!("io-creating", path = &dir))?;
         let stamp = now();
         let info =
             ProjectInfo { id: id.to_owned(), name, created: stamp.clone(), modified: stamp, ..Default::default() };
@@ -239,7 +240,7 @@ impl Projects {
         let state = match fs::read(dir.join(STATE)) {
             Ok(bytes) => Some(bytes),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
-            Err(e) => return Err(e).context(|| "reading the project".to_owned()),
+            Err(e) => return Err(e).context(|| tr!("core-projects-reading")),
         };
         let updates = read_log(&dir.join(LOG))?;
         Ok(LoadedProject { info, state, updates })
@@ -252,17 +253,14 @@ impl Projects {
         }
         let dir = self.existing_dir(id)?;
         let path = dir.join(LOG);
-        let mut file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&path)
-            .context(|| format!("opening {}", path.display()))?;
+        let mut file =
+            OpenOptions::new().create(true).append(true).open(&path).context(|| tr!("io-opening", path = &path))?;
         let mut record = Vec::with_capacity(update.len() + 8);
         record.extend_from_slice(&(update.len() as u32).to_le_bytes());
         record.extend_from_slice(&checksum(update).to_le_bytes());
         record.extend_from_slice(update);
-        file.write_all(&record).context(|| format!("writing {}", path.display()))?;
-        file.sync_data().context(|| format!("flushing {}", path.display()))?;
+        file.write_all(&record).context(|| tr!("io-writing", path = &path))?;
+        file.sync_data().context(|| tr!("io-flushing", path = &path))?;
         Ok(())
     }
 
@@ -277,7 +275,7 @@ impl Projects {
         match fs::remove_file(dir.join(LOG)) {
             Ok(()) => {}
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-            Err(e) => return Err(e).context(|| "emptying the log".to_owned()),
+            Err(e) => return Err(e).context(|| tr!("core-projects-emptying-log")),
         }
         self.update_info(id, |info| {
             info.modified = now();
@@ -305,9 +303,9 @@ impl Projects {
         if newest.is_some_and(|t| now_unix - t < HISTORY_INTERVAL) {
             return Ok(());
         }
-        fs::create_dir_all(&history).context(|| format!("creating {}", history.display()))?;
+        fs::create_dir_all(&history).context(|| tr!("io-creating", path = &history))?;
         let name = format!("{}.bin", stamp_name(now_unix));
-        fs::copy(&state, history.join(&name)).context(|| "keeping an earlier state".to_owned())?;
+        fs::copy(&state, history.join(&name)).context(|| tr!("core-projects-keeping-state"))?;
 
         // Thin: when over the limit, drop the entry closest in time to its neighbours,
         // so that recent history is dense and old history sparse but present.
@@ -342,10 +340,10 @@ impl Projects {
     pub fn history_state(&self, id: &str, entry: &str) -> Result<Vec<u8>> {
         let dir = self.existing_dir(id)?;
         if parse_stamp(entry).is_none() || entry.contains(['/', '\\']) {
-            return Err(Error::invalid("That is not an entry of the history."));
+            return Err(Error::invalid(tr!("core-projects-not-in-history")));
         }
         let path = dir.join(HISTORY).join(entry);
-        fs::read(&path).context(|| format!("reading {}", path.display()))
+        fs::read(&path).context(|| tr!("io-reading", path = &path))
     }
 
     /// Notes that the project is shared, and keeps the token that admits this copy.
@@ -353,7 +351,7 @@ impl Projects {
         let dir = self.existing_dir(id)?;
         let token = token.trim();
         if token.is_empty() {
-            return Err(Error::invalid("The server gave no token."));
+            return Err(Error::invalid(tr!("core-projects-no-token")));
         }
         let path = dir.join(TOKEN);
         write_atomic(&path, token.as_bytes())?;
@@ -361,7 +359,7 @@ impl Projects {
         {
             use std::os::unix::fs::PermissionsExt;
             fs::set_permissions(&path, fs::Permissions::from_mode(0o600))
-                .context(|| format!("closing {} to others", path.display()))?;
+                .context(|| tr!("core-projects-closing", path = &path))?;
         }
         self.update_info(id, |info| info.sharing = Some(sharing))
     }
@@ -372,7 +370,7 @@ impl Projects {
         match fs::remove_file(dir.join(TOKEN)) {
             Ok(()) => {}
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-            Err(e) => return Err(e).context(|| "forgetting the token".to_owned()),
+            Err(e) => return Err(e).context(|| tr!("core-projects-forgetting-token")),
         }
         self.update_info(id, |info| info.sharing = None)
     }
@@ -380,12 +378,12 @@ impl Projects {
     /// How the project is shared, with the token that admits this copy.
     pub fn shared(&self, id: &str) -> Result<(Sharing, String)> {
         let dir = self.existing_dir(id)?;
-        let not_shared = || Error::invalid("The project is not shared.");
+        let not_shared = || Error::invalid(tr!("core-projects-not-shared"));
         let sharing = Self::read_info(&dir)?.sharing.ok_or_else(not_shared)?;
         let token = match fs::read_to_string(dir.join(TOKEN)) {
             Ok(text) => text.trim().to_owned(),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Err(not_shared()),
-            Err(e) => return Err(e).context(|| "reading the token".to_owned()),
+            Err(e) => return Err(e).context(|| tr!("core-projects-reading-token")),
         };
         if token.is_empty() {
             return Err(not_shared());
@@ -397,9 +395,9 @@ impl Projects {
     pub fn delete(&self, id: &str) -> Result<()> {
         let dir = self.existing_dir(id)?;
         let trash = self.root.join(TRASH);
-        fs::create_dir_all(&trash).context(|| format!("creating {}", trash.display()))?;
+        fs::create_dir_all(&trash).context(|| tr!("io-creating", path = &trash))?;
         let target = trash.join(format!("{}_{}", stamp_name(time::OffsetDateTime::now_utc().unix_timestamp()), id));
-        fs::rename(&dir, &target).context(|| "moving the project to the trash".to_owned())?;
+        fs::rename(&dir, &target).context(|| tr!("core-projects-to-trash"))?;
         Ok(())
     }
 
@@ -418,28 +416,28 @@ impl Projects {
 
     pub fn restore(&self, trashed: &str) -> Result<ProjectInfo> {
         if trashed.contains(['/', '\\']) || trashed.starts_with('.') {
-            return Err(Error::invalid("That is not a project in the trash."));
+            return Err(Error::invalid(tr!("core-projects-not-in-trash")));
         }
         let from = self.root.join(TRASH).join(trashed);
         let info = Self::read_info(&from)?;
         let to = self.dir(&info.id)?;
         if to.exists() {
-            return Err(Error::invalid("A project with that id exists already."));
+            return Err(Error::invalid(tr!("core-projects-id-exists")));
         }
-        fs::rename(&from, &to).context(|| "bringing the project back".to_owned())?;
+        fs::rename(&from, &to).context(|| tr!("core-projects-bringing-back"))?;
         Ok(info)
     }
 
     /// Removes a project in the trash for good.
     pub fn purge(&self, trashed: &str) -> Result<()> {
         if trashed.contains(['/', '\\']) || trashed.starts_with('.') || trashed.is_empty() {
-            return Err(Error::invalid("That is not a project in the trash."));
+            return Err(Error::invalid(tr!("core-projects-not-in-trash")));
         }
         let dir = self.root.join(TRASH).join(trashed);
         if !dir.join(INFO).is_file() {
-            return Err(Error::not_found("the project in the trash"));
+            return Err(Error::not_found(tr!("core-projects-the-project-in-trash")));
         }
-        fs::remove_dir_all(&dir).context(|| format!("removing {}", dir.display()))
+        fs::remove_dir_all(&dir).context(|| tr!("io-removing", path = &dir))
     }
 
     /// A new project that holds what another held at an earlier time. The
@@ -465,7 +463,7 @@ impl Projects {
         for file in [STATE, LOG] {
             let path = from.join(file);
             if path.is_file() {
-                fs::copy(&path, to.join(file)).context(|| format!("copying {}", path.display()))?;
+                fs::copy(&path, to.join(file)).context(|| tr!("io-copying", path = &path))?;
             }
         }
         copy.description = source.description;
@@ -520,10 +518,10 @@ fn read_log(path: &Path) -> Result<Vec<Vec<u8>>> {
     let mut bytes = Vec::new();
     match File::open(path) {
         Ok(mut f) => {
-            f.read_to_end(&mut bytes).context(|| format!("reading {}", path.display()))?;
+            f.read_to_end(&mut bytes).context(|| tr!("io-reading", path = path))?;
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
-        Err(e) => return Err(e).context(|| format!("opening {}", path.display())),
+        Err(e) => return Err(e).context(|| tr!("io-opening", path = path)),
     }
     let mut out = Vec::new();
     let mut pos = 0;

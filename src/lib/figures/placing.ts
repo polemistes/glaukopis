@@ -15,6 +15,7 @@ import {
 import { ySyncPluginKey } from 'y-prosemirror';
 import type { DocumentFormat } from '$lib/api/documents';
 import { flow, stand, type Flow, type Stand } from '$lib/editor/schema';
+import { t } from '$lib/i18n';
 
 /** The most that stand beside each other. */
 export const MOST_BESIDE = 4;
@@ -55,24 +56,24 @@ export function placed(
   return { stand: to, around };
 }
 
-export const SIDES: { value: Stand; label: string }[] = [
-  { value: '', label: 'As the format' },
-  { value: 'left', label: 'Left' },
-  { value: 'center', label: 'Middle' },
-  { value: 'right', label: 'Right' },
-];
+/** Where something can be said to stand, with what each is called in the interface. */
+export function sides(): { value: Stand; label: string }[] {
+  return [
+    { value: '', label: t('figures-side-format') },
+    { value: 'left', label: t('figures-side-left') },
+    { value: 'center', label: t('figures-side-middle') },
+    { value: 'right', label: t('figures-side-right') },
+  ];
+}
 
-export const FLOWS: { value: Flow; label: string }[] = [
-  { value: '', label: 'As the format' },
-  { value: 'around', label: 'Flows around it' },
-  { value: 'apart', label: 'Stands apart' },
-];
-
-export const sideWords: Record<Side, string> = {
-  left: 'to the left',
-  center: 'in the middle',
-  right: 'to the right',
-};
+/** Whether the text can be said to flow around it, with what each is called in the interface. */
+export function flows(): { value: Flow; label: string }[] {
+  return [
+    { value: '', label: t('figures-flow-format') },
+    { value: 'around', label: t('figures-flow-around') },
+    { value: 'apart', label: t('figures-flow-apart') },
+  ];
+}
 
 /** What stands at a position, if it is something that stands by itself. */
 function standing(state: EditorState, pos: number): Node | null {

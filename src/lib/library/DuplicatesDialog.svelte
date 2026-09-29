@@ -8,13 +8,14 @@
     type DuplicateGroup,
     type Summary,
   } from '$lib/api/library';
+  import { t } from '$lib/i18n';
   import { library } from '$lib/state/library.svelte';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
-  import { plural, reasonWords } from './format';
+  import { reasonWords } from './format';
   import TypeIcon from './TypeIcon.svelte';
 
   let { onclose }: { onclose: () => void } = $props();
@@ -48,7 +49,7 @@
         .sort((a, b) => (a.certainty === b.certainty ? 0 : a.certainty === 'certain' ? -1 : 1));
     } catch (error) {
       groups = [];
-      notifyError('The library could not be searched for duplicates', error);
+      notifyError(t('library-duplicates-failed'), error);
     }
   }
 
@@ -68,7 +69,7 @@
       groups = (groups ?? []).filter((g) => g !== group);
       await library.reload();
     } catch (error) {
-      notifyError('They could not be made one', error);
+      notifyError(t('library-duplicates-merge-failed'), error);
       await find();
     } finally {
       busy = null;
@@ -82,10 +83,8 @@
 
 <Dialog
   open
-  title="Duplicates"
-  subtitle={groups?.length
-    ? `${plural(groups.length, 'reference')} ${groups.length === 1 ? 'seems' : 'seem'} to be in the library more than once`
-    : undefined}
+  title={t('library-duplicates-title')}
+  subtitle={groups?.length ? t('library-duplicates-count', { count: groups.length }) : undefined}
   width={680}
   tall={!!groups?.length}
   {onclose}
@@ -95,26 +94,20 @@
   {:else if !groups.length}
     <EmptyState
       compact
-      title={merged ? 'No more duplicates' : 'No duplicates'}
-      text={merged
-        ? 'Citations of the references that were taken in now point to the ones that were kept.'
-        : 'No reference seems to be in the library more than once.'}
+      title={merged ? t('library-duplicates-no-more') : t('library-duplicates-none')}
+      text={merged ? t('library-duplicates-no-more.text') : t('library-duplicates-none.text')}
     />
   {:else}
-    <p class="how">
-      When references are made one, the one you keep is given what it lacks from the others, and
-      keeps its own where they differ. Their files and collections are brought together, and what
-      cites them cites the one kept.
-    </p>
+    <p class="how">{t('library-duplicates-how')}</p>
     <ul class="groups">
       {#each groups as group (group.ids.join())}
         <li class="group">
           <div class="why" class:certain={group.certainty === 'certain'}>
-            {group.certainty === 'certain' ? 'The same' : 'Probably the same'} · {reasonWords(
-              group.reasons,
-            )}
+            {group.certainty === 'certain'
+              ? t('library-duplicates-same')
+              : t('library-duplicates-probably-same')} · {reasonWords(group.reasons)}
           </div>
-          <div class="entries" role="radiogroup" aria-label="The one to keep">
+          <div class="entries" role="radiogroup" aria-label={t('library-duplicates-keep-which')}>
             {#each group.entries as entry (entry.id)}
               <label class="entry" class:kept={group.kept === entry.id}>
                 <input
@@ -126,26 +119,29 @@
                 <span class="icon"><TypeIcon type={entry.type} size={15} /></span>
                 <span class="text">
                   <span class="first">
-                    <span class="authors">{entry.authors || 'No author'}</span>
+                    <span class="authors">{entry.authors || t('library-no-author')}</span>
                     {#if entry.year}<span class="year">{entry.year}</span>{/if}
                     {#if entry.attachments}<span class="files"
                         ><Paperclip size={11} />{entry.attachments}</span
                       >{/if}
                   </span>
-                  <span class="title serif">{entry.title || 'No title'}</span>
+                  <span class="title serif">{entry.title || t('library-no-title')}</span>
                   {#if entry.container}<span class="container">{entry.container}</span>{/if}
                   <span class="key">{entry.key}</span>
                 </span>
-                {#if group.kept === entry.id}<span class="keep">Kept</span>{/if}
+                {#if group.kept === entry.id}<span class="keep">{t('library-duplicates-kept')}</span
+                  >{/if}
               </label>
             {/each}
           </div>
           <div class="actions">
             <Button size="sm" variant="ghost" disabled={!!busy} onclick={() => apart(group)}
-              >They are different</Button
+              >{t('library-duplicates-different')}</Button
             >
             <Button size="sm" variant="primary" disabled={!!busy} onclick={() => merge(group)}>
-              {busy === group.kept ? 'Making them one…' : 'Make them one'}
+              {busy === group.kept
+                ? t('library-duplicates-merging')
+                : t('library-duplicates-merge')}
             </Button>
           </div>
         </li>
@@ -153,7 +149,7 @@
     </ul>
   {/if}
   {#snippet footer()}
-    <Button variant="ghost" onclick={onclose}>Close</Button>
+    <Button variant="ghost" onclick={onclose}>{t('common-close')}</Button>
   {/snippet}
 </Dialog>
 

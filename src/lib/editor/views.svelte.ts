@@ -7,11 +7,12 @@ import type { Node } from 'prosemirror-model';
 import { EditorState, NodeSelection, Plugin, TextSelection, type Command } from 'prosemirror-state';
 import { StepMap } from 'prosemirror-transform';
 import { EditorView, type NodeView } from 'prosemirror-view';
+import { t } from '$lib/i18n';
 import { place } from '$lib/ui/floating';
 import { insertMath, toggle, updateCitation } from './commands';
 import { openSelected, passes, placeholder } from './plugins';
 import { pressedFound } from '$lib/found/found.svelte';
-import { citationLabel, currentProject, isMissing } from './references.svelte';
+import { citationLabel, currentProject, isMissing, languageOf } from './references.svelte';
 import { notePlace, type CiteItem, type CiteMode } from './schema';
 import { editorUi, hooksOf, OPEN, passing } from './ui.svelte';
 import { CrossRefView, FormulaView } from '$lib/figures/views.svelte';
@@ -39,11 +40,13 @@ export class CitationView implements NodeView {
     this.#attrs = { items: node.attrs.items, mode: node.attrs.mode };
 
     // The label follows the references: when one is changed, or arrives, the
-    // text shows it without being touched.
+    // text shows it without being touched. What a locator counts is said in
+    // the language of the map.
     this.#stop = $effect.root(() => {
       $effect(() => {
         const { items, mode } = this.#attrs;
-        this.dom.textContent = citationLabel(items, mode);
+        const language = languageOf(hooksOf.get(this.#view)?.element);
+        this.dom.textContent = citationLabel(items, mode, language);
         this.dom.classList.toggle('missing', isMissing(items));
       });
     });
@@ -133,10 +136,10 @@ export function letters(n: number): string {
   return out;
 }
 
-const PLACES: [string, string][] = [
-  ['', 'Where the format has its notes'],
-  ['foot', 'At the foot of the page'],
-  ['end', 'At the end of the text'],
+const PLACES = (): [string, string][] => [
+  ['', t('editor-note-place-format')],
+  ['foot', t('editor-note-place-foot')],
+  ['end', t('editor-note-place-end')],
 ];
 
 const noteRules = inputRules({
@@ -182,7 +185,10 @@ export class FootnoteView implements NodeView {
     else delete this.#panel.dataset.place;
     const n = noteNumberOf(this.dom);
     const heading = this.#panel.querySelector('.note-number');
-    if (heading) heading.textContent = `Note ${n ? (place ? letters(n) : n) : ''}`.trim();
+    if (heading)
+      heading.textContent = n
+        ? t('editor-note-numbered', { number: place ? letters(n) : String(n) })
+        : t('editor-note');
     const select = this.#panel.querySelector<HTMLSelectElement>('.note-place');
     if (select && select.value !== place) select.value = place;
   }
@@ -211,7 +217,7 @@ export class FootnoteView implements NodeView {
     const panel = document.createElement('div');
     panel.className = 'note-panel';
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'Note');
+    panel.setAttribute('aria-label', t('editor-note'));
     const head = document.createElement('div');
     head.className = 'note-head';
     const heading = document.createElement('div');
@@ -221,8 +227,8 @@ export class FootnoteView implements NodeView {
     // page and the sources at the end, is told here where.
     const select = document.createElement('select');
     select.className = 'note-place';
-    select.setAttribute('aria-label', 'Where the note stands');
-    for (const [value, words] of PLACES) {
+    select.setAttribute('aria-label', t('editor-note-place'));
+    for (const [value, words] of PLACES()) {
       const option = document.createElement('option');
       option.value = value;
       option.textContent = words;
@@ -292,7 +298,7 @@ export class FootnoteView implements NodeView {
           keymap({ Enter: openSelected }),
           keymap(keys),
           keymap(baseKeymap),
-          placeholder(() => 'The text of the note'),
+          placeholder(() => t('editor-note-placeholder')),
           // In the language of the map of the element the note is in.
           spellingPlugin(
             spellingOptions(

@@ -22,6 +22,7 @@ use super::{Options, Passage, Proposal, ProposedItem, Suggestion, Sure};
 use crate::bib::latex::fold;
 use crate::document::CiteMode;
 use crate::library::Library;
+use crate::tr;
 
 const TERMS_JSON: &str = include_str!("../../../../resources/csl/locator-terms.json");
 
@@ -500,7 +501,7 @@ impl Last {
             .map(|s| Suggestion {
                 reference: s.reference.clone(),
                 sure: s.sure.min(Sure::Likely),
-                why: format!("the work cited before this: {}", s.why),
+                why: tr!("core-found-cited-before", why = &s.why),
             })
             .collect()
     }

@@ -16,13 +16,14 @@ use std::time::Duration;
 use crate::duplicates::to_isbn10;
 use crate::error::{Error, Result};
 use crate::net::{Client, encode};
+use crate::tr;
 
 use super::marc::{Described, Facts, Kind, Record, describe};
 use super::{Hit, pace};
 
 pub(crate) struct Catalogue {
     /// As the user is told. The Norwegian licence (NLOD) asks that the source be named.
-    pub name: &'static str,
+    pub name: fn() -> String,
     /// The address up to the question, with the form of record asked for.
     address: &'static str,
     /// The index that ISBNs are looked up in.
@@ -34,7 +35,7 @@ pub(crate) struct Catalogue {
 }
 
 pub(crate) const K10PLUS: Catalogue = Catalogue {
-    name: "K10plus",
+    name: || "K10plus".to_owned(),
     address: "https://sru.k10plus.de/opac-de-627?version=1.1&operation=searchRetrieve&recordSchema=marcxml",
     isbn: "pica.isb",
     words: Some(|words| {
@@ -49,7 +50,7 @@ pub(crate) const K10PLUS: Catalogue = Catalogue {
 };
 
 pub(crate) const NORWAY: Catalogue = Catalogue {
-    name: "Norwegian academic libraries (Sikt)",
+    name: || tr!("core-lookup-sikt"),
     address: "https://bibsys.alma.exlibrisgroup.com/view/sru/47BIBSYS_NETWORK?version=1.2&operation=searchRetrieve&recordSchema=marcxml",
     isbn: "alma.isbn",
     // This catalogue does not take brackets in a question, so title and name
@@ -59,7 +60,7 @@ pub(crate) const NORWAY: Catalogue = Catalogue {
 };
 
 pub(crate) const DNB: Catalogue = Catalogue {
-    name: "Deutsche Nationalbibliothek",
+    name: || "Deutsche Nationalbibliothek".to_owned(),
     address: "https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&recordSchema=MARC21-xml",
     isbn: "num",
     words: None,
@@ -69,7 +70,7 @@ pub(crate) const DNB: Catalogue = Catalogue {
 /// Reached without encryption only. Without `startRecord` it answered that
 /// there was one record and gave none.
 pub(crate) const CONGRESS: Catalogue = Catalogue {
-    name: "Library of Congress",
+    name: || "Library of Congress".to_owned(),
     address: "http://lx2.loc.gov:210/lcdb?version=1.1&operation=searchRetrieve&recordSchema=marcxml&startRecord=1",
     isbn: "bath.isbn",
     words: None,
@@ -137,7 +138,7 @@ impl Catalogue {
 
     fn hit(&self, described: Described) -> Hit {
         Hit {
-            source: self.name.to_owned(),
+            source: (self.name)(),
             url: (self.page)(&described.facts),
             draft: described.draft,
             remarks: described.remarks,
@@ -163,24 +164,24 @@ impl Catalogue {
         let first = found.first().map(|d| (own(d), d.facts.online, year(d), d.draft.get("edition").map(str::to_owned)));
         for (i, d) in found.iter_mut().enumerate() {
             if !own(d) {
-                let theirs = d.draft.get("isbn").unwrap_or("none").to_owned();
+                let theirs = d.draft.get("isbn").map(str::to_owned).unwrap_or_else(|| tr!("core-lookup-isbn-none"));
                 d.remarks.push(if d.facts.other_isbns.iter().any(|i| i == isbn13) {
-                    format!("The ISBN asked for is that of another form of the book. The ISBN of what this record describes is {theirs}.")
+                    tr!("core-lookup-other-form", isbn = &theirs)
                 } else {
-                    format!("The record does not have the ISBN asked for. The ISBN of what it describes is {theirs}.")
+                    tr!("core-lookup-other-isbn", isbn = &theirs)
                 });
             } else if let (true, Some((true, false, first_year, first_edition))) = (i > 0 && !d.facts.online, &first) {
                 let edition = d.draft.get("edition").map(str::to_owned);
                 if year(d) != *first_year || edition != *first_edition {
                     let which = match (edition, year(d)) {
                         (Some(e), y) if !y.is_empty() && e.chars().all(|c| c.is_ascii_digit()) => {
-                            format!("edition {e}, {y}")
+                            tr!("core-lookup-edition-year", edition = e, year = y)
                         }
                         (_, y) if !y.is_empty() => y,
                         (Some(e), _) => e,
-                        _ => "without a year".to_owned(),
+                        _ => tr!("core-lookup-without-year"),
                     };
-                    d.remarks.push(format!("Another edition with the same ISBN ({which})."));
+                    d.remarks.push(tr!("core-lookup-another-edition", which = which));
                 }
             }
         }
@@ -197,14 +198,14 @@ impl Catalogue {
 /// failures with 200.
 pub(crate) fn records(xml: &str) -> Result<Vec<Record>> {
     let document = roxmltree::Document::parse_with_options(xml, super::xml_options())
-        .map_err(|_| Error::Network("the answer could not be read".to_owned()))?;
+        .map_err(|_| Error::Network(tr!("core-lookup-catalogue-unreadable")))?;
     let named = |n: &roxmltree::Node, name: &str| n.is_element() && n.tag_name().name() == name;
     let root = document.root_element();
     if !root.tag_name().name().ends_with("searchRetrieveResponse")
         && !named(&root, "record")
         && !named(&root, "collection")
     {
-        return Err(Error::Network("the answer was not that of a catalogue".to_owned()));
+        return Err(Error::Network(tr!("core-lookup-not-a-catalogue")));
     }
     let records: Vec<Record> = document.descendants().filter(|n| named(n, "record")).filter_map(Record::read).collect();
     if records.is_empty() {
@@ -220,11 +221,11 @@ pub(crate) fn records(xml: &str) -> Result<Vec<Record>> {
             match (part("message"), part("details")) {
                 (Some(message), Some(details)) => format!("{message} ({details})"),
                 (Some(one), None) | (None, Some(one)) => one,
-                (None, None) => part("uri").unwrap_or_else(|| "no reason given".to_owned()),
+                (None, None) => part("uri").unwrap_or_else(|| tr!("core-lookup-no-reason")),
             }
         });
         if let Some(said) = said {
-            return Err(Error::Network(format!("the catalogue could not answer the question: {said}")));
+            return Err(Error::Network(tr!("core-lookup-catalogue-could-not-answer", said = said)));
         }
     }
     Ok(records)
@@ -262,7 +263,7 @@ mod tests {
 
     #[test]
     fn the_order_of_catalogues() {
-        let names = |isbn: &str| for_isbn(isbn).iter().map(|c| c.name).collect::<Vec<_>>();
+        let names = |isbn: &str| for_isbn(isbn).iter().map(|c| (c.name)()).collect::<Vec<_>>();
         assert_eq!(
             names("9788202413736"),
             vec!["Norwegian academic libraries (Sikt)", "K10plus", "Library of Congress"]

@@ -10,6 +10,7 @@ import { currentProject } from '$lib/editor/references.svelte';
 import type { DocumentFormat } from '$lib/api/documents';
 import { figureWidth, flow, stand, tableWidth } from '$lib/editor/schema';
 import { hooksOf, OPEN, passing } from '$lib/editor/ui.svelte';
+import { t } from '$lib/i18n';
 import { refForm } from '$lib/project/model/text';
 import { openMenu } from '$lib/ui/menu.svelte';
 import { place } from '$lib/ui/floating';
@@ -286,7 +287,11 @@ export class FormulaView implements NodeView {
   }
 
   #open() {
-    const panel = new Panel(this.dom, this.#display ? 'Equation' : 'Formula', 'formula-panel');
+    const panel = new Panel(
+      this.dom,
+      this.#display ? t('figures-equation') : t('figures-formula'),
+      'formula-panel',
+    );
     this.#panel = panel;
     const mounted = mount(FormulaPanel, {
       target: panel.el,
@@ -419,9 +424,9 @@ export class FormulaView implements NodeView {
 /** Asks for a picture among the files of this computer, and takes it in. */
 export async function choosePicture() {
   const path = await openFile({
-    title: 'A picture',
+    title: t('figures-choose-picture'),
     multiple: false,
-    filters: [{ name: 'Pictures', extensions: PICTURE_ENDINGS }],
+    filters: [{ name: t('figures-picture-files'), extensions: PICTURE_ENDINGS }],
   });
   if (typeof path !== 'string') return null;
   return pictures.addFile(path);
@@ -551,7 +556,7 @@ export class FigureView implements NodeView {
   }
 
   #open() {
-    const panel = new Panel(this.#picture, 'Figure', 'figure-panel', this.dom);
+    const panel = new Panel(this.#picture, t('figures-figure'), 'figure-panel', this.dom);
     this.#panel = panel;
     const a = this.#node.attrs;
     this.#mounted = mount(FigurePanel, {
@@ -621,7 +626,7 @@ export class FigureView implements NodeView {
       caption: captionOf(this.#node),
       ...(this.#node.attrs.alt ? { alt: String(this.#node.attrs.alt) } : {}),
     });
-    if (kept) notifyOk('Kept with the picture', 'Figures made with it begin with these words.');
+    if (kept) notifyOk(t('figures-caption-kept'), t('figures-caption-kept-detail'));
   }
 
   /** What is kept with the picture is said of the figure, in place of what is said now. */
@@ -785,7 +790,7 @@ export class CrossRefView implements NodeView {
         this.dom.textContent = text || '?';
         this.dom.classList.toggle('missing', !text);
         if (text) this.dom.removeAttribute('title');
-        else this.dom.title = 'What this pointed to is not in the document';
+        else this.dom.title = t('figures-pointed-gone');
       });
     });
     this.dom.addEventListener('click', this.#open);
@@ -818,7 +823,7 @@ export class CrossRefView implements NodeView {
       [
         ...(pointed && of
           ? [
-              { kind: 'heading' as const, label: 'Points by' },
+              { kind: 'heading' as const, label: t('figures-points-by') },
               ...formsOf(pointed.kind, pointed.number !== null).map((f) => ({
                 label: f.label,
                 hint: pointerText(pointed, f.form, of.counting),
@@ -829,7 +834,7 @@ export class CrossRefView implements NodeView {
               })),
               { kind: 'separator' as const },
               {
-                label: 'Go to what it points to',
+                label: t('figures-go-to'),
                 action: () => {
                   const at =
                     document.querySelector(`[data-id="${CSS.escape(pointed.id)}"]`) ??
@@ -841,16 +846,16 @@ export class CrossRefView implements NodeView {
             ]
           : [
               {
-                label: 'What this pointed to is not in the document',
+                label: t('figures-pointed-gone'),
                 disabled: true,
                 action: () => {},
               },
             ]),
         {
-          label: 'Point to something else…',
+          label: t('figures-point-elsewhere'),
           action: () => hooksOf.get(this.#view)?.point?.(this.#view, this.#getPos()),
         },
-        { label: 'Remove', action: () => this.#set(null) },
+        { label: t('common-remove'), action: () => this.#set(null) },
       ],
       { align: 'start' },
     );

@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
+use crate::tr;
 
 pub use length::Length;
 
@@ -819,7 +820,7 @@ fn check_id(id: &str) -> Result<()> {
         && id.len() <= 80
         && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
         && !id.starts_with('-');
-    if ok { Ok(()) } else { Err(Error::invalid(format!("“{id}” cannot be the id of a format"))) }
+    if ok { Ok(()) } else { Err(Error::invalid(tr!("core-export-format-bad-id", id = id))) }
 }
 
 impl Formats {
@@ -828,7 +829,7 @@ impl Formats {
     }
 
     fn read(path: &Path) -> Result<DocumentFormat> {
-        let text = fs::read_to_string(path).context(|| format!("reading {}", path.display()))?;
+        let text = fs::read_to_string(path).context(|| tr!("io-reading", path = path))?;
         let mut format: DocumentFormat =
             serde_json::from_str(&text).map_err(|e| Error::Parse { path: path.to_owned(), message: e.to_string() })?;
         if format.id.is_empty() {
@@ -902,7 +903,7 @@ impl Formats {
         if bundled.is_file() {
             return Self::read(&bundled);
         }
-        Err(Error::not_found(format!("the format “{id}”")))
+        Err(Error::not_found(tr!("core-export-the-format", id = id)))
     }
 
     /// The format with an id, or the general one when it is not there.
@@ -918,7 +919,7 @@ impl Formats {
     pub fn save(&self, mut format: DocumentFormat) -> Result<DocumentFormat> {
         format.name = format.name.split_whitespace().collect::<Vec<_>>().join(" ");
         if format.name.is_empty() {
-            return Err(Error::invalid("A format needs a name."));
+            return Err(Error::invalid(tr!("core-export-format-needs-name")));
         }
         if format.id.is_empty() || self.bundled.join(format!("{}.json", format.id)).is_file() {
             // A new one, or one made from a format that comes with the application.
@@ -945,9 +946,9 @@ impl Formats {
         check_id(id)?;
         let path = self.own.join(format!("{id}.json"));
         if !path.is_file() {
-            return Err(Error::invalid("Only your own formats can be deleted."));
+            return Err(Error::invalid(tr!("core-export-format-own-only")));
         }
-        fs::remove_file(&path).context(|| format!("removing {}", path.display()))
+        fs::remove_file(&path).context(|| tr!("io-removing", path = &path))
     }
 }
 

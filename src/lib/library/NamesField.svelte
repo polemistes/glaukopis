@@ -4,6 +4,7 @@
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import Plus from '@lucide/svelte/icons/plus';
   import type { Person } from '$lib/api/library';
+  import { t } from '$lib/i18n';
   import { openMenu } from '$lib/ui/menu.svelte';
 
   interface Props {
@@ -111,7 +112,7 @@
       event.currentTarget as HTMLElement,
       [
         {
-          label: 'Institution or other name kept whole',
+          label: t('library-names-kept-whole'),
           icon: Building2,
           checked: !!person.literal,
           action: () => {
@@ -125,8 +126,8 @@
           },
         },
         {
-          label: 'Prefix and suffix',
-          hint: '“van”, “de la” · “Jr.”, “III”',
+          label: t('library-names-prefix-suffix'),
+          hint: t('library-names-prefix-suffix.hint'),
           checked: expanded.has(i) || !!person.prefix || !!person.suffix,
           disabled: !!person.literal,
           action: () => {
@@ -136,11 +137,15 @@
           },
         },
         { kind: 'separator' },
-        { label: 'Move up', disabled: i === 0, action: () => move(i, -1) },
-        { label: 'Move down', disabled: i >= people.length - 1, action: () => move(i, 1) },
+        { label: t('library-names-move-up'), disabled: i === 0, action: () => move(i, -1) },
+        {
+          label: t('library-names-move-down'),
+          disabled: i >= people.length - 1,
+          action: () => move(i, 1),
+        },
         { kind: 'separator' },
         {
-          label: 'Remove',
+          label: t('common-remove'),
           danger: true,
           disabled: people.length <= 1 && isEmpty(person),
           action: () => remove(i),
@@ -159,8 +164,8 @@
           id={i === 0 ? id : undefined}
           class="whole"
           value={person.family}
-          placeholder="Name"
-          aria-label="{label}: name"
+          placeholder={t('library-names-name')}
+          aria-label={t('library-names-name-of', { role: label })}
           oninput={(e) => set(i, 'family', e.currentTarget.value)}
           onkeydown={(e) => onkeydown(e, i)}
         />
@@ -168,16 +173,16 @@
         <input
           id={i === 0 ? id : undefined}
           value={person.family}
-          placeholder="Family name"
-          aria-label="{label}: family name"
+          placeholder={t('library-names-family')}
+          aria-label={t('library-names-family-of', { role: label })}
           oninput={(e) => set(i, 'family', e.currentTarget.value)}
           onkeydown={(e) => onkeydown(e, i)}
           onpaste={(e) => onpaste(e, i)}
         />
         <input
           value={person.given ?? ''}
-          placeholder="Given names"
-          aria-label="{label}: given names"
+          placeholder={t('library-names-given')}
+          aria-label={t('library-names-given-of', { role: label })}
           oninput={(e) => set(i, 'given', e.currentTarget.value)}
           onkeydown={(e) => onkeydown(e, i)}
         />
@@ -185,7 +190,7 @@
       <button
         type="button"
         class="more"
-        aria-label="More for this name"
+        aria-label={t('library-names-more')}
         tabindex="-1"
         onclick={(e) => menu(e, i)}
       >
@@ -196,14 +201,14 @@
       <div class="row extra">
         <input
           value={person.prefix ?? ''}
-          placeholder="Prefix: van, de la"
-          aria-label="{label}: prefix"
+          placeholder={t('library-names-prefix')}
+          aria-label={t('library-names-prefix-of', { role: label })}
           oninput={(e) => set(i, 'prefix', e.currentTarget.value)}
         />
         <input
           value={person.suffix ?? ''}
-          placeholder="Suffix: Jr., III"
-          aria-label="{label}: suffix"
+          placeholder={t('library-names-suffix')}
+          aria-label={t('library-names-suffix-of', { role: label })}
           oninput={(e) => set(i, 'suffix', e.currentTarget.value)}
         />
         <span class="more"></span>

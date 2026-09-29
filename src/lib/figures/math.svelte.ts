@@ -10,6 +10,7 @@
 import { SvelteMap } from 'svelte/reactivity';
 import font from '@fontsource/stix-two-math/files/stix-two-math-latin-400-normal.woff2?url';
 import { mathRender, type Formula } from '$lib/api/pictures';
+import { t } from '$lib/i18n';
 
 export interface Shown {
   /** The formula as MathML that may be put into the page as it is. */
@@ -144,7 +145,8 @@ function withFont() {
 }
 
 class Mathematics {
-  readonly #shown = new SvelteMap<string, Shown>();
+  /** What came of each formula; `unread` for one that could not be read, and no reason was given. */
+  readonly #shown = new SvelteMap<string, Shown | 'unread'>();
   #wanted = new Map<string, Formula>();
   #timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -157,6 +159,8 @@ class Mathematics {
     if (!formula) return { mathml: null, problem: null };
     const key = keyOf(formula, display);
     const known = this.#shown.get(key);
+    // Said in the language of the interface as it is when it is shown.
+    if (known === 'unread') return { mathml: null, problem: t('figures-formula-unread') };
     if (known) return known;
     if (!this.#wanted.has(key)) {
       this.#wanted.set(key, { tex: formula, display });
@@ -176,10 +180,15 @@ class Mathematics {
       wanted.forEach(([key], i) => {
         const r = rendered[i];
         const mathml = r?.mathml ? sanitise(r.mathml) : null;
-        this.#shown.set(key, {
-          mathml,
-          problem: mathml ? null : (r?.problem ?? 'The formula could not be read.'),
-        });
+        const problem = r?.problem ?? null;
+        this.#shown.set(
+          key,
+          mathml
+            ? { mathml, problem: null }
+            : problem !== null
+              ? { mathml: null, problem }
+              : 'unread',
+        );
       });
     } catch {
       // Without Pandoc the formula is shown as it was written, and nothing is said of it.
@@ -202,6 +211,7 @@ export function showFormula(el: HTMLElement, tex: string, display: boolean) {
     // Made by `sanitise`: mathematics and nothing else.
     el.innerHTML = shown.mathml;
   } else {
-    el.textContent = tex.trim() || (display ? 'An equation' : 'formula');
+    el.textContent =
+      tex.trim() || (display ? t('figures-equation-blank') : t('figures-formula-blank'));
   }
 }

@@ -9,6 +9,7 @@ use unicode_normalization::UnicodeNormalization;
 use crate::bib::latex::fold;
 use crate::bib::names::Person;
 use crate::bib::parser::normalise_space;
+use crate::tr;
 
 /// Composed letters, no invisible characters, single spaces.
 ///
@@ -289,8 +290,9 @@ pub(crate) fn recase_title(text: &str, langid: Option<&str>) -> String {
 }
 
 /// What the user is told when a title has been taken out of capitals.
-pub(crate) const CAPITALS_REMARK: &str =
-    "The title was in capitals and has been put in lower case: see that names have their capital letters.";
+pub(crate) fn capitals_remark() -> String {
+    tr!("core-lookup-title-capitals")
+}
 
 /// A title as it is entered: without markup, without the full stop that some
 /// services end titles with, and out of capitals if it came in them.
@@ -300,8 +302,9 @@ pub(crate) fn title(raw: &str, langid: Option<&str>, remarks: &mut Vec<String>) 
     if !is_capitals(plain) {
         return plain.to_owned();
     }
-    if !remarks.iter().any(|r| r == CAPITALS_REMARK) {
-        remarks.push(CAPITALS_REMARK.to_owned());
+    let remark = capitals_remark();
+    if !remarks.contains(&remark) {
+        remarks.push(remark);
     }
     recase_title(plain, langid)
 }
@@ -402,7 +405,7 @@ pub(crate) fn person(family: &str, given: &str, remarks: &mut Vec<String>) -> Pe
     let mut given = tidy_given(given);
     if name_is_capitals(&family) && family.chars().filter(|c| c.is_alphabetic()).count() > 2 {
         let mended = recase_family(&family);
-        remarks.push(format!("The name “{family}” was in capitals and has been written “{mended}”."));
+        remarks.push(tr!("core-lookup-name-capitals", family = &family, mended = &mended));
         family = mended;
         if name_is_capitals(&given) && given.chars().filter(|c| c.is_alphabetic()).count() > 3 {
             given = given

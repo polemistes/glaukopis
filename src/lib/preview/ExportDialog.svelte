@@ -8,6 +8,7 @@
     type Exported,
     type Target,
   } from '$lib/api/documents';
+  import { t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
@@ -33,52 +34,54 @@
     needsLatex?: boolean;
   }
 
-  const kinds: Kind[] = [
+  // The names of kinds of file that are names of programs and standards are
+  // the same in every language.
+  const kinds: Kind[] = $derived([
     {
       target: 'pdf',
       label: 'PDF',
       extension: 'pdf',
-      about: 'As the preview shows it',
+      about: t('preview-export-pdf-about'),
       needsTypst: true,
     },
     {
       target: 'pdflatex',
-      label: 'PDF, set by LaTeX',
+      label: t('preview-export-pdflatex'),
       extension: 'pdf',
-      about: 'The same document in the typesetting of LaTeX. It takes a little longer.',
+      about: t('preview-export-pdflatex-about'),
       needsLatex: true,
     },
     {
       target: 'docx',
       label: 'Word',
       extension: 'docx',
-      about: 'What most publishers and journals ask for',
+      about: t('preview-export-docx-about'),
     },
     {
       target: 'odt',
       label: 'OpenDocument',
       extension: 'odt',
-      about: 'For LibreOffice Writer and others',
+      about: t('preview-export-odt-about'),
     },
     {
       target: 'latex',
       label: 'LaTeX',
       extension: 'tex',
-      about: 'To be set with LuaLaTeX or XeLaTeX',
+      about: t('preview-export-latex-about'),
     },
     {
       target: 'markdown',
       label: 'Markdown',
       extension: 'md',
-      about: 'Plain text, with the citations as keys',
+      about: t('preview-export-markdown-about'),
     },
     {
       target: 'html',
-      label: 'Web page',
+      label: t('preview-export-html'),
       extension: 'html',
-      about: 'One file, to be read in a browser',
+      about: t('preview-export-html-about'),
     },
-  ];
+  ]);
 
   let chosen = $state<Target>('docx');
   let biblatex = $state(false);
@@ -94,7 +97,7 @@
     error = null;
     done = null;
     const path = await save({
-      title: `Export as ${kind.label}`,
+      title: t('preview-export-as', { kind: kind.label }),
       defaultPath: `${name}.${kind.extension}`,
       filters: [{ name: kind.label, extensions: [kind.extension] }],
     });
@@ -103,7 +106,7 @@
     try {
       done = await documentExport(await request(), chosen, path, { biblatex });
     } catch (e) {
-      error = describeError(e) ?? 'The document could not be made.';
+      error = describeError(e) ?? t('preview-export-failed');
     } finally {
       working = false;
     }
@@ -114,21 +117,17 @@
   }
 </script>
 
-<Dialog open title="Export" width={540} dismissable={!working} {onclose}>
+<Dialog open title={t('preview-export')} width={540} dismissable={!working} {onclose}>
   {#if done}
     <div class="done">
       <span class="mark"><CircleCheck size={28} strokeWidth={1.5} /></span>
       <h3 class="selectable">{fileName(done.path)}</h3>
       {#each done.also as other}
-        <p class="also selectable">with {fileName(other)}</p>
+        <p class="also selectable">{t('preview-export-also', { file: fileName(other) })}</p>
       {/each}
       {#if done.missing.length}
         <p class="warning">
-          {done.missing.length === 1
-            ? 'One work cited was'
-            : `${done.missing.length} works cited were`} not found, and {done.missing.length === 1
-            ? 'is'
-            : 'are'} marked in the text.
+          {t('preview-export-missing', { count: done.missing.length })}
         </p>
       {/if}
       {#each done.warnings.slice(0, 5) as w}
@@ -139,23 +138,23 @@
           variant="primary"
           onclick={() =>
             done &&
-            openPath(done.path).catch((e) => notifyError('The file could not be opened', e))}
+            openPath(done.path).catch((e) => notifyError(t('preview-export-open-failed'), e))}
         >
-          Open
+          {t('common-open')}
         </Button>
         <Button
           onclick={() =>
             done &&
             openPath(done.path, true).catch((e) =>
-              notifyError('The folder could not be opened', e),
+              notifyError(t('preview-export-folder-failed'), e),
             )}
         >
-          Show in folder
+          {t('preview-export-show-in-folder')}
         </Button>
       </div>
     </div>
   {:else}
-    <div class="kinds" role="radiogroup" aria-label="Kind of file">
+    <div class="kinds" role="radiogroup" aria-label={t('preview-export-kind')}>
       {#each kinds as k (k.target)}
         {@const unavailable = (!!k.needsTypst && typstMissing) || (!!k.needsLatex && latexMissing)}
         <label class="kind" class:chosen={chosen === k.target} class:unavailable>
@@ -170,9 +169,9 @@
             {#if !unavailable}
               {k.about}
             {:else if k.needsLatex}
-              LaTeX is needed for this, and was not found. It is installed as TeX Live.
+              {t('preview-export-latex-missing')}
             {:else}
-              Typst is needed for this, and was not found
+              {t('preview-export-typst-missing')}
             {/if}
           </span>
         </label>
@@ -183,11 +182,8 @@
       <label class="option">
         <input type="checkbox" bind:checked={biblatex} disabled={working} />
         <span>
-          Keep the citations as commands of BibLaTeX
-          <small
-            >The references are written to a .bib file beside the document. The reference style is
-            then that of BibLaTeX nearest to the one chosen.</small
-          >
+          {t('preview-export-biblatex')}
+          <small>{t('preview-export-biblatex-hint')}</small>
         </span>
       </label>
     {/if}
@@ -197,13 +193,13 @@
   {#snippet footer()}
     {#if done}
       <div class="left">
-        <Button variant="ghost" onclick={() => (done = null)}>Export another</Button>
+        <Button variant="ghost" onclick={() => (done = null)}>{t('preview-export-another')}</Button>
       </div>
-      <Button onclick={onclose}>Close</Button>
+      <Button onclick={onclose}>{t('common-close')}</Button>
     {:else}
-      {#if working}<div class="left working"><Spinner /> Making the document…</div>{/if}
-      <Button variant="ghost" disabled={working} onclick={onclose}>Cancel</Button>
-      <Button variant="primary" disabled={working} onclick={run}>Export…</Button>
+      {#if working}<div class="left working"><Spinner /> {t('preview-export-working')}</div>{/if}
+      <Button variant="ghost" disabled={working} onclick={onclose}>{t('common-cancel')}</Button>
+      <Button variant="primary" disabled={working} onclick={run}>{t('preview-export-run')}</Button>
     {/if}
   {/snippet}
 </Dialog>

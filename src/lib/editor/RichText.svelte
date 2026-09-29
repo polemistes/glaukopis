@@ -6,6 +6,7 @@
   import { ySyncPlugin, yCursorPlugin } from 'y-prosemirror';
   import type * as Y from 'yjs';
   import type { Project } from '$lib/project/model/project.svelte';
+  import { t } from '$lib/i18n';
   import { insertCitation } from './commands';
   import {
     bodyPlugins,
@@ -172,7 +173,7 @@
     event.preventDefault();
     void (async () => {
       for (const file of files) {
-        const taken = await pictures.addBlob(file, file.name || 'picture');
+        const taken = await pictures.addBlob(file, file.name || t('editor-pasted-picture'));
         if (!taken || v.isDestroyed) continue;
         insertFigure(taken)(v.state, v.dispatch);
       }

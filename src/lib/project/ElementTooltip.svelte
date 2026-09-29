@@ -24,7 +24,7 @@
     const f = project.fragment(id, 'body');
     if (!(f instanceof Y.XmlFragment)) return { html: '', cut: false };
     const { blocks, cut } = excerpt(readBody(f), 520);
-    return { html: blocksHtml(blocks), cut };
+    return { html: blocksHtml(blocks, project.map(node?.map)?.document.language), cut };
   });
   const included = $derived(node?.include ? project.map(node.include) : undefined);
   const worth = $derived(!!node && (!node.empty || !!included || !node.heading || node.excluded));

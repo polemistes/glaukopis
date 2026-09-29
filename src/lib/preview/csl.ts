@@ -9,6 +9,8 @@
  * - the source.
  */
 
+import { has, t } from '$lib/i18n';
+
 export const CSL = 'http://purl.org/net/xbiblio/csl';
 
 export type Scope = 'citation' | 'bibliography';
@@ -24,17 +26,13 @@ export function parse(xml: string): Style {
   if (failure) {
     const words = (failure.textContent ?? '').replace(/\s+/g, ' ').trim();
     throw new Error(
-      words.replace(/^.*?error[^:]*:\s*/i, '').slice(0, 200) ||
-        'The source is not well-formed XML.',
+      words.replace(/^.*?error[^:]*:\s*/i, '').slice(0, 200) || t('style-source-not-xml'),
     );
   }
   const root = doc.documentElement;
-  if (root.localName !== 'style')
-    throw new Error('This is not a style: it does not begin with <style>.');
+  if (root.localName !== 'style') throw new Error(t('style-source-not-style'));
   if (!child(root, 'citation')) {
-    throw new Error(
-      'The style has no <citation>: it only names another style, and cannot be changed.',
-    );
+    throw new Error(t('style-source-dependent'));
   }
   return { doc, root };
 }
@@ -229,234 +227,141 @@ export function setInitials(style: Style, scope: Scope, how: Initials) {
 // Parts
 // ---------------------------------------------------------------------
 
-const VARIABLES: Record<string, string> = {
-  title: 'the title',
-  'title-short': 'the short title',
-  'container-title': 'the title of the journal or book',
-  'container-title-short': 'the short title of the journal',
-  'collection-title': 'the series',
-  'collection-number': 'the number in the series',
-  'original-title': 'the original title',
-  'reviewed-title': 'the title of the work reviewed',
-  author: 'the author',
-  editor: 'the editor',
-  translator: 'the translator',
-  'container-author': 'the author of the book',
-  'collection-editor': 'the editor of the series',
-  'editorial-director': 'the editorial director',
-  'original-author': 'the original author',
-  'reviewed-author': 'the author of the work reviewed',
-  interviewer: 'the interviewer',
-  recipient: 'the recipient',
-  director: 'the director',
-  composer: 'the composer',
-  illustrator: 'the illustrator',
-  issued: 'the date',
-  accessed: 'the date of access',
-  'original-date': 'the original date',
-  'event-date': 'the date of the event',
-  submitted: 'the date of submission',
-  volume: 'the volume',
-  'number-of-volumes': 'the number of volumes',
-  issue: 'the issue',
-  edition: 'the edition',
-  page: 'the pages',
-  'page-first': 'the first page',
-  'number-of-pages': 'the number of pages',
-  number: 'the number',
-  chapter: 'the chapter',
-  'chapter-number': 'the number of the chapter',
-  publisher: 'the publisher',
-  'publisher-place': 'the place of publication',
-  'original-publisher': 'the original publisher',
-  'original-publisher-place': 'the original place of publication',
-  locator: 'the place cited',
-  'citation-number': 'the number of the citation',
-  'citation-label': 'the label of the citation',
-  'year-suffix': 'the letter after the year',
-  'first-reference-note-number': 'the number of the note where it was first cited',
-  DOI: 'the DOI',
-  URL: 'the address',
-  ISBN: 'the ISBN',
-  ISSN: 'the ISSN',
-  PMID: 'the PMID',
-  genre: 'the kind of work',
-  medium: 'the medium',
-  note: 'the note',
-  annote: 'the annotation',
-  abstract: 'the abstract',
-  archive: 'the archive',
-  archive_location: 'the place in the archive',
-  'archive-place': 'the place of the archive',
-  authority: 'the authority',
-  'call-number': 'the call number',
-  event: 'the event',
-  'event-place': 'the place of the event',
-  'event-title': 'the title of the event',
-  section: 'the section',
-  source: 'the source',
-  status: 'the state of publication',
-  version: 'the version',
-  language: 'the language',
-  dimensions: 'the dimensions',
-  scale: 'the scale',
-  references: 'the references',
-  keyword: 'the keywords',
-  jurisdiction: 'the jurisdiction',
-};
+// What the variables, types and positions of CSL are called is said in
+// `locales/<language>/style.ftl`, a message for each: `style-variable-title`,
+// `style-type-book`, `style-position-first`. What has none is shown by the
+// name CSL gives it.
 
-const TYPES: Record<string, string> = {
-  book: 'a book',
-  chapter: 'a chapter',
-  'article-journal': 'an article in a journal',
-  'article-magazine': 'an article in a magazine',
-  'article-newspaper': 'an article in a newspaper',
-  article: 'an article',
-  thesis: 'a thesis',
-  report: 'a report',
-  webpage: 'a web page',
-  'paper-conference': 'a conference paper',
-  'entry-encyclopedia': 'an entry in an encyclopaedia',
-  'entry-dictionary': 'an entry in a dictionary',
-  entry: 'an entry',
-  review: 'a review',
-  'review-book': 'a review of a book',
-  manuscript: 'a manuscript',
-  personal_communication: 'a letter or other communication',
-  legal_case: 'a court decision',
-  legislation: 'legislation',
-  bill: 'a bill',
-  patent: 'a patent',
-  dataset: 'a dataset',
-  software: 'software',
-  motion_picture: 'a film',
-  broadcast: 'a broadcast',
-  song: 'a recording',
-  speech: 'a lecture',
-  interview: 'an interview',
-  graphic: 'an image',
-  map: 'a map',
-  pamphlet: 'a pamphlet',
-  'post-weblog': 'a blog post',
-  post: 'a post',
-  classic: 'a classical work',
-  collection: 'a collection',
-  document: 'a document',
-  standard: 'a standard',
-  treaty: 'a treaty',
-  periodical: 'a periodical',
-  musical_score: 'a score',
-  figure: 'a figure',
-  event: 'an event',
-  performance: 'a performance',
-  regulation: 'a regulation',
-  hearing: 'a hearing',
-};
-
-const POSITIONS: Record<string, string> = {
-  first: 'it is cited for the first time',
-  subsequent: 'it has been cited before',
-  ibid: 'it is the same as the citation before',
-  'ibid-with-locator': 'it is the same as the citation before, at another place',
-  'near-note': 'it was cited in a note nearby',
-};
-
-export function variableWords(names: string): string {
-  return names
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((v) => VARIABLES[v] ?? `“${v}”`)
-    .join(', or else ');
+/** The words for a variable, with their article: "the title". */
+function variableWord(name: string): string {
+  const id = `style-variable-${name}`;
+  return has(id) ? t(id) : t('style-quoted', { text: name });
 }
 
-function list(values: string, words: Record<string, string>, join: string): string {
-  const parts = values
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((v) => words[v] ?? v);
+/** A variable as a field of a reference is named, without an article: "title". */
+export function variableName(name: string): string {
+  const id = `style-variable-${name}`;
+  return has(id) ? t(`${id}.bare`) : name;
+}
+
+function typeWord(name: string): string {
+  const id = `style-type-${name}`;
+  return has(id) ? t(id) : name;
+}
+
+function positionWord(name: string): string {
+  const id = `style-position-${name}`;
+  return has(id) ? t(id) : name;
+}
+
+function split(values: string): string[] {
+  return values.split(/\s+/).filter(Boolean);
+}
+
+/**
+ * Words joined two at a time by a message that has them as `first` and
+ * `last`, so that the language orders them: "the author, or else the editor".
+ */
+function chain(parts: string[], id: string): string {
+  return parts.length ? parts.reduce((first, last) => t(id, { first, last })) : '';
+}
+
+/** Words as a list, the last joined to the others by a message: "a book, a chapter or a thesis". */
+function list(parts: string[], id: string): string {
   if (parts.length <= 1) return parts[0] ?? '';
-  return `${parts.slice(0, -1).join(', ')} ${join} ${parts[parts.length - 1]}`;
+  return t(id, { first: parts.slice(0, -1).join(', '), last: parts[parts.length - 1] });
+}
+
+export function variableWords(names: string): string {
+  return chain(split(names).map(variableWord), 'style-or-else');
 }
 
 function condition(el: Element): string {
   const match = el.getAttribute('match') ?? 'all';
-  const join = match === 'any' ? 'or' : 'and';
+  const join = match === 'any' ? 'style-or' : 'style-and';
   const parts: string[] = [];
   const type = el.getAttribute('type');
-  if (type)
+  if (type) {
+    const types = split(type).map(typeWord);
     parts.push(
-      `the work is ${list(type, TYPES, match === 'all' && type.includes(' ') ? 'and' : 'or')}`,
+      t('style-if-type', {
+        types: list(types, match === 'all' && type.includes(' ') ? 'style-and' : 'style-or'),
+      }),
     );
+  }
   const variable = el.getAttribute('variable');
   if (variable) {
-    const names = variable
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((v) => (VARIABLES[v] ?? v).replace(/^the /, ''));
-    const verb = match === 'none' ? 'it has no' : 'it has';
-    parts.push(`${verb} ${names.join(match === 'any' ? ' or ' : ' and ')}`);
+    const names = chain(split(variable).map(variableName), join);
+    parts.push(
+      match === 'none'
+        ? t('style-if-lacks', { variables: names })
+        : t('style-if-has', { variables: names }),
+    );
   }
   const position = el.getAttribute('position');
-  if (position) parts.push(list(position, POSITIONS, join));
+  if (position) parts.push(list(split(position).map(positionWord), join));
   const numeric = el.getAttribute('is-numeric');
-  if (numeric) parts.push(`${variableWords(numeric).replace(/^the /, 'the ')} is a number`);
+  if (numeric) parts.push(t('style-if-numeric', { variables: variableWords(numeric) }));
   const uncertain = el.getAttribute('is-uncertain-date');
-  if (uncertain) parts.push(`${variableWords(uncertain)} is uncertain`);
+  if (uncertain) parts.push(t('style-if-uncertain', { variables: variableWords(uncertain) }));
   const locator = el.getAttribute('locator');
-  if (locator) parts.push(`the place cited is a ${locator.split(/\s+/).join(' or a ')}`);
+  if (locator) {
+    const places = split(locator).map((name) => t('style-locator', { name }));
+    parts.push(t('style-if-locator', { locators: chain(places, 'style-or') }));
+  }
   const disambiguate = el.getAttribute('disambiguate');
-  if (disambiguate) parts.push('it would otherwise be mistaken for another');
-  if (!parts.length) return 'always';
-  const joined = parts.join(` ${join} `);
-  return match === 'none' && !variable ? `none of this holds: ${joined}` : joined;
+  if (disambiguate) parts.push(t('style-if-disambiguate'));
+  if (!parts.length) return t('style-if-always');
+  const joined = chain(parts, join);
+  return match === 'none' && !variable ? t('style-if-none-holds', { conditions: joined }) : joined;
 }
 
 /** What a part of a style is, in words. */
 export function describe(el: Element): string {
   switch (el.localName) {
     case 'layout':
-      return 'The whole';
+      return t('style-part-layout');
     case 'text': {
       const variable = el.getAttribute('variable');
       if (variable) return capital(variableWords(variable));
       const m = el.getAttribute('macro');
-      if (m) return `“${m}”`;
+      if (m) return t('style-quoted', { text: m });
       const term = el.getAttribute('term');
-      if (term) return `The word for “${term}”`;
+      if (term) return t('style-part-term', { term });
       const value = el.getAttribute('value');
-      if (value !== null) return `The words “${value}”`;
-      return 'Text';
+      if (value !== null) return t('style-part-value', { value });
+      return t('style-part-text');
     }
     case 'names':
       return capital(variableWords(el.getAttribute('variable') ?? ''));
     case 'name':
-      return 'How the names are written';
+      return t('style-part-name');
     case 'name-part':
-      return `The ${el.getAttribute('name') ?? ''} name`;
+      return t('style-part-name-part', { name: el.getAttribute('name') ?? '' });
     case 'et-al':
-      return '“et al.”';
+      return t('style-part-et-al');
     case 'label':
       return el.getAttribute('variable')
-        ? `The word before ${variableWords(el.getAttribute('variable')!)} (“p.”, “ed.”)`
-        : 'The word for the role (“ed.”, “trans.”)';
+        ? t('style-part-label', { variables: variableWords(el.getAttribute('variable')!) })
+        : t('style-part-role');
     case 'substitute':
-      return 'When there is no such name, in its place';
+      return t('style-part-substitute');
     case 'date':
       return capital(variableWords(el.getAttribute('variable') ?? ''));
     case 'date-part':
-      return `The ${el.getAttribute('name') ?? 'part'}`;
+      return t('style-part-date-part', { name: el.getAttribute('name') ?? 'part' });
     case 'number':
       return capital(variableWords(el.getAttribute('variable') ?? ''));
     case 'group':
-      return 'Together';
+      return t('style-part-group');
     case 'choose':
-      return 'One of these';
+      return t('style-part-choose');
     case 'if':
-      return `If ${condition(el)}`;
+      return t('style-part-if', { condition: condition(el) });
     case 'else-if':
-      return `Or else, if ${condition(el)}`;
+      return t('style-part-else-if', { condition: condition(el) });
     case 'else':
-      return 'Otherwise';
+      return t('style-part-else');
     default:
       return el.localName;
   }
@@ -588,20 +493,21 @@ export const TEXT_VARIABLES = [
 /** A sentence for a part with its form: “italic, in quotation marks, followed by ‘, ’”. */
 export function formWords(el: Element): string {
   const out: string[] = [];
-  if (el.getAttribute('font-style') === 'italic') out.push('italic');
-  if (el.getAttribute('font-weight') === 'bold') out.push('bold');
-  if (el.getAttribute('font-variant') === 'small-caps') out.push('small capitals');
-  if (el.getAttribute('text-decoration') === 'underline') out.push('underlined');
-  if (el.getAttribute('quotes') === 'true') out.push('in quotation marks');
+  if (el.getAttribute('font-style') === 'italic') out.push(t('style-form-italic'));
+  if (el.getAttribute('font-weight') === 'bold') out.push(t('style-form-bold'));
+  if (el.getAttribute('font-variant') === 'small-caps') out.push(t('style-form-small-caps'));
+  if (el.getAttribute('text-decoration') === 'underline') out.push(t('style-form-underlined'));
+  if (el.getAttribute('quotes') === 'true') out.push(t('style-form-quoted'));
   const c = el.getAttribute('text-case');
-  if (c) out.push(c.replace(/-/g, ' '));
+  if (c) out.push(t('style-form-case', { case: c, words: c.replace(/-/g, ' ') }));
   const v = el.getAttribute('vertical-align');
-  if (v && v !== 'baseline') out.push(v === 'sup' ? 'raised' : 'lowered');
+  if (v && v !== 'baseline')
+    out.push(v === 'sup' ? t('style-form-raised') : t('style-form-lowered'));
   const prefix = el.getAttribute('prefix');
-  if (prefix) out.push(`after “${prefix}”`);
+  if (prefix) out.push(t('style-form-after', { text: prefix }));
   const suffix = el.getAttribute('suffix');
-  if (suffix) out.push(`before “${suffix}”`);
+  if (suffix) out.push(t('style-form-before', { text: suffix }));
   const delimiter = el.getAttribute('delimiter');
-  if (delimiter) out.push(`with “${delimiter}” between`);
+  if (delimiter) out.push(t('style-form-between', { text: delimiter }));
   return out.join(', ');
 }

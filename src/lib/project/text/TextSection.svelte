@@ -98,7 +98,7 @@
     // The record is made anew whenever the text changes.
     void node.words;
     void node.cited;
-    return body ? blocksHtml(readBody(body)) : '';
+    return body ? blocksHtml(readBody(body), project.map(node.map)?.document.language) : '';
   });
   const included = $derived(node.include ? project.map(node.include) : undefined);
   /** Where the map it stands for is in the document, with the map's name in bold. */

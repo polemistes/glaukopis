@@ -13,6 +13,7 @@
   import TextAlignCenter from '@lucide/svelte/icons/text-align-center';
   import TextAlignEnd from '@lucide/svelte/icons/text-align-end';
   import TextAlignStart from '@lucide/svelte/icons/text-align-start';
+  import { t } from '$lib/i18n';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import type { TableTools } from './views.svelte';
@@ -30,7 +31,7 @@
 <div
   class="bar"
   role="toolbar"
-  aria-label="Table"
+  aria-label={t('tables-table')}
   tabindex="-1"
   onmousedown={(e) => e.preventDefault()}
 >
@@ -38,22 +39,22 @@
     type="button"
     class="word"
     data-tool="rows"
-    use:tooltip={{ text: 'A row above or below; remove the row', side: 'top' }}
+    use:tooltip={{ text: t('tables-row-hint'), side: 'top' }}
     onclick={(e) => menu(e, tools.rows())}
   >
     <Rows3 size={14} />
-    Row
+    {t('tables-row')}
     <ChevronDown size={12} />
   </button>
   <button
     type="button"
     class="word"
     data-tool="columns"
-    use:tooltip={{ text: 'A column before or after; remove the column', side: 'top' }}
+    use:tooltip={{ text: t('tables-column-hint'), side: 'top' }}
     onclick={(e) => menu(e, tools.columns())}
   >
     <Columns3 size={14} />
-    Column
+    {t('tables-column')}
     <ChevronDown size={12} />
   </button>
 
@@ -63,8 +64,8 @@
     type="button"
     data-tool="join"
     disabled={!now?.canJoin}
-    aria-label="Join the cells"
-    use:tooltip={{ text: 'Join the cells that are selected', side: 'top' }}
+    aria-label={t('tables-join')}
+    use:tooltip={{ text: t('tables-join-hint'), side: 'top' }}
     onclick={() => tools.join()}
   >
     <TableCellsMerge size={15} />
@@ -73,8 +74,8 @@
     type="button"
     data-tool="split"
     disabled={!now?.canSplit}
-    aria-label="Split the cell"
-    use:tooltip={{ text: 'Split the cell into those it was joined of', side: 'top' }}
+    aria-label={t('tables-split')}
+    use:tooltip={{ text: t('tables-split-hint'), side: 'top' }}
     onclick={() => tools.split()}
   >
     <TableCellsSplit size={15} />
@@ -87,10 +88,10 @@
     class="word"
     data-tool="headings"
     class:on={now?.headerRow || now?.headerColumn}
-    use:tooltip={{ text: 'Whether the first row and the first column are headings', side: 'top' }}
+    use:tooltip={{ text: t('tables-headings-hint'), side: 'top' }}
     onclick={(e) => menu(e, tools.headings())}
   >
-    Headings
+    {t('tables-headings')}
     <ChevronDown size={12} />
   </button>
 
@@ -101,8 +102,8 @@
     data-tool="left"
     class:on={now?.align === 'left'}
     disabled={!now?.cells}
-    aria-label="To the left"
-    use:tooltip={{ text: 'What the cell holds stands to the left', side: 'top' }}
+    aria-label={t('tables-left')}
+    use:tooltip={{ text: t('tables-left-hint'), side: 'top' }}
     onclick={() => tools.align('left')}
   >
     <TextAlignStart size={15} />
@@ -112,8 +113,8 @@
     data-tool="center"
     class:on={now?.align === 'center'}
     disabled={!now?.cells}
-    aria-label="In the middle"
-    use:tooltip={{ text: 'What the cell holds stands in the middle', side: 'top' }}
+    aria-label={t('tables-middle')}
+    use:tooltip={{ text: t('tables-middle-hint'), side: 'top' }}
     onclick={() => tools.align('center')}
   >
     <TextAlignCenter size={15} />
@@ -123,8 +124,8 @@
     data-tool="right"
     class:on={now?.align === 'right'}
     disabled={!now?.cells}
-    aria-label="To the right"
-    use:tooltip={{ text: 'What the cell holds stands to the right', side: 'top' }}
+    aria-label={t('tables-right')}
+    use:tooltip={{ text: t('tables-right-hint'), side: 'top' }}
     onclick={() => tools.align('right')}
   >
     <TextAlignEnd size={15} />
@@ -136,11 +137,11 @@
     type="button"
     class="word"
     data-tool="table"
-    use:tooltip={{ text: 'Whether it is numbered, how wide it is; remove it', side: 'top' }}
+    use:tooltip={{ text: t('tables-table-hint'), side: 'top' }}
     onclick={() => (tools.panelOpen ? tools.closePanel() : tools.openPanel())}
   >
     <Settings2 size={14} />
-    Table
+    {t('tables-table')}
   </button>
 </div>
 

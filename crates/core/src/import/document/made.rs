@@ -33,8 +33,8 @@ use roxmltree::Node;
 use serde_json::Value;
 
 use super::lifting::{Change, TEXT, WORD, attribute, called, changed, is, opening, parse};
-use super::several;
 use crate::found::{By, FoundItem};
+use crate::tr;
 
 /// Where a citation that a program made begins: after it its number,
 /// written in digits, and `NUMBERED`. Signs that are kept for the use of
@@ -78,15 +78,7 @@ impl Made {
     pub fn remarks(&self) -> Vec<String> {
         let mut out = Vec::new();
         if self.dark > 0 {
-            out.push(format!(
-                "The document keeps {} in {}, and what {} could not be read: {} as {}. Zotero keeps them \
-                 otherwise where its document preferences say so.",
-                several(self.dark, "citation", "citations"),
-                if self.dark == 1 { "a bookmark" } else { "bookmarks" },
-                if self.dark == 1 { "it cites" } else { "they cite" },
-                if self.dark == 1 { "it is text" } else { "they are text" },
-                if self.dark == 1 { "it stands" } else { "they stand" }
-            ));
+            out.push(tr!("core-import-document-bookmarks", count = self.dark));
         }
         out
     }

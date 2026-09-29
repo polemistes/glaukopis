@@ -221,10 +221,17 @@ application, and words that point to figures, equations and parts of the
 document (ADR 0010); tables, where figures, tables and equations stand and
 whether the text flows around them, and several beside each other (ADR
 0011); tables from CSV files and spreadsheets, and documents brought in from
-files as maps of their own (ADR 0012, 0013).
+files as maps of their own (ADR 0012, 0013); folding elements away in the
+text (ADR 0014); citations found in texts written elsewhere, gone through in
+a window of their own (ADR 0015); a preview that keeps up with a document of
+more than a hundred thousand words (ADR 0016); search, and search and
+replace, in the text and through all projects (ADR 0017); text read from
+PDFs and pictures by OCR (ADR 0018); spelling checked as one writes (ADR
+0019); and the interface and the documents in English and Norwegian Bokmål,
+in the language of the system or as chosen (ADR 0020).
 
 ## 9. Not in the first version
 
 Annotation of PDFs inside the application; synchronising the library itself
-between machines; end-to-end encryption of shared projects; translation of the
-interface; mobile.
+between machines; end-to-end encryption of shared projects; grammar checking;
+mobile.

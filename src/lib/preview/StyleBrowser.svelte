@@ -4,6 +4,7 @@
   import Download from '@lucide/svelte/icons/download';
   import Search from '@lucide/svelte/icons/search';
   import { stylesFetch, stylesImport, stylesSearch, type StyleFound } from '$lib/api/documents';
+  import { t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
@@ -54,7 +55,7 @@
       await documents.reload();
       onchoose(got.id);
     } catch (e) {
-      error = describeError(e) ?? 'The style could not be fetched.';
+      error = describeError(e) ?? t('style-browser-fetch-failed');
     } finally {
       fetching = null;
     }
@@ -62,7 +63,7 @@
 
   async function fromFile() {
     const path = await openFile({
-      title: 'Import a reference style',
+      title: t('style-browser-import-title'),
       multiple: false,
       filters: [{ name: 'Citation Style Language', extensions: ['csl', 'xml'] }],
     });
@@ -72,15 +73,15 @@
       await documents.reload();
       onchoose(got.id);
     } catch (e) {
-      error = describeError(e) ?? 'The file could not be read.';
+      error = describeError(e) ?? t('style-browser-file-unread');
     }
   }
 </script>
 
 <Dialog
   open
-  title="Reference styles"
-  subtitle="More than ten thousand styles of journals and publishers, by name"
+  title={t('style-browser')}
+  subtitle={t('style-browser-subtitle')}
   width={620}
   tall
   padded={false}
@@ -91,8 +92,8 @@
       <Search size={15} />
       <input
         bind:value={query}
-        placeholder="The name of a journal, a publisher or a style"
-        aria-label="Search styles"
+        placeholder={t('style-browser-placeholder')}
+        aria-label={t('style-browser-search')}
         spellcheck="false"
         data-autofocus
       />
@@ -110,7 +111,7 @@
           <div class="text">
             <div class="title">{style.title}</div>
             <div class="meta">
-              {[kindWords[style.kind] ?? style.kind, style.fields.slice(0, 3).join(', ')]
+              {[kindWords(style.kind) ?? style.kind, style.fields.slice(0, 3).join(', ')]
                 .filter(Boolean)
                 .join(' · ')}
             </div>
@@ -118,19 +119,17 @@
           {#if fetching === style.id}
             <Spinner size={14} />
           {:else if style.installed}
-            <span class="have"><Check size={14} /> Here</span>
+            <span class="have"><Check size={14} /> {t('style-browser-here')}</span>
           {:else}
-            <span class="get"><Download size={14} /> Fetch</span>
+            <span class="get"><Download size={14} /> {t('style-browser-fetch')}</span>
           {/if}
         </button>
       {:else}
         <p class="none">
           {#if query.trim()}
-            No style has these words in its name.
+            {t('style-browser-none-found')}
           {:else}
-            Styles are fetched from the repository of the Citation Style Language project and kept
-            with your own. Those you have can be changed to a publisher’s wishes in the style
-            editor.
+            {t('style-browser-about')}
           {/if}
         </p>
       {/each}
@@ -138,8 +137,10 @@
   </div>
 
   {#snippet footer()}
-    <div class="left"><Button variant="ghost" onclick={fromFile}>Import a file…</Button></div>
-    <Button onclick={onclose}>Close</Button>
+    <div class="left">
+      <Button variant="ghost" onclick={fromFile}>{t('style-browser-import')}</Button>
+    </div>
+    <Button onclick={onclose}>{t('common-close')}</Button>
   {/snippet}
 </Dialog>
 

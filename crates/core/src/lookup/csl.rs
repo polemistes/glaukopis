@@ -13,6 +13,7 @@ use serde_json::Value;
 use crate::bib::names::Person;
 use crate::duplicates::{normalise_doi, normalise_isbns};
 use crate::library::entry::Draft;
+use crate::tr;
 
 use super::text;
 
@@ -116,9 +117,7 @@ fn one_person(value: &Value, remarks: &mut Vec<String>) -> Option<Person> {
         (Some(family), Some(given)) if given.starts_with("The ") => {
             // A group entered as if it were a person: "Community, The Turing Way".
             let name = format!("{given} {family}");
-            remarks.push(format!(
-                "“{name}” was given as the name of a person, “{family}, {given}”, and has been taken as the name of a group."
-            ));
+            remarks.push(tr!("core-lookup-group-name", name = &name, family = &family, given = &given));
             Some(Person::literal(name))
         }
         (Some(family), given) => {
@@ -258,10 +257,11 @@ pub(crate) fn convert(item: &Value) -> Option<Converted> {
         Some(t) => t.to_owned(),
         None if part_by_signs => "incollection".to_owned(),
         None => {
-            let named = if kind.is_empty() { "nothing".to_owned() } else { format!("“{kind}”") };
-            remarks.push(format!(
-                "The record calls the kind of publication {named}. It has been entered as “misc”: choose the right type."
-            ));
+            remarks.push(if kind.is_empty() {
+                tr!("core-lookup-kind-none")
+            } else {
+                tr!("core-lookup-kind", kind = &kind)
+            });
             "misc".to_owned()
         }
     };
@@ -357,7 +357,7 @@ pub(crate) fn convert(item: &Value) -> Option<Converted> {
         let publisher = if text::is_capitals(&publisher) {
             let mended = text::recase_publisher(&publisher);
             if mended != publisher {
-                remarks.push(format!("The publisher was in capitals, “{publisher}”, and has been written “{mended}”."));
+                remarks.push(tr!("core-lookup-publisher-capitals", publisher = &publisher, mended = &mended));
             }
             mended
         } else {
@@ -417,9 +417,7 @@ pub(crate) fn convert(item: &Value) -> Option<Converted> {
         }
         // The date here is the year alone; arXiv itself has the day.
         if draft.get("date").is_some_and(|d| d.len() == 4) {
-            remarks.push(format!(
-                "Only the year is given here. Looking up arXiv:{id} gives the day the preprint was sent in."
-            ));
+            remarks.push(tr!("core-lookup-arxiv-year-only", id = id));
         }
     }
     if let Some(url) = string(item, "URL") {
@@ -442,7 +440,7 @@ pub(crate) fn convert(item: &Value) -> Option<Converted> {
     }
     let creators = ["author", "editor"].iter().any(|f| draft.names.contains_key(*f));
     if !creators {
-        remarks.push("The record names no author or editor.".to_owned());
+        remarks.push(tr!("core-lookup-no-creators"));
     }
     let in_book = is_part_of_book(&draft.entry_type);
     Some(Converted { draft, remarks, doi, agency, in_book })

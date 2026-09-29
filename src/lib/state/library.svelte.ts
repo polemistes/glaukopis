@@ -8,6 +8,7 @@ import {
   type Reference,
   type Summary,
 } from '$lib/api/library';
+import { t } from '$lib/i18n';
 import { notifyError } from '$lib/ui/toast.svelte';
 
 export type SortKey = 'authors' | 'year' | 'title' | 'added' | 'modified';
@@ -64,7 +65,7 @@ class LibraryState {
       this.#loading = libraryList()
         .then((listing) => this.#take(listing))
         .catch((error) => {
-          notifyError('The library could not be read', error);
+          notifyError(t('library-unread'), error);
         })
         .finally(() => {
           this.#loading = null;
@@ -80,7 +81,7 @@ class LibraryState {
       const listing = await libraryRefresh();
       if (listing) this.#take(listing);
     } catch (error) {
-      notifyError('The library could not be read', error);
+      notifyError(t('library-unread'), error);
     }
   }
 

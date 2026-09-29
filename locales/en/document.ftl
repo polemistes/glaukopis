@@ -20,3 +20,18 @@ document-tables = Tables
 # Where a figure or table that is gathered at the end belongs in the text;
 # the braces stand for its label and number.
 document-about-here = [{"{}"} about here]
+# A work that has no year, where the year of a citation stands.
+document-no-date = n.d.
+# Where a figure or table that is gathered at the end has no label: "[The figure about here]".
+document-the-figure = The figure
+document-the-table = The table
+# Where a citation names a work that the document does not have.
+document-reference-not-found = [reference not found]
+# Where a picture is not on the computer the document is made on; the braces
+# stand for its name, or for the words below where it has none.
+document-picture-not-here = [The picture is not here: {"{}"}]
+document-the-file = the file
+# The little document that shows what a reference style does: "(see Nagy
+# 1979, 12–14)", and "Nagy (1979) argues otherwise."
+document-sample-see = see
+document-sample-argues = argues otherwise.

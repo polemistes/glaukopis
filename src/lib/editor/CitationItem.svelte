@@ -7,6 +7,7 @@
   import type { Snippet } from 'svelte';
   import Pencil from '@lucide/svelte/icons/pencil';
   import Trash2 from '@lucide/svelte/icons/trash-2';
+  import { t } from '$lib/i18n';
   import { truncate } from '$lib/library/format';
   import NoteButton from '$lib/library/NoteButton.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
@@ -62,7 +63,7 @@
         <span class="year">{ref.year}</span>
         <span class="title serif">{truncate(ref.title, 70)}</span>
       {:else if reference || !unknown}
-        <span class="gone">This reference is not in your library.</span>
+        <span class="gone">{t('editor-citation-not-in-library')}</span>
       {:else}
         {@render unknown()}
       {/if}
@@ -70,7 +71,11 @@
     {#if reference}
       <NoteButton id={reference} always />
       {#if ref?.inLibrary && onedit}
-        <IconButton label="Edit the reference" size="sm" onclick={() => onedit(reference)}>
+        <IconButton
+          label={t('editor-citation-edit-reference')}
+          size="sm"
+          onclick={() => onedit(reference)}
+        >
           <Pencil size={13} />
         </IconButton>
       {/if}
@@ -81,27 +86,35 @@
 
   <div class="fields">
     <label class="prefix">
-      <span>Before</span>
-      <input bind:value={said.prefix} placeholder="see, cf." oninput={onchange} />
+      <span>{t('editor-citation-before')}</span>
+      <input
+        bind:value={said.prefix}
+        placeholder={t('editor-citation-before-placeholder')}
+        oninput={onchange}
+      />
     </label>
     <label class="locator">
       <select
-        aria-label="Kind of place"
+        aria-label={t('editor-citation-locator-kind')}
         value={said.label ?? 'page'}
         onchange={(e) => {
           said.label = e.currentTarget.value;
           onchange?.();
         }}
       >
-        {#each LOCATOR_LABELS as [value, label] (value)}
-          <option {value}>{label}</option>
+        {#each LOCATOR_LABELS as [value] (value)}
+          <option {value}>{t(`editor-locator-${value}`)}</option>
         {/each}
       </select>
       <input bind:value={said.locator} placeholder="45–67" oninput={onchange} />
     </label>
     <label class="suffix">
-      <span>After</span>
-      <input bind:value={said.suffix} placeholder="and passim" oninput={onchange} />
+      <span>{t('editor-citation-after')}</span>
+      <input
+        bind:value={said.suffix}
+        placeholder={t('editor-citation-after-placeholder')}
+        oninput={onchange}
+      />
     </label>
   </div>
 
@@ -110,11 +123,12 @@
     {#if mode === 'normal'}
       <label class="check">
         <input type="checkbox" bind:checked={said.suppressAuthor} {onchange} />
-        The author is named in my sentence: give the year only
+        {t('editor-citation-suppress-author')}
       </label>
     {/if}
     <button type="button" class="out" data-remove onclick={onremove}>
-      <Trash2 size={13} /> Remove this work
+      <Trash2 size={13} />
+      {t('editor-citation-remove-work')}
     </button>
   </div>
 </div>

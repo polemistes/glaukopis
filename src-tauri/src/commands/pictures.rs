@@ -10,6 +10,7 @@ use tauri::ipc::Response;
 
 use glaukopis_core::Error;
 use glaukopis_core::export::math::{self, Formula, Rendered};
+use glaukopis_core::i18n::tr;
 use glaukopis_core::pictures::{Change, Picture};
 use glaukopis_core::sharing::{Remote, Synced, Used};
 
@@ -37,7 +38,7 @@ pub fn picture_add_file(state: State<'_, AppState>, path: PathBuf) -> CommandRes
 /// dropped from where there are no files.
 #[tauri::command(async)]
 pub fn picture_add(state: State<'_, AppState>, name: String, content: String) -> CommandResult<Picture> {
-    let bytes = B64.decode(content.trim()).map_err(|_| Error::invalid("the picture did not arrive whole"))?;
+    let bytes = B64.decode(content.trim()).map_err(|_| Error::invalid(tr!("core-pictures-not-whole")))?;
     Ok(state.pictures.add(&name, &bytes)?)
 }
 

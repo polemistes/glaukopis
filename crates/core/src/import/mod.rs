@@ -23,6 +23,7 @@ use crate::duplicates::{self, Certainty, Reason};
 use crate::error::Result;
 use crate::library::Library;
 use crate::library::entry::{Draft, Entry, FIELD_ZOTERO, Summary};
+use crate::tr;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -377,7 +378,7 @@ pub fn apply(library: &mut Library, plan: &Plan) -> Result<Outcome> {
             },
             Action::Merge { into } => {
                 let Some(existing) = library.resolve(into).cloned() else {
-                    outcome.problems.push(format!("{}: the entry to merge with is no longer there", describe(item)));
+                    outcome.problems.push(tr!("core-import-merge-gone", reference = describe(item)));
                     continue;
                 };
                 let (draft, gains) = fill_missing(&existing, &candidate.draft);
@@ -439,7 +440,7 @@ fn describe(item: &PlanItem) -> String {
     }
     if !s.title.is_empty() {
         let short: String = s.title.chars().take(60).collect();
-        out.push_str(&format!("“{short}”"));
+        out.push_str(&tr!("core-import-title", title = short));
     }
     if out.trim().is_empty() { item.candidate.origin.clone() } else { out.trim().to_owned() }
 }

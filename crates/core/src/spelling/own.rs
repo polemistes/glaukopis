@@ -80,7 +80,7 @@ impl OwnWords {
     }
 
     fn write(&self, language: &str, words: &[String]) -> Result<()> {
-        fs::create_dir_all(&self.dir).context(|| tr!("spelling-creating", path = &self.dir))?;
+        fs::create_dir_all(&self.dir).context(|| tr!("io-creating", path = &self.dir))?;
         let mut text = words.join("\n");
         text.push('\n');
         write_atomic(&self.file(language), text.as_bytes())

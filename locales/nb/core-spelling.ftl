@@ -3,9 +3,6 @@
 # $name er navnet på filene til ordboken: nb_NO. $message sier hvorfor.
 spelling-unreadable = Ordboken { $name } kunne ikke leses: { $message }
 spelling-encoding = Ordboken { $name } er skrevet i en tegnkoding som ikke kan leses.
-# Står foran det systemet sier gikk galt.
-spelling-reading = leser { $path }
-spelling-creating = oppretter { $path }
 # Står etter «ikke funnet:». $language er språket til et kart: nb, en-GB.
 spelling-dictionary-for = en ordbok for «{ $language }»
 spelling-not-a-word = «{ $word }» kan ikke legges til i ordene dine.

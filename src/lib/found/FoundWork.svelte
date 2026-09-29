@@ -9,7 +9,8 @@
   import CitationItem from '$lib/editor/CitationItem.svelte';
   import { lookup } from '$lib/editor/references.svelte';
   import type { CiteMode } from '$lib/editor/schema';
-  import { truncate } from '$lib/library/format';
+  import { languages, t } from '$lib/i18n';
+  import { truncate, wordsAround } from '$lib/library/format';
   import { certain, describeItem } from './works';
   import type { Work } from './going.svelte';
 
@@ -40,7 +41,22 @@
     onadd,
   }: Props = $props();
 
-  const SURE = { certain: 'Certain', likely: 'Likely', possible: 'Possible' } as const;
+  const SURE = $derived({
+    certain: t('found-work-certain'),
+    likely: t('found-work-likely'),
+    possible: t('found-work-possible'),
+  });
+
+  /** What is said of a work that no reference is taken for, around the work, where the language puts it. */
+  const untaken = $derived(
+    wordsAround((mark) =>
+      asking
+        ? t('found-work-looking', { work: mark })
+        : work.item.key && !work.item.data
+          ? t('found-work-no-tag', { work: mark })
+          : t('found-work-not-found', { work: mark }),
+    ),
+  );
 
   const taken = $derived(work.suggestions.find((s) => s.reference === work.reference));
   const others = $derived(work.suggestions.filter((s) => s.reference !== work.reference));
@@ -59,38 +75,34 @@
 
 <CitationItem reference={work.reference} bind:said={work} {mode} {index} {onremove} {onedit}>
   {#snippet unknown()}
-    <span class="told">{told || 'A work'}</span>
-    <span class="none">
-      {#if asking}
-        is looked for in your library…
-      {:else if work.item.key && !work.item.data}
-        is a tag that no reference of your library has.
-      {:else}
-        was not found in your library.
-      {/if}
-    </span>
+    {#if untaken[0]}<span class="none">{untaken[0]}</span>{/if}<span class="told"
+      >{told || t('found-work-a-work')}</span
+    ><span class="none">{untaken[1]}</span>
   {/snippet}
   {#snippet more()}
     <div class="more">
       {#if work.reference}
         <div class="sure" data-sure={work.chosen ? 'chosen' : (taken?.sure ?? 'possible')}>
           {#if work.chosen}
-            Chosen by you
+            {t('found-work-chosen')}
           {:else if taken}
             {SURE[taken.sure]}{taken.why ? ` · ${taken.why}` : ''}
           {/if}
-          {#if told}<span class="from">for “{truncate(told, 80)}”</span>{/if}
+          {#if told}<span class="from">{t('found-work-for', { work: truncate(told, 80) })}</span
+            >{/if}
         </div>
       {/if}
       {#if others.length}
-        <div class="others" role="group" aria-label="Other references it may be">
-          <span class="or">{work.reference ? 'Or' : 'It may be'}</span>
+        <div class="others" role="group" aria-label={t('found-work-others')}>
+          <span class="or">{work.reference ? t('found-work-or') : t('found-work-may-be')}</span>
           {#each others as other (other.reference)}
             {@const ref = lookup(other.reference)}
             <button type="button" class="other" onclick={() => onchoose(other.reference)}>
               <span class="who">{ref ? `${ref.authors || '—'} ${ref.year}` : other.reference}</span>
               {#if ref}<span class="title serif">{truncate(ref.title, 48)}</span>{/if}
-              <span class="how">{SURE[other.sure].toLowerCase()} · {other.why}</span>
+              <span class="how"
+                >{SURE[other.sure].toLocaleLowerCase(languages.current)} · {other.why}</span
+              >
             </button>
           {/each}
         </div>
@@ -98,11 +110,12 @@
       <div class="means">
         <button type="button" class="mean" onclick={(e) => onanother(e.currentTarget)}>
           <Search size={13} />
-          {work.reference ? 'Another…' : 'Find it…'}
+          {work.reference ? t('found-work-another') : t('found-work-find')}
         </button>
         {#if addable}
           <button type="button" class="mean" onclick={onadd}>
-            <BookPlus size={13} /> Add it to the library
+            <BookPlus size={13} />
+            {t('found-work-add')}
           </button>
         {/if}
       </div>

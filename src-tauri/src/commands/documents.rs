@@ -218,7 +218,7 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
     if lacking > 0 {
         return Err(glaukopis_core::Error::Refused {
             kind: LACKING,
-            message: format!("{lacking} texts of the document were not sent, and are not kept."),
+            message: glaukopis_core::i18n::tr!("core-export-lacking", count = lacking),
         }
         .into());
     }

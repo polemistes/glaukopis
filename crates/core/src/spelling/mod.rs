@@ -184,8 +184,8 @@ impl Spelling {
         let started = Instant::now();
         let aff_path = found.aff();
         let dic_path = found.dic();
-        let aff_bytes = fs::read(&aff_path).context(|| tr!("spelling-reading", path = &aff_path))?;
-        let dic_bytes = fs::read(&dic_path).context(|| tr!("spelling-reading", path = &dic_path))?;
+        let aff_bytes = fs::read(&aff_path).context(|| tr!("io-reading", path = &aff_path))?;
+        let dic_bytes = fs::read(&dic_path).context(|| tr!("io-reading", path = &dic_path))?;
         let extra_bytes = fs::read(found.extra()).ok();
         let encoding =
             encoding_of(&aff_bytes).ok_or_else(|| Error::invalid(tr!("spelling-encoding", name = &found.name)))?;

@@ -51,6 +51,7 @@ use crate::export::tools;
 use crate::formats::Stand;
 use crate::found::{self, By, FoundItem};
 use crate::pictures::{Picture, Pictures};
+use crate::tr;
 
 /// The largest file that is read.
 pub const MAX_BYTES: u64 = 50 * 1024 * 1024;
@@ -178,8 +179,8 @@ impl Format {
         })
     }
 
-    /// What it is called, in words.
-    pub fn name(self) -> &'static str {
+    /// What it is called, in words, in the language of the interface.
+    pub fn name(self) -> String {
         match self {
             Format::Docx => "Word (DOCX)",
             Format::Odt => "OpenDocument (ODT)",
@@ -191,7 +192,7 @@ impl Format {
             Format::Org => "Org",
             Format::Rst => "reStructuredText",
             Format::Typst => "Typst",
-            Format::Plain => "plain text",
+            Format::Plain => return tr!("core-import-document-plain-text"),
             Format::AsciiDoc => "AsciiDoc",
             Format::DocBook => "DocBook",
             Format::Jats => "JATS",
@@ -201,8 +202,9 @@ impl Format {
             Format::Textile => "Textile",
             Format::Djot => "Djot",
             Format::Muse => "Muse",
-            Format::Notebook => "Jupyter notebook",
+            Format::Notebook => return tr!("core-import-document-notebook"),
         }
+        .to_owned()
     }
 
     /// Whether the file holds its pictures itself.
@@ -294,7 +296,7 @@ pub type Keys<'a> = dyn Fn(&str) -> Option<String> + 'a;
 // =========================================================================
 
 fn stopped() -> Error {
-    Error::invalid("The reading was stopped.")
+    Error::invalid(tr!("core-import-document-stopped"))
 }
 
 /// Runs Pandoc to its end, unless it is stopped before. What it writes goes
@@ -311,7 +313,7 @@ fn pandoc(tools: &Tools, args: &[String], dir: &Path, work: &Path, stop: &Atomic
         .current_dir(dir)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
-        .stderr(fs::File::create(&said).context(|| format!("writing {}", said.display()))?)
+        .stderr(fs::File::create(&said).context(|| tr!("io-writing", path = &said))?)
         .spawn()
         .map_err(failed)?;
     let status = loop {
@@ -336,10 +338,10 @@ fn pandoc(tools: &Tools, args: &[String], dir: &Path, work: &Path, stop: &Atomic
         };
         return Err(Error::Program {
             program: "Pandoc".into(),
-            message: if message.is_empty() { format!("it ended with {status}") } else { message },
+            message: if message.is_empty() { tr!("program-ended", status = status.to_string()) } else { message },
         });
     }
-    fs::read(&out).context(|| format!("reading {}", out.display()))
+    fs::read(&out).context(|| tr!("io-reading", path = &out))
 }
 
 /// Reads a document. `work` is where what is made on the way is put, in a
@@ -354,27 +356,22 @@ pub fn read(
     keys: &Keys,
     stop: &AtomicBool,
 ) -> Result<Imported> {
-    fs::create_dir_all(work).context(|| format!("creating {}", work.display()))?;
+    fs::create_dir_all(work).context(|| tr!("io-creating", path = work))?;
     let place = tempfile::Builder::new()
         .prefix("document-")
         .tempdir_in(work)
-        .context(|| format!("creating a directory in {}", work.display()))?;
+        .context(|| tr!("io-creating-directory-in", path = work))?;
     let work = place.path();
     // Pandoc works elsewhere than here: the file is named from the root.
     let named = std::path::absolute(path).unwrap_or_else(|_| path.to_owned());
     let path = named.as_path();
     let file = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     let Some(format) = Format::of(path) else {
-        return Err(Error::invalid(format!(
-            "“{file}” is not of a kind that can be brought in as a document. Those that can are Word (DOCX), \
-             OpenDocument (ODT), Markdown, HTML, LaTeX, RTF, EPUB, Org, reStructuredText, Typst and plain text."
-        )));
+        return Err(Error::invalid(tr!("core-import-document-kind", file = &file)));
     };
-    let size = fs::metadata(path).context(|| format!("reading {}", path.display()))?.len();
+    let size = fs::metadata(path).context(|| tr!("io-reading", path = path))?.len();
     if size > MAX_BYTES {
-        return Err(Error::invalid(format!(
-            "“{file}” is larger than 50 MB, which is more than can be brought in as a document."
-        )));
+        return Err(Error::invalid(tr!("core-import-document-too-large", file = &file)));
     }
     let stem = path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     let beside = path.parent().map(Path::to_owned).unwrap_or_default();
@@ -398,8 +395,8 @@ pub fn read(
             name_of(named)
         };
         let picture = pictures.add(&called, &bytes).map_err(|_| match kind_of_name(named) {
-            Some(kind) => format!("it is of a kind that is not read ({kind})"),
-            None => "it is not a picture of a kind that is read".to_owned(),
+            Some(kind) => tr!("core-import-document-picture-kind", kind = kind),
+            None => tr!("core-import-document-picture-not-read"),
         })?;
         if !before.contains(&picture.hash) && !taken.contains(&picture.hash) {
             taken.push(picture.hash.clone());
@@ -409,7 +406,7 @@ pub fn read(
 
     let mut imported = match format.reader() {
         None => {
-            let bytes = fs::read(path).context(|| format!("reading {}", path.display()))?;
+            let bytes = fs::read(path).context(|| tr!("io-reading", path = path))?;
             plain(&decode(&bytes), &stem)
         }
         Some(reader) => {
@@ -437,15 +434,17 @@ pub fn read(
             told = prepared.remarks;
             args.push(prepared.copy.as_deref().unwrap_or(path).display().to_string());
             let json = pandoc(tools, &args, dir, work, stop).map_err(|e| match e {
-                Error::Program { message, .. } => Error::invalid(format!(
-                    "“{file}” could not be read as {}. It may be damaged, or of another kind than its name says. \
-                     Pandoc, which reads it, said: {message}",
-                    format.name()
+                Error::Program { message, .. } => Error::invalid(tr!(
+                    "core-import-document-unreadable",
+                    file = &file,
+                    kind = format.name(),
+                    message = message
                 )),
                 other => other,
             })?;
-            let value: Value = serde_json::from_slice(&json)
-                .map_err(|e| Error::invalid(format!("what Pandoc made of “{file}” could not be read: {e}")))?;
+            let value: Value = serde_json::from_slice(&json).map_err(|e| {
+                Error::invalid(tr!("core-import-document-pandoc-unreadable", file = &file, error = e.to_string()))
+            })?;
             convert_with(&value, &stem, &prepared.properties, &prepared.made, keys, &mut take_in)
         }
     };
@@ -458,18 +457,11 @@ pub fn read(
     // Never without a word: the pictures that the file holds and the text that was read has not.
     let wanting = held.saturating_sub(asked.len());
     if wanting > 0 {
-        imported.remarks.push(format!(
-            "{} that the file holds {} not in the text that was read, and {} left out. {} stand in the head or the \
-             foot of the pages, or in a drawing.",
-            several(wanting, "picture", "pictures"),
-            if wanting == 1 { "is" } else { "are" },
-            if wanting == 1 { "is" } else { "are" },
-            if wanting == 1 { "It may" } else { "They may" }
-        ));
+        imported.remarks.push(tr!("core-import-document-pictures-wanting", count = wanting));
     }
     imported.remarks.extend(told);
     imported.file = file;
-    imported.kind = format.name().to_owned();
+    imported.kind = format.name();
     imported.pictures = taken;
     Ok(imported)
 }
@@ -486,7 +478,7 @@ fn name_of(named: &str) -> String {
     let last = named.rsplit(['/', '\\']).next().unwrap_or(named);
     let last = last.split(['?', '#']).next().unwrap_or(last);
     let name = unescape(last);
-    if name.trim().is_empty() || named.starts_with("data:") { "picture".to_owned() } else { name }
+    if name.trim().is_empty() || named.starts_with("data:") { tr!("core-pictures-unnamed") } else { name }
 }
 
 fn kind_of_name(named: &str) -> Option<String> {
@@ -521,16 +513,18 @@ fn unescape(text: &str) -> String {
 fn picture_bytes(named: &str, beside: &Path, media: &Path, held: bool) -> std::result::Result<Vec<u8>, String> {
     let lower = named.to_ascii_lowercase();
     if let Some(rest) = named.strip_prefix("data:") {
-        let (kind, content) = rest.split_once(',').ok_or("it could not be read")?;
+        let (kind, content) = rest.split_once(',').ok_or_else(|| tr!("core-import-document-picture-unreadable"))?;
         return if kind.ends_with(";base64") {
             let clean: String = content.chars().filter(|c| !c.is_whitespace()).collect();
-            base64::engine::general_purpose::STANDARD.decode(clean).map_err(|_| "it could not be read".to_owned())
+            base64::engine::general_purpose::STANDARD
+                .decode(clean)
+                .map_err(|_| tr!("core-import-document-picture-unreadable"))
         } else {
             Ok(unescape(content).into_bytes())
         };
     }
     if lower.starts_with("http://") || lower.starts_with("https://") || lower.starts_with("//") {
-        return Err("it is on the network, and nothing is fetched from there".to_owned());
+        return Err(tr!("core-import-document-picture-network"));
     }
     let plain = named.strip_prefix("file://").unwrap_or(named);
     let plain = unescape(plain.split(['?', '#']).next().unwrap_or(plain));
@@ -545,16 +539,16 @@ fn picture_bytes(named: &str, beside: &Path, media: &Path, held: bool) -> std::r
     let found = candidates.into_iter().find(|c| c.is_file());
     let Some(found) = found else {
         return Err(if held {
-            "it could not be taken out of the file".to_owned()
+            tr!("core-import-document-picture-not-taken-out")
         } else {
-            "the file was not found where the document says it is".to_owned()
+            tr!("core-import-document-picture-not-found")
         });
     };
     match fs::metadata(&found) {
-        Ok(m) if m.len() > crate::pictures::MAX_BYTES => return Err("it is larger than 50 MB".to_owned()),
+        Ok(m) if m.len() > crate::pictures::MAX_BYTES => return Err(tr!("core-import-document-picture-too-large")),
         _ => {}
     }
-    fs::read(&found).map_err(|_| "the file could not be read".to_owned())
+    fs::read(&found).map_err(|_| tr!("core-import-document-picture-file-unreadable"))
 }
 
 /// Text as it is, whatever it was written in: UTF-8, UTF-16 where it says
@@ -1799,10 +1793,6 @@ fn count(sections: &[Section], cited: usize, not_found: usize) -> Counts {
     counts
 }
 
-fn several(n: usize, one: &str, more: &str) -> String {
-    if n == 1 { format!("1 {one}") } else { format!("{n} {more}") }
-}
-
 /// What Pandoc gives of what a file says of itself, as JSON is written.
 fn meta_value(v: &Value) -> Value {
     let c = inner(v);
@@ -1855,21 +1845,13 @@ fn found_remark(counts: &Counts) -> Option<String> {
     if counts.found == 0 {
         return None;
     }
-    let one = counts.found == 1;
+    // How many of them a program that keeps references made: none, all, or some.
     let made = match counts.found_made {
-        0 => String::new(),
-        all if all == counts.found && one => ", made by a program that keeps references".to_owned(),
-        all if all == counts.found => ", all made by a program that keeps references".to_owned(),
-        some => format!(", {some} of them made by a program that keeps references"),
+        0 => "none",
+        all if all == counts.found => "all",
+        _ => "some",
     };
-    Some(format!(
-        "{} found that {} of your library{made}. {} as the text {} written as, and can be gone through when the \
-         map is made, and later.",
-        if one { "1 citation was".to_owned() } else { format!("{} citations were", counts.found) },
-        if one { "is not yet tied to a reference" } else { "are not yet tied to references" },
-        if one { "It stands" } else { "They stand" },
-        if one { "it was" } else { "they were" }
-    ))
+    Some(tr!("core-import-document-found", count = counts.found, made = made, some = counts.found_made))
 }
 
 /// Turns what Pandoc has read into a document in parts. `stem` is what the
@@ -1959,7 +1941,8 @@ fn convert_with(
         }
     }
     if title.is_empty() {
-        title = vec![text_of(if stem.trim().is_empty() { "Untitled" } else { stem.trim() })];
+        let untitled = tr!("core-import-document-untitled");
+        title = vec![text_of(if stem.trim().is_empty() { &untitled } else { stem.trim() })];
     } else if from_properties {
         // The title as it is set at the top of the page is not part of the
         // text, nor a part of the document: as a paragraph, or as a heading
@@ -2044,94 +2027,40 @@ fn convert_with(
     // Where EndNote keeps what it says apart from the field, Pandoc does not read it.
     let unread = made.endnote.saturating_sub(tally.endnote);
     if unread > 0 {
-        remarks.push(format!(
-            "{} made by EndNote {} brought in as the text {}, and {} not among those that were found: what EndNote \
-             says of the works could not be read.",
-            several(unread, "citation", "citations"),
-            if unread == 1 { "is" } else { "are" },
-            if unread == 1 { "it shows" } else { "they show" },
-            if unread == 1 { "is" } else { "are" }
-        ));
+        remarks.push(tr!("core-import-document-endnote", count = unread));
     }
     if let Some(heading) = &bibliography {
-        remarks.push(format!(
-            "The document has a list of what it cites, under “{heading}”. It is brought in as text, like the rest. \
-             The map makes a bibliography of its own from what is cited in it."
-        ));
+        remarks.push(tr!("core-import-document-bibliography", heading = heading));
     } else if made.list {
-        remarks.push(
-            "The document has a list of what it cites, made by the program that keeps its references. It is brought \
-             in as text, like the rest. The map makes a bibliography of its own from what is cited in it."
-                .to_owned(),
-        );
+        remarks.push(tr!("core-import-document-bibliography-made"));
     }
     for (name, why) in &tally.lost {
-        remarks.push(format!("The picture “{name}” is left out: {why}."));
+        remarks.push(tr!("core-import-document-picture-left-out", name = name, why = why));
     }
     if tally.moved > 0 {
-        remarks.push(format!(
-            "{} at the beginning of the text under it: a heading cannot have a note.",
-            if tally.moved == 1 {
-                "A note on a heading stands".to_owned()
-            } else {
-                format!("{} notes on headings stand", tally.moved)
-            }
-        ));
+        remarks.push(tr!("core-import-document-heading-notes", count = tally.moved));
     }
     if tally.said.labels > 0 {
-        remarks.push(format!(
-            "{} began with a word and a number, such as “{}”. {} left out: the map numbers its figures and tables \
-             itself. Where the text names one of them by its number, that is text as it was written, and does not \
-             follow the numbers of the map.",
-            several(tally.said.labels, "caption", "captions"),
-            tally.said.first.as_deref().unwrap_or("Figure 1:"),
-            if tally.said.labels == 1 { "It is" } else { "They are" }
-        ));
+        let first = tally.said.first.clone().unwrap_or_else(|| tr!("core-import-document-label-example"));
+        remarks.push(tr!("core-import-document-labels", count = tally.said.labels, first = first));
     }
     if tally.said.bracketed > 0 {
-        remarks.push(format!(
-            "{} there in brackets.",
-            if tally.said.bracketed == 1 {
-                "A note in what is said of a figure or a table stands".to_owned()
-            } else {
-                format!("{} notes in what is said of figures or tables stand", tally.said.bracketed)
-            }
-        ));
+        remarks.push(tr!("core-import-document-caption-notes", count = tally.said.bracketed));
     }
     if tally.headings > 0 {
-        remarks.push(format!(
-            "{} in a quotation, a list or a table {} brought in as a paragraph in bold.",
-            several(tally.headings, "heading", "headings"),
-            if tally.headings == 1 { "is" } else { "are" }
-        ));
+        remarks.push(tr!("core-import-document-headings", count = tally.headings));
     }
     if tally.code > 0 {
-        remarks.push(format!(
-            "{} of code {} brought in as plain paragraphs, a line to each.",
-            several(tally.code, "block", "blocks"),
-            if tally.code == 1 { "is" } else { "are" }
-        ));
+        remarks.push(tr!("core-import-document-code", count = tally.code));
     }
     if tally.definitions > 0 {
-        remarks.push(format!(
-            "{} of terms with what they mean {} brought in as paragraphs, the terms in bold.",
-            several(tally.definitions, "list", "lists"),
-            if tally.definitions == 1 { "is" } else { "are" }
-        ));
+        remarks.push(tr!("core-import-document-definitions", count = tally.definitions));
     }
     if tally.rules > 0 {
-        remarks.push(format!(
-            "{} across the page {} left out.",
-            several(tally.rules, "line", "lines"),
-            if tally.rules == 1 { "is" } else { "are" }
-        ));
+        remarks.push(tr!("core-import-document-rules", count = tally.rules));
     }
     if tally.raw > 0 {
-        remarks.push(format!(
-            "{} written in HTML or TeX for the one kind of document only {} left out.",
-            several(tally.raw, "piece", "pieces"),
-            if tally.raw == 1 { "is" } else { "are" }
-        ));
+        remarks.push(tr!("core-import-document-raw", count = tally.raw));
     }
 
     let keywords: Vec<String> = match meta.get("keywords").or_else(|| meta.get("keyword")).or_else(|| meta.get("tags"))

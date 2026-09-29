@@ -32,6 +32,7 @@
   import type { EditorView } from 'prosemirror-view';
   import { goThrough } from '$lib/found/found.svelte';
   import { countFound } from '$lib/found/gather';
+  import { t } from '$lib/i18n';
   import { showPictures } from '$lib/pictures/store.svelte';
   import { askForTable, chooseTable } from '$lib/tables/ask';
   import { openMenu } from '$lib/ui/menu.svelte';
@@ -68,36 +69,38 @@
   const body = $derived(s?.kind === 'body');
   const style = $derived<ParagraphStyle>(s && body ? styleOf(s.view.state) : 'text');
 
-  const STYLES: {
-    value: ParagraphStyle;
-    label: string;
-    hint: string;
-    icon: typeof Pilcrow;
-    shortcut?: string;
-  }[] = [
-    { value: 'text', label: 'Text', hint: 'A paragraph', icon: Pilcrow },
+  const STYLES = $derived<
+    {
+      value: ParagraphStyle;
+      label: string;
+      hint: string;
+      icon: typeof Pilcrow;
+      shortcut?: string;
+    }[]
+  >([
+    { value: 'text', label: t('editor-text'), hint: t('editor-text-hint'), icon: Pilcrow },
     {
       value: 'quote',
-      label: 'Quotation',
-      hint: 'Set apart from the text',
+      label: t('editor-quotation'),
+      hint: t('editor-quotation-hint'),
       icon: TextQuote,
       shortcut: "Ctrl+'",
     },
     {
       value: 'list',
-      label: 'List',
-      hint: 'With a mark before each point',
+      label: t('editor-list'),
+      hint: t('editor-list-hint'),
       icon: List,
       shortcut: 'Ctrl+Shift+8',
     },
     {
       value: 'numbered',
-      label: 'Numbered list',
-      hint: 'With a number before each point',
+      label: t('editor-numbered-list'),
+      hint: t('editor-numbered-list-hint'),
       icon: ListOrdered,
       shortcut: 'Ctrl+Shift+7',
     },
-  ];
+  ]);
   const current = $derived(STYLES.find((x) => x.value === style) ?? STYLES[0]);
 
   function run(command: Command, view: EditorView | undefined = s?.view) {
@@ -128,15 +131,15 @@
         ...(body
           ? [
               {
-                label: 'Picture from a file…',
-                hint: 'A figure, with what is said of it',
+                label: t('editor-picture-file'),
+                hint: t('editor-picture-file-hint'),
                 icon: ImagePlus,
                 shortcut: 'Ctrl+Alt+P',
                 action: () => hooks?.picture?.(view),
               },
               {
-                label: 'Picture from the store…',
-                hint: 'Those you have are shown at the side',
+                label: t('editor-picture-store'),
+                hint: t('editor-picture-store-hint'),
                 icon: Images,
                 action: () => {
                   // The cursor stays where the picture is to go.
@@ -145,31 +148,31 @@
                 },
               },
               {
-                label: 'Equation',
-                hint: 'Mathematics on a line of its own',
+                label: t('editor-equation'),
+                hint: t('editor-equation-hint'),
                 icon: SquareFunction,
                 shortcut: 'Ctrl+Alt+E',
                 // It opens a panel of its own, which takes the cursor.
                 action: () => void insertEquation(view.state, view.dispatch, view),
               },
               {
-                label: 'Table…',
-                hint: 'Of so many rows and columns',
+                label: t('editor-table'),
+                hint: t('editor-table-hint'),
                 icon: Table,
                 shortcut: 'Ctrl+Alt+T',
                 action: () => void askForTable(view),
               },
               {
-                label: 'Table from a file…',
-                hint: 'CSV, or a sheet of LibreOffice or Excel',
+                label: t('editor-table-file'),
+                hint: t('editor-table-file-hint'),
                 icon: Sheet,
                 action: () => void chooseTable(view),
               },
             ]
           : []),
         {
-          label: 'Formula',
-          hint: 'Mathematics in the line',
+          label: t('editor-formula'),
+          hint: t('editor-formula-hint'),
           icon: Sigma,
           shortcut: 'Ctrl+Alt+M',
           action: () => void insertMath(view.state, view.dispatch, view),
@@ -178,8 +181,8 @@
           ? [
               { kind: 'separator' as const },
               {
-                label: 'Pointer…',
-                hint: 'To a figure, a table, an equation or a part: “see figure 2”',
+                label: t('editor-pointer'),
+                hint: t('editor-pointer-hint'),
                 icon: Link2,
                 shortcut: 'Ctrl+Alt+R',
                 action: () => hooks.point?.(view),
@@ -190,7 +193,7 @@
           ? [
               { kind: 'separator' as const },
               {
-                label: 'A picture or a table can also be dropped on the text, or pasted',
+                label: t('editor-dropped'),
                 disabled: true,
                 action: () => {},
               },
@@ -232,14 +235,14 @@
         ...(view
           ? [
               {
-                label: 'Superscript',
+                label: t('editor-superscript'),
                 icon: Superscript,
                 shortcut: 'Ctrl+.',
                 checked: marks.sup,
                 action: () => run(toggle('sup'), view),
               },
               {
-                label: 'Subscript',
+                label: t('editor-subscript'),
                 icon: Subscript,
                 shortcut: 'Ctrl+,',
                 checked: marks.sub,
@@ -250,7 +253,7 @@
         ...(view && s?.kind !== 'title'
           ? [
               {
-                label: 'Struck through',
+                label: t('editor-struck'),
                 icon: Strikethrough,
                 shortcut: 'Ctrl+Shift+X',
                 checked: marks.strike,
@@ -262,24 +265,27 @@
           ? [
               { kind: 'separator' as const },
               {
-                label: 'Citations that were found…',
-                hint: found
-                  ? `${found.toLocaleString()} to go through, and make citations of`
-                  : 'And text that looks like citations, in this map',
+                label: t('editor-found'),
+                hint: found ? t('editor-found-count', { count: found }) : t('editor-found-none'),
                 icon: TextSearch,
                 action: () => goThrough(of),
               },
             ]
           : []),
         { kind: 'separator' as const },
-        { kind: 'heading' as const, label: 'While typing' },
+        { kind: 'heading' as const, label: t('editor-while-typing') },
         {
           label: '>  -  1.',
-          hint: 'At the start of a line: quotation, list, numbered list',
+          hint: t('editor-typing-line-hint'),
           disabled: true,
           action: () => {},
         },
-        { label: '--  ---  ...', hint: 'Become –, — and …', disabled: true, action: () => {} },
+        {
+          label: '--  ---  ...',
+          hint: t('editor-typing-dashes-hint'),
+          disabled: true,
+          action: () => {},
+        },
       ],
       { align: 'end' },
     );
@@ -291,7 +297,7 @@
   class="tools"
   class:idle={!s}
   role="toolbar"
-  aria-label="Writing"
+  aria-label={t('editor-writing')}
   tabindex="-1"
   onmousedown={(e) => e.preventDefault()}
 >
@@ -299,8 +305,8 @@
     type="button"
     class="style"
     disabled={!body}
-    aria-label="Kind of paragraph: {current.label}"
-    use:tooltip={{ text: 'Kind of paragraph', side: 'bottom' }}
+    aria-label={t('editor-paragraph-kind-now', { kind: current.label })}
+    use:tooltip={{ text: t('editor-paragraph-kind'), side: 'bottom' }}
     onclick={styles}
   >
     <span class="truncate">{current.label}</span>
@@ -313,8 +319,8 @@
     type="button"
     class:on={s?.marks.em}
     disabled={!s}
-    aria-label="Italic"
-    use:tooltip={{ text: 'Italic', shortcut: 'Ctrl+I', side: 'bottom' }}
+    aria-label={t('editor-italic')}
+    use:tooltip={{ text: t('editor-italic'), shortcut: 'Ctrl+I', side: 'bottom' }}
     onclick={() => run(toggle('em'))}
   >
     <Italic size={15} />
@@ -323,8 +329,8 @@
     type="button"
     class:on={s?.marks.strong}
     disabled={!s || s.kind === 'title'}
-    aria-label="Bold"
-    use:tooltip={{ text: 'Bold', shortcut: 'Ctrl+B', side: 'bottom' }}
+    aria-label={t('editor-bold')}
+    use:tooltip={{ text: t('editor-bold'), shortcut: 'Ctrl+B', side: 'bottom' }}
     onclick={() => run(toggle('strong'))}
   >
     <Bold size={15} />
@@ -334,8 +340,8 @@
     class="caps"
     class:on={s?.marks.smallcaps}
     disabled={!s}
-    aria-label="Small capitals"
-    use:tooltip={{ text: 'Small capitals', shortcut: 'Ctrl+Shift+K', side: 'bottom' }}
+    aria-label={t('editor-small-capitals')}
+    use:tooltip={{ text: t('editor-small-capitals'), shortcut: 'Ctrl+Shift+K', side: 'bottom' }}
     onclick={() => run(toggle('smallcaps'))}
   >
     <span>Sc</span>
@@ -347,36 +353,36 @@
     type="button"
     class="word cite"
     disabled={!s || s.kind === 'title'}
-    use:tooltip={{ text: 'Cite a work where the cursor is', shortcut: '@', side: 'bottom' }}
+    use:tooltip={{ text: t('editor-cite-at-cursor'), shortcut: '@', side: 'bottom' }}
     onclick={cite}
   >
     <Quote size={13} />
-    Cite
+    {t('editor-cite')}
   </button>
   <button
     type="button"
     class="word"
     disabled={!body}
     use:tooltip={{
-      text: 'A note, at the foot of the page or the end',
+      text: t('editor-note-hint'),
       shortcut: 'Ctrl+Alt+F',
       side: 'bottom',
     }}
     onclick={note}
   >
     <StickyNote size={13} />
-    Note
+    {t('editor-note')}
   </button>
 
   <button
     type="button"
     class="word"
     disabled={!s || s.kind === 'title'}
-    use:tooltip={{ text: 'A picture, a table, mathematics, a pointer to a figure', side: 'bottom' }}
+    use:tooltip={{ text: t('editor-insert-hint'), side: 'bottom' }}
     onclick={insert}
   >
     <Plus size={13} />
-    Insert
+    {t('editor-insert')}
   </button>
 
   <span class="spring"></span>
@@ -384,8 +390,8 @@
   <button
     type="button"
     disabled={!s && !map}
-    aria-label="More"
-    use:tooltip={{ text: 'More, and what can be typed', side: 'bottom' }}
+    aria-label={t('editor-more')}
+    use:tooltip={{ text: t('editor-more-hint'), side: 'bottom' }}
     onclick={more}
   >
     <Ellipsis size={15} />

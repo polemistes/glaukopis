@@ -11,6 +11,7 @@ use crate::bib::is_name_field;
 use crate::bib::names::{Person, parse_list};
 use crate::bib::parser::normalise_space;
 use crate::library::entry::{Draft, FIELD_ZOTERO};
+use crate::tr;
 
 use super::database::{Creator, Item};
 use super::dates::{self, Date};
@@ -301,11 +302,7 @@ fn names(item: &Item, draft: &mut Draft, notes: &mut Vec<String>) {
             }
             // Those a work is written to or about have no part in making it.
             role @ ("recipient" | "reviewedAuthor") => {
-                notes.push(format!(
-                    "Zotero names {} as {}, which BibLaTeX has no field for. The name was left out.",
-                    person.display(),
-                    text::label(role)
-                ));
+                notes.push(tr!("core-import-zotero-not-a-field", name = person.display(), role = text::label(role)));
                 continue;
             }
             _ => {
@@ -608,11 +605,7 @@ pub(super) fn entry(item: &Item) -> (Draft, Vec<String>) {
 }
 
 fn left_out(field: &str, value: &str) -> String {
-    format!(
-        "Zotero’s field “{}” has no counterpart in BibLaTeX and was left out: {}",
-        text::label(field),
-        text::shorten(dates::as_typed(value), 80)
-    )
+    tr!("core-import-zotero-left-out", field = text::label(field), value = text::shorten(dates::as_typed(value), 80))
 }
 
 #[cfg(test)]

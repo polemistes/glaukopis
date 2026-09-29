@@ -631,7 +631,7 @@ span.math.selected {
   content: '…';
 }
 .figure .picture[data-state='absent']::after {
-  content: 'The picture is not on this computer';
+  content: var(--words-picture-absent, 'The picture is not on this computer');
 }
 .prose:not(.static) .figure .picture:hover,
 .figure.selected .picture,
@@ -658,7 +658,7 @@ span.math.selected {
   color: var(--ink-3);
 }
 .prose:not(.static) .figure.uncaptioned figcaption::after {
-  content: 'What is said of the picture';
+  content: var(--words-picture-caption, 'What is said of the picture');
   margin-left: 0.5em;
   color: var(--ink-4);
   font-style: italic;
@@ -702,7 +702,7 @@ span.math.selected {
   color: var(--ink-3);
 }
 .prose:not(.static) .tabular.uncaptioned > figcaption::after {
-  content: 'What is said of the table';
+  content: var(--words-table-caption, 'What is said of the table');
   margin-left: 0.5em;
   color: var(--ink-4);
   font-style: italic;

@@ -528,7 +528,7 @@ impl Converter<'_> {
                 }
                 Inline::Citation { items, mode } => match self.citation(items, *mode) {
                     Some(c) => out.push(c),
-                    None => out.push(json!({"t": "Strong", "c": [{"t": "Str", "c": "[reference not found]"}]})),
+                    None => out.push(json!({"t": "Strong", "c": [{"t": "Str", "c": super::term(self.language, "document-reference-not-found")}]})),
                 },
                 Inline::Math { tex } => {
                     if !tex.trim().is_empty() {
@@ -811,6 +811,24 @@ mod tests {
         assert_eq!(locator_token(&item("mênis", Some("sub-verbo")), None).unwrap(), "{sub verbo mênis}");
         assert_eq!(locator_token(&item("a{b}", None), None).unwrap(), "{page ab}");
         assert_eq!(locator_token(&item("  ", None), None), None);
+    }
+
+    #[test]
+    fn what_the_document_prints_of_a_work_it_does_not_have_is_in_its_language() {
+        let keys = HashMap::new();
+        let cited = [Inline::Citation {
+            items: vec![CiteItem { id: "gone".into(), ..Default::default() }],
+            mode: CiteMode::Normal,
+        }];
+        let said = |language: Option<&str>| {
+            let c = Converter { language, ..converter(&keys) };
+            Value::Array(c.inlines(&cited))
+        };
+        assert_eq!(said(Some("en-GB")), json!([{"t": "Strong", "c": [{"t": "Str", "c": "[reference not found]"}]}]));
+        assert_eq!(said(Some("nb")), json!([{"t": "Strong", "c": [{"t": "Str", "c": "[fant ikke referansen]"}]}]));
+        assert_eq!(said(Some("nn-NO")), json!([{"t": "Strong", "c": [{"t": "Str", "c": "[fann ikkje referansen]"}]}]));
+        // A language documents have no words in: English.
+        assert_eq!(said(Some("de")), said(None));
     }
 
     #[test]

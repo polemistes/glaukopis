@@ -7,6 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::error::{IoContext, Result};
+use crate::tr;
 
 #[derive(Debug, Clone)]
 pub struct DataDir {
@@ -31,7 +32,7 @@ impl DataDir {
             // So that the writer finds where a dictionary of their own goes.
             dir.dictionaries(),
         ] {
-            fs::create_dir_all(&sub).context(|| format!("creating {}", sub.display()))?;
+            fs::create_dir_all(&sub).context(|| tr!("io-creating", path = &sub))?;
         }
         Ok(dir)
     }

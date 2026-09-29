@@ -16,13 +16,13 @@
     collectionRename,
     type Collection,
   } from '$lib/api/library';
+  import { languages, t } from '$lib/i18n';
   import { library } from '$lib/state/library.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
   import { dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu } from '$lib/ui/menu.svelte';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
-  import { plural } from './format';
 
   interface Props {
     /** The collection shown, or null for the whole library. */
@@ -98,18 +98,16 @@
         await refresh();
       }
     } catch (error) {
-      notifyError('The collection could not be named', error);
+      notifyError(t('library-collection-name-failed'), error);
     }
   }
 
   async function remove(c: Collection) {
     const inside = library.collections.filter((x) => x.parent === c.id).length;
     const ok = await confirm({
-      title: `Delete the collection “${c.name}”?`,
-      message:
-        (inside ? 'The collections inside it are deleted as well. ' : '') +
-        'The references stay in your library.',
-      confirm: 'Delete collection',
+      title: t('library-collection-delete-title', { name: c.name }),
+      message: t('library-collection-delete-message', { inside }),
+      confirm: t('library-collection-delete'),
       danger: true,
     });
     if (!ok) return;
@@ -121,19 +119,28 @@
       await refresh();
       if (selected && !library.collection(selected)) onselect(null);
     } catch (error) {
-      notifyError('The collection could not be deleted', error);
+      notifyError(t('library-collection-delete-failed'), error);
     }
   }
 
   function context(event: MouseEvent, c: Collection) {
     openContextMenu(event, [
-      { label: 'New collection inside', icon: FolderPlus, action: () => begin(c.id) },
-      { label: 'Rename', icon: Pencil, shortcut: 'F2', action: () => rename(c) },
+      {
+        label: t('library-collection-new-inside'),
+        icon: FolderPlus,
+        action: () => begin(c.id),
+      },
+      { label: t('common-rename'), icon: Pencil, shortcut: 'F2', action: () => rename(c) },
       ...(c.parent
-        ? [{ label: 'Move to the top level', action: () => move(c.id, null) } as const]
+        ? [{ label: t('library-collection-to-top'), action: () => move(c.id, null) } as const]
         : []),
       { kind: 'separator' },
-      { label: 'Delete collection', icon: Trash2, danger: true, action: () => remove(c) },
+      {
+        label: t('library-collection-delete'),
+        icon: Trash2,
+        danger: true,
+        action: () => remove(c),
+      },
     ]);
   }
 
@@ -142,7 +149,7 @@
       await collectionMove(id, parent);
       await refresh();
     } catch (error) {
-      notifyError('The collection could not be moved', error);
+      notifyError(t('library-collection-move-failed'), error);
     }
   }
 
@@ -153,14 +160,14 @@
         const ids = payload.data as string[];
         const added = await collectionAdd(target.id, ids);
         await refresh();
-        if (added === 0) notifyOk(`Already in “${target.name}”`);
-        else notifyOk(`${plural(added, 'reference')} added to “${target.name}”`);
+        if (added === 0) notifyOk(t('library-collection-already', { name: target.name }));
+        else notifyOk(t('library-collection-added', { count: added, name: target.name }));
       } else if (payload.kind === 'collection') {
         const id = payload.data as string;
         if (id !== target?.id) await move(id, target?.id ?? null);
       }
     } catch (error) {
-      notifyError('That could not be done', error);
+      notifyError(t('library-not-done'), error);
     }
   }
 
@@ -190,8 +197,8 @@
     <input
       bind:this={input}
       bind:value={naming!.value}
-      placeholder="Name of the collection"
-      aria-label="Name of the collection"
+      placeholder={t('library-collection-name')}
+      aria-label={t('library-collection-name')}
       onblur={commit}
       onkeydown={(e) => {
         if (e.key === 'Enter') commit();
@@ -211,13 +218,13 @@
     onclick={() => onselect(null)}
   >
     <LibraryBig size={15} strokeWidth={1.6} />
-    <span class="name truncate">All references</span>
-    <span class="count">{library.entries.length.toLocaleString()}</span>
+    <span class="name truncate">{t('library-all-references')}</span>
+    <span class="count">{library.entries.length.toLocaleString(languages.current)}</span>
   </button>
 
   <div class="heading">
-    <span class="overline">Collections</span>
-    <IconButton label="New collection" size="sm" onclick={() => begin(null)}
+    <span class="overline">{t('library-collections')}</span>
+    <IconButton label={t('library-collection-new')} size="sm" onclick={() => begin(null)}
       ><Plus size={14} /></IconButton
     >
   </div>
@@ -253,7 +260,9 @@
           class="twisty"
           class:open={!collapsed.has(c.id)}
           class:hidden={node.children === 0}
-          aria-label={collapsed.has(c.id) ? 'Expand' : 'Collapse'}
+          aria-label={collapsed.has(c.id)
+            ? t('library-collection-expand')
+            : t('library-collection-collapse')}
           tabindex="-1"
           onclick={(e) => {
             e.stopPropagation();
@@ -264,7 +273,7 @@
         </button>
         <Folder size={15} strokeWidth={1.6} />
         <span class="name truncate">{c.name}</span>
-        <span class="count">{node.count.toLocaleString()}</span>
+        <span class="count">{node.count.toLocaleString(languages.current)}</span>
       </div>
     {/if}
     {#if naming?.id === 'new' && naming.parent === c.id}
@@ -273,10 +282,7 @@
   {/each}
 
   {#if !nodes.length && !naming}
-    <p class="none">
-      Collections gather references for a subject or a piece of work. A reference can be in any
-      number of them.
-    </p>
+    <p class="none">{t('library-collections-hint')}</p>
   {/if}
 </div>
 

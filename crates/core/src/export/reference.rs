@@ -13,13 +13,14 @@ use crate::formats::{
     Align, CaptionPosition, Case, DocumentFormat, HeadContent, HeadingLevel, Length, NoteKind, Paragraphs, Rules,
     fallbacks,
 };
+use crate::tr;
 
 fn xml(text: &str) -> String {
     text.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
 
 fn zip_error(e: zip::result::ZipError) -> Error {
-    Error::invalid(format!("the pattern document could not be read: {e}"))
+    Error::invalid(tr!("core-export-pattern-unreadable", error = e.to_string()))
 }
 
 /// Reads a zip, lets `change` alter, add or drop files, and writes it again.
@@ -35,7 +36,7 @@ pub(crate) fn rewrite(
             continue;
         }
         let mut bytes = Vec::with_capacity(file.size() as usize);
-        file.read_to_end(&mut bytes).map_err(|e| Error::io("reading the pattern document", e))?;
+        file.read_to_end(&mut bytes).map_err(|e| Error::io(tr!("core-export-pattern-reading"), e))?;
         files.push((file.name().to_owned(), bytes));
     }
     change(&mut files)?;
@@ -47,7 +48,7 @@ pub(crate) fn rewrite(
         let method = if name == "mimetype" { zip::CompressionMethod::Stored } else { zip::CompressionMethod::Deflated };
         let options = zip::write::SimpleFileOptions::default().compression_method(method);
         out.start_file(name.as_str(), options).map_err(zip_error)?;
-        out.write_all(bytes).map_err(|e| Error::io("writing the pattern document", e))?;
+        out.write_all(bytes).map_err(|e| Error::io(tr!("core-export-pattern-writing"), e))?;
     }
     Ok(out.finish().map_err(zip_error)?.into_inner())
 }
@@ -64,7 +65,7 @@ pub(crate) fn text_of(files: &[(String, Vec<u8>)], name: &str) -> Result<String>
         .iter()
         .find(|(n, _)| n == name)
         .map(|(_, b)| String::from_utf8_lossy(b).into_owned())
-        .ok_or_else(|| Error::invalid(format!("the pattern document has no {name}")))
+        .ok_or_else(|| Error::invalid(tr!("core-export-pattern-lacks", name = name)))
 }
 
 /// The font to name in a document: the one asked for. Word processors find
