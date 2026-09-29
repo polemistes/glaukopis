@@ -21,7 +21,6 @@
   import { kindWords, noteKey, removePicture, usersOf } from './store.svelte';
   import Thumb from './Thumb.svelte';
   import ScanText from '@lucide/svelte/icons/scan-text';
-  import { t } from '$lib/i18n';
   import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
 
   interface Props {
