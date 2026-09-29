@@ -1,0 +1,25 @@
+{
+  // What is built, installed or worked on by agents in worktrees of their own
+  // is many gigabytes that change while they build; the editor need not watch,
+  // search or index it.
+  "files.watcherExclude": {
+    "**/target/**": true,
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.claude/worktrees/**": true,
+    "**/packaging/arch/src/**": true,
+    "**/packaging/arch/pkg/**": true,
+    "**/e2e/output/**": true
+  },
+  "search.exclude": {
+    "**/target": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.claude/worktrees": true,
+    "**/packaging/arch/src": true,
+    "**/packaging/arch/pkg": true
+  },
+  // The worktrees are repositories of their own; the editor need not follow them.
+  "git.autoRepositoryDetection": "openEditors",
+  "rust-analyzer.files.exclude": [".claude/worktrees", "packaging/arch/src", "packaging/arch/pkg"]
+}
