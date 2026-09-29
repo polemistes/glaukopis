@@ -957,7 +957,8 @@ project, which tells who changed what, and when; where the history is not
 kept, the panel says so, and offers to keep it from then on.
 
 **Review changes** over the text (**Ctrl+Shift+E**) opens the panel of
-changes beside the text of the map. It lists the changes of the map in the
+changes beside the text of the map, in the place at the side that the
+references, the pictures and the history share. It lists the changes of the map in the
 order of the text, says how many are left, and shows one at a time: where it
 is, as it was and as it is, with the words that changed marked, each person's
 in their colour, and who made it and when. While the panel is open, the text
@@ -995,7 +996,8 @@ one change: for a quick look at text much rewritten.
 | Go through the list | The arrows up and down, in the panel |
 
 Rejecting is a change of yours like any other: the others see it, and
-**Ctrl+Z** takes it back. An element that was deleted, and a figure or a
+**Ctrl+Z** takes it back. It counts as reviewed, so what you rejected is
+not put before you again. An element that was deleted, and a figure or a
 table taken out, are brought back from the history instead.
 
 You can write in the text while you review it. The change you write in is
