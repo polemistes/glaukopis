@@ -13,6 +13,9 @@ for scholars in the humanities first, the social sciences second.
 - **What you have written already** is brought in as a map of its own, from
   Word, OpenDocument, Markdown, LaTeX, HTML and other kinds of file; tables
   from CSV files and from spreadsheets.
+- **Text in scans and pictures** is read by Tesseract: a scanned PDF or a
+  picture becomes a map, a page to an element, and a PDF of the library is
+  made searchable, looking as it did.
 - **One store of pictures** for all projects, with what you have said of
   each: its caption, what it shows, your notes.
 - **One library** for all projects, kept as a BibLaTeX file that other tools
@@ -49,13 +52,15 @@ Rust and [Tauri 2](https://tauri.app) for the application, which uses the web
 view of the system and brings no browser of its own; Svelte 5 and TypeScript
 for the interface; ProseMirror for the text; Yjs for the project, which is
 what lets several write in it at once. Pandoc makes the documents and Typst
-the pages; both are used as they are installed. The reasons are in
-`PLAN.md` and `docs/adr/0001-tauri-rust-svelte.md`.
+the pages, and Tesseract reads the text of scans; they are used as they are
+installed. The pages of PDFs are drawn for Tesseract by hayro, in Rust. The
+reasons are in `PLAN.md` and `docs/adr/0001-tauri-rust-svelte.md`.
 
 ## Building
 
 Needed: Rust, Node.js, pnpm, and on Linux `webkit2gtk-4.1` and `gtk3` with
-their headers. To use it, also Pandoc and Typst.
+their headers. To use it, also Pandoc and Typst, and Tesseract with the data
+of the languages you read.
 
 ```
 pnpm install
