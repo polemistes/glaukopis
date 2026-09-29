@@ -3,7 +3,8 @@ import * as Y from 'yjs';
 import { Project, type Persistence } from '$lib/project/model/project.svelte';
 import { applyEdits } from './applying';
 import { Engine } from './engine';
-import type { HistoryRecord } from './records';
+import { ProjectHistory } from './history.svelte';
+import { writeRecords, type HistoryRecord } from './records';
 import type { Passage, Piece, Reference } from './types';
 
 /** A store of history as the core keeps one: see `crates/core/src/history.rs`. */
@@ -301,5 +302,29 @@ describe('the history of a project', () => {
     expect(again.pieces.filter((p) => p.status !== 'same').map((p) => p.text)).toEqual([
       ' of Achilles',
     ]);
+  });
+});
+
+describe('the history of a project that is open', () => {
+  it('is read when it is first asked, follows what is written, and changes the project', async () => {
+    const { a, b, ann, map, root, flush } = await two();
+    paragraph(a, root, 'Sing, goddess, the wrath.');
+    await flush();
+    const history = new ProjectHistory(a, 'p', async () => writeRecords(ann.read()));
+    const since = await history.now();
+    // Written after the history was read: followed as it is made, before and after it is written.
+    b.transact(() => textOf(b, root).insert(0, 'O '));
+    await flush();
+    b.transact(() => textOf(b, root).insert(textOf(b, root).length - 1, ' of Achilles'));
+    const changes = await history.compare(map, { moment: since.snapshot, accepted: [] });
+    const added = changes.passages[0].pieces.filter((p) => p.status === 'added');
+    expect(added.map((p) => [p.text, p.by])).toEqual([
+      ['O ', 'bo'],
+      [' of Achilles', 'bo'],
+    ]);
+    await history.revert(changes.passages[0], added);
+    expect(textOf(a, root).toString()).toBe('Sing, goddess, the wrath.');
+    expect((await history.people()).map((p) => p.name).sort()).toEqual(['Ann', 'Bo']);
+    history.stop();
   });
 });

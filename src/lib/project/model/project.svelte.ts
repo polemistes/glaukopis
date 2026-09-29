@@ -471,6 +471,10 @@ export class Project {
    * Says who works here. While the history is on, the project keeps them
    * among its people, with their name as it is now.
    */
+  get me(): Me | null {
+    return this.#me;
+  }
+
   setMe(me: Me | null) {
     this.#me = me;
     this.#introduce();

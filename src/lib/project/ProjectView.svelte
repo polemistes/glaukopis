@@ -56,6 +56,8 @@
   import ReferencePanel from './ReferencePanel.svelte';
   import MapText from './text/MapText.svelte';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
+  import { historyOf } from '$lib/history/history.svelte';
+  import { me } from '$lib/history/me.svelte';
 
   let { projectId }: { projectId: string } = $props();
 
@@ -201,7 +203,18 @@
     });
   });
 
+  // Who works here, as the history knows them: again when they are named anew.
+  $effect(() => {
+    const who = me();
+    const p = project;
+    if (!p) return;
+    untrack(() => p.setMe(who));
+    // For the tests of the running application, which ask the history as the review does.
+    (window as unknown as Record<string, unknown>).__glaukopisHistory = historyOf(p, ownId);
+  });
+
   async function leave(p: Project) {
+    historyOf(p, ownId).stop();
     shared?.close();
     await saveView();
     await p.close();
