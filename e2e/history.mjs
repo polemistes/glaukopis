@@ -125,6 +125,108 @@ try {
   const room = await ask(app, `return await h.room();`);
   check('the room it takes is known', room > 0, `${room} bytes`);
 
+  // ---- the panel ----
+  await app.keys(' Of Achilles.');
+  await sleep(1200);
+  await app.click('button[aria-label="History"]');
+  await app.waitFor('.history-panel .moment', 10000);
+  await sleep(600);
+  const rows = () =>
+    app.exec(`return Array.from(document.querySelectorAll('.history-panel .moment')).map((m) => m.textContent.replace(/\\s+/g, ' ').trim())`);
+  let listed = await rows();
+  check('the panel lists the sessions, the newest first', listed.length >= 2 && listed[listed.length - 1].includes('The history begins'), JSON.stringify(listed));
+  await app.screenshot('history-1-panel');
+
+  // A moment: the map as it was, with what changed since the moment before marked.
+  await app.click('.history-panel .moment');
+  await app.waitFor('.past .text .element', 8000);
+  await sleep(300);
+  const marked = await app.exec(`return Array.from(document.querySelectorAll('.past .piece.added')).map((p) => p.textContent)`);
+  check('the map is shown as it was, what was written marked', marked.join('').includes('Of Achilles'), JSON.stringify(marked));
+  check('it is not to be written in', !(await app.exists('.past .ProseMirror')) && !(await app.exists('.panes .text-view')));
+  await app.screenshot('history-2-as-it-was');
+
+  // Named.
+  await app.click('button[aria-label="Name this moment"]');
+  await app.waitFor('.past input.naming');
+  await app.keys('With Achilles');
+  await app.press('Enter');
+  await app.waitForText('.history-panel .moment.named', 'With Achilles', 5000);
+  check('a moment is given a name, and stands among the sessions', true);
+
+  // Brought back: the text is changed, and the element is brought back as it was at the named moment.
+  await app.click('.past .bar button.primary');
+  await app.waitFor('.text-view .section .body', 5000);
+  await app.click('.text-view .section .body');
+  await app.keys(['Control', 'a']);
+  await app.press('Backspace');
+  await app.keys('Nothing.');
+  await sleep(1200);
+  check('the text is changed', (await bodyText(app)) === 'Nothing.', await bodyText(app));
+  await app.clickText('.history-panel .moment.named', 'With Achilles');
+  await app.waitFor('.past .text .element', 8000);
+  await app.exec(`document.querySelector('.past .element .back').click()`);
+  await sleep(600);
+  await app.click('.past .bar button.primary');
+  await app.waitFor('.text-view .section .body', 5000);
+  await sleep(400);
+  check('an element is brought back as it was', (await bodyText(app)) === 'Sing, goddess, the wrath. Of Achilles.', await bodyText(app));
+  await app.click('button[aria-label="Undo"]');
+  await sleep(500);
+  check('and that is undone as one change', (await bodyText(app)) === 'Nothing.', await bodyText(app));
+
+  // ---- kept less finely, as if weeks had passed ----
+  const merged = await ask(app, `return await h.thinAsOf(Date.now() + 60 * 24 * 3600 * 1000);`);
+  check('older history is merged', merged > 0, `${merged} stretches`);
+  await app.click('button[aria-label="History"]');
+  await app.click('button[aria-label="History"]');
+  await app.waitFor('.history-panel .moment', 10000);
+  await sleep(600);
+  listed = await rows();
+  check('merged history is shown as such, and the named moment is kept', listed.some((r) => r.includes('kept less finely')) && listed.some((r) => r.includes('With Achilles')), JSON.stringify(listed));
+
+  // ---- archived and deleted ----
+  const archive = join(app.dataDir, 'Wrath until then.glaukopis-history');
+  const before = await ask(app, `return (await h.sessions()).length;`);
+  await ask(
+    app,
+    `const s = await h.sessions(); const at = s[1].last; await h.cutting(at); await h.cut(at, arguments[0]);`,
+    archive,
+  );
+  const archived = await app.execAsync(
+    `const b = await window.__TAURI_INTERNALS__.invoke('history_archive_read', { path: arguments[0] }); return b.byteLength;`,
+    archive,
+  );
+  const after = await ask(app, `return (await h.sessions()).length;`);
+  check('history before a moment is archived into a file that can be read again', existsSync(archive) && archived > 0 && after < before, `${before} → ${after} sessions, ${archived} bytes`);
+  check('what is left begins with the project as it was', (await ask(app, `return (await h.sessions())[0].first;`)) === 0 && (await bodyText(app)) === 'Nothing.');
+
+  // Deleted before a moment, from the settings.
+  await app.click('button[aria-label="History"]');
+  await app.click('button[aria-label="History"]');
+  await app.waitFor('.history-panel .moment', 10000);
+  const moments = await app.findAll('.history-panel .moment');
+  await app.click(moments[Math.max(0, moments.length - 2)]);
+  await app.waitFor('.past .text', 8000);
+  await app.click('button[aria-label="Settings of the history"]');
+  await app.clickText('.history-panel button', 'Delete');
+  await app.waitForText('dialog h2', 'Delete the history before', 5000);
+  await app.screenshot('history-3-delete');
+  await app.clickText('dialog footer button', 'Delete');
+  await app.waitGone('dialog[open]', 8000);
+  await sleep(800);
+  const left = await ask(app, `return (await h.sessions()).length;`);
+  check('history before a moment is deleted', left < after, `${after} → ${left} sessions`);
+
+  // ---- turned off ----
+  await app.click('.history-panel input[type="checkbox"]');
+  await app.waitForText('dialog h2', 'Stop keeping the history?', 5000);
+  await app.clickText('dialog footer button', 'Delete the history');
+  await app.waitGone('dialog[open]', 8000);
+  await sleep(1500);
+  check('turned off, what was kept is deleted', !existsSync(join(dir, 'changes.log')));
+  await app.waitForText('.history-panel', 'is not kept', 5000);
+
   const errors = await app.pageErrors();
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));
 } catch (error) {
