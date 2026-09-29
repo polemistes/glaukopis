@@ -54,6 +54,8 @@ export class ProjectHistory implements History {
   #started: Promise<void> | null = null;
   /** Whether older history has been kept less finely since the project was opened. */
   #thinned = false;
+  /** Which reading of the history this is: an older one still under way leaves off. */
+  #run = 0;
   #unfollow: (() => void) | null = null;
   /** Where the history is read from, where it is not the project's own: an archive. */
   readonly #read: () => Promise<Uint8Array>;
@@ -103,6 +105,10 @@ export class ProjectHistory implements History {
   /** Reads the history, and follows the project from then on. Once. */
   start(): Promise<void> {
     this.#started ??= (async () => {
+      // A reading that is stopped while it waits leaves off: another has
+      // begun, and this one must touch neither it nor what it has made.
+      const run = ++this.#run;
+      const stale = () => run !== this.#run;
       if (typeof Worker !== 'undefined') {
         try {
           this.#worker = new Worker(new URL('./engine.worker.ts', import.meta.url), {
@@ -122,11 +128,15 @@ export class ProjectHistory implements History {
       if (!this.archive && !this.#thinned) {
         this.#thinned = true;
         try {
-          this.#post({ kind: 'load', records: readRecords(await this.#read()), me: null });
+          const records = readRecords(await this.#read());
+          if (stale()) return;
+          this.#post({ kind: 'load', records, me: null });
           await this.#thin(Date.now());
         } catch (error) {
+          if (stale()) return;
           console.error('older history could not be kept less finely', error);
         }
+        if (stale()) return;
         this.#post({ kind: 'reset' });
       }
       // Followed before it is read: what is written meanwhile is both on disk
@@ -137,6 +147,7 @@ export class ProjectHistory implements History {
           written: (time, here, changes) => this.#post({ kind: 'written', time, here, changes }),
         });
       const records = readRecords(await this.#read());
+      if (stale()) return;
       this.#post({ kind: 'load', records, me: this.project.me?.id ?? null });
       this.ready = true;
     })();
@@ -150,6 +161,7 @@ export class ProjectHistory implements History {
   }
 
   stop() {
+    this.#run++;
     this.#unfollow?.();
     this.#unfollow = null;
     this.#worker?.terminate();
