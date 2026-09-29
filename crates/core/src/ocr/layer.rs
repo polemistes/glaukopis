@@ -15,6 +15,7 @@ use std::time::Duration;
 use pdf_extract::{Document, MediaBox, Object, OutputDev, OutputError, Transform};
 
 use super::text::Line;
+use crate::tr;
 
 /// A page has text when it has at least this many letters and digits.
 pub const TEXT_PAGE: usize = 100;
@@ -366,7 +367,7 @@ pub fn patience(bytes: usize) -> Duration {
 /// Reads the text of a PDF file.
 pub fn read_file(path: &Path) -> crate::Result<Layer> {
     use crate::error::IoContext;
-    let bytes = std::fs::read(path).context(|| format!("reading {}", path.display()))?;
+    let bytes = std::fs::read(path).context(|| tr!("io-reading", path = path))?;
     let wait = patience(bytes.len());
     Ok(read(Arc::new(bytes), wait))
 }

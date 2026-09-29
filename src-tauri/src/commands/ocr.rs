@@ -17,6 +17,8 @@ use glaukopis_core::import::document::Imported;
 use glaukopis_core::ocr::{self, Asked, Looked, Progress};
 
 use crate::commands::library::{EntryFull, full};
+use glaukopis_core::tr;
+
 use crate::error::CommandResult;
 use crate::state::AppState;
 
@@ -102,7 +104,7 @@ pub fn ocr_read(
     let work = state.data.work();
     let file = file_name(&path);
     if ocr::is_picture(&path) {
-        let bytes = std::fs::read(&path).context(|| format!("reading {}", path.display()))?;
+        let bytes = std::fs::read(&path).context(|| tr!("io-reading", path = &path))?;
         let paragraphs = ocr::read_picture(&bytes, &tools, &work, &asked, None, &reading.stop)?;
         return Ok(ocr::imported_picture(&file, &stem(&file), paragraphs));
     }

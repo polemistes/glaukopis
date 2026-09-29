@@ -5,6 +5,7 @@ use std::sync::atomic::AtomicBool;
 
 use crate::error::{Error, IoContext, Result};
 use crate::export::tools::{self, Tool};
+use crate::tr;
 
 /// What Tesseract made of a picture.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -62,13 +63,13 @@ pub fn read(
     let made = |ending: &str| base.with_extension(ending);
     let tsv = if text {
         let path = made("tsv");
-        Some(std::fs::read_to_string(&path).context(|| format!("reading {}", path.display()))?)
+        Some(std::fs::read_to_string(&path).context(|| tr!("io-reading", path = &path))?)
     } else {
         None
     };
     let layer = if layer {
         let path = made("pdf");
-        let bytes = std::fs::read(&path).context(|| format!("reading {}", path.display()))?;
+        let bytes = std::fs::read(&path).context(|| tr!("io-reading", path = &path))?;
         if !bytes.starts_with(b"%PDF") {
             return Err(Error::Program {
                 program: "Tesseract".into(),

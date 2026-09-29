@@ -46,12 +46,12 @@ impl Drawn {
     /// Writes the picture as PGM, the plainest kind there is, which
     /// Tesseract reads as it is and which takes no time to write.
     pub fn write(&self, path: &Path) -> Result<()> {
-        let file = std::fs::File::create(path).context(|| format!("writing {}", path.display()))?;
+        let file = std::fs::File::create(path).context(|| tr!("io-writing", path = path))?;
         let mut out = std::io::BufWriter::new(file);
         write!(out, "P5\n{} {}\n255\n", self.width, self.height)
             .and_then(|()| out.write_all(&self.grey))
             .and_then(|()| out.flush())
-            .context(|| format!("writing {}", path.display()))
+            .context(|| tr!("io-writing", path = path))
     }
 
     /// A picture of the store or of a file, made grey on white: what is
@@ -62,7 +62,7 @@ impl Drawn {
         let unreadable = |e: image::ImageError| Error::invalid(tr!("ocr-picture-unreadable", message = e.to_string()));
         let reader = image::ImageReader::new(std::io::Cursor::new(bytes))
             .with_guessed_format()
-            .context(|| "reading the picture".to_owned())?;
+            .map_err(|e| Error::invalid(tr!("ocr-picture-unreadable", message = e.to_string())))?;
         let mut decoder = reader.into_decoder().map_err(unreadable)?;
         let orientation = decoder.orientation().unwrap_or(image::metadata::Orientation::NoTransforms);
         let mut picture = image::DynamicImage::from_decoder(decoder).map_err(unreadable)?;

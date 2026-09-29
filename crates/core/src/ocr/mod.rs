@@ -250,11 +250,11 @@ fn read_pdf_file(path: &Path) -> Result<Arc<Vec<u8>>> {
     let mut head = Vec::new();
     std::fs::File::open(path)
         .and_then(|f| f.take(1024).read_to_end(&mut head))
-        .context(|| format!("reading {}", path.display()))?;
+        .context(|| tr!("io-reading", path = path))?;
     if !head.windows(5).any(|w| w == b"%PDF-") {
         return Err(Error::invalid(tr!("ocr-not-pdf", file = &file)));
     }
-    Ok(Arc::new(std::fs::read(path).context(|| format!("reading {}", path.display()))?))
+    Ok(Arc::new(std::fs::read(path).context(|| tr!("io-reading", path = path))?))
 }
 
 /// Looks at a PDF or a picture before it is read: how many pages it has,
@@ -283,11 +283,8 @@ pub fn look(path: &Path, tools: &Tools) -> Result<Looked> {
 /// A directory of its own for what is made on the way, in `work`, which is
 /// gone afterwards.
 fn place_in(work: &Path) -> Result<tempfile::TempDir> {
-    std::fs::create_dir_all(work).context(|| format!("creating {}", work.display()))?;
-    tempfile::Builder::new()
-        .prefix("ocr-")
-        .tempdir_in(work)
-        .context(|| format!("creating a directory in {}", work.display()))
+    std::fs::create_dir_all(work).context(|| tr!("io-creating", path = work))?;
+    tempfile::Builder::new().prefix("ocr-").tempdir_in(work).context(|| tr!("io-creating-directory-in", path = work))
 }
 
 /// Draws a page and has Tesseract read it: its TSV, its page of text, or both.
