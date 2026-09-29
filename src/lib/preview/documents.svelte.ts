@@ -10,6 +10,7 @@ import {
   type StyleSummary,
   type ToolsInfo,
 } from '$lib/api/documents';
+import { t } from '$lib/i18n';
 import { settings } from '$lib/state/settings.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
 
@@ -42,7 +43,7 @@ class Documents {
       this.#formats.clear();
       this.loaded = true;
     } catch (error) {
-      notifyError('The styles and formats could not be read', error);
+      notifyError(t('preview-reading-failed'), error);
     } finally {
       this.#loading = null;
     }
@@ -52,7 +53,7 @@ class Documents {
     try {
       this.tools = await toolsInfo(true);
     } catch (error) {
-      notifyError('The programs could not be looked for', error);
+      notifyError(t('preview-looking-failed'), error);
     }
   }
 
@@ -88,19 +89,25 @@ class Documents {
 
 export const documents = new Documents();
 
-export const kindWords: Record<string, string> = {
-  note: 'Notes',
-  'author-date': 'Author and date',
-  numeric: 'Numbers',
-  label: 'Labels',
-  author: 'Author',
-  '': '',
+const styleKinds: Record<string, () => string> = {
+  note: () => t('style-kind-note'),
+  'author-date': () => t('style-kind-author-date'),
+  numeric: () => t('style-kind-numeric'),
+  label: () => t('style-kind-label'),
+  author: () => t('style-kind-author'),
+  '': () => '',
 };
 
-export const formatKindWords: Record<string, string> = {
-  own: 'Your own',
-  general: 'General',
-  'style-guide': 'Style guides',
-  publisher: 'Publishers',
-  journal: 'Journals',
+/** A kind of reference style in words, in the language of the interface; nothing for one not known. */
+export const kindWords = (kind: string): string | undefined => styleKinds[kind]?.();
+
+const formatKinds: Record<string, () => string> = {
+  own: () => t('format-kind-own'),
+  general: () => t('format-kind-general'),
+  'style-guide': () => t('format-kind-style-guide'),
+  publisher: () => t('format-kind-publisher'),
+  journal: () => t('format-kind-journal'),
 };
+
+/** A kind of document format in words, in the language of the interface. */
+export const formatKindWords = (kind: string): string | undefined => formatKinds[kind]?.();

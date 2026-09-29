@@ -13,6 +13,8 @@
     type ExportReference,
   } from '$lib/api/documents';
   import { libraryGetMany } from '$lib/api/library';
+  import { languageName, primary, t } from '$lib/i18n';
+  import { pieces } from '$lib/project/pieces';
   import { library, sortEntries } from '$lib/state/library.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
@@ -85,10 +87,10 @@
         const summary = documents.style(wanted);
         own = summary?.own ?? false;
         const title = csl.title(parsed) || summary?.title || wanted;
-        name = own ? title : `${title}, changed`;
+        name = own ? title : t('style-name-changed', { name: title });
         version++;
       } catch (e) {
-        error = describeError(e) ?? 'The style could not be read.';
+        error = describeError(e) ?? t('style-read-failed');
       }
       await pickWorks();
     });
@@ -213,7 +215,7 @@
       sample = read(html);
       sampleError = null;
     } catch (e) {
-      if (mine === round) sampleError = describeError(e) ?? 'The style could not be tried.';
+      if (mine === round) sampleError = describeError(e) ?? t('style-sample-failed');
     } finally {
       if (mine === round) sampling = false;
     }
@@ -274,14 +276,14 @@
     return { citations, bibliography };
   }
 
-  const captions = [
-    'A work cited',
-    'The same, at a page',
-    'Another, with a word before it',
-    'The first again, at a chapter',
-    'Two works together',
-    'With the author in the sentence',
-  ];
+  const captions = $derived([
+    t('style-sample-cited'),
+    t('style-sample-same-page'),
+    t('style-sample-another'),
+    t('style-sample-first-again'),
+    t('style-sample-together'),
+    t('style-sample-in-sentence'),
+  ]);
 
   function touch() {
     version++;
@@ -297,10 +299,10 @@
     try {
       const saved = await stylesSave(own ? id : '', name.trim(), csl.serialise(style));
       await documents.reload();
-      notifyOk(`“${saved.title}” is saved among your own styles`);
+      notifyOk(t('style-saved', { name: saved.title }));
       onsaved(saved.id);
     } catch (e) {
-      error = describeError(e) ?? 'The style could not be saved.';
+      error = describeError(e) ?? t('style-save-failed');
     } finally {
       saving = false;
     }
@@ -308,9 +310,9 @@
 
   async function removeStyle() {
     const ok = await confirm({
-      title: `Delete the style “${name}”?`,
-      message: 'Maps that use it will use another style instead.',
-      confirm: 'Delete style',
+      title: t('style-delete-title', { name }),
+      message: t('style-delete-message'),
+      confirm: t('style-delete-confirm'),
       danger: true,
     });
     if (!ok) return;
@@ -319,17 +321,17 @@
       await documents.reload();
       onsaved('');
     } catch (e) {
-      error = describeError(e) ?? 'The style could not be deleted.';
+      error = describeError(e) ?? t('style-delete-failed');
     }
   }
 
   async function close() {
     if (changed) {
       const ok = await confirm({
-        title: 'Leave without saving?',
-        message: 'The changes you have made to the style will be lost.',
-        confirm: 'Leave',
-        cancel: 'Go on editing',
+        title: t('style-leave-title'),
+        message: t('style-leave-message'),
+        confirm: t('style-leave-confirm'),
+        cancel: t('style-leave-cancel'),
       });
       if (!ok) return;
     }
@@ -357,7 +359,7 @@
       touch();
       return true;
     } catch (e) {
-      sourceError = describeError(e) ?? 'The source could not be read.';
+      sourceError = describeError(e) ?? t('style-source-unread');
       return false;
     }
   }
@@ -493,17 +495,14 @@
       event.currentTarget as HTMLElement,
       [
         {
-          label: 'Words of my own',
-          hint: 'Such as “in”, “accessed”, or punctuation',
+          label: t('style-add-words'),
+          hint: t('style-add-words-hint'),
           action: () => put({ kind: 'value', text: '' }),
         },
         { kind: 'separator' },
-        { kind: 'heading', label: 'From the reference' },
+        { kind: 'heading', label: t('style-add-from-reference') },
         ...csl.TEXT_VARIABLES.map((v) => ({
-          label: csl
-            .variableWords(v)
-            .replace(/^the /, '')
-            .replace(/^./, (c) => c.toUpperCase()),
+          label: csl.variableName(v).replace(/^./, (c) => c.toUpperCase()),
           action: () => put({ kind: 'variable', name: v }),
         })),
       ],
@@ -517,34 +516,56 @@
     return style && selectedWithin ? csl.usesOf(style, selectedWithin) : 0;
   });
 
-  const selects: Record<string, [string, string][]> = {
+  const selects: Record<string, [string, string][]> = $derived({
     'font-style': [
-      ['', 'Upright'],
-      ['italic', 'Italic'],
+      ['', t('style-slant-upright')],
+      ['italic', t('style-slant-italic')],
     ],
     'font-weight': [
-      ['', 'Regular'],
-      ['bold', 'Bold'],
+      ['', t('style-weight-regular')],
+      ['bold', t('style-weight-bold')],
     ],
     'font-variant': [
-      ['', 'As written'],
-      ['small-caps', 'Small capitals'],
+      ['', t('style-letters-as-written')],
+      ['small-caps', t('style-letters-small-caps')],
     ],
     'text-case': [
-      ['', 'As entered'],
-      ['title', 'Title Case'],
-      ['sentence', 'Sentence case'],
-      ['capitalize-first', 'First letter a capital'],
-      ['capitalize-all', 'Every Word A Capital'],
-      ['uppercase', 'CAPITALS'],
-      ['lowercase', 'small letters'],
+      ['', t('style-case-as-entered')],
+      ['title', t('style-case-title')],
+      ['sentence', t('style-case-sentence')],
+      ['capitalize-first', t('style-case-capitalize-first')],
+      ['capitalize-all', t('style-case-capitalize-all')],
+      ['uppercase', t('style-case-uppercase')],
+      ['lowercase', t('style-case-lowercase')],
     ],
     'vertical-align': [
-      ['', 'On the line'],
-      ['sup', 'Raised'],
-      ['sub', 'Lowered'],
+      ['', t('style-height-baseline')],
+      ['sup', t('style-height-raised')],
+      ['sub', t('style-height-lowered')],
     ],
-  };
+  });
+
+  /** The languages CSL has words in that a style can be set to, as `default-locale` names them. */
+  const LOCALES = [
+    'en-GB',
+    'en-US',
+    'nb-NO',
+    'nn-NO',
+    'da-DK',
+    'sv-SE',
+    'de-DE',
+    'fr-FR',
+    'it-IT',
+    'es-ES',
+    'el-GR',
+  ];
+  /** Named by the system, by the language alone where no other in the list shares it. */
+  const locales = $derived(
+    LOCALES.map((tag): [string, string] => {
+      const alone = LOCALES.filter((other) => primary(other) === primary(tag)).length === 1;
+      return [tag, languageName(alone ? primary(tag) : tag)];
+    }),
+  );
 </script>
 
 {#snippet pick(
@@ -618,7 +639,7 @@
 
 <Dialog
   open
-  title="Reference style"
+  title={t('style-editor')}
   width={1180}
   tall
   padded={false}
@@ -627,12 +648,12 @@
 >
   {#snippet header()}
     <div class="head">
-      <h2>Reference style</h2>
+      <h2>{t('style-editor')}</h2>
       <input
         class="name"
         bind:value={name}
-        aria-label="Name of the style"
-        placeholder="Name of the style"
+        aria-label={t('style-name')}
+        placeholder={t('style-name')}
       />
     </div>
   {/snippet}
@@ -647,21 +668,24 @@
         <div class="bar">
           <Segmented
             value={depth}
-            label="How deep to go"
+            label={t('style-depth')}
             options={[
-              { value: 'options', label: 'Common changes' },
-              { value: 'parts', label: 'Part by part' },
-              { value: 'source', label: 'Source' },
+              { value: 'options', label: t('style-depth-options') },
+              { value: 'parts', label: t('style-depth-parts') },
+              { value: 'source', label: t('style-depth-source') },
             ]}
             onchange={toDepth}
           />
           {#if depth !== 'source' && hasBibliography}
             <Segmented
               bind:value={scope}
-              label="What to change"
+              label={t('style-scope')}
               options={[
-                { value: 'citation', label: kind === 'note' ? 'Notes' : 'Citations' },
-                { value: 'bibliography', label: 'Bibliography' },
+                {
+                  value: 'citation',
+                  label: kind === 'note' ? t('style-scope-notes') : t('style-scope-citations'),
+                },
+                { value: 'bibliography', label: t('style-scope-bibliography') },
               ]}
               onchange={() => (selected = null)}
             />
@@ -672,124 +696,135 @@
 
         {#if depth === 'options'}
           <div class="form">
-            <h3>Names</h3>
+            <h3>{t('style-names')}</h3>
             <div class="row sentence">
               <span class="what">
-                With
-                <input
-                  class="inline"
-                  type="number"
-                  min="1"
-                  max="99"
-                  placeholder="—"
-                  value={nameOpt('et-al-min')}
-                  oninput={(e) => setNameOpt('et-al-min', e.currentTarget.value)}
-                  aria-label="Number of authors from which et al. is used"
-                />
-                authors or more, give the first
-                <input
-                  class="inline"
-                  type="number"
-                  min="1"
-                  max="99"
-                  placeholder="—"
-                  value={nameOpt('et-al-use-first')}
-                  oninput={(e) => setNameOpt('et-al-use-first', e.currentTarget.value)}
-                  aria-label="Number of authors given before et al."
-                />
-                and “et al.”
-                <small>Left empty, all are named</small>
+                {#each pieces( (marks) => t('style-et-al', marks), { min: '', first: '' } ) as piece, i (i)}
+                  {#if piece.name === 'min'}
+                    <input
+                      class="inline"
+                      type="number"
+                      min="1"
+                      max="99"
+                      placeholder="—"
+                      value={nameOpt('et-al-min')}
+                      oninput={(e) => setNameOpt('et-al-min', e.currentTarget.value)}
+                      aria-label={t('style-et-al-min')}
+                    />
+                  {:else if piece.name === 'first'}
+                    <input
+                      class="inline"
+                      type="number"
+                      min="1"
+                      max="99"
+                      placeholder="—"
+                      value={nameOpt('et-al-use-first')}
+                      oninput={(e) => setNameOpt('et-al-use-first', e.currentTarget.value)}
+                      aria-label={t('style-et-al-first')}
+                    />
+                  {:else}{piece.text}{/if}
+                {/each}
+                <small>{t('style-et-al-empty')}</small>
               </span>
             </div>
             {#if scope === 'citation'}
               <div class="row sentence">
                 <span class="what">
-                  When cited again, with
-                  <input
-                    class="inline"
-                    type="number"
-                    min="1"
-                    max="99"
-                    placeholder="—"
-                    value={nameOpt('et-al-subsequent-min')}
-                    oninput={(e) => setNameOpt('et-al-subsequent-min', e.currentTarget.value)}
-                    aria-label="Number of authors from which et al. is used in later citations"
-                  />
-                  or more give the first
-                  <input
-                    class="inline"
-                    type="number"
-                    min="1"
-                    max="99"
-                    placeholder="—"
-                    value={nameOpt('et-al-subsequent-use-first')}
-                    oninput={(e) => setNameOpt('et-al-subsequent-use-first', e.currentTarget.value)}
-                    aria-label="Number of authors given in later citations"
-                  />
-                  <small>Left empty, as the first time</small>
+                  {#each pieces( (marks) => t('style-et-al-again', marks), { min: '', first: '' } ) as piece, i (i)}
+                    {#if piece.name === 'min'}
+                      <input
+                        class="inline"
+                        type="number"
+                        min="1"
+                        max="99"
+                        placeholder="—"
+                        value={nameOpt('et-al-subsequent-min')}
+                        oninput={(e) => setNameOpt('et-al-subsequent-min', e.currentTarget.value)}
+                        aria-label={t('style-et-al-again-min')}
+                      />
+                    {:else if piece.name === 'first'}
+                      <input
+                        class="inline"
+                        type="number"
+                        min="1"
+                        max="99"
+                        placeholder="—"
+                        value={nameOpt('et-al-subsequent-use-first')}
+                        oninput={(e) =>
+                          setNameOpt('et-al-subsequent-use-first', e.currentTarget.value)}
+                        aria-label={t('style-et-al-again-first')}
+                      />
+                    {:else}{piece.text}{/if}
+                  {/each}
+                  <small>{t('style-et-al-again-empty')}</small>
                 </span>
               </div>
             {/if}
-            {@render pick('Before the last name', nameOpt('and'), (v) => setNameOpt('and', v), [
-              ['text', 'and'],
-              ['symbol', '&'],
-              ['', 'Nothing'],
-            ])}
             {@render pick(
-              'A comma before it',
+              t('style-before-last-name'),
+              nameOpt('and'),
+              (v) => setNameOpt('and', v),
+              [
+                ['text', t('style-and-word')],
+                ['symbol', '&'],
+                ['', t('style-and-nothing')],
+              ],
+            )}
+            {@render pick(
+              t('style-comma-before-last'),
               nameOpt('delimiter-precedes-last'),
               (v) => setNameOpt('delimiter-precedes-last', v),
               [
-                ['', 'As the style has it'],
-                ['contextual', 'With three names or more: A, B, and C'],
-                ['always', 'Always: A, and B'],
-                ['never', 'Never: A, B and C'],
-                ['after-inverted-name', 'After a name that is turned round'],
+                ['', t('style-as-the-style-has-it')],
+                ['contextual', t('style-comma-contextual')],
+                ['always', t('style-comma-always')],
+                ['never', t('style-comma-never')],
+                ['after-inverted-name', t('style-comma-after-inverted')],
               ],
             )}
-            {@render pick('Given names', initials, setInitials, [
-              ['full', 'In full: John Miles'],
-              ['spaced', 'Initials: J. M.'],
-              ['close', 'Initials, close: J.M.'],
-              ['bare', 'Initials without stops: JM'],
-              ['bare-spaced', 'Initials without stops: J M'],
+            {@render pick(t('style-given-names'), initials, setInitials, [
+              ['full', t('style-given-full')],
+              ['spaced', t('style-given-spaced')],
+              ['close', t('style-given-close')],
+              ['bare', t('style-given-bare')],
+              ['bare-spaced', t('style-given-bare-spaced')],
             ])}
             {@render pick(
-              'Family name first',
+              t('style-family-first'),
               nameOpt('name-as-sort-order'),
               (v) => setNameOpt('name-as-sort-order', v),
               [
-                ['', 'For no one: John Foley'],
-                ['first', 'For the first author: Foley, John, and Robert Fowler'],
-                ['all', 'For all: Foley, John, and Fowler, Robert'],
+                ['', t('style-family-first-none')],
+                ['first', t('style-family-first-first')],
+                ['all', t('style-family-first-all')],
               ],
             )}
             {@render words(
-              'Between family and given name',
+              t('style-sort-separator'),
               nameOpt('sort-separator'),
               (v) => setNameOpt('sort-separator', v),
-              'When the family name comes first',
+              t('style-sort-separator-hint'),
               ', ',
             )}
 
             {#if scope === 'citation'}
-              <h3>{kind === 'note' ? 'The note' : 'The citation'}</h3>
+              <h3>{kind === 'note' ? t('style-the-note') : t('style-the-citation')}</h3>
               {@render words(
-                'Begins with',
+                t('style-begins-with'),
                 attr(layoutEl, 'prefix'),
                 (v) => setAttr(layoutEl, 'prefix', v),
                 '',
                 '(',
               )}
               {@render words(
-                'Ends with',
+                t('style-ends-with'),
                 attr(layoutEl, 'suffix'),
                 (v) => setAttr(layoutEl, 'suffix', v),
                 '',
                 ')',
               )}
               {@render words(
-                'Between works cited together',
+                t('style-between-works'),
                 attr(layoutEl, 'delimiter'),
                 (v) => setAttr(layoutEl, 'delimiter', v),
                 '',
@@ -797,129 +832,118 @@
               )}
               {#if kind !== 'note'}
                 {@render pick(
-                  'Works of one author cited together',
+                  t('style-collapse'),
                   attr(scopeEl, 'collapse'),
                   (v) => setAttr(scopeEl, 'collapse', v),
                   [
-                    ['', 'Each in full'],
-                    ['year', 'The name once: Nagy 1979, 1996'],
-                    ['year-suffix', 'And the year once: Nagy 1979a, b'],
-                    ['year-suffix-ranged', 'With ranges: Nagy 1979a–c'],
-                    ['citation-number', 'Numbers as ranges: [1–3]'],
+                    ['', t('style-collapse-none')],
+                    ['year', t('style-collapse-year')],
+                    ['year-suffix', t('style-collapse-year-suffix')],
+                    ['year-suffix-ranged', t('style-collapse-year-suffix-ranged')],
+                    ['citation-number', t('style-collapse-citation-number')],
                   ],
                 )}
-                <h4>When two works would be cited alike</h4>
+                <h4>{t('style-disambiguate')}</h4>
                 {@render yes(
-                  'Add a letter to the year',
+                  t('style-disambiguate-year-suffix'),
                   attr(scopeEl, 'disambiguate-add-year-suffix'),
                   (v) => setAttr(scopeEl, 'disambiguate-add-year-suffix', v),
                   '1979a, 1979b',
                 )}
-                {@render yes('Name more authors', attr(scopeEl, 'disambiguate-add-names'), (v) =>
-                  setAttr(scopeEl, 'disambiguate-add-names', v),
+                {@render yes(
+                  t('style-disambiguate-names'),
+                  attr(scopeEl, 'disambiguate-add-names'),
+                  (v) => setAttr(scopeEl, 'disambiguate-add-names', v),
                 )}
                 {@render yes(
-                  'Add given names or initials',
+                  t('style-disambiguate-given-names'),
                   attr(scopeEl, 'disambiguate-add-givenname'),
                   (v) => setAttr(scopeEl, 'disambiguate-add-givenname', v),
                 )}
               {:else}
                 {@render count(
-                  'A note counts as near within',
+                  t('style-near-note'),
                   attr(scopeEl, 'near-note-distance'),
                   (v) => setAttr(scopeEl, 'near-note-distance', v),
-                  'Notes; for styles that shorten what was cited nearby',
+                  t('style-near-note-hint'),
                 )}
               {/if}
             {:else}
-              <h3>The entries</h3>
+              <h3>{t('style-entries')}</h3>
               {@render words(
-                'Each ends with',
+                t('style-entry-ends-with'),
                 attr(layoutEl, 'suffix'),
                 (v) => setAttr(layoutEl, 'suffix', v),
                 '',
                 '.',
               )}
               {@render words(
-                'For an author repeated',
+                t('style-author-repeated'),
                 attr(scopeEl, 'subsequent-author-substitute'),
                 (v) => setAttr(scopeEl, 'subsequent-author-substitute', v),
-                'In place of the name, in the entries after the first',
+                t('style-author-repeated-hint'),
                 '———',
               )}
               {@render yes(
-                'Hanging indent',
+                t('style-hanging-indent'),
                 attr(scopeEl, 'hanging-indent'),
                 (v) => setAttr(scopeEl, 'hanging-indent', v),
-                'The document format decides how deep',
+                t('style-hanging-indent-hint'),
               )}
               {@render pick(
-                'Numbers or labels stand',
+                t('style-second-field'),
                 attr(scopeEl, 'second-field-align'),
                 (v) => setAttr(scopeEl, 'second-field-align', v),
                 [
-                  ['', 'In the line'],
-                  ['flush', 'In a column of their own'],
-                  ['margin', 'In the margin'],
+                  ['', t('style-second-field-line')],
+                  ['flush', t('style-second-field-column')],
+                  ['margin', t('style-second-field-margin')],
                 ],
-                'For styles that number their entries',
+                t('style-second-field-hint'),
               )}
             {/if}
 
-            <h3>Throughout</h3>
+            <h3>{t('style-throughout')}</h3>
             {@render pick(
-              'Ranges of pages',
+              t('style-page-ranges'),
               attr(style.root, 'page-range-format'),
               (v) => setAttr(style!.root, 'page-range-format', v),
               [
-                ['', 'As entered'],
-                ['expanded', 'In full: 321–328'],
-                ['minimal', 'Shortest: 321–8'],
-                ['minimal-two', 'Two digits at least: 321–28'],
-                ['chicago', 'As the Chicago Manual has it'],
+                ['', t('style-page-ranges-as-entered')],
+                ['expanded', t('style-page-ranges-expanded')],
+                ['minimal', t('style-page-ranges-minimal')],
+                ['minimal-two', t('style-page-ranges-minimal-two')],
+                ['chicago', t('style-page-ranges-chicago')],
               ],
             )}
             {@render pick(
-              '“van”, “de”, “von” before a family name',
+              t('style-particles'),
               attr(style.root, 'demote-non-dropping-particle'),
               (v) => setAttr(style!.root, 'demote-non-dropping-particle', v),
               [
-                ['', 'As the style has it'],
-                ['never', 'Stay with it, and sort under v, d'],
-                ['sort-only', 'Stay with it, but are not sorted by'],
-                ['display-and-sort', 'Go after the given name: Gogh, Vincent van'],
+                ['', t('style-as-the-style-has-it')],
+                ['never', t('style-particles-never')],
+                ['sort-only', t('style-particles-sort-only')],
+                ['display-and-sort', t('style-particles-display-and-sort')],
               ],
             )}
             {@render yes(
-              'A hyphen between initials',
+              t('style-hyphen'),
               attr(style.root, 'initialize-with-hyphen') || 'true',
               (v) => setAttr(style!.root, 'initialize-with-hyphen', v === 'true' ? null : 'false'),
-              'J.-P. Sartre, not J.P. Sartre',
+              t('style-hyphen-hint'),
             )}
             {@render pick(
-              'The words of the style are in',
+              t('style-locale'),
               attr(style.root, 'default-locale'),
               (v) => setAttr(style!.root, 'default-locale', v),
-              [
-                ['', 'The language of the document'],
-                ['en-GB', 'English (British)'],
-                ['en-US', 'English (American)'],
-                ['nb-NO', 'Norwegian (bokmål)'],
-                ['nn-NO', 'Norwegian (nynorsk)'],
-                ['da-DK', 'Danish'],
-                ['sv-SE', 'Swedish'],
-                ['de-DE', 'German'],
-                ['fr-FR', 'French'],
-                ['it-IT', 'Italian'],
-                ['es-ES', 'Spanish'],
-                ['el-GR', 'Greek'],
-              ],
-              '“ed.”, “in”, “accessed”, the months',
+              [['', t('style-locale-document')], ...locales],
+              t('style-locale-hint'),
             )}
           </div>
         {:else if depth === 'parts'}
           <div class="parts">
-            <div class="tree" role="tree" aria-label="Parts of the {scope}">
+            <div class="tree" role="tree" aria-label={t('style-parts-of', { scope })}>
               {#each rows as row (row.el)}
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                 <div
@@ -939,7 +963,7 @@
                     class="twisty"
                     class:open={open.has(row.el)}
                     class:hidden={!row.parts}
-                    aria-label={open.has(row.el) ? 'Close' : 'Open'}
+                    aria-label={open.has(row.el) ? t('style-part-fold') : t('style-part-unfold')}
                     tabindex="-1"
                     onclick={(e) => {
                       e.stopPropagation();
@@ -953,7 +977,7 @@
                 </div>
               {/each}
               {#if !rows.length}
-                <p class="none">This style has no {scope}.</p>
+                <p class="none">{t('style-parts-none', { scope })}</p>
               {/if}
             </div>
 
@@ -962,17 +986,23 @@
                 {@const el = selected}
                 <div class="detail-head">
                   <h3>{csl.describe(el)}</h3>
-                  <IconButton label="Move up" size="sm" onclick={() => csl.move(el, -1) && touch()}
-                    ><ArrowUp size={14} /></IconButton
-                  >
-                  <IconButton label="Move down" size="sm" onclick={() => csl.move(el, 1) && touch()}
-                    ><ArrowDown size={14} /></IconButton
-                  >
-                  <IconButton label="Add after it" size="sm" onclick={(e) => addPart(e, el, false)}
-                    ><Plus size={14} /></IconButton
+                  <IconButton
+                    label={t('style-part-up')}
+                    size="sm"
+                    onclick={() => csl.move(el, -1) && touch()}><ArrowUp size={14} /></IconButton
                   >
                   <IconButton
-                    label="Take away"
+                    label={t('style-part-down')}
+                    size="sm"
+                    onclick={() => csl.move(el, 1) && touch()}><ArrowDown size={14} /></IconButton
+                  >
+                  <IconButton
+                    label={t('style-part-add-after')}
+                    size="sm"
+                    onclick={(e) => addPart(e, el, false)}><Plus size={14} /></IconButton
+                  >
+                  <IconButton
+                    label={t('style-part-take-away')}
                     size="sm"
                     disabled={el.localName === 'layout' || el.localName === 'if'}
                     onclick={() => {
@@ -987,104 +1017,110 @@
                 </div>
                 {#if selectedWithin && uses > 1}
                   <p class="shared">
-                    This belongs to “{selectedWithin}”, which is used in {uses} places. A change here
-                    shows in all of them.
+                    {t('style-part-shared', { macro: selectedWithin, count: uses })}
                   </p>
                 {/if}
 
                 {#if el.localName === 'text' && el.hasAttribute('value')}
-                  {@render words('The words', attr(el, 'value'), (v) => {
+                  {@render words(t('style-part-words'), attr(el, 'value'), (v) => {
                     el.setAttribute('value', v);
                     touch();
                   })}
                 {/if}
                 {#if csl.hasAffixes(el)}
                   {@render words(
-                    'Before it',
+                    t('style-part-before'),
                     attr(el, 'prefix'),
                     (v) => setAttr(el, 'prefix', v),
-                    'Printed only when the part itself is',
+                    t('style-part-before-hint'),
                   )}
-                  {@render words('After it', attr(el, 'suffix'), (v) => setAttr(el, 'suffix', v))}
+                  {@render words(t('style-part-after'), attr(el, 'suffix'), (v) =>
+                    setAttr(el, 'suffix', v),
+                  )}
                 {/if}
                 {#if csl.hasDelimiter(el)}
-                  {@render words('Between its parts', attr(el, 'delimiter'), (v) =>
+                  {@render words(t('style-part-between'), attr(el, 'delimiter'), (v) =>
                     setAttr(el, 'delimiter', v),
                   )}
                 {/if}
                 {#if csl.printsText(el)}
                   {@render pick(
-                    'Slant',
+                    t('style-slant'),
                     attr(el, 'font-style'),
                     (v) => setAttr(el, 'font-style', v),
                     selects['font-style'],
                   )}
                   {@render pick(
-                    'Weight',
+                    t('style-weight'),
                     attr(el, 'font-weight'),
                     (v) => setAttr(el, 'font-weight', v),
                     selects['font-weight'],
                   )}
                   {@render pick(
-                    'Letters',
+                    t('style-letters'),
                     attr(el, 'font-variant'),
                     (v) => setAttr(el, 'font-variant', v),
                     selects['font-variant'],
                   )}
                   {@render pick(
-                    'Capitals',
+                    t('style-case'),
                     attr(el, 'text-case'),
                     (v) => setAttr(el, 'text-case', v),
                     selects['text-case'],
                   )}
                   {@render pick(
-                    'Height',
+                    t('style-height'),
                     attr(el, 'vertical-align'),
                     (v) => setAttr(el, 'vertical-align', v),
                     selects['vertical-align'],
                   )}
                 {/if}
                 {#if el.localName === 'text'}
-                  {@render yes('In quotation marks', attr(el, 'quotes'), (v) =>
+                  {@render yes(t('style-quotes'), attr(el, 'quotes'), (v) =>
                     setAttr(el, 'quotes', v),
                   )}
                   {@render yes(
-                    'Without full stops',
+                    t('style-strip-periods'),
                     attr(el, 'strip-periods'),
                     (v) => setAttr(el, 'strip-periods', v),
-                    'For abbreviations: “ed” for “ed.”',
+                    t('style-strip-periods-hint'),
                   )}
                 {/if}
                 {#if el.localName === 'text' && el.hasAttribute('variable')}
-                  {@render pick('Form', attr(el, 'form'), (v) => setAttr(el, 'form', v), [
-                    ['', 'In full'],
-                    ['short', 'Short, where the reference has one'],
-                  ])}
-                {/if}
-                {#if el.localName === 'label' || (el.localName === 'text' && el.hasAttribute('term'))}
                   {@render pick(
-                    'Form of the word',
+                    t('style-text-form'),
                     attr(el, 'form'),
                     (v) => setAttr(el, 'form', v),
                     [
-                      ['', 'In full: editor, page'],
-                      ['short', 'Short: ed., p.'],
-                      ['verb', 'As a verb: edited by'],
-                      ['verb-short', 'As a verb, short: ed. by'],
-                      ['symbol', 'As a sign: §'],
+                      ['', t('style-text-form-long')],
+                      ['short', t('style-text-form-short')],
+                    ],
+                  )}
+                {/if}
+                {#if el.localName === 'label' || (el.localName === 'text' && el.hasAttribute('term'))}
+                  {@render pick(
+                    t('style-term-form'),
+                    attr(el, 'form'),
+                    (v) => setAttr(el, 'form', v),
+                    [
+                      ['', t('style-term-form-long')],
+                      ['short', t('style-term-form-short')],
+                      ['verb', t('style-term-form-verb')],
+                      ['verb-short', t('style-term-form-verb-short')],
+                      ['symbol', t('style-term-form-symbol')],
                     ],
                   )}
                 {/if}
                 {#if el.localName === 'date'}
                   {@render pick(
-                    'The date is given',
+                    t('style-date-parts'),
                     attr(el, 'date-parts'),
                     (v) => setAttr(el, 'date-parts', v),
                     [
-                      ['', 'As the style has it'],
-                      ['year', 'As the year only'],
-                      ['year-month', 'As year and month'],
-                      ['year-month-day', 'In full'],
+                      ['', t('style-as-the-style-has-it')],
+                      ['year', t('style-date-parts-year')],
+                      ['year-month', t('style-date-parts-year-month')],
+                      ['year-month-day', t('style-date-parts-full')],
                     ],
                   )}
                 {/if}
@@ -1092,15 +1128,12 @@
                   <div class="add-inside">
                     <Button size="sm" onclick={(e) => addPart(e, el, true)}>
                       {#snippet icon()}<Plus size={13} />{/snippet}
-                      Add within it
+                      {t('style-part-add-within')}
                     </Button>
                   </div>
                 {/if}
               {:else}
-                <p class="none">
-                  Choose a part on the left to change how it is printed: what stands before and
-                  after it, its type, its capitals. Parts are opened to show what they are made of.
-                </p>
+                <p class="none">{t('style-parts-hint')}</p>
               {/if}
             </div>
           </div>
@@ -1109,11 +1142,11 @@
             <textarea
               bind:value={source}
               spellcheck="false"
-              aria-label="Source of the style"
+              aria-label={t('style-source')}
               oninput={() => (sourceError = null)}></textarea>
             <div class="source-foot">
               {#if sourceError}<p class="error selectable" role="alert">{sourceError}</p>{/if}
-              <Button size="sm" onclick={applySource}>Try it</Button>
+              <Button size="sm" onclick={applySource}>{t('style-source-try')}</Button>
             </div>
           </div>
         {/if}
@@ -1121,22 +1154,24 @@
 
       <div class="sample" class:working={sampling}>
         {#if sampleError}
-          <p class="overline">The style cannot be used as it is</p>
+          <p class="overline">{t('style-sample-unusable')}</p>
           <pre class="selectable">{sampleError}</pre>
         {:else if !sample}
           <div class="centre"><Spinner size={20} /></div>
         {:else}
-          <p class="overline">{kind === 'note' ? 'In the notes' : 'In the text'}</p>
+          <p class="overline">
+            {kind === 'note' ? t('style-sample-in-notes') : t('style-sample-in-text')}
+          </p>
           <dl>
             {#each sample.citations as html, i (i)}
-              <dt>{captions[i] ?? 'A work cited'}</dt>
+              <dt>{captions[i] ?? t('style-sample-cited')}</dt>
               <!-- Cleaned above: only the elements of type, without attributes but their class. -->
               <!-- eslint-disable-next-line svelte/no-at-html-tags -->
               <dd class="selectable">{@html html}</dd>
             {/each}
           </dl>
           {#if sample.bibliography.length}
-            <p class="overline">In the bibliography</p>
+            <p class="overline">{t('style-sample-in-bibliography')}</p>
             <div
               class="entries"
               class:hanging={attr(csl.scopeElement(style, 'bibliography'), 'hanging-indent') ===
@@ -1149,9 +1184,7 @@
             </div>
           {/if}
           <p class="which">
-            {works === EXAMPLES
-              ? 'Shown on examples: your library is empty.'
-              : 'Shown on works from your library.'}
+            {works === EXAMPLES ? t('style-sample-examples') : t('style-sample-library')}
           </p>
         {/if}
       </div>
@@ -1161,21 +1194,18 @@
   {#snippet footer()}
     {#if own}
       <div class="left">
-        <Button variant="danger" onclick={removeStyle}>Delete this style</Button>
+        <Button variant="danger" onclick={removeStyle}>{t('style-delete')}</Button>
       </div>
     {:else}
-      <div class="left note">
-        Styles that come with Glaukopis stay as they are. Your changes are saved as a style of your
-        own.
-      </div>
+      <div class="left note">{t('style-bundled')}</div>
     {/if}
-    <Button variant="ghost" onclick={close}>Cancel</Button>
+    <Button variant="ghost" onclick={close}>{t('common-cancel')}</Button>
     <Button
       variant="primary"
       disabled={saving || !style || !name.trim() || !!sampleError || (own && !changed)}
       onclick={save}
     >
-      {own ? 'Save' : 'Save as my own'}
+      {own ? t('common-save') : t('style-save-own')}
     </Button>
   {/snippet}
 </Dialog>
