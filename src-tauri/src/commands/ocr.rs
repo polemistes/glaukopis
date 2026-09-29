@@ -14,6 +14,7 @@ use tauri::{AppHandle, Emitter, State};
 
 use glaukopis_core::error::IoContext;
 use glaukopis_core::import::document::Imported;
+use glaukopis_core::ocr::text::IsWord;
 use glaukopis_core::ocr::{self, Asked, Looked, Progress};
 
 use crate::commands::library::{EntryFull, full};
@@ -80,6 +81,47 @@ fn stem(name: &str) -> String {
     Path::new(name).file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| name.to_owned())
 }
 
+/// The tag of the dictionary for a language as Tesseract names it: `nor` is
+/// Bokmål, `eng` English.
+fn dictionary_tag(tesseract: &str) -> Option<&'static str> {
+    Some(match tesseract {
+        "eng" => "en",
+        "nor" | "nob" => "nb",
+        "nno" => "nn",
+        "dan" => "da",
+        "swe" => "sv",
+        "deu" => "de",
+        "fra" => "fr",
+        "ita" => "it",
+        "spa" => "es",
+        "por" => "pt",
+        "nld" => "nl",
+        "lat" => "la",
+        "ell" => "el",
+        _ => return None,
+    })
+}
+
+/// Whether a word is a word in one of the languages the text is read in, as
+/// the dictionaries of spelling know them: by it, words broken at the end of
+/// a line are joined again. Nothing, where none of the languages has a
+/// dictionary.
+fn words_of<'a>(state: &'a AppState, asked: &Asked) -> Option<impl Fn(&str) -> bool + Sync + 'a> {
+    let tags: Vec<&'static str> = asked
+        .languages
+        .iter()
+        .filter_map(|l| dictionary_tag(l))
+        .filter(|tag| !state.spelling.chosen(Some(tag)).is_empty())
+        .collect();
+    if tags.is_empty() {
+        return None;
+    }
+    Some(move |word: &str| {
+        let words = [word.to_owned()];
+        tags.iter().any(|tag| state.spelling.check(Some(tag), &words).is_ok_and(|known| known.first() == Some(&true)))
+    })
+}
+
 /// Looks at a PDF or a picture before it is read: its pages, and how many
 /// of them have text. With `stored`, the path is that of a file of the
 /// library, within its store.
@@ -105,10 +147,14 @@ pub fn ocr_read(
     let file = file_name(&path);
     if ocr::is_picture(&path) {
         let bytes = std::fs::read(&path).context(|| tr!("io-reading", path = &path))?;
-        let paragraphs = ocr::read_picture(&bytes, &tools, &work, &asked, None, &reading.stop)?;
+        let words = words_of(&state, &asked);
+        let paragraphs =
+            ocr::read_picture(&bytes, &tools, &work, &asked, words.as_ref().map(|w| w as &IsWord), &reading.stop)?;
         return Ok(ocr::imported_picture(&file, &stem(&file), paragraphs));
     }
-    let read = ocr::read_pdf(&path, &tools, &work, &asked, None, &mut reading.teller(&app), &reading.stop)?;
+    let words = words_of(&state, &asked);
+    let is_word = words.as_ref().map(|w| w as &IsWord);
+    let read = ocr::read_pdf(&path, &tools, &work, &asked, is_word, &mut reading.teller(&app), &reading.stop)?;
     let title = glaukopis_core::import::pdf::identify(&path).ok().and_then(|facts| facts.title);
     Ok(ocr::imported_pdf(&file, &title.unwrap_or_else(|| stem(&file)), read))
 }
@@ -181,7 +227,9 @@ pub fn ocr_picture(
     let reading = Reading::begin(ticket);
     let picture = state.pictures.get(&hash)?;
     let bytes = state.pictures.read(&hash, &picture.extension)?;
-    let paragraphs = ocr::read_picture(&bytes, &state.tools(), &state.data.work(), &asked, None, &reading.stop)?;
+    let words = words_of(&state, &asked);
+    let is_word = words.as_ref().map(|w| w as &IsWord);
+    let paragraphs = ocr::read_picture(&bytes, &state.tools(), &state.data.work(), &asked, is_word, &reading.stop)?;
     let name = if picture.name.trim().is_empty() { hash.chars().take(8).collect() } else { picture.name.clone() };
     Ok(ocr::imported_picture(&name, &stem(&name), paragraphs))
 }
