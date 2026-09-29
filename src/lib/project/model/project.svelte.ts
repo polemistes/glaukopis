@@ -39,9 +39,44 @@ export const LOCAL = 'local';
 /** Origin of changes read from disk: not to be saved again, nor undone. */
 export const LOAD = 'load';
 
+/** Origin of what the history writes into the document: who is who, and what they deleted. */
+export const HISTORY = 'history';
+
 export interface Persistence {
-  append(update: Uint8Array): Promise<void>;
-  saveState(state: Uint8Array, summary: Summary): Promise<void>;
+  /**
+   * Writes a batch of changes to the log: whether they were made here or
+   * came from another, and when, in milliseconds since 1970.
+   */
+  append(update: Uint8Array, here: boolean, time: number): Promise<void>;
+  /** With `keep`, where the project's full history is on, the log is kept in it. */
+  saveState(state: Uint8Array, summary: Summary, keep: boolean): Promise<void>;
+}
+
+/** How the full history of a project is kept (ADR 0021): in the document, so that every copy keeps it alike. */
+export interface HistorySettings {
+  on: boolean;
+  /** After how many weeks the changes of each hour are merged into one. */
+  hourly: number;
+  /** After how many months the changes of each day are merged into one. */
+  daily: number;
+}
+
+export const HISTORY_GIVEN: HistorySettings = { on: false, hourly: 4, daily: 6 };
+
+/**
+ * What follows the changes of the project as they are made: the history,
+ * while it is looked at. Each change is told as it is made, and each batch
+ * as it is written, with the number of changes in it.
+ */
+export interface Follower {
+  change(update: Uint8Array, here: boolean): void;
+  written(time: number, here: boolean, changes: number): void;
+}
+
+/** The person who works here, as the history knows them. */
+export interface Me {
+  id: string;
+  name: string;
 }
 
 export interface Summary {
@@ -68,6 +103,7 @@ export interface Other {
 export type SaveStatus = 'saved' | 'unsaved' | 'saving' | 'error';
 
 type YNode = Y.Map<unknown>;
+type DeleteSet = ReturnType<typeof Y.createDeleteSet>;
 
 const SNAPSHOT_AFTER_UPDATES = 150;
 const SNAPSHOT_AFTER_BYTES = 200_000;
@@ -125,6 +161,14 @@ export class Project {
    * were written: a set, which is the same for all it is shared with.
    */
   readonly yIgnored: Y.Map<true>;
+  /** How the full history is kept: see `HistorySettings`. */
+  readonly yHistory: Y.Map<unknown>;
+  /**
+   * The people of a project whose history is on, as Yjs's
+   * `PermanentUserData` keeps them: by person, the copies that are theirs
+   * (`ids`) and what they deleted (`ds`); and their name.
+   */
+  readonly yUsers: Y.Map<Y.Map<unknown>>;
   readonly undoManager: Y.UndoManager;
   #awareness: Awareness | null = null;
 
@@ -148,9 +192,18 @@ export class Project {
   canRedo = $state(false);
   status = $state<SaveStatus>('saved');
   saveError = $state<string | null>(null);
+  /** How the full history is kept. */
+  history = $state.raw<HistorySettings>(HISTORY_GIVEN);
 
   #persistence: Persistence | null;
-  #pending: Uint8Array[] = [];
+  /** Changes not yet written, each with whether it was made here. */
+  #pending: { update: Uint8Array; here: boolean }[] = [];
+  /** What was deleted here since the last batch, while the history is on. */
+  #deleted: DeleteSet[] = [];
+  #me: Me | null = null;
+  #followers = new Set<Follower>();
+  /** Whether what was on disk has been read. */
+  #loaded = false;
   #appendTimer: ReturnType<typeof setTimeout> | undefined;
   #idleTimer: ReturnType<typeof setTimeout> | undefined;
   #sinceSnapshot = { updates: 0, bytes: 0 };
@@ -168,6 +221,8 @@ export class Project {
     this.yRefs = this.doc.getMap('refs');
     this.yNotes = this.doc.getMap('notes');
     this.yIgnored = this.doc.getMap('ignored');
+    this.yHistory = this.doc.getMap('history');
+    this.yUsers = this.doc.getMap('users');
 
     this.undoManager = new Y.UndoManager([this.yMeta, this.yMaps, this.yNodes, this.yLinks], {
       trackedOrigins: new Set<unknown>([LOCAL, ySyncPluginKey]),
@@ -200,11 +255,28 @@ export class Project {
     this.yNodes.observeDeep((events) => this.#nodesChanged(events));
     this.yNotes.observeDeep(() => this.#readNotes());
     this.yIgnored.observe(() => this.#readIgnored());
+    this.yHistory.observe(() => this.#readHistory());
 
-    this.doc.on('update', (update: Uint8Array, origin: unknown) => {
-      if (origin === LOAD || this.#closed) return;
-      this.revision++;
-      this.#queue(update);
+    this.doc.on(
+      'update',
+      (update: Uint8Array, origin: unknown, _doc: Y.Doc, transaction: Y.Transaction) => {
+        if (origin === LOAD || this.#closed) return;
+        this.revision++;
+        // What came from another copy is applied as a change that is not local.
+        const here = transaction.local;
+        for (const f of this.#followers) f.change(update, here);
+        this.#queue(update, here);
+      },
+    );
+    // Who deleted what is kept, while the history is on: Yjs does not say it.
+    this.doc.on('afterTransaction', (transaction: Y.Transaction) => {
+      if (
+        this.history.on &&
+        transaction.local &&
+        transaction.origin !== LOAD &&
+        transaction.deleteSet.clients.size
+      )
+        this.#deleted.push(transaction.deleteSet);
     });
   }
 
@@ -275,6 +347,7 @@ export class Project {
       }
     }, LOAD);
     this.#readAll();
+    this.#loaded = true;
     this.undoManager.clear();
     this.#sinceSnapshot = {
       updates: updates.length,
@@ -292,11 +365,12 @@ export class Project {
     for (const [id, value] of this.yRefs) this.refs.set(id, value);
     this.#readNotes();
     this.#readIgnored();
+    this.#readHistory();
     this.structure++;
   }
 
-  #queue(update: Uint8Array) {
-    this.#pending.push(update);
+  #queue(update: Uint8Array, here: boolean) {
+    this.#pending.push({ update, here });
     this.status = 'unsaved';
     clearTimeout(this.#appendTimer);
     this.#appendTimer = setTimeout(() => void this.flush(), APPEND_DELAY);
@@ -304,52 +378,173 @@ export class Project {
     this.#idleTimer = setTimeout(() => void this.snapshot(), SNAPSHOT_IDLE);
   }
 
-  /** Writes pending changes to the log. */
+  /**
+   * Writes pending changes to the log: those made here and those that came
+   * from others in batches of their own, in the order they came.
+   */
   flush(): Promise<void> {
     clearTimeout(this.#appendTimer);
+    this.#noteDeleted();
     if (!this.#pending.length || !this.#persistence) {
       if (!this.#persistence) this.#pending = [];
       return this.#writing;
     }
-    const batch = this.#pending;
-    this.#pending = [];
-    const merged = batch.length === 1 ? batch[0] : Y.mergeUpdates(batch);
-    this.status = 'saving';
-    this.#writing = this.#writing
-      .then(() => this.#persistence!.append(merged))
-      .then(() => {
-        this.#sinceSnapshot.updates++;
-        this.#sinceSnapshot.bytes += merged.length;
-        this.saveError = null;
-        if (!this.#pending.length) this.status = 'saved';
-        if (
-          this.#sinceSnapshot.updates >= SNAPSHOT_AFTER_UPDATES ||
-          this.#sinceSnapshot.bytes >= SNAPSHOT_AFTER_BYTES
-        ) {
-          void this.snapshot();
-        }
-      })
-      .catch((error) => {
-        // Keep what could not be written, to try again with the next change.
-        this.#pending.unshift(merged);
-        this.status = 'error';
-        this.saveError = error?.message ?? String(error);
-        console.error('the project could not be saved', error);
+    const time = Date.now();
+    const batches: { update: Uint8Array; here: boolean; changes: number }[] = [];
+    let run: Uint8Array[] = [];
+    this.#pending.forEach(({ update, here }, i) => {
+      run.push(update);
+      const next = this.#pending[i + 1];
+      if (next && next.here === here) return;
+      batches.push({
+        update: run.length === 1 ? run[0] : Y.mergeUpdates(run),
+        here,
+        changes: run.length,
       });
+      run = [];
+    });
+    this.#pending = [];
+    for (const b of batches) for (const f of this.#followers) f.written(time, b.here, b.changes);
+    this.status = 'saving';
+    for (const batch of batches) {
+      this.#writing = this.#writing
+        .then(() => this.#persistence!.append(batch.update, batch.here, time))
+        .then(() => {
+          this.#sinceSnapshot.updates++;
+          this.#sinceSnapshot.bytes += batch.update.length;
+          this.saveError = null;
+          if (!this.#pending.length) this.status = 'saved';
+          if (
+            this.#sinceSnapshot.updates >= SNAPSHOT_AFTER_UPDATES ||
+            this.#sinceSnapshot.bytes >= SNAPSHOT_AFTER_BYTES
+          ) {
+            void this.snapshot();
+          }
+        })
+        .catch((error) => {
+          // Keep what could not be written, to try again with the next change.
+          this.#pending.unshift({ update: batch.update, here: batch.here });
+          this.status = 'error';
+          this.saveError = error?.message ?? String(error);
+          console.error('the project could not be saved', error);
+        });
+    }
     return this.#writing;
   }
 
-  /** Writes the whole document as one state, and empties the log. */
-  async snapshot(): Promise<void> {
+  /**
+   * What was deleted here since the last batch is written into the
+   * document, as `PermanentUserData` keeps it, so that every copy knows who
+   * deleted it. Once for each batch rather than for each change.
+   */
+  #noteDeleted() {
+    if (!this.#deleted.length) return;
+    const deleted = Y.mergeDeleteSets(this.#deleted);
+    this.#deleted = [];
+    const me = this.#me;
+    if (!me || !this.history.on) return;
+    this.doc.transact(() => {
+      const user = this.#register(me);
+      // A snapshot without a state vector is the delete set as `PermanentUserData` reads it.
+      (user.get('ds') as Y.Array<Uint8Array>).push([
+        Y.encodeSnapshot(Y.createSnapshot(deleted, new Map())),
+      ]);
+    }, HISTORY);
+  }
+
+  /** Makes sure the project knows this person, this copy as theirs, and their name. */
+  #register(me: Me): Y.Map<unknown> {
+    let user = this.yUsers.get(me.id);
+    if (!(user instanceof Y.Map)) {
+      user = new Y.Map<unknown>();
+      user.set('ids', new Y.Array<number>());
+      user.set('ds', new Y.Array<Uint8Array>());
+      this.yUsers.set(me.id, user);
+    }
+    const ids = user.get('ids') as Y.Array<number>;
+    if (!ids.toArray().includes(this.doc.clientID)) ids.push([this.doc.clientID]);
+    if (me.name && user.get('name') !== me.name) user.set('name', me.name);
+    return user;
+  }
+
+  /**
+   * Says who works here. While the history is on, the project keeps them
+   * among its people, with their name as it is now.
+   */
+  setMe(me: Me | null) {
+    this.#me = me;
+    this.#introduce();
+  }
+
+  #introduce() {
+    const me = this.#me;
+    if (!me || !this.history.on) return;
+    const user = this.yUsers.get(me.id);
+    const known =
+      user instanceof Y.Map &&
+      (user.get('ids') as Y.Array<number> | undefined)?.toArray().includes(this.doc.clientID) &&
+      (!me.name || user.get('name') === me.name);
+    if (!known) this.doc.transact(() => this.#register(me), HISTORY);
+  }
+
+  #readHistory() {
+    const on = this.yHistory.get('on') === true;
+    const number = (key: 'hourly' | 'daily') => {
+      const value = this.yHistory.get(key);
+      return typeof value === 'number' && value > 0 ? value : HISTORY_GIVEN[key];
+    };
+    const next = { on, hourly: number('hourly'), daily: number('daily') };
+    const before = this.history;
+    if (before.on === next.on && before.hourly === next.hourly && before.daily === next.daily)
+      return;
+    this.history = next;
+    if (on && !before.on) {
+      // Not within the observer that read it: after the change that turned it on.
+      queueMicrotask(() => {
+        if (this.#closed) return;
+        this.#introduce();
+        // The history begins now, with the whole state, on every copy that learns it is on.
+        if (this.#loaded) void this.snapshot(true);
+      });
+    }
+  }
+
+  /**
+   * Changes how the full history is kept. Turning it on begins it with the
+   * project as it is; turning it off, what was kept is deleted when the
+   * project is next saved, on every copy.
+   */
+  async setHistory(change: Partial<HistorySettings>): Promise<void> {
+    const next = { ...this.history, ...change };
+    this.doc.transact(() => {
+      for (const key of ['on', 'hourly', 'daily'] as const) {
+        if (this.yHistory.get(key) !== next[key]) this.yHistory.set(key, next[key]);
+      }
+    }, HISTORY);
+    await this.snapshot(true);
+  }
+
+  /** Follows the changes as they are made, until the function returned is called. */
+  follow(follower: Follower): () => void {
+    // What is made and not yet written is told first, so that the follower
+    // knows every change that a batch it is told of holds.
+    for (const p of this.#pending) follower.change(p.update, p.here);
+    this.#followers.add(follower);
+    return () => this.#followers.delete(follower);
+  }
+
+  /** Writes the whole document as one state, and empties the log; with `always`, even when nothing was written since. */
+  async snapshot(always = false): Promise<void> {
     clearTimeout(this.#idleTimer);
     await this.flush();
     if (!this.#persistence || this.status === 'error') return;
-    if (this.#sinceSnapshot.updates === 0) return;
+    if (this.#sinceSnapshot.updates === 0 && !always) return;
     const state = Y.encodeStateAsUpdate(this.doc);
     const summary = this.summary();
+    const keep = this.history.on;
     this.#sinceSnapshot = { updates: 0, bytes: 0 };
     this.#writing = this.#writing
-      .then(() => this.#persistence!.saveState(state, summary))
+      .then(() => this.#persistence!.saveState(state, summary, keep))
       .catch((error) => {
         this.#sinceSnapshot.updates = 1;
         this.status = 'error';

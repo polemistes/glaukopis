@@ -271,7 +271,9 @@ impl Projects {
 
     /// As `save_state`; with `keep`, where the project's full history is on,
     /// what the log held is kept in it rather than thrown away, and a history
-    /// that is not there begins with this state (see `history`).
+    /// that is not there begins with this state (see `history`). Without it,
+    /// a history that is there is deleted: it has been turned off, here or on
+    /// another copy of the project.
     pub fn save_state_keeping(
         &self,
         id: &str,
@@ -285,6 +287,8 @@ impl Projects {
         remove_copies(&dir);
         if keep {
             self.keep_changes(&dir, &dir.join(LOG), state)?;
+        } else {
+            self.forget_changes(id)?;
         }
         // Only now may the log go: the state holds what it held.
         match fs::remove_file(dir.join(LOG)) {

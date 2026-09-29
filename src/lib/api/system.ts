@@ -4,6 +4,8 @@ export interface SystemInfo {
   version: string;
   dataDir: string;
   platform: string;
+  /** The name the system gives the user: their full name where it is known, or their login. */
+  user: string;
 }
 
 export const systemInfo = () => call<SystemInfo>('system_info');
@@ -70,6 +72,11 @@ export interface Settings {
   contactEmail: string | null;
   /** Name shown to collaborators. */
   displayName: string | null;
+  /**
+   * Who this installation is, in the history of projects (ADR 0021): made
+   * once, when the settings are first read.
+   */
+  person: string | null;
   /** The server that was last used for sharing a project, or joining one. */
   server: string | null;
   /** The style and format that new maps start with. */
@@ -91,6 +98,7 @@ export const defaultSettings: Settings = {
   ocrLanguages: [],
   contactEmail: null,
   displayName: null,
+  person: null,
   server: null,
   defaultStyle: 'chicago-notes-bibliography',
   defaultFormat: 'manuscript',

@@ -87,9 +87,10 @@ export async function openProject(id: string): Promise<OpenProject> {
   projects.lastOpened = id;
   const loaded = await projectLoad(id);
   const persistence: Persistence = {
-    append: (update: Uint8Array) => projectAppend(id, toBase64(update)),
-    saveState: async (state: Uint8Array, summary: Summary) => {
-      const info = await projectSaveState(id, toBase64(state), summary);
+    append: (update: Uint8Array, here: boolean, time: number) =>
+      projectAppend(id, toBase64(update), here, time),
+    saveState: async (state: Uint8Array, summary: Summary, keep: boolean) => {
+      const info = await projectSaveState(id, toBase64(state), summary, keep);
       projects.put(info);
     },
   };

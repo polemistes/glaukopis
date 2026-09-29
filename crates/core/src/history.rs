@@ -484,10 +484,15 @@ mod tests {
         p.save_state_keeping(&a.id, b"STATE 4", None, true).unwrap();
         assert_eq!(updates(&p.changes(&a.id).unwrap()).len(), 5);
 
-        // Turned off: what was kept is deleted.
+        // Turned off: what was kept is deleted, when it is turned off here or
+        // when the project is next saved on a copy that learns it is off.
         p.forget_changes(&a.id).unwrap();
         assert!(p.changes(&a.id).unwrap().is_empty());
         assert_eq!(p.load(&a.id).unwrap().state.as_deref(), Some(&b"STATE 4"[..]));
+        p.save_state_keeping(&a.id, b"STATE 5", None, true).unwrap();
+        assert!(p.has_changes(&a.id).unwrap());
+        p.save_state_keeping(&a.id, b"STATE 6", None, false).unwrap();
+        assert!(!p.has_changes(&a.id).unwrap());
     }
 
     #[test]

@@ -32,6 +32,11 @@ class SettingsState {
         ...kept,
         found: { ...defaultSettings.found, ...(kept.found ?? {}) },
       };
+      // Who this installation is in the history of projects: made once, and kept.
+      if (!this.value.person) {
+        this.value.person = crypto.randomUUID();
+        await this.saveNow();
+      }
     } catch (error) {
       notifyError(t('settings-error-read'), error);
     }
