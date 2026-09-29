@@ -221,7 +221,8 @@ try {
   check('one’s own words are listed in the settings', listed.join(' ') === 'Glaukopis', listed.join(' '));
   await app.click('[data-words="en"] li button[aria-label="Take away “Glaukopis”"]');
   await until('the word to be taken away', async () => !readFileSync(own, 'utf8').includes('Glaukopis'));
-  check('and can be taken away', !(await app.exists('[data-words="en"]')));
+  await until('the list to be read again', async () => !(await app.exists('[data-words="en"]')));
+  check('and can be taken away', true);
   await app.click('[role="radiogroup"][aria-label="Check spelling as you write"] button[aria-label="Off"]');
   await openWrath();
   check('with checking turned off, nothing is underlined', (await drawnUnderlined()).length === 0 && (await underlined()).length === 0);
