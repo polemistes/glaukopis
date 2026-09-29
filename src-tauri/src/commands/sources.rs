@@ -2,6 +2,7 @@
 //! PDF files, and the libraries of Zotero.
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
 
 use serde::Serialize;
 use tauri::State;
@@ -12,6 +13,7 @@ use glaukopis_core::import::zotero::{self, Options, ZoteroCollection, ZoteroInfo
 use glaukopis_core::import::{self, Candidate, Plan, SummaryLite, pdf};
 use glaukopis_core::library::entry::Draft;
 use glaukopis_core::lookup::{self, Hit, Query, Scope};
+use glaukopis_core::ocr;
 
 use crate::error::CommandResult;
 use crate::state::AppState;
@@ -71,7 +73,10 @@ pub fn lookup_find(state: State<'_, AppState>, input: String, scope: Option<Scop
 /// what is known elsewhere of the DOI or ISBN printed in it.
 fn identify(state: &AppState, path: &Path, ask: bool, warnings: &mut Vec<String>) -> Option<Candidate> {
     let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-    let facts = match pdf::identify(path) {
+    // A scan has what it is read from pictures of its first pages, where Tesseract is there.
+    let tools = state.tools();
+    let read = |count| ocr::first_pages(path, &tools, &state.data.work(), count, &AtomicBool::new(false));
+    let facts = match pdf::identify_scan(path, read) {
         Ok(facts) => facts,
         Err(e) => {
             warnings.push(format!("{name}: {e}"));

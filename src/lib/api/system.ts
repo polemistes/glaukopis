@@ -60,6 +60,12 @@ export interface Settings {
   /** Paths to external programs, when not found automatically. */
   pandocPath: string | null;
   typstPath: string | null;
+  tesseractPath: string | null;
+  /**
+   * Tesseract's names of the languages text is read in at first (`nor`,
+   * `eng`); none, for the language of the text and that of the interface.
+   */
+  ocrLanguages: string[];
   /** Identifies the user to bibliographic services that ask for a contact address. */
   contactEmail: string | null;
   /** Name shown to collaborators. */
@@ -79,6 +85,8 @@ export const defaultSettings: Settings = {
   textSize: 17,
   pandocPath: null,
   typstPath: null,
+  tesseractPath: null,
+  ocrLanguages: [],
   contactEmail: null,
   displayName: null,
   server: null,

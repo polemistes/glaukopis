@@ -91,7 +91,8 @@ enum Kind {
     Other(ImageFormat),
 }
 
-fn is_svg(bytes: &[u8]) -> bool {
+/// Whether what a file holds is a drawing (SVG).
+pub fn is_svg(bytes: &[u8]) -> bool {
     let head = &bytes[..bytes.len().min(8192)];
     let Ok(text) = std::str::from_utf8(head).or_else(|e| std::str::from_utf8(&head[..e.valid_up_to()])) else {
         return false;

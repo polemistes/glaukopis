@@ -555,6 +555,36 @@ impl Library {
         Ok(result)
     }
 
+    /// Puts other content in the place of a stored file, for every entry
+    /// that links to it: a PDF made searchable in the place of the scan it
+    /// was made of. It is stored under the name the file had, and the file
+    /// is deleted from the store. The entries that were changed.
+    pub fn replace_file(&mut self, stored: &str, content: &[u8]) -> Result<Vec<Entry>> {
+        self.refresh()?;
+        if !self.entries.iter().any(|e| e.attachments().iter().any(|f| f == stored)) {
+            return Err(Error::not_found(stored.to_owned()));
+        }
+        let name = stored.rsplit('/').next().unwrap_or(stored);
+        let new = attachments::store_bytes(&self.dir, content, name)?;
+        let mut changed = Vec::new();
+        for entry in &mut self.entries {
+            let mut files = entry.attachments();
+            let Some(at) = files.iter().position(|f| f == stored) else { continue };
+            files[at] = new.clone();
+            // One that had the new content already has it once.
+            let mut seen = HashSet::new();
+            files.retain(|f| seen.insert(f.clone()));
+            entry.set_attachments(&files);
+            entry.modified = now();
+            changed.push(entry.clone());
+        }
+        self.save()?;
+        if new != stored {
+            self.delete_file_if_unused(stored);
+        }
+        Ok(changed)
+    }
+
     fn delete_file_if_unused(&self, stored: &str) {
         let used = self.entries.iter().any(|e| e.attachments().iter().any(|f| f == stored));
         if !used && let Err(e) = attachments::delete(&self.dir, stored) {
@@ -954,6 +984,32 @@ mod tests {
         let d = Draft::from_entry(&a3);
         assert!(!d.fields.contains_key("file"));
         assert_eq!(lib.update(&a.id, &d).unwrap().attachments().len(), 1);
+    }
+
+    #[test]
+    fn a_stored_file_is_replaced_for_all_that_link_it() {
+        let (tmp, mut lib) = library();
+        let a = lib.add(&draft("@book{a, author={Nagy, G.}, title={Best}, date={1979}}")).unwrap();
+        let b = lib.add(&draft("@incollection{b, title={A chapter}}")).unwrap();
+        let other = tmp.path().join("other.pdf");
+        fs::write(&other, b"%PDF other").unwrap();
+        let scan = tmp.path().join("scan.pdf");
+        fs::write(&scan, b"%PDF scan").unwrap();
+        lib.attach(&a.id, &other).unwrap();
+        let stored = lib.attach(&a.id, &scan).unwrap().attachments()[1].clone();
+        lib.attach(&b.id, &scan).unwrap();
+
+        let changed = lib.replace_file(&stored, b"%PDF scan, searchable").unwrap();
+        assert_eq!(changed.len(), 2);
+        let now = lib.require(&a.id).unwrap().attachments();
+        assert_eq!(now.len(), 2);
+        assert_ne!(now[1], stored, "in the same place, another file");
+        assert!(now[1].ends_with("/Nagy 1979 - Best.pdf"), "{}", now[1]);
+        assert_eq!(lib.require(&b.id).unwrap().attachments(), vec![now[1].clone()]);
+        assert_eq!(fs::read(lib.attachment_path(&now[1]).unwrap()).unwrap(), b"%PDF scan, searchable");
+        assert!(!lib.attachment_path(&stored).unwrap().exists(), "the scan is gone from the store");
+
+        assert_eq!(lib.replace_file(&stored, b"%PDF").unwrap_err().kind(), "not-found");
     }
 
     #[test]

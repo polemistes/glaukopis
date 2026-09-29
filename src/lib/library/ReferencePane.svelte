@@ -40,6 +40,8 @@
   import { dateWords, fileSize } from './format';
   import { toLines, withNoteAsItIs } from './notes.svelte';
   import ReferenceForm from './ReferenceForm.svelte';
+  import ScanText from '@lucide/svelte/icons/scan-text';
+  import SearchableDialog from '$lib/ocr/SearchableDialog.svelte';
 
   interface Props {
     id: string;
@@ -200,6 +202,9 @@
       notifyError(t('library-pane-detach-failed'), e);
     }
   }
+
+  /** The PDF that is being made searchable (`ocr/SearchableDialog.svelte`). */
+  let searchable = $state<StoredFile | null>(null);
 
   async function leaveCollection(collectionId: string) {
     if (!reference) return;
@@ -366,6 +371,16 @@
             >
               <FolderOpen size={13} />
             </IconButton>
+            {#if file.exists && /\.pdf$/i.test(file.name)}
+              <IconButton
+                label={t('ocr-searchable-button')}
+                size="sm"
+                data-searchable={file.name}
+                onclick={() => (searchable = file)}
+              >
+                <ScanText size={13} />
+              </IconButton>
+            {/if}
             <IconButton label={t('common-remove')} size="sm" onclick={() => detach(file)}
               ><X size={13} /></IconButton
             >
@@ -432,6 +447,18 @@
       <Button variant="primary" onclick={applySource}>{t('common-apply')}</Button>
     {/snippet}
   </Dialog>
+{/if}
+
+{#if searchable && reference}
+  <SearchableDialog
+    {reference}
+    file={searchable}
+    ondone={(made) => {
+      if (made.id === reference?.id) reference = made;
+      library.put(made);
+    }}
+    onclose={() => (searchable = null)}
+  />
 {/if}
 
 <style>

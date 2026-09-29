@@ -10,6 +10,7 @@
   import JoinDialog from '$lib/sharing/JoinDialog.svelte';
   import FileInput from '@lucide/svelte/icons/file-input';
   import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
+  import { isReadPath } from '$lib/api/ocr';
   import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
   import { goThroughWhenOpen } from '$lib/found/found.svelte';
   import { dropTarget } from '$lib/ui/drag.svelte';
@@ -60,7 +61,9 @@
     router.go({ view: 'project', project: p.id });
   }
 
-  const written = (path: string) => isDocumentPath(path) || isPlainTextPath(path);
+  // A PDF or a picture has its text read.
+  const written = (path: string) =>
+    isDocumentPath(path) || isPlainTextPath(path) || isReadPath(path);
 
   /**
    * A project is made of a document, named after it, with the document as

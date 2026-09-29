@@ -13,7 +13,7 @@ pkgrel=1
 arch=(x86_64 aarch64)
 license=(GPL-3.0-or-later CC-BY-SA-3.0)
 makedepends=(cargo nodejs pnpm rsync webkit2gtk-4.1 gtk3 openssl sqlite)
-checkdepends=(pandoc-cli typst)
+checkdepends=(pandoc-cli typst tesseract tesseract-data-eng)
 # Link-time optimisation is set in Cargo.toml; that of makepkg breaks the
 # building of the C that some crates bring along.
 options=(!lto !debug)
@@ -51,13 +51,25 @@ check() {
 
 package_glaukopis() {
   pkgdesc='A hub for scholarly work: references, ideas in mind maps, writing, and the manuscript'
-  depends=(webkit2gtk-4.1 gtk3 glib2 openssl sqlite gcc-libs glibc hicolor-icon-theme pandoc-cli typst)
+  depends=(webkit2gtk-4.1 gtk3 glib2 openssl sqlite gcc-libs glibc hicolor-icon-theme pandoc-cli typst
+           tesseract tesseract-data-eng)
   optdepends=(
     'texlive-luatex: for PDF set by LaTeX'
     'texlive-latexextra: for PDF set by LaTeX'
     'texlive-fontsrecommended: for PDF set by LaTeX'
     'librsvg: for drawings (SVG) in PDF set by LaTeX and in DOCX'
     'libreoffice-fresh: to open what is exported as ODT or DOCX'
+    'tesseract-data-nor: to read Norwegian in scans and pictures'
+    'tesseract-data-dan: to read Danish in scans and pictures'
+    'tesseract-data-swe: to read Swedish in scans and pictures'
+    'tesseract-data-deu: to read German in scans and pictures'
+    'tesseract-data-fra: to read French in scans and pictures'
+    'tesseract-data-ita: to read Italian in scans and pictures'
+    'tesseract-data-spa: to read Spanish in scans and pictures'
+    'tesseract-data-ell: to read Greek in scans and pictures'
+    'tesseract-data-grc: to read Ancient Greek in scans and pictures'
+    'tesseract-data-lat: to read Latin in scans and pictures'
+    'poppler: to read the pages of PDFs that cannot be drawn otherwise'
   )
 
   cd "$srcdir/$pkgbase-$pkgver"

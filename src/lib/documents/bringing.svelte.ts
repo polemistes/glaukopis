@@ -10,6 +10,7 @@
 import { open } from '@tauri-apps/plugin-dialog';
 import { DOCUMENT_ENDINGS, OTHER_ENDINGS } from '$lib/api/imported';
 import { libraryGetMany } from '$lib/api/library';
+import { PICTURE_ENDINGS } from '$lib/api/ocr';
 import type { ProjectInfo } from '$lib/api/projects';
 import { recordOf } from '$lib/editor/references.svelte';
 import { t } from '$lib/i18n';
@@ -47,13 +48,21 @@ export function bringIn(path: string, project: Project | null): Promise<Brought 
   });
 }
 
+/** PDFs and pictures, whose text is read (`ocr/ReadStep.svelte`). */
+const READ_ENDINGS = ['pdf', ...PICTURE_ENDINGS];
+
 /** Asks for the file of a document. */
 export async function chooseDocument(): Promise<string | null> {
   const path = await open({
     title: t('documents-choose'),
     multiple: false,
     filters: [
-      { name: t('documents-filter'), extensions: [...DOCUMENT_ENDINGS, ...OTHER_ENDINGS] },
+      {
+        name: t('documents-filter'),
+        extensions: [...DOCUMENT_ENDINGS, ...OTHER_ENDINGS, ...READ_ENDINGS],
+      },
+      // Whose text is read by Tesseract.
+      { name: t('ocr-filter'), extensions: READ_ENDINGS },
       { name: t('documents-filter-all'), extensions: ['*'] },
     ],
   });

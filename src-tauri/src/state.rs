@@ -106,7 +106,7 @@ impl AppState {
         settings::load(&self.data.settings_file()).ok().and_then(|s| settings::string(&s, key))
     }
 
-    /// Looks for Pandoc and Typst, where the settings say first.
+    /// Looks for Pandoc, Typst and Tesseract, where the settings say first.
     pub fn discover_tools(&self) -> Tools {
         let mut beside = Vec::new();
         if let Ok(exe) = std::env::current_exe()
@@ -119,11 +119,13 @@ impl AppState {
         let found = tools::discover(&Configured {
             pandoc: self.setting("pandocPath"),
             typst: self.setting("typstPath"),
+            tesseract: self.setting("tesseractPath"),
             beside,
         });
         tracing::info!(
             pandoc = found.pandoc.as_ref().map(|t| t.version.as_str()).unwrap_or("not found"),
             typst = found.typst.as_ref().map(|t| t.version.as_str()).unwrap_or("not found"),
+            tesseract = found.tesseract.as_ref().map(|t| t.version.as_str()).unwrap_or("not found"),
             "programs"
         );
         *self.tools.write().unwrap_or_else(|p| p.into_inner()) = found.clone();

@@ -1171,6 +1171,13 @@ fn file_name(path: &Path) -> String {
 /// pages and no text, and can still be kept with a reference that is made by
 /// hand.
 pub fn identify(path: &Path) -> Result<PdfFacts> {
+    let name = checked(path)?;
+    Ok(facts(&read(path), &name))
+}
+
+/// The name of a file that is a PDF, by its header; an error where it is
+/// empty or not a PDF.
+fn checked(path: &Path) -> Result<String> {
     let name = file_name(path);
     // The header may be preceded by what a mail program or a server put there.
     let mut head = Vec::new();
@@ -1183,7 +1190,23 @@ pub fn identify(path: &Path) -> Result<PdfFacts> {
     if !head.windows(5).any(|w| w == b"%PDF-") {
         return Err(Error::invalid(tr!("core-import-pdf-not-a-pdf", name = &name)));
     }
-    Ok(facts(&read(path), &name))
+    Ok(name)
+}
+
+/// As [`identify`], and where the file has no text, as a scan has none,
+/// what it is is looked for in the text of its first pages as `first`
+/// reads them from pictures of them (`ocr::first_pages`). `first` is given
+/// how many pages to read. The file is still said to have no text.
+pub fn identify_scan(path: &Path, first: impl FnOnce(usize) -> Vec<String>) -> Result<PdfFacts> {
+    let name = checked(path)?;
+    let mut raw = read(path);
+    let found = facts(&raw, &name);
+    if found.has_text || raw.pages == 0 {
+        return Ok(found);
+    }
+    raw.first = first(raw.pages.min(IMPRINT_PAGES));
+    raw.last.clear();
+    Ok(PdfFacts { has_text: false, ..facts(&raw, &name) })
 }
 
 // ---------------------------------------------------------------------------
