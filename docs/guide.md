@@ -947,6 +947,76 @@ writing slower, and a project with a long history opens as quickly as one
 without: the history is read only when you open the panel, and that takes
 well under a second.
 
+## Reviewing changes
+
+What the others have written in a shared project can be gone through
+afterwards, change by change, and accepted or rejected, much as in Word or
+LibreOffice. Nobody's writing is held back meanwhile: what is written is in
+the text at once, and the review comes after. It needs the history of the
+project, which tells who changed what, and when; where the history is not
+kept, the panel says so, and offers to keep it from then on.
+
+**Review changes** over the text (**Ctrl+Shift+E**) opens the panel of
+changes beside the text of the map, in the place at the side that the
+references, the pictures and the history share. It lists the changes of the map in the
+order of the text, says how many are left, and shows one at a time: where it
+is, as it was and as it is, with the words that changed marked, each person's
+in their colour, and who made it and when. While the panel is open, the text
+shows the changes where they are: what was added under a tint of the colour
+of who added it, what was deleted struck through, where it stood. The change
+you look at is brought into view, opened where it is folded away, and marked
+more strongly.
+
+What is one change:
+
+- **A sentence**, with the words that changed marked in it, however many
+  places in it changed, and however many people changed it. Formatting is
+  part of its sentence.
+- **New text** of a sentence or more, however long, and so **text deleted**:
+  paragraphs written one after another are one change.
+- **A paragraph moved**: deleted in one place and written, with nearly the
+  same words, in another.
+- **An element** added, deleted, moved, left out of the document or put back,
+  or printed as a heading or not. An element added with its text is one
+  change.
+- **A figure, an equation or a table** put in or taken out, and a citation, a
+  formula or a note put into a sentence where nothing else of it changed. The
+  text of a note, of what is said of a figure, and of a cell is gone through
+  sentence by sentence.
+
+**By paragraph**, at the top of the panel, makes each paragraph that changed
+one change: for a quick look at text much rewritten.
+
+| To | Do this |
+| --- | --- |
+| Accept the change: it is not shown again unless it changes again | **Accept**, or **Ctrl+Alt+Y** |
+| Put the text back as it was | **Reject**, or **Ctrl+Alt+N** |
+| Go on to the next, and leave this one for later | **Later**, or **F8** |
+| Go back to the one before | **Shift+F8** |
+| Go through the list | The arrows up and down, in the panel |
+
+Rejecting is a change of yours like any other: the others see it, and
+**Ctrl+Z** takes it back. It counts as reviewed, so what you rejected is
+not put before you again. An element that was deleted, and a figure or a
+table taken out, are brought back from the history instead.
+
+You can write in the text while you review it. The change you write in is
+worked out anew as you write, and **Accept** accepts it as it then stands;
+what you wrote is yours, for the others to review.
+
+**Its history**, under a change, shows every version between the two ends,
+with who made it and when. **Accept up to here** accepts the versions up to
+that one, and leaves those after it to be reviewed; **Use this version**
+makes the text what it was then, and accepts it.
+
+The review goes from where you last reviewed: what you have accepted is kept
+in the project, so that it holds on every computer you work on. When nothing
+is left that you have not accepted, in any map, the review begins anew from
+then. Your first review goes from when the history began. At the top of the
+panel another moment can be chosen to review from: a session of the history,
+or a moment given a name. Your own changes are left out, unless you ask for
+**Your own changes too**.
+
 ## Languages
 
 Glaukopis speaks English and Norwegian Bokmål. At first it speaks the
@@ -1052,7 +1122,9 @@ Norwegian is checked: the first underlines of a session come after a moment.
 | **Ctrl+F**, **Ctrl+H** | In the text and in the edit box of an element: search; search and replace |
 | **Enter**, **Shift+Enter** | In the search: the next that is found, the one before; **F3** and **Shift+F3** as well |
 | **Ctrl+Shift+F** | Search through everything |
-
+| **Ctrl+Shift+E** | The panel of changes, to review them |
+| **Ctrl+Alt+Y**, **Ctrl+Alt+N** | In a review: accept the change, reject it |
+| **F8**, **Shift+F8** | In a review: the next change (leaving this one for later), the one before |
 | **F7**, **Shift+F7** | In the text: the menu of the next misspelt word, or of the one before |
 | **Ctrl+F**, **Ctrl+N** | In the library: search, new reference |
 

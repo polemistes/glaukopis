@@ -28,6 +28,7 @@
   import { searchMarks } from '$lib/search/decorations';
   import { spellingOptions } from '$lib/spelling/menu';
   import { lookAgain, spellingPlugin } from '$lib/spelling/plugin';
+  import { reviewMarks } from '$lib/review/editor';
 
   interface Props {
     project: Project;
@@ -262,6 +263,8 @@
         placeholderPlugin(() => placeholder),
         // What a search found, where the editor is to draw it: see `search/decorations.ts`.
         searchMarks(),
+        // The changes that are reviewed, where they are: see `review/editor.ts`.
+        reviewMarks(kind),
         spellingPlugin(
           spellingOptions(
             () => project,

@@ -1,0 +1,77 @@
+/*
+ * The changes that are reviewed, where they are in the text (ADR 0022): what
+ * was added under a tint of the colour of who added it, with a line under
+ * it; what was deleted struck through, in their colour, drawn by the style
+ * sheet from `data-text` so that it is no text of the page; formatting
+ * changed, a dotted line. The change that is looked at, more strongly. In an
+ * editor the marks are decorations (`editor.ts`); in text drawn without one,
+ * spans (`drawn.ts`).
+ */
+
+.review-added {
+  background: color-mix(in srgb, var(--by) 14%, transparent);
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, var(--by) 70%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.18em;
+  border-radius: 2px;
+}
+
+.review-formatted {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--by);
+  text-underline-offset: 0.18em;
+}
+
+.review-removed::before {
+  content: attr(data-text);
+  color: color-mix(in srgb, var(--by) 80%, var(--ink-3));
+  text-decoration-line: line-through;
+  text-decoration-color: var(--by);
+  user-select: none;
+  pointer-events: none;
+}
+
+.review-removed.block {
+  display: block;
+  margin: 0.3em 0;
+  padding-left: 0.6em;
+  border-left: 2px solid color-mix(in srgb, var(--by) 55%, transparent);
+  white-space: pre-wrap;
+}
+
+.review-note,
+.review-object {
+  outline: 1.5px solid color-mix(in srgb, var(--by) 60%, transparent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.review-added.current {
+  background: color-mix(in srgb, var(--by) 30%, transparent);
+  text-decoration-thickness: 2px;
+}
+
+.review-removed.current::before {
+  background: color-mix(in srgb, var(--by) 16%, transparent);
+}
+
+.review-removed.block.current {
+  border-left-width: 4px;
+  background: color-mix(in srgb, var(--by) 8%, transparent);
+}
+
+.review-note.current,
+.review-object.current {
+  outline-width: 2.5px;
+  outline-color: var(--by);
+}
+
+/* An element changed as an element: added, moved, set out of the document. */
+section[data-review] > .gutter {
+  box-shadow: inset -3px 0 0 color-mix(in srgb, var(--by) 55%, transparent);
+}
+section[data-review].review-current > .gutter {
+  box-shadow: inset -4px 0 0 var(--by);
+}

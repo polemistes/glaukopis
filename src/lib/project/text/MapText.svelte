@@ -40,6 +40,8 @@
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import type { Folding } from './folding.svelte';
   import TextSection, { type Part } from './TextSection.svelte';
+  import { reviewing } from '$lib/review/context';
+  import type { Change } from '$lib/review/grouping';
 
   interface Props {
     project: Project;
@@ -625,6 +627,44 @@
     searching = new TextSearch(surface);
     searching.open(false, null);
     searching.beginAt(jump.element, jump.part, jump.passage, jump.start);
+  }
+
+  // ---- the change that is reviewed ----
+
+  const review = reviewing();
+
+  // The change looked at is brought into view, and opened where it is folded away.
+  $effect(() => {
+    const r = review?.review;
+    if (!r) return;
+    void r.shown;
+    untrack(() => {
+      const change = r.current;
+      if (change && r.map === mapId) void showChange(change);
+    });
+  });
+
+  async function showChange(change: Change) {
+    const element =
+      change.stretches[change.stretches.length - 1]?.passage.place.element ?? change.element;
+    if (!project.node(element)) return;
+    let opened = folding.reveal(tree, element);
+    if (folding.has(element) && change.kind !== 'element') {
+      folding.open(element);
+      opened = true;
+    }
+    if (opened) await tick();
+    current = element;
+    const frames = async (n: number) => {
+      for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(r));
+    };
+    const find = () =>
+      scroller?.querySelector(`[data-change="${CSS.escape(change.key)}"]`) ??
+      scroller?.querySelector(`[data-section="${element}"]`);
+    // The section first: its text is marked once it is in view.
+    find()?.scrollIntoView({ block: 'center' });
+    await frames(3);
+    find()?.scrollIntoView({ block: 'center' });
   }
 
   // ---- the menu of an element ----
