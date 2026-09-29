@@ -162,9 +162,12 @@
     if (c && review.hasVersions(c) && review.versions?.key !== c.key) void review.loadVersions(c);
   });
 
-  const versions = $derived(
-    current && review.versions?.key === current.key ? review.versions.list : null,
-  );
+  // The first the history gives is the stretch as it was at the moment
+  // compared with, which the panel shows already as “As it was”.
+  const versions = $derived.by(() => {
+    const list = current && review.versions?.key === current.key ? review.versions.list : null;
+    return list ? list.slice(1) : list;
+  });
   let showVersions = $state(false);
 
   // The one looked at is kept in view in the list.

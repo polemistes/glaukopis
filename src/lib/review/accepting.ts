@@ -153,6 +153,79 @@ function edges(pieces: Piece[]): { first: [number, number] | null; last: [number
 }
 
 /**
+ * What is accepted between two items of a block: everything from just after
+ * the one to just before the other, with what is undeleted there to be seen.
+ * Where there is none on a side, the edge is the beginning or the end of the
+ * block itself.
+ */
+function between(
+  block: Y.XmlElement,
+  place: Place,
+  entries: Entry[],
+  lower: number,
+  upper: number,
+): Accepted {
+  const inside = entries.slice(lower + 1, upper);
+  const before = lower >= 0 ? entries[lower] : null;
+  const after = upper < entries.length ? entries[upper] : null;
+  return {
+    place,
+    from: before
+      ? at(before.client, before.clock, -1)
+      : encode(Y.createRelativePositionFromTypeIndex(block, 0, -1)),
+    to: after
+      ? at(after.client, after.clock, 0)
+      : encode(Y.createRelativePositionFromTypeIndex(block, block.length, 0)),
+    visible: itemsOf(inside),
+  };
+}
+
+/** A sign of a text, by the item it is: the copy that made it, and its clock. */
+export interface Sign {
+  client: number;
+  clock: number;
+}
+
+/**
+ * The signs on either side of a stretch of a block, as it stands now: what
+ * bounds it while the text within it is changed. Nothing on a side where the
+ * stretch reaches the edge of the block.
+ */
+export function edgesOf(
+  block: Y.XmlElement | null,
+  from: number,
+  to: number,
+): { before: Sign | null; after: Sign | null } | null {
+  if (!block) return null;
+  const signs = entriesOf(block).filter((e) => e.sign);
+  const a = Math.max(0, Math.min(from, signs.length));
+  const b = Math.max(a, Math.min(to, signs.length));
+  return {
+    before: a > 0 ? { client: signs[a - 1].client, clock: signs[a - 1].clock } : null,
+    after: b < signs.length ? { client: signs[b].client, clock: signs[b].clock } : null,
+  };
+}
+
+/**
+ * What is accepted of the stretch between two signs, as the block stands
+ * now: for text that has just been changed, where the signs on either side
+ * are the same although what is between them is not.
+ */
+export function acceptBetween(
+  block: Y.XmlElement,
+  place: Place,
+  edges: { before: Sign | null; after: Sign | null } | null,
+): Accepted {
+  const entries = entriesOf(block);
+  const where = (sign: Sign) =>
+    entries.findIndex((e) => e.client === sign.client && e.clock === sign.clock);
+  const lower = edges?.before ? where(edges.before) : -1;
+  const found = edges?.after ? where(edges.after) : -1;
+  const upper = edges?.after && found >= 0 ? found : entries.length;
+  return between(block, place, entries, lower, upper);
+}
+
+/**
  * What is accepted of a stretch of a block as it stands: `from` and `to` are
  * where the stretch begins and ends in the text of the block as it is now
  * (signs counted as the history counts them), and `pieces` what the change
@@ -183,21 +256,13 @@ export function acceptStretch(
   const a = Math.max(0, Math.min(from, signs.length));
   const b = Math.max(a, Math.min(to, signs.length));
   // What is between the sign before the stretch and the sign after it.
-  const lower = a > 0 ? signs[a - 1] : -1;
-  const upper = b < signs.length ? signs[b] : entries.length;
-  const inside = entries.slice(lower + 1, upper);
-  const before = a > 0 ? entries[signs[a - 1]] : null;
-  const after = b < signs.length ? entries[signs[b]] : null;
-  return {
+  return between(
+    block,
     place,
-    from: before
-      ? at(before.client, before.clock, -1)
-      : encode(Y.createRelativePositionFromTypeIndex(block, 0, -1)),
-    to: after
-      ? at(after.client, after.clock, 0)
-      : encode(Y.createRelativePositionFromTypeIndex(block, block.length, 0)),
-    visible: itemsOf(inside),
-  };
+    entries,
+    a > 0 ? signs[a - 1] : -1,
+    b < signs.length ? signs[b] : entries.length,
+  );
 }
 
 /** The text of a block as it is, with each thing in it that is no text as U+FFFC: to compare with what the history said. */

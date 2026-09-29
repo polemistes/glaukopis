@@ -265,6 +265,9 @@
     (window as unknown as Record<string, unknown>).__glaukopisHistory = {
       history: historyOf(p, ownId),
       positions,
+      get review() {
+        return review;
+      },
     };
   });
 

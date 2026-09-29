@@ -10,9 +10,17 @@
  */
 
 import * as Y from 'yjs';
-import type { Accepted, History, Moment, Person, Reference, Version } from '$lib/history/types';
+import type {
+  Accepted,
+  History,
+  Moment,
+  Person,
+  Place,
+  Reference,
+  Version,
+} from '$lib/history/types';
 import type { Project } from '$lib/project/model/project.svelte';
-import { acceptStretch, blockAt, itemsOfPieces, nodeAt } from './accepting';
+import { acceptBetween, acceptStretch, blockAt, edgesOf, itemsOfPieces, nodeAt } from './accepting';
 import { changed, group, type Change, type Stretch, type Unit } from './grouping';
 import { accept, readReview, referenceOf, settle, type Settled } from './kept';
 import { colourOf } from '$lib/sharing/connection.svelte';
@@ -38,6 +46,11 @@ export function colour(by: string | null): string {
 /** Whether a change is settled on this side: to an element, or to an object as a whole. */
 function settles(c: Change): boolean {
   return !!(c.change || c.object);
+}
+
+/** Whether two places name the same block of text. */
+function samePlace(a: Place, b: Place): boolean {
+  return a.element === b.element && a.part === b.part && a.path.join('.') === b.path.join('.');
 }
 
 export class Review {
@@ -158,6 +171,18 @@ export class Review {
     return this.project.revision === this.#revision;
   }
 
+  /**
+   * Works the changes out, and again while the project keeps changing under
+   * them: a reading that a newer one overtook leaves its work to that one,
+   * so once is not always enough.
+   */
+  async upToDate(): Promise<void> {
+    for (let i = 0; i < 4; i++) {
+      await this.refresh();
+      if (this.#closed || this.fresh) return;
+    }
+  }
+
   /** Works the changes out now. */
   refresh(): Promise<void> {
     clearTimeout(this.#timer);
@@ -270,9 +295,7 @@ export class Review {
       at = next.findIndex((c) =>
         c.stretches.some(
           (s) =>
-            s.passage.place.element === place.element &&
-            s.passage.place.part === place.part &&
-            s.passage.place.path.join('.') === place.path.join('.') &&
+            samePlace(s.passage.place, place) &&
             s.now.to >= was.stretches[was.stretches.length - 1].now.from,
         ),
       );
@@ -309,7 +332,7 @@ export class Review {
   async #asItStands(change: Change): Promise<Change | null> {
     if (this.fresh) return change;
     await (this.#working ?? Promise.resolve());
-    if (!this.fresh) await this.refresh();
+    if (!this.fresh) await this.upToDate();
     return (
       this.changes.find((c) => c.key === change.key) ??
       this.changes.find((c) => c.key === this.looked) ??
@@ -387,17 +410,50 @@ export class Review {
     if (!change || !this.canReject(change)) return;
     const history = this.history!;
     const project = this.project;
+    const text = !change.change && !change.object;
+    // Where each stretch begins and ends, by the signs on either side of it,
+    // taken before the text is put back: those signs are not touched by the
+    // putting back, however much of what lies between them is.
+    const bounds = text
+      ? change.stretches.map((s) => ({
+          place: s.passage.place,
+          edges: s.passage.after
+            ? edgesOf(
+                blockAt(
+                  project.fragment(s.passage.place.element, s.passage.place.part),
+                  s.passage.place,
+                ),
+                s.now.from,
+                s.now.to,
+              )
+            : null,
+        }))
+      : [];
     project.checkpoint();
     if (change.change) this.#rejectElement(change);
     else if (change.object?.status === 'added' || change.object?.status === 'changed')
       this.#rejectObject(change);
     // The text of an element or an object taken away goes with it.
-    for (const s of change.object || change.change ? [] : change.stretches) {
+    for (const s of text ? change.stretches : []) {
       const pieces = s.pieces.filter(changed);
       if (pieces.length) await history.revert(s.passage, pieces);
     }
     project.checkpoint();
-    this.#drop(change);
+    // Taking a change back is a change of the reviewer's own, which stands in
+    // the history beside the one it undoes. What now stands there is accepted
+    // at once, so that the reviewer is not asked about their own undoing.
+    const accepted: Accepted[] = [];
+    for (const b of bounds) {
+      const block = blockAt(project.fragment(b.place.element, b.place.part), b.place);
+      if (!block) continue;
+      // A passage that was gone and is back is accepted whole.
+      accepted.push(
+        b.edges
+          ? acceptBetween(block, b.place, b.edges)
+          : acceptStretch(block, b.place, 0, Number.MAX_SAFE_INTEGER, []),
+      );
+    }
+    this.#keep(change, accepted);
     this.later(0);
   }
 
@@ -501,15 +557,10 @@ export class Review {
     this.project.checkpoint();
     await history.restore(accepted.place, accepted.from, accepted.to, version.moment.snapshot);
     this.project.checkpoint();
-    await this.refresh();
+    await this.upToDate();
     const place = stretch.passage.place;
     const now = this.changes.find((c) =>
-      c.stretches.some(
-        (s) =>
-          s.passage.place.element === place.element &&
-          s.passage.place.part === place.part &&
-          s.passage.place.path.join('.') === place.path.join('.'),
-      ),
+      c.stretches.some((s) => samePlace(s.passage.place, place)),
     );
     if (now) await this.accept(now);
   }
