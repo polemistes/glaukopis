@@ -7,6 +7,7 @@ import type {
   Passage,
   Piece,
   Place,
+  Run,
 } from '$lib/history/types';
 import { group, likeness, type Change } from './grouping';
 
@@ -14,23 +15,24 @@ import { group, likeness, type Change } from './grouping';
 
 const CLIENTS: Record<string, number> = { anna: 11, bo: 12, me: 13 };
 let clock = 0;
+let blocks = 0;
 
-function items(client: number, length: number): Items {
+function made(client: number, length: number): { items: Items; runs: Run[] } {
   const start = clock;
   clock += Math.max(1, length);
-  return { [client]: [[start, start + length]] };
+  return { items: { [client]: [[start, start + length]] }, runs: [[client, start, length]] };
 }
 
 function same(text: string, marks: Record<string, unknown> = {}): Piece {
-  return { status: 'same', text, marks, by: null, items: items(1, text.length) };
+  return { status: 'same', text, marks, by: null, ...made(1, text.length) };
 }
 
 function added(text: string, by = 'anna'): Piece {
-  return { status: 'added', text, marks: {}, by, items: items(CLIENTS[by], text.length) };
+  return { status: 'added', text, marks: {}, by, ...made(CLIENTS[by], text.length) };
 }
 
 function removed(text: string, by = 'anna'): Piece {
-  return { status: 'removed', text, marks: {}, by, items: items(CLIENTS[by], text.length) };
+  return { status: 'removed', text, marks: {}, by, ...made(CLIENTS[by], text.length) };
 }
 
 function formatted(
@@ -39,7 +41,7 @@ function formatted(
   before: Record<string, unknown>,
   by = 'anna',
 ): Piece {
-  return { status: 'same', text, marks, marksBefore: before, by, items: items(1, text.length) };
+  return { status: 'same', text, marks, marksBefore: before, by, ...made(1, text.length) };
 }
 
 function object(kind: string, status: Piece['status'], by = 'anna'): Piece {
@@ -49,7 +51,7 @@ function object(kind: string, status: Piece['status'], by = 'anna'): Piece {
     object: { kind, label: kind, attrs: {} },
     marks: {},
     by: status === 'same' ? null : by,
-    items: items(CLIENTS[by], 1),
+    ...made(CLIENTS[by], 1),
   };
 }
 
@@ -65,6 +67,7 @@ function passage(
 ): Passage {
   return {
     place: place(element, path, options.part),
+    block: `1:${++blocks}`,
     kind: options.kind ?? 'paragraph',
     before: options.before ?? true,
     after: options.after ?? true,
@@ -520,21 +523,22 @@ describe('a map much written anew', () => {
     const sentence = (n: number) =>
       `Sentence ${n} of the passage says something about wrath and song. `;
     for (let i = 0; i < 2000; i++) passages.push(written('a', [i], sentence(i).repeat(6)));
-    for (let i = 0; i < 2000; i++)
-      passages.push(deleted('b', [i], sentence(i + 5000).repeat(6)));
+    for (let i = 0; i < 2000; i++) passages.push(deleted('b', [i], sentence(i + 5000).repeat(6)));
     for (let i = 0; i < 1000; i++)
       passages.push(
-        passage('c', [i], [
-          same(sentence(i).repeat(3)),
-          added('New words here. '),
-          same(sentence(i).repeat(3)),
-        ]),
+        passage(
+          'c',
+          [i],
+          [same(sentence(i).repeat(3)), added('New words here. '), same(sentence(i).repeat(3))],
+        ),
       );
     const started = performance.now();
     const found = group(changes(passages), { language: 'en', sequence: ['a', 'b', 'c'] });
     const took = performance.now() - started;
     expect(found.length).toBeGreaterThan(1000);
     expect(took).toBeLessThan(2000);
-    console.log(`grouped ${passages.length} passages into ${found.length} changes in ${Math.round(took)} ms`);
+    console.log(
+      `grouped ${passages.length} passages into ${found.length} changes in ${Math.round(took)} ms`,
+    );
   });
 });

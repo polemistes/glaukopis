@@ -6,27 +6,28 @@
 //! ```text
 //! projects/<id>/project.json   name, dates, what the list of projects shows
 //! projects/<id>/state.bin      the document as one update
-//! projects/<id>/updates.log    changes since, each preceded by its length
+//! projects/<id>/updates.log    changes since, each in a record (see `history`)
 //! projects/<id>/history/       earlier states, thinned as they age
+//! projects/<id>/changes.log    the full history, where it is on (see `history`)
 //! ```
 //!
 //! A deleted project is moved to `projects/.trash/` and can be brought back.
 
-use std::fs::{self, File, OpenOptions};
-use std::io::{Read, Write};
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
+use crate::history::{Record, append_record, now_ms, read_records};
 use crate::library::now;
 use crate::paths::DataDir;
 use crate::tr;
 
 const INFO: &str = "project.json";
 const STATE: &str = "state.bin";
-const LOG: &str = "updates.log";
+pub(crate) const LOG: &str = "updates.log";
 const HISTORY: &str = "history";
 const TRASH: &str = ".trash";
 const TOKEN: &str = "sharing.key";
@@ -141,7 +142,7 @@ impl Projects {
         out
     }
 
-    fn existing_dir(&self, id: &str) -> Result<PathBuf> {
+    pub(crate) fn existing_dir(&self, id: &str) -> Result<PathBuf> {
         let dir = self.dir(id)?;
         if dir.join(INFO).is_file() { Ok(dir) } else { Err(Error::not_found(tr!("core-projects-the-project"))) }
     }
@@ -246,31 +247,49 @@ impl Projects {
         Ok(LoadedProject { info, state, updates })
     }
 
-    /// Adds a change to the log. It is on disk when this returns.
+    /// Adds a change made here to the log, written now. It is on disk when this returns.
     pub fn append(&self, id: &str, update: &[u8]) -> Result<()> {
+        self.append_change(id, update, true, now_ms())
+    }
+
+    /// Adds a change to the log: whether it was made here or came from
+    /// another, and when it was written, in milliseconds since 1970. It is
+    /// on disk when this returns.
+    pub fn append_change(&self, id: &str, update: &[u8], here: bool, time: i64) -> Result<()> {
         if update.is_empty() {
             return Ok(());
         }
         let dir = self.existing_dir(id)?;
-        let path = dir.join(LOG);
-        let mut file =
-            OpenOptions::new().create(true).append(true).open(&path).context(|| tr!("io-opening", path = &path))?;
-        let mut record = Vec::with_capacity(update.len() + 8);
-        record.extend_from_slice(&(update.len() as u32).to_le_bytes());
-        record.extend_from_slice(&checksum(update).to_le_bytes());
-        record.extend_from_slice(update);
-        file.write_all(&record).context(|| tr!("io-writing", path = &path))?;
-        file.sync_data().context(|| tr!("io-flushing", path = &path))?;
-        Ok(())
+        append_record(&dir.join(LOG), &Record::change(update.to_vec(), here, time))
     }
 
     /// Replaces the stored state by a new one that holds everything, and
     /// empties the log. An earlier state is kept in the history now and then.
     pub fn save_state(&self, id: &str, state: &[u8], summary: Option<Summary>) -> Result<ProjectInfo> {
+        self.save_state_keeping(id, state, summary, false)
+    }
+
+    /// As `save_state`; with `keep`, where the project's full history is on,
+    /// what the log held is kept in it rather than thrown away, and a history
+    /// that is not there begins with this state (see `history`). Without it,
+    /// a history that is there is deleted: it has been turned off, here or on
+    /// another copy of the project.
+    pub fn save_state_keeping(
+        &self,
+        id: &str,
+        state: &[u8],
+        summary: Option<Summary>,
+        keep: bool,
+    ) -> Result<ProjectInfo> {
         let dir = self.existing_dir(id)?;
         self.keep_history(&dir)?;
         write_atomic(&dir.join(STATE), state)?;
         remove_copies(&dir);
+        if keep {
+            self.keep_changes(&dir, &dir.join(LOG), state)?;
+        } else {
+            self.forget_changes(id)?;
+        }
         // Only now may the log go: the state holds what it held.
         match fs::remove_file(dir.join(LOG)) {
             Ok(()) => {}
@@ -503,45 +522,10 @@ fn remove_copies(dir: &Path) {
     let _ = fs::remove_dir(&copies);
 }
 
-fn checksum(bytes: &[u8]) -> u32 {
-    // FNV-1a: enough to tell a record that was written whole from one that was not.
-    let mut hash: u32 = 0x811c9dc5;
-    for b in bytes {
-        hash ^= *b as u32;
-        hash = hash.wrapping_mul(0x01000193);
-    }
-    hash
-}
-
-/// Reads the log. A record cut short by a crash, and anything after it, is left out.
+/// Reads the changes of the log. A record cut short by a crash, and anything
+/// after it, is left out.
 fn read_log(path: &Path) -> Result<Vec<Vec<u8>>> {
-    let mut bytes = Vec::new();
-    match File::open(path) {
-        Ok(mut f) => {
-            f.read_to_end(&mut bytes).context(|| tr!("io-reading", path = path))?;
-        }
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
-        Err(e) => return Err(e).context(|| tr!("io-opening", path = path)),
-    }
-    let mut out = Vec::new();
-    let mut pos = 0;
-    while pos + 8 <= bytes.len() {
-        let len = u32::from_le_bytes(bytes[pos..pos + 4].try_into().unwrap()) as usize;
-        let sum = u32::from_le_bytes(bytes[pos + 4..pos + 8].try_into().unwrap());
-        let start = pos + 8;
-        let Some(end) = start.checked_add(len).filter(|&e| e <= bytes.len()) else {
-            tracing::warn!(path = %path.display(), "the log ends in a record that was cut short");
-            break;
-        };
-        let record = &bytes[start..end];
-        if checksum(record) != sum {
-            tracing::warn!(path = %path.display(), "the log holds a damaged record; what follows it is left out");
-            break;
-        }
-        out.push(record.to_vec());
-        pos = end;
-    }
-    Ok(out)
+    Ok(read_records(path)?.into_iter().map(|r| r.update).collect())
 }
 
 fn stamp_name(unix: i64) -> String {

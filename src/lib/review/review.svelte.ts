@@ -185,13 +185,9 @@ export class Review {
         since: { snapshot: kept.moment, time: kept.time },
       };
     // A first review goes from the beginning of the history.
-    const first = (await this.source.choices())[0];
+    const first = await this.history?.begins();
     if (!first) return null;
-    return {
-      reference: { moment: first.moment.snapshot, accepted: [] },
-      settled: [],
-      since: first.moment,
-    };
+    return { reference: { moment: first.snapshot, accepted: [] }, settled: [], since: first };
   }
 
   /** The changes of a map, grouped, without those settled already. */

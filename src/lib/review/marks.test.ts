@@ -7,7 +7,7 @@ import { group } from './grouping';
 import { markChanges, marksIn } from './marks';
 
 function piece(status: Piece['status'], text: string, by: string | null = null): Piece {
-  return { status, text, marks: {}, by, items: {} };
+  return { status, text, marks: {}, by, items: {}, runs: [] };
 }
 
 const colour = (by: string | null) => (by === 'anna' ? 'red' : by === 'bo' ? 'blue' : 'grey');
@@ -18,6 +18,7 @@ function changes(): MapChanges {
     passages: [
       {
         place: { element: 'a', part: 'body', path: [0] },
+        block: '1:1',
         kind: 'paragraph',
         before: true,
         after: true,
@@ -30,6 +31,7 @@ function changes(): MapChanges {
       },
       {
         place: { element: 'a', part: 'body', path: [1] },
+        block: '1:2',
         kind: 'paragraph',
         before: true,
         after: false,
@@ -37,6 +39,7 @@ function changes(): MapChanges {
       },
       {
         place: { element: 'b', part: 'body', path: [0, 'note', 1] },
+        block: '1:3',
         kind: 'note',
         before: true,
         after: true,

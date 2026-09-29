@@ -34,6 +34,14 @@ export interface Moment {
  */
 export type Items = Record<number, [number, number][]>;
 
+/**
+ * The items of a piece of text in the order of the text: for each run of
+ * items one copy made one after another, the copy, the clock of the first,
+ * and how many (as many as the signs of the text they stand for, an object
+ * one). Positions in the text are made of them: see `positions.ts`.
+ */
+export type Run = [client: number, clock: number, length: number];
+
 /** A block of text in a map: an element, its name or its text, and the path to the block. */
 export interface Place {
   element: string;
@@ -43,6 +51,13 @@ export interface Place {
    * block, [3, 1] the second within it (a list item, a row, a cell). A note
    * is within the paragraph it stands in, after it: [3, 'note', 2] is the
    * third note in the fourth block.
+   *
+   * The indices are those of the tree of Yjs, which is ProseMirror's: a
+   * table is [3], what is said of it [3, 0], its rows [3, 1, r], a cell
+   * [3, 1, r, c] and a paragraph in it [3, 1, r, c, p]; the paragraph of a
+   * list item is [3, i, p]. They count what is there in the later of the two
+   * moments compared (now, in `compare`); a block that is there no more has
+   * the index it would have: it stood before the block that has that index.
    */
   path: (number | 'note')[];
 }
@@ -52,6 +67,12 @@ export interface Place {
  * with the moment they review from: from and to as relative positions
  * (`Y.encodeRelativePosition`) in the text it is in, and the items that were
  * to be seen in it when it was accepted.
+ *
+ * A position is known by the item it is at: before it, or with an `assoc`
+ * below nought after it, as Yjs and y-prosemirror make them; one at the end
+ * of a text of Yjs, by that text. `positions.ts` makes them of pieces, and
+ * `visible` of the pieces as they are (their `items`, which hold what
+ * formats them as well).
  */
 export interface Accepted {
   place: Place;
@@ -90,13 +111,27 @@ export interface Piece {
   marksBefore?: Record<string, unknown>;
   /** Who added or removed it, where that is known; of what is the same, nobody. */
   by: string | null;
-  /** The items it is made of. */
+  /**
+   * The items it is made of: those of its text, and those of Yjs that
+   * format it (an item that formats is counted with the piece after it).
+   */
   items: Items;
+  /** The items of its text, in the order of the text. */
+  runs: Run[];
+  /** Of what is in both with its marks changed: who changed them, where that is known. */
+  marksBy?: string | null;
+  /** Of an object in both that was changed (a citation, a formula): what it was. */
+  objectBefore?: TextObject;
 }
 
 /** A block of text as it was and as it is, piece by piece, in order. */
 export interface Passage {
   place: Place;
+  /**
+   * The block of Yjs it is, as `client:clock` of its item: the same in
+   * every answer, while the path may change as blocks come and go.
+   */
+  block: string;
   /** What block it is: paragraph, name, caption, cell, note, … */
   kind: string;
   /** Whether it was there at the moment compared with, and whether it is now. */
@@ -144,6 +179,47 @@ export interface Version {
 }
 
 /**
+ * What one person did before a pause: records of the history one after
+ * another. Its moment is that after its last record.
+ */
+export interface Session {
+  /** The place of its last record in the history as it is read now: see `History.moment`. */
+  last: number;
+  /** The place of its first record. */
+  first: number;
+  person: string | null;
+  /** When it began and ended, in milliseconds since 1970. */
+  time: number;
+  until: number;
+  /** How much was written and deleted, in signs. */
+  added: number;
+  removed: number;
+  /** Whether older history was merged here, so that moments within it are gone. */
+  merged: boolean;
+}
+
+/** A moment that was given a name. Kept in the project (`moments`), for every copy. */
+export interface Named {
+  id: string;
+  name: string;
+  moment: Moment;
+  /** Who named it. */
+  by: string | null;
+}
+
+/**
+ * What the review keeps of a person in the project, in the map `reviews`
+ * by the person's id: the history keeps these moments and items when it
+ * keeps older history less finely, and asks before it takes history out
+ * that they need.
+ */
+export interface KeptReview {
+  /** `Y.encodeSnapshot` of the moment they review from. */
+  moment: Uint8Array;
+  accepted: Accepted[];
+}
+
+/**
  * The history of a project, as the review asks it. Made by the history,
  * answered from a worker; what changes the project is done here, in the
  * document that is worked in, as a change of this person's.
@@ -153,10 +229,29 @@ export interface History {
   people(): Promise<Person[]>;
   /** The moment the project is at now. */
   now(): Promise<Moment>;
-  /** What changed in a map between what is compared with and now. */
-  compare(map: string, reference: Reference): Promise<MapChanges>;
+  /**
+   * The moment where the history on this computer begins. What changed
+   * before it cannot be told apart; a moment before it is compared as it.
+   */
+  begins(): Promise<Moment>;
+  /** What one person did before a pause, the oldest first. */
+  sessions(): Promise<Session[]>;
+  /** The moment after a record of the history: the `last` of a session. */
+  moment(record: number): Promise<Moment>;
+  /** The moments that were given a name, the oldest first. */
+  named(): Promise<Named[]>;
+  /**
+   * What changed in a map between what is compared with and now. With
+   * `elements`, in those elements alone: quicker, where only they are wanted.
+   */
+  compare(map: string, reference: Reference, elements?: string[]): Promise<MapChanges>;
   /** The versions of a stretch, from what is compared with there to now, the oldest first. */
-  versions(place: Place, from: Uint8Array, to: Uint8Array, reference: Reference): Promise<Version[]>;
+  versions(
+    place: Place,
+    from: Uint8Array,
+    to: Uint8Array,
+    reference: Reference,
+  ): Promise<Version[]>;
   /** Takes back the given pieces of a passage: what was added is taken away, what was removed is put back. */
   revert(passage: Passage, pieces: Piece[]): Promise<void>;
   /** Makes a stretch as it was at a moment again. */

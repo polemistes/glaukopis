@@ -4,9 +4,11 @@ import type {
   History,
   MapChanges,
   Moment,
+  Named,
   Passage,
   Piece,
   Reference,
+  Session,
   Version,
 } from '$lib/history/types';
 import { Project } from '$lib/project/model/project.svelte';
@@ -15,7 +17,14 @@ import { Review } from './review.svelte';
 import type { Choice, Source } from './source';
 
 function piece(status: Piece['status'], text: string, by: string | null = null): Piece {
-  return { status, text, marks: {}, by, items: { 5: [[0, text.length]] } };
+  return {
+    status,
+    text,
+    marks: {},
+    by,
+    items: { 5: [[0, text.length]] },
+    runs: [[5, 0, text.length]],
+  };
 }
 
 /** A history made by hand: what it says of each map is what the test gives it. */
@@ -40,6 +49,22 @@ class FakeHistory implements History {
 
   async now(): Promise<Moment> {
     return { snapshot: Y.encodeSnapshot(Y.snapshot(this.#doc)), time: Date.now() };
+  }
+
+  async begins(): Promise<Moment> {
+    return BEGINNING.moment;
+  }
+
+  async sessions(): Promise<Session[]> {
+    return [];
+  }
+
+  async moment(): Promise<Moment> {
+    return BEGINNING.moment;
+  }
+
+  async named(): Promise<Named[]> {
+    return [];
   }
 
   async compare(map: string, reference: Reference): Promise<MapChanges> {
@@ -78,6 +103,7 @@ function setUp() {
     const passages: Passage[] = [
       {
         place: { element, part: 'body', path: [0] },
+        block: '1:1',
         kind: 'paragraph',
         before: true,
         after: true,
@@ -161,6 +187,7 @@ describe('a review', () => {
       passages: [
         {
           place: { element: project.map(other)!.root, part: 'title', path: [0] },
+          block: '1:2',
           kind: 'name',
           before: true,
           after: true,
@@ -244,6 +271,7 @@ describe('a review', () => {
       passages: [
         {
           place: { element, part: 'body', path: [0] },
+          block: '1:3',
           kind: 'paragraph',
           before: true,
           after: true,

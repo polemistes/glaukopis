@@ -73,10 +73,16 @@ export const projectCopyFromHistory = (id: string, entry: string, name: string) 
 export const projectDuplicate = (id: string, name: string) =>
   call<ProjectInfo>('project_duplicate', { id, name });
 export const projectLoad = (id: string) => call<LoadedProject>('project_load', { id });
-export const projectAppend = (id: string, update: string) =>
-  call<void>('project_append', { id, update });
-export const projectSaveState = (id: string, document: string, summary: ProjectSummary | null) =>
-  call<ProjectInfo>('project_save_state', { id, document, summary });
+/** A batch of changes: made here or received from another, and when, in milliseconds since 1970. */
+export const projectAppend = (id: string, update: string, here = true, time?: number) =>
+  call<void>('project_append', { id, update, here, time: time ?? null });
+/** With `keep`, where the project's full history is on, the log is kept in it. */
+export const projectSaveState = (
+  id: string,
+  document: string,
+  summary: ProjectSummary | null,
+  keep = false,
+) => call<ProjectInfo>('project_save_state', { id, document, summary, keep });
 export const projectSaveView = (id: string, view: unknown) =>
   call<void>('project_save_view', { id, view });
 export const projectHistory = (id: string) => call<HistoryEntry[]>('project_history', { id });

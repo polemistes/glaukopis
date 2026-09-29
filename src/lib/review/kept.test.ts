@@ -111,8 +111,22 @@ describe('a stretch accepted', () => {
 
   it('of a block that is gone is found by the items of its pieces, and nothing in it is seen', () => {
     const pieces: Piece[] = [
-      { status: 'removed', text: 'Gone', marks: {}, by: 'a', items: { 7: [[10, 14]] } },
-      { status: 'removed', text: ' too', marks: {}, by: 'a', items: { 7: [[20, 24]] } },
+      {
+        status: 'removed',
+        text: 'Gone',
+        marks: {},
+        by: 'a',
+        items: { 7: [[10, 14]] },
+        runs: [[7, 10, 4]],
+      },
+      {
+        status: 'removed',
+        text: ' too',
+        marks: {},
+        by: 'a',
+        items: { 7: [[20, 24]] },
+        runs: [[7, 20, 4]],
+      },
     ];
     const accepted = acceptStretch(null, place([3]), 0, 0, pieces);
     expect(Y.decodeRelativePosition(accepted.from).item).toMatchObject({ client: 7, clock: 10 });

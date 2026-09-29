@@ -10,7 +10,9 @@
 //                                        made by Zotero, which are found and not made
 //
 // With GLAUKOPIS_E2E_BINARY another build of the application is measured,
-// so that two can be compared on the same project.
+// so that two can be compared on the same project. With GLAUKOPIS_E2E_HISTORY
+// the full history of the project is kept while it is measured (ADR 0021),
+// and how long the history takes to be read is measured as well.
 
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -191,6 +193,14 @@ async function measure() {
         `      ${name}: a key takes ${middle(list)} ms (nine in ten under ${nearlyAll(list)} ms, the longest ${most(list)} ms); the window stood still for ${still} ms at the most; the processor worked ${Math.round(cpu / seconds)} ms in each second`,
       );
 
+    const history = !!process.env.GLAUKOPIS_E2E_HISTORY;
+    if (history) {
+      const turned = Date.now();
+      await app.execAsync(`await window.__glaukopisHistory.history.turnOn();`);
+      console.log(`      the history is kept from now: turned on in ${Date.now() - turned} ms`);
+      await sleep(1500);
+    }
+
     // The preview is closed, if it was left open.
     if (await app.exists('.preview')) {
       console.log('      the preview was open, and is closed');
@@ -254,6 +264,35 @@ async function measure() {
     console.log(`      while the preview is made anew the window stood still for ${after.still} ms at the most`);
     await app.keys(['Control', 'p']);
     await sleep(500);
+
+    // ---- the history, read and compared ----
+    if (history) {
+      await sleep(1500);
+      const read = await app.execAsync(
+        `const h = window.__glaukopisHistory.history;
+         await h.project.snapshot(true);
+         h.stop();
+         let at = performance.now();
+         const sessions = await h.sessions();
+         const reading = Math.round(performance.now() - at);
+         const begins = await h.begins();
+         at = performance.now();
+         let passages = 0;
+         // Every map of the project, since the text that was written in is in one of them.
+         for (const map of h.project.maps) {
+           const c = await h.compare(map.id, { moment: begins.snapshot, accepted: [] });
+           passages += c.passages.length;
+         }
+         const comparing = Math.round(performance.now() - at);
+         return { reading, comparing, sessions: sessions.length, passages, room: await h.room() };`,
+      );
+      console.log(
+        `      the history (${Math.round(read.room / 1024)} kB, ${read.sessions} sessions) is read in ${read.reading} ms; the whole project compared with where it began in ${read.comparing} ms, ${read.passages} passages changed`,
+      );
+      check('the history of a large project is read in seconds', read.reading < 10000 && read.comparing < 10000, `${read.reading} ms, ${read.comparing} ms`);
+      // Without this a history that kept nothing would be read quickly and look well.
+      check('what was written is kept in the history', read.sessions > 1 && read.passages > 0, `${read.sessions} sessions, ${read.passages} passages`);
+    }
 
     // ---- from the text to the diagram and back ----
     began = Date.now();
