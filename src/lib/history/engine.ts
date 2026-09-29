@@ -70,6 +70,8 @@ export interface Kept {
   removed: number;
   /** Where it is in the store on disk; nothing for what was written while it was looked at. */
   stored: boolean;
+  /** The change itself, of what is in the store: to be merged with others. */
+  update?: Uint8Array;
 }
 
 /** ProseMirror's JSON of a node. */
@@ -199,6 +201,7 @@ export class Engine {
         time: r.time,
         until: r.until,
         stored: true,
+        update: r.update,
       });
     }
   }
@@ -700,6 +703,123 @@ export class Engine {
         node,
       },
     ];
+  }
+
+  // =====================================================================
+  // Keeping older history less finely
+  // =====================================================================
+
+  /**
+   * Works out how older history is kept less finely: the records of each
+   * hour older than `hourly` weeks merged into one, and those of each day
+   * older than `daily` months. A merged record holds what was made in its
+   * stretch and what was deleted; what was made and deleted within it is
+   * not kept, unless a moment that is kept (`kept`: named, reviewed) shows
+   * it. No stretch is merged across a kept moment. The stretches are given
+   * the last first, so that they can be replaced one after another.
+   */
+  thin(
+    now: number,
+    hourly: number,
+    daily: number,
+    kept: Uint8Array[],
+    visible: Items[] = [],
+  ): { first: number; count: number; time: number; until: number; record: HistoryRecord }[] {
+    const HOUR = 3_600_000;
+    const DAY = 24 * HOUR;
+    const hourBefore = now - hourly * 7 * DAY;
+    const dayBefore = now - daily * 30 * DAY;
+    const snapshots = kept.map((k) => Y.decodeSnapshot(k));
+    // After which records a kept moment falls: no stretch is merged across it.
+    const walls = new Set<number>();
+    const sv = new Map<number, number>();
+    this.records.forEach((r, i) => {
+      for (const [client, [, to]] of r.made) sv.set(client, Math.max(sv.get(client) ?? 0, to));
+      const next = this.records[i + 1];
+      for (const s of snapshots) {
+        const within = [...sv].every(([client, clock]) => clock <= (s.sv.get(client) ?? 0));
+        // The next record is within the moment too where all it made and deleted is.
+        const nextWithin =
+          !!next &&
+          [...next.made].every(([client, [, to]]) => to <= (s.sv.get(client) ?? 0)) &&
+          [...next.deleted.clients].every(([client, list]) =>
+            list.every(
+              (d) =>
+                Y.isDeleted(s.ds, Y.createID(client, d.clock)) &&
+                Y.isDeleted(s.ds, Y.createID(client, d.clock + d.len - 1)),
+            ),
+          );
+        if (within && !nextWithin) walls.add(i);
+      }
+    });
+
+    const bucket = (r: Kept): number | null =>
+      r.until < dayBefore
+        ? -Math.floor(r.time / DAY) - 1
+        : r.until < hourBefore
+          ? Math.floor(r.time / HOUR)
+          : null;
+    const stretches: [number, number][] = [];
+    let start = -1;
+    let key: number | null = null;
+    const close = (end: number) => {
+      if (start >= 0 && end - start >= 1) stretches.push([start, end]);
+      start = -1;
+      key = null;
+    };
+    this.records.forEach((r, i) => {
+      const k = r.stored && r.kind !== 'start' && r.update ? bucket(r) : null;
+      if (k === null || k !== key) {
+        close(i - 1);
+        if (k !== null) {
+          start = i;
+          key = k;
+        }
+      }
+      if (walls.has(i)) close(i);
+    });
+    close(this.records.length - 1);
+
+    const keep = (item: Y.Item) =>
+      snapshots.some(
+        (s) => (s.sv.get(item.id.client) ?? 0) > item.id.clock && !Y.isDeleted(s.ds, item.id),
+      ) || visible.some((v) => has(v, item.id));
+
+    const out: {
+      first: number;
+      count: number;
+      time: number;
+      until: number;
+      record: HistoryRecord;
+    }[] = [];
+    for (const [first, last] of stretches.reverse()) {
+      const records = this.records.slice(first, last + 1);
+      // What was there before the stretch, as if nothing had been deleted:
+      // the stretch deletes what it deletes, and nothing else is written.
+      const before = this.snapshot(first - 1);
+      const merged = new Y.Doc({ gc: true, gcFilter: (item) => !keep(item) });
+      merged.on('afterTransaction', (transaction: Y.Transaction) => {
+        (transaction as unknown as { _needFormattingCleanup: boolean })._needFormattingCleanup =
+          false;
+      });
+      Y.createDocFromSnapshot(this.doc, Y.createSnapshot(Y.createDeleteSet(), before.sv), merged);
+      for (const r of records) Y.applyUpdate(merged, r.update!);
+      const update = Y.encodeStateAsUpdate(merged, Y.encodeStateVector(before.sv));
+      out.push({
+        first,
+        count: records.length,
+        time: records[0].time,
+        until: records[records.length - 1].until,
+        record: {
+          kind: 'merged',
+          here: records.every((r) => r.here),
+          time: records[0].time,
+          until: records[records.length - 1].until,
+          update,
+        },
+      });
+    }
+    return out;
   }
 
   // =====================================================================

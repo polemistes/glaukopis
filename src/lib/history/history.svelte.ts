@@ -10,7 +10,7 @@
  */
 
 import * as Y from 'yjs';
-import { historyCut, historyRead, historyRoom } from '$lib/api/history';
+import { historyCut, historyMerge, historyRead, historyRoom } from '$lib/api/history';
 import { citationLabel } from '$lib/editor/references.svelte';
 import type { CiteItem, CiteMode } from '$lib/editor/schema';
 import { HISTORY, type Project } from '$lib/project/model/project.svelte';
@@ -19,9 +19,10 @@ import { newId } from '$lib/util/id';
 import { applyEdits } from './applying';
 import { Engine, type Edit, type When } from './engine';
 import { Host, type Message, type Method, type Reply } from './protocol';
-import { readRecords } from './records';
+import { readRecords, writeRecords, type HistoryRecord } from './records';
 import type {
   History,
+  Items,
   MapChanges,
   Moment,
   Named,
@@ -51,6 +52,8 @@ export class ProjectHistory implements History {
   #asked = 0;
   #waiting = new Map<number, { resolve: (v: unknown) => void; reject: (e: unknown) => void }>();
   #started: Promise<void> | null = null;
+  /** Whether older history has been kept less finely since the project was opened. */
+  #thinned = false;
   #unfollow: (() => void) | null = null;
   /** Where the history is read from, where it is not the project's own: an archive. */
   readonly #read: () => Promise<Uint8Array>;
@@ -115,6 +118,17 @@ export class ProjectHistory implements History {
           () => new Engine(),
           (reply) => this.#reply(reply),
         );
+      // Older history is kept less finely, once each time the project is opened.
+      if (!this.archive && !this.#thinned) {
+        this.#thinned = true;
+        try {
+          this.#post({ kind: 'load', records: readRecords(await this.#read()), me: null });
+          await this.#thin(Date.now());
+        } catch (error) {
+          console.error('older history could not be kept less finely', error);
+        }
+        this.#post({ kind: 'reset' });
+      }
       // Followed before it is read: what is written meanwhile is both on disk
       // and told, and the engine takes it once.
       if (!this.archive)
@@ -149,6 +163,10 @@ export class ProjectHistory implements History {
 
   async #ask<T>(method: Method, ...args: unknown[]): Promise<T> {
     await this.start();
+    return this.#send(method, ...args);
+  }
+
+  #send<T>(method: Method, ...args: unknown[]): Promise<T> {
     const ask = ++this.#asked;
     return new Promise<T>((resolve, reject) => {
       this.#waiting.set(ask, { resolve: resolve as (v: unknown) => void, reject });
@@ -286,6 +304,51 @@ export class ProjectHistory implements History {
       archive,
     );
     await this.restart();
+  }
+
+  /** The items accepted in reviews, which older history must keep. */
+  #acceptedItems(): Items[] {
+    const out: Items[] = [];
+    for (const value of this.project.doc.getMap('reviews').values()) {
+      const accepted =
+        value instanceof Y.Map
+          ? value.get('accepted')
+          : (value as { accepted?: unknown })?.accepted;
+      const list = accepted instanceof Y.Array ? accepted.toArray() : accepted;
+      if (!Array.isArray(list)) continue;
+      for (const a of list) {
+        const visible = (a as { visible?: unknown })?.visible;
+        if (visible && typeof visible === 'object') out.push(visible as Items);
+      }
+    }
+    return out;
+  }
+
+  /** Merges older history in the store, as the project's settings say: see `Engine.thin`. */
+  async #thin(now: number): Promise<number> {
+    const { hourly, daily } = this.project.history;
+    const stretches = await this.#send<
+      { first: number; count: number; time: number; until: number; record: HistoryRecord }[]
+    >('thin', now, hourly, daily, this.kept(), this.#acceptedItems());
+    for (const s of stretches)
+      await historyMerge(
+        this.id,
+        { first: s.first, count: s.count, time: s.time, until: s.until },
+        toBase64(writeRecords([s.record])),
+      );
+    return stretches.length;
+  }
+
+  /**
+   * Keeps older history less finely now, as if it were `now`: for the tests,
+   * which cannot wait weeks. Reads the history anew.
+   */
+  async thinAsOf(now: number): Promise<number> {
+    await this.project.snapshot(true);
+    await this.restart();
+    const merged = await this.#thin(now);
+    await this.restart();
+    return merged;
   }
 
   /** How much room the history takes on disk, in bytes. */

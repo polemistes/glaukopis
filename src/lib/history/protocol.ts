@@ -20,10 +20,13 @@ export type Method =
   | 'stateAt'
   | 'startAt'
   | 'cut'
+  | 'thin'
   | 'records';
 
 export type Message =
   | { kind: 'load'; records: HistoryRecord[]; me: string | null }
+  /** What follows waits for the next load: the history is read anew. */
+  | { kind: 'reset' }
   | { kind: 'change'; update: Uint8Array; here: boolean }
   | { kind: 'written'; time: number; here: boolean; changes: number }
   | { kind: 'ask'; ask: number; method: Method; args: unknown[] };
@@ -46,6 +49,10 @@ export class Host {
   }
 
   take(message: Message) {
+    if (message.kind === 'reset') {
+      this.engine = null;
+      return;
+    }
     if (message.kind === 'load') {
       const engine = this.#make();
       engine.me = message.me;

@@ -305,6 +305,69 @@ describe('the history of a project', () => {
   });
 });
 
+describe('keeping older history less finely', () => {
+  const holds = (update: Uint8Array, words: string) =>
+    new TextDecoder('utf-8', { fatal: false }).decode(update).includes(words);
+
+  async function written() {
+    const { a, ann, root, flush } = await two();
+    const steps = [
+      () => paragraph(a, root, 'Sing'),
+      () => a.transact(() => textOf(a, root).insert(4, ' goddess')),
+      () => a.transact(() => textOf(a, root).delete(4, 8)),
+      () => a.transact(() => textOf(a, root).insert(4, ' muse')),
+    ];
+    for (const step of steps) {
+      step();
+      await flush();
+    }
+    await a.snapshot(true);
+    // Two months ago, a minute apart, within one hour.
+    const now = Date.now();
+    const base = Math.floor((now - 60 * 24 * 3_600_000) / 3_600_000) * 3_600_000;
+    ann.kept.forEach((r, i) => {
+      if (i === 0) return;
+      r.time = r.until = base + i * 60_000;
+    });
+    return { a, ann, root, now };
+  }
+
+  it('merges the records of an hour into one, without what was made and deleted within it', async () => {
+    const { a, ann, root, now } = await written();
+    const e = engineOf(ann, 'ann');
+    const stretches = e.thin(now, 4, 6, []);
+    expect(stretches).toHaveLength(1);
+    expect(stretches[0].first).toBe(1);
+    expect(stretches[0].count).toBe(ann.kept.length - 1);
+    const merged = stretches[0].record;
+    expect(merged.kind).toBe('merged');
+    expect(holds(merged.update, 'goddess')).toBe(false);
+    expect(holds(merged.update, 'muse')).toBe(true);
+    // Played again, it is the project as it is.
+    const again = new Engine();
+    again.load([ann.kept[0], merged]);
+    const text = (again.doc.getMap('nodes').get(root) as Y.Map<unknown>).get(
+      'body',
+    ) as Y.XmlFragment;
+    expect((text.get(0) as Y.XmlElement).toArray().join('')).toBe(textOf(a, root).toString());
+    // Recent history is left as it is.
+    expect(e.thin(now - 50 * 24 * 3_600_000, 4, 6, [])).toEqual([]);
+  });
+
+  it('keeps a named moment, and merges nothing across it', async () => {
+    const { ann, now } = await written();
+    const e = engineOf(ann, 'ann');
+    // The moment when "goddess" had been written: before the record that deleted it.
+    const at = e.records.findIndex((r) => r.deleted.clients.size) - 1;
+    const stretches = e.thin(now, 4, 6, [e.moment(at).snapshot]);
+    expect(stretches.length).toBeGreaterThan(0);
+    for (const s of stretches) expect(s.first > at || s.first + s.count - 1 <= at).toBe(true);
+    // What it shows is kept in what is merged up to it.
+    const upTo = stretches.find((s) => s.first + s.count - 1 === at);
+    if (upTo) expect(holds(upTo.record.update, 'goddess')).toBe(true);
+  });
+});
+
 describe('bringing back', () => {
   it('an element as it was, and the whole map', async () => {
     const { a, b, ann, map, root, flush } = await two();
