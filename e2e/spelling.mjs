@@ -170,6 +170,12 @@ try {
   await app.waitGone('.menu');
   const selected = await app.exec(`return window.getSelection().toString()`);
   check('F7 opens the menu of the next misspelt word, which it selects', selected === 'teh', selected);
+  await app.keys([F7]);
+  await until('the menu of the one after it', async () => (await menuItems())[0] === 'Achilles');
+  await app.press('Escape');
+  await app.waitGone('.menu');
+  const after = await app.exec(`return window.getSelection().toString()`);
+  check('and F7 again goes on to the next', after === 'Achilees', after);
 
   // ---- drawn without an editor ----
   // Opened anew, the text is drawn, and not written, until it is clicked.

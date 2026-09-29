@@ -771,6 +771,51 @@ and a table are called, and the words of the reference style, such as
 "and", "p." and "edited by". A format that has words of its own keeps them;
 those it has as they are in English are printed in the language of the map.
 
+## Spelling
+
+Glaukopis checks the spelling of what you write as you write it, in the
+language of the map: the text, the names of the elements, and the notes. A
+word that the dictionary does not know has a wavy line under it, in the text
+you are writing and in the text that is only shown. The word you are in the
+middle of writing is left alone until you leave it.
+
+Right-click an underlined word, or press **F7**, which goes to the next one
+after the cursor (**Shift+F7**, to the one before), and its menu has:
+
+- **What it may be**, the likeliest first. What you choose takes the word's
+  place. In Norwegian, whose words are long, it can take half a second to
+  find.
+- **Add to my words**: the word is right from then on, in all your projects,
+  in the language of the map. A word added in English holds in American and
+  British English alike.
+- **Ignore in this project**: the word is left alone in this project, and
+  for those you share it with. One written in small letters is left alone
+  with a capital as well.
+
+What is not checked: citations, formulas and the other things in the text
+that are not words; citations that were found in a text you brought in, and
+are not yet citations; words with digits, such as *1990s*; addresses of web
+pages and of mail; and words written in another script than the
+dictionary's, such as Greek in an English text.
+
+Dictionaries of English (American and British) and of Norwegian (Bokmål and
+Nynorsk) come with Glaukopis. A map in English without a country is checked
+with the American and the British dictionary both, and a word is right if
+either has it. For other languages the dictionaries of the computer are used,
+where it has them: on Linux the packages named `hunspell-…` put them in
+`/usr/share/hunspell`. A dictionary of your own, in the form of Hunspell (a
+`.aff` and a `.dic` file), can be put in the folder `dictionaries` of the data
+directory, which is shown under *Settings*; it comes before the others of its
+language. Where there is no dictionary for the language of a map, nothing in
+it is underlined, and **F7** says so.
+
+*Settings* › *Spelling* turns the checking off and on, lists the dictionaries
+there are and where they came from, and shows the words you have added,
+where they can be taken away.
+
+The Norwegian dictionaries are large, and are read the first time a text in
+Norwegian is checked: the first underlines of a session come after a moment.
+
 ## Keeping things safe
 
 - **Earlier versions.** A version of each project is kept every now and then
@@ -803,6 +848,7 @@ those it has as they are in English are printed in the language of the map.
 | **Ctrl+Alt+M**, **Ctrl+Alt+E** | In the text: a formula in the line, an equation |
 | **Ctrl+Alt+R** | In the text: words that point to a figure, a table, an equation, a part |
 | **Ctrl+Alt+U**, **Ctrl+Alt+Shift+U** | In the text: fold the element away, or open it; open all that is folded under it |
+| **F7**, **Shift+F7** | In the text: the menu of the next misspelt word, or of the one before |
 | **Ctrl+F**, **Ctrl+N** | In the library: search, new reference |
 
 ## What Glaukopis needs

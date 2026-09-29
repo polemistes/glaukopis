@@ -215,19 +215,21 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
 
   /**
    * The misspelt word at the cursor, or the next after it (with `back`, the
-   * one before it), going round to the other end of the text.
+   * one before it), going round to the other end of the text. A word that
+   * is selected, as F7 leaves the one it found, is gone past, so that F7
+   * goes from one to the next.
    */
   function nextMisspelt(state: EditorState, back: boolean): Misspelt | null {
-    const here = misspeltAt(state, state.selection.head);
+    const { empty, from, to } = state.selection;
+    const here = empty ? misspeltAt(state, from) : null;
     if (here) return here;
     const all = (spellingKey.getState(state)?.decorations.find() ?? []).sort(
       (a, b) => a.from - b.from,
     );
     if (!all.length) return null;
-    const head = state.selection.head;
     const next = back
-      ? ([...all].reverse().find((d) => d.to < head) ?? all[all.length - 1])
-      : (all.find((d) => d.from > head) ?? all[0]);
+      ? ([...all].reverse().find((d) => d.to <= from && d.from < from) ?? all[all.length - 1])
+      : (all.find((d) => d.from >= to && d.to > to) ?? all[0]);
     const spec = next.spec as { word: string; asked: string };
     return { from: next.from, to: next.to, word: spec.word, asked: spec.asked };
   }
