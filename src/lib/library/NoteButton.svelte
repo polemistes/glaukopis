@@ -4,6 +4,7 @@
    * written; where nothing is, it appears when the pointer is near, to write.
    */
   import NotebookPen from '@lucide/svelte/icons/notebook-pen';
+  import { t } from '$lib/i18n';
   import { tooltip } from '$lib/ui/tooltip';
   import { hasNotes, openNotes } from './notes.svelte';
 
@@ -24,8 +25,8 @@
   class="note-button"
   class:has
   class:always
-  aria-label={has ? 'Read your notes' : 'Write a note'}
-  use:tooltip={has ? 'Your notes on this work' : 'Write a note on this work'}
+  aria-label={has ? t('library-notes-read') : t('library-notes-write')}
+  use:tooltip={has ? t('library-notes-on-work') : t('library-notes-write-on-work')}
   onpointerdown={(e) => e.stopPropagation()}
   onmousedown={(e) => e.preventDefault()}
   ondblclick={(e) => e.stopPropagation()}

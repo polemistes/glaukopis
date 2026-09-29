@@ -21,6 +21,7 @@ import {
 } from '$lib/api/found';
 import type { Draft } from '$lib/api/library';
 import type { CiteMode } from '$lib/editor/schema';
+import { t } from '$lib/i18n';
 import type { Project } from '$lib/project/model/project.svelte';
 import {
   around,
@@ -96,11 +97,13 @@ export interface Kept {
   inNotes: '' | 'citation' | 'within';
 }
 
-const TROUBLE: Record<Trouble, string> = {
-  gone: 'It is no longer in the text.',
-  changed: 'The text has changed here since it was proposed, and was looked at again.',
-  cannot: 'A citation cannot be made of it here.',
-};
+/** Why something could not be done, in words. */
+const troubleWords = (why: Trouble): string =>
+  ({
+    gone: t('found-trouble-gone'),
+    changed: t('found-trouble-changed'),
+    cannot: t('found-trouble-cannot'),
+  })[why];
 
 let serial = 0;
 const workKey = () => `w${++serial}`;
@@ -230,7 +233,7 @@ export class Going {
   /** Whether the note it stands in can become a citation, and why not. */
   can(entry: Entry): IntoCitation {
     const place = this.place(entry);
-    if (!place) return { possible: false, why: TROUBLE.gone };
+    if (!place) return { possible: false, why: troubleWords('gone') };
     const others = this.entries
       .filter((e) => e !== entry && e.marked && e.target.passage === entry.target.passage)
       .map((e) => ({ passage: e.target.passage, start: e.target.start, end: e.target.end }));
@@ -369,7 +372,7 @@ export class Going {
     } catch (error) {
       if (round !== this.#round) return;
       console.error(error);
-      this.failure = 'The library could not be asked.';
+      this.failure = t('found-library-failed');
       this.asked = true;
     } finally {
       if (round === this.#round) this.asking = false;
@@ -593,11 +596,11 @@ export class Going {
   }
 
   #failed(entry: Entry, why: Trouble) {
-    entry.trouble = TROUBLE[why];
+    entry.trouble = troubleWords(why);
     const key = entry.key;
     this.look();
     const still = this.entries.find((e) => e.key === key);
-    if (still) still.trouble = TROUBLE[why];
+    if (still) still.trouble = troubleWords(why);
     if (this.proposing) this.#later(0);
   }
 
@@ -661,7 +664,7 @@ export class Going {
       if (outcome.done) {
         done.add(list[i]);
         for (const item of makings[i].items) this.#keep(item.id);
-      } else list[i].trouble = TROUBLE[outcome.why];
+      } else list[i].trouble = troubleWords(outcome.why);
     });
     // The one that was looked at, or the first after it that is left.
     const from = current ? this.entries.indexOf(current) : 0;

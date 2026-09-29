@@ -3,10 +3,10 @@
   import Search from '@lucide/svelte/icons/search';
   import type { Draft } from '$lib/api/library';
   import { lookupFind, type Found, type Hit, type Scope } from '$lib/api/sources';
+  import { t } from '$lib/i18n';
   import Segmented from '$lib/ui/Segmented.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
-  import { plural } from './format';
   import TypeIcon from './TypeIcon.svelte';
 
   let { onpick }: { onpick: (draft: Draft) => void } = $props();
@@ -21,14 +21,6 @@
   /** Whether the other hits are shown after one was taken. */
   let showing = $state(true);
   let round = 0;
-
-  const KINDS = {
-    doi: 'DOI',
-    isbn: 'ISBN',
-    arxiv: 'arXiv number',
-    pmid: 'PubMed number',
-    text: '',
-  };
 
   async function find() {
     const asked = words.trim();
@@ -47,7 +39,7 @@
     } catch (error) {
       if (mine !== round) return;
       found = null;
-      problem = describeError(error) ?? 'Nothing could be looked up.';
+      problem = describeError(error) ?? t('library-lookup-failed');
     } finally {
       if (mine === round) searching = false;
     }
@@ -82,8 +74,8 @@
     <input
       type="text"
       bind:value={words}
-      placeholder="Look it up: a DOI, an ISBN, or words of the title and the author"
-      aria-label="Look up a reference"
+      placeholder={t('library-lookup-placeholder')}
+      aria-label={t('library-lookup-label')}
       spellcheck="false"
       data-autofocus
       {onpaste}
@@ -104,11 +96,11 @@
       <p class="from">
         <Check size={13} />
         <span>
-          Filled in from {taken.source}.
+          {t('library-lookup-filled', { source: taken.source })}
           {#each taken.remarks as remark}{' '}{remark}{/each}
           {#if found.hits.length > 1}
             <button type="button" class="link" onclick={() => (showing = true)}>
-              {plural(found.hits.length - 1, 'other record')}
+              {t('library-lookup-others', { count: found.hits.length - 1 })}
             </button>
           {/if}
         </span>
@@ -118,12 +110,12 @@
         <div class="scope">
           <Segmented
             bind:value={scope}
-            label="What to look for"
+            label={t('library-lookup-scope')}
             size="sm"
             options={[
-              { value: 'any', label: 'Anything' },
-              { value: 'books', label: 'Books' },
-              { value: 'articles', label: 'Articles' },
+              { value: 'any', label: t('library-lookup-any') },
+              { value: 'books', label: t('library-lookup-books') },
+              { value: 'articles', label: t('library-lookup-articles') },
             ]}
             onchange={find}
           />
@@ -132,11 +124,9 @@
       {#if !found.hits.length}
         <p class="none">
           {#if found.query.kind === 'text'}
-            Nothing was found. Fewer words may find more: the family name of the author and a word
-            or two of the title.
+            {t('library-lookup-none')}
           {:else}
-            Nothing is known of this {KINDS[found.query.kind]} where it was asked for. The reference can
-            be entered by hand below.
+            {t('library-lookup-unknown', { kind: found.query.kind })}
           {/if}
         </p>
       {:else}
@@ -154,9 +144,9 @@
                   <span class="first">
                     <span class="authors">{hit.summary.authors || '—'}</span>
                     {#if hit.summary.year}<span class="year">{hit.summary.year}</span>{/if}
-                    {#if hit.known}<span class="known">In your library</span>{/if}
+                    {#if hit.known}<span class="known">{t('library-in-library')}</span>{/if}
                   </span>
-                  <span class="title serif">{hit.summary.title || 'Untitled'}</span>
+                  <span class="title serif">{hit.summary.title || t('library-untitled')}</span>
                   {#if hit.summary.container}<span class="container">{hit.summary.container}</span
                     >{/if}
                   <span class="source">

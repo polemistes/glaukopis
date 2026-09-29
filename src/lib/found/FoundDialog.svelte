@@ -15,7 +15,8 @@
   import StickyNote from '@lucide/svelte/icons/sticky-note';
   import type { FoundBy } from '$lib/api/found';
   import { editorUi } from '$lib/editor/ui.svelte';
-  import { plural, truncate } from '$lib/library/format';
+  import { t } from '$lib/i18n';
+  import { truncate } from '$lib/library/format';
   import { editReference, newReference } from '$lib/library/references.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
   import { library } from '$lib/state/library.svelte';
@@ -96,19 +97,19 @@
     if (detail) detail.scrollTop = 0;
   });
 
-  const BY: Record<FoundBy, string> = {
-    zotero: 'Made by Zotero',
-    mendeley: 'Made by Mendeley, or a program that writes as it does',
-    key: 'A tag that names a reference',
-    form: 'Taken for a citation by how it looks',
-  };
+  const BY: Record<FoundBy, string> = $derived({
+    zotero: t('found-by-zotero'),
+    mendeley: t('found-by-mendeley'),
+    key: t('found-by-key'),
+    form: t('found-by-form'),
+  });
 
-  const SURE = {
-    certain: { icon: CircleCheck, words: 'The library has it for certain' },
-    likely: { icon: CircleDot, words: 'The library has what is likely it' },
-    possible: { icon: CircleDashed, words: 'The library has what may be it' },
-    none: { icon: CircleQuestionMark, words: 'A work of it has no reference yet' },
-  } as const;
+  const SURE = $derived({
+    certain: { icon: CircleCheck, words: t('found-sure-certain') },
+    likely: { icon: CircleDot, words: t('found-sure-likely') },
+    possible: { icon: CircleDashed, words: t('found-sure-possible') },
+    none: { icon: CircleQuestionMark, words: t('found-sure-none') },
+  });
 
   /** Text as it is shown: what is no text is a sign that says so. */
   const shown = (text: string) => text.replaceAll(NO_TEXT, '[…]').replace(/\s+/g, ' ');
@@ -134,6 +135,11 @@
       text: shown(place.text.slice(start, end)),
       after: shown(after),
     };
+  }
+
+  /** What the element an entry stands in is called. */
+  function elementTitle(entry: Entry): string {
+    return project.node(entry.element)?.title || t('found-untitled');
   }
 
   /** Of a note: the words it stands after, in the text. */
@@ -165,11 +171,7 @@
 
   function makeCertain() {
     const made = going.makeCertain();
-    if (made)
-      notify(
-        made === 1 ? 'One citation was made' : `${made.toLocaleString()} citations were made`,
-        'Ctrl+Z takes them back, as one step.',
-      );
+    if (made) notify(t('found-made', { count: made }), t('found-made-undo'));
     focusList();
   }
 
@@ -177,7 +179,7 @@
     editorUi.pick({
       anchor: anchor.getBoundingClientRect(),
       exclude: entry.works.flatMap((w) => (w !== work && w.reference ? [w.reference] : [])),
-      purpose: 'The work that is cited: author, title, year',
+      purpose: t('found-pick-work'),
       query: work.words,
       onpick: (id) => {
         editorUi.closePicker(false);
@@ -190,7 +192,7 @@
     editorUi.pick({
       anchor: anchor.getBoundingClientRect(),
       exclude: entry.works.flatMap((w) => (w.reference ? [w.reference] : [])),
-      purpose: 'Add a work to the citation',
+      purpose: t('found-pick-add'),
       onpick: (id) => {
         editorUi.closePicker(false);
         going.add(entry, id);
@@ -205,7 +207,7 @@
     try {
       const draft = await going.draft(work);
       if (!draft) {
-        notify('The file says too little of this work to make a reference of it');
+        notify(t('found-too-little'));
         return;
       }
       const made = await newReference({ draft });
@@ -214,7 +216,7 @@
         onkeep(made.id);
       }
     } catch (error) {
-      notifyError('The reference could not be made', error);
+      notifyError(t('found-reference-failed'), error);
     } finally {
       waiting = false;
     }
@@ -256,10 +258,10 @@
 
 <Dialog
   open
-  title="Citations that were found"
-  subtitle={`${project.map(map)?.name ?? ''}${
-    going.entries.length ? ` · ${plural(going.entries.length, 'citation')} to go through` : ''
-  }`}
+  title={t('found-title')}
+  subtitle={going.entries.length
+    ? t('found-subtitle', { map: project.map(map)?.name ?? '', count: going.entries.length })
+    : (project.map(map)?.name ?? '')}
   width={1080}
   tall
   padded={false}
@@ -268,15 +270,15 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="found-window" {onkeydown}>
     <div class="taken">
-      <span class="overline">What is taken for citations</span>
-      <span class="always">What a program made, and tags</span>
+      <span class="overline">{t('found-taken')}</span>
+      <span class="always">{t('found-taken-always')}</span>
       <label class="check">
         <input
           type="checkbox"
           checked={going.kept.years}
           onchange={(e) => void going.take({ years: e.currentTarget.checked })}
         />
-        Parentheses with a year in them
+        {t('found-taken-years')}
       </label>
       <label class="check">
         <input
@@ -285,7 +287,7 @@
           disabled={going.kept.notes}
           onchange={(e) => void going.take({ named: e.currentTarget.checked })}
         />
-        Notes that name a work of the library
+        {t('found-taken-named')}
       </label>
       <label class="check">
         <input
@@ -293,17 +295,15 @@
           checked={going.kept.notes}
           onchange={(e) => void going.take({ notes: e.currentTarget.checked })}
         />
-        Every note
+        {t('found-taken-notes')}
       </label>
       <span class="state" aria-live="polite">
-        {#if going.asking}<Spinner size={13} /> Asking the library…{/if}
+        {#if going.asking}<Spinner size={13} /> {t('found-asking')}{/if}
       </span>
       {#if certain}
         <Button size="sm" onclick={makeCertain}>
           {#snippet icon()}<CheckCheck size={14} />{/snippet}
-          {certain === 1
-            ? 'Make a citation of the one that is certain'
-            : `Make citations of the ${certain.toLocaleString()} that are certain`}
+          {t('found-make-certain', { count: certain })}
         </Button>
       {/if}
     </div>
@@ -320,12 +320,12 @@
           <EmptyState
             compact
             icon={CircleCheck}
-            title="Nothing to go through"
+            title={t('found-nothing')}
             text={going.proposing
               ? going.kept.years && going.kept.notes
-                ? 'No citation that was found is left in this map, and nothing in it looks like one.'
-                : 'No citation that was found is left in this map, and nothing in it looks like one. More can be taken for citations, above.'
-              : 'No citation that was found is left in this map. Text that only looks like a citation is looked for when you say above what is to be taken for one: parentheses with a year in them, or notes.'}
+                ? t('found-nothing-looked')
+                : t('found-nothing-looked-more')
+              : t('found-nothing-not-looked')}
           />
         {/if}
       </div>
@@ -335,7 +335,7 @@
         <div
           class="list"
           role="listbox"
-          aria-label="What there is to go through"
+          aria-label={t('found-list-label')}
           tabindex="0"
           data-autofocus
           bind:this={list}
@@ -360,9 +360,9 @@
               <span class="words">
                 <span class="text serif truncate">{truncate(shown(entry.target.text), 60)}</span>
                 <span class="where truncate">
-                  {#if entry.note}<StickyNote size={11} /> In a note ·
+                  {#if entry.note}<StickyNote size={11} /> {t('found-in-a-note')} ·
                   {/if}
-                  {project.node(entry.element)?.title || 'Untitled'}
+                  {elementTitle(entry)}
                 </span>
               </span>
             </div>
@@ -375,11 +375,14 @@
           {@const how = going.how(current)}
           <div class="detail" bind:this={detail} data-entry={current.key}>
             <div class="overline">
-              {current.note ? 'In a note of' : 'In'}
-              “{project.node(current.element)?.title || 'Untitled'}”
+              {current.note
+                ? t('found-in-note-of', { element: elementTitle(current) })
+                : t('found-in', { element: elementTitle(current) })}
             </div>
             {#if current.note && standsAt(current)}
-              <p class="outer serif selectable">{standsAt(current)}<sup>note</sup></p>
+              <p class="outer serif selectable">
+                {standsAt(current)}<sup>{t('found-note-mark')}</sup>
+              </p>
             {/if}
             <p class="passage serif selectable" class:note={current.note}>
               {around.before}<mark>{around.text}</mark>{around.after}
@@ -393,7 +396,7 @@
             {/if}
 
             <div class="proposed">
-              <div class="overline">The citation</div>
+              <div class="overline">{t('found-the-citation')}</div>
               <div class="works">
                 {#each current.works as work, i (work.key)}
                   <FoundWork
@@ -408,12 +411,13 @@
                     onadd={() => addToLibrary(work)}
                   />
                 {:else}
-                  <p class="no-works">It names no work. Add one, or leave it as the text it is.</p>
+                  <p class="no-works">{t('found-no-works')}</p>
                 {/each}
               </div>
               <div class="foot">
                 <button type="button" onclick={(e) => addWork(current, e.currentTarget)}>
-                  <Plus size={14} /> Add a work
+                  <Plus size={14} />
+                  {t('found-add-work')}
                 </button>
                 <label class="check inline">
                   <input
@@ -421,14 +425,14 @@
                     checked={current.mode === 'intext'}
                     onchange={(e) => (current.mode = e.currentTarget.checked ? 'intext' : 'normal')}
                   />
-                  Author in the text: Nagy (1979)
+                  {t('found-author-in-text')}
                 </label>
               </div>
             </div>
 
             {#if current.note && can}
               <fieldset class="in-note">
-                <legend class="overline">It stands in a note</legend>
+                <legend class="overline">{t('found-in-note')}</legend>
                 <label class="choice" class:off={!can.possible}>
                   <input
                     type="radio"
@@ -438,18 +442,18 @@
                     onchange={() => going.choice(current, 'note', going.kept.inNotes !== '')}
                   />
                   <span>
-                    <strong>The note becomes a citation</strong>
+                    <strong>{t('found-note-becomes')}</strong>
                     <span class="hint">
                       {#if !can.possible}
                         {can.why}
                       {:else if can.before || can.after}
-                        What else the note says goes before and after its works{can.before
-                          ? `: “${truncate(can.before, 60)}” before`
-                          : ''}{can.after
-                          ? `${can.before ? ',' : ':'} “${truncate(can.after, 60)}” after`
-                          : ''}. The style of the references sets it in the line or in a note.
+                        {t('found-note-around', {
+                          has: can.before && can.after ? 'both' : can.before ? 'before' : 'after',
+                          before: truncate(can.before, 60),
+                          after: truncate(can.after, 60),
+                        })}
                       {:else}
-                        The style of the references sets it in the line or in a note.
+                        {t('found-note-style')}
                       {/if}
                     </span>
                   </span>
@@ -462,8 +466,8 @@
                     onchange={() => going.choice(current, 'here', going.kept.inNotes !== '')}
                   />
                   <span>
-                    <strong>The citation stands in the note</strong>
-                    <span class="hint">The note stays a note, with what else it says.</span>
+                    <strong>{t('found-citation-in-note')}</strong>
+                    <span class="hint">{t('found-citation-in-note.hint')}</span>
                   </span>
                 </label>
                 <label class="check all">
@@ -472,7 +476,7 @@
                     checked={going.kept.inNotes !== ''}
                     onchange={(e) => going.choice(current, how, e.currentTarget.checked)}
                   />
-                  So for all that follow
+                  {t('found-for-all')}
                 </label>
               </fieldset>
             {/if}
@@ -485,20 +489,20 @@
   {#snippet footer()}
     <span class="count">
       {#if current}
-        {going.index + 1} of {going.entries.length.toLocaleString()}
+        {t('found-position', { index: going.index + 1, count: going.entries.length })}
         <span class="keys"><kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd> <kbd>Ctrl+Z</kbd></span>
       {/if}
     </span>
     {#if current}
       <Button variant="ghost" disabled={waiting || going.entries.length < 2} onclick={later}>
-        Later
+        {t('found-later')}
       </Button>
-      <Button disabled={waiting} onclick={leave}>Leave it as text</Button>
+      <Button disabled={waiting} onclick={leave}>{t('found-leave')}</Button>
       <Button variant="primary" disabled={waiting || !going.ready(current)} onclick={make}>
-        Make it a citation
+        {t('found-make')}
       </Button>
     {:else}
-      <Button variant="primary" onclick={onclose}>Close</Button>
+      <Button variant="primary" onclick={onclose}>{t('common-close')}</Button>
     {/if}
   {/snippet}
 </Dialog>

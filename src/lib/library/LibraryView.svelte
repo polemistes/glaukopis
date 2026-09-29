@@ -30,6 +30,7 @@
     librarySource,
     type Summary,
   } from '$lib/api/library';
+  import { t } from '$lib/i18n';
   import { dropTarget } from '$lib/ui/drag.svelte';
   import { library, search, sortEntries, type SortKey } from '$lib/state/library.svelte';
   import { router } from '$lib/state/router.svelte';
@@ -41,7 +42,6 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import CollectionTree from './CollectionTree.svelte';
-  import { plural } from './format';
   import ReferenceList from './ReferenceList.svelte';
   import ReferencePane from './ReferencePane.svelte';
   import {
@@ -119,17 +119,10 @@
     const files = entries.reduce((n, e) => n + e.attachments, 0);
     const ok = await confirm({
       title: one
-        ? `Delete “${one.title || one.key}”?`
-        : `Delete ${plural(entries.length, 'reference')}?`,
-      message:
-        'This removes ' +
-        (one ? 'the reference' : 'them') +
-        ' from your library, from every collection' +
-        (files ? `, together with ${plural(files, 'attached file')}` : '') +
-        '. Citations of ' +
-        (one ? 'it' : 'them') +
-        ' in your projects will no longer resolve.',
-      confirm: 'Delete',
+        ? t('library-delete-one-title', { name: one.title || one.key })
+        : t('library-delete-many-title', { count: entries.length }),
+      message: one ? t('library-delete-one', { files }) : t('library-delete-many', { files }),
+      confirm: t('common-delete'),
       danger: true,
     });
     if (!ok) return;
@@ -139,7 +132,7 @@
       library.forget(ids);
       selection = [];
     } catch (error) {
-      notifyError('The references could not be deleted', error);
+      notifyError(t('library-delete-failed'), error);
     }
   }
 
@@ -148,9 +141,13 @@
       const n = await collectionAdd(collection, ids);
       library.setCollections(await collectionList());
       const name = library.collection(collection)?.name ?? '';
-      notifyOk(n ? `${plural(n, 'reference')} added to “${name}”` : `Already in “${name}”`);
+      notifyOk(
+        n
+          ? t('library-collection-added', { count: n, name })
+          : t('library-collection-already', { name }),
+      );
     } catch (error) {
-      notifyError('That could not be done', error);
+      notifyError(t('library-not-done'), error);
     }
   }
 
@@ -160,22 +157,22 @@
       library.setCollections(await collectionList());
       selection = [];
     } catch (error) {
-      notifyError('That could not be done', error);
+      notifyError(t('library-not-done'), error);
     }
   }
 
   async function exportEntries(ids: string[] | null, name: string) {
     const path = await save({
-      title: 'Export references',
+      title: t('library-export-title'),
       defaultPath: `${name}.bib`,
       filters: [{ name: 'BibLaTeX', extensions: ['bib'] }],
     });
     if (!path) return;
     try {
       const n = await libraryExport(path, ids);
-      notifyOk(`${plural(n, 'reference')} exported`);
+      notifyOk(t('library-exported', { count: n }));
     } catch (error) {
-      notifyError('The export failed', error);
+      notifyError(t('library-export-failed'), error);
     }
   }
 
@@ -203,7 +200,7 @@
       ...(one && one.attachments
         ? [
             {
-              label: 'Open the file',
+              label: t('library-open-file'),
               icon: Paperclip,
               action: async () => {
                 try {
@@ -211,7 +208,7 @@
                   const file = full.files.find((f) => f.exists);
                   if (file) await attachmentOpen(file.path);
                 } catch (error) {
-                  notifyError('The file could not be opened', error);
+                  notifyError(t('library-file-open-failed'), error);
                 }
               },
             } as MenuItem,
@@ -220,7 +217,7 @@
         : []),
       {
         kind: 'submenu',
-        label: 'Add to collection',
+        label: t('library-add-to-collection'),
         icon: FolderPlus,
         disabled: !collections.length,
         items: collections,
@@ -228,7 +225,7 @@
       ...(collection
         ? [
             {
-              label: `Remove from “${collection.name}”`,
+              label: t('library-remove-from', { name: collection.name }),
               icon: FolderMinus,
               action: () => removeFrom(collection.id, ids),
             } as MenuItem,
@@ -238,31 +235,31 @@
       ...(one
         ? [
             {
-              label: 'Copy citation key',
+              label: t('library-copy-key'),
               icon: Copy,
               action: () => {
                 navigator.clipboard.writeText(one.key);
-                notifyOk(`Copied “${one.key}”`);
+                notifyOk(t('library-copied-key', { key: one.key }));
               },
             } as MenuItem,
           ]
         : []),
       {
-        label: 'Copy as BibLaTeX',
+        label: t('library-copy-biblatex'),
         action: async () => {
           const sources = await Promise.all(ids.map((id) => librarySource(id)));
           navigator.clipboard.writeText(sources.join('\n'));
-          notifyOk('Copied');
+          notifyOk(t('library-copied'));
         },
       },
       {
-        label: one ? 'Export…' : `Export ${entries.length} references…`,
+        label: one ? t('library-export-one') : t('library-export-many', { count: entries.length }),
         icon: FileDown,
-        action: () => exportEntries(ids, one ? one.key : 'references'),
+        action: () => exportEntries(ids, one ? one.key : t('library-export-file-references')),
       },
       { kind: 'separator' },
       {
-        label: 'Delete',
+        label: t('common-delete'),
         icon: Trash2,
         danger: true,
         shortcut: 'Del',
@@ -276,42 +273,44 @@
       event.currentTarget as HTMLElement,
       [
         {
-          label: 'Import a file…',
-          hint: 'BibLaTeX or BibTeX',
+          label: t('library-import-file'),
+          hint: t('library-import-file.hint'),
           icon: FileUp,
           action: () => importFile(collectionId),
         },
         {
-          label: 'Paste references…',
+          label: t('library-paste'),
           icon: ClipboardPaste,
           action: () => importPasted(collectionId),
         },
         {
-          label: 'Add PDF files…',
-          hint: 'Each is looked up, and kept',
+          label: t('library-add-pdfs'),
+          hint: t('library-add-pdfs.hint'),
           icon: FileText,
           action: () => importPdfFiles(undefined, collectionId),
         },
         {
-          label: 'Import from Zotero…',
+          label: t('library-import-zotero'),
           icon: LibraryBig,
           action: () => importFromZotero(collectionId),
         },
         { kind: 'separator' },
         {
-          label: 'Find duplicates…',
+          label: t('library-find-duplicates'),
           icon: CopyCheck,
           disabled: library.entries.length < 2,
           action: () => (findingDuplicates = true),
         },
         {
-          label: collection ? `Export “${collection.name}”…` : 'Export the library…',
+          label: collection
+            ? t('library-export-collection', { name: collection.name })
+            : t('library-export-library'),
           icon: FileDown,
           disabled: !scoped.length,
           action: () =>
             exportEntries(
               collection ? scoped.map((e) => e.id) : null,
-              collection?.name ?? 'library',
+              collection?.name ?? t('library-export-file-library'),
             ),
         },
       ],
@@ -334,13 +333,17 @@
     openMenu(
       event.currentTarget as HTMLElement,
       [
-        option('authors', 'Author'),
-        option('year', 'Year'),
-        option('title', 'Title'),
-        option('added', 'Date added'),
-        option('modified', 'Date changed'),
+        option('authors', t('library-sort-author')),
+        option('year', t('library-sort-year')),
+        option('title', t('library-sort-title')),
+        option('added', t('library-sort-added')),
+        option('modified', t('library-sort-modified')),
         { kind: 'separator' },
-        { label: 'Descending', checked: descending, action: () => (descending = !descending) },
+        {
+          label: t('library-sort-descending'),
+          checked: descending,
+          action: () => (descending = !descending),
+        },
       ],
       { align: 'end' },
     );
@@ -368,11 +371,11 @@
     ondrop: (e) => void importDropped(e.payload.data as string[], collectionId),
   }}
 >
-  <nav class="side" aria-label="Collections">
+  <nav class="side" aria-label={t('library-collections')}>
     <CollectionTree selected={collectionId} onselect={selectCollection} />
   </nav>
 
-  <section class="middle" aria-label="References">
+  <section class="middle" aria-label={t('library-references')}>
     <header>
       <div class="search">
         <Search size={15} />
@@ -380,8 +383,10 @@
           bind:this={searchField}
           bind:value={query}
           type="search"
-          placeholder={collection ? `Search in ${collection.name}` : 'Search the library'}
-          aria-label="Search"
+          placeholder={collection
+            ? t('library-search-in', { name: collection.name })
+            : t('library-search')}
+          aria-label={t('common-search')}
           spellcheck="false"
           onkeydown={(e) => {
             if (e.key === 'Escape' && query) {
@@ -394,20 +399,26 @@
           <button
             type="button"
             class="clear"
-            aria-label="Clear the search"
+            aria-label={t('library-search-clear')}
             onclick={() => (query = '')}
           >
             <X size={13} />
           </button>
         {/if}
       </div>
-      <IconButton label="Sort" onclick={sortMenu}><ArrowDownUp size={15} /></IconButton>
+      <IconButton label={t('library-sort')} onclick={sortMenu}><ArrowDownUp size={15} /></IconButton
+      >
       <div class="split">
         <Button variant="primary" onclick={add}>
           {#snippet icon()}<Plus size={15} />{/snippet}
-          New reference
+          {t('library-new-reference')}
         </Button>
-        <button type="button" class="split-more" aria-label="Import and export" onclick={addMenu}>
+        <button
+          type="button"
+          class="split-more"
+          aria-label={t('library-import-export')}
+          onclick={addMenu}
+        >
           <ChevronDown size={14} />
         </button>
       </div>
@@ -417,29 +428,25 @@
       {#if !library.loaded}
         <div class="centre"><Spinner size={22} /></div>
       {:else if !library.entries.length}
-        <EmptyState
-          icon={LibraryBig}
-          title="Your library is empty"
-          text="References you add here are available in all your projects. Begin with one, or bring in those you already have."
-        >
-          <Button variant="primary" onclick={add}>New reference</Button>
-          <Button onclick={() => importFile(collectionId)}>Import a file…</Button>
+        <EmptyState icon={LibraryBig} title={t('library-empty')} text={t('library-empty.text')}>
+          <Button variant="primary" onclick={add}>{t('library-new-reference')}</Button>
+          <Button onclick={() => importFile(collectionId)}>{t('library-import-file')}</Button>
         </EmptyState>
       {:else if !scoped.length}
         <EmptyState
           icon={FolderPlus}
-          title="Nothing in this collection yet"
-          text="Drag references here from the library, or add a new one."
+          title={t('library-collection-empty')}
+          text={t('library-collection-empty.text')}
         >
-          <Button variant="primary" onclick={add}>New reference</Button>
+          <Button variant="primary" onclick={add}>{t('library-new-reference')}</Button>
         </EmptyState>
       {:else if !shown.length}
         <EmptyState
           icon={SearchX}
-          title="Nothing found"
-          text="No reference holds all of these words."
+          title={t('library-nothing-found')}
+          text={t('library-nothing-found.text')}
         >
-          <Button onclick={() => (query = '')}>Clear the search</Button>
+          <Button onclick={() => (query = '')}>{t('library-search-clear')}</Button>
         </EmptyState>
       {:else}
         <ReferenceList
@@ -448,7 +455,7 @@
           bind:selection
           oncontext={context}
           ondelete={remove}
-          label={collection?.name ?? 'All references'}
+          label={collection?.name ?? t('library-all-references')}
         />
       {/if}
     </div>
@@ -456,11 +463,11 @@
     {#if library.loaded && library.entries.length}
       <footer>
         {#if selection.length > 1}
-          {selection.length} of {plural(shown.length, 'reference')} selected
+          {t('library-selected-of', { selected: selection.length, count: shown.length })}
         {:else if query || collection}
-          {plural(shown.length, 'reference')}
+          {t('library-count', { count: shown.length })}
         {:else}
-          {plural(library.entries.length, 'reference')}
+          {t('library-count', { count: library.entries.length })}
         {/if}
       </footer>
     {/if}
@@ -481,20 +488,20 @@
       />
     {:else if selection.length > 1}
       <div class="several">
-        <EmptyState title="{selection.length} references selected" compact>
+        <EmptyState title={t('library-selected', { count: selection.length })} compact>
           <Button
             onclick={(e) =>
               openMenu(e.currentTarget as HTMLElement, collectionItems(selection), {
                 align: 'start',
               })}
           >
-            Add to collection
+            {t('library-add-to-collection')}
           </Button>
           <Button
             variant="danger"
             onclick={() => remove(library.entries.filter((e) => selection.includes(e.id)))}
           >
-            Delete
+            {t('common-delete')}
           </Button>
         </EmptyState>
       </div>

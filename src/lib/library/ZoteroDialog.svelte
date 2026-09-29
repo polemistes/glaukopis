@@ -11,12 +11,13 @@
     type ZoteroCollection,
     type ZoteroInfo,
   } from '$lib/api/sources';
+  import { t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import Select from '$lib/ui/Select.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
-  import { plural } from './format';
+  import { wordsAround } from './format';
   import { importPlan, type ZoteroRequest } from './references.svelte';
 
   let { request, onclose }: { request: ZoteroRequest; onclose: () => void } = $props();
@@ -67,12 +68,12 @@
   }
 
   async function elsewhere() {
-    const dir = await chooseFolder({ title: 'The data directory of Zotero', directory: true });
+    const dir = await chooseFolder({ title: t('library-zotero-choose'), directory: true });
     if (typeof dir !== 'string') return;
     try {
       await take(await zoteroInspect(dir));
     } catch (e) {
-      error = describeError(e) ?? 'There is no Zotero there.';
+      error = describeError(e) ?? t('library-zotero-none-there');
     }
   }
 
@@ -91,7 +92,7 @@
       onclose();
       resolve(await importPlan(plan, into));
     } catch (e) {
-      error = describeError(e) ?? 'Zotero could not be read.';
+      error = describeError(e) ?? t('library-zotero-unread');
     } finally {
       reading = false;
     }
@@ -103,25 +104,22 @@
   }
 </script>
 
-<Dialog open title="Import from Zotero" width={520} dismissable={!reading} onclose={close}>
+<Dialog open title={t('library-zotero-title')} width={520} dismissable={!reading} onclose={close}>
   <div class="content">
     {#if found === null}
       <div class="waiting"><Spinner size={18} /></div>
     {:else if !info}
-      <p class="lead">
-        No Zotero was found on this computer in the places where it usually keeps its data. If it
-        keeps it elsewhere, show where: the folder that holds <code>zotero.sqlite</code>.
-      </p>
+      {@const [before, after] = wordsAround((file) => t('library-zotero-not-found', { file }))}
+      <p class="lead">{before}<code>zotero.sqlite</code>{after}</p>
     {:else}
-      <p class="lead">
-        What is imported is copied into your library, with its files. Zotero is only read, and
-        nothing of it is changed; it may be running meanwhile.
-      </p>
+      <p class="lead">{t('library-zotero-lead')}</p>
       <div class="where">
         <div class="path selectable">{info.path}</div>
         <div class="facts">
-          {plural(info.items, 'reference')} · {plural(info.attachments, 'file')} ·
-          {plural(info.collections, 'collection')}
+          {t('library-count', { count: info.items })} · {t('library-files', {
+            count: info.attachments,
+          })} ·
+          {t('library-collection-count', { count: info.collections })}
         </div>
       </div>
       {#each info.warnings as warning}
@@ -131,10 +129,13 @@
       {#if info.libraries.length > 1}
         <Select
           bind:value={library}
-          label="Library"
+          label={t('library-zotero-library')}
           options={info.libraries.map((l) => ({
             value: String(l.id),
-            label: `${l.kind === 'user' ? 'My library' : l.name} (${l.items})`,
+            label: t('library-zotero-library-option', {
+              name: l.kind === 'user' ? t('library-zotero-my-library') : l.name,
+              count: l.items,
+            }),
           }))}
           onchange={() => {
             collection = '';
@@ -145,9 +146,9 @@
       {#if collections.length}
         <Select
           bind:value={collection}
-          label="What to import"
+          label={t('library-zotero-what')}
           options={[
-            { value: '', label: 'Everything' },
+            { value: '', label: t('library-zotero-everything') },
             ...collections.map((c) => ({
               value: c.key,
               label: `${' '.repeat(Math.max(0, c.path.length - 1))}${c.name}`,
@@ -157,9 +158,12 @@
       {/if}
       <div class="options">
         <label
-          ><input type="checkbox" bind:checked={attachments} /> With the files that are attached</label
+          ><input type="checkbox" bind:checked={attachments} />
+          {t('library-zotero-with-files')}</label
         >
-        <label><input type="checkbox" bind:checked={notes} /> With the notes, as annotations</label>
+        <label
+          ><input type="checkbox" bind:checked={notes} /> {t('library-zotero-with-notes')}</label
+        >
       </div>
     {/if}
     {#if error}<p class="error selectable" role="alert">{error}</p>{/if}
@@ -169,15 +173,15 @@
     <div class="left">
       <Button variant="ghost" size="sm" disabled={reading} onclick={elsewhere}>
         {#snippet icon()}<FolderOpen size={14} />{/snippet}
-        {info ? 'Another place…' : 'Show where…'}
+        {info ? t('library-zotero-elsewhere') : t('library-zotero-show-where')}
       </Button>
     </div>
-    <Button variant="ghost" disabled={reading} onclick={close}>Cancel</Button>
+    <Button variant="ghost" disabled={reading} onclick={close}>{t('common-cancel')}</Button>
     <Button variant="primary" disabled={!info || reading || !count} onclick={read}>
       {#if reading}
-        Reading…
+        {t('library-zotero-reading')}
       {:else}
-        Read {count ? plural(count, 'reference') : ''}
+        {t('library-zotero-read', { count })}
       {/if}
     </Button>
   {/snippet}

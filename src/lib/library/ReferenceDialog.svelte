@@ -13,6 +13,7 @@
     type Match,
   } from '$lib/api/library';
   import { isBackendError } from '$lib/api/backend';
+  import { t } from '$lib/i18n';
   import { library } from '$lib/state/library.svelte';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
@@ -95,7 +96,7 @@
       }
       finish(existing);
     } catch (e) {
-      error = describeError(e) ?? 'The reference could not be opened.';
+      error = describeError(e) ?? t('library-dialog-open-failed');
     }
   }
 
@@ -121,7 +122,7 @@
       }
       finish(saved);
     } catch (e) {
-      const message = describeError(e) ?? 'The reference could not be saved.';
+      const message = describeError(e) ?? t('library-dialog-save-failed');
       if (isBackendError(e) && /citation key/i.test(e.message)) keyError = message;
       else error = message;
     } finally {
@@ -148,7 +149,7 @@
       onchange();
       return true;
     } catch (e) {
-      sourceError = describeError(e) ?? 'The source could not be read.';
+      sourceError = describeError(e) ?? t('library-source-unread');
       return false;
     }
   }
@@ -167,7 +168,7 @@
 
 <Dialog
   open
-  title={isNew ? 'New reference' : 'Edit reference'}
+  title={isNew ? t('library-new-reference') : t('library-dialog-edit')}
   width={620}
   dismissable={!changed}
   onclose={close}
@@ -192,7 +193,7 @@
         class="source"
         bind:value={source}
         spellcheck="false"
-        aria-label="BibLaTeX source"
+        aria-label={t('library-source-label')}
         oninput={() => {
           changed = true;
           sourceError = null;
@@ -211,15 +212,15 @@
         onclick={() => (source === null ? showSource() : leaveSource())}
       >
         {#snippet icon()}<Code size={14} />{/snippet}
-        {source === null ? 'Source' : 'Back to the form'}
+        {source === null ? t('library-source') : t('library-dialog-back')}
       </Button>
       {#if !isNew && request.reference}
         <NoteButton id={request.reference.id} size={14} always />
       {/if}
     </div>
-    <Button variant="ghost" onclick={close}>Cancel</Button>
+    <Button variant="ghost" onclick={close}>{t('common-cancel')}</Button>
     <Button variant="primary" disabled={saving || (!hasContent && source === null)} onclick={save}>
-      {isNew ? 'Add reference' : 'Save'}
+      {isNew ? t('library-dialog-add') : t('common-save')}
     </Button>
   {/snippet}
 </Dialog>
