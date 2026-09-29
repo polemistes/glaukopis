@@ -15,6 +15,8 @@ import type { Project } from '$lib/project/model/project.svelte';
 import { acceptStretch, blockAt, itemsOfPieces, nodeAt } from './accepting';
 import { changed, group, type Change, type Stretch, type Unit } from './grouping';
 import { accept, readReview, referenceOf, settle, type Settled } from './kept';
+import { colourOf } from '$lib/sharing/connection.svelte';
+import { markChanges, NOBODY, type Marked } from './marks';
 import type { Choice, Source } from './source';
 
 /** How long after the project has changed the changes are worked out again. */
@@ -26,6 +28,11 @@ export function stateOf(c: Change): string {
     return JSON.stringify([c.change.kind, c.change.after ?? null, c.change.before ?? null]);
   if (c.object) return JSON.stringify([c.object.status, c.object.after ?? null]);
   return '';
+}
+
+/** The colour of a person: the one they have wherever they are shown. */
+export function colour(by: string | null): string {
+  return by ? colourOf(by) : NOBODY;
 }
 
 /** Whether a change is settled on this side: to an element, or to an object as a whole. */
@@ -58,6 +65,14 @@ export class Review {
   people = $state.raw<ReadonlyMap<string, Person>>(new Map());
   /** The versions of the change looked at, once asked for. */
   versions = $state.raw<{ key: string; list: Version[] | null } | null>(null);
+
+  /** The marks the text shows of the changes, by element. */
+  #lastMarked: Marked | null = null;
+  readonly marked: Marked = $derived.by(() => {
+    const made = markChanges(this.changes, this.looked, colour, this.#lastMarked);
+    this.#lastMarked = made;
+    return made;
+  });
 
   #timer: ReturnType<typeof setTimeout> | undefined;
   #round = 0;
