@@ -49,7 +49,7 @@ editor-formula = Formel
 editor-formula-hint = Matematikk i linjen
 editor-pointer = Kryssreferanse …
 editor-pointer-hint = Til en figur, en tabell, en ligning eller en del: «se figur 2»
-editor-dropped = Et bilde eller en tabell kan også slippes på teksten, eller limes inn
+editor-dropped = Bilder og tabeller kan også slippes eller limes inn i teksten
 # Det et bilde som ble limt inn uten eget navn, heter i bildelageret.
 editor-pasted-picture = bilde
 
@@ -81,10 +81,10 @@ editor-picker-import = Importer …
 ## En kildehenvisning, og hvert verk i den.
 
 editor-citation = Kildehenvisning
-editor-citation-add = Legg til et verk
+editor-citation-add = Legg til verk
 editor-citation-add-purpose = Legg til et verk i kildehenvisningen
-editor-citation-in-text = Forfatteren i teksten: Nagy (1979)
-editor-citation-remove = Fjern kildehenvisningen
+editor-citation-in-text = Forfatter i teksten: Nagy (1979)
+editor-citation-remove = Fjern henvisningen
 editor-citation-not-in-library = Denne referansen er ikke i biblioteket ditt.
 editor-citation-edit-reference = Rediger referansen
 editor-citation-before = Tekst foran
