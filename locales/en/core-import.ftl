@@ -89,8 +89,6 @@ core-import-table-more-than = more than { $count }
 ## Documents brought in, to become maps.
 
 core-import-document-stopped = The reading was stopped.
-# Where Pandoc failed and said nothing: the status is "exit status: 1".
-core-import-document-ended = it ended with { $status }
 core-import-document-kind = “{ $file }” is not of a kind that can be brought in as a document. Those that can are Word (DOCX), OpenDocument (ODT), Markdown, HTML, LaTeX, RTF, EPUB, Org, reStructuredText, Typst and plain text.
 core-import-document-too-large = “{ $file }” is larger than 50 MB, which is more than can be brought in as a document.
 # The kind is the kind of file: Word (DOCX), plain text.

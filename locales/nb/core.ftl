@@ -11,6 +11,8 @@ error-network = nettverket: { $message }
 
 program-missing = { $program } er ikke installert, eller ble ikke funnet
 program-failed = { $program } mislyktes: { $message }
+program-ended = det sluttet med { $status }
+program-stopped = { $program } ble stoppet.
 
 ## Det som ble gjort da systemet sa nei, vist foran det systemet sa.
 

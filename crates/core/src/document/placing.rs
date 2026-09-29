@@ -295,9 +295,10 @@ impl Converter<'_> {
             let source = if x.files.is_empty() { stored } else { format!("{}/{stored}", x.files) };
             shown.push(json!({"t": "Image", "c": [["", [], [["width", width]]], described, [source, ""]]}));
         } else {
-            let said = if name.trim().is_empty() { "the file" } else { name.trim() };
+            let unnamed = super::term(self.language, "document-the-file");
+            let said = if name.trim().is_empty() { unnamed.as_str() } else { name.trim() };
             x.absent.borrow_mut().push(said.to_owned());
-            tokens(&format!("[The picture is not here: {said}]"), &mut shown);
+            tokens(&super::term(self.language, "document-picture-not-here").replacen("{}", said, 1), &mut shown);
         };
         let picture = json!({"t": "Para", "c": shown});
         let body = match x.flavour {
@@ -808,11 +809,15 @@ impl Converter<'_> {
     fn belongs_here(&self, kind: Kind, label: Vec<Value>, which: &str) -> Vec<Value> {
         let c = self.captioned(kind);
         let mut line = Vec::new();
-        let (before, after) = c.placeholder.split_once("{}").unwrap_or(("[", " about here]"));
+        let here = super::term(self.language, "document-about-here");
+        let (before, after) = c.placeholder.split_once("{}").or_else(|| here.split_once("{}")).unwrap_or(("[", "]"));
         tokens(before, &mut line);
         if label.is_empty() {
-            let of_its_kind = if kind == Kind::Figure { "The figure" } else { "The table" };
-            tokens(if which.is_empty() { of_its_kind } else { which }, &mut line);
+            let of_its_kind = super::term(
+                self.language,
+                if kind == Kind::Figure { "document-the-figure" } else { "document-the-table" },
+            );
+            tokens(if which.is_empty() { &of_its_kind } else { which }, &mut line);
         } else {
             line.extend(label);
         }

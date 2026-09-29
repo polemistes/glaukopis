@@ -338,11 +338,7 @@ fn pandoc(tools: &Tools, args: &[String], dir: &Path, work: &Path, stop: &Atomic
         };
         return Err(Error::Program {
             program: "Pandoc".into(),
-            message: if message.is_empty() {
-                tr!("core-import-document-ended", status = status.to_string())
-            } else {
-                message
-            },
+            message: if message.is_empty() { tr!("program-ended", status = status.to_string()) } else { message },
         });
     }
     fs::read(&out).context(|| tr!("io-reading", path = &out))

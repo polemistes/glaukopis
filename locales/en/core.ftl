@@ -11,6 +11,9 @@ error-network = network: { $message }
 
 program-missing = { $program } is not installed or could not be found
 program-failed = { $program } failed: { $message }
+# What a program that failed without a word is said to have done: the status is "exit status: 1".
+program-ended = it ended with { $status }
+program-stopped = { $program } was stopped.
 
 ## What was being done when the system said no, shown before what it said:
 ## "reading /home/…/library.bib: Permission denied".

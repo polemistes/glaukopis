@@ -10,6 +10,7 @@ use serde_json::{Value, json};
 
 use super::tools::{self, Tools};
 use crate::error::Result;
+use crate::tr;
 
 /// The most formulas read in one run.
 const AT_ONCE: usize = 400;
@@ -38,12 +39,12 @@ pub struct Rendered {
 fn said(warning: &str) -> String {
     let unexpected = warning.lines().map(str::trim).find_map(|l| l.strip_prefix("unexpected "));
     match unexpected {
-        Some("eof") | Some("end of input") => "The formula ends before it is complete.".to_owned(),
+        Some("eof") | Some("end of input") => tr!("core-export-formula-incomplete"),
         Some(what) => match what.strip_prefix("control sequence ") {
-            Some(command) => format!("{command} is not known."),
-            None => format!("{} was not expected where it stands.", what.trim_matches('"')),
+            Some(command) => tr!("core-export-formula-unknown", command = command),
+            None => tr!("core-export-formula-unexpected", what = what.trim_matches('"')),
         },
-        None => "The formula could not be read.".to_owned(),
+        None => tr!("core-export-formula-unreadable"),
     }
 }
 
@@ -65,7 +66,7 @@ fn render_some(tools: &Tools, formulas: &[Formula]) -> Result<Vec<Rendered>> {
             continue;
         }
         if tex.len() > LONGEST {
-            results[i].problem = Some("The formula is too long.".to_owned());
+            results[i].problem = Some(tr!("core-export-formula-too-long"));
             continue;
         }
         let kind = if f.display { "DisplayMath" } else { "InlineMath" };
@@ -104,7 +105,7 @@ fn render_some(tools: &Tools, formulas: &[Formula]) -> Result<Vec<Rendered>> {
         match (rest.find("<math"), rest.rfind("</math>")) {
             (Some(a), Some(b)) if a < b => result.mathml = Some(rest[a..b + "</math>".len()].to_owned()),
             _ => {
-                result.problem = Some(problems.next().unwrap_or_else(|| "The formula could not be read.".to_owned()));
+                result.problem = Some(problems.next().unwrap_or_else(|| tr!("core-export-formula-unreadable")));
             }
         }
     }

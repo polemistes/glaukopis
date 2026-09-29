@@ -86,7 +86,6 @@ core-import-table-more-than = mer enn { $count }
 ## Dokumenter som hentes inn for å bli kart.
 
 core-import-document-stopped = Lesingen ble stoppet.
-core-import-document-ended = det sluttet med { $status }
 core-import-document-kind = «{ $file }» er ikke av en type som kan hentes inn som dokument. De som kan, er Word (DOCX), OpenDocument (ODT), Markdown, HTML, LaTeX, RTF, EPUB, Org, reStructuredText, Typst og ren tekst.
 core-import-document-too-large = «{ $file }» er større enn 50 MB, og det er mer enn det som kan hentes inn som dokument.
 core-import-document-unreadable = «{ $file }» kunne ikke leses som { $kind }. Filen kan være skadet, eller av en annen type enn navnet sier. Pandoc, som leser den, sa: { $message }
