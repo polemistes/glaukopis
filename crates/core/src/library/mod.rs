@@ -242,14 +242,14 @@ impl Library {
             return Ok(keys::unique_key(&keys::base_key(&draft.to_entry()), &taken));
         }
         let Some(clean) = keys::sanitise_key(asked) else {
-            return Err(Error::invalid(tr!("core-library-bad-key", key = asked)));
+            return Err(key_error(tr!("core-library-bad-key", key = asked)));
         };
         if strict {
             if clean != asked {
-                return Err(Error::invalid(tr!("core-library-key-letters", key = &clean)));
+                return Err(key_error(tr!("core-library-key-letters", key = &clean)));
             }
             if taken.iter().any(|k| k.to_lowercase() == clean.to_lowercase()) {
-                return Err(Error::invalid(tr!("core-library-key-taken", key = &clean)));
+                return Err(key_error(tr!("core-library-key-taken", key = &clean)));
             }
             return Ok(clean);
         }
@@ -693,6 +693,13 @@ fn stored_entry(raw: &RawEntry) -> Entry {
     entry
 }
 
+/// What is wrong with a citation key that was asked for. It has a kind of its
+/// own, by which the interface shows it beside the key, in whatever language
+/// it is said.
+fn key_error(message: String) -> Error {
+    Error::Refused { kind: "key", message }
+}
+
 /// Reads exactly one entry from source typed by the user.
 pub fn draft_from_source(source: &str) -> Result<Draft> {
     let parsed = bib::parse(source);
@@ -777,8 +784,14 @@ mod tests {
         assert_eq!(a.key, "nagy1979");
         let b = lib.add(&draft("@book{, author={Nagy, Gregory}, title={Another}, date={1979}}")).unwrap();
         assert_eq!(b.key, "nagy1979a");
-        assert!(lib.add(&draft("@book{nagy1979, title={Clash}}")).is_err());
-        assert!(lib.add(&draft("@book{bad key, title={Clash}}")).is_err());
+        // What is wrong with a key has a kind of its own, by which the
+        // interface shows it beside the key in any language.
+        let taken = lib.add(&draft("@book{nagy1979, title={Clash}}")).unwrap_err();
+        assert_eq!(taken.kind(), "key");
+        assert_eq!(taken.to_string(), "The citation key “nagy1979” is already in use.");
+        let spaced = lib.add(&draft("@book{bad key, title={Clash}}")).unwrap_err();
+        assert_eq!(spaced.kind(), "key");
+        assert_eq!(spaced.to_string(), "A citation key may hold letters, digits and - _ : . only. Try “bad_key”.");
 
         let text = fs::read_to_string(lib.file()).unwrap();
         assert!(text.contains("Johns Hopkins \\& Sons"));
