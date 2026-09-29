@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from '$lib/i18n';
+
   let { size = 16 }: { size?: number } = $props();
 </script>
 
@@ -7,7 +9,7 @@
   style:width="{size}px"
   style:height="{size}px"
   role="progressbar"
-  aria-label="Working"
+  aria-label={t('ui-working')}
 ></span>
 
 <style>
