@@ -1,5 +1,6 @@
 pub mod documents;
 pub mod found;
+pub mod history;
 pub mod import;
 pub mod library;
 pub mod ocr;
