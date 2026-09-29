@@ -201,7 +201,7 @@ function citationOf(project: ProjectRead, items: CiteItem[], mode: CiteMode): st
     if (item.locator) {
       const label =
         item.label && item.label !== 'page'
-          ? (LOCATOR_LABELS.find(([name]) => name === item.label)?.[2] ?? '')
+          ? (LOCATOR_LABELS.find(([name]) => name === item.label)?.[1] ?? '')
           : '';
       out += `, ${label ? `${label} ` : ''}${item.locator}`;
     }
