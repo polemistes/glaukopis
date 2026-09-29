@@ -72,7 +72,12 @@ jobs:
           gh release download -R UB-Mannheim/tesseract --pattern 'tesseract-ocr-w64-setup-*.exe' -D work
           7z x -oresources/bin/tesseract work/tesseract-ocr-w64-setup-*.exe > /dev/null
           rm -rf 'resources/bin/tesseract/$PLUGINSDIR' resources/bin/tesseract/*.nsis resources/bin/tesseract/uninstall*
-          ls resources/bin/tesseract
+          # Tesseract itself, its libraries and its data; not the tools for
+          # training it, its manual or the viewer that needs Java.
+          cd resources/bin/tesseract
+          find . -maxdepth 1 -name '*.exe' ! -name 'tesseract.exe' -delete
+          rm -rf ./*.html ./*.jar doc
+          TESSDATA_PREFIX="$PWD/tessdata" ./tesseract.exe --list-langs
 
       - name: Pandoc and Typst for macOS
         if: matrix.name == 'macos'

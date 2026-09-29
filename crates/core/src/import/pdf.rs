@@ -1673,7 +1673,9 @@ mod tests {
         assert_eq!(c.draft.get("date"), Some("2020"));
         assert_eq!(c.draft.get("title"), None);
         assert_eq!(c.draft.names["author"][1].family, "Nagy");
-        assert_eq!(c.files.iter().map(Path::new).collect::<Vec<_>>(), vec![Path::new("/tmp/wrath.pdf")]);
+        // Made absolute as the system makes it: on Windows, on the drive the test runs on.
+        let absolute = std::path::absolute("/tmp/wrath.pdf").unwrap();
+        assert_eq!(c.files.iter().map(Path::new).collect::<Vec<_>>(), vec![absolute.as_path()]);
         assert_eq!(c.origin, "wrath.pdf");
         assert_eq!(c.notes.len(), 1);
     }
