@@ -59,10 +59,30 @@ async function rightClickWord(word, within = '.text-view') {
 const menuItems = () =>
   app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
 
+/** Right-clicks a point of the window, as the harness right-clicks an element. */
+async function rightClickAt(x, y) {
+  await app.exec(
+    `const [x, y] = arguments;
+     const common = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, screenX: x, screenY: y, view: window };
+     const send = (event) => document.elementFromPoint(x, y)?.dispatchEvent(event);
+     send(new PointerEvent('pointerdown', { ...common, button: 2, buttons: 2, pointerType: 'mouse', isPrimary: true }));
+     send(new MouseEvent('mousedown', { ...common, button: 2, buttons: 2 }));
+     send(new MouseEvent('contextmenu', { ...common, button: 2, buttons: 2 }));
+     send(new PointerEvent('pointerup', { ...common, button: 2, buttons: 0, pointerType: 'mouse', isPrimary: true }));
+     send(new MouseEvent('mouseup', { ...common, button: 2, buttons: 0 }));`,
+    x,
+    y,
+  );
+}
+
 async function newProject(name) {
   await app.keys(['Control', '1']);
-  await app.waitForText('button', 'Begin a project', 8000);
-  await app.clickText('button', 'Begin a project');
+  const begin = await until('the button that begins a project', () =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('button')).find((b) => /^(New project|Begin a project)$/.test(b.textContent.trim())) || null`,
+    ),
+  );
+  await app.click(begin[ELEMENT]);
   await app.waitFor('dialog input');
   await app.type('dialog input', name);
   await app.clickText('dialog footer button', 'Create');
@@ -146,11 +166,11 @@ try {
   await app.click('.text-view .section .body');
   await app.keys(['Control', 'Home']);
   await app.keys([F7]);
-  await app.waitFor('.menu [role="menuitem"]', 4000);
-  const selected = await app.exec(`return window.getSelection().toString()`);
-  check('F7 selects the next misspelt word and opens its menu', selected === 'teh', selected);
+  await until('the menu of the next misspelt word', async () => (await menuItems())[0] === 'the');
   await app.press('Escape');
-  await sleep(200);
+  await app.waitGone('.menu');
+  const selected = await app.exec(`return window.getSelection().toString()`);
+  check('F7 opens the menu of the next misspelt word, which it selects', selected === 'teh', selected);
 
   // ---- drawn without an editor ----
   // Opened anew, the text is drawn, and not written, until it is clicked.
@@ -172,21 +192,7 @@ try {
      const r = Array.from(h).find((r) => r.toString() === 'teh').getBoundingClientRect();
      return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };`,
   );
-  await app.cmd('POST', '/actions', {
-    actions: [
-      {
-        type: 'pointer',
-        id: 'mouse',
-        parameters: { pointerType: 'mouse' },
-        actions: [
-          { type: 'pointerMove', origin: 'viewport', x: at.x, y: at.y },
-          { type: 'pointerDown', button: 2 },
-          { type: 'pointerUp', button: 2 },
-        ],
-      },
-    ],
-  });
-  await app.cmd('DELETE', '/actions');
+  await rightClickAt(at.x, at.y);
   await until('the menu of the drawn word', async () => (await menuItems()).includes('the'));
   await app.clickText('.menu [role="menuitem"]', 'the');
   await until('the word to be put in there', async () => (await app.text('.text-view .section .body')).includes('by the gods'));

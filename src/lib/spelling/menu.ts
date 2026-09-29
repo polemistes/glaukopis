@@ -34,6 +34,8 @@ export interface WordMenu {
   /** Puts what was chosen in place of the word. */
   replace: (by: string) => void;
   project: Project | null | undefined;
+  /** Gives the focus back to where the word is, when the menu closes. */
+  back?: () => void;
 }
 
 const nothing = () => {};
@@ -69,7 +71,7 @@ export async function openWordMenu(menu: WordMenu) {
       action: () => project.ignoreWord(menu.word),
     });
   }
-  openMenu(menu.anchor, items, { side: 'bottom', align: 'start' });
+  openMenu(menu.anchor, items, { side: 'bottom', align: 'start', onclose: menu.back });
   if (early) return;
   const shown = menuState.current;
   const list = await suggestions.catch(() => []);
@@ -79,7 +81,12 @@ export async function openWordMenu(menu: WordMenu) {
 }
 
 /** Says, where the menu of a word is asked for and there is none, why. */
-export function openWhyMenu(anchor: RectLike, why: Why, language: string | null | undefined) {
+export function openWhyMenu(
+  anchor: RectLike,
+  why: Why,
+  language: string | null | undefined,
+  back?: () => void,
+) {
   const said =
     why === 'off'
       ? t('spelling-off')
@@ -91,7 +98,19 @@ export function openWhyMenu(anchor: RectLike, why: Why, language: string | null 
   openMenu(anchor, [{ label: said, disabled: true, action: nothing }], {
     side: 'bottom',
     align: 'start',
+    onclose: back,
   });
+}
+
+/**
+ * Gives an editor the focus again as ProseMirror does, which puts back its
+ * own selection. The focus that a menu gives back when it closes is the
+ * page's, which puts the cursor at the start of the text.
+ */
+function backTo(view: EditorView): () => void {
+  return () => {
+    if (!view.isDestroyed) view.focus();
+  };
 }
 
 /** Where a place of an editor is on the page. */
@@ -181,8 +200,10 @@ export function spellingOptions(
         anchor: event ? pointRect(event.clientX, event.clientY) : rectOf(view, at.to),
         replace: (by) => replaceIn(view, at, by),
         project: project(),
+        back: backTo(view),
       });
     },
-    none: (view, why) => openWhyMenu(rectOf(view, view.state.selection.head), why, language()),
+    none: (view, why) =>
+      openWhyMenu(rectOf(view, view.state.selection.head), why, language(), backTo(view)),
   };
 }

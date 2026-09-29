@@ -148,11 +148,12 @@ export function blockText(block: Node): string {
 }
 
 /**
- * The textblock a place is in, and where it begins: -1 for the editor of a
- * note, whose document is the note, which is a textblock itself.
+ * The node of text a place is in, and where it begins: a textblock, or, in
+ * the editor of a note, the document, which is the note (an inline node that
+ * holds text, and so not a textblock), with -1.
  */
 function blockOf($pos: ResolvedPos): { block: Node; pos: number } | null {
-  if (!$pos.parent.isTextblock) return null;
+  if (!$pos.parent.inlineContent) return null;
   return { block: $pos.parent, pos: $pos.depth === 0 ? -1 : $pos.before() };
 }
 
@@ -345,14 +346,14 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
           if (waits) waiting.push({ from: pos, to: end });
         };
 
-        // The editor of a note, whose document is one textblock, is looked at whole.
-        if (doc.isTextblock) lookAt(doc, -1);
-        for (let i = 0; i < (doc.isTextblock ? 0 : ranges.length); i++) {
+        // The editor of a note, whose document is the text of the note, is looked at whole.
+        if (doc.inlineContent) lookAt(doc, -1);
+        for (let i = 0; i < (doc.inlineContent ? 0 : ranges.length); i++) {
           const range = ranges[i];
           let stoppedAt: number | null = null;
           doc.nodesBetween(range.from, Math.max(range.to, range.from + 1), (node, pos) => {
             if (stoppedAt !== null) return false;
-            if (!node.isTextblock) return true;
+            if (!node.inlineContent) return true;
             if (performance.now() > until) {
               stoppedAt = pos;
               return false;
