@@ -359,6 +359,72 @@ try {
   check('choosing what was found opens the map at it, with the search in the bar', there.text === 'wrath' && there.element === 'One A' && there.said === '5 of 5', `${chosen} → ${JSON.stringify(there)}`);
   await app.screenshot('search-9-gone-to');
 
+  // ---- in a table and an equation, drawn without an editor ----
+  writeFileSync(
+    join(desk, 'table.md'),
+    `---
+title: The table
+---
+
+# First
+
+No sorrow here, but in the table.
+
+# Second
+
+| Hero | Sorrow |
+|------|--------|
+| Achilles | great sorrow |
+
+: The sorrows of the heroes
+
+$$E = mc^2$$
+`,
+  );
+  await app.exec(`document.querySelector('.search-bar input')?.focus()`);
+  await app.press('Escape');
+  await sleep(300);
+  const middleOfPanes = await app.exec(
+    `const r = document.querySelector('.project .work .panes').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }`,
+  );
+  await drop([join(desk, 'table.md')], middleOfPanes.x, middleOfPanes.y);
+  await app.waitFor('dialog [data-fact="words"]', 15000);
+  await app.clickText('dialog footer button', 'Make the map');
+  await app.waitGone('dialog[open]', 15000);
+  await until('the map of the table', async () => (await names()).includes('Second'), 10000);
+  await sleep(800);
+  // No editor has the cursor: the search begins at the top of the text.
+  await app.exec(`document.activeElement?.blur()`);
+  await app.keys(['Control', 'f']);
+  await app.waitFor('.search-bar input', 3000);
+  await searchFor('sorrow');
+  await until('sorrow', async () => / of 4$/.test((await said()) ?? ''), 5000);
+  const inTable = await app.exec(`
+    const out = [];
+    for (const r of CSS.highlights.get('search') ?? []) {
+      const el = r.startContainer.nodeType === 1 ? r.startContainer : r.startContainer.parentElement;
+      out.push({ text: r.toString(), drawn: !!el?.closest('.static'), where: el?.closest('td, th, figcaption')?.tagName ?? 'P' });
+    }
+    return out;`);
+  check(
+    'in a table drawn without an editor, what is found is marked in its cells and in what is said of it',
+    inTable.length === 4 &&
+      inTable.every((x) => x.text.toLowerCase() === 'sorrow') &&
+      ['TH', 'TD', 'FIGCAPTION'].every((w) => inTable.some((x) => x.drawn && x.where === w)),
+    JSON.stringify(inTable),
+  );
+  await app.screenshot('search-10-table');
+  check('an equation is not found by its formula', (await searchFor('mc^2')) === 'Nothing found', await said());
+  await option('Citations, formulas and words that point as well');
+  await sleep(800);
+  const equation = await app.exec(`
+    let m = null; for (const r of CSS.highlights.get('search-current') ?? []) m = r;
+    if (!m) return null;
+    const el = m.startContainer.nodeType === 1 ? m.startContainer : m.startContainer.parentElement;
+    return { said: document.querySelector('.search-bar .said').textContent.trim(), equation: !!el?.closest('.equation'), selected: !!document.querySelector('.text-view .equation.ProseMirror-selectednode, .text-view .equation.selected') };`);
+  check('unless that is asked for: then it is found, marked and selected', equation?.said === '1 of 1' && equation.equation && equation.selected, JSON.stringify(equation));
+  await option('Citations, formulas and words that point as well');
+
   const errors = await app.pageErrors();
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));
 } catch (error) {
