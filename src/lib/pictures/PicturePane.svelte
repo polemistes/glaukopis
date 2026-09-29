@@ -9,6 +9,7 @@
   import { onMount, tick, untrack } from 'svelte';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import { pictures, type Picture, type PictureChange } from '$lib/figures/pictures.svelte';
+  import { t } from '$lib/i18n';
   import { dateWords, fileSize } from '$lib/library/format';
   import type { Project } from '$lib/project/model/project.svelte';
   import type { Inline } from '$lib/project/model/text';
@@ -197,9 +198,9 @@
   {#if picture}
     <div class="field" data-field="name">
       <TextField
-        label="Name"
+        label={t('pictures-name')}
         bind:value={name}
-        placeholder="What the picture is called"
+        placeholder={t('pictures-name-placeholder')}
         oninput={() => waiting.add('name')}
         onblur={() => void keep('name')}
         onkeydown={(e) => {
@@ -212,10 +213,10 @@
     </div>
 
     <div class="field" data-field="caption">
-      <span class="label" id="caption-{own}">Caption</span>
+      <span class="label" id="caption-{own}">{t('pictures-caption')}</span>
       <CaptionField
         value={caption}
-        placeholder="What is said of the picture"
+        placeholder={t('pictures-caption-placeholder')}
         onchange={(value) => {
           caption = value;
           wrote('caption');
@@ -223,42 +224,40 @@
         onkeep={() => void keep('caption')}
       />
       <p class="hint">
-        Figures made with the picture begin with these words. What is said of a figure can be
-        changed there without changing this.
+        {t('pictures-caption-hint')}
       </p>
     </div>
 
     <label class="field" data-field="alt">
-      <span class="label">Shows</span>
+      <span class="label">{t('pictures-alt')}</span>
       <textarea
         class="plain"
         rows="2"
         bind:value={alt}
-        placeholder="In words, for those who cannot see it"
+        placeholder={t('pictures-alt-placeholder')}
         spellcheck="true"
         oninput={() => wrote('alt')}
         onblur={() => void keep('alt')}></textarea>
     </label>
   {:else}
     <div class="absent">
-      <p class="called serif">{named?.name || 'A picture'}</p>
+      <p class="called serif">{named?.name || t('pictures-unnamed')}</p>
       <p class="hint">
-        The picture is not on this computer. It is used in the project, and is shown when it has
-        come from the one who put it there.
+        {t('pictures-absent')}
       </p>
     </div>
   {/if}
 
   <section class="notes">
-    <h3 class="overline">Notes</h3>
+    <h3 class="overline">{t('pictures-notes')}</h3>
     {#if inProject}
       <label class="field">
-        <span class="label">In this project</span>
+        <span class="label">{t('pictures-note-project')}</span>
         <textarea
           class="note"
           bind:value={local}
           use:grow={local}
-          placeholder="What you make of it, for this work"
+          placeholder={t('pictures-note-project-placeholder')}
           spellcheck="true"
           data-scope="project"
           oninput={writeLocal}></textarea>
@@ -266,70 +265,70 @@
       {#if picture}
         <div class="under">
           <button type="button" class="link" disabled={!local.trim()} onclick={forAll}>
-            Keep it for all projects
+            {t('pictures-note-for-all')}
           </button>
           {#if !showAll && !note.trim()}
             <button type="button" class="link quiet" onclick={() => (showAll = true)}>
-              Write for all projects
+              {t('pictures-note-write-for-all')}
             </button>
           {/if}
         </div>
       {:else}
-        <p class="hint">What is written here is with everyone who has the project.</p>
+        <p class="hint">{t('pictures-note-project-hint')}</p>
       {/if}
     {/if}
 
     {#if picture && (showAll || note.trim())}
       <label class="field" data-field="note">
-        {#if inProject}<span class="label">In all projects</span>{/if}
+        {#if inProject}<span class="label">{t('pictures-note-all')}</span>{/if}
         <textarea
           class="note"
           bind:value={note}
           use:grow={note}
           placeholder={inProject
-            ? 'What you make of it, wherever you use it'
-            : 'What you make of it. For yourself: it is part of no document.'}
-          aria-label={inProject ? undefined : 'Your notes on this picture'}
+            ? t('pictures-note-all-placeholder')
+            : t('pictures-note-placeholder')}
+          aria-label={inProject ? undefined : t('pictures-note-label')}
           spellcheck="true"
           data-scope="all"
           oninput={() => wrote('note', 600)}
           onblur={() => void keep('note')}></textarea>
       </label>
       {#if inProject}
-        <p class="hint">Kept with the picture in the store, on this computer.</p>
+        <p class="hint">{t('pictures-note-all-hint')}</p>
       {/if}
     {/if}
   </section>
 
   {#if picture}
     <section>
-      <h3 class="overline">The file</h3>
+      <h3 class="overline">{t('pictures-file')}</h3>
       <dl class="facts">
-        <dt>Kind</dt>
+        <dt>{t('pictures-kind')}</dt>
         <dd>{kindWords(picture.extension)}</dd>
         {#if picture.width && picture.height}
-          <dt>Wide and high</dt>
-          <dd>{picture.width.toLocaleString()} × {picture.height.toLocaleString()} points</dd>
+          <dt>{t('pictures-dimensions-label')}</dt>
+          <dd>{t('pictures-dimensions', { width: picture.width, height: picture.height })}</dd>
         {/if}
-        <dt>Size</dt>
+        <dt>{t('pictures-size')}</dt>
         <dd>{fileSize(picture.size)}</dd>
-        <dt>Taken in</dt>
+        <dt>{t('pictures-added')}</dt>
         <dd>{dateWords(picture.added)}</dd>
       </dl>
     </section>
   {/if}
 
   <section class="used">
-    <h3 class="overline">Used in</h3>
+    <h3 class="overline">{t('pictures-used-in')}</h3>
     {#if inProject && maps.length}
       <div class="user">
-        <span class="project">This project</span>
+        <span class="project">{t('pictures-this-project')}</span>
         <span class="maps">
           {#each maps as map, i (map.id)}
             {#if i},
             {/if}
             <button type="button" class="link" onclick={() => onopenmap?.(map.id)}>
-              {map.name || 'Untitled'}
+              {map.name || t('pictures-untitled')}
             </button>
           {/each}
         </span>
@@ -341,7 +340,7 @@
       </div>
     {/each}
     {#if !others.length && !maps.length}
-      <p class="none">No project uses the picture.</p>
+      <p class="none">{t('pictures-unused')}</p>
     {/if}
   </section>
 
@@ -349,7 +348,7 @@
     <div class="last">
       <Button variant="danger" onclick={remove}>
         {#snippet icon()}<Trash2 size={14} />{/snippet}
-        Remove from the store
+        {t('pictures-remove')}
       </Button>
     </div>
   {/if}

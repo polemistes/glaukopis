@@ -1,6 +1,7 @@
 /** The store of pictures, and mathematics as it is shown. Mirrors `commands/pictures.rs`. */
 
 import { invoke } from '@tauri-apps/api/core';
+import { t } from '$lib/i18n';
 import type { Inline } from '$lib/project/model/text';
 import { call, inTauri } from './backend';
 
@@ -71,7 +72,7 @@ export async function pictureRead(
   extension: string,
   small = false,
 ): Promise<ArrayBuffer> {
-  if (!inTauri) throw { kind: 'no-backend', message: 'There is no backend.' };
+  if (!inTauri) throw { kind: 'no-backend', message: t('pictures-no-backend') };
   return invoke<ArrayBuffer>('picture_read', { hash, extension, small });
 }
 

@@ -7,6 +7,7 @@
   import { untrack } from 'svelte';
   import RichText from '$lib/editor/RichText.svelte';
   import type { KeyAction } from '$lib/editor/plugins';
+  import { t } from '$lib/i18n';
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import type { Other, Project } from '../model/project.svelte';
@@ -113,7 +114,7 @@
         {project}
         fragment={title}
         kind="title"
-        placeholder="Idea"
+        placeholder={t('diagram-idea')}
         autofocus="all"
         onaction={action}
         onblur={() => onrenamed(node.id, 'blur')}
@@ -124,7 +125,7 @@
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
       <span class="name">{@html node.titleHtml}</span>
     {:else}
-      <span class="name unnamed">Untitled</span>
+      <span class="name unnamed">{t('project-untitled')}</span>
     {/if}
   </div>
 
@@ -140,8 +141,10 @@
   {#if others.length}
     <div class="others">
       {#each others.slice(0, 3) as o (o.client)}
-        <span class="other" style:background={o.color} use:tooltip={`${o.name} is here`}
-          >{initials(o.name)}</span
+        <span
+          class="other"
+          style:background={o.color}
+          use:tooltip={t('project-other-here', { name: o.name })}>{initials(o.name)}</span
         >
       {/each}
     </div>
@@ -152,7 +155,7 @@
       type="button"
       class="fold"
       class:folded={node.collapsed}
-      aria-label={node.collapsed ? 'Show what is under it' : 'Hide what is under it'}
+      aria-label={node.collapsed ? t('diagram-show-under') : t('diagram-hide-under')}
       tabindex="-1"
       onpointerdown={(e) => e.stopPropagation()}
       onclick={(e) => {
@@ -168,7 +171,7 @@
     <span
       class="link-handle"
       role="presentation"
-      title="Drag to another element to associate them"
+      title={t('diagram-link-handle')}
       onpointerdown={(e) => {
         e.stopPropagation();
         onlinkstart(node.id, e);

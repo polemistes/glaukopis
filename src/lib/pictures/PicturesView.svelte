@@ -18,7 +18,7 @@
     pictures,
     type Picture,
   } from '$lib/figures/pictures.svelte';
-  import { plural } from '$lib/library/format';
+  import { t } from '$lib/i18n';
   import { importDropped } from '$lib/library/references.svelte';
   import { projects } from '$lib/state/projects.svelte';
   import { router } from '$lib/state/router.svelte';
@@ -103,7 +103,7 @@
     selected = picture.hash;
     openContextMenu(event, [
       {
-        label: 'Remove',
+        label: t('common-remove'),
         icon: Trash2,
         danger: true,
         shortcut: 'Del',
@@ -176,7 +176,7 @@
     ondrop: (e) => void dropped(e),
   }}
 >
-  <section class="middle" aria-label="Pictures">
+  <section class="middle" aria-label={t('pictures-title')}>
     <header>
       <div class="search">
         <Search size={15} />
@@ -184,8 +184,8 @@
           bind:this={searchField}
           bind:value={query}
           type="search"
-          placeholder="Search the pictures"
-          aria-label="Search"
+          placeholder={t('pictures-search-placeholder')}
+          aria-label={t('common-search')}
           spellcheck="false"
           onkeydown={(e) => {
             if (e.key === 'Escape' && query) {
@@ -198,7 +198,7 @@
           <button
             type="button"
             class="clear"
-            aria-label="Clear the search"
+            aria-label={t('pictures-clear-search')}
             onclick={() => (query = '')}
           >
             <X size={13} />
@@ -208,15 +208,15 @@
       {#if pictures.loaded && all.length}
         <span class="count">
           {#if query}
-            {shown.length} of {plural(all.length, 'picture')}
+            {t('pictures-shown', { shown: shown.length, count: all.length })}
           {:else}
-            {plural(all.length, 'picture')}
+            {t('pictures-count', { count: all.length })}
           {/if}
         </span>
       {/if}
       <Button variant="primary" onclick={add}>
         {#snippet icon()}<Plus size={15} />{/snippet}
-        Add pictures…
+        {t('pictures-add')}
       </Button>
     </header>
 
@@ -224,27 +224,23 @@
       {#if !pictures.loaded}
         <div class="centre"><Spinner size={22} /></div>
       {:else if !all.length}
-        <EmptyState
-          icon={Images}
-          title="The store is empty"
-          text="Pictures you add here can be used in all your projects, and a picture put into a text is kept here. Add some, or drop them on this window."
-        >
-          <Button variant="primary" onclick={add}>Add pictures…</Button>
+        <EmptyState icon={Images} title={t('pictures-empty')} text={t('pictures-empty-text')}>
+          <Button variant="primary" onclick={add}>{t('pictures-add')}</Button>
         </EmptyState>
       {:else if !shown.length}
         <EmptyState
           icon={SearchX}
-          title="Nothing found"
-          text="No picture holds all of these words."
+          title={t('pictures-nothing-found')}
+          text={t('pictures-nothing-found-text')}
         >
-          <Button onclick={() => (query = '')}>Clear the search</Button>
+          <Button onclick={() => (query = '')}>{t('pictures-clear-search')}</Button>
         </EmptyState>
       {:else}
         <div
           bind:this={grid}
           class="grid"
           role="listbox"
-          aria-label="All pictures"
+          aria-label={t('pictures-all')}
           tabindex="0"
           onkeydown={gridKey}
         >
@@ -263,9 +259,11 @@
                 <Thumb hash={picture.hash} extension={picture.extension} small alt={picture.alt} />
               </div>
               <div class="under">
-                <span class="name truncate">{picture.name || 'A picture'}</span>
+                <span class="name truncate">{picture.name || t('pictures-unnamed')}</span>
                 {#if picture.note.trim()}
-                  <span class="noted" aria-label="With notes"><NotebookPen size={12} /></span>
+                  <span class="noted" aria-label={t('pictures-with-notes')}
+                    ><NotebookPen size={12} /></span
+                  >
                 {/if}
               </div>
             </div>
@@ -275,7 +273,7 @@
     </div>
   </section>
 
-  <aside class="detail" aria-label="Picture">
+  <aside class="detail" aria-label={t('pictures-picture')}>
     {#if selected}
       {#key selected}
         <PicturePane hash={selected} />
