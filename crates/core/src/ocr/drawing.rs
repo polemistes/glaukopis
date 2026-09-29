@@ -279,4 +279,55 @@ mod tests {
 
         assert!(Drawn::of_picture(b"no picture").is_err());
     }
+
+    /// Poppler draws a page as hayro draws it: what is shown of it, turned as
+    /// it is shown, at 300 dots to the inch. Passed over where Typst or
+    /// Poppler is not installed.
+    #[test]
+    fn poppler_draws_a_page_as_hayro_does() {
+        let tools = tools::discover(&tools::Configured::default());
+        let (Some(typst), Some(pdftoppm)) = (tools.typst, tools.pdftoppm) else {
+            eprintln!("Typst or Poppler is not installed; the test is passed over");
+            return;
+        };
+        let tmp = tempfile::tempdir().unwrap();
+        let source = tmp.path().join("page.typ");
+        let pdf = tmp.path().join("page.pdf");
+        std::fs::write(
+            &source,
+            "#set page(width: 100mm, height: 150mm, margin: 10mm)\n#rect(width: 100%, height: 30%, fill: black)\n",
+        )
+        .unwrap();
+        tools::run(
+            &typst.path,
+            "Typst",
+            [std::ffi::OsStr::new("compile"), source.as_os_str(), pdf.as_os_str()],
+            None,
+            None,
+        )
+        .unwrap();
+        // Shown turned a quarter.
+        let mut doc = lopdf::Document::load(&pdf).unwrap();
+        let id = doc.get_pages()[&1];
+        doc.get_dictionary_mut(id).unwrap().set("Rotate", 90);
+        doc.save(&pdf).unwrap();
+
+        let sizes = poppler_sizes(&pdftoppm.path, &pdf).expect("pdfinfo is beside pdftoppm");
+        assert_eq!(sizes.len(), 1);
+        assert!(sizes[0].0 > sizes[0].1, "turned, it is wider than high: {sizes:?}");
+        let poppler = Pages::Poppler { pdftoppm: pdftoppm.path.clone(), file: pdf.clone(), sizes };
+        assert_eq!(poppler.count(), 1);
+        let (picture, dpi) = poppler.draw(0, tmp.path(), &AtomicBool::new(false)).unwrap();
+        assert_eq!(dpi, 300);
+        let by_poppler = image::open(&picture).unwrap().to_luma8();
+
+        let by_hayro = draw_with_hayro(&Pdf::new(std::fs::read(&pdf).unwrap()).unwrap(), 0).unwrap();
+        let (width, height) = (by_poppler.width(), by_poppler.height());
+        assert!(width.abs_diff(by_hayro.width) <= 2 && height.abs_diff(by_hayro.height) <= 2, "{width}×{height}");
+        // The black band is at the right, where the top of the page is shown turned.
+        let dark = |x: u32, y: u32| by_poppler.get_pixel(x, y).0[0] < 128;
+        assert!(dark(width - width / 6, height / 2) && !dark(width / 6, height / 2));
+        let hayro_dark = |x: u32, y: u32| by_hayro.grey[(y * by_hayro.width + x) as usize] < 128;
+        assert!(hayro_dark(by_hayro.width - by_hayro.width / 6, by_hayro.height / 2));
+    }
 }
