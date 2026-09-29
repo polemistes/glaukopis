@@ -201,3 +201,12 @@ What this settles:
 - A change is shown from the text as it was at the moment compared to, to the text as it is. What happened in between can be shown as well, and a version in between can be accepted instead.
 - The reviewer can change the text while reviewing, and then accept it as it stands, or go on to the next change and leave this one for later.
 - Proposals held back until accepted, as in Word and LibreOffice, are not built now. Pandoc reads and writes them in DOCX only; ODT would need the application's own reading and writing.
+
+## 2026-09-30 — Nynorsk, and the installers
+
+> I am guessing a reboot and the update of the code plugin might fix the problem. Wait with the installers now. Remeove the worktrees. Bokmål for now. We will make Nynorsk later.
+
+What this settles:
+
+- A computer set to Nynorsk is spoken to in Bokmål, as ADR 0020 has it, until the interface is in Nynorsk as well, which is to come.
+- The installers for Windows and macOS are not made again for now.

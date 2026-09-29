@@ -234,4 +234,4 @@ in the language of the system or as chosen (ADR 0020).
 
 Annotation of PDFs inside the application; synchronising the library itself
 between machines; end-to-end encryption of shared projects; grammar checking;
-mobile.
+the interface in Nynorsk (to come; until then Nynorsk is spoken to in Bokmål); mobile.
