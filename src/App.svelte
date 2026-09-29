@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { languageSet, languagesInfo } from '$lib/api/system';
-  import { languages } from '$lib/i18n';
+  import { languages, t } from '$lib/i18n';
   import { router } from '$lib/state/router.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import ConfirmHost from '$lib/ui/ConfirmHost.svelte';
@@ -44,6 +44,15 @@
     languages.current = tag;
     document.documentElement.lang = tag;
     languageSet(tag).catch(() => {});
+  });
+
+  // Words the stylesheet shows where the page has no element for them.
+  $effect(() => {
+    const root = document.documentElement.style;
+    const say = (name: string, id: string) => root.setProperty(name, JSON.stringify(t(id)));
+    say('--words-picture-absent', 'figures-picture-absent');
+    say('--words-picture-caption', 'figures-caption-placeholder');
+    say('--words-table-caption', 'tables-caption-empty');
   });
 
   // The language new texts are given.

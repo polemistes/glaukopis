@@ -7,6 +7,7 @@ use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
 
 use glaukopis_core::duplicates::{self, Group};
+use glaukopis_core::i18n::tr;
 use glaukopis_core::import::{PlanMatch, SummaryLite, fill_missing};
 use glaukopis_core::library::{Collection, Draft, Entry, EntryView, Library, StoredFile, Summary};
 
@@ -67,7 +68,8 @@ pub fn library_refresh(state: State<'_, AppState>) -> CommandResult<Option<Libra
 #[tauri::command(async)]
 pub fn library_get(state: State<'_, AppState>, id: String) -> CommandResult<EntryFull> {
     let library = state.library();
-    let entry = library.resolve(&id).ok_or_else(|| glaukopis_core::Error::not_found("the reference"))?;
+    let entry =
+        library.resolve(&id).ok_or_else(|| glaukopis_core::Error::not_found(tr!("core-library-the-reference")))?;
     Ok(full(&library, entry))
 }
 
@@ -273,7 +275,7 @@ pub fn attachment_remove(state: State<'_, AppState>, id: String, path: String) -
 pub fn attachment_open(app: AppHandle, state: State<'_, AppState>, path: String) -> CommandResult<()> {
     let absolute = state.library().attachment_path(&path)?;
     if !absolute.is_file() {
-        return Err(glaukopis_core::Error::not_found(format!("the file {}", absolute.display())).into());
+        return Err(glaukopis_core::Error::not_found(tr!("core-library-the-file", path = &absolute)).into());
     }
     app.opener()
         .open_path(absolute.display().to_string(), None::<&str>)

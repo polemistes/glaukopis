@@ -8,6 +8,7 @@ use serde::Serialize;
 use tauri::State;
 
 use glaukopis_core::duplicates;
+use glaukopis_core::i18n::tr;
 use glaukopis_core::import::zotero::{self, Options, ZoteroCollection, ZoteroInfo};
 use glaukopis_core::import::{self, Candidate, Plan, SummaryLite, pdf};
 use glaukopis_core::library::entry::Draft;
@@ -111,16 +112,11 @@ fn identify(state: &AppState, path: &Path, ask: bool, warnings: &mut Vec<String>
             Some(hit) => {
                 candidate.draft = hit.draft;
                 candidate.notes = hit.remarks;
-                candidate.notes.insert(0, format!("The details are from {}.", hit.source));
+                candidate.notes.insert(0, tr!("core-import-details-from", service = &hit.source));
             }
-            None => candidate.notes.push(
-                "A number was found in the file, but nothing is known of it in the databases; the details are from the file itself and should be checked."
-                    .into(),
-            ),
+            None => candidate.notes.push(tr!("core-import-number-unknown")),
         },
-        Err(e) => candidate
-            .notes
-            .push(format!("The databases could not be asked ({e}); the details are from the file itself and should be checked.")),
+        Err(e) => candidate.notes.push(tr!("core-import-databases-failed", error = e.to_string())),
     }
     Some(candidate)
 }
@@ -135,14 +131,14 @@ pub fn import_pdfs(state: State<'_, AppState>, paths: Vec<String>, ask: Option<b
         let is_pdf = path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf"));
         if !is_pdf {
             let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-            warnings.push(format!("{name} is not a PDF."));
+            warnings.push(tr!("core-import-not-a-pdf", name = &name));
             continue;
         }
         candidates.extend(identify(&state, path, ask.unwrap_or(true), &mut warnings));
     }
     let source = match paths.as_slice() {
         [one] => Path::new(one).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
-        many => format!("{} files", many.len()),
+        many => tr!("core-import-files", count = many.len()),
     };
     let mut library = state.library();
     library.refresh()?;
@@ -151,14 +147,14 @@ pub fn import_pdfs(state: State<'_, AppState>, paths: Vec<String>, ask: Option<b
 
 #[derive(Serialize)]
 pub struct Acknowledgement {
-    pub service: &'static str,
-    pub words: &'static str,
+    pub service: String,
+    pub words: String,
 }
 
 /// What the services that are asked want said of them.
 #[tauri::command]
 pub fn lookup_acknowledgements() -> Vec<Acknowledgement> {
-    lookup::ACKNOWLEDGEMENTS.iter().map(|(service, words)| Acknowledgement { service, words }).collect()
+    lookup::acknowledgements().into_iter().map(|(service, words)| Acknowledgement { service, words }).collect()
 }
 
 /// The libraries of Zotero on this computer.

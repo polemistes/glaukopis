@@ -15,6 +15,7 @@ use rusqlite::types::ValueRef;
 use rusqlite::{Connection, OpenFlags, Params, Row};
 
 use crate::error::{Error, IoContext, Result};
+use crate::tr;
 
 pub(super) const DATABASE: &str = "zotero.sqlite";
 /// The copy Zotero itself makes from time to time.
@@ -35,20 +36,24 @@ const REQUIRED: &[(&str, &[&str])] = &[
     ("creatorTypes", &["creatorTypeID", "creatorType"]),
 ];
 
-/// The tables that can be done without, and what is then missing.
-const OPTIONAL: &[(&str, &[&str], &str)] = &[
-    ("deletedItems", &["itemID"], "items in Zotero’s bin cannot be told from the others"),
-    (
-        "collections",
-        &["collectionID", "collectionName", "parentCollectionID", "libraryID", "key"],
-        "collections were not read",
-    ),
-    ("collectionItems", &["collectionID", "itemID"], "collections were not read"),
-    ("itemAttachments", &["itemID", "parentItemID", "linkMode", "contentType", "path"], "attached files were not read"),
-    ("itemNotes", &["itemID", "parentItemID", "note"], "notes were not read"),
-    ("tags", &["tagID", "name"], "keywords were not read"),
-    ("itemTags", &["itemID", "tagID"], "keywords were not read"),
-    ("groups", &["libraryID", "name"], "the names of group libraries are not known"),
+/// A table that can be done without, the columns read from it, and what is
+/// then missing, in words.
+type Optional = (&'static str, &'static [&'static str], fn() -> String);
+
+/// The tables that can be done without.
+const OPTIONAL: &[Optional] = &[
+    ("deletedItems", &["itemID"], || tr!("core-import-zotero-no-bin")),
+    ("collections", &["collectionID", "collectionName", "parentCollectionID", "libraryID", "key"], || {
+        tr!("core-import-zotero-no-collections")
+    }),
+    ("collectionItems", &["collectionID", "itemID"], || tr!("core-import-zotero-no-collections")),
+    ("itemAttachments", &["itemID", "parentItemID", "linkMode", "contentType", "path"], || {
+        tr!("core-import-zotero-no-attachments")
+    }),
+    ("itemNotes", &["itemID", "parentItemID", "note"], || tr!("core-import-zotero-no-notes")),
+    ("tags", &["tagID", "name"], || tr!("core-import-zotero-no-keywords")),
+    ("itemTags", &["itemID", "tagID"], || tr!("core-import-zotero-no-keywords")),
+    ("groups", &["libraryID", "name"], || tr!("core-import-zotero-no-group-names")),
 ];
 
 pub(super) struct Library {
@@ -119,7 +124,7 @@ fn locate(path: &Path) -> Result<(PathBuf, PathBuf)> {
     if path.is_dir() {
         let file = path.join(DATABASE);
         if !file.is_file() && !path.join(BACKUP).is_file() {
-            return Err(Error::not_found(format!("a Zotero database ({DATABASE}) in {}", path.display())));
+            return Err(Error::not_found(tr!("core-import-zotero-no-database", file = DATABASE, path = path)));
         }
         return Ok((path.to_owned(), file));
     }
@@ -145,7 +150,7 @@ fn stamp(path: &Path) -> Option<(u64, Option<SystemTime>)> {
 /// Copies the content only. `fs::copy` would copy the permissions too, and
 /// a copy that cannot be written to cannot be set right by SQLite.
 fn copy_file(from: &Path, to: &Path) -> Result<()> {
-    let context = || format!("copying {} to a temporary directory", from.display());
+    let context = || tr!("core-import-zotero-copying", path = from);
     let mut source = File::open(from).context(context)?;
     let mut target = File::create(to).context(context)?;
     std::io::copy(&mut source, &mut target).context(context)?;
@@ -184,21 +189,16 @@ impl Database {
     }
 
     fn open(dir: &Path, file: &Path, warnings: &mut Vec<String>) -> Result<Self> {
-        let copy = tempfile::Builder::new()
-            .prefix("glaukopis-zotero-")
-            .tempdir()
-            .context(|| "creating a temporary directory".to_owned())?;
+        let copy =
+            tempfile::Builder::new().prefix("glaukopis-zotero-").tempdir().context(|| tr!("io-creating-temporary"))?;
         let target = copy.path().join(DATABASE);
         let (companions, disturbed) = copy_database(file, &target)?;
         // To SQLite an empty file is a database with nothing in it.
         if fs::metadata(&target).map(|meta| meta.len() == 0).unwrap_or(true) {
-            return Err(Error::Parse { path: file.to_owned(), message: "the file is empty".to_owned() });
+            return Err(Error::Parse { path: file.to_owned(), message: tr!("core-import-zotero-empty") });
         }
         if disturbed {
-            warnings.push(
-                "Zotero was writing to its database while it was read. If something is missing, close Zotero and import again."
-                    .to_owned(),
-            );
+            warnings.push(tr!("core-import-zotero-disturbed"));
         }
         let error = |e: rusqlite::Error| Error::Parse { path: file.to_owned(), message: e.to_string() };
 
@@ -234,44 +234,51 @@ impl Database {
     }
 
     /// The version of Zotero's scheme for the user's data, for messages.
-    fn version(&self) -> String {
+    fn version(&self) -> Option<String> {
         self.conn
             .query_row("SELECT version FROM version WHERE schema = 'userdata'", [], |row| Ok(text(row, 0)))
             .ok()
             .filter(|v| !v.is_empty())
-            .map(|v| format!(" (version {v} of Zotero’s database)"))
-            .unwrap_or_default()
     }
 
     /// Sees that the database is one of Zotero's, in the form known here.
     fn check(&mut self, warnings: &mut Vec<String>) -> Result<()> {
         if self.columns("items")?.is_none() {
-            return Err(Error::invalid(format!("{} is not a database of Zotero.", self.source.display())));
+            return Err(Error::invalid(tr!("core-import-zotero-not-a-database", path = &self.source)));
         }
-        let lacking = |what: String, version: String| {
-            Error::invalid(format!(
-                "The Zotero database has a form that cannot be read here{version}: {what}. \
-                 If it was written by an old version of Zotero, opening it once in a current one brings it up to date."
-            ))
+        let lacking = |what: String, version: Option<String>| {
+            Error::invalid(match version {
+                Some(version) => tr!("core-import-zotero-unreadable-version", version = version, what = what),
+                None => tr!("core-import-zotero-unreadable", what = what),
+            })
         };
         for (table, wanted) in REQUIRED {
             let Some(columns) = self.columns(table)? else {
-                return Err(lacking(format!("the table “{table}” is missing"), self.version()));
+                return Err(lacking(tr!("core-import-zotero-no-table", table = *table), self.version()));
             };
             if let Some(column) = wanted.iter().find(|c| !columns.contains(**c)) {
-                return Err(lacking(format!("the table “{table}” has no column “{column}”"), self.version()));
+                return Err(lacking(
+                    tr!("core-import-zotero-no-column", table = *table, column = *column),
+                    self.version(),
+                ));
             }
         }
+        // What is lacking is said once, though several tables may lack for it.
+        let mut said: Vec<String> = Vec::new();
         for (table, wanted, consequence) in OPTIONAL {
             match self.columns(table)? {
                 Some(columns) if wanted.iter().all(|c| columns.contains(*c)) => {
                     self.tables.insert(*table);
                 }
                 _ => {
-                    let warning =
-                        format!("The Zotero database has no table “{table}” of the form known here: {consequence}.");
-                    if !warnings.iter().any(|w| w.ends_with(&format!(": {consequence}."))) {
-                        warnings.push(warning);
+                    let consequence = consequence();
+                    if !said.contains(&consequence) {
+                        warnings.push(tr!(
+                            "core-import-zotero-no-optional",
+                            table = *table,
+                            consequence = &consequence
+                        ));
+                        said.push(consequence);
                     }
                 }
             }
@@ -324,8 +331,8 @@ impl Database {
                 let id = id?;
                 let group = kind == "group";
                 let name = match (group, name.trim()) {
-                    (false, _) => "My Library".to_owned(),
-                    (true, "") => format!("Group {id}"),
+                    (false, _) => tr!("core-import-zotero-my-library"),
+                    (true, "") => tr!("core-import-zotero-group", id = id),
                     (true, name) => name.to_owned(),
                 };
                 Some(Library { id, group, name })
@@ -588,13 +595,7 @@ pub(super) fn with_database<T>(
     }
     match attempt(&backup) {
         Ok((value, mut warnings)) => {
-            warnings.insert(
-                0,
-                format!(
-                    "Zotero’s database could not be read ({error}). Its backup, {BACKUP}, was read instead: \
-                     what was changed in Zotero since the backup was made is missing."
-                ),
-            );
+            warnings.insert(0, tr!("core-import-zotero-backup-read", error = error.to_string(), backup = BACKUP));
             Ok((value, warnings))
         }
         Err(_) => Err(error),

@@ -92,7 +92,7 @@
   side="bottom"
   align="start"
   gap={8}
-  width={440}
+  width={480}
   label={t('editor-citation')}
   {onclose}
 >
@@ -162,6 +162,7 @@
   }
   .foot {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 2px;
     padding: 6px;
@@ -172,6 +173,7 @@
     align-items: center;
     gap: 5px;
     height: 28px;
+    white-space: nowrap;
     padding: 0 9px;
     border: none;
     border-radius: var(--radius-s);
@@ -183,6 +185,10 @@
   .foot button:hover {
     background: var(--paper-hover);
     color: var(--ink);
+  }
+  /* At the right, on the line of the others or, where they fill it, on a line of its own. */
+  .foot .danger {
+    margin-left: auto;
   }
   .foot .danger:hover {
     background: var(--danger-soft);

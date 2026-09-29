@@ -18,6 +18,7 @@ use crate::duplicates::{self, Certainty, Reason, without_article};
 use crate::library::Library;
 use crate::library::entry::{Draft, Entry};
 use crate::lookup::csl;
+use crate::tr;
 
 /// How many references are given for one work at most.
 const MOST: usize = 8;
@@ -330,7 +331,7 @@ impl Shelf {
             } else if said.years.is_empty() {
                 (Sure::Possible, work.people.clone())
             } else {
-                (Sure::Possible, format!("{}, another year", work.people))
+                (Sure::Possible, tr!("core-found-another-year", people = &work.people))
             };
             // The year that is said first is that of what is cited; the
             // other is the year the work first came out.
@@ -357,9 +358,9 @@ impl Shelf {
                         continue;
                     }
                     let why = if behind {
-                        format!("{year}, and the name is of one who stands behind {}", work.people)
+                        tr!("core-found-behind", year = *year, people = &work.people)
                     } else {
-                        format!("{year}, and a name like {}", work.people)
+                        tr!("core-found-name-like", year = *year, people = &work.people)
                     };
                     found.push((i, Sure::Possible, (usize::from(behind), 0, (alike * 100.0) as usize, 0), why));
                 }
@@ -437,15 +438,10 @@ impl Shelf {
             if alike >= 0.95 {
                 same.push("title");
             }
-            let mut why = match same.len() {
-                0 => String::new(),
-                1 => format!("the same {}", same[0]),
-                2 => format!("the same {} and {}", same[0], same[1]),
-                _ => format!("the same {}, {} and {}", same[0], same[1], same[2]),
-            };
-            if title && alike < 0.95 {
-                why.push_str(if why.is_empty() { "a title like it" } else { ", and a title like it" });
-            }
+            // The message says it whole, for each of what can be the same.
+            let same = if same.is_empty() { "none".to_owned() } else { same.join("-") };
+            let like = if title && alike < 0.95 { "yes" } else { "no" };
+            let why = tr!("core-found-alike", same = same, like = like);
             found.push((i, (agree, (alike * 1000.0) as usize), why));
         }
         found.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
@@ -457,6 +453,8 @@ impl Shelf {
 fn stamp(library: &Library) -> u64 {
     let mut hasher = DefaultHasher::new();
     library.dir().hash(&mut hasher);
+    // What is said of the works is said in the language of the interface.
+    crate::i18n::language().hash(&mut hasher);
     for entry in library.entries() {
         entry.id.hash(&mut hasher);
         entry.key.hash(&mut hasher);
@@ -517,17 +515,17 @@ impl Gathered {
 fn why_of(certainty: Certainty, reasons: &[Reason]) -> String {
     let has = |reason: Reason| reasons.contains(&reason);
     match certainty {
-        Certainty::Certain if has(Reason::Doi) => "the same DOI".into(),
-        Certainty::Certain if has(Reason::Isbn) => "the same ISBN".into(),
-        Certainty::Certain => "alike in all that tells one work from another".into(),
+        Certainty::Certain if has(Reason::Doi) => tr!("core-found-same-doi"),
+        Certainty::Certain if has(Reason::Isbn) => tr!("core-found-same-isbn"),
+        Certainty::Certain => tr!("core-found-alike-in-all"),
         // The DOI or the ISBN of the book that both are in.
         Certainty::Probable if has(Reason::Doi) && !has(Reason::TitleAuthorYear) => {
-            "the same DOI, and another title".into()
+            tr!("core-found-same-doi-other-title")
         }
         Certainty::Probable if has(Reason::Isbn) && !has(Reason::TitleAuthorYear) => {
-            "the same ISBN, and another title".into()
+            tr!("core-found-same-isbn-other-title")
         }
-        Certainty::Probable => "the same title, author and year".into(),
+        Certainty::Probable => tr!("core-found-same-title-author-year"),
     }
 }
 
@@ -547,7 +545,7 @@ pub(super) fn suggest(library: &Library, item: &FoundItem) -> Vec<Suggestion> {
             }
         }
     }
-    gathered.add(same.into_iter().map(|i| (i, Sure::Certain, "the same item in Zotero".to_owned())).collect());
+    gathered.add(same.into_iter().map(|i| (i, Sure::Certain, tr!("core-found-same-zotero-item"))).collect());
 
     // The tag: the citation key of an entry, or one it had, or one that an
     // entry had that was merged into it.
@@ -557,11 +555,11 @@ pub(super) fn suggest(library: &Library, item: &FoundItem) -> Vec<Suggestion> {
         && let Some(i) = shelf.ids.iter().position(|id| *id == entry.id)
     {
         let why = if entry.key.to_lowercase() == tag.to_lowercase() {
-            "the same citation key"
+            tr!("core-found-same-key")
         } else {
-            "a citation key it had before"
+            tr!("core-found-earlier-key")
         };
-        gathered.add(vec![(i, Sure::Certain, why.to_owned())]);
+        gathered.add(vec![(i, Sure::Certain, why)]);
     }
 
     // What the file says of the work: looked at where the key and the tag
@@ -839,5 +837,27 @@ mod tests {
         );
         assert_eq!(shelf.title_run(lord, &said(&[("of", false), ("the", false), ("guslar", true)])), 0);
         assert_eq!(shelf.title_run(lord, &said(&[("was", false), ("born", false)])), 0);
+    }
+
+    // The language of the interface is one for the whole program, and the
+    // tests run side by side: the languages are asked for by name.
+    #[test]
+    fn what_is_alike_is_said_whole_in_each_language() {
+        use crate::i18n::{Arg, FluentArgs, message_in};
+        let said = |tag: &str, same: &str, like: &str| {
+            let mut args = FluentArgs::new();
+            args.set("same", Arg::value(same));
+            args.set("like", Arg::value(like));
+            message_in(tag, "core-found-alike", Some(&args))
+        };
+        assert_eq!(said("en", "author-year", "yes"), "the same author and year, and a title like it");
+        assert_eq!(said("en", "author-year-title", "no"), "the same author, year and title");
+        assert_eq!(said("en", "none", "yes"), "a title like it");
+        assert_eq!(said("en", "none", "no"), "");
+        for same in ["author", "year", "title", "author-year", "author-title", "year-title", "author-year-title"] {
+            assert_ne!(said("nb", same, "no"), "", "{same}");
+        }
+        assert_eq!(said("nb", "author-year-title", "no"), "samme forfatter, år og tittel");
+        assert_eq!(said("nb", "year", "yes"), "samme år, og en lignende tittel");
     }
 }

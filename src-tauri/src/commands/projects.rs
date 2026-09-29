@@ -6,6 +6,7 @@ use base64::engine::general_purpose::STANDARD as B64;
 use serde::Serialize;
 use tauri::State;
 
+use glaukopis_core::i18n::tr;
 use glaukopis_core::projects::{HistoryEntry, ProjectInfo, Summary};
 
 use crate::error::{CommandError, CommandResult};
@@ -27,7 +28,8 @@ pub struct Trashed {
 }
 
 fn decode(text: &str) -> CommandResult<Vec<u8>> {
-    B64.decode(text).map_err(|e| CommandError { kind: "invalid", message: format!("not base64: {e}") })
+    B64.decode(text)
+        .map_err(|e| CommandError { kind: "invalid", message: tr!("core-projects-not-base64", error = e.to_string()) })
 }
 
 #[tauri::command(async)]

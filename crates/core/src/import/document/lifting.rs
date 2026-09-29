@@ -31,6 +31,7 @@ use roxmltree::{Document, Node};
 
 use super::made::{self, Made};
 use super::{Format, MAX_BYTES, Properties};
+use crate::tr;
 
 /// What marks a paragraph that says something of a figure or a table: two
 /// signs that are kept for the use of programs, and stand in no text.
@@ -83,7 +84,7 @@ pub(super) fn prepare(path: &Path, format: Format, work: &Path) -> Prepared {
                 kept = made::kept(&meta);
             }
             if written.as_deref().is_some_and(|xml| xml.contains(":changed-region")) {
-                out.remarks.push(TRACKED.to_owned());
+                out.remarks.push(tracked());
             }
             let styles = part(&mut archive, "styles.xml");
             let lifted = written.as_deref().and_then(|xml| odt_text(xml, styles.as_deref()));
@@ -97,10 +98,10 @@ pub(super) fn prepare(path: &Path, format: Format, work: &Path) -> Prepared {
             if written.as_deref().is_some_and(|xml| {
                 ["<w:ins ", "<w:del ", "<w:moveFrom ", "<w:moveTo "].iter().any(|mark| xml.contains(mark))
             }) {
-                out.remarks.push(TRACKED.to_owned());
+                out.remarks.push(tracked());
             }
             if part(&mut archive, "word/comments.xml").is_some_and(|xml| xml.contains("<w:comment ")) {
-                out.remarks.push("The document has comments in the margin, which are left out.".to_owned());
+                out.remarks.push(tr!("core-import-document-comments"));
             }
             let kept = part(&mut archive, "docProps/custom.xml").map(|custom| made::kept(&custom)).unwrap_or_default();
             let styles = part(&mut archive, "word/styles.xml");
@@ -130,8 +131,10 @@ pub(super) fn prepare(path: &Path, format: Format, work: &Path) -> Prepared {
     out
 }
 
-const TRACKED: &str =
-    "The document has changes that are tracked. The text is brought in as it stands when all of them are accepted.";
+/// What is said of a document with changes that are tracked.
+fn tracked() -> String {
+    tr!("core-import-document-tracked")
+}
 
 fn is_picture(name: &str) -> bool {
     let ending = name.rsplit('.').next().unwrap_or("").to_ascii_lowercase();

@@ -142,3 +142,8 @@ figures-targets-table-unsaid = En tabell uten tabelltekst
 figures-targets-no-match = Ingenting i dokumentet svarer til disse ordene.
 figures-targets-none = Det er ingenting å vise til ennå: ingen figur, ingen tabell, ingen nummerert ligning, ingen del med navn.
 figures-targets-hint = Ordene følger det de viser til: nummeret, og hva formatet kaller det.
+
+## Vist av stilarket, der siden ikke har noe element for ordene.
+
+figures-picture-absent = Bildet finnes ikke på denne datamaskinen
+figures-caption-placeholder = Bildetekst

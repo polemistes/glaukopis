@@ -27,6 +27,7 @@ use crate::bib::parser::normalise_space;
 use crate::duplicates::{normalise_doi, normalise_isbns};
 use crate::error::{Error, IoContext, Result};
 use crate::library::entry::Draft;
+use crate::tr;
 
 use super::Candidate;
 
@@ -1182,12 +1183,12 @@ fn checked(path: &Path) -> Result<String> {
     let mut head = Vec::new();
     std::fs::File::open(path)
         .and_then(|file| file.take(1024).read_to_end(&mut head))
-        .context(|| format!("reading {}", path.display()))?;
+        .context(|| tr!("io-reading", path = path))?;
     if head.is_empty() {
-        return Err(Error::invalid(format!("The file “{name}” is empty.")));
+        return Err(Error::invalid(tr!("core-import-pdf-empty", name = &name)));
     }
     if !head.windows(5).any(|w| w == b"%PDF-") {
-        return Err(Error::invalid(format!("The file “{name}” is not a PDF.")));
+        return Err(Error::invalid(tr!("core-import-pdf-not-a-pdf", name = &name)));
     }
     Ok(name)
 }
@@ -1328,24 +1329,17 @@ pub fn candidate(path: &Path, facts: &PdfFacts) -> Candidate {
 
     let mut notes = Vec::new();
     if facts.pages == 0 {
-        notes.push("The file could not be read: it is damaged, protected by a password, or too large.".to_owned());
+        notes.push(tr!("core-import-pdf-unreadable"));
     } else if !facts.has_text {
-        notes.push("The file has no text layer: it is a scan.".to_owned());
+        notes.push(tr!("core-import-pdf-scan"));
     }
     let identified = facts.doi.is_some() || !facts.isbns.is_empty() || facts.arxiv.is_some();
     let described = facts.title.is_some() || !facts.authors.is_empty();
-    notes.push(
-        match (identified, described) {
-            (true, _) => "The details are from the file itself, not from a catalogue, and should be checked.",
-            (false, true) => {
-                "No DOI or ISBN was found in the file; the details are from the file's own metadata and should be checked."
-            }
-            (false, false) => {
-                "No DOI or ISBN was found in the file, and its metadata do not say what it is: the details must be filled in."
-            }
-        }
-        .to_owned(),
-    );
+    notes.push(match (identified, described) {
+        (true, _) => tr!("core-import-pdf-from-file"),
+        (false, true) => tr!("core-import-pdf-from-metadata"),
+        (false, false) => tr!("core-import-pdf-unknown"),
+    });
 
     Candidate {
         draft,

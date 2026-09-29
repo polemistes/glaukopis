@@ -7,6 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::error::{IoContext, Result};
+use crate::tr;
 
 #[derive(Debug, Clone)]
 pub struct DataDir {
@@ -22,7 +23,7 @@ impl DataDir {
     pub fn open(root: impl Into<PathBuf>) -> Result<Self> {
         let dir = DataDir { root: root.into() };
         for sub in [dir.library(), dir.attachments(), dir.pictures(), dir.styles(), dir.formats(), dir.projects()] {
-            fs::create_dir_all(&sub).context(|| format!("creating {}", sub.display()))?;
+            fs::create_dir_all(&sub).context(|| tr!("io-creating", path = &sub))?;
         }
         Ok(dir)
     }

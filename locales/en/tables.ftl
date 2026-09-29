@@ -88,3 +88,7 @@ tables-files = Tables
 tables-unreadable = { $file } could not be read as a table
 tables-cannot-stand = A table cannot stand here
 tables-drop-on-text = Drop a table on the text it belongs to
+
+## Shown by the stylesheet, where the page has no element for the words.
+
+tables-caption-empty = What is said of the table

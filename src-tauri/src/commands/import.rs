@@ -4,6 +4,7 @@ use std::path::Path;
 
 use tauri::State;
 
+use glaukopis_core::i18n::tr;
 use glaukopis_core::import::{self, Outcome, Plan, bibfile};
 
 use crate::error::CommandResult;
@@ -24,7 +25,7 @@ pub fn import_bib_text(state: State<'_, AppState>, text: String) -> CommandResul
     let (candidates, warnings) = bibfile::read_text(&text, None);
     let mut library = state.library();
     library.refresh()?;
-    Ok(import::plan(&library, candidates, "pasted text", warnings))
+    Ok(import::plan(&library, candidates, &tr!("core-import-pasted"), warnings))
 }
 
 #[tauri::command(async)]

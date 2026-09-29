@@ -13,6 +13,7 @@ use std::time::Duration;
 use serde::Serialize;
 
 use crate::error::{Error, Result};
+use crate::tr;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -118,7 +119,7 @@ where
     let messages = String::from_utf8_lossy(&out.stderr).trim().to_owned();
     if !out.status.success() {
         let message = if messages.is_empty() {
-            format!("it ended with {}", out.status)
+            tr!("program-ended", status = out.status.to_string())
         } else {
             messages.lines().take(12).collect::<Vec<_>>().join("\n")
         };
@@ -197,13 +198,13 @@ pub fn run_command_until(mut c: Command, name: &str, input: Option<&[u8]>, stop:
         (status, written.join().unwrap_or_default(), said.join().unwrap_or_default())
     });
     let Some(status) = status else {
-        return Err(Error::Refused { kind: STOPPED, message: format!("{name} was stopped.") });
+        return Err(Error::Refused { kind: STOPPED, message: tr!("program-stopped", program = name) });
     };
     let status = status.map_err(failed)?;
     let messages = String::from_utf8_lossy(&said).trim().to_owned();
     if !status.success() {
         let message = if messages.is_empty() {
-            format!("it ended with {status}")
+            tr!("program-ended", status = status.to_string())
         } else {
             messages.lines().take(12).collect::<Vec<_>>().join("\n")
         };

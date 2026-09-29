@@ -4,6 +4,8 @@ use std::fmt;
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
+use crate::tr;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Unit {
     Pt,
@@ -113,7 +115,7 @@ impl<'de> Deserialize<'de> for Length {
         }
         match Either::deserialize(deserializer)? {
             Either::Text(s) => {
-                Length::parse(&s).ok_or_else(|| serde::de::Error::custom(format!("“{s}” is not a length")))
+                Length::parse(&s).ok_or_else(|| serde::de::Error::custom(tr!("core-export-not-a-length", length = &s)))
             }
             Either::Number(n) => Ok(Length::pt(n)),
         }

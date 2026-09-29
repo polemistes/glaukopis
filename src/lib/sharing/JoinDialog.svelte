@@ -58,8 +58,8 @@
     } catch (error) {
       const message = describeError(error) ?? t('sharing-failed');
       const kind = isBackendError(error) ? error.kind : '';
-      if (kind === 'bad-code' || kind === 'too-many') codeProblem = message;
-      else if (message.includes('code is for')) codeProblem = message;
+      // A code that is no good, and one for a project this computer shares itself, are said by the code.
+      if (kind === 'bad-code' || kind === 'too-many' || kind === 'own-code') codeProblem = message;
       else serverProblem = message;
     } finally {
       busy = false;

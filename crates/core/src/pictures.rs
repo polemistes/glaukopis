@@ -36,6 +36,7 @@ use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::library::attachments::hash_bytes;
 use crate::library::now;
+use crate::tr;
 
 const INDEX: &str = "pictures.json";
 const FILES: &str = "files";
@@ -132,11 +133,11 @@ fn kind_of(bytes: &[u8]) -> Option<Kind> {
 }
 
 fn not_a_picture() -> Error {
-    Error::invalid("the file is not a picture of a kind that can be used: PNG, JPEG, SVG, GIF, WebP, TIFF or BMP")
+    Error::invalid(tr!("core-pictures-not-a-picture"))
 }
 
 fn unreadable(e: image::ImageError) -> Error {
-    Error::invalid(format!("the picture could not be read: {e}"))
+    Error::invalid(tr!("core-pictures-unreadable", error = e.to_string()))
 }
 
 fn decode(bytes: &[u8], format: ImageFormat) -> Result<(DynamicImage, bool)> {
@@ -238,7 +239,7 @@ pub struct Pictures {
 /// The file of a picture in a store at `dir`, if it is named as pictures are.
 pub fn file_in(dir: &Path, hash: &str, extension: &str) -> Result<PathBuf> {
     if !is_hash(hash) || !is_extension(extension) {
-        return Err(Error::invalid("this does not name a picture"));
+        return Err(Error::invalid(tr!("core-pictures-not-a-name")));
     }
     Ok(dir.join(FILES).join(format!("{hash}.{extension}")))
 }
@@ -254,14 +255,14 @@ impl Pictures {
     pub fn open(dir: impl Into<PathBuf>) -> Result<Self> {
         let dir = dir.into();
         let files = dir.join(FILES);
-        fs::create_dir_all(&files).context(|| format!("creating {}", files.display()))?;
+        fs::create_dir_all(&files).context(|| tr!("io-creating", path = &files))?;
         let index = dir.join(INDEX);
         let mut known: Vec<Picture> = match fs::read_to_string(&index) {
             Ok(text) => {
                 serde_json::from_str(&text).map_err(|e| Error::Parse { path: index, message: e.to_string() })?
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Vec::new(),
-            Err(e) => return Err(Error::io(format!("reading {}", index.display()), e)),
+            Err(e) => return Err(Error::io(tr!("io-reading", path = &index), e)),
         };
         let before = known.len();
         known.retain(|p| file_in(&dir, &p.hash, &p.extension).is_ok_and(|f| f.is_file()));
@@ -327,15 +328,21 @@ impl Pictures {
     }
 
     pub fn get(&self, hash: &str) -> Result<Picture> {
-        self.known().iter().find(|p| p.hash == hash).cloned().ok_or_else(|| Error::not_found("the picture"))
+        self.known()
+            .iter()
+            .find(|p| p.hash == hash)
+            .cloned()
+            .ok_or_else(|| Error::not_found(tr!("core-pictures-the-picture")))
     }
 
     pub fn read(&self, hash: &str, extension: &str) -> Result<Vec<u8>> {
         let path = self.path(hash, extension)?;
         match fs::read(&path) {
             Ok(bytes) => Ok(bytes),
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Err(Error::not_found("the picture")),
-            Err(e) => Err(Error::io(format!("reading {}", path.display()), e)),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                Err(Error::not_found(tr!("core-pictures-the-picture")))
+            }
+            Err(e) => Err(Error::io(tr!("io-reading", path = &path), e)),
         }
     }
 
@@ -385,7 +392,7 @@ impl Pictures {
     fn store(&self, hash: &str, extension: &str, content: &[u8]) -> Result<()> {
         let path = self.path(hash, extension)?;
         if !path.is_file() {
-            fs::create_dir_all(self.dir.join(FILES)).context(|| format!("creating {}", self.dir.display()))?;
+            fs::create_dir_all(self.dir.join(FILES)).context(|| tr!("io-creating", path = &self.dir))?;
             write_atomic(&path, content)?;
         }
         Ok(())
@@ -416,11 +423,11 @@ impl Pictures {
     }
 
     pub fn add_from(&self, file: &Path) -> Result<Picture> {
-        let size = fs::metadata(file).context(|| format!("reading {}", file.display()))?.len();
+        let size = fs::metadata(file).context(|| tr!("io-reading", path = file))?.len();
         if size > MAX_BYTES {
             return Err(too_large());
         }
-        let bytes = fs::read(file).context(|| format!("reading {}", file.display()))?;
+        let bytes = fs::read(file).context(|| tr!("io-reading", path = file))?;
         let name = file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
         self.add(&name, &bytes)
     }
@@ -430,7 +437,7 @@ impl Pictures {
     /// says. `name` is what it is called where it came from.
     pub fn keep(&self, hash: &str, bytes: &[u8], name: &str) -> Result<Picture> {
         if !is_hash(hash) || hash_bytes(bytes) != hash {
-            return Err(Error::invalid("what arrived is not the picture that was asked for"));
+            return Err(Error::invalid(tr!("core-pictures-not-as-asked")));
         }
         let (extension, size) = match kind_of(bytes) {
             Some(Kind::Png) => ("png", dimensions(bytes, ImageFormat::Png)),
@@ -454,11 +461,14 @@ impl Pictures {
     /// Says something anew of a picture.
     pub fn update(&self, hash: &str, change: Change) -> Result<Picture> {
         let mut known = self.known();
-        let picture = known.iter_mut().find(|p| p.hash == hash).ok_or_else(|| Error::not_found("the picture"))?;
+        let picture = known
+            .iter_mut()
+            .find(|p| p.hash == hash)
+            .ok_or_else(|| Error::not_found(tr!("core-pictures-the-picture")))?;
         if let Some(name) = change.name {
             let name = trimmed(&name.replace('\n', " "), 200);
             if name.is_empty() {
-                return Err(Error::invalid("a picture must be called something"));
+                return Err(Error::invalid(tr!("core-pictures-needs-name")));
             }
             picture.name = name;
         }
@@ -484,14 +494,17 @@ impl Pictures {
     /// that names it is left without its picture.
     pub fn remove(&self, hash: &str) -> Result<()> {
         let mut known = self.known();
-        let at = known.iter().position(|p| p.hash == hash).ok_or_else(|| Error::not_found("the picture"))?;
+        let at = known
+            .iter()
+            .position(|p| p.hash == hash)
+            .ok_or_else(|| Error::not_found(tr!("core-pictures-the-picture")))?;
         let picture = known.remove(at);
         self.write(&known)?;
         let file = self.path(&picture.hash, &picture.extension)?;
         match fs::remove_file(&file) {
             Ok(()) => {}
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-            Err(e) => return Err(Error::io(format!("removing {}", file.display()), e)),
+            Err(e) => return Err(Error::io(tr!("io-removing", path = &file), e)),
         }
         let _ = fs::remove_file(self.dir.join(SMALL).join(format!("{}.{}", picture.hash, picture.extension)));
         Ok(())
@@ -522,7 +535,7 @@ impl Pictures {
 }
 
 fn too_large() -> Error {
-    Error::invalid(format!("the picture is larger than {} MB, which is the most a picture may be", MAX_BYTES >> 20))
+    Error::invalid(tr!("core-pictures-too-large", most = MAX_BYTES >> 20))
 }
 
 /// The name as it is shown: without what leads to the file, and with the
@@ -534,7 +547,11 @@ fn shown_name(name: &str, extension: &str) -> String {
         _ => name,
     };
     let stem: String = stem.chars().filter(|c| !c.is_control()).take(120).collect();
-    if stem.is_empty() { format!("picture.{extension}") } else { format!("{stem}.{extension}") }
+    if stem.is_empty() {
+        format!("{}.{extension}", tr!("core-pictures-unnamed"))
+    } else {
+        format!("{stem}.{extension}")
+    }
 }
 
 #[cfg(test)]

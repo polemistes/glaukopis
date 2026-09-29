@@ -142,3 +142,8 @@ figures-targets-table-unsaid = A table of which nothing is said
 figures-targets-no-match = Nothing in the document answers to these words.
 figures-targets-none = There is nothing to point to yet: no figure, no table, no numbered equation, no part with a name.
 figures-targets-hint = The words follow what they point to: its number, and what the format calls it.
+
+## Shown by the stylesheet, where the page has no element for the words.
+
+figures-picture-absent = The picture is not on this computer
+figures-caption-placeholder = What is said of the picture

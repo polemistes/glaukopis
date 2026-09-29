@@ -28,6 +28,7 @@ use crate::formats::{DocumentFormat, NoteKind, TitlePlacement};
 use crate::fsutil::write_atomic;
 use crate::library::Library;
 use crate::styles::Styles;
+use crate::tr;
 
 pub use tools::{Tool, Tools};
 
@@ -466,13 +467,10 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         .extras
         .absent()
         .into_iter()
-        .map(|name| format!("The picture “{name}” is not on this computer, and is left out of the document."))
+        .map(|name| tr!("core-export-picture-missing", name = name))
         .chain(match converter.extras.astray() {
             0 => None,
-            1 => Some("Words in the text point to something that is not in the document. They are set as [?].".into()),
-            n => Some(format!(
-                "Words in the text point, in {n} places, to what is not in the document. They are set as [?]."
-            )),
+            n => Some(tr!("core-export-astray", count = n)),
         })
         .collect();
 
@@ -532,7 +530,7 @@ fn warnings_of(messages: &str) -> Vec<String> {
 
 fn work_dir(ctx: &Context, key: &str, what: &str) -> Result<PathBuf> {
     let dir = ctx.work.join(safe_key(key)).join(what);
-    fs::create_dir_all(&dir).context(|| format!("creating {}", dir.display()))?;
+    fs::create_dir_all(&dir).context(|| tr!("io-creating", path = &dir))?;
     Ok(dir)
 }
 
@@ -671,7 +669,7 @@ pub fn preview_made(
 pub fn preview_pages(ctx: &Context, key: &str, wanted: &[u32], stop: &AtomicBool) -> Result<(usize, Vec<Page>)> {
     let dir = work_dir(ctx, key, "preview")?;
     if !dir.join("document.typ").is_file() {
-        return Err(Error::NotFound("the document of the preview".into()));
+        return Err(Error::NotFound(tr!("core-export-preview-document")));
     }
     let (count, pages, _) = pages_of(ctx, &dir, wanted, stop)?;
     Ok((count, pages))
@@ -687,7 +685,7 @@ fn pages_of(ctx: &Context, dir: &Path, wanted: &[u32], stop: &AtomicBool) -> Res
     let into = tempfile::Builder::new()
         .prefix("pages-")
         .tempdir_in(dir)
-        .context(|| format!("creating a directory in {}", dir.display()))?;
+        .context(|| tr!("io-creating-directory-in", path = dir))?;
     let mut wanted: Vec<u32> = wanted.iter().copied().filter(|n| *n > 0).collect();
     wanted.sort_unstable();
     wanted.dedup();
@@ -734,7 +732,7 @@ fn pages_of(ctx: &Context, dir: &Path, wanted: &[u32], stop: &AtomicBool) -> Res
 fn read_pages(dir: &Path) -> Result<(usize, Vec<Page>)> {
     let mut count = 0usize;
     let mut found: Vec<(u32, PathBuf)> = Vec::new();
-    for entry in fs::read_dir(dir).context(|| format!("reading {}", dir.display()))?.flatten() {
+    for entry in fs::read_dir(dir).context(|| tr!("io-reading", path = dir))?.flatten() {
         let name = entry.file_name().to_string_lossy().into_owned();
         let Some(rest) = name.strip_prefix("page-").and_then(|n| n.strip_suffix(".svg")) else { continue };
         let Some((number, of)) = rest.split_once("-of-") else { continue };
@@ -745,7 +743,7 @@ fn read_pages(dir: &Path) -> Result<(usize, Vec<Page>)> {
     found.sort_by_key(|(number, _)| *number);
     let mut pages = Vec::with_capacity(found.len());
     for (number, path) in found {
-        let svg = fs::read_to_string(&path).context(|| format!("reading {}", path.display()))?;
+        let svg = fs::read_to_string(&path).context(|| tr!("io-reading", path = &path))?;
         pages.push(Page { number, svg });
     }
     Ok((count, pages))
@@ -787,7 +785,7 @@ pub fn export(
         let made = dir.join("document.pdf");
         let out = tools::run(&typst.path, "Typst", ["compile", "document.typ", "document.pdf"], None, Some(&dir))?;
         exported.warnings.extend(typst_warnings(&out.messages));
-        let bytes = fs::read(&made).context(|| "reading the PDF that was made".to_owned())?;
+        let bytes = fs::read(&made).context(|| tr!("core-export-reading-pdf"))?;
         write_atomic(path, &bytes)?;
         return Ok(exported);
     }
@@ -836,10 +834,7 @@ pub fn export(
                 // and that is said.
                 without_font = engine == "pdflatex" || !tools::has_font(&fonts, &request.format.font.family);
                 if without_font && engine != "pdflatex" {
-                    exported.warnings.push(format!(
-                        "{} is not installed. The document is set in Latin Modern, the font that LaTeX has of its own.",
-                        request.format.font.family
-                    ));
+                    exported.warnings.push(tr!("core-export-latex-font", font = &request.format.font.family));
                 }
                 // A font has the letters it has. For those it lacks, as many
                 // lack Greek with its accents, others are asked in turn.
@@ -920,7 +915,7 @@ pub fn export(
             || !(w.contains("LaTeX Warning: Command") || w.contains("Check if current package is valid"))
     }));
     exported.missing = prepared.bibliography.missing;
-    let bytes = fs::read(&made).context(|| "reading the document that was made".to_owned())?;
+    let bytes = fs::read(&made).context(|| tr!("core-export-reading-made"))?;
     // What Pandoc cannot be told, of a document for a word processor, is set right after.
     let bytes = match target {
         Target::Docx => after::docx(&bytes)?,
@@ -984,7 +979,7 @@ fn html_styles(f: &DocumentFormat) -> String {
 fn add_odt_break(odt: &[u8]) -> Result<Vec<u8>> {
     use std::io::{Cursor, Read, Write};
     let mut archive = zip::ZipArchive::new(Cursor::new(odt))
-        .map_err(|e| Error::invalid(format!("the pattern document could not be read: {e}")))?;
+        .map_err(|e| Error::invalid(tr!("core-export-pattern-unreadable", error = e.to_string())))?;
     let mut out = zip::ZipWriter::new(Cursor::new(Vec::new()));
     let names: Vec<String> =
         (0..archive.len()).filter_map(|i| archive.by_index(i).ok().map(|f| f.name().to_owned())).collect();
@@ -996,7 +991,7 @@ fn add_odt_break(odt: &[u8]) -> Result<Vec<u8>> {
             continue;
         }
         let mut bytes = Vec::new();
-        file.read_to_end(&mut bytes).map_err(|e| Error::io("reading the pattern document", e))?;
+        file.read_to_end(&mut bytes).map_err(|e| Error::io(tr!("core-export-pattern-reading"), e))?;
         if name == "styles.xml" {
             let mut text = String::from_utf8_lossy(&bytes).into_owned();
             let style = "<style:style style:name=\"Pagebreak\" style:family=\"paragraph\" style:parent-style-name=\"Standard\">\
@@ -1011,7 +1006,7 @@ fn add_odt_break(odt: &[u8]) -> Result<Vec<u8>> {
         let method = if name == "mimetype" { zip::CompressionMethod::Stored } else { zip::CompressionMethod::Deflated };
         out.start_file(name.as_str(), zip::write::SimpleFileOptions::default().compression_method(method))
             .map_err(|e| Error::invalid(e.to_string()))?;
-        out.write_all(&bytes).map_err(|e| Error::io("writing the pattern document", e))?;
+        out.write_all(&bytes).map_err(|e| Error::io(tr!("core-export-pattern-writing"), e))?;
     }
     Ok(out.finish().map_err(|e| Error::invalid(e.to_string()))?.into_inner())
 }

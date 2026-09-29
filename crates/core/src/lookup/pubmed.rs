@@ -15,6 +15,7 @@ use crate::duplicates::normalise_doi;
 use crate::error::{Error, Result};
 use crate::library::entry::Draft;
 use crate::net::{Client, encode};
+use crate::tr;
 
 use super::{Hit, csl::is_issn, pace, text, xml_child, xml_child_text, xml_text};
 
@@ -76,12 +77,11 @@ fn article(entry: roxmltree::Node) -> Option<Hit> {
     match (translated, own) {
         (Some(english), Some(own)) => {
             put("title", text::title(&own, langid, &mut remarks));
-            remarks
-                .push(format!("PubMed translates the title into English as “{}”.", text::without_final_stop(&english)));
+            remarks.push(tr!("core-lookup-pubmed-translated", title = text::without_final_stop(&english)));
         }
         (Some(english), None) => {
             put("title", text::title(&english, Some("english"), &mut remarks));
-            remarks.push("The title is PubMed's translation into English. The title in the language of the article is not given.".to_owned());
+            remarks.push(tr!("core-lookup-pubmed-translation"));
         }
         (None, _) => put("title", text::title(&given, langid, &mut remarks)),
     }
@@ -188,21 +188,19 @@ fn article(entry: roxmltree::Node) -> Option<Hit> {
 
 pub(crate) fn hits(xml: &str) -> Result<Vec<Hit>> {
     let document = roxmltree::Document::parse_with_options(xml, super::xml_options())
-        .map_err(|_| Error::Network("PubMed answered with something that could not be read".to_owned()))?;
+        .map_err(|_| Error::Network(tr!("core-lookup-unreadable", service = "PubMed")))?;
     let root = document.root_element();
     if root.tag_name().name() != "PubmedArticleSet" {
         let said = descendant(root, "ERROR").map(xml_text).filter(|e| !e.is_empty());
         return Err(Error::Network(match said {
-            Some(said) => format!("PubMed could not answer the question: {said}"),
-            None => "PubMed answered with something that is not a list of articles".to_owned(),
+            Some(said) => tr!("core-lookup-could-not-answer", service = "PubMed", said = said),
+            None => tr!("core-lookup-not-articles", service = "PubMed"),
         }));
     }
     let named = |name: &'static str| root.children().filter(move |n| n.is_element() && n.tag_name().name() == name);
     let hits: Vec<Hit> = named("PubmedArticle").filter_map(article).collect();
     if hits.is_empty() && named("PubmedBookArticle").next().is_some() {
-        return Err(Error::Network(
-            "PubMed has this as a book or a part of one, which cannot be read from it yet".to_owned(),
-        ));
+        return Err(Error::Network(tr!("core-lookup-pubmed-book", service = SOURCE)));
     }
     Ok(hits)
 }

@@ -8,6 +8,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::latex::{fold, plain};
+use crate::tr;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
@@ -393,9 +394,9 @@ pub fn short_list(people: &[Person]) -> String {
     match (names.len(), others) {
         (0, _) => String::new(),
         (1, false) => names[0].clone(),
-        (2, false) => format!("{} and {}", names[0], names[1]),
-        (3, false) => format!("{}, {} and {}", names[0], names[1], names[2]),
-        _ => format!("{} et al.", names[0]),
+        (2, false) => tr!("core-library-two-names", first = &names[0], second = &names[1]),
+        (3, false) => tr!("core-library-three-names", first = &names[0], second = &names[1], third = &names[2]),
+        _ => tr!("core-library-et-al", first = &names[0]),
     }
 }
 

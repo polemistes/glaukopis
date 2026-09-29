@@ -15,6 +15,7 @@ use crate::bib::{self, RawEntry};
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic_with_backup;
 use crate::paths::DataDir;
+use crate::tr;
 
 pub use attachments::StoredFile;
 pub use collections::{Collection, Collections};
@@ -67,7 +68,7 @@ impl Library {
     }
 
     pub fn open_at(dir: &Path) -> Result<Self> {
-        fs::create_dir_all(dir.join(attachments::DIR)).context(|| format!("creating {}", dir.display()))?;
+        fs::create_dir_all(dir.join(attachments::DIR)).context(|| tr!("io-creating", path = dir))?;
         let mut library = Library {
             dir: dir.to_owned(),
             file: dir.join("library.bib"),
@@ -99,13 +100,13 @@ impl Library {
         let text = match fs::read(&self.file) {
             Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
-            Err(e) => return Err(e).context(|| format!("reading {}", self.file.display())),
+            Err(e) => return Err(e).context(|| tr!("io-reading", path = &self.file)),
         };
         self.stamp = stamp_of(&self.file);
 
         let parsed = bib::parse(&text);
         for w in &parsed.warnings {
-            self.warnings.push(format!("line {}: {}", w.line, w.message));
+            self.warnings.push(tr!("core-library-line", line = w.line, message = &w.message));
         }
 
         let mut ids = HashSet::new();
@@ -128,7 +129,7 @@ impl Library {
             let wanted = keys::sanitise_key(&entry.key).unwrap_or_else(|| keys::base_key(&entry));
             let key = keys::unique_key(&wanted, &keys);
             if key != entry.key {
-                self.warnings.push(format!("the key “{}” was changed to “{}”", entry.key, key));
+                self.warnings.push(tr!("core-library-key-changed", from = &entry.key, to = &key));
                 entry.key = key;
                 needs_saving = true;
             }
@@ -209,7 +210,7 @@ impl Library {
     }
 
     pub fn require(&self, id: &str) -> Result<&Entry> {
-        self.get(id).ok_or_else(|| Error::not_found("the reference"))
+        self.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))
     }
 
     pub fn by_key(&self, key: &str) -> Option<&Entry> {
@@ -241,16 +242,14 @@ impl Library {
             return Ok(keys::unique_key(&keys::base_key(&draft.to_entry()), &taken));
         }
         let Some(clean) = keys::sanitise_key(asked) else {
-            return Err(Error::invalid(format!("“{asked}” cannot be used as a citation key.")));
+            return Err(key_error(tr!("core-library-bad-key", key = asked)));
         };
         if strict {
             if clean != asked {
-                return Err(Error::invalid(format!(
-                    "A citation key may hold letters, digits and - _ : . only. Try “{clean}”."
-                )));
+                return Err(key_error(tr!("core-library-key-letters", key = &clean)));
             }
             if taken.iter().any(|k| k.to_lowercase() == clean.to_lowercase()) {
-                return Err(Error::invalid(format!("The citation key “{clean}” is already in use.")));
+                return Err(key_error(tr!("core-library-key-taken", key = &clean)));
             }
             return Ok(clean);
         }
@@ -260,10 +259,10 @@ impl Library {
     fn check_type(entry_type: &str) -> Result<String> {
         let t = entry_type.trim().to_ascii_lowercase();
         if t.is_empty() || !t.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
-            return Err(Error::invalid("The reference has no publication type."));
+            return Err(Error::invalid(tr!("core-library-no-type")));
         }
         if matches!(t.as_str(), "comment" | "string" | "preamble") {
-            return Err(Error::invalid(format!("“{t}” is not a publication type.")));
+            return Err(Error::invalid(tr!("core-library-not-a-type", kind = &t)));
         }
         Ok(t)
     }
@@ -335,7 +334,7 @@ impl Library {
     }
 
     pub(crate) fn apply(&mut self, id: &str, draft: &Draft) -> Result<Entry> {
-        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found("the reference"))?;
+        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
         let entry_type = Self::check_type(&draft.entry_type)?;
         let key = self.key_for(draft, Some(id), true)?;
         let files = self.entries[index].get("file").map(str::to_owned);
@@ -406,7 +405,7 @@ impl Library {
     pub fn merge(&mut self, kept: &str, absorbed: &str, draft: &Draft) -> Result<Entry> {
         self.refresh()?;
         if kept == absorbed {
-            return Err(Error::invalid("An entry cannot be merged with itself."));
+            return Err(Error::invalid(tr!("core-library-merge-itself")));
         }
         let gone = self.require(absorbed)?.clone();
         self.require(kept)?;
@@ -469,7 +468,7 @@ impl Library {
     fn file_name_for(entry: &Entry) -> String {
         let s = entry.summary();
         let mut name = String::new();
-        let authors = s.authors.replace(" (ed.)", "").replace(" (eds.)", "");
+        let authors = bib::names::short_list(&entry.creators());
         if !authors.is_empty() {
             name.push_str(&authors);
         }
@@ -492,7 +491,7 @@ impl Library {
     /// Copies a file into the store and links it to the entry.
     pub fn attach(&mut self, id: &str, source: &Path) -> Result<Entry> {
         self.refresh()?;
-        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found("the reference"))?;
+        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
         let name = Self::file_name_for(&self.entries[index]);
         let stored = attachments::store_file(&self.dir, source, &name)?;
         self.link_file(index, stored)
@@ -501,10 +500,10 @@ impl Library {
     /// Links a file that is already in the store.
     pub fn attach_stored(&mut self, id: &str, stored: &str) -> Result<Entry> {
         self.refresh()?;
-        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found("the reference"))?;
+        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
         let path = attachments::absolute(&self.dir, stored)?;
         if !path.is_file() {
-            return Err(Error::not_found(format!("the stored file {stored}")));
+            return Err(Error::not_found(tr!("core-library-the-stored-file", path = stored)));
         }
         self.link_file(index, stored.to_owned())
     }
@@ -530,7 +529,7 @@ impl Library {
 
     /// As `attach`, leaving the saving to the caller, who has more changes to make.
     pub(crate) fn attach_unsaved(&mut self, id: &str, source: &Path) -> Result<bool> {
-        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found("the reference"))?;
+        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
         let name = Self::file_name_for(&self.entries[index]);
         let stored = attachments::store_file(&self.dir, source, &name)?;
         Ok(self.link_file_unsaved(index, stored))
@@ -540,7 +539,7 @@ impl Library {
     /// no other entry links to it.
     pub fn detach(&mut self, id: &str, stored: &str) -> Result<Entry> {
         self.refresh()?;
-        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found("the reference"))?;
+        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
         let entry = &mut self.entries[index];
         let mut files = entry.attachments();
         let before = files.len();
@@ -724,17 +723,24 @@ fn stored_entry(raw: &RawEntry) -> Entry {
     entry
 }
 
+/// What is wrong with a citation key that was asked for. It has a kind of its
+/// own, by which the interface shows it beside the key, in whatever language
+/// it is said.
+fn key_error(message: String) -> Error {
+    Error::Refused { kind: "key", message }
+}
+
 /// Reads exactly one entry from source typed by the user.
 pub fn draft_from_source(source: &str) -> Result<Draft> {
     let parsed = bib::parse(source);
     if let Some(w) = parsed.warnings.first() {
-        return Err(Error::invalid(format!("Line {}: {}.", w.line, w.message)));
+        return Err(Error::invalid(tr!("core-library-line-sentence", line = w.line, message = &w.message)));
     }
     let mut entries = parsed.into_entries();
     match entries.len() {
-        0 => Err(Error::invalid("There is no entry here. An entry begins with @ and its type, as in @book{key, …}.")),
+        0 => Err(Error::invalid(tr!("core-library-no-entry"))),
         1 => Ok(Draft::from_raw(&entries.remove(0))),
-        n => Err(Error::invalid(format!("There are {n} entries here; one is expected."))),
+        n => Err(Error::invalid(tr!("core-library-many-entries", count = n))),
     }
 }
 
@@ -808,8 +814,14 @@ mod tests {
         assert_eq!(a.key, "nagy1979");
         let b = lib.add(&draft("@book{, author={Nagy, Gregory}, title={Another}, date={1979}}")).unwrap();
         assert_eq!(b.key, "nagy1979a");
-        assert!(lib.add(&draft("@book{nagy1979, title={Clash}}")).is_err());
-        assert!(lib.add(&draft("@book{bad key, title={Clash}}")).is_err());
+        // What is wrong with a key has a kind of its own, by which the
+        // interface shows it beside the key in any language.
+        let taken = lib.add(&draft("@book{nagy1979, title={Clash}}")).unwrap_err();
+        assert_eq!(taken.kind(), "key");
+        assert_eq!(taken.to_string(), "The citation key “nagy1979” is already in use.");
+        let spaced = lib.add(&draft("@book{bad key, title={Clash}}")).unwrap_err();
+        assert_eq!(spaced.kind(), "key");
+        assert_eq!(spaced.to_string(), "A citation key may hold letters, digits and - _ : . only. Try “bad_key”.");
 
         let text = fs::read_to_string(lib.file()).unwrap();
         assert!(text.contains("Johns Hopkins \\& Sons"));

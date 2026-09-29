@@ -9,6 +9,7 @@ use serde_json::{Map, Value};
 
 use crate::error::{IoContext, Result};
 use crate::fsutil::write_atomic;
+use crate::tr;
 
 pub fn load(path: &Path) -> Result<Map<String, Value>> {
     match std::fs::read_to_string(path) {
@@ -21,7 +22,7 @@ pub fn load(path: &Path) -> Result<Map<String, Value>> {
             }
         },
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Map::new()),
-        Err(e) => Err(e).context(|| format!("reading {}", path.display())),
+        Err(e) => Err(e).context(|| tr!("io-reading", path = path)),
     }
 }
 
