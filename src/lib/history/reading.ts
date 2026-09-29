@@ -163,6 +163,8 @@ export function readPieces(
   who: Who,
   override: Override[] = [],
   note?: (element: Y.XmlElement, index: number) => void,
+  /** Only the units from and to these, where given: what formats them is read all the same. */
+  range?: [number, number],
 ): Piece[] {
   const list = units(block);
   // A stretch that was accepted takes in what formats it at its ends.
@@ -238,6 +240,7 @@ export function readPieces(
       return;
     }
     if (!a && !b) return;
+    if (range && (index < range[0] || index >= range[1])) return;
     const status = a && b ? 'same' : a ? 'added' : 'removed';
     const by =
       status === 'added'
@@ -486,7 +489,8 @@ export function readMap(
   const nodes = doc.getMap('nodes') as unknown as AnyType;
 
   // ---- the elements themselves ----
-  const movedAmong = new Set<string>();
+  /** The parents among whose children some changed places. */
+  const reordered = new Set<string>();
   const parents = new Set([...treeThen.children.keys(), ...treeNow.children.keys()]);
   for (const parent of parents) {
     const a = (treeThen.children.get(parent) ?? []).filter(
@@ -495,7 +499,7 @@ export function readMap(
     const b = (treeNow.children.get(parent) ?? []).filter(
       (id) => treeThen.parent.get(id) === parent,
     );
-    for (const id of movedIn(a, b)) movedAmong.add(id);
+    if (movedIn(a, b).size) reordered.add(parent);
   }
   const placeIn = (tree: Tree, id: string) => {
     const parent = tree.parent.get(id) ?? null;
@@ -532,9 +536,22 @@ export function readMap(
       });
     } else if (a && b) {
       const node = a.node as unknown as AnyType;
+      // Of two that changed places, the one that moved is the one given a new
+      // place: its order is newer, and among those that were there both times
+      // its neighbours are others than they were.
+      const neighbours = (tree: Tree, other: Tree) => {
+        const parent = tree.parent.get(id) ?? null;
+        const list = (parent ? (tree.children.get(parent) ?? []) : tree.loose).filter(
+          (x) => x === id || (other.parent.get(x) ?? null) === parent,
+        );
+        const i = list.indexOf(id);
+        return `${list[i - 1] ?? ''} ${list[i + 1] ?? ''}`;
+      };
       const moved =
         (treeThen.parent.get(id) ?? null) !== (treeNow.parent.get(id) ?? null) ||
-        movedAmong.has(id);
+        (reordered.has(treeNow.parent.get(id) ?? '') &&
+          entryAt(node, 'order', after) !== entryAt(node, 'order', before) &&
+          neighbours(treeThen, treeNow) !== neighbours(treeNow, treeThen));
       const by = (key: string) => {
         const item = entryAt(node, key, after);
         return item && item !== entryAt(node, key, before) ? who.maker(item.id.client) : null;
