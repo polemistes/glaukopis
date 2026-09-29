@@ -298,12 +298,8 @@ describe('searching elements', () => {
     const { pr, elements } = project([p(t('wrath'))], [p(t('wrath'))]);
     const texts = new Texts(pr);
     const [a, b] = search(texts, elements, matcher('wrath'));
-    pr.transact(() =>
-      pr
-        .fragment(elements[0], 'body')!
-        .get(0)
-        .insert(0, [new Y.XmlText('The ')]),
-    );
+    const paragraph = pr.fragment(elements[0], 'body')!.get(0) as Y.XmlElement;
+    pr.transact(() => (paragraph.get(0) as Y.XmlText).insert(0, 'The '));
     const again = search(texts, elements, matcher('wrath'));
     expect(again.map((m) => m.start)).toEqual([4, 0]);
     expect(again[0]).not.toBe(a);
