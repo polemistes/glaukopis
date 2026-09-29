@@ -1,6 +1,7 @@
 /** The one place where the interface calls the Rust side. */
 
 import { invoke } from '@tauri-apps/api/core';
+import { t } from '$lib/i18n';
 
 export interface BackendError {
   kind: string;
@@ -22,7 +23,7 @@ export async function call<T>(command: string, args?: Record<string, unknown>): 
   if (!inTauri) {
     throw {
       kind: 'no-backend',
-      message: 'Glaukopis must be run as an application, not in a browser.',
+      message: t('ui-no-backend'),
     };
   }
   return invoke<T>(command, args);

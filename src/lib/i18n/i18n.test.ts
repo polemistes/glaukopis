@@ -16,7 +16,9 @@ function catalogue(tag: string, document: boolean): Map<string, Set<string>> {
         current = new Set();
         out.set(id, current);
       }
-      if (current) for (const v of line.matchAll(/\$([a-zA-Z][\w-]*)/g)) current.add(v[1]);
+      // What a comment says of a variable is not a variable.
+      if (current && !line.startsWith('#'))
+        for (const v of line.matchAll(/\$([a-zA-Z][\w-]*)/g)) current.add(v[1]);
     }
   }
   return out;

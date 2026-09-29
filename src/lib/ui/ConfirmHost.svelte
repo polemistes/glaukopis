@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
   import { confirmations } from './confirm.svelte';
@@ -17,7 +18,7 @@
     {#snippet footer()}
       {#if q.cancel !== ''}
         <Button variant="ghost" onclick={() => confirmations.answer('cancel')}
-          >{q.cancel ?? 'Cancel'}</Button
+          >{q.cancel ?? t('common-cancel')}</Button
         >
       {/if}
       {#if q.alternative}
@@ -26,7 +27,7 @@
       <Button
         bind:el={confirmButton}
         variant={q.danger ? 'danger' : 'primary'}
-        onclick={() => confirmations.answer('confirm')}>{q.confirm ?? 'OK'}</Button
+        onclick={() => confirmations.answer('confirm')}>{q.confirm ?? t('ui-ok')}</Button
       >
     {/snippet}
   </Dialog>
