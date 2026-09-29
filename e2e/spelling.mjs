@@ -29,10 +29,9 @@ const underlined = (within = '.text-view') =>
   );
 
 /** The words underlined in text that is drawn without an editor. */
-const highlighted = () =>
+const drawnUnderlined = () =>
   app.exec(
-    `const h = CSS.highlights && CSS.highlights.get('misspelt');
-     return h ? Array.from(h).map((r) => r.toString()) : null;`,
+    `return Array.from(document.querySelectorAll('.text-view .static .misspelt')).map((e) => e.textContent)`,
   );
 
 async function until(what, fn, ms = 10000) {
@@ -181,15 +180,14 @@ try {
   if (!(await app.exists('.text-view .section'))) await app.keys(['Control', 'd']);
   await app.waitFor('.text-view .section .body .static', 8000);
   const drawn = await until('the words to be marked', async () => {
-    const h = await highlighted();
-    return h === null ? ['(no highlights)'] : h.length ? h : null;
+    const words = await drawnUnderlined();
+    return words.length ? words : null;
   });
   check('in text drawn without an editor, misspelt words are underlined', drawn.includes('teh') && drawn.includes('Achilees') && !drawn.includes('Glaukopis') && !drawn.includes('colour'), drawn.join(' '));
   await app.screenshot('spelling-4-drawn');
   // Its menu, where it stands.
   const at = await app.exec(
-    `const h = CSS.highlights.get('misspelt');
-     const r = Array.from(h).find((r) => r.toString() === 'teh').getBoundingClientRect();
+    `const r = Array.from(document.querySelectorAll('.text-view .static .misspelt')).find((e) => e.textContent === 'teh').getBoundingClientRect();
      return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };`,
   );
   await rightClickAt(at.x, at.y);

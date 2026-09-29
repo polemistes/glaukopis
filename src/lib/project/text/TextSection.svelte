@@ -10,7 +10,7 @@
   import { hydrate } from '$lib/figures/hydrate.svelte';
   import { pressedFound } from '$lib/found/found.svelte';
   import { t } from '$lib/i18n';
-  import { drawnWordAt, spellingMarks } from '$lib/spelling/highlights';
+  import { drawnWordAt, spellingMarks } from '$lib/spelling/drawn';
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import type { Other, Project } from '../model/project.svelte';

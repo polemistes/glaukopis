@@ -3,12 +3,17 @@
  * does not have are underlined where they stand (ADR 0019).
  *
  * Only what has changed is looked at again after a change: the textblocks
- * that the change touched. The first look at a text, and a look at the
- * whole of it when the language or the writer's words have changed, goes
- * in pieces when there is time. The words are asked about through
- * `spelling`, which keeps what is known for all editors; what waits for an
- * answer is looked at again when the answer comes. The word being written,
- * at the cursor, is left alone until it is left.
+ * that the change touched, when the writing has rested a moment. The first
+ * look at a text, and a look at the whole of it when the language or the
+ * writer's words have changed, goes in pieces when there is time. The words
+ * are asked about through `spelling`, which keeps what is known for all
+ * editors; what waits for an answer is looked at again when the answer
+ * comes. The word being written, at the cursor, is left alone until it is
+ * left.
+ *
+ * What is to be looked at is kept by the view of the plugin, and not in the
+ * state of the editor: a look that finds what was underlined before changes
+ * nothing, and is not a transaction.
  */
 
 import type { Node, ResolvedPos } from 'prosemirror-model';
@@ -16,7 +21,7 @@ import { Plugin, PluginKey, type EditorState, type Transaction } from 'prosemirr
 import { Mapping, StepMap, type Mappable } from 'prosemirror-transform';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import { ySyncPluginKey } from 'y-prosemirror';
-import { isIgnored, spelling, type Change } from './spelling.svelte';
+import { isIgnored, spelling } from './spelling.svelte';
 import { findWords, NOT_TEXT, wordAt, type Word } from './words';
 import './spelling.css';
 
@@ -47,19 +52,12 @@ interface Range {
   to: number;
 }
 
+/** What is underlined, which is what the state of an editor holds of spelling. */
 interface State {
   decorations: DecorationSet;
-  /** What is to be looked at, when there is time. */
-  todo: Range[];
-  /** What waits for words to be answered. */
-  waiting: Range[];
 }
 
-type Meta =
-  | { kind: 'looked'; decorations: DecorationSet; todo: Range[]; waiting: Range[] }
-  | { kind: 'look'; ranges: Range[] }
-  | { kind: Change }
-  | { kind: 'off' };
+type Meta = { kind: 'underlined'; decorations: DecorationSet };
 
 export const spellingKey = new PluginKey<State>('spelling');
 
@@ -69,6 +67,16 @@ const REST = 120;
 const PIECE = 8;
 
 const DECORATION = { class: 'misspelt' };
+
+/** What looks at the text of each editor. */
+interface Looker {
+  /** Looks at these parts again, soon. */
+  look(ranges: Range[]): void;
+  /** Looks at all of it again. */
+  anew(): void;
+}
+
+const lookers = new WeakMap<EditorView, Looker>();
 
 function mapRanges(ranges: Range[], mapping: Mappable): Range[] {
   const out: Range[] = [];
@@ -81,36 +89,34 @@ function mapRanges(ranges: Range[], mapping: Mappable): Range[] {
 }
 
 /**
- * How places moved in a transaction, and what it changed. y-prosemirror puts
- * in the whole text anew for every change that comes through the document,
- * as when another writes or the text is first put in: there, what differs
- * is found by comparing, so that the underlines elsewhere stay.
+ * How places moved from one document to another, and what differs: found
+ * by comparing, which is quick, as what did not change is the same node.
+ * Null where nothing differs.
  */
-function changesOf(tr: Transaction, before: EditorState): { mapping: Mapping; changed: Range[] } {
-  if (tr.getMeta(ySyncPluginKey)) {
-    const a = before.doc.content;
-    const b = tr.doc.content;
-    const start = a.findDiffStart(b);
-    if (start == null) return { mapping: new Mapping(), changed: [] };
-    let { a: endA, b: endB } = a.findDiffEnd(b)!;
-    const overlap = start - Math.min(endA, endB);
-    if (overlap > 0) {
-      endA += overlap;
-      endB += overlap;
-    }
-    return {
-      mapping: new Mapping([new StepMap([start, endA - start, endB - start])]),
-      changed: [{ from: start, to: endB }],
-    };
+function difference(a: Node, b: Node): { mapping: Mapping; changed: Range } | null {
+  const start = a.content.findDiffStart(b.content);
+  if (start == null) return null;
+  let { a: endA, b: endB } = a.content.findDiffEnd(b.content)!;
+  const overlap = start - Math.min(endA, endB);
+  if (overlap > 0) {
+    endA += overlap;
+    endB += overlap;
   }
-  const changed: Range[] = [];
-  tr.mapping.maps.forEach((map, i) => {
-    const after = tr.mapping.slice(i + 1);
-    map.forEach((_oldFrom, _oldTo, from, to) => {
-      changed.push({ from: after.map(from, -1), to: after.map(to, 1) });
-    });
-  });
-  return { mapping: tr.mapping, changed };
+  return {
+    mapping: new Mapping([new StepMap([start, endA - start, endB - start])]),
+    changed: { from: start, to: endB },
+  };
+}
+
+/**
+ * How the places of a transaction moved. y-prosemirror puts in the whole
+ * text anew for every change that comes through the document, as when
+ * another writes or the text is first put in: there, what differs is found
+ * by comparing, so that the underlines elsewhere stay.
+ */
+function mappingOf(tr: Transaction, before: EditorState): Mapping {
+  if (!tr.getMeta(ySyncPluginKey)) return tr.mapping;
+  return difference(before.doc, tr.doc)?.mapping ?? new Mapping();
 }
 
 /** The ranges, sorted, with those that touch made one. */
@@ -166,7 +172,20 @@ function wordsOf(block: Node, pos: number, language: string, script: string | nu
   }));
 }
 
+/** Whether two lists of underlines underline the same words in the same places. */
+function same(a: Decoration[], b: Decoration[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every(
+    (d, i) =>
+      d.from === b[i].from &&
+      d.to === b[i].to &&
+      (d.spec as { word: string }).word === (b[i].spec as { word: string }).word,
+  );
+}
+
 export function spellingPlugin(options: SpellingOptions): Plugin<State> {
+  const languageOf = () => options.language() ?? '';
+
   /** Whether a word is misspelt: known to be wrong, and not ignored. Undefined while it is not known. */
   function wrong(word: Word): boolean | undefined {
     const right = spelling.judge(options.language(), word.asked);
@@ -181,13 +200,8 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
     if (!checking) return null;
     const at = blockOf(state.doc.resolve(pos));
     if (!at) return null;
-    const words = wordsOf(at.block, at.pos, languageOf(), checking.script);
-    const word = wordAt(words, pos);
+    const word = wordAt(wordsOf(at.block, at.pos, languageOf(), checking.script), pos);
     return word && wrong(word) === true ? word : null;
-  }
-
-  function languageOf(): string {
-    return options.language() ?? '';
   }
 
   /** Why nothing is shown in this text. */
@@ -199,38 +213,34 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
     return 'nothing';
   }
 
+  /**
+   * The misspelt word at the cursor, or the next after it (with `back`, the
+   * one before it), going round to the other end of the text.
+   */
+  function nextMisspelt(state: EditorState, back: boolean): Misspelt | null {
+    const here = misspeltAt(state, state.selection.head);
+    if (here) return here;
+    const all = (spellingKey.getState(state)?.decorations.find() ?? []).sort(
+      (a, b) => a.from - b.from,
+    );
+    if (!all.length) return null;
+    const head = state.selection.head;
+    const next = back
+      ? ([...all].reverse().find((d) => d.to < head) ?? all[all.length - 1])
+      : (all.find((d) => d.from > head) ?? all[0]);
+    const spec = next.spec as { word: string; asked: string };
+    return { from: next.from, to: next.to, word: spec.word, asked: spec.asked };
+  }
+
   return new Plugin<State>({
     key: spellingKey,
     state: {
-      init: (_config, state) => ({
-        decorations: DecorationSet.empty,
-        todo: [{ from: 0, to: state.doc.content.size }],
-        waiting: [],
-      }),
-      apply(tr, value, before, after) {
-        let { decorations, todo, waiting } = value;
-        if (tr.docChanged) {
-          const { mapping, changed } = changesOf(tr, before);
-          decorations = decorations.map(mapping, tr.doc);
-          todo = [...mapRanges(todo, mapping), ...changed];
-          waiting = mapRanges(waiting, mapping);
-        }
+      init: () => ({ decorations: DecorationSet.empty }),
+      apply(tr, value, before) {
         const meta = tr.getMeta(spellingKey) as Meta | undefined;
-        if (!meta) return tr.docChanged ? { decorations, todo, waiting } : value;
-        const all = { from: 0, to: after.doc.content.size };
-        switch (meta.kind) {
-          case 'looked':
-            return { decorations: meta.decorations, todo: meta.todo, waiting: meta.waiting };
-          case 'look':
-            return { decorations, todo: [...todo, ...meta.ranges], waiting };
-          case 'answered':
-            return { decorations, todo: [...todo, ...waiting], waiting: [] };
-          case 'anew':
-            return { decorations, todo: [all], waiting: [] };
-          case 'off':
-            return { decorations: DecorationSet.empty, todo: [], waiting: [] };
-        }
-        return value;
+        if (meta) return { decorations: meta.decorations };
+        if (!tr.docChanged) return value;
+        return { decorations: value.decorations.map(mappingOf(tr, before), tr.doc) };
       },
     },
     props: {
@@ -243,13 +253,7 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
           setTimeout(() => {
             if (view.isDestroyed || view.hasFocus()) return;
             const at = blockOf(view.state.selection.$head);
-            if (!at) return;
-            const ranges = [{ from: at.pos, to: at.pos + at.block.nodeSize }];
-            view.dispatch(
-              view.state.tr
-                .setMeta(spellingKey, { kind: 'look', ranges } satisfies Meta)
-                .setMeta('addToHistory', false),
-            );
+            if (at) lookers.get(view)?.look([{ from: at.pos, to: at.pos + at.block.nodeSize }]);
           }, 0);
           return false;
         },
@@ -275,33 +279,58 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
     },
     view(view) {
       let timer: ReturnType<typeof setTimeout> | undefined;
+      /** What is to be looked at, when there is time. */
+      let todo: Range[] = [{ from: 0, to: view.state.doc.content.size }];
+      /** What waits for words to be answered. */
+      let waiting: Range[] = [];
       /** The textblock of the word that was left alone at the cursor. */
       let atCursor: Range | null = null;
 
       function schedule(wait: number) {
         clearTimeout(timer);
-        timer = setTimeout(() => look(view), wait);
+        timer = setTimeout(look, wait);
       }
 
-      function send(meta: Meta) {
+      function underline(decorations: DecorationSet) {
         if (view.isDestroyed) return;
-        view.dispatch(view.state.tr.setMeta(spellingKey, meta).setMeta('addToHistory', false));
+        view.dispatch(
+          view.state.tr
+            .setMeta(spellingKey, { kind: 'underlined', decorations } satisfies Meta)
+            .setMeta('addToHistory', false),
+        );
       }
+
+      const looker: Looker = {
+        look(ranges) {
+          todo.push(...ranges);
+          schedule(0);
+        },
+        anew() {
+          todo = [{ from: 0, to: view.state.doc.content.size }];
+          waiting = [];
+          schedule(0);
+        },
+      };
+      lookers.set(view, looker);
 
       const stop = spelling.listen((change) => {
-        const state = spellingKey.getState(view.state);
-        // Answers matter only to an editor that waits for some.
-        if (change === 'answered' && !state?.waiting.length && !state?.todo.length) return;
-        send({ kind: change });
+        if (change === 'anew') looker.anew();
+        else if (waiting.length || todo.length) {
+          // Answers have come: what waited for them is looked at again.
+          todo.push(...waiting);
+          waiting = [];
+          schedule(0);
+        }
       });
 
       /** Looks at what is to be looked at, for as long as a piece may take. */
-      function look(view: EditorView) {
-        if (view.isDestroyed) return;
-        const state = spellingKey.getState(view.state);
-        if (!state || !state.todo.length) return;
+      function look() {
+        if (view.isDestroyed || !todo.length) return;
+        const before = spellingKey.getState(view.state)?.decorations ?? DecorationSet.empty;
         if (!spelling.on) {
-          send({ kind: 'off' });
+          todo = [];
+          waiting = [];
+          if (before.find().length) underline(DecorationSet.empty);
           return;
         }
         const language = languageOf();
@@ -312,10 +341,10 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
         const cursor = selection.empty && view.hasFocus() ? selection.head : -1;
         const script = checking?.script ?? null;
         const until = performance.now() + PIECE;
-        let decorations = state.decorations;
+        let decorations = before;
         const looked: Range[] = [];
-        const waiting: Range[] = [];
-        const ranges = merged(state.todo, doc.content.size);
+        const waits: Range[] = [];
+        const ranges = merged(todo, doc.content.size);
         let left: Range[] = [];
         atCursor = null;
 
@@ -323,7 +352,7 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
           const end = pos + block.nodeSize;
           looked.push({ from: pos, to: end });
           const found: Decoration[] = [];
-          let waits = false;
+          let unknown = false;
           if (checking) {
             for (const word of wordsOf(block, pos, language, script)) {
               // The word being written is judged when it is left.
@@ -332,7 +361,7 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
                 continue;
               }
               const judged = wrong(word);
-              if (judged === undefined) waits = true;
+              if (judged === undefined) unknown = true;
               else if (judged)
                 found.push(
                   Decoration.inline(word.from, word.to, DECORATION, {
@@ -342,8 +371,9 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
                 );
             }
           }
-          decorations = decorations.remove(decorations.find(pos, end)).add(doc, found);
-          if (waits) waiting.push({ from: pos, to: end });
+          const had = decorations.find(pos, end).sort((a, b) => a.from - b.from);
+          if (!same(had, found)) decorations = decorations.remove(had).add(doc, found);
+          if (unknown) waits.push({ from: pos, to: end });
         };
 
         // The editor of a note, whose document is the text of the note, is looked at whole.
@@ -367,59 +397,40 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
           }
         }
         // What waited and has been looked at waits no longer, unless it waits again.
-        const still = state.waiting.filter(
-          (w) => !looked.some((l) => w.from < l.to && w.to > l.from),
-        );
-        waiting.push(...still);
-        send({
-          kind: 'looked',
-          decorations,
-          todo: left,
-          waiting: merged(waiting, doc.content.size),
-        });
-        if (left.length) schedule(0);
+        const still = waiting.filter((w) => !looked.some((l) => w.from < l.to && w.to > l.from));
+        waiting = merged([...still, ...waits], doc.content.size);
+        todo = left;
+        if (decorations !== before) underline(decorations);
+        if (todo.length) schedule(0);
       }
 
       return {
-        update(view, before) {
-          const state = spellingKey.getState(view.state);
-          if (!state) return;
-          const changed = view.state.doc !== before.doc;
-          // The cursor has left the word that was being written: it is judged now.
-          if (!changed && atCursor && !view.state.selection.eq(before.selection)) {
-            const again = atCursor;
-            atCursor = null;
-            send({ kind: 'look', ranges: [again] });
+        update(view, previous) {
+          if (view.state.doc !== previous.doc) {
+            const moved = difference(previous.doc, view.state.doc);
+            if (moved) {
+              todo = [...mapRanges(todo, moved.mapping), moved.changed];
+              waiting = mapRanges(waiting, moved.mapping);
+              atCursor = null;
+              schedule(REST);
+            }
             return;
           }
-          if (state.todo.length) schedule(changed ? REST : 0);
+          // The cursor has left the word that was being written: it is judged now.
+          if (atCursor && !view.state.selection.eq(previous.selection)) {
+            const again = atCursor;
+            atCursor = null;
+            looker.look([again]);
+          }
         },
         destroy() {
           clearTimeout(timer);
           stop();
+          lookers.delete(view);
         },
       };
     },
   });
-
-  /**
-   * The misspelt word at the cursor, or the next after it (with `back`, the
-   * one before it), going round to the other end of the text.
-   */
-  function nextMisspelt(state: EditorState, back: boolean): Misspelt | null {
-    const here = misspeltAt(state, state.selection.head);
-    if (here) return here;
-    const set = spellingKey.getState(state)?.decorations;
-    if (!set) return null;
-    const all = set.find().sort((a, b) => a.from - b.from);
-    if (!all.length) return null;
-    const head = state.selection.head;
-    const next = back
-      ? ([...all].reverse().find((d) => d.to < head) ?? all[all.length - 1])
-      : (all.find((d) => d.from > head) ?? all[0]);
-    const spec = next.spec as { word: string; asked: string };
-    return { from: next.from, to: next.to, word: spec.word, asked: spec.asked };
-  }
 }
 
 /** The word that stands at a place of an editor, or touches it, if any. */
@@ -430,12 +441,7 @@ export function wordAtPlace(state: EditorState, pos: number): Word | null {
 
 /** Has an editor look at all its text again, as when the language of its map has changed. */
 export function lookAgain(view: EditorView) {
-  if (view.isDestroyed || !spellingKey.getState(view.state)) return;
-  view.dispatch(
-    view.state.tr
-      .setMeta(spellingKey, { kind: 'anew' } satisfies Meta)
-      .setMeta('addToHistory', false),
-  );
+  if (!view.isDestroyed) lookers.get(view)?.anew();
 }
 
 /** The misspelt words an editor shows, for tests. */

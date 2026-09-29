@@ -1,14 +1,20 @@
 /**
  * Spelling in the text that is drawn without an editor (ADR 0019): its
- * misspelt words are underlined by the CSS Custom Highlight API, which marks
- * ranges of the page without changing the page, so that nothing else that
- * works on the text is disturbed.
+ * misspelt words are wrapped in spans that underline them as the editors
+ * do. The text is put in whole by Svelte (`{@html}` is the only child of its
+ * element), which sweeps the spans away with the old text when it is drawn
+ * anew; they are then made again.
  *
  * A text is looked at when it comes into view, and again when it changes;
  * one that waits for words to be answered is looked at again when they are.
  * A long map is looked at in pieces, as it is scrolled through, when there
- * is time. Where the web view does not have the API, words are underlined
- * in the editors only.
+ * is time.
+ *
+ * The CSS Custom Highlight API, which marks words without changing the page,
+ * was tried first. WebKitGTK 2.52 draws it, but each range it holds made
+ * every change of the page slower, wherever it was: with five hundred words
+ * marked in view, a key took some thirty milliseconds more in a long map. A
+ * span costs nothing when the page changes elsewhere.
  */
 
 import type { Project } from '$lib/project/model/project.svelte';
@@ -16,6 +22,7 @@ import { pointRect } from '$lib/ui/floating';
 import { openWordMenu } from './menu';
 import { isIgnored, spelling } from './spelling.svelte';
 import { findWords, NOT_TEXT } from './words';
+import './spelling.css';
 
 /** A text drawn without an editor. */
 export interface Drawn {
@@ -31,11 +38,6 @@ export interface Drawn {
   html: string;
 }
 
-interface Mark {
-  word: string;
-  range: Range;
-}
-
 interface Shown {
   drawn: Drawn;
   visible: boolean;
@@ -43,17 +45,14 @@ interface Shown {
   stale: boolean;
   /** Whether it waits for words to be answered. */
   waits: boolean;
-  marks: Mark[];
+  /** The spans that mark its misspelt words. */
+  spans: HTMLElement[];
+  /** What sees it change; it is told to forget the changes made here. */
+  changes: MutationObserver;
 }
 
-/** The name the highlight is known by in the style (`::highlight(misspelt)`). */
-const NAME = 'misspelt';
 /** How long one piece of looking may take, in milliseconds. */
 const PIECE = 8;
-
-/** Whether the web view can mark words without changing the page. */
-export const canHighlight =
-  typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight !== 'undefined';
 
 /** What is not text, whose words are not checked. */
 const NOT_WORDS =
@@ -80,18 +79,9 @@ const BLOCKS = new Set([
 
 const shown = new Map<HTMLElement, Shown>();
 const queue = new Set<HTMLElement>();
-let highlight: Highlight | null = null;
 let seen: IntersectionObserver | null = null;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let listening = false;
-
-function theHighlight(): Highlight {
-  if (!highlight) {
-    highlight = new Highlight();
-    CSS.highlights.set(NAME, highlight);
-  }
-  return highlight;
-}
 
 function observer(): IntersectionObserver {
   seen ??= new IntersectionObserver((entries) => {
@@ -145,29 +135,48 @@ function blockOf(el: Element, root: HTMLElement): Element {
   return root;
 }
 
-function clear(s: Shown) {
-  if (s.marks.length) {
-    const h = theHighlight();
-    for (const m of s.marks) h.delete(m.range);
+/** Takes the marks away, and joins again the text they had parted. */
+function unmark(s: Shown) {
+  const parents = new Set<Node>();
+  for (const span of s.spans) {
+    // A span that is gone went with the text it was in.
+    const parent = span.parentNode;
+    if (!parent) continue;
+    parents.add(parent);
+    span.replaceWith(...span.childNodes);
   }
-  s.marks = [];
+  for (const parent of parents) parent.normalize();
+  s.spans = [];
+}
+
+/** Wraps a part of a node of text in a span that marks it misspelt. */
+function mark(node: Text, from: number, to: number, word: string): HTMLElement {
+  if (to < node.data.length) node.splitText(to);
+  const middle = from > 0 ? node.splitText(from) : node;
+  const span = document.createElement('span');
+  span.className = 'misspelt';
+  span.dataset.word = word;
+  middle.replaceWith(span);
+  span.append(middle);
+  return span;
 }
 
 /** Looks at the words of a text, and marks those that are misspelt. */
 function look(el: HTMLElement, s: Shown) {
   s.stale = false;
   s.waits = false;
-  clear(s);
-  if (!spelling.on) return;
-  const { language, ignored } = s.drawn;
-  const checking = spelling.checkingOf(language);
-  if (checking === undefined) {
-    s.waits = true;
-    return;
-  }
-  if (checking === null) return;
+  unmark(s);
+  const checking = spelling.on ? spelling.checkingOf(s.drawn.language) : null;
+  if (checking === undefined) s.waits = true;
+  if (checking) markAll(el, s, checking.script);
+  // What was changed here is not a change to be looked at again.
+  s.changes.takeRecords();
+}
 
-  // The text, and where each of its pieces begins in it.
+function markAll(el: HTMLElement, s: Shown, script: string | null) {
+  const { language, ignored } = s.drawn;
+
+  // The text, and where each of its nodes of text begins in it.
   let text = '';
   const pieces: { node: Text; at: number }[] = [];
   let lastBlock: Element | null = null;
@@ -187,44 +196,42 @@ function look(el: HTMLElement, s: Shown) {
     text += node.data;
   }
 
-  const h = theHighlight();
-  for (const w of findWords(text, language ?? '', checking.script)) {
+  // The parts of the nodes to be marked, the last first, so that parting a
+  // node leaves the places of those before as they were.
+  const parts: { piece: number; from: number; to: number; word: string }[] = [];
+  let i = 0;
+  for (const w of findWords(text, language ?? '', script)) {
     const right = spelling.judge(language, w.asked);
     if (right === undefined) {
       s.waits = true;
       continue;
     }
     if (right || isIgnored(ignored, w.word)) continue;
-    const range = rangeOf(pieces, w.from, w.to);
-    if (!range) continue;
-    s.marks.push({ word: w.word, range });
-    h.add(range);
+    while (i + 1 < pieces.length && pieces[i + 1].at <= w.from) i++;
+    for (let p = i; p < pieces.length && pieces[p].at < w.to; p++) {
+      const { node, at } = pieces[p];
+      const from = Math.max(w.from - at, 0);
+      const to = Math.min(w.to - at, node.data.length);
+      if (to > from) parts.push({ piece: p, from, to, word: w.word });
+    }
   }
-}
-
-/** A range of the page for a part of the text, which may go over several nodes. */
-function rangeOf(pieces: { node: Text; at: number }[], from: number, to: number): Range | null {
-  const start = pieces.findLast((p) => p.at <= from);
-  const end = pieces.findLast((p) => p.at < to);
-  if (!start || !end) return null;
-  const range = document.createRange();
-  range.setStart(start.node, Math.min(from - start.at, start.node.data.length));
-  range.setEnd(end.node, Math.min(to - end.at, end.node.data.length));
-  return range;
+  for (let n = parts.length - 1; n >= 0; n--) {
+    const { piece, from, to, word } = parts[n];
+    s.spans.push(mark(pieces[piece].node, from, to, word));
+  }
 }
 
 /** For an element whose name or text is drawn without an editor. */
 export function spellingMarks(el: HTMLElement, drawn: Drawn) {
-  if (!canHighlight) return {};
-  const s: Shown = { drawn, visible: false, stale: true, waits: false, marks: [] };
-  shown.set(el, s);
-  listen();
-  observer().observe(el);
   // Put in anew, or filled in afterwards, as formulas are: looked at again.
   const changes = new MutationObserver(() => {
     s.stale = true;
     if (s.visible) want(el);
   });
+  const s: Shown = { drawn, visible: false, stale: true, waits: false, spans: [], changes };
+  shown.set(el, s);
+  listen();
+  observer().observe(el);
   changes.observe(el, { childList: true, subtree: true, characterData: true });
   return {
     update(next: Drawn) {
@@ -235,7 +242,6 @@ export function spellingMarks(el: HTMLElement, drawn: Drawn) {
     destroy() {
       changes.disconnect();
       seen?.unobserve(el);
-      clear(s);
       shown.delete(el);
       queue.delete(el);
     },
@@ -244,16 +250,10 @@ export function spellingMarks(el: HTMLElement, drawn: Drawn) {
 
 /** The misspelt word under a point of the window, in text drawn without an editor. */
 export function drawnWordAt(x: number, y: number): { drawn: Drawn; word: string } | null {
+  const span = document.elementFromPoint(x, y)?.closest<HTMLElement>('.misspelt[data-word]');
+  if (!span) return null;
   for (const [el, s] of shown) {
-    if (!s.marks.length) continue;
-    const box = el.getBoundingClientRect();
-    if (x < box.left || x > box.right || y < box.top || y > box.bottom) continue;
-    for (const m of s.marks) {
-      for (const r of m.range.getClientRects()) {
-        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom)
-          return { drawn: s.drawn, word: m.word };
-      }
-    }
+    if (el.contains(span)) return { drawn: s.drawn, word: span.dataset.word ?? '' };
   }
   return null;
 }
@@ -281,9 +281,4 @@ export function openDrawnWordMenu(
     project: found.drawn.project,
   });
   return true;
-}
-
-/** The words marked in the text drawn without an editor, for tests. */
-export function drawnMisspelt(): string[] {
-  return [...shown.values()].flatMap((s) => s.marks.map((m) => m.word));
 }

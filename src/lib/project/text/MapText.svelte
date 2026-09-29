@@ -27,7 +27,7 @@
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { elementMenu, type ElementActions, type ElementsPayload } from '../elements';
-  import { openDrawnWordMenu } from '$lib/spelling/highlights';
+  import { openDrawnWordMenu } from '$lib/spelling/drawn';
   import { replaceWhenShown } from '$lib/spelling/menu';
   import type { Project } from '../model/project.svelte';
   import { isAncestor } from '../model/tree';
