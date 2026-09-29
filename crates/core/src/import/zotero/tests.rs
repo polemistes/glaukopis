@@ -166,11 +166,21 @@ struct Zotero {
     conn: Connection,
 }
 
+/// A library of Zotero that nothing holds open.
+struct Folder(tempfile::TempDir);
+
+impl Folder {
+    fn path(&self) -> &Path {
+        self.0.path()
+    }
+}
+
 impl Zotero {
     fn new() -> Self {
         let dir = tempfile::tempdir().unwrap();
         let conn = Connection::open(dir.path().join("zotero.sqlite")).unwrap();
-        conn.execute_batch("PRAGMA synchronous = OFF;").unwrap();
+        // As Zotero leaves it: SQLite compiled in (Windows, macOS) holds to foreign keys unless told not to.
+        conn.execute_batch("PRAGMA synchronous = OFF; PRAGMA foreign_keys = OFF;").unwrap();
         conn.execute_batch(SCHEMA).unwrap();
         Zotero { dir, conn }
     }
@@ -633,7 +643,10 @@ fn files_and_notes() {
     let z = a_library();
     let (candidates, _) = read_all(&z);
     let c = by_key(&candidates, "FILES001");
-    assert_eq!(c.files, vec![z.path().join("storage/PDFHERE1/Lord 1960.pdf").display().to_string()]);
+    assert_eq!(
+        c.files.iter().map(Path::new).collect::<Vec<_>>(),
+        vec![z.path().join("storage/PDFHERE1/Lord 1960.pdf")]
+    );
     assert!(Path::new(&c.files[0]).is_absolute() && Path::new(&c.files[0]).is_file());
     assert_eq!(
         c.notes,
@@ -670,7 +683,10 @@ fn linked_files() {
     let bases = [elsewhere.path().join("base")];
     let (candidates, _) =
         database::with_database(z.path(), |db, warnings| candidates(db, &EVERYTHING, &bases, warnings)).unwrap();
-    assert_eq!(candidates[0].files, vec![absolute.display().to_string(), relative.display().to_string()]);
+    assert_eq!(
+        candidates[0].files.iter().map(Path::new).collect::<Vec<_>>(),
+        vec![absolute.as_path(), relative.as_path()]
+    );
     assert_eq!(
         candidates[0].notes,
         vec!["The file “/nowhere/at/all.pdf” was not found.", "The file “../../zotero.sqlite” was not found.",]
@@ -859,6 +875,11 @@ fn no_database() {
 #[test]
 fn a_database_that_cannot_be_read() {
     let z = a_library();
+    // What made the library lets go of it, as Zotero does when it is closed:
+    // Windows keeps a file that is open from being taken away.
+    let Zotero { dir, conn } = z;
+    drop(conn);
+    let z = Folder(dir);
     let database = z.path().join("zotero.sqlite");
     let good = fs::read(&database).unwrap();
 

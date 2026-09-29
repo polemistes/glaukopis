@@ -152,7 +152,11 @@ mod tests {
         fs::create_dir_all(home.path().join(".var/app/org.zotero.Zotero/Zotero")).unwrap();
         fs::write(
             home.path().join(".zotero/zotero/abcd1234.default/prefs.js"),
-            format!("user_pref(\"extensions.zotero.dataDir\", \"{}\");\n", chosen.display()),
+            // Written as Zotero writes it, with the backslashes of Windows doubled.
+            format!(
+                "user_pref(\"extensions.zotero.dataDir\", \"{}\");\n",
+                chosen.display().to_string().replace('\\', "\\\\")
+            ),
         )
         .unwrap();
         assert_eq!(find_under(home.path()), vec![chosen.clone(), usual.clone(), snap, old]);

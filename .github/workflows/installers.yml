@@ -115,10 +115,6 @@ jobs:
 
       # ---- the application ----
 
-      - name: Test the core
-        continue-on-error: true
-        run: cargo test -p glaukopis-core --features bundled-sqlite
-
       - name: Build the installers
         run: pnpm tauri build --bundles ${{ matrix.bundles }} --features bundled-sqlite
 
@@ -130,3 +126,8 @@ jobs:
             target/release/bundle/nsis/*.exe
             target/release/bundle/msi/*.msi
             target/release/bundle/dmg/*.dmg
+
+      # After the installers are kept, so that a test that fails on one
+      # system marks the run without losing them.
+      - name: Test the core
+        run: cargo test -p glaukopis-core --features bundled-sqlite
