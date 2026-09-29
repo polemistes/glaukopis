@@ -123,7 +123,7 @@
       finish(saved);
     } catch (e) {
       const message = describeError(e) ?? t('library-dialog-save-failed');
-      if (isBackendError(e) && /citation key/i.test(e.message)) keyError = message;
+      if (isBackendError(e) && e.kind === 'key') keyError = message;
       else error = message;
     } finally {
       saving = false;

@@ -162,7 +162,7 @@
     } catch (e) {
       if (forId !== loadedId) return;
       const message = describeError(e) ?? t('library-pane-save-failed');
-      if (isBackendError(e) && /citation key/i.test(e.message)) keyError = message;
+      if (isBackendError(e) && e.kind === 'key') keyError = message;
       else error = message;
       status = 'error';
     }
