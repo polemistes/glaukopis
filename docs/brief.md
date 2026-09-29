@@ -182,3 +182,22 @@ Asked whether they should be built on GitHub's machines, which means pushing the
 What this settles:
 
 - Installers for Windows and macOS are made, on GitHub's machines, by `.github/workflows/installers.yml`. They carry Pandoc, Typst and Tesseract with them. They are not signed.
+
+## 2026-09-29 — the full history of a project, and reviewing changes
+
+> How complex would it be to implement optional document history for a project on a quite detailed level? Also, perhaps related, how hard would it be to make a track changes system, where changes are tagged with the author and we have a way to either accept or discard changes?
+
+Two ways of tracking changes were set out: proposals held back until they are accepted, as in Word and LibreOffice, and changes that are made at once and reviewed afterwards, which the history makes possible.
+
+> In 2. Reviewing changes afterwards, how fine grained should each change that the user have to accept or reject be? Each character would be meaningless, as would each word, unless just a character or word was changed.
+
+> Let us go for the optional full history. It should be optional. Could a way to deal with the disk space and history load time be to let the user archive or delete older history? Making older history less fine grained is also an option, perhaps. Let us also go for  2. Reviewing changes afterwards. It seems almost as convenient as the word and libreoffice track changes function. Two concerns. How will it look if a sentence or paragraph has changed many times between the present state and the state compared to? Will the full history be shown or just the to endpoints? Endpoints should be default, I guess, but perhaps it should be possible to see the full history as an option, and accept another point than the present one? And I think it should be possible in the review process for the reviewer to edit the text he is reviewing, and either accept it or defer it for later review (I mean just go on to the next change).
+
+What this settles:
+
+- A project can keep its full history: every change, with who made it and when. It is optional, for each project.
+- Older history can be kept less finely, archived, or deleted, so that it takes neither too much room nor too long to read.
+- Changes are reviewed afterwards. What others have changed since a moment is gone through, change by change, and each is accepted, rejected, or left for later. A change is a sentence, with the words that changed marked in it; or more, where more changed together: a paragraph written or deleted, a paragraph moved, an element added, moved or deleted.
+- A change is shown from the text as it was at the moment compared to, to the text as it is. What happened in between can be shown as well, and a version in between can be accepted instead.
+- The reviewer can change the text while reviewing, and then accept it as it stands, or go on to the next change and leave this one for later.
+- Proposals held back until accepted, as in Word and LibreOffice, are not built now. Pandoc reads and writes them in DOCX only; ODT would need the application's own reading and writing.
