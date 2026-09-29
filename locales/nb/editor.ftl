@@ -48,8 +48,8 @@ editor-table-file-hint = CSV, eller et ark fra LibreOffice eller Excel
 editor-formula = Formel
 editor-formula-hint = Matematikk i linjen
 editor-pointer = Kryssreferanse …
-editor-pointer-hint = Til en figur, en tabell, en ligning eller en del: «se figur 2»
-editor-dropped = Bilder og tabeller kan også slippes eller limes inn i teksten
+editor-pointer-hint = Til figur, tabell, ligning eller del: «se figur 2»
+editor-dropped = Bilder og tabeller kan også slippes eller limes inn
 # Det et bilde som ble limt inn uten eget navn, heter i bildelageret.
 editor-pasted-picture = bilde
 
