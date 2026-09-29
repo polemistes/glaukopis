@@ -117,6 +117,8 @@ export type Made = { matcher: Matcher } | { error: string } | null;
 
 export class Matcher {
   readonly options: SearchOptions;
+  /** The words and the options, in few signs: two matchers with the same find the same. */
+  readonly key: string;
   #re: RegExp;
   /** Folded passages, by the passage text: the same text is folded once while the matcher lasts. */
   #folded = new Map<string, Folded>();
@@ -124,6 +126,7 @@ export class Matcher {
   private constructor(re: RegExp, options: SearchOptions) {
     this.#re = re;
     this.options = options;
+    this.key = `${re.flags}/${re.source}`;
   }
 
   /**

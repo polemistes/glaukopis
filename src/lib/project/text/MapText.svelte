@@ -586,11 +586,17 @@
     void s?.close(focus);
   }
 
+  /**
+   * Which elements are shown. The rows are made anew whenever a text is
+   * changed; this is the same while the same elements are shown.
+   */
+  const shownIds = $derived(rows.map((r) => r.id).join(' '));
+
   // What is marked follows what is shown: an element folded or opened, one given its editors.
   $effect(() => {
-    void rows;
+    void shownIds;
     void active.length;
-    searching?.scrolled();
+    untrack(() => searching?.scrolled());
   });
 
   onDestroy(() => void searching?.close(false));

@@ -97,12 +97,27 @@ export function readEditor(view: EditorView, part: Part, labels: Labels | null):
  * passages that follow it.
  */
 function drawnHolders(root: HTMLElement): HTMLElement[] {
+  const known = holdersRead.get(root);
+  if (known?.round === round) return known.holders;
   const out: HTMLElement[] = [];
   for (const el of root.querySelectorAll<HTMLElement>('p, figcaption, div.equation')) {
     out.push(el);
     if (el.tagName === 'P') out.push(...el.querySelectorAll<HTMLElement>('sup.footnote'));
   }
+  holdersRead.set(root, { round, holders: out });
   return out;
+}
+
+/**
+ * The holders of drawn text are read once each time what was found is
+ * marked, and not for every match: the page does not change meanwhile.
+ */
+let round = 0;
+const holdersRead = new WeakMap<HTMLElement, { round: number; holders: HTMLElement[] }>();
+
+/** Begins a marking: what was read of the page before may have changed. */
+function newRound() {
+  round++;
 }
 
 const ATOMS = 'span.citation, span.math, span.crossref, sup.footnote, br';
@@ -251,6 +266,19 @@ export function rangeOf(
   labels: Labels | null,
   m: Match,
 ): Range | Element | null {
+  newRound();
+  return rangeIn(holder, element, part, texts, labels, m);
+}
+
+/** As `rangeOf`, within a marking, which reads the page once. */
+function rangeIn(
+  holder: HTMLElement,
+  element: string,
+  part: Part,
+  texts: Texts,
+  labels: Labels | null,
+  m: Match,
+): Range | Element | null {
   const view = editorOf(holder);
   if (view) return editorRange(view, readEditor(view, part, labels), m, labels);
   const read = texts.of(element, labels);
@@ -301,6 +329,7 @@ export class Marking {
    * is shown more strongly; and the text a search is kept to.
    */
   mark(matches: Match[], current: Match | null, labels: Labels | null, scope: Scope | null) {
+    newRound();
     const byPart = new Map<string, Match[]>();
     for (const m of matches) {
       const key = `${m.element}\u0000${m.part}`;
@@ -365,10 +394,16 @@ export class Marking {
       // Highlights, over an editor or over text that is drawn.
       const before = this.#kept.get(key);
       let marks: (Mark | null)[];
-      if (!view && before && before.holder === holder && same(before.matches, list)) {
+      if (
+        !view &&
+        before &&
+        before.holder === holder &&
+        same(before.matches, list) &&
+        before.marks.every((mark) => !mark || connected(mark))
+      ) {
         marks = before.marks;
       } else {
-        marks = list.map((m) => rangeOf(holder, element, part, this.#texts(), labels, m));
+        marks = list.map((m) => rangeIn(holder, element, part, this.#texts(), labels, m));
       }
       if (!view) kept.set(key, { holder, matches: list, marks });
       list.forEach((m, i) => {
@@ -388,7 +423,7 @@ export class Marking {
             text: '',
             hit: { start: from.offset, end: to.offset },
           };
-          const mark = rangeOf(holder, element, part, this.#texts(), labels, m);
+          const mark = rangeIn(holder, element, part, this.#texts(), labels, m);
           if (mark instanceof Range) within.push(mark);
         }
     }
@@ -416,6 +451,11 @@ export class Marking {
     this.#drawing.clear();
     this.#kept.clear();
   }
+}
+
+/** Whether a mark is still in the page: drawn text that is drawn anew leaves its marks behind. */
+function connected(mark: Mark): boolean {
+  return mark instanceof Range ? mark.startContainer.isConnected : mark.isConnected;
 }
 
 function same(a: Match[], b: Match[]): boolean {

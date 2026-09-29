@@ -2,7 +2,7 @@ import { EditorState } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { ySyncPlugin } from 'y-prosemirror';
 import { afterEach, describe, expect, it } from 'vitest';
-import type * as Y from 'yjs';
+import * as Y from 'yjs';
 import { bodySchema, titleSchema } from '$lib/editor/schema';
 import { HASH, cell, note, p, project, t } from '$lib/found/testing';
 import { readBody, readTitle, type Block, type Inline } from '$lib/project/model/text';
@@ -292,6 +292,24 @@ describe('searching elements', () => {
     expect(
       search(texts, elements, matcher('wrath'), { scope: narrow }).map((m) => m.start),
     ).toEqual([11]);
+  });
+
+  it('searches again only what was changed', () => {
+    const { pr, elements } = project([p(t('wrath'))], [p(t('wrath'))]);
+    const texts = new Texts(pr);
+    const [a, b] = search(texts, elements, matcher('wrath'));
+    pr.transact(() =>
+      pr
+        .fragment(elements[0], 'body')!
+        .get(0)
+        .insert(0, [new Y.XmlText('The ')]),
+    );
+    const again = search(texts, elements, matcher('wrath'));
+    expect(again.map((m) => m.start)).toEqual([4, 0]);
+    expect(again[0]).not.toBe(a);
+    expect(again[1]).toBe(b);
+    // Other words are looked for anew everywhere.
+    expect(search(texts, elements, matcher('wrath', { wholeWords: true }))[1]).not.toBe(b);
   });
 
   it('reads again only what was changed', () => {

@@ -53,6 +53,8 @@ export interface Scope {
 export class Texts {
   readonly project: Project;
   #kept = new Map<string, { key: string; read: Read }>();
+  /** What was found in the passages of an element, and by what: while the element is as it was. */
+  readonly found = new WeakMap<Read, { key: string; matches: Match[] }>();
 
   constructor(project: Project) {
     this.project = project;
@@ -164,12 +166,23 @@ export function search(
 ): Match[] {
   const out: Match[] = [];
   const scope = options.scope ?? null;
+  const key = scope ? `${matcher.key}\u0000${JSON.stringify(scope)}` : matcher.key;
   for (const id of elements) {
     if (scope && scope.element !== id) continue;
     const read = texts.of(id, options.labels ?? null);
     if (!read) continue;
-    out.push(...findIn(matcher, id, 'title', [read.title], scope));
-    out.push(...findIn(matcher, id, 'body', read.body, scope));
+    // What was found in an element that is as it was is found again as it was.
+    const known = texts.found.get(read);
+    if (known?.key === key) {
+      for (const m of known.matches) out.push(m);
+      continue;
+    }
+    const matches = [
+      ...findIn(matcher, id, 'title', [read.title], scope),
+      ...findIn(matcher, id, 'body', read.body, scope),
+    ];
+    texts.found.set(read, { key, matches });
+    for (const m of matches) out.push(m);
   }
   return out;
 }
