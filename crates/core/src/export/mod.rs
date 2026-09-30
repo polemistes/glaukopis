@@ -765,6 +765,20 @@ pub fn export(
     path: &Path,
     options: &ExportOptions,
 ) -> Result<Exported> {
+    export_until(ctx, request, target, path, options, &AtomicBool::new(false))
+}
+
+/// As [`export`], until `stop` is set: the program that is at work is then
+/// ended, and it fails with the kind `stopped`. Nothing is written where the
+/// file was to go.
+pub fn export_until(
+    ctx: &Context,
+    request: &Request,
+    target: Target,
+    path: &Path,
+    options: &ExportOptions,
+    stop: &AtomicBool,
+) -> Result<Exported> {
     let pandoc = ctx.tools.pandoc()?;
     let dir = work_dir(ctx, &request.key, "export")?;
     let mut exported = Exported { path: path.display().to_string(), ..Default::default() };
@@ -783,7 +797,14 @@ pub fn export(
         let typst = ctx.tools.typst()?;
         write_atomic(&dir.join("document.typ"), source.as_bytes())?;
         let made = dir.join("document.pdf");
-        let out = tools::run(&typst.path, "Typst", ["compile", "document.typ", "document.pdf"], None, Some(&dir))?;
+        let out = tools::run_until(
+            &typst.path,
+            "Typst",
+            ["compile", "document.typ", "document.pdf"],
+            None,
+            Some(&dir),
+            stop,
+        )?;
         exported.warnings.extend(typst_warnings(&out.messages));
         let bytes = fs::read(&made).context(|| tr!("core-export-reading-pdf"))?;
         write_atomic(path, &bytes)?;
@@ -903,7 +924,7 @@ pub fn export(
     args.push("-o".into());
     args.push(made.display().to_string());
     let input = serde_json::to_vec(&prepared.json)?;
-    let out = tools::run(&pandoc.path, "Pandoc", &args, Some(&input), Some(&dir)).map_err(|e| match e {
+    let out = tools::run_until(&pandoc.path, "Pandoc", &args, Some(&input), Some(&dir), stop).map_err(|e| match e {
         // What LaTeX says when it fails is long, and the first of it says little.
         Error::Program { message, .. } if target == Target::PdfLatex => {
             Error::Program { program: "LaTeX".into(), message: latex::what_went_wrong(&message) }
@@ -1374,6 +1395,20 @@ mod tests {
         assert!(styles.contains("fo:page-width=\"8.5000in\""));
         assert!(styles.contains("style:name=\"Bibliography\""));
         assert!(styles.contains("fo:line-height=\"200%\""));
+    }
+
+    #[test]
+    fn a_making_that_is_stopped_writes_nothing() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let r = request("chicago-author-date");
+        for (target, name) in [(Target::Docx, "stopped.docx"), (Target::Pdf, "stopped.pdf")] {
+            let path = out.join(name);
+            let stopped = export_until(&s.ctx(), &r, target, &path, &ExportOptions::default(), &AtomicBool::new(true));
+            assert!(matches!(stopped, Err(Error::Refused { kind, .. }) if kind == tools::STOPPED), "{stopped:?}");
+            assert!(!path.exists());
+        }
     }
 
     #[test]

@@ -18,7 +18,9 @@ import {
   type ImportPlan,
   type Reference,
 } from '$lib/api/library';
-import { importPdfs } from '$lib/api/sources';
+import { isBackendError } from '$lib/api/backend';
+import { importPdfs, importPdfsStop, onPdfsProgress } from '$lib/api/sources';
+import { newId } from '$lib/util/id';
 import { t } from '$lib/i18n';
 import { library } from '$lib/state/library.svelte';
 import { notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
@@ -59,6 +61,8 @@ class Dialogs {
   busy = $state(false);
   /** What is being done that takes a while, in words. */
   working = $state<string | null>(null);
+  /** What stops what is being done, where it can be stopped. */
+  stop = $state<(() => void) | null>(null);
 }
 
 export const dialogs = new Dialogs();
@@ -230,16 +234,26 @@ export async function importPdfFiles(
     files = Array.isArray(chosen) ? chosen : [chosen];
   }
   if (!files.length) return null;
+  const ticket = newId();
   dialogs.working = t('library-pdfs-working', { count: files.length });
+  dialogs.stop = () => void importPdfsStop(ticket).catch(() => {});
+  const unlisten = await onPdfsProgress(ticket, ({ done, total, name }) => {
+    if (total > 1)
+      dialogs.working = t('library-pdfs-progress', { done: done + 1, count: total, name });
+  });
   try {
-    const plan = await importPdfs(files);
+    const plan = await importPdfs(files, true, ticket);
     dialogs.working = null;
+    dialogs.stop = null;
     return review(plan, collection, { quietWhenKnown: true });
   } catch (error) {
-    notifyError(t('library-files-read-failed', { count: files.length }), error);
+    if (!(isBackendError(error) && error.kind === 'stopped'))
+      notifyError(t('library-files-read-failed', { count: files.length }), error);
     return null;
   } finally {
+    unlisten();
     dialogs.working = null;
+    dialogs.stop = null;
   }
 }
 

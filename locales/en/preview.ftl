@@ -131,6 +131,8 @@ preview-export-as = Export as { $kind }
 preview-export-run = Export…
 preview-export-working = Making the document…
 preview-export-failed = The document could not be made.
+preview-export-stop = Stop
+preview-export-stopped = The making was stopped. No file was written.
 # Under the name of the file that was made: another file made with it.
 preview-export-also = with { $file }
 preview-export-missing = { $count ->

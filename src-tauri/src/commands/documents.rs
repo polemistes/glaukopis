@@ -288,6 +288,16 @@ pub fn document_preview_stop(key: String) {
     }
 }
 
+/// The exports that are being made, by the tickets they were asked for with,
+/// each with what stops it.
+static EXPORTING: Mutex<Vec<(String, Arc<AtomicBool>)>> = Mutex::new(Vec::new());
+
+fn exporting() -> std::sync::MutexGuard<'static, Vec<(String, Arc<AtomicBool>)>> {
+    EXPORTING.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// Makes a document into a file. With a ticket, the making can be stopped
+/// while it goes on.
 #[tauri::command(async)]
 pub fn document_export(
     state: State<'_, AppState>,
@@ -295,12 +305,29 @@ pub fn document_export(
     target: Target,
     path: String,
     options: Option<ExportOptions>,
+    ticket: Option<String>,
 ) -> CommandResult<Exported> {
     request.format.sanitise();
     request.format.speak(request.document.language.as_deref());
-    with_context(&state, true, |ctx| {
-        export::export(ctx, &request, target, Path::new(&path), &options.unwrap_or_default())
-    })
+    let stop = Arc::new(AtomicBool::new(false));
+    if let Some(ticket) = &ticket {
+        exporting().push((ticket.clone(), stop.clone()));
+    }
+    let made = with_context(&state, true, |ctx| {
+        export::export_until(ctx, &request, target, Path::new(&path), &options.unwrap_or_default(), &stop)
+    });
+    if let Some(ticket) = &ticket {
+        exporting().retain(|(t, _)| t != ticket);
+    }
+    made
+}
+
+/// Stops the making of a file that goes on.
+#[tauri::command(async)]
+pub fn document_export_stop(ticket: String) {
+    for (_, stop) in exporting().iter().filter(|(t, _)| *t == ticket) {
+        stop.store(true, Ordering::Relaxed);
+    }
 }
 
 /// What a reference style makes of some works, as HTML.

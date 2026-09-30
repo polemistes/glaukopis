@@ -268,6 +268,8 @@ library-pdfs-working = { $count ->
     [one] Finner ut hva filen er …
    *[other] Finner ut hva { $count } filer er …
 }
+library-pdfs-progress = { $done } av { $count }: { $name }
+library-stop = Stopp
 library-imported-added = { $count ->
     [one] { $count } referanse lagt til
    *[other] { $count } referanser lagt til

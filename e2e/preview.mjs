@@ -129,6 +129,26 @@ try {
   await app.clickText('.preview button', 'Export');
   await app.waitFor('dialog .kinds');
   await app.screenshot('preview-5-export');
+
+  // Stopped while it is made, nothing is written. The dialog of the system,
+  // which asks where, cannot be driven: the making is asked for as the
+  // dialog asks for it, with a ticket, and stopped by it.
+  const stoppedAt = join(app.dataDir, 'stopped.pdf');
+  const stopping = await app.execAsync(`
+    const invoke = window.__TAURI_INTERNALS__.invoke;
+    const format = await invoke('formats_get', { id: 'manuscript' });
+    const document = {
+      title: [{ kind: 'text', text: 'Stopped', marks: {} }],
+      sections: [{ level: 1, heading: [{ kind: 'text', text: 'One', marks: {} }],
+        blocks: [{ kind: 'paragraph', content: [{ kind: 'text', text: 'Words.', marks: {} }] }] }],
+    };
+    const request = { document, style: 'chicago-author-date', format, key: 'stopping' };
+    const making = invoke('document_export', { request, target: 'pdflatex', path: ${JSON.stringify(stoppedAt)}, options: {}, ticket: 'the-ticket' })
+      .then(() => 'made', (e) => e?.kind ?? String(e));
+    await new Promise((r) => setTimeout(r, 400));
+    await invoke('document_export_stop', { ticket: 'the-ticket' });
+    return await making;`);
+  check('a making can be stopped, and writes nothing', stopping === 'stopped' && !existsSync(stoppedAt), stopping);
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog');
 

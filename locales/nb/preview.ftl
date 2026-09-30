@@ -116,6 +116,8 @@ preview-export-as = Eksporter som { $kind }
 preview-export-run = Eksporter …
 preview-export-working = Lager dokumentet …
 preview-export-failed = Dokumentet kunne ikke lages.
+preview-export-stop = Stopp
+preview-export-stopped = Lagingen ble stoppet. Ingen fil ble skrevet.
 # Under navnet på filen som ble laget: en annen fil som ble laget sammen med den.
 preview-export-also = med { $file }
 preview-export-missing = { $count ->

@@ -2,10 +2,11 @@
 //! PDF files, and the libraries of Zotero.
 
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 
 use glaukopis_core::duplicates;
 use glaukopis_core::i18n::tr;
@@ -71,11 +72,17 @@ pub fn lookup_find(state: State<'_, AppState>, input: String, scope: Option<Scop
 
 /// What a PDF is, as far as it can be told: from the file itself, and from
 /// what is known elsewhere of the DOI or ISBN printed in it.
-fn identify(state: &AppState, path: &Path, ask: bool, warnings: &mut Vec<String>) -> Option<Candidate> {
+fn identify(
+    state: &AppState,
+    path: &Path,
+    ask: bool,
+    warnings: &mut Vec<String>,
+    stop: &AtomicBool,
+) -> Option<Candidate> {
     let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     // A scan has what it is read from pictures of its first pages, where Tesseract is there.
     let tools = state.tools();
-    let read = |count| ocr::first_pages(path, &tools, &state.data.work(), count, &AtomicBool::new(false));
+    let read = |count| ocr::first_pages(path, &tools, &state.data.work(), count, stop);
     let facts = match pdf::identify_scan(path, read) {
         Ok(facts) => facts,
         Err(e) => {
@@ -96,7 +103,7 @@ fn identify(state: &AppState, path: &Path, ask: bool, warnings: &mut Vec<String>
         candidate.draft.fields.remove("year");
         return Some(candidate);
     }
-    if !ask {
+    if !ask || stop.load(Ordering::Relaxed) {
         return Some(candidate);
     }
     let query = if let Some(doi) = &facts.doi {
@@ -121,22 +128,93 @@ fn identify(state: &AppState, path: &Path, ask: bool, warnings: &mut Vec<String>
     Some(candidate)
 }
 
-/// Makes references of PDF files: each is identified, and kept with its reference.
+/// The files that are being found out about, by the tickets they were asked
+/// for with, each with what stops it.
+static IDENTIFYING: Mutex<Vec<(String, Arc<AtomicBool>)>> = Mutex::new(Vec::new());
+
+fn identifying() -> std::sync::MutexGuard<'static, Vec<(String, Arc<AtomicBool>)>> {
+    IDENTIFYING.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// How far the finding out about PDF files has come, as the interface is told it.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PdfsProgress {
+    ticket: String,
+    /// How many files are done, and of how many.
+    done: usize,
+    total: usize,
+    /// The file that is at hand.
+    name: String,
+}
+
+/// Makes references of PDF files: each is identified, and kept with its
+/// reference. With a ticket, the interface is told how far it has come
+/// (`pdfs-progress`), and it can be stopped: it then fails with the kind
+/// `stopped`, and nothing is added.
 #[tauri::command(async)]
-pub fn import_pdfs(state: State<'_, AppState>, paths: Vec<String>, ask: Option<bool>) -> CommandResult<Plan> {
+pub fn import_pdfs(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    paths: Vec<String>,
+    ask: Option<bool>,
+    ticket: Option<String>,
+) -> CommandResult<Plan> {
+    let stop = Arc::new(AtomicBool::new(false));
+    if let Some(ticket) = &ticket {
+        identifying().push((ticket.clone(), stop.clone()));
+    }
+    let planned = plan_pdfs(&app, &state, &paths, ask.unwrap_or(true), ticket.as_deref(), &stop);
+    if let Some(ticket) = &ticket {
+        identifying().retain(|(t, _)| t != ticket);
+    }
+    planned
+}
+
+/// Stops the finding out about PDF files that goes on.
+#[tauri::command(async)]
+pub fn import_pdfs_stop(ticket: String) {
+    for (_, stop) in identifying().iter().filter(|(t, _)| *t == ticket) {
+        stop.store(true, Ordering::Relaxed);
+    }
+}
+
+fn plan_pdfs(
+    app: &AppHandle,
+    state: &AppState,
+    paths: &[String],
+    ask: bool,
+    ticket: Option<&str>,
+    stop: &AtomicBool,
+) -> CommandResult<Plan> {
+    let stopped = || glaukopis_core::Error::Refused {
+        kind: glaukopis_core::export::tools::STOPPED,
+        message: tr!("core-import-pdfs-stopped"),
+    };
     let mut warnings = Vec::new();
     let mut candidates = Vec::new();
-    for path in &paths {
+    for (done, path) in paths.iter().enumerate() {
+        if stop.load(Ordering::Relaxed) {
+            return Err(stopped().into());
+        }
         let path = Path::new(path);
+        if let Some(ticket) = ticket {
+            let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let told = PdfsProgress { ticket: ticket.to_owned(), done, total: paths.len(), name };
+            let _ = app.emit("pdfs-progress", told);
+        }
         let is_pdf = path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf"));
         if !is_pdf {
             let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
             warnings.push(tr!("core-import-not-a-pdf", name = &name));
             continue;
         }
-        candidates.extend(identify(&state, path, ask.unwrap_or(true), &mut warnings));
+        candidates.extend(identify(state, path, ask, &mut warnings, stop));
     }
-    let source = match paths.as_slice() {
+    if stop.load(Ordering::Relaxed) {
+        return Err(stopped().into());
+    }
+    let source = match paths {
         [one] => Path::new(one).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
         many => tr!("core-import-files", count = many.len()),
     };

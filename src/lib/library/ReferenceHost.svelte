@@ -4,6 +4,7 @@
   import { inTauri } from '$lib/api/backend';
   import { t } from '$lib/i18n';
   import { outsideDrop, outsideLeave, outsideOver, type DragPayload } from '$lib/ui/drag.svelte';
+  import Button from '$lib/ui/Button.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import ImportDialog from './ImportDialog.svelte';
   import PasteDialog from './PasteDialog.svelte';
@@ -90,7 +91,11 @@
 {#if dialogs.working}
   <div class="working" role="status">
     <Spinner size={14} />
-    {dialogs.working}
+    <span class="doing">{dialogs.working}</span>
+    {#if dialogs.stop}
+      <Button variant="ghost" size="sm" onclick={() => dialogs.stop?.()}>{t('library-stop')}</Button
+      >
+    {/if}
   </div>
 {/if}
 
@@ -109,5 +114,11 @@
     background: var(--paper-raised);
     box-shadow: var(--shadow-2);
     transform: translateX(-50%);
+  }
+  .doing {
+    max-width: 60ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>

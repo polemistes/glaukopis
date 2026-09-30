@@ -343,5 +343,9 @@ export const documentExport = (
   target: Target,
   path: string,
   options: { biblatex?: boolean } = {},
-) => call<Exported>('document_export', { request, target, path, options });
+  ticket?: string,
+) => call<Exported>('document_export', { request, target, path, options, ticket });
+/** Stops the making of a file that was asked for with a ticket: it then fails with the kind `stopped`. */
+export const documentExportStop = (ticket: string) =>
+  call<void>('document_export_stop', { ticket });
 export const openPath = (path: string, reveal = false) => call<void>('open_path', { path, reveal });

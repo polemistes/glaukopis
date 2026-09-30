@@ -89,6 +89,7 @@ core-import-table-more-than = more than { $count }
 ## Documents brought in, to become maps.
 
 core-import-document-stopped = The reading was stopped.
+core-import-pdfs-stopped = Finding out what the files are was stopped. Nothing was added.
 core-import-document-kind = “{ $file }” is not of a kind that can be brought in as a document. Those that can are Word (DOCX), OpenDocument (ODT), Markdown, HTML, LaTeX, RTF, EPUB, Org, reStructuredText, Typst and plain text.
 core-import-document-too-large = “{ $file }” is larger than 50 MB, which is more than can be brought in as a document.
 # The kind is the kind of file: Word (DOCX), plain text.

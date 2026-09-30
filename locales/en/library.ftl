@@ -275,6 +275,9 @@ library-pdfs-working = { $count ->
     [one] Finding out what the file is…
    *[other] Finding out what { $count } files are…
 }
+# While PDF files are found out about, one after another.
+library-pdfs-progress = { $done } of { $count }: { $name }
+library-stop = Stop
 # What came of an import, as a list: “3 references added, 1 completed, 2 files stored”.
 library-imported-added = { $count ->
     [one] { $count } reference added

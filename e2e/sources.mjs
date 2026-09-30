@@ -235,6 +235,19 @@ try {
     passOver('PDF files', 'Typst is not installed, so none could be made');
   } else {
     const before = (await entries()).length;
+    if (online) {
+      // How far it has come is shown, and it can be stopped: then nothing is added.
+      await drop([join(desk, 'article.pdf'), join(desk, 'notes.pdf')], 500, 400);
+      await app.waitFor('.working button', 5000);
+      await app.waitForText('.working .doing', 'of 2', 5000).catch(() => {});
+      const told = await app.exec(`return document.querySelector('.working .doing')?.textContent.trim() ?? ''`);
+      await app.screenshot('sources-5a-finding-out');
+      await app.clickText('.working button', 'Stop');
+      await app.waitGone('.working', 60000);
+      await sleep(500);
+      check('while files are found out about, how far it has come is shown', /1 of 2: article\.pdf/.test(told), told.trim());
+      check('and it can be stopped, adding nothing', !(await app.exists('dialog .what')) && (await entries()).length === before);
+    }
     await drop([join(desk, 'article.pdf'), join(desk, 'notes.pdf')], 500, 400);
     await app.waitFor('dialog .what', 90000);
     await sleep(400);

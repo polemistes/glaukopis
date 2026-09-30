@@ -1,8 +1,10 @@
 <script lang="ts">
   import { save } from '@tauri-apps/plugin-dialog';
   import CircleCheck from '@lucide/svelte/icons/circle-check';
+  import { isBackendError } from '$lib/api/backend';
   import {
     documentExport,
+    documentExportStop,
     openPath,
     type DocumentRequest,
     type Exported,
@@ -13,6 +15,7 @@
   import Dialog from '$lib/ui/Dialog.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyError } from '$lib/ui/toast.svelte';
+  import { newId } from '$lib/util/id';
   import { documents } from './documents.svelte';
 
   interface Props {
@@ -88,6 +91,10 @@
   let working = $state(false);
   let error = $state<string | null>(null);
   let done = $state<Exported | null>(null);
+  /** Whether the last making was stopped. */
+  let stopped = $state(false);
+  /** What the making that goes on is asked for with, so that it can be stopped. */
+  let ticket = '';
 
   const kind = $derived(kinds.find((k) => k.target === chosen)!);
   const typstMissing = $derived(!documents.tools?.typst);
@@ -96,6 +103,7 @@
   async function run() {
     error = null;
     done = null;
+    stopped = false;
     const path = await save({
       title: t('preview-export-as', { kind: kind.label }),
       defaultPath: `${name}.${kind.extension}`,
@@ -103,10 +111,12 @@
     });
     if (!path) return;
     working = true;
+    ticket = newId();
     try {
-      done = await documentExport(await request(), chosen, path, { biblatex });
+      done = await documentExport(await request(), chosen, path, { biblatex }, ticket);
     } catch (e) {
-      error = describeError(e) ?? t('preview-export-failed');
+      if (isBackendError(e) && e.kind === 'stopped') stopped = true;
+      else error = describeError(e) ?? t('preview-export-failed');
     } finally {
       working = false;
     }
@@ -188,6 +198,7 @@
       </label>
     {/if}
     {#if error}<p class="error selectable" role="alert">{error}</p>{/if}
+    {#if stopped}<p class="stopped" role="status">{t('preview-export-stopped')}</p>{/if}
   {/if}
 
   {#snippet footer()}
@@ -198,13 +209,24 @@
       <Button onclick={onclose}>{t('common-close')}</Button>
     {:else}
       {#if working}<div class="left working"><Spinner /> {t('preview-export-working')}</div>{/if}
-      <Button variant="ghost" disabled={working} onclick={onclose}>{t('common-cancel')}</Button>
+      {#if working}
+        <Button variant="ghost" onclick={() => void documentExportStop(ticket).catch(() => {})}
+          >{t('preview-export-stop')}</Button
+        >
+      {:else}
+        <Button variant="ghost" onclick={onclose}>{t('common-cancel')}</Button>
+      {/if}
       <Button variant="primary" disabled={working} onclick={run}>{t('preview-export-run')}</Button>
     {/if}
   {/snippet}
 </Dialog>
 
 <style>
+  .stopped {
+    margin: 10px 0 0;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+  }
   .kinds {
     display: grid;
     grid-template-columns: 1fr 1fr;
