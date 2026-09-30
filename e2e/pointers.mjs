@@ -139,7 +139,7 @@ try {
   await app.keys(', and by ');
   await app.clickText('.text-view .tools button', 'Insert');
   await app.waitFor('.menu');
-  await app.clickText('.menu [role="menuitem"], .menu button', 'Pointer');
+  await app.clickText('.menu [role="menuitem"], .menu button', 'Cross-reference');
   await app.waitFor('.targets input', 3000);
   await sleep(250);
   await app.keys('a^2');
@@ -231,7 +231,7 @@ try {
   await app.exec(`document.querySelector(arguments[0]).click()`, `${section('The shield')} .ProseMirror .crossref`);
   await app.waitFor('.menu');
   await sleep(150);
-  await app.clickText('.menu [role="menuitem"], .menu button', 'Point to something else');
+  await app.clickText('.menu [role="menuitem"], .menu button', 'Refer to something else');
   await app.waitFor('.targets input', 3000);
   await sleep(250);
   await app.press('Enter');

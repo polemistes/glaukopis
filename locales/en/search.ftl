@@ -35,7 +35,7 @@ search-accents-sign = é=e
 search-regex = A regular expression
 search-selection = Only in the selected text
 search-selection-none = Select text first, to search only in it
-search-labels = Citations, formulas and words that point as well
+search-labels = Citations, formulas and cross-references as well
 search-labels-outside = What stands outside the texts as well
 
 ## The search through everything

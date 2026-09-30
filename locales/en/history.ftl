@@ -23,12 +23,12 @@ history-span = { $from } – { $to }
 # Older history that was merged, so that moments within it are gone.
 history-merged = kept less finely
 history-added = { $count ->
-    [one] +1 sign
-   *[other] +{ $count } signs
+    [one] +1 character
+   *[other] +{ $count } characters
 }
 history-removed = { $count ->
-    [one] −1 sign
-   *[other] −{ $count } signs
+    [one] −1 character
+   *[other] −{ $count } characters
 }
 
 ## The map as it was
@@ -40,8 +40,8 @@ history-map-not-there = This map was not there then.
 history-added-by = Added by { $name }
 history-removed-by = Removed by { $name }
 history-changed-by = Changed by { $name }
-# Words that point to a figure, a table or a part, where it is not known what they said.
-history-pointer = pointer
+# A cross-reference to a figure, a table or a part, where it is not known what it said.
+history-pointer = cross-reference
 history-name-moment = Name this moment
 history-name-placeholder = What to call it
 history-named = The moment is called “{ $name }”.

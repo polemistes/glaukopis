@@ -39,7 +39,7 @@ review-kind-object = { $what ->
     [citation] Citation
     [math] Formula
     [footnote] Note
-    [crossref] Words that point
+    [crossref] Cross-reference
    *[other] Something that is not text
 }
 review-kind-put-in = { $what } put in

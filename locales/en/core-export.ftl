@@ -5,8 +5,8 @@
 
 core-export-picture-missing = The picture “{ $name }” is not on this computer, and is left out of the document.
 core-export-astray = { $count ->
-    [one] Words in the text point to something that is not in the document. They are set as [?].
-   *[other] Words in the text point, in { $count } places, to what is not in the document. They are set as [?].
+    [one] A cross-reference in the text refers to something that is not in the document. It is set as [?].
+   *[other] { $count } cross-references in the text refer to what is not in the document. They are set as [?].
 }
 core-export-latex-font = { $font } is not installed. The document is set in Latin Modern, the font that LaTeX has of its own.
 # Texts of a preview that the interface did not send again, and that were not kept: it sends them all.

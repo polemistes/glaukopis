@@ -245,7 +245,7 @@ try {
   const before = files().length;
   const where = await middleOf('.box .text .prose p:last-of-type');
   await drop([join(desk, 'not a picture.png')], where.x, where.y);
-  await app.waitForText('.toaster', 'could not be taken in', 5000);
+  await app.waitForText('.toaster', 'could not be added', 5000);
   check('what is no picture is not taken for one', files().length === before && (await app.count('.box .text figure')) === 1);
 
   // ---- a picture that is pasted ----

@@ -1,4 +1,4 @@
-# Figures, formulas and equations in the text, and the words that point to
+# Figures, formulas and equations in the text, and the cross-references to
 # them. See locales/README.md.
 
 ## A figure, and the panel of what can be said of it.
@@ -30,7 +30,7 @@ figures-picture-files = Pictures
 ## The store of pictures, as the text reads it.
 
 figures-pictures-unread = The pictures could not be read
-figures-picture-not-taken = The picture could not be taken in
+figures-picture-not-taken = The picture could not be added
 figures-picture-not-kept = What was said of the picture could not be kept
 figures-picture-not-removed = The picture could not be removed
 
@@ -115,24 +115,24 @@ figures-sign-arrow = Arrow
 figures-sign-infinity = Without end
 figures-sign-words = Words within a formula
 
-## Words that point to a figure, a table, an equation or a part.
+## Cross-references to a figure, a table, an equation or a part.
 
-figures-points-by = Points by
+figures-points-by = Shown as
 figures-form-full = The word and the number
 figures-form-number = The number alone
 figures-form-equation = The number as it stands by the equation
 figures-form-its-number = Its number
 figures-form-its-name = Its name
-figures-go-to = Go to what it points to
-figures-pointed-gone = What this pointed to is not in the document
-figures-point-elsewhere = Point to something else…
+figures-go-to = Go to what it refers to
+figures-pointed-gone = What this refers to is no longer in the document
+figures-point-elsewhere = Refer to something else…
 
-## Choosing what to point to.
+## Choosing what a cross-reference refers to.
 
-figures-targets = Choose what to point to
-figures-targets-placeholder = Point to a figure, a table, an equation, a part
-figures-targets-search = Search what can be pointed to
-figures-targets-results = What can be pointed to
+figures-targets = Choose what to refer to
+figures-targets-placeholder = Refer to a figure, a table, an equation, a part
+figures-targets-search = Search what can be referred to
+figures-targets-results = What can be referred to
 figures-targets-figures = Figures
 figures-targets-tables = Tables
 figures-targets-equations = Equations
@@ -140,8 +140,8 @@ figures-targets-parts = Parts of the document
 figures-targets-figure-unsaid = A figure of which nothing is said
 figures-targets-table-unsaid = A table of which nothing is said
 figures-targets-no-match = Nothing in the document answers to these words.
-figures-targets-none = There is nothing to point to yet: no figure, no table, no numbered equation, no part with a name.
-figures-targets-hint = The words follow what they point to: its number, and what the format calls it.
+figures-targets-none = There is nothing to refer to yet: no figure, no table, no numbered equation, no part with a name.
+figures-targets-hint = A cross-reference follows what it refers to: its number, and what the format calls it.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 

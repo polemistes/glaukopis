@@ -71,7 +71,7 @@ pictures-dimensions-label = Wide and high
 pictures-dimensions = { $width } × { $height } points
 pictures-size = Size
 # When the picture was taken into the store.
-pictures-added = Taken in
+pictures-added = Added
 pictures-used-in = Used in
 pictures-this-project = This project
 # A map that has no name.

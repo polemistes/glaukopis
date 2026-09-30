@@ -143,7 +143,7 @@ try {
   await sleep(700);
   check('a picture that is there already is not there twice', (await app.count('.pictures .tile')) === 3 && files().length === 3);
   await drop([join(desk, 'not a picture.png')], again.x, again.y);
-  await app.waitForText('.toaster', 'could not be taken in', 5000);
+  await app.waitForText('.toaster', 'could not be added', 5000);
   check('what is no picture is not taken for one', files().length === 3);
 
   // ---- one is selected ----

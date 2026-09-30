@@ -85,7 +85,7 @@ found-note-not = It does not stand in a note.
 # What else the note holds, by the name of what it is in the text.
 found-note-holds = The note holds { $what ->
         [math] a formula
-        [crossref] words that point to something
+        [crossref] a cross-reference
         [citation] a citation
         [hard_break] a second line
        *[other] something that is no text

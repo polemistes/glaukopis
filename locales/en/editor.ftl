@@ -34,7 +34,7 @@ editor-note = Note
 editor-note-selection = Make the selection a note
 editor-note-hint = A note, at the foot of the page or the end
 editor-insert = Insert
-editor-insert-hint = A picture, a table, mathematics, a pointer to a figure
+editor-insert-hint = A picture, a table, mathematics, a cross-reference
 editor-picture-file = Picture from a file…
 editor-picture-file-hint = A figure, with what is said of it
 editor-picture-store = Picture from the store…
@@ -47,7 +47,7 @@ editor-table-file = Table from a file…
 editor-table-file-hint = CSV, or a sheet of LibreOffice or Excel
 editor-formula = Formula
 editor-formula-hint = Mathematics in the line
-editor-pointer = Pointer…
+editor-pointer = Cross-reference…
 editor-pointer-hint = To a figure, a table, an equation or a part: “see figure 2”
 editor-dropped = A picture or a table can also be dropped on the text, or pasted
 # What a picture that was pasted without a name of its own is called in the store of pictures.

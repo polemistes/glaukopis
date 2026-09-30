@@ -218,12 +218,12 @@ try {
   check('a regular expression finds', /^\d of 7$/.test(await searchFor('wr[a-z]+h')), await said());
   await option('A regular expression');
   check('a citation is not searched as it is shown', (await searchFor('Nagy')) === 'Nothing found', await said());
-  await option('Citations, formulas and words that point as well');
+  await option('Citations, formulas and cross-references as well');
   await sleep(800);
   const cited = await app.exec(`const c = document.querySelector('.text-view .citation.ProseMirror-selectednode, .text-view .citation.selected'); let marked = null; for (const r of CSS.highlights.get('search-current') ?? []) marked = r.toString(); return { said: document.querySelector('.search-bar .said').textContent.trim(), selected: !!c, marked }`);
   check('unless that is asked for: then it is found, marked, and selected in its editor', cited.said === '1 of 1' && cited.selected && cited.marked === 'Nagy', JSON.stringify(cited));
   await app.screenshot('search-4-labels');
-  await option('Citations, formulas and words that point as well');
+  await option('Citations, formulas and cross-references as well');
   await app.press('Escape');
   await sleep(300);
 
@@ -415,7 +415,7 @@ $$E = mc^2$$
   );
   await app.screenshot('search-10-table');
   check('an equation is not found by its formula', (await searchFor('mc^2')) === 'Nothing found', await said());
-  await option('Citations, formulas and words that point as well');
+  await option('Citations, formulas and cross-references as well');
   await sleep(800);
   const equation = await app.exec(`
     let m = null; for (const r of CSS.highlights.get('search-current') ?? []) m = r;
@@ -423,7 +423,7 @@ $$E = mc^2$$
     const el = m.startContainer.nodeType === 1 ? m.startContainer : m.startContainer.parentElement;
     return { said: document.querySelector('.search-bar .said').textContent.trim(), equation: !!el?.closest('.equation'), selected: !!document.querySelector('.text-view .equation.ProseMirror-selectednode, .text-view .equation.selected') };`);
   check('unless that is asked for: then it is found, marked and selected', equation?.said === '1 of 1' && equation.equation && equation.selected, JSON.stringify(equation));
-  await option('Citations, formulas and words that point as well');
+  await option('Citations, formulas and cross-references as well');
 
   const errors = await app.pageErrors();
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));

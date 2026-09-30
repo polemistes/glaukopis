@@ -99,7 +99,7 @@ Everything the tools do can be done from the keys, and much of it by typing:
 What a sign has done is undone by **Backspace**, should the sign have been
 meant as a sign.
 
-Notes, citations, formulas, figures and words that point each have a box of
+Notes, citations, formulas, figures and cross-references each have a box of
 their own, which opens when they are pressed. The arrows go through the
 text without opening them: what the cursor comes to is selected, and
 **Enter** opens it. **Backspace** at the beginning of a paragraph selects a
@@ -145,7 +145,7 @@ project with, the diagram is not changed by it, and the preview and the
 documents that are made hold the whole text. The words counted under the
 text are those of the whole text as well.
 
-When something takes you to an element that is folded away, as a pointer,
+When something takes you to an element that is folded away, as a cross-reference,
 an association or a new element under a folded one, what it is under is
 opened.
 
@@ -265,7 +265,7 @@ follow the file when the file is changed. One table may have 2000 rows and
 Mathematics is written in the notation of TeX, which is what journals and
 publishers take: `x_i` is *x* with a lowered *i*, `\frac{1}{2}` a half. It
 is written in a small panel, which shows what is written as it will stand
-while you write, and says so when it cannot be read. The signs that are most
+while you write, and says so when it cannot be read. The symbols that are most
 often wanted are in the panel, to be put in by pressing them; what is
 selected goes into what is put in.
 
@@ -296,16 +296,16 @@ breaks around a figure differs a little between the kinds of document, as
 each has its own way of doing it; the PDF that is set by Typst is what the
 preview shows.
 
-### Pointing to figures, tables, equations and parts
+### Cross-references to figures, tables, equations and parts
 
 Where the text says *see figure 2*, the number should follow the figure: if
-another figure is put in before it, the text is to say *figure 3*. Write
-such words with **Insert › Pointer…**, or **Ctrl+Alt+R**, and choose what
-they point to: a figure, a table, a numbered equation, or a part of the document,
-which is an element whose name is printed as a heading. They can be found
-by what is said of them.
+another figure is put in before it, the text is to say *figure 3*. Make such
+a cross-reference with **Insert › Cross-reference…**, or **Ctrl+Alt+R**, and
+choose what it refers to: a figure, a table, a numbered equation, or a part
+of the document, which is an element whose name is printed as a heading.
+They can be found by what is said of them.
 
-The words then say what the document calls the thing:
+The cross-reference then says what the document calls the thing:
 
 - a **figure** or a **table** by the word the format has for it and its
   number, *Figure 2*, *Table 1*, or by the number alone;
@@ -314,13 +314,14 @@ The words then say what the document calls the thing:
 - a **part** by its number where the format numbers the headings, *2.1*, and
   by its name where it does not, or whenever you choose the name.
 
-Words like *see* and *section* you write yourself. Press the pointer to
-change how it points, to go to what it points to, or to point it elsewhere.
+Words like *see* and *section* you write yourself. Press the cross-reference
+to change how it is shown, to go to what it refers to, or to have it refer
+to something else.
 
-In a PDF and on a web page the words lead to what they point to when they
-are pressed. If what they point to is taken away, or left out of the
-document, they are shown as **?** in red where you write and as **[?]** in
-the document, and the preview remarks on it.
+In a PDF and on a web page a cross-reference leads to what it refers to when
+it is pressed. If that is taken away, or left out of the document, it is
+shown as **?** in red where you write and as **[?]** in the document, and
+the preview remarks on it.
 
 ## Pictures
 
@@ -641,7 +642,7 @@ What becomes of what is in the document:
   them, also where the picture stands in a frame. *Figure 1:* before the
   words is left out, since the map numbers its figures and tables itself.
   Where the running text says *see Figure 1*, that stays text as it was
-  written; put a pointer in its place if the number is to follow.
+  written; put a cross-reference in its place if the number is to follow.
 - **Mathematics** is kept as it is written, in the line or as equations.
 - **Citations** written by key (Markdown `[@homer]`, LaTeX `\cite{homer}`)
   become citations when the key is in your library, with page and words
@@ -753,7 +754,7 @@ Beside the words are the options:
 | **é=e** | Letters with and without accents alike: *αειδε* finds *ἄειδε*, *Pelee* finds *Pelée* |
 | **.\*** | A regular expression |
 | The dashed frame | Only in the text you selected before you searched |
-| The label | Citations as they are shown, formulas and words that point as well |
+| The label | Citations as they are shown, formulas and cross-references as well |
 
 Words are found as they are written, but room of any kind is room, as a
 space that does not break, and an apostrophe or a quotation mark may be
@@ -763,7 +764,7 @@ To replace, write what replaces in the second field. **Replace**, or
 **Enter** in that field, replaces the one that is shown and shows the next;
 **Replace all** replaces all that is found. What is put in has the marks of
 what it replaces: a word in italics stays in italics. Only text is replaced:
-citations, formulas and words that point are not, and the option to search
+citations, formulas and cross-references are not, and the option to search
 them is not there while you replace. All that one **Replace all** did is
 taken back at once, by **Undo** or by **Ctrl+Z** in the text. With a
 regular expression, `$1` in what replaces stands for what its first group
@@ -782,7 +783,7 @@ around it; choose one, and the map opens there, with the words in the bar
 over the text.
 
 With the last of the options, what stands outside the texts is searched as
-well: citations as they are shown, formulas and words that point, the
+well: citations as they are shown, formulas and cross-references, the
 details of the documents, what you have written about the works cited in
 each project, and the words that name associations.
 
@@ -1117,7 +1118,7 @@ Norwegian is checked: the first underlines of a session come after a moment.
 | **Ctrl+Alt+P** | In the text: a picture |
 | **Ctrl+Alt+T** | In the text: a table |
 | **Ctrl+Alt+M**, **Ctrl+Alt+E** | In the text: a formula in the line, an equation |
-| **Ctrl+Alt+R** | In the text: words that point to a figure, a table, an equation, a part |
+| **Ctrl+Alt+R** | In the text: a cross-reference to a figure, a table, an equation, a part |
 | **Ctrl+Alt+U**, **Ctrl+Alt+Shift+U** | In the text: fold the element away, or open it; open all that is folded under it |
 | **Ctrl+F**, **Ctrl+H** | In the text and in the edit box of an element: search; search and replace |
 | **Enter**, **Shift+Enter** | In the search: the next that is found, the one before; **F3** and **Shift+F3** as well |
