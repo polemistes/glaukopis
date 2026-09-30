@@ -14,6 +14,8 @@ settings-theme-light = Lyst
 settings-theme-dark = Mørkt
 settings-text-size = Størrelsen på teksten din
 settings-text-size-hint = I kartene og i tekstvisningen. Det som eksporteres, følger dokumentformatet.
+settings-interface-size = Størrelsen på grensesnittet
+settings-interface-size-hint = Alt i vinduet, også teksten. For teksten din alene, størrelsen under.
 settings-sample = Syng, gudinne, om vreden til Peleus-sønnen Akilles
 
 ## Nye dokumenter

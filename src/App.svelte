@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { getCurrentWebview } from '@tauri-apps/api/webview';
   import { languageSet, languagesInfo } from '$lib/api/system';
   import { languages, t } from '$lib/i18n';
   import { library } from '$lib/state/library.svelte';
@@ -69,6 +70,16 @@
 
   $effect(() => {
     document.documentElement.style.setProperty('--text-size', `${settings.value.textSize}px`);
+  });
+
+  // The size of the whole interface, as the window's own zoom: everything
+  // grows alike, and the pointer stays where it is drawn.
+  $effect(() => {
+    const size = settings.value.interfaceSize;
+    if (ready)
+      void getCurrentWebview()
+        .setZoom(size > 0 ? size : 1)
+        .catch(() => {});
   });
 
   function onkeydown(event: KeyboardEvent) {

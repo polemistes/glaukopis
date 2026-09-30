@@ -17,8 +17,10 @@
   /* Text */
   --ink: #1f2528;
   --ink-2: #4b555a;
-  --ink-3: #7d878b;
-  --ink-4: #a7afb1;
+  /* Secondary text is readable (4.5:1 on paper); the faintest, for what
+     need not be read closely, still stands out (3:1). */
+  --ink-3: #636d71;
+  --ink-4: #858f92;
 
   /* Lines */
   --line: #e6e2da;
@@ -101,8 +103,8 @@
 
   --ink: #e7e9e6;
   --ink-2: #adb5b6;
-  --ink-3: #7c8689;
-  --ink-4: #566063;
+  --ink-3: #8b9598;
+  --ink-4: #6d777a;
 
   --line: #2a3033;
   --line-strong: #3a4246;

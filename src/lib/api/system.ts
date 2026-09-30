@@ -59,6 +59,8 @@ export interface Settings {
   textLanguage: string;
   /** Size of the researcher's text in the editor, in pixels. */
   textSize: number;
+  /** Size of the whole interface, as a zoom of the window: 1 as it is made. */
+  interfaceSize: number;
   /** Paths to external programs, when not found automatically. */
   pandocPath: string | null;
   typstPath: string | null;
@@ -92,6 +94,7 @@ export const defaultSettings: Settings = {
   language: 'system',
   textLanguage: 'system',
   textSize: 17,
+  interfaceSize: 1,
   pandocPath: null,
   typstPath: null,
   tesseractPath: null,

@@ -160,6 +160,24 @@
       </div>
       <div class="row top">
         <div class="what">
+          <label class="label" for="interface-size">{t('settings-interface-size')}</label>
+          <div class="hint">{t('settings-interface-size-hint')}</div>
+        </div>
+        <div class="size">
+          <input
+            id="interface-size"
+            type="range"
+            min="0.9"
+            max="1.5"
+            step="0.05"
+            value={settings.value.interfaceSize}
+            onchange={(e) => settings.set('interfaceSize', Number(e.currentTarget.value))}
+          />
+          <span class="number">{Math.round(settings.value.interfaceSize * 100)} %</span>
+        </div>
+      </div>
+      <div class="row top">
+        <div class="what">
           <label class="label" for="text-size">{t('settings-text-size')}</label>
           <div class="hint">
             {t('settings-text-size-hint')}
@@ -448,7 +466,10 @@
     accent-color: var(--accent);
   }
   .number {
-    width: 2ch;
+    /* As wide as "150 %", so that the sliders stand under one another. */
+    min-width: 5.5ch;
+    text-align: right;
+    white-space: nowrap;
     color: var(--ink-2);
     font-variant-numeric: tabular-nums;
   }

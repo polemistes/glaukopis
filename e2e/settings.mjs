@@ -29,6 +29,23 @@ try {
   await app.screenshot('settings-2-dark');
   await app.clickText('.segmented button', 'Light');
 
+  // The whole interface grows, as the window is zoomed: fewer pixels of the page fit in it.
+  const wide = await app.exec(`return window.innerWidth`);
+  await app.exec(`
+    const range = document.querySelector('#interface-size');
+    range.value = '1.25';
+    range.dispatchEvent(new Event('change', { bubbles: true }));`);
+  await sleep(500);
+  const zoomed = await app.exec(`return window.innerWidth`);
+  await app.screenshot('settings-3-larger');
+  check('the interface can be made larger', Math.abs(zoomed - wide / 1.25) < 4, `${wide} → ${zoomed}`);
+  await app.exec(`
+    const range = document.querySelector('#interface-size');
+    range.value = '1';
+    range.dispatchEvent(new Event('change', { bubbles: true }));`);
+  await sleep(500);
+  check('and as it was again', (await app.exec(`return window.innerWidth`)) === wide);
+
   await app.exec(`
     const range = document.querySelector('#text-size');
     range.value = '20';

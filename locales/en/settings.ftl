@@ -14,6 +14,8 @@ settings-theme-light = Light
 settings-theme-dark = Dark
 settings-text-size = Size of your text
 settings-text-size-hint = In the maps and the text view. What is exported follows the document format.
+settings-interface-size = Size of the interface
+settings-interface-size-hint = Everything in the window, the writing as well. For your text alone, the size below.
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
 settings-sample = Sing, goddess, the wrath of Achilles, son of Peleus
