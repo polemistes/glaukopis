@@ -378,6 +378,7 @@ try {
   await app.press('Enter');
   await sleep(300);
   check('a second map', (await app.count('.tabs .tab')) === 2);
+  check('whose centre is named with it', (await titles(app)).includes('Article'), (await titles(app)).join(' | '));
   // Ctrl+click on a tab opens that map beside the one in view.
   await app.exec(`
     const tab = Array.from(document.querySelectorAll('.tabs .tab')).find((t) => t.textContent.includes('Wrath and the hero'));

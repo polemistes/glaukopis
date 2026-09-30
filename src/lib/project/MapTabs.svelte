@@ -34,6 +34,8 @@
   let { project, current, beside = null, onselect, onbeside, ondocument }: Props = $props();
 
   let naming = $state<{ id: string; value: string } | null>(null);
+  /** A map that was just made, whose centre is named with it. */
+  let newMap: string | null = null;
   let input = $state<HTMLInputElement>();
   let spring: ReturnType<typeof setTimeout> | undefined;
 
@@ -46,6 +48,12 @@
   function commit() {
     if (!naming) return;
     project.renameMap(naming.id, naming.value);
+    // The centre of a map just made has the name it was made with, until the map is named.
+    const root = newMap === naming.id ? project.map(naming.id)?.root : null;
+    if (root && project.node(root)?.title === t('project-untitled') && naming.value.trim()) {
+      project.setTitle(root, naming.value);
+    }
+    newMap = null;
     naming = null;
   }
 
@@ -53,6 +61,7 @@
     project.checkpoint();
     const id = project.createMap(t('project-untitled'));
     project.checkpoint();
+    newMap = id;
     onselect(id);
     const made = project.map(id);
     if (made) await rename(made);
