@@ -54,15 +54,17 @@ fn listing(library: &Library) -> LibraryListing {
 pub fn library_list(state: State<'_, AppState>) -> CommandResult<LibraryListing> {
     let mut library = state.library();
     library.refresh()?;
+    library.take_reread();
     Ok(listing(&library))
 }
 
-/// Looks whether the library file was changed from outside, and if so returns
-/// the new listing.
+/// Looks whether the library file was changed from outside, now or before a
+/// change of one entry read it, and if so returns the new listing.
 #[tauri::command(async)]
 pub fn library_refresh(state: State<'_, AppState>) -> CommandResult<Option<LibraryListing>> {
     let mut library = state.library();
-    Ok(if library.refresh()? { Some(listing(&library)) } else { None })
+    library.refresh()?;
+    Ok(if library.take_reread() { Some(listing(&library)) } else { None })
 }
 
 #[tauri::command(async)]

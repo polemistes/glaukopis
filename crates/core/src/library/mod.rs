@@ -69,6 +69,10 @@ pub struct Library {
     pub warnings: Vec<String>,
     /// What stands in the file besides the entries, to be written back as it is.
     kept: Vec<bib::Verbatim>,
+    /// Whether the file was read again, from a change made outside, since the
+    /// interface last took the whole library: a change of one entry, which
+    /// reads it first, does not tell the interface of the others.
+    reread: bool,
 }
 
 impl Library {
@@ -89,6 +93,7 @@ impl Library {
             stamp: None,
             warnings: Vec::new(),
             kept: Vec::new(),
+            reread: false,
         };
         library.load()?;
         Ok(library)
@@ -178,7 +183,13 @@ impl Library {
         }
         tracing::info!("the library file changed on disk; reading it again");
         self.load()?;
+        self.reread = true;
         Ok(true)
+    }
+
+    /// Whether the file was read again since this was last asked; asking forgets it.
+    pub fn take_reread(&mut self) -> bool {
+        std::mem::take(&mut self.reread)
     }
 
     pub(crate) fn save(&mut self) -> Result<()> {
@@ -905,6 +916,15 @@ mod tests {
         // A change made now is applied on top of what was read.
         lib.add(&draft("@book{c, title={C}}")).unwrap();
         assert_eq!(lib.len(), 3);
+        assert!(lib.take_reread() && !lib.take_reread(), "the interface is told once");
+
+        // What a change of one entry reads first is told to the interface as well.
+        let mut text = fs::read_to_string(lib.file()).unwrap();
+        text.push_str("\n@book{d, title={D, added by hand}}\n");
+        fs::write(lib.file(), text).unwrap();
+        lib.add(&draft("@book{e, title={E}}")).unwrap();
+        assert_eq!(lib.len(), 5);
+        assert!(lib.take_reread());
     }
 
     #[test]

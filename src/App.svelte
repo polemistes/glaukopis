@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { languageSet, languagesInfo } from '$lib/api/system';
   import { languages, t } from '$lib/i18n';
+  import { library } from '$lib/state/library.svelte';
   import { router } from '$lib/state/router.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import ConfirmHost from '$lib/ui/ConfirmHost.svelte';
@@ -91,7 +92,12 @@
   }
 </script>
 
-<svelte:window {onkeydown} oncontextmenu={(e) => e.preventDefault()} />
+<!-- Changes made to the library file from outside are taken up on coming back, wherever one is. -->
+<svelte:window
+  {onkeydown}
+  onfocus={() => library.checkForChanges()}
+  oncontextmenu={(e) => e.preventDefault()}
+/>
 
 {#if ready}
   <div class="app">

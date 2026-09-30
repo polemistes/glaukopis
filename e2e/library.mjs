@@ -1,6 +1,6 @@
 // The reference library, exercised through the interface.
 
-import { readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { App, root, sleep } from './harness.mjs';
 
@@ -142,6 +142,33 @@ try {
   check('the library is a BibLaTeX file', file.includes('@book{lord1960,') && file.includes('glaukopis-id'));
   check('Unicode is stored as such', file.includes('Müller, Anna and Sørensen, Jørgen') && file.includes('Μαρωνίτης'));
   check('the @string abbreviation was resolved', /journaltitle\s+= \{Journal of Hellenic Studies\}/.test(file));
+
+  // --- Written in the file by hand, while the application runs ---
+  // A change of one entry, made from elsewhere, reads the file first; what it read reaches the list.
+  const libraryFile = join(app.dataDir, 'library', 'library.bib');
+  appendFileSync(
+    libraryFile,
+    '\n@book{west1997, author = {West, M. L.}, title = {The East Face of Helicon}, date = {1997}}\n' +
+      '@book{broken, title = {A brace that is never closed}\n',
+  );
+  await app.go('#/projects');
+  await sleep(300);
+  await app.execAsync(
+    `await window.__TAURI_INTERNALS__.invoke('library_add', { draft: { type: 'book', fields: { title: 'Added from a project' } } });`,
+  );
+  await app.go('#/library');
+  await app.waitForText('.list .item', 'The East Face of Helicon', 4000).catch(() => {});
+  const listed = await app.exec(`return Array.from(document.querySelectorAll('.list .item')).map((e) => e.textContent)`);
+  check(
+    'an entry written in the file by hand is shown, though a change made elsewhere read it first',
+    listed.some((x) => x.includes('The East Face of Helicon')),
+    `${listed.length} shown`,
+  );
+  const rewritten = readFileSync(libraryFile, 'utf8');
+  check(
+    'what could not be read stays in the file when it is written again',
+    rewritten.includes('@book{broken, title = {A brace that is never closed}') && rewritten.includes('Added from a project'),
+  );
 
   // --- Dark theme ---
   await app.setTheme('dark');

@@ -78,10 +78,8 @@
   const single = $derived(selection.length === 1 ? selection[0] : null);
 
   onMount(() => {
-    library.load();
-    const onfocus = () => library.checkForChanges();
-    window.addEventListener('focus', onfocus);
-    return () => window.removeEventListener('focus', onfocus);
+    if (library.loaded) void library.checkForChanges();
+    else void library.load();
   });
 
   // Open the entry the route names.
