@@ -4,6 +4,7 @@
 core-bib-string-without-name = en @string uten navn
 core-bib-expected-found = ventet `{ $expected }`, men fant `{ $found }`
 core-bib-expected-end = ventet `{ $expected }`, men filen sluttet
+core-bib-expected-brace = `@{ $kind }` etterfølges ikke av `{"{"}` eller `(`
 core-bib-comment-not-closed = en kommentar som aldri lukkes
 core-bib-entry-not-closed = oppføringen `{ $key }` lukkes aldri
 core-bib-expected-field = i `{ $key }`: ventet navnet på et felt, men fant `{ $found }`

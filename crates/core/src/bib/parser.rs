@@ -130,7 +130,7 @@ impl<'a> Parser<'a> {
         while let Some(at) = self.find_next_at() {
             self.pos = at + 1;
             let line = self.line_of(at);
-            match self.item(line) {
+            match self.item(at, line) {
                 Ok(Found::Other) => {
                     let text = self.text[at..self.pos].to_owned();
                     self.out.verbatim.push(Verbatim { line, text, readable: true });
@@ -224,7 +224,12 @@ impl<'a> Parser<'a> {
         &self.text[start..self.pos]
     }
 
-    fn item(&mut self, line: usize) -> PResult<Found> {
+    /// Whether nothing but spaces stands before `pos` on its line.
+    fn begins_line(&self, pos: usize) -> bool {
+        self.src[..pos.min(self.src.len())].iter().rev().take_while(|&&b| b != b'\n').all(|&b| b == b' ' || b == b'\t')
+    }
+
+    fn item(&mut self, at: usize, line: usize) -> PResult<Found> {
         self.skip_ws();
         let kind = self.word(|b| matches!(b, b'{' | b'(' | b'@' | b',' | b'=' | b'"' | b'}' | b')'));
         if kind.is_empty() {
@@ -235,7 +240,12 @@ impl<'a> Parser<'a> {
         self.skip_ws();
         let open = match self.peek() {
             Some(b @ (b'{' | b'(')) => b,
-            _ => return Ok(Found::Nothing), // not an entry after all
+            // Not an entry after all: an address in free text. Where the `@`
+            // begins its line, though, an entry was meant, and its brace
+            // forgotten: it is kept as it stands, and said to be wrong,
+            // rather than passed over and lost when the file is written.
+            _ if self.begins_line(at) => return Err(tr!("core-bib-expected-brace", kind = &kind)),
+            _ => return Ok(Found::Nothing),
         };
         let close = if open == b'{' { b'}' } else { b')' };
         self.pos += 1;
@@ -550,6 +560,25 @@ mod tests {
                 (6, "@comment{jabref-meta: databaseType:biblatex;}", true),
             ]
         );
+    }
+
+    #[test]
+    fn an_entry_without_its_brace_is_kept_and_said_to_be_wrong() {
+        // The brace after the type forgotten in a hand-written entry: it is
+        // not an entry, but what was meant as one is kept, not lost when the
+        // file is written. An address in free text is nothing still.
+        let parsed = parse(
+            "Write to me@example.org about this.\n@book nagy1979,\n  title = {The Best of the Achaeans}\n}\n\
+             @book{b, title = {B}}\n",
+        );
+        let keys: Vec<&str> = parsed.entries().map(|e| e.key.as_str()).collect();
+        assert_eq!(keys, ["b"]);
+        assert_eq!(parsed.warnings.len(), 1);
+        assert_eq!(parsed.warnings[0].line, 2);
+        assert!(parsed.warnings[0].message.contains("@book"), "{}", parsed.warnings[0].message);
+        let kept: Vec<(usize, &str, bool)> =
+            parsed.verbatim.iter().map(|v| (v.line, v.text.as_str(), v.readable)).collect();
+        assert_eq!(kept, [(2, "@book nagy1979,\n  title = {The Best of the Achaeans}\n}", false)]);
     }
 
     #[test]

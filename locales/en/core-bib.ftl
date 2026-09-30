@@ -4,6 +4,7 @@
 core-bib-string-without-name = a @string without a name
 core-bib-expected-found = expected `{ $expected }` but found `{ $found }`
 core-bib-expected-end = expected `{ $expected }` but the file ended
+core-bib-expected-brace = `@{ $kind }` is not followed by `{"{"}` or `(`
 core-bib-comment-not-closed = a comment that is never closed
 core-bib-entry-not-closed = the entry `{ $key }` is never closed
 core-bib-expected-field = in `{ $key }`: expected a field name but found `{ $found }`
