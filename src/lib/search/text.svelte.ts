@@ -98,6 +98,7 @@ export class TextSearch {
   #from: EditorView | null = null;
   #elements = new Map<string, number>();
   #closed = false;
+  #unheard: () => void;
 
   constructor(surface: Surface) {
     this.surface = surface;
@@ -105,6 +106,8 @@ export class TextSearch {
     this.marking = new Marking(surface, () => this.texts);
     this.query = remembered.query;
     this.replacement = remembered.replacement;
+    // And when the text has changed, by the writer, by another, or by undo.
+    this.#unheard = surface.project.onChange(() => this.changed());
   }
 
   get options(): SearchOptions {
@@ -539,6 +542,7 @@ export class TextSearch {
    */
   async close(focus = true) {
     this.#closed = true;
+    this.#unheard();
     clearTimeout(this.#timer);
     cancelAnimationFrame(this.#frame);
     this.#frame = 0;

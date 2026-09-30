@@ -68,12 +68,6 @@
     return () => going.close();
   });
 
-  // What is written elsewhere meanwhile, by the writer, by others, by undo.
-  $effect(() => {
-    void project.revision;
-    untrack(() => going.changed());
-  });
-
   // The library may have a work now that it did not have: it is asked again.
   $effect(() => {
     const now = library.revision;

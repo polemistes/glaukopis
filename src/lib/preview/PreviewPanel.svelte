@@ -106,14 +106,15 @@
    * window paint all between the line that is written and the count.
    */
   let words = $state.raw(untrack(() => countWords(project, mapId)));
+  function recount() {
+    const now = countWords(project, mapId);
+    if (now.text !== words.text || now.withNotes !== words.withNotes) words = now;
+  }
+  // Counted at once for another map, and for the writing when it pauses.
   $effect(() => {
-    void project.revision;
     void mapId;
-    const timer = setTimeout(() => {
-      const now = untrack(() => countWords(project, mapId));
-      if (now.text !== words.text || now.withNotes !== words.withNotes) words = now;
-    }, 600);
-    return () => clearTimeout(timer);
+    untrack(recount);
+    return project.onChange(recount, 600);
   });
 
   $effect(() => {
@@ -318,22 +319,26 @@
 
   // The preview follows the text, a moment behind it: the longer the pages
   // take to make, the longer it waits for the writing to pause.
+  let waiting: ReturnType<typeof setTimeout> | undefined;
+  function later() {
+    clearTimeout(waiting);
+    if (!documents.loaded) return;
+    waiting = setTimeout(refresh, count ? Math.max(900, Math.min(2500, took * 0.4)) : 50);
+  }
+  $effect(() => project.onChange(later));
+  // And it is made anew for another map, format or style.
   $effect(() => {
-    void project.revision;
     void mapId;
     void choice.style;
     void choice.format;
     void documents.loaded;
     void documents.changed;
-    if (!documents.loaded) return;
-    // What the effect waits by is not among what it follows: it would then follow its own doing.
-    const wait = untrack(() => (count ? Math.max(900, Math.min(2500, took * 0.4)) : 50));
-    const timer = setTimeout(() => untrack(() => refresh()), wait);
-    return () => clearTimeout(timer);
+    untrack(later);
   });
 
   $effect(() => () => {
     gone = true;
+    clearTimeout(waiting);
     clearTimeout(settled);
     release();
     // What is being made is no longer wanted.

@@ -68,12 +68,6 @@
     });
   });
 
-  // And when the text has changed, by the writer, by another, or by undo.
-  $effect(() => {
-    void search.project.revision;
-    untrack(() => search.changed());
-  });
-
   // Text selected in an editor here is what the search can be kept to.
   $effect(() => {
     const selection = editorUi.selection;

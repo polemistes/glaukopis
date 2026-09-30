@@ -148,6 +148,7 @@ export class Going {
   #places = new Map<string, Place>();
   #round = 0;
   #timer: ReturnType<typeof setTimeout> | undefined;
+  #unheard: (() => void) | null = null;
   /** What there was when something was taken back: what is proposed anew then is what came back. */
   #before: Set<string> | null = null;
   /** The state of the project that was last looked at. */
@@ -453,6 +454,8 @@ export class Going {
 
   /** Looks, and asks the library. `at` is the id of a citation that was found, to begin with. */
   async open(at?: string | null): Promise<void> {
+    // What is written elsewhere meanwhile, by the writer, by others, by undo.
+    this.#unheard ??= this.project.onChange(() => this.changed());
     this.look();
     const wanted = at ? this.entries.find((e) => e.target.id === at) : null;
     if (wanted) this.at = wanted.key;
@@ -501,6 +504,8 @@ export class Going {
 
   /** The window is closed: nothing more is asked. */
   close() {
+    this.#unheard?.();
+    this.#unheard = null;
     clearTimeout(this.#timer);
     this.#round++;
   }

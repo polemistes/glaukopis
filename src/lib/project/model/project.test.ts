@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import { Project, type Persistence, type Summary } from './project.svelte';
 
@@ -193,6 +193,49 @@ describe('working across maps', () => {
     expect(p.setInclude(c, chapter)).toBe(false);
     p.deleteMap(chapter);
     expect(p.node(a)!.include).toBeNull();
+  });
+});
+
+describe('what is told of changes', () => {
+  it('is told once for what changed at the same moment, and no more once stopped', async () => {
+    const { p, root } = project();
+    let heard = 0;
+    const stop = p.onChange(() => heard++);
+    p.setTitle(root, 'One');
+    p.setTitle(root, 'Two');
+    expect(heard).toBe(0);
+    await Promise.resolve();
+    expect(heard).toBe(1);
+    p.undo();
+    await Promise.resolve();
+    expect(heard).toBe(2);
+    stop();
+    p.setTitle(root, 'Three');
+    await Promise.resolve();
+    expect(heard).toBe(2);
+  });
+
+  it('waits, where asked, until the changes pause', () => {
+    vi.useFakeTimers();
+    try {
+      const { p, root } = project();
+      let heard = 0;
+      const stop = p.onChange(() => heard++, 500);
+      p.setTitle(root, 'One');
+      vi.advanceTimersByTime(300);
+      p.setTitle(root, 'Two');
+      vi.advanceTimersByTime(300);
+      expect(heard).toBe(0);
+      vi.advanceTimersByTime(300);
+      expect(heard).toBe(1);
+      // What waits when it is stopped is not told.
+      p.setTitle(root, 'Three');
+      stop();
+      vi.advanceTimersByTime(1000);
+      expect(heard).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

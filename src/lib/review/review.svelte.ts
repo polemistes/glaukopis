@@ -100,11 +100,14 @@ export class Review {
   #working: Promise<void> | null = null;
   /** Whether something was decided since it was last seen whether anything is left. */
   #decided = false;
+  #unheard: () => void;
 
   constructor(project: Project, source: Source, map: string) {
     this.project = project;
     this.source = source;
     this.map = map;
+    // What is written, by the writer, by others, by undo, is worked out again a while later.
+    this.#unheard = project.onChange(() => this.noticeChange());
   }
 
   get history(): History | null {
@@ -594,6 +597,7 @@ export class Review {
 
   close() {
     this.#closed = true;
+    this.#unheard();
     clearTimeout(this.#timer);
     this.#round++;
   }

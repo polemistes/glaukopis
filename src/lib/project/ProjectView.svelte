@@ -172,10 +172,6 @@
     const map = pane?.map;
     if (map) untrack(() => review?.turnTo(map));
   });
-  $effect(() => {
-    void project?.revision;
-    untrack(() => review?.noticeChange());
-  });
 
   // The view is made anew for every project, so the id is the same throughout;
   // it is kept here because it is needed after the view has gone.

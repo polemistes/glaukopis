@@ -91,16 +91,13 @@
     }
   }
 
-  // Read when it is looked at, and again as the project changes.
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  // Read when it is looked at, and again when the project has changed and the writing pauses.
   $effect(() => {
     const which = shown;
     if (!on && !which.archive) return;
-    void project.revision;
-    clearTimeout(timer);
-    timer = setTimeout(() => untrack(() => void read(which)), sessions === null ? 0 : 1200);
+    untrack(() => void read(which));
+    return project.onChange(() => void read(which), 1200);
   });
-  onDestroy(() => clearTimeout(timer));
 
   function nameOf(person: string | null): string {
     if (!person) return t('history-someone');

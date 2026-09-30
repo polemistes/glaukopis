@@ -214,6 +214,8 @@ export class Project {
   #deleted: DeleteSet[] = [];
   #me: Me | null = null;
   #followers = new Set<Follower>();
+  /** Those who are told that the project has changed: see `onChange`. */
+  #listeners = new Set<() => void>();
   /** Whether what was on disk has been read. */
   #loaded = false;
   #appendTimer: ReturnType<typeof setTimeout> | undefined;
@@ -280,6 +282,7 @@ export class Project {
       (update: Uint8Array, origin: unknown, _doc: Y.Doc, transaction: Y.Transaction) => {
         if (origin === LOAD || this.#closed) return;
         this.revision++;
+        for (const heard of this.#listeners) heard();
         // What came from another copy is applied as a change that is not local.
         const here = transaction.local;
         for (const f of this.#followers) f.change(update, here);
@@ -595,6 +598,37 @@ export class Project {
     await this.snapshot(true);
   }
 
+  /**
+   * Tells `listener` that the project has changed, by the writer, by
+   * another or by undo: once for all that changed at the same moment, or,
+   * with `wait`, when nothing has changed for so many milliseconds. The
+   * function returned stops it.
+   */
+  onChange(listener: () => void, wait = 0): () => void {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let queued = false;
+    const tell = () => {
+      if (this.#listeners.has(heard)) listener();
+    };
+    const heard = () => {
+      if (wait) {
+        clearTimeout(timer);
+        timer = setTimeout(tell, wait);
+      } else if (!queued) {
+        queued = true;
+        queueMicrotask(() => {
+          queued = false;
+          tell();
+        });
+      }
+    };
+    this.#listeners.add(heard);
+    return () => {
+      this.#listeners.delete(heard);
+      clearTimeout(timer);
+    };
+  }
+
   /** Follows the changes as they are made, until the function returned is called. */
   follow(follower: Follower): () => void {
     // What is made and not yet written is told first, so that the follower
@@ -630,6 +664,7 @@ export class Project {
     if (this.#closed) return;
     await this.snapshot();
     this.#closed = true;
+    this.#listeners.clear();
     clearTimeout(this.#appendTimer);
     clearTimeout(this.#idleTimer);
     this.undoManager.destroy();
