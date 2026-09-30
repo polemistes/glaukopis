@@ -200,6 +200,18 @@ fn same_first_family(a: &Fingerprint, b: &Fingerprint) -> Option<bool> {
 
 /// Compares two fingerprints.
 pub fn compare(a: &Fingerprint, b: &Fingerprint) -> Option<(Certainty, Vec<Reason>)> {
+    // Where no DOI or ISBN is shared, only the title, the first author and the
+    // year can make two entries one; the years and the authors, which are
+    // cheap to compare, are asked first. What is found is the same: the
+    // titles, which are dear to compare, are compared for fewer.
+    let shared_doi = matches!((&a.doi, &b.doi), (Some(x), Some(y)) if x == y);
+    let shared_isbn = a.isbns.iter().any(|i| b.isbns.contains(i));
+    if !shared_doi && !shared_isbn {
+        let years_apart = matches!((a.year, b.year), (Some(x), Some(y)) if (x - y).abs() > 1);
+        if years_apart || same_first_family(a, b) == Some(false) {
+            return None;
+        }
+    }
     let titles = title_similarity(a, b);
     let mut reasons = Vec::new();
     let mut certainty = None;
@@ -418,6 +430,72 @@ pub fn find_groups(entries: &[Entry]) -> Vec<Group> {
 mod tests {
     use super::*;
     use crate::library::draft_from_source;
+
+    /// A library of many works, many of whose titles share the words a field
+    /// uses, with some duplicates in it: what finding them costs.
+    fn many(count: usize) -> Vec<Entry> {
+        const COMMON: [&str; 8] =
+            ["Greek", "Homer", "Studies", "History", "Poetry", "Ancient", "Essays", "Introduction"];
+        let rare = |n: usize| format!("Word{}", n % 3000);
+        let mut out = Vec::with_capacity(count);
+        let mut seed: u64 = 7;
+        let mut next = || {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            (seed >> 33) as usize
+        };
+        for i in 0..count {
+            // Half the titles begin with one or two of the common words.
+            let mut words: Vec<String> = Vec::new();
+            if next() % 2 == 0 {
+                words.push(COMMON[next() % COMMON.len()].into());
+                if next() % 2 == 0 {
+                    words.push(COMMON[next() % COMMON.len()].into());
+                }
+            }
+            for _ in 0..(2 + next() % 4) {
+                words.push(rare(next()));
+            }
+            let title = words.join(" ");
+            let family = format!("Family{}", next() % 800);
+            let year = 1900 + next() % 125;
+            let source = format!("@book{{k{i}, author={{{family}, A.}}, title={{{title}}}, date={{{year}}}}}");
+            let mut entry = draft_from_source(&source).unwrap().to_entry();
+            entry.id = format!("e{i}");
+            out.push(entry);
+        }
+        // A hundred that are there twice.
+        for i in 0..100 {
+            let mut twice = out[i * 7].clone();
+            twice.id = format!("again{i}");
+            out.push(twice);
+        }
+        out
+    }
+
+    #[test]
+    #[ignore = "a measure, to be run in release: cargo test --release -p glaukopis-core -- --ignored many_entries"]
+    fn many_entries() {
+        for count in [5_000, 20_000] {
+            let entries = many(count);
+            let began = std::time::Instant::now();
+            let groups = find_groups(&entries);
+            let took = began.elapsed();
+            let (built, index) = {
+                let b = std::time::Instant::now();
+                let index = Index::new(&entries);
+                (b.elapsed(), index)
+            };
+            let b = std::time::Instant::now();
+            let one = index.find(&fingerprint(&entries[3]), None).len();
+            let found_one = b.elapsed();
+            let largest = index.by_word.values().map(Vec::len).max().unwrap_or(0);
+            eprintln!(
+                "{count} entries: duplicates found in {took:?} ({} groups); index made in {built:?}; one looked up in {found_one:?} ({one} matches); the largest bucket holds {largest}",
+                groups.len()
+            );
+            assert!(groups.len() >= 100);
+        }
+    }
 
     fn entry(src: &str) -> Entry {
         let mut e = draft_from_source(src).unwrap().to_entry();
