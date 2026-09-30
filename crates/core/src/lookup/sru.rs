@@ -13,10 +13,10 @@
 
 use std::time::Duration;
 
-use crate::duplicates::to_isbn10;
 use crate::error::{Error, Result};
 use crate::net::{Client, encode};
 use crate::tr;
+use crate::written::identifiers::isbn;
 
 use super::marc::{Described, Facts, Kind, Record, describe};
 use super::{Hit, pace};
@@ -105,7 +105,7 @@ impl Catalogue {
     /// Older books are in some catalogues under the ISBN of ten digits that
     /// they were given, so both forms are asked for.
     pub fn question_for_isbn(&self, isbn13: &str) -> String {
-        match to_isbn10(isbn13) {
+        match isbn::to10(isbn13) {
             Some(isbn10) => format!("{0}={isbn13} or {0}={isbn10}", self.isbn),
             None => format!("{}={isbn13}", self.isbn),
         }

@@ -14,7 +14,7 @@
 //! that are given are in units of UTF-16, as the interface counts.
 
 use std::cmp::Reverse;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
 use super::matching::{PARTICLES, Said, Shelf, Words, shelf};
@@ -23,33 +23,14 @@ use crate::bib::latex::fold;
 use crate::document::CiteMode;
 use crate::library::Library;
 use crate::tr;
-
-const TERMS_JSON: &str = include_str!("../../../../resources/csl/locator-terms.json");
+use crate::written::pages::is_dash;
+use crate::written::{locators, roman};
 
 /// What stands in a text for what is no text.
 const NOTHING: char = '\u{fffc}';
 
 /// How far apart brackets may stand, in letters.
 const FAR: usize = 400;
-
-/// The kinds of locator the application knows, as CSL names them.
-const LABELS: [&str; 15] = [
-    "page",
-    "chapter",
-    "section",
-    "paragraph",
-    "line",
-    "verse",
-    "book",
-    "volume",
-    "part",
-    "column",
-    "folio",
-    "figure",
-    "note",
-    "number",
-    "sub-verbo",
-];
 
 /// The languages whose words for locators come first, where a word counts
 /// one thing in one language and another in another.
@@ -209,9 +190,6 @@ fn written_short() -> &'static HashSet<&'static str> {
     SET.get_or_init(|| set_of(SHORT, ' '))
 }
 
-/// For every language, the words for every kind of locator, in their forms.
-type Terms = BTreeMap<String, BTreeMap<String, BTreeMap<String, Vec<String>>>>;
-
 /// Words in small letters, by the letter they begin with; each with what it
 /// counts.
 type Counted = HashMap<char, Vec<(Vec<char>, &'static str)>>;
@@ -220,7 +198,7 @@ type Counted = HashMap<char, Vec<(Vec<char>, &'static str)>>;
 fn labels() -> &'static Counted {
     static WORDS: OnceLock<Counted> = OnceLock::new();
     WORDS.get_or_init(|| {
-        let all: Terms = serde_json::from_str(TERMS_JSON).unwrap_or_default();
+        let all = locators::terms();
         let mut seen: HashSet<String> = HashSet::new();
         let mut words: Counted = HashMap::new();
         let mut add = |word: &str, label: &'static str| {
@@ -234,7 +212,7 @@ fn labels() -> &'static Counted {
         let others = all.keys().map(String::as_str).filter(|locale| !FIRST.contains(locale));
         for locale in FIRST.iter().copied().chain(others) {
             let Some(of_locale) = all.get(locale) else { continue };
-            for label in LABELS {
+            for label in locators::LABELS {
                 for word in of_locale.get(label).into_iter().flat_map(|forms| forms.values()).flatten() {
                     add(word, label);
                 }
@@ -260,10 +238,6 @@ fn labels() -> &'static Counted {
     })
 }
 
-fn is_dash(c: char) -> bool {
-    matches!(c, '-' | '–' | '—' | '‒' | '−' | '‐' | '‑')
-}
-
 /// What joins the letters of one word.
 fn is_joint(c: char) -> bool {
     matches!(c, '-' | '‐' | '‑' | '\'' | '’')
@@ -271,55 +245,6 @@ fn is_joint(c: char) -> bool {
 
 fn small(c: char) -> char {
     c.to_lowercase().next().unwrap_or(c)
-}
-
-/// The value of a number written in the letters of the Romans.
-fn roman_value(letters: &[char]) -> Option<u32> {
-    let value = |c: char| match c.to_ascii_lowercase() {
-        'i' => 1,
-        'v' => 5,
-        'x' => 10,
-        'l' => 50,
-        'c' => 100,
-        'd' => 500,
-        'm' => 1000,
-        _ => 0,
-    };
-    let mut total: i64 = 0;
-    for (i, c) in letters.iter().enumerate() {
-        let here = value(*c);
-        if here == 0 {
-            return None;
-        }
-        let next = letters.get(i + 1).map_or(0, |n| value(*n));
-        total += if here < next { -here } else { here };
-    }
-    u32::try_from(total).ok().filter(|n| *n > 0)
-}
-
-fn roman_of(mut number: u32) -> String {
-    let mut out = String::new();
-    for (value, letters) in [
-        (1000, "m"),
-        (900, "cm"),
-        (500, "d"),
-        (400, "cd"),
-        (100, "c"),
-        (90, "xc"),
-        (50, "l"),
-        (40, "xl"),
-        (10, "x"),
-        (9, "ix"),
-        (5, "v"),
-        (4, "iv"),
-        (1, "i"),
-    ] {
-        while number >= value {
-            out.push_str(letters);
-            number -= value;
-        }
-    }
-    out
 }
 
 /// Whether what stands here is a number in the letters of the Romans, or
@@ -332,9 +257,8 @@ fn is_roman(token: &[char], labelled: bool) -> bool {
         return false;
     }
     pieces.all(|piece| {
-        let written: String = piece.iter().map(|c| c.to_ascii_lowercase()).collect();
         let small_letters = piece.iter().all(|c| matches!(c, 'i' | 'v' | 'x' | 'l'));
-        (labelled || small_letters) && roman_value(piece).is_some_and(|value| roman_of(value) == written)
+        (labelled || small_letters) && roman::is_one(piece)
     })
 }
 

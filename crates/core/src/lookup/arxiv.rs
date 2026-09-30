@@ -6,11 +6,11 @@
 
 use std::time::Duration;
 
-use crate::duplicates::normalise_doi;
 use crate::error::{Error, Result};
 use crate::library::entry::Draft;
 use crate::net::{Client, encode};
 use crate::tr;
+use crate::written::identifiers::doi;
 
 use super::{Hit, pace, text, xml_child, xml_child_text};
 
@@ -97,7 +97,7 @@ pub(crate) fn hits(xml: &str, versioned: bool) -> Result<Vec<Hit>> {
         if let Some(summary) = xml_child_text(entry, "summary") {
             put("abstract", summary);
         }
-        let published = xml_child_text(entry, "doi").and_then(|d| normalise_doi(&d));
+        let published = xml_child_text(entry, "doi").and_then(|d| doi::normalise(&d));
         let journal = xml_child_text(entry, "journal_ref");
         if let Some(journal) = &journal {
             put("note", journal.clone());

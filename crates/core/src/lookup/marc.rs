@@ -10,9 +10,12 @@
 
 use crate::bib::latex::fold;
 use crate::bib::names::Person;
-use crate::duplicates::{normalise_doi, normalise_isbns};
 use crate::library::entry::Draft;
 use crate::tr;
+use crate::written::{
+    identifiers::{doi, isbn},
+    languages,
+};
 
 use super::text::{self, without_isbd};
 
@@ -460,14 +463,14 @@ fn institution(field: &Field) -> Option<Person> {
 fn language(record: &Record) -> Option<&'static str> {
     let fixed = record.positions("008", 35, 3);
     let listed = record.fields("041").flat_map(|f| f.all('a')).map(|c| c.chars().take(3).collect::<String>());
-    fixed.into_iter().chain(listed).find_map(|code| text::langid(&code))
+    fixed.into_iter().chain(listed).find_map(|code| languages::babel(&code))
 }
 
 fn original_language(record: &Record) -> Option<&'static str> {
     record
         .fields("041")
         .flat_map(|f| f.all('h'))
-        .find_map(|code| text::langid(&code.chars().take(3).collect::<String>()))
+        .find_map(|code| languages::babel(&code.chars().take(3).collect::<String>()))
 }
 
 /// A date as catalogues write it in the imprint: `1989.`, `[2017]`, `©2017`,
@@ -784,11 +787,11 @@ fn isbns(record: &Record) -> Vec<(String, String)> {
     let mut out: Vec<(String, String, usize)> = Vec::new();
     for field in record.fields("020") {
         let Some(raw) = field.get('a') else { continue };
-        let Some(number) = normalise_isbns(raw).into_iter().next() else { continue };
+        let Some(number) = isbn::normalise(raw).into_iter().next() else { continue };
         // Without what follows the number: "(alk. paper)", ": kart.".
         let token = raw.split([' ', '(', ':']).next().unwrap_or("").to_owned();
         let digits = token.chars().filter(|c| c.is_ascii_digit() || matches!(c, 'X' | 'x')).count();
-        let hyphened = field.get('9').filter(|h| normalise_isbns(h).first() == Some(&number)).map(str::to_owned);
+        let hyphened = field.get('9').filter(|h| isbn::normalise(h).first() == Some(&number)).map(str::to_owned);
         let written = hyphened.unwrap_or(token);
         match out.iter_mut().find(|(n, _, _)| *n == number) {
             // The same number in its older form of ten digits.
@@ -858,7 +861,7 @@ fn host(record: &Record) -> Option<Host> {
         number: None,
         pages: None,
         year: None,
-        isbn: main.get('z').and_then(|z| normalise_isbns(z).into_iter().next().map(|_| z.to_owned())),
+        isbn: main.get('z').and_then(|z| isbn::normalise(z).into_iter().next().map(|_| z.to_owned())),
         issn: main.get('x').map(str::to_owned).filter(|x| super::csl::is_issn(x)),
         author: main.get('a').map(without_isbd),
         imprint: main.get('d').map(without_isbd),
@@ -1092,7 +1095,7 @@ pub(crate) fn describe(record: &Record, asked: Option<&str>) -> Option<Described
 
     let own_isbns = isbns(record);
     let mut other_isbns: Vec<String> = Vec::new();
-    for isbn in record.fields("776").flat_map(|f| f.all('z')).flat_map(normalise_isbns) {
+    for isbn in record.fields("776").flat_map(|f| f.all('z')).flat_map(isbn::normalise) {
         if !other_isbns.contains(&isbn) && !own_isbns.iter().any(|(n, _)| *n == isbn) {
             other_isbns.push(isbn);
         }
@@ -1270,7 +1273,7 @@ pub(crate) fn describe(record: &Record, asked: Option<&str>) -> Option<Described
     let doi = record
         .fields("024")
         .filter(|f| f.ind1 == '7' && f.get('2').is_some_and(|s| s.eq_ignore_ascii_case("doi")))
-        .find_map(|f| f.get('a').and_then(normalise_doi));
+        .find_map(|f| f.get('a').and_then(doi::normalise));
     if let Some(doi) = &doi {
         put(&mut draft, "doi", doi.clone());
     }

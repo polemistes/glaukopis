@@ -16,6 +16,7 @@ use pdf_extract::{Document, MediaBox, Object, OutputDev, OutputError, Transform}
 
 use super::text::Line;
 use crate::tr;
+use crate::written::roman;
 
 /// A page has text when it has at least this many letters and digits.
 pub const TEXT_PAGE: usize = 100;
@@ -179,33 +180,6 @@ fn page_lines(doc: &Document, number: u32) -> Option<Vec<Line>> {
 // The numbers of the pages in print
 // ---------------------------------------------------------------------------
 
-/// A number in Roman numerals.
-fn roman(mut n: usize) -> String {
-    const NUMERALS: [(usize, &str); 13] = [
-        (1000, "m"),
-        (900, "cm"),
-        (500, "d"),
-        (400, "cd"),
-        (100, "c"),
-        (90, "xc"),
-        (50, "l"),
-        (40, "xl"),
-        (10, "x"),
-        (9, "ix"),
-        (5, "v"),
-        (4, "iv"),
-        (1, "i"),
-    ];
-    let mut out = String::new();
-    for (value, numeral) in NUMERALS {
-        while n >= value {
-            out.push_str(numeral);
-            n -= value;
-        }
-    }
-    out
-}
-
 /// A number in letters, as PDF numbers pages so: a to z, then aa to zz.
 fn letters(n: usize) -> String {
     let letter = char::from(b'a' + ((n.max(1) - 1) % 26) as u8);
@@ -227,8 +201,8 @@ impl Numbering {
         let n = self.start + index - self.from;
         let number = match self.style {
             Some(b'D') => n.to_string(),
-            Some(b'R') => roman(n).to_uppercase(),
-            Some(b'r') => roman(n),
+            Some(b'R') => roman::of(u32::try_from(n).unwrap_or(u32::MAX)).to_uppercase(),
+            Some(b'r') => roman::of(u32::try_from(n).unwrap_or(u32::MAX)),
             Some(b'A') => letters(n).to_uppercase(),
             Some(b'a') => letters(n),
             _ => String::new(),
@@ -378,8 +352,6 @@ mod tests {
 
     #[test]
     fn numbers_in_print() {
-        assert_eq!(roman(1994), "mcmxciv");
-        assert_eq!(roman(14), "xiv");
         assert_eq!(letters(1), "a");
         assert_eq!(letters(27), "aa");
         assert_eq!(letters(53), "aaa");

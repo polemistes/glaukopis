@@ -18,10 +18,10 @@ use std::time::Duration;
 use serde_json::Value;
 
 use crate::bib::names::Person;
-use crate::duplicates::normalise_isbns;
 use crate::error::{Error, Result};
 use crate::net::{Client, encode, host};
 use crate::tr;
+use crate::written::identifiers::isbn;
 
 use super::csl::{self, Converted};
 use super::{
@@ -211,7 +211,7 @@ pub(crate) fn with_book(converted: &mut Converted, xml: &str, doi: &str) -> bool
         .find(|i| i.attribute("media_type") == Some("print"))
         .or(isbns.first())
         .map(|i| text_within(*i))
-        .filter(|i| !normalise_isbns(i).is_empty());
+        .filter(|i| !isbn::normalise(i).is_empty());
     if let Some(isbn) = isbn {
         put("isbn", isbn);
     }

@@ -11,9 +11,12 @@
 use serde_json::Value;
 
 use crate::bib::names::Person;
-use crate::duplicates::{normalise_doi, normalise_isbns};
 use crate::library::entry::Draft;
 use crate::tr;
+use crate::written::{
+    identifiers::{doi, isbn},
+    languages,
+};
 
 use super::text;
 
@@ -241,7 +244,7 @@ pub(crate) fn convert(item: &Value) -> Option<Converted> {
         _ if item.get("id").and_then(Value::as_str).is_some_and(|id| id.contains("doi.org/")) => Some("DataCite"),
         _ => None,
     };
-    let doi = string(item, "DOI").and_then(|d| normalise_doi(&d));
+    let doi = string(item, "DOI").and_then(|d| doi::normalise(&d));
     let arxiv = doi.as_deref().and_then(|d| d.strip_prefix("10.48550/arxiv.")).map(str::to_owned);
 
     let kind = item.get("type").and_then(Value::as_str).unwrap_or("").trim().to_ascii_lowercase();
@@ -267,7 +270,7 @@ pub(crate) fn convert(item: &Value) -> Option<Converted> {
     };
     let entry_type = draft.entry_type.clone();
 
-    let langid = string(item, "language").and_then(|code| text::langid(&code));
+    let langid = string(item, "language").and_then(|code| languages::babel(&code));
     if let Some(l) = langid {
         put(&mut draft, "langid", l);
     }
@@ -392,7 +395,7 @@ pub(crate) fn convert(item: &Value) -> Option<Converted> {
     }
 
     // Identifiers.
-    if let Some(isbn) = printed(item, "ISBN", "isbn-type").filter(|i| !normalise_isbns(i).is_empty()) {
+    if let Some(isbn) = printed(item, "ISBN", "isbn-type").filter(|i| !isbn::normalise(i).is_empty()) {
         put(&mut draft, "isbn", isbn);
     }
     if matches!(entry_type.as_str(), "article" | "review" | "periodical")

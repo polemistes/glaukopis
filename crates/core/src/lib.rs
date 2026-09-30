@@ -27,5 +27,6 @@ pub mod spelling;
 pub mod styles;
 #[cfg(test)]
 pub(crate) mod testing;
+pub mod written;
 
 pub use error::{Error, Result};

@@ -5,54 +5,12 @@
 
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
-use std::sync::OnceLock;
 
 use serde_json::{Value, json};
 
 use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, RefForm, Section};
 use crate::formats::{Equations, Figures, Tables};
-
-const TERMS_JSON: &str = include_str!("../../../../resources/csl/locator-terms.json");
-
-type Terms = HashMap<String, HashMap<String, HashMap<String, [String; 2]>>>;
-
-fn terms() -> &'static Terms {
-    static TERMS: OnceLock<Terms> = OnceLock::new();
-    TERMS.get_or_init(|| serde_json::from_str(TERMS_JSON).expect("the bundled locator terms are valid"))
-}
-
-/// The locale whose words Pandoc will expect, for a language tag.
-pub fn locale_for(language: Option<&str>) -> &'static str {
-    let lang = language.unwrap_or("en-US").trim();
-    let all = terms();
-    let find = |name: &str| all.keys().find(|k| k.eq_ignore_ascii_case(name)).map(String::as_str);
-    if let Some(exact) = find(lang) {
-        return exact;
-    }
-    let primary = lang.split(['-', '_']).next().unwrap_or("en").to_ascii_lowercase();
-    // The variant that stands for the language as a whole.
-    let usual = match primary.as_str() {
-        "en" => "en-US",
-        "de" => "de-DE",
-        "fr" => "fr-FR",
-        "es" => "es-ES",
-        "pt" => "pt-PT",
-        "zh" => "zh-CN",
-        "sr" => "sr-Latn-RS",
-        "no" => "nb-NO",
-        _ => "",
-    };
-    if let Some(found) = find(usual) {
-        return found;
-    }
-    let mut candidates: Vec<&str> = all
-        .keys()
-        .filter(|k| k.split('-').next().is_some_and(|p| p.eq_ignore_ascii_case(&primary)))
-        .map(String::as_str)
-        .collect();
-    candidates.sort_unstable();
-    candidates.first().copied().or_else(|| find("en-US")).unwrap_or("en-US")
-}
+use crate::written::locators::{locale_for, terms};
 
 /// The locator of a citation as Pandoc wants it: in braces, which says that
 /// this and nothing else is the locator, and with the word for its kind in
@@ -74,7 +32,7 @@ pub fn locator_token(item: &CiteItem, language: Option<&str>) -> Option<String> 
         // The long form, in the singular: it is the same in every version of
         // the locales, and Pandoc tells by the locator itself whether one
         // place is meant or several.
-        let w = &forms.get("long").or_else(|| forms.get("short"))?[0];
+        let w = forms.get("long").or_else(|| forms.get("short"))?.first()?;
         (!w.is_empty()).then(|| w.clone())
     };
     match word(locale_for(language)).or_else(|| word("en-US")) {
@@ -809,18 +767,6 @@ mod tests {
         let text = || vec![json!({"t": "Str", "c": "here"})];
         assert_eq!(wrap(text(), &marks("https://example.org"))[0]["t"], "Link");
         assert_eq!(wrap(text(), &marks("javascript:alert(1)"))[0]["t"], "Span");
-    }
-
-    #[test]
-    fn locales() {
-        assert_eq!(locale_for(Some("nb")), "nb-NO");
-        assert_eq!(locale_for(Some("no")), "nb-NO");
-        assert_eq!(locale_for(Some("en")), "en-US");
-        assert_eq!(locale_for(Some("en-GB")), "en-GB");
-        assert_eq!(locale_for(Some("de-AT")), "de-AT");
-        assert_eq!(locale_for(Some("el")), "el-GR");
-        assert_eq!(locale_for(Some("xx")), "en-US");
-        assert_eq!(locale_for(None), "en-US");
     }
 
     #[test]

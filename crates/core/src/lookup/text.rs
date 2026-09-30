@@ -10,6 +10,7 @@ use crate::bib::latex::fold;
 use crate::bib::names::Person;
 use crate::bib::parser::normalise_space;
 use crate::tr;
+use crate::written::{entities, roman};
 
 /// Composed letters, no invisible characters, single spaces.
 ///
@@ -34,61 +35,6 @@ pub(crate) fn clean(text: &str) -> String {
     normalise_space(&out)
 }
 
-/// What an entity stands for, for those that occur in titles.
-fn entity(name: &str) -> Option<char> {
-    if let Some(number) = name.strip_prefix('#') {
-        let code = match number.strip_prefix(['x', 'X']) {
-            Some(hex) => u32::from_str_radix(hex, 16).ok()?,
-            None => number.parse().ok()?,
-        };
-        return char::from_u32(code).filter(|c| !c.is_control());
-    }
-    Some(match name {
-        "amp" => '&',
-        "lt" => '<',
-        "gt" => '>',
-        "quot" => '"',
-        "apos" => '\'',
-        "nbsp" => '\u{a0}',
-        "ndash" => '–',
-        "mdash" => '—',
-        "hellip" => '…',
-        "lsquo" => '‘',
-        "rsquo" => '’',
-        "ldquo" => '“',
-        "rdquo" => '”',
-        "laquo" => '«',
-        "raquo" => '»',
-        "shy" => '\u{ad}',
-        _ => return None,
-    })
-}
-
-fn resolve_entities(text: &str) -> String {
-    if !text.contains('&') {
-        return text.to_owned();
-    }
-    let mut out = String::with_capacity(text.len());
-    let mut rest = text;
-    while let Some(at) = rest.find('&') {
-        out.push_str(&rest[..at]);
-        let tail = &rest[at + 1..];
-        let resolved = tail.find(';').filter(|&end| end <= 8).and_then(|end| entity(&tail[..end]).map(|c| (c, end)));
-        match resolved {
-            Some((c, end)) => {
-                out.push(c);
-                rest = &tail[end + 1..];
-            }
-            None => {
-                out.push('&');
-                rest = tail;
-            }
-        }
-    }
-    out.push_str(rest);
-    out
-}
-
 /// Elements that stand on lines of their own: where one ends, words must not run together.
 fn is_block(name: &str) -> bool {
     let name = name.rsplit(':').next().unwrap_or(name).to_ascii_lowercase();
@@ -103,7 +49,7 @@ fn is_block(name: &str) -> bool {
 ///
 /// A `<` that does not begin a tag ("p < 0.05") is text and stays.
 pub(crate) fn strip_markup(text: &str) -> String {
-    let text = resolve_entities(text);
+    let text = entities::resolve(text);
     if !text.contains('<') {
         return clean(&text);
     }
@@ -213,16 +159,11 @@ fn case_for(text: &str, langid: Option<&str>) -> Case {
     }
 }
 
+/// A number in Roman capitals, as in the names of kings and the parts of
+/// books in titles: `II`, `XIV`.
 fn is_roman_numeral(word: &str) -> bool {
-    let n = word.chars().count();
-    (2..=6).contains(&n)
-        && word.chars().all(|c| matches!(c, 'I' | 'V' | 'X'))
-        && !word.contains("IIII")
-        && !word.contains("VV")
-        && !word.contains("XXXX")
-        && !word.contains("IIV")
-        && !word.contains("IIX")
-        && !word.contains("VX")
+    let letters: Vec<char> = word.chars().collect();
+    (2..=6).contains(&letters.len()) && letters.iter().all(|c| matches!(c, 'I' | 'V' | 'X')) && roman::is_one(&letters)
 }
 
 fn capitalised(word: &str) -> String {
@@ -444,36 +385,7 @@ pub(crate) fn person_from_display(name: &str) -> Person {
 pub(crate) fn pages(text: &str) -> String {
     let text = clean(text);
     let text = text.trim_start_matches("pp.").trim_start_matches("p.").trim_start_matches("S.").trim();
-    text.split(',')
-        .map(|part| {
-            let part = part.trim();
-            let dashes: Vec<(usize, char)> =
-                part.char_indices().filter(|(_, c)| matches!(c, '-' | '–' | '—' | '‐' | '‑' | '−')).collect();
-            let (Some(first), Some(last)) = (dashes.first(), dashes.last()) else { return part.to_owned() };
-            // One dash, or one written as two or three hyphens.
-            let together =
-                part[first.0..last.0 + last.1.len_utf8()].chars().all(|c| dashes.iter().any(|(_, d)| *d == c));
-            let from = part[..first.0].trim();
-            let to = part[last.0 + last.1.len_utf8()..].trim();
-            if !together || from.is_empty() || to.is_empty() {
-                return part.to_owned();
-            }
-            format!("{from}–{}", written_out(from, to))
-        })
-        .collect::<Vec<_>>()
-        .join(", ")
-}
-
-/// The end of a range that was abbreviated: in `1695-9` the 9 stands for 1699.
-fn written_out(from: &str, to: &str) -> String {
-    let numeric = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit());
-    if numeric(from) && numeric(to) && to.len() < from.len() {
-        let full = format!("{}{to}", &from[..from.len() - to.len()]);
-        if full.parse::<u64>().ok() > from.parse::<u64>().ok() {
-            return full;
-        }
-    }
-    to.to_owned()
+    crate::written::pages::written_out(&crate::written::pages::ranges(text))
 }
 
 /// A date of the form `YYYY`, `YYYY-MM` or `YYYY-MM-DD` from its parts. Parts
@@ -515,65 +427,6 @@ pub(crate) fn month_number(name: &str) -> Option<i64> {
         &["december", "dezember", "desember", "decembre", "dec", "dez", "des"],
     ];
     MONTHS.iter().position(|names| names.contains(&name)).map(|i| i as i64 + 1)
-}
-
-/// The name that babel has for a language, from its code in ISO 639-1
-/// (`en`, also `en-GB`) or ISO 639-2 (`eng`, `ger` and `deu`). Languages that
-/// are not in the list give none: a name that babel does not know would stop
-/// the typesetting.
-pub(crate) fn langid(code: &str) -> Option<&'static str> {
-    let code = code.trim().to_ascii_lowercase().replace('_', "-");
-    match code.as_str() {
-        "en-gb" => return Some("british"),
-        "en-us" => return Some("american"),
-        "pt-br" => return Some("brazilian"),
-        _ => {}
-    }
-    let code = code.split('-').next().unwrap_or("");
-    Some(match code {
-        "en" | "eng" => "english",
-        "de" | "ger" | "deu" => "german",
-        "fr" | "fre" | "fra" => "french",
-        "it" | "ita" => "italian",
-        "es" | "spa" => "spanish",
-        "pt" | "por" => "portuguese",
-        "nl" | "dut" | "nld" => "dutch",
-        "da" | "dan" => "danish",
-        "sv" | "swe" => "swedish",
-        "no" | "nor" | "nb" | "nob" => "norsk",
-        "nn" | "nno" => "nynorsk",
-        "fi" | "fin" => "finnish",
-        "is" | "ice" | "isl" => "icelandic",
-        "la" | "lat" => "latin",
-        "el" | "gre" | "ell" | "grc" => "greek",
-        "ru" | "rus" => "russian",
-        "pl" | "pol" => "polish",
-        "cs" | "cze" | "ces" => "czech",
-        "sk" | "slo" | "slk" => "slovak",
-        "hu" | "hun" => "hungarian",
-        "ro" | "rum" | "ron" => "romanian",
-        "bg" | "bul" => "bulgarian",
-        "uk" | "ukr" => "ukrainian",
-        "hr" | "hrv" => "croatian",
-        "sr" | "srp" => "serbian",
-        "sl" | "slv" => "slovene",
-        "tr" | "tur" => "turkish",
-        "ca" | "cat" => "catalan",
-        "gl" | "glg" => "galician",
-        "eu" | "baq" | "eus" => "basque",
-        "et" | "est" => "estonian",
-        "lv" | "lav" => "latvian",
-        "lt" | "lit" => "lithuanian",
-        "he" | "heb" => "hebrew",
-        "ar" | "ara" => "arabic",
-        "cy" | "wel" | "cym" => "welsh",
-        "ga" | "gle" => "irish",
-        "af" | "afr" => "afrikaans",
-        "ja" | "jpn" => "japanese",
-        "zh" | "chi" | "zho" => "chinese",
-        "ko" | "kor" => "korean",
-        _ => return None,
-    })
 }
 
 /// Whether a full stop at the end belongs to the last word: an initial, an
@@ -863,23 +716,6 @@ mod tests {
         assert_eq!(month_number("desember"), Some(12));
         assert_eq!(month_number("ma"), None);
         assert_eq!(month_number("Michaelmas"), None);
-    }
-
-    #[test]
-    fn languages() {
-        assert_eq!(langid("en"), Some("english"));
-        assert_eq!(langid("en-GB"), Some("british"));
-        assert_eq!(langid("en-AU"), Some("english"));
-        assert_eq!(langid("eng"), Some("english"));
-        assert_eq!(langid("ger"), Some("german"));
-        assert_eq!(langid("deu"), Some("german"));
-        assert_eq!(langid("nob"), Some("norsk"));
-        assert_eq!(langid("nno"), Some("nynorsk"));
-        assert_eq!(langid("grc"), Some("greek"));
-        assert_eq!(langid(" FRE "), Some("french"));
-        for unknown in ["und", "mul", "zxx", "|||", "", "xx", "tlh"] {
-            assert_eq!(langid(unknown), None, "{unknown}");
-        }
     }
 
     #[test]

@@ -5,6 +5,8 @@
 //! words be marked whose capitals are to be kept. Abstracts are plain text,
 //! but those fetched from publishers often arrive with tags in them.
 
+use crate::written::entities;
+
 /// A tag at a place in the text.
 struct Tag {
     /// In lower case: `p`, `span`, `jats:p`. `!` for comments and declarations.
@@ -65,79 +67,12 @@ fn tag(chars: &[char], at: usize) -> Option<Tag> {
     None
 }
 
-fn named_entity(name: &str) -> Option<&'static str> {
-    Some(match name {
-        "amp" => "&",
-        "lt" => "<",
-        "gt" => ">",
-        "quot" => "\"",
-        "apos" => "'",
-        "nbsp" => "\u{a0}",
-        "shy" => "",
-        "ndash" => "–",
-        "mdash" => "—",
-        "hellip" => "…",
-        "lsquo" => "‘",
-        "rsquo" => "’",
-        "sbquo" => "‚",
-        "ldquo" => "“",
-        "rdquo" => "”",
-        "bdquo" => "„",
-        "laquo" => "«",
-        "raquo" => "»",
-        "lsaquo" => "‹",
-        "rsaquo" => "›",
-        "copy" => "©",
-        "reg" => "®",
-        "trade" => "™",
-        "sect" => "§",
-        "para" => "¶",
-        "deg" => "°",
-        "middot" => "·",
-        "bull" => "•",
-        "times" => "×",
-        "minus" => "−",
-        "euro" => "€",
-        "pound" => "£",
-        "dagger" => "†",
-        "szlig" => "ß",
-        "aelig" => "æ",
-        "AElig" => "Æ",
-        "oslash" => "ø",
-        "Oslash" => "Ø",
-        "aring" => "å",
-        "Aring" => "Å",
-        "auml" => "ä",
-        "Auml" => "Ä",
-        "ouml" => "ö",
-        "Ouml" => "Ö",
-        "uuml" => "ü",
-        "Uuml" => "Ü",
-        "eacute" => "é",
-        "Eacute" => "É",
-        "egrave" => "è",
-        "agrave" => "à",
-        "ccedil" => "ç",
-        _ => return None,
-    })
-}
-
 /// Reads the entity that begins at `at`, where a `&` stands: `&amp;`,
 /// `&#8211;`, `&#x2013;`. An ampersand that begins none gives none.
 fn entity(chars: &[char], at: usize) -> Option<(String, usize)> {
-    let end = (at + 1..chars.len().min(at + 12)).find(|&i| chars[i] == ';')?;
-    let name: String = chars[at + 1..end].iter().collect();
-    let text = match name.strip_prefix('#') {
-        Some(number) => {
-            let code = match number.strip_prefix(['x', 'X']) {
-                Some(hex) => u32::from_str_radix(hex, 16).ok()?,
-                None => number.parse::<u32>().ok()?,
-            };
-            char::from_u32(code).filter(|c| !c.is_control() || c.is_whitespace())?.to_string()
-        }
-        None => named_entity(&name)?.to_owned(),
-    };
-    Some((text, end + 1))
+    let after: String = chars[at + 1..chars.len().min(at + 12)].iter().collect();
+    let (text, len) = entities::at(&after)?;
+    Some((text, at + 1 + len))
 }
 
 /// Plain text being put together: runs of white space become one space, and

@@ -24,10 +24,10 @@ use unicode_normalization::UnicodeNormalization;
 
 use crate::bib::names::parse_one;
 use crate::bib::parser::normalise_space;
-use crate::duplicates::{normalise_doi, normalise_isbns};
 use crate::error::{Error, IoContext, Result};
 use crate::library::entry::Draft;
 use crate::tr;
+use crate::written::identifiers::{arxiv, doi, isbn};
 
 use super::Candidate;
 
@@ -55,7 +55,7 @@ const PATIENCE: Duration = Duration::from_secs(20);
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PdfFacts {
-    /// In the form of `duplicates::normalise_doi`: lower case, without resolver.
+    /// In the form of `doi::normalise`: lower case, without resolver.
     pub doi: Option<String>,
     /// Each as an ISBN-13 without hyphens; those of the printed book first.
     pub isbns: Vec<String>,
@@ -173,10 +173,7 @@ fn doi_prefix(s: &str) -> Option<(String, usize)> {
             _ => return None,
         }
     }
-    // A registrant has four digits or more, and may be subdivided: `10.1000.10/…`.
-    let mut parts = prefix.strip_prefix("10.")?.split('.');
-    let registrant = (4..=9).contains(&parts.next()?.len()) && parts.all(|part| !part.is_empty());
-    (registrant && bytes.get(at) == Some(&b'/')).then(|| (format!("{prefix}/"), at + 1))
+    (doi::is_prefix(&prefix) && bytes.get(at) == Some(&b'/')).then(|| (format!("{prefix}/"), at + 1))
 }
 
 /// When nothing but the end of the line follows `at`: the first word of the
@@ -203,39 +200,18 @@ fn goes_on(so_far: &str, next: &str) -> bool {
     match so_far.chars().next_back() {
         None | Some('/' | '-' | '_') => true,
         Some('.') if first.is_ascii_lowercase() => next.contains(|c: char| c.is_ascii_digit() || c == '.'),
-        Some('.') if first.is_ascii_digit() => trim_doi(next).len() >= 5,
+        Some('.') if first.is_ascii_digit() => doi::trim_end(next).len() >= 5,
         _ => false,
     }
 }
 
-/// Without what follows a DOI in running text: the punctuation of the
-/// sentence, and brackets that were opened before it.
-fn trim_doi(doi: &str) -> &str {
-    let mut d = doi;
-    while let Some(last) = d.chars().next_back() {
-        let open = match last {
-            '.' | ',' | ';' | ':' | '\'' | '!' | '?' => None,
-            ')' => Some('('),
-            ']' => Some('['),
-            '}' => Some('{'),
-            '>' => Some('<'),
-            _ => return d,
-        };
-        if open.is_some_and(|open| d.matches(open).count() >= d.matches(last).count()) {
-            return d;
-        }
-        d = &d[..d.len() - last.len_utf8()];
-    }
-    d
-}
-
 /// The DOI in its normal form, when there is more to it than the prefix.
 fn whole_doi(prefix: &str, suffix: &str) -> Option<String> {
-    let suffix = trim_doi(suffix);
+    let suffix = doi::trim_end(suffix);
     if suffix.is_empty() {
         return None;
     }
-    normalise_doi(&format!("{prefix}{suffix}"))
+    doi::normalise(&format!("{prefix}{suffix}"))
 }
 
 /// Whether what stands before a DOI introduces it as one: `doi:`, `DOI `,
@@ -460,30 +436,6 @@ struct IsbnFound {
     len: usize,
 }
 
-fn valid_isbn13(digits: &str) -> bool {
-    digits.len() == 13
-        && (digits.starts_with("978") || digits.starts_with("979"))
-        && digits.bytes().all(|b| b.is_ascii_digit())
-        && digits.bytes().enumerate().map(|(i, b)| u32::from(b - b'0') * if i % 2 == 0 { 1 } else { 3 }).sum::<u32>()
-            % 10
-            == 0
-}
-
-fn valid_isbn10(digits: &str) -> bool {
-    digits.len() == 10
-        && digits[..9].bytes().all(|b| b.is_ascii_digit())
-        && digits
-            .bytes()
-            .enumerate()
-            .map(|(i, b)| match b {
-                b'0'..=b'9' => Some(u32::from(b - b'0') * (10 - i as u32)),
-                b'X' if i == 9 => Some(10),
-                _ => None,
-            })
-            .sum::<Option<u32>>()
-            .is_some_and(|sum| sum % 11 == 0)
-}
-
 /// The ISBN that begins at the beginning of `s`, which is a digit, and its
 /// length as written. It may be divided by hyphens or by spaces.
 fn isbn_at(s: &str) -> Option<(String, usize)> {
@@ -508,8 +460,8 @@ fn isbn_at(s: &str) -> Option<(String, usize)> {
         let end = digits[length - 1].1;
         // More digits straight on make it another number, such as an EAN with its supplement.
         let ends = !s[end..].starts_with(|c: char| c.is_ascii_digit() || c == '-');
-        if ends && (valid_isbn13(&number) || valid_isbn10(&number)) {
-            return normalise_isbns(&number).into_iter().next().map(|isbn| (isbn, end));
+        if ends && isbn::is_valid(&number) {
+            return isbn::normalise(&number).into_iter().next().map(|isbn| (isbn, end));
         }
     }
     None
@@ -595,36 +547,6 @@ fn find_isbns(text: &str) -> Vec<IsbnFound> {
 // arXiv
 // ---------------------------------------------------------------------------
 
-/// The identifier at the beginning of `s`, without its version, and the
-/// length of both: `2301.01234v2`, `hep-th/9901001`, `math.AG/0601001v1`.
-fn arxiv_at(s: &str) -> Option<(String, usize)> {
-    let bytes = s.as_bytes();
-    let digits = |from: usize| bytes[from.min(bytes.len())..].iter().take_while(|b| b.is_ascii_digit()).count();
-    let len = if bytes.first().is_some_and(u8::is_ascii_digit) {
-        // Year and month, then a number of four digits, or of five since 2015.
-        let number = digits(5);
-        let month: u32 = s.get(2..4)?.parse().ok()?;
-        if digits(0) != 4 || bytes.get(4) != Some(&b'.') || !(4..=5).contains(&number) || !(1..=12).contains(&month) {
-            return None;
-        }
-        5 + number
-    } else {
-        let archive = s.find(|c: char| !(c.is_ascii_alphabetic() || c == '-' || c == '.'))?;
-        if archive < 2 || bytes.get(archive) != Some(&b'/') || digits(archive + 1) != 7 {
-            return None;
-        }
-        archive + 8
-    };
-    let version = match bytes.get(len) {
-        Some(b'v') if digits(len + 1) > 0 => 1 + digits(len + 1),
-        _ => 0,
-    };
-    if bytes.get(len + version).is_some_and(|b| b.is_ascii_alphanumeric()) {
-        return None;
-    }
-    Some((s[..len].to_owned(), len + version))
-}
-
 /// The identifier that arXiv stamps in the margin of the first page:
 /// `arXiv:2301.01234v2 [hep-th] 3 Jan 2023`. A paper may cite others in the
 /// same form, so one that is followed by its subject class in brackets, as
@@ -637,7 +559,7 @@ fn find_arxiv(text: &str) -> Option<(String, usize, usize)> {
         let at = from + found;
         from = at + 6;
         let rest = text[from..].trim_start_matches(' ');
-        let Some((id, len)) = arxiv_at(rest) else { continue };
+        let Some((id, len)) = arxiv::at(rest) else { continue };
         let len = text.len() - rest.len() + len - at;
         if text[at + len..].trim_start_matches(' ').starts_with('[') {
             return Some((id, at, len));

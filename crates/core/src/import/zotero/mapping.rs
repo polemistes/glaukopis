@@ -12,6 +12,7 @@ use crate::bib::names::{Person, parse_list};
 use crate::bib::parser::normalise_space;
 use crate::library::entry::{Draft, FIELD_ZOTERO};
 use crate::tr;
+use crate::written::{languages, pages};
 
 use super::database::{Creator, Item};
 use super::dates::{self, Date};
@@ -415,7 +416,7 @@ pub(super) fn entry(item: &Item) -> (Draft, Vec<String>) {
         "archiveID",
     ]);
     set(&mut draft, "number", text::line(number.unwrap_or_default()));
-    set(&mut draft, "pages", text::pages(fields.take(&["pages", "firstPage", "codePages"]).unwrap_or_default()));
+    set(&mut draft, "pages", pages::ranges(fields.take(&["pages", "firstPage", "codePages"]).unwrap_or_default()));
     set(&mut draft, "pagetotal", text::line(fields.take(&["numPages"]).unwrap_or_default()));
     set(&mut draft, "version", text::line(fields.take(&["versionNumber"]).unwrap_or_default()));
 
@@ -558,7 +559,7 @@ pub(super) fn entry(item: &Item) -> (Draft, Vec<String>) {
 
     // The language.
     if let Some(language) = fields.take(&["language"]) {
-        match (text::babel(language), text::languages(language)) {
+        match (languages::babel(language), languages::several(language)) {
             (Some(name), _) => set(&mut draft, "langid", name),
             (None, Some(several)) => set(&mut draft, "language", several),
             (None, None) => set(&mut draft, "language", text::line(language)),

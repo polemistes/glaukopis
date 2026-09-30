@@ -33,11 +33,11 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 
 use crate::bib::latex::fold;
-use crate::duplicates::{normalise_doi, normalise_isbns};
 use crate::error::{Error, Result};
 use crate::library::entry::Draft;
 use crate::net::Client;
 use crate::tr;
+use crate::written::identifiers::{arxiv as arxiv_number, doi as doi_number, isbn as isbn_number};
 
 /// What is to be looked up.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -145,12 +145,14 @@ const ROWS: usize = 10;
 pub fn lookup(client: &Client, query: &Query, scope: Scope) -> Result<Outcome> {
     match query {
         Query::Doi(doi) => {
-            let doi = normalise_doi(doi).ok_or_else(|| Error::invalid(tr!("core-lookup-not-a-doi", doi = doi)))?;
+            let doi =
+                doi_number::normalise(doi).ok_or_else(|| Error::invalid(tr!("core-lookup-not-a-doi", doi = doi)))?;
             doi::lookup(client, &doi)
         }
         Query::Isbn(isbn) => by_isbn(client, isbn),
         Query::Arxiv(id) => {
-            let id = arxiv_id(id.trim()).ok_or_else(|| Error::invalid(tr!("core-lookup-not-arxiv", id = id)))?;
+            let id =
+                arxiv_number::whole(id.trim()).ok_or_else(|| Error::invalid(tr!("core-lookup-not-arxiv", id = id)))?;
             alone(arxiv::SOURCE, arxiv::lookup(client, &id))
         }
         Query::Pmid(id) => {
@@ -178,10 +180,13 @@ fn checked_isbn(isbn: &str) -> Result<String> {
     if !matches!(digits.len(), 10 | 13) {
         return Err(Error::invalid(tr!("core-lookup-isbn-length", isbn = isbn, count = digits.len())));
     }
-    if !isbn_is_valid(&digits) {
+    if !isbn_number::is_valid(&digits) {
         return Err(Error::invalid(tr!("core-lookup-isbn-check", isbn = isbn)));
     }
-    normalise_isbns(&digits).into_iter().next().ok_or_else(|| Error::invalid(tr!("core-lookup-not-isbn", isbn = isbn)))
+    isbn_number::normalise(&digits)
+        .into_iter()
+        .next()
+        .ok_or_else(|| Error::invalid(tr!("core-lookup-not-isbn", isbn = isbn)))
 }
 
 /// The catalogues are asked at once, and the first of them in the order they
@@ -298,12 +303,17 @@ fn agreement(hit: &Hit, words: &[String]) -> f64 {
 fn in_order(hits: Vec<Hit>, words: &[String]) -> Vec<Hit> {
     let mut kept: Vec<(i64, Hit)> = Vec::new();
     for hit in hits {
-        let isbns = hit.draft.get("isbn").map(normalise_isbns).unwrap_or_default();
+        let isbns = hit.draft.get("isbn").map(isbn_number::normalise).unwrap_or_default();
         let twice = !isbns.is_empty()
             && kept.iter().any(|(_, k)| {
                 k.source != hit.source
                     && k.draft.get("date") == hit.draft.get("date")
-                    && k.draft.get("isbn").map(normalise_isbns).unwrap_or_default().iter().any(|i| isbns.contains(i))
+                    && k.draft
+                        .get("isbn")
+                        .map(isbn_number::normalise)
+                        .unwrap_or_default()
+                        .iter()
+                        .any(|i| isbns.contains(i))
             });
         if !twice {
             kept.push(((agreement(&hit, words) * 100.0).round() as i64, hit));
@@ -380,70 +390,23 @@ fn pmid(text: &str) -> Option<String> {
     None
 }
 
-/// The archives of arXiv from before 2007, when identifiers named them.
-const ARXIV_ARCHIVES: &[&str] = &[
-    "acc-phys", "adap-org", "alg-geom", "ao-sci", "astro-ph", "atom-ph", "bayes-an", "chao-dyn", "chem-ph", "cmp-lg",
-    "comp-gas", "cond-mat", "cs", "dg-ga", "funct-an", "gr-qc", "hep-ex", "hep-lat", "hep-ph", "hep-th", "math",
-    "math-ph", "mtrl-th", "nlin", "nucl-ex", "nucl-th", "patt-sol", "physics", "plasm-ph", "q-alg", "q-bio", "q-fin",
-    "quant-ph", "solv-int", "stat", "supr-con",
-];
-
 fn arxiv(text: &str) -> Option<String> {
     if let Some(rest) = after(text, "arxiv:").or_else(|| after(text, "arxiv ")) {
-        return arxiv_id(rest.trim());
+        return arxiv_number::whole(rest.trim());
     }
     if let Some(path) = address_at(text, &["arxiv.org", "export.arxiv.org"]) {
         let path = path.split(['?', '#']).next().unwrap_or("");
         let id = ["abs/", "pdf/", "html/", "format/", "ps/"].iter().find_map(|kind| path.strip_prefix(kind))?;
         let id = id.trim_end_matches('/');
-        return arxiv_id(after_suffix(id, ".pdf").unwrap_or(id));
+        return arxiv_number::whole(after_suffix(id, ".pdf").unwrap_or(id));
     }
-    arxiv_id(text)
+    arxiv_number::whole(text)
 }
 
 fn after_suffix<'a>(text: &'a str, suffix: &str) -> Option<&'a str> {
     let at = text.len().checked_sub(suffix.len())?;
     let tail = text.get(at..)?;
     tail.eq_ignore_ascii_case(suffix).then(|| &text[..at])
-}
-
-/// An identifier of arXiv in its form since 2007 (`1706.03762`, with four
-/// digits after the point until 2014) or in the older one (`hep-th/9901001`,
-/// `math.GT/0309136`), with or without a version.
-fn arxiv_id(text: &str) -> Option<String> {
-    let (body, version) = match text.rfind('v') {
-        Some(at) if at > 0 && text.len() > at + 1 && text[at + 1..].chars().all(|c| c.is_ascii_digit()) => {
-            (&text[..at], &text[at..])
-        }
-        _ => (text, ""),
-    };
-    let digits =
-        |s: &str, n: std::ops::RangeInclusive<usize>| n.contains(&s.len()) && s.chars().all(|c| c.is_ascii_digit());
-    let month = |s: &str| s.get(2..4).and_then(|m| m.parse::<u8>().ok()).is_some_and(|m| (1..=12).contains(&m));
-
-    if let Some((left, right)) = body.split_once('.')
-        && digits(left, 4..=4)
-        && digits(right, 4..=5)
-        && month(left)
-    {
-        return Some(format!("{body}{version}"));
-    }
-    if let Some((archive, number)) = body.split_once('/') {
-        let (name, class) = match archive.split_once('.') {
-            Some((name, class)) => (name, Some(class)),
-            None => (archive, None),
-        };
-        let class_ok = class.is_none_or(|c| c.len() == 2 && c.chars().all(|c| c.is_ascii_uppercase()));
-        if ARXIV_ARCHIVES.contains(&name.to_ascii_lowercase().as_str())
-            && class_ok
-            && digits(number, 7..=7)
-            && month(number)
-        {
-            let class = class.map(|c| format!(".{c}")).unwrap_or_default();
-            return Some(format!("{}{class}/{number}{version}", name.to_ascii_lowercase()));
-        }
-    }
-    None
 }
 
 fn doi(text: &str) -> Option<String> {
@@ -486,52 +449,12 @@ fn doi(text: &str) -> Option<String> {
 /// A DOI has a prefix of `10.`, four to nine digits and perhaps further
 /// numbers after points, then a slash and a suffix of the registrant's choosing.
 fn doi_proper(token: &str) -> Option<String> {
-    let mut token = token.trim_start_matches(['(', '<', '[', '"', '“']);
-    loop {
-        let before = token;
-        token = token.trim_end_matches(['.', ',', ';', ':', '"', '”', '>', ']', '\'']);
-        // A bracket that was opened before the DOI began is not part of it.
-        if token.ends_with(')') && token.matches(')').count() > token.matches('(').count() {
-            token = &token[..token.len() - 1];
-        }
-        if token == before {
-            break;
-        }
-    }
+    let token = doi_number::trim_end(token.trim_start_matches(['(', '<', '[', '"', '“']));
     let (prefix, suffix) = token.split_once('/')?;
-    let mut numbers = prefix.strip_prefix("10.")?.split('.');
-    let registrant = numbers.next()?;
-    let ok = (4..=9).contains(&registrant.len())
-        && registrant.chars().all(|c| c.is_ascii_digit())
-        && numbers.all(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()))
-        && !suffix.is_empty();
-    if !ok {
+    if !doi_number::is_prefix(prefix) || suffix.is_empty() {
         return None;
     }
-    normalise_doi(token)
-}
-
-/// Whether the last digit of an ISBN agrees with the others.
-pub(crate) fn isbn_is_valid(digits: &str) -> bool {
-    let values: Vec<u32> = digits
-        .chars()
-        .enumerate()
-        .filter_map(|(i, c)| match c {
-            'X' | 'x' if i == 9 && digits.len() == 10 => Some(10),
-            c => c.to_digit(10),
-        })
-        .collect();
-    if values.len() != digits.chars().count() {
-        return false;
-    }
-    match values.len() {
-        10 => values.iter().enumerate().map(|(i, v)| v * (10 - i as u32)).sum::<u32>() % 11 == 0,
-        13 => {
-            (digits.starts_with("978") || digits.starts_with("979"))
-                && values.iter().enumerate().map(|(i, v)| v * if i % 2 == 0 { 1 } else { 3 }).sum::<u32>() % 10 == 0
-        }
-        _ => false,
-    }
+    doi_number::normalise(token)
 }
 
 fn isbn(text: &str) -> Option<String> {
@@ -568,8 +491,8 @@ fn isbn(text: &str) -> Option<String> {
         return None;
     }
 
-    if isbn_is_valid(&digits) && (tail.is_empty() || named.is_some() || tail.starts_with('(')) {
-        return crate::duplicates::normalise_isbns(&digits).into_iter().next();
+    if isbn_number::is_valid(&digits) && (tail.is_empty() || named.is_some() || tail.starts_with('(')) {
+        return isbn_number::normalise(&digits).into_iter().next();
     }
     // A digit wrong or missing. That it was meant as an ISBN is beyond doubt
     // when it is called one, or has thirteen digits beginning as ISBNs do.
@@ -730,10 +653,6 @@ mod tests {
 
     #[test]
     fn an_isbn_with_a_digit_wrong_is_still_meant_as_one() {
-        assert!(isbn_is_valid("9780674033818") && isbn_is_valid("080442957X") && isbn_is_valid("0674033809"));
-        assert!(!isbn_is_valid("9780674033819") && !isbn_is_valid("0674033818") && !isbn_is_valid("9770674033811"));
-        assert!(!isbn_is_valid("X674033817") && !isbn_is_valid("97806740338") && !isbn_is_valid(""));
-
         assert_eq!(classify("978-0-674-03381-9"), Query::Isbn("9780674033819".into()));
         assert_eq!(classify("ISBN 0674033818"), Query::Isbn("0674033818".into()));
         assert_eq!(classify("ISBN 978-0-674-0338"), Query::Isbn("97806740338".into()));

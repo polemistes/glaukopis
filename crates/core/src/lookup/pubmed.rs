@@ -11,11 +11,11 @@
 use std::time::Duration;
 
 use crate::bib::names::Person;
-use crate::duplicates::normalise_doi;
 use crate::error::{Error, Result};
 use crate::library::entry::Draft;
 use crate::net::{Client, encode};
 use crate::tr;
+use crate::written::{identifiers::doi, languages};
 
 use super::{Hit, csl::is_issn, pace, text, xml_child, xml_child_text, xml_text};
 
@@ -65,7 +65,7 @@ fn article(entry: roxmltree::Node) -> Option<Hit> {
         }
     };
 
-    let langid = xml_child_text(article, "Language").and_then(|code| text::langid(&code));
+    let langid = xml_child_text(article, "Language").and_then(|code| languages::babel(&code));
     if let Some(l) = langid {
         put("langid", l.to_owned());
     }
@@ -136,7 +136,7 @@ fn article(entry: roxmltree::Node) -> Option<Hit> {
                     && n.attribute("IdType") == Some("doi")
                     && n.ancestors().all(|a| a.tag_name().name() != "ReferenceList"))
         })
-        .find_map(|n| normalise_doi(&xml_text(n)));
+        .find_map(|n| doi::normalise(&xml_text(n)));
     if let Some(doi) = doi {
         put("doi", doi);
     }

@@ -13,6 +13,7 @@ use serde::Serialize;
 use crate::bib::latex::fold;
 use crate::library::entry::Entry;
 use crate::library::schema::is_whole_book;
+use crate::written::identifiers::{doi, isbn};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -74,81 +75,14 @@ pub(crate) fn without_article(folded: &str) -> &str {
     folded
 }
 
-pub fn normalise_doi(doi: &str) -> Option<String> {
-    let d = doi.trim().to_lowercase();
-    let d = d
-        .trim_start_matches("https://")
-        .trim_start_matches("http://")
-        .trim_start_matches("dx.doi.org/")
-        .trim_start_matches("doi.org/")
-        .trim_start_matches("doi:")
-        .trim();
-    let d = d.trim_end_matches(['.', ',', ';']);
-    (d.starts_with("10.") && d.contains('/')).then(|| d.to_owned())
-}
-
-/// ISBNs in a field, each as an ISBN-13 without hyphens.
-pub fn normalise_isbns(field: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    let mut current = String::new();
-    let flush = |current: &mut String, out: &mut Vec<String>| {
-        if let Some(isbn) = to_isbn13(current)
-            && !out.contains(&isbn)
-        {
-            out.push(isbn);
-        }
-        current.clear();
-    };
-    for c in field.chars() {
-        match c {
-            '0'..='9' | 'X' | 'x' => current.push(c.to_ascii_uppercase()),
-            '-' | '\u{2010}' | '\u{2011}' | '–' => {}
-            ' ' if !current.is_empty() && current.len() < 10 => {} // spaces used as hyphens
-            _ => flush(&mut current, &mut out),
-        }
-        if current.len() == 13 {
-            flush(&mut current, &mut out);
-        }
-    }
-    flush(&mut current, &mut out);
-    out
-}
-
-fn to_isbn13(digits: &str) -> Option<String> {
-    match digits.len() {
-        13 if digits.chars().all(|c| c.is_ascii_digit()) => Some(digits.to_owned()),
-        10 if digits[..9].chars().all(|c| c.is_ascii_digit()) => {
-            let body = format!("978{}", &digits[..9]);
-            let sum: u32 =
-                body.chars().enumerate().map(|(i, c)| c.to_digit(10).unwrap() * if i % 2 == 0 { 1 } else { 3 }).sum();
-            let check = (10 - sum % 10) % 10;
-            Some(format!("{body}{check}"))
-        }
-        _ => None,
-    }
-}
-
-/// An ISBN-13 beginning with 978 as an ISBN-10, for catalogues that index older books that way.
-pub fn to_isbn10(isbn13: &str) -> Option<String> {
-    let body = isbn13.strip_prefix("978")?;
-    if body.len() != 10 {
-        return None;
-    }
-    let nine = &body[..9];
-    let sum: u32 = nine.chars().enumerate().map(|(i, c)| c.to_digit(10).unwrap_or(0) * (10 - i as u32)).sum();
-    let check = (11 - sum % 11) % 11;
-    let check = if check == 10 { 'X' } else { char::from_digit(check, 10)? };
-    Some(format!("{nine}{check}"))
-}
-
 pub fn fingerprint(entry: &Entry) -> Fingerprint {
     let main = fold(entry.get("title").unwrap_or(""));
     let full = fold(&entry.title_plain());
     let pages = entry.get("pages").unwrap_or("");
     let first_page: String = pages.chars().take_while(|c| c.is_alphanumeric()).collect();
     Fingerprint {
-        doi: entry.get("doi").and_then(normalise_doi),
-        isbns: entry.get("isbn").map(normalise_isbns).unwrap_or_default(),
+        doi: entry.get("doi").and_then(doi::normalise),
+        isbns: entry.get("isbn").map(isbn::normalise).unwrap_or_default(),
         title: without_article(&full).to_owned(),
         main_title: without_article(&main).to_owned(),
         families: entry.creators().iter().map(|p| p.family_key()).filter(|f| !f.is_empty()).collect(),
@@ -505,22 +439,6 @@ mod tests {
 
     fn cmp(a: &str, b: &str) -> Option<(Certainty, Vec<Reason>)> {
         compare(&fingerprint(&entry(a)), &fingerprint(&entry(b)))
-    }
-
-    #[test]
-    fn identifiers() {
-        assert_eq!(
-            normalise_doi(" https://doi.org/10.1017/S0009838800012345. ").as_deref(),
-            Some("10.1017/s0009838800012345")
-        );
-        assert_eq!(normalise_doi("doi:10.2307/123").as_deref(), Some("10.2307/123"));
-        assert_eq!(normalise_doi("not a doi"), None);
-        assert_eq!(normalise_isbns("0-8018-2388-9"), vec!["9780801823886"]);
-        assert_eq!(normalise_isbns("978-0-8018-2388-6 (pbk.), 080442957X"), vec!["9780801823886", "9780804429573"]);
-        assert_eq!(normalise_isbns("9780801823886 9780804429573"), vec!["9780801823886", "9780804429573"]);
-        assert!(normalise_isbns("12345").is_empty());
-        assert_eq!(to_isbn10("9780801823886").as_deref(), Some("0801823889"));
-        assert_eq!(to_isbn10("9780804429573").as_deref(), Some("080442957X"));
     }
 
     #[test]

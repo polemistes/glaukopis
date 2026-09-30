@@ -36,7 +36,6 @@ mod made;
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
@@ -52,11 +51,11 @@ use crate::formats::Stand;
 use crate::found::{self, By, FoundItem};
 use crate::pictures::{Picture, Pictures};
 use crate::tr;
+use crate::written::pages::is_dash;
+use crate::written::{locators, roman};
 
 /// The largest file that is read.
 pub const MAX_BYTES: u64 = 50 * 1024 * 1024;
-
-const TERMS_JSON: &str = include_str!("../../../../resources/csl/locator-terms.json");
 
 /// The kinds of file that are read.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -949,33 +948,6 @@ fn stand_of(align: &Value) -> Option<Stand> {
     }
 }
 
-/// For every language, the words for every kind of locator, in their forms.
-type Terms = BTreeMap<String, BTreeMap<String, BTreeMap<String, Vec<String>>>>;
-
-fn terms() -> &'static Terms {
-    static TERMS: OnceLock<Terms> = OnceLock::new();
-    TERMS.get_or_init(|| serde_json::from_str(TERMS_JSON).unwrap_or_default())
-}
-
-/// The kinds of locator the application knows, as CSL names them.
-const LABELS: [&str; 15] = [
-    "page",
-    "chapter",
-    "section",
-    "paragraph",
-    "line",
-    "verse",
-    "book",
-    "volume",
-    "part",
-    "column",
-    "folio",
-    "figure",
-    "note",
-    "number",
-    "sub-verbo",
-];
-
 /// The words that say what a locator counts, in English and in the
 /// language of the document, the longest first.
 fn terms_for(language: Option<&str>) -> Vec<(String, String)> {
@@ -986,19 +958,14 @@ fn terms_for(language: Option<&str>) -> Vec<(String, String)> {
             out.push((word, label.to_owned()));
         }
     };
-    let all = terms();
+    let all = locators::terms();
     let mut locales: Vec<&str> = vec!["en-US", "en-GB"];
     if let Some(language) = language.map(str::trim).filter(|l| !l.is_empty()) {
-        let short = language.split('-').next().unwrap_or(language).to_lowercase();
-        if let Some(found) = all.keys().find(|k| k.eq_ignore_ascii_case(language)) {
-            locales.insert(0, found);
-        } else if let Some(found) = all.keys().find(|k| k.to_lowercase().split('-').next() == Some(short.as_str())) {
-            locales.insert(0, found);
-        }
+        locales.insert(0, locators::locale_for(Some(language)));
     }
     for locale in locales {
         let Some(of_locale) = all.get(locale) else { continue };
-        for label in LABELS {
+        for label in locators::LABELS {
             let Some(forms) = of_locale.get(label) else { continue };
             for words in forms.values() {
                 for word in words {
@@ -1014,8 +981,11 @@ fn terms_for(language: Option<&str>) -> Vec<(String, String)> {
     out
 }
 
+/// A number in Roman letters, or a range of two: `xii`, `XIV`, `xii-xv`.
 fn is_roman(word: &str) -> bool {
-    !word.is_empty() && word.chars().all(|c| "ivxlcdmIVXLCDM".contains(c))
+    let letters: Vec<char> = word.chars().collect();
+    let mut pieces = letters.split(|c| is_dash(*c)).peekable();
+    pieces.peek().is_some() && pieces.all(roman::is_one)
 }
 
 /// What is said after a work that is cited, in its parts: the locator, what
