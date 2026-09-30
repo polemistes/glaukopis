@@ -44,6 +44,16 @@ try {
   check('and says so, waiting to be read', ended === null);
   check('it does not read the library or the projects', !said.includes('library read'), said.split('\n').filter(Boolean).slice(-3).join(' | '));
 
+  // Its message is answered, on the display of the test only: then it ends.
+  const onTheDisplay = { env: { ...process.env, DISPLAY: app.display }, encoding: 'utf8' };
+  const dialog = execFileSync('xdotool', ['search', '--sync', '--name', 'Glaukopis is open already'], onTheDisplay)
+    .trim()
+    .split('\n')[0];
+  execFileSync('xdotool', ['windowfocus', '--sync', dialog], onTheDisplay);
+  execFileSync('xdotool', ['key', '--window', dialog, 'Return'], onTheDisplay);
+  for (let i = 0; i < 50 && ended === null; i++) await sleep(100);
+  check('and ends when its message has been read', ended === 0, `exit ${ended}`);
+
   // The first goes on as before.
   await app.clickText('button', 'Begin a project');
   await app.waitFor('dialog input');
