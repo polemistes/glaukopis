@@ -705,6 +705,18 @@ impl Converter<'_> {
     }
 }
 
+/// Whether a link may go into a document: to the web, to an address, or
+/// within the document. Not `javascript:` and its like, which would run
+/// where a web page made of the document is read.
+fn safe_href(href: &str) -> bool {
+    // As a browser reads it: without the spaces and the signs that are not written.
+    let bare: String = href.chars().filter(|c| !c.is_ascii_control() && *c != ' ').collect();
+    let Some((scheme, _)) = bare.split_once(':') else { return true };
+    let is_scheme = scheme.chars().next().is_some_and(|c| c.is_ascii_alphabetic())
+        && scheme.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '.' | '-'));
+    !is_scheme || matches!(scheme.to_ascii_lowercase().as_str(), "http" | "https" | "mailto" | "ftp" | "doi")
+}
+
 fn wrap(inner: Vec<Value>, marks: &std::collections::BTreeMap<String, Value>) -> Vec<Value> {
     let mut current = inner;
     // From the innermost outwards. The order is fixed, so that the same marks
@@ -723,7 +735,7 @@ fn wrap(inner: Vec<Value>, marks: &std::collections::BTreeMap<String, Value>) ->
             "smallcaps" => json!({"t": "SmallCaps", "c": current}),
             "link" => {
                 let href = value.get("href").and_then(Value::as_str).unwrap_or("");
-                if href.is_empty() {
+                if href.is_empty() || !safe_href(href) {
                     current = vec![json!({"t": "Span", "c": [attr(), current]})];
                     continue;
                 }
@@ -781,6 +793,22 @@ mod tests {
 
     fn converter(keys: &HashMap<String, String>) -> Converter<'_> {
         Converter { keys, language: Some("en-GB"), run_in: vec![], deepest: 6, extras: Extras::default() }
+    }
+
+    #[test]
+    fn links_that_would_run_are_left_out() {
+        for href in ["https://example.org", "mailto:a@b.no", "doi:10.1/x", "#part", "notes.html", "a/b:c"] {
+            assert!(safe_href(href), "{href}");
+        }
+        for href in
+            ["javascript:alert(1)", " JavaScript:alert(1)", "java\tscript:x", "data:text/html,x", "file:///etc/passwd"]
+        {
+            assert!(!safe_href(href), "{href}");
+        }
+        let marks = |href: &str| std::collections::BTreeMap::from([("link".to_owned(), json!({ "href": href }))]);
+        let text = || vec![json!({"t": "Str", "c": "here"})];
+        assert_eq!(wrap(text(), &marks("https://example.org"))[0]["t"], "Link");
+        assert_eq!(wrap(text(), &marks("javascript:alert(1)"))[0]["t"], "Span");
     }
 
     #[test]

@@ -10,6 +10,20 @@
 import { Schema, type MarkSpec, type NodeSpec } from 'prosemirror-model';
 import { tableNodes } from 'prosemirror-tables';
 
+/**
+ * Whether a link may be followed: to the web, to an address, or within the
+ * document. Not `javascript:` and its like, which would run in the
+ * application; a project that is shared can bring any link with it.
+ */
+export function safeHref(href: unknown): href is string {
+  if (typeof href !== 'string') return false;
+  // As a browser reads it: without the spaces and the signs that are not written.
+  // eslint-disable-next-line no-control-regex
+  const bare = href.replace(/[\u0000-\u0020\u007f]/g, '');
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(bare)?.[1]?.toLowerCase();
+  return !scheme || ['http', 'https', 'mailto', 'ftp', 'doi'].includes(scheme);
+}
+
 /** One work cited, with what is said about the place in it. */
 export interface CiteItem {
   /** The id of the reference in the library. */
@@ -105,7 +119,12 @@ const marks: Record<string, MarkSpec> = {
         getAttrs: (node) => ({ href: (node as HTMLElement).getAttribute('href') }),
       },
     ],
-    toDOM: (mark) => ['a', { href: mark.attrs.href, rel: 'noopener' }, 0],
+    // A link that may not be followed is kept, and shown without where it leads.
+    toDOM: (mark) => [
+      'a',
+      safeHref(mark.attrs.href) ? { href: mark.attrs.href, rel: 'noopener' } : { rel: 'noopener' },
+      0,
+    ],
   },
   // A citation that was found in a text written elsewhere, and stands as
   // the text it was until it is tied to a reference: see `api/found.ts`.

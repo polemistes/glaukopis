@@ -3,7 +3,8 @@ import { EditorView } from 'prosemirror-view';
 import { afterEach, describe, expect, it } from 'vitest';
 import { setStyle, styleOf } from './commands';
 import { bodyPlugins } from './plugins';
-import { bodySchema } from './schema';
+import { DOMSerializer } from 'prosemirror-model';
+import { bodySchema, safeHref } from './schema';
 
 let view: EditorView | undefined;
 
@@ -48,6 +49,43 @@ afterEach(() => {
   view?.destroy();
   view = undefined;
   document.body.innerHTML = '';
+});
+
+describe('links', () => {
+  it('lead to the web, to an address or within the document, and nowhere that runs', () => {
+    for (const href of [
+      'https://example.org',
+      'http://a.b/c?d#e',
+      'mailto:a@b.no',
+      'doi:10.1/x',
+      '#part',
+      'notes.html',
+    ])
+      expect(safeHref(href), href).toBe(true);
+    for (const href of [
+      'javascript:alert(1)',
+      ' JavaScript:alert(1)',
+      'java\tscript:alert(1)',
+      'data:text/html,<b>',
+      'vbscript:x',
+      'file:///etc/passwd',
+      null,
+    ])
+      expect(safeHref(href), String(href)).toBe(false);
+  });
+
+  it('that may not be followed are drawn without where they lead', () => {
+    const draw = (href: string) => {
+      const mark = bodySchema.marks.link.create({ href });
+      const text = bodySchema.text('here', [mark]);
+      const dom = DOMSerializer.fromSchema(bodySchema).serializeFragment(
+        bodySchema.nodes.paragraph.create(null, text).content,
+      );
+      return (dom.firstChild as HTMLAnchorElement).getAttribute('href');
+    };
+    expect(draw('https://example.org')).toBe('https://example.org');
+    expect(draw('javascript:alert(1)')).toBeNull();
+  });
 });
 
 describe('what is put right as it is typed', () => {
