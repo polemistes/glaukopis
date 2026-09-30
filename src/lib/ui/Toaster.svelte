@@ -28,6 +28,7 @@
       <div class="text selectable">
         <div class="message">{toast.message}</div>
         {#if toast.detail}<div class="detail">{toast.detail}</div>{/if}
+        {#each toast.more ?? [] as line}<div class="more">{line}</div>{/each}
       </div>
       {#if toast.action}
         <button
@@ -46,6 +47,9 @@
 </div>
 
 <style>
+  .more {
+    margin-top: 2px;
+  }
   .toaster {
     position: fixed;
     z-index: 950;
