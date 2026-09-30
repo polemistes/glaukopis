@@ -33,6 +33,22 @@ describe('maps and elements', () => {
     expect([first, b, c]).toHaveLength(3);
   });
 
+  it('a name can be kept and put back as it was, with its marks', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'The word' })!;
+    const title = p.fragment(a, 'title')!;
+    p.transact(() => {
+      const text = (title.get(0) as Y.XmlElement).get(0) as Y.XmlText;
+      text.insert(text.length, ' mênis', { em: true });
+    });
+    const kept = p.copyTitle(a)!;
+    p.setTitle(a, 'Something else');
+    expect(p.node(a)!.title).toBe('Something else');
+    p.restoreTitle(a, kept);
+    expect(p.node(a)!.title).toBe('The word mênis');
+    expect(title.toString()).toContain('<em> mênis</em>');
+  });
+
   it('a sibling of the centre is a child of it', () => {
     const { p, map, root } = project();
     const x = p.addSibling(root, { title: 'X' })!;

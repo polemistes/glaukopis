@@ -46,6 +46,8 @@
     oncite?: (id: string) => void;
     onfocus?: (view: EditorView) => void;
     onblur?: (view: EditorView) => void;
+    /** Called once `autofocus` has put the cursor in the editor. */
+    onready?: (view: EditorView) => void;
     /** Called when the selection or the text changes, for toolbars. */
     onstate?: (view: EditorView) => void;
     class?: string;
@@ -63,6 +65,7 @@
     oncite,
     onfocus,
     onblur,
+    onready,
     onstate,
     class: className = '',
   }: Props = $props();
@@ -343,6 +346,7 @@
       setTimeout(() => {
         if (view !== created) return;
         focus(how);
+        untrack(() => onready)?.(created);
       }, 20);
     }
 

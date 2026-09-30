@@ -1255,6 +1255,26 @@ export class Project {
   }
 
   /** Replaces the name of an element by plain text. */
+  /**
+   * The name of an element as it stands, with its marks: to be put back,
+   * once, by `restoreTitle`. A copy that is not in a document cannot be
+   * copied again: its content would be lost.
+   */
+  copyTitle(id: string): (Y.XmlElement | Y.XmlText)[] | null {
+    const f = this.fragment(id, 'title');
+    return f ? f.toArray().map((part) => (part as Y.XmlElement | Y.XmlText).clone()) : null;
+  }
+
+  /** Puts back a name that `copyTitle` kept. */
+  restoreTitle(id: string, copy: (Y.XmlElement | Y.XmlText)[]) {
+    const f = this.fragment(id, 'title');
+    if (!f) return;
+    this.transact(() => {
+      f.delete(0, f.length);
+      f.insert(0, copy);
+    });
+  }
+
   setTitle(id: string, text: string) {
     const f = this.fragment(id, 'title');
     if (!f) return;

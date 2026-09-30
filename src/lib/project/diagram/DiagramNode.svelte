@@ -31,6 +31,8 @@
     others?: Other[];
     onsize: (id: string, size: Size | null) => void;
     onrenamed: (id: string, action: KeyAction | 'blur') => void;
+    /** What was typed before the name could be written in, and how it was ended: it goes in first. */
+    typedAhead?: () => { text: string; then: KeyAction | null } | null;
     ontoggle: (id: string) => void;
     onlinkstart: (id: string, event: PointerEvent) => void;
   }
@@ -47,6 +49,7 @@
     excluded,
     others = [],
     onsize,
+    typedAhead,
     onrenamed,
     ontoggle,
     onlinkstart,
@@ -117,6 +120,12 @@
         placeholder={t('diagram-idea')}
         autofocus="all"
         onaction={action}
+        onready={(view) => {
+          const typed = typedAhead?.();
+          if (!typed) return;
+          if (typed.text) view.dispatch(view.state.tr.insertText(typed.text));
+          if (typed.then) onrenamed(node.id, typed.then);
+        }}
         onblur={() => onrenamed(node.id, 'blur')}
         class="rename"
       />

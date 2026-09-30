@@ -79,6 +79,23 @@
   let selection = $state<string[]>([]);
   let selectedLink = $state<string | null>(null);
   let renaming = $state<string | null>(null);
+  /** The name as it was when it began to be written anew: Escape puts it back. */
+  let renamedFrom: { id: string; copy: ReturnType<Project['copyTitle']> } | null = null;
+  /**
+   * What is typed after a letter began a new name, before the name can be
+   * written in: it goes in, in order, when it can.
+   */
+  let typedAhead: string | null = null;
+  /** A key that ends the name, pressed before it could be written in: done after what was typed. */
+  let endedAhead: KeyAction | null = null;
+  let typedAheadTimer: ReturnType<typeof setTimeout> | undefined;
+  function takeTyped(): { text: string; then: KeyAction | null } | null {
+    const typed = typedAhead === null ? null : { text: typedAhead, then: endedAhead };
+    typedAhead = null;
+    endedAhead = null;
+    clearTimeout(typedAheadTimer);
+    return typed;
+  }
   /** Elements made a moment ago, which go again if left without a name. */
   const fresh = new Set<string>();
   let editing = $state<{ id: string; anchor: RectLike; begin: 'title' | 'body' } | null>(null);
@@ -425,6 +442,7 @@
   function rename(id: string) {
     hovered = null;
     project.checkpoint();
+    renamedFrom = fresh.has(id) ? null : { id, copy: project.copyTitle(id) };
     renaming = id;
     queueMicrotask(() => bringIntoView(id));
   }
@@ -432,6 +450,11 @@
   function finishRename(id: string, action: KeyAction | 'blur') {
     if (renaming !== id) return;
     renaming = null;
+    takeTyped();
+    const from = renamedFrom?.id === id ? renamedFrom.copy : null;
+    renamedFrom = null;
+    // Escape leaves the name as it was, as in a spreadsheet.
+    if (action === 'escape' && from) project.restoreTitle(id, from);
     project.checkpoint();
     const node = project.node(id);
     const wasFresh = fresh.delete(id);
@@ -727,6 +750,23 @@
   function onkeydown(event: KeyboardEvent) {
     if (event.target !== viewport) return;
     const mod = event.ctrlKey || event.metaKey;
+    // A name has begun, and cannot be written in yet: what is typed waits for it.
+    if (typedAhead !== null) {
+      const ends: Record<string, KeyAction> = { Enter: 'enter', Escape: 'escape', Tab: 'tab' };
+      if (endedAhead) {
+        // Nothing more is taken after the name was ended.
+      } else if (event.key in ends && !mod && !event.altKey && !event.shiftKey) {
+        endedAhead = ends[event.key];
+      } else if (event.key === 'Backspace') {
+        typedAhead = typedAhead.slice(0, -1);
+      } else if (event.key.length === 1 && !mod && !event.altKey) {
+        typedAhead += event.key;
+      } else {
+        return;
+      }
+      event.preventDefault();
+      return;
+    }
     const one = selection.length === 1 ? selection[0] : null;
     const last = selection[selection.length - 1] ?? null;
 
@@ -797,15 +837,13 @@
         // A letter begins a new name for what is selected.
         if (one && event.key.length === 1 && !event.altKey && /\S/.test(event.key)) {
           project.checkpoint();
+          renamedFrom = { id: one, copy: project.copyTitle(one) };
           project.setTitle(one, '');
           renaming = one;
-          // The key itself goes to the editor once it is there.
-          const typed = event.key;
-          setTimeout(() => {
-            const field = viewport?.querySelector<HTMLElement>(`[data-node="${one}"] .prose`);
-            field?.focus();
-            document.execCommand('insertText', false, typed);
-          }, 40);
+          // The key itself, and those after it, go in once the name can be written in.
+          typedAhead = event.key;
+          clearTimeout(typedAheadTimer);
+          typedAheadTimer = setTimeout(() => (typedAhead = null), 2000);
           break;
         }
         return;
@@ -997,6 +1035,7 @@
               }
             }}
             onrenamed={finishRename}
+            typedAhead={renaming === id ? takeTyped : undefined}
             ontoggle={(nodeId) => project.setCollapsed(nodeId, !project.node(nodeId)?.collapsed)}
             onlinkstart={linkStart}
           />

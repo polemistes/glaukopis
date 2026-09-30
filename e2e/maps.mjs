@@ -85,6 +85,22 @@ try {
   const redoLeft = await app.exec(`return !document.querySelector('button[aria-label="Redo"]')?.disabled`);
   check('one Ctrl+Z in the diagram undoes one step, not two', redoLeft === false);
 
+  // A name begun by typing over an element keeps every key, however fast; Escape puts the old one back.
+  await app.click(await app.findByText('.diagram .node', 'Virgil'));
+  await sleep(150);
+  await app.keys('Publius Vergilius Maro');
+  await app.press('Enter');
+  await app.waitGone('.diagram .node.renaming', 3000);
+  check('a name typed over an element keeps every key', (await titles(app)).includes('Publius Vergilius Maro'), (await titles(app)).join(' | '));
+  await app.keys('Nonsense');
+  await app.press('Escape');
+  await app.waitGone('.diagram .node.renaming', 3000);
+  await sleep(150);
+  check('and Escape leaves the name as it was', (await titles(app)).includes('Publius Vergilius Maro') && !(await titles(app)).includes('Nonsense'), (await titles(app)).join(' | '));
+  await app.keys('Virgil');
+  await app.press('Enter');
+  await app.waitGone('.diagram .node.renaming', 3000);
+
   // --- Writing in the edit box, with a citation and a note ---
   const mênis = await app.findByText('.diagram .node', 'The word mênis');
   await app.doubleClick(mênis);
