@@ -350,6 +350,7 @@
   }
 
   function onkeydown(event: KeyboardEvent) {
+    if (event.defaultPrevented) return;
     const mod = event.ctrlKey || event.metaKey;
     if (mod && event.key === 'f') {
       event.preventDefault();

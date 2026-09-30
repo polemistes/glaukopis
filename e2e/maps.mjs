@@ -74,7 +74,16 @@ try {
   const afterUndo = await titles(app);
   await app.keys(['Control', 'Shift', 'z']);
   await sleep(200);
-  check('undo takes back, redo brings again', afterUndo.length < 7 && (await titles(app)).length === 7, `${afterUndo.length}`);
+  // The last step was naming Milton; making the element is the step before.
+  const afterRedo = await titles(app);
+  check(
+    'undo takes back, redo brings again',
+    !afterUndo.includes('Milton') && afterRedo.length === 7 && afterRedo.includes('Milton'),
+    `${afterUndo.join(' | ')} → ${afterRedo.join(' | ')}`,
+  );
+  // One Ctrl+Z is one step: after one redo there is nothing more to redo.
+  const redoLeft = await app.exec(`return !document.querySelector('button[aria-label="Redo"]')?.disabled`);
+  check('one Ctrl+Z in the diagram undoes one step, not two', redoLeft === false);
 
   // --- Writing in the edit box, with a citation and a note ---
   const mênis = await app.findByText('.diagram .node', 'The word mênis');
@@ -260,6 +269,14 @@ try {
   await app.clickText('[role="menuitem"]', 'Text');
   await sleep(200);
   check('and changed back', !/<blockquote>/.test(await written()));
+
+  // Ctrl+, in the text lowers the writing, and does not leave for the settings.
+  const inProse = await app.exec(`return !!document.activeElement?.closest('.text-view .prose')`);
+  await app.keys(['Control', ',']);
+  await sleep(300);
+  const stayed = await app.exec(`return !!document.querySelector('.text-view') && !document.querySelector('.settings')`);
+  await app.keys(['Control', ',']);
+  check('Ctrl+, in the text is lowered writing, not the settings', inProse && stayed, JSON.stringify({ inProse, stayed }));
 
   // --- Back in the diagram, the new element is there ---
   await app.keys(['Control', 'd']);

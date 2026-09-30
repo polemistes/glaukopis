@@ -71,6 +71,9 @@
   });
 
   function onkeydown(event: KeyboardEvent) {
+    // What the editor or a view has done with the key is not done again here:
+    // Ctrl+, in the text is lowered writing, not the settings.
+    if (event.defaultPrevented) return;
     const mod = event.ctrlKey || event.metaKey;
     // The search through everything, from wherever one is.
     if (mod && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'f') {

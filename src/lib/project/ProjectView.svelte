@@ -563,7 +563,9 @@
   }
 
   function onkeydown(event: KeyboardEvent) {
-    if (!project) return;
+    // What the diagram or the text has done with the key is not done again here:
+    // Ctrl+Z in the diagram is one step back, not two.
+    if (!project || event.defaultPrevented) return;
     const mod = event.ctrlKey || event.metaKey;
     // The review of changes: its panel, and what is done with the change looked at.
     if (mod && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'e') {
