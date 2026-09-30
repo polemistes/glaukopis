@@ -42,6 +42,12 @@ export const LOAD = 'load';
 /** Origin of what the history writes into the document: who is who, and what they deleted. */
 export const HISTORY = 'history';
 
+/** Origin of what is put in order when a project is read: saved, but not undone. */
+export const TIDY = 'tidy';
+
+/** How many records of what a person deleted are kept before they are merged into one. */
+const DELETIONS_MERGED_AFTER = 20;
+
 export interface Persistence {
   /**
    * Writes a batch of changes to the log: whether they were made here or
@@ -356,6 +362,7 @@ export class Project {
         }
       }
     }, LOAD);
+    this.#sweep();
     this.#readAll();
     this.#loaded = true;
     this.undoManager.clear();
@@ -363,6 +370,54 @@ export class Project {
       updates: updates.length,
       bytes: updates.reduce((n, u) => n + u.length, 0),
     };
+  }
+
+  /**
+   * Elements of a map that was deleted while another added to it are left
+   * with no map to be seen in, and would be counted and carried for ever:
+   * they go. Only where the map is known to have been deleted, not where it
+   * has only not arrived yet.
+   */
+  #sweep() {
+    const lost: string[] = [];
+    for (const [id, n] of this.yNodes) {
+      const map = n.get('map');
+      if (typeof map === 'string' && !this.yMaps.has(map) && this.yMaps._map.get(map)?.deleted)
+        lost.push(id);
+    }
+    if (lost.length) this.doc.transact(() => this.#deleteNodes(new Set(lost)), TIDY);
+  }
+
+  /**
+   * What each person deleted is kept as one record for each batch of
+   * changes: merged into one record for each person, now and then, so that
+   * the project does not grow with the records. Everyone reads them as
+   * one set, so a copy that merges while another adds loses nothing. Where
+   * the history is off, the records are let go. The people stay, with their
+   * names: `PermanentUserData`, which the history reads them with, cannot
+   * be told of a person who is taken away.
+   */
+  #tidyHistory() {
+    const on = this.history.on;
+    const records = [...this.yUsers.values()]
+      .map((user) => (user instanceof Y.Map ? user.get('ds') : null))
+      .filter((ds): ds is Y.Array<unknown> => ds instanceof Y.Array)
+      .filter((ds) => ds.length > (on ? DELETIONS_MERGED_AFTER : 0));
+    if (!records.length) return;
+    this.doc.transact(() => {
+      for (const ds of records) {
+        if (!on) {
+          ds.delete(0, ds.length);
+          continue;
+        }
+        const sets = (ds.toArray() as unknown[])
+          .filter((bytes): bytes is Uint8Array => bytes instanceof Uint8Array)
+          .map((bytes) => Y.decodeSnapshot(bytes).ds);
+        const merged = Y.encodeSnapshot(Y.createSnapshot(Y.mergeDeleteSets(sets), new Map()));
+        ds.delete(0, ds.length);
+        ds.push([merged]);
+      }
+    }, HISTORY);
   }
 
   #readAll() {
@@ -553,6 +608,7 @@ export class Project {
     await this.flush();
     if (!this.#persistence || this.status === 'error') return;
     if (this.#sinceSnapshot.updates === 0 && !always) return;
+    this.#tidyHistory();
     const state = Y.encodeStateAsUpdate(this.doc);
     const summary = this.summary();
     const keep = this.history.on;

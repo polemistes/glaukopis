@@ -329,6 +329,45 @@ describe('undo', () => {
   });
 });
 
+describe('putting in order', () => {
+  it('elements added to a map another deleted meanwhile go when the project is read', () => {
+    const a = new Project(null);
+    const kept = a.createMap('Kept');
+    const doomed = a.createMap('Doomed');
+    const b = new Project(null);
+    b.load(Y.encodeStateAsUpdate(a.doc), []);
+
+    a.deleteMap(doomed);
+    const late = b.addChild(b.map(doomed)!.root, {
+      title: 'Late',
+      body: 'Words no one will see.',
+    })!;
+    Y.applyUpdate(a.doc, Y.encodeStateAsUpdate(b.doc), 'remote');
+    expect(a.yNodes.has(late)).toBe(true);
+
+    const read = new Project(null);
+    read.load(Y.encodeStateAsUpdate(a.doc), []);
+    expect(read.yNodes.has(late)).toBe(false);
+    expect(read.summary().words).toBe(0);
+    expect(read.tree(kept).sequence).toHaveLength(1);
+  });
+
+  it('elements of a map that has not arrived yet are left alone', () => {
+    const a = new Project(null);
+    a.createMap('Wrath');
+    const node = new Y.Map<unknown>();
+    const read = new Project(null);
+    read.load(Y.encodeStateAsUpdate(a.doc), []);
+    read.doc.transact(() => {
+      node.set('map', 'a map on its way');
+      read.yNodes.set('waiting', node);
+    }, 'remote');
+    const again = new Project(null);
+    again.load(Y.encodeStateAsUpdate(read.doc), []);
+    expect(again.yNodes.has('waiting')).toBe(true);
+  });
+});
+
 describe('saving', () => {
   class Disk implements Persistence {
     log: Uint8Array[] = [];
@@ -378,6 +417,36 @@ describe('saving', () => {
     r.load(disk.state, disk.log);
     expect(r.node(a)!.title).toBe('A, renamed');
     expect(r.tree(map).sequence).toHaveLength(2);
+  });
+
+  it('what each deleted is kept as one record, and let go when the history is turned off', async () => {
+    const disk = new Disk();
+    const p = new Project(disk);
+    const map = p.createMap('Wrath');
+    const root = p.map(map)!.root;
+    p.setMe({ id: 'me', name: 'Robert' });
+    await p.setHistory({ on: true });
+    const made: string[] = [];
+    for (let i = 0; i < 30; i++) {
+      made.push(p.addChild(root, { title: `E${i}` })!);
+      await p.flush();
+      p.remove([made[i]]);
+      await p.flush();
+    }
+    const ds = () => p.yUsers.get('me')!.get('ds') as Y.Array<Uint8Array>;
+    expect(ds().length).toBe(30);
+
+    await p.snapshot();
+    expect(ds().length).toBe(1);
+    // All that was deleted is in the one record, as the history reads it.
+    const pud = new Y.PermanentUserData(p.doc, p.yUsers);
+    for (const id of made) {
+      const item = p.yNodes._map.get(id)!;
+      expect(pud.getUserByDeletedId(item.id)).toBe('me');
+    }
+
+    await p.setHistory({ on: false });
+    expect(ds().length).toBe(0);
   });
 
   it('a failure keeps the change for the next attempt', async () => {
