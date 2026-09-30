@@ -35,3 +35,6 @@ default = []
 custom-protocol = ["tauri/custom-protocol"]
 # SQLite compiled in, where the system has none to link to: Windows, macOS.
 bundled-sqlite = ["glaukopis-core/bundled-sqlite"]
+
+[dev-dependencies]
+tempfile.workspace = true

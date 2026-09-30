@@ -1,6 +1,8 @@
 //! The desktop application: a window, and commands that call the core.
 
 mod commands;
+#[cfg(test)]
+mod contract;
 mod error;
 mod state;
 

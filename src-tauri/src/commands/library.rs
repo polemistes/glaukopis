@@ -41,7 +41,7 @@ pub(crate) fn full(library: &Library, entry: &Entry) -> EntryFull {
     }
 }
 
-fn listing(library: &Library) -> LibraryListing {
+pub(crate) fn listing(library: &Library) -> LibraryListing {
     LibraryListing {
         entries: library.summaries(),
         collections: library.collections.list.clone(),
