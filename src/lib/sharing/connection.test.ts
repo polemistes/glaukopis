@@ -93,7 +93,7 @@ describe('the connection to the server', () => {
     await vi.advanceTimersByTimeAsync(0);
     sockets[0].open();
     sockets[0].hear();
-    sockets[0].closed(4005, 'too large');
+    sockets[0].closed(4006, 'too large');
     expect(connection.tooLarge).toBe(true);
     expect(connection.status).toBe('offline');
     expect(connection.ending).toBeNull();

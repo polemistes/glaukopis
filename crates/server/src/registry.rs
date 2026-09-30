@@ -29,17 +29,16 @@ pub struct Member {
 
 /// An invitation to a project. Its code is told once, when it is made, and
 /// kept only as its hash, as tokens are: one who reads the server's disk
-/// cannot come in by it. The last four of its signs are kept to tell it by.
+/// does not read a code there, and would be years guessing one from its
+/// hash. No more of the code is kept, not even a few of its signs: they
+/// would make the guessing short.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Invitation {
     #[serde(default)]
     pub id: String,
-    /// The hash of the code.
+    /// The hash of the code: `sharing::code_hash`.
     #[serde(default)]
     pub hash: String,
-    /// Its last four signs.
-    #[serde(default)]
-    pub hint: String,
     /// The code itself: only where the invitation was just made, and never
     /// written; or as a server before this one wrote it, which is hashed
     /// when it is read.
@@ -61,8 +60,7 @@ pub struct Invitation {
 impl Invitation {
     /// Keeps a code as an invitation keeps it.
     fn keep(&mut self, code: &str) {
-        self.hash = secrets::hash(code);
-        self.hint = code.chars().rev().take(4).collect::<Vec<_>>().into_iter().rev().collect();
+        self.hash = secrets::code_hash(code);
         if self.id.is_empty() {
             self.id = uuid::Uuid::new_v4().to_string();
         }
@@ -272,7 +270,6 @@ impl Registry {
         let mut invitation = Invitation {
             id: String::new(),
             hash: String::new(),
-            hint: String::new(),
             code: String::new(),
             label: clean(label, 100),
             created: at,
@@ -306,7 +303,7 @@ impl Registry {
         if code.len() != 14 {
             return Err(Refusal::BadCode);
         }
-        let hashed = secrets::hash(&code);
+        let hashed = secrets::code_hash(&code);
         let at = now();
         let room = self
             .rooms
@@ -404,7 +401,7 @@ mod tests {
         assert!(matches!(r.withdraw(ROOM, &many.code), Err(Refusal::BadCode)), "withdrawn by its id");
         r.withdraw(ROOM, &many.id).unwrap();
         assert!(matches!(r.join(&many.code, "C"), Err(Refusal::BadCode)));
-        assert_eq!(many.hint, &many.code[10..]);
+        assert_eq!(many.hash, secrets::code_hash(&many.code), "the owner knows a code by its hash");
 
         r.remove_member(ROOM, &id).unwrap();
         assert!(matches!(r.admit(ROOM, &token), Err(Refusal::NotAdmitted)));
@@ -437,7 +434,7 @@ mod tests {
         let text = std::fs::read_to_string(dir.join("room.json")).unwrap();
         assert!(!text.contains("ABCD-EFGH-JKMN"), "{text}");
         let meta = r.get(ROOM).unwrap();
-        assert_eq!(meta.invitations[0].hint, "JKMN");
+        assert_eq!(meta.invitations[0].hash, secrets::code_hash("ABCD-EFGH-JKMN"));
         assert_eq!(meta.members[0].invitation, meta.invitations[0].id);
         // The code goes on admitting those it admitted before.
         r.join("abcd efgh jkmn", "Björn").unwrap();

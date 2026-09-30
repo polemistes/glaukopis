@@ -24,8 +24,8 @@ export interface Collaborator {
 
 export interface Invitation {
   id: string;
-  /** The last four signs of the code, to tell it by. */
-  hint: string;
+  /** What the server keeps of the code: its hash. Nothing to the interface. */
+  hash: string;
   /** The code: only where the invitation was just made. The server keeps its hash alone. */
   code?: string;
   label: string;

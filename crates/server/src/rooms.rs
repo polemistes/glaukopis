@@ -45,10 +45,14 @@ pub enum Outgoing {
     Close(u16, &'static str),
 }
 
-/// Codes for closing, from the range left to applications.
+/// Codes for closing: the common ones, and those from the range left to
+/// applications, which the application reads. All of them are here, so that
+/// no two say the same.
 pub mod close {
     /// The server is stopping: the code that is common for this.
     pub const STOPPING: u16 = 1001;
+    /// The server could not do what was asked of it: the common code.
+    pub const UNAVAILABLE: u16 = 1011;
     /// The one connected may no longer enter: a member who was removed.
     pub const REMOVED: u16 = 4001;
     /// The project was taken off the server.
@@ -57,8 +61,10 @@ pub mod close {
     pub const BEHIND: u16 = 4003;
     /// What was received could not be understood.
     pub const NOT_UNDERSTOOD: u16 = 4004;
+    /// As many have the project open as the server allows at a time.
+    pub const CROWDED: u16 = 4005;
     /// A change would make the project larger than the server keeps.
-    pub const TOO_LARGE: u16 = 4005;
+    pub const TOO_LARGE: u16 = 4006;
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -190,12 +196,18 @@ impl Inner {
                 self.tell(encode(&Message::Sync(SyncMessage::Update(bytes))), Some(from));
             }
             Message::Awareness(mut update) => {
-                // One speaks for oneself: the presence of those who came by
-                // another connection is not changed by this one.
+                // One speaks for oneself: the presence of those who came as
+                // another member is not changed by this one. One's own, come
+                // by an earlier connection that has not yet been let go, as
+                // after a change of network, is spoken for by the new one
+                // from now on, and does not go when the old one does.
+                let Some(me) = self.peers.get(&from).map(|peer| peer.member.clone()) else {
+                    return Ok(());
+                };
                 let others: HashSet<ClientID> = self
                     .peers
                     .iter()
-                    .filter(|(id, _)| **id != from)
+                    .filter(|(id, peer)| **id != from && peer.member != me)
                     .flat_map(|(_, peer)| peer.clients.iter().copied())
                     .collect();
                 update.clients.retain(|client, _| !others.contains(client));
@@ -204,6 +216,13 @@ impl Inner {
                 }
                 let clients: Vec<ClientID> = update.clients.keys().copied().collect();
                 let changed = self.awareness.apply_update_summary(update.clone())?;
+                for (id, peer) in &mut self.peers {
+                    if *id != from {
+                        for client in &clients {
+                            peer.clients.remove(client);
+                        }
+                    }
+                }
                 if let Some(peer) = self.peers.get_mut(&from) {
                     match &changed {
                         Some(summary) => {
@@ -616,6 +635,43 @@ mod tests {
         // What is her own she may say.
         anna.send(&presence(ANNA, 1, r#"{"user":{"name":"Anna"}}"#));
         assert!(owner.take_in().iter().any(|m| matches!(m, Message::Awareness(_))));
+    }
+
+    #[tokio::test]
+    async fn one_who_comes_back_speaks_for_oneself_at_once() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        let mut owner = Side::enter(&rooms, None).await;
+        let mut anna = Side::enter(&rooms, Some("anna")).await;
+        owner.take_in();
+        anna.take_in();
+        anna.send(&presence(ANNA, 1, r#"{"user":{"name":"Anna"}}"#));
+        owner.take_in();
+        anna.take_in();
+        // Anna's network changes: she connects again with the same copy of
+        // the project, while the server still holds her first connection.
+        let mut again = Side::enter(&rooms, Some("anna")).await;
+        again.take_in();
+        again.send(&presence(ANNA, 2, r#"{"user":{"name":"Anna"},"at":"x"}"#));
+        assert!(
+            owner.take_in().iter().any(|m| matches!(m, Message::Awareness(_))),
+            "her presence is taken from the new connection"
+        );
+        let clock = owner.room.inner().awareness.meta(ANNA).map(|(clock, _)| clock);
+        assert_eq!(clock, Some(2));
+        // The first connection is let go: her presence stays, as it is the second's now.
+        let room = anna.room.clone();
+        room.leave(anna.peer);
+        let heard = owner.take_in();
+        assert!(
+            !heard.iter().any(|m| matches!(m, Message::Awareness(_))),
+            "nothing of her leaving was told: {heard:?}"
+        );
+        assert!(room.inner().awareness.state::<serde_json::Value>(ANNA).is_some(), "she is still present");
+        // When the second goes, she has left.
+        room.leave(again.peer);
+        assert!(owner.take_in().iter().any(|m| matches!(m, Message::Awareness(_))));
+        assert!(room.inner().awareness.state::<serde_json::Value>(ANNA).is_none());
     }
 
     #[tokio::test]

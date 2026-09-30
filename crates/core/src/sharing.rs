@@ -58,9 +58,10 @@ pub struct Member {
 pub struct Invitation {
     #[serde(default)]
     pub id: String,
-    /// The last four signs of the code, to tell it by.
+    /// What the server keeps of the code: `code_hash` of it. Told to the
+    /// owner alone, who knows a code of their own by it.
     #[serde(default)]
-    pub hint: String,
+    pub hash: String,
     /// The code: only where the invitation was just made. The server keeps
     /// nothing but its hash, and tells it this once.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -87,6 +88,31 @@ pub struct Room {
     pub members: Vec<Member>,
     #[serde(default)]
     pub invitations: Vec<Invitation>,
+}
+
+/// A code as it may have been typed, written as the server writes one: in
+/// capitals, in groups of four with hyphens between, and with the signs that
+/// are taken for one another read as those the alphabet of codes has (no 0
+/// and O, no 1, I and L). The server has the same, in its `secrets`, and
+/// its tests hold the two to agree.
+pub fn normalise_code(typed: &str) -> String {
+    let letters: String = typed
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .map(|c| c.to_ascii_uppercase())
+        .map(|c| match c {
+            '0' | 'O' => 'Q',
+            '1' | 'I' | 'L' => 'J',
+            c => c,
+        })
+        .collect();
+    letters.as_bytes().chunks(4).map(|c| std::str::from_utf8(c).unwrap_or("")).collect::<Vec<_>>().join("-")
+}
+
+/// What the server keeps of a code, and what the owner is told of one: its
+/// hash, taken of the code as `normalise_code` writes it.
+pub fn code_hash(code: &str) -> String {
+    crate::library::attachments::hash_bytes(normalise_code(code).as_bytes())
 }
 
 /// An address of a server as it may have been typed, made whole: `example.org`
@@ -577,6 +603,16 @@ fn not_a_server(host: &str) -> Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn codes_as_they_are_typed() {
+        assert_eq!(normalise_code("abcd efgh jkmn"), "ABCD-EFGH-JKMN");
+        assert_eq!(normalise_code("abcd-efgh-jkmn"), "ABCD-EFGH-JKMN");
+        assert_eq!(normalise_code("abcd-efgh-jk10"), "ABCD-EFGH-JKJQ", "0 and 1 are read as Q and J");
+        assert_eq!(code_hash("abcd efgh jkmn"), code_hash("ABCD-EFGH-JKMN"));
+        assert_ne!(code_hash("ABCD-EFGH-JKMN"), code_hash("ABCD-EFGH-JKMP"));
+        assert_eq!(code_hash("x").len(), 64);
+    }
 
     #[test]
     fn addresses_as_they_are_typed() {

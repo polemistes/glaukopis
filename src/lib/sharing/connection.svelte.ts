@@ -31,7 +31,7 @@ const QUERY_AWARENESS = 3;
 const REMOVED = 4001;
 const DELETED = 4002;
 /** The code with which it refuses a change that would make the project larger than it keeps. */
-const TOO_LARGE = 4005;
+const TOO_LARGE = 4006;
 
 const LONGEST_WAIT = 30_000;
 /** How long a connection must have lasted for one that fails after it to be tried again at once. */

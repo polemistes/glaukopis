@@ -220,6 +220,11 @@
     }
   }
 
+  /** When an invitation was made: what it is told by, as its code is not kept. */
+  function made(i: Invitation): string {
+    return t('sharing-made', { when: ago(new Date(i.created * 1000).toISOString()) });
+  }
+
   function expires(i: Invitation): string {
     const parts = [
       i.usesLeft === null
@@ -388,10 +393,7 @@
             <ul class="codes">
               {#each open.filter((i) => i.id !== fresh?.id) as i (i.id)}
                 <li>
-                  <span class="small-code" aria-label={t('sharing-code-ending', { hint: i.hint })}
-                    >…{i.hint}</span
-                  >
-                  <span class="about truncate">{expires(i)}</span>
+                  <span class="about truncate">{made(i)} · {expires(i)}</span>
                   <IconButton label={t('sharing-withdraw')} size="sm" onclick={() => withdraw(i)}
                     ><X size={13} /></IconButton
                   >
@@ -622,11 +624,6 @@
   .codes li + li,
   .people li + li {
     border-top: 1px solid var(--line);
-  }
-  .small-code {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    letter-spacing: 0.03em;
   }
   .about {
     flex: 1;

@@ -28,6 +28,13 @@ pub fn hash(token: &str) -> String {
     hex(&Sha256::digest(token.trim().as_bytes()))
 }
 
+/// What is kept of an invitation code: the hash of the code as it is written
+/// by `normalise_code`. The application computes the same, in
+/// `glaukopis_core::sharing::code_hash`, to know a code of its own by it.
+pub fn code_hash(code: &str) -> String {
+    hash(&normalise_code(code))
+}
+
 /// Compares without telling by the time taken where two strings differ.
 pub fn same(a: &str, b: &str) -> bool {
     if a.len() != b.len() {
@@ -67,7 +74,11 @@ pub fn code() -> String {
     out
 }
 
-/// A code as it may have been typed: in small letters, with spaces, without hyphens.
+/// A code as it may have been typed, written as `code` writes one: in
+/// capitals, in groups of four with hyphens between, and with the signs that
+/// are taken for one another read as those of the alphabet. The application
+/// has the same, in `glaukopis_core::sharing`; the two are held to agree by
+/// the tests here.
 pub fn normalise_code(typed: &str) -> String {
     let letters: String = typed
         .chars()
@@ -100,5 +111,10 @@ mod tests {
         assert!(c.split('-').all(|g| g.len() == 4 && g.bytes().all(|b| ALPHABET.contains(&b))));
         assert_eq!(normalise_code(&c.to_lowercase().replace('-', " ")), c);
         assert_eq!(normalise_code("abcd efgh jkmn"), "ABCD-EFGH-JKMN");
+        // The application knows a code of its own by the same hash.
+        for typed in [c.as_str(), "abcd efgh jk10", " Abcd-Efgh-Jkmn\n"] {
+            assert_eq!(normalise_code(typed), glaukopis_core::sharing::normalise_code(typed));
+            assert_eq!(code_hash(typed), glaukopis_core::sharing::code_hash(typed));
+        }
     }
 }

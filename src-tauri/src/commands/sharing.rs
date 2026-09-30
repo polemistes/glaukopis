@@ -104,16 +104,15 @@ pub fn sharing_join(
 
 /// Whether a code is one of those the owner of a project here has made. Asked
 /// before joining, so that no one joins their own project as a stranger. The
-/// server tells its owner the last four signs of a code, not the code: those
-/// are compared, which mistakes one code for another once in a million.
+/// server tells its owner what it keeps of a code, its hash, not the code:
+/// that is compared with the hash of the code given.
 fn code_is_of(state: &AppState, project: &ProjectInfo, code: &str) -> bool {
     let Ok((sharing, token)) = state.projects.shared(&project.id) else { return false };
-    let signs: Vec<char> = code.chars().filter(char::is_ascii_alphanumeric).map(|c| c.to_ascii_uppercase()).collect();
-    let hint: String = signs[signs.len().saturating_sub(4)..].iter().collect();
+    let hash = sharing::code_hash(code);
     let client = state.client();
     Remote::new(&client, &sharing.server)
         .and_then(|remote| remote.room(&sharing.room, &token))
-        .is_ok_and(|room| room.invitations.iter().any(|i| i.open && i.hint == hint))
+        .is_ok_and(|room| room.invitations.iter().any(|i| i.open && i.hash == hash))
 }
 
 /// A ticket for the socket of a project. A refusal of the kinds `no-room` and

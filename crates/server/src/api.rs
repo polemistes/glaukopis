@@ -27,7 +27,7 @@ use tokio::sync::mpsc;
 
 use crate::files::{Begun, Kept, Refused};
 use crate::registry::{self, Invitation, Refusal, Registry, RoomMeta, Who};
-use crate::rooms::{EnterError, Outgoing};
+use crate::rooms::{EnterError, Outgoing, close};
 use crate::{Shared, secrets};
 
 /// The version of what is said between the application and the server. Raised
@@ -229,8 +229,8 @@ struct MemberView {
 #[serde(rename_all = "camelCase")]
 struct InvitationView {
     id: String,
-    /// The last four signs of the code, to tell it by.
-    hint: String,
+    /// What is kept of the code: the owner knows a code of their own by it.
+    hash: String,
     /// The code: only in the answer that made it.
     #[serde(skip_serializing_if = "Option::is_none")]
     code: Option<String>,
@@ -246,7 +246,7 @@ impl From<&Invitation> for InvitationView {
     fn from(i: &Invitation) -> Self {
         InvitationView {
             id: i.id.clone(),
-            hint: i.hint.clone(),
+            hash: i.hash.clone(),
             code: Some(i.code.clone()).filter(|c| !c.is_empty()),
             label: i.label.clone(),
             created: i.created,
@@ -693,11 +693,6 @@ async fn store(
 // ---------------------------------------------------------------------------
 // The WebSocket
 
-/// Codes for closing that are the server's own, besides those of the rooms.
-const CROWDED: u16 = 4005;
-const UNAVAILABLE: u16 = 1011;
-const NOT_ADMITTED: u16 = 4001;
-
 /// How long the server waits for one frame to be taken.
 const SENDING: Duration = Duration::from_secs(20);
 /// How often the server asks whether the other side is there, and how long it
@@ -747,7 +742,7 @@ async fn attend(server: Shared, id: String, member: Option<String>, socket: WebS
         let mut registry = server.registry.lock().await;
         if !still_admitted(&registry, &id, &member) {
             drop(registry);
-            return end(socket, NOT_ADMITTED, "you are no longer among the collaborators").await;
+            return end(socket, close::REMOVED, "you are no longer among the collaborators").await;
         }
         if let Some(member) = &member {
             registry.seen(&id, member);
@@ -756,10 +751,10 @@ async fn attend(server: Shared, id: String, member: Option<String>, socket: WebS
     };
     let (room, mut entered) = match entered {
         Ok(entered) => entered,
-        Err(EnterError::Crowded) => return end(socket, CROWDED, "too many have the project open").await,
+        Err(EnterError::Crowded) => return end(socket, close::CROWDED, "too many have the project open").await,
         Err(EnterError::Io(e)) => {
             tracing::error!(room = %id, %e, "a room could not be opened");
-            return end(socket, UNAVAILABLE, "the server could not read the project").await;
+            return end(socket, close::UNAVAILABLE, "the server could not read the project").await;
         }
     };
     let peer = entered.peer;

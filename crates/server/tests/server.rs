@@ -379,9 +379,11 @@ async fn publishing_inviting_joining_and_writing_together() {
     assert_eq!(body["ownerPresent"], true);
     assert_eq!(body["members"][0]["present"], true);
     assert_eq!(body["invitations"][0]["open"], false, "used up");
-    // The owner is told the invitations by their last signs; the code was told once, when it was made.
-    assert_eq!(body["invitations"][0]["hint"], code[10..]);
+    // The owner is told what is kept of a code, its hash, by which the
+    // application knows a code of its own; the code was told once, when it was made.
+    assert_eq!(body["invitations"][0]["hash"], glaukopis_core::sharing::code_hash(&code));
     assert!(body["invitations"][0].get("code").is_none());
+    assert!(body["invitations"][0].get("hint").is_none());
 
     // A ticket opens the door once.
     let ticket = server.ticket(&owner).await;

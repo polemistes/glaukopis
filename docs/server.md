@@ -133,11 +133,13 @@ shared anew from any copy.
   they reach everyone who has the project. They are not encrypted either.
 - Tokens, by which the server knows the owner and the collaborators of a
   project, are not kept: only their hashes are. So it is with invitation
-  codes: the owner is shown a code once, when it is made, and after that its
-  last four signs. A code can be made to admit one person only, and to expire.
-  (Codes that an earlier version kept whole are hashed when it first starts.)
+  codes: the owner is shown a code once, when it is made, and the server keeps
+  nothing of it but its hash, by which one who reads the disk would be years
+  guessing the code. A code can be made to admit one person only, and to
+  expire. (Codes that an earlier version kept whole are hashed when it first
+  starts.)
 - Each one's presence, where their cursor is and what they are called, is
-  theirs to change: the server does not let one connection speak for another.
+  theirs to change: the server does not let one member speak for another.
 - Attempts with wrong codes or passwords are counted for each address. After
   ten in ten minutes, the address must wait.
 - Files attached to references are not sent to the server. References

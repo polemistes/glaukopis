@@ -49,10 +49,10 @@ sharing-a-week = A week
 sharing-a-month = A month
 sharing-until-withdrawn = Until withdrawn
 sharing-withdraw = Withdraw
-# The last four signs of a code that was made before, as it is listed.
-sharing-code-ending = The code ending { $hint }
+# What is said of a code that was made before, in a list with a dot between:
+# "made yesterday · for one person · 6 days left · used once". $when: as `ago` writes it.
+sharing-made = made { $when }
 sharing-codes-once = A code is shown once, when it is made: the server keeps no more of it than it needs to know it again. To send one again, make a new one.
-# What is said of a code, in a list with a dot between: "for one person · 6 days left · used once".
 sharing-for-several = for several
 sharing-for-one = for one person
 sharing-for-more = for { $count } more
