@@ -70,6 +70,13 @@ what it is.
 An element that has text shows a small mark, and the number of works its
 text cites.
 
+**How far the writing has come.** Right-click an element, **Status**, and say
+whether it is an idea, a draft or done; for several at once, select them
+first. It is shown lightly beside the name, as an empty ring, half a dot or a
+whole one, with the words of a draft or of what is done. The foot of the
+diagram then says how far the map has come, as *2 done · 3 drafts · 1 idea ·
+4,210 words written*, and the foot of the text says it too.
+
 ## The text
 
 **Ctrl+D** turns between the diagram and the text. In the text, each element
@@ -385,6 +392,10 @@ the whole library. A reference dragged from the panel is cited where it is
 dropped in a text; dropped on an element of the diagram, it is cited at the
 end of that element's text.
 
+A reference chosen in the panel shows where it is cited in the project, map
+by map and element by element; a click goes there. In the library, a work
+shows the projects that cite it, and a click opens the project at the work.
+
 ### What you think of a work
 
 Beside what is cited there is what you make of it: a summary, a doubt, where
@@ -513,6 +524,10 @@ same form in all three.
 collection holds links, not copies: a reference can be in any number of
 collections, and changing it changes it everywhere.
 
+A project keeps its own copy of every work it cites. A reference deleted from
+the library therefore leaves the citations of it as they are; before it is
+deleted, Glaukopis says how many projects cite it.
+
 ### What is already there
 
 When a reference is added or imported, Glaukopis looks for it in the library.
@@ -599,7 +614,10 @@ consumed by the writing:
 - **New map from this branch** lifts one part of a map out as a map of its
   own: a chapter out of the plan for the book.
 - **Copy to map** and **Move to map** take elements from one map to another. A
-  copy remembers where it came from.
+  copy remembers where it came from, and what its original was. When the
+  original changes, the copy is marked; the mark, or **Compare with the
+  original…** in its menu, shows where the two differ now. The copy can then
+  take the original's name and text, or keep its own.
 - An element can have **another map take its place in the document**. The map
   of the book then has one element for each chapter, each of which stands for
   the map of that chapter. The preview of the book shows the book.
