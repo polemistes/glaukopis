@@ -2,7 +2,7 @@
 //! PDF files, and the libraries of Zotero.
 
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
@@ -191,43 +191,75 @@ fn plan_pdfs(
         kind: glaukopis_core::export::tools::STOPPED,
         message: tr!("core-import-pdfs-stopped"),
     };
-    let mut warnings = Vec::new();
-    let mut candidates = Vec::new();
+    let name_of = |path: &Path| path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     // A few files at a time: each is read, and may be looked up, which is
-    // mostly waiting. The services are paced whatever asks them.
+    // mostly waiting. The services are paced whatever asks them. Each is
+    // taken up as soon as one is done with. The interface is told how many
+    // are done, and of one that is at hand, whenever either changes.
     const AT_ONCE: usize = 3;
-    for (group, files) in paths.chunks(AT_ONCE).enumerate() {
-        if stop.load(Ordering::Relaxed) {
-            return Err(stopped().into());
-        }
-        let name_of = |path: &Path| path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let next = AtomicUsize::new(0);
+    /// What was found out about a file: what it may be, and what was said of it.
+    type Found = (Option<Candidate>, Vec<String>);
+    let found: Mutex<Vec<Option<Found>>> = Mutex::new(paths.iter().map(|_| None).collect());
+    let at_hand: Mutex<Vec<String>> = Mutex::new(Vec::new());
+    let done = AtomicUsize::new(0);
+    let tell = |name: String| {
         if let Some(ticket) = ticket {
-            let name = name_of(Path::new(&files[0]));
-            let told = PdfsProgress { ticket: ticket.to_owned(), done: group * AT_ONCE, total: paths.len(), name };
+            let told = PdfsProgress {
+                ticket: ticket.to_owned(),
+                done: done.load(Ordering::Relaxed),
+                total: paths.len(),
+                name,
+            };
             let _ = app.emit("pdfs-progress", told);
         }
-        let found: Vec<(Option<Candidate>, Vec<String>)> = std::thread::scope(|s| {
-            let asking: Vec<_> = files
-                .iter()
-                .map(|path| {
-                    s.spawn(move || {
-                        let path = Path::new(path);
-                        let mut said = Vec::new();
-                        if !path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf")) {
-                            said.push(tr!("core-import-not-a-pdf", name = &name_of(path)));
-                            return (None, said);
+    };
+    std::thread::scope(|s| {
+        let working: Vec<_> = (0..AT_ONCE.min(paths.len()))
+            .map(|_| {
+                s.spawn(|| {
+                    loop {
+                        let i = next.fetch_add(1, Ordering::Relaxed);
+                        let Some(given) = paths.get(i) else { break };
+                        if stop.load(Ordering::Relaxed) {
+                            break;
                         }
-                        (identify(state, path, ask, &mut said, stop), said)
-                    })
+                        let path = Path::new(given);
+                        let name = name_of(path);
+                        at_hand.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).push(name.clone());
+                        tell(name.clone());
+                        let mut said = Vec::new();
+                        let candidate = if path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf")) {
+                            identify(state, path, ask, &mut said, stop)
+                        } else {
+                            said.push(tr!("core-import-not-a-pdf", name = &name));
+                            None
+                        };
+                        found.lock().unwrap_or_else(|poisoned| poisoned.into_inner())[i] = Some((candidate, said));
+                        done.fetch_add(1, Ordering::Relaxed);
+                        let still = {
+                            let mut at_hand = at_hand.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                            at_hand.retain(|n| *n != name);
+                            at_hand.first().cloned()
+                        };
+                        if let Some(still) = still {
+                            tell(still);
+                        }
+                    }
                 })
-                .collect();
-            asking.into_iter().map(|h| h.join().unwrap_or((None, Vec::new()))).collect()
-        });
-        // In the order the files were given, whatever order they were found out about in.
-        for (candidate, said) in found {
-            candidates.extend(candidate);
-            warnings.extend(said);
+            })
+            .collect();
+        // What went wrong in finding out about a file is not passed over in silence.
+        for h in working {
+            h.join().unwrap_or_else(|e| std::panic::resume_unwind(e));
         }
+    });
+    let mut warnings = Vec::new();
+    let mut candidates = Vec::new();
+    // In the order the files were given, whatever order they were found out about in.
+    for (candidate, said) in found.into_inner().unwrap_or_else(|poisoned| poisoned.into_inner()).into_iter().flatten() {
+        candidates.extend(candidate);
+        warnings.extend(said);
     }
     if stop.load(Ordering::Relaxed) {
         return Err(stopped().into());

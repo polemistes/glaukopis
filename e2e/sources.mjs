@@ -245,7 +245,8 @@ try {
       await app.clickText('.working button', 'Stop');
       await app.waitGone('.working', 60000);
       await sleep(500);
-      check('while files are found out about, how far it has come is shown', /1 of 2: article\.pdf/.test(told), told.trim());
+      // Both are at hand at once: either may be the one named, and one may be done already.
+      check('while files are found out about, how far it has come is shown', /[12] of 2: (article|notes)\.pdf/.test(told), told.trim());
       check('and it can be stopped, adding nothing', !(await app.exists('dialog .what')) && (await entries()).length === before);
     }
     await drop([join(desk, 'article.pdf'), join(desk, 'notes.pdf')], 500, 400);
