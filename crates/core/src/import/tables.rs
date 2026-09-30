@@ -13,7 +13,7 @@
 use std::fs;
 use std::path::Path;
 
-use calamine::{Data, Range, Reader, SheetType, SheetVisible, open_workbook_auto};
+use calamine::{Data, DataRef, Range, Reader, SheetType, SheetVisible, Sheets, open_workbook_auto};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, IoContext, Result};
@@ -310,10 +310,78 @@ fn read_sheets(path: &Path) -> Result<Vec<Sheet>> {
     }
     let mut out = Vec::new();
     for name in names {
-        let range = book.worksheet_range(&name).map_err(|e| unread(format!("{name}: {e}")))?;
-        out.push(from_range(&name, &range));
+        let sheet = match cells_of(&mut book, &name) {
+            Some(cells) => from_cells(&name, cells.map_err(|e| unread(format!("{name}: {e}")))?),
+            None => from_range(&name, &book.worksheet_range(&name).map_err(|e| unread(format!("{name}: {e}")))?),
+        };
+        out.push(sheet);
     }
     Ok(out)
+}
+
+/// The cells of a sheet that hold something, with where they stand, read
+/// one by one where the kind of file allows it (Excel's own): a sheet is
+/// then not laid out whole before its size is known, which for one with a
+/// value far out, in the last row or column, would take more memory than
+/// there is. Past as many cells as the largest table holds, reading stops:
+/// the sheet is too large whatever else it holds. `None` for other kinds of
+/// file, which are read whole.
+type Cells = Vec<((u32, u32), Data)>;
+fn cells_of<R: std::io::Read + std::io::Seek>(
+    book: &mut Sheets<R>,
+    name: &str,
+) -> Option<std::result::Result<Cells, String>> {
+    const MOST: usize = MAX_ROWS * MAX_COLUMNS + 1;
+    fn keep(cells: &mut Cells, at: (u32, u32), value: &DataRef<'_>) {
+        if !matches!(value, DataRef::Empty) {
+            cells.push((at, value.clone().into()));
+        }
+    }
+    let mut cells = Vec::new();
+    let read = match book {
+        Sheets::Xlsx(xlsx) => (|| {
+            let mut reader = xlsx.worksheet_cells_reader(name).map_err(|e| e.to_string())?;
+            while cells.len() < MOST
+                && let Some(cell) = reader.next_cell().map_err(|e| e.to_string())?
+            {
+                keep(&mut cells, cell.get_position(), cell.get_value());
+            }
+            Ok(())
+        })(),
+        Sheets::Xlsb(xlsb) => (|| {
+            let mut reader = xlsb.worksheet_cells_reader(name).map_err(|e| e.to_string())?;
+            while cells.len() < MOST
+                && let Some(cell) = reader.next_cell().map_err(|e| e.to_string())?
+            {
+                keep(&mut cells, cell.get_position(), cell.get_value());
+            }
+            Ok(())
+        })(),
+        Sheets::Xls(_) | Sheets::Ods(_) => return None,
+    };
+    Some(read.map(|()| cells))
+}
+
+/// A sheet of the cells that hold something: laid out only when it is not too large.
+fn from_cells(name: &str, cells: Cells) -> Sheet {
+    let rows = || cells.iter().map(|((row, _), _)| *row);
+    let columns = || cells.iter().map(|((_, column), _)| *column);
+    let (Some(top), Some(bottom), Some(left), Some(right)) =
+        (rows().min(), rows().max(), columns().min(), columns().max())
+    else {
+        return tidy(name, Vec::new());
+    };
+    let (height, width) = ((bottom - top) as usize + 1, (right - left) as usize + 1);
+    if height > MAX_ROWS * 5 || width > MAX_COLUMNS * 5 || cells.len() > MAX_ROWS * MAX_COLUMNS {
+        // So large that it is not laid out to see where it ends.
+        let problem = too_large(height.max(MAX_ROWS + 1), width);
+        return Sheet { name: name.to_string(), rows: Vec::new(), problem };
+    }
+    let mut grid = vec![vec![String::new(); width]; height];
+    for ((row, column), value) in &cells {
+        grid[(row - top) as usize][(column - left) as usize] = shown(value);
+    }
+    tidy(name, grid)
 }
 
 fn from_range(name: &str, range: &Range<Data>) -> Sheet {
@@ -730,6 +798,34 @@ mod tests {
                 ["Odyssey", "12109", "", "TRUE"]
             ]
         );
+    }
+
+    #[test]
+    fn a_sheet_with_a_value_far_out_is_refused_without_being_laid_out() {
+        // One value in the first cell, and one in the last there can be: laid out
+        // whole, seventeen thousand million cells.
+        let far = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>
+<row r="1"><c r="A1" t="inlineStr"><is><t>Here</t></is></c></row>
+<row r="1048576"><c r="XFD1048576"><v>1</v></c></row>
+</sheetData></worksheet>"#;
+        let (_tmp, path) = zipped(
+            "far.xlsx",
+            &[
+                ("[Content_Types].xml", XLSX_TYPES),
+                ("_rels/.rels", XLSX_RELS),
+                ("xl/workbook.xml", XLSX_BOOK),
+                ("xl/_rels/workbook.xml.rels", XLSX_BOOK_RELS),
+                ("xl/sharedStrings.xml", XLSX_STRINGS),
+                ("xl/styles.xml", XLSX_STYLES),
+                ("xl/worksheets/sheet1.xml", far),
+                ("xl/worksheets/sheet2.xml", XLSX_HIDDEN),
+                ("xl/worksheets/sheet3.xml", XLSX_EMPTY),
+            ],
+        );
+        // Refused in words, as a table too large for a text, and quickly.
+        let refused = read(&path).unwrap_err().to_string();
+        assert!(refused.contains("rows"), "{refused}");
     }
 
     const ODS_MANIFEST: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
