@@ -868,7 +868,8 @@ pub fn export(
                 args.push("-V".into());
                 args.push(format!("biblatexoptions=style={}", latex::biblatex_style(&request.style, &kind)));
                 args.push("-V".into());
-                args.push(format!("biblio-title={}", request.format.bibliography.title));
+                // Pandoc puts it into the source as it stands: `\printbibliography[title=…]`.
+                args.push(format!("biblio-title={{{}}}", latex::escape(&request.format.bibliography.title)));
                 write_atomic(&target_bib, prepared.bibliography.text.as_bytes())?;
                 exported.also.push(target_bib.display().to_string());
             }
@@ -1380,7 +1381,7 @@ mod tests {
         let Some(s) = setup() else { return };
         let out = s.work.join("out");
         fs::create_dir_all(&out).unwrap();
-        let r = request("chicago-author-date");
+        let mut r = request("chicago-author-date");
 
         let tex = out.join("wrath.tex");
         export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
@@ -1390,8 +1391,11 @@ mod tests {
         assert!(text.contains("\\titleformat{\\section}"));
         assert!(text.contains("\\setstretch{2}"));
 
+        // A title with what LaTeX and the options of biblatex take as signs of their own.
+        r.format.bibliography.title = "Works & Days, 100% [cited]".into();
         let e = export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions { biblatex: true }).unwrap();
         let text = fs::read_to_string(&tex).unwrap();
+        assert!(text.contains("\\printbibliography[title={Works \\& Days, 100\\% [cited]}]"), "{text}");
         assert!(text.contains("\\autocite[73]{nagy1979}") || text.contains("\\autocite[\\pno~73]{nagy1979}"), "{text}");
         assert!(text.contains("\\addbibresource{wrath.bib}"));
         assert!(text.contains("style=chicago-authordate"));
