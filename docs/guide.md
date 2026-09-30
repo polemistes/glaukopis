@@ -113,6 +113,14 @@ Associations are shown as narrow lines in the left margin, between the
 sections they join. Click one to go to either end of it, to give it a few
 words, or to remove it.
 
+### The outline
+
+**Ctrl+Shift+O**, or the button at the left over the text, shows the outline
+of the map beside it: every element by its name, as deep as it stands, and
+the one at the top of the text marked. Press a name to go there; what it is
+folded under is opened. In the outline the arrows go from name to name, and
+**Alt+Shift** with the arrows moves an element, as in the text.
+
 ### Folding elements away
 
 A long text is easier to work in when what you are not working on is out of
@@ -1123,6 +1131,7 @@ what is to be done by its name, and does it.
 | **Ctrl+1**, **Ctrl+2**, **Ctrl+3** | The projects, the library, the pictures |
 | **Ctrl+,** | Settings |
 | **Ctrl+D** | Diagram or text |
+| **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+P** | The preview |
 | **Ctrl+Shift+R** | The references of the map |
 | **Ctrl+Shift+P** | The pictures of the map |

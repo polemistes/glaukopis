@@ -61,6 +61,7 @@ keys-text-new = Et nytt element, fra markøren og ut
 keys-text-deeper = I et navn: elementet dypere
 keys-text-shallower = I et navn: elementet mindre dypt
 keys-text-move = Flytt elementet: opp, ned, dypere, mindre dypt
+keys-text-outline = Disposisjonen ved siden av teksten
 keys-text-fold = Fold bort det som er under elementet, eller åpne det
 keys-text-unfold-all = Åpne alt som er foldet under det
 keys-text-found-next = Neste treff

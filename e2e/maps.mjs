@@ -243,6 +243,7 @@ try {
   check('Ctrl+Enter begins a new element after the one written in', after[4] === 'The prize of Briseis', after.join(' | '));
   await app.screenshot('maps-11-text-written');
 
+
   // --- The tools over the text ---
   const written = () =>
     app.exec(
@@ -334,6 +335,34 @@ try {
   const stayed = await app.exec(`return !!document.querySelector('.text-view') && !document.querySelector('.settings')`);
   await app.keys(['Control', ',']);
   check('Ctrl+, in the text is lowered writing, not the settings', inProse && stayed, JSON.stringify({ inProse, stayed }));
+
+  // --- The outline beside the text ---
+  await app.keys(['Control', 'Shift', 'o']);
+  await app.waitFor('.text-view .outline', 3000);
+  const outlined = await app.exec(`return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`);
+  check('Ctrl+Shift+O shows the outline, every element by its name', outlined.includes('The prize of Briseis') && outlined.includes('Reception'), outlined.join(' | '));
+  await app.click(await app.findByText('.outline [data-outline]', 'Reception'));
+  await sleep(400);
+  const atTop = await app.exec(`
+    const s = document.querySelector('.text-view .scroller').getBoundingClientRect();
+    const reception = Array.from(document.querySelectorAll('.text-view .section')).find((e) => e.querySelector('.heading .title')?.textContent.trim() === 'Reception');
+    return Math.round(reception.getBoundingClientRect().top - s.top) + ' of ' + Math.round(s.height);`);
+  const [fromTop, height] = atTop.split(' of ').map(Number);
+  check('a name pressed in the outline brings its element into view', fromTop >= -2 && fromTop < height - 60, atTop);
+  const marked = await app.exec(`return document.querySelector('.outline .chosen')?.textContent.trim() ?? ''`);
+  check('and the outline marks it', marked === 'Reception', marked);
+  await app.screenshot('maps-11c-outline');
+  // Moved from the outline, and taken back.
+  await app.keys(['Alt', 'Shift', 'ArrowUp']);
+  await sleep(300);
+  const movedUp = await app.exec(`return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`);
+  check('Alt+Shift and the arrows move an element from the outline', movedUp.indexOf('Reception') < outlined.indexOf('Reception'), movedUp.join(' | '));
+  await app.keys(['Control', 'z']);
+  await sleep(300);
+  const back = await app.exec(`return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`);
+  check('and undo puts it back', back.join('|') === outlined.join('|'), back.join(' | '));
+  await app.keys(['Control', 'Shift', 'o']);
+  await app.waitGone('.text-view .outline', 3000);
 
   // --- Back in the diagram, the new element is there ---
   await app.keys(['Control', 'd']);

@@ -64,6 +64,7 @@ keys-text-new = A new element, from the cursor on
 keys-text-deeper = In a name: the element deeper
 keys-text-shallower = In a name: the element less deep
 keys-text-move = Move the element: up, down, deeper, less deep
+keys-text-outline = The outline beside the text
 keys-text-fold = Fold away what is under the element, or open it
 keys-text-unfold-all = Open all that is folded under it
 keys-text-found-next = The next that is found

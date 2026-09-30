@@ -93,6 +93,7 @@ export const KEYS: KeyEntry[] = [
   { id: 'text-deeper', keys: 'Tab', place: 'text', over: ['writing-list-in'] },
   { id: 'text-shallower', keys: 'Shift+Tab', place: 'text', over: ['writing-list-out'] },
   { id: 'text-move', keys: 'Alt+Shift+↑↓←→', place: 'text' },
+  { id: 'text-outline', keys: 'Ctrl+Shift+O', place: 'project', bound: true },
   { id: 'text-fold', keys: 'Ctrl+Alt+U', place: 'text' },
   { id: 'text-unfold-all', keys: 'Ctrl+Alt+Shift+U', place: 'text' },
   { id: 'text-found-next', keys: 'F3', place: 'text' },

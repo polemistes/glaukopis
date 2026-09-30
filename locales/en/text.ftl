@@ -47,6 +47,7 @@ text-folded = { $text ->
 ## Associations, in the margin
 
 text-associations = Associations
+text-outline = Outline
 text-go-to = Go to “{ $name }”
 text-add-label = Add a label…
 text-change-label = Change the label…

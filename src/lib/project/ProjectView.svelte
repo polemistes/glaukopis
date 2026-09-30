@@ -94,6 +94,8 @@
     side?: SideKind | null;
     /** What it showed last, and shows when it is opened again. */
     lastSide?: SideKind;
+    /** Whether the outline stands beside the text. */
+    outline?: boolean;
     /** As the view was kept before the panel at the side had tabs. */
     references?: boolean;
     pictures?: boolean;
@@ -111,6 +113,7 @@
   /** What the panel at the side shows: one thing at a time, in the one place. */
   let sideKind = $state<SideKind | null>(null);
   let lastSide = $state<SideKind>('references');
+  let showOutline = $state(false);
   /** A moment of the history that is looked at, in place of the map as it is. */
   let looking = $state.raw<Looking | null>(null);
   /** Which pictures the panel shows. */
@@ -232,6 +235,7 @@
               : null;
     sideKind = kept === 'changes' ? null : kept;
     lastSide = stored.lastSide ?? sideKind ?? 'references';
+    showOutline = stored.outline ?? false;
     showPreview = stored.preview ?? false;
     sizes = { ...GIVEN, ...stored.sizes };
   }
@@ -326,6 +330,7 @@
       cameras: kept,
       side: sideKind === 'changes' ? null : sideKind,
       lastSide,
+      outline: showOutline,
       preview: showPreview,
       folded: folding.kept((id) => !!project?.node(id)),
     };
@@ -347,6 +352,7 @@
     void panes.map((p) => `${p.map}${p.mode}`);
     void sideKind;
     void lastSide;
+    void showOutline;
     void showPreview;
     void cameras;
     void sizes.split;
@@ -610,6 +616,13 @@
       'side-panel': () => (sideKind ? closeSide() : side(lastSide, true)),
       'side-by-side': sideBySide,
       share: () => (showShare = true),
+      'text-outline': {
+        run: () => {
+          if (pane && pane.mode !== 'text') panes[focused] = { ...pane, mode: 'text' };
+          showOutline = pane?.mode === 'text' ? !showOutline : true;
+        },
+        when: () => !!pane,
+      },
       find: { run: () => findInText(false), when: () => !!pane },
       replace: { run: () => findInText(true), when: () => !!pane },
       undo: { run: () => project?.undo(), when: () => !!project },
@@ -846,6 +859,8 @@
                     onopenmap={(id) => show(id, { pane: i })}
                     reveal={i === focused ? reveal : null}
                     {folding}
+                    outline={showOutline}
+                    ontoggleoutline={() => (showOutline = !showOutline)}
                   />
                 {/if}
               {/key}

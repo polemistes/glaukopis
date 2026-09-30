@@ -31,6 +31,9 @@
   import { pointRect } from '$lib/ui/floating';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import ListTree from '@lucide/svelte/icons/list-tree';
+  import IconButton from '$lib/ui/IconButton.svelte';
+  import Outline from './Outline.svelte';
   import {
     elementMenu,
     indent as indentElement,
@@ -59,9 +62,21 @@
     reveal?: string | null;
     /** What is folded away in the text of the project. */
     folding: Folding;
+    /** Whether the outline of the map stands beside the text. */
+    outline?: boolean;
+    ontoggleoutline?: () => void;
   }
 
-  let { project, mapId, onkeep, onopenmap, reveal = null, folding }: Props = $props();
+  let {
+    project,
+    mapId,
+    onkeep,
+    onopenmap,
+    reveal = null,
+    folding,
+    outline = false,
+    ontoggleoutline,
+  }: Props = $props();
 
   const KEPT_ACTIVE = 10;
 
@@ -150,6 +165,43 @@
 
   /** The elements that are shown. */
   const rows = $derived(all.filter((r) => !r.away));
+
+  // ---- the element at the top of what is in view, for the outline ----
+
+  let atTop = $state<string | null>(null);
+  let topFrame = 0;
+  /** Until when the element gone to from the outline stays marked, whatever is at the top. */
+  let heldUntil = 0;
+  /** Looked for where the text begins, a little under the top: one point, however long the text. */
+  function findTop() {
+    cancelAnimationFrame(topFrame);
+    topFrame = requestAnimationFrame(() => {
+      // The end of a text cannot be scrolled to the top: the element gone to stays marked.
+      if (!scroller || !column || performance.now() < heldUntil) return;
+      const box = scroller.getBoundingClientRect();
+      const x = column.getBoundingClientRect().left + 8;
+      for (const dy of [24, 64, 128, 256]) {
+        const at = document
+          .elementFromPoint(x, box.top + dy)
+          ?.closest<HTMLElement>('[data-section]')?.dataset.section;
+        if (at) {
+          atTop = at;
+          return;
+        }
+      }
+    });
+  }
+  $effect(() => {
+    if (outline) untrack(findTop);
+  });
+
+  /** From the outline: the element, at the top of the view, unfolded where it was folded away. */
+  async function goFromOutline(id: string) {
+    if (folding.reveal(tree, id)) await tick();
+    heldUntil = performance.now() + 400;
+    scroller?.querySelector(`[data-section="${id}"]`)?.scrollIntoView({ block: 'start' });
+    atTop = id;
+  }
 
   const firstLoose = $derived(rows.findIndex((r) => r.loose));
 
@@ -983,112 +1035,142 @@
 />
 
 <div class="text-view" bind:this={root} style:--margin="{marginWidth}px">
-  <div class="tools"><div class="inner"><WritingTools scope={root} map={mapId} /></div></div>
+  <div class="tools">
+    {#if ontoggleoutline}
+      <span class="outline-toggle">
+        <IconButton
+          label={t('text-outline')}
+          shortcut="Ctrl+Shift+O"
+          size="sm"
+          active={outline}
+          onclick={ontoggleoutline}
+        >
+          <ListTree size={15} />
+        </IconButton>
+      </span>
+    {/if}
+    <div class="inner"><WritingTools scope={root} map={mapId} /></div>
+  </div>
   {#if searching}
     <SearchBar bind:this={bar} search={searching} onclose={() => closeSearch(true)} />
   {/if}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div
-    bind:this={scroller}
-    class="scroller"
-    onscroll={() => searching?.scrolled()}
-    use:dropTarget={{
-      accepts: (p) =>
-        (p.kind === 'elements' && (p.data as ElementsPayload).project === project) ||
-        p.kind === PICTURES_DRAGGED ||
-        p.kind === 'references',
-      ondrop,
-      onover: (e) => (drop = e ? targetAt(e) : null),
-    }}
-    onkeydowncapture={onkeydown}
-    {oncontextmenu}
-  >
-    <div class="page">
-      <!-- The associations stand in the left margin, beside the names they join. -->
-      <div class="margin" aria-label={t('text-associations')}>
-        <svg width={marginWidth} height={columnHeight} aria-hidden="true">
-          <!-- Drawn from the edge of the text outwards: mirrored, so that the edge is at nought. -->
-          <g transform="translate({marginWidth} 0) scale(-1 1)">
-            {#each brackets as b (b.id)}
-              <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-              <g
-                class="bracket"
-                class:hot={hoveredLink === b.id || current === b.from || current === b.to}
-                onpointerenter={() => (hoveredLink = b.id)}
-                onpointerleave={() => (hoveredLink = null)}
-                onclick={(e) => linkMenu(e, b)}
-                oncontextmenu={(e) => linkMenu(e, b)}
-                use:tooltip={{ text: linkWords(b), side: 'right' }}
-              >
-                <path d={b.path} class="hit" />
-                <path d={b.path} class="line" />
-                <circle cx="1.5" cy={b.top} r="2.2" />
-                <circle cx="1.5" cy={b.bottom} r="2.2" />
-              </g>
-            {/each}
-          </g>
-        </svg>
-        {#if labelling}
-          <input
-            class="label-input"
-            style:top="{labelling.top - 13}px"
-            bind:value={labelling.value}
-            placeholder={t('project-link-placeholder')}
-            aria-label={t('project-link-label')}
-            onblur={commitLabel}
-            onkeydown={(e) => {
-              e.stopPropagation();
-              if (e.key === 'Enter') commitLabel();
-              else if (e.key === 'Escape') labelling = null;
-            }}
-            {@attach (el: HTMLInputElement) => el.focus()}
-          />
-        {/if}
-      </div>
-
-      <div class="column" bind:this={column} data-notes>
-        {#each rows as row, i (row.id)}
-          {@const node = project.nodes.get(row.id)}
-          {#if i === firstLoose}
-            <div class="loose-heading">
-              <span class="overline">{t('text-loose')}</span>
-              <span>{t('text-loose-hint')}</span>
-            </div>
-          {/if}
-          {#if node}
-            <TextSection
-              {project}
-              {node}
-              level={row.level}
-              active={active.includes(row.id)}
-              focus={focus?.id === row.id ? focus : null}
-              selected={current === row.id}
-              excluded={row.excluded && !row.loose}
-              loose={row.loose}
-              drop={drop?.id === row.id && drag.payload ? drop.where : null}
-              linkable={!!linkFrom && linkFrom !== row.id}
-              others={othersAt(row)}
-              foldable={row.foldable}
-              hidden={row.hidden
-                ? { parts: row.hidden.ids.length, text: row.hidden.text, words: row.hidden.words }
-                : null}
-              openable={row.foldable && folding.anyFoldedUnder(tree, row.id)}
-              onfold={fold}
-              onactivate={activate}
-              {onaction}
-              onfocused={(id) => (current = id)}
-              {ongrip}
-              {onmenu}
-              onpick={pick}
-              {onkeep}
-              {onopenmap}
-              onready={(id, e) => {
-                if (e) editors.set(id, e);
-                else editors.delete(id);
+  <div class="beside-outline">
+    {#if outline}
+      <Outline
+        {project}
+        {mapId}
+        items={all}
+        current={atTop}
+        ongo={goFromOutline}
+        onclose={() => ontoggleoutline?.()}
+      />
+    {/if}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      bind:this={scroller}
+      class="scroller"
+      onscroll={() => {
+        searching?.scrolled();
+        if (outline) findTop();
+      }}
+      use:dropTarget={{
+        accepts: (p) =>
+          (p.kind === 'elements' && (p.data as ElementsPayload).project === project) ||
+          p.kind === PICTURES_DRAGGED ||
+          p.kind === 'references',
+        ondrop,
+        onover: (e) => (drop = e ? targetAt(e) : null),
+      }}
+      onkeydowncapture={onkeydown}
+      {oncontextmenu}
+    >
+      <div class="page">
+        <!-- The associations stand in the left margin, beside the names they join. -->
+        <div class="margin" aria-label={t('text-associations')}>
+          <svg width={marginWidth} height={columnHeight} aria-hidden="true">
+            <!-- Drawn from the edge of the text outwards: mirrored, so that the edge is at nought. -->
+            <g transform="translate({marginWidth} 0) scale(-1 1)">
+              {#each brackets as b (b.id)}
+                <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+                <g
+                  class="bracket"
+                  class:hot={hoveredLink === b.id || current === b.from || current === b.to}
+                  onpointerenter={() => (hoveredLink = b.id)}
+                  onpointerleave={() => (hoveredLink = null)}
+                  onclick={(e) => linkMenu(e, b)}
+                  oncontextmenu={(e) => linkMenu(e, b)}
+                  use:tooltip={{ text: linkWords(b), side: 'right' }}
+                >
+                  <path d={b.path} class="hit" />
+                  <path d={b.path} class="line" />
+                  <circle cx="1.5" cy={b.top} r="2.2" />
+                  <circle cx="1.5" cy={b.bottom} r="2.2" />
+                </g>
+              {/each}
+            </g>
+          </svg>
+          {#if labelling}
+            <input
+              class="label-input"
+              style:top="{labelling.top - 13}px"
+              bind:value={labelling.value}
+              placeholder={t('project-link-placeholder')}
+              aria-label={t('project-link-label')}
+              onblur={commitLabel}
+              onkeydown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') commitLabel();
+                else if (e.key === 'Escape') labelling = null;
               }}
+              {@attach (el: HTMLInputElement) => el.focus()}
             />
           {/if}
-        {/each}
+        </div>
+
+        <div class="column" bind:this={column} data-notes>
+          {#each rows as row, i (row.id)}
+            {@const node = project.nodes.get(row.id)}
+            {#if i === firstLoose}
+              <div class="loose-heading">
+                <span class="overline">{t('text-loose')}</span>
+                <span>{t('text-loose-hint')}</span>
+              </div>
+            {/if}
+            {#if node}
+              <TextSection
+                {project}
+                {node}
+                level={row.level}
+                active={active.includes(row.id)}
+                focus={focus?.id === row.id ? focus : null}
+                selected={current === row.id}
+                excluded={row.excluded && !row.loose}
+                loose={row.loose}
+                drop={drop?.id === row.id && drag.payload ? drop.where : null}
+                linkable={!!linkFrom && linkFrom !== row.id}
+                others={othersAt(row)}
+                foldable={row.foldable}
+                hidden={row.hidden
+                  ? { parts: row.hidden.ids.length, text: row.hidden.text, words: row.hidden.words }
+                  : null}
+                openable={row.foldable && folding.anyFoldedUnder(tree, row.id)}
+                onfold={fold}
+                onactivate={activate}
+                {onaction}
+                onfocused={(id) => (current = id)}
+                {ongrip}
+                {onmenu}
+                onpick={pick}
+                {onkeep}
+                {onopenmap}
+                onready={(id, e) => {
+                  if (e) editors.set(id, e);
+                  else editors.delete(id);
+                }}
+              />
+            {/if}
+          {/each}
+        </div>
       </div>
     </div>
   </div>
@@ -1121,8 +1203,24 @@
     min-height: 0;
     background: var(--paper);
   }
+  /* The outline, where it is shown, and the text beside it. */
+  .beside-outline {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+  .beside-outline > .scroller {
+    min-width: 0;
+  }
+  .outline-toggle {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
   /* The tools stand over the text, and begin where the text begins. */
   .tools {
+    position: relative;
     flex: none;
     border-bottom: 1px solid var(--line);
     background: var(--paper);

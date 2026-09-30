@@ -14,6 +14,7 @@
 // the full history of the project is kept while it is measured (ADR 0021),
 // and how long the history takes to be read is measured as well, with the
 // panel of changes open beside the text (ADR 0022).
+// With GLAUKOPIS_E2E_OUTLINE the outline stands beside the text.
 
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -207,6 +208,15 @@ async function measure() {
       console.log('      the preview was open, and is closed');
       await app.keys(['Control', 'p']);
       await sleep(3000);
+    }
+
+    // With GLAUKOPIS_E2E_OUTLINE, the outline stands beside the text while it is measured.
+    if (process.env.GLAUKOPIS_E2E_OUTLINE) {
+      await app.keys(['Control', 'Shift', 'o']);
+      await app.waitFor('.text-view .outline', 5000);
+      const items = await app.count('.outline [data-outline]');
+      console.log(`      the outline is open beside the text: ${items} elements`);
+      await sleep(1500);
     }
 
     // ---- at rest ----
