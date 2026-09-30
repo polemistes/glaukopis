@@ -8,6 +8,7 @@
 
 import { spawn } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,6 +39,26 @@ export const Key = {
   F10: '\uE03A',
   Space: ' ',
 };
+
+/** A port that nothing listens on: two drivers that took the same would share one session. */
+export function freePort() {
+  return new Promise((done, fail) => {
+    const server = createServer();
+    server.on('error', fail);
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address();
+      server.close(() => done(port));
+    });
+  });
+}
+
+/** A display that no X server has. */
+function freeDisplay() {
+  for (;;) {
+    const n = 90 + Math.floor(Math.random() * 400);
+    if (!existsSync(`/tmp/.X${n}-lock`) && !existsSync(`/tmp/.X11-unix/X${n}`)) return `:${n}`;
+  }
+}
 
 function waitForLine(child, pattern, ms, what) {
   return new Promise((resolvePromise, reject) => {
@@ -74,14 +95,14 @@ export class App {
     app.log = [];
 
     // A private X display.
-    const display = `:${90 + Math.floor(Math.random() * 400)}`;
+    const display = freeDisplay();
     app.display = display;
     app.xvfb = spawn('Xvfb', [display, '-screen', '0', `${width}x${height}x24`, '-nolisten', 'tcp'], {
       stdio: 'ignore',
     });
     await sleep(500);
 
-    const port = 4700 + Math.floor(Math.random() * 200);
+    const port = await freePort();
     const env = {
       ...process.env,
       DISPLAY: display,
@@ -118,16 +139,22 @@ export class App {
       }
     }
 
-    const created = await app.raw('POST', '/session', {
-      capabilities: {
-        alwaysMatch: {
-          'webkitgtk:browserOptions': { binary: app.binary, args: [] },
+    try {
+      const created = await app.raw('POST', '/session', {
+        capabilities: {
+          alwaysMatch: {
+            'webkitgtk:browserOptions': { binary: app.binary, args: [] },
+          },
         },
-      },
-    });
-    app.session = created.sessionId;
-    await app.raw('POST', `/session/${app.session}/window/rect`, { x: 0, y: 0, width, height }).catch(() => {});
-    await app.waitFor('#app > *', 15000);
+      });
+      app.session = created.sessionId;
+      await app.raw('POST', `/session/${app.session}/window/rect`, { x: 0, y: 0, width, height }).catch(() => {});
+      await app.waitFor('#app > *', 15000);
+    } catch (error) {
+      // What was started for it is not left behind.
+      await app.close();
+      throw error;
+    }
     return app;
   }
 

@@ -33,6 +33,10 @@ const WAITING: usize = 512;
 /// How long a room is kept in memory after the last one has left.
 const KEPT_EMPTY: Duration = Duration::from_secs(60);
 
+/// The most the document of a project may hold, as it is written: far more
+/// than the text of a long book, whose pictures are files of their own.
+pub const MAX_DOCUMENT_BYTES: usize = 64 << 20;
+
 /// What is sent to one who is present.
 #[derive(Debug, Clone)]
 pub enum Outgoing {
@@ -53,6 +57,8 @@ pub mod close {
     pub const BEHIND: u16 = 4003;
     /// What was received could not be understood.
     pub const NOT_UNDERSTOOD: u16 = 4004;
+    /// A change would make the project larger than the server keeps.
+    pub const TOO_LARGE: u16 = 4005;
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -80,6 +86,11 @@ struct Inner {
     /// The room was taken off the server: nothing of it is written again.
     gone: bool,
     empty_since: Option<Instant>,
+    /// About how much the document holds: what it held when it was last
+    /// read or written, and the changes since, which may overlap.
+    size: usize,
+    /// The most it may hold.
+    most: usize,
 }
 
 pub struct Room {
@@ -145,18 +156,52 @@ impl Inner {
     }
 
     fn handle(&mut self, from: u64, message: Message) -> Result<(), yrs::sync::Error> {
+        // One who was let go while their messages were read is heard no more.
+        if !self.peers.contains_key(&from) {
+            return Ok(());
+        }
         match message {
             Message::Sync(SyncMessage::SyncStep1(theirs)) => {
                 let lacking = self.awareness.doc().transact().encode_state_as_update_v1(&theirs);
                 self.reply(from, &Message::Sync(SyncMessage::SyncStep2(lacking)));
             }
             Message::Sync(SyncMessage::SyncStep2(bytes)) | Message::Sync(SyncMessage::Update(bytes)) => {
+                // What would make the project larger than the server keeps is not taken in.
+                if self.size + bytes.len() > self.most {
+                    self.size =
+                        self.awareness.doc().transact().encode_state_as_update_v1(&StateVector::default()).len();
+                    if self.size + bytes.len() > self.most {
+                        tracing::warn!(
+                            peer = from,
+                            size = self.size,
+                            "a change would make a project larger than is kept"
+                        );
+                        self.dismiss(
+                            from,
+                            Some((close::TOO_LARGE, "the project would be larger than this server keeps")),
+                        );
+                        return Ok(());
+                    }
+                }
+                self.size += bytes.len();
                 let update = Update::decode_v1(&bytes)?;
                 self.awareness.doc().transact_mut().apply_update(update)?;
                 self.unsaved = true;
                 self.tell(encode(&Message::Sync(SyncMessage::Update(bytes))), Some(from));
             }
-            Message::Awareness(update) => {
+            Message::Awareness(mut update) => {
+                // One speaks for oneself: the presence of those who came by
+                // another connection is not changed by this one.
+                let others: HashSet<ClientID> = self
+                    .peers
+                    .iter()
+                    .filter(|(id, _)| **id != from)
+                    .flat_map(|(_, peer)| peer.clients.iter().copied())
+                    .collect();
+                update.clients.retain(|client, _| !others.contains(client));
+                if update.clients.is_empty() {
+                    return Ok(());
+                }
                 let clients: Vec<ClientID> = update.clients.keys().copied().collect();
                 let changed = self.awareness.apply_update_summary(update.clone())?;
                 if let Some(peer) = self.peers.get_mut(&from) {
@@ -188,11 +233,13 @@ impl Inner {
 }
 
 impl Room {
-    fn load(id: &str, dir: PathBuf) -> io::Result<Room> {
+    fn load(id: &str, dir: PathBuf, most: usize) -> io::Result<Room> {
         let doc = Doc::new();
         let state = dir.join("state.bin");
+        let mut size = 0;
         match std::fs::read(&state) {
             Ok(bytes) => {
+                size = bytes.len();
                 let applied = Update::decode_v1(&bytes)
                     .map_err(|e| e.to_string())
                     .and_then(|u| doc.transact_mut().apply_update(u).map_err(|e| e.to_string()));
@@ -223,6 +270,8 @@ impl Room {
                 unsaved: false,
                 gone: false,
                 empty_since: Some(Instant::now()),
+                size,
+                most,
             }),
             writing: Mutex::new(()),
         })
@@ -321,7 +370,9 @@ impl Room {
                 return Ok(false);
             }
             inner.unsaved = false;
-            inner.awareness.doc().transact().encode_state_as_update_v1(&StateVector::default())
+            let state = inner.awareness.doc().transact().encode_state_as_update_v1(&StateVector::default());
+            inner.size = state.len();
+            state
         };
         let dir = self.dir.clone();
         let written = tokio::task::spawn_blocking(move || {
@@ -361,11 +412,13 @@ pub struct Entered {
 pub struct Rooms {
     data: PathBuf,
     open: Mutex<HashMap<String, Arc<Room>>>,
+    /// The most the document of a project may hold.
+    most: usize,
 }
 
 impl Rooms {
-    pub fn new(data: PathBuf) -> Self {
-        Rooms { data, open: Mutex::new(HashMap::new()) }
+    pub fn new(data: PathBuf, most: usize) -> Self {
+        Rooms { data, open: Mutex::new(HashMap::new()), most }
     }
 
     /// Lets one into a room, which is read from disk if it is not open.
@@ -379,7 +432,8 @@ impl Rooms {
             None => {
                 let dir = room_dir(&self.data, id);
                 let name = id.to_owned();
-                let room = tokio::task::spawn_blocking(move || Room::load(&name, dir))
+                let most = self.most;
+                let room = tokio::task::spawn_blocking(move || Room::load(&name, dir, most))
                     .await
                     .unwrap_or_else(|e| Err(io::Error::other(e)))?;
                 let room = Arc::new(room);
@@ -542,9 +596,53 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn one_speaks_for_oneself_only() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        let mut owner = Side::enter(&rooms, None).await;
+        let mut anna = Side::enter(&rooms, Some("anna")).await;
+        owner.take_in();
+        anna.take_in();
+        owner.send(&presence(OWNER, 1, r#"{"user":{"name":"Robert"}}"#));
+        owner.take_in();
+        anna.take_in();
+        // Anna says the owner has left, and names herself as him: neither is taken.
+        anna.send(&presence(OWNER, 2, "null"));
+        anna.send(&presence(OWNER, 3, r#"{"user":{"name":"Not Robert"}}"#));
+        let heard = owner.take_in();
+        assert!(!heard.iter().any(|m| matches!(m, Message::Awareness(_))), "nothing was passed on: {heard:?}");
+        let clock = owner.room.inner().awareness.meta(OWNER).map(|(clock, _)| clock);
+        assert_eq!(clock, Some(1), "the owner's own presence stands");
+        // What is her own she may say.
+        anna.send(&presence(ANNA, 1, r#"{"user":{"name":"Anna"}}"#));
+        assert!(owner.take_in().iter().any(|m| matches!(m, Message::Awareness(_))));
+    }
+
+    #[tokio::test]
+    async fn a_project_grows_no_larger_than_is_kept() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rooms = Rooms::new(tmp.path().to_owned(), 4096);
+        let mut a = Side::enter(&rooms, None).await;
+        let mut b = Side::enter(&rooms, Some("anna")).await;
+        a.take_in();
+        b.take_in();
+        a.write(0, "Sing, goddess");
+        b.take_in();
+        assert_eq!(b.text(), "Sing, goddess");
+        // More than the room keeps: refused, and the one who sent it let go.
+        a.write(13, &"x".repeat(5000));
+        assert_eq!(a.closed_with(), Some(close::TOO_LARGE));
+        b.take_in();
+        assert_eq!(b.text(), "Sing, goddess", "what was refused did not reach the others");
+        let inner = a.room.inner();
+        let doc = inner.awareness.doc();
+        assert_eq!(doc.get_or_insert_text("text").get_string(&doc.transact()), "Sing, goddess", "nor the room");
+    }
+
+    #[tokio::test]
     async fn what_one_writes_reaches_the_others_and_the_disk() {
         let tmp = tempfile::tempdir().unwrap();
-        let rooms = Rooms::new(tmp.path().to_owned());
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
 
         let mut a = Side::enter(&rooms, None).await;
         a.take_in();
@@ -566,7 +664,7 @@ mod tests {
         assert!(room_dir(tmp.path(), ROOM).join("state.bin").exists());
 
         // After a restart of the server, the text is there for one who has nothing.
-        let again = Rooms::new(tmp.path().to_owned());
+        let again = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
         let mut c = Side::enter(&again, Some("carl")).await;
         c.take_in();
         assert_eq!(c.text(), "μῆνιν: Sing, goddess, the wrath");
@@ -576,7 +674,7 @@ mod tests {
     #[tokio::test]
     async fn the_server_is_given_what_it_lacks() {
         let tmp = tempfile::tempdir().unwrap();
-        let rooms = Rooms::new(tmp.path().to_owned());
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
         // One who wrote while away from the server, or whose server lost what it had.
         let (room, entered) = rooms.enter(ROOM, None).await.unwrap();
         let mut a = Side { doc: Doc::new(), peer: entered.peer, incoming: entered.incoming, room };
@@ -593,7 +691,7 @@ mod tests {
     #[tokio::test]
     async fn presence_comes_and_goes_with_the_connection() {
         let tmp = tempfile::tempdir().unwrap();
-        let rooms = Rooms::new(tmp.path().to_owned());
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
         let mut a = Side::enter(&rooms, None).await;
         a.send(&presence(OWNER, 1, r#"{"user":{"name":"Owner"}}"#));
         let heard = a.take_in();
@@ -626,7 +724,7 @@ mod tests {
     #[tokio::test]
     async fn removal_and_nonsense_close_the_connection() {
         let tmp = tempfile::tempdir().unwrap();
-        let rooms = Rooms::new(tmp.path().to_owned());
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
         let mut a = Side::enter(&rooms, None).await;
         let mut b = Side::enter(&rooms, Some("anna")).await;
         let mut c = Side::enter(&rooms, Some("carl")).await;
@@ -656,7 +754,7 @@ mod tests {
     #[tokio::test]
     async fn a_room_is_put_away_when_it_has_been_empty() {
         let tmp = tempfile::tempdir().unwrap();
-        let rooms = Rooms::new(tmp.path().to_owned());
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
         let a = Side::enter(&rooms, None).await;
         a.write(0, "x");
         rooms.unload_idle().await;
@@ -676,7 +774,7 @@ mod tests {
         let dir = room_dir(tmp.path(), ROOM);
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("state.bin"), b"\xff\xff not a state").unwrap();
-        let rooms = Rooms::new(tmp.path().to_owned());
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
         let mut a = Side::enter(&rooms, None).await;
         a.take_in();
         assert_eq!(a.text(), "");

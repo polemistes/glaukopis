@@ -39,7 +39,7 @@ async fn the_pictures_of_a_project_are_brought_to_be_the_same() {
         let client = Client::new(None);
         let remote = Remote::new(&client, &address).unwrap();
         let owner = remote.publish(ROOM, "Wrath", None).unwrap();
-        let code = remote.invite(ROOM, &owner, "", None, None).unwrap().code;
+        let code = remote.invite(ROOM, &owner, "", None, None).unwrap().code.unwrap();
         let joined = remote.join(&code, "Another").unwrap();
 
         // Each has a store of pictures, in which there is more than the project uses.

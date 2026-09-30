@@ -872,7 +872,8 @@ needs a server, which you or your institution runs: see `server.md`.
 **To share a project**, open it and click the two figures at the top right.
 Enter the address of the server, and the password of the server if it asks
 for one. Then **Make an invitation code**, and send the code and the address
-of the server to the one you invite.
+of the server to the one you invite. A code is shown only once, when it is
+made; to invite someone later, make a new one.
 
 **To join a project**, choose **Join a shared project** among the projects,
 and enter the address and the code. An invitation that is pasted whole is

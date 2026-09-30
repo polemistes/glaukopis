@@ -151,8 +151,8 @@
 
   async function withdraw(invitation: Invitation) {
     try {
-      await sharingWithdraw(projectId, invitation.code);
-      if (fresh?.code === invitation.code) fresh = null;
+      await sharingWithdraw(projectId, invitation.id);
+      if (fresh?.id === invitation.id) fresh = null;
       await refresh();
     } catch (error) {
       notifyError(t('sharing-withdraw-failed'), error);
@@ -314,9 +314,16 @@
     </form>
   {:else}
     <div class="shared">
-      <div class="state" class:off={connection?.status !== 'connected'}>
+      <div
+        class="state"
+        class:off={connection?.status !== 'connected'}
+        class:refused={connection?.tooLarge}
+        role={connection?.tooLarge ? 'alert' : undefined}
+      >
         <span class="dot"></span>
-        {#if connection?.status === 'connected'}
+        {#if connection?.tooLarge}
+          {t('sharing-too-large')}
+        {:else if connection?.status === 'connected'}
           {t('sharing-connected')}
         {:else if connection?.status === 'connecting'}
           {t('sharing-connecting')}
@@ -333,7 +340,7 @@
               <div class="code" aria-label={t('sharing-code-label')}>{fresh.code}</div>
               <Button
                 variant={copied ? 'secondary' : 'primary'}
-                onclick={() => fresh && copy(fresh.code)}
+                onclick={() => fresh?.code && copy(fresh.code)}
               >
                 {#snippet icon()}{#if copied}<Check size={14} />{:else}<Copy
                       size={14}
@@ -377,21 +384,21 @@
               />
             </div>
           {/if}
-          {#if open.filter((i) => i.code !== fresh?.code).length}
+          {#if open.filter((i) => i.id !== fresh?.id).length}
             <ul class="codes">
-              {#each open.filter((i) => i.code !== fresh?.code) as i (i.code)}
+              {#each open.filter((i) => i.id !== fresh?.id) as i (i.id)}
                 <li>
-                  <span class="small-code">{i.code}</span>
+                  <span class="small-code" aria-label={t('sharing-code-ending', { hint: i.hint })}
+                    >…{i.hint}</span
+                  >
                   <span class="about truncate">{expires(i)}</span>
-                  <IconButton label={t('sharing-copy')} size="sm" onclick={() => copy(i.code)}>
-                    <Copy size={13} />
-                  </IconButton>
                   <IconButton label={t('sharing-withdraw')} size="sm" onclick={() => withdraw(i)}
                     ><X size={13} /></IconButton
                   >
                 </li>
               {/each}
             </ul>
+            <p class="hint">{t('sharing-codes-once')}</p>
           {/if}
         </section>
       {/if}
@@ -541,6 +548,13 @@
   }
   .state.off .dot {
     background: var(--ink-4);
+  }
+  .state.refused {
+    background: var(--danger-soft);
+    color: var(--ink);
+  }
+  .state.refused .dot {
+    background: var(--danger);
   }
   section {
     display: flex;

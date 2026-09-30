@@ -23,6 +23,7 @@ sharing-through = Via { $server }
 sharing-connected = Tilkoblet. Det som skrives, kommer til de andre med en gang.
 sharing-connecting = Kobler til …
 sharing-offline = Serveren kan ikke nås. Det du skriver, tas vare på her og sendes med når det lar seg gjøre.
+sharing-too-large = Serveren tar ikke imot de siste endringene: med dem ville prosjektet bli større enn den tar vare på. De tas vare på her. Den som driver serveren, kan la prosjekter bli større.
 sharing-your-name-seen = Slik de andre ser deg.
 
 ## Invitasjoner
@@ -45,6 +46,8 @@ sharing-a-week = Én uke
 sharing-a-month = Én måned
 sharing-until-withdrawn = Til den trekkes tilbake
 sharing-withdraw = Trekk tilbake
+sharing-code-ending = Koden som slutter på { $hint }
+sharing-codes-once = En kode vises én gang, når den lages: serveren tar ikke vare på mer av den enn den trenger for å kjenne den igjen. For å sende en igjen, lag en ny.
 sharing-for-several = for flere
 sharing-for-one = for én person
 sharing-for-more = for { $count } til

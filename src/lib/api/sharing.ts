@@ -23,7 +23,11 @@ export interface Collaborator {
 }
 
 export interface Invitation {
-  code: string;
+  id: string;
+  /** The last four signs of the code, to tell it by. */
+  hint: string;
+  /** The code: only where the invitation was just made. The server keeps its hash alone. */
+  code?: string;
   label: string;
   created: number;
   expires: number | null;
@@ -66,8 +70,9 @@ export const sharingInvite = (
   uses: number | null,
   hours: number | null,
 ) => call<Invitation>('sharing_invite', { id, label, uses, hours });
-export const sharingWithdraw = (id: string, code: string) =>
-  call<void>('sharing_withdraw', { id, code });
+/** Withdraws an invitation, by its id. */
+export const sharingWithdraw = (id: string, invitation: string) =>
+  call<void>('sharing_withdraw', { id, invitation });
 export const sharingRemoveMember = (id: string, member: string) =>
   call<void>('sharing_remove_member', { id, member });
 export const sharingRename = (id: string, name: string) =>

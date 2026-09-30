@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use clap::Parser;
-use glaukopis_server::{Config, MAX_FILE_BYTES, MAX_ROOM_BYTES, Server, serve};
+use glaukopis_server::{Config, MAX_DOCUMENT_BYTES, MAX_FILE_BYTES, MAX_ROOM_BYTES, Server, serve};
 
 /// The collaboration server of Glaukopis.
 ///
@@ -46,6 +46,17 @@ struct Args {
     /// The most the files of one project may hold together, in megabytes.
     #[arg(long, env = "GLAUKOPIS_SERVER_MAX_ROOM_MB", value_name = "MB", default_value_t = MAX_ROOM_BYTES >> 20)]
     max_room_mb: u64,
+
+    /// The most one project may hold, without its files, in megabytes.
+    #[arg(long, env = "GLAUKOPIS_SERVER_MAX_PROJECT_MB", value_name = "MB", default_value_t = MAX_DOCUMENT_BYTES >> 20)]
+    max_project_mb: usize,
+
+    /// Let anyone who can reach the server publish projects on it, with no
+    /// password, though it can be reached from beyond this computer (it
+    /// listens beyond it, or is behind a proxy). Without a password, and
+    /// without this, it will be reached from this computer only.
+    #[arg(long, env = "GLAUKOPIS_SERVER_OPEN")]
+    open: bool,
 }
 
 fn default_data() -> PathBuf {
@@ -96,15 +107,35 @@ fn password(args: &Args) -> Result<Option<String>, String> {
     }
 }
 
-async fn run(args: Args) -> Result<(), String> {
+/// The code the server stops with when it cannot be run as it is set: the
+/// service is not started again until the setting is changed.
+const EX_CONFIG: i32 = 78;
+
+/// What the server is to be, from what it was given; or why it cannot be.
+fn settings(args: &Args) -> Result<Config, String> {
     let config = Config {
         data: args.data.clone(),
-        password: password(&args)?,
+        password: password(args)?,
         trust_proxy: args.trust_proxy,
         max_rooms: args.max_rooms,
         max_file_bytes: args.max_file_mb.saturating_mul(1 << 20),
         max_room_bytes: args.max_room_mb.saturating_mul(1 << 20),
+        max_document_bytes: args.max_project_mb.saturating_mul(1 << 20),
     };
+    // Open to all who can reach it from elsewhere only where that is said to be meant.
+    let reached_from_beyond = !args.listen.ip().is_loopback() || args.trust_proxy;
+    if config.password.is_none() && reached_from_beyond && !args.open {
+        return Err(format!(
+            "no password is set, and the server can be reached from beyond this computer ({}): anyone who \
+             could reach it could publish projects on it. Set a password (--password or --password-file, \
+             GLAUKOPIS_SERVER_PASSWORD in /etc/glaukopis-server.conf), or --open if that is meant",
+            if args.trust_proxy { "it is behind a proxy".to_owned() } else { format!("it listens on {}", args.listen) }
+        ));
+    }
+    Ok(config)
+}
+
+async fn run(args: Args, config: Config) -> Result<(), String> {
     let open_to_all = config.password.is_none();
     let server =
         Server::open(config).map_err(|e| format!("the directory {} could not be used: {e}", args.data.display()))?;
@@ -141,7 +172,14 @@ fn main() {
             std::process::exit(1);
         }
     };
-    if let Err(message) = runtime.block_on(run(args)) {
+    let config = match settings(&args) {
+        Ok(config) => config,
+        Err(message) => {
+            eprintln!("glaukopis-server: {message}");
+            std::process::exit(EX_CONFIG);
+        }
+    };
+    if let Err(message) = runtime.block_on(run(args, config)) {
         eprintln!("glaukopis-server: {message}");
         std::process::exit(1);
     }

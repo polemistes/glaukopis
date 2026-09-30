@@ -228,7 +228,12 @@ struct MemberView {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct InvitationView {
-    code: String,
+    id: String,
+    /// The last four signs of the code, to tell it by.
+    hint: String,
+    /// The code: only in the answer that made it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    code: Option<String>,
     label: String,
     created: i64,
     expires: Option<i64>,
@@ -240,7 +245,9 @@ struct InvitationView {
 impl From<&Invitation> for InvitationView {
     fn from(i: &Invitation) -> Self {
         InvitationView {
-            code: i.code.clone(),
+            id: i.id.clone(),
+            hint: i.hint.clone(),
+            code: Some(i.code.clone()).filter(|c| !c.is_empty()),
             label: i.label.clone(),
             created: i.created,
             expires: i.expires,
@@ -450,12 +457,12 @@ async fn invite(
 
 async fn withdraw(
     State(server): State<Shared>,
-    Path((room, code)): Path<(String, String)>,
+    Path((room, invitation)): Path<(String, String)>,
     headers: HeaderMap,
 ) -> Answer<StatusCode> {
     let mut registry = server.registry.lock().await;
     registry.require_owner(&room, bearer(&headers)?)?;
-    registry.withdraw(&room, &code)?;
+    registry.withdraw(&room, &invitation)?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -715,7 +722,10 @@ async fn socket(
         )
         .into_response();
     };
-    upgrade.max_message_size(64 << 20).on_upgrade(move |socket| attend(server, room, member, socket))
+    // A message may hold no more than the document may: the first may bring all of it.
+    upgrade
+        .max_message_size(server.config.max_document_bytes)
+        .on_upgrade(move |socket| attend(server, room, member, socket))
 }
 
 fn still_admitted(registry: &Registry, room: &str, member: &Option<String>) -> bool {
@@ -806,7 +816,7 @@ pub fn router(server: Shared) -> Router {
         .route("/api/rooms/{room}", get(room).patch(rename).delete(remove))
         .route("/api/rooms/{room}/tickets", post(ticket))
         .route("/api/rooms/{room}/invitations", post(invite))
-        .route("/api/rooms/{room}/invitations/{code}", delete(withdraw))
+        .route("/api/rooms/{room}/invitations/{invitation}", delete(withdraw))
         .route("/api/rooms/{room}/members/{member}", delete(remove_member))
         .route("/api/rooms/{room}/files", get(files))
         .route("/api/rooms/{room}/files/{hash}", get(file).put(store))

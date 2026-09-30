@@ -22,13 +22,28 @@ pub struct Member {
     pub joined: i64,
     #[serde(default)]
     pub last_seen: i64,
-    /// The code by which the member came.
+    /// The invitation by which the member came.
     #[serde(default)]
     pub invitation: String,
 }
 
+/// An invitation to a project. Its code is told once, when it is made, and
+/// kept only as its hash, as tokens are: one who reads the server's disk
+/// cannot come in by it. The last four of its signs are kept to tell it by.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Invitation {
+    #[serde(default)]
+    pub id: String,
+    /// The hash of the code.
+    #[serde(default)]
+    pub hash: String,
+    /// Its last four signs.
+    #[serde(default)]
+    pub hint: String,
+    /// The code itself: only where the invitation was just made, and never
+    /// written; or as a server before this one wrote it, which is hashed
+    /// when it is read.
+    #[serde(default, skip_serializing)]
     pub code: String,
     #[serde(default)]
     pub label: String,
@@ -44,6 +59,15 @@ pub struct Invitation {
 }
 
 impl Invitation {
+    /// Keeps a code as an invitation keeps it.
+    fn keep(&mut self, code: &str) {
+        self.hash = secrets::hash(code);
+        self.hint = code.chars().rev().take(4).collect::<Vec<_>>().into_iter().rev().collect();
+        if self.id.is_empty() {
+            self.id = uuid::Uuid::new_v4().to_string();
+        }
+    }
+
     pub fn is_open(&self, at: i64) -> bool {
         self.expires.is_none_or(|e| e > at) && self.uses_left.is_none_or(|u| u > 0)
     }
@@ -114,19 +138,37 @@ impl Registry {
         let rooms_dir = data.join("rooms");
         std::fs::create_dir_all(&rooms_dir)?;
         let mut rooms = HashMap::new();
+        let mut rewrite = Vec::new();
         for entry in std::fs::read_dir(&rooms_dir)?.flatten() {
             let path = entry.path().join("room.json");
             let Ok(text) = std::fs::read_to_string(&path) else { continue };
             match serde_json::from_str::<RoomMeta>(&text) {
-                Ok(meta) if valid_room_id(&meta.id) => {
-                    rooms.insert(meta.id.clone(), meta);
+                Ok(mut meta) if valid_room_id(&meta.id) => {
+                    // Codes written whole by an earlier server are kept as their hashes from now on.
+                    let whole = meta.invitations.iter().any(|i| !i.code.is_empty());
+                    for i in meta.invitations.iter_mut().filter(|i| !i.code.is_empty()) {
+                        let code = std::mem::take(&mut i.code);
+                        i.keep(&code);
+                        for m in meta.members.iter_mut().filter(|m| m.invitation == code) {
+                            m.invitation = i.id.clone();
+                        }
+                    }
+                    let id = meta.id.clone();
+                    rooms.insert(id.clone(), meta);
+                    if whole {
+                        rewrite.push(id);
+                    }
                 }
                 Ok(_) => tracing::warn!(path = %path.display(), "a room with an id that cannot be is left out"),
                 Err(e) => tracing::warn!(path = %path.display(), %e, "a room could not be read"),
             }
         }
         tracing::info!(rooms = rooms.len(), "rooms read");
-        Ok(Registry { dir: data.to_owned(), rooms })
+        let registry = Registry { dir: data.to_owned(), rooms };
+        for id in rewrite {
+            registry.save(&id)?;
+        }
+        Ok(registry)
     }
 
     pub fn len(&self) -> usize {
@@ -226,24 +268,31 @@ impl Registry {
         if meta.invitations.iter().filter(|i| i.is_open(at)).count() >= 50 {
             return Err(Refusal::Invalid("there are fifty open invitations already; withdraw some".into()));
         }
-        let invitation = Invitation {
-            code: secrets::code(),
+        let code = secrets::code();
+        let mut invitation = Invitation {
+            id: String::new(),
+            hash: String::new(),
+            hint: String::new(),
+            code: String::new(),
             label: clean(label, 100),
             created: at,
             expires: hours.filter(|h| *h > 0).map(|h| at + i64::from(h) * 3600),
             uses_left: uses.filter(|u| *u > 0),
             used: 0,
         };
+        invitation.keep(&code);
         meta.invitations.push(invitation.clone());
         self.save(room)?;
+        // The code is told this once.
+        invitation.code = code;
         Ok(invitation)
     }
 
-    pub fn withdraw(&mut self, room: &str, code: &str) -> Result<(), Refusal> {
-        let code = secrets::normalise_code(code);
+    /// Withdraws an invitation, by its id.
+    pub fn withdraw(&mut self, room: &str, invitation: &str) -> Result<(), Refusal> {
         let meta = self.rooms.get_mut(room).ok_or(Refusal::NoRoom)?;
         let before = meta.invitations.len();
-        meta.invitations.retain(|i| i.code != code);
+        meta.invitations.retain(|i| i.id != invitation);
         if meta.invitations.len() == before {
             return Err(Refusal::BadCode);
         }
@@ -257,22 +306,25 @@ impl Registry {
         if code.len() != 14 {
             return Err(Refusal::BadCode);
         }
+        let hashed = secrets::hash(&code);
         let at = now();
         let room = self
             .rooms
             .values()
-            .find(|r| r.invitations.iter().any(|i| secrets::same(&i.code, &code) && i.is_open(at)))
+            .find(|r| r.invitations.iter().any(|i| secrets::same(&i.hash, &hashed) && i.is_open(at)))
             .map(|r| r.id.clone())
             .ok_or(Refusal::BadCode)?;
         let name = clean(name, 100);
         let token = secrets::token();
         let id = uuid::Uuid::new_v4().to_string();
         let meta = self.rooms.get_mut(&room).expect("the room was found a moment ago");
-        if let Some(i) = meta.invitations.iter_mut().find(|i| i.code == code) {
+        let mut by = String::new();
+        if let Some(i) = meta.invitations.iter_mut().find(|i| secrets::same(&i.hash, &hashed)) {
             i.used += 1;
             if let Some(left) = i.uses_left.as_mut() {
                 *left = left.saturating_sub(1);
             }
+            by = i.id.clone();
         }
         meta.members.push(Member {
             id: id.clone(),
@@ -280,7 +332,7 @@ impl Registry {
             token: secrets::hash(&token),
             joined: at,
             last_seen: at,
-            invitation: code,
+            invitation: by,
         });
         let result = meta.clone();
         self.save(&room)?;
@@ -349,18 +401,46 @@ mod tests {
         r.join(&many.code, "").unwrap();
         assert_eq!(r.get(ROOM).unwrap().members.len(), 3);
         assert_eq!(r.get(ROOM).unwrap().members[2].name, "A collaborator");
-        r.withdraw(ROOM, &many.code).unwrap();
+        assert!(matches!(r.withdraw(ROOM, &many.code), Err(Refusal::BadCode)), "withdrawn by its id");
+        r.withdraw(ROOM, &many.id).unwrap();
         assert!(matches!(r.join(&many.code, "C"), Err(Refusal::BadCode)));
+        assert_eq!(many.hint, &many.code[10..]);
 
         r.remove_member(ROOM, &id).unwrap();
         assert!(matches!(r.admit(ROOM, &token), Err(Refusal::NotAdmitted)));
 
-        // Nothing but hashes of tokens is on disk, and everything is there after a restart.
+        // Nothing but hashes of tokens and codes is on disk, and everything is there after a restart.
         let text = std::fs::read_to_string(room_dir(tmp.path(), ROOM).join("room.json")).unwrap();
         assert!(!text.contains(&owner) && !text.contains(&token));
+        assert!(!text.contains(&once.code) && !text.contains(&many.code), "{text}");
         let again = Registry::open(tmp.path()).unwrap();
         assert_eq!(again.admit(ROOM, &owner).unwrap(), Who::Owner);
         assert_eq!(again.get(ROOM).unwrap().members.len(), 2);
+    }
+
+    #[test]
+    fn codes_an_earlier_server_wrote_whole_are_hashed_when_read() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = room_dir(tmp.path(), ROOM);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("room.json"),
+            format!(
+                r#"{{"id":"{ROOM}","name":"Old","created":0,"owner":"{}",
+                "members":[{{"id":"m1","name":"Anna","token":"x","joined":0,"invitation":"ABCD-EFGH-JKMN"}}],
+                "invitations":[{{"code":"ABCD-EFGH-JKMN","label":"old","created":0,"used":1}}]}}"#,
+                secrets::hash("owner")
+            ),
+        )
+        .unwrap();
+        let mut r = Registry::open(tmp.path()).unwrap();
+        let text = std::fs::read_to_string(dir.join("room.json")).unwrap();
+        assert!(!text.contains("ABCD-EFGH-JKMN"), "{text}");
+        let meta = r.get(ROOM).unwrap();
+        assert_eq!(meta.invitations[0].hint, "JKMN");
+        assert_eq!(meta.members[0].invitation, meta.invitations[0].id);
+        // The code goes on admitting those it admitted before.
+        r.join("abcd efgh jkmn", "Björn").unwrap();
     }
 
     #[test]

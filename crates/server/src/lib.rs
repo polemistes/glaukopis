@@ -28,7 +28,7 @@ use tokio::sync::Mutex;
 
 pub use files::{Files, MAX_FILE_BYTES, MAX_ROOM_BYTES};
 pub use registry::Registry;
-pub use rooms::Rooms;
+pub use rooms::{MAX_DOCUMENT_BYTES, Rooms};
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -43,6 +43,8 @@ pub struct Config {
     pub max_file_bytes: u64,
     /// The most the files of one room may hold together.
     pub max_room_bytes: u64,
+    /// The most the document of one room may hold.
+    pub max_document_bytes: usize,
 }
 
 impl Config {
@@ -54,6 +56,7 @@ impl Config {
             max_rooms: None,
             max_file_bytes: MAX_FILE_BYTES,
             max_room_bytes: MAX_ROOM_BYTES,
+            max_document_bytes: MAX_DOCUMENT_BYTES,
         }
     }
 }
@@ -73,7 +76,7 @@ impl Server {
     pub fn open(config: Config) -> std::io::Result<Shared> {
         std::fs::create_dir_all(&config.data)?;
         let registry = Registry::open(&config.data)?;
-        let rooms = Rooms::new(config.data.clone());
+        let rooms = Rooms::new(config.data.clone(), config.max_document_bytes);
         let files = Files::new(config.data.clone(), config.max_file_bytes, config.max_room_bytes);
         files.sweep();
         Ok(Arc::new(Server {

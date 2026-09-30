@@ -10,6 +10,8 @@ Environment=GLAUKOPIS_SERVER_DATA=%S/glaukopis-server
 ExecStart=/usr/bin/glaukopis-server
 Restart=on-failure
 RestartSec=3
+# It cannot be run as it is set: it is not tried again until that is changed.
+RestartPreventExitStatus=78
 
 # The server needs its own directory, and the network. Nothing else.
 DynamicUser=yes

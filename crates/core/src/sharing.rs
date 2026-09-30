@@ -56,7 +56,15 @@ pub struct Member {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Invitation {
-    pub code: String,
+    #[serde(default)]
+    pub id: String,
+    /// The last four signs of the code, to tell it by.
+    #[serde(default)]
+    pub hint: String,
+    /// The code: only where the invitation was just made. The server keeps
+    /// nothing but its hash, and tells it this once.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
     #[serde(default)]
     pub label: String,
     pub created: i64,
@@ -416,8 +424,9 @@ impl<'a> Remote<'a> {
         self.read(value)
     }
 
-    pub fn withdraw(&self, room: &str, token: &str, code: &str) -> Result<()> {
-        let path = format!("{}/invitations/{}", Self::room_path(room), net::encode(code));
+    /// Withdraws an invitation, by its id.
+    pub fn withdraw(&self, room: &str, token: &str, invitation: &str) -> Result<()> {
+        let path = format!("{}/invitations/{}", Self::room_path(room), net::encode(invitation));
         self.ask("DELETE", &path, Some(token), None).map(|_| ())
     }
 

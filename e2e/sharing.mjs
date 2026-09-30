@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { App, root, sleep } from './harness.mjs';
+import { App, root, sleep, freePort } from './harness.mjs';
 
 const checks = [];
 function check(name, ok, detail = '') {
@@ -30,7 +30,7 @@ async function until(what, fn, ms = 8000) {
 const binary = join(root, 'target', 'debug', 'glaukopis-server');
 if (!existsSync(binary)) throw new Error(`No server at ${binary}. Build it first: cargo build -p glaukopis-server`);
 const serverData = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-server-'));
-const port = 8400 + Math.floor(Math.random() * 400);
+const port = await freePort();
 const address = `127.0.0.1:${port}`;
 const serverLog = [];
 
@@ -179,7 +179,7 @@ try {
   await owner.click(await owner.findByText('.diagram .node', 'Virgil'));
   await owner.press('Delete');
   await owner.waitForText('dialog h2', 'Someone is writing here', 3000);
-  const asked = await owner.text('dialog[open]');
+  const asked = await owner.exec(`return document.querySelector('dialog[open]')?.textContent ?? ''`);
   check('deleting what another is at work in is asked about first', asked.includes('Anna Lind is at work'), asked.replace(/\s+/g, ' '));
   await owner.screenshot('sharing-5c-asked');
   await owner.clickText('dialog footer button', 'Cancel');

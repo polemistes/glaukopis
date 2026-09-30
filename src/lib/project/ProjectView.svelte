@@ -776,14 +776,18 @@
       <span
         class="share"
         class:shared={shared?.shared}
-        data-status={shared?.connection?.status ?? 'none'}
+        data-status={shared?.connection?.tooLarge
+          ? 'refused'
+          : (shared?.connection?.status ?? 'none')}
       >
         <IconButton
           label={!shared?.shared
             ? t('project-share')
-            : shared.connection?.status === 'connected'
-              ? t('project-shared')
-              : t('project-shared-offline')}
+            : shared.connection?.tooLarge
+              ? t('project-shared-too-large')
+              : shared.connection?.status === 'connected'
+                ? t('project-shared')
+                : t('project-shared-offline')}
           onclick={() => (showShare = true)}
         >
           <Users size={16} />
@@ -1038,6 +1042,9 @@
   }
   .share.shared[data-status='offline']::after {
     background: var(--warn);
+  }
+  .share.shared[data-status='refused']::after {
+    background: var(--danger);
   }
   .work {
     flex: 1;

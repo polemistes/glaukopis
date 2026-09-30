@@ -379,6 +379,9 @@ async fn publishing_inviting_joining_and_writing_together() {
     assert_eq!(body["ownerPresent"], true);
     assert_eq!(body["members"][0]["present"], true);
     assert_eq!(body["invitations"][0]["open"], false, "used up");
+    // The owner is told the invitations by their last signs; the code was told once, when it was made.
+    assert_eq!(body["invitations"][0]["hint"], code[10..]);
+    assert!(body["invitations"][0].get("code").is_none());
 
     // A ticket opens the door once.
     let ticket = server.ticket(&owner).await;
@@ -460,6 +463,7 @@ async fn codes_cannot_be_tried_without_end() {
     let owner = body["token"].as_str().unwrap().to_owned();
     let (_, body) = server.call("POST", &format!("/api/rooms/{ROOM}/invitations"), Some(&owner), Some(json!({}))).await;
     let code = body["code"].as_str().unwrap().to_owned();
+    let invitation = body["id"].as_str().unwrap().to_owned();
 
     for _ in 0..10 {
         let guess = json!({ "code": "AAAA-BBBB-CCCC", "name": "x" });
@@ -470,8 +474,9 @@ async fn codes_cannot_be_tried_without_end() {
     let (status, body) = server.call("POST", "/api/join", None, Some(json!({ "code": code, "name": "x" }))).await;
     assert_eq!((status, body["error"].as_str()), (429, Some("too-many")), "{body}");
 
-    // The owner withdraws the code.
-    let withdrawn = server.call("DELETE", &format!("/api/rooms/{ROOM}/invitations/{code}"), Some(&owner), None).await;
+    // The owner withdraws the code, by its invitation.
+    let withdrawn =
+        server.call("DELETE", &format!("/api/rooms/{ROOM}/invitations/{invitation}"), Some(&owner), None).await;
     assert_eq!(withdrawn.0, 204);
     let (_, body) = server.call("GET", &format!("/api/rooms/{ROOM}"), Some(&owner), None).await;
     assert_eq!(body["invitations"], json!([]));

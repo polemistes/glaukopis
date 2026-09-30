@@ -31,6 +31,7 @@ project-preview = Forhåndsvisning og eksport
 project-share = Del
 project-shared = Delt
 project-shared-offline = Delt · serveren kan ikke nås
+project-shared-too-large = Delt · serveren tar ikke imot de siste endringene
 project-between-maps = Mellom de to kartene
 project-between-preview = Mellom kartet og forhåndsvisningen
 project-between-pictures = Mellom kartet og bildene

@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { App, root, sleep } from './harness.mjs';
+import { App, root, sleep, freePort } from './harness.mjs';
 
 const checks = [];
 function check(name, ok, detail = '') {
@@ -51,7 +51,7 @@ async function changes(app, since) {
 const binary = join(root, 'target', 'debug', 'glaukopis-server');
 if (!existsSync(binary)) throw new Error(`No server at ${binary}. Build it first: cargo build -p glaukopis-server`);
 const serverData = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-server-'));
-const port = 8400 + Math.floor(Math.random() * 400);
+const port = await freePort();
 const address = `127.0.0.1:${port}`;
 const serverLog = [];
 const server = spawn(binary, ['--listen', address, '--data', serverData, '--password', 'sesame'], {

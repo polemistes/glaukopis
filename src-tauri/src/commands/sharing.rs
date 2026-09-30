@@ -103,13 +103,17 @@ pub fn sharing_join(
 }
 
 /// Whether a code is one of those the owner of a project here has made. Asked
-/// before joining, so that no one joins their own project as a stranger.
+/// before joining, so that no one joins their own project as a stranger. The
+/// server tells its owner the last four signs of a code, not the code: those
+/// are compared, which mistakes one code for another once in a million.
 fn code_is_of(state: &AppState, project: &ProjectInfo, code: &str) -> bool {
     let Ok((sharing, token)) = state.projects.shared(&project.id) else { return false };
+    let signs: Vec<char> = code.chars().filter(char::is_ascii_alphanumeric).map(|c| c.to_ascii_uppercase()).collect();
+    let hint: String = signs[signs.len().saturating_sub(4)..].iter().collect();
     let client = state.client();
     Remote::new(&client, &sharing.server)
         .and_then(|remote| remote.room(&sharing.room, &token))
-        .is_ok_and(|room| room.invitations.iter().any(|i| i.code == code))
+        .is_ok_and(|room| room.invitations.iter().any(|i| i.open && i.hint == hint))
 }
 
 /// A ticket for the socket of a project. A refusal of the kinds `no-room` and
@@ -145,10 +149,10 @@ pub fn sharing_invite(
 }
 
 #[tauri::command(async)]
-pub fn sharing_withdraw(state: State<'_, AppState>, id: String, code: String) -> CommandResult<()> {
+pub fn sharing_withdraw(state: State<'_, AppState>, id: String, invitation: String) -> CommandResult<()> {
     let (sharing, token) = state.projects.shared(&id)?;
     let client = state.client();
-    Ok(Remote::new(&client, &sharing.server)?.withdraw(&sharing.room, &token, &code)?)
+    Ok(Remote::new(&client, &sharing.server)?.withdraw(&sharing.room, &token, &invitation)?)
 }
 
 #[tauri::command(async)]

@@ -30,8 +30,12 @@ const QUERY_AWARENESS = 3;
 /** Codes with which the server closes a connection for good. */
 const REMOVED = 4001;
 const DELETED = 4002;
+/** The code with which it refuses a change that would make the project larger than it keeps. */
+const TOO_LARGE = 4005;
 
 const LONGEST_WAIT = 30_000;
+/** How long a connection must have lasted for one that fails after it to be tried again at once. */
+const STEADY = 10_000;
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'offline' | 'ended';
 
@@ -68,6 +72,11 @@ export class Connection {
   ending = $state<Ending | null>(null);
   /** Why the server could not be reached, the last time it was tried. */
   problem = $state<string | null>(null);
+  /**
+   * Whether the server refused what was written here, as the project would
+   * be larger with it than the server keeps. It is tried again, seldom.
+   */
+  tooLarge = $state(false);
   readonly #doc: Y.Doc;
   readonly #awareness: Awareness;
   readonly #options: ConnectionOptions;
@@ -92,6 +101,7 @@ export class Connection {
     if (this.#stopped) return;
     this.#stopped = true;
     clearTimeout(this.#retry);
+    this.tooLarge = false;
     this.#doc.off('update', this.#onUpdate);
     this.#awareness.off('update', this.#onAwareness);
     if (typeof window !== 'undefined') window.removeEventListener('online', this.#onOnline);
@@ -169,8 +179,15 @@ export class Connection {
     socket.binaryType = 'arraybuffer';
     this.#socket = socket;
 
+    let steady: ReturnType<typeof setTimeout> | undefined;
     socket.onopen = () => {
       if (this.#socket !== socket) return;
+      // A connection that lasts was not refused: a failure after it is tried again at once.
+      steady = setTimeout(() => {
+        if (this.#socket !== socket) return;
+        this.#attempts = 0;
+        this.tooLarge = false;
+      }, STEADY);
       const encoder = encoding.createEncoder();
       encoding.writeVarUint(encoder, SYNC);
       writeSyncStep1(encoder, this.#doc);
@@ -188,7 +205,6 @@ export class Connection {
 
     socket.onmessage = (event: MessageEvent) => {
       if (this.#socket !== socket || !(event.data instanceof ArrayBuffer)) return;
-      this.#attempts = 0;
       this.problem = null;
       if (this.status !== 'connected') this.status = 'connected';
       try {
@@ -200,12 +216,18 @@ export class Connection {
 
     socket.onclose = (event: CloseEvent) => {
       if (this.#socket !== socket) return;
+      clearTimeout(steady);
       this.#socket = null;
       this.synced = false;
       this.#forgetOthers();
       if (event.code === REMOVED) this.#end('removed');
       else if (event.code === DELETED) this.#end('deleted');
-      else this.#failed(event.reason || null);
+      else if (event.code === TOO_LARGE) {
+        // What was refused would be sent, and refused, again at once.
+        this.tooLarge = true;
+        this.#attempts = Math.max(this.#attempts, 5);
+        this.#failed(event.reason || null);
+      } else this.#failed(event.reason || null);
     };
     // A failure is followed by the closing of the socket, which is where it is dealt with.
     socket.onerror = () => {};

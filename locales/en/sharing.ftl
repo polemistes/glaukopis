@@ -24,6 +24,7 @@ sharing-through = Through { $server }
 sharing-connected = Connected. What is written is with the others at once.
 sharing-connecting = Connecting…
 sharing-offline = The server cannot be reached. What you write is kept here, and brought along when it can.
+sharing-too-large = The server does not take the latest changes: with them the project would be larger than it keeps. They are kept here. Whoever runs the server can let projects be larger.
 sharing-your-name-seen = As the others see you.
 
 ## Invitations
@@ -48,6 +49,9 @@ sharing-a-week = A week
 sharing-a-month = A month
 sharing-until-withdrawn = Until withdrawn
 sharing-withdraw = Withdraw
+# The last four signs of a code that was made before, as it is listed.
+sharing-code-ending = The code ending { $hint }
+sharing-codes-once = A code is shown once, when it is made: the server keeps no more of it than it needs to know it again. To send one again, make a new one.
 # What is said of a code, in a list with a dot between: "for one person · 6 days left · used once".
 sharing-for-several = for several
 sharing-for-one = for one person

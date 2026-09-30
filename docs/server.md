@@ -25,7 +25,9 @@ Install the package `glaukopis-server` (see `packaging/arch`), then:
 
 1. Set a password in `/etc/glaukopis-server.conf`. It is asked of those who
    share projects through the server, not of those they invite. Without it,
-   anyone who can reach the server can put projects on it.
+   the server does not start behind a proxy, as anyone who could reach it
+   could put projects on it; if that is what you want, say so with
+   `GLAUKOPIS_SERVER_OPEN=true` there instead.
 
    ```
    GLAUKOPIS_SERVER_PASSWORD=something long that you make up
@@ -73,6 +75,8 @@ glaukopis-server --listen 127.0.0.1:8375 --data /var/lib/glaukopis-server --trus
 | `--max-rooms` | `GLAUKOPIS_SERVER_MAX_ROOMS` | The most projects the server will hold. |
 | `--max-file-mb` | `GLAUKOPIS_SERVER_MAX_FILE_MB` | The most one figure of a project may hold, in megabytes. `50` if not given. |
 | `--max-room-mb` | `GLAUKOPIS_SERVER_MAX_ROOM_MB` | The most the figures of one project may hold together, in megabytes. `1024` if not given. |
+| `--max-project-mb` | `GLAUKOPIS_SERVER_MAX_PROJECT_MB` | The most one project may hold without its figures, in megabytes: its text, maps, references and history. `64` if not given, which is far more than the text of a long book. |
+| `--open` | `GLAUKOPIS_SERVER_OPEN` | Let anyone who can reach the server publish projects on it, with no password. Without a password, the server does not start unless this is given, or it listens on this computer only and is not behind a proxy. |
 
 How much is written to the log is set with `GLAUKOPIS_SERVER_LOG`: `warn`,
 `info` (the default) or `debug`.
@@ -98,9 +102,9 @@ last line above lets through what the server itself takes. If `--max-file-mb`
 is changed, change it there as well.
 
 On a network of your own, at home or in a department, the server can be used
-without a proxy: start it with `--listen 0.0.0.0:8375` and give its address as
-`http://192.168.1.20:8375`. What is sent is then not encrypted, and Glaukopis
-says so to those who use it.
+without a proxy: start it with `--listen 0.0.0.0:8375` and a password (or
+`--open`), and give its address as `http://192.168.1.20:8375`. What is sent is
+then not encrypted, and Glaukopis says so to those who use it.
 
 ## What is kept, and where
 
@@ -128,9 +132,12 @@ shared anew from any copy.
 - The figures of a project are sent to the server and kept there, so that
   they reach everyone who has the project. They are not encrypted either.
 - Tokens, by which the server knows the owner and the collaborators of a
-  project, are not kept: only their hashes are. Invitation codes are kept as
-  they are, so that the owner can be shown them again; they can be made to
-  admit one person only, and to expire.
+  project, are not kept: only their hashes are. So it is with invitation
+  codes: the owner is shown a code once, when it is made, and after that its
+  last four signs. A code can be made to admit one person only, and to expire.
+  (Codes that an earlier version kept whole are hashed when it first starts.)
+- Each one's presence, where their cursor is and what they are called, is
+  theirs to change: the server does not let one connection speak for another.
 - Attempts with wrong codes or passwords are counted for each address. After
   ten in ten minutes, the address must wait.
 - Files attached to references are not sent to the server. References
@@ -144,4 +151,5 @@ shared anew from any copy.
 | Sharing works, but the project is never "connected" | The proxy does not pass WebSocket on. See the lines for nginx above. |
 | "Too many attempts have been made from here" for everyone at once | The server is behind a proxy and was started without `--trust-proxy`, so that all callers seem to be the proxy. |
 | A figure is refused as too large, or does not reach the others | The limits `--max-file-mb` and `--max-room-mb`. Behind nginx, `client_max_body_size`. |
-| The server does not start | `journalctl -u glaukopis-server` says why. Most often the port is in use, or the data directory cannot be written to. |
+| Glaukopis says that the server does not take the latest changes | The project would be larger than `--max-project-mb` lets it be. |
+| The server does not start | `journalctl -u glaukopis-server` says why. Most often the port is in use, the data directory cannot be written to, or no password is set. |

@@ -32,6 +32,7 @@ project-preview = Preview and export
 project-share = Share
 project-shared = Shared
 project-shared-offline = Shared · the server cannot be reached
+project-shared-too-large = Shared · the server does not take the latest changes
 project-between-maps = Between the two maps
 project-between-preview = Between the map and the preview
 project-between-pictures = Between the map and the pictures
