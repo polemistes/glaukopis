@@ -53,15 +53,18 @@ Everything is saved as you work. There is nothing to press.
 | Rename an element | **F2**, or begin to type |
 | Read its text without opening it | Rest the pointer on it |
 | Move an element, with all that is under it | Drag it onto another element |
+| Move it up or down, deeper or less deep | **Alt+Shift** and the arrows |
+| Go from element to element | The arrows |
 | Select several | **Shift**-click, or drag a frame around them |
 | Delete | **Delete** |
 | Undo, redo | **Ctrl+Z**, **Ctrl+Shift+Z** |
 | Move about the map | Drag the background; scroll to zoom |
-| Everything else | Right-click an element |
+| Everything else | Right-click an element, or **Shift+F10** |
 
 Lines between an element and what is under it are straight. **Associations**
 are curved. To make one, right-click an element, choose **Associate with…**,
-and click the other element. An association can be given a few words that say
+and click the other element; or, from the keys, **Shift+F10**, **Associate
+with…**, the arrows to the other element, and **Enter**. An association can be given a few words that say
 what it is.
 
 An element that has text shows a small mark, and the number of works its
@@ -1114,6 +1117,8 @@ Norwegian is checked: the first underlines of a session come after a moment.
 | **Ctrl+Shift+H** | The history of the project |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
 | **Tab**, **Enter** | In the diagram: a new element under, or beside |
+| **Alt+Shift** and the arrows | In the diagram and the text: move the element up, down, deeper, less deep |
+| **Shift+F10** | In the diagram: the menu of what is selected |
 | **F2** | Rename |
 | **@** | In the text: cite |
 | **Ctrl+Alt+F** | In the text: a note |

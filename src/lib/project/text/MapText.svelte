@@ -31,7 +31,14 @@
   import { pointRect } from '$lib/ui/floating';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
-  import { elementMenu, type ElementActions, type ElementsPayload } from '../elements';
+  import {
+    elementMenu,
+    indent as indentElement,
+    outdent as outdentElement,
+    shift as shiftElement,
+    type ElementActions,
+    type ElementsPayload,
+  } from '../elements';
   import { openDrawnWordMenu } from '$lib/spelling/drawn';
   import { replaceWhenShown } from '$lib/spelling/menu';
   import type { Project } from '../model/project.svelte';
@@ -267,42 +274,9 @@
 
   // ---- changes of structure from the text ----
 
-  function indent(id: string) {
-    const parent = tree.parent.get(id) ?? null;
-    if (!parent) return false;
-    const siblings = tree.children.get(parent) ?? [];
-    const i = siblings.indexOf(id);
-    if (i <= 0) return false;
-    project.checkpoint();
-    project.move([id], siblings[i - 1], undefined, { pos: null });
-    project.checkpoint();
-    return true;
-  }
-
-  function outdent(id: string) {
-    const parent = tree.parent.get(id) ?? null;
-    if (!parent || parent === tree.root) return false;
-    const grand = tree.parent.get(parent) ?? null;
-    if (!grand) return false;
-    const list = tree.children.get(grand) ?? [];
-    project.checkpoint();
-    project.move([id], grand, list.indexOf(parent) + 1, { pos: null });
-    project.checkpoint();
-    return true;
-  }
-
-  function shift(id: string, by: -1 | 1) {
-    const parent = tree.parent.get(id) ?? null;
-    const list = parent ? (tree.children.get(parent) ?? []) : tree.loose;
-    const i = list.indexOf(id);
-    const j = i + by;
-    if (i < 0 || j < 0 || j >= list.length) return false;
-    project.checkpoint();
-    // `move` counts places in the list as it is: to go down, past the next one.
-    project.move([id], parent, by > 0 ? j + 1 : j, parent ? { pos: null } : {});
-    project.checkpoint();
-    return true;
-  }
+  const indent = (id: string) => indentElement(project, tree, id);
+  const outdent = (id: string) => outdentElement(project, tree, id);
+  const shift = (id: string, by: -1 | 1) => shiftElement(project, tree, id, by);
 
   /** What follows the cursor becomes a new element, after this one. */
   function split(id: string, view: EditorView) {

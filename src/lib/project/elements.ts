@@ -20,7 +20,7 @@ import { confirm } from '$lib/ui/confirm.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { notify, toasts } from '$lib/ui/toast.svelte';
 import type { Project } from './model/project.svelte';
-import { subtree, topmost } from './model/tree';
+import { subtree, topmost, type Tree } from './model/tree';
 
 /** What is dragged when elements are. */
 export interface ElementsPayload {
@@ -42,6 +42,48 @@ export interface ElementActions {
   link?: (id: string) => void;
   /** Show a map, after elements went to it or it was made. */
   openMap?: (id: string) => void;
+}
+
+// ---- moving an element by the keys, in the diagram and in the text ----
+
+/** Puts an element under the one before it. Returns whether it moved. */
+export function indent(project: Project, tree: Tree, id: string): boolean {
+  const parent = tree.parent.get(id) ?? null;
+  if (!parent) return false;
+  const siblings = tree.children.get(parent) ?? [];
+  const i = siblings.indexOf(id);
+  if (i <= 0) return false;
+  project.checkpoint();
+  project.move([id], siblings[i - 1], undefined, { pos: null });
+  project.checkpoint();
+  return true;
+}
+
+/** Puts an element beside its parent, after it. Returns whether it moved. */
+export function outdent(project: Project, tree: Tree, id: string): boolean {
+  const parent = tree.parent.get(id) ?? null;
+  if (!parent || parent === tree.root) return false;
+  const grand = tree.parent.get(parent) ?? null;
+  if (!grand) return false;
+  const list = tree.children.get(grand) ?? [];
+  project.checkpoint();
+  project.move([id], grand, list.indexOf(parent) + 1, { pos: null });
+  project.checkpoint();
+  return true;
+}
+
+/** Moves an element one place up or down among those beside it. Returns whether it moved. */
+export function shift(project: Project, tree: Tree, id: string, by: -1 | 1): boolean {
+  const parent = tree.parent.get(id) ?? null;
+  const list = parent ? (tree.children.get(parent) ?? []) : tree.loose;
+  const i = list.indexOf(id);
+  const j = i + by;
+  if (i < 0 || j < 0 || j >= list.length) return false;
+  project.checkpoint();
+  // `move` counts places in the list as it is: to go down, past the next one.
+  project.move([id], parent, by > 0 ? j + 1 : j, parent ? { pos: null } : {});
+  project.checkpoint();
+  return true;
 }
 
 /** Removes elements, and says what went, with a way back. */

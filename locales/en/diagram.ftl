@@ -9,7 +9,7 @@ diagram-tidy = Tidy the whole map
 diagram-tidy-hint = Every element goes back to its automatic place
 # The keys are shown as keys, where the variables stand.
 diagram-hint-empty = { $tab } adds an element under the one selected · { $enter } adds one beside it · double-click to write
-diagram-hint-linking = Click the element to associate with · { $esc } to leave it
+diagram-hint-linking = Click the element to associate with, or go to it with the arrows and press { $enter } · { $esc } to leave it
 diagram-show-under = Show what is under it
 diagram-hide-under = Hide what is under it
 diagram-link-handle = Drag to another element to associate them

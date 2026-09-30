@@ -35,6 +35,7 @@ export const Key = {
   Shift: '',
   Alt: '',
   F2: '',
+  F10: '\uE03A',
   Space: ' ',
 };
 

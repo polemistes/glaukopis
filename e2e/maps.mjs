@@ -169,6 +169,37 @@ try {
   check('dragging from the handle associates two elements', (await app.count('.diagram .association')) === 1);
   await app.screenshot('maps-9-association');
 
+  // --- The same from the keys: the menu by Shift+F10, the other end by the arrows and Enter ---
+  await app.click(await app.findByText('.diagram .node', 'The economy of honour'));
+  await sleep(100);
+  await app.keys(['Shift', 'F10']);
+  await app.waitFor('[role="menuitem"]', 3000);
+  check('the menu of an element opens from the keys', await app.exists('[role="menuitem"]'));
+  await app.clickText('[role="menuitem"]', 'Associate with');
+  await sleep(150);
+  await app.press('ArrowUp');
+  await app.press('Enter');
+  await sleep(300);
+  check('an association can be ended from the keys', (await app.count('.diagram .association')) === 2);
+  await app.keys(['Control', 'z']);
+  await sleep(300);
+  check('and taken back', (await app.count('.diagram .association')) === 1);
+
+  // --- An element moved by Alt+Shift and the arrows ---
+  const top = (name) =>
+    app.exec(`return Array.from(document.querySelectorAll('.diagram .node')).find((e) => e.textContent.includes(${JSON.stringify(name)})).getBoundingClientRect().top`);
+  await app.click(await app.findByText('.diagram .node', 'Milton'));
+  await sleep(100);
+  await app.keys(['Alt', 'Shift', 'ArrowUp']);
+  await sleep(400);
+  const up = (await top('Milton')) < (await top('Virgil'));
+  await app.keys(['Alt', 'Shift', 'ArrowDown']);
+  await sleep(400);
+  const down = (await top('Milton')) > (await top('Virgil'));
+  check('Alt+Shift and the arrows move an element among those beside it', up && down, JSON.stringify({ up, down }));
+  const level = await app.exec(`return Array.from(document.querySelectorAll('.diagram [role="treeitem"]')).find((e) => e.textContent.includes('Milton')).getAttribute('aria-level')`);
+  check('and the elements are told as a tree to those who hear them', level === '3', level);
+
   // --- The same map as text ---
   await app.clickText('header [role="radio"]', 'Text');
   await app.waitFor('.text-view .section');

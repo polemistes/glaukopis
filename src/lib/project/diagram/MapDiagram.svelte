@@ -10,12 +10,15 @@
   import { t } from '$lib/i18n';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import type { RectLike } from '$lib/ui/floating';
-  import { openContextMenu } from '$lib/ui/menu.svelte';
+  import { openContextMenu, openMenu } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import ElementBox from '../ElementBox.svelte';
   import {
     elementMenu,
+    indent,
+    outdent,
     removeElements,
+    shift,
     type ElementActions,
     type ElementsPayload,
   } from '../elements';
@@ -79,6 +82,8 @@
   let selection = $state<string[]>([]);
   let selectedLink = $state<string | null>(null);
   let renaming = $state<string | null>(null);
+  /** Tells apart the elements of this diagram in the page from those of another showing the same map. */
+  const domPrefix = `diagram-${Math.random().toString(36).slice(2, 8)}-`;
   /** The name as it was when it began to be written anew: Escape puts it back. */
   let renamedFrom: { id: string; copy: ReturnType<Project['copyTitle']> } | null = null;
   /**
@@ -743,7 +748,11 @@
     rename,
     edit: (id) => open(id),
     select,
-    link: (id) => (linkFrom = id),
+    link: (id) => {
+      linkFrom = id;
+      // The other end can be gone to with the arrows: the keys come here, after the menu has closed.
+      requestAnimationFrame(() => viewport?.focus({ preventScroll: true }));
+    },
     openMap: (id) => onopenmap(id),
   };
 
@@ -783,13 +792,47 @@
       return;
     }
 
+    // Alt+Shift and the arrows move the element, as in the text: up and down
+    // among those beside it, and deeper or less deep, which is outwards or
+    // inwards on the side of the map where it stands.
+    if (event.altKey && event.shiftKey && !mod && event.key.startsWith('Arrow')) {
+      event.preventDefault();
+      if (!one) return;
+      const outwards = lay.placed.get(one)?.side === 'left' ? 'ArrowLeft' : 'ArrowRight';
+      const inwards = outwards === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft';
+      const moved =
+        event.key === 'ArrowUp'
+          ? shift(project, tree, one, -1)
+          : event.key === 'ArrowDown'
+            ? shift(project, tree, one, 1)
+            : event.key === outwards
+              ? indent(project, tree, one)
+              : event.key === inwards && outdent(project, tree, one);
+      if (moved) requestAnimationFrame(() => bringIntoView(one));
+      return;
+    }
+
+    // The menu of what is selected, from the keys.
+    if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+      event.preventDefault();
+      const at = last && viewport?.querySelector<HTMLElement>(`[data-node="${last}"]`);
+      if (!at) return;
+      menuByKey = true;
+      openMenu(at, elementMenu(project, selection, actions, at));
+      return;
+    }
+
     switch (event.key) {
       case 'Tab':
         if (one) add('child', one);
         else if (!selection.length && tree.root) add('child', tree.root);
         break;
       case 'Enter':
-        if (one && event.altKey) open(one);
+        // An association that was begun ends at the element that is selected.
+        if (linkFrom && one) {
+          if (linkFrom !== one) project.addLink(linkFrom, one);
+          linkFrom = null;
+        } else if (one && event.altKey) open(one);
         else if (one) add('sibling', one);
         else if (!selection.length && tree.root) select([tree.root]);
         break;
@@ -851,7 +894,15 @@
     event.preventDefault();
   }
 
+  /** Whether the menu was just opened by a key, so that the event the key sends after it is let be. */
+  let menuByKey = false;
+
   function oncontextmenu(event: MouseEvent) {
+    if (menuByKey) {
+      menuByKey = false;
+      event.preventDefault();
+      return;
+    }
     const el = (event.target as HTMLElement).closest<HTMLElement>('[data-node]');
     event.preventDefault();
     hovered = null;
@@ -898,7 +949,9 @@
   const emptyHint = $derived(
     pieces((m) => t('diagram-hint-empty', m), { tab: 'Tab', enter: 'Enter' }),
   );
-  const linkingHint = $derived(pieces((m) => t('diagram-hint-linking', m), { esc: 'Esc' }));
+  const linkingHint = $derived(
+    pieces((m) => t('diagram-hint-linking', m), { enter: 'Enter', esc: 'Esc' }),
+  );
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
@@ -907,7 +960,9 @@
   class="diagram"
   class:panning
   class:linking={!!linking || !!linkFrom}
-  role="application"
+  role="tree"
+  aria-multiselectable="true"
+  aria-activedescendant={selection.length ? domPrefix + selection[selection.length - 1] : undefined}
   aria-label={t('diagram-map')}
   tabindex="0"
   use:dropTarget={{
@@ -1036,6 +1091,7 @@
             }}
             onrenamed={finishRename}
             typedAhead={renaming === id ? takeTyped : undefined}
+            domId={domPrefix + id}
             ontoggle={(nodeId) => project.setCollapsed(nodeId, !project.node(nodeId)?.collapsed)}
             onlinkstart={linkStart}
           />

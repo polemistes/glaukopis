@@ -31,6 +31,8 @@
     others?: Other[];
     onsize: (id: string, size: Size | null) => void;
     onrenamed: (id: string, action: KeyAction | 'blur') => void;
+    /** The id of the element in the page, for those who hear it read: unique to its diagram. */
+    domId?: string;
     /** What was typed before the name could be written in, and how it was ended: it goes in first. */
     typedAhead?: () => { text: string; then: KeyAction | null } | null;
     ontoggle: (id: string) => void;
@@ -49,6 +51,7 @@
     excluded,
     others = [],
     onsize,
+    domId,
     typedAhead,
     onrenamed,
     ontoggle,
@@ -107,6 +110,12 @@
   class:plain={!node.heading}
   class:pinned={placed.pinned}
   data-node={node.id}
+  id={domId}
+  role="treeitem"
+  aria-label={node.title || t('project-untitled')}
+  aria-selected={selected}
+  aria-level={placed.depth + 1}
+  aria-expanded={hasChildren ? !node.collapsed : undefined}
   style:transform="translate({Math.round(placed.x - placed.w / 2)}px, {Math.round(
     placed.y - placed.h / 2,
   )}px)"
