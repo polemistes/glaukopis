@@ -8,7 +8,7 @@ use glaukopis_core::export::tools::{self, Configured};
 use glaukopis_core::formats::Formats;
 use glaukopis_core::library::Library;
 use glaukopis_core::net::Client;
-use glaukopis_core::paths::DataDir;
+use glaukopis_core::paths::{Claim, DataDir};
 use glaukopis_core::pictures::Pictures;
 use glaukopis_core::projects::Projects;
 use glaukopis_core::settings;
@@ -17,6 +17,8 @@ use glaukopis_core::styles::Styles;
 
 pub struct AppState {
     pub data: DataDir,
+    /// Held while the application runs, so that no other works in the same data.
+    _claim: Claim,
     pub projects: Projects,
     /// The store of pictures.
     pub pictures: Pictures,
@@ -64,8 +66,7 @@ pub fn find_resources(installed: Option<PathBuf>) -> PathBuf {
 }
 
 impl AppState {
-    pub fn open(installed_resources: Option<PathBuf>) -> glaukopis_core::Result<Self> {
-        let data = DataDir::open_default()?;
+    pub fn open(data: DataDir, claim: Claim, installed_resources: Option<PathBuf>) -> glaukopis_core::Result<Self> {
         let library = Library::open(&data)?;
         for w in &library.warnings {
             tracing::warn!("library: {w}");
@@ -96,6 +97,7 @@ impl AppState {
             fonts: RwLock::new(None),
             making: Mutex::new(()),
             data,
+            _claim: claim,
         };
         state.discover_tools();
         Ok(state)

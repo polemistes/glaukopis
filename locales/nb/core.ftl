@@ -41,3 +41,8 @@ network-nothing-there = { $host } har ingenting på den adressen
 network-wait = { $host } ber oss vente før vi spør igjen
 network-status = { $host } svarte med en feil ({ $status })
 network-method = { $method } er ikke en måte å spørre på som brukes her
+
+## Når programmet åpnes en gang til.
+
+core-in-use-title = Glaukopis er allerede åpent
+core-in-use = Glaukopis er allerede åpent, og arbeider i { $path }. Bare ett kan arbeide der om gangen, ellers skriver de over det den andre har skrevet. Fortsett i det som er åpent.

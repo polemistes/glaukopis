@@ -14,6 +14,14 @@ pub struct DataDir {
     root: PathBuf,
 }
 
+/// A claim on a data directory: while it is held, no other instance of the
+/// application works in it. It is let go when it is dropped, or when the
+/// process ends however it ends.
+#[derive(Debug)]
+pub struct Claim {
+    _file: fs::File,
+}
+
 impl DataDir {
     /// The data directory for this user, created if it does not exist.
     pub fn open_default() -> Result<Self> {
@@ -39,6 +47,29 @@ impl DataDir {
 
     pub fn root(&self) -> &Path {
         &self.root
+    }
+
+    /// Claims the directory for this instance of the application; `None` when
+    /// another holds it. Two that worked in one directory would each write
+    /// the library, the pictures and the projects over what the other wrote.
+    /// Where the file system cannot lock, it is worked in without a claim, as
+    /// before there was one.
+    pub fn claim(&self) -> Result<Option<Claim>> {
+        let path = self.root.join(".in-use");
+        let file = fs::OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .write(true)
+            .open(&path)
+            .context(|| tr!("io-creating", path = &path))?;
+        match file.try_lock() {
+            Ok(()) => Ok(Some(Claim { _file: file })),
+            Err(fs::TryLockError::WouldBlock) => Ok(None),
+            Err(fs::TryLockError::Error(e)) => {
+                tracing::warn!("the data directory cannot be claimed, and is used without: {e}");
+                Ok(Some(Claim { _file: file }))
+            }
+        }
     }
 
     pub fn library(&self) -> PathBuf {
@@ -143,5 +174,18 @@ mod tests {
         assert!(dir.attachments().is_dir());
         assert!(dir.projects().is_dir());
         assert_eq!(dir.library_file().file_name().unwrap(), "library.bib");
+    }
+
+    #[test]
+    fn one_at_a_time_works_in_a_directory() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = DataDir::open(tmp.path().join("data")).unwrap();
+        let first = dir.claim().unwrap();
+        assert!(first.is_some());
+        assert!(dir.claim().unwrap().is_none(), "a second is refused while the first holds it");
+        let other = DataDir::open(tmp.path().join("other")).unwrap();
+        assert!(other.claim().unwrap().is_some(), "another directory is another matter");
+        drop(first);
+        assert!(dir.claim().unwrap().is_some(), "and it is free again when let go");
     }
 }

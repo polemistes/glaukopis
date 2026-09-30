@@ -44,3 +44,8 @@ network-wait = { $host } asks us to wait before asking again
 network-status = { $host } answered with an error ({ $status })
 # A way of asking, GET or POST, that the application does not use.
 network-method = { $method } is not a way of asking that is used here
+
+## When the application is opened a second time.
+
+core-in-use-title = Glaukopis is open already
+core-in-use = Glaukopis is already open, and at work in { $path }. Only one can work there at a time, lest each write over what the other has written. Go on in the one that is open.

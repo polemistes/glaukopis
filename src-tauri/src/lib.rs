@@ -4,7 +4,10 @@ mod commands;
 mod error;
 mod state;
 
+use glaukopis_core::i18n::tr;
+use glaukopis_core::paths::DataDir;
 use tauri::Manager;
+use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 
 pub fn run() {
     tracing_subscriber::fmt()
@@ -16,16 +19,32 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let state = state::AppState::open(app.path().resource_dir().ok())?;
+            let data = DataDir::open_default()?;
             // The core speaks the language of the interface from the start: the
             // one chosen in the settings, or that of the system.
-            let chosen = glaukopis_core::settings::load(&state.data.settings_file())
+            let chosen = glaukopis_core::settings::load(&data.settings_file())
                 .ok()
                 .and_then(|settings| glaukopis_core::settings::string(&settings, "language"))
                 .filter(|language| language != "system");
             glaukopis_core::i18n::set_language(&chosen.unwrap_or_else(glaukopis_core::i18n::system_tag));
             tracing::info!(language = glaukopis_core::i18n::language(), "language of the interface");
-            tracing::info!(data = %state.data.root().display(), "data directory");
+            tracing::info!(data = %data.root().display(), "data directory");
+
+            let Some(claim) = data.claim()? else {
+                // Another is at work in the same data: this one says so, and goes.
+                tracing::warn!("the data directory is in use by another instance; this one ends");
+                for window in app.webview_windows().values() {
+                    let _ = window.hide();
+                }
+                let handle = app.handle().clone();
+                app.dialog()
+                    .message(tr!("core-in-use", path = data.root()))
+                    .title(tr!("core-in-use-title"))
+                    .kind(MessageDialogKind::Info)
+                    .show(move |_| handle.exit(0));
+                return Ok(());
+            };
+            let state = state::AppState::open(data, claim, app.path().resource_dir().ok())?;
             app.manage(state);
             Ok(())
         })

@@ -74,6 +74,7 @@ export class App {
 
     // A private X display.
     const display = `:${90 + Math.floor(Math.random() * 400)}`;
+    app.display = display;
     app.xvfb = spawn('Xvfb', [display, '-screen', '0', `${width}x${height}x24`, '-nolisten', 'tcp'], {
       stdio: 'ignore',
     });
