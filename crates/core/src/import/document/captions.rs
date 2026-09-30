@@ -13,8 +13,9 @@
 //! is not asked: it is Figure, Figur, Abbildung, Tableau, as the writer has
 //! it. It must stand directly beside what it speaks of.
 
+use super::convert::{join, trim};
 use super::lifting::MARK;
-use super::{join, text_of, trim};
+use super::plain::text_of;
 use crate::document::{Block, Inline};
 
 /// What was done, for saying so.
