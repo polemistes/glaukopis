@@ -120,15 +120,19 @@ function nowIso(): string {
 
 const NONE: Other[] = [];
 
-/** Whether something in a piece of text was written by someone else than `me`, and is still there. */
+/**
+ * Whether something in a piece of text, or in an element, was written or set
+ * by someone else than `me`, and is still there.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function holdsWorkOfOthers(type: Y.AbstractType<any>, me: number): boolean {
-  for (let item = type._start; item !== null; item = item.right) {
-    if (item.deleted) continue;
-    if (item.id.client !== me) return true;
-    if (item.content instanceof Y.ContentType && holdsWorkOfOthers(item.content.type, me))
-      return true;
-  }
+  const holds = (item: Y.Item) =>
+    !item.deleted &&
+    (item.id.client !== me ||
+      (item.content instanceof Y.ContentType && holdsWorkOfOthers(item.content.type, me)));
+  for (let item = type._start; item !== null; item = item.right) if (holds(item)) return true;
+  // What a map holds by name: the parts of an element, and the attributes of a paragraph.
+  for (const item of type._map.values()) if (holds(item)) return true;
   return false;
 }
 
@@ -227,12 +231,18 @@ export class Project {
     this.undoManager = new Y.UndoManager([this.yMeta, this.yMaps, this.yNodes, this.yLinks], {
       trackedOrigins: new Set<unknown>([LOCAL, ySyncPluginKey]),
       captureTimeout: 600,
-      // Taking back a paragraph one began must not take with it what another
-      // has written in it since: then only one's own words go.
-      deleteFilter: (item) =>
-        !(item.content instanceof Y.ContentType) ||
-        !(item.content.type instanceof Y.XmlElement || item.content.type instanceof Y.XmlText) ||
-        !holdsWorkOfOthers(item.content.type, this.doc.clientID),
+      // Taking back a paragraph or an element one began must not take with it
+      // what another has written in it since: then only one's own words go.
+      deleteFilter: (item) => {
+        const me = this.doc.clientID;
+        const node = this.#elementOf(item);
+        if (node) return !holdsWorkOfOthers(node, me);
+        return (
+          !(item.content instanceof Y.ContentType) ||
+          !(item.content.type instanceof Y.XmlElement || item.content.type instanceof Y.XmlText) ||
+          !holdsWorkOfOthers(item.content.type, me)
+        );
+      },
     });
     const stacks = () => {
       this.canUndo = this.undoManager.undoStack.length > 0;
@@ -1387,6 +1397,18 @@ export class Project {
       this.#cloneLinks(map);
     });
     return made;
+  }
+
+  /**
+   * The element an item makes up: the element itself, or one of its parts
+   * (its name, its text, where it stands). Not what is written within them.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  #elementOf(item: Y.Item): Y.AbstractType<any> | null {
+    if (item.parent === this.yNodes)
+      return item.content instanceof Y.ContentType ? item.content.type : null;
+    const parent = item.parent;
+    return parent instanceof Y.Map && parent._item?.parent === this.yNodes ? parent : null;
   }
 
   #deleteNodes(ids: Set<string>) {

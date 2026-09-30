@@ -126,6 +126,14 @@ project-deleted-many = { $count ->
    *[other] { $count } elements deleted
 }
 
+project-delete-busy-title = Someone is writing here
+# $names: those who are at what would be deleted, as a list.
+project-delete-busy-message = { $names } { $count ->
+    [one] is
+   *[other] are
+} at work in what would be deleted. What is being written there now would be lost with it, and cannot be brought back.
+project-delete-busy-confirm = Delete all the same
+
 ## An element, open for writing, and as it is shown when the pointer rests on it
 
 project-element = Element

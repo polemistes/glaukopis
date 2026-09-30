@@ -258,6 +258,75 @@ describe('undo', () => {
     p.redo();
     expect(titles(p, p.tree(map).sequence)).toEqual(['Wrath', 'A']);
   });
+
+  /** Two copies of one project, that have seen each other's changes. */
+  function two() {
+    const a = new Project(null);
+    const map = a.createMap('Wrath');
+    const root = a.map(map)!.root;
+    const b = new Project(null);
+    b.load(Y.encodeStateAsUpdate(a.doc), []);
+    const sync = () => {
+      Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc, Y.encodeStateVector(b.doc)), 'remote');
+      Y.applyUpdate(a.doc, Y.encodeStateAsUpdate(b.doc, Y.encodeStateVector(a.doc)), 'remote');
+    };
+    return { a, b, map, root, sync };
+  }
+
+  /** Writes a paragraph at the end of an element's text, as the editor would. */
+  function write(p: Project, id: string, words: string) {
+    const body = p.fragment(id, 'body')!;
+    p.doc.transact(() => {
+      const para = new Y.XmlElement('paragraph');
+      para.insert(0, [new Y.XmlText(words)]);
+      body.insert(body.length, [para]);
+    });
+  }
+
+  it('taking back an element one made keeps it, when another has written in it since', () => {
+    const { a, b, map, root, sync } = two();
+    a.checkpoint();
+    const x = a.addChild(root, { title: 'X' })!;
+    a.checkpoint();
+    sync();
+    write(b, x, 'Written by the other.');
+    sync();
+
+    a.undo();
+    expect(a.tree(map).sequence).toContain(x);
+    expect(a.tree(map).parent.get(x)).toBe(root);
+    expect(a.fragment(x, 'body')!.toString()).toContain('Written by the other.');
+    sync();
+    expect(b.tree(map).sequence).toContain(x);
+    expect(b.fragment(x, 'body')!.toString()).toContain('Written by the other.');
+  });
+
+  it('taking back an element one made removes it, when no one else has touched it', () => {
+    const { a, b, map, root, sync } = two();
+    a.checkpoint();
+    const x = a.addChild(root, { title: 'X' })!;
+    a.checkpoint();
+    sync();
+    a.undo();
+    expect(a.tree(map).sequence).not.toContain(x);
+    sync();
+    expect(b.tree(map).sequence).not.toContain(x);
+  });
+
+  it("taking back one's own paragraph leaves another's paragraph in the same element", () => {
+    const { a, b, root, sync } = two();
+    const x = a.addChild(root, { title: 'X' })!;
+    a.checkpoint();
+    sync();
+    write(b, x, 'The other wrote this.');
+    sync();
+    a.transact(() => write(a, x, 'I wrote this.'));
+    a.checkpoint();
+    a.undo();
+    const text = a.fragment(x, 'body')!.toString();
+    expect(text).toContain('The other wrote this.');
+    expect(text).not.toContain('I wrote this.');
+  });
 });
 
 describe('saving', () => {

@@ -119,6 +119,14 @@ project-deleted-many = { $count ->
    *[other] { $count } elementer ble slettet
 }
 
+project-delete-busy-title = Noen skriver her
+# $names: de som er i det som ville bli slettet, som en liste.
+project-delete-busy-message = { $names } { $count ->
+    [one] arbeider
+   *[other] arbeider
+} i det som ville bli slettet. Det som skrives der nå, ville gå tapt sammen med det, og kan ikke hentes tilbake.
+project-delete-busy-confirm = Slett likevel
+
 ## Et element, åpent for skriving, og slik det vises når pekeren hviler på det
 
 project-element = Element

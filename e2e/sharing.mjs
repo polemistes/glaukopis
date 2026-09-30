@@ -175,6 +175,17 @@ try {
   check('and the element the other is at is marked', where === 'Virgil:AL', where);
   await owner.screenshot('sharing-5b-where');
 
+  // Deleting where the other is at work is asked about first.
+  await owner.click(await owner.findByText('.diagram .node', 'Virgil'));
+  await owner.press('Delete');
+  await owner.waitForText('dialog h2', 'Someone is writing here', 3000);
+  const asked = await owner.text('dialog[open]');
+  check('deleting what another is at work in is asked about first', asked.includes('Anna Lind is at work'), asked.replace(/\s+/g, ' '));
+  await owner.screenshot('sharing-5c-asked');
+  await owner.clickText('dialog footer button', 'Cancel');
+  await owner.waitGone('dialog[open]');
+  check('and left as it is when not confirmed', (await titles(owner)).includes('Virgil'));
+
   await owner.doubleClick(await owner.findByText('.diagram .node', 'The word mênis'));
   await owner.waitFor('.box .text .prose');
   await sleep(250);

@@ -14,8 +14,9 @@ import Plus from '@lucide/svelte/icons/plus';
 import Scissors from '@lucide/svelte/icons/scissors';
 import Trash2 from '@lucide/svelte/icons/trash-2';
 import Unlink from '@lucide/svelte/icons/unlink';
-import { t } from '$lib/i18n';
+import { languages, t } from '$lib/i18n';
 import { truncate } from '$lib/library/format';
+import { confirm } from '$lib/ui/confirm.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { notify, toasts } from '$lib/ui/toast.svelte';
 import type { Project } from './model/project.svelte';
@@ -54,6 +55,30 @@ export function removeElements(project: Project, ids: string[], keepChildren = f
       notify(t('project-centre-stays'), t('project-centre-stays-detail'));
     return 0;
   }
+  // What another is writing in when it is deleted is lost with it, and no undo brings it back.
+  const going = keepChildren ? tops : tops.flatMap((id) => subtree(tree, id));
+  const busy = [...new Set(going.flatMap((id) => project.othersAt(id).map((o) => o.name)))];
+  if (busy.length) {
+    void confirm({
+      title: t('project-delete-busy-title'),
+      message: t('project-delete-busy-message', {
+        count: busy.length,
+        names: new Intl.ListFormat(languages.current, { type: 'conjunction' }).format(busy),
+      }),
+      confirm: t('project-delete-busy-confirm'),
+      danger: true,
+    }).then((sure) => sure && remove(project, tree, tops, keepChildren));
+    return 0;
+  }
+  return remove(project, tree, tops, keepChildren);
+}
+
+function remove(
+  project: Project,
+  tree: ReturnType<Project['tree']>,
+  tops: string[],
+  keepChildren: boolean,
+): number {
   const name = project.node(tops[0])?.title || t('project-untitled');
   const under = keepChildren ? 0 : tops.reduce((n, id) => n + subtree(tree, id).length - 1, 0);
   project.checkpoint();
