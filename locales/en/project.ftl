@@ -232,3 +232,30 @@ copy-changed-mark = The original has changed since this was copied
 copy-compare = Compare with the original…
 copy-copied-from = Copied from “{ $name }” in “{ $map }”
 copy-copied-from-changed = Copied from “{ $name }” in “{ $map }”, which has changed since
+
+## How far the writing of an element has come, as its writer says.
+status = Status
+status-idea = Idea
+status-draft = Draft
+status-done = Done
+status-none = No status
+# Of an element, where its status is shown: "Draft · 340 words".
+status-of = { $status } · { $count ->
+    [one] { $count } word
+   *[other] { $count } words
+}
+status-count-idea = { $count ->
+    [one] { $count } idea
+   *[other] { $count } ideas
+}
+status-count-draft = { $count ->
+    [one] { $count } draft
+   *[other] { $count } drafts
+}
+status-count-done = { $count } done
+# The words of the drafts and of what is done, in a map.
+status-words-written = { $count ->
+    [one] { $count } word written
+   *[other] { $count } words written
+}
+status-progress = How far the map has come

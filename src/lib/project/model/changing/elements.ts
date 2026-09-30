@@ -11,7 +11,7 @@ import { str, type YNode } from '../origins';
 import type { Project } from '../project.svelte';
 import { fillBody, fillTitle } from '../text';
 import { isAncestor, subtree, topmost } from '../tree';
-import type { NodeRecord, Position } from '../types';
+import type { NodeRecord, Position, Status } from '../types';
 import { makeLink } from './links';
 
 /** A key that sorts between two siblings. `siblings` is the list the element will join, without it. */
@@ -243,6 +243,13 @@ export const elementChanges = {
 
   setHeading(this: Project, id: string, heading: boolean) {
     set(this, id, 'heading', heading, true);
+  },
+
+  /** Says how far the writing of elements has come; with nothing, no longer says it. */
+  setStatus(this: Project, ids: string[], status: Status | null) {
+    this.transact(() => {
+      for (const id of ids) set(this, id, 'status', status, null);
+    });
   },
 
   setExcluded(this: Project, id: string, excluded: boolean) {

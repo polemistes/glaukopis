@@ -12,6 +12,7 @@
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { compareCopy } from '../copies.svelte';
+  import { number, statusWords } from '../status';
   import type { Other, Project } from '../model/project.svelte';
   import type { NodeRecord } from '../model/types';
   import type { Placed, Size } from './layout';
@@ -151,8 +152,18 @@
     {/if}
   </div>
 
-  {#if !renaming && (!node.empty || cited || node.include || node.excluded || behind)}
+  {#if !renaming && (!node.empty || cited || node.include || node.excluded || behind || node.status)}
     <div class="marks">
+      {#if node.status}
+        <span
+          class="mark status {node.status}"
+          aria-label={statusWords(node.status, node.words)}
+          use:tooltip={statusWords(node.status, node.words)}
+          ><span class="dot"></span>{#if node.status !== 'idea' && node.words}{number(
+              node.words,
+            )}{/if}</span
+        >
+      {/if}
       {#if behind}
         <button
           type="button"
@@ -377,6 +388,28 @@
   }
   .mark.include {
     color: var(--gold);
+  }
+  /* How far the writing has come: an empty ring, half full, full. */
+  .mark.status {
+    gap: 3px;
+  }
+  .mark.status .dot {
+    width: 7px;
+    height: 7px;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+  }
+  .mark.status.draft {
+    color: var(--gold);
+  }
+  .mark.status.draft .dot {
+    background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+  }
+  .mark.status.done {
+    color: var(--ok);
+  }
+  .mark.status.done .dot {
+    background: currentColor;
   }
   .mark.behind {
     padding: 1px;

@@ -6,6 +6,7 @@ import EyeOff from '@lucide/svelte/icons/eye-off';
 import FileInput from '@lucide/svelte/icons/file-input';
 import GitBranchPlus from '@lucide/svelte/icons/git-branch-plus';
 import GitCompare from '@lucide/svelte/icons/git-compare';
+import CircleDashed from '@lucide/svelte/icons/circle-dashed';
 import Heading from '@lucide/svelte/icons/heading';
 import LayoutGrid from '@lucide/svelte/icons/layout-grid';
 import Link2 from '@lucide/svelte/icons/link-2';
@@ -22,6 +23,7 @@ import type { MenuItem } from '$lib/ui/menu.svelte';
 import { compareCopy } from './copies.svelte';
 import { notify, toasts } from '$lib/ui/toast.svelte';
 import type { Project } from './model/project.svelte';
+import { STATUSES } from './model/types';
 import { subtree, topmost, type Tree } from './model/tree';
 
 /** What is dragged when elements are. */
@@ -255,6 +257,30 @@ export function elementMenu(
       });
     items.push({ kind: 'separator' });
   }
+
+  // How far the writing of what is chosen has come.
+  const said = nodes.every((n) => n.status === nodes[0].status) ? nodes[0].status : undefined;
+  items.push(
+    {
+      kind: 'submenu',
+      label: t('status'),
+      icon: CircleDashed,
+      items: [
+        ...STATUSES.map((status): MenuItem => ({
+          label: t(`status-${status}`),
+          checked: said === status,
+          action: () => project.setStatus(ids, status),
+        })),
+        { kind: 'separator' },
+        {
+          label: t('status-none'),
+          checked: said === null,
+          action: () => project.setStatus(ids, null),
+        },
+      ],
+    },
+    { kind: 'separator' },
+  );
 
   if (!isRoot) {
     const allPlain = nodes.every((n) => !n.heading);

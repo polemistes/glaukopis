@@ -42,6 +42,14 @@ export interface MapRecord {
   document: DocumentSettings;
 }
 
+/**
+ * How far the writing of an element has come, as its writer says: an idea,
+ * a draft, done. So that a map shows how far the book has come.
+ */
+export type Status = 'idea' | 'draft' | 'done';
+
+export const STATUSES: readonly Status[] = ['idea', 'draft', 'done'];
+
 /** Where an element was copied from. */
 export interface Origin {
   map: string;
@@ -76,6 +84,8 @@ export interface NodeRecord {
   include: string | null;
   /** Where the element was copied from. */
   origin: Origin | null;
+  /** How far its writing has come; nothing where that is not said. */
+  status: Status | null;
 
   // Read from the content.
   title: string;

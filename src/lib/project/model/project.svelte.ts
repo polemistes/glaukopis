@@ -32,13 +32,14 @@ import {
 } from './saving.svelte';
 import { bodyFacts, inlineText, readBody, readTitle, titleHtml, type Block } from './text';
 import { buildTree, type FlatNode, type Tree } from './tree';
-import type {
-  DocumentSettings,
-  LinkRecord,
-  MapRecord,
-  NodeRecord,
-  Position,
-  RefRecord,
+import {
+  STATUSES,
+  type DocumentSettings,
+  type LinkRecord,
+  type MapRecord,
+  type NodeRecord,
+  type Position,
+  type RefRecord,
 } from './types';
 
 export { HISTORY, LOAD, LOCAL, TIDY } from './origins';
@@ -521,6 +522,7 @@ export class Project {
       excluded: n.get('excluded') === true,
       include: (n.get('include') as string | null | undefined) || null,
       origin: origin && origin.map && origin.node ? origin : null,
+      status: STATUSES.find((s) => s === n.get('status')) ?? null,
       title: inlineText(title).trim(),
       titleHtml: titleHtml(title),
       empty: facts.empty,

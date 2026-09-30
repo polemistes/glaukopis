@@ -50,6 +50,7 @@
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import type { Folding } from './folding.svelte';
   import TextSection, { type Part } from './TextSection.svelte';
+  import { progressOf, progressWords } from '../status';
   import { reviewing } from '$lib/review/context';
   import type { Change } from '$lib/review/grouping';
 
@@ -102,6 +103,8 @@
   >();
 
   const tree = $derived(project.tree(mapId));
+  /** How far the writing of the map has come, where its elements say. */
+  const progress = $derived(progressOf(project, mapId));
 
   interface Row {
     id: string;
@@ -1186,6 +1189,7 @@
       <span>{t('project-words', { count: counted.words })}</span>
       {#if counted.cited}<span>{t('text-cited', { count: counted.cited })}</span>{/if}
       {#if counted.notes}<span>{t('text-notes', { count: counted.notes })}</span>{/if}
+      {#if progress}<span class="progress">{progressWords(progress).join(' · ')}</span>{/if}
       <span class="keys">
         {#each keysHint as piece, i (i)}
           {#if piece.name}<kbd>{piece.text}</kbd>{:else}{piece.text}{/if}

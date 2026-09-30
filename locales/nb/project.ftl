@@ -208,3 +208,19 @@ copy-changed-mark = Originalen er endret siden dette ble kopiert
 copy-compare = Sammenlign med originalen …
 copy-copied-from = Kopiert fra «{ $name }» i «{ $map }»
 copy-copied-from-changed = Kopiert fra «{ $name }» i «{ $map }», som er endret siden
+
+## Hvor langt skrivingen av et element er kommet, slik den som skriver sier.
+status = Status
+status-idea = Idé
+status-draft = Utkast
+status-done = Ferdig
+status-none = Ingen status
+status-of = { $status } · { $count } ord
+status-count-idea = { $count ->
+    [one] { $count } idé
+   *[other] { $count } idéer
+}
+status-count-draft = { $count } utkast
+status-count-done = { $count } ferdig
+status-words-written = { $count } ord skrevet
+status-progress = Hvor langt kartet er kommet

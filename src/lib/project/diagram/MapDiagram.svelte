@@ -31,6 +31,7 @@
   } from './camera';
   import DiagramNode from './DiagramNode.svelte';
   import { pressed, type Diagram } from './keys';
+  import { progressOf, progressWords } from '../status';
   import { associationsOf, drawing, linesOf } from './lines';
   import { layout, type Placed, type Size } from './layout';
 
@@ -780,6 +781,8 @@
   }
 
   const empty = $derived(tree.sequence.length <= 1);
+  /** How far the writing of the map has come, where its elements say. */
+  const progress = $derived(progressOf(project, mapId));
 
   // What is said at the foot of the map, with the keys shown as keys.
   const emptyHint = $derived(
@@ -948,6 +951,15 @@
       {#each linkingHint as piece, i (i)}
         {#if piece.name}<kbd>{piece.text}</kbd>{:else}{piece.text}{/if}
       {/each}
+    </div>
+  {/if}
+
+  {#if progress}
+    <div class="progress" aria-label={t('status-progress')}>
+      {[
+        ...progressWords(progress),
+        ...(progress.words ? [t('status-words-written', { count: progress.words })] : []),
+      ].join(' · ')}
     </div>
   {/if}
 
@@ -1147,6 +1159,19 @@
     max-width: calc(100% - 40px);
     border-color: var(--gold);
     color: var(--ink);
+  }
+  .progress {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background: var(--paper-raised);
+    box-shadow: var(--shadow-1);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+    pointer-events: none;
   }
   .controls {
     position: absolute;

@@ -317,6 +317,31 @@ describe('copies between maps', () => {
   });
 });
 
+describe('how far the writing has come', () => {
+  it('is said of elements, and counted for their map', async () => {
+    const { progressOf } = await import('../status');
+    const { p, map, root } = project();
+    const a = p.addChild(root, { title: 'A', body: 'The wrath is sung here' })!;
+    const b = p.addChild(root, { title: 'B', body: 'Two words' })!;
+    const c = p.addChild(root, { title: 'C' })!;
+    expect(p.node(a)!.status).toBeNull();
+    expect(progressOf(p, map)).toBeNull();
+    p.setStatus([a], 'done');
+    p.setStatus([b, c], 'draft');
+    expect(p.node(a)!.status).toBe('done');
+    expect(progressOf(p, map)).toEqual({ idea: 0, draft: 2, done: 1, words: 7 });
+    p.setStatus([c], 'idea');
+    expect(progressOf(p, map)).toEqual({ idea: 1, draft: 1, done: 1, words: 7 });
+    // Nothing said is nothing kept.
+    p.setStatus([a, b, c], null);
+    expect(p.yNodes.get(a)!.has('status')).toBe(false);
+    expect(progressOf(p, map)).toBeNull();
+    // What is not a status is none.
+    p.doc.transact(() => p.yNodes.get(a)!.set('status', 'finished'));
+    expect(p.node(a)!.status).toBeNull();
+  });
+});
+
 describe('notes on references', () => {
   it('are kept in the project, and changed where they differ', () => {
     const { p } = project();
