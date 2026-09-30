@@ -184,15 +184,33 @@ fn checked_isbn(isbn: &str) -> Result<String> {
     normalise_isbns(&digits).into_iter().next().ok_or_else(|| Error::invalid(tr!("core-lookup-not-isbn", isbn = isbn)))
 }
 
+/// The catalogues are asked at once, and the first of them in the order they
+/// are given in that has the book answers: as soon as it and those before it
+/// have answered, whatever those after it are doing. They end by themselves.
 fn by_isbn(client: &Client, isbn: &str) -> Result<Outcome> {
     let isbn = checked_isbn(isbn)?;
     let catalogues = sru::for_isbn(&isbn);
+    let (tell, told) = std::sync::mpsc::channel();
+    for (i, catalogue) in catalogues.iter().copied().enumerate() {
+        let (tell, client, isbn) = (tell.clone(), client.clone(), isbn.clone());
+        std::thread::spawn(move || {
+            let _ = tell.send((i, catalogue.by_isbn(&client, &isbn)));
+        });
+    }
+    drop(tell);
+    let mut answers: Vec<Option<Result<Vec<Hit>>>> = catalogues.iter().map(|_| None).collect();
     let mut failures = Vec::new();
-    for catalogue in &catalogues {
-        match catalogue.by_isbn(client, &isbn) {
-            Ok(hits) if !hits.is_empty() => return Ok(Outcome { hits, failures }),
-            Ok(_) => {}
-            Err(e) => failures.push(failure(&(catalogue.name)(), &e)),
+    let mut settled = 0;
+    while let Ok((i, answer)) = told.recv() {
+        answers[i] = Some(answer);
+        // Those whose turn it is, in order, as far as they have answered.
+        while let Some(Some(answer)) = answers.get_mut(settled).map(Option::take) {
+            match answer {
+                Ok(hits) if !hits.is_empty() => return Ok(Outcome { hits, failures }),
+                Ok(_) => {}
+                Err(e) => failures.push(failure(&(catalogues[settled].name)(), &e)),
+            }
+            settled += 1;
         }
     }
     if failures.len() == catalogues.len() {
@@ -217,25 +235,30 @@ fn by_words(client: &Client, text: &str, scope: Scope) -> Result<Outcome> {
         asked_for = words.clone();
     }
 
+    // The services are asked at once: what they answer is taken together.
+    let catalogues = if scope != Scope::Articles { sru::for_words().to_vec() } else { Vec::new() };
+    let asked = catalogues.len() + usize::from(scope != Scope::Books);
+    let (from_catalogues, from_crossref) = std::thread::scope(|s| {
+        let asked_for = &asked_for;
+        let asking: Vec<_> =
+            catalogues.iter().copied().map(|c| s.spawn(move || (c, c.by_words(client, asked_for, ROWS)))).collect();
+        let crossref = (scope != Scope::Books).then(|| crossref::search(client, &text, ROWS));
+        let answers: Vec<_> = asking.into_iter().filter_map(|h| h.join().ok()).collect();
+        (answers, crossref)
+    });
     let mut hits: Vec<Hit> = Vec::new();
     let mut failures = Vec::new();
-    let mut asked = 0;
-    if scope != Scope::Articles {
-        for catalogue in sru::for_words() {
-            asked += 1;
-            match catalogue.by_words(client, &asked_for, ROWS) {
-                Ok(found) => hits.extend(found),
-                Err(e) => failures.push(failure(&(catalogue.name)(), &e)),
-            }
+    for (catalogue, answer) in from_catalogues {
+        match answer {
+            Ok(found) => hits.extend(found),
+            Err(e) => failures.push(failure(&(catalogue.name)(), &e)),
         }
     }
-    if scope != Scope::Books {
-        asked += 1;
-        match crossref::search(client, &text, ROWS) {
-            // Crossref answers with ten records whatever is asked.
-            Ok(found) => hits.extend(found.into_iter().filter(|h| agreement(h, &words) >= 0.5)),
-            Err(e) => failures.push(failure(crossref::SOURCE, &e)),
-        }
+    match from_crossref {
+        // Crossref answers with ten records whatever is asked.
+        Some(Ok(found)) => hits.extend(found.into_iter().filter(|h| agreement(h, &words) >= 0.5)),
+        Some(Err(e)) => failures.push(failure(crossref::SOURCE, &e)),
+        None => {}
     }
     if hits.is_empty() && failures.len() == asked {
         return Err(Error::Network(failures.join(" ")));

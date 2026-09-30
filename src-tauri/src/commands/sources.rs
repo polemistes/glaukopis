@@ -193,23 +193,41 @@ fn plan_pdfs(
     };
     let mut warnings = Vec::new();
     let mut candidates = Vec::new();
-    for (done, path) in paths.iter().enumerate() {
+    // A few files at a time: each is read, and may be looked up, which is
+    // mostly waiting. The services are paced whatever asks them.
+    const AT_ONCE: usize = 3;
+    for (group, files) in paths.chunks(AT_ONCE).enumerate() {
         if stop.load(Ordering::Relaxed) {
             return Err(stopped().into());
         }
-        let path = Path::new(path);
+        let name_of = |path: &Path| path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
         if let Some(ticket) = ticket {
-            let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-            let told = PdfsProgress { ticket: ticket.to_owned(), done, total: paths.len(), name };
+            let name = name_of(Path::new(&files[0]));
+            let told = PdfsProgress { ticket: ticket.to_owned(), done: group * AT_ONCE, total: paths.len(), name };
             let _ = app.emit("pdfs-progress", told);
         }
-        let is_pdf = path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf"));
-        if !is_pdf {
-            let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-            warnings.push(tr!("core-import-not-a-pdf", name = &name));
-            continue;
+        let found: Vec<(Option<Candidate>, Vec<String>)> = std::thread::scope(|s| {
+            let asking: Vec<_> = files
+                .iter()
+                .map(|path| {
+                    s.spawn(move || {
+                        let path = Path::new(path);
+                        let mut said = Vec::new();
+                        if !path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf")) {
+                            said.push(tr!("core-import-not-a-pdf", name = &name_of(path)));
+                            return (None, said);
+                        }
+                        (identify(state, path, ask, &mut said, stop), said)
+                    })
+                })
+                .collect();
+            asking.into_iter().map(|h| h.join().unwrap_or((None, Vec::new()))).collect()
+        });
+        // In the order the files were given, whatever order they were found out about in.
+        for (candidate, said) in found {
+            candidates.extend(candidate);
+            warnings.extend(said);
         }
-        candidates.extend(identify(state, path, ask, &mut warnings, stop));
     }
     if stop.load(Ordering::Relaxed) {
         return Err(stopped().into());
