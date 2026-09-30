@@ -1868,7 +1868,7 @@ mod tests {
         }
         assert!(t.contains("$ a^2 + b^2 = c^2 $\n\n<gk-to-eq-sum>"), "{t}");
         assert_eq!(
-            e.warnings.iter().filter(|w| w.contains("point to something that is not in the document")).count(),
+            e.warnings.iter().filter(|w| w.contains("refers to something that is not in the document")).count(),
             1
         );
         let p = preview(&s.ctx(), &r).unwrap();
