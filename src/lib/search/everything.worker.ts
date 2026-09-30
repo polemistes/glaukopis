@@ -4,7 +4,6 @@
  * read of a project is kept until it is read anew. See `everything.ts`.
  */
 
-import { fromBase64 } from '$lib/util/base64';
 import { readProject, searchProject, type ProjectRead } from './everything';
 import type { Asked, Answer } from './engine';
 
@@ -18,15 +17,7 @@ self.onmessage = (event: MessageEvent<Asked>) => {
   const asked = event.data;
   try {
     if (asked.kind === 'read') {
-      read.set(
-        asked.id,
-        readProject(
-          asked.id,
-          asked.name,
-          asked.state ? fromBase64(asked.state) : null,
-          asked.updates.map(fromBase64),
-        ),
-      );
+      read.set(asked.id, readProject(asked.id, asked.name, asked.state, asked.updates));
       answer({ kind: 'read', ask: asked.ask });
     } else if (asked.kind === 'search') {
       const project = read.get(asked.id);

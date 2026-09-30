@@ -162,11 +162,8 @@ try {
   await app.waitGone('.notes');
   await sleep(600);
   check('what is written for the project is not in the library', !/Only for this book/.test(library()));
-  const inProject = await app.execAsync(
-    `const id = location.hash.split('/')[2];
-     const loaded = await window.__TAURI_INTERNALS__.invoke('project_load', { id });
-     return loaded.updates.length + (loaded.state ? 1 : 0);`,
-  );
+  const loaded = await app.projectLoad((await app.exec(`return location.hash`)).split('/')[2].split('?')[0]);
+  const inProject = loaded.updates.length + (loaded.state ? 1 : 0);
   check('it is in the project', inProject > 0);
 
   // In another project the note for all is there, and the other is not.

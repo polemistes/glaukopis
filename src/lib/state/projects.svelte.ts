@@ -14,7 +14,6 @@ import {
 import { t } from '$lib/i18n';
 import { Project, type Persistence, type Summary } from '$lib/project/model/project.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
-import { fromBase64, toBase64 } from '$lib/util/base64';
 
 class ProjectsState {
   list = $state.raw<ProjectInfo[]>([]);
@@ -88,14 +87,14 @@ export async function openProject(id: string): Promise<OpenProject> {
   const loaded = await projectLoad(id);
   const persistence: Persistence = {
     append: (update: Uint8Array, here: boolean, time: number) =>
-      projectAppend(id, toBase64(update), here, time),
+      projectAppend(id, update, here, time),
     saveState: async (state: Uint8Array, summary: Summary, keep: boolean) => {
-      const info = await projectSaveState(id, toBase64(state), summary, keep);
+      const info = await projectSaveState(id, state, summary, keep);
       projects.put(info);
     },
   };
   const project = new Project(persistence);
-  project.load(loaded.state ? fromBase64(loaded.state) : null, loaded.updates.map(fromBase64));
+  project.load(loaded.state, loaded.updates);
   if (!project.maps.length) {
     // A new project begins with one map, named after it. One that was joined
     // and has not been fetched is left empty: what it holds is on its way.

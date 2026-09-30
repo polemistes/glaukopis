@@ -19,7 +19,11 @@ export function isBackendError(value: unknown): value is BackendError {
 
 export const inTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
-export async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+/** With bytes for `args`, they are sent as they are, as the body of the request. */
+export async function call<T>(
+  command: string,
+  args?: Record<string, unknown> | Uint8Array,
+): Promise<T> {
   if (!inTauri) {
     throw {
       kind: 'no-backend',

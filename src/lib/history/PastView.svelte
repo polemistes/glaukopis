@@ -21,7 +21,6 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { notify, notifyError } from '$lib/ui/toast.svelte';
   import { tooltip } from '$lib/ui/tooltip';
-  import { toBase64 } from '$lib/util/base64';
   import type { MapAt } from './history.svelte';
   import type { Looking } from './looking';
   import type { Passage, Piece } from './types';
@@ -149,7 +148,7 @@
       });
       const state = await history.stateAt(looking.when);
       const copy = await projectCreate(t('history-copy-name', { name: project.name, day }));
-      const info = await projectSaveState(copy.id, toBase64(state), null);
+      const info = await projectSaveState(copy.id, state, null);
       projects.put(info);
       router.go({ view: 'project', project: copy.id });
     } catch (error) {

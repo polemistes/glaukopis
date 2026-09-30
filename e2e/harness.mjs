@@ -157,6 +157,41 @@ export class App {
   }
 
   /** Runs an async function body in the page; `await` is allowed, `return` gives the result. */
+  /**
+   * A project as it is on disk, with its state and changes in base64, as a
+   * script can carry them: `project_load` gives bytes (see `api/projects.ts`).
+   */
+  async projectLoad(id) {
+    return this.execAsync(
+      `const bytes = new Uint8Array(await window.__TAURI_INTERNALS__.invoke('project_load', { id: arguments[0] }));
+       const view = new DataView(bytes.buffer);
+       let at = 0;
+       const number = () => { const n = view.getUint32(at, true); at += 4; return n; };
+       const part = () => { const n = number(); at += n; return bytes.subarray(at - n, at); };
+       const base64 = (b) => { let s = ''; for (const c of b) s += String.fromCharCode(c); return btoa(s); };
+       const info = JSON.parse(new TextDecoder().decode(part()));
+       const state = part();
+       const updates = Array.from({ length: number() }, part).map(base64);
+       return { info, state: state.length ? base64(state) : null, updates };`,
+      id,
+    );
+  }
+
+  /** Adds a change, given in base64, to the log of a project, as the application does. */
+  async projectAppend(id, update64) {
+    return this.execAsync(
+      `const update = Uint8Array.from(atob(arguments[1]), (c) => c.charCodeAt(0));
+       const head = new TextEncoder().encode(JSON.stringify({ id: arguments[0], here: true, time: null }));
+       const body = new Uint8Array(4 + head.length + update.length);
+       new DataView(body.buffer).setUint32(0, head.length, true);
+       body.set(head, 4);
+       body.set(update, 4 + head.length);
+       return await window.__TAURI_INTERNALS__.invoke('project_append', body);`,
+      id,
+      update64,
+    );
+  }
+
   async execAsync(body, ...args) {
     const script = `
       const done = arguments[arguments.length - 1];

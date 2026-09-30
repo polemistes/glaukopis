@@ -168,7 +168,7 @@ try {
   await app.waitFor('.card', 8000);
   await sleep(800);
   {
-    const loaded = await invoke('project_load', { id });
+    const loaded = await app.projectLoad(id);
     const doc = new Y.Doc();
     if (loaded.state) Y.applyUpdate(doc, fromBase64(loaded.state));
     for (const update of loaded.updates) Y.applyUpdate(doc, fromBase64(update));
@@ -176,7 +176,7 @@ try {
     const [map] = [...doc.getMap('maps').values()];
     const centre = doc.getMap('nodes').get(map.get('root'));
     doc.transact(() => centre.get('body').insert(0, written()));
-    await invoke('project_append', { id, update: toBase64(Y.encodeStateAsUpdate(doc, before)) });
+    await app.projectAppend(id, toBase64(Y.encodeStateAsUpdate(doc, before)));
   }
   await app.clickText('.card h3', 'Homer');
   await app.waitFor('.diagram .node.root', 8000);

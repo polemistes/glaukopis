@@ -4,12 +4,18 @@
  * not, as in the tests. Each question is answered on its own.
  */
 
-import { fromBase64 } from '$lib/util/base64';
 import { readProject, searchProject, type ProjectFound, type ProjectRead } from './everything';
 import type { SearchOptions } from './matching';
 
 export type Asked =
-  | { kind: 'read'; ask: number; id: string; name: string; state: string | null; updates: string[] }
+  | {
+      kind: 'read';
+      ask: number;
+      id: string;
+      name: string;
+      state: Uint8Array | null;
+      updates: Uint8Array[];
+    }
   | { kind: 'search'; ask: number; id: string; words: string; options: SearchOptions }
   | { kind: 'forget'; ask: number; id: string };
 
@@ -58,15 +64,7 @@ export class Engine {
   #here(asked: Asked): Answer {
     try {
       if (asked.kind === 'read') {
-        this.#read.set(
-          asked.id,
-          readProject(
-            asked.id,
-            asked.name,
-            asked.state ? fromBase64(asked.state) : null,
-            asked.updates.map(fromBase64),
-          ),
-        );
+        this.#read.set(asked.id, readProject(asked.id, asked.name, asked.state, asked.updates));
         return { kind: 'read', ask: asked.ask };
       }
       if (asked.kind === 'forget') {
@@ -85,7 +83,12 @@ export class Engine {
   }
 
   /** Reads a project from what is kept of it on disk. */
-  async read(id: string, name: string, state: string | null, updates: string[]): Promise<void> {
+  async read(
+    id: string,
+    name: string,
+    state: Uint8Array | null,
+    updates: Uint8Array[],
+  ): Promise<void> {
     const answer = await this.#ask({ kind: 'read', id, name, state, updates });
     if (answer.kind === 'failed') throw new Error(answer.error);
   }

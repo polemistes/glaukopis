@@ -3,7 +3,6 @@ import * as Y from 'yjs';
 import { note, p, project, t } from '$lib/found/testing';
 import type { Inline } from '$lib/project/model/text';
 import type { RefRecord } from '$lib/project/model/types';
-import { toBase64 } from '$lib/util/base64';
 import { Engine } from './engine';
 import { around, readProject, searchProject, type ProjectFound } from './everything';
 import { NO_OPTIONS, type SearchOptions } from './matching';
@@ -118,7 +117,7 @@ describe('the search through everything', () => {
       ['a', one.pr],
       ['b', two.pr],
     ] as const)
-      await engine.read(id, id, toBase64(Y.encodeStateAsUpdate(pr.doc)), []);
+      await engine.read(id, id, Y.encodeStateAsUpdate(pr.doc), []);
     const a = await engine.search('a', 'wrath', options({ wholeWords: true }));
     const b = await engine.search('b', 'wrath', options({ wholeWords: true }));
     expect(a).toMatchObject({ project: 'a', count: 3 });
@@ -127,7 +126,7 @@ describe('the search through everything', () => {
     expect(await engine.search('c', 'wrath', options())).toBeNull();
     // What was read of a project is kept, and read anew when it is given anew.
     two.pr.setTitle(two.elements[0], 'Of wrath');
-    await engine.read('b', 'b', toBase64(Y.encodeStateAsUpdate(two.pr.doc)), []);
+    await engine.read('b', 'b', Y.encodeStateAsUpdate(two.pr.doc), []);
     expect(await engine.search('b', 'wrath', options())).toMatchObject({ count: 3 });
   });
 });
