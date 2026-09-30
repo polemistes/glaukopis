@@ -129,4 +129,18 @@ describe('the search through everything', () => {
     await engine.read('b', 'b', Y.encodeStateAsUpdate(two.pr.doc), []);
     expect(await engine.search('b', 'wrath', options())).toMatchObject({ count: 3 });
   });
+
+  it('says what a project cites, in its texts and their notes, each once', async () => {
+    const one = made();
+    const two = project(
+      [p(t('Again '), cite('r1'), note(t('See '), cite('r2'), t(' and '), cite('r1')))],
+      [p(t('Nothing cited here.'))],
+    );
+    const engine = new Engine();
+    await engine.read('a', 'a', Y.encodeStateAsUpdate(one.pr.doc), []);
+    await engine.read('b', 'b', Y.encodeStateAsUpdate(two.pr.doc), []);
+    expect(await engine.cited('a')).toEqual(['r1']);
+    expect((await engine.cited('b')).sort()).toEqual(['r1', 'r2']);
+    expect(await engine.cited('c')).toEqual([]);
+  });
 });

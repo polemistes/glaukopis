@@ -260,14 +260,26 @@ export const duplicates: DuplicateGroup[] = [
 ];
 
 export const project: ProjectInfo = {
+  "cited": [
+    "reference"
+  ],
   "created": "2026-01-01T00:00:00Z",
   "description": "",
   "id": "00000000-0000-4000-8000-000000000000",
-  "maps": [],
+  "maps": [
+    {
+      "elements": 3,
+      "id": "map",
+      "name": "Wrath"
+    }
+  ],
   "modified": "2026-01-01T00:00:00Z",
   "name": "Wrath",
-  "references": 0,
-  "words": 0
+  "pictures": [
+    "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5"
+  ],
+  "references": 1,
+  "words": 12
 };
 
 export const picture: Picture = {

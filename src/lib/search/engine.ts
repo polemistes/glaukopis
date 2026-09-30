@@ -4,7 +4,13 @@
  * not, as in the tests. Each question is answered on its own.
  */
 
-import { readProject, searchProject, type ProjectFound, type ProjectRead } from './everything';
+import {
+  citedIn,
+  readProject,
+  searchProject,
+  type ProjectFound,
+  type ProjectRead,
+} from './everything';
 import type { SearchOptions } from './matching';
 
 export type Asked =
@@ -17,6 +23,7 @@ export type Asked =
       updates: Uint8Array[];
     }
   | { kind: 'search'; ask: number; id: string; words: string; options: SearchOptions }
+  | { kind: 'cited'; ask: number; id: string }
   | { kind: 'forget'; ask: number; id: string };
 
 /** A question before it is numbered. */
@@ -25,6 +32,7 @@ type Question = Asked extends infer A ? (A extends Asked ? Omit<A, 'ask'> : neve
 export type Answer =
   | { kind: 'read'; ask: number }
   | { kind: 'found'; ask: number; result: ProjectFound | { error: string } | null }
+  | { kind: 'cited'; ask: number; ids: string[] }
   | { kind: 'failed'; ask: number; error: string };
 
 export class Engine {
@@ -72,6 +80,9 @@ export class Engine {
         return { kind: 'read', ask: asked.ask };
       }
       const project = this.#read.get(asked.id);
+      if (asked.kind === 'cited') {
+        return { kind: 'cited', ask: asked.ask, ids: project ? citedIn(project) : [] };
+      }
       return {
         kind: 'found',
         ask: asked.ask,
@@ -102,6 +113,13 @@ export class Engine {
     const answer = await this.#ask({ kind: 'search', id, words, options });
     if (answer.kind === 'failed') throw new Error(answer.error);
     return answer.kind === 'found' ? answer.result : null;
+  }
+
+  /** The references a project that was read cites. */
+  async cited(id: string): Promise<string[]> {
+    const answer = await this.#ask({ kind: 'cited', id });
+    if (answer.kind === 'failed') throw new Error(answer.error);
+    return answer.kind === 'cited' ? answer.ids : [];
   }
 
   /** Forgets what was read of a project. */

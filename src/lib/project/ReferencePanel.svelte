@@ -23,13 +23,18 @@
     onclose: () => void;
     /** What stands at the head in place of the title: the tabs of the panel at the side. */
     head?: Snippet;
+    /** Goes to an element where a reference is cited. */
+    ongo?: (map: string, element: string) => void;
+    /** A reference to show at once, with where it is cited. */
+    show?: string | null;
   }
 
-  let { project, mapId, onclose, head }: Props = $props();
+  let { project, mapId, onclose, head, ongo, show = null }: Props = $props();
 
   let scope = $state<'map' | 'project' | 'library'>('project');
   let query = $state('');
-  let selection = $state<string[]>([]);
+  // svelte-ignore state_referenced_locally
+  let selection = $state<string[]>(show ? [show] : []);
 
   onMount(() => {
     library.load();
@@ -41,6 +46,10 @@
   );
   const shown = $derived(sortEntries(search(pool, query), 'authors', false));
   const foreign = $derived([...used].filter((id) => !library.get(id)).length);
+
+  /** The one reference chosen, and where it is cited. */
+  const chosen = $derived(selection.length === 1 ? selection[0] : null);
+  const citing = $derived(chosen ? project.citing(chosen) : []);
 
   function context(event: MouseEvent, entries: Summary[]) {
     const one = entries.length === 1 ? entries[0] : null;
@@ -113,6 +122,29 @@
     {/if}
   </div>
 
+  {#if chosen}
+    <section class="cited" aria-label={t('project-cited-in-heading')}>
+      <h3 class="overline">{t('project-cited-in-heading')}</h3>
+      {#each citing as { map, elements } (map.id)}
+        <div class="map">
+          <span class="map-name">{map.name}</span>
+          {#each elements as element (element.id)}
+            <button
+              type="button"
+              class="element"
+              data-element={element.id}
+              onclick={() => ongo?.(map.id, element.id)}
+            >
+              {element.title || t('project-untitled')}
+            </button>
+          {/each}
+        </div>
+      {:else}
+        <p class="none">{t('project-not-cited')}</p>
+      {/each}
+    </section>
+  {/if}
+
   <footer>
     {t('project-references-drag')}
     {#if foreign && scope !== 'library'}
@@ -173,6 +205,53 @@
   .body {
     flex: 1;
     min-height: 0;
+  }
+  .cited {
+    flex: none;
+    max-height: 38%;
+    overflow-y: auto;
+    padding: 10px 16px 12px;
+    border-top: 1px solid var(--line);
+  }
+  .cited h3 {
+    margin-bottom: 6px;
+  }
+  .map + .map {
+    margin-top: 8px;
+  }
+  .map-name {
+    display: block;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--ink-3);
+  }
+  .element {
+    display: block;
+    width: 100%;
+    padding: 3px 6px;
+    margin-left: -6px;
+    border: none;
+    border-radius: var(--radius-s);
+    background: none;
+    color: var(--accent-strong);
+    font-size: var(--text-sm);
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .element:hover {
+    background: var(--paper-sunken);
+    text-decoration: underline;
+  }
+  .element:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+  }
+  .none {
+    font-size: var(--text-sm);
+    color: var(--ink-4);
   }
   footer {
     flex: none;

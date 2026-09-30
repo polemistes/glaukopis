@@ -23,7 +23,7 @@ use glaukopis_core::import::{self, bibfile};
 use glaukopis_core::library::{Library, attachments, draft_from_source};
 use glaukopis_core::paths::DataDir;
 use glaukopis_core::pictures::Pictures;
-use glaukopis_core::projects::Projects;
+use glaukopis_core::projects::{MapInfo, Projects, Summary};
 use glaukopis_core::styles::Styles;
 
 use crate::commands::documents::ToolsInfo;
@@ -97,9 +97,20 @@ fn what_is_sent_is_what_the_interface_declares() {
     let groups = glaukopis_core::duplicates::find_groups(library.entries());
     assert!(!groups.is_empty() && again.id != work.id);
 
-    let project = Projects::new(&data).create("Wrath").unwrap();
     let pictures = Pictures::open(data.pictures()).unwrap();
     let picture = pictures.add("dot.png", DOT).unwrap();
+    // A project as it is after it was saved: with what it uses and cites.
+    let projects = Projects::new(&data);
+    let project = projects.create("Wrath").unwrap();
+    let summary = Summary {
+        name: None,
+        maps: vec![MapInfo { id: "map".into(), name: "Wrath".into(), elements: 3 }],
+        words: 12,
+        references: 1,
+        pictures: vec![picture.hash.clone()],
+        cited: Some(vec!["reference".into()]),
+    };
+    let project = projects.save_state(&project.id, b"state", Some(summary)).unwrap();
     let formats = Formats::new(&resources, &data.formats());
     let styles = Styles::new(&resources, &data.styles());
     let tools = ToolsInfo {

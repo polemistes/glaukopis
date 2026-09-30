@@ -206,22 +206,35 @@ library-delete-many-title = { $count ->
     [one] Delete { $count } reference?
    *[other] Delete { $count } references?
 }
+# $projects is the number of projects that cite what is deleted, which keep copies of their own.
 library-delete-one = This removes the reference from your library, from every collection{ $files ->
         [0] {""}
         [one] , together with { $files } attached file
        *[other] , together with { $files } attached files
-    }. Citations of it in your projects will no longer resolve.
+    }.{ $projects ->
+        [0] {""}
+        [one] {" "}It is cited in a project, which keeps a copy of it.
+       *[other] {" "}It is cited in { $projects } projects, which keep a copy of it.
+    }
 library-delete-many = This removes them from your library, from every collection{ $files ->
         [0] {""}
         [one] , together with { $files } attached file
        *[other] , together with { $files } attached files
-    }. Citations of them in your projects will no longer resolve.
+    }.{ $projects ->
+        [0] {""}
+        [one] {" "}A project that cites some of them keeps a copy of those.
+       *[other] {" "}{ $projects } projects that cite some of them keep a copy of those.
+    }
 library-delete-failed = The references could not be deleted
 library-not-done = That could not be done
 
 ## Collections.
 
 library-collections = Collections
+# The projects that cite a work, in its pane.
+library-cited-in = Cited in
+library-not-cited = Not cited in any project.
+library-cited-reading = Reading the projects…
 library-collections-hint = Collections gather references for a subject or a piece of work. A reference can be in any number of them.
 library-collection-new = New collection
 library-collection-new-inside = New collection inside

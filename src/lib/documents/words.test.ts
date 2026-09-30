@@ -54,11 +54,14 @@ describe('the words of the library that were put together', () => {
   });
 
   it('say what deleting references takes with it', () => {
-    expect(t('library-delete-one', { files: 0 })).toBe(
-      'This removes the reference from your library, from every collection. Citations of it in your projects will no longer resolve.',
+    expect(t('library-delete-one', { files: 0, projects: 0 })).toBe(
+      'This removes the reference from your library, from every collection.',
     );
-    expect(t('library-delete-many', { files: 1 })).toBe(
-      'This removes them from your library, from every collection, together with 1 attached file. Citations of them in your projects will no longer resolve.',
+    expect(t('library-delete-one', { files: 0, projects: 2 })).toBe(
+      'This removes the reference from your library, from every collection. It is cited in 2 projects, which keep a copy of it.',
+    );
+    expect(t('library-delete-many', { files: 1, projects: 1 })).toBe(
+      'This removes them from your library, from every collection, together with 1 attached file. A project that cites some of them keeps a copy of those.',
     );
   });
 

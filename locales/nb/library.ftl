@@ -204,18 +204,29 @@ library-delete-one = Referansen fjernes fra biblioteket ditt og fra alle samling
         [0] {""}
         [one] , sammen med { $files } vedlegg
        *[other] , sammen med { $files } vedlegg
-    }. Kildehenvisninger til den i prosjektene dine vil ikke lenger finne referansen sin.
+    }.{ $projects ->
+        [0] {""}
+        [one] {" "}Den er sitert i et prosjekt, som har en kopi av den.
+       *[other] {" "}Den er sitert i { $projects } prosjekter, som har en kopi av den.
+    }
 library-delete-many = Referansene fjernes fra biblioteket ditt og fra alle samlinger{ $files ->
         [0] {""}
         [one] , sammen med { $files } vedlegg
        *[other] , sammen med { $files } vedlegg
-    }. Kildehenvisninger til dem i prosjektene dine vil ikke lenger finne referansene sine.
+    }.{ $projects ->
+        [0] {""}
+        [one] {" "}Et prosjekt som siterer noen av dem, har en kopi av disse.
+       *[other] {" "}{ $projects } prosjekter som siterer noen av dem, har en kopi av disse.
+    }
 library-delete-failed = Referansene kunne ikke slettes
 library-not-done = Det lot seg ikke gjøre
 
 ## Samlinger.
 
 library-collections = Samlinger
+library-cited-in = Sitert i
+library-not-cited = Ikke sitert i noe prosjekt.
+library-cited-reading = Leser prosjektene …
 library-collections-hint = En samling holder referanser til et emne eller et arbeid. En referanse kan være med i så mange samlinger du vil.
 library-collection-new = Ny samling
 library-collection-new-inside = Ny samling inni

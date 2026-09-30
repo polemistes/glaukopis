@@ -38,6 +38,7 @@
   import { library } from '$lib/state/library.svelte';
   import { openProject, projects } from '$lib/state/projects.svelte';
   import { jumpFor } from '$lib/search/everything.svelte';
+  import { takeCitations } from '$lib/library/citing.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
   import { shortcuts } from '$lib/shell/keys.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -127,6 +128,8 @@
   let host = $state<ReturnType<typeof EditorHost>>();
   /** An element to show when a map is opened by a jump. */
   let reveal = $state<string | null>(null);
+  /** A reference to show at the references, with where it is cited, as the library asked. */
+  let citationsOf = $state<string | null>(null);
   let release: (() => void) | undefined;
   let shared = $state<ProjectSharing | null>(null);
   let showShare = $state(false);
@@ -194,6 +197,9 @@
       if (p.maps.length) arrange(p);
       // What was found through everything in what is written about a work is shown with the references.
       if (jumpFor(ownId)?.references) side('references', true);
+      // The library asked where a work is cited in this project.
+      citationsOf = takeCitations(ownId);
+      if (citationsOf) side('references', true);
       shared = new ProjectSharing(ownId, p, opened.info);
       pictures.open(ownId, () => p.usedPictures());
       void pictures.nameFrom(p.usedPictures());
@@ -394,6 +400,8 @@
   function show(map: string, options: { pane?: number; element?: string } = {}) {
     const i = options.pane ?? focused;
     if (!panes[i]) return;
+    // Set anew, so that an element asked for again is shown again.
+    reveal = null;
     reveal = options.element ?? null;
     panes[i] = { ...panes[i], map };
     focused = i;
@@ -934,7 +942,14 @@
               onopenmap={(id) => show(id)}
             />
           {:else}
-            <ReferencePanel {project} mapId={pane.map} head={tabs} onclose={closeSide} />
+            <ReferencePanel
+              {project}
+              mapId={pane.map}
+              head={tabs}
+              onclose={closeSide}
+              show={citationsOf}
+              ongo={(map, element) => show(map, { element })}
+            />
           {/if}
         </div>
       {/if}

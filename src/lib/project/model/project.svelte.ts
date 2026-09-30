@@ -92,6 +92,8 @@ export interface Summary {
   references: number;
   /** The pictures the project uses, by the names the store keeps them by. */
   pictures: string[];
+  /** The references the project cites, by their ids. */
+  cited: string[];
 }
 
 /** Someone else who has the project open. */
@@ -650,6 +652,7 @@ export class Project {
       words,
       references: references.size,
       pictures: this.usedPictures().map((p) => p.hash),
+      cited: [...references],
     };
   }
 
@@ -838,6 +841,23 @@ export class Project {
       for (const id of n.cited) out.add(id);
     }
     return [...out];
+  }
+
+  /**
+   * Where a reference is cited: the maps that cite it, in their order, each
+   * with the elements that do, in the order of the text.
+   */
+  citing(reference: string): { map: MapRecord; elements: NodeRecord[] }[] {
+    const out: { map: MapRecord; elements: NodeRecord[] }[] = [];
+    for (const map of this.maps) {
+      const elements: NodeRecord[] = [];
+      for (const id of this.tree(map.id).sequence) {
+        const n = this.nodes.get(id);
+        if (n?.cited.includes(reference)) elements.push(n);
+      }
+      if (elements.length) out.push({ map, elements });
+    }
+    return out;
   }
 
   /**

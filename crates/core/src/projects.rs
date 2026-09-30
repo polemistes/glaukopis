@@ -76,6 +76,11 @@ pub struct ProjectInfo {
     /// so that the store can say where a picture is used.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub pictures: Vec<String>,
+    /// The references the project cites, by their ids: so that the library
+    /// can say where a work is cited. Nothing for a project last saved
+    /// before this was kept.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cited: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sharing: Option<Sharing>,
     /// What the interface wants to find again: the map that was open, the view.
@@ -303,6 +308,7 @@ impl Projects {
                 info.words = s.words;
                 info.references = s.references;
                 info.pictures = s.pictures;
+                info.cited = s.cited;
                 if let Some(name) = s.name.filter(|n| !n.trim().is_empty()) {
                     info.name = name;
                 }
@@ -489,6 +495,8 @@ impl Projects {
         copy.maps = source.maps;
         copy.words = source.words;
         copy.references = source.references;
+        copy.pictures = source.pictures;
+        copy.cited = source.cited;
         Self::write_info(&to, &copy)?;
         Ok(copy)
     }
@@ -504,6 +512,8 @@ pub struct Summary {
     pub references: usize,
     /// The pictures of the figures, each by the name it is kept by.
     pub pictures: Vec<String>,
+    /// The references cited, each by its id.
+    pub cited: Option<Vec<String>>,
 }
 
 /// Earlier versions wrote every map as Markdown beside the project. Those
@@ -633,12 +643,17 @@ mod tests {
             name: Some("A better name".into()),
             maps: vec![MapInfo { id: "m".into(), name: "Map".into(), elements: 3 }],
             words: 120,
-            references: 4,
+            references: 2,
+            cited: Some(vec!["r1".into(), "r2".into()]),
             ..Default::default()
         };
+        assert_eq!(a.cited, None, "what a project cites is not known before it is saved");
         let info = p.save_state(&a.id, b"STATE", Some(summary)).unwrap();
         assert_eq!(info.name, "A better name");
         assert_eq!(info.maps[0].elements, 3);
+        assert_eq!(info.cited.as_deref(), Some(&["r1".to_owned(), "r2".to_owned()][..]));
+        let copy = p.duplicate(&a.id, "B").unwrap();
+        assert_eq!(copy.cited, info.cited, "a copy cites what the project did");
         let loaded = p.load(&a.id).unwrap();
         assert_eq!(loaded.state.as_deref(), Some(&b"STATE"[..]));
         assert!(loaded.updates.is_empty());

@@ -145,6 +145,21 @@ class Everything {
     this.done = true;
   }
 
+  /**
+   * The references a project cites, read as it is searched, without its
+   * being opened: for a project that did not say, when it was last saved.
+   */
+  async citedIn(info: ProjectInfo): Promise<string[]> {
+    this.#engine ??= new Engine();
+    await projects.closed(info.id);
+    if (this.#read.get(info.id) !== info.modified) {
+      const loaded = await projectLoad(info.id);
+      await this.#engine.read(info.id, info.name, loaded.state, loaded.updates);
+      this.#read.set(info.id, info.modified);
+    }
+    return this.#engine.cited(info.id);
+  }
+
   /** Opens what was found where it stands. */
   go(project: ProjectFound, found: Found) {
     const text = found.where === 'text';

@@ -119,7 +119,10 @@ const desk = mkdtempSync(join(tmpdir(), 'glaukopis-e2e-desk-'));
 writeFileSync(join(desk, 'shield.png'), png(480, 300));
 writeFileSync(join(desk, 'wrath.md'), WRITTEN);
 writeFileSync(join(desk, 'broken.docx'), 'This only says that it is one.');
-writeFileSync(join(desk, 'lines.txt'), 'A line of plain text.\n\nAnd another, after an empty line.\n');
+writeFileSync(
+  join(desk, 'lines.txt'),
+  'A line of plain text.\n\nAnd another, after an empty line.\n',
+);
 let pandoc = true;
 try {
   execFileSync('pandoc', ['wrath.md', '-o', 'wrath.docx'], { cwd: desk });
@@ -146,7 +149,11 @@ const app = await App.launch({ width: 1360, height: 900 });
 try {
   await app.installErrorHook();
   const invoke = (command, args = {}) =>
-    app.execAsync(`return await window.__TAURI_INTERNALS__.invoke(arguments[0], arguments[1]);`, command, args);
+    app.execAsync(
+      `return await window.__TAURI_INTERNALS__.invoke(arguments[0], arguments[1]);`,
+      command,
+      args,
+    );
   const drop = (paths, x, y) =>
     app.execAsync(
       `const emit = (event, payload) => window.__TAURI_INTERNALS__.invoke('plugin:event|emit', { event, payload });
@@ -169,7 +176,9 @@ try {
     await drop([join(desk, file)], at.x, at.y);
   };
   const tabs = () =>
-    app.exec(`return Array.from(document.querySelectorAll('.tabs .tab .name')).map((e) => e.textContent.trim())`);
+    app.exec(
+      `return Array.from(document.querySelectorAll('.tabs .tab .name')).map((e) => e.textContent.trim())`,
+    );
   const facts = () =>
     app.exec(
       `const out = {};
@@ -178,7 +187,9 @@ try {
        return out;`,
     );
   const remarks = () =>
-    app.exec(`return Array.from(document.querySelectorAll('dialog .remarks li')).map((e) => e.textContent.trim())`);
+    app.exec(
+      `return Array.from(document.querySelectorAll('dialog .remarks li')).map((e) => e.textContent.trim())`,
+    );
   /** The parts of the text of the map: the level of each with its name. */
   const parts = () =>
     app.exec(
@@ -205,7 +216,9 @@ try {
   check(
     'where a project is begun, one can be made from a document',
     (await app.count('.welcome button.quiet')) === 2 &&
-      /from a document/.test(await app.exec(`return document.querySelector('.welcome').textContent`)),
+      /from a document/.test(
+        await app.exec(`return document.querySelector('.welcome').textContent`),
+      ),
   );
 
   await app.clickText('button', 'Begin a project');
@@ -214,7 +227,10 @@ try {
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
-  check('beside the tabs of the maps, a map can be made from a document', await app.exists('.tabs button[aria-label="A map from a document…"]'));
+  check(
+    'beside the tabs of the maps, a map can be made from a document',
+    await app.exists('.tabs button[aria-label="A map from a document…"]'),
+  );
 
   // ---- a file that cannot be read ----
   if (pandoc) {
@@ -222,7 +238,11 @@ try {
     const said = await until('the failure to be said', async () =>
       (await app.exists('dialog .failure')) ? app.text('dialog .failure') : null,
     );
-    check('a file that cannot be read is said to be so, in words', /could not be read as Word \(DOCX\)/.test(said), said);
+    check(
+      'a file that cannot be read is said to be so, in words',
+      /could not be read as Word \(DOCX\)/.test(said),
+      said,
+    );
     await app.screenshot('documents-1-failure');
     await app.clickText('dialog footer button', 'Close');
     await app.waitGone('dialog[open]');
@@ -233,13 +253,21 @@ try {
   await dropOnProject('wrath.md');
   await app.waitFor('dialog [data-fact="words"]', 15000);
   await sleep(200);
-  check('a document dropped on the project is read', (await app.text('dialog h2, dialog .title, dialog header')).includes('A map from a document'));
+  check(
+    'a document dropped on the project is read',
+    (await app.text('dialog h2, dialog .title, dialog header')).includes('A map from a document'),
+  );
   const title = await app.exec(`return document.querySelector('dialog input').value`);
   check('its title is shown, to be changed', title === 'The wrath of Achilles', title);
   const found = await facts();
   check(
     'what it holds is counted',
-    found.parts === '6' && found.notes === '1' && found.figures === '1' && found.tables === '1' && found.equations === '1' && Number(found.words) > 50,
+    found.parts === '6' &&
+      found.notes === '1' &&
+      found.figures === '1' &&
+      found.tables === '1' &&
+      found.equations === '1' &&
+      Number(found.words) > 50,
     JSON.stringify(found),
   );
   check(
@@ -250,11 +278,22 @@ try {
   const told = await remarks();
   check(
     'the citation by a key that the library has not is said to be found, and that it can be gone through',
-    told.some((r) => /^1 citation was found that is not yet tied to a reference of your library\. .* can be gone through/.test(r)),
+    told.some((r) =>
+      /^1 citation was found that is not yet tied to a reference of your library\. .* can be gone through/.test(
+        r,
+      ),
+    ),
     told.join(' ‖ '),
   );
-  check('the list of references of the document is said to be there', told.some((r) => /under “References”/.test(r)));
-  check('nothing is said in the words of programs', told.every((r) => !/pandoc|json|ast\b/i.test(r)), told.join(' ‖ '));
+  check(
+    'the list of references of the document is said to be there',
+    told.some((r) => /under “References”/.test(r)),
+  );
+  check(
+    'nothing is said in the words of programs',
+    told.every((r) => !/pandoc|json|ast\b/i.test(r)),
+    told.join(' ‖ '),
+  );
   await app.screenshot('documents-2-read');
   check('its picture is in the store meanwhile', files().length === 1, files().join(', '));
   await app.clickText('dialog footer button', 'Cancel');
@@ -275,16 +314,26 @@ try {
   const through = await app.exec(
     `return Array.from(document.querySelectorAll('dialog .found-window .list [role="option"], dialog .found-window .list button, dialog .found-window .list li')).map((e) => e.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean)`,
   );
-  check('the citations that were found are there to be gone through', through.some((t) => t.includes('[@nokey, 12]')), JSON.stringify(through));
+  check(
+    'the citations that were found are there to be gone through',
+    through.some((t) => t.includes('[@nokey, 12]')),
+    JSON.stringify(through),
+  );
   await app.screenshot('documents-2-found');
   await app.press('Escape');
   await app.waitGone('dialog[open]', 15000);
   await app.waitFor('.text-view .section', 8000);
   await sleep(600);
-  check('the map is made, beside the one that was there', JSON.stringify(await tabs()) === '["Homer","The wrath of Achilles"]', JSON.stringify(await tabs()));
+  check(
+    'the map is made, beside the one that was there',
+    JSON.stringify(await tabs()) === '["Homer","The wrath of Achilles"]',
+    JSON.stringify(await tabs()),
+  );
   check(
     'and shown',
-    (await app.exec(`return document.querySelector('.tabs .tab.current .name').textContent.trim()`)) === 'The wrath of Achilles',
+    (await app.exec(
+      `return document.querySelector('.tabs .tab.current .name').textContent.trim()`,
+    )) === 'The wrath of Achilles',
   );
   const order = await parts();
   check(
@@ -303,11 +352,24 @@ try {
   );
   check(
     'the title has the marks it had',
-    (await app.exec(`const e = document.querySelector('.text-view .section.level-0 .heading .prose.title em'); return e ? e.textContent : null`)) === 'Achilles',
+    (await app.exec(
+      `const e = document.querySelector('.text-view .section.level-0 .heading .prose.title em'); return e ? e.textContent : null`,
+    )) === 'Achilles',
   );
-  const centre = await app.exec(`return ${section('The wrath of Achilles')}.querySelector('.prose.body').textContent`);
-  check('what stood before the first heading is the text of the centre', /^What stands before the first heading, with a note\./.test(centre), centre);
-  check('with its note', (await app.exec(`return ${section('The wrath of Achilles')}.querySelectorAll('.prose.body .footnote').length`)) === 1);
+  const centre = await app.exec(
+    `return ${section('The wrath of Achilles')}.querySelector('.prose.body').textContent`,
+  );
+  check(
+    'what stood before the first heading is the text of the centre',
+    /^What stands before the first heading, with a note\./.test(centre),
+    centre,
+  );
+  check(
+    'with its note',
+    (await app.exec(
+      `return ${section('The wrath of Achilles')}.querySelectorAll('.prose.body .footnote').length`,
+    )) === 1,
+  );
 
   const word = await app.exec(
     `const s = ${section('The word')}.querySelector('.prose.body');
@@ -324,12 +386,39 @@ try {
        found: Array.from(s.querySelectorAll('.found')).map((e) => [e.dataset.by, e.textContent]),
      };`,
   );
-  check('the citation whose key is in the library is a citation of that work', word.citations === 1 && /Nagy/.test(word.citation) && /73/.test(word.citation) && word.missing === false, JSON.stringify(word));
-  check('the one whose key is not stays the text it was written as', word.text.includes('as [@nokey, 12] does not say'), word.text);
-  check('and is marked as a citation that was found, by its tag', JSON.stringify(word.found) === '[["key","[@nokey, 12]"]]', JSON.stringify(word.found));
-  check('the formula is a formula, in the line and by itself', word.math === 1 && word.equation === 1, JSON.stringify(word));
-  check('the quotation is a quotation', word.quote === 'Sing, goddess, the wrath.', String(word.quote));
-  check('the list is a list', JSON.stringify(word.items) === '["of gods","of heroes"]', JSON.stringify(word.items));
+  check(
+    'the citation whose key is in the library is a citation of that work',
+    word.citations === 1 &&
+      /Nagy/.test(word.citation) &&
+      /73/.test(word.citation) &&
+      word.missing === false,
+    JSON.stringify(word),
+  );
+  check(
+    'the one whose key is not stays the text it was written as',
+    word.text.includes('as [@nokey, 12] does not say'),
+    word.text,
+  );
+  check(
+    'and is marked as a citation that was found, by its tag',
+    JSON.stringify(word.found) === '[["key","[@nokey, 12]"]]',
+    JSON.stringify(word.found),
+  );
+  check(
+    'the formula is a formula, in the line and by itself',
+    word.math === 1 && word.equation === 1,
+    JSON.stringify(word),
+  );
+  check(
+    'the quotation is a quotation',
+    word.quote === 'Sing, goddess, the wrath.',
+    String(word.quote),
+  );
+  check(
+    'the list is a list',
+    JSON.stringify(word.items) === '["of gods","of heroes"]',
+    JSON.stringify(word.items),
+  );
 
   const table = await app.exec(
     `const s = ${section('Its forms')}.querySelector('.prose.body');
@@ -341,7 +430,9 @@ try {
   );
   check(
     'the table is a table, with its headings and what is said of it',
-    table.said === 'Forms of the word' && JSON.stringify(table.heads) === '["Form","Lines"]' && JSON.stringify(table.cells) === '["mênis","12","kotos","7"]',
+    table.said === 'Forms of the word' &&
+      JSON.stringify(table.heads) === '["Form","Lines"]' &&
+      JSON.stringify(table.cells) === '["mênis","12","kotos","7"]',
     JSON.stringify(table),
   );
   await until('the picture of the figure', () =>
@@ -354,8 +445,16 @@ try {
     `const f = ${section('In the Iliad')}.querySelector('figure.figure');
      return { said: f.querySelector('figcaption').textContent, width: f.querySelector('.picture').style.width };`,
   );
-  check('the figure is there with its picture, as wide as the document says', figure.said === 'The shield of Achilles' && figure.width === '50%', JSON.stringify(figure));
-  check('the picture is in the store, once', files().length === 1 && /^[0-9a-f]{64}\.png$/.test(files()[0]), files().join(', '));
+  check(
+    'the figure is there with its picture, as wide as the document says',
+    figure.said === 'The shield of Achilles' && figure.width === '50%',
+    JSON.stringify(figure),
+  );
+  check(
+    'the picture is in the store, once',
+    files().length === 1 && /^[0-9a-f]{64}\.png$/.test(files()[0]),
+    files().join(', '),
+  );
   await app.screenshot('documents-3-text');
   await app.exec(`${section('Its forms')}.scrollIntoView({ block: 'start' })`);
   await sleep(500);
@@ -366,7 +465,44 @@ try {
   await app.waitFor('.side', 5000);
   await sleep(500);
   const references = await app.exec(`return document.querySelector('.side').textContent`);
-  check('the work that is cited is among the references of the map', /Nagy/.test(references) && /Best of the/.test(references), references.slice(0, 200));
+  check(
+    'the work that is cited is among the references of the map',
+    /Nagy/.test(references) && /Best of the/.test(references),
+    references.slice(0, 200),
+  );
+
+  // Where a work is cited is shown when it is chosen, and gone to with a click.
+  const citedIn = () =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('.side .cited .map')).map((m) =>
+         m.querySelector('.map-name').textContent.trim() + ': ' +
+         Array.from(m.querySelectorAll('.element')).map((e) => e.textContent.trim()).join(', '))`,
+    );
+  await app.click(await app.findByText('.side [role="option"]', 'Nagy'));
+  await app.waitFor('.side .cited .element', 5000);
+  check(
+    'where a chosen work is cited is shown, by map and element',
+    JSON.stringify(await citedIn()) === '["The wrath of Achilles: The word"]',
+    JSON.stringify(await citedIn()),
+  );
+  await app.exec(
+    `const s = document.querySelector('.text-view .scroller'); s.scrollTop = s.scrollHeight;`,
+  );
+  await sleep(300);
+  await app.click(await app.findByText('.side .cited .element', 'The word'));
+  await sleep(600);
+  const offset = await app.exec(
+    `const s = document.querySelector('.text-view .scroller');
+     const section = ${section('The word')};
+     return Math.round(section.getBoundingClientRect().top - s.getBoundingClientRect().top);`,
+  );
+  // The text keeps some room above what it goes to (scroll-padding).
+  check(
+    'and a click goes to the element',
+    offset >= 0 && offset <= 120,
+    `${offset} px from the top`,
+  );
+  await app.screenshot('documents-4b-cited-in');
   await app.keys(['Control', 'Shift', 'r']);
   await sleep(200);
 
@@ -381,7 +517,15 @@ try {
   check(
     'the diagram has the elements, each as deep as its heading',
     JSON.stringify(nodes) ===
-      JSON.stringify(['0 The wrath of Achilles', '1 References', '1 The hero', '1 The word', '2 In the Iliad', '2 Its forms', '2 Its kin']),
+      JSON.stringify([
+        '0 The wrath of Achilles',
+        '1 References',
+        '1 The hero',
+        '1 The word',
+        '2 In the Iliad',
+        '2 Its forms',
+        '2 Its kin',
+      ]),
     JSON.stringify(nodes),
   );
   await app.screenshot('documents-5-diagram');
@@ -389,11 +533,19 @@ try {
   // ---- undo takes the whole map back ----
   await app.click('header button[aria-label^="Undo"]');
   await sleep(500);
-  check('undo takes the whole map back, in one step', JSON.stringify(await tabs()) === '["Homer"]', JSON.stringify(await tabs()));
+  check(
+    'undo takes the whole map back, in one step',
+    JSON.stringify(await tabs()) === '["Homer"]',
+    JSON.stringify(await tabs()),
+  );
   check('and what is shown is the map that is left', await app.exists('.diagram .node.root'));
   await app.click('header button[aria-label^="Redo"]');
   await sleep(500);
-  check('redo makes it again', JSON.stringify(await tabs()) === '["Homer","The wrath of Achilles"]', JSON.stringify(await tabs()));
+  check(
+    'redo makes it again',
+    JSON.stringify(await tabs()) === '["Homer","The wrath of Achilles"]',
+    JSON.stringify(await tabs()),
+  );
   await app.screenshot('documents-6-again');
 
   // ---- the same from Word ----
@@ -406,7 +558,11 @@ try {
     const counted = await facts();
     check(
       'and holds the same',
-      counted.parts === '6' && counted.notes === '1' && counted.figures === '1' && counted.tables === '1' && counted.cited === undefined,
+      counted.parts === '6' &&
+        counted.notes === '1' &&
+        counted.figures === '1' &&
+        counted.tables === '1' &&
+        counted.cited === undefined,
       JSON.stringify(counted),
     );
     await app.exec(
@@ -420,12 +576,24 @@ try {
     await app.waitGone('dialog[open]', 15000);
     await app.waitFor('.text-view .section', 8000);
     await sleep(600);
-    check('the map has the title it was given', JSON.stringify(await tabs()) === '["Homer","The wrath of Achilles","The wrath, from Word"]', JSON.stringify(await tabs()));
+    check(
+      'the map has the title it was given',
+      JSON.stringify(await tabs()) === '["Homer","The wrath of Achilles","The wrath, from Word"]',
+      JSON.stringify(await tabs()),
+    );
     const again = await parts();
     check(
       'and the same parts',
       JSON.stringify(again) ===
-        JSON.stringify(['0 The wrath, from Word', '1 The word', '2 Its forms', '3 In the Iliad', '2 Its kin', '1 The hero', '1 References']),
+        JSON.stringify([
+          '0 The wrath, from Word',
+          '1 The word',
+          '2 Its forms',
+          '3 In the Iliad',
+          '2 Its kin',
+          '1 The hero',
+          '1 References',
+        ]),
       JSON.stringify(again),
     );
     const held = await app.exec(
@@ -439,12 +607,29 @@ try {
          text: ${section('The word')}.querySelector('.prose.body').textContent.replace(/\\s+/g, ' '),
        };`,
     );
-    check('with the note, the table and the figure', held.notes === 1 && held.tables === 1 && held.figures === 1 && JSON.stringify(held.cells) === '["mênis","12","kotos","7"]', JSON.stringify(held));
-    check('citations that are text in the file stay text', held.citations === 0 && held.text.includes('[@nagy1979, 73]'), held.text);
-    await until('the picture of the figure from Word', () =>
-      app.exec(`const i = document.querySelector('.text-view figure.figure img[src^="blob:"]'); return !!i && i.complete && i.naturalWidth > 0;`),
+    check(
+      'with the note, the table and the figure',
+      held.notes === 1 &&
+        held.tables === 1 &&
+        held.figures === 1 &&
+        JSON.stringify(held.cells) === '["mênis","12","kotos","7"]',
+      JSON.stringify(held),
     );
-    check('the picture that was in the file is in the store', files().length >= 1, files().join(', '));
+    check(
+      'citations that are text in the file stay text',
+      held.citations === 0 && held.text.includes('[@nagy1979, 73]'),
+      held.text,
+    );
+    await until('the picture of the figure from Word', () =>
+      app.exec(
+        `const i = document.querySelector('.text-view figure.figure img[src^="blob:"]'); return !!i && i.complete && i.naturalWidth > 0;`,
+      ),
+    );
+    check(
+      'the picture that was in the file is in the store',
+      files().length >= 1,
+      files().join(', '),
+    );
     await app.screenshot('documents-8-word-text');
   } else {
     console.log('Pandoc is not installed: the document from Word is passed over');
@@ -454,7 +639,10 @@ try {
   await dropOnProject('lines.txt');
   await app.waitFor('dialog [data-fact="words"]', 15000);
   await sleep(200);
-  check('text without marks is a document, called what the file is called', (await app.exec(`return document.querySelector('dialog input').value`)) === 'lines');
+  check(
+    'text without marks is a document, called what the file is called',
+    (await app.exec(`return document.querySelector('dialog input').value`)) === 'lines',
+  );
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]');
 
@@ -467,7 +655,11 @@ try {
   await app.waitFor('dialog [data-fact="words"]', 60000);
   const read = Date.now() - began;
   const long = await facts();
-  check('a long document is read', long.parts === '60' && long.notes === '200' && /cited 200 times/.test(long.cited), JSON.stringify(long));
+  check(
+    'a long document is read',
+    long.parts === '60' && long.notes === '200' && /cited 200 times/.test(long.cited),
+    JSON.stringify(long),
+  );
   // How long the window stands still is how long nothing else gets its turn.
   await app.exec(
     `window.__still = 0; window.__last = performance.now();
@@ -483,22 +675,35 @@ try {
   const made = Date.now() - clicked;
   await until(
     'the long document to be shown',
-    () => app.exec(`const n = document.querySelector('.text-view .section.level-0 .heading .prose.title'); return !!n && n.textContent.trim() === 'A long book'`),
+    () =>
+      app.exec(
+        `const n = document.querySelector('.text-view .section.level-0 .heading .prose.title'); return !!n && n.textContent.trim() === 'A long book'`,
+      ),
     30000,
   );
   const shown = Date.now() - clicked;
   // To its end, so that all of it has been drawn.
   await sleep(500);
-  await app.exec(`const s = Array.from(document.querySelectorAll('.text-view .section')).pop(); s.scrollIntoView({ block: 'end' });`);
+  await app.exec(
+    `const s = Array.from(document.querySelectorAll('.text-view .section')).pop(); s.scrollIntoView({ block: 'end' });`,
+  );
   await sleep(1500);
   const drawn = await app.exec(
     `return { parts: document.querySelectorAll('.text-view .section').length, paragraphs: document.querySelectorAll('.text-view .prose.body p').length }`,
   );
   const still = Math.round(await app.exec(`clearInterval(window.__probe); return window.__still;`));
-  console.log(`      a document of 2000 paragraphs under 60 headings: read in ${read} ms, the map made in ${made} ms, shown after ${shown} ms (${drawn.parts} parts and ${drawn.paragraphs} paragraphs drawn); the window stood still for ${still} ms at the most`);
-  await app.exec(`document.querySelector('.text-view .section').scrollIntoView({ block: 'start' });`);
+  console.log(
+    `      a document of 2000 paragraphs under 60 headings: read in ${read} ms, the map made in ${made} ms, shown after ${shown} ms (${drawn.parts} parts and ${drawn.paragraphs} paragraphs drawn); the window stood still for ${still} ms at the most`,
+  );
+  await app.exec(
+    `document.querySelector('.text-view .section').scrollIntoView({ block: 'start' });`,
+  );
   await sleep(300);
-  check('the map of it is made without the window standing still for long', still < 4000, `${still} ms`);
+  check(
+    'the map of it is made without the window standing still for long',
+    still < 4000,
+    `${still} ms`,
+  );
   const elements = await app.execAsync(
     `const list = await window.__TAURI_INTERNALS__.invoke('project_list');
      return list[0].maps;`,
@@ -506,8 +711,14 @@ try {
   await app.screenshot('documents-10-long');
   await app.click('header button[aria-label^="Undo"]');
   await sleep(800);
-  check('and taken back as one', !(await tabs()).includes('A long book'), JSON.stringify(await tabs()));
-  console.log(`      the maps of the project, as they were last written: ${JSON.stringify(elements)}`);
+  check(
+    'and taken back as one',
+    !(await tabs()).includes('A long book'),
+    JSON.stringify(await tabs()),
+  );
+  console.log(
+    `      the maps of the project, as they were last written: ${JSON.stringify(elements)}`,
+  );
 
   // ---- while a file is read, the reading can be stopped ----
   await dropOnProject('long.md');
@@ -515,33 +726,100 @@ try {
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]');
   await sleep(1500);
-  check('stopped while it is read, nothing comes of it', !(await app.exists('dialog[open]')) && !(await tabs()).includes('A long book'));
+  check(
+    'stopped while it is read, nothing comes of it',
+    !(await app.exists('dialog[open]')) && !(await tabs()).includes('A long book'),
+  );
 
   // ---- a project from a document ----
   await app.click('header button[aria-label="All projects"]');
   await app.waitForText('h1', 'Projects');
   await sleep(400);
-  check('where projects are made, one can be made from a document', await app.exec(`return Array.from(document.querySelectorAll('.home header button')).some((b) => b.textContent.includes('A project from a document…'))`));
+  check(
+    'where projects are made, one can be made from a document',
+    await app.exec(
+      `return Array.from(document.querySelectorAll('.home header button')).some((b) => b.textContent.includes('A project from a document…'))`,
+    ),
+  );
   // The dialog that asks for a file cannot be driven: the file is dropped among the projects.
   const among = await middleOf('.home');
   await drop([join(desk, 'wrath.md')], among.x, among.y);
   await app.waitFor('dialog [data-fact="words"]', 15000);
   await sleep(200);
-  check('among the projects, a document is read likewise', (await app.exec(`return document.querySelector('dialog').textContent`)).includes('A project from a document'));
+  check(
+    'among the projects, a document is read likewise',
+    (await app.exec(`return document.querySelector('dialog').textContent`)).includes(
+      'A project from a document',
+    ),
+  );
   await app.screenshot('documents-11-project');
   await app.clickText('dialog footer button', 'Make the project');
   await app.waitFor('.text-view .section', 15000);
   await sleep(600);
-  const named = await app.exec(`return document.querySelector('.project header .name').textContent.trim()`);
+  const named = await app.exec(
+    `return document.querySelector('.project header .name').textContent.trim()`,
+  );
   check('the project is named after the document', named === 'The wrath of Achilles', named);
-  check('and has the document as its map, and no other', JSON.stringify(await tabs()) === '["The wrath of Achilles"]', JSON.stringify(await tabs()));
+  check(
+    'and has the document as its map, and no other',
+    JSON.stringify(await tabs()) === '["The wrath of Achilles"]',
+    JSON.stringify(await tabs()),
+  );
   check('with its parts', (await parts()).length === 7, JSON.stringify(await parts()));
-  check('there is nothing to take back: the project begins with it', (await app.exec(`return document.querySelector('header button[aria-label^="Undo"]').disabled`)) === true);
+  check(
+    'there is nothing to take back: the project begins with it',
+    (await app.exec(
+      `return document.querySelector('header button[aria-label^="Undo"]').disabled`,
+    )) === true,
+  );
   await app.screenshot('documents-12-project-made');
   const listed = await invoke('project_list');
-  check('it is among the projects', listed.some((p) => p.name === 'The wrath of Achilles' && p.maps.length === 1 && p.maps[0].elements === 7), JSON.stringify(listed.map((p) => [p.name, p.maps])));
+  check(
+    'it is among the projects',
+    listed.some(
+      (p) => p.name === 'The wrath of Achilles' && p.maps.length === 1 && p.maps[0].elements === 7,
+    ),
+    JSON.stringify(listed.map((p) => [p.name, p.maps])),
+  );
 
-  const errors = (await app.pageErrors()).filter((e) => !/could not be read as Word|The reading was stopped/.test(e));
+  // ---- from the library, where a work is cited ----
+  // The citations of the new project that were found are left to be gone through later.
+  if (await app.exists('dialog[open]')) {
+    await app.press('Escape');
+    await app.waitGone('dialog[open]', 15000);
+  }
+  await app.click('nav.rail a[aria-label="Library"]');
+  await app.waitFor('[role="option"]', 8000);
+  await app.click(await app.findByText('[role="option"]', 'Nagy'));
+  await app.waitFor('.pane .cited .citer', 8000);
+  const citers = await app.exec(
+    `return Array.from(document.querySelectorAll('.pane .cited .citer')).map((b) => b.textContent.trim()).sort()`,
+  );
+  check(
+    'the library says which projects cite a work',
+    JSON.stringify(citers) === '["Homer","The wrath of Achilles"]',
+    JSON.stringify(citers),
+  );
+  await app.screenshot('documents-13-library-cited-in');
+  await app.click(await app.findByText('.pane .cited .citer', 'Homer'));
+  await app.waitFor('.side .cited .element', 10000);
+  check(
+    'and a click opens the project at the work, with where it is cited',
+    JSON.stringify(await citedIn()) === '["The wrath of Achilles: The word"]',
+    JSON.stringify(await citedIn()),
+  );
+  check(
+    'the work is the one chosen there',
+    /Nagy/.test(
+      await app.exec(
+        `return document.querySelector('.side [role="option"][aria-selected="true"]')?.textContent ?? ''`,
+      ),
+    ),
+  );
+
+  const errors = (await app.pageErrors()).filter(
+    (e) => !/could not be read as Word|The reading was stopped/.test(e),
+  );
   check('no errors in the window', errors.length === 0, errors.join(' ‖ '));
 } catch (error) {
   console.error(error);

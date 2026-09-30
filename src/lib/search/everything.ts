@@ -326,6 +326,17 @@ export function around(
   ];
 }
 
+/** The references a project cites, each once, as its texts have them. */
+export function citedIn(project: ProjectRead): string[] {
+  const out = new Set<string>();
+  for (const map of project.maps) {
+    for (const element of map.elements) {
+      for (const id of bodyFacts(element.blocks).cited) out.add(id);
+    }
+  }
+  return [...out];
+}
+
 /**
  * Searches a project. What is found is counted all; so many of it are kept,
  * with the words around them, in the order of the maps and their texts.

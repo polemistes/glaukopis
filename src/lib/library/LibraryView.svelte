@@ -42,6 +42,7 @@
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
+  import { citing } from './citing.svelte';
   import CollectionTree from './CollectionTree.svelte';
   import ReferenceList from './ReferenceList.svelte';
   import ReferencePane from './ReferencePane.svelte';
@@ -116,11 +117,14 @@
     if (!entries.length) return;
     const one = entries.length === 1 ? entries[0] : null;
     const files = entries.reduce((n, e) => n + e.attachments, 0);
+    const projects = citing.count(entries.map((e) => e.id));
     const ok = await confirm({
       title: one
         ? t('library-delete-one-title', { name: one.title || one.key })
         : t('library-delete-many-title', { count: entries.length }),
-      message: one ? t('library-delete-one', { files }) : t('library-delete-many', { files }),
+      message: one
+        ? t('library-delete-one', { files, projects })
+        : t('library-delete-many', { files, projects }),
       confirm: t('common-delete'),
       danger: true,
     });

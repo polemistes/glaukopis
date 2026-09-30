@@ -4,7 +4,7 @@
  * read of a project is kept until it is read anew. See `everything.ts`.
  */
 
-import { readProject, searchProject, type ProjectRead } from './everything';
+import { citedIn, readProject, searchProject, type ProjectRead } from './everything';
 import type { Asked, Answer } from './engine';
 
 const read = new Map<string, ProjectRead>();
@@ -23,6 +23,9 @@ self.onmessage = (event: MessageEvent<Asked>) => {
       const project = read.get(asked.id);
       const result = project ? searchProject(project, asked.words, asked.options) : null;
       answer({ kind: 'found', ask: asked.ask, result });
+    } else if (asked.kind === 'cited') {
+      const project = read.get(asked.id);
+      answer({ kind: 'cited', ask: asked.ask, ids: project ? citedIn(project) : [] });
     } else if (asked.kind === 'forget') {
       read.delete(asked.id);
       answer({ kind: 'read', ask: asked.ask });

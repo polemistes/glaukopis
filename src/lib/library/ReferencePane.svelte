@@ -1,6 +1,6 @@
 <script lang="ts">
   import { open } from '@tauri-apps/plugin-dialog';
-  import { untrack } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import Check from '@lucide/svelte/icons/check';
   import Code from '@lucide/svelte/icons/code';
   import Copy from '@lucide/svelte/icons/copy';
@@ -37,6 +37,7 @@
   import { openMenu } from '$lib/ui/menu.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
+  import { citing, showCitations } from './citing.svelte';
   import { dateWords, fileSize } from './format';
   import { toLines, withNoteAsItIs } from './notes.svelte';
   import ReferenceForm from './ReferenceForm.svelte';
@@ -51,6 +52,10 @@
   }
 
   let { id, ondelete, onduplicate, onclose }: Props = $props();
+
+  /** The projects that cite the work; those that did not say are read once. */
+  const citers = $derived(citing.of(id));
+  onMount(() => void citing.fill());
 
   let reference = $state<Reference | null>(null);
   let draft = $state<Draft | null>(null);
@@ -413,6 +418,25 @@
         </section>
       {/if}
 
+      <section class="cited">
+        <div class="section-head"><h3 class="overline">{t('library-cited-in')}</h3></div>
+        {#each citers as project (project.id)}
+          <button
+            type="button"
+            class="citer"
+            data-project={project.id}
+            onclick={() => showCitations(project.id, id)}
+          >
+            <FolderOpen size={14} strokeWidth={1.6} />
+            <span class="name truncate">{project.name}</span>
+          </button>
+        {:else}
+          <p class="none">
+            {citing.reading ? t('library-cited-reading') : t('library-not-cited')}
+          </p>
+        {/each}
+      </section>
+
       <p class="dates">
         {#if reference.modified.slice(0, 10) !== reference.added.slice(0, 10)}
           {t('library-pane-added-changed', {
@@ -618,6 +642,26 @@
   .chip button:hover {
     background: var(--paper-hover);
     color: var(--ink);
+  }
+  .citer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 30px;
+    padding: 0 8px;
+    border: none;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--accent-strong);
+    text-align: left;
+    cursor: pointer;
+  }
+  .citer:hover {
+    background: var(--paper-hover);
+  }
+  .citer:hover .name {
+    text-decoration: underline;
   }
   .dates {
     margin-left: 14px;

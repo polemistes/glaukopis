@@ -212,6 +212,19 @@ describe('references', () => {
     expect(p.usedReferences(other).sort()).toEqual(['nagy', 'west']);
     expect(p.usedReferences().sort()).toEqual(['lord', 'nagy', 'west']);
     expect(p.summary().references).toBe(3);
+    expect(p.summary().cited.sort()).toEqual(['lord', 'nagy', 'west']);
+
+    // Where each is cited: the maps in their order, the elements in the order of the text.
+    const c = p.addChild(root, { title: 'C' })!;
+    p.cite(c, ['nagy']);
+    const where = (ref: string) =>
+      p.citing(ref).map((m) => [m.map.name, ...m.elements.map((e) => e.title)]);
+    expect(where('nagy')).toEqual([
+      [p.map(map)!.name, 'A', 'C'],
+      ['Article', 'B'],
+    ]);
+    expect(where('west')).toEqual([['Article', 'B']]);
+    expect(where('homer')).toEqual([]);
 
     // Cited after the text that is there, with a space between; in a text of its own where there is none.
     const body = p.fragment(a, 'body')!.toString();
@@ -426,6 +439,7 @@ describe('saving', () => {
       words: 4,
       references: 0,
       pictures: [],
+      cited: [],
     });
     p.setTitle(a, 'A, renamed');
     await p.flush();

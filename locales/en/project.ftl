@@ -167,6 +167,8 @@ project-library-empty = Your library is empty
 project-library-empty-hint = Add a reference, or import those you have.
 project-no-references = No references yet
 project-no-references-hint = What you cite while writing is listed here. To cite, choose Cite over the text, or type @.
+project-cited-in-heading = Cited in
+project-not-cited = Not cited in this project.
 project-references-drag = Drag a reference into a text to cite it there, or onto an element to cite it at the end of its text.
 # The count is of the references the project cites that the library lacks.
 project-references-foreign = { $count ->

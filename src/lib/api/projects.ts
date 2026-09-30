@@ -28,6 +28,11 @@ export interface ProjectInfo {
   references: number;
   /** The pictures the project uses, by the names the store keeps them by. */
   pictures?: string[];
+  /**
+   * The references the project cites, by their ids. Not there for a project
+   * last saved before this was kept.
+   */
+  cited?: string[];
   sharing?: Sharing;
   view?: unknown;
 }
@@ -38,6 +43,7 @@ export interface ProjectSummary {
   words: number;
   references: number;
   pictures?: string[];
+  cited?: string[];
 }
 
 export interface LoadedProject {
