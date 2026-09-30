@@ -287,7 +287,7 @@ mod tests {
     fn poppler_draws_a_page_as_hayro_does() {
         let tools = tools::discover(&tools::Configured::default());
         let Some(pdftoppm) = tools.pdftoppm else {
-            eprintln!("Poppler is not installed; the test is passed over");
+            crate::testing::passed_over("Poppler is not installed");
             return;
         };
         let tmp = tempfile::tempdir().unwrap();

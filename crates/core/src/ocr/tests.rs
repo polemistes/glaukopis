@@ -34,11 +34,11 @@ struct Kit {
 fn kit(reading: bool) -> Option<Kit> {
     let tools = discover(&Configured::default());
     let Some(typst) = crate::export::tools::find("typst", None, &[]) else {
-        eprintln!("Typst is not installed; the test is passed over");
+        crate::testing::passed_over("The program Typst is not installed");
         return None;
     };
     if reading && (tools.tesseract.is_none() || !tools.ocr_languages.iter().any(|l| l == "eng")) {
-        eprintln!("Tesseract with English is not installed; the test is passed over");
+        crate::testing::passed_over("Tesseract with English is not installed");
         return None;
     }
     Some(Kit { tmp: tempfile::tempdir().unwrap(), tools, typst })

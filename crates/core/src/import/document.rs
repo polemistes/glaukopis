@@ -2938,7 +2938,7 @@ mod tests {
     fn setup() -> Option<Setup> {
         let tools = tools::discover(&tools::Configured::default());
         if tools.pandoc.is_none() {
-            eprintln!("Pandoc is not installed; the test is passed over");
+            crate::testing::passed_over("Pandoc is not installed");
             return None;
         }
         let tmp = tempfile::tempdir().unwrap();

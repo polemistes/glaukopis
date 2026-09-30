@@ -25,5 +25,7 @@ pub mod settings;
 pub mod sharing;
 pub mod spelling;
 pub mod styles;
+#[cfg(test)]
+pub(crate) mod testing;
 
 pub use error::{Error, Result};

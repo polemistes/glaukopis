@@ -1,0 +1,83 @@
+# The tests, on every push and pull request: the core, the server and the
+# application in Rust, and the interface. Pandoc, Tesseract with English,
+# Poppler and the program Typst (which the tests of OCR make their scans
+# with) are installed, and GLAUKOPIS_TESTS_NEED_ALL makes a test that would
+# be passed over for want of one of them fail instead. LaTeX is not
+# installed: the one test of a PDF set by LaTeX says so and goes on.
+#
+# The tests of the running application (e2e/) are not run here: they need a
+# display and WebKitWebDriver, and are run on a desktop.
+
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GLAUKOPIS_TESTS_NEED_ALL: '1'
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: What the application is built with, and what the tests need
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev libxdo-dev \
+            pandoc tesseract-ocr tesseract-ocr-eng poppler-utils fontconfig
+          pandoc --version | head -1
+
+      - name: The program Typst, for the scans of the tests of OCR
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          gh release download v0.15.1 -R typst/typst --pattern 'typst-x86_64-unknown-linux-musl.tar.xz' -D /tmp
+          tar -xf /tmp/typst-x86_64-unknown-linux-musl.tar.xz -C /tmp
+          cp /tmp/typst-x86_64-unknown-linux-musl/typst "$HOME/.local/bin/"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.26.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+
+      - name: The interface's packages
+        run: pnpm install --frozen-lockfile
+
+      # The interface is built first: the application takes it in as it is built.
+      - name: The interface is built
+        run: pnpm build
+
+      - name: The Rust is formatted as rustfmt has it
+        run: cargo fmt --all -- --check
+
+      - name: Clippy finds nothing
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: The tests in Rust
+        run: cargo test --workspace --locked
+
+      - name: The interface is formatted as Prettier has it
+        run: pnpm exec prettier --check src
+
+      - name: The types of the interface hold
+        run: pnpm check
+
+      - name: The tests of the interface
+        run: pnpm test

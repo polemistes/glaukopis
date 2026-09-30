@@ -1148,7 +1148,7 @@ mod tests {
     fn setup() -> Option<Setup> {
         let tools = tools::discover(&tools::Configured::default());
         if tools.pandoc.is_none() {
-            eprintln!("Pandoc is not installed; the test is passed over");
+            crate::testing::passed_over("Pandoc is not installed");
             return None;
         }
         let tmp = tempfile::tempdir().unwrap();
@@ -1435,7 +1435,8 @@ mod tests {
             assert!(fs::read(&by_latex).unwrap().starts_with(b"%PDF"));
             assert!(e.also.is_empty(), "the references are in the document, not beside it");
         } else {
-            eprintln!("no LaTeX: the PDF by LaTeX is not tested");
+            // LaTeX is too large to ask of every machine the tests run on.
+            eprintln!("LaTeX is not installed: the PDF by LaTeX is not tested");
         }
     }
 

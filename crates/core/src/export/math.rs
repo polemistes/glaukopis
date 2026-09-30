@@ -131,7 +131,7 @@ mod tests {
     fn formulas_as_they_are_shown() {
         let tools = tools::discover(&tools::Configured::default());
         if tools.pandoc.is_none() {
-            eprintln!("Pandoc is not installed; the test is passed over");
+            crate::testing::passed_over("Pandoc is not installed");
             return;
         }
         let f = |tex: &str, display: bool| Formula { tex: tex.into(), display };
