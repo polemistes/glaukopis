@@ -136,10 +136,7 @@ pub fn library_parse_source(source: String) -> CommandResult<Draft> {
 /// The key an entry would be given.
 #[tauri::command(async)]
 pub fn library_suggest_key(state: State<'_, AppState>, draft: Draft, except: Option<String>) -> CommandResult<String> {
-    let library = state.library();
-    let taken = library.entries().iter().filter(|e| Some(&e.id) != except.as_ref()).map(|e| e.key.clone()).collect();
-    let base = glaukopis_core::library::keys::base_key(&draft.to_entry());
-    Ok(glaukopis_core::library::keys::unique_key(&base, &taken))
+    Ok(state.library().suggest_key(&draft, except.as_deref()))
 }
 
 /// Entries of the library that a draft may be a duplicate of.

@@ -77,6 +77,10 @@ pub struct Library {
     reread: bool,
     /// What duplicates are found by: made when it is first asked for after a change.
     index: std::cell::OnceCell<crate::duplicates::Index>,
+    /// The entries by their keys, in lower case, and whether the key is theirs
+    /// now or one they had before (kept in `ids`): made when first asked for
+    /// after a change, and kept up to date as entries are added.
+    keys: std::cell::OnceCell<HashMap<String, (usize, bool)>>,
 }
 
 impl Library {
@@ -99,6 +103,7 @@ impl Library {
             kept: Vec::new(),
             reread: false,
             index: std::cell::OnceCell::new(),
+            keys: std::cell::OnceCell::new(),
         };
         library.load()?;
         Ok(library)
@@ -168,6 +173,7 @@ impl Library {
 
     fn reindex(&mut self) {
         self.index = std::cell::OnceCell::new();
+        self.keys = std::cell::OnceCell::new();
         self.by_id.clear();
         self.aliases.clear();
         for (i, e) in self.entries.iter().enumerate() {
@@ -206,6 +212,7 @@ impl Library {
     pub(crate) fn save(&mut self) -> Result<()> {
         // Whatever was changed is written: what was found by is made again when it is asked for.
         self.index = std::cell::OnceCell::new();
+        self.keys = std::cell::OnceCell::new();
         let mut out = String::with_capacity(self.entries.len() * 400 + HEADER.len());
         out.push_str(HEADER);
         for v in self.kept.iter().filter(|v| v.readable) {
@@ -260,22 +267,34 @@ impl Library {
         self.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))
     }
 
+    /// The entry with a key, or that had it before: earlier keys are remembered in `ids`.
     pub fn by_key(&self, key: &str) -> Option<&Entry> {
-        let lower = key.to_lowercase();
-        self.entries.iter().find(|e| e.key.to_lowercase() == lower).or_else(|| {
-            // Earlier keys are remembered in `ids`.
-            self.entries
-                .iter()
-                .find(|e| e.get("ids").is_some_and(|ids| ids.split(',').any(|k| k.trim().to_lowercase() == lower)))
+        self.keys().get(&key.to_lowercase()).map(|&(i, _)| &self.entries[i])
+    }
+
+    fn keys(&self) -> &HashMap<String, (usize, bool)> {
+        self.keys.get_or_init(|| {
+            let mut keys = HashMap::with_capacity(self.entries.len());
+            for (i, e) in self.entries.iter().enumerate() {
+                keys.entry(e.key.to_lowercase()).or_insert((i, true));
+            }
+            // A key an entry has now is found before one another had before.
+            for (i, e) in self.entries.iter().enumerate() {
+                for earlier in e.get("ids").into_iter().flat_map(|ids| ids.split(',')) {
+                    keys.entry(earlier.trim().to_lowercase()).or_insert((i, false));
+                }
+            }
+            keys
         })
+    }
+
+    /// Whether a key is that of an entry now, other than the one given.
+    fn key_taken(&self, key: &str, except: Option<&str>) -> bool {
+        self.keys().get(&key.to_lowercase()).is_some_and(|&(i, now)| now && Some(self.entries[i].id.as_str()) != except)
     }
 
     pub fn summaries(&self) -> Vec<Summary> {
         self.entries.iter().map(Entry::summary).collect()
-    }
-
-    fn taken_keys(&self, except: Option<&str>) -> HashSet<String> {
-        self.entries.iter().filter(|e| Some(e.id.as_str()) != except).map(|e| e.key.clone()).collect()
     }
 
     // ---- changing ----
@@ -283,10 +302,10 @@ impl Library {
     /// The key for a draft: the one it asks for, if it is free; otherwise one is made.
     /// `strict` refuses a key that is taken instead of making another.
     fn key_for(&self, draft: &Draft, except: Option<&str>, strict: bool) -> Result<String> {
-        let taken = self.taken_keys(except);
+        let taken = |key: &str| self.key_taken(key, except);
         let asked = draft.key.trim();
         if asked.is_empty() {
-            return Ok(keys::unique_key(&keys::base_key(&draft.to_entry()), &taken));
+            return Ok(keys::unique_key_where(&keys::base_key(&draft.to_entry()), taken));
         }
         let Some(clean) = keys::sanitise_key(asked) else {
             return Err(key_error(tr!("core-library-bad-key", key = asked)));
@@ -295,12 +314,20 @@ impl Library {
             if clean != asked {
                 return Err(key_error(tr!("core-library-key-letters", key = &clean)));
             }
-            if taken.iter().any(|k| k.to_lowercase() == clean.to_lowercase()) {
+            if taken(&clean) {
                 return Err(key_error(tr!("core-library-key-taken", key = &clean)));
             }
             return Ok(clean);
         }
-        Ok(keys::unique_key(&clean, &taken))
+        Ok(keys::unique_key_where(&clean, taken))
+    }
+
+    /// The key a draft would be given, as the form suggests it: the entry
+    /// `except` is the one being changed, whose own key is free for it.
+    pub fn suggest_key(&self, draft: &Draft, except: Option<&str>) -> String {
+        let mut asked = draft.clone();
+        asked.key.clear();
+        self.key_for(&asked, except, false).unwrap_or_default()
     }
 
     fn check_type(entry_type: &str) -> Result<String> {
@@ -350,6 +377,10 @@ impl Library {
             zotero: draft.zotero(),
         };
         self.by_id.insert(entry.id.clone(), self.entries.len());
+        if let Some(keys) = self.keys.get_mut() {
+            keys.insert(entry.key.to_lowercase(), (self.entries.len(), true));
+        }
+        self.index = std::cell::OnceCell::new();
         self.entries.push(entry.clone());
         Ok(entry)
     }
@@ -1019,6 +1050,60 @@ mod tests {
         let stored = attachments::store_file(&dir, &source, &name).unwrap();
         let linked = lib.attach_stored(&e.id, &stored).unwrap();
         assert_eq!(linked.attachments(), [stored]);
+    }
+
+    #[test]
+    fn keys_are_known_by_the_library_as_entries_come_and_change() {
+        let (_tmp, mut lib) = library();
+        let a = lib.add(&draft("@book{nagy1979, author={Nagy, Gregory}, title={A}, date={1979}}")).unwrap();
+        assert_eq!(lib.by_key("NAGY1979").unwrap().id, a.id);
+        // An import that brings the same key twice gives the second another.
+        let added = lib
+            .add_many(&[
+                draft("@book{nagy1979, title={B}, date={1979}}"),
+                draft("@book{nagy1979, title={C}, date={1979}}"),
+            ])
+            .unwrap();
+        let keys: Vec<&str> = added.iter().map(|e| e.key.as_str()).collect();
+        assert_eq!(keys, ["nagy1979a", "nagy1979b"]);
+        assert_eq!(lib.by_key("nagy1979b").unwrap().id, added[1].id);
+        // A key given up is still known, as one the entry had.
+        let mut changed = Draft::from_entry(&a);
+        changed.key = "nagy-best".into();
+        lib.update(&a.id, &changed).unwrap();
+        assert_eq!(lib.by_key("nagy-best").unwrap().id, a.id);
+        assert_eq!(lib.by_key("nagy1979").unwrap().id, a.id, "the earlier key");
+        // And no longer taken: a new entry may have it.
+        assert_eq!(lib.suggest_key(&draft("@book{x, author={Nagy, G.}, title={D}, date={1979}}"), None), "nagy1979");
+        // The entry changed has its own key free for itself.
+        assert_eq!(lib.suggest_key(&Draft::from_entry(lib.get(&a.id).unwrap()), Some(&a.id)), "nagy1979");
+    }
+
+    #[test]
+    #[ignore = "a measure, to be run in release: cargo test --release -p glaukopis-core -- --ignored many_added"]
+    fn many_added() {
+        let (_tmp, mut lib) = library();
+        let make = |from: usize, count: usize| -> Vec<Draft> {
+            (from..from + count)
+                .map(|i| {
+                    draft(&format!(
+                        "@book{{k, author={{Family{}, A.}}, title={{Title {i}}}, date={{{}}}}}",
+                        i % 50,
+                        1950 + i % 50
+                    ))
+                })
+                .collect()
+        };
+        lib.add_many(&make(0, 20_000)).unwrap();
+        let began = std::time::Instant::now();
+        lib.add_many(&make(20_000, 1_000)).unwrap();
+        eprintln!("1000 added to 20000 in {:?}", began.elapsed());
+        let keys: Vec<String> = lib.entries().iter().step_by(21).map(|e| e.key.clone()).collect();
+        let began = std::time::Instant::now();
+        for key in &keys {
+            assert!(lib.by_key(key).is_some());
+        }
+        eprintln!("1000 keys looked up in {:?}", began.elapsed());
     }
 
     #[test]

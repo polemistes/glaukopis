@@ -100,14 +100,20 @@ pub fn base_key(entry: &Entry) -> String {
 /// A key not yet in use: the base, or the base with `a`, `b`, … `z`, `aa`, …
 pub fn unique_key(base: &str, taken: &HashSet<String>) -> String {
     let lower: HashSet<String> = taken.iter().map(|k| k.to_lowercase()).collect();
-    if !lower.contains(&base.to_lowercase()) {
+    unique_key_where(base, |candidate| lower.contains(&candidate.to_lowercase()))
+}
+
+/// As [`unique_key`], asking `is_taken` of each key it tries: for a library
+/// that knows its keys already.
+pub fn unique_key_where(base: &str, is_taken: impl Fn(&str) -> bool) -> String {
+    if !is_taken(base) {
         return base.to_owned();
     }
     // A key ending in a digit takes a letter; one ending in a letter takes a number.
     let digit_end = base.chars().last().is_some_and(|c| c.is_ascii_digit());
     for n in 0.. {
         let candidate = if digit_end { format!("{base}{}", letters(n)) } else { format!("{base}{}", n + 2) };
-        if !lower.contains(&candidate.to_lowercase()) {
+        if !is_taken(&candidate) {
             return candidate;
         }
     }
