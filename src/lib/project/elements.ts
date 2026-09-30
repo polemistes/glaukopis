@@ -5,6 +5,7 @@ import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
 import EyeOff from '@lucide/svelte/icons/eye-off';
 import FileInput from '@lucide/svelte/icons/file-input';
 import GitBranchPlus from '@lucide/svelte/icons/git-branch-plus';
+import GitCompare from '@lucide/svelte/icons/git-compare';
 import Heading from '@lucide/svelte/icons/heading';
 import LayoutGrid from '@lucide/svelte/icons/layout-grid';
 import Link2 from '@lucide/svelte/icons/link-2';
@@ -18,6 +19,7 @@ import { languages, t } from '$lib/i18n';
 import { truncate } from '$lib/library/format';
 import { confirm } from '$lib/ui/confirm.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
+import { compareCopy } from './copies.svelte';
 import { notify, toasts } from '$lib/ui/toast.svelte';
 import type { Project } from './model/project.svelte';
 import { subtree, topmost, type Tree } from './model/tree';
@@ -313,6 +315,13 @@ export function elementMenu(
         },
       );
     }
+  }
+  if (one?.origin) {
+    items.push({
+      label: t('copy-compare'),
+      icon: GitCompare,
+      action: () => compareCopy(one.id),
+    });
   }
   if (one && !isRoot) {
     items.push({

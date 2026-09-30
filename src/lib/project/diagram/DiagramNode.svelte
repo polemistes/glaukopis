@@ -2,6 +2,7 @@
   import AlignLeft from '@lucide/svelte/icons/align-left';
   import EyeOff from '@lucide/svelte/icons/eye-off';
   import FileInput from '@lucide/svelte/icons/file-input';
+  import GitCompare from '@lucide/svelte/icons/git-compare';
   import Quote from '@lucide/svelte/icons/quote';
   import type { EditorView } from 'prosemirror-view';
   import { untrack } from 'svelte';
@@ -10,6 +11,7 @@
   import { t } from '$lib/i18n';
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import { compareCopy } from '../copies.svelte';
   import type { Other, Project } from '../model/project.svelte';
   import type { NodeRecord } from '../model/types';
   import type { Placed, Size } from './layout';
@@ -84,6 +86,8 @@
 
   const title = $derived(project.fragment(node.id, 'title'));
   const cited = $derived(node.cited.length);
+  /** A copy whose original has changed since it was copied. */
+  const behind = $derived(!!node.origin && project.copyOf(node.id)?.changed === true);
 
   function action(a: KeyAction, _view: EditorView): boolean {
     if (a === 'enter' || a === 'escape' || a === 'tab') {
@@ -147,8 +151,22 @@
     {/if}
   </div>
 
-  {#if !renaming && (!node.empty || cited || node.include || node.excluded)}
+  {#if !renaming && (!node.empty || cited || node.include || node.excluded || behind)}
     <div class="marks">
+      {#if behind}
+        <button
+          type="button"
+          class="mark behind"
+          aria-label={t('copy-changed-mark')}
+          use:tooltip={t('copy-changed-mark')}
+          tabindex="-1"
+          onpointerdown={(e) => e.stopPropagation()}
+          onclick={(e) => {
+            e.stopPropagation();
+            compareCopy(node.id);
+          }}><GitCompare size={11} /></button
+        >
+      {/if}
       {#if node.include}<span class="mark include"><FileInput size={11} /></span>{/if}
       {#if !node.empty}<span class="mark"><AlignLeft size={11} /></span>{/if}
       {#if cited}<span class="mark"><Quote size={10} />{cited}</span>{/if}
@@ -359,6 +377,17 @@
   }
   .mark.include {
     color: var(--gold);
+  }
+  .mark.behind {
+    padding: 1px;
+    border: none;
+    border-radius: 3px;
+    background: none;
+    color: var(--accent-strong);
+    cursor: pointer;
+  }
+  .mark.behind:hover {
+    background: var(--accent-soft);
   }
 
   .fold {

@@ -42,9 +42,16 @@ export interface MapRecord {
   document: DocumentSettings;
 }
 
+/** Where an element was copied from. */
 export interface Origin {
   map: string;
   node: string;
+  /**
+   * What the original was when the copy was made, or when its change was
+   * last seen, in few signs (`Project.fingerprint`). Not there in copies
+   * made before this was kept.
+   */
+  print?: string;
 }
 
 export interface NodeRecord {

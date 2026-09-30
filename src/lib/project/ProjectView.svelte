@@ -46,6 +46,8 @@
   import { t } from '$lib/i18n';
   import type { Camera } from './diagram/camera';
   import MapDiagram from './diagram/MapDiagram.svelte';
+  import { comparing } from './copies.svelte';
+  import CopyDialog from './CopyDialog.svelte';
   import { filesDropped, mapOfIt } from './drops';
   import {
     arranged,
@@ -250,6 +252,7 @@
 
   onDestroy(() => {
     review?.close();
+    comparing.copy = null;
     release?.();
     if (pictures.project === ownId) pictures.open(null);
     // What reads the project from disk meanwhile, as the search through everything, waits for it.
@@ -823,6 +826,15 @@
   <EditorHost bind:this={host} {project} />
   <DocumentHost />
   <FoundHost {project} onkeep={keep} />
+{/if}
+
+{#if comparing.copy && project}
+  <CopyDialog
+    {project}
+    id={comparing.copy}
+    onclose={() => (comparing.copy = null)}
+    ongo={(map, element) => show(map, { element })}
+  />
 {/if}
 
 {#if showShare && shared && project}

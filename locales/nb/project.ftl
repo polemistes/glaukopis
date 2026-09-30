@@ -189,3 +189,22 @@ project-elements = { $count ->
 project-other-here = { $name } er her
 project-link-placeholder = Hvordan de henger sammen
 project-link-label = Merkelapp på assosiasjonen
+
+## En kopi og originalen, i et annet kart.
+copy-title = Kopien og originalen
+copy-from = Kopiert fra «{ $name }» i kartet «{ $map }»
+copy-original-changed = Originalen er endret siden den ble kopiert, eller siden det sist ble sett.
+copy-original-same = Originalen er som den var da den ble kopiert.
+copy-original-unknown = Om originalen er endret siden den ble kopiert, vites ikke: kopien ble laget før det ble tatt vare på.
+copy-original-gone = Originalen finnes ikke lenger.
+copy-how-shown = Nedenfor står det bare originalen har, strøket over, og det bare denne kopien har, markert.
+copy-alike = Navnene og tekstene er like. De kan være ulike i det som ikke er ord: kildehenvisninger, bilder, merker.
+copy-only-original = Bare i originalen
+copy-only-copy = Bare i denne kopien
+copy-go = Gå til originalen
+copy-seen = Behold kopien som den er
+copy-take = Ta over originalens navn og tekst
+copy-changed-mark = Originalen er endret siden dette ble kopiert
+copy-compare = Sammenlign med originalen …
+copy-copied-from = Kopiert fra «{ $name }» i «{ $map }»
+copy-copied-from-changed = Kopiert fra «{ $name }» i «{ $map }», som er endret siden

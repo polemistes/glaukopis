@@ -130,7 +130,7 @@ describe('working across maps', () => {
     const [copy] = p.copy([a, a1], otherRoot);
     const tree = p.tree(other);
     expect(titles(p, tree.sequence)).toEqual(['Article', 'A', 'A1']);
-    expect(p.node(copy)!.origin).toEqual({ map, node: a });
+    expect(p.node(copy)!.origin).toEqual({ map, node: a, print: p.fingerprint(a) });
     expect(p.node(copy)!.words).toBe(1);
     // The link within the branch came along; the one leading out of it did not.
     expect(p.linksOf(other)).toHaveLength(1);
@@ -282,6 +282,38 @@ describe('references', () => {
     p.doc.transact(() => p.yNodes.get(root)!.set('refs', ['nagy', 'c:homer']));
     expect(p.usedReferences(map)).toEqual([]);
     expect(p.summary().references).toBe(0);
+  });
+});
+
+describe('copies between maps', () => {
+  it('know whether their original has changed since, and can take what it is now', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'Wrath', body: 'Sing, goddess.' })!;
+    const other = p.createMap('Article');
+    const [copy] = p.copy([a], p.map(other)!.root);
+    expect(p.copyOf(copy)).toMatchObject({ original: { id: a }, changed: false });
+    expect(p.copyOf(a)).toBeNull();
+    // What is written in the copy is its own.
+    p.setTitle(copy, 'Wrath, in the article');
+    expect(p.copyOf(copy)?.changed).toBe(false);
+    p.setTitle(a, 'The wrath');
+    expect(p.copyOf(copy)?.changed).toBe(true);
+    p.settleCopy(copy);
+    expect(p.copyOf(copy)?.changed).toBe(false);
+
+    p.setTitle(a, 'The wrath of Achilles');
+    p.checkpoint();
+    p.takeOriginal(copy);
+    expect(p.node(copy)?.title).toBe('The wrath of Achilles');
+    expect(p.blocksOf(copy)).toEqual(p.blocksOf(a));
+    expect(p.copyOf(copy)?.changed).toBe(false);
+    // Taken back as one.
+    p.undo();
+    expect(p.node(copy)?.title).toBe('Wrath, in the article');
+    expect(p.copyOf(copy)?.changed).toBe(true);
+
+    p.remove([a]);
+    expect(p.copyOf(copy)).toMatchObject({ original: null, changed: null });
   });
 });
 

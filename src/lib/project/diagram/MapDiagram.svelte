@@ -13,11 +13,7 @@
   import { openContextMenu } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import ElementBox from '../ElementBox.svelte';
-  import {
-    elementMenu,
-    type ElementActions,
-    type ElementsPayload,
-  } from '../elements';
+  import { elementMenu, type ElementActions, type ElementsPayload } from '../elements';
   import ElementTooltip from '../ElementTooltip.svelte';
   import type { Project } from '../model/project.svelte';
   import { isAncestor, subtree } from '../model/tree';

@@ -213,3 +213,22 @@ project-elements = { $count ->
 project-other-here = { $name } is here
 project-link-placeholder = How they are related
 project-link-label = Label of the association
+
+## A copy and its original, in another map.
+copy-title = The copy and its original
+copy-from = Copied from “{ $name }” in the map “{ $map }”
+copy-original-changed = The original has changed since it was copied, or since that was last seen.
+copy-original-same = The original is as it was when it was copied.
+copy-original-unknown = Whether the original has changed since it was copied is not known: the copy was made before that was kept.
+copy-original-gone = The original is no longer there.
+copy-how-shown = Below, struck through, is what only the original has, and marked, what only this copy has.
+copy-alike = Their names and texts are alike. They may differ in what is not words: citations, pictures, marks.
+copy-only-original = Only in the original
+copy-only-copy = Only in this copy
+copy-go = Go to the original
+copy-seen = Keep this copy as it is
+copy-take = Take the original’s name and text
+copy-changed-mark = The original has changed since this was copied
+copy-compare = Compare with the original…
+copy-copied-from = Copied from “{ $name }” in “{ $map }”
+copy-copied-from-changed = Copied from “{ $name }” in “{ $map }”, which has changed since

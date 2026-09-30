@@ -82,7 +82,9 @@ export function cloneNode(
   n.set('map', change.map);
   n.set('parent', change.parent);
   if (change.order) n.set('order', change.order);
-  if (change.origin) n.set('origin', change.origin);
+  // What the original is now is kept with the copy, to tell whether it changes.
+  const print = p.fingerprint(from);
+  if (change.origin) n.set('origin', print ? { ...change.origin, print } : change.origin);
   for (const key of ['title', 'body'] as const) {
     const f = source.get(key);
     n.set(key, f instanceof Y.XmlFragment ? f.clone() : new Y.XmlFragment());
@@ -455,5 +457,37 @@ export const elementChanges = {
       deleteNodes(this, doomed);
     });
     return doomed.size;
+  },
+
+  /**
+   * The change of the original of a copy has been seen: the copy keeps what
+   * the original is now, and is no longer said to be behind it.
+   */
+  settleCopy(this: Project, id: string) {
+    const n = this.yNodes.get(id);
+    const origin = n?.get('origin') as NodeRecord['origin'] | undefined;
+    const print = origin ? this.fingerprint(origin.node) : null;
+    if (!n || !origin || !print || origin.print === print) return;
+    this.transact(() => n.set('origin', { ...origin, print }));
+  },
+
+  /** A copy takes the name and the text its original has now, in one step that undo takes back. */
+  takeOriginal(this: Project, id: string) {
+    const origin = this.node(id)?.origin;
+    if (!origin || !this.node(origin.node)) return;
+    this.transact(() => {
+      for (const which of ['title', 'body'] as const) {
+        const from = this.fragment(origin.node, which);
+        const to = this.fragment(id, which);
+        if (!from || !to) continue;
+        to.delete(0, to.length);
+        to.insert(
+          0,
+          from.toArray().map((part) => (part as Y.XmlElement | Y.XmlText).clone()),
+        );
+      }
+    });
+    // Then it is no longer behind its original.
+    this.settleCopy(id);
   },
 };

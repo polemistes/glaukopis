@@ -543,6 +543,43 @@ export class Project {
     this.nodes.set(id, record);
   }
 
+  /** What each element was, in few signs, as it was last read: see `fingerprint`. */
+  #prints = new WeakMap<NodeRecord, string>();
+
+  /**
+   * An element's name and text in few signs, by which it is told whether
+   * they are what they were: a copy keeps its original's, to say whether
+   * the original has changed since. Nothing, of an element that is not there.
+   */
+  fingerprint(id: string): string | null {
+    const record = this.nodes.get(id);
+    if (!record) return null;
+    let print = this.#prints.get(record);
+    if (print === undefined) {
+      print = printOf(`${record.titleHtml}\n${JSON.stringify(this.blocksOf(id))}`);
+      this.#prints.set(record, print);
+    }
+    return print;
+  }
+
+  /**
+   * Of a copy, its original, and whether that has changed since the copy
+   * was made or its change was last seen: nothing where that is not known,
+   * of a copy made before it was kept. Nothing, of what is no copy.
+   */
+  copyOf(
+    id: string,
+  ): { original: NodeRecord | null; map: MapRecord | null; changed: boolean | null } | null {
+    const origin = this.nodes.get(id)?.origin;
+    if (!origin) return null;
+    const original = this.nodes.get(origin.node) ?? null;
+    return {
+      original,
+      map: this.map(origin.map) ?? null,
+      changed: original && origin.print ? this.fingerprint(original.id) !== origin.print : null,
+    };
+  }
+
   /** The text of an element, as it was read when the element was last changed. */
   blocksOf(id: string): Block[] {
     const record = this.nodes.get(id);

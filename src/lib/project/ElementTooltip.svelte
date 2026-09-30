@@ -27,7 +27,11 @@
     return { html: blocksHtml(blocks, project.map(node?.map)?.document.language), cut };
   });
   const included = $derived(node?.include ? project.map(node.include) : undefined);
-  const worth = $derived(!!node && (!node.empty || !!included || !node.heading || node.excluded));
+  /** Where the element was copied from, if it is a copy of what is still there. */
+  const copied = $derived(node?.origin ? project.copyOf(id) : null);
+  const worth = $derived(
+    !!node && (!node.empty || !!included || !node.heading || node.excluded || !!copied?.original),
+  );
 
   $effect(() => {
     if (el && worth) place(el, anchor, { side: 'bottom', align: 'center', gap: 10 });
@@ -44,8 +48,17 @@
       </div>
       {#if content.cut}<div class="more">{t('project-read-on')}</div>{/if}
     {/if}
-    {#if included || !node.heading || node.excluded}
+    {#if included || !node.heading || node.excluded || copied?.original}
       <div class="facts" class:alone={!content.html}>
+        {#if copied?.original && copied.map}
+          {@const said = {
+            name: copied.original.title || t('project-untitled'),
+            map: copied.map.name,
+          }}
+          <div>
+            {copied.changed ? t('copy-copied-from-changed', said) : t('copy-copied-from', said)}
+          </div>
+        {/if}
         {#if included}<div>{t('project-stands-for-map', { name: included.name })}</div>{/if}
         {#if !node.heading}<div>{t('project-name-not-printed')}</div>{/if}
         {#if node.excluded}<div>{t('project-left-out-of-document')}</div>{/if}
