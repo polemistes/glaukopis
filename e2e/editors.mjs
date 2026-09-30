@@ -75,8 +75,15 @@ try {
   );
   await sleep(400);
   const told = await app.text('dialog .form');
-  check('the format says what a figure is called, and shows it', /Fig\. 1/.test(told), told.replace(/\s+/g, ' ').slice(0, 300));
-  check('and where the figures stand', /Heading over the figures/.test(told) && /about here/.test(told));
+  check(
+    'the format says what a figure is called, and shows it',
+    /Fig\. 1/.test(told),
+    told.replace(/\s+/g, ' ').slice(0, 300),
+  );
+  check(
+    'and where the figures stand',
+    /Heading over the figures/.test(told) && /about here/.test(told),
+  );
   await app.screenshot('editors-2b-format-figures');
   await app.clickText('dialog nav button', 'About this format');
   await sleep(200);
@@ -87,13 +94,38 @@ try {
   await app.clickText('dialog footer button', 'Save as my own');
   await app.waitGone('dialog', 8000);
   await sleep(3500);
-  const format = await app.exec(`return document.querySelector('.preview select[aria-label="Document format"]').value`);
-  check('a changed format is saved as one’s own and taken into use', format === 'my-publisher', format);
+  const format = await app.exec(
+    `return document.querySelector('.preview select[aria-label="Document format"]').value`,
+  );
+  check(
+    'a changed format is saved as one’s own and taken into use',
+    format === 'my-publisher',
+    format,
+  );
   const saved = JSON.parse(readFileSync(join(app.dataDir, 'formats', 'my-publisher.json'), 'utf8'));
-  check('it holds the change and remembers what it was made from', saved.text.lineSpacing === 1.5 && saved.basedOn === 'manuscript', `${saved.text.lineSpacing} ${saved.basedOn}`);
-  check('with what was said of figures', saved.figures.label === 'Fig.' && saved.figures.placement === 'at-end' && saved.equations.beforeNumber === '(', JSON.stringify(saved.figures));
+  check(
+    'it holds the change and remembers what it was made from',
+    saved.text.lineSpacing === 1.5 && saved.basedOn === 'manuscript',
+    `${saved.text.lineSpacing} ${saved.basedOn}`,
+  );
+  check(
+    'with what was said of figures',
+    saved.figures.label === 'Fig.' &&
+      saved.figures.placement === 'at-end' &&
+      saved.equations.beforeNumber === '(',
+    JSON.stringify(saved.figures),
+  );
   const work = join(app.dataDir, 'work');
-  const typ = () => readFileSync(join(work, readdirSync(work).find((n) => !n.includes('-') || n.length > 30), 'preview', 'document.typ'), 'utf8');
+  const typ = () =>
+    readFileSync(
+      join(
+        work,
+        readdirSync(work).find((n) => !n.includes('-') || n.length > 30),
+        'preview',
+        'document.typ',
+      ),
+      'utf8',
+    );
   check('the preview is in the new format', /leading: 0\.8em/.test(typ()));
 
   // --- The style ---
@@ -102,8 +134,14 @@ try {
   await app.waitFor('dialog .sample dd', 20000);
   await sleep(300);
   await app.screenshot('editors-4-style');
-  const before = await app.exec(`return Array.from(document.querySelectorAll('dialog .sample .entries p')).map((p) => p.textContent.trim())`);
-  check('the style is shown on works of the library', before.length >= 3 && before.some((b) => /Nagy/.test(b)), `${before.length} entries`);
+  const before = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog .sample .entries p')).map((p) => p.textContent.trim())`,
+  );
+  check(
+    'the style is shown on works of the library',
+    before.length >= 3 && before.some((b) => /Nagy/.test(b)),
+    `${before.length} entries`,
+  );
 
   // Bibliography: initials for given names.
   await app.clickText('dialog [role="radio"]', 'Bibliography');
@@ -115,8 +153,14 @@ try {
      given.dispatchEvent(new Event('change', { bubbles: true }));`,
   );
   await sleep(2500);
-  const after = await app.exec(`return Array.from(document.querySelectorAll('dialog .sample .entries p')).map((p) => p.textContent.trim())`);
-  check('a change shows in the sample at once', after.some((a) => /Nagy, G\./.test(a)) && !after.some((a) => /Nagy, Gregory/.test(a)), after.find((a) => /Nagy/.test(a)));
+  const after = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog .sample .entries p')).map((p) => p.textContent.trim())`,
+  );
+  check(
+    'a change shows in the sample at once',
+    after.some((a) => /Nagy, G\./.test(a)) && !after.some((a) => /Nagy, Gregory/.test(a)),
+    after.find((a) => /Nagy/.test(a)),
+  );
   await app.screenshot('editors-5-style-initials');
 
   await app.clickText('dialog [role="radio"]', 'Part by part');
@@ -124,12 +168,34 @@ try {
   await app.click('dialog .tree .part:last-child');
   await sleep(200);
   await app.screenshot('editors-6-style-parts');
-  check('the parts of the style are shown as a tree', (await app.count('dialog .tree .part')) >= 2 && (await app.exists('dialog .detail .detail-head')));
+  check(
+    'the parts of the style are shown as a tree',
+    (await app.count('dialog .tree .part')) >= 2 &&
+      (await app.exists('dialog .detail .detail-head')),
+  );
+  // The whole of what is cited: what stands before, after and between its parts is set there.
+  await app.click('dialog .tree .part:first-child');
+  await sleep(200);
+  const said = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog .detail .row .what')).map((w) => w.firstChild.textContent.trim())`,
+  );
+  check(
+    'a part shows what can be set of it',
+    ['Before', 'After', 'Between'].every((w) => said.some((s) => s.startsWith(w))),
+    said.join(' | '),
+  );
+  await app.screenshot('editors-6b-style-part');
 
   await app.clickText('dialog [role="radio"]', 'Source');
   await sleep(300);
-  const source = await app.exec(`return document.querySelector('dialog .source-view textarea').value`);
-  check('the source holds the change', /<bibliography[^>]*initialize="true"/.test(source), source.match(/<bibliography[^>]*>/)?.[0]);
+  const source = await app.exec(
+    `return document.querySelector('dialog .source-view textarea').value`,
+  );
+  check(
+    'the source holds the change',
+    /<bibliography[^>]*initialize="true"/.test(source),
+    source.match(/<bibliography[^>]*>/)?.[0],
+  );
   await app.screenshot('editors-7-style-source');
   await app.clickText('dialog [role="radio"]', 'Common changes');
 
@@ -139,8 +205,14 @@ try {
   await app.clickText('dialog footer button', 'Save as my own');
   await app.waitGone('dialog', 8000);
   await sleep(3500);
-  const style = await app.exec(`return document.querySelector('.preview select[aria-label="Reference style"]').value`);
-  check('a changed style is saved as one’s own and taken into use', style === 'chicago-with-initials', style);
+  const style = await app.exec(
+    `return document.querySelector('.preview select[aria-label="Reference style"]').value`,
+  );
+  check(
+    'a changed style is saved as one’s own and taken into use',
+    style === 'chicago-with-initials',
+    style,
+  );
   check('the preview uses it', /Nagy, G\./.test(typ()), typ().match(/Nagy[^\n]{0,40}/)?.[0]);
 
   const errors = await app.pageErrors();

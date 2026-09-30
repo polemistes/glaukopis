@@ -22,6 +22,8 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openMenu } from '$lib/ui/menu.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
+  import Settings from '$lib/ui/settings/Settings.svelte';
+  import { rowsOf, type Row as SettingRow } from '$lib/ui/settings/rows';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import * as csl from './csl';
@@ -574,76 +576,270 @@
       return [tag, languageName(alone ? primary(tag) : tag)];
     }),
   );
+
+  // ---- the rows of the forms ----
+
+  /** A row's reach into an attribute of an element: nothing where it is not there. */
+  const attribute = (name: string) => ({
+    get: (el: Element | null) => attr(el, name),
+    set: (el: Element | null, v: string | number) => setAttr(el, name, String(v)),
+  });
+  /** An attribute that is `true`, or not there. */
+  const flag = (name: string) => ({
+    get: (el: Element | null) => attr(el, name) === 'true',
+    set: (el: Element | null, v: boolean) => setAttr(el, name, v ? 'true' : ''),
+  });
+  /** An attribute of an element that the rows of a page do not stand for. */
+  const attributeOf = (el: () => Element | null, name: string) => ({
+    get: () => attr(el(), name),
+    set: (_: unknown, v: string | number) => setAttr(el(), name, String(v)),
+  });
+  /** An attribute of such an element that is `true`, or not there. */
+  const flagOf = (el: () => Element | null, name: string) => ({
+    get: () => attr(el(), name) === 'true',
+    set: (_: unknown, v: boolean) => setAttr(el(), name, v ? 'true' : ''),
+  });
+  /** An option of the names, in the citations or the bibliography. */
+  const nameOption = (name: string) => ({
+    get: () => nameOpt(name),
+    set: (_: unknown, v: string | number) => setNameOpt(name, String(v)),
+  });
+
+  // The rows of the first page reach their values by functions of their own.
+  const page = rowsOf<null>();
+  const layout = () => layoutEl;
+  const within = () => scopeEl;
+  const root = () => style?.root ?? null;
+  const notes = () => kind === 'note';
+
+  const nameRows: SettingRow<null>[] = $derived([
+    page.choice(t('style-before-last-name'), nameOption('and'), [
+      ['text', t('style-and-word')],
+      ['symbol', '&'],
+      ['', t('style-and-nothing')],
+    ]),
+    page.choice(t('style-comma-before-last'), nameOption('delimiter-precedes-last'), [
+      ['', t('style-as-the-style-has-it')],
+      ['contextual', t('style-comma-contextual')],
+      ['always', t('style-comma-always')],
+      ['never', t('style-comma-never')],
+      ['after-inverted-name', t('style-comma-after-inverted')],
+    ]),
+    page.choice(
+      t('style-given-names'),
+      { get: () => initials, set: (_, v) => setInitials(String(v)) },
+      [
+        ['full', t('style-given-full')],
+        ['spaced', t('style-given-spaced')],
+        ['close', t('style-given-close')],
+        ['bare', t('style-given-bare')],
+        ['bare-spaced', t('style-given-bare-spaced')],
+      ],
+    ),
+    page.choice(t('style-family-first'), nameOption('name-as-sort-order'), [
+      ['', t('style-family-first-none')],
+      ['first', t('style-family-first-first')],
+      ['all', t('style-family-first-all')],
+    ]),
+    page.text(t('style-sort-separator'), nameOption('sort-separator'), {
+      hint: t('style-sort-separator-hint'),
+      placeholder: ', ',
+      literal: true,
+    }),
+  ]);
+
+  const citationRows: SettingRow<null>[] = $derived([
+    { heading: kind === 'note' ? t('style-the-note') : t('style-the-citation') },
+    page.text(t('style-begins-with'), attributeOf(layout, 'prefix'), {
+      placeholder: '(',
+      literal: true,
+    }),
+    page.text(t('style-ends-with'), attributeOf(layout, 'suffix'), {
+      placeholder: ')',
+      literal: true,
+    }),
+    page.text(t('style-between-works'), attributeOf(layout, 'delimiter'), {
+      placeholder: '; ',
+      literal: true,
+    }),
+    page.choice(
+      t('style-collapse'),
+      attributeOf(within, 'collapse'),
+      [
+        ['', t('style-collapse-none')],
+        ['year', t('style-collapse-year')],
+        ['year-suffix', t('style-collapse-year-suffix')],
+        ['year-suffix-ranged', t('style-collapse-year-suffix-ranged')],
+        ['citation-number', t('style-collapse-citation-number')],
+      ],
+      { when: () => !notes() },
+    ),
+    { subheading: t('style-disambiguate'), when: () => !notes() },
+    page.toggle(
+      t('style-disambiguate-year-suffix'),
+      flagOf(within, 'disambiguate-add-year-suffix'),
+      { hint: '1979a, 1979b', when: () => !notes() },
+    ),
+    page.toggle(t('style-disambiguate-names'), flagOf(within, 'disambiguate-add-names'), {
+      when: () => !notes(),
+    }),
+    page.toggle(t('style-disambiguate-given-names'), flagOf(within, 'disambiguate-add-givenname'), {
+      when: () => !notes(),
+    }),
+    page.number(
+      t('style-near-note'),
+      {
+        get: () => {
+          const n = attr(scopeEl, 'near-note-distance');
+          return n === '' ? null : Number(n);
+        },
+        set: (_, v) => setAttr(scopeEl, 'near-note-distance', v === null ? '' : String(v)),
+      },
+      { min: 0, max: 99, step: 1, blank: '—', hint: t('style-near-note-hint'), when: notes },
+    ),
+  ]);
+
+  const entryRows: SettingRow<null>[] = $derived([
+    { heading: t('style-entries') },
+    page.text(t('style-entry-ends-with'), attributeOf(layout, 'suffix'), {
+      placeholder: '.',
+      literal: true,
+    }),
+    page.text(t('style-author-repeated'), attributeOf(within, 'subsequent-author-substitute'), {
+      hint: t('style-author-repeated-hint'),
+      placeholder: '———',
+      literal: true,
+    }),
+    page.toggle(t('style-hanging-indent'), flagOf(within, 'hanging-indent'), {
+      hint: t('style-hanging-indent-hint'),
+    }),
+    page.choice(
+      t('style-second-field'),
+      attributeOf(within, 'second-field-align'),
+      [
+        ['', t('style-second-field-line')],
+        ['flush', t('style-second-field-column')],
+        ['margin', t('style-second-field-margin')],
+      ],
+      { hint: t('style-second-field-hint') },
+    ),
+  ]);
+
+  const throughoutRows: SettingRow<null>[] = $derived([
+    { heading: t('style-throughout') },
+    page.choice(t('style-page-ranges'), attributeOf(root, 'page-range-format'), [
+      ['', t('style-page-ranges-as-entered')],
+      ['expanded', t('style-page-ranges-expanded')],
+      ['minimal', t('style-page-ranges-minimal')],
+      ['minimal-two', t('style-page-ranges-minimal-two')],
+      ['chicago', t('style-page-ranges-chicago')],
+    ]),
+    page.choice(t('style-particles'), attributeOf(root, 'demote-non-dropping-particle'), [
+      ['', t('style-as-the-style-has-it')],
+      ['never', t('style-particles-never')],
+      ['sort-only', t('style-particles-sort-only')],
+      ['display-and-sort', t('style-particles-display-and-sort')],
+    ]),
+    // On unless the style says otherwise.
+    page.toggle(
+      t('style-hyphen'),
+      {
+        get: () => attr(root(), 'initialize-with-hyphen') !== 'false',
+        set: (_, v) => setAttr(root(), 'initialize-with-hyphen', v ? null : 'false'),
+      },
+      { hint: t('style-hyphen-hint') },
+    ),
+    page.choice(
+      t('style-locale'),
+      attributeOf(root, 'default-locale'),
+      [['', t('style-locale-document')], ...locales],
+      { hint: t('style-locale-hint') },
+    ),
+  ]);
+
+  // Those of a part, from the attributes of the element it is.
+  const part = rowsOf<Element>();
+  const isText = (el: Element) => el.localName === 'text';
+
+  const partRows: SettingRow<Element>[] = $derived([
+    part.text(
+      t('style-part-words'),
+      {
+        get: (el) => attr(el, 'value'),
+        set: (el, v) => {
+          el.setAttribute('value', v);
+          touch();
+        },
+      },
+      { literal: true, when: (el) => isText(el) && el.hasAttribute('value') },
+    ),
+    part.text(t('style-part-before'), attribute('prefix'), {
+      hint: t('style-part-before-hint'),
+      literal: true,
+      when: csl.hasAffixes,
+    }),
+    part.text(t('style-part-after'), attribute('suffix'), {
+      literal: true,
+      when: csl.hasAffixes,
+    }),
+    part.text(t('style-part-between'), attribute('delimiter'), {
+      literal: true,
+      when: csl.hasDelimiter,
+    }),
+    part.choice(t('style-slant'), attribute('font-style'), selects['font-style'], {
+      when: csl.printsText,
+    }),
+    part.choice(t('style-weight'), attribute('font-weight'), selects['font-weight'], {
+      when: csl.printsText,
+    }),
+    part.choice(t('style-letters'), attribute('font-variant'), selects['font-variant'], {
+      when: csl.printsText,
+    }),
+    part.choice(t('style-case'), attribute('text-case'), selects['text-case'], {
+      when: csl.printsText,
+    }),
+    part.choice(t('style-height'), attribute('vertical-align'), selects['vertical-align'], {
+      when: csl.printsText,
+    }),
+    part.toggle(t('style-quotes'), flag('quotes'), { when: isText }),
+    part.toggle(t('style-strip-periods'), flag('strip-periods'), {
+      hint: t('style-strip-periods-hint'),
+      when: isText,
+    }),
+    part.choice(
+      t('style-text-form'),
+      attribute('form'),
+      [
+        ['', t('style-text-form-long')],
+        ['short', t('style-text-form-short')],
+      ],
+      { when: (el) => isText(el) && el.hasAttribute('variable') },
+    ),
+    part.choice(
+      t('style-term-form'),
+      attribute('form'),
+      [
+        ['', t('style-term-form-long')],
+        ['short', t('style-term-form-short')],
+        ['verb', t('style-term-form-verb')],
+        ['verb-short', t('style-term-form-verb-short')],
+        ['symbol', t('style-term-form-symbol')],
+      ],
+      { when: (el) => el.localName === 'label' || (isText(el) && el.hasAttribute('term')) },
+    ),
+    part.choice(
+      t('style-date-parts'),
+      attribute('date-parts'),
+      [
+        ['', t('style-as-the-style-has-it')],
+        ['year', t('style-date-parts-year')],
+        ['year-month', t('style-date-parts-year-month')],
+        ['year-month-day', t('style-date-parts-full')],
+      ],
+      { when: (el) => el.localName === 'date' },
+    ),
+  ]);
 </script>
-
-{#snippet pick(
-  label: string,
-  value: string,
-  set: (v: string) => void,
-  options: [string, string][],
-  hint = '',
-)}
-  <label class="row">
-    <span class="what"
-      >{label}{#if hint}<small>{hint}</small>{/if}</span
-    >
-    <select {value} onchange={(e) => set(e.currentTarget.value)}>
-      {#each options as [v, words] (v)}<option value={v}>{words}</option>{/each}
-      {#if !options.some(([v]) => v === value)}<option {value}>{value}</option>{/if}
-    </select>
-  </label>
-{/snippet}
-
-{#snippet words(
-  label: string,
-  value: string,
-  set: (v: string) => void,
-  hint = '',
-  placeholder = '',
-)}
-  <label class="row">
-    <span class="what"
-      >{label}{#if hint}<small>{hint}</small>{/if}</span
-    >
-    <input
-      class="literal"
-      {value}
-      {placeholder}
-      spellcheck="false"
-      oninput={(e) => set(e.currentTarget.value)}
-    />
-  </label>
-{/snippet}
-
-{#snippet count(label: string, value: string, set: (v: string) => void, hint = '')}
-  <label class="row">
-    <span class="what"
-      >{label}{#if hint}<small>{hint}</small>{/if}</span
-    >
-    <input
-      class="short"
-      type="number"
-      min="0"
-      max="99"
-      {value}
-      placeholder="—"
-      oninput={(e) => set(e.currentTarget.value)}
-    />
-  </label>
-{/snippet}
-
-{#snippet yes(label: string, value: string, set: (v: string) => void, hint = '')}
-  <label class="row check">
-    <span class="what"
-      >{label}{#if hint}<small>{hint}</small>{/if}</span
-    >
-    <input
-      type="checkbox"
-      checked={value === 'true'}
-      onchange={(e) => set(e.currentTarget.checked ? 'true' : '')}
-    />
-  </label>
-{/snippet}
 
 <Dialog
   open
@@ -703,7 +899,7 @@
         {#if error}<p class="error selectable" role="alert">{error}</p>{/if}
 
         {#if depth === 'options'}
-          <div class="form">
+          <div class="form settings">
             <h3>{t('style-names')}</h3>
             <div class="row sentence">
               <span class="what">
@@ -768,186 +964,9 @@
                 </span>
               </div>
             {/if}
-            {@render pick(
-              t('style-before-last-name'),
-              nameOpt('and'),
-              (v) => setNameOpt('and', v),
-              [
-                ['text', t('style-and-word')],
-                ['symbol', '&'],
-                ['', t('style-and-nothing')],
-              ],
-            )}
-            {@render pick(
-              t('style-comma-before-last'),
-              nameOpt('delimiter-precedes-last'),
-              (v) => setNameOpt('delimiter-precedes-last', v),
-              [
-                ['', t('style-as-the-style-has-it')],
-                ['contextual', t('style-comma-contextual')],
-                ['always', t('style-comma-always')],
-                ['never', t('style-comma-never')],
-                ['after-inverted-name', t('style-comma-after-inverted')],
-              ],
-            )}
-            {@render pick(t('style-given-names'), initials, setInitials, [
-              ['full', t('style-given-full')],
-              ['spaced', t('style-given-spaced')],
-              ['close', t('style-given-close')],
-              ['bare', t('style-given-bare')],
-              ['bare-spaced', t('style-given-bare-spaced')],
-            ])}
-            {@render pick(
-              t('style-family-first'),
-              nameOpt('name-as-sort-order'),
-              (v) => setNameOpt('name-as-sort-order', v),
-              [
-                ['', t('style-family-first-none')],
-                ['first', t('style-family-first-first')],
-                ['all', t('style-family-first-all')],
-              ],
-            )}
-            {@render words(
-              t('style-sort-separator'),
-              nameOpt('sort-separator'),
-              (v) => setNameOpt('sort-separator', v),
-              t('style-sort-separator-hint'),
-              ', ',
-            )}
-
-            {#if scope === 'citation'}
-              <h3>{kind === 'note' ? t('style-the-note') : t('style-the-citation')}</h3>
-              {@render words(
-                t('style-begins-with'),
-                attr(layoutEl, 'prefix'),
-                (v) => setAttr(layoutEl, 'prefix', v),
-                '',
-                '(',
-              )}
-              {@render words(
-                t('style-ends-with'),
-                attr(layoutEl, 'suffix'),
-                (v) => setAttr(layoutEl, 'suffix', v),
-                '',
-                ')',
-              )}
-              {@render words(
-                t('style-between-works'),
-                attr(layoutEl, 'delimiter'),
-                (v) => setAttr(layoutEl, 'delimiter', v),
-                '',
-                '; ',
-              )}
-              {#if kind !== 'note'}
-                {@render pick(
-                  t('style-collapse'),
-                  attr(scopeEl, 'collapse'),
-                  (v) => setAttr(scopeEl, 'collapse', v),
-                  [
-                    ['', t('style-collapse-none')],
-                    ['year', t('style-collapse-year')],
-                    ['year-suffix', t('style-collapse-year-suffix')],
-                    ['year-suffix-ranged', t('style-collapse-year-suffix-ranged')],
-                    ['citation-number', t('style-collapse-citation-number')],
-                  ],
-                )}
-                <h4>{t('style-disambiguate')}</h4>
-                {@render yes(
-                  t('style-disambiguate-year-suffix'),
-                  attr(scopeEl, 'disambiguate-add-year-suffix'),
-                  (v) => setAttr(scopeEl, 'disambiguate-add-year-suffix', v),
-                  '1979a, 1979b',
-                )}
-                {@render yes(
-                  t('style-disambiguate-names'),
-                  attr(scopeEl, 'disambiguate-add-names'),
-                  (v) => setAttr(scopeEl, 'disambiguate-add-names', v),
-                )}
-                {@render yes(
-                  t('style-disambiguate-given-names'),
-                  attr(scopeEl, 'disambiguate-add-givenname'),
-                  (v) => setAttr(scopeEl, 'disambiguate-add-givenname', v),
-                )}
-              {:else}
-                {@render count(
-                  t('style-near-note'),
-                  attr(scopeEl, 'near-note-distance'),
-                  (v) => setAttr(scopeEl, 'near-note-distance', v),
-                  t('style-near-note-hint'),
-                )}
-              {/if}
-            {:else}
-              <h3>{t('style-entries')}</h3>
-              {@render words(
-                t('style-entry-ends-with'),
-                attr(layoutEl, 'suffix'),
-                (v) => setAttr(layoutEl, 'suffix', v),
-                '',
-                '.',
-              )}
-              {@render words(
-                t('style-author-repeated'),
-                attr(scopeEl, 'subsequent-author-substitute'),
-                (v) => setAttr(scopeEl, 'subsequent-author-substitute', v),
-                t('style-author-repeated-hint'),
-                '———',
-              )}
-              {@render yes(
-                t('style-hanging-indent'),
-                attr(scopeEl, 'hanging-indent'),
-                (v) => setAttr(scopeEl, 'hanging-indent', v),
-                t('style-hanging-indent-hint'),
-              )}
-              {@render pick(
-                t('style-second-field'),
-                attr(scopeEl, 'second-field-align'),
-                (v) => setAttr(scopeEl, 'second-field-align', v),
-                [
-                  ['', t('style-second-field-line')],
-                  ['flush', t('style-second-field-column')],
-                  ['margin', t('style-second-field-margin')],
-                ],
-                t('style-second-field-hint'),
-              )}
-            {/if}
-
-            <h3>{t('style-throughout')}</h3>
-            {@render pick(
-              t('style-page-ranges'),
-              attr(style.root, 'page-range-format'),
-              (v) => setAttr(style!.root, 'page-range-format', v),
-              [
-                ['', t('style-page-ranges-as-entered')],
-                ['expanded', t('style-page-ranges-expanded')],
-                ['minimal', t('style-page-ranges-minimal')],
-                ['minimal-two', t('style-page-ranges-minimal-two')],
-                ['chicago', t('style-page-ranges-chicago')],
-              ],
-            )}
-            {@render pick(
-              t('style-particles'),
-              attr(style.root, 'demote-non-dropping-particle'),
-              (v) => setAttr(style!.root, 'demote-non-dropping-particle', v),
-              [
-                ['', t('style-as-the-style-has-it')],
-                ['never', t('style-particles-never')],
-                ['sort-only', t('style-particles-sort-only')],
-                ['display-and-sort', t('style-particles-display-and-sort')],
-              ],
-            )}
-            {@render yes(
-              t('style-hyphen'),
-              attr(style.root, 'initialize-with-hyphen') || 'true',
-              (v) => setAttr(style!.root, 'initialize-with-hyphen', v === 'true' ? null : 'false'),
-              t('style-hyphen-hint'),
-            )}
-            {@render pick(
-              t('style-locale'),
-              attr(style.root, 'default-locale'),
-              (v) => setAttr(style!.root, 'default-locale', v),
-              [['', t('style-locale-document')], ...locales],
-              t('style-locale-hint'),
-            )}
+            <Settings target={null} rows={nameRows} />
+            <Settings target={null} rows={scope === 'citation' ? citationRows : entryRows} />
+            <Settings target={null} rows={throughoutRows} />
           </div>
         {:else if depth === 'parts'}
           <div class="parts">
@@ -989,7 +1008,7 @@
               {/if}
             </div>
 
-            <div class="detail">
+            <div class="detail settings">
               {#if selected}
                 {@const el = selected}
                 <div class="detail-head">
@@ -1029,109 +1048,7 @@
                   </p>
                 {/if}
 
-                {#if el.localName === 'text' && el.hasAttribute('value')}
-                  {@render words(t('style-part-words'), attr(el, 'value'), (v) => {
-                    el.setAttribute('value', v);
-                    touch();
-                  })}
-                {/if}
-                {#if csl.hasAffixes(el)}
-                  {@render words(
-                    t('style-part-before'),
-                    attr(el, 'prefix'),
-                    (v) => setAttr(el, 'prefix', v),
-                    t('style-part-before-hint'),
-                  )}
-                  {@render words(t('style-part-after'), attr(el, 'suffix'), (v) =>
-                    setAttr(el, 'suffix', v),
-                  )}
-                {/if}
-                {#if csl.hasDelimiter(el)}
-                  {@render words(t('style-part-between'), attr(el, 'delimiter'), (v) =>
-                    setAttr(el, 'delimiter', v),
-                  )}
-                {/if}
-                {#if csl.printsText(el)}
-                  {@render pick(
-                    t('style-slant'),
-                    attr(el, 'font-style'),
-                    (v) => setAttr(el, 'font-style', v),
-                    selects['font-style'],
-                  )}
-                  {@render pick(
-                    t('style-weight'),
-                    attr(el, 'font-weight'),
-                    (v) => setAttr(el, 'font-weight', v),
-                    selects['font-weight'],
-                  )}
-                  {@render pick(
-                    t('style-letters'),
-                    attr(el, 'font-variant'),
-                    (v) => setAttr(el, 'font-variant', v),
-                    selects['font-variant'],
-                  )}
-                  {@render pick(
-                    t('style-case'),
-                    attr(el, 'text-case'),
-                    (v) => setAttr(el, 'text-case', v),
-                    selects['text-case'],
-                  )}
-                  {@render pick(
-                    t('style-height'),
-                    attr(el, 'vertical-align'),
-                    (v) => setAttr(el, 'vertical-align', v),
-                    selects['vertical-align'],
-                  )}
-                {/if}
-                {#if el.localName === 'text'}
-                  {@render yes(t('style-quotes'), attr(el, 'quotes'), (v) =>
-                    setAttr(el, 'quotes', v),
-                  )}
-                  {@render yes(
-                    t('style-strip-periods'),
-                    attr(el, 'strip-periods'),
-                    (v) => setAttr(el, 'strip-periods', v),
-                    t('style-strip-periods-hint'),
-                  )}
-                {/if}
-                {#if el.localName === 'text' && el.hasAttribute('variable')}
-                  {@render pick(
-                    t('style-text-form'),
-                    attr(el, 'form'),
-                    (v) => setAttr(el, 'form', v),
-                    [
-                      ['', t('style-text-form-long')],
-                      ['short', t('style-text-form-short')],
-                    ],
-                  )}
-                {/if}
-                {#if el.localName === 'label' || (el.localName === 'text' && el.hasAttribute('term'))}
-                  {@render pick(
-                    t('style-term-form'),
-                    attr(el, 'form'),
-                    (v) => setAttr(el, 'form', v),
-                    [
-                      ['', t('style-term-form-long')],
-                      ['short', t('style-term-form-short')],
-                      ['verb', t('style-term-form-verb')],
-                      ['verb-short', t('style-term-form-verb-short')],
-                      ['symbol', t('style-term-form-symbol')],
-                    ],
-                  )}
-                {/if}
-                {#if el.localName === 'date'}
-                  {@render pick(
-                    t('style-date-parts'),
-                    attr(el, 'date-parts'),
-                    (v) => setAttr(el, 'date-parts', v),
-                    [
-                      ['', t('style-as-the-style-has-it')],
-                      ['year', t('style-date-parts-year')],
-                      ['year-month', t('style-date-parts-year-month')],
-                      ['year-month-day', t('style-date-parts-full')],
-                    ],
-                  )}
-                {/if}
+                <Settings target={el} rows={partRows} />
                 {#if csl.partsOf(style, el).length || ['group', 'layout', 'if', 'else-if', 'else', 'substitute'].includes(el.localName) || (el.localName === 'text' && el.hasAttribute('macro'))}
                   <div class="add-inside">
                     <Button size="sm" onclick={(e) => addPart(e, el, true)}>
@@ -1280,84 +1197,17 @@
     overflow-y: auto;
     padding: 6px 24px 28px;
   }
-  h3 {
-    margin: 20px 0 8px;
-    font-family: var(--font-text);
-    font-size: var(--text-xl);
-    font-weight: 500;
-  }
-  h4 {
-    margin: 16px 0 4px;
-    font-size: var(--text-xs);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-  .row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 250px;
-    gap: 14px;
-    align-items: center;
-    min-height: 38px;
-    padding: 4px 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .row.check {
-    grid-template-columns: minmax(0, 1fr) auto;
-    cursor: pointer;
-  }
   .row.sentence {
     grid-template-columns: 1fr;
     line-height: 2;
   }
-  .what {
-    display: block;
-    min-width: 0;
-  }
-  .what small {
-    display: block;
-    font-size: var(--text-xs);
-    color: var(--ink-3);
-    line-height: 1.35;
-  }
-  input:not([type='checkbox']),
-  select {
-    width: 100%;
-    height: 28px;
-    padding: 0 8px;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-s);
-    background: var(--paper-raised);
-    outline: none;
-  }
-  :is(input, select, textarea):focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--focus-ring);
-  }
-  input.literal {
-    font-family: var(--font-mono);
-    font-size: 12.5px;
-    white-space: pre;
-  }
-  input.short {
-    width: 80px;
-    justify-self: end;
-    text-align: right;
-  }
-  input.inline {
+  .sentence input.inline {
     display: inline-block;
     width: 52px;
     height: 24px;
     margin: 0 3px;
     padding: 0 4px;
     text-align: center;
-  }
-  input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--accent);
-    margin: 0;
   }
   .parts {
     flex: 1;
@@ -1425,7 +1275,8 @@
     overflow-y: auto;
     padding: 4px 16px 24px;
   }
-  .detail .row {
+  /* The rows of a part stand in a narrow column. */
+  .detail :global(.row) {
     grid-template-columns: minmax(0, 1fr) 150px;
   }
   .detail-head {
