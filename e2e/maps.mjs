@@ -318,10 +318,12 @@ try {
   await app.press('Enter');
   await sleep(300);
   check('a second map', (await app.count('.tabs .tab')) === 2);
-  await app.rightClick(await app.findByText('.tabs .tab', 'Wrath and the hero'));
-  await app.clickText('[role="menuitem"]', 'Open beside');
+  // Ctrl+click on a tab opens that map beside the one in view.
+  await app.exec(`
+    const tab = Array.from(document.querySelectorAll('.tabs .tab')).find((t) => t.textContent.includes('Wrath and the hero'));
+    tab.dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }));`);
   await sleep(500);
-  check('two maps side by side', (await app.count('.pane')) === 2);
+  check('two maps side by side, by Ctrl+click on a tab', (await app.count('.pane')) === 2);
   await app.screenshot('maps-13-beside');
 
   // --- The room each has can be changed ---

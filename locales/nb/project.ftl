@@ -69,6 +69,7 @@ project-duplicate = Lag en kopi
 project-duplicate-hint = En kopi å arbeide videre med; dette kartet blir som det er
 project-open-beside = Åpne ved siden av
 project-open-beside-hint = To kart side om side, for å flytte elementer mellom dem
+project-tab-hint = Ctrl+klikk eller midtklikk: ved siden av dette · dobbeltklikk: gi nytt navn
 project-found = Funne kildehenvisninger …
 project-found-hint = { $count } å gå gjennom og gjøre om til kildehenvisninger
 project-found-none = Og tekst som ser ut som kildehenvisninger

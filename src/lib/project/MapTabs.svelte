@@ -172,7 +172,19 @@
             if (e && e.payload.kind === 'elements') spring = setTimeout(() => onselect(m.id), 700);
           },
         }}
-        onclick={() => onselect(m.id)}
+        onclick={(e) => {
+          // With Ctrl, beside the map in view, as a link opens in a tab of its own.
+          if ((e.ctrlKey || e.metaKey) && !(m.id === current && project.maps.length < 2))
+            onbeside(m.id);
+          else onselect(m.id);
+        }}
+        onauxclick={(e) => {
+          if (e.button === 1 && !(m.id === current && project.maps.length < 2)) {
+            e.preventDefault();
+            onbeside(m.id);
+          }
+        }}
+        use:tooltip={{ text: t('project-tab-hint') }}
         ondblclick={() => rename(m)}
         oncontextmenu={(e) => context(e, m)}
         onkeydown={(e) => {

@@ -584,9 +584,11 @@ consumed by the writing:
 - An element can have **another map take its place in the document**. The map
   of the book then has one element for each chapter, each of which stands for
   the map of that chapter. The preview of the book shows the book.
-- **Two side by side**, in the bar over the map, shows the map as diagram and
-  as text beside one another. Click a side and then a tab to show another
-  map there; each side can be diagram or text.
+- **Ctrl+click** a tab, or click it with the middle button, to open that map
+  beside the one in view: two maps side by side, to move elements between
+  them. **Two side by side**, in the bar over the map, shows the map as
+  diagram and as text beside one another. Click a side and then a tab to show
+  another map there; each side can be diagram or text.
 
 The line between the two sides can be dragged, as can those beside the
 preview and the references. A double click on a line puts it back.
