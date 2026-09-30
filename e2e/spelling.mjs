@@ -213,7 +213,8 @@ try {
     await app.waitFor('.text-view .section .body .static', 8000);
     await sleep(800);
   };
-  await app.keys(['Control', ',']);
+  // Not by Ctrl+, from the text, which lowers the writing there.
+  await app.click('nav.rail a[aria-label="Settings"]');
   await app.waitFor('[data-words="en"] li', 8000);
   const listed = await app.exec(
     `return Array.from(document.querySelectorAll('[data-words="en"] li')).map((l) => l.textContent.trim())`,
