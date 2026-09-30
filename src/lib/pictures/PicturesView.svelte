@@ -5,6 +5,7 @@
    * the one that is here.
    */
   import { onMount, tick } from 'svelte';
+  import { shortcuts } from '$lib/shell/keys.svelte';
   import Images from '@lucide/svelte/icons/images';
   import NotebookPen from '@lucide/svelte/icons/notebook-pen';
   import Plus from '@lucide/svelte/icons/plus';
@@ -157,18 +158,16 @@
     reveal(selected);
   }
 
-  function onkeydown(event: KeyboardEvent) {
-    if (event.defaultPrevented) return;
-    const mod = event.ctrlKey || event.metaKey;
-    if (mod && event.key === 'f') {
-      event.preventDefault();
-      searchField?.focus();
-      searchField?.select();
-    }
-  }
+  // The keys of the store, while it is shown: see `shell/keys`.
+  onMount(() =>
+    shortcuts.bind({
+      'store-find': () => {
+        searchField?.focus();
+        searchField?.select();
+      },
+    }),
+  );
 </script>
-
-<svelte:window {onkeydown} />
 
 <div
   class="pictures"

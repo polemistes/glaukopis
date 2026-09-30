@@ -5,6 +5,9 @@
   import { languages, t } from '$lib/i18n';
   import { library } from '$lib/state/library.svelte';
   import { router } from '$lib/state/router.svelte';
+  import { keysUi, shortcuts } from '$lib/shell/keys.svelte';
+  import KeySheet from '$lib/shell/KeySheet.svelte';
+  import Palette from '$lib/shell/Palette.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import ConfirmHost from '$lib/ui/ConfirmHost.svelte';
   import DragGhost from '$lib/ui/DragGhost.svelte';
@@ -82,24 +85,22 @@
         .catch(() => {});
   });
 
+  // The keys that hold wherever one is.
+  onMount(() =>
+    shortcuts.bind({
+      projects: () => router.go({ view: 'projects' }),
+      library: () => router.go({ view: 'library' }),
+      pictures: () => router.go({ view: 'pictures' }),
+      settings: () => router.go({ view: 'settings' }),
+      'search-everything': () => router.go({ view: 'search' }),
+      palette: () => keysUi.togglePalette(),
+      sheet: () => keysUi.toggleSheet(),
+    }),
+  );
+
+  // Every key comes here, and is done where it is bound: see `shell/keys`.
   function onkeydown(event: KeyboardEvent) {
-    // What the editor or a view has done with the key is not done again here:
-    // Ctrl+, in the text is lowered writing, not the settings.
-    if (event.defaultPrevented) return;
-    const mod = event.ctrlKey || event.metaKey;
-    // The search through everything, from wherever one is.
-    if (mod && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'f') {
-      event.preventDefault();
-      router.go({ view: 'search' });
-      return;
-    }
-    if (!mod || event.altKey || event.shiftKey) return;
-    if (event.key === '1') router.go({ view: 'projects' });
-    else if (event.key === '2') router.go({ view: 'library' });
-    else if (event.key === '3') router.go({ view: 'pictures' });
-    else if (event.key === ',') router.go({ view: 'settings' });
-    else return;
-    event.preventDefault();
+    shortcuts.handle(event);
   }
 </script>
 
@@ -134,6 +135,8 @@
 
   <ReferenceHost />
   <ConfirmHost />
+  {#if keysUi.sheet}<KeySheet onclose={() => (keysUi.sheet = false)} />{/if}
+  {#if keysUi.palette}<Palette onclose={() => (keysUi.palette = false)} />{/if}
   <MenuHost />
   <DragGhost />
 {/if}

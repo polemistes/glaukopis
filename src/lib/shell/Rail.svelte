@@ -1,5 +1,6 @@
 <script lang="ts">
   import FolderOpen from '@lucide/svelte/icons/folder-open';
+  import Keyboard from '@lucide/svelte/icons/keyboard';
   import Images from '@lucide/svelte/icons/images';
   import LibraryBig from '@lucide/svelte/icons/library-big';
   import Search from '@lucide/svelte/icons/search';
@@ -7,6 +8,7 @@
   import { t } from '$lib/i18n';
   import { router } from '$lib/state/router.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import { keysUi } from './keys.svelte';
   import Mark from './Mark.svelte';
 
   const view = $derived(router.route.view);
@@ -61,6 +63,17 @@
 
   <div class="spring"></div>
 
+  <button
+    type="button"
+    class="place"
+    class:current={keysUi.sheet}
+    aria-label={t('keys-title')}
+    use:tooltip={{ text: t('keys-title'), shortcut: 'Ctrl+/', side: 'right' }}
+    onclick={() => keysUi.toggleSheet()}
+  >
+    <Keyboard size={19} strokeWidth={1.7} />
+  </button>
+
   <a
     href="#/settings"
     class="place"
@@ -91,6 +104,10 @@
   }
   .place {
     position: relative;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;

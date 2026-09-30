@@ -1,0 +1,99 @@
+# The keys of the application: the sheet of them (Ctrl+/) and the palette of
+# commands (Ctrl+K). Each key is named by what it does, as a command.
+
+keys-title = Keys
+keys-subtitle = What each key does, and where. Ctrl+K finds any of it by its name.
+keys-palette-title = What is to be done?
+keys-palette-placeholder = Begin to type what is to be done
+keys-palette-none = Nothing here goes by that name
+keys-palette-hint = Everything that has a key, and some that have none. All the keys: { $keys }
+
+## Where the keys hold
+
+keys-place-everywhere = Everywhere
+keys-place-project = In a project
+keys-place-review = While changes are reviewed
+keys-place-diagram = In the diagram
+keys-place-text = In the text of a map
+keys-place-writing = Writing
+keys-place-library = In the library
+keys-place-store = In the store of pictures
+
+## What they do
+
+keys-projects = The projects
+keys-library = The library
+keys-pictures = The pictures
+keys-settings = Settings
+keys-search-everything = Search through everything
+keys-palette = What is to be done?
+keys-sheet = The keys
+keys-diagram-or-text = Diagram or text
+keys-preview = Preview and export
+keys-side-references = References
+keys-side-pictures = Pictures of the project
+keys-side-history = History
+keys-side-changes = Review changes
+keys-side-panel = Open or close the panel at the side
+keys-side-by-side = Two side by side
+keys-share = Share the project
+keys-find = Search the text
+keys-replace = Search and replace
+keys-undo = Undo
+keys-redo = Redo
+keys-redo-y = Redo
+keys-review-next = The next change, leaving this one for later
+keys-review-previous = The change before
+keys-review-accept = Accept the change
+keys-review-reject = Reject the change
+keys-diagram-child = A new element under the one selected
+keys-diagram-sibling = A new element beside it
+keys-diagram-open = Write the text of the element
+keys-diagram-rename = Rename
+keys-diagram-fold = Fold away what is under it, or open it
+keys-diagram-delete = Delete
+keys-diagram-go = Go from element to element
+keys-diagram-more = Select more
+keys-diagram-move = Move the element: up, down, deeper, less deep
+keys-diagram-menu = The menu of what is selected
+keys-diagram-all = Select all
+keys-diagram-whole = Show the whole map
+keys-diagram-closer = Closer
+keys-diagram-farther = Farther
+keys-text-new = A new element, from the cursor on
+keys-text-deeper = In a name: the element deeper
+keys-text-shallower = In a name: the element less deep
+keys-text-move = Move the element: up, down, deeper, less deep
+keys-text-fold = Fold away what is under the element, or open it
+keys-text-unfold-all = Open all that is folded under it
+keys-text-found-next = The next that is found
+keys-text-found-previous = The one found before
+keys-writing-cite = Cite
+keys-writing-cite-keys = Cite
+keys-writing-italic = Italics
+keys-writing-bold = Bold
+keys-writing-smallcaps = Small capitals
+keys-writing-strike = Struck through
+keys-writing-raised = Raised
+keys-writing-lowered = Lowered
+keys-writing-quotation = Quotation
+keys-writing-list = List
+keys-writing-numbered = Numbered list
+keys-writing-list-in = In a list: one level in
+keys-writing-list-out = In a list: one level out
+keys-writing-break = A new line in the same paragraph
+keys-writing-line = A new line in the same paragraph
+keys-writing-note = A note
+keys-writing-picture = A picture
+keys-writing-table = A table
+keys-writing-formula = A formula in the line
+keys-writing-equation = An equation
+keys-writing-crossref = A cross-reference
+keys-writing-spelling = The next misspelt word
+keys-writing-spelling-back = The misspelt word before
+keys-writing-undo = Undo
+keys-writing-redo = Redo
+keys-writing-redo-y = Redo
+keys-library-find = Search the library
+keys-library-new = A new reference
+keys-store-find = Search the pictures

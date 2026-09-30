@@ -1,6 +1,7 @@
 <script lang="ts">
   import { save } from '@tauri-apps/plugin-dialog';
   import { onMount } from 'svelte';
+  import { shortcuts } from '$lib/shell/keys.svelte';
   import ArrowDownUp from '@lucide/svelte/icons/arrow-down-up';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ClipboardPaste from '@lucide/svelte/icons/clipboard-paste';
@@ -347,21 +348,17 @@
     );
   }
 
-  function onkeydown(event: KeyboardEvent) {
-    if (event.defaultPrevented) return;
-    const mod = event.ctrlKey || event.metaKey;
-    if (mod && event.key === 'f') {
-      event.preventDefault();
-      searchField?.focus();
-      searchField?.select();
-    } else if (mod && event.key === 'n') {
-      event.preventDefault();
-      add();
-    }
-  }
+  // The keys of the library, while it is shown: see `shell/keys`.
+  onMount(() =>
+    shortcuts.bind({
+      'library-find': () => {
+        searchField?.focus();
+        searchField?.select();
+      },
+      'library-new': () => void add(),
+    }),
+  );
 </script>
-
-<svelte:window {onkeydown} />
 
 <div
   class="library"

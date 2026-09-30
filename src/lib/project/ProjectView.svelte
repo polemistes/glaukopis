@@ -39,6 +39,7 @@
   import { openProject, projects } from '$lib/state/projects.svelte';
   import { jumpFor } from '$lib/search/everything.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
+  import { shortcuts } from '$lib/shell/keys.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import Divider from '$lib/ui/Divider.svelte';
@@ -582,74 +583,47 @@
     void saveView();
   }
 
-  function onkeydown(event: KeyboardEvent) {
-    // What the diagram or the text has done with the key is not done again here:
-    // Ctrl+Z in the diagram is one step back, not two.
-    if (!project || event.defaultPrevented) return;
-    const mod = event.ctrlKey || event.metaKey;
-    // The review of changes: its panel, and what is done with the change looked at.
-    if (mod && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'e') {
-      event.preventDefault();
-      toggleReview();
-      return;
-    }
-    if (review && event.key === 'F8' && !mod && !event.altKey) {
-      event.preventDefault();
-      if (event.shiftKey) review.previous();
-      else review.next();
-      return;
-    }
-    if (
-      review &&
-      mod &&
-      event.altKey &&
-      !event.shiftKey &&
-      (event.code === 'KeyY' || event.code === 'KeyN')
-    ) {
-      event.preventDefault();
-      if (event.code === 'KeyY') void review.accept();
-      else void review.reject();
-      return;
-    }
-    if (!mod || event.altKey) return;
-    const target = event.target as HTMLElement;
-    const typing = target.closest('input, textarea, .prose');
-    const key = event.key.toLowerCase();
-    if (key === 'd' && !event.shiftKey) {
-      // Between the two views of the map.
-      event.preventDefault();
-      if (pane) panes[focused] = { ...pane, mode: pane.mode === 'diagram' ? 'text' : 'diagram' };
-    } else if (key === 'r' && event.shiftKey) {
-      event.preventDefault();
-      side('references');
-    } else if (key === 'h' && event.shiftKey) {
-      event.preventDefault();
-      side('history');
-    } else if (key === 'p' && event.shiftKey) {
-      // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
-      event.preventDefault();
-      side('pictures');
-    } else if (key === 'p' && !event.shiftKey) {
-      event.preventDefault();
-      showPreview = !showPreview;
-    } else if ((key === 'f' || key === 'h') && !event.shiftKey) {
-      // The text of the map is searched; from the diagram, the text is turned to first.
-      event.preventDefault();
-      const i = focused;
-      if (pane && pane.mode !== 'text') panes[i] = { ...pane, mode: 'text' };
-      tick().then(() => texts[i]?.find(key === 'h'));
-    } else if (!typing && key === 'z') {
-      event.preventDefault();
-      if (event.shiftKey) project.redo();
-      else project.undo();
-    } else if (!typing && key === 'y') {
-      event.preventDefault();
-      project.redo();
-    }
+  /** The text of the map in view is searched; from the diagram, the text is turned to first. */
+  function findInText(replacing: boolean) {
+    const i = focused;
+    if (pane && pane.mode !== 'text') panes[i] = { ...pane, mode: 'text' };
+    tick().then(() => texts[i]?.find(replacing));
   }
+
+  // The keys of a project, while it is open: see `shell/keys`.
+  onMount(() => {
+    const reviewing = () => !!review;
+    return shortcuts.bind({
+      'diagram-or-text': {
+        run: () => {
+          if (pane)
+            panes[focused] = { ...pane, mode: pane.mode === 'diagram' ? 'text' : 'diagram' };
+        },
+        when: () => !!pane,
+      },
+      preview: () => (showPreview = !showPreview),
+      'side-references': () => side('references'),
+      // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
+      'side-pictures': () => side('pictures'),
+      'side-history': () => side('history'),
+      'side-changes': () => toggleReview(),
+      'side-panel': () => (sideKind ? closeSide() : side(lastSide, true)),
+      'side-by-side': sideBySide,
+      share: () => (showShare = true),
+      find: { run: () => findInText(false), when: () => !!pane },
+      replace: { run: () => findInText(true), when: () => !!pane },
+      undo: { run: () => project?.undo(), when: () => !!project },
+      redo: { run: () => project?.redo(), when: () => !!project },
+      'redo-y': { run: () => project?.redo(), when: () => !!project },
+      'review-next': { run: () => review?.next(), when: reviewing },
+      'review-previous': { run: () => review?.previous(), when: reviewing },
+      'review-accept': { run: () => void review?.accept(), when: reviewing },
+      'review-reject': { run: () => void review?.reject(), when: reviewing },
+    });
+  });
 </script>
 
-<svelte:window {onkeydown} {onblur} />
+<svelte:window {onblur} />
 
 {#if failure !== null}
   <EmptyState

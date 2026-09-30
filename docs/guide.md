@@ -1112,8 +1112,14 @@ Norwegian is checked: the first underlines of a session come after a moment.
 
 ## Keys
 
+Everything here is also in the application: **Ctrl+/**, or the keyboard at
+the foot of the rail, shows the keys by where they hold. **Ctrl+K** finds
+what is to be done by its name, and does it.
+
 | | |
 | --- | --- |
+| **Ctrl+/** | All the keys, by where they hold; also the keyboard in the rail |
+| **Ctrl+K** | What is to be done: anything that has a key, and some that have none, found by its name |
 | **Ctrl+1**, **Ctrl+2**, **Ctrl+3** | The projects, the library, the pictures |
 | **Ctrl+,** | Settings |
 | **Ctrl+D** | Diagram or text |
