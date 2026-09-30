@@ -31,8 +31,10 @@ pub struct AppState {
     library: Mutex<Library>,
     tools: RwLock<Tools>,
     fonts: RwLock<Option<Vec<String>>>,
-    /// One document is made at a time: they share a place to work in.
+    /// One preview or sample is made at a time: they share a place to work in.
     pub making: Mutex<()>,
+    /// And one file, beside them, in a place of its own.
+    pub exporting: Mutex<()>,
 }
 
 /// Where the resources are: where the environment says, where the
@@ -96,6 +98,7 @@ impl AppState {
             tools: RwLock::new(Tools::default()),
             fonts: RwLock::new(None),
             making: Mutex::new(()),
+            exporting: Mutex::new(()),
             data,
             _claim: claim,
         };

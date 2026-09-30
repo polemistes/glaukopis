@@ -30,7 +30,7 @@ struct CollectionsFile {
     collections: Vec<Collection>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Collections {
     pub list: Vec<Collection>,
 }

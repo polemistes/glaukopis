@@ -53,7 +53,7 @@ pub fn lookup_find(state: State<'_, AppState>, input: String, scope: Option<Scop
 
     let library = state.library();
     let entries = library.entries();
-    let index = duplicates::Index::new(entries);
+    let index = library.duplicates_index();
     let hits = outcome
         .hits
         .into_iter()

@@ -279,7 +279,7 @@ pub fn compare(a: &Fingerprint, b: &Fingerprint) -> Option<(Certainty, Vec<Reaso
 
 /// An index over a list of entries, for finding what matches a candidate
 /// without comparing it to every entry.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Index {
     prints: Vec<Fingerprint>,
     by_doi: HashMap<String, Vec<usize>>,

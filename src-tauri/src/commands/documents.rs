@@ -96,22 +96,37 @@ pub fn formats_delete(state: State<'_, AppState>, id: String) -> CommandResult<(
 
 // ---- documents ----
 
-/// Runs `work` with everything the making of a document needs.
+/// What the making of a document has of the library.
+enum Of {
+    /// Nothing.
+    Nothing,
+    /// The library itself, held while the work is done: for short work.
+    Held,
+    /// A copy of it as it is now, so that the library is free while the
+    /// work is done, which with a long document or LaTeX takes long.
+    Copy,
+}
+
+/// Runs `work` with everything the making of a document needs. One at a
+/// time in each lane: the preview and the samples of styles in one, the
+/// making of files in another, since they work in places of their own.
 fn with_context<T>(
     state: &AppState,
-    library: bool,
+    library: Of,
+    lane: &std::sync::Mutex<()>,
     work: impl FnOnce(&Context) -> glaukopis_core::Result<T>,
 ) -> CommandResult<T> {
-    let _one_at_a_time = state.making.lock().unwrap_or_else(|p| p.into_inner());
+    let copy = matches!(library, Of::Copy).then(|| state.library().clone());
+    let _one_at_a_time = lane.lock().unwrap_or_else(|p| p.into_inner());
     let tools = state.tools();
     let fonts = state.fonts();
-    let guard = library.then(|| state.library());
+    let guard = matches!(library, Of::Held).then(|| state.library());
     let pictures = state.data.pictures();
     let ctx = Context {
         tools: &tools,
         resources: &state.resources,
         styles: &state.styles,
-        library: guard.as_deref(),
+        library: guard.as_deref().or(copy.as_ref()),
         work: state.data.work(),
         fonts: &fonts,
         pictures: Some(&pictures),
@@ -249,8 +264,8 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
 pub fn document_preview(state: State<'_, AppState>, request: LeanRequest, pages: Vec<u32>) -> CommandResult<Preview> {
     let (mut request, stop) = whole(request)?;
     request.format.sanitise();
-    let readied = with_context(&state, true, |ctx| export::preview_ready(ctx, &request))?;
-    with_context(&state, false, |ctx| export::preview_made(ctx, &request, readied, &pages, &stop))
+    let readied = with_context(&state, Of::Held, &state.making, |ctx| export::preview_ready(ctx, &request))?;
+    with_context(&state, Of::Nothing, &state.making, |ctx| export::preview_made(ctx, &request, readied, &pages, &stop))
 }
 
 /// Pages of the document that was made last for a key, as they come into
@@ -313,7 +328,7 @@ pub fn document_export(
     if let Some(ticket) = &ticket {
         exporting().push((ticket.clone(), stop.clone()));
     }
-    let made = with_context(&state, true, |ctx| {
+    let made = with_context(&state, Of::Copy, &state.exporting, |ctx| {
         export::export_until(ctx, &request, target, Path::new(&path), &options.unwrap_or_default(), &stop)
     });
     if let Some(ticket) = &ticket {
@@ -338,7 +353,9 @@ pub fn style_sample(
     references: Vec<glaukopis_core::document::CarriedReference>,
     language: Option<String>,
 ) -> CommandResult<String> {
-    with_context(&state, true, |ctx| export::style_sample(ctx, &xml, &references, language.as_deref()))
+    with_context(&state, Of::Held, &state.making, |ctx| {
+        export::style_sample(ctx, &xml, &references, language.as_deref())
+    })
 }
 
 /// Opens a file that was made, in the program the system uses for its kind.

@@ -54,7 +54,9 @@ fn stamp_of(path: &Path) -> Option<Stamp> {
     Some(Stamp { modified: meta.modified().ok(), len: meta.len() })
 }
 
-#[derive(Debug)]
+/// The library. A clone is a copy of it as it is, to be read while the
+/// library itself goes on being changed: a document is made from one.
+#[derive(Debug, Clone)]
 pub struct Library {
     dir: PathBuf,
     file: PathBuf,
@@ -73,6 +75,8 @@ pub struct Library {
     /// interface last took the whole library: a change of one entry, which
     /// reads it first, does not tell the interface of the others.
     reread: bool,
+    /// What duplicates are found by: made when it is first asked for after a change.
+    index: std::cell::OnceCell<crate::duplicates::Index>,
 }
 
 impl Library {
@@ -94,6 +98,7 @@ impl Library {
             warnings: Vec::new(),
             kept: Vec::new(),
             reread: false,
+            index: std::cell::OnceCell::new(),
         };
         library.load()?;
         Ok(library)
@@ -162,6 +167,7 @@ impl Library {
     }
 
     fn reindex(&mut self) {
+        self.index = std::cell::OnceCell::new();
         self.by_id.clear();
         self.aliases.clear();
         for (i, e) in self.entries.iter().enumerate() {
@@ -192,7 +198,14 @@ impl Library {
         std::mem::take(&mut self.reread)
     }
 
+    /// The index by which the duplicates of an entry are found, kept until the library changes.
+    pub fn duplicates_index(&self) -> &crate::duplicates::Index {
+        self.index.get_or_init(|| crate::duplicates::Index::new(&self.entries))
+    }
+
     pub(crate) fn save(&mut self) -> Result<()> {
+        // Whatever was changed is written: what was found by is made again when it is asked for.
+        self.index = std::cell::OnceCell::new();
         let mut out = String::with_capacity(self.entries.len() * 400 + HEADER.len());
         out.push_str(HEADER);
         for v in self.kept.iter().filter(|v| v.readable) {
@@ -529,6 +542,14 @@ impl Library {
         let name = Self::file_name_for(&self.entries[index]);
         let stored = attachments::store_file(&self.dir, source, &name)?;
         self.link_file(index, stored)
+    }
+
+    /// The name a file of an entry is given in the store, and where the store
+    /// is: that a file may be copied there without the library being held,
+    /// and linked with `attach_stored` after.
+    pub fn file_name_of(&self, id: &str) -> Result<(String, PathBuf)> {
+        let entry = self.resolve(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
+        Ok((Self::file_name_for(entry), self.dir.clone()))
     }
 
     /// Links a file that is already in the store.
@@ -970,6 +991,34 @@ mod tests {
         assert!(!written.contains("could not be read"));
         assert!(written.starts_with(HEADER));
         assert!(written[HEADER.len()..].starts_with("@book{a,"), "{written}");
+    }
+
+    #[test]
+    fn what_duplicates_are_found_by_follows_the_library() {
+        let (_tmp, mut lib) = library();
+        lib.add(&draft("@book{a, author={Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}}")).unwrap();
+        let later = draft("@book{b, author={Lord, Albert}, title={The Singer of Tales}, date={1960}}");
+        let print = crate::duplicates::fingerprint(&later.to_entry());
+        assert!(lib.duplicates_index().find(&print, None).is_empty());
+        // A copy is the library as it was.
+        let copy = lib.clone();
+        lib.add(&later).unwrap();
+        assert_eq!(lib.duplicates_index().find(&print, None).len(), 1, "made again after the change");
+        assert!(copy.duplicates_index().find(&print, None).is_empty());
+        assert_eq!((copy.len(), lib.len()), (1, 2));
+    }
+
+    #[test]
+    fn a_file_is_stored_without_the_library_and_linked_after() {
+        let (tmp, mut lib) = library();
+        let e = lib.add(&draft("@book{a, author={Nagy, Gregory}, title={Homeric Questions}, date={1996}}")).unwrap();
+        let source = tmp.path().join("questions.pdf");
+        fs::write(&source, b"%PDF-1.4 Homeric").unwrap();
+        let (name, dir) = lib.file_name_of(&e.id).unwrap();
+        assert_eq!(name, "Nagy 1996 - Homeric Questions");
+        let stored = attachments::store_file(&dir, &source, &name).unwrap();
+        let linked = lib.attach_stored(&e.id, &stored).unwrap();
+        assert_eq!(linked.attachments(), [stored]);
     }
 
     #[test]

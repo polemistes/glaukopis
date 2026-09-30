@@ -12,7 +12,7 @@ use crate::error::CommandResult;
 use crate::state::AppState;
 
 /// The dictionaries there are, looked for anew.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn spelling_languages(state: State<'_, AppState>) -> CommandResult<Vec<Found>> {
     Ok(state.spelling.languages())
 }

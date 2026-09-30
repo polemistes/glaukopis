@@ -146,9 +146,18 @@ try {
     const making = invoke('document_export', { request, target: 'pdflatex', path: ${JSON.stringify(stoppedAt)}, options: {}, ticket: 'the-ticket' })
       .then(() => 'made', (e) => e?.kind ?? String(e));
     await new Promise((r) => setTimeout(r, 400));
+    // The library is not held while the file is made.
+    let settled = false;
+    making.then(() => (settled = true));
+    const asked = performance.now();
+    await invoke('library_list');
+    const answered = Math.round(performance.now() - asked);
+    const whileMaking = !settled;
     await invoke('document_export_stop', { ticket: 'the-ticket' });
-    return await making;`);
-  check('a making can be stopped, and writes nothing', stopping === 'stopped' && !existsSync(stoppedAt), stopping);
+    return JSON.stringify({ outcome: await making, answered, whileMaking });`);
+  const { outcome, answered, whileMaking } = JSON.parse(stopping);
+  check('a making can be stopped, and writes nothing', outcome === 'stopped' && !existsSync(stoppedAt), outcome);
+  check('the library answers while a file is made', whileMaking && answered < 1000, `${answered} ms, still making: ${whileMaking}`);
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog');
 

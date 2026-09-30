@@ -151,7 +151,7 @@ pub fn library_find_matches(
 ) -> CommandResult<Vec<PlanMatch>> {
     let library = state.library();
     let entries = library.entries();
-    let index = duplicates::Index::new(entries);
+    let index = library.duplicates_index();
     let print = duplicates::fingerprint(&draft.to_entry());
     let except_index = except.as_ref().and_then(|id| entries.iter().position(|e| &e.id == id));
     Ok(index
@@ -172,8 +172,9 @@ pub fn library_find_matches(
 
 #[tauri::command(async)]
 pub fn library_duplicates(state: State<'_, AppState>) -> CommandResult<Vec<Group>> {
-    let library = state.library();
-    Ok(duplicates::find_groups(library.entries()))
+    // Looked for in a copy: with many entries it takes a while, and the library is not held meanwhile.
+    let entries = state.library().entries().to_vec();
+    Ok(duplicates::find_groups(&entries))
 }
 
 /// A draft in which `kept` has been given what it lacks from `absorbed`, as a
@@ -257,10 +258,16 @@ pub fn collection_list(state: State<'_, AppState>) -> CommandResult<Vec<Collecti
 
 #[tauri::command(async)]
 pub fn attachment_add(state: State<'_, AppState>, id: String, paths: Vec<String>) -> CommandResult<EntryFull> {
+    // The files are read and copied into the store with the library free, and linked after.
+    let (name, dir) = state.library().file_name_of(&id)?;
+    let mut stored = Vec::new();
+    for p in &paths {
+        stored.push(glaukopis_core::library::attachments::store_file(&dir, Path::new(p), &name)?);
+    }
     let mut library = state.library();
     let mut last = library.require(&id)?.clone();
-    for p in &paths {
-        last = library.attach(&id, Path::new(p))?;
+    for s in &stored {
+        last = library.attach_stored(&id, s)?;
     }
     Ok(full(&library, &last))
 }

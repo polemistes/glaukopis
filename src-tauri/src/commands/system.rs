@@ -17,7 +17,7 @@ pub struct SystemInfo {
     pub user: String,
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn system_info(state: State<'_, AppState>) -> CommandResult<SystemInfo> {
     Ok(SystemInfo {
         version: env!("CARGO_PKG_VERSION"),
@@ -50,7 +50,7 @@ pub fn settings_load(state: State<'_, AppState>) -> CommandResult<serde_json::Ma
     Ok(glaukopis_core::settings::load(&state.data.settings_file())?)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn settings_save(
     state: State<'_, AppState>,
     settings: serde_json::Map<String, serde_json::Value>,
