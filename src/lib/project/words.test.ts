@@ -61,7 +61,7 @@ describe('the words of a diagram', () => {
         .map((p) => p.text)
         .join(''),
     ).toBe(
-      'Tab adds an idea under the one selected · Enter adds one beside it · double-click to write',
+      'Tab adds an element under the one selected · Enter adds one beside it · double-click to write',
     );
     expect(hint().filter((p) => p.name)).toEqual([
       { text: 'Tab', name: 'tab' },
