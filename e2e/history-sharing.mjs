@@ -156,7 +156,7 @@ try {
   );
 
   // ---- the panel, on the guest's computer ----
-  await guest.click('button[aria-label="History"]');
+  await guest.keys(['Control', 'Shift', 'h']);
   await guest.waitFor('.history-panel .moment', 10000);
   await sleep(800);
   const listed = await guest.exec(

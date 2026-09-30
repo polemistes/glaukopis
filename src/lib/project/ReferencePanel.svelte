@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import { onMount } from 'svelte';
   import FileUp from '@lucide/svelte/icons/file-up';
   import Plus from '@lucide/svelte/icons/plus';
@@ -20,9 +21,11 @@
     /** The map in view: "In this map" counts its references. */
     mapId: string;
     onclose: () => void;
+    /** What stands at the head in place of the title: the tabs of the panel at the side. */
+    head?: Snippet;
   }
 
-  let { project, mapId, onclose }: Props = $props();
+  let { project, mapId, onclose, head }: Props = $props();
 
   let scope = $state<'map' | 'project' | 'library'>('project');
   let query = $state('');
@@ -51,7 +54,7 @@
 
 <aside class="panel" aria-label={t('project-references')}>
   <header>
-    <h2>{t('project-references')}</h2>
+    {#if head}{@render head()}{:else}<h2>{t('project-references')}</h2>{/if}
     <IconButton label={t('project-new-reference')} size="sm" onclick={() => newReference()}
       ><Plus size={15} /></IconButton
     >

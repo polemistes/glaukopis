@@ -269,7 +269,7 @@ try {
   await picturesKey();
   await app.waitFor('.panel[aria-label="Pictures"]', 5000);
   check('the panel of pictures takes the place of that of the references', !(await app.exists('.panel[aria-label="References"]')));
-  check('its button is in the header', await app.exists('.project header button[aria-label="Pictures"][aria-pressed="true"]'));
+  check('its tab is the one chosen', await app.exists('.side-tabs [role="tab"][aria-label="Pictures"][aria-selected="true"]'));
   check('the project has no pictures yet', /No pictures yet/.test(await app.text('.panel .body')));
   await app.clickText('.panel [role="radio"]', 'This map');
   await sleep(200);
@@ -413,7 +413,7 @@ try {
   await app.keys(['Control', 'Shift', 'r']);
   await app.waitFor('.panel[aria-label="References"]', 5000);
   check('a note on a picture marks no reference', (await app.count('.panel .note-button.has')) === 0);
-  await app.click('.project header button[aria-label="Pictures"]');
+  await app.click('.side-tabs [role="tab"][aria-label="Pictures"]');
   await app.waitFor('.panel[aria-label="Pictures"] .list .row', 5000);
   await app.doubleClick(await row('The shield of Achilles'));
   await app.waitFor('dialog .picture-pane', 5000);

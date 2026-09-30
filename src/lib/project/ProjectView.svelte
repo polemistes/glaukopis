@@ -1,16 +1,13 @@
 <script lang="ts">
   import { onDestroy, onMount, tick, untrack } from 'svelte';
   import ArrowLeft from '@lucide/svelte/icons/arrow-left';
-  import BookMarked from '@lucide/svelte/icons/book-marked';
   import BookOpenText from '@lucide/svelte/icons/book-open-text';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import CloudDownload from '@lucide/svelte/icons/cloud-download';
   import Columns2 from '@lucide/svelte/icons/columns-2';
-  import FileDiff from '@lucide/svelte/icons/file-diff';
   import FileText from '@lucide/svelte/icons/file-text';
-  import HistoryIcon from '@lucide/svelte/icons/history';
-  import Images from '@lucide/svelte/icons/images';
   import Network from '@lucide/svelte/icons/network';
+  import PanelRight from '@lucide/svelte/icons/panel-right';
   import Redo2 from '@lucide/svelte/icons/redo-2';
   import Undo2 from '@lucide/svelte/icons/undo-2';
   import Users from '@lucide/svelte/icons/users';
@@ -56,6 +53,7 @@
   import type { Project } from './model/project.svelte';
   import PicturePanel from './PicturePanel.svelte';
   import ReferencePanel from './ReferencePanel.svelte';
+  import SideTabs, { type SideKind } from './SideTabs.svelte';
   import MapText from './text/MapText.svelte';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
   import { historyOf } from '$lib/history/history.svelte';
@@ -91,10 +89,13 @@
     sizes?: Partial<Sizes>;
     panes?: Pane[];
     cameras?: Record<string, Camera>;
+    /** What the panel at the side shows; none where it is closed. */
+    side?: SideKind | null;
+    /** What it showed last, and shows when it is opened again. */
+    lastSide?: SideKind;
+    /** As the view was kept before the panel at the side had tabs. */
     references?: boolean;
-    /** The panel at the side shows the pictures. Not both: they have the same place. */
     pictures?: boolean;
-    /** The panel at the side shows the history. */
     history?: boolean;
     preview?: boolean;
     /** The elements under which the text is folded away. */
@@ -106,9 +107,9 @@
   let panes = $state<Pane[]>([]);
   let focused = $state(0);
   let cameras = $state<Record<string, Camera>>({});
-  let showReferences = $state(false);
-  let showPictures = $state(false);
-  let showHistory = $state(false);
+  /** What the panel at the side shows: one thing at a time, in the one place. */
+  let sideKind = $state<SideKind | null>(null);
+  let lastSide = $state<SideKind>('references');
   /** A moment of the history that is looked at, in place of the map as it is. */
   let looking = $state.raw<Looking | null>(null);
   /** Which pictures the panel shows. */
@@ -147,14 +148,13 @@
     if (!open || !project || !pane) {
       review?.close();
       review = null;
+      if (sideKind === 'changes') sideKind = null;
       return;
     }
+    sideKind = lastSide = 'changes';
     if (review) return;
     // The changes are shown in the text: the pane shows it.
     if (pane.mode !== 'text') panes[focused] = { ...pane, mode: 'text' };
-    showReferences = false;
-    showPictures = false;
-    showHistory = false;
     looking = null;
     review = new Review(project, sourceFor(project, ownId), pane.map);
     review.later(0);
@@ -218,9 +218,19 @@
       list.push({ map: second.map, mode: second.mode });
     panes = list;
     cameras = stored.cameras ?? {};
-    showReferences = stored.references ?? false;
-    showPictures = !showReferences && (stored.pictures ?? false);
-    showHistory = !showReferences && !showPictures && (stored.history ?? false);
+    // The changes are gone through when asked for, not when the project opens.
+    const kept =
+      stored.side !== undefined
+        ? stored.side
+        : stored.references
+          ? 'references'
+          : stored.pictures
+            ? 'pictures'
+            : stored.history
+              ? 'history'
+              : null;
+    sideKind = kept === 'changes' ? null : kept;
+    lastSide = stored.lastSide ?? sideKind ?? 'references';
     showPreview = stored.preview ?? false;
     sizes = { ...GIVEN, ...stored.sizes };
   }
@@ -313,9 +323,8 @@
       sizes: $state.snapshot(sizes),
       panes: $state.snapshot(panes),
       cameras: kept,
-      references: showReferences,
-      pictures: showPictures,
-      history: showHistory,
+      side: sideKind === 'changes' ? null : sideKind,
+      lastSide,
       preview: showPreview,
       folded: folding.kept((id) => !!project?.node(id)),
     };
@@ -335,9 +344,8 @@
   $effect(() => {
     if (!project) return;
     void panes.map((p) => `${p.map}${p.mode}`);
-    void showReferences;
-    void showPictures;
-    void showHistory;
+    void sideKind;
+    void lastSide;
     void showPreview;
     void cameras;
     void sizes.split;
@@ -430,16 +438,28 @@
     sizes[which] = clamp(sizes[which] - dx, least, most);
   }
 
-  /** The references, the pictures and the history have the same place at the side: one at a time. */
-  function side(which: 'references' | 'pictures' | 'history', shown?: boolean) {
-    const now =
-      which === 'references' ? showReferences : which === 'pictures' ? showPictures : showHistory;
-    const open = shown ?? !now;
-    showReferences = which === 'references' && open;
-    showPictures = which === 'pictures' && open;
-    showHistory = which === 'history' && open;
-    if (!showHistory) looking = null;
-    if (open) toggleReview(false);
+  /**
+   * Shows one of what the panel at the side can show, or closes it: the
+   * references, the pictures, the history and the changes have the same
+   * place, one at a time.
+   */
+  function side(which: SideKind, shown?: boolean) {
+    const open = shown ?? sideKind !== which;
+    if (which === 'changes') {
+      toggleReview(open);
+      return;
+    }
+    if (open) {
+      if (review) toggleReview(false);
+      sideKind = lastSide = which;
+    } else if (sideKind === which) {
+      sideKind = null;
+    }
+    if (sideKind !== 'history') looking = null;
+  }
+
+  function closeSide() {
+    if (sideKind) side(sideKind, false);
   }
 
   // The pictures are asked for from elsewhere, as from the tools for writing.
@@ -748,36 +768,11 @@
         <Columns2 size={16} />
       </IconButton>
       <IconButton
-        label={t('project-references')}
-        shortcut="Ctrl+Shift+R"
-        active={showReferences}
-        onclick={() => side('references')}
+        label={t('project-side')}
+        active={!!sideKind}
+        onclick={() => (sideKind ? closeSide() : side(lastSide, true))}
       >
-        <BookMarked size={16} />
-      </IconButton>
-      <IconButton
-        label={t('project-pictures')}
-        shortcut="Ctrl+Shift+P"
-        active={showPictures}
-        onclick={() => side('pictures')}
-      >
-        <Images size={16} />
-      </IconButton>
-      <IconButton
-        label={t('history-title')}
-        shortcut="Ctrl+Shift+H"
-        active={showHistory}
-        onclick={() => side('history')}
-      >
-        <HistoryIcon size={16} />
-      </IconButton>
-      <IconButton
-        label={t('review-open')}
-        shortcut="Ctrl+Shift+E"
-        active={!!review}
-        onclick={() => toggleReview()}
-      >
-        <FileDiff size={16} />
+        <PanelRight size={16} />
       </IconButton>
       <IconButton
         label={t('project-preview')}
@@ -905,11 +900,14 @@
           />
         </div>
       {/if}
-      {#if review || showReferences || showPictures || showHistory}
+      {#if sideKind}
+        {#snippet tabs()}
+          <SideTabs current={sideKind ?? lastSide} onpick={(kind) => side(kind, true)} />
+        {/snippet}
         <Divider
-          label={showPictures
+          label={sideKind === 'pictures'
             ? t('project-between-pictures')
-            : showHistory
+            : sideKind === 'history'
               ? t('history-between')
               : t('project-between-references')}
           onstart={() => measure('references')}
@@ -921,27 +919,29 @@
           bind:this={referencesEl}
           style:width={sizes.references ? `${sizes.references}px` : undefined}
         >
-          {#if review}
-            <ReviewPanel {review} onclose={() => toggleReview(false)} />
-          {:else if showHistory}
+          {#if sideKind === 'changes' && review}
+            <ReviewPanel {review} head={tabs} onclose={closeSide} />
+          {:else if sideKind === 'history'}
             <HistoryPanel
               {project}
               history={historyOf(project, ownId)}
               {looking}
               pane={focused}
               onlook={(l) => (looking = l)}
-              onclose={() => side('history', false)}
+              head={tabs}
+              onclose={closeSide}
             />
-          {:else if showPictures}
+          {:else if sideKind === 'pictures'}
             <PicturePanel
               {project}
               mapId={pane.map}
               bind:scope={pictureScope}
-              onclose={() => (showPictures = false)}
+              head={tabs}
+              onclose={closeSide}
               onopenmap={(id) => show(id)}
             />
           {:else}
-            <ReferencePanel {project} mapId={pane.map} onclose={() => (showReferences = false)} />
+            <ReferencePanel {project} mapId={pane.map} head={tabs} onclose={closeSide} />
           {/if}
         </div>
       {/if}

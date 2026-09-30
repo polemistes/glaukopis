@@ -134,7 +134,7 @@ try {
     await sleep(1200);
   };
   await writeAtEnd(' Of Achilles.');
-  await app.click('button[aria-label="History"]');
+  await app.keys(['Control', 'Shift', 'h']);
   await app.waitFor('.history-panel .moment', 10000);
   await sleep(600);
   const rows = () =>
@@ -185,8 +185,8 @@ try {
   // ---- kept less finely, as if weeks had passed ----
   const merged = await ask(app, `return await h.thinAsOf(Date.now() + 60 * 24 * 3600 * 1000);`);
   check('older history is merged', merged > 0, `${merged} stretches`);
-  await app.click('button[aria-label="History"]');
-  await app.click('button[aria-label="History"]');
+  await app.keys(['Control', 'Shift', 'h']);
+  await app.keys(['Control', 'Shift', 'h']);
   await app.waitFor('.history-panel .moment', 10000);
   await sleep(600);
   listed = await rows();
@@ -211,8 +211,8 @@ try {
 
   // Deleted before a moment, from the settings: the moment of what is written now.
   await writeAtEnd(' And more.');
-  await app.click('button[aria-label="History"]');
-  await app.click('button[aria-label="History"]');
+  await app.keys(['Control', 'Shift', 'h']);
+  await app.keys(['Control', 'Shift', 'h']);
   await app.waitFor('.history-panel .moment:not(.named)', 10000);
   await sleep(600);
   await app.click('.history-panel .moment:not(.named)');

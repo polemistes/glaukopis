@@ -570,6 +570,14 @@ become collections here.
 Before anything is added you are shown what was found and what is already
 there. Importing the same a second time adds nothing.
 
+## The panel at the side
+
+The references, the pictures, the history and the changes to review share
+one panel at the side of the map, one at a time. The button with the panel
+on it, in the bar over the map, opens it as it was last, and closes it; the
+tabs at its head change what it shows. Each has its key as well:
+**Ctrl+Shift+R**, **Ctrl+Shift+P**, **Ctrl+Shift+H** and **Ctrl+Shift+E**.
+
 ## Several maps
 
 A project can hold several maps. They are the tabs over the map; **+** makes
@@ -887,9 +895,8 @@ when. The project can then be looked at as it was at any moment, and what
 stood there brought back. It is off at first, and turned on for one project
 at a time.
 
-**To open the history**, click the clock at the top right, or press
-**Ctrl+Shift+H**. It takes the place at the side that the references and the
-pictures share. While the history is not kept, the panel says so and has one
+**To open the history**, choose its tab in the panel at the side, or press
+**Ctrl+Shift+H**. While the history is not kept, the panel says so and has one
 button, **Keep the history**: from that moment the history begins with the
 project as it is, and nothing written after it is thrown away. The setting
 is in the project, so in a shared project the others keep the history too.
@@ -962,9 +969,8 @@ the text at once, and the review comes after. It needs the history of the
 project, which tells who changed what, and when; where the history is not
 kept, the panel says so, and offers to keep it from then on.
 
-**Review changes** over the text (**Ctrl+Shift+E**) opens the panel of
-changes beside the text of the map, in the place at the side that the
-references, the pictures and the history share. It lists the changes of the map in the
+**Changes**, in the panel at the side (**Ctrl+Shift+E**), is where the
+changes of a map are reviewed, beside its text. It lists the changes of the map in the
 order of the text, says how many are left, and shows one at a time: where it
 is, as it was and as it is, with the words that changed marked, each person's
 in their colour, and who made it and when. While the panel is open, the text

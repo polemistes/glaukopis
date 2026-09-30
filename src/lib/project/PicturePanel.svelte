@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   /**
    * The pictures at the side of a project: those of the map in view, of the
    * project, or all of the store. A picture is dragged from here into a text,
@@ -48,10 +49,12 @@
     /** Which pictures are shown. */
     scope?: PictureScope;
     onclose: () => void;
+    /** What stands at the head in place of the title: the tabs of the panel at the side. */
+    head?: Snippet;
     onopenmap?: (map: string) => void;
   }
 
-  let { project, mapId, scope = $bindable('project'), onclose, onopenmap }: Props = $props();
+  let { project, mapId, scope = $bindable('project'), onclose, onopenmap, head }: Props = $props();
 
   /** A picture as it stands in the list: one the project uses may not have arrived in the store. */
   interface Row {
@@ -220,7 +223,7 @@
   }}
 >
   <header>
-    <h2>{t('project-pictures')}</h2>
+    {#if head}{@render head()}{:else}<h2>{t('project-pictures')}</h2>{/if}
     <IconButton label={t('project-add-pictures')} size="sm" onclick={add}>
       <Plus size={15} />
     </IconButton>

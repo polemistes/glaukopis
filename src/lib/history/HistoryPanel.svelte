@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   /**
    * The history of the project beside the map (ADR 0021): what each person
    * did before a pause, and the moments that were given a name, the newest
@@ -34,9 +35,11 @@
     pane: number;
     onlook: (looking: Looking | null) => void;
     onclose: () => void;
+    /** What stands at the head in place of the title: the tabs of the panel at the side. */
+    head?: Snippet;
   }
 
-  let { project, history, looking, pane, onlook, onclose }: Props = $props();
+  let { project, history, looking, pane, onlook, onclose, head }: Props = $props();
 
   let sessions = $state.raw<Session[] | null>(null);
   let named = $state.raw<Named[]>([]);
@@ -190,7 +193,7 @@
 
 <div class="panel history-panel">
   <header>
-    <h2>{t('history-title')}</h2>
+    {#if head}{@render head()}{:else}<h2>{t('history-title')}</h2>{/if}
     {#if on}
       <IconButton
         label={t('history-settings')}

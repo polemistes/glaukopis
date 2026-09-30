@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import { tick } from 'svelte';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ChevronLeft from '@lucide/svelte/icons/chevron-left';
@@ -23,9 +24,11 @@
   interface Props {
     review: Review;
     onclose: () => void;
+    /** What stands at the head in place of the title: the tabs of the panel at the side. */
+    head?: Snippet;
   }
 
-  let { review, onclose }: Props = $props();
+  let { review, onclose, head }: Props = $props();
 
   let list = $state<HTMLElement>();
   let turning = $state(false);
@@ -226,7 +229,7 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <aside class="panel review-panel" aria-label={t('review-title')} {onkeydown}>
   <header>
-    <h2>{t('review-title')}</h2>
+    {#if head}{@render head()}{:else}<h2>{t('review-title')}</h2>{/if}
     <IconButton label={t('common-close')} shortcut="Ctrl+Shift+E" size="sm" onclick={onclose}
       ><X size={15} /></IconButton
     >
