@@ -18,20 +18,14 @@
   import Presence from '$lib/sharing/Presence.svelte';
   import SharePanel from '$lib/sharing/SharePanel.svelte';
   import { ProjectSharing } from '$lib/sharing/sharing.svelte';
-  import { importDropped } from '$lib/library/references.svelte';
-  import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
-  import { isReadPath } from '$lib/api/ocr';
   import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
   import { goThrough, takeWaiting } from '$lib/found/found.svelte';
   import FoundHost from '$lib/found/FoundHost.svelte';
-  import { tablesDropped } from '$lib/tables/ask';
-  import { insertFigure, widthFor } from '$lib/editor/commands';
-  import { viewsByDom } from '$lib/editor/ui.svelte';
-  import { isPicturePath, pictures } from '$lib/figures/pictures.svelte';
+  import { pictures } from '$lib/figures/pictures.svelte';
   import { picturesUi, type PictureScope } from '$lib/pictures/store.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
-  import { dropTarget, type DropEvent } from '$lib/ui/drag.svelte';
+  import { dropTarget } from '$lib/ui/drag.svelte';
   import { notify } from '$lib/ui/toast.svelte';
   import EditorHost from '$lib/editor/EditorHost.svelte';
   import { beforeClose } from '$lib/state/closing';
@@ -39,7 +33,7 @@
   import { openProject, projects } from '$lib/state/projects.svelte';
   import { jumpFor } from '$lib/search/everything.svelte';
   import { takeCitations } from '$lib/library/citing.svelte';
-  import { router, type MapMode } from '$lib/state/router.svelte';
+  import { router } from '$lib/state/router.svelte';
   import { shortcuts } from '$lib/shell/keys.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -50,7 +44,20 @@
   import { describeError } from '$lib/ui/toast.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { t } from '$lib/i18n';
-  import MapDiagram, { type Camera } from './diagram/MapDiagram.svelte';
+  import type { Camera } from './diagram/camera';
+  import MapDiagram from './diagram/MapDiagram.svelte';
+  import { filesDropped, mapOfIt } from './drops';
+  import {
+    arranged,
+    clamp,
+    sideWidth,
+    toStore,
+    withoutGone,
+    type Pane,
+    type Sizes,
+    type StoredView,
+    GIVEN,
+  } from './layout';
   import MapTabs from './MapTabs.svelte';
   import type { Project } from './model/project.svelte';
   import PicturePanel from './PicturePanel.svelte';
@@ -70,41 +77,6 @@
   import { sourceFor } from '$lib/review/source';
 
   let { projectId }: { projectId: string } = $props();
-
-  interface Pane {
-    map: string;
-    mode: MapMode;
-  }
-
-  /** How the room is shared between the parts of the view. Nought for what is given. */
-  interface Sizes {
-    /** The part of the width the first of two maps has. */
-    split: number;
-    preview: number;
-    /** The panel at the side, whether it shows the references or the pictures. */
-    references: number;
-  }
-
-  const GIVEN: Sizes = { split: 0.5, preview: 0, references: 0 };
-
-  interface StoredView {
-    sizes?: Partial<Sizes>;
-    panes?: Pane[];
-    cameras?: Record<string, Camera>;
-    /** What the panel at the side shows; none where it is closed. */
-    side?: SideKind | null;
-    /** What it showed last, and shows when it is opened again. */
-    lastSide?: SideKind;
-    /** Whether the outline stands beside the text. */
-    outline?: boolean;
-    /** As the view was kept before the panel at the side had tabs. */
-    references?: boolean;
-    pictures?: boolean;
-    history?: boolean;
-    preview?: boolean;
-    /** The elements under which the text is folded away. */
-    folded?: string[];
-  }
 
   let project = $state<Project | null>(null);
   let failure = $state<string | null>(null);
@@ -212,34 +184,15 @@
 
   /** Lays out the view as it was left, or as a project is first met. */
   function arrange(p: Project) {
-    const known = (m: string | undefined) => (m && p.map(m) ? m : undefined);
     const route = router.route.view === 'project' ? router.route : null;
-    const first: Pane = {
-      map: known(route?.map) ?? known(stored.panes?.[0]?.map) ?? p.maps[0].id,
-      mode: route?.mode ?? stored.panes?.[0]?.mode ?? 'diagram',
-    };
-    const list = [first];
-    const second = stored.panes?.[1];
-    if (!route?.map && second && known(second.map))
-      list.push({ map: second.map, mode: second.mode });
-    panes = list;
-    cameras = stored.cameras ?? {};
-    // The changes are gone through when asked for, not when the project opens.
-    const kept =
-      stored.side !== undefined
-        ? stored.side
-        : stored.references
-          ? 'references'
-          : stored.pictures
-            ? 'pictures'
-            : stored.history
-              ? 'history'
-              : null;
-    sideKind = kept === 'changes' ? null : kept;
-    lastSide = stored.lastSide ?? sideKind ?? 'references';
-    showOutline = stored.outline ?? false;
-    showPreview = stored.preview ?? false;
-    sizes = { ...GIVEN, ...stored.sizes };
+    const laid = arranged(p.maps, stored, route);
+    panes = laid.panes;
+    cameras = laid.cameras;
+    sideKind = laid.side;
+    lastSide = laid.lastSide;
+    showOutline = laid.outline;
+    showPreview = laid.preview;
+    sizes = laid.sizes;
   }
 
   // What a joined project holds has arrived.
@@ -323,19 +276,20 @@
   });
 
   function viewToStore(): StoredView {
-    // Only the cameras of maps that exist.
-    const kept: Record<string, Camera> = {};
-    for (const [id, c] of Object.entries(cameras)) if (project?.map(id)) kept[id] = c;
-    return {
-      sizes: $state.snapshot(sizes),
+    const layout = {
       panes: $state.snapshot(panes),
-      cameras: kept,
-      side: sideKind === 'changes' ? null : sideKind,
+      cameras: $state.snapshot(cameras),
+      side: sideKind,
       lastSide,
       outline: showOutline,
       preview: showPreview,
-      folded: folding.kept((id) => !!project?.node(id)),
+      sizes: $state.snapshot(sizes),
     };
+    return toStore(
+      layout,
+      project?.maps ?? [],
+      folding.kept((id) => !!project?.node(id)),
+    );
   }
 
   let viewTimer: ReturnType<typeof setTimeout> | undefined;
@@ -375,19 +329,8 @@
   // A map that is gone cannot be shown.
   $effect(() => {
     if (!project) return;
-    const maps = project.maps;
-    if (!maps.length) return;
-    let changed = false;
-    const next = panes.filter((p, i) => {
-      if (maps.some((m) => m.id === p.map)) return true;
-      changed = true;
-      return i === 0;
-    });
-    if (next[0] && !maps.some((m) => m.id === next[0].map)) {
-      next[0] = { ...next[0], map: maps[0].id };
-      changed = true;
-    }
-    if (changed) {
+    const next = withoutGone(panes, project.maps);
+    if (next) {
       panes = next;
       focused = Math.min(focused, next.length - 1);
     }
@@ -428,9 +371,6 @@
 
   // ---- the room each part has ----
 
-  const clamp = (value: number, least: number, most: number) =>
-    Math.min(Math.max(value, least), most);
-
   function moveSplit(dx: number) {
     const width = work?.querySelector<HTMLElement>('.panes')?.offsetWidth ?? 0;
     if (width) sizes.split = clamp(sizes.split + dx / width, 0.2, 0.8);
@@ -443,10 +383,7 @@
   }
 
   function moveSide(which: 'preview' | 'references', dx: number) {
-    const all = work?.offsetWidth ?? 1200;
-    const least = which === 'preview' ? 320 : 240;
-    const most = Math.max(least, which === 'preview' ? all * 0.7 : Math.min(640, all * 0.5));
-    sizes[which] = clamp(sizes[which] - dx, least, most);
+    sizes[which] = sideWidth(which, sizes[which], dx, work?.offsetWidth ?? 1200);
   }
 
   /**
@@ -504,78 +441,6 @@
       if (shared?.sharing?.owner) sharingRename(projectId, name).catch(() => {});
     }
   }
-
-  /**
-   * Files dropped from the desktop are taken into the library. Dropped on an
-   * element, their references are cited at the end of its text.
-   */
-  async function filesDropped(event: DropEvent) {
-    const under = document.elementFromPoint(event.x, event.y);
-    const at = under?.closest<HTMLElement>('[data-node], [data-section]');
-    const element = at?.dataset.node ?? at?.dataset.section ?? null;
-    const all = event.payload.data as string[];
-    const shown = all.filter(isPicturePath);
-    const p = project;
-    if (shown.length && p) {
-      // Pictures become figures: where they were dropped, in a text that is
-      // being written; otherwise at the end of the element they were dropped on.
-      const written = under?.closest('.ProseMirror.body');
-      const view = written ? viewsByDom.get(written) : undefined;
-      if (!view && !(element && p.node(element))) {
-        notify(t('project-drop-picture'));
-      } else {
-        let where = view?.posAtCoords({ left: event.x, top: event.y })?.pos;
-        for (const path of shown) {
-          const picture = await pictures.addFile(path);
-          if (!picture) continue;
-          if (view && !view.isDestroyed) {
-            insertFigure(picture, where)(view.state, view.dispatch);
-            where = undefined;
-          } else if (element) {
-            p.checkpoint();
-            p.addFigure(element, picture, widthFor(picture));
-            p.checkpoint();
-          }
-        }
-      }
-    }
-    // Files that hold tables become tables, in the same places.
-    const body = under?.closest('.ProseMirror.body');
-    const text = body ? viewsByDom.get(body) : undefined;
-    const rest = await tablesDropped(
-      all.filter((path) => !isPicturePath(path)),
-      {
-        view: text,
-        at: text?.posAtCoords({ left: event.x, top: event.y })?.pos,
-        project: p,
-        element,
-      },
-    );
-    // Documents become maps of their own; text without marks is one when nothing else claims it.
-    const written = (path: string) => isDocumentPath(path) || isPlainTextPath(path);
-    if (p) await documentsIn(rest.filter(written));
-    const others = rest.filter((path) => !written(path));
-    if (!others.length) return;
-    const outcome = await importDropped(others);
-    if (!outcome?.concerned?.length || !element || !p || !p.node(element)) return;
-    p.checkpoint();
-    p.cite(element, outcome.concerned);
-    p.checkpoint();
-    for (const id of outcome.concerned) keep(id);
-    const name = p.node(element)?.title;
-    const count = outcome.concerned.length;
-    notify(
-      name ? t('project-cited-in', { count, name }) : t('project-cited-in-element', { count }),
-    );
-  }
-
-  /**
-   * What becomes a map when it is dropped on the tabs of the maps: a
-   * document, and a PDF or a picture, whose text is read. Elsewhere a PDF is
-   * taken into the library, and a picture becomes a figure.
-   */
-  const mapOfIt = (path: string) =>
-    isDocumentPath(path) || isPlainTextPath(path) || isReadPath(path);
 
   /** Maps are made of documents, one after another, and the last that was made is shown as text. */
   async function documentsIn(paths: (string | null)[]) {
@@ -802,7 +667,10 @@
     <div
       class="work"
       bind:this={work}
-      use:dropTarget={{ accepts: ['files'], ondrop: filesDropped }}
+      use:dropTarget={{
+        accepts: ['files'],
+        ondrop: (e) => filesDropped(e, { project, documentsIn, keep }),
+      }}
     >
       <div class="panes" class:two={panes.length > 1}>
         {#each panes as p, i (i)}

@@ -10,15 +10,11 @@
   import { t } from '$lib/i18n';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import type { RectLike } from '$lib/ui/floating';
-  import { openContextMenu, openMenu } from '$lib/ui/menu.svelte';
+  import { openContextMenu } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import ElementBox from '../ElementBox.svelte';
   import {
     elementMenu,
-    indent,
-    outdent,
-    removeElements,
-    shift,
     type ElementActions,
     type ElementsPayload,
   } from '../elements';
@@ -27,23 +23,20 @@
   import { isAncestor, subtree } from '../model/tree';
   import type { Position } from '../model/types';
   import { pieces } from '../pieces';
-  import DiagramNode from './DiagramNode.svelte';
   import {
-    associationCurve,
-    edgePoint,
-    hierarchyLine,
-    layout,
-    neighbour,
-    type Placed,
-    type Size,
-  } from './layout';
-
-  /** The view of a map: the point of the canvas in the middle of the window, and the scale. */
-  export interface Camera {
-    cx: number;
-    cy: number;
-    k: number;
-  }
+    bringing,
+    centred,
+    fitting,
+    kept,
+    wheeled,
+    zoomedAt,
+    type Camera,
+    type View,
+  } from './camera';
+  import DiagramNode from './DiagramNode.svelte';
+  import { pressed, type Diagram } from './keys';
+  import { associationsOf, drawing, linesOf } from './lines';
+  import { layout, type Placed, type Size } from './layout';
 
   interface Props {
     project: Project;
@@ -68,14 +61,11 @@
     reveal = null,
   }: Props = $props();
 
-  const MIN_ZOOM = 0.25;
-  const MAX_ZOOM = 2.5;
-
   let viewport = $state<HTMLDivElement>();
   let width = $state(0);
   let height = $state(0);
   /** Where the origin of the canvas is in the window, and the scale. */
-  let cam = $state({ x: 0, y: 0, k: 1 });
+  let cam = $state<View>({ x: 0, y: 0, k: 1 });
   let placedCamera = false;
 
   const sizes = new SvelteMap<string, Size>();
@@ -233,34 +223,25 @@
     placedCamera = true;
     untrack(() => {
       const root = tree.root ? lay.placed.get(tree.root) : null;
-      const k = camera?.k ?? 1;
-      const cx = camera?.cx ?? root?.x ?? 0;
-      const cy = camera?.cy ?? root?.y ?? 0;
-      cam = { x: width / 2 - cx * k, y: height / 2 - cy * k, k };
+      cam = centred(
+        { cx: camera?.cx ?? root?.x ?? 0, cy: camera?.cy ?? root?.y ?? 0, k: camera?.k ?? 1 },
+        width,
+        height,
+      );
     });
   });
 
   let cameraTimer: ReturnType<typeof setTimeout> | undefined;
   $effect(() => {
     if (!placedCamera || !width) return;
-    const snapshot: Camera = {
-      cx: Math.round((width / 2 - cam.x) / cam.k),
-      cy: Math.round((height / 2 - cam.y) / cam.k),
-      k: Math.round(cam.k * 1000) / 1000,
-    };
+    const snapshot: Camera = kept(cam, width, height);
     clearTimeout(cameraTimer);
     cameraTimer = setTimeout(() => oncamera?.(snapshot), 400);
   });
 
   function zoomAt(clientX: number, clientY: number, k: number) {
     const rect = viewport?.getBoundingClientRect();
-    if (!rect) return;
-    const next = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, k));
-    const px = clientX - rect.left;
-    const py = clientY - rect.top;
-    const wx = (px - cam.x) / cam.k;
-    const wy = (py - cam.y) / cam.k;
-    cam = { x: px - wx * next, y: py - wy * next, k: next };
+    if (rect) cam = zoomedAt(cam, clientX - rect.left, clientY - rect.top, k);
   }
 
   function zoomBy(factor: number) {
@@ -269,37 +250,15 @@
   }
 
   export function fit() {
-    const b = lay.bounds;
-    const w = b.right - b.left;
-    const h = b.bottom - b.top;
-    if (!width || !height) return;
-    const k = Math.max(
-      MIN_ZOOM,
-      Math.min(1, (width - 120) / Math.max(w, 1), (height - 120) / Math.max(h, 1)),
-    );
-    cam = {
-      x: width / 2 - ((b.left + b.right) / 2) * k,
-      y: height / 2 - ((b.top + b.bottom) / 2) * k,
-      k,
-    };
+    if (width && height) cam = fitting(lay.bounds, width, height);
   }
 
   /** Moves the view, if need be, so that an element is in it. */
   function bringIntoView(id: string) {
     const p = lay.placed.get(id);
     if (!p || !width) return;
-    const margin = 60;
-    const left = cam.x + (p.x - p.w / 2) * cam.k;
-    const right = cam.x + (p.x + p.w / 2) * cam.k;
-    const top = cam.y + (p.y - p.h / 2) * cam.k;
-    const bottom = cam.y + (p.y + p.h / 2) * cam.k;
-    let dx = 0;
-    let dy = 0;
-    if (left < margin) dx = margin - left;
-    else if (right > width - margin) dx = width - margin - right;
-    if (top < margin) dy = margin - top;
-    else if (bottom > height - margin) dy = height - margin - bottom;
-    if (dx || dy) cam = { ...cam, x: cam.x + dx, y: cam.y + dy };
+    const moved = bringing(cam, p, width, height);
+    if (moved) cam = moved;
   }
 
   $effect(() => {
@@ -309,12 +268,8 @@
       if ((event.target as HTMLElement).closest('.rename')) return;
       event.preventDefault();
       hovered = null;
-      if (event.ctrlKey || event.metaKey) {
-        zoomAt(event.clientX, event.clientY, cam.k * Math.exp(-event.deltaY * 0.0022));
-      } else {
-        const scale = event.deltaMode === 1 ? 32 : 1;
-        cam = { ...cam, x: cam.x - event.deltaX * scale, y: cam.y - event.deltaY * scale };
-      }
+      const rect = el.getBoundingClientRect();
+      cam = wheeled(cam, event, event.clientX - rect.left, event.clientY - rect.top);
     };
     el.addEventListener('wheel', onwheel, { passive: false });
     return () => el.removeEventListener('wheel', onwheel);
@@ -683,57 +638,9 @@
     window.addEventListener('pointerup', up);
   }
 
-  /** The end of an association: the element itself, or what it is folded under. */
-  function visibleEnd(id: string): Placed | null {
-    let at: string | null = id;
-    while (at) {
-      const p = lay.placed.get(at);
-      if (p) return p;
-      at = tree.parent.get(at) ?? null;
-    }
-    return null;
-  }
-
-  const curves = $derived.by(() => {
-    const out: { id: string; path: string; middle: Position; label: string; faint: boolean }[] = [];
-    for (const link of project.linksOf(mapId)) {
-      const a = visibleEnd(link.from);
-      const b = visibleEnd(link.to);
-      if (!a || !b || a.id === b.id) continue;
-      const c = associationCurve(a, b);
-      out.push({
-        id: link.id,
-        path: c.path,
-        middle: c.middle,
-        label: link.label,
-        faint: a.id !== link.from || b.id !== link.to,
-      });
-    }
-    return out;
-  });
-
-  const lines = $derived.by(() => {
-    const out: { id: string; x1: number; y1: number; x2: number; y2: number; faint: boolean }[] =
-      [];
-    for (const p of lay.placed.values()) {
-      if (!p.parent) continue;
-      const parent = lay.placed.get(p.parent);
-      if (!parent) continue;
-      const [a, b] = hierarchyLine(parent, p);
-      out.push({ id: p.id, x1: a.x, y1: a.y, x2: b.x, y2: b.y, faint: lifted.has(p.id) });
-    }
-    return out;
-  });
-
-  const pendingCurve = $derived.by(() => {
-    if (!linking) return null;
-    const from = lay.placed.get(linking.from);
-    if (!from) return null;
-    const over = linking.over ? lay.placed.get(linking.over) : null;
-    if (over) return associationCurve(from, over).path;
-    const start = edgePoint(from, linking);
-    return `M ${start.x} ${start.y} L ${linking.x} ${linking.y}`;
-  });
+  const curves = $derived(associationsOf(project.linksOf(mapId), lay, tree));
+  const lines = $derived(linesOf(lay, lifted));
+  const pendingCurve = $derived(linking ? drawing(lay, linking) : null);
 
   function commitLabel() {
     if (!labelling) return;
@@ -776,123 +683,56 @@
       event.preventDefault();
       return;
     }
-    const one = selection.length === 1 ? selection[0] : null;
-    const last = selection[selection.length - 1] ?? null;
-
-    if (mod && !event.altKey) {
-      const key = event.key.toLowerCase();
-      if (key === 'z' && !event.shiftKey) project.undo();
-      else if (key === 'y' || (key === 'z' && event.shiftKey)) project.redo();
-      else if (key === 'a') select(lay.order.slice());
-      else if (key === '0') fit();
-      else if (key === '=' || key === '+') zoomBy(1.2);
-      else if (key === '-') zoomBy(1 / 1.2);
-      else return;
-      event.preventDefault();
-      return;
-    }
-
-    // Alt+Shift and the arrows move the element, as in the text: up and down
-    // among those beside it, and deeper or less deep, which is outwards or
-    // inwards on the side of the map where it stands.
-    if (event.altKey && event.shiftKey && !mod && event.key.startsWith('Arrow')) {
-      event.preventDefault();
-      if (!one) return;
-      const outwards = lay.placed.get(one)?.side === 'left' ? 'ArrowLeft' : 'ArrowRight';
-      const inwards = outwards === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft';
-      const moved =
-        event.key === 'ArrowUp'
-          ? shift(project, tree, one, -1)
-          : event.key === 'ArrowDown'
-            ? shift(project, tree, one, 1)
-            : event.key === outwards
-              ? indent(project, tree, one)
-              : event.key === inwards && outdent(project, tree, one);
-      if (moved) requestAnimationFrame(() => bringIntoView(one));
-      return;
-    }
-
-    // The menu of what is selected, from the keys.
-    if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
-      event.preventDefault();
-      const at = last && viewport?.querySelector<HTMLElement>(`[data-node="${last}"]`);
-      if (!at) return;
-      menuByKey = true;
-      openMenu(at, elementMenu(project, selection, actions, at));
-      return;
-    }
-
-    switch (event.key) {
-      case 'Tab':
-        if (one) add('child', one);
-        else if (!selection.length && tree.root) add('child', tree.root);
-        break;
-      case 'Enter':
-        // An association that was begun ends at the element that is selected.
-        if (linkFrom && one) {
-          if (linkFrom !== one) project.addLink(linkFrom, one);
-          linkFrom = null;
-        } else if (one && event.altKey) open(one);
-        else if (one) add('sibling', one);
-        else if (!selection.length && tree.root) select([tree.root]);
-        break;
-      case 'F2':
-        if (one) rename(one);
-        break;
-      case ' ':
-        if (one && (tree.children.get(one)?.length ?? 0)) {
-          project.setCollapsed(one, !project.node(one)?.collapsed);
-        }
-        break;
-      case 'Delete':
-      case 'Backspace':
-        if (selectedLink) {
-          project.removeLink(selectedLink);
-          selectedLink = null;
-        } else if (selection.length) {
-          const parent = one ? (tree.parent.get(one) ?? null) : null;
-          if (removeElements(project, selection) && parent) select([parent]);
-        }
-        break;
-      case 'Escape':
-        if (linkFrom) linkFrom = null;
-        else select([]);
-        break;
-      case 'ArrowLeft':
-      case 'ArrowRight':
-      case 'ArrowUp':
-      case 'ArrowDown': {
-        const from = last ?? tree.root;
-        if (!from) break;
-        if (!last) {
-          select([from]);
-          break;
-        }
-        const direction = event.key.slice(5).toLowerCase() as 'left' | 'right' | 'up' | 'down';
-        const next = neighbour(lay, from, direction);
-        if (next) {
-          select(event.shiftKey ? [...selection.filter((s) => s !== next), next] : [next]);
-          bringIntoView(next);
-        }
-        break;
-      }
-      default:
-        // A letter begins a new name for what is selected.
-        if (one && event.key.length === 1 && !event.altKey && /\S/.test(event.key)) {
-          project.checkpoint();
-          renamedFrom = { id: one, copy: project.copyTitle(one) };
-          project.setTitle(one, '');
-          renaming = one;
-          // The key itself, and those after it, go in once the name can be written in.
-          typedAhead = event.key;
-          clearTimeout(typedAheadTimer);
-          typedAheadTimer = setTimeout(() => (typedAhead = null), 2000);
-          break;
-        }
-        return;
-    }
-    event.preventDefault();
+    if (pressed(event, diagram)) event.preventDefault();
   }
+
+  /** What the keys read of the diagram, and ask of it: see `keys.ts`. */
+  const diagram: Diagram = {
+    get project() {
+      return project;
+    },
+    get tree() {
+      return tree;
+    },
+    get lay() {
+      return lay;
+    },
+    get selection() {
+      return selection;
+    },
+    get linkFrom() {
+      return linkFrom;
+    },
+    set linkFrom(id) {
+      linkFrom = id;
+    },
+    get selectedLink() {
+      return selectedLink;
+    },
+    set selectedLink(id) {
+      selectedLink = id;
+    },
+    actions,
+    select,
+    add,
+    open: (id) => open(id),
+    rename,
+    beginName(id, letter) {
+      project.checkpoint();
+      renamedFrom = { id, copy: project.copyTitle(id) };
+      project.setTitle(id, '');
+      renaming = id;
+      // The letter, and those after it, go in once the name can be written in.
+      typedAhead = letter;
+      clearTimeout(typedAheadTimer);
+      typedAheadTimer = setTimeout(() => (typedAhead = null), 2000);
+    },
+    fit,
+    zoomBy,
+    bringIntoView,
+    elementAt: (id) => viewport?.querySelector<HTMLElement>(`[data-node="${id}"]`) ?? null,
+    openedByKey: () => (menuByKey = true),
+  };
 
   /** Whether the menu was just opened by a key, so that the event the key sends after it is let be. */
   let menuByKey = false;
