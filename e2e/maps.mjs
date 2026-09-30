@@ -97,6 +97,16 @@ try {
   await app.keys('nagy best');
   await sleep(250);
   await app.screenshot('maps-4-picker');
+  // A new reference begins with what was being searched for.
+  await app.clickText('.picker button', 'New reference');
+  await app.waitFor('dialog[open] .lookup input', 3000);
+  await sleep(300);
+  const carried = await app.exec(`return document.querySelector('dialog[open] .lookup input').value`);
+  check('a new reference from the picker begins with what was searched for', carried === 'nagy best', carried);
+  await app.clickText('dialog[open] footer button', 'Cancel');
+  await app.waitGone('dialog[open]');
+  await app.waitFor('.picker input', 3000);
+  await sleep(200);
   await app.press('Enter');
   await app.waitFor('.editor .locator input');
   await app.keys('73');

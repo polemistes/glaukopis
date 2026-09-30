@@ -74,7 +74,7 @@
 
   async function create() {
     waiting = true;
-    const made = await newReference();
+    const made = await newReference({ lookup: query });
     waiting = false;
     if (made) request.onpick(made.id);
     else input?.focus();

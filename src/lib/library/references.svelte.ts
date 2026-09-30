@@ -30,6 +30,8 @@ export interface FormRequest {
   reference?: Reference;
   /** A collection to put a new entry in. */
   collection?: string | null;
+  /** What was being searched for where the form was opened from: put into its lookup. */
+  lookup?: string;
   resolve: (result: Reference | null) => void;
 }
 
@@ -70,7 +72,7 @@ export function rememberType(type: string) {
 
 /** Opens the form for a new reference. Resolves to the entry added, or null. */
 export function newReference(
-  options: { draft?: Draft; collection?: string | null } = {},
+  options: { draft?: Draft; collection?: string | null; lookup?: string } = {},
 ): Promise<Reference | null> {
   return new Promise((resolve) => {
     dialogs.form?.resolve(null);
@@ -78,6 +80,7 @@ export function newReference(
       mode: 'new',
       draft: options.draft ?? emptyDraft(lastType),
       collection: options.collection,
+      lookup: options.lookup,
       resolve,
     };
   });

@@ -177,6 +177,7 @@
   <div class="content" {onkeydown}>
     {#if isNew && source === null}
       <Lookup
+        initial={request.lookup}
         onpick={(found) => {
           draft = found;
           onchange();

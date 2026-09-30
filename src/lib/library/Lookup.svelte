@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import Check from '@lucide/svelte/icons/check';
   import Search from '@lucide/svelte/icons/search';
   import type { Draft } from '$lib/api/library';
@@ -9,9 +10,15 @@
   import { describeError } from '$lib/ui/toast.svelte';
   import TypeIcon from './TypeIcon.svelte';
 
-  let { onpick }: { onpick: (draft: Draft) => void } = $props();
+  let { onpick, initial = '' }: { onpick: (draft: Draft) => void; initial?: string } = $props();
 
-  let words = $state('');
+  // What was being searched for where the form was opened from: looked up at
+  // once where it is a number that names one work, and otherwise left to be.
+  // svelte-ignore state_referenced_locally
+  let words = $state(initial.trim());
+  onMount(() => {
+    if (isNumber(words)) void find();
+  });
   let scope = $state<Scope>('any');
   let found = $state.raw<Found | null>(null);
   let searching = $state(false);
@@ -51,15 +58,18 @@
     onpick({ ...hit.draft, key: '' });
   }
 
+  /** Whether a text is a DOI or an ISBN, which names one work. */
+  function isNumber(text: string): boolean {
+    return (
+      /^(https?:\/\/(dx\.)?doi\.org\/|doi:\s*)?10\.\d{4,9}\/\S+$/i.test(text) ||
+      /^(isbn[:\s-]*)?[\d\sXx-]{10,17}$/i.test(text)
+    );
+  }
+
   /** A number that is pasted is looked up at once. */
   function onpaste(event: ClipboardEvent) {
     const text = (event.clipboardData?.getData('text/plain') ?? '').trim();
-    if (
-      !/^(https?:\/\/(dx\.)?doi\.org\/|doi:\s*)?10\.\d{4,9}\/\S+$/i.test(text) &&
-      !/^(isbn[:\s-]*)?[\d\sXx-]{10,17}$/i.test(text)
-    ) {
-      return;
-    }
+    if (!isNumber(text)) return;
     event.preventDefault();
     words = text;
     void find();
