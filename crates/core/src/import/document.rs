@@ -544,6 +544,20 @@ fn picture_bytes(named: &str, beside: &Path, media: &Path, held: bool) -> std::r
             tr!("core-import-document-picture-not-found")
         });
     };
+    // A file that holds its pictures has them within it, and Pandoc took them
+    // out to where the work is done. One that names a picture elsewhere on
+    // this computer, as a Word file may link one, would bring that into the
+    // project, and to those it is shared with.
+    if held {
+        let work = media.parent().unwrap_or(media);
+        let within = match (found.canonicalize(), work.canonicalize()) {
+            (Ok(found), Ok(work)) => found.starts_with(work),
+            _ => false,
+        };
+        if !within {
+            return Err(tr!("core-import-document-picture-outside"));
+        }
+    }
     match fs::metadata(&found) {
         Ok(m) if m.len() > crate::pictures::MAX_BYTES => return Err(tr!("core-import-document-picture-too-large")),
         _ => {}
@@ -3959,6 +3973,31 @@ Text between.
         let Ok(named) = source.strip_prefix(&here) else { return };
         let read = s.read(named).unwrap();
         assert_eq!(read.counts.figures, 2);
+    }
+
+    #[test]
+    fn a_file_that_holds_its_pictures_brings_none_from_elsewhere() {
+        let tmp = tempfile::tempdir().unwrap();
+        let work = tmp.path().join("work");
+        let media = work.join("media");
+        fs::create_dir_all(media.join("media")).unwrap();
+        fs::write(media.join("media").join("image1.png"), b"inside").unwrap();
+        fs::write(tmp.path().join("secret.png"), b"elsewhere").unwrap();
+        let beside = tmp.path().join("beside");
+        fs::create_dir_all(&beside).unwrap();
+        fs::write(beside.join("drawn.png"), b"beside").unwrap();
+
+        let inside = media.join("media").join("image1.png");
+        assert_eq!(picture_bytes(&inside.display().to_string(), &beside, &media, true).unwrap(), b"inside");
+        assert_eq!(picture_bytes("media/image1.png", &beside, &media, true).unwrap(), b"inside");
+        let outside = tmp.path().join("secret.png").display().to_string();
+        let refused = tr!("core-import-document-picture-outside");
+        assert_eq!(picture_bytes(&outside, &beside, &media, true).unwrap_err(), refused);
+        assert_eq!(picture_bytes(&format!("file://{outside}"), &beside, &media, true).unwrap_err(), refused);
+        assert_eq!(picture_bytes("../../secret.png", &beside, &media, true).unwrap_err(), refused);
+        // A text of one's own names pictures beside it, and where it likes.
+        assert_eq!(picture_bytes("drawn.png", &beside, &media, false).unwrap(), b"beside");
+        assert_eq!(picture_bytes(&outside, &beside, &media, false).unwrap(), b"elsewhere");
     }
 
     #[test]

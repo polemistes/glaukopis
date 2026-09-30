@@ -165,6 +165,7 @@ core-import-document-picture-not-read = det er ikke et bilde av en type som lese
 core-import-document-picture-unreadable = det kunne ikke leses
 core-import-document-picture-network = det ligger på nettet, og ingenting hentes derfra
 core-import-document-picture-not-taken-out = det kunne ikke tas ut av filen
+core-import-document-picture-outside = det ligger ikke i filen, men et annet sted på denne datamaskinen, og hentes ikke derfra
 core-import-document-picture-not-found = filen ble ikke funnet der dokumentet sier den er
 core-import-document-picture-too-large = det er større enn 50 MB
 core-import-document-picture-file-unreadable = filen kunne ikke leses

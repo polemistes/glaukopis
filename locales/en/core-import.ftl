@@ -171,6 +171,7 @@ core-import-document-picture-not-read = it is not a picture of a kind that is re
 core-import-document-picture-unreadable = it could not be read
 core-import-document-picture-network = it is on the network, and nothing is fetched from there
 core-import-document-picture-not-taken-out = it could not be taken out of the file
+core-import-document-picture-outside = it is not in the file, but elsewhere on this computer, and is not taken from there
 core-import-document-picture-not-found = the file was not found where the document says it is
 core-import-document-picture-too-large = it is larger than 50 MB
 core-import-document-picture-file-unreadable = the file could not be read
