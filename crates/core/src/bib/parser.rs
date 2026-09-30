@@ -4,7 +4,9 @@
 //! delimited by braces or parentheses; a value is a concatenation, with `#`,
 //! of braced text, quoted text, numbers and macro names; braces are counted
 //! without regard to backslashes. A malformed entry is reported and skipped,
-//! and parsing resumes at the next `@` that begins a line.
+//! and parsing resumes at the next `@` that begins a line. What is not an
+//! entry, and what could not be read, is kept as it stands, so that a file
+//! that is written again loses none of it.
 
 use std::collections::HashMap;
 
@@ -35,6 +37,17 @@ pub enum BibItem {
     Comment(String),
 }
 
+/// What stands in a file besides its entries, as it is written there:
+/// `@string`, `@preamble` and `@comment`, and what could not be read.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Verbatim {
+    /// The line on which it begins, from 1.
+    pub line: usize,
+    pub text: String,
+    /// False for what could not be read, and was skipped.
+    pub readable: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParseWarning {
     pub line: usize,
@@ -46,6 +59,8 @@ pub struct Parsed {
     pub items: Vec<BibItem>,
     pub strings: HashMap<String, String>,
     pub warnings: Vec<ParseWarning>,
+    /// What is not an entry, in the order of the file.
+    pub verbatim: Vec<Verbatim>,
 }
 
 impl Parsed {
@@ -101,14 +116,36 @@ struct Parser<'a> {
 
 type PResult<T> = Result<T, String>;
 
+/// What an `@` turned out to begin.
+enum Found {
+    /// Nothing: a stray `@`, as in an e-mail address in free text.
+    Nothing,
+    Entry,
+    /// `@string`, `@preamble` or `@comment`.
+    Other,
+}
+
 impl<'a> Parser<'a> {
     fn run(&mut self) {
         while let Some(at) = self.find_next_at() {
             self.pos = at + 1;
             let line = self.line_of(at);
-            if let Err(message) = self.item(line) {
-                self.out.warnings.push(ParseWarning { line: self.line_of(self.pos.min(self.src.len())), message });
-                self.recover();
+            match self.item(line) {
+                Ok(Found::Other) => {
+                    let text = self.text[at..self.pos].to_owned();
+                    self.out.verbatim.push(Verbatim { line, text, readable: true });
+                }
+                Ok(Found::Nothing | Found::Entry) => {}
+                Err(message) => {
+                    let failed = self.pos.min(self.src.len());
+                    self.recover(at + 1);
+                    // A brace that is never closed runs on past the entries that follow: the
+                    // entry it was opened in is then the place to look.
+                    let line = if self.pos < failed { line } else { self.line_of(failed) };
+                    self.out.warnings.push(ParseWarning { line, message });
+                    let text = self.text[at..self.pos].trim_end().to_owned();
+                    self.out.verbatim.push(Verbatim { line, text, readable: false });
+                }
             }
         }
     }
@@ -118,16 +155,29 @@ impl<'a> Parser<'a> {
         self.src[self.pos.min(self.src.len())..].iter().position(|&b| b == b'@').map(|i| i + self.pos)
     }
 
-    /// After an error: continue from the next `@` that begins a line.
-    fn recover(&mut self) {
-        let mut i = self.pos;
+    /// After an error: continue from the first line after `from` that begins
+    /// an entry, an `@` with a word and an opening delimiter after it. Entries
+    /// that follow one whose brace was never closed are read all the same.
+    fn recover(&mut self, from: usize) {
+        let begins_item = |mut j: usize| {
+            j += 1;
+            let word = j;
+            while j < self.src.len() && self.src[j].is_ascii_alphabetic() {
+                j += 1;
+            }
+            while j < self.src.len() && (self.src[j] == b' ' || self.src[j] == b'\t') {
+                j += 1;
+            }
+            j > word && matches!(self.src.get(j), Some(b'{' | b'('))
+        };
+        let mut i = from;
         while i < self.src.len() {
             if self.src[i] == b'\n' {
                 let mut j = i + 1;
                 while j < self.src.len() && (self.src[j] == b' ' || self.src[j] == b'\t') {
                     j += 1;
                 }
-                if j < self.src.len() && self.src[j] == b'@' {
+                if j < self.src.len() && self.src[j] == b'@' && begins_item(j) {
                     self.pos = j;
                     return;
                 }
@@ -174,18 +224,18 @@ impl<'a> Parser<'a> {
         &self.text[start..self.pos]
     }
 
-    fn item(&mut self, line: usize) -> PResult<()> {
+    fn item(&mut self, line: usize) -> PResult<Found> {
         self.skip_ws();
         let kind = self.word(|b| matches!(b, b'{' | b'(' | b'@' | b',' | b'=' | b'"' | b'}' | b')'));
         if kind.is_empty() {
             // A stray `@`, as in an e-mail address in free text.
-            return Ok(());
+            return Ok(Found::Nothing);
         }
         let kind = kind.to_ascii_lowercase();
         self.skip_ws();
         let open = match self.peek() {
             Some(b @ (b'{' | b'(')) => b,
-            _ => return Ok(()), // not an entry after all
+            _ => return Ok(Found::Nothing), // not an entry after all
         };
         let close = if open == b'{' { b'}' } else { b')' };
         self.pos += 1;
@@ -223,9 +273,10 @@ impl<'a> Parser<'a> {
             _ => {
                 let entry = self.entry(kind, close, line)?;
                 self.out.items.push(BibItem::Entry(entry));
+                return Ok(Found::Entry);
             }
         }
-        Ok(())
+        Ok(Found::Other)
     }
 
     fn expect(&mut self, byte: u8) -> PResult<()> {
@@ -474,6 +525,31 @@ mod tests {
         let mut entries = parsed.into_entries();
         assert_eq!(entries.len(), 1);
         entries.remove(0)
+    }
+
+    #[test]
+    fn what_is_not_an_entry_is_kept_as_it_stands() {
+        let parsed = parse(
+            "% free text\n@string{hmn = {Harvard}}\n@preamble{\"\\newcommand{\\x}{y}\"}\n\
+             @book{a, publisher = hmn, title = {A}}\n\
+             @book{broken, title = {No end\n\
+             @comment{jabref-meta: databaseType:biblatex;}\n@book{b, title = {B}}\n",
+        );
+        assert_eq!(parsed.warnings.len(), 1);
+        let keys: Vec<&str> = parsed.entries().map(|e| e.key.as_str()).collect();
+        assert_eq!(keys, ["a", "b"]);
+        assert_eq!(parsed.entries().next().unwrap().get("publisher"), Some("Harvard"));
+        let kept: Vec<(usize, &str, bool)> =
+            parsed.verbatim.iter().map(|v| (v.line, v.text.as_str(), v.readable)).collect();
+        assert_eq!(
+            kept,
+            [
+                (2, "@string{hmn = {Harvard}}", true),
+                (3, "@preamble{\"\\newcommand{\\x}{y}\"}", true),
+                (5, "@book{broken, title = {No end", false),
+                (6, "@comment{jabref-meta: databaseType:biblatex;}", true),
+            ]
+        );
     }
 
     #[test]

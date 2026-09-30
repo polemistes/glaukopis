@@ -30,6 +30,13 @@ const HEADER: &str = "\
 
 ";
 
+/// Over what could not be read, which is written back as it was found.
+const UNREAD: &str = "\
+% What follows could not be read by Glaukopis. It is kept as it was written,
+% to be put right by hand; until then it is not in the library.
+
+";
+
 /// The time now, as written in the library: `2026-09-27T14:03:22Z`.
 pub fn now() -> String {
     let t = time::OffsetDateTime::now_utc().replace_nanosecond(0).unwrap_or_else(|_| time::OffsetDateTime::now_utc());
@@ -60,6 +67,8 @@ pub struct Library {
     stamp: Option<Stamp>,
     /// What was found amiss when the file was last read.
     pub warnings: Vec<String>,
+    /// What stands in the file besides the entries, to be written back as it is.
+    kept: Vec<bib::Verbatim>,
 }
 
 impl Library {
@@ -79,6 +88,7 @@ impl Library {
             collections: Collections::default(),
             stamp: None,
             warnings: Vec::new(),
+            kept: Vec::new(),
         };
         library.load()?;
         Ok(library)
@@ -104,10 +114,11 @@ impl Library {
         };
         self.stamp = stamp_of(&self.file);
 
-        let parsed = bib::parse(&text);
+        let mut parsed = bib::parse(&text);
         for w in &parsed.warnings {
             self.warnings.push(tr!("core-library-line", line = w.line, message = &w.message));
         }
+        self.kept = std::mem::take(&mut parsed.verbatim);
 
         let mut ids = HashSet::new();
         let mut keys = HashSet::new();
@@ -173,9 +184,21 @@ impl Library {
     pub(crate) fn save(&mut self) -> Result<()> {
         let mut out = String::with_capacity(self.entries.len() * 400 + HEADER.len());
         out.push_str(HEADER);
+        for v in self.kept.iter().filter(|v| v.readable) {
+            out.push_str(v.text.trim_end());
+            out.push_str("\n\n");
+        }
         for e in &self.entries {
             out.push_str(&e.to_bib(true, true));
             out.push('\n');
+        }
+        let mut unread = self.kept.iter().filter(|v| !v.readable).peekable();
+        if unread.peek().is_some() {
+            out.push_str(UNREAD);
+            for v in unread {
+                out.push_str(&v.text);
+                out.push_str("\n\n");
+            }
         }
         write_atomic_with_backup(&self.file, out.as_bytes())?;
         self.stamp = stamp_of(&self.file);
@@ -882,6 +905,51 @@ mod tests {
         // A change made now is applied on top of what was read.
         lib.add(&draft("@book{c, title={C}}")).unwrap();
         assert_eq!(lib.len(), 3);
+    }
+
+    #[test]
+    fn what_cannot_be_read_is_not_lost_when_the_file_is_written() {
+        let (_tmp, mut lib) = library();
+        lib.add(&draft("@book{a, title={A}}")).unwrap();
+        let mut text = fs::read_to_string(lib.file()).unwrap();
+        text.push_str(
+            "\n@string{hup = {Harvard University Press}}\n@comment{jabref-meta: databaseType:biblatex;}\n\
+             @book{b, title={B}, publisher = hup}\n@book{broken, title={Its brace is never closed\n\
+             @book{c, title={C}}\n",
+        );
+        fs::write(lib.file(), text).unwrap();
+        assert!(lib.refresh().unwrap());
+        assert_eq!(lib.len(), 3, "a, b and c are read; the broken one is not");
+        assert_eq!(lib.warnings.len(), 1);
+
+        // Reading adopted b and c, and so wrote the file again; a change writes it once more.
+        lib.add(&draft("@book{d, title={D}}")).unwrap();
+        let written = fs::read_to_string(lib.file()).unwrap();
+        assert!(written.contains("@book{broken, title={Its brace is never closed"), "{written}");
+        assert!(written.contains("@string{hup = {Harvard University Press}}"));
+        assert!(written.contains("@comment{jabref-meta: databaseType:biblatex;}"));
+
+        // Read again, it is the same, and writing it again adds nothing.
+        let reopened = Library::open_at(lib.dir()).unwrap();
+        assert_eq!(reopened.len(), 4);
+        assert_eq!(reopened.warnings.len(), 1);
+        let b = reopened.entries().iter().find(|e| e.key == "b").unwrap();
+        assert_eq!(b.get("publisher"), Some("Harvard University Press"));
+        lib.add(&draft("@book{e, title={E}}")).unwrap();
+        let again = fs::read_to_string(lib.file()).unwrap();
+        assert_eq!(again.matches("@book{broken").count(), 1);
+        assert_eq!(again.matches("@string{hup").count(), 1);
+        assert_eq!(again.matches("could not be read by Glaukopis").count(), 1);
+    }
+
+    #[test]
+    fn a_library_without_anything_amiss_is_written_as_before() {
+        let (_tmp, mut lib) = library();
+        lib.add(&draft("@book{a, title={A}}")).unwrap();
+        let written = fs::read_to_string(lib.file()).unwrap();
+        assert!(!written.contains("could not be read"));
+        assert!(written.starts_with(HEADER));
+        assert!(written[HEADER.len()..].starts_with("@book{a,"), "{written}");
     }
 
     #[test]

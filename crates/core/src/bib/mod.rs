@@ -14,7 +14,7 @@ pub mod names;
 pub mod parser;
 pub mod writer;
 
-pub use parser::{BibItem, ParseWarning, Parsed, RawEntry, parse};
+pub use parser::{BibItem, ParseWarning, Parsed, RawEntry, Verbatim, parse};
 pub use writer::write_entry;
 
 /// Fields whose value is taken literally: no LaTeX decoding or escaping.
