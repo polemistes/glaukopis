@@ -42,6 +42,7 @@ settings-pandoc-need = Trengs for forhåndsvisningen og for all eksport.
 settings-typst-need = Trengs for forhåndsvisning av sider, og for PDF.
 settings-looking = Leter …
 settings-program-missing = Ikke funnet. { $need } Installer det med pakkebehandleren på systemet ditt, eller skriv nedenfor hvor det er.
+settings-program-old = Eldre enn Glaukopis trenger: { $least } eller nyere.
 settings-program-where = Hvor { $program } er
 settings-program-found-by-itself = Blir funnet av seg selv
 settings-no-latex = Ingen LaTeX ble funnet. Det trengs ikke: LaTeX-kilde kan eksporteres uten, og PDF lages med Typst.

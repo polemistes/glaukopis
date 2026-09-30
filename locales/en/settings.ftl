@@ -45,6 +45,7 @@ settings-typst-need = Needed for the preview of pages, and for PDF.
 settings-looking = Looking…
 # "need" is what the program is needed for: settings-pandoc-need or settings-typst-need.
 settings-program-missing = Not found. { $need } Install it with the package manager of your system, or say below where it is.
+settings-program-old = Older than Glaukopis needs: { $least } or newer.
 # The field for the path to a program, and the title of the dialog that chooses it.
 settings-program-where = Where { $program } is
 settings-program-found-by-itself = Found by itself

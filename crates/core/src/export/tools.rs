@@ -20,6 +20,35 @@ use crate::tr;
 pub struct Tool {
     pub path: PathBuf,
     pub version: String,
+    /// Where it is older than what Glaukopis needs: the least that will do.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub least: Option<String>,
+}
+
+/// The least Pandoc that will do: the first to write Typst.
+pub const LEAST_PANDOC: &str = "3.1.2";
+/// The least Typst that will do: the first with the settings of paragraphs the preamble uses.
+pub const LEAST_TYPST: &str = "0.13";
+
+/// A version as numbers: `3.1.2` as 3, 1, 2. What is not a number ends it.
+fn numbers(version: &str) -> Vec<u32> {
+    version.split(['.', '-', '+']).map_while(|part| part.parse().ok()).collect()
+}
+
+/// Whether a version is older than the least that will do. One that cannot be read is let pass.
+pub fn older(version: &str, least: &str) -> bool {
+    let (have, need) = (numbers(version), numbers(least));
+    !have.is_empty() && have < need
+}
+
+impl Tool {
+    fn found(path: PathBuf, version: String, least: Option<&str>) -> Tool {
+        let least = least.filter(|l| older(&version, l)).map(str::to_owned);
+        if let Some(least) = &least {
+            tracing::warn!(path = %path.display(), %version, %least, "a program that is older than what is needed");
+        }
+        Tool { path, version, least }
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -285,11 +314,11 @@ pub fn discover(configured: &Configured) -> Tools {
             })
             .filter(|v: &Vec<u32>| v.len() >= 2)
             .unwrap_or_else(|| vec![1, 23, 1]);
-        tools.pandoc = Some(Tool { path, version });
+        tools.pandoc = Some(Tool::found(path, version, Some(LEAST_PANDOC)));
     }
     if let Some(path) = find("typst", configured.typst.as_deref(), &configured.beside) {
         let version = version_of(&path, "Typst");
-        tools.typst = Some(Tool { path, version });
+        tools.typst = Some(Tool::found(path, version, Some(LEAST_TYPST)));
     }
     for engine in ["lualatex", "xelatex", "pdflatex"] {
         if find(engine, None, &[]).is_some() {
@@ -299,11 +328,11 @@ pub fn discover(configured: &Configured) -> Tools {
     if let Some(path) = find("tesseract", configured.tesseract.as_deref(), &configured.beside) {
         let version = version_in(&said(&path, &["--version"]));
         tools.ocr_languages = languages_in(&said(&path, &["--list-langs"]));
-        tools.tesseract = Some(Tool { path, version });
+        tools.tesseract = Some(Tool::found(path, version, None));
     }
     if let Some(path) = find("pdftoppm", None, &configured.beside) {
         let version = version_in(&said(&path, &["-v"]));
-        tools.pdftoppm = Some(Tool { path, version });
+        tools.pdftoppm = Some(Tool::found(path, version, None));
     }
     tools
 }
@@ -344,15 +373,27 @@ impl Tools {
     }
 
     pub fn pandoc(&self) -> Result<&Tool> {
-        self.pandoc.as_ref().ok_or_else(|| Error::MissingProgram { program: "Pandoc".into() })
+        usable(self.pandoc.as_ref(), "Pandoc")
     }
 
     pub fn typst(&self) -> Result<&Tool> {
-        self.typst.as_ref().ok_or_else(|| Error::MissingProgram { program: "Typst".into() })
+        usable(self.typst.as_ref(), "Typst")
     }
 
     pub fn tesseract(&self) -> Result<&Tool> {
         self.tesseract.as_ref().ok_or_else(|| Error::MissingProgram { program: "Tesseract".into() })
+    }
+}
+
+/// A program that is there and new enough, or what is wrong with it.
+fn usable<'a>(tool: Option<&'a Tool>, program: &str) -> Result<&'a Tool> {
+    let tool = tool.ok_or_else(|| Error::MissingProgram { program: program.into() })?;
+    match &tool.least {
+        Some(least) => Err(Error::Refused {
+            kind: "old-program",
+            message: tr!("program-too-old", program = program, version = &tool.version, least = least),
+        }),
+        None => Ok(tool),
     }
 }
 
@@ -373,6 +414,21 @@ pub fn fonts(typst: &Tool) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn versions_older_than_what_is_needed() {
+        assert!(older("3.1.1", LEAST_PANDOC));
+        assert!(!older("3.1.2", LEAST_PANDOC));
+        assert!(!older("3.10.2", LEAST_PANDOC));
+        assert!(older("0.12.0", LEAST_TYPST));
+        assert!(!older("0.13.1", LEAST_TYPST));
+        assert!(!older("0.14.0-rc1", LEAST_TYPST));
+        assert!(!older("", LEAST_TYPST), "what cannot be read is let pass");
+        let old = Tool::found("/usr/bin/typst".into(), "0.11.1".into(), Some(LEAST_TYPST));
+        let tools = Tools { typst: Some(old), ..Default::default() };
+        let said = tools.typst().unwrap_err().to_string();
+        assert!(said.contains("0.11.1") && said.contains("0.13"), "{said}");
+    }
 
     #[test]
     fn looks_where_it_is_told_first() {

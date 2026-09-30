@@ -10,6 +10,7 @@ error-network = nettverket: { $message }
 ## Programmene programmet arbeider med: Pandoc, Typst, Tesseract.
 
 program-missing = { $program } er ikke installert, eller ble ikke funnet
+program-too-old = { $program } { $version } er installert. Glaukopis trenger { $program } { $least } eller nyere.
 program-failed = { $program } mislyktes: { $message }
 program-ended = det sluttet med { $status }
 program-stopped = { $program } ble stoppet.

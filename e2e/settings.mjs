@@ -1,6 +1,6 @@
 // The settings, exercised through the interface.
 
-import { readFileSync } from 'node:fs';
+import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { App, sleep } from './harness.mjs';
 
@@ -22,6 +22,22 @@ try {
   // Pandoc, Typst and Tesseract.
   check('the programs that are installed are found', (await app.count('.program .mark.ok')) === 3);
   check('with their versions', /\d+\.\d+/.test(await app.text('.program .version')));
+
+  // A Typst that is older than what is needed is said to be so.
+  const oldTypst = join(app.dataDir, 'old-typst');
+  writeFileSync(oldTypst, '#!/bin/sh\necho "typst 0.11.0"\n');
+  chmodSync(oldTypst, 0o755);
+  const typstField = 'input[aria-label="Where Typst is"]';
+  await app.type(typstField, oldTypst);
+  await app.exec(`document.querySelector('${typstField}').blur()`);
+  await app.waitForText('.program', 'Older than Glaukopis needs', 8000).catch(() => {});
+  const said = await app.exec(`return Array.from(document.querySelectorAll('.program')).map((p) => p.textContent.replace(/\\s+/g, ' ').trim()).join(' | ')`);
+  check('a program older than what is needed is said to be so', /Typst 0\.11\.0.*Older than Glaukopis needs: 0\.13 or newer/.test(said), said);
+  await app.screenshot('settings-1b-old-typst');
+  await app.exec(`const f = document.querySelector('${typstField}'); f.focus(); f.value = ''; f.dispatchEvent(new Event('input', { bubbles: true })); f.blur();`);
+  await app.waitFor('.program .mark.ok + div .version', 8000).catch(() => {});
+  await sleep(500);
+  check('and found again as it was when the path is taken away', (await app.count('.program .mark.ok')) === 3);
 
   await app.clickText('.segmented button', 'Dark');
   await sleep(200);

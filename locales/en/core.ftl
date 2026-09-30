@@ -10,6 +10,8 @@ error-network = network: { $message }
 ## The programs the application works with: Pandoc, Typst, Tesseract.
 
 program-missing = { $program } is not installed or could not be found
+# A program that is there, but older than what Glaukopis needs.
+program-too-old = { $program } { $version } is installed. Glaukopis needs { $program } { $least } or newer.
 program-failed = { $program } failed: { $message }
 # What a program that failed without a word is said to have done: the status is "exit status: 1".
 program-ended = it ended with { $status }

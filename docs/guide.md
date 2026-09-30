@@ -1169,7 +1169,9 @@ Glaukopis the first time by right-clicking it in *Applications* and choosing
 **Open**; if macOS says it is damaged, run `xattr -cr
 /Applications/Glaukopis.app` in the Terminal and try again.
 
-Pandoc makes the documents, and Typst the pages of the preview and the PDF.
+Pandoc makes the documents, and Typst the pages of the preview and the PDF:
+Pandoc 3.1.2 or newer, and Typst 0.13 or newer. One that is older is said to
+be so under *Settings*.
 Both are installed with Glaukopis when it is installed as a package. Where
 they are found is shown under *Settings*.
 

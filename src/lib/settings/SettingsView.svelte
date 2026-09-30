@@ -276,10 +276,10 @@
       </p>
       {#each [{ id: 'pandoc', name: 'Pandoc', found: tools?.pandoc, need: t('settings-pandoc-need') }, { id: 'typst', name: 'Typst', found: tools?.typst, need: t('settings-typst-need') }] as const as program (program.id)}
         <div class="program">
-          <div class="state" class:missing={tools && !program.found}>
+          <div class="state" class:missing={tools && (!program.found || !!program.found.least)}>
             {#if !tools}
               <span class="mark"></span>
-            {:else if program.found}
+            {:else if program.found && !program.found.least}
               <span class="mark ok"><Check size={13} /></span>
             {:else}
               <span class="mark"><TriangleAlert size={13} /></span>
@@ -292,6 +292,8 @@
               <div class="hint">
                 {#if !tools}
                   {t('settings-looking')}
+                {:else if program.found?.least}
+                  {t('settings-program-old', { least: program.found.least })}
                 {:else if program.found}
                   {program.found.path}
                 {:else}

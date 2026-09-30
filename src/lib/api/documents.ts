@@ -6,6 +6,8 @@ import { call } from './backend';
 export interface Tool {
   path: string;
   version: string;
+  /** Where it is older than what Glaukopis needs: the least that will do. */
+  least?: string;
 }
 
 export interface ToolsInfo {
