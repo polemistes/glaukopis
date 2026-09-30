@@ -9,10 +9,12 @@ pub mod latex;
 pub mod math;
 pub mod reference;
 pub mod tools;
+pub mod typeset;
 
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
@@ -613,7 +615,6 @@ pub struct Readied {
 /// Pandoc reads it.
 pub fn preview_ready(ctx: &Context, request: &Request) -> Result<Readied> {
     ctx.tools.pandoc()?;
-    ctx.tools.typst()?;
     let began = std::time::Instant::now();
     let dir = work_dir(ctx, &request.key, "preview")?;
     let placed = place_files(ctx, request, &dir, "files", true);
@@ -648,8 +649,9 @@ pub fn preview_made(
     warnings.extend(warnings_of(&out.messages));
     write_atomic(&dir.join("document.typ"), source.as_bytes())?;
 
-    let (count, pages, said) = pages_of(ctx, &dir, wanted, stop)?;
-    warnings.extend(typst_warnings(&said));
+    let set = set_for_preview(&dir, stop)?;
+    warnings.extend(set.warnings);
+    let (count, pages) = pages_from(&set.document, wanted);
     tracing::debug!(pandoc = ?written, typst = ?(began.elapsed() - written), count, "the pages of the preview are made");
     let (width, height) = request.format.page.dimensions();
     Ok(Preview {
@@ -665,97 +667,82 @@ pub fn preview_made(
 
 /// Pages of the document that was made last for a key: those that come into
 /// view when the preview is moved through. How many pages there are, and
-/// the pages.
+/// the pages. They are drawn from the document as it was set, which is set
+/// again only where it is not kept, as after the application was restarted.
 pub fn preview_pages(ctx: &Context, key: &str, wanted: &[u32], stop: &AtomicBool) -> Result<(usize, Vec<Page>)> {
     let dir = work_dir(ctx, key, "preview")?;
-    if !dir.join("document.typ").is_file() {
-        return Err(Error::NotFound(tr!("core-export-preview-document")));
-    }
-    let (count, pages, _) = pages_of(ctx, &dir, wanted, stop)?;
-    Ok((count, pages))
-}
-
-/// Has Typst set the document that stands in a directory, and gives the
-/// pages that are wanted, with how many there are and what Typst said.
-/// Pages that are wanted and are not there are passed over.
-fn pages_of(ctx: &Context, dir: &Path, wanted: &[u32], stop: &AtomicBool) -> Result<(usize, Vec<Page>, String)> {
-    let typst = ctx.tools.typst()?;
-    // Each making has a place of its own for its pages, so that two that
-    // are made at once do not take each other's.
-    let into = tempfile::Builder::new()
-        .prefix("pages-")
-        .tempdir_in(dir)
-        .context(|| tr!("io-creating-directory-in", path = dir))?;
-    let mut wanted: Vec<u32> = wanted.iter().copied().filter(|n| *n > 0).collect();
-    wanted.sort_unstable();
-    wanted.dedup();
-    wanted.truncate(MOST_PAGES);
-    let template = into.path().join("page-{p}-of-{t}.svg").display().to_string();
-
-    let run = |pages: Option<String>| {
-        let mut args: Vec<String> = vec!["compile".into(), "--format".into(), "svg".into()];
-        if let Some(pages) = pages {
-            args.push("--pages".into());
-            args.push(pages);
-        }
-        args.push("document.typ".into());
-        args.push(template.clone());
-        tools::run_until(&typst.path, "Typst", &args, None, Some(dir), stop)
-    };
-    let list = |pages: &[u32]| pages.iter().map(u32::to_string).collect::<Vec<_>>().join(",");
-    let out = if wanted.is_empty() {
-        run(None)?
-    } else {
-        // A page that is wanted may not be there, the document having grown shorter: Typst
-        // refuses then, or gives nothing. The first page says how many there are, and those
-        // that are there are asked for again.
-        let first = match run(Some(list(&wanted))) {
-            Ok(out) if read_pages(into.path())?.0 > 0 => Some(out),
-            Ok(_) | Err(Error::Program { .. }) => None,
-            Err(e) => return Err(e),
-        };
-        match first {
-            Some(out) => out,
-            None => {
-                let first = run(Some("1".into()))?;
-                let count = read_pages(into.path())?.0;
-                let there: Vec<u32> = wanted.iter().copied().filter(|n| (*n as usize) <= count && *n != 1).collect();
-                if there.is_empty() { first } else { run(Some(list(&there)))? }
+    let document = match kept(&dir) {
+        Some(document) => document,
+        None => {
+            if !dir.join("document.typ").is_file() {
+                return Err(Error::NotFound(tr!("core-export-preview-document")));
             }
+            set_for_preview(&dir, stop)?.document
         }
     };
-    let (count, pages) = read_pages(into.path())?;
-    Ok((count, pages, out.messages))
+    Ok(pages_from(&document, wanted))
 }
 
-/// The pages that stand in a directory, named `page-<number>-of-<count>.svg`.
-fn read_pages(dir: &Path) -> Result<(usize, Vec<Page>)> {
-    let mut count = 0usize;
-    let mut found: Vec<(u32, PathBuf)> = Vec::new();
-    for entry in fs::read_dir(dir).context(|| tr!("io-reading", path = dir))?.flatten() {
-        let name = entry.file_name().to_string_lossy().into_owned();
-        let Some(rest) = name.strip_prefix("page-").and_then(|n| n.strip_suffix(".svg")) else { continue };
-        let Some((number, of)) = rest.split_once("-of-") else { continue };
-        let (Ok(number), Ok(of)) = (number.parse::<u32>(), of.parse::<usize>()) else { continue };
-        count = count.max(of);
-        found.push((number, entry.path()));
-    }
-    found.sort_by_key(|(number, _)| *number);
-    let mut pages = Vec::with_capacity(found.len());
-    for (number, path) in found {
-        let svg = fs::read_to_string(&path).context(|| tr!("io-reading", path = &path))?;
-        pages.push(Page { number, svg });
-    }
-    Ok((count, pages))
+/// The documents last set for the preview, by the places they were made
+/// in: the pages are drawn from them as they are looked at. A few, for the
+/// projects last looked at.
+static KEPT: Mutex<Vec<(PathBuf, Arc<typeset::PagedDocument>)>> = Mutex::new(Vec::new());
+const KEPT_MOST: usize = 4;
+
+fn kept(dir: &Path) -> Option<Arc<typeset::PagedDocument>> {
+    let kept = KEPT.lock().unwrap_or_else(|p| p.into_inner());
+    kept.iter().find(|(d, _)| d == dir).map(|(_, document)| document.clone())
 }
 
-fn typst_warnings(messages: &str) -> Vec<String> {
-    messages
-        .lines()
-        .filter(|l| l.starts_with("warning:") || l.starts_with("error:"))
-        .map(|l| l.trim_start_matches("warning:").trim().to_owned())
-        .filter(|l| !l.to_lowercase().contains("unknown font family"))
-        .collect()
+/// A document set by Typst for the preview, and kept to draw its pages from.
+struct SetForPreview {
+    document: Arc<typeset::PagedDocument>,
+    warnings: Vec<String>,
+}
+
+/// Sets the document that stands in a place of the preview. Typst cannot be
+/// stopped while it sets, which takes a second or so of a long book: it is
+/// asked whether to stop before, and after.
+fn set_for_preview(dir: &Path, stop: &AtomicBool) -> Result<SetForPreview> {
+    let stopped = || Error::Refused { kind: tools::STOPPED, message: tr!("program-stopped", program = "Typst") };
+    if stop.load(Ordering::Relaxed) {
+        return Err(stopped());
+    }
+    let set = typeset::set(dir, "document.typ")?;
+    let document = Arc::new(set.document);
+    {
+        let mut kept = KEPT.lock().unwrap_or_else(|p| p.into_inner());
+        kept.retain(|(d, _)| d != dir);
+        kept.push((dir.to_path_buf(), document.clone()));
+        let over = kept.len().saturating_sub(KEPT_MOST);
+        kept.drain(..over);
+    }
+    // What was set is kept all the same, for the pages that are asked for next.
+    if stop.load(Ordering::Relaxed) {
+        return Err(stopped());
+    }
+    Ok(SetForPreview { document, warnings: set.warnings })
+}
+
+/// The pages of a document that are wanted, drawn, and how many there are.
+/// Pages that are wanted and are not there are passed over; where none is
+/// named, all are drawn.
+fn pages_from(document: &typeset::PagedDocument, wanted: &[u32]) -> (usize, Vec<Page>) {
+    let count = document.pages().len();
+    let wanted: Vec<u32> = if wanted.is_empty() {
+        (1..=count as u32).collect()
+    } else {
+        let mut named: Vec<u32> = wanted.iter().copied().filter(|n| *n > 0 && (*n as usize) <= count).collect();
+        named.sort_unstable();
+        named.dedup();
+        named.truncate(MOST_PAGES);
+        named
+    };
+    let pages = wanted
+        .into_iter()
+        .filter_map(|number| typeset::svg(document, number as usize).map(|svg| Page { number, svg }))
+        .collect();
+    (count, pages)
 }
 
 pub fn export(
@@ -794,19 +781,12 @@ pub fn export_until(
             files_beside(ctx, request, path, &files, &mut exported);
             return Ok(exported);
         }
-        let typst = ctx.tools.typst()?;
         write_atomic(&dir.join("document.typ"), source.as_bytes())?;
-        let made = dir.join("document.pdf");
-        let out = tools::run_until(
-            &typst.path,
-            "Typst",
-            ["compile", "document.typ", "document.pdf"],
-            None,
-            Some(&dir),
-            stop,
-        )?;
-        exported.warnings.extend(typst_warnings(&out.messages));
-        let bytes = fs::read(&made).context(|| tr!("core-export-reading-pdf"))?;
+        if stop.load(Ordering::Relaxed) {
+            return Err(Error::Refused { kind: tools::STOPPED, message: tr!("program-stopped", program = "Typst") });
+        }
+        let (bytes, said) = typeset::pdf_of(&dir, "document.typ")?;
+        exported.warnings.extend(said);
         write_atomic(path, &bytes)?;
         return Ok(exported);
     }
@@ -1163,12 +1143,12 @@ mod tests {
         pictures: PathBuf,
     }
 
-    /// Nothing, when Pandoc and Typst are not installed: the tests that need
-    /// them are then passed over.
+    /// Nothing, when Pandoc is not installed: the tests that need it are
+    /// then passed over. Typst is part of the application.
     fn setup() -> Option<Setup> {
         let tools = tools::discover(&tools::Configured::default());
-        if tools.pandoc.is_none() || tools.typst.is_none() {
-            eprintln!("Pandoc or Typst is not installed; the test is passed over");
+        if tools.pandoc.is_none() {
+            eprintln!("Pandoc is not installed; the test is passed over");
             return None;
         }
         let tmp = tempfile::tempdir().unwrap();

@@ -39,11 +39,10 @@ settings-contact-problem = That does not look like an address.
 ## Programs: Pandoc and Typst
 
 settings-programs = Programs
-settings-programs-about = Glaukopis makes documents with Pandoc, and pages to preview and print with Typst. They are found by themselves where they are installed in the usual way.
+settings-programs-about = Glaukopis makes documents with Pandoc, which is found by itself where it is installed in the usual way. The pages of the preview and of a PDF are set by Typst, which is part of Glaukopis.
 settings-pandoc-need = Needed for the preview and for every export.
-settings-typst-need = Needed for the preview of pages, and for PDF.
 settings-looking = Looking…
-# "need" is what the program is needed for: settings-pandoc-need or settings-typst-need.
+# "need" is what the program is needed for: settings-pandoc-need.
 settings-program-missing = Not found. { $need } Install it with the package manager of your system, or say below where it is.
 settings-program-old = Older than Glaukopis needs: { $least } or newer.
 # The field for the path to a program, and the title of the dialog that chooses it.

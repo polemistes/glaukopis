@@ -27,8 +27,6 @@ pub struct Tool {
 
 /// The least Pandoc that will do: the first to write Typst.
 pub const LEAST_PANDOC: &str = "3.1.2";
-/// The least Typst that will do: the first with the settings of paragraphs the preamble uses.
-pub const LEAST_TYPST: &str = "0.13";
 
 /// A version as numbers: `3.1.2` as 3, 1, 2. What is not a number ends it.
 fn numbers(version: &str) -> Vec<u32> {
@@ -55,7 +53,6 @@ impl Tool {
 #[serde(rename_all = "camelCase")]
 pub struct Tools {
     pub pandoc: Option<Tool>,
-    pub typst: Option<Tool>,
     /// The engines of LaTeX that are installed, the preferred first.
     pub latex: Vec<String>,
     /// The version of the document model that this Pandoc reads.
@@ -71,7 +68,6 @@ pub struct Tools {
 #[derive(Debug, Clone, Default)]
 pub struct Configured {
     pub pandoc: Option<String>,
-    pub typst: Option<String>,
     pub tesseract: Option<String>,
     /// Directories to look in after the path: beside the application.
     pub beside: Vec<PathBuf>,
@@ -316,10 +312,6 @@ pub fn discover(configured: &Configured) -> Tools {
             .unwrap_or_else(|| vec![1, 23, 1]);
         tools.pandoc = Some(Tool::found(path, version, Some(LEAST_PANDOC)));
     }
-    if let Some(path) = find("typst", configured.typst.as_deref(), &configured.beside) {
-        let version = version_of(&path, "Typst");
-        tools.typst = Some(Tool::found(path, version, Some(LEAST_TYPST)));
-    }
     for engine in ["lualatex", "xelatex", "pdflatex"] {
         if find(engine, None, &[]).is_some() {
             tools.latex.push(engine.to_owned());
@@ -376,10 +368,6 @@ impl Tools {
         usable(self.pandoc.as_ref(), "Pandoc")
     }
 
-    pub fn typst(&self) -> Result<&Tool> {
-        usable(self.typst.as_ref(), "Typst")
-    }
-
     pub fn tesseract(&self) -> Result<&Tool> {
         self.tesseract.as_ref().ok_or_else(|| Error::MissingProgram { program: "Tesseract".into() })
     }
@@ -397,20 +385,6 @@ fn usable<'a>(tool: Option<&'a Tool>, program: &str) -> Result<&'a Tool> {
     }
 }
 
-/// The families of fonts that Typst finds on this computer.
-pub fn fonts(typst: &Tool) -> Vec<String> {
-    run(&typst.path, "Typst", ["fonts"], None, None)
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| {
-            let mut list: Vec<String> = s.lines().map(str::trim).filter(|l| !l.is_empty()).map(str::to_owned).collect();
-            list.sort_by_key(|f| f.to_lowercase());
-            list.dedup();
-            list
-        })
-        .unwrap_or_default()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -420,14 +394,13 @@ mod tests {
         assert!(older("3.1.1", LEAST_PANDOC));
         assert!(!older("3.1.2", LEAST_PANDOC));
         assert!(!older("3.10.2", LEAST_PANDOC));
-        assert!(older("0.12.0", LEAST_TYPST));
-        assert!(!older("0.13.1", LEAST_TYPST));
-        assert!(!older("0.14.0-rc1", LEAST_TYPST));
-        assert!(!older("", LEAST_TYPST), "what cannot be read is let pass");
-        let old = Tool::found("/usr/bin/typst".into(), "0.11.1".into(), Some(LEAST_TYPST));
-        let tools = Tools { typst: Some(old), ..Default::default() };
-        let said = tools.typst().unwrap_err().to_string();
-        assert!(said.contains("0.11.1") && said.contains("0.13"), "{said}");
+        assert!(older("3.0", LEAST_PANDOC));
+        assert!(!older("3.2.0-rc1", LEAST_PANDOC));
+        assert!(!older("", LEAST_PANDOC), "what cannot be read is let pass");
+        let old = Tool::found("/usr/bin/pandoc".into(), "3.1.1".into(), Some(LEAST_PANDOC));
+        let tools = Tools { pandoc: Some(old), ..Default::default() };
+        let said = tools.pandoc().unwrap_err().to_string();
+        assert!(said.contains("3.1.1") && said.contains("3.1.2"), "{said}");
     }
 
     #[test]

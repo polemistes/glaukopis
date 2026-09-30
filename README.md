@@ -51,16 +51,17 @@ in [docs/server.md](docs/server.md).
 Rust and [Tauri 2](https://tauri.app) for the application, which uses the web
 view of the system and brings no browser of its own; Svelte 5 and TypeScript
 for the interface; ProseMirror for the text; Yjs for the project, which is
-what lets several write in it at once. Pandoc makes the documents and Typst
-the pages, and Tesseract reads the text of scans; they are used as they are
-installed. The pages of PDFs are drawn for Tesseract by hayro, in Rust. The
+what lets several write in it at once. Pandoc makes the documents, and
+Tesseract reads the text of scans; they are used as they are installed.
+Typst, which sets the pages of the preview and of a PDF, is part of the
+application (ADR 0023). The pages of PDFs are drawn for Tesseract by hayro, in Rust. The
 reasons are in `PLAN.md` and `docs/adr/0001-tauri-rust-svelte.md`.
 
 ## Building
 
 Needed: Rust, Node.js, pnpm, and on Linux `webkit2gtk-4.1` and `gtk3` with
-their headers. To use it, also Pandoc and Typst, and Tesseract with the data
-of the languages you read.
+their headers. To use it, also Pandoc, and Tesseract with the data of the
+languages you read.
 
 ```
 pnpm install

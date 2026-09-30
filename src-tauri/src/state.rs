@@ -30,7 +30,6 @@ pub struct AppState {
     pub spelling: Spelling,
     library: Mutex<Library>,
     tools: RwLock<Tools>,
-    fonts: RwLock<Option<Vec<String>>>,
     /// One preview or sample is made at a time: they share a place to work in.
     pub making: Mutex<()>,
     /// And one file, beside them, in a place of its own.
@@ -96,7 +95,6 @@ impl AppState {
             spelling,
             library: Mutex::new(library),
             tools: RwLock::new(Tools::default()),
-            fonts: RwLock::new(None),
             making: Mutex::new(()),
             exporting: Mutex::new(()),
             data,
@@ -136,18 +134,15 @@ impl AppState {
         }
         let found = tools::discover(&Configured {
             pandoc: self.setting("pandocPath"),
-            typst: self.setting("typstPath"),
             tesseract: self.setting("tesseractPath"),
             beside,
         });
         tracing::info!(
             pandoc = found.pandoc.as_ref().map(|t| t.version.as_str()).unwrap_or("not found"),
-            typst = found.typst.as_ref().map(|t| t.version.as_str()).unwrap_or("not found"),
             tesseract = found.tesseract.as_ref().map(|t| t.version.as_str()).unwrap_or("not found"),
             "programs"
         );
         *self.tools.write().unwrap_or_else(|p| p.into_inner()) = found.clone();
-        *self.fonts.write().unwrap_or_else(|p| p.into_inner()) = None;
         found
     }
 
@@ -155,14 +150,9 @@ impl AppState {
         self.tools.read().unwrap_or_else(|p| p.into_inner()).clone()
     }
 
-    /// The fonts Typst finds. Asked for once; it takes a moment.
+    /// The families of the fonts Typst sets with: found once; it takes a moment.
     pub fn fonts(&self) -> Vec<String> {
-        if let Some(list) = self.fonts.read().unwrap_or_else(|p| p.into_inner()).as_ref() {
-            return list.clone();
-        }
-        let list = self.tools().typst.as_ref().map(tools::fonts).unwrap_or_default();
-        *self.fonts.write().unwrap_or_else(|p| p.into_inner()) = Some(list.clone());
-        list
+        glaukopis_core::export::typeset::families()
     }
 
     /// A client for the network that names the address the user has given.

@@ -42,7 +42,6 @@
   let name = $state('');
   let contact = $state('');
   let pandoc = $state('');
-  let typst = $state('');
 
   const contactProblem = $derived(
     contact.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim())
@@ -57,7 +56,6 @@
     name = settings.value.displayName ?? '';
     contact = settings.value.contactEmail ?? '';
     pandoc = settings.value.pandocPath ?? '';
-    typst = settings.value.typstPath ?? '';
     try {
       [system, tools, styles, formats] = await Promise.all([
         systemInfo(),
@@ -82,7 +80,6 @@
     looking = true;
     try {
       keep('pandocPath', pandoc);
-      keep('typstPath', typst);
       await settings.saveNow();
       tools = await toolsInfo(true);
     } catch (error) {
@@ -92,14 +89,13 @@
     }
   }
 
-  async function choose(which: 'pandoc' | 'typst') {
+  async function choose() {
     const chosen = await chooseFile({
-      title: t('settings-program-where', { program: which === 'pandoc' ? 'Pandoc' : 'Typst' }),
+      title: t('settings-program-where', { program: 'Pandoc' }),
       multiple: false,
     });
     if (typeof chosen !== 'string') return;
-    if (which === 'pandoc') pandoc = chosen;
-    else typst = chosen;
+    pandoc = chosen;
     await lookAgain();
   }
 
@@ -274,7 +270,7 @@
       <p class="about">
         {t('settings-programs-about')}
       </p>
-      {#each [{ id: 'pandoc', name: 'Pandoc', found: tools?.pandoc, need: t('settings-pandoc-need') }, { id: 'typst', name: 'Typst', found: tools?.typst, need: t('settings-typst-need') }] as const as program (program.id)}
+      {#each [{ id: 'pandoc', name: 'Pandoc', found: tools?.pandoc, need: t('settings-pandoc-need') }] as const as program (program.id)}
         <div class="program">
           <div class="state" class:missing={tools && (!program.found || !!program.found.least)}>
             {#if !tools}
@@ -303,26 +299,15 @@
             </div>
           </div>
           <div class="path">
-            {#if program.id === 'pandoc'}
-              <TextField
-                bind:value={pandoc}
-                size="sm"
-                placeholder={t('settings-program-found-by-itself')}
-                aria-label={t('settings-program-where', { program: 'Pandoc' })}
-                spellcheck="false"
-                onblur={() => keep('pandocPath', pandoc) && lookAgain()}
-              />
-            {:else}
-              <TextField
-                bind:value={typst}
-                size="sm"
-                placeholder={t('settings-program-found-by-itself')}
-                aria-label={t('settings-program-where', { program: 'Typst' })}
-                spellcheck="false"
-                onblur={() => keep('typstPath', typst) && lookAgain()}
-              />
-            {/if}
-            <Button size="sm" onclick={() => choose(program.id)}>{t('common-choose')}</Button>
+            <TextField
+              bind:value={pandoc}
+              size="sm"
+              placeholder={t('settings-program-found-by-itself')}
+              aria-label={t('settings-program-where', { program: 'Pandoc' })}
+              spellcheck="false"
+              onblur={() => keep('pandocPath', pandoc) && lookAgain()}
+            />
+            <Button size="sm" onclick={choose}>{t('common-choose')}</Button>
           </div>
         </div>
       {/each}

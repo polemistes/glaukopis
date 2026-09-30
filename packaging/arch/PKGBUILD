@@ -53,7 +53,7 @@ check() {
 
 package_glaukopis() {
   pkgdesc='A hub for scholarly work: references, ideas in mind maps, writing, and the manuscript'
-  depends=(webkit2gtk-4.1 gtk3 glib2 openssl sqlite gcc-libs glibc hicolor-icon-theme pandoc-cli typst
+  depends=(webkit2gtk-4.1 gtk3 glib2 openssl sqlite gcc-libs glibc hicolor-icon-theme pandoc-cli fontconfig
            tesseract tesseract-data-eng)
   optdepends=(
     'texlive-luatex: for PDF set by LaTeX'

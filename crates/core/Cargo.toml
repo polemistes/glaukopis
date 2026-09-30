@@ -34,6 +34,14 @@ unic-langid = "0.9"
 sys-locale = "0.3"
 spellbook = "0.4"
 icu_properties = "2"
+# Typst, within the application: the pages of the preview are set once and
+# drawn as they are looked at, and the PDF is made by the same (ADR 0023).
+typst = "0.15.1"
+typst-svg = "0.15.1"
+typst-layout = "0.15.1"
+typst-pdf = "0.15.1"
+typst-kit = { version = "0.15.1", default-features = false, features = ["scan-fonts", "embedded-fonts"] }
+comemo = "0.5"
 
 [features]
 # Compile SQLite in, where the system has none to link to.

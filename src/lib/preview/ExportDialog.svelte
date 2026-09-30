@@ -33,7 +33,6 @@
     label: string;
     extension: string;
     about: string;
-    needsTypst?: boolean;
     needsLatex?: boolean;
   }
 
@@ -45,7 +44,6 @@
       label: 'PDF',
       extension: 'pdf',
       about: t('preview-export-pdf-about'),
-      needsTypst: true,
     },
     {
       target: 'pdflatex',
@@ -97,7 +95,6 @@
   let ticket = '';
 
   const kind = $derived(kinds.find((k) => k.target === chosen)!);
-  const typstMissing = $derived(!documents.tools?.typst);
   const latexMissing = $derived(!documents.tools?.latex.length);
 
   async function run() {
@@ -166,7 +163,7 @@
   {:else}
     <div class="kinds" role="radiogroup" aria-label={t('preview-export-kind')}>
       {#each kinds as k (k.target)}
-        {@const unavailable = (!!k.needsTypst && typstMissing) || (!!k.needsLatex && latexMissing)}
+        {@const unavailable = !!k.needsLatex && latexMissing}
         <label class="kind" class:chosen={chosen === k.target} class:unavailable>
           <input
             type="radio"
@@ -178,10 +175,8 @@
           <span class="about">
             {#if !unavailable}
               {k.about}
-            {:else if k.needsLatex}
-              {t('preview-export-latex-missing')}
             {:else}
-              {t('preview-export-typst-missing')}
+              {t('preview-export-latex-missing')}
             {/if}
           </span>
         </label>

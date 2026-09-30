@@ -1159,7 +1159,7 @@ what is to be done by its name, and does it.
 
 ## What Glaukopis needs
 
-On Windows and macOS, Pandoc, Typst and Tesseract come with Glaukopis, with
+On Windows and macOS, Pandoc and Tesseract come with Glaukopis, with
 the data for reading English, Norwegian, Danish, Swedish, German, French,
 Italian, Spanish, Latin, Greek and Ancient Greek.
 
@@ -1169,11 +1169,12 @@ Glaukopis the first time by right-clicking it in *Applications* and choosing
 **Open**; if macOS says it is damaged, run `xattr -cr
 /Applications/Glaukopis.app` in the Terminal and try again.
 
-Pandoc makes the documents, and Typst the pages of the preview and the PDF:
-Pandoc 3.1.2 or newer, and Typst 0.13 or newer. One that is older is said to
-be so under *Settings*.
-Both are installed with Glaukopis when it is installed as a package. Where
-they are found is shown under *Settings*.
+Pandoc makes the documents: Pandoc 3.1.2 or newer. One that is older is said
+to be so under *Settings*. It is installed with Glaukopis when Glaukopis is
+installed as a package, and where it is found is shown under *Settings*.
+Typst, which sets the pages of the preview and of the PDF, is part of
+Glaukopis; it sets with the fonts of the computer, and with those it brings
+itself.
 
 LaTeX is needed only for the PDF that is set by it. LuaLaTeX is used where
 it is installed, since it knows the fonts of the computer and can turn to

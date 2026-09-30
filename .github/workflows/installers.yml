@@ -4,8 +4,8 @@
 # the first time (see docs/guide.md). The installers are kept as artifacts of
 # the run, not published as a release.
 #
-# Pandoc, Typst and Tesseract come with the application, in resources/bin,
-# where it looks for them after the settings and the path.
+# Pandoc and Tesseract come with the application, in resources/bin, where it
+# looks for them after the settings and the path. Typst is part of it (ADR 0023).
 
 name: Installers
 
@@ -53,7 +53,7 @@ jobs:
 
       # ---- the programs that come with the application ----
 
-      - name: Pandoc and Typst for Windows
+      - name: Pandoc for Windows
         if: matrix.name == 'windows'
         run: |
           mkdir -p resources/bin/licenses work
@@ -61,10 +61,6 @@ jobs:
           7z x -owork/pandoc work/pandoc-*.zip > /dev/null
           cp work/pandoc/*/pandoc.exe resources/bin/
           cp work/pandoc/*/COPYRIGHT.txt resources/bin/licenses/pandoc-COPYRIGHT.txt
-          gh release download -R typst/typst --pattern 'typst-x86_64-pc-windows-msvc.zip' -D work
-          7z x -owork/typst work/typst-*.zip > /dev/null
-          cp work/typst/*/typst.exe resources/bin/
-          cp work/typst/*/LICENSE resources/bin/licenses/typst-LICENSE.txt
 
       - name: Tesseract for Windows
         if: matrix.name == 'windows'
@@ -79,7 +75,7 @@ jobs:
           rm -rf ./*.html ./*.jar doc
           TESSDATA_PREFIX="$PWD/tessdata" ./tesseract.exe --list-langs
 
-      - name: Pandoc and Typst for macOS
+      - name: Pandoc for macOS
         if: matrix.name == 'macos'
         run: |
           mkdir -p resources/bin/licenses work
@@ -87,10 +83,6 @@ jobs:
           unzip -q work/pandoc-*.zip -d work/pandoc
           cp work/pandoc/*/bin/pandoc resources/bin/
           cp work/pandoc/*/share/doc/pandoc/COPYRIGHT* resources/bin/licenses/ 2>/dev/null || true
-          gh release download -R typst/typst --pattern 'typst-aarch64-apple-darwin.tar.xz' -D work
-          tar -xf work/typst-*.tar.xz -C work
-          cp work/typst-aarch64-apple-darwin/typst resources/bin/
-          cp work/typst-aarch64-apple-darwin/LICENSE resources/bin/licenses/typst-LICENSE.txt
 
       # Homebrew's Tesseract, with the libraries it needs copied beside it and
       # pointed to there, so that it runs on a Mac without Homebrew.

@@ -12,7 +12,6 @@ export interface Tool {
 
 export interface ToolsInfo {
   pandoc: Tool | null;
-  typst: Tool | null;
   latex: string[];
   pandocApi: number[];
   /** Reads text in pictures: see `api/ocr.ts`. */

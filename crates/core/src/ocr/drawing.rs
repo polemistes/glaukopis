@@ -286,8 +286,8 @@ mod tests {
     #[test]
     fn poppler_draws_a_page_as_hayro_does() {
         let tools = tools::discover(&tools::Configured::default());
-        let (Some(typst), Some(pdftoppm)) = (tools.typst, tools.pdftoppm) else {
-            eprintln!("Typst or Poppler is not installed; the test is passed over");
+        let Some(pdftoppm) = tools.pdftoppm else {
+            eprintln!("Poppler is not installed; the test is passed over");
             return;
         };
         let tmp = tempfile::tempdir().unwrap();
@@ -298,14 +298,8 @@ mod tests {
             "#set page(width: 100mm, height: 150mm, margin: 10mm)\n#rect(width: 100%, height: 30%, fill: black)\n",
         )
         .unwrap();
-        tools::run(
-            &typst.path,
-            "Typst",
-            [std::ffi::OsStr::new("compile"), source.as_os_str(), pdf.as_os_str()],
-            None,
-            None,
-        )
-        .unwrap();
+        let (made, _) = crate::export::typeset::pdf_of(tmp.path(), "page.typ").unwrap();
+        std::fs::write(&pdf, made).unwrap();
         // Shown turned a quarter.
         let mut doc = lopdf::Document::load(&pdf).unwrap();
         let id = doc.get_pages()[&1];

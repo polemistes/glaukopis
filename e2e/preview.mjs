@@ -20,7 +20,7 @@ try {
     bib,
   );
   const tools = await app.execAsync(`return await window.__TAURI_INTERNALS__.invoke('tools_info', {});`);
-  check('Pandoc and Typst are found', !!tools.pandoc && !!tools.typst, `${tools.pandoc?.version} / ${tools.typst?.version}`);
+  check('Pandoc is found; Typst is part of the application', !!tools.pandoc && !('typst' in tools), `${tools.pandoc?.version}`);
   const formats = await app.execAsync(`return await window.__TAURI_INTERNALS__.invoke('formats_list');`);
   check('the formats that come with the application are there', formats.length >= 30, `${formats.length}`);
 

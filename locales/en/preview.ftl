@@ -123,7 +123,6 @@ preview-export-markdown-about = Plain text, with the citations as keys
 preview-export-html = Web page
 preview-export-html-about = One file, to be read in a browser
 preview-export-latex-missing = LaTeX is needed for this, and was not found. It is installed as TeX Live.
-preview-export-typst-missing = Typst is needed for this, and was not found
 preview-export-biblatex = Keep the citations as commands of BibLaTeX
 preview-export-biblatex-hint = The references are written to a .bib file beside the document. The reference style is then that of BibLaTeX nearest to the one chosen.
 # The title of the window where the file is named; the kind is PDF, Word, and so on.

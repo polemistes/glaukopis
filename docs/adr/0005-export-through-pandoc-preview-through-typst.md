@@ -1,6 +1,6 @@
 # 0005 — Export through Pandoc, preview through Typst
 
-Date: 2026-09-27. Status: accepted.
+Date: 2026-09-27. Status: accepted; Typst is no longer an installed program, see 0023.
 
 ## Context
 

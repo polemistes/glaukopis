@@ -1840,22 +1840,14 @@ mod tests {
         assert_eq!((f.pages, f.has_text), (0, false));
     }
 
-    /// Makes a PDF of Typst source. Nothing, when Typst is not installed: the
-    /// tests that need it are then passed over.
+    /// Makes a PDF of Typst source, with the Typst of the application.
     fn typeset(dir: &Path, name: &str, source: &str) -> Option<std::path::PathBuf> {
-        let input = dir.join(format!("{name}.typ"));
+        let input = format!("{name}.typ");
         let output = dir.join(format!("{name}.pdf"));
-        std::fs::write(&input, source).unwrap();
-        match std::process::Command::new("typst").arg("compile").arg(&input).arg(&output).output() {
-            Ok(run) => {
-                assert!(run.status.success(), "{}", String::from_utf8_lossy(&run.stderr));
-                Some(output)
-            }
-            Err(_) => {
-                eprintln!("Typst is not installed; the test is passed over");
-                None
-            }
-        }
+        std::fs::write(dir.join(&input), source).unwrap();
+        let (made, _) = crate::export::typeset::pdf_of(dir, &input).unwrap();
+        std::fs::write(&output, made).unwrap();
+        Some(output)
     }
 
     const ARTICLE: &str = r#"

@@ -108,7 +108,6 @@ preview-export-markdown-about = Ren tekst, med kildehenvisningene som nøkler
 preview-export-html = Nettside
 preview-export-html-about = Én fil, til å leses i en nettleser
 preview-export-latex-missing = Dette krever LaTeX, som ikke ble funnet. Det installeres som TeX Live.
-preview-export-typst-missing = Dette krever Typst, som ikke ble funnet
 preview-export-biblatex = Behold kildehenvisningene som BibLaTeX-kommandoer
 preview-export-biblatex-hint = Referansene skrives til en .bib-fil ved siden av dokumentet. Referansestilen blir da den i BibLaTeX som ligger nærmest den som er valgt.
 # Tittelen på vinduet der filen får navn; typen er PDF, Word og så videre.

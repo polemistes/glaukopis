@@ -23,21 +23,25 @@ Many scholars have written of the poem since then; the oral theory of Milman Par
 struct Kit {
     tmp: tempfile::TempDir,
     tools: Tools,
+    /// The program Typst, which the tests make their scans and pictures with:
+    /// the application sets its documents with Typst of its own, which does
+    /// not draw pictures.
+    typst: PathBuf,
 }
 
 /// Typst, and Tesseract with English where `reading`. Nothing where they are
 /// not installed: the test is then passed over.
 fn kit(reading: bool) -> Option<Kit> {
     let tools = discover(&Configured::default());
-    if tools.typst.is_none() {
+    let Some(typst) = crate::export::tools::find("typst", None, &[]) else {
         eprintln!("Typst is not installed; the test is passed over");
         return None;
-    }
+    };
     if reading && (tools.tesseract.is_none() || !tools.ocr_languages.iter().any(|l| l == "eng")) {
         eprintln!("Tesseract with English is not installed; the test is passed over");
         return None;
     }
-    Some(Kit { tmp: tempfile::tempdir().unwrap(), tools })
+    Some(Kit { tmp: tempfile::tempdir().unwrap(), tools, typst })
 }
 
 impl Kit {
@@ -54,7 +58,7 @@ impl Kit {
         let input = self.path(&format!("{name}.typ"));
         std::fs::write(&input, source).unwrap();
         let output = self.path(name);
-        let typst = &self.tools.typst.as_ref().unwrap().path;
+        let typst = &self.typst;
         let mut args = vec!["compile".to_owned(), input.display().to_string(), output.display().to_string()];
         if name.ends_with(".png") {
             args.extend(["--ppi".to_owned(), "300".to_owned()]);

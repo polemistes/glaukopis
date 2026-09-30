@@ -273,6 +273,22 @@ async function measure() {
     await sleep(6000);
     const after = await took();
     console.log(`      while the preview is made anew the window stood still for ${after.still} ms at the most`);
+    // Pages fetched as the preview is moved through: drawn from what was set.
+    const fetched = await app.execAsync(
+      `const key = location.hash.split('/')[2].split('?')[0];
+       const invoke = window.__TAURI_INTERNALS__.invoke;
+       const times = [];
+       let count = 0;
+       for (const at of [40, 120, 200, 280, 360]) {
+         const began = performance.now();
+         const answer = await invoke('document_preview_pages', { key, pages: [at, at + 1, at + 2] });
+         times.push(Math.round(performance.now() - began));
+         count = answer.count;
+       }
+       return { times, count };`,
+    );
+    console.log(`      three pages fetched further on, in ${fetched.times.join(', ')} ms, of ${fetched.count} pages`);
+    check('pages are fetched as the preview is moved through at once', Math.max(...fetched.times) < 1000, `${Math.max(...fetched.times)} ms`);
     await app.keys(['Control', 'p']);
     await sleep(500);
 

@@ -63,7 +63,6 @@ export interface Settings {
   interfaceSize: number;
   /** Paths to external programs, when not found automatically. */
   pandocPath: string | null;
-  typstPath: string | null;
   tesseractPath: string | null;
   /**
    * Tesseract's names of the languages text is read in at first (`nor`,
@@ -96,7 +95,6 @@ export const defaultSettings: Settings = {
   textSize: 17,
   interfaceSize: 1,
   pandocPath: null,
-  typstPath: null,
   tesseractPath: null,
   ocrLanguages: [],
   contactEmail: null,

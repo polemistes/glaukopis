@@ -37,9 +37,8 @@ settings-contact-problem = Det ser ikke ut som en e-postadresse.
 ## Programmer: Pandoc og Typst
 
 settings-programs = Programmer
-settings-programs-about = Glaukopis lager dokumenter med Pandoc, og sider til forhåndsvisning og utskrift med Typst. De blir funnet av seg selv når de er installert på vanlig måte.
+settings-programs-about = Glaukopis lager dokumenter med Pandoc, som blir funnet av seg selv når det er installert på vanlig måte. Sidene i forhåndsvisningen og i en PDF settes av Typst, som er en del av Glaukopis.
 settings-pandoc-need = Trengs for forhåndsvisningen og for all eksport.
-settings-typst-need = Trengs for forhåndsvisning av sider, og for PDF.
 settings-looking = Leter …
 settings-program-missing = Ikke funnet. { $need } Installer det med pakkebehandleren på systemet ditt, eller skriv nedenfor hvor det er.
 settings-program-old = Eldre enn Glaukopis trenger: { $least } eller nyere.

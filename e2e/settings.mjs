@@ -19,25 +19,25 @@ try {
   await sleep(300);
   await app.screenshot('settings-1');
 
-  // Pandoc, Typst and Tesseract.
-  check('the programs that are installed are found', (await app.count('.program .mark.ok')) === 3);
+  // Pandoc and Tesseract; Typst is part of the application.
+  check('the programs that are installed are found', (await app.count('.program .mark.ok')) === 2);
   check('with their versions', /\d+\.\d+/.test(await app.text('.program .version')));
 
-  // A Typst that is older than what is needed is said to be so.
-  const oldTypst = join(app.dataDir, 'old-typst');
-  writeFileSync(oldTypst, '#!/bin/sh\necho "typst 0.11.0"\n');
-  chmodSync(oldTypst, 0o755);
-  const typstField = 'input[aria-label="Where Typst is"]';
-  await app.type(typstField, oldTypst);
-  await app.exec(`document.querySelector('${typstField}').blur()`);
+  // A Pandoc that is older than what is needed is said to be so.
+  const oldPandoc = join(app.dataDir, 'old-pandoc');
+  writeFileSync(oldPandoc, '#!/bin/sh\necho "pandoc 3.1.1"\n');
+  chmodSync(oldPandoc, 0o755);
+  const pandocField = 'input[aria-label="Where Pandoc is"]';
+  await app.type(pandocField, oldPandoc);
+  await app.exec(`document.querySelector('${pandocField}').blur()`);
   await app.waitForText('.program', 'Older than Glaukopis needs', 8000).catch(() => {});
   const said = await app.exec(`return Array.from(document.querySelectorAll('.program')).map((p) => p.textContent.replace(/\\s+/g, ' ').trim()).join(' | ')`);
-  check('a program older than what is needed is said to be so', /Typst 0\.11\.0.*Older than Glaukopis needs: 0\.13 or newer/.test(said), said);
-  await app.screenshot('settings-1b-old-typst');
-  await app.exec(`const f = document.querySelector('${typstField}'); f.focus(); f.value = ''; f.dispatchEvent(new Event('input', { bubbles: true })); f.blur();`);
-  await app.waitFor('.program .mark.ok + div .version', 8000).catch(() => {});
-  await sleep(500);
-  check('and found again as it was when the path is taken away', (await app.count('.program .mark.ok')) === 3);
+  check('a program older than what is needed is said to be so', /Pandoc 3\.1\.1.*Older than Glaukopis needs: 3\.1\.2 or newer/.test(said), said);
+  await app.screenshot('settings-1b-old-pandoc');
+  await app.exec(`const f = document.querySelector('${pandocField}'); f.focus(); f.value = ''; f.dispatchEvent(new Event('input', { bubbles: true })); f.blur();`);
+  for (let i = 0; i < 40 && (await app.count('.program .mark.ok')) !== 2; i++) await sleep(200);
+  const again = await app.exec(`return Array.from(document.querySelectorAll('.program')).map((p) => p.textContent.replace(/\\s+/g, ' ').trim().slice(0, 60)).join(' | ')`);
+  check('and found again as it was when the path is taken away', (await app.count('.program .mark.ok')) === 2, again);
 
   await app.clickText('.segmented button', 'Dark');
   await sleep(200);
