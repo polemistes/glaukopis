@@ -887,6 +887,11 @@
               head={tabs}
               onclose={closeSide}
               ongo={(map, element) => show(map, { element })}
+              onopen={(map, element) => {
+                // In the diagram, the box of the element opens; in the text, the text is gone to.
+                if (pane.mode === 'diagram' && pane.map === map) diagrams[focused]?.write(element);
+                else show(map, { element, mode: 'text' });
+              }}
             />
           {:else if sideKind === 'pictures'}
             <PicturePanel

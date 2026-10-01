@@ -52,10 +52,6 @@ text-hint-linking = Klikk på navnet til elementet du vil knytte til · { $esc }
 
 ## Under teksten
 
-text-cited = { $count ->
-    [one] { $count } sitert verk
-   *[other] { $count } siterte verk
-}
 text-notes = { $count ->
     [one] { $count } note
    *[other] { $count } noter

@@ -102,8 +102,6 @@ describe('the words of a text', () => {
   });
 
   it('count what is under the text', () => {
-    expect(t('text-cited', { count: 1 })).toBe('1 work cited');
-    expect(t('text-cited', { count: 4 })).toBe('4 works cited');
     expect(t('text-notes', { count: 2 })).toBe('2 notes');
     const keys = pieces((m) => t('text-keys', m), { ctrl: 'Ctrl', enter: 'Enter', at: '@' });
     expect(keys.map((p) => (p.name ? `[${p.text}]` : p.text)).join('')).toBe(

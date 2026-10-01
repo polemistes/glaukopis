@@ -10,6 +10,8 @@ history-reading = Reading the history…
 ## When it is not kept
 
 history-off = The history of this project is not kept.
+history-on-word = Every change is kept
+history-off-word = Not kept
 history-off-about = While it is kept, every change is kept, with who made it and when: the project can be looked at as it was at any moment, and brought back. It takes room, and in a shared project it shows the others what each wrote, and when.
 history-turn-on = Keep the history
 

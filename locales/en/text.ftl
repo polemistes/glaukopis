@@ -57,10 +57,6 @@ text-hint-linking = Click the name of the element to associate with · { $esc } 
 
 ## Under the text
 
-text-cited = { $count ->
-    [one] { $count } work cited
-   *[other] { $count } works cited
-}
 text-notes = { $count ->
     [one] { $count } note
    *[other] { $count } notes

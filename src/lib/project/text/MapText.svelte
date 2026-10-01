@@ -213,7 +213,6 @@
   const totals = $derived.by(() => {
     let words = 0;
     let notes = 0;
-    const cited = new Set<string>();
     // What is folded away is counted as well: it is in the document.
     for (const r of all) {
       if (r.excluded) continue;
@@ -221,9 +220,8 @@
       if (!n) continue;
       words += n.words;
       notes += n.notes;
-      for (const c of n.cited) cited.add(c);
     }
-    return { words, notes, cited: cited.size };
+    return { words, notes };
   });
 
   /**
@@ -234,8 +232,7 @@
   let counted = $state.raw(untrack(() => totals));
   $effect(() => {
     const now = totals;
-    if (now.words === counted.words && now.notes === counted.notes && now.cited === counted.cited)
-      return;
+    if (now.words === counted.words && now.notes === counted.notes) return;
     const timer = setTimeout(() => (counted = now), 500);
     return () => clearTimeout(timer);
   });
@@ -1179,7 +1176,6 @@
       </span>
     {:else}
       <span>{t('project-words', { count: counted.words })}</span>
-      {#if counted.cited}<span>{t('text-cited', { count: counted.cited })}</span>{/if}
       {#if counted.notes}<span>{t('text-notes', { count: counted.notes })}</span>{/if}
       {#if progress}<span class="progress">{progressWords(progress).join(' · ')}</span>{/if}
       <span class="keys">

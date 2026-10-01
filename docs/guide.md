@@ -53,6 +53,7 @@ Everything is saved as you work. There is nothing to press.
 | Rename an element | **F2**, or begin to type |
 | Read its text without opening it | Rest the pointer on it |
 | Move an element, with all that is under it | Drag it onto another element |
+| Move an element on its own, what is under it staying | Drag it with **Shift** held |
 | Move it up or down, deeper or less deep | **Alt+Shift** and the arrows |
 | Go from element to element | The arrows |
 | Select several | **Shift**-click, or drag a frame around them |
@@ -67,8 +68,7 @@ and click the other element; or, from the keys, **Shift+F10**, **Associate
 with…**, the arrows to the other element, and **Enter**. An association can be given a few words that say
 what it is.
 
-An element that has text shows a small mark, and the number of works its
-text cites.
+An element that has text shows a small mark.
 
 **How far the writing has come.** Right-click an element, **Status**, and say
 whether it is an idea, a draft or done; for several at once, select them
@@ -708,15 +708,20 @@ the text, and goes into no document.
 - **On an element:** **Comment** with nothing selected, or **Comment…** in
   the element's menu, in the diagram or from the grip beside a heading.
 
-A commented passage is tinted in the text, the name of an element with open
-comments carries a line at its left, and a small mark in the right margin
-counts the open comments on the element; press the passage or the mark to
-see the thread. In the diagram the element carries the same mark with its
-count; press it, and the comments hang under the element as **cards**, like
-children that are not in the tree; press it again to hide them. The button
-with the speech bubble among the diagram's controls shows every open
-comment so, at once. A card can be dragged where it is wanted; pressing it
-opens the thread.
+A commented passage is tinted when the pointer rests on it, or on its
+thread in the panel; the name of an element with open comments carries a
+line at its left, and a small mark in the right margin counts the open
+comments on the element; press the passage or the mark to see the thread.
+In the diagram an element with open comments stands out a little, more
+while the pointer rests on one of its threads in the panel, and carries
+the same mark with its count; press it, and the comments hang under the
+element as **cards**, like children that are not in the tree; press it
+again to hide them. The button with the speech bubble among the diagram's
+controls shows every open comment so, at once. A card can be dragged where
+it is wanted; pressing it opens the thread.
+
+In the panel the threads of one element stand together under its name;
+press the name to go to the element, twice to write in it.
 
 A comment is a **thread**: the first note, and answers under it, each with
 who wrote it and when. You change or delete your own notes; you answer

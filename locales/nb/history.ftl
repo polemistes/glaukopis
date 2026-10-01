@@ -10,6 +10,8 @@ history-reading = Leser historikken …
 ## Når den ikke tas vare på
 
 history-off = Historikken til dette prosjektet tas ikke vare på.
+history-on-word = Hver endring tas vare på
+history-off-word = Tas ikke vare på
 history-off-about = Mens den tas vare på, blir hver endring tatt vare på, med hvem som gjorde den og når: prosjektet kan ses slik det var i ethvert øyeblikk, og hentes tilbake. Den tar plass, og i et delt prosjekt viser den de andre hva hver enkelt skrev, og når.
 history-turn-on = Ta vare på historikken
 

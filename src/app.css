@@ -967,13 +967,14 @@ span.math.selected {
 }
 
 /* A passage that is commented on, drawn by the editor over the text: see comments/marks.ts. */
+/* Quiet until the pointer is on it, or on its thread in the panel (see CommentsPanel). */
 .prose .comment-mark {
-  background-color: color-mix(in srgb, var(--gold) 34%, transparent);
-  border-bottom: 2px solid var(--gold);
   cursor: pointer;
+  border-radius: 2px;
 }
-.prose .comment-mark:hover {
-  background-color: color-mix(in srgb, var(--gold) 50%, transparent);
+.prose .comment-mark:hover,
+.prose .comment-mark.hot {
+  background-color: color-mix(in srgb, var(--gold) 24%, transparent);
 }
 .prose .comment-mark.settled {
   background-color: transparent;

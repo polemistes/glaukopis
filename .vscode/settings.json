@@ -19,6 +19,12 @@
     "**/packaging/arch/src": true,
     "**/packaging/arch/pkg": true
   },
+  // The Wine prefix under target links its Z: drive to /, and the workspace's
+  // startup scans ignore search.exclude; followed, they crawl the whole disk.
+  "search.followSymlinks": false,
+  "files.exclude": {
+    "**/target": true
+  },
   // The worktrees are repositories of their own; the editor need not follow them.
   "git.autoRepositoryDetection": "openEditors",
   "rust-analyzer.files.exclude": [".claude/worktrees", "packaging/arch/src", "packaging/arch/pkg"]

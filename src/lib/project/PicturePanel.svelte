@@ -224,23 +224,26 @@
 >
   <header>
     {#if head}{@render head()}{:else}<h2>{t('project-pictures')}</h2>{/if}
-    <IconButton label={t('project-add-pictures')} size="sm" onclick={add}>
-      <Plus size={15} />
-    </IconButton>
     <IconButton label={t('common-close')} size="sm" onclick={onclose}><X size={15} /></IconButton>
   </header>
 
   <div class="tools">
-    <Segmented
-      bind:value={scope}
-      label={t('project-which-pictures')}
-      size="sm"
-      options={[
-        { value: 'map', label: t('project-this-map') },
-        { value: 'project', label: t('project-project') },
-        { value: 'store', label: t('project-store') },
-      ]}
-    />
+    <div class="row">
+      <Segmented
+        bind:value={scope}
+        label={t('project-which-pictures')}
+        size="sm"
+        options={[
+          { value: 'map', label: t('project-this-map') },
+          { value: 'project', label: t('project-project') },
+          { value: 'store', label: t('project-store') },
+        ]}
+      />
+      <span class="spring"></span>
+      <IconButton label={t('project-add-pictures')} size="sm" onclick={add}>
+        <Plus size={15} />
+      </IconButton>
+    </div>
     <div class="search">
       <Search size={14} />
       <input
@@ -383,6 +386,14 @@
     gap: 8px;
     padding: 2px 12px 10px;
     border-bottom: 1px solid var(--line);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .spring {
+    flex: 1;
   }
   .search {
     display: flex;

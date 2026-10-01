@@ -64,26 +64,29 @@
 <aside class="panel" aria-label={t('project-references')}>
   <header>
     {#if head}{@render head()}{:else}<h2>{t('project-references')}</h2>{/if}
-    <IconButton label={t('project-new-reference')} size="sm" onclick={() => newReference()}
-      ><Plus size={15} /></IconButton
-    >
-    <IconButton label={t('project-import-file')} size="sm" onclick={() => importFile()}
-      ><FileUp size={14} /></IconButton
-    >
     <IconButton label={t('common-close')} size="sm" onclick={onclose}><X size={15} /></IconButton>
   </header>
 
   <div class="tools">
-    <Segmented
-      bind:value={scope}
-      label={t('project-which-references')}
-      size="sm"
-      options={[
-        { value: 'map', label: t('project-this-map') },
-        { value: 'project', label: t('project-project') },
-        { value: 'library', label: t('project-library') },
-      ]}
-    />
+    <div class="row">
+      <Segmented
+        bind:value={scope}
+        label={t('project-which-references')}
+        size="sm"
+        options={[
+          { value: 'map', label: t('project-this-map') },
+          { value: 'project', label: t('project-project') },
+          { value: 'library', label: t('project-library') },
+        ]}
+      />
+      <span class="spring"></span>
+      <IconButton label={t('project-new-reference')} size="sm" onclick={() => newReference()}
+        ><Plus size={15} /></IconButton
+      >
+      <IconButton label={t('project-import-file')} size="sm" onclick={() => importFile()}
+        ><FileUp size={14} /></IconButton
+      >
+    </div>
     <div class="search">
       <Search size={14} />
       <input
@@ -180,6 +183,14 @@
     gap: 8px;
     padding: 2px 12px 10px;
     border-bottom: 1px solid var(--line);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .spring {
+    flex: 1;
   }
   .search {
     display: flex;

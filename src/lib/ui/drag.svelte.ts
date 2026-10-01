@@ -21,6 +21,8 @@ export interface DropEvent {
   y: number;
   /** Ctrl or Alt was held: copy rather than move, where that has a meaning. */
   copy: boolean;
+  /** Shift was held: the thing alone, without what is under it, where that has a meaning. */
+  alone: boolean;
   target: HTMLElement;
 }
 
@@ -39,6 +41,7 @@ class DragState {
   x = $state(0);
   y = $state(0);
   copy = $state(false);
+  alone = $state(false);
   /** Whether the pointer is over something that would take the drop. */
   welcome = $state(false);
   /** Whether the label beside the pointer is hidden. */
@@ -68,7 +71,14 @@ function targetAt(x: number, y: number, payload: DragPayload): HTMLElement | nul
 }
 
 function eventFor(target: HTMLElement): DropEvent {
-  return { payload: drag.payload!, x: drag.x, y: drag.y, copy: drag.copy, target };
+  return {
+    payload: drag.payload!,
+    x: drag.x,
+    y: drag.y,
+    copy: drag.copy,
+    alone: drag.alone,
+    target,
+  };
 }
 
 function setOver(next: HTMLElement | null) {
@@ -124,6 +134,7 @@ export function startDrag(
     drag.x = e.clientX;
     drag.y = e.clientY;
     drag.copy = e.ctrlKey || e.altKey;
+    drag.alone = e.shiftKey;
     setOver(targetAt(e.clientX, e.clientY, drag.payload!));
     e.preventDefault();
   };

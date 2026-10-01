@@ -16,6 +16,8 @@ class CommentsUi {
   asked = $state(0);
   /** Whether the diagram shows every open thread as a card under its element. */
   cards = $state(false);
+  /** The thread the pointer rests on in the panel, and its element: shown where they are, without going there. */
+  hovered = $state<{ thread: string; element: string } | null>(null);
   /** The elements whose threads are shown as cards, one by one, from the mark on the element. */
   shownOn = $state<ReadonlySet<string>>(new Set());
 

@@ -1,10 +1,9 @@
 <script lang="ts">
-  import AlignLeft from '@lucide/svelte/icons/align-left';
+  import FileText from '@lucide/svelte/icons/file-text';
   import EyeOff from '@lucide/svelte/icons/eye-off';
   import FileInput from '@lucide/svelte/icons/file-input';
   import GitCompare from '@lucide/svelte/icons/git-compare';
   import MessageSquare from '@lucide/svelte/icons/message-square';
-  import Quote from '@lucide/svelte/icons/quote';
   import type { EditorView } from 'prosemirror-view';
   import { untrack } from 'svelte';
   import { commentsUi } from '$lib/comments/ui.svelte';
@@ -89,7 +88,6 @@
   });
 
   const title = $derived(project.fragment(node.id, 'title'));
-  const cited = $derived(node.cited.length);
   /** A copy whose original has changed since it was copied. */
   const behind = $derived(!!node.origin && project.copyOf(node.id)?.changed === true);
   /** The threads of comments on it that are open. */
@@ -129,6 +127,8 @@
     : node.title || t('project-untitled')}
   aria-selected={selected}
   class:kinded={!!kind}
+  class:commented={commented.length > 0}
+  class:hot={commentsUi.hovered?.element === node.id}
   style:--kind={kind ? kindColour(kind.colour).ink : undefined}
   aria-level={placed.depth + 1}
   aria-expanded={hasChildren ? !node.collapsed : undefined}
@@ -163,7 +163,7 @@
     {/if}
   </div>
 
-  {#if !renaming && (!node.empty || cited || node.include || node.excluded || behind || node.status || commented.length)}
+  {#if !renaming && (!node.empty || node.include || node.excluded || behind || node.status || commented.length)}
     <div class="marks">
       {#if node.status}
         <span
@@ -205,8 +205,7 @@
         >
       {/if}
       {#if node.include}<span class="mark include"><FileInput size={11} /></span>{/if}
-      {#if !node.empty}<span class="mark"><AlignLeft size={11} /></span>{/if}
-      {#if cited}<span class="mark"><Quote size={10} />{cited}</span>{/if}
+      {#if !node.empty}<span class="mark"><FileText size={11} /></span>{/if}
       {#if node.excluded}<span class="mark"><EyeOff size={11} /></span>{/if}
     </div>
   {/if}
@@ -254,6 +253,15 @@
 </div>
 
 <style>
+  /* An element with open comments stands out a little; more while its comment is pointed at. */
+  .node.commented {
+    border-color: color-mix(in srgb, var(--gold) 70%, var(--line-strong));
+  }
+  .node.hot {
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--gold) 60%, transparent),
+      var(--shadow-1);
+  }
   /* An element of a kind carries the kind's colour at its left edge. */
   .node.kinded {
     box-shadow:

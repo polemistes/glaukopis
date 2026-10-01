@@ -34,9 +34,11 @@
     head?: Snippet;
     /** Goes to an element, in its map. */
     ongo: (map: string, element: string) => void;
+    /** Opens an element for writing: its box in the diagram, or its text. */
+    onopen?: (map: string, element: string) => void;
   }
 
-  let { project, mapId, onclose, head, ongo }: Props = $props();
+  let { project, mapId, onclose, head, ongo, onopen }: Props = $props();
 
   type Which = 'open' | 'settled' | 'all';
   let which = $state<Which>('open');
@@ -158,6 +160,31 @@
     const node = project.node(thread.element);
     if (node) ongo(node.map, node.id);
   }
+
+  function write(thread: Thread) {
+    const node = project.node(thread.element);
+    if (node) (onopen ?? ongo)(node.map, node.id);
+  }
+
+  /** The pointer rests on a thread: its passage and its element are shown where they are. */
+  function hover(thread: Thread | null) {
+    commentsUi.hovered = thread ? { thread: thread.id, element: thread.element } : null;
+  }
+
+  // The passage of the hovered thread is tinted in every editor, by a rule
+  // for its thread alone: the editors need not be told.
+  $effect(() => {
+    const id = commentsUi.hovered?.thread;
+    const rule = document.getElementById('comment-hot') ?? document.createElement('style');
+    rule.id = 'comment-hot';
+    rule.textContent = id
+      ? `.prose .comment-mark[data-thread="${id}"] { background-color: color-mix(in srgb, var(--gold) 24%, transparent); }`
+      : '';
+    if (!rule.parentNode) document.head.append(rule);
+    return () => {
+      rule.textContent = '';
+    };
+  });
 </script>
 
 <div class="panel">
@@ -211,17 +238,31 @@
     {:else if !shown.length}
       <p class="nothing">{t('comments-none-of-these')}</p>
     {:else}
-      {#each shown as thread (thread.id)}
+      {#each shown as thread, i (thread.id)}
+        {@const sameElement = i > 0 && shown[i - 1].element === thread.element}
         <article
           class="thread"
           class:settled={thread.resolved}
           class:current={current === thread.id}
+          class:continued={sameElement}
           data-thread={thread.id}
+          onmouseenter={() => hover(thread)}
+          onmouseleave={() => hover(null)}
         >
           <div class="where">
-            <button type="button" class="element truncate" onclick={() => go(thread)}>
-              {nameOf(thread.element)}
-            </button>
+            {#if !sameElement}
+              <button
+                type="button"
+                class="element truncate"
+                use:tooltip={{ text: t('comments-element-hint'), side: 'top' }}
+                onclick={() => go(thread)}
+                ondblclick={() => write(thread)}
+              >
+                {nameOf(thread.element)}
+              </button>
+            {:else}
+              <span class="spring"></span>
+            {/if}
             <IconButton
               label={thread.resolved ? t('comments-reopen') : t('comments-settle')}
               size="sm"
@@ -355,6 +396,14 @@
   }
   .thread.current {
     background: var(--accent-soft);
+  }
+  /* Another thread on the same element: the name is not said again. */
+  .thread.continued {
+    border-top: none;
+    padding-top: 2px;
+  }
+  .spring {
+    flex: 1;
   }
   .where {
     display: flex;

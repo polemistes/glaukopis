@@ -191,6 +191,12 @@
 <div class="panel history-panel">
   <header>
     {#if head}{@render head()}{:else}<h2>{t('history-title')}</h2>{/if}
+    <IconButton label={t('common-close')} size="sm" onclick={onclose}><X size={15} /></IconButton>
+  </header>
+
+  <div class="tools">
+    <span class="what">{on ? t('history-on-word') : t('history-off-word')}</span>
+    <span class="spring"></span>
     {#if on}
       <IconButton
         label={t('history-settings')}
@@ -202,8 +208,7 @@
     <IconButton label={t('history-open-archive')} size="sm" onclick={openArchive}
       ><FolderOpen size={15} /></IconButton
     >
-    <IconButton label={t('common-close')} size="sm" onclick={onclose}><X size={15} /></IconButton>
-  </header>
+  </div>
 
   {#if archive}
     <div class="archive">
@@ -402,5 +407,20 @@
   }
   .removed {
     color: var(--danger);
+  }
+  .tools {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+    padding: 2px 12px 8px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tools .what {
+    font-size: var(--text-sm);
+    color: var(--ink-3);
+  }
+  .tools .spring {
+    flex: 1;
   }
 </style>

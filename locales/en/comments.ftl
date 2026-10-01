@@ -28,6 +28,7 @@ comments-edited = changed
 comments-someone = Someone
 comments-note-deleted = The note was deleted
 # On an element in the diagram, and in the margin of the text.
+comments-element-hint = Press to go to the element; press twice to write in it
 comments-mark = { $count ->
     [one] One open comment
    *[other] { $count } open comments

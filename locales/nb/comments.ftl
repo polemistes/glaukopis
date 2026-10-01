@@ -26,6 +26,7 @@ comments-edit = Endre
 comments-edited = endret
 comments-someone = Noen
 comments-note-deleted = Merknaden ble slettet
+comments-element-hint = Trykk for å gå til elementet; trykk to ganger for å skrive i det
 comments-mark = { $count ->
     [one] Én åpen kommentar
    *[other] { $count } åpne kommentarer

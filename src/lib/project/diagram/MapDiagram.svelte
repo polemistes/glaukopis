@@ -253,6 +253,12 @@
     if (width && height) cam = fitting(lay.bounds, width, height);
   }
 
+  /** Opens an element for writing, in its box, bringing it into view first. */
+  export function write(id: string) {
+    bringIntoView(id);
+    requestAnimationFrame(() => open(id));
+  }
+
   /** The elements that are selected. */
   export function chosen(): string[] {
     return selection;
@@ -473,6 +479,17 @@
     project.move([id], parent, at, { pos: rel });
   }
 
+  /**
+   * Keeps the children of an element where they are while it is moved to
+   * `to`: each child's place is said from its parent, so it is said anew.
+   */
+  function holdChildren(id: string, to: Position) {
+    for (const child of tree.children.get(id) ?? []) {
+      const p = lay.placed.get(child);
+      if (p) project.setPosition(child, { x: p.x - to.x, y: p.y - to.y });
+    }
+  }
+
   function ondrop(event: DropEvent) {
     const { payload } = event;
     const world = toWorld(event.x, event.y);
@@ -520,7 +537,10 @@
         : project.move(data.ids, target, undefined, { pos: null });
     } else if (local && !event.copy) {
       data.ids.forEach((id, i) => {
-        placeAt(id, { x: world.x - data.grab.x, y: world.y - data.grab.y + i * 52 });
+        const to = { x: world.x - data.grab.x, y: world.y - data.grab.y + i * 52 };
+        // With Shift, the element goes alone: what is under it stays where it is.
+        if (event.alone) holdChildren(id, to);
+        placeAt(id, to);
       });
       result = data.ids;
     } else {
