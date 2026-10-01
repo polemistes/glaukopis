@@ -278,6 +278,27 @@ read, so a share shown as 25 % comes as 0.25. A table is a copy: it does not
 follow the file when the file is changed. One table may have 2000 rows and
 100 columns.
 
+### Verse, and texts side by side
+
+Lines of poetry or drama are kept as lines: choose **Verse** as the kind of
+paragraph, for the paragraphs selected or for the one the cursor is in,
+and each paragraph becomes a line; Enter makes a new line, and Enter on an
+empty last line leaves the verse. A line can be the **speaker**, set in
+small capitals, or a **stage direction**, in italics: choose it as the kind
+of the line. Tab indents a line a step, for the shorter lines of lyric;
+Shift+Tab takes it back.
+
+The **#** button that appears beside the kind of paragraph numbers the
+lines: from which line, and every how many. Speakers and directions are
+not counted. The numbers stand in the margin, in the text and in the
+document.
+
+**Two texts side by side**, under *Insert*, puts an original beside its
+translation: two columns, each a text of its own, in which verse and
+paragraphs are written as anywhere else. Tab goes from the left side to
+the right. The document sets them side by side; a word processor gets them
+as a table without lines.
+
 ### Mathematics
 
 Mathematics is written in the notation of TeX, which is what journals and

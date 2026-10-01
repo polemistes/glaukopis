@@ -976,3 +976,57 @@ span.math.selected {
   background-color: transparent;
   border-bottom: 1px dotted var(--ink-4);
 }
+
+/* Lines of verse: each a line, the numbers in the margin where the lines are numbered. */
+.prose .verse {
+  margin: 0.6em 0 0.8em 2.4em;
+  position: relative;
+}
+.prose .verse-line {
+  position: relative;
+  margin: 0;
+  padding-left: calc(var(--indent, 0) * 1.5em);
+  text-indent: 0;
+}
+.prose .verse-line[data-n]::before {
+  content: attr(data-n);
+  position: absolute;
+  /* From the edge of the line's box, which is the same for every line, indented or not. */
+  left: -2.4em;
+  width: 2em;
+  text-align: right;
+  font-size: 0.8em;
+  line-height: inherit;
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.prose .verse-line.speaker {
+  margin-top: 0.6em;
+  font-variant: small-caps;
+  letter-spacing: 0.03em;
+}
+.prose .verse-line.direction {
+  font-style: italic;
+  margin: 0.2em 0;
+}
+.prose .verse-line.is-empty::before {
+  content: none;
+}
+/* Two texts side by side. */
+.prose .parallel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 2em;
+  margin: 0.6em 0 0.8em;
+}
+.prose .parallel-side {
+  min-width: 0;
+}
+.prose:not(.static) .parallel-side {
+  padding: 2px 4px;
+  border-left: 2px solid var(--line);
+}
+.prose .parallel-side .verse {
+  margin-left: 2.4em;
+}

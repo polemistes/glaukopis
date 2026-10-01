@@ -53,6 +53,10 @@ function lines(blocks: Block[], change: (line: Inline[]) => Inline[]): Block[] {
         return { ...b, content: line(b.content) };
       case 'blockquote':
         return { ...b, content: lines(b.content, change) };
+      case 'verse':
+        return { ...b, lines: b.lines.map((l) => ({ ...l, content: line(l.content) })) };
+      case 'parallel':
+        return { ...b, left: lines(b.left, change), right: lines(b.right, change) };
       case 'bullet_list':
       case 'ordered_list':
         return { ...b, items: b.items.map((item) => lines(item, change)) };

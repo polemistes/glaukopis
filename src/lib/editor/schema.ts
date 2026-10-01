@@ -202,6 +202,79 @@ const bodyNodes: Record<string, NodeSpec> = {
     parseDOM: [{ tag: 'blockquote' }],
     toDOM: () => ['blockquote', 0],
   },
+  /**
+   * Lines of verse: a quotation of poetry or drama, each line kept as a
+   * line, numbered where `start` is given. A line may be a speaker's name
+   * or a stage direction.
+   */
+  verse: {
+    group: 'block',
+    content: 'verse_line+',
+    defining: true,
+    attrs: { start: { default: null }, by: { default: 5 } },
+    parseDOM: [
+      {
+        tag: 'div.verse',
+        getAttrs: (node) => {
+          const el = node as HTMLElement;
+          const start = el.getAttribute('data-start');
+          return {
+            start: start === null || start === '' ? null : Number(start) || 0,
+            by: Number(el.getAttribute('data-by') ?? 5) || 5,
+          };
+        },
+      },
+    ],
+    toDOM: (node) => [
+      'div',
+      {
+        class: 'verse',
+        ...(node.attrs.start === null ? {} : { 'data-start': String(node.attrs.start) }),
+        'data-by': String(node.attrs.by),
+      },
+      0,
+    ],
+  },
+  verse_line: {
+    content: 'inline*',
+    attrs: { kind: { default: 'line' }, indent: { default: 0 } },
+    parseDOM: [
+      {
+        tag: 'p.verse-line',
+        getAttrs: (node) => {
+          const el = node as HTMLElement;
+          const kind = ['speaker', 'direction'].find((k) => el.classList.contains(k)) ?? 'line';
+          return { kind, indent: Number(el.getAttribute('data-indent') ?? 0) || 0 };
+        },
+      },
+    ],
+    toDOM: (node) => [
+      'p',
+      {
+        class: `verse-line ${node.attrs.kind}`,
+        ...(node.attrs.indent
+          ? { 'data-indent': String(node.attrs.indent), style: `--indent: ${node.attrs.indent}` }
+          : {}),
+      },
+      0,
+    ],
+  },
+  /** Two texts side by side: an original and its translation. */
+  parallel: {
+    group: 'block',
+    content: 'parallel_side parallel_side',
+    defining: true,
+    isolating: true,
+    parseDOM: [{ tag: 'div.parallel' }],
+    toDOM: () => ['div', { class: 'parallel' }, 0],
+  },
+  parallel_side: {
+    content: 'block+',
+    defining: true,
+    isolating: true,
+    parseDOM: [{ tag: 'div.parallel-side' }],
+    toDOM: () => ['div', { class: 'parallel-side' }, 0],
+  },
   bullet_list: {
     group: 'block',
     content: 'list_item+',

@@ -8,6 +8,7 @@
 pub mod bibliography;
 pub mod pandoc;
 mod placing;
+mod verse;
 
 use std::collections::BTreeMap;
 
@@ -114,6 +115,20 @@ pub enum Block {
     },
     Blockquote {
         content: Vec<Block>,
+    },
+    /// Lines of verse, as a quotation of poetry or drama: each line kept as
+    /// a line, numbered from `start` every `by` lines where `start` is given.
+    Verse {
+        #[serde(default)]
+        start: Option<i64>,
+        #[serde(default = "five")]
+        by: u32,
+        lines: Vec<VerseLine>,
+    },
+    /// Two texts side by side: an original and its translation.
+    Parallel {
+        left: Vec<Block>,
+        right: Vec<Block>,
     },
     BulletList {
         items: Vec<Vec<Block>>,
@@ -285,6 +300,31 @@ fn yes() -> bool {
     true
 }
 
+fn five() -> u32 {
+    5
+}
+
+/// A line of verse: the line itself, a speaker's name, or a stage direction.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VerseLine {
+    #[serde(default)]
+    pub kind: VerseLineKind,
+    /// Steps of indentation.
+    #[serde(default)]
+    pub indent: u32,
+    pub content: Vec<Inline>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum VerseLineKind {
+    #[default]
+    Line,
+    Speaker,
+    Direction,
+}
+
 fn one() -> u32 {
     1
 }
@@ -349,6 +389,15 @@ pub fn walk<'a>(list: &'a [Block], block: &mut dyn FnMut(&'a Block), line: &mut 
         match b {
             Block::Paragraph { content } => line(content),
             Block::Blockquote { content } => walk(content, block, line),
+            Block::Verse { lines, .. } => {
+                for l in lines {
+                    line(&l.content);
+                }
+            }
+            Block::Parallel { left, right } => {
+                walk(left, block, line);
+                walk(right, block, line);
+            }
             Block::BulletList { items } | Block::OrderedList { items, .. } => {
                 for item in items {
                     walk(item, block, line);

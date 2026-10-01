@@ -27,6 +27,12 @@
   import Subscript from '@lucide/svelte/icons/subscript';
   import Superscript from '@lucide/svelte/icons/superscript';
   import TextQuote from '@lucide/svelte/icons/text-quote';
+  import AlignLeft from '@lucide/svelte/icons/align-left';
+  import Columns2 from '@lucide/svelte/icons/columns-2';
+  import Drama from '@lucide/svelte/icons/drama';
+  import Hash from '@lucide/svelte/icons/hash';
+  import LineNumbersDialog from './LineNumbersDialog.svelte';
+  import { insertParallel, numberLines, verseAt } from './verse';
   import TextSearch from '@lucide/svelte/icons/text-search';
   import type { Command } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
@@ -100,7 +106,39 @@
       icon: ListOrdered,
       shortcut: 'Ctrl+Shift+7',
     },
+    {
+      value: 'verse',
+      label: t('editor-verse'),
+      hint: t('editor-verse-hint'),
+      icon: AlignLeft,
+    },
+    {
+      value: 'speaker',
+      label: t('editor-speaker'),
+      hint: t('editor-speaker-hint'),
+      icon: Drama,
+    },
+    {
+      value: 'direction',
+      label: t('editor-direction'),
+      hint: t('editor-direction-hint'),
+      icon: Drama,
+    },
   ]);
+  const inVerse = $derived(style === 'verse' || style === 'speaker' || style === 'direction');
+
+  /** How the lines of the verse the cursor is in are numbered, asked for in a dialog. */
+  let numbering = $state<{ view: EditorView; start: number | null; by: number } | null>(null);
+  function lineNumbers() {
+    const view = s?.view;
+    const at = view ? verseAt(view.state) : null;
+    if (!view || !at) return;
+    numbering = {
+      view,
+      start: at.verse.attrs.start as number | null,
+      by: at.verse.attrs.by as number,
+    };
+  }
   const current = $derived(STYLES.find((x) => x.value === style) ?? STYLES[0]);
 
   function run(command: Command, view: EditorView | undefined = s?.view) {
@@ -167,6 +205,12 @@
                 hint: t('editor-table-file-hint'),
                 icon: Sheet,
                 action: () => void chooseTable(view),
+              },
+              {
+                label: t('editor-parallel'),
+                hint: t('editor-parallel-hint'),
+                icon: Columns2,
+                action: () => run(insertParallel, view),
               },
             ]
           : []),
@@ -313,6 +357,18 @@
     <ChevronDown size={13} />
   </button>
 
+  {#if inVerse}
+    <button
+      type="button"
+      class="lines"
+      aria-label={t('editor-line-numbers')}
+      use:tooltip={{ text: t('editor-line-numbers-hint'), side: 'bottom' }}
+      onclick={lineNumbers}
+    >
+      <Hash size={14} />
+    </button>
+  {/if}
+
   <span class="rule"></span>
 
   <button
@@ -397,6 +453,15 @@
     <Ellipsis size={15} />
   </button>
 </div>
+
+{#if numbering}
+  <LineNumbersDialog
+    start={numbering.start}
+    by={numbering.by}
+    onclose={() => (numbering = null)}
+    onset={(start, by) => numbering && run(numberLines(start, by), numbering.view)}
+  />
+{/if}
 
 <style>
   .tools {

@@ -1106,6 +1106,16 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
                     }
                 }
                 Block::Blockquote { content } => blocks(content, with_notes, out),
+                Block::Verse { lines, .. } => {
+                    for l in lines {
+                        inlines(&l.content, with_notes, out);
+                        out.push('\n');
+                    }
+                }
+                Block::Parallel { left, right } => {
+                    blocks(left, with_notes, out);
+                    blocks(right, with_notes, out);
+                }
                 Block::BulletList { items } | Block::OrderedList { items, .. } => {
                     for item in items {
                         blocks(item, with_notes, out);
@@ -1768,6 +1778,75 @@ mod tests {
         assert!(t.contains("Tab.~1. Poems"));
         assert_eq!(t.matches("#show math.equation: set align(left)").count(), 3);
         assert!(!preview(&s.ctx(), &f).unwrap().pages.is_empty());
+    }
+
+    #[test]
+    fn verse_and_texts_side_by_side() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, Section, VerseLine, VerseLineKind};
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = request("chicago-author-date");
+        let line =
+            |kind: VerseLineKind, indent: u32, words: &str| VerseLine { kind, indent, content: vec![text(words)] };
+        let verse = Block::Verse {
+            start: Some(1),
+            by: 5,
+            lines: vec![
+                line(VerseLineKind::Speaker, 0, "Nurse"),
+                line(VerseLineKind::Line, 0, "If only the Argo had never flown"),
+                line(VerseLineKind::Line, 1, "through the dark Clashing Rocks"),
+                line(VerseLineKind::Direction, 0, "She weeps."),
+                line(VerseLineKind::Line, 0, "to the land of Colchis,"),
+                line(VerseLineKind::Line, 0, "nor the pine been felled"),
+                line(VerseLineKind::Line, 0, "in the glens of Pelion."),
+            ],
+        };
+        r.document.sections.push(Section {
+            level: 1,
+            heading: Some(vec![text("The nurse")]),
+            blocks: vec![
+                verse.clone(),
+                Block::Parallel {
+                    left: vec![Block::Verse {
+                        start: None,
+                        by: 5,
+                        lines: vec![line(VerseLineKind::Line, 0, "Εἴθ᾽ ὤφελ᾽ Ἀργοῦς μὴ διαπτάσθαι σκάφος")],
+                    }],
+                    right: vec![Block::Paragraph { content: vec![text("If only the Argo had never flown.")] }],
+                },
+            ],
+            element: Some("nurse".into()),
+        });
+
+        // Typst: the lines are blocks the opening sets, numbered; the pages are made.
+        let typ = out.join("verse.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("#gk-verse(start: 1, by: 5)["), "{t}");
+        assert!(t.contains("#gk-line(\"speaker\", 0)["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 1)["), "{t}");
+        assert!(t.contains("#gk-parallel(["), "{t}");
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let svg: String = p.pages.iter().map(|page| page.svg.as_str()).collect();
+        assert!(!svg.is_empty());
+
+        // LaTeX: a line block, with the speaker in small capitals.
+        let tex = out.join("verse.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("\\textsc{Nurse}"), "{l}");
+        assert!(l.contains("If only the Argo had never flown"), "{l}");
+        assert!(l.contains("\\begin{minipage}[t]{0.48\\textwidth}"), "{l}");
+
+        // Word: the lines stay lines, and the texts side by side are a table.
+        let docx = out.join("verse.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let xml = unzip(&docx, "word/document.xml");
+        assert!(xml.contains("If only the Argo had never flown"), "no verse in Word");
+        assert!(xml.contains("<w:tbl>"), "no table for the texts side by side");
     }
 
     #[test]

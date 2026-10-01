@@ -30,6 +30,9 @@ export const OBJECT = '￼';
 /** Blocks that hold other blocks, and are not changes of their own. */
 const CONTAINERS = new Set([
   'blockquote',
+  'verse',
+  'parallel',
+  'parallel_side',
   'bullet_list',
   'ordered_list',
   'list_item',

@@ -469,6 +469,40 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
         );
     }
 
+    // Lines of verse: each a line, numbered in the margin from the line the
+    // writer said, every so many lines; speakers in small capitals, stage
+    // directions in italics. And texts side by side.
+    let _ = writeln!(
+        out,
+        "#let gk-line-counter = counter(\"gk-verse-line\")
+#let gk-verse-numbering = state(\"gk-verse-numbering\", none)
+#let gk-verse(start: none, by: 5, body) = {{
+  if start != none {{ gk-line-counter.update(start - 1) }}
+  gk-verse-numbering.update(if start == none {{ none }} else {{ (start: start, by: by) }})
+  block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em, inset: (left: 2.4em), body)
+}}
+#let gk-line(kind, indent, body) = {{
+  if kind == \"speaker\" {{
+    block(above: 0.7em, below: 0.25em, breakable: false, smallcaps(body))
+  }} else if kind == \"direction\" {{
+    block(above: 0.25em, below: 0.25em, breakable: false, emph(body))
+  }} else {{
+    gk-line-counter.step()
+    context {{
+      let numbering = gk-verse-numbering.get()
+      let n = gk-line-counter.get().first()
+      let shown = numbering != none and (n == numbering.start or calc.rem(n, numbering.by) == 0)
+      block(above: 0pt, below: 0pt, breakable: false, inset: (left: indent * 1.5em), {{
+        if shown {{ place(left + horizon, dx: -2.4em - indent * 1.5em, text(size: 0.8em, fill: luma(45%), str(n))) }}
+        body
+      }})
+    }}
+  }}
+}}
+#let gk-parallel(left, right) = block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em,
+  grid(columns: (1fr, 1fr), column-gutter: 2em, left, right))"
+    );
+
     // Equations on a line of their own, with room about them.
     let _ = writeln!(
         out,

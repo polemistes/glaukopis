@@ -67,6 +67,33 @@ const everything: Block[] = [
     content: [p(t('Sing, goddess, the wrath.')), p(t('Of Achilles.', { em: {} }))],
   },
   {
+    kind: 'verse',
+    start: 1,
+    by: 5,
+    lines: [
+      { kind: 'speaker', indent: 0, content: [t('Nurse')] },
+      { kind: 'line', indent: 0, content: [t('If only the Argo had never flown')] },
+      {
+        kind: 'line',
+        indent: 1,
+        content: [t('through the dark '), t('Clashing Rocks', { em: {} })],
+      },
+      { kind: 'direction', indent: 0, content: [t('She weeps.')] },
+    ],
+  },
+  {
+    kind: 'parallel',
+    left: [
+      {
+        kind: 'verse',
+        start: null,
+        by: 5,
+        lines: [{ kind: 'line', indent: 0, content: [t('Εἴθ᾽ ὤφελ᾽')] }],
+      },
+    ],
+    right: [p(t('If only.'))],
+  },
+  {
     kind: 'bullet_list',
     items: [
       [p(t('one'))],

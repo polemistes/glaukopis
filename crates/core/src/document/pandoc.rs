@@ -248,6 +248,15 @@ impl Converter<'_> {
                 match block {
                     Block::Paragraph { content } => inlines(content, c.to),
                     Block::Blockquote { content } => blocks(content, c),
+                    Block::Verse { lines, .. } => {
+                        for l in lines {
+                            inlines(&l.content, c.to);
+                        }
+                    }
+                    Block::Parallel { left, right } => {
+                        blocks(left, c);
+                        blocks(right, c);
+                    }
                     Block::BulletList { items } | Block::OrderedList { items, .. } => {
                         for item in items {
                             blocks(item, c);
@@ -553,6 +562,8 @@ impl Converter<'_> {
                         out.push(json!({"t": "BlockQuote", "c": inner}));
                     }
                 }
+                Block::Verse { start, by, lines } => self.verse(*start, *by, lines, out),
+                Block::Parallel { left, right } => self.parallel(left, right, out),
                 Block::BulletList { items } => {
                     let list = self.items(items);
                     if !list.is_empty() {

@@ -169,6 +169,31 @@ function blockNodes(blocks: Block[]): Node[] {
         if (content.length) out.push(nodes.blockquote.create(null, content));
         break;
       }
+      case 'verse':
+        if (block.lines.length)
+          out.push(
+            nodes.verse.create(
+              { start: block.start, by: block.by },
+              block.lines.map((line) =>
+                nodes.verse_line.create(
+                  { kind: line.kind, indent: line.indent },
+                  inlineNodes(line.content, 'text'),
+                ),
+              ),
+            ),
+          );
+        break;
+      case 'parallel': {
+        const side = (list: Block[]) => {
+          const content = blockNodes(list);
+          return nodes.parallel_side.create(
+            null,
+            content.length ? content : [nodes.paragraph.create()],
+          );
+        };
+        out.push(nodes.parallel.create(null, [side(block.left), side(block.right)]));
+        break;
+      }
       case 'bullet_list':
         if (block.items.length) out.push(nodes.bullet_list.create(null, block.items.map(itemNode)));
         break;

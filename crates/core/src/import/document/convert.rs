@@ -222,6 +222,18 @@ fn line_of(blocks: Vec<Block>, aside: &mut Vec<Block>) -> Vec<Inline> {
                     }
                 }
                 Block::Blockquote { content } => walk(content, out, aside),
+                Block::Verse { lines, .. } => {
+                    for l in lines {
+                        if !l.content.is_empty() {
+                            apart(out);
+                            out.extend(l.content);
+                        }
+                    }
+                }
+                Block::Parallel { left, right } => {
+                    walk(left, out, aside);
+                    walk(right, out, aside);
+                }
                 Block::BulletList { items } | Block::OrderedList { items, .. } => {
                     for item in items {
                         walk(item, out, aside);
@@ -259,6 +271,13 @@ fn paragraphs_of(blocks: Vec<Block>, aside: &mut Vec<Block>) -> Vec<Block> {
         match b {
             paragraph @ Block::Paragraph { .. } => out.push(paragraph),
             Block::Blockquote { content } => out.extend(paragraphs_of(content, aside)),
+            Block::Verse { lines, .. } => {
+                out.extend(lines.into_iter().map(|l| Block::Paragraph { content: l.content }));
+            }
+            Block::Parallel { left, right } => {
+                out.extend(paragraphs_of(left, aside));
+                out.extend(paragraphs_of(right, aside));
+            }
             Block::BulletList { items } | Block::OrderedList { items, .. } => {
                 for item in items {
                     out.extend(paragraphs_of(item, aside));

@@ -277,6 +277,11 @@ pub(super) fn unmark(blocks: &mut Vec<Block>) {
                 }
             }
             Block::Row { items } => unmark(items),
+            Block::Verse { lines, .. } => lines.iter_mut().for_each(|l| unmark_line(&mut l.content)),
+            Block::Parallel { left, right } => {
+                unmark(left);
+                unmark(right);
+            }
             Block::Equation { .. } => {}
         }
     }

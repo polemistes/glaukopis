@@ -49,6 +49,14 @@ import {
   toggleList,
   toggleQuote,
 } from './commands';
+import {
+  acrossParallel,
+  backOutOfParallel,
+  backOutOfVerse,
+  indentLine,
+  leaveVerse,
+  verseNumbers,
+} from './verse';
 
 export type KeyAction =
   | 'enter'
@@ -270,13 +278,25 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     keys.Enter = chainCommands(
       openSelected,
       leaveCaption,
+      leaveVerse,
       splitListItem(item),
       createParagraphNear,
       liftEmptyBlock,
       splitBlock,
     );
-    keys.Tab = chainCommands(sinkListItem(item), act(hooks, 'tab'));
-    keys['Shift-Tab'] = chainCommands(liftListItem(item), act(hooks, 'shift-tab'));
+    keys.Tab = chainCommands(
+      indentLine(1),
+      acrossParallel(false),
+      sinkListItem(item),
+      act(hooks, 'tab'),
+    );
+    keys['Shift-Tab'] = chainCommands(
+      indentLine(-1),
+      acrossParallel(true),
+      liftListItem(item),
+      act(hooks, 'shift-tab'),
+    );
+    keys.Backspace = chainCommands(backOutOfVerse, backOutOfParallel, keys.Backspace);
   }
   if (br) {
     const hardBreak: Command = chainCommands(exitCode, (state, dispatch) => {
@@ -306,6 +326,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     cite,
     ids(),
     rows(),
+    // The numbers of the lines of verse: see `verse.ts`.
+    verseNumbers(),
     // Tables: before the keys of the text, since Tab and the arrows mean something of their own in them.
     ...tablePlugins(),
     keymap(keys),

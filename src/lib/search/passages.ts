@@ -167,6 +167,13 @@ function blocks(maker: PassageMaker, list: Block[]): void {
       case 'blockquote':
         blocks(maker, b.content);
         break;
+      case 'verse':
+        for (const l of b.lines) line(maker, l.content, 'line');
+        break;
+      case 'parallel':
+        blocks(maker, b.left);
+        blocks(maker, b.right);
+        break;
       case 'bullet_list':
       case 'ordered_list':
         for (const item of b.items) blocks(maker, item);

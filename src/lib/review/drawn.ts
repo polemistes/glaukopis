@@ -248,7 +248,9 @@ export function markDrawn(
         m.path.length > 1 ? drawnHolder(root, fragment, part, m.path.slice(0, -1)) : root;
       const before = drawnHolder(root, fragment, part, m.path);
       const block =
-        before?.closest('p, figure, div.equation, ul, ol, blockquote, div.row-of') ?? before;
+        before?.closest(
+          'p, figure, div.equation, ul, ol, blockquote, div.row-of, div.verse, div.parallel',
+        ) ?? before;
       if (block?.parentNode) block.parentNode.insertBefore(el, block);
       else (container ?? root).append(el);
       made.push(el);

@@ -136,6 +136,9 @@ class Reader {
       switch (child.nodeName) {
         case 'blockquote':
         case 'row':
+        case 'verse':
+        case 'parallel':
+        case 'parallel_side':
           this.blocks(child);
           break;
         case 'bullet_list':

@@ -89,6 +89,25 @@ function blocks(list: Block[], notes: { n: number }): string {
       case 'blockquote':
         out += `<blockquote>${blocks(b.content, notes)}</blockquote>`;
         break;
+      case 'verse': {
+        let n = b.start ?? 0;
+        out += `<div class="verse"${b.start === null ? '' : ` data-start="${b.start}"`}>`;
+        for (const line of b.lines) {
+          const numbered = b.start !== null && line.kind === 'line';
+          const number = numbered ? n++ : null;
+          const shown = number !== null && (number === b.start || number % b.by === 0);
+          out +=
+            `<p class="verse-line ${line.kind}"${line.indent ? ` style="--indent: ${line.indent}"` : ''}` +
+            `${shown ? ` data-n="${number}"` : ''}>${inlines(line.content, notes)}</p>`;
+        }
+        out += '</div>';
+        break;
+      }
+      case 'parallel':
+        out +=
+          `<div class="parallel"><div class="parallel-side">${blocks(b.left, notes)}</div>` +
+          `<div class="parallel-side">${blocks(b.right, notes)}</div></div>`;
+        break;
       case 'bullet_list':
         out += `<ul>${b.items.map((i) => `<li>${blocks(i, notes)}</li>`).join('')}</ul>`;
         break;
@@ -167,17 +186,21 @@ export function excerpt(list: Block[], characters = 600): { blocks: Block[]; cut
       ? plain(b.content).length
       : b.kind === 'blockquote'
         ? b.content.reduce((n, c) => n + size(c), 0)
-        : b.kind === 'figure'
-          ? // A picture takes the room of some lines.
-            plain(b.caption).length + 240
-          : b.kind === 'equation'
-            ? 80
-            : b.kind === 'row'
-              ? b.items.reduce((n, c) => n + size(c), 0)
-              : b.kind === 'table'
-                ? // A row takes the room of a line.
-                  plain(b.caption).length + b.rows.length * 70
-                : b.items.reduce((n, item) => n + item.reduce((m, c) => m + size(c), 0), 0);
+        : b.kind === 'verse'
+          ? b.lines.reduce((n, l) => n + plain(l.content).length + 1, 0)
+          : b.kind === 'parallel'
+            ? [...b.left, ...b.right].reduce((n, c) => n + size(c), 0)
+            : b.kind === 'figure'
+              ? // A picture takes the room of some lines.
+                plain(b.caption).length + 240
+              : b.kind === 'equation'
+                ? 80
+                : b.kind === 'row'
+                  ? b.items.reduce((n, c) => n + size(c), 0)
+                  : b.kind === 'table'
+                    ? // A row takes the room of a line.
+                      plain(b.caption).length + b.rows.length * 70
+                    : b.items.reduce((n, item) => n + item.reduce((m, c) => m + size(c), 0), 0);
   for (const b of list) {
     if (count >= characters) return { blocks: out, cut: true };
     const s = size(b);

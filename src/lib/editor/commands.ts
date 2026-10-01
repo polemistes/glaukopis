@@ -3,6 +3,7 @@
 import { lift, toggleMark, wrapIn } from 'prosemirror-commands';
 import { Fragment, type MarkType, type Node, type NodeType, type Schema } from 'prosemirror-model';
 import { liftListItem, wrapInList } from 'prosemirror-schema-list';
+import { makeVerse, setLineKind, unmakeVerse, verseAt } from './verse';
 import {
   NodeSelection,
   Selection,
@@ -53,13 +54,21 @@ export function toggleList(name: 'bullet_list' | 'ordered_list'): Command {
   };
 }
 
-/** The kinds of paragraph there are. */
-export type ParagraphStyle = 'text' | 'quote' | 'list' | 'numbered';
+/** The kinds of paragraph there are; and the kinds of line of verse. */
+export type ParagraphStyle =
+  'text' | 'quote' | 'list' | 'numbered' | 'verse' | 'speaker' | 'direction';
 
 export function styleOf(state: EditorState): ParagraphStyle {
   const { $from } = state.selection;
   for (let d = $from.depth; d > 0; d--) {
-    const name = $from.node(d).type.name;
+    const node = $from.node(d);
+    const name = node.type.name;
+    if (name === 'verse_line')
+      return node.attrs.kind === 'speaker'
+        ? 'speaker'
+        : node.attrs.kind === 'direction'
+          ? 'direction'
+          : 'verse';
     if (name === 'ordered_list') return 'numbered';
     if (name === 'bullet_list') return 'list';
     if (name === 'blockquote') return 'quote';
@@ -73,6 +82,14 @@ export function setStyle(style: ParagraphStyle): Command {
     const { blockquote, bullet_list, ordered_list, list_item } = state.schema.nodes;
     if (!blockquote || !bullet_list || !ordered_list || !list_item) return false;
     if (!dispatch || !view) return true;
+    // Within a verse, a line is made of a kind; out of one, a verse is made of the paragraphs.
+    const inVerse = verseAt(view.state);
+    if (style === 'verse' || style === 'speaker' || style === 'direction') {
+      if (!inVerse) makeVerse(view.state, view.dispatch);
+      setLineKind(style === 'verse' ? 'line' : style)(view.state, view.dispatch);
+      return true;
+    }
+    if (inVerse) unmakeVerse(view.state, view.dispatch);
     // Back to plain text first: out of whatever list or quotation it is in.
     for (let i = 0; i < 6 && styleOf(view.state) !== 'text'; i++) {
       const lifted = insideNode(view.state, list_item)

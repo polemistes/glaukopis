@@ -84,12 +84,35 @@ export interface FigureBlock {
 export type Block =
   | { kind: 'paragraph'; content: Inline[] }
   | { kind: 'blockquote'; content: Block[] }
+  | VerseBlock
+  | { kind: 'parallel'; left: Block[]; right: Block[] }
   | { kind: 'bullet_list'; items: Block[][] }
   | { kind: 'ordered_list'; start: number; items: Block[][] }
   | { kind: 'equation'; id: string; tex: string; numbered: boolean; align?: Stand }
   | FigureBlock
   | TableBlock
   | { kind: 'row'; items: Block[] };
+
+/**
+ * Lines of verse, as a quotation of drama or poetry: each line kept as a
+ * line, numbered from `start` every `by` lines where `start` is given; a
+ * line may be a speaker's name or a stage direction, and may be indented.
+ */
+export interface VerseBlock {
+  kind: 'verse';
+  start: number | null;
+  by: number;
+  lines: VerseLine[];
+}
+
+export type VerseLineKind = 'line' | 'speaker' | 'direction';
+
+export interface VerseLine {
+  kind: VerseLineKind;
+  /** Steps of indentation, for the shorter lines of lyric. */
+  indent: number;
+  content: Inline[];
+}
 
 /** A cell of a table. */
 export interface TableCell {
@@ -203,6 +226,10 @@ function inlinesOf(parent: Y.XmlElement | Y.XmlFragment): Inline[] {
   return out;
 }
 
+function verseLineKind(value: unknown): VerseLineKind {
+  return value === 'speaker' || value === 'direction' ? value : 'line';
+}
+
 function blocksOf(parent: Y.XmlElement | Y.XmlFragment): Block[] {
   const out: Block[] = [];
   for (const child of parent.toArray()) {
@@ -215,6 +242,40 @@ function blocksOf(parent: Y.XmlElement | Y.XmlFragment): Block[] {
       case 'blockquote':
         out.push({ kind: 'blockquote', content: blocksOf(child) });
         break;
+      case 'verse': {
+        const lines: VerseLine[] = child
+          .toArray()
+          .filter(
+            (l): l is Y.XmlElement => l instanceof Y.XmlElement && l.nodeName === 'verse_line',
+          )
+          .map((l) => ({
+            kind: verseLineKind(l.getAttribute('kind') as unknown),
+            indent: Math.max(0, Math.min(8, Number(l.getAttribute('indent') as unknown) || 0)),
+            content: inlinesOf(l),
+          }));
+        if (!lines.length) break;
+        const start = Number(child.getAttribute('start') as unknown);
+        out.push({
+          kind: 'verse',
+          start: Number.isFinite(start) && child.getAttribute('start') !== undefined ? start : null,
+          by: Math.max(1, Number(child.getAttribute('by') as unknown) || 5),
+          lines,
+        });
+        break;
+      }
+      case 'parallel': {
+        const sides = child
+          .toArray()
+          .filter(
+            (c): c is Y.XmlElement => c instanceof Y.XmlElement && c.nodeName === 'parallel_side',
+          );
+        out.push({
+          kind: 'parallel',
+          left: sides[0] ? blocksOf(sides[0]) : [],
+          right: sides[1] ? blocksOf(sides[1]) : [],
+        });
+        break;
+      }
       case 'bullet_list':
         out.push({ kind: 'bullet_list', items: itemsOf(child) });
         break;
@@ -350,6 +411,10 @@ export function blocksText(blocks: Block[], withNotes = false): string {
   for (const b of blocks) {
     if (b.kind === 'paragraph') parts.push(inlineText(b.content, withNotes));
     else if (b.kind === 'blockquote') parts.push(blocksText(b.content, withNotes));
+    else if (b.kind === 'verse')
+      parts.push(b.lines.map((l) => inlineText(l.content, withNotes)).join('\n'));
+    else if (b.kind === 'parallel')
+      parts.push(blocksText(b.left, withNotes), blocksText(b.right, withNotes));
     else if (b.kind === 'figure') parts.push(inlineText(b.caption, withNotes));
     else if (b.kind === 'equation') parts.push(b.tex);
     else if (b.kind === 'row') parts.push(blocksText(b.items, withNotes));
@@ -432,7 +497,15 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
     for (const b of list) {
       if (b.kind === 'paragraph') visitInlines(b.content);
       else if (b.kind === 'blockquote') visit(b.content);
-      else if (b.kind === 'figure') {
+      else if (b.kind === 'verse') {
+        for (const line of b.lines) {
+          visitInlines(line.content);
+          text += '\n';
+        }
+      } else if (b.kind === 'parallel') {
+        visit(b.left);
+        visit(b.right);
+      } else if (b.kind === 'figure') {
         set++;
         setOff.push({
           kind: 'figure',

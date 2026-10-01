@@ -36,7 +36,11 @@ function citedIn(blocks: Block[], out: Set<string>) {
   for (const b of blocks) {
     if (b.kind === 'paragraph') line(b.content);
     else if (b.kind === 'blockquote') citedIn(b.content, out);
-    else if (b.kind === 'bullet_list' || b.kind === 'ordered_list')
+    else if (b.kind === 'verse') for (const l of b.lines) line(l.content);
+    else if (b.kind === 'parallel') {
+      citedIn(b.left, out);
+      citedIn(b.right, out);
+    } else if (b.kind === 'bullet_list' || b.kind === 'ordered_list')
       for (const item of b.items) citedIn(item, out);
     else if (b.kind === 'figure') line(b.caption);
     else if (b.kind === 'row') citedIn(b.items, out);
