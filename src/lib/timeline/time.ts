@@ -317,3 +317,25 @@ export function writeTime(value: number, precision: Precision, axis: Axis, like 
       return `${written}${era}`;
   }
 }
+
+/**
+ * A length of time written at a value of the axis, in the words it was
+ * written in before (`like`) where it had any: `5 years` stays in years,
+ * `3 months` in months; otherwise in the largest whole unit that fits.
+ * On the axis of units a number. Nought is written as nothing.
+ */
+export function writeDuration(value: number, axis: Axis, like = ''): string {
+  if (!(value > 0)) return '';
+  const word = /^(?:[±+/-]+\s*)?\d+(?:[.,]\d+)?\s*([\p{L}.]+)$/u
+    .exec(like.trim())?.[1]
+    .replace(/\.$/, '');
+  if (axis === 'units') {
+    const n = Math.round(value * 10) / 10;
+    return word ? `${n} ${word}` : String(n);
+  }
+  const unit = word ? LENGTHS.find(([re]) => re.test(word)) : undefined;
+  if (word && unit) return `${Math.max(1, Math.round(value / unit[1]))} ${word}`;
+  if (value >= 1) return `${Math.max(1, Math.round(value))} years`;
+  if (value >= 1 / 12) return `${Math.max(1, Math.round(value * 12))} months`;
+  return `${Math.max(1, Math.round(value * 365))} days`;
+}

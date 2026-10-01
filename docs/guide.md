@@ -772,10 +772,17 @@ in which **Write text** opens it in the text.
 
 Nothing moves by mistake: the arrows button among the controls, **Move by
 dragging**, must be on before an element can be dragged along the axis,
-and the edges of a span dragged to change its start or its end. A time
-that is dragged is written anew as finely as it was written: a year stays a
-year, a month a month, and `431 BC` stays written with BC. What is placed
-relative to another element is not dragged; it stands where it was solved.
+the edges of a span dragged to change its start or its end, and the outer
+edge of a margin dragged to make it wider or narrower. While you drag, the
+time reads beside the pointer as it changes. A time that is dragged is
+written anew as finely as it was written: a year stays a year, a month a
+month, and `431 BC` stays written with BC; a margin keeps its words. What
+is placed relative to another element is not dragged; it stands where it
+was solved.
+
+Press the name of a lane to fold its elements away and press it again to
+open them; its own span stays. A double click on the name opens **When it
+is** for the lane's element.
 
 The elements that say nothing of their time are not on the timeline, but
 they are near: **Elements without a time**, beside the arrows, shows them

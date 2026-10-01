@@ -210,6 +210,57 @@ try {
     lanesNow.join('|'),
   );
   await app.screenshot('timeline-1c-placed');
+
+  // --- Pressed rather than dragged, an element without a time says when it is in words ---
+  await app.click(await app.findByText('.timeline .without button', 'Sources'));
+  await app.waitForText('dialog[open] h2', 'When it is', 3000);
+  check('pressing an element without a time opens When it is', await app.exists('dialog[open]'));
+  await app.press('Escape');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(200);
+  check(
+    'and nothing is placed by the press',
+    !(await app.exec(
+      `return Array.from(document.querySelectorAll('.timeline .label')).some((l) => l.textContent.trim() === 'Sources')`,
+    )),
+  );
+
+  // --- The margin of a time is dragged wider ---
+  const fadeBefore = await app.exec(
+    `return document.querySelector('.timeline .fade.after').getBoundingClientRect().width`,
+  );
+  await app.drag('.timeline .fade.after .handle.margin.end', { dx: 160, dy: 0 });
+  await sleep(400);
+  const fadeAfter = await app.exec(
+    `return document.querySelector('.timeline .fade.after').getBoundingClientRect().width`,
+  );
+  check(
+    'the margin of a time is dragged wider',
+    fadeAfter > fadeBefore + 100,
+    `${fadeBefore} -> ${fadeAfter}`,
+  );
+
+  // --- The name of a lane folds its elements away ---
+  const rowsBefore = await app.exec(
+    `return document.querySelectorAll('.timeline .lane .label').length`,
+  );
+  await app.clickText('.timeline .lane-name', 'Athens');
+  await sleep(300);
+  const rowsAfter = await app.exec(
+    `return document.querySelectorAll('.timeline .lane .label').length`,
+  );
+  check(
+    'pressing the name of a lane folds its elements away',
+    rowsAfter < rowsBefore && (await app.exists('.text-view')) === false,
+    `${rowsBefore} -> ${rowsAfter}`,
+  );
+  await app.clickText('.timeline .lane-name', 'Athens');
+  await sleep(300);
+  check(
+    'and opens them again',
+    (await app.exec(`return document.querySelectorAll('.timeline .lane .label').length`)) ===
+      rowsBefore,
+  );
   await app.click('.timeline button[aria-label="Elements without a time"]');
   await app.click('.timeline button[aria-label="Move by dragging"]');
   await sleep(150);

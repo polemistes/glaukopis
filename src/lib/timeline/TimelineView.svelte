@@ -14,6 +14,8 @@
    */
   import { untrack } from 'svelte';
   import CalendarPlus from '@lucide/svelte/icons/calendar-plus';
+  import ChevronDown from '@lucide/svelte/icons/chevron-down';
+  import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import Minus from '@lucide/svelte/icons/minus';
   import Maximize from '@lucide/svelte/icons/maximize';
   import MoveHorizontal from '@lucide/svelte/icons/move-horizontal';
@@ -34,7 +36,16 @@
   import { timelineOf, type Event } from './lanes';
   import LanesDialog from './LanesDialog.svelte';
   import { describeWhen, type Placed, type When } from './solve';
-  import { precisionOf, readTime, snap, writeTime, writeYear, type Precision } from './time';
+  import {
+    precisionOf,
+    readDuration,
+    readTime,
+    snap,
+    writeDuration,
+    writeTime,
+    writeYear,
+    type Precision,
+  } from './time';
   import { sayWhen } from './when.svelte';
 
   interface Props {
@@ -197,6 +208,15 @@
     return Math.min((name || t('project-untitled')).length * CHAR + 10, LABEL_MOST);
   }
 
+  /** The lanes whose events are folded away, by the id of the lane; its own span stays. */
+  let folded = $state<ReadonlySet<string>>(new Set());
+  function fold(id: string) {
+    const next = new Set(folded);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    folded = next;
+  }
+
   const lanes = $derived.by(() => {
     const laid: {
       id: string;
@@ -218,7 +238,7 @@
     for (const lane of all) {
       const ends: number[] = [];
       const drawn: Drawn[] = [];
-      const placed = lane.events
+      const placed = (folded.has(lane.id) ? [] : lane.events)
         .filter((e) => Number.isFinite(e.placed.from))
         .map((e) => (drag?.id === e.id ? { ...e, placed: dragged(e.placed) } : e))
         .sort((a, b) => a.placed.from - b.placed.from);
@@ -238,7 +258,7 @@
         } else ends[row] = extent;
         drawn.push({ event, row, left, right, labelLeft, labelWidth: lw, fadeLeft, fadeRight });
       }
-      laid.push({ ...lane, rows: Math.max(ends.length, 1), drawn });
+      laid.push({ ...lane, rows: folded.has(lane.id) ? 0 : Math.max(ends.length, 1), drawn });
     }
     return laid;
   });
@@ -321,17 +341,26 @@
     precision: Precision;
     /** Where what was written begins on the axis. */
     at: number;
+    /** The margin either side, as written. */
+    margin: string;
   }
 
   interface Dragging {
     id: string;
-    /** The whole, the start of a span, its end; or an element without a time, brought onto the timeline. */
-    mode: 'move' | 'start' | 'end' | 'new';
+    /**
+     * The whole, the start of a span, its end, the margin either side of
+     * the start or of the end; or an element without a time, brought onto
+     * the timeline.
+     */
+    mode: 'move' | 'start' | 'end' | 'margin-start' | 'margin-end' | 'new';
+    /** Where what is dragged stood when it was taken hold of. */
+    from: number;
+    to: number;
     x0: number;
     start: End | null;
     end: End | null;
-    /** The ends written anew, as the pointer has them. */
-    draft: { start?: string; end?: string };
+    /** The ends written anew, as the pointer has them; and the margins. */
+    draft: { start?: string; end?: string; marginStart?: string; marginEnd?: string };
     name: string;
     /** Where the pointer is, for what follows it. */
     px: number;
@@ -339,11 +368,14 @@
   }
   let drag = $state<Dragging | null>(null);
 
-  const endOf = (text: string | undefined): End | null => {
+  const endOf = (bound: { at?: string; margin?: string } | undefined): End | null => {
+    const text = bound?.at;
     if (!text) return null;
     const precision = precisionOf(text, timeline.axis);
     const time = readTime(text, timeline.axis);
-    return precision && time ? { text, precision, at: time.from } : null;
+    return precision && time
+      ? { text, precision, at: time.from, margin: bound?.margin ?? '' }
+      : null;
   };
 
   /** The placement of what is dragged, as its draft has it. */
@@ -355,16 +387,27 @@
     let to = end ? end.to : placed.span ? placed.to : start ? start.to : placed.to;
     if (drag.mode === 'move' && placed.span && !end) to = placed.to + (from - placed.from);
     if (to < from) [from, to] = [to, from];
-    return { ...placed, from, to };
+    const margins: [number, number] = [...placed.margins];
+    const m = (text: string | undefined) =>
+      text === undefined ? null : (readDuration(text, timeline.axis) ?? 0);
+    const ms = m(drag.draft.marginStart);
+    const me = m(drag.draft.marginEnd);
+    if (ms !== null) margins[0] = ms;
+    if (me !== null) margins[1] = me;
+    // A point has one margin, either side.
+    if (!placed.span && ms !== null) margins[1] = ms;
+    if (!placed.span && me !== null) margins[0] = me;
+    return { ...placed, from, to, margins };
   }
 
-  function beginDrag(event: PointerEvent, e: Event, mode: 'move' | 'start' | 'end') {
+  function beginDrag(event: PointerEvent, e: Event, mode: Exclude<Dragging['mode'], 'new'>) {
     if (!moving || !timeline.solved.scaled || event.button !== 0 || !e.node.when) return;
-    const start = endOf(e.node.when.start.at);
-    const end = endOf(e.node.when.end?.at);
+    const start = endOf(e.node.when.start);
+    const end = endOf(e.node.when.end);
     // Only a written time moves: what is relative stands where it was solved.
-    if ((mode === 'move' && !start) || (mode === 'start' && !start) || (mode === 'end' && !end))
-      return;
+    // The margin of a point is the margin of its start, either side.
+    const needs = mode === 'end' || (mode === 'margin-end' && e.placed.span) ? end : start;
+    if (!needs) return;
     event.stopPropagation();
     event.preventDefault();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
@@ -372,6 +415,8 @@
       id: e.id,
       mode,
       x0: event.clientX,
+      from: e.placed.from,
+      to: e.placed.to,
       start,
       end,
       draft: {},
@@ -389,6 +434,8 @@
       id,
       mode: 'new',
       x0: event.clientX,
+      from: NaN,
+      to: NaN,
       start: null,
       end: null,
       draft: {},
@@ -407,8 +454,31 @@
     if ((drag.mode === 'move' || drag.mode === 'start') && drag.start)
       draft.start = written(drag.start);
     if ((drag.mode === 'move' || drag.mode === 'end') && drag.end) draft.end = written(drag.end);
+    // A margin is as far as the pointer is from the end it belongs to, written in the words it had.
+    if (drag.mode === 'margin-start' && drag.start) {
+      const r = viewport!.getBoundingClientRect();
+      const far = Math.max(0, drag.from - value(event.clientX - r.left));
+      draft.marginStart = writeDuration(far, timeline.axis, drag.start.margin);
+    }
+    if (drag.mode === 'margin-end') {
+      const r = viewport!.getBoundingClientRect();
+      const far = Math.max(0, value(event.clientX - r.left) - drag.to);
+      const like = (drag.end ?? drag.start)?.margin ?? '';
+      draft.marginEnd = writeDuration(far, timeline.axis, like);
+    }
     drag = { ...drag, draft, px: event.clientX, py: event.clientY };
   }
+
+  /** What the dragged time reads now, shown beside the pointer. */
+  const readout = $derived.by(() => {
+    if (!drag || drag.mode === 'new') return '';
+    const { draft } = drag;
+    if (drag.mode === 'margin-start' || drag.mode === 'margin-end')
+      return `± ${draft.marginStart ?? draft.marginEnd ?? ''}`;
+    const start = draft.start ?? drag.start?.text ?? '';
+    const end = draft.end ?? drag.end?.text;
+    return end ? `${start} ${t('when-said-to')} ${end}` : start;
+  });
 
   /** How finely a time put on the timeline by hand is written: as the axis is looked at. */
   function grainNow(): Precision {
@@ -419,9 +489,11 @@
     return 'year';
   }
 
+  let scroller = $state<HTMLDivElement>();
+
   /** Whether the pointer is over the lanes, by a point of the window. */
   function overLanes(clientX: number, clientY: number): boolean {
-    const r = viewport?.getBoundingClientRect();
+    const r = scroller?.getBoundingClientRect();
     if (!r) return false;
     return clientX - r.left > LABEL_WIDTH && clientY - r.top > AXIS && clientY < r.bottom;
   }
@@ -434,6 +506,11 @@
     drag = null;
     if (!d) return;
     if (d.mode === 'new') {
+      // Pressed rather than dragged: it says when it is in words.
+      if (Math.abs(event.clientX - d.x0) < 4 && !overLanes(event.clientX, event.clientY)) {
+        sayWhen(d.id);
+        return;
+      }
       if (!overLanes(event.clientX, event.clientY)) return;
       const r = viewport!.getBoundingClientRect();
       const grain = grainNow();
@@ -457,6 +534,18 @@
       next.end.at = d.draft.end;
       changed = true;
     }
+    // A margin dragged to nothing is none.
+    const margin = (bound: { margin?: string }, text: string | undefined) => {
+      if (text === undefined) return;
+      const none = (readDuration(text, timeline.axis) ?? 0) <= 0;
+      if (none ? !bound.margin : bound.margin === text) return;
+      if (none) delete bound.margin;
+      else bound.margin = text;
+      changed = true;
+    };
+    margin(next.start, d.draft.marginStart);
+    if (next.end) margin(next.end, d.draft.marginEnd);
+    else margin(next.start, d.draft.marginEnd);
     if (!changed) return;
     // A span ends after it begins.
     if (next.end?.at && next.start.at) {
@@ -474,6 +563,7 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="scroller"
+    bind:this={scroller}
     role="application"
     aria-label={t('timeline-title')}
     {onwheel}
@@ -513,9 +603,18 @@
             style:width="{LABEL_WIDTH}px"
             style:--lane={lane.colour ?? 'var(--ink-3)'}
             disabled={!lane.id}
-            onclick={() => lane.id && ongo(lane.id)}
+            aria-expanded={lane.id ? !folded.has(lane.id) : undefined}
+            onclick={() => lane.id && fold(lane.id)}
+            ondblclick={() => lane.id && sayWhen(lane.id)}
             oncontextmenu={(e) => lane.id && menu(e, lane.id)}
           >
+            {#if lane.id}
+              <span class="chevron">
+                {#if folded.has(lane.id)}<ChevronRight size={13} />{:else}<ChevronDown
+                    size={13}
+                  />{/if}
+              </span>
+            {/if}
             {#if lane.colour}<span class="dot" style:background={lane.colour}></span>{/if}
             {lane.name || t('project-untitled')}
           </button>
@@ -541,7 +640,17 @@
                 style:width="{d.left - d.fadeLeft}px"
                 style:top="{y + 4}px"
                 style:--event={d.event.colour ?? 'var(--accent)'}
-              ></div>
+              >
+                {#if moving}
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <span
+                    class="handle margin start"
+                    onpointerdown={(e) => beginDrag(e, d.event, 'margin-start')}
+                    onpointermove={moveDrag}
+                    onpointerup={endDrag}
+                  ></span>
+                {/if}
+              </div>
             {/if}
             {#if d.fadeRight > d.right}
               <div
@@ -550,7 +659,17 @@
                 style:width="{d.fadeRight - d.right}px"
                 style:top="{y + 4}px"
                 style:--event={d.event.colour ?? 'var(--accent)'}
-              ></div>
+              >
+                {#if moving}
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <span
+                    class="handle margin end"
+                    onpointerdown={(e) => beginDrag(e, d.event, 'margin-end')}
+                    onpointermove={moveDrag}
+                    onpointerup={endDrag}
+                  ></span>
+                {/if}
+              </div>
             {/if}
             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
             <div
@@ -610,13 +729,17 @@
             class:dragging={drag?.id === e.id}
             onpointerdown={(ev) => beginNew(ev, e.id, e.name)}
             onpointermove={moveDrag}
-            onpointerup={endDrag}
-            onclick={() => !drag && sayWhen(e.id)}>{e.name}</button
+            onpointerup={endDrag}>{e.name}</button
           >
         {/each}
       {:else}
         <span>{t('timeline-without-none')}</span>
       {/if}
+    </div>
+  {/if}
+  {#if drag && drag.mode !== 'new' && readout}
+    <div class="ghost readout" style:left="{drag.px + 14}px" style:top="{drag.py - 30}px">
+      {readout}
     </div>
   {/if}
   {#if drag?.mode === 'new'}
@@ -866,6 +989,27 @@
   }
   .handle.end {
     right: -4px;
+  }
+  /* The outer edge of a margin, where it is dragged wider or narrower. */
+  .handle.margin {
+    pointer-events: auto;
+    top: 0;
+    bottom: 0;
+  }
+  .handle.margin.start {
+    left: -2px;
+  }
+  .handle.margin.end {
+    right: -2px;
+  }
+  .readout {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .chevron {
+    flex: none;
+    display: inline-flex;
+    color: var(--ink-3);
   }
   .ghost {
     position: fixed;

@@ -2,7 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { Project } from '$lib/project/model/project.svelte';
 import { timelineOf } from './lanes';
 import { describeWhen, solve, type When } from './solve';
-import { precisionOf, readDuration, readTime, snap, writeTime, writeYear } from './time';
+import {
+  precisionOf,
+  readDuration,
+  readTime,
+  snap,
+  writeDuration,
+  writeTime,
+  writeYear,
+} from './time';
 
 describe('times as they are written', () => {
   it('reads years, with BC and AD, as astronomers count them', () => {
@@ -67,6 +75,16 @@ describe('a length of time', () => {
     expect(readDuration('soon', 'dates')).toBeNull();
     expect(readDuration('5 moons', 'dates')).toBeNull();
     expect(readDuration('', 'dates')).toBeNull();
+  });
+
+  it('is written anew in the words it had', () => {
+    expect(writeDuration(5.4, 'dates', '2 years')).toBe('5 years');
+    expect(writeDuration(0.5, 'dates', '2 måneder')).toBe('6 måneder');
+    expect(writeDuration(3.2, 'dates')).toBe('3 years');
+    expect(writeDuration(0.4, 'dates')).toBe('5 months');
+    expect(writeDuration(0.01, 'dates')).toBe('4 days');
+    expect(writeDuration(2.25, 'units', '3 cycles')).toBe('2.3 cycles');
+    expect(writeDuration(0, 'dates', '2 years')).toBe('');
   });
 });
 
