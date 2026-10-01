@@ -41,7 +41,8 @@ export interface StyleFound {
   installed: boolean;
 }
 
-export type FormatKind = 'general' | 'style-guide' | 'publisher' | 'journal' | 'own';
+export type FormatKind =
+  'general' | 'style-guide' | 'publisher' | 'journal' | 'fiction' | 'stage' | 'poetry' | 'own';
 
 export interface FormatSummary {
   id: string;
@@ -65,6 +66,8 @@ export interface HeadingLevel {
   align: Align;
   case: Case;
   runIn: boolean;
+  /** The heading begins a new page: a chapter of a book. */
+  newPage: boolean;
   indent: boolean;
   spaceBefore: string;
   spaceAfter: string;
@@ -282,7 +285,8 @@ export interface Preview {
   substitute: string | null;
 }
 
-export type Target = 'pdf' | 'pdflatex' | 'docx' | 'odt' | 'latex' | 'markdown' | 'html' | 'typst';
+export type Target =
+  'pdf' | 'pdflatex' | 'docx' | 'odt' | 'latex' | 'markdown' | 'html' | 'epub' | 'typst';
 
 export interface Exported {
   path: string;

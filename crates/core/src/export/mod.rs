@@ -46,6 +46,8 @@ pub enum Target {
     Latex,
     Markdown,
     Html,
+    /// A book for readers of e-books.
+    Epub,
     Typst,
 }
 
@@ -58,6 +60,7 @@ impl Target {
             Target::Latex => "tex",
             Target::Markdown => "md",
             Target::Html => "html",
+            Target::Epub => "epub",
             Target::Typst => "typ",
         }
     }
@@ -70,6 +73,7 @@ impl Target {
             Target::Latex | Target::PdfLatex => "latex",
             Target::Markdown => "markdown",
             Target::Html => "html",
+            Target::Epub => "epub3",
         }
     }
 
@@ -81,7 +85,7 @@ impl Target {
             Target::Docx => Some(raw("openxml", "<w:p><w:r><w:br w:type=\"page\"/></w:r></w:p>")),
             Target::Odt => Some(raw("opendocument", "<text:p text:style-name=\"Pagebreak\"/>")),
             Target::Latex | Target::PdfLatex => Some(raw("latex", "\\clearpage")),
-            Target::Markdown | Target::Html => None,
+            Target::Markdown | Target::Html | Target::Epub => None,
         }
     }
 }
@@ -278,6 +282,8 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
             .filter(|(_, l)| l.run_in)
             .map(|(i, l)| crate::document::pandoc::RunIn { level: i as u8 + 1, bold: l.bold, italic: l.italic })
             .collect(),
+        new_page: f.headings.levels.iter().enumerate().filter(|(_, l)| l.new_page).map(|(i, _)| i as u8 + 1).collect(),
+        page_break: target.page_break(),
         deepest: f.headings.levels.len().clamp(1, 6) as u8,
         extras: Extras::new(
             match target {
@@ -285,7 +291,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
                 Target::Latex | Target::PdfLatex => Flavour::Latex,
                 Target::Docx => Flavour::Docx,
                 Target::Odt => Flavour::Odt,
-                Target::Markdown | Target::Html => Flavour::Plain,
+                Target::Markdown | Target::Html | Target::Epub => Flavour::Plain,
             },
             f.figures.clone(),
             f.tables.clone(),
@@ -895,6 +901,16 @@ pub fn export_until(
             args.push("--include-in-header".into());
             args.push(header.display().to_string());
         }
+        Target::Epub => {
+            // A reader sets the text; the book says of the parts what the
+            // format says, and begins each chapter on a page of its own.
+            let css = dir.join("book.css");
+            write_atomic(&css, epub_styles(&request.format).as_bytes())?;
+            args.push("--css".into());
+            args.push(css.display().to_string());
+            args.push("--epub-chapter-level=1".into());
+            args.push("--epub-title-page=false".into());
+        }
         Target::Pdf | Target::Typst => unreachable!(),
     }
     // In a PDF the citations are always set by the reference style.
@@ -932,6 +948,44 @@ pub fn export_until(
 }
 
 /// The styles of figures, tables and rows for a page of the web.
+/// What a book for e-readers says of its parts: little, as the reader sets
+/// the text; what the format says of headings, quotations and verse.
+fn epub_styles(f: &DocumentFormat) -> String {
+    use crate::formats::Align;
+    let to = |a: Align| match a {
+        Align::Left => "left",
+        Align::Center => "center",
+        Align::Right => "right",
+        Align::Justified => "justify",
+    };
+    let h1 = f.heading(1);
+    let h2 = f.heading(2);
+    let indent = if f.text.paragraphs == crate::formats::Paragraphs::Indent { "1.2em" } else { "0" };
+    let between = if f.text.paragraphs == crate::formats::Paragraphs::Indent { "0" } else { "0.8em" };
+    format!(
+        "body {{ text-align: {align}; {hyphens} }}
+p {{ margin: 0 0 {between} 0; text-indent: {indent}; }}
+h1 {{ text-align: {h1_align}; font-weight: {h1_weight}; font-style: {h1_style}; margin: 2em 0 1em; }}
+h2 {{ text-align: {h2_align}; font-weight: {h2_weight}; font-style: {h2_style}; margin: 1.5em 0 0.8em; }}
+h1 + p, h2 + p, h3 + p {{ text-indent: 0; }}
+blockquote {{ margin: 1em 1.5em; }}
+.line-block {{ margin-left: 1.5em; white-space: pre-wrap; }}
+.line-block p {{ text-indent: 0; margin: 0; }}
+table.gk-parallel {{ width: 100%; border: none; }}
+table.gk-parallel td {{ vertical-align: top; width: 50%; padding: 0 0.5em; border: none; }}
+.footnotes {{ font-size: 0.9em; }}
+",
+        align = to(f.text.align),
+        hyphens = if f.text.hyphenate { "hyphens: auto;" } else { "hyphens: manual;" },
+        h1_align = to(h1.align),
+        h1_weight = if h1.bold { "bold" } else { "normal" },
+        h1_style = if h1.italic { "italic" } else { "normal" },
+        h2_align = to(h2.align),
+        h2_weight = if h2.bold { "bold" } else { "normal" },
+        h2_style = if h2.italic { "italic" } else { "normal" },
+    )
+}
+
 fn html_styles(f: &DocumentFormat) -> String {
     use crate::formats::{Align, CaptionPosition, Rules};
     let to = |a: Align| match a {
@@ -1035,8 +1089,15 @@ pub fn style_sample(
     let bib = dir.join("references.bib");
     write_atomic(&bib, bibliography.text.as_bytes())?;
 
-    let converter =
-        Converter { keys: &bibliography.keys, language, run_in: Vec::new(), deepest: 6, extras: Default::default() };
+    let converter = Converter {
+        keys: &bibliography.keys,
+        language,
+        run_in: Vec::new(),
+        new_page: Vec::new(),
+        page_break: None,
+        deepest: 6,
+        extras: Default::default(),
+    };
     let mut meta = Map::new();
     if let Some(l) = language.filter(|l| !l.trim().is_empty()) {
         meta.insert("lang".into(), meta_string(l.trim()));
@@ -1226,6 +1287,28 @@ mod tests {
             assert!(!p.pages.is_empty(), "{}", format.id);
             assert!(p.warnings.is_empty(), "{}: {:?}", format.id, p.warnings);
         }
+    }
+
+    #[test]
+    fn a_chapter_begins_a_new_page_where_the_format_says() {
+        let Some(s) = setup() else { return };
+        let formats = crate::formats::Formats::new(&s.resources, &s.work.join("formats"));
+        let novel = formats.all().into_iter().map(|(f, _)| f).find(|f| f.id == "novel-manuscript").unwrap();
+        assert!(novel.headings.levels[0].new_page);
+        let mut r = request("chicago-notes-bibliography");
+        r.format = novel;
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let typ = out.join("novel.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        let heading = t.find("= The word").expect("a heading of the first level");
+        let before = &t[..heading];
+        assert!(before.trim_end().ends_with("#pagebreak(weak: true)"), "{}", &t[heading.saturating_sub(80)..heading]);
+        let tex = out.join("novel.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("\\clearpage\n\n\\section"), "{l}");
     }
 
     #[test]
@@ -1840,6 +1923,31 @@ mod tests {
         assert!(l.contains("\\textsc{Nurse}"), "{l}");
         assert!(l.contains("If only the Argo had never flown"), "{l}");
         assert!(l.contains("\\begin{minipage}[t]{0.48\\textwidth}"), "{l}");
+
+        // An e-book: the chapters are its parts, and the lines stay lines.
+        let epub = out.join("verse.epub");
+        export(&s.ctx(), &r, Target::Epub, &epub, &ExportOptions::default()).unwrap();
+        let bytes = fs::read(&epub).unwrap();
+        assert!(bytes.starts_with(b"PK"), "an EPUB is a zip");
+        let opf = unzip(&epub, "EPUB/content.opf");
+        assert!(opf.contains("<dc:title"), "{opf}");
+        // The verse is in the last chapter, whichever number that has.
+        let text: String = {
+            let mut archive = zip::ZipArchive::new(fs::File::open(&epub).unwrap()).unwrap();
+            let names: Vec<String> =
+                archive.file_names().filter(|n| n.starts_with("EPUB/text/")).map(str::to_owned).collect();
+            names
+                .iter()
+                .map(|n| {
+                    use std::io::Read;
+                    let mut s = String::new();
+                    archive.by_name(n).unwrap().read_to_string(&mut s).unwrap();
+                    s
+                })
+                .collect()
+        };
+        assert!(text.contains("If only the Argo had never flown"), "{text}");
+        assert!(text.contains("line-block"), "{text}");
 
         // Word: the lines stay lines, and the texts side by side are a table.
         let docx = out.join("verse.docx");

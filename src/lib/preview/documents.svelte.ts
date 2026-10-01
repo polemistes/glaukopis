@@ -107,6 +107,9 @@ const formatKinds: Record<string, () => string> = {
   'style-guide': () => t('format-kind-style-guide'),
   publisher: () => t('format-kind-publisher'),
   journal: () => t('format-kind-journal'),
+  fiction: () => t('format-kind-fiction'),
+  stage: () => t('format-kind-stage'),
+  poetry: () => t('format-kind-poetry'),
 };
 
 /** A kind of document format in words, in the language of the interface. */

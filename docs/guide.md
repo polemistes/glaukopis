@@ -965,16 +965,23 @@ Over the preview, two things are chosen:
   Language can be fetched by name.
 - The **document format**: the page, the type, the spacing, the headings, as
   a publisher or a journal asks for them. The formats that come with
-  Glaukopis each say where their requirements were found, and when.
+  Glaukopis each say where their requirements were found, and when. They are
+  offered by kind: the general ones, **fiction** (a novel as a manuscript for
+  submission, and as a book), **stage and screen** (a play script), **poetry**
+  (a collection of poems), and the style guides, publishers and journals of
+  academic writing. A project is not of one kind: any format can be given to
+  any map, and changed at any time.
 
 Both can be changed. **Change this format…** has every measure of the page in
-plain words. **Change this reference style…** has the changes publishers most
+plain words, among them whether a level of heading **begins a new page**, as
+the chapters of a book do. **Change this reference style…** has the changes publishers most
 often ask for as simple choices, and the whole style, part by part, for the
 rest. What you change is kept as a format or a style of your own; those that
 came with Glaukopis stay as they were.
 
-**Export** makes the manuscript: PDF, Word, OpenDocument, LaTeX, Markdown, or
-a web page. Where the document is given as it is written, in LaTeX, Typst or
+**Export** makes the manuscript: PDF, Word, OpenDocument, LaTeX, Markdown, a
+web page, or an **e-book** (EPUB), in which the reader sets the text and each
+chapter is a part of its own. Where the document is given as it is written, in LaTeX, Typst or
 Markdown, its pictures are put in a folder beside it, named after it.
 
 There are two kinds of PDF. **PDF** is what the preview shows. **PDF, set by

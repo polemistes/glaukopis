@@ -7,6 +7,9 @@ format-kind-general = General
 format-kind-style-guide = Style guides
 format-kind-publisher = Publishers
 format-kind-journal = Journals
+format-kind-fiction = Fiction
+format-kind-stage = Stage and screen
+format-kind-poetry = Poetry
 
 ## The format editor.
 
@@ -122,6 +125,9 @@ format-level-run-in = runs into the text
 format-level-indent = Indented as a paragraph is
 format-level-run-in-label = Runs into the text
 format-level-run-in-hint = The heading begins the paragraph and ends with a full stop
+format-level-new-page = Begins a new page
+format-level-new-page-hint = As the chapters of a book do
+format-level-new-page-said = on a new page
 format-space-before = Space before
 format-space-after = Space after
 format-level-add = A deeper level

@@ -389,7 +389,16 @@
   });
 
   const formatGroups = $derived.by(() => {
-    const order = ['own', 'general', 'style-guide', 'publisher', 'journal'];
+    const order = [
+      'own',
+      'general',
+      'fiction',
+      'stage',
+      'poetry',
+      'style-guide',
+      'publisher',
+      'journal',
+    ];
     return order
       .map((kind) => ({
         name: formatKindWords(kind) ?? kind,

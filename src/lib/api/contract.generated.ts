@@ -357,6 +357,7 @@ export const format: DocumentFormat = {
         "case": "none",
         "indent": false,
         "italic": false,
+        "newPage": false,
         "runIn": false,
         "size": 14.0,
         "spaceAfter": "12pt",
@@ -368,6 +369,7 @@ export const format: DocumentFormat = {
         "case": "none",
         "indent": false,
         "italic": false,
+        "newPage": false,
         "runIn": false,
         "size": 12.0,
         "spaceAfter": "6pt",
@@ -379,6 +381,7 @@ export const format: DocumentFormat = {
         "case": "none",
         "indent": false,
         "italic": true,
+        "newPage": false,
         "runIn": false,
         "size": 12.0,
         "spaceAfter": "6pt",
@@ -504,6 +507,42 @@ export const formats: FormatSummary[] = [
     "id": "manuscript",
     "kind": "general",
     "name": "Manuscript",
+    "own": false
+  },
+  {
+    "checked": "2026-10-01",
+    "confidence": "high",
+    "description": "The standard manuscript format that agents and publishers of fiction ask for: 12-point type, double spacing, margins of 2.5 cm, each chapter on a new page, the title and page number at the head of every page.",
+    "id": "novel-manuscript",
+    "kind": "fiction",
+    "name": "Novel manuscript",
+    "own": false
+  },
+  {
+    "checked": "2026-10-01",
+    "confidence": "medium",
+    "description": "A page as a printed novel has it, for reading one's own book as a book, or for a printing of one's own: a small page, serif type, justified and hyphenated, each chapter on a new page with room above its heading, the page number at the foot.",
+    "id": "novel-book",
+    "kind": "fiction",
+    "name": "Novel, as a book",
+    "own": false
+  },
+  {
+    "checked": "2026-10-01",
+    "confidence": "low",
+    "description": "A stage play for reading and rehearsal: 12-point type, lines set as verse with the speaker above each speech in small capitals and the directions in italics, each act on a new page, the scenes within it headed; wide margins for notes.",
+    "id": "play-script",
+    "kind": "stage",
+    "name": "Play script",
+    "own": false
+  },
+  {
+    "checked": "2026-10-01",
+    "confidence": "low",
+    "description": "A collection of poems: each poem an element, its name the title, its lines written as verse. A narrow page, a quiet serif, lines left as written, no hyphenation, each poem on a page of its own.",
+    "id": "poetry",
+    "kind": "poetry",
+    "name": "Poems",
     "own": false
   },
   {

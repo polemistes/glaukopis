@@ -112,6 +112,27 @@ try {
   check('the preview is in the format chosen', /us-letter/.test(typ) && /\(Nagy, 1979, p\. 73\)/.test(typ), typ.match(/\(Nagy[^)]*\)/)?.[0]);
   await app.screenshot('preview-2-apa');
 
+  // --- The formats are in groups, and a novel is a book ---
+  const groups = await app.exec(
+    `return Array.from(document.querySelectorAll('.preview select[aria-label="Document format"] optgroup')).map((g) => g.label)`,
+  );
+  check('the formats are offered by kind', ['Fiction', 'Stage and screen', 'Poetry'].every((g) => groups.includes(g)), groups.join(' | '));
+  await app.exec(
+    `const s = document.querySelector('.preview select[aria-label="Document format"]');
+     s.value = 'novel-book';
+     s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
+  await sleep(4500);
+  typ = source();
+  check('a chapter of a novel begins a new page', /#pagebreak\(weak: true\)\s*= /.test(typ) && /a5/.test(typ));
+  await app.screenshot('preview-2b-novel');
+  await app.exec(
+    `const s = document.querySelector('.preview select[aria-label="Document format"]');
+     s.value = 'apa-7-professional';
+     s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
+  await sleep(4500);
+
   // --- The particulars of the document ---
   await app.click('.preview button[aria-label="Title, authors, abstract"]');
   await app.waitFor('dialog .details');
@@ -128,6 +149,7 @@ try {
   // --- Export, as the dialog would ask for it ---
   await app.clickText('.preview button', 'Export');
   await app.waitFor('dialog .kinds');
+  check('an e-book is among what can be made', /E-book/.test(await app.text('dialog .kinds')));
   await app.screenshot('preview-5-export');
 
   // Stopped while it is made, nothing is written. The dialog of the system,

@@ -7,6 +7,9 @@ format-kind-general = Generelle
 format-kind-style-guide = Stilguider
 format-kind-publisher = Forlag
 format-kind-journal = Tidsskrifter
+format-kind-fiction = Skjønnlitteratur
+format-kind-stage = Scene og film
+format-kind-poetry = Lyrikk
 
 ## Redigeringen av et format.
 
@@ -122,6 +125,9 @@ format-level-run-in = går inn i teksten
 format-level-indent = Rykket inn som et avsnitt
 format-level-run-in-label = Går inn i teksten
 format-level-run-in-hint = Overskriften innleder avsnittet og slutter med punktum
+format-level-new-page = Begynner på ny side
+format-level-new-page-hint = Som kapitlene i en bok
+format-level-new-page-said = på ny side
 format-space-before = Luft før
 format-space-after = Luft etter
 format-level-add = Et dypere nivå

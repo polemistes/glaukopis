@@ -28,6 +28,11 @@ pub enum Kind {
     StyleGuide,
     Publisher,
     Journal,
+    /// Novels and stories.
+    Fiction,
+    /// Plays and screenplays.
+    Stage,
+    Poetry,
     /// Made by the user.
     Own,
 }
@@ -173,6 +178,8 @@ pub struct HeadingLevel {
     pub run_in: bool,
     /// Indented as a paragraph is.
     pub indent: bool,
+    /// The heading begins a new page: a chapter of a book.
+    pub new_page: bool,
     pub space_before: Length,
     pub space_after: Length,
 }
@@ -187,6 +194,7 @@ impl Default for HeadingLevel {
             case: Case::None,
             run_in: false,
             indent: false,
+            new_page: false,
             space_before: Length::pt(24.0),
             space_after: Length::pt(12.0),
         }
@@ -864,9 +872,12 @@ impl Formats {
         let rank = |k: Kind| match k {
             Kind::Own => 0,
             Kind::General => 1,
-            Kind::StyleGuide => 2,
-            Kind::Publisher => 3,
-            Kind::Journal => 4,
+            Kind::Fiction => 2,
+            Kind::Stage => 3,
+            Kind::Poetry => 4,
+            Kind::StyleGuide => 5,
+            Kind::Publisher => 6,
+            Kind::Journal => 7,
         };
         out.sort_by(|a, b| {
             rank(a.0.kind).cmp(&rank(b.0.kind)).then(a.0.name.to_lowercase().cmp(&b.0.name.to_lowercase()))

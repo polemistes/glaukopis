@@ -1,0 +1,105 @@
+{
+  "id": "poetry",
+  "name": "Poems",
+  "kind": "poetry",
+  "description": "A collection of poems: each poem an element, its name the title, its lines written as verse. A narrow page, a quiet serif, lines left as written, no hyphenation, each poem on a page of its own.",
+  "source": {
+    "name": "Standard manuscript format, as the article of that name has it, which names collections of poems among the works with conventions of their own; and the pages of printed collections",
+    "url": "https://en.wikipedia.org/wiki/Standard_manuscript_format",
+    "checked": "2026-10-01",
+    "confidence": "low",
+    "notes": "No publisher's page is reproduced. Write the lines of each poem as verse; stanzas are verses one after the other. Headings of the first level are the poems, each on a page of its own; of the second, the parts of a long poem."
+  },
+  "page": {
+    "size": "a5",
+    "marginTop": "2.4cm",
+    "marginBottom": "2.4cm",
+    "marginLeft": "2.4cm",
+    "marginRight": "2cm"
+  },
+  "font": {
+    "family": "Libertinus Serif",
+    "size": 11
+  },
+  "text": {
+    "lineSpacing": 1.35,
+    "align": "left",
+    "paragraphs": "spaced",
+    "indent": "0pt",
+    "indentFirst": false,
+    "spaceBetween": "9pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      {
+        "size": 14,
+        "bold": false,
+        "italic": false,
+        "align": "left",
+        "newPage": true,
+        "spaceBefore": "36pt",
+        "spaceAfter": "24pt"
+      },
+      {
+        "size": 11,
+        "bold": false,
+        "italic": true,
+        "align": "left",
+        "spaceBefore": "18pt",
+        "spaceAfter": "12pt"
+      },
+      {
+        "size": 11,
+        "bold": false,
+        "italic": true,
+        "align": "left",
+        "spaceBefore": "12pt",
+        "spaceAfter": "6pt"
+      }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 22,
+    "bold": false,
+    "align": "left",
+    "showAuthors": true,
+    "showAffiliations": false,
+    "showDate": false,
+    "showAbstract": false,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords"
+  },
+  "quote": {
+    "indentLeft": "0.8cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0
+  },
+  "notes": {
+    "kind": "endnotes",
+    "size": 9,
+    "lineSpacing": 1.1,
+    "title": "Notes"
+  },
+  "bibliography": {
+    "title": "Sources",
+    "hangingIndent": "0.8cm",
+    "lineSpacing": 1.2,
+    "entrySpacing": "3pt",
+    "newPage": true,
+    "size": 9.5
+  },
+  "pageNumbers": {
+    "show": true,
+    "position": "bottom-center",
+    "firstPage": false
+  },
+  "runningHead": {
+    "content": "none"
+  },
+  "lineNumbers": false,
+  "style": "chicago-notes-bibliography"
+}

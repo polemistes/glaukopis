@@ -1,0 +1,108 @@
+{
+  "id": "play-script",
+  "name": "Play script",
+  "kind": "stage",
+  "description": "A stage play for reading and rehearsal: 12-point type, lines set as verse with the speaker above each speech in small capitals and the directions in italics, each act on a new page, the scenes within it headed; wide margins for notes.",
+  "source": {
+    "name": "Standard manuscript format, as the article of that name has it, with the speeches as verse: the common shape of the script formats of theatres and writers' guilds",
+    "url": "https://en.wikipedia.org/wiki/Standard_manuscript_format",
+    "checked": "2026-10-01",
+    "confidence": "low",
+    "notes": "Theatres and guilds publish formats that agree on the broad shape (the speaker above the speech, directions set apart in italics, acts and scenes headed) and differ in the details; none is reproduced here. Write each speech as verse, with the speaker as a speaker line and stage directions as direction lines; prose speeches are verse of one long line each. Acts are headings of the first level, scenes of the second."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "3.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": {
+    "family": "Times New Roman",
+    "size": 12
+  },
+  "text": {
+    "lineSpacing": 1.5,
+    "align": "left",
+    "paragraphs": "spaced",
+    "indent": "0pt",
+    "indentFirst": false,
+    "spaceBetween": "10pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      {
+        "size": 14,
+        "bold": true,
+        "italic": false,
+        "align": "center",
+        "case": "upper",
+        "newPage": true,
+        "spaceBefore": "48pt",
+        "spaceAfter": "36pt"
+      },
+      {
+        "size": 12,
+        "bold": true,
+        "italic": false,
+        "align": "center",
+        "case": "upper",
+        "spaceBefore": "30pt",
+        "spaceAfter": "18pt"
+      },
+      {
+        "size": 12,
+        "bold": false,
+        "italic": true,
+        "align": "left",
+        "spaceBefore": "12pt",
+        "spaceAfter": "6pt"
+      }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 16,
+    "bold": true,
+    "align": "center",
+    "showAuthors": true,
+    "showAffiliations": false,
+    "showDate": false,
+    "showAbstract": false,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords"
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0
+  },
+  "notes": {
+    "kind": "footnotes",
+    "size": 10,
+    "lineSpacing": 1,
+    "title": "Notes"
+  },
+  "bibliography": {
+    "title": "Sources",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": true
+  },
+  "pageNumbers": {
+    "show": true,
+    "position": "top-right",
+    "firstPage": false
+  },
+  "runningHead": {
+    "content": "title",
+    "align": "left",
+    "case": "none"
+  },
+  "lineNumbers": false,
+  "style": "chicago-notes-bibliography"
+}

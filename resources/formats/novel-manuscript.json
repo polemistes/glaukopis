@@ -1,0 +1,107 @@
+{
+  "id": "novel-manuscript",
+  "name": "Novel manuscript",
+  "kind": "fiction",
+  "description": "The standard manuscript format that agents and publishers of fiction ask for: 12-point type, double spacing, margins of 2.5 cm, each chapter on a new page, the title and page number at the head of every page.",
+  "source": {
+    "name": "Shunn, Proper Manuscript Format: Novels; and the submission guidelines of publishers of fiction",
+    "url": "https://www.shunn.net/format/novel.html",
+    "checked": "2026-10-01",
+    "confidence": "high",
+    "notes": "Shunn gives Courier, double spacing, a title page, each chapter on a page of its own, and author, title and page number at the head of every page. Times New Roman is given here in place of Courier, as most publishers now take either and it reads better on screen; the strictest form of the chapter heading, some way down the page, is given as room above it."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "2.5cm",
+    "marginRight": "2.5cm"
+  },
+  "font": {
+    "family": "Times New Roman",
+    "size": 12
+  },
+  "text": {
+    "lineSpacing": 2,
+    "align": "left",
+    "paragraphs": "indent",
+    "indent": "1.27cm",
+    "indentFirst": false,
+    "spaceBetween": "0pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      {
+        "size": 12,
+        "bold": false,
+        "italic": false,
+        "align": "center",
+        "case": "upper",
+        "newPage": true,
+        "spaceBefore": "96pt",
+        "spaceAfter": "48pt"
+      },
+      {
+        "size": 12,
+        "bold": false,
+        "italic": false,
+        "align": "center",
+        "spaceBefore": "24pt",
+        "spaceAfter": "24pt"
+      },
+      {
+        "size": 12,
+        "bold": false,
+        "italic": true,
+        "align": "left",
+        "spaceBefore": "12pt",
+        "spaceAfter": "12pt"
+      }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 16,
+    "bold": true,
+    "align": "center",
+    "showAuthors": true,
+    "showAffiliations": false,
+    "showDate": false,
+    "showAbstract": false,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords"
+  },
+  "quote": {
+    "indentLeft": "1.27cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0
+  },
+  "notes": {
+    "kind": "footnotes",
+    "size": 10,
+    "lineSpacing": 1,
+    "title": "Notes"
+  },
+  "bibliography": {
+    "title": "Sources",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": true
+  },
+  "pageNumbers": {
+    "show": true,
+    "position": "top-right",
+    "firstPage": false
+  },
+  "runningHead": {
+    "content": "author-title",
+    "align": "right",
+    "case": "none"
+  },
+  "lineNumbers": false,
+  "style": "chicago-notes-bibliography"
+}

@@ -272,6 +272,7 @@
           ? t('format-level-right')
           : '',
       l.runIn ? t('format-level-run-in') : '',
+      l.newPage ? t('format-level-new-page-said') : '',
     ]
       .filter(Boolean)
       .join(', ');
@@ -365,6 +366,7 @@
     level.choice(t('format-alignment'), 'align', aligns),
     level.toggle(t('format-level-indent'), 'indent'),
     level.toggle(t('format-level-run-in-label'), 'runIn', { hint: t('format-level-run-in-hint') }),
+    level.toggle(t('format-level-new-page'), 'newPage', { hint: t('format-level-new-page-hint') }),
     level.length(t('format-space-before'), 'spaceBefore', { when: (l) => !l.runIn }),
     level.length(t('format-space-after'), 'spaceAfter', { when: (l) => !l.runIn }),
   ]);

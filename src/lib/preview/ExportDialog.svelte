@@ -82,6 +82,12 @@
       extension: 'html',
       about: t('preview-export-html-about'),
     },
+    {
+      target: 'epub',
+      label: t('preview-export-epub'),
+      extension: 'epub',
+      about: t('preview-export-epub-about'),
+    },
   ]);
 
   let chosen = $state<Target>('docx');

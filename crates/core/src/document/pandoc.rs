@@ -215,6 +215,9 @@ pub struct Converter<'a> {
     pub language: Option<&'a str>,
     /// Levels of heading that run into the text that follows them.
     pub run_in: Vec<RunIn>,
+    /// Levels of heading that begin a new page, where the document has pages: `page_break` before them.
+    pub new_page: Vec<u8>,
+    pub page_break: Option<Value>,
     /// Headings deeper than this are printed at this level.
     pub deepest: u8,
     pub extras: Extras,
@@ -649,6 +652,11 @@ impl Converter<'_> {
                 }
             }
             (Some(h), None) if section.level > 0 => {
+                if self.new_page.contains(&level)
+                    && let Some(b) = &self.page_break
+                {
+                    out.push(b.clone());
+                }
                 let place = section.element.as_deref().and_then(|id| self.extras.anchor(id));
                 let named = match place.as_ref().and_then(|p| p["c"][0][0].as_str()) {
                     Some(name) => json!([name, [], []]),
@@ -761,7 +769,15 @@ mod tests {
     use super::*;
 
     fn converter(keys: &HashMap<String, String>) -> Converter<'_> {
-        Converter { keys, language: Some("en-GB"), run_in: vec![], deepest: 6, extras: Extras::default() }
+        Converter {
+            keys,
+            language: Some("en-GB"),
+            run_in: vec![],
+            new_page: vec![],
+            page_break: None,
+            deepest: 6,
+            extras: Extras::default(),
+        }
     }
 
     #[test]
