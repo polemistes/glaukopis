@@ -8,6 +8,7 @@ use std::fmt::Write as _;
 use std::io::{Cursor, Read, Write};
 
 use crate::error::{Error, Result};
+use crate::formats::kinds::{self, Family, OwnKind, Resolved};
 use crate::formats::typst::Particulars;
 use crate::formats::{
     Align, CaptionPosition, Case, DocumentFormat, HeadContent, HeadingLevel, Length, NoteKind, Paragraphs, Rules,
@@ -96,16 +97,48 @@ fn jc(a: Align) -> &'static str {
     }
 }
 
+/// The letters of equal width that code is set in, in Word.
+const MONO_WORD: &str = "Courier New";
+
+/// What is said of the letters of a style; nothing, where nothing is said.
+#[derive(Default)]
 struct Run {
     size: Option<f32>,
     bold: Option<bool>,
     italic: Option<bool>,
     case: Case,
+    underline: Option<bool>,
+    /// A font of its own: that of code.
+    font: Option<&'static str>,
 }
 
 impl Run {
+    /// The run of a kind, from its look. Of a kind of paragraph everything
+    /// is said (`whole`); of a kind of words only what it adds to the words
+    /// around it.
+    fn of(look: &Resolved, whole: bool) -> Self {
+        let said = |v: bool| if whole { Some(v) } else { v.then_some(true) };
+        Run {
+            size: (look.size > 0.0).then_some(look.size),
+            bold: said(look.bold),
+            italic: said(look.italic),
+            case: look.case,
+            underline: look.underline.then_some(true),
+            font: look.monospace.then_some(MONO_WORD),
+        }
+    }
+
     fn xml(&self) -> String {
+        let s = self.inner();
+        if s.is_empty() { s } else { format!("<w:rPr>{s}</w:rPr>") }
+    }
+
+    /// The properties alone, for a character style.
+    fn inner(&self) -> String {
         let mut s = String::new();
+        if let Some(font) = self.font {
+            let _ = write!(s, "<w:rFonts w:ascii=\"{font}\" w:hAnsi=\"{font}\" w:cs=\"{font}\"/>");
+        }
         if let Some(b) = self.bold {
             let v = if b { "" } else { " w:val=\"0\"" };
             let _ = write!(s, "<w:b{v}/><w:bCs{v}/>");
@@ -119,11 +152,20 @@ impl Run {
             Case::Smallcaps => s.push_str("<w:smallCaps/>"),
             Case::None => {}
         }
+        if let Some(u) = self.underline {
+            let _ = write!(s, "<w:u w:val=\"{}\"/>", if u { "single" } else { "none" });
+        }
         if let Some(size) = self.size {
             let _ = write!(s, "<w:sz w:val=\"{0}\"/><w:szCs w:val=\"{0}\"/>", half_points(size));
         }
-        if s.is_empty() { s } else { format!("<w:rPr>{s}</w:rPr>") }
+        s
     }
+}
+
+/// The id of a style in Word, from its name: its letters and digits, as
+/// Word makes them ("Scene Heading" is `SceneHeading`).
+fn style_id(name: &str) -> String {
+    name.chars().filter(|c| c.is_alphanumeric()).collect()
 }
 
 #[derive(Default)]
@@ -261,7 +303,8 @@ fn heading_styles(f: &DocumentFormat, body_line: i32) -> String {
             outline: Some(level - 1),
             ..Default::default()
         };
-        let r = Run { size: Some(h.size), bold: Some(h.bold), italic: Some(h.italic), case: h.case };
+        let r =
+            Run { size: Some(h.size), bold: Some(h.bold), italic: Some(h.italic), case: h.case, ..Default::default() };
         out.push_str(&paragraph_style(
             &format!("Heading{level}"),
             &format!("heading {level}"),
@@ -275,13 +318,13 @@ fn heading_styles(f: &DocumentFormat, body_line: i32) -> String {
             &format!("Heading{level}Char"),
             &format!("Heading {level} Char"),
             Some(&format!("Heading{level}")),
-            r.xml().trim_start_matches("<w:rPr>").trim_end_matches("</w:rPr>"),
+            &r.inner(),
         ));
     }
     out
 }
 
-pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
+pub fn docx_styles(f: &DocumentFormat, language: Option<&str>, own: &[OwnKind]) -> String {
     let font = xml(&family(f));
     let body_line = line(f.text.line_spacing);
     let indent = f.text.indent.twips();
@@ -291,7 +334,7 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
     };
     let quote_line = if f.quote.line_spacing > 0.0 { line(f.quote.line_spacing) } else { body_line };
     let bib_line = if f.bibliography.line_spacing > 0.0 { line(f.bibliography.line_spacing) } else { body_line };
-    let none = || Run { size: None, bold: None, italic: None, case: Case::None };
+    let none = Run::default;
     let t = &f.title;
     let title_align = Some(if t.align == Align::Justified { Align::Left } else { t.align });
 
@@ -364,16 +407,14 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
             keep_next: true,
             ..Default::default()
         },
-        &Run { size: Some(t.size), bold: Some(t.bold), italic: Some(t.italic), case: t.case },
+        &Run { size: Some(t.size), bold: Some(t.bold), italic: Some(t.italic), case: t.case, ..Default::default() },
     ));
     s.push_str(&character_style(
         "TitleChar",
         "Title Char",
         Some("Title"),
-        Run { size: Some(t.size), bold: Some(t.bold), italic: Some(t.italic), case: t.case }
-            .xml()
-            .trim_start_matches("<w:rPr>")
-            .trim_end_matches("</w:rPr>"),
+        &Run { size: Some(t.size), bold: Some(t.bold), italic: Some(t.italic), case: t.case, ..Default::default() }
+            .inner(),
     ));
     s.push_str(&paragraph_style(
         "Subtitle",
@@ -382,7 +423,13 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
         Some("BodyText"),
         Some("SubtitleChar"),
         &Para { after: 240, line: Some(line(1.1)), align: title_align, keep_next: true, ..Default::default() },
-        &Run { size: Some((t.size * 0.8).max(f.font.size)), bold: Some(false), italic: Some(false), case: Case::None },
+        &Run {
+            size: Some((t.size * 0.8).max(f.font.size)),
+            bold: Some(false),
+            italic: Some(false),
+            case: Case::None,
+            ..Default::default()
+        },
     ));
     s.push_str(&character_style("SubtitleChar", "Subtitle Char", Some("Subtitle"), ""));
     for (id, name) in [("Author", "Author"), ("Date", "Date")] {
@@ -417,7 +464,7 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
             keep_next: true,
             ..Default::default()
         },
-        &Run { size: None, bold: Some(true), italic: None, case: Case::None },
+        &Run { size: None, bold: Some(true), italic: None, case: Case::None, ..Default::default() },
     ));
     s.push_str(&paragraph_style(
         "Abstract",
@@ -478,6 +525,7 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
                     bold: None,
                     italic: None,
                     case: Case::None,
+                    ..Default::default()
                 },
             ));
         }
@@ -497,7 +545,13 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
             align: Some(Align::Left),
             ..Default::default()
         },
-        &Run { size: (tables.size > 0.0).then_some(tables.size), bold: None, italic: None, case: Case::None },
+        &Run {
+            size: (tables.size > 0.0).then_some(tables.size),
+            bold: None,
+            italic: None,
+            case: Case::None,
+            ..Default::default()
+        },
     ));
 
     s.push_str(&paragraph_style(
@@ -519,6 +573,7 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
             bold: None,
             italic: None,
             case: Case::None,
+            ..Default::default()
         },
     ));
 
@@ -544,10 +599,12 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
             bold: None,
             italic: f.quote.italic.then_some(true),
             case: Case::None,
+            ..Default::default()
         },
     ));
     let note = Para { line: Some(line(f.notes.line_spacing)), align: Some(f.text.align), ..Default::default() };
-    let note_run = || Run { size: Some(f.notes.size), bold: None, italic: None, case: Case::None };
+    let note_run =
+        || Run { size: Some(f.notes.size), bold: None, italic: None, case: Case::None, ..Default::default() };
     s.push_str(&paragraph_style("FootnoteText", "footnote text", Some("Normal"), None, None, &note, &note_run()));
     s.push_str(&paragraph_style(
         "FootnoteBlockText",
@@ -585,8 +642,12 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
         ("TOCHeading", "TOC Heading"),
     ] {
         let run = match id {
-            "DefinitionTerm" | "TOCHeading" => Run { size: None, bold: Some(true), italic: None, case: Case::None },
-            "Caption" | "ImageCaption" => Run { size: None, bold: None, italic: Some(true), case: Case::None },
+            "DefinitionTerm" | "TOCHeading" => {
+                Run { size: None, bold: Some(true), italic: None, case: Case::None, ..Default::default() }
+            }
+            "Caption" | "ImageCaption" => {
+                Run { size: None, bold: None, italic: Some(true), case: Case::None, ..Default::default() }
+            }
             _ => none(),
         };
         s.push_str(&paragraph_style(
@@ -622,6 +683,53 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>) -> String {
         "<w:vertAlign w:val=\"superscript\"/>",
     ));
     s.push_str(&character_style("Hyperlink", "Hyperlink", None, "<w:color w:val=\"1F4E79\"/>"));
+
+    // The kinds of paragraph and of words, each a style of its own, from the
+    // looks the format resolves (see `formats/kinds.rs`): a paragraph style
+    // for a kind of paragraph, a character style for a kind of words. Pandoc
+    // names a block of code "Source Code", which is the kind code: so code
+    // is set as the format says. A kind whose style is there already, by the
+    // writer's naming of it, keeps that one.
+    for (_, info) in kinds::styled(f, own) {
+        let id = style_id(&info.style);
+        let name = xml(&info.style);
+        if id.is_empty()
+            || s.contains(&format!("w:styleId=\"{id}\""))
+            || s.contains(&format!("<w:name w:val=\"{name}\"/>"))
+        {
+            continue;
+        }
+        let look = &info.look;
+        match info.family {
+            Family::Paragraph => {
+                let first = look.first_line.twips();
+                let p = Para {
+                    before: look.space_before.twips(),
+                    after: look.space_after.twips(),
+                    line: Some(if look.line_spacing > 0.0 { line(look.line_spacing) } else { body_line }),
+                    align: Some(look.align),
+                    left: look.indent_left.twips(),
+                    right: look.indent_right.twips(),
+                    first: first.max(0),
+                    hanging: (-first).max(0),
+                    keep_next: look.keep_with_next,
+                    outline: None,
+                    page_break_before: look.new_page,
+                };
+                s.push_str(&paragraph_style(
+                    &id,
+                    &name,
+                    Some("Normal"),
+                    Some("BodyText"),
+                    None,
+                    &p,
+                    &Run::of(look, true),
+                ));
+            }
+            Family::Words => s.push_str(&character_style(&id, &name, None, &Run::of(look, false).inner())),
+        }
+    }
+
     // The lines of a table: over it, under it and under its headings, as
     // books have them; around every cell; or none.
     let rule =
@@ -741,7 +849,7 @@ pub fn docx(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u
     let (top, foot) = margins(f, p);
     let first_differs = f.page_numbers.show && !f.page_numbers.first_page;
     rewrite(default, |files| {
-        put(files, "word/styles.xml", docx_styles(f, p.language.as_deref()));
+        put(files, "word/styles.xml", docx_styles(f, p.language.as_deref(), &p.own_kinds));
 
         // Headers and footers, and their place in the list of parts.
         let mut relations = text_of(files, "word/_rels/document.xml.rels")?;
@@ -888,6 +996,25 @@ impl OdtStyle<'_> {
     }
 }
 
+/// The letters of equal width that code is set in, in Writer.
+const MONO_WRITER: &str = "Liberation Mono";
+
+/// Declares a font in the pattern, where it is not declared: a font must be
+/// declared before a style names it.
+fn declare_font(s: &mut String, name: &str, generic: &str, pitch: &str) {
+    if s.contains(&format!("style:font-face style:name=\"{name}\"")) {
+        return;
+    }
+    let face = format!(
+        "<style:font-face style:name=\"{name}\" svg:font-family=\"&apos;{name}&apos;\" style:font-family-generic=\"{generic}\" style:font-pitch=\"{pitch}\"/>"
+    );
+    if let Some(at) = s.find("</office:font-face-decls>") {
+        s.insert_str(at, &face);
+    } else if let Some(at) = s.find("<office:styles>") {
+        s.insert_str(at, &format!("<office:font-face-decls>{face}</office:font-face-decls>"));
+    }
+}
+
 fn odt_text(size: Option<f32>, bold: Option<bool>, italic: Option<bool>, case: Case) -> String {
     let mut s = String::new();
     if let Some(z) = size {
@@ -905,6 +1032,46 @@ fn odt_text(size: Option<f32>, bold: Option<bool>, italic: Option<bool>, case: C
         Case::Upper => s.push_str("fo:text-transform=\"uppercase\" "),
         Case::Smallcaps => s.push_str("fo:font-variant=\"small-caps\" "),
         Case::None => {}
+    }
+    s
+}
+
+/// The letters of a kind, from its look: as `odt_text`, with the underline
+/// and the letters of equal width a look may ask for. Of a kind of
+/// paragraph everything is said (`whole`); of a kind of words only what it
+/// adds to the words around it.
+fn odt_text_of(look: &Resolved, whole: bool) -> String {
+    let said = |v: bool| if whole { Some(v) } else { v.then_some(true) };
+    let mut s = odt_text((look.size > 0.0).then_some(look.size), said(look.bold), said(look.italic), look.case);
+    if look.underline {
+        s.push_str(
+            "style:text-underline-style=\"solid\" style:text-underline-width=\"auto\" style:text-underline-color=\"font-color\" ",
+        );
+    }
+    if look.monospace {
+        let _ = write!(
+            s,
+            "style:font-name=\"{MONO_WRITER}\" style:font-name-asian=\"{MONO_WRITER}\" style:font-name-complex=\"{MONO_WRITER}\" "
+        );
+    }
+    s
+}
+
+/// The paragraph of a kind, from its look; `body_line` is the line spacing
+/// of the text, for a look that says nothing of its own.
+fn odt_paragraph_of(look: &Resolved, body_line: f32) -> String {
+    let mut s = odt_paragraph(
+        look.space_before.points(),
+        look.space_after.points(),
+        if look.line_spacing > 0.0 { look.line_spacing } else { body_line },
+        look.align,
+        look.indent_left.points(),
+        look.indent_right.points(),
+        look.first_line.points(),
+        look.keep_with_next,
+    );
+    if look.new_page {
+        s.push_str("fo:break-before=\"page\" ");
     }
     s
 }
@@ -989,17 +1156,10 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
     let lang = word_language(p.language.as_deref());
     let (language, country) = lang.split_once('-').unwrap_or((lang.as_str(), ""));
 
-    // The font must be declared before it is named.
-    let face = format!(
-        "<style:font-face style:name=\"{font}\" svg:font-family=\"&apos;{font}&apos;\" style:font-family-generic=\"roman\" style:font-pitch=\"variable\"/>"
-    );
-    if let Some(at) = s.find("</office:font-face-decls>") {
-        if !s.contains(&format!("style:font-face style:name=\"{font}\"")) {
-            s.insert_str(at, &face);
-        }
-    } else if let Some(at) = s.find("<office:styles>") {
-        s.insert_str(at, &format!("<office:font-face-decls>{face}</office:font-face-decls>"));
-    }
+    // The fonts must be declared before they are named: that of the text,
+    // and that of code.
+    declare_font(&mut s, &font, "roman", "variable");
+    declare_font(&mut s, MONO_WRITER, "modern", "fixed");
 
     // What every paragraph begins from.
     let default_style = format!(
@@ -1296,6 +1456,53 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
             .to_owned(),
         text: "fo:font-size=\"2pt\" style:font-size-asian=\"2pt\" style:font-size-complex=\"2pt\" ".to_owned(),
     });
+
+    // The kinds of paragraph and of words, each a style of its own, from the
+    // looks the format resolves (see `formats/kinds.rs`): a paragraph style
+    // for a kind of paragraph, a text style for a kind of words. Pandoc sets
+    // a block of code as "Preformatted Text", which is given the look of
+    // the kind code. A kind whose style is there already, by the writer's
+    // naming of it, keeps that one.
+    for (id, info) in kinds::styled(f, &p.own_kinds) {
+        let name = info.style.replace(' ', "_20_");
+        if s.contains(&format!("style:name=\"{name}\"")) {
+            continue;
+        }
+        let look = &info.look;
+        let display = (name != info.style).then_some(info.style.as_str());
+        match info.family {
+            Family::Paragraph => {
+                let style = OdtStyle {
+                    name: &name,
+                    display,
+                    parent: Some("Standard"),
+                    next: Some("Text_20_body"),
+                    outline: None,
+                    paragraph: odt_paragraph_of(look, body),
+                    text: odt_text_of(look, true),
+                };
+                replace_style(&mut s, &name, &style.xml());
+                if id == "code" {
+                    let code = OdtStyle { name: "Preformatted_20_Text", display: Some("Preformatted Text"), ..style };
+                    replace_style(&mut s, code.name, &code.xml());
+                }
+            }
+            Family::Words => {
+                let text = odt_text_of(look, false);
+                let properties =
+                    if text.is_empty() { String::new() } else { format!("<style:text-properties {text}/>") };
+                let display = display.map(|d| format!(" style:display-name=\"{d}\"")).unwrap_or_default();
+                replace_style(
+                    &mut s,
+                    &name,
+                    &format!(
+                        "<style:style style:name=\"{name}\"{display} style:family=\"text\">{properties}</style:style>"
+                    ),
+                );
+            }
+        }
+    }
+
     // What the text flows around: a frame at the side of the text.
     for (name, side, clear) in [("GkAroundLeft", "left", "right"), ("GkAroundRight", "right", "left")] {
         replace_style(
@@ -1495,7 +1702,7 @@ mod tests {
     #[test]
     fn the_styles_of_word_are_well_formed_and_say_what_the_format_says() {
         let f = format();
-        let styles = docx_styles(&f, Some("nb"));
+        let styles = docx_styles(&f, Some("nb"), &[]);
         roxmltree::Document::parse(&styles).unwrap();
         assert!(styles.contains("w:ascii=\"Times New Roman\""));
         assert!(styles.contains("<w:lang w:val=\"nb-NO\""));
@@ -1518,6 +1725,97 @@ mod tests {
         ] {
             assert!(styles.contains(&format!("w:styleId=\"{id}\"")), "{id}");
         }
+    }
+
+    /// A kind of the writer's own: a letter, which is an epigraph in italics.
+    fn letter() -> Vec<OwnKind> {
+        vec![OwnKind {
+            id: "k1".into(),
+            name: "Letter".into(),
+            family: Family::Paragraph,
+            based_on: "epigraph".into(),
+            look: kinds::Look { italic: Some(true), ..Default::default() },
+        }]
+    }
+
+    /// The style of a name in styles of Word or of Writer, as written.
+    fn style_of<'a>(styles: &'a str, open: &str, close: &str) -> &'a str {
+        let at = styles.find(open).unwrap_or_else(|| panic!("no style {open}"));
+        let end = styles[at..].find(close).unwrap();
+        &styles[at..at + end]
+    }
+
+    #[test]
+    fn the_kinds_are_styles_of_word() {
+        let mut f = format();
+        f.kinds.insert("term".into(), kinds::Look { underline: Some(true), ..Default::default() });
+        let styles = docx_styles(&f, Some("en-GB"), &letter());
+        roxmltree::Document::parse(&styles).unwrap();
+        let of = |id: &str| style_of(&styles, &format!("w:styleId=\"{id}\""), "</w:style>");
+        let epigraph = of("Epigraph");
+        assert!(
+            epigraph.contains("<w:name w:val=\"Epigraph\"/><w:basedOn w:val=\"Normal\"/><w:next w:val=\"BodyText\"/>")
+        );
+        assert!(epigraph.contains("w:after=\"360\" w:line=\"480\""), "{epigraph}");
+        assert!(epigraph.contains("<w:ind w:left=\"2268\" w:right=\"0\" w:firstLine=\"0\"/>"), "{epigraph}");
+        let scene = of("SceneHeading");
+        assert!(scene.contains("<w:name w:val=\"Scene Heading\"/>"));
+        assert!(scene.contains("<w:keepNext/>") && scene.contains("<w:b/>") && scene.contains("<w:caps/>"), "{scene}");
+        let foreign =
+            style_of(&styles, "<w:style w:type=\"character\" w:customStyle=\"1\" w:styleId=\"Foreign\"", "</w:style>");
+        assert!(foreign.contains("<w:i/>") && !foreign.contains("<w:b/>"), "{foreign}");
+        assert!(of("Speaker").contains("<w:smallCaps/>"));
+        assert!(of("Term").contains("<w:u w:val=\"single\"/>"), "the format says that terms are underlined");
+        assert!(of("SourceCode").contains("<w:rFonts w:ascii=\"Courier New\""));
+        let own = of("Letter");
+        assert!(own.contains("<w:name w:val=\"Letter\"/>"));
+        assert!(own.contains("w:left=\"2268\"") && own.contains("<w:i/>"), "as an epigraph, in italics: {own}");
+        // A kind named as a style that is there keeps that style.
+        let mut named = letter();
+        named[0].name = "Title".into();
+        let styles = docx_styles(&f, Some("en-GB"), &named);
+        assert_eq!(styles.matches("<w:name w:val=\"Title\"/>").count(), 1);
+    }
+
+    /// The least of a pattern for Writer: what the styles are put into.
+    const PATTERN: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\
+        <office:document-styles xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" \
+        xmlns:style=\"urn:oasis:names:tc:opendocument:xmlns:style:1.0\" \
+        xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\" \
+        xmlns:fo=\"urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0\" \
+        xmlns:svg=\"urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0\" \
+        xmlns:draw=\"urn:oasis:names:tc:opendocument:xmlns:drawing:1.0\">\
+        <office:font-face-decls></office:font-face-decls>\
+        <office:styles><style:default-style style:family=\"paragraph\"><style:paragraph-properties/></style:default-style>\
+        <style:style style:name=\"Standard\" style:family=\"paragraph\" style:class=\"text\"/></office:styles>\
+        <office:automatic-styles></office:automatic-styles><office:master-styles></office:master-styles>\
+        </office:document-styles>";
+
+    #[test]
+    fn the_kinds_are_styles_of_writer() {
+        let f = format();
+        let p = Particulars { own_kinds: letter(), ..particulars() };
+        let styles = odt_styles(PATTERN, &f, &p);
+        roxmltree::Document::parse(&styles).unwrap();
+        assert!(styles.contains("<style:font-face style:name=\"Liberation Mono\""));
+        let of = |name: &str| style_of(&styles, &format!("<style:style style:name=\"{name}\""), "</style:style>");
+        let epigraph = of("Epigraph");
+        assert!(epigraph.contains("style:parent-style-name=\"Standard\" style:next-style-name=\"Text_20_body\""));
+        assert!(
+            epigraph.contains("fo:margin-left=\"1.5748in\"") && epigraph.contains("fo:line-height=\"200%\""),
+            "{epigraph}"
+        );
+        let scene = of("Scene_20_Heading");
+        assert!(scene.contains("style:display-name=\"Scene Heading\""), "{scene}");
+        assert!(scene.contains("fo:keep-with-next=\"always\"") && scene.contains("fo:font-weight=\"bold\""), "{scene}");
+        assert!(scene.contains("fo:text-transform=\"uppercase\""), "{scene}");
+        let foreign = of("Foreign");
+        assert!(foreign.contains("style:family=\"text\"") && foreign.contains("fo:font-style=\"italic\""), "{foreign}");
+        assert!(!foreign.contains("font-weight"), "only what the kind adds: {foreign}");
+        assert!(of("Speaker").contains("fo:font-variant=\"small-caps\""));
+        assert!(of("Preformatted_20_Text").contains("style:font-name=\"Liberation Mono\""), "code as Pandoc names it");
+        let own = of("Letter");
+        assert!(own.contains("fo:margin-left=\"1.5748in\"") && own.contains("fo:font-style=\"italic\""), "{own}");
     }
 
     #[test]

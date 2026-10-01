@@ -3,6 +3,7 @@
 
 use std::fmt::Write;
 
+use crate::formats::kinds::Resolved;
 use crate::formats::typst::Particulars;
 use crate::formats::{Align, Case, DocumentFormat, HeadContent, NoteKind, Paragraphs, Position};
 
@@ -308,6 +309,53 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
     Settings { variables: v, header: h, number_sections: f.headings.numbered }
 }
 
+/// What is written around a paragraph of a kind, from the kind's look: the
+/// group that sets its margins, its type and its room, and what closes it.
+/// `text` is the look of the text, against which a size and a spacing are
+/// told: what is the same as the text's is left unsaid.
+pub fn around(look: &Resolved, text: Option<&Resolved>) -> (String, String) {
+    let mut open = String::from("{\\par");
+    if look.space_before.points() > 0.0 {
+        let _ = write!(open, "\\vspace{{{}}}", look.space_before);
+    }
+    let _ =
+        write!(open, "\\leftskip={}\\rightskip={}\\parindent={}", look.indent_left, look.indent_right, look.first_line);
+    if look.line_spacing > 0.0 && text.is_none_or(|t| (t.line_spacing - look.line_spacing).abs() > 0.01) {
+        let _ = write!(open, "\\setstretch{{{}}}", look.line_spacing);
+    }
+    if look.size > 0.0 && text.is_none_or(|t| (t.size - look.size).abs() > 0.01) {
+        let _ = write!(open, "\\fontsize{{{}}}{{{}}}\\selectfont", look.size, (look.size * 1.2 * 10.0).round() / 10.0);
+    }
+    if look.bold {
+        open.push_str("\\bfseries");
+    }
+    if look.italic {
+        open.push_str("\\itshape");
+    }
+    if look.case == Case::Smallcaps {
+        open.push_str("\\scshape");
+    }
+    if look.monospace {
+        open.push_str("\\ttfamily");
+    }
+    match look.align {
+        Align::Center => open.push_str("\\centering"),
+        Align::Right => open.push_str("\\raggedleft"),
+        Align::Left => open.push_str("\\raggedright"),
+        Align::Justified => {}
+    }
+    open.push_str("\\noindent ");
+    let mut close = String::from("\\par");
+    if look.keep_with_next {
+        close.push_str("\\nobreak");
+    }
+    if look.space_after.points() > 0.0 {
+        let _ = write!(close, "\\vspace{{{}}}", look.space_after);
+    }
+    close.push('}');
+    (open, close)
+}
+
 /// The style of BibLaTeX that comes closest to a reference style, for those
 /// who keep their citations as commands.
 pub fn biblatex_style(style: &str, kind: &str) -> &'static str {
@@ -373,6 +421,24 @@ mod tests {
         assert!(s.header.contains("\\fancyhead[L]{R\\&D}"));
         assert!(s.header.contains("\\thispagestyle{plain}"));
         assert!(s.number_sections);
+    }
+
+    #[test]
+    fn what_is_written_around_a_kind() {
+        let f = DocumentFormat::default();
+        let text = crate::formats::kinds::resolve(&f, "text", &[]);
+        let scene = crate::formats::kinds::resolve(&f, "scene", &[]);
+        let (open, close) = around(&scene, Some(&text));
+        assert!(open.starts_with("{\\par\\vspace{19pt}\\leftskip=0pt\\rightskip=0pt\\parindent=0pt"), "{open}");
+        assert!(open.contains("\\bfseries") && open.ends_with("\\raggedright\\noindent "), "{open}");
+        assert_eq!(close, "\\par\\nobreak\\vspace{11pt}}");
+        let character = crate::formats::kinds::resolve(&f, "character", &[]);
+        assert!(around(&character, Some(&text)).0.contains("\\leftskip=5.6cm"));
+        // Of a kind set smaller and tighter, both are said.
+        let mut small = text.clone();
+        small.size = 10.0;
+        small.line_spacing = 1.0;
+        assert!(around(&small, Some(&text)).0.contains("\\setstretch{1}\\fontsize{10}{12}\\selectfont"));
     }
 
     #[test]

@@ -5,7 +5,7 @@
 import type { Summary, Reference, LibraryListing, ImportPlan, DuplicateGroup } from './library';
 import type { ProjectInfo } from './projects';
 import type { Picture } from './pictures';
-import type { ToolsInfo, DocumentFormat, FormatSummary, StyleSummary, Preview } from './documents';
+import type { ToolsInfo, DocumentFormat, FormatSummary, StyleSummary, Preview, KindEntry } from './documents';
 
 export const summary: Summary = {
   "added": "2026-01-01T00:00:00Z",
@@ -469,6 +469,7 @@ export const format: DocumentFormat = {
     "hyphenate": false,
     "indent": "1.27cm",
     "indentFirst": false,
+    "italics": "italic",
     "lineSpacing": 2.0,
     "paragraphs": "indent",
     "spaceBetween": "0pt"
@@ -1230,3 +1231,293 @@ export const preview: Preview = {
   ],
   "width": 595.0
 };
+
+export const kinds: KindEntry[] = [
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "text",
+    "id": "text",
+    "look": {},
+    "style": "Body Text"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "text",
+    "id": "quote",
+    "look": {},
+    "style": "Block Text"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "text",
+    "id": "list",
+    "look": {},
+    "style": ""
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "text",
+    "id": "numbered",
+    "look": {},
+    "style": ""
+  },
+  {
+    "basedOn": "quote",
+    "family": "paragraph",
+    "group": "quotation",
+    "id": "attribution",
+    "look": {
+      "align": "right",
+      "firstLine": "0pt",
+      "italic": false,
+      "spaceBefore": "0pt"
+    },
+    "style": "Attribution"
+  },
+  {
+    "basedOn": "quote",
+    "family": "paragraph",
+    "group": "quotation",
+    "id": "epigraph",
+    "look": {
+      "firstLine": "0pt",
+      "indentLeft": "4cm",
+      "indentRight": "0pt",
+      "spaceAfter": "18pt"
+    },
+    "style": "Epigraph"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "verse",
+    "id": "verse",
+    "look": {},
+    "style": ""
+  },
+  {
+    "basedOn": null,
+    "family": "words",
+    "group": "verse",
+    "id": "speaker",
+    "look": {
+      "case": "smallcaps"
+    },
+    "style": "Speaker"
+  },
+  {
+    "basedOn": null,
+    "family": "words",
+    "group": "verse",
+    "id": "direction",
+    "look": {
+      "italic": true
+    },
+    "style": "Stage Direction"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "script",
+    "id": "scene",
+    "look": {
+      "align": "left",
+      "bold": true,
+      "case": "upper",
+      "firstLine": "0pt",
+      "keepWithNext": true,
+      "spaceAfter": "11pt",
+      "spaceBefore": "19pt"
+    },
+    "style": "Scene Heading"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "script",
+    "id": "action",
+    "look": {
+      "align": "left",
+      "firstLine": "0pt",
+      "spaceAfter": "11pt",
+      "spaceBefore": "11pt"
+    },
+    "style": "Action"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "script",
+    "id": "character",
+    "look": {
+      "align": "left",
+      "case": "upper",
+      "firstLine": "0pt",
+      "indentLeft": "5.6cm",
+      "keepWithNext": true,
+      "spaceAfter": "0pt",
+      "spaceBefore": "11pt"
+    },
+    "style": "Character"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "script",
+    "id": "dialogue",
+    "look": {
+      "align": "left",
+      "firstLine": "0pt",
+      "indentLeft": "2.5cm",
+      "indentRight": "3.8cm",
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt"
+    },
+    "style": "Dialogue"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "script",
+    "id": "parenthetical",
+    "look": {
+      "align": "left",
+      "firstLine": "0pt",
+      "indentLeft": "4cm",
+      "indentRight": "4cm",
+      "keepWithNext": true,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt"
+    },
+    "style": "Parenthetical"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "script",
+    "id": "transition",
+    "look": {
+      "align": "right",
+      "case": "upper",
+      "firstLine": "0pt",
+      "spaceAfter": "11pt",
+      "spaceBefore": "11pt"
+    },
+    "style": "Transition"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "more",
+    "id": "headword",
+    "look": {
+      "bold": true,
+      "firstLine": "0pt",
+      "keepWithNext": true,
+      "spaceAfter": "0pt",
+      "spaceBefore": "6pt"
+    },
+    "style": "Headword"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "more",
+    "id": "gloss",
+    "look": {
+      "firstLine": "0pt",
+      "indentLeft": "1.27cm",
+      "spaceAfter": "6pt",
+      "spaceBefore": "0pt"
+    },
+    "style": "Gloss"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "more",
+    "id": "code",
+    "look": {
+      "align": "left",
+      "firstLine": "0pt",
+      "lineSpacing": 1.0,
+      "monospace": true,
+      "spaceAfter": "6pt",
+      "spaceBefore": "6pt"
+    },
+    "style": "Source Code"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "more",
+    "id": "break",
+    "look": {
+      "align": "center",
+      "firstLine": "0pt",
+      "keepWithNext": true,
+      "spaceAfter": "12pt",
+      "spaceBefore": "12pt",
+      "text": "* * *"
+    },
+    "style": "Section Break"
+  },
+  {
+    "basedOn": null,
+    "family": "paragraph",
+    "group": "more",
+    "id": "draft",
+    "look": {},
+    "style": ""
+  },
+  {
+    "basedOn": null,
+    "family": "words",
+    "group": "words",
+    "id": "foreign",
+    "look": {
+      "italic": true
+    },
+    "style": "Foreign"
+  },
+  {
+    "basedOn": null,
+    "family": "words",
+    "group": "words",
+    "id": "title",
+    "look": {
+      "italic": true
+    },
+    "style": "Title of a Work"
+  },
+  {
+    "basedOn": null,
+    "family": "words",
+    "group": "words",
+    "id": "term",
+    "look": {
+      "italic": true
+    },
+    "style": "Term"
+  },
+  {
+    "basedOn": null,
+    "family": "words",
+    "group": "words",
+    "id": "mention",
+    "look": {},
+    "style": "Mention"
+  },
+  {
+    "basedOn": null,
+    "family": "words",
+    "group": "words",
+    "id": "highlight",
+    "look": {},
+    "style": ""
+  }
+];

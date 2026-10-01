@@ -11,6 +11,7 @@ pub mod reference;
 pub mod tools;
 pub mod typeset;
 
+use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -23,7 +24,7 @@ use crate::document::bibliography::{Bibliography, gather};
 use crate::document::pandoc::{
     Converter, Extras, Flavour, meta_blocks, meta_inlines, meta_list, meta_string, meta_text,
 };
-use crate::document::{Document, Inline, NotePlace};
+use crate::document::{Document, Inline, NotePlace, OwnKind};
 use crate::error::{Error, IoContext, Result};
 use crate::formats::typst::{Particulars, preamble};
 use crate::formats::{DocumentFormat, NoteKind, TitlePlacement};
@@ -236,6 +237,7 @@ fn particulars(doc: &Document, f: &DocumentFormat) -> Particulars {
         lettered_footnotes: f.notes.kind == NoteKind::Endnotes && doc.placed_notes().contains(&NotePlace::Foot),
         flows,
         tables,
+        own_kinds: doc.kinds.clone(),
     }
 }
 
@@ -305,6 +307,9 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     converter.extras.text_width =
         f64::from(f.page.dimensions().0 - f.page.margin_left.points() - f.page.margin_right.points()).max(72.0);
     converter.extras.targets = converter.targets(doc, f.headings.numbered);
+    converter.extras.kinds = crate::formats::kinds::table(f, &doc.kinds);
+    converter.extras.italics_underlined = f.text.italics == crate::formats::Italics::Underline;
+    converter.extras.classes = matches!(target, Target::Html | Target::Epub);
 
     let mut meta = Map::new();
     if let Some(lang) = doc.language.as_deref().filter(|l| !l.trim().is_empty()) {
@@ -897,7 +902,10 @@ pub fn export_until(
             args.push("--embed-resources".into());
             // How what stands by itself is set on a page of the web.
             let header = dir.join("header.html");
-            write_atomic(&header, format!("<style>\n{}</style>\n", html_styles(&request.format)).as_bytes())?;
+            write_atomic(
+                &header,
+                format!("<style>\n{}</style>\n", html_styles(&request.format, &request.document.kinds)).as_bytes(),
+            )?;
             args.push("--include-in-header".into());
             args.push(header.display().to_string());
         }
@@ -905,7 +913,7 @@ pub fn export_until(
             // A reader sets the text; the book says of the parts what the
             // format says, and begins each chapter on a page of its own.
             let css = dir.join("book.css");
-            write_atomic(&css, epub_styles(&request.format).as_bytes())?;
+            write_atomic(&css, epub_styles(&request.format, &request.document.kinds).as_bytes())?;
             args.push("--css".into());
             args.push(css.display().to_string());
             args.push("--epub-chapter-level=1".into());
@@ -961,7 +969,7 @@ pub fn export_until(
 /// The styles of figures, tables and rows for a page of the web.
 /// What a book for e-readers says of its parts: little, as the reader sets
 /// the text; what the format says of headings, quotations and verse.
-fn epub_styles(f: &DocumentFormat) -> String {
+fn epub_styles(f: &DocumentFormat, own: &[OwnKind]) -> String {
     use crate::formats::Align;
     let to = |a: Align| match a {
         Align::Left => "left",
@@ -973,7 +981,7 @@ fn epub_styles(f: &DocumentFormat) -> String {
     let h2 = f.heading(2);
     let indent = if f.text.paragraphs == crate::formats::Paragraphs::Indent { "1.2em" } else { "0" };
     let between = if f.text.paragraphs == crate::formats::Paragraphs::Indent { "0" } else { "0.8em" };
-    format!(
+    let mut css = format!(
         "body {{ text-align: {align}; {hyphens} }}
 p {{ margin: 0 0 {between} 0; text-indent: {indent}; }}
 h1 {{ text-align: {h1_align}; font-weight: {h1_weight}; font-style: {h1_style}; margin: 2em 0 1em; }}
@@ -994,10 +1002,12 @@ table.gk-parallel td {{ vertical-align: top; width: 50%; padding: 0 0.5em; borde
         h2_align = to(h2.align),
         h2_weight = if h2.bold { "bold" } else { "normal" },
         h2_style = if h2.italic { "italic" } else { "normal" },
-    )
+    );
+    css.push_str(&kind_styles(f, own));
+    css
 }
 
-fn html_styles(f: &DocumentFormat) -> String {
+fn html_styles(f: &DocumentFormat, own: &[OwnKind]) -> String {
     use crate::formats::{Align, CaptionPosition, Rules};
     let to = |a: Align| match a {
         Align::Left => "left",
@@ -1014,7 +1024,7 @@ fn html_styles(f: &DocumentFormat) -> String {
         Rules::None => "table { border-collapse: collapse; }\nthead th, thead td { border: none; }\n",
     };
     let above = |c: CaptionPosition| if c == CaptionPosition::Above { "0.2em" } else { "0.6em" };
-    format!(
+    let mut css = format!(
         ".gk-figure, .gk-table {{ margin: 1.5em 0; }}\n\
          .gk-figure img {{ max-width: 100%; height: auto; }}\n\
          .gk-figure.gk-center, .gk-table.gk-center {{ text-align: center; }}\n\
@@ -1040,7 +1050,84 @@ fn html_styles(f: &DocumentFormat) -> String {
         table = to(f.tables.caption_align),
         figure_above = above(f.figures.caption_position),
         table_above = above(f.tables.caption_position),
-    )
+    );
+    css.push_str(&kind_styles(f, own));
+    css
+}
+
+/// The styles of the kinds of paragraph and of words, for a page of the web
+/// and for an e-book: a rule on the class of each kind that has a look of
+/// its own (`gk-kind-<id>`), with the look as the format resolves it. A
+/// paragraph of a kind is a block with the class, holding its text as a
+/// paragraph that is given no room of its own; words of a kind are a span
+/// with the class. What is as the text has it is left unsaid.
+fn kind_styles(f: &DocumentFormat, own: &[OwnKind]) -> String {
+    use crate::formats::kinds::{self, Family};
+    use crate::formats::{Align, Case, Length};
+    let to = |a: Align| match a {
+        Align::Left => "left",
+        Align::Center => "center",
+        Align::Right => "right",
+        Align::Justified => "justify",
+    };
+    let pt = |l: Length| format!("{}pt", (l.points() * 100.0).round() / 100.0);
+    let text = kinds::resolve(f, "text", own);
+    let mut css = String::new();
+    for (id, info) in kinds::styled(f, own) {
+        let look = &info.look;
+        let class = format!("gk-kind-{}", crate::document::pandoc::label(&id));
+        let mut rules: Vec<String> = Vec::new();
+        if info.family == Family::Paragraph {
+            rules.push(format!("text-align: {}", to(look.align)));
+            rules.push(format!("margin: {} 0 {}", pt(look.space_before), pt(look.space_after)));
+            if !look.indent_left.is_zero() {
+                rules.push(format!("padding-left: {}", pt(look.indent_left)));
+            }
+            if !look.indent_right.is_zero() {
+                rules.push(format!("padding-right: {}", pt(look.indent_right)));
+            }
+            rules.push(format!("text-indent: {}", pt(look.first_line)));
+            if look.keep_with_next {
+                rules.push("page-break-after: avoid".into());
+            }
+            if look.new_page {
+                rules.push("page-break-before: always".into());
+            }
+        }
+        if look.bold {
+            rules.push("font-weight: bold".into());
+        }
+        if look.italic {
+            rules.push("font-style: italic".into());
+        }
+        match look.case {
+            Case::Upper => rules.push("text-transform: uppercase".into()),
+            Case::Smallcaps => rules.push("font-variant: small-caps".into()),
+            Case::None => {}
+        }
+        if look.underline {
+            rules.push("text-decoration: underline".into());
+        }
+        if look.monospace {
+            rules.push("font-family: monospace".into());
+        }
+        if look.size > 0.0 && (look.size - text.size).abs() > 0.01 {
+            rules.push(format!("font-size: {}pt", look.size));
+        }
+        if rules.is_empty() {
+            continue;
+        }
+        let rules = rules.join("; ");
+        match info.family {
+            Family::Paragraph => {
+                let _ = writeln!(css, ".{class} {{ {rules}; }}\n.{class} p {{ margin: 0; text-indent: inherit; }}");
+            }
+            Family::Words => {
+                let _ = writeln!(css, "span.{class} {{ {rules}; }}");
+            }
+        }
+    }
+    css
 }
 
 fn add_odt_break(odt: &[u8]) -> Result<Vec<u8>> {
@@ -1165,6 +1252,11 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
         for b in list {
             match b {
                 Block::Paragraph { content } | Block::Script { content, .. } => inlines(content, with_notes, out),
+                Block::Passage { name, content } => {
+                    if name != "draft" {
+                        inlines(content, with_notes, out);
+                    }
+                }
                 Block::Figure { caption, .. } => inlines(caption, with_notes, out),
                 Block::Equation { .. } => {}
                 Block::Row { items } => blocks(items, with_notes, out),
@@ -1328,16 +1420,19 @@ mod tests {
         let typ = out.join("script.typ");
         export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
         let t = fs::read_to_string(&typ).unwrap();
-        assert!(t.contains("INT. PALACE -- NIGHT"), "{t}");
-        assert!(t.contains("<gk-script-scene>") && t.contains("<gk-script-dialogue>"), "{t}");
-        assert!(t.contains("NURSE") && t.contains("CUT TO:"), "{t}");
+        // The parts are blocks with labels; the capitals are set by the rules of the opening.
+        assert!(t.contains("<gk-kind-scene>") && t.contains("<gk-kind-dialogue>"), "{t}");
+        assert!(t.contains("Int. Palace") && t.contains("Nurse") && t.contains("Cut to:"), "{t}");
+        let scene = t.find("#show <gk-kind-scene>").expect("a rule for scene headings");
+        assert!(t[scene..].lines().take(6).any(|l| l.contains("upper(it.body)")), "{t}");
+        assert_eq!(t.matches("(quietly)").count(), 1, "the parentheses are put in once: {t}");
         let p = preview(&s.ctx(), &r).unwrap();
         assert!(p.warnings.is_empty(), "{:?}", p.warnings);
         let tex = out.join("script.tex");
         export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
         let l = fs::read_to_string(&tex).unwrap();
-        assert!(l.contains("\\leftskip=5.6cm\\noindent NURSE"), "{l}");
-        assert!(l.contains("\\noindent(quietly)"), "{l}");
+        assert!(l.contains("\\leftskip=5.6cm") && l.contains("NURSE"), "{l}");
+        assert!(l.contains("\\noindent (quietly)"), "{l}");
         let docx = out.join("script.docx");
         export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
         let xml = unzip(&docx, "word/document.xml");
@@ -2290,6 +2385,177 @@ mod tests {
         // A style that is broken says so.
         let broken = author_date.replace("</style>", "");
         assert!(style_sample(&s.ctx(), &broken, &references, None).is_err());
+    }
+
+    /// The sample with the kinds of passage and of words in it: an epigraph
+    /// with its attribution, a kind of the writer's own based on it, a
+    /// break, a note to oneself, a passage of code, and words of every kind.
+    fn with_kinds(language: &str) -> Request {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, Section};
+        use crate::formats::kinds::{Family, Look};
+        use std::collections::BTreeMap;
+        let mut r = request("chicago-author-date");
+        r.document.language = Some(language.into());
+        r.document.kinds = vec![OwnKind {
+            id: "k1".into(),
+            name: "Letter".into(),
+            family: Family::Paragraph,
+            based_on: "epigraph".into(),
+            look: Look { italic: Some(true), ..Default::default() },
+        }];
+        let passage = |name: &str, words: &str| Block::Passage { name: name.into(), content: vec![text(words)] };
+        let marked = |words: &str, mark: &str, value: Value| Inline::Text {
+            text: words.into(),
+            marks: BTreeMap::from([(mark.to_owned(), value)]),
+        };
+        r.document.sections.push(Section {
+            level: 1,
+            heading: Some(vec![text("Kinds")]),
+            blocks: vec![
+                passage("epigraph", "Sing, goddess, the wrath."),
+                passage("attribution", "Homer"),
+                passage("k1", "Dear friend, I write of wrath."),
+                Block::Passage { name: "break".into(), content: vec![] },
+                passage("draft", "Zzdraftzz: look this up again."),
+                Block::Passage {
+                    name: "code".into(),
+                    content: vec![text("let x = 1;"), Inline::Break, text("let y = 2;")],
+                },
+                Block::Paragraph {
+                    content: vec![
+                        text("The word "),
+                        marked("μῆνις", "kind", json!({"name": "foreign", "lang": "el"})),
+                        text(" is "),
+                        marked("wrath", "kind", json!({"name": "mention"})),
+                        text(", "),
+                        marked("underlined", "underline", json!(true)),
+                        text(", "),
+                        marked("x_1", "code", json!(true)),
+                        text(" and "),
+                        marked("stressed", "em", json!(true)),
+                        text("."),
+                    ],
+                },
+            ],
+            element: Some("kinds".into()),
+        });
+        r
+    }
+
+    /// The style of an id in Word's styles, as written.
+    fn word_style<'a>(styles: &'a str, id: &str) -> &'a str {
+        let at = styles.find(&format!("w:styleId=\"{id}\"")).unwrap_or_else(|| panic!("no style {id}"));
+        let end = styles[at..].find("</w:style>").unwrap();
+        &styles[at..at + end]
+    }
+
+    #[test]
+    fn kinds_of_passage_and_of_words_in_word() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = with_kinds("nb");
+        r.format.text.italics = crate::formats::Italics::Underline;
+        let docx = out.join("kinds.docx");
+        let e = export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let document = unzip(&docx, "word/document.xml");
+        roxmltree::Document::parse(&document).unwrap();
+        let styles = unzip(&docx, "word/styles.xml");
+        roxmltree::Document::parse(&styles).unwrap();
+        // Every kind of paragraph is a style that is defined, the writer's own among them.
+        for style in ["Epigraph", "Attribution", "Letter", "SourceCode", "SectionBreak"] {
+            assert!(document.contains(&format!("<w:pStyle w:val=\"{style}\"")), "{style} is not used: {document}");
+            assert!(styles.contains(&format!("w:styleId=\"{style}\"")), "{style} is not defined");
+        }
+        // Pandoc writes the styles anew, with a space before the end of a tag.
+        let letter = word_style(&styles, "Letter");
+        assert!(
+            letter.contains("w:left=\"2268\"") && letter.contains("<w:i />"),
+            "as an epigraph, in italics: {letter}"
+        );
+        // A foreign word carries its language; a word mentioned stands in the marks of the document's.
+        assert!(document.contains("<w:lang w:val=\"el\""), "{document}");
+        assert!(document.contains("<w:rStyle w:val=\"Foreign\""), "{document}");
+        assert!(word_style(&styles, "Foreign").contains("<w:i />"));
+        assert!(document.contains("«wrath»"), "{document}");
+        // Underlined by the mark, and by the format, which sets italics so: here and in the sample's heading.
+        assert_eq!(document.matches("<w:u ").count(), 3, "{document}");
+        assert!(document.contains("let x = 1;") && document.contains("let y = 2;"), "{document}");
+        assert!(document.contains("* * *"), "{document}");
+        assert!(!document.contains("Zzdraftzz"), "a note to oneself goes into no document");
+
+        // In English the marks are the English ones, and italics are italics.
+        let r = with_kinds("en-GB");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let document = unzip(&docx, "word/document.xml");
+        assert!(document.contains("“wrath”"), "{document}");
+        assert_eq!(document.matches("<w:u ").count(), 1, "{document}");
+    }
+
+    #[test]
+    fn kinds_of_passage_and_of_words_in_typst_and_latex() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let r = with_kinds("en-GB");
+        let typ = out.join("kinds.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("<gk-kind-epigraph>") && t.contains("<gk-kind-k1>"), "{t}");
+        assert!(
+            t.contains("#show <gk-kind-k1>: it => {\n  set text(size: 12pt, weight: \"regular\", style: \"italic\")"),
+            "{t}"
+        );
+        assert!(t.contains("#underline[underlined]"), "{t}");
+        assert!(t.contains("```\nlet x = 1;\nlet y = 2;\n```"), "{t}");
+        assert!(t.contains("#text(lang: \"el\")["), "{t}");
+        assert!(t.contains("“wrath”"), "{t}");
+        assert!(!t.contains("Zzdraftzz"));
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+
+        let tex = out.join("kinds.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("\\foreignlanguage{greek}{\\emph{μῆνις}}"), "{l}");
+        assert!(l.contains("\\ul{underlined}"), "{l}");
+        assert!(l.contains("\\begin{verbatim}\nlet x = 1;\nlet y = 2;\n\\end{verbatim}"), "{l}");
+        assert!(l.contains("\\leftskip=4cm") && l.contains("\\itshape\\raggedright\\noindent Dear friend"), "{l}");
+        assert!(!l.contains("Zzdraftzz"));
+    }
+
+    #[test]
+    fn kinds_of_passage_and_of_words_on_the_web_and_in_writer() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let r = with_kinds("en-GB");
+        let html = out.join("kinds.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let h = fs::read_to_string(&html).unwrap();
+        assert!(h.contains("class=\"gk-kind-epigraph\"") && h.contains("class=\"gk-kind-k1\""), "{h}");
+        assert!(h.contains(".gk-kind-k1 { ") && h.contains("span.gk-kind-foreign { font-style: italic; }"), "{h}");
+        assert!(h.contains("lang=\"el\""), "{h}");
+        assert!(h.contains("<u>underlined</u>") && h.contains("<pre"), "{h}");
+        assert!(!h.contains("Zzdraftzz"));
+
+        let odt = out.join("kinds.odt");
+        let e = export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let content = unzip(&odt, "content.xml");
+        roxmltree::Document::parse(&content).unwrap();
+        let styles = unzip(&odt, "styles.xml");
+        roxmltree::Document::parse(&styles).unwrap();
+        for style in ["Epigraph", "Attribution", "Letter", "Preformatted_20_Text", "Section_20_Break"] {
+            assert!(content.contains(&format!("text:style-name=\"{style}\"")), "{style} is not used: {content}");
+        }
+        assert!(content.contains("<text:span text:style-name=\"Foreign\">"), "{content}");
+        for style in ["Epigraph", "Letter", "Foreign", "Source_20_Code", "Stage_20_Direction"] {
+            assert!(styles.contains(&format!("style:name=\"{style}\"")), "{style} is not defined");
+        }
+        assert!(!content.contains("Zzdraftzz"));
     }
 
     #[test]

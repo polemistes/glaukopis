@@ -6,6 +6,7 @@
 
 use std::fmt::Write;
 
+use super::kinds::{self, Family, OwnKind, Resolved};
 use super::{
     Align, Case, DocumentFormat, HeadContent, HeadingLevel, NoteKind, Paragraphs, Position, Rules, TitlePlacement,
     fallbacks,
@@ -25,6 +26,8 @@ pub struct Particulars {
     pub flows: bool,
     /// The document has tables.
     pub tables: bool,
+    /// The kinds of paragraph and of words that are the writer's own, which the document carries.
+    pub own_kinds: Vec<OwnKind>,
 }
 
 /// What makes text flow around what stands at its side: see the file.
@@ -75,6 +78,55 @@ fn cased(case: Case, body: &str) -> String {
         Case::Upper => format!("upper({body})"),
         Case::Smallcaps => format!("smallcaps({body})"),
     }
+}
+
+/// Content set as a look of words says: `smallcaps(body)`, `emph(body)`.
+fn worded(look: &Resolved, body: &str) -> String {
+    let mut out = body.to_owned();
+    if look.size > 0.0 {
+        out = format!("text(size: {}, {out})", pt(look.size));
+    }
+    if look.monospace {
+        out = format!("text(font: \"DejaVu Sans Mono\", {out})");
+    }
+    if look.bold {
+        out = format!("strong({out})");
+    }
+    if look.italic {
+        out = format!("emph({out})");
+    }
+    if look.underline {
+        out = format!("underline({out})");
+    }
+    cased(look.case, &out)
+}
+
+/// The rule that sets a kind of paragraph as its look says.
+fn kind_rule(out: &mut String, id: &str, look: &Resolved, body_leading: &str) {
+    let _ = writeln!(
+        out,
+        "#show <gk-kind-{id}>: it => {{
+  set text(size: {size}, weight: {weight}, style: {style}{font})
+  set par(first-line-indent: {first}, leading: {leading}, spacing: {leading}, justify: {justify})
+  set align({align})
+  block(width: 100%, above: {body_leading} + {above}, below: {body_leading} + {below}, inset: (left: {left}, right: {right}), breakable: {breakable}, sticky: {sticky}, {body})
+}}",
+        size = pt(look.size),
+        weight = if look.bold { "\"bold\"" } else { "\"regular\"" },
+        style = if look.italic { "\"italic\"" } else { "\"normal\"" },
+        font = if look.monospace { ", font: \"DejaVu Sans Mono\"" } else { "" },
+        first = look.first_line,
+        leading = leading(look.line_spacing.max(0.8)),
+        justify = look.align == Align::Justified,
+        align = align(look.align),
+        above = look.space_before,
+        below = look.space_after,
+        left = look.indent_left,
+        right = look.indent_right,
+        breakable = !look.keep_with_next,
+        sticky = look.keep_with_next,
+        body = cased(look.case, "it.body"),
+    );
 }
 
 fn fonts(family: &str) -> String {
@@ -470,8 +522,10 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
     }
 
     // Lines of verse: each a line, numbered in the margin from the line the
-    // writer said, every so many lines; speakers in small capitals, stage
-    // directions in italics. And texts side by side.
+    // writer said, every so many lines; speakers and stage directions as
+    // their kinds of words are set. And texts side by side.
+    let speaker = worded(&kinds::resolve(f, "speaker", &p.own_kinds), "body");
+    let direction = worded(&kinds::resolve(f, "direction", &p.own_kinds), "body");
     let _ = writeln!(
         out,
         "#let gk-line-counter = counter(\"gk-verse-line\")
@@ -483,9 +537,9 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
 }}
 #let gk-line(kind, indent, body) = {{
   if kind == \"speaker\" {{
-    block(above: 0.7em, below: 0.25em, breakable: false, smallcaps(body))
+    block(above: 0.7em, below: 0.25em, breakable: false, {speaker})
   }} else if kind == \"direction\" {{
-    block(above: 0.25em, below: 0.25em, breakable: false, emph(body))
+    block(above: 0.25em, below: 0.25em, breakable: false, {direction})
   }} else {{
     gk-line-counter.step()
     context {{
@@ -503,16 +557,29 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
   grid(columns: (1fr, 1fr), column-gutter: 2em, left, right))"
     );
 
-    // A screenplay: each part of the script where scripts have it. The
-    // measures are those of the standard script page, from the margin of the text.
+    // The kinds of paragraph, each as its look says: those that come with
+    // the application, among them the parts of a script, and the writer's
+    // own. Code is a raw block, which Pandoc writes. See `kinds.rs`.
+    for (id, info) in kinds::styled(f, &p.own_kinds) {
+        if info.family != Family::Paragraph || id == "code" {
+            continue;
+        }
+        kind_rule(&mut out, &crate::document::pandoc::label(&id), &info.look, &body_leading);
+    }
+    let code = kinds::resolve(f, "code", &p.own_kinds);
     let _ = writeln!(
         out,
-        "#show <gk-script-scene>: it => block(width: 100%, above: 1.6em, below: 0.9em, breakable: false, strong(it.body))
-#show <gk-script-action>: it => block(width: 100%, above: 0.9em, below: 0.9em, it.body)
-#show <gk-script-character>: it => block(width: 100%, above: 0.9em, below: 0pt, breakable: false, inset: (left: 5.6cm), it.body)
-#show <gk-script-dialogue>: it => block(width: 100%, above: 0pt, below: 0pt, inset: (left: 2.5cm, right: 3.8cm), it.body)
-#show <gk-script-parenthetical>: it => block(width: 100%, above: 0pt, below: 0pt, breakable: false, inset: (left: 4cm, right: 4cm), [(#it.body)])
-#show <gk-script-transition>: it => block(width: 100%, above: 0.9em, below: 0.9em, align(right, it.body))"
+        "#show raw.where(block: true): it => {{
+  set text(size: {size})
+  set par(first-line-indent: 0pt, leading: {leading}, justify: false)
+  block(width: 100%, above: {body_leading} + {above}, below: {body_leading} + {below}, inset: (left: {left}, right: {right}), it)
+}}",
+        size = pt(if code.size > 0.0 { code.size } else { f.font.size }),
+        leading = leading(code.line_spacing.max(0.8)),
+        above = code.space_before,
+        below = code.space_after,
+        left = code.indent_left,
+        right = code.indent_right,
     );
 
     // Equations on a line of their own, with room about them.
@@ -625,6 +692,7 @@ mod tests {
         f.headings.numbered = true;
         f.line_numbers = true;
         f.title.placement = TitlePlacement::OwnPage;
+        f.kinds.insert("epigraph".into(), super::kinds::Look { italic: Some(true), ..Default::default() });
         let p = Particulars {
             title: "Wrath \"and\" the hero".into(),
             authors: vec!["A. Scholar".into()],
@@ -641,6 +709,19 @@ mod tests {
         assert!(out.contains("pagebreak(weak: true)"));
         assert!(out.contains("region: \"gb\""));
         assert!(out.contains("footer: none"));
+        assert!(
+            out.contains("#show <gk-kind-scene>: it => {\n  set text(size: 12pt, weight: \"bold\", style: \"normal\")"),
+            "{out}"
+        );
+        assert!(
+            out.contains(
+                "#show <gk-kind-epigraph>: it => {\n  set text(size: 12pt, weight: \"regular\", style: \"italic\")"
+            ),
+            "{out}"
+        );
+        assert!(out.contains("inset: (left: 4cm, right: 0pt)"), "{out}");
+        assert!(out.contains("breakable: false, smallcaps(body))"), "{out}");
+        assert!(!out.contains("<gk-kind-draft>"), "a note to oneself has no look");
 
         f.title.anonymous = true;
         f.running_head.content = HeadContent::AuthorTitle;

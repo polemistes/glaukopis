@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::bib::names::Person;
 use crate::formats::Stand;
+pub use crate::formats::kinds::OwnKind;
 
 /// A word the document prints, in the language of the document; in English
 /// where documents have no words in that language (ADR 0020).
@@ -133,6 +134,12 @@ pub enum Block {
     /// A paragraph of a screenplay.
     Script {
         part: ScriptPart,
+        content: Vec<Inline>,
+    },
+    /// A paragraph of a kind: an epigraph, a headword, a break, or a kind
+    /// of the writer's own. `name` is the id of the kind (`formats/kinds.rs`).
+    Passage {
+        name: String,
         content: Vec<Inline>,
     },
     BulletList {
@@ -421,6 +428,10 @@ pub struct Document {
     /// The references the project carries for what is cited. The library's own
     /// entries are preferred to these where it has them.
     pub references: Vec<CarriedReference>,
+    /// The kinds of paragraph and of words that are the writer's own, which
+    /// the project carries, with what each is based on and how it differs.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub kinds: Vec<OwnKind>,
 }
 
 /// Goes through blocks and what they hold, in the order of the text: every
@@ -429,7 +440,9 @@ pub fn walk<'a>(list: &'a [Block], block: &mut dyn FnMut(&'a Block), line: &mut 
     for b in list {
         block(b);
         match b {
-            Block::Paragraph { content } | Block::Script { content, .. } => line(content),
+            Block::Paragraph { content } | Block::Script { content, .. } | Block::Passage { content, .. } => {
+                line(content)
+            }
             Block::Blockquote { content } => walk(content, block, line),
             Block::Verse { lines, .. } => {
                 for l in lines {

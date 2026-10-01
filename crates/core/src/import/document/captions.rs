@@ -263,7 +263,9 @@ fn unmark_line(line: &mut Vec<Inline>) {
 pub(super) fn unmark(blocks: &mut Vec<Block>) {
     for block in blocks.iter_mut() {
         match block {
-            Block::Paragraph { content } | Block::Script { content, .. } => unmark_line(content),
+            Block::Paragraph { content } | Block::Script { content, .. } | Block::Passage { content, .. } => {
+                unmark_line(content)
+            }
             Block::Blockquote { content } => unmark(content),
             Block::BulletList { items } | Block::OrderedList { items, .. } => items.iter_mut().for_each(unmark),
             Block::Figure { caption, .. } => unmark_line(caption),

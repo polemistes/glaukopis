@@ -74,6 +74,63 @@ export interface HeadingLevel {
 }
 
 /** See `crates/core/src/formats/mod.rs`, where every parameter is explained. */
+/**
+ * How a kind of paragraph or of words differs from the kind it is based
+ * on: what is not said is as the base has it. Lengths with their unit,
+ * as `1.27cm`. See ADR 0029 and `formats/kinds.rs`.
+ */
+export interface Look {
+  /** In points. */
+  size?: number;
+  /** 1 is single spacing, 2 is double. */
+  lineSpacing?: number;
+  align?: Align;
+  indentLeft?: string;
+  indentRight?: string;
+  /** How far the first line begins in, beyond the rest. */
+  firstLine?: string;
+  spaceBefore?: string;
+  spaceAfter?: string;
+  bold?: boolean;
+  italic?: boolean;
+  case?: Case;
+  underline?: boolean;
+  /** In letters of equal width, as code is. */
+  monospace?: boolean;
+  /** Kept on the page with what follows it. */
+  keepWithNext?: boolean;
+  newPage?: boolean;
+  /** What stands in a passage that holds no text of its own: the sign of a break. */
+  text?: string;
+}
+
+/** Of paragraphs, or of words within them. */
+export type KindFamily = 'paragraph' | 'words';
+
+/** A kind that comes with the application, as the core has it: see `formats/kinds.rs`. */
+export interface KindEntry {
+  id: string;
+  family: KindFamily;
+  /** The group the tools show it in. */
+  group: string;
+  /** The id of the kind it is based on; nothing for text, or plain words. */
+  basedOn: string | null;
+  /** The name of its style in Word and Writer; empty where it has none. */
+  style: string;
+  /** How it differs from what it is based on. */
+  look: Look;
+}
+
+/** A kind of the writer's own, as the document carries it. */
+export interface OwnKind {
+  id: string;
+  name: string;
+  family: KindFamily;
+  /** The id of the kind it is based on. */
+  basedOn: string;
+  look: Look;
+}
+
 export interface DocumentFormat {
   id: string;
   name: string;
@@ -81,6 +138,10 @@ export interface DocumentFormat {
   description: string;
   source?: { name: string; url: string; checked: string; confidence: string; notes: string };
   basedOn?: string;
+  /** How the kinds of paragraph and of words are set, where the format says otherwise than the kind has it: by the id of the kind. */
+  kinds?: Record<string, Look>;
+  /** Kinds the format puts in the writer's hand, by id. */
+  suggests?: string[];
   page: {
     size: string;
     width: string;
@@ -99,6 +160,8 @@ export interface DocumentFormat {
     indentFirst: boolean;
     spaceBetween: string;
     hyphenate: boolean;
+    /** How italics are set: as italics, or underlined as typewritten manuscripts had them. */
+    italics: 'italic' | 'underline';
   };
   headings: { numbered: boolean; levels: HeadingLevel[] };
   title: {
@@ -237,6 +300,8 @@ export interface ExportDocument {
   language?: string;
   sections: ExportSection[];
   references: ExportReference[];
+  /** The kinds of paragraph and of words that are the writer's own, which the project carries. */
+  kinds?: OwnKind[];
 }
 
 export interface DocumentRequest {

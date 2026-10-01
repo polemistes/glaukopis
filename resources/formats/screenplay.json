@@ -103,5 +103,6 @@
     "content": "none"
   },
   "lineNumbers": false,
-  "style": "chicago-notes-bibliography"
+  "style": "chicago-notes-bibliography",
+  "suggests": ["scene", "action", "character", "dialogue", "parenthetical", "transition"]
 }

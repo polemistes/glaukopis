@@ -210,3 +210,46 @@ What this settles:
 
 - A computer set to Nynorsk is spoken to in Bokmål, as ADR 0020 has it, until the interface is in Nynorsk as well, which is to come.
 - The installers for Windows and macOS are not made again for now.
+
+## 2026-10-01 — the writing tools and the formats, thought through anew
+
+> For the Glaukopis system, we need to make a full rethinking and redesign of the writing tools as well as the format and styling system. Let us "invent the wheel" again for this, and perhaps end up with a very similar wheel as the one used for Word or Writer, but perhaps also not. Now the formatting tools in the writing toolbar seem quite arbitrarily chosen. Of course bold and italic etc. are very common tools, but we do want to provide a wider range than the one available now, I think. I would like you to think hard on this, and give suggestions. This is of course connected to the different needs of writers of different kinds of texts. As I have mentioned, I do not think we should have different types of projects or maps. The different choices for different types of texts should be readily available, but easily configured. Choices made on behalf of the one writing should be taken for her convinience, but should should not feel enforced or be felt to assume too much. The difficult balance is to let the styles, formats and writing tools of passages of text, elements and whole maps, that is documents, work seamlessly and intuitively together, providing the settings and tools needed, without persuming too much and without getting in the way, and in a configurable way. I was also concerned to hear that the text styles as they work now are not exported to word and writer documents, only the names of the styles. It is a goal that the documents created in Galukopis should be exported quite well to the main document formats, but how well is of course something to weigh against the usability, versatilitiy, power and intuitivity of the user interface of Glaukopis itself. Could you please think closely on solutions for this, and provide suggestions for how this reworking could be done? Just suggestions now, please. We will decide what to do afterwards.
+
+What was suggested, in short: a passage has a *kind*, which is a meaning
+and not a look; the look of every kind lives in the format, as a row of a
+table, and never in the text; a kind is a delta on the kind it is based
+on, so that a writer's own kind works in every format; there is no bucket
+of direct formatting, only a few adjustments a style guide asks for; the
+kind menu shows the kinds in hand and learns from use; each kind says what
+Enter makes next; a strip says where a look comes from; every kind becomes
+a defined style in Word and Writer; and styles are mapped back to kinds
+when a document is brought in. Four decisions were put to the owner: no
+direct formatting at all; a writer's own kinds kept in the project; the
+editor staying neutral paper; and italic staying one mark, which a
+manuscript format may set as underline.
+
+> I like your suggestions, and let's follow your recommendations for the decisions too.
+
+What this settles (docs/adr/0029):
+
+- The kinds of paragraph and of words are a catalogue, grouped, and a
+  writer may make kinds of her own, based on another kind; they are kept
+  in the project, as the kinds of elements are, and are offered by name
+  across projects.
+- The format has a look for every kind, and a kind of the writer's own
+  carries its differences from the kind it is based on. There is no
+  direct formatting: no font, size or colour in the tools. A few
+  adjustments stay: centred, a new page before, kept together, the
+  language of a passage.
+- The tools show the kinds in hand: the plain ones, those the map uses,
+  those pinned, and those the format suggests. The whole catalogue is
+  under "More…", with "Make a kind…" at its foot.
+- A kind says what Enter makes next, and Tab cycles within its group.
+- Every kind, built in or the writer's own, is a defined paragraph or
+  character style in Word and Writer, made from the format; adjustments
+  become derived styles. The same table drives Typst, LaTeX and the
+  e-book.
+- Italic stays one mark; a format may say that italics are set as
+  underline.
+- The editor stays neutral paper; each kind has a screen look of its
+  own, derived from the kind it is based on.

@@ -28,6 +28,17 @@ local function writer_name(name)
   return (name:gsub(' ', '_20_'))
 end
 
+-- The style of a run of words (a kind of words, a speaker, a stage
+-- direction), named as Writer names it.
+function Span(el)
+  local style = el.attributes['custom-style']
+  if style and style:find(' ') and FORMAT:match('odt') then
+    el.attributes['custom-style'] = writer_name(style)
+    return el
+  end
+  return nil
+end
+
 function Div(el)
   local style = el.attributes['custom-style']
   if style and style:find(' ') and FORMAT:match('odt') then

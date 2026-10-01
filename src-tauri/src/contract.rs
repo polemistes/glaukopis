@@ -148,6 +148,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("formats", "FormatSummary[]", "documents", &formats.list());
     put("styles", "StyleSummary[]", "documents", &styles.list());
     put("preview", "Preview", "documents", &preview);
+    put("kinds", "KindEntry[]", "documents", &glaukopis_core::formats::kinds::catalogue());
 
     let mut out = String::from(
         "// Made by the test `contract` in src-tauri/src/contract.rs: what the Rust side\n\

@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
-use glaukopis_core::document::{Author, Block, CarriedReference, Document, Inline, Section};
+use glaukopis_core::document::{Author, Block, CarriedReference, Document, Inline, OwnKind, Section};
 use glaukopis_core::export::{self, Context, ExportOptions, Exported, Page, Preview, Request, Target, Tools};
 use glaukopis_core::formats::{DocumentFormat, FormatSummary};
 use glaukopis_core::styles::{Found, StyleSummary};
@@ -174,6 +174,8 @@ pub struct LeanDocument {
     pub cover: Option<glaukopis_core::document::Cover>,
     pub sections: Vec<LeanSection>,
     pub references: Vec<CarriedReference>,
+    /// The kinds of paragraph and of words that are the writer's own.
+    pub kinds: Vec<OwnKind>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -254,6 +256,7 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
         cover: request.document.cover,
         sections,
         references: request.document.references,
+        kinds: request.document.kinds,
     };
     let mut format = request.format;
     format.speak(document.language.as_deref());

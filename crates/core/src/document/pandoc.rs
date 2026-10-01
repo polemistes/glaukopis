@@ -9,7 +9,8 @@ use std::collections::{HashMap, HashSet};
 use serde_json::{Value, json};
 
 use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, RefForm, Section};
-use crate::formats::{Equations, Figures, Tables};
+use crate::formats::kinds::{self, KindInfo, Resolved};
+use crate::formats::{Case, Equations, Figures, Tables};
 use crate::written::locators::{locale_for, terms};
 
 /// The locator of a citation as Pandoc wants it: in braces, which says that
@@ -109,6 +110,12 @@ pub struct Extras {
     pub text_width: f64,
     /// Text flows around something in the document.
     pub flows: bool,
+    /// What is known of every kind of paragraph and of words: see `formats/kinds.rs`.
+    pub kinds: HashMap<String, KindInfo>,
+    /// Whether the format sets italics as underline.
+    pub italics_underlined: bool,
+    /// Whether the document can carry the classes of kinds, as a page of the web can.
+    pub classes: bool,
     /// What has been given a place that can be gone to.
     anchored: RefCell<HashSet<String>>,
     /// How many pointers point to nothing that is in the document.
@@ -249,7 +256,9 @@ impl Converter<'_> {
         fn blocks(list: &[Block], c: &mut Counted) {
             for block in list {
                 match block {
-                    Block::Paragraph { content } | Block::Script { content, .. } => inlines(content, c.to),
+                    Block::Paragraph { content } | Block::Script { content, .. } | Block::Passage { content, .. } => {
+                        inlines(content, c.to)
+                    }
                     Block::Blockquote { content } => blocks(content, c),
                     Block::Verse { lines, .. } => {
                         for l in lines {
@@ -490,7 +499,7 @@ impl Converter<'_> {
                             inner.pop();
                         }
                     }
-                    let wrapped = if inner.is_empty() { Vec::new() } else { wrap(inner, marks) };
+                    let wrapped = if inner.is_empty() { Vec::new() } else { self.wrap(inner, marks) };
                     out.extend(wrapped);
                     if !marks.is_empty() && trail {
                         out.push(json!({"t": "Space"}));
@@ -567,7 +576,8 @@ impl Converter<'_> {
                 }
                 Block::Verse { start, by, lines } => self.verse(*start, *by, lines, out),
                 Block::Parallel { left, right } => self.parallel(left, right, out),
-                Block::Script { part, content } => self.script(*part, content, out),
+                Block::Script { part, content } => self.passage(part.name(), content, out),
+                Block::Passage { name, content } => self.passage(name, content, out),
                 Block::BulletList { items } => {
                     let list = self.items(items);
                     if !list.is_empty() {
@@ -695,35 +705,234 @@ fn safe_href(href: &str) -> bool {
     !is_scheme || matches!(scheme.to_ascii_lowercase().as_str(), "http" | "https" | "mailto" | "ftp" | "doi")
 }
 
-fn wrap(inner: Vec<Value>, marks: &std::collections::BTreeMap<String, Value>) -> Vec<Value> {
-    let mut current = inner;
-    // From the innermost outwards. The order is fixed, so that the same marks
-    // always nest the same way.
-    for name in ["sub", "sup", "smallcaps", "strike", "strong", "em", "link"] {
-        let Some(value) = marks.get(name) else { continue };
-        if value.is_null() || value == &Value::Bool(false) {
-            continue;
-        }
-        let node = match name {
-            "em" => json!({"t": "Emph", "c": current}),
-            "strong" => json!({"t": "Strong", "c": current}),
-            "strike" => json!({"t": "Strikeout", "c": current}),
-            "sup" => json!({"t": "Superscript", "c": current}),
-            "sub" => json!({"t": "Subscript", "c": current}),
-            "smallcaps" => json!({"t": "SmallCaps", "c": current}),
-            "link" => {
-                let href = value.get("href").and_then(Value::as_str).unwrap_or("");
-                if href.is_empty() || !safe_href(href) {
-                    current = vec![json!({"t": "Span", "c": [attr(), current]})];
-                    continue;
-                }
-                json!({"t": "Link", "c": [attr(), current, [href, ""]]})
+/// The name of a kind as a label of Typst or a class takes it.
+pub fn label(kind: &str) -> String {
+    kind.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_')).take(80).collect()
+}
+
+/// The text of inlines in capitals, for what a look sets so where no style
+/// can: scene headings, characters and transitions.
+pub(super) fn upper(inlines: &mut [Value]) {
+    for v in inlines.iter_mut() {
+        if v["t"] == "Str" {
+            if let Some(s) = v["c"].as_str() {
+                v["c"] = Value::String(s.to_uppercase());
             }
-            _ => unreachable!(),
-        };
-        current = vec![node];
+        } else {
+            // Emph, Strong and their like hold their inlines; a citation holds nothing to be set so.
+            let holds = v["t"] != "Cite" && v["t"] != "Note" && v["t"] != "Code";
+            if holds && let Some(inner) = v["c"].as_array_mut() {
+                upper(inner);
+            }
+        }
+    }
+}
+
+/// Inlines set as a look says, by what every kind of document knows:
+/// italics, bold, small capitals, underlining. For where no style can carry
+/// the look.
+pub(super) fn looked(mut current: Vec<Value>, look: &Resolved) -> Vec<Value> {
+    if look.case == Case::Smallcaps {
+        current = vec![json!({"t": "SmallCaps", "c": current})];
+    }
+    if look.underline {
+        current = vec![json!({"t": "Underline", "c": current})];
+    }
+    if look.bold {
+        current = vec![json!({"t": "Strong", "c": current})];
+    }
+    if look.italic {
+        current = vec![json!({"t": "Emph", "c": current})];
     }
     current
+}
+
+/// The words of inlines as one string: for code, which holds its text as it stands.
+fn plain_of(inlines: &[Value]) -> String {
+    let mut out = String::new();
+    for v in inlines {
+        match v["t"].as_str() {
+            Some("Str") => out.push_str(v["c"].as_str().unwrap_or("")),
+            Some("Space") => out.push(' '),
+            Some("LineBreak") | Some("SoftBreak") => out.push('\n'),
+            Some("Code") => out.push_str(v["c"][1].as_str().unwrap_or("")),
+            _ => {
+                if let Some(inner) = v["c"].as_array() {
+                    out.push_str(&plain_of(inner));
+                }
+            }
+        }
+    }
+    out
+}
+
+/// The text of a passage of code, line by line, as it was written.
+fn code_text(content: &[Inline]) -> String {
+    let mut out = String::new();
+    for i in content {
+        match i {
+            Inline::Text { text, .. } => out.push_str(text),
+            Inline::Break => out.push('\n'),
+            Inline::Math { tex } => out.push_str(tex),
+            _ => {}
+        }
+    }
+    out
+}
+
+impl Converter<'_> {
+    /// A paragraph of a kind, set as the kind's look says: in Typst by the
+    /// opening of the document, in LaTeX by what is written around it, in
+    /// Word and Writer by a paragraph style named after the kind, and
+    /// elsewhere as plainly as the look can be shown. A part of a script is
+    /// such a paragraph, by the name of the part.
+    pub(super) fn passage(&self, name: &str, content: &[Inline], out: &mut Vec<Value>) {
+        let x = &self.extras;
+        // A note to oneself goes into no document.
+        if name == "draft" {
+            return;
+        }
+        let Some(info) = x.kinds.get(name) else {
+            let inner = self.inlines(content);
+            if !inner.is_empty() {
+                out.push(json!({"t": "Para", "c": inner}));
+            }
+            return;
+        };
+        let look = &info.look;
+        if name == "code" {
+            let text = code_text(content);
+            if !text.trim().is_empty() {
+                out.push(json!({"t": "CodeBlock", "c": [attr(), text.trim_end()]}));
+            }
+            return;
+        }
+        let mut inner = self.inlines(content);
+        if name == "break" {
+            // A break holds no text of its own: the format says what stands in it.
+            inner.clear();
+            let sign = look.text.trim();
+            tokens(if sign.is_empty() { "\u{a0}" } else { sign }, &mut inner);
+        }
+        if inner.is_empty() {
+            return;
+        }
+        if name == "parenthetical" {
+            inner.insert(0, json!({"t": "Str", "c": "("}));
+            inner.push(json!({"t": "Str", "c": ")"}));
+        }
+        if look.new_page
+            && let Some(b) = &self.page_break
+        {
+            out.push(b.clone());
+        }
+        match x.flavour {
+            Flavour::Typst => out.push(json!({"t": "Div", "c": [[format!("gk-kind-{}", label(name)), [], []],
+                [{"t": "Plain", "c": inner}]]})),
+            Flavour::Latex => {
+                if look.case == Case::Upper {
+                    upper(&mut inner);
+                }
+                let (open, close) = crate::export::latex::around(look, x.kinds.get("text").map(|t| &t.look));
+                inner.insert(0, json!({"t": "RawInline", "c": ["latex", open]}));
+                inner.push(json!({"t": "RawInline", "c": ["latex", close]}));
+                out.push(json!({"t": "Plain", "c": inner}));
+            }
+            Flavour::Docx | Flavour::Odt => {
+                if info.style.is_empty() {
+                    out.push(json!({"t": "Para", "c": inner}));
+                } else {
+                    out.push(json!({"t": "Div", "c": [["", [format!("gk-kind-{}", label(name))], [["custom-style", info.style]]],
+                        [{"t": "Para", "c": inner}]]}));
+                }
+            }
+            Flavour::Plain => {
+                if look.case == Case::Upper {
+                    upper(&mut inner);
+                }
+                let inner = looked(inner, look);
+                out.push(json!({"t": "Div", "c": [["", [format!("gk-kind-{}", label(name))], []],
+                    [{"t": "Para", "c": inner}]]}));
+            }
+        }
+    }
+
+    /// Inlines within their marks: italics and bold, and the kinds of words.
+    fn wrap(&self, inner: Vec<Value>, marks: &std::collections::BTreeMap<String, Value>) -> Vec<Value> {
+        let x = &self.extras;
+        let mut current = inner;
+        // From the innermost outwards. The order is fixed, so that the same marks
+        // always nest the same way.
+        for name in ["sub", "sup", "smallcaps", "strike", "underline", "code", "kind", "strong", "em", "link"] {
+            let Some(value) = marks.get(name) else { continue };
+            if value.is_null() || value == &Value::Bool(false) {
+                continue;
+            }
+            let node = match name {
+                "em" if x.italics_underlined => json!({"t": "Underline", "c": current}),
+                "em" => json!({"t": "Emph", "c": current}),
+                "strong" => json!({"t": "Strong", "c": current}),
+                "strike" => json!({"t": "Strikeout", "c": current}),
+                "sup" => json!({"t": "Superscript", "c": current}),
+                "sub" => json!({"t": "Subscript", "c": current}),
+                "smallcaps" => json!({"t": "SmallCaps", "c": current}),
+                "underline" => json!({"t": "Underline", "c": current}),
+                // Code holds its letters as they stand, without marks within.
+                "code" => json!({"t": "Code", "c": [attr(), plain_of(&current)]}),
+                "kind" => {
+                    let kind = value.get("name").and_then(Value::as_str).unwrap_or("").trim();
+                    let lang = value.get("lang").and_then(Value::as_str).map(str::trim).filter(|l| !l.is_empty());
+                    // What is marked for the eye alone is not in the document.
+                    if kind == "highlight" || kind.is_empty() {
+                        continue;
+                    }
+                    let info = x.kinds.get(kind);
+                    let mut attrs: Vec<Value> = Vec::new();
+                    if let Some(l) = lang {
+                        attrs.push(json!(["lang", l]));
+                    }
+                    match x.flavour {
+                        Flavour::Docx | Flavour::Odt => {
+                            if let Some(i) = info
+                                && !i.style.is_empty()
+                            {
+                                attrs.push(json!(["custom-style", i.style]));
+                            }
+                        }
+                        _ => {
+                            if let Some(i) = info {
+                                if i.look.case == Case::Upper {
+                                    upper(&mut current);
+                                }
+                                current = looked(current, &i.look);
+                            }
+                        }
+                    }
+                    // A word that is mentioned stands in the quotation marks of the language.
+                    if kind == "mention" {
+                        let (open, close) = kinds::quotes(self.language);
+                        current.insert(0, json!({"t": "Str", "c": open}));
+                        current.push(json!({"t": "Str", "c": close}));
+                    }
+                    if attrs.is_empty() && !x.classes {
+                        continue;
+                    }
+                    json!({"t": "Span", "c": [["", [format!("gk-kind-{}", label(kind))], attrs], current]})
+                }
+                "link" => {
+                    let href = value.get("href").and_then(Value::as_str).unwrap_or("");
+                    if href.is_empty() || !safe_href(href) {
+                        current = vec![json!({"t": "Span", "c": [attr(), current]})];
+                        continue;
+                    }
+                    json!({"t": "Link", "c": [attr(), current, [href, ""]]})
+                }
+                _ => unreachable!(),
+            };
+            current = vec![node];
+        }
+        current
+    }
 }
 
 pub fn meta_inlines(inlines: Vec<Value>) -> Value {
@@ -793,8 +1002,10 @@ mod tests {
         }
         let marks = |href: &str| std::collections::BTreeMap::from([("link".to_owned(), json!({ "href": href }))]);
         let text = || vec![json!({"t": "Str", "c": "here"})];
-        assert_eq!(wrap(text(), &marks("https://example.org"))[0]["t"], "Link");
-        assert_eq!(wrap(text(), &marks("javascript:alert(1)"))[0]["t"], "Span");
+        let keys = HashMap::new();
+        let c = converter(&keys);
+        assert_eq!(c.wrap(text(), &marks("https://example.org"))[0]["t"], "Link");
+        assert_eq!(c.wrap(text(), &marks("javascript:alert(1)"))[0]["t"], "Span");
     }
 
     #[test]

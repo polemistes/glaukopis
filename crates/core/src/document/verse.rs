@@ -12,10 +12,14 @@
 //! - **Parallel**: an original and its translation side by side. A grid in
 //!   Typst, two minipages in LaTeX, and a table without lines in Word and
 //!   Writer.
+//!
+//! The speaker and the stage direction are kinds of words (`formats/kinds.rs`):
+//! in Word and Writer they have character styles of their own, which the
+//! format fills; elsewhere they are set as their looks say.
 
 use serde_json::{Value, json};
 
-use super::pandoc::{Converter, Flavour, attr};
+use super::pandoc::{Converter, Flavour, attr, looked};
 use super::{Block, VerseLine, VerseLineKind};
 
 fn raw(format: &str, text: impl Into<String>) -> Value {
@@ -69,10 +73,10 @@ impl Converter<'_> {
                         }
                         VerseLineKind::Speaker => {
                             lead = "\\medskip\\noindent".into();
-                            inner = vec![json!({"t": "SmallCaps", "c": inner})];
+                            inner = self.line_words(inner, "speaker");
                         }
                         VerseLineKind::Direction => {
-                            inner = vec![json!({"t": "Emph", "c": inner})];
+                            inner = self.line_words(inner, "direction");
                         }
                     }
                     inner.insert(0, json!({"t": "RawInline", "c": ["latex", lead]}));
@@ -91,8 +95,8 @@ impl Converter<'_> {
                     let mut inner = self.inlines(&line.content);
                     inner = match line.kind {
                         VerseLineKind::Line => inner,
-                        VerseLineKind::Speaker => vec![json!({"t": "SmallCaps", "c": inner})],
-                        VerseLineKind::Direction => vec![json!({"t": "Emph", "c": inner})],
+                        VerseLineKind::Speaker => self.line_words(inner, "speaker"),
+                        VerseLineKind::Direction => self.line_words(inner, "direction"),
                     };
                     if line.indent > 0 {
                         let spaces = "\u{a0}".repeat((line.indent as usize) * 4);
@@ -113,6 +117,26 @@ impl Converter<'_> {
                     block.push(Value::Array(inner));
                 }
                 out.push(json!({"t": "LineBlock", "c": block}));
+            }
+        }
+    }
+
+    /// A speaker's name or a stage direction, as its kind of words is set:
+    /// by a character style in Word and Writer, and by its look elsewhere.
+    fn line_words(&self, inner: Vec<Value>, kind: &str) -> Vec<Value> {
+        let Some(info) = self.extras.kinds.get(kind) else { return inner };
+        match self.extras.flavour {
+            Flavour::Docx | Flavour::Odt if !info.style.is_empty() => {
+                vec![
+                    json!({"t": "Span", "c": [["", [format!("gk-kind-{kind}")], [["custom-style", info.style]]], inner]}),
+                ]
+            }
+            _ => {
+                let mut inner = inner;
+                if info.look.case == crate::formats::Case::Upper {
+                    super::pandoc::upper(&mut inner);
+                }
+                looked(inner, &info.look)
             }
         }
     }
@@ -150,74 +174,6 @@ impl Converter<'_> {
                     [[attr(), 0, [], [[attr(), [cell(l), cell(r)]]]]],
                     [attr(), []],
                 ]}));
-            }
-        }
-    }
-}
-
-/// The text of inlines in capitals: scene headings, characters and transitions are set so.
-fn upper(inlines: &mut [Value]) {
-    for v in inlines.iter_mut() {
-        if v["t"] == "Str" {
-            if let Some(s) = v["c"].as_str() {
-                v["c"] = Value::String(s.to_uppercase());
-            }
-        } else {
-            // Emph, Strong and their like hold their inlines; a citation holds nothing to be set so.
-            let holds = v["t"] != "Cite" && v["t"] != "Note";
-            if holds && let Some(inner) = v["c"].as_array_mut() {
-                upper(inner);
-            }
-        }
-    }
-}
-
-impl Converter<'_> {
-    /// A paragraph of a screenplay, set as scripts are: in Typst by the
-    /// opening of the document, in LaTeX by what is written here, and in
-    /// Word and Writer by a paragraph style named after the part.
-    pub(super) fn script(&self, part: super::ScriptPart, content: &[super::Inline], out: &mut Vec<Value>) {
-        use super::ScriptPart as P;
-        let mut inner = self.inlines(content);
-        if inner.is_empty() {
-            return;
-        }
-        if matches!(part, P::Scene | P::Character | P::Transition) {
-            upper(&mut inner);
-        }
-        match self.extras.flavour {
-            Flavour::Typst => out.push(json!({"t": "Div", "c": [[format!("gk-script-{}", part.name()), [], []],
-                [{"t": "Plain", "c": inner}]]})),
-            Flavour::Latex => {
-                let (open, close) = match part {
-                    P::Scene => ("{\\par\\medskip\\noindent\\bfseries ", "\\par\\nobreak}"),
-                    P::Action => ("{\\par\\noindent ", "\\par}"),
-                    P::Character => ("{\\par\\medskip\\leftskip=5.6cm\\noindent ", "\\par\\nobreak}"),
-                    P::Dialogue => ("{\\par\\leftskip=2.5cm\\rightskip=3.8cm\\noindent ", "\\par}"),
-                    P::Parenthetical => ("{\\par\\leftskip=4cm\\rightskip=4cm\\noindent(", ")\\par\\nobreak}"),
-                    P::Transition => ("{\\par\\medskip\\raggedleft ", "\\par}"),
-                };
-                inner.insert(0, json!({"t": "RawInline", "c": ["latex", open]}));
-                inner.push(json!({"t": "RawInline", "c": ["latex", close]}));
-                out.push(json!({"t": "Plain", "c": inner}));
-            }
-            Flavour::Docx | Flavour::Odt | Flavour::Plain => {
-                let style = match part {
-                    P::Scene => "Scene Heading",
-                    P::Action => "Action",
-                    P::Character => "Character",
-                    P::Dialogue => "Dialogue",
-                    P::Parenthetical => "Parenthetical",
-                    P::Transition => "Transition",
-                };
-                if part == P::Parenthetical {
-                    inner.insert(0, json!({"t": "Str", "c": "("}));
-                    inner.push(json!({"t": "Str", "c": ")"}));
-                }
-                out.push(
-                    json!({"t": "Div", "c": [["", [format!("script-{}", part.name())], [["custom-style", style]]],
-                    [{"t": "Para", "c": inner}]]}),
-                );
             }
         }
     }

@@ -6,9 +6,11 @@
 //! the data directory. From a format are made a Typst preamble (for preview
 //! and PDF), settings for LaTeX, and reference documents for DOCX and ODT.
 
+pub mod kinds;
 pub mod length;
 pub mod typst;
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -127,6 +129,16 @@ pub enum Paragraphs {
     Spaced,
 }
 
+/// How italics are set: as italics, or underlined, as the manuscripts of
+/// the typewriter were and some publishers of fiction still ask.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Italics {
+    #[default]
+    Italic,
+    Underline,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Text {
@@ -140,6 +152,8 @@ pub struct Text {
     /// For spaced paragraphs: the space between them, beyond that between lines.
     pub space_between: Length,
     pub hyphenate: bool,
+    /// How italics are set.
+    pub italics: Italics,
 }
 
 impl Default for Text {
@@ -152,6 +166,7 @@ impl Default for Text {
             indent_first: true,
             space_between: Length::pt(12.0),
             hyphenate: false,
+            italics: Italics::Italic,
         }
     }
 }
@@ -681,6 +696,15 @@ pub struct DocumentFormat {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub style: Option<String>,
     pub limits: Limits,
+    /// How the kinds of paragraph and of words are set, where the format
+    /// says otherwise than the kind has it of itself: by the id of the kind.
+    /// See `kinds.rs`.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub kinds: BTreeMap<String, kinds::Look>,
+    /// Kinds the format puts in the writer's hand, by id: a format for a
+    /// screenplay suggests the parts of a script.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub suggests: Vec<String>,
 }
 
 impl DocumentFormat {
@@ -756,6 +780,9 @@ impl DocumentFormat {
         if self.font.family.trim().is_empty() {
             self.font.family = "Times New Roman".into();
         }
+        kinds::sanitise(&mut self.kinds);
+        self.suggests.retain(|k| !k.is_empty() && k.len() <= 80);
+        self.suggests.truncate(40);
         let (w, h) = self.page.dimensions();
         for m in [&mut self.page.margin_left, &mut self.page.margin_right] {
             if m.points() < 0.0 || m.points() > w / 2.0 - 36.0 {
