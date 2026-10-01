@@ -767,7 +767,20 @@ under the lanes.
 
 Scroll with Shift or drag the timeline to move along it; Ctrl with the
 wheel, or the buttons, change the scale. A click chooses an element; a
-double click opens it in the text; the right button gives its menu.
+double click opens **When it is** for it; the right button gives its menu,
+in which **Write text** opens it in the text.
+
+Nothing moves by mistake: the arrows button among the controls, **Move by
+dragging**, must be on before an element can be dragged along the axis,
+and the edges of a span dragged to change its start or its end. A time
+that is dragged is written anew as finely as it was written: a year stays a
+year, a month a month, and `431 BC` stays written with BC. What is placed
+relative to another element is not dragged; it stands where it was solved.
+
+The elements that say nothing of their time are not on the timeline, but
+they are near: **Elements without a time**, beside the arrows, shows them
+in a row at the foot. Drag one onto the timeline to place it at that time,
+as finely as the axis is looked at, or press it to say when it is in words.
 
 ## Comments
 
@@ -1349,11 +1362,16 @@ pages and of mail; and words written in another script than the
 dictionary's, such as Greek in an English text.
 
 Dictionaries of English (American and British) and of Norwegian (Bokmål and
-Nynorsk) come with Glaukopis. A map in English without a country is checked
-with the American and the British dictionary both, and a word is right if
-either has it. For other languages the dictionaries of the computer are used,
-where it has them: on Linux the packages named `hunspell-…` put them in
-`/usr/share/hunspell`. A dictionary of your own, in the form of Hunspell (a
+Nynorsk) come with Glaukopis: on Windows and macOS, with the application; on
+Arch Linux, as packages of their own, `glaukopis-dictionaries-en`,
+`glaukopis-dictionaries-nb` and `glaukopis-dictionaries-nn`, so that you
+install those of the languages you write in. A map in English without a
+country is checked with the American and the British dictionary both, and a
+word is right if either has it. For other languages the dictionaries of the
+computer are used, where it has them: on Linux the packages named
+`hunspell-…` put them in `/usr/share/hunspell`, and those of English and
+Norwegian serve as well as the packages of Glaukopis. A dictionary of your
+own, in the form of Hunspell (a
 `.aff` and a `.dic` file), can be put in the folder `dictionaries` of the data
 directory, which is shown under *Settings*; it comes before the others of its
 language. Where there is no dictionary for the language of a map, nothing in
@@ -1426,7 +1444,10 @@ what is to be done by its name, and does it.
 
 On Windows and macOS, Pandoc and Tesseract come with Glaukopis, with
 the data for reading English, Norwegian, Danish, Swedish, German, French,
-Italian, Spanish, Latin, Greek and Ancient Greek.
+Italian, Spanish, Latin, Greek and Ancient Greek; so do the dictionaries of
+spelling and the fonts that come with Typst. On Linux these come from the
+packages of the system instead: on Arch, Pandoc and the font Libertinus are
+installed with Glaukopis, and the rest is optional, said by the package.
 
 The installers for Windows and macOS are not signed. On Windows, the
 installer is let run with **More info** › **Run anyway**. On macOS, open
@@ -1438,8 +1459,11 @@ Pandoc makes the documents: Pandoc 3.1.2 or newer. One that is older is said
 to be so under *Settings*. It is installed with Glaukopis when Glaukopis is
 installed as a package, and where it is found is shown under *Settings*.
 Typst, which sets the pages of the preview and of the PDF, is part of
-Glaukopis; it sets with the fonts of the computer, and with those it brings
-itself.
+Glaukopis; it sets with the fonts of the computer, and on Windows and macOS
+with those it brings itself as well. On Arch the same fonts are packages:
+`otf-libertinus`, the serif it falls back on, is installed with Glaukopis,
+and `ttf-dejavu`, for code, and `otf-latin-modern`, for the font of LaTeX,
+are optional.
 
 LaTeX is needed only for the PDF that is set by it. LuaLaTeX is used where
 it is installed, since it knows the fonts of the computer and can turn to
@@ -1450,11 +1474,12 @@ A drawing (SVG) in a PDF set by LaTeX, or in a Word document, is made into
 what those can hold by `rsvg-convert`, which comes with librsvg and is on
 most computers.
 
-Tesseract reads the text of scans and pictures. It is installed with
-Glaukopis as a package, with the data for English; the data of other
-languages are packages of their own, such as `tesseract-data-nor` for
+Tesseract reads the text of scans and pictures. On Arch it is optional:
+the package `tesseract`, with `tesseract-data-eng` for English; the data of
+other languages are packages of their own, such as `tesseract-data-nor` for
 Norwegian, `tesseract-data-grc` for Ancient Greek and `tesseract-data-lat`
-for Latin on Arch. Where it is found, and which languages it reads, is shown
+for Latin. Without it, nothing is read, and *Settings* says it is not found.
+Where it is found, and which languages it reads, is shown
 under *Settings*, where you can also choose the languages to read in at
 first. The pages of a PDF that cannot be drawn otherwise, such as some that
 are locked, are drawn by `pdftoppm`, which comes with Poppler, where it is

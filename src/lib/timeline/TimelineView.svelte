@@ -6,10 +6,17 @@
    * century); what is relative is drawn where it was solved to be, dashed,
    * with the window of what it may be as a faint band. Where nothing is
    * written at all, the elements are in order, without a scale.
+   *
+   * With moving allowed, a written time is dragged along the axis, and the
+   * edge of a span changes its start or its end; the time is written anew
+   * as finely as it was written. Elements that say nothing of their time
+   * can be shown, dragged onto the timeline, or opened to say when they are.
    */
   import { untrack } from 'svelte';
+  import CalendarPlus from '@lucide/svelte/icons/calendar-plus';
   import Minus from '@lucide/svelte/icons/minus';
   import Maximize from '@lucide/svelte/icons/maximize';
+  import MoveHorizontal from '@lucide/svelte/icons/move-horizontal';
   import Plus from '@lucide/svelte/icons/plus';
   import Rows3 from '@lucide/svelte/icons/rows-3';
   import TableProperties from '@lucide/svelte/icons/table-properties';
@@ -26,8 +33,9 @@
   import { tooltip } from '$lib/ui/tooltip';
   import { timelineOf, type Event } from './lanes';
   import LanesDialog from './LanesDialog.svelte';
-  import { describeWhen, type Placed } from './solve';
-  import { writeYear } from './time';
+  import { describeWhen, type Placed, type When } from './solve';
+  import { precisionOf, readTime, snap, writeTime, writeYear, type Precision } from './time';
+  import { sayWhen } from './when.svelte';
 
   interface Props {
     project: Project;
@@ -212,6 +220,7 @@
       const drawn: Drawn[] = [];
       const placed = lane.events
         .filter((e) => Number.isFinite(e.placed.from))
+        .map((e) => (drag?.id === e.id ? { ...e, placed: dragged(e.placed) } : e))
         .sort((a, b) => a.placed.from - b.placed.from);
       for (const event of placed) {
         const left = x(event.placed.from);
@@ -289,9 +298,179 @@
   let lanesOpen = $state(false);
 
   const total = $derived(lanes.reduce((n, l) => n + LANE_HEAD + l.rows * ROW, 0));
+
+  // ---- moving what is placed, and placing what is not ----
+
+  /** Whether elements may be dragged: off, so that nothing moves by mistake. */
+  let moving = $state(false);
+  /** Whether the elements that say nothing of their time are shown, to be placed. */
+  let showWithout = $state(false);
+
+  /** The elements of the map that say nothing of their time, in the order of the text; not the centre. */
+  const without = $derived.by(() => {
+    if (!showWithout) return [];
+    const tree = project.tree(mapId);
+    return tree.sequence
+      .filter((id) => id !== tree.root && !project.node(id)?.when)
+      .map((id) => ({ id, name: project.node(id)?.title || t('project-untitled') }));
+  });
+
+  /** A written end as it is dragged: its text, and how finely it was written. */
+  interface End {
+    text: string;
+    precision: Precision;
+    /** Where what was written begins on the axis. */
+    at: number;
+  }
+
+  interface Dragging {
+    id: string;
+    /** The whole, the start of a span, its end; or an element without a time, brought onto the timeline. */
+    mode: 'move' | 'start' | 'end' | 'new';
+    x0: number;
+    start: End | null;
+    end: End | null;
+    /** The ends written anew, as the pointer has them. */
+    draft: { start?: string; end?: string };
+    name: string;
+    /** Where the pointer is, for what follows it. */
+    px: number;
+    py: number;
+  }
+  let drag = $state<Dragging | null>(null);
+
+  const endOf = (text: string | undefined): End | null => {
+    if (!text) return null;
+    const precision = precisionOf(text, timeline.axis);
+    const time = readTime(text, timeline.axis);
+    return precision && time ? { text, precision, at: time.from } : null;
+  };
+
+  /** The placement of what is dragged, as its draft has it. */
+  function dragged(placed: Placed): Placed {
+    if (!drag || drag.mode === 'new') return placed;
+    const start = drag.draft.start ? readTime(drag.draft.start, timeline.axis) : null;
+    const end = drag.draft.end ? readTime(drag.draft.end, timeline.axis) : null;
+    let from = start ? start.from : placed.from;
+    let to = end ? end.to : placed.span ? placed.to : start ? start.to : placed.to;
+    if (drag.mode === 'move' && placed.span && !end) to = placed.to + (from - placed.from);
+    if (to < from) [from, to] = [to, from];
+    return { ...placed, from, to };
+  }
+
+  function beginDrag(event: PointerEvent, e: Event, mode: 'move' | 'start' | 'end') {
+    if (!moving || !timeline.solved.scaled || event.button !== 0 || !e.node.when) return;
+    const start = endOf(e.node.when.start.at);
+    const end = endOf(e.node.when.end?.at);
+    // Only a written time moves: what is relative stands where it was solved.
+    if ((mode === 'move' && !start) || (mode === 'start' && !start) || (mode === 'end' && !end))
+      return;
+    event.stopPropagation();
+    event.preventDefault();
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    drag = {
+      id: e.id,
+      mode,
+      x0: event.clientX,
+      start,
+      end,
+      draft: {},
+      name: e.name,
+      px: event.clientX,
+      py: event.clientY,
+    };
+  }
+
+  function beginNew(event: PointerEvent, id: string, name: string) {
+    if (event.button !== 0 || !timeline.solved.scaled) return;
+    event.preventDefault();
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    drag = {
+      id,
+      mode: 'new',
+      x0: event.clientX,
+      start: null,
+      end: null,
+      draft: {},
+      name,
+      px: event.clientX,
+      py: event.clientY,
+    };
+  }
+
+  function moveDrag(event: PointerEvent) {
+    if (!drag) return;
+    const delta = (event.clientX - drag.x0) / scale;
+    const draft: Dragging['draft'] = {};
+    const written = (end: End) =>
+      writeTime(snap(end.at + delta, end.precision), end.precision, timeline.axis, end.text);
+    if ((drag.mode === 'move' || drag.mode === 'start') && drag.start)
+      draft.start = written(drag.start);
+    if ((drag.mode === 'move' || drag.mode === 'end') && drag.end) draft.end = written(drag.end);
+    drag = { ...drag, draft, px: event.clientX, py: event.clientY };
+  }
+
+  /** How finely a time put on the timeline by hand is written: as the axis is looked at. */
+  function grainNow(): Precision {
+    if (timeline.axis === 'units') return 'unit';
+    const visible = (width - LABEL_WIDTH) / scale;
+    if (visible < 1.5) return 'day';
+    if (visible < 20) return 'month';
+    return 'year';
+  }
+
+  /** Whether the pointer is over the lanes, by a point of the window. */
+  function overLanes(clientX: number, clientY: number): boolean {
+    const r = viewport?.getBoundingClientRect();
+    if (!r) return false;
+    return clientX - r.left > LABEL_WIDTH && clientY - r.top > AXIS && clientY < r.bottom;
+  }
+
+  /** Whether a dragged element without a time is over the lanes, where it can be put. */
+  const canDrop = $derived(!!drag && drag.mode === 'new' && overLanes(drag.px, drag.py));
+
+  function endDrag(event: PointerEvent) {
+    const d = drag;
+    drag = null;
+    if (!d) return;
+    if (d.mode === 'new') {
+      if (!overLanes(event.clientX, event.clientY)) return;
+      const r = viewport!.getBoundingClientRect();
+      const grain = grainNow();
+      const like = timeline.axis === 'units' && unit ? `${unit} 0` : '';
+      const at = writeTime(snap(value(event.clientX - r.left), grain), grain, timeline.axis, like);
+      project.checkpoint();
+      project.setWhen(d.id, { start: { at } });
+      project.checkpoint();
+      selected = d.id;
+      return;
+    }
+    const when = project.node(d.id)?.when;
+    if (!when) return;
+    const next: When = { start: { ...when.start }, ...(when.end ? { end: { ...when.end } } : {}) };
+    let changed = false;
+    if (d.draft.start && d.draft.start !== when.start.at) {
+      next.start.at = d.draft.start;
+      changed = true;
+    }
+    if (d.draft.end && next.end && d.draft.end !== next.end.at) {
+      next.end.at = d.draft.end;
+      changed = true;
+    }
+    if (!changed) return;
+    // A span ends after it begins.
+    if (next.end?.at && next.start.at) {
+      const a = readTime(next.start.at, timeline.axis);
+      const b = readTime(next.end.at, timeline.axis);
+      if (a && b && b.to <= a.from) return;
+    }
+    project.checkpoint();
+    project.setWhen(d.id, next);
+    project.checkpoint();
+  }
 </script>
 
-<div class="timeline" bind:this={viewport} bind:clientWidth={width}>
+<div class="timeline" class:moving bind:this={viewport} bind:clientWidth={width}>
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="scroller"
@@ -388,11 +567,19 @@
               style:--event={d.event.colour ?? 'var(--accent)'}
               use:tooltip={{ text: tipOf(d.event), side: 'top' }}
               onclick={() => (selected = d.event.id)}
-              ondblclick={() => ongo(d.event.id)}
+              ondblclick={() => sayWhen(d.event.id)}
               oncontextmenu={(e) => menu(e, d.event.id)}
+              onpointerdown={(e) => beginDrag(e, d.event, 'move')}
+              onpointermove={moveDrag}
+              onpointerup={endDrag}
             >
               {#if !p.span}<span class="mark"></span>{/if}
               {#if p.problem}<span class="warn"><TriangleAlert size={11} /></span>{/if}
+              {#if moving && p.span}
+                <span class="handle start" onpointerdown={(e) => beginDrag(e, d.event, 'start')}
+                ></span>
+                <span class="handle end" onpointerdown={(e) => beginDrag(e, d.event, 'end')}></span>
+              {/if}
             </div>
             <div
               class="label truncate"
@@ -411,6 +598,37 @@
       {/if}
     </div>
   </div>
+
+  {#if showWithout}
+    <div class="without" data-without>
+      <CalendarPlus size={13} />
+      {#if without.length}
+        <span>{t('timeline-without-hint')}</span>
+        {#each without as e (e.id)}
+          <button
+            type="button"
+            class:dragging={drag?.id === e.id}
+            onpointerdown={(ev) => beginNew(ev, e.id, e.name)}
+            onpointermove={moveDrag}
+            onpointerup={endDrag}
+            onclick={() => !drag && sayWhen(e.id)}>{e.name}</button
+          >
+        {/each}
+      {:else}
+        <span>{t('timeline-without-none')}</span>
+      {/if}
+    </div>
+  {/if}
+  {#if drag?.mode === 'new'}
+    <div
+      class="ghost"
+      class:can={canDrop}
+      style:left="{drag.px + 12}px"
+      style:top="{drag.py - 10}px"
+    >
+      {drag.name}
+    </div>
+  {/if}
 
   {#if unplaced.length}
     <div class="unplaced">
@@ -439,6 +657,26 @@
     </IconButton>
     <IconButton label={t('timeline-lanes')} size="sm" side="top" onclick={() => (lanesOpen = true)}>
       <Rows3 size={14} />
+    </IconButton>
+    <span class="rule-v"></span>
+    <IconButton
+      label={t('timeline-moving')}
+      size="sm"
+      side="top"
+      active={moving}
+      disabled={!timeline.solved.scaled}
+      onclick={() => (moving = !moving)}
+    >
+      <MoveHorizontal size={14} />
+    </IconButton>
+    <IconButton
+      label={t('timeline-without')}
+      size="sm"
+      side="top"
+      active={showWithout}
+      onclick={() => (showWithout = !showWithout)}
+    >
+      <CalendarPlus size={14} />
     </IconButton>
     <span class="rule-v"></span>
     <IconButton label={t('diagram-zoom-out')} size="sm" side="top" onclick={() => zoomBy(1 / 1.3)}>
@@ -611,6 +849,64 @@
   }
   .event.approx {
     opacity: 0.85;
+  }
+  /* With moving allowed, what is written can be taken hold of; the edges of a span as well. */
+  .timeline.moving .event {
+    cursor: grab;
+  }
+  .handle {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 8px;
+    cursor: ew-resize;
+  }
+  .handle.start {
+    left: -4px;
+  }
+  .handle.end {
+    right: -4px;
+  }
+  .ghost {
+    position: fixed;
+    z-index: 20;
+    padding: 2px 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-s);
+    background: var(--paper-raised);
+    box-shadow: var(--shadow-1);
+    color: var(--ink-3);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .ghost.can {
+    color: var(--ink);
+    border-color: var(--accent);
+  }
+  .without {
+    flex: none;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    padding: 6px 12px;
+    border-top: 1px solid var(--line);
+    background: var(--paper-raised);
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+  }
+  .without button {
+    padding: 1px 7px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--paper);
+    color: var(--ink-2);
+    font: inherit;
+    cursor: grab;
+    touch-action: none;
+  }
+  .without button.dragging {
+    opacity: 0.5;
   }
   /* The margin either side of a time: a band that fades away from it. */
   .fade {

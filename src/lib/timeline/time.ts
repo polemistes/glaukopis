@@ -214,3 +214,106 @@ export function writeYear(value: number, bcWord = 'BC'): string {
   const year = Math.floor(value);
   return year <= 0 ? `${1 - year} ${bcWord}` : String(year);
 }
+
+/** How finely a written time is given: the grain a dragged time keeps. */
+export type Precision = 'day' | 'month' | 'year' | 'decade' | 'century' | 'unit';
+
+/** The precision of a written time, from how long what was written is; nothing where it cannot be read. */
+export function precisionOf(written: string, axis: Axis): Precision | null {
+  const time = readTime(written, axis);
+  if (!time) return null;
+  if (axis === 'units') return 'unit';
+  const length = time.to - time.from;
+  if (length < 2 / 365) return 'day';
+  if (length < 0.5) return 'month';
+  if (length < 5) return 'year';
+  if (length < 50) return 'decade';
+  return 'century';
+}
+
+/** A value on the axis moved to the nearest time of a precision: the start of a day, a month, a year, a decade, a century. */
+export function snap(value: number, precision: Precision): number {
+  switch (precision) {
+    case 'day':
+      return Math.round(value * 365) / 365;
+    case 'month': {
+      // To the start of the nearest month, as months are read: by their days.
+      const year = Math.floor(value + 1e-9);
+      const fraction = value - year;
+      let best = 1;
+      for (let month = 1; month <= 12; month++) {
+        if (
+          Math.abs(BEFORE_MONTH[month - 1] / 365 - fraction) <
+          Math.abs(BEFORE_MONTH[best - 1] / 365 - fraction)
+        )
+          best = month;
+      }
+      if (1 - fraction < Math.abs(BEFORE_MONTH[best - 1] / 365 - fraction)) return year + 1;
+      return year + BEFORE_MONTH[best - 1] / 365;
+    }
+    case 'decade':
+      return Math.round(value / 10) * 10;
+    case 'century':
+      return Math.round(value / 100) * 100;
+    default:
+      return Math.round(value);
+  }
+}
+
+/** The ordinal of a number in English: 1st, 2nd, 3rd, 4th, 11th. */
+function ordinal(n: number): string {
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) return `${n}th`;
+  const last = n % 10;
+  return `${n}${last === 1 ? 'st' : last === 2 ? 'nd' : last === 3 ? 'rd' : 'th'}`;
+}
+
+/** The month and the day a fraction of a year stands at, in a year of 365 days. */
+function dayOfYear(fraction: number): { month: number; day: number } {
+  const days = Math.min(364, Math.max(0, Math.round(fraction * 365)));
+  let month = 12;
+  while (month > 1 && BEFORE_MONTH[month - 1] > days) month--;
+  return { month, day: days - BEFORE_MONTH[month - 1] + 1 };
+}
+
+/**
+ * A time written anew at a value of the axis, as finely as it was written
+ * before (`like`), in the way it was written: with the sign of BC that was
+ * used, and the word of the unit that stood with the number.
+ */
+export function writeTime(value: number, precision: Precision, axis: Axis, like = ''): string {
+  if (axis === 'units') {
+    const n = Number.isInteger(value) ? String(value) : String(Math.round(value * 10) / 10);
+    // "Year 12" keeps its word; "12" stays a number.
+    const m = /^([\p{L}.]+\s+)?-?\d+(?:[.,]\d+)?(\s+[\p{L}.]+)?$/u.exec(like.trim());
+    return `${m?.[1] ?? ''}${n}${m?.[2] ?? ''}`;
+  }
+  const year = Math.floor(value + 1e-9);
+  const bc = year <= 0;
+  const bcWord = (BC.exec(like.trim())?.[0] ?? ' BC').trim();
+  const era = bc ? ` ${bcWord}` : '';
+  const written = bc ? 1 - year : year;
+  const two = (n: number) => String(n).padStart(2, '0');
+  switch (precision) {
+    case 'day': {
+      const { month, day } = dayOfYear(value - year);
+      return `${written}-${two(month)}-${two(day)}${era}`;
+    }
+    case 'month': {
+      const { month } = dayOfYear(value - year);
+      return `${written}-${two(month)}${era}`;
+    }
+    case 'decade': {
+      // The 1920s begin at 1920; the 420s BC at 429 BC, which is -428 on the axis.
+      const start = bc ? Math.floor((1 - year) / 10) * 10 : Math.floor(year / 10) * 10;
+      return `${start}s${era}`;
+    }
+    case 'century': {
+      // The fifth century BC is 500 to 401 BC; the fifth century AD 401 to 500.
+      const n = bc ? Math.ceil((1 - year) / 100) : Math.ceil(year / 100);
+      return `${ordinal(Math.max(1, n))} century${era}`;
+    }
+    default:
+      return `${written}${era}`;
+  }
+}

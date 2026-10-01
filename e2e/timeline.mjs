@@ -147,6 +147,73 @@ try {
   );
   await app.screenshot('timeline-1-cities');
 
+  // --- A double click opens "When it is"; the text is reached from the menu ---
+  // The first point drawn is the plague, the earliest of Athens.
+  await app.doubleClick('.timeline .event.point');
+  await app.waitForText('dialog[open] h2', 'When it is', 3000);
+  check('a double click on an element opens When it is', await app.exists('dialog[open]'));
+  await app.press('Escape');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(200);
+
+  // --- With moving allowed, a written time is dragged along the axis ---
+  const leftOf = (name) =>
+    app.exec(
+      `const l = Array.from(document.querySelectorAll('.timeline .label')).find((e) => e.textContent.trim() === arguments[0]); return l ? parseFloat(l.style.left) : null`,
+      name,
+    );
+  const before = await leftOf('The plague');
+  await app.drag('.timeline .event.point', { dx: 140, dy: 0 });
+  await sleep(300);
+  check(
+    'an element is not moved while moving is off',
+    (await leftOf('The plague')) === before,
+    `${before} -> ${await leftOf('The plague')}`,
+  );
+  await app.click('.timeline button[aria-label="Move by dragging"]');
+  await sleep(150);
+  await app.drag('.timeline .event.point', { dx: 140, dy: 0 });
+  await sleep(400);
+  const after = await leftOf('The plague');
+  check(
+    'with moving on, a dragged element is written at a later year',
+    after > before + 100,
+    `${before} -> ${after}`,
+  );
+  await app.screenshot('timeline-1b-moved');
+
+  // --- Elements without a time are shown, and one is dragged onto the timeline ---
+  await app.click('.timeline button[aria-label="Elements without a time"]');
+  await app.waitFor('.timeline .without button', 3000);
+  const listed = await app.exec(
+    `return Array.from(document.querySelectorAll('.timeline .without button')).map((b) => b.textContent.trim())`,
+  );
+  check(
+    'the elements without a time are listed',
+    listed.includes('Thucydides') && listed.includes('Sources'),
+    listed.join('|'),
+  );
+  const thucydides = await app.findByText('.timeline .without button', 'Thucydides');
+  const target = await app.exec(
+    `const l = document.querySelector('.timeline .lanes'); const r = l.getBoundingClientRect();
+     const b = Array.from(document.querySelectorAll('.timeline .without button')).find((x) => x.textContent.trim() === 'Thucydides').getBoundingClientRect();
+     return { dx: Math.round(r.left + 700 - (b.left + b.width / 2)), dy: Math.round(r.top + 40 - (b.top + b.height / 2)) }`,
+  );
+  await app.drag(thucydides, target);
+  await sleep(500);
+  const lanesNow = await app.exec(
+    `return Array.from(document.querySelectorAll('.timeline .lane-name')).map((l) => l.textContent.trim())`,
+  );
+  check(
+    'an element dragged onto the timeline is placed, and its branch becomes a lane',
+    lanesNow.includes('Sources') && (await leftOf('Thucydides')) !== null,
+    lanesNow.join('|'),
+  );
+  await app.screenshot('timeline-1c-placed');
+  await app.click('.timeline button[aria-label="Elements without a time"]');
+  await app.click('.timeline button[aria-label="Move by dragging"]');
+  await sleep(150);
+
   // --- A contradiction is told ---
   await app.clickText('.segmented button', 'Diagram');
   await app.waitFor('.diagram .node.root', 5000);

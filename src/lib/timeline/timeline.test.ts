@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Project } from '$lib/project/model/project.svelte';
 import { timelineOf } from './lanes';
 import { describeWhen, solve, type When } from './solve';
-import { readDuration } from './time';
-import { readTime, writeYear } from './time';
+import { precisionOf, readDuration, readTime, snap, writeTime, writeYear } from './time';
 
 describe('times as they are written', () => {
   it('reads years, with BC and AD, as astronomers count them', () => {
@@ -68,6 +67,45 @@ describe('a length of time', () => {
     expect(readDuration('soon', 'dates')).toBeNull();
     expect(readDuration('5 moons', 'dates')).toBeNull();
     expect(readDuration('', 'dates')).toBeNull();
+  });
+});
+
+describe('a time moved along the axis', () => {
+  it('keeps the grain of what was written, and the way it was written', () => {
+    expect(precisionOf('431 BC', 'dates')).toBe('year');
+    expect(precisionOf('May 1453', 'dates')).toBe('month');
+    expect(precisionOf('1453-05-29', 'dates')).toBe('day');
+    expect(precisionOf('the 1920s', 'dates')).toBe('decade');
+    expect(precisionOf('5th century BC', 'dates')).toBe('century');
+    expect(precisionOf('Year 12', 'units')).toBe('unit');
+    expect(precisionOf('soon', 'dates')).toBeNull();
+    expect(snap(-430.4, 'year')).toBe(-430);
+    expect(snap(1453.37, 'month')).toBeCloseTo(1453 + 120 / 365, 9);
+    expect(snap(-427, 'decade')).toBe(-430);
+    expect(writeTime(-430, 'year', 'dates', '431 BC')).toBe('431 BC');
+    expect(writeTime(-425, 'year', 'dates', '431 BCE')).toBe('426 BCE');
+    expect(writeTime(1453, 'year', 'dates', '1450')).toBe('1453');
+    expect(writeTime(1453 + 120 / 365, 'month', 'dates', 'May 1453')).toBe('1453-05');
+    expect(writeTime(readTime('1453-05-29', 'dates')!.from, 'day', 'dates', '1453-05-29')).toBe(
+      '1453-05-29',
+    );
+    expect(writeTime(1920, 'decade', 'dates', 'the 1920s')).toBe('1920s');
+    expect(writeTime(-499, 'century', 'dates', '5th century BC')).toBe('5th century BC');
+    expect(writeTime(401, 'century', 'dates', '5th century')).toBe('5th century');
+    expect(writeTime(15, 'unit', 'units', 'Year 12')).toBe('Year 15');
+    expect(writeTime(15, 'unit', 'units', '12')).toBe('15');
+    // What is written anew reads back where it was put.
+    for (const [value, precision, like] of [
+      [-430, 'year', '431 BC'],
+      [1453 + 120 / 365, 'month', 'May 1453'],
+      [1920, 'decade', '1920s'],
+      [-499, 'century', '5th century BC'],
+    ] as const) {
+      expect(readTime(writeTime(value, precision, 'dates', like), 'dates')!.from).toBeCloseTo(
+        value,
+        6,
+      );
+    }
   });
 });
 

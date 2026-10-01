@@ -37,6 +37,12 @@ timeline-unplaced = { $count ->
    *[other] { $count } elements could not be placed:
 }
 timeline-contradiction = cannot be where it says it is
+# Dragging what is placed, and placing what is not.
+timeline-moving = Move by dragging
+timeline-moving-hint = Drag an element along the axis, or the edge of a span, to change its time; off, so that nothing moves by mistake
+timeline-without = Elements without a time
+timeline-without-hint = Drag one onto the timeline, or press it to say when it is:
+timeline-without-none = Everything in the map says when it is.
 timeline-unknown = refers to what is not placed, or to a time that cannot be read
 
 ## Saying when an element is
