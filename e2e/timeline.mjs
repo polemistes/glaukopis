@@ -38,6 +38,10 @@ try {
   await app.click(await app.findByText('.diagram .node', 'Athens'));
   await add('Enter', 'Sparta');
   await add('Tab', 'The peace of Nicias');
+  // And a branch that says nothing of its time.
+  await app.click(await app.findByText('.diagram .node', 'Sparta'));
+  await add('Enter', 'Sources');
+  await add('Tab', 'Thucydides');
 
   /** Says when an element is, through its dialog. */
   const say = async (name, fill) => {
@@ -54,7 +58,12 @@ try {
     await app.waitGone('dialog[open]', 3000);
     await sleep(200);
   };
-  const timeField = () => app.exec(`return document.querySelector('dialog[open] .end input:not([type="checkbox"])')`);
+  const timeField = () =>
+    app.exec(`return document.querySelector('dialog[open] .end input:not([type="checkbox"])')`);
+  const marginField = () =>
+    app.exec(
+      `return document.querySelectorAll('dialog[open] .end input:not([type="checkbox"])')[1]`,
+    );
   /** Chooses in the nth select of the dialog the option with this label. */
   const choose = (index, label) =>
     app.exec(
@@ -74,6 +83,10 @@ try {
     const field = await timeField();
     await app.click(field['element-6066-11e4-a52e-4f735466cecf']);
     await app.keys('421 BC');
+    // Give or take two years, drawn fading away both ways.
+    const margin = await marginField();
+    await app.click(margin['element-6066-11e4-a52e-4f735466cecf']);
+    await app.keys('2 years');
   });
   // The expedition: after the peace, as a relative placement.
   await say('The Sicilian expedition', async () => {
@@ -83,28 +96,55 @@ try {
   });
   check(
     'the Timeline view appears once something says when it is',
-    await app.exec(`return Array.from(document.querySelectorAll('.segmented button')).some((b) => b.textContent.trim() === 'Timeline')`),
+    await app.exec(
+      `return Array.from(document.querySelectorAll('.segmented button')).some((b) => b.textContent.trim() === 'Timeline')`,
+    ),
   );
 
   // --- The map as a timeline ---
   await app.clickText('.segmented button', 'Timeline');
   await app.waitFor('.timeline .lane', 5000);
   await sleep(500);
-  const laneNames = await app.exec(`return Array.from(document.querySelectorAll('.timeline .lane-name')).map((l) => l.textContent.trim())`);
+  const laneNames = await app.exec(
+    `return Array.from(document.querySelectorAll('.timeline .lane-name')).map((l) => l.textContent.trim())`,
+  );
   check('each city is a lane', laneNames.join('|') === 'Athens|Sparta', laneNames.join('|'));
+  check('a branch in which nothing says when it is, is no lane', !laneNames.includes('Sources'));
+  const fades = await app.exec(`return document.querySelectorAll('.timeline .fade').length`);
+  check(
+    'a margin either side of a time is drawn fading away both ways',
+    fades === 2,
+    String(fades),
+  );
   const events = await app.exec(
     `return Array.from(document.querySelectorAll('.timeline .lane')).map((l) => Array.from(l.querySelectorAll('.label')).map((e) => e.textContent.trim()).join(', '))`,
   );
-  check('the events stand in the lanes of their cities', events[0] === 'The plague, The Sicilian expedition' && events[1] === 'The peace of Nicias', events.join(' / '));
-  const floating = await app.exec(`return document.querySelectorAll('.timeline .event.floating').length + ':' + document.querySelectorAll('.timeline .window').length`);
+  check(
+    'the events stand in the lanes of their cities',
+    events[0] === 'The plague, The Sicilian expedition' && events[1] === 'The peace of Nicias',
+    events.join(' / '),
+  );
+  const floating = await app.exec(
+    `return document.querySelectorAll('.timeline .event.floating').length + ':' + document.querySelectorAll('.timeline .window').length`,
+  );
   check('the relative placement is drawn floating, with its window', floating === '1:1', floating);
   const order = await app.exec(
     `const left = (name) => { const l = Array.from(document.querySelectorAll('.timeline .label')).find((e) => e.textContent.trim() === name); return parseFloat(l.style.left); };
      return [left('The plague'), left('The peace of Nicias'), left('The Sicilian expedition')]`,
   );
-  check('and after the peace, which is after the plague', order[0] < order[1] && order[1] < order[2], order.join(' < '));
-  const ticks = await app.exec(`return Array.from(document.querySelectorAll('.timeline .tick span')).map((t) => t.textContent)`);
-  check('the axis counts years BC', ticks.some((t) => /\d+ BC/.test(t)), ticks.join(' '));
+  check(
+    'and after the peace, which is after the plague',
+    order[0] < order[1] && order[1] < order[2],
+    order.join(' < '),
+  );
+  const ticks = await app.exec(
+    `return Array.from(document.querySelectorAll('.timeline .tick span')).map((t) => t.textContent)`,
+  );
+  check(
+    'the axis counts years BC',
+    ticks.some((t) => /\d+ BC/.test(t)),
+    ticks.join(' '),
+  );
   await app.screenshot('timeline-1-cities');
 
   // --- A contradiction is told ---
@@ -128,13 +168,21 @@ try {
   await app.click('.timeline button[aria-label="Lanes"]');
   await app.waitForText('dialog[open] h2', 'The timeline', 3000);
   await sleep(200);
-  await app.exec(`Array.from(document.querySelectorAll('dialog[open] .choices button')).find((b) => b.textContent.trim() === 'One lane').click()`);
+  await app.exec(
+    `Array.from(document.querySelectorAll('dialog[open] .choices button')).find((b) => b.textContent.trim() === 'One lane').click()`,
+  );
   await sleep(200);
   await app.clickText('dialog[open] footer button', 'Done');
   await app.waitGone('dialog[open]', 3000);
   await sleep(300);
-  const chosen = await app.exec(`return Array.from(document.querySelectorAll('.timeline .lane-name')).map((l) => l.textContent.trim())`);
-  check('a lane chosen stands alone, the rest elsewhere', chosen[0] === 'Athens' && chosen[1] === 'Elsewhere in the map', chosen.join('|'));
+  const chosen = await app.exec(
+    `return Array.from(document.querySelectorAll('.timeline .lane-name')).map((l) => l.textContent.trim())`,
+  );
+  check(
+    'a lane chosen stands alone, the rest elsewhere',
+    chosen[0] === 'Athens' && chosen[1] === 'Elsewhere in the map',
+    chosen.join('|'),
+  );
 
   // --- A chronology is added to the map ---
   await app.click('.timeline button[aria-label="Add a chronology to the map"]');
@@ -144,7 +192,12 @@ try {
     `const s = Array.from(document.querySelectorAll('.text-view .section')).find((e) => e.querySelector('.heading').textContent.includes('Chronology'));
      return s ? Array.from(s.querySelectorAll('table tr')).map((r) => Array.from(r.querySelectorAll('th, td')).map((c) => c.textContent.trim()).join(' | ')).join(' / ') : ''`,
   );
-  check('a chronology is an element with a table of what is placed, in order', /^When \| What \/ /.test(chronology) && chronology.indexOf('peace') < chronology.indexOf('expedition'), chronology);
+  check(
+    'a chronology is an element with a table of what is placed, in order',
+    /^When \| What \/ /.test(chronology) &&
+      chronology.indexOf('peace') < chronology.indexOf('expedition'),
+    chronology,
+  );
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

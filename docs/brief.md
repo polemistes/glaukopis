@@ -253,3 +253,17 @@ What this settles (docs/adr/0029):
   underline.
 - The editor stays neutral paper; each kind has a screen look of its
   own, derived from the kind it is based on.
+
+## 2026-10-01 — the timeline: nothing without a time, and a margin either side
+
+> In timeline view, exclude elements with no time assigned. A point time can optionally have a span of +/- time which will be shown with a fading span both ways from the point in time.
+
+What this settles:
+
+- A lane is shown only when its element, or something in its branch, says
+  when it is; what says nothing of its time is not in the timeline.
+- A written time, of a point or of either end of a span, may have a margin
+  either side: a length of time (`5 years`, `3 months`, `10 days`, or a
+  number of the timeline's units), drawn as a band fading away on both
+  sides of the time. What is placed relative to it may be anywhere within
+  the margin.

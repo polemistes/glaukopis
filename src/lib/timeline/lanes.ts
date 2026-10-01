@@ -134,5 +134,6 @@ export function timelineOf(
     const e = event(id);
     if (e) elsewhere.push(e);
   }
-  return { axis, solved, lanes, elsewhere };
+  // A lane in which nothing says when it is, its element included, is not shown.
+  return { axis, solved, lanes: lanes.filter((l) => l.own || l.events.length), elsewhere };
 }

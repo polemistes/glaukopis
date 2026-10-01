@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { Project } from '$lib/project/model/project.svelte';
+import { timelineOf } from './lanes';
 import { describeWhen, solve, type When } from './solve';
+import { readDuration } from './time';
 import { readTime, writeYear } from './time';
 
 describe('times as they are written', () => {
@@ -49,6 +52,22 @@ describe('times as they are written', () => {
     expect(readTime('soon', 'units')).toBeNull();
     expect(readTime('', 'dates')).toBeNull();
     expect(readTime('next year', 'dates')).toBeNull();
+  });
+});
+
+describe('a length of time', () => {
+  it('is read as a margin either side of a time', () => {
+    expect(readDuration('5 years', 'dates')).toBe(5);
+    expect(readDuration('± 3 months', 'dates')).toBeCloseTo(0.25, 6);
+    expect(readDuration('+/- 10 days', 'dates')).toBeCloseTo(10 / 365, 6);
+    expect(readDuration('2 centuries', 'dates')).toBe(200);
+    expect(readDuration('7', 'dates')).toBe(7);
+    expect(readDuration('1,5 år', 'dates')).toBe(1.5);
+    expect(readDuration('3 cycles', 'units')).toBe(3);
+    expect(readDuration('3', 'units')).toBe(3);
+    expect(readDuration('soon', 'dates')).toBeNull();
+    expect(readDuration('5 moons', 'dates')).toBeNull();
+    expect(readDuration('', 'dates')).toBeNull();
   });
 });
 
@@ -194,10 +213,53 @@ describe('where elements stand in time', () => {
     expect(circle.placed.get('x')!.problem).toBe('contradiction');
   });
 
+  it('gives a time a margin either side, within which what is relative to it may be', () => {
+    const s = solve(
+      [
+        { id: 'peace', when: { start: { at: '421 BC', margin: '5 years' } } },
+        { id: 'later', when: { start: { after: 'peace' } } },
+        { id: 'war', when: { start: { at: '431 BC' }, end: { at: '404 BC', margin: '2 years' } } },
+      ],
+      'dates',
+    );
+    const peace = s.placed.get('peace')!;
+    // Drawn where it was written; the margin carried for the drawing.
+    expect(peace.from).toBe(-420);
+    expect(peace.to).toBe(-419);
+    expect(peace.margins).toEqual([5, 5]);
+    expect(s.placed.get('war')!.margins).toEqual([0, 2]);
+    // The peace may be five years earlier: what is after it may be from then on.
+    expect(s.placed.get('later')!.window!.start[0]).toBe(-425);
+    // The range takes the margins in.
+    expect(s.range![0]).toBe(-430);
+    expect(s.range![1]).toBe(-400);
+    // A margin that cannot be read is none.
+    const odd = solve([{ id: 'x', when: { start: { at: '421 BC', margin: 'soon' } } }], 'dates');
+    expect(odd.placed.get('x')!.margins).toEqual([0, 0]);
+  });
+
+  it('shows only lanes in which something says when it is', () => {
+    const p = new Project(null);
+    const map = p.createMap('Cities');
+    const root = p.map(map)!.root;
+    const athens = p.addChild(root, { title: 'Athens' })!;
+    const plague = p.addChild(athens, { title: 'The plague' })!;
+    const sparta = p.addChild(root, { title: 'Sparta' })!;
+    const sources = p.addChild(root, { title: 'Sources' })!;
+    p.addChild(sources, { title: 'Thucydides' });
+    p.setWhen(plague, { start: { at: '430 BC' } });
+    p.setWhen(sparta, { start: { at: '431 BC' }, end: { at: '404 BC' } });
+    const lanes = timelineOf(p, map, () => null).lanes.map((l) => l.name);
+    expect(lanes).toEqual(['Athens', 'Sparta']);
+  });
+
   it('says a placement in words', () => {
     const words = { after: 'after', before: 'before', during: 'during', to: 'to', approx: 'c.' };
     const name = (id: string) => ({ war: 'the war', peace: 'the peace' })[id] ?? id;
     expect(describeWhen({ start: { at: '431 BC', approx: true } }, name, words)).toBe('c. 431 BC');
+    expect(describeWhen({ start: { at: '431 BC', margin: '5 years' } }, name, words)).toBe(
+      '431 BC ± 5 years',
+    );
     expect(describeWhen({ start: { after: 'peace', before: 'war' } }, name, words)).toBe(
       'after the peace, before the war',
     );

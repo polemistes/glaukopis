@@ -13,7 +13,7 @@
   import Select from '$lib/ui/Select.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import type { Bound, When } from './solve';
-  import { isTime, type Axis } from './time';
+  import { isTime, readDuration, type Axis } from './time';
 
   interface Props {
     project: Project;
@@ -36,6 +36,8 @@
     before: string;
     during: string;
     approx: boolean;
+    /** A margin either side of a written time: `5 years`, `3 months`. */
+    margin: string;
   }
   const howOf = (b: Bound | undefined): How =>
     !b
@@ -56,6 +58,7 @@
     before: b?.before ?? '',
     during: b?.during ?? '',
     approx: !!b?.approx,
+    margin: b?.margin ?? '',
   });
 
   const given = untrack(() => project.node(id)?.when ?? null);
@@ -83,6 +86,7 @@
     if (e.how === 'at') {
       if (!e.at.trim()) return null;
       out.at = e.at.trim();
+      if (e.margin.trim()) out.margin = e.margin.trim();
     } else {
       if ((e.how === 'after' || e.how === 'between') && e.after) out.after = e.after;
       if ((e.how === 'before' || e.how === 'between') && e.before) out.before = e.before;
@@ -95,8 +99,12 @@
 
   const startBound = $derived(boundOf(start));
   const endBound = $derived(span ? boundOf(end) : null);
-  const complete = $derived(!!startBound && (!span || !!endBound));
   const unread = (e: End) => e.how === 'at' && !!e.at.trim() && !isTime(e.at, axis);
+  const unreadMargin = (e: End) =>
+    e.how === 'at' && !!e.margin.trim() && readDuration(e.margin, axis) === null;
+  const complete = $derived(
+    !!startBound && (!span || !!endBound) && !unreadMargin(start) && (!span || !unreadMargin(end)),
+  );
 
   function keep() {
     if (!startBound) return;
@@ -153,6 +161,17 @@
         size="sm"
         spellcheck="false"
         oninput={(ev) => set({ at: (ev.currentTarget as HTMLInputElement).value })}
+      />
+      <TextField
+        value={e.margin}
+        label={t('when-margin')}
+        placeholder={axis === 'dates'
+          ? t('when-margin-placeholder')
+          : t('when-margin-unit-placeholder')}
+        error={unreadMargin(e) ? t('when-margin-unread') : null}
+        size="sm"
+        spellcheck="false"
+        oninput={(ev) => set({ margin: (ev.currentTarget as HTMLInputElement).value })}
       />
     {/if}
     {#if e.how === 'after' || e.how === 'between'}

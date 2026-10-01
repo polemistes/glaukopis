@@ -64,6 +64,11 @@ when-before-what = Before
 when-during-what = During
 when-choose = Choose an element…
 when-approx = Approximately
+# A margin either side of a written time, drawn fading away both ways from it.
+when-margin = Give or take
+when-margin-placeholder = 5 years, 3 months, 10 days…
+when-margin-unit-placeholder = 5…
+when-margin-unread = This cannot be read as a length of time.
 when-hint-dates = Years, dates, months, centuries and decades are read, with BC or BCE where needed. A year stands for the whole year.
 when-hint-units = Times are numbers of the timeline’s unit, set under its lanes. “Year 12” and “12” are the same.
 when-bc = BC

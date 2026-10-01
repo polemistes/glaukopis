@@ -178,6 +178,9 @@
     /** Where the label stands and how wide it is thought to be. */
     labelLeft: number;
     labelWidth: number;
+    /** How far the margins either side reach, where there are any. */
+    fadeLeft: number;
+    fadeRight: number;
   }
 
   const CHAR = 6.6;
@@ -213,15 +216,18 @@
       for (const event of placed) {
         const left = x(event.placed.from);
         const right = Math.max(x(event.placed.to), left + 8);
+        const [before, after] = event.placed.margins;
+        const fadeLeft = before > 0 ? x(event.placed.from - before) : left;
+        const fadeRight = after > 0 ? Math.max(x(event.placed.to + after), right) : right;
         const lw = labelWidth(event.name);
         const labelLeft = event.placed.span && right - left > lw ? left + 4 : right + 6;
-        const extent = Math.max(right, labelLeft + lw);
-        let row = ends.findIndex((end) => end < left - 2);
+        const extent = Math.max(right, fadeRight, labelLeft + lw);
+        let row = ends.findIndex((end) => end < fadeLeft - 2);
         if (row < 0) {
           row = ends.length;
           ends.push(extent);
         } else ends[row] = extent;
-        drawn.push({ event, row, left, right, labelLeft, labelWidth: lw });
+        drawn.push({ event, row, left, right, labelLeft, labelWidth: lw, fadeLeft, fadeRight });
       }
       laid.push({ ...lane, rows: Math.max(ends.length, 1), drawn });
     }
@@ -347,6 +353,24 @@
                 style:left="{wFrom}px"
                 style:width="{Math.max(wTo - wFrom, 2)}px"
                 style:top="{y + 4}px"
+              ></div>
+            {/if}
+            {#if d.fadeLeft < d.left}
+              <div
+                class="fade before"
+                style:left="{d.fadeLeft}px"
+                style:width="{d.left - d.fadeLeft}px"
+                style:top="{y + 4}px"
+                style:--event={d.event.colour ?? 'var(--accent)'}
+              ></div>
+            {/if}
+            {#if d.fadeRight > d.right}
+              <div
+                class="fade after"
+                style:left="{d.right}px"
+                style:width="{d.fadeRight - d.right}px"
+                style:top="{y + 4}px"
+                style:--event={d.event.colour ?? 'var(--accent)'}
               ></div>
             {/if}
             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -587,6 +611,27 @@
   }
   .event.approx {
     opacity: 0.85;
+  }
+  /* The margin either side of a time: a band that fades away from it. */
+  .fade {
+    position: absolute;
+    height: 12px;
+    border-radius: 6px;
+    pointer-events: none;
+  }
+  .fade.before {
+    background: linear-gradient(
+      to right,
+      transparent,
+      color-mix(in srgb, var(--event) 38%, transparent)
+    );
+  }
+  .fade.after {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--event) 38%, transparent),
+      transparent
+    );
   }
   .event.chosen {
     outline: 2px solid var(--accent);

@@ -13,7 +13,7 @@
  * placed in levels, each after what it comes after, with no scale.
  */
 
-import { readTime, type Axis } from './time';
+import { readDuration, readTime, type Axis } from './time';
 
 /** One end of a placement. */
 export interface Bound {
@@ -26,6 +26,12 @@ export interface Bound {
   /** Within this element's span. */
   during?: string;
   approx?: boolean;
+  /**
+   * A margin either side of a written time, as a length of time: `5
+   * years`, `3 months`; on the axis of units a number. The time may be so
+   * much earlier or later than written; it is drawn fading away both ways.
+   */
+  margin?: string;
 }
 
 /** When an element is: at a point (`start` alone), or over a span. */
@@ -47,6 +53,8 @@ export interface Placed {
   window: { start: [number, number]; end: [number, number] } | null;
   /** Said to be approximate, at either end. */
   approx: boolean;
+  /** The margin either side, at the start and at the end, on the axis; nought where there is none. */
+  margins: [number, number];
   /** What is wrong with it: it is in contradiction with what it refers to, or refers to what is not placed. */
   problem: 'contradiction' | 'unknown' | null;
 }
@@ -71,6 +79,9 @@ interface Node {
   /** A written time at each end, as written: it is drawn there whatever else says. */
   fixedStart: Interval | null;
   fixedEnd: Interval | null;
+  /** The margin either side of each written end, on the axis. */
+  marginStart: number;
+  marginEnd: number;
   problem: Placed['problem'];
 }
 
@@ -85,6 +96,12 @@ function hasWindow(w: When): boolean {
   return isRelative(w.start) || (!!w.end && isRelative(w.end));
 }
 
+/** The margin either side of a written end, on the axis; nought where none is said, or it cannot be read. */
+function marginOf(b: Bound, axis: Axis): number {
+  if (!b.at || !b.margin) return 0;
+  return readDuration(b.margin, axis) ?? 0;
+}
+
 /** Solves where everything stands, from what each element says. */
 export function solve(items: { id: string; when: When }[], axis: Axis): Solved {
   const nodes = new Map<string, Node>();
@@ -97,24 +114,31 @@ export function solve(items: { id: string; when: When }[], axis: Axis): Solved {
       end: ALL,
       fixedStart: null,
       fixedEnd: null,
+      marginStart: 0,
+      marginEnd: 0,
       problem: null,
     };
+    // A written time is drawn as written; with a margin either side, what
+    // is relative to it may be anywhere within the margin.
     const startTime = when.start.at ? readTime(when.start.at, axis) : null;
     if (startTime) {
-      node.start = [startTime.from, startTime.to];
-      node.fixedStart = node.start;
+      node.marginStart = marginOf(when.start, axis);
+      node.fixedStart = [startTime.from, startTime.to];
+      node.start = [startTime.from - node.marginStart, startTime.to + node.marginStart];
       anyFixed = true;
     } else if (when.start.at) node.problem = 'unknown';
     if (when.end) {
       const endTime = when.end.at ? readTime(when.end.at, axis) : null;
       if (endTime) {
-        node.end = [endTime.from, endTime.to];
-        node.fixedEnd = node.end;
+        node.marginEnd = marginOf(when.end, axis);
+        node.fixedEnd = [endTime.from, endTime.to];
+        node.end = [endTime.from - node.marginEnd, endTime.to + node.marginEnd];
         anyFixed = true;
       } else if (when.end.at) node.problem = 'unknown';
     } else {
       node.end = node.start;
       node.fixedEnd = node.fixedStart;
+      node.marginEnd = node.marginStart;
     }
     nodes.set(id, node);
   }
@@ -239,6 +263,7 @@ export function solve(items: { id: string; when: When }[], axis: Axis): Solved {
       fixed: false,
       window: null,
       approx: false,
+      margins: [0, 0],
       problem: node.problem ?? 'unknown',
     });
   };
@@ -261,6 +286,7 @@ export function solve(items: { id: string; when: When }[], axis: Axis): Solved {
       return;
     }
     drawn.set(node.id, { from, to });
+    const margins: [number, number] = [node.marginStart, node.marginEnd];
     placed.set(node.id, {
       id: node.id,
       span: !!node.when.end,
@@ -269,10 +295,12 @@ export function solve(items: { id: string; when: When }[], axis: Axis): Solved {
       fixed: !!node.fixedStart && !!node.fixedEnd,
       window: hasWindow(node.when) ? { start: node.start, end: node.end } : null,
       approx: !!node.when.start.approx || !!node.when.end?.approx,
+      margins,
       problem: node.problem,
     });
-    min = Math.min(min, from);
-    max = Math.max(max, to);
+    // The margins are drawn too: the range takes them in.
+    min = Math.min(min, from - margins[0]);
+    max = Math.max(max, to + margins[1]);
   };
   // What is written first; then what refers only to what is drawn, round by
   // round; last, what refers to itself in a circle, from its window alone.
@@ -353,6 +381,7 @@ function ordered(nodes: Map<string, Node>): Solved {
       fixed: false,
       window: null,
       approx: !!node.when.start.approx || !!node.when.end?.approx,
+      margins: [0, 0],
       problem: circular.has(node.id) ? 'contradiction' : node.problem,
     });
     max = Math.max(max, to);
@@ -367,7 +396,8 @@ export function describeWhen(
   words: { after: string; before: string; during: string; to: string; approx: string },
 ): string {
   const bound = (b: Bound): string => {
-    if (b.at) return (b.approx ? `${words.approx} ` : '') + b.at;
+    if (b.at)
+      return (b.approx ? `${words.approx} ` : '') + b.at + (b.margin ? ` ± ${b.margin}` : '');
     const parts: string[] = [];
     if (b.after) parts.push(`${words.after} ${nameOf(b.after)}`);
     if (b.before) parts.push(`${words.before} ${nameOf(b.before)}`);

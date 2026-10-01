@@ -725,13 +725,19 @@ written in words — `431 BC`, `c. 480 BCE`, `May 1453`, `1453-05-29`, `5th
 century BC`, `the 1920s` — or relative: *after* another element, *before*
 one, *between* two, or *during* one. A year stands for the whole year, a
 century for the whole century: what is not known more finely is not drawn
-more finely. **Approximately** marks an end as a guess.
+more finely. **Approximately** marks an end as a guess. A written time may
+also be given a margin either side, **Give or take** `5 years`, `3 months`,
+`10 days`, or a number of the timeline's units: the time is drawn where it
+was written, with a band that fades away on both sides as far as the
+margin reaches, and what is placed relative to it is allowed that room.
 
 Once anything in a map says when it is, the map can be seen as a
 **Timeline**, beside *Diagram* and *Text*. Each child of the centre is a
 lane; the placed elements of its branch stand in it, and its own placement,
 if it has one, is the span of the lane — a person's lifetime, a city's
-years. The button with the rows among the timeline's controls chooses the
+years. A lane in which nothing says when it is, its own element included,
+is not shown: what says nothing of its time stays out of the timeline. The
+button with the rows among the timeline's controls chooses the
 lanes: any branch can be one lane, or each of its children a lane of their
 own. An element that stands for another map brings that map's placed
 elements with it. Elements that are in no lane stand in a lane of their own

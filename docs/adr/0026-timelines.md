@@ -36,6 +36,13 @@ what a scholar knows.
   lane's own placement is its span. An element that stands for another
   map brings that map's placed elements with it, so that maps are compared
   by inclusion, as the document already does.
+- **A written time may have a margin either side** (`margin` on the end,
+  added 2026-10-01): a length of time, `5 years`, `3 months`, `10 days`,
+  or a number of units (`timeline/time.ts`, `readDuration`). The time is
+  drawn where it was written, with a band fading away both ways as far as
+  the margin reaches; what is relative to it may be anywhere within the
+  margin. A lane in which nothing says when it is, its element included,
+  is not shown (same day).
 - Nothing of it goes into the document yet.
 
 ## Consequences

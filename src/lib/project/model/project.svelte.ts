@@ -89,10 +89,12 @@ function readWhen(value: unknown): When | null {
   const given = value as { start?: unknown; end?: unknown };
   const bound = (b: unknown): Bound | null => {
     if (!b || typeof b !== 'object') return null;
-    const { at, after, before, during, approx } = b as Record<string, unknown>;
+    const { at, after, before, during, approx, margin } = b as Record<string, unknown>;
     const out: Bound = {};
-    if (typeof at === 'string' && at.trim()) out.at = at.trim();
-    else {
+    if (typeof at === 'string' && at.trim()) {
+      out.at = at.trim();
+      if (typeof margin === 'string' && margin.trim()) out.margin = margin.trim();
+    } else {
       if (typeof after === 'string' && after) out.after = after;
       if (typeof before === 'string' && before) out.before = before;
       if (typeof during === 'string' && during) out.during = during;

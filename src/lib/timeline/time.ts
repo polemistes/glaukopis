@@ -177,6 +177,38 @@ export function isTime(written: string, axis: Axis): boolean {
   return readTime(written, axis) !== null;
 }
 
+/** The lengths of time a margin may be written in, and what each is in years. */
+const LENGTHS: [RegExp, number][] = [
+  [/^(?:years?|yrs?|y|år)$/i, 1],
+  [/^(?:decades?|tiår)$/i, 10],
+  [/^(?:centuries|century|c|århundrer?|hundreår)$/i, 100],
+  [/^(?:months?|mo|måneder?|månader|mnd)$/i, 1 / 12],
+  [/^(?:weeks?|wks?|uker?|veker?)$/i, 7 / 365],
+  [/^(?:days?|d|dager?|dagar)$/i, 1 / 365],
+];
+
+/**
+ * A length of time, as a margin either side of a time is written: `5
+ * years`, `3 months`, `10 days`, a bare number of years; on the axis of
+ * units a number, with or without the unit's name. A sign of plus and
+ * minus before it is allowed. Nothing where it cannot be read.
+ */
+export function readDuration(written: string, axis: Axis): number | null {
+  const text = written
+    .trim()
+    .replace(/^(?:±|\+\/-|\+-|-\/\+)\s*/, '')
+    .trim();
+  if (!text) return null;
+  const m = /^(\d+(?:[.,]\d+)?)\s*([\p{L}.]*)$/u.exec(text);
+  if (!m) return null;
+  const n = Number(m[1].replace(',', '.'));
+  if (!Number.isFinite(n) || n < 0) return null;
+  const word = m[2].replace(/\.$/, '');
+  if (axis === 'units' || !word) return n;
+  const length = LENGTHS.find(([re]) => re.test(word));
+  return length ? n * length[1] : null;
+}
+
 /** A year as it is written on the axis of dates: 0 is 1 BC. */
 export function writeYear(value: number, bcWord = 'BC'): string {
   const year = Math.floor(value);
