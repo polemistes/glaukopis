@@ -267,3 +267,26 @@ What this settles:
   number of the timeline's units), drawn as a band fading away on both
   sides of the time. What is placed relative to it may be anywhere within
   the margin.
+
+## 2026-10-01 — what comes with the application, and what comes from the system
+
+> the dictionaries both for spelling and tesseract should be optional packages for Linux. For Windows and Mac do what is best for those platforms.
+
+Asked earlier why the fonts that come with Typst were bundled rather than
+installed as dependencies, the answer agreed on was that Typst stays
+compiled in (ADR 0023), for the speed of the preview, but its fonts come
+from packages on Linux.
+
+What this settles:
+
+- On Arch Linux the dictionaries of spelling are packages of their own,
+  `glaukopis-dictionaries-en`, `-nb` and `-nn`, and optional; the
+  dictionaries of Hunspell that the system has serve as well. Tesseract is
+  optional too, with the data of its languages.
+- The fonts that come with Typst are a feature of the build,
+  `embedded-fonts`, on by default and off in the package for Arch, which
+  depends on `otf-libertinus` and offers `ttf-dejavu` and
+  `otf-latin-modern` instead.
+- The installers for Windows and macOS bring everything, since those systems
+  have no packages to lean on: Pandoc, Tesseract with its data, the
+  dictionaries, and the fonts compiled in.

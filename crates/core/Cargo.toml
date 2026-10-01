@@ -40,10 +40,15 @@ typst = "0.15.1"
 typst-svg = "0.15.1"
 typst-layout = "0.15.1"
 typst-pdf = "0.15.1"
-typst-kit = { version = "0.15.1", default-features = false, features = ["scan-fonts", "embedded-fonts"] }
+typst-kit = { version = "0.15.1", default-features = false, features = ["scan-fonts"] }
 comemo = "0.5"
 
 [features]
+default = ["embedded-fonts"]
+# The fonts that come with Typst, compiled in: for Windows and macOS, where
+# nothing installs fonts for the application. A package of Linux leaves them
+# out and depends on the packages of the fonts instead.
+embedded-fonts = ["typst-kit/embedded-fonts"]
 # Compile SQLite in, where the system has none to link to.
 bundled-sqlite = ["rusqlite/bundled"]
 

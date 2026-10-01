@@ -44,7 +44,7 @@
       "webviewInstallMode": { "type": "downloadBootstrapper" }
     },
     "linux": {
-      "deb": { "depends": ["pandoc", "typst"] },
+      "deb": { "depends": ["pandoc"] },
       "rpm": { "depends": ["pandoc"] }
     }
   }

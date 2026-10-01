@@ -1461,9 +1461,9 @@ installed as a package, and where it is found is shown under *Settings*.
 Typst, which sets the pages of the preview and of the PDF, is part of
 Glaukopis; it sets with the fonts of the computer, and on Windows and macOS
 with those it brings itself as well. On Arch the same fonts are packages:
-`otf-libertinus`, the serif it falls back on, is installed with Glaukopis,
-and `ttf-dejavu`, for code, and `otf-latin-modern`, for the font of LaTeX,
-are optional.
+`otf-libertinus`, the serif it falls back on and the font mathematics is set
+in, is installed with Glaukopis, and `ttf-dejavu`, for code, and
+`otf-latin-modern`, for the font of LaTeX, are optional.
 
 LaTeX is needed only for the PDF that is set by it. LuaLaTeX is used where
 it is installed, since it knows the fonts of the computer and can turn to

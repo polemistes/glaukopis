@@ -831,6 +831,24 @@ pub fn fallbacks(family: &str) -> Vec<&'static str> {
     out
 }
 
+/// Fonts that mathematics may be set in, the first that is installed used.
+/// Mathematics needs a font made for it, which says how its parts are put
+/// together; a font of text will not do, and Typst sets no equation without
+/// one. First the font Typst sets it in by itself, which comes with Typst
+/// where its fonts are compiled in (Windows, macOS); then that of Libertinus,
+/// which the package of Linux depends on; then those that are common.
+pub const MATH_FONTS: [&str; 9] = [
+    "New Computer Modern Math",
+    "Libertinus Math",
+    "Latin Modern Math",
+    "STIX Two Math",
+    "TeX Gyre Termes Math",
+    "TeX Gyre Pagella Math",
+    "Cambria Math",
+    "DejaVu Math TeX Gyre",
+    "Noto Sans Math",
+];
+
 // ---- where formats are kept ----
 
 #[derive(Debug, Clone, Serialize)]

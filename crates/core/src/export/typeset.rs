@@ -6,7 +6,7 @@
 //!
 //! What Typst may read is the place where the document is made, and nothing
 //! outside it; it asks for no packages. Its fonts are those of the computer
-//! and those that come with Typst, found once.
+//! and, where they are compiled in, those that come with Typst, found once.
 
 use std::path::Path;
 use std::sync::OnceLock;
@@ -24,13 +24,19 @@ pub use typst_layout::PagedDocument;
 use crate::error::{Error, Result};
 
 /// The fonts Typst can set with: those of the computer, and those that come
-/// with Typst, in that order, as the program has them.
+/// with Typst, in that order, as the program has them. The fonts of Typst
+/// are compiled in only with the feature `embedded-fonts`: on Windows and
+/// macOS, where nothing else would install them; a package of Linux is
+/// built without them and depends on the packages of the fonts instead, so
+/// that the application is the smaller and the fonts are shared and kept up
+/// by the system.
 fn fonts() -> &'static FontStore {
     static FONTS: OnceLock<FontStore> = OnceLock::new();
     FONTS.get_or_init(|| {
         let began = std::time::Instant::now();
         let mut store = FontStore::new();
         store.extend(typst_kit::fonts::system());
+        #[cfg(feature = "embedded-fonts")]
         store.extend(typst_kit::fonts::embedded());
         tracing::info!(took = ?began.elapsed(), "the fonts Typst sets with are found");
         store
@@ -211,7 +217,12 @@ mod tests {
     #[test]
     fn its_fonts_are_known() {
         let families = families();
-        // Those that come with Typst are always there.
+        // Those that come with Typst are there wherever they are compiled in;
+        // without them, the fonts are the computer's alone, whatever it has.
+        #[cfg(feature = "embedded-fonts")]
         assert!(families.iter().any(|f| f == "Libertinus Serif"), "{families:?}");
+        let mut lowered: Vec<String> = families.iter().map(|f| f.to_lowercase()).collect();
+        lowered.dedup();
+        assert_eq!(lowered.len(), families.len(), "each family once");
     }
 }

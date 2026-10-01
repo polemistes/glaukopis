@@ -19,7 +19,7 @@ path = "src/main.rs"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-glaukopis-core = { path = "../crates/core" }
+glaukopis-core = { path = "../crates/core", default-features = false }
 tauri = { version = "2.11", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
@@ -30,9 +30,13 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 [features]
-default = []
+default = ["embedded-fonts"]
 # Serve the built interface from inside the executable instead of the dev server.
 custom-protocol = ["tauri/custom-protocol"]
+# The fonts that come with Typst, compiled in: the installers for Windows
+# and macOS keep them; the package for Linux is built without, and depends
+# on the packages of the fonts.
+embedded-fonts = ["glaukopis-core/embedded-fonts"]
 # SQLite compiled in, where the system has none to link to: Windows, macOS.
 bundled-sqlite = ["glaukopis-core/bundled-sqlite"]
 

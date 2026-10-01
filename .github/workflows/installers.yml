@@ -5,7 +5,12 @@
 # the run, not published as a release.
 #
 # Pandoc and Tesseract come with the application, in resources/bin, where it
-# looks for them after the settings and the path. Typst is part of it (ADR 0023).
+# looks for them after the settings and the path; the dictionaries of spelling
+# come in resources/dictionaries; and Typst is part of it (ADR 0023), with its
+# fonts compiled in (the feature `embedded-fonts`, on unless turned off). On
+# Linux these are packages of the system, which the application's package
+# depends on or offers; Windows and macOS have no such packages to lean on,
+# so the installers bring everything.
 
 name: Installers
 

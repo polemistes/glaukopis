@@ -49,3 +49,19 @@ not draw pictures.
   making that is stopped is stopped before and after it. A document is set
   in about a second at most.
 - A font installed while the application runs is seen when it next starts.
+
+## Note of 2026-10-01
+
+The fonts that come with Typst are compiled in only with the feature
+`embedded-fonts` of `glaukopis-core` and of the application, which is on by
+default: the installers for Windows and macOS keep them, since nothing else
+would install them there. The package for Arch Linux is built without them
+(`--no-default-features --features custom-protocol`) and depends on the
+packages of the same fonts instead, `otf-libertinus` among what it needs and
+`ttf-dejavu` among what it may have, so that the fonts are shared with the
+rest of the system and kept up by it, and the application is smaller by
+them. Without the feature, Typst sets with the fonts of the computer alone.
+Mathematics needs a font made for it, and Typst sets no equation without
+one: the preamble names a list to turn to, Typst's own first, then
+Libertinus Math, which `otf-libertinus` brings, then the common ones
+(`formats::MATH_FONTS`).

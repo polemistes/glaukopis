@@ -8,8 +8,8 @@ use std::fmt::Write;
 
 use super::kinds::{self, Family, OwnKind, Resolved};
 use super::{
-    Align, Case, DocumentFormat, HeadContent, HeadingLevel, NoteKind, Paragraphs, Position, Rules, TitlePlacement,
-    fallbacks,
+    Align, Case, DocumentFormat, HeadContent, HeadingLevel, MATH_FONTS, NoteKind, Paragraphs, Position, Rules,
+    TitlePlacement, fallbacks,
 };
 
 /// What the running head and the properties of the file are made from.
@@ -587,6 +587,9 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
         out,
         "#show math.equation.where(block: true): set block(above: {body_leading} + 0.8em, below: {body_leading} + 0.8em)"
     );
+    // Mathematics in a font made for it: the first that is installed.
+    let math: Vec<String> = MATH_FONTS.iter().map(|f| string(f)).collect();
+    let _ = writeln!(out, "#show math.equation: set text(font: ({},))", math.join(", "));
 
     // The title block.
     let t = &f.title;
@@ -709,6 +712,10 @@ mod tests {
         assert!(out.contains("pagebreak(weak: true)"));
         assert!(out.contains("region: \"gb\""));
         assert!(out.contains("footer: none"));
+        assert!(
+            out.contains("#show math.equation: set text(font: (\"New Computer Modern Math\", \"Libertinus Math\", "),
+            "mathematics has fonts of its own to turn to: {out}"
+        );
         assert!(
             out.contains("#show <gk-kind-scene>: it => {\n  set text(size: 12pt, weight: \"bold\", style: \"normal\")"),
             "{out}"
