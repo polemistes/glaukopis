@@ -889,7 +889,8 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 6px 8px;
-    padding: 6px 12px;
+    /* Room at the right for the controls, which stand over the foot. */
+    padding: 6px 250px 6px 12px;
     border-top: 1px solid var(--line);
     background: var(--paper-raised);
     color: var(--ink-3);
