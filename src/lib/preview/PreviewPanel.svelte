@@ -28,7 +28,7 @@
   import DocumentDetails from './DocumentDetails.svelte';
   import { documentRequest, documents, formatKindWords, kindWords } from './documents.svelte';
   import ExportDialog from './ExportDialog.svelte';
-  import { formatEditorUi } from './formatEditor.svelte';
+  import { formatEditorUi } from './format-editor.svelte';
   import StyleEditor from './StyleEditor.svelte';
   import StyleBrowser from './StyleBrowser.svelte';
 

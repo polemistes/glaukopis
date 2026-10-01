@@ -11,7 +11,7 @@
   import { CATALOGUE, GROUPS, specOf } from '$lib/editor/kinds';
   import { rememberPassageKind } from '$lib/editor/own-kinds.svelte';
   import { t } from '$lib/i18n';
-  import { lengthsOk, lookRows, unsaid, type LookReach } from '$lib/preview/formatEditor.svelte';
+  import { lengthsOk, lookRows, unsaid, type LookReach } from '$lib/preview/format-editor.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';

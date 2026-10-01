@@ -54,7 +54,7 @@
   import { languageName, t, TEXT_LANGUAGES } from '$lib/i18n';
   import { showPictures } from '$lib/pictures/store.svelte';
   import { documents } from '$lib/preview/documents.svelte';
-  import { formatEditorUi } from '$lib/preview/formatEditor.svelte';
+  import { formatEditorUi } from '$lib/preview/format-editor.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
   import { askForTable, chooseTable } from '$lib/tables/ask';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';

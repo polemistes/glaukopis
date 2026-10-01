@@ -87,7 +87,7 @@
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
   import FormatEditor from '$lib/preview/FormatEditor.svelte';
   import { documentRequest } from '$lib/preview/documents.svelte';
-  import { formatEditorUi } from '$lib/preview/formatEditor.svelte';
+  import { formatEditorUi } from '$lib/preview/format-editor.svelte';
   import { historyOf } from '$lib/history/history.svelte';
   import { me } from '$lib/history/me.svelte';
   import * as positions from '$lib/history/positions';

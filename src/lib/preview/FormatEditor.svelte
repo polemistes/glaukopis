@@ -27,7 +27,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import { documents } from './documents.svelte';
-  import { lengthsOk, lookRows, lookWords, setKindLook } from './formatEditor.svelte';
+  import { lengthsOk, lookRows, lookWords, setKindLook } from './format-editor.svelte';
 
   interface Props {
     /** The format to begin from. */
