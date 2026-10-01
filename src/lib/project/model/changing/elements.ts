@@ -11,6 +11,7 @@ import { str, type YNode } from '../origins';
 import type { Project } from '../project.svelte';
 import { fillBody, fillTitle } from '../text';
 import { isAncestor, subtree, topmost } from '../tree';
+import type { When } from '$lib/timeline/solve';
 import type { NodeRecord, Position, Status } from '../types';
 import { deleteComments } from './comments';
 import { makeLink } from './links';
@@ -252,6 +253,11 @@ export const elementChanges = {
     this.transact(() => {
       for (const id of ids) set(this, id, 'status', status, null);
     });
+  },
+
+  /** Says when an element is, in time; with nothing, no longer says it. */
+  setWhen(this: Project, id: string, when: When | null) {
+    set(this, id, 'when', when, null);
   },
 
   setExcluded(this: Project, id: string, excluded: boolean) {

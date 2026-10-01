@@ -12,7 +12,7 @@ import { newId } from '$lib/util/id';
 import { nowIso } from '../origins';
 import type { Project } from '../project.svelte';
 import { subtree } from '../tree';
-import type { DocumentSettings } from '../types';
+import type { DocumentSettings, TimelineSettings } from '../types';
 import { cloneLinks, cloneNode, deleteNodes, makeNode } from './elements';
 
 export const mapChanges = {
@@ -119,6 +119,21 @@ export const mapChanges = {
         if (v === undefined || v === '' || (Array.isArray(v) && !v.length)) delete next[k];
       }
       m.set('document', next);
+    });
+  },
+
+  /** Changes how a map is shown as a timeline. */
+  setTimeline(this: Project, id: string, patch: Partial<TimelineSettings>) {
+    const m = this.yMaps.get(id);
+    if (!m) return;
+    this.transact(() => {
+      const current = (m.get('timeline') as TimelineSettings | undefined) ?? {};
+      const next: Record<string, unknown> = { ...current, ...patch };
+      for (const [k, v] of Object.entries(next)) {
+        if (v === undefined || v === '' || (Array.isArray(v) && !v.length)) delete next[k];
+      }
+      if (Object.keys(next).length) m.set('timeline', next);
+      else m.delete('timeline');
     });
   },
 

@@ -9,6 +9,7 @@ const map = (id: string): MapRecord => ({
   order: 'a0',
   created: '',
   document: {},
+  timeline: {},
 });
 const maps = [map('a'), map('b'), map('c')];
 

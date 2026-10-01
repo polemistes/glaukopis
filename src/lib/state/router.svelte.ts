@@ -3,7 +3,7 @@
  * back and forward work, and so that a place can be opened directly.
  */
 
-export type MapMode = 'diagram' | 'text';
+export type MapMode = 'diagram' | 'text' | 'timeline';
 
 export type Route =
   | { view: 'projects' }
@@ -32,12 +32,7 @@ export function parseRoute(hash: string): Route {
         view: 'project',
         project: parts[1],
         map: parts[2],
-        mode:
-          params.get('mode') === 'text'
-            ? 'text'
-            : params.get('mode') === 'diagram'
-              ? 'diagram'
-              : undefined,
+        mode: (['text', 'diagram', 'timeline'] as const).find((m) => m === params.get('mode')),
       };
     case 'settings':
       return { view: 'settings', section: parts[1] };

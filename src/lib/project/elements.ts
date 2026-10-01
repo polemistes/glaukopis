@@ -7,6 +7,7 @@ import FileInput from '@lucide/svelte/icons/file-input';
 import GitBranchPlus from '@lucide/svelte/icons/git-branch-plus';
 import GitCompare from '@lucide/svelte/icons/git-compare';
 import CircleDashed from '@lucide/svelte/icons/circle-dashed';
+import Clock from '@lucide/svelte/icons/clock';
 import Heading from '@lucide/svelte/icons/heading';
 import LayoutGrid from '@lucide/svelte/icons/layout-grid';
 import Link2 from '@lucide/svelte/icons/link-2';
@@ -22,6 +23,8 @@ import { languages, t } from '$lib/i18n';
 import { commentsUi } from '$lib/comments/ui.svelte';
 import { truncate } from '$lib/library/format';
 import { confirm } from '$lib/ui/confirm.svelte';
+import { describeWhen } from '$lib/timeline/solve';
+import { sayWhen } from '$lib/timeline/when.svelte';
 import { kindColour } from './kinds';
 import { manageKinds, newKind } from './kinds.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
@@ -56,6 +59,17 @@ export interface ElementActions {
 // ---- moving an element by the keys, in the diagram and in the text ----
 
 /** Puts an element under the one before it. Returns whether it moved. */
+/** The words with which a placement in time is said. */
+export function saidWords() {
+  return {
+    after: t('when-said-after'),
+    before: t('when-said-before'),
+    during: t('when-said-during'),
+    to: t('when-said-to'),
+    approx: t('when-said-approx'),
+  };
+}
+
 export function indent(project: Project, tree: Tree, id: string): boolean {
   const parent = tree.parent.get(id) ?? null;
   if (!parent) return false;
@@ -265,6 +279,18 @@ export function elementMenu(
       icon: MessageSquare,
       shortcut: 'Ctrl+Alt+C',
       action: () => commentsUi.begin(one.id),
+    });
+    items.push({
+      label: one.when ? t('when-change') : t('when-say'),
+      icon: Clock,
+      hint: one.when
+        ? describeWhen(
+            one.when,
+            (id) => project.node(id)?.title || t('project-untitled'),
+            saidWords(),
+          )
+        : undefined,
+      action: () => sayWhen(one.id),
     });
     items.push({ kind: 'separator' });
   }

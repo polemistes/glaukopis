@@ -12,6 +12,7 @@
  */
 
 import { t } from '$lib/i18n';
+import type { Bound, When } from '$lib/timeline/solve';
 import { SvelteMap } from 'svelte/reactivity';
 import * as Y from 'yjs';
 import { ySyncPluginKey } from 'y-prosemirror';
@@ -38,6 +39,7 @@ import {
   STATUSES,
   type DocumentSettings,
   type KindRecord,
+  type TimelineSettings,
   type LinkRecord,
   type MapRecord,
   type NodeRecord,
@@ -76,6 +78,29 @@ function holdsWorkOfOthers(type: Y.AbstractType<any>, me: number): boolean {
   // What a map holds by name: the parts of an element, and the attributes of a paragraph.
   for (const item of type._map.values()) if (holds(item)) return true;
   return false;
+}
+
+/** When an element is, as the document holds it; nothing where it says nothing that can be read. */
+function readWhen(value: unknown): When | null {
+  if (!value || typeof value !== 'object') return null;
+  const given = value as { start?: unknown; end?: unknown };
+  const bound = (b: unknown): Bound | null => {
+    if (!b || typeof b !== 'object') return null;
+    const { at, after, before, during, approx } = b as Record<string, unknown>;
+    const out: Bound = {};
+    if (typeof at === 'string' && at.trim()) out.at = at.trim();
+    else {
+      if (typeof after === 'string' && after) out.after = after;
+      if (typeof before === 'string' && before) out.before = before;
+      if (typeof during === 'string' && during) out.during = during;
+    }
+    if (approx === true) out.approx = true;
+    return out;
+  };
+  const start = bound(given.start);
+  if (!start) return null;
+  const end = given.end ? bound(given.end) : null;
+  return end ? { start, end } : { start };
 }
 
 /**
@@ -573,6 +598,7 @@ export class Project {
         order: str(m.get('order'), 'a0'),
         created: str(m.get('created')),
         document: (m.get('document') as DocumentSettings | undefined) ?? {},
+        timeline: (m.get('timeline') as TimelineSettings | undefined) ?? {},
       });
     }
     list.sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : a.id < b.id ? -1 : 1));
@@ -625,6 +651,7 @@ export class Project {
       origin: origin && origin.map && origin.node ? origin : null,
       status: STATUSES.find((s) => s === n.get('status')) ?? null,
       kind: str(n.get('kind')) || null,
+      when: readWhen(n.get('when')),
       title: inlineText(title).trim(),
       titleHtml: titleHtml(title),
       empty: facts.empty,

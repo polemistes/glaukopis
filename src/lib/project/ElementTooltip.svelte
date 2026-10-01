@@ -3,7 +3,9 @@
   import { t } from '$lib/i18n';
   import { place, type RectLike } from '$lib/ui/floating';
   import { hydrate } from '$lib/figures/hydrate.svelte';
+  import { saidWords } from './elements';
   import { kindColour } from './kinds';
+  import { describeWhen } from '$lib/timeline/solve';
   import { blocksHtml, excerpt } from './model/html';
   import type { Project } from './model/project.svelte';
   import { readBody } from './model/text';
@@ -31,9 +33,24 @@
   /** Where the element was copied from, if it is a copy of what is still there. */
   const copied = $derived(node?.origin ? project.copyOf(id) : null);
   const kind = $derived(project.kind(node?.kind));
+  const when = $derived(
+    node?.when
+      ? describeWhen(
+          node.when,
+          (id) => project.node(id)?.title || t('project-untitled'),
+          saidWords(),
+        )
+      : '',
+  );
   const worth = $derived(
     !!node &&
-      (!node.empty || !!included || !node.heading || node.excluded || !!copied?.original || !!kind),
+      (!node.empty ||
+        !!included ||
+        !node.heading ||
+        node.excluded ||
+        !!copied?.original ||
+        !!kind ||
+        !!when),
   );
 
   $effect(() => {
@@ -51,8 +68,9 @@
       </div>
       {#if content.cut}<div class="more">{t('project-read-on')}</div>{/if}
     {/if}
-    {#if included || !node.heading || node.excluded || copied?.original || kind}
+    {#if included || !node.heading || node.excluded || copied?.original || kind || when}
       <div class="facts" class:alone={!content.html}>
+        {#if when}<div>{when}</div>{/if}
         {#if kind}
           <div class="kind">
             <span class="dot" style:background={kindColour(kind.colour).ink}></span>{kind.name}

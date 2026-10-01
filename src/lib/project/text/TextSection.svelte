@@ -18,7 +18,9 @@
   import type { Other, Project } from '../model/project.svelte';
   import { readBody } from '../model/text';
   import type { NodeRecord } from '../model/types';
+  import { saidWords } from '../elements';
   import { kindColour } from '../kinds';
+  import { describeWhen } from '$lib/timeline/solve';
   import { pieces } from '../pieces';
   import { reviewing } from '$lib/review/context';
   import { reviewDrawn } from '$lib/review/drawn';
@@ -251,6 +253,15 @@
       {#if kind}
         <span class="tag kind" style:--kind={kindColour(kind.colour).ink}
           ><span class="dot"></span>{kind.name}</span
+        >
+      {/if}
+      {#if node.when}
+        <span class="tag when"
+          >{describeWhen(
+            node.when,
+            (id) => project.node(id)?.title || t('project-untitled'),
+            saidWords(),
+          )}</span
         >
       {/if}
       {#if !node.heading && level > 0}<span class="tag">{t('text-not-printed')}</span>{/if}
@@ -612,6 +623,11 @@
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+  }
+  .tag.when {
+    margin-right: 10px;
+    font-style: normal;
+    color: var(--ink-3);
   }
   .tag.kind .dot {
     width: 7px;

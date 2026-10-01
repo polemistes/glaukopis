@@ -1,3 +1,4 @@
+import type { When } from '$lib/timeline/solve';
 import type { SetOff } from './text';
 /** The records of a project, as the interface reads them from the document. */
 
@@ -40,6 +41,24 @@ export interface MapRecord {
   order: string;
   created: string;
   document: DocumentSettings;
+  /** How the map is shown as a timeline. */
+  timeline: TimelineSettings;
+}
+
+/** A lane of a timeline: an element, whose branch the lane holds; or each of its children a lane of their own. */
+export interface Lane {
+  element: string;
+  each?: boolean;
+}
+
+/** How a map is shown as a timeline: its axis, and its lanes. */
+export interface TimelineSettings {
+  /** Dates of the world, or the units of an invented one. */
+  axis?: 'dates' | 'units';
+  /** What a unit is called, on the axis of units: "year", "day", or a word of the writer's. */
+  unit?: string;
+  /** The lanes; none for each child of the centre a lane. */
+  lanes?: Lane[];
 }
 
 /**
@@ -103,6 +122,8 @@ export interface NodeRecord {
   status: Status | null;
   /** The id of its kind (`KindRecord`); nothing where it has none. */
   kind: string | null;
+  /** When it is, in time; nothing where that is not said. See `timeline/solve.ts`. */
+  when: When | null;
 
   // Read from the content.
   title: string;

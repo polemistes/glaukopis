@@ -619,6 +619,45 @@ An element of a kind carries the colour at its left edge in the diagram,
 as a dot in the outline, and as a small label over its name in the text.
 Nothing of it goes into the document.
 
+## Timelines
+
+An element can say **when it is**: at a point, or over a span. Choose **Say
+when it is…** in its menu. Each end of the placement is either a time
+written in words — `431 BC`, `c. 480 BCE`, `May 1453`, `1453-05-29`, `5th
+century BC`, `the 1920s` — or relative: *after* another element, *before*
+one, *between* two, or *during* one. A year stands for the whole year, a
+century for the whole century: what is not known more finely is not drawn
+more finely. **Approximately** marks an end as a guess.
+
+Once anything in a map says when it is, the map can be seen as a
+**Timeline**, beside *Diagram* and *Text*. Each child of the centre is a
+lane; the placed elements of its branch stand in it, and its own placement,
+if it has one, is the span of the lane — a person's lifetime, a city's
+years. The button with the rows among the timeline's controls chooses the
+lanes: any branch can be one lane, or each of its children a lane of their
+own. An element that stands for another map brings that map's placed
+elements with it. Elements that are in no lane stand in a lane of their own
+at the foot.
+
+A written time stands where it was written. What is relative is **solved**:
+the timeline works out the window of what it may be, from everything else,
+and draws it dashed in the middle of that window, with the window as a
+faint band — the uncertainty is seen, not hidden. An element that is after
+something and before something else that comes earlier **cannot be placed**,
+and is marked; one that refers to an element that says nothing of its time
+is listed at the foot. Where nothing in the map has a written time, the
+timeline is **in order** only, each element a step after what it comes
+after, with no scale.
+
+The timeline has an **axis**: the dates of the world, or **units of your
+own** for an invented one — years, days, cycles, whatever you call them — in
+which times are numbers: `Year 12`, `Day 3`, or just `12`. Choose the axis
+under the lanes.
+
+Scroll with Shift or drag the timeline to move along it; Ctrl with the
+wheel, or the buttons, change the scale. A click chooses an element; a
+double click opens it in the text; the right button gives its menu.
+
 ## Comments
 
 A comment is a note on an element, or on a passage of its text: a question

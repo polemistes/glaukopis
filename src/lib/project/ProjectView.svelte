@@ -37,7 +37,7 @@
   import { openProject, projects } from '$lib/state/projects.svelte';
   import { jumpFor } from '$lib/search/everything.svelte';
   import { takeCitations } from '$lib/library/citing.svelte';
-  import { router } from '$lib/state/router.svelte';
+  import { router, type MapMode } from '$lib/state/router.svelte';
   import { shortcuts } from '$lib/shell/keys.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -53,6 +53,10 @@
   import { comparing } from './copies.svelte';
   import CopyDialog from './CopyDialog.svelte';
   import KindDialog from './KindDialog.svelte';
+  import TimelineView from '$lib/timeline/TimelineView.svelte';
+  import WhenDialog from '$lib/timeline/WhenDialog.svelte';
+  import { whenUi } from '$lib/timeline/when.svelte';
+  import Clock from '@lucide/svelte/icons/clock';
   import KindsDialog from './KindsDialog.svelte';
   import { kindsUi } from './kinds.svelte';
   import { filesDropped, mapOfIt } from './drops';
@@ -348,13 +352,13 @@
     }
   });
 
-  function show(map: string, options: { pane?: number; element?: string } = {}) {
+  function show(map: string, options: { pane?: number; element?: string; mode?: MapMode } = {}) {
     const i = options.pane ?? focused;
     if (!panes[i]) return;
     // Set anew, so that an element asked for again is shown again.
     reveal = null;
     reveal = options.element ?? null;
-    panes[i] = { ...panes[i], map };
+    panes[i] = { ...panes[i], map, ...(options.mode ? { mode: options.mode } : {}) };
     focused = i;
   }
 
@@ -422,6 +426,15 @@
   $effect(() => {
     if (commentsUi.asked) untrack(() => side('comments', true));
   });
+
+  /** Whether a map has anything to show as a timeline: an element that says when it is, or settings. */
+  function timed(map: string): boolean {
+    if (!project) return false;
+    const settings = project.map(map)?.timeline;
+    if (settings && (settings.axis || settings.lanes?.length)) return true;
+    for (const n of project.nodes.values()) if (n.map === map && n.when) return true;
+    return false;
+  }
 
   function side(which: SideKind, shown?: boolean) {
     const open = shown ?? sideKind !== which;
@@ -646,6 +659,9 @@
         options={[
           { value: 'diagram', label: t('project-diagram'), icon: Network },
           { value: 'text', label: t('project-text'), icon: FileText },
+          ...(timed(pane.map) || pane.mode === 'timeline'
+            ? [{ value: 'timeline' as const, label: t('timeline-title'), icon: Clock }]
+            : []),
         ]}
         onchange={(mode) => (panes[focused] = { ...pane, mode })}
       />
@@ -738,6 +754,16 @@
                       iconOnly: true,
                     },
                     { value: 'text', label: t('project-text'), icon: FileText, iconOnly: true },
+                    ...(timed(p.map) || p.mode === 'timeline'
+                      ? [
+                          {
+                            value: 'timeline' as const,
+                            label: t('timeline-title'),
+                            icon: Clock,
+                            iconOnly: true,
+                          },
+                        ]
+                      : []),
                   ]}
                   onchange={(mode) => (panes[i] = { ...p, mode })}
                 />
@@ -750,6 +776,13 @@
               {#key `${p.map}:${p.mode}`}
                 {#if looking && looking.pane === i}
                   <PastView {project} map={p.map} {looking} onback={() => (looking = null)} />
+                {:else if p.mode === 'timeline'}
+                  <TimelineView
+                    {project}
+                    mapId={p.map}
+                    ongo={(element) => show(p.map, { element, pane: i, mode: 'text' })}
+                    reveal={i === focused ? reveal : null}
+                  />
                 {:else if p.mode === 'diagram'}
                   <MapDiagram
                     bind:this={diagrams[i]}
@@ -887,6 +920,12 @@
       assign={kindsUi.editing.assign}
       onclose={() => (kindsUi.editing = null)}
     />
+  {/key}
+{/if}
+
+{#if whenUi.element && project}
+  {#key whenUi.element}
+    <WhenDialog {project} id={whenUi.element} onclose={() => (whenUi.element = null)} />
   {/key}
 {/if}
 
