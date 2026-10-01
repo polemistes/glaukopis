@@ -3,8 +3,10 @@
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import FileInput from '@lucide/svelte/icons/file-input';
   import GripVertical from '@lucide/svelte/icons/grip-vertical';
+  import MessageSquare from '@lucide/svelte/icons/message-square';
   import type { EditorView } from 'prosemirror-view';
   import type { KeyAction } from '$lib/editor/plugins';
+  import { commentsUi } from '$lib/comments/ui.svelte';
   import RichText, { type FocusAt } from '$lib/editor/RichText.svelte';
   import { blocksHtml } from '../model/html';
   import { hydrate } from '$lib/figures/hydrate.svelte';
@@ -111,6 +113,8 @@
   );
   /** The language of the map, whose spelling the text is checked by. */
   const language = $derived(project.map(node.map)?.document.language ?? null);
+  /** The threads of comments on it that are open: a marker in the right margin. */
+  const commented = $derived(project.threadsOf(node.id).filter((th) => !th.resolved));
 
   $effect(() => {
     const id = node.id;
@@ -226,6 +230,19 @@
   </div>
 
   <div class="content">
+    {#if commented.length && !hidden}
+      <button
+        type="button"
+        class="commented"
+        aria-label={t('comments-mark', { count: commented.length })}
+        use:tooltip={{ text: t('comments-mark', { count: commented.length }), side: 'left' }}
+        tabindex="-1"
+        onmousedown={(e) => e.preventDefault()}
+        onclick={() => commentsUi.show(commented[0].id)}
+      >
+        <MessageSquare size={13} />{#if commented.length > 1}<span>{commented.length}</span>{/if}
+      </button>
+    {/if}
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div class="heading" data-part="title" onmousedown={(e) => press(e, 'title')}>
       {#if !node.heading && level > 0}<span class="tag">{t('text-not-printed')}</span>{/if}
@@ -443,7 +460,29 @@
     color: var(--ink);
   }
   .content {
+    position: relative;
     min-width: 0;
+  }
+  /* In the right margin, by the name of the element. */
+  .commented {
+    position: absolute;
+    top: var(--grip-top, 4px);
+    right: -34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: 22px;
+    padding: 0 4px;
+    border: none;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--gold);
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    cursor: pointer;
+  }
+  .commented:hover {
+    background: var(--accent-soft);
   }
 
   .heading {

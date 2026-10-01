@@ -123,3 +123,33 @@ export interface RefRecord {
   title: string;
   container: string;
 }
+
+/**
+ * A comment on an element, or on a passage of its text: a thread of notes,
+ * each by one person, which others answer under it. Never part of the text,
+ * nor of any document made from it.
+ */
+export interface Thread {
+  id: string;
+  element: string;
+  /**
+   * The passage it is on, where it is on one: two positions in the text
+   * that follow it through every change (Yjs's relative positions), and
+   * the words that were there when the comment was made.
+   */
+  passage: { from: Uint8Array; to: Uint8Array; text: string } | null;
+  resolved: boolean;
+  /** Where its card stands in the diagram, from its element; where it was moved. */
+  card: Position | null;
+  /** The first note, and the answers to it, in order. */
+  notes: Note[];
+}
+
+export interface Note {
+  id: string;
+  author: { id: string; name: string };
+  /** When it was written, and when it was last changed. */
+  created: string;
+  edited?: string;
+  text: string;
+}

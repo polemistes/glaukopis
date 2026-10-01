@@ -1,11 +1,11 @@
 <!--
   The head of the panel at the side of a project: what it can show, as tabs.
-  The references, the pictures, the history and the changes have the one
+  The references, the pictures, the comments, the history and the changes have the one
   place, and are one at a time. The panel puts its own tools, and the way to
   close it, after these.
 -->
 <script lang="ts" module>
-  export type SideKind = 'references' | 'pictures' | 'history' | 'changes';
+  export type SideKind = 'references' | 'pictures' | 'comments' | 'history' | 'changes';
 </script>
 
 <script lang="ts">
@@ -13,6 +13,7 @@
   import FileDiff from '@lucide/svelte/icons/file-diff';
   import HistoryIcon from '@lucide/svelte/icons/history';
   import Images from '@lucide/svelte/icons/images';
+  import MessageSquare from '@lucide/svelte/icons/message-square';
   import { t } from '$lib/i18n';
   import { tooltip } from '$lib/ui/tooltip';
 
@@ -35,6 +36,12 @@
       label: t('project-pictures'),
       icon: Images,
       shortcut: 'Ctrl+Shift+P',
+    },
+    {
+      kind: 'comments' as const,
+      label: t('comments-title'),
+      icon: MessageSquare,
+      shortcut: 'Ctrl+Shift+M',
     },
     {
       kind: 'history' as const,

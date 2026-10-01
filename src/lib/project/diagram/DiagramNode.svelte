@@ -3,9 +3,11 @@
   import EyeOff from '@lucide/svelte/icons/eye-off';
   import FileInput from '@lucide/svelte/icons/file-input';
   import GitCompare from '@lucide/svelte/icons/git-compare';
+  import MessageSquare from '@lucide/svelte/icons/message-square';
   import Quote from '@lucide/svelte/icons/quote';
   import type { EditorView } from 'prosemirror-view';
   import { untrack } from 'svelte';
+  import { commentsUi } from '$lib/comments/ui.svelte';
   import RichText from '$lib/editor/RichText.svelte';
   import type { KeyAction } from '$lib/editor/plugins';
   import { t } from '$lib/i18n';
@@ -89,6 +91,8 @@
   const cited = $derived(node.cited.length);
   /** A copy whose original has changed since it was copied. */
   const behind = $derived(!!node.origin && project.copyOf(node.id)?.changed === true);
+  /** The threads of comments on it that are open. */
+  const commented = $derived(project.threadsOf(node.id).filter((th) => !th.resolved));
 
   function action(a: KeyAction, _view: EditorView): boolean {
     if (a === 'enter' || a === 'escape' || a === 'tab') {
@@ -152,7 +156,7 @@
     {/if}
   </div>
 
-  {#if !renaming && (!node.empty || cited || node.include || node.excluded || behind || node.status)}
+  {#if !renaming && (!node.empty || cited || node.include || node.excluded || behind || node.status || commented.length)}
     <div class="marks">
       {#if node.status}
         <span
@@ -176,6 +180,20 @@
             e.stopPropagation();
             compareCopy(node.id);
           }}><GitCompare size={11} /></button
+        >
+      {/if}
+      {#if commented.length}
+        <button
+          type="button"
+          class="mark comments"
+          aria-label={t('comments-mark', { count: commented.length })}
+          use:tooltip={t('comments-mark', { count: commented.length })}
+          tabindex="-1"
+          onpointerdown={(e) => e.stopPropagation()}
+          onclick={(e) => {
+            e.stopPropagation();
+            commentsUi.show(commented[0].id);
+          }}><MessageSquare size={10} />{commented.length}</button
         >
       {/if}
       {#if node.include}<span class="mark include"><FileInput size={11} /></span>{/if}
@@ -420,6 +438,18 @@
     cursor: pointer;
   }
   .mark.behind:hover {
+    background: var(--accent-soft);
+  }
+  .mark.comments {
+    gap: 2px;
+    padding: 1px 2px;
+    border: none;
+    border-radius: 3px;
+    background: none;
+    color: var(--gold);
+    cursor: pointer;
+  }
+  .mark.comments:hover {
     background: var(--accent-soft);
   }
 

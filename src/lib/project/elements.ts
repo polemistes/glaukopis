@@ -10,6 +10,7 @@ import CircleDashed from '@lucide/svelte/icons/circle-dashed';
 import Heading from '@lucide/svelte/icons/heading';
 import LayoutGrid from '@lucide/svelte/icons/layout-grid';
 import Link2 from '@lucide/svelte/icons/link-2';
+import MessageSquare from '@lucide/svelte/icons/message-square';
 import MoveRight from '@lucide/svelte/icons/move-right';
 import Pencil from '@lucide/svelte/icons/pencil';
 import Plus from '@lucide/svelte/icons/plus';
@@ -17,6 +18,7 @@ import Scissors from '@lucide/svelte/icons/scissors';
 import Trash2 from '@lucide/svelte/icons/trash-2';
 import Unlink from '@lucide/svelte/icons/unlink';
 import { languages, t } from '$lib/i18n';
+import { commentsUi } from '$lib/comments/ui.svelte';
 import { truncate } from '$lib/library/format';
 import { confirm } from '$lib/ui/confirm.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
@@ -255,6 +257,12 @@ export function elementMenu(
         hint: t('project-associate-hint'),
         action: () => actions.link!(one.id),
       });
+    items.push({
+      label: t('comments-comment-on'),
+      icon: MessageSquare,
+      shortcut: 'Ctrl+Alt+C',
+      action: () => commentsUi.begin(one.id),
+    });
     items.push({ kind: 'separator' });
   }
 

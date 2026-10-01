@@ -595,11 +595,42 @@ there. Importing the same a second time adds nothing.
 
 ## The panel at the side
 
-The references, the pictures, the history and the changes to review share
-one panel at the side of the map, one at a time. The button with the panel
-on it, in the bar over the map, opens it as it was last, and closes it; the
-tabs at its head change what it shows. Each has its key as well:
-**Ctrl+Shift+R**, **Ctrl+Shift+P**, **Ctrl+Shift+H** and **Ctrl+Shift+E**.
+The references, the pictures, the comments, the history and the changes to
+review share one panel at the side of the map, one at a time. The button
+with the panel on it, in the bar over the map, opens it as it was last, and
+closes it; the tabs at its head change what it shows. Each has its key as
+well: **Ctrl+Shift+R**, **Ctrl+Shift+P**, **Ctrl+Shift+M**, **Ctrl+Shift+H**
+and **Ctrl+Shift+E**.
+
+## Comments
+
+A comment is a note on an element, or on a passage of its text: a question
+to yourself, a doubt, a word to someone you write with. It is never part of
+the text, and goes into no document.
+
+- **On a passage:** select the words and press **Ctrl+Alt+C**. The panel
+  opens with the passage quoted, and you write under it; Enter sends it.
+- **On an element:** **Comment…** in the element's menu, in the diagram or
+  from the grip beside a heading, or **Ctrl+Alt+C** with the cursor in its
+  text and nothing selected.
+
+A commented passage is tinted in the text, and a small mark in the right
+margin counts the open comments on the element; press either to see the
+thread. In the diagram the element carries the same mark. The button with
+the speech bubble among the diagram's controls shows every open thread as a
+**card** beside its element, on a dashed line; a card can be dragged where
+it is wanted, and never into the tree.
+
+A comment is a **thread**: the first note, and answers under it, each with
+who wrote it and when. You change or delete your own notes; you answer
+anyone's. A thread that is dealt with is **settled** from the tick at its
+head, which takes its marks away; the panel shows the open threads, the
+settled ones, or all, and a settled thread can be opened again.
+
+When an element is deleted, its comments go with it. When the words a
+comment was on are deleted, the comment stays on the element, with the
+words it was on quoted. Comments travel with a shared project, and are kept
+in its history like everything else.
 
 ## Several maps
 
@@ -1154,6 +1185,8 @@ what is to be done by its name, and does it.
 | **Ctrl+P** | The preview |
 | **Ctrl+Shift+R** | The references of the map |
 | **Ctrl+Shift+P** | The pictures of the map |
+| **Ctrl+Shift+M** | The comments |
+| **Ctrl+Alt+C** | A comment on the passage selected, or on the element |
 | **Ctrl+Shift+H** | The history of the project |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
 | **Tab**, **Enter** | In the diagram: a new element under, or beside |

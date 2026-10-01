@@ -2,9 +2,12 @@
   import { untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import Maximize from '@lucide/svelte/icons/maximize';
+  import MessageSquare from '@lucide/svelte/icons/message-square';
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
+  import { commentsUi } from '$lib/comments/ui.svelte';
   import { widthFor } from '$lib/editor/commands';
+  import { colourOf, initials } from '$lib/sharing/connection.svelte';
   import type { KeyAction } from '$lib/editor/plugins';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
   import { t } from '$lib/i18n';
@@ -248,6 +251,11 @@
 
   export function fit() {
     if (width && height) cam = fitting(lay.bounds, width, height);
+  }
+
+  /** The elements that are selected. */
+  export function chosen(): string[] {
+    return selection;
   }
 
   /** Moves the view, if need be, so that an element is in it. */
@@ -784,6 +792,69 @@
   /** How far the writing of the map has come, where its elements say. */
   const progress = $derived(progressOf(project, mapId));
 
+  // ---- the comments, as cards beside their elements ----
+
+  const CARD = { w: 180, gap: 26 };
+  /** The open threads of the map, each by its element as it is placed. */
+  const threads = $derived.by(() => {
+    const out: {
+      id: string;
+      element: string;
+      x: number;
+      y: number;
+      from: { x: number; y: number };
+      text: string;
+      title: string | null;
+      who: { id: string; name: string };
+    }[] = [];
+    for (const thread of project.comments.values()) {
+      const p = lay.placed.get(thread.element);
+      if (thread.resolved || !p) continue;
+      const first = thread.notes[0];
+      if (!first) continue;
+      const card = thread.card ?? { x: 0, y: 0 };
+      out.push({
+        id: thread.id,
+        element: thread.element,
+        x: p.x + p.w / 2 + CARD.gap + card.x,
+        y: p.y - p.h / 2 + card.y,
+        from: { x: p.x + p.w / 2, y: p.y },
+        text: first.text.length > 110 ? `${first.text.slice(0, 110).trimEnd()}…` : first.text,
+        title: thread.passage ? thread.passage.text.split(/\s+/).slice(0, 6).join(' ') : null,
+        who: first.author,
+      });
+    }
+    return out;
+  });
+  const anyThreads = $derived(project.comments.size > 0);
+
+  /** A card is moved: from its element, in the units of the map. */
+  function cardPointerDown(event: PointerEvent, id: string) {
+    if (event.button !== 0) return;
+    event.stopPropagation();
+    const thread = project.comments.get(id);
+    if (!thread) return;
+    const start = { x: event.clientX, y: event.clientY };
+    const was = thread.card ?? { x: 0, y: 0 };
+    let moved = false;
+    const el = event.currentTarget as HTMLElement;
+    el.setPointerCapture(event.pointerId);
+    const onmove = (e: PointerEvent) => {
+      const dx = (e.clientX - start.x) / cam.k;
+      const dy = (e.clientY - start.y) / cam.k;
+      if (!moved && Math.hypot(dx, dy) < 3) return;
+      moved = true;
+      project.setCard(id, { x: was.x + dx, y: was.y + dy });
+    };
+    const onup = () => {
+      el.removeEventListener('pointermove', onmove);
+      el.removeEventListener('pointerup', onup);
+      if (!moved) commentsUi.show(id);
+    };
+    el.addEventListener('pointermove', onmove);
+    el.addEventListener('pointerup', onup);
+  }
+
   // What is said at the foot of the map, with the keys shown as keys.
   const emptyHint = $derived(
     pieces((m) => t('diagram-hint-empty', m), { tab: 'Tab', enter: 'Enter' }),
@@ -846,6 +917,11 @@
       {#if pendingCurve}
         <path d={pendingCurve} class="curve pending" />
       {/if}
+      {#if commentsUi.cards}
+        {#each threads as th (th.id)}
+          <line x1={th.from.x} y1={th.from.y} x2={th.x} y2={th.y + 18} class="to-card" />
+        {/each}
+      {/if}
       {#if band}
         <rect
           class="band"
@@ -894,6 +970,27 @@
         >
       {/if}
     {/each}
+
+    {#if commentsUi.cards}
+      {#each threads as th (th.id)}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+          class="card"
+          style:transform="translate({Math.round(th.x)}px, {Math.round(th.y)}px)"
+          style:width="{CARD.w}px"
+          onpointerdown={(e) => cardPointerDown(e, th.id)}
+          ondblclick={(e) => e.stopPropagation()}
+        >
+          <div class="card-head">
+            <span class="card-who" style:background={colourOf(th.who.id || th.who.name)}
+              >{initials(th.who.name)}</span
+            >
+            <span class="card-name truncate">{th.title ?? th.who.name}</span>
+          </div>
+          <div class="card-text">{th.text}</div>
+        </div>
+      {/each}
+    {/if}
 
     {#each lay.order as id (id)}
       {@const node = project.nodes.get(id)}
@@ -989,6 +1086,19 @@
     >
       <Plus size={14} />
     </button>
+    {#if anyThreads}
+      <span class="rule"></span>
+      <button
+        type="button"
+        class:active={commentsUi.cards}
+        aria-label={t('comments-show-cards')}
+        aria-pressed={commentsUi.cards}
+        use:tooltip={{ text: t('comments-show-cards'), side: 'top' }}
+        onclick={() => (commentsUi.cards = !commentsUi.cards)}
+      >
+        <MessageSquare size={14} />
+      </button>
+    {/if}
     <span class="rule"></span>
     <button
       type="button"
@@ -1134,6 +1244,57 @@
   .hold {
     display: contents;
   }
+  /* A comment beside its element: never in the tree, moved where it is wanted. */
+  .card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 6px 9px 7px;
+    border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--line));
+    border-radius: var(--radius-m);
+    background: color-mix(in srgb, var(--gold) 9%, var(--paper-raised));
+    box-shadow: var(--shadow-1);
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    color: var(--ink-2);
+    cursor: pointer;
+    user-select: none;
+  }
+  .card:hover {
+    border-color: var(--gold);
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 3px;
+  }
+  .card-who {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 7px;
+    font-weight: 700;
+  }
+  .card-name {
+    min-width: 0;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .card-text {
+    overflow-wrap: anywhere;
+  }
+  .lines .to-card {
+    stroke: color-mix(in srgb, var(--gold) 70%, transparent);
+    stroke-width: 1.2;
+    stroke-dasharray: 4 3;
+  }
   .hint {
     position: absolute;
     left: 50%;
@@ -1198,6 +1359,9 @@
     background: transparent;
     color: var(--ink-3);
     cursor: pointer;
+  }
+  .controls button.active {
+    color: var(--gold);
   }
   .controls button:hover {
     background: var(--paper-hover);

@@ -12,6 +12,7 @@ import type { Project } from '../project.svelte';
 import { fillBody, fillTitle } from '../text';
 import { isAncestor, subtree, topmost } from '../tree';
 import type { NodeRecord, Position, Status } from '../types';
+import { deleteComments } from './comments';
 import { makeLink } from './links';
 
 /** A key that sorts between two siblings. `siblings` is the list the element will join, without it. */
@@ -125,6 +126,7 @@ export function elementOf(p: Project, item: Y.Item): Y.AbstractType<any> | null 
 
 export function deleteNodes(p: Project, ids: Set<string>) {
   for (const id of ids) p.yNodes.delete(id);
+  deleteComments(p, ids);
   for (const [linkId, l] of p.yLinks) {
     if (ids.has(str(l.get('from'))) || ids.has(str(l.get('to')))) p.yLinks.delete(linkId);
   }

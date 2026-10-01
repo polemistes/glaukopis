@@ -16,6 +16,7 @@ import { SvelteMap } from 'svelte/reactivity';
 import * as Y from 'yjs';
 import { ySyncPluginKey } from 'y-prosemirror';
 import type { Awareness } from 'y-protocols/awareness';
+import { commentChanges } from './changing/comments';
 import { deleteNodes, elementChanges, elementOf } from './changing/elements';
 import { linkChanges } from './changing/links';
 import { mapChanges } from './changing/maps';
@@ -40,6 +41,7 @@ import {
   type NodeRecord,
   type Position,
   type RefRecord,
+  type Thread,
 } from './types';
 
 export { HISTORY, LOAD, LOCAL, TIDY } from './origins';
@@ -93,9 +95,11 @@ type MapChanges = typeof mapChanges;
 type ElementChanges = typeof elementChanges;
 type ReferenceChanges = typeof referenceChanges;
 type LinkChanges = typeof linkChanges;
+type CommentChanges = typeof commentChanges;
 
 /** What changes a project, in `changing/`: its methods, which it takes in below. */
-export interface Project extends MapChanges, ElementChanges, ReferenceChanges, LinkChanges {}
+export interface Project
+  extends MapChanges, ElementChanges, ReferenceChanges, LinkChanges, CommentChanges {}
 
 export class Project {
   readonly doc: Y.Doc;
@@ -113,6 +117,8 @@ export class Project {
   readonly yIgnored: Y.Map<true>;
   /** How the full history is kept: see `HistorySettings`. */
   readonly yHistory: Y.Map<unknown>;
+  /** The comments: threads by their id, each on an element. See `changing/comments.ts`. */
+  readonly yComments: Y.Map<Y.Map<unknown>>;
   /**
    * The people of a project whose history is on, as Yjs's
    * `PermanentUserData` keeps them: by person, the copies that are theirs
@@ -131,6 +137,8 @@ export class Project {
   readonly notes = new SvelteMap<string, string>();
   /** The words ignored in this project by spelling. A new set whenever they change. */
   ignored = $state.raw<ReadonlySet<string>>(new Set());
+  /** The comments, by the id of the thread. A thread is made anew whenever it changes. */
+  readonly comments = new SvelteMap<string, Thread>();
   /** Rises when the shape of any tree changes. */
   structure = $state(0);
   /** Rises with every change to the project, whoever made it. */
@@ -160,6 +168,7 @@ export class Project {
     this.yNotes = this.doc.getMap('notes');
     this.yIgnored = this.doc.getMap('ignored');
     this.yHistory = this.doc.getMap('history');
+    this.yComments = this.doc.getMap('comments');
     this.yUsers = this.doc.getMap('users');
     this.#presence = new Presence(this.doc);
     this.#people = new People(this.doc, this.yUsers, () => this.history.on);
@@ -209,6 +218,15 @@ export class Project {
     this.yNotes.observeDeep(() => this.#readNotes());
     this.yIgnored.observe(() => this.#readIgnored());
     this.yHistory.observe(() => this.#readHistory());
+    this.yComments.observeDeep((events) => {
+      const touched = new Set<string>();
+      for (const event of events) {
+        if (event.target === this.yComments) {
+          for (const key of (event as Y.YMapEvent<unknown>).keysChanged) touched.add(key);
+        } else if (typeof event.path[0] === 'string') touched.add(event.path[0]);
+      }
+      for (const id of touched) this.#readThread(id);
+    });
 
     this.doc.on(
       'update',
@@ -338,7 +356,21 @@ export class Project {
       if (typeof map === 'string' && !this.yMaps.has(map) && this.yMaps._map.get(map)?.deleted)
         lost.push(id);
     }
-    if (lost.length) this.doc.transact(() => deleteNodes(this, new Set(lost)), TIDY);
+    // So with the threads of comments on elements that are gone, by undo or by another.
+    const stale: string[] = [];
+    for (const [id, thread] of this.yComments) {
+      const element = str(thread.get('element'));
+      if (
+        !this.yNodes.has(element) &&
+        (lost.includes(element) || this.yNodes._map.get(element)?.deleted)
+      )
+        stale.push(id);
+    }
+    if (lost.length || stale.length)
+      this.doc.transact(() => {
+        deleteNodes(this, new Set(lost));
+        for (const id of stale) this.yComments.delete(id);
+      }, TIDY);
   }
 
   #readAll() {
@@ -352,7 +384,45 @@ export class Project {
     this.#readNotes();
     this.#readIgnored();
     this.#readHistory();
+    this.comments.clear();
+    for (const id of this.yComments.keys()) this.#readThread(id);
     this.structure++;
+  }
+
+  #readThread(id: string) {
+    const y = this.yComments.get(id);
+    const notes = y instanceof Y.Map ? y.get('notes') : null;
+    const element = y instanceof Y.Map ? str(y.get('element')) : '';
+    if (!y || !(notes instanceof Y.Array) || !element) {
+      this.comments.delete(id);
+      return;
+    }
+    const passage = y.get('passage') as Thread['passage'] | undefined;
+    const card = y.get('card') as Position | undefined;
+    this.comments.set(id, {
+      id,
+      element,
+      passage:
+        passage && passage.from instanceof Uint8Array && passage.to instanceof Uint8Array
+          ? { from: passage.from, to: passage.to, text: str(passage.text) }
+          : null,
+      resolved: y.get('resolved') === true,
+      card:
+        card && Number.isFinite(card.x) && Number.isFinite(card.y)
+          ? { x: card.x, y: card.y }
+          : null,
+      notes: (notes.toArray() as unknown[]).filter(
+        (n): n is Thread['notes'][number] =>
+          !!n && typeof n === 'object' && typeof (n as { text?: unknown }).text === 'string',
+      ),
+    });
+  }
+
+  /** The threads on an element, the oldest first. */
+  threadsOf(element: string): Thread[] {
+    const out: Thread[] = [];
+    for (const thread of this.comments.values()) if (thread.element === element) out.push(thread);
+    return out.sort((a, b) => (a.notes[0]?.created ?? '').localeCompare(b.notes[0]?.created ?? ''));
   }
 
   #readHistory() {
@@ -754,4 +824,11 @@ export class Project {
   }
 }
 
-Object.assign(Project.prototype, mapChanges, elementChanges, referenceChanges, linkChanges);
+Object.assign(
+  Project.prototype,
+  mapChanges,
+  elementChanges,
+  referenceChanges,
+  linkChanges,
+  commentChanges,
+);

@@ -27,7 +27,11 @@
   import { confirm } from '$lib/ui/confirm.svelte';
   import { dropTarget } from '$lib/ui/drag.svelte';
   import { notify } from '$lib/ui/toast.svelte';
+  import CommentsPanel from '$lib/comments/CommentsPanel.svelte';
+  import { selectedPassage } from '$lib/comments/marks';
+  import { commentsUi } from '$lib/comments/ui.svelte';
   import EditorHost from '$lib/editor/EditorHost.svelte';
+  import { editorUi, hooksOf } from '$lib/editor/ui.svelte';
   import { beforeClose } from '$lib/state/closing';
   import { library } from '$lib/state/library.svelte';
   import { openProject, projects } from '$lib/state/projects.svelte';
@@ -113,6 +117,8 @@
   let folding = $state.raw(new Folding());
   /** The texts of the maps in the panes, where a pane shows the text: to be searched. */
   let texts = $state<(ReturnType<typeof MapText> | undefined)[]>([]);
+  /** The diagrams of the maps in the panes, where a pane shows the diagram. */
+  let diagrams = $state<(ReturnType<typeof MapDiagram> | undefined)[]>([]);
 
   const pane = $derived(panes[Math.min(focused, panes.length - 1)]);
 
@@ -394,6 +400,26 @@
    * references, the pictures, the history and the changes have the same
    * place, one at a time.
    */
+  /**
+   * Begins a comment: on the passage that is selected in the text, or on
+   * the element the cursor is in; or on the element selected in the diagram.
+   */
+  function beginComment() {
+    const view = editorUi.selection?.view;
+    const element = view ? hooksOf.get(view)?.element : undefined;
+    if (view && element && view.hasFocus()) {
+      commentsUi.begin(element, selectedPassage(view));
+      return;
+    }
+    const chosen = diagrams[focused]?.chosen() ?? [];
+    if (chosen.length === 1) commentsUi.begin(chosen[0]);
+  }
+
+  // What the comments ask of the view: that their panel open.
+  $effect(() => {
+    if (commentsUi.asked) untrack(() => side('comments', true));
+  });
+
   function side(which: SideKind, shown?: boolean) {
     const open = shown ?? sideKind !== which;
     if (which === 'changes') {
@@ -483,6 +509,8 @@
       'side-references': () => side('references'),
       // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
       'side-pictures': () => side('pictures'),
+      'side-comments': () => side('comments'),
+      comment: { run: beginComment, when: () => !!project },
       'side-history': () => side('history'),
       'side-changes': () => toggleReview(),
       'side-panel': () => (sideKind ? closeSide() : side(lastSide, true)),
@@ -721,6 +749,7 @@
                   <PastView {project} map={p.map} {looking} onback={() => (looking = null)} />
                 {:else if p.mode === 'diagram'}
                   <MapDiagram
+                    bind:this={diagrams[i]}
                     {project}
                     mapId={p.map}
                     camera={cameras[p.map] ?? null}
@@ -777,7 +806,9 @@
             ? t('project-between-pictures')
             : sideKind === 'history'
               ? t('history-between')
-              : t('project-between-references')}
+              : sideKind === 'comments'
+                ? t('comments-between')
+                : t('project-between-references')}
           onstart={() => measure('references')}
           onmove={(dx) => moveSide('references', dx)}
           onreset={() => (sizes.references = 0)}
@@ -798,6 +829,14 @@
               onlook={(l) => (looking = l)}
               head={tabs}
               onclose={closeSide}
+            />
+          {:else if sideKind === 'comments'}
+            <CommentsPanel
+              {project}
+              mapId={pane.map}
+              head={tabs}
+              onclose={closeSide}
+              ongo={(map, element) => show(map, { element })}
             />
           {:else if sideKind === 'pictures'}
             <PicturePanel

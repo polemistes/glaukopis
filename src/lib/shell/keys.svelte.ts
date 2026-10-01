@@ -55,6 +55,8 @@ export const KEYS: KeyEntry[] = [
   { id: 'preview', keys: 'Ctrl+P', place: 'project', bound: true },
   { id: 'side-references', keys: 'Ctrl+Shift+R', place: 'project', bound: true },
   { id: 'side-pictures', keys: 'Ctrl+Shift+P', place: 'project', bound: true },
+  { id: 'side-comments', keys: 'Ctrl+Shift+M', place: 'project', bound: true },
+  { id: 'comment', keys: 'Ctrl+Alt+C', place: 'project', bound: true },
   { id: 'side-history', keys: 'Ctrl+Shift+H', place: 'project', bound: true },
   { id: 'side-changes', keys: 'Ctrl+Shift+E', place: 'project', bound: true },
   { id: 'find', keys: 'Ctrl+F', place: 'project', bound: true },

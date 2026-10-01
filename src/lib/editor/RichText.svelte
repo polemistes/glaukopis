@@ -29,6 +29,8 @@
   import { spellingOptions } from '$lib/spelling/menu';
   import { lookAgain, spellingPlugin } from '$lib/spelling/plugin';
   import { reviewMarks } from '$lib/review/editor';
+  import { commentMarks, markComments, pressedThread } from '$lib/comments/marks';
+  import { commentsUi } from '$lib/comments/ui.svelte';
 
   interface Props {
     project: Project;
@@ -74,6 +76,18 @@
 
   let host = $state<HTMLDivElement>();
   let view: EditorView | undefined;
+  /** Rises when an editor is made: what follows the editor follows this. */
+  let made = $state(0);
+
+  // The threads of comments on the element, drawn over their passages;
+  // again whenever they change, and when the editor is made anew.
+  $effect(() => {
+    const threads = kind === 'body' && element ? project.threadsOf(element) : [];
+    void made;
+    untrack(() => {
+      if (view) markComments(view, threads);
+    });
+  });
 
   /** The element whose name or text this is: its map has the language the spelling is checked in. */
   const owner = $derived(element ?? project.ownerOf(fragment));
@@ -268,6 +282,8 @@
         searchMarks(),
         // The changes that are reviewed, where they are: see `review/editor.ts`.
         reviewMarks(kind),
+        // The passages that are commented on: see `comments/marks.ts`.
+        commentMarks(),
         spellingPlugin(
           spellingOptions(
             () => project,
@@ -295,14 +311,20 @@
           spellcheck: 'false',
         },
         handlePaste: (v, event) => kind === 'body' && pasted(v, event),
-        // A citation that was found is gone through where it is pressed.
-        handleClick: (_v, _pos, event) =>
-          kind === 'body' &&
-          event.button === 0 &&
-          pressedFound(
+        // A citation that was found is gone through where it is pressed; a
+        // commented passage shows its thread.
+        handleClick: (_v, _pos, event) => {
+          if (kind !== 'body' || event.button !== 0) return false;
+          const thread = pressedThread(event.target);
+          if (thread) {
+            commentsUi.show(thread);
+            return false;
+          }
+          return pressedFound(
             event.target,
             untrack(() => (element ? project.node(element)?.map : null)),
-          ),
+          );
+        },
         handleDOMEvents: {
           focus: (v) => {
             onfocus?.(v);
@@ -339,6 +361,8 @@
     view = created;
     hooksOf.set(created, hooks);
     viewsByDom.set(created.dom, created);
+    // Not read here: the effect that makes the editor must not follow what it tells.
+    untrack(() => (made += 1));
 
     const how = untrack(() => autofocus);
     if (how) {

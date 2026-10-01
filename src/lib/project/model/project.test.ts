@@ -621,3 +621,78 @@ describe('saving', () => {
     expect(ta.loose).toHaveLength(1);
   });
 });
+
+describe('comments', () => {
+  it('a thread is begun on an element, answered in, settled, and goes with the element', () => {
+    const { p, root } = project();
+    p.setMe({ id: 'robert', name: 'Robert' });
+    const a = p.addChild(root, { title: 'A' })!;
+    const id = p.comment(a, null, '  Is this right? ')!;
+    const thread = p.comments.get(id)!;
+    expect(thread.element).toBe(a);
+    expect(thread.passage).toBeNull();
+    expect(thread.notes).toHaveLength(1);
+    expect(thread.notes[0]).toMatchObject({
+      author: { id: 'robert', name: 'Robert' },
+      text: 'Is this right?',
+    });
+    expect(p.comment(a, null, '   ')).toBeNull();
+    expect(p.comment('nobody', null, 'x')).toBeNull();
+
+    p.setMe({ id: 'anna', name: 'Anna' });
+    const answer = p.reply(id, 'Yes, see Nagy.')!;
+    expect(p.comments.get(id)!.notes.map((n) => n.author.name)).toEqual(['Robert', 'Anna']);
+    p.editNote(id, answer, 'Yes: see Nagy 1979.');
+    expect(p.comments.get(id)!.notes[1]).toMatchObject({ text: 'Yes: see Nagy 1979.' });
+    expect(p.comments.get(id)!.notes[1].edited).toBeDefined();
+
+    p.setResolved(id, true);
+    expect(p.comments.get(id)!.resolved).toBe(true);
+    p.setResolved(id, false);
+    expect(p.comments.get(id)!.resolved).toBe(false);
+    expect(p.threadsOf(a).map((t) => t.id)).toEqual([id]);
+
+    // Comments are not the text: undo takes back the last change of the text, not the comment.
+    p.checkpoint();
+    p.setTitle(a, 'A, renamed');
+    p.undo();
+    expect(p.node(a)!.title).toBe('A');
+    expect(p.comments.get(id)).toBeDefined();
+
+    p.remove([a]);
+    expect(p.comments.size).toBe(0);
+  });
+
+  it('a note taken back can be put back, and the thread with its last note', () => {
+    const { p, root } = project();
+    p.setMe({ id: 'robert', name: 'Robert' });
+    const id = p.comment(root, null, 'First')!;
+    const second = p.reply(id, 'Second')!;
+    const taken = p.deleteNote(id, second)!;
+    expect(p.comments.get(id)!.notes).toHaveLength(1);
+    p.restoreNote(id, taken, p.comments.get(id)!);
+    expect(p.comments.get(id)!.notes.map((n) => n.text)).toEqual(['First', 'Second']);
+
+    const whole = p.comments.get(id)!;
+    const first = p.deleteNote(id, whole.notes[0].id)!;
+    const last = p.deleteNote(id, whole.notes[1].id)!;
+    expect(p.comments.has(id)).toBe(false);
+    p.restoreNote(id, last, whole);
+    p.restoreNote(id, first, whole);
+    expect(p.comments.get(id)!.notes.map((n) => n.text)).toEqual(['First', 'Second']);
+  });
+
+  it('a passage and a card are kept with the thread, and arrive at another copy', () => {
+    const { p, root } = project();
+    const passage = { from: new Uint8Array([1, 2]), to: new Uint8Array([3]), text: 'the wrath' };
+    const id = p.comment(root, passage, 'Why wrath?')!;
+    p.setCard(id, { x: 120.4, y: -30 });
+    const other = new Project(null);
+    Y.applyUpdate(other.doc, Y.encodeStateAsUpdate(p.doc));
+    other.load(null, []);
+    const there = other.comments.get(id)!;
+    expect(there.passage).toEqual(passage);
+    expect(there.card).toEqual({ x: 120, y: -30 });
+    expect(there.notes[0].text).toBe('Why wrath?');
+  });
+});
