@@ -80,8 +80,14 @@ try {
   await app.waitFor('.rail a.place', 8000);
   await sleep(300);
   const rail = () =>
-    app.exec(`return Array.from(document.querySelectorAll('.rail a.place')).map((a) => a.getAttribute('aria-label'))`);
-  check('the interface is in the language of the system', (await rail()).join(' ') === 'Prosjekter Bibliotek Bilder Søk Innstillinger', (await rail()).join(' '));
+    app.exec(
+      `return Array.from(document.querySelectorAll('.rail a.place')).map((a) => a.getAttribute('aria-label'))`,
+    );
+  check(
+    'the interface is in the language of the system',
+    (await rail()).join(' ') === 'Prosjekter Bibliotek Bilder Søk Innstillinger',
+    (await rail()).join(' '),
+  );
   check('and the page says so', (await app.exec(`return document.documentElement.lang`)) === 'nb');
   await english('the projects');
   await app.screenshot('languages-1-projects');
@@ -103,7 +109,14 @@ try {
   await app.press('Enter');
   await app.waitGone('.diagram .node.renaming', 3000);
   await sleep(200);
-  check('an element is named in Norwegian, with its ø', (await app.exec(`return Array.from(document.querySelectorAll('.diagram .node')).map((n) => n.textContent.trim())`)).includes('Første sang'));
+  check(
+    'an element is named in Norwegian, with its ø',
+    (
+      await app.exec(
+        `return Array.from(document.querySelectorAll('.diagram .node')).map((n) => n.textContent.trim())`,
+      )
+    ).includes('Første sang'),
+  );
   await app.rightClick('.diagram .node.root');
   await app.waitFor('.menu');
   await sleep(150);
@@ -171,7 +184,7 @@ try {
   await app.waitFor('.history-panel .moments li', 15000);
   await sleep(400);
   await english('the moments of the history');
-  const wheel = '.history-panel header button[aria-label="Innstillinger for historikken"]';
+  const wheel = '.history-panel .tools button[aria-label="Innstillinger for historikken"]';
   await app.click(wheel);
   await app.waitFor('.history-panel input[type="number"]', 8000);
   await sleep(300);
@@ -248,8 +261,16 @@ try {
   const before = await selects();
   const language = before.find((s) => s.label === 'Grensesnittet');
   const texts = before.find((s) => s.label === 'Språk for nye tekster');
-  check('the interface is as the system, and says what that is', language?.value === 'system' && language?.shown === 'Som systemet (Norsk bokmål)', JSON.stringify(language));
-  check('and so are new texts', texts?.value === 'system' && /bokmål/i.test(texts?.shown ?? ''), JSON.stringify(texts));
+  check(
+    'the interface is as the system, and says what that is',
+    language?.value === 'system' && language?.shown === 'Som systemet (Norsk bokmål)',
+    JSON.stringify(language),
+  );
+  check(
+    'and so are new texts',
+    texts?.value === 'system' && /bokmål/i.test(texts?.shown ?? ''),
+    JSON.stringify(texts),
+  );
   await app.screenshot('languages-6-settings');
 
   await app.exec(
@@ -257,9 +278,17 @@ try {
      const s = f.querySelector('select'); s.value = 'en'; s.dispatchEvent(new Event('change', { bubbles: true }));`,
   );
   await sleep(300);
-  check('English is chosen, and the interface changes at once', (await rail()).join(' ') === 'Projects Library Pictures Search Settings', (await rail()).join(' '));
+  check(
+    'English is chosen, and the interface changes at once',
+    (await rail()).join(' ') === 'Projects Library Pictures Search Settings',
+    (await rail()).join(' '),
+  );
   check('the page says so', (await app.exec(`return document.documentElement.lang`)) === 'en');
-  check('and the settings themselves', (await app.exists('h2')) && (await app.text('h1')) === 'Settings', await app.text('h1'));
+  check(
+    'and the settings themselves',
+    (await app.exists('h2')) && (await app.text('h1')) === 'Settings',
+    await app.text('h1'),
+  );
   await sleep(500);
   const kept = JSON.parse(readFileSync(join(app.dataDir, 'settings.json'), 'utf8'));
   check('what was chosen is kept', kept.language === 'en', JSON.stringify(kept.language));

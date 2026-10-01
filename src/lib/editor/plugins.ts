@@ -49,7 +49,7 @@ import {
   toggleList,
   toggleQuote,
 } from './commands';
-import { backOutOfScript, nextScriptPart, tabScriptPart } from './script';
+import { backOutOfPassage, nextPassage, tabPassage } from './script';
 import {
   acrossParallel,
   backOutOfParallel,
@@ -85,6 +85,12 @@ export interface EditorHooks {
   point?: (view: EditorView, at?: number) => void;
   /** The element whose text the editor holds, by which what stands in it is numbered. */
   element?: string;
+  /**
+   * The kinds of paragraph of the writer's own, by which Enter and Tab
+   * know what follows a paragraph of such a kind: as the kind it is based
+   * on has it. None, where they are not given.
+   */
+  passageKinds?: () => { id: string; basedOn: string }[];
 }
 
 /**
@@ -234,6 +240,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     'Shift-Mod-z': () => (hooks.redo(), true),
     'Mod-b': toggle('strong'),
     'Mod-i': toggle('em'),
+    'Mod-u': toggle('underline'),
     'Mod-.': toggle('sup'),
     'Mod-,': toggle('sub'),
     'Shift-Mod-k': toggle('smallcaps'),
@@ -276,11 +283,13 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     ),
   };
   if (item) {
+    // The kinds of the writer's own, for what Enter and Tab make after a paragraph of one.
+    const own = () => hooks.passageKinds?.() ?? [];
     keys.Enter = chainCommands(
       openSelected,
       leaveCaption,
       leaveVerse,
-      nextScriptPart,
+      nextPassage(own),
       splitListItem(item),
       createParagraphNear,
       liftEmptyBlock,
@@ -288,7 +297,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     );
     keys.Tab = chainCommands(
       indentLine(1),
-      tabScriptPart,
+      tabPassage(own),
       acrossParallel(false),
       sinkListItem(item),
       act(hooks, 'tab'),
@@ -301,7 +310,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     );
     keys.Backspace = chainCommands(
       backOutOfVerse,
-      backOutOfScript,
+      backOutOfPassage,
       backOutOfParallel,
       keys.Backspace,
     );

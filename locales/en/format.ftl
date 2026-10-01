@@ -43,6 +43,7 @@ format-section-paragraphs = Paragraphs
 format-section-headings = Headings
 format-section-title = Title and abstract
 format-section-quotations = Quotations
+format-section-kinds = Kinds of paragraph and words
 format-section-notes = Notes
 format-section-bibliography = Bibliography
 format-section-figures = Figures, tables, equations
@@ -108,6 +109,9 @@ format-indent = Indent
 format-indent-first = Also after a heading
 format-indent-first-hint = Typographic custom leaves the first paragraph unindented; APA and others indent it
 format-space-between = Space between paragraphs
+format-italics = Italics are set
+format-italics-italic = As italics
+format-italics-underline = Underlined, as typewritten manuscripts had them
 
 ## Headings.
 
@@ -171,6 +175,50 @@ format-bibliography-entry-spacing = Space between entries
 format-bibliography-style = Reference style
 format-bibliography-style-hint = The one this format goes with; it is taken when the format is chosen
 format-bibliography-style-none = None in particular
+
+## The kinds of paragraph and of words: how each differs from the kind it
+## is based on. The rows are those of the dialog for a kind of one's own
+## too; what is not said is as the base has it.
+
+format-kinds-hint = Each kind is set as the kind it is based on, with the differences given here. What is not said is as the base has it.
+format-kind-based-on = based on { $base }
+format-as-the-base = As the base
+# In an empty field for a size, in the place of its number.
+format-as-the-base-blank = as the base
+format-yes = Yes
+format-no = No
+format-underline = Underlined
+format-equal-width = Letters of equal width
+format-equal-width-hint = As code is set
+format-indent-left = Indent on the left
+format-indent-right = Indent on the right
+format-first-line = First line
+format-first-line-hint = How far it begins in, beyond the rest
+format-keep-with-next = Kept with the next
+format-keep-with-next-hint = Not left alone at the foot of a page
+format-new-page = Begins a new page
+format-break-text = What stands in a break
+format-break-text-hint = * * * where nothing is said; # for a manuscript
+# What a look says, in short, on the line of its kind: "10 pt, italic, centred".
+format-look-not-bold = not bold
+format-look-not-italic = not italic
+format-look-underlined = underlined
+format-look-not-underlined = not underlined
+format-look-as-written = as written
+format-look-left = left
+format-look-justified = justified
+format-look-indent-left = { $length } in on the left
+format-look-indent-right = { $length } in on the right
+format-look-first-line = first line { $length }
+format-look-space-before = { $length } before
+format-look-space-after = { $length } after
+format-look-line-spacing = spacing { $spacing }
+format-look-equal-width = letters of equal width
+format-look-not-equal-width = letters of unequal width
+format-look-kept = kept with the next
+format-look-not-kept = not kept with the next
+format-look-no-new-page = no new page
+format-look-text = “{ $text }” in a break
 
 ## Figures and tables, which are told alike. The kind is figure or table: where
 ## English has the same words for both, another language may not (the caption

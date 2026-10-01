@@ -1,68 +1,89 @@
 <script lang="ts">
   /**
-   * The tools for writing, where they can be seen: the kind of paragraph, the
-   * marks, citing and notes. They act on the text that has the cursor.
+   * The tools for writing, where they can be seen: the kind of paragraph,
+   * the marks and the kinds of words, citing and notes. They act on the text
+   * that has the cursor.
    *
-   * The bar that appears over a selection does the same for what is
-   * selected; the keys do it without either.
+   * The kind menu shows the kinds in hand, then the whole catalogue under
+   * "More…", and at its foot names the format that sets them (ADR 0029).
+   * The bar that appears over a selection does the same as the marks for
+   * what is selected; the keys do it without either.
    */
+  import AlignLeft from '@lucide/svelte/icons/align-left';
   import Bold from '@lucide/svelte/icons/bold';
+  import BookType from '@lucide/svelte/icons/book-type';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
-  import MessageSquare from '@lucide/svelte/icons/message-square';
-  import { selectedPassage } from '$lib/comments/marks';
-  import { commentsUi } from '$lib/comments/ui.svelte';
+  import Clapperboard from '@lucide/svelte/icons/clapperboard';
+  import Code from '@lucide/svelte/icons/code';
+  import Columns2 from '@lucide/svelte/icons/columns-2';
+  import Drama from '@lucide/svelte/icons/drama';
+  import Hash from '@lucide/svelte/icons/hash';
+  import Highlighter from '@lucide/svelte/icons/highlighter';
   import ImagePlus from '@lucide/svelte/icons/image-plus';
   import Images from '@lucide/svelte/icons/images';
   import Italic from '@lucide/svelte/icons/italic';
+  import Languages from '@lucide/svelte/icons/languages';
   import Link2 from '@lucide/svelte/icons/link-2';
-  import Plus from '@lucide/svelte/icons/plus';
-  import Sigma from '@lucide/svelte/icons/sigma';
-  import SquareFunction from '@lucide/svelte/icons/square-function';
-  import Sheet from '@lucide/svelte/icons/sheet';
-  import Table from '@lucide/svelte/icons/table';
   import List from '@lucide/svelte/icons/list';
   import ListOrdered from '@lucide/svelte/icons/list-ordered';
+  import MessageSquare from '@lucide/svelte/icons/message-square';
+  import Pencil from '@lucide/svelte/icons/pencil';
+  import PenLine from '@lucide/svelte/icons/pen-line';
   import Pilcrow from '@lucide/svelte/icons/pilcrow';
+  import Plus from '@lucide/svelte/icons/plus';
   import Quote from '@lucide/svelte/icons/quote';
+  import Sheet from '@lucide/svelte/icons/sheet';
+  import Sigma from '@lucide/svelte/icons/sigma';
+  import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
+  import SquareFunction from '@lucide/svelte/icons/square-function';
   import StickyNote from '@lucide/svelte/icons/sticky-note';
   import Strikethrough from '@lucide/svelte/icons/strikethrough';
   import Subscript from '@lucide/svelte/icons/subscript';
   import Superscript from '@lucide/svelte/icons/superscript';
+  import Table from '@lucide/svelte/icons/table';
+  import Tag from '@lucide/svelte/icons/tag';
   import TextQuote from '@lucide/svelte/icons/text-quote';
-  import AlignLeft from '@lucide/svelte/icons/align-left';
-  import Columns2 from '@lucide/svelte/icons/columns-2';
-  import Drama from '@lucide/svelte/icons/drama';
-  import Clapperboard from '@lucide/svelte/icons/clapperboard';
-  import Hash from '@lucide/svelte/icons/hash';
-  import LineNumbersDialog from './LineNumbersDialog.svelte';
-  import { insertParallel, numberLines, verseAt } from './verse';
+  import Type from '@lucide/svelte/icons/type';
+  import Underline from '@lucide/svelte/icons/underline';
+  import WholeWord from '@lucide/svelte/icons/whole-word';
   import type { Command } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
-  import { t } from '$lib/i18n';
+  import type { DocumentFormat } from '$lib/api/documents';
+  import { selectedPassage } from '$lib/comments/marks';
+  import { commentsUi } from '$lib/comments/ui.svelte';
+  import { languageName, t, TEXT_LANGUAGES } from '$lib/i18n';
   import { showPictures } from '$lib/pictures/store.svelte';
+  import { documents } from '$lib/preview/documents.svelte';
+  import { formatEditorUi } from '$lib/preview/formatEditor.svelte';
+  import type { Project } from '$lib/project/model/project.svelte';
   import { askForTable, chooseTable } from '$lib/tables/ask';
-  import { openMenu } from '$lib/ui/menu.svelte';
+  import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import {
     insertEquation,
     insertFootnote,
     insertMath,
-    setStyle,
-    styleOf,
+    kindMarkOf,
+    kindOf,
+    setKind,
     toggle,
-    type ParagraphStyle,
+    toggleKind,
   } from './commands';
-  import { editorUi } from './ui.svelte';
-  import { hooksOf } from './ui.svelte';
+  import { CATALOGUE, GROUPS, inHand, specOf, type KindGroup } from './kinds';
+  import LineNumbersDialog from './LineNumbersDialog.svelte';
+  import { editPassageKind, newPassageKind } from './own-kinds.svelte';
+  import { editorUi, hooksOf } from './ui.svelte';
+  import { insertParallel, numberLines, verseAt } from './verse';
 
   interface Props {
+    project: Project;
     /** The part of the window whose texts the tools are for. */
     scope?: HTMLElement | null;
     /** The map whose texts they are. */
     map?: string | null;
   }
 
-  let { scope = null, map = null }: Props = $props();
+  let { project, scope = null, map = null }: Props = $props();
 
   const s = $derived.by(() => {
     const selection = editorUi.selection;
@@ -72,96 +93,86 @@
     return selection;
   });
   const body = $derived(s?.kind === 'body');
-  const style = $derived<ParagraphStyle>(s && body ? styleOf(s.view.state) : 'text');
+  /** The id of the kind of paragraph the cursor is in. */
+  const kind = $derived(s && body ? kindOf(s.view.state) : 'text');
+  /** What the kind is called: by the catalogue, or by the writer. */
+  const kindLabel = $derived(specOf(kind)?.label() ?? project.passageKind(kind)?.name ?? kind);
+  const inVerse = $derived(kind === 'verse' || kind === 'speaker' || kind === 'direction');
+  /** The kind of words at the cursor, or the first in what is selected. */
+  const wordKind = $derived(s ? kindMarkOf(s.view.state) : null);
+  /** Whether what is selected has any of what the words menu holds. */
+  const wordsOn = $derived(
+    !!s &&
+      (!!wordKind || ['underline', 'sup', 'sub', 'strike', 'code'].some((name) => s.marks[name])),
+  );
 
-  const STYLES = $derived<
-    {
-      value: ParagraphStyle;
-      label: string;
-      hint: string;
-      icon: typeof Pilcrow;
-      shortcut?: string;
-    }[]
-  >([
-    { value: 'text', label: t('editor-text'), hint: t('editor-text-hint'), icon: Pilcrow },
-    {
-      value: 'quote',
-      label: t('editor-quotation'),
-      hint: t('editor-quotation-hint'),
-      icon: TextQuote,
-      shortcut: "Ctrl+'",
-    },
-    {
-      value: 'list',
-      label: t('editor-list'),
-      hint: t('editor-list-hint'),
-      icon: List,
-      shortcut: 'Ctrl+Shift+8',
-    },
-    {
-      value: 'numbered',
-      label: t('editor-numbered-list'),
-      hint: t('editor-numbered-list-hint'),
-      icon: ListOrdered,
-      shortcut: 'Ctrl+Shift+7',
-    },
-    {
-      value: 'verse',
-      label: t('editor-verse'),
-      hint: t('editor-verse-hint'),
-      icon: AlignLeft,
-    },
-    {
-      value: 'speaker',
-      label: t('editor-speaker'),
-      hint: t('editor-speaker-hint'),
-      icon: Drama,
-    },
-    {
-      value: 'direction',
-      label: t('editor-direction'),
-      hint: t('editor-direction-hint'),
-      icon: Drama,
-    },
-    { value: 'scene', label: t('editor-scene'), hint: t('editor-scene-hint'), icon: Clapperboard },
-    {
-      value: 'action',
-      label: t('editor-action'),
-      hint: t('editor-action-hint'),
-      icon: Clapperboard,
-    },
-    {
-      value: 'character',
-      label: t('editor-character'),
-      hint: t('editor-character-hint'),
-      icon: Clapperboard,
-    },
-    {
-      value: 'dialogue',
-      label: t('editor-dialogue'),
-      hint: t('editor-dialogue-hint'),
-      icon: Clapperboard,
-    },
-    {
-      value: 'parenthetical',
-      label: t('editor-parenthetical'),
-      hint: t('editor-parenthetical-hint'),
-      icon: Clapperboard,
-    },
-    {
-      value: 'transition',
-      label: t('editor-transition'),
-      hint: t('editor-transition-hint'),
-      icon: Clapperboard,
-    },
-  ]);
-  /** The kinds in groups, for the menu: text, verse, script. */
-  const GROUPS = $derived([
-    { label: t('editor-kinds-text'), from: 0, to: 4 },
-    { label: t('editor-kinds-verse'), from: 4, to: 7 },
-    { label: t('editor-kinds-script'), from: 7, to: 13 },
-  ]);
-  const inVerse = $derived(style === 'verse' || style === 'speaker' || style === 'direction');
+  // The format of the map: for the kinds it suggests, and its name at the foot of the kind menu.
+  $effect(() => {
+    documents.load();
+  });
+  const choice = $derived(documents.choice(project.map(map)?.document ?? {}));
+  let format = $state.raw<DocumentFormat | null>(null);
+  $effect(() => {
+    const id = choice.format;
+    void documents.changed;
+    let stale = false;
+    documents.format(id).then(
+      (f) => {
+        if (!stale) format = f;
+      },
+      () => {
+        if (!stale) format = null;
+      },
+    );
+    return () => {
+      stale = true;
+    };
+  });
+  const suggests = $derived(format?.suggests ?? []);
+  const formatName = $derived(
+    documents.formatSummary(choice.format)?.name ?? format?.name ?? choice.format,
+  );
+  const ownParagraphs = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
+  const ownWords = $derived(project.passageKinds.filter((k) => k.family === 'words'));
+
+  /** The icons of the kinds: by id for the plain kinds and the lines of verse, by group for the rest. */
+  const ICONS: Record<string, typeof Pilcrow> = {
+    text: Pilcrow,
+    quote: TextQuote,
+    list: List,
+    numbered: ListOrdered,
+    verse: AlignLeft,
+    speaker: Drama,
+    direction: Drama,
+    foreign: Languages,
+    title: BookType,
+    term: Tag,
+    mention: Quote,
+    highlight: Highlighter,
+  };
+  const GROUP_ICONS: Record<KindGroup, typeof Pilcrow> = {
+    text: Pilcrow,
+    quotation: TextQuote,
+    verse: AlignLeft,
+    script: Clapperboard,
+    more: Type,
+    words: WholeWord,
+  };
+  function iconOf(id: string): typeof Pilcrow {
+    const spec = specOf(id);
+    return spec ? (ICONS[id] ?? GROUP_ICONS[spec.group]) : PenLine;
+  }
+
+  /** The name of a kind, of the catalogue or the writer's own. */
+  function nameOf(id: string): string {
+    return specOf(id)?.label() ?? project.passageKind(id)?.name ?? id;
+  }
+
+  /** Whether a kind of the catalogue is set from the kind menu: everything but a mark on words. */
+  function ofParagraphs(id: string): boolean {
+    const spec = specOf(id);
+    return spec ? spec.structure !== 'mark' : project.passageKind(id)?.family === 'paragraph';
+  }
 
   /** The element whose text an editor holds. */
   function elementOf(view: EditorView | undefined): string | undefined {
@@ -188,10 +199,9 @@
       by: at.verse.attrs.by as number,
     };
   }
-  const current = $derived(STYLES.find((x) => x.value === style) ?? STYLES[0]);
 
   function run(command: Command, view: EditorView | undefined = s?.view) {
-    if (!view) return;
+    if (!view || view.isDestroyed) return;
     command(view.state, view.dispatch, view);
     view.focus();
   }
@@ -287,23 +297,216 @@
     );
   }
 
-  function styles(event: MouseEvent) {
+  // ---- the kind of paragraph ----
+
+  /** An item of the kind menu, which makes the paragraphs that are selected of the kind. */
+  function kindItem(id: string, view: EditorView): MenuItem {
+    const spec = specOf(id);
+    return {
+      label: nameOf(id),
+      hint: spec?.hint(),
+      icon: iconOf(id),
+      shortcut: spec?.shortcut,
+      checked: id === kind,
+      action: () => run(setKind(id), view),
+    };
+  }
+
+  /** The kinds of the catalogue that the kind menu sets, under the heading of each group. */
+  function grouped(item: (id: string) => MenuItem, without: string[] = []): MenuItem[] {
+    const out: MenuItem[] = [];
+    for (const g of GROUPS) {
+      const kinds = CATALOGUE.filter(
+        (k) => k.group === g.id && ofParagraphs(k.id) && !without.includes(k.id),
+      );
+      if (!kinds.length) continue;
+      out.push({ kind: 'heading', label: g.label() }, ...kinds.map((k) => item(k.id)));
+    }
+    return out;
+  }
+
+  /** The kinds of the writer's own, each to be changed in its dialog. */
+  function changeOwn(
+    kinds: { id: string; name: string }[],
+    family: 'paragraph' | 'words',
+  ): MenuItem[] {
+    if (!kinds.length) return [];
+    return [
+      {
+        kind: 'submenu',
+        label: t('editor-kinds-change-own'),
+        icon: Pencil,
+        items: kinds.map((k) => ({
+          label: k.name,
+          icon: PenLine,
+          action: () => editPassageKind(k.id, family),
+        })),
+      },
+    ];
+  }
+
+  /** The whole catalogue, the writer's own kinds, and the making of a kind. */
+  function moreItems(view: EditorView): MenuItem[] {
+    return [
+      ...grouped((id) => kindItem(id, view)),
+      ...(ownParagraphs.length
+        ? [
+            { kind: 'heading' as const, label: t('editor-kinds-own') },
+            ...ownParagraphs.map((k) => kindItem(k.id, view)),
+          ]
+        : []),
+      { kind: 'separator' },
+      {
+        label: t('editor-kinds-make'),
+        icon: Plus,
+        // The kind is put on the paragraphs that were selected when it is made.
+        action: () => newPassageKind('paragraph', (id) => run(setKind(id), view)),
+      },
+      ...changeOwn(ownParagraphs, 'paragraph'),
+    ];
+  }
+
+  /** Every kind, with those in hand marked; choosing one pins it, or takes it out of hand. */
+  function handItems(view: EditorView): MenuItem[] {
+    const hand = new Set(inHand(project, map ?? '', suggests));
+    const item = (id: string): MenuItem => ({
+      label: nameOf(id),
+      hint: specOf(id)?.hint(),
+      icon: iconOf(id),
+      checked: hand.has(id),
+      action: () => {
+        if (!map) return;
+        const current = project.map(map)?.hand ?? { pinned: [], unpinned: [] };
+        if (hand.has(id)) project.setHand(map, { unpinned: [...current.unpinned, id] });
+        else project.setHand(map, { pinned: [...current.pinned, id] });
+        view.focus();
+      },
+    });
+    return [
+      ...grouped(item, ['text']),
+      ...(ownParagraphs.length
+        ? [
+            { kind: 'heading' as const, label: t('editor-kinds-own') },
+            ...ownParagraphs.map((k) => item(k.id)),
+          ]
+        : []),
+    ];
+  }
+
+  /** Opens the editor of the map's format at the look of the kind the cursor is in. */
+  function changeFormat() {
+    const id = map;
+    if (!id) return;
+    formatEditorUi.open({
+      id: choice.format,
+      map: id,
+      section: 'kinds',
+      kind,
+      onsaved: (format) => project.setDocument(id, { format }),
+    });
+  }
+
+  function kinds(event: MouseEvent) {
     // The text loses the cursor while the menu is open: what it was is kept.
     const view = s?.view;
     if (!view) return;
+    // In hand, and with them the kinds of the group the cursor is in: a
+    // speaker and a stage direction in verse, every part of a script in one.
+    const group = specOf(kind)?.group;
+    const wanted = new Set([
+      ...inHand(project, map ?? '', suggests),
+      ...CATALOGUE.filter((k) => group && k.group === group && group !== 'text').map((k) => k.id),
+    ]);
+    const inHandNow = [
+      ...CATALOGUE.map((k) => k.id),
+      ...project.passageKinds.map((k) => k.id),
+    ].filter((id) => wanted.has(id) && ofParagraphs(id));
     openMenu(
       event.currentTarget as HTMLElement,
-      GROUPS.flatMap((g) => [
-        { kind: 'heading' as const, label: g.label },
-        ...STYLES.slice(g.from, g.to).map((x) => ({
-          label: x.label,
-          hint: x.hint,
-          icon: x.icon,
-          shortcut: x.shortcut,
-          checked: x.value === style,
-          action: () => run(setStyle(x.value), view),
-        })),
-      ]),
+      [
+        ...inHandNow.map((id) => kindItem(id, view)),
+        { kind: 'separator' },
+        { kind: 'submenu', label: t('editor-kinds-menu-more'), items: moreItems(view) },
+        { kind: 'submenu', label: t('editor-kinds-in-hand'), items: handItems(view) },
+        { kind: 'separator' },
+        { kind: 'heading', label: t('editor-kinds-set-by', { format: formatName }) },
+        {
+          label: t('editor-kinds-change-format'),
+          hint: t('editor-kinds-change-format-hint'),
+          icon: SlidersHorizontal,
+          disabled: !map,
+          action: changeFormat,
+        },
+      ],
+      { align: 'start' },
+    );
+  }
+
+  // ---- the words ----
+
+  function words(event: MouseEvent) {
+    const view = s?.view;
+    const marks = s?.marks;
+    if (!view || !marks) return;
+    const mark = (
+      name: 'underline' | 'sup' | 'sub' | 'strike' | 'code',
+      label: string,
+      icon: typeof Pilcrow,
+      shortcut?: string,
+      hint?: string,
+    ): MenuItem => ({
+      label,
+      hint,
+      icon,
+      shortcut,
+      checked: !!marks[name],
+      action: () => run(toggle(name), view),
+    });
+    const ofWords = (id: string): MenuItem => ({
+      label: nameOf(id),
+      hint: specOf(id)?.hint(),
+      icon: iconOf(id),
+      checked: wordKind?.name === id,
+      action: () => run(toggleKind(id), view),
+    });
+    // The languages foreign words may be in: that of the map first.
+    const language = project.map(map)?.document.language;
+    const tags = [...(language ? [language] : []), ...TEXT_LANGUAGES.filter((l) => l !== language)];
+    const foreign: MenuItem = {
+      kind: 'submenu',
+      label: t('editor-foreign'),
+      icon: Languages,
+      items: tags.map((tag) => ({
+        label: languageName(tag),
+        hint: tag === language ? t('editor-foreign-of-map') : undefined,
+        checked: wordKind?.name === 'foreign' && wordKind.lang === tag,
+        action: () => run(toggleKind('foreign', tag), view),
+      })),
+    };
+    openMenu(
+      event.currentTarget as HTMLElement,
+      [
+        mark('underline', t('editor-underline'), Underline, 'Ctrl+U'),
+        mark('sup', t('editor-superscript'), Superscript, 'Ctrl+.'),
+        mark('sub', t('editor-subscript'), Subscript, 'Ctrl+,'),
+        mark('strike', t('editor-struck'), Strikethrough, 'Ctrl+Shift+X'),
+        mark('code', t('editor-code-words'), Code, undefined, t('editor-code-words-hint')),
+        { kind: 'separator' },
+        foreign,
+        ofWords('title'),
+        ofWords('term'),
+        ofWords('mention'),
+        ofWords('highlight'),
+        ...ownWords.map((k) => ofWords(k.id)),
+        { kind: 'separator' },
+        {
+          label: t('editor-words-make'),
+          icon: Plus,
+          // The kind is put on the words that were selected when it is made.
+          action: () => newPassageKind('words', (id) => run(toggleKind(id), view)),
+        },
+        ...changeOwn(ownWords, 'words'),
+      ],
       { align: 'start' },
     );
   }
@@ -322,11 +525,11 @@
     type="button"
     class="style"
     disabled={!body}
-    aria-label={t('editor-paragraph-kind-now', { kind: current.label })}
+    aria-label={t('editor-paragraph-kind-now', { kind: kindLabel })}
     use:tooltip={{ text: t('editor-paragraph-kind'), side: 'bottom' }}
-    onclick={styles}
+    onclick={kinds}
   >
-    <span class="truncate">{current.label}</span>
+    <span class="truncate">{kindLabel}</span>
     <ChevronDown size={13} />
   </button>
 
@@ -377,33 +580,16 @@
   </button>
   <button
     type="button"
-    class:on={s?.marks.sup}
-    disabled={!s}
-    aria-label={t('editor-superscript')}
-    use:tooltip={{ text: t('editor-superscript'), shortcut: 'Ctrl+.', side: 'bottom' }}
-    onclick={() => run(toggle('sup'))}
-  >
-    <Superscript size={15} />
-  </button>
-  <button
-    type="button"
-    class:on={s?.marks.sub}
-    disabled={!s}
-    aria-label={t('editor-subscript')}
-    use:tooltip={{ text: t('editor-subscript'), shortcut: 'Ctrl+,', side: 'bottom' }}
-    onclick={() => run(toggle('sub'))}
-  >
-    <Subscript size={15} />
-  </button>
-  <button
-    type="button"
-    class:on={s?.marks.strike}
+    class="words"
+    class:on={wordsOn}
     disabled={!s || s.kind === 'title'}
-    aria-label={t('editor-struck')}
-    use:tooltip={{ text: t('editor-struck'), shortcut: 'Ctrl+Shift+X', side: 'bottom' }}
-    onclick={() => run(toggle('strike'))}
+    aria-label={t('editor-words')}
+    use:tooltip={{ text: t('editor-words-hint'), side: 'bottom' }}
+    onclick={words}
   >
-    <Strikethrough size={15} />
+    <WholeWord size={15} />
+    {t('editor-words')}
+    <ChevronDown size={13} />
   </button>
 
   <span class="rule"></span>
@@ -522,6 +708,11 @@
   }
   .word {
     padding: 0 9px 0 8px;
+    font-weight: 500;
+  }
+  .words {
+    gap: 4px;
+    padding: 0 5px 0 7px;
     font-weight: 500;
   }
   .cite:not(:disabled) {

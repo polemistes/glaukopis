@@ -28,6 +28,8 @@ kinds-template-placeholder = Appearance
     Wants
     Fears
 kinds-template-hint = An element without text that is given this kind begins with these lines, one paragraph each.
+kinds-begins = An element of this kind writes in
+kinds-begins-hint = The text begins in this kind of paragraph, where the element has none yet
 kinds-create = Create
 kinds-elements = { $count ->
     [one] { $count } element

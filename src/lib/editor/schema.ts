@@ -110,6 +110,39 @@ const marks: Record<string, MarkSpec> = {
     ],
     toDOM: () => ['s', 0],
   },
+  underline: {
+    parseDOM: [{ tag: 'u' }, { style: 'text-decoration=underline' }],
+    toDOM: () => ['u', 0],
+  },
+  /** Words kept letter for letter, in letters of equal width. */
+  code: {
+    parseDOM: [{ tag: 'code' }],
+    toDOM: () => ['code', 0],
+  },
+  /**
+   * A kind of words: foreign words, the title of a work, a term, a mention,
+   * a highlight, or a kind of the writer's own. `name` is the id of the
+   * kind (`editor/kinds.ts`); `lang` the language of foreign words, as a
+   * tag, and empty where none is said. A run of words has one kind.
+   */
+  kind: {
+    attrs: { name: { default: '' }, lang: { default: '' } },
+    excludes: 'kind',
+    parseDOM: [
+      {
+        tag: 'span.kind[data-kind]',
+        getAttrs: (node) => ({
+          name: (node as HTMLElement).getAttribute('data-kind') ?? '',
+          lang: (node as HTMLElement).getAttribute('lang') ?? '',
+        }),
+      },
+    ],
+    toDOM: (mark) => [
+      'span',
+      { class: 'kind', 'data-kind': mark.attrs.name, lang: mark.attrs.lang || null },
+      0,
+    ],
+  },
   link: {
     attrs: { href: {} },
     inclusive: false,
@@ -276,6 +309,24 @@ const bodyNodes: Record<string, NodeSpec> = {
       },
     ],
     toDOM: (node) => ['p', { class: `script ${node.attrs.part}` }, 0],
+  },
+  /**
+   * A paragraph of a kind: an epigraph, a headword, a break, a draft note,
+   * or a kind of the writer's own. `name` is the id of the kind
+   * (`editor/kinds.ts`). The parts of a script and the lines of verse are
+   * kinds too, kept as they were. See ADR 0029.
+   */
+  passage: {
+    group: 'block',
+    content: 'inline*',
+    attrs: { name: { default: '' } },
+    parseDOM: [
+      {
+        tag: 'p.passage[data-kind]',
+        getAttrs: (node) => ({ name: (node as HTMLElement).getAttribute('data-kind') ?? '' }),
+      },
+    ],
+    toDOM: (node) => ['p', { class: 'passage', 'data-kind': node.attrs.name }, 0],
   },
   /** Two texts side by side: an original and its translation. */
   parallel: {

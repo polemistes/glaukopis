@@ -30,6 +30,8 @@
   import { selectedPassage } from '$lib/comments/marks';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import EditorHost from '$lib/editor/EditorHost.svelte';
+  import { passageKindsCss } from '$lib/editor/kinds';
+  import { ownKindsUi } from '$lib/editor/own-kinds.svelte';
   import { editorUi, hooksOf } from '$lib/editor/ui.svelte';
   import { beforeClose } from '$lib/state/closing';
   import { library } from '$lib/state/library.svelte';
@@ -53,6 +55,7 @@
   import { comparing } from './copies.svelte';
   import CopyDialog from './CopyDialog.svelte';
   import KindDialog from './KindDialog.svelte';
+  import PassageKindDialog from './PassageKindDialog.svelte';
   import TimelineView from '$lib/timeline/TimelineView.svelte';
   import WhenDialog from '$lib/timeline/WhenDialog.svelte';
   import { whenUi } from '$lib/timeline/when.svelte';
@@ -80,6 +83,9 @@
   import SideTabs, { type SideKind } from './SideTabs.svelte';
   import MapText from './text/MapText.svelte';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
+  import FormatEditor from '$lib/preview/FormatEditor.svelte';
+  import { documentRequest } from '$lib/preview/documents.svelte';
+  import { formatEditorUi } from '$lib/preview/formatEditor.svelte';
   import { historyOf } from '$lib/history/history.svelte';
   import { me } from '$lib/history/me.svelte';
   import * as positions from '$lib/history/positions';
@@ -276,11 +282,36 @@
       .catch(() => {});
   });
 
+  // The kinds of paragraph and of words of the writer's own are seen at
+  // once: a style sheet in the head of the document sets them from what
+  // they are based on (`passageKindsCss`), anew whenever they change.
+  $effect(() => {
+    const css = project ? passageKindsCss(project.passageKinds) : '';
+    let sheet = document.getElementById('passage-kinds');
+    if (!sheet) {
+      sheet = document.createElement('style');
+      sheet.id = 'passage-kinds';
+      document.head.appendChild(sheet);
+    }
+    sheet.textContent = css;
+  });
+
+  /** The document of a map whole, for the sample pages of the format editor. */
+  function sampleOf(map: string) {
+    return () => {
+      if (!project) throw new Error('The project is closed.');
+      return documentRequest(project, ownId, map);
+    };
+  }
+
   onDestroy(() => {
     document.title = 'Glaukopis';
     void getCurrentWindow()
       .setTitle('Glaukopis')
       .catch(() => {});
+    document.getElementById('passage-kinds')?.remove();
+    formatEditorUi.close();
+    ownKindsUi.editing = null;
     review?.close();
     comparing.copy = null;
     release?.();
@@ -752,7 +783,7 @@
                   <ListTree size={15} />
                 </IconButton>
                 <div class="writing">
-                  <WritingTools scope={paneEls[i]} map={p.map} />
+                  <WritingTools {project} scope={paneEls[i]} map={p.map} />
                 </div>
               {/if}
               <span class="spring"></span>
@@ -940,6 +971,35 @@
       onclose={() => (kindsUi.editing = null)}
     />
   {/key}
+{/if}
+
+{#if ownKindsUi.editing && project}
+  {#key ownKindsUi.editing.id}
+    <PassageKindDialog
+      {project}
+      id={ownKindsUi.editing.id}
+      family={ownKindsUi.editing.family}
+      apply={ownKindsUi.editing.apply}
+      onclose={() => (ownKindsUi.editing = null)}
+    />
+  {/key}
+{/if}
+
+{#if formatEditorUi.request && project}
+  {@const asked = formatEditorUi.request}
+  <FormatEditor
+    id={asked.id}
+    section={asked.section}
+    kind={asked.kind}
+    request={asked.map ? sampleOf(asked.map) : undefined}
+    onsaved={(id) => {
+      // Held before the editor goes: what it was asked for goes with it.
+      const given = asked.onsaved;
+      formatEditorUi.close();
+      given?.(id);
+    }}
+    onclose={() => formatEditorUi.close()}
+  />
 {/if}
 
 {#if whenUi.element && project}

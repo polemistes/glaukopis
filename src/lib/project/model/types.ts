@@ -1,3 +1,4 @@
+import type { KindFamily, Look } from '$lib/api/documents';
 import type { When } from '$lib/timeline/solve';
 import type { SetOff } from './text';
 /** The records of a project, as the interface reads them from the document. */
@@ -35,6 +36,15 @@ export interface DocumentSettings {
   cover?: { hash: string; extension: string };
 }
 
+/**
+ * The kinds of paragraph and of words the writer has pinned to the hand of
+ * a map, by id, and those taken out of it: see `editor/kinds.ts`, `inHand`.
+ */
+export interface Hand {
+  pinned: string[];
+  unpinned: string[];
+}
+
 export interface MapRecord {
   id: string;
   name: string;
@@ -45,6 +55,8 @@ export interface MapRecord {
   document: DocumentSettings;
   /** How the map is shown as a timeline. */
   timeline: TimelineSettings;
+  /** The kinds in hand, as the writer has changed them. */
+  hand: Hand;
 }
 
 /**
@@ -88,6 +100,23 @@ export interface KindRecord {
   colour: string;
   /** What the text of a new element of the kind begins with: lines, one paragraph each. */
   template: string;
+  /** The kind of paragraph the text of an element of the kind is written in (`editor/kinds.ts`); nothing for text. */
+  begins?: string;
+  order: string;
+}
+
+/**
+ * A kind of paragraph or of words of the writer's own: a name, what it is
+ * based on, and how it differs from that, by the measures a format uses.
+ * Kept in the project, as the kinds of elements are. See ADR 0029.
+ */
+export interface PassageKindRecord {
+  id: string;
+  name: string;
+  family: KindFamily;
+  /** The id of the kind it is based on: of the catalogue, or another of the writer's own. */
+  basedOn: string;
+  look: Look;
   order: string;
 }
 
@@ -143,6 +172,8 @@ export interface NodeRecord {
   noteWords: number;
   /** The figures and equations of the text, in the order they stand in. */
   set: SetOff[];
+  /** The ids of the kinds of paragraph and of words the text uses, each once, in the order of first use. */
+  uses: string[];
 }
 
 export interface LinkRecord {

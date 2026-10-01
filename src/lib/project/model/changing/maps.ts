@@ -12,7 +12,7 @@ import { newId } from '$lib/util/id';
 import { nowIso } from '../origins';
 import type { Project } from '../project.svelte';
 import { subtree } from '../tree';
-import type { DocumentSettings, TimelineSettings } from '../types';
+import type { DocumentSettings, Hand, TimelineSettings } from '../types';
 import { cloneLinks, cloneNode, deleteNodes, makeNode } from './elements';
 
 export const mapChanges = {
@@ -137,6 +137,28 @@ export const mapChanges = {
     });
   },
 
+  /**
+   * Changes the kinds in hand of a map: those the writer has pinned, those
+   * taken out. A kind pinned is no longer taken out, and the other way
+   * round. Nothing is kept of a hand that says nothing.
+   */
+  setHand(this: Project, id: string, patch: Partial<Hand>) {
+    const m = this.yMaps.get(id);
+    if (!m) return;
+    const list = (ids: string[] | undefined) => [
+      ...new Set((ids ?? []).map((k) => k.trim()).filter(Boolean)),
+    ];
+    this.transact(() => {
+      const current = this.map(id)?.hand ?? { pinned: [], unpinned: [] };
+      let pinned = list(patch.pinned ?? current.pinned);
+      let unpinned = list(patch.unpinned ?? current.unpinned);
+      if (patch.unpinned) pinned = pinned.filter((k) => !unpinned.includes(k));
+      else unpinned = unpinned.filter((k) => !pinned.includes(k));
+      if (pinned.length || unpinned.length) m.set('hand', { pinned, unpinned });
+      else m.delete('hand');
+    });
+  },
+
   /** Puts a map before another in the list of maps, or last. */
   moveMap(this: Project, id: string, before: string | null) {
     const m = this.yMaps.get(id);
@@ -192,6 +214,8 @@ export const mapChanges = {
       );
       m.set('created', nowIso());
       m.set('document', { ...source.document });
+      if (source.hand.pinned.length || source.hand.unpinned.length)
+        m.set('hand', { pinned: [...source.hand.pinned], unpinned: [...source.hand.unpinned] });
       this.yMaps.set(copyId, m);
       for (const old of tree.sequence) {
         const parent = tree.parent.get(old) ?? null;

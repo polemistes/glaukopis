@@ -43,6 +43,7 @@ format-section-paragraphs = Avsnitt
 format-section-headings = Overskrifter
 format-section-title = Tittel og sammendrag
 format-section-quotations = Sitater
+format-section-kinds = Slag avsnitt og ord
 format-section-notes = Noter
 format-section-bibliography = Litteraturliste
 format-section-figures = Figurer, tabeller, ligninger
@@ -108,6 +109,9 @@ format-indent = Innrykk
 format-indent-first = Også etter en overskrift
 format-indent-first-hint = Typografisk skikk er å ikke rykke inn første avsnitt; APA og andre rykker det inn
 format-space-between = Luft mellom avsnittene
+format-italics = Kursiv settes
+format-italics-italic = Som kursiv
+format-italics-underline = Understreket, slik maskinskrevne manuskripter hadde det
 
 ## Overskrifter.
 
@@ -171,6 +175,50 @@ format-bibliography-entry-spacing = Luft mellom oppføringene
 format-bibliography-style = Referansestil
 format-bibliography-style-hint = Den som hører til dette formatet; den tas i bruk når formatet velges
 format-bibliography-style-none = Ingen bestemt
+
+## Slagene avsnitt og ord: hvordan hvert skiller seg fra slaget det bygger
+## på. Radene er også dem i vinduet for et eget slag; det som ikke sies, er
+## som grunnlaget har det.
+
+format-kinds-hint = Hvert slag settes som slaget det bygger på, med forskjellene som oppgis her. Det som ikke sies, er som grunnlaget har det.
+format-kind-based-on = bygger på { $base }
+format-as-the-base = Som grunnlaget
+# I et tomt felt for en størrelse, der tallet ellers står.
+format-as-the-base-blank = som grunnlaget
+format-yes = Ja
+format-no = Nei
+format-underline = Understreket
+format-equal-width = Bokstaver med lik bredde
+format-equal-width-hint = Slik kode settes
+format-indent-left = Innrykk til venstre
+format-indent-right = Innrykk til høyre
+format-first-line = Første linje
+format-first-line-hint = Hvor langt inn den begynner, utover resten
+format-keep-with-next = Holdes sammen med det neste
+format-keep-with-next-hint = Blir ikke stående alene nederst på en side
+format-new-page = Begynner på ny side
+format-break-text = Det som står i et skille
+format-break-text-hint = * * * der ingenting er sagt; # for et manuskript
+# Det en utforming sier, kort, på linjen til slaget sitt: «10 pt, kursiv, midtstilt».
+format-look-not-bold = ikke fet
+format-look-not-italic = ikke kursiv
+format-look-underlined = understreket
+format-look-not-underlined = ikke understreket
+format-look-as-written = som skrevet
+format-look-left = venstre
+format-look-justified = blokkjustert
+format-look-indent-left = { $length } inn fra venstre
+format-look-indent-right = { $length } inn fra høyre
+format-look-first-line = første linje { $length }
+format-look-space-before = { $length } før
+format-look-space-after = { $length } etter
+format-look-line-spacing = avstand { $spacing }
+format-look-equal-width = bokstaver med lik bredde
+format-look-not-equal-width = bokstaver med ulik bredde
+format-look-kept = holdt sammen med det neste
+format-look-not-kept = ikke holdt sammen med det neste
+format-look-no-new-page = ikke ny side
+format-look-text = «{ $text }» i et skille
 
 ## Figurer og tabeller, som beskrives likt. Typen er figure eller table: en
 ## figur har bildetekst, en tabell har tabelltekst.

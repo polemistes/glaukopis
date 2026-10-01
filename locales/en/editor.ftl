@@ -34,8 +34,38 @@ editor-line-numbers-none = Leave empty for no numbers
 editor-line-numbers-every = Show a number every
 editor-line-numbers-number = A whole number is wanted.
 editor-kinds-text = Text
+editor-kinds-quotation = Quotation
 editor-kinds-verse = Verse
 editor-kinds-script = Script
+editor-kinds-more = More
+editor-kinds-words = Words
+editor-attribution = Attribution
+editor-attribution-hint = Whose words they are, under a quotation, at the right
+editor-epigraph = Epigraph
+editor-epigraph-hint = A quotation at the head of a part
+editor-headword = Headword
+editor-headword-hint = The word a glossary explains
+editor-gloss = Gloss
+editor-gloss-hint = What the headword means
+editor-code = Code
+editor-code-hint = Kept letter for letter, in letters of equal width
+editor-break = Break
+editor-break-hint = A pause between parts, with the sign the format gives it
+editor-draft = Draft note
+editor-draft-hint = For your eyes: it goes into no document
+editor-foreign = Foreign words
+editor-foreign-hint = Words in another language, which spelling follows
+editor-title-of-work = Title of a work
+editor-title-of-work-hint = The title of a book, a play, a painting
+editor-term = Term
+editor-term-hint = A term where it is first used
+editor-mention = Mention
+editor-mention-hint = A word spoken of as a word, in quotation marks
+editor-highlight = Highlight
+editor-highlight-hint = For the eye on the screen: it goes into no document
+editor-underline = Underlined
+editor-code-words = Code in the line
+editor-code-words-hint = Letters of equal width, within the line
 editor-scene = Scene heading
 editor-scene-hint = INT. HOUSE – NIGHT
 editor-action = Action
@@ -56,6 +86,43 @@ editor-parallel-hint = An original and its translation, each a text of its own
 editor-paragraph-kind = Kind of paragraph
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Kind of paragraph: { $kind }
+
+## The kind menu: the kinds in hand, the whole catalogue under "More…", and
+## the format that sets them at its foot. The words menu, with the kinds of
+## words. And a kind of the writer's own, in its dialog.
+
+editor-kinds-menu-more = More…
+editor-kinds-in-hand = Kinds in hand
+editor-kinds-own = Your own
+editor-kinds-make = Make a kind…
+editor-kinds-change-own = Change a kind of your own…
+# Over the item that opens the format editor: the format sets how each kind looks.
+editor-kinds-set-by = Set as “{ $format }” has them
+editor-kinds-change-format = Change the format…
+editor-kinds-change-format-hint = How each kind is set in this document
+editor-words = Words
+editor-words-hint = Underlining, superscript, code; foreign words, the title of a work, a term
+editor-words-make = Make a kind of words…
+# Beside the language of the map, first among the languages foreign words may be in.
+editor-foreign-of-map = The language of the map
+# What a kind of words is based on when it is based on no kind in particular.
+editor-plain-words = Plain words
+editor-own-kind-new = A kind of your own
+editor-own-kind-change = Change the kind
+editor-own-kind-name = Name
+editor-own-kind-name-placeholder = Letter, telegram, prayer…
+editor-own-kind-words-placeholder = Ship’s name, Latin, a key word…
+editor-own-kind-name-taken = There is a kind of that name already.
+editor-own-kind-based-on = Based on
+editor-own-kind-based-on-hint = What is not said below is as this kind has it
+editor-own-kind-look = How it differs
+editor-own-kind-create = Create
+editor-own-kind-delete-title = Delete the kind “{ $name }”?
+editor-own-kind-delete-message = { $count ->
+    [0] No text is of it.
+    [one] What is of it in one element stays as it is, and is set as text in documents.
+   *[other] What is of it in { $count } elements stays as it is, and is set as text in documents.
+}
 
 ## Citing, notes, and what is put into the text.
 

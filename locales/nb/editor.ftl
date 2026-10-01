@@ -34,8 +34,38 @@ editor-line-numbers-none = La stå tomt for ingen nummer
 editor-line-numbers-every = Vis et nummer hver
 editor-line-numbers-number = Et helt tall trengs.
 editor-kinds-text = Tekst
+editor-kinds-quotation = Sitat
 editor-kinds-verse = Vers
 editor-kinds-script = Manus
+editor-kinds-more = Mer
+editor-kinds-words = Ord
+editor-attribution = Kildeangivelse
+editor-attribution-hint = Hvem ordene er fra, under et sitat, til høyre
+editor-epigraph = Epigraf
+editor-epigraph-hint = Et sitat i begynnelsen av en del
+editor-headword = Oppslagsord
+editor-headword-hint = Ordet en ordliste forklarer
+editor-gloss = Forklaring
+editor-gloss-hint = Hva oppslagsordet betyr
+editor-code = Kode
+editor-code-hint = Beholdt bokstav for bokstav, i bokstaver med lik bredde
+editor-break = Skille
+editor-break-hint = Et opphold mellom deler, med tegnet formatet gir det
+editor-draft = Kladd
+editor-draft-hint = For dine øyne: det kommer ikke med i noe dokument
+editor-foreign = Annet språk
+editor-foreign-hint = Ord på et annet språk, som stavingen følger
+editor-title-of-work = Tittel på et verk
+editor-title-of-work-hint = Tittelen på en bok, et skuespill, et maleri
+editor-term = Term
+editor-term-hint = En term der den brukes første gang
+editor-mention = Omtalt ord
+editor-mention-hint = Et ord omtalt som ord, i anførselstegn
+editor-highlight = Utheving
+editor-highlight-hint = For øyet på skjermen: det kommer ikke med i noe dokument
+editor-underline = Understreket
+editor-code-words = Kode i linjen
+editor-code-words-hint = Bokstaver med lik bredde, inne i linjen
 editor-scene = Sceneoverskrift
 editor-scene-hint = INT. HUS – NATT
 editor-action = Handling
@@ -56,6 +86,43 @@ editor-parallel-hint = En original og dens oversettelse, hver sin tekst
 editor-paragraph-kind = Slags avsnitt
 # Sies om knappen som viser hva slags avsnitt markøren står i.
 editor-paragraph-kind-now = Slags avsnitt: { $kind }
+
+## Menyen over slagene: slagene for hånden, hele katalogen under «Mer …», og
+## formatet som setter dem, nederst. Menyen over ordene, med slagene ord. Og
+## et eget slag, i vinduet sitt.
+
+editor-kinds-menu-more = Mer …
+editor-kinds-in-hand = Slag for hånden
+editor-kinds-own = Dine egne
+editor-kinds-make = Lag et slag …
+editor-kinds-change-own = Endre et av dine egne …
+# Over valget som åpner formatredigeringen: formatet bestemmer hvordan hvert slag ser ut.
+editor-kinds-set-by = Satt slik «{ $format }» har dem
+editor-kinds-change-format = Endre formatet …
+editor-kinds-change-format-hint = Hvordan hvert slag settes i dette dokumentet
+editor-words = Ord
+editor-words-hint = Understreking, hevet skrift, kode; ord på et annet språk, tittelen på et verk, en term
+editor-words-make = Lag et slag ord …
+# Ved siden av språket i kartet, først blant språkene ord på et annet språk kan være på.
+editor-foreign-of-map = Språket i kartet
+# Det et slag ord bygger på når det ikke bygger på noe bestemt slag.
+editor-plain-words = Vanlige ord
+editor-own-kind-new = Et eget slag
+editor-own-kind-change = Endre slaget
+editor-own-kind-name = Navn
+editor-own-kind-name-placeholder = Brev, telegram, bønn …
+editor-own-kind-words-placeholder = Skipsnavn, latin, et nøkkelord …
+editor-own-kind-name-taken = Det finnes alt et slag med det navnet.
+editor-own-kind-based-on = Bygger på
+editor-own-kind-based-on-hint = Det som ikke sies nedenfor, er som dette slaget har det
+editor-own-kind-look = Hvordan det skiller seg
+editor-own-kind-create = Opprett
+editor-own-kind-delete-title = Slette slaget «{ $name }»?
+editor-own-kind-delete-message = { $count ->
+    [0] Ingen tekst er av det.
+    [one] Det som er av det i ett element, blir stående som det er, og settes som tekst i dokumenter.
+   *[other] Det som er av det i { $count } elementer, blir stående som det er, og settes som tekst i dokumenter.
+}
 
 ## Kildehenvisninger, noter og det som settes inn i teksten.
 

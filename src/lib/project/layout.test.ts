@@ -10,6 +10,7 @@ const map = (id: string): MapRecord => ({
   created: '',
   document: {},
   timeline: {},
+  hand: { pinned: [], unpinned: [] },
 });
 const maps = [map('a'), map('b'), map('c')];
 

@@ -1,10 +1,12 @@
 <script lang="ts">
   /**
-   * A kind of element, made or changed: its name, its colour, and the text
-   * an element of the kind begins with. A name is offered from the kinds
-   * made before, in any project, with the colour it had then.
+   * A kind of element, made or changed: its name, its colour, the text an
+   * element of the kind begins with, and the kind of paragraph it is
+   * written in. A name is offered from the kinds made before, in any
+   * project, with the colour it had then.
    */
   import { untrack } from 'svelte';
+  import { CATALOGUE, GROUPS } from '$lib/editor/kinds';
   import { t } from '$lib/i18n';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -33,7 +35,28 @@
     existing?.colour || untrack(() => nextKindColour(project.kinds.map((k) => k.colour))),
   );
   let template = $state(existing?.template ?? '');
+  /** The kind of paragraph the text begins in; empty for text. */
+  let begins = $state(existing?.begins ?? '');
   let field = $state<HTMLInputElement>();
+
+  /**
+   * The kinds of paragraph a text can begin in, in their groups: the lines
+   * of verse, the parts of a script, the others. Not a quotation or a
+   * list, which a text is not begun in.
+   */
+  const BEGINS = ['verse', 'script', 'quotation', 'more'] as const;
+  const beginsGroups = $derived(
+    BEGINS.map((id) => ({
+      id,
+      label: GROUPS.find((g) => g.id === id)?.label() ?? id,
+      kinds: CATALOGUE.filter(
+        (k) =>
+          k.group === id &&
+          (k.structure === 'verse' || k.structure === 'script' || k.structure === 'passage'),
+      ),
+    })).filter((g) => g.kinds.length),
+  );
+  const ownParagraphs = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
 
   const uid = $props.id();
   /** The kinds made before that are not of this project already. */
@@ -64,9 +87,9 @@
   function keep() {
     if (!name.trim() || taken) return;
     if (id) {
-      project.updateKind(id, { name, colour, template });
+      project.updateKind(id, { name, colour, template, begins });
     } else {
-      const made = project.createKind({ name, colour, template });
+      const made = project.createKind({ name, colour, template, begins });
       if (made && assign.length) {
         project.checkpoint();
         project.setKind(assign, made);
@@ -143,6 +166,24 @@
       ></textarea>
       <span class="hint">{t('kinds-template-hint')}</span>
     </label>
+
+    <label class="begins">
+      <span class="label">{t('kinds-begins')}</span>
+      <select bind:value={begins}>
+        <option value="">{t('editor-text')}</option>
+        {#each beginsGroups as g (g.id)}
+          <optgroup label={g.label}>
+            {#each g.kinds as k (k.id)}<option value={k.id}>{k.label()}</option>{/each}
+          </optgroup>
+        {/each}
+        {#if ownParagraphs.length}
+          <optgroup label={t('editor-kinds-own')}>
+            {#each ownParagraphs as k (k.id)}<option value={k.id}>{k.name}</option>{/each}
+          </optgroup>
+        {/if}
+      </select>
+      <span class="hint">{t('kinds-begins-hint')}</span>
+    </label>
   </div>
 
   {#snippet footer()}
@@ -202,6 +243,22 @@
     resize: vertical;
   }
   .template textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .begins select {
+    display: block;
+    width: 100%;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--paper);
+    color: var(--ink);
+    font: inherit;
+    font-size: var(--text-md);
+  }
+  .begins select:focus {
     outline: none;
     border-color: var(--accent);
   }

@@ -186,7 +186,7 @@
       >
     </header>
 
-    <div class="tools"><WritingTools scope={el} map={node?.map} /></div>
+    <div class="tools"><WritingTools {project} scope={el} map={node?.map} /></div>
     {#if searching}
       <div class="find">
         <SearchBar bind:this={bar} search={searching} compact onclose={() => closeSearch(true)} />

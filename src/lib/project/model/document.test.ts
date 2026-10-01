@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDocument, countWords } from './document';
+import { buildDocument, countWords, documentMark, leanDocument } from './document';
 import { Project } from './project.svelte';
 import { inlineText } from './text';
 
@@ -94,5 +94,29 @@ describe('a map as a document', () => {
     p.setExcluded(out, true);
     expect(countWords(p, map)).toEqual({ text: 4, withNotes: 4 });
     expect(buildDocument(p, map).references).toEqual([]);
+  });
+});
+
+describe('the kinds of the writer`s own', () => {
+  it('go with the document, and change what the document is made of', () => {
+    const p = new Project(null);
+    const map = p.createMap('Wrath');
+    const root = p.map(map)!.root;
+    p.addChild(root, { title: 'A', body: 'Text.' });
+    expect(buildDocument(p, map).kinds).toEqual([]);
+    const before = documentMark(leanDocument(p, map));
+    const id = p.createPassageKind({
+      name: 'Letter',
+      family: 'paragraph',
+      basedOn: 'epigraph',
+      look: { italic: true },
+    })!;
+    expect(buildDocument(p, map).kinds).toEqual([
+      { id, name: 'Letter', family: 'paragraph', basedOn: 'epigraph', look: { italic: true } },
+    ]);
+    const made = documentMark(leanDocument(p, map));
+    expect(made).not.toBe(before);
+    p.updatePassageKind(id, { look: { italic: true, bold: true } });
+    expect(documentMark(leanDocument(p, map))).not.toBe(made);
   });
 });

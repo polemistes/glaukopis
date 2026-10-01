@@ -1,8 +1,8 @@
 /**
  * Changing the kinds of elements of a project: making them, naming and
- * colouring them, giving them a text to begin with, deleting them; and
- * saying of elements which kind they are. These are methods of `Project`,
- * which takes them in (see there).
+ * colouring them, giving them a text to begin with and a kind of paragraph
+ * to write it in, deleting them; and saying of elements which kind they
+ * are. These are methods of `Project`, which takes them in (see there).
  */
 
 import { generateKeyBetween } from 'fractional-indexing';
@@ -13,13 +13,14 @@ import { fillBody } from '../text';
 import type { KindRecord } from '../types';
 
 /** What can be said of a kind. */
-export type KindDraft = Pick<KindRecord, 'name' | 'colour' | 'template'>;
+export type KindDraft = Pick<KindRecord, 'name' | 'colour' | 'template' | 'begins'>;
 
 function clean(draft: Partial<KindDraft>): Partial<KindDraft> {
   const out: Partial<KindDraft> = {};
   if (draft.name !== undefined) out.name = draft.name.replace(/\s+/g, ' ').trim();
   if (draft.colour !== undefined) out.colour = draft.colour;
   if (draft.template !== undefined) out.template = draft.template.replace(/\r\n?/g, '\n').trim();
+  if (draft.begins !== undefined) out.begins = draft.begins.trim();
   return out;
 }
 
@@ -35,13 +36,14 @@ export const kindChanges = {
       k.set('name', given.name);
       k.set('colour', given.colour ?? '');
       if (given.template) k.set('template', given.template);
+      if (given.begins) k.set('begins', given.begins);
       k.set('order', generateKeyBetween(last, null));
       this.yKinds.set(id, k);
     });
     return id;
   },
 
-  /** Changes what is said of a kind: its name, its colour, its text. */
+  /** Changes what is said of a kind: its name, its colour, its text, the kind of paragraph it writes in. */
   updateKind(this: Project, id: string, draft: Partial<KindDraft>) {
     const k = this.yKinds.get(id);
     if (!k) return;
@@ -68,7 +70,8 @@ export const kindChanges = {
   /**
    * Says of elements which kind they are; with nothing, that they are of
    * none. An element without text that is given a kind with a text to begin
-   * with begins with it.
+   * with begins with it, in the kind of paragraph the kind writes in; one
+   * given a kind that only says the kind of paragraph begins in that.
    */
   setKind(this: Project, ids: string[], kind: string | null) {
     const record = kind ? this.kinds.find((k) => k.id === kind) : undefined;
@@ -79,9 +82,9 @@ export const kindChanges = {
         if (!n) continue;
         if (kind) n.set('kind', kind);
         else n.delete('kind');
-        if (record?.template && this.node(id)?.empty) {
+        if ((record?.template || record?.begins) && this.node(id)?.empty) {
           const body = n.get('body');
-          if (body instanceof Y.XmlFragment) fillBody(body, record.template);
+          if (body instanceof Y.XmlFragment) fillBody(body, record.template, record.begins);
         }
       }
     });

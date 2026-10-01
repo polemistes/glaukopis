@@ -5,11 +5,42 @@ import {
   type FoundSettings,
   type Settings,
 } from '$lib/api/system';
+import type { KindFamily, Look } from '$lib/api/documents';
 import { t } from '$lib/i18n';
 import { notifyError } from '$lib/ui/toast.svelte';
 
+/**
+ * A kind of paragraph or of words of the writer's own, as it is remembered
+ * across projects: offered by name when a kind is made, with what it was
+ * based on and how it differed. See `editor/own-kinds.svelte.ts`.
+ */
+export interface RememberedPassageKind {
+  name: string;
+  family: KindFamily;
+  basedOn: string;
+  look: Look;
+}
+
+/** What is kept in the settings beyond what `api/system.ts` declares. */
+export interface MoreSettings {
+  /** The kinds of paragraph and of words made in any project, the latest first. */
+  passageKinds: RememberedPassageKind[];
+}
+
+export type AllSettings = Settings & MoreSettings;
+
+const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
+  passageKinds: Array.isArray(kept.passageKinds)
+    ? kept.passageKinds.filter((k) => k && typeof k.name === 'string')
+    : [],
+});
+
 class SettingsState {
-  value = $state<Settings>({ ...defaultSettings, found: { ...defaultSettings.found } });
+  value = $state<AllSettings>({
+    ...defaultSettings,
+    ...more(),
+    found: { ...defaultSettings.found },
+  });
   loaded = $state(false);
   #systemDark = $state(false);
   #saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -30,6 +61,7 @@ class SettingsState {
       this.value = {
         ...defaultSettings,
         ...kept,
+        ...more(kept),
         found: { ...defaultSettings.found, ...(kept.found ?? {}) },
       };
       // Who this installation is in the history of projects: made once, and kept.
@@ -54,8 +86,10 @@ class SettingsState {
     this.set('found', { ...$state.snapshot(this.value.found), ...change });
   }
 
-  set<K extends keyof Settings>(key: K, value: Settings[K]) {
-    this.value[key] = value;
+  set<K extends keyof Settings>(key: K, value: Settings[K]): void;
+  set<K extends keyof MoreSettings>(key: K, value: MoreSettings[K]): void;
+  set(key: keyof AllSettings, value: AllSettings[keyof AllSettings]) {
+    Object.assign(this.value, { [key]: value });
     clearTimeout(this.#saveTimer);
     this.#saveTimer = setTimeout(() => {
       settingsSave($state.snapshot(this.value)).catch((error) =>

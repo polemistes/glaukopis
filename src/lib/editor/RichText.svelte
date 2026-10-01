@@ -93,6 +93,20 @@
   const owner = $derived(element ?? project.ownerOf(fragment));
   const language = $derived(project.map(project.node(owner)?.map)?.document.language ?? null);
 
+  // The text says what language it is in, by which a mentioned word takes
+  // the quotation marks of the language (`:lang()` in the style sheet);
+  // again when the language of the map changes, and when the editor is
+  // made anew. The editor leaves alone what it did not set itself.
+  $effect(() => {
+    const now = language;
+    void made;
+    untrack(() => {
+      if (!view) return;
+      if (now) view.dom.setAttribute('lang', now);
+      else view.dom.removeAttribute('lang');
+    });
+  });
+
   // The spelling is looked at again when the language of the map changes, or
   // the words ignored in the project do.
   let lookedWith: { language: string | null; ignored: ReadonlySet<string> } | null = null;
@@ -269,6 +283,8 @@
       picture: kind === 'body' ? picture : undefined,
       point: kind === 'body' ? point : undefined,
       element: untrack(() => element),
+      // The kinds of the writer's own, for what Enter and Tab make after a paragraph of one.
+      passageKinds: () => project.passageKinds,
     };
 
     const created = untrack(() => {

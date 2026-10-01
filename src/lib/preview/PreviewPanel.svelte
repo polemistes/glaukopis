@@ -12,17 +12,11 @@
     documentPreviewPages,
     documentPreviewStop,
     type DocumentFormat,
-    type DocumentRequest,
     type Preview,
     type PreviewPage,
   } from '$lib/api/documents';
   import { t } from '$lib/i18n';
-  import {
-    buildDocument,
-    countWords,
-    documentMark,
-    leanDocument,
-  } from '$lib/project/model/document';
+  import { countWords, documentMark, leanDocument } from '$lib/project/model/document';
   import type { Project } from '$lib/project/model/project.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -32,9 +26,9 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, toasts } from '$lib/ui/toast.svelte';
   import DocumentDetails from './DocumentDetails.svelte';
-  import { documents, formatKindWords, kindWords } from './documents.svelte';
+  import { documentRequest, documents, formatKindWords, kindWords } from './documents.svelte';
   import ExportDialog from './ExportDialog.svelte';
-  import FormatEditor from './FormatEditor.svelte';
+  import { formatEditorUi } from './formatEditor.svelte';
   import StyleEditor from './StyleEditor.svelte';
   import StyleBrowser from './StyleBrowser.svelte';
 
@@ -86,7 +80,6 @@
   let browsing = $state(false);
   let detailing = $state(false);
   let exporting = $state(false);
-  let editingFormat = $state<string | null>(null);
   let editingStyle = $state<string | null>(null);
   let scroller = $state<HTMLDivElement>();
   /** Whether the pages are being made. Never twice at once. */
@@ -122,14 +115,19 @@
   });
 
   /** The document whole, for what is made of all of it: an export, the sample of a format. */
-  async function request(): Promise<DocumentRequest> {
-    const f = await documents.format(choice.format);
-    return {
-      document: buildDocument(project, mapId),
-      style: choice.style,
-      format: $state.snapshot(f) as DocumentFormat,
-      key: projectId,
-    };
+  const request = () => documentRequest(project, projectId, mapId);
+
+  /** Opens the editor of the map's format; the map takes the format that is saved. */
+  function editFormat() {
+    formatEditorUi.open({
+      id: choice.format,
+      map: mapId,
+      onsaved: (id) => {
+        project.setDocument(mapId, { format: id });
+        // What a style or a format holds may have changed under the same name.
+        void refresh(true);
+      },
+    });
   }
 
   /** The room between two pages, and around all of them, as the style sheet has them. */
@@ -470,7 +468,7 @@
             {
               label: t('preview-change-format'),
               hint: t('preview-change-format-hint'),
-              action: () => (editingFormat = choice.format),
+              action: editFormat,
             },
             {
               label: t('preview-change-style'),
@@ -623,19 +621,6 @@
       ? { abstractWords: format.limits.abstractWords, keywords: format.limits.keywords }
       : undefined}
     onclose={() => (detailing = false)}
-  />
-{/if}
-{#if editingFormat}
-  <FormatEditor
-    id={editingFormat}
-    {request}
-    onsaved={(id) => {
-      editingFormat = null;
-      project.setDocument(mapId, { format: id });
-      // What a style or a format holds may have changed under the same name.
-      void refresh(true);
-    }}
-    onclose={() => (editingFormat = null)}
   />
 {/if}
 {#if editingStyle}

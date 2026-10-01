@@ -33,6 +33,12 @@ function marksOf(schema: Schema, marks: InlineText['marks']): readonly Mark[] {
       // A citation that was found: what is known of it goes with the text.
       const held = foundAttrs(value);
       if (held) set = type.create(held).addToSet(set);
+    } else if (name === 'kind') {
+      // A kind of words, with the language of a foreign word.
+      const kind = typeof value === 'object' ? value.name : undefined;
+      if (typeof kind !== 'string' || !kind) continue;
+      const lang = typeof value === 'object' && typeof value.lang === 'string' ? value.lang : '';
+      set = type.create({ name: kind, lang }).addToSet(set);
     } else set = type.create().addToSet(set);
   }
   return set;
@@ -185,6 +191,9 @@ function blockNodes(blocks: Block[]): Node[] {
         break;
       case 'script':
         out.push(nodes.script.create({ part: block.part }, inlineNodes(block.content, 'text')));
+        break;
+      case 'passage':
+        out.push(nodes.passage.create({ name: block.name }, inlineNodes(block.content, 'text')));
         break;
       case 'parallel': {
         const side = (list: Block[]) => {

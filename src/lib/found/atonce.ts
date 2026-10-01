@@ -51,6 +51,7 @@ function lines(blocks: Block[], change: (line: Inline[]) => Inline[]): Block[] {
     switch (b.kind) {
       case 'paragraph':
       case 'script':
+      case 'passage':
         return { ...b, content: line(b.content) };
       case 'blockquote':
         return { ...b, content: lines(b.content, change) };

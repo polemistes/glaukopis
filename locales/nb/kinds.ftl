@@ -28,6 +28,8 @@ kinds-template-placeholder = Utseende
     Vil
     Frykter
 kinds-template-hint = Et element uten tekst som får denne typen, begynner med disse linjene, ett avsnitt hver.
+kinds-begins = Et element av denne typen skrives i
+kinds-begins-hint = Teksten begynner i dette slaget avsnitt, der elementet ennå ikke har noen
 kinds-create = Opprett
 kinds-elements = { $count ->
     [one] { $count } element

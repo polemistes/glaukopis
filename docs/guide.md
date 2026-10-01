@@ -83,12 +83,14 @@ diagram then says how far the map has come, as *2 done · 3 drafts · 1 idea ·
 is a section: its name is the heading, and the depth of the heading is the
 depth of the element in the map.
 
-Write as in any editor. The tools are over the text: the kind of paragraph
-(text, quotation, list, numbered list), italics, bold and small capitals,
-**Cite**, **Note** and **Insert**, which has pictures and mathematics. They
-act where the cursor is. The same tools are in
-the box that opens when an element is double-clicked in the diagram, and a
-bar with them appears over whatever you select.
+Write as in any editor. The tools are over the text: the kind of the
+paragraph the cursor is in, a button that opens the kinds (text, quotation,
+list, numbered list, and the rest under **More…**); italics, bold and small
+capitals, and **Words**, which has the other marks and the kinds of words;
+**Cite**, **Note** and **Insert**, which has pictures, tables and
+mathematics; and **Comment**. They act where the cursor is, or on what is
+selected. The same tools are in the box that opens when an element is
+double-clicked in the diagram.
 
 Everything the tools do can be done from the keys, and much of it by typing:
 
@@ -101,6 +103,8 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Write a formula in the line | **Insert**, or **Ctrl+Alt+M** |
 | Write an equation on a line of its own | **Insert**, or **Ctrl+Alt+E** |
 | Set words in italics or bold | The tools, or **Ctrl+I**, **Ctrl+B** |
+| Underline words | **Words**, or **Ctrl+U** |
+| Choose the kind of a paragraph, or make a kind of your own | The kind button; **Make a kind…** under **More…** in its menu |
 | Begin a quotation or a list | Type `> `, `- ` or `1. ` at the start of a line |
 | Make a dash | Type `--` for –, `---` for — |
 | Divide an element in two | Right-click where it is to be divided: **Split here** |
@@ -307,6 +311,65 @@ translation: two columns, each a text of its own, in which verse and
 paragraphs are written as anywhere else. Tab goes from the left side to
 the right. The document sets them side by side; a word processor gets them
 as a table without lines.
+
+### Kinds of paragraph and of words
+
+Every paragraph is of a **kind**, and a run of words may be: a quotation,
+an epigraph, the heading of a scene, a word in another language. A kind
+says what the words are, not how they look. The look comes from the
+document format, which has a look for every kind and changes with the
+format; where you write, each kind has a plain look of its own, so that it
+is seen.
+
+The button at the left of the tools shows the kind of the paragraph the
+cursor is in, and opens the kinds **in hand**: **Text**, **Quotation**,
+**List** and **Numbered list**; every kind the map uses; those you have
+pinned; and those the format suggests, as the *Screenplay* format suggests
+the parts of a script. A kind chosen there is given to the paragraphs
+selected, or to the one the cursor is in. **More…** has every kind, by its
+group, and **Kinds in hand** a check beside each kind in hand: choose a
+kind there to pin it, so that it stays in the menu, or to unpin it.
+
+| Group | Kinds |
+| --- | --- |
+| **Text** | **Text**, **Quotation**, **List**, **Numbered list** |
+| **Quotation** | **Attribution**, whose words they are, under a quotation, at the right; **Epigraph**, a quotation at the head of a part |
+| **Verse** | **Verse**, and the **Speaker** and **Stage direction** of a line: see *Verse, and texts side by side* |
+| **Script** | **Scene heading**, **Action**, **Character**, **Dialogue**, **Parenthetical** and **Transition**: the parts of a screenplay |
+| **More** | **Headword** and **Gloss**, the two paragraphs of a glossary; **Code**, kept letter for letter, in letters of equal width; **Break**, a pause between parts, which holds no text and prints the sign the format gives it, `* * *` unless the format says otherwise; **Draft note**, for your eyes, which goes into no document |
+
+Each kind says what **Enter** makes next: after a scene heading comes
+action, after a character its dialogue and after dialogue action, after a
+headword its gloss and after a gloss the next headword, after an epigraph
+its attribution and after an attribution text. **Backspace** at the start
+of an empty paragraph makes it text.
+
+**Words**, among the tools, has the marks beyond italics, bold and small
+capitals — **Underlined** (**Ctrl+U**), **Superscript**, **Subscript**,
+**Struck through** and **Code in the line** — and then the kinds of words,
+which say what the words are: **Foreign words**, with their language,
+which the spelling follows and which goes into every document; the
+**Title of a work**; a **Term** where it is first used; a **Mention** of a
+word spoken of as a word, which stands in the quotation marks of the
+language of the map, « » in Norwegian, “ ” in English, „ “ in German; and
+a **Highlight**, for the eye on the screen. Select the words first; with
+nothing selected, what you type next is of the kind.
+
+**Make a kind…**, at the foot of **More…**, makes a kind of paragraph of
+your own, and **Make a kind of words…**, under **Words**, a kind of words.
+Give it a name, say what it is based on, and say only how it differs:
+italic, bold, underlined, letters, alignment, indents, space before and
+after, size; what you do not say is as the base has it. What was selected
+is given the kind at once. A kind of your own is kept with the project, so
+that those you share it with have it, and works in every document format,
+since it says no more than how it differs from a kind the format knows;
+its name is offered in your other projects when a kind is named there.
+
+The foot of the kind menu says where the looks come from: **Set as
+“Manuscript” has them**, naming the format of the map, and under it
+**Change the format…**, which opens the format at its kinds, where the
+look of each is changed; see *The preview, and the manuscript*. A draft
+note and a highlight are for the screen alone, and go into no document.
 
 ### Mathematics
 
@@ -638,7 +701,11 @@ and **Ctrl+Shift+E**.
 An element can be of a **kind**: a character, a place, an event, a source,
 an argument, a scene — whatever the work needs, named by you. A kind is a
 name and a colour, and may have a text that an element of the kind begins
-with: *Appearance, Wants, Fears*, one paragraph each.
+with: *Appearance, Wants, Fears*, one paragraph each. It may also say,
+under **An element of this kind writes in**, in which kind of paragraph
+the text of its elements begins: the text of a scene with a scene heading,
+that of an entry of a glossary with a headword. A paragraph that is given
+another kind keeps it.
 
 **Kind** in the element's menu lists the kinds of the project; **New kind…**
 makes one and gives it to the element, and **Kinds of this project…** shows
@@ -1005,7 +1072,15 @@ Over the preview, two things are chosen:
 
 Both can be changed. **Change this format…** has every measure of the page in
 plain words, among them whether a level of heading **begins a new page**, as
-the chapters of a book do. **Change this reference style…** has the changes publishers most
+the chapters of a book do. Under **Kinds of paragraph and words** it says of
+each kind what it is based on and how it differs from that: size, line
+spacing, alignment, indents, the first line, space before and after, bold,
+italic, letters, underlining, letters of equal width, whether it keeps with
+what follows, and whether it begins a new page. A kind the format says
+nothing of is as its base, so a kind of your own needs nothing said of it.
+Under **Type and spacing**, **Italics are set** says whether italics stand
+as italics or are underlined, as the manuscript of the typewriter had them;
+the mark in the text is the same. **Change this reference style…** has the changes publishers most
 often ask for as simple choices, and the whole style, part by part, for the
 rest. What you change is kept as a format or a style of your own; those that
 came with Glaukopis stay as they were.
@@ -1015,6 +1090,21 @@ web page, or an **e-book** (EPUB), in which the reader sets the text and each
 chapter is a part of its own. A cover for the e-book, a picture of the
 store, is chosen under *Title, authors, abstract*. Where the document is given as it is written, in LaTeX, Typst or
 Markdown, its pictures are put in a folder beside it, named after it.
+
+In Word and Writer every kind is a style, with the look the format gives
+it, so that a publisher can change every epigraph at once: the paragraph
+styles *Attribution*, *Epigraph*, *Scene Heading*, *Action*, *Character*,
+*Dialogue*, *Parenthetical*, *Transition*, *Headword*, *Gloss*, *Source
+Code* and *Section Break*; the character styles *Speaker*, *Stage
+Direction*, *Foreign*, *Title of a Work*, *Term* and *Mention*; and, for a
+kind of your own, a style of its name. In every document that is made,
+foreign words carry their language, a mention stands in the quotation
+marks of the language of the map, code is kept letter for letter, and a
+break prints the sign the format gives it; a draft note and a highlight go
+into none of them.
+The numbers of the lines of verse do not stand in the margin of Word,
+which numbers lines only by the section: they stand at the head of their
+lines, small.
 
 There are two kinds of PDF. **PDF** is what the preview shows. **PDF, set by
 LaTeX** is the same document in the typesetting of LaTeX, for those who
@@ -1310,6 +1400,7 @@ what is to be done by its name, and does it.
 | **Shift+F10** | In the diagram: the menu of what is selected |
 | **F2** | Rename |
 | **@** | In the text: cite |
+| **Ctrl+I**, **Ctrl+B**, **Ctrl+U** | In the text: italics, bold, underlined |
 | **Ctrl+Alt+F** | In the text: a note |
 | **Ctrl+Alt+P** | In the text: a picture |
 | **Ctrl+Alt+T** | In the text: a table |

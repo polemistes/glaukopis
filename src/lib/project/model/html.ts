@@ -25,6 +25,15 @@ function inlines(list: Inline[], notes: { n: number }): string {
         if (i.marks.sup) html = `<sup>${html}</sup>`;
         if (i.marks.sub) html = `<sub>${html}</sub>`;
         if (i.marks.strike) html = `<s>${html}</s>`;
+        if (i.marks.underline) html = `<u>${html}</u>`;
+        if (i.marks.code) html = `<code>${html}</code>`;
+        // A kind of words: a foreign word with its language, the title of a work, a term.
+        const kind = i.marks.kind;
+        if (typeof kind === 'object' && typeof kind.name === 'string' && kind.name) {
+          const lang =
+            typeof kind.lang === 'string' && kind.lang ? ` lang="${escape(kind.lang)}"` : '';
+          html = `<span class="kind" data-kind="${escape(kind.name)}"${lang}>${html}</span>`;
+        }
         if (i.marks.link) html = `<a>${html}</a>`;
         // A citation that was found, and is not yet tied to a reference.
         const found = foundAttrs(i.marks.found);
@@ -105,6 +114,9 @@ function blocks(list: Block[], notes: { n: number }): string {
       }
       case 'script':
         out += `<p class="script ${b.part}">${inlines(b.content, notes)}</p>`;
+        break;
+      case 'passage':
+        out += `<p class="passage" data-kind="${escape(b.name)}">${inlines(b.content, notes)}</p>`;
         break;
       case 'parallel':
         out +=
@@ -191,7 +203,7 @@ export function excerpt(list: Block[], characters = 600): { blocks: Block[]; cut
         ? b.content.reduce((n, c) => n + size(c), 0)
         : b.kind === 'verse'
           ? b.lines.reduce((n, l) => n + plain(l.content).length + 1, 0)
-          : b.kind === 'script'
+          : b.kind === 'script' || b.kind === 'passage'
             ? plain(b.content).length
             : b.kind === 'parallel'
               ? [...b.left, ...b.right].reduce((n, c) => n + size(c), 0)

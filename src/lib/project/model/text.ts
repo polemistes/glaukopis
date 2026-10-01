@@ -87,12 +87,23 @@ export type Block =
   | VerseBlock
   | { kind: 'parallel'; left: Block[]; right: Block[] }
   | { kind: 'script'; part: ScriptPart; content: Inline[] }
+  | PassageBlock
   | { kind: 'bullet_list'; items: Block[][] }
   | { kind: 'ordered_list'; start: number; items: Block[][] }
   | { kind: 'equation'; id: string; tex: string; numbered: boolean; align?: Stand }
   | FigureBlock
   | TableBlock
   | { kind: 'row'; items: Block[] };
+
+/**
+ * A paragraph of a kind: an epigraph, a headword, a break, or a kind of the
+ * writer's own. `name` is the id of the kind (`editor/kinds.ts`). See ADR 0029.
+ */
+export interface PassageBlock {
+  kind: 'passage';
+  name: string;
+  content: Inline[];
+}
 
 /**
  * Lines of verse, as a quotation of drama or poetry: each line kept as a
@@ -284,6 +295,13 @@ function blocksOf(parent: Y.XmlElement | Y.XmlFragment): Block[] {
           content: inlinesOf(child),
         });
         break;
+      case 'passage': {
+        // A passage of no kind is a paragraph.
+        const name = text(child.getAttribute('name') as unknown).trim();
+        if (name) out.push({ kind: 'passage', name, content: inlinesOf(child) });
+        else out.push({ kind: 'paragraph', content: inlinesOf(child) });
+        break;
+      }
       case 'parallel': {
         const sides = child
           .toArray()
@@ -410,6 +428,38 @@ export function readBody(fragment: Y.XmlFragment | undefined): Block[] {
   return blocks;
 }
 
+/**
+ * The kinds of the catalogue (`editor/kinds.ts`) that are no kinds of
+ * passage: the plain kinds, which are paragraphs and what holds them, and
+ * the kinds of words and of lines of verse. The catalogue itself is not
+ * read here, so that the text can be read where the interface is not.
+ */
+const NOT_PASSAGES = [
+  'text',
+  'quote',
+  'list',
+  'numbered',
+  'speaker',
+  'direction',
+  'foreign',
+  'title',
+  'term',
+  'mention',
+  'highlight',
+];
+
+/**
+ * What a text begins in when its kind of paragraph is given: a verse, a
+ * script, a passage of the kind, or paragraphs of text; a kind that is not
+ * known is one of the writer's own, and a passage.
+ */
+export function beginsIn(kind: string): 'text' | 'verse' | 'script' | 'passage' {
+  if (!kind || NOT_PASSAGES.includes(kind)) return 'text';
+  if (kind === 'verse') return 'verse';
+  if (SCRIPT_PARTS.includes(kind as ScriptPart)) return 'script';
+  return 'passage';
+}
+
 /** The name of an element as inline content. */
 export function readTitle(fragment: Y.XmlFragment | undefined): Inline[] {
   if (!fragment) return [];
@@ -430,7 +480,8 @@ export function inlineText(inlines: Inline[], withNotes = false): string {
 export function blocksText(blocks: Block[], withNotes = false): string {
   const parts: string[] = [];
   for (const b of blocks) {
-    if (b.kind === 'paragraph') parts.push(inlineText(b.content, withNotes));
+    if (b.kind === 'paragraph' || b.kind === 'passage')
+      parts.push(inlineText(b.content, withNotes));
     else if (b.kind === 'blockquote') parts.push(blocksText(b.content, withNotes));
     else if (b.kind === 'verse')
       parts.push(b.lines.map((l) => inlineText(l.content, withNotes)).join('\n'));
@@ -484,10 +535,21 @@ export interface BodyFacts {
   notes: number;
   /** The words that stand in notes, which are among the words. */
   noteWords: number;
+  /**
+   * The ids of the kinds of paragraph and of words the text uses, each
+   * once, in the order of first use: the kinds of its passages, the parts
+   * of its script, verse where there is verse, with its speakers and stage
+   * directions, and the kinds of its words. Not the plain kinds.
+   */
+  uses: string[];
 }
 
 export function bodyFacts(blocks: Block[]): BodyFacts {
   const cited: string[] = [];
+  const uses: string[] = [];
+  const use = (id: unknown) => {
+    if (typeof id === 'string' && id && !uses.includes(id)) uses.push(id);
+  };
   let notes = 0;
   /** What the notes say. */
   let noted = '';
@@ -497,8 +559,11 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
   let text = '';
   const visitInlines = (inlines: Inline[]) => {
     for (const i of inlines) {
-      if (i.kind === 'text') text += i.text;
-      else if (i.kind === 'break') text += ' ';
+      if (i.kind === 'text') {
+        text += i.text;
+        const kind = i.marks.kind;
+        if (kind && typeof kind === 'object') use(kind.name);
+      } else if (i.kind === 'break') text += ' ';
       else if (i.kind === 'math' || i.kind === 'crossref') {
         // A formula in the line stands for a word, and so do words that point.
         text += ' x ';
@@ -517,10 +582,15 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
   };
   const visit = (list: Block[]) => {
     for (const b of list) {
-      if (b.kind === 'paragraph' || b.kind === 'script') visitInlines(b.content);
-      else if (b.kind === 'blockquote') visit(b.content);
+      if (b.kind === 'paragraph') visitInlines(b.content);
+      else if (b.kind === 'script' || b.kind === 'passage') {
+        use(b.kind === 'script' ? b.part : b.name);
+        visitInlines(b.content);
+      } else if (b.kind === 'blockquote') visit(b.content);
       else if (b.kind === 'verse') {
+        use('verse');
         for (const line of b.lines) {
+          if (line.kind !== 'line') use(line.kind);
           visitInlines(line.content);
           text += '\n';
         }
@@ -566,6 +636,7 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
     cited,
     notes,
     noteWords: notes ? countWords(noted) : 0,
+    uses,
   };
 }
 
@@ -577,16 +648,45 @@ export function fillTitle(fragment: Y.XmlFragment, text: string) {
   fragment.insert(0, [line]);
 }
 
-/** Makes the content of a text from plain text: one paragraph to a line. */
-export function fillBody(fragment: Y.XmlFragment, text: string) {
+/**
+ * Makes the content of a text from plain text: one paragraph to a line.
+ * With `begins`, the kind of paragraph the text is written in: lines of
+ * one verse, paragraphs of a part of a script, passages of a kind of the
+ * catalogue or of the writer's own; and one empty one, where there is no
+ * text, so that the writing begins in it.
+ */
+export function fillBody(fragment: Y.XmlFragment, text: string, begins = '') {
   if (fragment.length) fragment.delete(0, fragment.length);
-  const paragraphs = text.split(/\n+/).filter((p) => p.trim());
-  fragment.insert(
-    0,
-    paragraphs.map((p) => {
-      const el = new Y.XmlElement('paragraph');
-      el.insert(0, [new Y.XmlText(p)]);
-      return el;
-    }),
-  );
+  const lines = text.split(/\n+/).filter((p) => p.trim());
+  const kind = begins.trim();
+  const structure = beginsIn(kind);
+  const line = (name: string, attrs: Record<string, string> = {}, words = '') => {
+    const el = new Y.XmlElement(name);
+    for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, value);
+    if (words) el.insert(0, [new Y.XmlText(words)]);
+    return el;
+  };
+  if (structure === 'verse') {
+    const verse = new Y.XmlElement('verse');
+    verse.insert(
+      0,
+      (lines.length ? lines : ['']).map((l) => line('verse_line', {}, l)),
+    );
+    fragment.insert(0, [verse]);
+  } else if (structure === 'script') {
+    fragment.insert(
+      0,
+      (lines.length ? lines : ['']).map((l) => line('script', { part: kind }, l)),
+    );
+  } else if (structure === 'passage') {
+    fragment.insert(
+      0,
+      (lines.length ? lines : ['']).map((l) => line('passage', { name: kind }, l)),
+    );
+  } else {
+    fragment.insert(
+      0,
+      lines.map((l) => line('paragraph', {}, l)),
+    );
+  }
 }

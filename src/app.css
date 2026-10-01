@@ -36,6 +36,8 @@
   /* Second voice: the owl's eye */
   --gold: #b9832a;
   --gold-soft: #f6ecd8;
+  /* Under words highlighted for the eye on the screen. */
+  --highlight: rgba(248, 214, 76, 0.5);
 
   --danger: #b0412f;
   --danger-soft: #f8e6e2;
@@ -117,6 +119,7 @@
 
   --gold: #dcae5c;
   --gold-soft: #3a3020;
+  --highlight: rgba(220, 184, 74, 0.32);
 
   --danger: #e0806f;
   --danger-soft: #3b2420;
@@ -1070,4 +1073,112 @@ span.math.selected {
 .prose .script.parenthetical + .script.dialogue,
 .prose .script.dialogue + .script.parenthetical {
   margin-top: 0;
+}
+
+/* The kinds of paragraph beyond the script, each seen at once on neutral
+   paper, by the same measures that give a kind of the writer's own its look
+   (editor/kinds.ts, where the measures of these are declared): a
+   centimetre of the format is about 2.4em here, 12pt about an em. */
+.prose .passage {
+  text-indent: 0;
+}
+.prose .passage[data-kind='attribution'] {
+  margin-top: 0;
+  margin-left: 3.05em;
+  text-align: right;
+}
+.prose .passage[data-kind='epigraph'] {
+  margin: 0.51em 0 1.52em 9.6em;
+}
+.prose .passage[data-kind='headword'] {
+  margin-top: 0.51em;
+  margin-bottom: 0;
+  font-weight: 600;
+}
+.prose .passage[data-kind='gloss'] {
+  margin: 0 0 0.51em 3.05em;
+}
+.prose .passage[data-kind='code'] {
+  margin: 0.51em 0;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  line-height: 1.62;
+  text-align: left;
+  white-space: pre-wrap;
+  font-variant-numeric: lining-nums;
+  hanging-punctuation: none;
+}
+.prose .passage[data-kind='code'] code {
+  font-size: inherit;
+}
+.prose .passage[data-kind='break'] {
+  margin: 1.02em 0;
+  text-align: center;
+}
+/* The sign of a break stands where the passage holds nothing: in text
+   that is drawn, and in the editor, where an empty paragraph holds a line
+   break and nothing else. */
+.prose .passage[data-kind='break']:empty::before {
+  content: '* * *';
+  letter-spacing: 0.4em;
+  color: var(--ink-3);
+}
+.prose .passage[data-kind='break']:has(> .ProseMirror-trailingBreak:only-child)::before {
+  content: '* * *';
+  letter-spacing: 0.4em;
+  color: var(--ink-3);
+}
+/* A draft note goes into no document. */
+.prose .passage[data-kind='draft'] {
+  padding-left: 0.8em;
+  border-left: 2px dashed var(--line-strong);
+  color: var(--ink-3);
+}
+
+/* The marks underline and code. */
+.prose u {
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  font-variant-numeric: lining-nums;
+}
+
+/* The kinds of words. A mentioned word stands in the quotation marks of
+   the language of the text, which the editor is given as `lang` from the
+   map; a kind of the writer's own based on one of these is set the same
+   way by editor/kinds.ts. */
+.prose .kind[data-kind='foreign'],
+.prose .kind[data-kind='title'],
+.prose .kind[data-kind='term'] {
+  font-style: italic;
+}
+.prose .kind[data-kind='mention'] {
+  quotes: '\201C' '\201D' '\2018' '\2019';
+}
+.prose .kind[data-kind='mention']:lang(nb),
+.prose .kind[data-kind='mention']:lang(nn),
+.prose .kind[data-kind='mention']:lang(no) {
+  quotes: '\AB' '\BB' '\2018' '\2019';
+}
+.prose .kind[data-kind='mention']:lang(de) {
+  quotes: '\201E' '\201C' '\201A' '\2018';
+}
+.prose .kind[data-kind='mention']:lang(fr) {
+  quotes: '\AB\A0' '\A0\BB' '\201C' '\201D';
+}
+.prose .kind[data-kind='mention']::before {
+  content: open-quote;
+}
+.prose .kind[data-kind='mention']::after {
+  content: close-quote;
+}
+/* A highlight is for the eye on the screen, and goes into no document. */
+.prose .kind[data-kind='highlight'] {
+  background: var(--highlight);
+  border-radius: 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }

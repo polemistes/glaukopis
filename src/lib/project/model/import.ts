@@ -34,7 +34,7 @@ function citedIn(blocks: Block[], out: Set<string>) {
     }
   };
   for (const b of blocks) {
-    if (b.kind === 'paragraph' || b.kind === 'script') line(b.content);
+    if (b.kind === 'paragraph' || b.kind === 'script' || b.kind === 'passage') line(b.content);
     else if (b.kind === 'blockquote') citedIn(b.content, out);
     else if (b.kind === 'verse') for (const l of b.lines) line(l.content);
     else if (b.kind === 'parallel') {

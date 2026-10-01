@@ -22,6 +22,7 @@ import { kindChanges } from './changing/kinds';
 import { deleteNodes, elementChanges, elementOf } from './changing/elements';
 import { linkChanges } from './changing/links';
 import { mapChanges } from './changing/maps';
+import { cleanLook, family, passageKindChanges } from './changing/passage-kinds';
 import { referenceChanges } from './changing/references';
 import { HISTORY, LOAD, LOCAL, str, TIDY, type YNode } from './origins';
 import { People, type Me } from './people';
@@ -38,11 +39,13 @@ import { buildTree, type FlatNode, type Tree } from './tree';
 import {
   STATUSES,
   type DocumentSettings,
+  type Hand,
   type KindRecord,
   type TimelineSettings,
   type LinkRecord,
   type MapRecord,
   type NodeRecord,
+  type PassageKindRecord,
   type Position,
   type RefRecord,
   type Thread,
@@ -103,6 +106,14 @@ function readWhen(value: unknown): When | null {
   return end ? { start, end } : { start };
 }
 
+/** The kinds in hand of a map, as the document holds them: lists of ids, empty where nothing is said. */
+function readHand(value: unknown): Hand {
+  const list = (ids: unknown) =>
+    Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string' && !!id) : [];
+  const given = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  return { pinned: list(given.pinned), unpinned: list(given.unpinned) };
+}
+
 /**
  * A text in few signs, by which it is told whether two texts are the same:
  * its length, and two numbers made of all its signs.
@@ -124,10 +135,18 @@ type ReferenceChanges = typeof referenceChanges;
 type LinkChanges = typeof linkChanges;
 type CommentChanges = typeof commentChanges;
 type KindChanges = typeof kindChanges;
+type PassageKindChanges = typeof passageKindChanges;
 
 /** What changes a project, in `changing/`: its methods, which it takes in below. */
 export interface Project
-  extends MapChanges, ElementChanges, ReferenceChanges, LinkChanges, CommentChanges, KindChanges {}
+  extends
+    MapChanges,
+    ElementChanges,
+    ReferenceChanges,
+    LinkChanges,
+    CommentChanges,
+    KindChanges,
+    PassageKindChanges {}
 
 export class Project {
   readonly doc: Y.Doc;
@@ -149,6 +168,8 @@ export class Project {
   readonly yComments: Y.Map<Y.Map<unknown>>;
   /** The kinds of elements, by their id. See `changing/kinds.ts`. */
   readonly yKinds: Y.Map<Y.Map<unknown>>;
+  /** The kinds of paragraph and of words of the writer's own, by their id. See `changing/passage-kinds.ts`. */
+  readonly yPassageKinds: Y.Map<Y.Map<unknown>>;
   /**
    * The people of a project whose history is on, as Yjs's
    * `PermanentUserData` keeps them: by person, the copies that are theirs
@@ -171,6 +192,8 @@ export class Project {
   readonly comments = new SvelteMap<string, Thread>();
   /** The kinds of elements, in their order. */
   kinds = $state.raw<KindRecord[]>([]);
+  /** The kinds of paragraph and of words of the writer's own, in their order. */
+  passageKinds = $state.raw<PassageKindRecord[]>([]);
   /** Rises when the shape of any tree changes. */
   structure = $state(0);
   /** Rises with every change to the project, whoever made it. */
@@ -202,6 +225,7 @@ export class Project {
     this.yHistory = this.doc.getMap('history');
     this.yComments = this.doc.getMap('comments');
     this.yKinds = this.doc.getMap('kinds');
+    this.yPassageKinds = this.doc.getMap('passageKinds');
     this.yUsers = this.doc.getMap('users');
     this.#presence = new Presence(this.doc);
     this.#people = new People(this.doc, this.yUsers, () => this.history.on);
@@ -252,6 +276,7 @@ export class Project {
     this.yIgnored.observe(() => this.#readIgnored());
     this.yHistory.observe(() => this.#readHistory());
     this.yKinds.observeDeep(() => this.#readKinds());
+    this.yPassageKinds.observeDeep(() => this.#readPassageKinds());
     this.yComments.observeDeep((events) => {
       const touched = new Set<string>();
       for (const event of events) {
@@ -421,6 +446,7 @@ export class Project {
     this.comments.clear();
     for (const id of this.yComments.keys()) this.#readThread(id);
     this.#readKinds();
+    this.#readPassageKinds();
     this.structure++;
   }
 
@@ -428,11 +454,13 @@ export class Project {
     const list: KindRecord[] = [];
     for (const [id, k] of this.yKinds) {
       if (!(k instanceof Y.Map)) continue;
+      const begins = str(k.get('begins'));
       list.push({
         id,
         name: str(k.get('name'), '?'),
         colour: str(k.get('colour')),
         template: str(k.get('template')),
+        ...(begins ? { begins } : {}),
         order: str(k.get('order'), 'a0'),
       });
     }
@@ -443,6 +471,28 @@ export class Project {
   /** A kind by its id. */
   kind(id: string | null | undefined): KindRecord | undefined {
     return id ? this.kinds.find((k) => k.id === id) : undefined;
+  }
+
+  #readPassageKinds() {
+    const list: PassageKindRecord[] = [];
+    for (const [id, k] of this.yPassageKinds) {
+      if (!(k instanceof Y.Map)) continue;
+      list.push({
+        id,
+        name: str(k.get('name'), '?'),
+        family: family(k.get('family')),
+        basedOn: str(k.get('basedOn')),
+        look: cleanLook(k.get('look')),
+        order: str(k.get('order'), 'a0'),
+      });
+    }
+    list.sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : a.id < b.id ? -1 : 1));
+    this.passageKinds = list;
+  }
+
+  /** A kind of paragraph or of words of the writer's own, by its id. */
+  passageKind(id: string | null | undefined): PassageKindRecord | undefined {
+    return id ? this.passageKinds.find((k) => k.id === id) : undefined;
   }
 
   #readThread(id: string) {
@@ -599,6 +649,7 @@ export class Project {
         created: str(m.get('created')),
         document: (m.get('document') as DocumentSettings | undefined) ?? {},
         timeline: (m.get('timeline') as TimelineSettings | undefined) ?? {},
+        hand: readHand(m.get('hand')),
       });
     }
     list.sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : a.id < b.id ? -1 : 1));
@@ -660,6 +711,7 @@ export class Project {
       notes: facts.notes,
       noteWords: facts.noteWords,
       set: facts.set,
+      uses: facts.uses,
     };
     // The text as it was read is kept with the record, which is made anew
     // whenever the element is changed: a document is then made of what was
@@ -897,4 +949,5 @@ Object.assign(
   linkChanges,
   commentChanges,
   kindChanges,
+  passageKindChanges,
 );

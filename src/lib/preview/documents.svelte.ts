@@ -6,11 +6,14 @@ import {
   stylesList,
   toolsInfo,
   type DocumentFormat,
+  type DocumentRequest,
   type FormatSummary,
   type StyleSummary,
   type ToolsInfo,
 } from '$lib/api/documents';
 import { t } from '$lib/i18n';
+import { buildDocument } from '$lib/project/model/document';
+import type { Project } from '$lib/project/model/project.svelte';
 import { settings } from '$lib/state/settings.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
 
@@ -88,6 +91,27 @@ class Documents {
 }
 
 export const documents = new Documents();
+
+/**
+ * The document of a map whole, with the style and the format the map
+ * uses, for what is made of all of it: an export, the sample pages of a
+ * format. The key is that of the project, by which the core knows one
+ * making from another.
+ */
+export async function documentRequest(
+  project: Project,
+  projectId: string,
+  mapId: string,
+): Promise<DocumentRequest> {
+  const choice = documents.choice(project.map(mapId)?.document ?? {});
+  const format = await documents.format(choice.format);
+  return {
+    document: buildDocument(project, mapId),
+    style: choice.style,
+    format: $state.snapshot(format) as DocumentFormat,
+    key: projectId,
+  };
+}
 
 const styleKinds: Record<string, () => string> = {
   note: () => t('style-kind-note'),

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
@@ -17,6 +17,7 @@
     type HeadingLevel,
     type Position,
   } from '$lib/api/documents';
+  import { CATALOGUE, GROUPS, specOf, type KindSpec } from '$lib/editor/kinds';
   import { languages, t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
@@ -26,23 +27,29 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import { documents } from './documents.svelte';
+  import { lengthsOk, lookRows, lookWords, setKindLook } from './formatEditor.svelte';
 
   interface Props {
     /** The format to begin from. */
     id: string;
     /** Makes a request for the document in view, to show the format on. */
     request?: () => Promise<DocumentRequest>;
+    /** The part of the format to open at; the page where nothing is said. */
+    section?: string;
+    /** The kind whose look is opened and brought into view, in the part of the kinds. */
+    kind?: string;
     /** Called with the id of the format as saved. */
     onsaved: (id: string) => void;
     onclose: () => void;
   }
 
-  let { id, request, onsaved, onclose }: Props = $props();
+  let { id, request, section: openAt, kind: kindInView, onsaved, onclose }: Props = $props();
 
   let format = $state<DocumentFormat | null>(null);
   let original = '';
   let name = $state('');
-  let section = $state('page');
+  let section = $state(untrack(() => openAt ?? 'page'));
+  let form = $state<HTMLDivElement>();
   let fonts = $state.raw<string[]>([]);
   let error = $state<string | null>(null);
   let saving = $state(false);
@@ -71,6 +78,19 @@
       fontsList()
         .then((list) => (fonts = list))
         .catch(() => {});
+    });
+  });
+
+  // The kind asked for is brought into view once the format is there.
+  $effect(() => {
+    const wanted = kindInView;
+    if (!format || !wanted || !form || !/^[\w-]+$/.test(wanted)) return;
+    const at = form;
+    untrack(() => {
+      if (section !== 'kinds') return;
+      void tick().then(() =>
+        at.querySelector(`details[data-kind="${wanted}"]`)?.scrollIntoView({ block: 'start' }),
+      );
     });
   });
 
@@ -168,6 +188,7 @@
     ['headings', t('format-section-headings')],
     ['title', t('format-section-title')],
     ['quotations', t('format-section-quotations')],
+    ['kinds', t('format-section-kinds')],
     ['notes', t('format-section-notes')],
     ['bibliography', t('format-section-bibliography')],
     ['figures', t('format-section-figures')],
@@ -337,6 +358,10 @@
       ['justified', t('format-align-justified')],
     ]),
     toggle(t('format-hyphenate'), 'text.hyphenate'),
+    choice(t('format-italics'), 'text.italics', [
+      ['italic', t('format-italics-italic')],
+      ['underline', t('format-italics-underline')],
+    ]),
   ]);
 
   const paragraphRows: Row<F>[] = $derived([
@@ -579,6 +604,43 @@
     choice(t('format-letters'), 'runningHead.case', cases.slice(0, 2), { when: headed }),
   ]);
 
+  // ---- the kinds of paragraph and of words ----
+
+  /** The kinds of the catalogue that have no style of their own, and so nothing a format can say of them. */
+  const UNSTYLED = ['text', 'quote', 'list', 'numbered', 'verse', 'draft', 'highlight'];
+  /** The kinds a format can set, in their groups. */
+  const styledGroups = $derived(
+    GROUPS.map((g) => ({
+      id: g.id,
+      label: g.label(),
+      kinds: CATALOGUE.filter((k) => k.group === g.id && !UNSTYLED.includes(k.id)),
+    })).filter((g) => g.kinds.length),
+  );
+  /** The rows of each kind's look, which write into the format's table of kinds, by the id of the kind. */
+  const kindRows = $derived(
+    new Map(
+      CATALOGUE.filter((k) => !UNSTYLED.includes(k.id)).map((k) => [
+        k.id,
+        lookRows<F>(
+          k.family,
+          {
+            get: (f) => f.kinds?.[k.id],
+            set: (f, key, value) => setKindLook(f, k.id, key, value),
+          },
+          { sign: k.id === 'break' },
+        ),
+      ]),
+    ),
+  );
+  /** Whether every length the format says of a kind is written with its unit. */
+  const kindsOk = $derived(Object.values(format?.kinds ?? {}).every(lengthsOk));
+
+  /** What a kind is based on, by name: text, or plain words, where it says nothing. */
+  function baseOf(spec: KindSpec): string {
+    if (spec.basedOn) return specOf(spec.basedOn)?.label() ?? spec.basedOn;
+    return spec.family === 'words' ? t('editor-plain-words') : t('editor-text');
+  }
+
   const limitRows: Row<F>[] = $derived([
     { heading: t('format-section-limits') },
     { note: t('format-limits-hint') },
@@ -665,7 +727,7 @@
         {/each}
       </nav>
 
-      <div class="form settings">
+      <div class="form settings" bind:this={form}>
         {#if error}<p class="error selectable" role="alert">{error}</p>{/if}
 
         {#if section === 'page'}
@@ -714,6 +776,22 @@
           <Settings target={f} rows={titleRows} />
         {:else if section === 'quotations'}
           <Settings target={f} rows={quotationRows} />
+        {:else if section === 'kinds'}
+          <p class="hint top">{t('format-kinds-hint')}</p>
+          {#each styledGroups as group (group.id)}
+            <h3>{group.label}</h3>
+            {#each group.kinds as spec (spec.id)}
+              <details open={spec.id === kindInView} data-kind={spec.id}>
+                <summary>
+                  <strong>{spec.label()}</strong>
+                  <span>{t('format-kind-based-on', { base: baseOf(spec) })}</span>
+                  <span class="said">{lookWords(f.kinds?.[spec.id], spec.family)}</span>
+                </summary>
+                <Settings target={f} rows={kindRows.get(spec.id) ?? []} />
+              </details>
+            {/each}
+          {/each}
+          <p class="hint" class:bad={!kindsOk}>{t('format-lengths-hint')}</p>
         {:else if section === 'notes'}
           <Settings target={f} rows={noteRows} />
         {:else if section === 'bibliography'}
@@ -817,7 +895,11 @@
     <Button variant="ghost" onclick={close}>{t('common-cancel')}</Button>
     <Button
       variant="primary"
-      disabled={saving || !format || !name.trim() || (own && !changed && name === format.name)}
+      disabled={saving ||
+        !format ||
+        !name.trim() ||
+        !kindsOk ||
+        (own && !changed && name === format.name)}
       onclick={save}
     >
       {own ? t('common-save') : t('format-save-own')}
@@ -939,6 +1021,19 @@
   summary span {
     font-size: var(--text-sm);
     color: var(--ink-3);
+  }
+  /* What the format says of a kind, at the right of its line. */
+  summary .said {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    color: var(--ink-2);
+  }
+  .hint.bad {
+    color: var(--danger);
   }
   details :global(.row:last-child) {
     border-bottom: none;

@@ -163,6 +163,7 @@ function blocks(maker: PassageMaker, list: Block[]): void {
     switch (b.kind) {
       case 'paragraph':
       case 'script':
+      case 'passage':
         line(maker, b.content, 'line');
         break;
       case 'blockquote':

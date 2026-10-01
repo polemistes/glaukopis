@@ -18,6 +18,7 @@ import type {
   ExportSection,
   LeanDocument,
   LeanSection,
+  OwnKind,
 } from '$lib/api/documents';
 import type { Project } from './project.svelte';
 import { readTitle, type Inline } from './text';
@@ -113,6 +114,16 @@ export function buildDocument(project: Project, mapId: string): ExportDocument {
       references.push({ id: r.id, key: r.key, type: r.type, fields: r.fields, names: r.names });
   }
 
+  // The kinds of paragraph and of words of the writer's own, with what each
+  // is based on and how it differs, so that every target can set them.
+  const kinds: OwnKind[] = project.passageKinds.map(({ id, name, family, basedOn, look }) => ({
+    id,
+    name,
+    family,
+    basedOn,
+    look,
+  }));
+
   return {
     title,
     subtitle: settings.subtitle,
@@ -124,6 +135,7 @@ export function buildDocument(project: Project, mapId: string): ExportDocument {
     ...(settings.cover ? { cover: settings.cover } : {}),
     sections,
     references,
+    kinds,
   };
 }
 
@@ -157,9 +169,10 @@ export function leanDocument(
 
 /**
  * What a document is made of, in few words: whatever changes in the
- * document changes this, and what changes nothing in the document (where an
- * element stands in the diagram, whether a branch is folded) changes it
- * not, unless the element itself is changed.
+ * document changes this, the kinds of the writer's own among it, and what
+ * changes nothing in the document (where an element stands in the diagram,
+ * whether a branch is folded) changes it not, unless the element itself is
+ * changed.
  */
 export function documentMark(document: LeanDocument): string {
   const { sections, ...head } = document;

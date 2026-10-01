@@ -54,12 +54,19 @@ try {
   await sleep(200);
   await app.keys(['Control', 'a']);
   await app.click('.pane-bar .tools .style');
+  // Verse is not in hand until it is used: it is found under More….
+  await app.clickText('[role="menuitem"]', 'More…');
+  await sleep(200);
   await app.clickText('[role="menuitem"]', 'Verse');
   await sleep(300);
   const lines = await app.exec(
     `return Array.from(document.querySelectorAll('.text-view .verse .verse-line')).map((l) => l.textContent.trim())`,
   );
-  check('the paragraphs are lines of one verse', lines.length === 6 && lines[0] === 'Nurse', lines.join(' | '));
+  check(
+    'the paragraphs are lines of one verse',
+    lines.length === 6 && lines[0] === 'Nurse',
+    lines.join(' | '),
+  );
   await app.waitForText('.pane-bar .tools .style', 'Verse', 3000);
 
   // --- The first line is the speaker; the third is indented ---
@@ -77,16 +84,22 @@ try {
   await sleep(150);
   await app.press('Tab');
   await sleep(200);
-  const indented = await app.exec(`return document.querySelectorAll('.text-view .verse .verse-line')[2].getAttribute('data-indent')`);
+  const indented = await app.exec(
+    `return document.querySelectorAll('.text-view .verse .verse-line')[2].getAttribute('data-indent')`,
+  );
   check('Tab indents a line', indented === '1', String(indented));
 
   // --- The lines are numbered from 1, every 2 ---
   await app.click('.pane-bar .tools button[aria-label="Line numbers"]');
   await app.waitForText('dialog[open] h2', 'Line numbers', 3000);
   await sleep(200);
-  await app.exec(`const i = document.querySelectorAll('dialog[open] input')[0]; i.focus(); i.select();`);
+  await app.exec(
+    `const i = document.querySelectorAll('dialog[open] input')[0]; i.focus(); i.select();`,
+  );
   await app.keys('1');
-  await app.exec(`const i = document.querySelectorAll('dialog[open] input')[1]; i.focus(); i.select();`);
+  await app.exec(
+    `const i = document.querySelectorAll('dialog[open] input')[1]; i.focus(); i.select();`,
+  );
   await app.keys('2');
   await app.clickText('dialog[open] footer button', 'Apply');
   await app.waitGone('dialog[open]', 3000);
@@ -94,7 +107,11 @@ try {
   const numbers = await app.exec(
     `return Array.from(document.querySelectorAll('.text-view .verse .verse-line')).map((l) => l.getAttribute('data-n') ?? '-').join(' ')`,
   );
-  check('the lines are numbered in the margin, the speaker not counted', numbers === '- 1 2 - 4 -', numbers);
+  check(
+    'the lines are numbered in the margin, the speaker not counted',
+    numbers === '- 1 2 - 4 -',
+    numbers,
+  );
   await app.screenshot('verse-1-lines');
 
   // --- Enter at the end twice leaves the verse ---
@@ -108,8 +125,11 @@ try {
   await sleep(200);
   check(
     'Enter on an empty last line leaves the verse for a paragraph',
-    (await app.exec(`return document.querySelectorAll('.text-view .verse .verse-line').length`)) === 6 &&
-      (await app.exec(`return Array.from(document.querySelectorAll('.text-view .body p:not(.verse-line)')).some((p) => p.textContent.includes('So the nurse'))`)),
+    (await app.exec(`return document.querySelectorAll('.text-view .verse .verse-line').length`)) ===
+      6 &&
+      (await app.exec(
+        `return Array.from(document.querySelectorAll('.text-view .body p:not(.verse-line)')).some((p) => p.textContent.includes('So the nurse'))`,
+      )),
   );
 
   // --- Two texts side by side ---
@@ -124,7 +144,11 @@ try {
   const sides = await app.exec(
     `return Array.from(document.querySelectorAll('.text-view .parallel .parallel-side')).map((s) => s.textContent.trim())`,
   );
-  check('the two sides are written, Tab going across', sides.length === 2 && sides[0].startsWith('Εἴθ') && sides[1] === 'If only the Argo', sides.join(' | '));
+  check(
+    'the two sides are written, Tab going across',
+    sides.length === 2 && sides[0].startsWith('Εἴθ') && sides[1] === 'If only the Argo',
+    sides.join(' | '),
+  );
   await app.screenshot('verse-2-parallel');
 
   // --- A script: the parts follow one another with Enter and Tab ---
@@ -134,6 +158,9 @@ try {
   await app.press('Enter');
   await sleep(150);
   await app.click('.pane-bar .tools .style');
+  // The parts of a script are not in hand until one is used: under More….
+  await app.clickText('[role="menuitem"]', 'More…');
+  await sleep(200);
   await app.clickText('[role="menuitem"]', 'Scene heading');
   await sleep(200);
   await app.keys('Int. Palace – night');
@@ -150,7 +177,8 @@ try {
   );
   check(
     'a scene heading, then action; Tab makes a character, Enter its dialogue',
-    script === 'scene:Int. Palace – night | action:Medea paces. | character:Nurse | dialogue:If only the Argo had never flown.',
+    script ===
+      'scene:Int. Palace – night | action:Medea paces. | character:Nurse | dialogue:If only the Argo had never flown.',
     script,
   );
   await app.waitForText('.pane-bar .tools .style', 'Dialogue', 3000);

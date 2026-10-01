@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import { Project, type Persistence, type Summary } from './project.svelte';
+import { fillBody } from './text';
 
 function project() {
   const p = new Project(null);
@@ -728,5 +729,110 @@ describe('kinds of elements', () => {
     expect(p.node(b)!.kind).toBe(place);
     p.setKind([b], null);
     expect(p.node(b)!.kind).toBeNull();
+  });
+});
+
+describe('kinds of paragraph and of words of the writer`s own', () => {
+  it('are made, changed and deleted, and the passages that were of one stay', () => {
+    const { p, map, root } = project();
+    const letter = p.createPassageKind({
+      name: ' Letter ',
+      family: 'paragraph',
+      basedOn: 'epigraph',
+      look: { italic: true, indentLeft: '2cm', size: 900, text: 'x'.repeat(50), bold: undefined },
+    })!;
+    const word = p.createPassageKind({ name: 'Ship', family: 'words', basedOn: '', look: {} })!;
+    expect(p.createPassageKind({ name: ' ', family: 'words', basedOn: '', look: {} })).toBeNull();
+    expect(p.passageKinds.map((k) => k.name)).toEqual(['Letter', 'Ship']);
+    // Only the measures of a look, each as it should be.
+    expect(p.passageKind(letter)).toMatchObject({
+      family: 'paragraph',
+      basedOn: 'epigraph',
+      look: { italic: true, indentLeft: '2cm', size: 900, text: 'x'.repeat(40) },
+    });
+    expect(p.passageKind(word)).toMatchObject({ family: 'words', basedOn: '', look: {} });
+
+    const a = p.addChild(root, { title: 'A' })!;
+    p.transact(() => fillBody(p.fragment(a, 'body')!, 'Dear reader', letter));
+    expect(p.node(a)!.uses).toEqual([letter]);
+    p.setHand(map, { pinned: [letter], unpinned: [word] });
+
+    p.updatePassageKind(letter, { name: 'Note', look: { bold: true }, basedOn: 'text' });
+    expect(p.passageKind(letter)).toMatchObject({
+      name: 'Note',
+      basedOn: 'text',
+      look: { bold: true },
+    });
+    p.updatePassageKind(letter, { name: '', look: {}, basedOn: '' });
+    expect(p.passageKind(letter)).toMatchObject({ name: 'Note', basedOn: '', look: {} });
+    p.updatePassageKind('no such kind', { name: 'X' });
+
+    p.deletePassageKind(letter);
+    expect(p.passageKinds.map((k) => k.name)).toEqual(['Ship']);
+    // The passage stays as it is; the hand lets the kind go.
+    expect(p.blocksOf(a)).toEqual([
+      {
+        kind: 'passage',
+        name: letter,
+        content: [{ kind: 'text', text: 'Dear reader', marks: {} }],
+      },
+    ]);
+    expect(p.map(map)!.hand).toEqual({ pinned: [], unpinned: [word] });
+    p.deletePassageKind(word);
+    expect(p.map(map)!.hand).toEqual({ pinned: [], unpinned: [] });
+    expect(p.yMaps.get(map)!.has('hand')).toBe(false);
+  });
+
+  it('the hand of a map is pinned and unpinned, and kept only while it says something', () => {
+    const { p, map } = project();
+    expect(p.map(map)!.hand).toEqual({ pinned: [], unpinned: [] });
+    p.setHand(map, { pinned: ['epigraph', ' scene ', 'epigraph', ''] });
+    expect(p.map(map)!.hand).toEqual({ pinned: ['epigraph', 'scene'], unpinned: [] });
+    // What is unpinned is pinned no more, and the other way round.
+    p.setHand(map, { unpinned: ['scene', 'quote'] });
+    expect(p.map(map)!.hand).toEqual({ pinned: ['epigraph'], unpinned: ['scene', 'quote'] });
+    p.setHand(map, { pinned: ['quote'] });
+    expect(p.map(map)!.hand).toEqual({ pinned: ['quote'], unpinned: ['scene'] });
+    p.setHand(map, { pinned: [], unpinned: [] });
+    expect(p.yMaps.get(map)!.has('hand')).toBe(false);
+    p.setHand(map, { pinned: ['code'] });
+    const copy = p.duplicateMap(map)!;
+    expect(p.map(copy)!.hand).toEqual({ pinned: ['code'], unpinned: [] });
+    p.setHand('no such map', { pinned: ['code'] });
+  });
+
+  it('a kind of element says in which kind of paragraph its text begins', () => {
+    const { p, root } = project();
+    const scene = p.createKind({
+      name: 'Scene',
+      colour: 'teal',
+      template: 'INT. HOUSE',
+      begins: 'scene',
+    })!;
+    const chorus = p.createKind({
+      name: 'Chorus',
+      colour: 'rose',
+      template: '',
+      begins: ' verse ',
+    })!;
+    expect(p.kind(scene)!.begins).toBe('scene');
+    expect(p.kind(chorus)!.begins).toBe('verse');
+    const a = p.addChild(root, { title: 'A' })!;
+    const b = p.addChild(root, { title: 'B' })!;
+    const c = p.addChild(root, { title: 'C', body: 'Written already.' })!;
+    p.setKind([a], scene);
+    expect(p.blocksOf(a)).toEqual([
+      { kind: 'script', part: 'scene', content: [{ kind: 'text', text: 'INT. HOUSE', marks: {} }] },
+    ]);
+    // Without a text to begin with, the writing begins in the kind.
+    p.setKind([b, c], chorus);
+    expect(p.blocksOf(b)).toEqual([
+      { kind: 'verse', start: null, by: 5, lines: [{ kind: 'line', indent: 0, content: [] }] },
+    ]);
+    expect(p.blocksOf(c)).toEqual([
+      { kind: 'paragraph', content: [{ kind: 'text', text: 'Written already.', marks: {} }] },
+    ]);
+    p.updateKind(chorus, { begins: '' });
+    expect(p.kind(chorus)!.begins).toBeUndefined();
   });
 });

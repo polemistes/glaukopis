@@ -1,9 +1,17 @@
 /** What can be done to the text, as ProseMirror commands. */
 
 import { lift, toggleMark, wrapIn } from 'prosemirror-commands';
-import { Fragment, type MarkType, type Node, type NodeType, type Schema } from 'prosemirror-model';
+import {
+  Fragment,
+  type Attrs,
+  type Mark,
+  type MarkType,
+  type Node,
+  type NodeType,
+  type Schema,
+} from 'prosemirror-model';
 import { liftListItem, wrapInList } from 'prosemirror-schema-list';
-import { scriptAt, setScriptPart, unsetScript } from './script';
+import { specOf } from './kinds';
 import { makeVerse, setLineKind, unmakeVerse, verseAt } from './verse';
 import {
   NodeSelection,
@@ -55,16 +63,19 @@ export function toggleList(name: 'bullet_list' | 'ordered_list'): Command {
   };
 }
 
-/** The kinds of paragraph there are; and the kinds of line of verse. */
-export type ParagraphStyle =
-  'text' | 'quote' | 'list' | 'numbered' | 'verse' | 'speaker' | 'direction' | ScriptPart;
-
-export function styleOf(state: EditorState): ParagraphStyle {
+/**
+ * The id of the kind of paragraph the cursor is in: text, a quotation, a
+ * list, a line of verse or its speaker or stage direction, a part of a
+ * script, or the kind of a passage, of the catalogue or the writer's own.
+ * See `editor/kinds.ts`.
+ */
+export function kindOf(state: EditorState): string {
   const { $from } = state.selection;
   for (let d = $from.depth; d > 0; d--) {
     const node = $from.node(d);
     const name = node.type.name;
-    if (name === 'script') return node.attrs.part as ScriptPart;
+    if (name === 'script') return node.attrs.part as string;
+    if (name === 'passage') return (node.attrs.name as string) || 'text';
     if (name === 'verse_line')
       return node.attrs.kind === 'speaker'
         ? 'speaker'
@@ -78,45 +89,199 @@ export function styleOf(state: EditorState): ParagraphStyle {
   return 'text';
 }
 
-/** Makes the paragraphs that are selected of one kind, whatever they were. */
-export function setStyle(style: ParagraphStyle): Command {
+/** The kinds that hold paragraphs, out of which a paragraph is lifted to be plain text. */
+const HOLDERS = ['quote', 'list', 'numbered'];
+
+/** The paragraphs of a kind, which can be made another: a paragraph, a part of a script, a passage. */
+const RETYPED = ['paragraph', 'script', 'passage'];
+
+/**
+ * The paragraphs the selection touches made of a type, where what holds
+ * them allows it: paragraphs, parts of a script and passages, and nothing
+ * else that holds text, which is left as it is.
+ */
+function retype(type: NodeType, attrs: Attrs | null = null): Command {
+  return (state, dispatch) => {
+    const { from, to } = state.selection;
+    const tr = state.tr;
+    let changed = false;
+    state.doc.nodesBetween(from, to, (node, pos) => {
+      if (!node.isTextblock) return true;
+      if (!RETYPED.includes(node.type.name) || node.hasMarkup(type, attrs)) return false;
+      const $pos = state.doc.resolve(pos);
+      const index = $pos.index();
+      if (!$pos.parent.canReplaceWith(index, index + 1, type)) return false;
+      // The paragraph keeps its size: the positions after it stand.
+      tr.setNodeMarkup(pos, type, attrs);
+      changed = true;
+      return false;
+    });
+    if (!changed) return false;
+    if (dispatch) dispatch(tr.scrollIntoView());
+    return true;
+  };
+}
+
+/**
+ * Makes the paragraphs that are selected of one kind, whatever they were:
+ * out of the verse, the script or the kind they were of, and out of
+ * whatever list or quotation they stand in, then into the kind. A kind of
+ * words is toggled on the words instead, as `toggleKind` does. An id that
+ * is not in the catalogue is a kind of the writer's own: a passage of
+ * that name.
+ */
+export function setKind(id: string): Command {
   return (state, dispatch, view) => {
-    const { blockquote, bullet_list, ordered_list, list_item } = state.schema.nodes;
-    if (!blockquote || !bullet_list || !ordered_list || !list_item) return false;
+    const spec = specOf(id);
+    if (spec?.structure === 'mark') return toggleKind(id)(state, dispatch, view);
+    const { blockquote, bullet_list, ordered_list, list_item, paragraph, passage, script } =
+      state.schema.nodes;
+    if (
+      !blockquote ||
+      !bullet_list ||
+      !ordered_list ||
+      !list_item ||
+      !paragraph ||
+      !passage ||
+      !script
+    )
+      return false;
     if (!dispatch || !view) return true;
-    // A part of a script is what the paragraph is; another kind takes it out of the script.
-    if (SCRIPT_PARTS.includes(style as ScriptPart)) {
-      if (verseAt(view.state)) unmakeVerse(view.state, view.dispatch);
-      for (let i = 0; i < 6 && !['text', ...SCRIPT_PARTS].includes(styleOf(view.state)); i++) {
-        const lifted = insideNode(view.state, list_item)
-          ? liftListItem(list_item)(view.state, view.dispatch)
-          : lift(view.state, view.dispatch);
-        if (!lifted) break;
-      }
-      setScriptPart(style as ScriptPart)(view.state, view.dispatch);
+    const run = (command: Command) => command(view.state, view.dispatch, view);
+    const structure = spec?.structure ?? 'passage';
+    const toLine = structure === 'verse' || structure === 'speaker' || structure === 'direction';
+    // Within a verse, a line is only said to be what it is: the verse stays whole.
+    if (toLine && verseAt(view.state)) {
+      run(setLineKind(structure === 'verse' ? 'line' : structure));
       return true;
     }
-    if (scriptAt(view.state)) unsetScript(view.state, view.dispatch);
-    // Within a verse, a line is made of a kind; out of one, a verse is made of the paragraphs.
-    const inVerse = verseAt(view.state);
-    if (style === 'verse' || style === 'speaker' || style === 'direction') {
-      if (!inVerse) makeVerse(view.state, view.dispatch);
-      setLineKind(style === 'verse' ? 'line' : style)(view.state, view.dispatch);
-      return true;
-    }
-    if (inVerse) unmakeVerse(view.state, view.dispatch);
-    // Back to plain text first: out of whatever list or quotation it is in.
-    for (let i = 0; i < 6 && styleOf(view.state) !== 'text'; i++) {
+    // Back to paragraphs of text first.
+    if (verseAt(view.state)) run(unmakeVerse);
+    run(retype(paragraph));
+    for (let i = 0; i < 6 && HOLDERS.includes(kindOf(view.state)); i++) {
       const lifted = insideNode(view.state, list_item)
         ? liftListItem(list_item)(view.state, view.dispatch)
         : lift(view.state, view.dispatch);
       if (!lifted) break;
     }
-    if (style === 'quote') wrapIn(blockquote)(view.state, view.dispatch);
-    else if (style === 'list') wrapInList(bullet_list)(view.state, view.dispatch);
-    else if (style === 'numbered') wrapInList(ordered_list)(view.state, view.dispatch);
+    switch (structure) {
+      case 'quote':
+        run(wrapIn(blockquote));
+        break;
+      case 'list':
+        run(wrapInList(bullet_list));
+        break;
+      case 'numbered':
+        run(wrapInList(ordered_list));
+        break;
+      case 'verse':
+      case 'speaker':
+      case 'direction':
+        // A verse is made of the paragraphs, and the line is said to be what it is.
+        run(makeVerse);
+        run(setLineKind(structure === 'verse' ? 'line' : structure));
+        break;
+      case 'script':
+        run(retype(script, { part: id }));
+        break;
+      case 'passage':
+        run(retype(passage, { name: id }));
+        break;
+    }
     return true;
   };
+}
+
+/** The kind of words of a mark `kind`. */
+function kindAttrs(mark: Mark): { name: string; lang: string } {
+  return { name: String(mark.attrs.name ?? ''), lang: String(mark.attrs.lang ?? '') };
+}
+
+/**
+ * The kind of words at the cursor, or the first in what is selected, with
+ * the language of foreign words; nothing where the words are of no kind.
+ */
+export function kindMarkOf(state: EditorState): { name: string; lang: string } | null {
+  const type = state.schema.marks.kind;
+  if (!type) return null;
+  const { from, to, empty, $from } = state.selection;
+  if (empty) {
+    const mark = type.isInSet(state.storedMarks ?? $from.marks());
+    return mark ? kindAttrs(mark) : null;
+  }
+  let found: Mark | undefined;
+  state.doc.nodesBetween(from, to, (node) => {
+    if (found) return false;
+    if (node.isText) found = type.isInSet(node.marks);
+    return !found;
+  });
+  return found ? kindAttrs(found) : null;
+}
+
+/** Whether a mark can be put on what is selected: on text, where it is allowed. */
+function markApplies(state: EditorState, type: MarkType): boolean {
+  const { from, to, empty, $from } = state.selection;
+  if (empty) return $from.parent.type.allowsMarkType(type);
+  let can = false;
+  state.doc.nodesBetween(from, to, (node) => {
+    if (can) return false;
+    can = node.inlineContent && node.type.allowsMarkType(type);
+    return !can;
+  });
+  return can;
+}
+
+/**
+ * Makes the selected words of a kind, in place of any kind they were of;
+ * or of none, when they are of this kind already, with the same language.
+ * With nothing selected, what is typed next is of the kind.
+ */
+export function toggleKind(name: string, lang = ''): Command {
+  return (state, dispatch) => {
+    const type = state.schema.marks.kind;
+    if (!type || !name || !markApplies(state, type)) return false;
+    const current = kindMarkOf(state);
+    const same = !!current && current.name === name && current.lang === lang;
+    if (dispatch) {
+      const { from, to, empty, $from } = state.selection;
+      const tr = state.tr;
+      if (empty) {
+        const marks = state.storedMarks ?? $from.marks();
+        tr.setStoredMarks(
+          same ? type.removeFromSet(marks) : type.create({ name, lang }).addToSet(marks),
+        );
+      } else if (same) tr.removeMark(from, to, type);
+      else tr.addMark(from, to, type.create({ name, lang }));
+      dispatch(tr.scrollIntoView());
+    }
+    return true;
+  };
+}
+
+/** The kinds of paragraph the tools knew before the catalogue; `kindOf` and `setKind` know every kind. */
+export type ParagraphStyle =
+  'text' | 'quote' | 'list' | 'numbered' | 'verse' | 'speaker' | 'direction' | ScriptPart;
+
+const STYLES: readonly string[] = [
+  'text',
+  'quote',
+  'list',
+  'numbered',
+  'verse',
+  'speaker',
+  'direction',
+  ...SCRIPT_PARTS,
+];
+
+/** As `kindOf`, naming only the kinds the tools knew before: a passage of another kind is text. */
+export function styleOf(state: EditorState): ParagraphStyle {
+  const kind = kindOf(state);
+  return (STYLES.includes(kind) ? kind : 'text') as ParagraphStyle;
+}
+
+/** As `setKind`. */
+export function setStyle(style: ParagraphStyle): Command {
+  return setKind(style);
 }
 
 export function insertCitation(items: CiteItem[], mode: CiteMode = 'normal'): Command {
