@@ -146,17 +146,17 @@ package_glaukopis-dictionaries-en() {
 package_glaukopis-dictionaries-nb() {
   pkgdesc='Dictionary of Norwegian Bokmål for the spelling in Glaukopis'
   arch=(any)
-  # The words of Norsk Ordbank and of CLARINO, the rules and the older list of spell-norwegian.
-  license=(CC-BY-4.0 LicenseRef-CLARIN-PUB-BY GPL-2.0-only)
-  _dictionaries glaukopis-dictionaries-nb nb_NO.aff nb_NO.dic extra/nb_NO.dic README.md README_NO.txt COPYING
+  # The words of Bokmålsordboka and Nynorskordboka, with the inflections of Norsk ordbank; the rules of spell-norwegian.
+  license=(CC-BY-4.0 GPL-2.0-only)
+  _dictionaries glaukopis-dictionaries-nb nb_NO.aff nb_NO.dic README.md README_NO.txt COPYING
 }
 
 package_glaukopis-dictionaries-nn() {
   pkgdesc='Dictionary of Norwegian Nynorsk for the spelling in Glaukopis'
   arch=(any)
-  # The words of Norsk Ordbank and of CLARINO, the rules and the older list of spell-norwegian.
-  license=(CC-BY-4.0 LicenseRef-CLARIN-PUB-BY GPL-2.0-only)
-  _dictionaries glaukopis-dictionaries-nn nn_NO.aff nn_NO.dic extra/nn_NO.dic README.md README_NO.txt COPYING
+  # The words of Bokmålsordboka and Nynorskordboka, with the inflections of Norsk ordbank; the rules of spell-norwegian.
+  license=(CC-BY-4.0 GPL-2.0-only)
+  _dictionaries glaukopis-dictionaries-nn nn_NO.aff nn_NO.dic README.md README_NO.txt COPYING
 }
 
 package_glaukopis-server() {

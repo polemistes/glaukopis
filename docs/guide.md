@@ -1395,8 +1395,12 @@ it is underlined, and **F7** says so.
 there are and where they came from, and shows the words you have added,
 where they can be taken away.
 
-The Norwegian dictionaries are large, and are read the first time a text in
-Norwegian is checked: the first underlines of a session come after a moment.
+The Norwegian dictionaries are made from the word lists of Bokmålsordboka
+and Nynorskordboka (Universitetet i Bergen og Språkrådet, ordbøkene.no,
+CC-BY 4.0), with every form of every word, and the rules of spell-norwegian
+that put words together and make the genitive. They are large, and are read
+the first time a text in Norwegian is checked: the first underlines of a
+session come after a moment.
 
 ## Keeping things safe
 

@@ -290,3 +290,28 @@ What this settles:
 - The installers for Windows and macOS bring everything, since those systems
   have no packages to lean on: Pandoc, Tesseract with its data, the
   dictionaries, and the fonts compiled in.
+
+## 2026-10-01 — the Norwegian dictionaries, made from the word lists of Bokmålsordboka and Nynorskordboka
+
+> No build the packages. They should be bundled with windows and mac.
+
+Asked whether the Norwegian dictionaries should go on being LibreOffice's,
+with a second list beside each for the compounding and the genitive, or be
+made anew from the official word lists of Bokmålsordboka and Nynorskordboka
+that the University of Bergen publishes, the answer was to make them.
+
+What this settles:
+
+- The Norwegian word lists, `nb_NO.dic` and `nn_NO.dic`, are made by
+  `scripts/make-norwegian-dictionaries.py` from `lemma_expanded.json` of
+  each language at ord.uib.no: every form of every word, with the flags of
+  compounding and of the genitive given by word class. The rules of
+  spell-norwegian stay as they are. The extra lists are gone.
+- The words are under CC BY 4.0, to be named as *Bokmålsordboka/Nynorskordboka,
+  Universitetet i Bergen og Språkrådet, ordbøkene.no, CC-BY 4.0*; the
+  inflections are those of Norsk ordbank (Nasjonalbiblioteket, CC BY 4.0);
+  the rules are GPL-2. The packages for Arch say so, and the guide names
+  the source under *Spelling*.
+- On Windows and macOS the dictionaries are bundled with the application,
+  as everything in `resources/` is; on Arch Linux they stay packages of
+  their own.

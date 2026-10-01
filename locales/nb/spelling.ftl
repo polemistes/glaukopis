@@ -20,6 +20,7 @@ spelling-off = Stavingen kontrolleres ikke. Det slås på i innstillingene.
 
 spelling-settings = Staving
 spelling-settings-about = Ord som ordboken for kartets språk ikke har, strekes under mens du skriver. Høyreklikk på et av dem, eller trykk F7, for å se hva det kan være.
+spelling-norwegian-source = De norske ordlistene er laget av Bokmålsordboka og Nynorskordboka, Universitetet i Bergen og Språkrådet, ordbøkene.no, CC BY 4.0, med bøyningene fra Norsk ordbank ved Nasjonalbiblioteket.
 spelling-check = Kontroller stavingen mens du skriver
 spelling-on = På
 spelling-off-short = Av

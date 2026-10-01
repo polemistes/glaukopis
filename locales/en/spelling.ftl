@@ -20,6 +20,7 @@ spelling-off = Spelling is not checked. It is turned on in the settings.
 
 spelling-settings = Spelling
 spelling-settings-about = Words that the dictionary of a map’s language does not have are underlined as you write. Right-click one, or press F7, for what it may be.
+spelling-norwegian-source = The Norwegian dictionaries are made from Bokmålsordboka and Nynorskordboka, Universitetet i Bergen og Språkrådet, ordbøkene.no, CC BY 4.0, with the inflections of Norsk ordbank of the National Library.
 spelling-check = Check spelling as you write
 spelling-on = On
 spelling-off-short = Off

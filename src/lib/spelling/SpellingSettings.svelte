@@ -59,6 +59,8 @@
 <section>
   <h2>{t('spelling-settings')}</h2>
   <p class="about">{t('spelling-settings-about')}</p>
+  <!-- The Norwegian dictionaries ask that their source is named where they are used. -->
+  <p class="about source">{t('spelling-norwegian-source')}</p>
   <div class="row">
     <div class="what">
       <div class="label">{t('spelling-check')}</div>

@@ -2,63 +2,76 @@
 
 The dictionaries that spelling is checked with, in the form of Hunspell: for
 each language a file of rules, `.aff`, and a list of words, `.dic`. They are
-taken from LibreOffice's repository of dictionaries,
-<https://github.com/LibreOffice/dictionaries>, and are not part of the code
-of Glaukopis: each has its own licence, which is said below and whose text
-is beside it.
+not part of the code of Glaukopis: each has its own licence, which is said
+below and whose text is beside it. The English ones are taken from
+LibreOffice's repository of dictionaries,
+<https://github.com/LibreOffice/dictionaries>; the Norwegian ones are made
+here, from the word lists of Bokmålsordboka and Nynorskordboka.
 
 | Files | Language | From |
 | --- | --- | --- |
 | `en_US.aff`, `en_US.dic` | English (United States) | `en/`, version 2020.12.07 of the list, from SCOWL |
 | `en_GB.aff`, `en_GB.dic` | English (Great Britain) | `en/`, the list of 2025 |
-| `nb_NO.aff`, `nb_NO.dic` | Norwegian Bokmål | `no/`, version 3.0 (2026) |
-| `nn_NO.aff`, `nn_NO.dic` | Norwegian Nynorsk | `no/`, version 3.0 (2026) |
-| `extra/nb_NO.dic`, `extra/nn_NO.dic` | Norwegian Bokmål and Nynorsk | `no/`, version 2.2 (2018) |
+| `nb_NO.dic` | Norwegian Bokmål | the word list of Bokmålsordboka, <https://ord.uib.no/bm/fil/lemma_expanded.json> |
+| `nn_NO.dic` | Norwegian Nynorsk | the word list of Nynorskordboka, <https://ord.uib.no/nn/fil/lemma_expanded.json> |
+| `nb_NO.aff`, `nn_NO.aff` | Norwegian Bokmål and Nynorsk | `no/`, the rules of spell-norwegian, as LibreOffice has them in UTF-8 |
 
-Fetched 2026-09-28. `scripts/update-dictionaries.sh` fetches them anew.
+The English dictionaries and the Norwegian rules were fetched 2026-09-28,
+the Norwegian word lists 2026-10-01. `scripts/update-dictionaries.sh`
+fetches them anew, and makes the Norwegian lists by
+`scripts/make-norwegian-dictionaries.py`; see `README_NO.txt`.
 
-## Why there are two lists of Norwegian words
+## How the Norwegian lists are made
 
-Version 3.0 of the Norwegian dictionaries has lists of every form of every
-word, taken from Norsk Ordbank, with the words of the revision of
-Bokmålsordboka and Nynorskordboka (2018–2024). But its words carry none of
-the marks by which the rules of the `.aff` file make more words of them, so
-that none are made: not the genitive (*verdens*, *forfatterens*), and not
-the words that Norwegian makes by putting words together
-(*kaffemaskinreparatør*), which would all be called wrong. Version 2.2 has
-those marks, and its rules are those of version 3.0, which differs from it
-only in being written in UTF-8.
+Bokmålsordboka and Nynorskordboka, the dictionaries of Norwegian as it is
+written, are published by the University of Bergen and Språkrådet, and their
+word lists are open: for each language, every headword with its word class
+and every inflected form of every way it may be inflected
+(<https://ord.uib.no/ord_1_Ordlister.html>). The script reads the list and
+writes every form, once, as an entry of the `.dic` file: the lists are of
+full forms, so that the rules of the `.aff` file have no inflecting to do.
+What the rules do is let words be put together, and make the genitive; for
+which every entry gets flags by its word class:
 
-So a list in `extra/` is read together with the list of the same name, by
-its rules: a word is right if either list has it or the rules make it of
-the words of either. The lists of version 2.2 are here as they were in
-LibreOffice's repository, made UTF-8 from ISO 8859-1 as the rest are. (Any
-dictionary may have more words in a list of its name in `extra/` beside it,
-written as its own list is.)
+- a noun, in every form, gets `z` (COMPOUNDFLAG: it may begin, continue or
+  end a compound, *kaffe·maskin·reparatør*, *hjemme·kontoret*) and `J` (the
+  genitive *-s*, *verdens*, *forfatterens*); and its headword with an *s*
+  on it is an entry with `z`, for the *s* that links the parts of a compound
+  (*bærekrafts·mål*, *språkråds·direktør*), which stands on its own too, as
+  the genitive it is;
+- an adjective, in every form, gets `z` (*stor·bonde*, *is·kaldt*);
+- a verb gets `z` on its infinitive and imperative, the forms that begin
+  compounds (*skrive·bord*), and nothing on the others;
+- a proper noun gets `J`;
+- a prefix of compounds (`alpe-`, `anti-`), when it is long enough to be
+  a part of one, is an entry without its hyphen, with `z`;
+- adverbs, prepositions, determiners, pronouns, conjunctions,
+  interjections, abbreviations and symbols get no flags.
+
+Nothing shorter than four letters is a part of a compound (COMPOUNDMIN 4),
+and a compound that would put three of the same letter together is wrong
+(CHECKCOMPOUNDTRIPLE, in Bokmål). Forms with a space in them (expressions,
+*17. mai*) are left out, since the words of a text are checked one at a
+time. The affix files are those of spell-norwegian, as they stand; the
+flags above are the ones they define.
 
 ## Licences, and what they ask
 
-**Norwegian, version 3.0** (`nb_NO.*`, `nn_NO.*`; see `README_NO.txt`):
+**Norwegian** (`nb_NO.*`, `nn_NO.*`; see `README_NO.txt`):
 
-- The words are from **Norsk Ordbank**, of the National Library of Norway
-  (Nasjonalbiblioteket, Språkbanken), under
+- The words are those of **Bokmålsordboka** and **Nynorskordboka**, of the
+  University of Bergen and Språkrådet, under
   [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/)
-  (CC BY 4.0), which asks that Nasjonalbiblioteket is named as the source.
-- The new words are from the lists made after the revision of
-  Bokmålsordboka and Nynorskordboka (2018–2024), handed out by CLARINO
-  Bergen (<http://hdl.handle.net/11509/152>, <http://hdl.handle.net/11509/151>),
-  under the licence
-  [CLARIN PUB +BY](https://www.kielipankki.fi/wp-content/uploads/CLARIN_PUB_BY_en.html),
-  which asks that they are named as the source; with thanks to
-  Kultur- og likestillingsdepartementet. Some words of the year are from
-  Språkrådet.
+  (CC BY 4.0), to be named thus:
+  *Bokmålsordboka/Nynorskordboka, Universitetet i Bergen og Språkrådet,
+  ordbøkene.no, CC-BY 4.0.* Their inflections come from **Norsk ordbank**,
+  of the National Library of Norway (Nasjonalbiblioteket, Språkbanken),
+  under CC BY 4.0 as well. What was found of the licence, and where, is
+  written out in `README_NO.txt`; the page of the licence that the
+  dictionaries' site links to could not be reached on the day the lists
+  were fetched, and ord@uib.no is where to ask.
 - The rules (`.aff`) are from the **spell-norwegian** project, under the GNU
   General Public License, version 2 (`COPYING`).
-- The lists were put together by Lars Bungum.
-
-**Norwegian, version 2.2** (`extra/`): from the spell-norwegian project
-(no.speling.org), under the GNU General Public License, version 2
-(`COPYING`).
 
 **American English** (`en_US.*`; see `README_en_US.txt`): the words are from
 **SCOWL**, copyright 2000–2018 Kevin Atkinson and others, under a licence
@@ -78,7 +91,10 @@ LibreOffice's English folder.
 
 What the GNU licences ask of those who pass the dictionaries on is that
 their text goes with them, which it does here, and that they can be had in
-the form they are worked on in, which is the form they are in here.
+the form they are worked on in, which is the form they are in here. What
+CC BY asks is that the source is named, with the licence and what was
+changed: the guide names it under *Spelling*, and `README_NO.txt` says
+what was done to the lists.
 
 ## Where else dictionaries are found
 
