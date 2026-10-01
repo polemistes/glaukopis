@@ -175,10 +175,7 @@ try {
     const at = await middleOf('.project .work .panes');
     await drop([join(desk, file)], at.x, at.y);
   };
-  const tabs = () =>
-    app.exec(
-      `return Array.from(document.querySelectorAll('.tabs .tab .name')).map((e) => e.textContent.trim())`,
-    );
+  const tabs = () => app.mapNames();
   const facts = () =>
     app.exec(
       `const out = {};
@@ -215,10 +212,7 @@ try {
   await app.waitForText('h2', 'Welcome to Glaukopis');
   check(
     'where a project is begun, one can be made from a document',
-    (await app.count('.welcome button.quiet')) === 2 &&
-      /from a document/.test(
-        await app.exec(`return document.querySelector('.welcome').textContent`),
-      ),
+    /from a document/.test(await app.exec(`return document.querySelector('.welcome').textContent`)),
   );
 
   await app.clickText('button', 'Begin a project');
@@ -227,10 +221,15 @@ try {
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
+  await app.openMaps();
   check(
-    'beside the tabs of the maps, a map can be made from a document',
-    await app.exists('.tabs button[aria-label="A map from a document…"]'),
+    'among the maps, a map can be made from a document',
+    await app.exec(
+      `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).some((m) => m.textContent.includes('A map from a document'))`,
+    ),
   );
+  await app.press('Escape');
+  await app.waitGone('.menu', 3000);
 
   // ---- a file that cannot be read ----
   if (pandoc) {
@@ -331,9 +330,8 @@ try {
   );
   check(
     'and shown',
-    (await app.exec(
-      `return document.querySelector('.tabs .tab.current .name').textContent.trim()`,
-    )) === 'The wrath of Achilles',
+    (await app.exec(`return document.querySelector('.maps .map .name').textContent.trim()`)) ===
+      'The wrath of Achilles',
   );
   const order = await parts();
   check(
@@ -738,7 +736,7 @@ try {
   check(
     'where projects are made, one can be made from a document',
     await app.exec(
-      `return Array.from(document.querySelectorAll('.home header button')).some((b) => b.textContent.includes('A project from a document…'))`,
+      `return Array.from(document.querySelectorAll('.home .welcome button')).some((b) => b.textContent.includes('A project from a document…'))`,
     ),
   );
   // The dialog that asks for a file cannot be driven: the file is dropped among the projects.

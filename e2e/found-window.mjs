@@ -229,14 +229,20 @@ try {
   await app.screenshot('found-1-text');
 
   // ---- where the window is reached from ----
-  await app.rightClick('.tabs .tab.current');
-  await app.waitFor('.menu');
+  await app.openMaps();
+  await app.exec(
+    `Array.from(document.querySelectorAll('.menu [role="menuitem"]')).find((m) => m.textContent.includes('This map')).click()`,
+  );
+  await sleep(200);
   const ofTab = await menu();
   check(
     'the menu of the tab of the map has it, with how many there are',
     ofTab.some((m) => /^Citations that were found…\s*7 to go through/.test(m)),
     ofTab.join(' ‖ '),
   );
+  // Escape closes the submenu first, and the menu of maps after it.
+  await app.press('Escape');
+  await sleep(150);
   await app.press('Escape');
   await app.waitGone('.menu');
 
@@ -429,9 +435,7 @@ try {
   await app.clickText('.card h3', 'Homer');
   await app.waitFor('.text-view .section, .diagram .node.root', 8000);
   await sleep(500);
-  await app.rightClick('.tabs .tab.current');
-  await app.waitFor('.menu');
-  await app.clickText('.menu [role="menuitem"], .menu .item', 'Citations that were found…');
+  await app.thisMap('Citations that were found…');
   await app.waitFor('dialog .found-window .row', 8000);
   await sleep(500);
   check('opened again later, the window has what was left', JSON.stringify(await rows()) === JSON.stringify(left), JSON.stringify(await rows()));

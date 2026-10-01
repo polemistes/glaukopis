@@ -464,7 +464,8 @@ reference of your library.
 
 **Citations that were found…** opens the window in which they are gone
 through. It is in the menu **More** of the tools over the text and in the
-menu of the tab of a map, where it says how many there are; and pressing
+menu of the map (**This map**, under the name of the map in the bar), where
+it says how many there are; and pressing
 found text in the text opens the window at that one.
 
 The window shows one at a time, in the sentence it stands in, with the
@@ -707,12 +708,15 @@ the text, and goes into no document.
   from the grip beside a heading, or **Ctrl+Alt+C** with the cursor in its
   text and nothing selected.
 
-A commented passage is tinted in the text, and a small mark in the right
-margin counts the open comments on the element; press either to see the
-thread. In the diagram the element carries the same mark. The button with
-the speech bubble among the diagram's controls shows every open thread as a
-**card** beside its element, on a dashed line; a card can be dragged where
-it is wanted, and never into the tree.
+A commented passage is tinted in the text, the name of an element with open
+comments carries a line at its left, and a small mark in the right margin
+counts the open comments on the element; press the passage or the mark to
+see the thread. In the diagram the element carries the same mark with its
+count; press it, and the comments hang under the element as **cards**, like
+children that are not in the tree; press it again to hide them. The button
+with the speech bubble among the diagram's controls shows every open
+comment so, at once. A card can be dragged where it is wanted; pressing it
+opens the thread.
 
 A comment is a **thread**: the first note, and answers under it, each with
 who wrote it and when. You change or delete your own notes; you answer
@@ -727,8 +731,12 @@ in its history like everything else.
 
 ## Several maps
 
-A project can hold several maps. They are the tabs over the map; **+** makes
-a new one.
+A project can hold several maps. The name of the map in view stands in the
+bar over it, after **Diagram**, **Text**, **Side by side**, **Preview** and
+**Share**; press it, and the maps of the project pull down, with **New map**,
+**A map from a document…**, and under **This map** what can be done with
+the one in view: rename, duplicate, open beside, move earlier or later,
+delete.
 
 This is what makes it safe to write. A map that is valuable as it is, the
 first sketch of the argument, or the plan for the whole book, need not be
@@ -745,11 +753,11 @@ consumed by the writing:
 - An element can have **another map take its place in the document**. The map
   of the book then has one element for each chapter, each of which stands for
   the map of that chapter. The preview of the book shows the book.
-- **Ctrl+click** a tab, or click it with the middle button, to open that map
-  beside the one in view: two maps side by side, to move elements between
-  them. **Two side by side**, in the bar over the map, shows the map as
-  diagram and as text beside one another. Click a side and then a tab to show
-  another map there; each side can be diagram or text.
+- **Open beside**, under *This map*, opens the map beside the one in view:
+  two maps side by side, to move elements between them. **Side by side**, in
+  the bar over the map, shows the map as diagram and as text beside one
+  another. Click a side and then choose a map to show another there; each
+  side can be diagram, text or timeline.
 
 The line between the two sides can be dragged, as can those beside the
 preview and the references. A double click on a line puts it back.
@@ -839,8 +847,8 @@ quoted until it is read. Glaukopis reads it with Tesseract, a program that
 reads text in pictures, in three places.
 
 - **A PDF or a picture becomes a map.** In a project, choose **A map from a
-  document…** beside **+** over the map, and choose the file, or drop the
-  file on the tabs of the maps; dropped elsewhere in a project, a PDF is
+  document…** among the maps, and choose the file, or drop the file on the
+  name of the map in the bar; dropped elsewhere in a project, a PDF is
   taken into the library and a picture becomes a figure. Among the projects,
   **A project from a document…**, or drop the file there. Each
   page of a PDF becomes an element under the centre, named by its number as

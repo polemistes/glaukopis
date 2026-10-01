@@ -171,55 +171,39 @@
   }}
 >
   <div class="inner">
-    <header>
-      <div class="title">
-        <h1>{t('home-title')}</h1>
+    <div class="welcome" class:alone={projects.loaded && !projects.list.length}>
+      <Mark size={120} />
+      <h2>{t('home-welcome')}</h2>
+      <p>
+        {t('home-welcome-text')}
+      </p>
+      <div class="actions">
+        <Button
+          variant="secondary"
+          onclick={() => (naming = { purpose: 'new', value: '', error: null })}
+        >
+          {#snippet icon()}<Plus size={15} />{/snippet}
+          {t('home-begin')}
+        </Button>
+        <Button variant="secondary" onclick={() => (joining = true)}>
+          {#snippet icon()}<Users size={15} />{/snippet}
+          {t('home-join')}
+        </Button>
+        <Button variant="secondary" onclick={() => fromDocument()}>
+          {#snippet icon()}<FileInput size={15} />{/snippet}
+          {t('home-from-document')}
+        </Button>
       </div>
-      {#if projects.list.length}
-        <div class="actions">
-          <Button variant="ghost" onclick={() => (joining = true)}>
-            {#snippet icon()}<Users size={15} />{/snippet}
-            {t('home-join')}
-          </Button>
-          <Button variant="ghost" onclick={() => fromDocument()}>
-            {#snippet icon()}<FileInput size={15} />{/snippet}
-            {t('home-from-document')}
-          </Button>
-          <Button
-            variant="primary"
-            onclick={() => (naming = { purpose: 'new', value: '', error: null })}
-          >
-            {#snippet icon()}<Plus size={15} />{/snippet}
-            {t('home-new')}
-          </Button>
-        </div>
-      {/if}
-    </header>
+    </div>
 
     {#if !projects.loaded}
       <div class="centre"><Spinner size={22} /></div>
-    {:else if !projects.list.length}
-      <div class="welcome">
-        <Mark size={120} />
-        <h2>{t('home-welcome')}</h2>
-        <p>
-          {t('home-welcome-text')}
-        </p>
-        <Button
-          variant="primary"
-          size="lg"
-          onclick={() => (naming = { purpose: 'new', value: '', error: null })}
-        >
-          {t('home-begin')}
-        </Button>
-        <button type="button" class="quiet" onclick={() => (joining = true)}>
-          {t('home-or-join')}
-        </button>
-        <button type="button" class="quiet" onclick={() => fromDocument()}>
-          {t('home-or-from-document')}
-        </button>
-      </div>
-    {:else}
+    {:else if projects.list.length}
+      <header>
+        <div class="title">
+          <h1>{t('home-title')}</h1>
+        </div>
+      </header>
       <div class="grid">
         {#each projects.list as p (p.id)}
           <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -423,8 +407,16 @@
     flex-direction: column;
     align-items: center;
     gap: 14px;
-    padding: 70px 0;
+    padding: 36px 0 40px;
     text-align: center;
+  }
+  .welcome.alone {
+    padding-top: 70px;
+  }
+  .welcome .actions {
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 6px;
   }
   .welcome h2 {
     margin-top: 10px;

@@ -463,6 +463,45 @@ export class App {
 
   /** Messages the page wrote to the console as errors, collected by a hook installed at launch. */
   /** Each different message once, with how often it came. */
+  // ---- the maps of a project, which pull down from the name of the map in view ----
+
+  /** Opens the menu of maps. */
+  async openMaps() {
+    await this.click('.maps .map');
+    await this.waitFor('.menu');
+    await sleep(150);
+  }
+
+  /** The names of the maps, in their order, as the menu of maps has them. */
+  async mapNames() {
+    return this.exec(`return JSON.parse(document.querySelector('.maps')?.dataset.maps ?? '[]')`);
+  }
+
+  /** Opens the map of this name. */
+  async openMap(name) {
+    await this.openMaps();
+    await this.clickText('.menu [role="menuitem"]', name);
+    await sleep(300);
+  }
+
+  /** Makes a new map, and leaves its name being typed. */
+  async newMap() {
+    await this.openMaps();
+    await this.clickText('.menu [role="menuitem"]', 'New map');
+    await this.waitFor('.maps .naming');
+    await sleep(150);
+  }
+
+  /** Opens the menu of what can be done with the map in view, and chooses in it. */
+  async thisMap(item) {
+    await this.openMaps();
+    await this.exec(
+      `Array.from(document.querySelectorAll('.menu [role="menuitem"]')).find((m) => m.textContent.includes('This map')).click()`,
+    );
+    await sleep(200);
+    await this.clickText('.menu [role="menuitem"]', item);
+  }
+
   async pageErrors() {
     const all = await this.exec(`return (window.__glaukopisErrors || []).slice();`);
     const counts = new Map();

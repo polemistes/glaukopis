@@ -32,4 +32,8 @@ comments-mark = { $count ->
     [one] One open comment
    *[other] { $count } open comments
 }
-comments-show-cards = Show the comments beside their elements
+comments-show-cards = Show every comment under its element
+comments-mark-hint = { $count ->
+    [one] One open comment: press to show it under the element, or hide it
+   *[other] { $count } open comments: press to show them under the element, or hide them
+}

@@ -162,9 +162,7 @@ try {
     await sleep(300);
   };
   const openWindow = async () => {
-    await app.rightClick('.tabs .tab.current');
-    await app.waitFor('.menu');
-    await app.clickText('.menu .item', 'Citations that were found…');
+    await app.thisMap('Citations that were found…');
     await app.waitFor(W, 8000);
     await sleep(700);
   };
@@ -182,8 +180,7 @@ try {
          text: body.map((b) => b.textContent).join(' ').replace(/\\s+/g, ' '),
        };`,
     );
-  const tabs = () =>
-    app.exec(`return Array.from(document.querySelectorAll('.tabs .tab .name')).map((e) => e.textContent.trim())`);
+  const tabs = () => app.mapNames();
   const fact = (name) =>
     app.exec(`const e = document.querySelector('dialog [data-fact="' + arguments[0] + '"]'); return e ? e.textContent.replace(/\\s+/g, ' ').trim() : null`, name);
   const choice = (name) =>
@@ -530,7 +527,7 @@ try {
   await closeWindow();
 
   // ---- the tags, now that the library has the work ----
-  await app.clickText('.tabs .tab .name', 'The wrath, cited by tags');
+  await app.openMap('The wrath, cited by tags');
   await app.waitFor('.text-view .section', 8000);
   await sleep(500);
   await app.click('.text-view .prose .found[data-by="key"]');
@@ -560,9 +557,9 @@ try {
   await app.waitFor('.card', 8000);
   await sleep(900);
   await app.clickText('.card h3', 'Homer');
-  await app.waitFor('.tabs .tab', 8000);
+  await app.waitFor('.maps .map', 8000);
   await sleep(600);
-  await app.clickText('.tabs .tab .name', 'The wrath, from LibreOffice');
+  await app.openMap('The wrath, from LibreOffice');
   await sleep(600);
   await openWindow();
   list = await rows();
@@ -608,7 +605,7 @@ try {
   await app.waitForText('h1', 'Projects');
   await sleep(900);
   await app.clickText('.card h3', 'Homer');
-  await app.waitFor('.tabs .tab', 8000);
+  await app.waitFor('.maps .map', 8000);
   await sleep(600);
 
   // =====================================================================

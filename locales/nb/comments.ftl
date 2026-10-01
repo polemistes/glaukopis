@@ -30,4 +30,8 @@ comments-mark = { $count ->
     [one] Én åpen kommentar
    *[other] { $count } åpne kommentarer
 }
-comments-show-cards = Vis kommentarene ved siden av elementene
+comments-show-cards = Vis hver kommentar under elementet sitt
+comments-mark-hint = { $count ->
+    [one] Én åpen kommentar: trykk for å vise den under elementet, eller skjule den
+   *[other] { $count } åpne kommentarer: trykk for å vise dem under elementet, eller skjule dem
+}

@@ -76,7 +76,14 @@ project-duplicate = Duplicate
 project-duplicate-hint = A copy to work on; this one stays as it is
 project-open-beside = Open beside
 project-open-beside-hint = Two maps side by side, to move elements between them
-project-tab-hint = Ctrl+click or middle click: beside this one · double-click: rename
+project-maps-hint = The maps of the project, and what can be done with this one
+project-map-label = Map
+project-map-beside = beside this one
+project-map-menu = This map: { $name }
+project-map-earlier = Move earlier
+project-map-later = Move later
+project-side-by-side-short = Side by side
+project-preview-short = Preview
 project-found = Citations that were found…
 # The count is of those found in the map.
 project-found-hint = { $count } to go through, and make citations of

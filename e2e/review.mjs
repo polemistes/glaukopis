@@ -150,7 +150,7 @@ try {
   await robert.waitGone('dialog[open]');
 
   await anna.waitForText('h2', 'Welcome to Glaukopis');
-  await anna.clickText('button', 'or join a project');
+  await anna.clickText('button', 'Join a shared project');
   await anna.waitForText('dialog h2', 'Join a shared project');
   await anna.type('dialog input[name="server"]', address);
   await anna.type('dialog input[name="code"]', code);

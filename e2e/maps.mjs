@@ -372,19 +372,17 @@ try {
   await app.screenshot('maps-12-diagram-again');
 
   // --- A second map, and the two side by side ---
-  await app.click('.tabs .add');
-  await app.waitFor('.tabs .naming input');
+  await app.newMap();
   await app.keys('Article');
   await app.press('Enter');
   await sleep(300);
-  check('a second map', (await app.count('.tabs .tab')) === 2);
+  check('a second map', (await app.mapNames()).length === 2, (await app.mapNames()).join(' | '));
   check('whose centre is named with it', (await titles(app)).includes('Article'), (await titles(app)).join(' | '));
-  // Ctrl+click on a tab opens that map beside the one in view.
-  await app.exec(`
-    const tab = Array.from(document.querySelectorAll('.tabs .tab')).find((t) => t.textContent.includes('Wrath and the hero'));
-    tab.dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }));`);
+  // The other map opens beside the one in view, from the menu of the map in view.
+  await app.openMap('Wrath and the hero');
+  await app.thisMap('Open beside');
   await sleep(500);
-  check('two maps side by side, by Ctrl+click on a tab', (await app.count('.pane')) === 2);
+  check('two maps side by side, from the menu of the map', (await app.count('.pane')) === 2);
   await app.screenshot('maps-13-beside');
 
   // --- The room each has can be changed ---

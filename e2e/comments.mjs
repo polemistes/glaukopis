@@ -69,7 +69,7 @@ try {
   check(
     'the passage is marked in the text, and the element in the margin',
     (await app.exec(`return document.querySelector('.text-view .comment-mark')?.textContent`)) === 'before men.' &&
-      (await app.exists('.text-view .section .commented')),
+      (await app.exists('.text-view .section .comment-marker')),
   );
   await app.screenshot('comments-1-thread');
 
@@ -86,7 +86,7 @@ try {
   await sleep(300);
   check(
     'a settled thread leaves the open ones, and its marks go',
-    !(await app.exists('.thread')) && !(await app.exists('.text-view .section .commented')),
+    !(await app.exists('.thread')) && !(await app.exists('.text-view .section .comment-marker')),
   );
   check('the passage is drawn as settled', await app.exists('.text-view .comment-mark.settled'));
   await app.clickText('.tools button', 'Settled');
@@ -95,7 +95,7 @@ try {
   await sleep(300);
   await app.clickText('.tools button', 'Open');
   await app.waitFor('.thread:not(.settled)', 3000);
-  check('and is opened again', await app.exists('.text-view .section .commented'));
+  check('and is opened again', await app.exists('.text-view .section .comment-marker'));
 
   // --- The mark in the text opens the thread ---
   await app.click('.text-view .comment-mark');
@@ -108,7 +108,13 @@ try {
   await sleep(300);
   const mark = await app.exec(`return document.querySelector('.diagram .mark.comments')?.textContent.trim()`);
   check('the element is marked in the diagram with its open comments', mark === '1', mark);
-  await app.click('.controls button[aria-label="Show the comments beside their elements"]');
+  // The mark on the element shows its comments under it; the switch among the controls shows every one.
+  await app.click('.diagram .mark.comments');
+  await app.waitFor('.diagram .card', 3000);
+  await app.click('.diagram .mark.comments');
+  await app.waitGone('.diagram .card', 3000);
+  check('the mark on the element shows its comments under it, and hides them', true);
+  await app.click('.controls button[aria-label="Show every comment under its element"]');
   await app.waitFor('.diagram .card', 3000);
   const card = await app.exec(
     `const c = document.querySelector('.diagram .card'); return c.querySelector('.card-name').textContent.trim() + ' | ' + c.querySelector('.card-text').textContent.trim()`,

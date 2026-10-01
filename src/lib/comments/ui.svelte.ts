@@ -14,8 +14,18 @@ class CommentsUi {
   composing = $state<{ element: string; passage: Thread['passage'] } | null>(null);
   /** Rises each time the panel is asked to open: the view of the project follows it. */
   asked = $state(0);
-  /** Whether the diagram shows the threads as cards beside their elements. */
+  /** Whether the diagram shows every open thread as a card under its element. */
   cards = $state(false);
+  /** The elements whose threads are shown as cards, one by one, from the mark on the element. */
+  shownOn = $state<ReadonlySet<string>>(new Set());
+
+  /** Shows the cards of an element, or hides them again. */
+  toggleOn(element: string) {
+    const next = new Set(this.shownOn);
+    if (next.has(element)) next.delete(element);
+    else next.add(element);
+    this.shownOn = next;
+  }
 
   /** Asks for a thread to be shown. */
   show(thread: string) {

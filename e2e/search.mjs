@@ -304,7 +304,7 @@ try {
   await app.keys(['Control', '1']);
   await app.waitFor('.home', 8000);
   await sleep(600);
-  await app.clickText('button', 'New project');
+  await app.clickText('button', 'Begin a project');
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Second');
   await app.clickText('dialog footer button', 'Create');

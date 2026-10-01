@@ -39,14 +39,11 @@ try {
   await add('Tab', 'The word menis');
 
   // A second map, and back to the first.
-  await app.click('.tabs .add');
-  await app.waitFor('.tabs .naming input');
+  await app.newMap();
   await app.keys('Article');
   await app.press('Enter');
   await sleep(400);
-  await app.exec(
-    `Array.from(document.querySelectorAll('.tabs .tab')).find((t) => t.textContent.includes('Wrath')).click()`,
-  );
+  await app.openMap('Wrath');
   await app.waitFor('.diagram .node:not(.root)', 5000);
   await sleep(300);
 
@@ -72,9 +69,7 @@ try {
   await sleep(300);
 
   // --- The copy says so ---
-  await app.exec(
-    `Array.from(document.querySelectorAll('.tabs .tab')).find((t) => t.textContent.includes('Article')).click()`,
-  );
+  await app.openMap('Article');
   await app.waitFor('.diagram .node .mark.behind', 5000);
   await sleep(300);
   check(

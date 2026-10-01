@@ -135,7 +135,7 @@ try {
 
   // ---- the guest joins ----
   await guest.waitForText('h2', 'Welcome to Glaukopis');
-  await guest.clickText('button', 'or join a project');
+  await guest.clickText('button', 'Join a shared project');
   await guest.waitForText('dialog h2', 'Join a shared project');
   await guest.type('dialog input[name="server"]', address);
   await guest.type('dialog input[name="code"]', 'AAAA-BBBB-CCCC');

@@ -10,8 +10,6 @@ home-new = New project
 home-welcome = Welcome to Glaukopis
 home-welcome-text = A project holds the work on one book or article: the maps of your ideas, the texts you write into them, and the references they rest on.
 home-begin = Begin a project
-home-or-join = or join a project that is shared with you
-home-or-from-document = or make one from a document you have written
 
 ## A project in the list
 

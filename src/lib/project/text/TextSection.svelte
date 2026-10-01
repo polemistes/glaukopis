@@ -185,6 +185,7 @@
   class:drop-inside={drop === 'inside'}
   class:folded={!!hidden}
   data-section={node.id}
+  class:commented={commented.length > 0}
   data-folded={hidden ? '' : undefined}
   data-review={changedAsElement?.kind}
   data-change={changedAsElement?.change}
@@ -238,7 +239,7 @@
     {#if commented.length && !hidden}
       <button
         type="button"
-        class="commented"
+        class="comment-marker"
         aria-label={t('comments-mark', { count: commented.length })}
         use:tooltip={{ text: t('comments-mark', { count: commented.length }), side: 'left' }}
         tabindex="-1"
@@ -482,8 +483,14 @@
     position: relative;
     min-width: 0;
   }
+  /* An element with open comments: a line of the comments' colour at the left of its name. */
+  .section.commented > .content > .heading {
+    box-shadow: inset 3px 0 0 var(--gold);
+    padding-left: 10px;
+    margin-left: -13px;
+  }
   /* In the right margin, by the name of the element. */
-  .commented {
+  .comment-marker {
     position: absolute;
     top: var(--grip-top, 4px);
     right: -34px;
@@ -500,7 +507,7 @@
     font-size: var(--text-xs);
     cursor: pointer;
   }
-  .commented:hover {
+  .comment-marker:hover {
     background: var(--accent-soft);
   }
 

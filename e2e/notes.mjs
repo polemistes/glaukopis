@@ -170,7 +170,7 @@ try {
   await app.click('header button[aria-label="All projects"]');
   await app.waitFor('.card', 8000);
   await sleep(400);
-  await app.clickText('button', 'New project');
+  await app.clickText('button', 'Begin a project');
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Another book');
   await app.clickText('dialog footer button', 'Create');

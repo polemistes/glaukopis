@@ -1,5 +1,5 @@
 <script lang="ts">
-  import FolderOpen from '@lucide/svelte/icons/folder-open';
+  import House from '@lucide/svelte/icons/house';
   import Keyboard from '@lucide/svelte/icons/keyboard';
   import Images from '@lucide/svelte/icons/images';
   import LibraryBig from '@lucide/svelte/icons/library-big';
@@ -31,7 +31,7 @@
     aria-label={t('shell-projects')}
     use:tooltip={{ text: t('shell-projects'), shortcut: 'Ctrl+1', side: 'right' }}
   >
-    <FolderOpen size={19} strokeWidth={1.7} />
+    <House size={19} strokeWidth={1.7} />
   </a>
   <a
     href="#/library"

@@ -794,7 +794,7 @@
 
   // ---- the comments, as cards beside their elements ----
 
-  const CARD = { w: 180, gap: 26 };
+  const CARD = { w: 190, gap: 22, step: 66 };
   /** The open threads of the map, each by its element as it is placed. */
   const threads = $derived.by(() => {
     const out: {
@@ -807,18 +807,27 @@
       title: string | null;
       who: { id: string; name: string };
     }[] = [];
-    for (const thread of project.comments.values()) {
+    // The cards hang under their element, one below the other, as children
+    // of it that are not in the tree; each may be moved from there.
+    const under = new Map<string, number>();
+    const sorted = [...project.comments.values()].sort((a, b) =>
+      (a.notes[0]?.created ?? '').localeCompare(b.notes[0]?.created ?? ''),
+    );
+    for (const thread of sorted) {
       const p = lay.placed.get(thread.element);
       if (thread.resolved || !p) continue;
+      if (!commentsUi.cards && !commentsUi.shownOn.has(thread.element)) continue;
       const first = thread.notes[0];
       if (!first) continue;
       const card = thread.card ?? { x: 0, y: 0 };
+      const row = under.get(thread.element) ?? 0;
+      under.set(thread.element, row + 1);
       out.push({
         id: thread.id,
         element: thread.element,
-        x: p.x + p.w / 2 + CARD.gap + card.x,
-        y: p.y - p.h / 2 + card.y,
-        from: { x: p.x + p.w / 2, y: p.y },
+        x: p.x - p.w / 2 + CARD.gap + card.x,
+        y: p.y + p.h / 2 + CARD.gap + row * CARD.step + card.y,
+        from: { x: p.x, y: p.y + p.h / 2 },
         text: first.text.length > 110 ? `${first.text.slice(0, 110).trimEnd()}…` : first.text,
         title: thread.passage ? thread.passage.text.split(/\s+/).slice(0, 6).join(' ') : null,
         who: first.author,
@@ -917,11 +926,9 @@
       {#if pendingCurve}
         <path d={pendingCurve} class="curve pending" />
       {/if}
-      {#if commentsUi.cards}
-        {#each threads as th (th.id)}
-          <line x1={th.from.x} y1={th.from.y} x2={th.x} y2={th.y + 18} class="to-card" />
-        {/each}
-      {/if}
+      {#each threads as th (th.id)}
+        <line x1={th.from.x} y1={th.from.y} x2={th.x + 12} y2={th.y} class="to-card" />
+      {/each}
       {#if band}
         <rect
           class="band"
@@ -971,26 +978,24 @@
       {/if}
     {/each}
 
-    {#if commentsUi.cards}
-      {#each threads as th (th.id)}
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div
-          class="card"
-          style:transform="translate({Math.round(th.x)}px, {Math.round(th.y)}px)"
-          style:width="{CARD.w}px"
-          onpointerdown={(e) => cardPointerDown(e, th.id)}
-          ondblclick={(e) => e.stopPropagation()}
-        >
-          <div class="card-head">
-            <span class="card-who" style:background={colourOf(th.who.id || th.who.name)}
-              >{initials(th.who.name)}</span
-            >
-            <span class="card-name truncate">{th.title ?? th.who.name}</span>
-          </div>
-          <div class="card-text">{th.text}</div>
+    {#each threads as th (th.id)}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        class="card"
+        style:transform="translate({Math.round(th.x)}px, {Math.round(th.y)}px)"
+        style:width="{CARD.w}px"
+        onpointerdown={(e) => cardPointerDown(e, th.id)}
+        ondblclick={(e) => e.stopPropagation()}
+      >
+        <div class="card-head">
+          <span class="card-who" style:background={colourOf(th.who.id || th.who.name)}
+            >{initials(th.who.name)}</span
+          >
+          <span class="card-name truncate">{th.title ?? th.who.name}</span>
         </div>
-      {/each}
-    {/if}
+        <div class="card-text">{th.text}</div>
+      </div>
+    {/each}
 
     {#each lay.order as id (id)}
       {@const node = project.nodes.get(id)}

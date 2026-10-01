@@ -194,12 +194,13 @@
           type="button"
           class="mark comments"
           aria-label={t('comments-mark', { count: commented.length })}
-          use:tooltip={t('comments-mark', { count: commented.length })}
+          use:tooltip={t('comments-mark-hint', { count: commented.length })}
           tabindex="-1"
+          class:open={commentsUi.cards || commentsUi.shownOn.has(node.id)}
           onpointerdown={(e) => e.stopPropagation()}
           onclick={(e) => {
             e.stopPropagation();
-            commentsUi.show(commented[0].id);
+            commentsUi.toggleOn(node.id);
           }}><MessageSquare size={10} />{commented.length}</button
         >
       {/if}
@@ -462,7 +463,8 @@
     color: var(--gold);
     cursor: pointer;
   }
-  .mark.comments:hover {
+  .mark.comments:hover,
+  .mark.comments.open {
     background: var(--accent-soft);
   }
 

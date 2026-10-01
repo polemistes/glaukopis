@@ -10,8 +10,6 @@ home-new = Nytt prosjekt
 home-welcome = Velkommen til Glaukopis
 home-welcome-text = Et prosjekt rommer arbeidet med én bok eller artikkel: kartene over ideene dine, tekstene du skriver inn i dem, og referansene de bygger på.
 home-begin = Begynn på et prosjekt
-home-or-join = eller bli med i et prosjekt som er delt med deg
-home-or-from-document = eller lag et av et dokument du har skrevet
 
 ## Et prosjekt i listen
 

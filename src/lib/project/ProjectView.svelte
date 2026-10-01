@@ -71,7 +71,7 @@
     type StoredView,
     GIVEN,
   } from './layout';
-  import MapTabs from './MapTabs.svelte';
+  import MapMenu from './MapMenu.svelte';
   import type { Project } from './model/project.svelte';
   import PicturePanel from './PicturePanel.svelte';
   import ReferencePanel from './ReferencePanel.svelte';
@@ -608,6 +608,85 @@
 
       <span class="divider"></span>
 
+      <Segmented
+        value={pane.mode}
+        label={t('project-view')}
+        options={[
+          { value: 'diagram', label: t('project-diagram'), icon: Network },
+          { value: 'text', label: t('project-text'), icon: FileText },
+          ...(timed(pane.map) || pane.mode === 'timeline'
+            ? [{ value: 'timeline' as const, label: t('timeline-title'), icon: Clock }]
+            : []),
+        ]}
+        onchange={(mode) => (panes[focused] = { ...pane, mode })}
+      />
+      <button
+        type="button"
+        class="tool"
+        class:on={panes.length > 1}
+        aria-pressed={panes.length > 1}
+        aria-label={panes.length > 1 ? t('project-one-at-a-time') : t('project-side-by-side')}
+        use:tooltip={{
+          text: panes.length > 1 ? t('project-one-at-a-time') : t('project-side-by-side'),
+          side: 'bottom',
+        }}
+        onclick={sideBySide}
+      >
+        <Columns2 size={15} />
+        <span>{t('project-side-by-side-short')}</span>
+      </button>
+      <button
+        type="button"
+        class="tool"
+        class:on={showPreview}
+        aria-pressed={showPreview}
+        aria-label={t('project-preview')}
+        use:tooltip={{ text: t('project-preview'), shortcut: 'Ctrl+P', side: 'bottom' }}
+        onclick={() => (showPreview = !showPreview)}
+      >
+        <BookOpenText size={15} />
+        <span>{t('project-preview-short')}</span>
+      </button>
+      <span
+        class="share"
+        class:shared={shared?.shared}
+        data-status={shared?.connection?.tooLarge
+          ? 'refused'
+          : (shared?.connection?.status ?? 'none')}
+      >
+        <button
+          type="button"
+          class="tool"
+          class:on={showShare}
+          aria-label={!shared?.shared
+            ? t('project-share')
+            : shared.connection?.tooLarge
+              ? t('project-shared-too-large')
+              : shared.connection?.status === 'connected'
+                ? t('project-shared')
+                : t('project-shared-offline')}
+          use:tooltip={{
+            text: !shared?.shared
+              ? t('project-share')
+              : shared.connection?.tooLarge
+                ? t('project-shared-too-large')
+                : shared.connection?.status === 'connected'
+                  ? t('project-shared')
+                  : t('project-shared-offline'),
+            side: 'bottom',
+          }}
+          onclick={() => (showShare = true)}
+        >
+          <Users size={15} />
+          <span>{shared?.shared ? t('project-shared') : t('project-share')}</span>
+        </button>
+      </span>
+      {#if shared?.connection}
+        <Presence people={project.others} />
+      {/if}
+
+      <span class="divider"></span>
+
       <div
         class="tabs"
         use:dropTarget={{
@@ -615,7 +694,7 @@
           ondrop: (e) => documentsIn((e.payload.data as string[]).filter(mapOfIt)),
         }}
       >
-        <MapTabs
+        <MapMenu
           {project}
           current={pane.map}
           beside={panes.length > 1 ? panes[1 - focused]?.map : null}
@@ -650,29 +729,6 @@
       >
         <Redo2 size={16} />
       </IconButton>
-
-      <span class="divider"></span>
-
-      <Segmented
-        value={pane.mode}
-        label={t('project-view')}
-        options={[
-          { value: 'diagram', label: t('project-diagram'), icon: Network },
-          { value: 'text', label: t('project-text'), icon: FileText },
-          ...(timed(pane.map) || pane.mode === 'timeline'
-            ? [{ value: 'timeline' as const, label: t('timeline-title'), icon: Clock }]
-            : []),
-        ]}
-        onchange={(mode) => (panes[focused] = { ...pane, mode })}
-      />
-
-      <IconButton
-        label={panes.length > 1 ? t('project-one-at-a-time') : t('project-side-by-side')}
-        active={panes.length > 1}
-        onclick={sideBySide}
-      >
-        <Columns2 size={16} />
-      </IconButton>
       <IconButton
         label={t('project-side')}
         active={!!sideKind}
@@ -680,38 +736,6 @@
       >
         <PanelRight size={16} />
       </IconButton>
-      <IconButton
-        label={t('project-preview')}
-        shortcut="Ctrl+P"
-        active={showPreview}
-        onclick={() => (showPreview = !showPreview)}
-      >
-        <BookOpenText size={16} />
-      </IconButton>
-
-      {#if shared?.connection}
-        <Presence people={project.others} />
-      {/if}
-      <span
-        class="share"
-        class:shared={shared?.shared}
-        data-status={shared?.connection?.tooLarge
-          ? 'refused'
-          : (shared?.connection?.status ?? 'none')}
-      >
-        <IconButton
-          label={!shared?.shared
-            ? t('project-share')
-            : shared.connection?.tooLarge
-              ? t('project-shared-too-large')
-              : shared.connection?.status === 'connected'
-                ? t('project-shared')
-                : t('project-shared-offline')}
-          onclick={() => (showShare = true)}
-        >
-          <Users size={16} />
-        </IconButton>
-      </span>
     </header>
 
     <div
@@ -1005,6 +1029,30 @@
     margin-right: 6px;
     color: var(--danger);
     font-weight: 500;
+  }
+  .tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    height: 28px;
+    padding: 0 9px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--ink-2);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+  .tool:hover {
+    background: var(--paper-hover);
+    color: var(--ink);
+  }
+  .tool.on {
+    background: var(--accent-soft);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: var(--accent-strong);
   }
   .share {
     position: relative;

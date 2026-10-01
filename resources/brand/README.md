@@ -2,7 +2,9 @@
 
 `owl.png` is the mark of Glaukopis: the owl of Athena, drawn by Robert Emil
 Berge after a photograph of an Athenian tetradrachm of 454–404 BC (SNG
-Copenhagen 39):
+Copenhagen 39); `owl-icon.png` is the owl's head, drawn by him after the
+same, to be seen small: it is the icon of the application and the mark
+where the mark is small.
 
 > Classical Numismatic Group, Inc. http://www.cngcoins.com
 > <https://commons.wikimedia.org/wiki/File:SNGCop_039.jpg>

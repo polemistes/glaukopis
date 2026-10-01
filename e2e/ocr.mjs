@@ -112,8 +112,7 @@ try {
     const at = await middleOf('.project header .tabs');
     await drop([path], at.x, at.y);
   };
-  const tabs = () =>
-    app.exec(`return Array.from(document.querySelectorAll('.tabs .tab .name')).map((e) => e.textContent.trim())`);
+  const tabs = () => app.mapNames();
   const facts = () =>
     app.exec(
       `const out = {};
@@ -160,7 +159,7 @@ try {
   await sleep(300);
 
   // ---- a scanned PDF becomes a map, in a project ----
-  await app.clickText('button', 'New project');
+  await app.clickText('button', 'Begin a project');
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Homer');
   await app.clickText('dialog footer button', 'Create');
