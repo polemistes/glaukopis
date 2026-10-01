@@ -484,21 +484,24 @@ export class App {
     await sleep(300);
   }
 
+  /** Opens the menu of what can be done with the map in view, and with the maps. */
+  async openThisMap() {
+    await this.click('.maps .this-map');
+    await this.waitFor('.menu');
+    await sleep(150);
+  }
+
   /** Makes a new map, and leaves its name being typed. */
   async newMap() {
-    await this.openMaps();
+    await this.openThisMap();
     await this.clickText('.menu [role="menuitem"]', 'New map');
     await this.waitFor('.maps .naming');
     await sleep(150);
   }
 
-  /** Opens the menu of what can be done with the map in view, and chooses in it. */
+  /** Chooses in the menu of what can be done with the map in view. */
   async thisMap(item) {
-    await this.openMaps();
-    await this.exec(
-      `Array.from(document.querySelectorAll('.menu [role="menuitem"]')).find((m) => m.textContent.includes('This map')).click()`,
-    );
-    await sleep(200);
+    await this.openThisMap();
     await this.clickText('.menu [role="menuitem"]', item);
   }
 

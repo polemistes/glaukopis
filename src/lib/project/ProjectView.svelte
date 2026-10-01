@@ -14,7 +14,6 @@
   import X from '@lucide/svelte/icons/x';
   import { projectSaveView } from '$lib/api/projects';
   import { Folding } from './text/folding.svelte';
-  import { sharingRename } from '$lib/api/sharing';
   import Presence from '$lib/sharing/Presence.svelte';
   import SharePanel from '$lib/sharing/SharePanel.svelte';
   import { ProjectSharing } from '$lib/sharing/sharing.svelte';
@@ -38,6 +37,7 @@
   import { jumpFor } from '$lib/search/everything.svelte';
   import { takeCitations } from '$lib/library/citing.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { shortcuts } from '$lib/shell/keys.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -71,7 +71,9 @@
     type StoredView,
     GIVEN,
   } from './layout';
-  import MapMenu from './MapMenu.svelte';
+  import MapBar from './MapBar.svelte';
+  import WritingTools from '$lib/editor/WritingTools.svelte';
+  import ListTree from '@lucide/svelte/icons/list-tree';
   import type { Project } from './model/project.svelte';
   import PicturePanel from './PicturePanel.svelte';
   import ReferencePanel from './ReferencePanel.svelte';
@@ -109,7 +111,6 @@
   let work = $state<HTMLDivElement>();
   let previewEl = $state<HTMLDivElement>();
   let referencesEl = $state<HTMLDivElement>();
-  let renaming = $state<string | null>(null);
   let host = $state<ReturnType<typeof EditorHost>>();
   /** An element to show when a map is opened by a jump. */
   let reveal = $state<string | null>(null);
@@ -124,6 +125,8 @@
   let folding = $state.raw(new Folding());
   /** The texts of the maps in the panes, where a pane shows the text: to be searched. */
   let texts = $state<(ReturnType<typeof MapText> | undefined)[]>([]);
+  /** The elements of the panes, within which the writing tools find their editor. */
+  let paneEls = $state<(HTMLDivElement | undefined)[]>([]);
   /** The diagrams of the maps in the panes, where a pane shows the diagram. */
   let diagrams = $state<(ReturnType<typeof MapDiagram> | undefined)[]>([]);
 
@@ -263,7 +266,21 @@
     await p.close();
   }
 
+  // The window is named after the project while it is open.
+  $effect(() => {
+    const name = project?.name;
+    const title = name ? `Glaukopis – ${name}` : 'Glaukopis';
+    document.title = title;
+    void getCurrentWindow()
+      .setTitle(title)
+      .catch(() => {});
+  });
+
   onDestroy(() => {
+    document.title = 'Glaukopis';
+    void getCurrentWindow()
+      .setTitle('Glaukopis')
+      .catch(() => {});
     review?.close();
     comparing.copy = null;
     release?.();
@@ -475,18 +492,6 @@
     host?.keep(id);
   }
 
-  function commitName() {
-    if (renaming === null || !project) return;
-    const name = renaming.trim();
-    renaming = null;
-    if (name && name !== project.name) {
-      project.setName(name);
-      projects.rename(projectId, name).catch(() => {});
-      // Those who join later are told the name by the server.
-      if (shared?.sharing?.owner) sharingRename(projectId, name).catch(() => {});
-    }
-  }
-
   /** Maps are made of documents, one after another, and the last that was made is shown as text. */
   async function documentsIn(paths: (string | null)[]) {
     for (const path of paths) {
@@ -581,31 +586,6 @@
         <ArrowLeft size={16} />
       </IconButton>
 
-      {#if renaming !== null}
-        <input
-          class="name editing"
-          bind:value={renaming}
-          aria-label={t('project-name')}
-          size={Math.max(10, renaming.length + 1)}
-          onblur={commitName}
-          onkeydown={(e) => {
-            e.stopPropagation();
-            if (e.key === 'Enter') commitName();
-            else if (e.key === 'Escape') renaming = null;
-          }}
-          {@attach (el: HTMLInputElement) => el.select()}
-        />
-      {:else}
-        <button
-          type="button"
-          class="name serif truncate"
-          use:tooltip={t('project-rename')}
-          onclick={() => (renaming = project?.name ?? '')}
-        >
-          {project.name}
-        </button>
-      {/if}
-
       <span class="divider"></span>
 
       <Segmented
@@ -685,25 +665,6 @@
         <Presence people={project.others} />
       {/if}
 
-      <span class="divider"></span>
-
-      <div
-        class="tabs"
-        use:dropTarget={{
-          accepts: (p) => p.kind === 'files' && (p.data as string[]).some(mapOfIt),
-          ondrop: (e) => documentsIn((e.payload.data as string[]).filter(mapOfIt)),
-        }}
-      >
-        <MapMenu
-          {project}
-          current={pane.map}
-          beside={panes.length > 1 ? panes[1 - focused]?.map : null}
-          onselect={(id) => show(id)}
-          onbeside={beside}
-          ondocument={async () => documentsIn([await chooseDocument()])}
-        />
-      </div>
-
       <div class="status" aria-live="polite">
         {#if project.status === 'error'}
           <span class="failed" use:tooltip={project.saveError ?? ''}>
@@ -758,14 +719,44 @@
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
             class="pane"
+            bind:this={paneEls[i]}
             style:flex-grow={panes.length > 1 ? (i === 0 ? sizes.split : 1 - sizes.split) : 1}
             class:focused={panes.length > 1 && i === focused}
             onpointerdowncapture={() => (focused = i)}
             onfocusin={() => (focused = i)}
           >
-            {#if panes.length > 1}
-              <div class="pane-head">
-                <span class="pane-name truncate">{project.map(p.map)?.name}</span>
+            <div
+              class="pane-bar"
+              use:dropTarget={{
+                accepts: (d) => d.kind === 'files' && (d.data as string[]).some(mapOfIt),
+                ondrop: (e) => documentsIn((e.payload.data as string[]).filter(mapOfIt)),
+              }}
+            >
+              <MapBar
+                {project}
+                current={p.map}
+                beside={panes.length > 1 ? panes[1 - i]?.map : null}
+                onselect={(id) => show(id, { pane: i })}
+                onbeside={beside}
+                ondocument={async () => documentsIn([await chooseDocument()])}
+              />
+              {#if p.mode === 'text'}
+                <span class="bar-divider"></span>
+                <IconButton
+                  label={t('text-outline')}
+                  shortcut="Ctrl+Shift+O"
+                  size="sm"
+                  active={showOutline}
+                  onclick={() => (showOutline = !showOutline)}
+                >
+                  <ListTree size={15} />
+                </IconButton>
+                <div class="writing">
+                  <WritingTools scope={paneEls[i]} map={p.map} />
+                </div>
+              {/if}
+              <span class="spring"></span>
+              {#if panes.length > 1}
                 <Segmented
                   value={p.mode}
                   label={t('project-view-this')}
@@ -794,8 +785,8 @@
                 <IconButton label={t('project-close-side')} size="sm" onclick={() => closePane(i)}>
                   <X size={14} />
                 </IconButton>
-              </div>
-            {/if}
+              {/if}
+            </div>
             <div class="pane-body">
               {#key `${p.map}:${p.mode}`}
                 {#if looking && looking.pane === i}
@@ -828,7 +819,6 @@
                     reveal={i === focused ? reveal : null}
                     {folding}
                     outline={showOutline}
-                    ontoggleoutline={() => (showOutline = !showOutline)}
                   />
                 {/if}
               {/key}
@@ -984,39 +974,12 @@
     border-bottom: 1px solid var(--line);
     background: var(--paper);
   }
-  .name {
-    max-width: 260px;
-    flex: none;
-    padding: 3px 8px;
-    border: none;
-    border-radius: var(--radius-s);
-    background: transparent;
-    font-size: 15.5px;
-    font-weight: 600;
-    letter-spacing: -0.005em;
-    cursor: pointer;
-  }
-  .name:hover {
-    background: var(--paper-hover);
-  }
-  input.name {
-    font-family: var(--font-text);
-    background: var(--paper-raised);
-    outline: none;
-    box-shadow: 0 0 0 1.5px var(--accent);
-    cursor: text;
-  }
   .divider {
     width: 1px;
     height: 18px;
     margin: 0 6px;
     flex: none;
     background: var(--line);
-  }
-  .tabs {
-    flex: 1;
-    min-width: 0;
-    height: 100%;
   }
   .status {
     flex: none;
@@ -1098,27 +1061,36 @@
     min-width: 0;
     min-height: 0;
   }
-  .pane-head {
+  .pane-bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    height: 34px;
+    gap: 2px 4px;
+    min-height: 40px;
     flex: none;
-    padding: 0 6px 0 14px;
+    padding: 4px 8px 4px 10px;
     border-bottom: 1px solid var(--line);
-    background: var(--paper-sunken);
+    background: var(--paper);
   }
-  .pane.focused .pane-head {
+  .pane.focused .pane-bar {
     background: var(--accent-softer);
   }
-  .pane-name {
-    flex: 1;
-    font-weight: 550;
-    font-size: var(--text-sm);
-    color: var(--ink-2);
+  .pane-bar :global([data-drop-over]) {
+    box-shadow: inset 0 0 0 2px var(--accent);
   }
-  .pane.focused .pane-name {
-    color: var(--accent-strong);
+  .bar-divider {
+    width: 1px;
+    height: 18px;
+    margin: 0 4px;
+    flex: none;
+    background: var(--line);
+  }
+  .writing {
+    flex: 1;
+    min-width: 0;
+  }
+  .spring {
+    flex: 1;
   }
   .pane-body {
     flex: 1;

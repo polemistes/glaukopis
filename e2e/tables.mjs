@@ -111,7 +111,7 @@ try {
     else await sleep(200);
   };
   const insert = async (words) => {
-    await app.clickText('.text-view .tools button', 'Insert');
+    await app.clickText('.pane-bar .tools button', 'Insert');
     await app.waitFor('.menu');
     await app.clickText('.menu [role="menuitem"], .menu button', words);
   };
@@ -450,9 +450,9 @@ try {
   await app.press('End');
   check(
     'the tools for writing act in a cell',
-    await app.exists('.text-view .tools button[aria-label="Italic"]:not(:disabled)'),
+    await app.exists('.pane-bar .tools button[aria-label="Italic"]:not(:disabled)'),
   );
-  await app.clickText('.text-view .tools button', 'Note');
+  await app.clickText('.pane-bar .tools button', 'Note');
   await app.waitFor('.note-panel .prose');
   await sleep(150);
   await app.keys('Counted by hand.');

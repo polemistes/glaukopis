@@ -364,7 +364,7 @@ try {
   await app.click('.text-view .section .body .prose');
   await app.waitFor('.text-view .section .body .ProseMirror', 5000);
   await sleep(300);
-  await app.clickText('.text-view .tools button', 'Insert');
+  await app.clickText('.pane-bar .tools button', 'Insert');
   await app.waitFor('.menu');
   const insert = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((m) => m.textContent.trim().replace(/\\s+/g, ' ')).join('|')`);
   check('the tools have a picture from a file, and one from the store', /Picture from a file…/.test(insert) && /Picture from the store…/.test(insert), insert);

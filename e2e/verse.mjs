@@ -53,21 +53,21 @@ try {
   await app.keys('in the glens of Pelion.');
   await sleep(200);
   await app.keys(['Control', 'a']);
-  await app.click('.text-view .tools .style');
+  await app.click('.pane-bar .tools .style');
   await app.clickText('[role="menuitem"]', 'Verse');
   await sleep(300);
   const lines = await app.exec(
     `return Array.from(document.querySelectorAll('.text-view .verse .verse-line')).map((l) => l.textContent.trim())`,
   );
   check('the paragraphs are lines of one verse', lines.length === 6 && lines[0] === 'Nurse', lines.join(' | '));
-  await app.waitForText('.text-view .tools .style', 'Verse', 3000);
+  await app.waitForText('.pane-bar .tools .style', 'Verse', 3000);
 
   // --- The first line is the speaker; the third is indented ---
   await app.exec(
     `const l = document.querySelector('.text-view .verse .verse-line'); const s = getSelection(); s.selectAllChildren(l); s.collapseToStart();`,
   );
   await sleep(150);
-  await app.click('.text-view .tools .style');
+  await app.click('.pane-bar .tools .style');
   await app.clickText('[role="menuitem"]', 'Speaker');
   await sleep(250);
   check('a line can be the speaker', await app.exists('.text-view .verse .verse-line.speaker'));
@@ -81,7 +81,7 @@ try {
   check('Tab indents a line', indented === '1', String(indented));
 
   // --- The lines are numbered from 1, every 2 ---
-  await app.click('.text-view .tools button[aria-label="Line numbers"]');
+  await app.click('.pane-bar .tools button[aria-label="Line numbers"]');
   await app.waitForText('dialog[open] h2', 'Line numbers', 3000);
   await sleep(200);
   await app.exec(`const i = document.querySelectorAll('dialog[open] input')[0]; i.focus(); i.select();`);
@@ -113,7 +113,7 @@ try {
   );
 
   // --- Two texts side by side ---
-  await app.clickText('.text-view .tools button', 'Insert');
+  await app.clickText('.pane-bar .tools button', 'Insert');
   await app.waitFor('.menu');
   await app.clickText('.menu [role="menuitem"]', 'Two texts side by side');
   await sleep(300);
@@ -133,7 +133,7 @@ try {
   );
   await app.press('Enter');
   await sleep(150);
-  await app.click('.text-view .tools .style');
+  await app.click('.pane-bar .tools .style');
   await app.clickText('[role="menuitem"]', 'Scene heading');
   await sleep(200);
   await app.keys('Int. Palace – night');
@@ -153,7 +153,7 @@ try {
     script === 'scene:Int. Palace – night | action:Medea paces. | character:Nurse | dialogue:If only the Argo had never flown.',
     script,
   );
-  await app.waitForText('.text-view .tools .style', 'Dialogue', 3000);
+  await app.waitForText('.pane-bar .tools .style', 'Dialogue', 3000);
   await app.screenshot('verse-2b-script');
 
   // --- The preview sets them ---

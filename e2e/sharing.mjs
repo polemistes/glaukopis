@@ -153,7 +153,7 @@ try {
     return t.length === 3 ? t : null;
   });
   check('the one who joins is given the project', fetched.includes('The word mênis') && fetched.includes('Reception'), fetched.join(' | '));
-  const shownName = await guest.exec(`return document.querySelector('header .name').textContent.trim()`);
+  const shownName = await guest.exec(`return document.title.replace(/^Glaukopis – /, '')`);
   check('under its name', shownName === 'Wrath and the hero', shownName);
   await guest.screenshot('sharing-5-joined');
 

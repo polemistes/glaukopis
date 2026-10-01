@@ -122,9 +122,9 @@ words, or to remove it.
 
 ### The outline
 
-**Ctrl+Shift+O**, or the button at the left over the text, shows the outline
+**Ctrl+Shift+O**, or the button in the bar over the text, shows the outline
 of the map beside it: every element by its name, as deep as it stands, and
-the one at the top of the text marked. Press a name to go there; what it is
+the one at the top of the text marked; the line beside it can be dragged. Press a name to go there; what it is
 folded under is opened. In the outline the arrows go from name to name, and
 **Alt+Shift** with the arrows moves an element, as in the text.
 
@@ -702,11 +702,11 @@ A comment is a note on an element, or on a passage of its text: a question
 to yourself, a doubt, a word to someone you write with. It is never part of
 the text, and goes into no document.
 
-- **On a passage:** select the words and press **Ctrl+Alt+C**. The panel
-  opens with the passage quoted, and you write under it; Enter sends it.
-- **On an element:** **Comment…** in the element's menu, in the diagram or
-  from the grip beside a heading, or **Ctrl+Alt+C** with the cursor in its
-  text and nothing selected.
+- **On a passage:** select the words and press **Comment** in the bar over
+  the text, or **Ctrl+Alt+C**. The panel opens with the passage quoted, and
+  you write under it; Enter sends it.
+- **On an element:** **Comment** with nothing selected, or **Comment…** in
+  the element's menu, in the diagram or from the grip beside a heading.
 
 A commented passage is tinted in the text, the name of an element with open
 comments carries a line at its left, and a small mark in the right margin
@@ -731,12 +731,13 @@ in its history like everything else.
 
 ## Several maps
 
-A project can hold several maps. The name of the map in view stands in the
-bar over it, after **Diagram**, **Text**, **Side by side**, **Preview** and
-**Share**; press it, and the maps of the project pull down, with **New map**,
-**A map from a document…**, and under **This map** what can be done with
-the one in view: rename, duplicate, open beside, move earlier or later,
-delete.
+A project can hold several maps. The name of the map in view stands at the
+left of the bar over the map; press it, and the maps of the project pull
+down, to open one. The button beside it has what can be done with this map
+— rename, duplicate, the citations that were found, delete — and **New
+map** and **A map from a document…**. Over that bar, the bar of the project
+has **Diagram**, **Text**, **Side by side**, **Preview** and **Share**;
+side by side, each side has a bar of its own, with its map.
 
 This is what makes it safe to write. A map that is valuable as it is, the
 first sketch of the argument, or the plan for the whole book, need not be
@@ -753,14 +754,14 @@ consumed by the writing:
 - An element can have **another map take its place in the document**. The map
   of the book then has one element for each chapter, each of which stands for
   the map of that chapter. The preview of the book shows the book.
-- **Open beside**, under *This map*, opens the map beside the one in view:
-  two maps side by side, to move elements between them. **Side by side**, in
-  the bar over the map, shows the map as diagram and as text beside one
-  another. Click a side and then choose a map to show another there; each
-  side can be diagram, text or timeline.
+- **Side by side**, in the bar of the project, shows the map as diagram and
+  as text beside one another; choose another map in the bar of either side
+  to see two maps, and move elements between them. Each side can be diagram,
+  text or timeline.
 
 The line between the two sides can be dragged, as can those beside the
-preview and the references. A double click on a line puts it back.
+preview, the references and the outline. A double click on a line puts it
+back.
 
 ### A map from a document you have written
 

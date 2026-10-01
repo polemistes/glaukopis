@@ -221,7 +221,7 @@ try {
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
-  await app.openMaps();
+  await app.openThisMap();
   check(
     'among the maps, a map can be made from a document',
     await app.exec(
@@ -755,7 +755,7 @@ try {
   await app.waitFor('.text-view .section', 15000);
   await sleep(600);
   const named = await app.exec(
-    `return document.querySelector('.project header .name').textContent.trim()`,
+    `return document.title.replace(/^Glaukopis – /, '')`,
   );
   check('the project is named after the document', named === 'The wrath of Achilles', named);
   check(

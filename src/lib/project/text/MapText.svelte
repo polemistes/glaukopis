@@ -27,12 +27,11 @@
   import { remembered, TextSearch, type Surface } from '$lib/search/text.svelte';
   import { truncate } from '$lib/library/format';
   import { t } from '$lib/i18n';
+  import Divider from '$lib/ui/Divider.svelte';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import { pointRect } from '$lib/ui/floating';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
-  import ListTree from '@lucide/svelte/icons/list-tree';
-  import IconButton from '$lib/ui/IconButton.svelte';
   import Outline from './Outline.svelte';
   import {
     elementMenu,
@@ -47,7 +46,6 @@
   import type { Project } from '../model/project.svelte';
   import { isAncestor } from '../model/tree';
   import { pieces } from '../pieces';
-  import WritingTools from '$lib/editor/WritingTools.svelte';
   import type { Folding } from './folding.svelte';
   import TextSection, { type Part } from './TextSection.svelte';
   import { progressOf, progressWords } from '../status';
@@ -78,6 +76,10 @@
     outline = false,
     ontoggleoutline,
   }: Props = $props();
+
+  /** How wide the outline is, as it was last dragged. */
+  const OUTLINE_WIDTH = 240;
+  let outlineWidth = $state(OUTLINE_WIDTH);
 
   const KEPT_ACTIVE = 10;
 
@@ -1038,22 +1040,6 @@
 />
 
 <div class="text-view" bind:this={root} style:--margin="{marginWidth}px">
-  <div class="tools">
-    {#if ontoggleoutline}
-      <span class="outline-toggle">
-        <IconButton
-          label={t('text-outline')}
-          shortcut="Ctrl+Shift+O"
-          size="sm"
-          active={outline}
-          onclick={ontoggleoutline}
-        >
-          <ListTree size={15} />
-        </IconButton>
-      </span>
-    {/if}
-    <div class="inner"><WritingTools scope={root} map={mapId} /></div>
-  </div>
   {#if searching}
     <SearchBar bind:this={bar} search={searching} onclose={() => closeSearch(true)} />
   {/if}
@@ -1066,6 +1052,12 @@
         current={atTop}
         ongo={goFromOutline}
         onclose={() => ontoggleoutline?.()}
+        width={outlineWidth}
+      />
+      <Divider
+        label={t('text-outline-between')}
+        onmove={(dx) => (outlineWidth = Math.max(160, Math.min(520, outlineWidth + dx)))}
+        onreset={() => (outlineWidth = OUTLINE_WIDTH)}
       />
     {/if}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1215,24 +1207,6 @@
   }
   .beside-outline > .scroller {
     min-width: 0;
-  }
-  .outline-toggle {
-    position: absolute;
-    left: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-  /* The tools stand over the text, and begin where the text begins. */
-  .tools {
-    position: relative;
-    flex: none;
-    border-bottom: 1px solid var(--line);
-    background: var(--paper);
-  }
-  .tools .inner {
-    max-width: calc(780px + var(--margin));
-    margin: 0 auto;
-    padding: 5px 40px 5px calc(12px + var(--margin) + 35px);
   }
   /* The text is a region of its own: how large it is does not follow from
      what is written in it, and what is written changes nothing outside

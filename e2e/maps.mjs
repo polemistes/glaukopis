@@ -252,12 +252,12 @@ try {
     );
   await app.keys(' So *Iliad* 1 has it.');
   check('signs are left as they are typed', /\*Iliad\* 1 has it/.test(await written()), await written());
-  await app.click('.text-view .tools button[aria-label="Italic"]');
+  await app.click('.pane-bar .tools button[aria-label="Italic"]');
   await app.keys('kleos');
-  await app.click('.text-view .tools button[aria-label="Italic"]');
+  await app.click('.pane-bar .tools button[aria-label="Italic"]');
   await app.keys(' is what is at stake.');
   check('the tools set what is typed next', /<em>kleos<\/em> is what/.test(await written()), await written());
-  await app.clickText('.text-view .tools button', 'Cite');
+  await app.clickText('.pane-bar .tools button', 'Cite');
   await app.waitFor('.picker input', 3000);
   await app.keys('lord singer');
   await sleep(250);
@@ -269,7 +269,7 @@ try {
   await sleep(200);
   check('the tool for citing cites', /Lord 1960, 99/.test((await written()).replace(/<[^>]+>/g, '')), (await written()).replace(/<[^>]+>/g, ''));
   // The tool for notes opens a note that stays open to be written in.
-  await app.clickText('.text-view .tools button', 'Note');
+  await app.clickText('.pane-bar .tools button', 'Note');
   await app.waitFor('.note-panel .prose', 3000);
   await sleep(700);
   check('the tool for notes opens a note, which stays open', await app.exists('.note-panel .prose'));
@@ -316,14 +316,14 @@ try {
   await app.press('Escape');
   await app.waitGone('.note-panel');
 
-  await app.click('.text-view .tools .style');
+  await app.click('.pane-bar .tools .style');
   await app.clickText('[role="menuitem"]', 'Quotation');
   await sleep(200);
   check('the kind of paragraph is chosen from a list', /<blockquote>/.test(await written()));
-  await app.waitForText('.text-view .tools .style', 'Quotation', 3000);
+  await app.waitForText('.pane-bar .tools .style', 'Quotation', 3000);
   check('and shown', true);
   await app.screenshot('maps-11b-tools');
-  await app.click('.text-view .tools .style');
+  await app.click('.pane-bar .tools .style');
   await app.clickText('[role="menuitem"]', 'Text');
   await sleep(200);
   check('and changed back', !/<blockquote>/.test(await written()));
@@ -378,11 +378,11 @@ try {
   await sleep(300);
   check('a second map', (await app.mapNames()).length === 2, (await app.mapNames()).join(' | '));
   check('whose centre is named with it', (await titles(app)).includes('Article'), (await titles(app)).join(' | '));
-  // The other map opens beside the one in view, from the menu of the map in view.
+  // Side by side, from the bar; the other pane shows the map chosen in its own bar.
   await app.openMap('Wrath and the hero');
-  await app.thisMap('Open beside');
+  await app.click('header button[aria-label="Two side by side"]');
   await sleep(500);
-  check('two maps side by side, from the menu of the map', (await app.count('.pane')) === 2);
+  check('two maps side by side, from the bar', (await app.count('.pane')) === 2);
   await app.screenshot('maps-13-beside');
 
   // --- The room each has can be changed ---
@@ -413,7 +413,7 @@ try {
   await app.click('header button[aria-label="Two side by side"]');
   await sleep(500);
   const two = await app.exec(
-    `return Array.from(document.querySelectorAll('.pane')).map((p) => (p.querySelector('.diagram') ? 'diagram' : p.querySelector('.text-view') ? 'text' : '?') + ':' + p.querySelector('.pane-name').textContent.trim())`,
+    `return Array.from(document.querySelectorAll('.pane')).map((p) => (p.querySelector('.diagram') ? 'diagram' : p.querySelector('.text-view') ? 'text' : '?') + ':' + p.querySelector('.maps .map .name').textContent.trim())`,
   );
   check('two side by side: the map as diagram and as text', new Set(two.map((t) => t.split(':')[1])).size === 1 && two.map((t) => t.split(':')[0]).sort().join() === 'diagram,text', two.join(' | '));
   await app.screenshot('maps-13c-diagram-and-text');

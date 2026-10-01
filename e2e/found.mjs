@@ -587,7 +587,7 @@ try {
   await app.clickText('dialog footer button', 'Make the project');
   await app.waitFor(W, 20000);
   await sleep(900);
-  const named = await app.exec(`return document.querySelector('.project header .name').textContent.trim()`);
+  const named = await app.exec(`return document.title.replace(/^Glaukopis – /, '')`);
   list = await rows();
   text = await inText();
   check(

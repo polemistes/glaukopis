@@ -109,7 +109,7 @@ try {
     );
   /** Drops a file on the tabs of the maps, where it becomes a map of its own. */
   const dropOnTabs = async (path) => {
-    const at = await middleOf('.project header .tabs');
+    const at = await middleOf('.pane-bar .maps');
     await drop([path], at.x, at.y);
   };
   const tabs = () => app.mapNames();

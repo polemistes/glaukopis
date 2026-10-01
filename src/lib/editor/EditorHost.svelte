@@ -3,7 +3,6 @@
   import type { Project } from '$lib/project/model/project.svelte';
   import TargetPicker from '$lib/figures/TargetPicker.svelte';
   import CitationEditor from './CitationEditor.svelte';
-  import FormatBar from './FormatBar.svelte';
   import ReferencePicker from './ReferencePicker.svelte';
   import { recordOf, setProject } from './references.svelte';
   import { editorUi } from './ui.svelte';
@@ -29,8 +28,6 @@
     }
   }
 </script>
-
-<FormatBar />
 
 {#if editorUi.picking}
   {#key editorUi.picking}

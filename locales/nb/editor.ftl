@@ -48,6 +48,9 @@ editor-parenthetical = Parentes
 editor-parenthetical-hint = Hvordan det sies, i parentes
 editor-transition = Overgang
 editor-transition-hint = KLIPP TIL:, til høyre
+editor-comment = Kommentar
+editor-comment-hint = En kommentar til det som er merket
+editor-comment-element-hint = En kommentar til dette elementet; merk ord for å kommentere dem
 editor-parallel = To tekster side om side
 editor-parallel-hint = En original og dens oversettelse, hver sin tekst
 editor-paragraph-kind = Slags avsnitt
@@ -78,20 +81,14 @@ editor-formula = Formel
 editor-formula-hint = Matematikk i linjen
 editor-pointer = Kryssreferanse …
 editor-pointer-hint = Til figur, tabell, ligning eller del: «se figur 2»
-editor-dropped = Bilder og tabeller kan også slippes eller limes inn
 # Det et bilde som ble limt inn uten eget navn, heter i bildelageret.
 editor-pasted-picture = bilde
 
 ## Mer.
 
-editor-more = Mer
-editor-more-hint = Mer, og det som kan skrives
 editor-found = Funne kildehenvisninger …
 editor-found-count = { $count } å gå gjennom og gjøre til kildehenvisninger
 editor-found-none = Og tekst som ser ut som kildehenvisninger, i dette kartet
-editor-while-typing = Mens du skriver
-editor-typing-line-hint = I starten av en linje: sitat, liste, nummerert liste
-editor-typing-dashes-hint = Blir –, — og …
 
 ## Å velge et verk å henvise til.
 

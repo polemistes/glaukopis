@@ -137,7 +137,7 @@ try {
   await until('the words that point', async () => (await pointers()).length === 1);
   check('the words say what the document calls the figure', (await pointers()).join('|') === 'Figure 1', (await pointers()).join('|'));
   await app.keys(', and by ');
-  await app.clickText('.text-view .tools button', 'Insert');
+  await app.clickText('.pane-bar .tools button', 'Insert');
   await app.waitFor('.menu');
   await app.clickText('.menu [role="menuitem"], .menu button', 'Cross-reference');
   await app.waitFor('.targets input', 3000);

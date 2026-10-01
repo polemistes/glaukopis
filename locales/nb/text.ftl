@@ -43,6 +43,7 @@ text-folded = { $text ->
 
 text-associations = Assosiasjoner
 text-outline = Disposisjon
+text-outline-between = Mellom disposisjonen og teksten
 text-go-to = Gå til «{ $name }»
 text-add-label = Legg til en merkelapp …
 text-change-label = Endre merkelappen …

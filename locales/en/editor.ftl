@@ -48,6 +48,9 @@ editor-parenthetical = Parenthetical
 editor-parenthetical-hint = How it is said, in parentheses
 editor-transition = Transition
 editor-transition-hint = CUT TO:, at the right
+editor-comment = Comment
+editor-comment-hint = A comment on what is selected
+editor-comment-element-hint = A comment on this element; select words to comment on them
 editor-parallel = Two texts side by side
 editor-parallel-hint = An original and its translation, each a text of its own
 editor-paragraph-kind = Kind of paragraph
@@ -78,20 +81,14 @@ editor-formula = Formula
 editor-formula-hint = Mathematics in the line
 editor-pointer = Cross-reference…
 editor-pointer-hint = To a figure, a table, an equation or a part: “see figure 2”
-editor-dropped = A picture or a table can also be dropped on the text, or pasted
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = picture
 
 ## More.
 
-editor-more = More
-editor-more-hint = More, and what can be typed
 editor-found = Citations that were found…
 editor-found-count = { $count } to go through, and make citations of
 editor-found-none = And text that looks like citations, in this map
-editor-while-typing = While typing
-editor-typing-line-hint = At the start of a line: quotation, list, numbered list
-editor-typing-dashes-hint = Become –, — and …
 
 ## Choosing a work to cite.
 

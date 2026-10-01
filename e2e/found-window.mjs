@@ -229,32 +229,17 @@ try {
   await app.screenshot('found-1-text');
 
   // ---- where the window is reached from ----
-  await app.openMaps();
-  await app.exec(
-    `Array.from(document.querySelectorAll('.menu [role="menuitem"]')).find((m) => m.textContent.includes('This map')).click()`,
-  );
-  await sleep(200);
+  await app.openThisMap();
   const ofTab = await menu();
   check(
     'the menu of the tab of the map has it, with how many there are',
     ofTab.some((m) => /^Citations that were found…\s*7 to go through/.test(m)),
     ofTab.join(' ‖ '),
   );
-  // Escape closes the submenu first, and the menu of maps after it.
-  await app.press('Escape');
-  await sleep(150);
   await app.press('Escape');
   await app.waitGone('.menu');
 
-  await app.click('.text-view .tools button[aria-label="More"]');
-  await app.waitFor('.menu');
-  const ofTools = await menu();
-  check(
-    'the menu More of the tools over the text has it, also where no text has the cursor',
-    ofTools.some((m) => /^Citations that were found…\s*7 to go through/.test(m)),
-    ofTools.join(' ‖ '),
-  );
-  await app.clickText('.menu [role="menuitem"], .menu .item', 'Citations that were found…');
+  await app.thisMap('Citations that were found…');
   await app.waitFor('dialog .found-window .row', 8000);
   await sleep(500);
 

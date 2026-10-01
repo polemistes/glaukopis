@@ -8,7 +8,9 @@
    */
   import Bold from '@lucide/svelte/icons/bold';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
-  import Ellipsis from '@lucide/svelte/icons/ellipsis';
+  import MessageSquare from '@lucide/svelte/icons/message-square';
+  import { selectedPassage } from '$lib/comments/marks';
+  import { commentsUi } from '$lib/comments/ui.svelte';
   import ImagePlus from '@lucide/svelte/icons/image-plus';
   import Images from '@lucide/svelte/icons/images';
   import Italic from '@lucide/svelte/icons/italic';
@@ -34,11 +36,8 @@
   import Hash from '@lucide/svelte/icons/hash';
   import LineNumbersDialog from './LineNumbersDialog.svelte';
   import { insertParallel, numberLines, verseAt } from './verse';
-  import TextSearch from '@lucide/svelte/icons/text-search';
   import type { Command } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
-  import { goThrough } from '$lib/found/found.svelte';
-  import { countFound } from '$lib/found/gather';
   import { t } from '$lib/i18n';
   import { showPictures } from '$lib/pictures/store.svelte';
   import { askForTable, chooseTable } from '$lib/tables/ask';
@@ -53,7 +52,6 @@
     toggle,
     type ParagraphStyle,
   } from './commands';
-  import { currentProject } from './references.svelte';
   import { editorUi } from './ui.svelte';
   import { hooksOf } from './ui.svelte';
 
@@ -165,6 +163,19 @@
   ]);
   const inVerse = $derived(style === 'verse' || style === 'speaker' || style === 'direction');
 
+  /** The element whose text an editor holds. */
+  function elementOf(view: EditorView | undefined): string | undefined {
+    return view ? hooksOf.get(view)?.element : undefined;
+  }
+
+  /** A comment on what is selected, or on the element where nothing is. */
+  function comment() {
+    const view = s?.view;
+    const element = elementOf(view);
+    if (!view || !element) return;
+    commentsUi.begin(element, selectedPassage(view));
+  }
+
   /** How the lines of the verse the cursor is in are numbered, asked for in a dialog. */
   let numbering = $state<{ view: EditorView; start: number | null; by: number } | null>(null);
   function lineNumbers() {
@@ -271,16 +282,6 @@
               },
             ]
           : []),
-        ...(body
-          ? [
-              { kind: 'separator' as const },
-              {
-                label: t('editor-dropped'),
-                disabled: true,
-                action: () => {},
-              },
-            ]
-          : []),
       ],
       { align: 'start' },
     );
@@ -304,75 +305,6 @@
         })),
       ]),
       { align: 'start' },
-    );
-  }
-
-  function more(event: MouseEvent) {
-    const view = s?.view;
-    const marks = s?.marks ?? {};
-    const project = currentProject();
-    const of = map && project?.map(map) ? map : null;
-    if (!view && !of) return;
-    const found = of && project ? countFound(project, of) : 0;
-    openMenu(
-      event.currentTarget as HTMLElement,
-      [
-        ...(view
-          ? [
-              {
-                label: t('editor-superscript'),
-                icon: Superscript,
-                shortcut: 'Ctrl+.',
-                checked: marks.sup,
-                action: () => run(toggle('sup'), view),
-              },
-              {
-                label: t('editor-subscript'),
-                icon: Subscript,
-                shortcut: 'Ctrl+,',
-                checked: marks.sub,
-                action: () => run(toggle('sub'), view),
-              },
-            ]
-          : []),
-        ...(view && s?.kind !== 'title'
-          ? [
-              {
-                label: t('editor-struck'),
-                icon: Strikethrough,
-                shortcut: 'Ctrl+Shift+X',
-                checked: marks.strike,
-                action: () => run(toggle('strike'), view),
-              },
-            ]
-          : []),
-        ...(of
-          ? [
-              { kind: 'separator' as const },
-              {
-                label: t('editor-found'),
-                hint: found ? t('editor-found-count', { count: found }) : t('editor-found-none'),
-                icon: TextSearch,
-                action: () => goThrough(of),
-              },
-            ]
-          : []),
-        { kind: 'separator' as const },
-        { kind: 'heading' as const, label: t('editor-while-typing') },
-        {
-          label: '>  -  1.',
-          hint: t('editor-typing-line-hint'),
-          disabled: true,
-          action: () => {},
-        },
-        {
-          label: '--  ---  ...',
-          hint: t('editor-typing-dashes-hint'),
-          disabled: true,
-          action: () => {},
-        },
-      ],
-      { align: 'end' },
     );
   }
 </script>
@@ -443,6 +375,36 @@
   >
     <span>Sc</span>
   </button>
+  <button
+    type="button"
+    class:on={s?.marks.sup}
+    disabled={!s}
+    aria-label={t('editor-superscript')}
+    use:tooltip={{ text: t('editor-superscript'), shortcut: 'Ctrl+.', side: 'bottom' }}
+    onclick={() => run(toggle('sup'))}
+  >
+    <Superscript size={15} />
+  </button>
+  <button
+    type="button"
+    class:on={s?.marks.sub}
+    disabled={!s}
+    aria-label={t('editor-subscript')}
+    use:tooltip={{ text: t('editor-subscript'), shortcut: 'Ctrl+,', side: 'bottom' }}
+    onclick={() => run(toggle('sub'))}
+  >
+    <Subscript size={15} />
+  </button>
+  <button
+    type="button"
+    class:on={s?.marks.strike}
+    disabled={!s || s.kind === 'title'}
+    aria-label={t('editor-struck')}
+    use:tooltip={{ text: t('editor-struck'), shortcut: 'Ctrl+Shift+X', side: 'bottom' }}
+    onclick={() => run(toggle('strike'))}
+  >
+    <Strikethrough size={15} />
+  </button>
 
   <span class="rule"></span>
 
@@ -470,6 +432,20 @@
     <StickyNote size={13} />
     {t('editor-note')}
   </button>
+  <button
+    type="button"
+    class="word"
+    disabled={!body || !elementOf(s?.view)}
+    use:tooltip={{
+      text: s?.empty ? t('editor-comment-element-hint') : t('editor-comment-hint'),
+      shortcut: 'Ctrl+Alt+C',
+      side: 'bottom',
+    }}
+    onclick={comment}
+  >
+    <MessageSquare size={13} />
+    {t('editor-comment')}
+  </button>
 
   <button
     type="button"
@@ -480,18 +456,6 @@
   >
     <Plus size={13} />
     {t('editor-insert')}
-  </button>
-
-  <span class="spring"></span>
-
-  <button
-    type="button"
-    disabled={!s && !map}
-    aria-label={t('editor-more')}
-    use:tooltip={{ text: t('editor-more-hint'), side: 'bottom' }}
-    onclick={more}
-  >
-    <Ellipsis size={15} />
   </button>
 </div>
 
@@ -507,6 +471,7 @@
 <style>
   .tools {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 2px;
     min-width: 0;
@@ -573,8 +538,5 @@
     height: 16px;
     margin: 0 5px;
     background: var(--line);
-  }
-  .spring {
-    flex: 1;
   }
 </style>

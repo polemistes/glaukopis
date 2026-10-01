@@ -18,6 +18,7 @@
   import { projectTrash, type ProjectInfo, type Trashed } from '$lib/api/projects';
   import HistoryDialog from './HistoryDialog.svelte';
   import TrashDialog from './TrashDialog.svelte';
+  import { sharingRename } from '$lib/api/sharing';
   import { t } from '$lib/i18n';
   import { projects } from '$lib/state/projects.svelte';
   import { router } from '$lib/state/router.svelte';
@@ -93,6 +94,8 @@
         open(made);
       } else if (naming.purpose === 'rename' && naming.project) {
         await projects.rename(naming.project.id, name);
+        // Those who share it are told the name by the server; the server itself takes no harm from failing.
+        if (naming.project.sharing?.owner) sharingRename(naming.project.id, name).catch(() => {});
         naming = null;
       } else if (naming.purpose === 'copy' && naming.project) {
         await projects.duplicate(naming.project.id, name);

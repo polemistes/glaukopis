@@ -30,9 +30,11 @@
     current: string | null;
     ongo: (id: string) => void;
     onclose: () => void;
+    /** How wide it stands, in pixels. */
+    width?: number;
   }
 
-  let { project, mapId, items, current, ongo, onclose }: Props = $props();
+  let { project, mapId, items, current, ongo, onclose, width = 240 }: Props = $props();
 
   let list = $state<HTMLOListElement>();
 
@@ -85,7 +87,7 @@
   }
 </script>
 
-<aside class="outline" aria-label={t('text-outline')}>
+<aside class="outline" aria-label={t('text-outline')} style:--outline-width="{width}px">
   <header>
     <h2>{t('text-outline')}</h2>
     <IconButton label={t('common-close')} shortcut="Ctrl+Shift+O" size="sm" onclick={onclose}>
@@ -129,7 +131,7 @@
   .outline {
     display: flex;
     flex-direction: column;
-    width: 240px;
+    width: var(--outline-width, 240px);
     flex: none;
     min-height: 0;
     border-right: 1px solid var(--line);
