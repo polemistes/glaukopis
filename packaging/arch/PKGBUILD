@@ -60,6 +60,7 @@ package_glaukopis() {
     'texlive-latexextra: for PDF set by LaTeX'
     'texlive-fontsrecommended: for PDF set by LaTeX'
     'librsvg: for drawings (SVG) in PDF set by LaTeX and in DOCX'
+    'ttf-dejavu: for code set in letters of equal width in the preview and in PDF'
     'libreoffice-fresh: to open what is exported as ODT or DOCX'
     'tesseract-data-nor: to read Norwegian in scans and pictures'
     'tesseract-data-dan: to read Danish in scans and pictures'
