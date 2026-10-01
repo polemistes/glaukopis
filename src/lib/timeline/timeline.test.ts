@@ -307,6 +307,20 @@ describe('where elements stand in time', () => {
     p.setWhen(sparta, { start: { at: '431 BC' }, end: { at: '404 BC' } });
     const lanes = timelineOf(p, map, () => null).lanes.map((l) => l.name);
     expect(lanes).toEqual(['Athens', 'Sparta']);
+    // With what waits wanted: the lanes stay, the one of the sources among them, and what waits is in each with its path.
+    const shown = timelineOf(p, map, () => null, true);
+    expect(shown.lanes.map((l) => `${l.name}${l.empty ? '*' : ''}`)).toEqual([
+      'Athens',
+      'Sparta',
+      'Sources*',
+    ]);
+    const athens2 = shown.lanes[0];
+    expect(athens2.waiting.map((w) => [w.name, w.path.join('/')])).toEqual([['Athens', '']]);
+    const sourcesLane = shown.lanes[2];
+    expect(sourcesLane.waiting.map((w) => w.name)).toEqual(['Sources', 'Thucydides']);
+    const herodotus = p.addChild(p.node(sourcesLane.waiting[1].id)!.id, { title: 'Histories' })!;
+    const again = timelineOf(p, map, () => null, true).lanes[2];
+    expect(again.waiting.find((w) => w.id === herodotus)!.path).toEqual(['Thucydides']);
   });
 
   it('says a placement in words', () => {

@@ -213,7 +213,7 @@ async function measure() {
     // With GLAUKOPIS_E2E_OUTLINE, the outline stands beside the text while it is measured.
     if (process.env.GLAUKOPIS_E2E_OUTLINE) {
       await app.keys(['Control', 'Shift', 'o']);
-      await app.waitFor('.text-view .outline', 5000);
+      await app.waitFor('.outline', 5000);
       const items = await app.count('.outline [data-outline]');
       console.log(`      the outline is open beside the text: ${items} elements`);
       await sleep(1500);

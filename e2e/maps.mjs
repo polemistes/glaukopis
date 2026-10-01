@@ -338,7 +338,7 @@ try {
 
   // --- The outline beside the text ---
   await app.keys(['Control', 'Shift', 'o']);
-  await app.waitFor('.text-view .outline', 3000);
+  await app.waitFor('.outline', 3000);
   const outlined = await app.exec(`return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`);
   check('Ctrl+Shift+O shows the outline, every element by its name', outlined.includes('The prize of Briseis') && outlined.includes('Reception'), outlined.join(' | '));
   await app.click(await app.findByText('.outline [data-outline]', 'Reception'));
@@ -362,7 +362,7 @@ try {
   const back = await app.exec(`return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`);
   check('and undo puts it back', back.join('|') === outlined.join('|'), back.join(' | '));
   await app.keys(['Control', 'Shift', 'o']);
-  await app.waitGone('.text-view .outline', 3000);
+  await app.waitGone('.outline', 3000);
 
   // --- Back in the diagram, the new element is there ---
   await app.keys(['Control', 'd']);

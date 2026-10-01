@@ -57,6 +57,8 @@
   import KindDialog from './KindDialog.svelte';
   import PassageKindDialog from './PassageKindDialog.svelte';
   import TimelineView from '$lib/timeline/TimelineView.svelte';
+  import Outline from './text/Outline.svelte';
+  import { outlineItems } from './outline';
   import WhenDialog from '$lib/timeline/WhenDialog.svelte';
   import { whenUi } from '$lib/timeline/when.svelte';
   import Clock from '@lucide/svelte/icons/clock';
@@ -131,6 +133,11 @@
   let folding = $state.raw(new Folding());
   /** The texts of the maps in the panes, where a pane shows the text: to be searched. */
   let texts = $state<(ReturnType<typeof MapText> | undefined)[]>([]);
+  /** The element at the top of the text of each pane, for the outline. */
+  let tops = $state<(string | null)[]>([]);
+  const OUTLINE_WIDTH = 240;
+  /** How wide the outline stands, as it was last dragged. */
+  let outlineWidth = $state(OUTLINE_WIDTH);
   /** The elements of the panes, within which the writing tools find their editor. */
   let paneEls = $state<(HTMLDivElement | undefined)[]>([]);
   /** The diagrams of the maps in the panes, where a pane shows the diagram. */
@@ -569,10 +576,7 @@
       'side-by-side': sideBySide,
       share: () => (showShare = true),
       'text-outline': {
-        run: () => {
-          if (pane && pane.mode !== 'text') panes[focused] = { ...pane, mode: 'text' };
-          showOutline = pane?.mode === 'text' ? !showOutline : true;
-        },
+        run: () => (showOutline = !showOutline),
         when: () => !!pane,
       },
       find: { run: () => findInText(false), when: () => !!pane },
@@ -763,6 +767,15 @@
                 ondrop: (e) => documentsIn((e.payload.data as string[]).filter(mapOfIt)),
               }}
             >
+              <IconButton
+                label={t('text-outline')}
+                shortcut="Ctrl+Shift+O"
+                size="sm"
+                active={showOutline}
+                onclick={() => (showOutline = !showOutline)}
+              >
+                <ListTree size={15} />
+              </IconButton>
               <MapBar
                 {project}
                 current={p.map}
@@ -773,15 +786,6 @@
               />
               {#if p.mode === 'text'}
                 <span class="bar-divider"></span>
-                <IconButton
-                  label={t('text-outline')}
-                  shortcut="Ctrl+Shift+O"
-                  size="sm"
-                  active={showOutline}
-                  onclick={() => (showOutline = !showOutline)}
-                >
-                  <ListTree size={15} />
-                </IconButton>
                 <div class="writing">
                   <WritingTools {project} scope={paneEls[i]} map={p.map} />
                 </div>
@@ -819,40 +823,62 @@
               {/if}
             </div>
             <div class="pane-body">
-              {#key `${p.map}:${p.mode}`}
-                {#if looking && looking.pane === i}
-                  <PastView {project} map={p.map} {looking} onback={() => (looking = null)} />
-                {:else if p.mode === 'timeline'}
-                  <TimelineView
-                    {project}
-                    mapId={p.map}
-                    ongo={(element) => show(p.map, { element, pane: i, mode: 'text' })}
-                    reveal={i === focused ? reveal : null}
-                  />
-                {:else if p.mode === 'diagram'}
-                  <MapDiagram
-                    bind:this={diagrams[i]}
-                    {project}
-                    mapId={p.map}
-                    camera={cameras[p.map] ?? null}
-                    oncamera={(c) => (cameras[p.map] = c)}
-                    onkeep={keep}
-                    onopenmap={(id) => show(id, { pane: i })}
-                    reveal={i === focused ? reveal : null}
-                  />
-                {:else}
-                  <MapText
-                    bind:this={texts[i]}
-                    {project}
-                    mapId={p.map}
-                    onkeep={keep}
-                    onopenmap={(id) => show(id, { pane: i })}
-                    reveal={i === focused ? reveal : null}
-                    {folding}
-                    outline={showOutline}
-                  />
-                {/if}
-              {/key}
+              {#if showOutline}
+                <Outline
+                  {project}
+                  mapId={p.map}
+                  items={outlineItems(project, p.map, folding)}
+                  current={p.mode === 'text' ? (tops[i] ?? null) : null}
+                  ongo={(id) =>
+                    p.mode === 'text' && texts[i]
+                      ? texts[i].goTo(id)
+                      : show(p.map, { element: id, pane: i })}
+                  onclose={() => (showOutline = false)}
+                  width={outlineWidth}
+                />
+                <Divider
+                  label={t('text-outline-between')}
+                  onmove={(dx) => (outlineWidth = Math.max(160, Math.min(520, outlineWidth + dx)))}
+                  onreset={() => (outlineWidth = OUTLINE_WIDTH)}
+                />
+              {/if}
+              <div class="view">
+                {#key `${p.map}:${p.mode}`}
+                  {#if looking && looking.pane === i}
+                    <PastView {project} map={p.map} {looking} onback={() => (looking = null)} />
+                  {:else if p.mode === 'timeline'}
+                    <TimelineView
+                      {project}
+                      mapId={p.map}
+                      ongo={(element) => show(p.map, { element, pane: i, mode: 'text' })}
+                      reveal={i === focused ? reveal : null}
+                    />
+                  {:else if p.mode === 'diagram'}
+                    <MapDiagram
+                      bind:this={diagrams[i]}
+                      {project}
+                      mapId={p.map}
+                      camera={cameras[p.map] ?? null}
+                      oncamera={(c) => (cameras[p.map] = c)}
+                      onkeep={keep}
+                      onopenmap={(id) => show(id, { pane: i })}
+                      reveal={i === focused ? reveal : null}
+                    />
+                  {:else}
+                    <MapText
+                      bind:this={texts[i]}
+                      {project}
+                      mapId={p.map}
+                      onkeep={keep}
+                      onopenmap={(id) => show(id, { pane: i })}
+                      reveal={i === focused ? reveal : null}
+                      {folding}
+                      outline={showOutline}
+                      ontop={(id) => (tops[i] = id)}
+                    />
+                  {/if}
+                {/key}
+              </div>
             </div>
           </div>
         {/each}
@@ -1158,7 +1184,14 @@
     flex: 1;
   }
   .pane-body {
+    display: flex;
     flex: 1;
+    min-height: 0;
+  }
+  /* The view beside the outline, where that is shown. */
+  .pane-body > .view {
+    flex: 1;
+    min-width: 0;
     min-height: 0;
     position: relative;
   }

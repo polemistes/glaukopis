@@ -182,22 +182,25 @@ try {
   );
   await app.screenshot('timeline-1b-moved');
 
-  // --- Elements without a time are shown, and one is dragged onto the timeline ---
+  // --- Elements without a time stand in their lanes, and one is dragged along its lane ---
   await app.click('.timeline button[aria-label="Elements without a time"]');
-  await app.waitFor('.timeline .without button', 3000);
+  await app.waitFor('.timeline .waiting', 3000);
   const listed = await app.exec(
-    `return Array.from(document.querySelectorAll('.timeline .without button')).map((b) => b.textContent.trim())`,
+    `return Array.from(document.querySelectorAll('.timeline .waiting')).map((b) => b.textContent.trim())`,
+  );
+  const lanesWaiting = await app.exec(
+    `return Array.from(document.querySelectorAll('.timeline .lane-name')).map((l) => l.textContent.trim())`,
   );
   check(
-    'the elements without a time are listed',
-    listed.includes('Thucydides') && listed.includes('Sources'),
-    listed.join('|'),
+    'the elements without a time stand in their lanes, the lane of the sources among them',
+    listed.includes('Thucydides') && lanesWaiting.includes('Sources'),
+    `${lanesWaiting.join('|')} :: ${listed.join('|')}`,
   );
-  const thucydides = await app.findByText('.timeline .without button', 'Thucydides');
+  const thucydides = await app.findByText('.timeline .waiting', 'Thucydides');
   const target = await app.exec(
-    `const l = document.querySelector('.timeline .lanes'); const r = l.getBoundingClientRect();
-     const b = Array.from(document.querySelectorAll('.timeline .without button')).find((x) => x.textContent.trim() === 'Thucydides').getBoundingClientRect();
-     return { dx: Math.round(r.left + 700 - (b.left + b.width / 2)), dy: Math.round(r.top + 40 - (b.top + b.height / 2)) }`,
+    `const b = Array.from(document.querySelectorAll('.timeline .waiting')).find((x) => x.textContent.trim() === 'Thucydides').getBoundingClientRect();
+     const l = document.querySelector('.timeline .lanes').getBoundingClientRect();
+     return { dx: Math.round(l.left + 700 - (b.left + b.width / 2)), dy: 0 }`,
   );
   await app.drag(thucydides, target);
   await sleep(500);
@@ -205,14 +208,14 @@ try {
     `return Array.from(document.querySelectorAll('.timeline .lane-name')).map((l) => l.textContent.trim())`,
   );
   check(
-    'an element dragged onto the timeline is placed, and its branch becomes a lane',
+    'an element dragged along its lane is placed there',
     lanesNow.includes('Sources') && (await leftOf('Thucydides')) !== null,
     lanesNow.join('|'),
   );
   await app.screenshot('timeline-1c-placed');
 
   // --- Pressed rather than dragged, an element without a time says when it is in words ---
-  await app.click(await app.findByText('.timeline .without button', 'Sources'));
+  await app.click(await app.findByText('.timeline .waiting', 'Sources'));
   await app.waitForText('dialog[open] h2', 'When it is', 3000);
   check('pressing an element without a time opens When it is', await app.exists('dialog[open]'));
   await app.press('Escape');
@@ -224,6 +227,32 @@ try {
       `return Array.from(document.querySelectorAll('.timeline .label')).some((l) => l.textContent.trim() === 'Sources')`,
     )),
   );
+
+  // --- The outline beside the timeline, with folding ---
+  await app.keys(['Control', 'Shift', 'o']);
+  await app.waitFor('.outline', 3000);
+  const outlined = await app.exec(
+    `return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`,
+  );
+  check(
+    'the outline stands beside the timeline too',
+    outlined.includes('Thucydides') && (await app.exists('.timeline')),
+    outlined.join('|'),
+  );
+  await app.exec(
+    `Array.from(document.querySelectorAll('.outline [data-outline]')).find((b) => b.textContent.trim() === 'Sources').querySelector('.chevron').click()`,
+  );
+  await sleep(200);
+  const foldedOutline = await app.exec(
+    `return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`,
+  );
+  check(
+    'an entry of the outline folds what is under it',
+    foldedOutline.includes('Sources') && !foldedOutline.includes('Thucydides'),
+    foldedOutline.join('|'),
+  );
+  await app.keys(['Control', 'Shift', 'o']);
+  await app.waitGone('.outline', 3000);
 
   // --- The margin of a time is dragged wider ---
   const fadeBefore = await app.exec(

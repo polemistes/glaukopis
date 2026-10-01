@@ -23,6 +23,18 @@ export interface TimelineLane {
   own: Placed | null;
   /** What stands in it, in the order of the text. */
   events: Event[];
+  /** What is in its branch and says nothing of its time, the lane's own element first where it says nothing. */
+  waiting: Waiting[];
+  /** Nothing in it is placed: it is shown only for what waits in it. */
+  empty: boolean;
+}
+
+/** An element that says nothing of its time, where it belongs. */
+export interface Waiting {
+  id: string;
+  name: string;
+  /** The names of what stands between the lane and it, from the lane down; empty for the lane's own element and its children. */
+  path: string[];
 }
 
 export interface Event {
@@ -39,6 +51,8 @@ export interface Timeline {
   lanes: TimelineLane[];
   /** Placed elements that are in no lane. */
   elsewhere: Event[];
+  /** Elements in no lane that say nothing of their time. */
+  waitingElsewhere: Waiting[];
 }
 
 /** The elements of a map and of the maps it stands for, in the order of the text. */
@@ -67,11 +81,16 @@ function branchOf(project: Project, id: string, seen = new Set<string>()): strin
   return out;
 }
 
-/** The map as a timeline. */
+/**
+ * The map as a timeline. With `withWaiting`, the lanes in which only
+ * elements that say nothing of their time stand are kept as well, so that
+ * those elements have a place to be put from.
+ */
 export function timelineOf(
   project: Project,
   mapId: string,
   colourOf: (node: NodeRecord) => string | null,
+  withWaiting = false,
 ): Timeline {
   const settings = project.map(mapId)?.timeline ?? {};
   const axis: Axis = settings.axis ?? 'dates';
@@ -105,35 +124,74 @@ export function timelineOf(
     if (!node || !placed) return null;
     return { id, name: node.title, node, placed, colour: colourOf(node) };
   };
+  /** The names between a lane and an element of its branch, from the lane down. */
+  const pathOf = (lane: string, id: string): string[] => {
+    const names: string[] = [];
+    let at = project.node(id)?.parent ?? null;
+    for (let depth = 0; at && at !== lane && depth < 40; depth++) {
+      const node = project.node(at);
+      if (!node) break;
+      names.unshift(node.title || '?');
+      at = node.parent;
+    }
+    return names;
+  };
+  const waiting = (lane: string, id: string): Waiting | null => {
+    const node = project.node(id);
+    if (!node || node.when) return null;
+    return { id, name: node.title, path: id === lane ? [] : pathOf(lane, id) };
+  };
   const taken = new Set<string>();
   const lanes: TimelineLane[] = [];
   for (const id of laneElements) {
     const node = project.node(id);
     if (!node || taken.has(id)) continue;
     const events: Event[] = [];
+    const waits: Waiting[] = [];
     for (const d of branchOf(project, id)) {
-      if (d === id || taken.has(d)) continue;
-      const e = event(d);
+      if (taken.has(d)) continue;
+      const e = d === id ? null : event(d);
       if (e) {
         events.push(e);
         taken.add(d);
+      } else if (withWaiting) {
+        const w = waiting(id, d);
+        if (w) {
+          waits.push(w);
+          taken.add(d);
+        }
       }
     }
     taken.add(id);
+    const own = solved.placed.get(id) ?? null;
     lanes.push({
       id,
       name: node.title,
       colour: colourOf(node),
-      own: solved.placed.get(id) ?? null,
+      own,
       events,
+      waiting: waits,
+      empty: !own && !events.length,
     });
   }
   const elsewhere: Event[] = [];
+  const waitingElsewhere: Waiting[] = [];
   for (const id of all) {
-    if (taken.has(id)) continue;
+    if (taken.has(id) || id === tree.root) continue;
     const e = event(id);
     if (e) elsewhere.push(e);
+    else if (withWaiting) {
+      const w = waiting('', id);
+      if (w) waitingElsewhere.push(w);
+    }
   }
-  // A lane in which nothing says when it is, its element included, is not shown.
-  return { axis, solved, lanes: lanes.filter((l) => l.own || l.events.length), elsewhere };
+  // A lane in which nothing says when it is, its element included, is not
+  // shown, unless what waits in it is wanted.
+  return {
+    axis,
+    solved,
+    lanes: lanes.filter((l) => !l.empty || (withWaiting && l.waiting.length)),
+    elsewhere,
+    waitingElsewhere,
+  };
 }

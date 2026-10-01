@@ -1,32 +1,27 @@
 <!--
-  The outline of a map beside its text: every element by its name, as deep as
-  it stands, the one in view marked. A name is pressed to go there; the
-  arrows go through them, and Alt+Shift with the arrows moves an element, as
-  in the text and the diagram.
+  The outline of a map beside any view of it: every element by its name, as
+  deep as it stands, the one in view marked. A name is pressed to go there;
+  what has something under it folds and opens by its chevron, or with the
+  left and right arrows; the up and down arrows go through the names, and
+  Alt+Shift with the arrows moves an element, as in the text and the diagram.
 -->
 <script lang="ts">
   import { tick } from 'svelte';
+  import ChevronDown from '@lucide/svelte/icons/chevron-down';
+  import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import X from '@lucide/svelte/icons/x';
   import { t } from '$lib/i18n';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { indent, outdent, shift } from '../elements';
   import { kindColour } from '../kinds';
   import type { Project } from '../model/project.svelte';
-
-  interface Item {
-    id: string;
-    level: number;
-    /** Folded away in the text, under another. */
-    away: boolean;
-    loose: boolean;
-    excluded: boolean;
-  }
+  import { listed, outlineFolds, type OutlineItem } from '../outline';
 
   interface Props {
     project: Project;
     mapId: string;
-    items: Item[];
-    /** The element at the top of the text in view. */
+    items: OutlineItem[];
+    /** The element in view: at the top of the text, or chosen. */
     current: string | null;
     ongo: (id: string) => void;
     onclose: () => void;
@@ -34,7 +29,18 @@
     width?: number;
   }
 
-  let { project, mapId, items, current, ongo, onclose, width = 240 }: Props = $props();
+  let { project, mapId, items: all, current, ongo, onclose, width = 240 }: Props = $props();
+
+  const folded = $derived(outlineFolds(mapId));
+  /** The items that are listed: not those under a folded one. */
+  const items = $derived(listed(all, folded));
+
+  function fold(id: string, to?: boolean) {
+    const now = folded.has(id);
+    if (to === now) return;
+    if (now) folded.delete(id);
+    else folded.add(id);
+  }
 
   let list = $state<HTMLOListElement>();
 
@@ -69,6 +75,16 @@
         focusItem(id);
       }
       return;
+    }
+    // The left arrow folds, the right opens; on one that has nothing under it, they go up and down.
+    const item = items[i];
+    if (item.children > 0 && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+      const wants = event.key === 'ArrowLeft';
+      if (folded.has(item.id) !== wants) {
+        event.preventDefault();
+        fold(item.id, wants);
+        return;
+      }
     }
     const next =
       event.key === 'ArrowDown'
@@ -107,12 +123,32 @@
           class:chosen={item.id === current}
           class:away={item.away}
           class:excluded={item.excluded}
-          style:padding-left="{10 + Math.min(item.level, 6) * 12}px"
+          style:padding-left="{4 + Math.min(item.level, 6) * 12}px"
           aria-current={item.id === current ? 'location' : undefined}
           tabindex={item.id === current || (!current && i === 0) ? 0 : -1}
           onclick={() => ongo(item.id)}
           onkeydown={(e) => onkeydown(e, i)}
         >
+          {#if item.children > 0}
+            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+            <span
+              class="chevron"
+              role="button"
+              tabindex="-1"
+              aria-expanded={!folded.has(item.id)}
+              aria-label={folded.has(item.id) ? t('text-outline-open') : t('text-outline-fold')}
+              onclick={(e) => {
+                e.stopPropagation();
+                fold(item.id);
+              }}
+            >
+              {#if folded.has(item.id)}<ChevronRight size={12} />{:else}<ChevronDown
+                  size={12}
+                />{/if}
+            </span>
+          {:else}
+            <span class="chevron none"></span>
+          {/if}
           {#if node?.kind && project.kind(node.kind)}
             <span
               class="dot"
@@ -194,6 +230,21 @@
   }
   .name {
     min-width: 0;
+  }
+  .chevron {
+    flex: none;
+    display: inline-flex;
+    width: 14px;
+    height: 18px;
+    margin-right: 2px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    color: var(--ink-4);
+  }
+  .chevron:not(.none):hover {
+    background: var(--paper-hover);
+    color: var(--ink);
   }
   .dot {
     flex: none;

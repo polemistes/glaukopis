@@ -33,7 +33,7 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
-  import { timelineOf, type Event } from './lanes';
+  import { timelineOf, type Event, type Waiting } from './lanes';
   import LanesDialog from './LanesDialog.svelte';
   import { describeWhen, type Placed, type When } from './solve';
   import {
@@ -69,7 +69,9 @@
     const kind = project.kind(node.kind);
     return kind ? kindColour(kind.colour).ink : null;
   };
-  const timeline = $derived(timelineOf(project, mapId, colourOf));
+  /** Whether the elements that say nothing of their time are shown in their lanes, to be placed. */
+  let showWithout = $state(false);
+  const timeline = $derived(timelineOf(project, mapId, colourOf, showWithout));
   const settings = $derived(project.map(mapId)?.timeline ?? {});
   const unit = $derived(settings.unit?.trim() || '');
 
@@ -223,17 +225,22 @@
       name: string;
       colour: string | null;
       own: Placed | null;
+      empty: boolean;
       rows: number;
       drawn: Drawn[];
+      /** What waits in the lane, each in a row of its own after the events. */
+      waiting: { item: Waiting; row: number }[];
     }[] = [];
     const all = [...timeline.lanes];
-    if (timeline.elsewhere.length)
+    if (timeline.elsewhere.length || (showWithout && timeline.waitingElsewhere.length))
       all.push({
         id: '',
         name: t('timeline-elsewhere'),
         colour: null,
         own: null,
         events: timeline.elsewhere,
+        waiting: timeline.waitingElsewhere,
+        empty: !timeline.elsewhere.length,
       });
     for (const lane of all) {
       const ends: number[] = [];
@@ -258,7 +265,11 @@
         } else ends[row] = extent;
         drawn.push({ event, row, left, right, labelLeft, labelWidth: lw, fadeLeft, fadeRight });
       }
-      laid.push({ ...lane, rows: folded.has(lane.id) ? 0 : Math.max(ends.length, 1), drawn });
+      const away = folded.has(lane.id);
+      const eventRows = away ? 0 : Math.max(ends.length, drawn.length ? 1 : 0);
+      const waiting = away ? [] : lane.waiting.map((item, k) => ({ item, row: eventRows + k }));
+      const rows = away ? 0 : Math.max(eventRows + waiting.length, 1);
+      laid.push({ ...lane, rows, drawn, waiting });
     }
     return laid;
   });
@@ -323,17 +334,6 @@
 
   /** Whether elements may be dragged: off, so that nothing moves by mistake. */
   let moving = $state(false);
-  /** Whether the elements that say nothing of their time are shown, to be placed. */
-  let showWithout = $state(false);
-
-  /** The elements of the map that say nothing of their time, in the order of the text; not the centre. */
-  const without = $derived.by(() => {
-    if (!showWithout) return [];
-    const tree = project.tree(mapId);
-    return tree.sequence
-      .filter((id) => id !== tree.root && !project.node(id)?.when)
-      .map((id) => ({ id, name: project.node(id)?.title || t('project-untitled') }));
-  });
 
   /** A written end as it is dragged: its text, and how finely it was written. */
   interface End {
@@ -507,7 +507,7 @@
     if (!d) return;
     if (d.mode === 'new') {
       // Pressed rather than dragged: it says when it is in words.
-      if (Math.abs(event.clientX - d.x0) < 4 && !overLanes(event.clientX, event.clientY)) {
+      if (Math.abs(event.clientX - d.x0) < 4) {
         sayWhen(d.id);
         return;
       }
@@ -602,6 +602,7 @@
             class="lane-name truncate"
             style:width="{LABEL_WIDTH}px"
             style:--lane={lane.colour ?? 'var(--ink-3)'}
+            class:empty={lane.empty}
             disabled={!lane.id}
             aria-expanded={lane.id ? !folded.has(lane.id) : undefined}
             onclick={() => lane.id && fold(lane.id)}
@@ -618,6 +619,22 @@
             {#if lane.colour}<span class="dot" style:background={lane.colour}></span>{/if}
             {lane.name || t('project-untitled')}
           </button>
+          {#each lane.waiting as w (w.item.id)}
+            <button
+              type="button"
+              class="waiting"
+              class:dragging={drag?.id === w.item.id}
+              style:left="{LABEL_WIDTH + 10}px"
+              style:top="{LANE_HEAD + w.row * ROW + 3}px"
+              use:tooltip={{ text: t('timeline-waiting-hint'), side: 'top' }}
+              onpointerdown={(ev) => beginNew(ev, w.item.id, w.item.name)}
+              onpointermove={moveDrag}
+              onpointerup={endDrag}
+            >
+              {#if w.item.path.length}<span class="path">{w.item.path.join(' › ')} ›</span>{/if}
+              {w.item.name || t('project-untitled')}
+            </button>
+          {/each}
           {#each lane.drawn as d (d.event.id)}
             {@const p = d.event.placed}
             {@const y = LANE_HEAD + d.row * ROW}
@@ -718,25 +735,6 @@
     </div>
   </div>
 
-  {#if showWithout}
-    <div class="without" data-without>
-      <CalendarPlus size={13} />
-      {#if without.length}
-        <span>{t('timeline-without-hint')}</span>
-        {#each without as e (e.id)}
-          <button
-            type="button"
-            class:dragging={drag?.id === e.id}
-            onpointerdown={(ev) => beginNew(ev, e.id, e.name)}
-            onpointermove={moveDrag}
-            onpointerup={endDrag}>{e.name}</button
-          >
-        {/each}
-      {:else}
-        <span>{t('timeline-without-none')}</span>
-      {/if}
-    </div>
-  {/if}
   {#if drag && drag.mode !== 'new' && readout}
     <div class="ghost readout" style:left="{drag.px + 14}px" style:top="{drag.py - 30}px">
       {readout}
@@ -1027,31 +1025,32 @@
     color: var(--ink);
     border-color: var(--accent);
   }
-  .without {
-    flex: none;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px 8px;
-    /* Room at the right for the controls, which stand over the foot. */
-    padding: 6px 250px 6px 12px;
-    border-top: 1px solid var(--line);
-    background: var(--paper-raised);
-    color: var(--ink-3);
-    font-size: var(--text-xs);
-  }
-  .without button {
-    padding: 1px 7px;
-    border: 1px solid var(--line);
+  /* What waits in a lane to be given a time: pressed, it says when it is; dragged along the lane, it is placed. */
+  .waiting {
+    position: absolute;
+    height: 20px;
+    padding: 0 8px;
+    border: 1px dashed var(--line-strong);
     border-radius: var(--radius-s);
-    background: var(--paper);
+    background: var(--paper-raised);
     color: var(--ink-2);
     font: inherit;
+    font-size: var(--text-xs);
+    line-height: 18px;
+    white-space: nowrap;
     cursor: grab;
     touch-action: none;
   }
-  .without button.dragging {
+  .waiting .path {
+    color: var(--ink-4);
+    margin-right: 3px;
+  }
+  .waiting.dragging {
     opacity: 0.5;
+  }
+  .lane-name.empty {
+    color: var(--ink-3);
+    font-weight: 500;
   }
   /* The margin either side of a time: a band that fades away from it. */
   .fade {

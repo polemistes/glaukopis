@@ -126,11 +126,16 @@ words, or to remove it.
 
 ### The outline
 
-**Ctrl+Shift+O**, or the button in the bar over the text, shows the outline
-of the map beside it: every element by its name, as deep as it stands, and
-the one at the top of the text marked; the line beside it can be dragged. Press a name to go there; what it is
-folded under is opened. In the outline the arrows go from name to name, and
-**Alt+Shift** with the arrows moves an element, as in the text.
+**Ctrl+Shift+O**, or the button at the left of the bar beside the map's
+name, shows the outline of the map beside whatever view is open, diagram,
+text or timeline: every element by its name, as deep as it stands, and in
+the text the one at the top marked; the line beside it can be dragged.
+Press a name to go there; what it is folded under is opened. An entry with
+something under it has a chevron, which folds that away in the outline and
+opens it again, as the left and right arrows do; this folding is the
+outline's own and changes nothing in the text. The up and down arrows go
+from name to name, and **Alt+Shift** with the arrows moves an element, as
+in the text.
 
 ### Folding elements away
 
@@ -785,9 +790,11 @@ open them; its own span stays. A double click on the name opens **When it
 is** for the lane's element.
 
 The elements that say nothing of their time are not on the timeline, but
-they are near: **Elements without a time**, beside the arrows, shows them
-in a row at the foot. Drag one onto the timeline to place it at that time,
-as finely as the axis is looked at, or press it to say when it is in words.
+they are near: **Elements without a time**, beside the arrows, shows each
+in the lane of its branch, the elements deeper down with their path, and
+the branches in which nothing is placed yet as lanes of their own. Drag
+one along its lane to place it at that time, as finely as the axis is
+looked at, or press it to say when it is in words.
 
 ## Comments
 

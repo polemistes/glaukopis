@@ -41,7 +41,7 @@ timeline-moving = Flytt ved å dra
 timeline-moving-hint = Dra et element langs aksen, eller kanten av et spenn, for å endre tiden; av, så ingenting flyttes ved et uhell
 timeline-without = Elementer uten tid
 timeline-without-hint = Dra ett inn på tidslinjen, eller trykk på det for å si når det er:
-timeline-without-none = Alt i kartet sier når det er.
+timeline-waiting-hint = Sier ennå ikke når det er: trykk på det for å si når, eller dra det langs banen for å plassere det
 timeline-unknown = viser til noe som ikke er plassert, eller til en tid som ikke kan leses
 
 when-title = Når det er
