@@ -918,6 +918,7 @@ fn kinds(blocks: &[Block]) -> Vec<&'static str> {
             Block::Figure { .. } => "figure",
             Block::Verse { .. } => "verse",
             Block::Parallel { .. } => "parallel",
+            Block::Script { .. } => "script",
         })
         .collect()
 }

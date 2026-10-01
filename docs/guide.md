@@ -291,7 +291,16 @@ Shift+Tab takes it back.
 The **#** button that appears beside the kind of paragraph numbers the
 lines: from which line, and every how many. Speakers and directions are
 not counted. The numbers stand in the margin, in the text and in the
-document.
+document; in Word and Writer they stand at the head of their lines, small.
+
+A **screenplay** is written with the kinds of paragraph under *Script*:
+**scene heading**, **action**, **character**, **dialogue**,
+**parenthetical** and **transition**. Enter goes from a character to its
+dialogue and from dialogue to action; Tab goes to the other part that
+follows (action to character, dialogue to parenthetical), as a new
+paragraph after text or in place of an empty one. Scene headings,
+characters and transitions are set in capitals; the *Screenplay* format
+sets every part where the standard script page has it.
 
 **Two texts side by side**, under *Insert*, puts an original beside its
 translation: two columns, each a text of its own, in which verse and
@@ -670,6 +679,13 @@ is listed at the foot. Where nothing in the map has a written time, the
 timeline is **in order** only, each element a step after what it comes
 after, with no scale.
 
+A kind of element can be lanes too: under the lanes, **Lanes by kind**
+makes every element of a kind — each character, each place — a lane of
+its own. **Add a chronology to the map**, among the timeline's controls,
+adds an element under the centre with a table of everything placed, in
+the order of time, with when and what: a copy of what the timeline knows
+at the moment, to be written on and printed with the document.
+
 The timeline has an **axis**: the dates of the world, or **units of your
 own** for an invented one — years, days, cycles, whatever you call them — in
 which times are numbers: `Year 12`, `Day 3`, or just `12`. Choose the axis
@@ -967,7 +983,8 @@ Over the preview, two things are chosen:
   a publisher or a journal asks for them. The formats that come with
   Glaukopis each say where their requirements were found, and when. They are
   offered by kind: the general ones, **fiction** (a novel as a manuscript for
-  submission, and as a book), **stage and screen** (a play script), **poetry**
+  submission, and as a book), **stage and screen** (a play script and a
+  screenplay), **poetry**
   (a collection of poems), and the style guides, publishers and journals of
   academic writing. A project is not of one kind: any format can be given to
   any map, and changed at any time.
@@ -981,7 +998,8 @@ came with Glaukopis stay as they were.
 
 **Export** makes the manuscript: PDF, Word, OpenDocument, LaTeX, Markdown, a
 web page, or an **e-book** (EPUB), in which the reader sets the text and each
-chapter is a part of its own. Where the document is given as it is written, in LaTeX, Typst or
+chapter is a part of its own. A cover for the e-book, a picture of the
+store, is chosen under *Title, authors, abstract*. Where the document is given as it is written, in LaTeX, Typst or
 Markdown, its pictures are put in a folder beside it, named after it.
 
 There are two kinds of PDF. **PDF** is what the preview shows. **PDF, set by

@@ -232,6 +232,8 @@ export interface ExportDocument {
   date?: string;
   abstract?: string;
   keywords: string[];
+  /** The cover of an e-book: a picture, by its hash, and its kind of file. */
+  cover?: { hash: string; extension: string };
   language?: string;
   sections: ExportSection[];
   references: ExportReference[];

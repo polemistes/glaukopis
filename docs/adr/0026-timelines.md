@@ -40,8 +40,10 @@ what a scholar knows.
 
 ## Consequences
 
-- To come: a chronology table in the text, the timeline as a figure,
-  dragging written times along the axis, and lanes by kind of element.
+- Lanes can be every element of a kind (`kind` on a lane); a chronology,
+  a table of what is placed in the order of time, is added to the map as
+  an element of its own, as a copy of the moment. To come: the timeline
+  as a figure, and dragging written times along the axis.
 - The solving is linear in the number of placed elements and rounds, and is
   done again whenever the project changes; a map of some hundreds of placed
   elements is solved in milliseconds.

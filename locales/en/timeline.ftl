@@ -20,6 +20,15 @@ timeline-each-child = { $count ->
    *[other] Each of { $count } children a lane
 }
 timeline-no-branches = The map has nothing under its centre yet.
+timeline-lanes-by-kind = Lanes by kind
+timeline-lanes-by-kind-hint = Every element of a kind a lane of its own: each character, each place.
+timeline-each-of-kind = Each a lane
+timeline-chronology = Add a chronology to the map
+timeline-chronology-hint = An element with a table of everything placed, in the order of time, to be written on and printed
+timeline-chronology-title = Chronology
+timeline-chronology-when = When
+timeline-chronology-what = What
+timeline-chronology-made = A chronology was added to the map
 timeline-elsewhere = Elsewhere in the map
 timeline-ordered = In order, without dates
 timeline-empty = Nothing says when it is yet. Choose “Say when it is…” in an element’s menu.

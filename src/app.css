@@ -1030,3 +1030,40 @@ span.math.selected {
 .prose .parallel-side .verse {
   margin-left: 2.4em;
 }
+
+/* A screenplay: each paragraph a part of the script, set as scripts are. */
+.prose .script {
+  text-indent: 0;
+}
+.prose .script.scene {
+  margin-top: 1.4em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.prose .script.character {
+  margin: 0.9em 0 0 38%;
+  text-transform: uppercase;
+}
+.prose .script.dialogue {
+  margin: 0 22% 0 17%;
+}
+.prose .script.parenthetical {
+  margin: 0 28% 0 24%;
+  font-style: italic;
+}
+.prose .script.parenthetical::before {
+  content: '(';
+}
+.prose .script.parenthetical::after {
+  content: ')';
+}
+.prose .script.transition {
+  margin-top: 0.9em;
+  text-align: right;
+  text-transform: uppercase;
+}
+.prose .script.character + .script.dialogue,
+.prose .script.parenthetical + .script.dialogue,
+.prose .script.dialogue + .script.parenthetical {
+  margin-top: 0;
+}

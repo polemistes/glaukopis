@@ -538,6 +538,15 @@ export const formats: FormatSummary[] = [
   },
   {
     "checked": "2026-10-01",
+    "confidence": "medium",
+    "description": "The standard screenplay page: 12-point Courier, single spacing, a wide margin at the left for binding, scene headings in capitals, the character over the dialogue, the dialogue in a narrow column; a page a minute of film.",
+    "id": "screenplay",
+    "kind": "stage",
+    "name": "Screenplay",
+    "own": false
+  },
+  {
+    "checked": "2026-10-01",
     "confidence": "low",
     "description": "A collection of poems: each poem an element, its name the title, its lines written as verse. A narrow page, a quiet serif, lines left as written, no hyphenation, each poem on a page of its own.",
     "id": "poetry",

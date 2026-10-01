@@ -91,8 +91,12 @@ export function timelineOf(
       ? [{ element: tree.root, each: true }]
       : [];
   for (const lane of chosen) {
-    if (lane.each) laneElements.push(...(tree.children.get(lane.element) ?? []));
-    else laneElements.push(lane.element);
+    if (lane.kind) {
+      // Every element of the kind, in the order of the text, the maps it stands for included.
+      for (const id of all) if (project.node(id)?.kind === lane.kind) laneElements.push(id);
+    } else if (lane.element && lane.each)
+      laneElements.push(...(tree.children.get(lane.element) ?? []));
+    else if (lane.element) laneElements.push(lane.element);
   }
 
   const event = (id: string): Event | null => {

@@ -108,6 +108,10 @@ preview-details-date-placeholder = As it is to be printed
 preview-details-language = Language of the text
 # A map that was given no language is printed in English.
 preview-details-language-none = Not stated (English)
+preview-details-cover = Cover
+preview-details-cover-choose = Choose a picture…
+preview-details-cover-other = Another…
+preview-details-cover-hint = The cover of the e-book: a picture, kept in the store of pictures. Nothing else uses it.
 
 ## The export: the kinds of file a document is made as.
 

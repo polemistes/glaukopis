@@ -183,6 +183,9 @@ function blockNodes(blocks: Block[]): Node[] {
             ),
           );
         break;
+      case 'script':
+        out.push(nodes.script.create({ part: block.part }, inlineNodes(block.content, 'text')));
+        break;
       case 'parallel': {
         const side = (list: Block[]) => {
           const content = blockNodes(list);

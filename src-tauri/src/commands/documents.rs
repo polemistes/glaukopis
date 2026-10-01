@@ -170,6 +170,8 @@ pub struct LeanDocument {
     pub abstract_text: Option<String>,
     pub keywords: Vec<String>,
     pub language: Option<String>,
+    #[serde(default)]
+    pub cover: Option<glaukopis_core::document::Cover>,
     pub sections: Vec<LeanSection>,
     pub references: Vec<CarriedReference>,
 }
@@ -249,6 +251,7 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
         abstract_text: request.document.abstract_text,
         keywords: request.document.keywords,
         language: request.document.language,
+        cover: request.document.cover,
         sections,
         references: request.document.references,
     };

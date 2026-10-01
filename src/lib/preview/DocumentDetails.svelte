@@ -7,6 +7,8 @@
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
+  import { choosePicture } from '$lib/figures/views.svelte';
+  import Thumb from '$lib/pictures/Thumb.svelte';
 
   interface Props {
     project: Project;
@@ -54,9 +56,16 @@
         .filter(Boolean),
       date: draft.date?.trim(),
       language: draft.language?.trim(),
+      cover: draft.cover,
     });
     project.checkpoint();
     onclose();
+  }
+
+  /** A picture of the store, chosen among the files, becomes the cover of the e-book. */
+  async function pickCover() {
+    const picture = await choosePicture();
+    if (picture) draft.cover = { hash: picture.hash, extension: picture.extension };
   }
 
   // Named by the system, in the language of the interface.
@@ -169,6 +178,26 @@
     </div>
   </div>
 
+  <div class="cover">
+    <span class="label">{t('preview-details-cover')}</span>
+    {#if draft.cover}
+      <div class="chosen">
+        <Thumb hash={draft.cover.hash} extension={draft.cover.extension} small />
+        <Button size="sm" variant="ghost" onclick={pickCover}
+          >{t('preview-details-cover-other')}</Button
+        >
+        <Button size="sm" variant="ghost" onclick={() => (draft.cover = undefined)}
+          >{t('common-remove')}</Button
+        >
+      </div>
+    {:else}
+      <Button size="sm" variant="secondary" onclick={pickCover}
+        >{t('preview-details-cover-choose')}</Button
+      >
+    {/if}
+    <span class="hint">{t('preview-details-cover-hint')}</span>
+  </div>
+
   {#snippet footer()}
     <Button variant="ghost" onclick={onclose}>{t('common-cancel')}</Button>
     <Button variant="primary" onclick={save}>{t('common-save')}</Button>
@@ -263,5 +292,35 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+  }
+  .cover {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .cover .label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+  .chosen {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chosen :global(.thumb) {
+    width: 36px;
+    height: 48px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+  }
+  .cover .hint {
+    flex-basis: 100%;
+    font-size: var(--text-xs);
+    color: var(--ink-4);
   }
 </style>

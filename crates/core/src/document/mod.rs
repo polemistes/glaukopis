@@ -130,6 +130,11 @@ pub enum Block {
         left: Vec<Block>,
         right: Vec<Block>,
     },
+    /// A paragraph of a screenplay.
+    Script {
+        part: ScriptPart,
+        content: Vec<Inline>,
+    },
     BulletList {
         items: Vec<Vec<Block>>,
     },
@@ -316,6 +321,32 @@ pub struct VerseLine {
     pub content: Vec<Inline>,
 }
 
+/// What a paragraph of a screenplay is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ScriptPart {
+    Scene,
+    #[default]
+    Action,
+    Character,
+    Dialogue,
+    Parenthetical,
+    Transition,
+}
+
+impl ScriptPart {
+    pub fn name(self) -> &'static str {
+        match self {
+            ScriptPart::Scene => "scene",
+            ScriptPart::Action => "action",
+            ScriptPart::Character => "character",
+            ScriptPart::Dialogue => "dialogue",
+            ScriptPart::Parenthetical => "parenthetical",
+            ScriptPart::Transition => "transition",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum VerseLineKind {
@@ -363,6 +394,14 @@ pub struct CarriedReference {
     pub names: BTreeMap<String, Vec<Person>>,
 }
 
+/// The cover of an e-book.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Cover {
+    pub hash: String,
+    pub extension: String,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Document {
@@ -375,6 +414,9 @@ pub struct Document {
     pub keywords: Vec<String>,
     /// BCP 47: en-GB, nb, de, el.
     pub language: Option<String>,
+    /// The cover of an e-book: a picture of the store, and its kind of file.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover: Option<Cover>,
     pub sections: Vec<Section>,
     /// The references the project carries for what is cited. The library's own
     /// entries are preferred to these where it has them.
@@ -387,7 +429,7 @@ pub fn walk<'a>(list: &'a [Block], block: &mut dyn FnMut(&'a Block), line: &mut 
     for b in list {
         block(b);
         match b {
-            Block::Paragraph { content } => line(content),
+            Block::Paragraph { content } | Block::Script { content, .. } => line(content),
             Block::Blockquote { content } => walk(content, block, line),
             Block::Verse { lines, .. } => {
                 for l in lines {

@@ -24,18 +24,18 @@ lines ran together into paragraphs, and nothing stood beside anything.
   the lines (`editor/verse.ts`), never part of the text. In Typst the
   lines are blocks the opening of the document sets (`gk-verse`, `gk-line`,
   `gk-parallel` in `formats/typst.rs`), with the numbers placed in the
-  margin by a counter. For LaTeX, Word and Writer a verse is Pandoc's line
-  block, which every writer keeps as lines, with speakers in small
-  capitals and directions in italics; the numbers are left out there, for
-  now. Texts side by side are a grid in Typst, two minipages in LaTeX and
-  a two-column table in Word and Writer.
+  margin by a counter. In LaTeX each line is a paragraph of its own, the
+  number hanging in the margin. For Word and Writer a verse is Pandoc's
+  line block, which keeps lines, with speakers in small capitals and
+  directions in italics and the number at the head of its line, small, in
+  a character style of its own. Texts side by side are a grid in Typst,
+  two minipages in LaTeX and a two-column table in Word and Writer.
 - Plain-text readings of a text (search, counting, comparing) take the
   lines one under the other.
 
 ## Consequences
 
-- Line numbers in LaTeX and the word processors are to come; the format
-  could also say how verse is set (indentation, size), as it says of
-  quotations.
+- The format could also say how verse is set (indentation, size), as it
+  says of quotations.
 - Pasting paragraphs into a verse makes them paragraphs after it, not
   lines; a paste that makes lines is a small later piece.

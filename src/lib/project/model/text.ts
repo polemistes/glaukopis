@@ -86,6 +86,7 @@ export type Block =
   | { kind: 'blockquote'; content: Block[] }
   | VerseBlock
   | { kind: 'parallel'; left: Block[]; right: Block[] }
+  | { kind: 'script'; part: ScriptPart; content: Inline[] }
   | { kind: 'bullet_list'; items: Block[][] }
   | { kind: 'ordered_list'; start: number; items: Block[][] }
   | { kind: 'equation'; id: string; tex: string; numbered: boolean; align?: Stand }
@@ -106,6 +107,19 @@ export interface VerseBlock {
 }
 
 export type VerseLineKind = 'line' | 'speaker' | 'direction';
+
+/** A paragraph of a screenplay: what it is in the script. */
+export type ScriptPart =
+  'scene' | 'action' | 'character' | 'dialogue' | 'parenthetical' | 'transition';
+
+export const SCRIPT_PARTS: readonly ScriptPart[] = [
+  'scene',
+  'action',
+  'character',
+  'dialogue',
+  'parenthetical',
+  'transition',
+];
 
 export interface VerseLine {
   kind: VerseLineKind;
@@ -263,6 +277,13 @@ function blocksOf(parent: Y.XmlElement | Y.XmlFragment): Block[] {
         });
         break;
       }
+      case 'script':
+        out.push({
+          kind: 'script',
+          part: SCRIPT_PARTS.find((p) => p === child.getAttribute('part')) ?? 'action',
+          content: inlinesOf(child),
+        });
+        break;
       case 'parallel': {
         const sides = child
           .toArray()
@@ -413,6 +434,7 @@ export function blocksText(blocks: Block[], withNotes = false): string {
     else if (b.kind === 'blockquote') parts.push(blocksText(b.content, withNotes));
     else if (b.kind === 'verse')
       parts.push(b.lines.map((l) => inlineText(l.content, withNotes)).join('\n'));
+    else if (b.kind === 'script') parts.push(inlineText(b.content, withNotes));
     else if (b.kind === 'parallel')
       parts.push(blocksText(b.left, withNotes), blocksText(b.right, withNotes));
     else if (b.kind === 'figure') parts.push(inlineText(b.caption, withNotes));
@@ -495,7 +517,7 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
   };
   const visit = (list: Block[]) => {
     for (const b of list) {
-      if (b.kind === 'paragraph') visitInlines(b.content);
+      if (b.kind === 'paragraph' || b.kind === 'script') visitInlines(b.content);
       else if (b.kind === 'blockquote') visit(b.content);
       else if (b.kind === 'verse') {
         for (const line of b.lines) {

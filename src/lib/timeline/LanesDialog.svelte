@@ -13,6 +13,7 @@
   import Dialog from '$lib/ui/Dialog.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
   import TextField from '$lib/ui/TextField.svelte';
+  import { kindColour } from '$lib/project/kinds';
 
   interface Props {
     project: Project;
@@ -40,6 +41,12 @@
 
   const lanes = $derived(settings.lanes ?? []);
   const laneOf = (id: string): Lane | undefined => lanes.find((l) => l.element === id);
+  const kindLane = (kind: string): boolean => lanes.some((l) => l.kind === kind);
+
+  function toggleKind(kind: string) {
+    const next = kindLane(kind) ? lanes.filter((l) => l.kind !== kind) : [...lanes, { kind }];
+    project.setTimeline(mapId, { lanes: next });
+  }
   /** Whether the lanes are as they are by themselves: each child of the centre one. */
   const given = $derived(!lanes.length);
 
@@ -51,7 +58,7 @@
       next = [...lanes.filter((l) => l.element !== id), { element: id, ...(each ? { each } : {}) }];
     // In the order of the text.
     const order = new Map(tree.sequence.map((e, i) => [e, i]));
-    next.sort((a, b) => (order.get(a.element) ?? 0) - (order.get(b.element) ?? 0));
+    next.sort((a, b) => (order.get(a.element ?? '') ?? -1) - (order.get(b.element ?? '') ?? -1));
     project.setTimeline(mapId, { lanes: next });
   }
 
@@ -134,6 +141,29 @@
         <p class="hint">{t('timeline-no-branches')}</p>
       {/if}
     </section>
+
+    {#if project.kinds.length}
+      <section>
+        <h3>{t('timeline-lanes-by-kind')}</h3>
+        <p class="hint">{t('timeline-lanes-by-kind-hint')}</p>
+        <ul class="branches">
+          {#each project.kinds as k (k.id)}
+            <li>
+              <span class="dot" style:background={kindColour(k.colour).ink}></span>
+              <span class="name truncate">{k.name}</span>
+              <span class="choices">
+                <button
+                  type="button"
+                  class:on={kindLane(k.id)}
+                  aria-pressed={kindLane(k.id)}
+                  onclick={() => toggleKind(k.id)}>{t('timeline-each-of-kind')}</button
+                >
+              </span>
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
   </div>
 
   {#snippet footer()}
@@ -179,6 +209,12 @@
   .name {
     flex: 1;
     min-width: 0;
+  }
+  .dot {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
   }
   .choices {
     display: flex;

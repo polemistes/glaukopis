@@ -215,7 +215,7 @@ fn line_of(blocks: Vec<Block>, aside: &mut Vec<Block>) -> Vec<Inline> {
         };
         for b in blocks {
             match b {
-                Block::Paragraph { content } => {
+                Block::Paragraph { content } | Block::Script { content, .. } => {
                     if !content.is_empty() {
                         apart(out);
                         out.extend(content);
@@ -270,6 +270,7 @@ fn paragraphs_of(blocks: Vec<Block>, aside: &mut Vec<Block>) -> Vec<Block> {
     for b in blocks {
         match b {
             paragraph @ Block::Paragraph { .. } => out.push(paragraph),
+            Block::Script { content, .. } => out.push(Block::Paragraph { content }),
             Block::Blockquote { content } => out.extend(paragraphs_of(content, aside)),
             Block::Verse { lines, .. } => {
                 out.extend(lines.into_iter().map(|l| Block::Paragraph { content: l.content }));

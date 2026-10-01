@@ -92,6 +92,10 @@ preview-details-date = Dato
 preview-details-date-placeholder = Slik den skal stå i dokumentet
 preview-details-language = Språket i teksten
 # Et kart som ikke har fått noe språk, skrives ut på engelsk.
+preview-details-cover = Omslag
+preview-details-cover-choose = Velg et bilde …
+preview-details-cover-other = Et annet …
+preview-details-cover-hint = Omslaget til e-boken: et bilde, som ligger i bildelageret. Ingenting annet bruker det.
 preview-details-language-none = Ikke oppgitt (engelsk)
 
 ## Eksporten: filtypene et dokument kan lages som.

@@ -3,6 +3,7 @@
 import { lift, toggleMark, wrapIn } from 'prosemirror-commands';
 import { Fragment, type MarkType, type Node, type NodeType, type Schema } from 'prosemirror-model';
 import { liftListItem, wrapInList } from 'prosemirror-schema-list';
+import { scriptAt, setScriptPart, unsetScript } from './script';
 import { makeVerse, setLineKind, unmakeVerse, verseAt } from './verse';
 import {
   NodeSelection,
@@ -11,7 +12,7 @@ import {
   type Command,
   type EditorState,
 } from 'prosemirror-state';
-import type { Inline, RefForm } from '$lib/project/model/text';
+import { SCRIPT_PARTS, type Inline, type RefForm, type ScriptPart } from '$lib/project/model/text';
 import { newId } from '$lib/util/id';
 import { bodySchema, type CiteItem, type CiteMode } from './schema';
 
@@ -56,13 +57,14 @@ export function toggleList(name: 'bullet_list' | 'ordered_list'): Command {
 
 /** The kinds of paragraph there are; and the kinds of line of verse. */
 export type ParagraphStyle =
-  'text' | 'quote' | 'list' | 'numbered' | 'verse' | 'speaker' | 'direction';
+  'text' | 'quote' | 'list' | 'numbered' | 'verse' | 'speaker' | 'direction' | ScriptPart;
 
 export function styleOf(state: EditorState): ParagraphStyle {
   const { $from } = state.selection;
   for (let d = $from.depth; d > 0; d--) {
     const node = $from.node(d);
     const name = node.type.name;
+    if (name === 'script') return node.attrs.part as ScriptPart;
     if (name === 'verse_line')
       return node.attrs.kind === 'speaker'
         ? 'speaker'
@@ -82,6 +84,19 @@ export function setStyle(style: ParagraphStyle): Command {
     const { blockquote, bullet_list, ordered_list, list_item } = state.schema.nodes;
     if (!blockquote || !bullet_list || !ordered_list || !list_item) return false;
     if (!dispatch || !view) return true;
+    // A part of a script is what the paragraph is; another kind takes it out of the script.
+    if (SCRIPT_PARTS.includes(style as ScriptPart)) {
+      if (verseAt(view.state)) unmakeVerse(view.state, view.dispatch);
+      for (let i = 0; i < 6 && !['text', ...SCRIPT_PARTS].includes(styleOf(view.state)); i++) {
+        const lifted = insideNode(view.state, list_item)
+          ? liftListItem(list_item)(view.state, view.dispatch)
+          : lift(view.state, view.dispatch);
+        if (!lifted) break;
+      }
+      setScriptPart(style as ScriptPart)(view.state, view.dispatch);
+      return true;
+    }
+    if (scriptAt(view.state)) unsetScript(view.state, view.dispatch);
     // Within a verse, a line is made of a kind; out of one, a verse is made of the paragraphs.
     const inVerse = verseAt(view.state);
     if (style === 'verse' || style === 'speaker' || style === 'direction') {

@@ -50,6 +50,7 @@ function lines(blocks: Block[], change: (line: Inline[]) => Inline[]): Block[] {
   return blocks.map((b): Block => {
     switch (b.kind) {
       case 'paragraph':
+      case 'script':
         return { ...b, content: line(b.content) };
       case 'blockquote':
         return { ...b, content: lines(b.content, change) };

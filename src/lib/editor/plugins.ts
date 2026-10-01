@@ -49,6 +49,7 @@ import {
   toggleList,
   toggleQuote,
 } from './commands';
+import { backOutOfScript, nextScriptPart, tabScriptPart } from './script';
 import {
   acrossParallel,
   backOutOfParallel,
@@ -279,6 +280,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
       openSelected,
       leaveCaption,
       leaveVerse,
+      nextScriptPart,
       splitListItem(item),
       createParagraphNear,
       liftEmptyBlock,
@@ -286,6 +288,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     );
     keys.Tab = chainCommands(
       indentLine(1),
+      tabScriptPart,
       acrossParallel(false),
       sinkListItem(item),
       act(hooks, 'tab'),
@@ -296,7 +299,12 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
       liftListItem(item),
       act(hooks, 'shift-tab'),
     );
-    keys.Backspace = chainCommands(backOutOfVerse, backOutOfParallel, keys.Backspace);
+    keys.Backspace = chainCommands(
+      backOutOfVerse,
+      backOutOfScript,
+      backOutOfParallel,
+      keys.Backspace,
+    );
   }
   if (br) {
     const hardBreak: Command = chainCommands(exitCode, (state, dispatch) => {

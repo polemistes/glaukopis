@@ -12,6 +12,9 @@
   import Maximize from '@lucide/svelte/icons/maximize';
   import Plus from '@lucide/svelte/icons/plus';
   import Rows3 from '@lucide/svelte/icons/rows-3';
+  import TableProperties from '@lucide/svelte/icons/table-properties';
+  import { notifyOk } from '$lib/ui/toast.svelte';
+  import { addChronology } from './chronology';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import { t } from '$lib/i18n';
   import { elementMenu } from '$lib/project/elements';
@@ -396,6 +399,20 @@
   {/if}
 
   <div class="controls" role="group" aria-label={t('timeline-view')}>
+    <IconButton
+      label={t('timeline-chronology')}
+      size="sm"
+      side="top"
+      onclick={() => {
+        const made = addChronology(project, mapId);
+        if (made) {
+          notifyOk(t('timeline-chronology-made'));
+          ongo(made);
+        }
+      }}
+    >
+      <TableProperties size={14} />
+    </IconButton>
     <IconButton label={t('timeline-lanes')} size="sm" side="top" onclick={() => (lanesOpen = true)}>
       <Rows3 size={14} />
     </IconButton>

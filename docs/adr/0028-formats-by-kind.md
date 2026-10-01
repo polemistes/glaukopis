@@ -27,12 +27,19 @@ What tells one kind of text from another is how the document is set.
   stylesheet from the format and each chapter a part of its own; the
   reader sets the text, so the format says little.
 - No vocabulary is set by the kind; the interface's words are the same for
-  every writer. The paragraph kinds of a script (scene heading, action,
-  character, dialogue) are to come; a play is written with its speeches as
-  verse, which has speakers and stage directions already.
+  every writer. A play is written with its speeches as verse, which has
+  speakers and stage directions. A screenplay is written with the parts of
+  a script as kinds of paragraph (`script` with a `part`: scene heading,
+  action, character, dialogue, parenthetical, transition), set in Typst by
+  the opening of the document, in LaTeX by what is written for each part,
+  and in Word and Writer by paragraph styles named after the parts, which
+  a writer may define in the reference document; the *Screenplay* format
+  gives the standard page.
+- The e-book takes a cover: a picture of the store, chosen among the
+  document's details and kept with it, so that it is sent with the project.
 
 ## Consequences
 
-- A screenplay format waits on the paragraph kinds of scripts.
-- The e-book carries pictures and notes as Pandoc writes them; a cover is
-  not given yet.
+- The paragraph styles of the script in Word and Writer are named but not
+  defined: the parts stand as plain paragraphs there until styles of those
+  names are given.

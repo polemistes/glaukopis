@@ -20,6 +20,15 @@ timeline-each-child = { $count ->
    *[other] Hvert av { $count } barn en bane
 }
 timeline-no-branches = Kartet har ingenting under sentrum ennå.
+timeline-lanes-by-kind = Baner etter type
+timeline-lanes-by-kind-hint = Hvert element av en type en egen bane: hver person, hvert sted.
+timeline-each-of-kind = Hver en bane
+timeline-chronology = Legg en kronologi til kartet
+timeline-chronology-hint = Et element med en tabell over alt som er plassert, i tidens rekkefølge, til å skrive på og trykke
+timeline-chronology-title = Kronologi
+timeline-chronology-when = Når
+timeline-chronology-what = Hva
+timeline-chronology-made = En kronologi ble lagt til kartet
 timeline-elsewhere = Ellers i kartet
 timeline-ordered = I rekkefølge, uten datoer
 timeline-empty = Ingenting sier når det er ennå. Velg «Si når det er …» i menyen til et element.

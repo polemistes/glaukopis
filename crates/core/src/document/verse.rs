@@ -5,9 +5,10 @@
 //!   labels, which the opening of the document (`formats/typst.rs`) sets:
 //!   numbered in the margin from the line the writer said, every so many
 //!   lines, with speakers in small capitals and stage directions in
-//!   italics. Elsewhere a line block, which every writer of Pandoc keeps as
-//!   lines, with the speakers and the directions marked the same; the
-//!   numbers are Typst's alone, for now.
+//!   italics. In LaTeX each line is a paragraph of its own, with the number
+//!   hanging in the margin. Elsewhere a line block, which every writer of
+//!   Pandoc keeps as lines, with the speakers and the directions marked the
+//!   same and the number at the head of its line, small.
 //! - **Parallel**: an original and its translation side by side. A grid in
 //!   Typst, two minipages in LaTeX, and a table without lines in Word and
 //!   Writer.
@@ -46,10 +47,46 @@ impl Converter<'_> {
                 }
                 out.push(raw("typst", "]"));
             }
+            Flavour::Latex => {
+                // Each line a paragraph of its own, in a group that moves the
+                // lines in; the number hangs in the margin at the left of it.
+                out.push(raw("latex", "{\\par\\leftskip=2.4em\\relax\\parindent=0pt\\parskip=0pt"));
+                let mut n = start;
+                for line in lines {
+                    let mut inner = self.inlines(&line.content);
+                    let mut lead = String::from("\\noindent");
+                    match line.kind {
+                        VerseLineKind::Line => {
+                            if let Some(number) = n.as_mut() {
+                                if *number == start.unwrap_or(0) || number.rem_euclid(i64::from(by.max(1))) == 0 {
+                                    lead.push_str(&format!("\\llap{{{{\\footnotesize {number}}}\\hspace{{0.9em}}}}"));
+                                }
+                                *number += 1;
+                            }
+                            if line.indent > 0 {
+                                lead.push_str(&format!("\\hspace*{{{}em}}", line.indent as f32 * 1.5));
+                            }
+                        }
+                        VerseLineKind::Speaker => {
+                            lead = "\\medskip\\noindent".into();
+                            inner = vec![json!({"t": "SmallCaps", "c": inner})];
+                        }
+                        VerseLineKind::Direction => {
+                            inner = vec![json!({"t": "Emph", "c": inner})];
+                        }
+                    }
+                    inner.insert(0, json!({"t": "RawInline", "c": ["latex", lead]}));
+                    inner.push(json!({"t": "RawInline", "c": ["latex", "\\par"]}));
+                    out.push(json!({"t": "Plain", "c": inner}));
+                }
+                out.push(raw("latex", "\\par}\\medskip"));
+            }
             _ => {
                 // A line block: lines, each as its kind has it. Indentation is
-                // spaces that do not break, which Pandoc keeps at the head of a line.
+                // spaces that do not break, which Pandoc keeps at the head of a
+                // line; a number stands at the head of its line, small.
                 let mut block = Vec::new();
+                let mut n = start;
                 for line in lines {
                     let mut inner = self.inlines(&line.content);
                     inner = match line.kind {
@@ -60,6 +97,18 @@ impl Converter<'_> {
                     if line.indent > 0 {
                         let spaces = "\u{a0}".repeat((line.indent as usize) * 4);
                         inner.insert(0, json!({"t": "Str", "c": spaces}));
+                    }
+                    if line.kind == VerseLineKind::Line
+                        && let Some(number) = n.as_mut()
+                    {
+                        if *number == start.unwrap_or(0) || number.rem_euclid(i64::from(by.max(1))) == 0 {
+                            inner.insert(
+                                0,
+                                json!({"t": "Span", "c": [["", ["verse-number"], [["custom-style", "Verse Number"]]],
+                                    [{"t": "Str", "c": format!("{number}\u{a0}\u{a0}")}]]}),
+                            );
+                        }
+                        *number += 1;
                     }
                     block.push(Value::Array(inner));
                 }
@@ -101,6 +150,74 @@ impl Converter<'_> {
                     [[attr(), 0, [], [[attr(), [cell(l), cell(r)]]]]],
                     [attr(), []],
                 ]}));
+            }
+        }
+    }
+}
+
+/// The text of inlines in capitals: scene headings, characters and transitions are set so.
+fn upper(inlines: &mut [Value]) {
+    for v in inlines.iter_mut() {
+        if v["t"] == "Str" {
+            if let Some(s) = v["c"].as_str() {
+                v["c"] = Value::String(s.to_uppercase());
+            }
+        } else {
+            // Emph, Strong and their like hold their inlines; a citation holds nothing to be set so.
+            let holds = v["t"] != "Cite" && v["t"] != "Note";
+            if holds && let Some(inner) = v["c"].as_array_mut() {
+                upper(inner);
+            }
+        }
+    }
+}
+
+impl Converter<'_> {
+    /// A paragraph of a screenplay, set as scripts are: in Typst by the
+    /// opening of the document, in LaTeX by what is written here, and in
+    /// Word and Writer by a paragraph style named after the part.
+    pub(super) fn script(&self, part: super::ScriptPart, content: &[super::Inline], out: &mut Vec<Value>) {
+        use super::ScriptPart as P;
+        let mut inner = self.inlines(content);
+        if inner.is_empty() {
+            return;
+        }
+        if matches!(part, P::Scene | P::Character | P::Transition) {
+            upper(&mut inner);
+        }
+        match self.extras.flavour {
+            Flavour::Typst => out.push(json!({"t": "Div", "c": [[format!("gk-script-{}", part.name()), [], []],
+                [{"t": "Plain", "c": inner}]]})),
+            Flavour::Latex => {
+                let (open, close) = match part {
+                    P::Scene => ("{\\par\\medskip\\noindent\\bfseries ", "\\par\\nobreak}"),
+                    P::Action => ("{\\par\\noindent ", "\\par}"),
+                    P::Character => ("{\\par\\medskip\\leftskip=5.6cm\\noindent ", "\\par\\nobreak}"),
+                    P::Dialogue => ("{\\par\\leftskip=2.5cm\\rightskip=3.8cm\\noindent ", "\\par}"),
+                    P::Parenthetical => ("{\\par\\leftskip=4cm\\rightskip=4cm\\noindent(", ")\\par\\nobreak}"),
+                    P::Transition => ("{\\par\\medskip\\raggedleft ", "\\par}"),
+                };
+                inner.insert(0, json!({"t": "RawInline", "c": ["latex", open]}));
+                inner.push(json!({"t": "RawInline", "c": ["latex", close]}));
+                out.push(json!({"t": "Plain", "c": inner}));
+            }
+            Flavour::Docx | Flavour::Odt | Flavour::Plain => {
+                let style = match part {
+                    P::Scene => "Scene Heading",
+                    P::Action => "Action",
+                    P::Character => "Character",
+                    P::Dialogue => "Dialogue",
+                    P::Parenthetical => "Parenthetical",
+                    P::Transition => "Transition",
+                };
+                if part == P::Parenthetical {
+                    inner.insert(0, json!({"t": "Str", "c": "("}));
+                    inner.push(json!({"t": "Str", "c": ")"}));
+                }
+                out.push(
+                    json!({"t": "Div", "c": [["", [format!("script-{}", part.name())], [["custom-style", style]]],
+                    [{"t": "Para", "c": inner}]]}),
+                );
             }
         }
     }

@@ -30,6 +30,7 @@
   import AlignLeft from '@lucide/svelte/icons/align-left';
   import Columns2 from '@lucide/svelte/icons/columns-2';
   import Drama from '@lucide/svelte/icons/drama';
+  import Clapperboard from '@lucide/svelte/icons/clapperboard';
   import Hash from '@lucide/svelte/icons/hash';
   import LineNumbersDialog from './LineNumbersDialog.svelte';
   import { insertParallel, numberLines, verseAt } from './verse';
@@ -124,6 +125,43 @@
       hint: t('editor-direction-hint'),
       icon: Drama,
     },
+    { value: 'scene', label: t('editor-scene'), hint: t('editor-scene-hint'), icon: Clapperboard },
+    {
+      value: 'action',
+      label: t('editor-action'),
+      hint: t('editor-action-hint'),
+      icon: Clapperboard,
+    },
+    {
+      value: 'character',
+      label: t('editor-character'),
+      hint: t('editor-character-hint'),
+      icon: Clapperboard,
+    },
+    {
+      value: 'dialogue',
+      label: t('editor-dialogue'),
+      hint: t('editor-dialogue-hint'),
+      icon: Clapperboard,
+    },
+    {
+      value: 'parenthetical',
+      label: t('editor-parenthetical'),
+      hint: t('editor-parenthetical-hint'),
+      icon: Clapperboard,
+    },
+    {
+      value: 'transition',
+      label: t('editor-transition'),
+      hint: t('editor-transition-hint'),
+      icon: Clapperboard,
+    },
+  ]);
+  /** The kinds in groups, for the menu: text, verse, script. */
+  const GROUPS = $derived([
+    { label: t('editor-kinds-text'), from: 0, to: 4 },
+    { label: t('editor-kinds-verse'), from: 4, to: 7 },
+    { label: t('editor-kinds-script'), from: 7, to: 13 },
   ]);
   const inVerse = $derived(style === 'verse' || style === 'speaker' || style === 'direction');
 
@@ -254,14 +292,17 @@
     if (!view) return;
     openMenu(
       event.currentTarget as HTMLElement,
-      STYLES.map((x) => ({
-        label: x.label,
-        hint: x.hint,
-        icon: x.icon,
-        shortcut: x.shortcut,
-        checked: x.value === style,
-        action: () => run(setStyle(x.value), view),
-      })),
+      GROUPS.flatMap((g) => [
+        { kind: 'heading' as const, label: g.label },
+        ...STYLES.slice(g.from, g.to).map((x) => ({
+          label: x.label,
+          hint: x.hint,
+          icon: x.icon,
+          shortcut: x.shortcut,
+          checked: x.value === style,
+          action: () => run(setStyle(x.value), view),
+        })),
+      ]),
       { align: 'start' },
     );
   }

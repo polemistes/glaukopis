@@ -127,6 +127,35 @@ try {
   check('the two sides are written, Tab going across', sides.length === 2 && sides[0].startsWith('Εἴθ') && sides[1] === 'If only the Argo', sides.join(' | '));
   await app.screenshot('verse-2-parallel');
 
+  // --- A script: the parts follow one another with Enter and Tab ---
+  await app.exec(
+    `const ps = Array.from(document.querySelectorAll('.text-view .body p:not(.verse-line)')); const l = ps[ps.length - 1]; const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
+  );
+  await app.press('Enter');
+  await sleep(150);
+  await app.click('.text-view .tools .style');
+  await app.clickText('[role="menuitem"]', 'Scene heading');
+  await sleep(200);
+  await app.keys('Int. Palace – night');
+  await app.press('Enter');
+  await app.keys('Medea paces.');
+  await app.press('Tab');
+  await sleep(100);
+  await app.keys('Nurse');
+  await app.press('Enter');
+  await app.keys('If only the Argo had never flown.');
+  await sleep(200);
+  const script = await app.exec(
+    `return Array.from(document.querySelectorAll('.text-view .body p.script')).map((p) => p.className.replace('script ', '') + ':' + p.textContent.trim()).join(' | ')`,
+  );
+  check(
+    'a scene heading, then action; Tab makes a character, Enter its dialogue',
+    script === 'scene:Int. Palace – night | action:Medea paces. | character:Nurse | dialogue:If only the Argo had never flown.',
+    script,
+  );
+  await app.waitForText('.text-view .tools .style', 'Dialogue', 3000);
+  await app.screenshot('verse-2b-script');
+
   // --- The preview sets them ---
   await app.click('header button[aria-label="Preview and export"]');
   await app.waitFor('.preview .page', 30000);

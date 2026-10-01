@@ -121,6 +121,7 @@ export function buildDocument(project: Project, mapId: string): ExportDocument {
     abstract: settings.abstract,
     keywords: settings.keywords ?? [],
     language: settings.language,
+    ...(settings.cover ? { cover: settings.cover } : {}),
     sections,
     references,
   };

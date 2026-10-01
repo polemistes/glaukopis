@@ -103,6 +103,9 @@ function blocks(list: Block[], notes: { n: number }): string {
         out += '</div>';
         break;
       }
+      case 'script':
+        out += `<p class="script ${b.part}">${inlines(b.content, notes)}</p>`;
+        break;
       case 'parallel':
         out +=
           `<div class="parallel"><div class="parallel-side">${blocks(b.left, notes)}</div>` +
@@ -188,19 +191,21 @@ export function excerpt(list: Block[], characters = 600): { blocks: Block[]; cut
         ? b.content.reduce((n, c) => n + size(c), 0)
         : b.kind === 'verse'
           ? b.lines.reduce((n, l) => n + plain(l.content).length + 1, 0)
-          : b.kind === 'parallel'
-            ? [...b.left, ...b.right].reduce((n, c) => n + size(c), 0)
-            : b.kind === 'figure'
-              ? // A picture takes the room of some lines.
-                plain(b.caption).length + 240
-              : b.kind === 'equation'
-                ? 80
-                : b.kind === 'row'
-                  ? b.items.reduce((n, c) => n + size(c), 0)
-                  : b.kind === 'table'
-                    ? // A row takes the room of a line.
-                      plain(b.caption).length + b.rows.length * 70
-                    : b.items.reduce((n, item) => n + item.reduce((m, c) => m + size(c), 0), 0);
+          : b.kind === 'script'
+            ? plain(b.content).length
+            : b.kind === 'parallel'
+              ? [...b.left, ...b.right].reduce((n, c) => n + size(c), 0)
+              : b.kind === 'figure'
+                ? // A picture takes the room of some lines.
+                  plain(b.caption).length + 240
+                : b.kind === 'equation'
+                  ? 80
+                  : b.kind === 'row'
+                    ? b.items.reduce((n, c) => n + size(c), 0)
+                    : b.kind === 'table'
+                      ? // A row takes the room of a line.
+                        plain(b.caption).length + b.rows.length * 70
+                      : b.items.reduce((n, item) => n + item.reduce((m, c) => m + size(c), 0), 0);
   for (const b of list) {
     if (count >= characters) return { blocks: out, cut: true };
     const s = size(b);

@@ -249,7 +249,7 @@ impl Converter<'_> {
         fn blocks(list: &[Block], c: &mut Counted) {
             for block in list {
                 match block {
-                    Block::Paragraph { content } => inlines(content, c.to),
+                    Block::Paragraph { content } | Block::Script { content, .. } => inlines(content, c.to),
                     Block::Blockquote { content } => blocks(content, c),
                     Block::Verse { lines, .. } => {
                         for l in lines {
@@ -567,6 +567,7 @@ impl Converter<'_> {
                 }
                 Block::Verse { start, by, lines } => self.verse(*start, *by, lines, out),
                 Block::Parallel { left, right } => self.parallel(left, right, out),
+                Block::Script { part, content } => self.script(*part, content, out),
                 Block::BulletList { items } => {
                     let list = self.items(items);
                     if !list.is_empty() {

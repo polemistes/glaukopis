@@ -136,6 +136,16 @@ try {
   const chosen = await app.exec(`return Array.from(document.querySelectorAll('.timeline .lane-name')).map((l) => l.textContent.trim())`);
   check('a lane chosen stands alone, the rest elsewhere', chosen[0] === 'Athens' && chosen[1] === 'Elsewhere in the map', chosen.join('|'));
 
+  // --- A chronology is added to the map ---
+  await app.click('.timeline button[aria-label="Add a chronology to the map"]');
+  await app.waitFor('.text-view .section', 5000);
+  await sleep(600);
+  const chronology = await app.exec(
+    `const s = Array.from(document.querySelectorAll('.text-view .section')).find((e) => e.querySelector('.heading').textContent.includes('Chronology'));
+     return s ? Array.from(s.querySelectorAll('table tr')).map((r) => Array.from(r.querySelectorAll('th, td')).map((c) => c.textContent.trim()).join(' | ')).join(' / ') : ''`,
+  );
+  check('a chronology is an element with a table of what is placed, in order', /^When \| What \/ /.test(chronology) && chronology.indexOf('peace') < chronology.indexOf('expedition'), chronology);
+
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));
 } catch (error) {

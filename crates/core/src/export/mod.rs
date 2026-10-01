@@ -910,6 +910,17 @@ pub fn export_until(
             args.push(css.display().to_string());
             args.push("--epub-chapter-level=1".into());
             args.push("--epub-title-page=false".into());
+            // The cover, where the document has one and the store has the picture.
+            if let (Some(cover), Some(pictures)) = (&request.document.cover, ctx.pictures)
+                && let Ok(source) = crate::pictures::file_in(pictures, &cover.hash, &cover.extension)
+                && source.is_file()
+            {
+                let target = dir.join(format!("cover.{}", cover.extension));
+                if fs::copy(&source, &target).is_ok() {
+                    args.push("--epub-cover-image".into());
+                    args.push(target.display().to_string());
+                }
+            }
         }
         Target::Pdf | Target::Typst => unreachable!(),
     }
@@ -1153,7 +1164,7 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
         use crate::document::Block;
         for b in list {
             match b {
-                Block::Paragraph { content } => inlines(content, with_notes, out),
+                Block::Paragraph { content } | Block::Script { content, .. } => inlines(content, with_notes, out),
                 Block::Figure { caption, .. } => inlines(caption, with_notes, out),
                 Block::Equation { .. } => {}
                 Block::Row { items } => blocks(items, with_notes, out),
@@ -1287,6 +1298,50 @@ mod tests {
             assert!(!p.pages.is_empty(), "{}", format.id);
             assert!(p.warnings.is_empty(), "{}: {:?}", format.id, p.warnings);
         }
+    }
+
+    #[test]
+    fn a_screenplay_is_set_as_scripts_are() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, ScriptPart, Section};
+        let Some(s) = setup() else { return };
+        let formats = crate::formats::Formats::new(&s.resources, &s.work.join("formats"));
+        let screenplay = formats.all().into_iter().map(|(f, _)| f).find(|f| f.id == "screenplay").unwrap();
+        let mut r = request("chicago-notes-bibliography");
+        r.format = screenplay;
+        let part = |part: ScriptPart, words: &str| Block::Script { part, content: vec![text(words)] };
+        r.document.sections.push(Section {
+            level: 1,
+            heading: Some(vec![text("Act one")]),
+            blocks: vec![
+                part(ScriptPart::Scene, "Int. Palace – night"),
+                part(ScriptPart::Action, "Medea paces. The nurse watches."),
+                part(ScriptPart::Character, "Nurse"),
+                part(ScriptPart::Parenthetical, "quietly"),
+                part(ScriptPart::Dialogue, "If only the Argo had never flown."),
+                part(ScriptPart::Transition, "Cut to:"),
+            ],
+            element: Some("act".into()),
+        });
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let typ = out.join("script.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("INT. PALACE -- NIGHT"), "{t}");
+        assert!(t.contains("<gk-script-scene>") && t.contains("<gk-script-dialogue>"), "{t}");
+        assert!(t.contains("NURSE") && t.contains("CUT TO:"), "{t}");
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let tex = out.join("script.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("\\leftskip=5.6cm\\noindent NURSE"), "{l}");
+        assert!(l.contains("\\noindent(quietly)"), "{l}");
+        let docx = out.join("script.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let xml = unzip(&docx, "word/document.xml");
+        assert!(xml.contains("SceneHeading") && xml.contains("Dialogue"), "{xml}");
     }
 
     #[test]
@@ -1916,12 +1971,14 @@ mod tests {
         let svg: String = p.pages.iter().map(|page| page.svg.as_str()).collect();
         assert!(!svg.is_empty());
 
-        // LaTeX: a line block, with the speaker in small capitals.
+        // LaTeX: each line a paragraph, the speaker in small capitals, the numbers in the margin.
         let tex = out.join("verse.tex");
         export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
         let l = fs::read_to_string(&tex).unwrap();
         assert!(l.contains("\\textsc{Nurse}"), "{l}");
-        assert!(l.contains("If only the Argo had never flown"), "{l}");
+        assert!(l.contains("\\llap{{\\footnotesize 1}\\hspace{0.9em}}If only the Argo had never flown"), "{l}");
+        assert!(l.contains("\\llap{{\\footnotesize 5}\\hspace{0.9em}}in the glens"), "{l}");
+        assert!(l.contains("\\hspace*{1.5em}through the dark"), "{l}");
         assert!(l.contains("\\begin{minipage}[t]{0.48\\textwidth}"), "{l}");
 
         // An e-book: the chapters are its parts, and the lines stay lines.
@@ -1949,11 +2006,32 @@ mod tests {
         assert!(text.contains("If only the Argo had never flown"), "{text}");
         assert!(text.contains("line-block"), "{text}");
 
+        // With a cover: a picture of the store, which the book carries.
+        {
+            use crate::pictures::fixtures::PNG;
+            let pictures = Pictures::open(&s.pictures).unwrap();
+            let picture = pictures.add("cover.png", &PNG).unwrap();
+            let mut with_cover = r.clone();
+            with_cover.document.cover = Some(crate::document::Cover { hash: picture.hash, extension: "png".into() });
+            let epub = out.join("covered.epub");
+            export(&s.ctx(), &with_cover, Target::Epub, &epub, &ExportOptions::default()).unwrap();
+            let archive = zip::ZipArchive::new(fs::File::open(&epub).unwrap()).unwrap();
+            assert!(
+                archive.file_names().any(|n| n.contains("cover")),
+                "{:?}",
+                archive.file_names().collect::<Vec<_>>()
+            );
+        }
+
         // Word: the lines stay lines, and the texts side by side are a table.
         let docx = out.join("verse.docx");
         export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
         let xml = unzip(&docx, "word/document.xml");
         assert!(xml.contains("If only the Argo had never flown"), "no verse in Word");
+        assert!(
+            xml.contains("VerseNumber") && xml.contains(">5\u{a0}\u{a0}<"),
+            "the numbers stand at the head of their lines: {xml}"
+        );
         assert!(xml.contains("<w:tbl>"), "no table for the texts side by side");
     }
 

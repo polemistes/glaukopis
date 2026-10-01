@@ -1,0 +1,107 @@
+{
+  "id": "screenplay",
+  "name": "Screenplay",
+  "kind": "stage",
+  "description": "The standard screenplay page: 12-point Courier, single spacing, a wide margin at the left for binding, scene headings in capitals, the character over the dialogue, the dialogue in a narrow column; a page a minute of film.",
+  "source": {
+    "name": "The standard screenplay format, as described in the article Screenplay, and as the screenwriting programs have it",
+    "url": "https://en.wikipedia.org/wiki/Screenplay",
+    "checked": "2026-10-01",
+    "confidence": "medium",
+    "notes": "Write the script with the kinds of paragraph under Script: scene heading, action, character, dialogue, parenthetical, transition. Enter goes from a character to its dialogue and from dialogue to action; Tab goes to the other part that follows. Acts, where there are any, are headings of the first level."
+  },
+  "page": {
+    "size": "a4",
+    "marginTop": "2.5cm",
+    "marginBottom": "2.5cm",
+    "marginLeft": "3.8cm",
+    "marginRight": "2.5cm"
+  },
+  "font": {
+    "family": "Courier New",
+    "size": 12
+  },
+  "text": {
+    "lineSpacing": 1,
+    "align": "left",
+    "paragraphs": "spaced",
+    "indent": "0pt",
+    "indentFirst": false,
+    "spaceBetween": "12pt",
+    "hyphenate": false
+  },
+  "headings": {
+    "numbered": false,
+    "levels": [
+      {
+        "size": 12,
+        "bold": true,
+        "italic": false,
+        "align": "center",
+        "case": "upper",
+        "newPage": true,
+        "spaceBefore": "48pt",
+        "spaceAfter": "36pt"
+      },
+      {
+        "size": 12,
+        "bold": true,
+        "italic": false,
+        "align": "left",
+        "case": "upper",
+        "spaceBefore": "24pt",
+        "spaceAfter": "12pt"
+      },
+      {
+        "size": 12,
+        "bold": false,
+        "italic": false,
+        "align": "left",
+        "case": "upper",
+        "spaceBefore": "12pt",
+        "spaceAfter": "12pt"
+      }
+    ]
+  },
+  "title": {
+    "placement": "own-page",
+    "size": 14,
+    "bold": true,
+    "align": "center",
+    "showAuthors": true,
+    "showAffiliations": false,
+    "showDate": false,
+    "showAbstract": false,
+    "abstractLabel": "Abstract",
+    "keywordsLabel": "Keywords"
+  },
+  "quote": {
+    "indentLeft": "2.5cm",
+    "indentRight": "0pt",
+    "size": 0,
+    "lineSpacing": 0
+  },
+  "notes": {
+    "kind": "endnotes",
+    "size": 10,
+    "lineSpacing": 1,
+    "title": "Notes"
+  },
+  "bibliography": {
+    "title": "Sources",
+    "hangingIndent": "1.27cm",
+    "lineSpacing": 0,
+    "entrySpacing": "0pt",
+    "newPage": true
+  },
+  "pageNumbers": {
+    "show": true,
+    "position": "top-right",
+    "firstPage": false
+  },
+  "runningHead": {
+    "content": "none"
+  },
+  "lineNumbers": false,
+  "style": "chicago-notes-bibliography"
+}

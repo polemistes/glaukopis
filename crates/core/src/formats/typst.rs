@@ -503,6 +503,18 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
   grid(columns: (1fr, 1fr), column-gutter: 2em, left, right))"
     );
 
+    // A screenplay: each part of the script where scripts have it. The
+    // measures are those of the standard script page, from the margin of the text.
+    let _ = writeln!(
+        out,
+        "#show <gk-script-scene>: it => block(width: 100%, above: 1.6em, below: 0.9em, breakable: false, strong(it.body))
+#show <gk-script-action>: it => block(width: 100%, above: 0.9em, below: 0.9em, it.body)
+#show <gk-script-character>: it => block(width: 100%, above: 0.9em, below: 0pt, breakable: false, inset: (left: 5.6cm), it.body)
+#show <gk-script-dialogue>: it => block(width: 100%, above: 0pt, below: 0pt, inset: (left: 2.5cm, right: 3.8cm), it.body)
+#show <gk-script-parenthetical>: it => block(width: 100%, above: 0pt, below: 0pt, breakable: false, inset: (left: 4cm, right: 4cm), [(#it.body)])
+#show <gk-script-transition>: it => block(width: 100%, above: 0.9em, below: 0.9em, align(right, it.body))"
+    );
+
     // Equations on a line of their own, with room about them.
     let _ = writeln!(
         out,

@@ -837,6 +837,12 @@ export class Project {
         out.set(s.file, { hash: s.file, extension: s.extension ?? '', name: s.name ?? '' });
       }
     }
+    // The cover of an e-book is a picture of the map's document.
+    for (const m of this.maps) {
+      const cover = m.document.cover;
+      if (cover && (!mapId || m.id === mapId) && !out.has(cover.hash))
+        out.set(cover.hash, { hash: cover.hash, extension: cover.extension, name: '' });
+    }
     return [...out.values()];
   }
 

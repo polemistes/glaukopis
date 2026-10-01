@@ -81,6 +81,9 @@ const everything: Block[] = [
       { kind: 'direction', indent: 0, content: [t('She weeps.')] },
     ],
   },
+  { kind: 'script', part: 'scene', content: [t('Int. Palace – night')] },
+  { kind: 'script', part: 'character', content: [t('Nurse')] },
+  { kind: 'script', part: 'dialogue', content: [t('If only.')] },
   {
     kind: 'parallel',
     left: [

@@ -31,6 +31,8 @@ export interface DocumentSettings {
   format?: string;
   /** Language of the text, as a BCP 47 tag: en-GB, nb, de, el. */
   language?: string;
+  /** The cover of the e-book: a picture of the store, by its hash, and its kind of file. */
+  cover?: { hash: string; extension: string };
 }
 
 export interface MapRecord {
@@ -45,10 +47,15 @@ export interface MapRecord {
   timeline: TimelineSettings;
 }
 
-/** A lane of a timeline: an element, whose branch the lane holds; or each of its children a lane of their own. */
+/**
+ * A lane of a timeline: an element, whose branch the lane holds, or each of
+ * its children a lane of their own; or a kind of element, every element of
+ * which is a lane.
+ */
 export interface Lane {
-  element: string;
+  element?: string;
   each?: boolean;
+  kind?: string;
 }
 
 /** How a map is shown as a timeline: its axis, and its lanes. */

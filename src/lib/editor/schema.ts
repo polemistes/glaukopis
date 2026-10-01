@@ -259,6 +259,24 @@ const bodyNodes: Record<string, NodeSpec> = {
       0,
     ],
   },
+  /** A paragraph of a screenplay: a scene heading, action, a character, dialogue, a parenthetical, a transition. */
+  script: {
+    group: 'block',
+    content: 'inline*',
+    attrs: { part: { default: 'action' } },
+    parseDOM: [
+      {
+        tag: 'p.script',
+        getAttrs: (node) => ({
+          part:
+            ['scene', 'action', 'character', 'dialogue', 'parenthetical', 'transition'].find((p) =>
+              (node as HTMLElement).classList.contains(p),
+            ) ?? 'action',
+        }),
+      },
+    ],
+    toDOM: (node) => ['p', { class: `script ${node.attrs.part}` }, 0],
+  },
   /** Two texts side by side: an original and its translation. */
   parallel: {
     group: 'block',

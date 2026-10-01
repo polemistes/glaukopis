@@ -162,6 +162,7 @@ function blocks(maker: PassageMaker, list: Block[]): void {
   for (const b of list) {
     switch (b.kind) {
       case 'paragraph':
+      case 'script':
         line(maker, b.content, 'line');
         break;
       case 'blockquote':
