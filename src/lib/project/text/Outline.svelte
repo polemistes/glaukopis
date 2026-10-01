@@ -10,6 +10,7 @@
   import { t } from '$lib/i18n';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { indent, outdent, shift } from '../elements';
+  import { kindColour } from '../kinds';
   import type { Project } from '../model/project.svelte';
 
   interface Item {
@@ -110,6 +111,13 @@
           onclick={() => ongo(item.id)}
           onkeydown={(e) => onkeydown(e, i)}
         >
+          {#if node?.kind && project.kind(node.kind)}
+            <span
+              class="dot"
+              style:background={kindColour(project.kind(node.kind)?.colour).ink}
+              title={project.kind(node.kind)?.name}
+            ></span>
+          {/if}
           <span class="name truncate">{node?.title || t('project-untitled')}</span>
         </button>
       </li>
@@ -153,6 +161,7 @@
   }
   button {
     display: flex;
+    align-items: flex-start;
     width: 100%;
     padding-top: 4px;
     padding-bottom: 4px;
@@ -183,6 +192,13 @@
   }
   .name {
     min-width: 0;
+  }
+  .dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    margin: 5px 6px 0 -2px;
+    border-radius: 50%;
   }
   .loose-heading {
     margin: 12px 0 4px 10px;

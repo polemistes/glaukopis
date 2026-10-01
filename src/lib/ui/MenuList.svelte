@@ -39,7 +39,9 @@
   const hasChecks = $derived(
     items.some((i) => (i.kind ?? 'item') === 'item' && 'checked' in i && i.checked !== undefined),
   );
-  const hasIcons = $derived(items.some((i) => 'icon' in i && i.icon));
+  const hasIcons = $derived(
+    items.some((i) => ('icon' in i && i.icon) || ('colour' in i && i.colour)),
+  );
 
   function selectable(i: number) {
     const item = items[i];
@@ -207,7 +209,10 @@
         {/if}
         {#if hasIcons}
           <span class="icon"
-            >{#if Icon}<Icon size={15} />{/if}</span
+            >{#if Icon}<Icon size={15} />{:else if item.kind !== 'submenu' && item.colour}<span
+                class="dot"
+                style:background={item.colour}
+              ></span>{/if}</span
           >
         {/if}
         <span class="label">
@@ -298,6 +303,12 @@
   }
   .item.danger .icon {
     color: inherit;
+  }
+  .icon .dot {
+    width: 10px;
+    height: 10px;
+    margin: auto;
+    border-radius: 50%;
   }
   .label {
     display: flex;

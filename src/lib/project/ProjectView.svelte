@@ -52,6 +52,9 @@
   import MapDiagram from './diagram/MapDiagram.svelte';
   import { comparing } from './copies.svelte';
   import CopyDialog from './CopyDialog.svelte';
+  import KindDialog from './KindDialog.svelte';
+  import KindsDialog from './KindsDialog.svelte';
+  import { kindsUi } from './kinds.svelte';
   import { filesDropped, mapOfIt } from './drops';
   import {
     arranged,
@@ -874,6 +877,21 @@
     onclose={() => (comparing.copy = null)}
     ongo={(map, element) => show(map, { element })}
   />
+{/if}
+
+{#if kindsUi.editing && project}
+  {#key kindsUi.editing.id}
+    <KindDialog
+      {project}
+      id={kindsUi.editing.id}
+      assign={kindsUi.editing.assign}
+      onclose={() => (kindsUi.editing = null)}
+    />
+  {/key}
+{/if}
+
+{#if kindsUi.managing && project}
+  <KindsDialog {project} onclose={() => (kindsUi.managing = false)} />
 {/if}
 
 {#if showShare && shared && project}

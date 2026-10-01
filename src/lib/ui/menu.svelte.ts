@@ -13,6 +13,8 @@ export type MenuItem =
       /** A second, quieter line under the label. */
       hint?: string;
       icon?: Component<{ size?: number | string }>;
+      /** A dot of this colour, in place of an icon: for a kind of element. */
+      colour?: string;
       shortcut?: string;
       disabled?: boolean;
       danger?: boolean;

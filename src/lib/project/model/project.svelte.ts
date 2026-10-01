@@ -17,6 +17,7 @@ import * as Y from 'yjs';
 import { ySyncPluginKey } from 'y-prosemirror';
 import type { Awareness } from 'y-protocols/awareness';
 import { commentChanges } from './changing/comments';
+import { kindChanges } from './changing/kinds';
 import { deleteNodes, elementChanges, elementOf } from './changing/elements';
 import { linkChanges } from './changing/links';
 import { mapChanges } from './changing/maps';
@@ -36,6 +37,7 @@ import { buildTree, type FlatNode, type Tree } from './tree';
 import {
   STATUSES,
   type DocumentSettings,
+  type KindRecord,
   type LinkRecord,
   type MapRecord,
   type NodeRecord,
@@ -96,10 +98,11 @@ type ElementChanges = typeof elementChanges;
 type ReferenceChanges = typeof referenceChanges;
 type LinkChanges = typeof linkChanges;
 type CommentChanges = typeof commentChanges;
+type KindChanges = typeof kindChanges;
 
 /** What changes a project, in `changing/`: its methods, which it takes in below. */
 export interface Project
-  extends MapChanges, ElementChanges, ReferenceChanges, LinkChanges, CommentChanges {}
+  extends MapChanges, ElementChanges, ReferenceChanges, LinkChanges, CommentChanges, KindChanges {}
 
 export class Project {
   readonly doc: Y.Doc;
@@ -119,6 +122,8 @@ export class Project {
   readonly yHistory: Y.Map<unknown>;
   /** The comments: threads by their id, each on an element. See `changing/comments.ts`. */
   readonly yComments: Y.Map<Y.Map<unknown>>;
+  /** The kinds of elements, by their id. See `changing/kinds.ts`. */
+  readonly yKinds: Y.Map<Y.Map<unknown>>;
   /**
    * The people of a project whose history is on, as Yjs's
    * `PermanentUserData` keeps them: by person, the copies that are theirs
@@ -139,6 +144,8 @@ export class Project {
   ignored = $state.raw<ReadonlySet<string>>(new Set());
   /** The comments, by the id of the thread. A thread is made anew whenever it changes. */
   readonly comments = new SvelteMap<string, Thread>();
+  /** The kinds of elements, in their order. */
+  kinds = $state.raw<KindRecord[]>([]);
   /** Rises when the shape of any tree changes. */
   structure = $state(0);
   /** Rises with every change to the project, whoever made it. */
@@ -169,6 +176,7 @@ export class Project {
     this.yIgnored = this.doc.getMap('ignored');
     this.yHistory = this.doc.getMap('history');
     this.yComments = this.doc.getMap('comments');
+    this.yKinds = this.doc.getMap('kinds');
     this.yUsers = this.doc.getMap('users');
     this.#presence = new Presence(this.doc);
     this.#people = new People(this.doc, this.yUsers, () => this.history.on);
@@ -218,6 +226,7 @@ export class Project {
     this.yNotes.observeDeep(() => this.#readNotes());
     this.yIgnored.observe(() => this.#readIgnored());
     this.yHistory.observe(() => this.#readHistory());
+    this.yKinds.observeDeep(() => this.#readKinds());
     this.yComments.observeDeep((events) => {
       const touched = new Set<string>();
       for (const event of events) {
@@ -386,7 +395,29 @@ export class Project {
     this.#readHistory();
     this.comments.clear();
     for (const id of this.yComments.keys()) this.#readThread(id);
+    this.#readKinds();
     this.structure++;
+  }
+
+  #readKinds() {
+    const list: KindRecord[] = [];
+    for (const [id, k] of this.yKinds) {
+      if (!(k instanceof Y.Map)) continue;
+      list.push({
+        id,
+        name: str(k.get('name'), '?'),
+        colour: str(k.get('colour')),
+        template: str(k.get('template')),
+        order: str(k.get('order'), 'a0'),
+      });
+    }
+    list.sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : a.id < b.id ? -1 : 1));
+    this.kinds = list;
+  }
+
+  /** A kind by its id. */
+  kind(id: string | null | undefined): KindRecord | undefined {
+    return id ? this.kinds.find((k) => k.id === id) : undefined;
   }
 
   #readThread(id: string) {
@@ -593,6 +624,7 @@ export class Project {
       include: (n.get('include') as string | null | undefined) || null,
       origin: origin && origin.map && origin.node ? origin : null,
       status: STATUSES.find((s) => s === n.get('status')) ?? null,
+      kind: str(n.get('kind')) || null,
       title: inlineText(title).trim(),
       titleHtml: titleHtml(title),
       empty: facts.empty,
@@ -831,4 +863,5 @@ Object.assign(
   referenceChanges,
   linkChanges,
   commentChanges,
+  kindChanges,
 );

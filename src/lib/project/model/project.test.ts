@@ -696,3 +696,37 @@ describe('comments', () => {
     expect(there.notes[0].text).toBe('Why wrath?');
   });
 });
+
+describe('kinds of elements', () => {
+  it('kinds are made, changed and deleted, and elements are of them', () => {
+    const { p, root } = project();
+    const person = p.createKind({ name: ' Person ', colour: 'rose', template: 'Born\nDied' })!;
+    const place = p.createKind({ name: 'Place', colour: 'teal', template: '' })!;
+    expect(p.createKind({ name: '  ', colour: 'teal', template: '' })).toBeNull();
+    expect(p.kinds.map((k) => k.name)).toEqual(['Person', 'Place']);
+    expect(p.kind(person)).toMatchObject({ colour: 'rose', template: 'Born\nDied' });
+
+    const a = p.addChild(root, { title: 'Pericles' })!;
+    const b = p.addChild(root, { title: 'Athens', body: 'A city.' })!;
+    p.setKind([a, b], person);
+    expect(p.node(a)!.kind).toBe(person);
+    expect(p.blocksOf(a).length).toBe(2);
+    expect(p.node(b)!.kind).toBe(person);
+    expect(p.blocksOf(b).length).toBe(1);
+    p.setKind([b], place);
+    p.setKind([a], 'no such kind');
+    expect(p.node(a)!.kind).toBe(person);
+
+    p.updateKind(person, { name: 'Character', colour: 'plum', template: '' });
+    expect(p.kind(person)).toMatchObject({ name: 'Character', colour: 'plum', template: '' });
+    p.updateKind(person, { name: '' });
+    expect(p.kind(person)!.name).toBe('Character');
+
+    p.deleteKind(person);
+    expect(p.kinds.map((k) => k.name)).toEqual(['Place']);
+    expect(p.node(a)!.kind).toBeNull();
+    expect(p.node(b)!.kind).toBe(place);
+    p.setKind([b], null);
+    expect(p.node(b)!.kind).toBeNull();
+  });
+});

@@ -15,12 +15,15 @@ import MoveRight from '@lucide/svelte/icons/move-right';
 import Pencil from '@lucide/svelte/icons/pencil';
 import Plus from '@lucide/svelte/icons/plus';
 import Scissors from '@lucide/svelte/icons/scissors';
+import Tag from '@lucide/svelte/icons/tag';
 import Trash2 from '@lucide/svelte/icons/trash-2';
 import Unlink from '@lucide/svelte/icons/unlink';
 import { languages, t } from '$lib/i18n';
 import { commentsUi } from '$lib/comments/ui.svelte';
 import { truncate } from '$lib/library/format';
 import { confirm } from '$lib/ui/confirm.svelte';
+import { kindColour } from './kinds';
+import { manageKinds, newKind } from './kinds.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { compareCopy } from './copies.svelte';
 import { notify, toasts } from '$lib/ui/toast.svelte';
@@ -265,6 +268,37 @@ export function elementMenu(
     });
     items.push({ kind: 'separator' });
   }
+
+  // What kind of element what is chosen is.
+  const kindSaid = nodes.every((n) => n.kind === nodes[0].kind) ? nodes[0].kind : undefined;
+  items.push({
+    kind: 'submenu',
+    label: t('kinds-kind'),
+    icon: Tag,
+    items: [
+      ...project.kinds.map((k): MenuItem => ({
+        label: k.name,
+        colour: kindColour(k.colour).ink,
+        checked: kindSaid === k.id,
+        action: () => project.setKind(ids, k.id),
+      })),
+      ...(project.kinds.length
+        ? [
+            { kind: 'separator' } as MenuItem,
+            {
+              label: t('kinds-none-of-them'),
+              checked: kindSaid === null,
+              action: () => project.setKind(ids, null),
+            } as MenuItem,
+          ]
+        : []),
+      { kind: 'separator' },
+      { label: t('kinds-new-ellipsis'), icon: Plus, action: () => newKind(ids) },
+      ...(project.kinds.length
+        ? [{ label: t('kinds-manage'), action: () => manageKinds() } as MenuItem]
+        : []),
+    ],
+  });
 
   // How far the writing of what is chosen has come.
   const said = nodes.every((n) => n.status === nodes[0].status) ? nodes[0].status : undefined;

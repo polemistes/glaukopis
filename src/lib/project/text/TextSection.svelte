@@ -18,6 +18,7 @@
   import type { Other, Project } from '../model/project.svelte';
   import { readBody } from '../model/text';
   import type { NodeRecord } from '../model/types';
+  import { kindColour } from '../kinds';
   import { pieces } from '../pieces';
   import { reviewing } from '$lib/review/context';
   import { reviewDrawn } from '$lib/review/drawn';
@@ -113,6 +114,8 @@
   );
   /** The language of the map, whose spelling the text is checked by. */
   const language = $derived(project.map(node.map)?.document.language ?? null);
+  /** Its kind, where it has one: a tag by its name. */
+  const kind = $derived(project.kind(node.kind));
   /** The threads of comments on it that are open: a marker in the right margin. */
   const commented = $derived(project.threadsOf(node.id).filter((th) => !th.resolved));
 
@@ -245,6 +248,11 @@
     {/if}
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div class="heading" data-part="title" onmousedown={(e) => press(e, 'title')}>
+      {#if kind}
+        <span class="tag kind" style:--kind={kindColour(kind.colour).ink}
+          ><span class="dot"></span>{kind.name}</span
+        >
+      {/if}
       {#if !node.heading && level > 0}<span class="tag">{t('text-not-printed')}</span>{/if}
       {#if active && title}
         <RichText
@@ -592,6 +600,24 @@
     color: var(--ink-4);
     font-style: italic;
     user-select: none;
+  }
+
+  .tag.kind {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-right: 10px;
+    color: var(--kind);
+    font-style: normal;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .tag.kind .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--kind);
   }
 
   .excluded > .content {

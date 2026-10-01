@@ -3,6 +3,7 @@
   import { t } from '$lib/i18n';
   import { place, type RectLike } from '$lib/ui/floating';
   import { hydrate } from '$lib/figures/hydrate.svelte';
+  import { kindColour } from './kinds';
   import { blocksHtml, excerpt } from './model/html';
   import type { Project } from './model/project.svelte';
   import { readBody } from './model/text';
@@ -29,8 +30,10 @@
   const included = $derived(node?.include ? project.map(node.include) : undefined);
   /** Where the element was copied from, if it is a copy of what is still there. */
   const copied = $derived(node?.origin ? project.copyOf(id) : null);
+  const kind = $derived(project.kind(node?.kind));
   const worth = $derived(
-    !!node && (!node.empty || !!included || !node.heading || node.excluded || !!copied?.original),
+    !!node &&
+      (!node.empty || !!included || !node.heading || node.excluded || !!copied?.original || !!kind),
   );
 
   $effect(() => {
@@ -48,8 +51,13 @@
       </div>
       {#if content.cut}<div class="more">{t('project-read-on')}</div>{/if}
     {/if}
-    {#if included || !node.heading || node.excluded || copied?.original}
+    {#if included || !node.heading || node.excluded || copied?.original || kind}
       <div class="facts" class:alone={!content.html}>
+        {#if kind}
+          <div class="kind">
+            <span class="dot" style:background={kindColour(kind.colour).ink}></span>{kind.name}
+          </div>
+        {/if}
         {#if copied?.original && copied.map}
           {@const said = {
             name: copied.original.title || t('project-untitled'),
@@ -106,6 +114,16 @@
     font-size: var(--text-sm);
     color: var(--ink-3);
     line-height: 1.5;
+  }
+  .kind {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
   }
   .facts.alone {
     margin-top: 0;

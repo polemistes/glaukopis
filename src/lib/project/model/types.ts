@@ -50,6 +50,21 @@ export type Status = 'idea' | 'draft' | 'done';
 
 export const STATUSES: readonly Status[] = ['idea', 'draft', 'done'];
 
+/**
+ * A kind of element, as the project's writer names it: character, place,
+ * event, source, argument, or what the work needs. A name and a colour, and
+ * perhaps a text that an element of the kind begins with.
+ */
+export interface KindRecord {
+  id: string;
+  name: string;
+  /** One of `KIND_COLOURS`, by its name. */
+  colour: string;
+  /** What the text of a new element of the kind begins with: lines, one paragraph each. */
+  template: string;
+  order: string;
+}
+
 /** Where an element was copied from. */
 export interface Origin {
   map: string;
@@ -86,6 +101,8 @@ export interface NodeRecord {
   origin: Origin | null;
   /** How far its writing has come; nothing where that is not said. */
   status: Status | null;
+  /** The id of its kind (`KindRecord`); nothing where it has none. */
+  kind: string | null;
 
   // Read from the content.
   title: string;

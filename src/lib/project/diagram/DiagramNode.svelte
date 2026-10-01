@@ -14,6 +14,7 @@
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { compareCopy } from '../copies.svelte';
+  import { kindColour } from '../kinds';
   import { number, statusWords } from '../status';
   import type { Other, Project } from '../model/project.svelte';
   import type { NodeRecord } from '../model/types';
@@ -93,6 +94,8 @@
   const behind = $derived(!!node.origin && project.copyOf(node.id)?.changed === true);
   /** The threads of comments on it that are open. */
   const commented = $derived(project.threadsOf(node.id).filter((th) => !th.resolved));
+  /** Its kind, with its colour, where it has one. */
+  const kind = $derived(project.kind(node.kind));
 
   function action(a: KeyAction, _view: EditorView): boolean {
     if (a === 'enter' || a === 'escape' || a === 'tab') {
@@ -121,8 +124,12 @@
   data-node={node.id}
   id={domId}
   role="treeitem"
-  aria-label={node.title || t('project-untitled')}
+  aria-label={kind
+    ? `${node.title || t('project-untitled')} (${kind.name})`
+    : node.title || t('project-untitled')}
   aria-selected={selected}
+  class:kinded={!!kind}
+  style:--kind={kind ? kindColour(kind.colour).ink : undefined}
   aria-level={placed.depth + 1}
   aria-expanded={hasChildren ? !node.collapsed : undefined}
   style:transform="translate({Math.round(placed.x - placed.w / 2)}px, {Math.round(
@@ -246,6 +253,12 @@
 </div>
 
 <style>
+  /* An element of a kind carries the kind's colour at its left edge. */
+  .node.kinded {
+    box-shadow:
+      inset 4px 0 0 var(--kind),
+      var(--shadow-1);
+  }
   .node {
     position: absolute;
     left: 0;

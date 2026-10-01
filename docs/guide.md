@@ -602,6 +602,23 @@ closes it; the tabs at its head change what it shows. Each has its key as
 well: **Ctrl+Shift+R**, **Ctrl+Shift+P**, **Ctrl+Shift+M**, **Ctrl+Shift+H**
 and **Ctrl+Shift+E**.
 
+## Kinds of elements
+
+An element can be of a **kind**: a character, a place, an event, a source,
+an argument, a scene — whatever the work needs, named by you. A kind is a
+name and a colour, and may have a text that an element of the kind begins
+with: *Appearance, Wants, Fears*, one paragraph each.
+
+**Kind** in the element's menu lists the kinds of the project; **New kind…**
+makes one and gives it to the element, and **Kinds of this project…** shows
+them all, with how many elements are of each, to change or delete them. A
+name you have used in another project is offered as you type, with the
+colour it had there.
+
+An element of a kind carries the colour at its left edge in the diagram,
+as a dot in the outline, and as a small label over its name in the text.
+Nothing of it goes into the document.
+
 ## Comments
 
 A comment is a note on an element, or on a passage of its text: a question

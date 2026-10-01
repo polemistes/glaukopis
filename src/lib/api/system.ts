@@ -86,6 +86,8 @@ export interface Settings {
   found: FoundSettings;
   /** Whether spelling is checked as one writes. */
   spelling: boolean;
+  /** The kinds of elements made in any project, by name, with the colour each had last: offered when a kind is named. */
+  kinds: { name: string; colour: string }[];
 }
 
 export const defaultSettings: Settings = {
@@ -105,6 +107,7 @@ export const defaultSettings: Settings = {
   defaultFormat: 'manuscript',
   found: { years: false, named: false, notes: false, atOnce: true, goThrough: true, inNotes: '' },
   spelling: true,
+  kinds: [],
 };
 
 export const settingsLoad = () => call<Partial<Settings>>('settings_load');
