@@ -43,6 +43,7 @@ timeline-moving-hint = Drag an element along the axis, or the edge of a span, to
 timeline-without = Elements without a time
 timeline-without-hint = Drag one onto the timeline, or press it to say when it is:
 timeline-waiting-hint = Says nothing of its time yet: press it to say when it is, or drag it along the lane to place it
+timeline-implied-hint = says nothing of its time, and stands within { $parent }; press it to say when it is, or, with moving on, drag it along the lane to place it
 timeline-unknown = refers to what is not placed, or to a time that cannot be read
 
 ## Saying when an element is

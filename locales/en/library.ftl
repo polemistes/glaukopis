@@ -43,7 +43,45 @@ library-in-library = In your library
 library-reason-doi = the same DOI
 library-reason-isbn = the same ISBN
 library-reason-identical = alike in all that tells one work from another
-library-reason-title-author-year = the same title, author and year
+# How far the title, the author and the year agree: the same, like (titles
+# that differ in a few letters or a subtitle, an author in common, years a
+# year apart), or none (one of them says nothing of it).
+library-reason-alike = { $title ->
+    [same] { $author ->
+        [same] { $year ->
+            [same] the same title, author and year
+            [like] the same title and author, a year apart
+           *[none] the same title and author, the year on one of them only
+        }
+        [like] { $year ->
+            [same] the same title and year, and an author in common
+            [like] the same title, an author in common, a year apart
+           *[none] the same title, an author in common, the year on one of them only
+        }
+       *[none] { $year ->
+            [same] the same title and year, the author on one of them only
+            [like] the same title, a year apart, the author on one of them only
+           *[none] the same title, the author and year on one of them only
+        }
+    }
+   *[like] { $author ->
+        [same] { $year ->
+            [same] the same author and year, and a title like it
+            [like] the same author, a title like it, a year apart
+           *[none] the same author, a title like it, the year on one of them only
+        }
+        [like] { $year ->
+            [same] the same year, a title like it, an author in common
+            [like] a title like it, an author in common, a year apart
+           *[none] a title like it, an author in common, the year on one of them only
+        }
+       *[none] { $year ->
+            [same] the same year, a title like it, the author on one of them only
+            [like] a title like it, a year apart, the author on one of them only
+           *[none] a title like it, the author and year on one of them only
+        }
+    }
+}
 library-reason-file = the same file
 # Several reasons: those before the last, set apart by commas, and the last.
 library-reasons = { $others } and { $last }
@@ -119,6 +157,12 @@ library-import-what-to-do = What to do
 library-import-merge = Same work: complete the one I have
 library-import-skip = Same work: leave mine as it is
 library-import-add = A different work: add it
+# One answer for every candidate in the same case: “For all 16 that are the same: …”.
+library-import-all-certain = For all { $count } that are the same:
+library-import-all-probable = For all { $count } that are probably the same:
+library-import-all-merge = Complete the ones I have
+library-import-all-skip = Leave mine as they are
+library-import-all-add = Add them all the same
 library-import-more = …and { $count } more.
 library-import-unread = { $count ->
     [one] { $count } part of the file could not be read

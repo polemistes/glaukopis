@@ -50,6 +50,11 @@ export interface ElementActions {
   edit?: (id: string) => void;
   /** Select elements, after some were made or moved. */
   select?: (ids: string[]) => void;
+  /**
+   * Make a new element after the one given, or under it, and begin its name,
+   * as the view does it; where the view does not say, the menu does it itself.
+   */
+  add?: (id: string, where: 'after' | 'under') => void;
   /** Begin an association from the element: the next element clicked is its other end. */
   link?: (id: string) => void;
   /** Show a map, after elements went to it or it was made. */
@@ -170,6 +175,8 @@ export function elementMenu(
   ids: string[],
   actions: ElementActions,
   anchor: HTMLElement | null = null,
+  /** Where the menu is opened, for the keys it shows beside adding: the diagram's, or the text's. */
+  where: 'diagram' | 'text' = 'diagram',
 ): MenuItem[] {
   const first = project.node(ids[0]);
   if (!first) return [];
@@ -225,32 +232,27 @@ export function elementMenu(
   const items: MenuItem[] = [];
 
   if (one) {
+    const add = (how: 'after' | 'under') => {
+      if (actions.add) return actions.add(one.id, how);
+      project.checkpoint();
+      const id = how === 'under' ? project.addChild(one.id) : project.addSibling(one.id);
+      if (id) {
+        actions.select?.([id]);
+        actions.rename?.(id);
+      }
+    };
     items.push(
       {
         label: t('project-add-under'),
         icon: CornerDownRight,
-        shortcut: 'Tab',
-        action: () => {
-          project.checkpoint();
-          const id = project.addChild(one.id);
-          if (id) {
-            actions.select?.([id]);
-            actions.rename?.(id);
-          }
-        },
+        shortcut: where === 'text' ? 'Alt+Shift+Enter' : 'Tab',
+        action: () => add('under'),
       },
       {
         label: isRoot ? t('project-add') : t('project-add-after'),
         icon: Plus,
-        shortcut: 'Enter',
-        action: () => {
-          project.checkpoint();
-          const id = project.addSibling(one.id);
-          if (id) {
-            actions.select?.([id]);
-            actions.rename?.(id);
-          }
-        },
+        shortcut: where === 'text' ? 'Alt+Enter' : 'Enter',
+        action: () => add('after'),
       },
       { kind: 'separator' },
     );

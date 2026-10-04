@@ -5,7 +5,8 @@ use std::path::{Path, PathBuf};
 
 use crate::bib;
 use crate::error::{IoContext, Result};
-use crate::library::entry::Draft;
+use crate::found::zotero_key;
+use crate::library::entry::{Draft, FIELD_ZOTERO, zotero_keys};
 use crate::tr;
 
 use super::Candidate;
@@ -82,7 +83,20 @@ pub fn read_text(text: &str, base: Option<&Path>) -> (Vec<Candidate>, Vec<String
         let mut notes = Vec::new();
 
         let groups = draft.fields.get("groups").cloned();
+        // What the entry is in Zotero, where the file says it: by it a
+        // citation that Zotero made finds the entry.
+        let mut keys: Vec<String> = draft.fields.get("zotero-key").map(|v| zotero_keys(v)).unwrap_or_default();
+        for name in ["uri", "url"] {
+            if let Some(key) = draft.fields.get(name).and_then(|v| zotero_key(v))
+                && !keys.contains(&key)
+            {
+                keys.push(key);
+            }
+        }
         draft.fields.retain(|name, _| !is_foreign_bookkeeping(name));
+        if !keys.is_empty() {
+            draft.fields.insert(FIELD_ZOTERO.to_owned(), keys.join(" "));
+        }
 
         let mut files = Vec::new();
         if let Some(value) = draft.fields.remove("file") {
@@ -243,6 +257,8 @@ mod tests {
   owner = {me},
   timestamp = {2019-01-01},
   bdsk-file-1 = {YnBsaXN0},
+  zotero-key = {ABCD2345},
+  uri = {http://zotero.org/users/123/items/WXYZ6789},
 }
 @book{empty,}
 @article{broken, title = }
@@ -258,6 +274,8 @@ mod tests {
         assert_eq!(c.collections, vec![vec!["Homer".to_owned()], vec!["Epic poetry".to_owned()]]);
         assert_eq!(c.draft.get("date"), Some("1979"));
         assert!(c.draft.get("owner").is_none() && c.draft.get("bdsk-file-1").is_none());
+        assert_eq!(c.draft.zotero(), vec!["ABCD2345", "WXYZ6789"]);
+        assert!(c.draft.get("uri").is_none());
         assert_eq!(c.origin, "nagy1979, line 2");
         assert_eq!(warnings.len(), 2, "{warnings:?}");
     }

@@ -56,7 +56,9 @@ async function rightClickWord(word, within = '.text-view') {
 }
 
 const menuItems = () =>
-  app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
+  app.exec(
+    `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`,
+  );
 
 /** Right-clicks a point of the window, as the harness right-clicks an element. */
 async function rightClickAt(x, y) {
@@ -98,7 +100,11 @@ try {
   const tags = await app.exec(
     `return Array.from(document.querySelectorAll('[data-dictionaries] li')).map((l) => l.dataset.tag)`,
   );
-  check('the settings list the dictionaries that come with the application', tags.join(' ') === 'en-GB en-US nb-NO nn-NO', tags.join(' '));
+  check(
+    'the settings list the dictionaries that come with the application',
+    tags.join(' ') === 'en-GB en-US nb-NO nn-NO',
+    tags.join(' '),
+  );
   await app.screenshot('spelling-1-settings');
 
   // ---- English ----
@@ -107,7 +113,9 @@ try {
   await app.waitFor('.text-view .section');
   await app.click('.text-view .section .body');
   await sleep(300);
-  await app.keys('The wrath of Achilles is recieved by teh gods of Glaukopis, and its colour is dark. ');
+  await app.keys(
+    'The wrath of Achilles is recieved by teh gods of Glaukopis, and its colour is dark. ',
+  );
   await until('the misspelt words to be underlined', async () => (await underlined()).length >= 4);
   let words = await underlined();
   // A new map is in American English, where "colour" is British.
@@ -132,7 +140,9 @@ try {
   await sleep(600);
   check('the word being written is not underlined', !(await underlined()).includes('Achilees'));
   await app.keys(' ');
-  await until('the word to be underlined when it is left', async () => (await underlined()).includes('Achilees'));
+  await until('the word to be underlined when it is left', async () =>
+    (await underlined()).includes('Achilees'),
+  );
   check('and is, when it is left', true);
 
   // What it may be.
@@ -141,7 +151,10 @@ try {
   await until('what it may be', async () => (await menuItems()).includes('received'));
   const items = await menuItems();
   check('the menu of a word says what it may be', items[0] === 'received', items.join(' | '));
-  check('and offers to add it, and to ignore it', items.includes('Add to my words') && items.includes('Ignore in this project'));
+  check(
+    'and offers to add it, and to ignore it',
+    items.includes('Add to my words') && items.includes('Ignore in this project'),
+  );
   await app.screenshot('spelling-3-menu');
   await app.clickText('.menu [role="menuitem"]', 'received');
   await until('the word to be put in', async () =>
@@ -155,7 +168,10 @@ try {
   await app.clickText('.menu [role="menuitem"]', 'Add to my words');
   await until('the word to be right', async () => !(await underlined()).includes('Glaukopis'));
   const own = join(app.dataDir, 'words', 'en.txt');
-  await until('the word to be kept', async () => existsSync(own) && readFileSync(own, 'utf8').includes('Glaukopis'));
+  await until(
+    'the word to be kept',
+    async () => existsSync(own) && readFileSync(own, 'utf8').includes('Glaukopis'),
+  );
   check('a word added to one’s words is right, and is kept', true);
 
   // Ignored in the project.
@@ -173,7 +189,11 @@ try {
   await app.press('Escape');
   await app.waitGone('.menu');
   const selected = await app.exec(`return window.getSelection().toString()`);
-  check('F7 opens the menu of the next misspelt word, which it selects', selected === 'teh', selected);
+  check(
+    'F7 opens the menu of the next misspelt word, which it selects',
+    selected === 'teh',
+    selected,
+  );
   await app.keys([F7]);
   await until('the menu of the one after it', async () => (await menuItems())[0] === 'Achilles');
   await app.press('Escape');
@@ -193,7 +213,14 @@ try {
     const words = await drawnUnderlined();
     return words.length ? words : null;
   });
-  check('in text drawn without an editor, misspelt words are underlined', drawn.includes('teh') && drawn.includes('Achilees') && !drawn.includes('Glaukopis') && !drawn.includes('colour'), drawn.join(' '));
+  check(
+    'in text drawn without an editor, misspelt words are underlined',
+    drawn.includes('teh') &&
+      drawn.includes('Achilees') &&
+      !drawn.includes('Glaukopis') &&
+      !drawn.includes('colour'),
+    drawn.join(' '),
+  );
   await app.screenshot('spelling-4-drawn');
   // Its menu, where it stands.
   const at = await app.exec(
@@ -203,7 +230,9 @@ try {
   await rightClickAt(at.x, at.y);
   await until('the menu of the drawn word', async () => (await menuItems()).includes('the'));
   await app.clickText('.menu [role="menuitem"]', 'the');
-  await until('the word to be put in there', async () => (await app.text('.text-view .section .body')).includes('by the gods'));
+  await until('the word to be put in there', async () =>
+    (await app.text('.text-view .section .body')).includes('by the gods'),
+  );
   check('its menu puts in what is chosen', true);
 
   // ---- the settings ----
@@ -219,22 +248,67 @@ try {
   const listed = await app.exec(
     `return Array.from(document.querySelectorAll('[data-words="en"] li')).map((l) => l.textContent.trim())`,
   );
-  check('one’s own words are listed in the settings', listed.join(' ') === 'Glaukopis', listed.join(' '));
+  check(
+    'one’s own words are listed in the settings',
+    listed.join(' ') === 'Glaukopis',
+    listed.join(' '),
+  );
   await app.click('[data-words="en"] li button[aria-label="Take away “Glaukopis”"]');
-  await until('the word to be taken away', async () => !readFileSync(own, 'utf8').includes('Glaukopis'));
+  await until(
+    'the word to be taken away',
+    async () => !readFileSync(own, 'utf8').includes('Glaukopis'),
+  );
   await until('the list to be read again', async () => !(await app.exists('[data-words="en"]')));
   check('and can be taken away', true);
-  await app.click('[role="radiogroup"][aria-label="Check spelling as you write"] button[aria-label="Off"]');
+  await app.click(
+    '[role="radiogroup"][aria-label="Check spelling as you write"] button[aria-label="Off"]',
+  );
   await openWrath();
-  check('with checking turned off, nothing is underlined', (await drawnUnderlined()).length === 0 && (await underlined()).length === 0);
+  check(
+    'with checking turned off, nothing is underlined',
+    (await drawnUnderlined()).length === 0 && (await underlined()).length === 0,
+  );
   await app.keys(['Control', ',']);
-  await app.click('[role="radiogroup"][aria-label="Check spelling as you write"] button[aria-label="On"]');
+  await app.click(
+    '[role="radiogroup"][aria-label="Check spelling as you write"] button[aria-label="On"]',
+  );
   await openWrath();
   const again = await until('the words to be marked again', async () => {
     const words = await drawnUnderlined();
     return words.includes('Glaukopis') ? words : null;
   });
-  check('turned on again, it is; and a word taken away from one’s words is wrong again', again.includes('Achilees'), again.join(' '));
+  check(
+    'turned on again, it is; and a word taken away from one’s words is wrong again',
+    again.includes('Achilees'),
+    again.join(' '),
+  );
+
+  // The button at the end of the tools over the text turns it off and on as well.
+  const toggle = '.writing button[aria-label="Check spelling as you write"]';
+  check(
+    'the tools over the text have the button, pressed in',
+    (await app.exec(
+      `return document.querySelector(arguments[0])?.getAttribute('aria-pressed')`,
+      toggle,
+    )) === 'true',
+  );
+  await app.click(toggle);
+  await until(
+    'nothing to be underlined',
+    async () => (await drawnUnderlined()).length === 0 && (await underlined()).length === 0,
+  );
+  check(
+    'pressed, it turns the checking off',
+    (await app.exec(
+      `return document.querySelector(arguments[0])?.getAttribute('aria-pressed')`,
+      toggle,
+    )) === 'false',
+  );
+  await app.click(toggle);
+  await until('the words to be marked again', async () =>
+    (await drawnUnderlined()).includes('Achilees'),
+  );
+  check('and pressed again, on', true);
 
   // ---- Norwegian ----
   await newProject('Vreden');
@@ -242,7 +316,9 @@ try {
   await app.waitFor('.preview', 8000);
   await app.click('.preview button[aria-label="Title, authors, abstract"]');
   await app.waitFor('dialog select');
-  await app.exec(`const s = document.querySelector('dialog select'); s.value = 'nb'; s.dispatchEvent(new Event('change', { bubbles: true }));`);
+  await app.exec(
+    `const s = document.querySelector('dialog select'); s.value = 'nb'; s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
   await app.clickText('dialog footer button', 'Save');
   await app.waitGone('dialog');
   await app.keys(['Control', 'p']);
@@ -250,14 +326,24 @@ try {
   await app.waitFor('.text-view .section');
   await app.click('.text-view .section .body');
   await sleep(300);
-  await app.keys('Kaffemaskinreparatøren så verdens største bokhylle, men forsjell var det ikke. Det gjor ingenting. ');
+  await app.keys(
+    'Kaffemaskinreparatøren så verdens største bokhylle, men forsjell var det ikke. Det gjor ingenting. ',
+  );
   await until('the misspelt Norwegian words', async () => (await underlined()).length >= 2, 15000);
   words = await underlined();
-  check('in Norwegian, compounds and genitives are right, and misspelt words are not', words.join(' ') === 'forsjell gjor', words.join(' '));
+  check(
+    'in Norwegian, compounds and genitives are right, and misspelt words are not',
+    words.join(' ') === 'forsjell gjor',
+    words.join(' '),
+  );
   await rightClickWord('forsjell');
   await app.waitFor('.menu [role="menuitem"]', 4000);
   await until('what it may be', async () => (await menuItems()).includes('forskjell'), 8000);
-  check('what a Norwegian word may be', (await menuItems())[0] === 'forskjell', (await menuItems()).join(' | '));
+  check(
+    'what a Norwegian word may be',
+    (await menuItems())[0] === 'forskjell',
+    (await menuItems()).join(' | '),
+  );
   await app.screenshot('spelling-5-norwegian');
   await app.press('Escape');
 
@@ -268,8 +354,14 @@ try {
   await app.waitFor('.note-panel .prose', 4000);
   await app.keys('Et notat med feill.');
   await app.keys(['Control', 'Home']);
-  await until('the note to be checked', async () => (await underlined('.note-panel')).includes('feill'));
-  check('the text of a note is checked', (await underlined('.note-panel')).join(' ') === 'feill', (await underlined('.note-panel')).join(' '));
+  await until('the note to be checked', async () =>
+    (await underlined('.note-panel')).includes('feill'),
+  );
+  check(
+    'the text of a note is checked',
+    (await underlined('.note-panel')).join(' ') === 'feill',
+    (await underlined('.note-panel')).join(' '),
+  );
   await app.screenshot('spelling-6-note');
   await app.press('Escape');
   await app.waitGone('.note-panel');
@@ -279,7 +371,9 @@ try {
   await app.waitFor('.preview', 8000);
   await app.click('.preview button[aria-label="Title, authors, abstract"]');
   await app.waitFor('dialog select');
-  await app.exec(`const s = document.querySelector('dialog select'); s.value = 'la'; s.dispatchEvent(new Event('change', { bubbles: true }));`);
+  await app.exec(
+    `const s = document.querySelector('dialog select'); s.value = 'la'; s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
   await app.clickText('dialog footer button', 'Save');
   await app.waitGone('dialog');
   await app.keys(['Control', 'p']);
@@ -288,7 +382,11 @@ try {
   await app.keys([F7]);
   await until('what F7 says', async () => (await menuItems()).length > 0);
   const said = await app.exec(`return document.querySelector('.menu').textContent.trim()`);
-  check('in a language without a dictionary nothing is underlined, and F7 says why', /no dictionary for Latin/.test(said), said);
+  check(
+    'in a language without a dictionary nothing is underlined, and F7 says why',
+    /no dictionary for Latin/.test(said),
+    said,
+  );
   await app.screenshot('spelling-7-latin');
   await app.press('Escape');
 

@@ -1,13 +1,11 @@
-# Funne kildehenvisninger i en tekst som er skrevet et annet sted, og vinduet
-# der de gås gjennom (ADR 0015), på bokmål. Se locales/README.md.
+# Funne kildehenvisninger i en tekst som er skrevet et annet sted, og
+# sidepanelet der de gås gjennom (ADR 0015), på bokmål. Se locales/README.md.
 
-## Vinduet.
+## Panelet.
 
 found-title = Funne kildehenvisninger
-found-subtitle = { $count ->
-    [one] { $map } · { $count } kildehenvisning å gå gjennom
-   *[other] { $map } · { $count } kildehenvisninger å gå gjennom
-}
+found-tab = Funne henvisninger
+found-between = Mellom kartet og de funne kildehenvisningene
 found-taken = Det som tas for kildehenvisninger
 found-taken-always = Det et program har laget, og tagger
 found-taken-years = Parenteser med et årstall i
@@ -35,6 +33,10 @@ found-in = I «{ $element }»
 found-in-note-of = I en note i «{ $element }»
 found-note-mark = note
 found-position = { $index } av { $count }
+found-previous = Den før
+found-next = Den neste
+found-list-show = Vis listen
+found-list-hide = Skjul listen
 found-later = Senere
 found-leave = La det stå som tekst
 found-make = Gjør det til en kildehenvisning
@@ -102,6 +104,7 @@ found-work-looking = { $work } letes etter i biblioteket ditt …
 found-work-no-tag = { $work } er en tagg som ingen referanse i biblioteket ditt har.
 found-work-not-found = { $work } ble ikke funnet i biblioteket ditt.
 found-work-chosen = Valgt av deg
+found-work-followed = Som du valgte for samme verk
 found-work-certain = Sikker
 found-work-likely = Trolig
 found-work-possible = Mulig

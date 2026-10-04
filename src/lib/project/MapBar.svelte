@@ -3,13 +3,14 @@
    * The bar of a pane, at its left: the name of the map in view, from which
    * the maps of the project pull down to be opened; and beside it a button
    * with what can be done with this map, and with the maps: rename,
-   * duplicate, the citations that were found, delete; a new map, a map from
-   * a document.
+   * duplicate, the citations that were found, the languages, delete; a new
+   * map, a map from a document.
    */
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import Copy from '@lucide/svelte/icons/copy';
   import FileInput from '@lucide/svelte/icons/file-input';
+  import Languages from '@lucide/svelte/icons/languages';
   import Pencil from '@lucide/svelte/icons/pencil';
   import Plus from '@lucide/svelte/icons/plus';
   import TextSearch from '@lucide/svelte/icons/text-search';
@@ -21,6 +22,7 @@
   import { confirm } from '$lib/ui/confirm.svelte';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import LanguagesDialog from './LanguagesDialog.svelte';
   import type { Project } from './model/project.svelte';
   import type { MapRecord } from './model/types';
 
@@ -44,6 +46,8 @@
   /** A map that was just made, whose centre is named with it. */
   let newMap: string | null = null;
   let input = $state<HTMLInputElement>();
+  /** The map whose languages are open in the dialog, if any. */
+  let languagesOf = $state<string | null>(null);
 
   async function rename(m: MapRecord) {
     naming = { id: m.id, value: m.name };
@@ -125,6 +129,7 @@
         hint: found ? t('project-found-hint', { count: found }) : t('project-found-none'),
         action: () => goThrough(m.id),
       },
+      { label: t('languages-menu'), icon: Languages, action: () => (languagesOf = m.id) },
       {
         label: t('project-delete-map'),
         icon: Trash2,
@@ -198,6 +203,10 @@
     </button>
   {/if}
 </div>
+
+{#if languagesOf}
+  <LanguagesDialog {project} mapId={languagesOf} onclose={() => (languagesOf = null)} />
+{/if}
 
 <style>
   .maps {

@@ -23,9 +23,11 @@
   import Images from '@lucide/svelte/icons/images';
   import Italic from '@lucide/svelte/icons/italic';
   import Languages from '@lucide/svelte/icons/languages';
+  import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
   import Link2 from '@lucide/svelte/icons/link-2';
   import List from '@lucide/svelte/icons/list';
   import ListOrdered from '@lucide/svelte/icons/list-ordered';
+  import ListPlus from '@lucide/svelte/icons/list-plus';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import Pencil from '@lucide/svelte/icons/pencil';
   import PenLine from '@lucide/svelte/icons/pen-line';
@@ -35,6 +37,8 @@
   import Sheet from '@lucide/svelte/icons/sheet';
   import Sigma from '@lucide/svelte/icons/sigma';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
+  import SpellCheck from '@lucide/svelte/icons/spell-check';
+  import SplitSquareVertical from '@lucide/svelte/icons/split-square-vertical';
   import SquareFunction from '@lucide/svelte/icons/square-function';
   import StickyNote from '@lucide/svelte/icons/sticky-note';
   import Strikethrough from '@lucide/svelte/icons/strikethrough';
@@ -56,6 +60,8 @@
   import { documents } from '$lib/preview/documents.svelte';
   import { formatEditorUi } from '$lib/preview/format-editor.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
+  import { spelling } from '$lib/spelling/spelling.svelte';
+  import { settings } from '$lib/state/settings.svelte';
   import { askForTable, chooseTable } from '$lib/tables/ask';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
@@ -81,9 +87,15 @@
     scope?: HTMLElement | null;
     /** The map whose texts they are. */
     map?: string | null;
+    /**
+     * Makes a new element, where the tools stand over the text of a whole
+     * map: after the one the cursor is in, under it, or from the cursor on.
+     * Without it there is no button for it, as in the box of one element.
+     */
+    onelement?: (what: 'after' | 'under' | 'split') => void;
   }
 
-  let { project, scope = null, map = null }: Props = $props();
+  let { project, scope = null, map = null, onelement }: Props = $props();
 
   const s = $derived.by(() => {
     const selection = editorUi.selection;
@@ -295,6 +307,44 @@
       ],
       { align: 'start' },
     );
+  }
+
+  /** A new element, by the menu of the button: the keys do the same. */
+  function newElement(event: MouseEvent) {
+    if (!onelement) return;
+    const add = onelement;
+    openMenu(
+      event.currentTarget as HTMLElement,
+      [
+        {
+          label: t('editor-new-after'),
+          icon: Plus,
+          shortcut: 'Alt+Enter',
+          action: () => add('after'),
+        },
+        {
+          label: t('editor-new-under'),
+          icon: CornerDownRight,
+          shortcut: 'Alt+Shift+Enter',
+          action: () => add('under'),
+        },
+        {
+          label: t('editor-new-split'),
+          hint: t('editor-new-split-hint'),
+          icon: SplitSquareVertical,
+          shortcut: 'Ctrl+Enter',
+          disabled: !body,
+          action: () => add('split'),
+        },
+      ],
+      { align: 'start' },
+    );
+  }
+
+  /** Turns the checking of spelling off or on, for everything, as the settings do. */
+  function turnSpelling() {
+    settings.set('spelling', !spelling.on);
+    spelling.anew();
   }
 
   // ---- the kind of paragraph ----
@@ -521,6 +571,22 @@
   tabindex="-1"
   onmousedown={(e) => e.preventDefault()}
 >
+  {#if onelement}
+    <button
+      type="button"
+      class="word element"
+      aria-label={t('editor-new-element')}
+      use:tooltip={{ text: t('editor-new-element-hint'), shortcut: 'Alt+Enter', side: 'bottom' }}
+      onclick={newElement}
+    >
+      <ListPlus size={14} />
+      {t('editor-new-element')}
+      <ChevronDown size={13} />
+    </button>
+
+    <span class="rule"></span>
+  {/if}
+
   <button
     type="button"
     class="style"
@@ -643,6 +709,24 @@
     <Plus size={13} />
     {t('editor-insert')}
   </button>
+
+  <span class="rule"></span>
+
+  <!-- Spelling is turned off and on from here as from the settings: it holds everywhere, cursor or no cursor. -->
+  <button
+    type="button"
+    class="spelling"
+    class:on={spelling.on}
+    aria-pressed={spelling.on}
+    aria-label={t('spelling-check')}
+    use:tooltip={{
+      text: spelling.on ? t('editor-spelling-on') : t('editor-spelling-off'),
+      side: 'bottom',
+    }}
+    onclick={turnSpelling}
+  >
+    <SpellCheck size={15} />
+  </button>
 </div>
 
 {#if numbering}
@@ -714,6 +798,14 @@
     gap: 4px;
     padding: 0 5px 0 7px;
     font-weight: 500;
+  }
+  .element {
+    gap: 4px;
+    padding: 0 5px 0 8px;
+  }
+  /* Not about the cursor: as plain while there is none as while there is. */
+  .tools.idle .spelling {
+    opacity: 1;
   }
   .cite:not(:disabled) {
     color: var(--accent-strong);

@@ -95,3 +95,33 @@ said before and after each of them.
   from Zotero again gives them their keys.
 - Mendeley, and other programs that write as it does, give no key that
   the library knows, and are found by what they say of the work.
+
+## Addendum of 2026-10-04 — a panel, and what the library learns
+
+Asked for by the one the application is made for, after trying it:
+
+- **The citations are gone through in the panel at the side**, not in a
+  window over the text: a tab of the panel, beside the references and the
+  comments, which says how many the map in view has left. Where a pane
+  shows the map as text, the one that is looked at is shown there as well,
+  scrolled to and selected, and a note opened at it. The panel is there for
+  any map, whether its text was brought in or written here; what is to be
+  taken for a citation is said at its top.
+- **The same question has the same answer.** A reference the writer chooses
+  for a work is chosen for every other citation of the same work, as far
+  as the file says which they are (the same item in Zotero, or the same
+  tag), unless the writer chose otherwise for it or the library knows it
+  for certain; what the library then comes to know for certain takes its
+  place.
+- **The library learns what its references are in Zotero** wherever that
+  is said for certain: a reference chosen, or a likely one confirmed, for
+  a work that Zotero made a citation of is given the key of the item; so
+  is a reference that an import from Zotero finds to be the same for
+  certain and leaves out; and a `.bib` file that carries the key or the
+  address of the item gives it as well. From then on, what Zotero made of
+  the work is certain, here and in every text brought in after. This is
+  why "make citations at once" had made so few: references that had come
+  from a `.bib` file, or were there before the import, had no key.
+- The reason two references are taken for one says what agreed: the same
+  title, author and year; a title like it; an author in common; a year
+  apart; or one of them saying nothing of it.

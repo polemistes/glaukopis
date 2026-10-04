@@ -1,7 +1,8 @@
 // The languages: the interface in that of the system, which is Norwegian
 // here; every view in Norwegian, with no English left in it; the language
-// changed in the settings, at once; and new texts written in the language of
-// the system.
+// changed in the settings, at once; new texts written in the language of
+// the system; and the languages of a map and of the project, from the menu
+// of the map.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -174,6 +175,78 @@ try {
   await sleep(200);
   await app.keys(['Control', 'p']);
   await sleep(300);
+
+  // ---- the languages of the map and of the project, from the menu of the map ----
+  const chosen = () =>
+    app.exec(`return Array.from(document.querySelectorAll('dialog select')).map((s) => s.value)`);
+  const choose = (which, value) =>
+    app.exec(
+      `const s = document.querySelectorAll('dialog select')[arguments[0]];
+       s.value = arguments[1]; s.dispatchEvent(new Event('change', { bubbles: true }));`,
+      which,
+      value,
+    );
+  const openLanguages = async () => {
+    await app.openThisMap();
+    await app.clickText('.menu [role="menuitem"]', 'Språk …');
+    await app.waitFor('dialog select');
+    await sleep(200);
+  };
+  await app.openThisMap();
+  await english('the menu of the map');
+  await app.press('Escape');
+  await sleep(200);
+  await openLanguages();
+  await english('the languages of the map and of the project');
+  check(
+    'the dialog has the language of the map, and none chosen for the project',
+    JSON.stringify(await chosen()) === '["nb",""]',
+    JSON.stringify(await chosen()),
+  );
+  await app.screenshot('languages-4d-languages');
+  await choose(0, 'en-GB');
+  await choose(1, 'nn');
+  await sleep(200);
+  check(
+    'the languages are written as they are chosen',
+    JSON.stringify(await chosen()) === '["en-GB","nn"]',
+    JSON.stringify(await chosen()),
+  );
+  await app.press('Escape');
+  await app.waitGone('dialog');
+  await sleep(200);
+  // A new map is written in the language of the project.
+  await app.openThisMap();
+  await app.clickText('.menu [role="menuitem"]', 'Nytt kart');
+  await app.waitFor('.maps .naming');
+  await sleep(150);
+  await app.keys('Annen sang');
+  await app.press('Enter');
+  await app.waitGone('.maps .naming');
+  await sleep(300);
+  await openLanguages();
+  check(
+    'a new map is written in the language of the project',
+    JSON.stringify(await chosen()) === '["nn","nn"]',
+    JSON.stringify(await chosen()),
+  );
+  await app.press('Escape');
+  await app.waitGone('dialog');
+  await sleep(200);
+  // The first map keeps the language it was given, and is put back as it was.
+  await app.openMap((await app.mapNames())[0]);
+  await openLanguages();
+  check(
+    'the first map keeps the language it was given',
+    JSON.stringify(await chosen()) === '["en-GB","nn"]',
+    JSON.stringify(await chosen()),
+  );
+  await choose(0, 'nb');
+  await choose(1, '');
+  await sleep(200);
+  await app.press('Escape');
+  await app.waitGone('dialog');
+  await sleep(200);
 
   // ---- the history of the project ----
   await app.keys(['Control', 'Shift', 'h']);

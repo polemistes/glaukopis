@@ -28,8 +28,9 @@ export const mapChanges = {
       m.set('order', generateKeyBetween(last, null));
       m.set('created', nowIso());
       // The language is written into the map, so that it is the same for
-      // everyone the project is shared with (ADR 0020).
-      m.set('document', { language: newTextLanguage() });
+      // everyone the project is shared with (ADR 0020): that of the
+      // project's new maps, where one is chosen, else that of the settings.
+      m.set('document', { language: this.language || newTextLanguage() });
       this.yMaps.set(id, m);
       makeNode(this, root, {
         map: id,
@@ -71,9 +72,11 @@ export const mapChanges = {
       const keys = generateNKeysBetween(null, null, list.length);
       list.forEach((part, i) => orders.set(part, keys[i]));
     }
+    // A document that says its language keeps it; else the map is given
+    // the language of the project's new maps, else that of the settings.
     const settings: Record<string, unknown> = {
       ...document,
-      language: document.language || newTextLanguage(),
+      language: document.language || this.language || newTextLanguage(),
     };
     for (const [k, v] of Object.entries(settings)) {
       if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length))

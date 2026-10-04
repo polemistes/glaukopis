@@ -19,7 +19,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-use crate::duplicates::{self, Certainty, Reason};
+use crate::duplicates::{self, Agreement, Certainty, Reason};
 use crate::error::Result;
 use crate::library::Library;
 use crate::library::entry::{Draft, Entry, FIELD_ZOTERO, Summary};
@@ -76,7 +76,7 @@ pub enum ReasonWord {
     Doi,
     Isbn,
     Identical,
-    TitleAuthorYear,
+    Alike { title: Agreement, author: Agreement, year: Agreement },
     File,
 }
 
@@ -95,7 +95,7 @@ impl From<Reason> for ReasonWord {
             Reason::Doi => ReasonWord::Doi,
             Reason::Isbn => ReasonWord::Isbn,
             Reason::Identical => ReasonWord::Identical,
-            Reason::TitleAuthorYear => ReasonWord::TitleAuthorYear,
+            Reason::Alike { title, author, year } => ReasonWord::Alike { title, author, year },
             Reason::File => ReasonWord::File,
         }
     }
@@ -364,6 +364,16 @@ pub fn apply(library: &mut Library, plan: &Plan) -> Result<Outcome> {
         let id = match &item.action {
             Action::Skip => {
                 outcome.skipped += 1;
+                // What is left out because the library has it for certain
+                // tells the entry what it is in Zotero, which the entry may
+                // lack: by that, citations Zotero made of it are found.
+                let keys = candidate.draft.zotero();
+                if !keys.is_empty()
+                    && let Some(m) = item.matches.iter().find(|m| m.certainty == CertaintyWord::Certain)
+                    && let Ok(true) = library.add_zotero_keys(&m.id, &keys)
+                {
+                    outcome.updated.push(m.id.clone());
+                }
                 continue;
             }
             Action::Add => match library.insert(&candidate.draft, false) {
@@ -520,6 +530,37 @@ mod tests {
             "{:?}",
             again.items.iter().map(|i| &i.action).collect::<Vec<_>>()
         );
+    }
+
+    #[test]
+    fn what_is_left_out_as_certain_tells_the_entry_what_it_is_in_zotero() {
+        let (_tmp, mut lib) = library();
+        let known = lib
+            .add(
+                &draft_from_source(
+                    "@book{nagy1979, author={Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}}",
+                )
+                .unwrap(),
+            )
+            .unwrap();
+        assert!(known.zotero.is_empty());
+        let mut plan = plan(
+            &lib,
+            vec![candidate(
+                "@book{x, author={Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}, glaukopis-zotero={ABCD2345}}",
+            )],
+            "zotero",
+            vec![],
+        );
+        // The key is something gained, so the plan offers to take it; the writer says to leave it out.
+        assert_eq!(plan.items[0].action, Action::Merge { into: known.id.clone() });
+        assert_eq!(plan.items[0].matches[0].certainty, CertaintyWord::Certain);
+        plan.items[0].action = Action::Skip;
+        let outcome = apply(&mut lib, &plan).unwrap();
+        assert_eq!(outcome.skipped, 1);
+        assert_eq!(outcome.updated, vec![known.id.clone()]);
+        assert_eq!(lib.get(&known.id).unwrap().zotero, vec!["ABCD2345"]);
+        assert_eq!(lib.get(&known.id).unwrap().get("date"), Some("1979"));
     }
 
     #[test]

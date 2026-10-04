@@ -315,3 +315,31 @@ What this settles:
 - On Windows and macOS the dictionaries are bundled with the application,
   as everything in `resources/` is; on Arch Linux they stay packages of
   their own.
+
+## 2026-10-04 — after trying it: eleven proposals
+
+> I have tested it and have some proposals for enhancing it: 1) In zotero etc. import, have an option to switch all the same quetions into the same answer, such as if it is the same book or not. 2) When importing from Zotero, and asking to make all the Zotero citations automatically, it does not do so, it seems. 3) Make it possible to do the check for citations that now happens when importing a document also after the text is imported, even if it is not imported. 4) When going through duplications in the reference library, the note says two works have the same title, author and year, even when this is not true. […] 5) When an element that has a time range has subelements, the subelements should be shown under that element in the time, and not anywhere, or am I misunderstanding the logic? 6) Make text windows in the diagram mode movable. 7) Language settings per map and project. 8) Turn on/off autospellcheck in the toolbar, or at least somewhere easily reached when writing. 9) Keep linebreaks when importing textfiles. 10) In text mode, it is not intuitive how to add new headings (elements). Is it a good idea to adopt the orgmode keyboard shortcuts? 10) Could we have the citation converting in a panel instead of a separate window when going through the citations of an imported document? Then the passage in with the citation could be shown in context in the text view (and perhaps the preview) view if open.
+
+What this settles:
+
+- An import answers for all candidates in the same case at once, by a row
+  at its head for each certainty; each can still be answered on its own.
+- "Make citations at once" was failing for want of the keys of Zotero's
+  items on the references: the library now learns them wherever they are
+  said for certain (ADR 0015, addendum).
+- The citations that were found are gone through in the panel at the side,
+  for any map, with the passage shown in the text beside it; the preview is
+  left for later.
+- The reason two references are taken for one says what actually agreed.
+- An element without a time, under one that has one, is within that one's
+  time: drawn there, faint and dashed, until the writer says when it is.
+- The box in which an element's text is written in the diagram is dragged
+  by its header, and the next opens where it was put.
+- A map's language and a project's language for new maps are set under
+  **Languages…** in the map's menu; foreign words are checked in their own
+  language.
+- Spelling is turned off and on from the writing tools.
+- Lines of a text file stay lines of their paragraph.
+- Org mode's keys are taken as additions: Alt+Enter, Alt+Shift+Enter, Alt
+  and the arrows; Ctrl+Enter, Tab and Alt+Shift stay; a **New element**
+  button stands first in the writing tools.

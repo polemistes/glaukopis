@@ -19,8 +19,11 @@
   import { ProjectSharing } from '$lib/sharing/sharing.svelte';
   import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
-  import { goThrough, takeWaiting } from '$lib/found/found.svelte';
-  import FoundHost from '$lib/found/FoundHost.svelte';
+  import { foundUi, goThrough, takeWaiting } from '$lib/found/found.svelte';
+  import FoundPanel from '$lib/found/FoundPanel.svelte';
+  import { countFound } from '$lib/found/gather';
+  import type { Entry } from '$lib/found/going.svelte';
+  import { revealFound } from '$lib/found/reveal';
   import { pictures } from '$lib/figures/pictures.svelte';
   import { picturesUi, type PictureScope } from '$lib/pictures/store.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
@@ -482,6 +485,39 @@
     if (commentsUi.asked) untrack(() => side('comments', true));
   });
 
+  // What the citations that were found ask of the view: that their panel
+  // open, with their map in view. What was asked before this view was made is not for it.
+  let foundHandled = untrack(() => foundUi.asked);
+  $effect(() => {
+    const n = foundUi.asked;
+    const p = project;
+    if (!p || !pane) return;
+    untrack(() => {
+      if (n === foundHandled) return;
+      foundHandled = n;
+      const asked = foundUi.request;
+      if (!asked || !p.map(asked.map)) return;
+      if (pane.map !== asked.map) show(asked.map);
+      side('found', true);
+    });
+  });
+
+  /** How many citations that were found the map in view has left, for the tab of their panel. */
+  const foundCount = $derived.by(() => {
+    if (!project || !pane) return 0;
+    void project.revision;
+    return countFound(project, pane.map);
+  });
+
+  /** Shows a citation that was found where a pane shows its map as text: scrolled to, and selected. */
+  function showFound(map: string, entry: Entry) {
+    panes.forEach((p, i) => {
+      if (p.map !== map || p.mode !== 'text') return;
+      const surface = texts[i]?.searchSurface();
+      if (surface) void revealFound(surface, entry.target, entry.element);
+    });
+  }
+
   /** Whether a map has anything to show as a timeline: an element that says when it is, or settings. */
   function timed(map: string): boolean {
     if (!project) return false;
@@ -569,6 +605,7 @@
       // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
       'side-pictures': () => side('pictures'),
       'side-comments': () => side('comments'),
+      'side-found': () => side('found'),
       comment: { run: beginComment, when: () => !!project },
       'side-history': () => side('history'),
       'side-changes': () => toggleReview(),
@@ -787,7 +824,12 @@
               {#if p.mode === 'text'}
                 <span class="bar-divider"></span>
                 <div class="writing">
-                  <WritingTools {project} scope={paneEls[i]} map={p.map} />
+                  <WritingTools
+                    {project}
+                    scope={paneEls[i]}
+                    map={p.map}
+                    onelement={(what) => texts[i]?.newElement(what)}
+                  />
                 </div>
               {/if}
               <span class="spring"></span>
@@ -906,7 +948,11 @@
       {/if}
       {#if sideKind}
         {#snippet tabs()}
-          <SideTabs current={sideKind ?? lastSide} onpick={(kind) => side(kind, true)} />
+          <SideTabs
+            current={sideKind ?? lastSide}
+            counts={{ found: foundCount }}
+            onpick={(kind) => side(kind, true)}
+          />
         {/snippet}
         <Divider
           label={sideKind === 'pictures'
@@ -915,7 +961,9 @@
               ? t('history-between')
               : sideKind === 'comments'
                 ? t('comments-between')
-                : t('project-between-references')}
+                : sideKind === 'found'
+                  ? t('found-between')
+                  : t('project-between-references')}
           onstart={() => measure('references')}
           onmove={(dx) => moveSide('references', dx)}
           onreset={() => (sizes.references = 0)}
@@ -950,6 +998,17 @@
                 else show(map, { element, mode: 'text' });
               }}
             />
+          {:else if sideKind === 'found'}
+            {#key pane.map}
+              <FoundPanel
+                {project}
+                mapId={pane.map}
+                head={tabs}
+                onclose={closeSide}
+                onkeep={keep}
+                onshow={(entry) => showFound(pane.map, entry)}
+              />
+            {/key}
           {:else if sideKind === 'pictures'}
             <PicturePanel
               {project}
@@ -976,7 +1035,6 @@
 
   <EditorHost bind:this={host} {project} />
   <DocumentHost />
-  <FoundHost {project} onkeep={keep} />
 {/if}
 
 {#if comparing.copy && project}
@@ -1176,8 +1234,9 @@
     flex: none;
     background: var(--line);
   }
+  /* The tools take the room there is before anything springs; they wrap only when there is none. */
   .writing {
-    flex: 1;
+    flex: 1000 1 0;
     min-width: 0;
   }
   .spring {

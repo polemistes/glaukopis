@@ -75,7 +75,14 @@ export interface LibraryListing {
 }
 
 export type Certainty = 'certain' | 'probable';
-export type Reason = 'doi' | 'isbn' | 'identical' | 'title-author-year' | 'file';
+/** How far two references agree in one of what tells works apart. */
+export type Agreement = 'same' | 'like' | 'none';
+export type Reason =
+  | 'doi'
+  | 'isbn'
+  | 'identical'
+  | 'file'
+  | { alike: { title: Agreement; author: Agreement; year: Agreement } };
 
 export interface SummaryLite {
   key: string;
@@ -156,6 +163,9 @@ export const libraryGetMany = (ids: string[]) => call<Reference[]>('library_get_
 export const libraryAdd = (draft: Draft) => call<Reference>('library_add', { draft });
 export const libraryUpdate = (id: string, draft: Draft) =>
   call<Reference>('library_update', { id, draft });
+/** Gives a reference the keys of what it is in Zotero, which it may lack. */
+export const libraryAddZoteroKeys = (id: string, keys: string[]) =>
+  call<Reference>('library_add_zotero_keys', { id, keys });
 export const librarySetNote = (id: string, text: string) =>
   call<Reference>('library_set_note', { id, text });
 export const libraryRemove = (ids: string[]) => call<number>('library_remove', { ids });

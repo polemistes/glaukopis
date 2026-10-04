@@ -240,7 +240,7 @@
 
   // What is said under the text besides the count, with the keys shown as keys.
   const keysHint = $derived(
-    pieces((m) => t('text-keys', m), { ctrl: 'Ctrl', enter: 'Enter', at: '@' }),
+    pieces((m) => t('text-keys', m), { alt: 'Alt', shift: 'Shift', enter: 'Enter', at: '@' }),
   );
   const linkingHint = $derived(pieces((m) => t('text-hint-linking', m), { esc: 'Esc' }));
 
@@ -362,6 +362,44 @@
     if (made) go(made, 'title', 'start');
   }
 
+  /** A new element after this one, the cursor in its name. The centre has nothing beside it: the first under it. */
+  function addAfter(id: string) {
+    project.checkpoint();
+    const made = id === tree.root ? project.addChild(id, { index: 0 }) : project.addSibling(id);
+    project.checkpoint();
+    if (made) go(made, 'title', 'start');
+  }
+
+  /** A new element under this one, after all that is there, the cursor in its name. */
+  function addUnder(id: string) {
+    project.checkpoint();
+    const made = project.addChild(id);
+    project.checkpoint();
+    if (made) go(made, 'title', 'start');
+  }
+
+  /** A new element where the cursor is: in a text, from the cursor on; in a name, after the element. */
+  function addHere(id: string, part: Part | undefined) {
+    const view = editors.get(id)?.body?.getView();
+    if (part === 'body' && view) split(id, view);
+    else addAfter(id);
+  }
+
+  /**
+   * From the tools over the text: a new element after the one the cursor is
+   * in, under it, or from the cursor on. Before the cursor has been anywhere,
+   * the first element is the one.
+   */
+  export function newElement(what: 'after' | 'under' | 'split') {
+    const id = current ?? rows[0]?.id;
+    if (!id) return;
+    if (what === 'under') return addUnder(id);
+    if (what === 'after') return addAfter(id);
+    const view = editors.get(id)?.body?.getView();
+    if (view && view.hasFocus()) split(id, view);
+    else addAfter(id);
+  }
+
   /** Joins an element to the one before it in the text. Its name, if it has one, becomes a paragraph. */
   function merge(id: string) {
     const i = indexOf(id);
@@ -476,20 +514,17 @@
     const id = section?.dataset.section;
     if (!id) return;
 
-    if (mod && event.key === 'Enter' && !event.shiftKey) {
+    // Ctrl+Enter, and Alt+Enter as in Org mode: a new element here; with
+    // Alt+Shift, one under this one.
+    const alt = event.altKey && !mod;
+    if (event.key === 'Enter' && ((mod && !event.altKey) || alt)) {
+      if (mod && event.shiftKey) return;
       const part = (event.target as HTMLElement).closest<HTMLElement>('[data-part]')?.dataset
-        .part as Part;
-      const view = editors.get(id)?.[part === 'title' ? 'body' : 'body']?.getView();
+        .part as Part | undefined;
       event.preventDefault();
       event.stopPropagation();
-      if (part === 'body' && view) split(id, view);
-      else {
-        // From a name: a new element after this one.
-        project.checkpoint();
-        const made = id === tree.root ? project.addChild(id, { index: 0 }) : project.addSibling(id);
-        project.checkpoint();
-        if (made) go(made, 'title', 'start');
-      }
+      if (alt && event.shiftKey) addUnder(id);
+      else addHere(id, part);
       return;
     }
 
@@ -501,7 +536,8 @@
       return;
     }
 
-    if (event.altKey && event.shiftKey) {
+    // Alt+Shift and the arrows move the element; so do the arrows with Alt alone, as in Org mode.
+    if (alt) {
       let done = false;
       if (event.key === 'ArrowUp') done = shift(id, -1);
       else if (event.key === 'ArrowDown') done = shift(id, 1);
@@ -604,6 +640,11 @@
     scroller: () => scroller ?? null,
   };
 
+  /** The surface on which what is searched for is shown, for what else is to be shown in the text: a citation that was found. */
+  export function searchSurface(): Surface {
+    return surface;
+  }
+
   /** Opens the search over the text, or turns to it; with `replacing`, to the field of what replaces. */
   export function find(replacing = false) {
     const at = document.activeElement?.closest('.ProseMirror');
@@ -702,12 +743,13 @@
     rename: (id) => go(id, 'title', 'all'),
     edit: (id) => go(id, 'body', 'end'),
     select: (ids) => ids[0] && go(ids[0], 'title', 'start'),
+    add: (id, where) => (where === 'under' ? addUnder(id) : addAfter(id)),
     link: (id) => (linkFrom = id),
     openMap: (id) => onopenmap(id),
   };
 
   function menuFor(id: string, anchor: HTMLElement | null): MenuItem[] {
-    const base = elementMenu(project, [id], actions, anchor).filter(
+    const base = elementMenu(project, [id], actions, anchor, 'text').filter(
       (item) =>
         !('label' in item) ||
         (item.label !== t('project-write-text') && item.label !== t('common-rename')),

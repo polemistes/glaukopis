@@ -182,6 +182,8 @@ export class Project {
 
   // ---- what the interface reads ----
   name = $state('');
+  /** The language new maps of this project are given, as a tag; null where the settings decide. */
+  language = $state<string | null>(null);
   maps = $state.raw<MapRecord[]>([]);
   readonly nodes = new SvelteMap<string, NodeRecord>();
   links = $state.raw<LinkRecord[]>([]);
@@ -637,6 +639,7 @@ export class Project {
 
   #readMeta() {
     this.name = str(this.yMeta.get('name'));
+    this.language = str(this.yMeta.get('language')).trim() || null;
   }
 
   #readMaps() {
@@ -940,6 +943,20 @@ export class Project {
     const clean = name.replace(/\s+/g, ' ').trim();
     if (!clean || clean === this.name) return;
     this.transact(() => this.yMeta.set('name', clean));
+  }
+
+  /**
+   * Changes the language new maps of this project are given (ADR 0020). It
+   * is kept in the project, so that every copy makes its new maps alike;
+   * null leaves it to the settings of each writer.
+   */
+  setLanguage(language: string | null) {
+    const clean = language?.trim() || null;
+    if (clean === this.language) return;
+    this.transact(() => {
+      if (clean) this.yMeta.set('language', clean);
+      else this.yMeta.delete('language');
+    });
   }
 }
 

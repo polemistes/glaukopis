@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
+import { newTextLanguage } from '$lib/i18n';
 import { Project, type Persistence, type Summary } from './project.svelte';
 import { fillBody } from './text';
 
@@ -834,5 +835,38 @@ describe('kinds of paragraph and of words of the writer`s own', () => {
     ]);
     p.updateKind(chorus, { begins: '' });
     expect(p.kind(chorus)!.begins).toBeUndefined();
+  });
+});
+
+describe('the language of new maps', () => {
+  it('is that of the project where one is chosen, else that of the settings', () => {
+    const p = new Project(null);
+    const first = p.createMap('First');
+    expect(p.language).toBeNull();
+    expect(p.map(first)!.document.language).toBe(newTextLanguage());
+    p.setLanguage('nn');
+    expect(p.language).toBe('nn');
+    expect(p.map(p.createMap('Second'))!.document.language).toBe('nn');
+    expect(p.map(p.buildMap('Built', [], () => {}).map)!.document.language).toBe('nn');
+    // A document that says its language keeps it.
+    const own = p.buildMap('Own', [], () => {}, { language: 'de' });
+    expect(p.map(own.map)!.document.language).toBe('de');
+    // The map keeps the language it was made with.
+    expect(p.map(first)!.document.language).toBe(newTextLanguage());
+    p.setLanguage(null);
+    expect(p.language).toBeNull();
+    expect(p.yMeta.has('language')).toBe(false);
+    expect(p.map(p.createMap('Third'))!.document.language).toBe(newTextLanguage());
+  });
+
+  it('is kept in the project, and so reaches every copy of it', () => {
+    const a = new Project(null);
+    a.createMap('Wrath');
+    a.setLanguage(' nb ');
+    expect(a.language).toBe('nb');
+    const b = new Project(null);
+    b.load(Y.encodeStateAsUpdate(a.doc), []);
+    expect(b.language).toBe('nb');
+    expect(b.map(b.createMap('Theirs'))!.document.language).toBe('nb');
   });
 });

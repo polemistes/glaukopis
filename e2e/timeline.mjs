@@ -1,6 +1,8 @@
 // Timelines: elements say when they are, with dates or relative to one
 // another; the map is seen as a timeline, with a lane for each city, the
-// relative placement solved into its window, and a contradiction told.
+// relative placement solved into its window, and a contradiction told. An
+// element that says nothing of its time, under one that does, is implied
+// within that one's span.
 
 import { App, sleep } from './harness.mjs';
 
@@ -38,6 +40,8 @@ try {
   await app.click(await app.findByText('.diagram .node', 'Athens'));
   await add('Enter', 'Sparta');
   await add('Tab', 'The peace of Nicias');
+  // And one under Sparta that says nothing of its time: implied within Sparta's span.
+  await add('Enter', 'The ephors');
   // And a branch that says nothing of its time.
   await app.click(await app.findByText('.diagram .node', 'Sparta'));
   await add('Enter', 'Sources');
@@ -94,6 +98,19 @@ try {
     await sleep(150);
     await choose(1, 'The peace of Nicias');
   });
+  // Sparta over a span: the span of its lane.
+  await say('Sparta', async () => {
+    await app.clickText('dialog[open] .segmented button', 'Over a span');
+    await sleep(150);
+    const field = await timeField();
+    await app.click(field['element-6066-11e4-a52e-4f735466cecf']);
+    await app.keys('431 BC');
+    const to = await app.exec(
+      `return document.querySelectorAll('dialog[open] .end')[1].querySelector('input:not([type="checkbox"])')`,
+    );
+    await app.click(to['element-6066-11e4-a52e-4f735466cecf']);
+    await app.keys('404 BC');
+  });
   check(
     'the Timeline view appears once something says when it is',
     await app.exec(
@@ -117,7 +134,7 @@ try {
     String(fades),
   );
   const events = await app.exec(
-    `return Array.from(document.querySelectorAll('.timeline .lane')).map((l) => Array.from(l.querySelectorAll('.label')).map((e) => e.textContent.trim()).join(', '))`,
+    `return Array.from(document.querySelectorAll('.timeline .lane')).map((l) => Array.from(l.querySelectorAll('.label:not(.implied)')).map((e) => e.textContent.trim()).join(', '))`,
   );
   check(
     'the events stand in the lanes of their cities',
@@ -125,7 +142,7 @@ try {
     events.join(' / '),
   );
   const floating = await app.exec(
-    `return document.querySelectorAll('.timeline .event.floating').length + ':' + document.querySelectorAll('.timeline .window').length`,
+    `return document.querySelectorAll('.timeline .event.floating').length + ':' + document.querySelectorAll('.timeline .window:not(.implied)').length`,
   );
   check('the relative placement is drawn floating, with its window', floating === '1:1', floating);
   const order = await app.exec(
@@ -145,11 +162,28 @@ try {
     ticks.some((t) => /\d+ BC/.test(t)),
     ticks.join(' '),
   );
+  // The ephors say nothing of their time, but stand under Sparta: implied within its span, faint and dashed.
+  const implied = await app.exec(
+    `return Array.from(document.querySelectorAll('.timeline .lane .label.implied')).map((e) => e.textContent.trim())`,
+  );
+  check(
+    'an element without a time under one with a span is implied within it',
+    implied.join('|') === 'The ephors',
+    implied.join('|'),
+  );
+  const within = await app.exec(
+    `const m = document.querySelector('.timeline .event.implied');
+     const own = m && m.closest('.lane').querySelector('.own');
+     if (!m || !own) return 'none';
+     const a = m.getBoundingClientRect(); const b = own.getBoundingClientRect();
+     return (a.left + a.width / 2 >= b.left && a.left + a.width / 2 <= b.right) + ':' + m.closest('.lane').querySelector('.lane-name').textContent.trim()`,
+  );
+  check("and stands within its parent's span, in its lane", within === 'true:Sparta', within);
   await app.screenshot('timeline-1-cities');
 
   // --- A double click opens "When it is"; the text is reached from the menu ---
   // The first point drawn is the plague, the earliest of Athens.
-  await app.doubleClick('.timeline .event.point');
+  await app.doubleClick('.timeline .event.point:not(.implied)');
   await app.waitForText('dialog[open] h2', 'When it is', 3000);
   check('a double click on an element opens When it is', await app.exists('dialog[open]'));
   await app.press('Escape');
@@ -163,7 +197,7 @@ try {
       name,
     );
   const before = await leftOf('The plague');
-  await app.drag('.timeline .event.point', { dx: 140, dy: 0 });
+  await app.drag('.timeline .event.point:not(.implied)', { dx: 140, dy: 0 });
   await sleep(300);
   check(
     'an element is not moved while moving is off',
@@ -172,7 +206,7 @@ try {
   );
   await app.click('.timeline button[aria-label="Move by dragging"]');
   await sleep(150);
-  await app.drag('.timeline .event.point', { dx: 140, dy: 0 });
+  await app.drag('.timeline .event.point:not(.implied)', { dx: 140, dy: 0 });
   await sleep(400);
   const after = await leftOf('The plague');
   check(
@@ -196,6 +230,18 @@ try {
     listed.includes('Thucydides') && lanesWaiting.includes('Sources'),
     `${lanesWaiting.join('|')} :: ${listed.join('|')}`,
   );
+  check(
+    'what is implied within another is not among what waits',
+    !listed.includes('The ephors') && (await app.exists('.timeline .event.implied')),
+    listed.join('|'),
+  );
+  // Pressed, an implied element says when it is in words, as one that waits does.
+  await app.click('.timeline .event.implied');
+  await app.waitForText('dialog[open] h2', 'When it is', 3000);
+  check('pressing an implied element opens When it is', await app.exists('dialog[open]'));
+  await app.press('Escape');
+  await app.waitGone('dialog[open]', 3000);
+  await sleep(200);
   const thucydides = await app.findByText('.timeline .waiting', 'Thucydides');
   const target = await app.exec(
     `const b = Array.from(document.querySelectorAll('.timeline .waiting')).find((x) => x.textContent.trim() === 'Thucydides').getBoundingClientRect();

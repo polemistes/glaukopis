@@ -1,6 +1,9 @@
 /**
  * Spelling in an editor: words that the dictionary of the text's language
- * does not have are underlined where they stand (ADR 0019).
+ * does not have are underlined where they stand (ADR 0019). Foreign words,
+ * a kind of words with a language of their own, are checked in that
+ * language where there is a dictionary for it, and left alone where there
+ * is none.
  *
  * Only what has changed is looked at again after a change: the textblocks
  * that the change touched, when the writing has rested a moment. The first
@@ -134,6 +137,32 @@ function merged(ranges: Range[], size: number): Range[] {
   return out;
 }
 
+/** A word, and the language it is checked in: that of the map, or that of the foreign words it is among. */
+interface Spoken extends Word {
+  language: string;
+}
+
+/** The text of a textblock, run by run, each with its language; null where it is not text. */
+function runs(block: Node, language: string): { text: string; language: string | null }[] {
+  const out: { text: string; language: string | null }[] = [];
+  block.forEach((child) => {
+    if (!child.isText) {
+      out.push({ text: NOT_TEXT.repeat(child.nodeSize), language: null });
+      return;
+    }
+    const text = child.text ?? '';
+    // Citations that were found, and are not yet citations, are not checked.
+    if (child.marks.some((m) => m.type.name === 'found')) {
+      out.push({ text: NOT_TEXT.repeat(text.length), language: null });
+      return;
+    }
+    const kind = child.marks.find((m) => m.type.name === 'kind');
+    const lang = typeof kind?.attrs.lang === 'string' ? kind.attrs.lang.trim() : '';
+    out.push({ text, language: lang || language });
+  });
+  return out;
+}
+
 /**
  * The text of a textblock, as the words are found in: what is not text
  * stands as signs that are not words, as many as the places it takes, so
@@ -141,16 +170,33 @@ function merged(ranges: Range[], size: number): Range[] {
  * found, and are not yet citations, are not checked.
  */
 export function blockText(block: Node): string {
-  let text = '';
-  block.forEach((child) => {
-    if (child.isText) {
-      const t = child.text ?? '';
-      text += child.marks.some((m) => m.type.name === 'found') ? NOT_TEXT.repeat(t.length) : t;
-    } else {
-      text += NOT_TEXT.repeat(child.nodeSize);
-    }
-  });
-  return text;
+  return runs(block, '')
+    .map((r) => r.text)
+    .join('');
+}
+
+/**
+ * The text of a textblock in each of its languages: that of the map, and
+ * that of each language its foreign words are in. In each, the words of the
+ * other languages stand as signs that are not words, so that a place in any
+ * of the texts is a place in the document.
+ */
+export function blockTexts(block: Node, language: string): Map<string, string> {
+  const all = runs(block, language);
+  const languages = new Set<string>();
+  for (const r of all) if (r.language !== null) languages.add(r.language);
+  const texts = new Map<string, string>();
+  for (const lang of languages) {
+    texts.set(
+      lang,
+      all
+        .map((r) =>
+          r.language === lang || r.language === null ? r.text : NOT_TEXT.repeat(r.text.length),
+        )
+        .join(''),
+    );
+  }
+  return texts;
 }
 
 /**
@@ -163,13 +209,29 @@ function blockOf($pos: ResolvedPos): { block: Node; pos: number } | null {
   return { block: $pos.parent, pos: $pos.depth === 0 ? -1 : $pos.before() };
 }
 
-/** The words of a textblock that is at `pos`, with their places in the document. */
-function wordsOf(block: Node, pos: number, language: string, script: string | null): Word[] {
-  return findWords(blockText(block), language, script).map((w) => ({
-    ...w,
-    from: pos + 1 + w.from,
-    to: pos + 1 + w.to,
-  }));
+/**
+ * The words of a textblock that is at `pos`, with their places in the
+ * document and the language each is checked in. Only the words of the
+ * languages that have a dictionary are among them; `unknown` says whether
+ * it is not yet known of some language whether it has one, in which case
+ * the block is to be looked at again when it is.
+ */
+function wordsOf(
+  block: Node,
+  pos: number,
+  language: string,
+): { words: Spoken[]; unknown: boolean } {
+  const words: Spoken[] = [];
+  let unknown = false;
+  for (const [lang, text] of blockTexts(block, language)) {
+    const checking = spelling.checkingOf(lang);
+    if (checking === undefined) unknown = true;
+    if (!checking) continue;
+    for (const w of findWords(text, lang, checking.script))
+      words.push({ ...w, language: lang, from: pos + 1 + w.from, to: pos + 1 + w.to });
+  }
+  words.sort((a, b) => a.from - b.from);
+  return { words, unknown };
 }
 
 /** Whether two lists of underlines underline the same words in the same places. */
@@ -186,9 +248,9 @@ function same(a: Decoration[], b: Decoration[]): boolean {
 export function spellingPlugin(options: SpellingOptions): Plugin<State> {
   const languageOf = () => options.language() ?? '';
 
-  /** Whether a word is misspelt: known to be wrong, and not ignored. Undefined while it is not known. */
-  function wrong(word: Word): boolean | undefined {
-    const right = spelling.judge(options.language(), word.asked);
+  /** Whether a word is misspelt in its language: known to be wrong, and not ignored. Undefined while it is not known. */
+  function wrong(word: Spoken): boolean | undefined {
+    const right = spelling.judge(word.language, word.asked);
     if (right === undefined) return undefined;
     return !right && !isIgnored(options.ignored(), word.word);
   }
@@ -196,11 +258,9 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
   /** The misspelt word at a place, if there is one; looked for at once. */
   function misspeltAt(state: EditorState, pos: number): Misspelt | null {
     if (!spelling.on) return null;
-    const checking = spelling.checkingOf(options.language());
-    if (!checking) return null;
     const at = blockOf(state.doc.resolve(pos));
     if (!at) return null;
-    const word = wordAt(wordsOf(at.block, at.pos, languageOf(), checking.script), pos);
+    const word = wordAt(wordsOf(at.block, at.pos, languageOf()).words, pos);
     return word && wrong(word) === true ? word : null;
   }
 
@@ -344,7 +404,6 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
         if (checking === undefined) return;
         const { doc, selection } = view.state;
         const cursor = selection.empty && view.hasFocus() ? selection.head : -1;
-        const script = checking?.script ?? null;
         const until = performance.now() + PIECE;
         let decorations = before;
         const looked: Range[] = [];
@@ -357,24 +416,25 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
           const end = pos + block.nodeSize;
           looked.push({ from: pos, to: end });
           const found: Decoration[] = [];
-          let unknown = false;
-          if (checking) {
-            for (const word of wordsOf(block, pos, language, script)) {
-              // The word being written is judged when it is left.
-              if (word.to === cursor) {
-                atCursor = { from: pos, to: end };
-                continue;
-              }
-              const judged = wrong(word);
-              if (judged === undefined) unknown = true;
-              else if (judged)
-                found.push(
-                  Decoration.inline(word.from, word.to, DECORATION, {
-                    word: word.word,
-                    asked: word.asked,
-                  }),
-                );
+          // The words of the map's language, and of the languages of its
+          // foreign words, where there are dictionaries for them.
+          const words = wordsOf(block, pos, language);
+          let unknown = words.unknown;
+          for (const word of words.words) {
+            // The word being written is judged when it is left.
+            if (word.to === cursor) {
+              atCursor = { from: pos, to: end };
+              continue;
             }
+            const judged = wrong(word);
+            if (judged === undefined) unknown = true;
+            else if (judged)
+              found.push(
+                Decoration.inline(word.from, word.to, DECORATION, {
+                  word: word.word,
+                  asked: word.asked,
+                }),
+              );
           }
           const had = decorations.find(pos, end).sort((a, b) => a.from - b.from);
           if (!same(had, found)) decorations = decorations.remove(had).add(doc, found);
@@ -445,7 +505,13 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
 /** The word that stands at a place of an editor, or touches it, if any. */
 export function wordAtPlace(state: EditorState, pos: number): Word | null {
   const at = blockOf(state.doc.resolve(Math.min(pos, state.doc.content.size)));
-  return at ? wordAt(wordsOf(at.block, at.pos, '', null), pos) : null;
+  if (!at) return null;
+  const words = findWords(blockText(at.block), '', null).map((w) => ({
+    ...w,
+    from: at.pos + 1 + w.from,
+    to: at.pos + 1 + w.to,
+  }));
+  return wordAt(words, pos);
 }
 
 /** Has an editor look at all its text again, as when the language of its map has changed. */

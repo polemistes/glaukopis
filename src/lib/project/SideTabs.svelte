@@ -1,11 +1,12 @@
 <!--
   The head of the panel at the side of a project: what it can show, as tabs.
-  The references, the pictures, the comments, the history and the changes have the one
-  place, and are one at a time. The panel puts its own tools, and the way to
-  close it, after these.
+  The references, the pictures, the comments, the citations that were found,
+  the history and the changes have the one place, and are one at a time. A
+  tab may carry a count, as of the citations that are left to go through.
+  The panel puts its own tools, and the way to close it, after these.
 -->
 <script lang="ts" module>
-  export type SideKind = 'references' | 'pictures' | 'comments' | 'history' | 'changes';
+  export type SideKind = 'references' | 'pictures' | 'comments' | 'found' | 'history' | 'changes';
 </script>
 
 <script lang="ts">
@@ -14,15 +15,18 @@
   import HistoryIcon from '@lucide/svelte/icons/history';
   import Images from '@lucide/svelte/icons/images';
   import MessageSquare from '@lucide/svelte/icons/message-square';
+  import TextSearch from '@lucide/svelte/icons/text-search';
   import { t } from '$lib/i18n';
   import { tooltip } from '$lib/ui/tooltip';
 
   interface Props {
     current: SideKind;
     onpick: (kind: SideKind) => void;
+    /** What a tab counts, where it counts anything: shown beside it. */
+    counts?: Partial<Record<SideKind, number>>;
   }
 
-  let { current, onpick }: Props = $props();
+  let { current, onpick, counts = {} }: Props = $props();
 
   const kinds = $derived([
     {
@@ -42,6 +46,12 @@
       label: t('comments-title'),
       icon: MessageSquare,
       shortcut: 'Ctrl+Shift+M',
+    },
+    {
+      kind: 'found' as const,
+      label: t('found-tab'),
+      icon: TextSearch,
+      shortcut: 'Ctrl+Shift+T',
     },
     {
       kind: 'history' as const,
@@ -90,6 +100,7 @@
     >
       <Icon size={15} />
       {#if chosen}<span class="label">{k.label}</span>{/if}
+      {#if counts[k.kind]}<span class="count">{counts[k.kind]}</span>{/if}
     </button>
   {/each}
 </div>
@@ -127,6 +138,21 @@
     font-size: var(--text-md);
     font-weight: 600;
     white-space: nowrap;
+  }
+  .count {
+    min-width: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  button.chosen .count {
+    background: var(--paper);
   }
   .spacer {
     flex: 1;

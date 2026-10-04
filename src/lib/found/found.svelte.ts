@@ -1,7 +1,8 @@
 /**
- * Opening the window in which the citations that were found are gone
- * through. The window is mounted by `FoundHost.svelte`, where a project is
- * open; any code opens it through the functions here.
+ * Opening the panel in which the citations that were found are gone
+ * through. The panel stands at the side of a project (`FoundPanel.svelte`,
+ * shown by the view of the project); any code opens it through the
+ * functions here.
  */
 
 export interface FoundRequest {
@@ -12,25 +13,29 @@ export interface FoundRequest {
 }
 
 class FoundUi {
+  /** What was last asked for: the map, and the citation to begin with. */
   request = $state.raw<FoundRequest | null>(null);
+  /** Rises each time the panel is asked to open: the view of the project follows it, and the panel turns to what was asked. */
+  asked = $state(0);
   /** Asked for before the project was open, as when a project is made of a document. */
   waiting: { project: string; map: string } | null = null;
 }
 
 export const foundUi = new FoundUi();
 
-/** Opens the window for a map; at the citation with this id, where one is given. */
+/** Opens the panel for a map; at the citation with this id, where one is given. */
 export function goThrough(map: string, at: string | null = null) {
   foundUi.request = { map, at };
+  foundUi.asked++;
 }
 
-/** Opens the window for a map of a project when that project has been opened. */
+/** Opens the panel for a map of a project when that project has been opened. */
 export function goThroughWhenOpen(project: string, map: string) {
   foundUi.waiting = { project, map };
 }
 
 /**
- * A citation that was found was pressed, in a text of a map: the window
+ * A citation that was found was pressed, in a text of a map: the panel
  * opens at that one. Returns whether it was one.
  */
 export function pressedFound(target: EventTarget | null, map: string | null | undefined): boolean {

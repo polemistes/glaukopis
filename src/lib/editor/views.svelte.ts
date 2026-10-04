@@ -170,6 +170,21 @@ export class FootnoteView implements NodeView {
     this.dom.addEventListener(OPEN, this.#asked);
     this.dom.addEventListener(SHOW, this.#shown);
     this.#number();
+    this.#tell();
+  }
+
+  /** What the note says, as the text drawn without an editor has it: to be read without opening it. */
+  #tell() {
+    const language = this.#outer.dom.closest<HTMLElement>('[lang]')?.lang;
+    const text = this.#node.textBetween(0, this.#node.content.size, ' ', (leaf) =>
+      leaf.type.name === 'citation'
+        ? citationLabel(leaf.attrs.items as CiteItem[], leaf.attrs.mode as CiteMode, language)
+        : leaf.type.name === 'hard_break'
+          ? ' '
+          : '',
+    );
+    const title = text.replace(/\s+/g, ' ').trim();
+    if (this.dom.title !== title) this.dom.title = title;
   }
 
   /**
@@ -430,6 +445,7 @@ export class FootnoteView implements NodeView {
   update(node: Node): boolean {
     if (node.type !== this.#node.type) return false;
     this.#node = node;
+    this.#tell();
     const inner = this.#inner;
     if (inner) {
       const state = inner.state;

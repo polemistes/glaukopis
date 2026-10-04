@@ -41,34 +41,44 @@ fn western(byte: u8) -> char {
     }
 }
 
-/// Text without marks: paragraphs are set apart by empty lines; where there
-/// are none, every line is a paragraph.
+/// Text without marks: paragraphs are set apart by empty lines, and the
+/// lines of a paragraph stay lines, each ending in a break, so that verse and
+/// addresses are read as they were written; where there is no empty line,
+/// every line is a paragraph.
 pub(super) fn plain(text: &str, stem: &str) -> Imported {
     let text = text.replace("\r\n", "\n").replace('\r', "\n");
     let apart = text.trim().contains("\n\n");
-    let paragraphs: Vec<String> = if apart {
+    let paragraphs: Vec<Vec<&str>> = if apart {
         let mut out = Vec::new();
         let mut current: Vec<&str> = Vec::new();
         for line in text.lines() {
             if line.trim().is_empty() {
                 if !current.is_empty() {
-                    out.push(current.join(" "));
-                    current.clear();
+                    out.push(std::mem::take(&mut current));
                 }
             } else {
                 current.push(line.trim());
             }
         }
         if !current.is_empty() {
-            out.push(current.join(" "));
+            out.push(current);
         }
         out
     } else {
-        text.lines().map(|l| l.trim().to_owned()).filter(|l| !l.is_empty()).collect()
+        text.lines().map(str::trim).filter(|l| !l.is_empty()).map(|l| vec![l]).collect()
     };
     let blocks: Vec<Block> = paragraphs
         .into_iter()
-        .map(|p| Block::Paragraph { content: vec![Inline::Text { text: clean(&p), marks: BTreeMap::new() }] })
+        .map(|lines| {
+            let mut content = Vec::with_capacity(lines.len() * 2);
+            for (i, line) in lines.into_iter().enumerate() {
+                if i > 0 {
+                    content.push(Inline::Break);
+                }
+                content.push(Inline::Text { text: clean(line), marks: BTreeMap::new() });
+            }
+            Block::Paragraph { content }
+        })
         .collect();
     let sections = if blocks.is_empty() { Vec::new() } else { vec![Section { level: 0, heading: Vec::new(), blocks }] };
     let counts = count(&sections, 0, 0);

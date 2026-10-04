@@ -393,6 +393,26 @@ impl Library {
         Ok(entry)
     }
 
+    /// Gives an entry the keys of what it is in Zotero that it lacks; nothing
+    /// else of it changes. Returns whether anything was added.
+    pub fn add_zotero_keys(&mut self, id: &str, keys: &[String]) -> Result<bool> {
+        self.refresh()?;
+        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
+        let entry = &mut self.entries[index];
+        let mut added = false;
+        for key in keys.iter().flat_map(|k| entry::zotero_keys(k)) {
+            if !entry.zotero.contains(&key) {
+                entry.zotero.push(key);
+                added = true;
+            }
+        }
+        if added {
+            entry.modified = now();
+            self.save()?;
+        }
+        Ok(added)
+    }
+
     /// What the user has written about a work: their reflections and
     /// comments, which are not part of what is cited. Kept in the field
     /// `annotation`, which is what BibLaTeX has for it. Nothing, or only

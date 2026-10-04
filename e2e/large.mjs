@@ -104,13 +104,22 @@ async function make() {
       cited += `${h % 6 === 0 ? '#' : h % 3 === 0 ? '###' : '##'} Part ${h + 1}\n\n`;
       for (let i = 0; i < 34; i++) {
         const n = h * 34 + i;
-        const one = n % 4 === 3 ? '' : n % 5 === 0 ? `^[See ZOTCITE${c++}, and what is said there.]` : ` ZOTCITE${c++}`;
+        const one =
+          n % 4 === 3
+            ? ''
+            : n % 5 === 0
+              ? `^[See ZOTCITE${c++}, and what is said there.]`
+              : ` ZOTCITE${c++}`;
         cited += `${words.repeat(3)}*Emphasised*${one}.\n\n`;
       }
     }
     writeFileSync(join(desk, 'cited.md'), cited);
     execFileSync('pandoc', ['cited.md', '-o', 'made.docx'], { cwd: desk });
-    const put = execFileSync('python3', [join(import.meta.dirname, 'fixtures', 'zotero-fields.py'), 'made.docx', 'long.docx'], { cwd: desk });
+    const put = execFileSync(
+      'python3',
+      [join(import.meta.dirname, 'fixtures', 'zotero-fields.py'), 'made.docx', 'long.docx'],
+      { cwd: desk },
+    );
     console.log(`      ${String(put).trim()} citations as Zotero writes them`);
     file = 'long.docx';
   }
@@ -137,12 +146,14 @@ async function make() {
       at.y,
     );
     await app.waitFor('dialog [data-fact="words"]', 30000);
-    const said = await app.exec(`return document.querySelector('dialog [data-fact="words"]').textContent.replace(/\\s+/g, ' ').trim()`);
+    const said = await app.exec(
+      `return document.querySelector('dialog [data-fact="words"]').textContent.replace(/\\s+/g, ' ').trim()`,
+    );
     await app.clickText('dialog footer button', 'Make the map');
-    await until('the map', () => app.exec(`return !document.querySelector('dialog[open]') || !!document.querySelector('dialog .found-window')`), 60000);
-    if (await app.exists('dialog .found-window')) {
-      await app.press('Escape');
-      await app.waitGone('dialog[open]', 15000);
+    await until('the map', () => app.exec(`return !document.querySelector('dialog[open]')`), 60000);
+    if (await app.exists('.found-panel')) {
+      await app.click('.found-panel header button[aria-label="Close"]');
+      await app.waitGone('.found-panel', 15000);
     }
     await app.waitFor('.text-view .section', 15000);
     // Until it is kept.
@@ -163,13 +174,19 @@ async function measure() {
     await app.waitFor('.home', 15000);
     let began = Date.now();
     await app.clickText('.home .card', 'Large');
-    await until('the text of the map', () => app.exec(`return document.querySelectorAll('.text-view .section').length > 1`), 60000);
+    await until(
+      'the text of the map',
+      () => app.exec(`return document.querySelectorAll('.text-view .section').length > 1`),
+      60000,
+    );
     const shown = Date.now() - began;
     await sleep(1500);
     const drawn = await app.exec(
       `return { parts: document.querySelectorAll('.text-view .section').length, paragraphs: document.querySelectorAll('.text-view .prose.body p').length, words: document.querySelector('.text-view footer span').textContent.trim() }`,
     );
-    console.log(`      shown after ${shown} ms: ${drawn.parts} elements, ${drawn.paragraphs} paragraphs, ${drawn.words}`);
+    console.log(
+      `      shown after ${shown} ms: ${drawn.parts} elements, ${drawn.paragraphs} paragraphs, ${drawn.words}`,
+    );
 
     // What is measured: from a key going down until the window has drawn what came of it.
     await app.exec(
@@ -187,7 +204,9 @@ async function measure() {
     );
     const took = async () => {
       const list = await app.exec(`const t = window.__took; window.__took = []; return t;`);
-      const still = Math.round(await app.exec(`const s = window.__still; window.__still = 0; return s;`));
+      const still = Math.round(
+        await app.exec(`const s = window.__still; window.__still = 0; return s;`),
+      );
       return { list, still };
     };
     const report = (name, { list, still }, cpu, seconds) =>
@@ -226,9 +245,15 @@ async function measure() {
     await sleep(5000);
     const rest = worked() - before;
     const atRest = await took();
-    console.log(`      at rest: the processor worked ${Math.round(rest / 5)} ms in each second (${who(those)}); the window stood still for ${atRest.still} ms at the most`);
+    console.log(
+      `      at rest: the processor worked ${Math.round(rest / 5)} ms in each second (${who(those)}); the window stood still for ${atRest.still} ms at the most`,
+    );
     // The watching itself works ten times in a hundredth of a second each; what is looked for is an application that never rests.
-    check('at rest the application does nothing', rest / 5 < 250, `${Math.round(rest / 5)} ms in each second`);
+    check(
+      'at rest the application does nothing',
+      rest / 5 < 250,
+      `${Math.round(rest / 5)} ms in each second`,
+    );
 
     // ---- writing in the middle of the text ----
     const write = async (name, limit) => {
@@ -249,8 +274,14 @@ async function measure() {
       let seconds = (Date.now() - began) / 1000;
       const written = await took();
       report(`${name}, writing`, written, worked() - before, seconds);
-      console.log(`        the keys one after the other: ${written.list.map((t) => Math.round(t)).join(' ')}`);
-      check(`${name}: writing is answered at once`, nearlyAll(written.list) < limit && written.still < limit * 3, `${nearlyAll(written.list)} ms, stood still ${written.still} ms`);
+      console.log(
+        `        the keys one after the other: ${written.list.map((t) => Math.round(t)).join(' ')}`,
+      );
+      check(
+        `${name}: writing is answered at once`,
+        nearlyAll(written.list) < limit && written.still < limit * 3,
+        `${nearlyAll(written.list)} ms, stood still ${written.still} ms`,
+      );
 
       before = worked();
       began = Date.now();
@@ -261,7 +292,11 @@ async function measure() {
       seconds = (Date.now() - began) / 1000;
       const moved = await took();
       report(`${name}, the arrows`, moved, worked() - before, seconds);
-      check(`${name}: the arrows are answered at once`, nearlyAll(moved.list) < limit, `${nearlyAll(moved.list)} ms`);
+      check(
+        `${name}: the arrows are answered at once`,
+        nearlyAll(moved.list) < limit,
+        `${nearlyAll(moved.list)} ms`,
+      );
     };
     await write('the text alone', 50);
 
@@ -272,7 +307,9 @@ async function measure() {
     await write('with the preview', 80);
     await sleep(6000);
     const after = await took();
-    console.log(`      while the preview is made anew the window stood still for ${after.still} ms at the most`);
+    console.log(
+      `      while the preview is made anew the window stood still for ${after.still} ms at the most`,
+    );
     // Pages fetched as the preview is moved through: drawn from what was set.
     const fetched = await app.execAsync(
       `const key = location.hash.split('/')[2].split('?')[0];
@@ -287,8 +324,14 @@ async function measure() {
        }
        return { times, count };`,
     );
-    console.log(`      three pages fetched further on, in ${fetched.times.join(', ')} ms, of ${fetched.count} pages`);
-    check('pages are fetched as the preview is moved through at once', Math.max(...fetched.times) < 1000, `${Math.max(...fetched.times)} ms`);
+    console.log(
+      `      three pages fetched further on, in ${fetched.times.join(', ')} ms, of ${fetched.count} pages`,
+    );
+    check(
+      'pages are fetched as the preview is moved through at once',
+      Math.max(...fetched.times) < 1000,
+      `${Math.max(...fetched.times)} ms`,
+    );
     await app.keys(['Control', 'p']);
     await sleep(500);
 
@@ -316,9 +359,17 @@ async function measure() {
       console.log(
         `      the history (${Math.round(read.room / 1024)} kB, ${read.sessions} sessions) is read in ${read.reading} ms; the whole project compared with where it began in ${read.comparing} ms, ${read.passages} passages changed`,
       );
-      check('the history of a large project is read in seconds', read.reading < 10000 && read.comparing < 10000, `${read.reading} ms, ${read.comparing} ms`);
+      check(
+        'the history of a large project is read in seconds',
+        read.reading < 10000 && read.comparing < 10000,
+        `${read.reading} ms, ${read.comparing} ms`,
+      );
       // Without this a history that kept nothing would be read quickly and look well.
-      check('what was written is kept in the history', read.sessions > 1 && read.passages > 0, `${read.sessions} sessions, ${read.passages} passages`);
+      check(
+        'what was written is kept in the history',
+        read.sessions > 1 && read.passages > 0,
+        `${read.sessions} sessions, ${read.passages} passages`,
+      );
 
       // ---- with the panel of changes open (ADR 0022) ----
       await app.keys(['Control', 'Shift', 'e']);
@@ -338,7 +389,11 @@ async function measure() {
       console.log(
         `      the panel of changes: ${changes.count} changes in ${changes.marked} elements, worked out and marked in ${Date.now() - opened} ms, ${spans} marks drawn`,
       );
-      check('the changes of a large map are worked out in seconds', Date.now() - opened < 20000, `${Date.now() - opened} ms`);
+      check(
+        'the changes of a large map are worked out in seconds',
+        Date.now() - opened < 20000,
+        `${Date.now() - opened} ms`,
+      );
       check('and they are there to review', changes.count > 0, `${changes.count} changes`);
       await write('with the review', 80);
       await app.keys(['Control', 'Shift', 'e']);
@@ -353,7 +408,11 @@ async function measure() {
     const toDiagram = Date.now() - began;
     began = Date.now();
     await app.keys(['Control', 'd']);
-    await until('the text again', () => app.exec(`return document.querySelectorAll('.text-view .section').length > 1`), 60000);
+    await until(
+      'the text again',
+      () => app.exec(`return document.querySelectorAll('.text-view .section').length > 1`),
+      60000,
+    );
     const toText = Date.now() - began;
     console.log(`      to the diagram in ${toDiagram} ms, back to the text in ${toText} ms`);
 

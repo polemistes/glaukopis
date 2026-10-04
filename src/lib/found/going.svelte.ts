@@ -1,7 +1,7 @@
 /**
  * Going through the citations that were found in a map: what there is, what
  * the library has for each, what the writer has chosen, and what is done.
- * The window (`FoundDialog.svelte`) shows it.
+ * The panel (`FoundPanel.svelte`) shows it.
  *
  * What has the mark is read from the project whenever it is looked at, so
  * the project is what says what is left: nothing of it is kept here but
@@ -19,7 +19,7 @@ import {
   type Proposal,
   type Suggestion,
 } from '$lib/api/found';
-import type { Draft } from '$lib/api/library';
+import { libraryAddZoteroKeys, type Draft } from '$lib/api/library';
 import type { CiteMode } from '$lib/editor/schema';
 import { t } from '$lib/i18n';
 import type { Project } from '$lib/project/model/project.svelte';
@@ -44,13 +44,33 @@ export interface Commands {
   suggest: (items: FoundItem[]) => Promise<Suggestion[][]>;
   propose: (passages: Passage[], options: FoundOptions) => Promise<Proposal[]>;
   draft: (data: Record<string, unknown>) => Promise<Draft | null>;
+  /** Gives a reference the keys of what it is in Zotero. Nothing is asked of the library where it is not given. */
+  keys?: (reference: string, keys: string[]) => Promise<unknown>;
 }
 
 export const COMMANDS: Commands = {
   suggest: foundSuggest,
   propose: foundPropose,
   draft: foundDraft,
+  keys: libraryAddZoteroKeys,
 };
+
+/** The keys of the item in Zotero that a work was cited as, where the file says them. */
+export function keysOf(item: FoundItem): string[] {
+  return [...new Set((item.uris ?? []).map(zoteroKey).filter((k): k is string => !!k))];
+}
+
+/**
+ * Whether two works of the text are the same work, as far as the file says:
+ * the same item in Zotero, or the same tag. What is only words is not known
+ * to be the same.
+ */
+export function sameWork(a: FoundItem, b: FoundItem): boolean {
+  const keys = keysOf(a);
+  if (keys.length) return keysOf(b).some((k) => keys.includes(k));
+  const tag = a.key?.trim().replace(/^@/, '').toLowerCase();
+  return !!tag && tag === b.key?.trim().replace(/^@/, '').toLowerCase();
+}
 
 /** One work of what is gone through. */
 export interface Work extends Said {
@@ -66,6 +86,11 @@ export interface Work extends Said {
   reference: string | null;
   /** Whether the writer chose the reference, and not the library. */
   chosen: boolean;
+  /**
+   * Whether it was chosen for another citation of the same work, and this
+   * one followed: what the library then knows for certain is taken instead.
+   */
+  followed?: boolean;
 }
 
 /** Something to go through: a citation that was found, or text that looks like one. */
@@ -382,9 +407,10 @@ export class Going {
 
   #answer(work: Work, suggestions: Suggestion[]) {
     work.suggestions = suggestions;
-    if (work.chosen && work.reference) return;
+    if (work.chosen && work.reference && !(work.followed && certain(suggestions))) return;
     work.reference = suggestions[0]?.reference ?? null;
     work.chosen = false;
+    work.followed = false;
   }
 
   /** Takes up what was proposed, in place of what was proposed before. */
@@ -530,10 +556,29 @@ export class Going {
 
   // ---- the works ----
 
-  /** Takes a work for a reference, as the writer says. */
+  /**
+   * Takes a work for a reference, as the writer says; and with it every
+   * other citation of the same work, as far as the file says which they
+   * are, that the writer has not chosen for otherwise: the same question
+   * has the same answer.
+   */
   choose(work: Work, reference: string) {
     work.reference = reference;
     work.chosen = true;
+    work.followed = false;
+    for (const entry of this.entries) {
+      for (const other of entry.works) {
+        if (other === work || (other.chosen && !other.followed) || other.reference === reference)
+          continue;
+        // Where the library knows the other for certain, the library is right.
+        const sure = certain(other.suggestions);
+        if (sameWork(work.item, other.item) && !(sure && sure === other.reference)) {
+          other.reference = reference;
+          other.chosen = true;
+          other.followed = true;
+        }
+      }
+    }
   }
 
   remove(entry: Entry, work: Work) {
@@ -586,6 +631,24 @@ export class Going {
     };
   }
 
+  /**
+   * Tells the library what the references of works that were cited are in
+   * Zotero, where the file says it and the library did not know it for
+   * certain: from then on, what Zotero made of the work is certain, here and
+   * in every text brought in after.
+   */
+  #tell(works: Work[]) {
+    const tell = this.#commands.keys;
+    if (!tell) return;
+    for (const work of works) {
+      const keys = keysOf(work.item);
+      if (!work.reference || !keys.length || certain(work.suggestions) === work.reference) continue;
+      tell(work.reference, keys).catch((error) =>
+        console.error('the reference could not be given its key', error),
+      );
+    }
+  }
+
   /** What follows an entry in the list, to be looked at when the entry is done. */
   #after(entry: Entry): string | null {
     const i = this.entries.indexOf(entry);
@@ -626,6 +689,7 @@ export class Going {
       return false;
     }
     for (const item of making.items) this.#keep(item.id);
+    this.#tell(entry.works);
     if (!entry.marked && making.how === 'here') {
       // What was proposed after it in the passage stands earlier by what the citation is shorter.
       const by = 1 - (making.target.end - making.target.start);
@@ -669,6 +733,7 @@ export class Going {
       if (outcome.done) {
         done.add(list[i]);
         for (const item of makings[i].items) this.#keep(item.id);
+        this.#tell(list[i].works);
       } else list[i].trouble = troubleWords(outcome.why);
     });
     // The one that was looked at, or the first after it that is left.

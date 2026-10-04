@@ -790,7 +790,10 @@ fn text_without_marks() {
     let read = plain("One line\nof a paragraph.\r\n\r\nAnother.\n\n\n", "notes");
     assert_eq!(
         read.sections[0].blocks,
-        vec![paragraph(vec![text("One line of a paragraph.")]), paragraph(vec![text("Another.")])]
+        vec![
+            paragraph(vec![text("One line"), Inline::Break, text("of a paragraph.")]),
+            paragraph(vec![text("Another.")])
+        ]
     );
     assert_eq!(read.title, vec![text("notes")]);
     let read = plain("A paragraph to a line.\nAnd another.\n", "notes");

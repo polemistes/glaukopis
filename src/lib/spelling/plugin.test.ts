@@ -3,17 +3,26 @@ import { EditorView } from 'prosemirror-view';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bodySchema } from '$lib/editor/schema';
 
-// The dictionary of the test: these words are wrong, all others right.
-const WRONG = new Set(['recieved', 'teh', 'Wroth', 'Nagy']);
+// The dictionaries of the test: these words are wrong, all others right.
+// English has the first; German, which foreign words may be in, the second;
+// and the language `xx` has no dictionary.
+const WRONG = new Set(['recieved', 'teh', 'Wroth', 'Nagy', 'Weltschmerz', 'zzyx']);
+const WRONG_DE = new Set(['Kaltschmerz']);
 
 vi.mock('$lib/api/spelling', () => ({
-  spellingPrepare: vi.fn(async () => ({
-    dictionaries: [{ tag: 'en-US', name: 'en_US', source: 'application', dir: '' }],
-    script: 'Latn',
-    words: 'en',
-  })),
-  spellingCheck: vi.fn(async (_language: string | null, words: string[]) =>
-    words.map((w) => !WRONG.has(w.replace(/\.$/, ''))),
+  spellingPrepare: vi.fn(async (language: string | null) =>
+    language === 'xx'
+      ? null
+      : {
+          dictionaries: [
+            { tag: language ?? 'en-US', name: 'en_US', source: 'application', dir: '' },
+          ],
+          script: 'Latn',
+          words: language === 'de' ? 'de' : 'en',
+        },
+  ),
+  spellingCheck: vi.fn(async (language: string | null, words: string[]) =>
+    words.map((w) => !(language === 'de' ? WRONG_DE : WRONG).has(w.replace(/\.$/, ''))),
   ),
   spellingSuggest: vi.fn(async () => []),
   spellingAddWord: vi.fn(async () => {}),
@@ -75,6 +84,28 @@ describe('spelling in an editor', () => {
     );
     await settle();
     expect(misspeltIn(view.state)).toEqual(['recieved']);
+  });
+
+  it('checks foreign words in their language, and not where it has no dictionary', async () => {
+    const foreign = (lang: string) => bodySchema.marks.kind.create({ name: 'foreign', lang });
+    const view = editor([
+      p(
+        'The ',
+        bodySchema.text('Weltschmerz', [foreign('de')]),
+        ' is recieved with ',
+        bodySchema.text('Kaltschmerz', [foreign('de')]),
+        ' and ',
+        bodySchema.text('zzyx', [foreign('xx')]),
+        '.',
+      ),
+    ]);
+    await settle();
+    // The German words are not English, and one is wrong in German; the
+    // word in a language without a dictionary is left alone.
+    expect(misspeltIn(view.state)).toEqual(['recieved', 'Kaltschmerz']);
+    const asked = vi.mocked(spellingCheck).mock.calls.map(([language, words]) => [language, words]);
+    expect(asked).toContainEqual(['de', ['Weltschmerz', 'Kaltschmerz']]);
+    expect(asked.some(([language]) => language === 'xx')).toBe(false);
   });
 
   it('looks again only at what a change touched', async () => {

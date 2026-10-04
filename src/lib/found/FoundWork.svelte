@@ -84,7 +84,7 @@
       {#if work.reference}
         <div class="sure" data-sure={work.chosen ? 'chosen' : (taken?.sure ?? 'possible')}>
           {#if work.chosen}
-            {t('found-work-chosen')}
+            {work.followed ? t('found-work-followed') : t('found-work-chosen')}
           {:else if taken}
             {SURE[taken.sure]}{taken.why ? ` · ${taken.why}` : ''}
           {/if}

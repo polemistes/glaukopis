@@ -8,7 +8,7 @@
 
 use std::collections::HashMap;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::bib::latex::fold;
 use crate::library::entry::Entry;
@@ -28,8 +28,45 @@ pub enum Reason {
     Doi,
     Isbn,
     Identical,
-    TitleAuthorYear,
+    /// Alike in title, author and year, each as far as it says.
+    Alike {
+        title: Agreement,
+        author: Agreement,
+        year: Agreement,
+    },
     File,
+}
+
+/// How far two entries agree in one of what tells works apart. The order is
+/// from the least to the most: a group of several is as alike as its least
+/// alike pair.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Agreement {
+    /// One of them says nothing of it.
+    None,
+    /// Alike without being the same: titles that differ in a few letters or
+    /// in a subtitle, an author in common, years a year apart.
+    Like,
+    Same,
+}
+
+impl Agreement {
+    pub fn weaker(self, other: Agreement) -> Agreement {
+        self.min(other)
+    }
+}
+
+impl Reason {
+    /// The weaker of two reasons of being alike; anything else as it is.
+    pub fn weaken(self, other: Reason) -> Reason {
+        match (self, other) {
+            (Reason::Alike { title, author, year }, Reason::Alike { title: t, author: a, year: y }) => {
+                Reason::Alike { title: title.weaker(t), author: author.weaker(a), year: year.weaker(y) }
+            }
+            _ => self,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -214,7 +251,19 @@ pub fn compare(a: &Fingerprint, b: &Fingerprint) -> Option<(Certainty, Vec<Reaso
                 reasons.push(Reason::Identical);
                 certainty = Some(Certainty::Certain);
             } else {
-                reasons.push(Reason::TitleAuthorYear);
+                // Alike when one lacks its subtitle, or the words differ a little.
+                let title = if similarity(&a.title, &b.title) >= 0.999 { Agreement::Same } else { Agreement::Like };
+                let author = match (a.families.first(), b.families.first()) {
+                    (Some(x), Some(y)) if x == y => Agreement::Same,
+                    (Some(_), Some(_)) => Agreement::Like,
+                    _ => Agreement::None,
+                };
+                let year = match (a.year, b.year) {
+                    (Some(x), Some(y)) if x == y => Agreement::Same,
+                    (Some(_), Some(_)) => Agreement::Like,
+                    _ => Agreement::None,
+                };
+                reasons.push(Reason::Alike { title, author, year });
                 certainty = Some(certainty.unwrap_or(Certainty::Probable));
             }
         }
@@ -343,6 +392,13 @@ pub fn find_groups(entries: &[Entry]) -> Vec<Group> {
         // A group is as certain as its weakest link.
         g.certainty = g.certainty.min(certainty);
         for reason in reasons {
+            // Of the ways of being alike there is one, as weak as the weakest pair.
+            if let Some(known) = g.reasons.iter_mut().find(|r| matches!(r, Reason::Alike { .. }))
+                && matches!(reason, Reason::Alike { .. })
+            {
+                *known = known.weaken(reason);
+                continue;
+            }
             if !g.reasons.contains(&reason) {
                 g.reasons.push(reason);
             }
@@ -486,7 +542,26 @@ mod tests {
             "@book{b, author={Nagy, G.}, title={The Best of the Achaeans}, year={1980}}",
         )
         .unwrap();
-        assert_eq!(r, (Certainty::Probable, vec![Reason::TitleAuthorYear]));
+        assert_eq!(
+            r,
+            (
+                Certainty::Probable,
+                vec![Reason::Alike { title: Agreement::Like, author: Agreement::Same, year: Agreement::Like }]
+            )
+        );
+        // The year on one of them only, and the author of one among the authors of the other.
+        let r = cmp(
+            "@book{a, author={Lord, Albert and Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}}",
+            "@book{b, author={Nagy, G.}, title={The Best of the Achaeans}}",
+        )
+        .unwrap();
+        assert_eq!(
+            r,
+            (
+                Certainty::Probable,
+                vec![Reason::Alike { title: Agreement::Same, author: Agreement::Like, year: Agreement::None }]
+            )
+        );
     }
 
     #[test]

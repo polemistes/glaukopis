@@ -58,4 +58,4 @@ text-notes = { $count ->
     [one] { $count } note
    *[other] { $count } noter
 }
-text-keys = { $ctrl }+{ $enter } nytt element · { $at } kildehenvisning
+text-keys = { $alt }+{ $enter } nytt element · { $alt }+{ $shift }+{ $enter } ett under · { $at } kildehenvisning

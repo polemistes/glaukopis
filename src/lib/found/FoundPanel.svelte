@@ -1,11 +1,24 @@
+<script lang="ts" module>
+  /** Whether the list of all there is stands open: as it was left, for every panel. */
+  let listOpen = $state(false);
+</script>
+
 <script lang="ts">
   /**
-   * The window in which the citations that were found in a map are gone
-   * through, one at a time: see ADR 0015. What there is and what is done is
-   * in `going.svelte.ts`; this shows it.
+   * The panel at the side in which the citations that were found in the
+   * map in view are gone through, one at a time: see ADR 0015. What there
+   * is and what is done is in `going.svelte.ts`; this shows it, in a narrow
+   * column: what is taken for citations at the top, then where in the list
+   * the one that is looked at stands, the passage it stands in, the works,
+   * and the buttons at the foot. The list of all there is folds open when
+   * it is asked for. Whenever another is looked at, the view of the project
+   * is told, so that it is shown where the text of the map is shown.
    */
+  import type { Snippet } from 'svelte';
   import { onMount, tick, untrack } from 'svelte';
   import CheckCheck from '@lucide/svelte/icons/check-check';
+  import ChevronDown from '@lucide/svelte/icons/chevron-down';
+  import ChevronUp from '@lucide/svelte/icons/chevron-up';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import CircleCheck from '@lucide/svelte/icons/circle-check';
   import CircleDashed from '@lucide/svelte/icons/circle-dashed';
@@ -13,6 +26,7 @@
   import CircleQuestionMark from '@lucide/svelte/icons/circle-question-mark';
   import Plus from '@lucide/svelte/icons/plus';
   import StickyNote from '@lucide/svelte/icons/sticky-note';
+  import X from '@lucide/svelte/icons/x';
   import type { FoundBy } from '$lib/api/found';
   import { editorUi } from '$lib/editor/ui.svelte';
   import { t } from '$lib/i18n';
@@ -22,50 +36,77 @@
   import { library } from '$lib/state/library.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
-  import Dialog from '$lib/ui/Dialog.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
+  import IconButton from '$lib/ui/IconButton.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { notify, notifyError } from '$lib/ui/toast.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import { foundUi } from './found.svelte';
   import FoundWork from './FoundWork.svelte';
   import { NO_TEXT } from './gather';
   import { Going, type Entry, type Work } from './going.svelte';
 
   interface Props {
     project: Project;
-    map: string;
-    /** The id of a citation that was found, to begin with. */
-    at?: string | null;
-    onkeep: (reference: string) => void;
+    /** The map in view: its citations are gone through. */
+    mapId: string;
     onclose: () => void;
+    /** What stands at the head in place of the title: the tabs of the panel at the side. */
+    head?: Snippet;
+    /** Called when a work has been cited, with the id of its reference: the project keeps a copy. */
+    onkeep: (reference: string) => void;
+    /** Another is looked at: it is to be shown where the text of the map is shown. */
+    onshow?: (entry: Entry) => void;
   }
 
-  let { project, map, at = null, onkeep, onclose }: Props = $props();
+  let { project, mapId, onclose, head, onkeep, onshow }: Props = $props();
 
-  // The window is made anew for every map it is opened for.
+  // The panel is made anew for every map it is opened for.
   // svelte-ignore state_referenced_locally
-  const going = new Going(project, map, {
+  const going = new Going(project, mapId, {
     kept: $state.snapshot(settings.value.found),
     keep: (reference) => onkeep(reference),
     remember: (kept) => settings.setFound(kept),
   });
 
+  /** What holds all but the head and the foot, and takes the keys. */
+  let keys = $state<HTMLDivElement>();
   let list = $state<HTMLDivElement>();
   let detail = $state<HTMLDivElement>();
   /** While something is asked of the writer in a window of its own. */
   let waiting = $state(false);
   let libraryAt = library.revision;
+  /** The last asking of the panel that was answered: the one it was opened by, to begin with. */
+  let handled = untrack(() => foundUi.asked);
+
+  /** The citation that was asked for, where the asking was for this map. */
+  function askedFor(): string | null {
+    const request = foundUi.request;
+    return request?.map === mapId ? request.at : null;
+  }
 
   onMount(() => {
     // svelte-ignore state_referenced_locally
     void library.load().then(() => {
       libraryAt = library.revision;
-      const asked = going.open(at);
-      // The keys are those of the list from the beginning.
-      focusList();
+      const asked = going.open(askedFor());
+      focusKeys();
       return asked;
     });
     return () => going.close();
+  });
+
+  // Asked again while open, as when another citation is pressed in the text: that one is looked at.
+  $effect(() => {
+    const n = foundUi.asked;
+    untrack(() => {
+      if (n === handled) return;
+      handled = n;
+      const at = askedFor();
+      const wanted = at ? going.entries.find((e) => e.target.id === at) : null;
+      if (wanted) going.show(wanted.key);
+      focusKeys();
+    });
   });
 
   // The library may have a work now that it did not have: it is asked again.
@@ -81,14 +122,17 @@
   const current = $derived(going.current);
   const certain = $derived(going.certain.length);
 
-  // The one that is looked at is in view in the list, and its text at the top beside it.
+  // The one that is looked at is in view in the list and in the panel, and shown in the text.
   $effect(() => {
     const key = current?.key;
-    if (!key || !list) return;
-    list.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`)?.scrollIntoView({
-      block: 'nearest',
+    untrack(() => {
+      if (!key || !current) return;
+      list?.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`)?.scrollIntoView({
+        block: 'nearest',
+      });
+      detail?.scrollIntoView({ block: 'nearest' });
+      onshow?.(current);
     });
-    if (detail) detail.scrollTop = 0;
   });
 
   const BY: Record<FoundBy, string> = $derived({
@@ -113,7 +157,7 @@
     const place = going.place(entry);
     if (!place) return { before: '', text: entry.target.text, after: '' };
     const { start, end } = entry.target;
-    const room = 260;
+    const room = 200;
     let before = place.text.slice(0, start);
     let after = place.text.slice(end);
     if (before.length > room) {
@@ -146,27 +190,28 @@
     return before.length >= 90 ? `… ${before.slice(before.indexOf(' ') + 1)}` : before;
   }
 
-  function focusList() {
-    void tick().then(() => list?.focus());
+  /** The keys are those of the panel: the arrows, Enter and Ctrl+Z. */
+  function focusKeys() {
+    void tick().then(() => keys?.focus({ preventScroll: true }));
   }
 
   function make() {
-    if (going.make()) focusList();
+    if (going.make()) focusKeys();
   }
 
   function leave() {
-    if (going.leave()) focusList();
+    if (going.leave()) focusKeys();
   }
 
   function later() {
     going.later();
-    focusList();
+    focusKeys();
   }
 
   function makeCertain() {
     const made = going.makeCertain();
     if (made) notify(t('found-made', { count: made }), t('found-made-undo'));
-    focusList();
+    focusKeys();
   }
 
   function another(entry: Entry, work: Work, anchor: HTMLElement) {
@@ -250,22 +295,17 @@
   }
 </script>
 
-<Dialog
-  open
-  title={t('found-title')}
-  subtitle={going.entries.length
-    ? t('found-subtitle', { map: project.map(map)?.name ?? '', count: going.entries.length })
-    : (project.map(map)?.name ?? '')}
-  width={1080}
-  tall
-  padded={false}
-  {onclose}
->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="found-window" {onkeydown}>
-    <div class="taken">
-      <span class="overline">{t('found-taken')}</span>
-      <span class="always">{t('found-taken-always')}</span>
+<aside class="panel found-panel" aria-label={t('found-title')}>
+  <header>
+    {#if head}{@render head()}{:else}<h2>{t('found-title')}</h2>{/if}
+    <IconButton label={t('common-close')} size="sm" onclick={onclose}><X size={15} /></IconButton>
+  </header>
+
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
+  <div class="through" tabindex="0" bind:this={keys} {onkeydown}>
+    <section class="taken">
+      <div class="overline">{t('found-taken')}</div>
+      <p class="always">{t('found-taken-always')}</p>
       <label class="check">
         <input
           type="checkbox"
@@ -291,16 +331,18 @@
         />
         {t('found-taken-notes')}
       </label>
-      <span class="state" aria-live="polite">
-        {#if going.asking}<Spinner size={13} /> {t('found-asking')}{/if}
-      </span>
-      {#if certain}
-        <Button size="sm" onclick={makeCertain}>
-          {#snippet icon()}<CheckCheck size={14} />{/snippet}
-          {t('found-make-certain', { count: certain })}
-        </Button>
+      {#if going.asking}
+        <p class="state" aria-live="polite"><Spinner size={13} /> {t('found-asking')}</p>
       {/if}
-    </div>
+      {#if certain}
+        <div class="certain">
+          <Button size="sm" onclick={makeCertain}>
+            {#snippet icon()}<CheckCheck size={14} />{/snippet}
+            {t('found-make-certain', { count: certain })}
+          </Button>
+        </div>
+      {/if}
+    </section>
 
     {#if going.failure}
       <p class="failure" role="alert"><CircleAlert size={15} /> <span>{going.failure}</span></p>
@@ -324,16 +366,30 @@
         {/if}
       </div>
     {:else}
-      <div class="through">
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-        <div
-          class="list"
-          role="listbox"
-          aria-label={t('found-list-label')}
-          tabindex="0"
-          data-autofocus
-          bind:this={list}
+      <div class="where-in">
+        <IconButton label={t('found-previous')} size="sm" onclick={() => going.move(-1)}>
+          <ChevronUp size={15} />
+        </IconButton>
+        <IconButton label={t('found-next')} size="sm" onclick={() => going.move(1)}>
+          <ChevronDown size={15} />
+        </IconButton>
+        <span class="position">
+          {t('found-position', { index: going.index + 1, count: going.entries.length })}
+        </span>
+        <span class="spring"></span>
+        <button
+          type="button"
+          class="list-toggle"
+          aria-expanded={listOpen}
+          onclick={() => (listOpen = !listOpen)}
         >
+          {listOpen ? t('found-list-hide') : t('found-list-show')}
+          <span class="chevron" class:open={listOpen}><ChevronDown size={13} /></span>
+        </button>
+      </div>
+
+      {#if listOpen}
+        <div class="list" role="listbox" aria-label={t('found-list-label')} bind:this={list}>
           {#each going.entries as entry (entry.key)}
             {@const sure = going.sureness(entry)}
             {@const Sign = SURE[sure].icon}
@@ -362,197 +418,228 @@
             </div>
           {/each}
         </div>
+      {/if}
 
-        {#if current}
-          {@const around = context(current)}
-          {@const can = current.note ? going.can(current) : null}
-          {@const how = going.how(current)}
-          <div class="detail" bind:this={detail} data-entry={current.key}>
-            <div class="overline">
-              {current.note
-                ? t('found-in-note-of', { element: elementTitle(current) })
-                : t('found-in', { element: elementTitle(current) })}
-            </div>
-            {#if current.note && standsAt(current)}
-              <p class="outer serif selectable">
-                {standsAt(current)}<sup>{t('found-note-mark')}</sup>
-              </p>
-            {/if}
-            <p class="passage serif selectable" class:note={current.note}>
-              {around.before}<mark>{around.text}</mark>{around.after}
-            </p>
-            <div class="by" data-by={current.by}>{BY[current.by]}</div>
-
-            {#if current.trouble}
-              <p class="failure" role="alert">
-                <CircleAlert size={15} /> <span>{current.trouble}</span>
-              </p>
-            {/if}
-
-            <div class="proposed">
-              <div class="overline">{t('found-the-citation')}</div>
-              <div class="works">
-                {#each current.works as work, i (work.key)}
-                  <FoundWork
-                    bind:work={current.works[i]}
-                    mode={current.mode}
-                    index={i}
-                    asking={going.asking}
-                    onchoose={(reference) => going.choose(work, reference)}
-                    onremove={() => going.remove(current, work)}
-                    onedit={edit}
-                    onanother={(anchor) => another(current, work, anchor)}
-                    onadd={() => addToLibrary(work)}
-                  />
-                {:else}
-                  <p class="no-works">{t('found-no-works')}</p>
-                {/each}
-              </div>
-              <div class="foot">
-                <button type="button" onclick={(e) => addWork(current, e.currentTarget)}>
-                  <Plus size={14} />
-                  {t('found-add-work')}
-                </button>
-                <label class="check inline">
-                  <input
-                    type="checkbox"
-                    checked={current.mode === 'intext'}
-                    onchange={(e) => (current.mode = e.currentTarget.checked ? 'intext' : 'normal')}
-                  />
-                  {t('found-author-in-text')}
-                </label>
-              </div>
-            </div>
-
-            {#if current.note && can}
-              <fieldset class="in-note">
-                <legend class="overline">{t('found-in-note')}</legend>
-                <label class="choice" class:off={!can.possible}>
-                  <input
-                    type="radio"
-                    name="in-note"
-                    checked={how === 'note'}
-                    disabled={!can.possible}
-                    onchange={() => going.choice(current, 'note', going.kept.inNotes !== '')}
-                  />
-                  <span>
-                    <strong>{t('found-note-becomes')}</strong>
-                    <span class="hint">
-                      {#if !can.possible}
-                        {can.why}
-                      {:else if can.before || can.after}
-                        {t('found-note-around', {
-                          has: can.before && can.after ? 'both' : can.before ? 'before' : 'after',
-                          before: truncate(can.before, 60),
-                          after: truncate(can.after, 60),
-                        })}
-                      {:else}
-                        {t('found-note-style')}
-                      {/if}
-                    </span>
-                  </span>
-                </label>
-                <label class="choice">
-                  <input
-                    type="radio"
-                    name="in-note"
-                    checked={how === 'here'}
-                    onchange={() => going.choice(current, 'here', going.kept.inNotes !== '')}
-                  />
-                  <span>
-                    <strong>{t('found-citation-in-note')}</strong>
-                    <span class="hint">{t('found-citation-in-note.hint')}</span>
-                  </span>
-                </label>
-                <label class="check all">
-                  <input
-                    type="checkbox"
-                    checked={going.kept.inNotes !== ''}
-                    onchange={(e) => going.choice(current, how, e.currentTarget.checked)}
-                  />
-                  {t('found-for-all')}
-                </label>
-              </fieldset>
-            {/if}
+      {#if current}
+        {@const around = context(current)}
+        {@const can = current.note ? going.can(current) : null}
+        {@const how = going.how(current)}
+        <div class="detail" bind:this={detail} data-entry={current.key}>
+          <div class="overline">
+            {current.note
+              ? t('found-in-note-of', { element: elementTitle(current) })
+              : t('found-in', { element: elementTitle(current) })}
           </div>
-        {/if}
-      </div>
+          {#if current.note && standsAt(current)}
+            <p class="outer serif selectable">
+              {standsAt(current)}<sup>{t('found-note-mark')}</sup>
+            </p>
+          {/if}
+          <p class="passage serif selectable" class:note={current.note}>
+            {around.before}<mark>{around.text}</mark>{around.after}
+          </p>
+          <div class="by" data-by={current.by}>{BY[current.by]}</div>
+
+          {#if current.trouble}
+            <p class="failure" role="alert">
+              <CircleAlert size={15} /> <span>{current.trouble}</span>
+            </p>
+          {/if}
+
+          <div class="proposed">
+            <div class="overline">{t('found-the-citation')}</div>
+            <div class="works">
+              {#each current.works as work, i (work.key)}
+                <FoundWork
+                  bind:work={current.works[i]}
+                  mode={current.mode}
+                  index={i}
+                  asking={going.asking}
+                  onchoose={(reference) => going.choose(work, reference)}
+                  onremove={() => going.remove(current, work)}
+                  onedit={edit}
+                  onanother={(anchor) => another(current, work, anchor)}
+                  onadd={() => addToLibrary(work)}
+                />
+              {:else}
+                <p class="no-works">{t('found-no-works')}</p>
+              {/each}
+            </div>
+            <div class="foot">
+              <button type="button" onclick={(e) => addWork(current, e.currentTarget)}>
+                <Plus size={14} />
+                {t('found-add-work')}
+              </button>
+              <label class="check inline">
+                <input
+                  type="checkbox"
+                  checked={current.mode === 'intext'}
+                  onchange={(e) => (current.mode = e.currentTarget.checked ? 'intext' : 'normal')}
+                />
+                {t('found-author-in-text')}
+              </label>
+            </div>
+          </div>
+
+          {#if current.note && can}
+            <fieldset class="in-note">
+              <legend class="overline">{t('found-in-note')}</legend>
+              <label class="choice" class:off={!can.possible}>
+                <input
+                  type="radio"
+                  name="in-note"
+                  checked={how === 'note'}
+                  disabled={!can.possible}
+                  onchange={() => going.choice(current, 'note', going.kept.inNotes !== '')}
+                />
+                <span>
+                  <strong>{t('found-note-becomes')}</strong>
+                  <span class="hint">
+                    {#if !can.possible}
+                      {can.why}
+                    {:else if can.before || can.after}
+                      {t('found-note-around', {
+                        has: can.before && can.after ? 'both' : can.before ? 'before' : 'after',
+                        before: truncate(can.before, 60),
+                        after: truncate(can.after, 60),
+                      })}
+                    {:else}
+                      {t('found-note-style')}
+                    {/if}
+                  </span>
+                </span>
+              </label>
+              <label class="choice">
+                <input
+                  type="radio"
+                  name="in-note"
+                  checked={how === 'here'}
+                  onchange={() => going.choice(current, 'here', going.kept.inNotes !== '')}
+                />
+                <span>
+                  <strong>{t('found-citation-in-note')}</strong>
+                  <span class="hint">{t('found-citation-in-note.hint')}</span>
+                </span>
+              </label>
+              <label class="check all">
+                <input
+                  type="checkbox"
+                  checked={going.kept.inNotes !== ''}
+                  onchange={(e) => going.choice(current, how, e.currentTarget.checked)}
+                />
+                {t('found-for-all')}
+              </label>
+            </fieldset>
+          {/if}
+        </div>
+      {/if}
     {/if}
   </div>
 
-  {#snippet footer()}
-    <span class="count">
-      {#if current}
-        {t('found-position', { index: going.index + 1, count: going.entries.length })}
-        <span class="keys"><kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd> <kbd>Ctrl+Z</kbd></span>
-      {/if}
-    </span>
-    {#if current}
-      <Button variant="ghost" disabled={waiting || going.entries.length < 2} onclick={later}>
-        {t('found-later')}
-      </Button>
-      <Button disabled={waiting} onclick={leave}>{t('found-leave')}</Button>
-      <Button variant="primary" disabled={waiting || !going.ready(current)} onclick={make}>
-        {t('found-make')}
-      </Button>
-    {:else}
-      <Button variant="primary" onclick={onclose}>{t('common-close')}</Button>
-    {/if}
-  {/snippet}
-</Dialog>
+  {#if current}
+    <footer>
+      <span class="keys"><kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd> <kbd>Ctrl+Z</kbd></span>
+      <div class="buttons">
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={waiting || going.entries.length < 2}
+          onclick={later}
+        >
+          {t('found-later')}
+        </Button>
+        <Button size="sm" disabled={waiting} onclick={leave}>{t('found-leave')}</Button>
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={waiting || !going.ready(current)}
+          onclick={make}
+        >
+          {t('found-make')}
+        </Button>
+      </div>
+    </footer>
+  {/if}
+</aside>
 
 <style>
-  .found-window {
+  .panel {
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-width: 0;
+    background: var(--paper-raised);
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 40px;
+    flex: none;
+    padding: 0 8px 0 16px;
+  }
+  h2 {
+    flex: 1;
+    font-size: var(--text-md);
+    font-weight: 600;
+  }
+  .through {
+    flex: 1;
     min-height: 0;
+    overflow-y: auto;
+    outline: none;
+  }
+  .through:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--focus-ring);
   }
   .taken {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px 18px;
-    flex: none;
-    min-height: 44px;
-    padding: 6px var(--space-5);
-    border-top: 1px solid var(--line);
+    flex-direction: column;
+    gap: 5px;
+    padding: 4px 16px 10px;
     border-bottom: 1px solid var(--line);
     background: var(--paper);
   }
   .always {
+    margin: -2px 0 2px;
     color: var(--ink-3);
     font-size: var(--text-sm);
   }
   .check {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
     font-size: var(--text-sm);
     color: var(--ink-2);
+    line-height: 1.4;
     cursor: pointer;
   }
   .check input,
   .choice input {
+    flex: none;
+    margin: 2px 0 0;
     accent-color: var(--accent);
-    margin: 0;
   }
   .state {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 6px;
-    margin-left: auto;
+    margin: 4px 0 0;
     color: var(--ink-3);
     font-size: var(--text-sm);
+  }
+  .certain {
+    margin-top: 6px;
   }
   .failure {
     display: flex;
     gap: 8px;
-    margin: var(--space-3) var(--space-5) 0;
+    margin: var(--space-3) 16px 0;
     padding: 8px 12px;
     border-radius: var(--radius-m);
     background: var(--danger-soft);
     color: var(--danger);
+    font-size: var(--text-sm);
     line-height: 1.45;
   }
   .failure :global(svg) {
@@ -563,34 +650,61 @@
     margin: var(--space-3) 0 0;
   }
   .nothing {
+    padding: 24px 16px;
+  }
+  .where-in {
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex: 1;
-    min-height: 0;
+    gap: 2px;
+    padding: 6px 8px 6px 10px;
+    border-bottom: 1px solid var(--line);
   }
-  .through {
-    display: grid;
-    grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  .position {
+    margin-left: 6px;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .spring {
     flex: 1;
-    min-height: 0;
+  }
+  .list-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 26px;
+    padding: 0 8px;
+    border: none;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+  .list-toggle:hover {
+    background: var(--paper-hover);
+    color: var(--ink);
+  }
+  .chevron {
+    display: inline-flex;
+    transition: transform 120ms ease;
+  }
+  .chevron.open {
+    transform: rotate(180deg);
   }
   .list {
-    min-height: 0;
+    max-height: 36vh;
     overflow-y: auto;
     padding: 6px;
-    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
     background: var(--paper);
-    outline: none;
-  }
-  .list:focus-visible {
-    box-shadow: inset 0 0 0 2px var(--focus-ring);
   }
   .row {
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    padding: 7px 9px;
+    padding: 6px 8px;
     border-radius: var(--radius-s);
     cursor: pointer;
   }
@@ -633,9 +747,7 @@
     vertical-align: -1px;
   }
   .detail {
-    min-height: 0;
-    overflow-y: auto;
-    padding: var(--space-4) var(--space-5) var(--space-5);
+    padding: var(--space-3) 16px var(--space-5);
   }
   .outer {
     margin: 6px 0 0;
@@ -651,15 +763,15 @@
   }
   .passage {
     margin: 6px 0 0;
-    font-size: 16px;
-    line-height: 1.6;
+    font-size: var(--text-lg);
+    line-height: 1.55;
     color: var(--ink-2);
     overflow-wrap: anywhere;
   }
   .passage.note {
-    padding-left: 12px;
+    padding-left: 10px;
     border-left: 2px solid var(--line-strong);
-    font-size: var(--text-lg);
+    font-size: var(--text-md);
   }
   mark {
     padding: 1px 0;
@@ -669,7 +781,7 @@
     color: var(--ink);
   }
   .by {
-    margin-top: 8px;
+    margin-top: 6px;
     color: var(--ink-3);
     font-size: var(--text-sm);
   }
@@ -681,19 +793,21 @@
     border: 1px solid var(--line);
     border-bottom: none;
     border-radius: var(--radius-m) var(--radius-m) 0 0;
-    background: var(--paper-raised);
+    background: var(--paper);
   }
   .no-works {
     margin: 0;
-    padding: 12px 14px;
+    padding: 10px 12px;
     border-bottom: 1px solid var(--line);
     color: var(--ink-3);
+    font-size: var(--text-sm);
   }
   .foot {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 2px;
-    padding: 6px;
+    gap: 2px 6px;
+    padding: 4px;
     border: 1px solid var(--line);
     border-top: none;
     border-radius: 0 0 var(--radius-m) var(--radius-m);
@@ -704,7 +818,7 @@
     align-items: center;
     gap: 5px;
     height: 28px;
-    padding: 0 9px;
+    padding: 0 8px;
     border: none;
     border-radius: var(--radius-s);
     background: transparent;
@@ -717,7 +831,8 @@
     color: var(--ink);
   }
   .check.inline {
-    margin: 0 auto 0 8px;
+    align-items: center;
+    margin: 0 4px 0 auto;
   }
   .in-note {
     display: flex;
@@ -736,9 +851,6 @@
     align-items: flex-start;
     gap: 9px;
     cursor: pointer;
-  }
-  .choice input {
-    margin-top: 3px;
   }
   .choice.off {
     cursor: default;
@@ -759,18 +871,26 @@
   .check.all {
     margin-left: 22px;
   }
-  .count {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    margin-right: auto;
-    color: var(--ink-3);
-    font-size: var(--text-sm);
-    font-variant-numeric: tabular-nums;
+  footer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: none;
+    padding: 8px 12px 10px;
+    border-top: 1px solid var(--line);
   }
   .keys {
     display: inline-flex;
     gap: 3px;
+    padding-left: 4px;
+    color: var(--ink-3);
+    font-size: var(--text-xs);
     opacity: 0.8;
+  }
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
   }
 </style>

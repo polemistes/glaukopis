@@ -68,7 +68,9 @@ and click the other element; or, from the keys, **Shift+F10**, **Associate
 with…**, the arrows to the other element, and **Enter**. An association can be given a few words that say
 what it is.
 
-An element that has text shows a small mark.
+An element that has text shows a small mark. The box in which the text is
+written can be dragged by the room around its name to wherever it is wanted,
+and the next box opened in that map opens there.
 
 **How far the writing has come.** Right-click an element, **Status**, and say
 whether it is an idea, a draft or done; for several at once, select them
@@ -90,7 +92,10 @@ capitals, and **Words**, which has the other marks and the kinds of words;
 **Cite**, **Note** and **Insert**, which has pictures, tables and
 mathematics; and **Comment**. They act where the cursor is, or on what is
 selected. The same tools are in the box that opens when an element is
-double-clicked in the diagram.
+double-clicked in the diagram. Before them, over the text of a map, stands
+**New element**, which adds an element after the one the cursor is in, or
+under it; and at their end a button that turns the checking of spelling off
+and on.
 
 Everything the tools do can be done from the keys, and much of it by typing:
 
@@ -107,7 +112,11 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Choose the kind of a paragraph, or make a kind of your own | The kind button; **Make a kind…** under **More…** in its menu |
 | Begin a quotation or a list | Type `> `, `- ` or `1. ` at the start of a line |
 | Make a dash | Type `--` for –, `---` for — |
-| Divide an element in two | Right-click where it is to be divided: **Split here** |
+| Divide an element in two | Right-click where it is to be divided: **Split here**; or **Ctrl+Enter** |
+| Add an element after the one the cursor is in | **Alt+Enter**; in a text, what follows the cursor goes into it |
+| Add an element under it | **Alt+Shift+Enter** |
+| Make the element deeper or less deep | **Tab**, **Shift+Tab** in its name; or **Alt** and the arrows left and right |
+| Move the element up or down | **Alt** and the arrows up and down |
 | Join an element to the one above | Right-click: **Join to the element above** |
 
 What a sign has done is undone by **Backspace**, should the sign have been
@@ -530,33 +539,42 @@ citation at once stands in the text as the text it was, with a line of dots
 under it. It is a citation that was *found*, and waits to be tied to a
 reference of your library.
 
-**Citations that were found…** opens the window in which they are gone
-through. It is in the menu **More** of the tools over the text and in the
-menu of the map (**This map**, under the name of the map in the bar), where
-it says how many there are; and pressing
-found text in the text opens the window at that one.
+They are gone through in the panel at the side, under its tab with the
+magnifying glass, which says how many the map in view has left
+(**Ctrl+Shift+T**). **Citations that were found…** in the menu of the map
+(**This map**, under the name of the map in the bar) opens it as well, and
+says how many there are; and pressing found text in the text opens the
+panel at that one. The panel is there for any map, whether its text was
+brought in or written here: what is to be taken for a citation is said at
+its top, as below.
 
-The window shows one at a time, in the sentence it stands in, with the
+The panel shows one at a time, in the sentence it stands in, with the
 citation that is proposed for it: for each work the reference, how sure it
 is that this is the work and why, the page, and the words before and after.
 All of it can be changed as in any citation. Where the library has several
 references that it may be, the others are listed; **Another…** looks for
 the work in the library. A work that the library does not have, and that
 the file tells of, can be **added to the library** from what the file says.
+Where the text of the map is open beside the panel, the one that is looked
+at is shown there as well: the text is scrolled to it and it is selected,
+and a note is opened at it. Where in the list it stands is said over the
+passage, with arrows to the one before and the next; **Show the list** opens
+the list of all there is.
 
 | To | Do this |
 | --- | --- |
 | Make it a citation | **Make it a citation**, or **Enter** |
 | Leave it as the text it is | **Leave it as text** |
 | Go on to the next, and decide later | **Later** |
-| Go through the list | The arrows up and down |
+| Go through the list | The arrows up and down, while the panel has the focus |
 | Take back what was done | **Ctrl+Z**, one step for each |
 
 A citation that is made takes the place of its text, and reads from then
 on as the reference style has it. What is left as text is no longer marked,
 and not asked about again. What is put off stays as it was: the marks are
 kept in the project, so the citations can be gone through a few today and
-the rest another day, and by anyone the project is shared with.
+the rest another day, and by anyone the project is shared with; the panel
+can be closed and opened again at any time.
 
 Where the library has every work of a citation for certain, as by the key
 of the item in Zotero, the tag, the DOI or the ISBN, a button at the top
@@ -564,7 +582,8 @@ makes citations of **all that are certain** at once. It is undone as one
 step.
 
 Text that only looks like a citation is not marked. It is looked for while
-the window is open, if you say so at the top:
+the panel is open, if you say so at its top, under **What is taken for
+citations**:
 
 - **Parentheses with a year in them**, such as *(Nagy 1979, 73)*, and
   with the author in the sentence, *Nagy (1979, 73)*.
@@ -638,9 +657,10 @@ When a reference is added or imported, Glaukopis looks for it in the library.
   apart, though they share much.
 
 You are told which, and choose: add it all the same, leave it out, or let the
-one that is there take what it lacks from the new one. **Find duplicates…**,
-in the menu beside *New reference*, goes through the whole library in the
-same way.
+one that is there take what it lacks from the new one. When several are in
+the same case, a row at the head of the import answers for them all at once;
+any of them can still be changed on its own. **Find duplicates…**, in the
+menu beside *New reference*, goes through the whole library in the same way.
 
 ### Looking a reference up
 
@@ -694,12 +714,12 @@ there. Importing the same a second time adds nothing.
 
 ## The panel at the side
 
-The references, the pictures, the comments, the history and the changes to
-review share one panel at the side of the map, one at a time. The button
-with the panel on it, in the bar over the map, opens it as it was last, and
-closes it; the tabs at its head change what it shows. Each has its key as
-well: **Ctrl+Shift+R**, **Ctrl+Shift+P**, **Ctrl+Shift+M**, **Ctrl+Shift+H**
-and **Ctrl+Shift+E**.
+The references, the pictures, the comments, the citations that were found,
+the history and the changes to review share one panel at the side of the
+map, one at a time. The button with the panel on it, in the bar over the
+map, opens it as it was last, and closes it; the tabs at its head change
+what it shows. Each has its key as well: **Ctrl+Shift+R**, **Ctrl+Shift+P**,
+**Ctrl+Shift+M**, **Ctrl+Shift+T**, **Ctrl+Shift+H** and **Ctrl+Shift+E**.
 
 ## Kinds of elements
 
@@ -789,12 +809,25 @@ Press the name of a lane to fold its elements away and press it again to
 open them; its own span stays. A double click on the name opens **When it
 is** for the lane's element.
 
-The elements that say nothing of their time are not on the timeline, but
-they are near: **Elements without a time**, beside the arrows, shows each
-in the lane of its branch, the elements deeper down with their path, and
-the branches in which nothing is placed yet as lanes of their own. Drag
-one along its lane to place it at that time, as finely as the axis is
-looked at, or press it to say when it is in words.
+An element that says nothing of its time, under one that does, is taken
+to be **within that one's time**: it stands in the rows under its parent,
+faint and dashed, at a point along the parent's span, and several such
+elements are spread evenly along it in the order of the text. An element
+deeper down stands under the nearest element over it that says when it is,
+with its path before its name; what stands under the lane's own element
+stands in the first rows of the lane. This is implied, not placed: nothing
+is written on the element, the chronology does not list it, and it is not
+counted among what could not be placed. Press it to say when it is in
+words; with **Move by dragging** on, drag it along the lane to place it at
+that time.
+
+The elements that say nothing of their time, with nothing over them that
+does, are not on the timeline, but they are near: **Elements without a
+time**, beside the arrows, shows each in the lane of its branch, the
+elements deeper down with their path, and the branches in which nothing is
+placed yet as lanes of their own. Drag one along its lane to place it at
+that time, as finely as the axis is looked at, or press it to say when it is
+in words.
 
 ## Comments
 
@@ -1335,12 +1368,17 @@ changes it, at once.
 
 Your texts have a language of their own, which need not be that of
 Glaukopis: each map is written in one, which is shown, and can be changed,
-with the details of its document (**Title, authors, abstract** over the
-preview). A new map is given the language of new texts, which is set under
-*Settings* › *Language* as well: at first that of the computer, where
-documents have words in it (English, Bokmål and Nynorsk), and English
-otherwise. The language is written into the map, so that those you share the
-project with make the same document of it.
+under **Languages…** in the menu of the map (the button beside its name),
+and with the details of its document (**Title, authors, abstract** over the
+preview). The same dialog has **the language of new maps in this project**,
+for a project written in another language than you usually write in: it is
+kept with the project, so that everyone it is shared with makes their new
+maps alike. Where none is chosen there, a new map is given the language of
+new texts, which is set under *Settings* › *Language*: at first that of the
+computer, where documents have words in it (English, Bokmål and Nynorsk), and
+English otherwise. A map made from a document keeps the language the document
+says it is in. The language is written into the map, so that those you share
+the project with make the same document of it.
 
 The language of a map decides what its document prints in words of its own:
 the headings of the notes, the abstract and the bibliography, what a figure
@@ -1351,10 +1389,12 @@ those it has as they are in English are printed in the language of the map.
 ## Spelling
 
 Glaukopis checks the spelling of what you write as you write it, in the
-language of the map: the text, the names of the elements, and the notes. A
-word that the dictionary does not know has a wavy line under it, in the text
-you are writing and in the text that is only shown. The word you are in the
-middle of writing is left alone until you leave it.
+language of the map: the text, the names of the elements, and the notes.
+**Foreign words** (see *Kinds of paragraph and of words*) are checked in
+their own language where there is a dictionary for it, and left alone where
+there is none. A word that the dictionary does not know has a wavy line
+under it, in the text you are writing and in the text that is only shown.
+The word you are in the middle of writing is left alone until you leave it.
 
 Right-click an underlined word, or press **F7**, which goes to the next one
 after the cursor (**Shift+F7**, to the one before), and its menu has:
@@ -1393,7 +1433,9 @@ it is underlined, and **F7** says so.
 
 *Settings* › *Spelling* turns the checking off and on, lists the dictionaries
 there are and where they came from, and shows the words you have added,
-where they can be taken away.
+where they can be taken away. The last button of the tools over the text
+turns the checking off and on as well; it is pressed in while spelling is
+checked.
 
 The Norwegian dictionaries are made from the word lists of Bokmålsordboka
 and Nynorskordboka (Universitetet i Bergen og Språkrådet, ordbøkene.no,
@@ -1438,7 +1480,10 @@ what is to be done by its name, and does it.
 | **Ctrl+Shift+H** | The history of the project |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
 | **Tab**, **Enter** | In the diagram: a new element under, or beside |
+| **Ctrl+Enter**, **Alt+Enter** | In the text: a new element after this one, from the cursor on |
+| **Alt+Shift+Enter** | In the text: a new element under this one |
 | **Alt+Shift** and the arrows | In the diagram and the text: move the element up, down, deeper, less deep |
+| **Alt** and the arrows | In the text: move the element, or make it deeper or less deep, as in Org mode |
 | **Shift+F10** | In the diagram: the menu of what is selected |
 | **F2** | Rename |
 | **@** | In the text: cite |

@@ -33,14 +33,23 @@ export function truncate(text: string, length: number): string {
 }
 
 export function reasonWords(reasons: Reason[]): string {
-  const words: Record<Reason, string> = {
-    doi: t('library-reason-doi'),
-    isbn: t('library-reason-isbn'),
-    identical: t('library-reason-identical'),
-    'title-author-year': t('library-reason-title-author-year'),
-    file: t('library-reason-file'),
+  const words = (r: Reason): string => {
+    if (typeof r !== 'string') {
+      // What agreed of the title, the author and the year, each as far as it did.
+      return t('library-reason-alike', r.alike);
+    }
+    switch (r) {
+      case 'doi':
+        return t('library-reason-doi');
+      case 'isbn':
+        return t('library-reason-isbn');
+      case 'identical':
+        return t('library-reason-identical');
+      case 'file':
+        return t('library-reason-file');
+    }
   };
-  const list = reasons.map((r) => words[r]);
+  const list = reasons.map(words);
   if (list.length <= 1) return list[0] ?? '';
   return t('library-reasons', {
     others: list.slice(0, -1).join(', '),

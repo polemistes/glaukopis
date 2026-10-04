@@ -97,6 +97,16 @@ pub fn library_update(state: State<'_, AppState>, id: String, draft: Draft) -> C
     Ok(full(&library, &entry))
 }
 
+/// Gives a reference the key of what it is in Zotero, so that citations
+/// Zotero made of it are found as certain from then on.
+#[tauri::command(async)]
+pub fn library_add_zotero_keys(state: State<'_, AppState>, id: String, keys: Vec<String>) -> CommandResult<EntryFull> {
+    let mut library = state.library();
+    library.add_zotero_keys(&id, &keys)?;
+    let entry = library.require(&id)?.clone();
+    Ok(full(&library, &entry))
+}
+
 /// Keeps what the user has written about a work, for all projects.
 #[tauri::command(async)]
 pub fn library_set_note(state: State<'_, AppState>, id: String, text: String) -> CommandResult<EntryFull> {

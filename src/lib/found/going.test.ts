@@ -19,7 +19,12 @@ const likely = (reference: string): Suggestion[] => [
  * and notes as wholes, as the writer has said.
  */
 function library(has: Record<string, Suggestion[]> = {}) {
-  const calls = { suggest: 0, propose: 0, options: [] as FoundOptions[] };
+  const calls = {
+    suggest: 0,
+    propose: 0,
+    options: [] as FoundOptions[],
+    keys: [] as [string, string[]][],
+  };
   const commands: Commands = {
     suggest: async (items: FoundItem[]) => {
       calls.suggest++;
@@ -81,6 +86,9 @@ function library(has: Record<string, Suggestion[]> = {}) {
       fields: { title: String(data.title ?? '') },
       names: {},
     }),
+    keys: async (reference, keys) => {
+      calls.keys.push([reference, keys]);
+    },
   };
   return { commands, calls };
 }
@@ -296,6 +304,30 @@ describe('what the writer does', () => {
     expect(g.certain).toEqual([]);
     g.choose(g.entries[0].works[0], 'r-nagy');
     expect(g.certain).toHaveLength(1);
+  });
+
+  it('the same work, chosen once, is chosen in every citation of it, and the library learns its key', async () => {
+    const again: Block[] = [
+      p(t('First '), t('(Nagy 1979, 73)', { found: NAGY })),
+      p(t('Then '), t('(Nagy 1979, 80)', { found: zotero('d1b2c3d4e5f6', 'NAGY1979') })),
+      p(t('And '), t('(Lord 1960)', { found: LORD })),
+    ];
+    const { g, calls } = going([again], { LORD1960: sure('r-lord') });
+    await g.open();
+    const [first, second, lord] = g.entries;
+    expect(first.works[0].reference).toBeNull();
+    g.choose(first.works[0], 'r-nagy');
+    // The other citation of the item follows; another work does not.
+    expect(second.works[0]).toMatchObject({ reference: 'r-nagy', chosen: true, followed: true });
+    expect(lord.works[0]).toMatchObject({ reference: 'r-lord', chosen: false });
+    // What the writer has chosen for the other citation stands.
+    g.choose(second.works[0], 'r-other');
+    g.choose(first.works[0], 'r-nagy-2');
+    expect(second.works[0].reference).toBe('r-other');
+    // Made, the reference is told what it is in Zotero; one the library knew for certain is not.
+    expect(g.make(first)).toBe(true);
+    expect(g.make(g.entries.find((e) => e.target.text === '(Lord 1960)')!)).toBe(true);
+    expect(calls.keys).toEqual([['r-nagy-2', ['NAGY1979']]]);
   });
 
   it('works are taken out and added', async () => {

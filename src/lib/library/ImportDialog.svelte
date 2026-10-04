@@ -1,10 +1,11 @@
 <script lang="ts">
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
-  import type { ImportAction, PlanItem } from '$lib/api/library';
+  import type { Certainty, ImportAction, PlanItem } from '$lib/api/library';
   import { t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
+  import Segmented from '$lib/ui/Segmented.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import { reasonWords } from './format';
@@ -64,15 +65,59 @@
     items[index].action = action;
   }
 
-  function choice(item: PlanItem): 'merge' | 'add' | 'skip' {
+  type Choice = 'merge' | 'add' | 'skip';
+
+  function choice(item: PlanItem): Choice {
     return item.action.kind;
   }
 
-  function choose(index: number, value: 'merge' | 'add' | 'skip') {
+  function choose(index: number, value: Choice) {
     const item = items[index];
     if (value === 'merge') set(index, { kind: 'merge', into: item.matches[0].id });
     else set(index, { kind: value });
   }
+
+  // The candidates that have a match, by how sure the match is. Those in the same
+  // case can be answered alike, in one go.
+  const alike = $derived.by(() => {
+    const out: Record<Certainty, { item: PlanItem; index: number }[]> = {
+      probable: [],
+      certain: [],
+    };
+    items.forEach((item, index) => {
+      if (item.repeats == null && item.matches.length)
+        out[item.matches[0].certainty].push({ item, index });
+    });
+    return out;
+  });
+
+  function lacks(item: PlanItem): boolean {
+    return item.matches[0].gains.length > 0;
+  }
+
+  // What all of a certainty have chosen, when they agree; nothing when they differ.
+  // One that lacks nothing has nothing to take, so it is left out and counts as
+  // agreeing with the others that take what they lack.
+  function chosenByAll(certainty: Certainty): Choice | '' {
+    const list = alike[certainty];
+    const kinds = new Set(list.map(({ item }) => choice(item)));
+    if (kinds.size === 1) return [...kinds][0];
+    if (kinds.has('merge') && !kinds.has('add')) {
+      if (list.every(({ item }) => choice(item) === 'merge' || !lacks(item))) return 'merge';
+    }
+    return '';
+  }
+
+  function chooseForAll(certainty: Certainty, value: Choice) {
+    for (const { item, index } of alike[certainty]) {
+      choose(index, value === 'merge' && !lacks(item) ? 'skip' : value);
+    }
+  }
+
+  const forAll: Record<Certainty, (n: number) => string> = {
+    probable: (n) => t('library-import-all-probable', { count: n }),
+    certain: (n) => t('library-import-all-certain', { count: n }),
+  };
 
   async function run() {
     working = true;
@@ -132,6 +177,37 @@
 >
   <div class="content">
     {#if error}<p class="error selectable" role="alert">{error}</p>{/if}
+
+    {#if alike.probable.length > 1 || alike.certain.length > 1}
+      <div class="for-all">
+        {#each ['probable', 'certain'] as const as certainty (certainty)}
+          {@const list = alike[certainty]}
+          {#if list.length > 1}
+            {@const words = forAll[certainty](list.length)}
+            <div class="row" data-certainty={certainty}>
+              <span>{words}</span>
+              <Segmented
+                size="sm"
+                value={chosenByAll(certainty)}
+                label={words}
+                options={[
+                  {
+                    value: 'merge',
+                    label: t('library-import-all-merge'),
+                    disabled: !list.some(({ item }) => lacks(item)),
+                  },
+                  { value: 'skip', label: t('library-import-all-skip') },
+                  { value: 'add', label: t('library-import-all-add') },
+                ]}
+                onchange={(value) => {
+                  if (value) chooseForAll(certainty, value);
+                }}
+              />
+            </div>
+          {/if}
+        {/each}
+      </div>
+    {/if}
 
     {#each ['review', 'new', 'complete', 'known', 'repeated'] as const as group (group)}
       {@const list = groups[group]}
@@ -276,6 +352,22 @@
     border-radius: var(--radius-m);
     background: var(--danger-soft);
     color: var(--danger);
+  }
+  .for-all {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 12px;
+    font-size: var(--text-sm);
+    color: var(--ink-2);
   }
   section {
     border-top: 1px solid var(--line);

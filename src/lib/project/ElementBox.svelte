@@ -1,7 +1,15 @@
+<script module lang="ts">
+  /**
+   * Where the box was last put by hand in each map, for the session: the next
+   * element opened in that map opens there. Not kept with the project.
+   */
+  const putAt = new Map<string, { x: number; y: number }>();
+</script>
+
 <script lang="ts">
   import X from '@lucide/svelte/icons/x';
   import type { EditorView } from 'prosemirror-view';
-  import { onDestroy, tick } from 'svelte';
+  import { onDestroy, tick, untrack } from 'svelte';
   import type { KeyAction } from '$lib/editor/plugins';
   import { citationLabel } from '$lib/editor/references.svelte';
   import RichText from '$lib/editor/RichText.svelte';
@@ -35,15 +43,66 @@
   const title = $derived(project.fragment(id, 'title'));
   const text = $derived(project.fragment(id, 'body'));
 
+  const MARGIN = 12;
+
+  /** Where the box stands since it was dragged, or null while it stands beside its element. */
+  let moved: { x: number; y: number } | null = untrack(() => putAt.get(node?.map ?? '') ?? null);
+
+  /** Puts the box where it was dragged to, kept within the window, or beside its element. */
+  function position() {
+    if (!el) return;
+    if (!moved) {
+      place(el, anchor, { side: 'right', align: 'start', gap: 14, margin: MARGIN });
+      return;
+    }
+    const x = Math.max(MARGIN, Math.min(moved.x, window.innerWidth - el.offsetWidth - MARGIN));
+    const y = Math.max(MARGIN, Math.min(moved.y, window.innerHeight - el.offsetHeight - MARGIN));
+    el.style.left = `${Math.round(x)}px`;
+    el.style.top = `${Math.round(y)}px`;
+  }
+
   $effect(() => {
     if (!el) return;
-    const position = () =>
-      place(el!, anchor, { side: 'right', align: 'start', gap: 14, margin: 12 });
+    void anchor;
     position();
     const observer = new ResizeObserver(() => requestAnimationFrame(position));
     observer.observe(el);
     return () => observer.disconnect();
   });
+
+  /**
+   * The box is dragged by the header, around the name: not by the name
+   * itself, which is written in, nor by the button that closes it. Once
+   * moved it stays where it was put, and the next box of the map opens there.
+   */
+  function grab(event: PointerEvent) {
+    if (event.button !== 0 || !el) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('.box-title, button')) return;
+    event.preventDefault();
+    const header = event.currentTarget as HTMLElement;
+    const start = { x: event.clientX, y: event.clientY };
+    const was = { x: el.offsetLeft, y: el.offsetTop };
+    let dragged = false;
+    header.setPointerCapture(event.pointerId);
+    const onmove = (e: PointerEvent) => {
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!dragged && Math.hypot(dx, dy) < 3) return;
+      dragged = true;
+      moved = { x: was.x + dx, y: was.y + dy };
+      position();
+    };
+    const onup = () => {
+      header.removeEventListener('pointermove', onmove);
+      header.removeEventListener('pointerup', onup);
+      header.removeEventListener('pointercancel', onup);
+      if (dragged && moved && node) putAt.set(node.map, moved);
+    };
+    header.addEventListener('pointermove', onmove);
+    header.addEventListener('pointerup', onup);
+    header.addEventListener('pointercancel', onup);
+  }
 
   // The element may go while its box is open: deleted by a collaborator, or by undo.
   $effect(() => {
@@ -170,7 +229,8 @@
     tabindex="-1"
     {onkeydown}
   >
-    <header>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <header onpointerdown={grab}>
       <RichText
         bind:this={name}
         {project}
@@ -247,9 +307,13 @@
     gap: 8px;
     padding: 16px 12px 4px 22px;
     flex: none;
+    /* The box is dragged by the room around the name. */
+    cursor: move;
+    touch-action: none;
   }
   header :global(.box-title) {
     flex: 1;
+    cursor: text;
   }
   header :global(.box-title .prose) {
     font-size: 20px;

@@ -3,7 +3,9 @@
  * misspelt words are wrapped in spans that underline them as the editors
  * do. The text is put in whole by Svelte (`{@html}` is the only child of its
  * element), which sweeps the spans away with the old text when it is drawn
- * anew; they are then made again.
+ * anew; they are then made again. Foreign words, which stand in a span with
+ * their language (`html.ts`), are checked in that language where there is a
+ * dictionary for it, and left alone where there is none.
  *
  * A text is looked at when it comes into view, and again when it changes;
  * one that waits for words to be answered is looked at again when they are.
@@ -168,17 +170,29 @@ function look(el: HTMLElement, s: Shown) {
   unmark(s);
   const checking = spelling.on ? spelling.checkingOf(s.drawn.language) : null;
   if (checking === undefined) s.waits = true;
-  if (checking) markAll(el, s, checking.script);
+  else if (spelling.on) markAll(el, s);
   // What was changed here is not a change to be looked at again.
   s.changes.takeRecords();
 }
 
-function markAll(el: HTMLElement, s: Shown, script: string | null) {
-  const { language, ignored } = s.drawn;
+/** The language of a node of text: that of the foreign words it is among, else that of the map. */
+function languageOf(parent: Element, root: HTMLElement, language: string): string {
+  const foreign = parent.closest<HTMLElement>('.kind[lang]');
+  const lang = foreign && root.contains(foreign) ? foreign.getAttribute('lang')?.trim() : '';
+  return lang || language;
+}
 
-  // The text, and where each of its nodes of text begins in it.
-  let text = '';
-  const pieces: { node: Text; at: number }[] = [];
+function markAll(el: HTMLElement, s: Shown) {
+  const ignored = s.drawn.ignored;
+  const language = (s.drawn.language ?? '').trim();
+
+  // The text, and where each of its nodes of text begins in it, with the
+  // language each is checked in. What is not text stands as signs that are
+  // not words, as many as the places it takes.
+  const runs: { text: string; language: string | null }[] = [];
+  const pieces: { node: Text; at: number; language: string }[] = [];
+  const languages = new Set<string>();
+  let length = 0;
   let lastBlock: Element | null = null;
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
@@ -186,35 +200,59 @@ function markAll(el: HTMLElement, s: Shown, script: string | null) {
     const parent = node.parentElement;
     if (!parent) continue;
     const block = blockOf(parent, el);
-    if (lastBlock && block !== lastBlock) text += '\n';
+    if (lastBlock && block !== lastBlock) {
+      runs.push({ text: '\n', language: null });
+      length += 1;
+    }
     lastBlock = block;
     if (parent.closest(NOT_WORDS)) {
-      text += NOT_TEXT.repeat(node.data.length);
+      runs.push({ text: NOT_TEXT.repeat(node.data.length), language: null });
+      length += node.data.length;
       continue;
     }
-    pieces.push({ node, at: text.length });
-    text += node.data;
+    const lang = languageOf(parent, el, language);
+    languages.add(lang);
+    pieces.push({ node, at: length, language: lang });
+    runs.push({ text: node.data, language: lang });
+    length += node.data.length;
   }
 
-  // The parts of the nodes to be marked, the last first, so that parting a
-  // node leaves the places of those before as they were.
+  /** The text in one of its languages: the words of the others are not words in it. */
+  const textIn = (lang: string) =>
+    runs
+      .map((r) =>
+        r.language === lang || r.language === null ? r.text : NOT_TEXT.repeat(r.text.length),
+      )
+      .join('');
+
+  // The parts of the nodes to be marked, found language by language.
   const parts: { piece: number; from: number; to: number; word: string }[] = [];
-  let i = 0;
-  for (const w of findWords(text, language ?? '', script)) {
-    const right = spelling.judge(language, w.asked);
-    if (right === undefined) {
+  for (const lang of languages) {
+    const checking = spelling.checkingOf(lang);
+    if (checking === undefined) {
       s.waits = true;
       continue;
     }
-    if (right || isIgnored(ignored, w.word)) continue;
-    while (i + 1 < pieces.length && pieces[i + 1].at <= w.from) i++;
-    for (let p = i; p < pieces.length && pieces[p].at < w.to; p++) {
-      const { node, at } = pieces[p];
-      const from = Math.max(w.from - at, 0);
-      const to = Math.min(w.to - at, node.data.length);
-      if (to > from) parts.push({ piece: p, from, to, word: w.word });
+    if (!checking) continue;
+    let i = 0;
+    for (const w of findWords(textIn(lang), lang, checking.script)) {
+      const right = spelling.judge(lang, w.asked);
+      if (right === undefined) {
+        s.waits = true;
+        continue;
+      }
+      if (right || isIgnored(ignored, w.word)) continue;
+      while (i + 1 < pieces.length && pieces[i + 1].at <= w.from) i++;
+      for (let p = i; p < pieces.length && pieces[p].at < w.to; p++) {
+        const { node, at } = pieces[p];
+        const from = Math.max(w.from - at, 0);
+        const to = Math.min(w.to - at, node.data.length);
+        if (to > from) parts.push({ piece: p, from, to, word: w.word });
+      }
     }
   }
+  // The last first, so that parting a node leaves the places of those before as they were.
+  parts.sort((a, b) => a.piece - b.piece || a.from - b.from);
   for (let n = parts.length - 1; n >= 0; n--) {
     const { piece, from, to, word } = parts[n];
     s.spans.push(mark(pieces[piece].node, from, to, word));

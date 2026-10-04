@@ -43,6 +43,20 @@ what a scholar knows.
   the margin reaches; what is relative to it may be anywhere within the
   margin. A lane in which nothing says when it is, its element included,
   is not shown (same day).
+- **What says nothing of its time stands within what is over it** (added
+  2026-10-04): an element without a placement, under one that has a
+  placement in the same lane — the lane's own element included, and up
+  through the maps an element stands for — is *implied* within that one's
+  time (`timeline/lanes.ts`, `Implied`): drawn faint and dashed in the rows
+  under it, at a point along its span, those implied in one element spread
+  evenly along it in the order of the text, deeper ones with their path. It
+  is a view, not a fact: nothing is written on the element, the chronology
+  leaves it out, and it is not counted among what could not be placed. The
+  rule is one: the nearest element over it that says when it is, and only
+  within the same lane; an element of a lane's branch stays with its lane,
+  waiting there, rather than standing within a placed element elsewhere.
+  What has nothing over it that says when it is still waits, shown only on
+  asking.
 - Nothing of it goes into the document yet.
 
 ## Consequences

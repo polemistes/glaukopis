@@ -62,3 +62,26 @@ English.
   words are English; one script tries the Norwegian.
 - Every word shown is looked up by a name. A test checks that each name used
   in the code is in English and in Norwegian, with the same variables.
+
+## Addendum of 2026-10-04: the language of a project's new maps
+
+A map's language could be changed only with the details of its document,
+over the preview, which few found; and a project written in another
+language than the writer usually writes in had every new map given the
+wrong one, to be changed by hand.
+
+- **A project may have a language for its new maps**, kept in the shared
+  `meta` map of the document as `language`, so that every copy of the
+  project makes its new maps alike. A new map is given, in this order: the
+  project's language, where one is chosen; else the settings' language of new
+  texts, as before. A map made from a document keeps the language the
+  document says, before either.
+- **A dialog, *Languages…*, in the menu of a map** has the language of this
+  map and the language of new maps in the project, each with a line on what
+  follows from it: the words a document prints, the dictionary of spelling,
+  the quotation marks of a mention. The details of the document keep the
+  map's language as well.
+- **Foreign words are checked in their own language**, as the guide had
+  promised: a kind of words with a language has its words judged by that
+  language's dictionary where there is one, and left alone where there is
+  none, in the editors and in the text drawn without one.

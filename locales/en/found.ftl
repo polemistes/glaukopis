@@ -1,14 +1,13 @@
-# Citations that were found in a text written elsewhere, and the window in
-# which they are gone through (ADR 0015), in English. See locales/README.md.
+# Citations that were found in a text written elsewhere, and the panel at
+# the side in which they are gone through (ADR 0015), in English. See
+# locales/README.md.
 
-## The window.
+## The panel.
 
 found-title = Citations that were found
-# The map whose citations are gone through, and how many are left.
-found-subtitle = { $count ->
-    [one] { $map } · { $count } citation to go through
-   *[other] { $map } · { $count } citations to go through
-}
+# On the tab of the panel, beside the other tabs: short.
+found-tab = Citations found
+found-between = Between the map and the citations that were found
 found-taken = What is taken for citations
 found-taken-always = What a program made, and tags
 found-taken-years = Parentheses with a year in them
@@ -38,6 +37,10 @@ found-in-note-of = In a note of “{ $element }”
 # Set small and high after the words a note stands after.
 found-note-mark = note
 found-position = { $index } of { $count }
+found-previous = The one before
+found-next = The next
+found-list-show = Show the list
+found-list-hide = Hide the list
 found-later = Later
 found-leave = Leave it as text
 found-make = Make it a citation
@@ -108,6 +111,8 @@ found-work-looking = { $work } is looked for in your library…
 found-work-no-tag = { $work } is a tag that no reference of your library has.
 found-work-not-found = { $work } was not found in your library.
 found-work-chosen = Chosen by you
+# The writer chose this reference for another citation of the same work, and this one followed.
+found-work-followed = As you chose for the same work
 found-work-certain = Certain
 found-work-likely = Likely
 found-work-possible = Possible

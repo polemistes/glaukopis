@@ -11,6 +11,11 @@
    * edge of a span changes its start or its end; the time is written anew
    * as finely as it was written. Elements that say nothing of their time
    * can be shown, dragged onto the timeline, or opened to say when they are.
+   *
+   * An element that says nothing of its time, under one that does, is
+   * implied within that one's time: it is drawn faint and dashed in the
+   * rows under its parent, spread evenly along the parent's span with the
+   * others implied there, in the order of the text.
    */
   import { untrack } from 'svelte';
   import CalendarPlus from '@lucide/svelte/icons/calendar-plus';
@@ -33,7 +38,7 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
-  import { timelineOf, type Event, type Waiting } from './lanes';
+  import { timelineOf, type Event, type Implied, type Waiting } from './lanes';
   import LanesDialog from './LanesDialog.svelte';
   import { describeWhen, type Placed, type When } from './solve';
   import {
@@ -204,10 +209,62 @@
     fadeRight: number;
   }
 
+  /** An element implied within another's time, drawn under it. */
+  interface DrawnImplied {
+    item: Implied;
+    row: number;
+    /** Where its marker stands. */
+    x: number;
+    labelWidth: number;
+  }
+
+  /** The span of an element, faint, in a row in which what is implied within it stands. */
+  interface Band {
+    left: number;
+    right: number;
+    row: number;
+  }
+
   const CHAR = 6.6;
 
   function labelWidth(name: string): number {
     return Math.min((name || t('project-untitled')).length * CHAR + 10, LABEL_MOST);
+  }
+
+  /** The words of an implied element's label: its path, then its name. */
+  function impliedLabel(item: Implied): string {
+    return [...item.path, item.name || t('project-untitled')].join(' › ');
+  }
+
+  /** Half the width of an implied element's marker, and the room before its label. */
+  const MARK = 8;
+
+  /**
+   * Lays what is implied within a span out along it: evenly, in the order of
+   * the text, (i+1)/(n+1) of the way along; at the point, for a point. Those
+   * whose labels would overlap stand in rows of their own, the rows counted
+   * from nought. Returns them, and how far each row reaches.
+   */
+  function layWithin(
+    items: Implied[],
+    left: number,
+    right: number,
+    span: boolean,
+  ): { drawn: DrawnImplied[]; ends: number[] } {
+    const ends: number[] = [];
+    const drawn: DrawnImplied[] = [];
+    const to = span ? right : left;
+    items.forEach((item, i) => {
+      const x = left + ((to - left) * (i + 1)) / (items.length + 1);
+      const lw = labelWidth(impliedLabel(item));
+      let row = ends.findIndex((end) => end < x - MARK - 2);
+      if (row < 0) {
+        row = ends.length;
+        ends.push(x + MARK + lw);
+      } else ends[row] = x + MARK + lw;
+      drawn.push({ item, row, x, labelWidth: lw });
+    });
+    return { drawn, ends };
   }
 
   /** The lanes whose events are folded away, by the id of the lane; its own span stays. */
@@ -228,24 +285,68 @@
       empty: boolean;
       rows: number;
       drawn: Drawn[];
+      /** What is implied within the lane's elements, in the rows under each. */
+      within: DrawnImplied[];
+      /** The spans of the elements something is implied within, in the rows of what is implied. */
+      bands: Band[];
       /** What waits in the lane, each in a row of its own after the events. */
       waiting: { item: Waiting; row: number }[];
     }[] = [];
     const all = [...timeline.lanes];
-    if (timeline.elsewhere.length || (showWithout && timeline.waitingElsewhere.length))
+    if (
+      timeline.elsewhere.length ||
+      timeline.impliedElsewhere.length ||
+      (showWithout && timeline.waitingElsewhere.length)
+    )
       all.push({
         id: '',
         name: t('timeline-elsewhere'),
         colour: null,
         own: null,
         events: timeline.elsewhere,
+        implied: timeline.impliedElsewhere,
         waiting: timeline.waitingElsewhere,
         empty: !timeline.elsewhere.length,
       });
     for (const lane of all) {
+      const away = folded.has(lane.id);
+      // How far each row is taken, from the left; a row nothing is in yet is free from the start.
       const ends: number[] = [];
+      const take = (row: number, extent: number) => {
+        while (ends.length <= row) ends.push(-Infinity);
+        ends[row] = extent;
+      };
+      const free = (row: number, left: number) => row >= ends.length || ends[row] < left - 2;
       const drawn: Drawn[] = [];
-      const placed = (folded.has(lane.id) ? [] : lane.events)
+      const within: DrawnImplied[] = [];
+      const bands: Band[] = [];
+      const byParent = new Map<string, Implied[]>();
+      for (const item of away ? [] : lane.implied) {
+        const list = byParent.get(item.parent);
+        if (list) list.push(item);
+        else byParent.set(item.parent, [item]);
+      }
+      /** Puts what is laid out within a span in the rows from `first` on, and the span behind it. */
+      const put = (
+        laid: ReturnType<typeof layWithin>,
+        first: number,
+        left: number,
+        right: number,
+      ) => {
+        laid.ends.forEach((end, k) => {
+          take(first + k, end);
+          bands.push({ left, right, row: first + k });
+        });
+        within.push(...laid.drawn.map((d) => ({ ...d, row: first + d.row })));
+      };
+      // What is implied within the lane's own element stands in the first rows.
+      const ownKids = byParent.get(lane.id);
+      if (ownKids && lane.own && Number.isFinite(lane.own.from) && !away) {
+        const left = x(lane.own.from);
+        const right = Math.max(x(lane.own.to), left + 4);
+        put(layWithin(ownKids, left, right, lane.own.span), 0, left, right);
+      }
+      const placed = (away ? [] : lane.events)
         .filter((e) => Number.isFinite(e.placed.from))
         .map((e) => (drag?.id === e.id ? { ...e, placed: dragged(e.placed) } : e))
         .sort((a, b) => a.placed.from - b.placed.from);
@@ -258,18 +359,24 @@
         const lw = labelWidth(event.name);
         const labelLeft = event.placed.span && right - left > lw ? left + 4 : right + 6;
         const extent = Math.max(right, fadeRight, labelLeft + lw);
-        let row = ends.findIndex((end) => end < fadeLeft - 2);
-        if (row < 0) {
-          row = ends.length;
-          ends.push(extent);
-        } else ends[row] = extent;
+        // What is implied within it takes the rows directly under its own, as far as it reaches.
+        const kids = byParent.get(event.id);
+        const laid = kids ? layWithin(kids, left, right, event.placed.span) : null;
+        const kidsLeft = laid ? Math.min(...laid.drawn.map((d) => d.x)) - MARK : 0;
+        let row = 0;
+        while (
+          !free(row, fadeLeft) ||
+          (laid && !laid.ends.every((_, k) => free(row + 1 + k, kidsLeft)))
+        )
+          row++;
+        take(row, extent);
+        if (laid) put(laid, row + 1, left, right);
         drawn.push({ event, row, left, right, labelLeft, labelWidth: lw, fadeLeft, fadeRight });
       }
-      const away = folded.has(lane.id);
-      const eventRows = away ? 0 : Math.max(ends.length, drawn.length ? 1 : 0);
+      const eventRows = away ? 0 : ends.length;
       const waiting = away ? [] : lane.waiting.map((item, k) => ({ item, row: eventRows + k }));
       const rows = away ? 0 : Math.max(eventRows + waiting.length, 1);
-      laid.push({ ...lane, rows, drawn, waiting });
+      laid.push({ ...lane, rows, drawn, within, bands, waiting });
     }
     return laid;
   });
@@ -304,6 +411,20 @@
     return `${e.name || t('project-untitled')}: ${said}${problem}`;
   }
 
+  /** What is said of an implied element: that it stands within its parent's time, and how to place it. */
+  function tipOfImplied(item: Implied): string {
+    const hint = t('timeline-implied-hint', { parent: nameOf(item.parent) });
+    return `${item.name || t('project-untitled')}: ${hint}`;
+  }
+
+  /** The element an implied one stands within, if it is one. */
+  function parentOfImplied(id: string): string | null {
+    for (const lane of timeline.lanes)
+      for (const item of lane.implied) if (item.id === id) return item.parent;
+    for (const item of timeline.impliedElsewhere) if (item.id === id) return item.parent;
+    return null;
+  }
+
   function menu(event: MouseEvent, id: string) {
     event.preventDefault();
     selected = id;
@@ -321,7 +442,9 @@
     if (!id) return;
     untrack(() => {
       selected = id;
-      const p = timeline.solved.placed.get(id);
+      // What is implied is where its parent is.
+      const p =
+        timeline.solved.placed.get(id) ?? timeline.solved.placed.get(parentOfImplied(id) ?? '');
       if (p && Number.isFinite(p.from)) origin = p.from - (width - LABEL_WIDTH) / scale / 3;
     });
   });
@@ -365,6 +488,8 @@
     /** Where the pointer is, for what follows it. */
     px: number;
     py: number;
+    /** Held, not to be dragged: a press says when it is, and nothing is placed by moving. */
+    still?: boolean;
   }
   let drag = $state<Dragging | null>(null);
 
@@ -426,8 +551,12 @@
     };
   }
 
-  function beginNew(event: PointerEvent, id: string, name: string) {
-    if (event.button !== 0 || !timeline.solved.scaled) return;
+  /**
+   * Takes hold of an element without a time, to be dragged onto the timeline
+   * or pressed to say when it is; `still`, it can only be pressed.
+   */
+  function beginNew(event: PointerEvent, id: string, name: string, still = false) {
+    if (event.button !== 0 || (!still && !timeline.solved.scaled)) return;
     event.preventDefault();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     drag = {
@@ -442,6 +571,7 @@
       name,
       px: event.clientX,
       py: event.clientY,
+      still,
     };
   }
 
@@ -499,7 +629,9 @@
   }
 
   /** Whether a dragged element without a time is over the lanes, where it can be put. */
-  const canDrop = $derived(!!drag && drag.mode === 'new' && overLanes(drag.px, drag.py));
+  const canDrop = $derived(
+    !!drag && drag.mode === 'new' && !drag.still && overLanes(drag.px, drag.py),
+  );
 
   function endDrag(event: PointerEvent) {
     const d = drag;
@@ -511,7 +643,7 @@
         sayWhen(d.id);
         return;
       }
-      if (!overLanes(event.clientX, event.clientY)) return;
+      if (d.still || !overLanes(event.clientX, event.clientY)) return;
       const r = viewport!.getBoundingClientRect();
       const grain = grainNow();
       const like = timeline.axis === 'units' && unit ? `${unit} 0` : '';
@@ -635,6 +767,44 @@
               {w.item.name || t('project-untitled')}
             </button>
           {/each}
+          {#each lane.bands as b, k (k)}
+            <div
+              class="window implied"
+              style:left="{b.left}px"
+              style:width="{Math.max(b.right - b.left, 2)}px"
+              style:top="{LANE_HEAD + b.row * ROW + 4}px"
+            ></div>
+          {/each}
+          {#each lane.within as d (d.item.id)}
+            {@const y = LANE_HEAD + d.row * ROW}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+              class="event implied point"
+              class:chosen={selected === d.item.id}
+              class:dragging={drag?.id === d.item.id}
+              style:left="{d.x - MARK}px"
+              style:width="{MARK * 2}px"
+              style:top="{y + 3}px"
+              style:--event={d.item.colour ?? 'var(--ink-3)'}
+              use:tooltip={{ text: tipOfImplied(d.item), side: 'top' }}
+              oncontextmenu={(e) => menu(e, d.item.id)}
+              onpointerdown={(e) =>
+                beginNew(e, d.item.id, d.item.name, !(moving && timeline.solved.scaled))}
+              onpointermove={moveDrag}
+              onpointerup={endDrag}
+            >
+              <span class="mark"></span>
+            </div>
+            <div
+              class="label implied truncate"
+              style:left="{d.x + MARK}px"
+              style:max-width="{d.labelWidth}px"
+              style:top="{y + 3}px"
+            >
+              {#if d.item.path.length}<span class="path">{d.item.path.join(' › ')} ›</span>{/if}
+              {d.item.name || t('project-untitled')}
+            </div>
+          {/each}
           {#each lane.drawn as d (d.event.id)}
             {@const p = d.event.placed}
             {@const y = LANE_HEAD + d.row * ROW}
@@ -740,7 +910,7 @@
       {readout}
     </div>
   {/if}
-  {#if drag?.mode === 'new'}
+  {#if drag?.mode === 'new' && !drag.still}
     <div
       class="ghost"
       class:can={canDrop}
@@ -970,6 +1140,31 @@
   }
   .event.approx {
     opacity: 0.85;
+  }
+  /* What is implied within another's time: faint and dashed, at a point along the other's span. */
+  .window.implied {
+    background: color-mix(in srgb, var(--ink) 5%, transparent);
+  }
+  .event.implied.point {
+    border-bottom: none;
+    opacity: 0.8;
+    touch-action: none;
+  }
+  .event.implied.point .mark {
+    left: 3px;
+    background: var(--paper-raised);
+    border: 1.5px dashed var(--event);
+  }
+  .event.implied.dragging {
+    opacity: 0.4;
+  }
+  .label.implied {
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+  }
+  .label.implied .path {
+    color: var(--ink-4);
+    margin-right: 3px;
   }
   /* With moving allowed, what is written can be taken hold of; the edges of a span as well. */
   .timeline.moving .event {

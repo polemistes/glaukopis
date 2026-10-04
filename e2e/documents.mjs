@@ -307,11 +307,13 @@ try {
   await sleep(200);
   check('dropped again, it is read again', (await facts()).parts === '6');
   await app.clickText('dialog footer button', 'Make the map');
-  // The document has a citation that was found: the window in which such are gone through opens.
-  await app.waitFor('dialog .found-window', 15000);
+  // The document has a citation that was found: the panel in which such are gone through opens.
+  await app.waitFor('.found-panel .detail', 15000);
   await sleep(300);
+  await app.click('.found-panel .list-toggle');
+  await app.waitFor('.found-panel .list [role="option"]', 3000);
   const through = await app.exec(
-    `return Array.from(document.querySelectorAll('dialog .found-window .list [role="option"], dialog .found-window .list button, dialog .found-window .list li')).map((e) => e.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean)`,
+    `return Array.from(document.querySelectorAll('.found-panel .list [role="option"]')).map((e) => e.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean)`,
   );
   check(
     'the citations that were found are there to be gone through',
@@ -319,8 +321,8 @@ try {
     JSON.stringify(through),
   );
   await app.screenshot('documents-2-found');
-  await app.press('Escape');
-  await app.waitGone('dialog[open]', 15000);
+  await app.click('.found-panel header button[aria-label="Close"]');
+  await app.waitGone('.found-panel', 15000);
   await app.waitFor('.text-view .section', 8000);
   await sleep(600);
   check(
@@ -754,9 +756,7 @@ try {
   await app.clickText('dialog footer button', 'Make the project');
   await app.waitFor('.text-view .section', 15000);
   await sleep(600);
-  const named = await app.exec(
-    `return document.title.replace(/^Glaukopis – /, '')`,
-  );
+  const named = await app.exec(`return document.title.replace(/^Glaukopis – /, '')`);
   check('the project is named after the document', named === 'The wrath of Achilles', named);
   check(
     'and has the document as its map, and no other',

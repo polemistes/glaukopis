@@ -59,6 +59,8 @@ export const KEYS: KeyEntry[] = [
   { id: 'comment', keys: 'Ctrl+Alt+C', place: 'project', bound: true },
   { id: 'side-history', keys: 'Ctrl+Shift+H', place: 'project', bound: true },
   { id: 'side-changes', keys: 'Ctrl+Shift+E', place: 'project', bound: true },
+  // Not Ctrl+Shift+U, which the input methods of Linux keep for writing a sign by its number.
+  { id: 'side-found', keys: 'Ctrl+Shift+T', place: 'project', bound: true },
   { id: 'find', keys: 'Ctrl+F', place: 'project', bound: true },
   { id: 'replace', keys: 'Ctrl+H', place: 'project', bound: true },
   { id: 'undo', keys: 'Ctrl+Z', place: 'project', bound: true, notInFields: true },
@@ -92,9 +94,13 @@ export const KEYS: KeyEntry[] = [
 
   // In the text of a map.
   { id: 'text-new', keys: 'Ctrl+Enter', place: 'text', over: ['writing-break'] },
+  // As in Org mode: the same, and one under; the arrows with Alt alone move the element.
+  { id: 'text-new-after', keys: 'Alt+Enter', place: 'text' },
+  { id: 'text-new-under', keys: 'Alt+Shift+Enter', place: 'text' },
   { id: 'text-deeper', keys: 'Tab', place: 'text', over: ['writing-list-in'] },
   { id: 'text-shallower', keys: 'Shift+Tab', place: 'text', over: ['writing-list-out'] },
   { id: 'text-move', keys: 'Alt+Shift+↑↓←→', place: 'text' },
+  { id: 'text-move-alt', keys: 'Alt+↑↓←→', place: 'text' },
   { id: 'text-outline', keys: 'Ctrl+Shift+O', place: 'project', bound: true },
   { id: 'text-fold', keys: 'Ctrl+Alt+U', place: 'text' },
   { id: 'text-unfold-all', keys: 'Ctrl+Alt+Shift+U', place: 'text' },

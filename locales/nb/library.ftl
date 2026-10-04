@@ -42,7 +42,42 @@ library-in-library = I biblioteket ditt
 library-reason-doi = samme DOI
 library-reason-isbn = samme ISBN
 library-reason-identical = like i alt som skiller ett verk fra et annet
-library-reason-title-author-year = samme tittel, forfatter og år
+library-reason-alike = { $title ->
+    [same] { $author ->
+        [same] { $year ->
+            [same] samme tittel, forfatter og år
+            [like] samme tittel og forfatter, ett år fra hverandre
+           *[none] samme tittel og forfatter, år bare på den ene
+        }
+        [like] { $year ->
+            [same] samme tittel og år, og en felles forfatter
+            [like] samme tittel, en felles forfatter, ett år fra hverandre
+           *[none] samme tittel, en felles forfatter, år bare på den ene
+        }
+       *[none] { $year ->
+            [same] samme tittel og år, forfatter bare på den ene
+            [like] samme tittel, ett år fra hverandre, forfatter bare på den ene
+           *[none] samme tittel, forfatter og år bare på den ene
+        }
+    }
+   *[like] { $author ->
+        [same] { $year ->
+            [same] samme forfatter og år, og en tittel som ligner
+            [like] samme forfatter, en tittel som ligner, ett år fra hverandre
+           *[none] samme forfatter, en tittel som ligner, år bare på den ene
+        }
+        [like] { $year ->
+            [same] samme år, en tittel som ligner, en felles forfatter
+            [like] en tittel som ligner, en felles forfatter, ett år fra hverandre
+           *[none] en tittel som ligner, en felles forfatter, år bare på den ene
+        }
+       *[none] { $year ->
+            [same] samme år, en tittel som ligner, forfatter bare på den ene
+            [like] en tittel som ligner, ett år fra hverandre, forfatter bare på den ene
+           *[none] en tittel som ligner, forfatter og år bare på den ene
+        }
+    }
+}
 library-reason-file = samme fil
 library-reasons = { $others } og { $last }
 
@@ -115,6 +150,11 @@ library-import-what-to-do = Hva som skal gjøres
 library-import-merge = Samme verk: fullfør det jeg har
 library-import-skip = Samme verk: la mitt være som det er
 library-import-add = Et annet verk: legg det til
+library-import-all-certain = For alle { $count } som er de samme:
+library-import-all-probable = For alle { $count } som trolig er de samme:
+library-import-all-merge = Fullfør dem jeg har
+library-import-all-skip = La mine være som de er
+library-import-all-add = Legg dem til likevel
 library-import-more = … og { $count } til.
 library-import-unread = { $count ->
     [one] { $count } del av filen kunne ikke leses

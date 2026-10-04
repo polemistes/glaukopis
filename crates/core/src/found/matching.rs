@@ -14,7 +14,7 @@ use super::{FoundItem, Suggestion, Sure, zotero_key};
 use crate::bib::date::entry_year;
 use crate::bib::latex::{fold, plain};
 use crate::bib::names::{Person, short_list};
-use crate::duplicates::{self, Certainty, Reason, without_article};
+use crate::duplicates::{self, Agreement, Certainty, Reason, without_article};
 use crate::library::Library;
 use crate::library::entry::{Draft, Entry};
 use crate::lookup::csl;
@@ -514,18 +514,37 @@ impl Gathered {
 
 fn why_of(certainty: Certainty, reasons: &[Reason]) -> String {
     let has = |reason: Reason| reasons.contains(&reason);
+    let alike = reasons.iter().find_map(|r| match r {
+        Reason::Alike { title, author, year } => Some((*title, *author, *year)),
+        _ => None,
+    });
     match certainty {
         Certainty::Certain if has(Reason::Doi) => tr!("core-found-same-doi"),
         Certainty::Certain if has(Reason::Isbn) => tr!("core-found-same-isbn"),
         Certainty::Certain => tr!("core-found-alike-in-all"),
         // The DOI or the ISBN of the book that both are in.
-        Certainty::Probable if has(Reason::Doi) && !has(Reason::TitleAuthorYear) => {
-            tr!("core-found-same-doi-other-title")
-        }
-        Certainty::Probable if has(Reason::Isbn) && !has(Reason::TitleAuthorYear) => {
-            tr!("core-found-same-isbn-other-title")
-        }
-        Certainty::Probable => tr!("core-found-same-title-author-year"),
+        Certainty::Probable if has(Reason::Doi) && alike.is_none() => tr!("core-found-same-doi-other-title"),
+        Certainty::Probable if has(Reason::Isbn) && alike.is_none() => tr!("core-found-same-isbn-other-title"),
+        Certainty::Probable => match alike {
+            Some((Agreement::Same, Agreement::Same, Agreement::Same)) => tr!("core-found-same-title-author-year"),
+            Some((title, author, year)) => {
+                // Said as what is the same, and whether the title is like it.
+                let mut same: Vec<&str> = Vec::new();
+                if author == Agreement::Same {
+                    same.push("author");
+                }
+                if year == Agreement::Same {
+                    same.push("year");
+                }
+                if title == Agreement::Same {
+                    same.push("title");
+                }
+                let same = if same.is_empty() { "none".to_owned() } else { same.join("-") };
+                let like = if title == Agreement::Like { "yes" } else { "no" };
+                tr!("core-found-alike", same = same, like = like)
+            }
+            None => tr!("core-found-same-title-author-year"),
+        },
     }
 }
 
@@ -706,7 +725,7 @@ mod tests {
             "type": "book", "title": "The singer of tales",
             "author": [{"family": "Lord", "given": "A."}], "issued": {"date-parts": [[1961]]}
         }));
-        assert_eq!(one(&library, &likely), ("lord1960".into(), Sure::Likely, "the same title, author and year".into()));
+        assert_eq!(one(&library, &likely), ("lord1960".into(), Sure::Likely, "the same author and title".into()));
     }
 
     #[test]

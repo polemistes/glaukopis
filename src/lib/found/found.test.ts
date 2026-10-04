@@ -14,14 +14,16 @@ afterEach(() => {
 });
 
 describe('pressing a citation that was found', () => {
-  it('opens the window at that one, where the text is shown', () => {
+  it('opens the panel at that one, where the text is shown', () => {
     document.body.innerHTML = blocksHtml([
       p(t('Said '), t('(Nagy ', { found: NAGY }), t('1979', { found: NAGY, em: {} }), t(')')),
       p(t('Left '), t('(Lord 1960)', { found: LEFT })),
     ]);
     // On the words in italics within it, as on any of it.
+    const asked = foundUi.asked;
     expect(pressedFound(document.querySelector('.found em'), 'm1')).toBe(true);
     expect(foundUi.request).toEqual({ map: 'm1', at: NAGY.id });
+    expect(foundUi.asked).toBe(asked + 1);
     foundUi.request = null;
     // Not on other text, nor on what was left as text.
     expect(pressedFound(document.querySelector('p'), 'm1')).toBe(false);

@@ -145,6 +145,6 @@ export function findWords(text: string, locale = '', script: string | null = nul
 }
 
 /** The word that stands at a place of the text, or touches it. */
-export function wordAt(words: Word[], at: number): Word | null {
+export function wordAt<W extends Word>(words: W[], at: number): W | null {
   return words.find((w) => w.from <= at && at <= w.to) ?? null;
 }

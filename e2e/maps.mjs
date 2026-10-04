@@ -11,7 +11,9 @@ function check(name, ok, detail = '') {
 }
 
 const titles = (app) =>
-  app.exec(`return Array.from(document.querySelectorAll('.diagram .node .caption')).map((e) => e.textContent.trim())`);
+  app.exec(
+    `return Array.from(document.querySelectorAll('.diagram .node .caption')).map((e) => e.textContent.trim())`,
+  );
 
 let kept = [];
 let app = await App.launch({ keepData: true });
@@ -37,7 +39,10 @@ try {
   await app.clickText('dialog footer button', 'Create');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
-  check('a new project has one map with its centre', JSON.stringify(await titles(app)) === '["Wrath and the hero"]');
+  check(
+    'a new project has one map with its centre',
+    JSON.stringify(await titles(app)) === '["Wrath and the hero"]',
+  );
   await app.screenshot('maps-2-new-project');
 
   // --- Building the map from the keyboard ---
@@ -59,13 +64,21 @@ try {
   await add('Tab', 'Virgil');
   await add('Enter', 'Milton');
   const names = await titles(app);
-  check('Tab and Enter build the tree', names.length === 7 && names.includes('Milton'), names.join(' | '));
+  check(
+    'Tab and Enter build the tree',
+    names.length === 7 && names.includes('Milton'),
+    names.join(' | '),
+  );
 
   // The sides are balanced around the centre.
   const sides = await app.exec(
     `return Array.from(document.querySelectorAll('.diagram .node.depth-1')).map((e) => e.classList.contains('left') ? 'L' : 'R').join('')`,
   );
-  check('the branches stand on both sides of the centre', sides.includes('L') && sides.includes('R'), sides);
+  check(
+    'the branches stand on both sides of the centre',
+    sides.includes('L') && sides.includes('R'),
+    sides,
+  );
   await app.screenshot('maps-3-built');
 
   // --- Undo and redo ---
@@ -82,7 +95,9 @@ try {
     `${afterUndo.join(' | ')} → ${afterRedo.join(' | ')}`,
   );
   // One Ctrl+Z is one step: after one redo there is nothing more to redo.
-  const redoLeft = await app.exec(`return !document.querySelector('button[aria-label="Redo"]')?.disabled`);
+  const redoLeft = await app.exec(
+    `return !document.querySelector('button[aria-label="Redo"]')?.disabled`,
+  );
   check('one Ctrl+Z in the diagram undoes one step, not two', redoLeft === false);
 
   // A name begun by typing over an element keeps every key, however fast; Escape puts the old one back.
@@ -91,12 +106,21 @@ try {
   await app.keys('Publius Vergilius Maro');
   await app.press('Enter');
   await app.waitGone('.diagram .node.renaming', 3000);
-  check('a name typed over an element keeps every key', (await titles(app)).includes('Publius Vergilius Maro'), (await titles(app)).join(' | '));
+  check(
+    'a name typed over an element keeps every key',
+    (await titles(app)).includes('Publius Vergilius Maro'),
+    (await titles(app)).join(' | '),
+  );
   await app.keys('Nonsense');
   await app.press('Escape');
   await app.waitGone('.diagram .node.renaming', 3000);
   await sleep(150);
-  check('and Escape leaves the name as it was', (await titles(app)).includes('Publius Vergilius Maro') && !(await titles(app)).includes('Nonsense'), (await titles(app)).join(' | '));
+  check(
+    'and Escape leaves the name as it was',
+    (await titles(app)).includes('Publius Vergilius Maro') &&
+      !(await titles(app)).includes('Nonsense'),
+    (await titles(app)).join(' | '),
+  );
   await app.keys('Virgil');
   await app.press('Enter');
   await app.waitGone('.diagram .node.renaming', 3000);
@@ -106,7 +130,10 @@ try {
   await app.doubleClick(mênis);
   await app.waitFor('.box .text .prose');
   await sleep(250);
-  check('the box for writing has the tools too', await app.exists('.box .tools button[aria-label="Italic"]:not(:disabled)'));
+  check(
+    'the box for writing has the tools too',
+    await app.exists('.box .tools button[aria-label="Italic"]:not(:disabled)'),
+  );
   await app.keys('The first word of the Iliad names a wrath that is more than anger ');
   await app.keys('@');
   await app.waitFor('.picker input');
@@ -117,8 +144,14 @@ try {
   await app.clickText('.picker button', 'New reference');
   await app.waitFor('dialog[open] .lookup input', 3000);
   await sleep(300);
-  const carried = await app.exec(`return document.querySelector('dialog[open] .lookup input').value`);
-  check('a new reference from the picker begins with what was searched for', carried === 'nagy best', carried);
+  const carried = await app.exec(
+    `return document.querySelector('dialog[open] .lookup input').value`,
+  );
+  check(
+    'a new reference from the picker begins with what was searched for',
+    carried === 'nagy best',
+    carried,
+  );
   await app.clickText('dialog[open] footer button', 'Cancel');
   await app.waitGone('dialog[open]');
   await app.waitFor('.picker input', 3000);
@@ -164,9 +197,15 @@ try {
     `const n = Array.from(document.querySelectorAll('.diagram .node')).find((e) => e.textContent.includes('Achilles and Apollo'));
      return n.querySelector('.link-handle');`,
   );
-  await app.drag(handle['element-6066-11e4-a52e-4f735466cecf'], await app.findByText('.diagram .node', 'Virgil'));
+  await app.drag(
+    handle['element-6066-11e4-a52e-4f735466cecf'],
+    await app.findByText('.diagram .node', 'Virgil'),
+  );
   await sleep(300);
-  check('dragging from the handle associates two elements', (await app.count('.diagram .association')) === 1);
+  check(
+    'dragging from the handle associates two elements',
+    (await app.count('.diagram .association')) === 1,
+  );
   await app.screenshot('maps-9-association');
 
   // --- The same from the keys: the menu by Shift+F10, the other end by the arrows and Enter ---
@@ -180,14 +219,19 @@ try {
   await app.press('ArrowUp');
   await app.press('Enter');
   await sleep(300);
-  check('an association can be ended from the keys', (await app.count('.diagram .association')) === 2);
+  check(
+    'an association can be ended from the keys',
+    (await app.count('.diagram .association')) === 2,
+  );
   await app.keys(['Control', 'z']);
   await sleep(300);
   check('and taken back', (await app.count('.diagram .association')) === 1);
 
   // --- An element moved by Alt+Shift and the arrows ---
   const top = (name) =>
-    app.exec(`return Array.from(document.querySelectorAll('.diagram .node')).find((e) => e.textContent.includes(${JSON.stringify(name)})).getBoundingClientRect().top`);
+    app.exec(
+      `return Array.from(document.querySelectorAll('.diagram .node')).find((e) => e.textContent.includes(${JSON.stringify(name)})).getBoundingClientRect().top`,
+    );
   await app.click(await app.findByText('.diagram .node', 'Milton'));
   await sleep(100);
   await app.keys(['Alt', 'Shift', 'ArrowUp']);
@@ -196,8 +240,14 @@ try {
   await app.keys(['Alt', 'Shift', 'ArrowDown']);
   await sleep(400);
   const down = (await top('Milton')) > (await top('Virgil'));
-  check('Alt+Shift and the arrows move an element among those beside it', up && down, JSON.stringify({ up, down }));
-  const level = await app.exec(`return Array.from(document.querySelectorAll('.diagram [role="treeitem"]')).find((e) => e.textContent.includes('Milton')).getAttribute('aria-level')`);
+  check(
+    'Alt+Shift and the arrows move an element among those beside it',
+    up && down,
+    JSON.stringify({ up, down }),
+  );
+  const level = await app.exec(
+    `return Array.from(document.querySelectorAll('.diagram [role="treeitem"]')).find((e) => e.textContent.includes('Milton')).getAttribute('aria-level')`,
+  );
   check('and the elements are told as a tree to those who hear them', level === '3', level);
 
   // --- The same map as text ---
@@ -209,7 +259,8 @@ try {
   );
   check(
     'the text has the elements as headings, in order',
-    headings.join('|') === 'Wrath and the hero|The word mênis|Achilles and Apollo|The economy of honour|Reception|Virgil|Milton',
+    headings.join('|') ===
+      'Wrath and the hero|The word mênis|Achilles and Apollo|The economy of honour|Reception|Virgil|Milton',
     headings.join(' | '),
   );
   check('the association is a line in the margin', (await app.count('.text-view .bracket')) === 1);
@@ -218,7 +269,11 @@ try {
      const name = document.querySelector('.text-view .section .heading').getBoundingClientRect();
      return { line: Math.round(line.right), name: Math.round(name.left) };`,
   );
-  check('which is the left one, beside the names', margin.line <= margin.name && margin.name - margin.line < 80, JSON.stringify(margin));
+  check(
+    'which is the left one, beside the names',
+    margin.line <= margin.name && margin.name - margin.line < 80,
+    JSON.stringify(margin),
+  );
   await app.screenshot('maps-10-text');
 
   // Writing in the text, and making a new element from what follows the cursor.
@@ -227,7 +282,9 @@ try {
      return s.querySelector('.body');`,
   );
   await app.click(economy['element-6066-11e4-a52e-4f735466cecf']);
-  await app.waitFor('.text-view .section .body .ProseMirror-focused, .text-view .section .body .prose[contenteditable="true"]');
+  await app.waitFor(
+    '.text-view .section .body .ProseMirror-focused, .text-view .section .body .prose[contenteditable="true"]',
+  );
   await sleep(200);
   await app.keys('Honour is counted in prizes. ');
   await app.keys(['Control', 'Enter']);
@@ -240,9 +297,68 @@ try {
   const after = await app.exec(
     `return Array.from(document.querySelectorAll('.text-view .section .heading .title')).map((e) => e.textContent.trim())`,
   );
-  check('Ctrl+Enter begins a new element after the one written in', after[4] === 'The prize of Briseis', after.join(' | '));
-  await app.screenshot('maps-11-text-written');
+  check(
+    'Ctrl+Enter begins a new element after the one written in',
+    after[4] === 'The prize of Briseis',
+    after.join(' | '),
+  );
 
+  // Org mode's keys do the same: Alt+Enter one after, Alt+Shift+Enter one under.
+  await app.keys(['Alt', 'Enter']);
+  await sleep(400);
+  await app.keys('The gifts of Agamemnon');
+  await sleep(150);
+  await app.keys(['Alt', 'Shift', 'Enter']);
+  await sleep(400);
+  await app.keys('The embassy');
+  await sleep(300);
+  const org = await app.exec(
+    `return Array.from(document.querySelectorAll('.text-view .section')).map((s) => s.querySelector('.heading .title').textContent.trim() + ':' + (s.className.match(/level-(\\d)/) || [])[1])`,
+  );
+  check(
+    'Alt+Enter begins a new element after this one',
+    org[5]?.startsWith('The gifts of Agamemnon:'),
+    org.join(' | '),
+  );
+  check(
+    'and Alt+Shift+Enter one under it',
+    org[6] === 'The embassy:' + (Number(org[5]?.split(':')[1]) + 1),
+    org.join(' | '),
+  );
+  const hasNew = await app.exists('.writing button[aria-label="New element"]');
+  check('the tools over the text have a button for a new element', hasNew);
+  // The two are taken away again: an empty name, and Backspace in it, deletes
+  // an element that has nothing under it; the cursor goes up to the one before.
+  for (const name of ['The embassy', 'The gifts of Agamemnon']) {
+    await app.keys(['Control', 'a']);
+    await app.press('Backspace');
+    await sleep(100);
+    await app.press('Backspace');
+    await sleep(300);
+    if (name === 'The embassy') {
+      // From the empty text of the one before, Backspace goes to its name.
+      await app.press('Backspace');
+      await sleep(200);
+    }
+  }
+  const restored = await app.exec(
+    `return Array.from(document.querySelectorAll('.text-view .section .heading .title')).map((e) => e.textContent.trim())`,
+  );
+  check(
+    'and Backspace in an empty name takes an element away again',
+    restored.join(' | ') === after.join(' | '),
+    restored.join(' | '),
+  );
+  // Back to the end of the text of the element written in.
+  const briseis = await app.exec(
+    `const s = Array.from(document.querySelectorAll('.text-view .section')).find((e) => e.querySelector('.heading').textContent.includes('Briseis'));
+     return s.querySelector('.body');`,
+  );
+  await app.click(briseis['element-6066-11e4-a52e-4f735466cecf']);
+  await sleep(200);
+  await app.keys(['Control', 'End']);
+  await sleep(150);
+  await app.screenshot('maps-11-text-written');
 
   // --- The tools over the text ---
   const written = () =>
@@ -251,12 +367,20 @@ try {
        return s.querySelector('.body .prose').innerHTML;`,
     );
   await app.keys(' So *Iliad* 1 has it.');
-  check('signs are left as they are typed', /\*Iliad\* 1 has it/.test(await written()), await written());
+  check(
+    'signs are left as they are typed',
+    /\*Iliad\* 1 has it/.test(await written()),
+    await written(),
+  );
   await app.click('.pane-bar .tools button[aria-label="Italic"]');
   await app.keys('kleos');
   await app.click('.pane-bar .tools button[aria-label="Italic"]');
   await app.keys(' is what is at stake.');
-  check('the tools set what is typed next', /<em>kleos<\/em> is what/.test(await written()), await written());
+  check(
+    'the tools set what is typed next',
+    /<em>kleos<\/em> is what/.test(await written()),
+    await written(),
+  );
   await app.clickText('.pane-bar .tools button', 'Cite');
   await app.waitFor('.picker input', 3000);
   await app.keys('lord singer');
@@ -267,12 +391,19 @@ try {
   await app.press('Enter');
   await app.waitGone('.editor');
   await sleep(200);
-  check('the tool for citing cites', /Lord 1960, 99/.test((await written()).replace(/<[^>]+>/g, '')), (await written()).replace(/<[^>]+>/g, ''));
+  check(
+    'the tool for citing cites',
+    /Lord 1960, 99/.test((await written()).replace(/<[^>]+>/g, '')),
+    (await written()).replace(/<[^>]+>/g, ''),
+  );
   // The tool for notes opens a note that stays open to be written in.
   await app.clickText('.pane-bar .tools button', 'Note');
   await app.waitFor('.note-panel .prose', 3000);
   await sleep(700);
-  check('the tool for notes opens a note, which stays open', await app.exists('.note-panel .prose'));
+  check(
+    'the tool for notes opens a note, which stays open',
+    await app.exists('.note-panel .prose'),
+  );
   await app.keys('Thus Lord.');
   await app.press('Escape');
   await app.waitGone('.note-panel');
@@ -286,7 +417,10 @@ try {
   );
   check(
     'the notes of a map are numbered through its elements',
-    counted.notes === 2 && counted.sections === 2 && counted.resets.every((r) => r === 'none') && /^note\b/.test(counted.column),
+    counted.notes === 2 &&
+      counted.sections === 2 &&
+      counted.resets.every((r) => r === 'none') &&
+      /^note\b/.test(counted.column),
     JSON.stringify(counted),
   );
   await app.screenshot('maps-11a-notes');
@@ -332,15 +466,27 @@ try {
   const inProse = await app.exec(`return !!document.activeElement?.closest('.text-view .prose')`);
   await app.keys(['Control', ',']);
   await sleep(300);
-  const stayed = await app.exec(`return !!document.querySelector('.text-view') && !document.querySelector('.settings')`);
+  const stayed = await app.exec(
+    `return !!document.querySelector('.text-view') && !document.querySelector('.settings')`,
+  );
   await app.keys(['Control', ',']);
-  check('Ctrl+, in the text is lowered writing, not the settings', inProse && stayed, JSON.stringify({ inProse, stayed }));
+  check(
+    'Ctrl+, in the text is lowered writing, not the settings',
+    inProse && stayed,
+    JSON.stringify({ inProse, stayed }),
+  );
 
   // --- The outline beside the text ---
   await app.keys(['Control', 'Shift', 'o']);
   await app.waitFor('.outline', 3000);
-  const outlined = await app.exec(`return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`);
-  check('Ctrl+Shift+O shows the outline, every element by its name', outlined.includes('The prize of Briseis') && outlined.includes('Reception'), outlined.join(' | '));
+  const outlined = await app.exec(
+    `return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`,
+  );
+  check(
+    'Ctrl+Shift+O shows the outline, every element by its name',
+    outlined.includes('The prize of Briseis') && outlined.includes('Reception'),
+    outlined.join(' | '),
+  );
   await app.click(await app.findByText('.outline [data-outline]', 'Reception'));
   await sleep(400);
   const atTop = await app.exec(`
@@ -348,18 +494,32 @@ try {
     const reception = Array.from(document.querySelectorAll('.text-view .section')).find((e) => e.querySelector('.heading .title')?.textContent.trim() === 'Reception');
     return Math.round(reception.getBoundingClientRect().top - s.top) + ' of ' + Math.round(s.height);`);
   const [fromTop, height] = atTop.split(' of ').map(Number);
-  check('a name pressed in the outline brings its element into view', fromTop >= -2 && fromTop < height - 60, atTop);
-  const marked = await app.exec(`return document.querySelector('.outline .chosen')?.textContent.trim() ?? ''`);
+  check(
+    'a name pressed in the outline brings its element into view',
+    fromTop >= -2 && fromTop < height - 60,
+    atTop,
+  );
+  const marked = await app.exec(
+    `return document.querySelector('.outline .chosen')?.textContent.trim() ?? ''`,
+  );
   check('and the outline marks it', marked === 'Reception', marked);
   await app.screenshot('maps-11c-outline');
   // Moved from the outline, and taken back.
   await app.keys(['Alt', 'Shift', 'ArrowUp']);
   await sleep(300);
-  const movedUp = await app.exec(`return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`);
-  check('Alt+Shift and the arrows move an element from the outline', movedUp.indexOf('Reception') < outlined.indexOf('Reception'), movedUp.join(' | '));
+  const movedUp = await app.exec(
+    `return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`,
+  );
+  check(
+    'Alt+Shift and the arrows move an element from the outline',
+    movedUp.indexOf('Reception') < outlined.indexOf('Reception'),
+    movedUp.join(' | '),
+  );
   await app.keys(['Control', 'z']);
   await sleep(300);
-  const back = await app.exec(`return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`);
+  const back = await app.exec(
+    `return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`,
+  );
   check('and undo puts it back', back.join('|') === outlined.join('|'), back.join(' | '));
   await app.keys(['Control', 'Shift', 'o']);
   await app.waitGone('.outline', 3000);
@@ -368,7 +528,10 @@ try {
   await app.keys(['Control', 'd']);
   await app.waitFor('.diagram .node');
   await sleep(400);
-  check('what was written as text is in the diagram', (await titles(app)).includes('The prize of Briseis'));
+  check(
+    'what was written as text is in the diagram',
+    (await titles(app)).includes('The prize of Briseis'),
+  );
   await app.screenshot('maps-12-diagram-again');
 
   // --- A second map, and the two side by side ---
@@ -377,7 +540,11 @@ try {
   await app.press('Enter');
   await sleep(300);
   check('a second map', (await app.mapNames()).length === 2, (await app.mapNames()).join(' | '));
-  check('whose centre is named with it', (await titles(app)).includes('Article'), (await titles(app)).join(' | '));
+  check(
+    'whose centre is named with it',
+    (await titles(app)).includes('Article'),
+    (await titles(app)).join(' | '),
+  );
   // Side by side, from the bar; the other pane shows the map chosen in its own bar.
   await app.openMap('Wrath and the hero');
   await app.click('header button[aria-label="Two side by side"]');
@@ -387,7 +554,9 @@ try {
 
   // --- The room each has can be changed ---
   const widths = () =>
-    app.exec(`return Array.from(document.querySelectorAll('.pane')).map((p) => Math.round(p.getBoundingClientRect().width))`);
+    app.exec(
+      `return Array.from(document.querySelectorAll('.pane')).map((p) => Math.round(p.getBoundingClientRect().width))`,
+    );
   const even = await widths();
   await app.drag('.panes .divider', { dx: -180, dy: 0 });
   await sleep(300);
@@ -415,7 +584,15 @@ try {
   const two = await app.exec(
     `return Array.from(document.querySelectorAll('.pane')).map((p) => (p.querySelector('.diagram') ? 'diagram' : p.querySelector('.text-view') ? 'text' : '?') + ':' + p.querySelector('.maps .map .name').textContent.trim())`,
   );
-  check('two side by side: the map as diagram and as text', new Set(two.map((t) => t.split(':')[1])).size === 1 && two.map((t) => t.split(':')[0]).sort().join() === 'diagram,text', two.join(' | '));
+  check(
+    'two side by side: the map as diagram and as text',
+    new Set(two.map((t) => t.split(':')[1])).size === 1 &&
+      two
+        .map((t) => t.split(':')[0])
+        .sort()
+        .join() === 'diagram,text',
+    two.join(' | '),
+  );
   await app.screenshot('maps-13c-diagram-and-text');
 
   // Leaving the project puts it in order on disk.
@@ -440,15 +617,31 @@ try {
   await app.installErrorHook();
   await app.waitFor('.card', 8000);
   const facts = await app.exec(`return document.querySelector('.card .facts').textContent`);
-  check('the list of projects tells what is in the project', /2 maps/.test(facts) && /words/.test(facts), facts);
+  check(
+    'the list of projects tells what is in the project',
+    /2 maps/.test(facts) && /words/.test(facts),
+    facts,
+  );
   await app.screenshot('maps-14-projects');
   await app.click('.card');
   await app.waitFor('.pane', 8000);
   await sleep(600);
-  const count = await app.exec(`return document.querySelectorAll('.diagram .node, .text-view .section').length`);
-  const reopened = await app.exec(`return Array.from(document.querySelectorAll('.pane')).map((p) => Math.round(p.getBoundingClientRect().width))`);
-  check('with the room each part had', reopened.length === 2 && Math.abs(reopened[0] - kept[0]) < 6, `${kept.join('/')} → ${reopened.join('/')}`);
-  check('the project opens as it was left', (await app.count('.pane')) === 2 && count >= 9, `${count} elements shown`);
+  const count = await app.exec(
+    `return document.querySelectorAll('.diagram .node, .text-view .section').length`,
+  );
+  const reopened = await app.exec(
+    `return Array.from(document.querySelectorAll('.pane')).map((p) => Math.round(p.getBoundingClientRect().width))`,
+  );
+  check(
+    'with the room each part had',
+    reopened.length === 2 && Math.abs(reopened[0] - kept[0]) < 6,
+    `${kept.join('/')} → ${reopened.join('/')}`,
+  );
+  check(
+    'the project opens as it was left',
+    (await app.count('.pane')) === 2 && count >= 9,
+    `${count} elements shown`,
+  );
   const errors = await app.pageErrors();
   check('no errors after reopening', errors.length === 0, errors.join(' | '));
 } catch (error) {

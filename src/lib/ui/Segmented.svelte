@@ -9,6 +9,8 @@
     shortcut?: string;
     /** Show only the icon; the label becomes the tooltip. */
     iconOnly?: boolean;
+    /** Cannot be chosen now. */
+    disabled?: boolean;
   }
 
   interface Props {
@@ -28,13 +30,20 @@
   }
 
   function onkeydown(event: KeyboardEvent) {
-    const i = options.findIndex((o) => o.value === value);
-    if (event.key === 'ArrowRight') choose(options[(i + 1) % options.length].value);
-    else if (event.key === 'ArrowLeft')
-      choose(options[(i - 1 + options.length) % options.length].value);
+    const open = options.filter((o) => !o.disabled);
+    if (!open.length) return;
+    const i = open.findIndex((o) => o.value === value);
+    if (event.key === 'ArrowRight') choose(open[(i + 1) % open.length].value);
+    else if (event.key === 'ArrowLeft') choose(open[(i - 1 + open.length) % open.length].value);
     else return;
     event.preventDefault();
   }
+
+  // When none of the options is the value, as when the ones it stands for differ,
+  // the first that can be chosen takes the keyboard.
+  const tabbable = $derived(
+    options.some((o) => o.value === value) ? value : options.find((o) => !o.disabled)?.value,
+  );
 </script>
 
 <div class="segmented {size}" role="radiogroup" aria-label={label} tabindex="-1" {onkeydown}>
@@ -46,7 +55,8 @@
       aria-checked={option.value === value}
       aria-label={option.label}
       class:selected={option.value === value}
-      tabindex={option.value === value ? 0 : -1}
+      disabled={option.disabled}
+      tabindex={option.value === tabbable ? 0 : -1}
       use:tooltip={option.iconOnly || option.shortcut
         ? { text: option.label, shortcut: option.shortcut }
         : null}
@@ -90,6 +100,10 @@
   }
   button:hover {
     color: var(--ink);
+  }
+  button:disabled {
+    color: var(--ink-4);
+    cursor: default;
   }
   button.selected {
     background: var(--paper-raised);

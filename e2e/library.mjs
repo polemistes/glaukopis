@@ -52,7 +52,10 @@ try {
   await app.waitGone('dialog');
   await app.waitFor('.list .item');
   check('the new reference is listed', (await app.count('.list .item')) === 1);
-  check('and is selected, with its form in the pane', await app.exists('.pane [data-field="title"] textarea'));
+  check(
+    'and is selected, with its form in the pane',
+    await app.exists('.pane [data-field="title"] textarea'),
+  );
 
   // --- Import by pasting ---
   const bib = readFileSync(join(root, 'e2e/fixtures/sample.bib'), 'utf8');
@@ -74,7 +77,11 @@ try {
   check('the plan counts 16 to add', /16 to add/.test(summary), summary);
   await app.clickText('dialog footer button', 'Import');
   await app.waitGone('dialog', 10000);
-  await app.waitUntil(`return document.querySelectorAll('.list .item').length >= 10`, 5000, 'the list to fill');
+  await app.waitUntil(
+    `return document.querySelectorAll('.list .item').length >= 10`,
+    5000,
+    'the list to fill',
+  );
   const footer = await app.text('.middle footer');
   check('17 references in the library', /17 references/.test(footer), footer);
 
@@ -94,6 +101,55 @@ try {
   const second = await app.text('dialog .summary');
   check('a second import of the same file adds nothing', /^0 to add/.test(second.trim()), second);
   await app.screenshot('library-5-import-again');
+
+  // --- One answer for all that are the same ---
+  const forAll = await app.text('dialog .for-all .row[data-certainty="certain"]');
+  check(
+    'a row answers for all 16 that are the same',
+    /^For all 16 that are the same:/.test(forAll.trim()),
+    forAll,
+  );
+  const option = (text) => app.findByText('dialog .for-all [role="radio"]', text);
+  check(
+    'leaving them out is the choice they share',
+    (await app.attr(await option('Leave mine as they are'), 'aria-checked')) === 'true',
+  );
+  check(
+    'completing is not offered when none lacks anything',
+    (await app.attr(await option('Complete the ones I have'), 'disabled')) === 'true',
+  );
+  await app.click(await option('Add them all the same'));
+  await sleep(150);
+  const allAdded = await app.text('dialog .summary');
+  check('and one press sets all 16 to add', /^16 to add/.test(allAdded.trim()), allAdded);
+  check(
+    'the row shows what they now share',
+    (await app.attr(await option('Add them all the same'), 'aria-checked')) === 'true',
+  );
+  // The group of the 16 opens folded; its own radios are seen when it is opened.
+  await app.clickText('dialog .heading', 'already in your library');
+  await app.waitFor('dialog .choices');
+  check('each candidate is set too', (await app.count('dialog .choices input:checked')) === 16);
+  // One changed on its own: the row then shows no choice.
+  await app.click(await app.findByText('dialog .choices label', 'leave mine as it is'));
+  await sleep(150);
+  const oneApart = await app.text('dialog .summary');
+  check(
+    'a candidate can still be changed on its own',
+    /^15 to add/.test(oneApart.trim()),
+    oneApart,
+  );
+  check(
+    'and the row then shows nothing chosen',
+    (await app.count('dialog .for-all [role="radio"][aria-checked="true"]')) === 0,
+  );
+  await app.screenshot('library-5b-import-for-all');
+  await app.click(await option('Leave mine as they are'));
+  await sleep(150);
+  check(
+    'and back to leaving them all out',
+    /^0 to add/.test((await app.text('dialog .summary')).trim()),
+  );
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog');
 
@@ -101,11 +157,15 @@ try {
   await app.type('.search input', 'muller');
   await sleep(200);
   check('search folds diacritics', (await app.count('.list .item')) === 1);
-  await app.exec(`const i = document.querySelector('.search input'); i.value = ''; i.dispatchEvent(new Event('input', {bubbles: true}));`);
+  await app.exec(
+    `const i = document.querySelector('.search input'); i.value = ''; i.dispatchEvent(new Event('input', {bubbles: true}));`,
+  );
   await app.type('.search input', 'μεγαθεματα');
   await sleep(200);
   check('search finds Greek without accents', (await app.count('.list .item')) === 1);
-  await app.exec(`const i = document.querySelector('.search input'); i.value = ''; i.dispatchEvent(new Event('input', {bubbles: true}));`);
+  await app.exec(
+    `const i = document.querySelector('.search input'); i.value = ''; i.dispatchEvent(new Event('input', {bubbles: true}));`,
+  );
   await sleep(200);
 
   // --- Select, edit in the pane, autosave ---
@@ -121,7 +181,10 @@ try {
      return (await window.__TAURI_INTERNALS__.invoke('library_get', { id: e.id })).fields;`,
   );
   check('the edit was saved', stored.edition === '2', JSON.stringify(stored.edition));
-  check('aliases were resolved on import', stored.location === 'Cambridge, MA' && stored.date === '1960');
+  check(
+    'aliases were resolved on import',
+    stored.location === 'Cambridge, MA' && stored.date === '1960',
+  );
 
   // --- Collections ---
   await app.click('.side .heading button');
@@ -131,17 +194,33 @@ try {
   await app.waitForText('.side .item', 'Oral poetry');
   await app.go('#/library');
   await sleep(200);
-  await app.drag(await app.findByText('.list .item', 'The Singer of Tales'), await app.findByText('.side .item', 'Oral poetry'));
+  await app.drag(
+    await app.findByText('.list .item', 'The Singer of Tales'),
+    await app.findByText('.side .item', 'Oral poetry'),
+  );
   await sleep(500);
   const count = await app.text(await app.findByText('.side .item', 'Oral poetry'));
-  check('dragging a reference onto a collection adds it', /1$/.test(count.trim()), count.replace(/\s+/g, ' '));
+  check(
+    'dragging a reference onto a collection adds it',
+    /1$/.test(count.trim()),
+    count.replace(/\s+/g, ' '),
+  );
   await app.screenshot('library-7-collection');
 
   // --- The file on disk ---
   const file = readFileSync(join(app.dataDir, 'library', 'library.bib'), 'utf8');
-  check('the library is a BibLaTeX file', file.includes('@book{lord1960,') && file.includes('glaukopis-id'));
-  check('Unicode is stored as such', file.includes('Müller, Anna and Sørensen, Jørgen') && file.includes('Μαρωνίτης'));
-  check('the @string abbreviation was resolved', /journaltitle\s+= \{Journal of Hellenic Studies\}/.test(file));
+  check(
+    'the library is a BibLaTeX file',
+    file.includes('@book{lord1960,') && file.includes('glaukopis-id'),
+  );
+  check(
+    'Unicode is stored as such',
+    file.includes('Müller, Anna and Sørensen, Jørgen') && file.includes('Μαρωνίτης'),
+  );
+  check(
+    'the @string abbreviation was resolved',
+    /journaltitle\s+= \{Journal of Hellenic Studies\}/.test(file),
+  );
 
   // --- Written in the file by hand, while the application runs ---
   // A change of one entry, made from elsewhere, reads the file first; what it read reaches the list.
@@ -158,7 +237,9 @@ try {
   );
   await app.go('#/library');
   await app.waitForText('.list .item', 'The East Face of Helicon', 4000).catch(() => {});
-  const listed = await app.exec(`return Array.from(document.querySelectorAll('.list .item')).map((e) => e.textContent)`);
+  const listed = await app.exec(
+    `return Array.from(document.querySelectorAll('.list .item')).map((e) => e.textContent)`,
+  );
   check(
     'an entry written in the file by hand is shown, though a change made elsewhere read it first',
     listed.some((x) => x.includes('The East Face of Helicon')),
@@ -167,7 +248,8 @@ try {
   const rewritten = readFileSync(libraryFile, 'utf8');
   check(
     'what could not be read stays in the file when it is written again',
-    rewritten.includes('@book{broken, title = {A brace that is never closed}') && rewritten.includes('Added from a project'),
+    rewritten.includes('@book{broken, title = {A brace that is never closed}') &&
+      rewritten.includes('Added from a project'),
   );
 
   // --- Dark theme ---
