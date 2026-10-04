@@ -5,6 +5,7 @@
 //! level of each heading. What arrives here is the document in order, as
 //! sections of blocks. The shapes are those of `src/lib/project/model/text.ts`.
 
+pub mod beside;
 pub mod bibliography;
 pub mod pandoc;
 mod placing;

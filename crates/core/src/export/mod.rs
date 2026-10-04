@@ -266,7 +266,16 @@ struct Prepared {
 
 /// Makes the document that Pandoc reads.
 fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: bool, placed: Placed) -> Prepared {
-    let doc = &request.document;
+    // Where a citation stands beside punctuation is the style's to say
+    // (`document/beside.rs`): after it in a style of notes, before it
+    // otherwise. Where the citations are kept as they are, for another
+    // program to set, they stand as they were written.
+    let mut document = request.document.clone();
+    if !keep_citations {
+        let notes = ctx.styles.get(&request.style).is_ok_and(|s| s.kind == "note");
+        crate::document::beside::place_citations(&mut document, notes);
+    }
+    let doc = &document;
     let f = &request.format;
     let bibliography = gather(doc, ctx.library);
     let has_citations = !bibliography.keys.is_empty();

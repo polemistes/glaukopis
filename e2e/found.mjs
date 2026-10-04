@@ -706,8 +706,8 @@ try {
   typ = await style(authorDate);
   console.log(`      in ${authorDate}: ${around(typ, 'Not all agree')}`);
   check(
-    'in a style of author and year, it is set in the line, apart from the word before it',
-    /Not all agree\. \\?\(See Nagy,? 1979, (p\. )?73 ?\\?; but he says otherwise elsewhere\)/.test(
+    'in a style of author and year, it is set in the line before the full stop, apart from the word before it',
+    /Not all agree \\?\(See Nagy,? 1979, (p\. )?73 ?\\?; but he says otherwise elsewhere\)\./.test(
       typ.replace(/\s+/g, ' '),
     ),
     around(typ, 'Not all agree'),

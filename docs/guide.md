@@ -487,6 +487,15 @@ A citation is not text: it is a link to a reference in your library. How it is
 printed, as *(Nagy 1979, 73)*, as a footnote, or as a number, is decided by
 the reference style of the document, and changes when the style is changed.
 
+So is where it stands beside punctuation. Write the citation where it
+belongs in the sentence, before the full stop or after it: a style of notes
+sets its mark after the full stop and after a closing quotation mark,
+*said.¹*, and a style of author and year sets the citation before the full
+stop, *said (Nagy 1979, 73).* A citation with words on both sides stands
+where you put it, one whose author you name in your sentence is part of it,
+and one you write within brackets stays within them. Nothing in the text
+need be moved when the style is changed.
+
 Click a citation to give it more:
 
 - the **page** or another place in the work: chapter, section, verse, line;
