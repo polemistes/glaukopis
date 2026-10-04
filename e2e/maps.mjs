@@ -327,6 +327,33 @@ try {
   );
   const hasNew = await app.exists('.writing button[aria-label="New element"]');
   check('the tools over the text have a button for a new element', hasNew);
+
+  // Text pasted as text keeps every line break: into the text of the new element.
+  await app.press('Enter');
+  await sleep(250);
+  await app.exec(
+    `const el = document.activeElement.closest('.ProseMirror');
+     const dt = new DataTransfer();
+     dt.setData('text/plain', 'One\\ntwo\\n\\nThree\\n\\n\\nFour\\n');
+     el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));`,
+  );
+  await sleep(400);
+  const pastedLines = await app.exec(
+    `const el = document.activeElement.closest('.ProseMirror');
+     return Array.from(el.querySelectorAll(':scope > p')).map((p) =>
+       Array.from(p.childNodes).map((n) => n.nodeName === 'BR' ? (n.classList.contains('ProseMirror-trailingBreak') ? '' : '⏎') : n.textContent).join(''));`,
+  );
+  check(
+    'text pasted as text keeps every line break: a break, a new paragraph, an empty paragraph',
+    JSON.stringify(pastedLines) === '["One⏎two","Three","","Four"]',
+    JSON.stringify(pastedLines),
+  );
+  // Emptied again, and back to the name.
+  await app.keys(['Control', 'a']);
+  await app.press('Backspace');
+  await sleep(150);
+  await app.press('Backspace');
+  await sleep(250);
   // The two are taken away again: an empty name, and Backspace in it, deletes
   // an element that has nothing under it; the cursor goes up to the one before.
   for (const name of ['The embassy', 'The gifts of Agamemnon']) {

@@ -41,24 +41,30 @@ fn western(byte: u8) -> char {
     }
 }
 
-/// Text without marks: paragraphs are set apart by empty lines, and the
-/// lines of a paragraph stay lines, each ending in a break, so that verse and
-/// addresses are read as they were written; where there is no empty line,
-/// every line is a paragraph.
+/// Text without marks, every line break kept: paragraphs are set apart by
+/// empty lines, each further empty line is an empty paragraph, and the lines
+/// of a paragraph stay lines, each ending in a break, so that verse and
+/// addresses are read as they were written; where there is no empty line at
+/// all, every line is a paragraph.
 pub(super) fn plain(text: &str, stem: &str) -> Imported {
     let text = text.replace("\r\n", "\n").replace('\r', "\n");
     let apart = text.trim().contains("\n\n");
     let paragraphs: Vec<Vec<&str>> = if apart {
         let mut out = Vec::new();
         let mut current: Vec<&str> = Vec::new();
+        let mut empty = 0usize;
         for line in text.lines() {
             if line.trim().is_empty() {
-                if !current.is_empty() {
-                    out.push(std::mem::take(&mut current));
-                }
-            } else {
-                current.push(line.trim());
+                empty += 1;
+                continue;
             }
+            if empty > 0 && !current.is_empty() {
+                out.push(std::mem::take(&mut current));
+                // One empty line parts the paragraphs; each further one is an empty paragraph.
+                out.extend(std::iter::repeat_n(Vec::new(), empty - 1));
+            }
+            empty = 0;
+            current.push(line.trim());
         }
         if !current.is_empty() {
             out.push(current);

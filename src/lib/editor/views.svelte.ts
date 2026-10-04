@@ -12,6 +12,7 @@ import { place } from '$lib/ui/floating';
 import { insertMath, toggle, updateCitation } from './commands';
 import { openSelected, passes, placeholder } from './plugins';
 import { pressedFound } from '$lib/found/found.svelte';
+import { pastedTextSlice } from './clipboard';
 import { citationLabel, currentProject, isMissing, languageOf } from './references.svelte';
 import { notePlace, type CiteItem, type CiteMode } from './schema';
 import { editorUi, hooksOf, OPEN, passing, SHOW, viewsByDom, type ShowIn } from './ui.svelte';
@@ -346,6 +347,8 @@ export class FootnoteView implements NodeView {
         ],
       }),
       attributes: { class: 'prose note', spellcheck: 'false' },
+      // Text pasted as text keeps every line break, as breaks: a note has no paragraphs.
+      clipboardTextParser: (text, $context) => pastedTextSlice(text, $context, outer.state.schema),
       // A citation that was found is gone through where it is pressed.
       handleClick: (_v, _pos, event) =>
         event.button === 0 &&

@@ -798,6 +798,12 @@ fn text_without_marks() {
     assert_eq!(read.title, vec![text("notes")]);
     let read = plain("A paragraph to a line.\nAnd another.\n", "notes");
     assert_eq!(read.sections[0].blocks.len(), 2);
+    // Every line break is kept: a second empty line is an empty paragraph.
+    let read = plain("\n\nOne.\n\n\n\nTwo.\n\n", "notes");
+    assert_eq!(
+        read.sections[0].blocks,
+        vec![paragraph(vec![text("One.")]), paragraph(vec![]), paragraph(vec![]), paragraph(vec![text("Two.")])]
+    );
     assert_eq!(decode(b"\xef\xbb\xbfna\xc3\xafve"), "naïve");
     assert_eq!(decode(b"na\xefve \x93so\x94"), "naïve “so”");
     assert_eq!(decode(&[0xff, 0xfe, b'a', 0, 0xe5, 0]), "aå");

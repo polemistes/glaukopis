@@ -119,6 +119,10 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Move the element up or down | **Alt** and the arrows up and down |
 | Join an element to the one above | Right-click: **Join to the element above** |
 
+Text pasted as text keeps every line break: a lone one as a break within
+the paragraph, an empty line between paragraphs, and each further empty line
+as an empty paragraph.
+
 What a sign has done is undone by **Backspace**, should the sign have been
 meant as a sign.
 
@@ -935,7 +939,10 @@ everything as it was; **Undo** takes the map away again as one step.
 
 AsciiDoc, DocBook, JATS, FictionBook, OPML, MediaWiki, Textile, Djot, Muse
 and Jupyter notebooks can be chosen in the dialog for files as well. All but
-plain text are read by Pandoc.
+plain text are read by Pandoc. Of plain text every line break is kept: a
+lone one is a break within the paragraph, an empty line parts paragraphs,
+and each further empty line is an empty paragraph; a file without any empty
+line is read as a paragraph to a line.
 
 What becomes of what is in the document:
 
