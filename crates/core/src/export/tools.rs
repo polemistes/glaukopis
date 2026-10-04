@@ -25,8 +25,10 @@ pub struct Tool {
     pub least: Option<String>,
 }
 
-/// The least Pandoc that will do: the first to write Typst.
-pub const LEAST_PANDOC: &str = "3.1.2";
+/// The least Pandoc that will do: the first to write citations as the Typst
+/// that is compiled in reads them (`#cite(<key>)`, Typst 0.9; Pandoc 3.1.10,
+/// 2023-11). Ubuntu 24.04 still ships 3.1.3, which wrote them as strings.
+pub const LEAST_PANDOC: &str = "3.1.10";
 
 /// A version as numbers: `3.1.2` as 3, 1, 2. What is not a number ends it.
 fn numbers(version: &str) -> Vec<u32> {
@@ -392,7 +394,8 @@ mod tests {
     #[test]
     fn versions_older_than_what_is_needed() {
         assert!(older("3.1.1", LEAST_PANDOC));
-        assert!(!older("3.1.2", LEAST_PANDOC));
+        assert!(older("3.1.9", LEAST_PANDOC));
+        assert!(!older("3.1.10", LEAST_PANDOC));
         assert!(!older("3.10.2", LEAST_PANDOC));
         assert!(older("3.0", LEAST_PANDOC));
         assert!(!older("3.2.0-rc1", LEAST_PANDOC));
@@ -400,7 +403,7 @@ mod tests {
         let old = Tool::found("/usr/bin/pandoc".into(), "3.1.1".into(), Some(LEAST_PANDOC));
         let tools = Tools { pandoc: Some(old), ..Default::default() };
         let said = tools.pandoc().unwrap_err().to_string();
-        assert!(said.contains("3.1.1") && said.contains("3.1.2"), "{said}");
+        assert!(said.contains("3.1.1") && said.contains("3.1.10"), "{said}");
     }
 
     #[test]
