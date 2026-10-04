@@ -12,7 +12,7 @@ import type { Project } from '../project.svelte';
 import { fillBody, fillTitle } from '../text';
 import { isAncestor, subtree, topmost } from '../tree';
 import type { When } from '$lib/timeline/solve';
-import type { NodeRecord, Position, Status } from '../types';
+import type { NodeRecord, Position, Status, TimelineSettings } from '../types';
 import { deleteComments } from './comments';
 import { makeLink } from './links';
 
@@ -130,6 +130,20 @@ export function deleteNodes(p: Project, ids: Set<string>) {
   deleteComments(p, ids);
   for (const [linkId, l] of p.yLinks) {
     if (ids.has(str(l.get('from'))) || ids.has(str(l.get('to')))) p.yLinks.delete(linkId);
+  }
+  // A lane of a timeline that was one of them is a lane no more: a choice
+  // of lanes that named only what is gone goes with it, and each child of
+  // the centre is a lane again.
+  for (const m of p.yMaps.values()) {
+    if (!(m instanceof Y.Map)) continue;
+    const timeline = m.get('timeline') as TimelineSettings | undefined;
+    const lanes = timeline?.lanes;
+    if (!lanes?.some((l) => l.element && ids.has(l.element))) continue;
+    const kept = lanes.filter((l) => !l.element || !ids.has(l.element));
+    const next: TimelineSettings = { ...timeline, lanes: kept };
+    if (!kept.length) delete next.lanes;
+    if (Object.keys(next).length) m.set('timeline', next);
+    else m.delete('timeline');
   }
 }
 

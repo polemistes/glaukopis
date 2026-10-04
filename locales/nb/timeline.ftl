@@ -30,6 +30,7 @@ timeline-chronology-when = Når
 timeline-chronology-what = Hva
 timeline-chronology-made = En kronologi ble lagt til kartet
 timeline-elsewhere = Ellers i kartet
+timeline-elsewhere-chosen = Banene er valgt: det som ikke står i noen av dem, står her. Trykk for å velge banene på nytt.
 timeline-ordered = I rekkefølge, uten datoer
 timeline-empty = Ingenting sier når det er ennå. Velg «Si når det er …» i menyen til et element.
 timeline-unplaced = { $count ->

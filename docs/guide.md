@@ -783,7 +783,11 @@ button with the rows among the timeline's controls chooses the
 lanes: any branch can be one lane, or each of its children a lane of their
 own. An element that stands for another map brings that map's placed
 elements with it. Elements that are in no lane stand in a lane of their own
-at the foot.
+at the foot. Where you have chosen the lanes, a new child of the centre is
+not a lane until you choose it, and stands at the foot too: the lanes button
+is marked while lanes are chosen, and pressing the name of the lane at the
+foot opens the choice. An element that is deleted leaves the choice; when
+none that was chosen is left, each child of the centre is a lane again.
 
 A written time stands where it was written. What is relative is **solved**:
 the timeline works out the window of what it may be, from everything else,

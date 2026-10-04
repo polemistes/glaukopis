@@ -30,6 +30,7 @@ timeline-chronology-when = When
 timeline-chronology-what = What
 timeline-chronology-made = A chronology was added to the map
 timeline-elsewhere = Elsewhere in the map
+timeline-elsewhere-chosen = The lanes are chosen: what stands in none of them stands here. Press to choose the lanes anew.
 timeline-ordered = In order, without dates
 timeline-empty = Nothing says when it is yet. Choose “Say when it is…” in an element’s menu.
 timeline-unplaced = { $count ->

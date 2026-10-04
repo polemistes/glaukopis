@@ -324,6 +324,24 @@ describe('where elements stand in time', () => {
     expect(again.waiting.find((w) => w.id === herodotus)!.path).toEqual(['Thucydides']);
   });
 
+  it('forgets a chosen lane whose element is deleted, and the choice when none is left', () => {
+    const p = new Project(null);
+    const map = p.createMap('Cities');
+    const root = p.map(map)!.root;
+    const athens = p.addChild(root, { title: 'Athens' })!;
+    const sparta = p.addChild(root, { title: 'Sparta' })!;
+    const thebes = p.addChild(root, { title: 'Thebes' })!;
+    p.setWhen(thebes, { start: { at: '371 BC' } });
+    p.setTimeline(map, { axis: 'dates', lanes: [{ element: athens }, { element: sparta }] });
+    expect(timelineOf(p, map, () => null).elsewhere.map((e) => e.name)).toEqual(['Thebes']);
+    p.remove([sparta]);
+    expect(p.map(map)!.timeline.lanes).toEqual([{ element: athens }]);
+    p.remove([athens]);
+    expect(p.map(map)!.timeline).toEqual({ axis: 'dates' });
+    // Each child of the centre is a lane again.
+    expect(timelineOf(p, map, () => null).lanes.map((l) => l.name)).toEqual(['Thebes']);
+  });
+
   it('takes an element that stands on its own beside the centre for a lane, as the children of the centre are', () => {
     const p = new Project(null);
     const map = p.createMap('Cities');

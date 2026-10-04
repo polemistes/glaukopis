@@ -431,6 +431,8 @@
   });
 
   let lanesOpen = $state(false);
+  /** Whether the writer has chosen the lanes, rather than each child of the centre being one. */
+  const lanesChosen = $derived(!!project.map(mapId)?.timeline?.lanes?.length);
 
   const total = $derived(lanes.reduce((n, l) => n + LANE_HEAD + l.rows * ROW, 0));
 
@@ -716,9 +718,12 @@
             style:width="{LABEL_WIDTH}px"
             style:--lane={lane.colour ?? 'var(--ink-3)'}
             class:empty={lane.empty}
-            disabled={!lane.id}
+            disabled={!lane.id && !lanesChosen}
             aria-expanded={lane.id ? !folded.has(lane.id) : undefined}
-            onclick={() => lane.id && fold(lane.id)}
+            use:tooltip={!lane.id && lanesChosen
+              ? { text: t('timeline-elsewhere-chosen'), side: 'right' }
+              : null}
+            onclick={() => (lane.id ? fold(lane.id) : lanesChosen && (lanesOpen = true))}
             ondblclick={() => lane.id && sayWhen(lane.id)}
             oncontextmenu={(e) => lane.id && menu(e, lane.id)}
           >
@@ -739,7 +744,9 @@
               style:width="{Math.max(box.right - box.left, 40)}px"
               style:top="{LANE_HEAD + box.row * ROW + 1}px"
               style:height="{box.rows * ROW - 2}px"
-            ></div>
+            >
+              <span class="without-label">{t('timeline-without')}</span>
+            </div>
             {#each box.chips as c (c.item.id)}
               <button
                 type="button"
@@ -902,7 +909,13 @@
     >
       <TableProperties size={14} />
     </IconButton>
-    <IconButton label={t('timeline-lanes')} size="sm" side="top" onclick={() => (lanesOpen = true)}>
+    <IconButton
+      label={t('timeline-lanes')}
+      size="sm"
+      side="top"
+      active={lanesChosen}
+      onclick={() => (lanesOpen = true)}
+    >
       <Rows3 size={14} />
     </IconButton>
     <span class="rule-v"></span>
@@ -1158,6 +1171,20 @@
     border-radius: var(--radius-s);
     background: color-mix(in srgb, var(--paper-sunken, var(--paper)) 60%, transparent);
     pointer-events: none;
+  }
+  /* The box says what it holds, as the legend of a fieldset does, on its upper edge. */
+  .without-label {
+    position: absolute;
+    top: -8px;
+    left: 8px;
+    padding: 0 4px;
+    background: var(--paper);
+    color: var(--ink-4);
+    font-size: 10px;
+    line-height: 14px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
   }
   /* What waits in a lane to be given a time, as a card of the diagram: pressed, it says when it is; dragged along the lane, it is placed. */
   .waiting {
