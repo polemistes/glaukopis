@@ -15,6 +15,8 @@
     tall?: boolean;
     /** When false, Escape and clicking outside do not close it. */
     dismissable?: boolean;
+    /** Can be dragged about by its header, to see what lies under it. */
+    movable?: boolean;
     padded?: boolean;
     onclose: () => void;
     header?: Snippet;
@@ -29,6 +31,7 @@
     width = 520,
     tall = false,
     dismissable = true,
+    movable = false,
     padded = true,
     onclose,
     header,
@@ -82,6 +85,31 @@
   function onpointerdown(event: PointerEvent) {
     pressedOutside = event.target === el;
   }
+
+  // Where the dialog has been dragged to, from where it opened; forgotten when it is opened again.
+  let moved = $state({ x: 0, y: 0 });
+  $effect(() => {
+    if (open) moved = { x: 0, y: 0 };
+  });
+  function grab(event: PointerEvent) {
+    if (!movable || event.button !== 0) return;
+    if ((event.target as HTMLElement).closest('button, a, input, select, textarea')) return;
+    const header = event.currentTarget as HTMLElement;
+    const from = { x: event.clientX - moved.x, y: event.clientY - moved.y };
+    header.setPointerCapture(event.pointerId);
+    const onmove = (e: PointerEvent) => {
+      moved = { x: e.clientX - from.x, y: e.clientY - from.y };
+    };
+    const onup = () => {
+      header.removeEventListener('pointermove', onmove);
+      header.removeEventListener('pointerup', onup);
+      header.removeEventListener('pointercancel', onup);
+    };
+    header.addEventListener('pointermove', onmove);
+    header.addEventListener('pointerup', onup);
+    header.addEventListener('pointercancel', onup);
+    event.preventDefault();
+  }
   function onclick(event: MouseEvent) {
     if (dismissable && pressedOutside && event.target === el) onclose();
     pressedOutside = false;
@@ -94,6 +122,7 @@
     bind:this={el}
     class:tall
     style:width="min({width}px, calc(100vw - 48px))"
+    style:transform={moved.x || moved.y ? `translate(${moved.x}px, ${moved.y}px)` : undefined}
     aria-label={title}
     tabindex="-1"
     {oncancel}
@@ -102,7 +131,8 @@
   >
     <div class="frame">
       {#if title || header}
-        <header>
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <header class:movable onpointerdown={grab}>
           <div class="titles">
             {#if header}
               {@render header()}
@@ -175,6 +205,11 @@
     gap: var(--space-3);
     padding: var(--space-4) var(--space-4) var(--space-3) var(--space-5);
     flex: none;
+  }
+  header.movable {
+    cursor: move;
+    touch-action: none;
+    user-select: none;
   }
   .titles {
     flex: 1;

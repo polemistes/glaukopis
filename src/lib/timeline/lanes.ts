@@ -6,12 +6,10 @@
  * An element that stands for another map brings that map's placed
  * elements with it, as its own.
  *
- * An element that says nothing of its time, under one that does, stands
- * within that one's time: it is **implied** there, under the nearest
- * element over it that says when it is, as long as both are in the same
- * lane. What is implied is drawn, but it is not what the writer placed: it
- * is kept apart from the events, so that the chronology and the count of
- * what could not be placed see only the writer's placements.
+ * An element that says nothing of its time is not on the timeline. When
+ * what waits is wanted, it is listed in its lane as **waiting**, under the
+ * nearest element over it that is placed, where there is one in the lane,
+ * so that where it stands in the map is seen; it is not placed in time.
  */
 
 import type { Project } from '$lib/project/model/project.svelte';
@@ -30,9 +28,7 @@ export interface TimelineLane {
   own: Placed | null;
   /** What stands in it, in the order of the text. */
   events: Event[];
-  /** What is in its branch and says nothing of its time, under something that does: within that one's time. */
-  implied: Implied[];
-  /** What is in its branch and says nothing of its time, with nothing over it that does; the lane's own element first where it says nothing. */
+  /** What is in its branch and says nothing of its time, the lane's own element first where it says nothing; only when what waits is wanted. */
   waiting: Waiting[];
   /** Nothing in it is placed: it is shown only for what waits in it. */
   empty: boolean;
@@ -42,19 +38,15 @@ export interface TimelineLane {
 export interface Waiting {
   id: string;
   name: string;
-  /** The names of what stands between the lane and it, from the lane down; empty for the lane's own element and its children. */
+  /**
+   * The nearest element over it that is placed, among the events of its
+   * lane: it is shown under that one. Nothing where none is, or the nearest
+   * is the lane's own element, whose area is the lane.
+   */
+  under: string | null;
+  /** The names of what stands between the element it is shown under, or the lane, and it, from the top down; empty for their own children. */
   path: string[];
-}
-
-/** An element that says nothing of its time, under one that does: it stands within that one's time. */
-export interface Implied {
-  id: string;
-  name: string;
-  node: NodeRecord;
-  /** The nearest element over it that says when it is, in the same lane: the lane's own element, or one of its events. */
-  parent: string;
-  /** The names of what stands between the parent and it, from the parent down; empty for the parent's own children. */
-  path: string[];
+  /** The ink of its kind, where it has one. */
   colour: string | null;
 }
 
@@ -72,9 +64,7 @@ export interface Timeline {
   lanes: TimelineLane[];
   /** Placed elements that are in no lane. */
   elsewhere: Event[];
-  /** Elements in no lane that say nothing of their time, under one of those placed elsewhere. */
-  impliedElsewhere: Implied[];
-  /** Elements in no lane that say nothing of their time, with nothing over them that does. */
+  /** Elements in no lane that say nothing of their time; only when what waits is wanted. */
   waitingElsewhere: Waiting[];
 }
 
@@ -136,9 +126,11 @@ export function timelineOf(
     if (lane.kind) {
       // Every element of the kind, in the order of the text, the maps it stands for included.
       for (const id of all) if (project.node(id)?.kind === lane.kind) laneElements.push(id);
-    } else if (lane.element && lane.each)
+    } else if (lane.element && lane.each) {
       laneElements.push(...(tree.children.get(lane.element) ?? []));
-    else if (lane.element) laneElements.push(lane.element);
+      // The elements that stand on their own, beside the centre, are at the top of the map as its children are.
+      if (lane.element === tree.root) laneElements.push(...tree.loose);
+    } else if (lane.element) laneElements.push(lane.element);
   }
 
   const event = (id: string): Event | null => {
@@ -171,36 +163,30 @@ export function timelineOf(
     return names;
   };
   /**
-   * The nearest element over one that says when it is, as long as it is
-   * among `here`, the elements of the lane; nothing where none is, or the
-   * nearest is in another lane. The lane's own element counts; nothing
-   * over the lane does.
+   * The nearest element over one that is placed, as long as it is among
+   * `here`, the placed elements of the lane; nothing where none is, or the
+   * nearest is in another lane. The lane itself ends the search.
    */
   const over = (lane: string, id: string, here: ReadonlySet<string>): string | null => {
     let at = upOf(id);
     for (let depth = 0; at && depth < 40; depth++) {
-      if (project.node(at)?.when) return here.has(at) ? at : null;
       if (at === lane) return null;
+      if (solved.placed.has(at)) return here.has(at) ? at : null;
       at = upOf(at);
     }
     return null;
   };
-  const implied = (parent: string, id: string): Implied | null => {
+  const waiting = (lane: string, id: string, here: ReadonlySet<string>): Waiting | null => {
     const node = project.node(id);
-    if (!node) return null;
+    if (!node || node.when) return null;
+    const under = id === lane ? null : over(lane, id, here);
     return {
       id,
       name: node.title,
-      node,
-      parent,
-      path: pathOf(parent, id),
+      under,
+      path: id === lane ? [] : pathOf(under ?? lane, id),
       colour: colourOf(node),
     };
-  };
-  const waiting = (lane: string, id: string): Waiting | null => {
-    const node = project.node(id);
-    if (!node || node.when) return null;
-    return { id, name: node.title, path: id === lane ? [] : pathOf(lane, id) };
   };
   const taken = new Set<string>();
   // What is in the branch of some lane, shown there or not: it belongs to
@@ -211,11 +197,9 @@ export function timelineOf(
     const node = project.node(id);
     if (!node || taken.has(id)) continue;
     const events: Event[] = [];
-    const implieds: Implied[] = [];
     const waits: Waiting[] = [];
-    // What is in the lane so far: its own element, and the events of its
-    // branch as they are met, each before what is under it.
-    const here = new Set<string>([id]);
+    // The placed elements of the lane so far, as they are met, each before what is under it.
+    const here = new Set<string>();
     for (const d of branchOf(project, id)) {
       if (taken.has(d)) continue;
       claimed.add(d);
@@ -226,14 +210,8 @@ export function timelineOf(
         taken.add(d);
         continue;
       }
-      // It says nothing of its time: within what is over it, if that does; else waiting.
-      const parent = d === id ? null : over(id, d, here);
-      const i = parent ? implied(parent, d) : null;
-      if (i) {
-        implieds.push(i);
-        taken.add(d);
-      } else if (withWaiting) {
-        const w = waiting(id, d);
+      if (withWaiting) {
+        const w = waiting(id, d, here);
         if (w) {
           waits.push(w);
           taken.add(d);
@@ -248,13 +226,11 @@ export function timelineOf(
       colour: colourOf(node),
       own,
       events,
-      implied: implieds,
       waiting: waits,
       empty: !own && !events.length,
     });
   }
   const elsewhere: Event[] = [];
-  const impliedElsewhere: Implied[] = [];
   const waitingElsewhere: Waiting[] = [];
   const here = new Set<string>();
   for (const id of all) {
@@ -266,11 +242,8 @@ export function timelineOf(
       here.add(id);
       continue;
     }
-    const parent = over('', id, here);
-    const i = parent ? implied(parent, id) : null;
-    if (i) impliedElsewhere.push(i);
-    else if (withWaiting) {
-      const w = waiting('', id);
+    if (withWaiting) {
+      const w = waiting('', id, here);
       if (w) waitingElsewhere.push(w);
     }
   }
@@ -281,7 +254,6 @@ export function timelineOf(
     solved,
     lanes: lanes.filter((l) => !l.empty || (withWaiting && l.waiting.length)),
     elsewhere,
-    impliedElsewhere,
     waitingElsewhere,
   };
 }

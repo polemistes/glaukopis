@@ -43,20 +43,20 @@ what a scholar knows.
   the margin reaches; what is relative to it may be anywhere within the
   margin. A lane in which nothing says when it is, its element included,
   is not shown (same day).
-- **What says nothing of its time stands within what is over it** (added
-  2026-10-04): an element without a placement, under one that has a
-  placement in the same lane — the lane's own element included, and up
-  through the maps an element stands for — is *implied* within that one's
-  time (`timeline/lanes.ts`, `Implied`): drawn faint and dashed in the rows
-  under it, at a point along its span, those implied in one element spread
-  evenly along it in the order of the text, deeper ones with their path. It
-  is a view, not a fact: nothing is written on the element, the chronology
-  leaves it out, and it is not counted among what could not be placed. The
-  rule is one: the nearest element over it that says when it is, and only
-  within the same lane; an element of a lane's branch stays with its lane,
-  waiting there, rather than standing within a placed element elsewhere.
-  What has nothing over it that says when it is still waits, shown only on
-  asking.
+- **What says nothing of its time is listed under what is over it** (added
+  2026-10-04, changed 2026-10-05): when the elements without a time are
+  shown, each stands as a card, as in the diagram, in a box at the foot of
+  the area of the nearest placed element over it in its lane, or of the
+  lane (`timeline/lanes.ts`, `Waiting.under`). It is not placed in time: a
+  child's time may well lie outside its parent's, so nothing is read into
+  where it stands; nothing is written on the element, the chronology leaves
+  it out, and it is not counted among what could not be placed. The first
+  form of this, in which such elements were drawn as points spread along
+  the parent's span whether or not they were asked for, was taken back the
+  day after: they looked placed, and they filled the lane unasked.
+- **An element that stands on its own beside the centre is a lane** (2026-10-05),
+  as the children of the centre are: before, its placements went to
+  "elsewhere in the map", though nothing told it from a child of the centre.
 - Nothing of it goes into the document yet.
 
 ## Consequences

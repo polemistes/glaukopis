@@ -826,17 +826,16 @@ Press the name of a lane to fold its elements away and press it again to
 open them; its own span stays. A double click on the name opens **When it
 is** for the lane's element.
 
-An element that says nothing of its time, under one that does, is taken
-to be **within that one's time**: it stands in the rows under its parent,
-faint and dashed, at a point along the parent's span, and several such
-elements are spread evenly along it in the order of the text. An element
-deeper down stands under the nearest element over it that says when it is,
-with its path before its name; what stands under the lane's own element
-stands in the first rows of the lane. This is implied, not placed: nothing
-is written on the element, the chronology does not list it, and it is not
-counted among what could not be placed. Press it to say when it is in
-words; with **Move by dragging** on, drag it along the lane to place it at
-that time.
+An element that says nothing of its time is not on the timeline, and a
+child's time need not lie within its parent's. When **Elements without a
+time** is on, each such element is shown as a card, as in the diagram, in a
+box at the foot of the area of the nearest placed element over it: under
+that element's row, from its left edge, an element deeper down with its path
+before its name; what has no placed element over it in its lane stands in
+a box at the foot of the lane. The box says where the element is in the
+map, not when it is: nothing is written on it, the chronology does not list
+it, and it is not counted among what could not be placed. Press a card to
+say when it is in words, or drag it along the lane to place it at that time.
 
 The elements that say nothing of their time, with nothing over them that
 does, are not on the timeline, but they are near: **Elements without a

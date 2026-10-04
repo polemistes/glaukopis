@@ -324,7 +324,20 @@ describe('where elements stand in time', () => {
     expect(again.waiting.find((w) => w.id === herodotus)!.path).toEqual(['Thucydides']);
   });
 
-  it('stands what says nothing of its time within the nearest element over it that does', () => {
+  it('takes an element that stands on its own beside the centre for a lane, as the children of the centre are', () => {
+    const p = new Project(null);
+    const map = p.createMap('Cities');
+    const root = p.map(map)!.root;
+    const athens = p.addChild(root, { title: 'Athens' })!;
+    const sparta = p.addLoose(map, { x: 300, y: 0 }, 'Sparta')!;
+    p.setWhen(athens, { start: { at: '431 BC' } });
+    p.setWhen(sparta, { start: { at: '431 BC' }, end: { at: '404 BC' } });
+    const tl = timelineOf(p, map, () => null);
+    expect(tl.lanes.map((l) => l.name)).toEqual(['Athens', 'Sparta']);
+    expect(tl.elsewhere).toEqual([]);
+  });
+
+  it('lists what says nothing of its time under the nearest placed element over it, when what waits is wanted', () => {
     const p = new Project(null);
     const map = p.createMap('Cities');
     const root = p.map(map)!.root;
@@ -337,47 +350,51 @@ describe('where elements stand in time', () => {
     p.addChild(sources, { title: 'Thucydides' });
     p.setWhen(war, { start: { at: '431 BC' }, end: { at: '404 BC' } });
     p.setWhen(peace, { start: { at: '421 BC' } });
+    void oration;
+    // Without what waits: the writer's placements, and nothing else.
     const lane = timelineOf(p, map, () => null).lanes[0];
-    // The writer placed the war and the peace; the plague, and the oration under
-    // it, are implied within the war, in the order of the text, the oration with
-    // its path. They are shown whether or not what waits is.
     expect(lane.events.map((e) => e.name)).toEqual(['The war', 'The peace']);
-    expect(lane.implied.map((i) => [i.name, i.parent, i.path.join('/')])).toEqual([
+    expect(lane.waiting).toEqual([]);
+    // With it: every element that says nothing, in the order of the text; the
+    // plague and the oration under the war, which is placed over them, the
+    // oration with its path from there; the sources under nothing, since
+    // Athens, the lane's own element, is not placed.
+    const shown = timelineOf(p, map, () => null, true).lanes[0];
+    expect(shown.waiting.map((w) => [w.name, w.under, w.path.join('/')])).toEqual([
+      ['Athens', null, ''],
       ['The plague', war, ''],
       ['The funeral oration', war, 'The plague'],
+      ['Sources', null, ''],
+      ['Thucydides', null, 'Sources'],
     ]);
-    expect(lane.waiting).toEqual([]);
-    // With what waits shown: the sources wait, nothing over them saying when it is; what is implied does not wait.
-    const shown = timelineOf(p, map, () => null, true).lanes[0];
-    expect(shown.waiting.map((w) => w.name)).toEqual(['Athens', 'Sources', 'Thucydides']);
-    expect(shown.implied.map((i) => i.name)).toEqual(['The plague', 'The funeral oration']);
-    // Once the lane's own element says when it is, the sources are implied within it, and nothing waits.
+    // Once Athens says when it is, it waits no more; what is under it and not
+    // under a placed event stands under nothing, the lane being Athens's area.
     p.setWhen(athens, { start: { at: '500 BC' }, end: { at: '300 BC' } });
     const own = timelineOf(p, map, () => null, true).lanes[0];
-    expect(own.waiting).toEqual([]);
-    expect(own.implied.map((i) => [i.name, i.parent === athens])).toEqual([
-      ['The plague', false],
-      ['The funeral oration', false],
-      ['Sources', true],
-      ['Thucydides', true],
+    expect(own.waiting.map((w) => [w.name, w.under])).toEqual([
+      ['The plague', war],
+      ['The funeral oration', war],
+      ['Sources', null],
+      ['Thucydides', null],
     ]);
-    expect(own.implied.find((i) => i.name === 'Thucydides')!.path).toEqual(['Sources']);
     // With Athens's children the lanes, Athens itself is in none. The sources
     // belong to a lane of their own, in which nothing is placed: they wait there
-    // when what waits is shown, and are not implied elsewhere under Athens.
+    // when what waits is shown, and not elsewhere.
     p.setTimeline(map, { lanes: [{ element: athens, each: true }] });
     const each = timelineOf(p, map, () => null);
     expect(each.elsewhere.map((e) => e.name)).toEqual(['Athens']);
-    expect(each.impliedElsewhere).toEqual([]);
     expect(each.lanes.map((l) => l.name)).toEqual(['The war']);
     const eachShown = timelineOf(p, map, () => null, true);
     expect(eachShown.lanes[1].waiting.map((w) => w.name)).toEqual(['Sources', 'Thucydides']);
     expect(eachShown.waitingElsewhere).toEqual([]);
-    // With the war the one lane, the sources are in no lane: they stand within Athens, elsewhere.
+    // With the war the one lane, the sources are in no lane: they wait elsewhere, under Athens, which is placed there.
     p.setTimeline(map, { lanes: [{ element: war }] });
-    const one = timelineOf(p, map, () => null);
+    const one = timelineOf(p, map, () => null, true);
     expect(one.elsewhere.map((e) => e.name)).toEqual(['Athens']);
-    expect(one.impliedElsewhere.map((i) => i.name)).toEqual(['Sources', 'Thucydides']);
+    expect(one.waitingElsewhere.map((w) => [w.name, w.under === athens])).toEqual([
+      ['Sources', true],
+      ['Thucydides', true],
+    ]);
     // The chronology lists only what the writer placed (and, as it stands, not
     // the lane's own element, whose placement is the span of the lane).
     const chronology = addChronology(p, map)!;

@@ -1,7 +1,7 @@
 // Timelines: elements say when they are, with dates or relative to one
 // another; the map is seen as a timeline, with a lane for each city, the
 // relative placement solved into its window, and a contradiction told. An
-// element that says nothing of its time, under one that does, is implied
+// element that says nothing of its time, under one that does, is listed
 // within that one's span.
 
 import { App, sleep } from './harness.mjs';
@@ -37,10 +37,12 @@ try {
   await add('Tab', 'Athens');
   await add('Tab', 'The plague');
   await add('Enter', 'The Sicilian expedition');
+  // And one under the expedition that says nothing of its time: shown, when asked for, in a box under the expedition.
+  await add('Tab', 'Nicias');
   await app.click(await app.findByText('.diagram .node', 'Athens'));
   await add('Enter', 'Sparta');
   await add('Tab', 'The peace of Nicias');
-  // And one under Sparta that says nothing of its time: implied within Sparta's span.
+  // And one under Sparta that says nothing of its time: shown only when asked for, at the foot of Sparta's lane.
   await add('Enter', 'The ephors');
   // And a branch that says nothing of its time.
   await app.click(await app.findByText('.diagram .node', 'Sparta'));
@@ -134,7 +136,7 @@ try {
     String(fades),
   );
   const events = await app.exec(
-    `return Array.from(document.querySelectorAll('.timeline .lane')).map((l) => Array.from(l.querySelectorAll('.label:not(.implied)')).map((e) => e.textContent.trim()).join(', '))`,
+    `return Array.from(document.querySelectorAll('.timeline .lane')).map((l) => Array.from(l.querySelectorAll('.label')).map((e) => e.textContent.trim()).join(', '))`,
   );
   check(
     'the events stand in the lanes of their cities',
@@ -142,7 +144,7 @@ try {
     events.join(' / '),
   );
   const floating = await app.exec(
-    `return document.querySelectorAll('.timeline .event.floating').length + ':' + document.querySelectorAll('.timeline .window:not(.implied)').length`,
+    `return document.querySelectorAll('.timeline .event.floating').length + ':' + document.querySelectorAll('.timeline .window').length`,
   );
   check('the relative placement is drawn floating, with its window', floating === '1:1', floating);
   const order = await app.exec(
@@ -162,28 +164,16 @@ try {
     ticks.some((t) => /\d+ BC/.test(t)),
     ticks.join(' '),
   );
-  // The ephors say nothing of their time, but stand under Sparta: implied within its span, faint and dashed.
-  const implied = await app.exec(
-    `return Array.from(document.querySelectorAll('.timeline .lane .label.implied')).map((e) => e.textContent.trim())`,
-  );
+  // The ephors say nothing of their time: until the elements without a time are asked for, they are not on the timeline.
   check(
-    'an element without a time under one with a span is implied within it',
-    implied.join('|') === 'The ephors',
-    implied.join('|'),
+    'an element without a time is not on the timeline until asked for',
+    !(await app.exists('.timeline .waiting')) && !(await app.exists('.timeline .without')),
   );
-  const within = await app.exec(
-    `const m = document.querySelector('.timeline .event.implied');
-     const own = m && m.closest('.lane').querySelector('.own');
-     if (!m || !own) return 'none';
-     const a = m.getBoundingClientRect(); const b = own.getBoundingClientRect();
-     return (a.left + a.width / 2 >= b.left && a.left + a.width / 2 <= b.right) + ':' + m.closest('.lane').querySelector('.lane-name').textContent.trim()`,
-  );
-  check("and stands within its parent's span, in its lane", within === 'true:Sparta', within);
   await app.screenshot('timeline-1-cities');
 
   // --- A double click opens "When it is"; the text is reached from the menu ---
   // The first point drawn is the plague, the earliest of Athens.
-  await app.doubleClick('.timeline .event.point:not(.implied)');
+  await app.doubleClick('.timeline .event.point');
   await app.waitForText('dialog[open] h2', 'When it is', 3000);
   check('a double click on an element opens When it is', await app.exists('dialog[open]'));
   await app.press('Escape');
@@ -197,7 +187,7 @@ try {
       name,
     );
   const before = await leftOf('The plague');
-  await app.drag('.timeline .event.point:not(.implied)', { dx: 140, dy: 0 });
+  await app.drag('.timeline .event.point', { dx: 140, dy: 0 });
   await sleep(300);
   check(
     'an element is not moved while moving is off',
@@ -206,7 +196,7 @@ try {
   );
   await app.click('.timeline button[aria-label="Move by dragging"]');
   await sleep(150);
-  await app.drag('.timeline .event.point:not(.implied)', { dx: 140, dy: 0 });
+  await app.drag('.timeline .event.point', { dx: 140, dy: 0 });
   await sleep(400);
   const after = await leftOf('The plague');
   check(
@@ -230,15 +220,59 @@ try {
     listed.includes('Thucydides') && lanesWaiting.includes('Sources'),
     `${lanesWaiting.join('|')} :: ${listed.join('|')}`,
   );
-  check(
-    'what is implied within another is not among what waits',
-    !listed.includes('The ephors') && (await app.exists('.timeline .event.implied')),
-    listed.join('|'),
+  // The ephors stand as a card in a box at the foot of Sparta's lane, where they are in the map; not placed in time.
+  const boxed = await app.exec(
+    `const chip = Array.from(document.querySelectorAll('.timeline .waiting')).find((b) => b.textContent.trim() === 'The ephors');
+     if (!chip) return 'no chip';
+     const lane = chip.closest('.lane');
+     const box = lane.querySelector('.without');
+     if (!box) return 'no box';
+     const a = chip.getBoundingClientRect(); const b = box.getBoundingClientRect();
+     const inside = a.left >= b.left - 1 && a.right <= b.right + 1 && a.top >= b.top - 1 && a.bottom <= b.bottom + 1;
+     return inside + ':' + lane.querySelector('.lane-name').textContent.trim();`,
   );
-  // Pressed, an implied element says when it is in words, as one that waits does.
-  await app.click('.timeline .event.implied');
+  check(
+    'an element without a time stands as a card in a box in its lane',
+    boxed === 'true:Sparta',
+    boxed,
+  );
+  // One under a placed element stands in a box under that element's row, from its left edge.
+  const underBox = await app.exec(
+    `const chip = Array.from(document.querySelectorAll('.timeline .waiting')).find((b) => b.textContent.trim() === 'Nicias');
+     if (!chip) return 'no chip';
+     const lane = chip.closest('.lane');
+     const label = Array.from(lane.querySelectorAll('.label')).find((l) => l.textContent.trim() === 'The Sicilian expedition');
+     const lr = label && label.getBoundingClientRect();
+     const event = label && Array.from(lane.querySelectorAll('.event')).find((e) => { const r = e.getBoundingClientRect(); return Math.abs(r.top - lr.top) < 12 && r.left <= lr.left + 1 && r.right >= lr.left - 8; });
+     if (!event) return 'no event';
+     const boxes = Array.from(lane.querySelectorAll('.without'));
+     const box = boxes.find((b) => { const r = b.getBoundingClientRect(); const c = chip.getBoundingClientRect(); return c.left >= r.left - 1 && c.right <= r.right + 1 && c.top >= r.top - 1 && c.bottom <= r.bottom + 1; });
+     if (!box) return 'no box';
+     const e = event.getBoundingClientRect(); const b = box.getBoundingClientRect();
+     return (Math.abs(b.left - e.left) < 6) + ':' + (b.top >= e.bottom - 2) + ':' + lane.querySelector('.lane-name').textContent.trim();`,
+  );
+  check(
+    "one under a placed element stands in a box under that element's row, from its left edge",
+    underBox === 'true:true:Athens',
+    underBox,
+  );
+  // Pressed, it says when it is in words; and the dialog can be dragged aside by its header.
+  await app.click(await app.findByText('.timeline .waiting', 'The ephors'));
   await app.waitForText('dialog[open] h2', 'When it is', 3000);
-  check('pressing an implied element opens When it is', await app.exists('dialog[open]'));
+  check('pressing a card opens When it is', await app.exists('dialog[open]'));
+  const dialogBefore = await app.exec(
+    `return document.querySelector('dialog[open]').getBoundingClientRect().left`,
+  );
+  await app.drag('dialog[open] header h2', { dx: 120, dy: 40 });
+  await sleep(200);
+  const dialogAfter = await app.exec(
+    `return document.querySelector('dialog[open]').getBoundingClientRect().left`,
+  );
+  check(
+    'the dialog is dragged aside by its header',
+    dialogAfter > dialogBefore + 100,
+    `${dialogBefore} -> ${dialogAfter}`,
+  );
   await app.press('Escape');
   await app.waitGone('dialog[open]', 3000);
   await sleep(200);
