@@ -16,7 +16,9 @@
   import { openContextMenu } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import ElementBox from '../ElementBox.svelte';
+  import { canPaste, clipboard, copyElements, pasteElements } from '../clipboard.svelte';
   import { elementMenu, type ElementActions, type ElementsPayload } from '../elements';
+  import { notify, notifyOk } from '$lib/ui/toast.svelte';
   import ElementTooltip from '../ElementTooltip.svelte';
   import type { Project } from '../model/project.svelte';
   import { isAncestor, subtree } from '../model/tree';
@@ -145,6 +147,13 @@
     if (!pointerInside(drag.x, drag.y)) return null;
     const world = toWorld(drag.x, drag.y);
     return hit(world, p.kind === 'elements' ? lifted : new Set());
+  });
+
+  /** `dropOn` as it last was while something was dragged over this map, for the drop. */
+  let lastDropOn: string | null = null;
+  $effect(() => {
+    const on = dropOn;
+    if (drag.payload && drag.welcome) lastDropOn = on;
   });
 
   // ---- coordinates ----
@@ -335,11 +344,14 @@
       return;
     }
 
-    const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+    // Ctrl adds to the selection; Shift, with a drag, takes the element alone,
+    // and without one adds to the selection as well, once the pointer is up.
+    const additive = event.ctrlKey || event.metaKey;
+    const alone = event.shiftKey && !additive;
     const was = selected.has(id);
     if (additive) {
       select(was ? selection.filter((s) => s !== id) : [...selection, id]);
-    } else if (!was) {
+    } else if (!was && !alone) {
       select([id]);
     }
     if (renaming) finishRename(renaming, 'blur');
@@ -350,7 +362,10 @@
     startDrag(event, () => {
       if (additive && was) return null;
       moved = true;
-      const ids = (selected.has(id) ? selection : [id]).filter((s) => lay.placed.has(s));
+      // Alone, the one under the pointer goes by itself.
+      const ids = (alone ? [id] : selected.has(id) ? selection : [id]).filter((s) =>
+        lay.placed.has(s),
+      );
       // The one under the pointer leads.
       const ordered = [id, ...ids.filter((s) => s !== id)].filter(
         (s) => !ids.some((o) => o !== s && isAncestor(tree, o, s)),
@@ -368,7 +383,15 @@
         label: ordered.length === 1 ? name : t('project-elements', { count: ordered.length }),
       };
     });
-    if (!additive && was) {
+    if (alone) {
+      window.addEventListener(
+        'pointerup',
+        () => {
+          if (!moved) select(was ? selection.filter((s) => s !== id) : [...selection, id]);
+        },
+        { once: true },
+      );
+    } else if (!additive && was) {
       window.addEventListener(
         'pointerup',
         () => {
@@ -483,11 +506,22 @@
    * Keeps the children of an element where they are while it is moved to
    * `to`: each child's place is said from its parent, so it is said anew.
    */
-  function holdChildren(id: string, to: Position) {
-    for (const child of tree.children.get(id) ?? []) {
+  /**
+   * Lets an element go alone: what is under it takes its place under its
+   * parent, each child where it stands, so that nothing else moves.
+   */
+  function release(id: string) {
+    const children = tree.children.get(id) ?? [];
+    if (!children.length) return;
+    const parent = tree.parent.get(id) ?? null;
+    const list = parent ? (tree.children.get(parent) ?? []) : tree.loose;
+    const at = list.indexOf(id) + 1;
+    const base = parent ? lay.placed.get(parent) : null;
+    children.forEach((child, i) => {
       const p = lay.placed.get(child);
-      if (p) project.setPosition(child, { x: p.x - to.x, y: p.y - to.y });
-    }
+      const pos = p ? { x: p.x - (base?.x ?? 0), y: p.y - (base?.y ?? 0) } : null;
+      project.move([child], parent, at + i, { pos, map: mapId });
+    });
   }
 
   function ondrop(event: DropEvent) {
@@ -527,28 +561,27 @@
     const local = data.map === mapId;
     const except = new Set<string>();
     if (local) for (const id of data.ids) for (const d of subtree(tree, id)) except.add(d);
-    const target = hit(world, except);
+    // The element under the pointer as it was seen during the drag: once the
+    // drag has ended, what was lifted is laid out again, and the map may have
+    // shifted under the pointer by then.
+    const target = lastDropOn ?? hit(world, except);
+    lastDropOn = null;
 
     project.checkpoint();
+    // With Shift, the element goes alone: what is under it takes its place.
+    if (event.alone && local) for (const id of data.ids) release(id);
     let result: string[] = [];
     if (target) {
-      result = event.copy
-        ? project.copy(data.ids, target)
-        : project.move(data.ids, target, undefined, { pos: null });
-    } else if (local && !event.copy) {
+      result = project.move(data.ids, target, undefined, { pos: null });
+    } else if (local) {
       data.ids.forEach((id, i) => {
         const to = { x: world.x - data.grab.x, y: world.y - data.grab.y + i * 52 };
-        // With Shift, the element goes alone: what is under it stays where it is.
-        if (event.alone) holdChildren(id, to);
         placeAt(id, to);
       });
       result = data.ids;
     } else {
-      // From another map, or a copy: loose, where it was dropped.
-      const options = { pos: world, map: mapId };
-      result = event.copy
-        ? project.copy(data.ids, null, undefined, options)
-        : project.move(data.ids, null, undefined, options);
+      // From another map: loose, where it was dropped.
+      result = project.move(data.ids, null, undefined, { pos: world, map: mapId });
     }
     project.checkpoint();
     if (result.length) {
@@ -686,7 +719,39 @@
       requestAnimationFrame(() => viewport?.focus({ preventScroll: true }));
     },
     openMap: (id) => onopenmap(id),
+    copy: (ids) => hold(ids),
+    paste: (id) => paste(id),
   };
+
+  /** Holds the elements, each with all under it, and says how many. */
+  function hold(ids: string[]) {
+    const n = copyElements(project, mapId, ids);
+    if (n) notifyOk(t('diagram-copied', { count: n }));
+  }
+
+  /**
+   * Pastes what is held as copies: under the element given, or the one
+   * selected; where none is, on their own in the middle of the view.
+   */
+  function paste(under: string | null = selection.length === 1 ? selection[0] : null) {
+    if (!clipboard.held) {
+      notify(t('diagram-nothing-copied'));
+      return;
+    }
+    if (!canPaste(project)) {
+      notify(t('diagram-pasted-elsewhere'));
+      return;
+    }
+    const r = viewport?.getBoundingClientRect();
+    const middle = r ? toWorld(r.left + r.width / 2, r.top + r.height / 2) : { x: 0, y: 0 };
+    project.checkpoint();
+    const made = pasteElements(project, mapId, under, middle);
+    project.checkpoint();
+    if (made.length) {
+      select(made);
+      viewport?.focus({ preventScroll: true });
+    }
+  }
 
   function onkeydown(event: KeyboardEvent) {
     if (event.target !== viewport) return;
@@ -740,6 +805,8 @@
     actions,
     select,
     add,
+    copy: () => hold(selection),
+    paste: () => paste(),
     open: (id) => open(id),
     rename,
     beginName(id, letter) {

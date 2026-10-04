@@ -86,8 +86,11 @@ export class App {
     const app = new App();
     // Another program than the one that was built here, as the one of a package: GLAUKOPIS_E2E_BINARY.
     app.binary =
-      options.binary ?? process.env.GLAUKOPIS_E2E_BINARY ?? join(root, 'target', 'debug', 'glaukopis');
-    if (!existsSync(app.binary)) throw new Error(`No application at ${app.binary}. Build it first.`);
+      options.binary ??
+      process.env.GLAUKOPIS_E2E_BINARY ??
+      join(root, 'target', 'debug', 'glaukopis');
+    if (!existsSync(app.binary))
+      throw new Error(`No application at ${app.binary}. Build it first.`);
     app.ownsData = !options.dataDir && !options.keepData;
     app.dataDir = options.dataDir ?? mkdtempSync(join(tmpdir(), 'glaukopis-e2e-'));
     const width = options.width ?? 1360;
@@ -97,9 +100,13 @@ export class App {
     // A private X display.
     const display = freeDisplay();
     app.display = display;
-    app.xvfb = spawn('Xvfb', [display, '-screen', '0', `${width}x${height}x24`, '-nolisten', 'tcp'], {
-      stdio: 'ignore',
-    });
+    app.xvfb = spawn(
+      'Xvfb',
+      [display, '-screen', '0', `${width}x${height}x24`, '-nolisten', 'tcp'],
+      {
+        stdio: 'ignore',
+      },
+    );
     await sleep(500);
 
     const port = await freePort();
@@ -148,7 +155,9 @@ export class App {
         },
       });
       app.session = created.sessionId;
-      await app.raw('POST', `/session/${app.session}/window/rect`, { x: 0, y: 0, width, height }).catch(() => {});
+      await app
+        .raw('POST', `/session/${app.session}/window/rect`, { x: 0, y: 0, width, height })
+        .catch(() => {});
       await app.waitFor('#app > *', 15000);
     } catch (error) {
       // What was started for it is not left behind.
@@ -167,7 +176,9 @@ export class App {
     const json = await response.json().catch(() => ({}));
     if (!response.ok || json.value?.error) {
       const v = json.value ?? {};
-      const error = new Error(`${method} ${path}: ${v.error ?? response.status} ${v.message ?? ''}`);
+      const error = new Error(
+        `${method} ${path}: ${v.error ?? response.status} ${v.message ?? ''}`,
+      );
       error.webdriver = v.error;
       throw error;
     }
@@ -279,7 +290,8 @@ export class App {
       try {
         return await this.findByText(selector, text);
       } catch (e) {
-        if (Date.now() - start > ms) throw new Error(`timed out waiting for ${selector} containing "${text}"`);
+        if (Date.now() - start > ms)
+          throw new Error(`timed out waiting for ${selector} containing "${text}"`);
         await sleep(80);
       }
     }
@@ -303,7 +315,9 @@ export class App {
   }
 
   async el(target) {
-    return typeof target === 'string' && !/^[0-9a-f-]{20,}|^node-/.test(target) ? this.find(target) : target;
+    return typeof target === 'string' && !/^[0-9a-f-]{20,}|^node-/.test(target)
+      ? this.find(target)
+      : target;
   }
 
   async click(target) {
@@ -381,7 +395,12 @@ export class App {
   async drag(from, to, options = {}) {
     const a = await this.el(from);
     const steps = [
-      { type: 'pointerMove', origin: { [ELEMENT]: a }, x: options.fromX ?? 0, y: options.fromY ?? 0 },
+      {
+        type: 'pointerMove',
+        origin: { [ELEMENT]: a },
+        x: options.fromX ?? 0,
+        y: options.fromY ?? 0,
+      },
       { type: 'pointerDown', button: 0 },
       { type: 'pause', duration: 60 },
     ];
@@ -402,9 +421,25 @@ export class App {
       steps.push({ type: 'pointerMove', origin: { [ELEMENT]: b }, x: 0, y: 0, duration: 60 });
     }
     steps.push({ type: 'pause', duration: 60 }, { type: 'pointerUp', button: 0 });
-    await this.cmd('POST', '/actions', {
-      actions: [{ type: 'pointer', id: 'mouse', parameters: { pointerType: 'mouse' }, actions: steps }],
-    });
+    const sources = [
+      { type: 'pointer', id: 'mouse', parameters: { pointerType: 'mouse' }, actions: steps },
+    ];
+    // Keys held through the drag (`options.keys: ['Shift']`): pressed in the
+    // first tick, let go a tick after the pointer is up.
+    if (options.keys?.length) {
+      steps.push({ type: 'pause', duration: 30 });
+      const held = options.keys.map((k) => Key[k] ?? k);
+      const keyActions = [
+        ...held.map((k) => ({ type: 'keyDown', value: k })),
+        ...Array.from({ length: Math.max(steps.length - held.length - held.length, 0) }, () => ({
+          type: 'pause',
+          duration: 0,
+        })),
+        ...held.map((k) => ({ type: 'keyUp', value: k })),
+      ];
+      sources.push({ type: 'key', id: 'keyboard', actions: keyActions });
+    }
+    await this.cmd('POST', '/actions', { actions: sources });
     await this.cmd('DELETE', '/actions');
   }
 

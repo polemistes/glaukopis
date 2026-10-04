@@ -31,6 +31,9 @@ export interface Diagram {
   readonly actions: ElementActions;
   select(ids: string[]): void;
   add(kind: 'child' | 'sibling', at: string): void;
+  /** Holds what is selected, to be pasted; pastes what is held, under what is selected. */
+  copy(): void;
+  paste(): void;
   open(id: string): void;
   rename(id: string): void;
   /** A letter begins a new name for an element: the letter is its beginning. */
@@ -56,6 +59,8 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
     if (key === 'z' && !event.shiftKey) project.undo();
     else if (key === 'y' || (key === 'z' && event.shiftKey)) project.redo();
     else if (key === 'a') d.select(lay.order.slice());
+    else if (key === 'c') d.copy();
+    else if (key === 'v') d.paste();
     else if (key === '0') d.fit();
     else if (key === '=' || key === '+') d.zoomBy(1.2);
     else if (key === '-') d.zoomBy(1 / 1.2);

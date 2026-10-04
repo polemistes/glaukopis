@@ -113,6 +113,9 @@ project-stand-for = Stand for another map
 project-stand-for-heading = In the document, this map takes its place
 project-stand-for-none = None
 project-copy-to-map = Copy to map
+project-copy = Copy
+# Pasting what was copied under the element the menu is of.
+project-paste-under = Paste under it
 project-move-to-map = Move to map
 project-map-from-branch = New map from this branch
 project-map-from-branch-hint = A copy to work on; this one stays

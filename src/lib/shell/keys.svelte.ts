@@ -88,6 +88,8 @@ export const KEYS: KeyEntry[] = [
   { id: 'diagram-move', keys: 'Alt+Shift+↑↓←→', place: 'diagram' },
   { id: 'diagram-menu', keys: 'Shift+F10', place: 'diagram' },
   { id: 'diagram-all', keys: 'Ctrl+A', place: 'diagram' },
+  { id: 'diagram-copy', keys: 'Ctrl+C', place: 'diagram' },
+  { id: 'diagram-paste', keys: 'Ctrl+V', place: 'diagram' },
   { id: 'diagram-whole', keys: 'Ctrl+0', place: 'diagram' },
   { id: 'diagram-closer', keys: 'Ctrl+=', place: 'diagram' },
   { id: 'diagram-farther', keys: 'Ctrl+-', place: 'diagram' },

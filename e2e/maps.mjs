@@ -250,6 +250,57 @@ try {
   );
   check('and the elements are told as a tree to those who hear them', level === '3', level);
 
+  // --- Shift-drag moves an element alone: what was under it takes its place ---
+  const levelOf = (name) =>
+    app.exec(
+      `const e = Array.from(document.querySelectorAll('.diagram [role="treeitem"]')).find((e) => e.textContent.includes(${JSON.stringify(name)})); return e ? e.getAttribute('aria-level') : null`,
+    );
+  await app.drag(
+    await app.findByText('.diagram .node', 'Reception'),
+    await app.findByText('.diagram .node', 'Achilles and Apollo'),
+    { keys: ['Shift'] },
+  );
+  await sleep(500);
+  const alone = [await levelOf('Reception'), await levelOf('Virgil'), await levelOf('Milton')];
+  check(
+    'dragged with Shift onto another element, an element goes alone, and what was under it takes its place',
+    alone.join(',') === '3,2,2',
+    alone.join(','),
+  );
+  await app.keys(['Control', 'z']);
+  await sleep(400);
+  const restoredLevels = [
+    await levelOf('Reception'),
+    await levelOf('Virgil'),
+    await levelOf('Milton'),
+  ];
+  check('and Ctrl+Z puts it back', restoredLevels.join(',') === '2,3,3', restoredLevels.join(','));
+
+  // --- Copy and paste: Ctrl+C holds the elements, Ctrl+V pastes them under the one selected ---
+  await app.click(await app.findByText('.diagram .node', 'Virgil'));
+  await sleep(100);
+  await app.keys(['Control', 'c']);
+  await sleep(200);
+  await app.click(await app.findByText('.diagram .node', 'Milton'));
+  await sleep(100);
+  await app.keys(['Control', 'v']);
+  await sleep(500);
+  const virgils = await app.exec(
+    `return Array.from(document.querySelectorAll('.diagram [role="treeitem"]')).filter((e) => e.textContent.includes('Virgil')).map((e) => e.getAttribute('aria-level'))`,
+  );
+  check(
+    'Ctrl+C and Ctrl+V paste a copy of the element under the one selected',
+    virgils.join(',') === '3,4',
+    virgils.join(','),
+  );
+  await app.keys(['Control', 'z']);
+  await sleep(400);
+  check(
+    'and Ctrl+Z takes the copy away',
+    (await app.count('.diagram [role="treeitem"]')) === 7,
+    String(await app.count('.diagram [role="treeitem"]')),
+  );
+
   // --- The same map as text ---
   await app.clickText('header [role="radio"]', 'Text');
   await app.waitFor('.text-view .section');

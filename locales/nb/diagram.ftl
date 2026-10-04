@@ -21,3 +21,12 @@ diagram-zoom-in = Zoom inn
 diagram-actual-size = Faktisk størrelse
 # Med et hardt mellomrom mellom tallet og prosenttegnet.
 diagram-zoom = { $percent }{" "}%
+
+## Kopiering og innliming av elementer.
+
+diagram-copied = { $count ->
+    [one] Ett element kopiert, med alt under det
+   *[other] { $count } elementer kopiert, med alt under dem
+}
+diagram-nothing-copied = Ingenting er kopiert ennå
+diagram-pasted-elsewhere = Det som ble kopiert, er fra et annet prosjekt og kan ikke limes inn her

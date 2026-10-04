@@ -53,10 +53,11 @@ Everything is saved as you work. There is nothing to press.
 | Rename an element | **F2**, or begin to type |
 | Read its text without opening it | Rest the pointer on it |
 | Move an element, with all that is under it | Drag it onto another element |
-| Move an element on its own, what is under it staying | Drag it with **Shift** held |
+| Move an element on its own, what is under it taking its place | Drag it with **Shift** held |
 | Move it up or down, deeper or less deep | **Alt+Shift** and the arrows |
+| Copy elements, with all under them; paste them under the element selected, or on their own where none is | **Ctrl+C**, **Ctrl+V**; or the menu |
 | Go from element to element | The arrows |
-| Select several | **Shift**-click, or drag a frame around them |
+| Select several | **Ctrl**-click or **Shift**-click, or drag a frame around them |
 | Delete | **Delete** |
 | Undo, redo | **Ctrl+Z**, **Ctrl+Shift+Z** |
 | Move about the map | Drag the background; scroll to zoom |

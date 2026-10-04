@@ -22,3 +22,12 @@ diagram-zoom-in = Zoom in
 diagram-actual-size = Actual size
 # How large the map is shown, in hundredths of its size.
 diagram-zoom = { $percent }%
+
+## Copying and pasting elements.
+
+diagram-copied = { $count ->
+    [one] One element copied, with all under it
+   *[other] { $count } elements copied, with all under them
+}
+diagram-nothing-copied = Nothing is copied yet
+diagram-pasted-elsewhere = What was copied is of another project, and cannot be pasted here

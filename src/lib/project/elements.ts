@@ -1,6 +1,7 @@
 /** What can be done to elements, wherever they are shown: the menu, and what is dragged. */
 
 import Copy from '@lucide/svelte/icons/copy';
+import ClipboardPaste from '@lucide/svelte/icons/clipboard-paste';
 import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
 import EyeOff from '@lucide/svelte/icons/eye-off';
 import FileInput from '@lucide/svelte/icons/file-input';
@@ -29,6 +30,7 @@ import { kindColour } from './kinds';
 import { manageKinds, newKind } from './kinds.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { compareCopy } from './copies.svelte';
+import { canPaste } from './clipboard.svelte';
 import { notify, toasts } from '$lib/ui/toast.svelte';
 import type { Project } from './model/project.svelte';
 import { STATUSES } from './model/types';
@@ -57,6 +59,9 @@ export interface ElementActions {
   add?: (id: string, where: 'after' | 'under') => void;
   /** Begin an association from the element: the next element clicked is its other end. */
   link?: (id: string) => void;
+  /** Hold the elements, to be pasted; paste what is held under the element. */
+  copy?: (ids: string[]) => void;
+  paste?: (id: string) => void;
   /** Show a map, after elements went to it or it was made. */
   openMap?: (id: string) => void;
 }
@@ -401,6 +406,23 @@ export function elementMenu(
   if (movable.length || (one && !otherMaps.length)) {
     if (otherMaps.length) {
       items.push(
+        ...(actions.copy && actions.paste
+          ? [
+              {
+                label: t('project-copy'),
+                icon: Copy,
+                shortcut: 'Ctrl+C',
+                action: () => actions.copy?.(ids),
+              } as MenuItem,
+              {
+                label: t('project-paste-under'),
+                icon: ClipboardPaste,
+                shortcut: 'Ctrl+V',
+                disabled: !one || !canPaste(project),
+                action: () => one && actions.paste?.(one.id),
+              } as MenuItem,
+            ]
+          : []),
         { kind: 'submenu', label: t('project-copy-to-map'), icon: Copy, items: toMap(true) },
         {
           kind: 'submenu',
