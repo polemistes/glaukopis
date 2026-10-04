@@ -6,9 +6,23 @@
 
 import type { Imported } from '$lib/api/imported';
 import { foundSuggest, type Found, type FoundItem, type Suggestion } from '$lib/api/found';
+import type { CiteItem } from '$lib/editor/schema';
 import { foundAttrs } from '$lib/editor/schema';
 import type { Block, Inline, InlineText } from '$lib/project/model/text';
+import { withWords } from './change';
 import { certain, citeItem } from './works';
+
+/**
+ * What becomes of a note that holds a citation, as the writer may have said
+ * for all that follow (see `Going.how`): nothing said, and a note that is
+ * nothing but the citation becomes a citation in the line, as the style of
+ * the references then sets it, while a note that says more keeps it within;
+ * `citation`, and every note that can becomes one, what else it says going
+ * before and after its works; `within`, and the citation stands in the note.
+ */
+export interface AtOnceOptions {
+  inNotes?: '' | 'citation' | 'within';
+}
 
 /** Asks the library for the references of works, as `found_suggest` does. */
 export type Suggest = (items: FoundItem[]) => Promise<Suggestion[][]>;
@@ -24,6 +38,35 @@ export interface MadeAtOnce {
 
 /** A piece of a line: something that is left as it is, or the pieces of text of one citation that was found. */
 type Piece = { run: Found; text: InlineText[] } | { run: null; inline: Inline };
+
+/** Words and nothing else, or nothing. */
+const nothing = (text: string) => /^[\s.]*$/.test(text);
+
+/**
+ * The one citation that a note holds, with the words before and after it,
+ * where the note can become a citation: all else in it must be words, and
+ * no other citation that was found may be in it. Nothing otherwise.
+ */
+function noteAsCitation(content: Inline[]): { run: Found; before: string; after: string } | null {
+  let run: Found | null = null;
+  let before = '';
+  let after = '';
+  for (const piece of pieces(content)) {
+    if (piece.run) {
+      if (run) return null;
+      run = piece.run;
+      continue;
+    }
+    const inline = piece.inline;
+    // Another citation that was found would be lost in the words; so would anything that is not words.
+    if (inline.kind !== 'text' || inline.marks.found) return null;
+    if (run) after += inline.text;
+    else before += inline.text;
+  }
+  if (!run) return null;
+  // The note ends with a full stop, which the style of the references sets itself.
+  return { run, before: before.trim(), after: after.trim().replace(/\.$/, '').trim() };
+}
 
 /** Whether it is to be made a citation at once, if the library has its works. */
 const wanted = (found: Found | null): found is Found =>
@@ -88,43 +131,60 @@ function lines(blocks: Block[], change: (line: Inline[]) => Inline[]): Block[] {
 export async function citeAtOnce(
   texts: Block[][],
   suggest: Suggest = foundSuggest,
+  options: AtOnceOptions = {},
 ): Promise<MadeAtOnce> {
-  // What there is, in the order of the text.
-  const runs: Found[] = [];
+  // What there is, in the order of the text, each citation once.
+  const runs = new Map<string, Found>();
   for (const blocks of texts) {
     lines(blocks, (line) => {
-      for (const piece of pieces(line)) if (piece.run) runs.push(piece.run);
+      for (const piece of pieces(line))
+        if (piece.run && !runs.has(piece.run.id)) runs.set(piece.run.id, piece.run);
       return line;
     });
   }
-  if (!runs.length) return { texts, made: 0, cited: [] };
+  if (!runs.size) return { texts, made: 0, cited: [] };
 
-  const answers = await suggest(runs.flatMap((run) => run.items));
+  const all = [...runs.values()];
+  const answers = await suggest(all.flatMap((run) => run.items));
   let at = 0;
-  const references = runs.map((run) => {
+  const references = new Map<string, string[] | null>();
+  for (const run of all) {
     const own = run.items.map((_, i) => certain(answers[at + i]));
     at += run.items.length;
-    return own.every((r): r is string => !!r) ? own : null;
-  });
+    references.set(run.id, own.every((r): r is string => !!r) ? own : null);
+  }
 
-  let n = 0;
   let made = 0;
   const cited = new Set<string>();
+  const citation = (run: Found, known: string[], before = '', after = ''): Inline => {
+    made++;
+    for (const id of known) cited.add(id);
+    const items: CiteItem[] = run.items.map((item, i) => citeItem(known[i], item));
+    return {
+      kind: 'citation',
+      items: before || after ? withWords(items, before, after) : items,
+      mode: run.mode === 'intext' ? 'intext' : 'normal',
+    };
+  };
+  const inNotes = options.inNotes ?? '';
   const out = texts.map((blocks) =>
     lines(blocks, (line) =>
       pieces(line).flatMap((piece): Inline[] => {
-        if (!piece.run) return [piece.inline];
-        const known = references[n++];
-        if (!known) return piece.text;
-        made++;
-        for (const id of known) cited.add(id);
-        return [
-          {
-            kind: 'citation',
-            items: piece.run.items.map((item, i) => citeItem(known[i], item)),
-            mode: piece.run.mode === 'intext' ? 'intext' : 'normal',
-          },
-        ];
+        if (piece.run) {
+          const known = references.get(piece.run.id);
+          return known ? [citation(piece.run, known)] : piece.text;
+        }
+        const inline = piece.inline;
+        if (inline.kind !== 'footnote' || inNotes === 'within') return [inline];
+        // A note that is a citation and nothing else becomes a citation in
+        // the line, which the style sets in a note or in the line; one that
+        // says more as well, where the writer has said so for all.
+        const note = noteAsCitation(inline.content);
+        if (!note) return [inline];
+        const whole = nothing(note.before) && nothing(note.after);
+        if (!whole && inNotes !== 'citation') return [inline];
+        const known = references.get(note.run.id);
+        return known ? [citation(note.run, known, note.before, note.after)] : [inline];
       }),
     ),
   );
@@ -135,10 +195,12 @@ export async function citeAtOnce(
 export async function citeAtOnceIn(
   imported: Imported,
   suggest: Suggest = foundSuggest,
+  options: AtOnceOptions = {},
 ): Promise<{ imported: Imported; made: number }> {
   const { texts, made } = await citeAtOnce(
     imported.sections.map((s) => s.blocks),
     suggest,
+    options,
   );
   if (!made) return { imported, made: 0 };
   let works = 0;

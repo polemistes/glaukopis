@@ -583,7 +583,11 @@ can be closed and opened again at any time.
 Where the library has every work of a citation for certain, as by the key
 of the item in Zotero, the tag, the DOI or the ISBN, a button at the top
 makes citations of **all that are certain** at once. It is undone as one
-step.
+step. A citation in a note is then treated as when it is gone through by
+hand: a note that is nothing but the citation becomes a citation in the
+line, and a note that says more keeps it, unless you have said otherwise
+for all notes (below). The same holds when citations are made at once as a
+document is brought in.
 
 Text that only looks like a citation is not marked. It is looked for while
 the panel is open, if you say so at its top, under **What is taken for

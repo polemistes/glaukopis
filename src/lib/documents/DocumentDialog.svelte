@@ -78,7 +78,9 @@
   async function withCitations(imported: Imported): Promise<Imported> {
     if (!imported.counts.foundMade || !settings.value.found.atOnce) return imported;
     try {
-      return (await citeAtOnceIn(imported)).imported;
+      // Notes that hold a citation become citations as the writer has said for all, or as a note that is nothing else does.
+      return (await citeAtOnceIn(imported, undefined, { inNotes: settings.value.found.inNotes }))
+        .imported;
     } catch (error) {
       // They wait to be gone through, as the others do.
       console.error('the library could not be asked for what is cited', error);
@@ -222,6 +224,7 @@
             />
             {t('documents-at-once')}
           </label>
+          <p class="under">{t('documents-at-once-notes')}</p>
         {/if}
         <label class="check">
           <input
@@ -336,6 +339,13 @@
     gap: 7px;
     color: var(--ink-2);
     cursor: pointer;
+  }
+  /* What follows from a choice, under it, as far in as its words. */
+  .under {
+    margin: -6px 0 0 23px;
+    font-size: var(--text-sm);
+    line-height: 1.4;
+    color: var(--ink-3);
   }
   .check input {
     accent-color: var(--accent);

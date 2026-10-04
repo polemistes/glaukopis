@@ -76,6 +76,7 @@ documents-found-made = { $count ->
 }
 documents-found-some-made = { $count } kildehenvisninger ble funnet, { $made } av dem laget av et referanseverktøy.
 documents-at-once = Lag kildehenvisninger med én gang av dem Zotero har laget, der biblioteket ditt har verket
+documents-at-once-notes = En note som ikke er annet enn en kildehenvisning, blir en kildehenvisning i linjen, som henvisningsstilen setter i en note eller i linjen; en note som sier mer, beholder kildehenvisningen sin. Det du har valgt for noter i panelet med funne kildehenvisninger, for alle som følger, gjelder også her.
 documents-go-through-map = Gå gjennom kildehenvisningene når kartet er laget
 documents-go-through-project = Gå gjennom kildehenvisningene når prosjektet er laget
 

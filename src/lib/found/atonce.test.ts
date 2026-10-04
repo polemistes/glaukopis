@@ -40,6 +40,86 @@ const LORD = zotero('b1b2c3d4e5f6', 'LORD1960', {
 const PARRY = zotero('c1b2c3d4e5f6', 'PARRY971');
 
 describe('citations are made at once of what was read', () => {
+  it('a note that is nothing but a citation becomes a citation in the line; one that says more keeps it', async () => {
+    const { suggest } = library({ NAGY1979: sure('r-nagy'), LORD1960: sure('r-lord') });
+    const text: Block[] = [
+      p(
+        t('Not all agree.'),
+        note(t('(Nagy 1979, 73)', { found: NAGY }), t('.')),
+        t(' Some do.'),
+        note(
+          t('See '),
+          t('(Lord 1960)', { found: zotero('d1b2c3d4e5f6', 'LORD1960') }),
+          t(', who says otherwise.'),
+        ),
+      ),
+    ];
+    const { texts, made } = await citeAtOnce([text], suggest);
+    expect(made).toBe(2);
+    expect(texts[0][0]).toEqual(
+      p(
+        t('Not all agree.'),
+        { kind: 'citation', items: [{ id: 'r-nagy', locator: '73' }], mode: 'normal' },
+        t(' Some do.'),
+        note(
+          t('See '),
+          { kind: 'citation', items: [{ id: 'r-lord', locator: '73' }], mode: 'normal' },
+          t(', who says otherwise.'),
+        ),
+      ),
+    );
+  });
+
+  it('as the writer has said for all notes: every note that can becomes a citation with its words, or none does', async () => {
+    const { suggest } = library({ NAGY1979: sure('r-nagy') });
+    const said = () => [
+      p(
+        t('Not all agree.'),
+        note(t('See '), t('(Nagy 1979, 73)', { found: NAGY }), t(', who says otherwise.')),
+        t(' Nor here.'),
+        note(t('(Nagy 1979, 73)', { found: zotero('e1b2c3d4e5f6', 'NAGY1979') }), t('.')),
+      ),
+    ];
+    const every = await citeAtOnce([said()], suggest, { inNotes: 'citation' });
+    expect(every.texts[0][0]).toEqual(
+      p(
+        t('Not all agree.'),
+        {
+          kind: 'citation',
+          items: [{ id: 'r-nagy', locator: '73', prefix: 'See', suffix: ', who says otherwise' }],
+          mode: 'normal',
+        },
+        t(' Nor here.'),
+        { kind: 'citation', items: [{ id: 'r-nagy', locator: '73' }], mode: 'normal' },
+      ),
+    );
+    const within = await citeAtOnce([said()], suggest, { inNotes: 'within' });
+    expect(within.made).toBe(2);
+    expect(
+      within.texts[0][0].kind === 'paragraph' &&
+        within.texts[0][0].content.filter((i) => i.kind === 'footnote'),
+    ).toHaveLength(2);
+  });
+
+  it('a note with a formula, or with another citation that was found, keeps its citation within', async () => {
+    const { suggest } = library({ NAGY1979: sure('r-nagy') });
+    const text: Block[] = [
+      p(
+        t('So.'),
+        note(t('(Nagy 1979, 73)', { found: NAGY }), { kind: 'math', tex: 'x' }),
+        note(
+          t('(Nagy 1979, 73)', { found: zotero('f1b2c3d4e5f6', 'NAGY1979') }),
+          t(' and '),
+          t('(Parry 1971)', { found: PARRY }),
+        ),
+      ),
+    ];
+    const { texts, made } = await citeAtOnce([text], suggest, { inNotes: 'citation' });
+    expect(made).toBe(2);
+    const line = texts[0][0].kind === 'paragraph' ? texts[0][0].content : [];
+    expect(line.filter((i) => i.kind === 'footnote')).toHaveLength(2);
+  });
+
   it('of what Zotero made, where the library has every work for certain', async () => {
     const { suggest, asked } = library({ NAGY1979: sure('r-nagy'), LORD1960: sure('r-lord') });
     const text: Block[] = [

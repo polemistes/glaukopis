@@ -216,7 +216,7 @@ export function intoCitation(
 }
 
 /** The works of a citation, with what the note said beside them as words before and after. */
-function withWords(items: CiteItem[], before: string, after: string): CiteItem[] {
+export function withWords(items: CiteItem[], before: string, after: string): CiteItem[] {
   const out = items.map((i) => ({ ...i }));
   const first = out[0];
   const last = out[out.length - 1];
