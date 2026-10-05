@@ -166,12 +166,34 @@
     }
     sideKind = lastSide = 'changes';
     if (review) return;
-    // The changes are shown in the text: the pane shows it.
-    if (pane.mode !== 'text') panes[focused] = { ...pane, mode: 'text' };
     looking = null;
     review = new Review(project, sourceFor(project, ownId), pane.map);
     review.later(0);
   }
+
+  // The changes are shown in the text. Opening the panel leaves the view as
+  // it is; going to a change from it turns the pane of its map to the text.
+  let broughtChange = $state(-1);
+  $effect(() => {
+    const r = review;
+    if (!r) {
+      broughtChange = -1;
+      return;
+    }
+    const shown = r.shown;
+    untrack(() => {
+      if (broughtChange >= 0 && shown !== broughtChange) {
+        const i = panes.findIndex((p) => p.map === r.map);
+        if (i >= 0 && panes[i].mode !== 'text') panes[i] = { ...panes[i], mode: 'text' };
+      }
+      broughtChange = shown;
+    });
+  });
+
+  /** The map the panel at the side is about: that of the changes reviewed, else of the pane in view. */
+  const sideMap = $derived(
+    sideKind === 'history' ? null : project?.map((sideKind === 'changes' && review?.map) || pane?.map),
+  );
 
   // The review follows the map in view, and what is written.
   $effect(() => {
@@ -985,6 +1007,12 @@
           bind:this={referencesEl}
           style:width={sizes.references ? `${sizes.references}px` : undefined}
         >
+          {#if sideMap}
+            <div class="side-map" class:split={panes.length > 1}>
+              <span class="overline">{t('project-side-map')}</span>
+              <strong>{sideMap.name}</strong>
+            </div>
+          {/if}
           {#if sideKind === 'changes' && review}
             <ReviewPanel {review} head={tabs} onclose={closeSide} />
           {:else if sideKind === 'history'}
@@ -1267,10 +1295,36 @@
     position: relative;
   }
   .side {
+    display: flex;
+    flex-direction: column;
     width: 340px;
     max-width: 70%;
     flex: none;
     min-height: 0;
+  }
+  .side > :global(.panel) {
+    flex: 1;
+    min-height: 0;
+  }
+  /* Which map the panel is about, as the head of the pane in view is marked. */
+  .side-map {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: none;
+    min-width: 0;
+    padding: 5px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper-raised);
+    font-size: var(--text-sm);
+  }
+  .side-map.split {
+    background: var(--accent-softer);
+  }
+  .side-map strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .side.wide {
     width: min(46%, 640px);

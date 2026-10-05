@@ -795,6 +795,10 @@ map, one at a time. The button with the panel on it, in the bar over the
 map, opens it as it was last, and closes it; the tabs at its head change
 what it shows. Each has its key as well: **Ctrl+Shift+R**, **Ctrl+Shift+P**,
 **Ctrl+Shift+M**, **Ctrl+Shift+T**, **Ctrl+Shift+H** and **Ctrl+Shift+E**.
+What the panel shows is of one map, named in the line over its tabs: with two
+maps side by side, that of the pane in view, whose head is marked the same
+way, and the line is marked with it. The history alone is of the whole
+project, and has no such line.
 
 ## Kinds of elements
 
@@ -1410,9 +1414,10 @@ order of the text, says how many are left, and shows one at a time: where it
 is, as it was and as it is, with the words that changed marked, each person's
 in their colour, and who made it and when. While the panel is open, the text
 shows the changes where they are: what was added under a tint of the colour
-of who added it, what was deleted struck through, where it stood. The change
-you look at is brought into view, opened where it is folded away, and marked
-more strongly.
+of who added it, what was deleted struck through, where it stood. Opening the
+panel leaves the view as it is; going on to a change from the panel turns the
+pane of its map to the text, where the change you look at is brought into
+view, opened where it is folded away, and marked more strongly.
 
 What is one change:
 

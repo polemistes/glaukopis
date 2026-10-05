@@ -28,6 +28,7 @@ project-references = References
 project-pictures = Pictures
 project-side = References, pictures, history and changes
 project-side-tabs = What the panel at the side shows
+project-side-map = Map
 project-preview = Preview and export
 project-share = Share
 project-shared = Shared

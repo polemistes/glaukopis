@@ -27,6 +27,7 @@ project-references = Referanser
 project-pictures = Bilder
 project-side = Referanser, bilder, historikk og endringer
 project-side-tabs = Hva sidepanelet viser
+project-side-map = Kart
 project-preview = Forhåndsvisning og eksport
 project-share = Del
 project-shared = Delt

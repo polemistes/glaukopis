@@ -374,3 +374,16 @@ What this settles:
 - The text drawn without an editor takes away marks it did not make: WebKit
   gives a text set again by `innerHTML` the nodes it parsed before, marks
   and all.
+
+## 2026-10-05 — which map the panel at the side is about
+
+> In the side pane, the information is usually connected to a map. It is possible to have two maps open at the same time, and the information pertains to the view that is active, which is shown by highlighting the head of the active side of the split screen. But there should be some indication in the side pane as well of which map the information is about. Also, when clicking the changes tab, the active view changes into text mode. I am not sure if that is necessary.
+
+What this settles:
+
+- The panel at the side names its map in a line over its tabs; with two
+  maps side by side the line is marked as the head of the pane in view is.
+  The history, which is of the whole project, has no such line.
+- Opening the changes leaves the view as it is. Going on to a change from
+  the panel turns the pane of its map to the text, where the changes are
+  shown.
