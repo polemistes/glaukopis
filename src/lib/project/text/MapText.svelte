@@ -1213,12 +1213,13 @@
 </div>
 
 <style>
+  /* The sheet of the text lies on a desk of another shade, where no text goes. */
   .text-view {
     display: flex;
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    background: var(--paper);
+    background: var(--desk);
   }
   /* The text is a region of its own: how large it is does not follow from
      what is written in it, and what is written changes nothing outside
@@ -1236,9 +1237,13 @@
     display: grid;
     grid-template-columns: var(--margin) minmax(0, 1fr);
     max-width: calc(780px + var(--margin));
+    min-height: 100%;
     margin: 0 auto;
     padding: 56px 40px 40vh 12px;
     font-size: var(--text-size, 17px);
+    background: var(--paper);
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
   }
   .column {
     min-width: 0;

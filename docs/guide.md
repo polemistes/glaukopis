@@ -1485,6 +1485,19 @@ that put words together and make the genitive. They are large, and are read
 the first time a text in Norwegian is checked: the first underlines of a
 session come after a moment.
 
+## Colours
+
+Under *Settings* › *Appearance* the colours of the interface are chosen:
+**Light**, **Dark**, **Mellow**, pastel and warm, with the contrast kept
+where text is read, or **As the system**, light or dark as the computer is.
+**Your own** makes a colouring from four colours you choose: the paper, the
+ink, the accent that marks what is chosen and pressed, and the second voice
+that marks associations and comments; everything else follows from these,
+and whether the scheme is light or dark follows from the paper. Begin from
+one of the themes and change what you will; you are warned where the ink or
+the accent would be hard to read on the paper. In the text, the sheet lies
+on a desk of another shade, so that where the text goes is seen.
+
 ## Keeping things safe
 
 - **Earlier versions.** A version of each project is kept every now and then

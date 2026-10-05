@@ -9,6 +9,7 @@
   import KeySheet from '$lib/shell/KeySheet.svelte';
   import Palette from '$lib/shell/Palette.svelte';
   import { settings } from '$lib/state/settings.svelte';
+  import { applyOwn, clearOwn } from '$lib/theme/own';
   import ConfirmHost from '$lib/ui/ConfirmHost.svelte';
   import DragGhost from '$lib/ui/DragGhost.svelte';
   import ReferenceHost from '$lib/library/ReferenceHost.svelte';
@@ -69,6 +70,12 @@
 
   $effect(() => {
     document.documentElement.dataset.theme = settings.theme;
+  });
+
+  // A colouring of the writer's own: its tokens are derived from the four colours chosen and laid on the root.
+  $effect(() => {
+    if (settings.theme === 'own') applyOwn(settings.value.ownTheme);
+    else clearOwn();
   });
 
   $effect(() => {

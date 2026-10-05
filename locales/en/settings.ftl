@@ -8,10 +8,22 @@ settings-error-save = The settings could not be saved
 ## Appearance
 
 settings-appearance = Appearance
-settings-theme = Light or dark
+settings-theme = Colours
 settings-theme-system = As the system
 settings-theme-light = Light
 settings-theme-dark = Dark
+# A theme of pastel colours, warm and soft.
+settings-theme-mellow = Mellow
+settings-theme-own = Your own
+settings-own = Your own colours
+settings-own-hint = Four colours, from which the rest follow: the paper, the ink, the accent that marks what is chosen and pressed, and the second voice that marks associations and comments. Whether the scheme is light or dark follows from the paper.
+settings-own-paper = Paper
+settings-own-ink = Ink
+settings-own-accent = Accent
+settings-own-gold = Second voice
+settings-own-begin = Begin from
+# The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
+settings-own-weak = Hard to read: the ink stands at { $ink } to 1 on the paper and the accent at { $accent } to 1; 4.5 and 3 or more read well.
 settings-text-size = Size of your text
 settings-text-size-hint = In the maps and the text view. What is exported follows the document format.
 settings-interface-size = Size of the interface

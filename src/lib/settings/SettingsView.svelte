@@ -6,6 +6,9 @@
   import Moon from '@lucide/svelte/icons/moon';
   import RefreshCw from '@lucide/svelte/icons/refresh-cw';
   import Sun from '@lucide/svelte/icons/sun';
+  import Flower2 from '@lucide/svelte/icons/flower-2';
+  import Palette from '@lucide/svelte/icons/palette';
+  import { judge, STARTS } from '$lib/theme/own';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import { open as chooseFile } from '@tauri-apps/plugin-dialog';
   import {
@@ -131,6 +134,11 @@
 
   // The name of the file of the library is shown as code, where the language puts it.
   const [beforeFile, afterFile] = $derived(apart(t('settings-data-hint', { file: PLACE })));
+
+  /** The four colours of a colouring of one's own, in the order they are shown. */
+  const OWN_COLOURS = ['paper', 'ink', 'accent', 'gold'] as const;
+  /** How the colours of one's own read together. */
+  const judged = $derived(judge(settings.value.ownTheme));
 </script>
 
 <div class="settings">
@@ -150,10 +158,59 @@
             { value: 'system', label: t('settings-theme-system'), icon: Monitor },
             { value: 'light', label: t('settings-theme-light'), icon: Sun },
             { value: 'dark', label: t('settings-theme-dark'), icon: Moon },
+            { value: 'mellow', label: t('settings-theme-mellow'), icon: Flower2 },
+            { value: 'own', label: t('settings-theme-own'), icon: Palette },
           ]}
           onchange={(theme: Theme) => settings.set('theme', theme)}
         />
       </div>
+      {#if settings.value.theme === 'own'}
+        <div class="row top" data-own-theme>
+          <div class="what">
+            <div class="label">{t('settings-own')}</div>
+            <div class="hint">{t('settings-own-hint')}</div>
+          </div>
+          <div class="own">
+            <div class="swatches">
+              {#each OWN_COLOURS as which (which)}
+                <label class="swatch">
+                  <input
+                    type="color"
+                    value={settings.value.ownTheme[which]}
+                    oninput={(e) =>
+                      settings.set('ownTheme', {
+                        ...settings.value.ownTheme,
+                        [which]: e.currentTarget.value,
+                      })}
+                  />
+                  <span>{t(`settings-own-${which}`)}</span>
+                </label>
+              {/each}
+            </div>
+            <div class="begin">
+              <span class="hint">{t('settings-own-begin')}</span>
+              {#each ['light', 'dark', 'mellow'] as const as start (start)}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onclick={() => settings.set('ownTheme', { ...STARTS[start] })}
+                >
+                  {t(`settings-theme-${start}`)}
+                </Button>
+              {/each}
+            </div>
+            {#if !judged.fine}
+              <p class="hint warn">
+                <TriangleAlert size={13} />
+                {t('settings-own-weak', {
+                  ink: judged.ink.toFixed(1),
+                  accent: judged.accent.toFixed(1),
+                })}
+              </p>
+            {/if}
+          </div>
+        </div>
+      {/if}
       <div class="row top">
         <div class="what">
           <label class="label" for="interface-size">{t('settings-interface-size')}</label>
@@ -522,5 +579,44 @@
     display: flex;
     gap: 14px;
     align-items: center;
+  }
+  .own {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .swatch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .swatch input {
+    width: 34px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-s);
+    background: none;
+    cursor: pointer;
+  }
+  .begin {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .hint.warn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--warn);
   }
 </style>

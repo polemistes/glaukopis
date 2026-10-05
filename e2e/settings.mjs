@@ -31,18 +31,68 @@ try {
   await app.type(pandocField, oldPandoc);
   await app.exec(`document.querySelector('${pandocField}').blur()`);
   await app.waitForText('.program', 'Older than Glaukopis needs', 8000).catch(() => {});
-  const said = await app.exec(`return Array.from(document.querySelectorAll('.program')).map((p) => p.textContent.replace(/\\s+/g, ' ').trim()).join(' | ')`);
-  check('a program older than what is needed is said to be so', /Pandoc 3\.1\.1.*Older than Glaukopis needs: 3\.1\.2 or newer/.test(said), said);
+  const said = await app.exec(
+    `return Array.from(document.querySelectorAll('.program')).map((p) => p.textContent.replace(/\\s+/g, ' ').trim()).join(' | ')`,
+  );
+  check(
+    'a program older than what is needed is said to be so',
+    /Pandoc 3\.1\.1.*Older than Glaukopis needs: 3\.1\.10 or newer/.test(said),
+    said,
+  );
   await app.screenshot('settings-1b-old-pandoc');
-  await app.exec(`const f = document.querySelector('${pandocField}'); f.focus(); f.value = ''; f.dispatchEvent(new Event('input', { bubbles: true })); f.blur();`);
+  await app.exec(
+    `const f = document.querySelector('${pandocField}'); f.focus(); f.value = ''; f.dispatchEvent(new Event('input', { bubbles: true })); f.blur();`,
+  );
   for (let i = 0; i < 40 && (await app.count('.program .mark.ok')) !== 2; i++) await sleep(200);
-  const again = await app.exec(`return Array.from(document.querySelectorAll('.program')).map((p) => p.textContent.replace(/\\s+/g, ' ').trim().slice(0, 60)).join(' | ')`);
-  check('and found again as it was when the path is taken away', (await app.count('.program .mark.ok')) === 2, again);
+  const again = await app.exec(
+    `return Array.from(document.querySelectorAll('.program')).map((p) => p.textContent.replace(/\\s+/g, ' ').trim().slice(0, 60)).join(' | ')`,
+  );
+  check(
+    'and found again as it was when the path is taken away',
+    (await app.count('.program .mark.ok')) === 2,
+    again,
+  );
 
   await app.clickText('.segmented button', 'Dark');
   await sleep(200);
-  check('the theme changes at once', (await app.exec(`return document.documentElement.dataset.theme`)) === 'dark');
+  check(
+    'the theme changes at once',
+    (await app.exec(`return document.documentElement.dataset.theme`)) === 'dark',
+  );
   await app.screenshot('settings-2-dark');
+  await app.clickText('.segmented button', 'Mellow');
+  await sleep(200);
+  check(
+    'Mellow is a theme of its own, with pastel colours',
+    (await app.exec(`return document.documentElement.dataset.theme`)) === 'mellow' &&
+      (await app.exec(
+        `return getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()`,
+      )) === '#f7f2ea',
+  );
+  await app.screenshot('settings-2b-mellow');
+  await app.clickText('.segmented button', 'Your own');
+  await sleep(300);
+  const ownBefore = await app.exec(
+    `return getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()`,
+  );
+  await app.exec(
+    `const i = document.querySelectorAll('[data-own-theme] input[type=color]')[2]; i.value = '#7a6f9b'; i.dispatchEvent(new Event('input', { bubbles: true }));`,
+  );
+  await sleep(300);
+  const ownAfter = await app.exec(
+    `return getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()`,
+  );
+  check(
+    "a colouring of one's own: the accent chosen is laid on the root, and the rest follows",
+    (await app.exec(`return document.documentElement.dataset.theme`)) === 'own' &&
+      ownAfter === '#7a6f9b' &&
+      ownBefore !== ownAfter &&
+      (await app.exec(
+        `return getComputedStyle(document.documentElement).getPropertyValue('--accent-soft').trim()`,
+      )) !== '',
+    `${ownBefore} -> ${ownAfter}`,
+  );
+  await app.screenshot('settings-2c-own');
   await app.clickText('.segmented button', 'Light');
 
   // The whole interface grows, as the window is zoomed: fewer pixels of the page fit in it.
@@ -54,7 +104,11 @@ try {
   await sleep(500);
   const zoomed = await app.exec(`return window.innerWidth`);
   await app.screenshot('settings-3-larger');
-  check('the interface can be made larger', Math.abs(zoomed - wide / 1.25) < 4, `${wide} → ${zoomed}`);
+  check(
+    'the interface can be made larger',
+    Math.abs(zoomed - wide / 1.25) < 4,
+    `${wide} → ${zoomed}`,
+  );
   await app.exec(`
     const range = document.querySelector('#interface-size');
     range.value = '1';
@@ -67,7 +121,9 @@ try {
     range.value = '20';
     range.dispatchEvent(new Event('input', { bubbles: true }));`);
   await sleep(150);
-  const size = await app.exec(`return getComputedStyle(document.querySelector('.sample')).fontSize`);
+  const size = await app.exec(
+    `return getComputedStyle(document.querySelector('.sample')).fontSize`,
+  );
   check('the size of the text follows', size === '20px', size);
 
   const nameField = await app.exec(
@@ -83,7 +139,10 @@ try {
   const kept = JSON.parse(readFileSync(join(app.dataDir, 'settings.json'), 'utf8'));
   check(
     'what is set is on disk',
-    kept.theme === 'light' && kept.textSize === 20 && kept.displayName === 'Anna Lind' && !kept.contactEmail,
+    kept.theme === 'light' &&
+      kept.textSize === 20 &&
+      kept.displayName === 'Anna Lind' &&
+      !kept.contactEmail,
     JSON.stringify(kept),
   );
 

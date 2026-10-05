@@ -8,10 +8,20 @@ settings-error-save = Innstillingene kunne ikke lagres
 ## Utseende
 
 settings-appearance = Utseende
-settings-theme = Lyst eller mørkt
+settings-theme = Farger
 settings-theme-system = Som systemet
 settings-theme-light = Lyst
 settings-theme-dark = Mørkt
+settings-theme-mellow = Mildt
+settings-theme-own = Dine egne
+settings-own = Dine egne farger
+settings-own-hint = Fire farger, som resten følger av: papiret, blekket, aksenten som merker det som er valgt og trykket, og den andre stemmen, som merker assosiasjoner og kommentarer. Om fargene er lyse eller mørke, følger av papiret.
+settings-own-paper = Papir
+settings-own-ink = Blekk
+settings-own-accent = Aksent
+settings-own-gold = Andre stemme
+settings-own-begin = Begynn fra
+settings-own-weak = Vanskelig å lese: blekket står { $ink } til 1 mot papiret og aksenten { $accent } til 1; 4,5 og 3 eller mer leses godt.
 settings-text-size = Størrelsen på teksten din
 settings-text-size-hint = I kartene og i tekstvisningen. Det som eksporteres, følger dokumentformatet.
 settings-interface-size = Størrelsen på grensesnittet

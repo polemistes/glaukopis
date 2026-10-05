@@ -29,7 +29,15 @@ export const languagesInfo = () => call<LanguagesInfo>('languages');
 /** Sets the language the core speaks in, which is that of the interface. */
 export const languageSet = (tag: string) => call<void>('language_set', { tag });
 
-export type Theme = 'system' | 'light' | 'dark';
+export type Theme = 'system' | 'light' | 'dark' | 'mellow' | 'own';
+
+/** The four colours a colouring of one's own is made from: see `theme/own.ts`. */
+export interface OwnTheme {
+  paper: string;
+  ink: string;
+  accent: string;
+  gold: string;
+}
 
 /** What is done with citations that are found in texts written elsewhere: see `api/found.ts`. */
 export interface FoundSettings {
@@ -54,6 +62,8 @@ export interface FoundSettings {
 /** Settings kept in `settings.json` in the data directory. */
 export interface Settings {
   theme: Theme;
+  /** The colours of the theme "own". */
+  ownTheme: OwnTheme;
   /** The language of the interface: a tag, or "system" for that of the system. */
   language: string;
   /** The language new texts are given: a tag, or "system" for that of the system. */
@@ -97,6 +107,7 @@ export interface Settings {
 
 export const defaultSettings: Settings = {
   theme: 'system',
+  ownTheme: { paper: '#f7f2ea', ink: '#3b3a45', accent: '#56807a', gold: '#b57f49' },
   language: 'system',
   textLanguage: 'system',
   textSize: 17,

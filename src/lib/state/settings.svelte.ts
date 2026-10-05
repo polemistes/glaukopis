@@ -46,7 +46,7 @@ class SettingsState {
   #saveTimer: ReturnType<typeof setTimeout> | undefined;
 
   /** The theme in effect, with "system" resolved. */
-  get theme(): 'light' | 'dark' {
+  get theme(): 'light' | 'dark' | 'mellow' | 'own' {
     const t = this.value.theme;
     return t === 'system' ? (this.#systemDark ? 'dark' : 'light') : t;
   }
