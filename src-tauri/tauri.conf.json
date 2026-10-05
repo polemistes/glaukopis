@@ -34,7 +34,13 @@
     "shortDescription": "A hub for scholarly work",
     "longDescription": "Glaukopis is where the work on an academic book or article is done: collecting references, developing ideas in mind maps, writing, and producing the manuscript.",
     "licenseFile": "../LICENSE",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
     "resources": { "../resources": "resources" },
     "macOS": {
       "signingIdentity": "-",
@@ -44,8 +50,13 @@
       "webviewInstallMode": { "type": "downloadBootstrapper" }
     },
     "linux": {
-      "deb": { "depends": ["pandoc"] },
-      "rpm": { "depends": ["pandoc"] }
+      "deb": {
+        "recommends": ["tesseract-ocr", "tesseract-ocr-eng", "poppler-utils", "librsvg2-bin"]
+      },
+      "rpm": {
+        "depends": ["webkit2gtk4.1", "gtk3", "openssl-libs"],
+        "recommends": ["tesseract", "tesseract-langpack-eng", "poppler-utils", "librsvg2-tools"]
+      }
     }
   }
 }
