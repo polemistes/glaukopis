@@ -146,52 +146,53 @@
 }
 
 /*
- * Mellow: pastel and warm, the contrast kept where it is read without the
- * edges of the light theme. Cream paper, a slate ink that is not black, a
- * sage accent and an apricot second voice.
+ * Mellow: pastel and warm, happier than the light theme and a shade less
+ * bright, the contrast kept where it is read. Sand-coloured paper, a
+ * plum-slate ink that is not black, a sea-green accent, a coral second
+ * voice, and rose and leaf-green for what goes wrong and what goes well.
  */
 :root[data-theme='mellow'] {
-  --paper: #f7f2ea;
-  --paper-raised: #fdfaf5;
-  --paper-sunken: #efe8dd;
-  --paper-hover: #e9e1d4;
-  --canvas: #f3ede4;
-  --desk: #ece5d9;
+  --paper: #f3ebe1;
+  --paper-raised: #faf5ee;
+  --paper-sunken: #ebe1d4;
+  --paper-hover: #e3d7c8;
+  --canvas: #efe6da;
+  --desk: #e6dbcd;
 
-  --ink: #3b3a45;
-  --ink-2: #5e5c69;
-  --ink-3: #747282;
-  --ink-4: #93909d;
+  --ink: #3a3744;
+  --ink-2: #5d5a6a;
+  --ink-3: #6b6775;
+  --ink-4: #86828e;
 
-  --line: #e2dacd;
-  --line-strong: #cfc4b3;
+  --line: #dfd3c3;
+  --line-strong: #c9bba8;
 
-  --accent: #56807a;
-  --accent-strong: #456b65;
-  --accent-soft: #e0ebe7;
-  --accent-softer: #eef4f1;
+  --accent: #4b8c88;
+  --accent-strong: #3b7370;
+  --accent-soft: #d6ebe6;
+  --accent-softer: #e7f2ef;
   --accent-ink: #ffffff;
 
-  --gold: #b57f49;
-  --gold-soft: #f5e7d6;
-  --highlight: rgba(236, 196, 120, 0.45);
+  --gold: #bf7340;
+  --gold-soft: #f6e3d2;
+  --highlight: rgba(250, 205, 120, 0.5);
 
-  --danger: #a55f63;
-  --danger-soft: #f4e3e3;
-  --ok: #5f8a6a;
-  --ok-soft: #e3eee5;
-  --warn: #b57f49;
+  --danger: #b35f6c;
+  --danger-soft: #f6e0e3;
+  --ok: #4f8a5e;
+  --ok-soft: #dfeee2;
+  --warn: #a9731f;
 
-  --picture-ground: #efe8dd;
-  --picture-ground-2: #e5dccd;
+  --picture-ground: #ebe1d4;
+  --picture-ground-2: #e1d5c5;
 
-  --selection: rgba(86, 128, 122, 0.24);
-  --focus-ring: rgba(86, 128, 122, 0.5);
-  --scrim: rgba(59, 58, 69, 0.3);
+  --selection: rgba(75, 140, 136, 0.26);
+  --focus-ring: rgba(75, 140, 136, 0.5);
+  --scrim: rgba(58, 55, 68, 0.3);
 
-  --shadow-1: 0 1px 2px rgba(59, 58, 69, 0.06), 0 1px 1px rgba(59, 58, 69, 0.04);
-  --shadow-2: 0 4px 14px rgba(59, 58, 69, 0.08), 0 1px 3px rgba(59, 58, 69, 0.06);
-  --shadow-3: 0 18px 50px rgba(59, 58, 69, 0.16), 0 4px 12px rgba(59, 58, 69, 0.08);
+  --shadow-1: 0 1px 2px rgba(58, 55, 68, 0.06), 0 1px 1px rgba(58, 55, 68, 0.04);
+  --shadow-2: 0 4px 14px rgba(58, 55, 68, 0.08), 0 1px 3px rgba(58, 55, 68, 0.06);
+  --shadow-3: 0 18px 50px rgba(58, 55, 68, 0.16), 0 4px 12px rgba(58, 55, 68, 0.08);
 
   color-scheme: light;
 }

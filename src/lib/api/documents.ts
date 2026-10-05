@@ -333,11 +333,37 @@ export interface PreviewRequest {
   key: string;
 }
 
+/**
+ * A run of text on a page, as it was set: where it stands, in points from
+ * the top left corner of the page. The text is laid over the drawn page,
+ * unseen, so that it can be selected and copied.
+ */
+export interface TextRun {
+  /** Where the run begins. */
+  x: number;
+  /** The y of its baseline. */
+  baseline: number;
+  /** Its advance: how far it reaches from `x`. */
+  width: number;
+  /** The size of the type. */
+  size: number;
+  text: string;
+}
+
 /** A page of the preview. */
 export interface PreviewPage {
   /** Which page it is, the first being 1. */
   number: number;
   svg: string;
+  /** The text on the page, run by run. */
+  texts: TextRun[];
+}
+
+/** Where an element of the map begins in the document: the page, from 1, and the y in points from the top of it. */
+export interface Place {
+  element: string;
+  page: number;
+  y: number;
 }
 
 export interface Preview {
@@ -347,6 +373,8 @@ export interface Preview {
   pages: PreviewPage[];
   width: number;
   height: number;
+  /** Where each element of the map begins, in the order of the text. */
+  places: Place[];
   warnings: string[];
   missing: string[];
   substitute: string | null;

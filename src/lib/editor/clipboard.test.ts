@@ -34,3 +34,29 @@ describe('text pasted as text', () => {
     expect(content).toEqual(['One', '⏎', '⏎', 'Two', '⏎', 'three']);
   });
 });
+
+describe('text copied with its citations', () => {
+  it('reads the citations as they are shown, a break as a newline, a note in brackets', async () => {
+    const { copiedText, copiedHtml } = await import('./clipboard');
+    const { Slice } = await import('prosemirror-model');
+    const { nodes } = bodySchema;
+    const doc = bodySchema.node('doc', null, [
+      nodes.paragraph.create(null, [
+        bodySchema.text('As was said '),
+        nodes.citation.create({ items: [{ id: 'nowhere', locator: '73' }], mode: 'normal' }),
+        nodes.hard_break.create(),
+        bodySchema.text('and more'),
+        nodes.footnote.create(null, [bodySchema.text('A note.')]),
+      ]),
+      nodes.paragraph.create(null, [bodySchema.text('Then.')]),
+    ]);
+    const text = copiedText(new Slice(doc.content, 0, 0), 'en');
+    // The reference is in no library here: the label says so in its own way, but stands in the text.
+    expect(text.startsWith('As was said ')).toBe(true);
+    expect(text).toContain('\nand more [A note.]\n\nThen.');
+    expect(text.replace(/^As was said /, '').split('\n')[0].length).toBeGreaterThan(0);
+    const html = copiedHtml(bodySchema, () => 'en').serializeFragment(doc.content);
+    const span = (html as DocumentFragment).querySelector('span[data-citation]');
+    expect(span?.textContent?.length).toBeGreaterThan(0);
+  });
+});

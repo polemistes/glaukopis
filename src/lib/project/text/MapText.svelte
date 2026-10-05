@@ -645,6 +645,11 @@
     return surface;
   }
 
+  /** The element the text is at: the one whose editor has the focus, or the last that had it. */
+  export function currentElement(): string | null {
+    return current;
+  }
+
   /** Opens the search over the text, or turns to it; with `replacing`, to the field of what replaces. */
   export function find(replacing = false) {
     const at = document.activeElement?.closest('.ProseMirror');

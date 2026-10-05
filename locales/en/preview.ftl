@@ -18,6 +18,10 @@ preview-change-format-hint = Page, type, spacing, headings
 preview-change-style = Change this reference style…
 preview-change-style-hint = To a publisher’s wishes
 preview-details = Title, authors, abstract
+# Shows in the text the element whose place in the pages is looked at.
+preview-go-to-text = Go to this place in the text
+# Moves the pages to where the element the text is at begins.
+preview-show-text = Show where the text is
 preview-hide = Hide the preview
 # When a format that goes with a reference style is chosen, the style is taken with it.
 preview-style-taken = The reference style is now { $style }

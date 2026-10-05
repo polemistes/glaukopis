@@ -943,6 +943,18 @@
             {projectId}
             mapId={pane.map}
             onclose={() => (showPreview = false)}
+            ongo={(element) => {
+              // In the text of this map where it is shown; else the pane in view turns to the text.
+              const i = panes.findIndex((p) => p.map === pane.map && p.mode === 'text');
+              show(pane.map, { element, mode: 'text', ...(i >= 0 ? { pane: i } : {}) });
+            }}
+            current={() => {
+              const i =
+                pane.mode === 'text'
+                  ? focused
+                  : panes.findIndex((p) => p.map === pane.map && p.mode === 'text');
+              return texts[i]?.currentElement() ?? null;
+            }}
           />
         </div>
       {/if}

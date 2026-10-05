@@ -1169,6 +1169,13 @@ made, and the preview waits the longer for it; the writing is not held up
 meanwhile. The pages that are looked at are the ones that are drawn, and
 the others as they are moved to.
 
+The text on the pages can be selected and copied, as it is set: a passage
+dragged over and copied with **Ctrl+C** comes out line by line, across
+pages. Two buttons over the pages bring the text and the pages to the same
+place. **Go to this place in the text** shows in the text the element whose
+pages are in view; **Show where the text is** moves the pages to where the
+element you are writing in begins, and points its page out for a moment.
+
 Over the preview, two things are chosen:
 
 - The **reference style**: Chicago, MLA, APA, Harvard and other common styles

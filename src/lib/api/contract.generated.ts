@@ -1222,7 +1222,23 @@ export const preview: Preview = {
   "pages": [
     {
       "number": 1,
-      "svg": "<svg/>"
+      "svg": "<svg/>",
+      "texts": [
+        {
+          "baseline": 100.5,
+          "size": 11.0,
+          "text": "Wrath",
+          "width": 40.25,
+          "x": 72.0
+        }
+      ]
+    }
+  ],
+  "places": [
+    {
+      "element": "e1",
+      "page": 1,
+      "y": 72.0
     }
   ],
   "substitute": "Libertinus Serif",

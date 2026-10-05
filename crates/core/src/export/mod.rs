@@ -34,6 +34,7 @@ use crate::styles::Styles;
 use crate::tr;
 
 pub use tools::{Tool, Tools};
+pub use typeset::{Place, TextRun};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -104,13 +105,16 @@ pub struct Request {
 }
 
 /// A page of the preview.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Page {
     /// Which page it is, the first being 1.
     pub number: u32,
     /// The page, as SVG.
     pub svg: String,
+    /// The runs of text on the page, where they stand, for selecting and
+    /// copying what the drawing shows.
+    pub texts: Vec<TextRun>,
 }
 
 /// At most so many pages are given at once: a page is a quarter of a
@@ -132,6 +136,9 @@ pub struct Preview {
     pub missing: Vec<String>,
     /// The font used in place of the one the format asks for, when that is not installed.
     pub substitute: Option<String>,
+    /// Where each element of the document begins on the pages, in the order
+    /// of the text, for keeping the text and the pages side by side.
+    pub places: Vec<Place>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -672,6 +679,7 @@ pub fn preview_made(
     let set = set_for_preview(&dir, stop)?;
     warnings.extend(set.warnings);
     let (count, pages) = pages_from(&set.document, wanted);
+    let places = typeset::places(&set.document);
     tracing::debug!(pandoc = ?written, typst = ?(began.elapsed() - written), count, "the pages of the preview are made");
     let (width, height) = request.format.page.dimensions();
     Ok(Preview {
@@ -682,6 +690,7 @@ pub fn preview_made(
         warnings,
         missing: prepared.bibliography.missing,
         substitute: reference::substitute(&request.format, ctx.fonts),
+        places,
     })
 }
 
@@ -744,9 +753,9 @@ fn set_for_preview(dir: &Path, stop: &AtomicBool) -> Result<SetForPreview> {
     Ok(SetForPreview { document, warnings: set.warnings })
 }
 
-/// The pages of a document that are wanted, drawn, and how many there are.
-/// Pages that are wanted and are not there are passed over; where none is
-/// named, all are drawn.
+/// The pages of a document that are wanted, drawn and with their text, and
+/// how many there are. Pages that are wanted and are not there are passed
+/// over; where none is named, all are drawn.
 fn pages_from(document: &typeset::PagedDocument, wanted: &[u32]) -> (usize, Vec<Page>) {
     let count = document.pages().len();
     let wanted: Vec<u32> = if wanted.is_empty() {
@@ -760,7 +769,10 @@ fn pages_from(document: &typeset::PagedDocument, wanted: &[u32]) -> (usize, Vec<
     };
     let pages = wanted
         .into_iter()
-        .filter_map(|number| typeset::svg(document, number as usize).map(|svg| Page { number, svg }))
+        .filter_map(|number| {
+            let svg = typeset::svg(document, number as usize)?;
+            Some(Page { number, svg, texts: typeset::texts(document, number as usize) })
+        })
         .collect();
     (count, pages)
 }
@@ -1388,6 +1400,64 @@ mod tests {
     }
 
     #[test]
+    fn the_preview_tells_where_the_elements_are_and_what_the_pages_say() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, Section};
+        let Some(s) = setup() else { return };
+        let mut r = request("chicago-author-date");
+        // Two sections made from elements: the sample's, and one more of many
+        // paragraphs, so that it may reach a page of its own.
+        assert_eq!(r.document.sections[1].element.as_deref(), Some("e1"));
+        let para = |w: &str| Block::Paragraph { content: vec![text(&w.repeat(40))] };
+        r.document.sections.push(Section {
+            level: 1,
+            heading: Some(vec![text("Afterwards")]),
+            blocks: (0..30).map(|_| para("Many words follow. ")).collect(),
+            element: Some("e2".into()),
+        });
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+
+        let places: Vec<(&str, u32)> = p.places.iter().map(|pl| (pl.element.as_str(), pl.page)).collect();
+        assert_eq!(places, [("e1", 1), ("e2", 1)], "{:?}", p.places);
+        let (first, second) = (&p.places[0], &p.places[1]);
+        assert!(second.page >= first.page);
+        assert!(second.page > first.page || second.y > first.y, "{first:?} {second:?}");
+        assert!(first.y >= 0.0 && first.y <= p.height, "{first:?}");
+
+        let runs = &p.pages[0].texts;
+        assert!(!runs.is_empty());
+        let word = runs.iter().find(|r| r.text.contains("belongs")).unwrap_or_else(|| panic!("{runs:?}"));
+        assert!(word.size > 0.0 && word.width > 0.0, "{word:?}");
+        for run in runs {
+            assert!(run.x >= 0.0 && run.x <= p.width, "{run:?}");
+            assert!(run.baseline >= 0.0 && run.baseline <= p.height, "{run:?}");
+        }
+        // The heading of the first section stands at the top of its words, near its place.
+        let heading = runs.iter().find(|r| r.text.starts_with("The word")).unwrap_or_else(|| panic!("{runs:?}"));
+        assert!(heading.baseline > first.y && heading.baseline - first.y < 60.0, "{heading:?} {first:?}");
+        assert!(word.baseline > heading.baseline);
+        // The pages asked for afterwards carry their text as well.
+        let (count, pages) = preview_pages(&s.ctx(), &r.key, &[1], &AtomicBool::new(false)).unwrap();
+        assert_eq!(count, p.count);
+        assert_eq!(pages[0].texts, p.pages[0].texts);
+
+        // The marks are no part of what the other formats are given.
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let docx = out.join("marked.docx");
+        let e = export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        assert!(!unzip(&docx, "word/document.xml").contains("gk-el-"));
+        let tex = out.join("marked.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        assert!(!fs::read_to_string(&tex).unwrap().contains("gk-el-"));
+        let typ = out.join("marked.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        assert!(fs::read_to_string(&typ).unwrap().contains("#metadata(\"e1\") <gk-el-e1>"));
+    }
+
+    #[test]
     fn every_format_that_comes_with_the_application_makes_pages() {
         let Some(s) = setup() else { return };
         let formats = crate::formats::Formats::new(&s.resources, &s.work.join("formats"));
@@ -1462,8 +1532,9 @@ mod tests {
         export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
         let t = fs::read_to_string(&typ).unwrap();
         let heading = t.find("= The word").expect("a heading of the first level");
-        let before = &t[..heading];
-        assert!(before.trim_end().ends_with("#pagebreak(weak: true)"), "{}", &t[heading.saturating_sub(80)..heading]);
+        // The break of the page, then the mark of the element, then the heading.
+        let before = t[..heading].trim_end().trim_end_matches("#metadata(\"e1\") <gk-el-e1>").trim_end();
+        assert!(before.ends_with("#pagebreak(weak: true)"), "{}", &t[heading.saturating_sub(80)..heading]);
         let tex = out.join("novel.tex");
         export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
         let l = fs::read_to_string(&tex).unwrap();

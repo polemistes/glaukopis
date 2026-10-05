@@ -11,8 +11,11 @@
 use std::path::Path;
 use std::sync::OnceLock;
 
+use serde::Serialize;
 use typst::diag::{FileError, FileResult, Severity, SourceDiagnostic, Warned};
-use typst::foundations::{Bytes, Datetime};
+use typst::foundations::{Bytes, Datetime, NativeElement, Value};
+use typst::introspection::{Introspector, MetadataElem};
+use typst::layout::{Frame, FrameItem, Point, Transform};
 use typst::syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
 use typst::text::{Font, FontBook};
 use typst::utils::LazyHash;
@@ -21,6 +24,7 @@ use typst_kit::files::{FileLoader, FileStore, FsRoot};
 use typst_kit::fonts::FontStore;
 pub use typst_layout::PagedDocument;
 
+use crate::document::pandoc::ELEMENT_LABEL;
 use crate::error::{Error, Result};
 
 /// The fonts Typst can set with: those of the computer, and those that come
@@ -57,9 +61,9 @@ fn library() -> &'static LazyHash<Library> {
 }
 
 /// The files of the place where a document is made; no packages.
-struct Place(FsRoot);
+struct Files(FsRoot);
 
-impl FileLoader for Place {
+impl FileLoader for Files {
     fn load(&self, id: FileId) -> FileResult<Bytes> {
         match id.root() {
             VirtualRoot::Project => self.0.load(id.vpath()),
@@ -71,7 +75,7 @@ impl FileLoader for Place {
 /// What Typst sees of a document: its place, and the file it begins with.
 struct Setting {
     main: FileId,
-    files: FileStore<Place>,
+    files: FileStore<Files>,
 }
 
 impl Setting {
@@ -79,7 +83,7 @@ impl Setting {
         let path = VirtualPath::new(main).map_err(|e| Error::invalid(format!("{main}: {e:?}")))?;
         Ok(Setting {
             main: RootedPath::new(VirtualRoot::Project, path).intern(),
-            files: FileStore::new(Place(FsRoot::new(dir.to_path_buf()))),
+            files: FileStore::new(Files(FsRoot::new(dir.to_path_buf()))),
         })
     }
 }
@@ -165,6 +169,92 @@ pub fn svg(document: &PagedDocument, number: usize) -> Option<String> {
     Some(typst_svg::svg(page, &typst_svg::SvgOptions::default()))
 }
 
+/// A run of text on a page, as Typst set it, for selecting and copying from
+/// the drawn page: where it begins, the y of its baseline, how far it
+/// reaches, the size of its type, and its characters. All in points from
+/// the top left corner of the page, as the SVG of the page has them.
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TextRun {
+    pub x: f32,
+    pub baseline: f32,
+    pub width: f32,
+    pub size: f32,
+    pub text: String,
+}
+
+/// Where an element of the document begins on the pages: the page, the
+/// first being 1, and the y in points from the top of it. By these the text
+/// and the pages are kept side by side.
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Place {
+    /// The id of the element.
+    pub element: String,
+    pub page: u32,
+    pub y: f32,
+}
+
+/// The runs of text on a page of a document that was set, the first page
+/// being 1. Nothing of a page that is not there; a run of nothing but white
+/// space is left out.
+pub fn texts(document: &PagedDocument, number: usize) -> Vec<TextRun> {
+    let mut out = Vec::new();
+    if let Some(page) = number.checked_sub(1).and_then(|i| document.pages().get(i)) {
+        // Moved by the bleed, as the SVG of the page is drawn.
+        runs_in(&page.frame, Transform::translate(page.bleed.left, page.bleed.top), &mut out);
+    }
+    out
+}
+
+/// Walks a frame and what is within it: a group stands at its place and may
+/// be transformed, a text item stands with its baseline beginning at its place.
+fn runs_in(frame: &Frame, ts: Transform, out: &mut Vec<TextRun>) {
+    for (pos, item) in frame.items() {
+        match item {
+            FrameItem::Group(group) => {
+                let ts = ts.pre_concat(Transform::translate(pos.x, pos.y)).pre_concat(group.transform);
+                runs_in(&group.frame, ts, out);
+            }
+            FrameItem::Text(text) if !text.text.trim().is_empty() => {
+                let start = pos.transform(ts);
+                let end = Point::new(pos.x + text.width(), pos.y).transform(ts);
+                out.push(TextRun {
+                    x: start.x.to_pt() as f32,
+                    baseline: start.y.to_pt() as f32,
+                    width: (end.x - start.x).to_pt() as f32,
+                    size: (text.size.to_pt() * ts.sy.get().abs()) as f32,
+                    text: text.text.to_string(),
+                });
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Where the elements of the document begin on the pages, in the order of
+/// the text: the marks that Pandoc was given to write before each section
+/// (`#metadata("ID") <gk-el-ID>`, see `document::pandoc`) are asked where
+/// they came to stand.
+pub fn places(document: &PagedDocument) -> Vec<Place> {
+    let introspector = document.introspector();
+    introspector
+        .query(&MetadataElem::ELEM.select())
+        .iter()
+        .filter_map(|content| {
+            content.label().filter(|l| l.resolve().starts_with(ELEMENT_LABEL))?;
+            let Value::Str(element) = &content.to_packed::<MetadataElem>()?.value else { return None };
+            let position = introspector.position(content.location()?)?;
+            let page = document.pages().get(position.page.get() - 1)?;
+            Some(Place {
+                element: element.to_string(),
+                page: position.page.get() as u32,
+                y: (position.point.y + page.bleed.top).to_pt() as f32,
+            })
+        })
+        .collect()
+}
+
 /// A document that was set, as a PDF.
 pub fn pdf(document: &PagedDocument) -> Result<Vec<u8>> {
     typst_pdf::pdf(document, &typst_pdf::PdfOptions::default()).map_err(|errors| Error::Program {
@@ -198,6 +288,55 @@ mod tests {
         assert!(page.starts_with("<svg"), "{}", &page[..40]);
         assert!(svg(&set.document, 3).is_none() && svg(&set.document, 0).is_none());
         assert!(pdf(&set.document).unwrap().starts_with(b"%PDF"));
+    }
+
+    #[test]
+    fn the_text_of_a_page_and_the_places_of_the_elements_are_found() {
+        let tmp = tempfile::tempdir().unwrap();
+        let marked = "#set page(width: 100mm, height: 80mm)\n#show heading: it => block(above: 2em, below: 1em, it)\n\
+            #metadata(\"a\") <gk-el-a>\n\n= One\nSome words here.\n\n#pagebreak(weak: true)\n\n#metadata(\"b\") <gk-el-b>\n\n= Two\n\
+            #box(move(dx: 10pt, dy: 5pt)[Moved.])\n\n#metadata(\"other\") <note>\n";
+        std::fs::write(tmp.path().join("document.typ"), marked).unwrap();
+        let set = set(tmp.path(), "document.typ").unwrap();
+        assert_eq!(set.document.pages().len(), 2);
+
+        let found = places(&set.document);
+        assert_eq!(found.len(), 2, "{found:?}");
+        assert_eq!((found[0].element.as_str(), found[0].page), ("a", 1));
+        assert_eq!((found[1].element.as_str(), found[1].page), ("b", 2));
+        assert!(found[0].y >= 0.0 && found[0].y < 80.0 * 72.0 / 25.4, "{found:?}");
+
+        let runs = texts(&set.document, 1);
+        let words: Vec<&str> = runs.iter().map(|r| r.text.as_str()).collect();
+        assert!(words.contains(&"One"), "{words:?}");
+        assert!(runs.iter().any(|r| r.text.contains("Some words")), "{words:?}");
+        for run in &runs {
+            assert!(run.size > 0.0 && run.width > 0.0, "{run:?}");
+            assert!(run.x >= 0.0 && run.x + run.width <= 100.0 * 72.0 / 25.4 + 0.01, "{run:?}");
+            assert!(run.baseline > 0.0 && run.baseline <= 80.0 * 72.0 / 25.4, "{run:?}");
+            assert!(!run.text.trim().is_empty(), "{run:?}");
+        }
+        // The heading stands before its words, which stand below it.
+        let one = runs.iter().find(|r| r.text == "One").unwrap();
+        let some = runs.iter().find(|r| r.text.contains("Some")).unwrap();
+        assert!(some.baseline > one.baseline, "{one:?} {some:?}");
+        // A group that is moved moves its text with it.
+        let two = texts(&set.document, 2);
+        let two_heading = two.iter().find(|r| r.text == "Two").unwrap();
+        let moved = two.iter().find(|r| r.text == "Moved.").unwrap();
+        assert!((moved.x - two_heading.x - 10.0).abs() < 0.5, "{two_heading:?} {moved:?}");
+        assert!(texts(&set.document, 3).is_empty() && texts(&set.document, 0).is_empty());
+
+        // The marks change nothing of how the pages look.
+        let bare: String = marked.lines().filter(|l| !l.starts_with("#metadata")).collect::<Vec<_>>().join("\n");
+        std::fs::write(tmp.path().join("document.typ"), bare).unwrap();
+        let plain = super::set(tmp.path(), "document.typ").unwrap();
+        assert_eq!(plain.document.pages().len(), 2);
+        assert!(places(&plain.document).is_empty());
+        for page in 1..=2 {
+            assert_eq!(texts(&plain.document, page), texts(&set.document, page), "page {page}");
+            assert_eq!(svg(&plain.document, page), svg(&set.document, page), "page {page}");
+        }
     }
 
     #[test]

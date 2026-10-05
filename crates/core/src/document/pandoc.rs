@@ -627,12 +627,31 @@ impl Converter<'_> {
             .collect()
     }
 
+    /// The mark of the element a section was made from, in the Typst that
+    /// sets the preview: metadata, of which nothing is set, with a label by
+    /// which the place of the section on the pages is asked for afterwards
+    /// (`export::typeset::places`). Nothing for the other formats, and
+    /// nothing for a section that was made from no element.
+    fn mark(&self, section: &Section) -> Option<Value> {
+        if self.extras.flavour != Flavour::Typst {
+            return None;
+        }
+        let id = label(section.element.as_deref()?);
+        if id.is_empty() {
+            return None;
+        }
+        Some(json!({"t": "RawBlock", "c": ["typst", format!("#metadata(\"{id}\") <{ELEMENT_LABEL}{id}>")]}))
+    }
+
     fn section(&self, section: &Section, out: &mut Vec<Value>) {
         let heading = section.heading.as_ref().map(|h| self.inlines(h)).filter(|h| !h.is_empty());
         let level = section.level.clamp(1, self.deepest.max(1));
         let mut body = Vec::new();
         self.blocks(&section.blocks, &mut body);
 
+        // The mark stands before the heading, and after the break of the
+        // page before it, so that it is found on the page the section begins.
+        let mut mark = self.mark(section);
         let run_in = self.run_in.iter().find(|r| r.level == level).copied();
         match (heading, run_in) {
             (Some(mut h), Some(form)) if section.level > 0 => {
@@ -668,6 +687,7 @@ impl Converter<'_> {
                 {
                     out.push(b.clone());
                 }
+                out.extend(mark.take());
                 let place = section.element.as_deref().and_then(|id| self.extras.anchor(id));
                 let named = match place.as_ref().and_then(|p| p["c"][0][0].as_str()) {
                     Some(name) => json!([name, [], []]),
@@ -677,6 +697,7 @@ impl Converter<'_> {
             }
             _ => {}
         }
+        out.extend(mark);
         out.extend(body);
     }
 
@@ -705,7 +726,13 @@ fn safe_href(href: &str) -> bool {
     !is_scheme || matches!(scheme.to_ascii_lowercase().as_str(), "http" | "https" | "mailto" | "ftp" | "doi")
 }
 
-/// The name of a kind as a label of Typst or a class takes it.
+/// What the label of the mark of an element begins with, in the Typst of
+/// the preview: `#metadata("ID") <gk-el-ID>` stands before each section that
+/// was made from an element, and is found again by `export::typeset::places`.
+pub const ELEMENT_LABEL: &str = "gk-el-";
+
+/// The name of a kind, or the id of an element, as a label of Typst or a
+/// class takes it: letters, digits, `-` and `_`, and nothing else.
 pub fn label(kind: &str) -> String {
     kind.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_')).take(80).collect()
 }
@@ -1135,5 +1162,66 @@ mod tests {
         assert_eq!(blocks[3]["c"][0]["c"][1], json!([{"t":"Strong","c":[{"t":"Str","c":"Deeper?"}]}]));
         assert_eq!(blocks[4], json!({"t":"Para","c":[{"t":"Str","c":"No"},{"t":"Space"},{"t":"Str","c":"heading."}]}));
         assert_eq!(blocks.len(), 5);
+    }
+
+    #[test]
+    fn a_section_made_from_an_element_is_marked_for_typst_alone() {
+        let keys = HashMap::new();
+        let doc = Document {
+            sections: vec![
+                Section {
+                    level: 1,
+                    heading: Some(vec![text("One")]),
+                    blocks: vec![para(vec![text("Text.")])],
+                    element: Some("e1".into()),
+                },
+                Section {
+                    level: 2,
+                    heading: Some(vec![text("Run")]),
+                    blocks: vec![para(vec![text("In.")])],
+                    element: Some("e2 <x>".into()),
+                },
+                Section {
+                    level: 0,
+                    heading: None,
+                    blocks: vec![para(vec![text("Bare.")])],
+                    element: Some("e3".into()),
+                },
+                Section { level: 1, heading: Some(vec![text("None")]), blocks: vec![], element: None },
+            ],
+            ..Default::default()
+        };
+        let mark = |id: &str| json!({"t": "RawBlock", "c": ["typst", format!("#metadata(\"{id}\") <gk-el-{id}>")]});
+        let page_break = json!({"t": "RawBlock", "c": ["typst", "#pagebreak(weak: true)"]});
+
+        let mut c = converter(&keys);
+        c.extras.flavour = Flavour::Typst;
+        c.run_in = vec![RunIn { level: 2, bold: true, italic: false }];
+        c.new_page = vec![1];
+        c.page_break = Some(page_break.clone());
+        let out = c.document(&doc, &[1, 23, 1], serde_json::Map::new());
+        let blocks = out["blocks"].as_array().unwrap();
+        // After the break of the page, before the heading.
+        assert_eq!(blocks[0], page_break);
+        assert_eq!(blocks[1], mark("e1"));
+        assert_eq!(blocks[2]["t"], "Header");
+        assert_eq!(blocks[3]["t"], "Para");
+        // Before the paragraph a run-in heading begins; the id made safe.
+        assert_eq!(blocks[4], mark("e2x"));
+        assert_eq!(blocks[5]["c"][0]["t"], "Span");
+        // Before the first block of a section without a heading.
+        assert_eq!(blocks[6], mark("e3"));
+        assert_eq!(blocks[7]["c"][0], json!({"t":"Str","c":"Bare."}));
+        // None for a section made from no element.
+        assert_eq!(blocks[8], page_break);
+        assert_eq!(blocks[9]["t"], "Header");
+        assert_eq!(blocks.len(), 10);
+
+        for flavour in [Flavour::Latex, Flavour::Docx, Flavour::Odt, Flavour::Plain] {
+            let mut c = converter(&keys);
+            c.extras.flavour = flavour;
+            let out = c.document(&doc, &[1, 23, 1], serde_json::Map::new());
+            assert!(!out["blocks"].as_array().unwrap().iter().any(|b| b["t"] == "RawBlock"), "{flavour:?}");
+        }
     }
 }

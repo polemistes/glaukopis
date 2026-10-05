@@ -14,7 +14,7 @@
     titlePlugins,
     type KeyAction,
   } from './plugins';
-  import { pastedTextSlice } from './clipboard';
+  import { copiedHtml, copiedText, pastedTextSlice } from './clipboard';
   import { bodySchema, titleSchema } from './schema';
   import { dropTarget } from '$lib/ui/drag.svelte';
   import { editorUi, rectAt } from './ui.svelte';
@@ -331,6 +331,9 @@
         // Text pasted as text keeps every line break (see `clipboard.ts`).
         clipboardTextParser:
           kind === 'body' ? (text, $context) => pastedTextSlice(text, $context, schema) : undefined,
+        // What is copied carries its citations as they are shown.
+        clipboardTextSerializer: (slice) => copiedText(slice, language),
+        clipboardSerializer: copiedHtml(schema, () => language),
         // A citation that was found is gone through where it is pressed; a
         // commented passage shows its thread.
         handleClick: (_v, _pos, event) => {

@@ -275,7 +275,8 @@ pub fn document_preview(state: State<'_, AppState>, request: LeanRequest, pages:
 }
 
 /// Pages of the document that was made last for a key, as they come into
-/// view. It waits for nothing that is being made.
+/// view, each with the runs of its text. It waits for nothing that is being
+/// made.
 #[tauri::command(async)]
 pub fn document_preview_pages(state: State<'_, AppState>, key: String, pages: Vec<u32>) -> CommandResult<PagesOf> {
     let tools = state.tools();

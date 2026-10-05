@@ -67,7 +67,7 @@ try {
     (await app.exec(`return document.documentElement.dataset.theme`)) === 'mellow' &&
       (await app.exec(
         `return getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()`,
-      )) === '#f7f2ea',
+      )) === '#f3ebe1',
   );
   await app.screenshot('settings-2b-mellow');
   await app.clickText('.segmented button', 'Your own');

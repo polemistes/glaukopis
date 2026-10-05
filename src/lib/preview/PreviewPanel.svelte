@@ -2,8 +2,10 @@
   import { untrack } from 'svelte';
   import FileText from '@lucide/svelte/icons/file-text';
   import PackageX from '@lucide/svelte/icons/package-x';
+  import ScanEye from '@lucide/svelte/icons/scan-eye';
   import Share from '@lucide/svelte/icons/share';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
+  import TextCursorInput from '@lucide/svelte/icons/text-cursor-input';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import X from '@lucide/svelte/icons/x';
   import { isBackendError } from '$lib/api/backend';
@@ -12,8 +14,10 @@
     documentPreviewPages,
     documentPreviewStop,
     type DocumentFormat,
+    type Place,
     type Preview,
     type PreviewPage,
+    type TextRun,
   } from '$lib/api/documents';
   import { t } from '$lib/i18n';
   import { countWords, documentMark, leanDocument } from '$lib/project/model/document';
@@ -37,15 +41,79 @@
     projectId: string;
     mapId: string;
     onclose: () => void;
+    /** Shows an element in the text: the one at the place in the pages that is looked at. */
+    ongo: (element: string) => void;
+    /** The element the text is at, so that its place in the pages can be shown. */
+    current: () => string | null;
   }
 
-  let { project, projectId, mapId, onclose }: Props = $props();
+  let { project, projectId, mapId, onclose, ongo, current }: Props = $props();
 
-  /** A page as it is shown: what it holds, the address it is shown from, and the making it is of. */
+  /** A page as it is shown: what it holds, the address it is shown from, the making it is of, and its text, laid over it. */
   interface Shown {
     svg: string;
     url: string;
     made: number;
+    lines: Line[];
+  }
+
+  /**
+   * A line of the text on a page, laid over the drawn page so that it can be
+   * selected and copied. Its place is in percent of the page; the runs on it
+   * follow one another, each as wide as it was set, with the room before it
+   * as a margin, so that the browser copies a line as one line. Sizes of
+   * type are in hundredths of the width of the page (`cqw`).
+   */
+  interface Line {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    size: number;
+    runs: { gap: number; width: number; size: number; text: string }[];
+  }
+
+  /** Lays the runs of a page in lines: those on one baseline are one line. */
+  function linesOf(texts: TextRun[], page: { width: number; height: number }): Line[] {
+    const runs = texts
+      .filter((r) => r.text && r.width > 0 && r.size > 0)
+      .sort((a, b) => a.baseline - b.baseline || a.x - b.x);
+    const groups: TextRun[][] = [];
+    for (const run of runs) {
+      const last = groups[groups.length - 1];
+      if (last && Math.abs(last[0].baseline - run.baseline) <= run.size * 0.3) last.push(run);
+      else groups.push([run]);
+    }
+    return groups.map((group) => {
+      group.sort((a, b) => a.x - b.x);
+      const left = Math.min(...group.map((r) => r.x));
+      const right = Math.max(...group.map((r) => r.x + r.width));
+      const top = Math.min(...group.map((r) => r.baseline - r.size * 0.8));
+      const bottom = Math.max(...group.map((r) => r.baseline + r.size * 0.3));
+      const wide = Math.max(right - left, 0.01);
+      let end = left;
+      return {
+        left: (left / page.width) * 100,
+        top: (top / page.height) * 100,
+        width: (wide / page.width) * 100,
+        height: (Math.max(bottom - top, 0.01) / page.height) * 100,
+        size: (Math.max(...group.map((r) => r.size)) / page.width) * 100,
+        runs: group.map((r, i) => {
+          const gap = ((r.x - end) / wide) * 100;
+          end = r.x + r.width;
+          const next = group[i + 1];
+          // Words set apart, with room between them, are copied with a space between them.
+          const apart =
+            next && next.x - end > r.size * 0.12 && !/\s$/.test(r.text) && !/^\s/.test(next.text);
+          return {
+            gap,
+            width: (r.width / wide) * 100,
+            size: (r.size / page.width) * 100,
+            text: apart ? `${r.text} ` : r.text,
+          };
+        }),
+      };
+    });
   }
 
   /** At most so many pages are kept: those nearest to what is looked at. */
@@ -65,6 +133,11 @@
    * hundreds of pages, each a quarter of a megabyte.
    */
   let shown = $state.raw(new Map<number, Shown>());
+  /** Where each element of the map begins in the pages, in the order of the text. */
+  let places = $state.raw<Place[]>([]);
+  /** The page that is pointed out for a moment, when the place of the text is shown. */
+  let marked = $state<number | null>(null);
+  let marking: ReturnType<typeof setTimeout> | undefined;
   /** Rises with every making of the document: pages of an earlier one are shown until those of this one are there. */
   let made = 0;
   /** What the pages that are shown were made from. */
@@ -191,7 +264,7 @@
       }
       if (before) let_go.push(before.url);
       const url = URL.createObjectURL(new Blob([page.svg], { type: 'image/svg+xml' }));
-      next.set(page.number, { svg: page.svg, url, made });
+      next.set(page.number, { svg: page.svg, url, made, lines: linesOf(page.texts ?? [], size) });
     }
     // Pages that are no longer there, and those farthest from what is looked at.
     const wanted = near();
@@ -254,6 +327,7 @@
         made++;
         count = preview.count;
         size = { width: preview.width, height: preview.height };
+        places = preview.places ?? [];
         take(preview.pages);
         shownFrom = from;
         warnings = preview.warnings;
@@ -315,6 +389,39 @@
     for (const page of shown.values()) URL.revokeObjectURL(page.url);
   }
 
+  // ---- the pages and the text, brought to the same place ----
+
+  /** The page the middle of the view is on, and how far down it, in points. */
+  function looked(): { page: number; y: number } {
+    const pagePx = each - GAP;
+    const mid = moved + room.height / 2 - AROUND.top;
+    const page = Math.max(1, Math.min(count, Math.floor(mid / each) + 1));
+    const within = Math.max(0, Math.min(pagePx, mid - (page - 1) * each));
+    return { page, y: (within / pagePx) * size.height };
+  }
+
+  /** Shows in the text the element whose place in the pages is looked at: the last that begins before the middle of the view. */
+  function goToText() {
+    if (!places.length) return;
+    const at = looked();
+    let found = places[0];
+    for (const p of places) if (p.page < at.page || (p.page === at.page && p.y <= at.y)) found = p;
+    ongo(found.element);
+  }
+
+  /** Moves the pages to where the element the text is at begins, and points the page out for a moment. */
+  function showText() {
+    const element = current();
+    const place = element ? places.find((p) => p.element === element) : undefined;
+    if (!place || !scroller) return;
+    const pagePx = each - GAP;
+    const top = AROUND.top + (place.page - 1) * each + place.y * (pagePx / size.height);
+    scroller.scrollTop = Math.max(0, top - 40);
+    marked = place.page;
+    clearTimeout(marking);
+    marking = setTimeout(() => (marked = null), 1000);
+  }
+
   // The preview follows the text, a moment behind it: the longer the pages
   // take to make, the longer it waits for the writing to pause.
   let waiting: ReturnType<typeof setTimeout> | undefined;
@@ -338,6 +445,7 @@
     gone = true;
     clearTimeout(waiting);
     clearTimeout(settled);
+    clearTimeout(marking);
     release();
     // What is being made is no longer wanted.
     void documentPreviewStop(projectId).catch(() => {});
@@ -459,6 +567,12 @@
         </select>
       </label>
     </div>
+    <IconButton label={t('preview-go-to-text')} disabled={!places.length} onclick={goToText}>
+      <TextCursorInput size={15} />
+    </IconButton>
+    <IconButton label={t('preview-show-text')} disabled={!places.length} onclick={showText}>
+      <ScanEye size={15} />
+    </IconButton>
     <IconButton
       label={t('preview-change')}
       onclick={(e) =>
@@ -530,6 +644,7 @@
         {@const page = shown.get(n)}
         <div
           class="page"
+          class:marked={marked === n}
           data-page={n}
           style:aspect-ratio="{size.width} / {size.height}"
           aria-label={t('preview-page', { number: String(n) })}
@@ -538,7 +653,24 @@
               src={page.url}
               alt={t('preview-page', { number: String(n) })}
               draggable="false"
-            />{/if}
+            />
+            <!-- The text, over the drawn page and unseen, so that it can be selected and copied. -->
+            <div class="texts">
+              {#each page.lines as line}<div
+                  class="line"
+                  style:left="{line.left}%"
+                  style:top="{line.top}%"
+                  style:width="{line.width}%"
+                  style:height="{line.height}%"
+                  style:font-size="{line.size}cqw"
+                >
+                  {#each line.runs as run}<span
+                      style:margin-left="{run.gap}%"
+                      style:width="{run.width}%"
+                      style:font-size="{run.size}cqw">{run.text}</span
+                    >{/each}<br />
+                </div>{/each}
+            </div>{/if}
         </div>
       {/each}
       {#if span.to < count}
@@ -746,6 +878,9 @@
      width it is given and the shape of the page. */
   .page {
     contain: layout paint style;
+    /* The text over the page is sized by the width the page is drawn at. */
+    container-type: inline-size;
+    position: relative;
     flex: none;
     display: block;
     width: 100%;
@@ -758,6 +893,45 @@
       0 0 0 1px rgba(0, 0, 0, 0.07),
       0 1px 3px rgba(0, 0, 0, 0.14);
     user-select: none;
+    transition: box-shadow var(--slow) var(--ease);
+  }
+  /* The page the text is at, pointed out for a moment. */
+  .page.marked {
+    box-shadow:
+      0 0 0 2px var(--accent),
+      0 1px 3px rgba(0, 0, 0, 0.14);
+  }
+  /* The text of the page lies over the drawing, unseen but for its
+     selection: it is what is selected and copied, while the drawing is
+     what is seen. */
+  .texts {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: auto;
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+    color: transparent;
+    font-family: var(--font-text);
+    line-height: 1;
+  }
+  /* Room between the tags of the markup falls at the ends of a line, where it is dropped. */
+  /* The break at the end of a line is what copies as a newline; it is not seen, the line being as high as its text. */
+  .line {
+    position: absolute;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .line span {
+    display: inline-block;
+    vertical-align: baseline;
+    white-space: pre;
+  }
+  .texts ::selection,
+  .texts::selection {
+    background: var(--selection);
+    color: transparent;
   }
   .room {
     flex: none;
@@ -768,6 +942,7 @@
     width: 100%;
     height: 100%;
     user-select: none;
+    pointer-events: none;
   }
   .centre {
     flex: 1;

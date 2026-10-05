@@ -19,10 +19,22 @@ try {
      await window.__TAURI_INTERNALS__.invoke('import_apply', { plan });`,
     bib,
   );
-  const tools = await app.execAsync(`return await window.__TAURI_INTERNALS__.invoke('tools_info', {});`);
-  check('Pandoc is found; Typst is part of the application', !!tools.pandoc && !('typst' in tools), `${tools.pandoc?.version}`);
-  const formats = await app.execAsync(`return await window.__TAURI_INTERNALS__.invoke('formats_list');`);
-  check('the formats that come with the application are there', formats.length >= 30, `${formats.length}`);
+  const tools = await app.execAsync(
+    `return await window.__TAURI_INTERNALS__.invoke('tools_info', {});`,
+  );
+  check(
+    'Pandoc is found; Typst is part of the application',
+    !!tools.pandoc && !('typst' in tools),
+    `${tools.pandoc?.version}`,
+  );
+  const formats = await app.execAsync(
+    `return await window.__TAURI_INTERNALS__.invoke('formats_list');`,
+  );
+  check(
+    'the formats that come with the application are there',
+    formats.length >= 30,
+    `${formats.length}`,
+  );
 
   await app.clickText('button', 'Begin a project');
   await app.waitFor('dialog input');
@@ -75,10 +87,81 @@ try {
   await app.waitFor('.preview .page', 20000);
   await sleep(500);
   /** How many pages the document has. Of many, only those that are looked at have a place in the window. */
-  const counted = () => app.exec(`return Number(document.querySelector('.preview .pages').dataset.count)`);
+  const counted = () =>
+    app.exec(`return Number(document.querySelector('.preview .pages').dataset.count)`);
   const pages = await counted();
-  check('the preview shows pages', pages >= 1 && (await app.count('.preview .page img')) >= 1, `${pages}`);
+  check(
+    'the preview shows pages',
+    pages >= 1 && (await app.count('.preview .page img')) >= 1,
+    `${pages}`,
+  );
   await app.screenshot('preview-1-manuscript');
+
+  // --- The text lies over the pages, to be selected and copied ---
+  await app.waitFor('.preview .page .texts span', 5000);
+  const runs = await app.exec(
+    `return Array.from(document.querySelectorAll('.preview .page .texts span')).map((s) => s.textContent)`,
+  );
+  check(
+    'the text of the page lies over it, run by run',
+    runs.length >= 3 && runs.some((r) => /poem|wrath/i.test(r)),
+    `${runs.length} runs: ${runs.slice(0, 6).join(' | ')}`,
+  );
+  const laid = await app.exec(
+    `const page = document.querySelector('.preview .page');
+     const span = Array.from(page.querySelectorAll('.texts span')).find((s) => /wrath/i.test(s.textContent));
+     if (!span) return null;
+     const p = page.getBoundingClientRect(), b = span.getBoundingClientRect();
+     const size = parseFloat(getComputedStyle(span).fontSize);
+     return { within: b.left >= p.left && b.right <= p.right + 1 && b.top >= p.top && b.bottom <= p.bottom, size,
+       transparent: getComputedStyle(span).color === 'rgba(0, 0, 0, 0)' };`,
+  );
+  check(
+    'a run has its place on the page, sized with it, and is not seen',
+    !!laid && laid.within && laid.size > 4 && laid.size < 40 && laid.transparent,
+    JSON.stringify(laid),
+  );
+  // Selected across the lines and copied, the text comes line by line.
+  const copied = await app.exec(
+    `const texts = document.querySelector('.preview .page .texts');
+     const range = document.createRange();
+     range.selectNodeContents(texts);
+     const sel = getSelection();
+     sel.removeAllRanges();
+     sel.addRange(range);
+     const text = sel.toString();
+     sel.removeAllRanges();
+     return text;`,
+  );
+  check(
+    'the text of a page can be selected, and reads line by line',
+    /wrath/i.test(copied) && copied.split('\n').length >= 2 && !/wrath\n\S/.test(copied),
+    JSON.stringify(copied.slice(0, 120)),
+  );
+  check(
+    'the two buttons that bring the views together are there',
+    (await app.exists('.preview header button[aria-label="Go to this place in the text"]')) &&
+      (await app.exists('.preview header button[aria-label="Show where the text is"]')),
+  );
+
+  // --- From the pages to the text ---
+  // The diagram is in view; the place that is looked at is shown in the text.
+  await app.keys(['Control', 'd']);
+  await app.waitFor('.diagram .node');
+  await sleep(300);
+  await app.click('.preview header button[aria-label="Go to this place in the text"]');
+  await app.waitFor('.text-view .section', 5000);
+  await sleep(400);
+  const gone_to = await app.exec(
+    `const s = document.querySelector('.text-view .section.selected');
+     return s ? s.querySelector('.heading')?.textContent?.trim() ?? '(no heading)' : null;`,
+  );
+  check(
+    'from the pages, the text opens at the element that is looked at',
+    gone_to !== null,
+    String(gone_to),
+  );
+  await app.screenshot('preview-1b-gone-to-text');
 
   const source = () => {
     const work = join(app.dataDir, 'work');
@@ -87,7 +170,10 @@ try {
   };
   let typ = source();
   check('the citation is in the style of the map', /Nagy/.test(typ) && /73/.test(typ));
-  check('the note holds its citation', /#footnote\[[^\]]*West/s.test(typ) || /West[^]*155/.test(typ));
+  check(
+    'the note holds its citation',
+    /#footnote\[[^\]]*West/s.test(typ) || /West[^]*155/.test(typ),
+  );
 
   // --- The preview follows the text ---
   await app.click('.text-view .section:last-child .heading');
@@ -107,16 +193,26 @@ try {
   );
   await sleep(4500);
   typ = source();
-  const style = await app.exec(`return document.querySelector('.preview select[aria-label="Reference style"]').value`);
+  const style = await app.exec(
+    `return document.querySelector('.preview select[aria-label="Reference style"]').value`,
+  );
   check('choosing a format takes the reference style that goes with it', style === 'apa', style);
-  check('the preview is in the format chosen', /us-letter/.test(typ) && /\(Nagy, 1979, p\. 73\)/.test(typ), typ.match(/\(Nagy[^)]*\)/)?.[0]);
+  check(
+    'the preview is in the format chosen',
+    /us-letter/.test(typ) && /\(Nagy, 1979, p\. 73\)/.test(typ),
+    typ.match(/\(Nagy[^)]*\)/)?.[0],
+  );
   await app.screenshot('preview-2-apa');
 
   // --- The formats are in groups, and a novel is a book ---
   const groups = await app.exec(
     `return Array.from(document.querySelectorAll('.preview select[aria-label="Document format"] optgroup')).map((g) => g.label)`,
   );
-  check('the formats are offered by kind', ['Fiction', 'Stage and screen', 'Poetry'].every((g) => groups.includes(g)), groups.join(' | '));
+  check(
+    'the formats are offered by kind',
+    ['Fiction', 'Stage and screen', 'Poetry'].every((g) => groups.includes(g)),
+    groups.join(' | '),
+  );
   await app.exec(
     `const s = document.querySelector('.preview select[aria-label="Document format"]');
      s.value = 'novel-book';
@@ -124,7 +220,12 @@ try {
   );
   await sleep(4500);
   typ = source();
-  check('a chapter of a novel begins a new page', /#pagebreak\(weak: true\)\s*= /.test(typ) && /a5/.test(typ));
+  check(
+    'a chapter of a novel begins a new page',
+    // The mark of the element may stand between the page break and the heading.
+    /#pagebreak\(weak: true\)\s*(#metadata\("[^"]*"\) <gk-el-[^>]*>\s*)?= /.test(typ) &&
+      /a5/.test(typ),
+  );
   await app.screenshot('preview-2b-novel');
   await app.exec(
     `const s = document.querySelector('.preview select[aria-label="Document format"]');
@@ -143,7 +244,10 @@ try {
   await app.waitGone('dialog');
   await sleep(4500);
   typ = source();
-  check('author and abstract are on the first page', /A\. Scholar/.test(typ) && /What the wrath of Achilles is/.test(typ));
+  check(
+    'author and abstract are on the first page',
+    /A\. Scholar/.test(typ) && /What the wrath of Achilles is/.test(typ),
+  );
   await app.screenshot('preview-4-with-abstract');
 
   // --- Export, as the dialog would ask for it ---
@@ -178,8 +282,16 @@ try {
     await invoke('document_export_stop', { ticket: 'the-ticket' });
     return JSON.stringify({ outcome: await making, answered, whileMaking });`);
   const { outcome, answered, whileMaking } = JSON.parse(stopping);
-  check('a making can be stopped, and writes nothing', outcome === 'stopped' && !existsSync(stoppedAt), outcome);
-  check('the library answers while a file is made', whileMaking && answered < 1000, `${answered} ms, still making: ${whileMaking}`);
+  check(
+    'a making can be stopped, and writes nothing',
+    outcome === 'stopped' && !existsSync(stoppedAt),
+    outcome,
+  );
+  check(
+    'the library answers while a file is made',
+    whileMaking && answered < 1000,
+    `${answered} ms, still making: ${whileMaking}`,
+  );
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog');
 
@@ -223,7 +335,13 @@ try {
        }) && box.right <= innerWidth && box.left >= 0;`,
     );
     const said = (await app.text('.remarks')).replace(/\s+/g, ' ');
-    check('the remarks are shown whole', fits && /Porson of the Clarendon Press, 1806 is not installed/.test(said) && /has it\.$/.test(said.trim()), said.slice(0, 120));
+    check(
+      'the remarks are shown whole',
+      fits &&
+        /Porson of the Clarendon Press, 1806 is not installed/.test(said) &&
+        /has it\.$/.test(said.trim()),
+      said.slice(0, 120),
+    );
     await app.screenshot('preview-5b-remarks');
     await app.press('Escape');
     await app.waitGone('.remarks');
@@ -260,7 +378,11 @@ try {
   await sleep(300);
   await app.exec(`document.querySelector('.diagram .node .fold')?.click()`);
   drawn = await folding;
-  check('nor when the map changes and the document does not', drawn.length === 0, JSON.stringify(drawn));
+  check(
+    'nor when the map changes and the document does not',
+    drawn.length === 0,
+    JSON.stringify(drawn),
+  );
 
   // Pages enough that a change on the last leaves the first as it is.
   await app.keys(['Control', 'd']);
@@ -275,16 +397,26 @@ try {
     await app.exec(
       `const v = document.querySelector('.text-view .ProseMirror-focused');
        document.execCommand('insertText', false, arguments[0]);`,
-      'The wrath is sung, and the song is of what the wrath brought about among the Achaeans, whose dead were many. '.repeat(9),
+      'The wrath is sung, and the song is of what the wrath brought about among the Achaeans, whose dead were many. '.repeat(
+        9,
+      ),
     );
   }
   await sleep(4000);
   const many = await counted();
   // Only the pages that are looked at are drawn: the first, and those beside them.
-  const first = await app.exec(`return Array.from(document.querySelectorAll('.preview .page')).filter((p) => p.querySelector('img')).map((p) => Number(p.dataset.page))`);
-  check('of many pages, those that are looked at are drawn, and the others have their place', many >= 6 && first.length < many && first[0] === 1, `${many} pages, drawn: ${JSON.stringify(first)}`);
+  const first = await app.exec(
+    `return Array.from(document.querySelectorAll('.preview .page')).filter((p) => p.querySelector('img')).map((p) => Number(p.dataset.page))`,
+  );
+  check(
+    'of many pages, those that are looked at are drawn, and the others have their place',
+    many >= 6 && first.length < many && first[0] === 1,
+    `${many} pages, drawn: ${JSON.stringify(first)}`,
+  );
   // The end of the document is looked at, where the text is about to change.
-  await app.exec(`const p = document.querySelector('.preview .pages'); p.scrollTop = p.scrollHeight;`);
+  await app.exec(
+    `const p = document.querySelector('.preview .pages'); p.scrollTop = p.scrollHeight;`,
+  );
   await app.waitFor(`.preview .page[data-page="${many}"] img`, 10000);
   await sleep(1500);
   const writing = watch(4500);
@@ -298,13 +430,68 @@ try {
   );
   await app.screenshot('preview-6-many-pages');
 
+  // --- From the text to the pages ---
+  // The pages are moved away from where the text is, and brought back to it.
+  await app.exec(`document.querySelector('.preview .pages').scrollTop = 0;`);
+  await sleep(300);
+  await app.click('.text-view .section:first-child .body');
+  await sleep(300);
+  await app.click('.preview header button[aria-label="Show where the text is"]');
+  await sleep(150);
+  const atFirst = await app.exec(
+    `return { top: document.querySelector('.preview .pages').scrollTop, marked: document.querySelector('.preview .page.marked')?.dataset.page ?? null };`,
+  );
+  check(
+    'from the text, the pages show the first element and point its page out',
+    atFirst.marked === '1',
+    JSON.stringify(atFirst),
+  );
+  await app.screenshot('preview-7-shown-where-text-is');
+  await sleep(1200);
+  check('the page is pointed out for a moment only', !(await app.exists('.preview .page.marked')));
+  // The last element, whose text is at the end of the pages.
+  await app.click('.text-view .section:last-child .heading');
+  await sleep(200);
+  await app.press('ArrowDown');
+  await app.keys(['Control', 'End']);
+  await sleep(200);
+  await app.click('.preview header button[aria-label="Show where the text is"]');
+  await sleep(150);
+  const atLast = await app.exec(
+    `return { top: document.querySelector('.preview .pages').scrollTop, marked: document.querySelector('.preview .page.marked')?.dataset.page ?? null };`,
+  );
+  check(
+    'and where the element the text is in begins',
+    atLast.marked !== null && atLast.top !== atFirst.top,
+    JSON.stringify(atLast),
+  );
+  // The pages were moved to the end; the place that is looked at is the last element.
+  await app.exec(
+    `const p = document.querySelector('.preview .pages'); p.scrollTop = p.scrollHeight;`,
+  );
+  await sleep(400);
+  await app.click('.preview header button[aria-label="Go to this place in the text"]');
+  await sleep(400);
+  const lastShown = await app.exec(
+    `const s = document.querySelector('.text-view .section.selected');
+     return s?.querySelector('.heading')?.textContent?.trim() ?? null;`,
+  );
+  check(
+    'from the end of the pages, the text is at the last element',
+    lastShown === 'The word',
+    String(lastShown),
+  );
+
   // --- No copies are written beside the project ---
   await app.click('header button[aria-label="All projects"]');
   await app.waitFor('.card', 5000);
   await sleep(1500);
   const projects = join(app.dataDir, 'projects');
   const id = readdirSync(projects).find((n) => !n.startsWith('.'));
-  check('the project is kept, and no copies of it beside it', existsSync(join(projects, id, 'state.bin')) && !existsSync(join(projects, id, 'maps')));
+  check(
+    'the project is kept, and no copies of it beside it',
+    existsSync(join(projects, id, 'state.bin')) && !existsSync(join(projects, id, 'maps')),
+  );
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

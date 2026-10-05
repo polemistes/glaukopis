@@ -16,7 +16,7 @@ export interface OwnTheme {
 export const STARTS: Record<'light' | 'dark' | 'mellow', OwnTheme> = {
   light: { paper: '#fbfaf7', ink: '#1f2528', accent: '#3f7174', gold: '#b9832a' },
   dark: { paper: '#171b1d', ink: '#e7e9e6', accent: '#7fb5b1', gold: '#dcae5c' },
-  mellow: { paper: '#f7f2ea', ink: '#3b3a45', accent: '#56807a', gold: '#b57f49' },
+  mellow: { paper: '#f3ebe1', ink: '#3a3744', accent: '#4b8c88', gold: '#bf7340' },
 };
 
 type Rgb = [number, number, number];

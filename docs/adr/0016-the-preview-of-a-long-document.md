@@ -74,3 +74,25 @@ was closed. Measured on a document of 186 000 words, which makes 614 pages:
   on after it.
 - `e2e/large.mjs` measures this, and fails where writing would be felt to
   lag.
+
+## Note of 2026-10-05
+
+Beside the drawing, a page is given its text: for each run of text that
+Typst set, where it begins and the y of its baseline, how far it reaches,
+the size of its type and its characters, in points from the top left corner
+of the page as the SVG has them (`TextRun`, in `texts` of every `Page`,
+whether it came with the preview or was asked for afterwards). So the text
+of the pages can be selected and copied as the drawing is read, without
+drawing the pages as text, and without the SVG being searched for its
+glyphs. The pages given at once are at most `MOST_PAGES`, so the text given
+with them is small beside the drawing.
+
+With the preview come the places of the elements as well: for each section
+that was made from an element, the page it begins on and the y in points
+from the top of that page (`Place`, in `places` of `Preview`), in the order
+of the text. These keep the text and the pages side by side. They are found
+by a mark Pandoc writes before each such section, after the break of the
+page before it where there is one: `#metadata("ID") <gk-el-ID>`, which
+Typst sets nothing of, and which the document that was set is asked about
+afterwards (`typeset::places`). The mark is written for Typst alone; the
+other formats are given nothing of it.

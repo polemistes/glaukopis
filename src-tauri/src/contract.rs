@@ -17,7 +17,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use glaukopis_core::export::tools::{Tool, Tools};
-use glaukopis_core::export::{Page, Preview};
+use glaukopis_core::export::{Page, Place, Preview, TextRun};
 use glaukopis_core::formats::Formats;
 use glaukopis_core::import::{self, bibfile};
 use glaukopis_core::library::{Library, attachments, draft_from_source};
@@ -124,12 +124,17 @@ fn what_is_sent_is_what_the_interface_declares() {
     };
     let preview = Preview {
         count: 2,
-        pages: vec![Page { number: 1, svg: "<svg/>".into() }],
+        pages: vec![Page {
+            number: 1,
+            svg: "<svg/>".into(),
+            texts: vec![TextRun { x: 72.0, baseline: 100.5, width: 40.25, size: 11.0, text: "Wrath".into() }],
+        }],
         width: 595.0,
         height: 842.0,
         warnings: vec!["A remark.".into()],
         missing: vec!["gone".into()],
         substitute: Some("Libertinus Serif".into()),
+        places: vec![Place { element: "e1".into(), page: 1, y: 72.0 }],
     };
 
     let mut values: Vec<(&str, &str, &str, Value)> = Vec::new();

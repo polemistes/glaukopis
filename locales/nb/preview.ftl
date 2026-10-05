@@ -18,6 +18,10 @@ preview-change-format-hint = Side, skrift, avstand, overskrifter
 preview-change-style = Endre denne referansestilen …
 preview-change-style-hint = Etter et forlags ønsker
 preview-details = Tittel, forfattere, sammendrag
+# Viser i teksten elementet som står der i sidene det ses på.
+preview-go-to-text = Gå til dette stedet i teksten
+# Flytter sidene dit elementet teksten står i, begynner.
+preview-show-text = Vis hvor teksten er
 preview-hide = Skjul forhåndsvisningen
 # Når et format som hører sammen med en referansestil velges, tas stilen med.
 preview-style-taken = Referansestilen er nå { $style }

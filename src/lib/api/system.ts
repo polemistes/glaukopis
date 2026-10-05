@@ -107,7 +107,7 @@ export interface Settings {
 
 export const defaultSettings: Settings = {
   theme: 'system',
-  ownTheme: { paper: '#f7f2ea', ink: '#3b3a45', accent: '#56807a', gold: '#b57f49' },
+  ownTheme: { paper: '#f3ebe1', ink: '#3a3744', accent: '#4b8c88', gold: '#bf7340' },
   language: 'system',
   textLanguage: 'system',
   textSize: 17,
