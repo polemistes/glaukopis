@@ -194,8 +194,16 @@ function markAll(el: HTMLElement, s: Shown) {
   const languages = new Set<string>();
   let length = 0;
   let lastBlock: Element | null = null;
-  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (n.nodeType !== Node.TEXT_NODE) {
+      // A break in the line parts the words on either side of it; other elements hold text nodes, which come on their own.
+      if ((n as Element).tagName === 'BR') {
+        runs.push({ text: '\n', language: null });
+        length += 1;
+      }
+      continue;
+    }
     const node = n as Text;
     const parent = node.parentElement;
     if (!parent) continue;

@@ -959,7 +959,8 @@ and Jupyter notebooks can be chosen in the dialog for files as well. All but
 plain text are read by Pandoc. Of plain text every line break is kept: a
 lone one is a break within the paragraph, an empty line parts paragraphs,
 and each further empty line is an empty paragraph; a file without any empty
-line is read as a paragraph to a line.
+line is read as a paragraph to a line. In Markdown too a line break is a
+break, and an empty line parts paragraphs; several empty lines count as one.
 
 What becomes of what is in the document:
 

@@ -172,7 +172,10 @@ impl Format {
         Some(match self {
             Format::Docx => "docx",
             Format::Odt => "odt",
-            Format::Markdown => "markdown",
+            // A line break in the text stays a break, as in a text file: what
+            // is written in Markdown by hand is seldom reflowed, and what is
+            // reflowed loses nothing by keeping its lines.
+            Format::Markdown => "markdown+hard_line_breaks",
             Format::Html => "html",
             Format::Latex => "latex",
             Format::Rtf => "rtf",

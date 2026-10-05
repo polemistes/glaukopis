@@ -982,7 +982,10 @@ fn markdown_with_everything_in_it() {
         }
     );
     assert_eq!(content[4], text(" knows and "));
-    assert_eq!(content[6], text(" does not. It is "));
+    // The line was wrapped in the file: the break stays.
+    assert_eq!(content[6], text(" does not."));
+    assert_eq!(content[7], Inline::Break);
+    assert_eq!(content[8], text("It is "));
     let found = found_in(content);
     assert_eq!(found.len(), 1);
     assert_eq!(found[0].0, "[@nokey, 12]");
@@ -1462,6 +1465,17 @@ Text between.
     // What the second shows was said in the words that are said of it.
     let Block::Figure { alt, .. } = &blocks[6] else { panic!() };
     assert_eq!(alt, "");
+
+    // A line break in Markdown is a break, as in a text file.
+    fs::write(desk.join("lines.md"), "One line\nof a paragraph.\n\nAnother.\n").unwrap();
+    let read = s.read(&desk.join("lines.md")).unwrap();
+    assert_eq!(
+        read.sections[0].blocks,
+        vec![
+            paragraph(vec![text("One line"), Inline::Break, text("of a paragraph.")]),
+            paragraph(vec![text("Another.")])
+        ]
+    );
 
     // The same in Markdown, where nothing says what a paragraph is but its shape and its place.
     fs::write(

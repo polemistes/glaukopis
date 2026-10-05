@@ -147,7 +147,9 @@ function runs(block: Node, language: string): { text: string; language: string |
   const out: { text: string; language: string | null }[] = [];
   block.forEach((child) => {
     if (!child.isText) {
-      out.push({ text: NOT_TEXT.repeat(child.nodeSize), language: null });
+      // A break in the line parts the words on either side of it, as a blank does.
+      const sign = child.type.name === 'hard_break' ? ' ' : NOT_TEXT;
+      out.push({ text: sign.repeat(child.nodeSize), language: null });
       return;
     }
     const text = child.text ?? '';
