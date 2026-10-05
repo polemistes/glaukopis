@@ -363,11 +363,13 @@ What this settles:
 - The settings are a window over whatever is in view, from the gear in the
   rail or Ctrl+,; closed, they leave the view as it was. The old place,
   `#/settings`, opens the window over the projects.
-- Dragging an element with Shift moves it alone, wherever it is dropped: what
-  is under it stays where it stood, under the element's old parent. (First
-  read as mattering only on a drop onto another element; put right the same
-  day, before the packages were tried.) The element dragged is seen through,
-  and the element it would go into is ringed plainly.
+- Dragging an element with Shift moves it without moving its subelements,
+  which stay where they stood and stay its own; nothing is ever disconnected
+  by a drag. Dropped onto another element, it goes under that one with all
+  that is under it, Shift or not. (Read twice wrongly the same day, as
+  letting the subelements go to the old parent; put right the third time,
+  before the packages were tried.) The element dragged is seen through, and
+  the element it would go into is ringed plainly.
 - A new project or map opens on its text the first time.
 - The text drawn without an editor takes away marks it did not make: WebKit
   gives a text set again by `innerHTML` the nodes it parsed before, marks

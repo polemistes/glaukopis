@@ -120,14 +120,12 @@
 
   const overThis = $derived(!!dragged && drag.welcome && drag.quiet);
 
+  /** The map as it rests, nothing held: where everything stands before a drag moves it. */
+  const resting = $derived(layout(tree, project.nodes, sizes));
+
   const held = $derived.by(() => {
-    const out = new Map<string, Position>();
-    if (!dragged || !overThis) return out;
-    const world = toWorld(drag.x, drag.y);
-    dragged.ids.forEach((id, i) => {
-      out.set(id, { x: world.x - dragged.grab.x, y: world.y - dragged.grab.y + i * 52 });
-    });
-    return out;
+    if (!dragged || !overThis) return new Map<string, Position>();
+    return heldAt(dragged, toWorld(drag.x, drag.y), drag.alone);
   });
 
   const lifted = $derived.by(() => {
@@ -149,12 +147,25 @@
     return hit(world, p.kind === 'elements' ? lifted : new Set());
   });
 
-  /** Where the dragged elements are held, with the pointer at `world`: as `held` has them while the drag goes on. */
-  function heldAt(data: ElementsPayload, world: Position): Map<string, Position> {
+  /**
+   * Where the dragged elements are held, with the pointer at `world`. With
+   * Shift (`alone`), what is under them is held where it stood: the element
+   * moves without moving its subelements, which stay its own.
+   */
+  function heldAt(data: ElementsPayload, world: Position, alone: boolean): Map<string, Position> {
     const out = new Map<string, Position>();
     data.ids.forEach((id, i) => {
       out.set(id, { x: world.x - data.grab.x, y: world.y - data.grab.y + i * 52 });
     });
+    if (alone) {
+      for (const id of data.ids) {
+        for (const d of subtree(tree, id)) {
+          if (out.has(d)) continue;
+          const p = resting.placed.get(d);
+          if (p) out.set(d, { x: p.x, y: p.y });
+        }
+      }
+    }
     return out;
   }
 
@@ -346,8 +357,9 @@
       return;
     }
 
-    // Ctrl adds to the selection; Shift, with a drag, takes the element alone,
-    // and without one adds to the selection as well, once the pointer is up.
+    // Ctrl adds to the selection; Shift, with a drag, moves the element without
+    // moving its subelements, and without one adds to the selection as well,
+    // once the pointer is up.
     const additive = event.ctrlKey || event.metaKey;
     const alone = event.shiftKey && !additive;
     const was = selected.has(id);
@@ -504,31 +516,6 @@
     project.move([id], parent, at, { pos: rel });
   }
 
-  /**
-   * Keeps the children of an element where they are while it is moved to
-   * `to`: each child's place is said from its parent, so it is said anew.
-   */
-  /**
-   * Lets an element go alone: what is under it takes its place under its
-   * parent, each child where it stands, so that nothing else moves.
-   */
-  function release(id: string) {
-    const children = tree.children.get(id) ?? [];
-    if (!children.length) return;
-    const parent = tree.parent.get(id) ?? null;
-    const list = parent ? (tree.children.get(parent) ?? []) : tree.loose;
-    const at = list.indexOf(id) + 1;
-    const base = parent ? lay.placed.get(parent) : null;
-    // Where each stands is read before any is moved: the map is laid out anew after each move.
-    const spots = children.map((child) => {
-      const p = lay.placed.get(child);
-      return p ? { x: p.x - (base?.x ?? 0), y: p.y - (base?.y ?? 0) } : null;
-    });
-    children.forEach((child, i) => {
-      project.move([child], parent, at + i, { pos: spots[i], map: mapId });
-    });
-  }
-
   function ondrop(event: DropEvent) {
     const { payload } = event;
     const world = toWorld(event.x, event.y);
@@ -570,20 +557,28 @@
     // drag has ended, what was lifted is laid out again, and the map may have
     // shifted under the pointer by then. So the map is laid out once more as
     // it was, with the elements held where they were dropped.
-    const during = local ? layout(tree, project.nodes, sizes, heldAt(data, world)) : lay;
+    const during = local
+      ? layout(tree, project.nodes, sizes, heldAt(data, world, event.alone))
+      : lay;
     const target = hit(world, except, during);
 
     project.checkpoint();
-    // With Shift, the element goes alone, wherever it is dropped: what is
-    // under it stays where it stood, under the element's old parent.
-    if (event.alone && local) for (const id of data.ids) release(id);
     let result: string[] = [];
     if (target) {
+      // Under another element, with all that is under it, Shift or not.
       result = project.move(data.ids, target, undefined, { pos: null });
     } else if (local) {
       data.ids.forEach((id, i) => {
         const to = { x: world.x - data.grab.x, y: world.y - data.grab.y + i * 52 };
+        // With Shift, what is under the element stays where it stood: each
+        // child's place is said from its parent, so it is said anew.
+        const kept = event.alone
+          ? (tree.children.get(id) ?? []).map((c) => ({ c, at: during.placed.get(c) }))
+          : [];
         placeAt(id, to);
+        for (const { c, at } of kept) {
+          if (at) project.setPosition(c, { x: at.x - to.x, y: at.y - to.y });
+        }
       });
       result = data.ids;
     } else {

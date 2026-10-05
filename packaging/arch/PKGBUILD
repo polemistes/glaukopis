@@ -11,7 +11,7 @@ pkgbase=glaukopis
 pkgname=(glaukopis glaukopis-server
   glaukopis-dictionaries-en glaukopis-dictionaries-nb glaukopis-dictionaries-nn)
 pkgver=0.1.0
-pkgrel=14
+pkgrel=15
 arch=(x86_64 aarch64)
 # The program and the owl. The dictionaries have licences of their own, said
 # by their packages (see resources/dictionaries/README.md).

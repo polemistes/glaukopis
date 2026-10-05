@@ -253,7 +253,7 @@ try {
   );
   check('and the elements are told as a tree to those who hear them', level === '3', level);
 
-  // --- Shift-drag moves an element alone: what was under it takes its place ---
+  // --- Dropped on another element, with Shift or without, an element goes under it with all that is under it ---
   const levelOf = (name) =>
     app.exec(
       `const e = Array.from(document.querySelectorAll('.diagram [role="treeitem"]')).find((e) => e.textContent.includes(${JSON.stringify(name)})); return e ? e.getAttribute('aria-level') : null`,
@@ -266,8 +266,8 @@ try {
   await sleep(500);
   const alone = [await levelOf('Reception'), await levelOf('Virgil'), await levelOf('Milton')];
   check(
-    'dragged with Shift onto another element, an element goes alone, and what was under it takes its place',
-    alone.join(',') === '3,2,2',
+    'dragged with Shift onto another element, an element goes under it with all that is under it',
+    alone.join(',') === '3,4,4',
     alone.join(','),
   );
   await app.keys(['Control', 'z']);
