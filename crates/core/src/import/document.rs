@@ -167,6 +167,14 @@ impl Format {
         })
     }
 
+    /// Whether a newline in the file is a break in the line, as in a text
+    /// file: in the formats of notes written by hand, which are seldom
+    /// reflowed, and lose nothing by keeping their lines. Markdown keeps its
+    /// lines by Pandoc's own means (`hard_line_breaks`).
+    fn keeps_lines(self) -> bool {
+        matches!(self, Format::Org | Format::Rst)
+    }
+
     /// What Pandoc calls it. Nothing for what is read without Pandoc.
     fn reader(self) -> Option<&'static str> {
         Some(match self {
@@ -414,7 +422,7 @@ pub fn read(
             let value: Value = serde_json::from_slice(&json).map_err(|e| {
                 Error::invalid(tr!("core-import-document-pandoc-unreadable", file = &file, error = e.to_string()))
             })?;
-            convert_with(&value, &stem, &prepared.properties, &prepared.made, keys, &mut take_in)
+            convert_with(&value, &stem, &prepared.properties, &prepared.made, keys, &mut take_in, format.keeps_lines())
         }
     };
     if stop.load(Ordering::Relaxed) {
@@ -446,5 +454,5 @@ pub fn forget(pictures: &Pictures, hashes: &[String]) {
 /// Turns what Pandoc has read into a document in parts. `stem` is what the
 /// file is called, without its ending: the title where the document has none.
 pub fn convert(doc: &Value, stem: &str, properties: &Properties, keys: &Keys, take_in: &mut TakeIn) -> Imported {
-    convert_with(doc, stem, properties, &made::Made::default(), keys, take_in)
+    convert_with(doc, stem, properties, &made::Made::default(), keys, take_in, false)
 }

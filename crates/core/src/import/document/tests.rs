@@ -1477,6 +1477,18 @@ Text between.
         ]
     );
 
+    // And in Org, which Pandoc reads with a newline as a blank: the break stays here too.
+    fs::write(desk.join("lines.org"), "One line\nof a paragraph.\n\nAnother.\n").unwrap();
+    let read = s.read(&desk.join("lines.org")).unwrap();
+    assert_eq!(read.kind, "Org");
+    assert_eq!(
+        read.sections[0].blocks,
+        vec![
+            paragraph(vec![text("One line"), Inline::Break, text("of a paragraph.")]),
+            paragraph(vec![text("Another.")])
+        ]
+    );
+
     // The same in Markdown, where nothing says what a paragraph is but its shape and its place.
     fs::write(
             desk.join("shape.md"),
@@ -1852,7 +1864,7 @@ fn signs_that_do_not_end_and_signs_in_a_name() {
         ],
     ))
     .unwrap();
-    let read = convert_with(&value, "the file", &Properties::default(), &made, &none, &mut a_picture);
+    let read = convert_with(&value, "the file", &Properties::default(), &made, &none, &mut a_picture, false);
     assert_eq!(read.title, vec![text("One (Nagy 1979)")]);
     let found = all_found(&read);
     assert_eq!(found.len(), 1);

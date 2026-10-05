@@ -60,6 +60,8 @@ pub(super) struct Reading<'a, 'b> {
     /// The mark of the citation that the text now read is of: it stands
     /// between the signs that were set around it before Pandoc read.
     within: Option<Value>,
+    /// Whether a newline in the file is a break in the line, as in a text file.
+    keeps_lines: bool,
     /// What the file says of the works that a program cites in it, by what
     /// the citations call them, where Pandoc read citations that a program
     /// made. Tags are not read in such a file.
@@ -351,7 +353,9 @@ impl Reading<'_, '_> {
             let c = inner(v);
             match tag(v) {
                 "Str" => self.text(c.as_str().unwrap_or(""), marks, out),
-                "Space" | "SoftBreak" => self.push(out, " ", marks),
+                "Space" => self.push(out, " ", marks),
+                "SoftBreak" if self.keeps_lines => out.push(Piece::Inline(Inline::Break)),
+                "SoftBreak" => self.push(out, " ", marks),
                 "LineBreak" => out.push(Piece::Inline(Inline::Break)),
                 "Emph" => self.inlines(list(c), &with(marks, "em", Value::Bool(true)), out),
                 "Strong" => self.inlines(list(c), &with(marks, "strong", Value::Bool(true)), out),
@@ -1095,6 +1099,8 @@ pub(super) fn convert_with(
     made: &made::Made,
     keys: &Keys,
     take_in: &mut TakeIn,
+    // Whether a newline in the file is a break in the line, as in a text file.
+    keeps_lines: bool,
 ) -> Imported {
     let empty = json!({});
     let meta = doc.get("meta").unwrap_or(&empty);
@@ -1108,6 +1114,7 @@ pub(super) fn convert_with(
         naming: false,
         made: &made.citations,
         within: None,
+        keeps_lines,
         told: (made.endnote > 0).then(|| told_of(meta)),
         hoisted: Vec::new(),
         tally: Tally::default(),
