@@ -401,6 +401,9 @@ What this settles:
 - `packaging/arch/release/PKGBUILD` builds from the archive of the release,
   with its checksum; it is the PKGBUILD to publish. The one beside it goes
   on building from the tree. Neither goes to the AUR yet.
-- Packages for other distributions wait: deb and rpm are near at hand, as
-  the Tauri bundler makes them, but must bring Pandoc and Tesseract along;
-  Flatpak would reach every distribution with one build.
+- A deb and an rpm, for Ubuntu 24.04 and Debian 13 or newer and for Fedora
+  40 or newer, are made by the installers workflow beside the installers,
+  on an Ubuntu runner, and are in the release. They bring Pandoc along, since
+  the Pandoc of Debian and Ubuntu is older than the application asks for,
+  and recommend Tesseract from the system's packages, which has it as new as
+  any. Flatpak, which would reach every distribution with one build, waits.

@@ -291,9 +291,42 @@ sudo pacman -U glaukopis-0.1.0-16-x86_64.pkg.tar.zst \
       <p class="aside">
         The dictionaries are optional, and Glaukopis finds those of Hunspell as well
         (<code>hunspell-en_us</code>, <code>hunspell-en_gb</code>; <code>hunspell-nb</code> and
-        <code>hunspell-nn</code> from the AUR), which serve for other languages too. Other Linux
-        distributions are not covered yet.
+        <code>hunspell-nn</code> from the AUR), which serve for other languages too.
       </p>
+
+      <h2>Debian, Ubuntu and Fedora</h2>
+      <p>
+        One package each for <code>apt</code> and <code>dnf</code>, x86_64. Pandoc, the dictionaries
+        of spelling and the fonts of Typst come with them. Tesseract, for reading scans and
+        pictures, is recommended from the system's own packages, so <code>apt</code> and
+        <code>dnf</code> install it along unless told not to; the data of other languages are
+        packages beside it, such as <code>tesseract-ocr-nor</code> or
+        <code>tesseract-langpack-nor</code> for Norwegian. Other distributions, and older releases
+        of these, are not covered yet.
+      </p>
+      <ul class="files">
+        <li>
+          <a class="name" href="Glaukopis_0.1.0_amd64.deb">Glaukopis_0.1.0_amd64.deb</a>
+          <span class="size">73 MB</span>
+          <div class="what">
+            <p>
+              For Ubuntu 24.04 or newer and Debian 13 or newer. Install with
+              <code>sudo apt install ./Glaukopis_0.1.0_amd64.deb</code>, from the folder it is in.
+            </p>
+          </div>
+        </li>
+        <li>
+          <a class="name" href="Glaukopis-0.1.0-1.x86_64.rpm">Glaukopis-0.1.0-1.x86_64.rpm</a>
+          <span class="size">73 MB</span>
+          <div class="what">
+            <p>
+              For Fedora 40 or newer. Install with
+              <code>sudo dnf install ./Glaukopis-0.1.0-1.x86_64.rpm</code>, from the folder it is
+              in.
+            </p>
+          </div>
+        </li>
+      </ul>
 
       <h2>Checking what you downloaded</h2>
       <p>

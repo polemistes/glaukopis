@@ -12,6 +12,7 @@ make the checksums again, from `packaging/`:
 ```
 (sha256sum arch/*-N-*.pkg.tar.zst installers/glaukopis-windows/msi/*.msi \
   installers/glaukopis-windows/nsis/*.exe installers/glaukopis-macos/dmg/*.dmg \
+  installers/glaukopis-linux/deb/*.deb installers/glaukopis-linux/rpm/*.rpm \
   | sed 's#  .*/#  #') > web/packages/SHA256SUMS
 ```
 

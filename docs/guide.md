@@ -1633,7 +1633,10 @@ the data for reading English, Norwegian, Danish, Swedish, German, French,
 Italian, Spanish, Latin, Greek and Ancient Greek; so do the dictionaries of
 spelling and the fonts that come with Typst. On Linux these come from the
 packages of the system instead: on Arch, Pandoc and the font Libertinus are
-installed with Glaukopis, and the rest is optional, said by the package.
+installed with Glaukopis, and the rest is optional, said by the package. The
+packages for Debian, Ubuntu and Fedora stand between: Pandoc, the
+dictionaries and the fonts come with them, and Tesseract is recommended from
+the system's packages, so that `apt` and `dnf` install it along.
 
 The installers for Windows and macOS are not signed. On Windows, the
 installer is let run with **More info** › **Run anyway**. On macOS, open
