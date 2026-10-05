@@ -387,3 +387,20 @@ What this settles:
 - Opening the changes leaves the view as it is. Going on to a change from
   the panel turns the pane of its map to the text, where the changes are
   shown.
+
+## 2026-10-05 — the first release, to test
+
+> I am putting out the packages for people to test now. [...] I would also like to put the PKGBUILD out, but it should then take the code from github. We should perhaps make this a release?
+
+What this settles:
+
+- Version 0.1.0 is tagged `v0.1.0` on the commit that was tested, and is a
+  pre-release on GitHub with the Arch packages, the installers for Windows
+  and macOS and their checksums, the same files as on the page of packages
+  put out for testing (`packaging/web`).
+- `packaging/arch/release/PKGBUILD` builds from the archive of the release,
+  with its checksum; it is the PKGBUILD to publish. The one beside it goes
+  on building from the tree. Neither goes to the AUR yet.
+- Packages for other distributions wait: deb and rpm are near at hand, as
+  the Tauri bundler makes them, but must bring Pandoc and Tesseract along;
+  Flatpak would reach every distribution with one build.

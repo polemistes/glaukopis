@@ -32,6 +32,17 @@ here they are packages (`ttf-dejavu` for code, among the optional ones).
 There is no package of New Computer Modern in the repositories; `otf-latin-modern`
 stands in for it.
 
+## The PKGBUILD of a release
+
+`release/PKGBUILD` builds the same five packages from the archive of a
+release on GitHub instead of from the tree: it names the release's tag and
+the checksum of its archive. It is the PKGBUILD to publish, with a release or
+in the AUR; `makepkg -s` in `release/` builds it as any PKGBUILD. When a
+release is made, set `pkgver`, put back `pkgrel` to 1 or carry it on, and
+put in the checksum of the new archive, `sha256sum` of what
+`https://github.com/polemistes/glaukopis/archive/refs/tags/vX.Y.Z.tar.gz`
+gives.
+
 The building is done in `src/` and the packages are put together in `pkg/`,
 both in this directory. Nothing is built in the tree itself. The first
 building takes some minutes, and some gigabytes of disk while it lasts.

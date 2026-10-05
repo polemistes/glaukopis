@@ -1,0 +1,168 @@
+# Maintainer: Robert Emil Berge <post@robertemilberge.no>
+#
+# Builds the application, the collaboration server and the dictionaries of
+# spelling from the archive of a release on GitHub. This is the PKGBUILD to
+# publish; the one in the directory above builds from the tree it is in.
+
+pkgbase=glaukopis
+pkgname=(glaukopis glaukopis-server
+  glaukopis-dictionaries-en glaukopis-dictionaries-nb glaukopis-dictionaries-nn)
+pkgver=0.1.0
+pkgrel=16
+arch=(x86_64 aarch64)
+# The program and the owl. The dictionaries have licences of their own, said
+# by their packages (see resources/dictionaries/README.md).
+license=(GPL-3.0-or-later CC-BY-SA-3.0)
+makedepends=(cargo nodejs pnpm webkit2gtk-4.1 gtk3 openssl sqlite)
+checkdepends=(pandoc-cli typst tesseract tesseract-data-eng)
+# Link-time optimisation is set in Cargo.toml; that of makepkg breaks the
+# building of the C that some crates bring along.
+options=(!lto !debug)
+url='https://github.com/polemistes/glaukopis'
+source=("$pkgbase-$pkgver.tar.gz::https://github.com/polemistes/glaukopis/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('37a356d4cef0bc6a2ab1a92e34cd34c2a36b9ef8be5d5b3e581dd34ba9676e45')
+
+prepare() {
+  cd "$srcdir/$pkgbase-$pkgver"
+  export CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
+  pnpm install --frozen-lockfile
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+  cd "$srcdir/$pkgbase-$pkgver"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  pnpm build
+  # Without the fonts that come with Typst: here they are packages, which
+  # the application depends on (otf-libertinus) or may have (ttf-dejavu).
+  cargo build --release --frozen -p glaukopis --no-default-features --features custom-protocol
+  cargo build --release --frozen -p glaukopis-server
+}
+
+check() {
+  cd "$srcdir/$pkgbase-$pkgver"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  pnpm test
+  # The core as it is packaged: without the fonts of Typst.
+  cargo test --release --frozen -p glaukopis-core -p glaukopis-server --no-default-features
+}
+
+package_glaukopis() {
+  pkgdesc='A hub for scholarly work: references, ideas in mind maps, writing, and the manuscript'
+  # Libertinus is the serif Typst falls back on, the first that stands in for
+  # a font the format asks for that is not installed, and has a font for
+  # mathematics, which Typst sets no equation without.
+  depends=(webkit2gtk-4.1 gtk3 glib2 openssl sqlite gcc-libs glibc hicolor-icon-theme pandoc-cli fontconfig
+           otf-libertinus)
+  optdepends=(
+    'glaukopis-dictionaries-en: to check the spelling of English, American and British'
+    'glaukopis-dictionaries-nb: to check the spelling of Norwegian Bokmål'
+    'glaukopis-dictionaries-nn: to check the spelling of Norwegian Nynorsk'
+    'hunspell-en_us: or the dictionary of Hunspell for American English, which Glaukopis finds as well'
+    'hunspell-en_gb: or the dictionary of Hunspell for British English, which Glaukopis finds as well'
+    'hunspell-nb: or the dictionary of Hunspell for Bokmål, which Glaukopis finds as well'
+    'hunspell-nn: or the dictionary of Hunspell for Nynorsk, which Glaukopis finds as well'
+    'tesseract: to read text in scans and pictures'
+    'tesseract-data-eng: to read English in scans and pictures'
+    'texlive-luatex: for PDF set by LaTeX'
+    'texlive-latexextra: for PDF set by LaTeX'
+    'texlive-fontsrecommended: for PDF set by LaTeX'
+    'librsvg: for drawings (SVG) in PDF set by LaTeX and in DOCX'
+    'ttf-dejavu: for code set in letters of equal width in the preview and in PDF'
+    'otf-latin-modern: for the font of LaTeX, Computer Modern, in the preview and in PDF'
+    'libreoffice-fresh: to open what is exported as ODT or DOCX'
+    'tesseract-data-nor: to read Norwegian in scans and pictures'
+    'tesseract-data-dan: to read Danish in scans and pictures'
+    'tesseract-data-swe: to read Swedish in scans and pictures'
+    'tesseract-data-deu: to read German in scans and pictures'
+    'tesseract-data-fra: to read French in scans and pictures'
+    'tesseract-data-ita: to read Italian in scans and pictures'
+    'tesseract-data-spa: to read Spanish in scans and pictures'
+    'tesseract-data-ell: to read Greek in scans and pictures'
+    'tesseract-data-grc: to read Ancient Greek in scans and pictures'
+    'tesseract-data-lat: to read Latin in scans and pictures'
+    'poppler: to read the pages of PDFs that cannot be drawn otherwise'
+  )
+
+  cd "$srcdir/$pkgbase-$pkgver"
+  install -Dm755 "$srcdir/target/release/glaukopis" "$pkgdir/usr/bin/glaukopis"
+
+  install -d "$pkgdir/usr/share/glaukopis"
+  cp -r resources "$pkgdir/usr/share/glaukopis/resources"
+  # The dictionaries are packages of their own, put in the same place.
+  rm -r "$pkgdir/usr/share/glaukopis/resources/dictionaries"
+  find "$pkgdir/usr/share/glaukopis" -type d -exec chmod 755 {} +
+  find "$pkgdir/usr/share/glaukopis" -type f -exec chmod 644 {} +
+
+  install -Dm644 packaging/linux/org.glaukopis.app.desktop \
+    "$pkgdir/usr/share/applications/org.glaukopis.app.desktop"
+  install -Dm644 packaging/linux/org.glaukopis.app.metainfo.xml \
+    "$pkgdir/usr/share/metainfo/org.glaukopis.app.metainfo.xml"
+  local size
+  for size in 16 24 32 48 64 128 256 512; do
+    install -Dm644 "src-tauri/icons/${size}x${size}.png" \
+      "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/org.glaukopis.app.png"
+  done
+
+  install -Dm644 docs/guide.md "$pkgdir/usr/share/doc/glaukopis/guide.md"
+  # The owl has a licence of its own.
+  install -Dm644 resources/brand/README.md "$pkgdir/usr/share/licenses/glaukopis/the-owl.md"
+  install -Dm644 resources/brand/LICENSE "$pkgdir/usr/share/licenses/glaukopis/CC-BY-SA-3.0.txt"
+}
+
+# A package of dictionaries: its files into the folder the application looks
+# in, beside the dictionaries of the system which it looks in as well; and
+# what their licences ask to go with them under the licences of the package.
+_dictionaries() {
+  local name=$1 file
+  shift
+  cd "$srcdir/$pkgbase-$pkgver/resources/dictionaries"
+  for file in "$@"; do
+    case $file in
+      *.aff | *.dic) install -Dm644 "$file" "$pkgdir/usr/share/glaukopis/resources/dictionaries/$file" ;;
+      *) install -Dm644 "$file" "$pkgdir/usr/share/licenses/$name/$file" ;;
+    esac
+  done
+}
+
+package_glaukopis-dictionaries-en() {
+  pkgdesc='Dictionaries of English, American and British, for the spelling in Glaukopis'
+  arch=(any)
+  # SCOWL and Ispell for the American, the LGPL for the British.
+  license=(LicenseRef-SCOWL LGPL-2.1-or-later)
+  _dictionaries glaukopis-dictionaries-en en_US.aff en_US.dic en_GB.aff en_GB.dic \
+    README.md README_en_US.txt README_en_GB.txt LGPL-2.1.txt license.txt
+}
+
+package_glaukopis-dictionaries-nb() {
+  pkgdesc='Dictionary of Norwegian Bokmål for the spelling in Glaukopis'
+  arch=(any)
+  # The words of Bokmålsordboka and Nynorskordboka, with the inflections of Norsk ordbank; the rules of spell-norwegian.
+  license=(CC-BY-4.0 GPL-2.0-only)
+  _dictionaries glaukopis-dictionaries-nb nb_NO.aff nb_NO.dic README.md README_NO.txt COPYING
+}
+
+package_glaukopis-dictionaries-nn() {
+  pkgdesc='Dictionary of Norwegian Nynorsk for the spelling in Glaukopis'
+  arch=(any)
+  # The words of Bokmålsordboka and Nynorskordboka, with the inflections of Norsk ordbank; the rules of spell-norwegian.
+  license=(CC-BY-4.0 GPL-2.0-only)
+  _dictionaries glaukopis-dictionaries-nn nn_NO.aff nn_NO.dic README.md README_NO.txt COPYING
+}
+
+package_glaukopis-server() {
+  pkgdesc='The collaboration server of Glaukopis: keeps shared projects the same for everyone'
+  license=(GPL-3.0-or-later)
+  depends=(gcc-libs glibc)
+  optdepends=('caddy: to encrypt what is sent to and from the server')
+  backup=(etc/glaukopis-server.conf)
+
+  cd "$srcdir/$pkgbase-$pkgver"
+  install -Dm755 "$srcdir/target/release/glaukopis-server" "$pkgdir/usr/bin/glaukopis-server"
+  install -Dm644 packaging/server/glaukopis-server.service \
+    "$pkgdir/usr/lib/systemd/system/glaukopis-server.service"
+  install -Dm640 packaging/server/glaukopis-server.conf "$pkgdir/etc/glaukopis-server.conf"
+  install -Dm644 packaging/server/Caddyfile.example \
+    "$pkgdir/usr/share/doc/glaukopis-server/Caddyfile.example"
+  install -Dm644 docs/server.md "$pkgdir/usr/share/doc/glaukopis-server/server.md"
+}
