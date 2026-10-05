@@ -315,6 +315,50 @@ export function updateCitation(pos: number, items: CiteItem[], mode: CiteMode): 
 }
 
 /**
+ * Parts the words before and after from the citation at a position: they
+ * become text of the line, and each work a citation of its own, with its
+ * place in the work and nothing else, so that a note written as one long
+ * citation reads as text with citations in it. Works that have no words
+ * between them are parted by a semicolon, as the styles part them.
+ */
+export function splitCitation(pos: number): Command {
+  return (state, dispatch) => {
+    const node = state.doc.nodeAt(pos);
+    if (!node || node.type.name !== 'citation') return false;
+    const items = node.attrs.items as CiteItem[];
+    const mode = node.attrs.mode as CiteMode;
+    if (!items.some((i) => i.prefix?.trim() || i.suffix?.trim()) && items.length < 2) return false;
+    if (dispatch) {
+      const marks = state.doc.resolve(pos).marks();
+      const text = (words: string) => state.schema.text(words, marks);
+      const out: Node[] = [];
+      let last: 'words' | 'citation' | null = null;
+      items.forEach((item, i) => {
+        const before = item.prefix?.trim() ?? '';
+        const after = item.suffix?.trim() ?? '';
+        if (i > 0 && !before && last === 'citation') out.push(text('; '));
+        if (before) out.push(text(i > 0 && last === 'citation' ? `; ${before} ` : `${before} `));
+        const own: CiteItem = { id: item.id };
+        if (item.locator?.trim()) own.locator = item.locator.trim();
+        if (item.label && item.label !== 'page' && own.locator) own.label = item.label;
+        if (item.suppressAuthor) own.suppressAuthor = true;
+        out.push(
+          node.type.create({ items: [own], mode: i === 0 ? mode : 'normal' }, undefined, marks),
+        );
+        last = 'citation';
+        if (after) {
+          // Words that begin with a sign of their own stand close to the citation.
+          out.push(text(/^[,;:.!?)]/.test(after) ? after : ` ${after}`));
+          last = 'words';
+        }
+      });
+      dispatch(state.tr.replaceWith(pos, pos + node.nodeSize, Fragment.from(out)).scrollIntoView());
+    }
+    return true;
+  };
+}
+
+/**
  * Puts a note at the cursor. Text that is selected becomes the text of the
  * note. The note is left selected, which opens it.
  */

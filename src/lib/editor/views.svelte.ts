@@ -9,7 +9,7 @@ import { StepMap } from 'prosemirror-transform';
 import { EditorView, type NodeView } from 'prosemirror-view';
 import { t } from '$lib/i18n';
 import { place } from '$lib/ui/floating';
-import { insertMath, toggle, updateCitation } from './commands';
+import { insertMath, splitCitation, toggle, updateCitation } from './commands';
 import { openSelected, passes, placeholder } from './plugins';
 import { pressedFound } from '$lib/found/found.svelte';
 import { pastedTextSlice } from './clipboard';
@@ -70,6 +70,10 @@ export class CitationView implements NodeView {
       onchange: (items, mode) => {
         const at = this.#getPos();
         if (at !== undefined) updateCitation(at, items, mode)(view.state, view.dispatch);
+      },
+      onsplit: () => {
+        const at = this.#getPos();
+        if (at !== undefined) splitCitation(at)(view.state, view.dispatch);
       },
       onclose: () => view.focus(),
     });

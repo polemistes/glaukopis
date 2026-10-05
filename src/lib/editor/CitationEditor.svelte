@@ -1,5 +1,6 @@
 <script lang="ts">
   import Plus from '@lucide/svelte/icons/plus';
+  import Scissors from '@lucide/svelte/icons/scissors';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import { t } from '$lib/i18n';
   import { editReference } from '$lib/library/references.svelte';
@@ -112,6 +113,18 @@
 
     <div class="foot">
       <button type="button" onclick={add}><Plus size={14} /> {t('editor-citation-add')}</button>
+      {#if request.onsplit && (items.length > 1 || items.some((i) => i.prefix?.trim() || i.suffix?.trim()))}
+        <button
+          type="button"
+          data-citation-split
+          title={t('editor-citation-split-hint')}
+          onclick={() => {
+            commit();
+            request.onsplit?.();
+            onclose();
+          }}><Scissors size={14} /> {t('editor-citation-split')}</button
+        >
+      {/if}
       <label class="check inline">
         <input
           type="checkbox"

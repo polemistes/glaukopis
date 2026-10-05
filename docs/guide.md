@@ -506,6 +506,13 @@ Click a citation to give it more:
   given;
 - further references, to cite several in one place.
 
+The other way is there too: **Part the words from the citation** takes the
+words before and after out into the line, and makes each work a citation of
+its own, with its page and nothing else. A note written as one long citation,
+*For those who accept Lowe's conclusions see Ussher 1973, xxxv; West 1973,
+55; Olson 1996 attributes the view to Lowe…*, becomes text with the
+citations in it, to be written on as text.
+
 What you cite is thereby among the references of the map and of the
 project: there is nothing else to do to put it there. The panel of
 references (**Ctrl+Shift+R**) lists them, for this map, for the project, and

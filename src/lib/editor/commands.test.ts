@@ -1,7 +1,15 @@
 import { EditorState, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { afterEach, describe, expect, it } from 'vitest';
-import { kindMarkOf, kindOf, setKind, setStyle, styleOf, toggleKind } from './commands';
+import {
+  kindMarkOf,
+  kindOf,
+  setKind,
+  setStyle,
+  splitCitation,
+  styleOf,
+  toggleKind,
+} from './commands';
 import { bodyPlugins } from './plugins';
 import { bodySchema } from './schema';
 import { backOutOfPassage, nextPassage, tabPassage } from './script';
@@ -275,5 +283,48 @@ describe('the keys in a paragraph of a kind', () => {
     w.dispatch(w.state.tr.setSelection(TextSelection.atStart(w.state.doc)));
     expect(press(w, backOutOfPassage)).toBe(false);
     w.destroy();
+  });
+});
+
+describe('the words of a citation parted from it', () => {
+  it('makes the words text of the line and each work a citation of its own, parted by semicolons where no words stand between', () => {
+    const v = editor('Not all agree. ');
+    const items = [
+      { id: 'ussher', locator: 'xxxv', prefix: "For those who accept Lowe's conclusions see" },
+      { id: 'west', locator: '55' },
+      { id: 'olson', suffix: 'attributes the view to Lowe', suppressAuthor: true },
+    ];
+    v.dispatch(
+      v.state.tr.replaceSelectionWith(bodySchema.nodes.citation.create({ items, mode: 'normal' })),
+    );
+    const pos = v.state.selection.from - 1;
+    expect(splitCitation(pos)(v.state, v.dispatch)).toBe(true);
+    const pieces: string[] = [];
+    v.state.doc.firstChild!.forEach((n) =>
+      pieces.push(
+        n.type.name === 'citation'
+          ? `[${(n.attrs.items as { id: string; locator?: string }[]).map((i) => i.id + (i.locator ? ' ' + i.locator : '')).join(';')}]`
+          : n.text!,
+      ),
+    );
+    expect(pieces).toEqual([
+      "Not all agree. For those who accept Lowe's conclusions see ",
+      '[ussher xxxv]',
+      '; ',
+      '[west 55]',
+      '; ',
+      '[olson]',
+      ' attributes the view to Lowe',
+    ]);
+    const olson = v.state.doc.firstChild!.child(5);
+    expect(olson.attrs.items[0]).toEqual({ id: 'olson', suppressAuthor: true });
+    // A citation of one work with no words about it has nothing to part.
+    const one = editor('');
+    one.dispatch(
+      one.state.tr.replaceSelectionWith(
+        bodySchema.nodes.citation.create({ items: [{ id: 'west' }], mode: 'normal' }),
+      ),
+    );
+    expect(splitCitation(one.state.selection.from - 1)(one.state)).toBe(false);
   });
 });

@@ -38,6 +38,8 @@ export interface CitationRequest {
   /** The item whose place in the work is to be typed at once. */
   focus?: number;
   onchange: (items: CiteItem[], mode: CiteMode) => void;
+  /** Parts the words before and after from the citation, into the line: see `splitCitation`. */
+  onsplit?: () => void;
   onclose: () => void;
 }
 
