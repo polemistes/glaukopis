@@ -192,7 +192,9 @@
 
   /** The map the panel at the side is about: that of the changes reviewed, else of the pane in view. */
   const sideMap = $derived(
-    sideKind === 'history' ? null : project?.map((sideKind === 'changes' && review?.map) || pane?.map),
+    sideKind === 'history'
+      ? null
+      : project?.map((sideKind === 'changes' && review?.map) || pane?.map),
   );
 
   // The review follows the map in view, and what is written.
