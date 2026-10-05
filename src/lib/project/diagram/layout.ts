@@ -67,7 +67,8 @@ export function layout(
   const blockHeight = (id: string): number => {
     const known = heights.get(id);
     if (known !== undefined) return known;
-    const flowing = visibleChildren(id).filter((c) => !nodes.get(c)?.pos && !held.has(c));
+    // What is held keeps its room in the flow, so that nothing else moves while it is dragged.
+    const flowing = visibleChildren(id).filter((c) => !nodes.get(c)?.pos || held.has(c));
     let kids = 0;
     flowing.forEach((c, i) => {
       kids += blockHeight(c) + (i ? V_GAP : 0);
@@ -112,22 +113,39 @@ export function layout(
       let top = y - total / 2;
       for (const c of list) {
         const block = blockHeight(c);
-        const cs = size(c);
-        const cx = to === 'right' ? x + s.w / 2 + H_GAP + cs.w / 2 : x - s.w / 2 - H_GAP - cs.w / 2;
-        place(c, cx, top + block / 2, to, depth + 1, id);
+        const at = held.get(c);
+        if (at) {
+          // Held where the pointer is, its room in the flow kept for it.
+          place(c, at.x, at.y, at.x < x ? 'left' : 'right', depth + 1, id);
+        } else {
+          const cs = size(c);
+          const cx =
+            to === 'right' ? x + s.w / 2 + H_GAP + cs.w / 2 : x - s.w / 2 - H_GAP - cs.w / 2;
+          place(c, cx, top + block / 2, to, depth + 1, id);
+        }
         top += block + V_GAP;
       }
     };
 
     const flowing: string[] = [];
+    // What is already on either side, placed by hand or held: the rest is
+    // divided so that the sides come out even with it counted.
+    const occupied = { left: 0, right: 0 };
     for (const c of children) {
       const n = nodes.get(c);
       const at = held.get(c);
-      if (at) {
+      if (at && n?.pos) {
+        // Placed by the user, and held: where the pointer is, counted on the side it was placed.
+        const to: Side = n.pos.x < 0 ? 'left' : n.pos.x > 0 ? 'right' : side;
+        occupied[to] += blockHeight(c) + V_GAP;
         place(c, at.x, at.y, at.x < x ? 'left' : 'right', depth + 1, id);
+      } else if (at) {
+        // Held while it flows: it keeps its room in the flow, and is placed where the pointer is.
+        flowing.push(c);
       } else if (n?.pos) {
         // Placed by the user: the branch grows away from its parent.
         const to: Side = n.pos.x < 0 ? 'left' : n.pos.x > 0 ? 'right' : side;
+        occupied[to] += blockHeight(c) + V_GAP;
         place(c, x + n.pos.x, y + n.pos.y, to, depth + 1, id);
       } else {
         flowing.push(c);
@@ -136,7 +154,7 @@ export function layout(
     if (id === tree.root) {
       // Around the centre: the first in order to the right, the rest to the
       // left, divided where the two sides come closest to equal height.
-      const split = balance(flowing.map(blockHeight));
+      const split = balance(flowing.map(blockHeight), occupied.right, occupied.left);
       flow(flowing.slice(0, split), 'right');
       flow(flowing.slice(split), 'left');
     } else {
@@ -166,15 +184,22 @@ export function layout(
 }
 
 /** Where to divide a list of heights so that the two parts are closest to equal. The first part is never the smaller by count when heights are equal. */
-export function balance(heights: number[]): number {
-  if (heights.length <= 1) return heights.length;
+/**
+ * How many of the branches, from the first, go to the right of the centre,
+ * the rest going to the left, so that the two sides come closest to equal
+ * height; `right` and `left` are what the sides hold already, of branches
+ * placed by hand. Nothing held, and a single branch goes to the right.
+ */
+export function balance(heights: number[], right = 0, left = 0): number {
+  if (!heights.length) return 0;
+  if (heights.length === 1 && !right && !left) return 1;
   const total = heights.reduce((a, b) => a + b + V_GAP, 0);
-  let best = heights.length;
-  let bestDiff = Infinity;
+  let best = 0;
+  let bestDiff = Math.abs(right - (left + total));
   let first = 0;
   for (let i = 1; i <= heights.length; i++) {
     first += heights[i - 1] + V_GAP;
-    const diff = Math.abs(first - (total - first));
+    const diff = Math.abs(right + first - (left + total - first));
     if (diff <= bestDiff + 0.5) {
       bestDiff = diff;
       best = i;

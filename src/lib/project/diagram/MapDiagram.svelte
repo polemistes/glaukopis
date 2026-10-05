@@ -38,7 +38,7 @@
   import { pressed, type Diagram } from './keys';
   import { progressOf, progressWords } from '../status';
   import { associationsOf, drawing, linesOf } from './lines';
-  import { layout, type Placed, type Size } from './layout';
+  import { layout, type Layout, type Placed, type Size } from './layout';
 
   interface Props {
     project: Project;
@@ -149,12 +149,14 @@
     return hit(world, p.kind === 'elements' ? lifted : new Set());
   });
 
-  /** `dropOn` as it last was while something was dragged over this map, for the drop. */
-  let lastDropOn: string | null = null;
-  $effect(() => {
-    const on = dropOn;
-    if (drag.payload && drag.welcome) lastDropOn = on;
-  });
+  /** Where the dragged elements are held, with the pointer at `world`: as `held` has them while the drag goes on. */
+  function heldAt(data: ElementsPayload, world: Position): Map<string, Position> {
+    const out = new Map<string, Position>();
+    data.ids.forEach((id, i) => {
+      out.set(id, { x: world.x - data.grab.x, y: world.y - data.grab.y + i * 52 });
+    });
+    return out;
+  }
 
   // ---- coordinates ----
 
@@ -191,9 +193,9 @@
   }
 
   /** The element at a point of the canvas, the topmost first. */
-  function hit(world: Position, except: Set<string> = new Set()): string | null {
-    for (let i = lay.order.length - 1; i >= 0; i--) {
-      const p = lay.placed.get(lay.order[i])!;
+  function hit(world: Position, except: Set<string> = new Set(), l: Layout = lay): string | null {
+    for (let i = l.order.length - 1; i >= 0; i--) {
+      const p = l.placed.get(l.order[i])!;
       if (except.has(p.id)) continue;
       if (Math.abs(world.x - p.x) <= p.w / 2 + 3 && Math.abs(world.y - p.y) <= p.h / 2 + 3)
         return p.id;
@@ -517,10 +519,13 @@
     const list = parent ? (tree.children.get(parent) ?? []) : tree.loose;
     const at = list.indexOf(id) + 1;
     const base = parent ? lay.placed.get(parent) : null;
-    children.forEach((child, i) => {
+    // Where each stands is read before any is moved: the map is laid out anew after each move.
+    const spots = children.map((child) => {
       const p = lay.placed.get(child);
-      const pos = p ? { x: p.x - (base?.x ?? 0), y: p.y - (base?.y ?? 0) } : null;
-      project.move([child], parent, at + i, { pos, map: mapId });
+      return p ? { x: p.x - (base?.x ?? 0), y: p.y - (base?.y ?? 0) } : null;
+    });
+    children.forEach((child, i) => {
+      project.move([child], parent, at + i, { pos: spots[i], map: mapId });
     });
   }
 
@@ -563,9 +568,10 @@
     if (local) for (const id of data.ids) for (const d of subtree(tree, id)) except.add(d);
     // The element under the pointer as it was seen during the drag: once the
     // drag has ended, what was lifted is laid out again, and the map may have
-    // shifted under the pointer by then.
-    const target = lastDropOn ?? hit(world, except);
-    lastDropOn = null;
+    // shifted under the pointer by then. So the map is laid out once more as
+    // it was, with the elements held where they were dropped.
+    const during = local ? layout(tree, project.nodes, sizes, heldAt(data, world)) : lay;
+    const target = hit(world, except, during);
 
     project.checkpoint();
     // With Shift, the element goes alone: what is under it takes its place.

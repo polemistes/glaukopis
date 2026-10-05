@@ -126,7 +126,7 @@ describe('the layout of a map', () => {
     const p = (id: string) => l.placed.get(id)!;
     expect([p('a').x, p('a').y]).toEqual([-500, 300]);
     expect(p('a1').x).toBeLessThan(-500);
-    // What flows takes the room as if the held one were not there.
+    // The held one keeps its room on its own side; what flows on the other side stands as it did.
     expect(p('b').y).toBe(0);
   });
 
@@ -136,6 +136,10 @@ describe('the layout of a map', () => {
     expect(balance([40, 40, 40, 40])).toBe(2);
     expect(balance([200, 40, 40, 40])).toBe(1);
     expect(balance([40])).toBe(1);
+    // What the sides hold already counts: with the right side full, the rest goes left.
+    expect(balance([40, 40], 200, 0)).toBe(0);
+    expect(balance([40, 40], 0, 200)).toBe(2);
+    expect(balance([40], 56, 0)).toBe(0);
     expect(balance([])).toBe(0);
   });
 
