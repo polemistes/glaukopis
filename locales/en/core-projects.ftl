@@ -10,6 +10,9 @@ core-projects-not-in-history = That is not an entry of the history.
 core-projects-no-token = The server gave no token.
 core-projects-not-shared = The project is not shared.
 core-projects-not-in-trash = That is not a project in the trash.
+core-projects-folder-in-itself = A folder cannot be put in itself.
+# The page of projects has two forms, "recent" and "list"; something else was asked for.
+core-projects-not-a-form = “{ $kind }” is not a form of the page of projects.
 # What the interface sent is not written as it should be.
 core-projects-not-base64 = not base64: { $error }
 
@@ -17,6 +20,7 @@ core-projects-not-base64 = not base64: { $error }
 
 core-projects-the-project = the project
 core-projects-the-project-in-trash = the project in the trash
+core-projects-the-folder = the folder
 
 ## What was being done when the system said no, shown before what it said.
 

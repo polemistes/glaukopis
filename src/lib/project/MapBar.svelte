@@ -32,7 +32,8 @@
     current: string;
     /** The map shown in the other pane, if there is one. */
     beside?: string | null;
-    onselect: (id: string) => void;
+    /** Shows a map; with a mode, in that view, as a new map is shown as text. */
+    onselect: (id: string, mode?: 'diagram' | 'text' | 'timeline') => void;
     onbeside: (id: string) => void;
     /** A map is to be made of a document. */
     ondocument?: () => void;
@@ -72,7 +73,8 @@
     const id = project.createMap(t('project-untitled'));
     project.checkpoint();
     newMap = id;
-    onselect(id);
+    // A new map opens as text the first time: there is nothing to see in the diagram yet.
+    onselect(id, 'text');
     const made = project.map(id);
     if (made) await rename(made);
   }

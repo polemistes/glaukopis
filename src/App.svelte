@@ -4,7 +4,7 @@
   import { languageSet, languagesInfo } from '$lib/api/system';
   import { languages, t } from '$lib/i18n';
   import { library } from '$lib/state/library.svelte';
-  import { router } from '$lib/state/router.svelte';
+  import { router, type Route } from '$lib/state/router.svelte';
   import { keysUi, shortcuts } from '$lib/shell/keys.svelte';
   import KeySheet from '$lib/shell/KeySheet.svelte';
   import Palette from '$lib/shell/Palette.svelte';
@@ -21,7 +21,8 @@
   import PicturesView from '$lib/pictures/PicturesView.svelte';
   import ProjectView from '$lib/project/ProjectView.svelte';
   import SearchView from '$lib/search/SearchView.svelte';
-  import SettingsView from '$lib/settings/SettingsView.svelte';
+  import SettingsDialog from '$lib/settings/SettingsDialog.svelte';
+  import { settingsUi } from '$lib/settings/settings-ui.svelte';
 
   const route = $derived(router.route);
 
@@ -92,14 +93,27 @@
         .catch(() => {});
   });
 
-  // The keys that hold wherever one is.
+  // The settings are a window over the view that is open. The old place
+  // `#/settings` opens it over the projects, so that old links still work.
+  $effect(() => {
+    if (route.view !== 'settings') return;
+    settingsUi.show();
+    router.replace({ view: 'projects' });
+  });
+
+  // The keys that hold wherever one is. Going to a place closes the settings,
+  // which would otherwise lie over it.
+  const go = (route: Route) => {
+    settingsUi.hide();
+    router.go(route);
+  };
   onMount(() =>
     shortcuts.bind({
-      projects: () => router.go({ view: 'projects' }),
-      library: () => router.go({ view: 'library' }),
-      pictures: () => router.go({ view: 'pictures' }),
-      settings: () => router.go({ view: 'settings' }),
-      'search-everything': () => router.go({ view: 'search' }),
+      projects: () => go({ view: 'projects' }),
+      library: () => go({ view: 'library' }),
+      pictures: () => go({ view: 'pictures' }),
+      settings: () => settingsUi.toggle(),
+      'search-everything': () => go({ view: 'search' }),
       palette: () => keysUi.togglePalette(),
       sheet: () => keysUi.toggleSheet(),
     }),
@@ -122,7 +136,7 @@
   <div class="app">
     <Rail />
     <main>
-      {#if route.view === 'projects'}
+      {#if route.view === 'projects' || route.view === 'settings'}
         <ProjectsView />
       {:else if route.view === 'library'}
         <LibraryView />
@@ -134,8 +148,6 @@
         {/key}
       {:else if route.view === 'search'}
         <SearchView />
-      {:else if route.view === 'settings'}
-        <SettingsView />
       {/if}
     </main>
   </div>
@@ -144,6 +156,7 @@
   <ConfirmHost />
   {#if keysUi.sheet}<KeySheet onclose={() => (keysUi.sheet = false)} />{/if}
   {#if keysUi.palette}<Palette onclose={() => (keysUi.palette = false)} />{/if}
+  <SettingsDialog />
   <MenuHost />
   <DragGhost />
 {/if}

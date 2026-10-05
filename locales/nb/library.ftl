@@ -198,6 +198,24 @@ library-sort-title = Tittel
 library-sort-added = Dato lagt til
 library-sort-modified = Dato endret
 library-sort-descending = Synkende
+
+## Filtrene, ved siden av søket: hva slags publikasjon, hvem som ga den ut, og når.
+
+library-filters = Filtrer
+library-filters-on = { $count ->
+    [one] Filter: { $count } på
+   *[other] Filter: { $count } på
+}
+library-filter-kind = Slag
+library-filter-publisher = Utgiver
+library-filter-publisher-hint = En del av navnet
+library-filter-any-publisher = Alle utgivere
+library-filter-year = År
+library-filter-from = Fra
+library-filter-to = Til
+library-filter-clear = Fjern filtrene
+library-filter-nothing-here = Ingenting å filtrere her.
+library-nothing-passes = Ingen referanse i oversikten slipper gjennom filtrene.
 library-import-export = Importer og eksporter
 library-import-file = Importer en fil …
     .hint = BibLaTeX eller BibTeX
@@ -206,6 +224,8 @@ library-add-pdfs = Legg til PDF-filer …
     .hint = Hver av dem slås opp og tas vare på
 library-import-zotero = Importer fra Zotero …
 library-find-duplicates = Finn duplikater …
+library-map-library = Et kart over biblioteket …
+library-map-collection = Et kart over «{ $name }» …
 library-export-library = Eksporter biblioteket …
 library-export-collection = Eksporter «{ $name }» …
 library-export-one = Eksporter …
@@ -270,6 +290,8 @@ library-cited-reading = Leser prosjektene …
 library-collections-hint = En samling holder referanser til et emne eller et arbeid. En referanse kan være med i så mange samlinger du vil.
 library-collection-new = Ny samling
 library-collection-new-inside = Ny samling inni
+library-collection-new-under = Ny samling i «{ $name }»
+library-collection-move-to = Flytt til
 library-collection-name = Navn på samlingen
 library-collection-name-failed = Samlingen kunne ikke få navn
 library-collection-expand = Brett ut
@@ -292,6 +314,20 @@ library-collection-count = { $count ->
     [one] { $count } samling
    *[other] { $count } samlinger
 }
+
+## Et kart over biblioteket, eller over en samling: et nytt prosjekt.
+
+library-map-title-library = Et kart over biblioteket
+library-map-title-collection = Et kart over en samling
+library-map-library-name = Biblioteket
+library-map-name = Navn
+library-map-name-hint = Navnet på prosjektet, på kartet i det, og på elementet i midten av kartet.
+library-map-what-library = Samlingene blir elementer, ordnet slik de er, og hver referanse et element under samlingen sin, med en henvisning til den som tekst. Referanser som ikke er i noen samling, står i midten.
+library-map-what-collection = Samlingene i den blir elementer, ordnet slik de er, og hver referanse et element under samlingen sin, med en henvisning til den som tekst.
+library-map-nothing = Det er ingen referanser å sette på kartet.
+library-map-make = Lag prosjektet
+library-map-making = Lager prosjektet …
+library-map-failed = Prosjektet kunne ikke lages.
 
 ## Å hente inn referanser, fra hvor som helst i programmet.
 

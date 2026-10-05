@@ -7,6 +7,7 @@
   import Settings from '@lucide/svelte/icons/settings';
   import { t } from '$lib/i18n';
   import { router } from '$lib/state/router.svelte';
+  import { settingsUi } from '$lib/settings/settings-ui.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { keysUi } from './keys.svelte';
   import Mark from './Mark.svelte';
@@ -74,15 +75,17 @@
     <Keyboard size={19} strokeWidth={1.7} />
   </button>
 
-  <a
-    href="#/settings"
+  <!-- The settings are a window over the view, not a place: see settings-ui. -->
+  <button
+    type="button"
     class="place"
-    class:current={view === 'settings'}
+    class:current={settingsUi.open}
     aria-label={t('shell-settings')}
     use:tooltip={{ text: t('shell-settings'), shortcut: 'Ctrl+,', side: 'right' }}
+    onclick={() => settingsUi.toggle()}
   >
     <Settings size={19} strokeWidth={1.7} />
-  </a>
+  </button>
 </nav>
 
 <style>

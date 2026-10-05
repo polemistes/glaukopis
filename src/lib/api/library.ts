@@ -21,6 +21,8 @@ export interface Summary {
   yearNumber: number | null;
   title: string;
   container: string;
+  /** The publisher, or the institution or organisation that stands for one. */
+  publisher: string;
   attachments: number;
   /** Whether the user has written something about the work, for all projects. */
   hasNote: boolean;

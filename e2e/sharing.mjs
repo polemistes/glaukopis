@@ -79,6 +79,9 @@ try {
   await owner.waitFor('dialog input');
   await owner.type('dialog input', 'Wrath and the hero');
   await owner.clickText('dialog footer button', 'Create');
+  // A new project opens as text: the diagram is turned to.
+  await owner.waitFor('.text-view .section', 8000);
+  await owner.clickText('header [role="radio"]', 'Diagram');
   await owner.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await owner.click('.diagram .node.root');

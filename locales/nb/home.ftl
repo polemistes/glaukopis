@@ -5,6 +5,55 @@ home-join = Bli med i et delt prosjekt
 home-from-document = Et prosjekt av et dokument …
 home-new = Nytt prosjekt
 
+## Sidens to former: de sist brukte prosjektene som kort, alle som en liste
+
+home-shown = Hva som vises
+home-recent = Sist brukt
+home-all = Alle prosjekter
+home-show-all = Vis alle { $count } prosjektene
+home-page-menu = Mer
+home-search = Finn et prosjekt
+home-search-none = Ingen prosjekter har det navnet.
+home-list-none = Det er ingen prosjekter.
+
+## Mapper med prosjekter
+
+home-new-folder = Ny mappe
+home-folder-new-inside = Ny mappe inni …
+home-folder-rename-title = Gi mappen nytt navn
+home-folder-name-placeholder = Det mappen rommer
+home-folder-name-missing = Gi mappen et navn.
+home-folder-projects = { $count ->
+    [one] { $count } prosjekt
+   *[other] { $count } prosjekter
+}
+home-menu-move = Flytt til mappe
+home-menu-out = Ut av mappene
+home-folder-delete-title = Slette mappen «{ $name }»?
+home-folder-delete-message = Mappene og prosjektene i den beholdes: de flyttes opp dit mappen var.
+home-folder-delete-confirm = Slett mappen
+home-folder-failed = Det kunne ikke gjøres med mappen
+home-moved-to = «{ $name }» ble flyttet til { $folder }
+home-moved-out = «{ $name }» ligger ikke i noen mappe nå
+home-move-failed = Prosjektet kunne ikke flyttes
+
+## Et kart over prosjektene
+
+home-map-menu = Et kart over prosjektene …
+home-map-title = Et kart over prosjektene
+home-map-about = Et nytt prosjekt med ett kart: mappene som elementer, og under hver mappe prosjektene i den.
+home-map-name-default = Prosjekter
+home-map-what = Hva kartet rommer
+home-map-names = Bare navnene
+home-map-names-hint = Ett element for hvert prosjekt, med beskrivelsen som tekst.
+home-map-everything = Med alt de rommer
+home-map-everything-hint = Under hvert prosjekt kartene dets, og under hvert kart alle elementene, med navn og tekster.
+home-map-note = Siteringene beholder referansene sine. En kryssreferanse til en figur eller en del peker på ingenting i det nye prosjektet, og kommentarene blir igjen.
+home-map-reading = Leser «{ $name }» …
+home-map-working = Lager kartet …
+home-map-make = Lag kartet
+home-map-failed = Kartet over prosjektene kunne ikke lages
+
 ## Når det ikke er noen ennå
 
 home-welcome = Velkommen til Glaukopis

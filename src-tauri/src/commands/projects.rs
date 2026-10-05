@@ -10,7 +10,7 @@ use tauri::State;
 use tauri::ipc::{InvokeBody, Request, Response};
 
 use glaukopis_core::i18n::tr;
-use glaukopis_core::projects::{HistoryEntry, ProjectInfo, Summary};
+use glaukopis_core::projects::{Folder, HistoryEntry, ProjectInfo, Summary};
 
 use crate::error::{CommandError, CommandResult};
 use crate::state::AppState;
@@ -156,6 +156,56 @@ pub fn project_save_state(state: State<'_, AppState>, request: Request<'_>) -> C
 pub fn project_save_view(state: State<'_, AppState>, id: String, view: serde_json::Value) -> CommandResult<()> {
     state.projects.update_info(&id, |info| info.view = view)?;
     Ok(())
+}
+
+// ---- folders, and the form of the page of projects (ADR 0031) ----
+
+#[tauri::command(async)]
+pub fn folders_list(state: State<'_, AppState>) -> CommandResult<Vec<Folder>> {
+    Ok(state.projects.folders()?)
+}
+
+#[tauri::command(async)]
+pub fn folder_create(state: State<'_, AppState>, name: String, parent: Option<String>) -> CommandResult<Folder> {
+    Ok(state.projects.folder_create(&name, parent.as_deref())?)
+}
+
+#[tauri::command(async)]
+pub fn folder_rename(state: State<'_, AppState>, id: String, name: String) -> CommandResult<Folder> {
+    Ok(state.projects.folder_rename(&id, &name)?)
+}
+
+/// Puts a folder in another, or at the top with no parent. Refused where it would lie under itself.
+#[tauri::command(async)]
+pub fn folder_move(state: State<'_, AppState>, id: String, parent: Option<String>) -> CommandResult<Folder> {
+    Ok(state.projects.folder_move(&id, parent.as_deref())?)
+}
+
+/// Deletes a folder; what was in it moves up to where it was.
+#[tauri::command(async)]
+pub fn folder_delete(state: State<'_, AppState>, id: String) -> CommandResult<()> {
+    Ok(state.projects.folder_delete(&id)?)
+}
+
+#[tauri::command(async)]
+pub fn project_move_to_folder(
+    state: State<'_, AppState>,
+    id: String,
+    folder: Option<String>,
+) -> CommandResult<ProjectInfo> {
+    Ok(state.projects.move_to_folder(&id, folder.as_deref())?)
+}
+
+/// Which form of the page of projects is shown, "recent" or "list": with
+/// `kind`, remembers it; without, says which was remembered, or "recent".
+#[tauri::command(async)]
+pub fn projects_shown(state: State<'_, AppState>, kind: Option<String>) -> CommandResult<String> {
+    if let Some(kind) = kind {
+        state.projects.set_shown(&kind)?;
+        return Ok(kind);
+    }
+    let shown = state.projects.shown()?;
+    Ok(if shown.is_empty() { "recent".to_owned() } else { shown })
 }
 
 #[tauri::command(async)]

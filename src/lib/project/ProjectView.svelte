@@ -817,7 +817,7 @@
                 {project}
                 current={p.map}
                 beside={panes.length > 1 ? panes[1 - i]?.map : null}
-                onselect={(id) => show(id, { pane: i })}
+                onselect={(id, mode) => show(id, { pane: i, mode })}
                 onbeside={beside}
                 ondocument={async () => documentsIn([await chooseDocument()])}
               />

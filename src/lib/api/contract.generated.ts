@@ -3,7 +3,7 @@
 // fails where the two differ. Not to be changed by hand: run the tests.
 
 import type { Summary, Reference, LibraryListing, ImportPlan, DuplicateGroup } from './library';
-import type { ProjectInfo } from './projects';
+import type { ProjectInfo, Folder } from './projects';
 import type { Picture } from './pictures';
 import type { ToolsInfo, DocumentFormat, FormatSummary, StyleSummary, Preview, KindEntry } from './documents';
 
@@ -17,6 +17,7 @@ export const summary: Summary = {
   "id": "00000000-0000-4000-8000-000000000000",
   "key": "nagy1979",
   "modified": "2026-01-01T00:00:00Z",
+  "publisher": "Johns Hopkins",
   "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
   "title": "The Best of the Achaeans: Concepts of the Hero",
   "type": "book",
@@ -79,6 +80,7 @@ export const reference: Reference = {
     "id": "00000000-0000-4000-8000-000000000000",
     "key": "nagy1979",
     "modified": "2026-01-01T00:00:00Z",
+    "publisher": "Johns Hopkins",
     "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
     "title": "The Best of the Achaeans: Concepts of the Hero",
     "type": "book",
@@ -111,6 +113,7 @@ export const listing: LibraryListing = {
       "id": "00000000-0000-4000-8000-000000000000",
       "key": "nagy1979",
       "modified": "2026-01-01T00:00:00Z",
+      "publisher": "Johns Hopkins",
       "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
       "title": "The Best of the Achaeans: Concepts of the Hero",
       "type": "book",
@@ -127,6 +130,7 @@ export const listing: LibraryListing = {
       "id": "00000000-0000-4000-8000-000000000000",
       "key": "x",
       "modified": "2026-01-01T00:00:00Z",
+      "publisher": "",
       "search": "gregory nagy the best of the achaeans  1979 x",
       "title": "The Best of the Achaeans",
       "type": "book",
@@ -265,6 +269,7 @@ export const project: ProjectInfo = {
   ],
   "created": "2026-01-01T00:00:00Z",
   "description": "",
+  "folder": "00000000-0000-4000-8000-000000000000",
   "id": "00000000-0000-4000-8000-000000000000",
   "maps": [
     {
@@ -280,6 +285,13 @@ export const project: ProjectInfo = {
   ],
   "references": 1,
   "words": 12
+};
+
+export const folder: Folder = {
+  "id": "00000000-0000-4000-8000-000000000000",
+  "name": "Epic",
+  "order": "000002",
+  "parent": "00000000-0000-4000-8000-000000000000"
 };
 
 export const picture: Picture = {

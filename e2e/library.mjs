@@ -168,6 +168,57 @@ try {
   );
   await sleep(200);
 
+  // --- Filters: kind, publisher, year ---
+  await app.click('.middle header .filter button');
+  await app.waitFor('.filters', 3000);
+  await sleep(200);
+  const kinds = await app.exec(
+    `return Array.from(document.querySelectorAll('.filters input[data-kind]')).map((i) => i.dataset.kind)`,
+  );
+  check(
+    'the filter offers the kinds present',
+    kinds.includes('book') && kinds.includes('article'),
+    kinds.join(' '),
+  );
+  await app.screenshot('library-5c-filters');
+  await app.click('.filters input[data-kind="article"]');
+  await sleep(250);
+  const articles = await app.count('.list .item');
+  check('ticking a kind narrows the list to it', articles === 2, String(articles));
+  check(
+    'and the button says one filter is on',
+    (await app.text('.middle header .filter .badge')) === '1',
+  );
+  await app.exec(
+    `const s = document.querySelector('.filters select.publishers');
+     s.value = 'Cambridge University Press';
+     s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
+  await sleep(250);
+  check(
+    'a publisher and a kind together may let nothing through',
+    (await app.count('.list .item')) === 0 && (await app.exists('.body h3')),
+  );
+  await app.click('.filters input[data-kind="article"]');
+  await sleep(250);
+  const cambridge = await app.exec(
+    `return Array.from(document.querySelectorAll('.list .item')).map((e) => e.textContent)`,
+  );
+  check(
+    'the publisher alone finds what Cambridge published',
+    cambridge.length === 2 && cambridge.some((x) => x.includes('Kirk')),
+    `${cambridge.length}`,
+  );
+  await app.type('.filters [data-year="from"]', '2000');
+  await app.press('Enter');
+  await sleep(250);
+  check('a year narrows it further', (await app.count('.list .item')) === 1);
+  await app.click('.filters [data-action="clear"]');
+  await sleep(250);
+  check('clearing the filters brings the list back', (await app.count('.list .item')) >= 10);
+  await app.press('Escape');
+  await app.waitGone('.filters', 3000);
+
   // --- Select, edit in the pane, autosave ---
   await app.click(await app.findByText('.list .item', 'The Singer of Tales'));
   await app.waitFor('.pane [data-field="title"] textarea');
@@ -251,6 +302,53 @@ try {
     rewritten.includes('@book{broken, title = {A brace that is never closed}') &&
       rewritten.includes('Added from a project'),
   );
+
+  // --- A map of the library: a new project ---
+  await app.click('.split-more');
+  await app.clickText('[role="menuitem"]', 'A map of the library');
+  await app.waitFor('dialog .map-of', 3000);
+  await sleep(200);
+  check(
+    'the project is named after the library',
+    (await app.exec(`return document.querySelector('dialog .map-of input').value`)) ===
+      'The library',
+  );
+  const mapFacts = await app.exec(
+    `const out = {};
+     for (const e of document.querySelectorAll('dialog [data-fact]'))
+       out[e.dataset.fact] = e.querySelector('dd').textContent.trim();
+     return out;`,
+  );
+  check(
+    'and counts its collections and references',
+    mapFacts.collections === '1' && Number(mapFacts.references) >= 18,
+    JSON.stringify(mapFacts),
+  );
+  await app.screenshot('library-7b-map-dialog');
+  await app.clickText('dialog footer button', 'Make the project');
+  await app.waitFor('.text-view .section', 15000);
+  await sleep(600);
+  const projectName = await app.exec(`return document.title.replace(/^Glaukopis – /, '')`);
+  check('a project is opened, named after the library', projectName === 'The library', projectName);
+  const mapParts = await app.exec(
+    `return Array.from(document.querySelectorAll('.text-view .section')).map((s) => {
+       const name = s.querySelector('.heading .prose.title');
+       return name ? name.textContent.trim() : '';
+     })`,
+  );
+  check(
+    'with the collection and the references as elements, named as the list shows them',
+    mapParts.includes('Oral poetry') && mapParts.includes('Lord 1960 The Singer of Tales'),
+    mapParts.slice(0, 5).join(' | '),
+  );
+  check(
+    'and a citation as the text of each reference',
+    (await app.count('.text-view .citation')) >= 1,
+    String(await app.count('.text-view .citation')),
+  );
+  await app.screenshot('library-7c-map-made');
+  await app.go('#/library');
+  await app.waitFor('.list .item');
 
   // --- Dark theme ---
   await app.setTheme('dark');

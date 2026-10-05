@@ -12,9 +12,15 @@
 //! ```
 //!
 //! A deleted project is moved to `projects/.trash/` and can be brought back.
+//!
+//! How the projects are arranged on this computer, the folders they are put
+//! in and which form the page of projects shows, is kept beside them in
+//! `projects/folders.json` (ADR 0031). A project says which folder it is in
+//! in its own `project.json`; the folders themselves are in the one file.
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
@@ -31,6 +37,14 @@ pub(crate) const LOG: &str = "updates.log";
 const HISTORY: &str = "history";
 const TRASH: &str = ".trash";
 const TOKEN: &str = "sharing.key";
+const FOLDERS: &str = "folders.json";
+
+/// The two forms of the page of projects: the last used, as cards; all of
+/// them, as a list in folders.
+pub const SHOWN: [&str; 2] = ["recent", "list"];
+
+/// One at a time changes the file of folders: it is read, changed and written whole.
+static FOLDERS_LOCK: Mutex<()> = Mutex::new(());
 
 /// The most history kept for one project.
 const HISTORY_LIMIT: usize = 40;
@@ -83,9 +97,36 @@ pub struct ProjectInfo {
     pub cited: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sharing: Option<Sharing>,
+    /// The folder the project is in on this computer, by its id; none for
+    /// one that is in no folder. See `Folder`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub folder: Option<String>,
     /// What the interface wants to find again: the map that was open, the view.
     #[serde(skip_serializing_if = "serde_json::Value::is_null")]
     pub view: serde_json::Value,
+}
+
+/// A folder of projects, on this computer alone: a name under which the
+/// list of projects gathers some of them. A folder may lie in another.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Folder {
+    pub id: String,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent: Option<String>,
+    /// Sorts among its siblings as a string; new folders are given one after the last.
+    pub order: String,
+}
+
+/// How the projects are arranged on this computer: `projects/folders.json`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Arrangement {
+    pub folders: Vec<Folder>,
+    /// Which form of the page of projects is shown: one of `SHOWN`, or nothing yet.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub shown: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -475,6 +516,7 @@ impl Projects {
         let to = self.dir(&copy.id)?;
         write_atomic(&to.join(STATE), &state)?;
         copy.description = source.description;
+        copy.folder = source.folder;
         Self::write_info(&to, &copy)?;
         Ok(copy)
     }
@@ -497,9 +539,157 @@ impl Projects {
         copy.references = source.references;
         copy.pictures = source.pictures;
         copy.cited = source.cited;
+        copy.folder = source.folder;
         Self::write_info(&to, &copy)?;
         Ok(copy)
     }
+
+    // ---- folders: see `Folder` and ADR 0031 ----
+
+    fn read_arrangement(&self) -> Result<Arrangement> {
+        let path = self.root.join(FOLDERS);
+        match fs::read_to_string(&path) {
+            Ok(text) => serde_json::from_str(&text).map_err(|e| Error::Parse { path, message: e.to_string() }),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Arrangement::default()),
+            Err(e) => Err(e).context(|| tr!("io-reading", path = &path)),
+        }
+    }
+
+    fn write_arrangement(&self, arrangement: &Arrangement) -> Result<()> {
+        write_atomic(&self.root.join(FOLDERS), serde_json::to_string_pretty(arrangement)?.as_bytes())
+    }
+
+    /// Reads the arrangement, changes it, and writes it back, one at a time.
+    fn change_arrangement<T>(&self, change: impl FnOnce(&mut Arrangement) -> Result<T>) -> Result<T> {
+        let _held = FOLDERS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let mut arrangement = self.read_arrangement()?;
+        let out = change(&mut arrangement)?;
+        self.write_arrangement(&arrangement)?;
+        Ok(out)
+    }
+
+    /// The folders, in the order they were made.
+    pub fn folders(&self) -> Result<Vec<Folder>> {
+        let mut folders = self.read_arrangement()?.folders;
+        folders.sort_by(|a, b| a.order.cmp(&b.order).then(a.name.cmp(&b.name)));
+        Ok(folders)
+    }
+
+    /// Which form of the page of projects is shown: one of `SHOWN`, or an empty string where none was chosen.
+    pub fn shown(&self) -> Result<String> {
+        Ok(self.read_arrangement()?.shown)
+    }
+
+    pub fn set_shown(&self, kind: &str) -> Result<()> {
+        if !SHOWN.contains(&kind) {
+            return Err(Error::invalid(tr!("core-projects-not-a-form", kind = kind)));
+        }
+        self.change_arrangement(|a| {
+            a.shown = kind.to_owned();
+            Ok(())
+        })
+    }
+
+    fn folder_in<'a>(arrangement: &'a Arrangement, id: &str) -> Result<&'a Folder> {
+        arrangement.folders.iter().find(|f| f.id == id).ok_or_else(|| Error::not_found(tr!("core-projects-the-folder")))
+    }
+
+    /// Whether `folder` is `ancestor`, or lies under it.
+    fn folder_under(arrangement: &Arrangement, folder: &str, ancestor: &str) -> bool {
+        let mut at = Some(folder.to_owned());
+        let mut steps = 0;
+        while let Some(id) = at {
+            if id == ancestor {
+                return true;
+            }
+            steps += 1;
+            if steps > arrangement.folders.len() {
+                return false;
+            }
+            at = arrangement.folders.iter().find(|f| f.id == id).and_then(|f| f.parent.clone());
+        }
+        false
+    }
+
+    pub fn folder_create(&self, name: &str, parent: Option<&str>) -> Result<Folder> {
+        let name = Self::check_name(name)?;
+        self.change_arrangement(|a| {
+            if let Some(parent) = parent {
+                Self::folder_in(a, parent)?;
+            }
+            let last = a.folders.iter().map(|f| f.order.as_str()).max();
+            let folder = Folder {
+                id: uuid::Uuid::new_v4().to_string(),
+                name,
+                parent: parent.map(str::to_owned),
+                order: next_order(last),
+            };
+            a.folders.push(folder.clone());
+            Ok(folder)
+        })
+    }
+
+    pub fn folder_rename(&self, id: &str, name: &str) -> Result<Folder> {
+        let name = Self::check_name(name)?;
+        self.change_arrangement(|a| {
+            Self::folder_in(a, id)?;
+            let folder = a.folders.iter_mut().find(|f| f.id == id).expect("found above");
+            folder.name = name;
+            Ok(folder.clone())
+        })
+    }
+
+    /// Puts a folder in another, or at the top. A folder cannot be put in
+    /// itself or in one that lies under it.
+    pub fn folder_move(&self, id: &str, parent: Option<&str>) -> Result<Folder> {
+        self.change_arrangement(|a| {
+            Self::folder_in(a, id)?;
+            if let Some(parent) = parent {
+                Self::folder_in(a, parent)?;
+                if Self::folder_under(a, parent, id) {
+                    return Err(Error::invalid(tr!("core-projects-folder-in-itself")));
+                }
+            }
+            let folder = a.folders.iter_mut().find(|f| f.id == id).expect("found above");
+            folder.parent = parent.map(str::to_owned);
+            Ok(folder.clone())
+        })
+    }
+
+    /// Deletes a folder. The folders and projects in it move up to where it was.
+    pub fn folder_delete(&self, id: &str) -> Result<()> {
+        let parent = self.change_arrangement(|a| {
+            let parent = Self::folder_in(a, id)?.parent.clone();
+            for f in a.folders.iter_mut() {
+                if f.parent.as_deref() == Some(id) {
+                    f.parent = parent.clone();
+                }
+            }
+            a.folders.retain(|f| f.id != id);
+            Ok(parent)
+        })?;
+        for info in self.list()? {
+            if info.folder.as_deref() == Some(id) {
+                self.update_info(&info.id, |i| i.folder = parent.clone())?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Puts a project in a folder, or in none. The project is not changed by it: the date stays.
+    pub fn move_to_folder(&self, id: &str, folder: Option<&str>) -> Result<ProjectInfo> {
+        if let Some(folder) = folder {
+            Self::folder_in(&self.read_arrangement()?, folder)?;
+        }
+        self.update_info(id, |info| info.folder = folder.map(str::to_owned))
+    }
+}
+
+/// An order after the last: the keys count up as decimal numbers of six
+/// places, so that comparing them as strings is comparing them as numbers.
+fn next_order(last: Option<&str>) -> String {
+    let n = last.and_then(|s| s.trim().parse::<u64>().ok()).unwrap_or(0);
+    format!("{:06}", n + 1)
 }
 
 /// What the interface reports about the document when it saves its state.
@@ -807,6 +997,72 @@ mod tests {
         let kept = p.dir(&b.id).unwrap().join("maps");
         assert!(!kept.join("Book.md").exists());
         assert_eq!(fs::read_to_string(kept.join("mine.txt")).unwrap(), "put here by the user");
+    }
+
+    #[test]
+    fn folders_are_made_moved_and_deleted() {
+        let (_tmp, p) = projects();
+        assert!(p.folders().unwrap().is_empty());
+        assert_eq!(p.shown().unwrap(), "");
+        let greek = p.folder_create("Greek", None).unwrap();
+        let epic = p.folder_create("  Epic ", Some(&greek.id)).unwrap();
+        assert_eq!(epic.name, "Epic");
+        assert_eq!(epic.parent.as_deref(), Some(greek.id.as_str()));
+        assert!(greek.order < epic.order, "a new folder comes after the last");
+        assert!(p.folder_create("Lost", Some("nowhere")).is_err());
+        assert!(p.folder_create("  ", None).is_err());
+
+        // Not in itself, nor in what lies under it.
+        assert!(p.folder_move(&greek.id, Some(&greek.id)).is_err());
+        assert!(p.folder_move(&greek.id, Some(&epic.id)).is_err());
+        let latin = p.folder_create("Latin", None).unwrap();
+        let moved = p.folder_move(&epic.id, Some(&latin.id)).unwrap();
+        assert_eq!(moved.parent.as_deref(), Some(latin.id.as_str()));
+        let back = p.folder_move(&epic.id, None).unwrap();
+        assert_eq!(back.parent, None);
+        p.folder_move(&epic.id, Some(&greek.id)).unwrap();
+        assert_eq!(p.folder_rename(&epic.id, "Epic poetry").unwrap().name, "Epic poetry");
+        assert!(p.folder_rename("nowhere", "X").is_err());
+
+        // Projects in folders.
+        let a = p.create("Iliad").unwrap();
+        let b = p.create("Aeneid").unwrap();
+        assert_eq!(a.folder, None);
+        let a = p.move_to_folder(&a.id, Some(&epic.id)).unwrap();
+        assert_eq!(a.folder.as_deref(), Some(epic.id.as_str()));
+        assert_eq!(a.modified, p.info(&a.id).unwrap().modified, "moving does not change the project");
+        assert!(p.move_to_folder(&b.id, Some("nowhere")).is_err());
+        p.move_to_folder(&b.id, Some(&latin.id)).unwrap();
+        let copy = p.duplicate(&a.id, "Iliad, copy").unwrap();
+        assert_eq!(copy.folder, a.folder, "a copy lies where the original does");
+
+        // Read back from disk by another.
+        let again = Projects::at(p.root.clone());
+        let names: Vec<_> = again.folders().unwrap().into_iter().map(|f| f.name).collect();
+        assert_eq!(names, ["Greek", "Epic poetry", "Latin"]);
+
+        // Deleting a folder moves what is in it up to where it was.
+        let deep = p.folder_create("Homer", Some(&epic.id)).unwrap();
+        p.folder_delete(&epic.id).unwrap();
+        let folders = p.folders().unwrap();
+        assert!(!folders.iter().any(|f| f.id == epic.id));
+        assert_eq!(folders.iter().find(|f| f.id == deep.id).unwrap().parent.as_deref(), Some(greek.id.as_str()));
+        assert_eq!(p.info(&a.id).unwrap().folder.as_deref(), Some(greek.id.as_str()));
+        assert_eq!(p.info(&copy.id).unwrap().folder.as_deref(), Some(greek.id.as_str()));
+        p.folder_delete(&greek.id).unwrap();
+        assert_eq!(p.info(&a.id).unwrap().folder, None);
+        assert_eq!(p.info(&b.id).unwrap().folder.as_deref(), Some(latin.id.as_str()), "the other was not touched");
+        assert!(p.folder_delete(&greek.id).is_err());
+        let a = p.move_to_folder(&a.id, None).unwrap();
+        assert_eq!(a.folder, None);
+
+        // Which form is shown.
+        p.set_shown("list").unwrap();
+        assert_eq!(p.shown().unwrap(), "list");
+        assert!(p.set_shown("cards").is_err());
+        assert_eq!(next_order(None), "000001");
+        assert_eq!(next_order(Some("000009")), "000010");
+        assert!(next_order(Some("000009")).as_str() > "000009");
     }
 
     #[test]

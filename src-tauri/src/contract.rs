@@ -111,6 +111,10 @@ fn what_is_sent_is_what_the_interface_declares() {
         cited: Some(vec!["reference".into()]),
     };
     let project = projects.save_state(&project.id, b"state", Some(summary)).unwrap();
+    // In a folder that lies in another.
+    let greek = projects.folder_create("Greek", None).unwrap();
+    let folder = projects.folder_create("Epic", Some(&greek.id)).unwrap();
+    let project = projects.move_to_folder(&project.id, Some(&folder.id)).unwrap();
     let formats = Formats::new(&resources, &data.formats());
     let styles = Styles::new(&resources, &data.styles());
     let tools = ToolsInfo {
@@ -147,6 +151,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("importPlan", "ImportPlan", "library", &plan);
     put("duplicates", "DuplicateGroup[]", "library", &groups);
     put("project", "ProjectInfo", "projects", &project);
+    put("folder", "Folder", "projects", &folder);
     put("picture", "Picture", "pictures", &picture);
     put("tools", "ToolsInfo", "documents", &tools);
     put("format", "DocumentFormat", "documents", &formats.get("manuscript").unwrap());

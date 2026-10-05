@@ -341,6 +341,9 @@ export function reviewDrawn(el: HTMLElement, given: DrawnMarks) {
     )
       return;
     unmarkDrawn(made);
+    // WebKit gives a text set again by `innerHTML` the nodes it parsed before,
+    // marks and all: what the text holds that was not made for it goes too.
+    unmarkDrawn([...el.querySelectorAll<HTMLElement>(`.${OURS}, .${OURS}-class`)]);
     made = now.marks.length ? markDrawn(el, now.fragment, now.marks, now.part) : [];
     done = { marks: now.marks, html: now.html };
   };

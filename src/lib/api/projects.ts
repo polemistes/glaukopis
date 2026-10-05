@@ -34,8 +34,22 @@ export interface ProjectInfo {
    */
   cited?: string[];
   sharing?: Sharing;
+  /** The folder the project is in on this computer. Not there for one in no folder. */
+  folder?: string;
   view?: unknown;
 }
+
+/** A folder of projects, on this computer alone (ADR 0031). It may lie in another. */
+export interface Folder {
+  id: string;
+  name: string;
+  parent?: string;
+  /** Sorts among its siblings as a string. */
+  order: string;
+}
+
+/** The two forms of the page of projects: the last used, as cards; all of them, as a list in folders. */
+export type ProjectsShown = 'recent' | 'list';
 
 export interface ProjectSummary {
   name?: string;
@@ -126,6 +140,21 @@ export const projectSaveState = (
 ) => call<ProjectInfo>('project_save_state', withHead({ id, summary, keep }, document));
 export const projectSaveView = (id: string, view: unknown) =>
   call<void>('project_save_view', { id, view });
+export const foldersList = () => call<Folder[]>('folders_list');
+export const folderCreate = (name: string, parent: string | null) =>
+  call<Folder>('folder_create', { name, parent });
+export const folderRename = (id: string, name: string) =>
+  call<Folder>('folder_rename', { id, name });
+/** Refused where the folder would lie under itself. */
+export const folderMove = (id: string, parent: string | null) =>
+  call<Folder>('folder_move', { id, parent });
+/** What was in the folder moves up to where it was. */
+export const folderDelete = (id: string) => call<void>('folder_delete', { id });
+export const projectMoveToFolder = (id: string, folder: string | null) =>
+  call<ProjectInfo>('project_move_to_folder', { id, folder });
+/** With a kind, remembers which form of the page is shown; without, says which was remembered. */
+export const projectsShown = (kind?: ProjectsShown) =>
+  call<ProjectsShown>('projects_shown', { kind: kind ?? null });
 export const projectHistory = (id: string) => call<HistoryEntry[]>('project_history', { id });
 export const projectHistoryState = (id: string, entry: string) =>
   call<string>('project_history_state', { id, entry });

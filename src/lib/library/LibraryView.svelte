@@ -14,6 +14,8 @@
   import FolderMinus from '@lucide/svelte/icons/folder-minus';
   import FolderPlus from '@lucide/svelte/icons/folder-plus';
   import LibraryBig from '@lucide/svelte/icons/library-big';
+  import ListFilter from '@lucide/svelte/icons/list-filter';
+  import Network from '@lucide/svelte/icons/network';
   import Paperclip from '@lucide/svelte/icons/paperclip';
   import Plus from '@lucide/svelte/icons/plus';
   import Search from '@lucide/svelte/icons/search';
@@ -29,6 +31,7 @@
     libraryGet,
     libraryRemove,
     librarySource,
+    type Collection,
     type Summary,
   } from '$lib/api/library';
   import { t } from '$lib/i18n';
@@ -44,6 +47,9 @@
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import { citing } from './citing.svelte';
   import CollectionTree from './CollectionTree.svelte';
+  import FilterPopover from './FilterPopover.svelte';
+  import { activeFilters, applyFilters, noFilters, type Filters } from './filters';
+  import MapDialog from './MapDialog.svelte';
   import ReferenceList from './ReferenceList.svelte';
   import ReferencePane from './ReferencePane.svelte';
   import {
@@ -56,7 +62,12 @@
   } from './references.svelte';
 
   let findingDuplicates = $state(false);
+  /** A map is being made of the library, or of a collection. */
+  let mapping = $state<{ collection: Collection | null } | null>(null);
   let query = $state('');
+  let filters = $state<Filters>({ ...noFilters });
+  let filtering = $state(false);
+  let filterButton = $state<HTMLElement>();
   let sortKey = $state<SortKey>('authors');
   let descending = $state(false);
   let selection = $state<string[]>([]);
@@ -76,7 +87,10 @@
     const ids = library.idsIn(collectionId);
     return library.entries.filter((e) => ids.has(e.id));
   });
-  const shown = $derived(sortEntries(search(scoped, query), sortKey, descending));
+  const active = $derived(activeFilters(filters));
+  const shown = $derived(
+    sortEntries(applyFilters(search(scoped, query), filters), sortKey, descending),
+  );
   const single = $derived(selection.length === 1 ? selection[0] : null);
 
   onMount(() => {
@@ -306,6 +320,14 @@
         },
         {
           label: collection
+            ? t('library-map-collection', { name: collection.name })
+            : t('library-map-library'),
+          icon: Network,
+          disabled: !scoped.length,
+          action: () => (mapping = { collection: collection ?? null }),
+        },
+        {
+          label: collection
             ? t('library-export-collection', { name: collection.name })
             : t('library-export-library'),
           icon: FileDown,
@@ -406,6 +428,17 @@
           </button>
         {/if}
       </div>
+      <span class="filter" bind:this={filterButton}>
+        <IconButton
+          label={active ? t('library-filters-on', { count: active }) : t('library-filters')}
+          active={active > 0 || filtering}
+          aria-expanded={filtering}
+          onclick={() => (filtering = !filtering)}
+        >
+          <ListFilter size={15} />
+        </IconButton>
+        {#if active}<span class="badge" aria-hidden="true">{active}</span>{/if}
+      </span>
       <IconButton label={t('library-sort')} onclick={sortMenu}><ArrowDownUp size={15} /></IconButton
       >
       <div class="split">
@@ -442,11 +475,17 @@
         </EmptyState>
       {:else if !shown.length}
         <EmptyState
-          icon={SearchX}
+          icon={active ? ListFilter : SearchX}
           title={t('library-nothing-found')}
-          text={t('library-nothing-found.text')}
+          text={active ? t('library-nothing-passes') : t('library-nothing-found.text')}
         >
-          <Button onclick={() => (query = '')}>{t('library-search-clear')}</Button>
+          {#if query}
+            <Button onclick={() => (query = '')}>{t('library-search-clear')}</Button>
+          {/if}
+          {#if active}
+            <Button onclick={() => (filters = { ...noFilters })}>{t('library-filter-clear')}</Button
+            >
+          {/if}
         </EmptyState>
       {:else}
         <ReferenceList
@@ -464,7 +503,7 @@
       <footer>
         {#if selection.length > 1}
           {t('library-selected-of', { selected: selection.length, count: shown.length })}
-        {:else if query || collection}
+        {:else if query || collection || active}
           {t('library-count', { count: shown.length })}
         {:else}
           {t('library-count', { count: library.entries.length })}
@@ -514,6 +553,22 @@
 {#if findingDuplicates}
   <DuplicatesDialog onclose={() => (findingDuplicates = false)} />
 {/if}
+
+{#if mapping}
+  <MapDialog
+    collection={mapping.collection}
+    sort={{ key: sortKey, descending }}
+    onclose={() => (mapping = null)}
+  />
+{/if}
+
+<FilterPopover
+  open={filtering}
+  anchor={filterButton}
+  entries={scoped}
+  bind:filters
+  onclose={() => (filtering = false)}
+/>
 
 <style>
   .library {
@@ -588,6 +643,26 @@
   .clear:hover {
     background: var(--paper-hover);
     color: var(--ink);
+  }
+  .filter {
+    position: relative;
+    display: inline-flex;
+  }
+  .badge {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 15px;
+    text-align: center;
+    pointer-events: none;
   }
   .split {
     display: flex;

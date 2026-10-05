@@ -87,6 +87,9 @@ async function newProject(name) {
   await app.waitFor('dialog input');
   await app.type('dialog input', name);
   await app.clickText('dialog footer button', 'Create');
+  // A new project opens as text: the diagram is turned to.
+  await app.waitFor('.text-view .section', 8000);
+  await app.clickText('header [role="radio"]', 'Diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
 }
@@ -243,7 +246,9 @@ try {
     await sleep(800);
   };
   // Not by Ctrl+, from the text, which lowers the writing there.
-  await app.click('nav.rail a[aria-label="Settings"]');
+  // The settings are a window over the view; Ctrl+1, in newProject, closes it.
+  await app.click('nav.rail button[aria-label="Settings"]');
+  await sleep(500);
   await app.waitFor('[data-words="en"] li', 8000);
   const listed = await app.exec(
     `return Array.from(document.querySelectorAll('[data-words="en"] li')).map((l) => l.textContent.trim())`,

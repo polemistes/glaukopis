@@ -34,14 +34,37 @@ Both are in the same map.
 ## A first project
 
 1. Choose **Begin a project** and give it the working title of the book or
-   article. It opens on a map with one element, the centre, named after the
-   project.
-2. Click the centre and press **Tab**. A new element appears under it: type
-   its name and press **Enter**.
+   article. It opens on its text, a sheet with one heading, named after the
+   project: a new project begins with writing. Write under the heading, or
+   press **Ctrl+D** for the diagram, a map with one element, the centre.
+2. In the diagram, click the centre and press **Tab**. A new element appears
+   under it: type its name and press **Enter**.
 3. Press **Enter** again for one beside it, **Tab** for one under it.
 4. Double-click an element to write its text.
 
 Everything is saved as you work. There is nothing to press.
+
+### Many projects
+
+The page of projects has two forms, chosen at its head and remembered.
+**Last used** shows the twelve projects last worked on, as cards. **All
+projects** is a line for each, in folders: make a folder with **New folder**,
+or inside another from that folder's menu; drag a project onto a folder, or
+choose **Move to folder** in its menu, and **Out of folders** to take it out
+again. A folder shows how many projects it holds, and is opened and closed
+with a click. Deleting a folder keeps what is in it, which moves up to where
+the folder was. The folders are kept on this computer alone, not in the
+projects: a project you share is in your folders, not in the others'. The
+field above the list finds a project by its name.
+
+**A map of the projects…**, in the menu at the head of the page, makes a new
+project whose one map is the projects themselves: the folders as elements,
+nested as the folders are, and under each the projects in it, with their
+descriptions as text. With **everything in them**, each project has its maps
+under it, and each map its whole tree of elements, names and texts, so that
+all your work can be seen and searched as one map. The citations keep their
+references; a cross-reference points at nothing in the new project, and
+comments stay behind. The new project opens on its text.
 
 ## The diagram
 
@@ -53,7 +76,7 @@ Everything is saved as you work. There is nothing to press.
 | Rename an element | **F2**, or begin to type |
 | Read its text without opening it | Rest the pointer on it |
 | Move an element, with all that is under it | Drag it onto another element |
-| Move an element on its own, what is under it taking its place | Drag it with **Shift** held |
+| Move an element on its own onto another, what is under it taking its place | Drag it with **Shift** held; on the background, it is only moved |
 | Move it up or down, deeper or less deep | **Alt+Shift** and the arrows |
 | Copy elements, with all under them; paste them under the element selected, or on their own where none is | **Ctrl+C**, **Ctrl+V**; or the menu |
 | Go from element to element | The arrows |
@@ -665,7 +688,34 @@ same form in all three.
 
 **Collections** gather references for a subject or a piece of work. A
 collection holds links, not copies: a reference can be in any number of
-collections, and changing it changes it everywhere.
+collections, and changing it changes it everywhere. Collections can lie
+within collections: **New collection inside**, in the menu of a collection,
+makes one under it, and the **+** at the head of the collections offers the
+same while a collection is in view. A collection is moved under another by
+dragging it there, or with **Move to** in its menu. A collection shows its
+own references together with those of the collections within it, and counts
+them all.
+
+### Finding references
+
+The search field finds references that hold every word typed, in any field,
+without regard to case or accents. Beside it, the **filter** button narrows
+the list by the **kind** of publication, by the **publisher** and by the
+**year**, from one year to another. The filters work together with the
+search and with the collection in view; the button says how many are on, and
+**Clear the filters** takes them all off.
+
+### A map of the library
+
+**A map of the library…**, in the menu beside *New reference*, makes a new
+project with the library as a map: each collection an element, nested as the
+collections are, and under it every reference as an element of its own,
+named as the list shows it. The text of each is a citation of the reference,
+so the bibliography of the map lists them all, in the reference style chosen.
+References in no collection stand at the centre. While a collection is in
+view, the item is **A map of “…”**, and the map holds that collection and
+what lies within it. The project keeps copies of the references, as every
+project does of what it cites.
 
 A project keeps its own copy of every work it cites. A reference deleted from
 the library therefore leaves the citations of it as they are; before it is
@@ -1537,7 +1587,7 @@ what is to be done by its name, and does it.
 | **Ctrl+/** | All the keys, by where they hold; also the keyboard in the rail |
 | **Ctrl+K** | What is to be done: anything that has a key, and some that have none, found by its name |
 | **Ctrl+1**, **Ctrl+2**, **Ctrl+3** | The projects, the library, the pictures |
-| **Ctrl+,** | Settings |
+| **Ctrl+,** | Settings, in a window over what is open; closing it leaves you where you were |
 | **Ctrl+D** | Diagram or text |
 | **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+P** | The preview |

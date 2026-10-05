@@ -347,10 +347,13 @@
     border-color: var(--accent);
     background: var(--accent-soft);
     color: var(--ink);
-    box-shadow: 0 0 0 3px var(--focus-ring);
+    box-shadow:
+      0 0 0 4px var(--focus-ring),
+      0 0 0 1px var(--accent);
   }
+  /* Lifted, it is seen through, so that what it is over is seen: the element it will go under. */
   .node.lifted {
-    opacity: 0.85;
+    opacity: 0.45;
     box-shadow: var(--shadow-3);
     z-index: 5;
     transition: none;

@@ -207,6 +207,25 @@ library-sort-title = Title
 library-sort-added = Date added
 library-sort-modified = Date changed
 library-sort-descending = Descending
+
+## The filters, beside the search: what kind of publication, who published it, and when.
+
+library-filters = Filter
+library-filters-on = { $count ->
+    [one] Filter: { $count } on
+   *[other] Filter: { $count } on
+}
+library-filter-kind = Kind
+library-filter-publisher = Publisher
+library-filter-publisher-hint = Part of the name
+library-filter-any-publisher = Any publisher
+library-filter-year = Year
+library-filter-from = From
+library-filter-to = To
+library-filter-clear = Clear the filters
+library-filter-nothing-here = Nothing to filter here.
+# When the filters let nothing through.
+library-nothing-passes = No reference in view passes the filters.
 library-import-export = Import and export
 library-import-file = Import a file…
     .hint = BibLaTeX or BibTeX
@@ -215,6 +234,8 @@ library-add-pdfs = Add PDF files…
     .hint = Each is looked up, and kept
 library-import-zotero = Import from Zotero…
 library-find-duplicates = Find duplicates…
+library-map-library = A map of the library…
+library-map-collection = A map of “{ $name }”…
 library-export-library = Export the library…
 library-export-collection = Export “{ $name }”…
 library-export-one = Export…
@@ -282,6 +303,8 @@ library-cited-reading = Reading the projects…
 library-collections-hint = Collections gather references for a subject or a piece of work. A reference can be in any number of them.
 library-collection-new = New collection
 library-collection-new-inside = New collection inside
+library-collection-new-under = New collection in “{ $name }”
+library-collection-move-to = Move to
 library-collection-name = Name of the collection
 library-collection-name-failed = The collection could not be named
 library-collection-expand = Expand
@@ -305,6 +328,21 @@ library-collection-count = { $count ->
     [one] { $count } collection
    *[other] { $count } collections
 }
+
+## A map of the library, or of a collection: a new project.
+
+library-map-title-library = A map of the library
+library-map-title-collection = A map of a collection
+# The name a project made of the whole library is given.
+library-map-library-name = The library
+library-map-name = Name
+library-map-name-hint = The name of the project, of its map, and of the element at the centre of the map.
+library-map-what-library = The collections become elements, nested as they are, and every reference an element under its collection, whose text is a citation of it. References in no collection stand at the centre.
+library-map-what-collection = The collections within it become elements, nested as they are, and every reference an element under its collection, whose text is a citation of it.
+library-map-nothing = There are no references to put on the map.
+library-map-make = Make the project
+library-map-making = Making the project…
+library-map-failed = The project could not be made.
 
 ## Bringing references in, from anywhere in the application.
 

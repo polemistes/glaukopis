@@ -82,11 +82,11 @@ try {
   await sleep(300);
   const rail = () =>
     app.exec(
-      `return Array.from(document.querySelectorAll('.rail a.place')).map((a) => a.getAttribute('aria-label'))`,
+      `return Array.from(document.querySelectorAll('.rail .place')).map((a) => a.getAttribute('aria-label'))`,
     );
   check(
     'the interface is in the language of the system',
-    (await rail()).join(' ') === 'Prosjekter Bibliotek Bilder Søk Innstillinger',
+    (await rail()).join(' ') === 'Prosjekter Bibliotek Bilder Søk Taster Innstillinger',
     (await rail()).join(' '),
   );
   check('and the page says so', (await app.exec(`return document.documentElement.lang`)) === 'nb');
@@ -99,6 +99,9 @@ try {
   await english('a new project');
   await app.type('dialog input', 'Vreden');
   await app.clickText('dialog footer button', 'Opprett');
+  // Et nytt prosjekt åpnes som tekst: diagrammet velges.
+  await app.waitFor('.text-view .section', 8000);
+  await app.clickText('header [role="radio"]', 'Diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   await english('the diagram');
@@ -353,14 +356,15 @@ try {
   await sleep(300);
   check(
     'English is chosen, and the interface changes at once',
-    (await rail()).join(' ') === 'Projects Library Pictures Search Settings',
+    (await rail()).join(' ') === 'Projects Library Pictures Search Keys Settings',
     (await rail()).join(' '),
   );
   check('the page says so', (await app.exec(`return document.documentElement.lang`)) === 'en');
   check(
     'and the settings themselves',
-    (await app.exists('h2')) && (await app.text('h1')) === 'Settings',
-    await app.text('h1'),
+    (await app.exists('dialog .settings h2')) &&
+      (await app.text('dialog header h2')) === 'Settings',
+    await app.text('dialog header h2'),
   );
   await sleep(500);
   const kept = JSON.parse(readFileSync(join(app.dataDir, 'settings.json'), 'utf8'));

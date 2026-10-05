@@ -23,6 +23,9 @@ try {
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Wrath');
   await app.clickText('dialog footer button', 'Create');
+  // A new project opens as text: the diagram is turned to.
+  await app.waitFor('.text-view .section', 8000);
+  await app.clickText('header [role="radio"]', 'Diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
 
@@ -42,6 +45,9 @@ try {
   await app.newMap();
   await app.keys('Article');
   await app.press('Enter');
+  // A new map opens as text: the diagram is turned to.
+  await app.clickText('header [role="radio"]', 'Diagram');
+  await app.waitFor('.diagram .node.root', 8000);
   await sleep(400);
   await app.openMap('Wrath');
   await app.waitFor('.diagram .node:not(.root)', 5000);

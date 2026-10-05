@@ -164,6 +164,9 @@ try {
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Homer');
   await app.clickText('dialog footer button', 'Create');
+  // A new project opens as text: the diagram is turned to.
+  await app.waitFor('.text-view .section', 8000);
+  await app.clickText('header [role="radio"]', 'Diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   const id = (await app.exec(`return location.hash`)).split('/')[2].split('?')[0];

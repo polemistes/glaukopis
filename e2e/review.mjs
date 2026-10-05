@@ -104,6 +104,9 @@ try {
   await robert.waitFor('dialog input');
   await robert.type('dialog input', 'Wrath');
   await robert.clickText('dialog footer button', 'Create');
+  // A new project opens as text: the diagram is turned to.
+  await robert.waitFor('.text-view .section', 8000);
+  await robert.clickText('header [role="radio"]', 'Diagram');
   await robert.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await robert.keys(['Control', 'd']);

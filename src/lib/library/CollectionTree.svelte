@@ -2,6 +2,7 @@
   import { tick } from 'svelte';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import Folder from '@lucide/svelte/icons/folder';
+  import FolderInput from '@lucide/svelte/icons/folder-input';
   import FolderPlus from '@lucide/svelte/icons/folder-plus';
   import LibraryBig from '@lucide/svelte/icons/library-big';
   import Pencil from '@lucide/svelte/icons/pencil';
@@ -21,7 +22,7 @@
   import { confirm } from '$lib/ui/confirm.svelte';
   import { dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
-  import { openContextMenu } from '$lib/ui/menu.svelte';
+  import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
 
   interface Props {
@@ -123,6 +124,64 @@
     }
   }
 
+  /** Whether `id` lies within `ancestor`, at any depth. */
+  function within(id: string, ancestor: string): boolean {
+    let at = library.collection(id);
+    while (at) {
+      if (at.id === ancestor) return true;
+      at = library.collection(at.parent);
+    }
+    return false;
+  }
+
+  /** The places a collection can be moved to: the top, and every collection but itself and those within it. */
+  function moveItems(c: Collection): MenuItem[] {
+    const walk = (parent: string | null, depth: number): MenuItem[] =>
+      library.collections
+        .filter((x) => (x.parent ?? null) === parent && x.id !== c.id)
+        .sort((a, b) => collator.compare(a.name, b.name))
+        .flatMap((x) => [
+          {
+            label: ' '.repeat(depth) + x.name,
+            icon: depth ? undefined : Folder,
+            disabled: x.id === c.parent,
+            action: () => move(c.id, x.id),
+          } as MenuItem,
+          ...walk(x.id, depth + 1),
+        ]);
+    return [
+      {
+        label: t('library-collection-to-top'),
+        icon: LibraryBig,
+        disabled: !c.parent,
+        action: () => move(c.id, null),
+      },
+      { kind: 'separator' },
+      ...walk(null, 0),
+    ];
+  }
+
+  /** The button at the head of the collections: a new collection, within the one in view when one is. */
+  function add(event: MouseEvent) {
+    const c = library.collection(selected);
+    if (!c) {
+      begin(null);
+      return;
+    }
+    openMenu(
+      event.currentTarget as HTMLElement,
+      [
+        { label: t('library-collection-new'), icon: FolderPlus, action: () => begin(null) },
+        {
+          label: t('library-collection-new-under', { name: c.name }),
+          icon: FolderPlus,
+          action: () => begin(c.id),
+        },
+      ],
+      { align: 'end' },
+    );
+  }
+
   function context(event: MouseEvent, c: Collection) {
     openContextMenu(event, [
       {
@@ -131,9 +190,13 @@
         action: () => begin(c.id),
       },
       { label: t('common-rename'), icon: Pencil, shortcut: 'F2', action: () => rename(c) },
-      ...(c.parent
-        ? [{ label: t('library-collection-to-top'), action: () => move(c.id, null) } as const]
-        : []),
+      {
+        kind: 'submenu',
+        label: t('library-collection-move-to'),
+        icon: FolderInput,
+        disabled: !c.parent && library.collections.length < 2,
+        items: moveItems(c),
+      },
       { kind: 'separator' },
       {
         label: t('library-collection-delete'),
@@ -224,7 +287,7 @@
 
   <div class="heading">
     <span class="overline">{t('library-collections')}</span>
-    <IconButton label={t('library-collection-new')} size="sm" onclick={() => begin(null)}
+    <IconButton label={t('library-collection-new')} size="sm" onclick={add}
       ><Plus size={14} /></IconButton
     >
   </div>
@@ -245,7 +308,9 @@
         tabindex="0"
         style:padding-left="{10 + node.depth * 14}px"
         use:dropTarget={{
-          accepts: (p) => p.kind === 'references' || (p.kind === 'collection' && p.data !== c.id),
+          accepts: (p) =>
+            p.kind === 'references' ||
+            (p.kind === 'collection' && p.data !== c.id && !within(c.id, p.data as string)),
           ondrop: (e) => drop(e, c),
         }}
         onclick={() => onselect(c.id)}

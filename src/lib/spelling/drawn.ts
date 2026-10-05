@@ -17,6 +17,11 @@
  * every change of the page slower, wherever it was: with five hundred words
  * marked in view, a key took some thirty milliseconds more in a long map. A
  * span costs nothing when the page changes elsewhere.
+ *
+ * WebKit keeps what it parsed for `innerHTML`, and gives the same text set
+ * again the nodes it kept, marks and all: a text drawn anew may hold the
+ * spans of the one before it. What a text holds that was not made for it
+ * is taken away whenever it is looked at.
  */
 
 import type { Project } from '$lib/project/model/project.svelte';
@@ -106,6 +111,8 @@ function listen() {
       if (change === 'anew' || s.waits) {
         s.stale = true;
         if (s.visible) want(el);
+        // Turned off, a text out of sight loses its marks at once: that costs nothing.
+        else if (!spelling.on) look(el, s);
       }
     }
   });
@@ -137,10 +144,13 @@ function blockOf(el: Element, root: HTMLElement): Element {
   return root;
 }
 
-/** Takes the marks away, and joins again the text they had parted. */
-function unmark(s: Shown) {
+/**
+ * Takes the marks away, and joins again the text they had parted: those
+ * made for the text, and any it holds from elsewhere.
+ */
+function unmark(el: HTMLElement, s: Shown) {
   const parents = new Set<Node>();
-  for (const span of s.spans) {
+  for (const span of [...s.spans, ...el.querySelectorAll<HTMLElement>('.misspelt')]) {
     // A span that is gone went with the text it was in.
     const parent = span.parentNode;
     if (!parent) continue;
@@ -167,7 +177,7 @@ function mark(node: Text, from: number, to: number, word: string): HTMLElement {
 function look(el: HTMLElement, s: Shown) {
   s.stale = false;
   s.waits = false;
-  unmark(s);
+  unmark(el, s);
   const checking = spelling.on ? spelling.checkingOf(s.drawn.language) : null;
   if (checking === undefined) s.waits = true;
   else if (spelling.on) markAll(el, s);

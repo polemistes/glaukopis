@@ -5,6 +5,57 @@ home-join = Join a shared project
 home-from-document = A project from a document…
 home-new = New project
 
+## The two forms of the page: the last used projects as cards, all of them as a list
+
+home-shown = What is shown
+home-recent = Last used
+home-all = All projects
+# Under the cards, when there are more projects than they show.
+home-show-all = Show all { $count } projects
+# The button that opens the menu of the page.
+home-page-menu = More
+home-search = Find a project
+home-search-none = No project has that name.
+home-list-none = There are no projects.
+
+## Folders of projects
+
+home-new-folder = New folder
+home-folder-new-inside = New folder inside…
+home-folder-rename-title = Rename folder
+home-folder-name-placeholder = What the folder holds
+home-folder-name-missing = Give the folder a name.
+home-folder-projects = { $count ->
+    [one] { $count } project
+   *[other] { $count } projects
+}
+home-menu-move = Move to folder
+home-menu-out = Out of folders
+home-folder-delete-title = Delete the folder “{ $name }”?
+home-folder-delete-message = The folders and projects in it are kept: they move up to where the folder was.
+home-folder-delete-confirm = Delete folder
+home-folder-failed = That could not be done with the folder
+home-moved-to = “{ $name }” was moved to { $folder }
+home-moved-out = “{ $name }” is in no folder now
+home-move-failed = The project could not be moved
+
+## A map of the projects
+
+home-map-menu = A map of the projects…
+home-map-title = A map of the projects
+home-map-about = A new project, with one map: the folders as elements, and under each folder the projects in it.
+home-map-name-default = Projects
+home-map-what = What the map holds
+home-map-names = Only the names
+home-map-names-hint = An element for each project, with its description as its text.
+home-map-everything = With everything in them
+home-map-everything-hint = Under each project its maps, and under each map all its elements, with their names and texts.
+home-map-note = The citations keep their references. A cross-reference to a figure or a part points at nothing in the new project, and comments stay behind.
+home-map-reading = Reading “{ $name }”…
+home-map-working = Making the map…
+home-map-make = Make the map
+home-map-failed = The map of the projects could not be made
+
 ## When there are none yet
 
 home-welcome = Welcome to Glaukopis

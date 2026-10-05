@@ -135,16 +135,23 @@
   // The name of the file of the library is shown as code, where the language puts it.
   const [beforeFile, afterFile] = $derived(apart(t('settings-data-hint', { file: PLACE })));
 
+  /** How far along a slider a value lies, from 0 to 1. */
+  const along = (value: number, min: number, max: number) =>
+    Math.min(1, Math.max(0, (value - min) / (max - min)));
+  // The size of the interface is kept when the knob is let go, as the window
+  // is zoomed by it; while it is dragged, the fill and the number follow the knob.
+  let interfaceSlid = $state<number | null>(null);
+  const interfaceShown = $derived(interfaceSlid ?? settings.value.interfaceSize);
+
   /** The four colours of a colouring of one's own, in the order they are shown. */
   const OWN_COLOURS = ['paper', 'ink', 'accent', 'gold'] as const;
   /** How the colours of one's own read together. */
   const judged = $derived(judge(settings.value.ownTheme));
 </script>
 
-<div class="settings">
+<!-- The title is the dialog's; the focus is taken here, so that a key does not change a setting by chance. -->
+<div class="settings" tabindex="-1" data-autofocus>
   <div class="inner">
-    <h1>{t('settings-title')}</h1>
-
     <section>
       <h2>{t('settings-appearance')}</h2>
       <div class="row">
@@ -217,16 +224,22 @@
           <div class="hint">{t('settings-interface-size-hint')}</div>
         </div>
         <div class="size">
-          <input
-            id="interface-size"
-            type="range"
-            min="0.9"
-            max="1.5"
-            step="0.05"
-            value={settings.value.interfaceSize}
-            onchange={(e) => settings.set('interfaceSize', Number(e.currentTarget.value))}
-          />
-          <span class="number">{Math.round(settings.value.interfaceSize * 100)} %</span>
+          <span class="slider" style:--fill={along(interfaceShown, 0.9, 1.5)}>
+            <input
+              id="interface-size"
+              type="range"
+              min="0.9"
+              max="1.5"
+              step="0.05"
+              value={settings.value.interfaceSize}
+              oninput={(e) => (interfaceSlid = Number(e.currentTarget.value))}
+              onchange={(e) => {
+                settings.set('interfaceSize', Number(e.currentTarget.value));
+                interfaceSlid = null;
+              }}
+            />
+          </span>
+          <span class="number">{Math.round(interfaceShown * 100)} %</span>
         </div>
       </div>
       <div class="row top">
@@ -237,15 +250,17 @@
           </div>
         </div>
         <div class="size">
-          <input
-            id="text-size"
-            type="range"
-            min="14"
-            max="22"
-            step="1"
-            value={settings.value.textSize}
-            oninput={(e) => settings.set('textSize', Number(e.currentTarget.value))}
-          />
+          <span class="slider" style:--fill={along(settings.value.textSize, 14, 22)}>
+            <input
+              id="text-size"
+              type="range"
+              min="14"
+              max="22"
+              step="1"
+              value={settings.value.textSize}
+              oninput={(e) => settings.set('textSize', Number(e.currentTarget.value))}
+            />
+          </span>
           <span class="number">{settings.value.textSize}</span>
         </div>
       </div>
@@ -424,20 +439,10 @@
 
 <style>
   .settings {
-    height: 100%;
-    overflow-y: auto;
+    outline: none;
   }
   .inner {
-    max-width: 660px;
-    margin: 0 auto;
-    padding: 44px 40px 80px;
-  }
-  h1 {
-    margin-bottom: 8px;
-    font-family: var(--font-text);
-    font-size: var(--text-3xl);
-    font-weight: 500;
-    letter-spacing: -0.015em;
+    padding: 0 0 8px;
   }
   section {
     display: flex;
@@ -445,6 +450,9 @@
     gap: 14px;
     padding: 26px 0;
     border-bottom: 1px solid var(--line);
+  }
+  section:first-child {
+    padding-top: 6px;
   }
   section.last {
     border-bottom: none;
@@ -505,9 +513,71 @@
     gap: 10px;
     flex: none;
   }
-  .size input {
+  /* A slider drawn by us: the knob's centre travels over the track less the
+     knob's width, so the filled part of the line is measured the same way,
+     and ends under the knob wherever it is. The fill is a part of the
+     wrapper, so that its width can be read. */
+  .slider {
+    --thumb: 16px;
+    --track: 4px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
     width: 170px;
-    accent-color: var(--accent);
+    height: 20px;
+  }
+  .slider::before,
+  .slider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: var(--track);
+    margin-top: calc(var(--track) / -2);
+    border-radius: calc(var(--track) / 2);
+    pointer-events: none;
+  }
+  .slider::before {
+    right: 0;
+    background: var(--line-strong);
+  }
+  .slider::after {
+    width: calc(var(--fill, 0) * (100% - var(--thumb)) + var(--thumb) / 2);
+    background: var(--accent);
+  }
+  .slider input {
+    position: relative;
+    width: 100%;
+    height: 20px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+  .slider input:focus-visible {
+    outline: none;
+  }
+  .slider input::-webkit-slider-runnable-track {
+    height: var(--track);
+    background: transparent;
+    border: none;
+  }
+  .slider input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--thumb);
+    height: var(--thumb);
+    margin-top: calc((var(--track) - var(--thumb)) / 2);
+    border: 2px solid var(--paper-raised);
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: var(--shadow-1);
+  }
+  .slider input:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px var(--focus-ring);
   }
   .number {
     /* As wide as "150 %", so that the sliders stand under one another. */

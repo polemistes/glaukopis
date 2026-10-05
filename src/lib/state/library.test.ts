@@ -13,6 +13,7 @@ function entry(partial: Partial<Summary>): Summary {
     yearNumber: null,
     title: '',
     container: '',
+    publisher: '',
     attachments: 0,
     hasNote: false,
     added: '',

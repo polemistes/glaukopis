@@ -106,3 +106,14 @@ describe('drawn text', () => {
     expect(root.innerHTML).toBe(before);
   });
 });
+
+describe('what a drawn text holds from elsewhere', () => {
+  it('is nothing of the marks made for it, and is taken away like them', () => {
+    // WebKit gives a text set again by innerHTML the nodes it parsed before, marks and all.
+    const el = document.createElement('div');
+    el.innerHTML =
+      '<p>The <span class="review-mark review-added">wrath</span> of <span class="review-object review-mark-class">Achilles</span></p>';
+    unmarkDrawn([...el.querySelectorAll<HTMLElement>('.review-mark, .review-mark-class')]);
+    expect(el.innerHTML).toBe('<p>The wrath of <span class="">Achilles</span></p>');
+  });
+});

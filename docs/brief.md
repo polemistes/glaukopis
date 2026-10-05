@@ -343,3 +343,31 @@ What this settles:
 - Org mode's keys are taken as additions: Alt+Enter, Alt+Shift+Enter, Alt
   and the arrows; Ctrl+Enter, Tab and Alt+Shift stay; a **New element**
   button stands first in the writing tools.
+
+## 2026-10-05 — many projects, the library sifted, the settings a window
+
+> The project page will be messy after tens if not hundres of projects have been started. In addition to the veiw of the last used projects, that can be similar to now, there should also be a more compact list of projects, where they can be placed in "folders". An option that we almost have to include, then, although it probably will not be much used, is to turn the tree of projects into a new tree, either with the whole hierarchy beneath each project intact, or with just the titles of the folders and the projects inside them. In the library, it should be possible to filter on type of citation (book, article etc.), publisher and publication date. It should be possible to make a tree of the publication list or a set of collections. So subcollections should be possible. There is a tiny bug in the interface and font size selector, where the colour of the line behind the knob does not exactly align with the knob when moving it. The user settings should be a window, so we come back to where we were after changing them. The only thing pressing shift does now is to disconnect all the element's subelements and connect them to the moved element's parent. Movement should not do anything other than move the element. The only excelption is when moving one element into another. The element that is moved should be a bit more transparent, so it is possible to see when it is exactly over another element and will be moved there. This is now difficult for elements with names that span several lines. And, when creating a new project or map, open it the first time in text view. Build the package when you are ready.
+
+What this settles:
+
+- The page of projects has two forms, remembered: the last used as cards,
+  and all projects as a compact list in folders that nest. The folders are
+  kept on this computer, not in the projects (ADR 0031). **A map of the
+  projects…** makes a new project of them: the folders and projects by
+  name, or everything in them, maps and elements copied as they are.
+- The library is sifted by kind of work, publisher and year, from a filter
+  at its head; collections lie within collections; and a collection, or the
+  whole library, can be made a map in a new project.
+- The filled part of a slider ends under its knob: both are measured over
+  the track less the knob's width.
+- The settings are a window over whatever is in view, from the gear in the
+  rail or Ctrl+,; closed, they leave the view as it was. The old place,
+  `#/settings`, opens the window over the projects.
+- Dragging an element only moves it, with or without Shift; Shift makes a
+  difference only when the element is dropped onto another, where what is
+  under it stays behind in its place. The element dragged is seen through,
+  and the element it would go into is ringed plainly.
+- A new project or map opens on its text the first time.
+- The text drawn without an editor takes away marks it did not make: WebKit
+  gives a text set again by `innerHTML` the nodes it parsed before, marks
+  and all.

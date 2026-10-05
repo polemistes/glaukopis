@@ -125,6 +125,20 @@ impl Entry {
         String::new()
     }
 
+    /// Who published it: the publisher, or else the institution or the
+    /// organisation that stands for one, as of a report or a standard.
+    pub fn publisher_plain(&self) -> String {
+        for field in ["publisher", "institution", "organization"] {
+            if let Some(v) = self.get(field) {
+                let text = plain(v);
+                if !text.is_empty() {
+                    return text;
+                }
+            }
+        }
+        String::new()
+    }
+
     pub fn attachments(&self) -> Vec<String> {
         self.get("file").map(split_files).unwrap_or_default()
     }
@@ -144,6 +158,7 @@ impl Entry {
             creators.iter().map(|p| fold(&format!("{} {}", p.family, p.given))).collect::<Vec<_>>().join(" ");
         let title = self.title_plain();
         let container = self.container_plain();
+        let publisher = self.publisher_plain();
 
         // Everything a search may hit, folded.
         let mut hay = String::new();
@@ -194,6 +209,7 @@ impl Entry {
             year_number: self.year(),
             title,
             container,
+            publisher,
             attachments: self.attachments().len(),
             has_note: self.get("annotation").is_some(),
             added: self.added.clone(),
@@ -303,6 +319,8 @@ pub struct Summary {
     pub year_number: Option<i32>,
     pub title: String,
     pub container: String,
+    /// The publisher, or the institution or organisation that stands for one.
+    pub publisher: String,
     pub attachments: usize,
     /// Whether the user has written something about the work: its `annotation`.
     pub has_note: bool,
@@ -542,11 +560,22 @@ mod tests {
         assert_eq!(s.authors, "Nagy and Lord");
         assert_eq!(s.title, "Homeric Questions: A Reply");
         assert_eq!(s.container, "Essays");
+        assert_eq!(s.publisher, "");
         assert_eq!(s.year, "1996");
         assert_eq!(s.attachments, 2);
         assert!(s.search.contains("gregory nagy"));
         assert!(s.search.contains("homeric questions"));
         assert_eq!(e.attachments(), vec!["a/b.pdf", "c;d.pdf"]);
+    }
+
+    #[test]
+    fn the_publisher_or_what_stands_for_one() {
+        let book = draft("@book{k, title={T}, publisher={Johns Hopkins University Press}}").to_entry();
+        assert_eq!(book.summary().publisher, "Johns Hopkins University Press");
+        let report = draft("@report{k, title={T}, institution={Universidad de Salamanca}}").to_entry();
+        assert_eq!(report.summary().publisher, "Universidad de Salamanca");
+        let standard = draft("@standard{k, title={T}, organization={ISO}}").to_entry();
+        assert_eq!(standard.summary().publisher, "ISO");
     }
 
     #[test]

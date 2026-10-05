@@ -326,6 +326,9 @@ try {
     await app.waitFor('dialog input');
     await app.type('dialog input', 'Networks');
     await app.clickText('dialog footer button', 'Create');
+    // A new project opens as text: the diagram is turned to.
+    await app.waitFor('.text-view .section', 8000);
+    await app.clickText('header [role="radio"]', 'Diagram');
     await app.waitFor('.diagram .node.root', 8000);
     await sleep(400);
     const place = await app.exec(

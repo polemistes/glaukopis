@@ -10,12 +10,15 @@ core-projects-not-in-history = Det er ikke en oppføring i historikken.
 core-projects-no-token = Serveren ga ingen tilgangsnøkkel.
 core-projects-not-shared = Prosjektet er ikke delt.
 core-projects-not-in-trash = Det er ikke et prosjekt i papirkurven.
+core-projects-folder-in-itself = En mappe kan ikke legges i seg selv.
+core-projects-not-a-form = «{ $kind }» er ikke en form for prosjektsiden.
 core-projects-not-base64 = ikke base64: { $error }
 
 ## Det som ikke ble funnet, vist etter «ikke funnet: ».
 
 core-projects-the-project = prosjektet
 core-projects-the-project-in-trash = prosjektet i papirkurven
+core-projects-the-folder = mappen
 
 ## Det som ble gjort da systemet sa nei, vist foran det systemet sa.
 

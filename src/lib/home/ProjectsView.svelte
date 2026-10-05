@@ -3,10 +3,13 @@
   import Copy from '@lucide/svelte/icons/copy';
   import History from '@lucide/svelte/icons/history';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
+  import LayoutGrid from '@lucide/svelte/icons/layout-grid';
+  import List from '@lucide/svelte/icons/list';
   import Pencil from '@lucide/svelte/icons/pencil';
   import Plus from '@lucide/svelte/icons/plus';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import Users from '@lucide/svelte/icons/users';
+  import Waypoints from '@lucide/svelte/icons/waypoints';
   import JoinDialog from '$lib/sharing/JoinDialog.svelte';
   import FileInput from '@lucide/svelte/icons/file-input';
   import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
@@ -15,32 +18,66 @@
   import { goThroughWhenOpen } from '$lib/found/found.svelte';
   import { dropTarget } from '$lib/ui/drag.svelte';
   import DocumentHost from '$lib/documents/DocumentHost.svelte';
-  import { projectTrash, type ProjectInfo, type Trashed } from '$lib/api/projects';
+  import {
+    projectTrash,
+    type Folder,
+    type ProjectInfo,
+    type ProjectsShown,
+    type Trashed,
+  } from '$lib/api/projects';
   import HistoryDialog from './HistoryDialog.svelte';
+  import ProjectList from './ProjectList.svelte';
+  import ProjectsMapDialog from './ProjectsMapDialog.svelte';
   import TrashDialog from './TrashDialog.svelte';
   import { sharingRename } from '$lib/api/sharing';
   import { t } from '$lib/i18n';
   import { projects } from '$lib/state/projects.svelte';
-  import { router } from '$lib/state/router.svelte';
+  import { router, type MapMode } from '$lib/state/router.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
+  import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
+  import Segmented from '$lib/ui/Segmented.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import Mark from '$lib/shell/Mark.svelte';
   import { ago } from '$lib/util/time';
 
-  /** The dialog that asks for a name: for a new project, a renamed one, a copy. */
+  /** The dialog that asks for a name: for a new project, a renamed one, a copy; a new folder, a renamed one. */
   let naming = $state<{
-    purpose: 'new' | 'rename' | 'copy';
+    purpose: 'new' | 'rename' | 'copy' | 'folder' | 'folder-rename';
     project?: ProjectInfo;
+    folder?: Folder;
+    /** The folder a new folder is made in. */
+    parent?: string | null;
     value: string;
     error: string | null;
   } | null>(null);
   let busy = $state(false);
   let joining = $state(false);
+  /** The dialog that makes a map of the projects. */
+  let mapping = $state(false);
+
+  /** How many of the last used projects the cards show; the rest are in the list. */
+  const RECENT = 12;
+  const recent = $derived(projects.list.slice(0, RECENT));
+
+  const forms: { value: ProjectsShown; label: string; icon: typeof LayoutGrid }[] = $derived([
+    { value: 'recent', label: t('home-recent'), icon: LayoutGrid },
+    { value: 'list', label: t('home-all'), icon: List },
+  ]);
+
+  function pageMenu(anchor: HTMLElement) {
+    openMenu(
+      anchor,
+      [{ label: t('home-map-menu'), icon: Waypoints, action: () => (mapping = true) }],
+      {
+        align: 'end',
+      },
+    );
+  }
   let earlier = $state<ProjectInfo | null>(null);
   let trash = $state.raw<Trashed[]>([]);
   let showTrash = $state(false);
@@ -58,8 +95,9 @@
     readTrash();
   });
 
-  function open(p: ProjectInfo) {
-    router.go({ view: 'project', project: p.id });
+  /** Opens a project; with a mode, in that view rather than where it was left. */
+  function open(p: ProjectInfo, mode?: MapMode) {
+    router.go({ view: 'project', project: p.id, mode });
   }
 
   // A PDF or a picture has its text read.
@@ -83,7 +121,10 @@
     if (!naming || busy) return;
     const name = naming.value.trim();
     if (!name) {
-      naming.error = t('home-name-missing');
+      naming.error =
+        naming.purpose === 'folder' || naming.purpose === 'folder-rename'
+          ? t('home-folder-name-missing')
+          : t('home-name-missing');
       return;
     }
     busy = true;
@@ -91,7 +132,14 @@
       if (naming.purpose === 'new') {
         const made = await projects.create(name);
         naming = null;
-        open(made);
+        // The first time, on its text: a new project begins with writing.
+        open(made, 'text');
+      } else if (naming.purpose === 'folder') {
+        await projects.createFolder(name, naming.parent ?? null);
+        naming = null;
+      } else if (naming.purpose === 'folder-rename' && naming.folder) {
+        await projects.renameFolder(naming.folder.id, name);
+        naming = null;
       } else if (naming.purpose === 'rename' && naming.project) {
         await projects.rename(naming.project.id, name);
         // Those who share it are told the name by the server; the server itself takes no harm from failing.
@@ -206,60 +254,95 @@
         <div class="title">
           <h1>{t('home-title')}</h1>
         </div>
-      </header>
-      <div class="grid">
-        {#each projects.list as p (p.id)}
-          <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <div
-            class="card"
-            role="button"
-            tabindex="0"
-            onclick={() => open(p)}
-            onkeydown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                open(p);
-              }
-            }}
-            oncontextmenu={(e) => openContextMenu(e, items(p))}
+        <div class="forms">
+          <Segmented
+            value={projects.shown}
+            options={forms}
+            label={t('home-shown')}
+            size="sm"
+            onchange={(kind) => projects.show(kind)}
+          />
+          <IconButton
+            label={t('home-page-menu')}
+            size="sm"
+            onclick={(e) => pageMenu(e.currentTarget)}
           >
-            <h3 class="serif">{p.name}</h3>
-            {#if p.description}<p class="description">{p.description}</p>{/if}
-            {#if p.maps.length > 1}
-              <ul class="maps">
-                {#each p.maps.slice(0, 4) as m (m.id)}
-                  <li class="truncate">{m.name}</li>
-                {/each}
-                {#if p.maps.length > 4}<li class="more">
-                    {t('home-more-maps', { count: p.maps.length - 4 })}
-                  </li>{/if}
-              </ul>
-            {/if}
-            <div class="spring"></div>
-            <div class="foot">
-              <div class="meta">
-                <div class="facts truncate">{facts(p) || t('home-not-begun')}</div>
-                <div class="when">
-                  {#if p.sharing}<span class="shared"><Users size={11} /> {t('home-shared')} ·</span
-                    >{/if}
-                  {t('home-changed', { ago: ago(p.modified) })}
+            <Ellipsis size={16} />
+          </IconButton>
+        </div>
+      </header>
+      {#if projects.shown === 'list'}
+        <ProjectList
+          {open}
+          {items}
+          onnewfolder={(parent) => (naming = { purpose: 'folder', parent, value: '', error: null })}
+          onrenamefolder={(folder) =>
+            (naming = { purpose: 'folder-rename', folder, value: folder.name, error: null })}
+        />
+      {:else}
+        <div class="grid">
+          {#each recent as p (p.id)}
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <div
+              class="card"
+              role="button"
+              tabindex="0"
+              onclick={() => open(p)}
+              onkeydown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  open(p);
+                }
+              }}
+              oncontextmenu={(e) => openContextMenu(e, items(p))}
+            >
+              <h3 class="serif">{p.name}</h3>
+              {#if p.description}<p class="description">{p.description}</p>{/if}
+              {#if p.maps.length > 1}
+                <ul class="maps">
+                  {#each p.maps.slice(0, 4) as m (m.id)}
+                    <li class="truncate">{m.name}</li>
+                  {/each}
+                  {#if p.maps.length > 4}<li class="more">
+                      {t('home-more-maps', { count: p.maps.length - 4 })}
+                    </li>{/if}
+                </ul>
+              {/if}
+              <div class="spring"></div>
+              <div class="foot">
+                <div class="meta">
+                  <div class="facts truncate">{facts(p) || t('home-not-begun')}</div>
+                  <div class="when">
+                    {#if p.sharing}<span class="shared"
+                        ><Users size={11} /> {t('home-shared')} ·</span
+                      >{/if}
+                    {t('home-changed', { ago: ago(p.modified) })}
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  class="menu"
+                  aria-label={t('home-more-for', { name: p.name })}
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    openMenu(e.currentTarget, items(p), { align: 'end' });
+                  }}
+                >
+                  <Ellipsis size={16} />
+                </button>
               </div>
-              <button
-                type="button"
-                class="menu"
-                aria-label={t('home-more-for', { name: p.name })}
-                onclick={(e) => {
-                  e.stopPropagation();
-                  openMenu(e.currentTarget, items(p), { align: 'end' });
-                }}
-              >
-                <Ellipsis size={16} />
-              </button>
             </div>
+          {/each}
+        </div>
+        {#if projects.list.length > RECENT}
+          <div class="under">
+            <button type="button" class="quiet" onclick={() => projects.show('list')}>
+              <List size={13} />
+              {t('home-show-all', { count: projects.list.length })}
+            </button>
           </div>
-        {/each}
-      </div>
+        {/if}
+      {/if}
     {/if}
     {#if projects.loaded && trash.length}
       <div class="under">
@@ -296,6 +379,16 @@
 
 <DocumentHost />
 
+{#if mapping}
+  <ProjectsMapDialog
+    onclose={() => (mapping = false)}
+    onmade={({ project, map }) => {
+      mapping = false;
+      router.go({ view: 'project', project, map, mode: 'text' });
+    }}
+  />
+{/if}
+
 {#if joining}
   <JoinDialog
     onclose={() => (joining = false)}
@@ -313,7 +406,11 @@
       ? t('home-new')
       : naming.purpose === 'rename'
         ? t('home-rename-title')
-        : t('home-duplicate-title')}
+        : naming.purpose === 'copy'
+          ? t('home-duplicate-title')
+          : naming.purpose === 'folder'
+            ? t('home-new-folder')
+            : t('home-folder-rename-title')}
     width={440}
     onclose={() => (naming = null)}
   >
@@ -327,8 +424,10 @@
         bind:value={naming.value}
         label={t('home-name')}
         size="lg"
-        serif
-        placeholder={t('home-name-placeholder')}
+        serif={naming.purpose !== 'folder' && naming.purpose !== 'folder-rename'}
+        placeholder={naming.purpose === 'folder' || naming.purpose === 'folder-rename'
+          ? t('home-folder-name-placeholder')
+          : t('home-name-placeholder')}
         error={naming.error}
         data-autofocus
         oninput={() => naming && (naming.error = null)}
@@ -337,9 +436,9 @@
     {#snippet footer()}
       <Button variant="ghost" onclick={() => (naming = null)}>{t('common-cancel')}</Button>
       <Button variant="primary" disabled={busy || !naming?.value.trim()} onclick={commit}>
-        {naming?.purpose === 'new'
+        {naming?.purpose === 'new' || naming?.purpose === 'folder'
           ? t('home-create')
-          : naming?.purpose === 'rename'
+          : naming?.purpose === 'rename' || naming?.purpose === 'folder-rename'
             ? t('common-rename')
             : t('home-duplicate')}
       </Button>
@@ -367,6 +466,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+  .forms {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 4px;
   }
   .under {
     display: flex;
