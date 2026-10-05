@@ -1,4 +1,4 @@
-# Maintainer: Robert Emil Berge <post@robertemilberge.no>
+# Maintainer: Robert Emil Berge <develop@robertemilberge.no>
 #
 # Builds the application, the collaboration server and the dictionaries of
 # spelling from the archive of a release on GitHub. This is the PKGBUILD to
