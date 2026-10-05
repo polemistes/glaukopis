@@ -16,7 +16,7 @@
 ```
 cd packaging/arch
 makepkg -s
-sudo pacman -U glaukopis-0.1.0-11-x86_64.pkg.tar.zst glaukopis-dictionaries-en-0.1.0-11-any.pkg.tar.zst
+sudo pacman -U glaukopis-0.1.0-12-x86_64.pkg.tar.zst glaukopis-dictionaries-en-0.1.0-12-any.pkg.tar.zst
 ```
 
 What the application needs on Arch comes from the repositories rather than
