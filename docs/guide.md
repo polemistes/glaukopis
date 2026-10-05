@@ -76,7 +76,7 @@ comments stay behind. The new project opens on its text.
 | Rename an element | **F2**, or begin to type |
 | Read its text without opening it | Rest the pointer on it |
 | Move an element, with all that is under it | Drag it onto another element |
-| Move an element on its own onto another, what is under it taking its place | Drag it with **Shift** held; on the background, it is only moved |
+| Move an element on its own, what is under it staying where it stood | Drag it with **Shift** held |
 | Move it up or down, deeper or less deep | **Alt+Shift** and the arrows |
 | Copy elements, with all under them; paste them under the element selected, or on their own where none is | **Ctrl+C**, **Ctrl+V**; or the menu |
 | Go from element to element | The arrows |

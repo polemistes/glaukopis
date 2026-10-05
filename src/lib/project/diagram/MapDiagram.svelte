@@ -574,10 +574,9 @@
     const target = hit(world, except, during);
 
     project.checkpoint();
-    // With Shift, dropped on another element, the element goes alone: what
-    // is under it takes its place. Dropped on the background, it is only
-    // moved, with all that is under it, as without Shift.
-    if (event.alone && local && target) for (const id of data.ids) release(id);
+    // With Shift, the element goes alone, wherever it is dropped: what is
+    // under it stays where it stood, under the element's old parent.
+    if (event.alone && local) for (const id of data.ids) release(id);
     let result: string[] = [];
     if (target) {
       result = project.move(data.ids, target, undefined, { pos: null });
