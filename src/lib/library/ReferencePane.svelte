@@ -7,6 +7,7 @@
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import FileText from '@lucide/svelte/icons/file-text';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
+  import Map from '@lucide/svelte/icons/map';
   import Paperclip from '@lucide/svelte/icons/paperclip';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import X from '@lucide/svelte/icons/x';
@@ -42,16 +43,31 @@
   import { toLines, withNoteAsItIs } from './notes.svelte';
   import ReferenceForm from './ReferenceForm.svelte';
   import ScanText from '@lucide/svelte/icons/scan-text';
+  import PdfMapDialog from '$lib/ocr/PdfMapDialog.svelte';
   import SearchableDialog from '$lib/ocr/SearchableDialog.svelte';
+  import type { Project } from '$lib/project/model/project.svelte';
 
   interface Props {
     id: string;
     ondelete: (id: string) => void;
     onduplicate?: (draft: Draft) => void;
     onclose?: () => void;
+    /** The project the pane stands in, where it does, with its id: a map of a PDF can be made in it. */
+    project?: Project | null;
+    projectId?: string | null;
+    /** Asks for a map that was made in that project to be shown. */
+    onopenmap?: (map: string) => void;
   }
 
-  let { id, ondelete, onduplicate, onclose }: Props = $props();
+  let {
+    id,
+    ondelete,
+    onduplicate,
+    onclose,
+    project = null,
+    projectId = null,
+    onopenmap,
+  }: Props = $props();
 
   /** The projects that cite the work; those that did not say are read once. */
   const citers = $derived(citing.of(id));
@@ -210,6 +226,8 @@
 
   /** The PDF that is being made searchable (`ocr/SearchableDialog.svelte`). */
   let searchable = $state<StoredFile | null>(null);
+  /** The PDF whose text is becoming a map (`ocr/PdfMapDialog.svelte`). */
+  let mapping = $state<StoredFile | null>(null);
 
   async function leaveCollection(collectionId: string) {
     if (!reference) return;
@@ -385,6 +403,14 @@
               >
                 <ScanText size={13} />
               </IconButton>
+              <IconButton
+                label={t('ocr-map-button')}
+                size="sm"
+                data-pdf-map={file.name}
+                onclick={() => (mapping = file)}
+              >
+                <Map size={13} />
+              </IconButton>
             {/if}
             <IconButton label={t('common-remove')} size="sm" onclick={() => detach(file)}
               ><X size={13} /></IconButton
@@ -483,6 +509,10 @@
     }}
     onclose={() => (searchable = null)}
   />
+{/if}
+
+{#if mapping}
+  <PdfMapDialog file={mapping} {project} {projectId} {onopenmap} onclose={() => (mapping = null)} />
 {/if}
 
 <style>

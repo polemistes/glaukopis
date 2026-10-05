@@ -77,7 +77,7 @@ impl Kit {
     }
 
     fn asked(&self) -> Asked {
-        Asked { languages: vec!["eng".into()], all: false }
+        Asked { languages: vec!["eng".into()], ..Asked::default() }
     }
 }
 
@@ -124,6 +124,79 @@ fn a_scan_is_read_into_paragraphs() {
     assert_eq!(imported.kind, tr!("ocr-kind-pdf"));
 }
 
+/// The settings for quality: a scan read in black and white, as one block,
+/// at fewer dots to the inch, is read all the same; and what is asked for
+/// is what Tesseract is given.
+#[test]
+fn a_scan_is_read_as_the_quality_asks() {
+    let Some(kit) = kit(true) else { return };
+    let scan = kit.scan("scan.pdf");
+    let asked = Asked { dpi: 200, layout: "block".into(), contrast: true, ..kit.asked() };
+    assert_eq!(asked.quality(), drawing::Quality { dpi: 200, contrast: true });
+    assert!(!asked.strips(), "strip is only with all");
+    assert!(Asked { strip: true, all: true, ..Asked::default() }.strips());
+    assert!(!Asked { strip: true, ..Asked::default() }.strips());
+    let read = read_pdf(&scan, &kit.tools, &kit.work(), &asked, None, &mut nothing, &never()).unwrap();
+    let text = read.pages[0].paragraphs.join(" ");
+    assert!(has(&text, "the quarrel between the king") && has(&text, "Milman Parry"), "{text}");
+
+    // The picture is drawn at 200 dots, and of two shades only.
+    let pdf = hayro::hayro_syntax::Pdf::new(std::fs::read(&scan).unwrap()).unwrap();
+    let drawn = drawing::draw_with_hayro(&pdf, 0, asked.quality()).unwrap();
+    assert_eq!(drawn.dpi, 200);
+    assert!((drawn.width as f32 - 150.0 / 25.4 * 200.0).abs() < 3.0, "{}", drawn.width);
+    assert!(drawn.grey.iter().all(|s| *s == 0 || *s == 255));
+    assert!(drawn.grey.contains(&0) && drawn.grey.contains(&255));
+
+    // A picture is read in black and white as well.
+    let page = kit.typeset("page.png", PAGE);
+    let bytes = std::fs::read(&page).unwrap();
+    let read = read_picture(&bytes, &kit.tools, &kit.work(), &asked, None, &never()).unwrap();
+    assert!(has(&read.join(" "), "Milman Parry"), "{read:?}");
+}
+
+/// A PDF whose text is poor has it taken away as it is made searchable, so
+/// that only what Tesseract reads stays; what is drawn stays with it.
+#[test]
+fn the_text_a_pdf_has_can_be_taken_away_as_it_is_made_searchable() {
+    let Some(kit) = kit(true) else { return };
+    // A scan with a text layer that says the wrong thing, unseen.
+    let scan = kit.scan("scan.pdf");
+    let wrong = b"BT 3 Tr /F1 12 Tf 72 70 Td (Wrong words altogether, laid by another program over the page) Tj ET\n";
+    let before = {
+        let mut doc = Document::load(&scan).unwrap();
+        let page = doc.get_pages()[&1];
+        let font = doc.add_object(dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica" });
+        let resources = doc.get_dictionary(page).unwrap().get(b"Resources").unwrap().as_reference().unwrap();
+        doc.get_dictionary_mut(resources).unwrap().set("Font", dictionary! { "F1" => font });
+        doc.add_page_contents(page, wrong.to_vec()).unwrap();
+        doc.save(&scan).unwrap();
+        std::fs::read(&scan).unwrap()
+    };
+    let text = pdf_extract::extract_text_from_mem(&before).unwrap();
+    assert!(has(&text, "Wrong words altogether"), "{text}");
+
+    // Without strip, the wrong text stays beside the right.
+    let all = Asked { all: true, ..kit.asked() };
+    let made = make_searchable(&scan, &kit.tools, &kit.work(), &all, &mut nothing, &never()).unwrap();
+    let text = pdf_extract::extract_text_from_mem(made.pdf.as_ref().unwrap()).unwrap();
+    assert!(has(&text, "Wrong words altogether") && has(&text, "Milman Parry"), "{text}");
+
+    // With it, only the right text is there, and the page looks as it did.
+    let strip = Asked { strip: true, ..all };
+    let made = make_searchable(&scan, &kit.tools, &kit.work(), &strip, &mut nothing, &never()).unwrap();
+    assert_eq!((made.read, made.failed.len()), (1, 0));
+    let after = made.pdf.unwrap();
+    assert_eq!(drawn(&after), drawn(&before));
+    let text = pdf_extract::extract_text_from_mem(&after).unwrap();
+    assert!(!has(&text, "Wrong words") && has(&text, "Milman Parry"), "{text}");
+    let (on, of) = on_the_ink(&before, &after, 0);
+    assert!(of > 100 && on * 100 >= of * 95, "{on} of {of} letters are on the ink");
+    // The pages that are to be read are those that have text already, where all are not asked for.
+    let looked = look(&scan, &kit.tools).unwrap();
+    assert_eq!(looked.with_text, 0, "the wrong text is too short to count as text");
+}
+
 #[test]
 fn a_pdf_that_has_text_is_taken_as_it_is() {
     let Some(kit) = kit(false) else { return };
@@ -164,7 +237,7 @@ fn a_scan_without_tesseract_cannot_be_read() {
 /// The pages of a PDF drawn by hayro, as grey.
 fn drawn(pdf: &[u8]) -> Vec<drawing::Drawn> {
     let pdf = hayro::hayro_syntax::Pdf::new(pdf.to_vec()).unwrap();
-    (0..pdf.pages().len()).map(|i| drawing::draw_with_hayro(&pdf, i).unwrap()).collect()
+    (0..pdf.pages().len()).map(|i| drawing::draw_with_hayro(&pdf, i, drawing::Quality::default()).unwrap()).collect()
 }
 
 /// The unseen glyphs of a page as hayro interprets it, on the picture of
@@ -209,7 +282,7 @@ impl<'a> Device<'a> for Unseen {
 fn on_the_ink(original: &[u8], searchable: &[u8], page: usize) -> (usize, usize) {
     use hayro::hayro_interpret::{Context, InterpreterCache, InterpreterSettings, TransformExt, interpret_page};
     let before = hayro::hayro_syntax::Pdf::new(original.to_vec()).unwrap();
-    let picture = drawing::draw_with_hayro(&before, page).unwrap();
+    let picture = drawing::draw_with_hayro(&before, page, drawing::Quality::default()).unwrap();
     let after = hayro::hayro_syntax::Pdf::new(searchable.to_vec()).unwrap();
     let shown = &after.pages()[page];
     let scale = f64::from(picture.dpi) / 72.0;
@@ -434,7 +507,7 @@ fn a_reading_can_be_stopped_and_asks_for_languages_there_are() {
     let err = make_searchable(&scan, &kit.tools, &kit.work(), &kit.asked(), &mut nothing, &stop).unwrap_err();
     assert_eq!(err.kind(), tools::STOPPED);
 
-    let klingon = Asked { languages: vec!["tlh".into()], all: false };
+    let klingon = Asked { languages: vec!["tlh".into()], ..Asked::default() };
     let err = read_pdf(&scan, &kit.tools, &kit.work(), &klingon, None, &mut nothing, &never()).unwrap_err();
     assert_eq!(err.to_string(), tr!("ocr-no-language", language = "tlh"));
     // What is made on the way is gone.

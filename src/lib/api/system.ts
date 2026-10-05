@@ -1,4 +1,5 @@
 import { call } from './backend';
+import type { Layout } from './ocr';
 
 export interface SystemInfo {
   version: string;
@@ -69,6 +70,10 @@ export interface Settings {
    * `eng`); none, for the language of the text and that of the interface.
    */
   ocrLanguages: string[];
+  /** How text is read at first: the resolution (0 for 300), the layout of the page, and whether it is made black and white. See `api/ocr.ts`. */
+  ocrDpi: number;
+  ocrLayout: Layout;
+  ocrContrast: boolean;
   /** Identifies the user to bibliographic services that ask for a contact address. */
   contactEmail: string | null;
   /** Name shown to collaborators. */
@@ -99,6 +104,9 @@ export const defaultSettings: Settings = {
   pandocPath: null,
   tesseractPath: null,
   ocrLanguages: [],
+  ocrDpi: 0,
+  ocrLayout: '',
+  ocrContrast: false,
   contactEmail: null,
   displayName: null,
   person: null,

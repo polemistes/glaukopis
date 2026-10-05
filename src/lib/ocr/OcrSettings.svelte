@@ -1,8 +1,8 @@
 <script lang="ts">
   /**
    * Tesseract among the programs of the settings: where it is, the languages
-   * it has data for, and those text is read in at first. What to install is
-   * said where it is not found.
+   * it has data for, those text is read in at first, and how it is read at
+   * first (`how.ts`). What to install is said where it is not found.
    */
   import { onMount } from 'svelte';
   import Check from '@lucide/svelte/icons/check';
@@ -14,6 +14,8 @@
   import Button from '$lib/ui/Button.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
+  import { howFromSettings } from './how';
+  import HowControls from './HowControls.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { byName, ocrLanguageName } from './languages';
   import { reader } from './reader.svelte';
@@ -69,6 +71,7 @@
   }
 
   const found = $derived(tools?.tesseract ?? null);
+  const how = $derived(howFromSettings());
   const installed = $derived(byName(tools?.ocrLanguages ?? []));
   const first = $derived((settings.value.ocrLanguages ?? []).filter((c) => installed.includes(c)));
   /** The languages it reads, in a sentence: "Danish, English and Latin". */
@@ -132,6 +135,18 @@
           onchange={(value) => settings.set('ocrLanguages', value)}
         />
       {/if}
+    </div>
+    <div class="languages" data-ocr-settings-how>
+      <div class="label">{t('ocr-settings-how')}</div>
+      <HowControls
+        value={how}
+        hint
+        onchange={(value) => {
+          settings.set('ocrDpi', value.dpi);
+          settings.set('ocrLayout', value.layout);
+          settings.set('ocrContrast', value.contrast);
+        }}
+      />
     </div>
   {/if}
 </div>

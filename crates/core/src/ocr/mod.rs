@@ -38,7 +38,7 @@ use crate::export::tools::{self, Tool};
 use crate::import::document::{Counts, Imported, Section, count_words};
 use crate::tr;
 
-use drawing::{Drawn, Pages};
+use drawing::{Drawn, Pages, Quality};
 use layer::Layer;
 use text::{IsWord, Line};
 
@@ -51,6 +51,34 @@ pub struct Asked {
     pub languages: Vec<String>,
     /// Whether the pages that have text already are read as well.
     pub all: bool,
+    /// Whether the unseen text the pages have, as scanners and OCR programs
+    /// lay it, is taken away from a PDF made searchable, so that only what
+    /// is read stays: for a text layer that is poor. Only with `all`; the
+    /// pages look as they did, and letters that are seen stay.
+    pub strip: bool,
+    /// The dots to the inch the pages are drawn at for Tesseract: nought
+    /// for 300, else held within 150 and 600. A picture is not drawn, and
+    /// is read as large as it is.
+    pub dpi: u32,
+    /// How Tesseract takes a page apart: `""` as it judges, `column`,
+    /// `block` or `sparse` (`tesseract::psm_of`).
+    pub layout: String,
+    /// Whether the page is made black and white before it is read, for
+    /// faint or uneven print.
+    pub contrast: bool,
+}
+
+impl Asked {
+    /// How the pages are drawn, as asked.
+    pub fn quality(&self) -> Quality {
+        Quality { dpi: self.dpi, contrast: self.contrast }
+    }
+
+    /// Whether the text the pages have is taken away: asked for, and all
+    /// pages read, since a page that is not read would be left with none.
+    pub fn strips(&self) -> bool {
+        self.strip && self.all
+    }
 }
 
 /// How far a reading has come.
@@ -145,10 +173,49 @@ fn stopped() -> Error {
     Error::Refused { kind: tools::STOPPED, message: tr!("ocr-stopped") }
 }
 
+/// Tesseract, ready to read: with what it reads with, and how the pages are
+/// drawn for it.
+struct Reader<'t> {
+    tesseract: &'t Tool,
+    with: tesseract::With,
+    quality: Quality,
+}
+
+impl Reader<'_> {
+    /// Has Tesseract read a picture that is drawn already: its TSV, its page
+    /// of text, or both.
+    fn read(
+        &self,
+        picture: &Path,
+        dpi: u32,
+        (text, layer): (bool, bool),
+        stop: &AtomicBool,
+    ) -> Result<tesseract::Read> {
+        tesseract::read(self.tesseract, picture, dpi, &self.with, text, layer, stop)
+    }
+
+    /// Draws a page and has Tesseract read it.
+    fn draw_and_read(
+        &self,
+        pages: &Pages,
+        index: usize,
+        place: &Path,
+        wanted: (bool, bool),
+        stop: &AtomicBool,
+    ) -> Result<tesseract::Read> {
+        let (picture, dpi) = pages.draw(index, place, self.quality, stop)?;
+        let read = self.read(&picture, dpi, wanted, stop);
+        for made in [picture.clone(), picture.with_extension("tsv"), picture.with_extension("pdf")] {
+            let _ = std::fs::remove_file(made);
+        }
+        read
+    }
+}
+
 /// Tesseract, and the languages it is to read with: those asked for, each of
 /// which it must have data for; English where none are asked for, or the
 /// first it has.
-fn ready<'t>(tools: &'t Tools, asked: &Asked) -> Result<(&'t Tool, Vec<String>)> {
+fn ready<'t>(tools: &'t Tools, asked: &Asked) -> Result<Reader<'t>> {
     let tesseract = tools.tesseract()?;
     let has = &tools.ocr_languages;
     let mut languages: Vec<String> = Vec::new();
@@ -165,7 +232,8 @@ fn ready<'t>(tools: &'t Tools, asked: &Asked) -> Result<(&'t Tool, Vec<String>)>
         let first = has.iter().find(|l| *l == "eng").or_else(|| has.first());
         languages.push(first.ok_or_else(|| Error::invalid(tr!("ocr-no-languages")))?.clone());
     }
-    Ok((tesseract, languages))
+    let with = tesseract::With { languages, psm: tesseract::psm_of(&asked.layout) };
+    Ok(Reader { tesseract, with, quality: asked.quality() })
 }
 
 /// How many pages are read at once: one less than there are cores, so that
@@ -287,24 +355,6 @@ fn place_in(work: &Path) -> Result<tempfile::TempDir> {
     tempfile::Builder::new().prefix("ocr-").tempdir_in(work).context(|| tr!("io-creating-directory-in", path = work))
 }
 
-/// Draws a page and has Tesseract read it: its TSV, its page of text, or both.
-fn draw_and_read(
-    pages: &Pages,
-    index: usize,
-    place: &Path,
-    tesseract: &Tool,
-    languages: &[String],
-    (text, layer): (bool, bool),
-    stop: &AtomicBool,
-) -> Result<tesseract::Read> {
-    let (picture, dpi) = pages.draw(index, place, stop)?;
-    let read = tesseract::read(tesseract, &picture, dpi, languages, text, layer, stop);
-    for made in [picture.clone(), picture.with_extension("tsv"), picture.with_extension("pdf")] {
-        let _ = std::fs::remove_file(made);
-    }
-    read
-}
-
 /// What was said of the pages that could not be read: of the first few,
 /// each, and of the rest how many there are.
 fn failures(failed: &[(usize, String)]) -> Vec<String> {
@@ -346,10 +396,10 @@ pub fn read_pdf(
     if !wanted.is_empty() {
         let can = ready(tools, asked).and_then(|ready| drawing.map(|pages| (ready, pages)));
         match can {
-            Ok(((tesseract, languages), pages)) => {
+            Ok((reader, pages)) => {
                 let place = place_in(work)?;
                 let one = |index: usize| {
-                    let read = draw_and_read(&pages, index, place.path(), tesseract, &languages, (true, false), stop)?;
+                    let read = reader.draw_and_read(&pages, index, place.path(), (true, false), stop)?;
                     Ok(text::tsv_paragraphs(read.tsv.as_deref().unwrap_or_default()))
                 };
                 for (index, result) in several(&wanted, &one, told, stop) {
@@ -411,7 +461,8 @@ pub fn read_pdf(
 }
 
 /// Reads a picture as one page: the file of a picture, or a picture of the
-/// store.
+/// store. It is read as large as it is, in black and white where that is
+/// asked.
 pub fn read_picture(
     bytes: &[u8],
     tools: &Tools,
@@ -423,12 +474,12 @@ pub fn read_picture(
     if crate::pictures::is_svg(bytes) {
         return Err(Error::invalid(tr!("ocr-drawing")));
     }
-    let (tesseract, languages) = ready(tools, asked)?;
-    let drawn = Drawn::of_picture(bytes)?;
+    let reader = ready(tools, asked)?;
+    let drawn = Drawn::of_picture(bytes)?.as_asked(reader.quality);
     let place = place_in(work)?;
     let picture = place.path().join("picture.pgm");
     drawn.write(&picture)?;
-    let read = tesseract::read(tesseract, &picture, drawn.dpi, &languages, true, false, stop)?;
+    let read = reader.read(&picture, drawn.dpi, (true, false), stop)?;
     if stop.load(Ordering::Relaxed) {
         return Err(stopped());
     }
@@ -440,13 +491,13 @@ pub fn read_picture(
 /// or its ISBN, where it has no text (`import::pdf::identify_scan`).
 /// Nothing, where Tesseract is not there or the pages cannot be drawn.
 pub fn first_pages(path: &Path, tools: &Tools, work: &Path, count: usize, stop: &AtomicBool) -> Vec<String> {
-    let Ok((tesseract, languages)) = ready(tools, &Asked::default()) else { return Vec::new() };
+    let Ok(reader) = ready(tools, &Asked::default()) else { return Vec::new() };
     let Ok(bytes) = read_pdf_file(path) else { return Vec::new() };
     let Ok(pages) = Pages::open(path, bytes, tools.pdftoppm.as_ref()) else { return Vec::new() };
     let Ok(place) = place_in(work) else { return Vec::new() };
     let wanted: Vec<usize> = (0..count.min(pages.count())).collect();
     let one = |index: usize| {
-        let read = draw_and_read(&pages, index, place.path(), tesseract, &languages, (true, false), stop)?;
+        let read = reader.draw_and_read(&pages, index, place.path(), (true, false), stop)?;
         let paragraphs = text::tsv_paragraphs(read.tsv.as_deref().unwrap_or_default());
         Ok(paragraphs
             .iter()
@@ -459,9 +510,11 @@ pub fn first_pages(path: &Path, tools: &Tools, work: &Path, count: usize, stop: 
 
 /// Makes a PDF searchable: the pages that have no text are read, and what
 /// is read is laid over them, unseen. Pages that have text are left as they
-/// are, unless all are asked to be read. The file itself is not touched: the
-/// one that has the text is given back, and has been read again to be sure
-/// it holds as many pages as the file.
+/// are, unless all are asked to be read; and where that is asked with
+/// `strip`, the unseen text the pages had is taken away, so that only what
+/// is read stays. The file itself is not touched: the one that has the text is
+/// given back, and has been read again to be sure it holds as many pages as
+/// the file.
 pub fn make_searchable(
     path: &Path,
     tools: &Tools,
@@ -479,12 +532,12 @@ pub fn make_searchable(
     if wanted.is_empty() {
         return Ok(Searchable { pdf: None, read: 0, with_text, failed: Vec::new() });
     }
-    let (tesseract, languages) = ready(tools, asked)?;
+    let reader = ready(tools, asked)?;
     let pages = Pages::open(path, bytes.clone(), tools.pdftoppm.as_ref())?;
     let drawn_by_hayro = matches!(pages, Pages::Hayro(_));
     let place = place_in(work)?;
     let one = |index: usize| {
-        let read = draw_and_read(&pages, index, place.path(), tesseract, &languages, (false, true), stop)?;
+        let read = reader.draw_and_read(&pages, index, place.path(), (false, true), stop)?;
         Ok(searchable::Layer { page: index, pdf: read.layer.unwrap_or_default() })
     };
     let mut layers = Vec::new();
@@ -504,7 +557,7 @@ pub fn make_searchable(
     }
     drop(pages);
     let bytes = Arc::try_unwrap(bytes).unwrap_or_else(|shared| shared.as_ref().clone());
-    let pdf = searchable::lay_over(bytes, doc, &layers)?;
+    let pdf = searchable::lay_over(bytes, doc, &layers, asked.strips())?;
     // Read again as it is drawn, where it was drawn so before.
     if drawn_by_hayro {
         let pages = catch_unwind(AssertUnwindSafe(|| {

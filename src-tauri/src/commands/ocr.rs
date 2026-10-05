@@ -132,15 +132,19 @@ pub fn ocr_look(state: State<'_, AppState>, path: String, stored: Option<bool>) 
 }
 
 /// Reads a PDF or a picture, to become a map: a part for each page of a
-/// PDF, named by its number; the text of a picture under its name.
+/// PDF, named by its number; the text of a picture under its name. With
+/// `stored`, the path is that of a file of the library, within its store,
+/// as for `ocr_look`.
 #[tauri::command(async)]
 pub fn ocr_read(
     app: AppHandle,
     state: State<'_, AppState>,
-    path: PathBuf,
+    path: String,
     asked: Asked,
     ticket: Option<String>,
+    stored: Option<bool>,
 ) -> CommandResult<Imported> {
+    let path = if stored.unwrap_or(false) { state.library().attachment_path(&path)? } else { PathBuf::from(path) };
     let reading = Reading::begin(ticket);
     let tools = state.tools();
     let work = state.data.work();

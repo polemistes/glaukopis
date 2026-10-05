@@ -20,6 +20,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
+  import { howFromSettings } from './how';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
 
@@ -70,7 +71,7 @@
     try {
       const imported = await ocrPicture(
         hash,
-        { languages: $state.snapshot(chosen), all: false },
+        { languages: $state.snapshot(chosen), all: false, strip: false, ...howFromSettings() },
         ticket,
       );
       if (gone) return;

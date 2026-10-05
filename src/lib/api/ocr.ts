@@ -5,12 +5,33 @@ import { call, inTauri } from './backend';
 import type { Imported } from './imported';
 import type { Reference } from './library';
 
+/**
+ * How a page is laid out, where Tesseract is told rather than left to judge:
+ * one column, one block of text, or text that stands sparse on the page.
+ */
+export type Layout = '' | 'column' | 'block' | 'sparse';
+
+/** How the pages are read, when the way they are read at first goes badly. */
+export interface How {
+  /** The dots to the inch the pages are drawn at: 300, 400 or 600; 0 for 300, as before. */
+  dpi: number;
+  /** How the page is laid out; '' leaves it to Tesseract. */
+  layout: Layout;
+  /** Whether the picture is made black and white before it is read. */
+  contrast: boolean;
+}
+
 /** What a reading is asked to do. */
-export interface Asked {
+export interface Asked extends How {
   /** Tesseract's names of the languages the text is in, the likeliest first: `nor`, `eng`. */
   languages: string[];
   /** Whether the pages that have text already are read as well. */
   all: boolean;
+  /**
+   * Only with `all`, for a PDF made searchable: the text the pages have is
+   * taken away, and only what is read stays.
+   */
+  strip: boolean;
 }
 
 /** How far a reading has come. */
@@ -62,9 +83,12 @@ export function isReadPath(path: string): boolean {
 /** Looks at a file before it is read: with `stored`, one of the library, by its path in the store. */
 export const ocrLook = (path: string, stored = false) => call<Looked>('ocr_look', { path, stored });
 
-/** Reads a PDF or a picture, to become a map. With a ticket, it can be stopped and tells how far it has come. */
-export const ocrRead = (path: string, asked: Asked, ticket?: string) =>
-  call<Imported>('ocr_read', { path, asked, ticket });
+/**
+ * Reads a PDF or a picture, to become a map. With a ticket, it can be stopped
+ * and tells how far it has come; with `stored`, the path is one of the library.
+ */
+export const ocrRead = (path: string, asked: Asked, ticket?: string, stored?: boolean) =>
+  call<Imported>('ocr_read', { path, asked, ticket, stored });
 
 export const ocrStop = (ticket: string) => call<void>('ocr_stop', { ticket });
 

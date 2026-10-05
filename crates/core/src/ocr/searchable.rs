@@ -11,10 +11,17 @@
 //! is set in, once) is written after it, as an update of the file, which
 //! every program that reads PDF knows how to read. Where the update does not
 //! read back as whole, the file is written anew with the same changes.
+//!
+//! Where the text a page has is poor, as an old OCR's may be, it can be
+//! taken away as the new is laid over ([`lay_over`] with `strip`): the
+//! page's content is written anew without the text that is unseen, as
+//! scanners and OCR programs lay it, and without a text laid over it here
+//! before; what is seen stays, letters among it.
 
 use std::collections::HashMap;
 use std::io::Write;
 
+use lopdf::content::{Content, Operation};
 use lopdf::{Dictionary, Document, IncrementalDocument, Object, ObjectId, Stream, dictionary};
 
 use crate::error::{Error, Result};
@@ -283,6 +290,115 @@ fn own_resources(doc: &Document, page: &Dictionary) -> Dictionary {
     resources
 }
 
+// ---------------------------------------------------------------------------
+// The text a page has, taken away
+// ---------------------------------------------------------------------------
+
+/// The operators that show text.
+const SHOWING: [&str; 4] = ["Tj", "TJ", "'", "\""];
+
+/// Whether text shown in a render mode (`Tr`) is unseen: neither filled nor
+/// stroked, whether it clips (7) or not (3).
+fn unseen(render_mode: i64) -> bool {
+    matches!(render_mode, 3 | 7)
+}
+
+/// The content of a page decoded, its streams one after another. Nothing
+/// where a stream is packed in a way that cannot be unpacked here: what
+/// could not be read whole is not written anew.
+fn decoded_contents(doc: &Document, page: &Dictionary) -> Option<Vec<u8>> {
+    let mut out = Vec::new();
+    for object in contents_of(doc, page) {
+        let stream = match &object {
+            Object::Reference(id) => doc.get_object(*id).ok()?,
+            other => other,
+        };
+        let Ok(stream) = stream.as_stream() else { continue };
+        out.extend(stream.decompressed_content().ok()?);
+        out.push(b'\n');
+    }
+    Some(out)
+}
+
+/// An object as it is written in a content stream.
+fn written(object: &Object) -> Vec<u8> {
+    let mut out = Content { operations: vec![Operation::new("", vec![object.clone()])] }.encode().unwrap_or_default();
+    while out.last().is_some_and(|b| b.is_ascii_whitespace()) {
+        out.pop();
+    }
+    out
+}
+
+/// A picture within the content (`BI … ID … EI`), written as it was read:
+/// what it says of itself, then its bytes.
+fn inline_image(image: &Stream, out: &mut Vec<u8>) {
+    out.extend_from_slice(b"BI\n");
+    for (key, value) in image.dict.iter() {
+        out.push(b'/');
+        out.extend_from_slice(key);
+        out.push(b' ');
+        out.extend(written(value));
+        out.push(b'\n');
+    }
+    out.extend_from_slice(b"ID\n");
+    out.extend_from_slice(&image.content);
+    out.extend_from_slice(b"\nEI\n");
+}
+
+/// The content of a page without the text that is unseen: an operation
+/// that shows text is dropped while the render mode (`Tr`, a part of the
+/// graphics state, saved and restored with `q` and `Q`) is one that neither
+/// fills nor strokes the letters, as scanners and OCR programs lay their
+/// text; and so is a text laid over the page here before, whose XObject is
+/// taken from `xobjects` as well. Everything else stays as it was, letters
+/// that are seen and what sets them among it. Nothing where the content
+/// cannot be read whole, as when it holds a picture packed in a way that is
+/// not read here: the page is then left as it is.
+fn stripped(doc: &Document, page: &Dictionary, xobjects: &mut Dictionary) -> Option<Vec<u8>> {
+    let content = Content::decode(&decoded_contents(doc, page)?).ok()?;
+    let mut out = Vec::new();
+    let mut run: Vec<Operation> = Vec::new();
+    let flush = |run: &mut Vec<Operation>, out: &mut Vec<u8>| -> Option<()> {
+        if !run.is_empty() {
+            out.extend(Content { operations: std::mem::take(run) }.encode().ok()?);
+            out.push(b'\n');
+        }
+        Some(())
+    };
+    let mut render_mode: i64 = 0;
+    let mut saved: Vec<i64> = Vec::new();
+    for operation in content.operations {
+        let operator = operation.operator.as_str();
+        match operator {
+            "q" => saved.push(render_mode),
+            "Q" => render_mode = saved.pop().unwrap_or(0),
+            "Tr" => render_mode = operation.operands.first().and_then(|m| m.as_i64().ok()).unwrap_or(render_mode),
+            _ => {}
+        }
+        if SHOWING.contains(&operator) && unseen(render_mode) {
+            continue;
+        }
+        if operator == "Do"
+            && let Some(Object::Name(name)) = operation.operands.first()
+            && name.starts_with(NAME.as_bytes())
+        {
+            xobjects.remove(name);
+            continue;
+        }
+        if operator == "BI" {
+            // A picture within the content is kept as it was read; one that
+            // could not be read is lost, and the page is left as it is.
+            let Some(Object::Stream(image)) = operation.operands.first() else { return None };
+            flush(&mut run, &mut out)?;
+            inline_image(image, &mut out);
+            continue;
+        }
+        run.push(operation);
+    }
+    flush(&mut run, &mut out)?;
+    Some(out)
+}
+
 /// A name for the text among the XObjects of a page that is not taken.
 fn free_name(xobjects: &Dictionary) -> String {
     (0..)
@@ -301,8 +417,9 @@ fn number(n: f32) -> String {
 const OF_THE_STREAM: [&[u8]; 8] = [b"DecodeParms", b"Filter", b"XRefStm", b"Type", b"W", b"Index", b"Length", b"Prev"];
 
 /// Lays the pages of text over the pages of `doc`, which was read from
-/// `bytes`, and gives the file that has them.
-pub fn lay_over(bytes: Vec<u8>, doc: Document, layers: &[Layer]) -> Result<Vec<u8>> {
+/// `bytes`, and gives the file that has them. With `strip`, the text each
+/// of those pages had is taken away first ([`stripped`]).
+pub fn lay_over(bytes: Vec<u8>, doc: Document, layers: &[Layer], strip: bool) -> Result<Vec<u8>> {
     let pages = doc.get_pages();
     let count = pages.len();
     let largest = doc.trailer.get(b"Size").and_then(Object::as_i64).unwrap_or(0).max(1) as u32 - 1;
@@ -336,14 +453,27 @@ pub fn lay_over(bytes: Vec<u8>, doc: Document, layers: &[Layer]) -> Result<Vec<u
         let place = placing(text.size, shown(&doc, page), quarters(&doc, page));
         let mut resources = own_resources(&doc, page);
         let xobjects = resources.get_mut(b"XObject").and_then(Object::as_dict_mut).map_err(unreadable)?;
+        let mut contents = vec![Object::Reference(begin)];
+        match strip.then(|| stripped(&doc, page, xobjects)) {
+            Some(Some(without_text)) => {
+                let mut stream = Stream::new(Dictionary::new(), without_text);
+                stream.compress().map_err(unreadable)?;
+                contents.push(Object::Reference(new.add_object(stream)));
+            }
+            Some(None) => {
+                tracing::warn!(
+                    page = layer.page + 1,
+                    "the content of the page could not be read whole; its text stays"
+                );
+                contents.extend(contents_of(&doc, page));
+            }
+            None => contents.extend(contents_of(&doc, page)),
+        }
         let name = free_name(xobjects);
         xobjects.set(name.as_bytes(), Object::Reference(form));
         let matrix = place.iter().map(|n| number(*n)).collect::<Vec<_>>().join(" ");
         let end = format!("\nQ\nq {matrix} cm /{name} Do Q\n");
         let end = new.add_object(Stream::new(Dictionary::new(), end.into_bytes()));
-
-        let mut contents = vec![Object::Reference(begin)];
-        contents.extend(contents_of(&doc, page));
         contents.push(Object::Reference(end));
         let mut changed = page.clone();
         changed.set("Resources", Object::Dictionary(resources));
@@ -436,6 +566,154 @@ mod tests {
         assert!(near(apply(m, (0.0, 0.0)), (10.0, 220.0)));
         assert!(near(apply(m, (200.0, 0.0)), (10.0, 20.0)));
         assert!(near(apply(m, (0.0, 100.0)), (110.0, 220.0)));
+    }
+
+    /// A PDF of one page, 200 by 100 points, with `content` and Helvetica as `F1`.
+    fn page_of(content: &[u8]) -> Vec<u8> {
+        let mut doc = Document::with_version("1.5");
+        let pages = doc.new_object_id();
+        let font = doc.add_object(dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica" });
+        let stream = doc.add_object(Stream::new(Dictionary::new(), content.to_vec()));
+        let page = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => pages,
+            "MediaBox" => vec![0.into(), 0.into(), 200.into(), 100.into()],
+            "Resources" => dictionary! { "Font" => dictionary! { "F1" => font } },
+            "Contents" => stream,
+        });
+        doc.objects.insert(
+            pages,
+            Object::Dictionary(dictionary! { "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1 }),
+        );
+        let catalog = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages });
+        doc.trailer.set("Root", catalog);
+        let mut bytes = Vec::new();
+        doc.save_to(&mut bytes).unwrap();
+        bytes
+    }
+
+    /// The operators of the content of the first page, in order.
+    fn operators(pdf: &[u8]) -> Vec<String> {
+        let doc = Document::load_mem(pdf).unwrap();
+        let page = doc.get_pages()[&1];
+        let content = Content::decode(&doc.get_page_content(page).unwrap()).unwrap();
+        content.operations.into_iter().map(|o| o.operator).collect()
+    }
+
+    /// The names of the XObjects of the first page.
+    fn xobject_names(pdf: &[u8]) -> Vec<String> {
+        let doc = Document::load_mem(pdf).unwrap();
+        let page = doc.get_dictionary(doc.get_pages()[&1]).unwrap();
+        inherited(&doc, page, b"Resources")
+            .and_then(|r| r.as_dict().ok())
+            .and_then(|r| r.get(b"XObject").ok())
+            .and_then(|x| doc.dereference(x).ok())
+            .and_then(|(_, x)| x.as_dict().ok())
+            .map(|x| x.iter().map(|(name, _)| String::from_utf8_lossy(name).into_owned()).collect())
+            .unwrap_or_default()
+    }
+
+    #[test]
+    fn the_text_a_page_has_is_taken_away_and_the_rest_stays() {
+        // An unseen word, a rectangle, and a picture of one grey dot within the content.
+        let before = page_of(
+            b"BT 3 Tr /F1 12 Tf 72 70 Td (Hello) Tj ET\n0 0 10 10 re f\nq BI /W 1 /H 1 /CS /DeviceGray /BPC 8 ID \x80 EI Q\n",
+        );
+        assert!(pdf_extract::extract_text_from_mem(&before).unwrap().contains("Hello"));
+        // Laid: unseen, as Tesseract makes it.
+        let laid = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Laid) Tj ET\n");
+        let layers = [Layer { page: 0, pdf: laid.clone() }];
+
+        let doc = open(&before).unwrap();
+        let kept = lay_over(before.clone(), doc, &layers, false).unwrap();
+        assert!(holds(&kept, 1, &layers));
+        let ops = operators(&kept);
+        assert!(ops.contains(&"Tj".to_owned()) && ops.contains(&"re".to_owned()), "{ops:?}");
+        let text = pdf_extract::extract_text_from_mem(&kept).unwrap();
+        assert!(text.contains("Hello") && text.contains("Laid"), "{text}");
+
+        let doc = open(&before).unwrap();
+        let stripped = lay_over(before.clone(), doc, &layers, true).unwrap();
+        assert!(holds(&stripped, 1, &layers));
+        let ops = operators(&stripped);
+        assert!(!ops.iter().any(|o| SHOWING.contains(&o.as_str())), "{ops:?}");
+        assert_eq!(ops.iter().filter(|o| *o == "re").count(), 1, "{ops:?}");
+        assert_eq!(ops.iter().filter(|o| *o == "BI").count(), 1, "{ops:?}");
+        assert_eq!(ops.iter().filter(|o| *o == "Do").count(), 1, "{ops:?}");
+        assert_eq!(xobject_names(&stripped), vec!["GlaukopisText"]);
+        let text = pdf_extract::extract_text_from_mem(&stripped).unwrap();
+        assert!(!text.contains("Hello") && text.contains("Laid"), "{text}");
+        // The picture within the content is as it was.
+        let doc = Document::load_mem(&stripped).unwrap();
+        let content = Content::decode(&doc.get_page_content(doc.get_pages()[&1]).unwrap()).unwrap();
+        let image = content.operations.iter().find(|o| o.operator == "BI").unwrap();
+        let Object::Stream(image) = &image.operands[0] else { panic!("no picture") };
+        assert_eq!((image.content.as_slice(), image.dict.get(b"W").unwrap().as_i64().unwrap()), (&[0x80][..], 1));
+
+        // Laid over again with strip, the text laid before goes with the rest.
+        let again = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Again) Tj ET\n");
+        let layers = [Layer { page: 0, pdf: again }];
+        let doc = open(&kept).unwrap();
+        let twice = lay_over(kept.clone(), doc, &layers, true).unwrap();
+        assert!(holds(&twice, 1, &layers));
+        assert_eq!(xobject_names(&twice), vec!["GlaukopisText"]);
+        assert_eq!(operators(&twice).iter().filter(|o| *o == "Do").count(), 1);
+        let text = pdf_extract::extract_text_from_mem(&twice).unwrap();
+        assert!(!text.contains("Hello") && !text.contains("Laid") && text.contains("Again"), "{text}");
+        // Without strip, both texts stay, the second under a name of its own.
+        let doc = open(&kept).unwrap();
+        let both = lay_over(kept.clone(), doc, &layers, false).unwrap();
+        assert_eq!(xobject_names(&both), vec!["GlaukopisText", "GlaukopisText1"]);
+    }
+
+    /// Letters that are seen stay; only text that is unseen is taken away,
+    /// by the render mode as it stands when the text is shown, saved and
+    /// restored with the graphics state.
+    #[test]
+    fn letters_that_are_seen_stay_and_unseen_text_goes() {
+        let before = page_of(
+            b"BT 3 Tr /F1 12 Tf 72 70 Td (Hidden) Tj ET\n\
+              BT 0 Tr /F1 12 Tf 72 50 Td (Shown) Tj ET\n\
+              0 0 10 10 re f\n\
+              q 7 Tr BT /F1 12 Tf 72 30 Td (Clipped) Tj ET Q\n\
+              BT /F1 12 Tf 72 10 Td (Restored) Tj [(Also) -20 (shown)] TJ ET\n",
+        );
+        let laid = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Laid) Tj ET\n");
+        let layers = [Layer { page: 0, pdf: laid }];
+        let doc = open(&before).unwrap();
+        let stripped = lay_over(before.clone(), doc, &layers, true).unwrap();
+        assert!(holds(&stripped, 1, &layers));
+        let text = pdf_extract::extract_text_from_mem(&stripped).unwrap();
+        for word in ["Shown", "Restored", "Also", "Laid"] {
+            assert!(text.contains(word), "{word} is gone: {text}");
+        }
+        for word in ["Hidden", "Clipped"] {
+            assert!(!text.contains(word), "{word} stays: {text}");
+        }
+        let ops = operators(&stripped);
+        // The seen words' operations and the rectangle stay, and so do BT, ET and Tr.
+        assert_eq!(ops.iter().filter(|o| *o == "Tj").count(), 2, "{ops:?}");
+        assert_eq!(ops.iter().filter(|o| *o == "TJ").count(), 1, "{ops:?}");
+        assert_eq!(ops.iter().filter(|o| *o == "BT").count(), 4, "{ops:?}");
+        assert_eq!(ops.iter().filter(|o| *o == "Tr").count(), 3, "{ops:?}");
+        assert!(ops.contains(&"re".to_owned()), "{ops:?}");
+        assert!(unseen(3) && unseen(7) && !unseen(0) && !unseen(1) && !unseen(2) && !unseen(4));
+    }
+
+    /// A page whose content cannot be read whole is left as it is, its text
+    /// with it, rather than lose what could not be read: here a picture
+    /// within the content that names its colours as lopdf does not know them.
+    #[test]
+    fn a_page_whose_content_is_not_read_whole_keeps_its_text() {
+        let before = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Hello) Tj ET\nq BI /W 1 /H 1 /CS /G /BPC 8 ID \x80 EI Q\n");
+        let laid = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Laid) Tj ET\n");
+        let layers = [Layer { page: 0, pdf: laid }];
+        let doc = open(&before).unwrap();
+        let made = lay_over(before.clone(), doc, &layers, true).unwrap();
+        assert!(holds(&made, 1, &layers));
+        let text = pdf_extract::extract_text_from_mem(&made).unwrap();
+        assert!(text.contains("Hello") && text.contains("Laid"), "{text}");
+        assert!(made.starts_with(&before), "the page is kept to the byte");
     }
 
     #[test]

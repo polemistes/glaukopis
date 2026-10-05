@@ -31,6 +31,18 @@ ocr-reading = Reading { $file }…
 ocr-reading-pages = { $done } of { $total } pages read
 ocr-reading-hint = A page takes a few seconds. Cancel stops the reading.
 
+## How the text is read: what to try when a reading goes badly
+
+ocr-how = How it is read
+ocr-how-dpi = Resolution, in dots to the inch
+ocr-how-layout = Layout of the page
+ocr-how-layout-auto = As Tesseract judges
+ocr-how-layout-column = One column
+ocr-how-layout-block = One block of text
+ocr-how-layout-sparse = Sparse text
+ocr-how-contrast = Black and white
+ocr-how-hint = What to try when a reading goes badly: a higher resolution for small print, one column where columns are muddled, one block of text for a single paragraph, and black and white for print that is faint or uneven.
+
 ## The languages of the text
 
 ocr-languages = Languages of the text
@@ -57,6 +69,8 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = The PDF could not be taken apart to be changed: it may be damaged. Its text can still be brought into a project as a map.
 ocr-searchable-make = Make searchable
+ocr-strip = Take away the unseen text they have, and keep only what is read
+ocr-strip-hint = For a text layer that is poor, as a scanner lays it under the page. Letters that are seen stay, and the page looks as it did.
 ocr-searchable-done = { $count ->
     [one] The PDF is searchable: one page was read
    *[other] The PDF is searchable: { $count } pages were read
@@ -65,6 +79,15 @@ ocr-searchable-failed = { $count ->
     [one] One page could not be read.
    *[other] { $count } pages could not be read.
 }
+
+## A map from a PDF of the library
+
+ocr-map-button = A map of its text…
+ocr-map-title = A map of the text
+ocr-map-into = Into the project
+ocr-map-new-project = A new project, named after it
+ocr-map-making = Making the map…
+ocr-map-failed = The map could not be made.
 
 ## The text of a picture of the store
 
@@ -86,3 +109,4 @@ ocr-settings-has = It reads { $languages }.
 ocr-settings-has-none = It has the data of no language: install that of one, such as tesseract-data-eng.
 ocr-settings-first = Read in at first
 ocr-settings-first-hint = When none are chosen, the language of the text and that of the interface.
+ocr-settings-how = How text is read at first

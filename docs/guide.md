@@ -1007,7 +1007,7 @@ see *Text in scans and pictures*.
 
 A scan is a picture of a page: its text cannot be searched, copied or
 quoted until it is read. Glaukopis reads it with Tesseract, a program that
-reads text in pictures, in three places.
+reads text in pictures, in four places.
 
 - **A PDF or a picture becomes a map.** In a project, choose **A map from a
   document…** among the maps, and choose the file, or drop the file on the
@@ -1026,6 +1026,10 @@ reads text in pictures, in three places.
   The file in the library is replaced by the searchable one, which the
   reference then points to, as does every other reference that had the same
   file.
+- **A PDF of the library becomes a map.** Beside it, **A map of its text…**
+  reads the PDF where it is stored, and makes a map of what is read, as of a
+  PDF brought in, in the project you choose: a new one named after the PDF,
+  or one of yours. The file stays in the library as it was.
 - **The text of a picture of the store is read.** **Read the text in it…**,
   in the pane of a picture, shows the text, to be copied. Where the picture
   is looked at in a project, beside a map, **Make a map of it** makes a map
@@ -1036,7 +1040,10 @@ document have, are taken as they are and not read. A page with only a little
 text, such as a scan with a line of text at its foot, is read. **Read the
 pages that have text as well** reads those too: into a map, what is read
 then takes the place of their text; in a searchable PDF, it is laid over
-their text, which stays.
+their text, which stays, unless you ask for the unseen text to be **taken
+away**, so that only what is read is left: for a text layer that is poor, as
+a scanner lays it under the page. Letters that are seen stay, and the page
+looks as it did either way.
 
 Before anything is read, you are asked for the languages of the text, the
 likeliest first. Those chosen under *Settings* are given at first; where
@@ -1059,6 +1066,14 @@ of a rule or a picture on the page.
 Reading is not faultless: letters that are faint, worn, or in a type or a
 script the data of the language does not know are misread. Check what is
 read against the page where it matters.
+
+**When a reading goes badly**, three things can be tried, under **How it is
+read** in the dialog, for that reading, or under Tesseract in *Settings*, for
+every reading: a higher **resolution** (400 or 600 dots to the inch in place
+of 300) where the print is small; the **layout** told, one column where
+columns are muddled together, one block of text for a single paragraph, or
+sparse text where words stand apart on the page; and **black and white**
+where the print is faint or uneven, so that what is pale is read as ink.
 
 A PDF that is locked with a password cannot be made searchable, since what
 is added would have to be locked in the same way. Its text can still be

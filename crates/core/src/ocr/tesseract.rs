@@ -26,6 +26,28 @@ pub fn is_language(name: &str) -> bool {
         && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '/' | '-'))
 }
 
+/// How Tesseract is to take the page apart, by the name the interface gives
+/// it: nothing for `""`, which leaves it to Tesseract's judgement (its
+/// `--psm 3`); `column` for one column of text of differing sizes (4);
+/// `block` for one uniform block of text (6); `sparse` for text scattered
+/// about, in no order (11). A name that is none of these is as `""`.
+pub fn psm_of(layout: &str) -> Option<u32> {
+    match layout.trim() {
+        "column" => Some(4),
+        "block" => Some(6),
+        "sparse" => Some(11),
+        _ => None,
+    }
+}
+
+/// With what Tesseract reads a picture: its languages, the likeliest first,
+/// and how it takes the page apart (`psm_of`).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct With {
+    pub languages: Vec<String>,
+    pub psm: Option<u32>,
+}
+
 /// Reads a picture with the languages given, the likeliest first. `dpi` is
 /// the resolution it was drawn at, nought where that is not known, and
 /// Tesseract then judges it by the size of the letters. What is made is
@@ -34,7 +56,7 @@ pub fn read(
     tesseract: &Tool,
     picture: &Path,
     dpi: u32,
-    languages: &[String],
+    with: &With,
     text: bool,
     layer: bool,
     stop: &AtomicBool,
@@ -45,7 +67,10 @@ pub fn read(
     if dpi > 0 {
         c.arg("--dpi").arg(dpi.to_string());
     }
-    c.arg("-l").arg(languages.join("+"));
+    c.arg("-l").arg(with.languages.join("+"));
+    if let Some(psm) = with.psm {
+        c.arg("--psm").arg(psm.to_string());
+    }
     if layer {
         c.args(["-c", "textonly_pdf=1"]);
     }
@@ -95,5 +120,16 @@ mod tests {
         for name in ["", "../eng", "/etc/eng", "-l", "eng+nor", "en g", "a/../b"] {
             assert!(!is_language(name), "{name}");
         }
+    }
+
+    #[test]
+    fn how_the_page_is_taken_apart() {
+        assert_eq!(psm_of(""), None);
+        assert_eq!(psm_of("column"), Some(4));
+        assert_eq!(psm_of("block"), Some(6));
+        assert_eq!(psm_of("sparse"), Some(11));
+        assert_eq!(psm_of(" block "), Some(6));
+        assert_eq!(psm_of("whatever"), None);
+        assert_eq!(psm_of("3"), None);
     }
 }

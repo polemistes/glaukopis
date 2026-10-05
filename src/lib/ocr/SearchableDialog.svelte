@@ -5,6 +5,8 @@
    * the place of the one that was stored (ADR 0018). The file is looked at
    * first, the languages asked for, and the pages shown as they are read;
    * Cancel stops the reading, and the stored file is then left as it was.
+   * Where all pages are read, the text they have can be taken away, so that
+   * only what is read stays.
    */
   import { onMount } from 'svelte';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
@@ -24,6 +26,8 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
+  import { howFromSettings } from './how';
+  import HowDisclosure from './HowDisclosure.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
 
@@ -42,6 +46,10 @@
   let looked = $state.raw<Looked | null>(null);
   let chosen = $state<string[]>([]);
   let all = $state(false);
+  /** With all pages read: the text they have is taken away, and only what is read stays. */
+  let strip = $state(false);
+  /** How the pages are read, as the settings say until this reading says otherwise. */
+  let how = $state(howFromSettings());
   let progress = $state.raw<Progress | null>(null);
   let failure = $state<string | null>(null);
   let gone = false;
@@ -86,7 +94,12 @@
       const made = await ocrSearchable(
         reference.id,
         file.path,
-        { languages: $state.snapshot(chosen), all },
+        {
+          languages: $state.snapshot(chosen),
+          all,
+          strip: all && strip,
+          ...$state.snapshot(how),
+        },
         ticket,
       );
       if (gone) return;
@@ -158,7 +171,17 @@
             <input type="checkbox" data-choice="all" bind:checked={all} />
             {t('ocr-read-all')}
           </label>
-          {#if all}<p class="hint">{t('ocr-read-all-hint')}</p>{/if}
+          {#if all}
+            {#if !strip}<p class="hint">{t('ocr-read-all-hint')}</p>{/if}
+            <label class="check">
+              <input type="checkbox" data-choice="strip" bind:checked={strip} />
+              {t('ocr-strip')}
+            </label>
+            {#if strip}<p class="hint">{t('ocr-strip-hint')}</p>{/if}
+          {/if}
+        {/if}
+        {#if reader.installed}
+          <HowDisclosure bind:value={how} />
         {/if}
       {/if}
     {:else if phase === 'reading'}

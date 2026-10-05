@@ -27,6 +27,38 @@ use crate::tr;
 /// Tesseract reads best what is drawn at 300 dots to the inch.
 pub const DPI: f32 = 300.0;
 
+/// The fewest and the most dots to the inch a page may be asked to be drawn
+/// at: fewer and the letters are too small to be read, more and the picture
+/// is large for nothing.
+pub const LEAST_DPI: u32 = 150;
+pub const MOST_DPI: u32 = 600;
+
+/// How the pages are drawn for Tesseract: at what resolution, and whether
+/// in black and white.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Quality {
+    /// The dots to the inch asked for; nought where none were, which is 300.
+    pub dpi: u32,
+    /// Whether the picture is made black and white, by Otsu's threshold on
+    /// the grey: for faint or uneven print, which Tesseract reads better so.
+    pub contrast: bool,
+}
+
+impl Quality {
+    /// The dots to the inch a page is drawn at, before it is seen to be very
+    /// large: 300 where none are asked for, else as asked within what is
+    /// allowed.
+    pub fn dots(&self) -> f32 {
+        dots_asked(self.dpi)
+    }
+}
+
+/// The dots to the inch that `asked` comes to: 300 where it is nought, else
+/// `asked` held within 150 and 600.
+pub fn dots_asked(asked: u32) -> f32 {
+    if asked == 0 { DPI } else { asked.clamp(LEAST_DPI, MOST_DPI) as f32 }
+}
+
 /// No side of a picture of a page is longer than this, in dots: a plan a
 /// metre wide is drawn at less than 300 dots to the inch, so that its
 /// picture is not hundreds of megabytes.
@@ -82,6 +114,56 @@ impl Drawn {
         // judges it from the size of the letters.
         Ok(Drawn { width: rgba.width(), height: rgba.height(), dpi: 0, grey })
     }
+
+    /// Makes the picture black and white: each dot darker than Otsu's
+    /// threshold black, the rest white.
+    pub fn black_and_white(&mut self) {
+        black_and_white(&mut self.grey);
+    }
+
+    /// Made as `quality` asks: black and white, where that is asked.
+    pub fn as_asked(mut self, quality: Quality) -> Drawn {
+        if quality.contrast {
+            self.black_and_white();
+        }
+        self
+    }
+}
+
+/// The shade that parts a grey picture into its dark and its light dots
+/// best, by Otsu's method: the one that puts the most of the picture's
+/// variance between the two. Dots at or below it are dark.
+pub fn otsu(grey: &[u8]) -> u8 {
+    let mut histogram = [0u64; 256];
+    for shade in grey {
+        histogram[usize::from(*shade)] += 1;
+    }
+    let total = grey.len() as f64;
+    let sum: f64 = histogram.iter().enumerate().map(|(shade, n)| shade as f64 * *n as f64).sum();
+    let (mut dark, mut dark_sum) = (0.0, 0.0);
+    let (mut best, mut at) = (-1.0, 0u8);
+    for (shade, n) in histogram.iter().enumerate().take(255) {
+        dark += *n as f64;
+        dark_sum += shade as f64 * *n as f64;
+        let light = total - dark;
+        if dark == 0.0 || light == 0.0 {
+            continue;
+        }
+        let between = dark * light * (dark_sum / dark - (sum - dark_sum) / light).powi(2);
+        if between > best {
+            best = between;
+            at = shade as u8;
+        }
+    }
+    at
+}
+
+/// Makes grey black and white, at Otsu's threshold.
+pub fn black_and_white(grey: &mut [u8]) {
+    let threshold = otsu(grey);
+    for shade in grey {
+        *shade = if *shade <= threshold { 0 } else { 255 };
+    }
 }
 
 /// How light a colour is, as the eye sees it (ITU-R BT.601).
@@ -89,11 +171,12 @@ fn luma(r: u8, g: u8, b: u8) -> u8 {
     ((u32::from(r) * 299 + u32::from(g) * 587 + u32::from(b) * 114 + 500) / 1000) as u8
 }
 
-/// The dots to the inch a page is drawn at: 300, and fewer for a page so
-/// large that its picture would be too large. The sizes are in points.
-pub fn resolution(width: f32, height: f32) -> f32 {
-    let longest = width.max(height) / 72.0 * DPI;
-    if longest > LONGEST { DPI * LONGEST / longest } else { DPI }
+/// The dots to the inch a page is drawn at: `dots`, which is 300 unless
+/// another is asked for, and fewer for a page so large that its picture
+/// would be too large. The sizes are in points.
+pub fn resolution(width: f32, height: f32, dots: f32) -> f32 {
+    let longest = width.max(height) / 72.0 * dots;
+    if longest > LONGEST { dots * LONGEST / longest } else { dots }
 }
 
 /// A PDF whose pages can be drawn.
@@ -135,12 +218,12 @@ impl Pages {
         }
     }
 
-    /// Draws a page, counted from nought, into a file in `dir`, and gives
-    /// the file and the dots to the inch it was drawn at.
-    pub fn draw(&self, index: usize, dir: &Path, stop: &AtomicBool) -> Result<(PathBuf, u32)> {
+    /// Draws a page, counted from nought, into a file in `dir`, as `quality`
+    /// asks, and gives the file and the dots to the inch it was drawn at.
+    pub fn draw(&self, index: usize, dir: &Path, quality: Quality, stop: &AtomicBool) -> Result<(PathBuf, u32)> {
         match self {
             Pages::Hayro(pdf) => {
-                let drawn = draw_with_hayro(pdf, index)?;
+                let drawn = draw_with_hayro(pdf, index, quality)?;
                 let path = dir.join(format!("page-{}.pgm", index + 1));
                 drawn.write(&path)?;
                 Ok((path, drawn.dpi))
@@ -148,7 +231,7 @@ impl Pages {
             Pages::Poppler { pdftoppm, file, sizes } => {
                 let not_drawn = || Error::invalid(tr!("ocr-page-not-drawn", page = index + 1));
                 let (width, height) = sizes.get(index).copied().ok_or_else(not_drawn)?;
-                let dpi = resolution(width, height).floor();
+                let dpi = resolution(width, height, quality.dots()).floor();
                 let base = dir.join(format!("page-{}", index + 1));
                 let number = (index + 1).to_string();
                 let args: Vec<std::ffi::OsString> = vec![
@@ -166,19 +249,38 @@ impl Pages {
                     base.clone().into(),
                 ];
                 tools::run_until(pdftoppm, "pdftoppm", &args, None, None, stop)?;
-                Ok((base.with_extension("png"), dpi as u32))
+                let png = base.with_extension("png");
+                if !quality.contrast {
+                    return Ok((png, dpi as u32));
+                }
+                // Made black and white here, and written as PGM as hayro's pages are.
+                let drawn = Drawn::of_png(&png, dpi as u32).map_err(|_| not_drawn())?;
+                let _ = std::fs::remove_file(&png);
+                let pgm = base.with_extension("pgm");
+                drawn.as_asked(quality).write(&pgm)?;
+                Ok((pgm, dpi as u32))
             }
         }
     }
 }
 
-/// Draws a page with hayro. A page it loses itself in is an error of that
-/// page, and not of the others.
-pub fn draw_with_hayro(pdf: &Pdf, index: usize) -> Result<Drawn> {
+impl Drawn {
+    /// A page as `pdftoppm` drew it, grey, read back from its PNG.
+    fn of_png(path: &Path, dpi: u32) -> Result<Drawn> {
+        let picture = image::open(path)
+            .map_err(|e| Error::invalid(tr!("ocr-picture-unreadable", message = e.to_string())))?
+            .into_luma8();
+        Ok(Drawn { width: picture.width(), height: picture.height(), dpi, grey: picture.into_raw() })
+    }
+}
+
+/// Draws a page with hayro, as `quality` asks. A page it loses itself in is
+/// an error of that page, and not of the others.
+pub fn draw_with_hayro(pdf: &Pdf, index: usize, quality: Quality) -> Result<Drawn> {
     let not_drawn = || Error::invalid(tr!("ocr-page-not-drawn", page = index + 1));
     let page = pdf.pages().get(index).ok_or_else(not_drawn)?;
     let (width, height) = page.render_dimensions();
-    let dpi = resolution(width, height).floor();
+    let dpi = resolution(width, height, quality.dots()).floor();
     let scale = dpi / 72.0;
     let settings = RenderSettings { x_scale: scale, y_scale: scale, bg_color: WHITE, ..Default::default() };
     let drawn = catch_unwind(AssertUnwindSafe(|| {
@@ -187,7 +289,8 @@ pub fn draw_with_hayro(pdf: &Pdf, index: usize) -> Result<Drawn> {
     }))
     .map_err(|_| not_drawn())?;
     let grey = drawn.data_as_u8_slice().as_chunks::<4>().0.iter().map(|p| luma(p[0], p[1], p[2])).collect();
-    Ok(Drawn { width: u32::from(drawn.width()), height: u32::from(drawn.height()), dpi: dpi as u32, grey })
+    Ok(Drawn { width: u32::from(drawn.width()), height: u32::from(drawn.height()), dpi: dpi as u32, grey }
+        .as_asked(quality))
 }
 
 /// The pages of a PDF and their sizes as they are shown, as Poppler's
@@ -243,10 +346,51 @@ mod tests {
 
     #[test]
     fn a_page_is_drawn_at_300_dots_unless_it_is_very_large() {
-        assert_eq!(resolution(595.0, 842.0), 300.0);
+        assert_eq!(resolution(595.0, 842.0, DPI), 300.0);
         // A0 is 2384 by 3370 points: its longer side would be 14,041 dots.
-        let a0 = resolution(2384.0, 3370.0);
+        let a0 = resolution(2384.0, 3370.0, DPI);
         assert!((a0 * 3370.0 / 72.0 - LONGEST).abs() < 1.0, "{a0}");
+        // Asked for more, a large page is still held within the longest side.
+        assert_eq!(resolution(595.0, 842.0, 600.0), 600.0);
+        let a0 = resolution(2384.0, 3370.0, 600.0);
+        assert!((a0 * 3370.0 / 72.0 - LONGEST).abs() < 1.0, "{a0}");
+    }
+
+    #[test]
+    fn the_dots_asked_for_are_held_within_what_is_allowed() {
+        assert_eq!(dots_asked(0), 300.0);
+        assert_eq!(dots_asked(72), 150.0);
+        assert_eq!(dots_asked(150), 150.0);
+        assert_eq!(dots_asked(400), 400.0);
+        assert_eq!(dots_asked(1200), 600.0);
+        assert_eq!(Quality { dpi: 200, contrast: false }.dots(), 200.0);
+        assert_eq!(Quality::default().dots(), 300.0);
+    }
+
+    #[test]
+    fn a_picture_of_two_tones_is_made_black_and_white() {
+        // Dark grey on light grey, with a lighter speck in the dark.
+        let mut grey = vec![60u8, 62, 58, 70, 190, 195, 185, 200, 60, 190];
+        let threshold = otsu(&grey);
+        assert!((70..190).contains(&threshold), "{threshold}");
+        black_and_white(&mut grey);
+        assert_eq!(grey, vec![0, 0, 0, 0, 255, 255, 255, 255, 0, 255]);
+        // Pure black and white stay as they are.
+        let mut pure = vec![0u8, 255, 255, 0];
+        black_and_white(&mut pure);
+        assert_eq!(pure, vec![0, 255, 255, 0]);
+        // A blank page, one shade all over, is white.
+        let mut blank = vec![128u8; 16];
+        black_and_white(&mut blank);
+        assert!(blank.iter().all(|s| *s == 255), "{blank:?}");
+        black_and_white(&mut []);
+
+        let mut drawn = Drawn { width: 2, height: 1, dpi: 300, grey: vec![40, 220] };
+        drawn.black_and_white();
+        assert_eq!(drawn.grey, vec![0, 255]);
+        let drawn =
+            Drawn { width: 2, height: 1, dpi: 300, grey: vec![40, 220] }.as_asked(Quality { dpi: 0, contrast: false });
+        assert_eq!(drawn.grey, vec![40, 220]);
     }
 
     #[test]
@@ -311,11 +455,12 @@ mod tests {
         assert!(sizes[0].0 > sizes[0].1, "turned, it is wider than high: {sizes:?}");
         let poppler = Pages::Poppler { pdftoppm: pdftoppm.path.clone(), file: pdf.clone(), sizes };
         assert_eq!(poppler.count(), 1);
-        let (picture, dpi) = poppler.draw(0, tmp.path(), &AtomicBool::new(false)).unwrap();
+        let (picture, dpi) = poppler.draw(0, tmp.path(), Quality::default(), &AtomicBool::new(false)).unwrap();
         assert_eq!(dpi, 300);
         let by_poppler = image::open(&picture).unwrap().to_luma8();
 
-        let by_hayro = draw_with_hayro(&Pdf::new(std::fs::read(&pdf).unwrap()).unwrap(), 0).unwrap();
+        let by_hayro =
+            draw_with_hayro(&Pdf::new(std::fs::read(&pdf).unwrap()).unwrap(), 0, Quality::default()).unwrap();
         let (width, height) = (by_poppler.width(), by_poppler.height());
         assert!(width.abs_diff(by_hayro.width) <= 2 && height.abs_diff(by_hayro.height) <= 2, "{width}×{height}");
         // The black band is at the right, where the top of the page is shown turned.
@@ -323,5 +468,19 @@ mod tests {
         assert!(dark(width - width / 6, height / 2) && !dark(width / 6, height / 2));
         let hayro_dark = |x: u32, y: u32| by_hayro.grey[(y * by_hayro.width + x) as usize] < 128;
         assert!(hayro_dark(by_hayro.width - by_hayro.width / 6, by_hayro.height / 2));
+
+        // Asked for in black and white at 150 dots, Poppler's page is PGM, half as large, and of two shades.
+        let quality = Quality { dpi: 150, contrast: true };
+        let (picture, dpi) = poppler.draw(0, tmp.path(), quality, &AtomicBool::new(false)).unwrap();
+        assert_eq!((dpi, picture.extension().and_then(|e| e.to_str())), (150, Some("pgm")));
+        let pgm = std::fs::read(&picture).unwrap();
+        let header = String::from_utf8_lossy(&pgm[..32]).to_string();
+        let mut words = header.split_whitespace();
+        assert_eq!(words.next(), Some("P5"));
+        let small_width: u32 = words.next().unwrap().parse().unwrap();
+        assert!(small_width.abs_diff(width / 2) <= 2, "{small_width} against {width}");
+        let dots = &pgm[pgm.len() - (small_width as usize * 10)..];
+        assert!(dots.iter().all(|d| *d == 0 || *d == 255));
+        assert!(!tmp.path().join("page-1.png").exists());
     }
 }

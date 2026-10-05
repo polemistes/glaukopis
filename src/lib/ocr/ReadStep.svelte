@@ -5,6 +5,8 @@
    * the languages are asked for where there are pages without text, and the
    * pages are shown as they are read. Where every page has text, it is read
    * at once. What is read is handed to the dialog, which makes the map.
+   * Also for a PDF of the library (`PdfMapDialog.svelte`), by its path in the
+   * store.
    *
    * Leaving the dialog stops the reading.
    */
@@ -19,25 +21,33 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
+  import { howFromSettings } from './how';
+  import HowDisclosure from './HowDisclosure.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
 
   interface Props {
     path: string;
+    /** Whether the path is one of the library, in the store. */
+    stored?: boolean;
+    /** What the file is called, where its path does not say. */
+    name?: string;
     /** What was read. */
     onread: (imported: Imported) => void;
   }
 
-  let { path, onread }: Props = $props();
+  let { path, stored = false, name, onread }: Props = $props();
 
   // svelte-ignore state_referenced_locally
-  const file = path.split(/[\\/]/).pop() ?? path;
+  const file = name ?? path.split(/[\\/]/).pop() ?? path;
   const ticket = newId();
 
   let phase = $state<'looking' | 'asking' | 'reading' | 'failed'>('looking');
   let looked = $state.raw<Looked | null>(null);
   let chosen = $state<string[]>([]);
   let all = $state(false);
+  /** How the pages are read, as the settings say until this reading says otherwise. */
+  let how = $state(howFromSettings());
   let progress = $state.raw<Progress | null>(null);
   let failure = $state<string | null>(null);
   /** The dialog was left: what comes back is not wanted. */
@@ -61,7 +71,7 @@
 
   async function look() {
     try {
-      const [found] = await Promise.all([ocrLook(path), reader.load()]);
+      const [found] = await Promise.all([ocrLook(path, stored), reader.load()]);
       if (gone) return;
       looked = found;
       chosen = reader.first(newTextLanguage(), languages.current);
@@ -77,7 +87,12 @@
     progress = null;
     const stopListening = await onProgress(ticket, (told) => (progress = told));
     try {
-      const imported = await ocrRead(path, { languages: $state.snapshot(chosen), all }, ticket);
+      const imported = await ocrRead(
+        path,
+        { languages: $state.snapshot(chosen), all, strip: false, ...$state.snapshot(how) },
+        ticket,
+        stored,
+      );
       if (!gone) onread(imported);
     } catch (error) {
       if (gone) return;
@@ -139,6 +154,9 @@
         {t('ocr-read-all')}
       </label>
       {#if all}<p class="hint">{t('ocr-read-all-map-hint')}</p>{/if}
+    {/if}
+    {#if scanning && reader.installed}
+      <HowDisclosure bind:value={how} />
     {/if}
     <div class="go">
       <Button variant="primary" disabled={!readable} onclick={read} data-ocr-read>
