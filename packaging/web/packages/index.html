@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Glaukopis — packages to test</title>
+    <meta
+      name="description"
+      content="Glaukopis 0.1.0, a first version for testing: installers for Windows and macOS, and packages for Arch Linux."
+    />
+    <style>
+      :root {
+        --paper: #fbf8f2;
+        --ink: #2a2622;
+        --ink-soft: #625b53;
+        --line: #d9d1c4;
+        --accent: #2d4b86;
+        --accent-soft: #e6ebf4;
+        --warn: #8a5a1b;
+        --warn-soft: #f7efe0;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #1d1b19;
+          --ink: #ebe5dc;
+          --ink-soft: #a89f93;
+          --line: #3c3732;
+          --accent: #9db5e3;
+          --accent-soft: #262d3b;
+          --warn: #e0b36a;
+          --warn-soft: #2e2719;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font:
+          17px/1.55 'EB Garamond',
+          Garamond,
+          'Times New Roman',
+          Georgia,
+          serif;
+      }
+      main {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 2.5rem 1rem 4rem;
+      }
+      h1 {
+        font-weight: 500;
+        font-size: 2.1rem;
+        line-height: 1.15;
+        margin: 0 0 0.25rem;
+      }
+      .lede {
+        color: var(--ink-soft);
+        margin: 0 0 2rem;
+      }
+      h2 {
+        font-weight: 500;
+        font-size: 1.45rem;
+        margin: 2.4rem 0 0.6rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid var(--line);
+      }
+      h3 {
+        font-weight: 500;
+        font-size: 1.1rem;
+        margin: 1.4rem 0 0.3rem;
+      }
+      p {
+        margin: 0.5rem 0;
+      }
+      a {
+        color: var(--accent);
+      }
+      .files {
+        list-style: none;
+        margin: 0.8rem 0 0;
+        padding: 0;
+      }
+      .files li {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0 1rem;
+        padding: 0.7rem 0;
+        border-top: 1px solid var(--line);
+      }
+      .files li:first-child {
+        border-top: 0;
+      }
+      .files .name {
+        font-family: ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+        font-size: 0.92rem;
+        word-break: break-all;
+      }
+      .files .size {
+        color: var(--ink-soft);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .files .what {
+        grid-column: 1 / -1;
+        margin: 0.15rem 0 0;
+      }
+      .files .what p {
+        margin: 0.2rem 0;
+      }
+      .note {
+        margin: 1rem 0;
+        padding: 0.7rem 1rem;
+        border-left: 3px solid var(--warn);
+        background: var(--warn-soft);
+      }
+      .note strong {
+        color: var(--warn);
+        font-weight: 600;
+      }
+      .aside {
+        margin: 1rem 0;
+        padding: 0.7rem 1rem;
+        border-left: 3px solid var(--accent);
+        background: var(--accent-soft);
+      }
+      code,
+      pre {
+        font-family: ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+        font-size: 0.9rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 0.7rem 1rem;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: var(--accent-soft);
+        line-height: 1.45;
+      }
+      kbd {
+        font-family: inherit;
+        font-weight: 600;
+      }
+      footer {
+        margin-top: 3rem;
+        padding-top: 0.8rem;
+        border-top: 1px solid var(--line);
+        color: var(--ink-soft);
+        font-size: 0.95rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Glaukopis, a first version to test</h1>
+      <p class="lede">
+        Version 0.1.0, built 5 October 2026. Glaukopis is where the work on an academic book or
+        article is done: references, ideas in mind maps, writing, and the manuscript. Everything
+        here is for testing: it will have faults, and your project files may not open in a later
+        version. Keep what matters elsewhere as well.
+      </p>
+
+      <div class="note">
+        <p>
+          <strong>Not signed.</strong> The installers for Windows and macOS carry no signature, so
+          both systems warn before they run. On Windows, choose <kbd>More info</kbd> and then
+          <kbd>Run anyway</kbd>. On macOS, open Glaukopis the first time by right-clicking it in
+          <em>Applications</em> and choosing <kbd>Open</kbd>; if macOS says the app is damaged, run
+          <code>xattr -cr /Applications/Glaukopis.app</code> in the Terminal and try again.
+        </p>
+      </div>
+
+      <h2>Windows</h2>
+      <p>
+        For Windows 10 and 11, 64-bit. Pandoc, Tesseract with its languages, the dictionaries of
+        spelling and the fonts of Typst come with the installer: nothing else is needed. If the
+        WebView2 runtime is missing, which is rare, the installer fetches it.
+      </p>
+      <ul class="files">
+        <li>
+          <a class="name" href="Glaukopis_0.1.0_x64-setup.exe">Glaukopis_0.1.0_x64-setup.exe</a>
+          <span class="size">102 MB</span>
+          <div class="what">
+            <p>
+              The usual installer. Installs for the person who runs it, without asking for an
+              administrator, and puts Glaukopis in the Start menu. Choose this one unless you have a
+              reason not to.
+            </p>
+          </div>
+        </li>
+        <li>
+          <a class="name" href="Glaukopis_0.1.0_x64_en-US.msi">Glaukopis_0.1.0_x64_en-US.msi</a>
+          <span class="size">148 MB</span>
+          <div class="what">
+            <p>
+              The same application as a Windows Installer package, for installing for every user of
+              the computer or through the tools of an institution. Needs an administrator.
+            </p>
+          </div>
+        </li>
+      </ul>
+
+      <h2>macOS</h2>
+      <p>
+        For Macs with Apple silicon (M1 and later), macOS 11 or newer. There is no build for Intel
+        Macs yet. As on Windows, Pandoc, Tesseract, the dictionaries and the fonts come with it.
+      </p>
+      <ul class="files">
+        <li>
+          <a class="name" href="Glaukopis_0.1.0_aarch64.dmg">Glaukopis_0.1.0_aarch64.dmg</a>
+          <span class="size">98 MB</span>
+          <div class="what">
+            <p>
+              A disk image. Open it and drag Glaukopis into <em>Applications</em>. Then open it the
+              first time with a right-click, as said above.
+            </p>
+          </div>
+        </li>
+      </ul>
+
+      <h2>Arch Linux</h2>
+      <p>
+        Packages for <code>pacman</code>, x86_64. Here Pandoc and the font Libertinus come from the
+        repositories and are installed with Glaukopis as its dependencies; Tesseract and the rest
+        are optional, and <code>pacman -Qi glaukopis</code> says what each is for. Install the
+        application and the dictionaries of the languages you write in:
+      </p>
+      <pre>
+sudo pacman -U glaukopis-0.1.0-16-x86_64.pkg.tar.zst \
+  glaukopis-dictionaries-en-0.1.0-16-any.pkg.tar.zst</pre>
+      <ul class="files">
+        <li>
+          <a class="name" href="glaukopis-0.1.0-16-x86_64.pkg.tar.zst"
+            >glaukopis-0.1.0-16-x86_64.pkg.tar.zst</a
+          >
+          <span class="size">25 MB</span>
+          <div class="what">
+            <p>
+              The application. Depends on <code>pandoc-cli</code> and <code>otf-libertinus</code>,
+              which pacman fetches. For reading scans and pictures, install
+              <code>tesseract</code> and <code>tesseract-data-eng</code>, with the data of other
+              languages as you need them.
+            </p>
+          </div>
+        </li>
+        <li>
+          <a class="name" href="glaukopis-dictionaries-en-0.1.0-16-any.pkg.tar.zst"
+            >glaukopis-dictionaries-en-0.1.0-16-any.pkg.tar.zst</a
+          >
+          <span class="size">0.7 MB</span>
+          <div class="what">
+            <p>Dictionaries for checking the spelling of English, American and British.</p>
+          </div>
+        </li>
+        <li>
+          <a class="name" href="glaukopis-dictionaries-nb-0.1.0-16-any.pkg.tar.zst"
+            >glaukopis-dictionaries-nb-0.1.0-16-any.pkg.tar.zst</a
+          >
+          <span class="size">1.5 MB</span>
+          <div class="what">
+            <p>Dictionary for Norwegian Bokmål.</p>
+          </div>
+        </li>
+        <li>
+          <a class="name" href="glaukopis-dictionaries-nn-0.1.0-16-any.pkg.tar.zst"
+            >glaukopis-dictionaries-nn-0.1.0-16-any.pkg.tar.zst</a
+          >
+          <span class="size">1.5 MB</span>
+          <div class="what">
+            <p>Dictionary for Norwegian Nynorsk.</p>
+          </div>
+        </li>
+        <li>
+          <a class="name" href="glaukopis-server-0.1.0-16-x86_64.pkg.tar.zst"
+            >glaukopis-server-0.1.0-16-x86_64.pkg.tar.zst</a
+          >
+          <span class="size">1.8 MB</span>
+          <div class="what">
+            <p>
+              The collaboration server, for the one computer that is to pass changes between people
+              writing in the same project at the same time. Nobody else needs it: Glaukopis works on
+              its own. How to run it is in <code>/usr/share/doc/glaukopis-server/server.md</code>
+              once installed.
+            </p>
+          </div>
+        </li>
+      </ul>
+      <p class="aside">
+        The dictionaries are optional, and Glaukopis finds those of Hunspell as well
+        (<code>hunspell-en_us</code>, <code>hunspell-en_gb</code>; <code>hunspell-nb</code> and
+        <code>hunspell-nn</code> from the AUR), which serve for other languages too. Other Linux
+        distributions are not covered yet.
+      </p>
+
+      <h2>Checking what you downloaded</h2>
+      <p>
+        <a href="SHA256SUMS">SHA256SUMS</a> lists the checksum of every file above. In the folder
+        you downloaded to, <code>sha256sum -c SHA256SUMS --ignore-missing</code> on Linux or
+        <code>shasum -a 256 -c SHA256SUMS --ignore-missing</code> on macOS checks them; on Windows,
+        <code>Get-FileHash</code> in PowerShell shows a file's checksum to compare.
+      </p>
+
+      <h2>Reading on, and reporting</h2>
+      <p>
+        The guide to Glaukopis is installed with it and can be read on GitHub:
+        <a href="https://github.com/polemistes/glaukopis/blob/main/docs/guide.md">docs/guide.md</a>.
+        Faults, surprises and wishes are welcome by mail to
+        <a href="mailto:post@robertemilberge.no">post@robertemilberge.no</a>, or as issues at
+        <a href="https://github.com/polemistes/glaukopis">github.com/polemistes/glaukopis</a>. Say
+        which file you installed and what you did when it went wrong.
+      </p>
+
+      <footer>
+        Glaukopis is free software under the GPL, version 3 or later. The dictionaries have licences
+        of their own, which come with them.
+      </footer>
+    </main>
+  </body>
+</html>
