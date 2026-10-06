@@ -1,5 +1,7 @@
 # Glaukopis
 
+**Be aware: The text below is AI generated, as is the code of Glaukopis. AI code can be good. AI text cannot. The first non-beta release of Glaukopis will not have AI generated texts, except for standard short text for features in the user interface.**
+
 A desktop application for writing: a book, an article, a thesis, a novel, a
 play, a report, a letter, whatever is to be written. The work is done in one
 place: developing ideas in mind maps, collecting what has been read, writing,
