@@ -46,8 +46,16 @@ language, unless the format has words of its own.
 
 ## A new language
 
-Copy `en/` to a directory named by the tag of the language, translate every
-file, and add the language to `INTERFACE` in `crates/core/src/i18n.rs`. A
-language that has only `document.ftl` has words for documents and not an
-interface. The tests (`pnpm test`, `cargo test`) say what is missing, and
-where the variables differ.
+Read `TRANSLATING.md`, which says how, and `GLOSSARY.md`, which says what
+the application's own words mean. In short: copy `en/` to a directory named
+by the tag of the language (`de`, `pt-BR`, `sr-Cyrl`), translate every
+file, and give the language its name in `NAMES` in
+`crates/core/src/i18n.rs`. `node scripts/check-locales.mjs <tag>` says what
+is lacking and what is wrong. A language is offered in the settings as soon
+as it has a `core.ftl`; what it lacks is said in English. A language that
+has only `document.ftl` has words for documents and not an interface.
+English and Bokmål must be complete; the tests (`pnpm test`, `cargo test`)
+demand that, and that no language has anything wrong. Serbian in Latin
+letters is made from the Cyrillic by `scripts/serbian-latin.mjs`, and is not
+edited by hand. The words of a language are loaded when it is first spoken;
+English and every `document.ftl` are at hand from the start.

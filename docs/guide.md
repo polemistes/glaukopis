@@ -1471,10 +1471,19 @@ or a moment given a name. Your own changes are left out, unless you ask for
 
 ## Languages
 
-Glaukopis speaks English and Norwegian Bokmål. At first it speaks the
-language of the computer, where it has it, and English where it does not;
-a computer set to Nynorsk is spoken to in Bokmål. *Settings* › *Language*
-changes it, at once.
+Glaukopis speaks English; Norwegian Bokmål and Nynorsk, Swedish, Danish,
+Finnish and Icelandic; German, Dutch, French, Italian, Spanish, and
+Portuguese as Portugal and as Brazil write it; Romanian, Albanian and
+Greek; Polish, Czech, Slovak, Slovenian, Croatian, Bosnian, and Serbian in
+both its scripts; Ukrainian, Belarusian and Russian; Turkish; Hindi,
+Marathi, Bengali, Gujarati, Tamil and Telugu; Chinese in simplified and in
+traditional characters; and Japanese. English and Bokmål are the author's
+own. The others were translated with the help of a language model, under a
+glossary and mechanical checks, and have not yet all been read by people
+who speak them: a word that is wrong or odd in your language is worth a
+line to develop@robertemilberge.no. At first Glaukopis speaks the language
+of the computer, where it has it, and English where it does not.
+*Settings* › *Language* changes it, at once.
 
 Your texts have a language of their own, which need not be that of
 Glaukopis: each map is written in one, which is shown, and can be changed,
@@ -1485,8 +1494,8 @@ for a project written in another language than you usually write in: it is
 kept with the project, so that everyone it is shared with makes their new
 maps alike. Where none is chosen there, a new map is given the language of
 new texts, which is set under *Settings* › *Language*: at first that of the
-computer, where documents have words in it (English, Bokmål and Nynorsk), and
-English otherwise. A map made from a document keeps the language the document
+computer, where documents have words in it (every language Glaukopis
+speaks), and English otherwise. A map made from a document keeps the language the document
 says it is in. The language is written into the map, so that those you share
 the project with make the same document of it.
 

@@ -85,7 +85,7 @@ pub struct Languages {
 pub fn languages() -> Languages {
     let system = i18n::system_tag();
     Languages {
-        interface: i18n::INTERFACE.iter().map(|&(tag, name)| Language { tag, name }).collect(),
+        interface: i18n::interface().iter().map(|&(tag, name)| Language { tag, name }).collect(),
         interface_default: i18n::interface_language(&system),
         texts: i18n::text_languages(),
         text_default: i18n::text_language(&system),

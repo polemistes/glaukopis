@@ -31,9 +31,64 @@ mod files {
 /// translation lacks them.
 pub const ENGLISH: &str = "en";
 
+/// The languages the application may be in, each with its name in itself:
+/// every language that has, or is to have, a folder under `locales/`, in the
+/// order they are offered, by alphabet within each script. A language is
+/// offered only when its words are there (see [`interface`]).
+const NAMES: &[(&str, &str)] = &[
+    ("sq", "Shqip"),
+    ("bs", "Bosanski"),
+    ("cs", "Čeština"),
+    ("da", "Dansk"),
+    ("de", "Deutsch"),
+    ("en", "English"),
+    ("es", "Español"),
+    ("fr", "Français"),
+    ("hr", "Hrvatski"),
+    ("is", "Íslenska"),
+    ("it", "Italiano"),
+    ("nl", "Nederlands"),
+    ("nb", "Norsk bokmål"),
+    ("nn", "Norsk nynorsk"),
+    ("pl", "Polski"),
+    ("pt-BR", "Português (Brasil)"),
+    ("pt-PT", "Português (Portugal)"),
+    ("ro", "Română"),
+    ("sk", "Slovenčina"),
+    ("sl", "Slovenščina"),
+    ("sr-Latn", "Srpski (latinica)"),
+    ("fi", "Suomi"),
+    ("sv", "Svenska"),
+    ("tr", "Türkçe"),
+    ("el", "Ελληνικά"),
+    ("be", "Беларуская"),
+    ("ru", "Русский"),
+    ("sr-Cyrl", "Српски (ћирилица)"),
+    ("uk", "Українська"),
+    ("hi", "हिन्दी"),
+    ("mr", "मराठी"),
+    ("bn", "বাংলা"),
+    ("gu", "ગુજરાતી"),
+    ("ta", "தமிழ்"),
+    ("te", "తెలుగు"),
+    ("zh-Hans", "中文（简体）"),
+    ("zh-Hant", "中文（繁體）"),
+    ("ja", "日本語"),
+];
+
 /// The languages the interface is in: the tag, and the name of the language
-/// in itself.
-pub const INTERFACE: &[(&str, &str)] = &[("en", "English"), ("nb", "Norsk bokmål")];
+/// in itself. Those of [`NAMES`] whose words are there, which is told by
+/// the core's own file, `core.ftl`, being among the files compiled in.
+pub fn interface() -> &'static [(&'static str, &'static str)] {
+    static INTERFACE: OnceLock<Vec<(&'static str, &'static str)>> = OnceLock::new();
+    INTERFACE.get_or_init(|| {
+        NAMES
+            .iter()
+            .copied()
+            .filter(|(tag, _)| files::FILES.iter().any(|&(t, name, _)| t == *tag && name == "core.ftl"))
+            .collect()
+    })
+}
 
 /// The language of the interface, which is the language the core speaks in.
 static LANGUAGE: RwLock<&'static str> = RwLock::new(ENGLISH);
@@ -124,15 +179,93 @@ fn region(tag: &str) -> Option<String> {
         .map(|p| p.to_ascii_uppercase())
 }
 
-/// The language of the interface that is nearest to what a system or a
-/// person says. Norwegian without more is Bokmål, and Nynorsk, which the
-/// interface is not in, is shown in Bokmål, as Norwegians read both; any
-/// other language the interface is not in is shown in English.
-pub fn interface_language(tag: &str) -> &'static str {
-    match primary(tag).as_str() {
-        "nb" | "no" | "nn" => "nb",
-        other => INTERFACE.iter().map(|(t, _)| *t).find(|t| *t == other).unwrap_or(ENGLISH),
+/// A tag taken apart: the language in small letters, the script as `Latn`,
+/// the region as `BR`. `nb_NO.UTF-8`, `zh-Hant-TW`, `sr_RS@latin` and
+/// `pt-BR` are all read. Norwegian without more is Bokmål.
+struct Pieces {
+    language: String,
+    script: Option<String>,
+    region: Option<String>,
+}
+
+fn pieces(tag: &str) -> Pieces {
+    let tag = tag.trim();
+    let (head, modifier) = tag.split_once('@').unwrap_or((tag, ""));
+    let head = head.split('.').next().unwrap_or_default();
+    let mut subtags = head.split(['-', '_']).filter(|s| !s.is_empty());
+    let language = subtags.next().unwrap_or_default().to_ascii_lowercase();
+    let language = if language == "no" { "nb".to_owned() } else { language };
+    let mut script = None;
+    let mut region = None;
+    for s in subtags {
+        if script.is_none() && s.len() == 4 && s.chars().all(|c| c.is_ascii_alphabetic()) {
+            let (first, rest) = s.split_at(1);
+            script = Some(format!("{}{}", first.to_ascii_uppercase(), rest.to_ascii_lowercase()));
+        } else if region.is_none()
+            && ((s.len() == 2 && s.chars().all(|c| c.is_ascii_alphabetic()))
+                || (s.len() == 3 && s.chars().all(|c| c.is_ascii_digit())))
+        {
+            region = Some(s.to_ascii_uppercase());
+        }
     }
+    match modifier.to_ascii_lowercase().as_str() {
+        "latin" => script = Some("Latn".to_owned()),
+        "cyrillic" => script = Some("Cyrl".to_owned()),
+        _ => {}
+    }
+    Pieces { language, script, region }
+}
+
+/// The tag among those available that is nearest to a tag: the same with
+/// its script and region, then with its script, then with its region, then
+/// the language alone; then what the language means without more
+/// (Portuguese is Portugal's, Chinese is simplified, Serbian is Cyrillic,
+/// unless the region or the script says otherwise); then any of the
+/// language. Nothing, where the language is not among them.
+pub fn nearest<'a>(tag: &str, available: &[&'a str]) -> Option<&'a str> {
+    let p = pieces(tag);
+    if p.language.is_empty() {
+        return None;
+    }
+    let has = |t: &str| available.iter().copied().find(|a| a.eq_ignore_ascii_case(t));
+    let mut tries = Vec::new();
+    if let (Some(s), Some(r)) = (&p.script, &p.region) {
+        tries.push(format!("{}-{s}-{r}", p.language));
+    }
+    if let Some(s) = &p.script {
+        tries.push(format!("{}-{s}", p.language));
+    }
+    if let Some(r) = &p.region {
+        tries.push(format!("{}-{r}", p.language));
+    }
+    tries.push(p.language.clone());
+    if let Some(found) = tries.iter().find_map(|t| has(t)) {
+        return Some(found);
+    }
+    let usual = match p.language.as_str() {
+        "pt" => Some(if p.region.as_deref() == Some("BR") { "pt-BR" } else { "pt-PT" }),
+        "zh" => {
+            Some(if p.script.as_deref() == Some("Hant") || matches!(p.region.as_deref(), Some("TW" | "HK" | "MO")) {
+                "zh-Hant"
+            } else {
+                "zh-Hans"
+            })
+        }
+        "sr" => Some(if p.script.as_deref() == Some("Latn") { "sr-Latn" } else { "sr-Cyrl" }),
+        _ => None,
+    };
+    if let Some(found) = usual.and_then(has) {
+        return Some(found);
+    }
+    available.iter().copied().find(|a| primary(a) == p.language)
+}
+
+/// The language of the interface that is nearest to what a system or a
+/// person says (see [`nearest`]); English, where the interface is not in
+/// the language.
+pub fn interface_language(tag: &str) -> &'static str {
+    let tags: Vec<&'static str> = interface().iter().map(|(t, _)| *t).collect();
+    nearest(tag, &tags).unwrap_or(ENGLISH)
 }
 
 /// Sets the language the core speaks in: that of the interface.
@@ -155,16 +288,23 @@ pub fn system_tag() -> String {
 }
 
 /// A tag as the system gives it, as a tag of BCP 47: `nb_NO.UTF-8` is
-/// `nb-NO`; the language of no language, `C` and `POSIX`, is English.
+/// `nb-NO`, `sr_RS@latin` is `sr-Latn-RS`; the language of no language,
+/// `C` and `POSIX`, is English.
 fn normalise(tag: &str) -> String {
-    let language = primary(tag);
-    if language.is_empty() || language == "c" || language == "posix" {
+    let p = pieces(tag);
+    if p.language.is_empty() || p.language == "c" || p.language == "posix" {
         return ENGLISH.to_owned();
     }
-    match region(tag) {
-        Some(region) => format!("{language}-{region}"),
-        None => language,
+    let mut out = p.language;
+    if let Some(script) = p.script {
+        out.push('-');
+        out.push_str(&script);
     }
+    if let Some(region) = p.region {
+        out.push('-');
+        out.push_str(&region);
+    }
+    out
 }
 
 /// The languages that documents have words of their own in.
@@ -178,13 +318,11 @@ pub fn text_languages() -> Vec<&'static str> {
 /// language where documents have words in it, and English otherwise. English
 /// is British where the country writes so, and American elsewhere.
 pub fn text_language(system: &str) -> String {
-    let language = primary(system);
-    let language = if language == "no" { "nb".to_owned() } else { language };
-    if language != ENGLISH && text_languages().contains(&language.as_str()) {
-        return language;
+    if let Some(found) = nearest(system, &text_languages()).filter(|t| primary(t) != ENGLISH) {
+        return found.to_owned();
     }
     match region(system).as_deref() {
-        Some("GB" | "IE" | "AU" | "NZ" | "ZA" | "IN") if language == ENGLISH => "en-GB".to_owned(),
+        Some("GB" | "IE" | "AU" | "NZ" | "ZA" | "IN") if primary(system) == ENGLISH => "en-GB".to_owned(),
         _ => "en-US".to_owned(),
     }
 }
@@ -211,13 +349,9 @@ pub fn message_in(tag: &str, id: &str, args: Option<&FluentArgs>) -> String {
 /// The language of documents nearest to a tag, if documents have words in
 /// it: `nb` of `nb-NO`, and of `no`.
 fn text_bundle(language: Option<&str>) -> Option<&'static Bundle> {
-    let language = primary(language.unwrap_or(ENGLISH));
-    let language = match language.as_str() {
-        "" => ENGLISH,
-        "no" => "nb",
-        other => other,
-    };
-    words().terms.get(language)
+    let language = language.map(str::trim).filter(|l| !l.is_empty()).unwrap_or(ENGLISH);
+    let found = nearest(language, &text_languages())?;
+    words().terms.get(found)
 }
 
 /// A word a document prints, in the language of the document. Nothing where
@@ -366,24 +500,47 @@ mod tests {
         }
     }
 
+    /// The languages that must have every message: the Norwegian of the
+    /// application's author. The others may lack messages, which are then
+    /// said in English, but may have nothing wrong.
+    const COMPLETE: &[&str] = &["nb"];
+    /// The languages whose words of documents must all be there.
+    const COMPLETE_DOCUMENTS: &[&str] = &["nb", "nn"];
+
     #[test]
-    fn the_translations_have_every_message_with_the_same_variables() {
+    fn the_translations_are_complete_where_they_must_be_and_nowhere_wrong() {
         let english = catalogue(ENGLISH, core);
         assert!(!english.is_empty());
-        for (tag, _) in INTERFACE.iter().filter(|(t, _)| *t != ENGLISH) {
+        let tags: BTreeSet<&str> = files::FILES.iter().map(|&(tag, _, _)| tag).filter(|t| *t != ENGLISH).collect();
+        for tag in &tags {
             let other = catalogue(tag, core);
-            let lacking: Vec<_> = english.keys().filter(|k| !other.contains_key(*k)).collect();
-            assert!(lacking.is_empty(), "{tag} lacks {lacking:?}");
+            if COMPLETE.contains(tag) {
+                let lacking: Vec<_> = english.keys().filter(|k| !other.contains_key(*k)).collect();
+                assert!(lacking.is_empty(), "{tag} lacks {lacking:?}");
+            }
             let extra: Vec<_> = other.keys().filter(|k| !english.contains_key(*k)).collect();
             assert!(extra.is_empty(), "{tag} has what English has not: {extra:?}");
-            for (id, vars) in &english {
-                assert_eq!(&other[id], vars, "{tag}: {id} has other variables");
+            for (id, vars) in &other {
+                assert_eq!(vars, &english[id], "{tag}: {id} has other variables");
             }
         }
         let english = catalogue(ENGLISH, |n| n == "document.ftl");
-        for tag in text_languages() {
+        for tag in text_languages().into_iter().filter(|t| *t != ENGLISH) {
             let other = catalogue(tag, |n| n == "document.ftl");
-            assert_eq!(other.keys().collect::<Vec<_>>(), english.keys().collect::<Vec<_>>(), "{tag}");
+            if COMPLETE_DOCUMENTS.contains(&tag) {
+                assert_eq!(other.keys().collect::<Vec<_>>(), english.keys().collect::<Vec<_>>(), "{tag}");
+            } else {
+                let extra: Vec<_> = other.keys().filter(|k| !english.contains_key(*k)).collect();
+                assert!(extra.is_empty(), "{tag} has words of documents English has not: {extra:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn every_language_that_has_words_is_named() {
+        let tags: BTreeSet<&str> = files::FILES.iter().map(|&(tag, _, _)| tag).collect();
+        for tag in tags {
+            assert!(NAMES.iter().any(|(t, _)| *t == tag), "{tag} has a folder under locales/ and no name in NAMES");
         }
     }
 
@@ -440,13 +597,40 @@ mod tests {
         assert_eq!(interface_language("nb-NO"), "nb");
         assert_eq!(interface_language("nb_NO.UTF-8"), "nb");
         assert_eq!(interface_language("no"), "nb");
-        assert_eq!(interface_language("nn-NO"), "nb");
         assert_eq!(interface_language("en-GB"), "en");
-        assert_eq!(interface_language("de-DE"), "en");
+        assert_eq!(interface_language("xx-XX"), "en");
         assert_eq!(interface_language(""), "en");
         assert_eq!(normalise("nb_NO.UTF-8"), "nb-NO");
         assert_eq!(normalise("C.UTF-8"), "en");
-        assert_eq!(normalise("sr_RS@latin"), "sr-RS");
+        assert_eq!(normalise("sr_RS@latin"), "sr-Latn-RS");
+        assert_eq!(normalise("zh_TW.UTF-8"), "zh-TW");
+        assert_eq!(normalise("zh-Hant-HK"), "zh-Hant-HK");
+    }
+
+    #[test]
+    fn the_nearest_language_is_found() {
+        let portuguese = ["pt-PT", "pt-BR"];
+        assert_eq!(nearest("pt-BR", &portuguese), Some("pt-BR"));
+        assert_eq!(nearest("pt_PT.UTF-8", &portuguese), Some("pt-PT"));
+        assert_eq!(nearest("pt", &portuguese), Some("pt-PT"));
+        assert_eq!(nearest("pt-AO", &portuguese), Some("pt-PT"));
+        let chinese = ["zh-Hans", "zh-Hant"];
+        assert_eq!(nearest("zh-TW", &chinese), Some("zh-Hant"));
+        assert_eq!(nearest("zh_CN.UTF-8", &chinese), Some("zh-Hans"));
+        assert_eq!(nearest("zh-Hant-HK", &chinese), Some("zh-Hant"));
+        assert_eq!(nearest("zh", &chinese), Some("zh-Hans"));
+        let serbian = ["sr-Cyrl", "sr-Latn"];
+        assert_eq!(nearest("sr_RS@latin", &serbian), Some("sr-Latn"));
+        assert_eq!(nearest("sr-Latn-RS", &serbian), Some("sr-Latn"));
+        assert_eq!(nearest("sr", &serbian), Some("sr-Cyrl"));
+        let some = ["en", "nb", "nn", "de"];
+        assert_eq!(nearest("no", &some), Some("nb"));
+        assert_eq!(nearest("nn-NO", &some), Some("nn"));
+        assert_eq!(nearest("nb_NO.UTF-8", &some), Some("nb"));
+        assert_eq!(nearest("de-AT", &some), Some("de"));
+        assert_eq!(nearest("en-GB", &some), Some("en"));
+        assert_eq!(nearest("fr", &some), None);
+        assert_eq!(nearest("", &some), None);
     }
 
     #[test]
@@ -457,7 +641,7 @@ mod tests {
         assert_eq!(text_language("en-GB"), "en-GB");
         assert_eq!(text_language("en-US"), "en-US");
         assert_eq!(text_language("en"), "en-US");
-        assert_eq!(text_language("de-DE"), "en-US");
+        assert_eq!(text_language("xx-XX"), "en-US");
     }
 
     // The language of the interface is not set here: it is one for the whole
@@ -470,7 +654,7 @@ mod tests {
         let english = message_in("en", "program-missing", Some(&args));
         assert_eq!(english, "Tesseract is not installed or could not be found");
         assert!(norwegian.starts_with("Tesseract er ikke installert"), "{norwegian}");
-        assert_eq!(message_in("de", "program-missing", Some(&args)), english);
+        assert_eq!(message_in("xx", "program-missing", Some(&args)), english);
         assert_eq!(message("no-such-message", None), "no-such-message");
         assert_eq!(crate::tr!("program-missing", program = "Typst"), "Typst is not installed or could not be found");
     }

@@ -111,7 +111,10 @@
           languages.interfaceDefault,
       }),
     },
-    ...languages.interface.map((l) => ({ value: l.tag, label: l.name })),
+    // In the order of their names, as the alphabets go: Latin, Greek, Cyrillic, and so on.
+    ...[...languages.interface]
+      .sort((a, b) => new Intl.Collator(languages.current).compare(a.name, b.name))
+      .map((l) => ({ value: l.tag, label: l.name })),
   ]);
   const textOptions = $derived([
     {

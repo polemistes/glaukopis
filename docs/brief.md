@@ -407,3 +407,29 @@ What this settles:
   the Pandoc of Debian and Ubuntu is older than the application asks for,
   and recommend Tesseract from the system's packages, which has it as new as
   any. Flatpak, which would reach every distribution with one build, waits.
+
+## 2026-10-06 — the languages of the interface, and how the languages of spelling and OCR are to come
+
+> Now, we are not really satisfied with the number of interface languages. We want Nynorsk, Swedish, Danish, Finish, Icelandic, if you are able to translate reliably into the Samic languages and Kvensk, that would be great, German, French, Dutch, Spanish, Italian, Greek, Polish, Ukrainian, Czech, Slovakian, Slovenian, Bosnian, Serbian, Croatian, Romanian, Albanian, Turkish, Belarusian, Russian, Chinese, Japanese, Hindi and other large indian languages, Portugese. That is for a start. I think what makes sense is to make a system for importing spelling languages and ocr languages, instead of bundling or making our own packages. On Linux the system Hunspell or Tesseract languages would work, but imported packages take precedense. We could import from official hunspell or tesseract archives, or store them on our own server, where we can control their content and stability. [...]
+
+> Ok, do all the interface translations in the two first groups, so include the group with Finnish and Icelandic, but not the ones worse than that. Let us do the spelling and ocr when that is done.
+
+What this settles:
+
+- The interface is translated into the languages asked for, by a language
+  model under rules and checks (ADR 0020, addendum of 2026-10-06): one
+  agent for each language, a glossary of the application's words, a check
+  of names, variables and plural forms. Portuguese comes in both standards,
+  Serbian in both scripts, Chinese simplified and traditional. English and
+  Bokmål are the only languages that must be complete. The Sámi languages
+  and Kven, the Indian languages beyond Hindi, Marathi, Bengali, Gujarati,
+  Tamil and Telugu, and the languages written from right to left wait: the
+  first for a reader who knows them, the last for the layout.
+- The languages of spelling and of OCR are to be imported, not bundled with
+  the application and not packaged by the project: from an index of the
+  project's own, signed, with the files wherever is convenient, so that
+  their content and stability are the project's to control. On Linux the
+  system's Hunspell and Tesseract languages serve as well, and an imported
+  language comes before them. The Norwegian dictionaries become import
+  packages like the others. That is the next piece of work, after the
+  translations.

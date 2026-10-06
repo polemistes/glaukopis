@@ -609,15 +609,22 @@ pub fn styled(f: &DocumentFormat, own: &[OwnKind]) -> Vec<(String, KindInfo)> {
 
 /// The quotation marks of a language, for a word that is mentioned.
 pub fn quotes(language: Option<&str>) -> (&'static str, &'static str) {
-    let lang = language.unwrap_or("en").trim().to_ascii_lowercase();
-    let lang = lang.split(['-', '_']).next().unwrap_or("en");
+    let whole = language.unwrap_or("en").trim().to_ascii_lowercase();
+    let mut subtags = whole.split(['-', '_']);
+    let lang = subtags.next().unwrap_or("en");
+    let rest: Vec<&str> = subtags.collect();
+    let traditional = rest.iter().any(|s| matches!(*s, "hant" | "tw" | "hk" | "mo"));
+    let brazil = rest.iter().any(|s| *s == "br");
     match lang {
-        "nb" | "nn" | "no" | "el" | "es" | "it" | "pt" | "ru" => ("«", "»"),
+        "nb" | "nn" | "no" | "el" | "es" | "it" | "ru" | "uk" | "be" | "sq" => ("«", "»"),
+        "pt" if !brazil => ("«", "»"),
         "fr" => ("«\u{a0}", "\u{a0}»"),
         "da" => ("»", "«"),
-        "de" => ("„", "“"),
+        "de" | "cs" | "sk" | "sl" | "sr" | "bs" | "is" | "bg" | "mk" | "et" | "lt" => ("„", "“"),
         "sv" | "fi" => ("”", "”"),
-        "nl" => ("„", "”"),
+        "nl" | "pl" | "hr" | "ro" | "hu" | "lv" => ("„", "”"),
+        "zh" if traditional => ("「", "」"),
+        "ja" => ("「", "」"),
         _ => ("“", "”"),
     }
 }

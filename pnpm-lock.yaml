@@ -81,6 +81,9 @@ importers:
         specifier: ^13.6.33
         version: 13.6.33
     devDependencies:
+      '@fluent/syntax':
+        specifier: ^0.19.0
+        version: 0.19.0
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.3.1
         version: 7.3.1(svelte@5.57.1)(vite@8.3.1)
@@ -177,6 +180,10 @@ packages:
   '@fluent/bundle@0.19.1':
     resolution: {integrity: sha512-SWJLZrPamDPsJlFFOW1nkgN0j0rbPbmSdmK0XAoXlyqKieLtMVl4vzng3aR5pwKoUx0scug8+YY2oct3fdfy9A==}
     engines: {node: '>=18.0.0', npm: '>=7.0.0'}
+
+  '@fluent/syntax@0.19.0':
+    resolution: {integrity: sha512-5D2qVpZrgpjtqU4eNOcWGp1gnUCgjfM+vKGE2y03kKN6z5EBhtx0qdRFbg8QuNNj8wXNoX93KJoYb+NqoxswmQ==}
+    engines: {node: '>=14.0.0', npm: '>=7.0.0'}
 
   '@fontsource-variable/inter@5.3.0':
     resolution: {integrity: sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==}
@@ -1004,6 +1011,8 @@ snapshots:
   '@exodus/bytes@1.16.0': {}
 
   '@fluent/bundle@0.19.1': {}
+
+  '@fluent/syntax@0.19.0': {}
 
   '@fontsource-variable/inter@5.3.0': {}
 

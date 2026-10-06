@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { getCurrentWebview } from '@tauri-apps/api/webview';
   import { languageSet, languagesInfo } from '$lib/api/system';
-  import { languages, t } from '$lib/i18n';
+  import { languages, load, t } from '$lib/i18n';
   import { library } from '$lib/state/library.svelte';
   import { router, type Route } from '$lib/state/router.svelte';
   import { keysUi, shortcuts } from '$lib/shell/keys.svelte';
@@ -40,18 +40,27 @@
       })
       .catch(() => {});
     await Promise.all([settings.load(), known]);
+    // And the words of the language, lest the interface be shown in English first.
+    await load(interfaceTag()).catch(() => {});
     ready = true;
   });
 
-  // The language of the interface: the one chosen, or that of the system.
-  $effect(() => {
+  /** The language of the interface: the one chosen, or that of the system. */
+  function interfaceTag(): string {
     const chosen = settings.value.language;
-    const tag = languages.interface.some((l) => l.tag === chosen)
-      ? chosen
-      : languages.interfaceDefault;
-    languages.current = tag;
+    return languages.interface.some((l) => l.tag === chosen) ? chosen : languages.interfaceDefault;
+  }
+
+  // The language of the interface, spoken once its words are loaded.
+  $effect(() => {
+    const tag = interfaceTag();
     document.documentElement.lang = tag;
     languageSet(tag).catch(() => {});
+    load(tag)
+      .catch(() => {})
+      .then(() => {
+        languages.current = tag;
+      });
   });
 
   // Words the stylesheet shows where the page has no element for them.

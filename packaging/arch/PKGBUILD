@@ -80,6 +80,8 @@ package_glaukopis() {
     'ttf-dejavu: for code set in letters of equal width in the preview and in PDF'
     'otf-latin-modern: for the font of LaTeX, Computer Modern, in the preview and in PDF'
     'libreoffice-fresh: to open what is exported as ODT or DOCX'
+    'noto-fonts: for the interface in Hindi, Marathi, Bengali, Gujarati, Tamil or Telugu'
+    'noto-fonts-cjk: for the interface in Chinese or Japanese'
     'tesseract-data-nor: to read Norwegian in scans and pictures'
     'tesseract-data-dan: to read Danish in scans and pictures'
     'tesseract-data-swe: to read Swedish in scans and pictures'

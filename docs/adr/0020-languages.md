@@ -85,3 +85,45 @@ wrong one, to be changed by hand.
   promised: a kind of words with a language has its words judged by that
   language's dictionary where there is one, and left alone where there is
   none, in the editors and in the text drawn without one.
+
+## Addendum of 2026-10-06: many languages of the interface
+
+Asked for by the one the application is made for: Nynorsk, Swedish,
+Danish, Finnish, Icelandic, German, French, Dutch, Spanish, Italian,
+Portuguese, Greek, Polish, Czech, Slovak, Slovenian, Croatian, Bosnian,
+Serbian, Romanian, Albanian, Turkish, Ukrainian, Belarusian, Russian,
+Chinese, Japanese, Hindi and the other large languages of India; and the
+Sámi languages and Kven if they could be done reliably, which they cannot
+be without a reader who knows them, so they wait, as do the Indian
+languages beyond Hindi, Marathi, Bengali, Gujarati, Tamil and Telugu, and
+the languages written from right to left, which the layout is not made for.
+
+- **The translations are made by a language model**, one agent for each
+  language, from the English, under a glossary of the application's own
+  words (`locales/GLOSSARY.md`) and rules of voice and form
+  (`locales/TRANSLATING.md`), and checked by `scripts/check-locales.mjs`:
+  every file reads; no name that English has not; the same variables,
+  attributes and references as the English; the plural forms of the
+  language in every choice by number. Serbian in Latin letters is made from
+  the Cyrillic by `scripts/serbian-latin.mjs`. None has yet been read by a
+  speaker; the guide says so, and asks to be told what is wrong.
+- **English and Bokmål must be complete; the others may lack**, and what
+  they lack is said in English, as before. The tests demand completeness of
+  those two only, and of every language that nothing in it is wrong.
+- **A language is offered when its words are there**: `i18n::interface()`
+  lists those of the known names (`NAMES`) that have a `core.ftl`. The
+  words of a language are loaded when it is first spoken, not all at the
+  start, since there are many; English, and the words of documents in every
+  language, are at hand always.
+- **The nearest language** to what the system or a map says is found by
+  one rule on both sides (`nearest`): the tag with its script and region,
+  then with its script, then with its region, then the language alone, then
+  what the language means without more (Portugal's Portuguese, simplified
+  Chinese, Cyrillic Serbian, unless the region or the script says
+  otherwise), then any of the language. Nynorsk is its own now.
+- **The words of documents** come in every language of the interface, so
+  that a document in any of them prints its own words; the languages
+  offered for texts grow accordingly, and so do the quotation marks a
+  mention stands in.
+- **Fonts**: on Linux the packages offer or recommend Noto for the Indian
+  scripts and for Chinese and Japanese; Windows and macOS have such fonts.

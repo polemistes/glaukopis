@@ -5,6 +5,8 @@ export {
   has,
   languageName,
   languages,
+  load,
+  nearest,
   newTextLanguage,
   primary,
   t,

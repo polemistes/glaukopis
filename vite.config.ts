@@ -19,6 +19,17 @@ export default defineConfig({
     target: ['es2022', 'safari15'],
     sourcemap: false,
     chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        // The words of a language in one chunk, fetched when the language is
+        // first spoken (src/lib/i18n). English, and the words of documents in
+        // every language, are part of the program itself.
+        manualChunks(id) {
+          const m = /\/locales\/([^/]+)\/([^/]+)\.ftl/.exec(id);
+          if (m && m[1] !== 'en' && m[2] !== 'document') return `words-${m[1]}`;
+        },
+      },
+    },
   },
   test: {
     environment: 'jsdom',

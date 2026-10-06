@@ -25,6 +25,8 @@ for scholars in the humanities first, the social sciences second.
   document formats can be chosen and changed; export to PDF, set by Typst
   or by LaTeX, and to Word, OpenDocument, LaTeX, Markdown and HTML.
 - **Working together**, through a small server of one's own.
+- **In your language.** The interface speaks some forty languages, from
+  Norwegian to Japanese, and a document prints its own words in each.
 
 How to use it is told in [docs/guide.md](docs/guide.md); how to run a server
 in [docs/server.md](docs/server.md).
