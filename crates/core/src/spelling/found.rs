@@ -16,6 +16,8 @@ use serde::Serialize;
 pub enum Source {
     /// Put in the data directory by the writer.
     Own,
+    /// Imported as a language package (ADR 0032).
+    Imported,
     /// Came with the application.
     Application,
     /// Installed on the system.
@@ -60,7 +62,7 @@ impl Found {
     /// More words for the dictionary, where there are: a list of the same
     /// name in `extra/` beside it, written as its own list is and read with
     /// its affix file. None of the dictionaries of the application has one
-    /// now; a dictionary of one's own may (see `resources/dictionaries/README.md`).
+    /// now; a dictionary of one's own may (see `packaging/languages/dictionaries/README.md`).
     pub fn extra(&self) -> PathBuf {
         self.dir.join("extra").join(format!("{}.dic", self.name))
     }

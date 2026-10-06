@@ -23,6 +23,10 @@ pub struct Tool {
     /// Where it is older than what Glaukopis needs: the least that will do.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub least: Option<String>,
+    /// For Tesseract, where languages are imported: the folder of data it
+    /// is given (`languages::merge_tessdata`).
+    #[serde(skip)]
+    pub data: Option<PathBuf>,
 }
 
 /// The least Pandoc that will do: the first to write citations as the Typst
@@ -47,7 +51,7 @@ impl Tool {
         if let Some(least) = &least {
             tracing::warn!(path = %path.display(), %version, %least, "a program that is older than what is needed");
         }
-        Tool { path, version, least }
+        Tool { path, version, least, data: None }
     }
 }
 
@@ -73,6 +77,8 @@ pub struct Configured {
     pub tesseract: Option<String>,
     /// Directories to look in after the path: beside the application.
     pub beside: Vec<PathBuf>,
+    /// The languages imported, which Tesseract is given (ADR 0032).
+    pub languages: Option<crate::languages::Languages>,
 }
 
 fn executable(name: &str) -> String {
@@ -101,6 +107,16 @@ pub fn find(program: &str, configured: Option<&str>, beside: &[PathBuf]) -> Opti
         }
     }
     beside.iter().map(|d| d.join(&name)).find(|p| p.is_file())
+}
+
+/// Tesseract, given the folder of data it is to read from where languages
+/// are imported.
+pub fn tesseract(tool: &Tool) -> Command {
+    let mut c = command(&tool.path);
+    if let Some(data) = &tool.data {
+        c.env("TESSDATA_PREFIX", data);
+    }
+    c
 }
 
 pub fn command(program: &Path) -> Command {
@@ -263,7 +279,11 @@ fn version_of(path: &Path, name: &str) -> String {
 /// What a program says of itself, on either stream, whatever it ends with:
 /// some say their version as an error.
 fn said(path: &Path, args: &[&str]) -> String {
-    let Ok(out) = command(path).args(args).stdin(Stdio::null()).output() else { return String::new() };
+    said_by(command(path), args)
+}
+
+fn said_by(mut c: Command, args: &[&str]) -> String {
+    let Ok(out) = c.args(args).stdin(Stdio::null()).output() else { return String::new() };
     let mut all = String::from_utf8_lossy(&out.stdout).into_owned();
     all.push('\n');
     all.push_str(&String::from_utf8_lossy(&out.stderr));
@@ -277,6 +297,15 @@ fn version_in(said: &str) -> String {
         .find_map(|line| line.split_whitespace().find(|w| w.chars().next().is_some_and(|c| c.is_ascii_digit())))
         .unwrap_or("")
         .to_owned()
+}
+
+/// The folder of data Tesseract reads from, as `tesseract --list-langs`
+/// says it: `List of available languages in "/usr/share/tessdata/" (3):`.
+pub fn data_dir_in(said: &str) -> Option<PathBuf> {
+    let line = said.lines().find(|line| line.contains("List of available languages"))?;
+    let (_, rest) = line.split_once('"')?;
+    let (dir, _) = rest.split_once('"')?;
+    Some(PathBuf::from(dir)).filter(|d| !d.as_os_str().is_empty())
 }
 
 /// The languages in what `tesseract --list-langs` says: a line that tells
@@ -321,8 +350,35 @@ pub fn discover(configured: &Configured) -> Tools {
     }
     if let Some(path) = find("tesseract", configured.tesseract.as_deref(), &configured.beside) {
         let version = version_in(&said(&path, &["--version"]));
-        tools.ocr_languages = languages_in(&said(&path, &["--list-langs"]));
-        tools.tesseract = Some(Tool::found(path, version, None));
+        let mut listed = said(&path, &["--list-langs"]);
+        let mut tool = Tool::found(path, version, None);
+        // Languages imported: Tesseract is given them, with its own.
+        if let Some(languages) = configured.languages.as_ref().filter(|l| l.has_ocr()) {
+            let base = data_dir_in(&listed).filter(|d| d.is_dir());
+            let merged = languages.tessdata();
+            match crate::languages::merge_tessdata(
+                base.as_deref(),
+                &languages.dir(crate::languages::Kind::Ocr),
+                &merged,
+            ) {
+                Ok(()) => {
+                    tool.data = Some(merged);
+                    listed = said_by(tesseract(&tool), &["--list-langs"]);
+                }
+                Err(error) => tracing::warn!(%error, "the languages imported could not be given to Tesseract"),
+            }
+        } else if let Some(languages) = &configured.languages {
+            // None is imported: what was made for Tesseract before goes. Its
+            // links go, not what they point to.
+            let merged = languages.tessdata();
+            if merged.exists()
+                && let Err(error) = std::fs::remove_dir_all(&merged)
+            {
+                tracing::warn!(%error, "the data made for Tesseract could not be taken away");
+            }
+        }
+        tools.ocr_languages = languages_in(&listed);
+        tools.tesseract = Some(tool);
     }
     if let Some(path) = find("pdftoppm", None, &configured.beside) {
         let version = version_in(&said(&path, &["-v"]));
@@ -441,6 +497,14 @@ mod tests {
         assert_eq!(version_in("tesseract 5.5.3\n leptonica-1.87.0\n"), "5.5.3");
         assert_eq!(version_in("\npdftoppm version 26.08.0\nCopyright 2005-2026"), "26.08.0");
         assert_eq!(version_in(""), "");
+    }
+
+    #[test]
+    fn the_folder_of_tesseracts_data_is_read_from_what_it_says() {
+        let listed = "List of available languages in \"/usr/share/tessdata/\" (5):\neng\nnor\n";
+        assert_eq!(data_dir_in(listed), Some(PathBuf::from("/usr/share/tessdata/")));
+        assert_eq!(data_dir_in("List of available languages (2):\neng\n"), None);
+        assert_eq!(data_dir_in(""), None);
     }
 
     #[test]

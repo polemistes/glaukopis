@@ -1,22 +1,23 @@
 #!/usr/bin/env bash
-# Fetches the dictionaries that come with the application, with their
-# licences: see resources/dictionaries/README.md.
+# Fetches the dictionaries of English and Norwegian that the language
+# packages are partly made from and the tests check with, with their
+# licences: see packaging/languages/dictionaries/README.md.
 #
-#     scripts/update-dictionaries.sh
+#     scripts/update-norwegian-dictionaries.sh
 #
 # English (American and British) is taken from LibreOffice's repository of
 # dictionaries as it is. Of Norwegian (Bokmål and Nynorsk) only the affix
 # files and their licence come from there, the rules of spell-norwegian; the
 # word lists are made from the word lists of Bokmålsordboka and
 # Nynorskordboka by scripts/make-norwegian-dictionaries.py, which this runs
-# last, and are described in resources/dictionaries/README_NO.txt, which is
+# last, and are described in packaging/languages/dictionaries/README_NO.txt, which is
 # written here and not fetched. Needs curl and python3.
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 repository=https://raw.githubusercontent.com/LibreOffice/dictionaries
-dir=resources/dictionaries
+dir=packaging/languages/dictionaries
 
 for file in en_US.aff en_US.dic en_GB.aff en_GB.dic README_en_US.txt README_en_GB.txt license.txt; do
   curl -sSfL -o "$dir/$file" "$repository/master/en/$file"

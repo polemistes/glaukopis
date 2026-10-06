@@ -1,20 +1,20 @@
 # Maintainer: The Glaukopis contributors
 #
-# Builds the application, the collaboration server and the dictionaries of
-# spelling from the tree this file is in. Run `makepkg` in this directory;
+# Builds the application and the collaboration server from the tree this
+# file is in. Run `makepkg` in this directory;
 # see README.md beside this file.
 #
 # For a release, replace what prepare() copies by a `source=` with the
 # archive of the release, and its checksum.
 
 pkgbase=glaukopis
-pkgname=(glaukopis glaukopis-server
-  glaukopis-dictionaries-en glaukopis-dictionaries-nb glaukopis-dictionaries-nn)
+pkgname=(glaukopis glaukopis-server)
 pkgver=0.1.0
-pkgrel=16
+pkgrel=17
 arch=(x86_64 aarch64)
-# The program and the owl. The dictionaries have licences of their own, said
-# by their packages (see resources/dictionaries/README.md).
+# The program and the owl. The dictionaries of spelling and the data of
+# Tesseract's languages are imported in the application, or come from the
+# system's packages (ADR 0032).
 license=(GPL-3.0-or-later CC-BY-SA-3.0)
 makedepends=(cargo nodejs pnpm rsync webkit2gtk-4.1 gtk3 openssl sqlite)
 checkdepends=(pandoc-cli typst tesseract tesseract-data-eng)
@@ -64,13 +64,8 @@ package_glaukopis() {
   depends=(webkit2gtk-4.1 gtk3 glib2 openssl sqlite gcc-libs glibc hicolor-icon-theme pandoc-cli fontconfig
            otf-libertinus)
   optdepends=(
-    'glaukopis-dictionaries-en: to check the spelling of English, American and British'
-    'glaukopis-dictionaries-nb: to check the spelling of Norwegian Bokmål'
-    'glaukopis-dictionaries-nn: to check the spelling of Norwegian Nynorsk'
-    'hunspell-en_us: or the dictionary of Hunspell for American English, which Glaukopis finds as well'
-    'hunspell-en_gb: or the dictionary of Hunspell for British English, which Glaukopis finds as well'
-    'hunspell-nb: or the dictionary of Hunspell for Bokmål, which Glaukopis finds as well'
-    'hunspell-nn: or the dictionary of Hunspell for Nynorsk, which Glaukopis finds as well'
+    'hunspell-en_us: to check the spelling of American English (other languages are imported in the application)'
+    'hunspell-en_gb: to check the spelling of British English'
     'tesseract: to read text in scans and pictures'
     'tesseract-data-eng: to read English in scans and pictures'
     'texlive-luatex: for PDF set by LaTeX'
@@ -100,8 +95,6 @@ package_glaukopis() {
 
   install -d "$pkgdir/usr/share/glaukopis"
   cp -r resources "$pkgdir/usr/share/glaukopis/resources"
-  # The dictionaries are packages of their own, put in the same place.
-  rm -r "$pkgdir/usr/share/glaukopis/resources/dictionaries"
   find "$pkgdir/usr/share/glaukopis" -type d -exec chmod 755 {} +
   find "$pkgdir/usr/share/glaukopis" -type f -exec chmod 644 {} +
 
@@ -119,46 +112,6 @@ package_glaukopis() {
   # The owl has a licence of its own.
   install -Dm644 resources/brand/README.md "$pkgdir/usr/share/licenses/glaukopis/the-owl.md"
   install -Dm644 resources/brand/LICENSE "$pkgdir/usr/share/licenses/glaukopis/CC-BY-SA-3.0.txt"
-}
-
-# A package of dictionaries: its files into the folder the application looks
-# in, beside the dictionaries of the system which it looks in as well; and
-# what their licences ask to go with them under the licences of the package.
-_dictionaries() {
-  local name=$1 file
-  shift
-  cd "$srcdir/$pkgbase-$pkgver/resources/dictionaries"
-  for file in "$@"; do
-    case $file in
-      *.aff | *.dic) install -Dm644 "$file" "$pkgdir/usr/share/glaukopis/resources/dictionaries/$file" ;;
-      *) install -Dm644 "$file" "$pkgdir/usr/share/licenses/$name/$file" ;;
-    esac
-  done
-}
-
-package_glaukopis-dictionaries-en() {
-  pkgdesc='Dictionaries of English, American and British, for the spelling in Glaukopis'
-  arch=(any)
-  # SCOWL and Ispell for the American, the LGPL for the British.
-  license=(LicenseRef-SCOWL LGPL-2.1-or-later)
-  _dictionaries glaukopis-dictionaries-en en_US.aff en_US.dic en_GB.aff en_GB.dic \
-    README.md README_en_US.txt README_en_GB.txt LGPL-2.1.txt license.txt
-}
-
-package_glaukopis-dictionaries-nb() {
-  pkgdesc='Dictionary of Norwegian Bokmål for the spelling in Glaukopis'
-  arch=(any)
-  # The words of Bokmålsordboka and Nynorskordboka, with the inflections of Norsk ordbank; the rules of spell-norwegian.
-  license=(CC-BY-4.0 GPL-2.0-only)
-  _dictionaries glaukopis-dictionaries-nb nb_NO.aff nb_NO.dic README.md README_NO.txt COPYING
-}
-
-package_glaukopis-dictionaries-nn() {
-  pkgdesc='Dictionary of Norwegian Nynorsk for the spelling in Glaukopis'
-  arch=(any)
-  # The words of Bokmålsordboka and Nynorskordboka, with the inflections of Norsk ordbank; the rules of spell-norwegian.
-  license=(CC-BY-4.0 GPL-2.0-only)
-  _dictionaries glaukopis-dictionaries-nn nn_NO.aff nn_NO.dic README.md README_NO.txt COPYING
 }
 
 package_glaukopis-server() {

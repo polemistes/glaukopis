@@ -136,6 +136,7 @@ impl AppState {
             pandoc: self.setting("pandocPath"),
             tesseract: self.setting("tesseractPath"),
             beside,
+            languages: Some(self.languages()),
         });
         tracing::info!(
             pandoc = found.pandoc.as_ref().map(|t| t.version.as_str()).unwrap_or("not found"),
@@ -144,6 +145,11 @@ impl AppState {
         );
         *self.tools.write().unwrap_or_else(|p| p.into_inner()) = found.clone();
         found
+    }
+
+    /// The languages of spelling and of OCR that are imported (ADR 0032).
+    pub fn languages(&self) -> glaukopis_core::languages::Languages {
+        glaukopis_core::languages::Languages::new(self.data.languages())
     }
 
     pub fn tools(&self) -> Tools {

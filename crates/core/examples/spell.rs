@@ -3,7 +3,8 @@
 //!
 //!     cargo run --release -p glaukopis-core --example spell -- <language> <word>...
 //!
-//! The dictionaries are those that come with the application and those of
+//! The dictionaries are those of packaging/languages/dictionaries, or of
+//! `GLAUKOPIS_RESOURCES`/dictionaries, and those of
 //! the system. The language is that of a map: `en`, `en-GB`, `nb`, `nn`.
 
 use std::path::Path;
@@ -19,7 +20,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let resources = std::env::var_os("GLAUKOPIS_RESOURCES")
         .map(Into::into)
-        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources"));
+        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packaging/languages"));
     let mut places = vec![Place::new(resources.join("dictionaries"), Source::Application)];
     places.extend(found::system_dirs().into_iter().map(|dir| Place::new(dir, Source::System)));
     let words_dir = std::env::temp_dir().join("glaukopis-spell-words");

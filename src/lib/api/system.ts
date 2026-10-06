@@ -101,6 +101,11 @@ export interface Settings {
   found: FoundSettings;
   /** Whether spelling is checked as one writes. */
   spelling: boolean;
+  /**
+   * Where languages of spelling and of OCR are imported from: the address
+   * of a server, or a folder; none for the project's own (ADR 0032).
+   */
+  languagesServer: string | null;
   /** The kinds of elements made in any project, by name, with the colour each had last: offered when a kind is named. */
   kinds: { name: string; colour: string }[];
 }
@@ -126,6 +131,7 @@ export const defaultSettings: Settings = {
   defaultFormat: 'manuscript',
   found: { years: false, named: false, notes: false, atOnce: true, goThrough: true, inNotes: '' },
   spelling: true,
+  languagesServer: null,
   kinds: [],
 };
 

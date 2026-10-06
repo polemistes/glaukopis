@@ -1,10 +1,13 @@
 # Dictionaries
 
-The dictionaries that spelling is checked with, in the form of Hunspell: for
-each language a file of rules, `.aff`, and a list of words, `.dic`. They are
-not part of the code of Glaukopis: each has its own licence, which is said
-below and whose text is beside it. The English ones are taken from
-LibreOffice's repository of dictionaries,
+The dictionaries that the language packages of Norwegian are made of, and
+copies of LibreOffice's English, which the tests of spelling check with
+(ADR 0032; the packages themselves are made by
+`scripts/make-language-packages.py`, see `../README.md`). They are in the
+form of Hunspell: for each language a file of rules, `.aff`, and a list of
+words, `.dic`. They are not part of the code of Glaukopis: each has its own
+licence, which is said below and whose text is beside it. The English ones
+are taken from LibreOffice's repository of dictionaries,
 <https://github.com/LibreOffice/dictionaries>; the Norwegian ones are made
 here, from the word lists of Bokmålsordboka and Nynorskordboka.
 
@@ -17,7 +20,7 @@ here, from the word lists of Bokmålsordboka and Nynorskordboka.
 | `nb_NO.aff`, `nn_NO.aff` | Norwegian Bokmål and Nynorsk | `no/`, the rules of spell-norwegian, as LibreOffice has them in UTF-8 |
 
 The English dictionaries and the Norwegian rules were fetched 2026-09-28,
-the Norwegian word lists 2026-10-01. `scripts/update-dictionaries.sh`
+the Norwegian word lists 2026-10-01. `scripts/update-norwegian-dictionaries.sh`
 fetches them anew, and makes the Norwegian lists by
 `scripts/make-norwegian-dictionaries.py`; see `README_NO.txt`.
 

@@ -1114,7 +1114,13 @@ none are chosen there, the language of the text, as far as it is known (that
 of new texts, of the project, or of the reference), and that of the
 interface. Tesseract reads only the
 languages it has data for, and each one more makes the reading slower, and
-not always better. A page takes a few seconds; several are read at a time,
+not always better. The data of more languages is imported under *Settings* ›
+*Programs*, below Tesseract, at **Imported languages**, as the dictionaries
+of spelling are (see *Spelling*): from the server of Glaukopis, which offers
+the best data there is for English, Norwegian, Swedish, Danish, German,
+French and Italian, for now, or from a `.traineddata` file of any language
+Tesseract has, such as those of `tessdata_best` on GitHub. A language you
+have imported is read with before the computer's of the same name. A page takes a few seconds; several are read at a time,
 and you are shown how many are read. **Cancel** stops the reading, and
 nothing is made or changed.
 
@@ -1534,21 +1540,29 @@ are not yet citations; words with digits, such as *1990s*; addresses of web
 pages and of mail; and words written in another script than the
 dictionary's, such as Greek in an English text.
 
-Dictionaries of English (American and British) and of Norwegian (Bokmål and
-Nynorsk) come with Glaukopis: on Windows and macOS, with the application; on
-Arch Linux, as packages of their own, `glaukopis-dictionaries-en`,
-`glaukopis-dictionaries-nb` and `glaukopis-dictionaries-nn`, so that you
-install those of the languages you write in. A map in English without a
-country is checked with the American and the British dictionary both, and a
-word is right if either has it. For other languages the dictionaries of the
-computer are used, where it has them: on Linux the packages named
-`hunspell-…` put them in `/usr/share/hunspell`, and those of English and
-Norwegian serve as well as the packages of Glaukopis. A dictionary of your
-own, in the form of Hunspell (a
-`.aff` and a `.dic` file), can be put in the folder `dictionaries` of the data
-directory, which is shown under *Settings*; it comes before the others of its
-language. Where there is no dictionary for the language of a map, nothing in
-it is underlined, and **F7** says so.
+Dictionaries are imported under *Settings* › *Spelling*, at **Imported
+languages**. **Show languages on the server** lists those the server of
+Glaukopis offers: English (American and British), Norwegian (Bokmål and
+Nynorsk), Swedish, Danish, German, French and Italian, for now. **Import**
+fetches one, and it is used at once; one that is newer on the server than
+the one you have can be **Updated**, and **×** takes it away again. Under
+**Import from files…** you can import a language package of your own, a
+dictionary extension of LibreOffice or Firefox (`.oxt`, `.xpi`), or the
+`.aff` and the `.dic` file of any dictionary of Hunspell's, chosen together;
+`docs/language-packages.md` tells how a package is made. Beside the address
+of the server, **Change** gives another, or a folder on the computer, for
+packages of your own or where there is no network.
+
+A map in English without a country is checked with the American and the
+British dictionary both, and a word is right if either has it. The
+dictionaries of the computer are used as well: on Linux the packages named
+`hunspell-…` put them in `/usr/share/hunspell`, and the packages of Glaukopis
+for Debian, Ubuntu and Fedora bring those of English along. A dictionary you
+have imported comes before the computer's of the same language. A dictionary
+of your own can also be put, as its `.aff` and `.dic` file, in the folder
+`dictionaries` of the data directory, which is shown under *Settings*; it
+comes before all the others of its language. Where there is no dictionary
+for the language of a map, nothing in it is underlined, and **F7** says so.
 
 *Settings* › *Spelling* turns the checking off and on, lists the dictionaries
 there are and where they came from, and shows the words you have added,
@@ -1637,15 +1651,17 @@ what is to be done by its name, and does it.
 
 ## What Glaukopis needs
 
-On Windows and macOS, Pandoc and Tesseract come with Glaukopis, with
-the data for reading English, Norwegian, Danish, Swedish, German, French,
-Italian, Spanish, Latin, Greek and Ancient Greek; so do the dictionaries of
-spelling and the fonts that come with Typst. On Linux these come from the
-packages of the system instead: on Arch, Pandoc and the font Libertinus are
-installed with Glaukopis, and the rest is optional, said by the package. The
-packages for Debian, Ubuntu and Fedora stand between: Pandoc, the
-dictionaries and the fonts come with them, and Tesseract is recommended from
-the system's packages, so that `apt` and `dnf` install it along.
+On Windows and macOS, Pandoc and Tesseract come with Glaukopis, Tesseract
+with the data for reading English that it has of its own, and so do the
+fonts that come with Typst. On Linux these come from the packages of the
+system instead: on Arch, Pandoc and the font Libertinus are installed with
+Glaukopis, and the rest is optional, said by the package. The packages for
+Debian, Ubuntu and Fedora stand between: Pandoc and the fonts come with
+them, and Tesseract and the dictionaries of English are recommended from
+the system's packages, so that `apt` and `dnf` install them along. On every
+system the dictionaries of spelling and the data for reading other
+languages are imported under *Settings* (see *Spelling* and *Text in scans
+and pictures*), and on Linux those of the system's packages serve as well.
 
 The installers for Windows and macOS are not signed. On Windows, the
 installer is let run with **More info** › **Run anyway**. On macOS, open

@@ -51,11 +51,11 @@
     },
     "linux": {
       "deb": {
-        "recommends": ["tesseract-ocr", "tesseract-ocr-eng", "poppler-utils", "librsvg2-bin", "fonts-noto-core", "fonts-noto-cjk"]
+        "recommends": ["tesseract-ocr", "tesseract-ocr-eng", "poppler-utils", "librsvg2-bin", "hunspell-en-us", "hunspell-en-gb", "fonts-noto-core", "fonts-noto-cjk"]
       },
       "rpm": {
         "depends": ["webkit2gtk4.1", "gtk3", "openssl-libs"],
-        "recommends": ["tesseract", "tesseract-langpack-eng", "poppler-utils", "librsvg2-tools", "google-noto-sans-cjk-fonts"]
+        "recommends": ["tesseract", "tesseract-langpack-eng", "poppler-utils", "librsvg2-tools", "hunspell-en-US", "hunspell-en-GB", "google-noto-sans-cjk-fonts"]
       }
     }
   }

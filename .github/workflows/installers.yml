@@ -6,15 +6,17 @@
 # published as a release.
 #
 # Pandoc and Tesseract come with the application, in resources/bin, where it
-# looks for them after the settings and the path; the dictionaries of spelling
-# come in resources/dictionaries; and Typst is part of it (ADR 0023), with its
+# looks for them after the settings and the path, Tesseract with the data it
+# has of its own (English); and Typst is part of it (ADR 0023), with its
 # fonts compiled in (the feature `embedded-fonts`, on unless turned off). On
 # Arch these are packages of the system, which the application's package
 # depends on or offers; Windows and macOS have no such packages to lean on,
-# so the installers bring everything. The deb and the rpm stand between:
-# Pandoc comes along, since the Pandoc of Debian and Ubuntu is older than the
+# so the installers bring them. The deb and the rpm stand between: Pandoc
+# comes along, since the Pandoc of Debian and Ubuntu is older than the
 # application asks for, while Tesseract, which those systems have as new as
-# any, is recommended from their packages with the data of its languages.
+# any, and the dictionaries of English are recommended from their packages.
+# The dictionaries of spelling and the data of Tesseract's other languages
+# come with none: they are imported in the application (ADR 0032).
 
 name: Installers
 
@@ -120,7 +122,9 @@ jobs:
           cp work/pandoc/*/share/doc/pandoc/COPYRIGHT* resources/bin/licenses/ 2>/dev/null || true
 
       # Homebrew's Tesseract, with the libraries it needs copied beside it and
-      # pointed to there, so that it runs on a Mac without Homebrew.
+      # pointed to there, so that it runs on a Mac without Homebrew; and its
+      # folder of data whole: English, and the configurations and the font it
+      # makes PDFs and TSV with.
       - name: Tesseract for macOS
         if: matrix.name == 'macos'
         continue-on-error: true
@@ -131,21 +135,9 @@ jobs:
           chmod u+w resources/bin/tesseract/tesseract
           dylibbundler -od -b -x resources/bin/tesseract/tesseract -d resources/bin/tesseract/libs -p @executable_path/libs/
           for f in resources/bin/tesseract/tesseract resources/bin/tesseract/libs/*; do codesign --force -s - "$f"; done
-          cp "$(brew --prefix tesseract)/share/tessdata/osd.traineddata" resources/bin/tesseract/tessdata/ || true
-          cp "$(brew --prefix tesseract)/share/tessdata/eng.traineddata" resources/bin/tesseract/tessdata/ || true
+          cp -RL "$(brew --prefix tesseract)/share/tessdata/." resources/bin/tesseract/tessdata/
           resources/bin/tesseract/tesseract --version
-
-      # On Linux, Tesseract is the system's, which has its own data.
-      - name: The languages Tesseract reads, besides English
-        if: matrix.name != 'linux'
-        run: |
-          mkdir -p resources/bin/tesseract/tessdata
-          for lang in eng nor dan swe deu fra ita spa lat grc ell; do
-            [ -f resources/bin/tesseract/tessdata/$lang.traineddata ] ||
-              curl -fsSL -o resources/bin/tesseract/tessdata/$lang.traineddata \
-                https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/$lang.traineddata
-          done
-          ls -la resources/bin/tesseract/tessdata
+          TESSDATA_PREFIX="$PWD/resources/bin/tesseract/tessdata" resources/bin/tesseract/tesseract --list-langs
 
       # ---- the application ----
 

@@ -119,7 +119,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     let styles = Styles::new(&resources, &data.styles());
     let tools = ToolsInfo {
         tools: Tools {
-            pandoc: Some(Tool { path: "/usr/bin/pandoc".into(), version: "3.10.2".into(), least: None }),
+            pandoc: Some(Tool { path: "/usr/bin/pandoc".into(), version: "3.10.2".into(), least: None, data: None }),
             latex: vec!["lualatex".into()],
             pandoc_api: vec![1, 23, 1],
             ..Default::default()

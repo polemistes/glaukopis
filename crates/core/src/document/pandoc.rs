@@ -1068,7 +1068,7 @@ mod tests {
         assert_eq!(said(Some("nb")), json!([{"t": "Strong", "c": [{"t": "Str", "c": "[fant ikke referansen]"}]}]));
         assert_eq!(said(Some("nn-NO")), json!([{"t": "Strong", "c": [{"t": "Str", "c": "[fann ikkje referansen]"}]}]));
         // A language documents have no words in: English.
-        assert_eq!(said(Some("de")), said(None));
+        assert_eq!(said(Some("xx")), said(None));
     }
 
     #[test]

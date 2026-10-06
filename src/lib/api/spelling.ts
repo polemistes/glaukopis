@@ -10,7 +10,7 @@
 import { call } from './backend';
 
 /** Where a dictionary was found. */
-export type DictionarySource = 'own' | 'application' | 'system';
+export type DictionarySource = 'own' | 'imported' | 'application' | 'system';
 
 /** A dictionary that was found. */
 export interface Dictionary {

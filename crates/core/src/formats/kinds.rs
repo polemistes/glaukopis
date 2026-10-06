@@ -614,7 +614,7 @@ pub fn quotes(language: Option<&str>) -> (&'static str, &'static str) {
     let lang = subtags.next().unwrap_or("en");
     let rest: Vec<&str> = subtags.collect();
     let traditional = rest.iter().any(|s| matches!(*s, "hant" | "tw" | "hk" | "mo"));
-    let brazil = rest.iter().any(|s| *s == "br");
+    let brazil = rest.contains(&"br");
     match lang {
         "nb" | "nn" | "no" | "el" | "es" | "it" | "ru" | "uk" | "be" | "sq" => ("«", "»"),
         "pt" if !brazil => ("«", "»"),

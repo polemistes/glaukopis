@@ -5,6 +5,7 @@
   import { systemInfo } from '$lib/api/system';
   import { languageName, t } from '$lib/i18n';
   import { settings } from '$lib/state/settings.svelte';
+  import LanguagePackages from '$lib/languages/LanguagePackages.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
   import { spelling } from './spelling.svelte';
@@ -50,6 +51,7 @@
 
   /** Where a dictionary was found, in words. */
   function source(d: Dictionary): string {
+    if (d.source === 'imported') return t('spelling-source-imported');
     if (d.source === 'application') return t('spelling-source-application');
     if (d.source === 'system') return t('spelling-source-system');
     return t('spelling-source-own');
@@ -90,6 +92,14 @@
       </ul>
     {/if}
   </div>
+
+  <LanguagePackages
+    kind="spelling"
+    onchanged={() => {
+      load();
+      spelling.anew();
+    }}
+  />
 
   <div>
     <div class="label">{t('spelling-own-words')}</div>

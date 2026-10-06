@@ -120,6 +120,11 @@ impl DataDir {
         self.root.join("dictionaries")
     }
 
+    /// The languages of spelling and of OCR that are imported: see `languages`.
+    pub fn languages(&self) -> PathBuf {
+        self.root.join("languages")
+    }
+
     /// The writer's own words, a list for each language: see `spelling`.
     pub fn words(&self) -> PathBuf {
         self.root.join("words")

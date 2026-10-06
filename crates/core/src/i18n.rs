@@ -671,7 +671,8 @@ mod tests {
         assert_eq!(in_language(Some("nb"), "table"), "tabell");
         // A word of the format's own, and a language documents have no words in.
         assert_eq!(in_language(Some("nb"), "Endnoter i boka"), "Endnoter i boka");
-        assert_eq!(in_language(Some("de"), "Notes"), "Notes");
+        assert_eq!(in_language(Some("de"), "Notes"), "Anmerkungen");
+        assert_eq!(in_language(Some("xx"), "Notes"), "Notes");
         assert_eq!(in_language(None, "Notes"), "Notes");
         assert_eq!(term(Some("en-GB"), "document-figure").as_deref(), Some("Figure"));
     }

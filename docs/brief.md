@@ -433,3 +433,31 @@ What this settles:
   language comes before them. The Norwegian dictionaries become import
   packages like the others. That is the next piece of work, after the
   translations.
+
+## 2026-10-06 — languages of spelling and of OCR imported
+
+> Could you make the spelling and ocr changes. I suggest that the import comes from my server robertemilberge.no/glaukopis/ by default, but it should be possible to change this. Also it should be possible to import single spelling or ocr languages with single files, with instructions about how these files should be formed (a zip file with the files needed I guess). Make the spell and ocr files for GB and US English, Bokmål, Nynorsk, Swedish, Danish, German, French and Italian for now.
+
+What this settles (ADR 0032):
+
+- Languages of spelling and of OCR are imported under *Settings*, from
+  `https://robertemilberge.no/glaukopis/` unless another server, or a
+  folder, is said; or from files: a language package (a zip with a
+  `manifest.json`), a dictionary extension of LibreOffice or Firefox, the
+  `.aff` and `.dic` of a dictionary, or a `.traineddata`.
+  `docs/language-packages.md` says how a package is made.
+- What the server offers is checked against the size and the SHA-256 its
+  index says. The index is not signed, as was thought before, since the
+  server can be changed to one's own.
+- An imported language comes before the system's. Tesseract, where any
+  language is imported, is given a folder of its own data and the imported
+  languages together.
+- `scripts/make-language-packages.py` makes the packages: dictionaries of
+  English (American and British), Norwegian (Bokmål and Nynorsk, the
+  project's own), Swedish, Danish, German, French and Italian, from
+  LibreOffice's; and the data of `tessdata_best` for English, Norwegian,
+  Swedish, Danish, German, French and Italian, Tesseract having one
+  Norwegian and one English. They are put on the server by hand.
+- Nothing is bundled but Tesseract itself, with its English: the
+  dictionaries leave the application and the packages of dictionaries for
+  Arch are given up; the deb and the rpm recommend the system's English.

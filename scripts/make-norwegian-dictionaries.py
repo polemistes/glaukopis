@@ -11,10 +11,10 @@ every inflected form of every paradigm it has, with `inflection_tags.json`
 saying what each form is. The lists are downloaded into the work directory
 (`packaging/build/dictionaries` unless --work says otherwise; never into the
 tree), and from them `nb_NO.dic` and `nn_NO.dic` are written in
-`resources/dictionaries`, as lists of full forms for Hunspell. The affix
+`packaging/languages/dictionaries`, as lists of full forms for Hunspell. The affix
 files `nb_NO.aff` and `nn_NO.aff` beside them, of the spell-norwegian
 project, are kept as they are and give the flags their meaning; see
-resources/dictionaries/README.md for the flags and the licences.
+packaging/languages/dictionaries/README.md for the flags and the licences.
 
 Needs only Python 3 and the standard library. The lists are 16 MB each.
 """
@@ -172,8 +172,8 @@ def main() -> None:
     parser.add_argument("--work", type=Path, default=root / "packaging" / "build" / "dictionaries",
                         help="where the downloaded lists are kept (default: packaging/build/dictionaries)")
     parser.add_argument("--fetch", action="store_true", help="download the lists anew, though they are there")
-    parser.add_argument("--out", type=Path, default=root / "resources" / "dictionaries",
-                        help="where the dictionaries are written (default: resources/dictionaries)")
+    parser.add_argument("--out", type=Path, default=root / "packaging" / "languages" / "dictionaries",
+                        help="where the dictionaries are written (default: packaging/languages/dictionaries)")
     args = parser.parse_args()
 
     for language, name in LANGUAGES.items():

@@ -7,7 +7,7 @@ use std::sync::OnceLock;
 use super::*;
 
 fn resources() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packaging/languages")
 }
 
 fn application(words: &Path) -> Spelling {

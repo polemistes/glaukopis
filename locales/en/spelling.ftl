@@ -12,7 +12,7 @@ spelling-add-failed = The word could not be added
 
 spelling-nothing = Nothing is misspelt here.
 # $language is the name of the language of the map: Latin.
-spelling-no-dictionary = There is no dictionary for { $language }: its spelling is not checked.
+spelling-no-dictionary = There is no dictionary for { $language }: its spelling is not checked. Dictionaries are imported under Settings › Spelling.
 spelling-not-ready = The dictionary is being read. Try again in a moment.
 spelling-off = Spelling is not checked. It is turned on in the settings.
 
@@ -26,8 +26,9 @@ spelling-on = On
 spelling-off-short = Off
 spelling-dictionaries = Dictionaries
 # $folder is the folder of dictionaries in the data directory.
-spelling-dictionaries-hint = Texts in other languages are not checked. A dictionary of Hunspell’s, its .aff and .dic files, put in { $folder } is used as well, before the others.
+spelling-dictionaries-hint = Texts in other languages are not checked. A dictionary of Hunspell’s, its .aff and .dic files, put in { $folder } is used before the others, those imported next, then those installed on the computer.
 spelling-source-application = Comes with Glaukopis
+spelling-source-imported = Imported
 spelling-source-system = Installed on the computer
 spelling-source-own = Put there by you
 spelling-own-words = Your words

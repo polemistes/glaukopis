@@ -10,7 +10,7 @@ ocr-kind-picture = Picture
 
 ocr-stopped = The reading was stopped.
 ocr-no-language = Tesseract has no data for the language “{ $language }”.
-ocr-no-languages = Tesseract has no data for any language. Install the data of one, such as tesseract-data-eng on Arch.
+ocr-no-languages = Tesseract has no data for any language. Import one under Settings › Programs, or install one with the package manager of your system, such as tesseract-data-eng on Arch.
 ocr-not-pdf = “{ $file }” is not a PDF.
 ocr-no-pages = “{ $file }” has no pages.
 ocr-locked = “{ $file }” is locked with a password, and its pages cannot be drawn.

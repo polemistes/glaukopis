@@ -2,9 +2,9 @@
 //! dictionaries, which Spellbook reads (ADR 0019).
 //!
 //! Dictionaries are looked for where the writer may have put one (the data
-//! directory), where the application has its own (English and Norwegian, in
-//! its resources), and where the system has them (`/usr/share/hunspell` and
-//! its like), in that order; the first of a language that is found is the
+//! directory), among the languages imported (`languages`, ADR 0032), where
+//! the application has its own (none now, in its resources), and where the
+//! system has them (`/usr/share/hunspell` and its like), in that order; the first of a language that is found is the
 //! one used ([`found`]). A dictionary is read when a text in its language is
 //! first checked, which for Norwegian takes a moment, and is kept.
 //!
@@ -102,11 +102,14 @@ impl Spelling {
         }
     }
 
-    /// The dictionaries of the data directory, of the application, and of
-    /// the system.
+    /// The dictionaries the writer has put in the data directory, those
+    /// imported (ADR 0032), those of the application, and those of the
+    /// system, in that order.
     pub fn open(data: &DataDir, resources: &Path) -> Self {
+        let imported = crate::languages::Languages::new(data.languages()).dir(crate::languages::Kind::Spelling);
         let mut places = vec![
             Place::new(data.dictionaries(), Source::Own),
+            Place::new(imported, Source::Imported),
             Place::new(resources.join("dictionaries"), Source::Application),
         ];
         places.extend(found::system_dirs().into_iter().map(|dir| Place::new(dir, Source::System)));
@@ -121,6 +124,13 @@ impl Spelling {
         lock(&self.read).retain(|aff, _| now.iter().any(|f| f.aff() == *aff));
         *self.found.write().unwrap_or_else(PoisonError::into_inner) = Some(now.clone());
         now
+    }
+
+    /// Forgets what was found and read, so that a dictionary imported in
+    /// the place of one that was read is read anew.
+    pub fn forget(&self) {
+        lock(&self.read).clear();
+        *self.found.write().unwrap_or_else(PoisonError::into_inner) = None;
     }
 
     fn found(&self) -> Vec<Found> {

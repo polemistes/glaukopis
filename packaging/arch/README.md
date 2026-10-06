@@ -1,22 +1,21 @@
 # The packages for Arch Linux
 
-`makepkg` in this directory builds five packages from the tree it is in:
+`makepkg` in this directory builds two packages from the tree it is in:
 
 - `glaukopis`, the application;
 - `glaukopis-server`, the collaboration server, which is needed only on the
-  computer that is to be the server;
-- `glaukopis-dictionaries-en`, `glaukopis-dictionaries-nb` and
-  `glaukopis-dictionaries-nn`, the dictionaries that spelling is checked
-  with, in English (American and British), Norwegian Bokmål and Norwegian
-  Nynorsk. Each is optional: install those of the languages you write in.
-  Glaukopis finds the dictionaries of Hunspell as well (`hunspell-en_us`,
-  `hunspell-en_gb`; `hunspell-nb` and `hunspell-nn` are in the AUR), so
-  those will do instead, and they serve for the other languages.
+  computer that is to be the server.
+
+The dictionaries of spelling and the data of Tesseract's languages are not
+packaged: they are imported in the application, under *Settings*, from the
+project's server or from files (ADR 0032), and the system's Hunspell
+dictionaries (`hunspell-en_us`, `hunspell-en_gb` and the others) and
+Tesseract's data (`tesseract-data-*`) serve as well.
 
 ```
 cd packaging/arch
 makepkg -s
-sudo pacman -U glaukopis-0.1.0-16-x86_64.pkg.tar.zst glaukopis-dictionaries-en-0.1.0-16-any.pkg.tar.zst
+sudo pacman -U glaukopis-0.1.0-17-x86_64.pkg.tar.zst
 ```
 
 What the application needs on Arch comes from the repositories rather than
@@ -34,8 +33,9 @@ stands in for it.
 
 ## The PKGBUILD of a release
 
-`release/PKGBUILD` builds the same five packages from the archive of a
-release on GitHub instead of from the tree: it names the release's tag and
+`release/PKGBUILD` builds the packages of a release from its archive on
+GitHub instead of from the tree, as that release had them (0.1.0 still with
+the packages of dictionaries): it names the release's tag and
 the checksum of its archive. It is the PKGBUILD to publish, with a release or
 in the AUR; `makepkg -s` in `release/` builds it as any PKGBUILD. When a
 release is made, set `pkgver`, put back `pkgrel` to 1 or carry it on, and

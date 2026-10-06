@@ -12,7 +12,7 @@ spelling-add-failed = Ordet kunne ikke legges til
 
 spelling-nothing = Ingenting er feilstavet her.
 # $language er navnet på språket til kartet: latin.
-spelling-no-dictionary = Det finnes ingen ordbok for { $language }, så stavingen kontrolleres ikke.
+spelling-no-dictionary = Det finnes ingen ordbok for { $language }, så stavingen kontrolleres ikke. Ordbøker importeres under Innstillinger › Staving.
 spelling-not-ready = Ordboken leses inn. Prøv igjen om et øyeblikk.
 spelling-off = Stavingen kontrolleres ikke. Det slås på i innstillingene.
 
@@ -26,8 +26,9 @@ spelling-on = På
 spelling-off-short = Av
 spelling-dictionaries = Ordbøker
 # $folder er mappen for ordbøker i datamappen.
-spelling-dictionaries-hint = Tekster på andre språk kontrolleres ikke. En ordbok for Hunspell, med filene .aff og .dic, som legges i { $folder }, brukes også, foran de andre.
+spelling-dictionaries-hint = Tekster på andre språk kontrolleres ikke. En ordbok for Hunspell, med filene .aff og .dic, som legges i { $folder }, brukes foran de andre, de importerte deretter, så de som er installert på datamaskinen.
 spelling-source-application = Følger med Glaukopis
+spelling-source-imported = Importert
 spelling-source-system = Installert på datamaskinen
 spelling-source-own = Lagt der av deg
 spelling-own-words = Dine ord

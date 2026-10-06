@@ -15,6 +15,7 @@
   import TextField from '$lib/ui/TextField.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
   import { howFromSettings } from './how';
+  import LanguagePackages from '$lib/languages/LanguagePackages.svelte';
   import HowControls from './HowControls.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { byName, ocrLanguageName } from './languages';
@@ -135,6 +136,18 @@
           onchange={(value) => settings.set('ocrLanguages', value)}
         />
       {/if}
+    </div>
+    <div class="languages">
+      <LanguagePackages
+        kind="ocr"
+        onchanged={async () => {
+          try {
+            onlooked(await toolsInfo(true));
+          } catch (error) {
+            notifyError(t('ocr-settings-look-failed'), error);
+          }
+        }}
+      />
     </div>
     <div class="languages" data-ocr-settings-how>
       <div class="label">{t('ocr-settings-how')}</div>

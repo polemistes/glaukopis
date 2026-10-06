@@ -62,7 +62,7 @@ pub fn read(
     stop: &AtomicBool,
 ) -> Result<Read> {
     let base = picture.with_extension("");
-    let mut c = tools::command(&tesseract.path);
+    let mut c = tools::tesseract(tesseract);
     c.arg(picture).arg(&base);
     if dpi > 0 {
         c.arg("--dpi").arg(dpi.to_string());

@@ -14,6 +14,7 @@ pub mod fsutil;
 pub mod history;
 pub mod i18n;
 pub mod import;
+pub mod languages;
 pub mod library;
 pub mod lookup;
 pub mod net;
