@@ -1,10 +1,7 @@
-3b93bf12b9450d5892c2980bee1f0a7946fb770cb4cd590d0639d3f79ec9032e  glaukopis-0.1.0-16-x86_64.pkg.tar.zst
-b23409c2abda50670d8c301a00707ce98970cbf840a81ad27a8a515a23fe0cc9  Glaukopis-0.1.0-1.x86_64.rpm
-6662d494e4352ec6c694f6c170c218a5f5840fb1e497e4db532f4680fdc4d147  Glaukopis_0.1.0_amd64.deb
-b25925ea3063fed1f11af5548b2289677dc367016dde763cb9eba57b756d86b4  Glaukopis_0.1.0_x64_en-US.msi
-702e02788f6c7ff05987f8a5819b40f13b835b9cbe51361093b5e743f6d95035  Glaukopis_0.1.0_x64-setup.exe
-58a52dfc4e3300f6946b66bedef10865a31c1058df7bc9a15ad8725e7b3cdd88  Glaukopis_0.1.0_aarch64.dmg
-8a6b4e0b2cec855682aea51f2e3ba5d2cf7da79dfb81b7b1db55da71f22dcedf  glaukopis-dictionaries-en-0.1.0-16-any.pkg.tar.zst
-a02d17c57e4621af53211ae091dbdaf3825537e8586d78547855a9127fe52c7a  glaukopis-dictionaries-nb-0.1.0-16-any.pkg.tar.zst
-a745ef24758540e7ac569bff7a27cf135f5d641b2b8d6b95554ce083620a5e93  glaukopis-dictionaries-nn-0.1.0-16-any.pkg.tar.zst
-e94ee5726a25de590998e6be1c11ae4c07556aa286fc016d6854545f511b7c0e  glaukopis-server-0.1.0-16-x86_64.pkg.tar.zst
+87daa294f0d554795fb29f62c5fc6aec3303c6127d549aedd3395b1c81ef7299  glaukopis-0.1.0-17-x86_64.pkg.tar.zst
+a42fffc617c3e03291c91df0ceded6d1762ec932aaf07952d26302fd182c277f  glaukopis-server-0.1.0-17-x86_64.pkg.tar.zst
+45f57445dc72d397e4bb735223c7cdff5bf7462808d2f6e7c27d564a27fc7619  Glaukopis_0.1.0_x64_en-US.msi
+f2211d5480d4d3ea543dd966a20f78627ef97e2f56d40700afd3be28cb782936  Glaukopis_0.1.0_x64-setup.exe
+0b6ed0430bccc71f1e0cdba0e10fb602a0c7bde51e885a469891e943f7b52340  Glaukopis_0.1.0_aarch64.dmg
+3cd4e87020be0fcd557dc82657e9582cae01d9ec959964aa7e1136f0cd68d306  Glaukopis_0.1.0_amd64.deb
+fdc324c5a1bda9d735da60cbfb71ed5a13a9db6c6793b9ebbf92a29c329b4a17  Glaukopis-0.1.0-1.x86_64.rpm

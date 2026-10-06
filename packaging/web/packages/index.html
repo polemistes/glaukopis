@@ -6,7 +6,7 @@
     <title>Glaukopis — packages to test</title>
     <meta
       name="description"
-      content="Glaukopis 0.1.0, a first version for testing: installers for Windows and macOS, and packages for Arch Linux."
+      content="Glaukopis 0.1.0, a first version for testing: installers for Windows and macOS, packages for Linux, and the languages of spelling and of reading text."
     />
     <style>
       :root {
@@ -144,6 +144,53 @@
         font-family: inherit;
         font-weight: 600;
       }
+      .back {
+        display: inline-block;
+        margin: 0 0 1.6rem;
+        color: var(--ink-soft);
+        text-decoration: none;
+      }
+      .back:hover {
+        color: var(--accent);
+      }
+      table.languages {
+        width: 100%;
+        margin: 0.8rem 0 0;
+        border-collapse: collapse;
+        font-variant-numeric: tabular-nums;
+      }
+      table.languages th {
+        text-align: left;
+        font-weight: 500;
+        color: var(--ink-soft);
+        border-bottom: 1px solid var(--line);
+        padding: 0.3rem 0.6rem 0.3rem 0;
+      }
+      table.languages td {
+        padding: 0.35rem 0.6rem 0.35rem 0;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      table.languages td.size {
+        white-space: nowrap;
+        color: var(--ink-soft);
+        text-align: right;
+        padding-right: 0;
+      }
+      table.languages a {
+        font-family: ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+        font-size: 0.85rem;
+        word-break: break-all;
+      }
+      table.languages .licence {
+        color: var(--ink-soft);
+        font-size: 0.9rem;
+      }
+      @media (max-width: 34rem) {
+        table.languages .licence {
+          display: none;
+        }
+      }
       footer {
         margin-top: 3rem;
         padding-top: 0.8rem;
@@ -155,9 +202,10 @@
   </head>
   <body>
     <main>
+      <a class="back" href="/">← robertemilberge.no</a>
       <h1>Glaukopis, a first version to test</h1>
       <p class="lede">
-        Version 0.1.0, built 5 October 2026. Glaukopis is where the work on an academic book or
+        Version 0.1.0, built 6 October 2026. Glaukopis is where the work on an academic book or
         article is done: references, ideas in mind maps, writing, and the manuscript. Everything
         here is for testing: it will have faults, and your project files may not open in a later
         version. Keep what matters elsewhere as well.
@@ -173,16 +221,24 @@
         </p>
       </div>
 
+      <p class="aside">
+        <strong>Spelling and other languages.</strong> No dictionaries of spelling come with
+        Glaukopis, and Tesseract, which reads text in scans and pictures, comes with English only.
+        The languages you need are imported in Glaukopis itself, under <em>Settings</em> ›
+        <em>Spelling</em> and under Tesseract in <em>Settings</em> › <em>Programs</em>: choose
+        <kbd>Show languages on the server</kbd> and <kbd>Import</kbd>. They are fetched from
+        <a href="#languages">this page</a>.
+      </p>
+
       <h2>Windows</h2>
       <p>
-        For Windows 10 and 11, 64-bit. Pandoc, Tesseract with its languages, the dictionaries of
-        spelling and the fonts of Typst come with the installer: nothing else is needed. If the
-        WebView2 runtime is missing, which is rare, the installer fetches it.
+        For Windows 10 and 11, 64-bit. Pandoc, Tesseract and the fonts of Typst come with the
+        installer. If the WebView2 runtime is missing, which is rare, the installer fetches it.
       </p>
       <ul class="files">
         <li>
           <a class="name" href="Glaukopis_0.1.0_x64-setup.exe">Glaukopis_0.1.0_x64-setup.exe</a>
-          <span class="size">102 MB</span>
+          <span class="size">91 MB</span>
           <div class="what">
             <p>
               The usual installer. Installs for the person who runs it, without asking for an
@@ -193,7 +249,7 @@
         </li>
         <li>
           <a class="name" href="Glaukopis_0.1.0_x64_en-US.msi">Glaukopis_0.1.0_x64_en-US.msi</a>
-          <span class="size">148 MB</span>
+          <span class="size">134 MB</span>
           <div class="what">
             <p>
               The same application as a Windows Installer package, for installing for every user of
@@ -206,12 +262,12 @@
       <h2>macOS</h2>
       <p>
         For Macs with Apple silicon (M1 and later), macOS 11 or newer. There is no build for Intel
-        Macs yet. As on Windows, Pandoc, Tesseract, the dictionaries and the fonts come with it.
+        Macs yet. As on Windows, Pandoc, Tesseract and the fonts come with it.
       </p>
       <ul class="files">
         <li>
           <a class="name" href="Glaukopis_0.1.0_aarch64.dmg">Glaukopis_0.1.0_aarch64.dmg</a>
-          <span class="size">98 MB</span>
+          <span class="size">87 MB</span>
           <div class="what">
             <p>
               A disk image. Open it and drag Glaukopis into <em>Applications</em>. Then open it the
@@ -224,58 +280,30 @@
       <h2>Arch Linux</h2>
       <p>
         Packages for <code>pacman</code>, x86_64. Here Pandoc and the font Libertinus come from the
-        repositories and are installed with Glaukopis as its dependencies; Tesseract and the rest
-        are optional, and <code>pacman -Qi glaukopis</code> says what each is for. Install the
-        application and the dictionaries of the languages you write in:
+        repositories and are installed with Glaukopis as its dependencies; Tesseract, the
+        dictionaries of Hunspell and the rest are optional, and <code>pacman -Qi glaukopis</code>
+        says what each is for.
       </p>
-      <pre>
-sudo pacman -U glaukopis-0.1.0-16-x86_64.pkg.tar.zst \
-  glaukopis-dictionaries-en-0.1.0-16-any.pkg.tar.zst</pre>
+      <pre>sudo pacman -U glaukopis-0.1.0-17-x86_64.pkg.tar.zst</pre>
       <ul class="files">
         <li>
-          <a class="name" href="glaukopis-0.1.0-16-x86_64.pkg.tar.zst"
-            >glaukopis-0.1.0-16-x86_64.pkg.tar.zst</a
+          <a class="name" href="glaukopis-0.1.0-17-x86_64.pkg.tar.zst"
+            >glaukopis-0.1.0-17-x86_64.pkg.tar.zst</a
           >
-          <span class="size">25 MB</span>
+          <span class="size">27 MB</span>
           <div class="what">
             <p>
               The application. Depends on <code>pandoc-cli</code> and <code>otf-libertinus</code>,
               which pacman fetches. For reading scans and pictures, install
-              <code>tesseract</code> and <code>tesseract-data-eng</code>, with the data of other
-              languages as you need them.
+              <code>tesseract</code> and <code>tesseract-data-eng</code>. The system's dictionaries
+              and Tesseract's data (<code>hunspell-en_us</code>, <code>tesseract-data-nor</code>
+              and the like) are found as well as those imported.
             </p>
           </div>
         </li>
         <li>
-          <a class="name" href="glaukopis-dictionaries-en-0.1.0-16-any.pkg.tar.zst"
-            >glaukopis-dictionaries-en-0.1.0-16-any.pkg.tar.zst</a
-          >
-          <span class="size">0.7 MB</span>
-          <div class="what">
-            <p>Dictionaries for checking the spelling of English, American and British.</p>
-          </div>
-        </li>
-        <li>
-          <a class="name" href="glaukopis-dictionaries-nb-0.1.0-16-any.pkg.tar.zst"
-            >glaukopis-dictionaries-nb-0.1.0-16-any.pkg.tar.zst</a
-          >
-          <span class="size">1.5 MB</span>
-          <div class="what">
-            <p>Dictionary for Norwegian Bokmål.</p>
-          </div>
-        </li>
-        <li>
-          <a class="name" href="glaukopis-dictionaries-nn-0.1.0-16-any.pkg.tar.zst"
-            >glaukopis-dictionaries-nn-0.1.0-16-any.pkg.tar.zst</a
-          >
-          <span class="size">1.5 MB</span>
-          <div class="what">
-            <p>Dictionary for Norwegian Nynorsk.</p>
-          </div>
-        </li>
-        <li>
-          <a class="name" href="glaukopis-server-0.1.0-16-x86_64.pkg.tar.zst"
-            >glaukopis-server-0.1.0-16-x86_64.pkg.tar.zst</a
+          <a class="name" href="glaukopis-server-0.1.0-17-x86_64.pkg.tar.zst"
+            >glaukopis-server-0.1.0-17-x86_64.pkg.tar.zst</a
           >
           <span class="size">1.8 MB</span>
           <div class="what">
@@ -288,26 +316,19 @@ sudo pacman -U glaukopis-0.1.0-16-x86_64.pkg.tar.zst \
           </div>
         </li>
       </ul>
-      <p class="aside">
-        The dictionaries are optional, and Glaukopis finds those of Hunspell as well
-        (<code>hunspell-en_us</code>, <code>hunspell-en_gb</code>; <code>hunspell-nb</code> and
-        <code>hunspell-nn</code> from the AUR), which serve for other languages too.
-      </p>
 
       <h2>Debian, Ubuntu and Fedora</h2>
       <p>
-        One package each for <code>apt</code> and <code>dnf</code>, x86_64. Pandoc, the dictionaries
-        of spelling and the fonts of Typst come with them. Tesseract, for reading scans and
-        pictures, is recommended from the system's own packages, so <code>apt</code> and
-        <code>dnf</code> install it along unless told not to; the data of other languages are
-        packages beside it, such as <code>tesseract-ocr-nor</code> or
-        <code>tesseract-langpack-nor</code> for Norwegian. Other distributions, and older releases
-        of these, are not covered yet.
+        One package each for <code>apt</code> and <code>dnf</code>, x86_64. Pandoc and the fonts of
+        Typst come with them. Tesseract, for reading scans and pictures, and the dictionaries of
+        English are recommended from the system's own packages, so <code>apt</code> and
+        <code>dnf</code> install them along unless told not to. Other distributions, and older
+        releases of these, are not covered yet.
       </p>
       <ul class="files">
         <li>
           <a class="name" href="Glaukopis_0.1.0_amd64.deb">Glaukopis_0.1.0_amd64.deb</a>
-          <span class="size">73 MB</span>
+          <span class="size">71 MB</span>
           <div class="what">
             <p>
               For Ubuntu 24.04 or newer and Debian 13 or newer. Install with
@@ -317,7 +338,7 @@ sudo pacman -U glaukopis-0.1.0-16-x86_64.pkg.tar.zst \
         </li>
         <li>
           <a class="name" href="Glaukopis-0.1.0-1.x86_64.rpm">Glaukopis-0.1.0-1.x86_64.rpm</a>
-          <span class="size">73 MB</span>
+          <span class="size">71 MB</span>
           <div class="what">
             <p>
               For Fedora 40 or newer. Install with
@@ -328,12 +349,167 @@ sudo pacman -U glaukopis-0.1.0-16-x86_64.pkg.tar.zst \
         </li>
       </ul>
 
+      <h2 id="languages">Languages of spelling and of reading text</h2>
+      <p>
+        Glaukopis imports these itself, from the list <a href="index.json">index.json</a>, and
+        checks each against the checksum it gives. They are here as well for importing by hand, with
+        <kbd>Import from files…</kbd> in the same places in the settings, on a computer without the
+        network or for a server of your own. How such a package is made is told in
+        <a href="https://github.com/polemistes/glaukopis/blob/main/docs/language-packages.md"
+          >docs/language-packages.md</a
+        >.
+      </p>
+      <h3>Dictionaries of spelling</h3>
+      <p>
+        LibreOffice's dictionaries, but the Norwegian, which are made for Glaukopis from the word
+        lists of Bokmålsordboka and Nynorskordboka (Universitetet i Bergen og Språkrådet,
+        ordbøkene.no, CC BY 4.0).
+      </p>
+      <table class="languages">
+        <thead>
+          <tr>
+            <th>Language</th>
+            <th>File</th>
+            <th class="licence">Licence</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>English (United States)</td>
+            <td><a href="spelling-en_US-2026.10.06.zip">spelling-en_US-2026.10.06.zip</a></td>
+            <td class="licence">SCOWL</td>
+            <td class="size">0.2 MB</td>
+          </tr>
+          <tr>
+            <td>English (United Kingdom)</td>
+            <td><a href="spelling-en_GB-2026.10.06.zip">spelling-en_GB-2026.10.06.zip</a></td>
+            <td class="licence">LGPL 2.1 or later</td>
+            <td class="size">0.4 MB</td>
+          </tr>
+          <tr>
+            <td>Norwegian Bokmål</td>
+            <td><a href="spelling-nb_NO-2026.10.06.zip">spelling-nb_NO-2026.10.06.zip</a></td>
+            <td class="licence">CC BY 4.0 and GPL 2</td>
+            <td class="size">1.2 MB</td>
+          </tr>
+          <tr>
+            <td>Norwegian Nynorsk</td>
+            <td><a href="spelling-nn_NO-2026.10.06.zip">spelling-nn_NO-2026.10.06.zip</a></td>
+            <td class="licence">CC BY 4.0 and GPL 2</td>
+            <td class="size">1.3 MB</td>
+          </tr>
+          <tr>
+            <td>Swedish</td>
+            <td><a href="spelling-sv_SE-2026.10.06.zip">spelling-sv_SE-2026.10.06.zip</a></td>
+            <td class="licence">LGPL 3</td>
+            <td class="size">0.7 MB</td>
+          </tr>
+          <tr>
+            <td>Danish</td>
+            <td><a href="spelling-da_DK-2026.10.06.zip">spelling-da_DK-2026.10.06.zip</a></td>
+            <td class="licence">GPL 2, LGPL 2.1 or MPL 1.1</td>
+            <td class="size">0.9 MB</td>
+          </tr>
+          <tr>
+            <td>German</td>
+            <td><a href="spelling-de_DE-2026.10.06.zip">spelling-de_DE-2026.10.06.zip</a></td>
+            <td class="licence">GPL 2 or 3</td>
+            <td class="size">1.2 MB</td>
+          </tr>
+          <tr>
+            <td>French</td>
+            <td><a href="spelling-fr-2026.10.06.zip">spelling-fr-2026.10.06.zip</a></td>
+            <td class="licence">MPL 2.0</td>
+            <td class="size">0.3 MB</td>
+          </tr>
+          <tr>
+            <td>Italian</td>
+            <td><a href="spelling-it_IT-2026.10.06.zip">spelling-it_IT-2026.10.06.zip</a></td>
+            <td class="licence">GPL 3</td>
+            <td class="size">0.4 MB</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Languages for reading scans and pictures</h3>
+      <p>
+        The best data there is for Tesseract, <code>tessdata_best</code> 4.1.0, under the Apache
+        License 2.0. Tesseract has one Norwegian, for Bokmål and Nynorsk both, and one English.
+      </p>
+      <table class="languages">
+        <thead>
+          <tr>
+            <th>Language</th>
+            <th>File</th>
+            <th class="licence">Licence</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>English</td>
+            <td><a href="ocr-eng-4.1.0.zip">ocr-eng-4.1.0.zip</a></td>
+            <td class="licence">Apache 2.0</td>
+            <td class="size">12 MB</td>
+          </tr>
+          <tr>
+            <td>Norwegian</td>
+            <td><a href="ocr-nor-4.1.0.zip">ocr-nor-4.1.0.zip</a></td>
+            <td class="licence">Apache 2.0</td>
+            <td class="size">12 MB</td>
+          </tr>
+          <tr>
+            <td>Swedish</td>
+            <td><a href="ocr-swe-4.1.0.zip">ocr-swe-4.1.0.zip</a></td>
+            <td class="licence">Apache 2.0</td>
+            <td class="size">12 MB</td>
+          </tr>
+          <tr>
+            <td>Danish</td>
+            <td><a href="ocr-dan-4.1.0.zip">ocr-dan-4.1.0.zip</a></td>
+            <td class="licence">Apache 2.0</td>
+            <td class="size">7.8 MB</td>
+          </tr>
+          <tr>
+            <td>German</td>
+            <td><a href="ocr-deu-4.1.0.zip">ocr-deu-4.1.0.zip</a></td>
+            <td class="licence">Apache 2.0</td>
+            <td class="size">7.3 MB</td>
+          </tr>
+          <tr>
+            <td>French</td>
+            <td><a href="ocr-fra-4.1.0.zip">ocr-fra-4.1.0.zip</a></td>
+            <td class="licence">Apache 2.0</td>
+            <td class="size">3.2 MB</td>
+          </tr>
+          <tr>
+            <td>Italian</td>
+            <td><a href="ocr-ita-4.1.0.zip">ocr-ita-4.1.0.zip</a></td>
+            <td class="licence">Apache 2.0</td>
+            <td class="size">6.9 MB</td>
+          </tr>
+          <tr>
+            <td>Ancient Greek</td>
+            <td><a href="ocr-grc-4.1.0.zip">ocr-grc-4.1.0.zip</a></td>
+            <td class="licence">Apache 2.0</td>
+            <td class="size">3.8 MB</td>
+          </tr>
+          <tr>
+            <td>Latin</td>
+            <td><a href="ocr-lat-4.1.0.zip">ocr-lat-4.1.0.zip</a></td>
+            <td class="licence">Apache 2.0</td>
+            <td class="size">7.7 MB</td>
+          </tr>
+        </tbody>
+      </table>
+
       <h2>Checking what you downloaded</h2>
       <p>
-        <a href="SHA256SUMS">SHA256SUMS</a> lists the checksum of every file above. In the folder
-        you downloaded to, <code>sha256sum -c SHA256SUMS --ignore-missing</code> on Linux or
-        <code>shasum -a 256 -c SHA256SUMS --ignore-missing</code> on macOS checks them; on Windows,
-        <code>Get-FileHash</code> in PowerShell shows a file's checksum to compare.
+        <a href="SHA256SUMS">SHA256SUMS</a> lists the checksum of every installer and package above.
+        In the folder you downloaded to, <code>sha256sum -c SHA256SUMS --ignore-missing</code> on
+        Linux or <code>shasum -a 256 -c SHA256SUMS --ignore-missing</code> on macOS checks them; on
+        Windows, <code>Get-FileHash</code> in PowerShell shows a file's checksum to compare. The
+        checksums of the languages are in <a href="index.json">index.json</a>.
       </p>
 
       <h2>Reading on, and reporting</h2>
@@ -343,12 +519,14 @@ sudo pacman -U glaukopis-0.1.0-16-x86_64.pkg.tar.zst \
         Faults, surprises and wishes are welcome by mail to
         <a href="mailto:develop@robertemilberge.no">develop@robertemilberge.no</a>, or as issues at
         <a href="https://github.com/polemistes/glaukopis">github.com/polemistes/glaukopis</a>. Say
-        which file you installed and what you did when it went wrong.
+        which file you installed and what you did when it went wrong. The interface speaks many
+        languages, most of them translated with the help of a language model and not yet read by
+        people who speak them: a word that is wrong in yours is worth a line.
       </p>
 
       <footer>
-        Glaukopis is free software under the GPL, version 3 or later. The dictionaries have licences
-        of their own, which come with them.
+        Glaukopis is free software under the GPL, version 3 or later. The dictionaries and the data
+        for Tesseract have licences of their own, which come with them.
       </footer>
     </main>
   </body>

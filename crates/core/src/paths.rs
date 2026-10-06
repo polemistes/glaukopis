@@ -191,6 +191,17 @@ mod tests {
         let other = DataDir::open(tmp.path().join("other")).unwrap();
         assert!(other.claim().unwrap().is_some(), "another directory is another matter");
         drop(first);
-        assert!(dir.claim().unwrap().is_some(), "and it is free again when let go");
+        // A program another test starts at the same time holds a copy of the
+        // file, and so the lock, between being forked and running what it
+        // runs: the claim is free again, but perhaps a moment later.
+        let mut again = dir.claim().unwrap();
+        for _ in 0..50 {
+            if again.is_some() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(40));
+            again = dir.claim().unwrap();
+        }
+        assert!(again.is_some(), "and it is free again when let go");
     }
 }
