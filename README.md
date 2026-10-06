@@ -1,5 +1,7 @@
 # Glaukopis
 
+**Be aware: The text below is AI generated, as is the code of Glaukopis. AI code can be good. AI text cannot. The first non-beta release of Glaukopis will not have AI generated texts, except for standard short text for features in the user interface.**
+
 A desktop application for scholarly work. It is where the work on an academic
 book or article is done: collecting references, developing ideas in mind maps,
 writing, and producing the manuscript.
