@@ -488,8 +488,8 @@ library-pane-duplicate = Duplicar
 library-pane-edit-source = Alterar o código…
 library-pane-source-subtitle = A entrada em BibLaTeX. A maior parte das coisas é mais fácil no formulário.
 library-pane-source-failed = Não foi possível mostrar o código
-library-pane-added = Acrescentada { $date }
-library-pane-added-changed = Acrescentada { $added } · alterada { $changed }
+library-pane-added = Acrescentada a { $date }
+library-pane-added-changed = Acrescentada a { $added } · alterada a { $changed }
 
 ## Looking up a reference.
 

@@ -98,7 +98,8 @@ personne qui écrit. Un mot choisi ici est le même dans tous les fichiers.
 
 ## Temps, commentaires, historique
 
-- **timeline** → la **chronologie**
+- **timeline** → la **frise chronologique** (« la frise » quand c’est court) ;
+  la **chronologie** est l’élément-tableau que la frise peut ajouter à la carte
 - **when** → **Quand** (comme étiquette) ; le **moment** ou la **période**
   d’un élément dans une phrase
 - **comment** → le **commentaire** ; **commenter**
@@ -114,7 +115,7 @@ personne qui écrit. Un mot choisi ici est le même dans tous les fichiers.
 ## Lecture et vérification
 
 - **spelling** → l’**orthographe** ; **dictionary** → le **dictionnaire** ;
-  **own words** → les **mots personnels**
+  **own words** → **vos mots** (« mes mots » dans une commande)
 - **reading text** → **lire le texte**, la **lecture du texte** ; **OCR**
   reste OCR là où l’anglais l’écrit
 - **made searchable** → rendu **interrogeable** (le texte posé sous l’image

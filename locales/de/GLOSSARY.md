@@ -110,6 +110,29 @@ Bild ab, Einfg.
 - **the cursor** — der Cursor (so sagt es deutsche Software; nicht
   „Schreibmarke“)
 
+## Unterwegs dazugekommen
+
+- **association** (zwischen Elementen) — die Verbindung, verbinden
+- **note** (Fußnote/Endnote, auch im Dokument) — die Anmerkung; die Notiz
+  nur für Notizen zu Quellen, Bildern und in Kommentaren
+- **remark** (der Vorschau) — der Hinweis
+- **source** (BibLaTeX-/CSL-Quelltext) — der Quelltext, nie „Quelle“
+- **duplicate** — die Dublette
+- **moment** (im Verlauf) — der Zeitpunkt; **version** — die Fassung;
+  „as it was { $when }“ — „Stand { $when }“
+- **tag**, **label** (Zitierschlüssel im Text, Nummernstil) — das Kürzel
+- **member** (eines geteilten Projekts) — das Mitglied; **collaborators** —
+  die Mitwirkenden; **owner** — der Eigentümer
+- **make** (a map, a project, a reference) — anlegen; (a document, a
+  preview) — erzeugen
+- **left out** — weggelassen; **status** (eines Elements) — der Stand
+- **redo** — Wiederherstellen; **press** (eine Schaltfläche) — klicken,
+  (eine Taste) — drücken
+- **break** (Absatzart) — die Zäsur; **epigraph** — das Motto; **draft
+  note** — die Arbeitsnotiz; **headword/gloss** — Stichwort/Erklärung
+- **lane** (Zeitleiste) — die Bahn; **chronology** — die Chronologie
+- **running head** — die Kopfzeile; **style guides** — Richtlinien
+
 ## Namen, die nicht übersetzt werden
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,
