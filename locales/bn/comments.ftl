@@ -19,8 +19,8 @@ comments-settled = { $count ->
 }
 comments-all = সব
 comments-none = এখনও কোনো মন্তব্য নেই
-comments-none-of-these = এগুলোর কোনোটিই নয়।
 comments-none-detail = কিছু লেখা নির্বাচন করে Ctrl+Alt+C চাপুন, বা কোনো উপাদানের মেনু থেকে “মন্তব্য করুন…” বেছে নিন। মন্তব্য কখনও পাঠের অংশ হয় না।
+comments-none-of-these = এগুলোর কোনোটিই নয়।
 comments-settle = আলোচনার মীমাংসা করুন
 comments-reopen = আলোচনা আবার খুলুন
 comments-edit = বদলান
