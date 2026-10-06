@@ -112,6 +112,8 @@ OCR = [
     ("deu", "de", "Deutsch"),
     ("fra", "fr", "Français"),
     ("ita", "it", "Italiano"),
+    ("grc", "grc", "Ἀρχαία ἑλληνική"),
+    ("lat", "la", "Latina"),
 ]
 TESSDATA_VERSION = "4.1.0"
 

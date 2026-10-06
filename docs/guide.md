@@ -1118,7 +1118,7 @@ not always better. The data of more languages is imported under *Settings* ›
 *Programs*, below Tesseract, at **Imported languages**, as the dictionaries
 of spelling are (see *Spelling*): from the server of Glaukopis, which offers
 the best data there is for English, Norwegian, Swedish, Danish, German,
-French and Italian, for now, or from a `.traineddata` file of any language
+French, Italian, Ancient Greek and Latin, for now, or from a `.traineddata` file of any language
 Tesseract has, such as those of `tessdata_best` on GitHub. A language you
 have imported is read with before the computer's of the same name. A page takes a few seconds; several are read at a time,
 and you are shown how many are read. **Cancel** stops the reading, and

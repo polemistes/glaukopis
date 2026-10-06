@@ -456,8 +456,8 @@ What this settles (ADR 0032):
   English (American and British), Norwegian (Bokmål and Nynorsk, the
   project's own), Swedish, Danish, German, French and Italian, from
   LibreOffice's; and the data of `tessdata_best` for English, Norwegian,
-  Swedish, Danish, German, French and Italian, Tesseract having one
-  Norwegian and one English. They are put on the server by hand.
+  Swedish, Danish, German, French, Italian, and, asked for after,
+  Ancient Greek and Latin, Tesseract having one Norwegian and one English. They are put on the server by hand.
 - Nothing is bundled but Tesseract itself, with its English: the
   dictionaries leave the application and the packages of dictionaries for
   Arch are given up; the deb and the rpm recommend the system's English.

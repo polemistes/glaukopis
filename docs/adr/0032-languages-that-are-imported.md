@@ -53,7 +53,8 @@ from files, with instructions for how such a file is made.
 - **The project's packages** are made by `scripts/make-language-packages.py`,
   with their index, for English (American and British), Norwegian (Bokmål
   and Nynorsk, the project's own dictionaries), Swedish, Danish, German,
-  French and Italian, from LibreOffice's dictionaries and `tessdata_best`.
+  French and Italian, from LibreOffice's dictionaries, and for OCR the same
+  and Ancient Greek and Latin, from `tessdata_best`.
   The script mends what Hunspell lets pass and Spellbook does not (an
   unescaped slash in a word of the Danish).
 - **Nothing is bundled any longer but the engine**: the dictionaries leave
