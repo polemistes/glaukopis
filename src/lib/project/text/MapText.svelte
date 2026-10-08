@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { notifyOk } from '$lib/ui/toast.svelte';
+  import { canPaste, copyElements, cutElements, pasteElements } from '../clipboard.svelte';
   import { TextSelection } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
   import { onDestroy, onMount, tick, untrack } from 'svelte';
@@ -751,7 +753,25 @@
     add: (id, where) => (where === 'under' ? addUnder(id) : addAfter(id)),
     link: (id) => (linkFrom = id),
     openMap: (id) => onopenmap(id),
+    copy: (ids) => holdElements(ids, false),
+    cut: (ids) => holdElements(ids, true),
+    paste: (id) => pasteUnder(id),
   };
+
+  /** Holds elements, each with all under it, copied or cut, and says how many. */
+  function holdElements(ids: string[], cut: boolean) {
+    const n = cut ? cutElements(project, mapId, ids) : copyElements(project, mapId, ids);
+    if (n) notifyOk(t(cut ? 'diagram-cut' : 'diagram-copied', { count: n }));
+  }
+
+  /** Pastes what is held under an element, at the end of what is under it. */
+  function pasteUnder(id: string) {
+    if (!canPaste(project)) return;
+    project.checkpoint();
+    const made = pasteElements(project, mapId, id);
+    project.checkpoint();
+    if (made[0]) void go(made[0], 'title', 'start');
+  }
 
   function menuFor(id: string, anchor: HTMLElement | null): MenuItem[] {
     const base = elementMenu(project, [id], actions, anchor, 'text').filter(

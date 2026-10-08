@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ClipboardPaste from '@lucide/svelte/icons/clipboard-paste';
   import { untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import Maximize from '@lucide/svelte/icons/maximize';
@@ -16,7 +17,13 @@
   import { openContextMenu } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import ElementBox from '../ElementBox.svelte';
-  import { canPaste, clipboard, copyElements, pasteElements } from '../clipboard.svelte';
+  import {
+    canPaste,
+    clipboard,
+    copyElements,
+    cutElements,
+    pasteElements,
+  } from '../clipboard.svelte';
   import { elementMenu, type ElementActions, type ElementsPayload } from '../elements';
   import { notify, notifyOk } from '$lib/ui/toast.svelte';
   import ElementTooltip from '../ElementTooltip.svelte';
@@ -722,20 +729,28 @@
     },
     openMap: (id) => onopenmap(id),
     copy: (ids) => hold(ids),
+    cut: (ids) => hold(ids, true),
     paste: (id) => paste(id),
   };
 
-  /** Holds the elements, each with all under it, and says how many. */
-  function hold(ids: string[]) {
-    const n = copyElements(project, mapId, ids);
-    if (n) notifyOk(t('diagram-copied', { count: n }));
+  /** Holds the elements, each with all under it, copied or cut, and says how many. */
+  function hold(ids: string[], cut = false) {
+    const n = cut ? cutElements(project, mapId, ids) : copyElements(project, mapId, ids);
+    if (n) notifyOk(t(cut ? 'diagram-cut' : 'diagram-copied', { count: n }));
   }
 
+  /** Where the pointer was last over the map, in the page: what is pasted loose goes there. */
+  let pointer: { x: number; y: number } | null = null;
+
   /**
-   * Pastes what is held as copies: under the element given, or the one
-   * selected; where none is, on their own in the middle of the view.
+   * Pastes what is held: under the element given, or the one selected; where
+   * none is, on their own where they are asked to go, or where the pointer is
+   * over the map, or else in the middle of the view.
    */
-  function paste(under: string | null = selection.length === 1 ? selection[0] : null) {
+  function paste(
+    under: string | null = selection.length === 1 ? selection[0] : null,
+    at: Position | null = null,
+  ) {
     if (!clipboard.held) {
       notify(t('diagram-nothing-copied'));
       return;
@@ -745,9 +760,22 @@
       return;
     }
     const r = viewport?.getBoundingClientRect();
-    const middle = r ? toWorld(r.left + r.width / 2, r.top + r.height / 2) : { x: 0, y: 0 };
+    const inside =
+      r &&
+      pointer &&
+      pointer.x >= r.left &&
+      pointer.x <= r.right &&
+      pointer.y >= r.top &&
+      pointer.y <= r.bottom;
+    const place =
+      at ??
+      (inside
+        ? toWorld(pointer!.x, pointer!.y)
+        : r
+          ? toWorld(r.left + r.width / 2, r.top + r.height / 2)
+          : { x: 0, y: 0 });
     project.checkpoint();
-    const made = pasteElements(project, mapId, under, middle);
+    const made = pasteElements(project, mapId, under, place);
     project.checkpoint();
     if (made.length) {
       select(made);
@@ -808,6 +836,7 @@
     select,
     add,
     copy: () => hold(selection),
+    cut: () => hold(selection, true),
     paste: () => paste(),
     open: (id) => open(id),
     rename,
@@ -856,6 +885,13 @@
               requestAnimationFrame(() => rename(id));
             }
           },
+        },
+        {
+          label: t('diagram-paste-here'),
+          icon: ClipboardPaste,
+          shortcut: 'Ctrl+V',
+          disabled: !clipboard.held || !canPaste(project),
+          action: () => paste(null, world),
         },
         { kind: 'separator' },
         { label: t('diagram-show-all'), shortcut: 'Ctrl+0', action: fit },
@@ -982,6 +1018,7 @@
     quiet: (p) => p.kind === 'elements' && (p.data as ElementsPayload).map === mapId,
   }}
   onpointerdown={backgroundPointerDown}
+  onpointermove={(e) => (pointer = { x: e.clientX, y: e.clientY })}
   ondblclick={backgroundDoubleClick}
   {onkeydown}
   {oncontextmenu}

@@ -28,5 +28,10 @@ diagram-copied = { $count ->
     [one] Ett element kopiert, med alt under det
    *[other] { $count } elementer kopiert, med alt under dem
 }
+diagram-cut = { $count ->
+    [one] Ett element er klippet ut: det flyttes dit du limer det inn
+   *[other] { $count } elementer er klippet ut: de flyttes dit du limer dem inn
+}
+diagram-paste-here = Lim inn her
 diagram-nothing-copied = Ingenting er kopiert ennå
 diagram-pasted-elsewhere = Det som ble kopiert, er fra et annet prosjekt og kan ikke limes inn her

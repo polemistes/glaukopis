@@ -85,7 +85,8 @@ comments stay behind. The new project opens on its text.
 | Move an element, with all that is under it | Drag it onto another element |
 | Move an element without moving what is under it, which stays where it stood, still its own | Drag it with **Shift** held |
 | Move it up or down, deeper or less deep | **Alt+Shift** and the arrows |
-| Copy elements, with all under them; paste them under the element selected, or on their own where none is | **Ctrl+C**, **Ctrl+V**; or the menu |
+| Copy elements, with all under them; paste them under the element selected, or on their own, where the pointer is, where none is | **Ctrl+C**, **Ctrl+V**; or the menu |
+| Cut elements, to move them where they are pasted: in another map, or another project | **Ctrl+X**, then **Ctrl+V**; or the menu |
 | Go from element to element | The arrows |
 | Select several | **Ctrl**-click or **Shift**-click, or drag a frame around them |
 | Delete | **Delete** |
@@ -992,7 +993,12 @@ consumed by the writing:
   elements go in under the centre of the map chosen, without the project
   having to be open, and **Show** in the message that follows opens it. Or
   copy them with **Ctrl+C** in the diagram, open the other project, and paste
-  them with **Ctrl+V**. They go with their names, texts and notes, their
+  them with **Ctrl+V**. Cut them with **Ctrl+X** instead, and they move: they
+  stay where they are until they are pasted, and within the project the move
+  is one step, which one **Ctrl+Z** takes back. **Cut**, **Copy** and **Paste
+  under it** are in the menu of an element, in the diagram and in the text,
+  and **Paste here** in the menu of the map itself, which puts what is pasted
+  on its own where you clicked. They go with their names, texts and notes, their
   kinds, colours and times, and all that is under them; kinds the project made
   for itself go with them, unless the other project has kinds of the same
   names. Comments stay behind, and a copy in another project does not

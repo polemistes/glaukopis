@@ -119,6 +119,8 @@ project-stand-for = Stand for another map
 project-stand-for-heading = In the document, this map takes its place
 project-stand-for-none = None
 project-copy-to-map = Copy to map
+project-cut = Cut
+project-cut-not-removed = What was cut was pasted, but could not be taken away from the project it came from
 project-copy = Copy
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Paste under it

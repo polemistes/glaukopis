@@ -34,6 +34,7 @@ import { compareCopy } from './copies.svelte';
 import { canPaste } from './clipboard.svelte';
 import { notify, notifyError, toasts } from '$lib/ui/toast.svelte';
 import { openProject, projects } from '$lib/state/projects.svelte';
+import { openElsewhere, type Elsewhere } from './elsewhere';
 import { router } from '$lib/state/router.svelte';
 import type { ProjectInfo } from '$lib/api/projects';
 import { makePortable, portable } from './model/portable';
@@ -64,8 +65,9 @@ export interface ElementActions {
   add?: (id: string, where: 'after' | 'under') => void;
   /** Begin an association from the element: the next element clicked is its other end. */
   link?: (id: string) => void;
-  /** Hold the elements, to be pasted; paste what is held under the element. */
+  /** Hold the elements, to be pasted, copied or cut; paste what is held under the element. */
   copy?: (ids: string[]) => void;
+  cut?: (ids: string[]) => void;
   paste?: (id: string) => void;
   /** Show a map, after elements went to it or it was made. */
   openMap?: (id: string) => void;
@@ -181,22 +183,6 @@ function remove(
 }
 
 // ---- elements to another project (ADR 0033) ----
-
-/** A project that is not open, opened to be written in, and let go when what was written is on disk. */
-export interface Elsewhere {
-  project: Project;
-  close(): Promise<void>;
-}
-
-async function openElsewhere(id: string): Promise<Elsewhere> {
-  // A project that is being closed is opened when what was written in it is on disk.
-  await projects.closed(id);
-  // It is opened only to be written in: not the project last opened.
-  const last = projects.lastOpened;
-  const { project } = await openProject(id);
-  projects.lastOpened = last;
-  return { project, close: () => project.close() };
-}
 
 /** The project that is open, as the place says. */
 function hereId(): string | null {
@@ -520,36 +506,45 @@ export function elementMenu(
     items.push({ kind: 'separator' });
   }
 
-  if (movable.length || (one && !otherMaps.length)) {
-    if (otherMaps.length || elsewhere.length) {
-      items.push(
-        ...(actions.copy && actions.paste
-          ? [
-              {
-                label: t('project-copy'),
-                icon: Copy,
-                shortcut: 'Ctrl+C',
-                action: () => actions.copy?.(ids),
-              } as MenuItem,
-              {
-                label: t('project-paste-under'),
-                icon: ClipboardPaste,
-                shortcut: 'Ctrl+V',
-                disabled: !one || !canPaste(project),
-                action: () => one && actions.paste?.(one.id),
-              } as MenuItem,
-            ]
-          : []),
-        { kind: 'submenu', label: t('project-copy-to-map'), icon: Copy, items: toMap(true) },
-        {
-          kind: 'submenu',
-          label: t('project-move-to-map'),
-          icon: MoveRight,
-          disabled: !movable.length,
-          items: toMap(false),
-        },
-      );
-    }
+  // Cut, copy and paste: for every element, the centre too, which cannot be
+  // cut or copied but has what is pasted put under it.
+  if (actions.copy && actions.paste) {
+    // In the text, the keys cut, copy and paste the text.
+    const keyed = where !== 'text';
+    if (movable.length && actions.cut)
+      items.push({
+        label: t('project-cut'),
+        icon: Scissors,
+        shortcut: keyed ? 'Ctrl+X' : undefined,
+        action: () => actions.cut?.(movable),
+      });
+    if (movable.length)
+      items.push({
+        label: t('project-copy'),
+        icon: Copy,
+        shortcut: keyed ? 'Ctrl+C' : undefined,
+        action: () => actions.copy?.(movable),
+      });
+    if (one)
+      items.push({
+        label: t('project-paste-under'),
+        icon: ClipboardPaste,
+        shortcut: keyed ? 'Ctrl+V' : undefined,
+        disabled: !canPaste(project),
+        action: () => actions.paste?.(one.id),
+      });
+  }
+  if ((movable.length || one) && (otherMaps.length || elsewhere.length)) {
+    items.push(
+      { kind: 'submenu', label: t('project-copy-to-map'), icon: Copy, items: toMap(true) },
+      {
+        kind: 'submenu',
+        label: t('project-move-to-map'),
+        icon: MoveRight,
+        disabled: !movable.length,
+        items: toMap(false),
+      },
+    );
   }
   if (one?.origin) {
     items.push({

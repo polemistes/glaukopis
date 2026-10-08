@@ -503,3 +503,22 @@ What this settles:
   sign of a break within a paragraph (`breakSigns`).
 - **Make it the centre**, in the menu of a loose element, makes it the
   centre of its map, the centre that was going under it.
+
+## 2026-10-08 — cut and paste, paste in more places
+
+> When undoing a cut and paste of elements between maps, it is now necessary to undo in both maps, both where the cut was done and where the paste was done. Is should be the same undo operation. Is that possible? Also, the position of a deleted element should be restored when undoing the delete. There should be a paste under it menu item also for the head element of a map, and also a paste item in the right click menu directly on the diagram and in the text mode. When pasting into a map itself as a loose element, and not another element, the loose element should appear near the mouse pointer, if possible.
+
+What this settles:
+
+- Elements can be cut (Ctrl+X, and **Cut** in their menu): they stay until
+  pasted, and are then moved, within the project as one step that one undo
+  takes back; into another project they are made there and taken away from
+  the one they came from. A move by the menu or by dragging was already one
+  step; a copy, a delete and a paste are three.
+- **Cut**, **Copy** and **Paste under it** are in the menu of every element,
+  the centre too, in the diagram and in the text; **Paste here** in the menu
+  of the map's background, where it was opened; Ctrl+V with nothing selected
+  pastes where the pointer is over the map.
+- An element deleted and brought back by undo was found in its place, loose
+  or not, in the model and in the running application; how it was lost is to
+  be learnt from the one who saw it.

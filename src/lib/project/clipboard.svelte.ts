@@ -6,12 +6,20 @@
  * another project, what they were when they were copied is held as well, in
  * a form that project can take (`model/portable.ts`), so that they can be
  * pasted there after the one they came from is closed.
+ *
+ * Elements cut are held as those copied are, and stay where they are until
+ * they are pasted: then they are moved, in the project they came from, as one
+ * step that one undo takes back; in another, they are made there and taken
+ * away from the one they came from. What was cut is pasted once.
  */
 
+import { t } from '$lib/i18n';
 import { router } from '$lib/state/router.svelte';
+import { notifyError } from '$lib/ui/toast.svelte';
+import { writeElsewhere } from './elsewhere';
 import type { Project } from './model/project.svelte';
 import { makePortable, portable, type Portable } from './model/portable';
-import { topmost } from './model/tree';
+import { isAncestor, topmost } from './model/tree';
 import type { Position } from './model/types';
 
 export interface Held {
@@ -23,6 +31,8 @@ export interface Held {
   ids: string[];
   /** What they were when they were copied, for another project. */
   portable: Portable;
+  /** Cut, to be moved where they are pasted, rather than copied. */
+  cut: boolean;
 }
 
 /** The id of the project that is open, as the route names it. */
@@ -50,13 +60,24 @@ class Clipboard {
 export const clipboard = new Clipboard();
 
 /** Holds the elements, each with all under it; the centre is never copied. Returns how many are held. */
-export function copyElements(project: Project, map: string, ids: string[]): number {
+export function copyElements(project: Project, map: string, ids: string[], cut = false): number {
   const tree = project.tree(map);
   const top = topmost(tree, ids).filter((id) => id !== tree.root && project.node(id));
   clipboard.held = top.length
-    ? { project, from: openId(), map, ids: top, portable: portable(project, top) }
+    ? { project, from: openId(), map, ids: top, portable: portable(project, top), cut }
     : null;
   return top.length;
+}
+
+/** Holds the elements to be moved where they are pasted. Returns how many are held. */
+export function cutElements(project: Project, map: string, ids: string[]): number {
+  return copyElements(project, map, ids, true);
+}
+
+/** Whether an element is held as cut, to be shown so. */
+export function isCut(project: Project, id: string): boolean {
+  const held = clipboard.held;
+  return !!held && held.cut && held.project === project && held.ids.includes(id);
 }
 
 /** Whether what is held can be pasted into this project: as copies, or made anew. */
@@ -78,6 +99,7 @@ export function pasteElements(
 ): string[] {
   if (!canPaste(project)) return [];
   const held = clipboard.held!;
+  if (held.cut) return pasteCut(held, project, map, under, pos);
   if (!asCopies(held, project))
     return makePortable(
       project,
@@ -87,4 +109,39 @@ export function pasteElements(
   return under
     ? project.copy(held.ids, under)
     : project.copy(held.ids, null, undefined, { pos: pos ?? { x: 0, y: 0 }, map });
+}
+
+/**
+ * Pastes what was cut: moved, where it came from this project; made here,
+ * and taken away from the project it came from, where it came from another.
+ */
+function pasteCut(
+  held: Held,
+  project: Project,
+  map: string,
+  under: string | null,
+  pos: Position | null,
+): string[] {
+  clipboard.held = null;
+  if (asCopies(held, project)) {
+    // Under one of what was cut, or under what is under it, it cannot go.
+    const tree = project.tree(project.node(held.ids[0])?.map ?? map);
+    if (under && held.ids.some((id) => id === under || isAncestor(tree, id, under))) return [];
+    return under
+      ? project.move(held.ids, under, undefined, { pos: null })
+      : project.move(held.ids, null, undefined, { pos: pos ?? { x: 0, y: 0 }, map });
+  }
+  const made = makePortable(
+    project,
+    held.portable,
+    under ? { under } : { map, pos: pos ?? { x: 0, y: 0 } },
+  );
+  if (made.length && held.from) {
+    const from = held.from;
+    const ids = held.ids;
+    void writeElsewhere(from, (there) => there.remove(ids)).catch((error) =>
+      notifyError(t('project-cut-not-removed'), error),
+    );
+  }
+  return made;
 }

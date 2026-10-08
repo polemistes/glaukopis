@@ -29,5 +29,10 @@ diagram-copied = { $count ->
     [one] One element copied, with all under it
    *[other] { $count } elements copied, with all under them
 }
+diagram-cut = { $count ->
+    [one] One element is cut: it moves where you paste it
+   *[other] { $count } elements are cut: they move where you paste them
+}
+diagram-paste-here = Paste here
 diagram-nothing-copied = Nothing is copied yet
 diagram-pasted-elsewhere = What was copied is of another project, and cannot be pasted here
