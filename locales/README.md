@@ -51,7 +51,9 @@ the application's own words mean. In short: copy `en/` to a directory named
 by the tag of the language (`de`, `pt-BR`, `sr-Cyrl`), translate every
 file, and give the language its name in `NAMES` in
 `crates/core/src/i18n.rs`. `node scripts/check-locales.mjs <tag>` says what
-is lacking and what is wrong. A language is offered in the settings as soon
+is lacking and what is wrong. A language can be read through and mended in a
+spreadsheet, `node scripts/locale-sheet.mjs export <tag>` and `import`; see
+`TRANSLATING.md`. A language is offered in the settings as soon
 as it has a `core.ftl`; what it lacks is said in English. A language that
 has only `document.ftl` has words for documents and not an interface.
 English and Bokmål must be complete; the tests (`pnpm test`, `cargo test`)

@@ -118,6 +118,44 @@ field-editoratype-organizer = { field-editortype-organizer }
    glossary words that were hard to choose and why; the messages whose
    English you found unclear, by name; and anything you left as it was.
 
+## In a spreadsheet
+
+A language can also be read through and mended in a spreadsheet, which is
+easier for going over a whole language than the files are:
+
+```
+node scripts/locale-sheet.mjs export nb nb.ods
+```
+
+writes `nb.ods`, which LibreOffice Calc opens: a row for each message, and
+for each of its attributes (`name.hint`), with the file, the name, the
+English, the language, the note the English file has for translators, and a
+column **Done** for marking what has been read. Rows may be sorted and
+filtered as you like (the first row has filter buttons). Change only the
+column of the language; for English, `en`, the language is the English. A
+cell holds the Fluent of the message as it stands in the file, without the
+indentation of its lines; a new line in a cell is Ctrl+Enter. An empty cell
+is a message the language lacks, and may be written.
+
+```
+node scripts/locale-sheet.mjs import nb nb.ods --dry-run
+node scripts/locale-sheet.mjs import nb nb.ods
+```
+
+puts back what was changed in the sheet, and nothing else: a message changed
+in the file after the sheet was made is left as the file has it, and named.
+A change that is not good Fluent, or lacks a variable of the English, or a
+plural form of the language, is named and left out, so that it can be
+mended in the sheet and imported again. The first says what would be done,
+without doing it. The sheet can be imported again and again; what is already
+in the files counts as unchanged only against the sheet it was exported in,
+so export a new sheet after an import if more is to be done in another.
+
+LibreOffice's AutoCorrect may change what is typed: straight quotation marks
+into curly ones, `--` into a dash. In the text that is mostly welcome; in the
+Fluent of a cell (`{ "" }`, `{"{"}`) it breaks it, and the import says so.
+It is turned off under *Tools* › *AutoCorrect Options*.
+
 ## The files
 
 `common.ftl` has the words used everywhere; `shell.ftl` the rail; the

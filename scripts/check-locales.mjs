@@ -25,7 +25,7 @@ const flags = new Set(args.filter((a) => a.startsWith('--')));
 const tags = args.filter((a) => !a.startsWith('--'));
 
 /** The plural forms of a language: all of them, and those whole numbers take. */
-function plurals(tag) {
+export function plurals(tag) {
   let rules;
   try {
     rules = new Intl.PluralRules(tag);
@@ -54,7 +54,7 @@ function walk(node, visit) {
 }
 
 /** What a pattern uses: variables, references, and choices by number. */
-function uses(pattern) {
+export function uses(pattern) {
   const variables = new Set();
   const references = new Set();
   const selects = [];
@@ -110,7 +110,7 @@ function list(set) {
   return [...set].sort().join(', ') || 'nothing';
 }
 
-function check(tag) {
+export function check(tag) {
   const english = readdirSync(join(root, ENGLISH)).filter((f) => f.endsWith('.ftl')).sort();
   const dir = join(root, tag);
   const { all, whole } = plurals(tag);
@@ -192,12 +192,17 @@ function report(tag, verbose) {
   return r.problems.length === 0;
 }
 
-const languages = tags.length
-  ? tags
-  : readdirSync(root, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name)
-      .sort();
-let ok = true;
-for (const tag of languages) ok = report(tag, tags.length > 0) && ok;
-process.exit(ok ? 0 : 1);
+function main() {
+  const languages = tags.length
+    ? tags
+    : readdirSync(root, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name)
+        .sort();
+  let ok = true;
+  for (const tag of languages) ok = report(tag, tags.length > 0) && ok;
+  process.exit(ok ? 0 : 1);
+}
+
+// Run as a script; imported by another (scripts/locale-sheet.mjs), only what is exported is used.
+if (process.argv[1] === fileURLToPath(import.meta.url)) main();
