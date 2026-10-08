@@ -524,6 +524,10 @@ body.dragging * {
   user-select: none;
   -webkit-user-select: none;
 }
+/* Turned off in the writing tools, or by the settings. */
+:root[data-break-signs='off'] .hard-break::before {
+  content: none;
+}
 @media print {
   .hard-break::before {
     content: none;

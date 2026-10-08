@@ -180,6 +180,8 @@ pub fn run() {
             commands::ocr::ocr_searchable,
             commands::ocr::ocr_picture,
             commands::languages::languages_installed,
+            commands::words::words_read,
+            commands::words::words_write,
             commands::languages::languages_offered,
             commands::languages::languages_install,
             commands::languages::languages_import,

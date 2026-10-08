@@ -37,6 +37,7 @@
   import Sheet from '@lucide/svelte/icons/sheet';
   import Sigma from '@lucide/svelte/icons/sigma';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
+  import CornerDownLeft from '@lucide/svelte/icons/corner-down-left';
   import SpellCheck from '@lucide/svelte/icons/spell-check';
   import SplitSquareVertical from '@lucide/svelte/icons/split-square-vertical';
   import SquareFunction from '@lucide/svelte/icons/square-function';
@@ -340,6 +341,9 @@
       { align: 'start' },
     );
   }
+
+  /** Whether the sign of a break within a paragraph is shown, everywhere. */
+  const breakSigns = $derived(settings.value.breakSigns !== false);
 
   /** Turns the checking of spelling off or on, for everything, as the settings do. */
   function turnSpelling() {
@@ -726,6 +730,22 @@
     onclick={turnSpelling}
   >
     <SpellCheck size={15} />
+  </button>
+  <!-- The sign of a break within a paragraph, ↵, shown or not: everywhere, as spelling. -->
+  <button
+    type="button"
+    class="spelling"
+    class:on={breakSigns}
+    aria-pressed={breakSigns}
+    aria-label={t('editor-break-signs')}
+    data-break-signs-button
+    use:tooltip={{
+      text: breakSigns ? t('editor-break-signs-on') : t('editor-break-signs-off'),
+      side: 'bottom',
+    }}
+    onclick={() => settings.set('breakSigns', !breakSigns)}
+  >
+    <CornerDownLeft size={15} />
   </button>
 </div>
 

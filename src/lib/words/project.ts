@@ -1,0 +1,157 @@
+/**
+ * The words of a language as a project of Glaukopis, to be read through and
+ * mended in the application itself, with its spelling, its search and its
+ * history, and written back as Fluent files (ADR 0034).
+ *
+ * The project has a map for each Fluent file (`common`, `editor`, …), and
+ * under its centre an element for each part of a message: its name is the
+ * name of the message (`common-cancel`, or `field-title.hint` for an
+ * attribute), and its text is the English, as a quotation in foreign words,
+ * with the note the English file has for translators, and after it the
+ * words of the language, as plain paragraphs, which are what is mended.
+ * Each element keeps which part it is, and its words as they were when the
+ * project was made (`was`), so that only what was changed is written back,
+ * and nothing that was changed in the files meanwhile.
+ */
+
+import { writeBody } from '$lib/project/model/blocks';
+import { TIDY, type Project } from '$lib/project/model/project.svelte';
+import type { Block, Inline } from '$lib/project/model/text';
+import { readFile, tidy, type Change } from './fluent';
+
+/** The name under which a project says it holds the words of a language, and an element which part it is. */
+export const WORDS = 'words';
+
+/** What a project of words says of itself. */
+export interface ProjectWords {
+  language: string;
+}
+
+/** What an element of such a project says of itself. */
+export interface ElementWords {
+  file: string;
+  key: string;
+  /** The words as they were when the project was made, or last written out. */
+  was: string;
+}
+
+/** The language whose words a project holds, or nothing where it is no project of words. */
+export function projectWords(project: Project): ProjectWords | null {
+  const said = project.yMeta.get(WORDS) as ProjectWords | undefined;
+  return said && typeof said.language === 'string' ? said : null;
+}
+
+function elementWords(value: unknown): ElementWords | null {
+  const w = value as ElementWords | undefined;
+  return w && typeof w.file === 'string' && typeof w.key === 'string' ? w : null;
+}
+
+/** Lines as inline content: a break within the paragraph where a line ends. */
+function lines(text: string, marks: InlineMarks = {}): Inline[] {
+  const out: Inline[] = [];
+  text.split('\n').forEach((line, i) => {
+    if (i > 0) out.push({ kind: 'break' });
+    if (line) out.push({ kind: 'text', text: line, marks });
+  });
+  return out;
+}
+type InlineMarks = Record<string, Record<string, unknown> | true>;
+
+/** The text of an element as it is shown, for its words. */
+export function elementText(english: string, note: string, words: string, tag: string): Block[] {
+  const foreign: InlineMarks = tag === 'en' ? {} : { kind: { name: 'foreign', lang: 'en' } };
+  const quoted: Block[] = [{ kind: 'paragraph', content: lines(english, foreign) }];
+  if (note) quoted.push({ kind: 'paragraph', content: lines(note, { ...foreign, em: true }) });
+  return [
+    { kind: 'blockquote', content: quoted },
+    { kind: 'paragraph', content: lines(words) },
+  ];
+}
+
+/**
+ * Fills a project with the words of a language: a map for each file of the
+ * English, an element for each part of its messages. `own` are the files of
+ * the language, which may lack parts or files, as a translation that is not
+ * done does. The maps are in the language, so that its spelling is checked.
+ */
+export function fillWords(
+  project: Project,
+  tag: string,
+  english: Map<string, string>,
+  own: Map<string, string>,
+): number {
+  const before = project.maps.map((m) => m.id);
+  project.setLanguage(tag);
+  project.transact(() => project.yMeta.set(WORDS, { language: tag } satisfies ProjectWords));
+  let count = 0;
+  for (const [file, text] of english) {
+    const en = readFile(text);
+    if (!en.messages.length) continue;
+    const mine = own.has(file) ? readFile(own.get(file)!) : null;
+    const map = project.createMap(file.replace(/\.ftl$/, ''));
+    const root = project.map(map)!.root;
+    for (const m of en.messages) {
+      for (const part of m.parts) {
+        const id = project.addChild(root, { title: part.key });
+        if (!id) continue;
+        const was = mine?.parts.get(part.key)?.text ?? '';
+        const note = part.key.includes('.') ? '' : m.comment;
+        writeBody(
+          project.fragment(id, 'body')!,
+          elementText(en.parts.get(part.key)!.text, note, was, tag),
+        );
+        project.transact(() =>
+          project.yNodes.get(id)?.set(WORDS, { file, key: part.key, was } satisfies ElementWords),
+        );
+        count++;
+      }
+    }
+  }
+  // The map a new project begins with holds no words.
+  for (const id of before) project.deleteMap(id);
+  project.undoManager.clear();
+  return count;
+}
+
+/** The words of an element as they are written in it: what follows the quotation, a line to a line. */
+export function wordsIn(blocks: Block[]): string {
+  const inline = (content: Inline[]) =>
+    content.map((i) => (i.kind === 'text' ? i.text : i.kind === 'break' ? '\n' : '')).join('');
+  const out: string[] = [];
+  const read = (list: Block[]) => {
+    for (const b of list) {
+      if (b.kind === 'blockquote') continue;
+      if ('content' in b && Array.isArray(b.content)) {
+        if (b.kind === 'paragraph' || b.kind === 'script' || b.kind === 'passage')
+          out.push(inline(b.content as Inline[]));
+      }
+    }
+  };
+  read(blocks);
+  return tidy(out.join('\n'));
+}
+
+/** What was changed in a project of words since it was made or last written out. */
+export function changesIn(project: Project): Change[] {
+  const changes: Change[] = [];
+  for (const [id, node] of project.yNodes.entries()) {
+    const w = elementWords(node.get(WORDS));
+    if (!w) continue;
+    const text = wordsIn(project.blocksOf(id));
+    if (text !== tidy(w.was)) changes.push({ file: w.file, key: w.key, text, was: tidy(w.was) });
+  }
+  return changes;
+}
+
+/** After the words were written out: what was written is what the elements now were. */
+export function written(project: Project, done: Change[]) {
+  const wanted = new Map(done.map((c) => [`${c.file}\u0000${c.key}`, c.text]));
+  // Saved, but not undone: undoing it would make the words written out look unwritten.
+  project.doc.transact(() => {
+    for (const [, node] of project.yNodes.entries()) {
+      const w = elementWords(node.get(WORDS));
+      const text = w ? wanted.get(`${w.file}\u0000${w.key}`) : undefined;
+      if (w && text !== undefined) node.set(WORDS, { ...w, was: text } satisfies ElementWords);
+    }
+  }, TIDY);
+}

@@ -19,6 +19,7 @@ import Plus from '@lucide/svelte/icons/plus';
 import Scissors from '@lucide/svelte/icons/scissors';
 import Tag from '@lucide/svelte/icons/tag';
 import Trash2 from '@lucide/svelte/icons/trash-2';
+import Crown from '@lucide/svelte/icons/crown';
 import Unlink from '@lucide/svelte/icons/unlink';
 import { languages, t } from '$lib/i18n';
 import { commentsUi } from '$lib/comments/ui.svelte';
@@ -565,6 +566,18 @@ export function elementMenu(
       action: () => {
         const id = project.mapFromBranch(one.id);
         if (id) actions.openMap?.(id);
+      },
+    });
+  }
+  if (one && !isRoot && !tree.parent.get(one.id) && tree.loose.includes(one.id)) {
+    items.push({
+      label: t('project-make-centre'),
+      icon: Crown,
+      hint: t('project-make-centre-hint'),
+      action: () => {
+        project.checkpoint();
+        project.makeCentre(one.id);
+        project.checkpoint();
       },
     });
   }

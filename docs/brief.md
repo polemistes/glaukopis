@@ -484,3 +484,22 @@ What this settles (ADR 0033):
   to another; Ctrl+Shift+L opens and closes it.
 - Bringing documents in by one rule, and a command that turns breaks into
   paragraphs, were proposed and not asked for now.
+
+## 2026-10-08 — the words as a project, the sign of breaks turned off, a loose element made the centre
+
+> Back to the language edit script. Why not export to a Glaukopis project instead of Libreoffice Calc? The script places it as one of the current user's Glaukopis projects, and also reads it from there?
+
+> Yes, make the project based translation edit.
+
+> Also, it must be possible to turn off the line break symbols. An icon beside the spell check while typing icon, perhaps?
+
+> Also, it should be possible to move the head of a tree into a loose element, and make the loose element the head.
+
+What this settles:
+
+- The words of any language become a project from the settings, and are
+  written back as Fluent files from a bar over it (ADR 0034).
+- A button beside that of spelling in the writing tools hides and shows the
+  sign of a break within a paragraph (`breakSigns`).
+- **Make it the centre**, in the menu of a loose element, makes it the
+  centre of its map, the centre that was going under it.

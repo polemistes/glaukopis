@@ -1,4 +1,5 @@
 <script lang="ts">
+  import WordsBar from '$lib/words/WordsBar.svelte';
   import { onDestroy, onMount, tick, untrack } from 'svelte';
   import ArrowLeft from '@lucide/svelte/icons/arrow-left';
   import BookOpenText from '@lucide/svelte/icons/book-open-text';
@@ -798,6 +799,10 @@
         <PanelRight size={16} />
       </IconButton>
     </header>
+
+    {#if project}
+      <WordsBar {project} />
+    {/if}
 
     <div
       class="work"

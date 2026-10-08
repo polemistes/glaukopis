@@ -6,6 +6,8 @@ export {
   languageName,
   languages,
   load,
+  localeSources,
+  localeTags,
   nearest,
   newTextLanguage,
   primary,

@@ -192,7 +192,12 @@ describe('paragraphs read as one', () => {
       p(t('After.')),
       p(t('Last.')),
     ];
-    const runs = ['Before.', `Left one.${PARAGRAPH}Left two.`, 'Right one.', `After.${PARAGRAPH}Last.`];
+    const runs = [
+      'Before.',
+      `Left one.${PARAGRAPH}Left two.`,
+      'Right one.',
+      `After.${PARAGRAPH}Last.`,
+    ];
     expect(joined(bodyPassages(parallel)).map((j) => j.text)).toEqual(runs);
     const { pr, elements } = project(parallel);
     const fragment = pr.fragment(elements[0], 'body')!;

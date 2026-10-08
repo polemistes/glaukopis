@@ -40,6 +40,31 @@ const fetched = import.meta.glob('/locales/*/*.ftl', {
   import: 'default',
 }) as Record<string, () => Promise<string>>;
 
+/** The languages that have words: every folder under `locales/`. */
+export function localeTags(): string[] {
+  const tags = new Set<string>();
+  for (const path of Object.keys(fetched)) {
+    const p = parts(path);
+    if (p) tags.add(p.tag);
+  }
+  return [...tags].sort();
+}
+
+/**
+ * The Fluent files of a language as they are written, by name
+ * (`common.ftl`), the words of documents among them: for making a project of
+ * them (`words/`).
+ */
+export async function localeSources(tag: string): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  for (const [path, fetch] of Object.entries(fetched)) {
+    const p = parts(path);
+    if (p?.tag !== tag) continue;
+    out.set(`${p.name}.ftl`, atHand[path] ?? (await fetch()));
+  }
+  return new Map([...out].sort(([a], [b]) => a.localeCompare(b)));
+}
+
 export const ENGLISH = 'en';
 
 /** A language: its tag, and its name in itself. */

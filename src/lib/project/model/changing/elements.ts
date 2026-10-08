@@ -386,6 +386,37 @@ export const elementChanges = {
   },
 
   /**
+   * Makes a loose element the centre of its map: the centre that was, with
+   * all under it, goes under it, after what is under it already, where it
+   * holds its place among them as any element does. Nothing happens to an
+   * element that is not loose. Returns whether it was done.
+   */
+  makeCentre(this: Project, id: string): boolean {
+    const node = this.node(id);
+    if (!node) return false;
+    const tree = this.tree(node.map);
+    const old = tree.root;
+    if (!old || id === old || tree.parent.get(id) || !tree.loose.includes(id)) return false;
+    const map = this.yMaps.get(node.map);
+    if (!map) return false;
+    const siblings = tree.children.get(id) ?? [];
+    this.transact(() => {
+      map.set('root', id);
+      const centre = this.yNodes.get(id)!;
+      // The centre stands where the map is drawn from, at no place of its own.
+      centre.delete('pos');
+      centre.delete('side');
+      if (centre.get('collapsed') === true) centre.delete('collapsed');
+      const was = this.yNodes.get(old)!;
+      was.set('parent', id);
+      was.set('order', keyAt(this, siblings, siblings.length));
+      was.delete('pos');
+      was.delete('side');
+    });
+    return true;
+  },
+
+  /**
    * Copies elements, with all under them, to a parent in any map (or to none:
    * loose, in `options.map`). Each copy remembers what it was copied from.
    * Returns the ids of the copies of the elements named.

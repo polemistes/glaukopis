@@ -33,6 +33,7 @@
   import Mark from '$lib/shell/Mark.svelte';
   import OcrSettings from '$lib/ocr/OcrSettings.svelte';
   import SpellingSettings from '$lib/spelling/SpellingSettings.svelte';
+  import WordsSettings from '$lib/words/WordsSettings.svelte';
 
   let system = $state<SystemInfo | null>(null);
   let tools = $state<ToolsInfo | null>(null);
@@ -292,6 +293,7 @@
           onchange={(tag) => settings.set('textLanguage', tag)}
         />
       </div>
+      <WordsSettings />
     </section>
 
     <SpellingSettings />

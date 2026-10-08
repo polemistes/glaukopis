@@ -154,7 +154,8 @@ A text has two breaks: **Enter** begins a new paragraph, and
 **Shift+Enter** breaks the line within the paragraph, as in an address or a
 title of two lines. A break within a paragraph is shown by a faint **↵** at
 the end of its line, on the screen only: it is not printed, copied or
-searched.
+searched. The button with the sign, beside that of spelling at the end of the
+writing tools, hides it and shows it again, everywhere.
 
 Text pasted as text keeps every line break: a lone one as a break within
 the paragraph, an empty line between paragraphs, and each further empty line
@@ -979,6 +980,8 @@ consumed by the writing:
 - **Duplicate** a map, and write in the copy.
 - **New map from this branch** lifts one part of a map out as a map of its
   own: a chapter out of the plan for the book.
+- **Make it the centre**, in the menu of a loose element, makes it the centre
+  of its map: the centre that was goes under it, with all under it.
 - **Copy to map** and **Move to map** take elements from one map to another. A
   copy remembers where it came from, and what its original was. When the
   original changes, the copy is marked; the mark, or **Compare with the
@@ -1545,6 +1548,31 @@ the headings of the notes, the abstract and the bibliography, what a figure
 and a table are called, and the words of the reference style, such as
 "and", "p." and "edited by". A format that has words of its own keeps them;
 those it has as they are in English are printed in the language of the map.
+
+## The words of Glaukopis
+
+The words of the interface in any language can be read through and mended
+in Glaukopis itself. Under *Settings* › *Language*, **The words of Glaukopis,
+as a project** makes a project, *Words:* and the language, with a map for
+each part of the application and an element for each message, named by it.
+In its text the English stands above, as a quotation, with what it says to
+translators where it says anything; under it are the words of the language,
+which are what you change. Spelling is checked in the language, search and
+replace work as in any project, and the status of an element can say what
+you have read.
+
+The words are written as Fluent, as in the files: `{ $count }` is a number
+the program puts in, and a choice by number stands on several lines. Keep
+those as they are, and change the words around them.
+
+**Write as Fluent files…**, in the bar over the project, writes what you
+changed into the Fluent files of a folder: the folder of the language in a
+copy of Glaukopis's code (`locales/nb`), or any folder, to send the files to
+develop@robertemilberge.no. Only what you changed is written, and nothing
+that was changed in the files since the project was made. What cannot be
+written, because it has lost a variable of the English or a form of the
+plural, or is no longer good Fluent, is listed, to be mended and written
+again.
 
 ## Spelling
 

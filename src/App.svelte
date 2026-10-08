@@ -83,6 +83,12 @@
     document.documentElement.dataset.theme = settings.theme;
   });
 
+  // Whether the sign of a break within a paragraph is shown (app.css).
+  $effect(() => {
+    document.documentElement.dataset.breakSigns =
+      settings.value.breakSigns === false ? 'off' : 'on';
+  });
+
   // A colouring of the writer's own: its tokens are derived from the four colours chosen and laid on the root.
   $effect(() => {
     if (settings.theme === 'own') applyOwn(settings.value.ownTheme);
