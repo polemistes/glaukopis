@@ -10,10 +10,15 @@
  * piece: the paragraph is then written anew by the means the editors write
  * with. Only text is replaced: what stands outside it is not searched when
  * text is to be replaced.
+ *
+ * What makes or takes away a break (ADR 0033) changes more than one
+ * paragraph: a paragraph break put in splits the paragraph, and what ran
+ * across one joins two. The text is then written anew as a whole, by the
+ * same means, which leave what is the same as it was.
  */
 
 import type { Attrs, Mark, Node } from 'prosemirror-model';
-import { Transform } from 'prosemirror-transform';
+import { canSplit, Transform } from 'prosemirror-transform';
 import { updateYFragment } from 'y-prosemirror';
 import * as Y from 'yjs';
 import { bodySchema } from '$lib/editor/schema';
@@ -21,8 +26,8 @@ import { nodeOf } from '$lib/found/change';
 import { markName } from '$lib/found/gather';
 import type { Project } from '$lib/project/model/project.svelte';
 import { refForm } from '$lib/project/model/text';
-import { NO_TEXT, PassageMaker, pieceAt, type Labels, type Passage } from './passages';
-import { positionOf, readLine } from './prosemirror';
+import { NO_TEXT, PARAGRAPH, PassageMaker, pieceAt, type Labels, type Passage } from './passages';
+import { positionOf, readBodyDoc, readLine } from './prosemirror';
 
 /** Where a piece of a passage is kept in the project. */
 export interface Kept {
@@ -62,7 +67,7 @@ class Reader {
     said = false,
   ) {
     const { maker } = this;
-    const passage = maker.begin(kind, within);
+    const passage = maker.begin(kind, within, said);
     this.holders[passage.index] = holder;
     const notes: { holder: Y.XmlElement; at: number }[] = [];
     const visit = (parent: Y.XmlElement | Y.XmlFragment) => {
@@ -134,11 +139,15 @@ class Reader {
     for (const child of parent.toArray()) {
       if (!(child instanceof Y.XmlElement)) continue;
       switch (child.nodeName) {
+        case 'parallel_side':
+          this.maker.part();
+          this.blocks(child);
+          this.maker.part();
+          break;
         case 'blockquote':
         case 'row':
         case 'verse':
         case 'parallel':
-        case 'parallel_side':
           this.blocks(child);
           break;
         case 'bullet_list':
@@ -173,8 +182,10 @@ class Reader {
     // A table without cells is not shown, and is not read.
     if (!rows.length) return;
     if (said) this.line(said, 'line', undefined, true);
-    else this.holders[this.maker.begin('line').index] = null;
+    else this.holders[this.maker.begin('line', undefined, true).index] = null;
+    this.maker.inCells++;
     for (const row of rows) for (const cell of row) this.blocks(cell);
+    this.maker.inCells--;
   }
 }
 
@@ -198,11 +209,19 @@ export interface Replacing {
   part: 'title' | 'body';
   passage: number;
   start: number;
+  /** Where it ends: in `passage`, or in `last`. */
   end: number;
+  /** The passage it ends in, where it runs across paragraphs. */
+  last?: number;
   /** The text that was found, which must still stand there. */
   found: string;
-  /** What is put in its place. */
+  /** What is put in its place: `\n` in it is a break within the paragraph, U+2029 a paragraph break. */
   text: string;
+}
+
+/** Whether a change makes or takes away a break, and so changes more than the text of a line. */
+function breaking(change: Replacing): boolean {
+  return change.last !== undefined || /[\n\u2029]/.test(change.text);
 }
 
 /** The marks of ProseMirror that attributes of the project stand for. */
@@ -252,6 +271,109 @@ function rewrite(
   }
   if (done)
     updateYFragment(project.doc, holder, tr.doc, { mapping: new Map(), isOMark: new Map() });
+  return done;
+}
+
+/** The lines that may be split by a paragraph break: those that are paragraphs, of whatever kind. */
+const SPLITS = new Set(['paragraph', 'passage', 'script', 'verse_line']);
+
+/** The text from one place of the passages to another, with a paragraph separator where one broke. */
+function stretch(passages: Passage[], change: Replacing): string {
+  const first = passages[change.passage];
+  const last = change.last ?? change.passage;
+  if (!first) return '';
+  if (last === change.passage) return first.text.slice(change.start, change.end);
+  let out = first.text.slice(change.start);
+  for (let i = change.passage + 1; i <= last; i++) {
+    const p = passages[i];
+    if (!p) return '';
+    // A note stands within its line, and is no paragraph between.
+    if (p.kind === 'note') continue;
+    out += PARAGRAPH + (i === last ? p.text.slice(0, change.end) : p.text);
+  }
+  return out;
+}
+
+/** Puts words in a line at a place, with a break within the line for each `\n`. Where they end. */
+function putWords(tr: Transform, pos: number, words: string, marks: readonly Mark[]): number {
+  const nodes: Node[] = [];
+  words.split('\n').forEach((line, i) => {
+    if (i) nodes.push(bodySchema.nodes.hard_break.create());
+    if (line) nodes.push(bodySchema.text(line, marks));
+  });
+  if (!nodes.length) return pos;
+  tr.insert(pos, nodes);
+  return pos + nodes.reduce((n, node) => n + node.nodeSize, 0);
+}
+
+/**
+ * What is found replaced in a document, as an editor would replace it: what
+ * ran across paragraphs joins them, the first keeping its kind; a paragraph
+ * break splits the paragraph, the part after it of the same kind; where a
+ * line cannot be split, as what is said of a figure or the text of a note, a
+ * break within the line is put in instead.
+ */
+function replaceInDoc(doc: Node, from: number, to: number, text: string): Transform {
+  const tr = new Transform(doc);
+  const $from = doc.resolve(from);
+  const after = $from.nodeAfter;
+  // What is put in has the marks of the first letter of what it replaces.
+  const marks = after?.isText ? after.marks : $from.marks();
+  tr.delete(from, to);
+  let pos = tr.mapping.map(from, -1);
+  text.split(PARAGRAPH).forEach((words, i) => {
+    if (i) {
+      if (SPLITS.has(tr.doc.resolve(pos).parent.type.name) && canSplit(tr.doc, pos)) {
+        tr.split(pos);
+        pos += 2;
+      } else pos = putWords(tr, pos, '\n', []);
+    }
+    pos = putWords(tr, pos, words, marks);
+  });
+  return tr;
+}
+
+/**
+ * Writes the changes of a text by writing all of it anew, as an editor
+ * would: for those that make or take away a break. What is the same is left
+ * as it was. Returns how many were made.
+ */
+function rewriteText(project: Project, fragment: Y.XmlFragment, list: Replacing[]): number {
+  let doc: Node;
+  try {
+    const blocks = fragment.toArray().filter((c): c is Y.XmlElement => c instanceof Y.XmlElement);
+    doc = bodySchema.node('doc', null, blocks.map(nodeOf));
+  } catch {
+    // A text that holds what this version does not know is left as it is.
+    return 0;
+  }
+  const read = readBodyDoc(doc, null);
+  const placed: { change: Replacing; from: number; to: number }[] = [];
+  for (const change of list) {
+    // Only text and breaks are replaced, and only what still stands where it was found.
+    if (!change.found || change.found.includes(NO_TEXT)) continue;
+    if (stretch(read.passages, change) !== change.found) continue;
+    placed.push({
+      change,
+      from: positionOf(read, change.passage, change.start),
+      to: positionOf(read, change.last ?? change.passage, change.end, true),
+    });
+  }
+  // The last first, so that where the others are stays as it was read.
+  placed.sort((a, b) => b.from - a.from);
+  const tr = new Transform(doc);
+  let done = 0;
+  for (const { change, from, to } of placed) {
+    try {
+      const made = replaceInDoc(tr.doc, from, to, change.text);
+      for (const step of made.steps) tr.step(step);
+      done++;
+    } catch {
+      // Not a place where this can stand: it is left as it is.
+    }
+  }
+  if (done)
+    updateYFragment(project.doc, fragment, tr.doc, { mapping: new Map(), isOMark: new Map() });
   return done;
 }
 
@@ -334,9 +456,18 @@ export function replaceAll(project: Project, list: Replacing[]): number {
         const { element, part } = those[0];
         const fragment = project.fragment(element, part);
         if (!fragment) continue;
+        if (part === 'body' && those.some(breaking)) {
+          done += rewriteText(project, fragment, those);
+          continue;
+        }
+        // A name is one line: a break put in it is a space.
+        const changes =
+          part === 'title'
+            ? those.map((c) => ({ ...c, text: c.text.replace(/[\n\u2029]/g, ' ') }))
+            : those;
         const read = part === 'title' ? readTitleY(fragment) : readBodyY(fragment);
         const byPassage = new Map<number, Replacing[]>();
-        for (const change of those) {
+        for (const change of changes) {
           const in_ = byPassage.get(change.passage);
           if (in_) in_.push(change);
           else byPassage.set(change.passage, [change]);

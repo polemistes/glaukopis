@@ -461,3 +461,26 @@ What this settles (ADR 0032):
 - Nothing is bundled but Tesseract itself, with its English: the
   dictionaries leave the application and the packages of dictionaries for
   Arch are given up; the deb and the rpm recommend the system's English.
+
+## 2026-10-08 — breaks in search, elements across projects, the pane of projects
+
+> There are now two types of line break, and it is a bit unpredictable what gets imported from different types of files. The regex search and replace does not work properly for line breaks. Only \n is detected and no linebreak type can be in the replacement string. Simple question: Would it not be better for this program to have only one type of line break?
+
+Answered: keep both, as documents need both, but let search and replace find and make both, bring documents in by one rule, show the break within a paragraph, and offer to turn breaks into paragraphs.
+
+> Just do 1. and 3. Also, could you make it possible to copy and move elements between maps and projects? Could you also make the All projects list which is now on the home page also available as a pane that can be opened on the left side when projects are open, so it becomes easy to move between projects?
+
+What this settles (ADR 0033):
+
+- In regular expressions `\n` is a break within a paragraph and `\p` a
+  paragraph break, in what is searched for and in what replaces it; a search
+  with `\p` reads the paragraphs of an element's text as one, so that what is
+  found may cross them, and a replacement may split and join paragraphs.
+- The break within a paragraph is shown by a faint ↵, on the screen only.
+- Elements are copied and moved to the maps of other projects, from the menu
+  of elements and by copying and pasting, carried with their kinds; comments
+  and the bond of a copy to its original stay behind.
+- In a project a pane at the left holds the list of projects, to go from one
+  to another; Ctrl+Shift+L opens and closes it.
+- Bringing documents in by one rule, and a command that turns breaks into
+  paragraphs, were proposed and not asked for now.

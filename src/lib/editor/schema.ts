@@ -371,12 +371,15 @@ const bodyNodes: Record<string, NodeSpec> = {
     toDOM: () => ['li', 0],
   },
   text: { group: 'inline' },
+  // A break within a paragraph. It is drawn as a line break with a faint
+  // sign at the end of its line, which the style sheet draws (app.css), so
+  // that the sign is no text: not copied, searched or printed.
   hard_break: {
     group: 'inline',
     inline: true,
     selectable: false,
-    parseDOM: [{ tag: 'br' }],
-    toDOM: () => ['br'],
+    parseDOM: [{ tag: 'span.hard-break' }, { tag: 'br' }],
+    toDOM: () => ['span', { class: 'hard-break' }, ['br']],
   },
   citation: {
     group: 'inline',

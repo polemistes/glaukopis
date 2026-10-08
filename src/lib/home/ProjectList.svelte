@@ -13,41 +13,63 @@
   import { t } from '$lib/i18n';
   import { projects } from '$lib/state/projects.svelte';
   import Button from '$lib/ui/Button.svelte';
+  import IconButton from '$lib/ui/IconButton.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
   import { dropTarget, startDrag, type DragPayload, type DropEvent } from '$lib/ui/drag.svelte';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
+  import { tick, untrack } from 'svelte';
   import { ago } from '$lib/util/time';
-  import { descendants, folderOf, folderTree, foldersOpenTo, rows as makeRows } from './folders';
+  import {
+    ancestors,
+    descendants,
+    folderOf,
+    folderTree,
+    foldersOpenTo,
+    rows as makeRows,
+  } from './folders';
+  import { listUi } from './list.svelte';
+  import type { ProjectActions } from './project-actions.svelte';
 
   interface Props {
-    open: (p: ProjectInfo) => void;
-    /** The menu of a project, as the cards have it; what folders add comes after. */
-    items: (p: ProjectInfo) => MenuItem[];
-    onnewfolder: (parent: string | null) => void;
-    onrenamefolder: (folder: FolderInfo) => void;
+    /** What opens a project, its menu, and the dialog that asks for a name: the place's own. */
+    actions: ProjectActions;
+    /** A narrow column, as in the pane of projects: the names only. */
+    compact?: boolean;
+    /** The project that is open, marked in the list and scrolled into view. */
+    current?: string | null;
   }
 
-  let { open, items, onnewfolder, onrenamefolder }: Props = $props();
+  let { actions, compact = false, current = null }: Props = $props();
 
-  let collapsed = $state(new Set<string>());
   let filter = $state('');
+  let listEl = $state<HTMLDivElement>();
 
-  const rows = $derived(makeRows(projects.folders, projects.list, { collapsed, filter }));
+  const rows = $derived(
+    makeRows(projects.folders, projects.list, { collapsed: listUi.collapsed, filter }),
+  );
+  /** How far each step deeper is drawn in. */
+  const step = $derived(compact ? 14 : 20);
 
-  function toggle(id: string) {
-    if (collapsed.has(id)) collapsed.delete(id);
-    else collapsed.add(id);
-    collapsed = new Set(collapsed);
-  }
+  const open = (p: ProjectInfo) => actions.open(p);
+  const toggle = (id: string) => listUi.toggle(id);
+  const reveal = (id: string | null) => listUi.reveal(ancestors(projects.folders, id));
 
-  function reveal(id: string | null) {
-    if (id && collapsed.has(id)) {
-      collapsed.delete(id);
-      collapsed = new Set(collapsed);
-    }
-  }
+  // The project that is open is shown: the folders it lies in open, and its row scrolled to.
+  $effect(() => {
+    const id = current;
+    if (!id || !projects.loaded) return;
+    untrack(() => {
+      const p = projects.list.find((x) => x.id === id);
+      if (p) reveal(folderOf(projects.folders, p));
+      void tick().then(() =>
+        listEl
+          ?.querySelector(`[data-project="${CSS.escape(id)}"]`)
+          ?.scrollIntoView({ block: 'nearest' }),
+      );
+    });
+  });
 
   async function moveProject(p: ProjectInfo, folder: string | null) {
     if (folderOf(projects.folders, p) === folder) return;
@@ -108,9 +130,9 @@
   }
 
   function projectItems(p: ProjectInfo): MenuItem[] {
-    const current = folderOf(projects.folders, p);
-    const into = intoFolders(projects.folders, current, (folder) => moveProject(p, folder));
-    const base = items(p);
+    const folder = folderOf(projects.folders, p);
+    const into = intoFolders(projects.folders, folder, (id) => moveProject(p, id));
+    const base = actions.items(p, { here: p.id === current });
     // Before the last part of the menu, which deletes.
     const cut = base.findIndex((item, i) => item.kind === 'separator' && i === base.length - 2);
     const moving: MenuItem[] = [
@@ -122,7 +144,7 @@
         items: into,
         disabled: !into.length,
       },
-      ...(current
+      ...(folder
         ? [
             {
               label: t('home-menu-out'),
@@ -141,8 +163,17 @@
       moveFolder(f.id, folder),
     );
     return [
-      { label: t('home-folder-new-inside'), icon: FolderPlus, action: () => onnewfolder(f.id) },
-      { label: t('common-rename'), icon: Pencil, shortcut: 'F2', action: () => onrenamefolder(f) },
+      {
+        label: t('home-folder-new-inside'),
+        icon: FolderPlus,
+        action: () => actions.newFolder(f.id),
+      },
+      {
+        label: t('common-rename'),
+        icon: Pencil,
+        shortcut: 'F2',
+        action: () => actions.renameFolder(f),
+      },
       { kind: 'separator' },
       {
         kind: 'submenu',
@@ -209,7 +240,7 @@
   }
 
   function onfolderkey(event: KeyboardEvent, f: FolderInfo) {
-    if (event.key === 'F2') onrenamefolder(f);
+    if (event.key === 'F2') actions.renameFolder(f);
     else if (event.key === 'Delete') removeFolder(f);
     else if (event.key === 'Enter' || event.key === ' ') toggle(f.id);
     else return;
@@ -217,7 +248,12 @@
   }
 </script>
 
-<div class="list" use:dropTarget={{ accepts: accepts(null), ondrop: (e) => drop(e, null) }}>
+<div
+  class="list"
+  class:compact
+  bind:this={listEl}
+  use:dropTarget={{ accepts: accepts(null), ondrop: (e) => drop(e, null) }}
+>
   <div class="tools">
     <TextField
       bind:value={filter}
@@ -227,10 +263,16 @@
     >
       {#snippet leading()}<Search size={14} />{/snippet}
     </TextField>
-    <Button size="sm" onclick={() => onnewfolder(null)}>
-      {#snippet icon()}<FolderPlus size={14} />{/snippet}
-      {t('home-new-folder')}
-    </Button>
+    {#if compact}
+      <IconButton label={t('home-new-folder')} size="sm" onclick={() => actions.newFolder(null)}>
+        <FolderPlus size={15} />
+      </IconButton>
+    {:else}
+      <Button size="sm" onclick={() => actions.newFolder(null)}>
+        {#snippet icon()}<FolderPlus size={14} />{/snippet}
+        {t('home-new-folder')}
+      </Button>
+    {/if}
   </div>
 
   {#each rows as row (row.kind === 'folder' ? `f:${row.folder.id}` : `p:${row.project.id}`)}
@@ -243,7 +285,7 @@
         tabindex="0"
         data-depth={row.depth}
         data-folder={f.id}
-        style:padding-left="{8 + row.depth * 20}px"
+        style:padding-left="{(compact ? 4 : 8) + row.depth * step}px"
         use:dropTarget={{ accepts: accepts(f.id), ondrop: (e) => drop(e, f.id) }}
         onclick={() => toggle(f.id)}
         oncontextmenu={(e) => openContextMenu(e, folderItems(f))}
@@ -255,7 +297,11 @@
         </span>
         <Folder size={15} strokeWidth={1.6} />
         <span class="name truncate">{f.name}</span>
-        <span class="count">{t('home-folder-projects', { count: row.projects })}</span>
+        {#if compact}
+          <span class="count">{row.projects}</span>
+        {:else}
+          <span class="count">{t('home-folder-projects', { count: row.projects })}</span>
+        {/if}
         <button
           type="button"
           class="menu"
@@ -274,11 +320,15 @@
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <div
         class="row project"
+        class:current={p.id === current}
         role="button"
         tabindex="0"
+        aria-current={p.id === current ? 'page' : undefined}
         data-depth={row.depth}
         data-project={p.id}
-        style:padding-left="{8 + row.depth * 20 + 22}px"
+        data-current={p.id === current ? '' : undefined}
+        title={compact ? p.name : undefined}
+        style:padding-left="{(compact ? 4 : 8) + row.depth * step + 22}px"
         onclick={() => open(p)}
         onkeydown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -291,8 +341,10 @@
       >
         <span class="name serif truncate">{p.name}</span>
         {#if p.sharing}<span class="shared" title={t('home-shared')}><Users size={12} /></span>{/if}
-        <span class="facts truncate">{facts(p)}</span>
-        <span class="when">{t('home-changed', { ago: ago(p.modified) })}</span>
+        {#if !compact}
+          <span class="facts truncate">{facts(p)}</span>
+          <span class="when">{t('home-changed', { ago: ago(p.modified) })}</span>
+        {/if}
         <button
           type="button"
           class="menu"
@@ -428,5 +480,46 @@
     padding: 20px 8px;
     color: var(--ink-4);
     text-align: center;
+  }
+  /* The project that is open, as the outline marks the element in view. */
+  .row.project.current {
+    background: var(--accent-soft);
+  }
+  .row.project.current .name {
+    color: var(--accent-strong);
+    font-weight: 550;
+  }
+
+  /* A narrow column, as in the pane of projects: rows as the outline has them. */
+  .compact {
+    gap: 0;
+    border-radius: 0;
+  }
+  .compact .tools {
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .compact .tools :global(.field) {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+  .compact .row {
+    gap: 6px;
+    min-height: 28px;
+    padding-right: 2px;
+  }
+  .compact .row .name {
+    font-size: var(--text-sm);
+  }
+  .compact .row.project .name {
+    font-size: var(--text-md);
+  }
+  .compact .menu {
+    padding: 3px;
+  }
+  .compact .none {
+    padding: 14px 6px;
+    font-size: var(--text-sm);
   }
 </style>

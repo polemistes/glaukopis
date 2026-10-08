@@ -52,6 +52,8 @@ export const KEYS: KeyEntry[] = [
 
   // In a project.
   { id: 'diagram-or-text', keys: 'Ctrl+D', place: 'project', bound: true },
+  // L for the list of projects.
+  { id: 'projects-pane', keys: 'Ctrl+Shift+L', place: 'project', bound: true },
   { id: 'preview', keys: 'Ctrl+P', place: 'project', bound: true },
   { id: 'side-references', keys: 'Ctrl+Shift+R', place: 'project', bound: true },
   { id: 'side-pictures', keys: 'Ctrl+Shift+P', place: 'project', bound: true },

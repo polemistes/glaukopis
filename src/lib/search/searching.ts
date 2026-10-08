@@ -11,21 +11,37 @@
 import type { Project } from '$lib/project/model/project.svelte';
 import { readTitle } from '$lib/project/model/text';
 import type { Hit, Matcher } from './matching';
-import { bodyPassages, titlePassage, type Labels, type Passage } from './passages';
+import {
+  bodyPassages,
+  joined,
+  placeIn,
+  titlePassage,
+  type Joined,
+  type Labels,
+  type Passage,
+} from './passages';
 
 export type Part = 'title' | 'body';
 
-/** Something that was found. */
+/**
+ * Something that was found: from a place in one passage to a place in the
+ * same, or, where a search crosses paragraphs, in a passage after it.
+ */
 export interface Match {
   element: string;
   part: Part;
   passage: number;
   start: number;
+  /** Where it ends: in `passage`, or in `last`. */
   end: number;
-  /** The text of it. */
+  /** The passage it ends in, where that is not the one it begins in. */
+  last?: number;
+  /** The text of it; across paragraphs, with a paragraph separator where one broke. */
   text: string;
   /** Of a regular expression: where its groups were, for what is put in its place. */
   hit: Hit;
+  /** Where a search crosses paragraphs: the lines read as one, in which `hit` is counted. */
+  joined?: string;
   /** Of a note: where the note stands in the passage it is in. */
   within?: Passage['within'];
 }
@@ -116,6 +132,25 @@ function withinScope(
   ];
 }
 
+/** What is searched of lines read as one: all of them, a part of them, or nothing. */
+function withinJoined(
+  scope: Scope | null,
+  element: string,
+  part: Part,
+  j: Joined,
+): [number, number] | null | false {
+  if (!scope) return null;
+  let from = -1;
+  let to = -1;
+  j.passages.forEach((p, i) => {
+    const within = withinScope(scope, element, part, p);
+    if (within === false) return;
+    if (from < 0) from = j.starts[i] + (within ? within[0] : 0);
+    to = j.starts[i] + (within ? within[1] : p.text.length);
+  });
+  return from < 0 ? false : [from, to];
+}
+
 /** What is found in the passages of a name or a text, in the order of the text. */
 export function findIn(
   matcher: Matcher,
@@ -125,27 +160,41 @@ export function findIn(
   scope: Scope | null = null,
 ): Match[] {
   const out: { match: Match; order: number[] }[] = [];
-  for (const p of passages) {
-    if (!p.text) continue;
-    const within = withinScope(scope, element, part, p);
-    if (within === false) continue;
-    for (const hit of matcher.find(p.text, within)) {
-      const match: Match = {
-        element,
-        part,
-        passage: p.index,
-        start: hit.start,
-        end: hit.end,
-        text: p.text.slice(hit.start, hit.end),
-        hit,
-        ...(p.within ? { within: p.within } : {}),
-      };
-      // What is found in a note comes where the note stands.
-      const order = p.within
-        ? [p.within.passage, p.within.at, 1, hit.start]
-        : [p.index, hit.start, 0, 0];
-      out.push({ match, order });
+  const put = (match: Match) => {
+    // What is found in a note comes where the note stands.
+    const order = match.within
+      ? [match.within.passage, match.within.at, 1, match.start]
+      : [match.passage, match.start, 0, 0];
+    out.push({ match, order });
+  };
+  if (matcher.acrossParagraphs) {
+    for (const j of joined(passages)) {
+      if (!j.text) continue;
+      const first = j.passages[0];
+      const within = j.passages.length > 1 ? withinJoined(scope, element, part, j) : null;
+      if (within === false) continue;
+      if (j.passages.length === 1) {
+        findOne(matcher, element, part, first, scope, put);
+        continue;
+      }
+      for (const hit of matcher.find(j.text, within)) {
+        const a = placeIn(j, hit.start);
+        const b = placeIn(j, hit.end);
+        put({
+          element,
+          part,
+          passage: a.passage,
+          start: a.offset,
+          end: b.offset,
+          ...(b.passage !== a.passage ? { last: b.passage } : {}),
+          text: j.text.slice(hit.start, hit.end),
+          hit,
+          joined: j.text,
+        });
+      }
     }
+  } else {
+    for (const p of passages) findOne(matcher, element, part, p, scope, put);
   }
   out.sort((a, b) => {
     for (let i = 0; i < 4; i++) {
@@ -155,6 +204,32 @@ export function findIn(
     return 0;
   });
   return out.map((o) => o.match);
+}
+
+/** What is found in one passage by itself. */
+function findOne(
+  matcher: Matcher,
+  element: string,
+  part: Part,
+  p: Passage,
+  scope: Scope | null,
+  put: (match: Match) => void,
+) {
+  if (!p.text) return;
+  const within = withinScope(scope, element, part, p);
+  if (within === false) return;
+  for (const hit of matcher.find(p.text, within)) {
+    put({
+      element,
+      part,
+      passage: p.index,
+      start: hit.start,
+      end: hit.end,
+      text: p.text.slice(hit.start, hit.end),
+      hit,
+      ...(p.within ? { within: p.within } : {}),
+    });
+  }
 }
 
 /** What is found in elements, one after the other: in each, its name first and then its text. */

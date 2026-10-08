@@ -44,6 +44,13 @@ Both are in the same map.
 
 Everything is saved as you work. There is nothing to press.
 
+To go from one project to another without the home page, open **the list of
+projects** at the left of a project, with the button at the left of the bar
+over the map or **Ctrl+Shift+L**. It is the list of the home page, with its
+folders and its search; a click opens a project, and the one that is open is
+marked. It stays open from project to project until you close it, and its
+edge can be dragged to make it wider.
+
 ### Many projects
 
 The page of projects has two forms, chosen at its head and remembered.
@@ -142,6 +149,12 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Make the element deeper or less deep | **Tab**, **Shift+Tab** in its name; or **Alt** and the arrows left and right |
 | Move the element up or down | **Alt** and the arrows up and down |
 | Join an element to the one above | Right-click: **Join to the element above** |
+
+A text has two breaks: **Enter** begins a new paragraph, and
+**Shift+Enter** breaks the line within the paragraph, as in an address or a
+title of two lines. A break within a paragraph is shown by a faint **↵** at
+the end of its line, on the screen only: it is not printed, copied or
+searched.
 
 Text pasted as text keeps every line break: a lone one as a break within
 the paragraph, an empty line between paragraphs, and each further empty line
@@ -971,6 +984,17 @@ consumed by the writing:
   original changes, the copy is marked; the mark, or **Compare with the
   original…** in its menu, shows where the two differ now. The copy can then
   take the original's name and text, or keep its own.
+- **To another project** as well: below the maps of this project, **Copy to
+  map** and **Move to map** list the other projects, each with its maps; the
+  elements go in under the centre of the map chosen, without the project
+  having to be open, and **Show** in the message that follows opens it. Or
+  copy them with **Ctrl+C** in the diagram, open the other project, and paste
+  them with **Ctrl+V**. They go with their names, texts and notes, their
+  kinds, colours and times, and all that is under them; kinds the project made
+  for itself go with them, unless the other project has kinds of the same
+  names. Comments stay behind, and a copy in another project does not
+  remember its original. A move to another project can be undone here, which
+  brings the elements back, but leaves the copy there.
 - An element can have **another map take its place in the document**. The map
   of the book then has one element for each chapter, each of which stands for
   the map of that chapter. The preview of the book shows the book.
@@ -1187,6 +1211,17 @@ them is not there while you replace. All that one **Replace all** did is
 taken back at once, by **Undo** or by **Ctrl+Z** in the text. With a
 regular expression, `$1` in what replaces stands for what its first group
 found, `$2` for the second, and so on.
+
+In a regular expression, `\n` is a break within a paragraph and `\p` a
+paragraph break, both in what is searched for and in what replaces it.
+`ends\.\pIt` finds a paragraph that ends with *ends.* and the one after it
+that begins with *It*, and replacing it with `ends. It` makes the two one
+paragraph; replacing `; ` with `;\p` begins a new paragraph after every
+semicolon, and `\n` in what replaces breaks the line there. A search with
+`\p` reads across the paragraphs of the text of one element, not into its
+name, its notes, the captions of figures and tables, the cells of a table, or
+from one side of a parallel text to the other. (`\p{L}` and the other
+classes of Unicode keep their meaning.)
 
 The edit box of an element in the diagram can be searched in the same way,
 its name and its text. In the diagram itself, **Ctrl+F** turns to the text
@@ -1618,6 +1653,7 @@ what is to be done by its name, and does it.
 | **Ctrl+,** | Settings, in a window over what is open; closing it leaves you where you were |
 | **Ctrl+D** | Diagram or text |
 | **Ctrl+Shift+O** | The outline beside the text |
+| **Ctrl+Shift+L** | The list of projects at the left of a project |
 | **Ctrl+P** | The preview |
 | **Ctrl+Shift+R** | The references of the map |
 | **Ctrl+Shift+P** | The pictures of the map |

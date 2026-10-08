@@ -16,6 +16,7 @@
   import MenuHost from '$lib/ui/MenuHost.svelte';
   import Toaster from '$lib/ui/Toaster.svelte';
   import Rail from '$lib/shell/Rail.svelte';
+  import ProjectsPane from '$lib/home/ProjectsPane.svelte';
   import ProjectsView from '$lib/home/ProjectsView.svelte';
   import LibraryView from '$lib/library/LibraryView.svelte';
   import PicturesView from '$lib/pictures/PicturesView.svelte';
@@ -152,9 +153,17 @@
       {:else if route.view === 'pictures'}
         <PicturesView />
       {:else if route.view === 'project'}
-        {#key route.project}
-          <ProjectView projectId={route.project} />
-        {/key}
+        <!-- The pane of projects stands outside the view of a project, which is made anew for each. -->
+        <div class="in-project">
+          {#if settings.value.projectsPane}
+            <ProjectsPane current={route.project} />
+          {/if}
+          <div class="project-view">
+            {#key route.project}
+              <ProjectView projectId={route.project} />
+            {/key}
+          </div>
+        </div>
       {:else if route.view === 'search'}
         <SearchView />
       {/if}
@@ -182,5 +191,16 @@
     display: flex;
     flex-direction: column;
     background: var(--paper);
+  }
+  .in-project {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+  .project-view {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
   }
 </style>

@@ -108,6 +108,10 @@ export interface Settings {
   languagesServer: string | null;
   /** The kinds of elements made in any project, by name, with the colour each had last: offered when a kind is named. */
   kinds: { name: string; colour: string }[];
+  /** Whether the pane of projects stands at the left of a project (ADR 0033). */
+  projectsPane: boolean;
+  /** How wide it is, in pixels. */
+  projectsPaneWidth: number;
 }
 
 export const defaultSettings: Settings = {
@@ -133,6 +137,8 @@ export const defaultSettings: Settings = {
   spelling: true,
   languagesServer: null,
   kinds: [],
+  projectsPane: false,
+  projectsPaneWidth: 240,
 };
 
 export const settingsLoad = () => call<Partial<Settings>>('settings_load');

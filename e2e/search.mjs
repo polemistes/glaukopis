@@ -191,7 +191,8 @@ try {
   check('and takes the marks away', m.all === 0 && m.current === 0, JSON.stringify(m));
 
   // ---- the options ----
-  const option = (label) => app.click(`.search-bar button[aria-label="${label}"]`);
+  // By the beginning of its name: that of a regular expression goes on to say what \n and \p are.
+  const option = (label) => app.click(`.search-bar button[aria-label^="${label}"]`);
   const searchFor = async (words) => {
     await app.exec(`const i = document.querySelector('.search-bar input'); i.focus(); i.select();`);
     await app.keys(words);

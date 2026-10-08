@@ -38,7 +38,7 @@ class Reader {
   /** A line of inline content that begins at `start`, and the notes in it after it. */
   line(node: Node, start: number, kind: 'line' | 'note', within?: Passage['within'], said = false) {
     const { maker } = this;
-    const passage = maker.begin(kind, within);
+    const passage = maker.begin(kind, within, said);
     this.starts[passage.index] = start;
     const notes: { node: Node; pos: number; at: number }[] = [];
     node.forEach((child, offset) => {
@@ -101,7 +101,11 @@ class Reader {
         }
         default:
           if (child.isTextblock) this.line(child, pos + 1, 'line');
-          else if (!child.isLeaf) this.blocks(child, pos + 1);
+          else if (child.type.name === 'parallel_side') {
+            this.maker.part();
+            this.blocks(child, pos + 1);
+            this.maker.part();
+          } else if (!child.isLeaf) this.blocks(child, pos + 1);
       }
     });
   }
@@ -122,11 +126,13 @@ class Reader {
     if (!found || !cells) return;
     const said = caption as { node: Node; pos: number } | null;
     if (said) this.line(said.node, said.pos + 1, 'line', undefined, true);
-    else this.starts[this.maker.begin('line').index] = pos + 1;
+    else this.starts[this.maker.begin('line', undefined, true).index] = pos + 1;
+    this.maker.inCells++;
     found.node.forEach((row, rowOffset) => {
       const rowStart = found.pos + 1 + rowOffset + 1;
       row.forEach((cell, cellOffset) => this.blocks(cell, rowStart + cellOffset + 1));
     });
+    this.maker.inCells--;
   }
 }
 

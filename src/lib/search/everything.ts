@@ -10,6 +10,10 @@
  * texts is asked for, citations as they are shown, words that point and
  * formulas, the details of the document of each map, what is written about
  * the works cited, and the words that name associations.
+ *
+ * Where what is searched for holds a paragraph break, the paragraphs of a
+ * text are read as one (`passages.ts`), and the words around what is found
+ * show a ¶ where the paragraph broke.
  */
 
 import * as Y from 'yjs';
@@ -29,9 +33,13 @@ import type { DocumentSettings, RefRecord } from '$lib/project/model/types';
 import { Matcher, type SearchOptions } from './matching';
 import {
   bodyPassages,
+  joined,
   NO_TEXT,
+  PARAGRAPH,
+  placeIn,
   titlePassage,
   translate,
+  type Joined,
   type Labels,
   type Passage,
 } from './passages';
@@ -308,7 +316,8 @@ export function around(
   end: number,
   room = 56,
 ): [string, string, string] {
-  const clean = (s: string) => s.replaceAll(NO_TEXT, '').replace(/\s+/g, ' ');
+  const clean = (s: string) =>
+    s.replaceAll(NO_TEXT, '').replaceAll(PARAGRAPH, ' ¶ ').replace(/\s+/g, ' ');
   let from = Math.max(0, start - room);
   if (from > 0) {
     const space = text.indexOf(' ', from);
@@ -324,6 +333,34 @@ export function around(
     clean(text.slice(start, end)),
     clean(text.slice(end, to)).trimEnd() + (to < text.length ? '…' : ''),
   ];
+}
+
+/** Each passage by itself, as lines read as one are. */
+function alone(passages: Passage[]): Joined[] {
+  return passages.map((p) => ({ text: p.text, passages: [p], starts: [0] }));
+}
+
+/**
+ * The same lines read as one, read with what stands outside the text as it
+ * is shown; and where a place in the first is in it.
+ */
+function shownAs(j: Joined, shown: Passage[]): { text: string; place: (offset: number) => number } {
+  const seen = j.passages.map((p) => shown[p.index] ?? p);
+  const starts: number[] = [];
+  let text = '';
+  seen.forEach((p, i) => {
+    if (i) text += PARAGRAPH;
+    starts.push(text.length);
+    text += p.text;
+  });
+  return {
+    text,
+    place: (offset) => {
+      const at = placeIn(j, offset);
+      const i = j.passages.findIndex((p) => p.index === at.passage);
+      return starts[i] + translate(j.passages[i], seen[i], at.offset);
+    },
+  };
 }
 
 /** The references a project cites, each once, as its texts have them. */
@@ -385,20 +422,26 @@ export function searchProject(
       for (const hit of matcher.find(e.title.text))
         put({ ...base, part: 'title', passage: 0, start: hit.start, end: hit.end }, e.title.text);
       const shown = () => (e.shown ??= bodyPassages(e.blocks, labels));
-      for (const p of options.labels ? shown() : e.body) {
-        if (!p.text) continue;
-        for (const hit of matcher.find(p.text)) {
+      const list = options.labels ? shown() : e.body;
+      for (const j of matcher.acrossParagraphs ? joined(list) : alone(list)) {
+        if (!j.text) continue;
+        let seen: ReturnType<typeof shownAs> | null = null;
+        for (const hit of matcher.find(j.text)) {
+          const a = placeIn(j, hit.start);
+          const b = placeIn(j, hit.end);
           const found = {
             ...base,
             part: 'body' as const,
-            passage: p.index,
-            start: hit.start,
-            end: hit.end,
+            passage: a.passage,
+            start: a.offset,
+            end: b.offset,
           };
-          if (options.labels) put(found, p.text);
+          if (options.labels) put(found, j.text, hit.start, hit.end);
+          // Once so many are kept, the rest are only counted.
+          else if (out.found.length >= most) put(found, '');
           else {
-            const seen = shown()[p.index] ?? p;
-            put(found, seen.text, translate(p, seen, hit.start), translate(p, seen, hit.end));
+            seen ??= shownAs(j, shown());
+            put(found, seen.text, seen.place(hit.start), seen.place(hit.end));
           }
         }
       }

@@ -383,6 +383,7 @@ export class TextSearch {
       if (
         passage?.kind === 'equation' ||
         (piece &&
+          m.last === undefined &&
           piece.kind !== 'text' &&
           piece.kind !== 'break' &&
           m.end <= piece.start + piece.length)
@@ -394,7 +395,7 @@ export class TextSearch {
         );
       } else {
         const from = positionOf(read, m.passage, m.start);
-        const to = positionOf(read, m.passage, m.end, true);
+        const to = positionOf(read, m.last ?? m.passage, m.end, true);
         quietly(view, () =>
           view.dispatch(view.state.tr.setSelection(TextSelection.create(doc, from, to))),
         );
@@ -471,8 +472,9 @@ export class TextSearch {
         passage: m.passage,
         start: m.start,
         end: m.end,
+        ...(m.last !== undefined ? { last: m.last } : {}),
         found: m.text,
-        text: matcher.replacement(passage.text, m.hit, this.replacement),
+        text: matcher.replacement(m.joined ?? passage.text, m.hit, this.replacement),
       });
     }
     return out;

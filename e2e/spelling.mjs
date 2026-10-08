@@ -4,9 +4,22 @@
 // the next; a note is checked; and the underline is there in text that is
 // drawn without an editor.
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { App, sleep } from './harness.mjs';
+import { App, root, sleep } from './harness.mjs';
+
+// The dictionaries are imported (ADR 0032), from the packages that
+// scripts/make-language-packages.py makes.
+const packages = join(root, 'packaging/languages/out');
+const dictionaries = existsSync(packages)
+  ? readdirSync(packages)
+      .filter((f) => /^spelling-(en_US|en_GB|nb_NO|nn_NO)-/.test(f))
+      .map((f) => join(packages, f))
+  : [];
+if (dictionaries.length !== 4) {
+  console.error('No language packages: run scripts/make-language-packages.py first.');
+  process.exit(1);
+}
 
 const checks = [];
 function check(name, ok, detail = '') {
@@ -96,6 +109,10 @@ async function newProject(name) {
 
 try {
   await app.installErrorHook();
+  await app.execAsync(
+    `return await window.__TAURI_INTERNALS__.invoke('languages_import', { paths: arguments[0] });`,
+    dictionaries,
+  );
 
   // ---- the settings list the dictionaries ----
   await app.keys(['Control', ',']);
@@ -104,7 +121,7 @@ try {
     `return Array.from(document.querySelectorAll('[data-dictionaries] li')).map((l) => l.dataset.tag)`,
   );
   check(
-    'the settings list the dictionaries that come with the application',
+    'the settings list the dictionaries that were imported',
     tags.join(' ') === 'en-GB en-US nb-NO nn-NO',
     tags.join(' '),
   );

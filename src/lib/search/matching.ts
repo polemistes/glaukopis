@@ -3,9 +3,14 @@
  * capitals as they are written, whole words, letters with and without
  * accents alike, regular expressions, and what is put in the place of what
  * is found.
+ *
+ * In a regular expression, `\n` is a break within a paragraph and `\p` a
+ * paragraph break (ADR 0033), in what is searched for and in what replaces
+ * it. Where what is searched for holds `\p`, the paragraphs of a text are
+ * read as one passage, joined by the sign `\p` stands for (`PARAGRAPH`).
  */
 
-import { NO_TEXT } from './passages';
+import { NO_TEXT, PARAGRAPH } from './passages';
 
 export interface SearchOptions {
   /** Capitals as they are written: otherwise "wrath" finds "Wrath". */
@@ -113,19 +118,67 @@ function plain(words: string): string {
 /** What letters and words are made of, for telling where a word begins and ends. */
 const WORDLY = '[\\p{L}\\p{N}\\p{M}_]';
 
+/**
+ * A regular expression as it is searched with: `\p` that is not `\p{…}`, a
+ * class of Unicode, is a paragraph break. Where there is one, `^` and `$`
+ * are the beginning and the end of a paragraph, as they are where the
+ * paragraphs are read one by one. Whether it crosses paragraphs.
+ */
+function paragraphs(source: string): { source: string; across: boolean } {
+  let out = '';
+  let joined = '';
+  let across = false;
+  let inClass = false;
+  for (let i = 0; i < source.length; i++) {
+    const sign = source[i];
+    if (sign === '\\') {
+      const next = source[i + 1] ?? '';
+      i++;
+      if (next === 'p' && source[i + 1] !== '{') {
+        across = true;
+        out += '\\u2029';
+        joined += '\\u2029';
+      } else {
+        // An escaped backslash stays one, and so does what any other sign stands for.
+        out += sign + next;
+        joined += sign + next;
+      }
+      continue;
+    }
+    if (inClass) {
+      if (sign === ']') inClass = false;
+    } else if (sign === '[') inClass = true;
+    else if (sign === '^') {
+      out += sign;
+      joined += '(?<![^\\u2029])';
+      continue;
+    } else if (sign === '$') {
+      out += sign;
+      joined += '(?![^\\u2029])';
+      continue;
+    }
+    out += sign;
+    joined += sign;
+  }
+  return { source: across ? joined : out, across };
+}
+
 export type Made = { matcher: Matcher } | { error: string } | null;
 
 export class Matcher {
   readonly options: SearchOptions;
   /** The words and the options, in few signs: two matchers with the same find the same. */
   readonly key: string;
+  /** Whether what is searched for holds a paragraph break: the paragraphs of a text are then read as one. */
+  readonly acrossParagraphs: boolean;
   #re: RegExp;
   /** Folded passages, by the passage text: the same text is folded once while the matcher lasts. */
   #folded = new Map<string, Folded>();
 
-  private constructor(re: RegExp, options: SearchOptions) {
+  private constructor(re: RegExp, options: SearchOptions, across: boolean) {
     this.#re = re;
     this.options = options;
+    this.acrossParagraphs = across;
     // Letters with and without accents alike are found in the text folded, with the same expression.
     this.key = `${options.accentsAlike ? 'folded ' : ''}${re.flags}/${re.source}`;
   }
@@ -137,11 +190,12 @@ export class Matcher {
   static make(words: string, options: SearchOptions): Made {
     if (!words) return null;
     const folded = options.accentsAlike ? fold(words).text : words;
-    let source = options.regex ? folded : plain(folded);
+    const read = options.regex ? paragraphs(folded) : { source: plain(folded), across: false };
+    let source = read.source;
     if (options.wholeWords) source = `(?<!${WORDLY})(?:${source})(?!${WORDLY})`;
     const flags = `gu${options.caseSensitive ? '' : 'i'}${options.regex ? 'd' : ''}`;
     try {
-      return { matcher: new Matcher(new RegExp(source, flags), options) };
+      return { matcher: new Matcher(new RegExp(source, flags), options, read.across) };
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) };
     }
@@ -204,14 +258,18 @@ export class Matcher {
   /**
    * What is put in the place of what was found. Plain words are put as they
    * are; of a regular expression, `$1`, `$<name>` and `$&` are what the
-   * groups and the whole found, and `$$` is a dollar.
+   * groups and the whole found, and `$$` is a dollar; `\n` is a break within
+   * the paragraph, `\p` a paragraph break, and `\\` a backslash.
    */
   replacement(text: string, hit: Hit, words: string): string {
     if (!this.options.regex) return words;
     const part = (range: [number, number] | undefined) =>
       range ? text.slice(range[0], range[1]) : '';
     const groups = hit.groups ?? [];
-    return words.replace(/\$(\$|&|`|'|\d{1,2}|<([^>]*)>)/g, (all, what: string, name?: string) => {
+    const signs = /\$(\$|&|`|'|\d{1,2}|<([^>]*)>)|\\([\\np])/g;
+    return words.replace(signs, (all, what?: string, name?: string, escaped?: string) => {
+      if (escaped) return escaped === 'n' ? '\n' : escaped === 'p' ? PARAGRAPH : '\\';
+      if (what === undefined) return all;
       if (what === '$') return '$';
       if (what === '&') return text.slice(hit.start, hit.end);
       if (what === '`') return text.slice(0, hit.start);

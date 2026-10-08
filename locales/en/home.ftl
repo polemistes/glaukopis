@@ -39,6 +39,15 @@ home-moved-to = “{ $name }” was moved to { $folder }
 home-moved-out = “{ $name }” is in no folder now
 home-move-failed = The project could not be moved
 
+## The pane of projects, at the left of a project
+
+home-pane = The list of projects
+home-pane-toggle = The list of projects
+home-pane-close = Close the list of projects
+home-pane-between = Between the list of projects and the project
+# Why the project that is open cannot be renamed or deleted from its menu.
+home-open-now = It is open now
+
 ## A map of the projects
 
 home-map-menu = A map of the projects…

@@ -43,7 +43,8 @@ function inlines(list: Inline[], notes: { n: number }): string {
         break;
       }
       case 'break':
-        out += '<br>';
+        // As an editor draws it: the style sheet puts a faint sign at the end of the line.
+        out += '<span class="hard-break"><br></span>';
         break;
       case 'citation':
         out += `<span class="citation${isMissing(i.items) ? ' missing' : ''}">${escape(citationLabel(i.items, i.mode, speaking))}</span>`;

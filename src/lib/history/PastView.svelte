@@ -103,7 +103,6 @@
     const o = piece.object!;
     if (o.label) return o.label;
     if (o.kind === 'footnote') return '*';
-    if (o.kind === 'hard_break') return '↵';
     if (o.kind === 'crossref') return t('history-pointer');
     return '◦';
   }
@@ -253,7 +252,11 @@
 
 {#snippet text(passage: Passage)}
   {#each passage.pieces as piece, i (i)}
-    {#if piece.object}
+    {#if piece.object?.kind === 'hard_break'}
+      <!-- A break within the paragraph: the style sheet draws its sign (app.css). -->
+      <span class="hard-break {piece.status}" style={style(piece)} title={title(piece)}><br /></span
+      >
+    {:else if piece.object}
       <span
         class="object {piece.status}"
         class:changed={!!piece.objectBefore}
@@ -400,6 +403,10 @@
   }
   .changed {
     box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--who) 60%, transparent);
+  }
+  .hard-break.added::before,
+  .hard-break.removed::before {
+    color: var(--who);
   }
   .object {
     padding: 0 3px;

@@ -94,6 +94,11 @@ project-delete-map-message = { $count ->
 }
 project-copied-to = Copied to “{ $name }”
 project-moved-to = Moved to “{ $name }”
+project-copied-to-project = Copied to “{ $name }” in “{ $project }”
+project-moved-to-project = Moved to “{ $name }” in “{ $project }”
+project-other-projects = Other projects
+project-send-failed = Could not write in “{ $project }”. Nothing was changed here.
+project-send-no-map = The map is no longer in that project.
 
 ## What is done to elements, in the diagram and in the text
 

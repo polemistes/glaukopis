@@ -60,6 +60,22 @@ export function descendants(folders: Folder[], id: string): Set<string> {
   return out;
 }
 
+/**
+ * The folder and every folder it lies in, by id, the innermost first: what
+ * must be open for what is in it to be seen. None for the top, or a folder
+ * that is gone.
+ */
+export function ancestors(folders: Folder[], id: string | null): string[] {
+  const out: string[] = [];
+  let at = id ? folders.find((f) => f.id === id) : undefined;
+  while (at && !out.includes(at.id)) {
+    out.push(at.id);
+    const parent = parentOf(folders, at);
+    at = parent ? folders.find((f) => f.id === parent) : undefined;
+  }
+  return out;
+}
+
 /** The folders a folder may be moved into: every other that does not lie under it. */
 export function foldersOpenTo(folders: Folder[], id: string): Folder[] {
   const under = descendants(folders, id);

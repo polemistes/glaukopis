@@ -29,6 +29,7 @@ keys-search-everything = Search through everything
 keys-palette = What is to be done?
 keys-sheet = The keys
 keys-diagram-or-text = Diagram or text
+keys-projects-pane = The list of projects at the left
 keys-preview = Preview and export
 keys-side-references = References
 keys-side-pictures = Pictures of the project

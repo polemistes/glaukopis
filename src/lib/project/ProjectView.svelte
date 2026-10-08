@@ -7,6 +7,7 @@
   import Columns2 from '@lucide/svelte/icons/columns-2';
   import FileText from '@lucide/svelte/icons/file-text';
   import Network from '@lucide/svelte/icons/network';
+  import PanelLeft from '@lucide/svelte/icons/panel-left';
   import PanelRight from '@lucide/svelte/icons/panel-right';
   import Redo2 from '@lucide/svelte/icons/redo-2';
   import Undo2 from '@lucide/svelte/icons/undo-2';
@@ -44,6 +45,8 @@
   import { router, type MapMode } from '$lib/state/router.svelte';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { shortcuts } from '$lib/shell/keys.svelte';
+  import { toggleProjectsPane } from '$lib/home/list.svelte';
+  import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import Divider from '$lib/ui/Divider.svelte';
@@ -625,6 +628,7 @@
         when: () => !!pane,
       },
       preview: () => (showPreview = !showPreview),
+      'projects-pane': toggleProjectsPane,
       'side-references': () => side('references'),
       // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
       'side-pictures': () => side('pictures'),
@@ -828,6 +832,19 @@
                 ondrop: (e) => documentsIn((e.payload.data as string[]).filter(mapOfIt)),
               }}
             >
+              <!-- The pane of projects is one for the project: its button is in the first bar, nearest it. -->
+              {#if i === 0}
+                <IconButton
+                  label={t('home-pane-toggle')}
+                  shortcut="Ctrl+Shift+L"
+                  size="sm"
+                  active={settings.value.projectsPane}
+                  data-projects-button
+                  onclick={toggleProjectsPane}
+                >
+                  <PanelLeft size={15} />
+                </IconButton>
+              {/if}
               <IconButton
                 label={t('text-outline')}
                 shortcut="Ctrl+Shift+O"

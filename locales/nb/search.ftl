@@ -32,7 +32,8 @@ search-case = Store og små bokstaver slik de er skrevet
 search-whole-words = Bare hele ord
 search-accents = Bokstaver med og uten aksenter regnes like
 search-accents-sign = é=e
-search-regex = Et regulært uttrykk
+# Hint for valget: i et regulært uttrykk står \n og \p for de to skiftene i en tekst.
+search-regex = Et regulært uttrykk: \n er linjeskift i et avsnitt, \p er avsnittsskift
 search-selection = Bare i den markerte teksten
 search-selection-none = Marker tekst først for å søke bare i den
 search-labels = Også henvisninger, formler og ord som viser til noe

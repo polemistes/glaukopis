@@ -31,7 +31,11 @@ import { manageKinds, newKind } from './kinds.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { compareCopy } from './copies.svelte';
 import { canPaste } from './clipboard.svelte';
-import { notify, toasts } from '$lib/ui/toast.svelte';
+import { notify, notifyError, toasts } from '$lib/ui/toast.svelte';
+import { openProject, projects } from '$lib/state/projects.svelte';
+import { router } from '$lib/state/router.svelte';
+import type { ProjectInfo } from '$lib/api/projects';
+import { makePortable, portable } from './model/portable';
 import type { Project } from './model/project.svelte';
 import { STATUSES } from './model/types';
 import { subtree, topmost, type Tree } from './model/tree';
@@ -175,6 +179,85 @@ function remove(
   return gone;
 }
 
+// ---- elements to another project (ADR 0033) ----
+
+/** A project that is not open, opened to be written in, and let go when what was written is on disk. */
+export interface Elsewhere {
+  project: Project;
+  close(): Promise<void>;
+}
+
+async function openElsewhere(id: string): Promise<Elsewhere> {
+  // A project that is being closed is opened when what was written in it is on disk.
+  await projects.closed(id);
+  // It is opened only to be written in: not the project last opened.
+  const last = projects.lastOpened;
+  const { project } = await openProject(id);
+  projects.lastOpened = last;
+  return { project, close: () => project.close() };
+}
+
+/** The project that is open, as the place says. */
+function hereId(): string | null {
+  const route = router.route;
+  return route.view === 'project' ? route.project : null;
+}
+
+/** The other projects, those with maps, as the list of projects has them. */
+function otherProjects(): ProjectInfo[] {
+  if (!projects.loaded) void projects.load();
+  const here = hereId();
+  return projects.list.filter((p) => p.id !== here && p.maps.length);
+}
+
+/**
+ * Copies elements, each with all under it, to the end of the centre of a
+ * map of another project, which is not open: it is opened, written, saved
+ * and closed again. A move then removes them here, in one step that undo
+ * takes back here. Where writing there fails, nothing is removed here, and
+ * the failure is thrown. Returns how many of the topmost went.
+ */
+export async function sendElements(
+  project: Project,
+  ids: string[],
+  to: { project: string; map: string },
+  move: boolean,
+  open: (id: string) => Promise<Elsewhere> = openElsewhere,
+): Promise<number> {
+  const first = project.node(ids[0]);
+  if (!first) return 0;
+  const tree = project.tree(first.map);
+  const movable = topmost(tree, ids).filter((id) => id !== tree.root);
+  const going = move ? movable : movable.length ? movable : ids;
+  const carried = portable(project, going);
+  if (!carried.elements.length) return 0;
+
+  const there = await open(to.project);
+  const written = (async () => {
+    try {
+      const centre = there.project.map(to.map)?.root;
+      if (!centre || !there.project.node(centre)) throw new Error(t('project-send-no-map'));
+      const made = makePortable(there.project, carried, { under: centre });
+      there.project.undoManager.clear();
+      await there.project.flush();
+      if (there.project.status === 'error') throw new Error(there.project.saveError ?? '');
+      return made.length;
+    } finally {
+      await there.close();
+    }
+  })();
+  // What reads that project from disk meanwhile waits for it.
+  projects.closing(to.project, written);
+  const count = await written;
+
+  if (move && count) {
+    project.checkpoint();
+    project.remove(movable);
+    project.checkpoint();
+  }
+  return count;
+}
+
 export function elementMenu(
   project: Project,
   ids: string[],
@@ -191,6 +274,7 @@ export function elementMenu(
   const movable = topmost(tree, ids).filter((id) => id !== tree.root);
   const nodes = ids.map((id) => project.node(id)!).filter(Boolean);
   const otherMaps = project.maps.filter((m) => m.id !== first.map);
+  const elsewhere = otherProjects();
   const hasChildren = one ? (tree.children.get(one.id)?.length ?? 0) > 0 : false;
   const pinned = nodes.some((n) => n.pos && tree.parent.get(n.id));
   const branchPinned =
@@ -216,6 +300,38 @@ export function elementMenu(
           });
         }
       },
+    })),
+    ...(elsewhere.length
+      ? ([
+          ...(otherMaps.length ? [{ kind: 'separator' }] : []),
+          { kind: 'heading', label: t('project-other-projects') },
+        ] as MenuItem[])
+      : []),
+    ...elsewhere.map((info): MenuItem => ({
+      kind: 'submenu',
+      label: info.name,
+      items: info.maps.map((m): MenuItem => ({
+        label: m.name,
+        action: () => {
+          sendElements(project, ids, { project: info.id, map: m.id }, !copy).then(
+            (count) => {
+              if (!count) return;
+              const names = { name: m.name, project: info.name };
+              toasts.show({
+                kind: 'ok',
+                message: copy
+                  ? t('project-copied-to-project', names)
+                  : t('project-moved-to-project', names),
+                action: {
+                  label: t('common-show'),
+                  run: () => router.go({ view: 'project', project: info.id, map: m.id }),
+                },
+              });
+            },
+            (error) => notifyError(t('project-send-failed', { project: info.name }), error),
+          );
+        },
+      })),
     })),
   ];
 
@@ -404,7 +520,7 @@ export function elementMenu(
   }
 
   if (movable.length || (one && !otherMaps.length)) {
-    if (otherMaps.length) {
+    if (otherMaps.length || elsewhere.length) {
       items.push(
         ...(actions.copy && actions.paste
           ? [

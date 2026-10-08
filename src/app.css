@@ -503,6 +503,33 @@ body.dragging * {
   border-radius: 2px 2px 0 0;
 }
 
+/* The break within a paragraph (ADR 0033): a faint sign at the end of its
+   line. It is the style sheet's and no text, so it is not copied, searched
+   or printed. It takes no room, so the line wraps as it would without it,
+   and it is no taller than the line. */
+.hard-break::before {
+  content: '↵';
+  display: inline-block;
+  width: 0;
+  overflow: visible;
+  transform: translateX(0.15em);
+  white-space: nowrap;
+  color: var(--ink-4);
+  font-family: var(--font-ui);
+  font-size: 0.8em;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+@media print {
+  .hard-break::before {
+    content: none;
+  }
+}
+
 /* Notes are numbered by where they stand: within a text, and in the text of
    a map through all its elements. An element that is left out of the
    document, or loose, numbers its own. */

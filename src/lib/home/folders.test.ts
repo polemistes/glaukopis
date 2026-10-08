@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Folder, ProjectInfo } from '$lib/api/projects';
-import { descendants, folderTree, foldersOpenTo, pathOf, rows } from './folders';
+import { ancestors, descendants, folderTree, foldersOpenTo, pathOf, rows } from './folders';
 
 const folder = (id: string, name: string, parent?: string): Folder => ({
   id,
@@ -81,6 +81,15 @@ describe('folders as a tree', () => {
   it('say which folders another may be moved into', () => {
     expect(foldersOpenTo(folders, 'g').map((f) => f.id)).toEqual(['l']);
     expect(foldersOpenTo(folders, 'e').map((f) => f.id)).toEqual(['g', 'l']);
+  });
+
+  it('know the folders a folder lies in, the innermost first', () => {
+    expect(ancestors(folders, 'e')).toEqual(['e', 'g']);
+    expect(ancestors(folders, 'l')).toEqual(['l']);
+    expect(ancestors(folders, null)).toEqual([]);
+    expect(ancestors(folders, 'gone')).toEqual([]);
+    // A folder that lies in itself, as a file mended by hand may say, does not go on for ever.
+    expect(ancestors([folder('x', 'X', 'y'), folder('y', 'Y', 'x')], 'x')).toEqual(['x', 'y']);
   });
 
   it('name a folder with the folders it lies in', () => {

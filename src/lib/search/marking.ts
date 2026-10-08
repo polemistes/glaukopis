@@ -120,7 +120,7 @@ function newRound() {
   round++;
 }
 
-const ATOMS = 'span.citation, span.math, span.crossref, sup.footnote, br';
+const ATOMS = 'span.citation, span.math, span.crossref, sup.footnote, span.hard-break, br';
 
 /**
  * Where a place of a passage is in drawn text: text is found by counting its
@@ -183,8 +183,13 @@ function drawnRange(root: HTMLElement, read: Passage[], m: Match): Range | Eleme
     range.selectNodeContents(holder);
     return range;
   }
+  // What runs across paragraphs ends in another.
+  const last = m.last ?? m.passage;
+  const lastHolder = holders[last];
+  const lastPassage = read[last];
+  if (!lastHolder || !lastPassage) return null;
   const a = drawnPoint(holder, passage, m.start, false);
-  const b = drawnPoint(holder, passage, m.end, true);
+  const b = drawnPoint(lastHolder, lastPassage, m.end, true);
   if (!a || !b) return null;
   const range = document.createRange();
   try {
@@ -228,6 +233,7 @@ export function editorRange(
     if (
       labels &&
       piece &&
+      m.last === undefined &&
       piece.kind !== 'text' &&
       m.end <= piece.start + piece.length &&
       (piece.kind === 'citation' || piece.kind === 'crossref')
@@ -245,7 +251,7 @@ export function editorRange(
       }
     }
     const from = view.domAtPos(positionOf(read, m.passage, m.start));
-    const to = view.domAtPos(positionOf(read, m.passage, m.end, true));
+    const to = view.domAtPos(positionOf(read, m.last ?? m.passage, m.end, true));
     range.setStart(from.node, from.offset);
     range.setEnd(to.node, to.offset);
     return range;
@@ -375,7 +381,7 @@ export class Marking {
           }
           marks.push({
             from: positionOf(read, m.passage, m.start),
-            to: positionOf(read, m.passage, m.end, true),
+            to: positionOf(read, m.last ?? m.passage, m.end, true),
             current: m === current,
           });
         }

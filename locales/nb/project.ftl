@@ -89,6 +89,11 @@ project-delete-map-message = { $count ->
 }
 project-copied-to = Kopiert til «{ $name }»
 project-moved-to = Flyttet til «{ $name }»
+project-copied-to-project = Kopiert til «{ $name }» i «{ $project }»
+project-moved-to-project = Flyttet til «{ $name }» i «{ $project }»
+project-other-projects = Andre prosjekter
+project-send-failed = Kunne ikke skrive i «{ $project }». Her er ingenting endret.
+project-send-no-map = Kartet finnes ikke lenger i det prosjektet.
 
 ## Det som gjøres med elementer, i diagrammet og i teksten
 

@@ -37,6 +37,14 @@ home-moved-to = «{ $name }» ble flyttet til { $folder }
 home-moved-out = «{ $name }» ligger ikke i noen mappe nå
 home-move-failed = Prosjektet kunne ikke flyttes
 
+## Prosjektlisten til venstre i et prosjekt
+
+home-pane = Prosjektlisten
+home-pane-toggle = Prosjektlisten
+home-pane-close = Lukk prosjektlisten
+home-pane-between = Mellom prosjektlisten og prosjektet
+home-open-now = Det er åpent nå
+
 ## Et kart over prosjektene
 
 home-map-menu = Et kart over prosjektene …

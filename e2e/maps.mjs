@@ -395,7 +395,7 @@ try {
   const pastedLines = await app.exec(
     `const el = document.activeElement.closest('.ProseMirror');
      return Array.from(el.querySelectorAll(':scope > p')).map((p) =>
-       Array.from(p.childNodes).map((n) => n.nodeName === 'BR' ? (n.classList.contains('ProseMirror-trailingBreak') ? '' : '⏎') : n.textContent).join(''));`,
+       Array.from(p.childNodes).map((n) => n.nodeName === 'BR' ? (n.classList.contains('ProseMirror-trailingBreak') ? '' : '⏎') : n.classList?.contains('hard-break') ? '⏎' : n.textContent).join(''));`,
   );
   check(
     'text pasted as text keeps every line break: a break, a new paragraph, an empty paragraph',

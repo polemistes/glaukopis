@@ -32,7 +32,8 @@ search-case = Capitals as they are written
 search-whole-words = Whole words only
 search-accents = Letters with and without accents alike
 search-accents-sign = é=e
-search-regex = A regular expression
+# The hint of the option: in a regular expression, \n and \p stand for the two breaks of a text.
+search-regex = A regular expression: \n is a line break within a paragraph, \p a paragraph break
 search-selection = Only in the selected text
 search-selection-none = Select text first, to search only in it
 search-labels = Citations, formulas and cross-references as well
