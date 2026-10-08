@@ -7,6 +7,7 @@
    * is opened; whether it is open, and how wide, the settings remember.
    */
   import { onMount } from 'svelte';
+  import FolderOpen from '@lucide/svelte/icons/folder-open';
   import Plus from '@lucide/svelte/icons/plus';
   import X from '@lucide/svelte/icons/x';
   import type { ProjectInfo } from '$lib/api/projects';
@@ -44,6 +45,14 @@
     <h2>{t('home-title')}</h2>
     <IconButton label={t('home-new')} size="sm" onclick={() => actions.newProject()}>
       <Plus size={15} />
+    </IconButton>
+    <IconButton
+      label={t('home-file-open')}
+      size="sm"
+      disabled={actions.filing}
+      onclick={() => void actions.openFile()}
+    >
+      <FolderOpen size={14} />
     </IconButton>
     <IconButton
       label={t('home-pane-close')}

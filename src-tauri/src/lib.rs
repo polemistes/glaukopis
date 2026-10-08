@@ -30,6 +30,11 @@ pub fn run() {
                 .filter(|language| language != "system");
             glaukopis_core::i18n::set_language(&chosen.unwrap_or_else(glaukopis_core::i18n::system_tag));
             tracing::info!(language = glaukopis_core::i18n::language(), "language of the interface");
+            // And with the words the writer has changed, where there are any (ADR 0035).
+            let left_out = glaukopis_core::i18n::use_own_words(&data.words());
+            if !left_out.is_empty() {
+                tracing::warn!(count = left_out.len(), "own words that do not fit are left out");
+            }
             tracing::info!(data = %data.root().display(), "data directory");
 
             let Some(claim) = data.claim()? else {
@@ -111,6 +116,10 @@ pub fn run() {
             commands::projects::project_append,
             commands::projects::project_save_state,
             commands::projects::project_save_view,
+            commands::projectfile::project_file_write,
+            commands::projectfile::project_file_read,
+            commands::projectfile::project_file_references,
+            commands::projectfile::project_file_settle,
             commands::projects::project_history,
             commands::projects::project_history_state,
             commands::projects::folders_list,
@@ -182,6 +191,10 @@ pub fn run() {
             commands::languages::languages_installed,
             commands::words::words_read,
             commands::words::words_write,
+            commands::words::words_own,
+            commands::words::words_own_write,
+            commands::words::words_own_remove,
+            commands::words::words_own_use,
             commands::languages::languages_offered,
             commands::languages::languages_install,
             commands::languages::languages_import,

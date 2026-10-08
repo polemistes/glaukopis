@@ -1,6 +1,7 @@
 /** Projects on disk. Mirrors `src-tauri/src/commands/projects.rs`. */
 
 import { call } from './backend';
+import type { Certainty, Person, Reason, Reference, SummaryLite } from './library';
 
 export interface MapInfo {
   id: string;
@@ -158,3 +159,124 @@ export const projectsShown = (kind?: ProjectsShown) =>
 export const projectHistory = (id: string) => call<HistoryEntry[]>('project_history', { id });
 export const projectHistoryState = (id: string, entry: string) =>
   call<string>('project_history_state', { id, entry });
+
+// ---- a project as one file (ADR 0036): see `commands/projectfile.rs` ----
+
+/** What a project file says of itself. */
+export interface ProjectFileManifest {
+  format: number;
+  name: string;
+  description: string;
+  /** When it was written. */
+  written: string;
+  /** By which version of the application. */
+  app: string;
+}
+
+/** A project file as it was read: its pictures are in the store already. */
+export interface ProjectFile {
+  manifest: ProjectFileManifest;
+  /** How many of its pictures the store did not have. */
+  pictures: number;
+  /** The document, as one state. */
+  state: Uint8Array;
+}
+
+/** A work as the document keeps it: what of a `RefRecord` the core reads. */
+export interface WorkRecord {
+  id: string;
+  key: string;
+  type: string;
+  fields: Record<string, string>;
+  names: Record<string, Person[]>;
+}
+
+/** What a work of a project file is to the library. */
+export type Finding =
+  | { kind: 'same' }
+  | { kind: 'differs'; library: SummaryLite }
+  | { kind: 'new' }
+  | {
+      kind: 'alike';
+      /** The library's entry. */
+      id: string;
+      library: SummaryLite;
+      certainty: Certainty;
+      reasons: Reason[];
+      /** Whether the file's id is that of an entry merged into it. */
+      merged: boolean;
+      /** What the library's entry would gain from the file's. */
+      gains: string[];
+    };
+
+export interface FoundWork {
+  id: string;
+  /** The work as the file has it. */
+  file: SummaryLite;
+  finding: Finding;
+}
+
+/**
+ * What is done with a work that is asked about. Of one whose id the library
+ * has, and that differs: the library's is kept, the file's taken in, or both
+ * kept. Of one that is alike: the library's is cited, or the file's added.
+ */
+export type FileChoice = 'library' | 'file' | 'both' | 'cite' | 'another';
+
+export interface SettledWork {
+  /** Its id in the file. */
+  from: string;
+  /** The id it is cited by now. */
+  to: string;
+  /** The library's entry, as it is now. */
+  reference: Reference | null;
+}
+
+export interface FileSettlement {
+  settled: SettledWork[];
+  added: string[];
+  changed: string[];
+  problems: string[];
+}
+
+export interface ProjectFileWriting {
+  name: string;
+  description: string;
+  /** The pictures the figures show, by their hash. */
+  pictures: string[];
+  /** The works cited. */
+  records: WorkRecord[];
+}
+
+/** Writes a project file of a document, at `path`. */
+export const projectFileWrite = (path: string, writing: ProjectFileWriting, state: Uint8Array) =>
+  call<void>('project_file_write', withHead({ path, ...writing }, state));
+
+/**
+ * Reads a project file, and takes its pictures into the store. It comes as
+ * `project_file_read` writes it: what it says, in JSON, and the document,
+ * each with its length before it (four bytes, least first).
+ */
+export async function projectFileRead(path: string): Promise<ProjectFile> {
+  const bytes = new Uint8Array(await call<ArrayBuffer>('project_file_read', { path }));
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let at = 0;
+  const part = () => {
+    const n = view.getUint32(at, true);
+    at += 4 + n;
+    return bytes.subarray(at - n, at);
+  };
+  const head = JSON.parse(new TextDecoder().decode(part())) as {
+    manifest: ProjectFileManifest;
+    pictures: number;
+  };
+  return { ...head, state: part() };
+}
+
+/** What each work a project file cites is to the library. */
+export const projectFileReferences = (records: WorkRecord[]) =>
+  call<FoundWork[]>('project_file_references', { records });
+
+/** Brings the works into the library as was chosen; what is not chosen is as the core chooses. */
+export const projectFileSettle = (records: WorkRecord[], choices: Record<string, FileChoice>) =>
+  call<FileSettlement>('project_file_settle', { records, choices });

@@ -21,6 +21,7 @@ pub mod net;
 pub mod ocr;
 pub mod paths;
 pub mod pictures;
+pub mod projectfile;
 pub mod projects;
 pub mod settings;
 pub mod sharing;

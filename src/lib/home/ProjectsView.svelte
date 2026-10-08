@@ -9,6 +9,7 @@
   import Waypoints from '@lucide/svelte/icons/waypoints';
   import JoinDialog from '$lib/sharing/JoinDialog.svelte';
   import FileInput from '@lucide/svelte/icons/file-input';
+  import FolderOpen from '@lucide/svelte/icons/folder-open';
   import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
   import { isReadPath } from '$lib/api/ocr';
   import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
@@ -138,6 +139,14 @@
         <Button variant="secondary" onclick={() => fromDocument()}>
           {#snippet icon()}<FileInput size={15} />{/snippet}
           {t('home-from-document')}
+        </Button>
+        <Button
+          variant="secondary"
+          disabled={actions.filing}
+          onclick={() => void actions.openFile()}
+        >
+          {#snippet icon()}<FolderOpen size={15} />{/snippet}
+          {t('home-file-open')}
         </Button>
       </div>
     </div>

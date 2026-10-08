@@ -107,6 +107,7 @@ home-deleted-projects = { $count ->
 home-menu-rename = Rename…
 home-menu-duplicate = Duplicate…
 home-menu-history = Earlier versions…
+home-menu-save-file = Save as a file…
 
 ## Naming a project
 
@@ -154,3 +155,44 @@ home-history-open = Open a copy
 home-history-copy-name = { $name }, as of { $day }
 home-history-unread = The earlier versions could not be read
 home-history-open-failed = That version could not be opened
+
+## A project as one file
+
+home-file-open = Open a project file…
+home-file-open-title = Open a project file
+# The kind of file, in the dialog that asks for one.
+home-file-filter = Glaukopis project
+home-file-save-title = Save the project as a file
+home-file-saved = “{ $name }” was saved as a file
+home-file-save-failed = The project could not be saved as a file
+home-file-open-failed = The project file could not be opened
+home-file-opened = “{ $name }” was made of the file
+home-file-opened-added = “{ $name }” was made of the file. { $count ->
+    [one] One work was
+   *[other] { $count } works were
+} added to your library.
+home-file-problems = { $count ->
+    [one] One work could not be brought into your library. It is cited as it was in the file.
+   *[other] { $count } works could not be brought into your library. They are cited as they were in the file.
+}
+# The dialog that asks what is to be done with the works a project file cites.
+home-file-references-title = The works the project cites
+home-file-references-about = Before “{ $name }” is made: these works are in your library, but not as they are in the file.
+home-file-in-file = In the file
+home-file-same-id = In your library as the same entry, written otherwise
+home-file-merged = In your library, merged into this one
+home-file-what-to-do = What is to be done with it
+home-file-keep-library = Keep your library’s
+home-file-take-file = Take the file’s into your library
+home-file-keep-both = Keep both
+home-file-cite-library = Cite your library’s
+home-file-add-another = Add the file’s as another work
+home-file-same = { $count ->
+    [one] One work is in your library as it is in the file.
+   *[other] { $count } works are in your library as they are in the file.
+}
+home-file-added = { $count ->
+    [one] One work is not in your library, and is added to it.
+   *[other] { $count } works are not in your library, and are added to it.
+}
+home-file-make = Make the project

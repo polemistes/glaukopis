@@ -6,6 +6,7 @@ pub mod languages;
 pub mod library;
 pub mod ocr;
 pub mod pictures;
+pub mod projectfile;
 pub mod projects;
 pub mod reading;
 pub mod sharing;

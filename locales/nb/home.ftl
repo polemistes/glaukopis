@@ -101,6 +101,7 @@ home-deleted-projects = { $count ->
 home-menu-rename = Gi nytt navn …
 home-menu-duplicate = Dupliser …
 home-menu-history = Tidligere versjoner …
+home-menu-save-file = Lagre som fil …
 
 ## Å gi et prosjekt navn
 
@@ -146,3 +147,42 @@ home-history-open = Åpne en kopi
 home-history-copy-name = { $name }, per { $day }
 home-history-unread = De tidligere versjonene kunne ikke leses
 home-history-open-failed = Den versjonen kunne ikke åpnes
+
+## Et prosjekt som én fil
+
+home-file-open = Åpne en prosjektfil …
+home-file-open-title = Åpne en prosjektfil
+home-file-filter = Glaukopis-prosjekt
+home-file-save-title = Lagre prosjektet som en fil
+home-file-saved = «{ $name }» ble lagret som en fil
+home-file-save-failed = Prosjektet kunne ikke lagres som en fil
+home-file-open-failed = Prosjektfilen kunne ikke åpnes
+home-file-opened = «{ $name }» ble laget av filen
+home-file-opened-added = «{ $name }» ble laget av filen. { $count ->
+    [one] Ett verk ble
+   *[other] { $count } verk ble
+} lagt til i biblioteket ditt.
+home-file-problems = { $count ->
+    [one] Ett verk kunne ikke tas inn i biblioteket ditt. Det blir sitert slik det var i filen.
+   *[other] { $count } verk kunne ikke tas inn i biblioteket ditt. De blir sitert slik de var i filen.
+}
+home-file-references-title = Verkene prosjektet siterer
+home-file-references-about = Før «{ $name }» lages: disse verkene finnes i biblioteket ditt, men ikke slik de er i filen.
+home-file-in-file = I filen
+home-file-same-id = I biblioteket ditt som samme oppføring, men skrevet annerledes
+home-file-merged = I biblioteket ditt, slått sammen med denne
+home-file-what-to-do = Hva skal gjøres med det
+home-file-keep-library = Behold bibliotekets
+home-file-take-file = Ta filens inn i biblioteket
+home-file-keep-both = Behold begge
+home-file-cite-library = Siter bibliotekets
+home-file-add-another = Legg til filens som et annet verk
+home-file-same = { $count ->
+    [one] Ett verk er i biblioteket ditt slik det er i filen.
+   *[other] { $count } verk er i biblioteket ditt slik de er i filen.
+}
+home-file-added = { $count ->
+    [one] Ett verk er ikke i biblioteket ditt, og legges til.
+   *[other] { $count } verk er ikke i biblioteket ditt, og legges til.
+}
+home-file-make = Lag prosjektet

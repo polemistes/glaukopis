@@ -22,9 +22,14 @@
  * `document.ftl` holds the words that documents print, which are in the
  * language of the document, not of the interface: see `documentWord`. Those
  * are small, and are at hand in every language.
+ *
+ * Own words (ADR 0035), Fluent files of the data directory, are laid over the
+ * words built in: a message there takes the place of the one of the same
+ * name, where it fits the English built in (`setOwnWords`).
  */
 
 import { FluentBundle, FluentResource, type FluentVariable } from '@fluent/bundle';
+import { fault, readFile } from '$lib/words/fluent';
 
 export type Args = Record<string, FluentVariable>;
 
@@ -128,7 +133,77 @@ function parts(path: string): { tag: string; name: string } | null {
   return m ? { tag: m[1], name: m[2] } : null;
 }
 
-function makeBundle(tag: string, sources: [string, string][]): FluentBundle | null {
+/** The own words of every language that has some: its files by name (`common.ftl`). */
+export type OwnWords = Map<string, Map<string, string>>;
+
+/** An own message left out, and why. */
+export interface LeftOut {
+  language: string;
+  file: string;
+  id: string;
+  why: string;
+}
+
+/** The own words laid over those built in. */
+let own: OwnWords = new Map();
+/** What of the own words did not fit, and was left out. */
+let leftOut: LeftOut[] = [];
+
+/** The parts of the English messages built in, `name` or `name.hint`, with their text: of the interface, or of documents. */
+const englishParts = new Map<boolean, Map<string, string>>();
+function englishPartsOf(document: boolean): Map<string, string> {
+  let found = englishParts.get(document);
+  if (!found) {
+    found = new Map();
+    for (const [path, text] of Object.entries(atHand)) {
+      const p = parts(path);
+      if (p?.tag !== ENGLISH || (p.name === 'document') !== document) continue;
+      for (const [key, part] of readFile(text).parts)
+        if (!found.has(key)) found.set(key, part.text);
+    }
+    englishParts.set(document, found);
+  }
+  return found;
+}
+
+/**
+ * The messages of a file of own words that fit: each is good Fluent, and
+ * each of its parts has the variables and the references of the English
+ * built in, and the plural forms of the language. As one text, to be laid
+ * over the words built in; with what was left out.
+ */
+export function fitting(
+  tag: string,
+  file: string,
+  text: string,
+): { text: string; count: number; left: LeftOut[] } {
+  const english = englishPartsOf(file === 'document.ftl');
+  const read = readFile(text);
+  const good: string[] = [];
+  const left: LeftOut[] = [];
+  for (const m of read.messages) {
+    let why: string | null = m.parts.length ? null : 'no text';
+    for (const p of m.parts) {
+      const theirs = english.get(p.key);
+      const wrong = theirs === undefined ? null : fault(tag, read.parts.get(p.key)!.text, theirs);
+      if (theirs === undefined) why = `${p.key} is not among the English words`;
+      else if (wrong) why = `${p.key}: ${wrong.kind} ${wrong.detail}`;
+      if (why) break;
+    }
+    if (why) left.push({ language: tag, file, id: m.id, why });
+    else good.push(text.slice(m.start, m.end));
+  }
+  // What is not good Fluent is not among the messages read, but is told.
+  if (read.faulty) left.push({ language: tag, file, id: '…', why: 'not good Fluent' });
+  return { text: good.join('\n') + (good.length ? '\n' : ''), count: good.length, left };
+}
+
+function makeBundle(
+  tag: string,
+  sources: [string, string][],
+  ownFiles?: Map<string, string>,
+  document = false,
+): FluentBundle | null {
   if (!sources.length) return null;
   // Marks that keep right-to-left text apart are not wanted in these
   // languages, and would stand in what is copied and compared.
@@ -137,11 +212,21 @@ function makeBundle(tag: string, sources: [string, string][]): FluentBundle | nu
     const errors = bundle.addResource(new FluentResource(text));
     for (const error of errors) console.warn(`${path}: ${error.message}`);
   }
+  for (const [file, text] of ownFiles ?? []) {
+    if ((file === 'document.ftl') !== document) continue;
+    const fit = fitting(tag, file, text);
+    for (const l of fit.left)
+      console.warn(`Own words, ${tag}/${l.file}: ${l.id} is left out: ${l.why}`);
+    leftOut.push(...fit.left);
+    if (fit.count) bundle.addResource(new FluentResource(fit.text), { allowOverrides: true });
+  }
   return bundle;
 }
 
 const bundles = new Map<string, FluentBundle | null>();
 const documentBundles = new Map<string, FluentBundle | null>();
+/** The files of the languages loaded, as they are built in, by path. */
+const builtIn = new Map<string, [string, string][]>();
 const loading = new Map<string, Promise<void>>();
 
 /** Counts the languages that have been loaded, so that what `t` said is said anew when one arrives. */
@@ -152,7 +237,7 @@ let arrived = $state(0);
  * for English, which always is, nor for a language that has no words.
  */
 export function load(tag: string): Promise<void> {
-  if (bundles.has(tag)) return Promise.resolve();
+  if (tag === ENGLISH || builtIn.has(tag)) return Promise.resolve();
   let pending = loading.get(tag);
   if (!pending) {
     pending = (async () => {
@@ -165,7 +250,8 @@ export function load(tag: string): Promise<void> {
         const text = atHand[path] ?? (await fetch());
         sources.push([path, text]);
       }
-      bundles.set(tag, makeBundle(tag, sources));
+      builtIn.set(tag, sources);
+      bundles.delete(tag);
       loading.delete(tag);
       arrived++;
     })();
@@ -174,21 +260,43 @@ export function load(tag: string): Promise<void> {
   return pending;
 }
 
+/**
+ * Lays own words over the words built in, in place of those laid over
+ * before, and has what `t` said said anew. What does not fit is left out
+ * (`ownLeftOut`), and the built-in words stand.
+ */
+export function setOwnWords(files: OwnWords) {
+  own = new Map([...files].filter(([, f]) => f.size));
+  leftOut = [];
+  bundles.clear();
+  documentBundles.clear();
+  languages.own = [...own.keys()].sort();
+  arrived++;
+}
+
+/** What of the own words was left out, of the languages read since they were set. */
+export function ownLeftOut(): LeftOut[] {
+  return leftOut;
+}
+
 /** The bundle of a language, if it has been loaded; English is loaded at once. */
 function bundleOf(tag: string): FluentBundle | null {
-  if (!bundles.has(tag)) {
-    if (tag === ENGLISH) {
-      const sources = Object.entries(atHand).filter(([path]) => {
-        const p = parts(path);
-        return p?.tag === ENGLISH && p.name !== 'document';
-      });
-      bundles.set(ENGLISH, makeBundle(ENGLISH, sources));
-    } else {
-      load(tag).catch((error) => console.warn(`The words of ${tag} could not be loaded: ${error}`));
-      return null;
-    }
+  const made = bundles.get(tag);
+  if (made !== undefined) return made;
+  const sources =
+    tag === ENGLISH
+      ? Object.entries(atHand).filter(([path]) => {
+          const p = parts(path);
+          return p?.tag === ENGLISH && p.name !== 'document';
+        })
+      : builtIn.get(tag);
+  if (!sources) {
+    load(tag).catch((error) => console.warn(`The words of ${tag} could not be loaded: ${error}`));
+    return null;
   }
-  return bundles.get(tag) ?? null;
+  const bundle = makeBundle(tag, sources, own.get(tag));
+  bundles.set(tag, bundle);
+  return bundle;
 }
 
 /** The languages documents have words in: those with a `document.ftl`. */
@@ -197,13 +305,16 @@ const documentLanguages = Object.keys(atHand)
   .filter((p) => p?.name === 'document')
   .map((p) => p!.tag);
 
+function documentSources(tag: string): [string, string][] {
+  return Object.entries(atHand).filter(([path]) => {
+    const p = parts(path);
+    return p?.tag === tag && p.name === 'document';
+  });
+}
+
 function documentBundleOf(tag: string): FluentBundle | null {
   if (!documentBundles.has(tag)) {
-    const sources = Object.entries(atHand).filter(([path]) => {
-      const p = parts(path);
-      return p?.tag === tag && p.name === 'document';
-    });
-    documentBundles.set(tag, makeBundle(tag, sources));
+    documentBundles.set(tag, makeBundle(tag, documentSources(tag), own.get(tag), true));
   }
   return documentBundles.get(tag) ?? null;
 }
@@ -300,6 +411,8 @@ class Languages {
   newTexts = $state('en-US');
   /** The one new texts are given when none is chosen. */
   textDefault = $state('en-US');
+  /** The languages that have own words laid over those built in (ADR 0035). */
+  own = $state.raw<string[]>([]);
 }
 
 export const languages = new Languages();
@@ -357,7 +470,8 @@ let english: Map<string, string> | null = null;
 export function documentWord(language: string | null | undefined, word: string): string {
   if (!english) {
     english = new Map();
-    const bundle = documentBundleOf(ENGLISH);
+    // The words of the formats are English as the formats have them: those built in.
+    const bundle = makeBundle(ENGLISH, documentSources(ENGLISH));
     for (const [path, text] of Object.entries(atHand)) {
       const p = parts(path);
       if (p?.tag !== ENGLISH || p.name !== 'document') continue;

@@ -10,9 +10,13 @@ export {
   localeTags,
   nearest,
   newTextLanguage,
+  ownLeftOut,
   primary,
+  setOwnWords,
   t,
   term,
   type Args,
   type Language,
+  type LeftOut,
+  type OwnWords,
 } from './i18n.svelte';

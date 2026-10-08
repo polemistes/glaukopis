@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { writeBody } from '$lib/project/model/blocks';
 import { Project } from '$lib/project/model/project.svelte';
-import { apply, dedent, fault, indent, readFile } from './fluent';
+import { apply, dedent, fault, indent, overOwn, readFile } from './fluent';
 import { changesIn, elementText, fillWords, projectWords, wordsIn, written } from './project';
 
 const sources = import.meta.glob('/locales/*/*.ftl', {
@@ -134,4 +134,46 @@ describe('a project of the words of a language', () => {
     expect(took).toBeLessThan(60000);
     console.log(`${count} parts in ${Math.round(took)} ms`);
   }, 120000);
+});
+
+describe('own words', () => {
+  it('are put over what the folder holds, each message given whole', () => {
+    const english = new Map([
+      ['a.ftl', 'a-one = One\na-two = Two\n    .hint = A hint\na-three = { $n } three\n'],
+    ]);
+    const builtIn = new Map([
+      ['a.ftl', '# Built in.\na-one = En\na-two = To\n    .hint = Et hint\na-three = { $n } tre\n'],
+    ]);
+    const there = new Map([['a.ftl', 'a-one = Ein\n']]);
+    const changes = [
+      { file: 'a.ftl', key: 'a-one', text: 'Én', was: 'En' },
+      { file: 'a.ftl', key: 'a-two.hint', text: 'Et vink', was: 'Et hint' },
+      { file: 'a.ftl', key: 'a-three', text: 'tre', was: '{ $n } tre' },
+    ];
+    const { own, changes: over } = overOwn(builtIn, there, changes);
+    expect(over.map((c) => c.was)).toEqual(['Ein', 'Et hint', '{ $n } tre']);
+    const applied = apply('nb', english, own, over);
+    expect(applied.conflicts).toEqual([]);
+    expect(applied.refused.map((r) => [r.change.key, r.fault.kind])).toEqual([
+      ['a-three', 'variables'],
+    ]);
+    const read = readFile(applied.files.get('a.ftl')!);
+    expect(read.faulty).toBe(false);
+    expect(read.parts.get('a-one')?.text).toBe('Én');
+    expect(read.parts.get('a-two')?.text).toBe('To');
+    expect(read.parts.get('a-two.hint')?.text).toBe('Et vink');
+    expect(read.parts.get('a-three')?.text).toBe('{ $n } tre');
+    // Nothing else of what is built in is taken in.
+    expect(read.messages.map((m) => m.id)).toEqual(['a-one', 'a-two', 'a-three']);
+  });
+
+  it('begin a file the folder lacks with the messages changed', () => {
+    const english = new Map([['a.ftl', 'a-one = One\na-two = Two\n']]);
+    const builtIn = new Map([['a.ftl', 'a-one = En\na-two = To\n']]);
+    const { own, changes } = overOwn(builtIn, new Map(), [
+      { file: 'a.ftl', key: 'a-two', text: 'Två', was: 'To' },
+    ]);
+    const applied = apply('nb', english, own, changes);
+    expect(applied.files.get('a.ftl')).toBe('a-two = Två\n');
+  });
 });

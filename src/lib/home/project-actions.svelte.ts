@@ -6,18 +6,22 @@
  * `ProjectActionsHost.svelte`; what opens a project is the place's.
  */
 
+import { open as chooseFile, save } from '@tauri-apps/plugin-dialog';
 import Copy from '@lucide/svelte/icons/copy';
+import FileDown from '@lucide/svelte/icons/file-down';
 import History from '@lucide/svelte/icons/history';
 import Pencil from '@lucide/svelte/icons/pencil';
 import Trash2 from '@lucide/svelte/icons/trash-2';
-import type { Folder, ProjectInfo } from '$lib/api/projects';
+import type { FileChoice, Folder, FoundWork, ProjectInfo } from '$lib/api/projects';
 import { sharingRename } from '$lib/api/sharing';
+import { currentProject } from '$lib/editor/references.svelte';
 import { t } from '$lib/i18n';
 import { projects } from '$lib/state/projects.svelte';
 import type { MapMode } from '$lib/state/router.svelte';
 import { confirm } from '$lib/ui/confirm.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
-import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
+import { describeError, notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
+import { ENDING, fileName, given, makeFromFile, writeProjectFile } from './project-file';
 
 /** What a name is asked for. */
 export type Purpose = 'new' | 'rename' | 'copy' | 'folder' | 'folder-rename';
@@ -58,6 +62,17 @@ export function namingAction(purpose: Purpose): string {
   return t('home-duplicate');
 }
 
+/** The works of a project file that something is to be chosen for, while it is asked. */
+export interface Asking {
+  /** The name the project will have. */
+  name: string;
+  works: FoundWork[];
+  /** What is chosen for each that is asked about, by its id in the file. */
+  choices: Record<string, FileChoice>;
+  /** Gives the choices, or nothing to make nothing. */
+  resolve: (choices: Record<string, FileChoice> | null) => void;
+}
+
 export interface ActionsPlace {
   /** Opens a project; with a mode, in that view rather than where it was left. */
   open: (p: ProjectInfo, mode?: MapMode) => void;
@@ -71,6 +86,10 @@ export class ProjectActions {
   busy = $state(false);
   /** The project whose earlier versions are shown. */
   earlier = $state.raw<ProjectInfo | null>(null);
+  /** The works of a project file being opened, while what to do with them is asked. */
+  asking = $state<Asking | null>(null);
+  /** Whether a project file is being written or read. */
+  filing = $state(false);
   #place: ActionsPlace;
 
   constructor(place: ActionsPlace) {
@@ -169,6 +188,79 @@ export class ProjectActions {
   }
 
   /**
+   * Saves a project as one file, where the user says (ADR 0036). The
+   * project that is open (`here`) is written to disk first.
+   */
+  async saveAsFile(p: ProjectInfo, here = false) {
+    const path = await save({
+      title: t('home-file-save-title'),
+      defaultPath: fileName(p.name),
+      filters: [{ name: t('home-file-filter'), extensions: [ENDING] }],
+    });
+    if (!path) return;
+    // Not every system adds the ending to a name written without it.
+    const target = path.toLowerCase().endsWith(`.${ENDING}`) ? path : `${path}.${ENDING}`;
+    this.filing = true;
+    try {
+      const open = here ? currentProject() : null;
+      await writeProjectFile(p, target, open ? () => open.flush() : undefined);
+      notifyOk(t('home-file-saved', { name: p.name }));
+    } catch (error) {
+      notifyError(t('home-file-save-failed'), error);
+    } finally {
+      this.filing = false;
+    }
+  }
+
+  /** Makes a new project of a project file the user chooses, and opens it. */
+  async openFile() {
+    if (this.filing) return;
+    const path = await chooseFile({
+      title: t('home-file-open-title'),
+      multiple: false,
+      filters: [{ name: t('home-file-filter'), extensions: [ENDING] }],
+    });
+    if (typeof path !== 'string') return;
+    this.filing = true;
+    try {
+      const made = await makeFromFile(
+        path,
+        (name, works) =>
+          new Promise((resolve) => {
+            const choices: Record<string, FileChoice> = {};
+            for (const w of works) {
+              const choice = given(w.finding);
+              if (choice) choices[w.id] = choice;
+            }
+            this.asking = { name, works, choices, resolve };
+          }),
+      );
+      if (!made) return;
+      const name = made.info.name;
+      notifyOk(
+        made.added
+          ? t('home-file-opened-added', { name, count: made.added })
+          : t('home-file-opened', { name }),
+      );
+      if (made.problems.length)
+        notify(t('home-file-problems', { count: made.problems.length }), made.problems.join('\n'));
+      this.open(made.info);
+    } catch (error) {
+      notifyError(t('home-file-open-failed'), error);
+    } finally {
+      this.asking = null;
+      this.filing = false;
+    }
+  }
+
+  /** Answers what was asked of the works of a project file: the choices, or nothing to make nothing. */
+  answer(choices: Record<string, FileChoice> | null) {
+    const asking = this.asking;
+    this.asking = null;
+    asking?.resolve(choices);
+  }
+
+  /**
    * The menu of a project. The project that is open (`here`) is not opened
    * again, and is neither renamed nor deleted while it is open: what is
    * written in it goes to its folder on disk.
@@ -189,6 +281,12 @@ export class ProjectActions {
       },
       { label: t('home-menu-duplicate'), icon: Copy, action: () => this.duplicate(p) },
       { label: t('home-menu-history'), icon: History, action: () => (this.earlier = p) },
+      {
+        label: t('home-menu-save-file'),
+        icon: FileDown,
+        disabled: this.filing,
+        action: () => void this.saveAsFile(p, here),
+      },
       { kind: 'separator' },
       {
         label: t('common-delete'),

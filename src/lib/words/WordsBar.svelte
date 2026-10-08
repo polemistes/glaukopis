@@ -2,7 +2,8 @@
   /**
    * Over a project of the words of a language (ADR 0034): what it is, and
    * the writing of what was changed in it into Fluent files, with what was
-   * and was not written.
+   * and was not written; or into the own words of the data directory, to be
+   * used at once (ADR 0035).
    */
   import Languages from '@lucide/svelte/icons/languages';
   import { open as chooseFolder } from '@tauri-apps/plugin-dialog';
@@ -12,7 +13,7 @@
   import Dialog from '$lib/ui/Dialog.svelte';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import { projectWords } from './project';
-  import { writeWords, type WrittenOut } from './words.svelte';
+  import { useWords, writeWords, type WrittenOut } from './words.svelte';
 
   interface Props {
     project: Project;
@@ -22,7 +23,10 @@
 
   const words = $derived(projectWords(project));
   let writing = $state(false);
+  let using = $state(false);
   let result = $state<WrittenOut | null>(null);
+  /** Whether the result is of words put to use, rather than written as files. */
+  let used = $state(false);
 
   async function write() {
     const dir = await chooseFolder({ title: t('words-write-choose'), directory: true });
@@ -32,11 +36,31 @@
       const done = await writeWords(project, dir);
       if (!done.conflicts.length && !done.refused.length) {
         notifyOk(t('words-written', { count: done.done.length, files: done.files.size }));
-      } else result = done;
+      } else {
+        used = false;
+        result = done;
+      }
     } catch (error) {
       notifyError(t('words-write-failed'), error);
     } finally {
       writing = false;
+    }
+  }
+
+  async function use() {
+    using = true;
+    try {
+      const done = await useWords(project);
+      if (!done.conflicts.length && !done.refused.length) {
+        notifyOk(t('words-used', { count: done.done.length }));
+      } else {
+        used = true;
+        result = done;
+      }
+    } catch (error) {
+      notifyError(t('words-use-failed'), error);
+    } finally {
+      using = false;
     }
   }
 
@@ -50,6 +74,9 @@
   <div class="bar" data-words-bar>
     <Languages size={15} />
     <span class="said">{t('words-bar', { language: languageName(words.language) })}</span>
+    <Button size="sm" disabled={using} onclick={use} title={t('words-use-hint')} data-words-use>
+      {using ? t('words-using') : t('words-use')}
+    </Button>
     <Button size="sm" disabled={writing} onclick={write}>
       {writing ? t('words-writing') : t('words-write')}
     </Button>
@@ -57,9 +84,19 @@
 {/if}
 
 {#if result}
-  <Dialog open title={t('words-result-title')} width={620} tall onclose={() => (result = null)}>
+  <Dialog
+    open
+    title={used ? t('words-used-title') : t('words-result-title')}
+    width={620}
+    tall
+    onclose={() => (result = null)}
+  >
     <div class="result" data-words-result>
-      <p>{t('words-written', { count: result.done.length, files: result.files.size })}</p>
+      <p>
+        {used
+          ? t('words-used', { count: result.done.length })
+          : t('words-written', { count: result.done.length, files: result.files.size })}
+      </p>
       {#if result.conflicts.length}
         <h3>{t('words-conflicts')}</h3>
         <ul>
@@ -69,7 +106,7 @@
         </ul>
       {/if}
       {#if result.refused.length}
-        <h3>{t('words-refused')}</h3>
+        <h3>{used ? t('words-used-refused') : t('words-refused')}</h3>
         <ul>
           {#each result.refused as r (r.change.file + r.change.key)}
             <li>

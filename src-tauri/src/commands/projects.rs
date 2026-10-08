@@ -25,7 +25,7 @@ pub struct Trashed {
 /// What a request of bytes says of itself before them, and the bytes: the
 /// body is the length of what it says (four bytes, least first), that in
 /// JSON, and the bytes. See `api/projects.ts`.
-fn with_head<T: DeserializeOwned>(request: &Request<'_>) -> CommandResult<(T, Vec<u8>)> {
+pub(crate) fn with_head<T: DeserializeOwned>(request: &Request<'_>) -> CommandResult<(T, Vec<u8>)> {
     let unread = |why: String| CommandError { kind: "invalid", message: tr!("core-projects-not-base64", error = why) };
     let InvokeBody::Raw(body) = request.body() else { return Err(unread("not bytes".into())) };
     let size = body.get(..4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]) as usize);
@@ -35,7 +35,7 @@ fn with_head<T: DeserializeOwned>(request: &Request<'_>) -> CommandResult<(T, Ve
 }
 
 /// Parts one after another, each with its length before it (four bytes, least first).
-fn put_part(out: &mut Vec<u8>, part: &[u8]) {
+pub(crate) fn put_part(out: &mut Vec<u8>, part: &[u8]) {
     out.extend_from_slice(&(part.len() as u32).to_le_bytes());
     out.extend_from_slice(part);
 }

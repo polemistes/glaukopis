@@ -30,6 +30,10 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 calamine = "0.36"
 encoding_rs = "0.8"
 fluent-bundle = "0.16"
+# The parser fluent-bundle reads with, and the plural rules it says by: for
+# checking own words before they are laid over the words built in (ADR 0035).
+fluent-syntax = "0.12"
+intl_pluralrules = "7"
 unic-langid = "0.9"
 sys-locale = "0.3"
 spellbook = "0.4"

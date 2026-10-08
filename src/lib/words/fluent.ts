@@ -39,6 +39,8 @@ export interface FileRead {
   text: string;
   messages: Message[];
   parts: Map<string, { text: string; indent: number }>;
+  /** Whether any of it cannot be read. */
+  faulty: boolean;
 }
 
 /** The messages of the text of a Fluent file, in their order; and whether any of it cannot be read. */
@@ -111,7 +113,7 @@ export function tidy(text: string | null | undefined): string {
 
 /** A file read, with the text of each of its parts. */
 export function readFile(text: string): FileRead {
-  const { messages } = messagesOf(text);
+  const { messages, faulty } = messagesOf(text);
   const parts = new Map<string, { text: string; indent: number }>();
   for (const m of messages) {
     for (const p of m.parts) {
@@ -119,7 +121,7 @@ export function readFile(text: string): FileRead {
       parts.set(p.key, { text: dedent(source), indent: indentOf(source) });
     }
   }
-  return { text, messages, parts };
+  return { text, messages, parts, faulty };
 }
 
 /** What a pattern uses: its variables, the messages it refers to, and its choices by number. */
@@ -363,4 +365,45 @@ export function apply(
     result.done.push(...put);
   }
   return result;
+}
+
+/**
+ * Changes to be put over the own words of a language (ADR 0035), as `apply`
+ * takes them. `there` are the files of own words as they are, `builtIn` the
+ * language's files as they are built in. A message a change touches that the
+ * own words lack is first given as it is built in, whole, so that a part is
+ * changed within its message and the message laid over keeps its other
+ * parts; and each change is made against what is there now, so that it is
+ * put over it rather than refused as changed since.
+ */
+export function overOwn(
+  builtIn: Map<string, string>,
+  there: Map<string, string>,
+  changes: Change[],
+): { own: Map<string, string>; changes: Change[] } {
+  const own = new Map(there);
+  const files = new Set(changes.map((c) => c.file));
+  for (const file of files) {
+    let text = own.get(file) ?? '';
+    const have = new Set(messagesOf(text).messages.map((m) => m.id));
+    const source = builtIn.get(file) ?? '';
+    const built = messagesOf(source).messages;
+    const wanted = new Set(changes.filter((c) => c.file === file).map((c) => c.key.split('.')[0]));
+    const given = built
+      .filter((m) => wanted.has(m.id) && !have.has(m.id))
+      .map((m) => source.slice(m.start, m.end).trimEnd());
+    if (given.length) {
+      const lead = text && !text.endsWith('\n') ? '\n' : '';
+      text = `${text}${lead}${given.join('\n')}\n`;
+      own.set(file, text);
+    }
+  }
+  const read = new Map([...own].map(([file, text]) => [file, readFile(text)]));
+  return {
+    own,
+    changes: changes.map((c) => ({
+      ...c,
+      was: read.get(c.file)?.parts.get(c.key)?.text ?? '',
+    })),
+  };
 }

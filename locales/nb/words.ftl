@@ -38,3 +38,26 @@ words-refused-reference = det viser til { $detail }, som engelsken ikke gjør
 words-refused-plurals = flertallsformene er ikke språkets: { $detail }
 words-refused-missing = engelsken har ingen slik melding, eller teksten i meldingen ble ikke skrevet
 words-refused-file = filen { $detail } ville ikke kunne leses etterpå
+
+# Putting the changed words to use at once, without a new version of
+# Glaukopis (ADR 0035): they are written into the data directory and laid
+# over the words Glaukopis came with.
+words-use = Bruk dem nå
+words-using = Tar dem i bruk …
+words-use-hint = Tar det du har endret i bruk med en gang, i stedet for ordene Glaukopis kom med, uten en ny versjon. Fluent-filene skrives ikke av dette.
+words-use-failed = Ordene kunne ikke tas i bruk
+# $count is how many messages.
+words-used = { $count ->
+    [0] Ingenting var endret, og ingenting ble tatt i bruk.
+    [one] Én melding er nå i bruk.
+   *[other] { $count } meldinger er nå i bruk.
+}
+words-used-title = Ordene som ble tatt i bruk
+words-used-refused = Ikke tatt i bruk, rett dem i prosjektet
+# $languages are the names of the languages: "English, Norwegian Bokmål".
+words-own-in-use = Ord du har endret, er i bruk i stedet for dem Glaukopis kom med, for { $languages }.
+words-own-remove = Fjern dem
+words-own-remove-title = Fjerne ordene du har endret?
+words-own-remove-message = Ordene du har tatt i bruk for { $languages }, fjernes, og ordene Glaukopis kom med, brukes igjen. Prosjektene av ord beholdes.
+words-own-removed = Ordene Glaukopis kom med, brukes igjen.
+words-own-remove-failed = Ordene du har endret, kunne ikke fjernes

@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { FluentResource } from '@fluent/bundle';
-import { documentWord, languages, load, names, nearest, t, term } from './i18n.svelte';
+import {
+  documentWord,
+  languages,
+  load,
+  names,
+  nearest,
+  ownLeftOut,
+  setOwnWords,
+  t,
+  term,
+} from './i18n.svelte';
 
 /** Every Fluent file, by its path. */
 const allFiles = import.meta.glob('/locales/*/*.ftl', {
@@ -160,5 +170,54 @@ describe('the words of documents', () => {
     expect(documentWord('nb', 'Abbildung')).toBe('Abbildung');
     expect(documentWord(undefined, 'Figure')).toBe('Figure');
     expect(documentWord('xx', 'Figure')).toBe('Figure');
+  });
+});
+
+describe('own words', () => {
+  it('are laid over the words built in where they fit, and what they lack is said as before', async () => {
+    await load('nb');
+    setOwnWords(
+      new Map([
+        ['en', new Map([['common.ftl', 'common-cancel = Never mind\n']])],
+        [
+          'nb',
+          new Map([
+            ['common.ftl', '# Mine.\ncommon-cancel = Glem det\ncommon-close = Lukk { $what }\n'],
+            [
+              'search.ftl',
+              'search-found = { $count ->\n    [one] Fant én\n   *[other] Fant { $count }\n}\nno-such-message = Nei\n',
+            ],
+            ['document.ftl', 'document-notes = Sluttnoter\n'],
+          ]),
+        ],
+      ]),
+    );
+    expect(languages.own).toEqual(['en', 'nb']);
+    languages.current = 'en';
+    expect(t('common-cancel')).toBe('Never mind');
+    expect(t('common-close')).toBe('Close');
+    languages.current = 'nb';
+    expect(t('common-cancel')).toBe('Glem det');
+    expect(t('search-found', { count: 1 })).toBe('Fant én');
+    expect(t('search-found', { count: 3 })).toBe('Fant 3');
+    // Its variables are not those of the English: the one built in stands.
+    expect(t('common-close')).toBe('Lukk');
+    // What the own words lack.
+    expect(t('common-save')).toBe('Lagre');
+    expect(term('nb', 'document-notes')).toBe('Sluttnoter');
+    expect(term('nb', 'document-figure')).toBe('Figur');
+    expect(documentWord('nb-NO', 'NOTES')).toBe('SLUTTNOTER');
+    expect(
+      ownLeftOut()
+        .map((l) => l.id)
+        .sort(),
+    ).toEqual(['common-close', 'no-such-message']);
+
+    // Taken away, the words built in are said again.
+    setOwnWords(new Map());
+    expect(t('common-cancel')).toBe('Avbryt');
+    expect(languages.own).toEqual([]);
+    languages.current = 'en';
+    expect(t('common-cancel')).toBe('Cancel');
   });
 });

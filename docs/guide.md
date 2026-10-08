@@ -1580,6 +1580,17 @@ written, because it has lost a variable of the English or a form of the
 plural, or is no longer good Fluent, is listed, to be mended and written
 again.
 
+**Use them now**, beside it, puts what you changed into the words this
+Glaukopis speaks, at once, without waiting for a new version: the menus and
+dialogs show your words as soon as the button is pressed. They are kept in
+the folder `words` of the data directory, and are used each time Glaukopis
+starts; a word that no longer fits a newer version, having lost a variable
+the English has, is left out, and the English one stands. *Settings* ›
+*Language* says which languages have words you changed in use, and takes
+them away again. Files of words from someone else work the same way: put them
+in `words`, in a folder named by the language (`words/nb`), and start
+Glaukopis.
+
 ## Spelling
 
 Glaukopis checks the spelling of what you write as you write it, in the
@@ -1667,6 +1678,17 @@ on a desk of another shade, so that where the text goes is seen.
 - **The whole history.** A project can keep every change, with who made it
   and when: see *The history of a project*.
 - **Deleted projects** can be brought back, from the line under the projects.
+- **A project as one file.** Right-click a project, on the home page or in the
+  list of projects, and choose **Save as a file…**: a `.glaukopis` file holds
+  the project, its comments, the pictures its figures show and the works it
+  cites, to keep, to move to another computer, or to send. **Open a project
+  file…**, on the home page and at the head of the list of projects, makes a
+  new project of one, never in the place of one you have. The works it cites
+  are compared with your library: those that are the same need nothing, new
+  ones are added, and where the file's differs from yours, or looks like a
+  work you have, you choose, in one window, which to keep; the citations follow
+  your choice. The history of the project, and the attachments of the library,
+  do not go with it.
 - **Everything is in one folder**, shown under *Settings*. To keep a copy of
   your work, copy the folder.
 - **To read your text without Glaukopis**, export it. The references are in

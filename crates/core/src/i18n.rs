@@ -12,13 +12,15 @@
 //! a translation lacks is said in English, and what English lacks is said by
 //! its name, so that it is seen and mended.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
-use std::sync::{OnceLock, PoisonError, RwLock};
+use std::sync::{Arc, OnceLock, PoisonError, RwLock};
 
 use fluent_bundle::FluentResource;
 use fluent_bundle::concurrent::FluentBundle;
 pub use fluent_bundle::{FluentArgs, FluentValue};
+use fluent_syntax::{ast, parser, serializer};
+use intl_pluralrules::{PluralCategory, PluralRuleType, PluralRules};
 use unic_langid::LanguageIdentifier;
 
 pub use crate::tr;
@@ -101,9 +103,19 @@ struct Words {
     /// What documents print, by language.
     terms: HashMap<&'static str, Bundle>,
     /// The words of the formats in English, with the names of their terms:
-    /// "Notes" is `document-notes`.
+    /// "Notes" is `document-notes`. Those built in, whatever own words say.
     english: HashMap<String, String>,
+    /// The languages that have own words laid over those built in.
+    own: Vec<String>,
 }
+
+/// The folder of own words, `words/` of the data directory, once it is
+/// known (ADR 0035).
+static OWN: RwLock<Option<PathBuf>> = RwLock::new(None);
+
+/// The words, made when they are first asked for, and made anew when the
+/// own words are read again.
+static WORDS: RwLock<Option<Arc<Words>>> = RwLock::new(None);
 
 fn bundle(tag: &str) -> Bundle {
     let id: LanguageIdentifier = tag.parse().unwrap_or_default();
@@ -114,36 +126,340 @@ fn bundle(tag: &str) -> Bundle {
     bundle
 }
 
-fn words() -> &'static Words {
-    static WORDS: OnceLock<Words> = OnceLock::new();
-    WORDS.get_or_init(|| {
-        let mut words = Words { messages: HashMap::new(), terms: HashMap::new(), english: HashMap::new() };
+fn words() -> Arc<Words> {
+    if let Some(words) = WORDS.read().unwrap_or_else(PoisonError::into_inner).as_ref() {
+        return Arc::clone(words);
+    }
+    let own = OWN.read().unwrap_or_else(PoisonError::into_inner).clone();
+    let mut slot = WORDS.write().unwrap_or_else(PoisonError::into_inner);
+    Arc::clone(slot.get_or_insert_with(|| Arc::new(make_words(own.as_deref()).0)))
+}
+
+/// Reads the own words in a folder, `words/` of the data directory, which
+/// has a folder for each language (`words/nb/`) with Fluent files as
+/// `locales/` has, and lays them over the words built in: a message there
+/// takes the place of the one of the same name. Called again, it reads them
+/// again. What does not fit is left out, said in the log, and returned.
+pub fn use_own_words(dir: &Path) -> Vec<LeftOut> {
+    *OWN.write().unwrap_or_else(PoisonError::into_inner) = Some(dir.to_owned());
+    let (words, left_out) = make_words(Some(dir));
+    *WORDS.write().unwrap_or_else(PoisonError::into_inner) = Some(Arc::new(words));
+    left_out
+}
+
+/// The languages whose own words the core has laid over its own.
+pub fn own_languages() -> Vec<String> {
+    words().own.clone()
+}
+
+/// The words built in, and over them the own words of a folder, if there is
+/// one; with what of those was left out.
+fn make_words(own: Option<&Path>) -> (Words, Vec<LeftOut>) {
+    let mut words = Words { messages: HashMap::new(), terms: HashMap::new(), english: HashMap::new(), own: Vec::new() };
+    for &(tag, name, text) in files::FILES {
+        let resource = FluentResource::try_new(text.to_owned()).unwrap_or_else(|(resource, errors)| {
+            tracing::warn!(language = tag, file = name, ?errors, "a file of words has faults");
+            resource
+        });
+        let into = if name == "document.ftl" { &mut words.terms } else { &mut words.messages };
+        let bundle = into.entry(tag).or_insert_with(|| bundle(tag));
+        // A name given twice is kept as it was first given.
+        if let Err(errors) = bundle.add_resource(resource) {
+            tracing::warn!(language = tag, file = name, ?errors, "a file of words gives names twice");
+        }
+    }
+    if let Some(english) = words.terms.get(ENGLISH) {
         for &(tag, name, text) in files::FILES {
-            let resource = FluentResource::try_new(text.to_owned()).unwrap_or_else(|(resource, errors)| {
-                tracing::warn!(language = tag, file = name, ?errors, "a file of words has faults");
-                resource
-            });
-            let into = if name == "document.ftl" { &mut words.terms } else { &mut words.messages };
-            let bundle = into.entry(tag).or_insert_with(|| bundle(tag));
-            // A name given twice is kept as it was first given.
-            if let Err(errors) = bundle.add_resource(resource) {
-                tracing::warn!(language = tag, file = name, ?errors, "a file of words gives names twice");
+            if tag != ENGLISH || name != "document.ftl" {
+                continue;
+            }
+            for id in names(text) {
+                if let Some(word) = format(english, &id, None) {
+                    words.english.insert(word.to_lowercase(), id);
+                }
             }
         }
-        if let Some(english) = words.terms.get(ENGLISH) {
-            for &(tag, name, text) in files::FILES {
-                if tag != ENGLISH || name != "document.ftl" {
-                    continue;
+    }
+    let mut left_out = Vec::new();
+    for (tag, name, text) in own.map(own_files).unwrap_or_default() {
+        let document = name == "document.ftl";
+        let into = if document { &mut words.terms } else { &mut words.messages };
+        let Some(bundle) = into.get_mut(tag) else { continue };
+        let (laid, left) = lay_over(bundle, tag, &name, &text, document);
+        if laid > 0 && !words.own.iter().any(|t| t == tag) {
+            words.own.push(tag.to_owned());
+        }
+        left_out.extend(left);
+    }
+    words.own.sort();
+    for left in &left_out {
+        tracing::warn!(
+            language = left.language,
+            file = left.file,
+            id = left.id,
+            why = left.why,
+            "an own word is left out"
+        );
+    }
+    (words, left_out)
+}
+
+/// The Fluent files of the core in a folder of own words: those of the
+/// languages that have words built in, by language, the name of the file,
+/// and what it holds.
+fn own_files(dir: &Path) -> Vec<(&'static str, String, String)> {
+    let mut out = Vec::new();
+    let Ok(entries) = std::fs::read_dir(dir) else { return out };
+    let mut folders: Vec<PathBuf> = entries.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
+    folders.sort();
+    for folder in folders {
+        let Some(name) = folder.file_name().and_then(|n| n.to_str()) else { continue };
+        let Some(&(tag, _, _)) = files::FILES.iter().find(|(t, _, _)| *t == name) else { continue };
+        let Ok(entries) = std::fs::read_dir(&folder) else { continue };
+        let mut paths: Vec<PathBuf> = entries.flatten().map(|e| e.path()).filter(|p| p.is_file()).collect();
+        paths.sort();
+        for path in paths {
+            let Some(name) = path.file_name().and_then(|n| n.to_str()).map(str::to_owned) else { continue };
+            if !name.ends_with(".ftl") || !(name.starts_with("core") || name == "document.ftl") {
+                continue;
+            }
+            match std::fs::read_to_string(&path) {
+                Ok(text) => out.push((tag, name, text)),
+                Err(error) => tracing::warn!(path = %path.display(), %error, "a file of own words could not be read"),
+            }
+        }
+    }
+    out
+}
+
+/// An own word left out, and why.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct LeftOut {
+    pub language: String,
+    pub file: String,
+    /// The name of the message, or the beginning of what could not be read.
+    pub id: String,
+    pub why: String,
+}
+
+/// What a pattern uses: its variables, the messages and terms it refers to,
+/// and its choices by number, each with the plural forms it names.
+#[derive(Debug, Default)]
+struct Uses {
+    variables: BTreeSet<String>,
+    references: BTreeSet<String>,
+    selects: Vec<Vec<String>>,
+}
+
+/// The plural forms, by the names Fluent and Unicode give them.
+const CATEGORIES: &[&str] = &["zero", "one", "two", "few", "many", "other"];
+
+fn uses(pattern: &ast::Pattern<&str>) -> Uses {
+    fn pattern_of(pattern: &ast::Pattern<&str>, out: &mut Uses) {
+        for element in &pattern.elements {
+            if let ast::PatternElement::Placeable { expression } = element {
+                expression_of(expression, out);
+            }
+        }
+    }
+    fn expression_of(expression: &ast::Expression<&str>, out: &mut Uses) {
+        match expression {
+            ast::Expression::Select { selector, variants } => {
+                inline_of(selector, out);
+                let keys: Vec<String> = variants
+                    .iter()
+                    .map(|v| match &v.key {
+                        ast::VariantKey::Identifier { name } => (*name).to_owned(),
+                        ast::VariantKey::NumberLiteral { value } => (*value).to_owned(),
+                    })
+                    .collect();
+                // A choice among plural forms names a form besides `other`.
+                if keys.iter().any(|k| k != "other" && CATEGORIES.contains(&k.as_str())) {
+                    out.selects.push(keys.into_iter().filter(|k| CATEGORIES.contains(&k.as_str())).collect());
                 }
-                for id in names(text) {
-                    if let Some(word) = format(english, &id, None) {
-                        words.english.insert(word.to_lowercase(), id);
+                for variant in variants {
+                    pattern_of(&variant.value, out);
+                }
+            }
+            ast::Expression::Inline(inline) => inline_of(inline, out),
+        }
+    }
+    fn arguments_of(arguments: &ast::CallArguments<&str>, out: &mut Uses) {
+        for a in &arguments.positional {
+            inline_of(a, out);
+        }
+        for a in &arguments.named {
+            inline_of(&a.value, out);
+        }
+    }
+    fn inline_of(inline: &ast::InlineExpression<&str>, out: &mut Uses) {
+        match inline {
+            ast::InlineExpression::VariableReference { id } => {
+                out.variables.insert(id.name.to_owned());
+            }
+            ast::InlineExpression::MessageReference { id, .. } => {
+                out.references.insert(id.name.to_owned());
+            }
+            ast::InlineExpression::TermReference { id, arguments, .. } => {
+                out.references.insert(format!("-{}", id.name));
+                if let Some(arguments) = arguments {
+                    arguments_of(arguments, out);
+                }
+            }
+            ast::InlineExpression::FunctionReference { arguments, .. } => arguments_of(arguments, out),
+            ast::InlineExpression::Placeable { expression } => expression_of(expression, out),
+            ast::InlineExpression::StringLiteral { .. } | ast::InlineExpression::NumberLiteral { .. } => {}
+        }
+    }
+    let mut out = Uses::default();
+    pattern_of(pattern, &mut out);
+    out
+}
+
+/// The parts of a message, its value (`name`) and its attributes
+/// (`name.hint`), each with its pattern.
+fn parts<'a, 's>(message: &'a ast::Message<&'s str>) -> Vec<(String, &'a ast::Pattern<&'s str>)> {
+    let id = message.id.name;
+    message
+        .value
+        .iter()
+        .map(|value| (id.to_owned(), value))
+        .chain(message.attributes.iter().map(|a| (format!("{id}.{}", a.id.name), &a.value)))
+        .collect()
+}
+
+/// What the parts of the English messages built in use, for the core's own
+/// messages (`false`) and for the words of documents (`true`).
+fn english_uses() -> &'static HashMap<(bool, String), Uses> {
+    static USES: OnceLock<HashMap<(bool, String), Uses>> = OnceLock::new();
+    USES.get_or_init(|| {
+        let mut out = HashMap::new();
+        for &(tag, name, text) in files::FILES {
+            if tag != ENGLISH {
+                continue;
+            }
+            let document = name == "document.ftl";
+            let resource = parser::parse(text).unwrap_or_else(|(resource, _)| resource);
+            for entry in &resource.body {
+                if let ast::Entry::Message(message) = entry {
+                    for (key, pattern) in parts(message) {
+                        out.entry((document, key)).or_insert_with(|| uses(pattern));
                     }
                 }
             }
         }
-        words
+        out
     })
+}
+
+/// The plural forms of a language: all of them, and those whole numbers take.
+fn plurals(tag: &str) -> (BTreeSet<&'static str>, BTreeSet<&'static str>) {
+    let rules = [tag.to_owned(), primary(tag), ENGLISH.to_owned()]
+        .iter()
+        .filter_map(|t| t.parse::<LanguageIdentifier>().ok())
+        .find_map(|id| PluralRules::create(id, PluralRuleType::CARDINAL).ok());
+    let Some(rules) = rules else { return (BTreeSet::from(["other"]), BTreeSet::from(["other"])) };
+    let name = |category: PluralCategory| match category {
+        PluralCategory::ZERO => "zero",
+        PluralCategory::ONE => "one",
+        PluralCategory::TWO => "two",
+        PluralCategory::FEW => "few",
+        PluralCategory::MANY => "many",
+        PluralCategory::OTHER => "other",
+    };
+    let numbers = (0..=200u64).chain([1000, 1001, 1002, 1005, 1021, 1_000_000]);
+    let whole: BTreeSet<&'static str> = numbers.clone().filter_map(|n| rules.select(n).ok()).map(name).collect();
+    let mut all = whole.clone();
+    for n in numbers {
+        for fraction in ["0", "1", "5", "00", "25"] {
+            if let Ok(category) = rules.select(format!("{n}.{fraction}").as_str()) {
+                all.insert(name(category));
+            }
+        }
+    }
+    (all, whole)
+}
+
+/// What is wrong with a part of an own message in a language, by what the
+/// English of it uses, or nothing: as the interface checks it
+/// (`words/fluent.ts`, `fault`). It must use the variables of the English,
+/// refer only to what the English refers to, and give every plural form of
+/// the language whole numbers take, and none it has not.
+fn fault(tag: &str, mine: &Uses, theirs: &Uses) -> Option<String> {
+    let list = |set: &BTreeSet<String>| {
+        if set.is_empty() { "—".to_owned() } else { set.iter().cloned().collect::<Vec<_>>().join(", ") }
+    };
+    if mine.variables != theirs.variables {
+        return Some(format!("variables: {} ≠ {}", list(&mine.variables), list(&theirs.variables)));
+    }
+    if let Some(reference) = mine.references.iter().find(|r| !theirs.references.contains(*r)) {
+        return Some(format!("a reference the English has not: {reference}"));
+    }
+    if mine.selects.is_empty() {
+        return None;
+    }
+    let (all, whole) = plurals(tag);
+    for keys in &mine.selects {
+        let missing: Vec<&str> = whole.iter().copied().filter(|c| !keys.iter().any(|k| k == c)).collect();
+        let foreign: Vec<&str> = keys.iter().map(String::as_str).filter(|k| !all.contains(k)).collect();
+        if !missing.is_empty() || !foreign.is_empty() {
+            return Some(format!("plural forms: lacks {missing:?}, has {foreign:?} besides"));
+        }
+    }
+    None
+}
+
+/// Why an own message cannot be laid over the one built in, or nothing.
+fn message_fault(tag: &str, message: &ast::Message<&str>, document: bool) -> Option<String> {
+    let english = english_uses();
+    for (key, pattern) in parts(message) {
+        let Some(theirs) = english.get(&(document, key.clone())) else {
+            return Some(format!("{key} is not among the English words"));
+        };
+        if let Some(why) = fault(tag, &uses(pattern), theirs) {
+            return Some(format!("{key}: {why}"));
+        }
+    }
+    None
+}
+
+/// Lays the messages of a file of own words over a bundle: each that fits
+/// takes the place of the one of the same name; the others are left out.
+/// How many were laid over, and what was left out.
+fn lay_over(bundle: &mut Bundle, tag: &str, file: &str, text: &str, document: bool) -> (usize, Vec<LeftOut>) {
+    let left =
+        |id: &str, why: String| LeftOut { language: tag.to_owned(), file: file.to_owned(), id: id.to_owned(), why };
+    let mut left_out = Vec::new();
+    let mut good = Vec::new();
+    let resource = parser::parse(text).unwrap_or_else(|(resource, _)| resource);
+    for entry in resource.body {
+        match entry {
+            ast::Entry::Message(message) => match message_fault(tag, &message, document) {
+                None => good.push(ast::Entry::Message(ast::Message { comment: None, ..message })),
+                Some(why) => left_out.push(left(message.id.name, why)),
+            },
+            ast::Entry::Term(term) => {
+                left_out.push(left(&format!("-{}", term.id.name), "a term, which own words may not give".to_owned()))
+            }
+            ast::Entry::Junk { content } => {
+                let begins = content.lines().next().unwrap_or_default().split('=').next().unwrap_or_default();
+                left_out.push(left(begins.trim(), "not good Fluent".to_owned()));
+            }
+            _ => {}
+        }
+    }
+    let laid = good.len();
+    if laid > 0 {
+        let source = serializer::serialize(&ast::Resource { body: good });
+        match FluentResource::try_new(source) {
+            Ok(resource) => bundle.add_resource_overriding(resource),
+            Err((_, errors)) => {
+                left_out.push(left("*", format!("not read again as it was written: {errors:?}")));
+                return (0, left_out);
+            }
+        }
+    }
+    (laid, left_out)
 }
 
 /// The names of the messages in a Fluent file, in their order.
@@ -336,7 +652,10 @@ pub fn message(id: &str, args: Option<&FluentArgs>) -> String {
 /// What the core says by the name of the message, in a language of the
 /// interface, or in English where that lacks it.
 pub fn message_in(tag: &str, id: &str, args: Option<&FluentArgs>) -> String {
-    let words = words();
+    say(&words(), tag, id, args)
+}
+
+fn say(words: &Words, tag: &str, id: &str, args: Option<&FluentArgs>) -> String {
     [interface_language(tag), ENGLISH]
         .iter()
         .find_map(|tag| words.messages.get(tag).and_then(|bundle| format(bundle, id, args)))
@@ -346,18 +665,20 @@ pub fn message_in(tag: &str, id: &str, args: Option<&FluentArgs>) -> String {
         })
 }
 
-/// The language of documents nearest to a tag, if documents have words in
-/// it: `nb` of `nb-NO`, and of `no`.
-fn text_bundle(language: Option<&str>) -> Option<&'static Bundle> {
-    let language = language.map(str::trim).filter(|l| !l.is_empty()).unwrap_or(ENGLISH);
-    let found = nearest(language, &text_languages())?;
-    words().terms.get(found)
-}
-
 /// A word a document prints, in the language of the document. Nothing where
 /// documents have no words in that language.
 pub fn term(language: Option<&str>, id: &str) -> Option<String> {
-    text_bundle(language).and_then(|bundle| format(bundle, id, None))
+    term_in(&words(), language, id)
+}
+
+/// A word a document prints, in the language of documents nearest to a tag,
+/// if documents have words in it: `nb` of `nb-NO`, and of `no`.
+fn term_in(words: &Words, language: Option<&str>, id: &str) -> Option<String> {
+    let language = language.map(str::trim).filter(|l| !l.is_empty()).unwrap_or(ENGLISH);
+    let mut tags: Vec<&str> = words.terms.keys().copied().collect();
+    tags.sort_unstable();
+    let found = nearest(language, &tags)?;
+    words.terms.get(found).and_then(|bundle| format(bundle, id, None))
 }
 
 /// A word of a format in the language of the document. The formats have
@@ -367,8 +688,9 @@ pub fn term(language: Option<&str>, id: &str) -> Option<String> {
 /// kept as it is.
 pub fn in_language(language: Option<&str>, word: &str) -> String {
     let trimmed = word.trim();
-    let Some(id) = words().english.get(&trimmed.to_lowercase()) else { return word.to_owned() };
-    let Some(said) = term(language, id) else { return word.to_owned() };
+    let words = words();
+    let Some(id) = words.english.get(&trimmed.to_lowercase()) else { return word.to_owned() };
+    let Some(said) = term_in(&words, language, id) else { return word.to_owned() };
     let letters = || trimmed.chars().filter(|c| c.is_alphabetic());
     if letters().count() > 1 && !letters().any(char::is_lowercase) {
         // NOTES
@@ -657,6 +979,109 @@ mod tests {
         assert_eq!(message_in("xx", "program-missing", Some(&args)), english);
         assert_eq!(message("no-such-message", None), "no-such-message");
         assert_eq!(crate::tr!("program-missing", program = "Typst"), "Typst is not installed or could not be found");
+    }
+
+    /// The uses of the value of the first message of a text.
+    fn uses_of(text: &str) -> Uses {
+        let resource = parser::parse(text).unwrap_or_else(|(resource, _)| resource);
+        let Some(ast::Entry::Message(message)) = resource.body.first() else { panic!("no message in {text}") };
+        uses(message.value.as_ref().unwrap())
+    }
+
+    #[test]
+    fn an_own_word_must_have_the_variables_references_and_plural_forms_of_the_english() {
+        let english = uses_of("a = { $count ->\n    [one] One { -brand }\n   *[other] { $count } { -brand }\n}\n");
+        assert!(english.variables.contains("count"));
+        let good = uses_of("a = { $count ->\n    [one] Én\n   *[other] { $count } { -brand }\n}\n");
+        assert_eq!(fault("nb", &good, &english), None);
+        let lost = uses_of("a = Noen\n");
+        assert!(fault("nb", &lost, &english).unwrap().starts_with("variables"));
+        let gained = uses_of("a = { $count } { $more }\n");
+        assert!(fault("nb", &gained, &english).unwrap().starts_with("variables"));
+        let referred = uses_of("a = { $count } { other-message }\n");
+        assert!(fault("nb", &referred, &english).unwrap().contains("other-message"));
+        // Norwegian has one and other; Polish has one, few and many as well.
+        let lacking = uses_of("a = { $count ->\n    [few] få\n   *[other] { $count }\n}\n");
+        assert!(fault("nb", &lacking, &english).unwrap().starts_with("plural"));
+        assert!(fault("pl", &good, &english).unwrap().starts_with("plural"));
+        let polish = uses_of("a = { $count ->\n    [one] a\n    [few] b\n    [many] c\n   *[other] { $count }\n}\n");
+        assert_eq!(fault("pl", &polish, &english), None);
+        // A choice by other names than plural forms is not one by number.
+        let chosen = uses_of("a = { $count ->\n    [all] alle\n   *[none] { $count }\n}\n");
+        assert_eq!(fault("nb", &chosen, &english), None);
+        let (all, whole) = plurals("nb");
+        assert_eq!(whole, BTreeSet::from(["one", "other"]));
+        assert!(all.contains("other"));
+        let (_, whole) = plurals("sr-Cyrl");
+        assert_eq!(whole, BTreeSet::from(["few", "one", "other"]));
+    }
+
+    #[test]
+    fn own_words_are_laid_over_those_built_in_and_what_does_not_fit_is_left_out() {
+        let tmp = tempfile::tempdir().unwrap();
+        let nb = tmp.path().join("nb");
+        std::fs::create_dir_all(&nb).unwrap();
+        std::fs::write(
+            nb.join("core.ftl"),
+            "# Own words.\n\
+             program-missing = Finner ikke { $program }\n\
+             core-in-use-title = Glaukopis er åpent i { $path }\n\
+             no-such-message = Ingen\n\
+             -brand = Glaukopis\n\
+             core-export-astray = { $count ->\n    [few] få\n   *[other] { $count }\n}\n\
+             this is not = { Fluent\n",
+        )
+        .unwrap();
+        std::fs::write(nb.join("document.ftl"), "document-notes = Sluttnoter\n").unwrap();
+        // The interface's files and other files are not the core's.
+        std::fs::write(nb.join("common.ftl"), "common-cancel = Nei\n").unwrap();
+        std::fs::write(nb.join("notes.txt"), "x").unwrap();
+        let en = tmp.path().join("en");
+        std::fs::create_dir_all(&en).unwrap();
+        std::fs::write(en.join("document.ftl"), "document-notes = Endnotes\n").unwrap();
+        // A language that has no words built in is not read, nor a list of spelling.
+        std::fs::create_dir_all(tmp.path().join("xx")).unwrap();
+        std::fs::write(tmp.path().join("xx/core.ftl"), "program-missing = X { $program }\n").unwrap();
+        std::fs::write(tmp.path().join("nb.txt"), "Glaukopis\n").unwrap();
+
+        let (words, left_out) = make_words(Some(tmp.path()));
+        let mut args = FluentArgs::new();
+        args.set("program", Arg::value("Tesseract"));
+        assert_eq!(say(&words, "nb", "program-missing", Some(&args)), "Finner ikke Tesseract");
+        // What the own words lack is said as before, and what was left out too.
+        assert!(say(&words, "nb", "program-too-old", None).contains("er installert"));
+        assert_eq!(say(&words, "nb", "core-in-use-title", None), "Glaukopis er allerede åpent");
+        assert!(
+            say(&words, "nb", "core-export-astray", None).starts_with("Kryssreferanser"),
+            "the built-in one stands"
+        );
+        assert_eq!(
+            say(&words, "en", "program-missing", Some(&args)),
+            "Tesseract is not installed or could not be found"
+        );
+        // The words of documents, and English own words.
+        assert_eq!(term_in(&words, Some("nb-NO"), "document-notes").as_deref(), Some("Sluttnoter"));
+        assert_eq!(term_in(&words, Some("en-GB"), "document-notes").as_deref(), Some("Endnotes"));
+        assert_eq!(term_in(&words, Some("nb"), "document-figure").as_deref(), Some("Figur"));
+        // The words of the formats are known by the English built in.
+        assert_eq!(words.english.get("notes").map(String::as_str), Some("document-notes"));
+        assert_eq!(words.own, ["en", "nb"]);
+
+        let mut left: Vec<&str> = left_out.iter().map(|l| l.id.as_str()).collect();
+        left.sort_unstable();
+        assert_eq!(left, ["-brand", "core-export-astray", "core-in-use-title", "no-such-message", "this is not"]);
+        assert!(left_out.iter().all(|l| l.language == "nb" && l.file == "core.ftl"));
+
+        // Without a folder, or with an empty one, the words are those built in.
+        let (built_in, none) = make_words(None);
+        assert!(none.is_empty() && built_in.own.is_empty());
+        let empty = tempfile::tempdir().unwrap();
+        let (words, none) = make_words(Some(empty.path()));
+        assert!(none.is_empty());
+        assert_eq!(
+            say(&words, "nb", "program-missing", Some(&args)),
+            "Tesseract er ikke installert, eller ble ikke funnet"
+        );
     }
 
     #[test]

@@ -3,6 +3,7 @@
   import { getCurrentWebview } from '@tauri-apps/api/webview';
   import { languageSet, languagesInfo } from '$lib/api/system';
   import { languages, load, t } from '$lib/i18n';
+  import { readOwnWords } from '$lib/words/own';
   import { library } from '$lib/state/library.svelte';
   import { router, type Route } from '$lib/state/router.svelte';
   import { keysUi, shortcuts } from '$lib/shell/keys.svelte';
@@ -40,7 +41,9 @@
         languages.textDefault = info.textDefault;
       })
       .catch(() => {});
-    await Promise.all([settings.load(), known]);
+    // The own words, laid over those built in, by the interface and the core (ADR 0035).
+    const own = readOwnWords().catch((error) => console.warn('Own words not read', error));
+    await Promise.all([settings.load(), known, own]);
     // And the words of the language, lest the interface be shown in English first.
     await load(interfaceTag()).catch(() => {});
     ready = true;

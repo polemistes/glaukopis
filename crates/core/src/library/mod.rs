@@ -385,6 +385,26 @@ impl Library {
         Ok(entry)
     }
 
+    /// As `insert`, under an id that is given: a work that came with a
+    /// project, whose citations name it by that id (ADR 0036). Where an
+    /// entry has the id, or it is no id the library could keep, the new
+    /// entry is given an id of its own; the caller sees which it has.
+    pub(crate) fn insert_with_id(&mut self, id: &str, draft: &Draft) -> Result<Entry> {
+        let keepable = !id.is_empty()
+            && id.len() <= 64
+            && id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | ':'));
+        let free = keepable && !self.by_id.contains_key(id);
+        let mut entry = self.insert(draft, false)?;
+        if free && let Some(at) = self.by_id.remove(&entry.id) {
+            entry.id = id.to_owned();
+            self.entries[at].id = entry.id.clone();
+            self.by_id.insert(entry.id.clone(), at);
+            // An entry merged away under this id no longer stands for it.
+            self.aliases.remove(id);
+        }
+        Ok(entry)
+    }
+
     /// Replaces an entry's content by the draft. Attachments are not touched.
     pub fn update(&mut self, id: &str, draft: &Draft) -> Result<Entry> {
         self.refresh()?;

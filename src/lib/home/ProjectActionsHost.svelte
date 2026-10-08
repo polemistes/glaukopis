@@ -1,13 +1,15 @@
 <script lang="ts">
   /**
    * The dialogs of what is done with a project from a list of them: the one
-   * that asks for a name, and the earlier versions. See `project-actions`.
+   * that asks for a name, the earlier versions, and what is to be done with
+   * the works of a project file. See `project-actions`.
    */
   import { t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import HistoryDialog from './HistoryDialog.svelte';
+  import ProjectFileDialog from './ProjectFileDialog.svelte';
   import {
     namingAction,
     namingTitle,
@@ -27,6 +29,10 @@
       actions.open(copy);
     }}
   />
+{/if}
+
+{#if actions.asking}
+  <ProjectFileDialog asking={actions.asking} onanswer={(choices) => actions.answer(choices)} />
 {/if}
 
 {#if actions.naming}

@@ -522,3 +522,21 @@ What this settles:
 - An element deleted and brought back by undo was found in its place, loose
   or not, in the model and in the running application; how it was lost is to
   be learnt from the one who saw it.
+
+## 2026-10-08 — own words without a new package, a project as one file
+
+> How hard is it for the changed langauge strings to be detected by the app without making new packages?
+
+> Yes, build it. Also, it should be possible to save and load projects as single files. References that are in both must be resolved in the process, unless they are identical. And make new packages again without the end-to-end tests.
+
+What this settles:
+
+- Own words, in a folder of the data directory, are laid over the words
+  built into the program, the interface's and the core's, each message
+  checked first; **Use them now** over a project of words puts its changes
+  there and shows them at once (ADR 0035).
+- A project is saved as one `.glaukopis` file, with its pictures and the
+  works it cites, and opened from one as a new project; the references of
+  the file are resolved against the library, what is the same without a
+  question, what differs or looks like a work the library has by a choice,
+  and the citations follow where a work is cited by another id (ADR 0036).

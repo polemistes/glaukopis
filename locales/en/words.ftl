@@ -38,3 +38,26 @@ words-refused-reference = it refers to { $detail }, which the English does not
 words-refused-plurals = its plural forms are not those of the language: { $detail }
 words-refused-missing = the English has no such message, or the message's text was not written
 words-refused-file = the file { $detail } would not read afterwards
+
+# Putting the changed words to use at once, without a new version of
+# Glaukopis (ADR 0035): they are written into the data directory and laid
+# over the words Glaukopis came with.
+words-use = Use them now
+words-using = Putting them to use…
+words-use-hint = Puts what you changed to use at once, in place of the words Glaukopis came with, without a new version. The Fluent files are not written by this.
+words-use-failed = The words could not be put to use
+# $count is how many messages.
+words-used = { $count ->
+    [0] Nothing was changed, and nothing put to use.
+    [one] One message is now in use.
+   *[other] { $count } messages are now in use.
+}
+words-used-title = The words put to use
+words-used-refused = Not put to use, to be mended in the project
+# $languages are the names of the languages: "English, Norwegian Bokmål".
+words-own-in-use = Words you changed are in use, in place of those Glaukopis came with, for { $languages }.
+words-own-remove = Take them away
+words-own-remove-title = Take away the words you changed?
+words-own-remove-message = The words you put to use for { $languages } are taken away, and those Glaukopis came with are used again. The projects of words are kept.
+words-own-removed = The words Glaukopis came with are used again.
+words-own-remove-failed = The words you changed could not be taken away

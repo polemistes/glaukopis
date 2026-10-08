@@ -125,7 +125,9 @@ impl DataDir {
         self.root.join("languages")
     }
 
-    /// The writer's own words, a list for each language: see `spelling`.
+    /// The writer's own words: a list for each language, for spelling (see
+    /// `spelling`); and, in a folder for each language (`words/nb/`), Fluent
+    /// files laid over the words of the application (see `i18n`, ADR 0035).
     pub fn words(&self) -> PathBuf {
         self.root.join("words")
     }
