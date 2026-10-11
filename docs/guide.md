@@ -1401,6 +1401,180 @@ their label, and the checklist of the document settings names them. Nothing
 is lost: a part the template has no place for is printed all the same, after
 the parts the template lists in front or at the back.
 
+## Templates
+
+A **template** says what a document consists of: its parts in their order,
+the kinds of elements and of paragraph it puts in your hand, the layout and
+the reference style it brings, and what it requires, such as how many words
+it may have. A journal article has a title page, an abstract and keywords,
+the text, then appendices, acknowledgements, notes and bibliography; a novel
+has a cover, a half-title and a title page, a copyright page, a dedication
+and an epigraph, the contents, the chapters, then the acknowledgements and a
+note on the author. Three things are told apart, each with one job:
+
+| | What it says |
+| --- | --- |
+| **Template** | What the document consists of |
+| **Layout** | How the page looks: the page, the type, the spacing, the headings, the notes, the looks of the kinds |
+| **Reference style** | How citations and the bibliography are written |
+
+A template is set on an element and holds for everything under it, as the
+layout and the reference style do: the template of the book holds for a
+chapter printed alone. Any element may have one of its own, so a thin
+element that stands for a chapter (see *One tree, entered anywhere*) sends
+the chapter as an article, with the journal's template, while the book keeps
+its own. Where an element chooses neither a layout nor a style, it has those
+the template brings; where the template brings none, it has your usual
+ones. Your usual template, layout and reference style are chosen under
+*Settings*, and hold wherever nothing else is said.
+
+The templates that come with Glaukopis are offered by group, with a search:
+
+- **Plain**: the **plain document**, nothing but the title, the text, the
+  notes and the bibliography.
+- **Articles and papers**: a **paper**, a student's or a conference paper,
+  as the plain document with your usual layout and reference style; and a
+  **journal article**, with an abstract and keywords before the text, and
+  appendices and acknowledgements after it, with no limits until a journal's
+  template sets them.
+- **Books and theses**: an **academic book**, with half-title and title
+  page, copyright page, dedication and epigraph, the contents, foreword,
+  preface and acknowledgements, the chapters, then appendices, glossary,
+  notes, bibliography and a note on the author; a **thesis**, with its
+  abstract and acknowledgements, the contents with the lists of figures and
+  tables, the chapters, then appendices and bibliography; and a **report**,
+  with abstract, contents, text, appendices and bibliography.
+- **Fiction**: a **novel**, as a printed book or an e-book, with its cover,
+  its front matter and its chapters, in the layout of a novel as a book; a
+  **novel manuscript**, a title page and the chapters in the standard
+  manuscript layout, for an agent or a publisher; a **short story**, for a
+  magazine or a competition, the same way; and a **collection of stories**,
+  as a book, each story an element.
+- **Stage and screen**: a **play**, with its cast and its setting before the
+  acts and scenes, the speeches written as verse with their speakers and
+  directions; and a **screenplay**, the script on the standard page.
+- **Poetry**: **poems**, a collection with a dedication, the contents, each
+  poem an element, then acknowledgements and a note on the poet.
+- **Other kinds of text**: a **news article**, with a standfirst over the
+  text; a **blog post**, the text alone, as a web page or as Markdown for a
+  site that makes its own pages; and a **letter**, the text and a signature.
+- **Journals**, **publishers** and **style guides**: one for each journal,
+  publisher and style guide that Glaukopis has a layout for, based on the
+  article, the book or the paper, each keeping the layout and the reference
+  style it had before, and its limits as requirements. *The
+  Classical Quarterly* allows twelve thousand words, footnotes and abstract
+  included, an abstract of 250 words and eight keywords, and asks for an
+  anonymised text. Each says where its requirements were found, and when,
+  and how sure that is.
+
+**Change this template…**, under the template chosen in the document
+settings, opens the template editor on it, and **New template…** opens it
+on a new one. The editor has, part by part:
+
+- **About this template**: its description, its group, what it is based on,
+  and where its requirements are from.
+- **Layout and reference style**: what it brings, or your usual.
+- **Contents**: the order of the document, as a list. In it stand the parts
+  Glaukopis makes itself, the half title, the title page, the keywords, the
+  table of contents, the lists of figures and tables, the text, the notes and
+  the bibliography, and *Every abstract*, *Every appendix*, and so on, which
+  place every element of that kind, in the order of the tree. Each is moved
+  up and down or taken out, and **A part…** and **A kind of element…** add
+  one. A kind listed before the text is front matter, one listed after it
+  back matter.
+- **Kinds of elements**: the kinds the template puts in the hand, so that
+  they are offered in the menu of kinds; those in the contents are in hand
+  whether chosen here or not.
+- **Kinds of paragraph and words**: those that belong to a document of its
+  kind, as the parts of a script belong to a screenplay.
+- **Requirements**: words of text, words of abstract, keywords, whether the
+  names of the authors are left out, for review, and a note on what the
+  limits count; *no limit* where nothing is said. The checklist and the
+  preview count against these; nothing is cut.
+- **Files**: the kinds of file the document is made as.
+
+What you change is kept as a template of your own, under the name you give
+it; those that came with Glaukopis stay as they were. **Delete this
+template** takes one of your own away, and the elements that used it use
+the template it was made from. A template is copied into the project when it
+is chosen there, so that those you share the project with, and a
+`.glaukopis` file, have it.
+
+## The document settings
+
+Every element has a window of **document settings**, for the document it
+prints. **Ctrl+Shift+D** opens it for the element in view; so do **Document
+settings…** in the menu of the element in view (**This element**, beside its
+name in the bar) and the button over the preview. Down its left stand six
+parts. The template, the layout, the reference style and the language take
+effect as they are chosen, each a step of undo; the details are kept with
+**Save**.
+
+**Template** lists the templates by group, with a search by the kind of
+text, a journal or a publisher. The one in use is marked, with where its
+requirements are from, the layout and the reference style it brings, and
+**Change this template…** and **New template…** (see *Templates*). A
+template taken from an element over this one says **From** which; where
+the element chose one itself, a button takes the one over it again, or your
+usual.
+
+**Details** is what stands on the first page, and what the files carry as
+metadata: the **title**, which is the element's name until one is written,
+and shows the name in its place meanwhile; the **subtitle**; the
+**authors**, each with affiliation, e-mail and ORCID; the **date**, as it is
+to be printed; the **keywords**, separated by commas, counted against what
+the template allows; and the **identifiers**, ISBN, edition, publisher,
+place and DOI, and any other you name, such as an ISSN. The authors, the
+date, the keywords and the identifiers are the element's own where it sets
+them, and otherwise taken from the nearest element over it that does, up to
+the project itself: under such a setting the window says **From** which
+element it comes, and the field shows the inherited value in grey, until
+you write your own. The title and the subtitle are never taken from above:
+they are each element's own. Everything else is written in the tree.
+
+**Parts** lists the kinds of elements the template gives a place to, each
+with where it stands, front matter, back matter or cover, and the elements
+directly under this one that fill it, or **None yet**. **Make one** makes an
+element of the kind under this one, named after the kind, first among them
+for the front matter and last for the rest; pressing an element goes to it
+in the text. Where a document has one of a kind and more are there, the
+second and the later say **Only the first is used**.
+
+**Layout and citations** chooses the **layout** and the **reference
+style**. The first choice of each is **As the template has it**, naming what
+the template brings, or **From** the element over this one that chose,
+naming what it chose; then come the layouts by kind, and the reference
+styles by kind, with **More styles…**, which fetches any of the ten thousand
+styles of the Citation Style Language by name. **Change this layout…**
+opens the layout editor and **Change this reference style…** the editor of
+the style (see *The preview, and the manuscript*).
+
+**Language** is the language of the text of this element, and of everything
+under it that is given no other, for a part written in another language
+than the rest. Where the element says none, it says **From** the element
+over it that does, naming the language; where none does, the text is
+written in the language of new texts, which is set under *Settings* ›
+*Language*: at first that of the computer, where documents have words in it
+(every language Glaukopis speaks), and English otherwise. On the project
+itself it is **the language of the project**, what the project is written
+in, for everyone it is shared with; a document brought in keeps the language
+the document says it is in. The language is written into the project, so
+that those you share it with make the same document of it. It decides what
+the document prints in words of its own, the headings of the notes, the
+abstract and the bibliography, what a figure and a table are called, and the
+words of the reference style; the dictionary the spelling is checked by; and
+the quotation marks a mention stands in. **Languages…**, in the menu of the
+element in view, opens the window at this part.
+
+**Checklist** is what the template requires, against the text and the tree;
+nothing is cut. It says the words of the text against the limit, with the
+template's note on what the limits count, and whether the authors are to be
+left out, for review; then what there is to remark on: more words than the
+template allows, more words in the abstract, more keywords, a second element
+of a kind the document has one of, beside the first, and elements of the
+kind **Cover** where the template makes no cover. Each names its elements,
+which open in the text; otherwise it says **Nothing to remark on**.
+
 ## The preview, and the manuscript
 
 **Ctrl+P** opens the preview beside the map, and closes it. It shows the
@@ -1419,66 +1593,60 @@ place. **Go to this place in the text** shows in the text the element whose
 pages are in view; **Show where the text is** moves the pages to where the
 element you are writing in begins, and points its page out for a moment.
 
-Over the preview, two things are chosen:
+One line over the preview names what the document is made by: the
+template, the layout and the reference style in use. Pressing it, or the
+button beside it, opens the document settings, where all three are chosen
+(see *The document settings*).
 
-- The **reference style**: Chicago, MLA, APA, Harvard and other common styles
-  come with Glaukopis; any of the ten thousand styles of the Citation Style
-  Language can be fetched by name.
-- The **document format**: the page, the type, the spacing, the headings, as
-  a publisher or a journal asks for them. The formats that come with
-  Glaukopis each say where their requirements were found, and when. They are
-  offered by kind: the general ones, **fiction** (a novel as a manuscript for
-  submission, and as a book), **stage and screen** (a play script and a
-  screenplay), **poetry**
-  (a collection of poems), and the style guides, publishers and journals of
-  academic writing. A project is not of one kind: any format can be given to
-  any element, and changed at any time.
+The **layout** is the page, the type, the spacing, the headings, as a
+publisher or a journal asks for them. The layouts that come with Glaukopis
+each say where their requirements were found, and when. They are offered by
+kind: the general ones, **fiction** (a novel as a manuscript for submission,
+and as a book), **stage and screen** (a play script and a screenplay),
+**poetry** (a collection of poems), and the style guides, publishers and
+journals of academic writing. The **reference style** is how citations and
+the bibliography are written: Chicago, MLA, APA, Harvard and other common
+styles come with Glaukopis, and any of the ten thousand styles of the
+Citation Style Language can be fetched by name. A project is not of one
+kind: any template, layout or style can be given to any element, and
+changed at any time.
 
-Both can be changed. **Change this format…** has every measure of the page in
-plain words, among them whether a level of heading **begins a new page**, as
-the chapters of a book do. Under **Kinds of paragraph and words** it says of
-each kind what it is based on and how it differs from that: size, line
-spacing, alignment, indents, the first line, space before and after, bold,
-italic, letters, underlining, letters of equal width, whether it keeps with
-what follows, and whether it begins a new page. A kind the format says
-nothing of is as its base, so a kind of your own needs nothing said of it.
-Under **Type and spacing**, **Italics are set** says whether italics stand
-as italics or are underlined, as the manuscript of the typewriter had them;
-the mark in the text is the same. **Change this reference style…** has the changes publishers most
-often ask for as simple choices, and the whole style, part by part, for the
-rest. What you change is kept as a format or a style of your own; those that
-came with Glaukopis stay as they were.
-
-**Title, authors, abstract**, over the preview, or **Document details…** in
-the menu of the element in view, is what stands on the first page: the
-title, which is the element's name until one is written; the subtitle; the
-authors, with their affiliations; the abstract; the keywords; the date; the
-language of the text; and the cover of an e-book. The authors, the keywords,
-the date, the language and the cover are the element's own where it sets
-them, and otherwise taken from the nearest element over it that does, up to
-the project itself: under such a setting the dialog says **From** which
-element it comes. The format and the reference style are taken the same
-way. Set them once on the project, and every chapter printed alone has them.
-The title, the subtitle and the abstract are never taken from above: they
-are each element's own.
+Both can be changed, from the document settings. **Change this layout…**
+opens the layout editor, which has every measure of the page in plain words,
+among them whether a level of heading **begins a new page**, as the chapters
+of a book do. Under **Kinds of paragraph and words** it says of each kind
+what it is based on and how it differs from that: size, line spacing,
+alignment, indents, the first line, space before and after, bold, italic,
+letters, underlining, letters of equal width, whether it keeps with what
+follows, and whether it begins a new page. A kind the layout says nothing of
+is as its base, so a kind of your own needs nothing said of it. Under **Type
+and spacing**, **Italics are set** says whether italics stand as italics or
+are underlined, as the manuscript of the typewriter had them; the mark in
+the text is the same. **Change this reference style…** has the changes
+publishers most often ask for as simple choices, and the whole style, part
+by part, for the rest. What you change is kept as a layout or a style of
+your own; those that came with Glaukopis stay as they were.
 
 **Export** makes the manuscript: PDF, Word, OpenDocument, LaTeX, Markdown, a
 web page, or an **e-book** (EPUB), in which the reader sets the text and each
-chapter is a part of its own. A cover for the e-book, a picture of the
-store, is chosen under *Title, authors, abstract*. Where the document is given as it is written, in LaTeX, Typst or
-Markdown, its pictures are put in a folder beside it, named after it.
+chapter is a part of its own. The cover of the e-book is the first picture
+in an element of the kind **Cover** under the element printed (see *What
+goes into the document*). Where the document is given as it is written, in
+LaTeX, Typst or Markdown, its pictures are put in a folder beside it, named
+after it.
 
-In Word and Writer every kind is a style, with the look the format gives
+In Word and Writer every kind is a style, with the look the layout gives
 it, so that a publisher can change every epigraph at once: the paragraph
 styles *Attribution*, *Epigraph*, *Scene Heading*, *Action*, *Character*,
 *Dialogue*, *Parenthetical*, *Transition*, *Headword*, *Gloss*, *Source
 Code* and *Section Break*; the character styles *Speaker*, *Stage
-Direction*, *Foreign*, *Title of a Work*, *Term* and *Mention*; and, for a
-kind of your own, a style of its name. In every document that is made,
-foreign words carry their language, a mention stands in the quotation
-marks of the language of the text, code is kept letter for letter, and a
-break prints the sign the format gives it; a draft note and a highlight go
-into none of them.
+Direction*, *Foreign*, *Title of a Work*, *Term* and *Mention*; for a kind
+of your own, a style of its name; and for each part of the document, an
+abstract or an appendix, a paragraph style of its name as well. In every
+document that is made, foreign words carry their language, a mention stands
+in the quotation marks of the language of the text, code is kept letter for
+letter, and a break prints the sign the layout gives it; a draft note and a
+highlight go into none of them.
 The numbers of the lines of verse do not stand in the margin of Word,
 which numbers lines only by the section: they stand at the head of their
 lines, small.
@@ -1487,10 +1655,11 @@ There are two kinds of PDF. **PDF** is what the preview shows. **PDF, set by
 LaTeX** is the same document in the typesetting of LaTeX, for those who
 prefer its pages or are asked for them; it needs LaTeX (TeX Live) on the
 computer, and takes a little longer. The two are alike in everything the
-format says, and differ in how lines and pages are broken.
+layout says, and differ in how lines and pages are broken.
 
-What there is to remark about a document, such as a font the format asks for
-and the computer does not have, is said at the foot of the preview.
+What there is to remark about a document, such as a font the layout asks for
+and the computer does not have, is said at the foot of the preview, with
+the words of the text against what the template allows.
 
 Two programs do the work. Pandoc turns the text into the document, and sets
 every citation and the bibliography in the reference style. Typst sets the
@@ -1689,19 +1858,12 @@ of the computer, where it has it, and English where it does not.
 *Settings* › *Language* changes it, at once.
 
 Your texts have a language of their own, which need not be that of
-Glaukopis. It is shown, and can be changed, under **Languages…** in the menu
-of the element in view (**This element**, beside its name in the bar), and
-with the details of its document (**Title, authors, abstract** over the
-preview). The dialog has **The language of the project**, what the project
-is written in, for everyone it is shared with; and **The language of this
-element**, for a part written in another language than the rest: it holds
-for the element and everything under it that is given no other. Where the
-project chooses none, it is written in the language of new texts, which is
-set under *Settings* › *Language*: at first that of the computer, where
-documents have words in it (every language Glaukopis speaks), and English
-otherwise. A document brought in keeps the language the document says it is
-in. The language is written into the project, so that those you share it
-with make the same document of it.
+Glaukopis. It is chosen under **Language** in the document settings of an
+element (**Ctrl+Shift+D**, or **Languages…** in the menu of the element in
+view, which opens the settings there): that of the project, for everyone it
+is shared with, and that of an element written in another language than the
+rest, which holds for everything under it that is given no other. See *The
+document settings*.
 
 The language of an element decides what its document prints in words of its
 own: the headings of the notes, the abstract and the bibliography, what a
@@ -1869,6 +2031,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+Shift+L** | The list of projects at the left of a project |
 | **Ctrl+P** | The preview |
+| **Ctrl+Shift+D** | The document settings of the element in view |
 | **Ctrl+Shift+R** | The references |
 | **Ctrl+Shift+P** | The pictures of the project |
 | **Ctrl+Shift+M** | The comments |
