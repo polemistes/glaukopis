@@ -1,6 +1,7 @@
 /**
- * What there is to go through in a map: the passages of its texts, and the
- * citations that were found in them. See `api/found.ts` and ADR 0015.
+ * What there is to go through in the branch of an element: the passages of
+ * its texts, and the citations that were found in them. See `api/found.ts`
+ * and ADR 0015.
  *
  * The texts are read as the project keeps them, and not as `model/text.ts`
  * gives them, because what is gathered is changed later where it stands: a
@@ -190,19 +191,19 @@ export function gatherElement(project: Project, element: string, into?: Gathered
 }
 
 /**
- * The passages of a map and the citations that were found in them, in the
- * order of the text: in the texts of all its elements, in notes, in what is
- * said of figures and tables, and in cells.
+ * The passages of an element and all under it, and the citations that were
+ * found in them, in the order of the text: in the texts of all those
+ * elements, in notes, in what is said of figures and tables, and in cells.
  */
-export function gather(project: Project, map: string): Gathered {
+export function gather(project: Project, at: string): Gathered {
   const out: Gathered = { places: [], marked: [] };
-  for (const element of project.tree(map).sequence) gatherElement(project, element, out);
+  for (const element of project.tree(at).sequence) gatherElement(project, element, out);
   return out;
 }
 
-/** How many citations that were found a map has to go through. */
-export function countFound(project: Project, map: string): number {
-  return gather(project, map).marked.length;
+/** How many citations that were found an element in view has to go through. */
+export function countFound(project: Project, at: string): number {
+  return gather(project, at).marked.length;
 }
 
 /** A passage as it is now, by what it is known by. Nothing, when it is no longer there. */

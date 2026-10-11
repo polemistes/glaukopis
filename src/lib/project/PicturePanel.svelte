@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   /**
-   * The pictures at the side of a project: those of the map in view, of the
-   * project, or all of the store. A picture is dragged from here into a text,
+   * The pictures at the side of a project: those of the element in view, of
+   * the project, or all of the store. A picture is dragged from here into a text,
    * where it becomes a figure.
    */
   import { onMount } from 'svelte';
@@ -44,17 +44,18 @@
 
   interface Props {
     project: Project;
-    /** The map in view: "This map" shows its pictures. */
-    mapId: string;
+    /** The element in view: "This map" shows the pictures of its branch. */
+    at: string;
     /** Which pictures are shown. */
     scope?: PictureScope;
     onclose: () => void;
     /** What stands at the head in place of the title: the tabs of the panel at the side. */
     head?: Snippet;
-    onopenmap?: (map: string) => void;
+    /** Enters an element in which the picture stands. */
+    onenter?: (id: string) => void;
   }
 
-  let { project, mapId, scope = $bindable('project'), onclose, onopenmap, head }: Props = $props();
+  let { project, at, scope = $bindable('project'), onclose, onenter, head }: Props = $props();
 
   /** A picture as it stands in the list: one the project uses may not have arrived in the store. */
   interface Row {
@@ -92,7 +93,7 @@
         picture: p,
       }));
     return project
-      .usedPictures(scope === 'map' ? mapId : undefined)
+      .usedPictures(scope === 'map' ? at : undefined)
       .map((used) => {
         const picture = pictures.get(used.hash);
         return {
@@ -346,10 +347,11 @@
       <PicturePane
         hash={opened}
         {project}
+        {at}
         onremoved={() => (opened = null)}
-        onopenmap={(map) => {
+        onenter={(id) => {
           opened = null;
-          onopenmap?.(map);
+          onenter?.(id);
         }}
       />
     {/key}

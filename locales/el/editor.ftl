@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Πώς στοιχειοθετείται κάθ
 editor-words = Λέξεις
 editor-words-hint = Υπογράμμιση, εκθέτης, κώδικας· ξένες λέξεις, τίτλος έργου, όρος
 editor-words-make = Δημιουργία είδους λέξεων…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Η γλώσσα του χάρτη
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Απλές λέξεις
 editor-own-kind-new = Ένα δικό σας είδος

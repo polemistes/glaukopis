@@ -18,15 +18,14 @@ import { router } from '$lib/state/router.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
 import { writeElsewhere } from './elsewhere';
 import type { Project } from './model/project.svelte';
-import { makePortable, portable, type Portable } from './model/portable';
+import { makePortable, portable, type Place, type Portable } from './model/portable';
 import { isAncestor, topmost } from './model/tree';
-import type { Position } from './model/types';
+import { PROJECT } from './model/types';
 
 export interface Held {
   project: Project;
   /** The id of the project they came from, so that it is known again when it is opened anew. */
   from: string | null;
-  map: string;
   /** The topmost of what was copied: each with all that is under it. */
   ids: string[];
   /** What they were when they were copied, for another project. */
@@ -59,19 +58,22 @@ class Clipboard {
 
 export const clipboard = new Clipboard();
 
-/** Holds the elements, each with all under it; the centre is never copied. Returns how many are held. */
-export function copyElements(project: Project, map: string, ids: string[], cut = false): number {
-  const tree = project.tree(map);
-  const top = topmost(tree, ids).filter((id) => id !== tree.root && project.node(id));
+/** Holds the elements, each with all under it; the project itself is never copied. Returns how many are held. */
+export function copyElements(project: Project, ids: string[], cut = false): number {
+  const tree = project.tree();
+  const top = topmost(
+    tree,
+    ids.filter((id) => project.node(id)),
+  ).filter((id) => id !== PROJECT);
   clipboard.held = top.length
-    ? { project, from: openId(), map, ids: top, portable: portable(project, top), cut }
+    ? { project, from: openId(), ids: top, portable: portable(project, top), cut }
     : null;
   return top.length;
 }
 
 /** Holds the elements to be moved where they are pasted. Returns how many are held. */
-export function cutElements(project: Project, map: string, ids: string[]): number {
-  return copyElements(project, map, ids, true);
+export function cutElements(project: Project, ids: string[]): number {
+  return copyElements(project, ids, true);
 }
 
 /** Whether an element is held as cut, to be shown so. */
@@ -87,55 +89,32 @@ export function canPaste(project: Project): boolean {
 }
 
 /**
- * Pastes what is held: under the element given, at the end; or, under
- * none, on their own in the map, at the position given. Within the project
- * they came from as copies; in another, or where they are gone, made anew.
+ * Pastes what is held under the element given, at the end of what is under
+ * it: at the position given, relative to that element, or placed
+ * automatically. Within the project they came from as copies; in another,
+ * or where they are gone, made anew.
  */
-export function pasteElements(
-  project: Project,
-  map: string,
-  under: string | null,
-  pos: Position | null = null,
-): string[] {
-  if (!canPaste(project)) return [];
+export function pasteElements(project: Project, place: Place): string[] {
+  if (!canPaste(project) || !project.node(place.under)) return [];
   const held = clipboard.held!;
-  if (held.cut) return pasteCut(held, project, map, under, pos);
-  if (!asCopies(held, project))
-    return makePortable(
-      project,
-      held.portable,
-      under ? { under } : { map, pos: pos ?? { x: 0, y: 0 } },
-    );
-  return under
-    ? project.copy(held.ids, under)
-    : project.copy(held.ids, null, undefined, { pos: pos ?? { x: 0, y: 0 }, map });
+  if (held.cut) return pasteCut(held, project, place);
+  if (!asCopies(held, project)) return makePortable(project, held.portable, place);
+  return project.copy(held.ids, place.under, undefined, { pos: place.pos });
 }
 
 /**
  * Pastes what was cut: moved, where it came from this project; made here,
  * and taken away from the project it came from, where it came from another.
  */
-function pasteCut(
-  held: Held,
-  project: Project,
-  map: string,
-  under: string | null,
-  pos: Position | null,
-): string[] {
+function pasteCut(held: Held, project: Project, place: Place): string[] {
   clipboard.held = null;
   if (asCopies(held, project)) {
     // Under one of what was cut, or under what is under it, it cannot go.
-    const tree = project.tree(project.node(held.ids[0])?.map ?? map);
-    if (under && held.ids.some((id) => id === under || isAncestor(tree, id, under))) return [];
-    return under
-      ? project.move(held.ids, under, undefined, { pos: null })
-      : project.move(held.ids, null, undefined, { pos: pos ?? { x: 0, y: 0 }, map });
+    const tree = project.tree();
+    if (held.ids.some((id) => id === place.under || isAncestor(tree, id, place.under))) return [];
+    return project.move(held.ids, place.under, undefined, { pos: place.pos ?? null });
   }
-  const made = makePortable(
-    project,
-    held.portable,
-    under ? { under } : { map, pos: pos ?? { x: 0, y: 0 } },
-  );
+  const made = makePortable(project, held.portable, place);
   if (made.length && held.from) {
     const from = held.from;
     const ids = held.ids;

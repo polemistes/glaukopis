@@ -4,14 +4,12 @@
 documents-choose = Ett dokument att hämta in
 documents-filter = Dokument
 documents-filter-all = Alla filer
-documents-title-map = En karta av ett dokument
 documents-title-project = Ett projekt av ett dokument
 documents-reading = Läser { $file }…
 documents-reading-hint = Ett långt dokument tar en stund.
 documents-no-pandoc = Dokument av det här slaget läses av Pandoc, som inte är installerat eller inte kunde hittas. Var det finns kan anges i inställningarna.
 documents-unread = Filen kunde inte läsas.
 documents-title = Titel
-documents-title-hint-map = Namnet på kartan, och på elementet i dess mitt.
 documents-title-hint-project = Namnet på projektet, på dess karta, och på elementet i kartans mitt.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Utan titel
@@ -79,7 +77,6 @@ documents-found-some-made = { $count } källhänvisningar hittades, { $made } av
 documents-at-once = Gör genast källhänvisningar av dem som Zotero gjort till verk som ditt bibliotek har
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = En not som inte är annat än en källhänvisning blir en källhänvisning i raden, som referensstilen sätter i en not eller i raden; en not som säger mer behåller sin källhänvisning. Det du har valt för noter i panelen med hittade källhänvisningar, för alla som följer, gäller här också.
-documents-go-through-map = Gå igenom källhänvisningarna när kartan görs
 documents-go-through-project = Gå igenom källhänvisningarna när projektet görs
 
 ## Making the map.
@@ -87,6 +84,4 @@ documents-go-through-project = Gå igenom källhänvisningarna när projektet g�
 # Over what the one who brings the document in should know of it.
 documents-to-know = Att veta
 documents-making = Gör kartan…
-documents-make-map = Gör kartan
 documents-make-project = Gör projektet
-documents-map-failed = Kartan kunde inte göras.

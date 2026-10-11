@@ -37,7 +37,7 @@ preview-failed = The preview could not be made
 preview-failed-message = The preview could not be made.
 # A page of the preview, as it is told to those who cannot see it.
 preview-page = Page { $number }
-# The name of an exported file, where the map has none.
+# The name of an exported file, where the element has no name.
 preview-file-name = document
 
 ## At the foot of the preview: how long the document is, and what there is to remark.
@@ -81,8 +81,8 @@ preview-remarks-warnings = Said while the document was made
 preview-details-dialog = The document
 preview-details-dialog-subtitle = What stands on its first page
 preview-details-title = Title
-preview-details-title-placeholder = The name of the centre of the map
-preview-details-title-hint = Left empty, the name of the centre of the map is the title.
+preview-details-title-placeholder = The name of the element
+preview-details-title-hint = Left empty, the name of the element is the title.
 preview-details-subtitle = Subtitle
 preview-details-authors = Authors
 preview-details-name = Name

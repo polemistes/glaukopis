@@ -8,6 +8,7 @@ import { languages, t } from '$lib/i18n';
 import { blocksHtml } from '$lib/project/model/html';
 import { Project } from '$lib/project/model/project.svelte';
 import { readBody } from '$lib/project/model/text';
+import { PROJECT } from '$lib/project/model/types';
 import {
   canStandBeside,
   flows,
@@ -120,8 +121,8 @@ describe('beside each other', () => {
 
   it('is read from the project, and shown', () => {
     const p = new Project(null);
-    const map = p.createMap('Wrath');
-    const a = p.addChild(p.map(map)!.root, { title: 'A' })!;
+    p.begin('Wrath');
+    const a = p.addChild(PROJECT, { title: 'A' })!;
     const doc = bodySchema.node('doc', null, [
       row.create(null, [fig('a', { align: 'left', flow: 'around', width: 40 }), tab('t')]),
       row.create(null, [eq('e', { align: 'right' })]),

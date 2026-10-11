@@ -8,7 +8,7 @@
 import type { Project } from '$lib/project/model/project.svelte';
 import { refForm } from '$lib/project/model/text';
 import { showFormula } from './math.svelte';
-import { numbering, pointerText } from './numbering.svelte';
+import { numbering, pointerText, topOf } from './numbering.svelte';
 import { pictures } from './pictures.svelte';
 import { dress } from '$lib/tables/look';
 import { usualOf } from './placing';
@@ -20,6 +20,8 @@ export interface Shown {
   project: Project;
   /** The element whose text it is, by which what stands in it is numbered. */
   element: string;
+  /** The element in view, in whose document it is numbered; the tree under the project the element stands in, where none is given. */
+  at?: string;
 }
 
 function fill(root: HTMLElement, shown: Shown) {
@@ -40,9 +42,9 @@ function fill(root: HTMLElement, shown: Shown) {
   }
 
   // The numbers, what the document calls things, and where they stand.
-  const map = shown.project.node(shown.element)?.map;
-  if (!map) return;
-  const format = numbering.formatOf(shown.project, map);
+  if (!shown.project.node(shown.element)) return;
+  const at = shown.at ?? topOf(shown.project, shown.element);
+  const format = numbering.formatOf(shown.project, at);
   for (const [selector, kind] of [
     ['figure.figure', 'figure'],
     ['figure.tabular', 'table'],
@@ -61,8 +63,8 @@ function fill(root: HTMLElement, shown: Shown) {
       );
     }
   }
-  const numbers = numbering.of(shown.project, map);
-  const counting = numbering.countingOf(shown.project, map);
+  const numbers = numbering.of(shown.project, at);
+  const counting = numbering.countingOf(shown.project, at);
   const within = numbers.within.get(shown.element);
   root.querySelectorAll<HTMLElement>('figure.figure').forEach((figure, i) => {
     const said = figure.querySelector<HTMLElement>('figcaption');

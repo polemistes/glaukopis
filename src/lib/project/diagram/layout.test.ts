@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTree, type FlatNode } from '../model/tree';
+import { buildTree, viewOf, type FlatNode } from '../model/tree';
 import type { NodeRecord } from '../model/types';
 import {
   associationCurve,
@@ -12,41 +12,47 @@ import {
   type Size,
 } from './layout';
 
-function make(spec: Record<string, Partial<NodeRecord> & { parent: string | null }>) {
+/** A tree with `root` at the top, the elements in the order given. */
+function make(spec: Record<string, Partial<NodeRecord> & { parent: string | null }>, root = 'r') {
   const flat: FlatNode[] = [];
   const nodes = new Map<string, NodeRecord>();
   const sizes = new Map<string, Size>();
   let i = 0;
   for (const [id, s] of Object.entries(spec)) {
     const order = `a${String(i++).padStart(2, '0')}`;
-    flat.push({ id, map: 'm', parent: s.parent, order });
+    flat.push({ id, parent: s.parent, order });
     nodes.set(id, {
       id,
-      map: 'm',
       order,
       pos: null,
-      side: null,
       collapsed: false,
       heading: true,
       excluded: false,
       include: null,
-      refs: [],
       origin: null,
+      status: null,
+      kind: null,
+      when: null,
+      document: {},
+      timeline: {},
       title: id,
       titleHtml: id,
       empty: true,
       words: 0,
       cited: [],
       notes: 0,
+      noteWords: 0,
+      set: [],
+      uses: [],
       ...s,
-    } as NodeRecord);
+    });
     sizes.set(id, { w: 100, h: 40 });
   }
-  return { tree: buildTree(flat, 'm', 'r'), nodes, sizes };
+  return { tree: buildTree(flat, root), nodes, sizes };
 }
 
 describe('the layout of a map', () => {
-  it('puts the centre in the middle and its children on their sides', () => {
+  it('puts the element in view in the middle and its children on their sides', () => {
     const { tree, nodes, sizes } = make({
       r: { parent: null },
       a: { parent: 'r' },
@@ -155,16 +161,51 @@ describe('the layout of a map', () => {
     expect(l.placed.get('a')!.hidden).toBe(2);
   });
 
-  it('places loose elements where they are', () => {
+  it('keeps the element in view at the origin, whatever its place and however it is held', () => {
     const { tree, nodes, sizes } = make({
-      r: { parent: null },
-      l: { parent: null, pos: { x: -400, y: -100 } },
-      l1: { parent: 'l' },
+      r: { parent: null, pos: { x: 300, y: 120 } },
+      a: { parent: 'r' },
+    });
+    const l = layout(tree, nodes, sizes, new Map([['r', { x: -500, y: 300 }]]));
+    const p = (id: string) => l.placed.get(id)!;
+    expect([p('r').x, p('r').y]).toEqual([0, 0]);
+    expect(p('r').pinned).toBe(false);
+    expect(p('a').x).toBe(50 + H_GAP + 50);
+  });
+
+  it('never folds the element in view', () => {
+    const { tree, nodes, sizes } = make({
+      r: { parent: null, collapsed: true },
+      a: { parent: 'r' },
+      a1: { parent: 'a' },
     });
     const l = layout(tree, nodes, sizes);
-    expect(l.placed.get('l')!.x).toBe(-400);
-    expect(l.placed.get('l1')!.x).toBeLessThan(-400);
-    expect(l.bounds.left).toBe(l.placed.get('l1')!.x - 50);
+    expect(l.order).toEqual(['r', 'a', 'a1']);
+    expect(l.placed.get('r')!.hidden).toBe(0);
+  });
+
+  it('lays out a view of the whole tree from the element in view', () => {
+    const { tree, nodes, sizes } = make(
+      {
+        project: { parent: null },
+        r: { parent: 'project', pos: { x: 300, y: 120 } },
+        a: { parent: 'r' },
+        b: { parent: 'r', pos: { x: -200, y: 80 } },
+        other: { parent: 'project' },
+      },
+      'project',
+    );
+    const view = viewOf(tree, 'r');
+    const l = layout(view, nodes, sizes);
+    const p = (id: string) => l.placed.get(id)!;
+    expect(l.order[0]).toBe('r');
+    expect(l.order.slice().sort()).toEqual(['a', 'b', 'r']);
+    expect([p('r').x, p('r').y]).toEqual([0, 0]);
+    expect(p('r').depth).toBe(0);
+    expect(p('a').depth).toBe(1);
+    // Placed by hand, relative to the element in view, which stands at the origin.
+    expect([p('b').x, p('b').y]).toEqual([-200, 80]);
+    expect(l.placed.has('other')).toBe(false);
   });
 });
 

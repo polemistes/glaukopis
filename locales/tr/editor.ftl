@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Her türün bu belgede nasıl dizildiği
 editor-words = Sözler
 editor-words-hint = Altı çizme, üst simge, kod; yabancı sözcükler, eser adı, terim
 editor-words-make = Söz türü oluştur…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Haritanın dili
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Düz sözler
 editor-own-kind-new = Kendi türünüz

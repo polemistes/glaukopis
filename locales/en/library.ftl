@@ -329,20 +329,22 @@ library-collection-count = { $count ->
    *[other] { $count } collections
 }
 
-## A map of the library, or of a collection: a new project.
+## A map of the library, or of a collection: a tree of elements at the top of a project, new or chosen.
 
 library-map-title-library = A map of the library
 library-map-title-collection = A map of a collection
 # The name a project made of the whole library is given.
 library-map-library-name = The library
 library-map-name = Name
-library-map-name-hint = The name of the project, of its map, and of the element at the centre of the map.
-library-map-what-library = The collections become elements, nested as they are, and every reference an element under its collection, whose text is a citation of it. References in no collection stand at the centre.
+library-map-name-hint = The name of the element at the top of the map, and of a new project made for it.
+library-map-into = Into the project
+library-map-new-project = A new project, named after it
+library-map-what-library = The collections become elements, nested as they are, and every reference an element under its collection, whose text is a citation of it. References in no collection stand at the top.
 library-map-what-collection = The collections within it become elements, nested as they are, and every reference an element under its collection, whose text is a citation of it.
 library-map-nothing = There are no references to put on the map.
-library-map-make = Make the project
-library-map-making = Making the project…
-library-map-failed = The project could not be made.
+library-map-make = Make the map
+library-map-making = Making the map…
+library-map-failed = The map could not be made.
 
 ## Bringing references in, from anywhere in the application.
 

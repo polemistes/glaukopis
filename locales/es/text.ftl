@@ -5,11 +5,7 @@ text-name = Nombre del elemento
 text-first-section = Escriba aquí, o pulse Ctrl+Intro para empezar la primera sección.
 text-not-printed = no se imprime
 text-grip = Mover o cambiar este elemento
-# The map an element stands for, which is shown in bold where the variable stands.
-text-include = En el documento, aquí va el mapa { $map }.
 text-include-open = Abrirlo
-text-loose = Elementos sueltos
-text-loose-hint = Ideas que aún no tienen sitio. No forman parte del documento.
 text-split = Dividir aquí
 text-split-hint = Lo que sigue al cursor pasa a ser un elemento nuevo
 text-join = Unir al elemento de arriba

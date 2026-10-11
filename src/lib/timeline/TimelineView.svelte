@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * A map as a timeline: lanes, one for each chosen branch, with the placed
+   * The element in view as a timeline: lanes, one for each chosen branch, with the placed
    * elements of the branch along an axis of time. A written time stands
    * where it was written, and as long as it was written (a year, a
    * century); what is relative is drawn where it was solved to be, dashed,
@@ -55,14 +55,15 @@
 
   interface Props {
     project: Project;
-    mapId: string;
+    /** The element in view: it is shown as a timeline. */
+    at: string;
     /** Opens an element in the text. */
     ongo: (element: string) => void;
     /** An element to bring into view when the timeline opens. */
     reveal?: string | null;
   }
 
-  let { project, mapId, ongo, reveal = null }: Props = $props();
+  let { project, at, ongo, reveal = null }: Props = $props();
 
   const LABEL_WIDTH = 190;
   const LANE_HEAD = 28;
@@ -76,8 +77,8 @@
   };
   /** Whether the elements that say nothing of their time are shown in their lanes, to be placed. */
   let showWithout = $state(false);
-  const timeline = $derived(timelineOf(project, mapId, colourOf, showWithout));
-  const settings = $derived(project.map(mapId)?.timeline ?? {});
+  const timeline = $derived(timelineOf(project, at, colourOf, showWithout));
+  const settings = $derived(project.node(at)?.timeline ?? {});
   const unit = $derived(settings.unit?.trim() || '');
 
   // ---- the scale: pixels for each unit of time, and where the left edge is ----
@@ -431,8 +432,8 @@
   });
 
   let lanesOpen = $state(false);
-  /** Whether the writer has chosen the lanes, rather than each child of the centre being one. */
-  const lanesChosen = $derived(!!project.map(mapId)?.timeline?.lanes?.length);
+  /** Whether the writer has chosen the lanes, rather than each child of the element in view being one. */
+  const lanesChosen = $derived(!!settings.lanes?.length);
 
   const total = $derived(lanes.reduce((n, l) => n + LANE_HEAD + l.rows * ROW, 0));
 
@@ -900,7 +901,7 @@
       size="sm"
       side="top"
       onclick={() => {
-        const made = addChronology(project, mapId);
+        const made = addChronology(project, at);
         if (made) {
           notifyOk(t('timeline-chronology-made'));
           ongo(made);
@@ -952,7 +953,7 @@
 </div>
 
 {#if lanesOpen}
-  <LanesDialog {project} {mapId} onclose={() => (lanesOpen = false)} />
+  <LanesDialog {project} {at} onclose={() => (lanesOpen = false)} />
 {/if}
 
 <style>

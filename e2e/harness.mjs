@@ -526,10 +526,10 @@ export class App {
     await sleep(150);
   }
 
-  /** Makes a new map, and leaves its name being typed. */
+  /** Makes a new element under the one in view, and leaves its name being typed in the bar. */
   async newMap() {
     await this.openThisMap();
-    await this.clickText('.menu [role="menuitem"]', 'New map');
+    await this.clickText('.menu [role="menuitem"]', 'New element under it');
     await this.waitFor('.maps .naming');
     await sleep(150);
   }

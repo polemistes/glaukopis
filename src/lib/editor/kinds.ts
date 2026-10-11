@@ -2,8 +2,8 @@
  * The kinds of paragraph and of words that come with the application, and
  * what each does while writing: what it is in the editor, what Enter makes
  * after it, what Tab makes of it, and how the tools name it. Also the
- * kinds in a map's hand, and the look on screen of a kind of the writer's
- * own. The core has the same catalogue with the look each kind has in a
+ * kinds in the project's hand, and the look on screen of a kind of the
+ * writer's own. The core has the same catalogue with the look each kind has in a
  * document (`formats/kinds.rs`); a test holds the two alike. See ADR 0029.
  */
 
@@ -193,21 +193,17 @@ export function tabOf(id: string, own: OwnKindLike[] = []): string | undefined {
 }
 
 /**
- * The kinds in hand for a map, by id: the plain kinds, every kind the
- * map's texts use, the kinds the writer has pinned, and those the format
- * suggests, less those the writer has unpinned; in the catalogue's order,
- * the writer's own kinds after, each once. Text is always in hand.
+ * The kinds in hand of a project, by id: the plain kinds, every kind the
+ * project's texts use, the kinds the writer has pinned, and those the
+ * format suggests, less those the writer has unpinned; in the catalogue's
+ * order, the writer's own kinds after, each once. Text is always in hand.
  */
-export function inHand(project: Project, mapId: string, suggests: string[] = []): string[] {
-  const map = project.map(mapId);
+export function inHand(project: Project, suggests: string[] = []): string[] {
   const wanted = new Set<string>(PLAIN_KINDS);
-  for (const node of project.nodes.values()) {
-    if (node.map !== mapId) continue;
-    for (const id of node.uses) wanted.add(id);
-  }
-  for (const id of map?.hand.pinned ?? []) wanted.add(id);
+  for (const node of project.nodes.values()) for (const id of node.uses) wanted.add(id);
+  for (const id of project.hand.pinned) wanted.add(id);
   for (const id of suggests) wanted.add(id);
-  for (const id of map?.hand.unpinned ?? []) if (id !== 'text') wanted.delete(id);
+  for (const id of project.hand.unpinned) if (id !== 'text') wanted.delete(id);
   const out: string[] = [];
   for (const spec of CATALOGUE) if (wanted.has(spec.id)) out.push(spec.id);
   for (const kind of project.passageKinds) if (wanted.has(kind.id)) out.push(kind.id);

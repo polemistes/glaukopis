@@ -39,7 +39,8 @@
   interface Props {
     project: Project;
     projectId: string;
-    mapId: string;
+    /** The element in view: its branch is the document. */
+    at: string;
     onclose: () => void;
     /** Shows an element in the text: the one at the place in the pages that is looked at. */
     ongo: (element: string) => void;
@@ -47,7 +48,7 @@
     current: () => string | null;
   }
 
-  let { project, projectId, mapId, onclose, ongo, current }: Props = $props();
+  let { project, projectId, at, onclose, ongo, current }: Props = $props();
 
   /** A page as it is shown: what it holds, the address it is shown from, the making it is of, and its text, laid over it. */
   interface Shown {
@@ -133,7 +134,7 @@
    * hundreds of pages, each a quarter of a megabyte.
    */
   let shown = $state.raw(new Map<number, Shown>());
-  /** Where each element of the map begins in the pages, in the order of the text. */
+  /** Where each element of the document begins in the pages, in the order of the text. */
   let places = $state.raw<Place[]>([]);
   /** The page that is pointed out for a moment, when the place of the text is shown. */
   let marked = $state<number | null>(null);
@@ -164,21 +165,22 @@
   /** How long the last making took, in milliseconds. */
   let took = 0;
 
-  const map = $derived(project.map(mapId));
-  const choice = $derived(documents.choice(map?.document ?? {}));
+  /** What is said of the element as a document, with what it inherits from those over it. */
+  const settings = $derived(project.documentOf(at).settings);
+  const choice = $derived(documents.choice(settings));
   /**
    * The words of the document, a moment behind the writing: what is shown
    * under the pages is not written anew at every key, which would have the
    * window paint all between the line that is written and the count.
    */
-  let words = $state.raw(untrack(() => countWords(project, mapId)));
+  let words = $state.raw(untrack(() => countWords(project, at)));
   function recount() {
-    const now = countWords(project, mapId);
+    const now = countWords(project, at);
     if (now.text !== words.text || now.withNotes !== words.withNotes) words = now;
   }
-  // Counted at once for another map, and for the writing when it pauses.
+  // Counted at once for another element, and for the writing when it pauses.
   $effect(() => {
-    void mapId;
+    void at;
     untrack(recount);
     return project.onChange(recount, 600);
   });
@@ -188,15 +190,15 @@
   });
 
   /** The document whole, for what is made of all of it: an export, the sample of a format. */
-  const request = () => documentRequest(project, projectId, mapId);
+  const request = () => documentRequest(project, projectId, at);
 
-  /** Opens the editor of the map's format; the map takes the format that is saved. */
+  /** Opens the editor of the element's format; the element takes the format that is saved. */
   function editFormat() {
     formatEditorUi.open({
       id: choice.format,
-      map: mapId,
+      at,
       onsaved: (id) => {
-        project.setDocument(mapId, { format: id });
+        project.setDocument(at, { format: id });
         // What a style or a format holds may have changed under the same name.
         void refresh(true);
       },
@@ -304,7 +306,7 @@
         forced = false;
         force = false;
         const f = $state.snapshot(await documents.format(choice.format)) as DocumentFormat;
-        let document = leanDocument(project, mapId, sent);
+        let document = leanDocument(project, at, sent);
         const from = `${choice.style}\n${JSON.stringify(f)}\n${documentMark(document)}`;
         if (!must && from === shownFrom && status === 'shown') continue;
         status = count ? 'working' : 'waiting';
@@ -318,7 +320,7 @@
           if (!isBackendError(e) || e.kind !== 'lacking') throw e;
           // What was sent before is not kept: all of it is sent.
           sent = new Set();
-          document = leanDocument(project, mapId, sent);
+          document = leanDocument(project, at, sent);
           preview = await documentPreview({ ...asked, document }, near());
         }
         if (gone) return;
@@ -431,9 +433,9 @@
     waiting = setTimeout(refresh, count ? Math.max(900, Math.min(2500, took * 0.4)) : 50);
   }
   $effect(() => project.onChange(later));
-  // And it is made anew for another map, format or style.
+  // And it is made anew for another element, format or style.
   $effect(() => {
-    void mapId;
+    void at;
     void choice.style;
     void choice.format;
     void documents.loaded;
@@ -452,25 +454,25 @@
   });
 
   function setStyle(id: string) {
-    project.setDocument(mapId, { style: id });
+    project.setDocument(at, { style: id });
   }
 
   async function setFormat(id: string) {
     const before = choice.style;
     project.checkpoint();
-    project.setDocument(mapId, { format: id });
+    project.setDocument(at, { format: id });
     // A publisher's format goes with a reference style: it is taken with it.
     try {
       const f = await documents.format(id);
       if (f.style && f.style !== before && documents.style(f.style)) {
-        project.setDocument(mapId, { style: f.style });
+        project.setDocument(at, { style: f.style });
         toasts.show({
           kind: 'info',
           message: t('preview-style-taken', { style: documents.style(f.style)?.title ?? '' }),
           detail: t('preview-style-taken-why'),
           action: {
             label: t('preview-style-keep-other'),
-            run: () => project.setDocument(mapId, { style: before }),
+            run: () => project.setDocument(at, { style: before }),
           },
         });
       }
@@ -748,7 +750,7 @@
 {#if detailing}
   <DocumentDetails
     {project}
-    {mapId}
+    {at}
     limits={format
       ? { abstractWords: format.limits.abstractWords, keywords: format.limits.keywords }
       : undefined}
@@ -758,11 +760,11 @@
 {#if editingStyle}
   <StyleEditor
     id={editingStyle}
-    references={project.usedReferences(mapId)}
-    language={map?.document.language}
+    references={project.usedReferences(at)}
+    language={settings.language}
     onsaved={(id) => {
       editingStyle = null;
-      project.setDocument(mapId, { style: id || undefined });
+      project.setDocument(at, { style: id || undefined });
       // What a style or a format holds may have changed under the same name.
       void refresh(true);
     }}
@@ -772,7 +774,7 @@
 {#if exporting}
   <ExportDialog
     {request}
-    name={map?.name ?? t('preview-file-name')}
+    name={project.node(at)?.title || t('preview-file-name')}
     onclose={() => (exporting = false)}
   />
 {/if}

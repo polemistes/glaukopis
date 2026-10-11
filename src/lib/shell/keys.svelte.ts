@@ -54,6 +54,8 @@ export const KEYS: KeyEntry[] = [
   { id: 'diagram-or-text', keys: 'Ctrl+D', place: 'project', bound: true },
   // L for the list of projects.
   { id: 'projects-pane', keys: 'Ctrl+Shift+L', place: 'project', bound: true },
+  // Bound by the project view itself: the table cannot match an arrow.
+  { id: 'up', keys: 'Alt+↑', place: 'project' },
   { id: 'preview', keys: 'Ctrl+P', place: 'project', bound: true },
   { id: 'side-references', keys: 'Ctrl+Shift+R', place: 'project', bound: true },
   { id: 'side-pictures', keys: 'Ctrl+Shift+P', place: 'project', bound: true },

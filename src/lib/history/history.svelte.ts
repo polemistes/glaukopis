@@ -23,7 +23,7 @@ import { readRecords, writeRecords, type HistoryRecord } from './records';
 import type {
   History,
   Items,
-  MapChanges,
+  BranchChanges,
   Moment,
   Named,
   Passage,
@@ -35,8 +35,8 @@ import type {
   Version,
 } from './types';
 
-/** The whole map at a moment, compared with the moment before: for looking at the history. */
-export type MapAt = MapChanges & {
+/** An element and all under it at a moment, compared with the moment before: for looking at the history. */
+export type BranchAt = BranchChanges & {
   all: Passage[];
   order: { element: string; before: boolean; after: boolean; level: number }[];
 };
@@ -217,8 +217,8 @@ export class ProjectHistory implements History {
     return this.#ask('named');
   }
 
-  async compare(map: string, reference: Reference, elements?: string[]): Promise<MapChanges> {
-    const changes = await this.#ask<MapChanges>('compare', map, reference, elements);
+  async compare(at: string, reference: Reference, elements?: string[]): Promise<BranchChanges> {
+    const changes = await this.#ask<BranchChanges>('compare', at, reference, elements);
     for (const p of changes.passages) label(p.pieces, this.project);
     return changes;
   }
@@ -248,17 +248,17 @@ export class ProjectHistory implements History {
 
   // ---- for looking at the history ----
 
-  /** The whole map after a record, compared with it after another. */
-  async mapAt(map: string, when: When, since: When | null): Promise<MapAt> {
-    const reading = await this.#ask<MapAt>('mapAt', map, when, since);
+  /** An element and all under it after a record, compared with them after another. */
+  async branchAt(at: string, when: When, since: When | null): Promise<BranchAt> {
+    const reading = await this.#ask<BranchAt>('branchAt', at, when, since);
     for (const p of reading.all) label(p.pieces, this.project);
     return reading;
   }
 
-  /** Brings an element (or, with none, the whole map) back as it was at a moment. */
-  async bringBack(map: string, element: string | null, when: When): Promise<number> {
+  /** Brings an element (or, with none, all under the element in view) back as it was at a moment. */
+  async bringBack(at: string, element: string | null, when: When): Promise<number> {
     await this.project.flush();
-    const edits = await this.#ask<Edit[]>('bringBack', map, element, when);
+    const edits = await this.#ask<Edit[]>('bringBack', at, element, when);
     return applyEdits(this.project, edits);
   }
 

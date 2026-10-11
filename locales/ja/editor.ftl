@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = この文書で各種類をどう組むか
 editor-words = 語句
 editor-words-hint = 下線、上付き、コード、外国語、作品名、用語
 editor-words-make = 語句の種類を作る…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = マップの言語
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = 普通の語句
 editor-own-kind-new = 独自の種類

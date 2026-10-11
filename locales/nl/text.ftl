@@ -5,11 +5,7 @@ text-name = Naam van het element
 text-first-section = Schrijf hier, of druk op Ctrl+Enter om het eerste deel te beginnen.
 text-not-printed = niet gedrukt
 text-grip = Dit element verplaatsen of wijzigen
-# The map an element stands for, which is shown in bold where the variable stands.
-text-include = In het document staat hier de mindmap { $map }.
 text-include-open = Openen
-text-loose = Losse elementen
-text-loose-hint = Gedachten die nog geen plaats hebben. Ze horen niet bij het document.
 text-split = Hier splitsen
 text-split-hint = Wat na de cursor komt, wordt een nieuw element
 text-join = Aan het element erboven vastmaken

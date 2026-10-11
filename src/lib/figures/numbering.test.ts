@@ -9,6 +9,7 @@ import { buildDocument } from '$lib/project/model/document';
 import { blocksHtml } from '$lib/project/model/html';
 import { Project } from '$lib/project/model/project.svelte';
 import { readBody } from '$lib/project/model/text';
+import { PROJECT } from '$lib/project/model/types';
 import { count, countingOf, formsOf, pointerText, type Counting } from './numbering.svelte';
 
 const { paragraph, figure, equation, crossref } = bodySchema.nodes;
@@ -31,31 +32,31 @@ function write(p: Project, element: string, ...blocks: ReturnType<typeof text>[]
 const plain = countingOf(undefined);
 const numbered: Counting = { ...plain, numberedHeadings: true };
 
-/** A map of two parts, the first with a part under it. */
+/** A tree under the project, of two parts, the first with a part under it. */
 function sample() {
   const p = new Project(null);
-  const map = p.createMap('Wrath');
-  const root = p.map(map)!.root;
-  const a = p.addChild(root, { title: 'The word' })!;
+  p.begin('Wrath');
+  const top = p.addChild(PROJECT, { title: 'Wrath' })!;
+  const a = p.addChild(top, { title: 'The word' })!;
   const a1 = p.addChild(a, { title: 'In Homer' })!;
-  const b = p.addChild(root, { title: 'The shield' })!;
-  write(p, root, text('Before the first part.'), fig('f0', 'a', 'A map'));
+  const b = p.addChild(top, { title: 'The shield' })!;
+  write(p, top, text('Before the first part.'), fig('f0', 'a', 'A map'));
   write(p, a, text('Text.'), eq('q1', 'a = b'), fig('f1', 'b', 'A vase'), eq('q2', 'c = d', false));
   write(p, a1, fig('f2', 'c', '', false), eq('q3', 'e = f'), eq('q4', '  '));
   write(p, b, fig('f3', 'd', 'The shield'), text('After.'));
-  return { p, map, root, a, a1, b };
+  return { p, top, a, a1, b };
 }
 
 describe('the numbers of a document', () => {
-  it('are counted through the map, in the order of the document', () => {
-    const { p, map, root, a, a1, b } = sample();
-    const n = count(p, map, plain);
+  it('are counted through the branch, in the order of the document', () => {
+    const { p, top, a, a1, b } = sample();
+    const n = count(p, top, plain);
     const called = (id: string) => n.byId.get(id)?.number ?? null;
     expect(['f0', 'f1', 'f2', 'f3'].map(called)).toEqual(['1', '2', null, '3']);
     expect(['q1', 'q2', 'q3'].map(called)).toEqual(['1', null, '2']);
     // One in which nothing is written is nothing.
     expect(n.byId.has('q4')).toBe(false);
-    expect(n.within.get(root)).toEqual({ figure: ['1'], table: [], equation: [] });
+    expect(n.within.get(top)).toEqual({ figure: ['1'], table: [], equation: [] });
     expect(n.within.get(a)).toEqual({ figure: ['2'], table: [], equation: ['1', null] });
     expect(n.within.get(a1)).toEqual({ figure: [null], table: [], equation: ['2'] });
     expect(n.within.get(b)).toEqual({ figure: ['3'], table: [], equation: [] });
@@ -65,47 +66,48 @@ describe('the numbers of a document', () => {
 
     // The parts have their names, and numbers where the format numbers them.
     expect(n.byId.get(a1)).toMatchObject({ kind: 'part', number: null, words: 'In Homer' });
-    expect(n.byId.has(root)).toBe(false);
-    const m = count(p, map, numbered);
+    expect(n.byId.has(top)).toBe(false);
+    const m = count(p, top, numbered);
     expect([a, a1, b].map((id) => m.byId.get(id)?.number)).toEqual(['1', '1.1', '2']);
     // A level that runs into the text has no number, and is not counted.
-    const r = count(p, map, { ...numbered, runIn: [2] });
+    const r = count(p, top, { ...numbered, runIn: [2] });
     expect([a, a1, b].map((id) => r.byId.get(id)?.number)).toEqual(['1', null, '2']);
   });
 
   it('pass over what is not part of the document', () => {
-    const { p, map, a, a1, b } = sample();
+    const { p, top, a, a1, b } = sample();
     p.setExcluded(a, true);
-    const n = count(p, map, numbered);
+    const n = count(p, top, numbered);
     expect(n.byId.has('f1')).toBe(false);
     expect(n.byId.has('f2')).toBe(false);
     expect(n.within.has(a1)).toBe(false);
     expect(n.byId.get('f3')?.number).toBe('2');
     expect(n.byId.get(b)?.number).toBe('1');
-    const loose = p.addLoose(map, { x: 0, y: 0 }, 'A thought')!;
-    write(p, loose, fig('f9', 'e', 'Loose'));
-    expect(count(p, map, plain).byId.has('f9')).toBe(false);
+    // A tree beside it under the project is no part of its document, though of the project's.
+    const beside = p.addChild(PROJECT, { title: 'A thought' })!;
+    write(p, beside, fig('f9', 'e', 'Beside'));
+    expect(count(p, top, plain).byId.has('f9')).toBe(false);
+    expect(count(p, PROJECT, plain).byId.get('f9')?.number).toBe('3');
     // An element whose name is not printed is no part that can be pointed to.
     p.setHeading(b, false);
-    expect(count(p, map, numbered).byId.has(b)).toBe(false);
+    expect(count(p, top, numbered).byId.has(b)).toBe(false);
   });
 
-  it('are those of the map the document is made of', () => {
-    const { p, map, b } = sample();
-    const other = p.createMap('Another');
-    const centre = p.map(other)!.root;
-    const x = p.addChild(centre, { title: 'From elsewhere' })!;
-    write(p, centre, fig('g0', 'e', 'At the centre'));
+  it('are those of the element the document is made of', () => {
+    const { p, top, b } = sample();
+    const other = p.addChild(PROJECT, { title: 'Another' })!;
+    const x = p.addChild(other, { title: 'From elsewhere' })!;
+    write(p, other, fig('g0', 'e', 'At the top'));
     write(p, x, fig('g1', 'f', 'Elsewhere'), eq('r1', 'x = y'));
     expect(count(p, other, plain).byId.get('g1')?.number).toBe('2');
     // Standing in the place of an element, it is counted where it stands.
     p.setInclude(b, other);
-    const n = count(p, map, numbered);
+    const n = count(p, top, numbered);
     expect(['f3', 'g0', 'g1'].map((id) => n.byId.get(id)?.number)).toEqual(['3', '4', '5']);
     expect(n.byId.get('r1')?.number).toBe('3');
     expect(n.byId.get(x)?.number).toBe('2.1');
     // And as the document is made, so it is counted.
-    const sections = buildDocument(p, map).sections;
+    const sections = buildDocument(p, top).sections;
     const figures = sections.flatMap((s) =>
       s.blocks.flatMap((block) => (block.kind === 'figure' ? [block.id] : [])),
     );
@@ -113,9 +115,9 @@ describe('the numbers of a document', () => {
   });
 
   it('what stands twice is pointed to where it stands first', () => {
-    const { p, map, b } = sample();
+    const { p, top, b } = sample();
     write(p, b, fig('f1', 'z', 'A copy'), fig('f3', 'd', 'The shield'));
-    const n = count(p, map, plain);
+    const n = count(p, top, plain);
     expect(n.byId.get('f1')).toMatchObject({ number: '2', words: 'A vase' });
     expect(n.within.get(b)).toEqual({ figure: ['3', '4'], table: [], equation: [] });
   });
@@ -123,8 +125,8 @@ describe('the numbers of a document', () => {
 
 describe('words that point', () => {
   it('say what the document calls what they point to', () => {
-    const { p, map, a, a1 } = sample();
-    const n = count(p, map, numbered);
+    const { p, top, a, a1 } = sample();
+    const n = count(p, top, numbered);
     const to = (id: string) => n.byId.get(id);
     expect(pointerText(to('f1'), 'full', numbered)).toBe('Figure 2');
     expect(pointerText(to('f1'), 'number', numbered)).toBe('2');
@@ -138,14 +140,14 @@ describe('words that point', () => {
     expect(pointerText(to('q2'), 'full', numbered)).toBe('');
     expect(pointerText(to(a1), 'full', numbered)).toBe('1.1');
     expect(pointerText(to(a1), 'name', numbered)).toBe('In Homer');
-    expect(pointerText(count(p, map, plain).byId.get(a), 'full', plain)).toBe('The word');
+    expect(pointerText(count(p, top, plain).byId.get(a), 'full', plain)).toBe('The word');
     expect(pointerText(undefined, 'full', plain)).toBe('');
     expect(formsOf('part', false).map((f) => f.form)).toEqual(['full']);
     expect(formsOf('part', true).map((f) => f.form)).toEqual(['full', 'name']);
   });
 
   it('are read from the text, and go into the document', () => {
-    const { p, map, b } = sample();
+    const { p, top, b } = sample();
     write(
       p,
       b,
@@ -170,7 +172,7 @@ describe('words that point', () => {
     expect(blocksHtml(blocks)).toContain(
       '<span class="crossref" data-crossref="f1" data-form="full"></span>',
     );
-    const last = buildDocument(p, map).sections.at(-1)!;
+    const last = buildDocument(p, top).sections.at(-1)!;
     expect(last.element).toBe(b);
     expect(JSON.stringify(last.blocks)).toContain(
       '"kind":"crossref","target":"q1","form":"number"',

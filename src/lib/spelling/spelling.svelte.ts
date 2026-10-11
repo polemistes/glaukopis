@@ -5,7 +5,7 @@
  * the editors and for the text that is drawn without one, so that a word is
  * asked about once in each language.
  *
- * The language is that of a map (`document.language`): `en-GB`, `nb`; none
+ * The language is that of an element's document (`Project.documentOf`): `en-GB`, `nb`; none
  * is English, which the core checks with both English dictionaries.
  */
 

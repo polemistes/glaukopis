@@ -66,32 +66,15 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Zonder titel
-# The name of a copy of a map.
-project-map-copy = { $name }, kopie
-project-maps = Mindmaps
-project-map-name = Naam van de mindmap
-project-new-map = Nieuwe mindmap
-project-map-from-document = Een mindmap uit een document…
 project-drop-on-map = Laat vallen op een mindmap om ernaartoe te verplaatsen · houd Ctrl ingedrukt om te kopiëren
-project-duplicate = Dupliceren
-project-duplicate-hint = Een kopie om aan te werken; deze blijft zoals ze is
 project-open-beside = Ernaast openen
 project-open-beside-hint = Twee mindmaps naast elkaar, om elementen ertussen te verplaatsen
-project-this-map-actions = Deze mindmap, en de mindmaps
-project-maps-hint = De mindmaps van het project: kies er een om ze te openen
-project-map-beside = naast deze
 project-side-by-side-short = Naast elkaar
 project-preview-short = Voorbeeld
 project-found = Gevonden verwijzingen…
 # The count is of those found in the map.
 project-found-hint = { $count } om door te nemen en verwijzingen van te maken
 project-found-none = En tekst die op verwijzingen lijkt
-project-delete-map = Mindmap wissen
-project-delete-map-title = De mindmap ‘{ $name }’ wissen?
-project-delete-map-message = { $count ->
-    [one] { $count } element en de tekst erin verdwijnen. Dit kan ongedaan worden gemaakt zolang het project open is.
-   *[other] { $count } elementen en de tekst erin verdwijnen. Dit kan ongedaan worden gemaakt zolang het project open is.
-}
 project-copied-to = Gekopieerd naar ‘{ $name }’
 project-moved-to = Verplaatst naar ‘{ $name }’
 
@@ -113,20 +96,12 @@ project-stands-for = Staat voor ‘{ $name }’
 project-stand-for = Voor een andere mindmap staan
 project-stand-for-heading = In het document neemt deze mindmap zijn plaats in
 project-stand-for-none = Geen
-project-copy-to-map = Kopiëren naar mindmap
 project-copy = Kopiëren
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Eronder plakken
-project-move-to-map = Verplaatsen naar mindmap
-project-map-from-branch = Nieuwe mindmap van deze tak
-project-map-from-branch-hint = Een kopie om aan te werken; deze blijft
-project-detach = Losmaken van zijn ouder
-project-detach-hint = Een los element, om later te plaatsen
 project-tidy-branch = Deze tak opruimen
 project-place-automatically = Automatisch plaatsen
 project-delete-keeping = Wissen, met behoud van wat eronder staat
-project-centre-stays = De kern van een mindmap blijft
-project-centre-stays-detail = Wis de mindmap zelf vanaf haar tabblad.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] ‘{ $name }’ is gewist
@@ -224,7 +199,6 @@ project-link-label = Label van de verbinding
 
 ## A copy and its original, in another map.
 copy-title = De kopie en haar origineel
-copy-from = Gekopieerd van ‘{ $name }’ in de mindmap ‘{ $map }’
 copy-original-changed = Het origineel is veranderd sinds het is gekopieerd, of sinds dat voor het laatst is bekeken.
 copy-original-same = Het origineel is zoals het was toen het werd gekopieerd.
 copy-original-unknown = Of het origineel is veranderd sinds het is gekopieerd, is niet bekend: de kopie is gemaakt voordat dat werd bijgehouden.
@@ -238,8 +212,6 @@ copy-seen = Deze kopie houden zoals ze is
 copy-take = De naam en tekst van het origineel overnemen
 copy-changed-mark = Het origineel is veranderd sinds dit is gekopieerd
 copy-compare = Vergelijken met het origineel…
-copy-copied-from = Gekopieerd van ‘{ $name }’ in ‘{ $map }’
-copy-copied-from-changed = Gekopieerd van ‘{ $name }’ in ‘{ $map }’, dat sindsdien is veranderd
 
 ## How far the writing of an element has come, as its writer says.
 status = Status

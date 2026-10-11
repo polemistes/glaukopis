@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Cómo se compone cada tipo en este documento
 editor-words = Palabras
 editor-words-hint = Subrayado, superíndice, código; palabras en otro idioma, el título de una obra, un término
 editor-words-make = Crear un tipo de palabras…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = El idioma del mapa
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Palabras corrientes
 editor-own-kind-new = Un tipo propio

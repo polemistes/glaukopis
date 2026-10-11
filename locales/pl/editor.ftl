@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Jak każdy rodzaj jest składany w tym dokumen
 editor-words = Słowa
 editor-words-hint = Podkreślenie, indeks górny, kod; słowa obcojęzyczne, tytuł dzieła, termin
 editor-words-make = Utwórz rodzaj słów…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Język mapy
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Zwykłe słowa
 editor-own-kind-new = Własny rodzaj

@@ -2,8 +2,6 @@
 
 diagram-map = マップ
 diagram-idea = 名前
-diagram-new-loose = ここに独立した要素を追加
-diagram-new-loose-hint = まだ置き場所のない考え
 diagram-show-all = マップ全体を表示
 diagram-tidy = マップ全体を整理
 diagram-tidy-hint = すべての要素が自動の位置に戻ります

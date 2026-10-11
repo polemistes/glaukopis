@@ -10,8 +10,8 @@
 
   interface Props {
     onclose: () => void;
-    /** The new project and its map, to be opened. */
-    onmade: (made: { project: string; map: string }) => void;
+    /** The new project, and the element in it the map was made at, to be opened there. */
+    onmade: (made: { project: string; at: string }) => void;
   }
 
   let { onclose, onmade }: Props = $props();

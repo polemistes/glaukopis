@@ -1,29 +1,41 @@
 <script lang="ts">
   /**
-   * The languages of a map and of its project (ADR 0020): the language this
-   * map is written in, and the one new maps of the project are given. Both
-   * are written as they are chosen; the dialog is closed when done.
+   * The languages of an element and of its project (ADR 0020, ADR 0037):
+   * the language the element's text is written in, which it takes from the
+   * nearest element over it that says one when it says none itself; and the
+   * project's, which every element inherits that says nothing. Both are
+   * written as they are chosen; the dialog is closed when done.
    */
   import { languageName, newTextLanguage, t, TEXT_LANGUAGES } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import Select from '$lib/ui/Select.svelte';
   import type { Project } from './model/project.svelte';
+  import { PROJECT } from './model/types';
 
   interface Props {
     project: Project;
-    mapId: string;
+    /** The element whose language is chosen. */
+    at: string;
     onclose: () => void;
   }
 
-  let { project, mapId, onclose }: Props = $props();
+  let { project, at, onclose }: Props = $props();
 
-  const map = $derived(project.map(mapId));
-  const mapLanguage = $derived(map?.document.language ?? '');
+  /** The language the element says of its own. */
+  const own = $derived(project.node(at)?.document.language ?? '');
+  /** What it has with what it inherits, and which element says each thing. */
+  const inherited = $derived(project.documentOf(at));
+  /** The element over it whose language it takes, where it says none itself. */
+  const from = $derived.by(() => {
+    if (own) return null;
+    const setter = inherited.from.get('language');
+    return setter && setter !== at ? setter : null;
+  });
   const projectLanguage = $derived(project.language ?? '');
 
   // Named by the system, in the language of the interface; a language the
-  // list does not have, which a map may have been given elsewhere, is kept.
+  // list does not have, which an element may have been given elsewhere, is kept.
   function options(first: string, current: string) {
     const list = [
       { value: '', label: first },
@@ -34,7 +46,14 @@
     return list;
   }
 
-  const mapOptions = $derived(options(t('languages-map-none'), mapLanguage));
+  const ownOptions = $derived(
+    options(
+      from
+        ? t('languages-map-none')
+        : t('languages-project-settings', { language: languageName(newTextLanguage()) }),
+      own,
+    ),
+  );
   const projectOptions = $derived(
     options(
       t('languages-project-settings', { language: languageName(newTextLanguage()) }),
@@ -42,10 +61,10 @@
     ),
   );
 
-  function setMapLanguage(language: string) {
-    if (language === mapLanguage) return;
+  function setOwn(language: string) {
+    if (language === own) return;
     project.checkpoint();
-    project.setDocument(mapId, { language });
+    project.setDocument(at, { language: language || undefined });
     project.checkpoint();
   }
 
@@ -65,15 +84,21 @@
   {onclose}
 >
   <div class="languages">
-    <div class="field">
-      <Select
-        value={mapLanguage}
-        options={mapOptions}
-        label={t('languages-map')}
-        onchange={setMapLanguage}
-      />
-      <small>{t('languages-map-hint')}</small>
-    </div>
+    {#if at !== PROJECT}
+      <div class="field">
+        <Select value={own} options={ownOptions} label={t('languages-map')} onchange={setOwn} />
+        <small>
+          {#if from}
+            <span class="from">
+              {t('documents-inherited-from', {
+                name: project.node(from)?.title || t('project-untitled'),
+              })} · {languageName(inherited.settings.language ?? '')}
+            </span>
+          {/if}
+          {t('languages-map-hint')}
+        </small>
+      </div>
+    {/if}
     <div class="field">
       <Select
         value={projectLanguage}
@@ -105,5 +130,10 @@
     font-size: var(--text-xs);
     line-height: 1.45;
     color: var(--ink-4);
+  }
+  .from {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--ink-3);
   }
 </style>

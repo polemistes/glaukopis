@@ -2,9 +2,9 @@
  * Where what is dropped on a project from the desktop goes. Pictures become
  * figures and files that hold tables become tables: where they were
  * dropped, in a text that is being written, or else at the end of the
- * element they were dropped on. Documents become maps of their own. The
- * rest is taken into the library, and where it was dropped on an element,
- * what it is is cited at the end of its text.
+ * element they were dropped on. Documents become trees of their own, under
+ * the element in view. The rest is taken into the library, and where it was
+ * dropped on an element, what it is is cited at the end of its text.
  */
 
 import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
@@ -22,16 +22,16 @@ import type { Project } from './model/project.svelte';
 /** What the view does with what was dropped. */
 export interface Dropping {
   project: Project | null;
-  /** Makes maps of documents. */
+  /** Makes trees of documents, under the element in view. */
   documentsIn(paths: string[]): Promise<void>;
   /** Keeps a copy of a reference that was cited in the project. */
   keep(id: string): void;
 }
 
 /**
- * What becomes a map when it is dropped on the tabs of the maps: a
- * document, and a PDF or a picture, whose text is read. Elsewhere a PDF is
- * taken into the library, and a picture becomes a figure.
+ * What becomes a tree of its own when it is dropped on the bar over the
+ * map: a document, and a PDF or a picture, whose text is read. Elsewhere a
+ * PDF is taken into the library, and a picture becomes a figure.
  */
 export const mapOfIt = (path: string) =>
   isDocumentPath(path) || isPlainTextPath(path) || isReadPath(path);
@@ -79,7 +79,7 @@ export async function filesDropped(event: DropEvent, into: Dropping) {
       element,
     },
   );
-  // Documents become maps of their own; text without marks is one when nothing else claims it.
+  // Documents become trees of their own; text without marks is one when nothing else claims it.
   const written = (path: string) => isDocumentPath(path) || isPlainTextPath(path);
   if (p) await into.documentsIn(rest.filter(written));
   const others = rest.filter((path) => !written(path));

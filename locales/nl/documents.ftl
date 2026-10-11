@@ -4,14 +4,12 @@
 documents-choose = Een document om binnen te halen
 documents-filter = Documenten
 documents-filter-all = Alle bestanden
-documents-title-map = Een mindmap uit een document
 documents-title-project = Een project uit een document
 documents-reading = { $file } wordt gelezen…
 documents-reading-hint = Een lang document duurt even.
 documents-no-pandoc = Documenten van deze soort worden gelezen door Pandoc, dat niet is geïnstalleerd of niet kon worden gevonden. Waar het staat, kan in de instellingen worden gezegd.
 documents-unread = Het bestand kon niet worden gelezen.
 documents-title = Titel
-documents-title-hint-map = De naam van de mindmap, en van het element in haar kern.
 documents-title-hint-project = De naam van het project, van zijn mindmap, en van het element in de kern van de mindmap.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Zonder titel
@@ -79,7 +77,6 @@ documents-found-some-made = Er zijn { $count } verwijzingen gevonden, { $made } 
 documents-at-once = Maak meteen verwijzingen van die welke Zotero heeft gemaakt naar werken die je bibliotheek heeft
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = Een noot die niets anders is dan een verwijzing, wordt een verwijzing in de regel, die de citeerstijl in een noot of in de regel zet; een noot die meer zegt, houdt haar verwijzing. Wat je in het paneel van gevonden verwijzingen voor noten hebt gekozen, voor alle volgende, geldt ook hier.
-documents-go-through-map = De verwijzingen doornemen wanneer de mindmap is gemaakt
 documents-go-through-project = De verwijzingen doornemen wanneer het project is gemaakt
 
 ## Making the map.
@@ -87,6 +84,4 @@ documents-go-through-project = De verwijzingen doornemen wanneer het project is 
 # Over what the one who brings the document in should know of it.
 documents-to-know = Goed om te weten
 documents-making = De mindmap wordt gemaakt…
-documents-make-map = De mindmap maken
 documents-make-project = Het project maken
-documents-map-failed = De mindmap kon niet worden gemaakt.

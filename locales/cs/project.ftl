@@ -68,33 +68,15 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Bez názvu
-# The name of a copy of a map.
-project-map-copy = { $name }, kopie
-project-maps = Mapy
-project-map-name = Název mapy
-project-new-map = Nová mapa
-project-map-from-document = Mapa z dokumentu…
 project-drop-on-map = Pusťte na mapu, kam se má přesunout · s Ctrl se kopíruje
-project-duplicate = Duplikovat
-project-duplicate-hint = Kopie k práci; tato zůstane, jak je
 project-open-beside = Otevřít vedle
 project-open-beside-hint = Dvě mapy vedle sebe, pro přesouvání prvků mezi nimi
-project-this-map-actions = Tato mapa a mapy
-project-maps-hint = Mapy projektu: zvolte jednu a otevře se
-project-map-beside = vedle této
 project-side-by-side-short = Vedle sebe
 project-preview-short = Náhled
 project-found = Nalezené citace…
 # The count is of those found in the map.
 project-found-hint = { $count } k projití a převedení na citace
 project-found-none = A text, který vypadá jako citace
-project-delete-map = Smazat mapu
-project-delete-map-title = Smazat mapu „{ $name }“?
-project-delete-map-message = { $count ->
-    [one] { $count } prvek a text v něm zmizí. Dokud je projekt otevřený, lze to vzít zpět.
-    [few] { $count } prvky a text v nich zmizí. Dokud je projekt otevřený, lze to vzít zpět.
-   *[other] { $count } prvků a text v nich zmizí. Dokud je projekt otevřený, lze to vzít zpět.
-}
 project-copied-to = Zkopírováno do „{ $name }“
 project-moved-to = Přesunuto do „{ $name }“
 
@@ -116,20 +98,12 @@ project-stands-for = Zastupuje „{ $name }“
 project-stand-for = Zastupovat jinou mapu
 project-stand-for-heading = V dokumentu na jeho místo vstoupí tato mapa
 project-stand-for-none = Žádná
-project-copy-to-map = Kopírovat do mapy
 project-copy = Kopírovat
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Vložit pod něj
-project-move-to-map = Přesunout do mapy
-project-map-from-branch = Nová mapa z této větve
-project-map-from-branch-hint = Kopie k práci; tato zůstane
-project-detach = Odpojit od nadřazeného
-project-detach-hint = Volný prvek, k umístění později
 project-tidy-branch = Uspořádat tuto větev
 project-place-automatically = Umístit automaticky
 project-delete-keeping = Smazat a ponechat, co je pod ním
-project-centre-stays = Střed mapy zůstává
-project-centre-stays-detail = Mapu samu smažete z její karty.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] „{ $name }“ byl smazán
@@ -235,7 +209,6 @@ project-link-label = Popisek spojení
 
 ## A copy and its original, in another map.
 copy-title = Kopie a její originál
-copy-from = Zkopírováno z „{ $name }“ v mapě „{ $map }“
 copy-original-changed = Originál se od zkopírování, nebo od posledního nahlédnutí, změnil.
 copy-original-same = Originál je, jaký byl při zkopírování.
 copy-original-unknown = Zda se originál od zkopírování změnil, není známo: kopie vznikla dřív, než se to začalo uchovávat.
@@ -249,8 +222,6 @@ copy-seen = Ponechat tuto kopii, jak je
 copy-take = Převzít název a text originálu
 copy-changed-mark = Originál se od zkopírování změnil
 copy-compare = Porovnat s originálem…
-copy-copied-from = Zkopírováno z „{ $name }“ v „{ $map }“
-copy-copied-from-changed = Zkopírováno z „{ $name }“ v „{ $map }“, který se od té doby změnil
 
 ## How far the writing of an element has come, as its writer says.
 status = Stav

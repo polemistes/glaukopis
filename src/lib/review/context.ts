@@ -1,6 +1,6 @@
 /**
  * The review of a project, where the text finds it: the project's view gives
- * it, and the text of a map and each of its elements read it to show the
+ * it, and the text in view and each of its elements read it to show the
  * changes where they are.
  */
 

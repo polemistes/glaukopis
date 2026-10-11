@@ -1,5 +1,5 @@
 /**
- * Going through the citations that were found in a map: what there is, what
+ * Going through the citations that were found in the element in view: what there is, what
  * the library has for each, what the writer has chosen, and what is done.
  * The panel (`FoundPanel.svelte`) shows it.
  *
@@ -153,7 +153,8 @@ const nothing = (text: string) => /^[\s.]*$/.test(text);
 
 export class Going {
   readonly project: Project;
-  readonly map: string;
+  /** The element in view: its citations, and those of all under it, are gone through. */
+  readonly within: string;
 
   entries = $state<Entry[]>([]);
   /** The one that is looked at, by its key. */
@@ -181,7 +182,7 @@ export class Going {
 
   constructor(
     project: Project,
-    map: string,
+    at: string,
     options: {
       commands?: Commands;
       kept?: Partial<Kept>;
@@ -190,7 +191,7 @@ export class Going {
     } = {},
   ) {
     this.project = project;
-    this.map = map;
+    this.within = at;
     this.#commands = options.commands ?? COMMANDS;
     this.#keep = options.keep ?? (() => {});
     this.#remember = options.remember ?? (() => {});
@@ -324,7 +325,7 @@ export class Going {
    * chosen for something that is still there is kept.
    */
   look() {
-    const { places, marked } = gather(this.project, this.map);
+    const { places, marked } = gather(this.project, this.within);
     this.seen = this.project.revision;
     this.#places = new Map(places.map((p) => [p.id, p]));
     const before = new Map(this.entries.map((e) => [e.key, e]));

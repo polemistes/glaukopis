@@ -27,9 +27,10 @@
     const f = project.fragment(id, 'body');
     if (!(f instanceof Y.XmlFragment)) return { html: '', cut: false };
     const { blocks, cut } = excerpt(readBody(f), 520);
-    return { html: blocksHtml(blocks, project.map(node?.map)?.document.language), cut };
+    return { html: blocksHtml(blocks, project.documentOf(id).settings.language), cut };
   });
-  const included = $derived(node?.include ? project.map(node.include) : undefined);
+  /** The element whose branch stands in this element's place in the document. */
+  const included = $derived(node?.include ? project.node(node.include) : undefined);
   /** Where the element was copied from, if it is a copy of what is still there. */
   const copied = $derived(node?.origin ? project.copyOf(id) : null);
   const kind = $derived(project.kind(node?.kind));
@@ -76,16 +77,17 @@
             <span class="dot" style:background={kindColour(kind.colour).ink}></span>{kind.name}
           </div>
         {/if}
-        {#if copied?.original && copied.map}
-          {@const said = {
-            name: copied.original.title || t('project-untitled'),
-            map: copied.map.name,
-          }}
+        {#if copied?.original}
+          {@const said = { name: copied.original.title || t('project-untitled') }}
           <div>
             {copied.changed ? t('copy-copied-from-changed', said) : t('copy-copied-from', said)}
           </div>
         {/if}
-        {#if included}<div>{t('project-stands-for-map', { name: included.name })}</div>{/if}
+        {#if included}
+          <div>
+            {t('project-stands-for-map', { name: included.title || t('project-untitled') })}
+          </div>
+        {/if}
         {#if !node.heading}<div>{t('project-name-not-printed')}</div>{/if}
         {#if node.excluded}<div>{t('project-left-out-of-document')}</div>{/if}
       </div>

@@ -2,8 +2,6 @@
 
 diagram-map = Mapa
 diagram-idea = Název
-diagram-new-loose = Nový volný prvek sem
-diagram-new-loose-hint = Myšlenka, která zatím nemá své místo
 diagram-show-all = Zobrazit celou mapu
 diagram-tidy = Uspořádat celou mapu
 diagram-tidy-hint = Každý prvek se vrátí na své automatické místo

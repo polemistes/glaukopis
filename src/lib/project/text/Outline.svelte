@@ -1,6 +1,6 @@
 <!--
-  The outline of a map beside any view of it: every element by its name, as
-  deep as it stands, the one in view marked. A name is pressed to go there;
+  The outline of the element in view, beside any view of it: it and every
+  element under it by its name, as deep as it stands, the one in view marked. A name is pressed to go there;
   what has something under it folds and opens by its chevron, or with the
   left and right arrows; the up and down arrows go through the names, and
   Alt+Shift with the arrows moves an element, as in the text and the diagram.
@@ -19,7 +19,8 @@
 
   interface Props {
     project: Project;
-    mapId: string;
+    /** The element in view, whose branch is listed. */
+    at: string;
     items: OutlineItem[];
     /** The element in view: at the top of the text, or chosen. */
     current: string | null;
@@ -29,9 +30,9 @@
     width?: number;
   }
 
-  let { project, mapId, items: all, current, ongo, onclose, width = 240 }: Props = $props();
+  let { project, at, items: all, current, ongo, onclose, width = 240 }: Props = $props();
 
-  const folded = $derived(outlineFolds(mapId));
+  const folded = $derived(outlineFolds(at));
   /** The items that are listed: not those under a folded one. */
   const items = $derived(listed(all, folded));
 
@@ -61,7 +62,7 @@
     if (event.altKey && event.shiftKey && event.key.startsWith('Arrow')) {
       event.preventDefault();
       event.stopPropagation();
-      const tree = project.tree(mapId);
+      const tree = project.tree(at);
       const moved =
         event.key === 'ArrowUp'
           ? shift(project, tree, id, -1)
@@ -113,9 +114,6 @@
   <ol bind:this={list}>
     {#each items as item, i (item.id)}
       {@const node = project.nodes.get(item.id)}
-      {#if item.loose && !items[i - 1]?.loose}
-        <li class="loose-heading">{t('text-loose')}</li>
-      {/if}
       <li>
         <button
           type="button"
@@ -252,10 +250,5 @@
     height: 8px;
     margin: 5px 6px 0 -2px;
     border-radius: 50%;
-  }
-  .loose-heading {
-    margin: 12px 0 4px 10px;
-    color: var(--ink-3);
-    font-size: var(--text-xs);
   }
 </style>

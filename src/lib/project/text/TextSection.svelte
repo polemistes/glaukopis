@@ -31,8 +31,10 @@
 
   interface Props {
     project: Project;
+    /** The element in view, whose document this is part of. */
+    at: string;
     node: NodeRecord;
-    /** 0 for the centre of the map, which is the title of the document. */
+    /** 0 for the element in view, whose name is the title of the document. */
     level: number;
     /** Whether the editors are there; otherwise the text is shown as it stands. */
     active: boolean;
@@ -41,7 +43,6 @@
     selected: boolean;
     /** Left out of the document, itself or by what it is under. */
     excluded: boolean;
-    loose: boolean;
     /** Where something dragged would go, if dropped now. */
     drop: 'before' | 'after' | 'inside' | null;
     /** Whether an association is being made and this element could be its other end. */
@@ -63,7 +64,8 @@
     onmenu: (id: string, event: MouseEvent, anchor: HTMLElement) => void;
     onpick: (id: string) => void;
     onkeep: (ref: string) => void;
-    onopenmap: (id: string) => void;
+    /** Enters an element: the one this one stands for. */
+    onenter: (id: string) => void;
     onready?: (
       id: string,
       editors: { title?: ReturnType<typeof RichText>; body?: ReturnType<typeof RichText> } | null,
@@ -72,13 +74,13 @@
 
   let {
     project,
+    at,
     node,
     level,
     active,
     focus,
     selected,
     excluded,
-    loose,
     others = [],
     foldable = false,
     hidden = null,
@@ -93,7 +95,7 @@
     onmenu,
     onpick,
     onkeep,
-    onopenmap,
+    onenter,
     onready,
   }: Props = $props();
 
@@ -102,20 +104,23 @@
 
   const title = $derived(project.fragment(node.id, 'title'));
   const body = $derived(project.fragment(node.id, 'body'));
+  /** The language of the text, as the element or one over it says it: its spelling is checked by it. */
+  const language = $derived(project.documentOf(node.id).settings.language ?? null);
   const html = $derived.by(() => {
     if (active) return '';
     // The record is made anew whenever the text changes.
     void node.words;
     void node.cited;
-    return body ? blocksHtml(readBody(body), project.map(node.map)?.document.language) : '';
+    return body ? blocksHtml(readBody(body), language) : '';
   });
-  const included = $derived(node.include ? project.map(node.include) : undefined);
-  /** Where the map it stands for is in the document, with the map's name in bold. */
+  /** The element it stands for in the document, where it stands for one. */
+  const included = $derived(node.include ? project.node(node.include) : undefined);
+  /** Where that element is in the document, with its name in bold. */
   const includedWords = $derived(
-    included ? pieces((m) => t('text-include', m), { map: included.name }) : [],
+    included
+      ? pieces((m) => t('text-include', m), { name: included.title || t('project-untitled') })
+      : [],
   );
-  /** The language of the map, whose spelling the text is checked by. */
-  const language = $derived(project.map(node.map)?.document.language ?? null);
   /** Its kind, where it has one: a tag by its name. */
   const kind = $derived(project.kind(node.kind));
   /** The threads of comments on it that are open: a marker in the right margin. */
@@ -165,7 +170,7 @@
     // A misspelt word has its menu where it stands.
     if (event.button === 2 && drawnWordAt(event.clientX, event.clientY)) return;
     // A citation that was found is gone through where it is pressed, as a citation is changed.
-    if (part === 'body' && event.button === 0 && pressedFound(event.target, node.map)) {
+    if (part === 'body' && event.button === 0 && pressedFound(event.target, at)) {
       event.preventDefault();
       return;
     }
@@ -177,7 +182,6 @@
   class="section level-{Math.min(level, 4)}"
   class:selected
   class:excluded
-  class:loose
   class:plain={!node.heading && level > 0}
   class:linkable
   class:drop-before={drop === 'before'}
@@ -302,7 +306,7 @@
     </div>
 
     {#if included && !hidden}
-      <button type="button" class="include" onclick={() => onopenmap(included.id)}>
+      <button type="button" class="include" onclick={() => onenter(included.id)}>
         <FileInput size={14} />
         <span>
           {#each includedWords as piece, i (i)}
@@ -323,7 +327,7 @@
             fragment={body}
             kind="body"
             element={node.id}
-            placeholder={level === 0 && !loose ? t('text-first-section') : ''}
+            placeholder={level === 0 ? t('text-first-section') : ''}
             autofocus={focus?.part === 'body' ? focus.at : null}
             onaction={(a, v) => onaction(node.id, 'body', a, v)}
             onfocus={() => onfocused(node.id, 'body')}
@@ -655,14 +659,6 @@
     width: 2px;
     border-radius: 2px;
     background: repeating-linear-gradient(var(--ink-4) 0 4px, transparent 4px 8px);
-  }
-  .loose > .content {
-    padding: 10px 14px;
-    border: 1px dashed var(--line-strong);
-    border-radius: var(--radius-m);
-  }
-  .loose {
-    margin-top: 0.9em;
   }
 
   .linkable .heading {

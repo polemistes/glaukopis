@@ -5,11 +5,7 @@ text-name = Název prvku
 text-first-section = Pište sem, nebo stiskněte Ctrl+Enter a začněte první oddíl.
 text-not-printed = netiskne se
 text-grip = Přesunout nebo změnit tento prvek
-# The map an element stands for, which is shown in bold where the variable stands.
-text-include = V dokumentu zde stojí mapa { $map }.
 text-include-open = Otevřít ji
-text-loose = Volné prvky
-text-loose-hint = Myšlenky, které zatím nemají své místo. Nejsou součástí dokumentu.
 text-split = Rozdělit zde
 text-split-hint = Co následuje za kurzorem, se stane novým prvkem
 text-join = Připojit k prvku nad ním

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EditorState } from 'prosemirror-state';
-import type { MapChanges, Piece } from '$lib/history/types';
+import type { BranchChanges, Piece } from '$lib/history/types';
 import { bodySchema } from '$lib/editor/schema';
 import { blockIn, placeIn, reviewMarks } from './editor';
 import { group } from './grouping';
@@ -12,9 +12,9 @@ function piece(status: Piece['status'], text: string, by: string | null = null):
 
 const colour = (by: string | null) => (by === 'anna' ? 'red' : by === 'bo' ? 'blue' : 'grey');
 
-function changes(): MapChanges {
+function changes(): BranchChanges {
   return {
-    map: 'm',
+    at: 'm',
     passages: [
       {
         place: { element: 'a', part: 'body', path: [0] },

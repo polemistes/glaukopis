@@ -1,5 +1,5 @@
 /**
- * Searching the elements of a project, as the text of a map or the edit box
+ * Searching the elements of a project, as the text in view or the edit box
  * of an element does: what is found, in the order of the text.
  *
  * What is searched is read from the project, not from the editors (ADR

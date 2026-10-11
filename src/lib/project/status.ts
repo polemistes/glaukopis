@@ -1,7 +1,7 @@
 /**
- * How far the writing of a map has come, from what is said of each element
- * (`Status`): so many done, so many drafts, so many ideas, and the words
- * written in the drafts and in what is done.
+ * How far the writing of an element's branch has come, from what is said
+ * of each element (`Status`): so many done, so many drafts, so many ideas,
+ * and the words written in the drafts and in what is done.
  */
 
 import { languages, t } from '$lib/i18n';
@@ -16,12 +16,13 @@ export interface Progress {
   words: number;
 }
 
-/** How far a map has come; nothing where no element of it says. */
-export function progressOf(project: Project, mapId: string): Progress | null {
+/** How far the element in view and all under it have come; nothing where no element of them says. */
+export function progressOf(project: Project, at: string): Progress | null {
   const out: Progress = { idea: 0, draft: 0, done: 0, words: 0 };
   let any = false;
-  for (const n of project.nodes.values()) {
-    if (n.map !== mapId || !n.status) continue;
+  for (const id of project.tree(at).sequence) {
+    const n = project.nodes.get(id);
+    if (!n?.status) continue;
     any = true;
     out[n.status]++;
     if (n.status !== 'idea') out.words += n.words;
@@ -29,7 +30,7 @@ export function progressOf(project: Project, mapId: string): Progress | null {
   return any ? out : null;
 }
 
-/** The counts of a map's progress, in words, the furthest first: "2 done", "3 drafts", "1 idea". */
+/** The counts of the progress, in words, the furthest first: "2 done", "3 drafts", "1 idea". */
 export function progressWords(progress: Progress): string[] {
   const parts: string[] = [];
   for (const status of ['done', 'draft', 'idea'] as const) {

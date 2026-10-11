@@ -10,6 +10,7 @@
   import ChevronsDownUp from '@lucide/svelte/icons/chevrons-down-up';
   import ChevronsUpDown from '@lucide/svelte/icons/chevrons-up-down';
   import FoldVertical from '@lucide/svelte/icons/fold-vertical';
+  import MapIcon from '@lucide/svelte/icons/map';
   import UnfoldVertical from '@lucide/svelte/icons/unfold-vertical';
   import Merge from '@lucide/svelte/icons/merge';
   import Pencil from '@lucide/svelte/icons/pencil';
@@ -54,9 +55,11 @@
 
   interface Props {
     project: Project;
-    mapId: string;
+    /** The element in view: the title of the document, whose branch is the text. */
+    at: string;
     onkeep: (id: string) => void;
-    onopenmap: (id: string) => void;
+    /** Enters an element: it becomes the one in view. */
+    onenter: (id: string) => void;
     /** An element to bring into view when the map appears. */
     reveal?: string | null;
     /** What is folded away in the text of the project. */
@@ -69,9 +72,9 @@
 
   let {
     project,
-    mapId,
+    at,
     onkeep,
-    onopenmap,
+    onenter,
     reveal = null,
     folding,
     outline = false,
@@ -103,15 +106,14 @@
     { title?: ReturnType<typeof RichText>; body?: ReturnType<typeof RichText> }
   >();
 
-  const tree = $derived(project.tree(mapId));
-  /** How far the writing of the map has come, where its elements say. */
-  const progress = $derived(progressOf(project, mapId));
+  const tree = $derived(project.tree(at));
+  /** How far the writing of the branch has come, where its elements say. */
+  const progress = $derived(progressOf(project, at));
 
   interface Row {
     id: string;
     level: number;
     excluded: boolean;
-    loose: boolean;
     /** Whether it has text of its own or something under it, which can be folded away. */
     foldable: boolean;
     /**
@@ -123,17 +125,10 @@
     away: boolean;
   }
 
-  /** Every element of the map, those that are folded away as well. */
+  /** Every element of the branch, the one in view first, those that are folded away as well. */
   const all = $derived.by(() => {
     const out: Row[] = [];
-    const walk = (
-      id: string,
-      level: number,
-      excluded: boolean,
-      loose: boolean,
-      top: boolean,
-      away: boolean,
-    ) => {
+    const walk = (id: string, level: number, excluded: boolean, away: boolean) => {
       const node = project.nodes.get(id);
       if (!node) return;
       const out_ = excluded || node.excluded;
@@ -145,16 +140,16 @@
         id,
         level,
         excluded: out_,
-        loose: loose && top,
         foldable,
         hidden: hides ? { ids: [], text, words: node.words } : null,
         away,
       };
       out.push(row);
-      // An element whose name is not printed does not deepen what is under it.
-      const next = top && !loose ? 1 : node.heading ? level + 1 : level;
+      // The element in view is the title; an element whose name is not
+      // printed does not deepen what is under it.
+      const next = level === 0 ? 1 : node.heading ? level + 1 : level;
       const from = out.length;
-      for (const c of under) walk(c, Math.max(1, next), out_, loose, false, away || hides);
+      for (const c of under) walk(c, next, out_, away || hides);
       if (row.hidden) {
         for (const r of out.slice(from)) {
           row.hidden.ids.push(r.id);
@@ -162,8 +157,7 @@
         }
       }
     };
-    if (tree.root) walk(tree.root, 0, false, false, true, false);
-    for (const id of tree.loose) walk(id, 2, true, true, true, false);
+    walk(tree.root, 0, false, false);
     return out;
   });
 
@@ -210,8 +204,6 @@
     scroller?.querySelector(`[data-section="${id}"]`)?.scrollIntoView({ block: 'start' });
     atTop = id;
   }
-
-  const firstLoose = $derived(rows.findIndex((r) => r.loose));
 
   const totals = $derived.by(() => {
     let words = 0;
@@ -279,8 +271,9 @@
   }
 
   $effect(() => {
-    // What is active must exist.
-    const present = active.filter((id) => project.nodes.get(id)?.map === mapId);
+    // What is active must be in view.
+    const inside = new Set(tree.sequence);
+    const present = active.filter((id) => inside.has(id));
     if (present.length !== active.length) active = present;
   });
 
@@ -408,7 +401,6 @@
     const node = project.node(id);
     if (i <= 0 || !node || (tree.children.get(id)?.length ?? 0) > 0) return;
     const before = rows[i - 1];
-    if (before.loose !== rows[i].loose && !rows[i].loose) return;
     const target = project.fragment(before.id, 'body');
     const source = project.fragment(id, 'body');
     if (!target || !source) return;
@@ -617,14 +609,14 @@
     get project() {
       return project;
     },
-    elements: () => project.tree(mapId).sequence,
+    elements: () => project.tree(at).sequence,
     labels: () => ({
       citation: citationLabel,
       crossref: (target, form) =>
         pointerText(
-          numbering.of(project, mapId).byId.get(target),
+          numbering.of(project, at).byId.get(target),
           form,
-          numbering.countingOf(project, mapId),
+          numbering.countingOf(project, at),
         ),
     }),
     holder: (element, part) =>
@@ -684,7 +676,7 @@
 
   // What was found by the search through everything is gone to when the map is shown.
   onMount(() => {
-    const jump = takeJump(mapId);
+    const jump = takeJump(at);
     if (jump) void tick().then(() => jumpTo(jump));
   });
 
@@ -717,7 +709,7 @@
     void r.shown;
     untrack(() => {
       const change = r.current;
-      if (change && r.map === mapId) void showChange(change);
+      if (change && r.at === at) void showChange(change);
     });
   });
 
@@ -752,7 +744,7 @@
     select: (ids) => ids[0] && go(ids[0], 'title', 'start'),
     add: (id, where) => (where === 'under' ? addUnder(id) : addAfter(id)),
     link: (id) => (linkFrom = id),
-    openMap: (id) => onopenmap(id),
+    enter: (id) => onenter(id),
     copy: (ids) => holdElements(ids, false),
     cut: (ids) => holdElements(ids, true),
     paste: (id) => pasteUnder(id),
@@ -760,7 +752,7 @@
 
   /** Holds elements, each with all under it, copied or cut, and says how many. */
   function holdElements(ids: string[], cut: boolean) {
-    const n = cut ? cutElements(project, mapId, ids) : copyElements(project, mapId, ids);
+    const n = cut ? cutElements(project, ids) : copyElements(project, ids);
     if (n) notifyOk(t(cut ? 'diagram-cut' : 'diagram-copied', { count: n }));
   }
 
@@ -768,7 +760,7 @@
   function pasteUnder(id: string) {
     if (!canPaste(project)) return;
     project.checkpoint();
-    const made = pasteElements(project, mapId, id);
+    const made = pasteElements(project, { under: id });
     project.checkpoint();
     if (made[0]) void go(made[0], 'title', 'start');
   }
@@ -796,6 +788,14 @@
         label: t('text-join'),
         icon: Merge,
         action: () => merge(id),
+      });
+    }
+    if (id !== tree.root) {
+      extra.push({
+        label: t('text-open-as-map'),
+        icon: MapIcon,
+        hint: t('text-open-as-map-hint'),
+        action: () => onenter(id),
       });
     }
     if (extra.length) extra.push({ kind: 'separator' });
@@ -854,8 +854,9 @@
   function ongrip(id: string, event: PointerEvent) {
     if (event.button !== 0) return;
     startDrag(event, () => {
+      // The element in view stays where it is.
       if (id === tree.root) return null;
-      const data: ElementsPayload = { project, map: mapId, ids: [id], grab: { x: 0, y: 0 } };
+      const data: ElementsPayload = { project, at, ids: [id], grab: { x: 0, y: 0 } };
       return { kind: 'elements', data, label: project.node(id)?.title || t('project-untitled') };
     });
   }
@@ -869,7 +870,7 @@
     // And so does a reference, which is cited there.
     if (event.payload.kind === 'references') return { id, where: 'after' };
     const payload = event.payload.data as ElementsPayload;
-    if (payload.map === mapId) {
+    if (payload.project === project) {
       for (const dragged of payload.ids) {
         if (dragged === id || isAncestor(tree, dragged, id)) return null;
       }
@@ -912,18 +913,18 @@
     const payload = event.payload.data as ElementsPayload;
     if (payload.project !== project) return;
     const parent = target.where === 'inside' ? target.id : (tree.parent.get(target.id) ?? null);
-    const list = parent ? (tree.children.get(parent) ?? []) : tree.loose;
+    if (!parent) return;
+    const list = tree.children.get(parent) ?? [];
     const index =
       target.where === 'inside' ? 0 : list.indexOf(target.id) + (target.where === 'after' ? 1 : 0);
     project.checkpoint();
-    const options = parent ? { pos: null } : { map: mapId };
     const made = event.copy
-      ? project.copy(payload.ids, parent, index, options)
-      : project.move(payload.ids, parent, index, options);
+      ? project.copy(payload.ids, parent, index, { pos: null })
+      : project.move(payload.ids, parent, index, { pos: null });
     project.checkpoint();
     if (made[0]) {
       current = made[0];
-      folding.reveal(project.tree(mapId), made[0]);
+      folding.reveal(project.tree(at), made[0]);
       tick().then(() =>
         scroller
           ?.querySelector(`[data-section="${made[0]}"]`)
@@ -987,7 +988,7 @@
     // The end of an association is the element itself, or what it is folded away under.
     const shown = (id: string) => folding.hiddenUnder(tree, id) ?? id;
     const spans = project
-      .linksOf(mapId)
+      .linksOf(at)
       .map((l) => {
         const from = shown(l.from);
         const to = shown(l.to);
@@ -1171,24 +1172,18 @@
       </div>
 
       <div class="column" bind:this={column} data-notes>
-        {#each rows as row, i (row.id)}
+        {#each rows as row (row.id)}
           {@const node = project.nodes.get(row.id)}
-          {#if i === firstLoose}
-            <div class="loose-heading">
-              <span class="overline">{t('text-loose')}</span>
-              <span>{t('text-loose-hint')}</span>
-            </div>
-          {/if}
           {#if node}
             <TextSection
               {project}
+              {at}
               {node}
               level={row.level}
               active={active.includes(row.id)}
               focus={focus?.id === row.id ? focus : null}
               selected={current === row.id}
-              excluded={row.excluded && !row.loose}
-              loose={row.loose}
+              excluded={row.excluded}
               drop={drop?.id === row.id && drag.payload ? drop.where : null}
               linkable={!!linkFrom && linkFrom !== row.id}
               others={othersAt(row)}
@@ -1205,7 +1200,7 @@
               {onmenu}
               onpick={pick}
               {onkeep}
-              {onopenmap}
+              {onenter}
               onready={(id, e) => {
                 if (e) editors.set(id, e);
                 else editors.delete(id);
@@ -1323,17 +1318,6 @@
     font-size: var(--text-sm);
     outline: none;
     box-shadow: var(--shadow-2);
-  }
-  .loose-heading {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin: 4em 0 0 44px;
-    padding-top: 1.2em;
-    border-top: 1px solid var(--line);
-    font-family: var(--font-ui);
-    font-size: var(--text-sm);
-    color: var(--ink-3);
   }
   footer {
     display: flex;

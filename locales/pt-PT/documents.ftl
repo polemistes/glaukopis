@@ -4,14 +4,12 @@
 documents-choose = Um documento a trazer
 documents-filter = Documentos
 documents-filter-all = Todos os ficheiros
-documents-title-map = Um mapa a partir de um documento
 documents-title-project = Um projeto a partir de um documento
 documents-reading = A ler { $file }…
 documents-reading-hint = Um documento longo leva um momento.
 documents-no-pandoc = Os documentos deste tipo são lidos pelo Pandoc, que não está instalado ou não foi encontrado. Onde ele está pode dizer-se nas definições.
 documents-unread = Não foi possível ler o ficheiro.
 documents-title = Título
-documents-title-hint-map = O nome do mapa, e do elemento no seu centro.
 documents-title-hint-project = O nome do projeto, do seu mapa, e do elemento no centro do mapa.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Sem título
@@ -87,7 +85,6 @@ documents-found-some-made = Encontraram-se { $count } citações, { $made } dela
 documents-at-once = Fazer desde já citações das que o Zotero fez de obras que a biblioteca tem
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = Uma nota que não é mais do que uma citação torna-se uma citação na linha, que o estilo de citação põe numa nota ou na linha; uma nota que diz mais guarda a sua citação. O que se escolheu para as notas no painel das citações encontradas, para todas as que se seguem, vale também aqui.
-documents-go-through-map = Percorrer as citações quando o mapa se fizer
 documents-go-through-project = Percorrer as citações quando o projeto se fizer
 
 ## Making the map.
@@ -95,6 +92,4 @@ documents-go-through-project = Percorrer as citações quando o projeto se fizer
 # Over what the one who brings the document in should know of it.
 documents-to-know = A saber
 documents-making = A fazer o mapa…
-documents-make-map = Fazer o mapa
 documents-make-project = Fazer o projeto
-documents-map-failed = Não foi possível fazer o mapa.

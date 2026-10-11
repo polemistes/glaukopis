@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = 此文档中每种类型如何排印
 editor-words = 词语
 editor-words-hint = 下划线、上标、代码；外文词、作品名、术语
 editor-words-make = 新建词语类型…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = 导图的语言
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = 普通词语
 editor-own-kind-new = 自定义类型

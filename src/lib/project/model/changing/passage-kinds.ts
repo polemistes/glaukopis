@@ -10,7 +10,7 @@ import * as Y from 'yjs';
 import type { KindFamily, Look } from '$lib/api/documents';
 import { newId } from '$lib/util/id';
 import type { Project } from '../project.svelte';
-import type { Hand, PassageKindRecord } from '../types';
+import type { PassageKindRecord } from '../types';
 
 /** What can be said of a kind. */
 export type PassageKindDraft = Pick<PassageKindRecord, 'name' | 'family' | 'basedOn' | 'look'>;
@@ -123,22 +123,18 @@ export const passageKindChanges = {
 
   /**
    * Deletes a kind. The passages that were of it stay as they are, and
-   * are set as text where a document is made; the hands of the maps let
+   * are set as text where a document is made; the hand of the project lets
    * it go.
    */
   deletePassageKind(this: Project, id: string) {
     if (!this.yPassageKinds.has(id)) return;
     this.transact(() => {
-      for (const m of this.yMaps.values()) {
-        const hand = m.get('hand') as Hand | undefined;
-        if (!hand || (!hand.pinned?.includes(id) && !hand.unpinned?.includes(id))) continue;
-        const next = {
-          pinned: (hand.pinned ?? []).filter((k) => k !== id),
-          unpinned: (hand.unpinned ?? []).filter((k) => k !== id),
-        };
-        if (next.pinned.length || next.unpinned.length) m.set('hand', next);
-        else m.delete('hand');
-      }
+      const hand = this.hand;
+      if (hand.pinned.includes(id) || hand.unpinned.includes(id))
+        this.setHand({
+          pinned: hand.pinned.filter((k) => k !== id),
+          unpinned: hand.unpinned.filter((k) => k !== id),
+        });
       this.yPassageKinds.delete(id);
     });
   },

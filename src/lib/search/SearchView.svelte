@@ -42,19 +42,24 @@
     everything.options[option] = !everything.options[option];
   }
 
-  /** What was found in a project, with the map and the element it is in said where they change. */
+  /**
+   * What was found in a project, with the tree under the project and the
+   * element it is in said where they change. No tree is said of the
+   * project's own element, nor of what is in no element.
+   */
   function grouped(
     project: ProjectFound,
-  ): { found: Found; map: string | null; where: string | null }[] {
-    let map: string | null = null;
+  ): { found: Found; tree: string | null; where: string | null }[] {
+    let tree: string | null = null;
     let where: string | null = null;
     return project.found.map((found) => {
-      const mapShown = found.map !== map ? found.mapName : null;
+      const changed = found.tree !== tree;
+      const treeShown = changed && found.tree !== null ? found.treeName : null;
       const place = placeOf(found);
-      const whereShown = mapShown !== null || place !== where ? place : null;
-      map = found.map;
+      const whereShown = changed || place !== where ? place : null;
+      tree = found.tree;
       where = place;
-      return { found, map: mapShown, where: whereShown };
+      return { found, tree: treeShown, where: whereShown };
     });
   }
 
@@ -182,9 +187,9 @@
           <span class="count">{t('search-in-project', { count: project.count })}</span>
         </h2>
         <ul>
-          {#each grouped(project) as { found, map, where }, i (i)}
-            {#if map !== null}
-              <li class="map">{map || t('search-untitled')}</li>
+          {#each grouped(project) as { found, tree, where }, i (i)}
+            {#if tree !== null}
+              <li class="tree">{tree || t('search-untitled')}</li>
             {/if}
             <li>
               <button type="button" class="hit" onclick={() => everything.go(project, found)}>
@@ -348,7 +353,7 @@
     padding: 0;
     list-style: none;
   }
-  .map {
+  .tree {
     margin: 12px 0 2px;
     font-size: var(--text-xs);
     font-weight: 600;

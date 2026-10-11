@@ -1,3 +1,16 @@
+<script module lang="ts">
+  import { SvelteSet } from 'svelte/reactivity';
+
+  /**
+   * How the tree of the open project is folded in the pane, kept while the
+   * application runs: the elements unfolded by hand, and those folded by
+   * hand though they lie on the way to the element in view. Keyed by
+   * project and element.
+   */
+  const unfoldedByHand = new SvelteSet<string>();
+  const foldedByHand = new SvelteSet<string>();
+</script>
+
 <script lang="ts">
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
@@ -11,6 +24,8 @@
   import Users from '@lucide/svelte/icons/users';
   import type { Folder as FolderInfo, ProjectInfo } from '$lib/api/projects';
   import { t } from '$lib/i18n';
+  import type { Project } from '$lib/project/model/project.svelte';
+  import { PROJECT } from '$lib/project/model/types';
   import { projects } from '$lib/state/projects.svelte';
   import Button from '$lib/ui/Button.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
@@ -39,9 +54,26 @@
     compact?: boolean;
     /** The project that is open, marked in the list and scrolled into view. */
     current?: string | null;
+    /**
+     * The open project itself, where the view gives it: its tree stands
+     * under its row, folded but along the way to the element in view, which
+     * is marked (ADR 0037).
+     */
+    project?: Project | null;
+    /** The element in view in the open project. */
+    at?: string | null;
+    /** Enters an element of the open project. */
+    onenter?: (id: string) => void;
   }
 
-  let { actions, compact = false, current = null }: Props = $props();
+  let {
+    actions,
+    compact = false,
+    current = null,
+    project = null,
+    at = null,
+    onenter,
+  }: Props = $props();
 
   let filter = $state('');
   let listEl = $state<HTMLDivElement>();
@@ -239,6 +271,49 @@
     return parts.join(' · ');
   }
 
+  // ---- the tree of the open project ----
+
+  const tree = $derived(project ? project.tree() : null);
+  /** The way from the project down to the element in view: unfolded, unless folded by hand. */
+  const way = $derived(new Set(project && at ? project.pathTo(at) : []));
+
+  const foldKey = (id: string) => `${current}:${id}`;
+
+  function isUnfolded(id: string): boolean {
+    const key = foldKey(id);
+    if (foldedByHand.has(key)) return false;
+    return unfoldedByHand.has(key) || way.has(id);
+  }
+
+  function toggleFold(id: string) {
+    const key = foldKey(id);
+    if (isUnfolded(id)) {
+      unfoldedByHand.delete(key);
+      foldedByHand.add(key);
+    } else {
+      foldedByHand.delete(key);
+      unfoldedByHand.add(key);
+    }
+  }
+
+  // Entering an element unfolds the way to it, whatever was folded by hand before.
+  $effect(() => {
+    if (!project || !at) return;
+    const ids = project.pathTo(at);
+    const id = current;
+    untrack(() => {
+      for (const element of ids) foldedByHand.delete(`${id}:${element}`);
+    });
+  });
+
+  function onelementkey(event: KeyboardEvent, id: string, holds: boolean) {
+    if (event.key === 'Enter' || event.key === ' ') onenter?.(id);
+    else if (event.key === 'ArrowRight' && holds && !isUnfolded(id)) toggleFold(id);
+    else if (event.key === 'ArrowLeft' && holds && isUnfolded(id)) toggleFold(id);
+    else return;
+    event.preventDefault();
+  }
+
   function onfolderkey(event: KeyboardEvent, f: FolderInfo) {
     if (event.key === 'F2') actions.renameFolder(f);
     else if (event.key === 'Delete') removeFolder(f);
@@ -358,6 +433,15 @@
           <Ellipsis size={15} />
         </button>
       </div>
+      {#if p.id === current && tree && (tree.children.get(PROJECT)?.length ?? 0) > 0}
+        <div class="tree" data-project-tree={p.id}>
+          {@render branch(
+            tree.children.get(PROJECT) ?? [],
+            0,
+            (compact ? 4 : 8) + row.depth * step + 22,
+          )}
+        </div>
+      {/if}
     {/if}
   {/each}
 
@@ -365,6 +449,50 @@
     <p class="none">{filter.trim() ? t('home-search-none') : t('home-list-none')}</p>
   {/if}
 </div>
+
+<!-- The elements of the open project, each a line, those under an unfolded one drawn in a step further. -->
+{#snippet branch(ids: string[], depth: number, indent: number)}
+  {#each ids as id (id)}
+    {@const node = project?.node(id)}
+    {@const holds = (tree?.children.get(id)?.length ?? 0) > 0}
+    {@const open = holds && isUnfolded(id)}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <div
+      class="row element"
+      class:current={id === at}
+      role="button"
+      tabindex="0"
+      aria-current={id === at ? 'location' : undefined}
+      data-element={id}
+      data-current={id === at ? '' : undefined}
+      title={compact ? node?.title || undefined : undefined}
+      style:padding-left="{indent + depth * step}px"
+      onclick={() => onenter?.(id)}
+      onkeydown={(e) => onelementkey(e, id, holds)}
+    >
+      <button
+        type="button"
+        class="fold"
+        class:open
+        class:hidden={!holds}
+        tabindex="-1"
+        aria-label={open ? t('home-tree-fold') : t('home-tree-unfold')}
+        aria-expanded={holds ? open : undefined}
+        onclick={(e) => {
+          e.stopPropagation();
+          toggleFold(id);
+        }}
+        onpointerdown={(e) => e.stopPropagation()}
+      >
+        <ChevronRight size={12} />
+      </button>
+      <span class="name serif truncate">{node?.title || t('project-untitled')}</span>
+    </div>
+    {#if open}
+      {@render branch(tree?.children.get(id) ?? [], depth + 1, indent)}
+    {/if}
+  {/each}
+{/snippet}
 
 <style>
   .list {
@@ -490,6 +618,55 @@
     font-weight: 550;
   }
 
+  /* The tree of the open project: lighter than the projects, and no bigger. */
+  .tree {
+    display: flex;
+    flex-direction: column;
+  }
+  .row.element {
+    gap: 2px;
+    min-height: 26px;
+    color: var(--ink-3);
+  }
+  .row.element .name {
+    font-size: var(--text-sm);
+  }
+  .row.element:hover .name {
+    color: var(--ink);
+  }
+  .row.element.current {
+    background: var(--accent-soft);
+  }
+  .row.element.current .name {
+    color: var(--accent-strong);
+    font-weight: 550;
+  }
+  .fold {
+    display: inline-flex;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--ink-4);
+    cursor: pointer;
+    transition: transform var(--fast) var(--ease);
+  }
+  .fold:hover {
+    background: var(--paper-raised);
+    color: var(--ink);
+  }
+  .fold.open {
+    transform: rotate(90deg);
+  }
+  .fold.hidden {
+    visibility: hidden;
+  }
+
   /* A narrow column, as in the pane of projects: rows as the outline has them. */
   .compact {
     gap: 0;
@@ -514,6 +691,9 @@
   }
   .compact .row.project .name {
     font-size: var(--text-md);
+  }
+  .compact .row.element {
+    min-height: 24px;
   }
   .compact .menu {
     padding: 3px;

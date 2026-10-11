@@ -2,8 +2,6 @@
 
 diagram-map = Mindmap
 diagram-idea = Naam
-diagram-new-loose = Nieuw los element hier
-diagram-new-loose-hint = Een gedachte die nog geen plaats heeft
 diagram-show-all = De hele mindmap tonen
 diagram-tidy = De hele mindmap opruimen
 diagram-tidy-hint = Elk element gaat terug naar zijn automatische plaats

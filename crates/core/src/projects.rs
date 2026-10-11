@@ -353,6 +353,9 @@ impl Projects {
                 if let Some(name) = s.name.filter(|n| !n.trim().is_empty()) {
                     info.name = name;
                 }
+                if let Some(description) = s.description {
+                    info.description = description;
+                }
             }
         })
     }
@@ -697,6 +700,8 @@ fn next_order(last: Option<&str>) -> String {
 #[serde(rename_all = "camelCase", default)]
 pub struct Summary {
     pub name: Option<String>,
+    /// The first words of the project's text, shown on its card (ADR 0037).
+    pub description: Option<String>,
     pub maps: Vec<MapInfo>,
     pub words: usize,
     pub references: usize,

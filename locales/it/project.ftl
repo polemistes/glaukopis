@@ -68,33 +68,15 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Senza titolo
-# The name of a copy of a map.
-project-map-copy = { $name }, copia
-project-maps = Mappe
-project-map-name = Nome della mappa
-project-new-map = Nuova mappa
-project-map-from-document = Una mappa da un documento…
 project-drop-on-map = Lascia cadere su una mappa per spostare lì · tieni premuto Ctrl per copiare
-project-duplicate = Duplica
-project-duplicate-hint = Una copia su cui lavorare; questa resta com'è
 project-open-beside = Apri accanto
 project-open-beside-hint = Due mappe affiancate, per spostare elementi dall'una all'altra
-project-this-map-actions = Questa mappa, e le mappe
-project-maps-hint = Le mappe del progetto: scegline una per aprirla
-project-map-beside = accanto a questa
 project-side-by-side-short = Affiancate
 project-preview-short = Anteprima
 project-found = Citazioni trovate…
 # The count is of those found in the map.
 project-found-hint = { $count } da passare in rassegna, e di cui fare citazioni
 project-found-none = E testo che sembra una citazione
-project-delete-map = Elimina la mappa
-project-delete-map-title = Eliminare la mappa «{ $name }»?
-project-delete-map-message = { $count ->
-    [one] { $count } elemento e il testo che contiene se ne andranno. Si può annullare finché il progetto è aperto.
-    [many] { $count } elementi e il testo che contengono se ne andranno. Si può annullare finché il progetto è aperto.
-   *[other] { $count } elementi e il testo che contengono se ne andranno. Si può annullare finché il progetto è aperto.
-}
 project-copied-to = Copiato in «{ $name }»
 project-moved-to = Spostato in «{ $name }»
 
@@ -116,20 +98,12 @@ project-stands-for = Sta per «{ $name }»
 project-stand-for = Sta per un'altra mappa
 project-stand-for-heading = Nel documento, questa mappa prende il suo posto
 project-stand-for-none = Nessuna
-project-copy-to-map = Copia nella mappa
 project-copy = Copia
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Incolla sotto
-project-move-to-map = Sposta nella mappa
-project-map-from-branch = Nuova mappa da questo ramo
-project-map-from-branch-hint = Una copia su cui lavorare; questo resta
-project-detach = Stacca dal genitore
-project-detach-hint = Un elemento sciolto, da collocare più tardi
 project-tidy-branch = Riordina questo ramo
 project-place-automatically = Colloca automaticamente
 project-delete-keeping = Elimina, tenendo ciò che ha sotto
-project-centre-stays = Il centro di una mappa resta
-project-centre-stays-detail = Elimina la mappa stessa dalla sua scheda.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] «{ $name }» è stato eliminato
@@ -235,7 +209,6 @@ project-link-label = Etichetta dell'associazione
 
 ## A copy and its original, in another map.
 copy-title = La copia e il suo originale
-copy-from = Copiato da «{ $name }» nella mappa «{ $map }»
 copy-original-changed = L'originale è cambiato da quando è stato copiato, o da quando lo si è visto l'ultima volta.
 copy-original-same = L'originale è com'era quando è stato copiato.
 copy-original-unknown = Se l'originale sia cambiato da quando è stato copiato non si sa: la copia è stata fatta prima che questo si tenesse.
@@ -249,8 +222,6 @@ copy-seen = Tieni questa copia com'è
 copy-take = Prendi il nome e il testo dell'originale
 copy-changed-mark = L'originale è cambiato da quando questo è stato copiato
 copy-compare = Confronta con l'originale…
-copy-copied-from = Copiato da «{ $name }» in «{ $map }»
-copy-copied-from-changed = Copiato da «{ $name }» in «{ $map }», che da allora è cambiato
 
 ## How far the writing of an element has come, as its writer says.
 status = Stato

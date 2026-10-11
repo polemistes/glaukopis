@@ -68,20 +68,9 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Fără titlu
-# The name of a copy of a map.
-project-map-copy = { $name }, copie
-project-maps = Hărți
-project-map-name = Numele hărții
-project-new-map = Hartă nouă
-project-map-from-document = O hartă dintr-un document…
 project-drop-on-map = Trageți pe o hartă ca să mutați acolo · țineți Ctrl ca să copiați
-project-duplicate = Dublează
-project-duplicate-hint = O copie la care să lucrați; aceasta rămâne cum este
 project-open-beside = Deschide alături
 project-open-beside-hint = Două hărți alăturate, ca să mutați elemente între ele
-project-this-map-actions = Această hartă, și hărțile
-project-maps-hint = Hărțile proiectului: alegeți una ca să o deschideți
-project-map-beside = alături de aceasta
 project-side-by-side-short = Alăturate
 project-preview-short = Previzualizare
 project-found = Citări găsite…
@@ -92,13 +81,6 @@ project-found-hint = { $count ->
    *[other] { $count } de parcurs, din care să se facă citări
 }
 project-found-none = Și text care seamănă a citări
-project-delete-map = Șterge harta
-project-delete-map-title = Ștergeți harta „{ $name }”?
-project-delete-map-message = { $count ->
-    [one] { $count } element și textul din el vor dispărea. Se poate anula cât timp proiectul este deschis.
-    [few] { $count } elemente și textul din ele vor dispărea. Se poate anula cât timp proiectul este deschis.
-   *[other] { $count } de elemente și textul din ele vor dispărea. Se poate anula cât timp proiectul este deschis.
-}
 project-copied-to = Copiat în „{ $name }”
 project-moved-to = Mutat în „{ $name }”
 
@@ -120,20 +102,12 @@ project-stands-for = Ține locul hărții „{ $name }”
 project-stand-for = Ține locul altei hărți
 project-stand-for-heading = În document, această hartă îi ia locul
 project-stand-for-none = Niciuna
-project-copy-to-map = Copiază în harta
 project-copy = Copiază
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Lipește sub el
-project-move-to-map = Mută în harta
-project-map-from-branch = Hartă nouă din această ramură
-project-map-from-branch-hint = O copie la care să lucrați; aceasta rămâne
-project-detach = Desprinde de părintele lui
-project-detach-hint = Un element liber, de așezat mai târziu
 project-tidy-branch = Ordonează această ramură
 project-place-automatically = Așază automat
 project-delete-keeping = Șterge, păstrând ce este sub el
-project-centre-stays = Centrul unei hărți rămâne
-project-centre-stays-detail = Ștergeți harta însăși din fila ei.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] „{ $name }” a fost șters
@@ -239,7 +213,6 @@ project-link-label = Eticheta asocierii
 
 ## A copy and its original, in another map.
 copy-title = Copia și originalul ei
-copy-from = Copiat din „{ $name }” din harta „{ $map }”
 copy-original-changed = Originalul s-a schimbat de când a fost copiat, sau de când a fost văzut ultima dată.
 copy-original-same = Originalul este așa cum era când a fost copiat.
 copy-original-unknown = Nu se știe dacă originalul s-a schimbat de când a fost copiat: copia a fost făcută înainte să se păstreze asta.
@@ -253,8 +226,6 @@ copy-seen = Păstrează această copie cum este
 copy-take = Ia numele și textul originalului
 copy-changed-mark = Originalul s-a schimbat de când a fost copiat acesta
 copy-compare = Compară cu originalul…
-copy-copied-from = Copiat din „{ $name }” din „{ $map }”
-copy-copied-from-changed = Copiat din „{ $name }” din „{ $map }”, care s-a schimbat de atunci
 
 ## How far the writing of an element has come, as its writer says.
 status = Stare

@@ -5,7 +5,6 @@ import ClipboardPaste from '@lucide/svelte/icons/clipboard-paste';
 import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
 import EyeOff from '@lucide/svelte/icons/eye-off';
 import FileInput from '@lucide/svelte/icons/file-input';
-import GitBranchPlus from '@lucide/svelte/icons/git-branch-plus';
 import GitCompare from '@lucide/svelte/icons/git-compare';
 import CircleDashed from '@lucide/svelte/icons/circle-dashed';
 import Clock from '@lucide/svelte/icons/clock';
@@ -19,8 +18,6 @@ import Plus from '@lucide/svelte/icons/plus';
 import Scissors from '@lucide/svelte/icons/scissors';
 import Tag from '@lucide/svelte/icons/tag';
 import Trash2 from '@lucide/svelte/icons/trash-2';
-import Crown from '@lucide/svelte/icons/crown';
-import Unlink from '@lucide/svelte/icons/unlink';
 import { languages, t } from '$lib/i18n';
 import { commentsUi } from '$lib/comments/ui.svelte';
 import { truncate } from '$lib/library/format';
@@ -39,13 +36,14 @@ import { router } from '$lib/state/router.svelte';
 import type { ProjectInfo } from '$lib/api/projects';
 import { makePortable, portable } from './model/portable';
 import type { Project } from './model/project.svelte';
-import { STATUSES } from './model/types';
+import { PROJECT, STATUSES } from './model/types';
 import { subtree, topmost, type Tree } from './model/tree';
 
 /** What is dragged when elements are. */
 export interface ElementsPayload {
   project: Project;
-  map: string;
+  /** The element in view where the drag began. */
+  at: string;
   ids: string[];
   /** From the centre of the first element to the pointer, on the canvas. */
   grab: { x: number; y: number };
@@ -69,13 +67,10 @@ export interface ElementActions {
   copy?: (ids: string[]) => void;
   cut?: (ids: string[]) => void;
   paste?: (id: string) => void;
-  /** Show a map, after elements went to it or it was made. */
-  openMap?: (id: string) => void;
+  /** Enter an element, making it the one in view: after elements went to it. */
+  enter?: (id: string) => void;
 }
 
-// ---- moving an element by the keys, in the diagram and in the text ----
-
-/** Puts an element under the one before it. Returns whether it moved. */
 /** The words with which a placement in time is said. */
 export function saidWords() {
   return {
@@ -87,7 +82,14 @@ export function saidWords() {
   };
 }
 
+// ---- moving an element by the keys, in the diagram and in the text ----
+//
+// The tree is the one in view: its root, the element in view, stays where
+// it is, as the project itself does, whatever the keys say.
+
+/** Puts an element under the one before it. Returns whether it moved. */
 export function indent(project: Project, tree: Tree, id: string): boolean {
+  if (id === tree.root) return false;
   const parent = tree.parent.get(id) ?? null;
   if (!parent) return false;
   const siblings = tree.children.get(parent) ?? [];
@@ -101,6 +103,7 @@ export function indent(project: Project, tree: Tree, id: string): boolean {
 
 /** Puts an element beside its parent, after it. Returns whether it moved. */
 export function outdent(project: Project, tree: Tree, id: string): boolean {
+  if (id === tree.root) return false;
   const parent = tree.parent.get(id) ?? null;
   if (!parent || parent === tree.root) return false;
   const grand = tree.parent.get(parent) ?? null;
@@ -114,27 +117,29 @@ export function outdent(project: Project, tree: Tree, id: string): boolean {
 
 /** Moves an element one place up or down among those beside it. Returns whether it moved. */
 export function shift(project: Project, tree: Tree, id: string, by: -1 | 1): boolean {
+  if (id === tree.root) return false;
   const parent = tree.parent.get(id) ?? null;
-  const list = parent ? (tree.children.get(parent) ?? []) : tree.loose;
+  if (!parent) return false;
+  const list = tree.children.get(parent) ?? [];
   const i = list.indexOf(id);
   const j = i + by;
   if (i < 0 || j < 0 || j >= list.length) return false;
   project.checkpoint();
   // `move` counts places in the list as it is: to go down, past the next one.
-  project.move([id], parent, by > 0 ? j + 1 : j, parent ? { pos: null } : {});
+  project.move([id], parent, by > 0 ? j + 1 : j, { pos: null });
   project.checkpoint();
   return true;
 }
 
-/** Removes elements, and says what went, with a way back. */
+/** Removes elements, and says what went, with a way back. The project itself stays. */
 export function removeElements(project: Project, ids: string[], keepChildren = false): number {
-  const first = project.node(ids[0]);
-  if (!first) return 0;
-  const tree = project.tree(first.map);
-  const tops = topmost(tree, ids).filter((id) => id !== tree.root);
+  const tree = project.tree();
+  const tops = topmost(
+    tree,
+    ids.filter((id) => project.node(id)),
+  ).filter((id) => id !== PROJECT);
   if (!tops.length) {
-    if (ids.includes(tree.root ?? ''))
-      notify(t('project-centre-stays'), t('project-centre-stays-detail'));
+    if (ids.includes(PROJECT)) notify(t('project-itself-stays'), t('project-itself-stays-detail'));
     return 0;
   }
   // What another is writing in when it is deleted is lost with it, and no undo brings it back.
@@ -155,12 +160,7 @@ export function removeElements(project: Project, ids: string[], keepChildren = f
   return remove(project, tree, tops, keepChildren);
 }
 
-function remove(
-  project: Project,
-  tree: ReturnType<Project['tree']>,
-  tops: string[],
-  keepChildren: boolean,
-): number {
+function remove(project: Project, tree: Tree, tops: string[], keepChildren: boolean): number {
   const name = project.node(tops[0])?.title || t('project-untitled');
   const under = keepChildren ? 0 : tops.reduce((n, id) => n + subtree(tree, id).length - 1, 0);
   project.checkpoint();
@@ -190,31 +190,33 @@ function hereId(): string | null {
   return route.view === 'project' ? route.project : null;
 }
 
-/** The other projects, those with maps, as the list of projects has them. */
+/** The other projects, as the list of projects has them. */
 function otherProjects(): ProjectInfo[] {
   if (!projects.loaded) void projects.load();
   const here = hereId();
-  return projects.list.filter((p) => p.id !== here && p.maps.length);
+  return projects.list.filter((p) => p.id !== here);
 }
 
 /**
- * Copies elements, each with all under it, to the end of the centre of a
- * map of another project, which is not open: it is opened, written, saved
- * and closed again. A move then removes them here, in one step that undo
- * takes back here. Where writing there fails, nothing is removed here, and
- * the failure is thrown. Returns how many of the topmost went.
+ * Copies elements, each with all under it, to the end of an element of
+ * another project, or of the project itself where none is named; that
+ * project is not open: it is opened, written, saved and closed again. A
+ * move then removes them here, in one step that undo takes back here.
+ * Where writing there fails, nothing is removed here, and the failure is
+ * thrown. Returns how many of the topmost went.
  */
 export async function sendElements(
   project: Project,
   ids: string[],
-  to: { project: string; map: string },
+  to: { project: string; at?: string },
   move: boolean,
   open: (id: string) => Promise<Elsewhere> = openElsewhere,
 ): Promise<number> {
-  const first = project.node(ids[0]);
-  if (!first) return 0;
-  const tree = project.tree(first.map);
-  const movable = topmost(tree, ids).filter((id) => id !== tree.root);
+  const tree = project.tree();
+  const movable = topmost(
+    tree,
+    ids.filter((id) => project.node(id)),
+  ).filter((id) => id !== PROJECT);
   const going = move ? movable : movable.length ? movable : ids;
   const carried = portable(project, going);
   if (!carried.elements.length) return 0;
@@ -222,9 +224,9 @@ export async function sendElements(
   const there = await open(to.project);
   const written = (async () => {
     try {
-      const centre = there.project.map(to.map)?.root;
-      if (!centre || !there.project.node(centre)) throw new Error(t('project-send-no-map'));
-      const made = makePortable(there.project, carried, { under: centre });
+      const under = to.at ?? PROJECT;
+      if (!there.project.node(under)) throw new Error(t('project-send-no-element'));
+      const made = makePortable(there.project, carried, { under });
       there.project.undoManager.clear();
       await there.project.flush();
       if (there.project.status === 'error') throw new Error(there.project.saveError ?? '');
@@ -255,86 +257,85 @@ export function elementMenu(
 ): MenuItem[] {
   const first = project.node(ids[0]);
   if (!first) return [];
-  const tree = project.tree(first.map);
+  const tree = project.tree();
   const one = ids.length === 1 ? first : null;
-  const isRoot = ids.includes(tree.root ?? '');
-  const movable = topmost(tree, ids).filter((id) => id !== tree.root);
+  const isProject = ids.includes(PROJECT);
+  const movable = topmost(tree, ids).filter((id) => id !== PROJECT);
   const nodes = ids.map((id) => project.node(id)!).filter(Boolean);
-  const otherMaps = project.maps.filter((m) => m.id !== first.map);
+  // The trees of the project, under its own element: those the elements
+  // can go to, which is every one but the one they stand in.
+  const holding = project.pathTo(first.id)[1];
+  const trees = (tree.children.get(PROJECT) ?? []).filter(
+    (id) => id !== holding && !ids.includes(id),
+  );
+  const nameOf = (id: string) =>
+    id === PROJECT ? project.name : project.node(id)?.title || t('project-untitled');
   const elsewhere = otherProjects();
   const hasChildren = one ? (tree.children.get(one.id)?.length ?? 0) > 0 : false;
   const pinned = nodes.some((n) => n.pos && tree.parent.get(n.id));
   const branchPinned =
     pinned || ids.some((id) => subtree(tree, id).some((d) => d !== id && project.node(d)?.pos));
 
-  const toMap = (copy: boolean): MenuItem[] => [
-    ...otherMaps.map((m): MenuItem => ({
-      label: m.name,
+  // Where elements can go: the project itself, its other trees, and other projects.
+  const targets = (copy: boolean): MenuItem[] => [
+    ...[PROJECT, ...trees].map((target): MenuItem => ({
+      label: nameOf(target),
       action: () => {
         project.checkpoint();
-        const target = m.root;
-        const made = copy
-          ? project.copy(movable.length ? movable : ids, target)
-          : project.move(movable, target);
+        const made = copy ? project.copy(movable, target) : project.move(movable, target);
         project.checkpoint();
         if (made.length) {
           toasts.show({
             kind: 'ok',
             message: copy
-              ? t('project-copied-to', { name: m.name })
-              : t('project-moved-to', { name: m.name }),
-            action: { label: t('common-show'), run: () => actions.openMap?.(m.id) },
+              ? t('project-copied-to', { name: nameOf(target) })
+              : t('project-moved-to', { name: nameOf(target) }),
+            action: { label: t('common-show'), run: () => actions.enter?.(target) },
           });
         }
       },
     })),
     ...(elsewhere.length
       ? ([
-          ...(otherMaps.length ? [{ kind: 'separator' }] : []),
+          { kind: 'separator' },
           { kind: 'heading', label: t('project-other-projects') },
         ] as MenuItem[])
       : []),
     ...elsewhere.map((info): MenuItem => ({
-      kind: 'submenu',
       label: info.name,
-      items: info.maps.map((m): MenuItem => ({
-        label: m.name,
-        action: () => {
-          sendElements(project, ids, { project: info.id, map: m.id }, !copy).then(
-            (count) => {
-              if (!count) return;
-              const names = { name: m.name, project: info.name };
-              toasts.show({
-                kind: 'ok',
-                message: copy
-                  ? t('project-copied-to-project', names)
-                  : t('project-moved-to-project', names),
-                action: {
-                  label: t('common-show'),
-                  run: () => router.go({ view: 'project', project: info.id, map: m.id }),
-                },
-              });
-            },
-            (error) => notifyError(t('project-send-failed', { project: info.name }), error),
-          );
-        },
-      })),
+      action: () => {
+        sendElements(project, ids, { project: info.id }, !copy).then(
+          (count) => {
+            if (!count) return;
+            toasts.show({
+              kind: 'ok',
+              message: copy
+                ? t('project-copied-to', { name: info.name })
+                : t('project-moved-to', { name: info.name }),
+              action: {
+                label: t('common-show'),
+                run: () => router.go({ view: 'project', project: info.id }),
+              },
+            });
+          },
+          (error) => notifyError(t('project-send-failed', { project: info.name }), error),
+        );
+      },
     })),
   ];
 
+  // The trees an element can stand for in the document: not its own, and none that would loop.
   const includes: MenuItem[] = one
-    ? [
-        ...project.maps
-          .filter((m) => m.id !== one.map)
-          .map((m): MenuItem => ({
-            label: m.name,
-            checked: one.include === m.id,
-            disabled: one.include !== m.id && project.wouldLoop(one.map, m.id),
-            action: () => {
-              project.setInclude(one.id, one.include === m.id ? null : m.id);
-            },
-          })),
-      ]
+    ? (tree.children.get(PROJECT) ?? [])
+        .filter((id) => id !== one.id && id !== holding)
+        .map((id): MenuItem => ({
+          label: nameOf(id),
+          checked: one.include === id,
+          disabled: one.include !== id && project.wouldLoop(one.id, id),
+          action: () => {
+            project.setInclude(one.id, one.include === id ? null : id);
+          },
+        }))
     : [];
 
   const items: MenuItem[] = [];
@@ -357,7 +358,7 @@ export function elementMenu(
         action: () => add('under'),
       },
       {
-        label: isRoot ? t('project-add') : t('project-add-after'),
+        label: isProject ? t('project-add') : t('project-add-after'),
         icon: Plus,
         shortcut: where === 'text' ? 'Alt+Enter' : 'Enter',
         action: () => add('after'),
@@ -460,7 +461,7 @@ export function elementMenu(
     { kind: 'separator' },
   );
 
-  if (!isRoot) {
+  if (!isProject) {
     const allPlain = nodes.every((n) => !n.heading);
     const allOut = nodes.every((n) => n.excluded);
     items.push(
@@ -485,7 +486,7 @@ export function elementMenu(
       items.push({
         kind: 'submenu',
         label: one.include
-          ? t('project-stands-for', { name: project.map(one.include)?.name ?? '?' })
+          ? t('project-stands-for', { name: nameOf(one.include) })
           : t('project-stand-for'),
         icon: FileInput,
         items: [
@@ -506,8 +507,8 @@ export function elementMenu(
     items.push({ kind: 'separator' });
   }
 
-  // Cut, copy and paste: for every element, the centre too, which cannot be
-  // cut or copied but has what is pasted put under it.
+  // Cut, copy and paste: for every element, the project itself too, which
+  // cannot be cut or copied but has what is pasted put under it.
   if (actions.copy && actions.paste) {
     // In the text, the keys cut, copy and paste the text.
     const keyed = where !== 'text';
@@ -534,16 +535,10 @@ export function elementMenu(
         action: () => actions.paste?.(one.id),
       });
   }
-  if ((movable.length || one) && (otherMaps.length || elsewhere.length)) {
+  if (movable.length) {
     items.push(
-      { kind: 'submenu', label: t('project-copy-to-map'), icon: Copy, items: toMap(true) },
-      {
-        kind: 'submenu',
-        label: t('project-move-to-map'),
-        icon: MoveRight,
-        disabled: !movable.length,
-        items: toMap(false),
-      },
+      { kind: 'submenu', label: t('project-copy-to'), icon: Copy, items: targets(true) },
+      { kind: 'submenu', label: t('project-move-to'), icon: MoveRight, items: targets(false) },
     );
   }
   if (one?.origin) {
@@ -551,41 +546,6 @@ export function elementMenu(
       label: t('copy-compare'),
       icon: GitCompare,
       action: () => compareCopy(one.id),
-    });
-  }
-  if (one && !isRoot) {
-    items.push({
-      label: t('project-map-from-branch'),
-      icon: GitBranchPlus,
-      hint: t('project-map-from-branch-hint'),
-      action: () => {
-        const id = project.mapFromBranch(one.id);
-        if (id) actions.openMap?.(id);
-      },
-    });
-  }
-  if (one && !isRoot && !tree.parent.get(one.id) && tree.loose.includes(one.id)) {
-    items.push({
-      label: t('project-make-centre'),
-      icon: Crown,
-      hint: t('project-make-centre-hint'),
-      action: () => {
-        project.checkpoint();
-        project.makeCentre(one.id);
-        project.checkpoint();
-      },
-    });
-  }
-  if (one && !isRoot && tree.parent.get(one.id)) {
-    items.push({
-      label: t('project-detach'),
-      icon: Unlink,
-      hint: t('project-detach-hint'),
-      action: () => {
-        project.checkpoint();
-        project.move([one.id], null);
-        project.checkpoint();
-      },
     });
   }
   if (branchPinned) {

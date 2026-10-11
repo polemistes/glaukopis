@@ -4,14 +4,12 @@
 documents-choose = Документ для загрузки
 documents-filter = Документы
 documents-filter-all = Все файлы
-documents-title-map = Карта из документа
 documents-title-project = Проект из документа
 documents-reading = Чтение { $file }…
 documents-reading-hint = Длинный документ читается не сразу.
 documents-no-pandoc = Документы этого вида читает Pandoc, а он не установлен или не найден. Где он, можно указать в настройках.
 documents-unread = Не удалось прочитать файл.
 documents-title = Название
-documents-title-hint-map = Название карты и элемента в её центре.
 documents-title-hint-project = Название проекта, его карты и элемента в центре карты.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Без названия
@@ -112,7 +110,6 @@ documents-found-some-made = { $count ->
 documents-at-once = Сразу сделать ссылками те, что сделаны Zotero на работы из вашей библиотеки
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = Сноска, в которой нет ничего, кроме ссылки, становится ссылкой в строке, а стиль цитирования ставит её в сноску или в строку; сноска, в которой сказано больше, сохраняет свою ссылку. То, что вы выбрали для сносок на панели найденных ссылок — для всех последующих, — действует и здесь.
-documents-go-through-map = Разобрать ссылки, когда карта будет создана
 documents-go-through-project = Разобрать ссылки, когда проект будет создан
 
 ## Making the map.
@@ -120,6 +117,4 @@ documents-go-through-project = Разобрать ссылки, когда пр�
 # Over what the one who brings the document in should know of it.
 documents-to-know = Стоит знать
 documents-making = Создание карты…
-documents-make-map = Создать карту
 documents-make-project = Создать проект
-documents-map-failed = Не удалось создать карту.

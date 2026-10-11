@@ -40,49 +40,63 @@ next to the executable.
 
 Licence: GPL-3.0-or-later.
 
-## 2. The central idea: a map is a document
+## 2. The central idea: an element is a document
 
 The brief names the document editor as the hardest part. The plan rests on one
-decision (ADR 0003):
+decision, made as ADR 0003 and remade as ADR 0037:
 
 > **A mind map and a document are the same thing seen in two ways.** There is no
 > separate document that text must be moved into.
 
-Each **element** has a name, a text (rich text with citations and footnotes),
-a place in the hierarchy, and a position on the canvas. A **map** is a tree of
-elements plus associative links between them.
+A **project** is one tree of **elements**. Each element has a name, a text (rich
+text with citations and footnotes), a place in the hierarchy, and a position on
+the canvas relative to its parent. The project itself is the element at the
+top; its name is the project's name. Associative links run between any two
+elements. Any element can be **entered**: seen as a map with itself at the
+centre, read as text, printed as a document.
 
-- In **Diagram** view the elements are placed on a canvas. Straight lines show
-  the hierarchy, curved lines the associations. Hovering shows the text;
-  double-clicking opens the edit box.
-- In **Text** view the same map reads as a manuscript. Element names are the
-  headings, the hierarchy is the section structure, and associations are narrow
-  lines in the left margin. Text is edited in place.
-- **Preview** shows the map as the formatted, paginated document, in a panel
+- In **Diagram** view the element in view stands at the centre with its branch
+  around it. Straight lines show the hierarchy, curved lines the associations.
+  Hovering shows the text; double-clicking opens the edit box.
+- In **Text** view the same branch reads as a manuscript. The element's name is
+  the title, the names under it are the headings, the hierarchy is the section
+  structure, and associations are narrow lines in the left margin. Text is
+  edited in place.
+- **Preview** shows the branch as the formatted, paginated document, in a panel
   that is hidden until asked for.
 
 Writing the article is therefore not a separate stage with a separate tool. It
-is the same map, maturing. What this needs in order to work in practice:
+is the same tree, maturing. What this needs in order to work in practice:
 
 1. **An element's name need not be a printed heading.** Ideas have names;
    paragraphs do not. Each element can be set to contribute only its text to the
    document, keeping its name as a working label in the margin. This is what
    lets a map of ideas become continuous prose.
 2. **Elements can be left out of the document** without being deleted: notes to
-   self, discarded lines of thought, material for later.
-3. **Loose elements.** An idea that has no place yet can sit on the canvas
-   unattached. It is never exported.
-4. **Working across maps.** Two maps can be open side by side. Elements, with
-   everything under them, are dragged or copied from one to the other. A copy
-   remembers where it came from, so the origin can be found again.
-5. **Keeping the valuable map.** "Duplicate map" and "New map from this branch"
-   make a working copy in one step, so the original survives being reduced to a
-   manuscript. Snapshots of the project are kept automatically.
-6. **Books.** An element can *include* another map. The book map has one
-   element per chapter, each including the chapter's own map. Exporting the
-   book expands them; each chapter can also be previewed and exported alone. A
-   map for a theme that spans the book is an ordinary map; its elements can be
-   copied, or linked by association, to where they are used.
+   self, discarded lines of thought, material for later. This is the one mark;
+   a thought that has no place yet is a tree of its own under the project.
+3. **Where one is, is always shown.** The pane of projects expands to the whole
+   tree with the element in view marked; the bar over the map names the parent
+   and the element in view. An element is entered as much to hide the rest of
+   the project as to see the part.
+4. **Working across the tree.** Two views can be open side by side, of any two
+   elements. Elements, with everything under them, are dragged or copied from
+   one to the other. A copy remembers where it came from, so the origin can be
+   found again.
+5. **Keeping the valuable tree.** Copying a branch beside itself makes a working
+   copy in one step, so the original survives being reduced to a manuscript.
+   Snapshots of the project are kept automatically.
+6. **Books.** An element can *include* another element. The book's element has
+   one child per chapter, each including the chapter's own branch. Exporting the
+   book expands them; each chapter can also be previewed and exported alone,
+   with what it inherits of the book's settings. A branch for a theme that spans
+   the book is an ordinary branch; its elements can be copied, or linked by
+   association, to where they are used.
+7. **Settings follow the tree.** Authors, format, citation style and language set
+   on an element hold for everything under it that does not set its own.
+   Templates (to come) attach to elements the same way.
+8. **The owl map** (to come): the home page as a map, the owl at the centre,
+   folders and projects under it, each project entered as its own tree.
 
 ## 3. The reference library
 

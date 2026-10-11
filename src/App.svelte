@@ -21,7 +21,7 @@
   import ProjectsView from '$lib/home/ProjectsView.svelte';
   import LibraryView from '$lib/library/LibraryView.svelte';
   import PicturesView from '$lib/pictures/PicturesView.svelte';
-  import ProjectView from '$lib/project/ProjectView.svelte';
+  import ProjectView, { viewing } from '$lib/project/ProjectView.svelte';
   import SearchView from '$lib/search/SearchView.svelte';
   import SettingsDialog from '$lib/settings/SettingsDialog.svelte';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
@@ -165,7 +165,12 @@
         <!-- The pane of projects stands outside the view of a project, which is made anew for each. -->
         <div class="in-project">
           {#if settings.value.projectsPane}
-            <ProjectsPane current={route.project} />
+            <ProjectsPane
+              current={route.project}
+              project={viewing.project}
+              at={viewing.at}
+              onenter={(id) => viewing.enter?.(id)}
+            />
           {/if}
           <div class="project-view">
             {#key route.project}

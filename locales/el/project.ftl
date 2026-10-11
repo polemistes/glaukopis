@@ -66,32 +66,15 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Χωρίς τίτλο
-# The name of a copy of a map.
-project-map-copy = { $name }, αντίγραφο
-project-maps = Χάρτες
-project-map-name = Όνομα του χάρτη
-project-new-map = Νέος χάρτης
-project-map-from-document = Χάρτης από έγγραφο…
 project-drop-on-map = Αφήστε πάνω σε χάρτη για μετακίνηση εκεί · με πατημένο το Ctrl για αντιγραφή
-project-duplicate = Αντίγραφο
-project-duplicate-hint = Ένα αντίγραφο για δουλειά· αυτός μένει όπως είναι
 project-open-beside = Άνοιγμα δίπλα
 project-open-beside-hint = Δύο χάρτες δίπλα δίπλα, για να μετακινείτε στοιχεία ανάμεσά τους
-project-this-map-actions = Αυτός ο χάρτης, και οι χάρτες
-project-maps-hint = Οι χάρτες του έργου: επιλέξτε έναν για να ανοίξει
-project-map-beside = δίπλα σε αυτόν
 project-side-by-side-short = Δίπλα δίπλα
 project-preview-short = Προεπισκόπηση
 project-found = Παραπομπές που βρέθηκαν…
 # The count is of those found in the map.
 project-found-hint = { $count } προς εξέταση, για να γίνουν παραπομπές
 project-found-none = Και κείμενο που μοιάζει με παραπομπές
-project-delete-map = Διαγραφή χάρτη
-project-delete-map-title = Διαγραφή του χάρτη «{ $name }»;
-project-delete-map-message = { $count ->
-    [one] { $count } στοιχείο και το κείμενό του θα χαθούν. Αυτό αναιρείται όσο το έργο είναι ανοιχτό.
-   *[other] { $count } στοιχεία και τα κείμενά τους θα χαθούν. Αυτό αναιρείται όσο το έργο είναι ανοιχτό.
-}
 project-copied-to = Αντιγράφηκε στο «{ $name }»
 project-moved-to = Μετακινήθηκε στο «{ $name }»
 
@@ -113,20 +96,12 @@ project-stands-for = Στη θέση του «{ $name }»
 project-stand-for = Στη θέση άλλου χάρτη
 project-stand-for-heading = Στο έγγραφο, αυτός ο χάρτης παίρνει τη θέση του
 project-stand-for-none = Κανένας
-project-copy-to-map = Αντιγραφή σε χάρτη
 project-copy = Αντιγραφή
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Επικόλληση από κάτω του
-project-move-to-map = Μετακίνηση σε χάρτη
-project-map-from-branch = Νέος χάρτης από αυτόν τον κλάδο
-project-map-from-branch-hint = Ένα αντίγραφο για δουλειά· αυτός μένει
-project-detach = Αποκόλληση από το γονικό του
-project-detach-hint = Ελεύθερο στοιχείο, για να τοποθετηθεί αργότερα
 project-tidy-branch = Τακτοποίηση αυτού του κλάδου
 project-place-automatically = Αυτόματη τοποθέτηση
 project-delete-keeping = Διαγραφή, κρατώντας όσα είναι από κάτω του
-project-centre-stays = Το κέντρο ενός χάρτη μένει
-project-centre-stays-detail = Διαγράψτε τον ίδιο τον χάρτη από την καρτέλα του.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] Το «{ $name }» διαγράφηκε
@@ -224,7 +199,6 @@ project-link-label = Ετικέτα της συσχέτισης
 
 ## A copy and its original, in another map.
 copy-title = Το αντίγραφο και το πρωτότυπό του
-copy-from = Αντιγράφηκε από το «{ $name }» στον χάρτη «{ $map }»
 copy-original-changed = Το πρωτότυπο άλλαξε αφότου αντιγράφηκε, ή αφότου ιδώθηκε τελευταία φορά.
 copy-original-same = Το πρωτότυπο είναι όπως ήταν όταν αντιγράφηκε.
 copy-original-unknown = Αν το πρωτότυπο άλλαξε αφότου αντιγράφηκε δεν είναι γνωστό: το αντίγραφο έγινε πριν αρχίσει να κρατιέται αυτό.
@@ -238,8 +212,6 @@ copy-seen = Να μείνει αυτό το αντίγραφο όπως είνα
 copy-take = Λήψη του ονόματος και του κειμένου του πρωτοτύπου
 copy-changed-mark = Το πρωτότυπο άλλαξε αφότου αντιγράφηκε αυτό
 copy-compare = Σύγκριση με το πρωτότυπο…
-copy-copied-from = Αντιγράφηκε από το «{ $name }» στο «{ $map }»
-copy-copied-from-changed = Αντιγράφηκε από το «{ $name }» στο «{ $map }», που έκτοτε άλλαξε
 
 ## How far the writing of an element has come, as its writer says.
 status = Κατάσταση

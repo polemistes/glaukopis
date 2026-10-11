@@ -23,11 +23,10 @@ const nodes: FlatNode[] = [
   ['three', 'book'],
 ].map(([id, parent], i) => ({
   id: id as string,
-  map: 'm',
   parent: parent as string | null,
   order: String.fromCharCode(97 + i),
 }));
-const tree = buildTree(nodes, 'm', 'book');
+const tree = buildTree(nodes, 'book');
 
 describe('what is folded away in the text', () => {
   it('an element is folded, and opened again', () => {

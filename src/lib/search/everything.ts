@@ -5,11 +5,11 @@
  * while a large project is read; what it has read of a project is kept
  * while the project does not change.
  *
- * What is searched is the text of every element of every map, as the text
- * of a map is searched (`passages.ts`); and, where what stands outside the
+ * What is searched is the text of every element of a project, as the text
+ * in view is searched (`passages.ts`); and, where what stands outside the
  * texts is asked for, citations as they are shown, words that point and
- * formulas, the details of the document of each map, what is written about
- * the works cited, and the words that name associations.
+ * formulas, the details of the document said of each element, what is
+ * written about the works cited, and the words that name associations.
  *
  * Where what is searched for holds a paragraph break, the paragraphs of a
  * text are read as one (`passages.ts`), and the words around what is found
@@ -18,6 +18,7 @@
 
 import * as Y from 'yjs';
 import { LOCATOR_LABELS, type CiteItem, type CiteMode } from '$lib/editor/schema';
+import { migrate, needsMigration } from '$lib/project/model/migrate';
 import {
   bodyFacts,
   inlineText,
@@ -28,8 +29,8 @@ import {
   type RefForm,
   type SetOff,
 } from '$lib/project/model/text';
-import { buildTree, type FlatNode, type Tree } from '$lib/project/model/tree';
-import type { DocumentSettings, RefRecord } from '$lib/project/model/types';
+import { buildTree, pathTo, type FlatNode, type Tree } from '$lib/project/model/tree';
+import { PROJECT, type DocumentSettings, type RefRecord } from '$lib/project/model/types';
 import { Matcher, type SearchOptions } from './matching';
 import {
   bodyPassages,
@@ -55,25 +56,27 @@ interface ElementRead {
   heading: boolean;
   include: string | null;
   set: SetOff[];
+  /** What is said of it as a document, of its own. */
+  document: DocumentSettings;
+  /**
+   * The tree under the project it is in: that child of the project, by its
+   * id; nothing for the project itself.
+   */
+  tree: string | null;
   /** The passages with what stands outside the text, when they have been read so. */
   shown?: Passage[];
 }
 
-interface MapRead {
-  id: string;
-  name: string;
-  tree: Tree;
-  elements: ElementRead[];
-  byId: Map<string, ElementRead>;
-  document: DocumentSettings;
-  links: { from: string; to: string; label: string }[];
-}
-
-/** A project as it is searched. */
+/** A project as it is searched: one tree, the project's own element at the top (ADR 0037). */
 export interface ProjectRead {
   id: string;
   name: string;
-  maps: MapRead[];
+  tree: Tree;
+  /** Every element, in the order of the text, the project's own first. */
+  elements: ElementRead[];
+  byId: Map<string, ElementRead>;
+  /** The associations that have a name. */
+  links: { from: string; to: string; label: string }[];
   refs: Map<string, RefRecord>;
   /** What is written about the works cited, for this project, by the reference. */
   notes: { ref: string; text: string }[];
@@ -82,7 +85,11 @@ export interface ProjectRead {
 const str = (value: unknown, fallback = ''): string =>
   typeof value === 'string' ? value : fallback;
 
-/** Reads a project from its state and the changes after it, as the disk keeps them. */
+/**
+ * Reads a project from its state and the changes after it, as the disk
+ * keeps them. A project written before ADR 0037, as maps, is read in the
+ * shape it opens in; nothing is written back.
+ */
 export function readProject(
   id: string,
   name: string,
@@ -98,7 +105,7 @@ export function readProject(
       // A change that cannot be applied is left, as when the project is opened.
     }
   }
-  const yMaps = doc.getMap<Y.Map<unknown>>('maps');
+  if (needsMigration(doc)) migrate(doc, name);
   const yNodes = doc.getMap<Y.Map<unknown>>('nodes');
   const yLinks = doc.getMap<Y.Map<unknown>>('links');
   const yRefs = doc.getMap<RefRecord>('refs');
@@ -111,70 +118,41 @@ export function readProject(
     nodes.set(nodeId, n);
     flat.push({
       id: nodeId,
-      map: str(n.get('map')),
       parent: (n.get('parent') as string | null | undefined) ?? null,
       order: str(n.get('order'), 'a0'),
     });
   }
+  const tree = buildTree(flat);
+  const elements: ElementRead[] = [];
+  for (const nodeId of tree.sequence) {
+    const n = nodes.get(nodeId);
+    if (!n) continue;
+    const title = readTitle(n.get('title') as Y.XmlFragment | undefined);
+    const blocks = readBody(n.get('body') as Y.XmlFragment | undefined);
+    elements.push({
+      id: nodeId,
+      name: inlineText(title).trim(),
+      title: titlePassage(title),
+      body: bodyPassages(blocks),
+      blocks,
+      excluded: n.get('excluded') === true,
+      heading: n.get('heading') !== false,
+      include: (n.get('include') as string | null | undefined) || null,
+      set: bodyFacts(blocks).set,
+      document: (n.get('document') as DocumentSettings | undefined) ?? {},
+      tree: pathTo(tree, nodeId)[1] ?? null,
+    });
+  }
+  const byId = new Map(elements.map((e) => [e.id, e]));
 
   const links: { from: string; to: string; label: string }[] = [];
   for (const l of yLinks.values()) {
     if (!(l instanceof Y.Map)) continue;
     const label = str(l.get('label'));
-    if (label) links.push({ from: str(l.get('from')), to: str(l.get('to')), label });
+    const from = str(l.get('from'));
+    const to = str(l.get('to'));
+    if (label && byId.has(from) && byId.has(to)) links.push({ from, to, label });
   }
-
-  const listed: {
-    id: string;
-    name: string;
-    root: string;
-    order: string;
-    document: DocumentSettings;
-  }[] = [];
-  for (const [mapId, m] of yMaps) {
-    if (!(m instanceof Y.Map)) continue;
-    listed.push({
-      id: mapId,
-      // A map without a name is called so by the interface, in its language.
-      name: str(m.get('name')),
-      root: str(m.get('root')),
-      order: str(m.get('order'), 'a0'),
-      document: (m.get('document') as DocumentSettings | undefined) ?? {},
-    });
-  }
-  listed.sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : a.id < b.id ? -1 : 1));
-
-  const maps: MapRead[] = listed.map((m) => {
-    const tree = buildTree(flat, m.id, m.root || null);
-    const elements: ElementRead[] = [];
-    for (const nodeId of tree.sequence) {
-      const n = nodes.get(nodeId);
-      if (!n) continue;
-      const title = readTitle(n.get('title') as Y.XmlFragment | undefined);
-      const blocks = readBody(n.get('body') as Y.XmlFragment | undefined);
-      elements.push({
-        id: nodeId,
-        name: inlineText(title).trim(),
-        title: titlePassage(title),
-        body: bodyPassages(blocks),
-        blocks,
-        excluded: n.get('excluded') === true,
-        heading: n.get('heading') !== false,
-        include: (n.get('include') as string | null | undefined) || null,
-        set: bodyFacts(blocks).set,
-      });
-    }
-    const inMap = new Set(elements.map((e) => e.id));
-    return {
-      id: m.id,
-      name: m.name,
-      tree,
-      elements,
-      byId: new Map(elements.map((e) => [e.id, e])),
-      document: m.document,
-      links: links.filter((l) => inMap.has(l.from) && inMap.has(l.to)),
-    };
-  });
 
   const refs = new Map<string, RefRecord>();
   for (const [refId, r] of yRefs) if (r && typeof r === 'object') refs.set(refId, r);
@@ -184,10 +162,10 @@ export function readProject(
     if (said.trim()) notes.push({ ref, text: said });
   }
   doc.destroy();
-  return { id, name: str(name), maps, refs, notes };
+  return { id, name: str(name), tree, elements, byId, links, refs, notes };
 }
 
-// ---- what stands outside the text, as the text of a map shows it ----
+// ---- what stands outside the text, as the text in view shows it ----
 
 /** A work in short, as a citation shows it: see `editor/references.svelte.ts`. */
 function workOf(project: ProjectRead, id: string): string {
@@ -227,21 +205,20 @@ function citationOf(project: ProjectRead, items: CiteItem[], mode: CiteMode): st
 }
 
 /**
- * What words that point say in the document of a map, counted as the
+ * What words that point say in the document of an element, counted as the
  * document counts: see `figures/numbering.svelte.ts`. The words are those of
- * a document without a format of its own.
+ * a document without a format of its own. The document is walked from
+ * `top`: the project itself, for the whole of it.
  */
 function pointersOf(
   project: ProjectRead,
-  map: MapRead,
+  top: string = PROJECT,
 ): Map<string, { kind: string; number: string | null; words: string }> {
   const out = new Map<string, { kind: string; number: string | null; words: string }>();
   const counted: Record<string, number> = { figure: 0, table: 0, equation: 0 };
-  const walkMap = (mapId: string, within: Set<string>) => {
-    const m = project.maps.find((x) => x.id === mapId);
-    if (!m?.tree.root) return;
+  const walkBranch = (branch: string, within: Set<string>) => {
     const walk = (id: string, root: boolean) => {
-      const e = m.byId.get(id);
+      const e = project.byId.get(id);
       if (!e || e.excluded) return;
       if (!root && e.heading && e.name && !out.has(id))
         out.set(id, { kind: 'part', number: null, words: e.name });
@@ -250,12 +227,12 @@ function pointersOf(
         if (s.id && !out.has(s.id)) out.set(s.id, { kind: s.kind, number, words: s.words });
       }
       if (!root && e.include && !within.has(e.include))
-        walkMap(e.include, new Set([...within, e.include]));
-      for (const child of m.tree.children.get(id) ?? []) walk(child, false);
+        walkBranch(e.include, new Set([...within, e.include]));
+      for (const child of project.tree.children.get(id) ?? []) walk(child, false);
     };
-    walk(m.tree.root!, true);
+    walk(branch, true);
   };
-  walkMap(map.id, new Set([map.id]));
+  walkBranch(top, new Set([top]));
   return out;
 }
 
@@ -283,9 +260,14 @@ export type Where = 'text' | 'details' | 'association' | 'note';
 /** Something that was found in a project, with the words around it. */
 export interface Found {
   where: Where;
-  map: string | null;
-  mapName: string;
-  /** The element it was found in; of an association, the element it begins at. */
+  /**
+   * The tree under the project it is in: that child of the project, by its
+   * id, and its name. Nothing for the project's own element, and for what
+   * is in no element.
+   */
+  tree: string | null;
+  treeName: string;
+  /** The element it was found in; of an association, the element it begins at; of details, the element they are said of. */
   element: string | null;
   elementName: string;
   part: 'title' | 'body' | null;
@@ -366,17 +348,15 @@ function shownAs(j: Joined, shown: Passage[]): { text: string; place: (offset: n
 /** The references a project cites, each once, as its texts have them. */
 export function citedIn(project: ProjectRead): string[] {
   const out = new Set<string>();
-  for (const map of project.maps) {
-    for (const element of map.elements) {
-      for (const id of bodyFacts(element.blocks).cited) out.add(id);
-    }
+  for (const element of project.elements) {
+    for (const id of bodyFacts(element.blocks).cited) out.add(id);
   }
   return [...out];
 }
 
 /**
  * Searches a project. What is found is counted all; so many of it are kept,
- * with the words around them, in the order of the maps and their texts.
+ * with the words around them, in the order of the texts.
  */
 export function searchProject(
   project: ProjectRead,
@@ -402,20 +382,24 @@ export function searchProject(
     out.found.push({ ...found, before, text: middle, after });
   };
 
-  for (const map of project.maps) {
-    let pointers: ReturnType<typeof pointersOf> | null = null;
-    // What stands outside the text, as the text shows it: searched where that is asked for,
-    // and shown in the words around what is found in any case.
-    const labels: Labels = {
-      citation: (items, mode) => citationOf(project, items, mode),
-      crossref: (target, form) =>
-        pointerOf((pointers ??= pointersOf(project, map)).get(target), refForm(form)),
-    };
-    for (const e of map.elements) {
+  let pointers: ReturnType<typeof pointersOf> | null = null;
+  // What stands outside the text, as the text shows it: searched where that is asked for,
+  // and shown in the words around what is found in any case.
+  const labels: Labels = {
+    citation: (items, mode) => citationOf(project, items, mode),
+    crossref: (target, form) =>
+      pointerOf((pointers ??= pointersOf(project)).get(target), refForm(form)),
+  };
+  /** The tree under the project an element is in, as what is found says it. */
+  const treeOf = (e: ElementRead | undefined) => ({
+    tree: e?.tree ?? null,
+    treeName: e?.tree ? (project.byId.get(e.tree)?.name ?? '') : '',
+  });
+  {
+    for (const e of project.elements) {
       const base = {
         where: 'text' as const,
-        map: map.id,
-        mapName: map.name,
+        ...treeOf(e),
         element: e.id,
         elementName: e.name,
       };
@@ -446,43 +430,45 @@ export function searchProject(
         }
       }
     }
-    if (!options.labels) continue;
-    // The details of the document, and the words that name associations.
-    const d = map.document;
-    const details = [
-      d.title,
-      d.subtitle,
-      ...(d.authors ?? []).flatMap((a) => [a.name, a.affiliation, a.email]),
-      d.abstract,
-      (d.keywords ?? []).join(', '),
-      d.date,
-    ].filter((x): x is string => typeof x === 'string' && !!x.trim());
-    for (const line of details) {
-      for (const hit of matcher.find(line))
-        put(
-          {
-            where: 'details',
-            map: map.id,
-            mapName: map.name,
-            element: null,
-            elementName: '',
-            part: null,
-            passage: 0,
-            start: hit.start,
-            end: hit.end,
-          },
-          line,
-        );
+  }
+  if (options.labels) {
+    // The details of the document said of each element, and the words that name associations.
+    for (const e of project.elements) {
+      const d = e.document;
+      const details = [
+        d.title,
+        d.subtitle,
+        ...(d.authors ?? []).flatMap((a) => [a.name, a.affiliation, a.email]),
+        d.abstract,
+        (d.keywords ?? []).join(', '),
+        d.date,
+      ].filter((x): x is string => typeof x === 'string' && !!x.trim());
+      for (const line of details) {
+        for (const hit of matcher.find(line))
+          put(
+            {
+              where: 'details',
+              ...treeOf(e),
+              element: e.id,
+              elementName: e.name,
+              part: null,
+              passage: 0,
+              start: hit.start,
+              end: hit.end,
+            },
+            line,
+          );
+      }
     }
-    for (const link of map.links) {
+    for (const link of project.links) {
+      const from = project.byId.get(link.from);
       for (const hit of matcher.find(link.label))
         put(
           {
             where: 'association',
-            map: map.id,
-            mapName: map.name,
+            ...treeOf(from),
             element: link.from,
-            elementName: `${map.byId.get(link.from)?.name ?? ''} ↔ ${map.byId.get(link.to)?.name ?? ''}`,
+            elementName: `${from?.name ?? ''} ↔ ${project.byId.get(link.to)?.name ?? ''}`,
             part: null,
             passage: 0,
             start: hit.start,
@@ -491,15 +477,13 @@ export function searchProject(
           link.label,
         );
     }
-  }
-  if (options.labels) {
     for (const note of project.notes) {
       for (const hit of matcher.find(note.text))
         put(
           {
             where: 'note',
-            map: null,
-            mapName: '',
+            tree: null,
+            treeName: '',
             element: null,
             elementName: '',
             part: null,

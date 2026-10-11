@@ -3,6 +3,7 @@
   import { untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import Maximize from '@lucide/svelte/icons/maximize';
+  import Maximize2 from '@lucide/svelte/icons/maximize-2';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
@@ -14,7 +15,7 @@
   import { t } from '$lib/i18n';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import type { RectLike } from '$lib/ui/floating';
-  import { openContextMenu } from '$lib/ui/menu.svelte';
+  import { openContextMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import ElementBox from '../ElementBox.svelte';
   import {
@@ -49,26 +50,20 @@
 
   interface Props {
     project: Project;
-    mapId: string;
+    /** The element in view: at the centre, its branch around it. */
+    at: string;
     /** Where the view was when the map was last shown. */
     camera?: Camera | null;
     oncamera?: (camera: Camera) => void;
     /** Called with the id of every reference that comes into use. */
     onkeep: (id: string) => void;
-    onopenmap: (id: string) => void;
+    /** Asks for an element to be made the one in view. */
+    onenter: (id: string) => void;
     /** An element to select and bring into view when the map appears. */
     reveal?: string | null;
   }
 
-  let {
-    project,
-    mapId,
-    camera = null,
-    oncamera,
-    onkeep,
-    onopenmap,
-    reveal = null,
-  }: Props = $props();
+  let { project, at, camera = null, oncamera, onkeep, onenter, reveal = null }: Props = $props();
 
   let viewport = $state<HTMLDivElement>();
   let width = $state(0);
@@ -113,22 +108,31 @@
   let band = $state<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   let panning = $state(false);
 
-  const tree = $derived(project.tree(mapId));
+  /** The tree seen from the element in view: that element its root, its branch under it. */
+  const tree = $derived(project.tree(at));
   const selected = $derived(new Set(selection));
 
-  // ---- what is being dragged, when it is from this map ----
+  // ---- what is being dragged, when it is from this project ----
 
   const dragged = $derived.by(() => {
     const p = drag.payload;
     if (p?.kind !== 'elements') return null;
     const data = p.data as ElementsPayload;
-    return data.project === project && data.map === mapId ? data : null;
+    return data.project === project ? data : null;
   });
-
-  const overThis = $derived(!!dragged && drag.welcome && drag.quiet);
 
   /** The map as it rests, nothing held: where everything stands before a drag moves it. */
   const resting = $derived(layout(tree, project.nodes, sizes));
+
+  /** Whether elements stand on this map: shown on it, and not the element in view, which stays at the centre. */
+  function shownHere(ids: string[]): boolean {
+    return ids.every((id) => id !== tree.root && resting.placed.has(id));
+  }
+
+  /** Whether what is dragged stands on this map, so that it is moved about on it rather than brought onto it. */
+  const local = $derived(!!dragged && shownHere(dragged.ids));
+
+  const overThis = $derived(local && drag.welcome && drag.quiet);
 
   const held = $derived.by(() => {
     if (!dragged || !overThis) return new Map<string, Position>();
@@ -246,17 +250,12 @@
   });
 
   // The first time the size is known, the view is put where it was left; or
-  // else the centre of the map goes to the middle.
+  // else the element in view, which stands at the origin, goes to the middle.
   $effect(() => {
     if (placedCamera || !width || !height) return;
     placedCamera = true;
     untrack(() => {
-      const root = tree.root ? lay.placed.get(tree.root) : null;
-      cam = centred(
-        { cx: camera?.cx ?? root?.x ?? 0, cy: camera?.cy ?? root?.y ?? 0, k: camera?.k ?? 1 },
-        width,
-        height,
-      );
+      cam = centred({ cx: camera?.cx ?? 0, cy: camera?.cy ?? 0, k: camera?.k ?? 1 }, width, height);
     });
   });
 
@@ -337,12 +336,13 @@
     const id = reveal;
     if (!id) return;
     untrack(() => {
-      if (!project.node(id) || project.node(id)?.map !== mapId) return;
-      // Open what it is folded under.
-      let at = tree.parent.get(id) ?? null;
-      while (at) {
-        if (project.node(at)?.collapsed) project.setCollapsed(at, false);
-        at = tree.parent.get(at) ?? null;
+      // Only what is within the view can be shown.
+      if (!project.node(id) || !tree.depth.has(id)) return;
+      // Open what it is folded under, up to the element in view.
+      let up = tree.parent.get(id) ?? null;
+      while (up && up !== tree.root) {
+        if (project.node(up)?.collapsed) project.setCollapsed(up, false);
+        up = tree.parent.get(up) ?? null;
       }
       select([id]);
       queueMicrotask(() => bringIntoView(id));
@@ -380,30 +380,32 @@
     const start = toWorld(event.clientX, event.clientY);
     const p = lay.placed.get(id);
     let moved = false;
-    startDrag(event, () => {
-      if (additive && was) return null;
-      moved = true;
-      // Alone, the one under the pointer goes by itself.
-      const ids = (alone ? [id] : selected.has(id) ? selection : [id]).filter((s) =>
-        lay.placed.has(s),
-      );
-      // The one under the pointer leads.
-      const ordered = [id, ...ids.filter((s) => s !== id)].filter(
-        (s) => !ids.some((o) => o !== s && isAncestor(tree, o, s)),
-      );
-      const data: ElementsPayload = {
-        project,
-        map: mapId,
-        ids: ordered,
-        grab: { x: start.x - (p?.x ?? start.x), y: start.y - (p?.y ?? start.y) },
-      };
-      const name = project.node(id)?.title || t('project-untitled');
-      return {
-        kind: 'elements',
-        data,
-        label: ordered.length === 1 ? name : t('project-elements', { count: ordered.length }),
-      };
-    });
+    // The element in view stays at the centre: it is not dragged.
+    if (id !== tree.root)
+      startDrag(event, () => {
+        if (additive && was) return null;
+        moved = true;
+        // Alone, the one under the pointer goes by itself; the element in view never goes.
+        const ids = (alone ? [id] : selected.has(id) ? selection : [id]).filter(
+          (s) => s !== tree.root && lay.placed.has(s),
+        );
+        // The one under the pointer leads.
+        const ordered = [id, ...ids.filter((s) => s !== id)].filter(
+          (s) => !ids.some((o) => o !== s && isAncestor(tree, o, s)),
+        );
+        const data: ElementsPayload = {
+          project,
+          at,
+          ids: ordered,
+          grab: { x: start.x - (p?.x ?? start.x), y: start.y - (p?.y ?? start.y) },
+        };
+        const name = project.node(id)?.title || t('project-untitled');
+        return {
+          kind: 'elements',
+          data,
+          label: ordered.length === 1 ? name : t('project-elements', { count: ordered.length }),
+        };
+      });
     if (alone) {
       window.addEventListener(
         'pointerup',
@@ -486,9 +488,9 @@
     if (action !== 'blur') viewport?.focus({ preventScroll: true });
   }
 
-  function add(kind: 'child' | 'sibling', at: string) {
+  function add(kind: 'child' | 'sibling', from: string) {
     project.checkpoint();
-    const id = kind === 'child' ? project.addChild(at) : project.addSibling(at);
+    const id = kind === 'child' ? project.addChild(from) : project.addSibling(from);
     if (!id) return;
     fresh.add(id);
     select([id]);
@@ -498,12 +500,11 @@
 
   // ---- drops ----
 
+  /** Puts an element where it was dropped, under the parent it has, placed from that parent. */
   function placeAt(id: string, world: Position) {
     const parent = tree.parent.get(id) ?? null;
-    if (parent === null) {
-      project.setPosition(id, world);
-      return;
-    }
+    // The element in view stands at the centre whatever is said of it.
+    if (parent === null || id === tree.root) return;
     const pp = lay.placed.get(parent);
     if (!pp) return;
     const rel = { x: world.x - pp.x, y: world.y - pp.y };
@@ -519,8 +520,8 @@
     // `move` counts places in the list as it is, with the element in it.
     const full = tree.children.get(parent) ?? [];
     const before = siblings[index];
-    const at = before ? full.indexOf(before) : full.length;
-    project.move([id], parent, at, { pos: rel });
+    const slot = before ? full.indexOf(before) : full.length;
+    project.move([id], parent, slot, { pos: rel });
   }
 
   function ondrop(event: DropEvent) {
@@ -557,14 +558,16 @@
     if (payload.kind !== 'elements') return;
     const data = payload.data as ElementsPayload;
     if (data.project !== project) return;
-    const local = data.map === mapId;
+    // What stands on this map is moved about on it; what is brought from
+    // another pane, or from the text, goes under the element in view.
+    const onMap = shownHere(data.ids);
     const except = new Set<string>();
-    if (local) for (const id of data.ids) for (const d of subtree(tree, id)) except.add(d);
+    for (const id of data.ids) for (const d of subtree(tree, id)) except.add(d);
     // The element under the pointer as it was seen during the drag: once the
     // drag has ended, what was lifted is laid out again, and the map may have
     // shifted under the pointer by then. So the map is laid out once more as
     // it was, with the elements held where they were dropped.
-    const during = local
+    const during = onMap
       ? layout(tree, project.nodes, sizes, heldAt(data, world, event.alone))
       : lay;
     const target = hit(world, except, during);
@@ -574,23 +577,23 @@
     if (target) {
       // Under another element, with all that is under it, Shift or not.
       result = project.move(data.ids, target, undefined, { pos: null });
-    } else if (local) {
+    } else if (onMap) {
       data.ids.forEach((id, i) => {
         const to = { x: world.x - data.grab.x, y: world.y - data.grab.y + i * 52 };
         // With Shift, what is under the element stays where it stood: each
         // child's place is said from its parent, so it is said anew.
         const kept = event.alone
-          ? (tree.children.get(id) ?? []).map((c) => ({ c, at: during.placed.get(c) }))
+          ? (tree.children.get(id) ?? []).map((c) => ({ c, was: during.placed.get(c) }))
           : [];
         placeAt(id, to);
-        for (const { c, at } of kept) {
-          if (at) project.setPosition(c, { x: at.x - to.x, y: at.y - to.y });
+        for (const { c, was } of kept) {
+          if (was) project.setPosition(c, { x: was.x - to.x, y: was.y - to.y });
         }
       });
       result = data.ids;
     } else {
-      // From another map: loose, where it was dropped.
-      result = project.move(data.ids, null, undefined, { pos: world, map: mapId });
+      // From elsewhere: under the element in view, where it was dropped.
+      result = project.move(data.ids, at, undefined, { pos: world });
     }
     project.checkpoint();
     if (result.length) {
@@ -661,16 +664,19 @@
     window.addEventListener('pointercancel', up);
   }
 
-  function backgroundDoubleClick(event: MouseEvent) {
-    if ((event.target as HTMLElement).closest('.node, .controls, .link-hit, .link-label')) return;
-    // A thought that has no place yet.
-    const world = toWorld(event.clientX, event.clientY);
+  /** A new element under the one in view, where the pointer is: a thought that has no place yet. */
+  function addHere(world: Position) {
     project.checkpoint();
-    const id = project.addLoose(mapId, world);
+    const id = project.addChild(at, { pos: world });
     if (!id) return;
     fresh.add(id);
     select([id]);
     requestAnimationFrame(() => rename(id));
+  }
+
+  function backgroundDoubleClick(event: MouseEvent) {
+    if ((event.target as HTMLElement).closest('.node, .controls, .link-hit, .link-label')) return;
+    addHere(toWorld(event.clientX, event.clientY));
   }
 
   // ---- associations ----
@@ -705,7 +711,7 @@
     window.addEventListener('pointerup', up);
   }
 
-  const curves = $derived(associationsOf(project.linksOf(mapId), lay, tree));
+  const curves = $derived(associationsOf(project.linksOf(at), lay, tree));
   const lines = $derived(linesOf(lay, lifted));
   const pendingCurve = $derived(linking ? drawing(lay, linking) : null);
 
@@ -727,29 +733,50 @@
       // The other end can be gone to with the arrows: the keys come here, after the menu has closed.
       requestAnimationFrame(() => viewport?.focus({ preventScroll: true }));
     },
-    openMap: (id) => onopenmap(id),
+    enter: (id) => onenter(id),
     copy: (ids) => hold(ids),
     cut: (ids) => hold(ids, true),
     paste: (id) => paste(id),
   };
 
+  /**
+   * The menu of elements: what can be done to any element, and before it,
+   * for one that is not in view, opening it as a map.
+   */
+  function menuFor(ids: string[], anchor: HTMLElement): MenuItem[] {
+    const items = elementMenu(project, ids, actions, anchor);
+    const one = ids.length === 1 ? ids[0] : null;
+    if (!one || one === tree.root) return items;
+    return [
+      {
+        label: t('diagram-open-as-map'),
+        hint: t('diagram-open-as-map-hint'),
+        icon: Maximize2,
+        shortcut: 'Ctrl+Enter',
+        action: () => onenter(one),
+      },
+      { kind: 'separator' },
+      ...items,
+    ];
+  }
+
   /** Holds the elements, each with all under it, copied or cut, and says how many. */
   function hold(ids: string[], cut = false) {
-    const n = cut ? cutElements(project, mapId, ids) : copyElements(project, mapId, ids);
+    const n = cut ? cutElements(project, ids) : copyElements(project, ids);
     if (n) notifyOk(t(cut ? 'diagram-cut' : 'diagram-copied', { count: n }));
   }
 
-  /** Where the pointer was last over the map, in the page: what is pasted loose goes there. */
+  /** Where the pointer was last over the map, in the page: what is pasted on the background goes there. */
   let pointer: { x: number; y: number } | null = null;
 
   /**
    * Pastes what is held: under the element given, or the one selected; where
-   * none is, on their own where they are asked to go, or where the pointer is
-   * over the map, or else in the middle of the view.
+   * none is, under the element in view, where they are asked to go, or where
+   * the pointer is over the map, or else in the middle of the view.
    */
   function paste(
     under: string | null = selection.length === 1 ? selection[0] : null,
-    at: Position | null = null,
+    where: Position | null = null,
   ) {
     if (!clipboard.held) {
       notify(t('diagram-nothing-copied'));
@@ -768,14 +795,14 @@
       pointer.y >= r.top &&
       pointer.y <= r.bottom;
     const place =
-      at ??
+      where ??
       (inside
         ? toWorld(pointer!.x, pointer!.y)
         : r
           ? toWorld(r.left + r.width / 2, r.top + r.height / 2)
           : { x: 0, y: 0 });
     project.checkpoint();
-    const made = pasteElements(project, mapId, under, place);
+    const made = pasteElements(project, under ? { under } : { under: at, pos: place });
     project.checkpoint();
     if (made.length) {
       select(made);
@@ -839,7 +866,9 @@
     cut: () => hold(selection, true),
     paste: () => paste(),
     open: (id) => open(id),
+    enter: (id) => onenter(id),
     rename,
+    menu: menuFor,
     beginName(id, letter) {
       project.checkpoint();
       renamedFrom = { id, copy: project.copyTitle(id) };
@@ -874,17 +903,9 @@
       const world = toWorld(event.clientX, event.clientY);
       openContextMenu(event, [
         {
-          label: t('diagram-new-loose'),
-          hint: t('diagram-new-loose-hint'),
-          action: () => {
-            project.checkpoint();
-            const id = project.addLoose(mapId, world);
-            if (id) {
-              fresh.add(id);
-              select([id]);
-              requestAnimationFrame(() => rename(id));
-            }
-          },
+          label: t('diagram-new-here'),
+          hint: t('diagram-new-here-hint'),
+          action: () => addHere(world),
         },
         {
           label: t('diagram-paste-here'),
@@ -910,12 +931,12 @@
     }
     const id = el.dataset.node!;
     if (!selected.has(id)) select([id]);
-    openContextMenu(event, elementMenu(project, selected.has(id) ? selection : [id], actions, el));
+    openContextMenu(event, menuFor(selected.has(id) ? selection : [id], el));
   }
 
   const empty = $derived(tree.sequence.length <= 1);
   /** How far the writing of the map has come, where its elements say. */
-  const progress = $derived(progressOf(project, mapId));
+  const progress = $derived(progressOf(project, at));
 
   // ---- the comments, as cards beside their elements ----
 
@@ -1015,7 +1036,11 @@
       p.kind === 'references' ||
       p.kind === PICTURES_DRAGGED,
     ondrop,
-    quiet: (p) => p.kind === 'elements' && (p.data as ElementsPayload).map === mapId,
+    // What stands on this map is shown held where the pointer is: no label is wanted beside it.
+    quiet: (p) =>
+      p.kind === 'elements' &&
+      (p.data as ElementsPayload).project === project &&
+      shownHere((p.data as ElementsPayload).ids),
   }}
   onpointerdown={backgroundPointerDown}
   onpointermove={(e) => (pointer = { x: e.clientX, y: e.clientY })}
@@ -1161,6 +1186,7 @@
             domId={domPrefix + id}
             ontoggle={(nodeId) => project.setCollapsed(nodeId, !project.node(nodeId)?.collapsed)}
             onlinkstart={linkStart}
+            {onenter}
           />
         </div>
       {/if}
@@ -1253,6 +1279,7 @@
     <ElementBox
       {project}
       id={editing.id}
+      {at}
       anchor={editing.anchor}
       begin={editing.begin}
       {onkeep}

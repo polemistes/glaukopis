@@ -3,10 +3,11 @@
  * mended in the application itself, with its spelling, its search and its
  * history, and written back as Fluent files (ADR 0034).
  *
- * The project has a map for each Fluent file (`common`, `editor`, …), and
- * under its centre an element for each part of a message: its name is the
- * name of the message (`common-cancel`, or `field-title.hint` for an
- * attribute), and its text is the English, as a quotation in foreign words,
+ * The project has a tree for each Fluent file (`common`, `editor`, …),
+ * under its own element, and under that an element for each part of a
+ * message: its name is the name of the message (`common-cancel`, or
+ * `field-title.hint` for an attribute), and its text is the English, as a
+ * quotation in foreign words,
  * with the note the English file has for translators, and after it the
  * words of the language, as plain paragraphs, which are what is mended.
  * Each element keeps which part it is, and its words as they were when the
@@ -17,6 +18,7 @@
 import { writeBody } from '$lib/project/model/blocks';
 import { TIDY, type Project } from '$lib/project/model/project.svelte';
 import type { Block, Inline } from '$lib/project/model/text';
+import { PROJECT } from '$lib/project/model/types';
 import { readFile, tidy, type Change } from './fluent';
 
 /** The name under which a project says it holds the words of a language, and an element which part it is. */
@@ -69,10 +71,11 @@ export function elementText(english: string, note: string, words: string, tag: s
 }
 
 /**
- * Fills a project with the words of a language: a map for each file of the
- * English, an element for each part of its messages. `own` are the files of
- * the language, which may lack parts or files, as a translation that is not
- * done does. The maps are in the language, so that its spelling is checked.
+ * Fills a project with the words of a language: a tree under the project
+ * for each file of the English, an element for each part of its messages.
+ * `own` are the files of the language, which may lack parts or files, as a
+ * translation that is not done does. The project is in the language, so
+ * that its spelling is checked.
  */
 export function fillWords(
   project: Project,
@@ -80,7 +83,6 @@ export function fillWords(
   english: Map<string, string>,
   own: Map<string, string>,
 ): number {
-  const before = project.maps.map((m) => m.id);
   project.setLanguage(tag);
   project.transact(() => project.yMeta.set(WORDS, { language: tag } satisfies ProjectWords));
   let count = 0;
@@ -88,11 +90,11 @@ export function fillWords(
     const en = readFile(text);
     if (!en.messages.length) continue;
     const mine = own.has(file) ? readFile(own.get(file)!) : null;
-    const map = project.createMap(file.replace(/\.ftl$/, ''));
-    const root = project.map(map)!.root;
+    const top = project.addChild(PROJECT, { title: file.replace(/\.ftl$/, '') });
+    if (!top) continue;
     for (const m of en.messages) {
       for (const part of m.parts) {
-        const id = project.addChild(root, { title: part.key });
+        const id = project.addChild(top, { title: part.key });
         if (!id) continue;
         const was = mine?.parts.get(part.key)?.text ?? '';
         const note = part.key.includes('.') ? '' : m.comment;
@@ -107,8 +109,6 @@ export function fillWords(
       }
     }
   }
-  // The map a new project begins with holds no words.
-  for (const id of before) project.deleteMap(id);
   project.undoManager.clear();
   return count;
 }

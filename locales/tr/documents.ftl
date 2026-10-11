@@ -4,14 +4,12 @@
 documents-choose = İçeri alınacak belge
 documents-filter = Belgeler
 documents-filter-all = Tüm dosyalar
-documents-title-map = Bir belgeden harita
 documents-title-project = Bir belgeden proje
 documents-reading = { $file } okunuyor…
 documents-reading-hint = Uzun bir belge biraz zaman alır.
 documents-no-pandoc = Bu türdeki belgeleri Pandoc okur; Pandoc kurulu değil ya da bulunamadı. Nerede olduğu ayarlarda belirtilebilir.
 documents-unread = Dosya okunamadı.
 documents-title = Ad
-documents-title-hint-map = Haritanın ve merkezindeki öğenin adı.
 documents-title-hint-project = Projenin, haritasının ve haritanın merkezindeki öğenin adı.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Adsız
@@ -79,7 +77,6 @@ documents-found-some-made = { $count } atıf bulundu; bunların { $made } adedi 
 documents-at-once = Kitaplığınızda bulunan eserlere Zotero ile yapılmış atıfları hemen atıfa dönüştür
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = Yalnızca bir atıftan oluşan not, satır içi bir atıfa dönüşür; atıf stili onu notta ya da satırda dizer. Daha fazlasını söyleyen not, atıfını korur. Bulunan atıflar panelinde sonraki bütün notlar için seçtiğiniz burada da geçerlidir.
-documents-go-through-map = Harita yapılırken atıfları gözden geçir
 documents-go-through-project = Proje yapılırken atıfları gözden geçir
 
 ## Making the map.
@@ -87,6 +84,4 @@ documents-go-through-project = Proje yapılırken atıfları gözden geçir
 # Over what the one who brings the document in should know of it.
 documents-to-know = Bilinmesi gerekenler
 documents-making = Harita yapılıyor…
-documents-make-map = Haritayı yap
 documents-make-project = Projeyi yap
-documents-map-failed = Harita yapılamadı.

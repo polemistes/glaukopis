@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Kako je vsaka vrsta postavljena v tem dokument
 editor-words = Besede
 editor-words-hint = Podčrtano, nadpisano, koda; tujejezične besede, naslov dela, izraz
 editor-words-make = Naredi vrsto besed…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Jezik miselnega vzorca
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Navadne besede
 editor-own-kind-new = Lastna vrsta

@@ -52,6 +52,12 @@ export interface ConnectionOptions {
   ticket: () => Promise<string>;
   /** Called when the server has no place for this copy any more. */
   onended?: (why: Ending) => void;
+  /**
+   * Called each time what the server holds has been received, after
+   * `synced` is set: a project joined and not yet fetched is loaded empty,
+   * and is brought into shape when it arrives.
+   */
+  onsynced?: () => void;
   /** For tests. */
   socket?: (url: string) => WebSocket;
 }
@@ -245,6 +251,7 @@ export class Connection {
         if (step === messageYjsSyncStep2 && !this.synced) {
           this.synced = true;
           this.everSynced = true;
+          this.#options.onsynced?.();
         }
       } else if (kind === AWARENESS) {
         applyAwarenessUpdate(this.#awareness, decoding.readVarUint8Array(decoder), this);

@@ -22,6 +22,7 @@ import { languages, t } from '$lib/i18n';
 import { buildDocument } from '$lib/project/model/document';
 import { blocksHtml } from '$lib/project/model/html';
 import { Project } from '$lib/project/model/project.svelte';
+import { PROJECT } from '$lib/project/model/types';
 import { bodyFacts, readBody, type TableBlock } from '$lib/project/model/text';
 import { addTable } from './ask';
 import {
@@ -639,8 +640,8 @@ describe('a table in the project', () => {
 
   it('is read from the project, shown, and part of the document', () => {
     const p = new Project(null);
-    const map = p.createMap('Wrath');
-    const a = p.addChild(p.map(map)!.root, { title: 'A' })!;
+    p.begin('Wrath');
+    const a = p.addChild(PROJECT, { title: 'A' })!;
     p.transact(() => prosemirrorToYXmlFragment(written(), p.fragment(a, 'body')!));
 
     const blocks = readBody(p.fragment(a, 'body')!);
@@ -681,14 +682,14 @@ describe('a table in the project', () => {
       '<td colspan="2" style="text-align: right"><p>15 693</p><p>56,5 %</p></td>',
     );
 
-    const sections = buildDocument(p, map).sections;
+    const sections = buildDocument(p, PROJECT).sections;
     expect(sections[0].blocks.map((b) => b.kind)).toEqual(['paragraph', 'table', 'paragraph']);
   });
 
   it('a table is put at the end of an element its file is dropped on', () => {
     const p = new Project(null);
-    const map = p.createMap('Wrath');
-    const a = p.addChild(p.map(map)!.root, { title: 'A', body: 'Text.' })!;
+    p.begin('Wrath');
+    const a = p.addChild(PROJECT, { title: 'A', body: 'Text.' })!;
     p.checkpoint();
     expect(addTable(p, a, POEMS)).toBe(true);
     const blocks = readBody(p.fragment(a, 'body')!);

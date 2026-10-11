@@ -1,19 +1,13 @@
 /**
  * What the keys do in a diagram that has the focus: go from one element to
  * the next, add, name, fold, move, associate and remove elements, open their
- * menu, and zoom. A letter begins a new name for the element selected.
- * What is typed while a name cannot yet be written in is the diagram's.
+ * menu, enter one, and zoom. A letter begins a new name for the element
+ * selected. What is typed while a name cannot yet be written in is the
+ * diagram's.
  */
 
-import { openMenu } from '$lib/ui/menu.svelte';
-import {
-  elementMenu,
-  indent,
-  outdent,
-  removeElements,
-  shift,
-  type ElementActions,
-} from '../elements';
+import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
+import { indent, outdent, removeElements, shift, type ElementActions } from '../elements';
 import type { Project } from '../model/project.svelte';
 import type { Tree } from '../model/tree';
 import { neighbour, type Layout } from './layout';
@@ -21,6 +15,7 @@ import { neighbour, type Layout } from './layout';
 /** What the keys read of a diagram, and ask of it. */
 export interface Diagram {
   readonly project: Project;
+  /** The tree as seen from the element in view, which is its root. */
   readonly tree: Tree;
   readonly lay: Layout;
   readonly selection: string[];
@@ -36,7 +31,11 @@ export interface Diagram {
   cut(): void;
   paste(): void;
   open(id: string): void;
+  /** Makes the element the one in view. */
+  enter(id: string): void;
   rename(id: string): void;
+  /** The menu of elements, as the diagram assembles it. */
+  menu(ids: string[], anchor: HTMLElement): MenuItem[];
   /** A letter begins a new name for an element: the letter is its beginning. */
   beginName(id: string, letter: string): void;
   fit(): void;
@@ -66,7 +65,10 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
     else if (key === '0') d.fit();
     else if (key === '=' || key === '+') d.zoomBy(1.2);
     else if (key === '-') d.zoomBy(1 / 1.2);
-    else return false;
+    else if (key === 'enter') {
+      // The element selected becomes the one in view.
+      if (one && one !== tree.root) d.enter(one);
+    } else return false;
     return true;
   }
 
@@ -94,14 +96,15 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
     const at = last && d.elementAt(last);
     if (!at) return true;
     d.openedByKey();
-    openMenu(at, elementMenu(project, selection, d.actions, at));
+    openMenu(at, d.menu(selection, at));
     return true;
   }
 
   switch (event.key) {
     case 'Tab':
+      // With nothing selected, under the element in view.
       if (one) d.add('child', one);
-      else if (!selection.length && tree.root) d.add('child', tree.root);
+      else if (!selection.length) d.add('child', tree.root);
       break;
     case 'Enter':
       // An association that was begun ends at the element that is selected.
@@ -110,7 +113,7 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
         d.linkFrom = null;
       } else if (one && event.altKey) d.open(one);
       else if (one) d.add('sibling', one);
-      else if (!selection.length && tree.root) d.select([tree.root]);
+      else if (!selection.length) d.select([tree.root]);
       break;
     case 'F2':
       if (one) d.rename(one);
@@ -138,8 +141,9 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
     case 'ArrowRight':
     case 'ArrowUp':
     case 'ArrowDown': {
+      // Alt+Up goes up, to the parent of the element in view: the view does that, not the diagram.
+      if (event.altKey) return false;
       const from = last ?? tree.root;
-      if (!from) break;
       if (!last) {
         d.select([from]);
         break;

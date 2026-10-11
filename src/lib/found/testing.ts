@@ -1,9 +1,11 @@
 /** What the tests of the citations that were found are made with. */
 
+import * as Y from 'yjs';
 import type { Found } from '$lib/api/found';
 import { writeBody } from '$lib/project/model/blocks';
 import { Project } from '$lib/project/model/project.svelte';
-import type { Block, Inline, TableCell } from '$lib/project/model/text';
+import { fillTitle, type Block, type Inline, type TableCell } from '$lib/project/model/text';
+import { PROJECT } from '$lib/project/model/types';
 
 export const HASH = 'a'.repeat(64);
 
@@ -31,15 +33,61 @@ export const zotero = (id: string, key = 'ABCD2345', more: Partial<Found> = {}):
   ...more,
 });
 
-/** A project with one map, and elements under its centre with these texts. */
+/**
+ * A project named Wrath, with elements under the project itself with these
+ * texts. `at` is the element in view: the project.
+ */
 export function project(...texts: Block[][]) {
   const pr = new Project(null);
-  const map = pr.createMap('Wrath');
-  const root = pr.map(map)!.root;
+  pr.begin('Wrath');
   const elements = texts.map((blocks, i) => {
-    const id = pr.addChild(root, { title: `Part ${i + 1}` })!;
+    const id = pr.addChild(PROJECT, { title: `Part ${i + 1}` })!;
     pr.transact(() => writeBody(pr.fragment(id, 'body')!, blocks));
     return id;
   });
-  return { pr, map, root, elements };
+  return { pr, at: PROJECT, elements };
+}
+
+/**
+ * A document as it was written before ADR 0037: a map named Wrath, its
+ * centre The poem with an element Part 1 under it, and a loose element
+ * Beside, each with a text. The ids are those given.
+ */
+export function oldDocument(
+  texts: { centre?: Block[]; part?: Block[]; loose?: Block[] } = {},
+): Y.Doc {
+  const doc = new Y.Doc();
+  const maps = doc.getMap<Y.Map<unknown>>('maps');
+  const nodes = doc.getMap<Y.Map<unknown>>('nodes');
+  doc.transact(() => {
+    doc.getMap<unknown>('meta').set('name', 'Wrath');
+    const m = new Y.Map<unknown>();
+    m.set('name', 'Wrath');
+    m.set('root', 'centre');
+    m.set('order', 'a0');
+    maps.set('m1', m);
+    const node = (
+      id: string,
+      parent: string | null,
+      order: string,
+      title: string,
+      blocks: Block[],
+    ) => {
+      const n = new Y.Map<unknown>();
+      n.set('map', 'm1');
+      n.set('parent', parent);
+      n.set('order', order);
+      const t = new Y.XmlFragment();
+      const body = new Y.XmlFragment();
+      n.set('title', t);
+      n.set('body', body);
+      nodes.set(id, n);
+      fillTitle(t, title);
+      writeBody(body, blocks);
+    };
+    node('centre', null, 'a0', 'The poem', texts.centre ?? []);
+    node('part', 'centre', 'a0', 'Part 1', texts.part ?? []);
+    node('loose', null, 'a1', 'Beside', texts.loose ?? []);
+  });
+  return doc;
 }

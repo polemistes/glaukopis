@@ -86,17 +86,17 @@
     project: Project;
     /** The part of the window whose texts the tools are for. */
     scope?: HTMLElement | null;
-    /** The map whose texts they are. */
-    map?: string | null;
+    /** The element in view: whose document sets the tools, where no text has the cursor. */
+    at?: string | null;
     /**
      * Makes a new element, where the tools stand over the text of a whole
-     * map: after the one the cursor is in, under it, or from the cursor on.
+     * branch: after the one the cursor is in, under it, or from the cursor on.
      * Without it there is no button for it, as in the box of one element.
      */
     onelement?: (what: 'after' | 'under' | 'split') => void;
   }
 
-  let { project, scope = null, map = null, onelement }: Props = $props();
+  let { project, scope = null, at = null, onelement }: Props = $props();
 
   const s = $derived.by(() => {
     const selection = editorUi.selection;
@@ -119,11 +119,17 @@
       (!!wordKind || ['underline', 'sup', 'sub', 'strike', 'code'].some((name) => s.marks[name])),
   );
 
-  // The format of the map: for the kinds it suggests, and its name at the foot of the kind menu.
+  /** The element whose text has the cursor, or, where none has it, the one in view: its document sets the tools. */
+  const element = $derived(elementOf(s?.view) ?? at ?? null);
+  /** What is said of that element as a document, with what it inherits, and from where. */
+  const ofDocument = $derived(
+    element && project.node(element) ? project.documentOf(element) : null,
+  );
+  // The format of the document: for the kinds it suggests, and its name at the foot of the kind menu.
   $effect(() => {
     documents.load();
   });
-  const choice = $derived(documents.choice(project.map(map)?.document ?? {}));
+  const choice = $derived(documents.choice(ofDocument?.settings ?? {}));
   let format = $state.raw<DocumentFormat | null>(null);
   $effect(() => {
     const id = choice.format;
@@ -422,17 +428,16 @@
 
   /** Every kind, with those in hand marked; choosing one pins it, or takes it out of hand. */
   function handItems(view: EditorView): MenuItem[] {
-    const hand = new Set(inHand(project, map ?? '', suggests));
+    const hand = new Set(inHand(project, suggests));
     const item = (id: string): MenuItem => ({
       label: nameOf(id),
       hint: specOf(id)?.hint(),
       icon: iconOf(id),
       checked: hand.has(id),
       action: () => {
-        if (!map) return;
-        const current = project.map(map)?.hand ?? { pinned: [], unpinned: [] };
-        if (hand.has(id)) project.setHand(map, { unpinned: [...current.unpinned, id] });
-        else project.setHand(map, { pinned: [...current.pinned, id] });
+        const current = project.hand;
+        if (hand.has(id)) project.setHand({ unpinned: [...current.unpinned, id] });
+        else project.setHand({ pinned: [...current.pinned, id] });
         view.focus();
       },
     });
@@ -447,16 +452,22 @@
     ];
   }
 
-  /** Opens the editor of the map's format at the look of the kind the cursor is in. */
+  /**
+   * Opens the editor of the document's format at the look of the kind the
+   * cursor is in, on the document of the element in view. The format that
+   * is saved goes where the format is set now: on the element that sets
+   * it, or, where none does, on the element in view.
+   */
   function changeFormat() {
-    const id = map;
+    const id = element;
     if (!id) return;
+    const on = ofDocument?.from.get('format') ?? at ?? id;
     formatEditorUi.open({
       id: choice.format,
-      map: id,
+      at: at ?? id,
       section: 'kinds',
       kind,
-      onsaved: (format) => project.setDocument(id, { format }),
+      onsaved: (format) => project.setDocument(on, { format }),
     });
   }
 
@@ -468,7 +479,7 @@
     // speaker and a stage direction in verse, every part of a script in one.
     const group = specOf(kind)?.group;
     const wanted = new Set([
-      ...inHand(project, map ?? '', suggests),
+      ...inHand(project, suggests),
       ...CATALOGUE.filter((k) => group && k.group === group && group !== 'text').map((k) => k.id),
     ]);
     const inHandNow = [
@@ -488,7 +499,7 @@
           label: t('editor-kinds-change-format'),
           hint: t('editor-kinds-change-format-hint'),
           icon: SlidersHorizontal,
-          disabled: !map,
+          disabled: !element,
           action: changeFormat,
         },
       ],
@@ -523,8 +534,8 @@
       checked: wordKind?.name === id,
       action: () => run(toggleKind(id), view),
     });
-    // The languages foreign words may be in: that of the map first.
-    const language = project.map(map)?.document.language;
+    // The languages foreign words may be in: that of the text first.
+    const language = ofDocument?.settings.language;
     const tags = [...(language ? [language] : []), ...TEXT_LANGUAGES.filter((l) => l !== language)];
     const foreign: MenuItem = {
       kind: 'submenu',
@@ -532,7 +543,7 @@
       icon: Languages,
       items: tags.map((tag) => ({
         label: languageName(tag),
-        hint: tag === language ? t('editor-foreign-of-map') : undefined,
+        hint: tag === language ? t('editor-foreign-of-text') : undefined,
         checked: wordKind?.name === 'foreign' && wordKind.lang === tag,
         action: () => run(toggleKind('foreign', tag), view),
       })),

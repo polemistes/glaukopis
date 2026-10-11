@@ -5,11 +5,7 @@ text-name = Naziv elementa
 text-first-section = Pišite ovdje, ili pritisnite Ctrl+Enter da započnete prvi odjeljak.
 text-not-printed = ne tiska se
 text-grip = Premjesti ili izmijeni ovaj element
-# The map an element stands for, which is shown in bold where the variable stands.
-text-include = U dokumentu ovdje stoji mapa { $map }.
 text-include-open = Otvori je
-text-loose = Slobodni elementi
-text-loose-hint = Misli koje još nemaju svoje mjesto. Nisu dio dokumenta.
 text-split = Razdvoji ovdje
 text-split-hint = Što slijedi iza pokazivača postaje novi element
 text-join = Spoji s elementom iznad

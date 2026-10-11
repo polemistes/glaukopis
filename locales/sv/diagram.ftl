@@ -2,8 +2,6 @@
 
 diagram-map = Karta
 diagram-idea = Namn
-diagram-new-loose = Nytt löst element här
-diagram-new-loose-hint = En tanke som inte har någon plats än
 diagram-show-all = Visa hela kartan
 diagram-tidy = Snygga till hela kartan
 diagram-tidy-hint = Varje element går tillbaka till sin automatiska plats

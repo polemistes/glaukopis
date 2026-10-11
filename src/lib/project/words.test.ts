@@ -17,12 +17,6 @@ describe('the words of a project', () => {
     );
     expect(t('project-deleted-many', { count: 2 })).toBe('2 elements deleted');
     expect(t('project-deleted-many', { count: 1200 })).toBe('1,200 elements deleted');
-    expect(t('project-delete-map-message', { count: 1 })).toBe(
-      '1 element and the text in it will go. This can be undone while the project is open.',
-    );
-    expect(t('project-delete-map-message', { count: 7 })).toBe(
-      '7 elements and the text in them will go. This can be undone while the project is open.',
-    );
     expect(t('project-cited-in', { count: 1, name: 'Wrath' })).toBe(
       'The reference is cited in “Wrath”',
     );

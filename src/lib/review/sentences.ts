@@ -1,7 +1,7 @@
 /**
  * The sentences of a text, as a review of changes goes through it (ADR 0022).
  *
- * They are found by `Intl.Segmenter`, in the language of the map, and mended
+ * They are found by `Intl.Segmenter`, in the language of the text, and mended
  * where it breaks wrongly for scholarly writing: after an abbreviation that
  * does not end a sentence ("cf.", "p.", "vol.", "jf.", "bl.a."), after the
  * initials of a name ("A. B. Lord"), after a short abbreviation before a

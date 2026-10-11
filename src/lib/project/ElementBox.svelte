@@ -1,7 +1,8 @@
 <script module lang="ts">
   /**
-   * Where the box was last put by hand in each map, for the session: the next
-   * element opened in that map opens there. Not kept with the project.
+   * Where the box was last put by hand in each view, for the session: the
+   * next element opened in the view of that element opens there. Not kept
+   * with the project.
    */
   const putAt = new Map<string, { x: number; y: number }>();
 </script>
@@ -22,18 +23,21 @@
   import { place, type RectLike } from '$lib/ui/floating';
   import IconButton from '$lib/ui/IconButton.svelte';
   import type { Project } from './model/project.svelte';
+  import { PROJECT } from './model/types';
 
   interface Props {
     project: Project;
     id: string;
     anchor: RectLike;
+    /** The element in view, whose document the element is read as part of; the project where none is. */
+    at?: string | null;
     /** Where to begin: in the name, or in the text. */
     begin?: 'title' | 'body';
     onkeep: (id: string) => void;
     onclose: () => void;
   }
 
-  let { project, id, anchor, begin = 'body', onkeep, onclose }: Props = $props();
+  let { project, id, anchor, at = null, begin = 'body', onkeep, onclose }: Props = $props();
 
   let el = $state<HTMLDivElement>();
   let name = $state<ReturnType<typeof RichText>>();
@@ -42,11 +46,13 @@
   const node = $derived(project.node(id));
   const title = $derived(project.fragment(id, 'title'));
   const text = $derived(project.fragment(id, 'body'));
+  /** The element whose document the numbers and the tools are of. */
+  const within = $derived(at ?? PROJECT);
 
   const MARGIN = 12;
 
   /** Where the box stands since it was dragged, or null while it stands beside its element. */
-  let moved: { x: number; y: number } | null = untrack(() => putAt.get(node?.map ?? '') ?? null);
+  let moved: { x: number; y: number } | null = untrack(() => putAt.get(within) ?? null);
 
   /** Puts the box where it was dragged to, kept within the window, or beside its element. */
   function position() {
@@ -73,7 +79,7 @@
   /**
    * The box is dragged by the header, around the name: not by the name
    * itself, which is written in, nor by the button that closes it. Once
-   * moved it stays where it was put, and the next box of the map opens there.
+   * moved it stays where it was put, and the next box of the view opens there.
    */
   function grab(event: PointerEvent) {
     if (event.button !== 0 || !el) return;
@@ -97,7 +103,7 @@
       header.removeEventListener('pointermove', onmove);
       header.removeEventListener('pointerup', onup);
       header.removeEventListener('pointercancel', onup);
-      if (dragged && moved && node) putAt.set(node.map, moved);
+      if (dragged && moved) putAt.set(within, moved);
     };
     header.addEventListener('pointermove', onmove);
     header.addEventListener('pointerup', onup);
@@ -132,18 +138,15 @@
       return project;
     },
     elements: () => [id],
-    labels: () => {
-      const map = project.node(id)?.map ?? '';
-      return {
-        citation: citationLabel,
-        crossref: (target, form) =>
-          pointerText(
-            numbering.of(project, map).byId.get(target),
-            form,
-            numbering.countingOf(project, map),
-          ),
-      };
-    },
+    labels: () => ({
+      citation: citationLabel,
+      crossref: (target, form) =>
+        pointerText(
+          numbering.of(project, within).byId.get(target),
+          form,
+          numbering.countingOf(project, within),
+        ),
+    }),
     holder: (_element, part) =>
       el?.querySelector<HTMLElement>(part === 'title' ? 'header .rich-text' : '.text .rich-text') ??
       null,
@@ -246,7 +249,7 @@
       >
     </header>
 
-    <div class="tools"><WritingTools {project} scope={el} map={node?.map} /></div>
+    <div class="tools"><WritingTools {project} scope={el} at={within} /></div>
     {#if searching}
       <div class="find">
         <SearchBar bind:this={bar} search={searching} compact onclose={() => closeSearch(true)} />

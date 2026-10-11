@@ -32,12 +32,23 @@ import {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyType = Y.AbstractType<any>;
-import { addItems, has, readMap, readPieces, units, type Unit, type Who } from './reading';
+import { PROJECT } from '$lib/project/model/types';
+import {
+  addItems,
+  branchOf,
+  has,
+  readBranch,
+  readPieces,
+  treeAt,
+  units,
+  type Unit,
+  type Who,
+} from './reading';
 import type { HistoryRecord, RecordKind } from './records';
 import type {
   Accepted,
+  BranchChanges,
   Items,
-  MapChanges,
   Moment,
   Named,
   Passage,
@@ -110,7 +121,7 @@ export type Edit =
       body: NodeJSON;
     }
   /** An element put back under what it stood under, where it stood. */
-  | { kind: 'place'; element: string; parent: string | null; order: string }
+  | { kind: 'place'; element: string; parent: string; order: string }
   /** An element that was not there, taken away. */
   | { kind: 'remove'; element: string };
 
@@ -401,18 +412,19 @@ export class Engine {
     return { block, index, units: list };
   }
 
-  compare(map: string, reference: Reference, elements?: string[]): MapChanges {
+  /** What changed within an element, in it and in all under it, since a moment. */
+  compare(at: string, reference: Reference, elements?: string[]): BranchChanges {
     const before = atSnapshot(Y.decodeSnapshot(reference.moment));
-    let result!: MapChanges;
+    let result!: BranchChanges;
     this.doc.transact((transaction) => {
       split(transaction, before);
       const overrides = this.#overrides(reference.accepted, transaction);
-      const reading = readMap(this.doc, map, before, NOW, this.who, {
+      const reading = readBranch(this.doc, at, before, NOW, this.who, {
         elements: elements ? new Set(elements) : undefined,
         overrides,
       });
       result = {
-        map,
+        at,
         passages: reading.passages,
         objects: reading.objects,
         elements: reading.elements,
@@ -461,25 +473,29 @@ export class Engine {
 
   /**
    * Brings an element back as it was at a moment: its name and its text,
-   * and where it was gone, the element itself. Without an element, the
-   * whole map: every element as it was, where it was, and those that were
-   * not there taken away.
+   * and where it was gone, the element itself. Without an element, all
+   * that stood under the element in view `at` then: every element as it
+   * was, where it was, and those that were not there taken away. The
+   * project's own element is never taken away.
    */
-  bringBack(map: string, element: string | null, when: When): Edit[] {
+  bringBack(at: string, element: string | null, when: When): Edit[] {
     const then = this.#at(when);
     const edits: Edit[] = [];
     this.doc.transact((transaction) => {
       split(transaction, then);
       const nodes = this.doc.getMap('nodes') as unknown as AnyType;
+      const treeThen = treeAt(this.doc, then);
+      const treeNow = treeAt(this.doc, NOW);
+      const wasWithin = new Set(branchOf(treeThen, at));
+      const isWithin = new Set(branchOf(treeNow, at));
       const ids = element ? [element] : keysOfMap(nodes);
       for (const id of ids) {
         const was = valueAt(nodes, id, then);
         const is = valueAt(nodes, id, NOW);
-        const wasHere =
-          was instanceof Y.Map && valueAt(was as unknown as AnyType, 'map', then) === map;
-        const isHere = is instanceof Y.Map && valueAt(is as unknown as AnyType, 'map', NOW) === map;
+        const wasHere = was instanceof Y.Map && wasWithin.has(id);
+        const isHere = is instanceof Y.Map && isWithin.has(id);
         if (!wasHere) {
-          if (isHere && !element) edits.push({ kind: 'remove', element: id });
+          if (isHere && !element && id !== PROJECT) edits.push({ kind: 'remove', element: id });
           continue;
         }
         const node = was as unknown as AnyType;
@@ -489,26 +505,31 @@ export class Engine {
           fragments[part] =
             fragment instanceof Y.XmlFragment ? fragmentJSON(fragment, then) : { type: 'doc' };
         }
+        // Under what it stood then, as the tree of then has it: the project
+        // itself, for what had no parent before the project was one tree.
+        const parent = id === PROJECT ? null : (treeThen.parent.get(id) ?? PROJECT);
         if (!isHere || is !== was) {
           const values: Record<string, unknown> = {};
           for (const key of keysOfMap(node)) {
-            if (key === 'title' || key === 'body') continue;
+            // What was said of a map of old is not said again.
+            if (key === 'title' || key === 'body' || key === 'map' || key === 'side') continue;
             const value = valueAt(node, key, then);
             if (value !== undefined) values[key] = value;
           }
+          values.parent = parent;
           edits.push({ kind: 'element', element: id, values, ...fragments });
           continue;
         }
         for (const part of ['title', 'body'] as const)
           edits.push({ kind: 'fragment', element: id, part, node: fragments[part] });
-        if (!element) {
-          const parent = valueAt(node, 'parent', then);
+        if (!element && parent !== null) {
           const order = valueAt(node, 'order', then);
-          if (parent !== valueAt(node, 'parent', NOW) || order !== valueAt(node, 'order', NOW))
+          const parentNow = treeNow.parent.get(id) ?? PROJECT;
+          if (parent !== parentNow || order !== valueAt(node, 'order', NOW))
             edits.push({
               kind: 'place',
               element: id,
-              parent: typeof parent === 'string' ? parent : null,
+              parent,
               order: typeof order === 'string' ? order : 'a0',
             });
         }
@@ -517,15 +538,18 @@ export class Engine {
     return edits;
   }
 
-  /** The whole map at one moment, compared with another: for looking at the history. */
-  mapAt(map: string, when: When, since: When | null) {
+  /**
+   * An element and all under it at one moment, compared with another: for
+   * looking at the history.
+   */
+  branchAt(at: string, when: When, since: When | null) {
     const after = this.#at(when);
     const before = since === null ? after : this.#at(since);
-    let result!: ReturnType<typeof readMap>;
+    let result!: ReturnType<typeof readBranch>;
     this.doc.transact((transaction) => {
       split(transaction, after);
       split(transaction, before);
-      result = readMap(this.doc, map, before, after, this.who, { overrides: OVERRIDE_NONE });
+      result = readBranch(this.doc, at, before, after, this.who, { overrides: OVERRIDE_NONE });
     });
     return result;
   }

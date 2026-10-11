@@ -19,7 +19,7 @@ import { mount, unmount } from 'svelte';
 import { currentProject } from '$lib/editor/references.svelte';
 import { tableWidth, type Stand } from '$lib/editor/schema';
 import { hooksOf } from '$lib/editor/ui.svelte';
-import { numbering } from '$lib/figures/numbering.svelte';
+import { numbering, topOf } from '$lib/figures/numbering.svelte';
 import { standAlone, standBeside, usualOf, type Usual } from '$lib/figures/placing';
 import { figureLabel, numberOf, showPlacing } from '$lib/figures/views.svelte';
 import { t } from '$lib/i18n';
@@ -48,10 +48,12 @@ function wide(el: HTMLElement, width: number) {
 
 /** The format of the document the text of an editor is part of, when it has been read. */
 function formatOf(view: EditorView) {
-  const element = hooksOf.get(view)?.element;
+  const hooks = hooksOf.get(view);
+  const element = hooks?.element;
   const project = currentProject();
-  const map = element ? project?.node(element)?.map : undefined;
-  return project && map ? numbering.formatOf(project, map) : undefined;
+  if (!element || !project?.node(element)) return undefined;
+  // Of the element in view, where the editor was told of one; else of the tree the element stands in.
+  return numbering.formatOf(project, hooks?.at ?? topOf(project, element));
 }
 
 /**

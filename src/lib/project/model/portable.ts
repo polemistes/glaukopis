@@ -23,7 +23,13 @@ import { makeLink } from './changing/links';
 import type { Project } from './project.svelte';
 import { readTitle, type Block, type Inline } from './text';
 import { topmost } from './tree';
-import type { KindRecord, PassageKindRecord, Position, RefRecord } from './types';
+import {
+  PROJECT,
+  type KindRecord,
+  type PassageKindRecord,
+  type Position,
+  type RefRecord,
+} from './types';
 
 export interface PortableElement {
   /** Its id in the project it came from: links, and words that point, name it so. */
@@ -53,11 +59,14 @@ export interface Portable {
   references: RefRecord[];
 }
 
-/** Where elements are made: under an element, at the end; or loose in a map, at a place. */
-export type Place = { under: string } | { map: string; pos: Position };
+/** Where elements are made: under an element, at the end; `pos` where the first stands, relative to it, the rest below. */
+export interface Place {
+  under: string;
+  pos?: Position;
+}
 
 /** What of an element does not cross, or is made anew where it arrives. */
-const LEFT = new Set(['map', 'parent', 'order', 'title', 'body', 'origin', 'include']);
+const LEFT = new Set(['map', 'side', 'parent', 'order', 'title', 'body', 'origin', 'include']);
 
 /** Names alike, whatever their case and spaces. */
 const alike = (a: string, b: string) =>
@@ -67,13 +76,12 @@ const alike = (a: string, b: string) =>
 /** The elements, each with all under it, in a form another project can take. */
 export function portable(p: Project, ids: string[]): Portable {
   const empty: Portable = { elements: [], links: [], kinds: [], passageKinds: [], references: [] };
-  const first = p.node(ids[0]);
-  if (!first) return empty;
-  const tree = p.tree(first.map);
+  const tree = p.tree();
   const tops = topmost(
     tree,
-    ids.filter((id) => p.node(id)?.map === first.map),
+    ids.filter((id) => id !== PROJECT && p.node(id)),
   );
+  if (!tops.length) return empty;
   const carried = new Set<string>();
 
   const read = (id: string): PortableElement => {
@@ -281,16 +289,14 @@ function retime(when: When, point: (id: string) => string): When {
 
 /**
  * Makes the elements of a portable form in a project, with new ids: under
- * an element, at the end of what is under it, or loose in a map, at a
- * place, one under another. The kinds they use are found here or added;
+ * an element, at the end of what is under it, at a place when one is
+ * given, one under another. The kinds they use are found here or added;
  * the links among them are made again. Returns the ids of the topmost.
  */
 export function makePortable(p: Project, carried: Portable, place: Place): string[] {
-  const parent = 'under' in place ? p.node(place.under) : null;
-  if ('under' in place && !parent) return [];
-  const map = parent ? parent.map : 'map' in place ? place.map : '';
-  if (!map || !p.yMaps.has(map) || !carried.elements.length) return [];
-  const tree = p.tree(map);
+  const parent = p.node(place.under);
+  if (!parent || !carried.elements.length) return [];
+  const tree = p.tree();
 
   const ids = new Map<string, string>();
   const name = (list: PortableElement[]) => {
@@ -310,7 +316,7 @@ export function makePortable(p: Project, carried: Portable, place: Place): strin
 
     const write = (e: PortableElement, under: string | null, order: string) => {
       const id = ids.get(e.id)!;
-      const n = makeNode(p, id, { map, parent: under, order });
+      const n = makeNode(p, id, { parent: under, order });
       for (const [key, value] of Object.entries(e.facts)) {
         if (LEFT.has(key) || value === undefined || value === null) continue;
         n.set(key, structuredClone(value));
@@ -330,20 +336,21 @@ export function makePortable(p: Project, carried: Portable, place: Place): strin
       return n;
     };
 
-    const siblings = (parent ? (tree.children.get(parent.id) ?? []) : tree.loose).slice();
+    const siblings = (tree.children.get(parent.id) ?? []).slice();
     for (const e of carried.elements) {
-      const n = write(e, parent?.id ?? null, keyAt(p, siblings, siblings.length));
+      const n = write(e, parent.id, keyAt(p, siblings, siblings.length));
       const id = ids.get(e.id)!;
       siblings.push(id);
       made.push(id);
-      n.delete('side');
-      if (parent) n.delete('pos');
-      else if ('pos' in place)
+      if (place.pos)
         n.set('pos', {
           x: Math.round(place.pos.x),
           y: Math.round(place.pos.y + (made.length - 1) * 60),
         });
+      else n.delete('pos');
     }
+    const under = p.yNodes.get(parent.id);
+    if (under?.get('collapsed') === true) under.delete('collapsed');
 
     for (const l of carried.links) {
       const from = ids.get(l.from);

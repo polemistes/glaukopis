@@ -66,32 +66,15 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Utan titel
-# The name of a copy of a map.
-project-map-copy = { $name }, kopia
-project-maps = Kartor
-project-map-name = Kartans namn
-project-new-map = Ny karta
-project-map-from-document = En karta av ett dokument…
 project-drop-on-map = Släpp på en karta för att flytta dit · håll Ctrl för att kopiera
-project-duplicate = Kopiera
-project-duplicate-hint = En kopia att arbeta med; den här förblir som den är
 project-open-beside = Öppna bredvid
 project-open-beside-hint = Två kartor sida vid sida, för att flytta element mellan dem
-project-this-map-actions = Den här kartan, och kartorna
-project-maps-hint = Projektets kartor: välj en för att öppna den
-project-map-beside = bredvid den här
 project-side-by-side-short = Sida vid sida
 project-preview-short = Förhandsvisning
 project-found = Hittade källhänvisningar…
 # The count is of those found in the map.
 project-found-hint = { $count } att gå igenom och göra till källhänvisningar
 project-found-none = Och text som ser ut som källhänvisningar
-project-delete-map = Radera kartan
-project-delete-map-title = Radera kartan ”{ $name }”?
-project-delete-map-message = { $count ->
-    [one] { $count } element och texten i det försvinner. Det kan ångras medan projektet är öppet.
-   *[other] { $count } element och texten i dem försvinner. Det kan ångras medan projektet är öppet.
-}
 project-copied-to = Kopierat till ”{ $name }”
 project-moved-to = Flyttat till ”{ $name }”
 
@@ -113,20 +96,12 @@ project-stands-for = Står för ”{ $name }”
 project-stand-for = Stå för en annan karta
 project-stand-for-heading = I dokumentet tar den här kartan dess plats
 project-stand-for-none = Ingen
-project-copy-to-map = Kopiera till karta
 project-copy = Kopiera
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Klistra in under det
-project-move-to-map = Flytta till karta
-project-map-from-branch = Ny karta av den här grenen
-project-map-from-branch-hint = En kopia att arbeta med; den här blir kvar
-project-detach = Lossa från det element det hör under
-project-detach-hint = Ett löst element, att placera senare
 project-tidy-branch = Snygga till den här grenen
 project-place-automatically = Placera automatiskt
 project-delete-keeping = Radera, men behåll det som står under
-project-centre-stays = Kartans mitt står kvar
-project-centre-stays-detail = Radera själva kartan från dess flik.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] ”{ $name }” raderades
@@ -224,7 +199,6 @@ project-link-label = Associationens etikett
 
 ## A copy and its original, in another map.
 copy-title = Kopian och dess original
-copy-from = Kopierad från ”{ $name }” i kartan ”{ $map }”
 copy-original-changed = Originalet har ändrats sedan det kopierades, eller sedan det senast sågs.
 copy-original-same = Originalet är som det var när det kopierades.
 copy-original-unknown = Om originalet har ändrats sedan det kopierades är inte känt: kopian gjordes innan sådant sparades.
@@ -238,8 +212,6 @@ copy-seen = Behåll den här kopian som den är
 copy-take = Ta originalets namn och text
 copy-changed-mark = Originalet har ändrats sedan det här kopierades
 copy-compare = Jämför med originalet…
-copy-copied-from = Kopierad från ”{ $name }” i ”{ $map }”
-copy-copied-from-changed = Kopierad från ”{ $name }” i ”{ $map }”, som har ändrats sedan dess
 
 ## How far the writing of an element has come, as its writer says.
 status = Status

@@ -2,8 +2,6 @@
 
 diagram-map = Kart
 diagram-idea = Idé
-diagram-new-loose = Nytt løst element her
-diagram-new-loose-hint = En tanke som ikke har fått en plass ennå
 diagram-show-all = Vis hele kartet
 diagram-tidy = Rydd i hele kartet
 diagram-tidy-hint = Hvert element går tilbake til sin automatiske plass

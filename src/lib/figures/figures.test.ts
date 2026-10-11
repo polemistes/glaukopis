@@ -14,6 +14,7 @@ import { buildDocument } from '$lib/project/model/document';
 import { blocksHtml } from '$lib/project/model/html';
 import { Project } from '$lib/project/model/project.svelte';
 import { bodyFacts, readBody } from '$lib/project/model/text';
+import { PROJECT } from '$lib/project/model/types';
 import { sanitise } from './math.svelte';
 
 const HASH = 'a'.repeat(64);
@@ -99,9 +100,8 @@ describe('figures and formulas in the text', () => {
 
   it('is read from the project, shown, and part of the document', () => {
     const p = new Project(null);
-    const map = p.createMap('Wrath');
-    const root = p.map(map)!.root;
-    const a = p.addChild(root, { title: 'A' })!;
+    p.begin('Wrath');
+    const a = p.addChild(PROJECT, { title: 'A' })!;
     const { paragraph, math, equation, figure, citation } = bodySchema.nodes;
     const doc = bodySchema.node('doc', null, [
       paragraph.create(null, [bodySchema.text('Where '), math.create({ tex: 'x_i' })]),
@@ -142,7 +142,7 @@ describe('figures and formulas in the text', () => {
     expect(html).toContain('style="width: 50%"');
     expect(html).toContain('<figcaption>A vase, after ');
 
-    const sections = buildDocument(p, map).sections;
+    const sections = buildDocument(p, PROJECT).sections;
     expect(sections[0].blocks.map((b) => b.kind)).toEqual(['paragraph', 'equation', 'figure']);
   });
 
@@ -167,8 +167,8 @@ describe('figures and formulas in the text', () => {
 
   it('a picture is put at the end of an element it is dropped on', () => {
     const p = new Project(null);
-    const map = p.createMap('Wrath');
-    const a = p.addChild(p.map(map)!.root, { title: 'A', body: 'Text.' })!;
+    p.begin('Wrath');
+    const a = p.addChild(PROJECT, { title: 'A', body: 'Text.' })!;
     p.checkpoint();
     p.addFigure(
       a,

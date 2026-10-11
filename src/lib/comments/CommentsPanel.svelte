@@ -1,7 +1,8 @@
 <script lang="ts">
   /**
-   * The comments at the side of a project: the threads of the map in view,
-   * in the order of the text, each with its notes, and a place to answer.
+   * The comments at the side of a project: the threads of the element in
+   * view and of all under it, in the order of the text, each with its
+   * notes, and a place to answer.
    * A thread is begun here too, on an element or on a passage, when asked
    * from the text or the diagram. A note is its author's alone to change.
    */
@@ -27,26 +28,26 @@
 
   interface Props {
     project: Project;
-    /** The map in view: its threads are shown. */
-    mapId: string;
+    /** The element in view: the threads on it and on all under it are shown. */
+    at: string;
     onclose: () => void;
     /** What stands at the head in place of the title: the tabs of the panel at the side. */
     head?: Snippet;
-    /** Goes to an element, in its map. */
-    ongo: (map: string, element: string) => void;
+    /** Goes to an element. */
+    ongo: (element: string) => void;
     /** Opens an element for writing: its box in the diagram, or its text. */
-    onopen?: (map: string, element: string) => void;
+    onopen?: (element: string) => void;
   }
 
-  let { project, mapId, onclose, head, ongo, onopen }: Props = $props();
+  let { project, at, onclose, head, ongo, onopen }: Props = $props();
 
   type Which = 'open' | 'settled' | 'all';
   let which = $state<Which>('open');
   let list = $state<HTMLDivElement>();
 
-  /** The threads of the map, in the order of the text, and of their beginning within an element. */
+  /** The threads within the element in view, in the order of the text, and of their beginning within an element. */
   const threads = $derived.by(() => {
-    const order = new Map(project.tree(mapId).sequence.map((id, i) => [id, i]));
+    const order = new Map(project.tree(at).sequence.map((id, i) => [id, i]));
     const out: Thread[] = [];
     for (const thread of project.comments.values()) {
       if (order.has(thread.element)) out.push(thread);
@@ -158,12 +159,12 @@
 
   function go(thread: Thread) {
     const node = project.node(thread.element);
-    if (node) ongo(node.map, node.id);
+    if (node) ongo(node.id);
   }
 
   function write(thread: Thread) {
     const node = project.node(thread.element);
-    if (node) (onopen ?? ongo)(node.map, node.id);
+    if (node) (onopen ?? ongo)(node.id);
   }
 
   /** The pointer rests on a thread: its passage and its element are shown where they are. */

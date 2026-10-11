@@ -17,8 +17,8 @@ import { lengthOk, rowsOf, type Choices, type Row } from '$lib/ui/settings/rows'
 export interface FormatEditorRequest {
   /** The format to begin from. */
   id: string;
-  /** The map whose document the format is shown on; the caller gives the map the format that is saved. */
-  map?: string;
+  /** The element whose document the format is shown on; the caller gives the element the format that is saved. */
+  at?: string;
   /** The part of the format to open at: `kinds`, `page`, … */
   section?: string;
   /** The kind whose look is to be in view, in the part of the kinds. */

@@ -1,8 +1,9 @@
 <script lang="ts">
   /**
    * The text of a picture of the store, read by Tesseract (ADR 0018): shown,
-   * to be copied, or, where the picture is looked at in a project, made a map
-   * of in that project, its name the centre and the text the centre's text.
+   * to be copied, or, where the picture is looked at in a project, made an
+   * element of under the element in view, named after the picture, with the
+   * text as its text.
    */
   import { onMount } from 'svelte';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
@@ -13,7 +14,8 @@
   import { ocrPicture, ocrStop } from '$lib/api/ocr';
   import { languages, newTextLanguage, t } from '$lib/i18n';
   import type { Project } from '$lib/project/model/project.svelte';
-  import { makeMap } from '$lib/project/model/import';
+  import { makeImported } from '$lib/project/model/import';
+  import { PROJECT } from '$lib/project/model/types';
   import { inlineText } from '$lib/project/model/text';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
@@ -28,14 +30,15 @@
     hash: string;
     /** What the picture is called. */
     name: string;
-    /** The project the picture is looked at in, where it is. */
+    /** The project the picture is looked at in, where it is, and the element in view in it. */
     project?: Project | null;
-    /** Asks for the map that was made to be shown. */
-    onopenmap?: (map: string) => void;
+    at?: string | null;
+    /** Asks for the element that was made to be entered. */
+    onenter?: (id: string) => void;
     onclose: () => void;
   }
 
-  let { hash, name, project = null, onopenmap, onclose }: Props = $props();
+  let { hash, name, project = null, at = null, onenter, onclose }: Props = $props();
 
   const ticket = newId();
   let phase = $state<'asking' | 'reading' | 'shown' | 'failed'>('asking');
@@ -45,8 +48,8 @@
   let gone = false;
 
   onMount(() => {
-    // The language the project's texts are written in, as far as its maps say.
-    const written = project?.maps.map((m) => m.document.language).find(Boolean);
+    // The language the text is written in where the picture is looked at, as far as the elements say.
+    const written = project ? project.documentOf(at ?? PROJECT).settings.language : undefined;
     void reader.load().then(() => {
       if (!gone) chosen = reader.first(written ?? newTextLanguage(), languages.current);
     });
@@ -96,11 +99,12 @@
     notifyOk(t('ocr-picture-copied'));
   }
 
-  function mapOf() {
+  function elementOf() {
     if (!project || !read) return;
-    const made = makeMap(project, read, name);
+    const made = makeImported(project, at ?? PROJECT, read, name);
+    if (!made) return;
     onclose();
-    onopenmap?.(made.map);
+    onenter?.(made.top);
   }
 
   function cancel() {
@@ -147,7 +151,7 @@
   {#snippet footer()}
     {#if phase === 'shown'}
       {#if project && text}
-        <Button onclick={mapOf} data-ocr-map>
+        <Button onclick={elementOf} data-ocr-map>
           {#snippet icon()}<Network size={14} />{/snippet}
           {t('ocr-picture-map')}
         </Button>

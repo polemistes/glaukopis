@@ -4,14 +4,12 @@
 documents-choose = Dokument na načítanie
 documents-filter = Dokumenty
 documents-filter-all = Všetky súbory
-documents-title-map = Mapa z dokumentu
 documents-title-project = Projekt z dokumentu
 documents-reading = Číta sa { $file }…
 documents-reading-hint = Dlhý dokument chvíľu trvá.
 documents-no-pandoc = Dokumenty tohto druhu číta Pandoc, ktorý nie je nainštalovaný alebo sa nenašiel. Kde je, možno povedať v nastaveniach.
 documents-unread = Súbor sa nepodarilo prečítať.
 documents-title = Názov
-documents-title-hint-map = Názov mapy a prvku v jej strede.
 documents-title-hint-project = Názov projektu, jeho mapy a prvku v strede mapy.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Bez názvu
@@ -91,7 +89,6 @@ documents-found-some-made = { $count ->
 documents-at-once = Citácie vytvorené Zoterom z diel, ktoré má vaša knižnica, premeniť hneď na citácie
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = Poznámka, ktorá nie je ničím iným než citáciou, sa stane citáciou v riadku, ktorú citačný štýl vysádza do poznámky alebo do riadku; poznámka, ktorá hovorí viac, si svoju citáciu ponechá. Čo ste zvolili pre poznámky v paneli nájdených citácií, pre všetky nasledujúce, platí aj tu.
-documents-go-through-map = Prejsť citácie pri vytváraní mapy
 documents-go-through-project = Prejsť citácie pri vytváraní projektu
 
 ## Making the map.
@@ -99,6 +96,4 @@ documents-go-through-project = Prejsť citácie pri vytváraní projektu
 # Over what the one who brings the document in should know of it.
 documents-to-know = Na vedomie
 documents-making = Vytvára sa mapa…
-documents-make-map = Vytvoriť mapu
 documents-make-project = Vytvoriť projekt
-documents-map-failed = Mapu sa nepodarilo vytvoriť.

@@ -1,9 +1,9 @@
 /**
- * A chronology: everything placed in time in a map, as a table in the
- * order of time, with when each is and what it is. It is added to the map
- * as an element of its own, under the centre, to be written on and
- * printed with the document; it is a copy of what the timeline knows at
- * the moment, not a view that follows it.
+ * A chronology: everything placed in time within the element in view, as
+ * a table in the order of time, with when each is and what it is. It is
+ * added as an element of its own, under the element in view, to be
+ * written on and printed with the document; it is a copy of what the
+ * timeline knows at the moment, not a view that follows it.
  */
 
 import { t } from '$lib/i18n';
@@ -15,11 +15,10 @@ import { newId } from '$lib/util/id';
 import { timelineOf, type Event } from './lanes';
 import { describeWhen } from './solve';
 
-/** Adds the chronology of a map to the map. Returns the id of the element made. */
-export function addChronology(project: Project, mapId: string): string | null {
-  const map = project.map(mapId);
-  if (!map) return null;
-  const timeline = timelineOf(project, mapId, () => null);
+/** Adds the chronology of the element in view under it. Returns the id of the element made. */
+export function addChronology(project: Project, at: string): string | null {
+  if (!project.node(at)) return null;
+  const timeline = timelineOf(project, at, () => null);
   const events: Event[] = [
     ...timeline.lanes.flatMap((l) => l.events),
     ...timeline.elsewhere,
@@ -52,7 +51,7 @@ export function addChronology(project: Project, mapId: string): string | null {
     width: 0,
   };
   project.checkpoint();
-  const id = project.addChild(map.root, { title: t('timeline-chronology-title') });
+  const id = project.addChild(at, { title: t('timeline-chronology-title') });
   if (!id) return null;
   const body = project.fragment(id, 'body');
   if (body) project.transact(() => writeBody(body, [table]));

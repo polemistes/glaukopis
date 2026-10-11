@@ -1,7 +1,7 @@
 /**
- * A review of the changes of a map (ADR 0022): what is compared with, the
- * changes worked out from what the history says, the one looked at, and what
- * is decided of each.
+ * A review of the changes within the element in view (ADR 0022): what is
+ * compared with, the changes worked out from what the history says, the one
+ * looked at, and what is decided of each.
  *
  * The changes are worked out by the history in its worker, and grouped here;
  * again a while after the project has changed, never at every key. Accepting
@@ -20,6 +20,7 @@ import type {
   Version,
 } from '$lib/history/types';
 import type { Project } from '$lib/project/model/project.svelte';
+import { PROJECT } from '$lib/project/model/types';
 import { acceptBetween, acceptStretch, blockAt, edgesOf, itemsOfPieces, nodeAt } from './accepting';
 import { changed, group, type Change, type Stretch, type Unit } from './grouping';
 import { accept, readReview, referenceOf, settle, type Settled } from './kept';
@@ -57,8 +58,8 @@ export class Review {
   readonly project: Project;
   readonly source: Source;
 
-  /** The map whose changes are gone through. */
-  map = $state('');
+  /** The element in view: the changes in it and in all under it are gone through. */
+  at = $state('');
   unit = $state<Unit>('sentence');
   /** Whether one's own changes are shown as well. */
   own = $state(false);
@@ -102,10 +103,10 @@ export class Review {
   #decided = false;
   #unheard: () => void;
 
-  constructor(project: Project, source: Source, map: string) {
+  constructor(project: Project, source: Source, at: string) {
     this.project = project;
     this.source = source;
-    this.map = map;
+    this.at = at;
     // What is written, by the writer, by others, by undo, is worked out again a while later.
     this.#unheard = project.onChange(() => this.noticeChange());
   }
@@ -128,10 +129,10 @@ export class Review {
 
   // ---- working out ----
 
-  /** Turns to another map. */
-  turnTo(map: string) {
-    if (map === this.map) return;
-    this.map = map;
+  /** Turns to another element in view. */
+  turnTo(at: string) {
+    if (at === this.at) return;
+    this.at = at;
     this.changes = [];
     this.looked = null;
     this.ready = false;
@@ -218,22 +219,23 @@ export class Review {
     return { reference: { moment: first.snapshot, accepted: [] }, settled: [], since: first };
   }
 
-  /** The changes of a map, grouped, without those settled already. */
+  /** The changes within an element, grouped, without those settled already. */
   async #changesOf(
     history: History,
-    map: string,
+    at: string,
     reference: Reference,
     settled: Settled[],
     options: { own: boolean; unit: Unit },
   ): Promise<Change[]> {
-    const compared = await history.compare(map, reference);
+    const compared = await history.compare(at, reference);
     const done = new Set(settled.map((s) => `${s.key}\u0000${s.state}`));
     return group(compared, {
       unit: options.unit,
-      language: this.project.map(map)?.document.language ?? null,
+      // The language of the text, as the element says it or inherits it.
+      language: this.project.documentOf(at).settings.language ?? null,
       me: this.me,
       own: options.own,
-      sequence: this.project.tree(map).sequence,
+      sequence: this.project.tree(at).sequence,
     }).filter((c) => !settles(c) || !done.has(`${c.key}\u0000${stateOf(c)}`));
   }
 
@@ -255,7 +257,7 @@ export class Review {
         return;
       }
       const [changes, people] = await Promise.all([
-        this.#changesOf(history, this.map, found.reference, found.settled, {
+        this.#changesOf(history, this.at, found.reference, found.settled, {
           own: this.own,
           unit: this.unit,
         }),
@@ -472,10 +474,11 @@ export class Review {
       case 'moved': {
         const was = e.before;
         if (!was) break;
-        const tree = project.tree(node.map);
-        const list = was.parent ? (tree.children.get(was.parent) ?? []) : tree.loose;
-        const at = was.after ? list.indexOf(was.after) + 1 : 0;
-        project.move([e.element], was.parent, Math.max(0, at), was.parent ? { pos: null } : {});
+        // Under what it stood: every element stands under one, the project itself at the top.
+        const parent = was.parent ?? PROJECT;
+        const list = project.tree().children.get(parent) ?? [];
+        const index = was.after ? list.indexOf(was.after) + 1 : 0;
+        project.move([e.element], parent, Math.max(0, index), { pos: null });
         break;
       }
       case 'heading':
@@ -571,8 +574,9 @@ export class Review {
   // ---- when nothing is left ----
 
   /**
-   * Nothing is left in this map: where nothing is left in the other maps
-   * either, the review becomes the moment the changes were worked out at.
+   * Nothing is left within the element in view: where nothing is left in
+   * the rest of the project either, the review becomes the moment the
+   * changes were worked out at.
    */
   async #settleIfDone() {
     const history = this.history;
@@ -582,9 +586,8 @@ export class Review {
     const kept = readReview(this.project.doc, me);
     if (!kept) return;
     const reference = referenceOf(kept);
-    for (const map of this.project.maps) {
-      if (map.id === this.map) continue;
-      const left = await this.#changesOf(history, map.id, reference, kept.settled, {
+    if (this.at !== PROJECT) {
+      const left = await this.#changesOf(history, PROJECT, reference, kept.settled, {
         own: false,
         unit: 'paragraph',
       });

@@ -1,5 +1,5 @@
 /**
- * A search in a text that is written in: the text of a map, or the edit box
+ * A search in a text that is written in: the text in view, or the edit box
  * of an element (ADR 0017). What it searches is read from the project; what
  * it finds is marked where it is shown, and going to one shows it, opens
  * what it is folded away under and gives it an editor, and selects it there.

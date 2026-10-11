@@ -13,9 +13,9 @@ import {
 } from './gather';
 import { HASH, cell, note, p, project, t, zotero } from './testing';
 
-describe('the passages of a map', () => {
+describe('the passages of an element in view', () => {
   it('are its paragraphs, with one sign for each thing that is no text', () => {
-    const { pr, map, elements } = project([
+    const { pr, at, elements } = project([
       p(
         t('As '),
         t('Nagy', { em: {} }),
@@ -30,7 +30,7 @@ describe('the passages of a map', () => {
         note(t('A note.')),
       ),
     ]);
-    const { places, marked } = gather(pr, map);
+    const { places, marked } = gather(pr, at);
     expect(marked).toEqual([]);
     expect(places.map((x) => x.text)).toEqual([
       `As Nagy says ${NO_TEXT}, where ${NO_TEXT} and ${NO_TEXT}\nhold.${NO_TEXT}`,
@@ -52,7 +52,7 @@ describe('the passages of a map', () => {
   });
 
   it('are found in quotations, lists, cells, and what is said of figures and tables', () => {
-    const { pr, map } = project([
+    const { pr, at } = project([
       { kind: 'blockquote', content: [p(t('Quoted.'))] },
       {
         kind: 'bullet_list',
@@ -99,7 +99,7 @@ describe('the passages of a map', () => {
         ],
       },
     ]);
-    expect(gather(pr, map).places.map((x) => x.text)).toEqual([
+    expect(gather(pr, at).places.map((x) => x.text)).toEqual([
       'Quoted.',
       'one',
       'nested',
@@ -113,33 +113,35 @@ describe('the passages of a map', () => {
     ]);
   });
 
-  it('are those of all elements of the map, in the order of the text, and of no other map', () => {
-    const { pr, map, root, elements } = project([p(t('First.'))], [p(t('Second.'))]);
+  it('are those of the element in view and all under it, in the order of the text, and of nothing else', () => {
+    const { pr, at, elements } = project([p(t('First.'))], [p(t('Second.'))]);
     const under = pr.addChild(elements[0], { title: 'Under', body: 'Under the first.' })!;
-    const loose = pr.addLoose(map, { x: 0, y: 0 }, 'Loose')!;
-    pr.transact(() => writeBody(pr.fragment(loose, 'body')!, [p(t('Loose.'))]));
-    pr.transact(() => writeBody(pr.fragment(root, 'body')!, [p(t('Centre.'))]));
+    pr.transact(() => writeBody(pr.fragment(at, 'body')!, [p(t('Preamble.'))]));
     pr.setExcluded(elements[1], true);
-    const other = pr.createMap('Other');
-    pr.transact(() => writeBody(pr.fragment(pr.map(other)!.root, 'body')!, [p(t('Elsewhere.'))]));
+    const other = pr.addChild(at, { title: 'Other', body: 'Elsewhere.' })!;
 
-    const { places } = gather(pr, map);
+    const { places } = gather(pr, at);
     expect(places.map((x) => x.text)).toEqual([
-      'Centre.',
+      'Preamble.',
       'First.',
       'Under the first.',
-      // Left out of the document, it is part of the map all the same.
+      // Left out of the document, it is part of the project all the same.
       'Second.',
-      'Loose.',
+      'Elsewhere.',
     ]);
-    expect(places.map((x) => x.element)).toEqual([root, elements[0], under, elements[1], loose]);
+    expect(places.map((x) => x.element)).toEqual([at, elements[0], under, elements[1], other]);
     expect(places.map((x) => x.order)).toEqual([0, 1, 2, 3, 4]);
+    // Seen from an element, its own branch alone.
+    expect(gather(pr, elements[0]).places.map((x) => x.text)).toEqual([
+      'First.',
+      'Under the first.',
+    ]);
     expect(gather(pr, other).places.map((x) => x.text)).toEqual(['Elsewhere.']);
   });
 
   it('are known by what holds them, which stays while others write around them', () => {
-    const { pr, map, elements } = project([p(t('One.')), p(t('Two.'))]);
-    const before = gather(pr, map).places;
+    const { pr, at, elements } = project([p(t('One.')), p(t('Two.'))]);
+    const before = gather(pr, at).places;
     expect(new Set(before.map((x) => x.id)).size).toBe(2);
     // A paragraph is written before them, and words into the second.
     const body = pr.fragment(elements[0], 'body')!;
@@ -150,7 +152,7 @@ describe('the passages of a map', () => {
       const words = (body.get(2) as Y.XmlElement).get(0) as Y.XmlText;
       words.insert(3, ', and more', {});
     });
-    const after = gather(pr, map).places;
+    const after = gather(pr, at).places;
     expect(after.map((x) => x.text)).toEqual(['Nought.', 'One.', 'Two, and more.']);
     const two = locate(pr, before[1].id);
     expect(two?.text).toBe('Two, and more.');
@@ -163,7 +165,7 @@ describe('the citations that were found', () => {
   it('are the text with the mark, the pieces with the same id being one', () => {
     const a = zotero('a1b2c3d4e5f6');
     const b = zotero('b1b2c3d4e5f6', 'WXYZ6789');
-    const { pr, map, elements } = project([
+    const { pr, at, elements } = project([
       p(
         t('As was said '),
         t('(Nagy 1979, ', { found: a }),
@@ -174,7 +176,7 @@ describe('the citations that were found', () => {
         t('.'),
       ),
     ]);
-    const { places, marked } = gather(pr, map);
+    const { places, marked } = gather(pr, at);
     expect(marked).toEqual([
       {
         passage: places[0].id,
@@ -202,25 +204,25 @@ describe('the citations that were found', () => {
       [12, 27],
       [32, 43],
     ]);
-    expect(countFound(pr, map)).toBe(2);
+    expect(countFound(pr, at)).toBe(2);
   });
 
   it('are not those that were left as text, which are not looked at again', () => {
     const left = zotero('a1b2c3d4e5f6', 'ABCD2345', { left: true });
-    const { pr, map } = project([p(t('See '), t('(Nagy 1979)', { found: left }), t('.'))]);
-    const { places, marked } = gather(pr, map);
+    const { pr, at } = project([p(t('See '), t('(Nagy 1979)', { found: left }), t('.'))]);
+    const { places, marked } = gather(pr, at);
     expect(marked).toEqual([]);
     expect(places[0].taken).toEqual([[4, 15]]);
-    expect(countFound(pr, map)).toBe(0);
+    expect(countFound(pr, at)).toBe(0);
   });
 
   it('are two where text with the same id stands in two places', () => {
     const a = zotero('a1b2c3d4e5f6');
-    const { pr, map } = project([
+    const { pr, at } = project([
       p(t('(Nagy 1979)', { found: a }), t(' and again '), t('(Nagy 1979)', { found: a })),
       p(t('(Nagy 1979)', { found: a })),
     ]);
-    const { marked } = gather(pr, map);
+    const { marked } = gather(pr, at);
     expect(marked.map((m) => [m.start, m.end])).toEqual([
       [0, 11],
       [22, 33],
@@ -231,8 +233,8 @@ describe('the citations that were found', () => {
 
   it('have their places in units of UTF-16, as strings have them here', () => {
     const a = zotero('a1b2c3d4e5f6');
-    const { pr, map } = project([p(t('μῆνιν 𝔄 ἄειδε '), t('(Ναγύ 1979)', { found: a }))]);
-    const { places, marked } = gather(pr, map);
+    const { pr, at } = project([p(t('μῆνιν 𝔄 ἄειδε '), t('(Ναγύ 1979)', { found: a }))]);
+    const { places, marked } = gather(pr, at);
     expect(marked[0].start).toBe('μῆνιν 𝔄 ἄειδε '.length);
     expect(places[0].text.slice(marked[0].start, marked[0].end)).toBe('(Ναγύ 1979)');
   });
@@ -242,7 +244,7 @@ describe('the citations that were found', () => {
     const b = zotero('b1b2c3d4e5f6');
     const c = zotero('c1b2c3d4e5f6');
     const d = zotero('d1b2c3d4e5f6');
-    const { pr, map } = project([
+    const { pr, at } = project([
       p(
         t('First'),
         note(t('Nagy 1979, 73', { found: a }), t('.')),
@@ -254,7 +256,7 @@ describe('the citations that were found', () => {
         t('(Parry 1971)', { found: d }),
       ),
     ]);
-    const { places, marked } = gather(pr, map);
+    const { places, marked } = gather(pr, at);
     // In the order of the text: what a note holds comes where the note stands.
     expect(marked.map((m) => m.found.id)).toEqual([a.id, b.id, c.id, d.id]);
     expect(marked.map((m) => [m.note, m.whole])).toEqual([

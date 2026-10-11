@@ -21,6 +21,7 @@
   import { sharedUndo } from './undo';
   import { markActive, insideNode } from './commands';
   import { CitationView, FootnoteView } from './views.svelte';
+  import { topOf } from '$lib/figures/numbering.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
   import { choosePicture, CrossRefView, FigureView, FormulaView } from '$lib/figures/views.svelte';
   import { insertCrossRef, insertFigure } from './commands';
@@ -39,6 +40,12 @@
     kind: 'body' | 'title';
     /** The element whose text it is: what stands in the text is numbered by it. */
     element?: string;
+    /**
+     * The element in view, in whose document what stands in the text is
+     * numbered and pointed to; the tree under the project the element
+     * stands in, where none is given.
+     */
+    at?: string;
     placeholder?: string;
     /** Where to put the cursor when the editor appears: at an end, or at a point of the window. */
     autofocus?: FocusAt | null;
@@ -61,6 +68,7 @@
     fragment,
     kind,
     element,
+    at,
     placeholder = '',
     autofocus = null,
     editable = true,
@@ -90,14 +98,16 @@
     });
   });
 
-  /** The element whose name or text this is: its map has the language the spelling is checked in. */
+  /** The element whose name or text this is: its document has the language the spelling is checked in. */
   const owner = $derived(element ?? project.ownerOf(fragment));
-  const language = $derived(project.map(project.node(owner)?.map)?.document.language ?? null);
+  const language = $derived(
+    owner && project.node(owner) ? (project.documentOf(owner).settings.language ?? null) : null,
+  );
 
   // The text says what language it is in, by which a mentioned word takes
   // the quotation marks of the language (`:lang()` in the style sheet);
-  // again when the language of the map changes, and when the editor is
-  // made anew. The editor leaves alone what it did not set itself.
+  // again when the language of the document changes, and when the editor
+  // is made anew. The editor leaves alone what it did not set itself.
   $effect(() => {
     const now = language;
     void made;
@@ -108,7 +118,7 @@
     });
   });
 
-  // The spelling is looked at again when the language of the map changes, or
+  // The spelling is looked at again when the language of the document changes, or
   // the words ignored in the project do.
   let lookedWith: { language: string | null; ignored: ReadonlySet<string> } | null = null;
   $effect(() => {
@@ -172,22 +182,22 @@
 
   /**
    * Asks what the text is to point to, and puts the words where the cursor
-   * is; or, with `at`, in place of the words that stand there.
+   * is; or, with `pos`, in place of the words that stand there. What can be
+   * pointed to is what stands in the document of the element in view.
    */
-  function point(v: EditorView, at?: number) {
-    const map = element ? project.node(element)?.map : undefined;
-    if (!map) return;
-    const from = at ?? v.state.selection.from;
+  function point(v: EditorView, pos?: number) {
+    if (!element || !project.node(element)) return;
+    const from = pos ?? v.state.selection.from;
     editorUi.pickTarget({
       anchor: rectAt(v, from),
-      map,
+      at: at ?? topOf(project, element),
       onpick: (target) => {
         editorUi.closeTargets(false);
         if (v.isDestroyed) return;
         v.focus();
-        const there = at === undefined ? null : v.state.doc.nodeAt(at);
-        if (at !== undefined && there?.type.name === 'crossref') {
-          v.dispatch(v.state.tr.setNodeMarkup(at, undefined, { target: target.id, form: 'full' }));
+        const there = pos === undefined ? null : v.state.doc.nodeAt(pos);
+        if (pos !== undefined && there?.type.name === 'crossref') {
+          v.dispatch(v.state.tr.setNodeMarkup(pos, undefined, { target: target.id, form: 'full' }));
         } else {
           insertCrossRef(target.id)(v.state, v.dispatch);
         }
@@ -284,6 +294,7 @@
       picture: kind === 'body' ? picture : undefined,
       point: kind === 'body' ? point : undefined,
       element: untrack(() => element),
+      at: untrack(() => at),
       // The kinds of the writer's own, for what Enter and Tab make after a paragraph of one.
       passageKinds: () => project.passageKinds,
     };
@@ -324,7 +335,7 @@
             : {},
         attributes: {
           class: `prose ${kind}`,
-          // Spelling is checked by the application, in the language of the map (ADR 0019).
+          // Spelling is checked by the application, in the language of the text (ADR 0019).
           spellcheck: 'false',
         },
         handlePaste: (v, event) => kind === 'body' && pasted(v, event),
@@ -345,7 +356,9 @@
           }
           return pressedFound(
             event.target,
-            untrack(() => (element ? project.node(element)?.map : null)),
+            untrack(() =>
+              element && project.node(element) ? (at ?? topOf(project, element)) : null,
+            ),
           );
         },
         handleDOMEvents: {

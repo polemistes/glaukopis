@@ -80,14 +80,14 @@ ocr-searchable-failed = { $count ->
    *[other] { $count } pages could not be read.
 }
 
-## A map from a PDF of the library
+## A PDF of the library read into a project, as a tree of elements
 
-ocr-map-button = A map of its text…
-ocr-map-title = A map of the text
+ocr-map-button = Its text as elements…
+ocr-map-title = The text as elements
 ocr-map-into = Into the project
 ocr-map-new-project = A new project, named after it
-ocr-map-making = Making the map…
-ocr-map-failed = The map could not be made.
+ocr-map-making = Making the elements…
+ocr-map-failed = The elements could not be made.
 
 ## The text of a picture of the store
 
@@ -96,7 +96,7 @@ ocr-picture-title = The text in the picture
 ocr-picture-empty = No text was found in the picture.
 ocr-picture-copy = Copy
 ocr-picture-copied = The text is copied
-ocr-picture-map = Make a map of it
+ocr-picture-map = Make an element of it
 
 ## Tesseract in the settings
 

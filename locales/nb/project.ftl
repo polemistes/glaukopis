@@ -63,37 +63,18 @@ project-cited-in-element = { $count ->
 ## Fanene til kartene
 
 project-untitled = Uten navn
-project-map-copy = { $name }, kopi
-project-maps = Kart
-project-map-name = Navnet på kartet
-project-new-map = Nytt kart
-project-map-from-document = Et kart fra et dokument …
 project-drop-on-map = Slipp på et kart for å flytte dit · hold Ctrl for å kopiere
-project-duplicate = Lag en kopi
-project-duplicate-hint = En kopi å arbeide videre med; dette kartet blir som det er
 project-open-beside = Åpne ved siden av
 project-open-beside-hint = To kart side om side, for å flytte elementer mellom dem
-project-this-map-actions = Dette kartet, og kartene
-project-maps-hint = Kartene i prosjektet: velg ett for å åpne det
-project-map-beside = ved siden av dette
 project-side-by-side-short = Side om side
 project-preview-short = Forhåndsvisning
 project-found = Funne kildehenvisninger …
 project-found-hint = { $count } å gå gjennom og gjøre om til kildehenvisninger
 project-found-none = Og tekst som ser ut som kildehenvisninger
-project-delete-map = Slett kartet
-project-delete-map-title = Slette kartet «{ $name }»?
-project-delete-map-message = { $count ->
-    [one] { $count } element og teksten i det forsvinner. Dette kan angres så lenge prosjektet er åpent.
-   *[other] { $count } elementer og teksten i dem forsvinner. Dette kan angres så lenge prosjektet er åpent.
-}
 project-copied-to = Kopiert til «{ $name }»
 project-moved-to = Flyttet til «{ $name }»
-project-copied-to-project = Kopiert til «{ $name }» i «{ $project }»
-project-moved-to-project = Flyttet til «{ $name }» i «{ $project }»
 project-other-projects = Andre prosjekter
 project-send-failed = Kunne ikke skrive i «{ $project }». Her er ingenting endret.
-project-send-no-map = Kartet finnes ikke lenger i det prosjektet.
 
 ## Det som gjøres med elementer, i diagrammet og i teksten
 
@@ -112,23 +93,13 @@ project-stands-for = Står for «{ $name }»
 project-stand-for = La det stå for et annet kart
 project-stand-for-heading = I dokumentet tar kartet elementets plass
 project-stand-for-none = Ingen
-project-copy-to-map = Kopier til kart
 project-cut = Klipp ut
 project-cut-not-removed = Det som ble klippet ut, ble limt inn, men kunne ikke tas bort fra prosjektet det kom fra
 project-copy = Kopier
 project-paste-under = Lim inn under
-project-move-to-map = Flytt til kart
-project-map-from-branch = Nytt kart av denne grenen
-project-map-from-branch-hint = En kopi å arbeide videre med; grenen blir stående
-project-detach = Løsne fra elementet over
-project-detach-hint = Et løst element, som kan plasseres senere
-project-make-centre = Gjør det til midten
-project-make-centre-hint = Det blir midten av kartet, og midten som var, flyttes inn under det, med alt under seg
 project-tidy-branch = Rydd i denne grenen
 project-place-automatically = Plasser automatisk
 project-delete-keeping = Slett, men behold det som står under
-project-centre-stays = Midten av et kart blir stående
-project-centre-stays-detail = Slett selve kartet fra fanen.
 project-deleted = { $under ->
     [0] «{ $name }» ble slettet
     [one] «{ $name }» ble slettet, sammen med { $under } element under det
@@ -208,7 +179,6 @@ project-link-label = Merkelapp på assosiasjonen
 
 ## En kopi og originalen, i et annet kart.
 copy-title = Kopien og originalen
-copy-from = Kopiert fra «{ $name }» i kartet «{ $map }»
 copy-original-changed = Originalen er endret siden den ble kopiert, eller siden det sist ble sett.
 copy-original-same = Originalen er som den var da den ble kopiert.
 copy-original-unknown = Om originalen er endret siden den ble kopiert, vites ikke: kopien ble laget før det ble tatt vare på.
@@ -222,8 +192,6 @@ copy-seen = Behold kopien som den er
 copy-take = Ta over originalens navn og tekst
 copy-changed-mark = Originalen er endret siden dette ble kopiert
 copy-compare = Sammenlign med originalen …
-copy-copied-from = Kopiert fra «{ $name }» i «{ $map }»
-copy-copied-from-changed = Kopiert fra «{ $name }» i «{ $map }», som er endret siden
 
 ## Hvor langt skrivingen av et element er kommet, slik den som skriver sier.
 status = Status

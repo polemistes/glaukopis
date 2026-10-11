@@ -70,33 +70,15 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Bez naslova
-# The name of a copy of a map.
-project-map-copy = { $name }, kopija
-project-maps = Mape
-project-map-name = Naziv mape
-project-new-map = Nova mapa
-project-map-from-document = Mapa iz dokumenta…
 project-drop-on-map = Ispustite na mapu da se premjesti onamo · držite Ctrl za kopiranje
-project-duplicate = Udvostruči
-project-duplicate-hint = Kopija za rad; ova ostaje kakva jest
 project-open-beside = Otvori pokraj
 project-open-beside-hint = Dvije mape usporedo, za premještanje elemenata između njih
-project-this-map-actions = Ova mapa, i mape
-project-maps-hint = Mape projekta: odaberite jednu da je otvorite
-project-map-beside = pokraj ove
 project-side-by-side-short = Usporedo
 project-preview-short = Pretpregled
 project-found = Pronađeni citati…
 # The count is of those found in the map.
 project-found-hint = { $count } za proći i pretvoriti u citate
 project-found-none = I tekst koji nalikuje citatima
-project-delete-map = Izbriši mapu
-project-delete-map-title = Izbrisati mapu „{ $name }”?
-project-delete-map-message = { $count ->
-    [one] Nestat će { $count } element i tekst u njemu. To se može poništiti dok je projekt otvoren.
-    [few] Nestat će { $count } elementa i tekst u njima. To se može poništiti dok je projekt otvoren.
-   *[other] Nestat će { $count } elemenata i tekst u njima. To se može poništiti dok je projekt otvoren.
-}
 project-copied-to = Kopirano u „{ $name }”
 project-moved-to = Premješteno u „{ $name }”
 
@@ -118,20 +100,12 @@ project-stands-for = Stoji za „{ $name }”
 project-stand-for = Stoji za drugu mapu
 project-stand-for-heading = U dokumentu ova mapa zauzima njegovo mjesto
 project-stand-for-none = Nijedna
-project-copy-to-map = Kopiraj u mapu
 project-copy = Kopiraj
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Zalijepi ispod njega
-project-move-to-map = Premjesti u mapu
-project-map-from-branch = Nova mapa od ove grane
-project-map-from-branch-hint = Kopija za rad; ova ostaje
-project-detach = Odvoji od roditelja
-project-detach-hint = Slobodan element, da se smjesti poslije
 project-tidy-branch = Uredi ovu granu
 project-place-automatically = Smjesti automatski
 project-delete-keeping = Izbriši, a zadrži što je ispod njega
-project-centre-stays = Središte mape ostaje
-project-centre-stays-detail = Samu mapu izbrišite s njezine kartice.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] „{ $name }” je izbrisan
@@ -237,7 +211,6 @@ project-link-label = Oznaka veze
 
 ## A copy and its original, in another map.
 copy-title = Kopija i njezin izvornik
-copy-from = Kopirano iz „{ $name }” u mapi „{ $map }”
 copy-original-changed = Izvornik se promijenio otkako je kopiran, ili otkako je to zadnji put viđeno.
 copy-original-same = Izvornik je kakav je bio kad je kopiran.
 copy-original-unknown = Ne zna se je li se izvornik promijenio otkako je kopiran: kopija je načinjena prije nego što se to počelo čuvati.
@@ -251,8 +224,6 @@ copy-seen = Zadrži ovu kopiju kakva jest
 copy-take = Uzmi naziv i tekst izvornika
 copy-changed-mark = Izvornik se promijenio otkako je ovo kopirano
 copy-compare = Usporedi s izvornikom…
-copy-copied-from = Kopirano iz „{ $name }” u „{ $map }”
-copy-copied-from-changed = Kopirano iz „{ $name }” u „{ $map }”, koji se otada promijenio
 
 ## How far the writing of an element has come, as its writer says.
 status = Stanje

@@ -1,13 +1,14 @@
 /**
- * The changes of a map, as a review goes through them (ADR 0022): what the
- * history says changed in a map, grouped into what is decided at once.
+ * The changes within the element in view, as a review goes through them
+ * (ADR 0022): what the history says changed there, grouped into what is
+ * decided at once.
  *
  * - A sentence is one change, with the words that changed marked in it,
  *   however many places in it changed, and whoever changed them.
  * - New text of a sentence or more is one change, however long, and so is
  *   text deleted: a paragraph written, or several in a row, or deleted.
  * - A paragraph moved, a passage deleted and one written with nearly the
- *   same text anywhere in the map, is one change.
+ *   same text anywhere in view, is one change.
  * - Each element added, deleted, moved, set in or out of the document, or
  *   given a heading or not, is one; an element added with its text is one.
  * - A figure, an equation or a table as a whole is one, and so is a
@@ -21,7 +22,7 @@
 
 import type {
   ElementChange,
-  MapChanges,
+  BranchChanges,
   ObjectChange,
   Passage,
   Piece,
@@ -34,12 +35,12 @@ export type Unit = 'sentence' | 'paragraph';
 export interface Options {
   /** Sentence by sentence, or paragraph by paragraph. */
   unit?: Unit;
-  /** The language of the map, whose sentences are found. */
+  /** The language of the text, whose sentences are found. */
   language?: string | null;
   /** Who reviews: their own changes are left out, unless `own`. */
   me?: string | null;
   own?: boolean;
-  /** The elements of the map in the order of the text, which the changes are put in. */
+  /** The elements in view in the order of the text, which the changes are put in. */
   sequence?: string[];
 }
 
@@ -445,7 +446,7 @@ function alike(x: Bag, y: Bag): number {
 
 /**
  * How many passages deleted and written are compared at most, to find the
- * paragraphs moved: beyond it, as where most of a map was written anew,
+ * paragraphs moved: beyond it, as where most of a text was written anew,
  * what was moved is shown as deleted and written.
  */
 const COMPARED = 40_000;
@@ -466,13 +467,13 @@ function textOf(change: Change, side: 'added' | 'removed'): string {
 
 // ---- the whole ----
 
-/** The changes of a map, in the order of the text. */
-export function group(map: MapChanges, options: Options = {}): Change[] {
+/** The changes within the element in view, in the order of the text. */
+export function group(changes: BranchChanges, options: Options = {}): Change[] {
   const unit = options.unit ?? 'sentence';
   const out: Change[] = [];
 
   // What each passage holds.
-  for (const passage of map.passages) {
+  for (const passage of changes.passages) {
     const layout = lay(passage.pieces);
     const whole = wholly(passage);
     if (unit === 'paragraph' || whole) {
@@ -582,7 +583,7 @@ export function group(map: MapChanges, options: Options = {}): Change[] {
   }
 
   // Figures, equations and tables, with what is said of them where they are new or deleted.
-  for (const object of map.objects) {
+  for (const object of changes.objects) {
     const change: Change = {
       key: '',
       kind: 'object',
@@ -610,7 +611,7 @@ export function group(map: MapChanges, options: Options = {}): Change[] {
   }
 
   // Elements, with their name and text where they are new or deleted.
-  for (const element of map.elements) {
+  for (const element of changes.elements) {
     const change: Change = {
       key: '',
       kind: 'element',

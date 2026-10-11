@@ -5,7 +5,7 @@ import { writeBody } from './blocks';
 import { makePortable, portable } from './portable';
 import { Project } from './project.svelte';
 import type { Block, Inline } from './text';
-import type { RefRecord } from './types';
+import { PROJECT, type RefRecord } from './types';
 
 const HASH = 'b'.repeat(64);
 
@@ -16,11 +16,11 @@ const t = (text: string, marks: Record<string, Record<string, unknown>> = {}): I
 });
 const para = (...content: Inline[]): Block => ({ kind: 'paragraph', content });
 
+/** A project begun, with its own element at the top, named so. */
 function project(name: string) {
   const p = new Project(null);
-  const map = p.createMap(name);
-  const root = p.map(map)!.root;
-  return { p, map, root };
+  p.begin(name);
+  return { p, root: PROJECT };
 }
 
 function write(p: Project, id: string, blocks: Block[]) {
@@ -146,8 +146,8 @@ function source() {
 }
 
 /** The elements under an element, by name, with all under them. */
-function branch(p: Project, map: string, id: string): string[] {
-  const tree = p.tree(map);
+function branch(p: Project, id: string): string[] {
+  const tree = p.tree();
   const out: string[] = [];
   const visit = (at: string, depth: number) => {
     out.push(`${'-'.repeat(depth)}${p.node(at)!.title}`);
@@ -166,7 +166,7 @@ describe('elements to another project', () => {
     expect(JSON.parse(JSON.stringify(carried))).toEqual(carried);
 
     const [a] = makePortable(d.p, carried, { under: d.root });
-    expect(branch(d.p, d.map, d.root)).toEqual(['Book', '-Wrath', '--Achilles', '--Agamemnon']);
+    expect(branch(d.p, d.root)).toEqual(['Book', '-Wrath', '--Achilles', '--Agamemnon']);
     expect(a).not.toBe(s.a);
     const there = d.p.node(a)!;
     expect(there.origin).toBeNull();
@@ -178,7 +178,7 @@ describe('elements to another project', () => {
     expect(there.cited).toEqual(['r1']);
 
     // The text reads back as it was, the kinds being of the same ids.
-    const [a1, a2] = d.p.tree(d.map).children.get(a)!;
+    const [a1, a2] = d.p.tree().children.get(a)!;
     const text = d.p.blocksOf(a);
     const point = (b: Block[]) => JSON.stringify(b).replaceAll(s.a1, 'A1').replaceAll(a1, 'A1');
     expect(point(text)).toEqual(point(s.p.blocksOf(s.a)));
@@ -208,7 +208,20 @@ describe('elements to another project', () => {
     makePortable(d.p, carried, { under: d.root });
     expect(d.p.kinds).toHaveLength(1);
     expect(d.p.passageKinds).toHaveLength(2);
-    expect(branch(d.p, d.map, d.root)).toHaveLength(7);
+    expect(branch(d.p, d.root)).toHaveLength(7);
+
+    // Where the first stands is said; the rest stand below it. Under nothing, nothing is made.
+    const twice = makePortable(d.p, portable(s.p, [s.a1, s.a2]), {
+      under: d.root,
+      pos: { x: 100.4, y: 20 },
+    });
+    expect(twice.map((id) => d.p.node(id)!.pos)).toEqual([
+      { x: 100, y: 20 },
+      { x: 100, y: 80 },
+    ]);
+    expect(makePortable(d.p, carried, { under: 'nobody' })).toEqual([]);
+    // The project itself is never carried.
+    expect(portable(s.p, [PROJECT]).elements).toEqual([]);
   });
 
   it('use the kinds of the same name there, and name them as they are there', () => {
@@ -225,7 +238,7 @@ describe('elements to another project', () => {
     d.p.createPassageKind({ name: 'Epithet', family: 'paragraph', basedOn: 'text', look: {} });
 
     const [a] = makePortable(d.p, portable(s.p, [s.a]), { under: d.root });
-    const [a1] = d.p.tree(d.map).children.get(a)!;
+    const [a1] = d.p.tree().children.get(a)!;
     expect(d.p.kinds).toHaveLength(1);
     expect(d.p.node(a1)!.kind).toBe(character);
     expect(d.p.passageKinds.map((k) => k.name)).toEqual(['Lament', 'Epithet', 'Epithet']);
@@ -283,27 +296,31 @@ describe('elements to another project', () => {
   it('the clipboard pastes copies in the project they came from, and makes them anew in another', () => {
     const s = source();
     const d = project('Book');
-    expect(copyElements(s.p, s.map, [s.a, s.a1])).toBe(1);
+    expect(copyElements(s.p, [s.a, s.a1])).toBe(1);
+    expect(copyElements(s.p, [PROJECT])).toBe(0);
+    expect(copyElements(s.p, [s.a, s.a1])).toBe(1);
     expect(canPaste(s.p)).toBe(true);
     expect(canPaste(d.p)).toBe(true);
 
-    const [copy] = pasteElements(s.p, s.map, s.outside);
+    const [copy] = pasteElements(s.p, { under: s.outside });
     expect(s.p.node(copy)!.origin?.node).toBe(s.a);
 
-    const [loose] = pasteElements(d.p, d.map, null, { x: 300.4, y: 40 });
-    expect(d.p.node(loose)!.origin).toBeNull();
-    expect(d.p.node(loose)!.pos).toEqual({ x: 300, y: 40 });
-    expect(d.p.tree(d.map).loose).toEqual([loose]);
-    const [under] = pasteElements(d.p, d.map, d.root);
-    expect(branch(d.p, d.map, under)).toEqual(['Wrath', '-Achilles', '-Agamemnon']);
+    // Pasted here, at a place: under the element in view, where the pointer is.
+    const [placed] = pasteElements(d.p, { under: d.root, pos: { x: 300.4, y: 40 } });
+    expect(d.p.node(placed)!.origin).toBeNull();
+    expect(d.p.node(placed)!.pos).toEqual({ x: 300, y: 40 });
+    expect(d.p.tree().parent.get(placed)).toBe(d.root);
+    const [under] = pasteElements(d.p, { under: d.root });
+    expect(branch(d.p, under)).toEqual(['Wrath', '-Achilles', '-Agamemnon']);
+    expect(d.p.node(under)!.pos).toBeNull();
 
     // What was copied can be pasted after it is gone here: elsewhere, and
     // here again, made anew, as no copy of what is gone.
     s.p.remove([s.a]);
     expect(canPaste(d.p)).toBe(true);
-    expect(pasteElements(d.p, d.map, d.root)).toHaveLength(1);
+    expect(pasteElements(d.p, { under: d.root })).toHaveLength(1);
     expect(canPaste(s.p)).toBe(true);
-    const [again] = pasteElements(s.p, s.map, s.root);
+    const [again] = pasteElements(s.p, { under: s.root });
     expect(s.p.node(again)?.title).toBe('Wrath');
     expect(s.p.copyOf(again)).toBeFalsy();
     clipboard.held = null;
@@ -319,14 +336,14 @@ describe('elements to another project', () => {
         closed++;
       },
     });
-    const count = await sendElements(s.p, [s.a], { project: 'book', map: d.map }, true, open);
+    const count = await sendElements(s.p, [s.a], { project: 'book', at: d.root }, true, open);
     expect(count).toBe(1);
     expect(closed).toBe(1);
-    expect(branch(d.p, d.map, d.root)).toEqual(['Book', '-Wrath', '--Achilles', '--Agamemnon']);
+    expect(branch(d.p, d.root)).toEqual(['Book', '-Wrath', '--Achilles', '--Agamemnon']);
     expect(s.p.node(s.a)).toBeUndefined();
     expect(s.p.node(s.a1)).toBeUndefined();
     s.p.undo();
-    expect(branch(s.p, s.map, s.root)).toEqual([
+    expect(branch(s.p, s.root)).toEqual([
       'Iliad',
       '-Outside',
       '-Wrath',
@@ -335,9 +352,9 @@ describe('elements to another project', () => {
     ]);
 
     // A copy leaves them here.
-    await sendElements(s.p, [s.a1], { project: 'book', map: d.map }, false, open);
+    await sendElements(s.p, [s.a1], { project: 'book', at: d.root }, false, open);
     expect(s.p.node(s.a1)).toBeDefined();
-    expect(branch(d.p, d.map, d.root)).toHaveLength(5);
+    expect(branch(d.p, d.root)).toHaveLength(5);
   });
 
   it('where writing there fails, nothing is removed here', async () => {
@@ -347,18 +364,18 @@ describe('elements to another project', () => {
       throw new Error('no disk');
     };
     await expect(
-      sendElements(s.p, [s.a], { project: 'book', map: d.map }, true, failing),
+      sendElements(s.p, [s.a], { project: 'book', at: d.root }, true, failing),
     ).rejects.toThrow('no disk');
     expect(s.p.node(s.a)).toBeDefined();
 
-    // A map that is not there is a failure too, and the project is closed all the same.
+    // An element that is not there is a failure too, and the project is closed all the same.
     let closed = false;
     const open = async () => ({ project: d.p, close: async () => void (closed = true) });
     await expect(
-      sendElements(s.p, [s.a], { project: 'book', map: 'gone' }, true, open),
+      sendElements(s.p, [s.a], { project: 'book', at: 'gone' }, true, open),
     ).rejects.toThrow();
     expect(closed).toBe(true);
     expect(s.p.node(s.a)).toBeDefined();
-    expect(d.p.tree(d.map).sequence).toEqual([d.root]);
+    expect(d.p.tree().sequence).toEqual([d.root]);
   });
 });

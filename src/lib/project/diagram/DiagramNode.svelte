@@ -3,6 +3,7 @@
   import EyeOff from '@lucide/svelte/icons/eye-off';
   import FileInput from '@lucide/svelte/icons/file-input';
   import GitCompare from '@lucide/svelte/icons/git-compare';
+  import Maximize2 from '@lucide/svelte/icons/maximize-2';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import type { EditorView } from 'prosemirror-view';
   import { untrack } from 'svelte';
@@ -42,6 +43,8 @@
     typedAhead?: () => { text: string; then: KeyAction | null } | null;
     ontoggle: (id: string) => void;
     onlinkstart: (id: string, event: PointerEvent) => void;
+    /** Makes the element the one in view: a button on it while it is selected. */
+    onenter?: (id: string) => void;
   }
 
   let {
@@ -61,6 +64,7 @@
     onrenamed,
     ontoggle,
     onlinkstart,
+    onenter,
   }: Props = $props();
 
   let el = $state<HTMLDivElement>();
@@ -107,11 +111,7 @@
 <div
   bind:this={el}
   class="node depth-{Math.min(placed.depth, 2)} {placed.side}"
-  class:root={placed.depth === 0 &&
-    placed.parent === null &&
-    node.parent === null &&
-    project.map(node.map)?.root === node.id}
-  class:loose={placed.parent === null && project.map(node.map)?.root !== node.id}
+  class:root={placed.depth === 0}
   class:selected
   class:target
   class:lifted
@@ -239,6 +239,24 @@
     </button>
   {/if}
 
+  {#if selected && !renaming && placed.depth !== 0 && onenter}
+    <button
+      type="button"
+      class="enter"
+      aria-label={t('diagram-open-as-map')}
+      use:tooltip={{ text: t('diagram-open-as-map'), shortcut: 'Ctrl+Enter' }}
+      tabindex="-1"
+      onpointerdown={(e) => e.stopPropagation()}
+      ondblclick={(e) => e.stopPropagation()}
+      onclick={(e) => {
+        e.stopPropagation();
+        onenter(node.id);
+      }}
+    >
+      <Maximize2 size={11} />
+    </button>
+  {/if}
+
   {#if !renaming}
     <span
       class="link-handle"
@@ -308,7 +326,7 @@
     letter-spacing: -0.005em;
     box-shadow: var(--shadow-2);
   }
-  .node.depth-1:not(.loose) {
+  .node.depth-1 {
     font-weight: 600;
     font-size: 15px;
   }
@@ -316,10 +334,6 @@
     background: color-mix(in srgb, var(--paper-raised) 70%, transparent);
     border-color: var(--line);
     box-shadow: none;
-  }
-  .node.loose {
-    border-style: dashed;
-    background: var(--paper);
   }
   .node.plain .name {
     font-style: italic;
@@ -527,6 +541,29 @@
   .fold:hover {
     border-color: var(--accent);
     color: var(--accent-strong);
+  }
+
+  /* Opens the element as a map: on the selected element, at its upper left corner. */
+  .enter {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    cursor: pointer;
+    box-shadow: var(--shadow-1);
+  }
+  .enter:hover {
+    background: var(--accent);
+    color: var(--accent-ink);
   }
 
   .link-handle {

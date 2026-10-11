@@ -2,8 +2,6 @@
 
 diagram-map = 导图
 diagram-idea = 名称
-diagram-new-loose = 在此新建游离元素
-diagram-new-loose-hint = 一个还没有位置的想法
 diagram-show-all = 显示整个导图
 diagram-tidy = 整理整个导图
 diagram-tidy-hint = 每个元素都回到自动排布的位置

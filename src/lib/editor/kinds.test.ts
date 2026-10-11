@@ -4,7 +4,7 @@ import { kinds } from '$lib/api/contract.generated';
 import type { KindEntry } from '$lib/api/documents';
 import { Project } from '$lib/project/model/project.svelte';
 import { beginsIn, fillBody } from '$lib/project/model/text';
-import type { PassageKindRecord } from '$lib/project/model/types';
+import { PROJECT, type PassageKindRecord } from '$lib/project/model/types';
 import { CATALOGUE, GROUPS, inHand, nextOf, passageKindsCss, points, specOf, tabOf } from './kinds';
 
 describe('the catalogue', () => {
@@ -70,11 +70,10 @@ describe('the catalogue', () => {
 });
 
 describe('the kinds in hand', () => {
-  it('are the plain kinds, what the map uses, what is pinned and suggested, less what is unpinned', () => {
+  it('are the plain kinds, what the project uses, what is pinned and suggested, less what is unpinned', () => {
     const p = new Project(null);
-    const map = p.createMap('Wrath');
-    const root = p.map(map)!.root;
-    const a = p.addChild(root, { title: 'A' })!;
+    p.begin('Wrath');
+    const a = p.addChild(PROJECT, { title: 'A' })!;
     const own = p.createPassageKind({
       name: 'Letter',
       family: 'paragraph',
@@ -87,37 +86,37 @@ describe('the kinds in hand', () => {
       b.setAttribute('part', 'scene');
       p.fragment(a, 'body')!.insert(0, [b]);
     });
-    // Another map's uses are its own.
-    const other = p.createMap('Other');
-    const o = p.addChild(p.map(other)!.root, { title: 'O' })!;
+    // What any element of the project uses is in hand, in whatever tree it stands.
+    const o = p.addChild(PROJECT, { title: 'O' })!;
     p.transact(() => fillBody(p.fragment(o, 'body')!, 'Chorus', 'verse'));
 
-    expect(inHand(p, map)).toEqual(['text', 'quote', 'list', 'numbered', 'scene', own]);
-    expect(inHand(p, other)).toEqual(['text', 'quote', 'list', 'numbered', 'verse']);
-    expect(inHand(p, map, ['action', 'scene', 'character'])).toEqual([
+    expect(inHand(p)).toEqual(['text', 'quote', 'list', 'numbered', 'verse', 'scene', own]);
+    expect(inHand(p, ['action', 'scene', 'character'])).toEqual([
       'text',
       'quote',
       'list',
       'numbered',
+      'verse',
       'scene',
       'action',
       'character',
       own,
     ]);
-    p.setHand(map, { pinned: ['epigraph', 'headword'], unpinned: ['scene', 'quote'] });
-    expect(inHand(p, map, ['action'])).toEqual([
+    p.setHand({ pinned: ['epigraph', 'headword'], unpinned: ['scene', 'quote'] });
+    expect(inHand(p, ['action'])).toEqual([
       'text',
       'list',
       'numbered',
       'epigraph',
+      'verse',
       'action',
       'headword',
       own,
     ]);
     // Text cannot be unpinned; what is not known is not in hand; and what
     // was unpinned before is in hand again, the scene among it.
-    p.setHand(map, { pinned: ['gone'], unpinned: ['text'] });
-    expect(inHand(p, map)).toEqual(['text', 'quote', 'list', 'numbered', 'scene', own]);
+    p.setHand({ pinned: ['gone'], unpinned: ['text'] });
+    expect(inHand(p)).toEqual(['text', 'quote', 'list', 'numbered', 'verse', 'scene', own]);
   });
 });
 

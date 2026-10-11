@@ -1,9 +1,9 @@
 <script lang="ts">
   /**
-   * How a map is shown as a timeline: which branches are its lanes (each
-   * branch one lane, or each of its children a lane of their own), and
-   * whether its axis is the dates of the world or the units of an invented
-   * one, and what a unit is called.
+   * How the element in view is shown as a timeline: which branches are its
+   * lanes (each branch one lane, or each of its children a lane of their
+   * own), and whether its axis is the dates of the world or the units of an
+   * invented one, and what a unit is called.
    */
   import { untrack } from 'svelte';
   import { t } from '$lib/i18n';
@@ -17,15 +17,16 @@
 
   interface Props {
     project: Project;
-    mapId: string;
+    /** The element in view, whose timeline it is. */
+    at: string;
     onclose: () => void;
   }
 
-  let { project, mapId, onclose }: Props = $props();
+  let { project, at, onclose }: Props = $props();
 
-  const settings = $derived(project.map(mapId)?.timeline ?? {});
-  const tree = $derived(project.tree(mapId));
-  /** The branches that can be lanes: the centre's children, and theirs. */
+  const settings = $derived(project.node(at)?.timeline ?? {});
+  const tree = $derived(project.tree(at));
+  /** The branches that can be lanes: the children of the element in view, and theirs. */
   const branches = $derived.by(() => {
     const out: { id: string; name: string; level: number; children: number }[] = [];
     const walk = (id: string, level: number) => {
@@ -35,7 +36,7 @@
       out.push({ id, name: node.title || t('project-untitled'), level, children: children.length });
       if (level < 2) for (const c of children) walk(c, level + 1);
     };
-    for (const c of tree.children.get(tree.root ?? '') ?? []) walk(c, 1);
+    for (const c of tree.children.get(at) ?? []) walk(c, 1);
     return out;
   });
 
@@ -45,9 +46,9 @@
 
   function toggleKind(kind: string) {
     const next = kindLane(kind) ? lanes.filter((l) => l.kind !== kind) : [...lanes, { kind }];
-    project.setTimeline(mapId, { lanes: next });
+    project.setTimeline(at, { lanes: next });
   }
-  /** Whether the lanes are as they are by themselves: each child of the centre one. */
+  /** Whether the lanes are as they are by themselves: each child of the element in view one. */
   const given = $derived(!lanes.length);
 
   function toggle(id: string, each: boolean) {
@@ -59,12 +60,12 @@
     // In the order of the text.
     const order = new Map(tree.sequence.map((e, i) => [e, i]));
     next.sort((a, b) => (order.get(a.element ?? '') ?? -1) - (order.get(b.element ?? '') ?? -1));
-    project.setTimeline(mapId, { lanes: next });
+    project.setTimeline(at, { lanes: next });
   }
 
   let unit = $state(untrack(() => settings.unit ?? ''));
   function keepUnit() {
-    if ((settings.unit ?? '') !== unit.trim()) project.setTimeline(mapId, { unit: unit.trim() });
+    if ((settings.unit ?? '') !== unit.trim()) project.setTimeline(at, { unit: unit.trim() });
   }
 </script>
 
@@ -80,7 +81,7 @@
           { value: 'dates', label: t('timeline-axis-dates') },
           { value: 'units', label: t('timeline-axis-units') },
         ]}
-        onchange={(axis) => project.setTimeline(mapId, { axis })}
+        onchange={(axis) => project.setTimeline(at, { axis })}
       />
       {#if settings.axis === 'units'}
         <div class="unit">
@@ -129,11 +130,7 @@
           {/each}
         </ul>
         {#if !given}
-          <Button
-            size="sm"
-            variant="ghost"
-            onclick={() => project.setTimeline(mapId, { lanes: [] })}
-          >
+          <Button size="sm" variant="ghost" onclick={() => project.setTimeline(at, { lanes: [] })}>
             {t('timeline-lanes-reset')}
           </Button>
         {/if}

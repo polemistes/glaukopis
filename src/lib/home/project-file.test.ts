@@ -5,7 +5,7 @@ import type { FileSettlement, FoundWork, ProjectInfo } from '$lib/api/projects';
 import { writeBody } from '$lib/project/model/blocks';
 import { Project } from '$lib/project/model/project.svelte';
 import { citedIds } from '$lib/project/model/rewrite-refs';
-import type { RefRecord } from '$lib/project/model/types';
+import { PROJECT, type RefRecord } from '$lib/project/model/types';
 
 const api = vi.hoisted(() => ({
   projectFileRead: vi.fn(),
@@ -102,11 +102,9 @@ const reference = (id: string, title: string): Reference => ({
 /** A project that cites r1 and r2 and shows a picture, as one written elsewhere. */
 function state(): Uint8Array {
   const p = new Project(null);
-  const map = p.createMap('Wrath');
-  p.setName('Wrath');
-  const root = p.map(map)!.root;
+  p.begin('Wrath');
   p.transact(() =>
-    writeBody(p.fragment(root, 'body')!, [
+    writeBody(p.fragment(PROJECT, 'body')!, [
       {
         kind: 'paragraph',
         content: [
@@ -253,7 +251,7 @@ describe('a project file', () => {
     expect([...citedIds(saved)].sort()).toEqual(['lib-1', 'r2']);
     expect(saved.refs.get('lib-1')!.title).toBe('One, as the library has it');
     expect(saved.refs.has('r1')).toBe(false);
-    expect(saved.maps).toHaveLength(1);
+    expect(saved.tree().sequence).toEqual([PROJECT]);
     expect(saved.name).toBe('Wrath (2)');
     expect(api.projectDescribe).toHaveBeenCalledWith('new', 'On wrath');
     expect(api.library.reload).toHaveBeenCalled();

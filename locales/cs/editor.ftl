@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Jak je každý druh v tomto dokumentu vysázen
 editor-words = Slova
 editor-words-hint = Podtržení, horní index, kód; cizojazyčná slova, název díla, termín
 editor-words-make = Vytvořit druh slov…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Jazyk mapy
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Prostá slova
 editor-own-kind-new = Vlastní druh

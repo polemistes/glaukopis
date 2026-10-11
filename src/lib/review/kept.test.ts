@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import type { Accepted, Moment, Piece, Place } from '$lib/history/types';
 import { Project } from '$lib/project/model/project.svelte';
+import { PROJECT } from '$lib/project/model/types';
 import { acceptStretch, blockAt, itemsOf, textOf } from './accepting';
 import { accept, forget, readReview, referenceOf, reviewers, settle } from './kept';
 
@@ -245,11 +246,12 @@ describe('what a person has reviewed', () => {
       append: async (u) => void saved.push(u),
       saveState: async () => {},
     });
-    const map = p.createMap('Wrath');
+    p.begin('Wrath');
+    const element = p.addChild(PROJECT, { title: 'Mênis' })!;
     p.checkpoint();
     accept(p.doc, 'anna', moment(p.doc, 1), [stretch(1)]);
     p.undo();
-    expect(p.map(map)).toBeUndefined();
+    expect(p.node(element)).toBeUndefined();
     expect(readReview(p.doc, 'anna')!.accepted).toHaveLength(1);
   });
 });

@@ -1,10 +1,10 @@
 /**
- * A map as a timeline: its lanes, and what stands in each. A lane is an
- * element: it holds the placed elements of its branch, and its own
- * placement, if it has one, is the span of the lane (a person's lifetime,
- * a city's existence). By default every child of the centre is a lane.
- * An element that stands for another map brings that map's placed
- * elements with it, as its own.
+ * The element in view as a timeline: its lanes, and what stands in each.
+ * A lane is an element: it holds the placed elements of its branch, and
+ * its own placement, if it has one, is the span of the lane (a person's
+ * lifetime, a city's existence). By default every child of the element in
+ * view is a lane. An element that stands for another element brings that
+ * one's placed elements with it, as its own.
  *
  * An element that says nothing of its time is not on the timeline. When
  * what waits is wanted, it is listed in its lane as **waiting**, under the
@@ -68,12 +68,15 @@ export interface Timeline {
   waitingElsewhere: Waiting[];
 }
 
-/** The elements of a map and of the maps it stands for, in the order of the text. */
-function elementsOf(project: Project, mapId: string, seen = new Set<string>()): string[] {
-  if (seen.has(mapId)) return [];
-  seen.add(mapId);
+/**
+ * An element, all under it, and the branches those stand for, in the order
+ * of the text, each element once.
+ */
+function elementsOf(project: Project, at: string, seen = new Set<string>()): string[] {
   const out: string[] = [];
-  for (const id of project.tree(mapId).sequence) {
+  for (const id of project.tree(at).sequence) {
+    if (seen.has(id)) continue;
+    seen.add(id);
     out.push(id);
     const node = project.node(id);
     if (node?.include) out.push(...elementsOf(project, node.include, seen));
@@ -81,12 +84,12 @@ function elementsOf(project: Project, mapId: string, seen = new Set<string>()): 
   return out;
 }
 
-/** The branch of an element: itself, what is under it, and the maps those stand for. */
+/** The branch of an element: itself, what is under it, and the branches those stand for. */
 function branchOf(project: Project, id: string, seen = new Set<string>()): string[] {
   const node = project.node(id);
   if (!node) return [];
   const out: string[] = [];
-  for (const d of subtree(project.tree(node.map), id)) {
+  for (const d of subtree(project.tree(), id)) {
     out.push(d);
     const include = project.node(d)?.include;
     if (include) out.push(...elementsOf(project, include, seen));
@@ -95,19 +98,19 @@ function branchOf(project: Project, id: string, seen = new Set<string>()): strin
 }
 
 /**
- * The map as a timeline. With `withWaiting`, the lanes in which only
- * elements that say nothing of their time stand are kept as well, so that
- * those elements have a place to be put from.
+ * The element in view as a timeline. With `withWaiting`, the lanes in
+ * which only elements that say nothing of their time stand are kept as
+ * well, so that those elements have a place to be put from.
  */
 export function timelineOf(
   project: Project,
-  mapId: string,
+  at: string,
   colourOf: (node: NodeRecord) => string | null,
   withWaiting = false,
 ): Timeline {
-  const settings = project.map(mapId)?.timeline ?? {};
+  const settings = project.node(at)?.timeline ?? {};
   const axis: Axis = settings.axis ?? 'dates';
-  const all = elementsOf(project, mapId);
+  const all = elementsOf(project, at);
   const items: { id: string; when: When }[] = [];
   for (const id of all) {
     const node = project.node(id);
@@ -115,21 +118,16 @@ export function timelineOf(
   }
   const solved = solve(items, axis);
 
-  const tree = project.tree(mapId);
+  const tree = project.tree(at);
   const laneElements: string[] = [];
-  const chosen: Lane[] = settings.lanes?.length
-    ? settings.lanes
-    : tree.root
-      ? [{ element: tree.root, each: true }]
-      : [];
+  // Each child of the element in view is a lane, until lanes are chosen.
+  const chosen: Lane[] = settings.lanes?.length ? settings.lanes : [{ element: at, each: true }];
   for (const lane of chosen) {
     if (lane.kind) {
-      // Every element of the kind, in the order of the text, the maps it stands for included.
+      // Every element of the kind, in the order of the text, the branches brought in included.
       for (const id of all) if (project.node(id)?.kind === lane.kind) laneElements.push(id);
     } else if (lane.element && lane.each) {
       laneElements.push(...(tree.children.get(lane.element) ?? []));
-      // The elements that stand on their own, beside the centre, are at the top of the map as its children are.
-      if (lane.element === tree.root) laneElements.push(...tree.loose);
     } else if (lane.element) laneElements.push(lane.element);
   }
 
@@ -139,18 +137,25 @@ export function timelineOf(
     if (!node || !placed) return null;
     return { id, name: node.title, node, placed, colour: colourOf(node) };
   };
-  // The element that stands for each map that is brought in, so that what
-  // is over an element is followed up through the maps as the branches are walked.
+  // The element that stands for each branch that is brought in, so that
+  // what is over an element is followed up through the branches as they are walked.
+  const inView = new Set(all);
   const includer = new Map<string, string>();
   for (const id of all) {
     const include = project.node(id)?.include;
-    if (include && include !== mapId && !includer.has(include)) includer.set(include, id);
+    if (include && include !== at && !includer.has(include)) includer.set(include, id);
   }
-  /** The element over one: its parent, or, at the centre of a map brought in, the element that stands for that map. */
+  /**
+   * The element over one, within the view: its parent, or, at the top of a
+   * branch brought in, the element that stands for it. Nothing over the
+   * element in view.
+   */
   const upOf = (id: string): string | null => {
+    if (id === at) return null;
     const node = project.node(id);
     if (!node) return null;
-    return node.parent ?? includer.get(node.map) ?? null;
+    if (node.parent !== null && inView.has(node.parent)) return node.parent;
+    return includer.get(id) ?? null;
   };
   /** The names between an element over another and the other, from the top down. */
   const pathOf = (top: string, id: string): string[] => {
@@ -234,7 +239,7 @@ export function timelineOf(
   const waitingElsewhere: Waiting[] = [];
   const here = new Set<string>();
   for (const id of all) {
-    if (taken.has(id) || id === tree.root) continue;
+    if (taken.has(id) || id === at) continue;
     const e = event(id);
     if (!e && claimed.has(id)) continue;
     if (e) {

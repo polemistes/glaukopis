@@ -4,14 +4,12 @@
 documents-choose = Un document de adus
 documents-filter = Documente
 documents-filter-all = Toate fișierele
-documents-title-map = O hartă dintr-un document
 documents-title-project = Un proiect dintr-un document
 documents-reading = Se citește { $file }…
 documents-reading-hint = Un document lung ia o clipă.
 documents-no-pandoc = Documentele de acest fel sunt citite de Pandoc, care nu este instalat sau nu a putut fi găsit. Unde se află se poate spune în setări.
 documents-unread = Fișierul nu s-a putut citi.
 documents-title = Titlu
-documents-title-hint-map = Numele hărții și al elementului din centrul ei.
 documents-title-hint-project = Numele proiectului, al hărții lui și al elementului din centrul hărții.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Fără titlu
@@ -95,7 +93,6 @@ documents-found-some-made = { $count ->
 documents-at-once = Fă dintr-odată citări din cele făcute de Zotero pentru lucrări pe care biblioteca le are
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = O notă care nu este decât o citare devine o citare în rând, pe care stilul de citare o așază într-o notă sau în rând; o notă care spune mai mult își păstrează citarea. Ce ați ales pentru note în panoul citărilor găsite, pentru toate cele care urmează, este valabil și aici.
-documents-go-through-map = Parcurge citările când se face harta
 documents-go-through-project = Parcurge citările când se face proiectul
 
 ## Making the map.
@@ -103,6 +100,4 @@ documents-go-through-project = Parcurge citările când se face proiectul
 # Over what the one who brings the document in should know of it.
 documents-to-know = De știut
 documents-making = Se face harta…
-documents-make-map = Fă harta
 documents-make-project = Fă proiectul
-documents-map-failed = Harta nu s-a putut face.

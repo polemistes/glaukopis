@@ -1,4 +1,4 @@
-/** A moment of the history that is being looked at, in place of the map as it is. */
+/** A moment of the history that is being looked at, in place of the element in view as it is. */
 
 import type { When } from './engine';
 import type { ProjectHistory } from './history.svelte';

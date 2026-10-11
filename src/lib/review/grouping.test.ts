@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   ElementChange,
   Items,
-  MapChanges,
+  BranchChanges,
   ObjectChange,
   Passage,
   Piece,
@@ -92,8 +92,8 @@ function deleted(element: string, path: Place['path'], text: string, by = 'anna'
 function changes(
   passages: Passage[],
   more: { objects?: ObjectChange[]; elements?: ElementChange[] } = {},
-): MapChanges {
-  return { map: 'm', passages, objects: more.objects ?? [], elements: more.elements ?? [] };
+): BranchChanges {
+  return { at: 'm', passages, objects: more.objects ?? [], elements: more.elements ?? [] };
 }
 
 /** A change as it is now, with the words that are new in brackets and those deleted in braces. */
@@ -481,7 +481,7 @@ describe('by paragraph', () => {
 
 describe('one’s own changes', () => {
   it('are left out, unless they are asked for, and shown where another changed the sentence too', () => {
-    const map = changes([
+    const branch = changes([
       passage('a', [0], [same('The '), added('black ', 'me'), same('cat sat.')]),
       passage(
         'a',
@@ -489,8 +489,8 @@ describe('one’s own changes', () => {
         [same('The '), added('big ', 'me'), same('dog '), added('really ', 'anna'), same('ran.')],
       ),
     ]);
-    expect(group(map, { me: 'me' }).map(shown)).toEqual(['The [big ]dog [really ]ran.']);
-    expect(group(map, { me: 'me', own: true })).toHaveLength(2);
+    expect(group(branch, { me: 'me' }).map(shown)).toEqual(['The [big ]dog [really ]ran.']);
+    expect(group(branch, { me: 'me', own: true })).toHaveLength(2);
   });
 });
 
@@ -517,7 +517,7 @@ describe('likeness', () => {
   });
 });
 
-describe('a map much written anew', () => {
+describe('a text much written anew', () => {
   it('is grouped in little time', () => {
     const passages: Passage[] = [];
     const sentence = (n: number) =>

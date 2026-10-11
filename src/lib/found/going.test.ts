@@ -114,7 +114,7 @@ function going(texts: Block[][], has: Record<string, Suggestion[]>, kept: Partia
   const lib = library(has);
   const cited: string[] = [];
   const remembered: Kept[] = [];
-  const g = new Going(made.pr, made.map, {
+  const g = new Going(made.pr, made.at, {
     commands: lib.commands,
     kept,
     keep: (id) => cited.push(id),
@@ -391,7 +391,7 @@ describe('text that was proposed', () => {
     expect(g.current?.target.text).toBe('(Lord 1960)');
     // What another writes meanwhile does not take the writer elsewhere.
     g.show(g.entries[2].key);
-    pr.transact(() => pr.setTitle(pr.map(g.map)!.root, 'Another name'));
+    pr.transact(() => pr.setTitle(g.within, 'Another name'));
     g.changed();
     await vi.advanceTimersByTimeAsync(500);
     expect(g.index).toBe(2);
@@ -432,14 +432,14 @@ describe('text that was proposed', () => {
   });
 
   it('left as text, is not proposed again', async () => {
-    const { g, pr, map } = going([plain], { Nagy: likely('r-nagy') }, { years: true });
+    const { g, pr, at } = going([plain], { Nagy: likely('r-nagy') }, { years: true });
     await g.open();
     g.show(g.entries[1].key);
     expect(g.leave()).toBe(true);
     await g.ask();
     expect(texts(g)).toEqual(['(Nagy 1979, 73)', '(Nagy 1979, 73)']);
     // Another who opens the window later is not asked about it either.
-    const later = new Going(pr, map, { commands: library().commands, kept: { years: true } });
+    const later = new Going(pr, at, { commands: library().commands, kept: { years: true } });
     await later.open();
     expect(texts(later)).toEqual(['(Nagy 1979, 73)', '(Nagy 1979, 73)']);
   });

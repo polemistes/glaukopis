@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Collection, Summary } from '$lib/api/library';
 import { Project } from '$lib/project/model/project.svelte';
 import { readBody } from '$lib/project/model/text';
+import { PROJECT } from '$lib/project/model/types';
 import { elementName, makeLibraryMap, planMap } from './map';
 
 function entry(partial: Partial<Summary>): Summary {
@@ -64,7 +65,7 @@ describe('a map of the library', () => {
     expect(elementName(anon)).toBe('Ἰλιάς');
   });
 
-  it('has the collections nested, the references under theirs, the rest at the centre', () => {
+  it('has the collections nested, the references under theirs, the rest under the top', () => {
     const plan = planMap('The library', null, collections, entries);
     expect(outline(plan.parts)).toEqual([
       '0 The library',
@@ -95,12 +96,15 @@ describe('a map of the library', () => {
     expect(plan.cited.sort()).toEqual(['lord', 'parry']);
   });
 
-  it('is made in the project with a citation as the text of every reference', () => {
+  it('is made as a branch of the project with a citation as the text of every reference', () => {
     const project = new Project(null);
+    project.begin('Notes');
     const plan = planMap('The library', null, collections, entries);
-    const made = makeLibraryMap(project, plan);
-    const tree = project.tree(made.map);
-    expect(tree.sequence.map((id) => `${tree.depth.get(id)} ${project.node(id)?.title}`)).toEqual([
+    const top = makeLibraryMap(project, PROJECT, plan)!;
+    expect(project.tree().children.get(PROJECT)).toEqual([top]);
+    const tree = project.tree(top);
+    const nodes = tree.sequence;
+    expect(nodes.map((id) => `${tree.depth.get(id)} ${project.node(id)?.title}`)).toEqual([
       '0 The library',
       '1 Ἰλιάς',
       '1 Oral poetry',
@@ -111,7 +115,7 @@ describe('a map of the library', () => {
       '1 The hero',
       '2 Nagy 1979 The Best of the Achaeans',
     ]);
-    const lordNode = made.nodes[3];
+    const lordNode = nodes[3];
     expect(readBody(project.fragment(lordNode, 'body') ?? undefined)).toEqual([
       {
         kind: 'paragraph',
@@ -119,7 +123,11 @@ describe('a map of the library', () => {
       },
     ]);
     // A collection has no text of its own.
-    expect(readBody(project.fragment(made.nodes[2], 'body') ?? undefined)).toEqual([]);
-    expect(project.usedReferences(made.map).sort()).toEqual(['anon', 'lord', 'nagy', 'parry']);
+    expect(readBody(project.fragment(nodes[2], 'body') ?? undefined)).toEqual([]);
+    expect(project.usedReferences(top).sort()).toEqual(['anon', 'lord', 'nagy', 'parry']);
+    // One step to undo, and nothing is made under an element that is not there.
+    project.undo();
+    expect(project.tree().sequence).toEqual([PROJECT]);
+    expect(makeLibraryMap(project, 'gone', plan)).toBeNull();
   });
 });

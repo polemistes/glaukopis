@@ -104,7 +104,7 @@ editor-words = Words
 editor-words-hint = Underlining, superscript, code; foreign words, the title of a work, a term
 editor-words-make = Make a kind of words…
 # Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = The language of the map
+editor-foreign-of-text = The language of the text
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Plain words
 editor-own-kind-new = A kind of your own

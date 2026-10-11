@@ -42,7 +42,7 @@ export type Items = Record<number, [number, number][]>;
  */
 export type Run = [client: number, clock: number, length: number];
 
-/** A block of text in a map: an element, its name or its text, and the path to the block. */
+/** A block of text: an element, its name or its text, and the path to the block. */
 export interface Place {
   element: string;
   part: 'title' | 'body';
@@ -150,7 +150,7 @@ export interface ObjectChange {
   by: string | null;
 }
 
-/** An element of a map, changed as an element: not its name or text, which are passages. */
+/** An element changed as an element: not its name or text, which are passages. */
 export interface ElementChange {
   element: string;
   kind: 'added' | 'removed' | 'moved' | 'heading' | 'excluded' | 'included' | string;
@@ -160,9 +160,13 @@ export interface ElementChange {
   by: string | null;
 }
 
-/** What changed in a map between what a person compares with and now. */
-export interface MapChanges {
-  map: string;
+/**
+ * What changed within an element between what a person compares with and
+ * now: in it and in all under it, as they stood at either moment.
+ */
+export interface BranchChanges {
+  /** The element in view. */
+  at: string;
   /** The passages that differ, in the order of the text; passages that do not differ are left out. */
   passages: Passage[];
   objects: ObjectChange[];
@@ -208,7 +212,7 @@ export interface Named {
 }
 
 /**
- * What the review keeps of a person in the project, in the map `reviews`
+ * What the review keeps of a person in the project, in the table `reviews`
  * by the person's id: the history keeps these moments and items when it
  * keeps older history less finely, and asks before it takes history out
  * that they need.
@@ -241,10 +245,10 @@ export interface History {
   /** The moments that were given a name, the oldest first. */
   named(): Promise<Named[]>;
   /**
-   * What changed in a map between what is compared with and now. With
-   * `elements`, in those elements alone: quicker, where only they are wanted.
+   * What changed within an element between what is compared with and now.
+   * With `elements`, in those elements alone: quicker, where only they are wanted.
    */
-  compare(map: string, reference: Reference, elements?: string[]): Promise<MapChanges>;
+  compare(at: string, reference: Reference, elements?: string[]): Promise<BranchChanges>;
   /** The versions of a stretch, from what is compared with there to now, the oldest first. */
   versions(
     place: Place,

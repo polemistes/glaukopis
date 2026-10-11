@@ -1,5 +1,5 @@
 /**
- * Showing a citation that was found where the text of its map is shown:
+ * Showing a citation that was found where the text it is in is shown:
  * the element it stands in is brought into view and given an editor, and
  * the text of the citation is selected there, without the cursor, as a
  * search shows what it found (`search/text.svelte.ts`). In a note, the
@@ -27,8 +27,8 @@ import { gatherElement } from './gather';
 let lastNote: { view: EditorView; pos: number } | null = null;
 
 /**
- * Shows a citation that was found on a surface that shows the text of its
- * map. Returns whether it could be shown.
+ * Shows a citation that was found on a surface that shows the text it is
+ * in. Returns whether it could be shown.
  */
 export async function revealFound(
   surface: Surface,

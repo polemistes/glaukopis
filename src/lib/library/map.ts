@@ -1,7 +1,8 @@
 /**
  * A map of the library, or of one collection: the collections as elements,
  * nested as they are, and under each the references it holds, every one an
- * element whose text is a citation of it. A project made of it has the
+ * element whose text is a citation of it. It is made as a branch under an
+ * element of a project (ADR 0037); a document made of it has the
  * bibliography follow from the citations.
  */
 
@@ -13,7 +14,7 @@ import { sortEntries, type SortKey } from '$lib/state/library.svelte';
 
 /** An element of the map to be: a collection, or a reference. */
 export interface Part {
-  /** The place in the list of the part this stands under; 0 is the centre. */
+  /** The place in the list of the part this stands under; 0 is the top of the branch. */
   under: number;
   title: string;
   /** The reference it stands for, where it is one. */
@@ -39,7 +40,7 @@ export function elementName(entry: Summary): string {
 /**
  * Lays the map out. `root` is the collection the map is of, or null for the
  * whole library; the references that are in none of the collections shown
- * stand under the centre.
+ * stand under the top.
  */
 export function planMap(
   name: string,
@@ -81,7 +82,7 @@ export function planMap(
     references(root.entries, 0);
     walk(root.id, 0);
   } else {
-    // Those in no collection at all stand at the centre.
+    // Those in no collection at all stand under the top.
     const inSome = new Set(collections.flatMap((c) => c.entries));
     references(
       entries.filter((e) => !inSome.has(e.id)).map((e) => e.id),
@@ -98,10 +99,14 @@ export function planMap(
   };
 }
 
-/** Makes the map in the project, in one step that undo takes back as one. */
-export function makeLibraryMap(project: Project, plan: Plan): { map: string; nodes: string[] } {
+/**
+ * Makes the map as a branch under an element of the project, in one step
+ * that undo takes back as one. Returns the element at the top of the
+ * branch, or nothing where the element to make it under is not there.
+ */
+export function makeLibraryMap(project: Project, under: string, plan: Plan): string | null {
   project.checkpoint();
-  const made = project.buildMap(plan.name, plan.parts, (i, title, body) => {
+  const made = project.buildBranch(under, plan.name, plan.parts, (i, title, body) => {
     const part = plan.parts[i];
     writeName(title, [{ kind: 'text', text: part.title, marks: {} }]);
     if (part.reference) {
@@ -114,5 +119,5 @@ export function makeLibraryMap(project: Project, plan: Plan): { map: string; nod
     }
   });
   project.checkpoint();
-  return made;
+  return made?.top ?? null;
 }

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { Imported, ImportedSection } from '$lib/api/imported';
 import { buildDocument } from './document';
-import { makeMap, titleOf } from './import';
+import { makeImported, titleOf } from './import';
 import { Project } from './project.svelte';
 import { inlineText, readBody, readTitle, type Block, type Inline } from './text';
+import { PROJECT } from './types';
 
 const t = (text: string, marks: Record<string, true> = {}): Inline => ({
   kind: 'text',
@@ -48,17 +49,31 @@ const section = (level: number, heading: string, ...blocks: Block[]): ImportedSe
   blocks,
 });
 
-function outline(project: Project, map: string): string[] {
-  const tree = project.tree(map);
+/** A project begun, with one tree under it already. */
+function begun(): Project {
+  const project = new Project(null);
+  project.begin('Book');
+  project.addChild(PROJECT, { title: 'The first' });
+  return project;
+}
+
+/** The branch of an element, as it is seen from it. */
+function outline(project: Project, id: string): string[] {
+  const tree = project.tree(id);
   return tree.sequence.map((id) => `${tree.depth.get(id)} ${project.node(id)?.title}`);
 }
 
-describe('a document made into a map', () => {
-  it('has the title at the centre and the headings as elements, in their order and depth', () => {
-    const project = new Project(null);
-    project.createMap('The first');
-    const made = makeMap(
+/** The trees under the project, by name. */
+function trees(project: Project): string[] {
+  return (project.tree().children.get(PROJECT) ?? []).map((id) => project.node(id)!.title);
+}
+
+describe('a document made into a branch', () => {
+  it('has the title at the top and the headings as elements, in their order and depth', () => {
+    const project = begun();
+    const made = makeImported(
       project,
+      PROJECT,
       imported(
         [
           section(0, '', p(t('Before the first heading.'))),
@@ -79,10 +94,10 @@ describe('a document made into a map', () => {
           language: 'en-GB',
         },
       ),
-    );
+    )!;
 
-    expect(project.maps.map((m) => m.name)).toEqual(['The first', 'Wrath and the hero']);
-    expect(outline(project, made.map)).toEqual([
+    expect(trees(project)).toEqual(['The first', 'Wrath and the hero']);
+    expect(outline(project, made.top)).toEqual([
       '0 Wrath and the hero',
       '1 One',
       '2 Within',
@@ -91,22 +106,22 @@ describe('a document made into a map', () => {
       '1 Two',
       '2 Too deep',
     ]);
-    const root = project.map(made.map)!.root;
-    expect(made.elements[0]).toBe(root);
-    // The marks of the title are those of the name of the centre.
-    expect(readTitle(project.fragment(root, 'title')!)).toEqual([
+    expect(made.elements[0]).toBe(made.top);
+    expect(project.tree().parent.get(made.top)).toBe(PROJECT);
+    // The marks of the title are those of the name of the top.
+    expect(readTitle(project.fragment(made.top, 'title')!)).toEqual([
       { kind: 'text', text: 'Wrath and the ', marks: {} },
       { kind: 'text', text: 'hero', marks: { em: {} } },
     ]);
-    expect(project.node(root)?.titleHtml).toBe('Wrath and the <em>hero</em>');
-    expect(readBody(project.fragment(root, 'body')!)).toEqual([
+    expect(project.node(made.top)?.titleHtml).toBe('Wrath and the <em>hero</em>');
+    expect(readBody(project.fragment(made.top, 'body')!)).toEqual([
       {
         kind: 'paragraph',
         content: [{ kind: 'text', text: 'Before the first heading.', marks: {} }],
       },
     ]);
     expect(project.node(made.elements[2])?.words).toBe(1);
-    expect(project.map(made.map)?.document).toEqual({
+    expect(project.node(made.top)?.document).toEqual({
       subtitle: 'A study',
       authors: [{ name: 'A. Scholar', affiliation: 'Oslo' }],
       date: '2026-01-02',
@@ -116,7 +131,7 @@ describe('a document made into a map', () => {
     });
 
     // The way out gives the document that came in.
-    const out = buildDocument(project, made.map);
+    const out = buildDocument(project, made.top);
     expect(inlineText(out.title)).toBe('Wrath and the hero');
     expect(
       out.sections.map((s) => `${s.level} ${s.heading ? inlineText(s.heading) : '—'}`),
@@ -124,43 +139,56 @@ describe('a document made into a map', () => {
     expect(out.subtitle).toBe('A study');
   });
 
+  it('is made under the element in view', () => {
+    const project = begun();
+    const chapter = project.addChild(PROJECT, { title: 'Chapter' })!;
+    const made = makeImported(project, chapter, imported([section(1, 'One')]))!;
+    expect(project.tree().parent.get(made.top)).toBe(chapter);
+    expect(outline(project, chapter)).toEqual(['0 Chapter', '1 Wrath and the hero', '2 One']);
+    expect(trees(project)).toEqual(['The first', 'Chapter']);
+    // Under an element that is not there, nothing is made.
+    expect(makeImported(project, 'nobody', imported([]))).toBeNull();
+  });
+
   it('is taken back by undo as one, and made again by redo', () => {
-    const project = new Project(null);
-    project.createMap('The first');
+    const project = begun();
     project.undoManager.clear();
-    const made = makeMap(
+    const made = makeImported(
       project,
+      PROJECT,
       imported([section(1, 'One', p(t('Under one.'))), section(1, 'Two')]),
-    );
-    expect(project.maps).toHaveLength(2);
-    expect(project.nodes.size).toBe(4);
+    )!;
+    expect(trees(project)).toEqual(['The first', 'Wrath and the hero']);
+    expect(project.nodes.size).toBe(5);
     expect(project.undoManager.undoStack).toHaveLength(1);
 
     project.undo();
-    expect(project.maps.map((m) => m.name)).toEqual(['The first']);
-    expect(project.nodes.size).toBe(1);
+    expect(trees(project)).toEqual(['The first']);
+    expect(project.nodes.size).toBe(2);
     expect(project.canUndo).toBe(false);
 
     project.redo();
-    expect(outline(project, made.map)).toEqual(['0 Wrath and the hero', '1 One', '1 Two']);
+    expect(outline(project, made.top)).toEqual(['0 Wrath and the hero', '1 One', '1 Two']);
     expect(readBody(project.fragment(made.elements[1], 'body')!)).toHaveLength(1);
   });
 
   it('has the title it is given, where that is another', () => {
-    const project = new Project(null);
+    const project = begun();
     const document = imported([]);
     expect(titleOf(document)).toBe('Wrath and the hero');
-    const made = makeMap(project, document, '  The anger of   Achilles ');
-    expect(project.map(made.map)?.name).toBe('The anger of Achilles');
-    expect(project.node(project.map(made.map)!.root)?.titleHtml).toBe('The anger of Achilles');
-    // A document without parts is a map of its centre.
-    expect(outline(project, made.map)).toEqual(['0 The anger of Achilles']);
+    const made = makeImported(project, PROJECT, document, '  The anger of   Achilles ')!;
+    expect(project.node(made.top)?.title).toBe('The anger of Achilles');
+    expect(project.node(made.top)?.titleHtml).toBe('The anger of Achilles');
+    // A document without parts is one element.
+    expect(outline(project, made.top)).toEqual(['0 The anger of Achilles']);
+    expect(made.elements).toEqual([made.top]);
   });
 
   it('gives what stands by itself ids, and tells what is cited', () => {
-    const project = new Project(null);
-    const made = makeMap(
+    const project = begun();
+    const made = makeImported(
       project,
+      PROJECT,
       imported([
         section(
           1,
@@ -187,14 +215,14 @@ describe('a document made into a map', () => {
           },
         ),
       ]),
-    );
+    )!;
     expect(made.cited).toEqual(['r1', 'r2']);
     const node = project.node(made.elements[1])!;
     expect(node.cited).toEqual(['r1', 'r2']);
     expect(node.notes).toBe(1);
     expect(node.set.map((s) => s.kind)).toEqual(['equation', 'figure']);
     expect(node.set.every((s) => /^[0-9A-Za-z]{12}$/.test(s.id))).toBe(true);
-    expect(project.usedPictures(made.map)).toEqual([
+    expect(project.usedPictures(made.top)).toEqual([
       { hash: 'a'.repeat(64), extension: 'png', name: 'shield.png' },
     ]);
   });
@@ -223,21 +251,20 @@ describe('a document made into a map', () => {
     }
     expect(paragraphs).toBe(2000);
 
-    const project = new Project(null);
-    project.createMap('The first');
+    const project = begun();
     const updates: number[] = [];
     project.doc.on('update', (update: Uint8Array) => updates.push(update.length));
     const before = performance.now();
-    const made = makeMap(project, imported(sections));
+    const made = makeImported(project, PROJECT, imported(sections))!;
     const took = performance.now() - before;
 
     expect(made.elements).toHaveLength(61);
     // One transaction: one change to be saved, and one step of undo.
     expect(updates).toHaveLength(1);
     expect(project.undoManager.undoStack.length).toBeLessThanOrEqual(2);
-    const counted = [...project.nodes.values()]
-      .filter((n) => n.map === made.map)
-      .reduce((n, node) => n + node.words, 0);
+    const counted = project
+      .tree(made.top)
+      .sequence.reduce((n, id) => n + project.node(id)!.words, 0);
     expect(counted).toBe(2000 * (3 * 29 + 1) + 200 * 29);
     console.info(
       `a document of 2000 paragraphs under 60 headings: ${Math.round(took)} ms, ${Math.round(updates[0] / 1024)} kB`,
@@ -246,7 +273,7 @@ describe('a document made into a map', () => {
 
     const undone = performance.now();
     project.undo();
-    expect(project.maps).toHaveLength(1);
+    expect(trees(project)).toEqual(['The first']);
     console.info(`taken back in ${Math.round(performance.now() - undone)} ms`);
   });
 });

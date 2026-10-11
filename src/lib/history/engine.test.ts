@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
+import { oldDocument, p, t } from '$lib/found/testing';
 import { Project, type Persistence } from '$lib/project/model/project.svelte';
+import { PROJECT } from '$lib/project/model/types';
 import { applyEdits } from './applying';
 import { Engine } from './engine';
 import { ProjectHistory } from './history.svelte';
@@ -35,8 +37,10 @@ async function two() {
   const a = new Project(ann);
   const b = new Project(bo);
   a.load(null, []);
-  const map = a.createMap('Wrath');
-  const root = a.map(map)!.root;
+  a.begin('Wrath');
+  // The view is of the whole project, whose own element is at the top.
+  const at = PROJECT;
+  const root = PROJECT;
   b.load(Y.encodeStateAsUpdate(a.doc), []);
   a.doc.on('update', (u: Uint8Array, origin: unknown) => {
     if (origin !== 'remote') Y.applyUpdate(b.doc, u, 'remote');
@@ -57,7 +61,7 @@ async function two() {
     await a.flush();
     await b.flush();
   };
-  return { a, b, ann, bo, map, root, flush };
+  return { a, b, ann, bo, at, root, flush };
 }
 
 function paragraph(p: Project, element: string, text: string) {
@@ -93,7 +97,7 @@ describe('the history of a project', () => {
   });
 
   it('knows who wrote, who deleted, and who changed the marks', async () => {
-    const { a, b, ann, map, root, flush } = await two();
+    const { a, b, ann, at, root, flush } = await two();
     paragraph(a, root, 'Sing, goddess, the wrath.');
     await flush();
     const since = engineOf(ann, 'ann').moment(Infinity);
@@ -113,7 +117,7 @@ describe('the history of a project', () => {
         { id: 'bo', name: 'Bo' },
       ]),
     );
-    const changes = e.compare(map, { moment: since.snapshot, accepted: [] });
+    const changes = e.compare(at, { moment: since.snapshot, accepted: [] });
     const passage = changes.passages.find(
       (p) => p.place.element === root && p.place.part === 'body',
     )!;
@@ -132,7 +136,7 @@ describe('the history of a project', () => {
     // What the pieces are made of, in the order of the text.
     const muse = find(passage, 'muse, ')!;
     expect(muse.runs.reduce((n, r) => n + r[2], 0)).toBe(6);
-    // The name of the centre did not change.
+    // The name of the project did not change.
     expect(changes.passages.some((p) => p.place.part === 'title')).toBe(false);
 
     // Sessions: the start, Ann's writing, Bo's.
@@ -142,7 +146,7 @@ describe('the history of a project', () => {
   });
 
   it('shows objects in the text, and figures and equations as wholes', async () => {
-    const { a, b, ann, map, root, flush } = await two();
+    const { a, b, ann, at, root, flush } = await two();
     paragraph(a, root, 'As Nagy says.');
     await flush();
     const since = engineOf(ann, 'ann').moment(Infinity);
@@ -156,7 +160,7 @@ describe('the history of a project', () => {
       b.fragment(root, 'body')!.insert(1, [equation]);
     });
     await flush();
-    const changes = engineOf(ann, 'ann').compare(map, { moment: since.snapshot, accepted: [] });
+    const changes = engineOf(ann, 'ann').compare(at, { moment: since.snapshot, accepted: [] });
     const passage = changes.passages.find((p) => p.place.part === 'body')!;
     const cited = passage.pieces.find((p) => p.object)!;
     expect(cited).toMatchObject({ status: 'added', by: 'bo', text: '￼' });
@@ -175,7 +179,7 @@ describe('the history of a project', () => {
   });
 
   it('knows elements added, removed and moved, and by whom', async () => {
-    const { a, b, ann, map, root, flush } = await two();
+    const { a, b, ann, at, root, flush } = await two();
     const achilles = a.addChild(root, { title: 'Achilles' })!;
     const hector = a.addChild(root, { title: 'Hector' })!;
     const priam = a.addChild(root, { title: 'Priam' })!;
@@ -187,7 +191,7 @@ describe('the history of a project', () => {
     const patroclus = a.addChild(achilles, { title: 'Patroclus' })!;
     b.setHeading(achilles, false);
     await flush();
-    const changes = engineOf(ann, 'ann').compare(map, { moment: since.snapshot, accepted: [] });
+    const changes = engineOf(ann, 'ann').compare(at, { moment: since.snapshot, accepted: [] });
     const of = (id: string) =>
       changes.elements.filter((c) => c.element === id).map((c) => [c.kind, c.by]);
     expect(of(priam)).toEqual([['removed', 'bo']]);
@@ -203,7 +207,7 @@ describe('the history of a project', () => {
   });
 
   it('takes back changes, makes a stretch as it was, and tells its versions', async () => {
-    const { a, b, ann, map, root, flush } = await two();
+    const { a, b, ann, at, root, flush } = await two();
     paragraph(a, root, 'Sing, goddess, the wrath.');
     await flush();
     const since = engineOf(ann, 'ann').moment(Infinity);
@@ -218,7 +222,7 @@ describe('the history of a project', () => {
 
     const e = engineOf(ann, 'ann', a);
     const reference: Reference = { moment: since.snapshot, accepted: [] };
-    const passage = e.compare(map, reference).passages[0];
+    const passage = e.compare(at, reference).passages[0];
     const t = textOf(a, root);
     const from = Y.encodeRelativePosition(Y.createRelativePositionFromTypeIndex(t, 0));
     const to = Y.encodeRelativePosition(Y.createRelativePositionFromTypeIndex(t, t.length, -1));
@@ -234,7 +238,7 @@ describe('the history of a project', () => {
     expect(applyEdits(a, e.revert(passage, pieces))).toBe(1);
     expect(textOf(a, root).toString()).toBe('O Sing, goddess, the wrath.');
     await flush();
-    const after = e.compare(map, reference).passages[0];
+    const after = e.compare(at, reference).passages[0];
     // Put back as Ann's: what Bo removed stays removed, and Ann's is added.
     expect(find(after, 'goddess, ')).toMatchObject({ status: 'removed', by: 'bo' });
     expect(after.pieces.find((p) => p.status === 'added' && p.text.includes('goddess'))?.by).toBe(
@@ -250,7 +254,7 @@ describe('the history of a project', () => {
   });
 
   it('brings a paragraph that was deleted back where it stood', async () => {
-    const { a, b, ann, map, root, flush } = await two();
+    const { a, b, ann, at, root, flush } = await two();
     paragraph(a, root, 'First.');
     paragraph(a, root, 'Second.');
     paragraph(a, root, 'Third.');
@@ -259,7 +263,7 @@ describe('the history of a project', () => {
     b.transact(() => b.fragment(root, 'body')!.delete(1, 1));
     await flush();
     const e = engineOf(ann, 'ann', a);
-    const gone = e.compare(map, { moment: since.snapshot, accepted: [] }).passages[0];
+    const gone = e.compare(at, { moment: since.snapshot, accepted: [] }).passages[0];
     expect(gone).toMatchObject({ before: true, after: false, place: { path: [1] } });
     applyEdits(a, e.revert(gone, gone.pieces));
     const body = a.fragment(root, 'body')!;
@@ -271,14 +275,14 @@ describe('the history of a project', () => {
   });
 
   it('compares a stretch that was accepted with what was accepted there', async () => {
-    const { a, b, ann, map, root, flush } = await two();
+    const { a, b, ann, at, root, flush } = await two();
     paragraph(a, root, 'Sing, goddess, the wrath.');
     await flush();
     const since = engineOf(ann, 'ann').moment(Infinity);
     b.transact(() => textOf(b, root).insert(0, 'O '));
     await flush();
     let e = engineOf(ann, 'ann');
-    const passage = e.compare(map, { moment: since.snapshot, accepted: [] }).passages[0];
+    const passage = e.compare(at, { moment: since.snapshot, accepted: [] }).passages[0];
     // Ann accepts the whole paragraph as it is.
     const t = textOf(a, root);
     const visible: Record<number, [number, number][]> = {};
@@ -293,12 +297,12 @@ describe('the history of a project', () => {
       visible,
     };
     e = engineOf(ann, 'ann');
-    expect(e.compare(map, { moment: since.snapshot, accepted: [accepted] }).passages).toEqual([]);
+    expect(e.compare(at, { moment: since.snapshot, accepted: [accepted] }).passages).toEqual([]);
     // Written in again: only what is new is a change.
     b.transact(() => textOf(b, root).insert(textOf(b, root).length - 1, ' of Achilles'));
     await flush();
     e = engineOf(ann, 'ann');
-    const again = e.compare(map, { moment: since.snapshot, accepted: [accepted] }).passages[0];
+    const again = e.compare(at, { moment: since.snapshot, accepted: [accepted] }).passages[0];
     expect(again.pieces.filter((p) => p.status !== 'same').map((p) => p.text)).toEqual([
       ' of Achilles',
     ]);
@@ -369,8 +373,8 @@ describe('keeping older history less finely', () => {
 });
 
 describe('bringing back', () => {
-  it('an element as it was, and the whole map', async () => {
-    const { a, b, ann, map, root, flush } = await two();
+  it('an element as it was, and all that is in view', async () => {
+    const { a, b, ann, at, root, flush } = await two();
     const achilles = a.addChild(root, { title: 'Achilles' })!;
     const hector = a.addChild(root, { title: 'Hector' })!;
     paragraph(a, achilles, 'Son of Peleus.');
@@ -385,20 +389,20 @@ describe('bringing back', () => {
 
     let e = engineOf(ann, 'ann', a);
     // The element that is gone comes back, under its own id, with its text.
-    applyEdits(a, e.bringBack(map, hector, then));
+    applyEdits(a, e.bringBack(at, hector, then));
     expect(a.node(hector)?.title).toBe('Hector');
     expect(textOf(a, hector).toString()).toBe('Tamer of horses.');
-    expect(a.tree(map).parent.get(hector)).toBe(root);
+    expect(a.tree(at).parent.get(hector)).toBe(root);
     // One that is there has its text as it was.
-    applyEdits(a, e.bringBack(map, achilles, then));
+    applyEdits(a, e.bringBack(at, achilles, then));
     expect(textOf(a, achilles).toString()).toBe('Son of Peleus.');
     expect(a.node(priam)).toBeTruthy();
-    // The whole map: what was not there goes.
+    // All that is in view: what was not there goes.
     await flush();
     e = engineOf(ann, 'ann', a);
-    applyEdits(a, e.bringBack(map, null, then));
+    applyEdits(a, e.bringBack(at, null, then));
     expect(a.node(priam)).toBeUndefined();
-    expect(a.tree(map).sequence.map((id) => a.node(id)!.title)).toEqual([
+    expect(a.tree(at).sequence.map((id) => a.node(id)!.title)).toEqual([
       'Wrath',
       'Achilles',
       'Hector',
@@ -414,9 +418,49 @@ describe('bringing back', () => {
   });
 });
 
+describe('a project written as maps', () => {
+  it('reads at every moment as one tree, before and after it was brought into shape', async () => {
+    const ann = new Store();
+    const a = new Project(ann);
+    a.load(Y.encodeStateAsUpdate(oldDocument({ part: [p(t('Sing.'))] })), []);
+    a.setMe({ id: 'ann', name: 'Ann' });
+    // The history begins with the old shape; then the project is opened, which brings it into one.
+    await a.setHistory({ on: true });
+    await a.flush();
+    const before = engineOf(ann, 'ann').records.length - 1;
+    a.begin('Wrath');
+    await a.flush();
+    await a.flush();
+    const e = engineOf(ann, 'ann', a);
+    // The moment before: the centre and the loose element under the project, which was not made yet.
+    const then = e.branchAt(PROJECT, before, null);
+    expect(then.order.map((o) => [o.element, o.level, o.before && o.after])).toEqual([
+      [PROJECT, 0, true],
+      ['centre', 1, true],
+      ['part', 2, true],
+      ['loose', 1, true],
+    ]);
+    // Since then, nothing was added, removed or moved as an element: the shape is the same.
+    const changes = e.compare(PROJECT, { moment: e.moment(before).snapshot, accepted: [] });
+    expect(changes.elements).toEqual([]);
+    expect(a.tree().sequence).toEqual([PROJECT, 'centre', 'part', 'loose']);
+    // The moment before, looked at from within the centre.
+    expect(e.branchAt('centre', before, null).order.map((o) => o.element)).toEqual([
+      'centre',
+      'part',
+    ]);
+    // Brought back as it was then, every element stands under the project as it does now.
+    const edits = e.bringBack(PROJECT, null, before);
+    expect(edits.filter((x) => x.kind === 'remove' || x.kind === 'element')).toEqual([]);
+    applyEdits(a, edits);
+    expect(a.tree().sequence).toEqual([PROJECT, 'centre', 'part', 'loose']);
+    expect(a.node('centre')?.parent).toBe(PROJECT);
+  });
+});
+
 describe('the history of a project that is open', () => {
   it('is read when it is first asked, follows what is written, and changes the project', async () => {
-    const { a, b, ann, map, root, flush } = await two();
+    const { a, b, ann, at, root, flush } = await two();
     paragraph(a, root, 'Sing, goddess, the wrath.');
     await flush();
     const history = new ProjectHistory(a, 'p', { read: async () => writeRecords(ann.read()) });
@@ -425,7 +469,7 @@ describe('the history of a project that is open', () => {
     b.transact(() => textOf(b, root).insert(0, 'O '));
     await flush();
     b.transact(() => textOf(b, root).insert(textOf(b, root).length - 1, ' of Achilles'));
-    const changes = await history.compare(map, { moment: since.snapshot, accepted: [] });
+    const changes = await history.compare(at, { moment: since.snapshot, accepted: [] });
     const added = changes.passages[0].pieces.filter((p) => p.status === 'added');
     expect(added.map((p) => [p.text, p.by])).toEqual([
       ['O ', 'bo'],

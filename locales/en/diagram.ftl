@@ -2,8 +2,10 @@
 
 diagram-map = Map
 diagram-idea = Name
-diagram-new-loose = New loose element here
-diagram-new-loose-hint = A thought that has no place yet
+diagram-new-here = New element here
+diagram-new-here-hint = A thought that has no place yet, under the element in view
+diagram-open-as-map = Open as a map
+diagram-open-as-map-hint = The element at the centre, with what is under it
 diagram-show-all = Show the whole map
 diagram-tidy = Tidy the whole map
 diagram-tidy-hint = Every element goes back to its automatic place

@@ -86,6 +86,12 @@ export interface EditorHooks {
   /** The element whose text the editor holds, by which what stands in it is numbered. */
   element?: string;
   /**
+   * The element in view, in whose document what stands in the text is
+   * numbered and pointed to. Where it is not given, the tree under the
+   * project the element stands in.
+   */
+  at?: string;
+  /**
    * The kinds of paragraph of the writer's own, by which Enter and Tab
    * know what follows a paragraph of such a kind: as the kind it is based
    * on has it. None, where they are not given.

@@ -11,15 +11,15 @@ timeline-unit = What a unit is called
 timeline-unit-placeholder = year, day, cycle…
 timeline-units-hint = Times are numbers of the unit: Year 12, Day 3, or just 12. They may be negative.
 timeline-lanes = Lanes
-timeline-lanes-given = Each child of the centre is a lane, until you choose. A lane holds what is placed in its branch; its own placement, if it has one, is the span of the lane.
+timeline-lanes-given = Each child of the element in view is a lane, until you choose. A lane holds what is placed in its branch; its own placement, if it has one, is the span of the lane.
 timeline-lanes-chosen = The lanes you chose, in the order of the text.
-timeline-lanes-reset = Each child of the centre again
+timeline-lanes-reset = Each child of the element in view again
 timeline-one-lane = One lane
 timeline-each-child = { $count ->
     [one] Its child a lane
    *[other] Each of { $count } children a lane
 }
-timeline-no-branches = The map has nothing under its centre yet.
+timeline-no-branches = The element in view has nothing under it yet.
 timeline-lanes-by-kind = Lanes by kind
 timeline-lanes-by-kind-hint = Every element of a kind a lane of its own: each character, each place.
 timeline-each-of-kind = Each a lane

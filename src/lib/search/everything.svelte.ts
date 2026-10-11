@@ -5,12 +5,13 @@
  * searched by the engine (`engine.ts`), in a thread of its own; a project
  * that has not changed since it was read is not read again.
  *
- * Choosing what was found opens the project and the map in the text, and
- * the text goes to it: what is to be gone to waits here as a jump, which
- * the text of the map takes when it is shown (`MapText.svelte`).
+ * Choosing what was found opens the project at the element that holds it,
+ * as text, and the text goes to it: what is to be gone to waits here as a
+ * jump, which the text takes when it is shown (`MapText.svelte`).
  */
 
 import { projectLoad, type ProjectInfo } from '$lib/api/projects';
+import { PROJECT } from '$lib/project/model/types';
 import { projects } from '$lib/state/projects.svelte';
 import { router } from '$lib/state/router.svelte';
 import { Engine } from './engine';
@@ -19,10 +20,14 @@ import { NO_OPTIONS, type SearchOptions } from './matching';
 
 export type Scope = 'last' | 'all';
 
-/** Where the text of a map is to go when it is shown: to what was found through everything. */
+/** Where the text in view is to go when it is shown: to what was found through everything. */
 export interface Jump {
   project: string;
-  map: string | null;
+  /**
+   * The element to be in view: the tree under the project that holds what
+   * was found, or the project itself; nothing for what is in no element.
+   */
+  at: string | null;
   element: string | null;
   part: 'title' | 'body' | null;
   passage: number;
@@ -35,19 +40,19 @@ export interface Jump {
 
 let waiting: Jump | null = null;
 
-/** The jump that waits for a map, if one does. It is taken. */
-export function takeJump(map: string): Jump | null {
+/** The jump that waits for the text of an element in view, if one does. It is taken. */
+export function takeJump(at: string): Jump | null {
   const jump = waiting;
-  if (!jump || jump.map !== map) return null;
+  if (!jump || jump.at !== at) return null;
   waiting = null;
   return jump;
 }
 
-/** The jump that waits for a project, if one does; it is taken where it is for no map. */
+/** The jump that waits for a project, if one does; it is taken where it is for no element. */
 export function jumpFor(project: string): Jump | null {
   const jump = waiting;
   if (!jump || jump.project !== project) return null;
-  if (!jump.map) waiting = null;
+  if (!jump.at) waiting = null;
   return jump;
 }
 
@@ -163,9 +168,11 @@ class Everything {
   /** Opens what was found where it stands. */
   go(project: ProjectFound, found: Found) {
     const text = found.where === 'text';
+    // The tree under the project that holds it; the project itself for its own element.
+    const at = found.tree ?? (found.element ? PROJECT : null);
     waiting = {
       project: project.project,
-      map: found.map,
+      at,
       element: found.element,
       part: text ? found.part : null,
       passage: found.passage,
@@ -178,7 +185,7 @@ class Everything {
     router.go({
       view: 'project',
       project: project.project,
-      map: found.map ?? undefined,
+      at: at ?? undefined,
       mode: 'text',
     });
   }

@@ -5,11 +5,7 @@ text-name = Название элемента
 text-first-section = Пишите здесь или нажмите Ctrl+Enter, чтобы начать первый раздел.
 text-not-printed = не печатается
 text-grip = Переместить или изменить этот элемент
-# The map an element stands for, which is shown in bold where the variable stands.
-text-include = В документе здесь стоит карта { $map }.
 text-include-open = Открыть её
-text-loose = Свободные элементы
-text-loose-hint = Мысли, у которых пока нет места. Они не входят в документ.
 text-split = Разделить здесь
 text-split-hint = То, что после курсора, становится новым элементом
 text-join = Присоединить к элементу выше

@@ -5,11 +5,7 @@ text-name = Namnet på elementet
 text-first-section = Skriv her, eller trykk Ctrl+Enter for å byrje på første del.
 text-not-printed = blir ikkje skrive ut
 text-grip = Flytt eller endre dette elementet
-# The map an element stands for, which is shown in bold where the variable stands.
-text-include = I dokumentet står kartet { $map } her.
 text-include-open = Opne det
-text-loose = Lause element
-text-loose-hint = Tankar som ikkje har fått nokon plass enno. Dei er ikkje ein del av dokumentet.
 text-split = Del her
 text-split-hint = Det som står etter markøren, blir eit nytt element
 text-join = Slå saman med elementet over

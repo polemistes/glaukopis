@@ -70,34 +70,15 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Без назви
-# The name of a copy of a map.
-project-map-copy = { $name }, копія
-project-maps = Мапи
-project-map-name = Назва мапи
-project-new-map = Нова мапа
-project-map-from-document = Мапа з документа…
 project-drop-on-map = Киньте на мапу, щоб перемістити туди · тримайте Ctrl, щоб скопіювати
-project-duplicate = Дублювати
-project-duplicate-hint = Копія для роботи; ця залишається як є
 project-open-beside = Відкрити поруч
 project-open-beside-hint = Дві мапи поруч, щоб переносити елементи між ними
-project-this-map-actions = Ця мапа, і мапи
-project-maps-hint = Мапи проєкту: виберіть одну, щоб відкрити
-project-map-beside = поруч із цією
 project-side-by-side-short = Поруч
 project-preview-short = Перегляд
 project-found = Знайдені цитування…
 # The count is of those found in the map.
 project-found-hint = Переглянути й зробити цитуваннями: { $count }
 project-found-none = І текст, схожий на цитування
-project-delete-map = Видалити мапу
-project-delete-map-title = Видалити мапу «{ $name }»?
-project-delete-map-message = { $count ->
-    [one] { $count } елемент і текст у ньому зникнуть. Це можна скасувати, поки проєкт відкритий.
-    [few] { $count } елементи й текст у них зникнуть. Це можна скасувати, поки проєкт відкритий.
-    [many] { $count } елементів і текст у них зникнуть. Це можна скасувати, поки проєкт відкритий.
-   *[other] { $count } елемента й текст у них зникнуть. Це можна скасувати, поки проєкт відкритий.
-}
 project-copied-to = Скопійовано до «{ $name }»
 project-moved-to = Переміщено до «{ $name }»
 
@@ -119,20 +100,12 @@ project-stands-for = Стоїть замість «{ $name }»
 project-stand-for = Стояти замість іншої мапи
 project-stand-for-heading = У документі на його місці стоїть ця мапа
 project-stand-for-none = Жодної
-project-copy-to-map = Копіювати до мапи
 project-copy = Копіювати
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Вставити під ним
-project-move-to-map = Перемістити до мапи
-project-map-from-branch = Нова мапа з цієї гілки
-project-map-from-branch-hint = Копія для роботи; ця залишається
-project-detach = Відʼєднати від батьківського
-project-detach-hint = Вільний елемент, щоб розмістити пізніше
 project-tidy-branch = Упорядкувати цю гілку
 project-place-automatically = Розмістити автоматично
 project-delete-keeping = Видалити, зберігши те, що під ним
-project-centre-stays = Центр мапи залишається
-project-centre-stays-detail = Саму мапу видаляйте з її вкладки.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] «{ $name }» видалено
@@ -246,7 +219,6 @@ project-link-label = Підпис звʼязку
 
 ## A copy and its original, in another map.
 copy-title = Копія та її оригінал
-copy-from = Скопійовано з «{ $name }» у мапі «{ $map }»
 copy-original-changed = Оригінал змінився, відколи його скопійовано або відколи це востаннє бачили.
 copy-original-same = Оригінал такий, яким був, коли його скопійовано.
 copy-original-unknown = Чи змінився оригінал, відколи його скопійовано, невідомо: копію зроблено раніше, ніж це почали зберігати.
@@ -260,8 +232,6 @@ copy-seen = Залишити цю копію як є
 copy-take = Узяти назву й текст оригіналу
 copy-changed-mark = Оригінал змінився, відколи це скопійовано
 copy-compare = Порівняти з оригіналом…
-copy-copied-from = Скопійовано з «{ $name }» у «{ $map }»
-copy-copied-from-changed = Скопійовано з «{ $name }» у «{ $map }», що відтоді змінився
 
 ## How far the writing of an element has come, as its writer says.
 status = Стан

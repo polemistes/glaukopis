@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * Where what the text is to point to is chosen: a figure, an equation, or
-   * a part of the document of the map.
+   * a part of the document of the element in view.
    */
   import Heading from '@lucide/svelte/icons/heading';
   import Image from '@lucide/svelte/icons/image';
@@ -28,8 +28,8 @@
   let input = $state<HTMLInputElement>();
   let list = $state<HTMLDivElement>();
 
-  const counting = $derived(numbering.countingOf(project, request.map));
-  const numbers = $derived(numbering.of(project, request.map));
+  const counting = $derived(numbering.countingOf(project, request.at));
+  const numbers = $derived(numbering.of(project, request.at));
 
   const GROUPS = $derived<{ kind: Pointed['kind']; heading: string }[]>([
     { kind: 'figure', heading: t('figures-targets-figures') },

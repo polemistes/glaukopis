@@ -11,8 +11,8 @@
     /** The copy that is compared with its original. */
     id: string;
     onclose: () => void;
-    /** Goes to the original, in its map. */
-    ongo: (map: string, element: string) => void;
+    /** Goes to the original. */
+    ongo: (element: string) => void;
   }
 
   let { project, id, onclose, ongo }: Props = $props();
@@ -56,7 +56,7 @@
 
   function go() {
     if (!original) return;
-    ongo(original.map, original.id);
+    ongo(original.id);
     onclose();
   }
 </script>
@@ -75,8 +75,8 @@
 <Dialog
   open
   title={t('copy-title')}
-  subtitle={of?.map && original
-    ? t('copy-from', { name: original.title || t('project-untitled'), map: of.map.name })
+  subtitle={original
+    ? t('copy-from', { name: original.title || t('project-untitled') })
     : undefined}
   width={720}
   {onclose}

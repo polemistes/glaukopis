@@ -70,34 +70,15 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Без названия
-# The name of a copy of a map.
-project-map-copy = { $name }, копия
-project-maps = Карты
-project-map-name = Название карты
-project-new-map = Новая карта
-project-map-from-document = Карта из документа…
 project-drop-on-map = Отпустите на карте, чтобы переместить туда · с Ctrl — копировать
-project-duplicate = Дублировать
-project-duplicate-hint = Копия для работы; эта остаётся как есть
 project-open-beside = Открыть рядом
 project-open-beside-hint = Две карты рядом, чтобы переносить элементы между ними
-project-this-map-actions = Эта карта и карты
-project-maps-hint = Карты проекта: выберите одну, чтобы открыть
-project-map-beside = рядом с этой
 project-side-by-side-short = Рядом
 project-preview-short = Предпросмотр
 project-found = Найденные ссылки…
 # The count is of those found in the map.
 project-found-hint = Осталось разобрать и сделать ссылками: { $count }
 project-found-none = И текст, похожий на ссылки
-project-delete-map = Удалить карту
-project-delete-map-title = Удалить карту «{ $name }»?
-project-delete-map-message = { $count ->
-    [one] Пропадёт { $count } элемент и текст в нём. Это можно отменить, пока проект открыт.
-    [few] Пропадут { $count } элемента и текст в них. Это можно отменить, пока проект открыт.
-    [many] Пропадут { $count } элементов и текст в них. Это можно отменить, пока проект открыт.
-   *[other] Пропадут { $count } элемента и текст в них. Это можно отменить, пока проект открыт.
-}
 project-copied-to = Скопировано в «{ $name }»
 project-moved-to = Перемещено в «{ $name }»
 
@@ -119,20 +100,12 @@ project-stands-for = Замещает «{ $name }»
 project-stand-for = Замещать другую карту
 project-stand-for-heading = В документе на его месте стоит эта карта
 project-stand-for-none = Никакую
-project-copy-to-map = Копировать в карту
 project-copy = Копировать
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Вставить под него
-project-move-to-map = Переместить в карту
-project-map-from-branch = Новая карта из этой ветви
-project-map-from-branch-hint = Копия для работы; эта остаётся
-project-detach = Отделить от родителя
-project-detach-hint = Свободный элемент, чтобы разместить позже
 project-tidy-branch = Прибрать эту ветвь
 project-place-automatically = Разместить автоматически
 project-delete-keeping = Удалить, сохранив то, что под ним
-project-centre-stays = Центр карты остаётся
-project-centre-stays-detail = Саму карту удаляйте с её вкладки.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] «{ $name }» удалён
@@ -231,7 +204,6 @@ project-link-label = Подпись связи
 
 ## A copy and its original, in another map.
 copy-title = Копия и оригинал
-copy-from = Скопировано из «{ $name }» в карте «{ $map }»
 copy-original-changed = Оригинал изменился с тех пор, как был скопирован, или с тех пор, как это видели в последний раз.
 copy-original-same = Оригинал таков, каким был при копировании.
 copy-original-unknown = Изменился ли оригинал с тех пор, как был скопирован, неизвестно: копия сделана до того, как это стали сохранять.
@@ -245,8 +217,6 @@ copy-seen = Оставить эту копию как есть
 copy-take = Взять название и текст оригинала
 copy-changed-mark = Оригинал изменился с тех пор, как это было скопировано
 copy-compare = Сравнить с оригиналом…
-copy-copied-from = Скопировано из «{ $name }» в «{ $map }»
-copy-copied-from-changed = Скопировано из «{ $name }» в «{ $map }», который с тех пор изменился
 
 ## How far the writing of an element has come, as its writer says.
 status = Статус

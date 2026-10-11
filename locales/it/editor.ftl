@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Come ogni tipo è reso in questo documento
 editor-words = Parole
 editor-words-hint = Sottolineato, apice, codice; parole straniere, il titolo di un'opera, un termine
 editor-words-make = Crea un tipo di parole…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = La lingua della mappa
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Parole semplici
 editor-own-kind-new = Un tipo tuo

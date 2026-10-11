@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Project } from '$lib/project/model/project.svelte';
+import { PROJECT } from '$lib/project/model/types';
 import { addChronology } from './chronology';
 import { timelineOf } from './lanes';
 import { describeWhen, solve, type When } from './solve';
@@ -131,6 +132,13 @@ describe('a time moved along the axis', () => {
 describe('where elements stand in time', () => {
   const at = (at: string): When => ({ start: { at } });
   const over = (from: string, to: string): When => ({ start: { at: from }, end: { at: to } });
+  /** A project with a tree Cities under it, which is in view. */
+  const cities = () => {
+    const p = new Project(null);
+    p.begin('Wars');
+    const root = p.addChild(PROJECT, { title: 'Cities' })!;
+    return { p, root };
+  };
 
   it('places what is written where it is written, as long as it was written', () => {
     const s = solve(
@@ -296,9 +304,7 @@ describe('where elements stand in time', () => {
   });
 
   it('shows only lanes in which something says when it is', () => {
-    const p = new Project(null);
-    const map = p.createMap('Cities');
-    const root = p.map(map)!.root;
+    const { p, root } = cities();
     const athens = p.addChild(root, { title: 'Athens' })!;
     const plague = p.addChild(athens, { title: 'The plague' })!;
     const sparta = p.addChild(root, { title: 'Sparta' })!;
@@ -306,10 +312,10 @@ describe('where elements stand in time', () => {
     p.addChild(sources, { title: 'Thucydides' });
     p.setWhen(plague, { start: { at: '430 BC' } });
     p.setWhen(sparta, { start: { at: '431 BC' }, end: { at: '404 BC' } });
-    const lanes = timelineOf(p, map, () => null).lanes.map((l) => l.name);
+    const lanes = timelineOf(p, root, () => null).lanes.map((l) => l.name);
     expect(lanes).toEqual(['Athens', 'Sparta']);
     // With what waits wanted: the lanes stay, the one of the sources among them, and what waits is in each with its path.
-    const shown = timelineOf(p, map, () => null, true);
+    const shown = timelineOf(p, root, () => null, true);
     expect(shown.lanes.map((l) => `${l.name}${l.empty ? '*' : ''}`)).toEqual([
       'Athens',
       'Sparta',
@@ -320,45 +326,44 @@ describe('where elements stand in time', () => {
     const sourcesLane = shown.lanes[2];
     expect(sourcesLane.waiting.map((w) => w.name)).toEqual(['Sources', 'Thucydides']);
     const herodotus = p.addChild(p.node(sourcesLane.waiting[1].id)!.id, { title: 'Histories' })!;
-    const again = timelineOf(p, map, () => null, true).lanes[2];
+    const again = timelineOf(p, root, () => null, true).lanes[2];
     expect(again.waiting.find((w) => w.id === herodotus)!.path).toEqual(['Thucydides']);
   });
 
   it('forgets a chosen lane whose element is deleted, and the choice when none is left', () => {
-    const p = new Project(null);
-    const map = p.createMap('Cities');
-    const root = p.map(map)!.root;
+    const { p, root } = cities();
     const athens = p.addChild(root, { title: 'Athens' })!;
     const sparta = p.addChild(root, { title: 'Sparta' })!;
     const thebes = p.addChild(root, { title: 'Thebes' })!;
     p.setWhen(thebes, { start: { at: '371 BC' } });
-    p.setTimeline(map, { axis: 'dates', lanes: [{ element: athens }, { element: sparta }] });
-    expect(timelineOf(p, map, () => null).elsewhere.map((e) => e.name)).toEqual(['Thebes']);
+    p.setTimeline(root, { axis: 'dates', lanes: [{ element: athens }, { element: sparta }] });
+    expect(timelineOf(p, root, () => null).elsewhere.map((e) => e.name)).toEqual(['Thebes']);
     p.remove([sparta]);
-    expect(p.map(map)!.timeline.lanes).toEqual([{ element: athens }]);
+    expect(p.node(root)!.timeline.lanes).toEqual([{ element: athens }]);
     p.remove([athens]);
-    expect(p.map(map)!.timeline).toEqual({ axis: 'dates' });
-    // Each child of the centre is a lane again.
-    expect(timelineOf(p, map, () => null).lanes.map((l) => l.name)).toEqual(['Thebes']);
+    expect(p.node(root)!.timeline).toEqual({ axis: 'dates' });
+    // Each child of the element in view is a lane again.
+    expect(timelineOf(p, root, () => null).lanes.map((l) => l.name)).toEqual(['Thebes']);
   });
 
-  it('takes an element that stands on its own beside the centre for a lane, as the children of the centre are', () => {
-    const p = new Project(null);
-    const map = p.createMap('Cities');
-    const root = p.map(map)!.root;
+  it('is of the element in view: what is elsewhere in the project is not on it', () => {
+    const { p, root } = cities();
     const athens = p.addChild(root, { title: 'Athens' })!;
-    const sparta = p.addLoose(map, { x: 300, y: 0 }, 'Sparta')!;
+    const elsewhere = p.addChild(PROJECT, { title: 'Sparta' })!;
     p.setWhen(athens, { start: { at: '431 BC' } });
-    p.setWhen(sparta, { start: { at: '431 BC' }, end: { at: '404 BC' } });
-    const tl = timelineOf(p, map, () => null);
-    expect(tl.lanes.map((l) => l.name)).toEqual(['Athens', 'Sparta']);
+    p.setWhen(elsewhere, { start: { at: '431 BC' }, end: { at: '404 BC' } });
+    const tl = timelineOf(p, root, () => null);
+    expect(tl.lanes.map((l) => l.name)).toEqual(['Athens']);
     expect(tl.elsewhere).toEqual([]);
+    // Seen from the project, both trees under it are lanes.
+    expect(timelineOf(p, PROJECT, () => null).lanes.map((l) => l.name)).toEqual([
+      'Cities',
+      'Sparta',
+    ]);
   });
 
   it('lists what says nothing of its time under the nearest placed element over it, when what waits is wanted', () => {
-    const p = new Project(null);
-    const map = p.createMap('Cities');
-    const root = p.map(map)!.root;
+    const { p, root } = cities();
     const athens = p.addChild(root, { title: 'Athens' })!;
     const war = p.addChild(athens, { title: 'The war' })!;
     const plague = p.addChild(war, { title: 'The plague' })!;
@@ -370,14 +375,14 @@ describe('where elements stand in time', () => {
     p.setWhen(peace, { start: { at: '421 BC' } });
     void oration;
     // Without what waits: the writer's placements, and nothing else.
-    const lane = timelineOf(p, map, () => null).lanes[0];
+    const lane = timelineOf(p, root, () => null).lanes[0];
     expect(lane.events.map((e) => e.name)).toEqual(['The war', 'The peace']);
     expect(lane.waiting).toEqual([]);
     // With it: every element that says nothing, in the order of the text; the
     // plague and the oration under the war, which is placed over them, the
     // oration with its path from there; the sources under nothing, since
     // Athens, the lane's own element, is not placed.
-    const shown = timelineOf(p, map, () => null, true).lanes[0];
+    const shown = timelineOf(p, root, () => null, true).lanes[0];
     expect(shown.waiting.map((w) => [w.name, w.under, w.path.join('/')])).toEqual([
       ['Athens', null, ''],
       ['The plague', war, ''],
@@ -388,7 +393,7 @@ describe('where elements stand in time', () => {
     // Once Athens says when it is, it waits no more; what is under it and not
     // under a placed event stands under nothing, the lane being Athens's area.
     p.setWhen(athens, { start: { at: '500 BC' }, end: { at: '300 BC' } });
-    const own = timelineOf(p, map, () => null, true).lanes[0];
+    const own = timelineOf(p, root, () => null, true).lanes[0];
     expect(own.waiting.map((w) => [w.name, w.under])).toEqual([
       ['The plague', war],
       ['The funeral oration', war],
@@ -398,16 +403,16 @@ describe('where elements stand in time', () => {
     // With Athens's children the lanes, Athens itself is in none. The sources
     // belong to a lane of their own, in which nothing is placed: they wait there
     // when what waits is shown, and not elsewhere.
-    p.setTimeline(map, { lanes: [{ element: athens, each: true }] });
-    const each = timelineOf(p, map, () => null);
+    p.setTimeline(root, { lanes: [{ element: athens, each: true }] });
+    const each = timelineOf(p, root, () => null);
     expect(each.elsewhere.map((e) => e.name)).toEqual(['Athens']);
     expect(each.lanes.map((l) => l.name)).toEqual(['The war']);
-    const eachShown = timelineOf(p, map, () => null, true);
+    const eachShown = timelineOf(p, root, () => null, true);
     expect(eachShown.lanes[1].waiting.map((w) => w.name)).toEqual(['Sources', 'Thucydides']);
     expect(eachShown.waitingElsewhere).toEqual([]);
     // With the war the one lane, the sources are in no lane: they wait elsewhere, under Athens, which is placed there.
-    p.setTimeline(map, { lanes: [{ element: war }] });
-    const one = timelineOf(p, map, () => null, true);
+    p.setTimeline(root, { lanes: [{ element: war }] });
+    const one = timelineOf(p, root, () => null, true);
     expect(one.elsewhere.map((e) => e.name)).toEqual(['Athens']);
     expect(one.waitingElsewhere.map((w) => [w.name, w.under === athens])).toEqual([
       ['Sources', true],
@@ -415,7 +420,7 @@ describe('where elements stand in time', () => {
     ]);
     // The chronology lists only what the writer placed (and, as it stands, not
     // the lane's own element, whose placement is the span of the lane).
-    const chronology = addChronology(p, map)!;
+    const chronology = addChronology(p, root)!;
     const table = p.blocksOf(chronology).find((b) => b.kind === 'table');
     const rows = table && table.kind === 'table' ? table.rows.slice(1) : [];
     const what = rows.map((r) => {

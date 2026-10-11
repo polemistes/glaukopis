@@ -1,14 +1,20 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { has, languages } from '$lib/i18n';
 import { Project } from '$lib/project/model/project.svelte';
+import { PROJECT } from '$lib/project/model/types';
 import { citationLabel, languageOf, locatorWord, setProject } from './references.svelte';
 import { LOCATOR_LABELS, type CiteItem } from './schema';
 
-/** A project with one map, in a language, and references of its own: one of them without a year. */
+/**
+ * A project with a tree under it, in a language, and references of its own:
+ * one of them without a year. Returns an element of the tree, whose text is
+ * in the language of the tree.
+ */
 function project(language?: string) {
   const p = new Project(null);
-  const map = p.createMap('Wrath');
-  if (language) p.setDocument(map, { language });
+  p.begin('Wrath');
+  const top = p.addChild(PROJECT, { title: 'Wrath' })!;
+  if (language) p.setDocument(top, { language });
   const reference = { type: 'book', fields: {}, names: {}, modified: '2026-01-01', container: '' };
   p.putReference({
     ...reference,
@@ -27,7 +33,7 @@ function project(language?: string) {
     title: 'Hymn to Demeter',
   });
   setProject(p);
-  return p.map(map)!.root;
+  return p.addChild(top, { title: 'A' })!;
 }
 
 afterEach(() => {
@@ -72,7 +78,7 @@ describe('what a locator counts', () => {
 describe('a citation in the text', () => {
   const items: CiteItem[] = [{ id: 'nagy', locator: '3', label: 'chapter' }];
 
-  it('says what its locator counts in the language of the map', () => {
+  it('says what its locator counts in the language of its document', () => {
     const element = project('nb');
     expect(languageOf(element)).toBe('nb');
     expect(citationLabel(items, 'normal', languageOf(element))).toBe('(Nagy 1979, kap. 3)');

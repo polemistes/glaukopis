@@ -4,7 +4,6 @@
  * the rest.
  */
 
-import { untrack } from 'svelte';
 import type { Reference, Summary } from '$lib/api/library';
 import { documentWord, primary, t } from '$lib/i18n';
 import { library } from '$lib/state/library.svelte';
@@ -37,14 +36,15 @@ export function currentProject(): Project | null {
 }
 
 /**
- * The language of the map an element belongs to, which its text is written
- * in, where it is known. What reads it follows the language of the map, and
- * not the element: the record of an element is made anew at every change to
- * its text, and every citation in it would be shown anew with it.
+ * The language the text of an element is written in, where it is known:
+ * what its document says, by the element itself or one over it. What reads
+ * it is read anew at every change to the element's text, since the record
+ * of the element is made anew then: it should write nothing that has not
+ * changed.
  */
 export function languageOf(element: string | null | undefined): string | undefined {
-  const map = element ? untrack(() => current?.node(element)?.map) : undefined;
-  return map ? current?.map(map)?.document.language : undefined;
+  if (!element || !current?.node(element)) return undefined;
+  return current.documentOf(element).settings.language;
 }
 
 export function lookup(id: string): RefLabel | null {

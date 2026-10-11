@@ -2,8 +2,9 @@
  * The numbers that figures, equations and the parts of a document have, and
  * what the document calls them.
  *
- * A number belongs to a document, and a document is a map: the same figure
- * is the second in one map and the fifth in a map that has the first in the
+ * A number belongs to a document, and a document is an element, the one
+ * in view: the same figure is the second in the document of one element
+ * and the fifth in that of another, which has the first standing in the
  * place of one of its elements. The numbers are counted as they are when
  * the document is made (`crates/core/src/document/pandoc.rs`), from what is
  * kept of each element, without reading the texts.
@@ -16,6 +17,7 @@ import { documents } from '$lib/preview/documents.svelte';
 import { walkDocument } from '$lib/project/model/document';
 import type { Project } from '$lib/project/model/project.svelte';
 import type { RefForm } from '$lib/project/model/text';
+import { PROJECT } from '$lib/project/model/types';
 
 export type PointedKind = 'figure' | 'table' | 'equation' | 'part';
 
@@ -103,8 +105,17 @@ export function countingOf(format: DocumentFormat | undefined, language?: string
   };
 }
 
-/** Counts through the document of a map. */
-export function count(project: Project, mapId: string, counting: Counting = PLAIN): Numbers {
+/**
+ * The top of the tree under the project an element stands in: the element
+ * in whose document the text of the element is counted, where none is in
+ * view. The project itself, for the project.
+ */
+export function topOf(project: Project, element: string): string {
+  return project.pathTo(element)[1] ?? PROJECT;
+}
+
+/** Counts through the document of an element. */
+export function count(project: Project, at: string, counting: Counting = PLAIN): Numbers {
   const all: Pointed[] = [];
   const byId = new Map<string, Pointed>();
   const within: Numbers['within'] = new Map();
@@ -116,7 +127,7 @@ export function count(project: Project, mapId: string, counting: Counting = PLAI
   const counted = { figure: 0, table: 0, equation: 0 };
   const levels = [0, 0, 0, 0, 0, 0];
 
-  walkDocument(project, mapId, (placed) => {
+  walkDocument(project, at, (placed) => {
     const node = project.node(placed.id);
     if (!node) return;
     if (placed.printed && placed.level > 0) {
@@ -129,8 +140,8 @@ export function count(project: Project, mapId: string, counting: Counting = PLAI
       }
       put({ id: placed.id, kind: 'part', number, words: node.title, element: placed.id });
     }
-    // The same element may stand twice in a document, where a map stands in
-    // the place of an element of another: its numbers are those of the first.
+    // The same element may stand twice in a document, where a branch stands
+    // in the place of an element: its numbers are those of the first.
     const first = !within.has(placed.id);
     const numbers: Within = { figure: [], table: [], equation: [] };
     for (const s of node.set) {
@@ -200,11 +211,11 @@ export function formsOf(kind: PointedKind, numbered: boolean): { form: RefForm; 
 class Numbering {
   /** The formats that have been read, by their ids. */
   readonly #formats = new SvelteMap<string, DocumentFormat | null>();
-  #counted = new Map<string, { at: string; numbers: Numbers }>();
+  #counted = new Map<string, { mark: string; numbers: Numbers }>();
 
-  /** The format of the document of a map, when it has been read; it is asked for when it has not. */
-  formatOf(project: Project, mapId: string): DocumentFormat | undefined {
-    const id = documents.choice(project.map(mapId)?.document ?? {}).format;
+  /** The format of the document of an element, when it has been read; it is asked for when it has not. */
+  formatOf(project: Project, at: string): DocumentFormat | undefined {
+    const id = documents.choice(project.documentOf(at).settings).format;
     if (!id) return undefined;
     // A format that was changed is read anew.
     const key = `${id}@${documents.changed}`;
@@ -221,22 +232,22 @@ class Numbering {
     return undefined;
   }
 
-  countingOf(project: Project, mapId: string): Counting {
-    return countingOf(this.formatOf(project, mapId), project.map(mapId)?.document.language);
+  countingOf(project: Project, at: string): Counting {
+    return countingOf(this.formatOf(project, at), project.documentOf(at).settings.language);
   }
 
   /**
-   * The numbers of the document of a map, as they are now. Read where they
-   * are shown: what reads them is told when the project has changed.
+   * The numbers of the document of an element, as they are now. Read where
+   * they are shown: what reads them is told when the project has changed.
    */
-  of(project: Project, mapId: string): Numbers {
-    const counting = this.countingOf(project, mapId);
-    const at = `${project.revision}:${project.structure}:${counting.numberedHeadings}:${counting.runIn}:${counting.deepest}:${counting.label}:${counting.tableLabel}`;
-    const known = this.#counted.get(mapId);
-    if (known && known.at === at) return known.numbers;
-    const numbers = count(project, mapId, counting);
+  of(project: Project, at: string): Numbers {
+    const counting = this.countingOf(project, at);
+    const mark = `${project.revision}:${project.structure}:${counting.numberedHeadings}:${counting.runIn}:${counting.deepest}:${counting.label}:${counting.tableLabel}`;
+    const known = this.#counted.get(at);
+    if (known && known.mark === mark) return known.numbers;
+    const numbers = count(project, at, counting);
     if (this.#counted.size > 40) this.#counted.clear();
-    this.#counted.set(mapId, { at, numbers });
+    this.#counted.set(at, { mark, numbers });
     return numbers;
   }
 }

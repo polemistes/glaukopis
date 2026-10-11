@@ -1,13 +1,21 @@
 <script lang="ts">
+  /**
+   * The library, or one collection, as a tree of elements (ADR 0031): made
+   * at the top of a project, new and named after it, or chosen, and opened
+   * there.
+   */
+  import { onMount } from 'svelte';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import type { Collection } from '$lib/api/library';
   import { keepReferences } from '$lib/documents/bringing.svelte';
   import { languages, t } from '$lib/i18n';
+  import { PROJECT } from '$lib/project/model/types';
   import { library, type SortKey } from '$lib/state/library.svelte';
   import { openProject, projects } from '$lib/state/projects.svelte';
   import { router } from '$lib/state/router.svelte';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
+  import Select from '$lib/ui/Select.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
@@ -27,6 +35,19 @@
   let making = $state(false);
   let failure = $state<string | null>(null);
 
+  /** A new project, named after the map. Ids of projects are not words. */
+  const NEW = 'new';
+  let into = $state<string>(NEW);
+
+  onMount(() => {
+    if (!projects.loaded) void projects.load();
+  });
+
+  const options = $derived([
+    { value: NEW, label: t('library-map-new-project') },
+    ...projects.list.map((p) => ({ value: p.id, label: p.name })),
+  ]);
+
   const plan = $derived(
     planMap(
       name.replace(/\s+/g, ' ').trim() || t('project-untitled'),
@@ -42,16 +63,14 @@
     making = true;
     failure = null;
     try {
-      const info = await projects.create(plan.name);
-      const opened = await openProject(info.id);
-      const first = opened.project.maps.map((m) => m.id);
-      const made = makeLibraryMap(opened.project, plan);
-      // The map a project begins with gives way to that of the library.
-      for (const id of first) opened.project.deleteMap(id);
-      await keepReferences(opened.project, plan.cited);
+      const id = into === NEW ? (await projects.create(plan.name)).id : into;
+      const opened = await openProject(id);
+      const top = makeLibraryMap(opened.project, PROJECT, plan);
+      if (top) await keepReferences(opened.project, plan.cited);
       await opened.project.close();
+      if (!top) throw new Error(t('library-map-failed'));
       onclose();
-      router.go({ view: 'project', project: info.id, map: made.map, mode: 'text' });
+      router.go({ view: 'project', project: id, at: top, mode: 'text' });
     } catch (error) {
       failure = describeError(error) ?? t('library-map-failed');
       making = false;
@@ -85,6 +104,9 @@
       data-autofocus
     />
   </form>
+  <div class="into" data-library-into>
+    <Select bind:value={into} label={t('library-map-into')} {options} disabled={making} />
+  </div>
 
   <p class="what">
     {collection ? t('library-map-what-collection') : t('library-map-what-library')}
@@ -118,6 +140,9 @@
 </Dialog>
 
 <style>
+  .into {
+    margin-top: var(--space-3);
+  }
   .what {
     margin: var(--space-4) 0 0;
     color: var(--ink-2);

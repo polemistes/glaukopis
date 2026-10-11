@@ -1,7 +1,8 @@
 /**
- * Changing the elements of a map: adding them, naming them, setting what is
- * said of them, moving, copying and removing them. These are methods of
- * `Project`, which takes them in (see there).
+ * Changing the elements of a project: adding them, naming them, setting
+ * what is said of them, moving, copying and removing them, and making a
+ * branch of them in one step. These are methods of `Project`, which takes
+ * them in (see there).
  */
 
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
@@ -12,7 +13,14 @@ import type { Project } from '../project.svelte';
 import { fillBody, fillTitle } from '../text';
 import { isAncestor, subtree, topmost } from '../tree';
 import type { When } from '$lib/timeline/solve';
-import type { NodeRecord, Position, Status, TimelineSettings } from '../types';
+import {
+  PROJECT,
+  type DocumentSettings,
+  type NodeRecord,
+  type Position,
+  type Status,
+  type TimelineSettings,
+} from '../types';
 import { deleteComments } from './comments';
 import { makeLink } from './links';
 
@@ -46,7 +54,6 @@ export function makeNode(
   p: Project,
   id: string,
   init: {
-    map: string;
     parent: string | null;
     order: string;
     title?: string;
@@ -55,7 +62,6 @@ export function makeNode(
   },
 ): YNode {
   const n = new Y.Map<unknown>();
-  n.set('map', init.map);
   n.set('parent', init.parent);
   n.set('order', init.order);
   if (init.pos) n.set('pos', init.pos);
@@ -69,19 +75,21 @@ export function makeNode(
   return n;
 }
 
+/** What is not copied with an element: its place, its content, and what documents of before said of it. */
+const NOT_CLONED = new Set(['title', 'body', 'map', 'side']);
+
 export function cloneNode(
   p: Project,
   from: string,
   id: string,
-  change: { map: string; parent: string | null; origin?: NodeRecord['origin']; order?: string },
+  change: { parent: string; origin?: NodeRecord['origin']; order?: string },
 ): YNode {
   const source = p.yNodes.get(from)!;
   const n = new Y.Map<unknown>();
   for (const [key, value] of source) {
-    if (key === 'title' || key === 'body') continue;
+    if (NOT_CLONED.has(key)) continue;
     n.set(key, value instanceof Y.AbstractType ? value.clone() : structuredClone(value));
   }
-  n.set('map', change.map);
   n.set('parent', change.parent);
   if (change.order) n.set('order', change.order);
   // What the original is now is kept with the copy, to tell whether it changes.
@@ -113,6 +121,15 @@ function set(p: Project, id: string, key: string, value: unknown, absentWhen: un
   });
 }
 
+/** A record of settings with nothing empty in it. */
+function clean<T extends object>(given: T): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...(given as Record<string, unknown>) };
+  for (const [k, v] of Object.entries(out)) {
+    if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) delete out[k];
+  }
+  return out;
+}
+
 /**
  * The element an item makes up: the element itself, or one of its parts
  * (its name, its text, where it stands). Not what is written within them.
@@ -131,42 +148,48 @@ export function deleteNodes(p: Project, ids: Set<string>) {
   for (const [linkId, l] of p.yLinks) {
     if (ids.has(str(l.get('from'))) || ids.has(str(l.get('to')))) p.yLinks.delete(linkId);
   }
-  // A lane of a timeline that was one of them is a lane no more: a choice
-  // of lanes that named only what is gone goes with it, and each child of
-  // the centre is a lane again.
-  for (const m of p.yMaps.values()) {
-    if (!(m instanceof Y.Map)) continue;
-    const timeline = m.get('timeline') as TimelineSettings | undefined;
+  // What stood for one of them stands for nothing. A lane of a timeline
+  // that was one of them is a lane no more: a choice of lanes that named
+  // only what is gone goes with it, and each child of the element in view
+  // is a lane again.
+  for (const n of p.yNodes.values()) {
+    const include = n.get('include');
+    if (typeof include === 'string' && ids.has(include)) n.delete('include');
+    const timeline = n.get('timeline') as TimelineSettings | undefined;
     const lanes = timeline?.lanes;
     if (!lanes?.some((l) => l.element && ids.has(l.element))) continue;
     const kept = lanes.filter((l) => !l.element || !ids.has(l.element));
     const next: TimelineSettings = { ...timeline, lanes: kept };
     if (!kept.length) delete next.lanes;
-    if (Object.keys(next).length) m.set('timeline', next);
-    else m.delete('timeline');
+    if (Object.keys(next).length) n.set('timeline', next);
+    else n.delete('timeline');
   }
 }
 
 export const elementChanges = {
-  /** Adds an element under another. `index` is its place among the children; at the end when absent. */
+  /**
+   * Adds an element under another. `index` is its place among the children,
+   * at the end when absent; `pos` where it stands, relative to its parent,
+   * when it is not to be placed automatically.
+   */
   addChild(
     this: Project,
     parentId: string,
-    options: { title?: string; body?: string; index?: number } = {},
+    options: { title?: string; body?: string; index?: number; pos?: Position } = {},
   ): string | null {
     const parent = this.node(parentId);
     if (!parent) return null;
-    const tree = this.tree(parent.map);
+    const tree = this.tree();
     const siblings = tree.children.get(parentId) ?? [];
     const id = newId();
     this.transact(() => {
       const order = keyAt(this, siblings, options.index ?? siblings.length);
       makeNode(this, id, {
-        map: parent.map,
         parent: parentId,
         order,
         title: options.title,
         body: options.body,
+        pos: options.pos ? { x: Math.round(options.pos.x), y: Math.round(options.pos.y) } : null,
       });
       const p = this.yNodes.get(parentId);
       if (p?.get('collapsed') === true) p.delete('collapsed');
@@ -174,7 +197,7 @@ export const elementChanges = {
     return id;
   },
 
-  /** Adds an element after another, under the same parent. After the centre, adds a child. */
+  /** Adds an element after another, under the same parent. After the project itself, adds a child. */
   addSibling(
     this: Project,
     nodeId: string,
@@ -182,40 +205,17 @@ export const elementChanges = {
   ): string | null {
     const node = this.node(nodeId);
     if (!node) return null;
-    const tree = this.tree(node.map);
+    const tree = this.tree();
     const parentId = tree.parent.get(nodeId) ?? null;
-    if (nodeId === tree.root) return this.addChild(nodeId, options);
-    if (parentId === null) {
-      // Beside a loose element: another loose element, below it.
-      const pos = node.pos ?? { x: 0, y: 0 };
-      return this.addLoose(node.map, { x: pos.x, y: pos.y + 70 }, options.title);
-    }
+    if (parentId === null) return this.addChild(nodeId, options);
     const siblings = tree.children.get(parentId) ?? [];
     const index = siblings.indexOf(nodeId) + (options.before ? 0 : 1);
     const id = newId();
     this.transact(() => {
       makeNode(this, id, {
-        map: node.map,
         parent: parentId,
         order: keyAt(this, siblings, index),
         title: options.title,
-      });
-    });
-    return id;
-  },
-
-  /** Adds an element that is attached to nothing. */
-  addLoose(this: Project, mapId: string, pos: Position, title?: string): string | null {
-    if (!this.yMaps.has(mapId)) return null;
-    const tree = this.tree(mapId);
-    const id = newId();
-    this.transact(() => {
-      makeNode(this, id, {
-        map: mapId,
-        parent: null,
-        order: keyAt(this, tree.loose, tree.loose.length),
-        title,
-        pos: { x: Math.round(pos.x), y: Math.round(pos.y) },
       });
     });
     return id;
@@ -278,42 +278,68 @@ export const elementChanges = {
     set(this, id, 'excluded', excluded, false);
   },
 
-  /** Whether including `mapId` in an element of `inMap` would make a map include itself. */
-  wouldLoop(this: Project, inMap: string, mapId: string): boolean {
-    if (inMap === mapId) return true;
+  /** Changes what is said of an element as a document. What is set empty is no longer said. */
+  setDocument(this: Project, id: string, patch: Partial<DocumentSettings>) {
+    const n = this.yNodes.get(id);
+    if (!n) return;
+    this.transact(() => {
+      const current = (n.get('document') as DocumentSettings | undefined) ?? {};
+      const next = clean({ ...current, ...patch });
+      if (Object.keys(next).length) n.set('document', next);
+      else n.delete('document');
+    });
+  },
+
+  /** Changes how an element is shown as a timeline. */
+  setTimeline(this: Project, id: string, patch: Partial<TimelineSettings>) {
+    const n = this.yNodes.get(id);
+    if (!n) return;
+    this.transact(() => {
+      const current = (n.get('timeline') as TimelineSettings | undefined) ?? {};
+      const next = clean({ ...current, ...patch });
+      if (Object.keys(next).length) n.set('timeline', next);
+      else n.delete('timeline');
+    });
+  },
+
+  /**
+   * Whether an element `at` that stood for `id` in the document would make
+   * a document hold itself: when `id` is `at` or over it, or holds, by
+   * what stands for other elements within it, an element that is.
+   */
+  wouldLoop(this: Project, at: string, id: string): boolean {
+    const tree = this.tree();
     const seen = new Set<string>();
-    const visit = (m: string): boolean => {
-      if (m === inMap) return true;
-      if (seen.has(m)) return false;
-      seen.add(m);
-      for (const n of this.nodes.values()) {
-        if (n.map === m && n.include && visit(n.include)) return true;
+    const visit = (e: string): boolean => {
+      if (e === at || isAncestor(tree, e, at)) return true;
+      if (seen.has(e)) return false;
+      seen.add(e);
+      for (const d of subtree(tree, e)) {
+        const include = this.nodes.get(d)?.include;
+        if (include && visit(include)) return true;
       }
       return false;
     };
-    return visit(mapId);
+    return visit(id);
   },
 
-  /** Makes an element stand for another map in the document. Returns false when that would loop. */
-  setInclude(this: Project, id: string, mapId: string | null): boolean {
+  /** Makes an element stand for another in the document. Returns false when that would loop. */
+  setInclude(this: Project, id: string, element: string | null): boolean {
     const node = this.node(id);
     if (!node) return false;
-    if (mapId && (!this.yMaps.has(mapId) || this.wouldLoop(node.map, mapId))) return false;
-    set(this, id, 'include', mapId, null);
+    if (element && (!this.nodes.has(element) || this.wouldLoop(id, element))) return false;
+    set(this, id, 'include', element, null);
     return true;
   },
 
-  /** Removes the positions the user gave, so that the branch is laid out automatically. */
+  /** Removes the positions the user gave, so that the branches are laid out automatically. */
   tidy(this: Project, ids: string[]) {
     this.transact(() => {
+      const tree = this.tree();
       for (const top of ids) {
-        const node = this.node(top);
-        if (!node) continue;
-        const tree = this.tree(node.map);
+        if (!this.node(top)) continue;
         for (const id of subtree(tree, top)) {
-          const parent = tree.parent.get(id) ?? null;
-          // The centre and loose elements keep their place: they have no other.
-          if (parent === null) continue;
+          if (id === PROJECT) continue;
           this.yNodes.get(id)?.delete('pos');
         }
       }
@@ -321,39 +347,30 @@ export const elementChanges = {
   },
 
   /**
-   * Moves elements, with all under them, to a parent (or to none: loose), at a
-   * place among its children. Elements cannot be moved under themselves.
-   * Returns the ids that were moved.
+   * Moves elements, with all under them, to a parent, at a place among its
+   * children. Elements cannot be moved under themselves; the project itself
+   * cannot be moved. `pos` is where the first will stand, relative to the
+   * parent, the rest below it; null has them placed automatically; nothing
+   * leaves their places as they were. Returns the ids that were moved.
    */
   move(
     this: Project,
     ids: string[],
-    parentId: string | null,
+    parentId: string,
     index?: number,
-    options: { pos?: Position | null; map?: string } = {},
+    options: { pos?: Position | null } = {},
   ): string[] {
-    const first = this.node(ids[0]);
-    if (!first) return [];
-    const sourceMap = first.map;
-    const targetMap = parentId
-      ? (this.node(parentId)?.map ?? sourceMap)
-      : (options.map ?? sourceMap);
-    const sourceTree = this.tree(sourceMap);
-    const targetTree = this.tree(targetMap);
+    if (!this.node(parentId)) return [];
+    const tree = this.tree();
     const movable = topmost(
-      sourceTree,
-      ids.filter((id) => this.node(id)?.map === sourceMap),
-    ).filter(
-      (id) =>
-        id !== sourceTree.root &&
-        id !== parentId &&
-        !(parentId && sourceMap === targetMap && isAncestor(sourceTree, id, parentId)),
-    );
+      tree,
+      ids.filter((id) => this.node(id)),
+    ).filter((id) => id !== PROJECT && id !== parentId && !isAncestor(tree, id, parentId));
     if (!movable.length) return [];
 
     this.transact(() => {
       const moving = new Set(movable);
-      const list = parentId ? (targetTree.children.get(parentId) ?? []) : targetTree.loose;
+      const list = tree.children.get(parentId) ?? [];
       // Where in the list, counted without those that are moving.
       let at = index ?? list.length;
       at -= list.slice(0, at).filter((id) => moving.has(id)).length;
@@ -369,93 +386,51 @@ export const elementChanges = {
           if (options.pos) {
             n.set('pos', { x: Math.round(options.pos.x), y: Math.round(options.pos.y + i * 60) });
           } else n.delete('pos');
-        } else if (parentId === null && !n.get('pos')) {
-          n.set('pos', { x: 0, y: 0 });
         }
         n.delete('side');
-        if (targetMap !== sourceMap) {
-          for (const d of subtree(sourceTree, id)) this.yNodes.get(d)?.set('map', targetMap);
-        }
       });
-      if (parentId) {
-        const p = this.yNodes.get(parentId);
-        if (p?.get('collapsed') === true) p.delete('collapsed');
-      }
+      const p = this.yNodes.get(parentId);
+      if (p?.get('collapsed') === true) p.delete('collapsed');
     });
     return movable;
   },
 
   /**
-   * Makes a loose element the centre of its map: the centre that was, with
-   * all under it, goes under it, after what is under it already, where it
-   * holds its place among them as any element does. Nothing happens to an
-   * element that is not loose. Returns whether it was done.
-   */
-  makeCentre(this: Project, id: string): boolean {
-    const node = this.node(id);
-    if (!node) return false;
-    const tree = this.tree(node.map);
-    const old = tree.root;
-    if (!old || id === old || tree.parent.get(id) || !tree.loose.includes(id)) return false;
-    const map = this.yMaps.get(node.map);
-    if (!map) return false;
-    const siblings = tree.children.get(id) ?? [];
-    this.transact(() => {
-      map.set('root', id);
-      const centre = this.yNodes.get(id)!;
-      // The centre stands where the map is drawn from, at no place of its own.
-      centre.delete('pos');
-      centre.delete('side');
-      if (centre.get('collapsed') === true) centre.delete('collapsed');
-      const was = this.yNodes.get(old)!;
-      was.set('parent', id);
-      was.set('order', keyAt(this, siblings, siblings.length));
-      was.delete('pos');
-      was.delete('side');
-    });
-    return true;
-  },
-
-  /**
-   * Copies elements, with all under them, to a parent in any map (or to none:
-   * loose, in `options.map`). Each copy remembers what it was copied from.
-   * Returns the ids of the copies of the elements named.
+   * Copies elements, with all under them, to a parent, at a place among its
+   * children. Each copy remembers what it was copied from. `pos` as for
+   * `move`; without it the copies are placed automatically. Returns the ids
+   * of the copies of the elements named.
    */
   copy(
     this: Project,
     ids: string[],
-    parentId: string | null,
+    parentId: string,
     index?: number,
-    options: { pos?: Position | null; map?: string } = {},
+    options: { pos?: Position | null } = {},
   ): string[] {
-    const first = this.node(ids[0]);
-    if (!first) return [];
-    const sourceTree = this.tree(first.map);
-    const targetMap = parentId ? this.node(parentId)?.map : (options.map ?? first.map);
-    if (!targetMap || !this.yMaps.has(targetMap)) return [];
-    const targetTree = this.tree(targetMap);
+    if (!this.node(parentId)) return [];
+    const tree = this.tree();
     const tops = topmost(
-      sourceTree,
-      ids.filter((id) => this.node(id)?.map === first.map),
+      tree,
+      ids.filter((id) => this.node(id) && id !== PROJECT),
     );
     const made: string[] = [];
 
     this.transact(() => {
-      const list = parentId ? (targetTree.children.get(parentId) ?? []) : targetTree.loose;
+      const list = tree.children.get(parentId) ?? [];
       const siblings = list.slice();
       let at = index ?? list.length;
       const map = new Map<string, string>();
       for (const top of tops) {
-        for (const old of subtree(sourceTree, top)) map.set(old, newId());
+        for (const old of subtree(tree, top)) map.set(old, newId());
       }
       for (const top of tops) {
-        for (const old of subtree(sourceTree, top)) {
+        for (const old of subtree(tree, top)) {
           const isTop = old === top;
-          const oldParent = sourceTree.parent.get(old) ?? null;
+          const oldParent = tree.parent.get(old) ?? null;
           const copy = cloneNode(this, old, map.get(old)!, {
-            map: targetMap,
-            parent: isTop ? parentId : (map.get(oldParent!) ?? null),
-            origin: { map: first.map, node: old },
+            parent: isTop ? parentId : (map.get(oldParent!) ?? parentId),
+            origin: { node: old },
             order: isTop ? keyAt(this, siblings, at) : undefined,
           });
           if (isTop) {
@@ -467,50 +442,46 @@ export const elementChanges = {
                 x: Math.round(options.pos.x),
                 y: Math.round(options.pos.y + (made.length - 1) * 60),
               });
-            else if (parentId === null) copy.set('pos', copy.get('pos') ?? { x: 0, y: 0 });
             else copy.delete('pos');
-            copy.delete('side');
           }
         }
       }
       cloneLinks(this, map);
+      const p = this.yNodes.get(parentId);
+      if (p?.get('collapsed') === true) p.delete('collapsed');
     });
     return made;
   },
 
   /**
    * Removes elements. With `keepChildren`, what is under them moves up to
-   * their parent; otherwise it goes with them. The centre of a map cannot be
+   * their parent; otherwise it goes with them. The project itself cannot be
    * removed. Returns how many elements went.
    */
   remove(this: Project, ids: string[], options: { keepChildren?: boolean } = {}): number {
-    const first = this.node(ids[0]);
-    if (!first) return 0;
-    const tree = this.tree(first.map);
+    const tree = this.tree();
     const doomed = new Set<string>();
     this.transact(() => {
       if (options.keepChildren) {
         for (const id of ids) {
-          if (id === tree.root || !this.yNodes.has(id)) continue;
-          const parent = tree.parent.get(id) ?? null;
+          if (id === PROJECT || !this.yNodes.has(id)) continue;
+          const parent = tree.parent.get(id) ?? PROJECT;
           const children = tree.children.get(id) ?? [];
-          const siblings = (parent ? (tree.children.get(parent) ?? []) : tree.loose).filter(
-            (s) => s !== id,
-          );
-          const at = (parent ? (tree.children.get(parent) ?? []) : tree.loose).indexOf(id);
+          const list = tree.children.get(parent) ?? [];
+          const siblings = list.filter((s) => s !== id);
+          const at = list.indexOf(id);
           children.forEach((c, i) => {
             const n = this.yNodes.get(c)!;
             n.set('parent', parent);
             n.set('order', keyAt(this, siblings, at + i));
             siblings.splice(at + i, 0, c);
             n.delete('pos');
-            if (parent === null) n.set('pos', { x: 0, y: 0 });
           });
           doomed.add(id);
         }
       } else {
         for (const top of topmost(tree, ids)) {
-          if (top === tree.root || !this.yNodes.has(top)) continue;
+          if (top === PROJECT || !this.yNodes.has(top)) continue;
           for (const id of subtree(tree, top)) doomed.add(id);
         }
       }
@@ -549,5 +520,57 @@ export const elementChanges = {
     });
     // Then it is no longer behind its original.
     this.settleCopy(id);
+  },
+
+  /**
+   * A branch made whole under an element, at the end of what is under it,
+   * in one step that undo takes back as one: for a document that is brought
+   * in. The first of the parts is the top of the branch; every other says
+   * which part it stands under, by the place of that part in the list, and
+   * stands after it. `fill` writes the name and the text of each; without
+   * parts, one element is made, named `name`. `document` is said of the top.
+   * Returns the top and every element, in the order of the parts.
+   */
+  buildBranch(
+    this: Project,
+    under: string,
+    name: string,
+    parts: { under: number }[],
+    fill: (part: number, title: Y.XmlFragment, body: Y.XmlFragment) => void,
+    document: DocumentSettings = {},
+  ): { top: string; nodes: string[] } | null {
+    if (!this.node(under)) return null;
+    const tree = this.tree();
+    const siblings = tree.children.get(under) ?? [];
+    const nodes = parts.length ? parts.map(() => newId()) : [newId()];
+    // Under what each stands, and the others that stand there, in their order.
+    const over = parts.map((p, i) => (i > 0 && p.under > 0 && p.under < i ? p.under : 0));
+    const beside = new Map<number, number[]>();
+    for (let i = 1; i < parts.length; i++) {
+      const list = beside.get(over[i]);
+      if (list) list.push(i);
+      else beside.set(over[i], [i]);
+    }
+    const orders = new Map<number, string>();
+    for (const list of beside.values()) {
+      const keys = generateNKeysBetween(null, null, list.length);
+      list.forEach((part, i) => orders.set(part, keys[i]));
+    }
+    const settings = clean(document);
+    this.transact(() => {
+      const topOrder = keyAt(this, siblings, siblings.length);
+      nodes.forEach((node, i) => {
+        const n = makeNode(this, node, {
+          parent: i === 0 ? under : nodes[over[i]],
+          order: i === 0 ? topOrder : (orders.get(i) ?? 'a0'),
+          title: i === 0 && !parts.length ? name.replace(/\s+/g, ' ').trim() : '',
+        });
+        if (i === 0 && Object.keys(settings).length) n.set('document', settings);
+        if (parts.length) fill(i, n.get('title') as Y.XmlFragment, n.get('body') as Y.XmlFragment);
+      });
+      const p = this.yNodes.get(under);
+      if (p?.get('collapsed') === true) p.delete('collapsed');
+    });
+    return { top: nodes[0], nodes };
   },
 };

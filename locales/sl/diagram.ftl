@@ -2,8 +2,6 @@
 
 diagram-map = Miselni vzorec
 diagram-idea = Ime
-diagram-new-loose = Nov prost element tukaj
-diagram-new-loose-hint = Misel, ki še nima svojega mesta
 diagram-show-all = Pokaži ves miselni vzorec
 diagram-tidy = Uredi ves miselni vzorec
 diagram-tidy-hint = Vsak element se vrne na svoje samodejno mesto

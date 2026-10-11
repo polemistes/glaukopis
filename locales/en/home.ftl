@@ -45,6 +45,9 @@ home-pane = The list of projects
 home-pane-toggle = The list of projects
 home-pane-close = Close the list of projects
 home-pane-between = Between the list of projects and the project
+# On the chevron before an element of the open project, in the pane: what is under it is shown, or hidden.
+home-tree-unfold = Show what is under it
+home-tree-fold = Hide what is under it
 # Why the project that is open cannot be renamed or deleted from its menu.
 home-open-now = It is open now
 
@@ -52,13 +55,13 @@ home-open-now = It is open now
 
 home-map-menu = A map of the projects…
 home-map-title = A map of the projects
-home-map-about = A new project, with one map: the folders as elements, and under each folder the projects in it.
+home-map-about = A new project: the folders as elements, and under each folder the projects in it.
 home-map-name-default = Projects
 home-map-what = What the map holds
 home-map-names = Only the names
 home-map-names-hint = An element for each project, with its description as its text.
 home-map-everything = With everything in them
-home-map-everything-hint = Under each project its maps, and under each map all its elements, with their names and texts.
+home-map-everything-hint = Under each project all its elements, with their names and texts.
 home-map-note = The citations keep their references. A cross-reference to a figure or a part points at nothing in the new project, and comments stay behind.
 home-map-reading = Reading “{ $name }”…
 home-map-working = Making the map…

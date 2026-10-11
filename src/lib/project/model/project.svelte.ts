@@ -2,8 +2,9 @@
  * A project: the shared document, and its reactive reading. See ADR 0002.
  *
  * What changes it is in files of their own, whose methods the project takes
- * in (`changing/`): its maps, its elements, what it keeps of references, and
- * associations. Who else has it open is told by `presence.svelte.ts`; it is
+ * in (`changing/`): its elements, what it keeps of references, and
+ * associations. It is one tree, with the project's own element at the top
+ * (ADR 0037); `migrate.ts` brings a document written before into that shape. Who else has it open is told by `presence.svelte.ts`; it is
  * written to disk by `saving.svelte.ts`; the people of its full history are
  * kept by `people.ts`.
  *
@@ -19,9 +20,8 @@ import { ySyncPluginKey } from 'y-prosemirror';
 import type { Awareness } from 'y-protocols/awareness';
 import { commentChanges } from './changing/comments';
 import { kindChanges } from './changing/kinds';
-import { deleteNodes, elementChanges, elementOf } from './changing/elements';
+import { elementChanges, elementOf } from './changing/elements';
 import { linkChanges } from './changing/links';
-import { mapChanges } from './changing/maps';
 import { cleanLook, family, passageKindChanges } from './changing/passage-kinds';
 import { referenceChanges } from './changing/references';
 import { HISTORY, LOAD, LOCAL, str, TIDY, type YNode } from './origins';
@@ -34,16 +34,18 @@ import {
   type SaveStatus,
   type Summary,
 } from './saving.svelte';
+import { migrate, needsMigration } from './migrate';
 import { bodyFacts, inlineText, readBody, readTitle, titleHtml, type Block } from './text';
-import { buildTree, type FlatNode, type Tree } from './tree';
+import { buildTree, pathTo, viewOf, type FlatNode, type Tree } from './tree';
 import {
+  OWN_SETTINGS,
+  PROJECT,
   STATUSES,
   type DocumentSettings,
   type Hand,
   type KindRecord,
   type TimelineSettings,
   type LinkRecord,
-  type MapRecord,
   type NodeRecord,
   type PassageKindRecord,
   type Position,
@@ -108,12 +110,17 @@ function readWhen(value: unknown): When | null {
   return end ? { start, end } : { start };
 }
 
-/** The kinds in hand of a map, as the document holds them: lists of ids, empty where nothing is said. */
+/** The kinds in hand of the project, as the document holds them: lists of ids, empty where nothing is said. */
 function readHand(value: unknown): Hand {
   const list = (ids: unknown) =>
     Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string' && !!id) : [];
   const given = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   return { pinned: list(given.pinned), unpinned: list(given.unpinned) };
+}
+
+/** A record of settings as the document holds it: an object, or nothing. */
+function readRecord<T extends object>(value: unknown): T {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as T) : ({} as T);
 }
 
 /**
@@ -131,7 +138,6 @@ function printOf(text: string): string {
   return `${text.length}.${(a >>> 0).toString(36)}.${(b >>> 0).toString(36)}`;
 }
 
-type MapChanges = typeof mapChanges;
 type ElementChanges = typeof elementChanges;
 type ReferenceChanges = typeof referenceChanges;
 type LinkChanges = typeof linkChanges;
@@ -142,7 +148,6 @@ type PassageKindChanges = typeof passageKindChanges;
 /** What changes a project, in `changing/`: its methods, which it takes in below. */
 export interface Project
   extends
-    MapChanges,
     ElementChanges,
     ReferenceChanges,
     LinkChanges,
@@ -153,7 +158,6 @@ export interface Project
 export class Project {
   readonly doc: Y.Doc;
   readonly yMeta: Y.Map<unknown>;
-  readonly yMaps: Y.Map<YNode>;
   readonly yNodes: Y.Map<YNode>;
   readonly yLinks: Y.Map<YNode>;
   readonly yRefs: Y.Map<RefRecord>;
@@ -181,10 +185,10 @@ export class Project {
   readonly undoManager: Y.UndoManager;
 
   // ---- what the interface reads ----
+  /** The name of the project: that of its element (`PROJECT`), as plain text. */
   name = $state('');
-  /** The language new maps of this project are given, as a tag; null where the settings decide. */
-  language = $state<string | null>(null);
-  maps = $state.raw<MapRecord[]>([]);
+  /** The kinds of paragraph and of words the writer has pinned to the hand, and those taken out of it. */
+  hand = $state.raw<Hand>({ pinned: [], unpinned: [] });
   readonly nodes = new SvelteMap<string, NodeRecord>();
   links = $state.raw<LinkRecord[]>([]);
   readonly refs = new SvelteMap<string, RefRecord>();
@@ -220,7 +224,6 @@ export class Project {
   constructor(persistence: Persistence | null = null) {
     this.doc = new Y.Doc();
     this.yMeta = this.doc.getMap('meta');
-    this.yMaps = this.doc.getMap('maps');
     this.yNodes = this.doc.getMap('nodes');
     this.yLinks = this.doc.getMap('links');
     this.yRefs = this.doc.getMap('refs');
@@ -241,7 +244,7 @@ export class Project {
       beforeState: () => this.#people.tidy(),
     });
 
-    this.undoManager = new Y.UndoManager([this.yMeta, this.yMaps, this.yNodes, this.yLinks], {
+    this.undoManager = new Y.UndoManager([this.yMeta, this.yNodes, this.yLinks], {
       trackedOrigins: new Set<unknown>([LOCAL, ySyncPluginKey]),
       captureTimeout: 600,
       // Taking back a paragraph or an element one began must not take with it
@@ -266,7 +269,6 @@ export class Project {
     this.undoManager.on('stack-cleared', stacks);
 
     this.yMeta.observe(() => this.#readMeta());
-    this.yMaps.observeDeep(() => this.#readMaps());
     this.yLinks.observeDeep(() => this.#readLinks());
     this.yRefs.observe((event) => {
       for (const key of event.keysChanged) {
@@ -407,38 +409,37 @@ export class Project {
   }
 
   /**
-   * Elements of a map that was deleted while another added to it are left
-   * with no map to be seen in, and would be counted and carried for ever:
-   * they go. Only where the map is known to have been deleted, not where it
-   * has only not arrived yet.
+   * A project begins with its own element, named `name`; one written before
+   * ADR 0037, as maps with a centre each and loose elements beside, is
+   * brought into one tree. Done once, saved but not undone; nothing happens
+   * to a project that is in shape. Not for a joined project that has not
+   * arrived yet: its element is on its way. Returns whether anything was done.
+   */
+  begin(name: string): boolean {
+    if (!needsMigration(this.doc)) return false;
+    this.doc.transact(() => migrate(this.doc, name), TIDY);
+    return true;
+  }
+
+  /**
+   * Threads of comments on elements that are gone, by undo or by another,
+   * go with them. Only where the element is known to have been deleted, not
+   * where it has only not arrived yet.
    */
   #sweep() {
-    const lost: string[] = [];
-    for (const [id, n] of this.yNodes) {
-      const map = n.get('map');
-      if (typeof map === 'string' && !this.yMaps.has(map) && this.yMaps._map.get(map)?.deleted)
-        lost.push(id);
-    }
-    // So with the threads of comments on elements that are gone, by undo or by another.
     const stale: string[] = [];
     for (const [id, thread] of this.yComments) {
       const element = str(thread.get('element'));
-      if (
-        !this.yNodes.has(element) &&
-        (lost.includes(element) || this.yNodes._map.get(element)?.deleted)
-      )
-        stale.push(id);
+      if (!this.yNodes.has(element) && this.yNodes._map.get(element)?.deleted) stale.push(id);
     }
-    if (lost.length || stale.length)
+    if (stale.length)
       this.doc.transact(() => {
-        deleteNodes(this, new Set(lost));
         for (const id of stale) this.yComments.delete(id);
       }, TIDY);
   }
 
   #readAll() {
     this.#readMeta();
-    this.#readMaps();
     this.#readLinks();
     this.nodes.clear();
     for (const id of this.yNodes.keys()) this.#readNode(id);
@@ -615,17 +616,24 @@ export class Project {
   }
 
   summary(): Summary {
-    const elements = new Map<string, number>();
     let words = 0;
     const references = new Set<string>();
     for (const n of this.nodes.values()) {
-      elements.set(n.map, (elements.get(n.map) ?? 0) + 1);
       words += n.words;
       for (const id of n.cited) references.add(id);
     }
+    // The trees under the project stand for its maps, with the elements of each counted.
+    const tree = this.tree();
+    const count = (id: string): number =>
+      (tree.children.get(id) ?? []).reduce((n, c) => n + count(c), 1);
     return {
       name: this.name || undefined,
-      maps: this.maps.map((m) => ({ id: m.id, name: m.name, elements: elements.get(m.id) ?? 0 })),
+      description: this.#description(),
+      maps: (tree.children.get(PROJECT) ?? []).map((id) => ({
+        id,
+        name: this.nodes.get(id)?.title || t('project-untitled'),
+        elements: count(id),
+      })),
       words,
       references: references.size,
       pictures: this.usedPictures().map((p) => p.hash),
@@ -633,33 +641,25 @@ export class Project {
     };
   }
 
+  /** The first words of the project's text, for the list of projects, which does not read the documents. */
+  #description(): string {
+    const out: string[] = [];
+    for (const b of this.blocksOf(PROJECT)) {
+      if (b.kind === 'paragraph' || b.kind === 'passage' || b.kind === 'script')
+        out.push(inlineText(b.content));
+      if (out.join(' ').length > 280) break;
+    }
+    return out.join(' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+  }
+
   // =====================================================================
   // Reading
   // =====================================================================
 
   #readMeta() {
-    this.name = str(this.yMeta.get('name'));
-    this.language = str(this.yMeta.get('language')).trim() || null;
-  }
-
-  #readMaps() {
-    const list: MapRecord[] = [];
-    for (const [id, m] of this.yMaps) {
-      if (!(m instanceof Y.Map)) continue;
-      list.push({
-        id,
-        name: str(m.get('name'), t('project-untitled')),
-        root: str(m.get('root')),
-        order: str(m.get('order'), 'a0'),
-        created: str(m.get('created')),
-        document: (m.get('document') as DocumentSettings | undefined) ?? {},
-        timeline: (m.get('timeline') as TimelineSettings | undefined) ?? {},
-        hand: readHand(m.get('hand')),
-      });
-    }
-    list.sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : a.id < b.id ? -1 : 1));
-    this.maps = list;
-    this.structure++;
+    // The name is the project element's; until that has arrived, what was written here.
+    if (!this.yNodes.has(PROJECT)) this.name = str(this.yMeta.get('name'));
+    this.hand = readHand(this.yMeta.get('hand'));
   }
 
   #readLinks() {
@@ -691,23 +691,25 @@ export class Project {
     const blocks = readBody(n.get('body') as Y.XmlFragment | undefined);
     const facts = bodyFacts(blocks);
     const pos = n.get('pos') as Position | null | undefined;
-    const side = n.get('side');
     const origin = n.get('origin') as NodeRecord['origin'] | undefined;
     const record: NodeRecord = {
       id,
-      map: str(n.get('map')),
-      parent: (n.get('parent') as string | null | undefined) ?? null,
+      parent: id === PROJECT ? null : ((n.get('parent') as string | null | undefined) ?? null),
       order: str(n.get('order'), 'a0'),
       pos: pos && Number.isFinite(pos.x) && Number.isFinite(pos.y) ? { x: pos.x, y: pos.y } : null,
-      side: side === 'left' || side === 'right' ? side : null,
       collapsed: n.get('collapsed') === true,
       heading: n.get('heading') !== false,
       excluded: n.get('excluded') === true,
       include: (n.get('include') as string | null | undefined) || null,
-      origin: origin && origin.map && origin.node ? origin : null,
+      origin:
+        origin && origin.node
+          ? { node: origin.node, ...(origin.print ? { print: origin.print } : {}) }
+          : null,
       status: STATUSES.find((s) => s === n.get('status')) ?? null,
       kind: str(n.get('kind')) || null,
       when: readWhen(n.get('when')),
+      document: readRecord<DocumentSettings>(n.get('document')),
+      timeline: readRecord<TimelineSettings>(n.get('timeline')),
       title: inlineText(title).trim(),
       titleHtml: titleHtml(title),
       empty: facts.empty,
@@ -729,6 +731,7 @@ export class Project {
     this.#stamps.set(id, { print, stamp });
     this.#texts.set(record, { blocks, stamp });
     this.nodes.set(id, record);
+    if (id === PROJECT) this.name = record.title;
   }
 
   /** What each element was, in few signs, as it was last read: see `fingerprint`. */
@@ -755,15 +758,12 @@ export class Project {
    * was made or its change was last seen: nothing where that is not known,
    * of a copy made before it was kept. Nothing, of what is no copy.
    */
-  copyOf(
-    id: string,
-  ): { original: NodeRecord | null; map: MapRecord | null; changed: boolean | null } | null {
+  copyOf(id: string): { original: NodeRecord | null; changed: boolean | null } | null {
     const origin = this.nodes.get(id)?.origin;
     if (!origin) return null;
     const original = this.nodes.get(origin.node) ?? null;
     return {
       original,
-      map: this.map(origin.map) ?? null,
       changed: original && origin.print ? this.fingerprint(original.id) !== origin.print : null,
     };
   }
@@ -799,7 +799,7 @@ export class Project {
       touched.add(id);
       if (event.path.length === 1 && event instanceof Y.YMapEvent) {
         for (const key of event.keysChanged) {
-          if (key === 'parent' || key === 'order' || key === 'map') structural = true;
+          if (key === 'parent' || key === 'order') structural = true;
         }
       }
     }
@@ -807,32 +807,68 @@ export class Project {
     if (structural) this.structure++;
   }
 
-  map(id: string | null | undefined): MapRecord | undefined {
-    return id ? this.maps.find((m) => m.id === id) : undefined;
-  }
-
   node(id: string | null | undefined): NodeRecord | undefined {
     return id ? this.nodes.get(id) : undefined;
   }
 
-  /** The tree of a map. Reading it makes the reader depend on the shape of the project. */
-  tree(mapId: string): Tree {
+  /**
+   * The tree of the project, or of it seen from an element: that element at
+   * the top, and all under it. Reading it makes the reader depend on the
+   * shape of the project.
+   */
+  tree(root: string = PROJECT): Tree {
     const structure = this.structure;
-    const cached = this.#trees.get(mapId);
+    const cached = this.#trees.get(root);
     if (cached && cached.structure === structure) return cached.tree;
-    const flat: FlatNode[] = [];
-    for (const [id, n] of this.yNodes) {
-      if (!(n instanceof Y.Map)) continue;
-      flat.push({
-        id,
-        map: str(n.get('map')),
-        parent: (n.get('parent') as string | null | undefined) ?? null,
-        order: str(n.get('order'), 'a0'),
-      });
+    let whole = root === PROJECT ? null : this.#trees.get(PROJECT);
+    if (!whole || whole.structure !== structure) {
+      const flat: FlatNode[] = [];
+      for (const [id, n] of this.yNodes) {
+        if (!(n instanceof Y.Map)) continue;
+        flat.push({
+          id,
+          parent: (n.get('parent') as string | null | undefined) ?? null,
+          order: str(n.get('order'), 'a0'),
+        });
+      }
+      whole = { structure, tree: buildTree(flat) };
+      this.#trees.set(PROJECT, whole);
     }
-    const tree = buildTree(flat, mapId, this.map(mapId)?.root ?? null);
-    this.#trees.set(mapId, { structure, tree });
+    const tree = root === PROJECT ? whole.tree : viewOf(whole.tree, root);
+    this.#trees.set(root, { structure, tree });
     return tree;
+  }
+
+  /** From the project down to the element: the path by which it is reached. */
+  pathTo(id: string): string[] {
+    return pathTo(this.tree(), id);
+  }
+
+  /**
+   * What is said of an element as a document, with what it inherits: a
+   * setting it does not make is the nearest element's over it that makes
+   * it, then nothing; its title, subtitle and abstract are its own
+   * (`OWN_SETTINGS`). `from` says, for each setting that is set, which
+   * element sets it.
+   */
+  documentOf(id: string): {
+    settings: DocumentSettings;
+    from: Map<keyof DocumentSettings, string>;
+  } {
+    const settings: Record<string, unknown> = {};
+    const from = new Map<keyof DocumentSettings, string>();
+    for (const at of this.pathTo(id)) {
+      const own = this.nodes.get(at)?.document ?? {};
+      for (const key of Object.keys(own) as (keyof DocumentSettings)[]) {
+        if (at !== id && OWN_SETTINGS.includes(key)) continue;
+        const value = own[key];
+        if (value === undefined || value === '' || (Array.isArray(value) && !value.length))
+          continue;
+        settings[key] = value;
+        from.set(key, at);
+      }
+    }
+    return { settings: settings as DocumentSettings, from };
   }
 
   /** The content of an element's name or text, for an editor to bind to. */
@@ -843,61 +879,51 @@ export class Project {
     return f instanceof Y.XmlFragment ? f : null;
   }
 
-  /** Links of which both ends are in the map. */
-  linksOf(mapId: string): LinkRecord[] {
-    return this.links.filter(
-      (l) => this.nodes.get(l.from)?.map === mapId && this.nodes.get(l.to)?.map === mapId,
-    );
+  /** Links of which both ends are within an element: under it, or it. */
+  linksOf(within: string): LinkRecord[] {
+    const inside = new Set(this.tree(within).sequence);
+    return this.links.filter((l) => inside.has(l.from) && inside.has(l.to));
   }
 
   linksAt(nodeId: string): LinkRecord[] {
     return this.links.filter((l) => l.from === nodeId || l.to === nodeId);
   }
 
-  /** Ids of the references that are cited in the project, or in one of its maps. */
-  usedReferences(mapId?: string): string[] {
+  /** Ids of the references that are cited in the project, or within one of its elements. */
+  usedReferences(within: string = PROJECT): string[] {
     const out = new Set<string>();
-    for (const n of this.nodes.values()) {
-      if (mapId && n.map !== mapId) continue;
-      for (const id of n.cited) out.add(id);
+    for (const id of this.tree(within).sequence) {
+      for (const ref of this.nodes.get(id)?.cited ?? []) out.add(ref);
     }
     return [...out];
   }
 
-  /**
-   * Where a reference is cited: the maps that cite it, in their order, each
-   * with the elements that do, in the order of the text.
-   */
-  citing(reference: string): { map: MapRecord; elements: NodeRecord[] }[] {
-    const out: { map: MapRecord; elements: NodeRecord[] }[] = [];
-    for (const map of this.maps) {
-      const elements: NodeRecord[] = [];
-      for (const id of this.tree(map.id).sequence) {
-        const n = this.nodes.get(id);
-        if (n?.cited.includes(reference)) elements.push(n);
-      }
-      if (elements.length) out.push({ map, elements });
+  /** Where a reference is cited: the elements that cite it, in the order of the text. */
+  citing(reference: string): NodeRecord[] {
+    const out: NodeRecord[] = [];
+    for (const id of this.tree().sequence) {
+      const n = this.nodes.get(id);
+      if (n?.cited.includes(reference)) out.push(n);
     }
     return out;
   }
 
   /**
-   * The pictures of the figures of the project, or of one of its maps, each
-   * once, as the project names them.
+   * The pictures of the figures of the project, or within one of its
+   * elements, each once, as the project names them.
    */
-  usedPictures(mapId?: string): { hash: string; extension: string; name: string }[] {
+  usedPictures(within: string = PROJECT): { hash: string; extension: string; name: string }[] {
     const out = new Map<string, { hash: string; extension: string; name: string }>();
-    for (const n of this.nodes.values()) {
-      if (mapId && n.map !== mapId) continue;
+    for (const id of this.tree(within).sequence) {
+      const n = this.nodes.get(id);
+      if (!n) continue;
       for (const s of n.set) {
         if (s.kind !== 'figure' || !s.file || out.has(s.file)) continue;
         out.set(s.file, { hash: s.file, extension: s.extension ?? '', name: s.name ?? '' });
       }
-    }
-    // The cover of an e-book is a picture of the map's document.
-    for (const m of this.maps) {
-      const cover = m.document.cover;
-      if (cover && (!mapId || m.id === mapId) && !out.has(cover.hash))
+      // The cover of an e-book is a picture of an element's document.
+      const cover = n.document.cover;
+      if (cover && !out.has(cover.hash))
         out.set(cover.hash, { hash: cover.hash, extension: cover.extension, name: '' });
     }
     return [...out.values()];
@@ -939,30 +965,58 @@ export class Project {
     this.undoManager.redo();
   }
 
+  /**
+   * Names the project: its element is named so, and the name is written
+   * beside, for what reads the document without its elements.
+   */
   setName(name: string) {
     const clean = name.replace(/\s+/g, ' ').trim();
     if (!clean || clean === this.name) return;
-    this.transact(() => this.yMeta.set('name', clean));
+    this.transact(() => {
+      this.yMeta.set('name', clean);
+      if (this.yNodes.has(PROJECT)) this.setTitle(PROJECT, clean);
+    });
   }
 
   /**
-   * Changes the language new maps of this project are given (ADR 0020). It
-   * is kept in the project, so that every copy makes its new maps alike;
-   * null leaves it to the settings of each writer.
+   * The language of the project's text, as its element says it (ADR 0020):
+   * what every element inherits that says nothing itself. Null where none
+   * is said, and the settings of each writer decide.
    */
+  get language(): string | null {
+    return this.nodes.get(PROJECT)?.document.language?.trim() || null;
+  }
+
+  /** Changes the language of the project's text; null leaves it to the settings of each writer. */
   setLanguage(language: string | null) {
     const clean = language?.trim() || null;
     if (clean === this.language) return;
+    this.setDocument(PROJECT, { language: clean ?? undefined });
+  }
+
+  /**
+   * Changes the kinds in hand: those the writer has pinned, those taken
+   * out. A kind pinned is no longer taken out, and the other way round.
+   * Nothing is kept of a hand that says nothing.
+   */
+  setHand(patch: Partial<Hand>) {
+    const list = (ids: string[] | undefined) => [
+      ...new Set((ids ?? []).map((k) => k.trim()).filter(Boolean)),
+    ];
     this.transact(() => {
-      if (clean) this.yMeta.set('language', clean);
-      else this.yMeta.delete('language');
+      const current = this.hand;
+      let pinned = list(patch.pinned ?? current.pinned);
+      let unpinned = list(patch.unpinned ?? current.unpinned);
+      if (patch.unpinned) pinned = pinned.filter((k) => !unpinned.includes(k));
+      else unpinned = unpinned.filter((k) => !pinned.includes(k));
+      if (pinned.length || unpinned.length) this.yMeta.set('hand', { pinned, unpinned });
+      else this.yMeta.delete('hand');
     });
   }
 }
 
 Object.assign(
   Project.prototype,
-  mapChanges,
   elementChanges,
   referenceChanges,
   linkChanges,

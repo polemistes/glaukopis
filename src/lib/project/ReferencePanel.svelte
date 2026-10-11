@@ -15,21 +15,22 @@
   import { openContextMenu } from '$lib/ui/menu.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
   import type { Project } from './model/project.svelte';
+  import { PROJECT, type NodeRecord } from './model/types';
 
   interface Props {
     project: Project;
-    /** The map in view: "In this map" counts its references. */
-    mapId: string;
+    /** The element in view: "This map" counts the references of its branch. */
+    at: string;
     onclose: () => void;
     /** What stands at the head in place of the title: the tabs of the panel at the side. */
     head?: Snippet;
     /** Goes to an element where a reference is cited. */
-    ongo?: (map: string, element: string) => void;
+    ongo?: (element: string) => void;
     /** A reference to show at once, with where it is cited. */
     show?: string | null;
   }
 
-  let { project, mapId, onclose, head, ongo, show = null }: Props = $props();
+  let { project, at, onclose, head, ongo, show = null }: Props = $props();
 
   let scope = $state<'map' | 'project' | 'library'>('project');
   let query = $state('');
@@ -40,16 +41,26 @@
     library.load();
   });
 
-  const used = $derived(new Set(project.usedReferences(scope === 'map' ? mapId : undefined)));
+  const used = $derived(new Set(project.usedReferences(scope === 'map' ? at : undefined)));
   const pool = $derived(
     scope === 'library' ? library.entries : library.entries.filter((e) => used.has(e.id)),
   );
   const shown = $derived(sortEntries(search(pool, query), 'authors', false));
   const foreign = $derived([...used].filter((id) => !library.get(id)).length);
 
-  /** The one reference chosen, and where it is cited. */
+  /** The one reference chosen, and where it is cited: the elements, by the tree under the project each stands in. */
   const chosen = $derived(selection.length === 1 ? selection[0] : null);
-  const citing = $derived(chosen ? project.citing(chosen) : []);
+  const citing = $derived.by(() => {
+    if (!chosen) return [];
+    const groups = new Map<string, { top: string; elements: NodeRecord[] }>();
+    for (const n of project.citing(chosen)) {
+      const top = project.pathTo(n.id)[1] ?? PROJECT;
+      let group = groups.get(top);
+      if (!group) groups.set(top, (group = { top, elements: [] }));
+      group.elements.push(n);
+    }
+    return [...groups.values()];
+  });
 
   function context(event: MouseEvent, entries: Summary[]) {
     const one = entries.length === 1 ? entries[0] : null;
@@ -128,15 +139,15 @@
   {#if chosen}
     <section class="cited" aria-label={t('project-cited-in-heading')}>
       <h3 class="overline">{t('project-cited-in-heading')}</h3>
-      {#each citing as { map, elements } (map.id)}
-        <div class="map">
-          <span class="map-name">{map.name}</span>
-          {#each elements as element (element.id)}
+      {#each citing as group (group.top)}
+        <div class="tree">
+          <span class="tree-name">{project.node(group.top)?.title || t('project-untitled')}</span>
+          {#each group.elements as element (element.id)}
             <button
               type="button"
               class="element"
               data-element={element.id}
-              onclick={() => ongo?.(map.id, element.id)}
+              onclick={() => ongo?.(element.id)}
             >
               {element.title || t('project-untitled')}
             </button>
@@ -227,10 +238,10 @@
   .cited h3 {
     margin-bottom: 6px;
   }
-  .map + .map {
+  .tree + .tree {
     margin-top: 8px;
   }
-  .map-name {
+  .tree-name {
     display: block;
     font-size: var(--text-xs);
     font-weight: 600;

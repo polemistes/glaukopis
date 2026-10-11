@@ -52,11 +52,13 @@
     ondelete: (id: string) => void;
     onduplicate?: (draft: Draft) => void;
     onclose?: () => void;
-    /** The project the pane stands in, where it does, with its id: a map of a PDF can be made in it. */
+    /** The project the pane stands in, where it does, with its id: a PDF can be read into it as a branch. */
     project?: Project | null;
     projectId?: string | null;
-    /** Asks for a map that was made in that project to be shown. */
-    onopenmap?: (map: string) => void;
+    /** The element in view of that project, under which the branch is made. */
+    at?: string | null;
+    /** Asks for an element made in that project to be entered. */
+    onenter?: (id: string) => void;
   }
 
   let {
@@ -66,7 +68,8 @@
     onclose,
     project = null,
     projectId = null,
-    onopenmap,
+    at = null,
+    onenter,
   }: Props = $props();
 
   /** The projects that cite the work; those that did not say are read once. */
@@ -512,7 +515,14 @@
 {/if}
 
 {#if mapping}
-  <PdfMapDialog file={mapping} {project} {projectId} {onopenmap} onclose={() => (mapping = null)} />
+  <PdfMapDialog
+    file={mapping}
+    {project}
+    {projectId}
+    {at}
+    {onenter}
+    onclose={() => (mapping = null)}
+  />
 {/if}
 
 <style>

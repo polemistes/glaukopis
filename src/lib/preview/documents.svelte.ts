@@ -81,7 +81,7 @@ class Documents {
     this.#formats.delete(id);
   }
 
-  /** The style and format a map uses: its own, or those of the settings. */
+  /** The style and format a document uses: what its element says, or those of the settings. */
   choice(document: { style?: string; format?: string }): { style: string; format: string } {
     return {
       style: document.style || settings.value.defaultStyle,
@@ -93,7 +93,7 @@ class Documents {
 export const documents = new Documents();
 
 /**
- * The document of a map whole, with the style and the format the map
+ * The document of an element whole, with the style and the format it
  * uses, for what is made of all of it: an export, the sample pages of a
  * format. The key is that of the project, by which the core knows one
  * making from another.
@@ -101,12 +101,12 @@ export const documents = new Documents();
 export async function documentRequest(
   project: Project,
   projectId: string,
-  mapId: string,
+  at: string,
 ): Promise<DocumentRequest> {
-  const choice = documents.choice(project.map(mapId)?.document ?? {});
+  const choice = documents.choice(project.documentOf(at).settings);
   const format = await documents.format(choice.format);
   return {
-    document: buildDocument(project, mapId),
+    document: buildDocument(project, at),
     style: choice.style,
     format: $state.snapshot(format) as DocumentFormat,
     key: projectId,

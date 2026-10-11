@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Hur varje slag sätts i det här dokumentet
 editor-words = Ord
 editor-words-hint = Understrykning, upphöjt, kod; främmande ord, verktitel, term
 editor-words-make = Skapa ett slag av ord…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Kartans språk
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Vanliga ord
 editor-own-kind-new = Ett eget slag

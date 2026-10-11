@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Hoe elke soort in dit document wordt gezet
 editor-words = Woorden
 editor-words-hint = Onderstrepen, superscript, code; anderstalige woorden, de titel van een werk, een term
 editor-words-make = Een soort woorden maken…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = De taal van de mindmap
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Gewone woorden
 editor-own-kind-new = Een eigen soort

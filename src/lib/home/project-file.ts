@@ -69,12 +69,13 @@ export function given(finding: Finding): FileChoice | null {
   }
 }
 
-/** A project as it is on disk, read and not written. */
-async function read(id: string): Promise<Project> {
-  await projects.closed(id);
-  const loaded = await projectLoad(id);
+/** A project as it is on disk, read and not written, brought into shape as it is when opened (ADR 0037). */
+async function read(info: ProjectInfo): Promise<Project> {
+  await projects.closed(info.id);
+  const loaded = await projectLoad(info.id);
   const project = new Project(null);
   project.load(loaded.state, loaded.updates);
+  project.begin(info.name);
   return project;
 }
 
@@ -90,7 +91,7 @@ export async function writeProjectFile(
   flush?: () => Promise<void>,
 ): Promise<void> {
   await flush?.();
-  const project = await read(info.id);
+  const project = await read(info);
   try {
     const cited = [...citedIds(project)];
     // An entry that was merged into another is found under the other's id: the
@@ -143,6 +144,7 @@ export async function makeFromFile(
       file.manifest.name || project.name || path.replace(/^.*[\\/]/, '').replace(/\.[^.]*$/, ''),
       projects.list.map((p) => p.name),
     );
+    project.begin(name);
     const records = citedRecords(project);
     const found = records.length ? await projectFileReferences(records) : [];
     let choices: Record<string, FileChoice> = {};
@@ -161,7 +163,8 @@ export async function makeFromFile(
           record: s.reference ? recordOf(s.reference) : null,
         })),
       );
-    project.doc.transact(() => project.yMeta.set('name', name), TIDY);
+    // Named as the new project is, and saved so, but not undone.
+    project.doc.transact(() => project.setName(name), TIDY);
 
     if (settlement && (settlement.added.length || settlement.changed.length)) void library.reload();
 

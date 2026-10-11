@@ -5,11 +5,7 @@ text-name = Numele elementului
 text-first-section = Scrieți aici, sau apăsați Ctrl+Enter ca să începeți prima secțiune.
 text-not-printed = nu se tipărește
 text-grip = Mută sau modifică acest element
-# The map an element stands for, which is shown in bold where the variable stands.
-text-include = În document, aici stă harta { $map }.
 text-include-open = Deschide-o
-text-loose = Elemente libere
-text-loose-hint = Gânduri care nu au încă loc. Nu fac parte din document.
 text-split = Desparte aici
 text-split-hint = Ce urmează după cursor devine un element nou
 text-join = Unește cu elementul de deasupra

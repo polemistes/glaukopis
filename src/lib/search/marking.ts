@@ -301,7 +301,7 @@ function rangeIn(
 type Mark = Range | Element;
 
 /**
- * The marks of one surface: a text of a map, or an edit box. The
+ * The marks of one surface: a text in view, or an edit box. The
  * highlights are shared by all of them; each takes away its own marks
  * before it puts new ones.
  */

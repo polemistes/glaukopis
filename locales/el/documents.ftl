@@ -4,14 +4,12 @@
 documents-choose = Ένα έγγραφο για εισαγωγή
 documents-filter = Έγγραφα
 documents-filter-all = Όλα τα αρχεία
-documents-title-map = Χάρτης από έγγραφο
 documents-title-project = Έργο από έγγραφο
 documents-reading = Ανάγνωση του { $file }…
 documents-reading-hint = Ένα μεγάλο έγγραφο θέλει λίγη ώρα.
 documents-no-pandoc = Έγγραφα αυτού του είδους τα διαβάζει το Pandoc, που δεν είναι εγκατεστημένο ή δεν βρέθηκε. Πού βρίσκεται μπορείτε να το πείτε στις ρυθμίσεις.
 documents-unread = Το αρχείο δεν διαβάζεται.
 documents-title = Τίτλος
-documents-title-hint-map = Το όνομα του χάρτη, και του στοιχείου στο κέντρο του.
 documents-title-hint-project = Το όνομα του έργου, του χάρτη του, και του στοιχείου στο κέντρο του χάρτη.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Χωρίς τίτλο
@@ -79,7 +77,6 @@ documents-found-some-made = Βρέθηκαν { $count } παραπομπές, { 
 documents-at-once = Να γίνουν αμέσως παραπομπές όσες έφτιαξε το Zotero για έργα που έχει η βιβλιοθήκη σας
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = Μια σημείωση που δεν είναι παρά μια παραπομπή γίνεται παραπομπή μέσα στη γραμμή, που το στυλ παραπομπών τη βάζει σε σημείωση ή στη γραμμή· μια σημείωση που λέει περισσότερα κρατά την παραπομπή της. Ό,τι έχετε επιλέξει για τις σημειώσεις στο πλαίσιο των παραπομπών που βρέθηκαν, για όλες τις επόμενες, ισχύει κι εδώ.
-documents-go-through-map = Εξέταση των παραπομπών όταν φτιαχτεί ο χάρτης
 documents-go-through-project = Εξέταση των παραπομπών όταν φτιαχτεί το έργο
 
 ## Making the map.
@@ -87,6 +84,4 @@ documents-go-through-project = Εξέταση των παραπομπών ότα
 # Over what the one who brings the document in should know of it.
 documents-to-know = Για να ξέρετε
 documents-making = Φτιάχνεται ο χάρτης…
-documents-make-map = Δημιουργία του χάρτη
 documents-make-project = Δημιουργία του έργου
-documents-map-failed = Ο χάρτης δεν μπόρεσε να φτιαχτεί.

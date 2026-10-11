@@ -1,6 +1,6 @@
 /**
- * Citations made at once of what was read from a file, before a map is made
- * of it: those that Zotero made, of works the library has for certain. All
+ * Citations made at once of what was read from a file, before a branch is
+ * made of it: those that Zotero made, of works the library has for certain. All
  * else waits for the writer. See ADR 0015.
  */
 

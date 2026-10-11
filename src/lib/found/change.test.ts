@@ -47,8 +47,8 @@ const target = (m: Marked): Target => ({
 });
 
 /** Text that was proposed: where these words stand in the first passage that has them. */
-function proposed(pr: Project, map: string, words: string): Target {
-  const place = gather(pr, map).places.find((x) => x.text.includes(words))!;
+function proposed(pr: Project, at: string, words: string): Target {
+  const place = gather(pr, at).places.find((x) => x.text.includes(words))!;
   const start = place.text.indexOf(words);
   const end = start + words.length;
   return { passage: place.id, start, end, text: words, around: around(place.text, start, end) };
@@ -82,8 +82,8 @@ const wrath: Block[] = [
 
 describe('a citation is made of what was found', () => {
   it('in the place of its text, all its pieces, and nothing else is changed', () => {
-    const { pr, map, elements } = project(wrath);
-    const [first] = gather(pr, map).marked;
+    const { pr, at, elements } = project(wrath);
+    const [first] = gather(pr, at).marked;
     expect(
       makeCitation(pr, target(first), [{ id: 'r1', locator: ' 73 ', label: 'page' }], 'normal'),
     ).toEqual({ done: true });
@@ -101,7 +101,7 @@ describe('a citation is made of what was found', () => {
       p(t('After.')),
     ]);
     expect(pr.node(elements[0])!.cited).toEqual(['r1']);
-    expect(gather(pr, map).marked.map((m) => m.found.id)).toEqual([B.id]);
+    expect(gather(pr, at).marked.map((m) => m.found.id)).toEqual([B.id]);
     // What the project holds is what an editor can hold.
     const v = editor(pr.fragment(elements[0], 'body')!);
     expect(() => v.state.doc.check()).not.toThrow();
@@ -109,9 +109,9 @@ describe('a citation is made of what was found', () => {
   });
 
   it('is undone as one step, and made again', () => {
-    const { pr, map, elements } = project(wrath);
+    const { pr, at, elements } = project(wrath);
     pr.undoManager.clear();
-    const [first, second] = gather(pr, map).marked;
+    const [first, second] = gather(pr, at).marked;
     makeCitation(pr, target(first), [{ id: 'r1' }], 'normal');
     makeCitation(pr, target(second), [{ id: 'r2' }, { id: 'r3', prefix: 'cf.' }], 'intext');
     expect(pr.node(elements[0])!.cited).toEqual(['r1', 'r2', 'r3']);
@@ -120,7 +120,7 @@ describe('a citation is made of what was found', () => {
     expect(pr.node(elements[0])!.cited).toEqual(['r1']);
     pr.undo();
     expect(text(pr, elements[0])).toEqual(wrath);
-    expect(gather(pr, map).marked.map((m) => m.found.id)).toEqual([A.id, B.id]);
+    expect(gather(pr, at).marked.map((m) => m.found.id)).toEqual([A.id, B.id]);
     pr.redo();
     pr.redo();
     expect(text(pr, elements[0])[1]).toEqual(
@@ -137,8 +137,8 @@ describe('a citation is made of what was found', () => {
   });
 
   it('is found by its id where the text around it has changed', () => {
-    const { pr, map, elements } = project(wrath);
-    const [, second] = gather(pr, map).marked;
+    const { pr, at, elements } = project(wrath);
+    const [, second] = gather(pr, at).marked;
     const words = (pr.fragment(elements[0], 'body')!.get(1) as Y.XmlElement).get(0) as Y.XmlText;
     pr.transact(() => words.insert(0, 'And so, ', {}));
     expect(makeCitation(pr, target(second), [{ id: 'r2' }], 'normal')).toEqual({ done: true });
@@ -163,8 +163,8 @@ describe('a citation is made of what was found', () => {
   });
 
   it('not without a reference for every work', () => {
-    const { pr, map, elements } = project(wrath);
-    const [first] = gather(pr, map).marked;
+    const { pr, at, elements } = project(wrath);
+    const [first] = gather(pr, at).marked;
     expect(makeCitation(pr, target(first), [], 'normal')).toEqual({ done: false, why: 'cannot' });
     expect(makeCitation(pr, target(first), [{ id: 'r1' }, { id: '' }], 'normal')).toEqual({
       done: false,
@@ -174,7 +174,7 @@ describe('a citation is made of what was found', () => {
   });
 
   it('in a cell, and in what is said of a figure', () => {
-    const { pr, map, elements } = project([
+    const { pr, at, elements } = project([
       {
         kind: 'table',
         id: 't1',
@@ -195,7 +195,7 @@ describe('a citation is made of what was found', () => {
         numbered: true,
       },
     ]);
-    const all = gather(pr, map).marked;
+    const all = gather(pr, at).marked;
     expect(all.map((m) => m.text)).toEqual(['(Nagy 1979)', '(Lord 1960)', '(Parry 1971)']);
     const done = makeCitations(
       pr,
@@ -213,11 +213,11 @@ describe('a citation is made of what was found', () => {
 
 describe('all that are certain are made citations at once', () => {
   it('those of one paragraph as well, and undone as one step', () => {
-    const { pr, map, elements } = project(wrath, [
+    const { pr, at, elements } = project(wrath, [
       p(t('Elsewhere '), t('(Nagy 1979, 73)', { found: zotero('c1b2c3d4e5f6') })),
     ]);
     pr.undoManager.clear();
-    const all = gather(pr, map).marked;
+    const all = gather(pr, at).marked;
     const done = makeCitations(pr, [
       ...all.map((m, i) => ({
         target: target(m),
@@ -248,16 +248,16 @@ describe('all that are certain are made citations at once', () => {
     expect(pr.undoManager.undoStack.length).toBe(1);
     pr.undo();
     expect(text(pr, elements[0])).toEqual(wrath);
-    expect(gather(pr, map).marked).toHaveLength(3);
+    expect(gather(pr, at).marked).toHaveLength(3);
     expect(makeCitations(pr, [])).toEqual([]);
   });
 });
 
 describe('what was found is left as text', () => {
   it('the mark says so, and keeps what is known of it', () => {
-    const { pr, map, elements } = project(wrath);
+    const { pr, at, elements } = project(wrath);
     pr.undoManager.clear();
-    const [first] = gather(pr, map).marked;
+    const [first] = gather(pr, at).marked;
     expect(leaveAsText(pr, target(first))).toEqual({ done: true });
     const left = { ...A, left: true };
     expect(text(pr, elements[0])[1]).toMatchObject({
@@ -273,7 +273,7 @@ describe('what was found is left as text', () => {
         t('.'),
       ],
     });
-    const after = gather(pr, map);
+    const after = gather(pr, at);
     expect(after.marked.map((m) => m.found.id)).toEqual([B.id]);
     expect(after.places[1].taken).toEqual([
       [12, 27],
@@ -292,9 +292,9 @@ describe('text that was proposed as a citation', () => {
   ];
 
   it('is made a citation where it stands', () => {
-    const { pr, map, elements } = project(plain);
-    const at = proposed(pr, map, '(Nagy 1979, 73)');
-    expect(makeCitation(pr, at, [{ id: 'r1', locator: '73' }], 'normal')).toEqual({ done: true });
+    const { pr, at, elements } = project(plain);
+    const nagy = proposed(pr, at, '(Nagy 1979, 73)');
+    expect(makeCitation(pr, nagy, [{ id: 'r1', locator: '73' }], 'normal')).toEqual({ done: true });
     expect(text(pr, elements[0])).toEqual([
       p(
         t('It is said '),
@@ -307,9 +307,9 @@ describe('text that was proposed as a citation', () => {
   });
 
   it('only if what stands there is still what was proposed', () => {
-    const { pr, map, elements } = project(plain);
-    const nagy = proposed(pr, map, '(Nagy 1979, 73)');
-    const lord = proposed(pr, map, '(Lord 1960)');
+    const { pr, at, elements } = project(plain);
+    const nagy = proposed(pr, at, '(Nagy 1979, 73)');
+    const lord = proposed(pr, at, '(Lord 1960)');
     const words = (pr.fragment(elements[0], 'body')!.get(0) as Y.XmlElement).get(0) as Y.XmlText;
     // The year is changed by another, and words are written before it.
     pr.transact(() => {
@@ -338,19 +338,19 @@ describe('text that was proposed as a citation', () => {
   });
 
   it('where the same words stand twice, it is the one with the same words around it', () => {
-    const { pr, map, elements } = project([
+    const { pr, at, elements } = project([
       p(t('(Nagy 1979) and (Nagy 1979).')),
       p(t('(Nagy 1979) and (Nagy 1979) and (Nagy 1979) and so on.')),
     ]);
-    const { places } = gather(pr, map);
-    const at = proposed(pr, map, '(Nagy 1979)');
+    const { places } = gather(pr, at);
+    const nagy = proposed(pr, at, '(Nagy 1979)');
     const words = (n: number) =>
       (pr.fragment(elements[0], 'body')!.get(n) as Y.XmlElement).get(0) as Y.XmlText;
     pr.transact(() => {
       words(0).insert(0, 'So ', {});
       words(1).insert(0, 'So ', {});
     });
-    expect(makeCitation(pr, at, [{ id: 'r1' }], 'normal')).toEqual({ done: true });
+    expect(makeCitation(pr, nagy, [{ id: 'r1' }], 'normal')).toEqual({ done: true });
     expect(text(pr, elements[0])[0]).toEqual(p(t('So '), cited('r1'), t(' and (Nagy 1979).')));
     // Not where several have the same around them: it cannot be told which was meant.
     const among = {
@@ -365,7 +365,7 @@ describe('text that was proposed as a citation', () => {
       why: 'changed',
     });
     expect(
-      makeCitation(pr, { ...at, passage: `${elements[0]}/1.99999` }, [{ id: 'r1' }], 'normal'),
+      makeCitation(pr, { ...nagy, passage: `${elements[0]}/1.99999` }, [{ id: 'r1' }], 'normal'),
     ).toEqual({
       done: false,
       why: 'gone',
@@ -373,10 +373,10 @@ describe('text that was proposed as a citation', () => {
   });
 
   it('left as text, gets a mark that says so, and is not looked at again', () => {
-    const { pr, map, elements } = project(plain);
+    const { pr, at, elements } = project(plain);
     pr.undoManager.clear();
-    const at = proposed(pr, map, '(Nagy 1979, 73)');
-    expect(leaveAsText(pr, at, 'normal')).toEqual({ done: true });
+    const nagy = proposed(pr, at, '(Nagy 1979, 73)');
+    expect(leaveAsText(pr, nagy, 'normal')).toEqual({ done: true });
     const [paragraph] = text(pr, elements[0]);
     const marked = (paragraph as { content: Inline[] }).content[1];
     expect(marked).toMatchObject({
@@ -387,11 +387,11 @@ describe('text that was proposed as a citation', () => {
     expect(marked.kind === 'text' ? marked.marks.found : null).toMatchObject({
       id: expect.stringMatching(/^[0-9A-Za-z]{12}$/),
     });
-    const after = gather(pr, map);
+    const after = gather(pr, at);
     expect(after.marked).toEqual([]);
     expect(after.places[0].taken).toEqual([[11, 26]]);
     // It is there no longer to be made a citation, or left again.
-    expect(makeCitation(pr, at, [{ id: 'r1' }], 'normal')).toEqual({ done: false, why: 'gone' });
+    expect(makeCitation(pr, nagy, [{ id: 'r1' }], 'normal')).toEqual({ done: false, why: 'gone' });
     pr.undo();
     expect(text(pr, elements[0])).toEqual(plain);
   });
@@ -418,9 +418,9 @@ describe('a citation in a note', () => {
   ];
 
   it('the note becomes a citation, with what it said beside its works before and after them', () => {
-    const { pr, map, elements } = project(noted);
+    const { pr, at, elements } = project(noted);
     pr.undoManager.clear();
-    const [first, second] = gather(pr, map).marked;
+    const [first, second] = gather(pr, at).marked;
     expect([first.whole, second.whole]).toEqual([false, true]);
     expect(
       makeCitation(
@@ -466,8 +466,8 @@ describe('a citation in a note', () => {
   });
 
   it('not where the note holds what words before and after cannot hold, and the text is left', () => {
-    const { pr, map, elements } = project(noted);
-    const { places, marked } = gather(pr, map);
+    const { pr, at, elements } = project(noted);
+    const { places, marked } = gather(pr, at);
     const third = marked[2];
     const place = places.find((x) => x.id === third.passage)!;
     expect(intoCitation(place, third.start, third.end)).toEqual({
@@ -483,7 +483,7 @@ describe('a citation in a note', () => {
     const two = project([
       p(t('Said'), note(t('Nagy 1979', { found: A }), t('; cf. '), t('Lord 1960', { found: B }))),
     ]);
-    const found = gather(two.pr, two.map);
+    const found = gather(two.pr, two.at);
     const can = intoCitation(found.places[1], found.marked[0].start, found.marked[0].end, [
       found.marked[1],
     ]);
@@ -506,7 +506,7 @@ describe('a citation in a note', () => {
     ]);
     // In the text, there is no note to become one.
     const three = project(wrath);
-    const inText = gather(three.pr, three.map);
+    const inText = gather(three.pr, three.at);
     expect(intoCitation(inText.places[1], 12, 27).possible).toBe(false);
     // Asked for all the same, the citation stands where the text stood.
     expect(
@@ -518,8 +518,8 @@ describe('a citation in a note', () => {
   });
 
   it('the citation stands in the note, which stays a note with what else it says', () => {
-    const { pr, map, elements } = project(noted);
-    const [first, , third] = gather(pr, map).marked;
+    const { pr, at, elements } = project(noted);
+    const [first, , third] = gather(pr, at).marked;
     expect(
       makeCitation(pr, target(first), [{ id: 'r1', locator: '73' }], 'normal', 'here'),
     ).toEqual({
@@ -547,7 +547,7 @@ describe('a citation in a note', () => {
       p(t('Said'), note(t('See Nagy, Best of the Achaeans, 73.')), t(' and done.')),
     ];
     const one = project(plain);
-    const whole = proposed(one.pr, one.map, 'See Nagy, Best of the Achaeans, 73.');
+    const whole = proposed(one.pr, one.at, 'See Nagy, Best of the Achaeans, 73.');
     expect(
       makeCitation(one.pr, whole, [{ id: 'r1', locator: '73', prefix: 'See' }], 'normal', 'note'),
     ).toEqual({ done: true });
@@ -560,7 +560,7 @@ describe('a citation in a note', () => {
       p(t('Said'), note(cited('r1')), t(' and done.')),
     ]);
     function whole2(of: typeof two) {
-      return proposed(of.pr, of.map, 'See Nagy, Best of the Achaeans, 73.');
+      return proposed(of.pr, of.at, 'See Nagy, Best of the Achaeans, 73.');
     }
   });
 });
@@ -568,7 +568,7 @@ describe('a citation in a note', () => {
 describe('a citation that was made of a note', () => {
   it('stands apart from the word the note stood close to, and nowhere else', () => {
     const N = (id: string) => note(t('Nagy 1979', { found: zotero(id) }));
-    const { pr, map, elements } = project([
+    const { pr, at, elements } = project([
       p(
         N('a1b2c3d4e5f6'),
         t('At the start, after room '),
@@ -582,7 +582,7 @@ describe('a citation that was made of a note', () => {
     ]);
     const done = makeCitations(
       pr,
-      gather(pr, map).marked.map((m) => ({
+      gather(pr, at).marked.map((m) => ({
         target: target(m),
         items: [{ id: 'r1' }],
         mode: 'normal',
@@ -607,13 +607,13 @@ describe('a citation that was made of a note', () => {
 
 describe('while the text is being written in', () => {
   it('the editor that is bound shows the citation, and the undo of the project takes it back', () => {
-    const { pr, map, elements } = project(wrath);
+    const { pr, at, elements } = project(wrath);
     const v = editor(pr.fragment(elements[0], 'body')!);
     expect(v.state.doc.child(1).textContent).toBe(
       'As was said (Nagy 1979, 73) and sung (Lord 1960).',
     );
     pr.undoManager.clear();
-    const [first, second] = gather(pr, map).marked;
+    const [first, second] = gather(pr, at).marked;
     expect(makeCitation(pr, target(first), [{ id: 'r1', locator: '73' }], 'normal')).toEqual({
       done: true,
     });
@@ -646,12 +646,12 @@ describe('while the text is being written in', () => {
   });
 
   it('a note becomes a citation under the eyes of the one who writes', () => {
-    const { pr, map, elements } = project([
+    const { pr, at, elements } = project([
       p(t('Said'), note(t('See '), t('Nagy 1979', { found: A }), t('.')), t(' and done.')),
     ]);
     const v = editor(pr.fragment(elements[0], 'body')!);
     expect(v.state.doc.child(0).child(1).type.name).toBe('footnote');
-    const [first] = gather(pr, map).marked;
+    const [first] = gather(pr, at).marked;
     expect(makeCitation(pr, target(first), [{ id: 'r1' }], 'normal', 'note')).toEqual({
       done: true,
     });
@@ -693,8 +693,8 @@ describe('while another writes in the same project', () => {
     (pr.fragment(element, 'body')!.get(paragraph) as Y.XmlElement).get(child) as Y.XmlText;
 
   it('what the other writes elsewhere and in the same paragraph is kept', () => {
-    const { pr, map, elements, theirs, meet } = two(wrath);
-    const [first] = gather(pr, map).marked;
+    const { pr, at, elements, theirs, meet } = two(wrath);
+    const [first] = gather(pr, at).marked;
     // At the same time, neither knowing of the other:
     makeCitation(pr, target(first), [{ id: 'r1', locator: '73' }], 'normal');
     theirs.transact(() => {
@@ -720,23 +720,23 @@ describe('while another writes in the same project', () => {
       ],
     });
     expect(pr.node(elements[0])!.title).toBe('Another name');
-    expect(gather(theirs, map).marked.map((m) => m.found.id)).toEqual([B.id]);
+    expect(gather(theirs, at).marked.map((m) => m.found.id)).toEqual([B.id]);
     // What the other wrote is not taken back by the undo of the one who made the citation.
     pr.undo();
     meet();
     expect(text(theirs, elements[0])).toEqual(text(pr, elements[0]));
     expect(text(pr, elements[0])[0]).toEqual(p(t('Before. And more before.')));
-    expect(gather(pr, map).marked.map((m) => m.text)).toEqual(['(Nagy 1979, 73)', '(Lord 1960)']);
-    expect(gather(pr, map).places[1].text).toBe(
+    expect(gather(pr, at).marked.map((m) => m.text)).toEqual(['(Nagy 1979, 73)', '(Lord 1960)']);
+    expect(gather(pr, at).places[1].text).toBe(
       'Indeed: As was said (Nagy 1979, 73) and sung (Lord 1960).',
     );
   });
 
   it('words the other writes after the citation, in the same line, are not lost', () => {
-    const { pr, map, elements, theirs, meet } = two([
+    const { pr, at, elements, theirs, meet } = two([
       p(t('Said '), t('(Nagy 1979)', { found: A }), t(' and done.')),
     ]);
-    const [first] = gather(pr, map).marked;
+    const [first] = gather(pr, at).marked;
     makeCitation(pr, target(first), [{ id: 'r1' }], 'normal');
     theirs.transact(() => {
       const line = words(theirs, elements[0], 0);
@@ -744,7 +744,7 @@ describe('while another writes in the same project', () => {
     });
     meet();
     expect(text(theirs, elements[0])).toEqual(text(pr, elements[0]));
-    const all = gather(pr, map).places[0].text;
+    const all = gather(pr, at).places[0].text;
     expect(all).toContain('And more.');
     expect(all).toContain('Said ');
     expect(all).toContain(' and done.');
@@ -754,15 +754,15 @@ describe('while another writes in the same project', () => {
   });
 
   it('both leave the same as text, or one makes a citation of what the other left, and the project is whole', () => {
-    const { pr, map, elements, theirs, meet } = two(wrath);
-    const [first, second] = gather(pr, map).marked;
+    const { pr, at, elements, theirs, meet } = two(wrath);
+    const [first, second] = gather(pr, at).marked;
     leaveAsText(pr, target(first));
     leaveAsText(theirs, target(first));
     makeCitation(pr, target(second), [{ id: 'r2' }], 'normal');
     leaveAsText(theirs, target(second));
     meet();
     expect(text(theirs, elements[0])).toEqual(text(pr, elements[0]));
-    expect(gather(pr, map).marked).toEqual([]);
+    expect(gather(pr, at).marked).toEqual([]);
     expect(pr.node(elements[0])!.cited).toEqual(['r2']);
     const v = editor(pr.fragment(elements[0], 'body')!);
     expect(() => v.state.doc.check()).not.toThrow();

@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   /**
-   * The history of the project beside the map (ADR 0021): what each person
+   * The history of the project beside the view (ADR 0021): what each person
    * did before a pause, and the moments that were given a name, the newest
-   * first. Choosing one shows the map as it was then. The settings of the
-   * history are here as well.
+   * first. Choosing one shows the element in view as it was then. The
+   * settings of the history are here as well.
    */
   import { onDestroy, untrack } from 'svelte';
   import Archive from '@lucide/svelte/icons/archive';
@@ -31,7 +31,7 @@
     project: Project;
     history: ProjectHistory;
     looking: Looking | null;
-    /** The pane the map is in, where a moment is shown. */
+    /** The pane the view is in, where a moment is shown. */
     pane: number;
     onlook: (looking: Looking | null) => void;
     onclose: () => void;

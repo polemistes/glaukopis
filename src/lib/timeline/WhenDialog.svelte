@@ -7,6 +7,7 @@
   import { untrack } from 'svelte';
   import { t } from '$lib/i18n';
   import type { Project } from '$lib/project/model/project.svelte';
+  import { PROJECT } from '$lib/project/model/types';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
@@ -19,13 +20,27 @@
     project: Project;
     /** The element that says when it is. */
     id: string;
+    /**
+     * The element in view, on whose timeline it is placed; the whole
+     * project where none is in view.
+     */
+    at?: string | null;
     onclose: () => void;
   }
 
-  let { project, id, onclose }: Props = $props();
+  let { project, id, at = null, onclose }: Props = $props();
 
   const node = $derived(project.node(id));
-  const axis = $derived<Axis>(project.map(node?.map)?.timeline.axis ?? 'dates');
+  /** The element whose timeline the placement is seen on. */
+  const scope = $derived(at ?? PROJECT);
+  /** The axis of that timeline: as the element in view says it, or inherits it from one over it. */
+  const axis = $derived.by((): Axis => {
+    for (const over of project.pathTo(scope).reverse()) {
+      const said = project.node(over)?.timeline.axis;
+      if (said) return said;
+    }
+    return 'dates';
+  });
 
   /** How an end is said. */
   type How = 'at' | 'after' | 'before' | 'between' | 'during';
@@ -67,12 +82,11 @@
   let start = $state<End>(endOf(given?.start));
   let end = $state<End>(endOf(given?.end));
 
-  /** The other elements of the map, by name, for the ends that refer to one. */
+  /** The other elements in view, by name, for the ends that refer to one. */
   const others = $derived.by(() => {
-    const map = node?.map;
-    if (!map) return [];
+    if (!node) return [];
     return project
-      .tree(map)
+      .tree(scope)
       .sequence.filter((other) => other !== id)
       .map((other) => ({
         value: other,

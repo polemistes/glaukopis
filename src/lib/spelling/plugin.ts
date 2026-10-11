@@ -29,7 +29,7 @@ import { findWords, NOT_TEXT, wordAt, type Word } from './words';
 import './spelling.css';
 
 export interface SpellingOptions {
-  /** The language of the text: that of its map. */
+  /** The language of the text: that of its element's document. */
   language: () => string | null | undefined;
   /** The words that are ignored in the project. */
   ignored: () => ReadonlySet<string>;
@@ -137,7 +137,7 @@ function merged(ranges: Range[], size: number): Range[] {
   return out;
 }
 
-/** A word, and the language it is checked in: that of the map, or that of the foreign words it is among. */
+/** A word, and the language it is checked in: that of the document, or that of the foreign words it is among. */
 interface Spoken extends Word {
   language: string;
 }
@@ -178,7 +178,7 @@ export function blockText(block: Node): string {
 }
 
 /**
- * The text of a textblock in each of its languages: that of the map, and
+ * The text of a textblock in each of its languages: that of the document, and
  * that of each language its foreign words are in. In each, the words of the
  * other languages stand as signs that are not words, so that a place in any
  * of the texts is a place in the document.
@@ -418,7 +418,7 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
           const end = pos + block.nodeSize;
           looked.push({ from: pos, to: end });
           const found: Decoration[] = [];
-          // The words of the map's language, and of the languages of its
+          // The words of the document's language, and of the languages of its
           // foreign words, where there are dictionaries for them.
           const words = wordsOf(block, pos, language);
           let unknown = words.unknown;
@@ -516,7 +516,7 @@ export function wordAtPlace(state: EditorState, pos: number): Word | null {
   return wordAt(words, pos);
 }
 
-/** Has an editor look at all its text again, as when the language of its map has changed. */
+/** Has an editor look at all its text again, as when the language of its document has changed. */
 export function lookAgain(view: EditorView) {
   if (!view.isDestroyed) lookers.get(view)?.anew();
 }

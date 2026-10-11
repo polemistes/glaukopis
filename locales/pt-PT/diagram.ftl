@@ -2,8 +2,6 @@
 
 diagram-map = Mapa
 diagram-idea = Nome
-diagram-new-loose = Novo elemento solto aqui
-diagram-new-loose-hint = Um pensamento que ainda não tem lugar
 diagram-show-all = Mostrar o mapa inteiro
 diagram-tidy = Arrumar o mapa inteiro
 diagram-tidy-hint = Cada elemento volta ao seu lugar automático

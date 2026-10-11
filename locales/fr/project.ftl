@@ -68,33 +68,15 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Sans titre
-# The name of a copy of a map.
-project-map-copy = { $name }, copie
-project-maps = Cartes
-project-map-name = Nom de la carte
-project-new-map = Nouvelle carte
-project-map-from-document = Une carte à partir d’un document…
 project-drop-on-map = Déposez sur une carte pour y déplacer · maintenez Ctrl pour copier
-project-duplicate = Dupliquer
-project-duplicate-hint = Une copie pour travailler ; celle-ci reste telle quelle
 project-open-beside = Ouvrir à côté
 project-open-beside-hint = Deux cartes côte à côte, pour déplacer des éléments de l’une à l’autre
-project-this-map-actions = Cette carte, et les cartes
-project-maps-hint = Les cartes du projet : choisissez-en une pour l’ouvrir
-project-map-beside = à côté de celle-ci
 project-side-by-side-short = Côte à côte
 project-preview-short = Aperçu
 project-found = Citations reconnues…
 # The count is of those found in the map.
 project-found-hint = { $count } à passer en revue, pour en faire des citations
 project-found-none = Et du texte qui ressemble à des citations
-project-delete-map = Supprimer la carte
-project-delete-map-title = Supprimer la carte « { $name } » ?
-project-delete-map-message = { $count ->
-    [one] { $count } élément et son texte disparaîtront. Cela peut être annulé tant que le projet est ouvert.
-    [many] { $count } éléments et leurs textes disparaîtront. Cela peut être annulé tant que le projet est ouvert.
-   *[other] { $count } éléments et leurs textes disparaîtront. Cela peut être annulé tant que le projet est ouvert.
-}
 project-copied-to = Copié dans « { $name } »
 project-moved-to = Déplacé dans « { $name } »
 
@@ -116,20 +98,12 @@ project-stands-for = Tient lieu de « { $name } »
 project-stand-for = Tenir lieu d’une autre carte
 project-stand-for-heading = Dans le document, cette carte prend sa place
 project-stand-for-none = Aucune
-project-copy-to-map = Copier dans la carte
 project-copy = Copier
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Coller dessous
-project-move-to-map = Déplacer dans la carte
-project-map-from-branch = Nouvelle carte à partir de cette branche
-project-map-from-branch-hint = Une copie pour travailler ; celle-ci reste
-project-detach = Détacher de son parent
-project-detach-hint = Un élément libre, à placer plus tard
 project-tidy-branch = Ranger cette branche
 project-place-automatically = Placer automatiquement
 project-delete-keeping = Supprimer, en gardant ce qui est dessous
-project-centre-stays = Le centre d’une carte reste
-project-centre-stays-detail = Supprimez la carte elle-même depuis son onglet.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] « { $name } » a été supprimé
@@ -235,7 +209,6 @@ project-link-label = Étiquette de l’association
 
 ## A copy and its original, in another map.
 copy-title = La copie et son original
-copy-from = Copié de « { $name } » dans la carte « { $map } »
 copy-original-changed = L’original a changé depuis la copie, ou depuis la dernière fois que cela a été vu.
 copy-original-same = L’original est tel qu’il était lors de la copie.
 copy-original-unknown = On ne sait pas si l’original a changé depuis la copie : la copie a été faite avant que cela ne soit gardé.
@@ -249,8 +222,6 @@ copy-seen = Garder cette copie telle quelle
 copy-take = Prendre le nom et le texte de l’original
 copy-changed-mark = L’original a changé depuis la copie
 copy-compare = Comparer avec l’original…
-copy-copied-from = Copié de « { $name } » dans « { $map } »
-copy-copied-from-changed = Copié de « { $name } » dans « { $map } », qui a changé depuis
 
 ## How far the writing of an element has come, as its writer says.
 status = État

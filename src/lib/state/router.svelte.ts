@@ -9,7 +9,8 @@ export type Route =
   | { view: 'projects' }
   | { view: 'library'; collection?: string; entry?: string }
   | { view: 'pictures'; picture?: string }
-  | { view: 'project'; project: string; map?: string; mode?: MapMode }
+  /** A project, and the element in view within it (ADR 0037): the project itself where none is named. */
+  | { view: 'project'; project: string; at?: string; mode?: MapMode }
   | { view: 'search' }
   | { view: 'settings'; section?: string };
 
@@ -31,7 +32,7 @@ export function parseRoute(hash: string): Route {
       return {
         view: 'project',
         project: parts[1],
-        map: parts[2],
+        at: parts[2],
         mode: (['text', 'diagram', 'timeline'] as const).find((m) => m === params.get('mode')),
       };
     case 'settings':
@@ -59,7 +60,7 @@ export function formatRoute(route: Route): string {
       return '#/pictures' + (route.picture ? `?picture=${e(route.picture)}` : '');
     case 'project': {
       let s = `#/project/${e(route.project)}`;
-      if (route.map) s += `/${e(route.map)}`;
+      if (route.at) s += `/${e(route.at)}`;
       if (route.mode) s += `?mode=${route.mode}`;
       return s;
     }

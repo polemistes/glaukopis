@@ -12,7 +12,7 @@ export type Method =
   | 'moment'
   | 'named'
   | 'compare'
-  | 'mapAt'
+  | 'branchAt'
   | 'versions'
   | 'revert'
   | 'restore'

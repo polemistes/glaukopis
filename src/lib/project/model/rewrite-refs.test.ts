@@ -4,7 +4,7 @@ import { writeBody, writeName } from './blocks';
 import { Project } from './project.svelte';
 import { citedIds, citedRecords, keepRecords, rewriteReferences } from './rewrite-refs';
 import type { Block, Inline } from './text';
-import type { RefRecord } from './types';
+import { PROJECT, type RefRecord } from './types';
 
 const t = (text: string): Inline => ({ kind: 'text', text, marks: {} });
 const cite = (...ids: string[]): Inline => ({
@@ -31,9 +31,8 @@ function record(id: string, title: string, modified = '2026-10-01T00:00:00Z'): R
 /** A project that cites works in a name, a text, a note and a caption, as one written elsewhere. */
 function written(): Uint8Array {
   const p = new Project(null);
-  const map = p.createMap('Wrath');
-  const root = p.map(map)!.root;
-  const a = p.addChild(root, { title: 'A' })!;
+  p.begin('Wrath');
+  const a = p.addChild(PROJECT, { title: 'A' })!;
   const body: Block[] = [
     {
       kind: 'paragraph',

@@ -3,6 +3,13 @@ import type { When } from '$lib/timeline/solve';
 import type { SetOff } from './text';
 /** The records of a project, as the interface reads them from the document. */
 
+/**
+ * The id of the element at the top of every project: the project itself,
+ * whose name is the project's name and whose text its preamble. It has no
+ * parent, and everything else stands under it (ADR 0037).
+ */
+export const PROJECT = 'project';
+
 export interface Position {
   x: number;
   y: number;
@@ -17,9 +24,14 @@ export interface Person {
   orcid?: string;
 }
 
-/** What belongs to a map as a document. Shown only with preview and export. */
+/**
+ * What belongs to an element as a document (ADR 0037). Shown only with
+ * preview and export. What an element does not set it takes from the
+ * nearest element over it that does (`Project.documentOf`), but for what is
+ * its own: see `OWN_SETTINGS`.
+ */
 export interface DocumentSettings {
-  /** When empty, the name of the central element is the title. */
+  /** When empty, the name of the element is the title. */
   title?: string;
   subtitle?: string;
   authors?: Person[];
@@ -36,27 +48,16 @@ export interface DocumentSettings {
   cover?: { hash: string; extension: string };
 }
 
+/** The settings an element has of its own, never from one over it: a chapter printed alone is not titled as the book. */
+export const OWN_SETTINGS: readonly (keyof DocumentSettings)[] = ['title', 'subtitle', 'abstract'];
+
 /**
  * The kinds of paragraph and of words the writer has pinned to the hand of
- * a map, by id, and those taken out of it: see `editor/kinds.ts`, `inHand`.
+ * the project, by id, and those taken out of it: see `editor/kinds.ts`, `inHand`.
  */
 export interface Hand {
   pinned: string[];
   unpinned: string[];
-}
-
-export interface MapRecord {
-  id: string;
-  name: string;
-  /** The element at the centre. */
-  root: string;
-  order: string;
-  created: string;
-  document: DocumentSettings;
-  /** How the map is shown as a timeline. */
-  timeline: TimelineSettings;
-  /** The kinds in hand, as the writer has changed them. */
-  hand: Hand;
 }
 
 /**
@@ -70,13 +71,13 @@ export interface Lane {
   kind?: string;
 }
 
-/** How a map is shown as a timeline: its axis, and its lanes. */
+/** How an element is shown as a timeline, when it is the element in view: its axis, and its lanes. */
 export interface TimelineSettings {
   /** Dates of the world, or the units of an invented one. */
   axis?: 'dates' | 'units';
   /** What a unit is called, on the axis of units: "year", "day", or a word of the writer's. */
   unit?: string;
-  /** The lanes; none for each child of the centre a lane. */
+  /** The lanes; none for each child of the element in view a lane. */
   lanes?: Lane[];
 }
 
@@ -120,9 +121,8 @@ export interface PassageKindRecord {
   order: string;
 }
 
-/** Where an element was copied from. */
+/** Where an element was copied from: another element of the project. */
 export interface Origin {
-  map: string;
   node: string;
   /**
    * What the original was when the copy was made, or when its change was
@@ -134,23 +134,21 @@ export interface Origin {
 
 export interface NodeRecord {
   id: string;
-  map: string;
+  /** The element it stands under; nothing for the project itself. */
   parent: string | null;
   order: string;
   /**
-   * Where the user put the element, relative to its parent; for the central
-   * element and loose ones, on the canvas. Null when the element is placed
-   * automatically.
+   * Where the user put the element, relative to its parent. Null when the
+   * element is placed automatically. The element in view stands at the
+   * origin whatever this says.
    */
   pos: Position | null;
-  /** For elements next to the centre: the side they are on. */
-  side: Side | null;
   collapsed: boolean;
   /** Whether the name is printed as a heading in the document. */
   heading: boolean;
   /** Whether the element is left out of the document. */
   excluded: boolean;
-  /** A map whose content stands in this element's place in the document. */
+  /** An element whose branch stands in this element's place in the document. */
   include: string | null;
   /** Where the element was copied from. */
   origin: Origin | null;
@@ -160,6 +158,10 @@ export interface NodeRecord {
   kind: string | null;
   /** When it is, in time; nothing where that is not said. See `timeline/solve.ts`. */
   when: When | null;
+  /** What is said of it as a document, of its own: see `Project.documentOf` for what it inherits. */
+  document: DocumentSettings;
+  /** How it is shown as a timeline, when it is the element in view. */
+  timeline: TimelineSettings;
 
   // Read from the content.
   title: string;

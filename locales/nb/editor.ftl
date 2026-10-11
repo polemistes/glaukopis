@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Hvordan hvert slag settes i dette dokumentet
 editor-words = Ord
 editor-words-hint = Understreking, hevet skrift, kode; ord på et annet språk, tittelen på et verk, en term
 editor-words-make = Lag et slag ord …
-# Ved siden av språket i kartet, først blant språkene ord på et annet språk kan være på.
-editor-foreign-of-map = Språket i kartet
 # Det et slag ord bygger på når det ikke bygger på noe bestemt slag.
 editor-plain-words = Vanlige ord
 editor-own-kind-new = Et eget slag

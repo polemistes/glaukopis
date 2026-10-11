@@ -17,7 +17,14 @@ import { place } from '$lib/ui/floating';
 import FigurePanel from './FigurePanel.svelte';
 import FormulaPanel from './FormulaPanel.svelte';
 import { showFormula } from './math.svelte';
-import { formsOf, numbering, pointerText, type Counting, type Numbers } from './numbering.svelte';
+import {
+  formsOf,
+  numbering,
+  pointerText,
+  topOf,
+  type Counting,
+  type Numbers,
+} from './numbering.svelte';
 import { pictures, PICTURE_ENDINGS } from './pictures.svelte';
 import {
   canStandBeside,
@@ -100,15 +107,17 @@ function belongs(target: HTMLElement, panel: HTMLElement, dom: HTMLElement): boo
 function documentOf(
   view: EditorView,
 ): { numbers: Numbers; counting: Counting; element: string; format?: DocumentFormat } | null {
-  const element = hooksOf.get(view)?.element;
+  const hooks = hooksOf.get(view);
+  const element = hooks?.element;
   const project = currentProject();
-  const map = element ? project?.node(element)?.map : undefined;
-  if (!element || !project || !map) return null;
+  if (!element || !project?.node(element)) return null;
+  // Of the element in view, where the editor was told of one; else of the tree the element stands in.
+  const at = hooks?.at ?? topOf(project, element);
   return {
-    numbers: numbering.of(project, map),
-    counting: numbering.countingOf(project, map),
+    numbers: numbering.of(project, at),
+    counting: numbering.countingOf(project, at),
     element,
-    format: numbering.formatOf(project, map),
+    format: numbering.formatOf(project, at),
   };
 }
 

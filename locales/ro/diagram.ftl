@@ -2,8 +2,6 @@
 
 diagram-map = Hartă
 diagram-idea = Nume
-diagram-new-loose = Element liber nou aici
-diagram-new-loose-hint = Un gând care nu are încă loc
 diagram-show-all = Arată toată harta
 diagram-tidy = Ordonează toată harta
 diagram-tidy-hint = Fiecare element se întoarce la locul lui automat

@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Wie jede Art in diesem Dokument gesetzt wird
 editor-words = Wörter
 editor-words-hint = Unterstreichung, Hochstellung, Code; fremdsprachige Wörter, Werktitel, Begriffe
 editor-words-make = Art für Wörter anlegen…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Die Sprache der Karte
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Gewöhnliche Wörter
 editor-own-kind-new = Eine eigene Art

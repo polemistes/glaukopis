@@ -91,15 +91,16 @@
 
   /**
    * A project is made of a document, named after it, with the document as
-   * its map: of the file that is chosen, or of one that was dropped here.
+   * a tree under it: of the file that is chosen, or of one that was dropped
+   * here.
    */
   async function fromDocument(dropped?: string) {
     const path = dropped ?? (await chooseDocument());
     const brought = path ? await bringIn(path, null) : null;
     // The citations that were found in it are gone through when the project is open.
-    if (brought?.project && brought.goThrough) goThroughWhenOpen(brought.project.id, brought.map);
+    if (brought?.project && brought.goThrough) goThroughWhenOpen(brought.project.id, brought.top);
     if (brought?.project)
-      router.go({ view: 'project', project: brought.project.id, map: brought.map, mode: 'text' });
+      router.go({ view: 'project', project: brought.project.id, at: brought.top, mode: 'text' });
   }
 
   function facts(p: ProjectInfo): string {
@@ -271,9 +272,9 @@
 {#if mapping}
   <ProjectsMapDialog
     onclose={() => (mapping = false)}
-    onmade={({ project, map }) => {
+    onmade={({ project, at }) => {
       mapping = false;
-      router.go({ view: 'project', project, map, mode: 'text' });
+      router.go({ view: 'project', project, at, mode: 'text' });
     }}
   />
 {/if}

@@ -4,14 +4,12 @@
 documents-choose = Un document à importer
 documents-filter = Documents
 documents-filter-all = Tous les fichiers
-documents-title-map = Une carte à partir d’un document
 documents-title-project = Un projet à partir d’un document
 documents-reading = Lecture de { $file }…
 documents-reading-hint = Un long document prend un moment.
 documents-no-pandoc = Les documents de ce type sont lus par Pandoc, qui n’est pas installé ou n’a pas pu être trouvé. Où il se trouve peut être indiqué dans les réglages.
 documents-unread = Le fichier n’a pas pu être lu.
 documents-title = Titre
-documents-title-hint-map = Le nom de la carte, et de l’élément à son centre.
 documents-title-hint-project = Le nom du projet, de sa carte, et de l’élément au centre de la carte.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Sans titre
@@ -87,7 +85,6 @@ documents-found-some-made = { $count } citations ont été trouvées, dont { $ma
 documents-at-once = Faire tout de suite des citations de celles que Zotero a faites d’œuvres que votre bibliothèque a
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = Une note qui n’est qu’une citation devient une citation dans la ligne, que le style de référence met en note ou dans la ligne ; une note qui dit davantage garde sa citation. Ce que vous avez choisi pour les notes dans le volet des citations reconnues, pour toutes celles qui suivent, vaut ici aussi.
-documents-go-through-map = Passer les citations en revue quand la carte est faite
 documents-go-through-project = Passer les citations en revue quand le projet est fait
 
 ## Making the map.
@@ -95,6 +92,4 @@ documents-go-through-project = Passer les citations en revue quand le projet est
 # Over what the one who brings the document in should know of it.
 documents-to-know = À savoir
 documents-making = Création de la carte…
-documents-make-map = Créer la carte
 documents-make-project = Créer le projet
-documents-map-failed = La carte n’a pas pu être créée.

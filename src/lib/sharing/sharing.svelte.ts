@@ -16,10 +16,13 @@ export class ProjectSharing {
 
   readonly #id: string;
   readonly #project: Project;
+  /** The project's name as the list has it, for a project element made when the project arrives. */
+  readonly #name: string;
 
   constructor(id: string, project: Project, info: ProjectInfo) {
     this.#id = id;
     this.#project = project;
+    this.#name = info.name;
     if (info.sharing) this.#begin(info.sharing);
   }
 
@@ -47,6 +50,9 @@ export class ProjectSharing {
     this.connection = new Connection(this.#project.doc, this.#project.awareness, {
       ticket: async () => (await sharingTicket(this.#id)).url,
       onended: (why) => void this.#onEnded(why),
+      // What arrives may be an old document, with maps, or one not yet begun;
+      // a project in shape is left as it is (ADR 0037).
+      onsynced: () => void this.#project.begin(this.#project.name || this.#name),
     });
   }
 

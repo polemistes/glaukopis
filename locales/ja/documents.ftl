@@ -4,14 +4,12 @@
 documents-choose = 取り込む文書
 documents-filter = 文書
 documents-filter-all = すべてのファイル
-documents-title-map = 文書からマップを作る
 documents-title-project = 文書からプロジェクトを作る
 documents-reading = { $file }を読み込んでいます…
 documents-reading-hint = 長い文書は少し時間がかかります。
 documents-no-pandoc = この種類の文書はPandocで読み込みますが、Pandocがインストールされていないか、見つかりません。場所は設定で指定できます。
 documents-unread = ファイルを読み込めませんでした。
 documents-title = タイトル
-documents-title-hint-map = マップの名前で、中心の要素の名前にもなります。
 documents-title-hint-project = プロジェクトの名前で、そのマップと、マップの中心の要素の名前にもなります。
 # What a project made of a document is called when the document has no title.
 documents-untitled = 無題
@@ -55,7 +53,6 @@ documents-found-some-made = 引用が{ $count }件見つかりました。その
 documents-at-once = Zoteroで作られた引用のうち、ライブラリにある作品のものはすぐに引用にする
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = 引用だけからなる注は行内の引用になり、引用スタイルに従って注または行内に組まれます。他の内容もある注は、引用をそのまま持ちます。見つかった引用のパネルで、以降すべてに対して注について選んだことは、ここでも適用されます。
-documents-go-through-map = マップを作るときに引用を確認する
 documents-go-through-project = プロジェクトを作るときに引用を確認する
 
 ## Making the map.
@@ -63,6 +60,4 @@ documents-go-through-project = プロジェクトを作るときに引用を確�
 # Over what the one who brings the document in should know of it.
 documents-to-know = 確認事項
 documents-making = マップを作っています…
-documents-make-map = マップを作る
 documents-make-project = プロジェクトを作る
-documents-map-failed = マップを作れませんでした。

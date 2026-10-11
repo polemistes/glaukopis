@@ -1,23 +1,29 @@
 /**
  * How the view of a project is laid out, and kept from one opening to the
- * next: which maps the panes show and how, what the panel at the side shows,
- * whether the outline and the preview stand beside the text, how the room
- * is shared, and where each diagram was looked at.
+ * next: which elements the panes show and how, what the panel at the side
+ * shows, whether the outline and the preview stand beside the text, how the
+ * room is shared, and where each diagram was looked at.
  */
 
 import type { MapMode } from '$lib/state/router.svelte';
 import type { Camera } from './diagram/camera';
-import type { MapRecord } from './model/types';
+import { PROJECT } from './model/types';
 import type { SideKind } from './SideTabs.svelte';
 
 export interface Pane {
-  map: string;
+  /** The element in view. */
+  at: string;
   mode: MapMode;
+}
+
+/** The elements there are, by id: `project.nodes` will do. */
+export interface Elements {
+  has(id: string): boolean;
 }
 
 /** How the room is shared between the parts of the view. Nought for what is given. */
 export interface Sizes {
-  /** The part of the width the first of two maps has. */
+  /** The part of the width the first of two panes has. */
   split: number;
   preview: number;
   /** The panel at the side, whether it shows the references or the pictures. */
@@ -30,6 +36,7 @@ export const GIVEN: Sizes = { split: 0.5, preview: 0, references: 0 };
 export interface StoredView {
   sizes?: Partial<Sizes>;
   panes?: Pane[];
+  /** By the element in view. */
   cameras?: Record<string, Camera>;
   /** What the panel at the side shows; none where it is closed. */
   side?: SideKind | null;
@@ -57,24 +64,30 @@ export interface Layout {
   sizes: Sizes;
 }
 
+/** Whether an element can be in view: the project itself always can, before its element has arrived. */
+const inView = (elements: Elements, id: string | undefined): id is string =>
+  !!id && (id === PROJECT || elements.has(id));
+
 /**
- * The view as it was left, or as a project is first met. A map the place in
- * the application names is shown first, and then alone.
+ * The view as it was left, or as a project is first met. An element the
+ * place in the application names is shown first, and then alone; where
+ * nothing names one, the project itself. A view kept before the project
+ * was one tree (ADR 0037) named maps, which are gone: it opens at the
+ * project.
  */
 export function arranged(
-  maps: MapRecord[],
+  elements: Elements,
   stored: StoredView,
-  route: { map?: string; mode?: MapMode } | null,
+  route: { at?: string; mode?: MapMode } | null,
 ): Layout {
-  const known = (m: string | undefined) => (m && maps.some((x) => x.id === m) ? m : undefined);
+  const known = (id: string | undefined) => (inView(elements, id) ? id : undefined);
   const first: Pane = {
-    map: known(route?.map) ?? known(stored.panes?.[0]?.map) ?? maps[0].id,
+    at: known(route?.at) ?? known(stored.panes?.[0]?.at) ?? PROJECT,
     mode: route?.mode ?? stored.panes?.[0]?.mode ?? 'diagram',
   };
   const panes = [first];
   const second = stored.panes?.[1];
-  if (!route?.map && second && known(second.map))
-    panes.push({ map: second.map, mode: second.mode });
+  if (!route?.at && second && known(second.at)) panes.push({ at: second.at, mode: second.mode });
   // The changes are gone through when asked for, not when the project opens.
   const kept =
     stored.side !== undefined
@@ -98,11 +111,11 @@ export function arranged(
   };
 }
 
-/** What is kept of a view: the cameras of maps that are there, and not the changes, which are opened when asked for. */
-export function toStore(layout: Layout, maps: MapRecord[], folded: string[]): StoredView {
+/** What is kept of a view: the cameras of elements that are there, and not the changes, which are opened when asked for. */
+export function toStore(layout: Layout, elements: Elements, folded: string[]): StoredView {
   const cameras: Record<string, Camera> = {};
   for (const [id, c] of Object.entries(layout.cameras)) {
-    if (maps.some((m) => m.id === id)) cameras[id] = c;
+    if (inView(elements, id)) cameras[id] = c;
   }
   return {
     sizes: layout.sizes,
@@ -114,26 +127,6 @@ export function toStore(layout: Layout, maps: MapRecord[], folded: string[]): St
     preview: layout.preview,
     folded,
   };
-}
-
-/**
- * The panes without the maps that are gone: the first stays, with another
- * map where its own is gone. Nothing where none is gone.
- */
-export function withoutGone(panes: Pane[], maps: MapRecord[]): Pane[] | null {
-  if (!maps.length) return null;
-  const there = (map: string) => maps.some((m) => m.id === map);
-  let changed = false;
-  const next = panes.filter((p, i) => {
-    if (there(p.map)) return true;
-    changed = true;
-    return i === 0;
-  });
-  if (next[0] && !there(next[0].map)) {
-    next[0] = { ...next[0], map: maps[0].id };
-    changed = true;
-  }
-  return changed ? next : null;
 }
 
 export const clamp = (value: number, least: number, most: number) =>

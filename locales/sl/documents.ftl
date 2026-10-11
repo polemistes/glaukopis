@@ -4,14 +4,12 @@
 documents-choose = Dokument za uvoz
 documents-filter = Dokumenti
 documents-filter-all = Vse datoteke
-documents-title-map = Miselni vzorec iz dokumenta
 documents-title-project = Projekt iz dokumenta
 documents-reading = Branje { $file }…
 documents-reading-hint = Dolg dokument vzame trenutek.
 documents-no-pandoc = Dokumente te vrste bere Pandoc, ki ni nameščen ali ga ni bilo mogoče najti. Kje je, lahko poveste v nastavitvah.
 documents-unread = Datoteke ni bilo mogoče prebrati.
 documents-title = Naslov
-documents-title-hint-map = Ime miselnega vzorca in elementa v njegovem središču.
 documents-title-hint-project = Ime projekta, njegovega miselnega vzorca in elementa v središču miselnega vzorca.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Brez naslova
@@ -100,7 +98,6 @@ documents-found-some-made = { $count ->
 documents-at-once = Iz tistih, ki jih je naredil Zotero in katerih dela ima vaša knjižnica, takoj naredi navedbe
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = Opomba, ki ni nič drugega kot navedba, postane navedba v vrstici, ki jo slog navajanja postavi v opombo ali v vrstico; opomba, ki pove več, obdrži svojo navedbo. Kar ste za opombe izbrali v plošči najdenih navedb, za vse nadaljnje, velja tudi tu.
-documents-go-through-map = Preglej navedbe, ko je miselni vzorec narejen
 documents-go-through-project = Preglej navedbe, ko je projekt narejen
 
 ## Making the map.
@@ -108,6 +105,4 @@ documents-go-through-project = Preglej navedbe, ko je projekt narejen
 # Over what the one who brings the document in should know of it.
 documents-to-know = Dobro je vedeti
 documents-making = Izdelava miselnega vzorca…
-documents-make-map = Naredi miselni vzorec
 documents-make-project = Naredi projekt
-documents-map-failed = Miselnega vzorca ni bilo mogoče narediti.

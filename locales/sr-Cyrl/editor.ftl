@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Како је свака врста сложе
 editor-words = Речи
 editor-words-hint = Подвлачење, експонент, кôд; речи на страном језику, наслов дела, термин
 editor-words-make = Направи врсту речи…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Језик мапе
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Обичне речи
 editor-own-kind-new = Сопствена врста

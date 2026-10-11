@@ -1,3 +1,21 @@
+<script module lang="ts">
+  import type { Project } from './model/project.svelte';
+
+  /**
+   * What the pane of projects, which stands outside the view and lasts from
+   * one project to the next, is told of the one that is open: the project,
+   * the element in view of the pane that has the focus, and how an element
+   * is entered. Nothing while no project is open.
+   */
+  class Viewing {
+    project = $state.raw<Project | null>(null);
+    at = $state<string | null>(null);
+    enter: ((id: string) => void) | null = null;
+  }
+
+  export const viewing = new Viewing();
+</script>
+
 <script lang="ts">
   import WordsBar from '$lib/words/WordsBar.svelte';
   import { onDestroy, onMount, tick, untrack } from 'svelte';
@@ -77,7 +95,6 @@
     clamp,
     sideWidth,
     toStore,
-    withoutGone,
     type Pane,
     type Sizes,
     type StoredView,
@@ -86,7 +103,7 @@
   import MapBar from './MapBar.svelte';
   import WritingTools from '$lib/editor/WritingTools.svelte';
   import ListTree from '@lucide/svelte/icons/list-tree';
-  import type { Project } from './model/project.svelte';
+  import { PROJECT } from './model/types';
   import PicturePanel from './PicturePanel.svelte';
   import ReferencePanel from './ReferencePanel.svelte';
   import SideTabs, { type SideKind } from './SideTabs.svelte';
@@ -127,18 +144,18 @@
   let previewEl = $state<HTMLDivElement>();
   let referencesEl = $state<HTMLDivElement>();
   let host = $state<ReturnType<typeof EditorHost>>();
-  /** An element to show when a map is opened by a jump. */
+  /** An element to show when a pane turns to it by a jump. */
   let reveal = $state<string | null>(null);
   /** A reference to show at the references, with where it is cited, as the library asked. */
   let citationsOf = $state<string | null>(null);
   let release: (() => void) | undefined;
   let shared = $state<ProjectSharing | null>(null);
   let showShare = $state(false);
-  /** What was kept of the view, until there are maps to show. */
+  /** What was kept of the view, until there is a project to show. */
   let stored: StoredView = {};
-  /** What is folded away in the text: as it was left, and for every map of the project. */
+  /** What is folded away in the text: as it was left, for the whole project, whatever is in view. */
   let folding = $state.raw(new Folding());
-  /** The texts of the maps in the panes, where a pane shows the text: to be searched. */
+  /** The texts in the panes, where a pane shows the text: to be searched. */
   let texts = $state<(ReturnType<typeof MapText> | undefined)[]>([]);
   /** The element at the top of the text of each pane, for the outline. */
   let tops = $state<(string | null)[]>([]);
@@ -147,12 +164,19 @@
   let outlineWidth = $state(OUTLINE_WIDTH);
   /** The elements of the panes, within which the writing tools find their editor. */
   let paneEls = $state<(HTMLDivElement | undefined)[]>([]);
-  /** The diagrams of the maps in the panes, where a pane shows the diagram. */
+  /** The diagrams in the panes, where a pane shows the diagram. */
   let diagrams = $state<(ReturnType<typeof MapDiagram> | undefined)[]>([]);
 
   const pane = $derived(panes[Math.min(focused, panes.length - 1)]);
 
-  /** The review of the changes of the map in view, while its panel is open (ADR 0022). */
+  // The pane of projects, outside the view, shows the project and where one is in it.
+  $effect(() => {
+    viewing.project = project;
+    viewing.at = pane?.at ?? null;
+    viewing.enter = (id) => show(id);
+  });
+
+  /** The review of the changes of the element in view, while its panel is open (ADR 0022). */
   let review = $state<Review | null>(null);
   provideReviewing({
     get review() {
@@ -171,12 +195,12 @@
     sideKind = lastSide = 'changes';
     if (review) return;
     looking = null;
-    review = new Review(project, sourceFor(project, ownId), pane.map);
+    review = new Review(project, sourceFor(project, ownId), pane.at);
     review.later(0);
   }
 
   // The changes are shown in the text. Opening the panel leaves the view as
-  // it is; going to a change from it turns the pane of its map to the text.
+  // it is; going to a change from it turns the pane of its element to the text.
   let broughtChange = $state(-1);
   $effect(() => {
     const r = review;
@@ -187,24 +211,24 @@
     const shown = r.shown;
     untrack(() => {
       if (broughtChange >= 0 && shown !== broughtChange) {
-        const i = panes.findIndex((p) => p.map === r.map);
+        const i = panes.findIndex((p) => p.at === r.at);
         if (i >= 0 && panes[i].mode !== 'text') panes[i] = { ...panes[i], mode: 'text' };
       }
       broughtChange = shown;
     });
   });
 
-  /** The map the panel at the side is about: that of the changes reviewed, else of the pane in view. */
-  const sideMap = $derived(
+  /** The element the panel at the side is about: that whose changes are reviewed, else the one in view. */
+  const sideElement = $derived(
     sideKind === 'history'
-      ? null
-      : project?.map((sideKind === 'changes' && review?.map) || pane?.map),
+      ? undefined
+      : project?.node((sideKind === 'changes' && review?.at) || pane?.at),
   );
 
-  // The review follows the map in view, and what is written.
+  // The review follows the element in view, and what is written.
   $effect(() => {
-    const map = pane?.map;
-    if (map) untrack(() => review?.turnTo(map));
+    const at = pane?.at;
+    if (at) untrack(() => review?.turnTo(at));
   });
 
   // The view is made anew for every project, so the id is the same throughout;
@@ -223,8 +247,8 @@
         const node = p.nodes.get(id);
         return !!node && (!node.empty || !!node.include);
       });
-      // A project that was joined and has not been fetched has no maps yet.
-      if (p.maps.length) arrange(p);
+      // A project that was joined and has not been fetched has no element of its own yet.
+      if (p.node(PROJECT)) arrange(p);
       // What was found through everything in what is written about a work is shown with the references.
       if (jumpFor(ownId)?.references) side('references', true);
       // The library asked where a work is cited in this project.
@@ -237,7 +261,7 @@
       release = beforeClose(() => leave(p));
       // The citations of a document the project was made of are gone through, where that was asked for.
       const found = takeWaiting(ownId);
-      if (found && p.map(found)) goThrough(found);
+      if (found && p.node(found)) goThrough(found);
     } catch (error) {
       // What is said of it is looked up when it is shown, in the language of that moment.
       failure = describeError(error) ?? '';
@@ -247,7 +271,7 @@
   /** Lays out the view as it was left, or as a project is first met. */
   function arrange(p: Project) {
     const route = router.route.view === 'project' ? router.route : null;
-    const laid = arranged(p.maps, stored, route);
+    const laid = arranged(p.nodes, stored, route);
     panes = laid.panes;
     cameras = laid.cameras;
     sideKind = laid.side;
@@ -259,7 +283,7 @@
 
   // What a joined project holds has arrived.
   $effect(() => {
-    if (project && !panes.length && project.maps.length) arrange(project);
+    if (project && !panes.length && project.node(PROJECT)) arrange(project);
   });
 
   // The sharing has ended from the other side.
@@ -268,7 +292,7 @@
     if (!why || !shared) return;
     shared.ended = null;
     showShare = false;
-    const fetched = (project?.maps.length ?? 0) > 0;
+    const fetched = !!project?.node(PROJECT);
     if (!fetched) {
       // There is nothing here to keep.
       projects.remove(ownId).catch(() => {});
@@ -334,11 +358,11 @@
     sheet.textContent = css;
   });
 
-  /** The document of a map whole, for the sample pages of the format editor. */
-  function sampleOf(map: string) {
+  /** The document of an element whole, for the sample pages of the format editor. */
+  function sampleOf(at: string) {
     return () => {
       if (!project) throw new Error('The project is closed.');
-      return documentRequest(project, ownId, map);
+      return documentRequest(project, ownId, at);
     };
   }
 
@@ -353,6 +377,11 @@
     review?.close();
     comparing.copy = null;
     release?.();
+    if (viewing.project === project) {
+      viewing.project = null;
+      viewing.at = null;
+      viewing.enter = null;
+    }
     if (pictures.project === ownId) pictures.open(null);
     // What reads the project from disk meanwhile, as the search through everything, waits for it.
     if (project)
@@ -389,7 +418,7 @@
     };
     return toStore(
       layout,
-      project?.maps ?? [],
+      project?.nodes ?? new Map(),
       folding.kept((id) => !!project?.node(id)),
     );
   }
@@ -407,7 +436,7 @@
 
   $effect(() => {
     if (!project) return;
-    void panes.map((p) => `${p.map}${p.mode}`);
+    void panes.map((p) => `${p.at}${p.mode}`);
     void sideKind;
     void lastSide;
     void showOutline;
@@ -425,49 +454,93 @@
   // The place in the application follows the first pane.
   $effect(() => {
     if (!project || !panes.length) return;
-    router.replace({ view: 'project', project: projectId, map: panes[0].map, mode: panes[0].mode });
+    router.replace({ view: 'project', project: projectId, at: panes[0].at, mode: panes[0].mode });
   });
 
-  // A map that is gone cannot be shown.
+  // An element that is gone, deleted or taken back by undo, cannot be in
+  // view: the pane turns to the nearest element over it that is there, else
+  // to the project. The way to each element in view is remembered for that,
+  // since a gone element no longer says where it stood.
+  const ways = new Map<string, string[]>();
   $effect(() => {
     if (!project) return;
-    const next = withoutGone(panes, project.maps);
-    if (next) {
-      panes = next;
-      focused = Math.min(focused, next.length - 1);
-    }
+    void project.structure;
+    const p = project;
+    const next = panes.map((pane) => {
+      if (p.node(pane.at)) {
+        ways.set(pane.at, p.pathTo(pane.at));
+        return pane;
+      }
+      const way = ways.get(pane.at) ?? [];
+      const at = [...way].reverse().find((id) => p.node(id)) ?? PROJECT;
+      return { ...pane, at };
+    });
+    if (next.some((pane, i) => pane !== panes[i])) panes = next;
   });
 
-  function show(map: string, options: { pane?: number; element?: string; mode?: MapMode } = {}) {
+  /** Enters an element: makes it the element in view of a pane; with an element within it, that one is shown. */
+  function show(at: string, options: { pane?: number; element?: string; mode?: MapMode } = {}) {
     const i = options.pane ?? focused;
     if (!panes[i]) return;
     // Set anew, so that an element asked for again is shown again.
     reveal = null;
     reveal = options.element ?? null;
-    panes[i] = { ...panes[i], map, ...(options.mode ? { mode: options.mode } : {}) };
+    panes[i] = { ...panes[i], at, ...(options.mode ? { mode: options.mode } : {}) };
     focused = i;
   }
 
-  function beside(map: string) {
+  /**
+   * The element in view a pane has to be at to show an element: its own
+   * when the element is within it, else the tree under the project that
+   * holds the element, or the project for the project itself.
+   */
+  function holding(element: string, i = focused): string {
+    const p = panes[i];
+    if (!project || !p) return PROJECT;
+    if (project.tree(p.at).depth.has(element)) return p.at;
+    return project.pathTo(element)[1] ?? PROJECT;
+  }
+
+  /** Goes to an element from a panel: in the pane as it is, where the element is within view, else entering the tree that holds it. */
+  function goTo(element: string, options: { pane?: number; mode?: MapMode } = {}) {
+    show(holding(element, options.pane ?? focused), { ...options, element });
+  }
+
+  /** Goes up: enters the parent of the element in view, where there is one, with the element one came from shown. */
+  function up() {
+    if (!project || !pane) return;
+    const parent = project.tree().parent.get(pane.at);
+    if (parent) show(parent, { element: pane.at });
+  }
+
+  /** Alt+Up goes up from anywhere in the view but a field or a text, which have their own use for it. */
+  function onkeydown(event: KeyboardEvent) {
+    if (event.defaultPrevented || event.key !== 'ArrowUp' || !event.altKey) return;
+    if (event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest?.('input, textarea, select, [contenteditable="true"], .prose')) return;
+    event.preventDefault();
+    up();
+  }
+
+  /** Shows an element in the other pane, beside the one in view; opens the other pane for it where there is none. */
+  function beside(at: string) {
     if (panes.length > 1) {
-      panes[1] = { ...panes[1], map };
+      panes[1] = { ...panes[1], at };
     } else {
-      // The map asked for goes beside; if it is the one in view, another takes its place here.
-      const other = project?.maps.find((m) => m.id !== map);
-      if (panes[0].map === map && other) panes[0] = { ...panes[0], map: other.id };
-      panes = [panes[0], { map, mode: panes[0].mode }];
+      panes = [panes[0], { at, mode: panes[0].mode }];
     }
     focused = 1;
   }
 
-  /** Two side by side: the map in view as diagram and as text, until another is chosen for a side. */
+  /** Two side by side: the element in view as diagram and as text, until another is chosen for a side. */
   function sideBySide() {
     if (panes.length > 1) {
       closePane(1 - focused);
       return;
     }
     const one = panes[0];
-    panes = [one, { map: one.map, mode: one.mode === 'diagram' ? 'text' : 'diagram' }];
+    panes = [one, { at: one.at, mode: one.mode === 'diagram' ? 'text' : 'diagram' }];
     focused = 0;
   }
 
@@ -514,7 +587,7 @@
   });
 
   // What the citations that were found ask of the view: that their panel
-  // open, with their map in view. What was asked before this view was made is not for it.
+  // open, with their element in view. What was asked before this view was made is not for it.
   let foundHandled = untrack(() => foundUi.asked);
   $effect(() => {
     const n = foundUi.asked;
@@ -524,34 +597,35 @@
       if (n === foundHandled) return;
       foundHandled = n;
       const asked = foundUi.request;
-      if (!asked || !p.map(asked.map)) return;
-      if (pane.map !== asked.map) show(asked.map);
+      if (!asked || !p.node(asked.at)) return;
+      const at = holding(asked.at);
+      if (pane.at !== at) show(at);
       side('found', true);
     });
   });
 
-  /** How many citations that were found the map in view has left, for the tab of their panel. */
+  /** How many citations that were found the element in view has left, for the tab of their panel. */
   const foundCount = $derived.by(() => {
     if (!project || !pane) return 0;
     void project.revision;
-    return countFound(project, pane.map);
+    return countFound(project, pane.at);
   });
 
-  /** Shows a citation that was found where a pane shows its map as text: scrolled to, and selected. */
-  function showFound(map: string, entry: Entry) {
+  /** Shows a citation that was found where a pane shows the element in view as text: scrolled to, and selected. */
+  function showFound(at: string, entry: Entry) {
     panes.forEach((p, i) => {
-      if (p.map !== map || p.mode !== 'text') return;
+      if (p.at !== at || p.mode !== 'text') return;
       const surface = texts[i]?.searchSurface();
       if (surface) void revealFound(surface, entry.target, entry.element);
     });
   }
 
-  /** Whether a map has anything to show as a timeline: an element that says when it is, or settings. */
-  function timed(map: string): boolean {
+  /** Whether an element has anything to show as a timeline: one within it that says when it is, or settings. */
+  function timed(at: string): boolean {
     if (!project) return false;
-    const settings = project.map(map)?.timeline;
+    const settings = project.node(at)?.timeline;
     if (settings && (settings.axis || settings.lanes?.length)) return true;
-    for (const n of project.nodes.values()) if (n.map === map && n.when) return true;
+    for (const id of project.tree(at).sequence) if (project.node(id)?.when) return true;
     return false;
   }
 
@@ -594,13 +668,13 @@
     host?.keep(id);
   }
 
-  /** Maps are made of documents, one after another, and the last that was made is shown as text. */
+  /** Documents are brought in one after another, each a branch under the element in view; the last that was made is shown in the text. */
   async function documentsIn(paths: (string | null)[]) {
     for (const path of paths) {
-      if (!path || !project) continue;
-      const brought = await bringIn(path, project);
-      if (brought && panes.length) panes[focused] = { map: brought.map, mode: 'text' };
-      if (brought?.goThrough) goThrough(brought.map);
+      if (!path || !project || !pane) continue;
+      const brought = await bringIn(path, project, pane.at);
+      if (brought) goTo(brought.top, { mode: 'text' });
+      if (brought?.goThrough) goThrough(brought.top);
     }
   }
 
@@ -610,7 +684,7 @@
     void saveView();
   }
 
-  /** The text of the map in view is searched; from the diagram, the text is turned to first. */
+  /** The text of the element in view is searched; from the diagram, the text is turned to first. */
   function findInText(replacing: boolean) {
     const i = focused;
     if (pane && pane.mode !== 'text') panes[i] = { ...pane, mode: 'text' };
@@ -658,7 +732,8 @@
   });
 </script>
 
-<svelte:window {onblur} />
+<!-- Alt+Up is a key of the whole window, like those of `shell/keys`, which cannot hold an arrow. -->
+<svelte:window {onblur} {onkeydown} />
 
 {#if failure !== null}
   <EmptyState
@@ -695,7 +770,7 @@
         options={[
           { value: 'diagram', label: t('project-diagram'), icon: Network },
           { value: 'text', label: t('project-text'), icon: FileText },
-          ...(timed(pane.map) || pane.mode === 'timeline'
+          ...(timed(pane.at) || pane.mode === 'timeline'
             ? [{ value: 'timeline' as const, label: t('timeline-title'), icon: Clock }]
             : []),
         ]}
@@ -861,8 +936,8 @@
               </IconButton>
               <MapBar
                 {project}
-                current={p.map}
-                beside={panes.length > 1 ? panes[1 - i]?.map : null}
+                at={p.at}
+                beside={panes.length > 1 ? panes[1 - i]?.at : null}
                 onselect={(id, mode) => show(id, { pane: i, mode })}
                 onbeside={beside}
                 ondocument={async () => documentsIn([await chooseDocument()])}
@@ -873,7 +948,7 @@
                   <WritingTools
                     {project}
                     scope={paneEls[i]}
-                    map={p.map}
+                    at={p.at}
                     onelement={(what) => texts[i]?.newElement(what)}
                   />
                 </div>
@@ -892,7 +967,7 @@
                       iconOnly: true,
                     },
                     { value: 'text', label: t('project-text'), icon: FileText, iconOnly: true },
-                    ...(timed(p.map) || p.mode === 'timeline'
+                    ...(timed(p.at) || p.mode === 'timeline'
                       ? [
                           {
                             value: 'timeline' as const,
@@ -914,13 +989,11 @@
               {#if showOutline}
                 <Outline
                   {project}
-                  mapId={p.map}
-                  items={outlineItems(project, p.map, folding)}
+                  at={p.at}
+                  items={outlineItems(project, p.at, folding)}
                   current={p.mode === 'text' ? (tops[i] ?? null) : null}
                   ongo={(id) =>
-                    p.mode === 'text' && texts[i]
-                      ? texts[i].goTo(id)
-                      : show(p.map, { element: id, pane: i })}
+                    p.mode === 'text' && texts[i] ? texts[i].goTo(id) : goTo(id, { pane: i })}
                   onclose={() => (showOutline = false)}
                   width={outlineWidth}
                 />
@@ -931,34 +1004,34 @@
                 />
               {/if}
               <div class="view">
-                {#key `${p.map}:${p.mode}`}
+                {#key `${p.at}:${p.mode}`}
                   {#if looking && looking.pane === i}
-                    <PastView {project} map={p.map} {looking} onback={() => (looking = null)} />
+                    <PastView {project} at={p.at} {looking} onback={() => (looking = null)} />
                   {:else if p.mode === 'timeline'}
                     <TimelineView
                       {project}
-                      mapId={p.map}
-                      ongo={(element) => show(p.map, { element, pane: i, mode: 'text' })}
+                      at={p.at}
+                      ongo={(element) => goTo(element, { pane: i, mode: 'text' })}
                       reveal={i === focused ? reveal : null}
                     />
                   {:else if p.mode === 'diagram'}
                     <MapDiagram
                       bind:this={diagrams[i]}
                       {project}
-                      mapId={p.map}
-                      camera={cameras[p.map] ?? null}
-                      oncamera={(c) => (cameras[p.map] = c)}
+                      at={p.at}
+                      camera={cameras[p.at] ?? null}
+                      oncamera={(c) => (cameras[p.at] = c)}
                       onkeep={keep}
-                      onopenmap={(id) => show(id, { pane: i })}
+                      onenter={(id) => show(id, { pane: i })}
                       reveal={i === focused ? reveal : null}
                     />
                   {:else}
                     <MapText
                       bind:this={texts[i]}
                       {project}
-                      mapId={p.map}
+                      at={p.at}
                       onkeep={keep}
-                      onopenmap={(id) => show(id, { pane: i })}
+                      onenter={(id) => show(id, { pane: i })}
                       reveal={i === focused ? reveal : null}
                       {folding}
                       outline={showOutline}
@@ -987,18 +1060,18 @@
           <PreviewPanel
             {project}
             {projectId}
-            mapId={pane.map}
+            at={pane.at}
             onclose={() => (showPreview = false)}
             ongo={(element) => {
-              // In the text of this map where it is shown; else the pane in view turns to the text.
-              const i = panes.findIndex((p) => p.map === pane.map && p.mode === 'text');
-              show(pane.map, { element, mode: 'text', ...(i >= 0 ? { pane: i } : {}) });
+              // In the text of this element where it is shown; else the pane in view turns to the text.
+              const i = panes.findIndex((p) => p.at === pane.at && p.mode === 'text');
+              goTo(element, { mode: 'text', ...(i >= 0 ? { pane: i } : {}) });
             }}
             current={() => {
               const i =
                 pane.mode === 'text'
                   ? focused
-                  : panes.findIndex((p) => p.map === pane.map && p.mode === 'text');
+                  : panes.findIndex((p) => p.at === pane.at && p.mode === 'text');
               return texts[i]?.currentElement() ?? null;
             }}
           />
@@ -1031,10 +1104,10 @@
           bind:this={referencesEl}
           style:width={sizes.references ? `${sizes.references}px` : undefined}
         >
-          {#if sideMap}
+          {#if sideElement}
             <div class="side-map" class:split={panes.length > 1}>
               <span class="overline">{t('project-side-map')}</span>
-              <strong>{sideMap.name}</strong>
+              <strong>{sideElement.title || t('project-untitled')}</strong>
             </div>
           {/if}
           {#if sideKind === 'changes' && review}
@@ -1052,44 +1125,45 @@
           {:else if sideKind === 'comments'}
             <CommentsPanel
               {project}
-              mapId={pane.map}
+              at={pane.at}
               head={tabs}
               onclose={closeSide}
-              ongo={(map, element) => show(map, { element })}
-              onopen={(map, element) => {
-                // In the diagram, the box of the element opens; in the text, the text is gone to.
-                if (pane.mode === 'diagram' && pane.map === map) diagrams[focused]?.write(element);
-                else show(map, { element, mode: 'text' });
+              ongo={(element) => goTo(element)}
+              onopen={(element) => {
+                // In the diagram, where the element is within view, its box opens; else the text is gone to.
+                if (pane.mode === 'diagram' && holding(element) === pane.at)
+                  diagrams[focused]?.write(element);
+                else goTo(element, { mode: 'text' });
               }}
             />
           {:else if sideKind === 'found'}
-            {#key pane.map}
+            {#key pane.at}
               <FoundPanel
                 {project}
-                mapId={pane.map}
+                at={pane.at}
                 head={tabs}
                 onclose={closeSide}
                 onkeep={keep}
-                onshow={(entry) => showFound(pane.map, entry)}
+                onshow={(entry) => showFound(pane.at, entry)}
               />
             {/key}
           {:else if sideKind === 'pictures'}
             <PicturePanel
               {project}
-              mapId={pane.map}
+              at={pane.at}
               bind:scope={pictureScope}
               head={tabs}
               onclose={closeSide}
-              onopenmap={(id) => show(id)}
+              onenter={(id) => show(id)}
             />
           {:else}
             <ReferencePanel
               {project}
-              mapId={pane.map}
+              at={pane.at}
               head={tabs}
               onclose={closeSide}
               show={citationsOf}
-              ongo={(map, element) => show(map, { element })}
+              ongo={(element) => goTo(element)}
             />
           {/if}
         </div>
@@ -1106,7 +1180,7 @@
     {project}
     id={comparing.copy}
     onclose={() => (comparing.copy = null)}
-    ongo={(map, element) => show(map, { element })}
+    ongo={(element) => goTo(element)}
   />
 {/if}
 
@@ -1139,7 +1213,7 @@
     id={asked.id}
     section={asked.section}
     kind={asked.kind}
-    request={asked.map ? sampleOf(asked.map) : undefined}
+    request={asked.at ? sampleOf(asked.at) : undefined}
     onsaved={(id) => {
       // Held before the editor goes: what it was asked for goes with it.
       const given = asked.onsaved;
@@ -1330,7 +1404,7 @@
     flex: 1;
     min-height: 0;
   }
-  /* Which map the panel is about, as the head of the pane in view is marked. */
+  /* Which element the panel is about, as the head of the pane in view is marked. */
   .side-map {
     display: flex;
     align-items: baseline;

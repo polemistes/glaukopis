@@ -1,18 +1,19 @@
-# A map as text: the elements one after another, each a heading and its text.
+# An element as text: its name the title, the elements under it one after
+# another, each a heading and its text.
 
 text-title = Title
 text-name = Name of the element
 text-first-section = Write here, or press Ctrl+Enter to begin the first section.
 text-not-printed = not printed
 text-grip = Move or change this element
-# The map an element stands for, which is shown in bold where the variable stands.
-text-include = In the document, the map { $map } stands here.
+# The element an element stands for, whose name is shown in bold where the variable stands.
+text-include = In the document, { $name } stands here, with all under it.
 text-include-open = Open it
-text-loose = Loose elements
-text-loose-hint = Thoughts that have no place yet. They are not part of the document.
 text-split = Split here
 text-split-hint = What follows the cursor becomes a new element
 text-join = Join to the element above
+text-open-as-map = Open as a map
+text-open-as-map-hint = It is shown alone, with what is under it
 
 ## Folding away what is under an element, and its text
 

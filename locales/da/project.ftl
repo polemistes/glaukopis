@@ -66,32 +66,15 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Uden titel
-# The name of a copy of a map.
-project-map-copy = { $name }, kopi
-project-maps = Kort
-project-map-name = Kortets navn
-project-new-map = Nyt kort
-project-map-from-document = Et kort af et dokument…
 project-drop-on-map = Slip på et kort for at flytte dertil · hold Ctrl nede for at kopiere
-project-duplicate = Dupliker
-project-duplicate-hint = En kopi at arbejde på; dette bliver, som det er
 project-open-beside = Åbn ved siden af
 project-open-beside-hint = To kort side om side, så elementer kan flyttes mellem dem
-project-this-map-actions = Dette kort, og kortene
-project-maps-hint = Projektets kort: vælg et for at åbne det
-project-map-beside = ved siden af dette
 project-side-by-side-short = Side om side
 project-preview-short = Forhåndsvisning
 project-found = Fundne kildehenvisninger…
 # The count is of those found in the map.
 project-found-hint = { $count } at gennemgå og gøre til kildehenvisninger
 project-found-none = Og tekst, der ligner kildehenvisninger
-project-delete-map = Slet kortet
-project-delete-map-title = Slet kortet »{ $name }«?
-project-delete-map-message = { $count ->
-    [one] { $count } element og teksten i det forsvinder. Det kan fortrydes, så længe projektet er åbent.
-   *[other] { $count } elementer og teksten i dem forsvinder. Det kan fortrydes, så længe projektet er åbent.
-}
 project-copied-to = Kopieret til »{ $name }«
 project-moved-to = Flyttet til »{ $name }«
 
@@ -113,20 +96,12 @@ project-stands-for = Står for »{ $name }«
 project-stand-for = Stå for et andet kort
 project-stand-for-heading = I dokumentet træder dette kort i dets sted
 project-stand-for-none = Intet
-project-copy-to-map = Kopiér til kort
 project-copy = Kopiér
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Sæt ind under det
-project-move-to-map = Flyt til kort
-project-map-from-branch = Nyt kort af denne gren
-project-map-from-branch-hint = En kopi at arbejde på; denne bliver
-project-detach = Løsn fra elementet over det
-project-detach-hint = Et løst element, som kan placeres senere
 project-tidy-branch = Ryd op i denne gren
 project-place-automatically = Placer automatisk
 project-delete-keeping = Slet, men behold det, der er under det
-project-centre-stays = Midten af et kort bliver
-project-centre-stays-detail = Slet selve kortet fra dets fane.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] »{ $name }« blev slettet
@@ -224,7 +199,6 @@ project-link-label = Associationens mærkat
 
 ## A copy and its original, in another map.
 copy-title = Kopien og dens original
-copy-from = Kopieret fra »{ $name }« i kortet »{ $map }«
 copy-original-changed = Originalen er ændret, siden den blev kopieret, eller siden det sidst blev set.
 copy-original-same = Originalen er, som den var, da den blev kopieret.
 copy-original-unknown = Om originalen er ændret, siden den blev kopieret, vides ikke: kopien blev lavet, før det blev gemt.
@@ -238,8 +212,6 @@ copy-seen = Behold denne kopi, som den er
 copy-take = Tag originalens navn og tekst
 copy-changed-mark = Originalen er ændret, siden dette blev kopieret
 copy-compare = Sammenlign med originalen…
-copy-copied-from = Kopieret fra »{ $name }« i »{ $map }«
-copy-copied-from-changed = Kopieret fra »{ $name }« i »{ $map }«, som er ændret siden
 
 ## How far the writing of an element has come, as its writer says.
 status = Status

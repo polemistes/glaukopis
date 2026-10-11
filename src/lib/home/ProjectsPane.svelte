@@ -2,9 +2,11 @@
   /**
    * The pane of projects (ADR 0033): at the left of a project, beside the
    * rail, the list of projects as the home page has it, in a narrow column.
-   * One click opens a project; the one that is open is marked. It stands
-   * outside the view of a project, so that it stays as it was when another
-   * is opened; whether it is open, and how wide, the settings remember.
+   * One click opens a project; the one that is open is marked, and under
+   * its row stands its tree, down to the element in view (ADR 0037). It
+   * stands outside the view of a project, so that it stays as it was when
+   * another is opened; whether it is open, and how wide, the settings
+   * remember.
    */
   import { onMount } from 'svelte';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
@@ -12,6 +14,8 @@
   import X from '@lucide/svelte/icons/x';
   import type { ProjectInfo } from '$lib/api/projects';
   import { t } from '$lib/i18n';
+  import type { Project } from '$lib/project/model/project.svelte';
+  import { PROJECT } from '$lib/project/model/types';
   import { projects } from '$lib/state/projects.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
   import { settings } from '$lib/state/settings.svelte';
@@ -23,13 +27,27 @@
   import ProjectActionsHost from './ProjectActionsHost.svelte';
   import ProjectList from './ProjectList.svelte';
 
-  /** The project that is open. */
-  let { current }: { current: string } = $props();
+  interface Props {
+    /** The project that is open. */
+    current: string;
+    /** The open project itself, where the view gives it: its tree is shown under its row. */
+    project?: Project | null;
+    /** The element in view in it, marked in the tree. */
+    at?: string | null;
+    /** Enters an element of the open project. */
+    onenter?: (id: string) => void;
+  }
+
+  let { current, project = null, at = null, onenter }: Props = $props();
 
   const width = $derived(paneWidth(settings.value.projectsPaneWidth, 0));
 
   function open(p: ProjectInfo, mode?: MapMode) {
-    if (p.id === current && !mode) return;
+    if (p.id === current && !mode) {
+      // The row of the open project is the top of its tree.
+      onenter?.(PROJECT);
+      return;
+    }
     router.go({ view: 'project', project: p.id, mode });
   }
 
@@ -65,7 +83,7 @@
   </header>
   <div class="body">
     {#if projects.loaded}
-      <ProjectList {actions} {current} compact />
+      <ProjectList {actions} {current} {project} {at} {onenter} compact />
     {:else}
       <div class="centre"><Spinner size={18} /></div>
     {/if}

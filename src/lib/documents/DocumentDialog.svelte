@@ -7,7 +7,8 @@
   import { citeAtOnceIn } from '$lib/found/atonce';
   import { languages, t } from '$lib/i18n';
   import { settings } from '$lib/state/settings.svelte';
-  import { makeMap, titleOf } from '$lib/project/model/import';
+  import { makeImported, titleOf } from '$lib/project/model/import';
+  import { PROJECT } from '$lib/project/model/types';
   import { openProject, projects } from '$lib/state/projects.svelte';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
@@ -93,31 +94,30 @@
     making = true;
     failure = null;
     try {
-      // What is shown stays while the map is made.
+      // What is shown stays while the tree is made.
       await new Promise((resolve) => setTimeout(resolve, 0));
       if (read.pictures.length) await pictures.reload();
       const text = await withCitations(read);
-      // Those that are left are gone through when the map is made, if the writer has said so.
+      // Those that are left are gone through when the tree is made, if the writer has said so.
       const goThrough = text.counts.found > 0 && settings.value.found.goThrough;
       if (request.project) {
-        const made = makeMap(request.project, text, title);
+        const made = makeImported(request.project, request.under, text, title);
+        if (!made) throw new Error(t('documents-failed'));
         await keepReferences(request.project, made.cited);
-        done({ map: made.map, goThrough });
+        done({ top: made.top, goThrough });
         return;
       }
-      // A project of its own, named after the document, with the map in it.
+      // A project of its own, named after the document, with the document as a tree under it.
       const name = title.replace(/\s+/g, ' ').trim() || titleOf(read) || t('documents-untitled');
       const info = await projects.create(name);
       const opened = await openProject(info.id);
-      const first = opened.project.maps.map((m) => m.id);
-      const made = makeMap(opened.project, text, title);
-      // The map a project begins with gives way to that of the document.
-      for (const id of first) opened.project.deleteMap(id);
-      await keepReferences(opened.project, made.cited);
+      const made = makeImported(opened.project, PROJECT, text, title);
+      if (made) await keepReferences(opened.project, made.cited);
       await opened.project.close();
-      done({ map: made.map, project: info, goThrough });
+      if (!made) throw new Error(t('documents-failed'));
+      done({ top: made.top, project: info, goThrough });
     } catch (error) {
-      failure = describeError(error) ?? t('documents-map-failed');
+      failure = describeError(error) ?? t('documents-failed');
       making = false;
     }
   }
@@ -160,7 +160,7 @@
 
 <Dialog
   open
-  title={request.project ? t('documents-title-map') : t('documents-title-project')}
+  title={request.project ? t('documents-title-element') : t('documents-title-project')}
   subtitle={read ? `${read.file} · ${read.kind}` : file}
   width={560}
   dismissable={!making}
@@ -196,7 +196,9 @@
         label={t('documents-title')}
         size="lg"
         serif
-        hint={request.project ? t('documents-title-hint-map') : t('documents-title-hint-project')}
+        hint={request.project
+          ? t('documents-title-hint-element')
+          : t('documents-title-hint-project')}
         data-autofocus
       />
     </form>
@@ -234,7 +236,7 @@
             disabled={making}
             onchange={(e) => settings.setFound({ goThrough: e.currentTarget.checked })}
           />
-          {request.project ? t('documents-go-through-map') : t('documents-go-through-project')}
+          {request.project ? t('documents-go-through-element') : t('documents-go-through-project')}
         </label>
       </div>
     {/if}
@@ -263,7 +265,7 @@
     {:else}
       <Button variant="ghost" disabled={making} onclick={cancel}>{t('common-cancel')}</Button>
       <Button variant="primary" disabled={!read || making || !title.trim()} onclick={make}>
-        {request.project ? t('documents-make-map') : t('documents-make-project')}
+        {request.project ? t('documents-make-element') : t('documents-make-project')}
       </Button>
     {/if}
   {/snippet}

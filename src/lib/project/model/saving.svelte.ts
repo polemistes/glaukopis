@@ -31,6 +31,9 @@ export interface Follower {
 /** What is told of a project where the projects are listed, when it is saved. */
 export interface Summary {
   name?: string;
+  /** The first words of the project's text, for its card on the home page. */
+  description?: string;
+  /** The trees under the project, each with its elements counted: what the list of projects shows of it. */
   maps: { id: string; name: string; elements: number }[];
   words: number;
   references: number;

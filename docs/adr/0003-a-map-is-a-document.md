@@ -1,6 +1,6 @@
 # 0003 — A map and a document are one thing in two views
 
-Date: 2026-09-27. Status: accepted.
+Date: 2026-09-27. Status: accepted; superseded in part by ADR 0037 (2026-10-11): there are no maps and no loose elements, a project is one tree, and any element is a document. Points 1, 2 and 7 hold of elements; points 3, 4, 5 and 6 are replaced.
 
 ## Context
 

@@ -27,7 +27,7 @@ const WAIT = 80;
 const NOTHING: ReadonlySet<string> = new Set();
 
 export interface WordMenu {
-  /** The language of the text: that of its map. */
+  /** The language of the text: that of its element's document. */
   language: string | null | undefined;
   word: string;
   anchor: RectLike;
@@ -171,8 +171,8 @@ export function replaceWhenShown(
 }
 
 /**
- * Spelling for an editor: the language of the map of the element whose text
- * it holds, the words ignored in its project, and the menus.
+ * Spelling for an editor: the language of the document of the element
+ * whose text it holds, the words ignored in its project, and the menus.
  */
 export function spellingOptions(
   project: () => Project | null | undefined,
@@ -180,7 +180,8 @@ export function spellingOptions(
 ): SpellingOptions {
   const language = () => {
     const p = project();
-    return p?.map(p.node(element())?.map)?.document.language ?? null;
+    const id = element();
+    return id && p?.node(id) ? (p.documentOf(id).settings.language ?? null) : null;
   };
   return {
     language,

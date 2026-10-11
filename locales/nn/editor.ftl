@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Korleis kvart slag blir sett i dette dokumente
 editor-words = Ord
 editor-words-hint = Understreking, heva skrift, kode; ord på eit anna språk, tittelen på eit verk, ein term
 editor-words-make = Lag eit slag ord …
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Språket i kartet
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Vanlege ord
 editor-own-kind-new = Eit eige slag

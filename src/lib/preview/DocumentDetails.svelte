@@ -12,25 +12,50 @@
 
   interface Props {
     project: Project;
-    mapId: string;
+    /**
+     * The element whose own settings are changed. What it does not set it
+     * takes from the elements over it (ADR 0037): that is shown, and left
+     * for it to set its own.
+     */
+    at: string;
     /** Limits of the format in use, shown beside what they limit. */
     limits?: { abstractWords: number | null; keywords: number | null };
     onclose: () => void;
   }
 
-  let { project, mapId, limits, onclose }: Props = $props();
+  let { project, at, limits, onclose }: Props = $props();
 
-  const map = $derived(project.map(mapId));
-  const root = $derived(map ? project.node(map.root) : undefined);
+  const node = $derived(project.node(at));
+  /** What is said of the element with what it inherits, and which element says each thing. */
+  const inherited = $derived(project.documentOf(at));
 
   // svelte-ignore state_referenced_locally
   let draft = $state<DocumentSettings>(
-    structuredClone($state.snapshot(map?.document ?? {}) as DocumentSettings),
+    structuredClone($state.snapshot(node?.document ?? {}) as DocumentSettings),
   );
   // svelte-ignore state_referenced_locally
-  let keywords = $state((map?.document.keywords ?? []).join(', '));
+  let keywords = $state((node?.document.keywords ?? []).join(', '));
 
   if (!draft.authors?.length) draft.authors = [{ name: '' }];
+
+  /**
+   * The name of the element over this one that a setting is taken from;
+   * nothing where the setting is this element's own, or nobody's.
+   */
+  function from(key: keyof DocumentSettings): string | null {
+    const who = inherited.from.get(key);
+    if (!who || who === at) return null;
+    return project.node(who)?.title || t('project-untitled');
+  }
+  // Shown while the element says nothing of its own.
+  const authorsFrom = $derived(draft.authors?.some((a) => a.name.trim()) ? null : from('authors'));
+  const keywordsFrom = $derived(keywords.trim() ? null : from('keywords'));
+  const dateFrom = $derived(draft.date?.trim() ? null : from('date'));
+  const languageFrom = $derived(draft.language ? null : from('language'));
+  const coverFrom = $derived(draft.cover ? null : from('cover'));
+  const inheritedAuthors = $derived(
+    (inherited.settings.authors ?? []).map((a) => a.name).join(', '),
+  );
 
   const abstractWords = $derived((draft.abstract ?? '').match(/[\p{L}\p{N}]+/gu)?.length ?? 0);
   const keywordCount = $derived(keywords.split(/[,;\n]/).filter((k) => k.trim()).length);
@@ -45,7 +70,7 @@
       }))
       .filter((a) => a.name);
     project.checkpoint();
-    project.setDocument(mapId, {
+    project.setDocument(at, {
       title: draft.title?.trim(),
       subtitle: draft.subtitle?.trim(),
       authors,
@@ -68,9 +93,15 @@
     if (picture) draft.cover = { hash: picture.hash, extension: picture.extension };
   }
 
-  // Named by the system, in the language of the interface.
+  // Named by the system, in the language of the interface. Where the
+  // language is inherited, nothing chosen stands for that language.
   const languages: [string, string][] = $derived([
-    ['', t('preview-details-language-none')],
+    [
+      '',
+      languageFrom && inherited.settings.language
+        ? languageName(inherited.settings.language)
+        : t('preview-details-language-none'),
+    ],
     ...TEXT_LANGUAGES.map((tag): [string, string] => [tag, languageName(tag)]),
   ]);
 </script>
@@ -88,7 +119,7 @@
       <input
         bind:value={draft.title}
         class="serif"
-        placeholder={root?.title || t('preview-details-title-placeholder')}
+        placeholder={node?.title || t('preview-details-title-placeholder')}
       />
       <small>{t('preview-details-title-hint')}</small>
     </label>
@@ -103,7 +134,7 @@
         <div class="author">
           <input
             bind:value={author.name}
-            placeholder={t('preview-details-name')}
+            placeholder={i === 0 && authorsFrom ? inheritedAuthors : t('preview-details-name')}
             aria-label={t('preview-details-author-name', { number: i + 1 })}
           />
           <input
@@ -133,6 +164,7 @@
         <Plus size={12} />
         {t('preview-details-add-author')}
       </button>
+      {#if authorsFrom}<small>{t('documents-inherited-from', { name: authorsFrom })}</small>{/if}
     </div>
 
     <label class="field">
@@ -156,13 +188,23 @@
           >
         {/if}
       </span>
-      <input bind:value={keywords} placeholder={t('preview-details-keywords-placeholder')} />
+      <input
+        bind:value={keywords}
+        placeholder={keywordsFrom
+          ? (inherited.settings.keywords ?? []).join(', ')
+          : t('preview-details-keywords-placeholder')}
+      />
+      {#if keywordsFrom}<small>{t('documents-inherited-from', { name: keywordsFrom })}</small>{/if}
     </label>
 
     <div class="pair">
       <label class="field">
         <span>{t('preview-details-date')}</span>
-        <input bind:value={draft.date} placeholder={t('preview-details-date-placeholder')} />
+        <input
+          bind:value={draft.date}
+          placeholder={dateFrom ? inherited.settings.date : t('preview-details-date-placeholder')}
+        />
+        {#if dateFrom}<small>{t('documents-inherited-from', { name: dateFrom })}</small>{/if}
       </label>
       <label class="field">
         <span>{t('preview-details-language')}</span>
@@ -174,6 +216,8 @@
             <option value={draft.language}>{languageName(draft.language)}</option>
           {/if}
         </select>
+        {#if languageFrom}<small>{t('documents-inherited-from', { name: languageFrom })}</small
+          >{/if}
       </label>
     </div>
   </div>
@@ -189,6 +233,18 @@
         <Button size="sm" variant="ghost" onclick={() => (draft.cover = undefined)}
           >{t('common-remove')}</Button
         >
+      </div>
+    {:else if coverFrom && inherited.settings.cover}
+      <div class="chosen">
+        <Thumb
+          hash={inherited.settings.cover.hash}
+          extension={inherited.settings.cover.extension}
+          small
+        />
+        <Button size="sm" variant="secondary" onclick={pickCover}
+          >{t('preview-details-cover-choose')}</Button
+        >
+        <small>{t('documents-inherited-from', { name: coverFrom })}</small>
       </div>
     {:else}
       <Button size="sm" variant="secondary" onclick={pickCover}

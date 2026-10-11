@@ -1,10 +1,12 @@
 /**
- * Bringing documents in from files, each to become a map of its own.
+ * Bringing documents in from files, each to become a tree of elements
+ * (ADR 0012): under the element in view, or under the project itself.
  *
  * The dialog is `DocumentDialog.svelte`, which is there wherever documents
- * are brought in: in a project, where the map is made in that project, and
- * among the projects, where a project is made of the document. It is opened
- * through the functions here, which give what was made, or nothing.
+ * are brought in: in a project, where the tree is made under the element in
+ * view, and among the projects, where a project is made of the document. It
+ * is opened through the functions here, which give what was made, or
+ * nothing.
  */
 
 import { open } from '@tauri-apps/plugin-dialog';
@@ -15,11 +17,12 @@ import type { ProjectInfo } from '$lib/api/projects';
 import { recordOf } from '$lib/editor/references.svelte';
 import { t } from '$lib/i18n';
 import type { Project } from '$lib/project/model/project.svelte';
+import { PROJECT } from '$lib/project/model/types';
 
 /** What came of a document that was brought in. */
 export interface Brought {
-  /** The map that was made. */
-  map: string;
+  /** The element at the top of what was made. */
+  top: string;
   /** The project that was made of it, where one was. */
   project?: ProjectInfo;
   /** Whether the citations that were found in it are to be gone through now. */
@@ -29,8 +32,10 @@ export interface Brought {
 export interface Bringing {
   /** The file. */
   path: string;
-  /** The project the map is made in. Nothing, when a project is made of the document. */
+  /** The project the tree is made in. Nothing, when a project is made of the document. */
   project: Project | null;
+  /** The element the tree is made under: the one in view, or the project itself. */
+  under: string;
   resolve: (brought: Brought | null) => void;
 }
 
@@ -40,11 +45,15 @@ class Documents {
 
 export const documents = new Documents();
 
-/** Reads a document and shows what it holds, for a map to be made of it. */
-export function bringIn(path: string, project: Project | null): Promise<Brought | null> {
+/** Reads a document and shows what it holds, for a tree to be made of it under `under`. */
+export function bringIn(
+  path: string,
+  project: Project | null,
+  under: string = PROJECT,
+): Promise<Brought | null> {
   return new Promise((resolve) => {
     documents.request?.resolve(null);
-    documents.request = { path, project, resolve };
+    documents.request = { path, project, under, resolve };
   });
 }
 

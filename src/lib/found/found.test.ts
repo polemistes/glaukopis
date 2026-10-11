@@ -22,7 +22,7 @@ describe('pressing a citation that was found', () => {
     // On the words in italics within it, as on any of it.
     const asked = foundUi.asked;
     expect(pressedFound(document.querySelector('.found em'), 'm1')).toBe(true);
-    expect(foundUi.request).toEqual({ map: 'm1', at: NAGY.id });
+    expect(foundUi.request).toEqual({ at: 'm1', citation: NAGY.id });
     expect(foundUi.asked).toBe(asked + 1);
     foundUi.request = null;
     // Not on other text, nor on what was left as text.
@@ -45,7 +45,7 @@ describe('pressing a citation that was found', () => {
     );
     const [first, second] = document.querySelectorAll('span[data-found]');
     expect(pressedFound(first, 'm2')).toBe(true);
-    expect(foundUi.request).toEqual({ map: 'm2', at: NAGY.id });
+    expect(foundUi.request).toEqual({ at: 'm2', citation: NAGY.id });
     foundUi.request = null;
     expect(pressedFound(second, 'm2')).toBe(false);
   });

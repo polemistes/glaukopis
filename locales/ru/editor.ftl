@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Как каждый вид оформляет�
 editor-words = Слова
 editor-words-hint = Подчёркивание, надстрочный, код; иностранные слова, название произведения, термин
 editor-words-make = Создать вид слов…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Язык карты
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Обычные слова
 editor-own-kind-new = Свой вид

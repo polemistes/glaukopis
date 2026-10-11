@@ -1,13 +1,14 @@
 /**
- * A map as a document: the elements in the order of the text, with the level
- * of each heading, as preview and export want it. See ADR 0003.
+ * An element as a document: the elements under it in the order of the
+ * text, with the level of each heading, as preview and export want it. See
+ * ADRs 0003 and 0037.
  *
- * - The name of the centre is the title; its text stands before the first section.
- * - What is excluded is left out, with everything under it. Loose elements
- *   are never part of the document.
- * - An element that stands for another map has that map in its place: its
- *   own name is the heading, the text of the other map's centre follows, and
- *   then the other map's sections, one level below.
+ * - The name of the element at the top is the title; its text stands before
+ *   the first section.
+ * - What is excluded is left out, with everything under it.
+ * - An element that stands for another element has that one's branch in its
+ *   place: its own name is the heading, the other's text follows, and then
+ *   the other's sections, one level below.
  * - An element whose name is not printed gives its text only, and does not
  *   deepen what is under it.
  */
@@ -32,58 +33,56 @@ export interface Placed {
   level: number;
   /** Whether its name is printed as a heading. */
   printed: boolean;
-  /** The centre of a map: of the map itself, or of one that stands in the place of an element. */
+  /** The top of a branch: of the document itself, or of one that stands in the place of an element. */
   root: boolean;
-  /** The centre of the map the document is made of, whose name is the title. */
+  /** The element the document is made of, whose name is the title. */
   top: boolean;
 }
 
 /**
- * The elements of a map in the order of the document, each with its place
- * there. What is excluded is passed over with everything under it; a map
- * that stands in the place of an element is walked in that place.
+ * The elements of a document in its order, each with its place there. What
+ * is excluded is passed over with everything under it; a branch that stands
+ * in the place of an element is walked in that place.
  */
-export function walkDocument(project: Project, mapId: string, visit: (placed: Placed) => void) {
-  const walkMap = (id: string, level: number, within: Set<string>, withRoot: boolean) => {
-    const tree = project.tree(id);
-    if (!tree.root) return;
+export function walkDocument(project: Project, id: string, visit: (placed: Placed) => void) {
+  const tree = project.tree();
+  const walkBranch = (top: string, level: number, within: Set<string>, isTop: boolean) => {
     const walk = (nodeId: string, at: number, isRoot: boolean) => {
       const node = project.node(nodeId);
       if (!node || node.excluded) return;
       const printed = !isRoot && node.heading && node.titleHtml.length > 0;
       visit({
         id: nodeId,
-        level: isRoot ? (withRoot ? 0 : Math.max(at, 1)) : Math.min(at, DEEPEST),
+        level: isRoot ? (isTop ? 0 : Math.max(at, 1)) : Math.min(at, DEEPEST),
         printed,
         root: isRoot,
-        top: isRoot && withRoot,
+        top: isRoot && isTop,
       });
 
-      const next = isRoot ? at + (withRoot ? 1 : 0) : printed ? at + 1 : at;
+      const next = isRoot ? at + (isTop ? 1 : 0) : printed ? at + 1 : at;
 
-      if (!isRoot && node.include && !within.has(node.include) && project.map(node.include)) {
+      if (!isRoot && node.include && !within.has(node.include) && project.node(node.include)) {
         const inner = new Set(within);
         inner.add(node.include);
-        walkMap(node.include, Math.max(next, 1), inner, false);
+        walkBranch(node.include, Math.max(next, 1), inner, false);
       }
       for (const child of tree.children.get(nodeId) ?? []) walk(child, Math.max(next, 1), false);
     };
-    walk(tree.root, level, true);
+    walk(top, level, true);
   };
-  walkMap(mapId, 0, new Set([mapId]), true);
+  if (project.node(id)) walkBranch(id, 0, new Set([id]), true);
 }
 
-export function buildDocument(project: Project, mapId: string): ExportDocument {
-  const map = project.map(mapId);
+export function buildDocument(project: Project, id: string): ExportDocument {
   const sections: ExportSection[] = [];
   const cited = new Set<string>();
 
-  walkDocument(project, mapId, (placed) => {
+  walkDocument(project, id, (placed) => {
     for (const ref of project.node(placed.id)?.cited ?? []) cited.add(ref);
     const blocks = project.blocksOf(placed.id);
     if (placed.root) {
-      // The text of the centre, before the first section. Its name is the
-      // title of the document, or the heading of what included the map.
+      // The text of the top of a branch, before its first section. Its name
+      // is the title of the document, or the heading of what stood for it.
       if (blocks.length)
         sections.push({ level: placed.level, heading: null, blocks, element: placed.id });
       return;
@@ -99,17 +98,16 @@ export function buildDocument(project: Project, mapId: string): ExportDocument {
     });
   });
 
-  const root = map ? project.node(map.root) : undefined;
-  const settings = map?.document ?? {};
+  const { settings } = project.documentOf(id);
   const title: Inline[] = settings.title?.trim()
     ? [{ kind: 'text', text: settings.title.trim(), marks: {} }]
-    : root
-      ? readTitle(project.fragment(root.id, 'title') ?? undefined)
+    : project.node(id)
+      ? readTitle(project.fragment(id, 'title') ?? undefined)
       : [];
 
   const references: ExportReference[] = [];
-  for (const id of cited) {
-    const r = project.refs.get(id);
+  for (const ref of cited) {
+    const r = project.refs.get(ref);
     if (r)
       references.push({ id: r.id, key: r.key, type: r.type, fields: r.fields, names: r.names });
   }
@@ -147,10 +145,10 @@ export function buildDocument(project: Project, mapId: string): ExportDocument {
  */
 export function leanDocument(
   project: Project,
-  mapId: string,
+  id: string,
   sent: ReadonlySet<string> = new Set(),
 ): LeanDocument {
-  const whole = buildDocument(project, mapId);
+  const whole = buildDocument(project, id);
   let n = 0;
   const sections: LeanSection[] = whole.sections.map((section) => {
     // A part that is of no element, or of one that is read as it is asked for, is sent as it is.
@@ -183,26 +181,26 @@ export function documentMark(document: LeanDocument): string {
 }
 
 /** The words of a document, as they would be counted by a publisher: without the notes, and with them. */
-export function countWords(project: Project, mapId: string): { text: number; withNotes: number } {
+export function countWords(project: Project, id: string): { text: number; withNotes: number } {
   // The count of each element includes its notes; the notes are counted apart to take them off.
   let withNotes = 0;
   let notes = 0;
-  const visit = (id: string, within: Set<string>) => {
-    const tree = project.tree(id);
+  const tree = project.tree();
+  const visit = (top: string, within: Set<string>) => {
     const walk = (nodeId: string) => {
       const node = project.node(nodeId);
       if (!node || node.excluded) return;
       withNotes += node.words;
       notes += node.noteWords;
-      if (node.include && !within.has(node.include) && project.map(node.include)) {
+      if (node.include && !within.has(node.include) && project.node(node.include)) {
         const inner = new Set(within);
         inner.add(node.include);
         visit(node.include, inner);
       }
       for (const c of tree.children.get(nodeId) ?? []) walk(c);
     };
-    if (tree.root) walk(tree.root);
+    walk(top);
   };
-  visit(mapId, new Set([mapId]));
+  visit(id, new Set([id]));
   return { text: withNotes - notes, withNotes };
 }

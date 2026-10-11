@@ -1,11 +1,13 @@
 /**
  * Where the elements of a map stand on the canvas.
  *
- * Elements are placed automatically, as a mind map: the centre in the middle,
- * its children to the right and to the left, each branch growing outwards with
- * its children stacked beside it. An element the user has moved keeps the
- * place it was given, relative to its parent, and its own branch is laid out
- * from there. Coordinates are those of the centre of each element.
+ * Elements are placed automatically, as a mind map: the element in view in
+ * the middle, its children to the right and to the left, each branch growing
+ * outwards with its children stacked beside it. An element the user has moved
+ * keeps the place it was given, relative to its parent, and its own branch is
+ * laid out from there. The element in view stands at the origin whatever its
+ * place under its own parent, and is never folded. Coordinates are those of
+ * the centre of each element.
  */
 
 import type { Tree } from '../model/tree';
@@ -53,8 +55,10 @@ export function layout(
   const order: string[] = [];
   const size = (id: string): Size => sizes.get(id) ?? DEFAULT_SIZE;
 
+  // The element in view is open whatever is said of it: what it is folded
+  // under is not seen from within it.
   const visibleChildren = (id: string): string[] =>
-    nodes.get(id)?.collapsed ? [] : (tree.children.get(id) ?? []);
+    id !== tree.root && nodes.get(id)?.collapsed ? [] : (tree.children.get(id) ?? []);
 
   const countUnder = (id: string): number => {
     let n = 0;
@@ -97,7 +101,7 @@ export function layout(
       side,
       depth,
       parent,
-      hidden: node?.collapsed ? countUnder(id) : 0,
+      hidden: node?.collapsed && id !== tree.root ? countUnder(id) : 0,
       pinned: !!node?.pos && parent !== null,
     });
     order.push(id);
@@ -152,8 +156,8 @@ export function layout(
       }
     }
     if (id === tree.root) {
-      // Around the centre: the first in order to the right, the rest to the
-      // left, divided where the two sides come closest to equal height.
+      // Around the element in view: the first in order to the right, the rest
+      // to the left, divided where the two sides come closest to equal height.
       const split = balance(flowing.map(blockHeight), occupied.right, occupied.left);
       flow(flowing.slice(0, split), 'right');
       flow(flowing.slice(split), 'left');
@@ -162,15 +166,9 @@ export function layout(
     }
   };
 
-  const rootPos = (tree.root && (held.get(tree.root) ?? nodes.get(tree.root)?.pos)) || {
-    x: 0,
-    y: 0,
-  };
-  if (tree.root) place(tree.root, rootPos.x, rootPos.y, 'right', 0, null);
-  for (const id of tree.loose) {
-    const pos = held.get(id) ?? nodes.get(id)?.pos ?? { x: 0, y: 0 };
-    place(id, pos.x, pos.y, pos.x < rootPos.x ? 'left' : 'right', 0, null);
-  }
+  // The element in view stands at the origin, whatever its place under its
+  // own parent, and is not moved by being held.
+  place(tree.root, 0, 0, 'right', 0, null);
 
   const bounds = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
   for (const p of placed.values()) {
@@ -183,12 +181,11 @@ export function layout(
   return { placed, order, bounds };
 }
 
-/** Where to divide a list of heights so that the two parts are closest to equal. The first part is never the smaller by count when heights are equal. */
 /**
- * How many of the branches, from the first, go to the right of the centre,
- * the rest going to the left, so that the two sides come closest to equal
- * height; `right` and `left` are what the sides hold already, of branches
- * placed by hand. Nothing held, and a single branch goes to the right.
+ * How many of the branches, from the first, go to the right of the element
+ * in view, the rest going to the left, so that the two sides come closest to
+ * equal height; `right` and `left` are what the sides hold already, of
+ * branches placed by hand. Nothing held, and a single branch goes to the right.
  */
 export function balance(heights: number[], right = 0, left = 0): number {
   if (!heights.length) return 0;

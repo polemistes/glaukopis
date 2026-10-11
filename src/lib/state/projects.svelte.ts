@@ -155,16 +155,11 @@ export async function openProject(id: string): Promise<OpenProject> {
   };
   const project = new Project(persistence);
   project.load(loaded.state, loaded.updates);
-  if (!project.maps.length) {
-    // A new project begins with one map, named after it. One that was joined
-    // and has not been fetched is left empty: what it holds is on its way.
-    if (!loaded.info.sharing) {
-      project.setName(loaded.info.name);
-      project.createMap(loaded.info.name);
-      project.undoManager.clear();
-    }
-  } else if (!project.name) {
-    project.setName(loaded.info.name);
+  // A new project begins with its own element, named after it, and one
+  // written before is brought into one tree (ADR 0037). One that was joined
+  // and has not been fetched is left empty: what it holds is on its way.
+  if (!(loaded.info.sharing && project.nodes.size === 0)) {
+    project.begin(loaded.info.name);
     project.undoManager.clear();
   }
   return { info: loaded.info, project };

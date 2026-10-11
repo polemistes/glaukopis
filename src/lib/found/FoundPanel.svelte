@@ -6,13 +6,13 @@
 <script lang="ts">
   /**
    * The panel at the side in which the citations that were found in the
-   * map in view are gone through, one at a time: see ADR 0015. What there
+   * element in view are gone through, one at a time: see ADR 0015. What there
    * is and what is done is in `going.svelte.ts`; this shows it, in a narrow
    * column: what is taken for citations at the top, then where in the list
    * the one that is looked at stands, the passage it stands in, the works,
    * and the buttons at the foot. The list of all there is folds open when
    * it is asked for. Whenever another is looked at, the view of the project
-   * is told, so that it is shown where the text of the map is shown.
+   * is told, so that it is shown where the text in view is shown.
    */
   import type { Snippet } from 'svelte';
   import { onMount, tick, untrack } from 'svelte';
@@ -48,22 +48,22 @@
 
   interface Props {
     project: Project;
-    /** The map in view: its citations are gone through. */
-    mapId: string;
+    /** The element in view: its citations, and those of all under it, are gone through. */
+    at: string;
     onclose: () => void;
     /** What stands at the head in place of the title: the tabs of the panel at the side. */
     head?: Snippet;
     /** Called when a work has been cited, with the id of its reference: the project keeps a copy. */
     onkeep: (reference: string) => void;
-    /** Another is looked at: it is to be shown where the text of the map is shown. */
+    /** Another is looked at: it is to be shown where the text in view is shown. */
     onshow?: (entry: Entry) => void;
   }
 
-  let { project, mapId, onclose, head, onkeep, onshow }: Props = $props();
+  let { project, at, onclose, head, onkeep, onshow }: Props = $props();
 
-  // The panel is made anew for every map it is opened for.
+  // The panel is made anew for every element in view it is opened for.
   // svelte-ignore state_referenced_locally
-  const going = new Going(project, mapId, {
+  const going = new Going(project, at, {
     kept: $state.snapshot(settings.value.found),
     keep: (reference) => onkeep(reference),
     remember: (kept) => settings.setFound(kept),
@@ -79,10 +79,10 @@
   /** The last asking of the panel that was answered: the one it was opened by, to begin with. */
   let handled = untrack(() => foundUi.asked);
 
-  /** The citation that was asked for, where the asking was for this map. */
+  /** The citation that was asked for, where the asking was for this element in view. */
   function askedFor(): string | null {
     const request = foundUi.request;
-    return request?.map === mapId ? request.at : null;
+    return request?.at === at ? request.citation : null;
   }
 
   onMount(() => {

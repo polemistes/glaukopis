@@ -2,8 +2,6 @@
 
 diagram-map = Harita
 diagram-idea = Ad
-diagram-new-loose = Buraya yeni serbest öğe
-diagram-new-loose-hint = Henüz yeri olmayan bir düşünce
 diagram-show-all = Bütün haritayı göster
 diagram-tidy = Bütün haritayı düzenle
 diagram-tidy-hint = Her öğe kendiliğinden aldığı yere geri döner

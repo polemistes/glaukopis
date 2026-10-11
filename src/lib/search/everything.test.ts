@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
-import { note, p, project, t } from '$lib/found/testing';
+import { note, oldDocument, p, project, t } from '$lib/found/testing';
 import type { Inline } from '$lib/project/model/text';
-import type { RefRecord } from '$lib/project/model/types';
+import { PROJECT, type RefRecord } from '$lib/project/model/types';
 import { Engine } from './engine';
 import { around, readProject, searchProject, type ProjectFound } from './everything';
 import { NO_OPTIONS, type SearchOptions } from './matching';
@@ -31,9 +31,9 @@ const cite = (id: string, locator?: string): Inline => ({
   mode: 'normal',
 });
 
-/** A project with a map of two elements, a citation, a note, an association with a name, details and a note on a work. */
+/** A project with two elements, a citation, a note, an association with a name, details and a note on a work. */
 function made() {
-  const { pr, map, root, elements } = project(
+  const { pr, at, elements } = project(
     [p(t('Sing the wrath of Achilles '), cite('r1', '73'), note(t('On wrath, see the poem.')))],
     [p(t('The wrath returns.'))],
   );
@@ -41,9 +41,9 @@ function made() {
   pr.setNote('r1', 'Nagy on the hero and his wrath.');
   const link = pr.addLink(elements[0], elements[1])!;
   pr.setLinkLabel(link, 'wrath again');
-  pr.setDocument(map, { subtitle: 'A study of wrath' });
-  pr.setTitle(root, 'The poem');
-  return { pr, map, root, elements };
+  pr.setDocument(at, { subtitle: 'A study of wrath' });
+  pr.setName('The poem');
+  return { pr, at, elements };
 }
 
 const read = (pr: ReturnType<typeof made>['pr'], id = 'p1') =>
@@ -55,8 +55,8 @@ function found(result: ReturnType<typeof searchProject>): ProjectFound {
 }
 
 describe('the search through everything', () => {
-  it('reads a project as the disk keeps it, and finds in the texts of its maps', () => {
-    const { pr, map, elements } = made();
+  it('reads a project as the disk keeps it, and finds in the texts of its elements', () => {
+    const { pr, elements } = made();
     const result = found(searchProject(read(pr), 'wrath', options()));
     expect(result.count).toBe(3);
     expect(result.found.map((f) => [f.where, f.element, f.part, f.passage])).toEqual([
@@ -65,14 +65,42 @@ describe('the search through everything', () => {
       ['text', elements[1], 'body', 0],
     ]);
     expect(result.found[0]).toMatchObject({
-      map,
-      mapName: 'Wrath',
+      // Under the project, each element is a tree of its own.
+      tree: elements[0],
+      treeName: 'Part 1',
       elementName: 'Part 1',
       before: 'Sing the ',
       text: 'wrath',
       // What is no text is shown as the text shows it.
       after: ' of Achilles (Nagy 1979, 73)',
     });
+  });
+
+  it('reads a project written as maps in the shape it opens in, without writing it back', () => {
+    const old = oldDocument({
+      centre: [p(t('Of wrath.'))],
+      part: [p(t('More wrath.'))],
+      loose: [p(t('Wrath beside.'))],
+    });
+    const before = Y.encodeStateAsUpdate(old);
+    const read = readProject('p2', 'Wrath', before, []);
+    // One tree: the project at the top, the centre and the loose element under it.
+    expect(read.tree.sequence).toEqual([PROJECT, 'centre', 'part', 'loose']);
+    expect(read.elements.map((e) => [e.name, e.tree])).toEqual([
+      ['Wrath', null],
+      ['The poem', 'centre'],
+      ['Part 1', 'centre'],
+      ['Beside', 'loose'],
+    ]);
+    const result = found(searchProject(read, 'wrath', options({ wholeWords: true })));
+    // The project's own element is named after the project.
+    expect(result.found.map((f) => [f.element, f.treeName])).toEqual([
+      [PROJECT, ''],
+      ['centre', 'The poem'],
+      ['part', 'The poem'],
+      ['loose', 'Beside'],
+    ]);
+    expect(Y.encodeStateAsUpdate(old)).toEqual(before);
   });
 
   it('finds what stands outside the texts only where that is asked for', () => {
@@ -92,6 +120,8 @@ describe('the search through everything', () => {
       'association',
       'note',
     ]);
+    // The details are said of the project itself, which is in no tree under it.
+    expect(wrath.found[3]).toMatchObject({ tree: null, element: PROJECT, elementName: 'The poem' });
     expect(wrath.found[4].elementName).toBe('Part 1 ↔ Part 2');
   });
 
@@ -121,7 +151,7 @@ describe('the search through everything', () => {
     const a = await engine.search('a', 'wrath', options({ wholeWords: true }));
     const b = await engine.search('b', 'wrath', options({ wholeWords: true }));
     expect(a).toMatchObject({ project: 'a', count: 3 });
-    // The centre of the map is named after it: "Wrath".
+    // The project's own element is named after it: "Wrath".
     expect(b).toMatchObject({ project: 'b', count: 2 });
     expect(await engine.search('c', 'wrath', options())).toBeNull();
     // What was read of a project is kept, and read anew when it is given anew.

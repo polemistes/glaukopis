@@ -66,32 +66,15 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Ohne Titel
-# The name of a copy of a map.
-project-map-copy = { $name }, Kopie
-project-maps = Karten
-project-map-name = Name der Karte
-project-new-map = Neue Karte
-project-map-from-document = Eine Karte aus einem Dokument…
 project-drop-on-map = Auf eine Karte fallen lassen, um dorthin zu verschieben · Strg halten, um zu kopieren
-project-duplicate = Duplizieren
-project-duplicate-hint = Eine Kopie zum Weiterarbeiten; diese bleibt, wie sie ist
 project-open-beside = Daneben öffnen
 project-open-beside-hint = Zwei Karten nebeneinander, um Elemente zwischen ihnen zu verschieben
-project-this-map-actions = Diese Karte, und die Karten
-project-maps-hint = Die Karten des Projekts: wählen Sie eine, um sie zu öffnen
-project-map-beside = neben dieser
 project-side-by-side-short = Nebeneinander
 project-preview-short = Vorschau
 project-found = Gefundene Zitationen…
 # The count is of those found in the map.
 project-found-hint = { $count } durchzugehen und zu Zitationen zu machen
 project-found-none = Und Text, der wie Zitationen aussieht
-project-delete-map = Karte löschen
-project-delete-map-title = Die Karte „{ $name }“ löschen?
-project-delete-map-message = { $count ->
-    [one] { $count } Element und der Text darin gehen verloren. Das kann rückgängig gemacht werden, solange das Projekt offen ist.
-   *[other] { $count } Elemente und der Text darin gehen verloren. Das kann rückgängig gemacht werden, solange das Projekt offen ist.
-}
 project-copied-to = Nach „{ $name }“ kopiert
 project-moved-to = Nach „{ $name }“ verschoben
 
@@ -113,20 +96,12 @@ project-stands-for = Steht für „{ $name }“
 project-stand-for = Für eine andere Karte stehen
 project-stand-for-heading = Im Dokument tritt diese Karte an seine Stelle
 project-stand-for-none = Keine
-project-copy-to-map = In Karte kopieren
 project-copy = Kopieren
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Darunter einfügen
-project-move-to-map = In Karte verschieben
-project-map-from-branch = Neue Karte aus diesem Zweig
-project-map-from-branch-hint = Eine Kopie zum Weiterarbeiten; diese bleibt
-project-detach = Vom Übergeordneten lösen
-project-detach-hint = Ein loses Element, später zu platzieren
 project-tidy-branch = Diesen Zweig aufräumen
 project-place-automatically = Automatisch platzieren
 project-delete-keeping = Löschen, aber behalten, was darunter ist
-project-centre-stays = Die Mitte einer Karte bleibt
-project-centre-stays-detail = Löschen Sie die Karte selbst von ihrem Reiter aus.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] „{ $name }“ wurde gelöscht
@@ -224,7 +199,6 @@ project-link-label = Beschriftung der Verbindung
 
 ## A copy and its original, in another map.
 copy-title = Die Kopie und ihr Original
-copy-from = Kopiert aus „{ $name }“ in der Karte „{ $map }“
 copy-original-changed = Das Original hat sich geändert, seit es kopiert wurde oder seit das zuletzt angesehen wurde.
 copy-original-same = Das Original ist, wie es war, als es kopiert wurde.
 copy-original-unknown = Ob sich das Original geändert hat, seit es kopiert wurde, ist nicht bekannt: die Kopie wurde gemacht, bevor das festgehalten wurde.
@@ -238,8 +212,6 @@ copy-seen = Diese Kopie lassen, wie sie ist
 copy-take = Namen und Text des Originals übernehmen
 copy-changed-mark = Das Original hat sich geändert, seit dies kopiert wurde
 copy-compare = Mit dem Original vergleichen…
-copy-copied-from = Kopiert aus „{ $name }“ in „{ $map }“
-copy-copied-from-changed = Kopiert aus „{ $name }“ in „{ $map }“, das sich seither geändert hat
 
 ## How far the writing of an element has come, as its writer says.
 status = Stand

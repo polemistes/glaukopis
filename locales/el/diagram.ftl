@@ -2,8 +2,6 @@
 
 diagram-map = Χάρτης
 diagram-idea = Όνομα
-diagram-new-loose = Νέο ελεύθερο στοιχείο εδώ
-diagram-new-loose-hint = Μια σκέψη που δεν έχει ακόμη θέση
 diagram-show-all = Εμφάνιση όλου του χάρτη
 diagram-tidy = Τακτοποίηση όλου του χάρτη
 diagram-tidy-hint = Κάθε στοιχείο γυρίζει στην αυτόματη θέση του

@@ -1,18 +1,20 @@
 <script lang="ts">
   /**
-   * A map from a PDF of the library (ADR 0018): the file is read where it is
-   * stored, as a file brought in is (`ReadStep.svelte`), and what is read
-   * becomes a map in a project that is chosen: the one the pane stands in,
-   * another, or a new one named after the PDF. The title is the one the PDF
-   * gives itself, or the file's name.
+   * A PDF of the library read into a project (ADR 0018): the file is read
+   * where it is stored, as a file brought in is (`ReadStep.svelte`), and
+   * what is read becomes a tree of elements in a project that is chosen:
+   * under the element in view of the one the pane stands in, or at the top
+   * of another, or of a new one named after the PDF. The title is the one
+   * the PDF gives itself, or the file's name.
    */
   import { onMount } from 'svelte';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import type { Imported } from '$lib/api/imported';
   import type { StoredFile } from '$lib/api/library';
   import { t } from '$lib/i18n';
-  import { makeMap, titleOf } from '$lib/project/model/import';
+  import { makeImported, titleOf } from '$lib/project/model/import';
   import type { Project } from '$lib/project/model/project.svelte';
+  import { PROJECT } from '$lib/project/model/types';
   import { openProject, projects } from '$lib/state/projects.svelte';
   import { router } from '$lib/state/router.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -24,15 +26,16 @@
 
   interface Props {
     file: StoredFile;
-    /** The project the pane stands in, where it does, with its id. */
+    /** The project the pane stands in, where it does, with its id, and the element in view in it. */
     project?: Project | null;
     projectId?: string | null;
-    /** Asks for a map made in that project to be shown. */
-    onopenmap?: (map: string) => void;
+    at?: string | null;
+    /** Asks for the element made in that project to be entered. */
+    onenter?: (id: string) => void;
     onclose: () => void;
   }
 
-  let { file, project = null, projectId = null, onopenmap, onclose }: Props = $props();
+  let { file, project = null, projectId = null, at = null, onenter, onclose }: Props = $props();
 
   /** A new project, named after the PDF. Ids of projects are not words. */
   const NEW = 'new';
@@ -57,20 +60,19 @@
     const title = titleOf(imported) || file.name.replace(/\.pdf$/i, '');
     try {
       if (project && into === projectId) {
-        const map = makeMap(project, imported, title).map;
+        const made = makeImported(project, at ?? PROJECT, imported, title);
+        if (!made) throw new Error(t('ocr-map-failed'));
         onclose();
-        onopenmap?.(map);
+        onenter?.(made.top);
         return;
       }
       const id = into === NEW ? (await projects.create(title)).id : into;
       const opened = await openProject(id);
-      // The map a new project begins with gives way to that of the PDF.
-      const first = into === NEW ? opened.project.maps.map((m) => m.id) : [];
-      const map = makeMap(opened.project, imported, title).map;
-      for (const old of first) opened.project.deleteMap(old);
+      const made = makeImported(opened.project, PROJECT, imported, title);
       await opened.project.close();
+      if (!made) throw new Error(t('ocr-map-failed'));
       onclose();
-      router.go({ view: 'project', project: id, map, mode: 'text' });
+      router.go({ view: 'project', project: id, at: made.top, mode: 'text' });
     } catch (error) {
       failure = describeError(error) ?? t('ocr-map-failed');
       making = false;

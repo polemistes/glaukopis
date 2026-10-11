@@ -1,4 +1,4 @@
-# A project: its view, the tabs of its maps, what is done to elements, and
+# A project: its view, the bar over the map, what is done to elements, and
 # the panels at the side with the references and the pictures.
 
 project-list-unreadable = The projects could not be read
@@ -62,43 +62,36 @@ project-cited-in-element = { $count ->
    *[other] { $count } references are cited in “the element”
 }
 
-## The tabs of the maps
+## The bar over the map: where one is, and what is done with the element in view
 
-# The name of a map, or of an element, that has none.
+# The name of an element that has none.
 project-untitled = Untitled
-# The name of a copy of a map.
-project-map-copy = { $name }, copy
-project-maps = Maps
-project-map-name = Name of the map
-project-new-map = New map
-project-map-from-document = A map from a document…
+project-where = Where you are
+# The small button before the name of the element in view: its parent's name.
+project-up = Up
+project-up-hint = Up to “{ $name }” · Alt+Up
+project-siblings-hint = The elements beside this one: choose one to show it
+project-trees-hint = The elements under the project: choose one to show it
+project-shown-beside = beside this one
+project-element-name = Name of the element
+project-this-element-actions = This element
+project-document-details = Document details…
+project-new-element-under = New element under it
+project-document-into = A document into it…
 project-drop-on-map = Drop on a map to move there · hold Ctrl to copy
-project-duplicate = Duplicate
-project-duplicate-hint = A copy to work on; this one stays as it is
 project-open-beside = Open beside
 project-open-beside-hint = Two maps side by side, to move elements between them
-project-this-map-actions = This map, and the maps
-project-maps-hint = The maps of the project: choose one to open it
-project-map-beside = beside this one
 project-side-by-side-short = Side by side
 project-preview-short = Preview
 project-found = Citations that were found…
-# The count is of those found in the map.
+# The count is of those found in the element in view, and under it.
 project-found-hint = { $count } to go through, and make citations of
 project-found-none = And text that looks like citations
-project-delete-map = Delete map
-project-delete-map-title = Delete the map “{ $name }”?
-project-delete-map-message = { $count ->
-    [one] { $count } element and the text in it will go. This can be undone while the project is open.
-   *[other] { $count } elements and the text in them will go. This can be undone while the project is open.
-}
 project-copied-to = Copied to “{ $name }”
 project-moved-to = Moved to “{ $name }”
-project-copied-to-project = Copied to “{ $name }” in “{ $project }”
-project-moved-to-project = Moved to “{ $name }” in “{ $project }”
 project-other-projects = Other projects
 project-send-failed = Could not write in “{ $project }”. Nothing was changed here.
-project-send-no-map = The map is no longer in that project.
+project-send-no-element = The element is no longer in that project.
 
 ## What is done to elements, in the diagram and in the text
 
@@ -113,29 +106,24 @@ project-heading = Print the name as a heading
 project-heading-hint = Off: the name is a label for you; only the text is printed
 project-leave-out = Leave out of the document
 project-leave-out-hint = With everything under it
-# An element that stands for another map: in the document, that map is in its place.
+# An element that stands for another element: in the document, that element is in its place.
 project-stands-for = Stands for “{ $name }”
-project-stand-for = Stand for another map
-project-stand-for-heading = In the document, this map takes its place
+project-stand-for = Stand for another element
+project-stand-for-heading = In the document, this element takes its place
 project-stand-for-none = None
-project-copy-to-map = Copy to map
+# Copying or moving elements to the project itself, to one of its trees, or to another project.
+project-copy-to = Copy to
 project-cut = Cut
 project-cut-not-removed = What was cut was pasted, but could not be taken away from the project it came from
 project-copy = Copy
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Paste under it
-project-move-to-map = Move to map
-project-map-from-branch = New map from this branch
-project-map-from-branch-hint = A copy to work on; this one stays
-project-detach = Detach from its parent
-project-detach-hint = A loose element, to be placed later
-project-make-centre = Make it the centre
-project-make-centre-hint = It becomes the centre of the map, and the centre that was goes under it, with all under it
+project-move-to = Move to
 project-tidy-branch = Tidy this branch
 project-place-automatically = Place automatically
 project-delete-keeping = Delete, keeping what is under it
-project-centre-stays = The centre of a map stays
-project-centre-stays-detail = Delete the map itself from its tab.
+project-itself-stays = The project itself stays
+project-itself-stays-detail = Delete the project from the home page.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] “{ $name }” was deleted
@@ -165,7 +153,7 @@ project-words = { $count ->
    *[other] { $count } words
 }
 project-read-on = Double-click to read on
-project-stands-for-map = Stands for the map “{ $name }”
+project-stands-for-map = Stands for “{ $name }”
 project-name-not-printed = The name is not printed
 project-left-out-of-document = Left out of the document
 
@@ -231,9 +219,9 @@ project-other-here = { $name } is here
 project-link-placeholder = How they are related
 project-link-label = Label of the association
 
-## A copy and its original, in another map.
+## A copy and its original.
 copy-title = The copy and its original
-copy-from = Copied from “{ $name }” in the map “{ $map }”
+copy-from = Copied from “{ $name }”
 copy-original-changed = The original has changed since it was copied, or since that was last seen.
 copy-original-same = The original is as it was when it was copied.
 copy-original-unknown = Whether the original has changed since it was copied is not known: the copy was made before that was kept.
@@ -247,8 +235,8 @@ copy-seen = Keep this copy as it is
 copy-take = Take the original’s name and text
 copy-changed-mark = The original has changed since this was copied
 copy-compare = Compare with the original…
-copy-copied-from = Copied from “{ $name }” in “{ $map }”
-copy-copied-from-changed = Copied from “{ $name }” in “{ $map }”, which has changed since
+copy-copied-from = Copied from “{ $name }”
+copy-copied-from-changed = Copied from “{ $name }”, which has changed since
 
 ## How far the writing of an element has come, as its writer says.
 status = Status

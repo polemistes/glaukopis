@@ -1,34 +1,53 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import { newTextLanguage } from '$lib/i18n';
 import { Project, type Persistence, type Summary } from './project.svelte';
 import { fillBody } from './text';
+import { PROJECT } from './types';
 
+/** A project begun: its own element at the top, named after it. */
 function project() {
   const p = new Project(null);
-  const map = p.createMap('Wrath');
-  const root = p.map(map)!.root;
-  return { p, map, root };
+  p.begin('Wrath');
+  return { p, root: PROJECT };
+}
+
+/** Two copies of one project, that have seen each other's changes. */
+function two() {
+  const a = new Project(null);
+  a.begin('Wrath');
+  const b = new Project(null);
+  b.load(Y.encodeStateAsUpdate(a.doc), []);
+  const sync = () => {
+    Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc, Y.encodeStateVector(b.doc)), 'remote');
+    Y.applyUpdate(a.doc, Y.encodeStateAsUpdate(b.doc, Y.encodeStateVector(a.doc)), 'remote');
+  };
+  return { a, b, root: PROJECT, sync };
 }
 
 const titles = (p: Project, ids: string[]) => ids.map((id) => p.node(id)!.title);
 
-describe('maps and elements', () => {
-  it('a new map has a centre named after it', () => {
-    const { p, map, root } = project();
-    expect(p.maps).toHaveLength(1);
+describe('the project and its elements', () => {
+  it('a project begins with its own element, named after it', () => {
+    const { p, root } = project();
+    expect(p.name).toBe('Wrath');
     expect(p.node(root)!.title).toBe('Wrath');
-    expect(p.tree(map).sequence).toEqual([root]);
+    expect(p.node(root)!.parent).toBeNull();
+    expect(p.tree().root).toBe(root);
+    expect(p.tree().sequence).toEqual([root]);
+    // Begun, it is begun: nothing is done to a project in shape, and nothing is undone.
+    expect(p.begin('Other')).toBe(false);
+    expect(p.name).toBe('Wrath');
+    expect(p.canUndo).toBe(false);
   });
 
   it('children and siblings take their places', () => {
-    const { p, map, root } = project();
+    const { p, root } = project();
     const a = p.addChild(root, { title: 'A' })!;
     const c = p.addChild(root, { title: 'C' })!;
     const b = p.addSibling(a, { title: 'B' })!;
     const first = p.addChild(root, { title: 'First', index: 0 })!;
     const a1 = p.addChild(a, { title: 'A1' })!;
-    const tree = p.tree(map);
+    const tree = p.tree();
     expect(titles(p, tree.children.get(root)!)).toEqual(['First', 'A', 'B', 'C']);
     expect(titles(p, tree.sequence)).toEqual(['Wrath', 'First', 'A', 'A1', 'B', 'C']);
     expect(tree.depth.get(a1)).toBe(2);
@@ -51,23 +70,43 @@ describe('maps and elements', () => {
     expect(title.toString()).toContain('<em> mênis</em>');
   });
 
-  it('a sibling of the centre is a child of it', () => {
-    const { p, map, root } = project();
+  it('a sibling of the project element is a child of it', () => {
+    const { p, root } = project();
     const x = p.addSibling(root, { title: 'X' })!;
-    expect(p.tree(map).parent.get(x)).toBe(root);
+    expect(p.tree().parent.get(x)).toBe(root);
+  });
+
+  it('the tree is seen from any element, with the way up still known', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
+    const a1 = p.addChild(a, { title: 'A1' })!;
+    const b = p.addChild(root, { title: 'B' })!;
+    const view = p.tree(a);
+    expect(view.root).toBe(a);
+    expect(titles(p, view.sequence)).toEqual(['A', 'A1']);
+    expect(view.depth.get(a)).toBe(0);
+    expect(view.depth.get(a1)).toBe(1);
+    expect(view.parent.get(a)).toBe(root);
+    expect(p.pathTo(a1)).toEqual([root, a, a1]);
+    expect(p.tree(b).sequence).toEqual([b]);
+    // The same tree while nothing changes, and a new one after.
+    expect(p.tree(a)).toBe(view);
+    p.addChild(a1, { title: 'A1a' });
+    expect(titles(p, p.tree(a).sequence)).toEqual(['A', 'A1', 'A1a']);
   });
 
   it('moving keeps the text and refuses to make a loop', () => {
-    const { p, map, root } = project();
+    const { p, root } = project();
     const a = p.addChild(root, { title: 'A', body: 'The text of A.' })!;
     const a1 = p.addChild(a, { title: 'A1' })!;
     const b = p.addChild(root, { title: 'B' })!;
     expect(p.move([a], a1)).toEqual([]);
     expect(p.move([a], a)).toEqual([]);
     expect(p.move([root], b)).toEqual([]);
+    expect(p.move([a], 'nobody')).toEqual([]);
     const body = p.fragment(a, 'body');
     expect(p.move([a], b)).toEqual([a]);
-    const tree = p.tree(map);
+    const tree = p.tree();
     expect(tree.parent.get(a)).toBe(b);
     expect(tree.parent.get(a1)).toBe(a);
     // The very same content, not a copy of it.
@@ -76,125 +115,171 @@ describe('maps and elements', () => {
   });
 
   it('moving within a list counts places as the user sees them', () => {
-    const { p, map, root } = project();
+    const { p, root } = project();
     const [a, b, c, d] = ['A', 'B', 'C', 'D'].map((t) => p.addChild(root, { title: t })!);
     p.move([a], root, 3); // before D
-    expect(titles(p, p.tree(map).children.get(root)!)).toEqual(['B', 'C', 'A', 'D']);
+    expect(titles(p, p.tree().children.get(root)!)).toEqual(['B', 'C', 'A', 'D']);
     p.move([d, b], root, 0);
-    expect(titles(p, p.tree(map).children.get(root)!)).toEqual(['D', 'B', 'C', 'A']);
+    expect(titles(p, p.tree().children.get(root)!)).toEqual(['D', 'B', 'C', 'A']);
     p.move([c], root);
-    expect(titles(p, p.tree(map).children.get(root)!)).toEqual(['D', 'B', 'A', 'C']);
+    expect(titles(p, p.tree().children.get(root)!)).toEqual(['D', 'B', 'A', 'C']);
+  });
+
+  it('an element stands where it is put, or is placed automatically', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
+    const l = p.addChild(root, { title: 'A thought', pos: { x: 300.4, y: -120 } })!;
+    expect(p.node(l)!.pos).toEqual({ x: 300, y: -120 });
+    // Moved without a word about its place, it keeps it; told none, it is placed.
+    p.move([l], a);
+    expect(p.node(l)!.pos).toEqual({ x: 300, y: -120 });
+    p.move([l], root, undefined, { pos: null });
+    expect(p.node(l)!.pos).toBeNull();
+    p.move([l], a, undefined, { pos: { x: 10.4, y: 10 } });
+    expect(p.node(l)!.pos).toEqual({ x: 10, y: 10 });
+    p.setPosition(l, { x: 1.6, y: 2 });
+    expect(p.node(l)!.pos).toEqual({ x: 2, y: 2 });
+    // Tidied, the branch is laid out again.
+    p.tidy([a]);
+    expect(p.node(l)!.pos).toBeNull();
   });
 
   it('removing takes the branch, or leaves the children', () => {
-    const { p, map, root } = project();
+    const { p, root } = project();
     const a = p.addChild(root, { title: 'A' })!;
     const a1 = p.addChild(a, { title: 'A1' })!;
     const a2 = p.addChild(a, { title: 'A2' })!;
     const b = p.addChild(root, { title: 'B' })!;
     p.addLink(a1, b);
     expect(p.remove([root])).toBe(0);
+    expect(p.remove([root], { keepChildren: true })).toBe(0);
 
     expect(p.remove([a], { keepChildren: true })).toBe(1);
-    expect(titles(p, p.tree(map).children.get(root)!)).toEqual(['A1', 'A2', 'B']);
+    expect(titles(p, p.tree().children.get(root)!)).toEqual(['A1', 'A2', 'B']);
     expect(p.links).toHaveLength(1);
 
     expect(p.remove([a1, a2])).toBe(2);
     expect(p.links).toHaveLength(0);
-    expect(titles(p, p.tree(map).sequence)).toEqual(['Wrath', 'B']);
+    expect(titles(p, p.tree().sequence)).toEqual(['Wrath', 'B']);
   });
 
-  it('loose elements belong to the map and to nothing in it', () => {
-    const { p, map, root } = project();
-    const l = p.addLoose(map, { x: 300.4, y: -120 }, 'A thought')!;
-    const tree = p.tree(map);
-    expect(tree.loose).toEqual([l]);
-    expect(p.node(l)!.pos).toEqual({ x: 300, y: -120 });
-    p.move([l], root);
-    expect(p.tree(map).loose).toEqual([]);
-    p.move([l], null, undefined, { pos: { x: 10, y: 10 } });
-    expect(p.tree(map).loose).toEqual([l]);
-    expect(p.node(l)!.pos).toEqual({ x: 10, y: 10 });
+  it('the summary tells the trees under the project, with the elements of each', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
+    p.addChild(a, { title: 'A1', body: 'Two words' });
+    const b = p.addChild(root, { title: '' })!;
+    const summary = p.summary();
+    expect(summary).toMatchObject({ name: 'Wrath', words: 2 });
+    expect(summary.maps).toMatchObject([
+      { id: a, name: 'A', elements: 2 },
+      { id: b, elements: 1 },
+    ]);
+    // An element without a name is called something all the same.
+    expect(summary.maps[1].name).toBeTruthy();
   });
 });
 
-describe('working across maps', () => {
+describe('working across the trees of the project', () => {
   it('a copy is independent and remembers where it came from', () => {
-    const { p, map, root } = project();
+    const { p, root } = project();
     const a = p.addChild(root, { title: 'A', body: 'Text.' })!;
     const a1 = p.addChild(a, { title: 'A1' })!;
     const b = p.addChild(root, { title: 'B' })!;
     p.addLink(a1, a);
     p.addLink(a1, b);
-    const other = p.createMap('Article');
-    const otherRoot = p.map(other)!.root;
+    const other = p.addChild(root, { title: 'Article' })!;
 
-    const [copy] = p.copy([a, a1], otherRoot);
-    const tree = p.tree(other);
-    expect(titles(p, tree.sequence)).toEqual(['Article', 'A', 'A1']);
-    expect(p.node(copy)!.origin).toEqual({ map, node: a, print: p.fingerprint(a) });
+    const [copy] = p.copy([a, a1], other);
+    expect(titles(p, p.tree(other).sequence)).toEqual(['Article', 'A', 'A1']);
+    expect(p.node(copy)!.origin).toEqual({ node: a, print: p.fingerprint(a) });
     expect(p.node(copy)!.words).toBe(1);
     // The link within the branch came along; the one leading out of it did not.
     expect(p.linksOf(other)).toHaveLength(1);
-    expect(p.linksOf(map)).toHaveLength(2);
+    expect(p.linksOf(a)).toHaveLength(1);
+    expect(p.linksOf(root)).toHaveLength(3);
 
     p.setTitle(copy, 'A, revised');
     expect(p.node(a)!.title).toBe('A');
-    expect(p.tree(map).sequence).toHaveLength(4);
+    expect(titles(p, p.tree().sequence)).toEqual([
+      'Wrath',
+      'A',
+      'A1',
+      'B',
+      'Article',
+      'A, revised',
+      'A1',
+    ]);
   });
 
-  it('a move to another map takes the branch along', () => {
-    const { p, map, root } = project();
+  it('a move to another tree under the project takes the branch along', () => {
+    const { p, root } = project();
     const a = p.addChild(root, { title: 'A' })!;
     const a1 = p.addChild(a, { title: 'A1' })!;
-    const other = p.createMap('Article');
-    p.move([a], p.map(other)!.root);
+    const other = p.addChild(root, { title: 'Article' })!;
+    expect(p.move([a], other)).toEqual([a]);
     expect(titles(p, p.tree(other).sequence)).toEqual(['Article', 'A', 'A1']);
-    expect(p.tree(map).sequence).toEqual([root]);
-    expect(p.node(a1)!.map).toBe(other);
+    expect(titles(p, p.tree().sequence)).toEqual(['Wrath', 'Article', 'A', 'A1']);
+    expect(p.pathTo(a1)).toEqual([root, other, a, a1]);
+    expect(p.node(a1)!.parent).toBe(a);
   });
 
-  it('a map can be duplicated, and a branch made into a map', () => {
-    const { p, map, root } = project();
+  it('a branch copied beside itself keeps its text, its settings and its links, and knows its origin', () => {
+    const { p, root } = project();
     const a = p.addChild(root, { title: 'A' })!;
     const a1 = p.addChild(a, { title: 'A1', body: 'One two three.' })!;
-    p.addLoose(map, { x: 5, y: 5 }, 'Loose');
     p.addLink(a, a1);
-    p.setDocument(map, { style: 'chicago' });
+    p.setDocument(a, { style: 'chicago' });
+    p.setCollapsed(a, true);
 
-    const copy = p.duplicateMap(map)!;
-    expect(p.map(copy)!.name).toBe('Wrath, copy');
-    expect(p.map(copy)!.document.style).toBe('chicago');
-    expect(titles(p, p.tree(copy).sequence)).toEqual(['Wrath', 'A', 'A1', 'Loose']);
+    const [copy] = p.copy([a], root, 1, { pos: { x: 40.4, y: 0 } });
+    expect(copy).not.toBe(a);
+    expect(titles(p, p.tree().children.get(root)!)).toEqual(['A', 'A']);
+    expect(titles(p, p.tree(copy).sequence)).toEqual(['A', 'A1']);
+    expect(p.node(copy)!.document.style).toBe('chicago');
+    expect(p.node(copy)!.collapsed).toBe(true);
+    expect(p.node(copy)!.pos).toEqual({ x: 40, y: 0 });
+    expect(p.copyOf(copy)).toMatchObject({ original: { id: a }, changed: false });
+    const [c1] = p.tree().children.get(copy)!;
+    expect(p.node(c1)!.words).toBe(3);
+    expect(p.copyOf(c1)?.original?.id).toBe(a1);
     expect(p.linksOf(copy)).toHaveLength(1);
-    expect(p.maps.map((m) => m.name)).toEqual(['Wrath', 'Wrath, copy']);
+    expect(p.links).toHaveLength(2);
+    // The original is untouched; the project itself is never copied.
+    expect(titles(p, p.tree(a).sequence)).toEqual(['A', 'A1']);
+    expect(p.copy([root], a)).toEqual([]);
 
-    const branch = p.mapFromBranch(a)!;
-    expect(p.map(branch)!.name).toBe('A');
-    expect(titles(p, p.tree(branch).sequence)).toEqual(['A', 'A1']);
-    expect(p.node(p.map(branch)!.root)!.pos).toEqual({ x: 0, y: 0 });
-    // The original is untouched.
-    expect(titles(p, p.tree(map).sequence)).toEqual(['Wrath', 'A', 'A1', 'Loose']);
-
-    p.deleteMap(copy);
-    expect(p.maps).toHaveLength(2);
-    expect([...p.nodes.values()].filter((n) => n.map === copy)).toHaveLength(0);
+    p.remove([copy]);
+    expect(titles(p, p.tree().sequence)).toEqual(['Wrath', 'A', 'A1']);
+    expect(p.nodes.size).toBe(3);
+    expect(p.links).toHaveLength(1);
   });
 
-  it('a map cannot come to include itself', () => {
-    const { p, map, root } = project();
-    const chapter = p.createMap('Chapter 1');
-    const section = p.createMap('Section');
-    const a = p.addChild(root, { title: 'Chapter 1' })!;
-    const b = p.addChild(p.map(chapter)!.root, { title: 'Section' })!;
-    const c = p.addChild(p.map(section)!.root, { title: 'Back to the book' })!;
-    expect(p.setInclude(a, map)).toBe(false);
-    expect(p.setInclude(a, chapter)).toBe(true);
+  it('an element cannot come to include itself, nor one over it, nor one that holds it by inclusion', () => {
+    const { p, root } = project();
+    const holder = p.addChild(root, { title: 'The first chapter' })!;
+    const chapter = p.addChild(root, { title: 'Chapter 1' })!;
+    const b = p.addChild(chapter, { title: 'Section' })!;
+    const section = p.addChild(root, { title: 'Section' })!;
+    const c = p.addChild(section, { title: 'Back to the book' })!;
+    expect(p.setInclude(holder, holder)).toBe(false);
+    expect(p.setInclude(holder, root)).toBe(false);
+    expect(p.setInclude(holder, 'nobody')).toBe(false);
+    expect(p.setInclude(holder, chapter)).toBe(true);
     expect(p.setInclude(b, section)).toBe(true);
-    expect(p.setInclude(c, map)).toBe(false);
+    expect(p.node(b)!.include).toBe(section);
+    // Through the chapter and its section, the book would come to hold itself.
+    expect(p.setInclude(c, root)).toBe(false);
     expect(p.setInclude(c, chapter)).toBe(false);
-    p.deleteMap(chapter);
-    expect(p.node(a)!.include).toBeNull();
+    expect(p.setInclude(c, holder)).toBe(false);
+    expect(p.setInclude(c, section)).toBe(false);
+    expect(p.wouldLoop(c, b)).toBe(true);
+    expect(p.wouldLoop(holder, section)).toBe(false);
+    // What stood for an element that is deleted stands for nothing.
+    p.remove([chapter]);
+    expect(p.node(holder)!.include).toBeNull();
+    expect(p.setInclude(holder, section)).toBe(true);
+    expect(p.setInclude(holder, null)).toBe(true);
+    expect(p.node(holder)!.include).toBeNull();
   });
 });
 
@@ -242,33 +327,33 @@ describe('what is told of changes', () => {
 });
 
 describe('references', () => {
-  it('are those that are cited, in the map and in the project', () => {
-    const { p, map, root } = project();
+  it('are those that are cited, within an element and in the project', () => {
+    const { p, root } = project();
     const a = p.addChild(root, { title: 'A', body: 'The wrath is sung' })!;
-    const other = p.createMap('Article');
-    const b = p.addChild(p.map(other)!.root, { title: 'B' })!;
+    const other = p.addChild(root, { title: 'Article' })!;
+    const b = p.addChild(other, { title: 'B' })!;
 
     p.cite(a, ['nagy', 'lord']);
     p.cite(b, ['west']);
     p.cite(b, ['nagy']);
     expect(p.node(a)!.cited).toEqual(['nagy', 'lord']);
     expect(p.node(a)!.words).toBe(4);
-    expect(p.usedReferences(map).sort()).toEqual(['lord', 'nagy']);
+    expect(p.usedReferences(a).sort()).toEqual(['lord', 'nagy']);
     expect(p.usedReferences(other).sort()).toEqual(['nagy', 'west']);
     expect(p.usedReferences().sort()).toEqual(['lord', 'nagy', 'west']);
     expect(p.summary().references).toBe(3);
     expect(p.summary().cited.sort()).toEqual(['lord', 'nagy', 'west']);
 
-    // Where each is cited: the maps in their order, the elements in the order of the text.
-    const c = p.addChild(root, { title: 'C' })!;
+    // Where each is cited: the elements in the order of the text, whichever cited it first.
+    const c = p.addChild(root, { title: 'C', index: 0 })!;
     p.cite(c, ['nagy']);
     const where = (ref: string) =>
-      p.citing(ref).map((m) => [m.map.name, ...m.elements.map((e) => e.title)]);
-    expect(where('nagy')).toEqual([
-      [p.map(map)!.name, 'A', 'C'],
-      ['Article', 'B'],
-    ]);
-    expect(where('west')).toEqual([['Article', 'B']]);
+      titles(
+        p,
+        p.citing(ref).map((n) => n.id),
+      );
+    expect(where('nagy')).toEqual(['C', 'A', 'B']);
+    expect(where('west')).toEqual(['B']);
     expect(where('homer')).toEqual([]);
 
     // Cited after the text that is there, with a space between; in a text of its own where there is none.
@@ -280,19 +365,19 @@ describe('references', () => {
   });
 
   it('that were attached to elements by an earlier version are passed over', () => {
-    const { p, map, root } = project();
+    const { p, root } = project();
     p.doc.transact(() => p.yNodes.get(root)!.set('refs', ['nagy', 'c:homer']));
-    expect(p.usedReferences(map)).toEqual([]);
+    expect(p.usedReferences(root)).toEqual([]);
     expect(p.summary().references).toBe(0);
   });
 });
 
-describe('copies between maps', () => {
+describe('copies', () => {
   it('know whether their original has changed since, and can take what it is now', () => {
     const { p, root } = project();
     const a = p.addChild(root, { title: 'Wrath', body: 'Sing, goddess.' })!;
-    const other = p.createMap('Article');
-    const [copy] = p.copy([a], p.map(other)!.root);
+    const other = p.addChild(root, { title: 'Article' })!;
+    const [copy] = p.copy([a], other);
     expect(p.copyOf(copy)).toMatchObject({ original: { id: a }, changed: false });
     expect(p.copyOf(a)).toBeNull();
     // What is written in the copy is its own.
@@ -320,24 +405,26 @@ describe('copies between maps', () => {
 });
 
 describe('how far the writing has come', () => {
-  it('is said of elements, and counted for their map', async () => {
+  it('is said of elements, and counted for the element in view', async () => {
     const { progressOf } = await import('../status');
-    const { p, map, root } = project();
+    const { p, root } = project();
     const a = p.addChild(root, { title: 'A', body: 'The wrath is sung here' })!;
     const b = p.addChild(root, { title: 'B', body: 'Two words' })!;
-    const c = p.addChild(root, { title: 'C' })!;
+    const c = p.addChild(b, { title: 'C' })!;
     expect(p.node(a)!.status).toBeNull();
-    expect(progressOf(p, map)).toBeNull();
+    expect(progressOf(p, root)).toBeNull();
     p.setStatus([a], 'done');
     p.setStatus([b, c], 'draft');
     expect(p.node(a)!.status).toBe('done');
-    expect(progressOf(p, map)).toEqual({ idea: 0, draft: 2, done: 1, words: 7 });
+    expect(progressOf(p, root)).toEqual({ idea: 0, draft: 2, done: 1, words: 7 });
     p.setStatus([c], 'idea');
-    expect(progressOf(p, map)).toEqual({ idea: 1, draft: 1, done: 1, words: 7 });
+    expect(progressOf(p, root)).toEqual({ idea: 1, draft: 1, done: 1, words: 7 });
+    // Seen from an element, its branch is counted.
+    expect(progressOf(p, b)).toEqual({ idea: 1, draft: 1, done: 0, words: 2 });
     // Nothing said is nothing kept.
     p.setStatus([a, b, c], null);
     expect(p.yNodes.get(a)!.has('status')).toBe(false);
-    expect(progressOf(p, map)).toBeNull();
+    expect(progressOf(p, root)).toBeNull();
     // What is not a status is none.
     p.doc.transact(() => p.yNodes.get(a)!.set('status', 'finished'));
     expect(p.node(a)!.status).toBeNull();
@@ -375,34 +462,20 @@ describe('notes on references', () => {
 
 describe('undo', () => {
   it('undoes and redoes changes of structure', () => {
-    const { p, map, root } = project();
+    const { p, root } = project();
     p.checkpoint();
     const a = p.addChild(root, { title: 'A' })!;
     p.checkpoint();
     p.remove([a]);
-    expect(p.tree(map).sequence).toEqual([root]);
+    expect(p.tree().sequence).toEqual([root]);
     p.undo();
-    expect(titles(p, p.tree(map).sequence)).toEqual(['Wrath', 'A']);
+    expect(titles(p, p.tree().sequence)).toEqual(['Wrath', 'A']);
     p.undo();
-    expect(p.tree(map).sequence).toEqual([root]);
+    expect(p.tree().sequence).toEqual([root]);
     expect(p.canRedo).toBe(true);
     p.redo();
-    expect(titles(p, p.tree(map).sequence)).toEqual(['Wrath', 'A']);
+    expect(titles(p, p.tree().sequence)).toEqual(['Wrath', 'A']);
   });
-
-  /** Two copies of one project, that have seen each other's changes. */
-  function two() {
-    const a = new Project(null);
-    const map = a.createMap('Wrath');
-    const root = a.map(map)!.root;
-    const b = new Project(null);
-    b.load(Y.encodeStateAsUpdate(a.doc), []);
-    const sync = () => {
-      Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc, Y.encodeStateVector(b.doc)), 'remote');
-      Y.applyUpdate(a.doc, Y.encodeStateAsUpdate(b.doc, Y.encodeStateVector(a.doc)), 'remote');
-    };
-    return { a, b, map, root, sync };
-  }
 
   /** Writes a paragraph at the end of an element's text, as the editor would. */
   function write(p: Project, id: string, words: string) {
@@ -415,7 +488,7 @@ describe('undo', () => {
   }
 
   it('taking back an element one made keeps it, when another has written in it since', () => {
-    const { a, b, map, root, sync } = two();
+    const { a, b, root, sync } = two();
     a.checkpoint();
     const x = a.addChild(root, { title: 'X' })!;
     a.checkpoint();
@@ -424,24 +497,24 @@ describe('undo', () => {
     sync();
 
     a.undo();
-    expect(a.tree(map).sequence).toContain(x);
-    expect(a.tree(map).parent.get(x)).toBe(root);
+    expect(a.tree().sequence).toContain(x);
+    expect(a.tree().parent.get(x)).toBe(root);
     expect(a.fragment(x, 'body')!.toString()).toContain('Written by the other.');
     sync();
-    expect(b.tree(map).sequence).toContain(x);
+    expect(b.tree().sequence).toContain(x);
     expect(b.fragment(x, 'body')!.toString()).toContain('Written by the other.');
   });
 
   it('taking back an element one made removes it, when no one else has touched it', () => {
-    const { a, b, map, root, sync } = two();
+    const { a, b, root, sync } = two();
     a.checkpoint();
     const x = a.addChild(root, { title: 'X' })!;
     a.checkpoint();
     sync();
     a.undo();
-    expect(a.tree(map).sequence).not.toContain(x);
+    expect(a.tree().sequence).not.toContain(x);
     sync();
-    expect(b.tree(map).sequence).not.toContain(x);
+    expect(b.tree().sequence).not.toContain(x);
   });
 
   it("taking back one's own paragraph leaves another's paragraph in the same element", () => {
@@ -461,41 +534,41 @@ describe('undo', () => {
 });
 
 describe('putting in order', () => {
-  it('elements added to a map another deleted meanwhile go when the project is read', () => {
-    const a = new Project(null);
-    const kept = a.createMap('Kept');
-    const doomed = a.createMap('Doomed');
-    const b = new Project(null);
-    b.load(Y.encodeStateAsUpdate(a.doc), []);
-
-    a.deleteMap(doomed);
-    const late = b.addChild(b.map(doomed)!.root, {
-      title: 'Late',
-      body: 'Words no one will see.',
-    })!;
-    Y.applyUpdate(a.doc, Y.encodeStateAsUpdate(b.doc), 'remote');
-    expect(a.yNodes.has(late)).toBe(true);
-
+  it('an element added under one another deleted meanwhile stands under the project', () => {
+    const { a, b, root, sync } = two();
+    const y = a.addChild(root, { title: 'Y' })!;
+    sync();
+    a.remove([y]);
+    const late = b.addChild(y, { title: 'Late', body: 'Words that are kept.' })!;
+    sync();
+    for (const p of [a, b]) {
+      // It still names its parent; the tree puts it where it can stand.
+      expect(p.node(late)!.parent).toBe(y);
+      expect(p.tree().parent.get(late)).toBe(root);
+      expect(titles(p, p.tree().sequence)).toEqual(['Wrath', 'Late']);
+    }
+    // Read anew, it is the same, and nothing was written to mend it.
     const read = new Project(null);
     read.load(Y.encodeStateAsUpdate(a.doc), []);
-    expect(read.yNodes.has(late)).toBe(false);
-    expect(read.summary().words).toBe(0);
-    expect(read.tree(kept).sequence).toHaveLength(1);
+    expect(read.node(late)!.parent).toBe(y);
+    expect(read.tree().children.get(root)).toEqual([late]);
+    expect(read.summary().words).toBe(4);
   });
 
-  it('elements of a map that has not arrived yet are left alone', () => {
-    const a = new Project(null);
-    a.createMap('Wrath');
-    const node = new Y.Map<unknown>();
+  it('a comment on an element another deleted meanwhile goes when the project is read', () => {
+    const { a, b, root, sync } = two();
+    b.setMe({ id: 'anna', name: 'Anna' });
+    const x = a.addChild(root, { title: 'X' })!;
+    sync();
+    a.remove([x]);
+    const thread = b.comment(x, null, 'Too late.')!;
+    sync();
+    expect(a.yComments.has(thread)).toBe(true);
+
     const read = new Project(null);
     read.load(Y.encodeStateAsUpdate(a.doc), []);
-    read.doc.transact(() => {
-      node.set('map', 'a map on its way');
-      read.yNodes.set('waiting', node);
-    }, 'remote');
-    const again = new Project(null);
-    again.load(Y.encodeStateAsUpdate(read.doc), []);
-    expect(again.yNodes.has('waiting')).toBe(true);
+    expect(read.yComments.has(thread)).toBe(false);
+    expect(read.comments.size).toBe(0);
   });
 });
 
@@ -519,9 +592,11 @@ describe('saving', () => {
   it('what is saved can be read again', async () => {
     const disk = new Disk();
     const p = new Project(disk);
+    p.begin('Draft');
     p.setName('Homer');
-    const map = p.createMap('Wrath');
-    const a = p.addChild(p.map(map)!.root, { title: 'A', body: 'Four words of text.' })!;
+    p.transact(() => fillBody(p.fragment(PROJECT, 'body')!, 'Sing, goddess.'));
+    const wrath = p.addChild(PROJECT, { title: 'Wrath' })!;
+    const a = p.addChild(wrath, { title: 'A', body: 'Four words of text.' })!;
     await p.flush();
     expect(disk.log.length).toBe(1);
     expect(p.status).toBe('saved');
@@ -535,10 +610,12 @@ describe('saving', () => {
 
     // From a state and a log after it.
     await p.snapshot();
+    // The project's text is its description, in few words.
     expect(disk.summary).toEqual({
       name: 'Homer',
-      maps: [{ id: map, name: 'Wrath', elements: 2 }],
-      words: 4,
+      description: 'Sing, goddess.',
+      maps: [{ id: wrath, name: 'Wrath', elements: 2 }],
+      words: 6,
       references: 0,
       pictures: [],
       cited: [],
@@ -548,19 +625,19 @@ describe('saving', () => {
     const r = new Project(null);
     r.load(disk.state, disk.log);
     expect(r.node(a)!.title).toBe('A, renamed');
-    expect(r.tree(map).sequence).toHaveLength(2);
+    expect(r.tree(wrath).sequence).toHaveLength(2);
+    expect(r.tree().sequence).toHaveLength(3);
   });
 
   it('what each deleted is kept as one record, and let go when the history is turned off', async () => {
     const disk = new Disk();
     const p = new Project(disk);
-    const map = p.createMap('Wrath');
-    const root = p.map(map)!.root;
+    p.begin('Wrath');
     p.setMe({ id: 'me', name: 'Robert' });
     await p.setHistory({ on: true });
     const made: string[] = [];
     for (let i = 0; i < 30; i++) {
-      made.push(p.addChild(root, { title: `E${i}` })!);
+      made.push(p.addChild(PROJECT, { title: `E${i}` })!);
       await p.flush();
       p.remove([made[i]]);
       await p.flush();
@@ -584,26 +661,25 @@ describe('saving', () => {
   it('a failure keeps the change for the next attempt', async () => {
     const disk = new Disk();
     const p = new Project(disk);
-    const map = p.createMap('Wrath');
+    p.begin('Wrath');
     disk.fail = true;
     await p.flush();
     expect(p.status).toBe('error');
     expect(p.saveError).toBe('disk full');
     disk.fail = false;
-    p.addChild(p.map(map)!.root, { title: 'A' });
+    p.addChild(PROJECT, { title: 'A' });
     await p.flush();
     expect(p.status).toBe('saved');
     const q = new Project(null);
     q.load(null, disk.log);
-    expect(q.tree(map).sequence).toHaveLength(2);
+    expect(titles(q, q.tree().sequence)).toEqual(['Wrath', 'A']);
   });
 
   it('two copies that change at once arrive at the same', () => {
     const a = new Project(null);
-    const map = a.createMap('Wrath');
-    const root = a.map(map)!.root;
-    const x = a.addChild(root, { title: 'X' })!;
-    const y = a.addChild(root, { title: 'Y' })!;
+    a.begin('Wrath');
+    const x = a.addChild(PROJECT, { title: 'X' })!;
+    const y = a.addChild(PROJECT, { title: 'Y' })!;
     const b = new Project(null);
     b.load(Y.encodeStateAsUpdate(a.doc), []);
 
@@ -616,11 +692,13 @@ describe('saving', () => {
     Y.applyUpdate(a.doc, ub, 'remote');
     Y.applyUpdate(b.doc, ua, 'remote');
 
-    const ta = a.tree(map);
-    const tb = b.tree(map);
+    const ta = a.tree();
+    const tb = b.tree();
     expect(ta.sequence).toEqual(tb.sequence);
     expect(ta.sequence).toHaveLength(4);
-    expect(ta.loose).toHaveLength(1);
+    // The loop is broken: one of the two stands under the project, the other under it.
+    expect(ta.children.get(PROJECT)).toHaveLength(1);
+    expect([x, y]).toContain(ta.children.get(PROJECT)![0]);
   });
 });
 
@@ -735,7 +813,7 @@ describe('kinds of elements', () => {
 
 describe('kinds of paragraph and of words of the writer`s own', () => {
   it('are made, changed and deleted, and the passages that were of one stay', () => {
-    const { p, map, root } = project();
+    const { p, root } = project();
     const letter = p.createPassageKind({
       name: ' Letter ',
       family: 'paragraph',
@@ -756,7 +834,7 @@ describe('kinds of paragraph and of words of the writer`s own', () => {
     const a = p.addChild(root, { title: 'A' })!;
     p.transact(() => fillBody(p.fragment(a, 'body')!, 'Dear reader', letter));
     expect(p.node(a)!.uses).toEqual([letter]);
-    p.setHand(map, { pinned: [letter], unpinned: [word] });
+    p.setHand({ pinned: [letter], unpinned: [word] });
 
     p.updatePassageKind(letter, { name: 'Note', look: { bold: true }, basedOn: 'text' });
     expect(p.passageKind(letter)).toMatchObject({
@@ -778,28 +856,29 @@ describe('kinds of paragraph and of words of the writer`s own', () => {
         content: [{ kind: 'text', text: 'Dear reader', marks: {} }],
       },
     ]);
-    expect(p.map(map)!.hand).toEqual({ pinned: [], unpinned: [word] });
+    expect(p.hand).toEqual({ pinned: [], unpinned: [word] });
     p.deletePassageKind(word);
-    expect(p.map(map)!.hand).toEqual({ pinned: [], unpinned: [] });
-    expect(p.yMaps.get(map)!.has('hand')).toBe(false);
+    expect(p.hand).toEqual({ pinned: [], unpinned: [] });
+    expect(p.yMeta.has('hand')).toBe(false);
   });
 
-  it('the hand of a map is pinned and unpinned, and kept only while it says something', () => {
-    const { p, map } = project();
-    expect(p.map(map)!.hand).toEqual({ pinned: [], unpinned: [] });
-    p.setHand(map, { pinned: ['epigraph', ' scene ', 'epigraph', ''] });
-    expect(p.map(map)!.hand).toEqual({ pinned: ['epigraph', 'scene'], unpinned: [] });
+  it('the hand of the project is pinned and unpinned, and kept only while it says something', () => {
+    const { p } = project();
+    expect(p.hand).toEqual({ pinned: [], unpinned: [] });
+    p.setHand({ pinned: ['epigraph', ' scene ', 'epigraph', ''] });
+    expect(p.hand).toEqual({ pinned: ['epigraph', 'scene'], unpinned: [] });
     // What is unpinned is pinned no more, and the other way round.
-    p.setHand(map, { unpinned: ['scene', 'quote'] });
-    expect(p.map(map)!.hand).toEqual({ pinned: ['epigraph'], unpinned: ['scene', 'quote'] });
-    p.setHand(map, { pinned: ['quote'] });
-    expect(p.map(map)!.hand).toEqual({ pinned: ['quote'], unpinned: ['scene'] });
-    p.setHand(map, { pinned: [], unpinned: [] });
-    expect(p.yMaps.get(map)!.has('hand')).toBe(false);
-    p.setHand(map, { pinned: ['code'] });
-    const copy = p.duplicateMap(map)!;
-    expect(p.map(copy)!.hand).toEqual({ pinned: ['code'], unpinned: [] });
-    p.setHand('no such map', { pinned: ['code'] });
+    p.setHand({ unpinned: ['scene', 'quote'] });
+    expect(p.hand).toEqual({ pinned: ['epigraph'], unpinned: ['scene', 'quote'] });
+    p.setHand({ pinned: ['quote'] });
+    expect(p.hand).toEqual({ pinned: ['quote'], unpinned: ['scene'] });
+    p.setHand({ pinned: [], unpinned: [] });
+    expect(p.yMeta.has('hand')).toBe(false);
+    // It is the project's, and so reaches every copy of it.
+    p.setHand({ pinned: ['code'] });
+    const other = new Project(null);
+    other.load(Y.encodeStateAsUpdate(p.doc), []);
+    expect(other.hand).toEqual({ pinned: ['code'], unpinned: [] });
   });
 
   it('a kind of element says in which kind of paragraph its text begins', () => {
@@ -838,35 +917,38 @@ describe('kinds of paragraph and of words of the writer`s own', () => {
   });
 });
 
-describe('the language of new maps', () => {
-  it('is that of the project where one is chosen, else that of the settings', () => {
-    const p = new Project(null);
-    const first = p.createMap('First');
+describe('the language of the text', () => {
+  it('is that of the project element where one is chosen, and reaches every element that says nothing itself', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
     expect(p.language).toBeNull();
-    expect(p.map(first)!.document.language).toBe(newTextLanguage());
+    expect(p.documentOf(a).settings.language).toBeUndefined();
     p.setLanguage('nn');
     expect(p.language).toBe('nn');
-    expect(p.map(p.createMap('Second'))!.document.language).toBe('nn');
-    expect(p.map(p.buildMap('Built', [], () => {}).map)!.document.language).toBe('nn');
+    expect(p.node(root)!.document.language).toBe('nn');
+    expect(p.documentOf(a).settings.language).toBe('nn');
+    expect(p.documentOf(a).from.get('language')).toBe(root);
     // A document that says its language keeps it.
-    const own = p.buildMap('Own', [], () => {}, { language: 'de' });
-    expect(p.map(own.map)!.document.language).toBe('de');
-    // The map keeps the language it was made with.
-    expect(p.map(first)!.document.language).toBe(newTextLanguage());
+    const own = p.buildBranch(root, 'Own', [], () => {}, { language: 'de' })!;
+    expect(p.node(own.top)!.document.language).toBe('de');
+    expect(p.documentOf(own.top).settings.language).toBe('de');
+    expect(p.documentOf(own.top).from.get('language')).toBe(own.top);
     p.setLanguage(null);
     expect(p.language).toBeNull();
-    expect(p.yMeta.has('language')).toBe(false);
-    expect(p.map(p.createMap('Third'))!.document.language).toBe(newTextLanguage());
+    expect(p.yNodes.get(root)!.has('document')).toBe(false);
+    expect(p.documentOf(a).settings.language).toBeUndefined();
+    expect(p.node(own.top)!.document.language).toBe('de');
   });
 
   it('is kept in the project, and so reaches every copy of it', () => {
     const a = new Project(null);
-    a.createMap('Wrath');
+    a.begin('Wrath');
     a.setLanguage(' nb ');
     expect(a.language).toBe('nb');
     const b = new Project(null);
     b.load(Y.encodeStateAsUpdate(a.doc), []);
     expect(b.language).toBe('nb');
-    expect(b.map(b.createMap('Theirs'))!.document.language).toBe('nb');
+    const theirs = b.addChild(PROJECT, { title: 'Theirs' })!;
+    expect(b.documentOf(theirs).settings.language).toBe('nb');
   });
 });

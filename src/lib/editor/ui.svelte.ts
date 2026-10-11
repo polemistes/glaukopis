@@ -22,11 +22,11 @@ export interface PickRequest {
   oncancel?: () => void;
 }
 
-/** A request for something to point to, in the document of a map. */
+/** A request for something to point to, in the document of an element. */
 export interface TargetRequest {
   anchor: RectLike;
-  /** The map whose document it is. */
-  map: string;
+  /** The element in view, whose document it is. */
+  at: string;
   onpick: (target: Pointed) => void;
   oncancel?: () => void;
 }

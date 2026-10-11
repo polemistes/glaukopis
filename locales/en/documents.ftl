@@ -1,18 +1,18 @@
-# Documents that are brought in, each to become a map (ADR 0012), in
-# English. See locales/README.md.
+# Documents that are brought in, each to become a tree of elements under
+# the element in view (ADR 0012, 0037), in English. See locales/README.md.
 
 documents-choose = A document to bring in
 documents-filter = Documents
 documents-filter-all = All files
-documents-title-map = A map from a document
+documents-title-element = A document into the element in view
 documents-title-project = A project from a document
 documents-reading = Reading { $file }…
 documents-reading-hint = A long document takes a moment.
 documents-no-pandoc = Documents of this kind are read by Pandoc, which is not installed or could not be found. Where it is can be said in the settings.
 documents-unread = The file could not be read.
 documents-title = Title
-documents-title-hint-map = The name of the map, and of the element at its centre.
-documents-title-hint-project = The name of the project, of its map, and of the element at the centre of the map.
+documents-title-hint-element = The name of the element at the top of the document, under the element in view.
+documents-title-hint-project = The name of the project, and of the element at the top of the document within it.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Untitled
 
@@ -79,14 +79,19 @@ documents-found-some-made = { $count } citations were found, { $made } of them m
 documents-at-once = Make citations at once of those made by Zotero of works your library has
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = A note that is nothing but a citation becomes a citation in the line, which the reference style sets in a note or in the line; a note that says more keeps its citation. What you have chosen for notes in the panel of found citations, for all that follow, holds here too.
-documents-go-through-map = Go through the citations when the map is made
+documents-go-through-element = Go through the citations when the document is brought in
 documents-go-through-project = Go through the citations when the project is made
 
-## Making the map.
+## Making the elements.
 
 # Over what the one who brings the document in should know of it.
 documents-to-know = To know
-documents-making = Making the map…
-documents-make-map = Make the map
+documents-making = Bringing the document in…
+documents-make-element = Bring it in
 documents-make-project = Make the project
-documents-map-failed = The map could not be made.
+documents-failed = The document could not be brought in.
+
+## What an element inherits as a document
+
+# Under a setting an element does not make, which it takes from the element named, over it.
+documents-inherited-from = From { $name }

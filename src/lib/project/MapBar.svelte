@@ -1,154 +1,147 @@
 <script lang="ts">
   /**
-   * The bar of a pane, at its left: the name of the map in view, from which
-   * the maps of the project pull down to be opened; and beside it a button
-   * with what can be done with this map, and with the maps: rename,
-   * duplicate, the citations that were found, the languages, delete; a new
-   * map, a map from a document.
+   * The bar of a pane, at its left: where one is in the project. Small, the
+   * name of the parent of the element in view, which goes up; then the name
+   * of the element in view, from which the elements beside it pull down to
+   * be shown, or, for the project itself, the trees under it; and beside it
+   * a button with what can be done with the element:
+   * rename, the details of its document, the citations that were found, its
+   * languages, a new element under it, a document into it, delete.
    */
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
+  import ChevronRight from '@lucide/svelte/icons/chevron-right';
+  import CornerDownRight from '@lucide/svelte/icons/corner-down-right';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
-  import Copy from '@lucide/svelte/icons/copy';
   import FileInput from '@lucide/svelte/icons/file-input';
+  import FileText from '@lucide/svelte/icons/file-text';
   import Languages from '@lucide/svelte/icons/languages';
   import Pencil from '@lucide/svelte/icons/pencil';
-  import Plus from '@lucide/svelte/icons/plus';
   import TextSearch from '@lucide/svelte/icons/text-search';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import { tick } from 'svelte';
   import { goThrough } from '$lib/found/found.svelte';
   import { countFound } from '$lib/found/gather';
   import { t } from '$lib/i18n';
-  import { confirm } from '$lib/ui/confirm.svelte';
+  import DocumentDetails from '$lib/preview/DocumentDetails.svelte';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import { removeElements } from './elements';
   import LanguagesDialog from './LanguagesDialog.svelte';
   import type { Project } from './model/project.svelte';
-  import type { MapRecord } from './model/types';
+  import { PROJECT } from './model/types';
 
   interface Props {
     project: Project;
-    /** The map shown in the pane that has the focus. */
-    current: string;
-    /** The map shown in the other pane, if there is one. */
+    /** The element in view in the pane that has the focus. */
+    at: string;
+    /** The element in view in the other pane, if there is one. */
     beside?: string | null;
-    /** Shows a map; with a mode, in that view, as a new map is shown as text. */
+    /** Shows an element; with a mode, in that view. */
     onselect: (id: string, mode?: 'diagram' | 'text' | 'timeline') => void;
+    /** Opens an element beside this one. */
     onbeside: (id: string) => void;
-    /** A map is to be made of a document. */
+    /** A document is to be brought in, under the element in view. */
     ondocument?: () => void;
   }
 
-  let { project, current, beside = null, onselect, onbeside, ondocument }: Props = $props();
+  let { project, at, beside = null, onselect, onbeside, ondocument }: Props = $props();
 
-  const map = $derived(project.map(current));
+  const tree = $derived(project.tree());
+  /** The parent of the element in view; none for the project itself. */
+  const parent = $derived(at === PROJECT ? null : (tree.parent.get(at) ?? null));
+  /**
+   * What pulls down from the name: the elements beside the one in view, it
+   * among them; for the project itself, the trees under it.
+   */
+  const listed = $derived(tree.children.get(parent ?? PROJECT) ?? []);
 
+  /** The element that is being named in the bar, and what is written. */
   let naming = $state<{ id: string; value: string } | null>(null);
-  /** A map that was just made, whose centre is named with it. */
-  let newMap: string | null = null;
   let input = $state<HTMLInputElement>();
-  /** The map whose languages are open in the dialog, if any. */
+  /** The element whose languages are open in the dialog, if any. */
   let languagesOf = $state<string | null>(null);
+  /** The element whose document's details are open in the dialog, if any. */
+  let detailsOf = $state<string | null>(null);
 
-  async function rename(m: MapRecord) {
-    naming = { id: m.id, value: m.name };
+  function nameOf(id: string): string {
+    return project.node(id)?.title || t('project-untitled');
+  }
+
+  /** Names an element in the bar: the one in view, or one just made under it. */
+  async function rename(id: string) {
+    naming = { id, value: project.node(id)?.title ?? '' };
     await tick();
     input?.select();
   }
 
   function commit() {
     if (!naming) return;
-    project.renameMap(naming.id, naming.value);
-    // The centre of a map just made has the name it was made with, until the map is named.
-    const root = newMap === naming.id ? project.map(naming.id)?.root : null;
-    if (root && project.node(root)?.title === t('project-untitled') && naming.value.trim()) {
-      project.setTitle(root, naming.value);
-    }
-    newMap = null;
+    const { id, value } = naming;
     naming = null;
+    if (!value.trim()) return;
+    project.checkpoint();
+    // The project's name is written beside its element as well.
+    if (id === PROJECT) project.setName(value);
+    else project.setTitle(id, value);
+    project.checkpoint();
   }
 
-  async function add() {
+  /** A new element under the one in view, named in the bar. */
+  function addUnder() {
     project.checkpoint();
-    const id = project.createMap(t('project-untitled'));
+    const id = project.addChild(at);
     project.checkpoint();
-    newMap = id;
-    // A new map opens as text the first time: there is nothing to see in the diagram yet.
-    onselect(id, 'text');
-    const made = project.map(id);
-    if (made) await rename(made);
+    if (id) void rename(id);
   }
 
-  async function remove(m: MapRecord) {
-    const count = project.tree(m.id).sequence.length;
-    const ok = await confirm({
-      title: t('project-delete-map-title', { name: m.name }),
-      message: t('project-delete-map-message', { count }),
-      confirm: t('project-delete-map'),
-      danger: true,
-    });
-    if (!ok) return;
-    const index = project.maps.findIndex((x) => x.id === m.id);
-    const next = project.maps[index + 1] ?? project.maps[index - 1];
-    project.checkpoint();
-    project.deleteMap(m.id);
-    project.checkpoint();
-    if (current === m.id && next) onselect(next.id);
+  /** Deletes the element in view, with all under it; the view goes up. */
+  function remove() {
+    const up = parent;
+    if (!up) return;
+    const gone = removeElements(project, [at]);
+    if (gone) onselect(up);
   }
 
-  /** The maps, to open one. */
-  function openMaps(event: MouseEvent) {
-    const items: MenuItem[] = project.maps.map((x): MenuItem => ({
-      label: x.name,
-      checked: x.id === current,
-      hint: x.id === beside && x.id !== current ? t('project-map-beside') : undefined,
-      action: () => onselect(x.id),
+  /** The elements beside the one in view, or under the project, to show one. */
+  function openListed(event: MouseEvent) {
+    const items: MenuItem[] = listed.map((id): MenuItem => ({
+      label: nameOf(id),
+      checked: id === at,
+      hint: id === beside && id !== at ? t('project-shown-beside') : undefined,
+      action: () => onselect(id),
     }));
     openMenu(event.currentTarget as HTMLElement, items, { align: 'start' });
   }
 
-  /** What can be done with this map, and with the maps. */
+  /** What can be done with the element in view. */
   function openActions(event: MouseEvent) {
-    const m = map;
-    if (!m) return;
-    const found = countFound(project, m.id);
+    const found = countFound(project, at);
     const items: MenuItem[] = [
-      { label: t('common-rename'), icon: Pencil, shortcut: 'F2', action: () => void rename(m) },
-      {
-        label: t('project-duplicate'),
-        icon: Copy,
-        hint: t('project-duplicate-hint'),
-        action: () => {
-          project.checkpoint();
-          const id = project.duplicateMap(m.id);
-          project.checkpoint();
-          if (id) onselect(id);
-        },
-      },
+      { label: t('common-rename'), icon: Pencil, shortcut: 'F2', action: () => void rename(at) },
+      { label: t('project-document-details'), icon: FileText, action: () => (detailsOf = at) },
       {
         label: t('project-found'),
         icon: TextSearch,
         hint: found ? t('project-found-hint', { count: found }) : t('project-found-none'),
-        action: () => goThrough(m.id),
+        action: () => goThrough(at),
       },
-      { label: t('languages-menu'), icon: Languages, action: () => (languagesOf = m.id) },
-      {
-        label: t('project-delete-map'),
-        icon: Trash2,
-        danger: true,
-        disabled: project.maps.length <= 1,
-        action: () => void remove(m),
-      },
+      { label: t('languages-menu'), icon: Languages, action: () => (languagesOf = at) },
       { kind: 'separator' },
-      { label: t('project-new-map'), icon: Plus, action: () => void add() },
+      { label: t('project-new-element-under'), icon: CornerDownRight, action: addUnder },
       ...(ondocument
         ? [
             {
-              label: t('project-map-from-document'),
+              label: t('project-document-into'),
               icon: FileInput,
               action: () => ondocument?.(),
             } as MenuItem,
           ]
+        : []),
+      ...(parent
+        ? ([
+            { kind: 'separator' },
+            { label: t('common-delete'), icon: Trash2, danger: true, action: remove },
+          ] as MenuItem[])
         : []),
     ];
     openMenu(event.currentTarget as HTMLElement, items, { align: 'start' });
@@ -158,15 +151,16 @@
 <div
   class="maps"
   role="group"
-  aria-label={t('project-maps')}
-  data-maps={JSON.stringify(project.maps.map((m) => m.name))}
+  aria-label={t('project-where')}
+  data-maps={JSON.stringify(listed.map((id) => nameOf(id)))}
 >
   {#if naming}
     <input
       bind:this={input}
       bind:value={naming.value}
       class="naming"
-      aria-label={t('project-map-name')}
+      aria-label={t('project-element-name')}
+      placeholder={t('project-name-placeholder')}
       size={Math.max(8, naming.value.length + 1)}
       onblur={commit}
       onkeydown={(e) => {
@@ -176,29 +170,44 @@
       }}
     />
   {:else}
+    {#if parent}
+      <button
+        type="button"
+        class="up"
+        aria-label={t('project-up')}
+        use:tooltip={{ text: t('project-up-hint', { name: nameOf(parent) }), side: 'bottom' }}
+        onclick={() => onselect(parent)}
+      >
+        <span class="truncate">{nameOf(parent)}</span>
+        <ChevronRight size={12} />
+      </button>
+    {/if}
     <button
       type="button"
       class="map"
       aria-haspopup="menu"
-      use:tooltip={{ text: t('project-maps-hint'), side: 'bottom' }}
-      onclick={openMaps}
+      use:tooltip={{
+        text: parent ? t('project-siblings-hint') : t('project-trees-hint'),
+        side: 'bottom',
+      }}
+      onclick={openListed}
       onkeydown={(e) => {
-        if (e.key === 'F2' && map) {
+        if (e.key === 'F2') {
           e.preventDefault();
-          void rename(map);
+          void rename(at);
         }
       }}
     >
-      <span class="name truncate">{map?.name ?? ''}</span>
-      {#if project.maps.length > 1}<span class="count">{project.maps.length}</span>{/if}
+      <span class="name truncate">{nameOf(at)}</span>
+      {#if listed.length > 1}<span class="count">{listed.length}</span>{/if}
       <ChevronDown size={13} />
     </button>
     <button
       type="button"
       class="this-map"
       aria-haspopup="menu"
-      aria-label={t('project-this-map-actions')}
-      use:tooltip={{ text: t('project-this-map-actions'), side: 'bottom' }}
+      aria-label={t('project-this-element-actions')}
+      use:tooltip={{ text: t('project-this-element-actions'), side: 'bottom' }}
       onclick={openActions}
     >
       <Ellipsis size={15} />
@@ -207,7 +216,10 @@
 </div>
 
 {#if languagesOf}
-  <LanguagesDialog {project} mapId={languagesOf} onclose={() => (languagesOf = null)} />
+  <LanguagesDialog {project} at={languagesOf} onclose={() => (languagesOf = null)} />
+{/if}
+{#if detailsOf}
+  <DocumentDetails {project} at={detailsOf} onclose={() => (detailsOf = null)} />
 {/if}
 
 <style>
@@ -232,6 +244,27 @@
     cursor: pointer;
   }
   .this-map:hover {
+    background: var(--paper-hover);
+    color: var(--ink);
+  }
+  /* The parent, small, before the name: the way up. */
+  .up {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    max-width: 160px;
+    min-width: 0;
+    height: 24px;
+    padding: 0 2px 0 6px;
+    border: none;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--ink-3);
+    font: inherit;
+    font-size: var(--text-xs);
+    cursor: pointer;
+  }
+  .up:hover {
     background: var(--paper-hover);
     color: var(--ink);
   }

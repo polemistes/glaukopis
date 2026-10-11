@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Cum este așezat fiecare tip în acest documen
 editor-words = Cuvinte
 editor-words-hint = Subliniere, exponent, cod; cuvinte străine, titlul unei lucrări, un termen
 editor-words-make = Fă un tip de cuvinte…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Limba hărții
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Cuvinte simple
 editor-own-kind-new = Un tip propriu

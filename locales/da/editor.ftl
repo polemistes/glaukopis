@@ -103,8 +103,6 @@ editor-kinds-change-format-hint = Hvordan hver art sættes i dette dokument
 editor-words = Ord
 editor-words-hint = Understregning, hævet skrift, kode; ord på et andet sprog, titlen på et værk, en term
 editor-words-make = Lav en art ord…
-# Beside the language of the map, first among the languages foreign words may be in.
-editor-foreign-of-map = Kortets sprog
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Almindelige ord
 editor-own-kind-new = En egen art

@@ -1,7 +1,14 @@
 /**
- * What changed in a map between two moments, read from a document that keeps
- * what was deleted: its passages piece by piece, its figures, equations and
- * tables, and its elements. See `types.ts` for what each part says.
+ * What changed within an element between two moments, read from a document
+ * that keeps what was deleted: the passages of it and of all under it piece
+ * by piece, their figures, equations and tables, and the elements
+ * themselves. See `types.ts` for what each part says.
+ *
+ * The tree at a moment is read as the project opens it (ADR 0037): every
+ * element then, and what had no parent to stand under, as the centres and
+ * loose elements of the maps of old had none, under the project's own
+ * element, which is made up where it was not there yet. So a moment before
+ * the project was brought into one tree reads in the same shape as one after.
  *
  * The text of an element is ProseMirror's tree of nodes as y-prosemirror
  * keeps it: an element of XML for each node, and within a block, texts of
@@ -11,11 +18,12 @@
  */
 
 import * as Y from 'yjs';
-import { buildTree, type FlatNode, type Tree } from '$lib/project/model/tree';
+import { buildTree, viewOf, type Tree } from '$lib/project/model/tree';
+import { PROJECT } from '$lib/project/model/types';
 import { attributesAt, children, entryAt, idWord, valueAt, type At } from './moments';
 import type {
+  BranchChanges,
   Items,
-  MapChanges,
   ObjectChange,
   Passage,
   Piece,
@@ -366,11 +374,11 @@ function settle(pieces: Piece[]): Piece[] {
 }
 
 // =====================================================================
-// A map
+// An element in view, with all under it
 // =====================================================================
 
-/** What is read of a map: its changes, and what is needed to find its blocks again. */
-export interface MapReading extends MapChanges {
+/** What is read of an element in view: its changes, and what is needed to find its blocks again. */
+export interface BranchReading extends BranchChanges {
   /** Every passage, in the order of the text, those that did not change among them. */
   all: Passage[];
   /** The elements in the order of the text, with whether they were there before and after. */
@@ -387,14 +395,14 @@ interface ElementAt {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyType = Y.AbstractType<any>;
 
-function elementsAt(doc: Y.Doc, map: string, at: At): Map<string, ElementAt> {
+/** Every element of the project at a moment. */
+function elementsAt(doc: Y.Doc, at: At): Map<string, ElementAt> {
   const nodes = doc.getMap('nodes') as unknown as AnyType;
   const out = new Map<string, ElementAt>();
   for (const id of nodes._map.keys()) {
     const node = valueAt(nodes, id, at);
     if (!(node instanceof Y.Map)) continue;
     const type = node as unknown as AnyType;
-    if (valueAt(type, 'map', at) !== map) continue;
     const parent = valueAt(type, 'parent', at);
     const order = valueAt(type, 'order', at);
     out.set(id, {
@@ -407,17 +415,17 @@ function elementsAt(doc: Y.Doc, map: string, at: At): Map<string, ElementAt> {
   return out;
 }
 
-function treeAt(doc: Y.Doc, map: string, at: At, elements: Map<string, ElementAt>): Tree {
-  const maps = doc.getMap('maps') as unknown as AnyType;
-  const record = valueAt(maps, map, at);
-  const root = record instanceof Y.Map ? valueAt(record as unknown as AnyType, 'root', at) : null;
-  const flat: FlatNode[] = [...elements.values()].map((e) => ({
-    id: e.id,
-    map,
-    parent: e.parent,
-    order: e.order,
-  }));
-  return buildTree(flat, map, typeof root === 'string' ? root : null);
+/** The whole tree of the project at a moment, the project's own element at the top. */
+export function treeAt(doc: Y.Doc, at: At): Tree {
+  return buildTree(elementsAt(doc, at).values());
+}
+
+/**
+ * An element and all under it at a moment, in the order of the text; none
+ * where the element was not there then.
+ */
+export function branchOf(tree: Tree, id: string): string[] {
+  return tree.parent.has(id) ? viewOf(tree, id).sequence : [];
 }
 
 /** The elements of both moments in one order: those that are gone where they stood. */
@@ -473,22 +481,33 @@ export interface ReadOptions {
   overrides?: Map<string, Override[]>;
 }
 
-/** Reads what changed in a map between two moments. Within a transaction in which the moments are split. */
-export function readMap(
+/**
+ * Reads what changed within an element between two moments: in it and in
+ * all under it at either moment. Within a transaction in which the moments
+ * are split.
+ */
+export function readBranch(
   doc: Y.Doc,
-  map: string,
+  at: string,
   before: At,
   after: At,
   who: Who,
   options: ReadOptions = {},
-): MapReading {
-  const then = elementsAt(doc, map, before);
-  const now = elementsAt(doc, map, after);
-  const treeThen = treeAt(doc, map, before, then);
-  const treeNow = treeAt(doc, map, after, now);
-  const sequence = merged(treeThen.sequence, treeNow.sequence);
+): BranchReading {
+  const then = elementsAt(doc, before);
+  const now = elementsAt(doc, after);
+  const treeThen = buildTree(then.values());
+  const treeNow = buildTree(now.values());
+  const sequence = merged(branchOf(treeThen, at), branchOf(treeNow, at));
 
-  const reading: MapReading = { map, passages: [], objects: [], elements: [], all: [], order: [] };
+  const reading: BranchReading = {
+    at,
+    passages: [],
+    objects: [],
+    elements: [],
+    all: [],
+    order: [],
+  };
   const nodes = doc.getMap('nodes') as unknown as AnyType;
 
   // ---- the elements themselves ----
@@ -506,7 +525,7 @@ export function readMap(
   }
   const placeIn = (tree: Tree, id: string) => {
     const parent = tree.parent.get(id) ?? null;
-    const siblings = parent ? (tree.children.get(parent) ?? []) : tree.loose;
+    const siblings = parent !== null ? (tree.children.get(parent) ?? []) : [];
     const index = siblings.indexOf(id);
     return { parent, after: index > 0 ? siblings[index - 1] : null };
   };
@@ -515,14 +534,23 @@ export function readMap(
     if (options.elements && !options.elements.has(id)) continue;
     const a = now.get(id);
     const b = then.get(id);
+    // The project's own element is at the top of every moment, whether or
+    // not it had been made by then (`treeAt`): it is never added or removed.
+    const top = id === PROJECT;
+    // The level is from the element in view down.
+    const level = (tree: Tree) => (tree.depth.get(id) ?? 0) - (tree.depth.get(at) ?? 0);
     reading.order.push({
       element: id,
-      before: !!b,
-      after: !!a,
-      level: (a ? treeNow.depth.get(id) : treeThen.depth.get(id)) ?? 0,
+      before: top || !!b,
+      after: top || !!a,
+      level: a ? level(treeNow) : level(treeThen),
     });
+    const record = a ?? b;
+    if (!record) continue;
     const entry = entryAt(nodes, id, a ? after : before);
-    if (a && !b) {
+    if (top && !(a && b)) {
+      // Made since, or not yet: its name and text are read as they are at the moment it is there.
+    } else if (a && !b) {
       reading.elements.push({
         element: id,
         kind: 'added',
@@ -544,7 +572,7 @@ export function readMap(
       // its neighbours are others than they were.
       const neighbours = (tree: Tree, other: Tree) => {
         const parent = tree.parent.get(id) ?? null;
-        const list = (parent ? (tree.children.get(parent) ?? []) : tree.loose).filter(
+        const list = (parent !== null ? (tree.children.get(parent) ?? []) : []).filter(
           (x) => x === id || (other.parent.get(x) ?? null) === parent,
         );
         const i = list.indexOf(id);
@@ -588,7 +616,7 @@ export function readMap(
     }
 
     // ---- its name and text ----
-    const node = (a ?? b)!.node as unknown as AnyType;
+    const node = record.node as unknown as AnyType;
     for (const part of ['title', 'body'] as const) {
       const fragment = valueAt(node, part, a ? after : before);
       if (!(fragment instanceof Y.XmlFragment)) continue;
@@ -607,7 +635,7 @@ function readBlocks(
   after: At,
   who: Who,
   options: ReadOptions,
-  reading: MapReading,
+  reading: BranchReading,
   within: string | null = null,
 ) {
   let index = 0;
@@ -701,7 +729,7 @@ function readText(
   after: At,
   who: Who,
   options: ReadOptions,
-  reading: MapReading,
+  reading: BranchReading,
 ) {
   const block = idWord(element._item!.id);
   const notes: { element: Y.XmlElement; index: number }[] = [];

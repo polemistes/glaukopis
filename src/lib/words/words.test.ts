@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { writeBody } from '$lib/project/model/blocks';
 import { Project } from '$lib/project/model/project.svelte';
+import { PROJECT } from '$lib/project/model/types';
 import { apply, dedent, fault, indent, overOwn, readFile } from './fluent';
 import { changesIn, elementText, fillWords, projectWords, wordsIn, written } from './project';
 
@@ -78,19 +79,20 @@ describe('the words of a Fluent file', () => {
 });
 
 describe('a project of the words of a language', () => {
-  it('holds a map for each file and an element for each part, with the English quoted', () => {
+  it('holds a tree for each file and an element for each part, with the English quoted', () => {
     const p = new Project(null);
-    p.createMap('first');
+    p.begin('Bokmål');
     const english = new Map([
       ['a.ftl', `# Say it.\na-one = { $count } found\n    .hint = A hint\n`],
     ]);
     const own = new Map([['a.ftl', `a-one = { $count } funnet\n`]]);
     expect(fillWords(p, 'nb', english, own)).toBe(2);
     expect(projectWords(p)).toEqual({ language: 'nb' });
-    expect(p.maps.map((m) => m.name)).toEqual(['a']);
+    const tree = p.tree();
+    const files = tree.children.get(PROJECT)!;
+    expect(files.map((id) => p.node(id)!.title)).toEqual(['a']);
     expect(p.language).toBe('nb');
-    const tree = p.tree(p.maps[0].id);
-    const [one, hint] = tree.children.get(tree.root!)!;
+    const [one, hint] = tree.children.get(files[0])!;
     expect(p.node(one)?.title).toBe('a-one');
     expect(p.node(hint)?.title).toBe('a-one.hint');
     const blocks = p.blocksOf(one);
@@ -102,14 +104,15 @@ describe('a project of the words of a language', () => {
 
   it('says what was changed in it, and forgets it once written out', () => {
     const p = new Project(null);
+    p.begin('Bokmål');
     fillWords(
       p,
       'nb',
       new Map([['a.ftl', `a-one = One\na-two = Two\n`]]),
       new Map([['a.ftl', `a-one = En\na-two = To\n`]]),
     );
-    const tree = p.tree(p.maps[0].id);
-    const [one] = tree.children.get(tree.root!)!;
+    const tree = p.tree();
+    const [one] = tree.children.get(tree.children.get(PROJECT)![0])!;
     const fragment = p.fragment(one, 'body')!;
     fragment.delete(0, fragment.length);
     writeBody(fragment, elementText('One', '', 'Én\nlinje', 'nb'));
@@ -124,6 +127,7 @@ describe('a project of the words of a language', () => {
 
   it('can hold all the words of Bokmål, and gives them back unchanged', () => {
     const p = new Project(null);
+    p.begin('Bokmål');
     const english = filesOf('en');
     const own = filesOf('nb');
     const started = performance.now();

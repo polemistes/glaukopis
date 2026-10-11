@@ -30,11 +30,13 @@
     project?: Project | null;
     /** Called when the picture has been removed from the store. */
     onremoved?: () => void;
-    /** Asks for a map of the project that is open to be shown. */
-    onopenmap?: (map: string) => void;
+    /** The element in view of the project that is open: what is read from a picture goes under it. */
+    at?: string | null;
+    /** Asks for an element of the project that is open to be entered. */
+    onenter?: (id: string) => void;
   }
 
-  let { hash, project = null, onremoved, onopenmap }: Props = $props();
+  let { hash, project = null, onremoved, at = null, onenter }: Props = $props();
 
   // svelte-ignore state_referenced_locally
   const own = hash;
@@ -174,9 +176,13 @@
 
   const users = $derived(usersOf(own, inProject));
   const others = $derived(users.filter((p) => !inProject || p.id !== pictures.project));
-  const maps = $derived(
+  /** The elements of the project whose text shows the picture, in the order of the text. */
+  const holders = $derived(
     inProject
-      ? inProject.maps.filter((m) => inProject.usedPictures(m.id).some((p) => p.hash === own))
+      ? inProject
+          .tree()
+          .sequence.map((id) => inProject.nodes.get(id))
+          .filter((n) => n?.set.some((s) => s.kind === 'figure' && s.file === own))
       : [],
   );
 
@@ -333,15 +339,15 @@
 
   <section class="used">
     <h3 class="overline">{t('pictures-used-in')}</h3>
-    {#if inProject && maps.length}
+    {#if inProject && holders.length}
       <div class="user">
         <span class="project">{t('pictures-this-project')}</span>
         <span class="maps">
-          {#each maps as map, i (map.id)}
+          {#each holders as holder, i (holder!.id)}
             {#if i},
             {/if}
-            <button type="button" class="link" onclick={() => onopenmap?.(map.id)}>
-              {map.name || t('pictures-untitled')}
+            <button type="button" class="link" onclick={() => onenter?.(holder!.id)}>
+              {holder!.title || t('pictures-untitled')}
             </button>
           {/each}
         </span>
@@ -352,7 +358,7 @@
         <a class="project" href={formatRoute({ view: 'project', project: p.id })}>{p.name}</a>
       </div>
     {/each}
-    {#if !others.length && !maps.length}
+    {#if !others.length && !holders.length}
       <p class="none">{t('pictures-unused')}</p>
     {/if}
   </section>
@@ -372,7 +378,8 @@
     hash={own}
     name={picture.name}
     project={inProject}
-    {onopenmap}
+    {at}
+    {onenter}
     onclose={() => (reading = false)}
   />
 {/if}

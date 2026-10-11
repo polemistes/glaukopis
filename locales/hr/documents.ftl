@@ -4,14 +4,12 @@
 documents-choose = Dokument za učitavanje
 documents-filter = Dokumenti
 documents-filter-all = Sve datoteke
-documents-title-map = Mapa iz dokumenta
 documents-title-project = Projekt iz dokumenta
 documents-reading = Čitanje { $file }…
 documents-reading-hint = Dugačak dokument traje trenutak.
 documents-no-pandoc = Dokumente ove vrste čita Pandoc, koji nije instaliran ili ga nije moguće pronaći. Gdje se nalazi može se reći u postavkama.
 documents-unread = Datoteku nije bilo moguće pročitati.
 documents-title = Naslov
-documents-title-hint-map = Naziv mape i elementa u njezinu središtu.
 documents-title-hint-project = Naziv projekta, njegove mape i elementa u središtu mape.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Bez naslova
@@ -101,7 +99,6 @@ documents-found-some-made = { $count ->
 documents-at-once = Odmah načini citate od onih koje je Zotero načinio za djela koja vaša knjižnica ima
 # Under the choice: what becomes of a note that holds one of them.
 documents-at-once-notes = Bilješka koja nije ništa drugo nego citat postaje citat u retku, koji citatni stil smješta u bilješku ili u redak; bilješka koja kaže više zadržava svoj citat. Što ste za bilješke odabrali u ploči pronađenih citata, za sve koje slijede, vrijedi i ovdje.
-documents-go-through-map = Prođi kroz citate kad se mapa načini
 documents-go-through-project = Prođi kroz citate kad se projekt načini
 
 ## Making the map.
@@ -109,6 +106,4 @@ documents-go-through-project = Prođi kroz citate kad se projekt načini
 # Over what the one who brings the document in should know of it.
 documents-to-know = Dobro je znati
 documents-making = Izrada mape…
-documents-make-map = Načini mapu
 documents-make-project = Načini projekt
-documents-map-failed = Mapu nije bilo moguće načiniti.

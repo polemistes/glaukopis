@@ -104,6 +104,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     let project = projects.create("Wrath").unwrap();
     let summary = Summary {
         name: None,
+        description: None,
         maps: vec![MapInfo { id: "map".into(), name: "Wrath".into(), elements: 3 }],
         words: 12,
         references: 1,

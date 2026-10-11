@@ -1,10 +1,11 @@
 <script lang="ts">
   /**
-   * A map as it was at a moment of the history, not to be written in: its
-   * elements in the order of the text, with what changed since the moment
-   * before marked in the colour of who changed it. From here an element or
-   * the whole map is brought back as it was, the moment is given a name, or
-   * the project as it was is opened as a project of its own.
+   * The element in view as it was at a moment of the history, not to be
+   * written in: it and all under it in the order of the text, with what
+   * changed since the moment before marked in the colour of who changed it.
+   * From here an element, or all that is in view, is brought back as it
+   * was, the moment is given a name, or the project as it was is opened as
+   * a project of its own.
    */
   import ArrowLeft from '@lucide/svelte/icons/arrow-left';
   import Bookmark from '@lucide/svelte/icons/bookmark';
@@ -21,20 +22,21 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { notify, notifyError } from '$lib/ui/toast.svelte';
   import { tooltip } from '$lib/ui/tooltip';
-  import type { MapAt } from './history.svelte';
+  import type { BranchAt } from './history.svelte';
   import type { Looking } from './looking';
   import type { Passage, Piece } from './types';
 
   interface Props {
     project: Project;
-    map: string;
+    /** The element in view: it and all under it are shown as they were. */
+    at: string;
     looking: Looking;
     onback: () => void;
   }
 
-  let { project, map, looking, onback }: Props = $props();
+  let { project, at, looking, onback }: Props = $props();
 
-  let reading = $state.raw<MapAt | null>(null);
+  let reading = $state.raw<BranchAt | null>(null);
   let failed = $state(false);
   let names = $state.raw(new Map<string, string>());
   let naming = $state<string | null>(null);
@@ -45,18 +47,18 @@
 
   $effect(() => {
     const l = looking;
-    const m = map;
+    const element = at;
     reading = null;
     failed = false;
-    Promise.all([l.history.mapAt(m, l.when, l.since), l.history.people()])
+    Promise.all([l.history.branchAt(element, l.when, l.since), l.history.people()])
       .then(([r, people]) => {
-        if (l !== looking || m !== map) return;
+        if (l !== looking || element !== at) return;
         reading = r;
         names = new Map(people.map((p) => [p.id, p.name]));
       })
       .catch((error) => {
         failed = true;
-        console.error('the map could not be read as it was', error);
+        console.error('the element in view could not be read as it was', error);
       });
   });
 
@@ -117,7 +119,7 @@
   async function bringBack(element: string | null) {
     busy = true;
     try {
-      const done = await history.bringBack(map, element, looking.when);
+      const done = await history.bringBack(at, element, looking.when);
       if (done) notify(t('history-brought-back'));
     } catch (error) {
       notifyError(t('history-bring-back-failed'), error);

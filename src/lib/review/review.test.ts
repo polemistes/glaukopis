@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import type {
   History,
-  MapChanges,
+  BranchChanges,
   Moment,
   Named,
   Passage,
@@ -12,6 +12,7 @@ import type {
   Version,
 } from '$lib/history/types';
 import { Project } from '$lib/project/model/project.svelte';
+import { PROJECT } from '$lib/project/model/types';
 import { readReview } from './kept';
 import { Review } from './review.svelte';
 import type { Choice, Source } from './source';
@@ -27,9 +28,9 @@ function piece(status: Piece['status'], text: string, by: string | null = null):
   };
 }
 
-/** A history made by hand: what it says of each map is what the test gives it. */
+/** A history made by hand: what it says of each element in view is what the test gives it. */
 class FakeHistory implements History {
-  said = new Map<string, (reference: Reference) => MapChanges>();
+  said = new Map<string, (reference: Reference) => BranchChanges>();
   compared: Reference[] = [];
   reverted: { passage: Passage; pieces: Piece[] }[] = [];
   restored: Uint8Array[] = [];
@@ -67,9 +68,9 @@ class FakeHistory implements History {
     return [];
   }
 
-  async compare(map: string, reference: Reference): Promise<MapChanges> {
+  async compare(at: string, reference: Reference): Promise<BranchChanges> {
     this.compared.push(reference);
-    return this.said.get(map)?.(reference) ?? { map, passages: [], objects: [], elements: [] };
+    return this.said.get(at)?.(reference) ?? { at, passages: [], objects: [], elements: [] };
   }
 
   async versions(): Promise<Version[]> {
@@ -90,15 +91,16 @@ const BEGINNING: Choice = {
   moment: { snapshot: new Uint8Array([0, 0]), time: 100 },
 };
 
+/** A project with a tree Wrath under it, which is in view, and an element in that. */
 function setUp() {
   const project = new Project(null);
-  const map = project.createMap('Wrath');
-  const root = project.map(map)!.root;
+  project.begin('The poem');
+  const root = project.addChild(PROJECT, { title: 'Wrath' })!;
   const element = project.addChild(root, { title: 'Mênis', body: 'The black cat sat. It slept.' })!;
   const history = new FakeHistory(project.doc);
   const source: Source = { history, me: 'me', choices: async () => [BEGINNING], turnOn: null };
   // Anna wrote "black" into the first sentence, and the second anew.
-  history.said.set(map, (reference) => {
+  history.said.set(root, (reference) => {
     const accepted = reference.accepted.length;
     const passages: Passage[] = [
       {
@@ -115,10 +117,10 @@ function setUp() {
         ],
       },
     ];
-    return { map, passages, objects: [], elements: [] };
+    return { at: root, passages, objects: [], elements: [] };
   });
-  const review = new Review(project, source, map);
-  return { project, map, root, element, history, review };
+  const review = new Review(project, source, root);
+  return { project, root, element, history, review };
 }
 
 describe('a review', () => {
@@ -169,7 +171,7 @@ describe('a review', () => {
     expect(review.changes).toHaveLength(1);
   });
 
-  it('when nothing is left in any map, becomes the moment the changes were worked out at', async () => {
+  it('when nothing is left anywhere, becomes the moment the changes were worked out at', async () => {
     const { review, project } = setUp();
     await review.refresh();
     await review.accept();
@@ -179,14 +181,15 @@ describe('a review', () => {
     expect(kept.moment).not.toEqual(BEGINNING.moment.snapshot);
   });
 
-  it('is not settled while another map has changes left', async () => {
+  it('is not settled while the rest of the project has changes left', async () => {
     const { review, project, history } = setUp();
-    const other = project.createMap('Other');
-    history.said.set(other, () => ({
-      map: other,
+    const other = project.addChild(PROJECT, { title: 'Other' })!;
+    // Asked of the whole project, the history says a name changed elsewhere.
+    history.said.set(PROJECT, () => ({
+      at: PROJECT,
       passages: [
         {
-          place: { element: project.map(other)!.root, part: 'title', path: [0] },
+          place: { element: other, part: 'title', path: [0] },
           block: '1:2',
           kind: 'name',
           before: true,
@@ -229,11 +232,11 @@ describe('a review', () => {
   });
 
   it('an element moved and taken back stands where it stood; one accepted is not shown again', async () => {
-    const { review, project, map, root, element, history } = setUp();
+    const { review, project, root, element, history } = setUp();
     const other = project.addChild(root, { title: 'Other' })!;
     project.move([element], other);
-    history.said.set(map, () => ({
-      map,
+    history.said.set(root, () => ({
+      at: root,
       passages: [],
       objects: [],
       elements: [
@@ -246,18 +249,18 @@ describe('a review', () => {
         },
       ],
     }));
-    // Another map has a change left, so that the review is not settled.
-    const second = project.createMap('Second');
-    history.said.set(second, () => ({
-      map: second,
+    // Elsewhere in the project a change is left, so that the review is not settled.
+    const second = project.addChild(PROJECT, { title: 'Second' })!;
+    history.said.set(PROJECT, () => ({
+      at: PROJECT,
       passages: [],
       objects: [],
-      elements: [{ element: project.map(second)!.root, kind: 'heading', by: 'anna' }],
+      elements: [{ element: second, kind: 'heading', by: 'anna' }],
     }));
     await review.refresh();
     expect(review.changes.map((c) => c.kind)).toEqual(['element']);
     await review.reject();
-    expect(project.tree(map).parent.get(element)).toBe(root);
+    expect(project.tree().parent.get(element)).toBe(root);
     await review.refresh();
     await review.accept();
     await review.refresh();
@@ -265,9 +268,9 @@ describe('a review', () => {
   });
 
   it('one’s own changes are shown only when asked for', async () => {
-    const { review, map, element, history } = setUp();
-    history.said.set(map, () => ({
-      map,
+    const { review, root, element, history } = setUp();
+    history.said.set(root, () => ({
+      at: root,
       passages: [
         {
           place: { element, part: 'body', path: [0] },

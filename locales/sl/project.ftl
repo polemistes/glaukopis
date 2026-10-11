@@ -70,20 +70,9 @@ project-cited-in-element = { $count ->
 
 # The name of a map, or of an element, that has none.
 project-untitled = Brez naslova
-# The name of a copy of a map.
-project-map-copy = { $name }, kopija
-project-maps = Miselni vzorci
-project-map-name = Ime miselnega vzorca
-project-new-map = Nov miselni vzorec
-project-map-from-document = Miselni vzorec iz dokumenta…
 project-drop-on-map = Spustite na miselni vzorec, da premaknete tja · držite Ctrl za kopiranje
-project-duplicate = Podvoji
-project-duplicate-hint = Kopija za delo; ta ostane, kakršen je
 project-open-beside = Odpri ob strani
 project-open-beside-hint = Dva miselna vzorca vzporedno, da premikate elemente med njima
-project-this-map-actions = Ta miselni vzorec in miselni vzorci
-project-maps-hint = Miselni vzorci projekta: izberite enega, da ga odprete
-project-map-beside = ob tem
 project-side-by-side-short = Vzporedno
 project-preview-short = Predogled
 project-found = Najdene navedbe…
@@ -95,14 +84,6 @@ project-found-hint = { $count ->
    *[other] { $count } za pregled, da iz njih nastanejo navedbe
 }
 project-found-none = In besedilo, ki je videti kot navedbe
-project-delete-map = Izbriši miselni vzorec
-project-delete-map-title = Izbrisati miselni vzorec »{ $name }«?
-project-delete-map-message = { $count ->
-    [one] { $count } element in besedilo v njem bosta izginila. To je mogoče razveljaviti, dokler je projekt odprt.
-    [two] { $count } elementa in besedilo v njiju bodo izginili. To je mogoče razveljaviti, dokler je projekt odprt.
-    [few] { $count } elementi in besedilo v njih bodo izginili. To je mogoče razveljaviti, dokler je projekt odprt.
-   *[other] { $count } elementov in besedilo v njih bo izginilo. To je mogoče razveljaviti, dokler je projekt odprt.
-}
 project-copied-to = Kopirano v »{ $name }«
 project-moved-to = Premaknjeno v »{ $name }«
 
@@ -124,20 +105,12 @@ project-stands-for = Stoji za »{ $name }«
 project-stand-for = Stoj za drug miselni vzorec
 project-stand-for-heading = V dokumentu ta miselni vzorec stopi na njegovo mesto
 project-stand-for-none = Noben
-project-copy-to-map = Kopiraj v miselni vzorec
 project-copy = Kopiraj
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Prilepi pod njim
-project-move-to-map = Premakni v miselni vzorec
-project-map-from-branch = Nov miselni vzorec iz te veje
-project-map-from-branch-hint = Kopija za delo; ta ostane
-project-detach = Odpni od nadrejenega
-project-detach-hint = Prost element, ki ga umestite pozneje
 project-tidy-branch = Uredi to vejo
 project-place-automatically = Umesti samodejno
 project-delete-keeping = Izbriši, obdrži pa, kar je pod njim
-project-centre-stays = Središče miselnega vzorca ostane
-project-centre-stays-detail = Miselni vzorec sam izbrišite z njegovega zavihka.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] »{ $name }« je izbrisan
@@ -251,7 +224,6 @@ project-link-label = Oznaka povezave
 
 ## A copy and its original, in another map.
 copy-title = Kopija in njen izvirnik
-copy-from = Kopirano iz »{ $name }« v miselnem vzorcu »{ $map }«
 copy-original-changed = Izvirnik se je spremenil, odkar je bil kopiran ali odkar je bilo to nazadnje videno.
 copy-original-same = Izvirnik je, kakršen je bil ob kopiranju.
 copy-original-unknown = Ali se je izvirnik spremenil, odkar je bil kopiran, ni znano: kopija je bila narejena, preden se je to hranilo.
@@ -265,8 +237,6 @@ copy-seen = Obdrži to kopijo, kakršna je
 copy-take = Vzemi ime in besedilo izvirnika
 copy-changed-mark = Izvirnik se je spremenil, odkar je bilo to kopirano
 copy-compare = Primerjaj z izvirnikom…
-copy-copied-from = Kopirano iz »{ $name }« v »{ $map }«
-copy-copied-from-changed = Kopirano iz »{ $name }« v »{ $map }«, ki se je od takrat spremenil
 
 ## How far the writing of an element has come, as its writer says.
 status = Stanje

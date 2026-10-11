@@ -10,18 +10,30 @@ import { EditorView, type NodeView } from 'prosemirror-view';
 import { t } from '$lib/i18n';
 import { place } from '$lib/ui/floating';
 import { insertMath, splitCitation, toggle, updateCitation } from './commands';
-import { openSelected, passes, placeholder } from './plugins';
+import { openSelected, passes, placeholder, type EditorHooks } from './plugins';
 import { pressedFound } from '$lib/found/found.svelte';
 import { pastedTextSlice } from './clipboard';
 import { citationLabel, currentProject, isMissing, languageOf } from './references.svelte';
 import { notePlace, type CiteItem, type CiteMode } from './schema';
 import { editorUi, hooksOf, OPEN, passing, SHOW, viewsByDom, type ShowIn } from './ui.svelte';
+import { topOf } from '$lib/figures/numbering.svelte';
 import { CrossRefView, FormulaView } from '$lib/figures/views.svelte';
 import { markIn, searchMarks } from '$lib/search/decorations';
 import { spellingOptions } from '$lib/spelling/menu';
 import { spellingPlugin } from '$lib/spelling/plugin';
 
 export { hooksOf };
+
+/**
+ * The element in view the text of an editor is seen in: as the editor was
+ * told, or else the tree under the project its element stands in. Nothing,
+ * where the editor holds no element's text.
+ */
+function viewedAt(hooks: EditorHooks | undefined): string | null {
+  if (hooks?.at) return hooks.at;
+  const project = currentProject();
+  return hooks?.element && project?.node(hooks.element) ? topOf(project, hooks.element) : null;
+}
 
 export class CitationView implements NodeView {
   dom: HTMLElement;
@@ -43,12 +55,14 @@ export class CitationView implements NodeView {
 
     // The label follows the references: when one is changed, or arrives, the
     // text shows it without being touched. What a locator counts is said in
-    // the language of the map.
+    // the language of the text, which is read anew at every change to it:
+    // the label is written only when it is not what it was.
     this.#stop = $effect.root(() => {
       $effect(() => {
         const { items, mode } = this.#attrs;
         const language = languageOf(hooksOf.get(this.#view)?.element);
-        this.dom.textContent = citationLabel(items, mode, language);
+        const label = citationLabel(items, mode, language);
+        if (this.dom.textContent !== label) this.dom.textContent = label;
         this.dom.classList.toggle('missing', isMissing(items));
       });
     });
@@ -111,11 +125,11 @@ export class CitationView implements NodeView {
 
 /**
  * The number a note is shown with: its place among the notes that are
- * counted with it. In the text of a map those are the notes of the map; of
- * an element that is left out of the document, or loose, its own.
+ * counted with it. In the text of a branch those are the notes of the
+ * branch; of an element that is left out of the document, its own.
  */
 export function noteNumberOf(mark: HTMLElement): number {
-  const own = mark.closest<HTMLElement>('.section.excluded, .section.loose');
+  const own = mark.closest<HTMLElement>('.section.excluded');
   const scope =
     own ?? mark.closest<HTMLElement>('[data-notes]') ?? mark.closest<HTMLElement>('.prose');
   if (!scope) return 0;
@@ -123,7 +137,7 @@ export function noteNumberOf(mark: HTMLElement): number {
   const placed = mark.hasAttribute('data-place');
   let n = 0;
   for (const other of scope.querySelectorAll<HTMLElement>('.footnote')) {
-    if (!own && other.closest('.section.excluded, .section.loose')) continue;
+    if (!own && other.closest('.section.excluded')) continue;
     if (other.hasAttribute('data-place') !== placed) continue;
     n++;
     if (other === mark) return n;
@@ -194,8 +208,8 @@ export class FootnoteView implements NodeView {
 
   /**
    * The number is not written into the text: it is counted by the page, from
-   * where the notes stand (see app.css), so that the notes of a map are
-   * numbered through all its elements.
+   * where the notes stand (see app.css), so that the notes of a document
+   * are numbered through all its elements.
    */
   #number() {
     this.dom.classList.toggle('blank', this.#node.content.size === 0);
@@ -341,7 +355,7 @@ export class FootnoteView implements NodeView {
           keymap(baseKeymap),
           placeholder(() => t('editor-note-placeholder')),
           searchMarks(),
-          // In the language of the map of the element the note is in.
+          // In the language of the document of the element the note is in.
           spellingPlugin(
             spellingOptions(
               () => currentProject(),
@@ -355,11 +369,7 @@ export class FootnoteView implements NodeView {
       clipboardTextParser: (text, $context) => pastedTextSlice(text, $context, outer.state.schema),
       // A citation that was found is gone through where it is pressed.
       handleClick: (_v, _pos, event) =>
-        event.button === 0 &&
-        pressedFound(
-          event.target,
-          hooks?.element ? currentProject()?.node(hooks.element)?.map : null,
-        ),
+        event.button === 0 && pressedFound(event.target, viewedAt(hooks)),
       nodeViews: {
         citation: (node, v, getPos) => new CitationView(node, v, getPos),
         math: (node, v, getPos) => new FormulaView(node, v, getPos),
