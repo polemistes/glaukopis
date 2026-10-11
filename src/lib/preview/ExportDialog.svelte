@@ -10,6 +10,7 @@
     type Exported,
     type Target,
   } from '$lib/api/documents';
+  import type { OutputTarget } from '$lib/api/templates';
   import { t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
@@ -23,10 +24,19 @@
     request: () => Promise<DocumentRequest>;
     /** A name for the file, without extension. */
     name: string;
+    /** The kinds of file the template makes the document as (ADR 0038); every kind where nothing is said. */
+    targets?: OutputTarget[];
     onclose: () => void;
   }
 
-  let { request, name, onclose }: Props = $props();
+  let { request, name, targets, onclose }: Props = $props();
+
+  /** The targets of the template in the names the core's export knows: `pdf-latex` is `pdflatex`. */
+  const allowed = $derived(
+    targets?.length
+      ? new Set<Target>(targets.map((t) => (t === 'pdf-latex' ? 'pdflatex' : t) as Target))
+      : null,
+  );
 
   interface Kind {
     target: Target;
@@ -38,7 +48,11 @@
 
   // The names of kinds of file that are names of programs and standards are
   // the same in every language.
-  const kinds: Kind[] = $derived([
+  const kinds: Kind[] = $derived.by(() =>
+    everyKind.filter((k) => !allowed || allowed.has(k.target)),
+  );
+
+  const everyKind: Kind[] = $derived([
     {
       target: 'pdf',
       label: 'PDF',
@@ -91,6 +105,10 @@
   ]);
 
   let chosen = $state<Target>('docx');
+  // What the template does not make is not offered; the first that is, is chosen instead.
+  $effect(() => {
+    if (kinds.length && !kinds.some((k) => k.target === chosen)) chosen = kinds[0].target;
+  });
   let biblatex = $state(false);
   let working = $state(false);
   let error = $state<string | null>(null);

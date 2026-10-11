@@ -625,6 +625,7 @@
 {#if exporting}
   <ExportDialog
     {request}
+    targets={template?.outputs.find((o) => o.id === 'document')?.targets}
     name={project.node(at)?.title || t('preview-file-name')}
     onclose={() => (exporting = false)}
   />

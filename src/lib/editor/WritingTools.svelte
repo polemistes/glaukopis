@@ -147,7 +147,8 @@
       stale = true;
     };
   });
-  const suggests = $derived(format?.suggests ?? []);
+  // The kinds the template puts in hand (ADR 0038); nothing until the template is read.
+  const suggests = $derived(documents.templateCached(choice.template)?.passageKinds ?? []);
   const formatName = $derived(
     documents.formatSummary(choice.format)?.name ?? format?.name ?? choice.format,
   );
