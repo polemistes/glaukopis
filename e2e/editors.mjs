@@ -1,4 +1,4 @@
-// The editors of document formats and reference styles.
+// The editors of layouts and reference styles, opened from the document settings.
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -46,19 +46,24 @@ try {
   await app.keys(['Control', 'p']);
   await app.waitFor('.preview .page', 20000);
 
-  const menu = async (item) => {
-    await app.click('.preview button[aria-label="Change the format or the style"]');
-    await app.clickText('[role="menuitem"]', item);
-  };
+  /** The template, the layout and the style in use, as the bar over the preview names them. */
+  const inUse = () => app.exec(`return document.querySelector('.preview .in-use .names')?.textContent.trim() ?? ''`);
+  // The editors are opened from the document settings, which the bar over the preview opens.
+  await app.click('.preview button.in-use');
+  await app.waitForText('dialog[open] h2', 'Document settings', 5000);
+  await app.documentSection('Layout and citations');
+  /** Whether only the document settings are open: an editor over them has gone. */
+  const editorGone = () =>
+    app.waitUntil(`return document.querySelectorAll('dialog[open]').length === 1`, 8000, 'the editor to go');
 
-  // --- The format ---
-  await menu('Change this format');
+  // --- The layout ---
+  await app.clickText('dialog[open] .window button', 'Change this layout…');
   await app.waitFor('dialog .editor nav');
   await app.waitFor('dialog .sample img', 20000);
   await app.screenshot('editors-1-format');
   await app.clickText('dialog nav button', 'Type and spacing');
   await app.exec(
-    `const selects = document.querySelectorAll('dialog .form select');
+    `const selects = document.querySelectorAll('dialog .editor .form select');
      const spacing = Array.from(selects).find((s) => Array.from(s.options).some((o) => o.textContent === 'Double'));
      spacing.value = '1.5';
      spacing.dispatchEvent(new Event('change', { bubbles: true }));`,
@@ -71,15 +76,15 @@ try {
   await sleep(300);
   await app.exec(
     `const set = (el, value) => { el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); };
-     const fields = Array.from(document.querySelectorAll('dialog .form input[type="text"], dialog .form input:not([type])'));
+     const fields = Array.from(document.querySelectorAll('dialog .editor .form input[type="text"], dialog .editor .form input:not([type])'));
      set(fields.find((i) => i.value === 'Figure'), 'Fig.');
-     const selects = Array.from(document.querySelectorAll('dialog .form select'));
+     const selects = Array.from(document.querySelectorAll('dialog .editor .form select'));
      set(selects.find((s) => Array.from(s.options).some((o) => o.value === 'at-end')), 'at-end');`,
   );
   await sleep(400);
-  const told = await app.text('dialog .form');
+  const told = await app.text('dialog .editor .form');
   check(
-    'the format says what a figure is called, and shows it',
+    'the layout says what a figure is called, and shows it',
     /Fig\. 1/.test(told),
     told.replace(/\s+/g, ' ').slice(0, 300),
   );
@@ -88,22 +93,20 @@ try {
     /Heading over the figures/.test(told) && /about here/.test(told),
   );
   await app.screenshot('editors-2b-format-figures');
-  await app.clickText('dialog nav button', 'About this format');
+  await app.clickText('dialog .editor nav button', 'About this layout');
   await sleep(200);
   await app.screenshot('editors-3-format-about');
   await app.exec(
     `const n = document.querySelector('dialog input.name'); n.value = 'My publisher'; n.dispatchEvent(new Event('input', { bubbles: true }));`,
   );
   await app.clickText('dialog footer button', 'Save as my own');
-  await app.waitGone('dialog', 8000);
+  await editorGone();
   await sleep(3500);
-  const format = await app.exec(
-    `return document.querySelector('.preview select[aria-label="Document format"]').value`,
-  );
+  const format = await app.documentChosen('Layout');
   check(
-    'a changed format is saved as one’s own and taken into use',
-    format === 'my-publisher',
-    format,
+    'a changed layout is saved as one’s own and taken into use',
+    format === 'my-publisher' && (await inUse()).includes('My publisher'),
+    `${format}: ${await inUse()}`,
   );
   const saved = JSON.parse(readFileSync(join(app.dataDir, 'formats', 'my-publisher.json'), 'utf8'));
   check(
@@ -129,10 +132,10 @@ try {
       ),
       'utf8',
     );
-  check('the preview is in the new format', /leading: 0\.8em/.test(typ()));
+  check('the preview is in the new layout', /leading: 0\.8em/.test(typ()));
 
   // --- The style ---
-  await menu('Change this reference style');
+  await app.clickText('dialog[open] .window button', 'Change this reference style…');
   await app.waitFor('dialog .editor .form');
   await app.waitFor('dialog .sample dd', 20000);
   await sleep(300);
@@ -150,7 +153,7 @@ try {
   await app.clickText('dialog [role="radio"]', 'Bibliography');
   await sleep(200);
   await app.exec(
-    `const selects = document.querySelectorAll('dialog .form select');
+    `const selects = document.querySelectorAll('dialog .editor .form select');
      const given = Array.from(selects).find((s) => Array.from(s.options).some((o) => o.value === 'spaced'));
      given.value = 'spaced';
      given.dispatchEvent(new Event('change', { bubbles: true }));`,
@@ -206,15 +209,14 @@ try {
     `const n = document.querySelector('dialog input.name'); n.value = 'Chicago with initials'; n.dispatchEvent(new Event('input', { bubbles: true }));`,
   );
   await app.clickText('dialog footer button', 'Save as my own');
-  await app.waitGone('dialog', 8000);
+  await editorGone();
   await sleep(3500);
-  const style = await app.exec(
-    `return document.querySelector('.preview select[aria-label="Reference style"]').value`,
-  );
+  const style = await app.documentChosen('Reference style');
+  await app.closeDocumentSettings();
   check(
     'a changed style is saved as one’s own and taken into use',
-    style === 'chicago-with-initials',
-    style,
+    style === 'chicago-with-initials' && (await inUse()).includes('Chicago with initials'),
+    `${style}: ${await inUse()}`,
   );
   check('the preview uses it', /Nagy, G\./.test(typ()), typ().match(/Nagy[^\n]{0,40}/)?.[0]);
 

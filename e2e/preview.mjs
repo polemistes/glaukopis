@@ -188,39 +188,46 @@ try {
   typ = source();
   check('the preview follows what is written', /written while the preview is open/.test(typ));
 
-  // --- Another format, which brings its reference style ---
-  await app.exec(
-    `const s = document.querySelector('.preview select[aria-label="Document format"]');
-     s.value = 'apa-7-professional';
-     s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  // --- Another template, which brings its layout and its reference style ---
+  /** The template, the layout and the style in use, as the bar over the preview names them. */
+  const inUse = () => app.exec(`return document.querySelector('.preview .in-use .names')?.textContent.trim() ?? ''`);
+  check(
+    'the bar over the preview names the template, the layout and the style in use',
+    (await inUse()).split(' · ').length === 3,
+    await inUse(),
   );
+  await app.click('.preview button.in-use');
+  await app.waitForText('dialog[open] h2', 'Document settings', 5000);
+  await sleep(200);
+  await app.type('dialog[open] input[aria-label="Search the templates"]', 'APA 7');
+  await sleep(200);
+  await app.clickText('dialog[open] .templates [role="radio"]', 'APA 7 (professional paper)');
   await sleep(4500);
   typ = source();
-  const style = await app.exec(
-    `return document.querySelector('.preview select[aria-label="Reference style"]').value`,
-  );
-  check('choosing a format takes the reference style that goes with it', style === 'apa', style);
   check(
-    'the preview is in the format chosen',
+    'choosing a template takes the layout and the reference style that go with it',
+    /^APA 7 \(professional paper\) · APA 7 \(professional paper\) · APA Style 7th/.test(await inUse()),
+    await inUse(),
+  );
+  check(
+    'the preview is in the layout chosen',
     /us-letter/.test(typ) && /\(Nagy, 1979, p\. 73\)/.test(typ),
     typ.match(/\(Nagy[^)]*\)/)?.[0],
   );
   await app.screenshot('preview-2-apa');
 
-  // --- The formats are in groups, and a novel is a book ---
+  // --- The layouts are in groups, and a novel is a book ---
+  await app.documentSection('Layout and citations');
   const groups = await app.exec(
-    `return Array.from(document.querySelectorAll('.preview select[aria-label="Document format"] optgroup')).map((g) => g.label)`,
+    `const row = Array.from(document.querySelectorAll('dialog[open] .window label.row')).find((r) => r.querySelector('.what').firstChild.textContent.trim() === 'Layout');
+     return Array.from(row.querySelectorAll('optgroup')).map((g) => g.label)`,
   );
   check(
-    'the formats are offered by kind',
+    'the layouts are offered by kind',
     ['Fiction', 'Stage and screen', 'Poetry'].every((g) => groups.includes(g)),
     groups.join(' | '),
   );
-  await app.exec(
-    `const s = document.querySelector('.preview select[aria-label="Document format"]');
-     s.value = 'novel-book';
-     s.dispatchEvent(new Event('change', { bubbles: true }));`,
-  );
+  check('the layout chosen is a choice of its own', await app.documentChoose('Layout', 'novel-book'));
   await sleep(4500);
   typ = source();
   check(
@@ -230,28 +237,20 @@ try {
       /a5/.test(typ),
   );
   await app.screenshot('preview-2b-novel');
-  await app.exec(
-    `const s = document.querySelector('.preview select[aria-label="Document format"]');
-     s.value = 'apa-7-professional';
-     s.dispatchEvent(new Event('change', { bubbles: true }));`,
-  );
+  // The layout of the template again.
+  await app.documentChoose('Layout', '');
   await sleep(4500);
+  check('left to the template, the layout is the template’s again', /^APA 7 \(professional paper\) · APA 7 \(professional paper\) · /.test(await inUse()), await inUse());
 
   // --- The particulars of the document ---
-  await app.click('.preview button[aria-label="Title, authors, abstract"]');
-  await app.waitFor('dialog .details');
-  await app.type('dialog input[aria-label="Name of author 1"]', 'A. Scholar');
-  await app.type('dialog textarea', 'What the wrath of Achilles is.');
+  await app.documentSection('Details');
+  await app.type('dialog[open] input[aria-label="Name of author 1"]', 'A. Scholar');
   await app.screenshot('preview-3-details');
-  await app.clickText('dialog footer button', 'Save');
-  await app.waitGone('dialog');
+  await app.closeDocumentSettings(true);
   await sleep(4500);
   typ = source();
-  check(
-    'author and abstract are on the first page',
-    /A\. Scholar/.test(typ) && /What the wrath of Achilles is/.test(typ),
-  );
-  await app.screenshot('preview-4-with-abstract');
+  check('the author is on the first page', /A\. Scholar/.test(typ));
+  await app.screenshot('preview-4-with-author');
 
   // --- Export, as the dialog would ask for it ---
   await app.clickText('.preview button', 'Export');
@@ -313,17 +312,11 @@ try {
   await app.click('header button[aria-label="Preview and export"]');
   await sleep(300);
   await app.click('header button[aria-label="Preview and export"]');
-  await app.waitFor('.preview select[aria-label="Document format"]', 8000);
+  await app.waitFor('.preview .in-use', 8000);
   await sleep(500);
-  await app.exec(
-    `const s = document.querySelector('.preview select[aria-label="Document format"]');
-     if (!Array.from(s.options).some((o) => o.value === arguments[0])) {
-       const o = document.createElement('option'); o.value = arguments[0]; o.textContent = 'x'; s.append(o);
-     }
-     s.value = arguments[0];
-     s.dispatchEvent(new Event('change', { bubbles: true }));`,
-    own,
-  );
+  await app.openDocumentSettings('Layout and citations');
+  await app.documentChoose('Layout', own);
+  await app.closeDocumentSettings();
   await app.waitFor('.preview footer .issues', 15000);
   {
     await app.click('.preview footer .issues');

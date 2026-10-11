@@ -315,6 +315,8 @@ export class App {
   }
 
   async el(target) {
+    // An element as a script in the page returns it.
+    if (target && typeof target === 'object' && ELEMENT in target) return target[ELEMENT];
     return typeof target === 'string' && !/^[0-9a-f-]{20,}|^node-/.test(target)
       ? this.find(target)
       : target;
@@ -538,6 +540,66 @@ export class App {
   async thisMap(item) {
     await this.openThisMap();
     await this.clickText('.menu [role="menuitem"]', item);
+  }
+
+  // ---- the document settings of an element (ADR 0038) ----
+
+  /** Opens the document settings of the element in view by Ctrl+Shift+D, at a part of the window named as it names it. */
+  async openDocumentSettings(section) {
+    await this.keys(['Control', 'Shift', 'd']);
+    await this.waitForText('dialog[open] h2', 'Document settings', 5000);
+    await sleep(200);
+    if (section) await this.documentSection(section);
+  }
+
+  /** Turns to a part of the open document settings: "Template", "Details", "Parts", "Layout and citations", "Language", "Checklist". */
+  async documentSection(section) {
+    await this.clickText('dialog[open] .window nav button', section);
+    await this.waitForText('dialog[open] .window .settings h3', section, 3000);
+    await sleep(150);
+  }
+
+  /**
+   * Chooses in a chooser of the document settings, found by the words of its
+   * label ("Layout", "Reference style", "Language of the text"), the value
+   * given: written as it is chosen. Says whether the chooser offered it.
+   */
+  async documentChoose(label, value) {
+    return this.exec(
+      `const row = Array.from(document.querySelectorAll('dialog[open] .window label.row'))
+         .find((r) => r.querySelector('.what')?.firstChild?.textContent.trim() === arguments[0]);
+       const s = row?.querySelector('select');
+       if (!s) throw new Error('no chooser labelled ' + arguments[0]);
+       const offered = Array.from(s.options).some((o) => o.value === arguments[1]);
+       if (!offered) {
+         const o = document.createElement('option');
+         o.value = arguments[1];
+         o.textContent = arguments[1];
+         s.append(o);
+       }
+       s.value = arguments[1];
+       s.dispatchEvent(new Event('change', { bubbles: true }));
+       return offered;`,
+      label,
+      value,
+    );
+  }
+
+  /** What a chooser of the document settings holds, found as `documentChoose` finds it. */
+  async documentChosen(label) {
+    return this.exec(
+      `const row = Array.from(document.querySelectorAll('dialog[open] .window label.row'))
+         .find((r) => r.querySelector('.what')?.firstChild?.textContent.trim() === arguments[0]);
+       return row?.querySelector('select')?.value ?? null;`,
+      label,
+    );
+  }
+
+  /** Closes the document settings: saved, which writes the details, or left. */
+  async closeDocumentSettings(save = false) {
+    await this.clickText('dialog[open] footer button', save ? 'Save' : 'Cancel');
+    await this.waitGone('dialog[open] .window nav', 5000);
+    await sleep(150);
   }
 
   async pageErrors() {
