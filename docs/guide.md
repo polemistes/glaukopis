@@ -274,7 +274,7 @@ all that is in view, as they will be in the document. An element that is
 left out of the document numbers its own.
 
 Whether notes stand at the foot of the page or at the end of the text is
-said by the document format. Some books keep two kinds of notes apart: the
+said by the layout of the document. Some books keep two kinds of notes apart: the
 author's remarks at the foot of the page, say, and the sources at the end.
 For that, a single note can be set to stand at the other place, in the panel
 it is written in. Such notes are lettered, *a*, *b*, *c*, in the text and in
@@ -312,8 +312,8 @@ Pressing the picture opens the rest that can be said of it:
 - **Another picture** in its place, or the figure removed.
 
 The word before the number, where what is said of the figure stands and how
-it is set, are said by the document format: *Figure 1.* under the picture in
-one, **Figure 1** over it in another. A format can also have the figures
+it is set, are said by the layout of the document: *Figure 1.* under the
+picture in one, **Figure 1** over it in another. A layout can also have the figures
 gathered at the end of the document, as many journals ask of a manuscript;
 a line in the text then says where each belongs.
 
@@ -347,7 +347,7 @@ headings. The cursor then stands in the first cell.
 The tables are numbered through the document, as the figures are, and can be
 pointed to. The word before the number, whether what is said of the table
 stands over or under it, the lines of the table and the size of its type are
-said by the document format: most have a line over the table, one under its
+said by the layout of the document: most have a line over the table, one under its
 headings and one under the table, and no lines between the columns.
 
 A table that was copied, from a web page or a document, becomes a table
@@ -398,7 +398,7 @@ A **screenplay** is written with the kinds of paragraph under *Script*:
 dialogue and from dialogue to action; Tab goes to the other part that
 follows (action to character, dialogue to parenthetical), as a new
 paragraph after text or in place of an empty one. Scene headings,
-characters and transitions are set in capitals; the *Screenplay* format
+characters and transitions are set in capitals; the *Screenplay* layout
 sets every part where the standard script page has it.
 
 **Two texts side by side**, under *Insert*, puts an original beside its
@@ -412,15 +412,14 @@ as a table without lines.
 Every paragraph is of a **kind**, and a run of words may be: a quotation,
 an epigraph, the heading of a scene, a word in another language. A kind
 says what the words are, not how they look. The look comes from the
-document format, which has a look for every kind and changes with the
-format; where you write, each kind has a plain look of its own, so that it
+layout of the document, which has a look for every kind and changes with
+the layout; where you write, each kind has a plain look of its own, so that it
 is seen.
 
 The button at the left of the tools shows the kind of the paragraph the
 cursor is in, and opens the kinds **in hand**: **Text**, **Quotation**,
-**List** and **Numbered list**; every kind the project uses; those you have
-pinned; and those the format suggests, as the *Screenplay* format suggests
-the parts of a script. A kind chosen there is given to the paragraphs
+**List** and **Numbered list**; every kind the project uses; and those you
+have pinned. A kind chosen there is given to the paragraphs
 selected, or to the one the cursor is in. **More…** has every kind, by its
 group, and **Kinds in hand** a check beside each kind in hand: choose a
 kind there to pin it, so that it stays in the menu, or to unpin it.
@@ -431,7 +430,7 @@ kind there to pin it, so that it stays in the menu, or to unpin it.
 | **Quotation** | **Attribution**, whose words they are, under a quotation, at the right; **Epigraph**, a quotation at the head of a part |
 | **Verse** | **Verse**, and the **Speaker** and **Stage direction** of a line: see *Verse, and texts side by side* |
 | **Script** | **Scene heading**, **Action**, **Character**, **Dialogue**, **Parenthetical** and **Transition**: the parts of a screenplay |
-| **More** | **Headword** and **Gloss**, the two paragraphs of a glossary; **Code**, kept letter for letter, in letters of equal width; **Break**, a pause between parts, which holds no text and prints the sign the format gives it, `* * *` unless the format says otherwise; **Draft note**, for your eyes, which goes into no document |
+| **More** | **Headword** and **Gloss**, the two paragraphs of a glossary; **Code**, kept letter for letter, in letters of equal width; **Break**, a pause between parts, which holds no text and prints the sign the layout gives it, `* * *` unless the layout says otherwise; **Draft note**, for your eyes, which goes into no document |
 
 Each kind says what **Enter** makes next: after a scene heading comes
 action, after a character its dialogue and after dialogue action, after a
@@ -456,13 +455,13 @@ Give it a name, say what it is based on, and say only how it differs:
 italic, bold, underlined, letters, alignment, indents, space before and
 after, size; what you do not say is as the base has it. What was selected
 is given the kind at once. A kind of your own is kept with the project, so
-that those you share it with have it, and works in every document format,
-since it says no more than how it differs from a kind the format knows;
+that those you share it with have it, and works in every layout, since it
+says no more than how it differs from a kind the layout knows;
 its name is offered in your other projects when a kind is named there.
 
 The foot of the kind menu says where the looks come from: **Set as
-“Manuscript” has them**, naming the format of the document, and under it
-**Change the format…**, which opens the format at its kinds, where the
+“Manuscript” has them**, naming the layout of the document, and under it
+**Change the layout…**, which opens the layout at its kinds, where the
 look of each is changed; see *The preview, and the manuscript*. A draft
 note and a highlight are for the screen alone, and go into no document.
 
@@ -477,7 +476,8 @@ selected goes into what is put in.
 
 A **formula** stands in the line, among the words. An **equation** stands on
 a line of its own, and can be numbered; what stands around the number,
-as in (1), is said by the document format. Pressing either opens it again.
+as in (1), is said by the layout of the document. Pressing either opens it
+again.
 
 ### Where things stand
 
@@ -485,11 +485,11 @@ A figure, a table and an equation each stand to the left, in the middle or
 to the right. The text can flow around a figure or a table that stands at a
 side, as it does in books; in the middle, nothing flows around it.
 
-What the document format says holds for all of them: a format may have its
-figures in the middle and its tables at the left margin. Of any one of them
-you can say something else, in the panel that opens when it is pressed;
-**As the format** takes what you said back. The panel tells what the format
-says.
+What the layout of the document says holds for all of them: a layout may
+have its figures in the middle and its tables at the left margin. Of any one
+of them you can say something else, in the panel that opens when it is
+pressed; **As the layout** takes what you said back. The panel tells what
+the layout says.
 
 Several can stand **beside each other**: open the panel of the second, and
 choose **Put it beside the one before it**. A third and a fourth can join
@@ -513,11 +513,11 @@ They can be found by what is said of them.
 
 The cross-reference then says what the document calls the thing:
 
-- a **figure** or a **table** by the word the format has for it and its
+- a **figure** or a **table** by the word the layout has for it and its
   number, *Figure 2*, *Table 1*, or by the number alone;
 - an **equation** by its number as it stands beside it, *(1)*, or by the
   number alone;
-- a **part** by its number where the format numbers the headings, *2.1*, and
+- a **part** by its number where the layout numbers the headings, *2.1*, and
   by its name where it does not, or whenever you choose the name.
 
 Words like *see* and *section* you write yourself. Press the cross-reference
@@ -865,15 +865,28 @@ the text of its elements begins: the text of a scene with a scene heading,
 that of an entry of a glossary with a headword. A paragraph that is given
 another kind keeps it.
 
-**Kind** in the element's menu lists the kinds of the project; **New kind…**
-makes one and gives it to the element, and **Kinds of this project…** shows
-them all, with how many elements are of each, to change or delete them. A
-name you have used in another project is offered as you type, with the
-colour it had there.
+A kind may also say what an element of it is in the document, under **In
+the document** in the kind's dialog: an abstract, an appendix, a page of its
+own, chosen among the kinds that come with Glaukopis (see *What goes into
+the document*). An *Author's note* that is a front section is then printed
+before the text, in every layout. A kind that is **nothing in particular**
+there is a name and a colour, as before.
+
+**Kind** in the element's menu has the kinds of the project, in their
+colours; then the kinds that come with Glaukopis which the template puts in
+hand, or which the project uses already, such as **Abstract** or
+**Appendix**; and **More…**, with all of them by group: **Front matter**,
+**Back matter** and **Cover**. **New kind…** makes a kind and gives it to
+the element, and **Kinds of this project…** shows the project's own, with
+how many elements are of each, to change or delete them. A name you have
+used in another project is offered as you type, with the colour it had
+there.
 
 An element of a kind carries the colour at its left edge in the diagram,
-as a dot in the outline, and as a small label over its name in the text.
-Nothing of it goes into the document.
+as a dot in the outline, and as a small label over its name in the text; an
+element of a kind that comes with Glaukopis carries the kind's name in
+plain grey. Nothing of it goes into the document, unless the kind says what
+the element is there.
 
 ## Timelines
 
@@ -1025,8 +1038,9 @@ small, which goes up; then the name of the element in view, which pulls down
 the elements beside it, to show one of them in its place, or, for the
 project itself, the trees under it. Beside the name is **This element**,
 with what can be done with the element in view: **Rename**, **Document
-details…**, **Citations that were found…**, **Languages…**, **New element
-under it**, **A document into it…** and **Delete**, which takes the element
+settings…**, **Citations that were found…**, **Languages…**, which opens
+the document settings at the language, **New element under it**, **A
+document into it…** and **Delete**, which takes the element
 with all under it, and goes up. The project itself is not deleted here, but
 from the home page. Over that bar, the bar of the project has **Diagram**,
 **Text**, **Side by side**, **Preview** and **Share**; side by side, each
@@ -1117,9 +1131,10 @@ changed.
 The title becomes an element under the element in view, the top of what is
 brought in. Every heading becomes an element under the heading above it,
 with the text under the heading as its text; what stands before the first
-heading becomes the text of the element at the top. Author, date, abstract,
-keywords and language are set on that element, as the details of its
-document.
+heading becomes the text of the element at the top. Author, date, keywords
+and language are set on that element, as the details of its document; the
+abstract becomes an element of the kind **Abstract**, first under the top
+(see *What goes into the document*).
 
 Before anything is made you are shown what was found: the title, which you
 can change, how many parts, words, notes, figures, tables and citations, and
@@ -1361,12 +1376,30 @@ chapter. Two things change that, both in the menu of an element:
   under the project, with the thoughts as trees beside it, and that tree is
   what is printed.
 
-What a document is set by, its authors, format, reference style, language,
-date, keywords and cover, is set on an element and holds for everything
-under it that sets none of its own: set once on the project, it holds for
-every chapter printed alone. The title, the subtitle and the abstract are an
+What a document is set by, its template, layout, reference style, language,
+authors, date, keywords and identifiers, is set on an element and holds for
+everything under it that sets none of its own: set once on the project, it
+holds for every chapter printed alone. The title and the subtitle are an
 element's own, and never taken from above: a chapter printed alone is not
-titled as the book. See *The preview, and the manuscript*.
+titled as the book. See *Templates* and *The document settings*.
+
+An element can also be a **part** of the document: the abstract, the
+dedication, an appendix, the acknowledgements, the cover. Such an element is
+of one of the kinds that come with Glaukopis (see *Kinds of elements*), and
+is written in the tree as any other; the kind says where it is printed. The
+**front matter** is printed before the text and the body, the **back
+matter** after the last part of the body, each where its own place says, and
+the **cover** on no page of the document: an element of the kind **Cover** is
+what the e-book takes its cover from, and a cover of its own is made by a
+later version. A part belongs to the element it stands directly under: the
+abstract under the book is the book's, and the abstract under chapter three
+is chapter three's, printed at the head of the chapter when the book is
+printed and as the abstract of the document when the chapter is printed
+alone. Of a kind a document has one of, such as the abstract, the first
+among the elements beside one another is used; the others are marked on
+their label, and the checklist of the document settings names them. Nothing
+is lost: a part the template has no place for is printed all the same, after
+the parts the template lists in front or at the back.
 
 ## The preview, and the manuscript
 
@@ -1673,7 +1706,7 @@ with make the same document of it.
 The language of an element decides what its document prints in words of its
 own: the headings of the notes, the abstract and the bibliography, what a
 figure and a table are called, and the words of the reference style, such as
-"and", "p." and "edited by". A format that has words of its own keeps them;
+"and", "p." and "edited by". A layout that has words of its own keeps them;
 those it has as they are in English are printed in the language of the
 text.
 
