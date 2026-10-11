@@ -171,7 +171,7 @@
   const broughtStyle = $derived(
     template?.style
       ? styleName(template.style)
-      : format?.style && !own.format
+      : format?.style
         ? styleName(format.style)
         : t('document-window-usual', { name: usualStyle }),
   );

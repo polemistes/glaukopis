@@ -45,7 +45,7 @@ class Documents {
   loaded = $state(false);
   /** Rises when a format or a template has been changed: what was made of it is made anew. */
   changed = $state(0);
-  #formats = new Map<string, DocumentFormat>();
+  #formats = new SvelteMap<string, DocumentFormat>();
   /**
    * The templates that have been read, by their ids; null for one that
    * could not be. Reactive, so that what chose by a template not yet read
@@ -116,6 +116,16 @@ class Documents {
     this.#formats.delete(id);
   }
 
+  /**
+   * A format as read already, reactive; one not read yet is asked for, and
+   * what derives from this is made again when it arrives. Nothing until then.
+   */
+  formatCached(id: string): DocumentFormat | undefined {
+    const known = this.#formats.get(id);
+    if (known === undefined) queueMicrotask(() => this.format(id).catch(() => {}));
+    return known;
+  }
+
   templateSummary(id: string | undefined): TemplateSummary | undefined {
     return this.templates.find((f) => f.id === id);
   }
@@ -162,11 +172,13 @@ class Documents {
 
   /**
    * The template, style and format a document uses: the template its
-   * element says, or the writer's usual; the style and the format its
-   * element says, else what the template brings, else the writer's usual.
-   * The template is read if it has not been, and the choice made again
-   * when it arrives; where the application lacks it, the project's copy
-   * says what it brings.
+   * element says, or the writer's usual; the format its element says, else
+   * what the template brings, else the writer's usual; the style its
+   * element says, else what the template brings, else what the layout
+   * brings (a publisher's layout goes with its style), else the writer's
+   * usual. The template and the layout are read if they have not been, and
+   * the choice made again when they arrive; where the application lacks
+   * the template, the project's copy says what it brings.
    */
   choice(
     document: { template?: string; style?: string; format?: string },
@@ -174,10 +186,16 @@ class Documents {
   ): Choice {
     const template = document.template || settings.value.defaultTemplate || PLAIN_TEMPLATE;
     const brings = this.templateCached(template) ?? project?.templateCopy(template);
+    const format = document.format || brings?.layout || settings.value.defaultFormat;
+    const layoutBrings = this.formatCached(format)?.style;
     return {
       template,
-      style: document.style || brings?.style || settings.value.defaultStyle,
-      format: document.format || brings?.layout || settings.value.defaultFormat,
+      style:
+        document.style ||
+        brings?.style ||
+        (layoutBrings && this.style(layoutBrings) ? layoutBrings : '') ||
+        settings.value.defaultStyle,
+      format,
     };
   }
 }
