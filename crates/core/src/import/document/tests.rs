@@ -638,7 +638,7 @@ fn citations_by_key() {
         read.remarks,
         vec![
             "3 citations were found that are not yet tied to references of your library. They stand as the text \
-                 they were written as, and can be gone through when the map is made, and later."
+                 they were written as, and can be gone through when the document has been brought in, and later."
         ]
     );
 }
@@ -682,7 +682,7 @@ fn what_is_said_of_the_citations_that_were_found() {
     assert_eq!(
         said(1, 0),
         "1 citation was found that is not yet tied to a reference of your library. It stands as the text it was \
-             written as, and can be gone through when the map is made, and later."
+             written as, and can be gone through when the document has been brought in, and later."
     );
     assert!(said(1, 1).starts_with(
         "1 citation was found that is not yet tied to a reference of your library, made by a program that keeps \
@@ -1230,9 +1230,9 @@ fn all_text(read: &Imported) -> String {
     text
 }
 
-const CAPTIONS: &str = "3 captions began with a word and a number, such as “Figure 1:”. They are left out: the map \
-                            numbers its figures and tables itself. Where the text names one of them by its number, \
-                            that is text as it was written, and does not follow the numbers of the map.";
+const CAPTIONS: &str = "3 captions began with a word and a number, such as “Figure 1:”. They are left out: Glaukopis \
+                            numbers figures and tables itself. Where the text names one of them by its number, \
+                            that is text as it was written, and does not follow the numbers as they are printed.";
 const TRACKED: &str = "The document has changes that are tracked. The text is brought in as it stands when all of \
                            them are accepted.";
 
@@ -1370,9 +1370,9 @@ fn pictures_that_the_file_holds_and_the_text_has_not_are_told_of() {
     assert_eq!(
         read.remarks,
         vec![
-            "2 captions began with a word and a number, such as “Figure 1:”. They are left out: the map numbers \
-                 its figures and tables itself. Where the text names one of them by its number, that is text as it \
-                 was written, and does not follow the numbers of the map.",
+            "2 captions began with a word and a number, such as “Figure 1:”. They are left out: Glaukopis numbers \
+                 figures and tables itself. Where the text names one of them by its number, that is text as it \
+                 was written, and does not follow the numbers as they are printed.",
             "1 picture that the file holds is not in the text that was read, and is left out. It may stand in \
                  the head or the foot of the pages, or in a drawing.",
             TRACKED,
@@ -1745,7 +1745,7 @@ fn tags_that_the_library_has_and_has_not_in_files_of_text() {
             read.remarks,
             vec![format!(
                 "{} citations were found that are not yet tied to references of your library. They stand as \
-                     the text they were written as, and can be gone through when the map is made, and later.",
+                     the text they were written as, and can be gone through when the document has been brought in, and later.",
                 expected.len()
             )],
             "{name}"
