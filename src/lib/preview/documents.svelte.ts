@@ -191,14 +191,14 @@ export async function documentRequest(
   projectId: string,
   at: string,
 ): Promise<DocumentRequest> {
-  const choice = documents.choice(project.documentOf(at).settings);
-  const template = await documents.templateOf(choice.template);
+  const { settings } = project.documentOf(at);
+  const template = await documents.templateOf(documents.choice(settings).template);
   // The choice again, with the template read: it may bring the style or the format.
-  const chosen = documents.choice(project.documentOf(at).settings);
-  const format = await documents.format(chosen.format);
+  const choice = documents.choice(settings);
+  const format = await documents.format(choice.format);
   return {
     document: buildDocument(project, at),
-    style: chosen.style,
+    style: choice.style,
     format: $state.snapshot(format) as DocumentFormat,
     template: $state.snapshot(template) as Template,
     output: 'document',

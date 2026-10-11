@@ -16,6 +16,7 @@ import type { DocumentFormat } from '$lib/api/documents';
 import { documents } from '$lib/preview/documents.svelte';
 import { walkDocument } from '$lib/project/model/document';
 import type { Project } from '$lib/project/model/project.svelte';
+import { partOf } from '$lib/project/parts';
 import type { RefForm } from '$lib/project/model/text';
 import { PROJECT } from '$lib/project/model/types';
 
@@ -130,6 +131,8 @@ export function count(project: Project, at: string, counting: Counting = PLAIN):
   walkDocument(project, at, (placed) => {
     const node = project.node(placed.id);
     if (!node) return;
+    // What a cover output alone prints has no number among the figures of the text.
+    if (placed.part && partOf(project, project.node(placed.part)?.kind)?.place === 'cover') return;
     if (placed.printed && placed.level > 0) {
       const level = Math.min(Math.max(placed.level, 1), counting.deepest);
       let number: string | null = null;
