@@ -80,14 +80,14 @@ ocr-searchable-failed = { $count ->
    *[other] { $count } sider kunne ikke leses.
 }
 
-## Et kart fra en PDF i biblioteket
+## En PDF i biblioteket lest inn i et prosjekt, som et tre av elementer
 
-ocr-map-button = Et kart av teksten i den…
-ocr-map-title = Et kart av teksten
+ocr-map-button = Teksten i den som elementer…
+ocr-map-title = Teksten som elementer
 ocr-map-into = Inn i prosjektet
 ocr-map-new-project = Et nytt prosjekt, oppkalt etter den
-ocr-map-making = Lager kartet…
-ocr-map-failed = Kartet kunne ikke lages.
+ocr-map-making = Lager elementene…
+ocr-map-failed = Elementene kunne ikke lages.
 
 ## Teksten i et bilde i lageret
 
@@ -96,7 +96,7 @@ ocr-picture-title = Teksten i bildet
 ocr-picture-empty = Ingen tekst ble funnet i bildet.
 ocr-picture-copy = Kopier
 ocr-picture-copied = Teksten er kopiert
-ocr-picture-map = Lag et kart av den
+ocr-picture-map = Lag et element av den
 
 ## Tesseract i innstillingene
 

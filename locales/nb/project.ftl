@@ -1,4 +1,4 @@
-# Et prosjekt: visningen av det, fanene til kartene, det som gjøres med
+# Et prosjekt: visningen av det, linjen over kartet, det som gjøres med
 # elementer, og panelene ved siden av med referansene og bildene.
 
 project-list-unreadable = Prosjektene kunne ikke leses
@@ -60,9 +60,20 @@ project-cited-in-element = { $count ->
    *[other] Det er vist til { $count } referanser i elementet
 }
 
-## Fanene til kartene
+## Linjen over kartet: hvor du er, og det som gjøres med elementet du står i
 
 project-untitled = Uten navn
+project-where = Hvor du er
+project-up = Opp
+project-up-hint = Opp til «{ $name }» · Alt+Pil opp
+project-siblings-hint = Elementene ved siden av dette: velg ett for å vise det
+project-trees-hint = Elementene under prosjektet: velg ett for å vise det
+project-shown-beside = ved siden av dette
+project-element-name = Navnet på elementet
+project-this-element-actions = Dette elementet
+project-document-details = Dokumentopplysninger …
+project-new-element-under = Nytt element under
+project-document-into = Et dokument inn i det …
 project-drop-on-map = Slipp på et kart for å flytte dit · hold Ctrl for å kopiere
 project-open-beside = Åpne ved siden av
 project-open-beside-hint = To kart side om side, for å flytte elementer mellom dem
@@ -75,6 +86,7 @@ project-copied-to = Kopiert til «{ $name }»
 project-moved-to = Flyttet til «{ $name }»
 project-other-projects = Andre prosjekter
 project-send-failed = Kunne ikke skrive i «{ $project }». Her er ingenting endret.
+project-send-no-element = Elementet er ikke lenger i det prosjektet.
 
 ## Det som gjøres med elementer, i diagrammet og i teksten
 
@@ -90,16 +102,20 @@ project-heading-hint = Av: navnet er en merkelapp for deg; bare teksten skrives 
 project-leave-out = Utelat fra dokumentet
 project-leave-out-hint = Med alt som står under
 project-stands-for = Står for «{ $name }»
-project-stand-for = La det stå for et annet kart
-project-stand-for-heading = I dokumentet tar kartet elementets plass
+project-stand-for = La det stå for et annet element
+project-stand-for-heading = I dokumentet tar elementet du velger, plassen til dette
 project-stand-for-none = Ingen
+project-copy-to = Kopier til
 project-cut = Klipp ut
 project-cut-not-removed = Det som ble klippet ut, ble limt inn, men kunne ikke tas bort fra prosjektet det kom fra
 project-copy = Kopier
 project-paste-under = Lim inn under
+project-move-to = Flytt til
 project-tidy-branch = Rydd i denne grenen
 project-place-automatically = Plasser automatisk
 project-delete-keeping = Slett, men behold det som står under
+project-itself-stays = Selve prosjektet blir stående
+project-itself-stays-detail = Slett prosjektet fra prosjektsiden.
 project-deleted = { $under ->
     [0] «{ $name }» ble slettet
     [one] «{ $name }» ble slettet, sammen med { $under } element under det
@@ -125,7 +141,7 @@ project-name-placeholder = Navn
 project-write-here = Skriv her. Skriv @ for å henvise til en kilde.
 project-words = { $count } ord
 project-read-on = Dobbeltklikk for å lese videre
-project-stands-for-map = Står for kartet «{ $name }»
+project-stands-for-map = Står for «{ $name }»
 project-name-not-printed = Navnet skrives ikke ut
 project-left-out-of-document = Utelatt fra dokumentet
 
@@ -177,8 +193,9 @@ project-other-here = { $name } er her
 project-link-placeholder = Hvordan de henger sammen
 project-link-label = Merkelapp på assosiasjonen
 
-## En kopi og originalen, i et annet kart.
+## En kopi og originalen.
 copy-title = Kopien og originalen
+copy-from = Kopiert fra «{ $name }»
 copy-original-changed = Originalen er endret siden den ble kopiert, eller siden det sist ble sett.
 copy-original-same = Originalen er som den var da den ble kopiert.
 copy-original-unknown = Om originalen er endret siden den ble kopiert, vites ikke: kopien ble laget før det ble tatt vare på.
@@ -192,6 +209,8 @@ copy-seen = Behold kopien som den er
 copy-take = Ta over originalens navn og tekst
 copy-changed-mark = Originalen er endret siden dette ble kopiert
 copy-compare = Sammenlign med originalen …
+copy-copied-from = Kopiert fra «{ $name }»
+copy-copied-from-changed = Kopiert fra «{ $name }», som er endret siden
 
 ## Hvor langt skrivingen av et element er kommet, slik den som skriver sier.
 status = Status

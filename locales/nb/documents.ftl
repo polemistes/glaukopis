@@ -1,16 +1,18 @@
-# Dokumenter som hentes inn, hvert for å bli et kart (ADR 0012), på
-# bokmål. Se locales/README.md.
+# Dokumenter som hentes inn, hvert for å bli et tre av elementer under
+# elementet du står i (ADR 0012, 0037), på bokmål. Se locales/README.md.
 
 documents-choose = Et dokument å hente inn
 documents-filter = Dokumenter
 documents-filter-all = Alle filer
+documents-title-element = Et dokument inn i elementet du står i
 documents-title-project = Et prosjekt av et dokument
 documents-reading = Leser { $file } …
 documents-reading-hint = Et langt dokument tar litt tid.
 documents-no-pandoc = Dokumenter av dette slaget leses av Pandoc, som ikke er installert eller ikke ble funnet. Hvor det er, kan angis i innstillingene.
 documents-unread = Filen kunne ikke leses.
 documents-title = Tittel
-documents-title-hint-project = Navnet på prosjektet, på kartet i det, og på elementet i midten av kartet.
+documents-title-hint-element = Navnet på elementet øverst i dokumentet, under elementet du står i.
+documents-title-hint-project = Navnet på prosjektet, og på elementet øverst i dokumentet i det.
 documents-untitled = Uten navn
 
 ## Det dokumentet har, under antallet av hvert.
@@ -75,10 +77,17 @@ documents-found-made = { $count ->
 documents-found-some-made = { $count } kildehenvisninger ble funnet, { $made } av dem laget av et referanseverktøy.
 documents-at-once = Lag kildehenvisninger med én gang av dem Zotero har laget, der biblioteket ditt har verket
 documents-at-once-notes = En note som ikke er annet enn en kildehenvisning, blir en kildehenvisning i linjen, som henvisningsstilen setter i en note eller i linjen; en note som sier mer, beholder kildehenvisningen sin. Det du har valgt for noter i panelet med funne kildehenvisninger, for alle som følger, gjelder også her.
+documents-go-through-element = Gå gjennom kildehenvisningene når dokumentet er hentet inn
 documents-go-through-project = Gå gjennom kildehenvisningene når prosjektet er laget
 
-## Å lage kartet.
+## Å lage elementene.
 
 documents-to-know = Verdt å vite
-documents-making = Lager kartet …
+documents-making = Henter inn dokumentet …
+documents-make-element = Hent det inn
 documents-make-project = Lag prosjektet
+documents-failed = Dokumentet kunne ikke hentes inn.
+
+## Det et element arver som dokument
+
+documents-inherited-from = Fra { $name }

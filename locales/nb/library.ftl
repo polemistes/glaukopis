@@ -315,19 +315,21 @@ library-collection-count = { $count ->
    *[other] { $count } samlinger
 }
 
-## Et kart over biblioteket, eller over en samling: et nytt prosjekt.
+## Et kart over biblioteket, eller over en samling: et tre av elementer øverst i et prosjekt, nytt eller valgt.
 
 library-map-title-library = Et kart over biblioteket
 library-map-title-collection = Et kart over en samling
 library-map-library-name = Biblioteket
 library-map-name = Navn
-library-map-name-hint = Navnet på prosjektet, på kartet i det, og på elementet i midten av kartet.
-library-map-what-library = Samlingene blir elementer, ordnet slik de er, og hver referanse et element under samlingen sin, med en henvisning til den som tekst. Referanser som ikke er i noen samling, står i midten.
+library-map-name-hint = Navnet på elementet øverst i kartet, og på et nytt prosjekt som lages for det.
+library-map-into = Inn i prosjektet
+library-map-new-project = Et nytt prosjekt, oppkalt etter det
+library-map-what-library = Samlingene blir elementer, ordnet slik de er, og hver referanse et element under samlingen sin, med en henvisning til den som tekst. Referanser som ikke er i noen samling, står øverst.
 library-map-what-collection = Samlingene i den blir elementer, ordnet slik de er, og hver referanse et element under samlingen sin, med en henvisning til den som tekst.
 library-map-nothing = Det er ingen referanser å sette på kartet.
-library-map-make = Lag prosjektet
-library-map-making = Lager prosjektet …
-library-map-failed = Prosjektet kunne ikke lages.
+library-map-make = Lag kartet
+library-map-making = Lager kartet …
+library-map-failed = Kartet kunne ikke lages.
 
 ## Å hente inn referanser, fra hvor som helst i programmet.
 

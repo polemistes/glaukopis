@@ -3,7 +3,7 @@
 # settings of languages, and over such a project. See locales/README.md.
 
 words-title = Ordene i Glaukopis, som et prosjekt
-words-hint = Lager et prosjekt av ordene i grensesnittet på et språk, så du kan lese dem gjennom og rette dem her, med stavekontroll, søk og historikk: et kart for hver del av programmet, et element for hver melding, med engelsken over ordene. Det du endrer, skrives tilbake som Fluent-filer med knappen over prosjektet, til mappen for språket i en kopi av koden til Glaukopis, eller til en hvilken som helst mappe, for å sendes til oss.
+words-hint = Lager et prosjekt av ordene i grensesnittet på et språk, så du kan lese dem gjennom og rette dem her, med stavekontroll, søk og historikk: et tre for hver del av programmet, et element for hver melding, med engelsken over ordene. Det du endrer, skrives tilbake som Fluent-filer med knappen over prosjektet, til mappen for språket i en kopi av koden til Glaukopis, eller til en hvilken som helst mappe, for å sendes til oss.
 words-language = Språk
 words-make = Lag prosjektet
 words-making = Lager det …

@@ -2,6 +2,10 @@
 
 diagram-map = Kart
 diagram-idea = Idé
+diagram-new-here = Nytt element her
+diagram-new-here-hint = En tanke som ikke har fått noen plass ennå, under elementet du står i
+diagram-open-as-map = Åpne som kart
+diagram-open-as-map-hint = Elementet i midten, med det som står under
 diagram-show-all = Vis hele kartet
 diagram-tidy = Rydd i hele kartet
 diagram-tidy-hint = Hvert element går tilbake til sin automatiske plass

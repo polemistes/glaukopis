@@ -99,13 +99,13 @@ core-import-document-notebook = Jupyter-notatbok
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] Det ble funnet én kildehenvisning som ennå ikke er knyttet til en referanse i biblioteket ditt, laget av et referanseprogram. Den står slik den ble skrevet, og kan gås gjennom når kartet lages, og senere.
-       *[none] Det ble funnet én kildehenvisning som ennå ikke er knyttet til en referanse i biblioteket ditt. Den står slik den ble skrevet, og kan gås gjennom når kartet lages, og senere.
+        [all] Det ble funnet én kildehenvisning som ennå ikke er knyttet til en referanse i biblioteket ditt, laget av et referanseprogram. Den står slik den ble skrevet, og kan gås gjennom når dokumentet er hentet inn, og senere.
+       *[none] Det ble funnet én kildehenvisning som ennå ikke er knyttet til en referanse i biblioteket ditt. Den står slik den ble skrevet, og kan gås gjennom når dokumentet er hentet inn, og senere.
     }
    *[other] { $made ->
-        [all] Det ble funnet { $count } kildehenvisninger som ennå ikke er knyttet til referanser i biblioteket ditt, alle laget av et referanseprogram. De står slik de ble skrevet, og kan gås gjennom når kartet lages, og senere.
-        [some] Det ble funnet { $count } kildehenvisninger som ennå ikke er knyttet til referanser i biblioteket ditt, { $some } av dem laget av et referanseprogram. De står slik de ble skrevet, og kan gås gjennom når kartet lages, og senere.
-       *[none] Det ble funnet { $count } kildehenvisninger som ennå ikke er knyttet til referanser i biblioteket ditt. De står slik de ble skrevet, og kan gås gjennom når kartet lages, og senere.
+        [all] Det ble funnet { $count } kildehenvisninger som ennå ikke er knyttet til referanser i biblioteket ditt, alle laget av et referanseprogram. De står slik de ble skrevet, og kan gås gjennom når dokumentet er hentet inn, og senere.
+        [some] Det ble funnet { $count } kildehenvisninger som ennå ikke er knyttet til referanser i biblioteket ditt, { $some } av dem laget av et referanseprogram. De står slik de ble skrevet, og kan gås gjennom når dokumentet er hentet inn, og senere.
+       *[none] Det ble funnet { $count } kildehenvisninger som ennå ikke er knyttet til referanser i biblioteket ditt. De står slik de ble skrevet, og kan gås gjennom når dokumentet er hentet inn, og senere.
     }
 }
 core-import-document-endnote = { $count ->
@@ -116,8 +116,8 @@ core-import-document-bookmarks = { $count ->
     [one] Dokumentet har én kildehenvisning i et bokmerke, og det den viser til, kunne ikke leses: den står som tekst. Zotero lagrer dem på en annen måte når dokumentinnstillingene sier det.
    *[other] Dokumentet har { $count } kildehenvisninger i bokmerker, og det de viser til, kunne ikke leses: de står som tekst. Zotero lagrer dem på en annen måte når dokumentinnstillingene sier det.
 }
-core-import-document-bibliography = Dokumentet har en liste over det det viser til, under «{ $heading }». Den hentes inn som tekst, som resten. Kartet lager sin egen litteraturliste av det som vises til i det.
-core-import-document-bibliography-made = Dokumentet har en liste over det det viser til, laget av programmet som holder orden på referansene. Den hentes inn som tekst, som resten. Kartet lager sin egen litteraturliste av det som vises til i det.
+core-import-document-bibliography = Dokumentet har en liste over det det viser til, under «{ $heading }». Den hentes inn som tekst, som resten. Glaukopis lager sin egen litteraturliste av det som vises til.
+core-import-document-bibliography-made = Dokumentet har en liste over det det viser til, laget av programmet som holder orden på referansene. Den hentes inn som tekst, som resten. Glaukopis lager sin egen litteraturliste av det som vises til.
 core-import-document-tracked = Dokumentet har sporede endringer. Teksten hentes inn slik den står når alle er godtatt.
 core-import-document-comments = Dokumentet har kommentarer i margen, og de utelates.
 core-import-document-heading-notes = { $count ->
@@ -125,8 +125,8 @@ core-import-document-heading-notes = { $count ->
    *[other] { $count } noter til overskrifter står i begynnelsen av teksten under dem: en overskrift kan ikke ha en note.
 }
 core-import-document-labels = { $count ->
-    [one] Én bildetekst begynte med et ord og et tall, som «{ $first }». Ordet og tallet er utelatt: kartet nummererer figurene og tabellene sine selv. Der teksten viser til en av dem med nummeret, er det tekst slik den ble skrevet, og det følger ikke nummerne i kartet.
-   *[other] { $count } bildetekster begynte med et ord og et tall, som «{ $first }». Ordene og tallene er utelatt: kartet nummererer figurene og tabellene sine selv. Der teksten viser til en av dem med nummeret, er det tekst slik den ble skrevet, og det følger ikke nummerne i kartet.
+    [one] Én bildetekst begynte med et ord og et tall, som «{ $first }». Ordet og tallet er utelatt: Glaukopis nummererer figurer og tabeller selv. Der teksten viser til en av dem med nummeret, er det tekst slik den ble skrevet, og det følger ikke numrene slik de skrives ut.
+   *[other] { $count } bildetekster begynte med et ord og et tall, som «{ $first }». Ordene og tallene er utelatt: Glaukopis nummererer figurer og tabeller selv. Der teksten viser til en av dem med nummeret, er det tekst slik den ble skrevet, og det følger ikke numrene slik de skrives ut.
 }
 core-import-document-label-example = Figur 1:
 core-import-document-caption-notes = { $count ->

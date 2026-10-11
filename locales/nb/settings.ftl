@@ -31,7 +31,7 @@ settings-sample = Syng, gudinne, om vreden til Peleus-sønnen Akilles
 ## Nye dokumenter
 
 settings-new-documents = Nye dokumenter
-settings-new-documents-hint = Det et nytt kart begynner med. Hvert kart kan få andre i forhåndsvisningen.
+settings-new-documents-hint = Det dokumentene i et nytt prosjekt begynner med. Hvert element kan få andre i forhåndsvisningen.
 settings-reference-style = Referansestil
 settings-document-format = Dokumentformat
 
@@ -72,7 +72,7 @@ settings-lookup-about = DOI-er hos doi.org, Crossref og DataCite; bøker i katal
 
 settings-language = Språk
 settings-language-interface = Grensesnittet
-settings-language-interface-hint = Ordene i programmet. Tekstene dine er på språket til kartene sine.
+settings-language-interface-hint = Ordene i programmet. Tekstene dine er på språket til prosjektene sine.
 settings-language-system = Som systemet ({ $language })
 settings-language-texts = Språk for nye tekster
-settings-language-texts-hint = Språket et nytt kart skrives på. Det avgjør hvilke ord dokumentet skriver ut, og hvilken ordbok rettskrivingen kontrolleres mot. Hvert kart kan få et annet språk under Språk … i menyen sin, og et prosjekt kan få et eget språk for de nye kartene sine.
+settings-language-texts-hint = Språket et nytt prosjekt skrives på. Det avgjør hvilke ord dokumentene skriver ut, og hvilken ordbok rettskrivingen kontrolleres mot. Hvert element kan få et annet språk under Språk … i menyen sin, og det som står under, følger med.

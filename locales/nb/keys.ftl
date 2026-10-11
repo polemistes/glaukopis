@@ -27,6 +27,7 @@ keys-palette = Hva skal gjøres?
 keys-sheet = Tastene
 keys-diagram-or-text = Diagram eller tekst
 keys-projects-pane = Prosjektlisten til venstre
+keys-up = Opp til elementet over dette
 keys-preview = Forhåndsvisning og eksport
 keys-side-references = Referanser
 keys-side-pictures = Bildene i prosjektet

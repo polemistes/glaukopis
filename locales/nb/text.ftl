@@ -1,14 +1,18 @@
-# Et kart som tekst: elementene etter hverandre, hvert med overskrift og tekst.
+# Et element som tekst: navnet som tittel, elementene under etter hverandre,
+# hvert med overskrift og tekst.
 
 text-title = Tittel
 text-name = Navnet på elementet
 text-first-section = Skriv her, eller trykk Ctrl+Enter for å begynne på første del.
 text-not-printed = skrives ikke ut
 text-grip = Flytt eller endre dette elementet
+text-include = I dokumentet står { $name } her, med alt under seg.
 text-include-open = Åpne det
 text-split = Del her
 text-split-hint = Det som står etter markøren, blir et nytt element
 text-join = Slå sammen med elementet over
+text-open-as-map = Åpne som kart
+text-open-as-map-hint = Det vises alene, med det som står under
 
 ## Å brette sammen det som står under et element, og teksten til elementet
 

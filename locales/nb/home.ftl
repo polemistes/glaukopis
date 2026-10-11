@@ -43,19 +43,21 @@ home-pane = Prosjektlisten
 home-pane-toggle = Prosjektlisten
 home-pane-close = Lukk prosjektlisten
 home-pane-between = Mellom prosjektlisten og prosjektet
+home-tree-unfold = Vis det som står under
+home-tree-fold = Skjul det som står under
 home-open-now = Det er åpent nå
 
 ## Et kart over prosjektene
 
 home-map-menu = Et kart over prosjektene …
 home-map-title = Et kart over prosjektene
-home-map-about = Et nytt prosjekt med ett kart: mappene som elementer, og under hver mappe prosjektene i den.
+home-map-about = Et nytt prosjekt: mappene som elementer, og under hver mappe prosjektene i den.
 home-map-name-default = Prosjekter
 home-map-what = Hva kartet rommer
 home-map-names = Bare navnene
 home-map-names-hint = Ett element for hvert prosjekt, med beskrivelsen som tekst.
 home-map-everything = Med alt de rommer
-home-map-everything-hint = Under hvert prosjekt kartene dets, og under hvert kart alle elementene, med navn og tekster.
+home-map-everything-hint = Under hvert prosjekt alle elementene i det, med navn og tekster.
 home-map-note = Siteringene beholder referansene sine. En kryssreferanse til en figur eller en del peker på ingenting i det nye prosjektet, og kommentarene blir igjen.
 home-map-reading = Leser «{ $name }» …
 home-map-working = Lager kartet …
@@ -65,15 +67,15 @@ home-map-failed = Kartet over prosjektene kunne ikke lages
 ## Når det ikke er noen ennå
 
 home-welcome = Velkommen til Glaukopis
-home-welcome-text = Et prosjekt rommer arbeidet med én bok eller artikkel: kartene over ideene dine, tekstene du skriver inn i dem, og referansene de bygger på.
+home-welcome-text = Et prosjekt rommer arbeidet med én bok eller artikkel: kartet over ideene dine, tekstene du skriver inn i det, og referansene de bygger på.
 home-begin = Begynn på et prosjekt
 
 ## Et prosjekt i listen
 
 home-more-maps = og { $count } til
 home-maps = { $count ->
-    [one] { $count } kart
-   *[other] { $count } kart
+    [one] { $count } tre
+   *[other] { $count } trær
 }
 home-elements = { $count ->
     [one] { $count } element

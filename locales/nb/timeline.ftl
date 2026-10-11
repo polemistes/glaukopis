@@ -11,15 +11,15 @@ timeline-unit = Hva en enhet heter
 timeline-unit-placeholder = år, dag, syklus …
 timeline-units-hint = Tider er tall av enheten: År 12, Dag 3, eller bare 12. De kan være negative.
 timeline-lanes = Baner
-timeline-lanes-given = Hvert barn av sentrum er en bane, til du velger. En bane rommer det som er plassert i grenen; dens egen plassering, om den har en, er banens spenn.
+timeline-lanes-given = Hvert barn av elementet du står i, er en bane, til du velger. En bane rommer det som er plassert i grenen; dens egen plassering, om den har en, er banens spenn.
 timeline-lanes-chosen = Banene du valgte, i tekstens rekkefølge.
-timeline-lanes-reset = Hvert barn av sentrum igjen
+timeline-lanes-reset = Hvert barn av elementet du står i igjen
 timeline-one-lane = Én bane
 timeline-each-child = { $count ->
     [one] Barnet en bane
    *[other] Hvert av { $count } barn en bane
 }
-timeline-no-branches = Kartet har ingenting under sentrum ennå.
+timeline-no-branches = Elementet du står i, har ingenting under seg ennå.
 timeline-lanes-by-kind = Baner etter type
 timeline-lanes-by-kind-hint = Hvert element av en type en egen bane: hver person, hvert sted.
 timeline-each-of-kind = Hver en bane
