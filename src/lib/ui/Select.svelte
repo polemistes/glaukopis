@@ -86,6 +86,9 @@
     appearance: none;
     -webkit-appearance: none;
     width: 100%;
+    /* WebKit lays out the options as wide as the longest is, past the
+       chooser: they would widen what it stands in, and have it scroll. */
+    overflow-x: clip;
     height: var(--control-h);
     padding: 0 28px 0 9px;
     background: var(--paper-raised);

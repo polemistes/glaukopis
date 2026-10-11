@@ -336,13 +336,11 @@ try {
   await newProject('Vreden');
   await app.keys(['Control', 'p']);
   await app.waitFor('.preview', 8000);
-  await app.click('.preview button[aria-label="Title, authors, abstract"]');
-  await app.waitFor('dialog select');
-  await app.exec(
-    `const s = document.querySelector('dialog select'); s.value = 'nb'; s.dispatchEvent(new Event('change', { bubbles: true }));`,
-  );
-  await app.clickText('dialog footer button', 'Save');
-  await app.waitGone('dialog');
+  await app.click('.preview button.in-use');
+  await app.waitForText('dialog[open] h2', 'Document settings', 5000);
+  await app.documentSection('Language');
+  await app.documentChoose('Language of the text', 'nb');
+  await app.closeDocumentSettings();
   await app.keys(['Control', 'p']);
   await app.keys(['Control', 'd']);
   await app.waitFor('.text-view .section');
@@ -391,13 +389,11 @@ try {
   // A language without a dictionary: nothing is underlined, and F7 says why.
   await app.keys(['Control', 'p']);
   await app.waitFor('.preview', 8000);
-  await app.click('.preview button[aria-label="Title, authors, abstract"]');
-  await app.waitFor('dialog select');
-  await app.exec(
-    `const s = document.querySelector('dialog select'); s.value = 'la'; s.dispatchEvent(new Event('change', { bubbles: true }));`,
-  );
-  await app.clickText('dialog footer button', 'Save');
-  await app.waitGone('dialog');
+  await app.click('.preview button.in-use');
+  await app.waitForText('dialog[open] h2', 'Document settings', 5000);
+  await app.documentSection('Language');
+  await app.documentChoose('Language of the text', 'la');
+  await app.closeDocumentSettings();
   await app.keys(['Control', 'p']);
   await until('the underlines to go', async () => (await underlined()).length === 0);
   await app.click('.text-view .section .body');
