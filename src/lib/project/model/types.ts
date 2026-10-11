@@ -35,21 +35,22 @@ export interface DocumentSettings {
   title?: string;
   subtitle?: string;
   authors?: Person[];
-  abstract?: string;
   keywords?: string[];
   date?: string;
+  /** Id of the template: what the document consists of (ADR 0038). */
+  template?: string;
   /** Id of the reference style. */
   style?: string;
-  /** Id of the document format. */
+  /** Id of the document format: the layout. */
   format?: string;
   /** Language of the text, as a BCP 47 tag: en-GB, nb, de, el. */
   language?: string;
-  /** The cover of the e-book: a picture of the store, by its hash, and its kind of file. */
-  cover?: { hash: string; extension: string };
+  /** What the file formats carry as metadata: isbn, edition, publisher, place, doi. */
+  identifiers?: Record<string, string>;
 }
 
 /** The settings an element has of its own, never from one over it: a chapter printed alone is not titled as the book. */
-export const OWN_SETTINGS: readonly (keyof DocumentSettings)[] = ['title', 'subtitle', 'abstract'];
+export const OWN_SETTINGS: readonly (keyof DocumentSettings)[] = ['title', 'subtitle'];
 
 /**
  * The kinds of paragraph and of words the writer has pinned to the hand of
@@ -103,6 +104,8 @@ export interface KindRecord {
   template: string;
   /** The kind of paragraph the text of an element of the kind is written in (`editor/kinds.ts`); nothing for text. */
   begins?: string;
+  /** The kind of the catalogue of `project/parts.ts` it is in the document; nothing for a name and a colour only (ADR 0038). */
+  basedOn?: string;
   order: string;
 }
 

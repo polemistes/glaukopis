@@ -15,6 +15,7 @@
   import TextField from '$lib/ui/TextField.svelte';
   import { KIND_COLOURS, nextKindColour } from './kinds';
   import { rememberKind } from './kinds.svelte';
+  import { PART_GROUPS, PARTS } from './parts';
   import type { Project } from './model/project.svelte';
 
   interface Props {
@@ -37,6 +38,8 @@
   let template = $state(existing?.template ?? '');
   /** The kind of paragraph the text begins in; empty for text. */
   let begins = $state(existing?.begins ?? '');
+  /** What an element of the kind is in the document: a kind of the catalogue of parts; empty for nothing. */
+  let basedOn = $state(existing?.basedOn ?? '');
   let field = $state<HTMLInputElement>();
 
   /**
@@ -87,9 +90,9 @@
   function keep() {
     if (!name.trim() || taken) return;
     if (id) {
-      project.updateKind(id, { name, colour, template, begins });
+      project.updateKind(id, { name, colour, template, begins, basedOn });
     } else {
-      const made = project.createKind({ name, colour, template, begins });
+      const made = project.createKind({ name, colour, template, begins, basedOn });
       if (made && assign.length) {
         project.checkpoint();
         project.setKind(assign, made);
@@ -184,6 +187,21 @@
       </select>
       <span class="hint">{t('kinds-begins-hint')}</span>
     </label>
+
+    <label class="based-on">
+      <span class="label">{t('kinds-based-on')}</span>
+      <select bind:value={basedOn}>
+        <option value="">{t('kinds-based-on-none')}</option>
+        {#each PART_GROUPS as g (g.id)}
+          <optgroup label={g.label()}>
+            {#each PARTS.filter((p) => p.group === g.id) as p (p.id)}
+              <option value={p.id}>{p.label()}</option>
+            {/each}
+          </optgroup>
+        {/each}
+      </select>
+      <span class="hint">{t('kinds-based-on-hint')}</span>
+    </label>
   </div>
 
   {#snippet footer()}
@@ -246,7 +264,8 @@
     outline: none;
     border-color: var(--accent);
   }
-  .begins select {
+  .begins select,
+  .based-on select {
     display: block;
     width: 100%;
     height: 30px;
@@ -258,7 +277,8 @@
     font: inherit;
     font-size: var(--text-md);
   }
-  .begins select:focus {
+  .begins select:focus,
+  .based-on select:focus {
     outline: none;
     border-color: var(--accent);
   }

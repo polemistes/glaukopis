@@ -41,3 +41,6 @@ kinds-delete-message = { $count ->
     [one] The one element that is of it will be of no kind.
    *[other] The { $count } elements that are of it will be of no kind.
 }
+kinds-based-on = In the document
+kinds-based-on-none = Nothing in particular
+kinds-based-on-hint = What an element of this kind is in the document: an abstract, an appendix, a page of its own. A kind that is nothing in particular is a name and a colour.

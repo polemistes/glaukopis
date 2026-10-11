@@ -5,6 +5,7 @@
   import { hydrate } from '$lib/figures/hydrate.svelte';
   import { saidWords } from './elements';
   import { kindColour } from './kinds';
+  import { isDoubled, kindLabel } from './parts';
   import { describeWhen } from '$lib/timeline/solve';
   import { blocksHtml, excerpt } from './model/html';
   import type { Project } from './model/project.svelte';
@@ -33,7 +34,9 @@
   const included = $derived(node?.include ? project.node(node.include) : undefined);
   /** Where the element was copied from, if it is a copy of what is still there. */
   const copied = $derived(node?.origin ? project.copyOf(id) : null);
-  const kind = $derived(project.kind(node?.kind));
+  const kind = $derived(kindLabel(project, node?.kind));
+  /** A second of a kind the document has one of, among its siblings: not printed. */
+  const doubled = $derived(!!kind?.part && isDoubled(project, id));
   const when = $derived(
     node?.when
       ? describeWhen(
@@ -76,6 +79,7 @@
           <div class="kind">
             <span class="dot" style:background={kindColour(kind.colour).ink}></span>{kind.name}
           </div>
+          {#if doubled}<div>{t('parts-doubled')}</div>{/if}
         {/if}
         {#if copied?.original}
           {@const said = { name: copied.original.title || t('project-untitled') }}

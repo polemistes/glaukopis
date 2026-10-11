@@ -7,8 +7,6 @@
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
-  import { choosePicture } from '$lib/figures/views.svelte';
-  import Thumb from '$lib/pictures/Thumb.svelte';
 
   interface Props {
     project: Project;
@@ -52,12 +50,10 @@
   const keywordsFrom = $derived(keywords.trim() ? null : from('keywords'));
   const dateFrom = $derived(draft.date?.trim() ? null : from('date'));
   const languageFrom = $derived(draft.language ? null : from('language'));
-  const coverFrom = $derived(draft.cover ? null : from('cover'));
   const inheritedAuthors = $derived(
     (inherited.settings.authors ?? []).map((a) => a.name).join(', '),
   );
 
-  const abstractWords = $derived((draft.abstract ?? '').match(/[\p{L}\p{N}]+/gu)?.length ?? 0);
   const keywordCount = $derived(keywords.split(/[,;\n]/).filter((k) => k.trim()).length);
 
   function save() {
@@ -74,23 +70,15 @@
       title: draft.title?.trim(),
       subtitle: draft.subtitle?.trim(),
       authors,
-      abstract: draft.abstract?.trim(),
       keywords: keywords
         .split(/[,;\n]/)
         .map((k) => k.trim())
         .filter(Boolean),
       date: draft.date?.trim(),
       language: draft.language?.trim(),
-      cover: draft.cover,
     });
     project.checkpoint();
     onclose();
-  }
-
-  /** A picture of the store, chosen among the files, becomes the cover of the e-book. */
-  async function pickCover() {
-    const picture = await choosePicture();
-    if (picture) draft.cover = { hash: picture.hash, extension: picture.extension };
   }
 
   // Named by the system, in the language of the interface. Where the
@@ -169,18 +157,6 @@
 
     <label class="field">
       <span>
-        {t('preview-details-abstract')}
-        <em class:over={!!limits?.abstractWords && abstractWords > limits.abstractWords}>
-          {limits?.abstractWords
-            ? t('preview-details-words-of', { count: abstractWords, limit: limits.abstractWords })
-            : t('preview-details-words', { count: abstractWords })}
-        </em>
-      </span>
-      <textarea bind:value={draft.abstract} rows="5" class="serif"></textarea>
-    </label>
-
-    <label class="field">
-      <span>
         {t('preview-details-keywords')}
         {#if limits?.keywords}
           <em class:over={keywordCount > limits.keywords}
@@ -222,38 +198,6 @@
     </div>
   </div>
 
-  <div class="cover">
-    <span class="label">{t('preview-details-cover')}</span>
-    {#if draft.cover}
-      <div class="chosen">
-        <Thumb hash={draft.cover.hash} extension={draft.cover.extension} small />
-        <Button size="sm" variant="ghost" onclick={pickCover}
-          >{t('preview-details-cover-other')}</Button
-        >
-        <Button size="sm" variant="ghost" onclick={() => (draft.cover = undefined)}
-          >{t('common-remove')}</Button
-        >
-      </div>
-    {:else if coverFrom && inherited.settings.cover}
-      <div class="chosen">
-        <Thumb
-          hash={inherited.settings.cover.hash}
-          extension={inherited.settings.cover.extension}
-          small
-        />
-        <Button size="sm" variant="secondary" onclick={pickCover}
-          >{t('preview-details-cover-choose')}</Button
-        >
-        <small>{t('documents-inherited-from', { name: coverFrom })}</small>
-      </div>
-    {:else}
-      <Button size="sm" variant="secondary" onclick={pickCover}
-        >{t('preview-details-cover-choose')}</Button
-      >
-    {/if}
-    <span class="hint">{t('preview-details-cover-hint')}</span>
-  </div>
-
   {#snippet footer()}
     <Button variant="ghost" onclick={onclose}>{t('common-cancel')}</Button>
     <Button variant="primary" onclick={save}>{t('common-save')}</Button>
@@ -293,7 +237,6 @@
     color: var(--ink-4);
   }
   input,
-  textarea,
   select {
     width: 100%;
     min-height: var(--control-h);
@@ -303,16 +246,11 @@
     background: var(--paper-raised);
     outline: none;
   }
-  textarea {
-    padding: 8px 10px;
-    line-height: 1.5;
-    resize: vertical;
-  }
   .serif {
     font-family: var(--font-text);
     font-size: 14.5px;
   }
-  :is(input, textarea, select):focus {
+  :is(input, select):focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--focus-ring);
   }
@@ -348,35 +286,5 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-  }
-  .cover {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px 10px;
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid var(--line);
-  }
-  .cover .label {
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--ink-2);
-  }
-  .chosen {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .chosen :global(.thumb) {
-    width: 36px;
-    height: 48px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-s);
-  }
-  .cover .hint {
-    flex-basis: 100%;
-    font-size: var(--text-xs);
-    color: var(--ink-4);
   }
 </style>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
+import { buildDocument } from './document';
 import { migrate, needsMigration } from './migrate';
 import { Project } from './project.svelte';
 import { fillTitle } from './text';
@@ -120,5 +121,98 @@ describe('a project brought into one tree', () => {
     expect(p.canUndo).toBe(false);
     expect(p.tree().children.get(PROJECT)).toEqual(['c1', 'c2', 'l1', 'l2']);
     expect(p.name).toBe('Wrath');
+  });
+});
+
+describe('an abstract or a cover in the settings of an element', () => {
+  /** A project in one tree, with an abstract and a cover said of elements as before ADR 0038. */
+  function withParts() {
+    const p = new Project(null);
+    p.begin('Wrath');
+    const book = p.addChild(PROJECT, { title: 'Book' })!;
+    const chapter = p.addChild(book, { title: 'Chapter', body: 'Text.' })!;
+    const article = p.addChild(PROJECT, { title: 'Article' })!;
+    p.addChild(article, { title: 'Argument' });
+    // Written straight into the document, as the settings were kept then.
+    p.transact(() => {
+      p.yNodes.get(book)!.set('document', {
+        title: 'The book',
+        language: 'nb',
+        abstract: 'Kort sagt.\n\nOg litt til.',
+        cover: { hash: 'abc123', extension: 'png' },
+      });
+      p.yNodes.get(article)!.set('document', { abstract: 'In short.' });
+      p.yNodes.get(chapter)!.set('document', { cover: { hash: 'def456', extension: 'jpg' } });
+    });
+    return { p, book, chapter, article };
+  }
+
+  it('is seen, and becomes an element under it, first among its children, outside undo', () => {
+    const { p, book, chapter, article } = withParts();
+    expect(needsMigration(p.doc)).toBe(true);
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, Y.encodeStateAsUpdate(p.doc));
+    expect(migrate(doc, 'Wrath')).toBe(true);
+    expect(needsMigration(doc)).toBe(false);
+
+    const q = new Project(null);
+    q.load(Y.encodeStateAsUpdate(doc), []);
+    // The settings lose the two, and keep the rest.
+    expect(q.node(book)?.document).toEqual({ title: 'The book', language: 'nb' });
+    expect(q.node(article)?.document).toEqual({});
+    expect(q.node(chapter)?.document).toEqual({});
+
+    // The cover first, the abstract after it, then what was there.
+    const [cover, abstract, ...rest] = q.tree().children.get(book)!;
+    expect(rest).toEqual([chapter]);
+    expect(q.node(cover)?.title).toBe('Cover');
+    expect(q.node(cover)?.kind).toBe('cover');
+    expect(q.node(cover)?.set).toEqual([
+      expect.objectContaining({
+        kind: 'figure',
+        file: 'abc123',
+        extension: 'png',
+        numbered: false,
+      }),
+    ]);
+    // Named as documents name it, in the language of the document.
+    expect(q.node(abstract)?.title).toBe('Sammendrag');
+    expect(q.node(abstract)?.kind).toBe('abstract');
+    expect(q.blocksOf(abstract)).toEqual([
+      { kind: 'paragraph', content: [{ kind: 'text', text: 'Kort sagt.', marks: {} }] },
+      { kind: 'paragraph', content: [{ kind: 'text', text: 'Og litt til.', marks: {} }] },
+    ]);
+    // In English where the document says no language.
+    const [articleAbstract, argument] = q.tree().children.get(article)!;
+    expect(q.node(articleAbstract)?.title).toBe('Abstract');
+    expect(q.node(argument)?.title).toBe('Argument');
+    // A cover without an abstract.
+    const [chapterCover] = q.tree().children.get(chapter)!;
+    expect(q.node(chapterCover)?.kind).toBe('cover');
+    expect(q.usedPictures().map((u) => u.hash)).toEqual(['abc123', 'def456']);
+    // The document is made of them: the front matter first, then what a cover output prints.
+    expect(buildDocument(q, book).parts.map((part) => part.kind)).toEqual(['abstract', 'cover']);
+
+    // By the project when it begins, outside undo.
+    const r = new Project(null);
+    r.load(Y.encodeStateAsUpdate(p.doc), []);
+    expect(r.begin('Wrath')).toBe(true);
+    expect(r.canUndo).toBe(false);
+    expect(r.begin('Wrath')).toBe(false);
+    expect(r.tree().children.get(book)).toHaveLength(3);
+  });
+
+  it('an abstract of blank words, or a cover without a picture, only goes', () => {
+    const p = new Project(null);
+    p.begin('Wrath');
+    const book = p.addChild(PROJECT, { title: 'Book' })!;
+    p.transact(() => {
+      p.yNodes.get(book)!.set('document', { abstract: '  ', cover: {}, title: 'T' });
+    });
+    expect(needsMigration(p.doc)).toBe(true);
+    expect(migrate(p.doc, 'Wrath')).toBe(true);
+    expect(p.node(book)?.document).toEqual({ title: 'T' });
+    expect(p.tree().children.get(book) ?? []).toEqual([]);
+    expect(needsMigration(p.doc)).toBe(false);
   });
 });

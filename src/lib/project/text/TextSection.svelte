@@ -1,6 +1,7 @@
 <script lang="ts">
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
+  import CircleOff from '@lucide/svelte/icons/circle-off';
   import FileInput from '@lucide/svelte/icons/file-input';
   import GripVertical from '@lucide/svelte/icons/grip-vertical';
   import MessageSquare from '@lucide/svelte/icons/message-square';
@@ -20,6 +21,7 @@
   import type { NodeRecord } from '../model/types';
   import { saidWords } from '../elements';
   import { kindColour } from '../kinds';
+  import { isDoubled, kindLabel } from '../parts';
   import { describeWhen } from '$lib/timeline/solve';
   import { pieces } from '../pieces';
   import { reviewing } from '$lib/review/context';
@@ -122,7 +124,9 @@
       : [],
   );
   /** Its kind, where it has one: a tag by its name. */
-  const kind = $derived(project.kind(node.kind));
+  const kind = $derived(kindLabel(project, node.kind));
+  /** A second of a kind the document has one of, among its siblings: not printed. */
+  const doubled = $derived(!!kind?.part && isDoubled(project, node.id));
   /** The threads of comments on it that are open: a marker in the right margin. */
   const commented = $derived(project.threadsOf(node.id).filter((th) => !th.resolved));
 
@@ -257,7 +261,10 @@
     <div class="heading" data-part="title" onmousedown={(e) => press(e, 'title')}>
       {#if kind}
         <span class="tag kind" style:--kind={kindColour(kind.colour).ink}
-          ><span class="dot"></span>{kind.name}</span
+          ><span class="dot"></span>{kind.name}{#if doubled}<span
+              class="doubled"
+              title={t('parts-doubled')}><CircleOff size={10} /></span
+            >{/if}</span
         >
       {/if}
       {#if node.when}
@@ -646,6 +653,11 @@
     height: 7px;
     border-radius: 50%;
     background: var(--kind);
+  }
+  .tag.kind .doubled {
+    display: inline-flex;
+    margin-left: 4px;
+    color: var(--ink-3);
   }
 
   .excluded > .content {

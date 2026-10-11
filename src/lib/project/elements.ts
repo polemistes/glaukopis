@@ -27,6 +27,8 @@ import { describeWhen } from '$lib/timeline/solve';
 import { sayWhen } from '$lib/timeline/when.svelte';
 import { kindColour } from './kinds';
 import { manageKinds, newKind } from './kinds.svelte';
+import { PART_GROUPS, PARTS, partsAmong, type PartSpec } from './parts';
+import { documents } from '$lib/preview/documents.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { compareCopy } from './copies.svelte';
 import { canPaste } from './clipboard.svelte';
@@ -459,8 +461,25 @@ export function elementMenu(
     items.push({ kind: 'separator' });
   }
 
-  // What kind of element what is chosen is.
+  // What kind of element what is chosen is: a kind of the project; a kind
+  // of the catalogue of parts of a document that the template of the
+  // first element puts in hand, or that the project uses already; any of
+  // the catalogue, by group, under "More…" (ADR 0038).
   const kindSaid = nodes.every((n) => n.kind === nodes[0].kind) ? nodes[0].kind : undefined;
+  const template = documents.templateCached(
+    documents.choice(project.documentOf(first.id).settings).template,
+  );
+  const inHand = partsAmong([
+    ...(template?.kinds ?? []),
+    ...(template?.contents ?? []).flatMap((c) => ('kind' in c ? [c.kind] : [])),
+    ...project.catalogueKindsInUse(),
+  ]);
+  const partItem = (p: PartSpec): MenuItem => ({
+    label: p.label(),
+    checked: kindSaid === p.id,
+    action: () => project.setKind(ids, p.id),
+  });
+  const separator = { kind: 'separator' } as MenuItem;
   items.push({
     kind: 'submenu',
     label: t('kinds-kind'),
@@ -472,17 +491,24 @@ export function elementMenu(
         checked: kindSaid === k.id,
         action: () => project.setKind(ids, k.id),
       })),
-      ...(project.kinds.length
-        ? [
-            { kind: 'separator' } as MenuItem,
-            {
-              label: t('kinds-none-of-them'),
-              checked: kindSaid === null,
-              action: () => project.setKind(ids, null),
-            } as MenuItem,
-          ]
-        : []),
-      { kind: 'separator' },
+      ...(project.kinds.length && inHand.length ? [separator] : []),
+      ...inHand.map(partItem),
+      ...(project.kinds.length || inHand.length ? [separator] : []),
+      {
+        kind: 'submenu',
+        label: t('parts-more'),
+        items: PART_GROUPS.flatMap((g): MenuItem[] => [
+          { kind: 'heading', label: g.label() },
+          ...PARTS.filter((p) => p.group === g.id).map(partItem),
+        ]),
+      },
+      separator,
+      {
+        label: t('kinds-none-of-them'),
+        checked: kindSaid === null,
+        action: () => project.setKind(ids, null),
+      },
+      separator,
       { label: t('kinds-new-ellipsis'), icon: Plus, action: () => newKind(ids) },
       ...(project.kinds.length
         ? [{ label: t('kinds-manage'), action: () => manageKinds() } as MenuItem]

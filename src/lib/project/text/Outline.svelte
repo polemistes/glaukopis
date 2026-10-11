@@ -14,6 +14,7 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import { indent, outdent, shift } from '../elements';
   import { kindColour } from '../kinds';
+  import { isDoubled, kindLabel } from '../parts';
   import type { Project } from '../model/project.svelte';
   import { listed, outlineFolds, type OutlineItem } from '../outline';
 
@@ -147,12 +148,18 @@
           {:else}
             <span class="chevron none"></span>
           {/if}
-          {#if node?.kind && project.kind(node.kind)}
-            <span
-              class="dot"
-              style:background={kindColour(project.kind(node.kind)?.colour).ink}
-              title={project.kind(node.kind)?.name}
-            ></span>
+          {#if node?.kind}
+            {@const label = kindLabel(project, node.kind)}
+            {#if label}
+              <span
+                class="dot"
+                class:doubled={label.part && isDoubled(project, item.id)}
+                style:background={kindColour(label.colour).ink}
+                title={label.part && isDoubled(project, item.id)
+                  ? `${label.name} — ${t('parts-doubled')}`
+                  : label.name}
+              ></span>
+            {/if}
           {/if}
           <span class="name truncate">{node?.title || t('project-untitled')}</span>
         </button>
@@ -250,5 +257,9 @@
     height: 8px;
     margin: 5px 6px 0 -2px;
     border-radius: 50%;
+  }
+  /* A second of a kind the document has one of: hollow, since it is not printed. */
+  .dot.doubled {
+    box-shadow: inset 0 0 0 2px var(--paper);
   }
 </style>
