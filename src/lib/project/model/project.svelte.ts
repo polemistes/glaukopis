@@ -34,6 +34,7 @@ import {
   type SaveStatus,
   type Summary,
 } from './saving.svelte';
+import { isCatalogueKind } from '$lib/project/parts';
 import { migrate, needsMigration } from './migrate';
 import { bodyFacts, inlineText, readBody, readTitle, titleHtml, type Block } from './text';
 import { buildTree, pathTo, viewOf, type FlatNode, type Tree } from './tree';
@@ -460,12 +461,14 @@ export class Project {
     for (const [id, k] of this.yKinds) {
       if (!(k instanceof Y.Map)) continue;
       const begins = str(k.get('begins'));
+      const basedOn = str(k.get('basedOn'));
       list.push({
         id,
         name: str(k.get('name'), '?'),
         colour: str(k.get('colour')),
         template: str(k.get('template')),
         ...(begins ? { begins } : {}),
+        ...(basedOn ? { basedOn } : {}),
         order: str(k.get('order'), 'a0'),
       });
     }
@@ -476,6 +479,16 @@ export class Project {
   /** A kind by its id. */
   kind(id: string | null | undefined): KindRecord | undefined {
     return id ? this.kinds.find((k) => k.id === id) : undefined;
+  }
+
+  /**
+   * The kinds of the catalogue of parts of a document (`project/parts.ts`)
+   * that elements of the project are of, each once, in no order.
+   */
+  catalogueKindsInUse(): string[] {
+    const out = new Set<string>();
+    for (const n of this.nodes.values()) if (n.kind && isCatalogueKind(n.kind)) out.add(n.kind);
+    return [...out];
   }
 
   #readPassageKinds() {
@@ -847,8 +860,7 @@ export class Project {
   /**
    * What is said of an element as a document, with what it inherits: a
    * setting it does not make is the nearest element's over it that makes
-   * it, then nothing; its title, subtitle and abstract are its own
-   * (`OWN_SETTINGS`). `from` says, for each setting that is set, which
+   * it, then nothing; its title and subtitle are its own (`OWN_SETTINGS`). `from` says, for each setting that is set, which
    * element sets it.
    */
   documentOf(id: string): {
@@ -917,14 +929,11 @@ export class Project {
     for (const id of this.tree(within).sequence) {
       const n = this.nodes.get(id);
       if (!n) continue;
+      // The cover of an e-book is a figure among them, in an element of the kind `cover`.
       for (const s of n.set) {
         if (s.kind !== 'figure' || !s.file || out.has(s.file)) continue;
         out.set(s.file, { hash: s.file, extension: s.extension ?? '', name: s.name ?? '' });
       }
-      // The cover of an e-book is a picture of an element's document.
-      const cover = n.document.cover;
-      if (cover && !out.has(cover.hash))
-        out.set(cover.hash, { hash: cover.hash, extension: cover.extension, name: '' });
     }
     return [...out.values()];
   }

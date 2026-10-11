@@ -2,27 +2,42 @@
  * A project brought into shape when it is opened (ADR 0037): its own
  * element is made where there is none, and a document written before, as
  * maps with a centre each and loose elements beside them, becomes one tree.
- * Done within a transaction of the caller's; nothing happens to a project
- * that is in shape, so it can be asked of every document that is read.
+ * An abstract or a cover written into an element's settings becomes an
+ * element under it (ADR 0038). Done within a transaction of the caller's;
+ * nothing happens to a project that is in shape, so it can be asked of
+ * every document that is read.
  */
 
 import { generateKeyBetween } from 'fractional-indexing';
 import * as Y from 'yjs';
+import { term } from '$lib/i18n';
+import { newId } from '$lib/util/id';
 import { str } from './origins';
-import { fillTitle, inlineText, readTitle } from './text';
+import { fillBody, fillTitle, inlineText, readTitle } from './text';
 import { PROJECT, type DocumentSettings, type Hand, type TimelineSettings } from './types';
 
 type YNode = Y.Map<unknown>;
-
-/** Whether the document is not yet in shape: without its project element, or with maps. */
-export function needsMigration(doc: Y.Doc): boolean {
-  return doc.getMap('maps').size > 0 || !doc.getMap('nodes').has(PROJECT);
-}
 
 const record = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+
+/** Whether an element's settings still hold an abstract or a cover, which are elements now. */
+const holdsParts = (n: YNode): boolean => {
+  const document = record(n.get('document'));
+  return !!document && ('abstract' in document || 'cover' in document);
+};
+
+/**
+ * Whether the document is not yet in shape: without its project element,
+ * with maps, or with an abstract or a cover in an element's settings.
+ */
+export function needsMigration(doc: Y.Doc): boolean {
+  if (doc.getMap('maps').size > 0 || !doc.getMap('nodes').has(PROJECT)) return true;
+  for (const n of doc.getMap<YNode>('nodes').values()) if (holdsParts(n)) return true;
+  return false;
+}
 
 /**
  * Brings the document into shape. `name` is the project's name, for its
@@ -65,7 +80,7 @@ export function migrate(doc: Y.Doc, name: string, language?: string): boolean {
     if (!own.language) project.set('document', { ...own, language });
   }
 
-  if (!yMaps.size) return changed;
+  if (!yMaps.size) return partsOut(yNodes) || changed;
 
   const maps = [...yMaps.entries()]
     .filter((entry): entry is [string, YNode] => entry[1] instanceof Y.Map)
@@ -175,5 +190,82 @@ export function migrate(doc: Y.Doc, name: string, language?: string): boolean {
   }
 
   for (const map of maps) yMaps.delete(map.id);
+  partsOut(yNodes);
   return true;
+}
+
+/** The language of an element's document: its own, or the nearest over it. */
+function languageOf(yNodes: Y.Map<YNode>, id: string): string | undefined {
+  const seen = new Set<string>();
+  for (let at: string | undefined = id; at && !seen.has(at);) {
+    seen.add(at);
+    const n: YNode | undefined = yNodes.get(at);
+    if (!n) return undefined;
+    const language = str(record(n.get('document'))?.language).trim();
+    if (language) return language;
+    at = str(n.get('parent')) || undefined;
+  }
+  return undefined;
+}
+
+/**
+ * An abstract or a cover that was written into an element's settings
+ * becomes an element under it, first among its children (ADR 0038): the
+ * abstract an element of the kind `abstract`, named as documents name it
+ * in the language of the document, with the text as paragraphs; the cover
+ * an element of the kind `cover`, whose text is the picture as a figure.
+ * The settings lose the two. Returns whether anything was changed.
+ */
+function partsOut(yNodes: Y.Map<YNode>): boolean {
+  let changed = false;
+  for (const [id, n] of [...yNodes.entries()]) {
+    if (!holdsParts(n)) continue;
+    const document = { ...record(n.get('document')) };
+    const abstract = str(document.abstract).trim();
+    const cover = record(document.cover);
+    const hash = str(cover?.hash).trim();
+    delete document.abstract;
+    delete document.cover;
+    if (Object.keys(document).length) n.set('document', document);
+    else n.delete('document');
+    changed = true;
+
+    // Before the first child; the cover, where there is one, before the abstract.
+    let first: string | null = null;
+    for (const [other, m] of yNodes) {
+      if (other === id || m.get('parent') !== id) continue;
+      const order = str(m.get('order'), 'a0');
+      if (first === null || order < first) first = order;
+    }
+    const make = (name: string, kind: string, fill: (body: Y.XmlFragment) => void) => {
+      const child = new Y.Map<unknown>();
+      child.set('parent', id);
+      child.set('order', (first = generateKeyBetween(null, first)));
+      child.set('kind', kind);
+      const title = new Y.XmlFragment();
+      const body = new Y.XmlFragment();
+      child.set('title', title);
+      child.set('body', body);
+      yNodes.set(newId(), child);
+      fillTitle(title, name);
+      fill(body);
+    };
+    if (abstract)
+      make(term(languageOf(yNodes, id), 'document-abstract') ?? 'Abstract', 'abstract', (body) =>
+        fillBody(body, abstract),
+      );
+    if (hash)
+      make('Cover', 'cover', (body) => {
+        const figure = new Y.XmlElement('figure');
+        figure.setAttribute('id', newId());
+        figure.setAttribute('file', hash);
+        figure.setAttribute('extension', str(cover?.extension));
+        figure.setAttribute('name', '');
+        figure.setAttribute('alt', '');
+        figure.setAttribute('width', 100 as unknown as string);
+        figure.setAttribute('numbered', false as unknown as string);
+        body.insert(0, [figure]);
+      });
+  }
+  return changed;
 }

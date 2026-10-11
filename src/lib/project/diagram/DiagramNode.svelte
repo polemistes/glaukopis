@@ -15,6 +15,7 @@
   import { tooltip } from '$lib/ui/tooltip';
   import { compareCopy } from '../copies.svelte';
   import { kindColour } from '../kinds';
+  import { kindLabel } from '../parts';
   import { number, statusWords } from '../status';
   import type { Other, Project } from '../model/project.svelte';
   import type { NodeRecord } from '../model/types';
@@ -97,7 +98,7 @@
   /** The threads of comments on it that are open. */
   const commented = $derived(project.threadsOf(node.id).filter((th) => !th.resolved));
   /** Its kind, with its colour, where it has one. */
-  const kind = $derived(project.kind(node.kind));
+  const kind = $derived(kindLabel(project, node.kind));
 
   function action(a: KeyAction, _view: EditorView): boolean {
     if (a === 'enter' || a === 'escape' || a === 'tab') {

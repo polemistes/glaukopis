@@ -439,7 +439,6 @@ export function searchProject(
         d.title,
         d.subtitle,
         ...(d.authors ?? []).flatMap((a) => [a.name, a.affiliation, a.email]),
-        d.abstract,
         (d.keywords ?? []).join(', '),
         d.date,
       ].filter((x): x is string => typeof x === 'string' && !!x.trim());

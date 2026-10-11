@@ -1,7 +1,7 @@
 /**
  * An element as a document: the elements under it in the order of the
  * text, with the level of each heading, as preview and export want it. See
- * ADRs 0003 and 0037.
+ * ADRs 0003, 0037 and 0038.
  *
  * - The name of the element at the top is the title; its text stands before
  *   the first section.
@@ -11,16 +11,25 @@
  *   the other's sections, one level below.
  * - An element whose name is not printed gives its text only, and does not
  *   deepen what is under it.
+ * - The children of every element stand in the order front matter, the
+ *   rest, back matter, by what their kinds are in the document
+ *   (`project/parts.ts`). Of a kind a document has one of, the first among
+ *   siblings is taken and the others are left out; a kind printed nowhere
+ *   is left out. Those of a matter or cover kind among the direct children
+ *   of the element at the top are the parts of the document, each a branch
+ *   of its own: its text at level 0, its children from level 1.
  */
 
 import type {
   ExportDocument,
+  ExportPart,
   ExportReference,
   ExportSection,
   LeanDocument,
   LeanSection,
   OwnKind,
 } from '$lib/api/documents';
+import { partOf, type PartSpec } from '$lib/project/parts';
 import type { Project } from './project.svelte';
 import { readTitle, type Inline } from './text';
 
@@ -33,10 +42,44 @@ export interface Placed {
   level: number;
   /** Whether its name is printed as a heading. */
   printed: boolean;
-  /** The top of a branch: of the document itself, or of one that stands in the place of an element. */
+  /** The top of a branch: of the document itself, of a part of it, or of one that stands in the place of an element. */
   root: boolean;
   /** The element the document is made of, whose name is the title. */
   top: boolean;
+  /** What its kind is in the document, by the id of the catalogue; nothing where it is nothing there. */
+  kind?: string;
+  /** The part of the document it is, or stands within: a direct child of the top, of a matter or cover kind. */
+  part?: string;
+}
+
+interface Child {
+  id: string;
+  part: PartSpec | null;
+}
+
+/**
+ * The children of an element in the order of the document: front matter,
+ * then the rest, then back matter, each in tree order; of a kind a document
+ * has one of, the first only; nothing of a kind printed nowhere.
+ */
+function childrenInOrder(project: Project, children: readonly string[]): Child[] {
+  const front: Child[] = [];
+  const rest: Child[] = [];
+  const back: Child[] = [];
+  const taken = new Set<string>();
+  for (const id of children) {
+    const node = project.node(id);
+    if (!node || node.excluded) continue;
+    const part = partOf(project, node.kind);
+    if (part?.one) {
+      if (taken.has(part.id)) continue;
+      taken.add(part.id);
+    }
+    const place = part?.place;
+    if (place === 'none') continue;
+    (place === 'front' ? front : place === 'back' ? back : rest).push({ id, part });
+  }
+  return [...front, ...rest, ...back];
 }
 
 /**
@@ -46,55 +89,94 @@ export interface Placed {
  */
 export function walkDocument(project: Project, id: string, visit: (placed: Placed) => void) {
   const tree = project.tree();
-  const walkBranch = (top: string, level: number, within: Set<string>, isTop: boolean) => {
-    const walk = (nodeId: string, at: number, isRoot: boolean) => {
+  /**
+   * A branch: the document itself, a part of it, or what stands in the
+   * place of an element. `part` is the part it stands within, where it
+   * does; `kind` what its top is in the document.
+   */
+  const walkBranch = (
+    top: string,
+    level: number,
+    within: Set<string>,
+    isTop: boolean,
+    part: string | undefined,
+    kind: string | undefined,
+  ) => {
+    const isPart = part === top;
+    const walk = (nodeId: string, at: number, isRoot: boolean, kind: string | undefined) => {
       const node = project.node(nodeId);
       if (!node || node.excluded) return;
       const printed = !isRoot && node.heading && node.titleHtml.length > 0;
       visit({
         id: nodeId,
-        level: isRoot ? (isTop ? 0 : Math.max(at, 1)) : Math.min(at, DEEPEST),
+        level: isRoot ? (isTop || isPart ? 0 : Math.max(at, 1)) : Math.min(at, DEEPEST),
         printed,
         root: isRoot,
         top: isRoot && isTop,
+        ...(kind ? { kind } : {}),
+        ...(part ? { part } : {}),
       });
 
-      const next = isRoot ? at + (isTop ? 1 : 0) : printed ? at + 1 : at;
+      const next = isRoot ? at + (isTop || isPart ? 1 : 0) : printed ? at + 1 : at;
 
       if (!isRoot && node.include && !within.has(node.include) && project.node(node.include)) {
         const inner = new Set(within);
         inner.add(node.include);
-        walkBranch(node.include, Math.max(next, 1), inner, false);
+        walkBranch(node.include, Math.max(next, 1), inner, false, part, undefined);
       }
-      for (const child of tree.children.get(nodeId) ?? []) walk(child, Math.max(next, 1), false);
+      for (const child of childrenInOrder(project, tree.children.get(nodeId) ?? [])) {
+        const place = child.part?.place;
+        // A part of the document: a direct child of the top, of a matter or cover kind.
+        if (isRoot && isTop && (place === 'front' || place === 'back' || place === 'cover')) {
+          walkBranch(child.id, 0, within, false, child.id, child.part?.id);
+          continue;
+        }
+        // Deeper down, what a cover output alone prints is not printed.
+        if (place === 'cover') continue;
+        walk(child.id, Math.max(next, 1), false, child.part?.id);
+      }
     };
-    walk(top, level, true);
+    walk(top, level, true, kind);
   };
-  if (project.node(id)) walkBranch(id, 0, new Set([id]), true);
+  if (project.node(id)) walkBranch(id, 0, new Set([id]), true, undefined, undefined);
 }
 
 export function buildDocument(project: Project, id: string): ExportDocument {
   const sections: ExportSection[] = [];
+  const parts: ExportPart[] = [];
   const cited = new Set<string>();
 
   walkDocument(project, id, (placed) => {
     for (const ref of project.node(placed.id)?.cited ?? []) cited.add(ref);
     const blocks = project.blocksOf(placed.id);
+    let into = sections;
+    if (placed.part) {
+      if (placed.part === placed.id)
+        parts.push({
+          kind: placed.kind ?? '',
+          element: placed.id,
+          title: readTitle(project.fragment(placed.id, 'title') ?? undefined),
+          sections: [],
+        });
+      into = parts[parts.length - 1].sections;
+    }
     if (placed.root) {
       // The text of the top of a branch, before its first section. Its name
-      // is the title of the document, or the heading of what stood for it.
+      // is the title of the document or of the part, or the heading of what
+      // stood for it.
       if (blocks.length)
-        sections.push({ level: placed.level, heading: null, blocks, element: placed.id });
+        into.push({ level: placed.level, heading: null, blocks, element: placed.id });
       return;
     }
     const heading = placed.printed
       ? readTitle(project.fragment(placed.id, 'title') ?? undefined)
       : [];
-    sections.push({
+    into.push({
       level: placed.level,
       heading: heading.length ? heading : null,
       blocks,
       element: placed.id,
+      ...(placed.kind ? { kind: placed.kind } : {}),
     });
   });
 
@@ -127,10 +209,10 @@ export function buildDocument(project: Project, id: string): ExportDocument {
     subtitle: settings.subtitle,
     authors: (settings.authors ?? []).filter((a) => a.name?.trim()),
     date: settings.date,
-    abstract: settings.abstract,
     keywords: settings.keywords ?? [],
     language: settings.language,
-    ...(settings.cover ? { cover: settings.cover } : {}),
+    identifiers: settings.identifiers ?? {},
+    parts,
     sections,
     references,
     kinds,

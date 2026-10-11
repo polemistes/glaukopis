@@ -7,7 +7,7 @@
  */
 
 import type { Imported } from '$lib/api/imported';
-import { t } from '$lib/i18n';
+import { t, term } from '$lib/i18n';
 import { writeBody, writeName } from './blocks';
 import type { Project } from './project.svelte';
 import { inlineText, type Block, type Inline } from './text';
@@ -91,10 +91,29 @@ export function makeImported(
     subtitle: imported.subtitle?.trim() || undefined,
     authors: imported.authors.filter((a) => a.name?.trim()),
     date: imported.date?.trim() || undefined,
-    abstract: imported.abstract?.trim() || undefined,
     keywords: imported.keywords.map((k) => k.trim()).filter(Boolean),
     language: imported.language?.trim() || undefined,
   };
+
+  // The abstract is an element, first under the top, of the kind `abstract` (ADR 0038).
+  const abstract = imported.abstract?.trim() ?? '';
+  if (abstract) {
+    for (const part of parts) if (part.under > 0) part.under += 1;
+    const language = settings.language ?? project.documentOf(under).settings.language;
+    parts.splice(1, 0, {
+      under: 0,
+      heading: [
+        { kind: 'text', text: term(language, 'document-abstract') ?? 'Abstract', marks: {} },
+      ],
+      blocks: abstract
+        .split(/\n+/)
+        .filter((line) => line.trim())
+        .map((line) => ({
+          kind: 'paragraph',
+          content: [{ kind: 'text', text: line.trim(), marks: {} }],
+        })),
+    });
+  }
 
   project.checkpoint();
   const made = project.buildBranch(
@@ -107,6 +126,7 @@ export function makeImported(
     },
     settings,
   );
+  if (made && abstract) project.setKind([made.nodes[1]], 'abstract');
   project.checkpoint();
   if (!made) return null;
 

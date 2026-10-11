@@ -1,4 +1,4 @@
-/** Reference styles and document formats, as the interface holds them. */
+/** Reference styles, document formats and templates, as the interface holds them. */
 
 import {
   formatsGet,
@@ -11,20 +11,48 @@ import {
   type StyleSummary,
   type ToolsInfo,
 } from '$lib/api/documents';
+import {
+  templatesGet,
+  templatesList,
+  type Template,
+  type TemplateSummary,
+} from '$lib/api/templates';
 import { t } from '$lib/i18n';
 import { buildDocument } from '$lib/project/model/document';
 import type { Project } from '$lib/project/model/project.svelte';
 import { settings } from '$lib/state/settings.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
+import { SvelteMap } from 'svelte/reactivity';
+
+/** The template every document has when none is chosen: title page, body, notes, bibliography. */
+export const PLAIN_TEMPLATE = 'plain';
+
+/** What a document uses, by the settings of its element and the writer's usual (ADR 0038). */
+export interface Choice {
+  /** The id of the template. */
+  template: string;
+  /** The id of the reference style. */
+  style: string;
+  /** The id of the format: the layout. */
+  format: string;
+}
 
 class Documents {
   styles = $state.raw<StyleSummary[]>([]);
   formats = $state.raw<FormatSummary[]>([]);
+  templates = $state.raw<TemplateSummary[]>([]);
   tools = $state.raw<ToolsInfo | null>(null);
   loaded = $state(false);
-  /** Rises when a format has been changed: what was made of it is made anew. */
+  /** Rises when a format or a template has been changed: what was made of it is made anew. */
   changed = $state(0);
   #formats = new Map<string, DocumentFormat>();
+  /**
+   * The templates that have been read, by their ids; null for one that
+   * could not be. Reactive, so that what chose by a template not yet read
+   * chooses again when it arrives.
+   */
+  #templates = new SvelteMap<string, Template | null>();
+  #reading = new Map<string, Promise<Template>>();
   #loading: Promise<void> | null = null;
 
   load(): Promise<void> {
@@ -44,11 +72,18 @@ class Documents {
       this.formats = formats;
       this.tools = tools;
       this.#formats.clear();
+      this.#templates.clear();
       this.loaded = true;
     } catch (error) {
       notifyError(t('preview-reading-failed'), error);
     } finally {
       this.#loading = null;
+    }
+    // The templates apart: a document is made without them where they cannot be read.
+    try {
+      this.templates = await templatesList();
+    } catch (error) {
+      notifyError(t('preview-reading-failed'), error);
     }
   }
 
@@ -81,11 +116,64 @@ class Documents {
     this.#formats.delete(id);
   }
 
-  /** The style and format a document uses: what its element says, or those of the settings. */
-  choice(document: { style?: string; format?: string }): { style: string; format: string } {
+  templateSummary(id: string | undefined): TemplateSummary | undefined {
+    return this.templates.find((f) => f.id === id);
+  }
+
+  /** A template whole, read once and kept. */
+  templateOf(id: string): Promise<Template> {
+    const known = this.#templates.get(id);
+    if (known) return Promise.resolve(known);
+    let reading = this.#reading.get(id);
+    if (!reading) {
+      reading = templatesGet(id).then(
+        (template) => {
+          this.#templates.set(id, template);
+          this.#reading.delete(id);
+          return template;
+        },
+        (error) => {
+          this.#templates.set(id, null);
+          this.#reading.delete(id);
+          throw error;
+        },
+      );
+      this.#reading.set(id, reading);
+    }
+    return reading;
+  }
+
+  /**
+   * A template as it has been read, for what cannot wait; it is asked for
+   * when it has not been, and what asked is told when it arrives, where it
+   * asked within an effect or a derivation. Nothing until then, or where it
+   * could not be read.
+   */
+  templateCached(id: string): Template | undefined {
+    const known = this.#templates.get(id);
+    if (known === undefined) queueMicrotask(() => this.templateOf(id).catch(() => {}));
+    return known ?? undefined;
+  }
+
+  forgetTemplate(id: string) {
+    this.changed++;
+    this.#templates.delete(id);
+  }
+
+  /**
+   * The template, style and format a document uses: the template its
+   * element says, or the writer's usual; the style and the format its
+   * element says, else what the template brings, else the writer's usual.
+   * The template is read if it has not been, and the choice made again
+   * when it arrives.
+   */
+  choice(document: { template?: string; style?: string; format?: string }): Choice {
+    const template = document.template || settings.value.defaultTemplate || PLAIN_TEMPLATE;
+    const brings = this.templateCached(template);
     return {
-      style: document.style || settings.value.defaultStyle,
-      format: document.format || settings.value.defaultFormat,
+      template,
+      style: document.style || brings?.style || settings.value.defaultStyle,
+      format: document.format || brings?.layout || settings.value.defaultFormat,
     };
   }
 }
@@ -93,22 +181,27 @@ class Documents {
 export const documents = new Documents();
 
 /**
- * The document of an element whole, with the style and the format it
- * uses, for what is made of all of it: an export, the sample pages of a
- * format. The key is that of the project, by which the core knows one
- * making from another.
+ * The document of an element whole, with the template, the style and the
+ * format it uses, for what is made of all of it: an export, the sample
+ * pages of a format. The key is that of the project, by which the core
+ * knows one making from another.
  */
 export async function documentRequest(
   project: Project,
   projectId: string,
   at: string,
 ): Promise<DocumentRequest> {
-  const choice = documents.choice(project.documentOf(at).settings);
+  const { settings } = project.documentOf(at);
+  const template = await documents.templateOf(documents.choice(settings).template);
+  // The choice again, with the template read: it may bring the style or the format.
+  const choice = documents.choice(settings);
   const format = await documents.format(choice.format);
   return {
     document: buildDocument(project, at),
     style: choice.style,
     format: $state.snapshot(format) as DocumentFormat,
+    template: $state.snapshot(template) as Template,
+    output: 'document',
     key: projectId,
   };
 }

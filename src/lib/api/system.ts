@@ -95,9 +95,10 @@ export interface Settings {
   person: string | null;
   /** The server that was last used for sharing a project, or joining one. */
   server: string | null;
-  /** The style and format that new maps start with. */
+  /** The style, the format and the template a document has where its element says nothing (ADR 0038). */
   defaultStyle: string;
   defaultFormat: string;
+  defaultTemplate: string;
   found: FoundSettings;
   /** Whether spelling is checked as one writes. */
   spelling: boolean;
@@ -135,6 +136,7 @@ export const defaultSettings: Settings = {
   server: null,
   defaultStyle: 'chicago-notes-bibliography',
   defaultFormat: 'manuscript',
+  defaultTemplate: 'plain',
   found: { years: false, named: false, notes: false, atOnce: true, goThrough: true, inNotes: '' },
   spelling: true,
   breakSigns: true,

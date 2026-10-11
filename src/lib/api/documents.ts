@@ -309,11 +309,12 @@ export interface ExportDocument {
   subtitle?: string;
   authors: ExportAuthor[];
   date?: string;
-  abstract?: string;
   keywords: string[];
-  /** The cover of an e-book: a picture, by its hash, and its kind of file. */
-  cover?: { hash: string; extension: string };
   language?: string;
+  /** What the file formats carry as metadata: isbn, edition, publisher, place, doi (ADR 0038). */
+  identifiers: Record<string, string>;
+  /** The elements of a matter or cover kind among the direct children of the element printed (ADR 0038). */
+  parts: ExportPart[];
   sections: ExportSection[];
   references: ExportReference[];
   /** The kinds of paragraph and of words that are the writer's own, which the project carries. */

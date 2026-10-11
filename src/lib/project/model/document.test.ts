@@ -75,11 +75,12 @@ describe('an element as a document', () => {
     p.setDocument(PROJECT, {
       title: 'The wrath of Achilles',
       subtitle: 'A reading',
-      abstract: 'In short.',
       authors: [{ name: 'A. Scholar' }],
       keywords: ['Homer'],
       style: 'chicago',
+      template: 'journal-article',
       language: 'de',
+      identifiers: { doi: '10.1/x' },
     });
     const chapter = p.addChild(PROJECT, { title: 'Chapter one' })!;
     const section = p.addChild(chapter, { title: 'First section' })!;
@@ -87,16 +88,19 @@ describe('an element as a document', () => {
     const d = buildDocument(p, chapter);
     expect(inlineText(d.title)).toBe('Chapter one');
     expect(d.subtitle).toBeUndefined();
-    expect(d.abstract).toBeUndefined();
     expect(d.authors).toEqual([{ name: 'A. Scholar' }]);
     expect(d.keywords).toEqual(['Homer']);
     expect(d.language).toBe('de');
+    expect(d.identifiers).toEqual({ doi: '10.1/x' });
+    expect(d.parts).toEqual([]);
     const { settings, from } = p.documentOf(section);
     expect(settings).toEqual({
       authors: [{ name: 'A. Scholar' }],
       keywords: ['Homer'],
       style: 'chicago',
+      template: 'journal-article',
       language: 'de',
+      identifiers: { doi: '10.1/x' },
     });
     expect(from.get('style')).toBe(PROJECT);
     expect(from.has('title')).toBe(false);
@@ -159,6 +163,159 @@ describe('an element as a document', () => {
     expect(countWords(p, PROJECT)).toEqual({ text: 4, withNotes: 4 });
     expect(countWords(p, a)).toEqual({ text: 4, withNotes: 4 });
     expect(buildDocument(p, PROJECT).references).toEqual([]);
+  });
+});
+
+describe('the kinds of elements that make a document', () => {
+  /** The outline of a document with the kinds of its sections. */
+  function kinded(p: Project, id: string): string[] {
+    return buildDocument(p, id).sections.map(
+      (s) => `${s.level} ${s.heading ? inlineText(s.heading) : '—'}${s.kind ? ` [${s.kind}]` : ''}`,
+    );
+  }
+
+  it('orders the children of every element as front matter, the rest, back matter', () => {
+    const p = project();
+    const book = p.addChild(PROJECT, { title: 'Book' })!;
+    const chapter = p.addChild(book, { title: 'Chapter' })!;
+    const appendix = p.addChild(chapter, { title: 'Tables', body: 'Of the chapter.' })!;
+    const text = p.addChild(chapter, { title: 'Text' })!;
+    const abstract = p.addChild(chapter, { title: 'Abstract', body: 'In short.' })!;
+    const note = p.createKind({ name: "Author's note", colour: 'teal', template: '' })!;
+    p.updateKind(note, { basedOn: 'front-section' });
+    const authors = p.addChild(chapter, { title: 'A word first' })!;
+    const character = p.createKind({ name: 'Character', colour: 'rose', template: '' })!;
+    const achilles = p.addChild(chapter, { title: 'Achilles' })!;
+    p.setKind([appendix], 'appendix');
+    p.setKind([abstract], 'abstract');
+    p.setKind([authors], note);
+    p.setKind([achilles], character);
+    void text;
+    // Deeper down, a kind-element is a section with its kind; a kind of the
+    // writer's own based on one of the catalogue is that.
+    expect(kinded(p, PROJECT)).toEqual([
+      '1 Book',
+      '2 Chapter',
+      '3 Abstract [abstract]',
+      '3 A word first [front-section]',
+      '3 Text',
+      '3 Achilles',
+      '3 Tables [appendix]',
+    ]);
+    // Printed itself, the chapter's matter is its parts, and not among its sections.
+    const d = buildDocument(p, chapter);
+    expect(d.parts.map((part) => `${part.kind} ${inlineText(part.title)}`)).toEqual([
+      'abstract Abstract',
+      'front-section A word first',
+      'appendix Tables',
+    ]);
+    expect(kinded(p, chapter)).toEqual(['1 Text', '1 Achilles']);
+    expect(d.parts[0].sections).toEqual([
+      { level: 0, heading: null, blocks: p.blocksOf(abstract), element: abstract },
+    ]);
+    expect(d.parts[1].sections).toEqual([]);
+  });
+
+  it('a part is a branch of its own: its text at level 0, its children from level 1', () => {
+    const p = project();
+    const book = p.addChild(PROJECT, { title: 'Book', body: 'Preamble.' })!;
+    const appendix = p.addChild(book, { title: 'Appendix', body: 'What the appendix says.' })!;
+    const a1 = p.addChild(appendix, { title: 'A.1', body: 'First.' })!;
+    p.addChild(a1, { title: 'A.1.1' });
+    p.addChild(appendix, { title: 'A.2' });
+    const chapter = p.addChild(book, { title: 'Chapter', body: 'Text.' })!;
+    p.setKind([appendix], 'appendix');
+    const d = buildDocument(p, book);
+    expect(outline(p, book)).toEqual(['0 — +text', '1 Chapter +text']);
+    expect(d.parts).toHaveLength(1);
+    expect(
+      d.parts[0].sections.map(
+        (s) =>
+          `${s.level} ${s.heading ? inlineText(s.heading) : '—'}${s.blocks.length ? ' +text' : ''}`,
+      ),
+    ).toEqual(['0 — +text', '1 A.1 +text', '2 A.1.1', '1 A.2']);
+    expect(d.parts[0].element).toBe(appendix);
+    expect(d.parts[0].sections[1].element).toBe(a1);
+    void chapter;
+  });
+
+  it('of a kind a document has one of, the first among siblings is sent and the rest are left out', () => {
+    const p = project();
+    const book = p.addChild(PROJECT, { title: 'Book' })!;
+    const chapter = p.addChild(book, { title: 'Chapter' })!;
+    const first = p.addChild(book, { title: 'Abstract', body: 'One.' })!;
+    const second = p.addChild(book, { title: 'Abstract again', body: 'Two.' })!;
+    const deeper = p.addChild(chapter, { title: 'Abstract of the chapter' })!;
+    const deeperAgain = p.addChild(chapter, { title: 'Another' })!;
+    p.setKind([first, second, deeper, deeperAgain], 'abstract');
+    const d = buildDocument(p, book);
+    expect(d.parts.map((part) => part.element)).toEqual([first]);
+    expect(kinded(p, book)).toEqual(['1 Chapter', '2 Abstract of the chapter [abstract]']);
+    // Appendices are many.
+    p.setKind([first, second], 'appendix');
+    expect(buildDocument(p, book).parts.map((part) => part.element)).toEqual([first, second]);
+    // The first, left out of the document, gives way to the second.
+    p.setKind([first, second], 'abstract');
+    p.setExcluded(first, true);
+    expect(buildDocument(p, book).parts.map((part) => part.element)).toEqual([second]);
+  });
+
+  it('what a cover output alone prints is a part at the top, and nowhere deeper down', () => {
+    const p = project();
+    const book = p.addChild(PROJECT, { title: 'Book' })!;
+    const cover = p.addChild(book, { title: 'Cover' })!;
+    const blurb = p.addChild(book, { title: 'Blurb', body: 'Buy it.' })!;
+    const chapter = p.addChild(book, { title: 'Chapter' })!;
+    const inner = p.addChild(chapter, { title: 'Cover of the chapter' })!;
+    p.setKind([cover, inner], 'cover');
+    p.setKind([blurb], 'blurb');
+    const d = buildDocument(p, book);
+    expect(d.parts.map((part) => `${part.kind} ${part.element}`)).toEqual([
+      `cover ${cover}`,
+      `blurb ${blurb}`,
+    ]);
+    expect(kinded(p, book)).toEqual(['1 Chapter']);
+    expect(kinded(p, PROJECT)).toEqual(['1 Book', '2 Chapter']);
+  });
+
+  it('the parts of an element that is included belong to it', () => {
+    const p = project();
+    const book = p.addChild(PROJECT, { title: 'Book' })!;
+    const article = p.addChild(PROJECT, { title: 'Article' })!;
+    const abstract = p.addChild(article, { title: 'Abstract', body: 'In short.' })!;
+    p.addChild(article, { title: 'Argument', body: 'At length.' });
+    p.setKind([abstract], 'abstract');
+    const holder = p.addChild(book, { title: 'The article as a chapter' })!;
+    expect(p.setInclude(holder, article)).toBe(true);
+    const bookAbstract = p.addChild(book, { title: 'Of the book' })!;
+    p.setKind([bookAbstract], 'abstract');
+
+    // Printed alone, the article's abstract is its part.
+    const alone = buildDocument(p, article);
+    expect(alone.parts.map((part) => part.element)).toEqual([abstract]);
+    expect(kinded(p, article)).toEqual(['1 Argument']);
+    // Within the book, it is a section at the head of the chapter that stands for the article.
+    const within = buildDocument(p, book);
+    expect(within.parts.map((part) => part.element)).toEqual([bookAbstract]);
+    expect(kinded(p, book)).toEqual([
+      '1 The article as a chapter',
+      '2 Abstract [abstract]',
+      '2 Argument',
+    ]);
+  });
+
+  it('goes with the lean document and its mark, and the words are counted as before', () => {
+    const p = project();
+    const book = p.addChild(PROJECT, { title: 'Book' })!;
+    const abstract = p.addChild(book, { title: 'Abstract', body: 'One two.' })!;
+    p.addChild(book, { title: 'Chapter', body: 'Three four five.' });
+    const before = documentMark(leanDocument(p, book));
+    p.setKind([abstract], 'abstract');
+    const lean = leanDocument(p, book);
+    expect(lean.parts).toHaveLength(1);
+    expect(lean.sections).toHaveLength(1);
+    expect(documentMark(lean)).not.toBe(before);
+    expect(countWords(p, book)).toEqual({ text: 5, withNotes: 5 });
   });
 });
 

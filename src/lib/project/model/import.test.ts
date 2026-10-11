@@ -97,8 +97,10 @@ describe('a document made into a branch', () => {
     )!;
 
     expect(trees(project)).toEqual(['The first', 'Wrath and the hero']);
+    // The abstract is an element, first under the top, of the kind `abstract` (ADR 0038).
     expect(outline(project, made.top)).toEqual([
       '0 Wrath and the hero',
+      '1 Abstract',
       '1 One',
       '2 Within',
       '3 Deepest',
@@ -107,6 +109,10 @@ describe('a document made into a branch', () => {
       '2 Too deep',
     ]);
     expect(made.elements[0]).toBe(made.top);
+    expect(project.node(made.elements[1])?.kind).toBe('abstract');
+    expect(readBody(project.fragment(made.elements[1], 'body')!)).toEqual([
+      { kind: 'paragraph', content: [{ kind: 'text', text: 'Short.', marks: {} }] },
+    ]);
     expect(project.tree().parent.get(made.top)).toBe(PROJECT);
     // The marks of the title are those of the name of the top.
     expect(readTitle(project.fragment(made.top, 'title')!)).toEqual([
@@ -120,12 +126,11 @@ describe('a document made into a branch', () => {
         content: [{ kind: 'text', text: 'Before the first heading.', marks: {} }],
       },
     ]);
-    expect(project.node(made.elements[2])?.words).toBe(1);
+    expect(project.node(made.elements[3])?.words).toBe(1);
     expect(project.node(made.top)?.document).toEqual({
       subtitle: 'A study',
       authors: [{ name: 'A. Scholar', affiliation: 'Oslo' }],
       date: '2026-01-02',
-      abstract: 'Short.',
       keywords: ['wrath', 'epic'],
       language: 'en-GB',
     });

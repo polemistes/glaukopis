@@ -24,8 +24,16 @@ export const KIND_COLOURS: readonly KindColour[] = [
   { name: 'plum', ink: '#86198f', soft: 'rgba(134, 25, 143, 0.14)' },
 ];
 
+/** The plain grey of a kind of the catalogue of parts of a document (ADR 0038), which has no colour of its own. */
+export const PART_COLOUR: KindColour = {
+  name: 'part',
+  ink: '#6b7280',
+  soft: 'rgba(107, 114, 128, 0.14)',
+};
+
 /** The colour by its name; the first where the name is not known. */
 export function kindColour(name: string | undefined): KindColour {
+  if (name === PART_COLOUR.name) return PART_COLOUR;
   return KIND_COLOURS.find((c) => c.name === name) ?? KIND_COLOURS[0];
 }
 

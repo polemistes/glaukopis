@@ -41,3 +41,6 @@ kinds-delete-message = { $count ->
     [one] Det ene elementet som er av den, blir uten type.
    *[other] De { $count } elementene som er av den, blir uten type.
 }
+kinds-based-on = I dokumentet
+kinds-based-on-none = Ikke noe særskilt
+kinds-based-on-hint = Hva et element av denne typen er i dokumentet: et sammendrag, et vedlegg, en egen side. En type som ikke er noe særskilt, er et navn og en farge.

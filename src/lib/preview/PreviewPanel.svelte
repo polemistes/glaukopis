@@ -515,7 +515,9 @@
       .filter((g) => g.formats.length);
   });
 
-  const over = $derived(!!format?.limits.words && words.text > format.limits.words);
+  /** The limit of words, when the template sets one: read from nothing until the window of the document reads it (ADR 0038). */
+  const wordLimit: number | null = null;
+  const over = $derived(!!wordLimit && words.text > wordLimit);
 
   /** The button the remarks are shown beside, while they are shown. */
   let remarking = $state<HTMLElement | null>(null);
@@ -685,8 +687,8 @@
     {#if status === 'working'}<Spinner size={11} />{/if}
     {#if count}<span>{t('preview-pages', { count })}</span>{/if}
     <span class:over>
-      {format?.limits.words
-        ? t('preview-words-of', { count: words.text, limit: format.limits.words })
+      {wordLimit
+        ? t('preview-words-of', { count: words.text, limit: wordLimit })
         : t('preview-words', { count: words.text })}
     </span>
     {#if words.withNotes !== words.text}
@@ -748,14 +750,7 @@
   />
 {/if}
 {#if detailing}
-  <DocumentDetails
-    {project}
-    {at}
-    limits={format
-      ? { abstractWords: format.limits.abstractWords, keywords: format.limits.keywords }
-      : undefined}
-    onclose={() => (detailing = false)}
-  />
+  <DocumentDetails {project} {at} onclose={() => (detailing = false)} />
 {/if}
 {#if editingStyle}
   <StyleEditor
