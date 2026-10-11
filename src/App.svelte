@@ -46,7 +46,9 @@
     const own = readOwnWords().catch((error) => console.warn('Own words not read', error));
     await Promise.all([settings.load(), known, own]);
     // And the words of the language, lest the interface be shown in English first.
-    await load(interfaceTag()).catch(() => {});
+    const tag = interfaceTag();
+    await load(tag).catch(() => {});
+    languages.current = tag;
     ready = true;
   });
 
@@ -56,15 +58,19 @@
     return languages.interface.some((l) => l.tag === chosen) ? chosen : languages.interfaceDefault;
   }
 
-  // The language of the interface, spoken once its words are loaded.
+  // The language of the interface, spoken once its words are loaded. Not
+  // before the settings are read: the system's language would be loaded
+  // first, and its slow words, coming last, would overrule the one chosen.
   $effect(() => {
+    if (!ready) return;
     const tag = interfaceTag();
     document.documentElement.lang = tag;
     languageSet(tag).catch(() => {});
     load(tag)
       .catch(() => {})
       .then(() => {
-        languages.current = tag;
+        // Only if it is still the one wanted: another may have been chosen meanwhile.
+        if (interfaceTag() === tag) languages.current = tag;
       });
   });
 
