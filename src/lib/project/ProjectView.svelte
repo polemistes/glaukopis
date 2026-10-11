@@ -118,7 +118,8 @@
   import MapText from './text/MapText.svelte';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
   import FormatEditor from '$lib/preview/FormatEditor.svelte';
-  import { documentRequest } from '$lib/preview/documents.svelte';
+  import { documentRequest, documents } from '$lib/preview/documents.svelte';
+  import type { Template } from '$lib/api/templates';
   import { formatEditorUi } from '$lib/preview/format-editor.svelte';
   import DocumentSettingsWindow from '$lib/document/DocumentSettingsWindow.svelte';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
@@ -553,6 +554,21 @@
     }
     sheet.textContent = css;
   });
+
+  /**
+   * A template of the writer's own saved anew: where the project carries a
+   * copy of it, or an element has chosen it, the copy is made afresh (ADR
+   * 0038).
+   */
+  function templateSaved(id: string) {
+    if (!project || !documents.templateSummary(id)?.own) return;
+    if (!project.templateCopy(id) && !project.usesTemplate(id)) return;
+    const p = project;
+    documents
+      .templateOf(id)
+      .then((tp) => p.keepTemplate($state.snapshot(tp) as Template))
+      .catch(() => {});
+  }
 
   /** The document of an element whole, for the sample pages of the format editor. */
   function sampleOf(at: string) {
@@ -1518,11 +1534,13 @@
   <TemplateEditor
     id={asked.id}
     fresh={asked.fresh}
+    copy={asked.copy}
     onsaved={(id) => {
       // Held before the editor goes: what it was asked for goes with it.
       const given = asked.onsaved;
       templateEditorUi.close();
       given?.(id);
+      templateSaved(id);
     }}
     onclose={() => templateEditorUi.close()}
   />

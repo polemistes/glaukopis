@@ -52,12 +52,14 @@
     id: string;
     /** A new template is made from it, rather than this one changed. */
     fresh?: boolean;
+    /** The project's copy of the template, to begin from where the application lacks it. */
+    copy?: Template;
     /** Called with the id of the template as saved. */
     onsaved: (id: string) => void;
     onclose: () => void;
   }
 
-  let { id, fresh = false, onsaved, onclose }: Props = $props();
+  let { id, fresh = false, copy, onsaved, onclose }: Props = $props();
 
   let template = $state<Template | null>(null);
   let original = '';
@@ -74,7 +76,9 @@
     const wanted = id;
     untrack(async () => {
       try {
-        const loaded = structuredClone($state.snapshot(await documents.templateOf(wanted)));
+        const loaded = structuredClone(
+          $state.snapshot(copy ?? (await documents.templateOf(wanted))),
+        ) as Template;
         original = JSON.stringify(loaded);
         template = loaded;
         name = fresh

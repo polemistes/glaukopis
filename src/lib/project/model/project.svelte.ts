@@ -12,6 +12,7 @@
  * write the text of elements through y-prosemirror.
  */
 
+import type { Template } from '$lib/api/templates';
 import { newTextLanguage, t } from '$lib/i18n';
 import type { Bound, When } from '$lib/timeline/solve';
 import { SvelteMap } from 'svelte/reactivity';
@@ -24,6 +25,7 @@ import { elementChanges, elementOf } from './changing/elements';
 import { linkChanges } from './changing/links';
 import { cleanLook, family, passageKindChanges } from './changing/passage-kinds';
 import { referenceChanges } from './changing/references';
+import { cleanTemplate, templateChanges } from './changing/templates';
 import { HISTORY, LOAD, LOCAL, str, TIDY, type YNode } from './origins';
 import { People, type Me } from './people';
 import { Presence, type Other } from './presence.svelte';
@@ -145,6 +147,7 @@ type LinkChanges = typeof linkChanges;
 type CommentChanges = typeof commentChanges;
 type KindChanges = typeof kindChanges;
 type PassageKindChanges = typeof passageKindChanges;
+type TemplateChanges = typeof templateChanges;
 
 /** What changes a project, in `changing/`: its methods, which it takes in below. */
 export interface Project
@@ -154,7 +157,8 @@ export interface Project
     LinkChanges,
     CommentChanges,
     KindChanges,
-    PassageKindChanges {}
+    PassageKindChanges,
+    TemplateChanges {}
 
 export class Project {
   readonly doc: Y.Doc;
@@ -177,6 +181,11 @@ export class Project {
   readonly yKinds: Y.Map<Y.Map<unknown>>;
   /** The kinds of paragraph and of words of the writer's own, by their id. See `changing/passage-kinds.ts`. */
   readonly yPassageKinds: Y.Map<Y.Map<unknown>>;
+  /**
+   * The templates of the writer's own that the project carries a copy of,
+   * as plain records by their id (ADR 0038). See `changing/templates.ts`.
+   */
+  readonly yTemplates: Y.Map<unknown>;
   /**
    * The people of a project whose history is on, as Yjs's
    * `PermanentUserData` keeps them: by person, the copies that are theirs
@@ -203,6 +212,8 @@ export class Project {
   kinds = $state.raw<KindRecord[]>([]);
   /** The kinds of paragraph and of words of the writer's own, in their order. */
   passageKinds = $state.raw<PassageKindRecord[]>([]);
+  /** The templates the project carries a copy of, by name. */
+  templates = $state.raw<Template[]>([]);
   /** Rises when the shape of any tree changes. */
   structure = $state(0);
   /** Rises with every change to the project, whoever made it. */
@@ -234,6 +245,7 @@ export class Project {
     this.yComments = this.doc.getMap('comments');
     this.yKinds = this.doc.getMap('kinds');
     this.yPassageKinds = this.doc.getMap('passageKinds');
+    this.yTemplates = this.doc.getMap('templates');
     this.yUsers = this.doc.getMap('users');
     this.#presence = new Presence(this.doc);
     this.#people = new People(this.doc, this.yUsers, () => this.history.on);
@@ -284,6 +296,7 @@ export class Project {
     this.yHistory.observe(() => this.#readHistory());
     this.yKinds.observeDeep(() => this.#readKinds());
     this.yPassageKinds.observeDeep(() => this.#readPassageKinds());
+    this.yTemplates.observe(() => this.#readTemplates());
     this.yComments.observeDeep((events) => {
       const touched = new Set<string>();
       for (const event of events) {
@@ -453,6 +466,7 @@ export class Project {
     for (const id of this.yComments.keys()) this.#readThread(id);
     this.#readKinds();
     this.#readPassageKinds();
+    this.#readTemplates();
     this.structure++;
   }
 
@@ -511,6 +525,27 @@ export class Project {
   /** A kind of paragraph or of words of the writer's own, by its id. */
   passageKind(id: string | null | undefined): PassageKindRecord | undefined {
     return id ? this.passageKinds.find((k) => k.id === id) : undefined;
+  }
+
+  #readTemplates() {
+    const list: Template[] = [];
+    for (const [id, value] of this.yTemplates) {
+      const template = cleanTemplate(value, id);
+      if (template) list.push(template);
+    }
+    list.sort((a, b) => a.name.localeCompare(b.name) || (a.id < b.id ? -1 : 1));
+    this.templates = list;
+  }
+
+  /** The project's copy of a template, by its id; nothing where it carries none. */
+  templateCopy(id: string | null | undefined): Template | undefined {
+    return id ? this.templates.find((tp) => tp.id === id) : undefined;
+  }
+
+  /** Whether some element of the project has chosen the template. */
+  usesTemplate(id: string): boolean {
+    for (const n of this.nodes.values()) if (n.document.template === id) return true;
+    return false;
   }
 
   #readThread(id: string) {
@@ -1032,4 +1067,5 @@ Object.assign(
   commentChanges,
   kindChanges,
   passageKindChanges,
+  templateChanges,
 );

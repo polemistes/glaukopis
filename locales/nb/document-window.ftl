@@ -35,6 +35,7 @@ document-window-template-layout = Oppsett: { $layout }
 document-window-template-style = Referansestil: { $style }
 document-window-template-change = Endre denne malen …
 document-window-template-new = Ny mal …
+document-window-template-of-project = Ligger i prosjektet: ikke blant dine egne maler på denne maskinen.
 
 ## Opplysningene: det som står på første side, og i metadataene til filene.
 

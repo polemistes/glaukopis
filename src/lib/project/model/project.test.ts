@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
+import type { Template } from '$lib/api/templates';
 import { Project, type Persistence, type Summary } from './project.svelte';
 import { fillBody } from './text';
 import { PROJECT } from './types';
@@ -952,5 +953,93 @@ describe('the language of the text', () => {
     expect(b.language).toBe('nb');
     const theirs = b.addChild(PROJECT, { title: 'Theirs' })!;
     expect(b.documentOf(theirs).settings.language).toBe('nb');
+  });
+});
+
+describe('the templates the project carries a copy of', () => {
+  const own = (id: string, name = 'Letter'): Template => ({
+    id,
+    name,
+    group: 'own',
+    description: 'A letter.',
+    basedOn: 'plain',
+    layout: 'manuscript',
+    contents: [{ part: 'title-page' }, { part: 'body' }, { kind: 'appendix' }],
+    kinds: ['appendix'],
+    passageKinds: [],
+    requirements: { words: 2000, abstractWords: null, keywords: null, anonymous: false, note: '' },
+    outputs: [{ id: 'document', targets: ['pdf', 'docx'] }],
+  });
+
+  it('are kept, read, told by name, and let go', () => {
+    const { p, root } = project();
+    expect(p.templates).toEqual([]);
+    expect(p.keepTemplate(own('letter'))).toBe(true);
+    expect(p.keepTemplate(own('note', 'Aide'))).toBe(true);
+    // By name; each as a plain record, whole.
+    expect(p.templates.map((tp) => tp.id)).toEqual(['note', 'letter']);
+    expect(p.templateCopy('letter')).toEqual(own('letter'));
+    expect(p.templateCopy('no such')).toBeUndefined();
+    expect(p.yTemplates.get('letter')).toEqual(own('letter'));
+
+    // Kept anew in place of the copy there was; nothing is written for a copy that is the same.
+    const before = p.revision;
+    p.keepTemplate(own('letter'));
+    expect(p.revision).toBe(before);
+    p.keepTemplate({ ...own('letter'), name: 'Epistle', style: 'chicago-notes' });
+    expect(p.templateCopy('letter')).toMatchObject({ name: 'Epistle', style: 'chicago-notes' });
+
+    // Which elements use it.
+    const a = p.addChild(root, { title: 'A' })!;
+    expect(p.usesTemplate('letter')).toBe(false);
+    p.setDocument(a, { template: 'letter' });
+    expect(p.usesTemplate('letter')).toBe(true);
+
+    p.dropTemplate('letter');
+    p.dropTemplate('no such');
+    expect(p.templates.map((tp) => tp.id)).toEqual(['note']);
+    expect(p.templateCopy('letter')).toBeUndefined();
+    // The element keeps the id it chose.
+    expect(p.node(a)!.document.template).toBe('letter');
+  });
+
+  it('never a template that came with the application, nor one without an id', () => {
+    const { p } = project();
+    expect(p.keepTemplate({ ...own('journal-article'), group: 'article' })).toBe(false);
+    expect(p.keepTemplate({ ...own('plain'), group: 'plain' })).toBe(false);
+    expect(p.keepTemplate(own(' '))).toBe(false);
+    expect(p.templates).toEqual([]);
+    expect(p.yTemplates.size).toBe(0);
+  });
+
+  it('are carried to another copy of the project, and read as templates whatever was written', () => {
+    const { a, b, sync } = two();
+    a.keepTemplate(own('letter'));
+    sync();
+    expect(b.templateCopy('letter')).toEqual(own('letter'));
+    // What is not a template is passed over; what a template lacks is filled in.
+    b.transact(() => {
+      b.yTemplates.set('odd', 'not a template');
+      b.yTemplates.set('bare', { group: 'own', name: 'Bare', kinds: ['x', 3] });
+      b.yTemplates.set('theirs', { group: 'article', name: 'Theirs' });
+    });
+    expect(b.templates.map((tp) => tp.id)).toEqual(['bare', 'letter']);
+    expect(b.templateCopy('bare')).toEqual({
+      id: 'bare',
+      name: 'Bare',
+      group: 'own',
+      description: '',
+      contents: [],
+      kinds: ['x'],
+      passageKinds: [],
+      requirements: {
+        words: null,
+        abstractWords: null,
+        keywords: null,
+        anonymous: false,
+        note: '',
+      },
+      outputs: [],
+    });
   });
 });

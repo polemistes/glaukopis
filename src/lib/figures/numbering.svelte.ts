@@ -218,7 +218,7 @@ class Numbering {
 
   /** The format of the document of an element, when it has been read; it is asked for when it has not. */
   formatOf(project: Project, at: string): DocumentFormat | undefined {
-    const id = documents.choice(project.documentOf(at).settings).format;
+    const id = documents.choice(project.documentOf(at).settings, project).format;
     if (!id) return undefined;
     // A format that was changed is read anew.
     const key = `${id}@${documents.changed}`;
