@@ -1,0 +1,24 @@
+{
+  "id": "blog-post",
+  "name": "Blog post",
+  "group": "other",
+  "description": "A blog post: the text alone, as a web page or as Markdown for a site that makes its own pages.",
+  "source": {
+    "name": "What a blog takes: a title and the text",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "The title is the element's name and the date and author are in the details; both go into the Markdown's metadata, which static site generators read."
+  },
+  "basedOn": "plain",
+  "layout": "reading",
+  "contents": [
+    { "part": "body" }
+  ],
+  "kinds": [],
+  "passageKinds": [],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["html", "markdown"] }
+  ]
+}

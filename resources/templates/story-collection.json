@@ -1,0 +1,39 @@
+{
+  "id": "story-collection",
+  "name": "Collection of stories",
+  "group": "fiction",
+  "description": "A collection of stories as a book: the cover, title page, copyright and dedication, the contents, each story an element, then acknowledgements and a note on the author.",
+  "source": {
+    "name": "The parts of a published collection, as the novel-book layout and the Chicago Manual of Style's front and back matter have them",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "Each story is an element under the collection, its name the title; the acknowledgements are where the stories first appeared. The cover is printed only by a cover output, which is a later piece."
+  },
+  "basedOn": "plain",
+  "layout": "novel-book",
+  "contents": [
+    { "kind": "cover" },
+    { "part": "title-page" },
+    { "kind": "copyright" },
+    { "kind": "dedication" },
+    { "part": "contents" },
+    { "part": "body" },
+    { "kind": "acknowledgements" },
+    { "kind": "about-the-author" }
+  ],
+  "kinds": [
+    "cover",
+    "blurb",
+    "copyright",
+    "dedication",
+    "epigraph",
+    "acknowledgements",
+    "about-the-author"
+  ],
+  "passageKinds": ["epigraph", "attribution", "break"],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "letter",
+  "name": "Letter",
+  "group": "other",
+  "description": "A letter: the text and a signature.",
+  "source": {
+    "name": "The shape of a letter",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "The date is in the details; the salutation opens the text and the signature is the element of that kind under it, so that one letter can be sent in several versions. A cover letter for a submission is a letter beside the article."
+  },
+  "basedOn": "plain",
+  "contents": [
+    { "part": "body" },
+    { "kind": "signature" }
+  ],
+  "kinds": ["signature"],
+  "passageKinds": [],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}

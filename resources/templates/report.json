@@ -1,0 +1,28 @@
+{
+  "id": "report",
+  "name": "Report",
+  "group": "article",
+  "description": "A report: a title page, an abstract, the contents, the text, then appendices and bibliography.",
+  "source": {
+    "name": "The usual shape of a report for an institution or a client",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "Institutions name the summary differently (abstract, summary, executive summary); here it is the abstract, and the element may be named as the institution has it."
+  },
+  "basedOn": "plain",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "contents" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix", "acknowledgements", "glossary"],
+  "passageKinds": [],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}

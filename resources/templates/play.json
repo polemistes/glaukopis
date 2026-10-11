@@ -1,0 +1,27 @@
+{
+  "id": "play",
+  "name": "Play",
+  "group": "stage",
+  "description": "A stage play: a title page, the cast and the setting, then the acts and scenes, with the speeches written as verse, each with its speaker and its directions.",
+  "source": {
+    "name": "The common shape of the script formats of theatres and writers' guilds, as the play-script layout has it",
+    "url": "https://en.wikipedia.org/wiki/Standard_manuscript_format",
+    "checked": "2026-10-11",
+    "confidence": "low",
+    "notes": "Theatres and guilds agree on the broad shape (a cast list and the setting before the first act, the speaker above the speech, directions set apart) and differ in the details; none is reproduced here. Acts are headings of the first level, scenes of the second."
+  },
+  "basedOn": "plain",
+  "layout": "play-script",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "cast" },
+    { "kind": "setting" },
+    { "part": "body" }
+  ],
+  "kinds": ["cast", "setting"],
+  "passageKinds": ["verse", "speaker", "direction"],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}

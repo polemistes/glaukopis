@@ -1,0 +1,30 @@
+{
+  "id": "article",
+  "name": "Journal article",
+  "group": "article",
+  "description": "An article for a journal: a title page, the abstract and keywords, the text, then appendices, acknowledgements, notes and bibliography, with no limits until a journal's template sets them.",
+  "source": {
+    "name": "The order of parts that the journals surveyed agree on",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "Every journal in docs/research/formats-journals.md asks for an abstract and most for keywords; appendices go before the references, and acknowledgements are a section or a note. The journals' own templates are based on this one and bring their limits, their anonymity and their layout."
+  },
+  "basedOn": "plain",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "keywords" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "acknowledgements" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix", "acknowledgements"],
+  "passageKinds": [],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}

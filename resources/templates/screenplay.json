@@ -1,0 +1,25 @@
+{
+  "id": "screenplay",
+  "name": "Screenplay",
+  "group": "stage",
+  "description": "A screenplay: a title page and the script, with its scene headings, action, characters, dialogue, parentheticals and transitions on the standard page.",
+  "source": {
+    "name": "The standard screenplay page, as the screenplay layout has it",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "low",
+    "notes": "The parts of a script are kinds of paragraph (ADR 0029); the page is the layout's. The title page carries the title and the writer's details, as the studios and competitions ask."
+  },
+  "basedOn": "plain",
+  "layout": "screenplay",
+  "contents": [
+    { "part": "title-page" },
+    { "part": "body" }
+  ],
+  "kinds": [],
+  "passageKinds": ["scene", "action", "character", "dialogue", "parenthetical", "transition"],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}

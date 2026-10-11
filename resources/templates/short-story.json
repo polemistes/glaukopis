@@ -1,0 +1,25 @@
+{
+  "id": "short-story",
+  "name": "Short story",
+  "group": "fiction",
+  "description": "A short story for submission to a magazine or a competition: a title page and the text, in the standard manuscript format.",
+  "source": {
+    "name": "Standard manuscript format, as the novel-manuscript layout has it",
+    "url": "https://en.wikipedia.org/wiki/Standard_manuscript_format",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "Magazines and competitions set their own word limits and their own rule on anonymity; put them in the requirements of a template of your own, based on this one."
+  },
+  "basedOn": "plain",
+  "layout": "novel-manuscript",
+  "contents": [
+    { "part": "title-page" },
+    { "part": "body" }
+  ],
+  "kinds": [],
+  "passageKinds": ["break"],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}

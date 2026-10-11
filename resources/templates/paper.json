@@ -1,0 +1,26 @@
+{
+  "id": "paper",
+  "name": "Paper",
+  "group": "plain",
+  "description": "A student's or a conference paper: a title page, the text, the notes and the bibliography, as the writer's usual layout and citation style set them.",
+  "source": {
+    "name": "The common shape of a term paper or a conference paper, as the student style guides have it",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "The guides say what the page looks like, and that is in their layouts; this is only the order of the parts, which the guides agree on. The student style guides' own templates are based on this one."
+  },
+  "basedOn": "plain",
+  "contents": [
+    { "part": "title-page" },
+    { "part": "body" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": [],
+  "passageKinds": [],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}

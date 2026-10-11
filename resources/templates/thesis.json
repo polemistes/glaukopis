@@ -1,0 +1,31 @@
+{
+  "id": "thesis",
+  "name": "Thesis",
+  "group": "book",
+  "description": "A thesis or dissertation: a title page, the abstract and acknowledgements, the table of contents with the lists of figures and tables, the chapters, then appendices and bibliography.",
+  "source": {
+    "name": "The usual order of a thesis, common to the universities' guides",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "Universities differ in the details of the title page and in whether the abstract precedes the acknowledgements; the layout and the citation style are the writer's own or the department's."
+  },
+  "basedOn": "plain",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "kind": "acknowledgements" },
+    { "part": "contents" },
+    { "part": "list-of-figures" },
+    { "part": "list-of-tables" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "acknowledgements", "dedication", "appendix", "glossary"],
+  "passageKinds": [],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}
