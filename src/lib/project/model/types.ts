@@ -42,6 +42,10 @@ export interface DocumentSettings {
   style?: string;
   /** Id of the document format. */
   format?: string;
+  /** Id of the template (ADR 0038). */
+  template?: string;
+  /** ISBN, edition, publisher, place, DOI, and what else the writer names. */
+  identifiers?: Record<string, string>;
   /** Language of the text, as a BCP 47 tag: en-GB, nb, de, el. */
   language?: string;
   /** The cover of the e-book: a picture of the store, by its hash, and its kind of file. */

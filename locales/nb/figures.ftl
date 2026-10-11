@@ -45,13 +45,13 @@ figures-stands-where = Hvor { $kind ->
         [table] tabellen
        *[equation] ligningen
     } står
-figures-side-format = Som formatet
+figures-side-format = Som oppsettet
 figures-side-left = Venstre
 figures-side-middle = Midten
 figures-side-right = Høyre
-# Det formatet til dokumentet sier om hvor ting av et slag står. Flyten er
+# Det oppsettet til dokumentet sier om hvor ting av et slag står. Flyten er
 # ingen for ligninger, og for det som står i midten.
-figures-usual = Formatet har { $kind ->
+figures-usual = Oppsettet har { $kind ->
         [figure] figurer
         [table] tabeller
        *[equation] ligninger
@@ -70,7 +70,7 @@ figures-flows-where = Om teksten flyter rundt { $kind ->
         [table] tabellen
        *[equation] ligningen
     }
-figures-flow-format = Som formatet
+figures-flow-format = Som oppsettet
 figures-flow-around = Flyter rundt
 figures-flow-apart = Står for seg
 figures-flow-at-side = Teksten flyter rundt det som står ved en side.
@@ -141,7 +141,7 @@ figures-targets-figure-unsaid = En figur uten bildetekst
 figures-targets-table-unsaid = En tabell uten tabelltekst
 figures-targets-no-match = Ingenting i dokumentet svarer til disse ordene.
 figures-targets-none = Det er ingenting å vise til ennå: ingen figur, ingen tabell, ingen nummerert ligning, ingen del med navn.
-figures-targets-hint = Ordene følger det de viser til: nummeret, og hva formatet kaller det.
+figures-targets-hint = Ordene følger det de viser til: nummeret, og hva oppsettet kaller det.
 
 ## Vist av stilarket, der siden ikke har noe element for ordene.
 

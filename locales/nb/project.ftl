@@ -78,7 +78,6 @@ project-copy-to-project = Kopier til «{ $name }»
 project-move-to-project = Flytt til «{ $name }»
 project-element-name = Navnet på elementet
 project-this-element-actions = Dette elementet
-project-document-details = Dokumentopplysninger …
 project-new-element-under = Nytt element under
 project-document-into = Et dokument inn i det …
 project-drop-on-map = Slipp på et kart for å flytte dit · hold Ctrl for å kopiere

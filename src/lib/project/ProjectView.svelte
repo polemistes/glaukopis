@@ -120,6 +120,10 @@
   import FormatEditor from '$lib/preview/FormatEditor.svelte';
   import { documentRequest } from '$lib/preview/documents.svelte';
   import { formatEditorUi } from '$lib/preview/format-editor.svelte';
+  import DocumentSettingsWindow from '$lib/document/DocumentSettingsWindow.svelte';
+  import { documentSettingsUi } from '$lib/document/document-settings.svelte';
+  import TemplateEditor from '$lib/document/TemplateEditor.svelte';
+  import { templateEditorUi } from '$lib/document/template-editor.svelte';
   import { historyOf } from '$lib/history/history.svelte';
   import { me } from '$lib/history/me.svelte';
   import * as positions from '$lib/history/positions';
@@ -565,6 +569,8 @@
       .catch(() => {});
     document.getElementById('passage-kinds')?.remove();
     formatEditorUi.close();
+    documentSettingsUi.close();
+    templateEditorUi.close();
     ownKindsUi.editing = null;
     review?.close();
     comparing.copy = null;
@@ -929,6 +935,13 @@
         when: () => !!pane,
       },
       preview: () => (showPreview = !showPreview),
+      'document-settings': {
+        run: () => {
+          if (pane && focusedProject)
+            documentSettingsUi.open({ project: focusedProject, at: pane.at });
+        },
+        when: () => !!pane && !!focusedProject,
+      },
       'projects-pane': toggleProjectsPane,
       'side-references': () => side('references'),
       // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
@@ -1484,6 +1497,34 @@
       given?.(id);
     }}
     onclose={() => formatEditorUi.close()}
+  />
+{/if}
+
+{#if documentSettingsUi.request}
+  {@const asked = documentSettingsUi.request}
+  {#key asked}
+    <DocumentSettingsWindow
+      project={asked.project}
+      at={asked.at}
+      section={asked.section}
+      ongo={(element) => goTo(element, { pane: Math.min(focused, panes.length - 1) })}
+      onclose={() => documentSettingsUi.close()}
+    />
+  {/key}
+{/if}
+
+{#if templateEditorUi.request}
+  {@const asked = templateEditorUi.request}
+  <TemplateEditor
+    id={asked.id}
+    fresh={asked.fresh}
+    onsaved={(id) => {
+      // Held before the editor goes: what it was asked for goes with it.
+      const given = asked.onsaved;
+      templateEditorUi.close();
+      given?.(id);
+    }}
+    onclose={() => templateEditorUi.close()}
   />
 {/if}
 

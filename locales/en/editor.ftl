@@ -50,7 +50,7 @@ editor-gloss-hint = What the headword means
 editor-code = Code
 editor-code-hint = Kept letter for letter, in letters of equal width
 editor-break = Break
-editor-break-hint = A pause between parts, with the sign the format gives it
+editor-break-hint = A pause between parts, with the sign the layout gives it
 editor-draft = Draft note
 editor-draft-hint = For your eyes: it goes into no document
 editor-foreign = Foreign words
@@ -88,7 +88,7 @@ editor-paragraph-kind = Kind of paragraph
 editor-paragraph-kind-now = Kind of paragraph: { $kind }
 
 ## The kind menu: the kinds in hand, the whole catalogue under "More…", and
-## the format that sets them at its foot. The words menu, with the kinds of
+## the layout that sets them at its foot. The words menu, with the kinds of
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = More…
@@ -96,9 +96,9 @@ editor-kinds-in-hand = Kinds in hand
 editor-kinds-own = Your own
 editor-kinds-make = Make a kind…
 editor-kinds-change-own = Change a kind of your own…
-# Over the item that opens the format editor: the format sets how each kind looks.
+# Over the item that opens the layout editor: the layout sets how each kind looks.
 editor-kinds-set-by = Set as “{ $format }” has them
-editor-kinds-change-format = Change the format…
+editor-kinds-change-format = Change the layout…
 editor-kinds-change-format-hint = How each kind is set in this document
 editor-words = Words
 editor-words-hint = Underlining, superscript, code; foreign words, the title of a work, a term
@@ -229,7 +229,7 @@ editor-locator-sub-verbo = Sub verbo
 # The number is that of the note, or a letter for a note that stands in a place of its own.
 editor-note-numbered = Note { $number }
 editor-note-place = Where the note stands
-editor-note-place-format = Where the format has its notes
+editor-note-place-format = Where the layout has its notes
 editor-note-place-foot = At the foot of the page
 editor-note-place-end = At the end of the text
 editor-note-placeholder = The text of the note

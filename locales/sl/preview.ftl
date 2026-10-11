@@ -4,29 +4,13 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Predogled
-# Small, over the choice of the document format.
-preview-format = Format
-preview-format-label = Format dokumenta
-# Small, over the choice of the reference style.
-preview-style = Viri
-preview-style-label = Slog navajanja
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Več slogov…
-preview-change = Spremeni format ali slog
-preview-change-format = Spremeni ta format…
-preview-change-format-hint = Stran, pisava, razmiki, naslovi
-preview-change-style = Spremeni ta slog navajanja…
-preview-change-style-hint = Po željah založnika
-preview-details = Naslov, avtorji, izvleček
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Pojdi na to mesto v besedilu
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Pokaži, kje je besedilo
 preview-hide = Skrij predogled
-# When a format that goes with a reference style is chosen, the style is taken with it.
-preview-style-taken = Slog navajanja je zdaj { $style }
-preview-style-taken-why = To je tisti, ki spada k temu formatu.
-preview-style-keep-other = Obdrži drugega
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } ni nameščen
 preview-programs-needed = Predogled in izvoz se naredita s Pandocom in Typstom. Namestite ju z upraviteljem paketov svojega sistema ali pa v nastavitvah povejte, kje sta.
@@ -85,51 +69,6 @@ preview-works-missing = { $count ->
 preview-works-missing-where = ne v vaši knjižnici ne v projektu. V besedilu so označena.
 # Over what Pandoc and Typst said while they made the document.
 preview-remarks-warnings = Rečeno med izdelavo dokumenta
-
-## The details of a document: what stands on its first page.
-
-preview-details-dialog = Dokument
-preview-details-dialog-subtitle = Kaj stoji na njegovi prvi strani
-preview-details-title = Naslov
-preview-details-title-placeholder = Ime središča miselnega vzorca
-preview-details-title-hint = Če ostane prazno, je naslov ime središča miselnega vzorca.
-preview-details-subtitle = Podnaslov
-preview-details-authors = Avtorji
-preview-details-name = Ime
-preview-details-author-name = Ime avtorja { $number }
-preview-details-affiliation = Ustanova
-preview-details-author-affiliation = Ustanova avtorja { $number }
-preview-details-email = E-pošta
-preview-details-author-email = E-pošta avtorja { $number }
-# Beside a plus, under the authors: adds one.
-preview-details-add-author = avtor
-preview-details-abstract = Izvleček
-preview-details-words = { $count ->
-    [one] { $count } beseda
-    [two] { $count } besedi
-    [few] { $count } besede
-   *[other] { $count } besed
-}
-# The words of the abstract, and the most the format allows.
-preview-details-words-of = { $limit ->
-    [one] { $count } od { $limit } besede
-    [two] { $count } od { $limit } besed
-    [few] { $count } od { $limit } besed
-   *[other] { $count } od { $limit } besed
-}
-preview-details-keywords = Ključne besede
-# The keywords given, and the most the format allows.
-preview-details-keywords-of = { $count } od { $limit }
-preview-details-keywords-placeholder = Ločene z vejicami
-preview-details-date = Datum
-preview-details-date-placeholder = Kakor naj bo natisnjen
-preview-details-language = Jezik besedila
-# A map that was given no language is printed in English.
-preview-details-language-none = Ni naveden (angleščina)
-preview-details-cover = Naslovnica
-preview-details-cover-choose = Izberi sliko…
-preview-details-cover-other = Drugo…
-preview-details-cover-hint = Naslovnica e-knjige: slika, hranjena v shrambi slik. Nič drugega je ne uporablja.
 
 ## The export: the kinds of file a document is made as.
 

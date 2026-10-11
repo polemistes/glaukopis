@@ -4,29 +4,13 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Vista previa
-# Small, over the choice of the document format.
-preview-format = Formato
-preview-format-label = Formato del documento
-# Small, over the choice of the reference style.
-preview-style = Referencias
-preview-style-label = Estilo de citas
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Más estilos…
-preview-change = Cambiar el formato o el estilo
-preview-change-format = Cambiar este formato…
-preview-change-format-hint = Página, letra, espaciado, encabezados
-preview-change-style = Cambiar este estilo de citas…
-preview-change-style-hint = A los deseos de una editorial
-preview-details = Título, autores, resumen
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Ir a este lugar del texto
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Mostrar dónde está el texto
 preview-hide = Ocultar la vista previa
-# When a format that goes with a reference style is chosen, the style is taken with it.
-preview-style-taken = El estilo de citas es ahora { $style }
-preview-style-taken-why = Es el que acompaña a este formato.
-preview-style-keep-other = Conservar el otro
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } no está instalado
 preview-programs-needed = La vista previa y la exportación se hacen con Pandoc y Typst. Instálelos con el gestor de paquetes de su sistema, o indique en los ajustes dónde están.
@@ -80,49 +64,6 @@ preview-works-missing = { $count ->
 preview-works-missing-where = ni en su biblioteca ni en el proyecto. Están marcadas en el texto.
 # Over what Pandoc and Typst said while they made the document.
 preview-remarks-warnings = Dicho mientras se hacía el documento
-
-## The details of a document: what stands on its first page.
-
-preview-details-dialog = El documento
-preview-details-dialog-subtitle = Lo que va en su primera página
-preview-details-title = Título
-preview-details-title-placeholder = El nombre del centro del mapa
-preview-details-title-hint = Si se deja vacío, el título es el nombre del centro del mapa.
-preview-details-subtitle = Subtítulo
-preview-details-authors = Autores
-preview-details-name = Nombre
-preview-details-author-name = Nombre del autor { $number }
-preview-details-affiliation = Afiliación
-preview-details-author-affiliation = Afiliación del autor { $number }
-preview-details-email = Correo electrónico
-preview-details-author-email = Correo electrónico del autor { $number }
-# Beside a plus, under the authors: adds one.
-preview-details-add-author = autor
-preview-details-abstract = Resumen
-preview-details-words = { $count ->
-    [one] { $count } palabra
-    [many] { $count } de palabras
-   *[other] { $count } palabras
-}
-# The words of the abstract, and the most the format allows.
-preview-details-words-of = { $limit ->
-    [one] { $count } de { $limit } palabra
-    [many] { $count } de { $limit } de palabras
-   *[other] { $count } de { $limit } palabras
-}
-preview-details-keywords = Palabras clave
-# The keywords given, and the most the format allows.
-preview-details-keywords-of = { $count } de { $limit }
-preview-details-keywords-placeholder = Separadas por comas
-preview-details-date = Fecha
-preview-details-date-placeholder = Tal como se ha de imprimir
-preview-details-language = Idioma del texto
-# A map that was given no language is printed in English.
-preview-details-language-none = Sin indicar (inglés)
-preview-details-cover = Portada
-preview-details-cover-choose = Elegir una imagen…
-preview-details-cover-other = Otra…
-preview-details-cover-hint = La portada del libro electrónico: una imagen, guardada en el almacén de imágenes. Nada más la usa.
 
 ## The export: the kinds of file a document is made as.
 

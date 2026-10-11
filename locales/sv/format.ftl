@@ -48,7 +48,6 @@ format-section-notes = Noter
 format-section-bibliography = Litteraturförteckning
 format-section-figures = Figurer, tabeller, ekvationer
 format-section-margins = Sidnummer och kolumntitel
-format-section-limits = Gränser
 format-section-about = Om det här formatet
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = som texten
 format-size-zero-hint = 0 för textens storlek
 # Beside a number of 0, in the place of its unit.
 format-not-said = inte angivet
-format-no-limit = ingen gräns
 format-unless-said = Om inte något annat sägs om ett
 format-as-it-will-stand = Som det kommer att stå
 format-align-left = Vänster
@@ -349,15 +347,6 @@ format-running-head-author = Författarna
 format-running-head-author-title = Författare och titel
 format-running-head-text = Egna ord
 format-running-head-words = Orden
-
-## Limits.
-
-format-limits-hint = Förhandsvisningen räknar textens ord mot dessa, och dialogen för titel och sammanfattning räknar mot de andra. Inget klipps bort.
-format-limits-words = Ord i texten
-format-limits-abstract-words = Ord i sammanfattningen
-format-limits-keywords = Nyckelord
-format-limits-note = Vad gränserna räknar
-format-limits-note-placeholder = Noter medräknade; litteraturförteckningen inte
 
 ## About the format: where its requirements are from.
 

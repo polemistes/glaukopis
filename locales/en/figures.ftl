@@ -45,13 +45,13 @@ figures-stands-where = Where the { $kind ->
         [table] table
        *[equation] equation
     } stands
-figures-side-format = As the format
+figures-side-format = As the layout
 figures-side-left = Left
 figures-side-middle = Middle
 figures-side-right = Right
-# What the format of the document says of where things of a kind stand. The
+# What the layout of the document says of where things of a kind stand. The
 # flow is none for equations, and for what stands in the middle.
-figures-usual = The format has { $kind ->
+figures-usual = The layout has { $kind ->
         [figure] figures
         [table] tables
        *[equation] equations
@@ -70,7 +70,7 @@ figures-flows-where = Whether the text flows around the { $kind ->
         [table] table
        *[equation] equation
     }
-figures-flow-format = As the format
+figures-flow-format = As the layout
 figures-flow-around = Flows around it
 figures-flow-apart = Stands apart
 figures-flow-at-side = The text flows around what stands at a side.
@@ -141,7 +141,7 @@ figures-targets-figure-unsaid = A figure of which nothing is said
 figures-targets-table-unsaid = A table of which nothing is said
 figures-targets-no-match = Nothing in the document answers to these words.
 figures-targets-none = There is nothing to refer to yet: no figure, no table, no numbered equation, no part with a name.
-figures-targets-hint = A cross-reference follows what it refers to: its number, and what the format calls it.
+figures-targets-hint = A cross-reference follows what it refers to: its number, and what the layout calls it.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 

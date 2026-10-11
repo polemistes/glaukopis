@@ -48,7 +48,6 @@ format-section-notes = Σημειώσεις
 format-section-bibliography = Βιβλιογραφία
 format-section-figures = Σχήματα, πίνακες, εξισώσεις
 format-section-margins = Αριθμοί σελίδων και κεφαλίδα
-format-section-limits = Όρια
 format-section-about = Για αυτή τη μορφή
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = όπως το κείμενο
 format-size-zero-hint = 0 για το μέγεθος του κειμένου
 # Beside a number of 0, in the place of its unit.
 format-not-said = δεν ορίζεται
-format-no-limit = χωρίς όριο
 format-unless-said = Εκτός αν λέγεται κάτι άλλο για κάποια
 format-as-it-will-stand = Όπως θα τυπωθεί
 format-align-left = Αριστερά
@@ -349,15 +347,6 @@ format-running-head-author = Οι συγγραφείς
 format-running-head-author-title = Συγγραφείς και τίτλος
 format-running-head-text = Δικά μου λόγια
 format-running-head-words = Τα λόγια
-
-## Limits.
-
-format-limits-hint = Η προεπισκόπηση μετρά τις λέξεις του κειμένου με βάση αυτά, και το παράθυρο τίτλου και περίληψης με βάση τα άλλα. Τίποτα δεν κόβεται.
-format-limits-words = Λέξεις κειμένου
-format-limits-abstract-words = Λέξεις περίληψης
-format-limits-keywords = Λέξεις-κλειδιά
-format-limits-note = Τι μετρούν τα όρια
-format-limits-note-placeholder = Με τις σημειώσεις· χωρίς τη βιβλιογραφία
 
 ## About the format: where its requirements are from.
 

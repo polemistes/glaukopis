@@ -32,12 +32,27 @@ language would use, not a transliteration of the English.
   (foreign words, the title of a work, a term, a mention, a highlight). The
   same word is used for all three. A kind is a meaning, never a look.
 - **look** — how a kind is set in a document: size, spacing, italics and
-  so on. Looks belong to the format, not to the text.
-- **format** — how a document as a whole is set: the margins, the fonts,
-  the looks of the kinds, what a publisher or a journal asks for. "APA 7"
-  and "Chicago" are formats.
+  so on. Looks belong to the layout, not to the text.
+- **layout** — how the page of a document looks: the margins, the fonts,
+  the headings, the notes, the looks of the kinds. "Manuscript" and "A
+  book of fiction" are layouts. The files and the code call it the
+  *format*, which was its name in the interface until ADR 0038; the word
+  "format" is now kept for file formats (Word, PDF) only.
+- **template** — what a document of a kind consists of: which parts it has
+  and in what order, which kinds of elements and of passages it puts in
+  hand, which layout and reference style it brings, what it requires
+  (words, keywords, anonymity), and which files it makes. "Journal
+  article", "Novel manuscript" and a journal's own are templates. A
+  template is chosen in the document settings of an element, and inherits
+  down the tree.
 - **style** — the reference style only: how citations and the bibliography
   are written (author–date, notes, numbers). Never used for looks.
+- **document settings** — the window of an element's document: its
+  template, its details (title, authors, date, keywords, identifiers), its
+  parts, its layout and style, its language, and the checklist.
+- **part** — a kind of element that has a place in the document: the
+  abstract, a dedication, an appendix, the cover. Front matter, back
+  matter and the cover are its places.
 - **document** — the manuscript that is made of a map or a project: the
   file that goes to the publisher, as Word, PDF, LaTeX and so on. Also a
   file *brought in*: a Word document, a PDF.
@@ -74,7 +89,7 @@ language would use, not a transliteration of the English.
 - **foreign words** — a kind of words: words in another language than the
   map's, which carry their language, for spelling and for the document.
 - **title of a work** — a kind of words: the title of a book or article
-  named in the text, set as the format says (usually italics).
+  named in the text, set as the layout says (usually italics).
 - **term** — a kind of words: a word where it is introduced or defined.
 - **mention** — a kind of words: a word spoken of *as a word*, set in the
   quotation marks of the language of the map.

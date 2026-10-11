@@ -4,29 +4,13 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Náhled
-# Small, over the choice of the document format.
-preview-format = Formát
-preview-format-label = Formát dokumentu
-# Small, over the choice of the reference style.
-preview-style = Citace
-preview-style-label = Citační styl
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Další styly…
-preview-change = Změnit formát nebo styl
-preview-change-format = Upravit tento formát…
-preview-change-format-hint = Strana, písmo, řádkování, nadpisy
-preview-change-style = Upravit tento citační styl…
-preview-change-style-hint = Podle přání nakladatele
-preview-details = Název, autoři, abstrakt
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Přejít na toto místo v textu
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Ukázat, kde text je
 preview-hide = Skrýt náhled
-# When a format that goes with a reference style is chosen, the style is taken with it.
-preview-style-taken = Citační styl je teď { $style }
-preview-style-taken-why = Je to ten, k němuž tento formát patří.
-preview-style-keep-other = Ponechat ten druhý
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } není nainstalován
 preview-programs-needed = Náhled a export se vytvářejí Pandocem a Typstem. Nainstalujte je správcem balíčků svého systému, nebo řekněte v nastavení, kde jsou.
@@ -80,49 +64,6 @@ preview-works-missing = { $count ->
 preview-works-missing-where = ani ve vaší knihovně, ani v projektu. V textu jsou označena.
 # Over what Pandoc and Typst said while they made the document.
 preview-remarks-warnings = Řečeno při vytváření dokumentu
-
-## The details of a document: what stands on its first page.
-
-preview-details-dialog = Dokument
-preview-details-dialog-subtitle = Co stojí na jeho první straně
-preview-details-title = Název
-preview-details-title-placeholder = Název středu mapy
-preview-details-title-hint = Zůstane-li prázdné, názvem je název středu mapy.
-preview-details-subtitle = Podnázev
-preview-details-authors = Autoři
-preview-details-name = Jméno
-preview-details-author-name = Jméno autora { $number }
-preview-details-affiliation = Pracoviště
-preview-details-author-affiliation = Pracoviště autora { $number }
-preview-details-email = E-mail
-preview-details-author-email = E-mail autora { $number }
-# Beside a plus, under the authors: adds one.
-preview-details-add-author = autor
-preview-details-abstract = Abstrakt
-preview-details-words = { $count ->
-    [one] { $count } slovo
-    [few] { $count } slova
-   *[other] { $count } slov
-}
-# The words of the abstract, and the most the format allows.
-preview-details-words-of = { $limit ->
-    [one] { $count } z { $limit } slova
-    [few] { $count } ze { $limit } slov
-   *[other] { $count } z { $limit } slov
-}
-preview-details-keywords = Klíčová slova
-# The keywords given, and the most the format allows.
-preview-details-keywords-of = { $count } z { $limit }
-preview-details-keywords-placeholder = Oddělená čárkami
-preview-details-date = Datum
-preview-details-date-placeholder = Jak se má vytisknout
-preview-details-language = Jazyk textu
-# A map that was given no language is printed in English.
-preview-details-language-none = Neuvedeno (angličtina)
-preview-details-cover = Obálka
-preview-details-cover-choose = Vybrat obrázek…
-preview-details-cover-other = Jiný…
-preview-details-cover-hint = Obálka e-knihy: obrázek uchovaný v úložišti obrázků. Nic jiného ho nepoužívá.
 
 ## The export: the kinds of file a document is made as.
 

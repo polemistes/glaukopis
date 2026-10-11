@@ -5,8 +5,8 @@
    * of the element in view, from which the elements beside it pull down to
    * be shown, or, for the project itself, the trees under it; and beside it
    * a button with what can be done with the element:
-   * rename, the details of its document, the citations that were found, its
-   * languages, a new element under it, a document into it, delete. At the
+   * rename, the settings of its document, the citations that were found, its
+   * language, a new element under it, a document into it, delete. At the
    * project itself, before all, the owl, which goes up to all the projects.
    * Where the two panes show two projects, the project's name stands first,
    * in full, with its badge.
@@ -28,12 +28,11 @@
   import { projects } from '$lib/state/projects.svelte';
   import { router } from '$lib/state/router.svelte';
   import { countFound } from '$lib/found/gather';
+  import { documentSettingsUi } from '$lib/document/document-settings.svelte';
   import { t } from '$lib/i18n';
-  import DocumentDetails from '$lib/preview/DocumentDetails.svelte';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { removeElements } from './elements';
-  import LanguagesDialog from './LanguagesDialog.svelte';
   import type { Project } from './model/project.svelte';
   import { PROJECT } from './model/types';
 
@@ -78,10 +77,6 @@
   /** The element that is being named in the bar, and what is written. */
   let naming = $state<{ id: string; value: string } | null>(null);
   let input = $state<HTMLInputElement>();
-  /** The element whose languages are open in the dialog, if any. */
-  let languagesOf = $state<string | null>(null);
-  /** The element whose document's details are open in the dialog, if any. */
-  let detailsOf = $state<string | null>(null);
 
   /** Up from the project: to all the projects, as the owl's map shows them. */
   function goHome() {
@@ -144,14 +139,23 @@
     const found = countFound(project, at);
     const items: MenuItem[] = [
       { label: t('common-rename'), icon: Pencil, shortcut: 'F2', action: () => void rename(at) },
-      { label: t('project-document-details'), icon: FileText, action: () => (detailsOf = at) },
+      {
+        label: t('document-window-menu'),
+        icon: FileText,
+        shortcut: 'Ctrl+Shift+D',
+        action: () => documentSettingsUi.open({ project, at }),
+      },
       {
         label: t('project-found'),
         icon: TextSearch,
         hint: found ? t('project-found-hint', { count: found }) : t('project-found-none'),
         action: () => goThrough(at),
       },
-      { label: t('languages-menu'), icon: Languages, action: () => (languagesOf = at) },
+      {
+        label: t('languages-menu'),
+        icon: Languages,
+        action: () => documentSettingsUi.open({ project, at, section: 'language' }),
+      },
       { kind: 'separator' },
       { label: t('project-new-element-under'), icon: CornerDownRight, action: addUnder },
       ...(ondocument
@@ -270,13 +274,6 @@
     </button>
   {/if}
 </div>
-
-{#if languagesOf}
-  <LanguagesDialog {project} at={languagesOf} onclose={() => (languagesOf = null)} />
-{/if}
-{#if detailsOf}
-  <DocumentDetails {project} at={detailsOf} onclose={() => (detailsOf = null)} />
-{/if}
 
 <style>
   .maps {

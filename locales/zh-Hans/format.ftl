@@ -48,7 +48,6 @@ format-section-notes = 注释
 format-section-bibliography = 参考文献
 format-section-figures = 插图、表格、公式
 format-section-margins = 页码与页眉
-format-section-limits = 篇幅限制
 format-section-about = 关于此格式
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = 同正文
 format-size-zero-hint = 0 表示与正文字号相同
 # Beside a number of 0, in the place of its unit.
 format-not-said = 未规定
-format-no-limit = 不限
 format-unless-said = 除非另有规定
 format-as-it-will-stand = 最终效果
 format-align-left = 左对齐
@@ -349,15 +347,6 @@ format-running-head-author = 作者
 format-running-head-author-title = 作者和题名
 format-running-head-text = 自己的文字
 format-running-head-words = 文字
-
-## Limits.
-
-format-limits-hint = 预览会根据这些限制统计正文字数，题名与摘要对话框则统计其余各项。不会删去任何内容。
-format-limits-words = 正文字数
-format-limits-abstract-words = 摘要字数
-format-limits-keywords = 关键词
-format-limits-note = 限制的统计范围
-format-limits-note-placeholder = 含注释；不含参考文献
 
 ## About the format: where its requirements are from.
 

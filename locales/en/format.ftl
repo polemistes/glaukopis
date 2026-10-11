@@ -1,6 +1,6 @@
-# Document formats: their kinds, and the editor of a format.
+# Layouts, which the files and the code call formats: their kinds, and the editor of a layout.
 
-## The kinds of document format, as the formats are grouped by them.
+## The kinds of document layout, as the layouts are grouped by them.
 
 format-kind-own = Your own
 format-kind-general = General
@@ -11,31 +11,31 @@ format-kind-fiction = Fiction
 format-kind-stage = Stage and screen
 format-kind-poetry = Poetry
 
-## The format editor.
+## The layout editor.
 
-format-editor = Document format
-format-name = Name of the format
-# The name a format of one's own is first given, made from that of the format it is made from.
+format-editor = Layout
+format-name = Name of the layout
+# The name a layout of one's own is first given, made from that of the layout it is made from.
 format-name-changed = { $name }, changed
-format-sections = Parts of the format
+format-sections = Parts of the layout
 format-sample-page = Sample page { $number }
-format-bundled = Formats that come with Glaukopis stay as they are. Your changes are saved as a format of your own.
-format-delete = Delete this format
+format-bundled = Layouts that come with Glaukopis stay as they are. Your changes are saved as a layout of your own.
+format-delete = Delete this layout
 format-save-own = Save as my own
-format-saved = “{ $name }” is saved among your own formats
-format-read-failed = The format could not be read.
+format-saved = “{ $name }” is saved among your own layouts
+format-read-failed = The layout could not be read.
 format-sample-failed = The sample could not be made.
-format-save-failed = The format could not be saved.
-format-delete-failed = The format could not be deleted.
-format-delete-title = Delete the format “{ $name }”?
-format-delete-message = Maps that use it will use the general manuscript format instead.
-format-delete-confirm = Delete format
+format-save-failed = The layout could not be saved.
+format-delete-failed = The layout could not be deleted.
+format-delete-title = Delete the layout “{ $name }”?
+format-delete-message = Elements that use it will use the general manuscript layout instead.
+format-delete-confirm = Delete layout
 format-leave-title = Leave without saving?
-format-leave-message = The changes you have made to the format will be lost.
+format-leave-message = The changes you have made to the layout will be lost.
 format-leave-confirm = Leave
 format-leave-cancel = Go on editing
 
-## The parts of a format, as they are chosen at the left.
+## The parts of a layout, as they are chosen at the left.
 
 format-section-page = Page
 format-section-type = Type and spacing
@@ -48,8 +48,7 @@ format-section-notes = Notes
 format-section-bibliography = Bibliography
 format-section-figures = Figures, tables, equations
 format-section-margins = Page numbers and running head
-format-section-limits = Limits
-format-section-about = About this format
+format-section-about = About this layout
 
 ## Words that stand in several parts.
 
@@ -65,7 +64,6 @@ format-as-the-text-zero = as the text
 format-size-zero-hint = 0 for the size of the text
 # Beside a number of 0, in the place of its unit.
 format-not-said = not said
-format-no-limit = no limit
 format-unless-said = Unless something else is said of one
 format-as-it-will-stand = As it will stand
 format-align-left = Left
@@ -173,7 +171,7 @@ format-bibliography-new-page = Begins on a new page
 format-bibliography-hanging-indent = Hanging indent
 format-bibliography-entry-spacing = Space between entries
 format-bibliography-style = Reference style
-format-bibliography-style-hint = The one this format goes with; it is taken when the format is chosen
+format-bibliography-style-hint = The one this layout goes with; it holds where the template names none
 format-bibliography-style-none = None in particular
 
 ## The kinds of paragraph and of words: how each differs from the kind it
@@ -350,16 +348,7 @@ format-running-head-author-title = Authors and title
 format-running-head-text = Words of my own
 format-running-head-words = The words
 
-## Limits.
-
-format-limits-hint = The preview counts the words of the text against these, and the dialog for title and abstract counts against the others. Nothing is cut.
-format-limits-words = Words of text
-format-limits-abstract-words = Words of abstract
-format-limits-keywords = Keywords
-format-limits-note = What the limits count
-format-limits-note-placeholder = Notes included; bibliography not
-
-## About the format: where its requirements are from.
+## About the layout: where its requirements are from.
 
 format-description = Description
 format-source = Where the requirements are from
@@ -368,5 +357,5 @@ format-source-read = Read { $date }.
 format-source-high = The values are those of the source.
 format-source-medium = The source could only be read in part or in an earlier state: check what matters to you.
 format-source-low = Little could be verified: treat the values as a beginning.
-format-source-changed = You have changed this format; the source describes what it was made from.
-format-source-none = This format follows no publisher’s requirements in particular.
+format-source-changed = You have changed this layout; the source describes what it was made from.
+format-source-none = This layout follows no publisher’s requirements in particular.

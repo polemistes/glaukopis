@@ -1,6 +1,5 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import FileText from '@lucide/svelte/icons/file-text';
   import PackageX from '@lucide/svelte/icons/package-x';
   import ScanEye from '@lucide/svelte/icons/scan-eye';
   import Share from '@lucide/svelte/icons/share';
@@ -19,22 +18,20 @@
     type PreviewPage,
     type TextRun,
   } from '$lib/api/documents';
+  import type { Template } from '$lib/api/templates';
+  import { documentSettingsUi } from '$lib/document/document-settings.svelte';
+  import { documents } from '$lib/document/pending';
   import { t } from '$lib/i18n';
   import { countWords, documentMark, leanDocument } from '$lib/project/model/document';
   import type { Project } from '$lib/project/model/project.svelte';
   import Button from '$lib/ui/Button.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
-  import { openMenu } from '$lib/ui/menu.svelte';
   import Popover from '$lib/ui/Popover.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { describeError, toasts } from '$lib/ui/toast.svelte';
-  import DocumentDetails from './DocumentDetails.svelte';
-  import { documentRequest, documents, formatKindWords, kindWords } from './documents.svelte';
+  import { describeError } from '$lib/ui/toast.svelte';
+  import { documentRequest } from './documents.svelte';
   import ExportDialog from './ExportDialog.svelte';
-  import { formatEditorUi } from './format-editor.svelte';
-  import StyleEditor from './StyleEditor.svelte';
-  import StyleBrowser from './StyleBrowser.svelte';
 
   interface Props {
     project: Project;
@@ -151,10 +148,9 @@
   let missing = $state.raw<string[]>([]);
   let substitute = $state<string | null>(null);
   let format = $state.raw<DocumentFormat | null>(null);
-  let browsing = $state(false);
-  let detailing = $state(false);
+  /** The template the pages were made by: what it requires is counted against. */
+  let template = $state.raw<Template | null>(null);
   let exporting = $state(false);
-  let editingStyle = $state<string | null>(null);
   let scroller = $state<HTMLDivElement>();
   /** Whether the pages are being made. Never twice at once. */
   let making = false;
@@ -189,20 +185,12 @@
     documents.load();
   });
 
-  /** The document whole, for what is made of all of it: an export, the sample of a format. */
+  /** The document whole, for what is made of all of it: an export, the sample of a layout. */
   const request = () => documentRequest(project, projectId, at);
 
-  /** Opens the editor of the element's format; the element takes the format that is saved. */
-  function editFormat() {
-    formatEditorUi.open({
-      id: choice.format,
-      at,
-      onsaved: (id) => {
-        project.setDocument(at, { format: id });
-        // What a style or a format holds may have changed under the same name.
-        void refresh(true);
-      },
-    });
+  /** Opens the settings of the element's document: its template, layout, style and the rest. */
+  function openSettings() {
+    documentSettingsUi.open({ project, at });
   }
 
   /** The room between two pages, and around all of them, as the style sheet has them. */
@@ -306,13 +294,16 @@
         forced = false;
         force = false;
         const f = $state.snapshot(await documents.format(choice.format)) as DocumentFormat;
+        const tp = $state.snapshot(await documents.template(choice.template)) as Template;
         let document = leanDocument(project, at, sent);
-        const from = `${choice.style}\n${JSON.stringify(f)}\n${documentMark(document)}`;
+        // With what has been changed under the same name: a style saved anew is made anew.
+        const from = `${documents.changed}\n${choice.style}\n${JSON.stringify(f)}\n${JSON.stringify(tp)}\n${documentMark(document)}`;
         if (!must && from === shownFrom && status === 'shown') continue;
         status = count ? 'working' : 'waiting';
         format = f;
+        template = tp;
         const began = performance.now();
-        const asked = { style: choice.style, format: f, key: projectId };
+        const asked = { style: choice.style, format: f, template: tp, key: projectId };
         let preview: Preview;
         try {
           preview = await documentPreview({ ...asked, document }, near());
@@ -433,11 +424,12 @@
     waiting = setTimeout(refresh, count ? Math.max(900, Math.min(2500, took * 0.4)) : 50);
   }
   $effect(() => project.onChange(later));
-  // And it is made anew for another element, format or style.
+  // And it is made anew for another element, template, layout or style.
   $effect(() => {
     void at;
     void choice.style;
     void choice.format;
+    void choice.template;
     void documents.loaded;
     void documents.changed;
     untrack(later);
@@ -453,69 +445,16 @@
     void documentPreviewStop(projectId).catch(() => {});
   });
 
-  function setStyle(id: string) {
-    project.setDocument(at, { style: id });
-  }
+  /** What the document is made by, named: its template, its layout and its reference style. */
+  const inUse = $derived([
+    documents.templateSummary(choice.template)?.name ?? choice.template,
+    documents.formatSummary(choice.format)?.name ?? choice.format,
+    documents.style(choice.style)?.title ?? choice.style,
+  ]);
 
-  async function setFormat(id: string) {
-    const before = choice.style;
-    project.checkpoint();
-    project.setDocument(at, { format: id });
-    // A publisher's format goes with a reference style: it is taken with it.
-    try {
-      const f = await documents.format(id);
-      if (f.style && f.style !== before && documents.style(f.style)) {
-        project.setDocument(at, { style: f.style });
-        toasts.show({
-          kind: 'info',
-          message: t('preview-style-taken', { style: documents.style(f.style)?.title ?? '' }),
-          detail: t('preview-style-taken-why'),
-          action: {
-            label: t('preview-style-keep-other'),
-            run: () => project.setDocument(at, { style: before }),
-          },
-        });
-      }
-    } catch {
-      // The format will be reported as missing by the preview.
-    }
-    project.checkpoint();
-  }
-
-  const styleGroups = $derived.by(() => {
-    const groups = new Map<string, typeof documents.styles>();
-    const other = t('style-kind-other');
-    for (const s of documents.styles) {
-      const name = kindWords(s.kind) || other;
-      groups.set(name, [...(groups.get(name) ?? []), s]);
-    }
-    const order = [
-      ...['note', 'author-date', 'numeric', 'label', 'author'].map((kind) => kindWords(kind)),
-      other,
-    ];
-    return [...groups].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
-  });
-
-  const formatGroups = $derived.by(() => {
-    const order = [
-      'own',
-      'general',
-      'fiction',
-      'stage',
-      'poetry',
-      'style-guide',
-      'publisher',
-      'journal',
-    ];
-    return order
-      .map((kind) => ({
-        name: formatKindWords(kind) ?? kind,
-        formats: documents.formats.filter((f) => f.kind === kind),
-      }))
-      .filter((g) => g.formats.length);
-  });
-
-  const over = $derived(!!format?.limits.words && words.text > format.limits.words);
+  /** The most words the template allows; nothing where it says none. */
+  const wordsMost = $derived(template?.requirements.words ?? null);
+  const over = $derived(!!wordsMost && words.text > wordsMost);
 
   /** The button the remarks are shown beside, while they are shown. */
   let remarking = $state<HTMLElement | null>(null);
@@ -525,80 +464,25 @@
 
 <aside class="preview" aria-label={t('preview')}>
   <header>
-    <div class="choices">
-      <label>
-        <span>{t('preview-format')}</span>
-        <select
-          value={choice.format}
-          onchange={(e) => setFormat(e.currentTarget.value)}
-          aria-label={t('preview-format-label')}
-        >
-          {#each formatGroups as group (group.name)}
-            <optgroup label={group.name}>
-              {#each group.formats as f (f.id)}
-                <option value={f.id}>{f.name}</option>
-              {/each}
-            </optgroup>
-          {/each}
-        </select>
-      </label>
-      <label>
-        <span>{t('preview-style')}</span>
-        <select
-          value={choice.style}
-          onchange={(e) => {
-            const v = e.currentTarget.value;
-            if (v === '…') {
-              e.currentTarget.value = choice.style;
-              browsing = true;
-            } else setStyle(v);
-          }}
-          aria-label={t('preview-style-label')}
-        >
-          {#each styleGroups as [name, styles] (name)}
-            <optgroup label={name}>
-              {#each styles as s (s.id)}
-                <option value={s.id}>{s.title}</option>
-              {/each}
-            </optgroup>
-          {/each}
-          {#if !documents.style(choice.style)}
-            <option value={choice.style}>{choice.style}</option>
-          {/if}
-          <option value="…">{t('preview-style-more')}</option>
-        </select>
-      </label>
-    </div>
+    <!-- The template, the layout and the style in use; the window of settings opens from them. -->
+    <button
+      type="button"
+      class="in-use"
+      aria-label={t('document-window-menu')}
+      title={t('document-window-menu')}
+      onclick={openSettings}
+    >
+      <span class="small">{t('preview-made-by')}</span>
+      <span class="names truncate">{inUse.join(' · ')}</span>
+    </button>
     <IconButton label={t('preview-go-to-text')} disabled={!places.length} onclick={goToText}>
       <TextCursorInput size={15} />
     </IconButton>
     <IconButton label={t('preview-show-text')} disabled={!places.length} onclick={showText}>
       <ScanEye size={15} />
     </IconButton>
-    <IconButton
-      label={t('preview-change')}
-      onclick={(e) =>
-        openMenu(
-          e.currentTarget as HTMLElement,
-          [
-            {
-              label: t('preview-change-format'),
-              hint: t('preview-change-format-hint'),
-              action: editFormat,
-            },
-            {
-              label: t('preview-change-style'),
-              hint: t('preview-change-style-hint'),
-              action: () => (editingStyle = choice.style),
-            },
-          ],
-          { align: 'end' },
-        )}
-    >
+    <IconButton label={t('document-window-menu')} shortcut="Ctrl+Shift+D" onclick={openSettings}>
       <SlidersHorizontal size={15} />
-    </IconButton>
-    <IconButton label={t('preview-details')} onclick={() => (detailing = true)}>
-      <FileText size={15} />
     </IconButton>
     <Button variant="primary" size="sm" onclick={() => (exporting = true)}>
       {#snippet icon()}<Share size={13} />{/snippet}
@@ -685,8 +569,8 @@
     {#if status === 'working'}<Spinner size={11} />{/if}
     {#if count}<span>{t('preview-pages', { count })}</span>{/if}
     <span class:over>
-      {format?.limits.words
-        ? t('preview-words-of', { count: words.text, limit: format.limits.words })
+      {wordsMost
+        ? t('preview-words-of', { count: words.text, limit: wordsMost })
         : t('preview-words', { count: words.text })}
     </span>
     {#if words.withNotes !== words.text}
@@ -738,39 +622,6 @@
   </div>
 </Popover>
 
-{#if browsing}
-  <StyleBrowser
-    onchoose={(id) => {
-      browsing = false;
-      setStyle(id);
-    }}
-    onclose={() => (browsing = false)}
-  />
-{/if}
-{#if detailing}
-  <DocumentDetails
-    {project}
-    {at}
-    limits={format
-      ? { abstractWords: format.limits.abstractWords, keywords: format.limits.keywords }
-      : undefined}
-    onclose={() => (detailing = false)}
-  />
-{/if}
-{#if editingStyle}
-  <StyleEditor
-    id={editingStyle}
-    references={project.usedReferences(at)}
-    language={settings.language}
-    onsaved={(id) => {
-      editingStyle = null;
-      project.setDocument(at, { style: id || undefined });
-      // What a style or a format holds may have changed under the same name.
-      void refresh(true);
-    }}
-    onclose={() => (editingStyle = null)}
-  />
-{/if}
 {#if exporting}
   <ExportDialog
     {request}
@@ -823,43 +674,40 @@
     border-bottom: 1px solid var(--line);
     background: var(--paper);
   }
-  .choices {
+  /* What the document is made by, as a line that opens the settings. */
+  .in-use {
     flex: 1;
     min-width: 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  label {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 1px;
-    min-width: 0;
+    padding: 2px 6px 2px 0;
+    border: none;
+    border-bottom: 1px solid transparent;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
   }
-  label span {
+  .in-use:hover,
+  .in-use:focus-visible {
+    border-bottom-color: var(--accent);
+    outline: none;
+  }
+  .in-use .small {
     font-size: 10.5px;
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--ink-4);
   }
-  select {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 100%;
-    height: 26px;
-    padding: 0 6px 0 0;
-    border: none;
-    border-bottom: 1px solid transparent;
-    background: transparent;
+  .in-use .names {
+    max-width: 100%;
+    height: 22px;
+    line-height: 22px;
     font-weight: 500;
-    text-overflow: ellipsis;
-    cursor: pointer;
-    outline: none;
-  }
-  select:hover,
-  select:focus-visible {
-    border-bottom-color: var(--accent);
   }
   /* The pages are a region of their own: what is written in the text
      beside them changes nothing in them, and they are not laid out and

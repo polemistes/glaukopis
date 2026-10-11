@@ -48,7 +48,6 @@ format-section-notes = Bilješke
 format-section-bibliography = Literatura
 format-section-figures = Ilustracije, tablice, jednadžbe
 format-section-margins = Brojevi stranica i živa glava
-format-section-limits = Ograničenja
 format-section-about = O ovom formatu
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = kao tekst
 format-size-zero-hint = 0 za veličinu teksta
 # Beside a number of 0, in the place of its unit.
 format-not-said = nije rečeno
-format-no-limit = bez ograničenja
 format-unless-said = Ako o kojem nije rečeno drukčije
 format-as-it-will-stand = Kako će stajati
 format-align-left = Lijevo
@@ -349,15 +347,6 @@ format-running-head-author = Autori
 format-running-head-author-title = Autori i naslov
 format-running-head-text = Vlastite riječi
 format-running-head-words = Riječi
-
-## Limits.
-
-format-limits-hint = Pretpregled broji riječi teksta prema ovima, a dijalog za naslov i sažetak prema ostalima. Ništa se ne reže.
-format-limits-words = Riječi teksta
-format-limits-abstract-words = Riječi sažetka
-format-limits-keywords = Ključne riječi
-format-limits-note = Što ograničenja broje
-format-limits-note-placeholder = Bilješke uključene; literatura ne
 
 ## About the format: where its requirements are from.
 

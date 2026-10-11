@@ -193,24 +193,24 @@ describe('where something stands', () => {
     });
   });
 
-  it('is told of the format in one sentence, in the language of the interface', () => {
+  it('is told of the layout in one sentence, in the language of the interface', () => {
     const said = (kind: string, side: string, flow: string) =>
       t('figures-usual', { kind, side, flow });
     expect(said('figure', 'left', 'around')).toBe(
-      'The format has figures to the left, with the text flowing around them.',
+      'The layout has figures to the left, with the text flowing around them.',
     );
     expect(said('table', 'right', 'apart')).toBe(
-      'The format has tables to the right, apart from the text.',
+      'The layout has tables to the right, apart from the text.',
     );
-    expect(said('equation', 'center', 'none')).toBe('The format has equations in the middle.');
+    expect(said('equation', 'center', 'none')).toBe('The layout has equations in the middle.');
     languages.current = 'nb';
     expect(said('table', 'left', 'apart')).toBe(
-      'Formatet har tabeller til venstre, atskilt fra teksten.',
+      'Oppsettet har tabeller til venstre, atskilt fra teksten.',
     );
-    expect(sides().map((s) => s.label)).toEqual(['Som formatet', 'Venstre', 'Midten', 'Høyre']);
+    expect(sides().map((s) => s.label)).toEqual(['Som oppsettet', 'Venstre', 'Midten', 'Høyre']);
     languages.current = 'en';
     expect(flows().map((f) => f.label)).toEqual([
-      'As the format',
+      'As the layout',
       'Flows around it',
       'Stands apart',
     ]);

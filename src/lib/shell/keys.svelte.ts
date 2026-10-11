@@ -57,6 +57,7 @@ export const KEYS: KeyEntry[] = [
   // Bound by the project view itself: the table cannot match an arrow.
   { id: 'up', keys: 'Alt+↑', place: 'project' },
   { id: 'preview', keys: 'Ctrl+P', place: 'project', bound: true },
+  { id: 'document-settings', keys: 'Ctrl+Shift+D', place: 'project', bound: true },
   { id: 'side-references', keys: 'Ctrl+Shift+R', place: 'project', bound: true },
   { id: 'side-pictures', keys: 'Ctrl+Shift+P', place: 'project', bound: true },
   { id: 'side-comments', keys: 'Ctrl+Shift+M', place: 'project', bound: true },

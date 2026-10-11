@@ -1,6 +1,6 @@
-# Dokumentformater: typene av dem, og redigeringen av et format.
+# Oppsett: typene av dem, og redigeringen av et oppsett.
 
-## Typene av dokumentformater, som formatene grupperes etter.
+## Typene av oppsett, som oppsettene grupperes etter.
 
 format-kind-own = Dine egne
 format-kind-general = Generelle
@@ -11,31 +11,31 @@ format-kind-fiction = Skjønnlitteratur
 format-kind-stage = Scene og film
 format-kind-poetry = Lyrikk
 
-## Redigeringen av et format.
+## Redigeringen av et oppsett.
 
-format-editor = Dokumentformat
-format-name = Navnet på formatet
-# Navnet et eget format først får, laget av navnet på formatet det lages av.
+format-editor = Oppsett
+format-name = Navnet på oppsettet
+# Navnet et eget oppsett først får, laget av navnet på oppsettet det lages av.
 format-name-changed = { $name }, endret
-format-sections = Delene av formatet
+format-sections = Delene av oppsettet
 format-sample-page = Prøveside { $number }
-format-bundled = Formatene som følger med Glaukopis, forblir som de er. Endringene dine lagres som et eget format.
-format-delete = Slett dette formatet
+format-bundled = Oppsettene som følger med Glaukopis, forblir som de er. Endringene dine lagres som et eget oppsett.
+format-delete = Slett dette oppsettet
 format-save-own = Lagre som mitt eget
-format-saved = «{ $name }» er lagret blant dine egne formater
-format-read-failed = Formatet kunne ikke leses.
+format-saved = «{ $name }» er lagret blant dine egne oppsett
+format-read-failed = Oppsettet kunne ikke leses.
 format-sample-failed = Prøven kunne ikke lages.
-format-save-failed = Formatet kunne ikke lagres.
-format-delete-failed = Formatet kunne ikke slettes.
-format-delete-title = Slette formatet «{ $name }»?
-format-delete-message = Kart som bruker det, vil bruke det generelle manusformatet i stedet.
-format-delete-confirm = Slett formatet
+format-save-failed = Oppsettet kunne ikke lagres.
+format-delete-failed = Oppsettet kunne ikke slettes.
+format-delete-title = Slette oppsettet «{ $name }»?
+format-delete-message = Elementer som bruker det, vil bruke det generelle manusoppsettet i stedet.
+format-delete-confirm = Slett oppsettet
 format-leave-title = Gå ut uten å lagre?
-format-leave-message = Endringene du har gjort i formatet, går tapt.
+format-leave-message = Endringene du har gjort i oppsettet, går tapt.
 format-leave-confirm = Gå ut
 format-leave-cancel = Fortsett å redigere
 
-## Delene av et format, slik de velges til venstre.
+## Delene av et oppsett, slik de velges til venstre.
 
 format-section-page = Side
 format-section-type = Skrift og avstand
@@ -48,8 +48,7 @@ format-section-notes = Noter
 format-section-bibliography = Litteraturliste
 format-section-figures = Figurer, tabeller, ligninger
 format-section-margins = Sidetall og topptekst
-format-section-limits = Grenser
-format-section-about = Om dette formatet
+format-section-about = Om dette oppsettet
 
 ## Ord som står i flere deler.
 
@@ -65,7 +64,6 @@ format-as-the-text-zero = som teksten
 format-size-zero-hint = 0 for tekstens størrelse
 # Ved siden av et tall på 0, der enheten ellers står.
 format-not-said = ikke oppgitt
-format-no-limit = ingen grense
 format-unless-said = Med mindre noe annet er sagt om den enkelte
 format-as-it-will-stand = Slik det blir
 format-align-left = Venstre
@@ -173,7 +171,7 @@ format-bibliography-new-page = Begynner på ny side
 format-bibliography-hanging-indent = Hengende innrykk
 format-bibliography-entry-spacing = Luft mellom oppføringene
 format-bibliography-style = Referansestil
-format-bibliography-style-hint = Den som hører til dette formatet; den tas i bruk når formatet velges
+format-bibliography-style-hint = Den som hører til dette oppsettet; den gjelder der malen ikke nevner noen
 format-bibliography-style-none = Ingen bestemt
 
 ## Slagene avsnitt og ord: hvordan hvert skiller seg fra slaget det bygger
@@ -349,16 +347,7 @@ format-running-head-author-title = Forfattere og tittel
 format-running-head-text = Egne ord
 format-running-head-words = Ordene
 
-## Grenser.
-
-format-limits-hint = Forhåndsvisningen teller ordene i teksten mot disse, og vinduet for tittel og sammendrag teller mot de andre. Ingenting kuttes.
-format-limits-words = Ord i teksten
-format-limits-abstract-words = Ord i sammendraget
-format-limits-keywords = Nøkkelord
-format-limits-note = Hva grensene teller
-format-limits-note-placeholder = Noter tatt med; litteraturlisten ikke
-
-## Om formatet: hvor kravene kommer fra.
+## Om oppsettet: hvor kravene kommer fra.
 
 format-description = Beskrivelse
 format-source = Hvor kravene kommer fra
@@ -367,5 +356,5 @@ format-source-read = Lest { $date }.
 format-source-high = Verdiene er kildens.
 format-source-medium = Kilden kunne bare leses delvis eller i en tidligere utgave: sjekk det som betyr noe for deg.
 format-source-low = Lite kunne bekreftes: se verdiene som et utgangspunkt.
-format-source-changed = Du har endret dette formatet; kilden beskriver det det ble laget av.
-format-source-none = Dette formatet følger ikke noe bestemt forlags krav.
+format-source-changed = Du har endret dette oppsettet; kilden beskriver det det ble laget av.
+format-source-none = Dette oppsettet følger ikke noe bestemt forlags krav.

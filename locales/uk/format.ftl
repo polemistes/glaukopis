@@ -48,7 +48,6 @@ format-section-notes = Примітки
 format-section-bibliography = Бібліографія
 format-section-figures = Рисунки, таблиці, рівняння
 format-section-margins = Номери сторінок і колонтитул
-format-section-limits = Обмеження
 format-section-about = Про цей формат
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = як текст
 format-size-zero-hint = 0 — розмір тексту
 # Beside a number of 0, in the place of its unit.
 format-not-said = не вказано
-format-no-limit = без обмеження
 format-unless-said = Якщо про якийсь не сказано інакше
 format-as-it-will-stand = Як стоятиме
 format-align-left = Ліворуч
@@ -349,15 +347,6 @@ format-running-head-author = Автори
 format-running-head-author-title = Автори й назва
 format-running-head-text = Власні слова
 format-running-head-words = Слова
-
-## Limits.
-
-format-limits-hint = Перегляд рахує слова тексту проти цих обмежень, а діалог назви й анотації — проти решти. Нічого не обрізається.
-format-limits-words = Слів тексту
-format-limits-abstract-words = Слів анотації
-format-limits-keywords = Ключових слів
-format-limits-note = Що рахують обмеження
-format-limits-note-placeholder = Разом із примітками; без бібліографії
 
 ## About the format: where its requirements are from.
 
