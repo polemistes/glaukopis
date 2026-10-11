@@ -13,32 +13,39 @@ references and is the same for all projects.
 You do not write a document in Glaukopis. You make a **map** of your ideas,
 and write into it, and the map *is* the document.
 
-Every idea is an **element** of the map. An element has a name and may have
-text. Elements stand under one another: that is the order of the argument.
-They may also be *associated* across the map, where one idea bears on another
-without belonging under it.
+Every idea is an **element** of the project. An element has a name and may
+have text. Elements stand under one another: that is the order of the
+argument. They may also be *associated* across the project, where one idea
+bears on another without belonging under it. A project is one tree, and at
+its top stands the project itself, an element like the others: its name is
+the project's name, and its text is what comes before everything else.
 
-A map can be looked at in three ways, and it is the same map in all of them:
+Any element can be looked at in three ways, with all that is under it, and
+it is the same element in all of them:
 
 | View | What it is for |
 | --- | --- |
-| **Diagram** | Seeing the whole, and moving ideas about. |
-| **Text** | Writing. The names of the elements are the headings. |
+| **Diagram** | Seeing the whole, and moving ideas about. The element stands at the centre, and what is under it about it: this is its map. |
+| **Text** | Writing. The name of the element is the title, and the names of those under it are the headings. |
 | **Preview** | Seeing the manuscript as it will be sent. |
 
 So there is no moment at which the outline is put away and the writing
 begins. An element with a name and nothing else is a thought to come back to;
 one with three paragraphs and citations is a section that is nearly done.
-Both are in the same map.
+Both are in the same tree. A thought that has no place yet is a tree of its
+own under the project, until it is moved to where it belongs; and any
+element, a chapter or the whole book, can be entered, to be seen alone and
+printed as a document of its own (see *One tree, entered anywhere*).
 
 ## A first project
 
 1. Choose **Begin a project** and give it the working title of the book or
    article. It opens on its text, a sheet with one heading, named after the
    project: a new project begins with writing. Write under the heading, or
-   press **Ctrl+D** for the diagram, a map with one element, the centre.
-2. In the diagram, click the centre and press **Tab**. A new element appears
-   under it: type its name and press **Enter**.
+   press **Ctrl+D** for the diagram, a map with one element, the project
+   itself.
+2. In the diagram, press **Tab**. A new element appears under the project:
+   type its name and press **Enter**.
 3. Press **Enter** again for one beside it, **Tab** for one under it.
 4. Double-click an element to write its text.
 
@@ -48,8 +55,10 @@ To go from one project to another without the home page, open **the list of
 projects** at the left of a project, with the button at the left of the bar
 over the map or **Ctrl+Shift+L**. It is the list of the home page, with its
 folders and its search; a click opens a project, and the one that is open is
-marked. It stays open from project to project until you close it, and its
-edge can be dragged to make it wider.
+marked. Under the open project stands its whole tree, folded but for the way
+down to the element in view, which is marked; a click on an element enters
+it (see *One tree, entered anywhere*). The list stays open from project to
+project until you close it, and its edge can be dragged to make it wider.
 
 ### Many projects
 
@@ -65,13 +74,13 @@ projects: a project you share is in your folders, not in the others'. The
 field above the list finds a project by its name.
 
 **A map of the projects…**, in the menu at the head of the page, makes a new
-project whose one map is the projects themselves: the folders as elements,
-nested as the folders are, and under each the projects in it, with their
-descriptions as text. With **everything in them**, each project has its maps
-under it, and each map its whole tree of elements, names and texts, so that
-all your work can be seen and searched as one map. The citations keep their
-references; a cross-reference points at nothing in the new project, and
-comments stay behind. The new project opens on its text.
+project of the projects themselves: the folders as elements, nested as the
+folders are, and under each the projects in it, with their descriptions as
+text. With **everything in them**, each project has its whole tree of
+elements under it, names and texts, so that all your work can be seen and
+searched as one map. The citations keep their references; a cross-reference
+points at nothing in the new project, and comments stay behind. The new
+project opens on its text.
 
 ## The diagram
 
@@ -79,20 +88,29 @@ comments stay behind. The new project opens on its text.
 | --- | --- |
 | Add an element under the one selected | **Tab** |
 | Add one beside it | **Enter** |
+| Add an element under the one in view, where you click | Double-click the background, or **New element here** in its menu |
 | Write the text of an element | Double-click it |
 | Rename an element | **F2**, or begin to type |
 | Read its text without opening it | Rest the pointer on it |
 | Move an element, with all that is under it | Drag it onto another element |
 | Move an element without moving what is under it, which stays where it stood, still its own | Drag it with **Shift** held |
 | Move it up or down, deeper or less deep | **Alt+Shift** and the arrows |
-| Copy elements, with all under them; paste them under the element selected, or on their own, where the pointer is, where none is | **Ctrl+C**, **Ctrl+V**; or the menu |
-| Cut elements, to move them where they are pasted: in another map, or another project | **Ctrl+X**, then **Ctrl+V**; or the menu |
+| Copy elements, with all under them; paste them under the element selected, or, where none is, under the element in view, where the pointer is | **Ctrl+C**, **Ctrl+V**; or the menu |
+| Cut elements, to move them where they are pasted: elsewhere in the project, or in another project | **Ctrl+X**, then **Ctrl+V**; or the menu |
 | Go from element to element | The arrows |
 | Select several | **Ctrl**-click or **Shift**-click, or drag a frame around them |
 | Delete | **Delete** |
 | Undo, redo | **Ctrl+Z**, **Ctrl+Shift+Z** |
+| Enter an element: it comes to the centre, with what is under it, and the rest is out of the way | The small button on it while it is selected, **Ctrl+Enter**, or **Open as a map** in its menu |
+| Go up, to the element over the one in view | **Alt+Up**, or its name, small, at the left of the bar |
 | Move about the map | Drag the background; scroll to zoom |
 | Everything else | Right-click an element, or **Shift+F10** |
+
+The element in view stands at the centre of the map, never folded, and what
+is under it is laid out to both sides of it. A project opens with the
+project itself in view, and its whole tree about it. With nothing selected,
+**Tab** adds an element under the element in view, and **Enter** selects it.
+See *One tree, entered anywhere*.
 
 Lines between an element and what is under it are straight. **Associations**
 are curved. To make one, right-click an element, choose **Associate with…**,
@@ -102,7 +120,7 @@ what it is.
 
 An element that has text shows a small mark. The box in which the text is
 written can be dragged by the room around its name to wherever it is wanted,
-and the next box opened in that map opens there.
+and the next box opened opens there.
 
 **How far the writing has come.** Right-click an element, **Status**, and say
 whether it is an idea, a draft or done; for several at once, select them
@@ -113,9 +131,11 @@ diagram then says how far the map has come, as *2 done · 3 drafts · 1 idea ·
 
 ## The text
 
-**Ctrl+D** turns between the diagram and the text. In the text, each element
-is a section: its name is the heading, and the depth of the heading is the
-depth of the element in the map.
+**Ctrl+D** turns between the diagram and the text. In the text, the element
+in view is the title, and each element under it is a section: its name is
+the heading, and the depth of the heading is how deep the element stands
+under the one in view. Of a project entered at its top, as a new one is, the
+project's name is the title, and its text comes before the first section.
 
 Write as in any editor. The tools are over the text: the kind of the
 paragraph the cursor is in, a button that opens the kinds (text, quotation,
@@ -124,7 +144,7 @@ capitals, and **Words**, which has the other marks and the kinds of words;
 **Cite**, **Note** and **Insert**, which has pictures, tables and
 mathematics; and **Comment**. They act where the cursor is, or on what is
 selected. The same tools are in the box that opens when an element is
-double-clicked in the diagram. Before them, over the text of a map, stands
+double-clicked in the diagram. Before them, over the text, stands
 **New element**, which adds an element after the one the cursor is in, or
 under it; and at their end a button that turns the checking of spelling off
 and on.
@@ -150,6 +170,8 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Make the element deeper or less deep | **Tab**, **Shift+Tab** in its name; or **Alt** and the arrows left and right |
 | Move the element up or down | **Alt** and the arrows up and down |
 | Join an element to the one above | Right-click: **Join to the element above** |
+| Enter an element, to see it alone with what is under it | **Open as a map**, from the grip beside its heading |
+| Go up, to the element over the one in view | Its name, small, at the left of the bar |
 
 A text has two breaks: **Enter** begins a new paragraph, and
 **Shift+Enter** breaks the line within the paragraph, as in an address or a
@@ -178,9 +200,9 @@ words, or to remove it.
 
 ### The outline
 
-**Ctrl+Shift+O**, or the button at the left of the bar beside the map's
-name, shows the outline of the map beside whatever view is open, diagram,
-text or timeline: every element by its name, as deep as it stands, and in
+**Ctrl+Shift+O**, or the button at the left of the bar over the map, shows
+the outline of what is in view beside whatever view is open, diagram, text
+or timeline: every element by its name, as deep as it stands, and in
 the text the one at the top marked; the line beside it can be dragged.
 Press a name to go there; what it is folded under is opened. An entry with
 something under it has a chevron, which folds that away in the outline and
@@ -231,8 +253,8 @@ opened.
 ### Notes
 
 A note is written in a small panel that opens where the note stands, and is
-shown in the text as its number. In the text of a map the notes are numbered
-through the whole map, as they will be in the document. An element that is
+shown in the text as its number. In the text the notes are numbered through
+all that is in view, as they will be in the document. An element that is
 left out of the document numbers its own.
 
 Whether notes stand at the foot of the page or at the end of the text is
@@ -380,7 +402,7 @@ is seen.
 
 The button at the left of the tools shows the kind of the paragraph the
 cursor is in, and opens the kinds **in hand**: **Text**, **Quotation**,
-**List** and **Numbered list**; every kind the map uses; those you have
+**List** and **Numbered list**; every kind the project uses; those you have
 pinned; and those the format suggests, as the *Screenplay* format suggests
 the parts of a script. A kind chosen there is given to the paragraphs
 selected, or to the one the cursor is in. **More…** has every kind, by its
@@ -408,7 +430,7 @@ which say what the words are: **Foreign words**, with their language,
 which the spelling follows and which goes into every document; the
 **Title of a work**; a **Term** where it is first used; a **Mention** of a
 word spoken of as a word, which stands in the quotation marks of the
-language of the map, « » in Norwegian, “ ” in English, „ “ in German; and
+language of the text, « » in Norwegian, “ ” in English, „ “ in German; and
 a **Highlight**, for the eye on the screen. Select the words first; with
 nothing selected, what you type next is of the kind.
 
@@ -423,7 +445,7 @@ since it says no more than how it differs from a kind the format knows;
 its name is offered in your other projects when a kind is named there.
 
 The foot of the kind menu says where the looks come from: **Set as
-“Manuscript” has them**, naming the format of the map, and under it
+“Manuscript” has them**, naming the format of the document, and under it
 **Change the format…**, which opens the format at its kinds, where the
 look of each is changed; see *The preview, and the manuscript*. A draft
 note and a highlight are for the screen alone, and go into no document.
@@ -494,17 +516,17 @@ the preview remarks on it.
 ## Pictures
 
 Pictures are kept in one store for the whole of Glaukopis, as references are
-kept in the library. A picture that is used in several texts, maps or
-projects is the same picture in all of them, and is kept once.
+kept in the library. A picture that is used in several texts or projects
+is the same picture in all of them, and is kept once.
 
 **Ctrl+3**, or the pictures in the rail at the left, shows the store: every
 picture, to be searched by what it is called and by what is said of it. Add
 pictures with **Add pictures…**, or drop files on the view.
 
 In a project, **Ctrl+Shift+P** opens the pictures beside the map, where the
-references are otherwise. They can be shown for **this map**, for the
-**project**, or for the whole **store**. Drag one into a text to make a
-figure of it there.
+references are otherwise. They can be shown for **this map**, which is the
+element in view with all under it, for the **project**, or for the whole
+**store**. Drag one into a text to make a figure of it there.
 
 Of each picture you can say:
 
@@ -551,15 +573,15 @@ its own, with its page and nothing else. A note written as one long citation,
 55; Olson 1996 attributes the view to Lowe…*, becomes text with the
 citations in it, to be written on as text.
 
-What you cite is thereby among the references of the map and of the
-project: there is nothing else to do to put it there. The panel of
-references (**Ctrl+Shift+R**) lists them, for this map, for the project, and
-the whole library. A reference dragged from the panel is cited where it is
-dropped in a text; dropped on an element of the diagram, it is cited at the
-end of that element's text.
+What you cite is thereby among the references of the project: there is
+nothing else to do to put it there. The panel of references
+(**Ctrl+Shift+R**) lists them, for this map, which is the element in view
+with all under it, for the project, and the whole library. A reference
+dragged from the panel is cited where it is dropped in a text; dropped on an
+element of the diagram, it is cited at the end of that element's text.
 
-A reference chosen in the panel shows where it is cited in the project, map
-by map and element by element; a click goes there. In the library, a work
+A reference chosen in the panel shows where it is cited in the project,
+element by element; a click goes there. In the library, a work
 shows the projects that cite it, and a click opens the project at the work.
 
 ### What you think of a work
@@ -599,13 +621,13 @@ under it. It is a citation that was *found*, and waits to be tied to a
 reference of your library.
 
 They are gone through in the panel at the side, under its tab with the
-magnifying glass, which says how many the map in view has left
-(**Ctrl+Shift+T**). **Citations that were found…** in the menu of the map
-(**This map**, under the name of the map in the bar) opens it as well, and
-says how many there are; and pressing found text in the text opens the
-panel at that one. The panel is there for any map, whether its text was
-brought in or written here: what is to be taken for a citation is said at
-its top, as below.
+magnifying glass, which says how many are left in the element in view and
+under it (**Ctrl+Shift+T**). **Citations that were found…** in the menu of
+the element in view (**This element**, beside its name in the bar) opens it
+as well, and says how many there are; and pressing found text in the text
+opens the panel at that one. The panel is there for any element, whether its
+text was brought in or written here: what is to be taken for a citation is
+said at its top, as below.
 
 The panel shows one at a time, in the sentence it stands in, with the
 citation that is proposed for it: for each work the reference, how sure it
@@ -614,8 +636,8 @@ All of it can be changed as in any citation. Where the library has several
 references that it may be, the others are listed; **Another…** looks for
 the work in the library. A work that the library does not have, and that
 the file tells of, can be **added to the library** from what the file says.
-Where the text of the map is open beside the panel, the one that is looked
-at is shown there as well: the text is scrolled to it and it is selected,
+Where the text is open beside the panel, the one that is looked at is shown
+there as well: the text is scrolled to it and it is selected,
 and a note is opened at it. Where in the list it stands is said over the
 passage, with arrows to the one before and the next; **Show the list** opens
 the list of all there is.
@@ -698,8 +720,8 @@ stands in the file can be seen and changed with **Edit the source…**, in the
 menu of a reference, by those who want to.
 
 References can be added wherever they are used: from the library, from the
-picker that **@** opens, and from the panel of references of a map. It is the
-same form in all three.
+picker that **@** opens, and from the panel of references of a project. It
+is the same form in all three.
 
 **Collections** gather references for a subject or a piece of work. A
 collection holds links, not copies: a reference can be in any number of
@@ -722,15 +744,16 @@ search and with the collection in view; the button says how many are on, and
 
 ### A map of the library
 
-**A map of the library…**, in the menu beside *New reference*, makes a new
-project with the library as a map: each collection an element, nested as the
+**A map of the library…**, in the menu beside *New reference*, makes a tree
+of elements of the library: each collection an element, nested as the
 collections are, and under it every reference as an element of its own,
 named as the list shows it. The text of each is a citation of the reference,
-so the bibliography of the map lists them all, in the reference style chosen.
-References in no collection stand at the centre. While a collection is in
-view, the item is **A map of “…”**, and the map holds that collection and
-what lies within it. The project keeps copies of the references, as every
-project does of what it cites.
+so the bibliography of the tree lists them all, in the reference style
+chosen. References in no collection stand at the top. The tree goes **into
+the project** you choose, or into **a new project, named after it**. While
+a collection is in view, the item is **A map of “…”**, and the tree holds
+that collection and what lies within it. The project keeps copies of the
+references, as every project does of what it cites.
 
 A project keeps its own copy of every work it cites. A reference deleted from
 the library therefore leaves the citations of it as they are; before it is
@@ -787,7 +810,7 @@ Where the file is dropped decides what becomes of it:
 | --- | --- |
 | The library | A reference is made of it, in the collection in view |
 | A reference that is open | The file is attached to that reference |
-| An element of a map | A reference is made of it, and cited at the end of the element's text |
+| An element of the diagram | A reference is made of it, and cited at the end of the element's text |
 
 ### Importing
 
@@ -810,10 +833,10 @@ map, one at a time. The button with the panel on it, in the bar over the
 map, opens it as it was last, and closes it; the tabs at its head change
 what it shows. Each has its key as well: **Ctrl+Shift+R**, **Ctrl+Shift+P**,
 **Ctrl+Shift+M**, **Ctrl+Shift+T**, **Ctrl+Shift+H** and **Ctrl+Shift+E**.
-What the panel shows is of one map, named in the line over its tabs: with two
-maps side by side, that of the pane in view, whose head is marked the same
-way, and the line is marked with it. The history alone is of the whole
-project, and has no such line.
+What the panel shows is of the element in view, with all under it, named in
+the line over its tabs: with two views side by side, that of the pane in
+view, whose head is marked the same way, and the line is marked with it. The
+history alone is of the whole project, and has no such line.
 
 ## Kinds of elements
 
@@ -850,21 +873,23 @@ also be given a margin either side, **Give or take** `5 years`, `3 months`,
 was written, with a band that fades away on both sides as far as the
 margin reaches, and what is placed relative to it is allowed that room.
 
-Once anything in a map says when it is, the map can be seen as a
-**Timeline**, beside *Diagram* and *Text*. Each child of the centre is a
-lane; the placed elements of its branch stand in it, and its own placement,
-if it has one, is the span of the lane — a person's lifetime, a city's
-years. A lane in which nothing says when it is, its own element included,
-is not shown: what says nothing of its time stays out of the timeline. The
-button with the rows among the timeline's controls chooses the
+Once anything under the element in view says when it is, it can be seen as
+a **Timeline**, beside *Diagram* and *Text*. Each child of the element in
+view is a lane; the placed elements of its branch stand in it, and its own
+placement, if it has one, is the span of the lane — a person's lifetime, a
+city's years. A lane in which nothing says when it is, its own element
+included, is not shown: what says nothing of its time stays out of the
+timeline. The button with the rows among the timeline's controls chooses the
 lanes: any branch can be one lane, or each of its children a lane of their
-own. An element that stands for another map brings that map's placed
-elements with it. Elements that are in no lane stand in a lane of their own
-at the foot. Where you have chosen the lanes, a new child of the centre is
-not a lane until you choose it, and stands at the foot too: the lanes button
-is marked while lanes are chosen, and pressing the name of the lane at the
-foot opens the choice. An element that is deleted leaves the choice; when
-none that was chosen is left, each child of the centre is a lane again.
+own. An element that stands for another element brings that element's
+placed elements with it. Elements that are in no lane stand in a lane of
+their own at the foot. Where you have chosen the lanes, a new child of the
+element in view is not a lane until you choose it, and stands at the foot
+too: the lanes button is marked while lanes are chosen, and pressing the
+name of the lane at the foot opens the choice. An element that is deleted
+leaves the choice; when none that was chosen is left, each child of the
+element in view is a lane again. The lanes are of the element in view: enter
+another element, and its children are the lanes.
 
 A written time stands where it was written. What is relative is **solved**:
 the timeline works out the window of what it may be, from everything else,
@@ -872,21 +897,23 @@ and draws it dashed in the middle of that window, with the window as a
 faint band — the uncertainty is seen, not hidden. An element that is after
 something and before something else that comes earlier **cannot be placed**,
 and is marked; one that refers to an element that says nothing of its time
-is listed at the foot. Where nothing in the map has a written time, the
+is listed at the foot. Where nothing in view has a written time, the
 timeline is **in order** only, each element a step after what it comes
 after, with no scale.
 
 A kind of element can be lanes too: under the lanes, **Lanes by kind**
 makes every element of a kind — each character, each place — a lane of
 its own. **Add a chronology to the map**, among the timeline's controls,
-adds an element under the centre with a table of everything placed, in
-the order of time, with when and what: a copy of what the timeline knows
-at the moment, to be written on and printed with the document.
+adds an element under the element in view with a table of everything
+placed, in the order of time, with when and what: a copy of what the
+timeline knows at the moment, to be written on and printed with the
+document.
 
 The timeline has an **axis**: the dates of the world, or **units of your
 own** for an invented one — years, days, cycles, whatever you call them — in
 which times are numbers: `Year 12`, `Day 3`, or just `12`. Choose the axis
-under the lanes.
+under the lanes: it is set on the element in view, and holds for everything
+under it that sets none.
 
 Scroll with Shift or drag the timeline to move along it; Ctrl with the
 wheel, or the buttons, change the scale. A click chooses an element; a
@@ -964,77 +991,111 @@ comment was on are deleted, the comment stays on the element, with the
 words it was on quoted. Comments travel with a shared project, and are kept
 in its history like everything else.
 
-## Several maps
+## One tree, entered anywhere
 
-A project can hold several maps. The name of the map in view stands at the
-left of the bar over the map; press it, and the maps of the project pull
-down, to open one. The button beside it has what can be done with this map
-— rename, duplicate, the citations that were found, delete — and **New
-map** and **A map from a document…**. Over that bar, the bar of the project
-has **Diagram**, **Text**, **Side by side**, **Preview** and **Share**;
-side by side, each side has a bar of its own, with its map.
+A project is one tree, and any element of it can be **entered**: it is then
+the element in view, at the centre of the diagram, the title of the text and
+the document of the preview, with all that is under it, and the rest of the
+project is out of the way. The project itself is an element, at the top: a
+new project opens there, with everything in it. Enter an element with the
+small button that appears on it while it is selected in the diagram, with
+**Ctrl+Enter**, or with **Open as a map** in its menu, in the diagram and
+from the grip beside its heading in the text. Go up with **Alt+Up**, or by
+pressing the name of the element over it, which stands small at the left of
+the bar over the map.
 
-This is what makes it safe to write. A map that is valuable as it is, the
+The bar says where you are: the name of the element over the one in view,
+small, which goes up; then the name of the element in view, which pulls down
+the elements beside it, to show one of them in its place, or, for the
+project itself, the trees under it. Beside the name is **This element**,
+with what can be done with the element in view: **Rename**, **Document
+details…**, **Citations that were found…**, **Languages…**, **New element
+under it**, **A document into it…** and **Delete**, which takes the element
+with all under it, and goes up. The project itself is not deleted here, but
+from the home page. Over that bar, the bar of the project has **Diagram**,
+**Text**, **Side by side**, **Preview** and **Share**; side by side, each
+side has a bar of its own.
+
+**The list of projects** (**Ctrl+Shift+L**) shows the whole tree of the open
+project under its name, folded but for the way down to the element in view,
+which is marked; press an element to enter it, and the chevron before one
+to show or hide what is under it.
+
+This is what makes it safe to write. A tree that is valuable as it is, the
 first sketch of the argument, or the plan for the whole book, need not be
 consumed by the writing:
 
-- **Duplicate** a map, and write in the copy.
-- **New map from this branch** lifts one part of a map out as a map of its
-  own: a chapter out of the plan for the book.
-- **Make it the centre**, in the menu of a loose element, makes it the centre
-  of its map: the centre that was goes under it, with all under it.
-- **Copy to map** and **Move to map** take elements from one map to another. A
-  copy remembers where it came from, and what its original was. When the
-  original changes, the copy is marked; the mark, or **Compare with the
-  original…** in its menu, shows where the two differ now. The copy can then
-  take the original's name and text, or keep its own.
-- **To another project** as well: below the maps of this project, **Copy to
-  map** and **Move to map** list the other projects, each with its maps; the
-  elements go in under the centre of the map chosen, without the project
-  having to be open, and **Show** in the message that follows opens it. Or
-  copy them with **Ctrl+C** in the diagram, open the other project, and paste
-  them with **Ctrl+V**. Cut them with **Ctrl+X** instead, and they move: they
-  stay where they are until they are pasted, and within the project the move
-  is one step, which one **Ctrl+Z** takes back. **Cut**, **Copy** and **Paste
-  under it** are in the menu of an element, in the diagram and in the text,
-  and **Paste here** in the menu of the map itself, which puts what is pasted
-  on its own where you clicked. They go with their names, texts and notes, their
-  kinds, colours and times, and all that is under them; kinds the project made
-  for itself go with them, unless the other project has kinds of the same
-  names. Comments stay behind, and a copy in another project does not
-  remember its original. A move to another project can be undone here, which
-  brings the elements back, but leaves the copy there.
-- An element can have **another map take its place in the document**. The map
-  of the book then has one element for each chapter, each of which stands for
-  the map of that chapter. The preview of the book shows the book.
-- **Side by side**, in the bar of the project, shows the map as diagram and
-  as text beside one another; choose another map in the bar of either side
-  to see two maps, and move elements between them. Each side can be diagram,
-  text or timeline.
+- A thought that has no place yet is a tree of its own under the project:
+  **New element here**, in the menu of the diagram's background, or a double
+  click there, makes one under the element in view where you clicked. Move
+  it into the argument when it has found its place.
+- **Copy** a branch with **Ctrl+C**, paste it beside itself with
+  **Ctrl+V**, and write in the copy. A copy remembers where it came from,
+  and what its original was. When the original changes, the copy is marked;
+  the mark, or **Compare with the original…** in its menu, shows where the
+  two differ now. The copy can then take the original's name and text, or
+  keep its own.
+- **Copy to** and **Move to**, in the menu of an element, list the project
+  itself and the other trees under it: a chapter is lifted out of the plan
+  for the book as a tree of its own, or a tree is put into the book where it
+  belongs. Enter the tree to work in it alone.
+- **To another project** as well: below them, **Copy to** and **Move to**
+  list the other projects; the elements go in under the top of the project
+  chosen, without its having to be open, and **Show** in the message that
+  follows opens it. Or copy them with **Ctrl+C** in the diagram, open the
+  other project, and paste them with **Ctrl+V**. Cut them with **Ctrl+X**
+  instead, and they move: they stay where they are until they are pasted,
+  and within the project the move is one step, which one **Ctrl+Z** takes
+  back. **Cut**, **Copy** and **Paste under it** are in the menu of an
+  element, in the diagram and in the text, and **Paste here** in the menu of
+  the diagram's background, which puts what is pasted under the element in
+  view, where you clicked. They go with their names, texts and notes, their
+  kinds, colours and times, and all that is under them; kinds the project
+  made for itself go with them, unless the other project has kinds of the
+  same names. Comments stay behind, and a copy in another project does not
+  remember its original. A move to another project can be undone here,
+  which brings the elements back, but leaves the copy there.
+- An element can have **another element take its place in the document**:
+  **Stand for another element**, in its menu, lists the trees under the
+  project. The tree of the book then has one element for each chapter, each
+  of which stands for the tree of that chapter, written elsewhere in the
+  project. The preview of the book shows the book.
+- **Side by side**, in the bar of the project, shows the project as diagram
+  and as text beside one another; enter another element on either side to
+  see two parts of the project, and move elements between them, by dragging
+  or by cutting and pasting. Each side can be diagram, text or timeline.
 
 The line between the two sides can be dragged, as can those beside the
 preview, the references and the outline. A double click on a line puts it
 back.
 
-### A map from a document you have written
+A project made before this version, with maps, opens as one tree: each map
+is a tree under the project, folded, with the map's settings on it, and the
+elements that were loose stand after them.
 
-A text that was written elsewhere can be brought in, and becomes a map of its
-own. The file it came from is read and not changed.
+### A document you have written
 
-- In a project, the button beside **+** over the map, **A map from a
-  document…**, or drop the file on the window.
+A text that was written elsewhere can be brought in, and becomes a tree of
+elements under the element in view. The file it came from is read and not
+changed.
+
+- In a project, **A document into it…** in the menu of the element in view
+  (**This element**, in the bar over the map), or drop the file on the bar,
+  or on the window.
 - Among the projects, **A project from a document…**, or drop the file
   there. The project is named after the document.
 
-The title becomes the centre of the map. Every heading becomes an element
-under the heading above it, with the text under the heading as its text; what
-stands before the first heading becomes the text of the centre. Author, date,
-abstract, keywords and language go where the document of the map has them.
+The title becomes an element under the element in view, the top of what is
+brought in. Every heading becomes an element under the heading above it,
+with the text under the heading as its text; what stands before the first
+heading becomes the text of the element at the top. Author, date, abstract,
+keywords and language are set on that element, as the details of its
+document.
 
 Before anything is made you are shown what was found: the title, which you
 can change, how many parts, words, notes, figures, tables and citations, and
 under **To know** what could not be brought in as it was. **Cancel** leaves
-everything as it was; **Undo** takes the map away again as one step.
+everything as it was; **Undo** takes the elements away again as one step.
 
 | Kind of file | Endings |
 | --- | --- |
@@ -1070,7 +1131,8 @@ What becomes of what is in the document:
 - **Captions** are found where the document has them: with the figure or
   the table, or as a paragraph beside it, as Word and LibreOffice write
   them, also where the picture stands in a frame. *Figure 1:* before the
-  words is left out, since the map numbers its figures and tables itself.
+  words is left out, since the document numbers its figures and tables
+  itself.
   Where the running text says *see Figure 1*, that stays text as it was
   written; put a cross-reference in its place if the number is to follow.
 - **Mathematics** is kept as it is written, in the line or as equations.
@@ -1081,13 +1143,13 @@ What becomes of what is in the document:
   as, and are marked as citations that were *found*. You are told how many
   there are, and choose whether those that Zotero made of works your
   library has are made citations at once, and whether the rest are gone
-  through when the map is made: see *Citations that were found*.
-- **A list of works cited** is brought in as text. The map makes its own
-  from what is cited in it, so the part can be left out of the document or
-  deleted.
+  through when the document is brought in: see *Citations that were found*.
+- **A list of works cited** is brought in as text. The document makes its
+  own from what is cited in it, so the part can be left out of the document
+  or deleted.
 - **Code, lists of terms, lines across the page** and what is written for
-  one kind of document only have no place in a map: what has text is kept as
-  paragraphs, the rest is left out, and you are told.
+  one kind of document only have no place in the tree: what has text is kept
+  as paragraphs, the rest is left out, and you are told.
 
 A file with changes that are tracked is brought in as it stands when all of
 them are accepted; comments in the margin of a Word file are left out. You
@@ -1105,16 +1167,17 @@ A scan is a picture of a page: its text cannot be searched, copied or
 quoted until it is read. Glaukopis reads it with Tesseract, a program that
 reads text in pictures, in four places.
 
-- **A PDF or a picture becomes a map.** In a project, choose **A map from a
-  document…** among the maps, and choose the file, or drop the file on the
-  name of the map in the bar; dropped elsewhere in a project, a PDF is
-  taken into the library and a picture becomes a figure. Among the projects,
-  **A project from a document…**, or drop the file there. Each
-  page of a PDF becomes an element under the centre, named by its number as
-  it is printed where the file tells it (*xiv*, *23*), and holding what was
-  read of the page, so that what you quote can be found on its page. The
-  title is the one the PDF gives itself, or its name. The text of a picture
-  becomes the text of the centre.
+- **A PDF or a picture becomes a tree of elements.** In a project, choose
+  **A document into it…** in the menu of the element in view, and choose
+  the file, or drop the file on the bar over the map; dropped elsewhere in a
+  project, a PDF is taken into the library and a picture becomes a figure.
+  Among the projects, **A project from a document…**, or drop the file
+  there. An element is made for the PDF under the element in view, named as
+  the PDF names itself, or after its file; each page becomes an element
+  under it, named by its number as it is printed where the file tells it
+  (*xiv*, *23*), and holding what was read of the page, so that what you
+  quote can be found on its page. The text of a picture becomes the text of
+  the one element made of it.
 - **A PDF of the library is made searchable.** In the files of a reference,
   the button beside a PDF, **Make searchable…**, reads its pages and lays
   their text unseen under what is shown. The PDF looks as it did, and its
@@ -1122,19 +1185,20 @@ reads text in pictures, in four places.
   The file in the library is replaced by the searchable one, which the
   reference then points to, as does every other reference that had the same
   file.
-- **A PDF of the library becomes a map.** Beside it, **A map of its text…**
-  reads the PDF where it is stored, and makes a map of what is read, as of a
-  PDF brought in, in the project you choose: a new one named after the PDF,
-  or one of yours. The file stays in the library as it was.
+- **A PDF of the library becomes elements.** Beside it, **Its text as
+  elements…** reads the PDF where it is stored, and makes elements of what
+  is read, as of a PDF brought in, **into the project** you choose, under
+  the element in view where that project is open, or into **a new project,
+  named after it**. The file stays in the library as it was.
 - **The text of a picture of the store is read.** **Read the text in it…**,
   in the pane of a picture, shows the text, to be copied. Where the picture
-  is looked at in a project, beside a map, **Make a map of it** makes a map
-  of it there.
+  is looked at in a project, beside the map, **Make an element of it** makes
+  an element of the text there, under the element in view.
 
 Pages that have text already, as the pages of a PDF made from a written
 document have, are taken as they are and not read. A page with only a little
 text, such as a scan with a line of text at its foot, is read. **Read the
-pages that have text as well** reads those too: into a map, what is read
+pages that have text as well** reads those too: into elements, what is read
 then takes the place of their text; in a searchable PDF, it is laid over
 their text, which stays, unless you ask for the unseen text to be **taken
 away**, so that only what is read is left: for a text layer that is poor, as
@@ -1179,11 +1243,11 @@ where the print is faint or uneven, so that what is pale is read as ink.
 
 A PDF that is locked with a password cannot be made searchable, since what
 is added would have to be locked in the same way. Its text can still be
-brought into a project as a map, where its pages can be drawn.
+brought into a project as elements, where its pages can be drawn.
 
 ## Searching
 
-**Ctrl+F** searches the text of the map, where you write, and **Ctrl+H**
+**Ctrl+F** searches the text in view, where you write, and **Ctrl+H**
 searches and replaces. A bar opens over the text. Type the words: what is
 found is marked where it stands, the one that is shown more strongly, and
 the bar says which it is of how many: *3 of 17*. **Enter** or **F3** shows
@@ -1240,9 +1304,9 @@ and searches it.
 
 **Ctrl+Shift+F**, or the magnifying glass at the left edge of the window,
 searches all you have written: the project you had open last, or all
-projects. What is found is listed by project and map, each with the words
-around it; choose one, and the map opens there, with the words in the bar
-over the text.
+projects. What is found is listed by project, and within it by the tree
+under the project, each with the words around it; choose one, and the
+project opens there, with the words in the bar over the text.
 
 With the last of the options, what stands outside the texts is searched as
 well: citations as they are shown, formulas and cross-references, the
@@ -1254,21 +1318,34 @@ a large one. It is read again only when it has changed.
 
 ## What goes into the document
 
-Everything under the centre of a map, in the order of the map. Three things
-change that, all in the menu of an element:
+Everything under the element in view, in its order: the element's name is
+the title, its text comes first, and each element under it is a part, with
+the parts under that, as deep as they go. Any element prints so: the project
+itself prints the whole project, and a chapter that is entered prints the
+chapter. Two things change that, both in the menu of an element:
 
 - **Print the name as a heading.** When this is off, the name is for you: a
   label for a paragraph, which is printed without it.
-- **Leave out of the document.** The element stays in the map, with what is
-  under it, and is not printed.
-- **Detach from its parent.** The element floats free in the diagram. It
-  belongs nowhere yet, and is not printed.
+- **Leave out of the document.** The element stays in the tree, with what is
+  under it, and is not printed, in no document that holds it. A thought not
+  yet decided on is kept so, out of every document; or the book is one tree
+  under the project, with the thoughts as trees beside it, and that tree is
+  what is printed.
+
+What a document is set by, its authors, format, reference style, language,
+date, keywords and cover, is set on an element and holds for everything
+under it that sets none of its own: set once on the project, it holds for
+every chapter printed alone. The title, the subtitle and the abstract are an
+element's own, and never taken from above: a chapter printed alone is not
+titled as the book. See *The preview, and the manuscript*.
 
 ## The preview, and the manuscript
 
-**Ctrl+P** opens the preview beside the map, and closes it. It shows the pages
-as they will be, and follows as you write, a moment behind: it waits until
-the writing pauses. Of a long document the pages take a few seconds to be
+**Ctrl+P** opens the preview beside the map, and closes it. It shows the
+pages of the element in view, with all under it, as they will be, and follows
+as you write, a moment behind: it waits until the writing pauses. Any
+element is a document: enter a chapter, and the preview shows the chapter
+alone, and exports it so. Of a long document the pages take a few seconds to be
 made, and the preview waits the longer for it; the writing is not held up
 meanwhile. The pages that are looked at are the ones that are drawn, and
 the others as they are moved to.
@@ -1293,7 +1370,7 @@ Over the preview, two things are chosen:
   screenplay), **poetry**
   (a collection of poems), and the style guides, publishers and journals of
   academic writing. A project is not of one kind: any format can be given to
-  any map, and changed at any time.
+  any element, and changed at any time.
 
 Both can be changed. **Change this format…** has every measure of the page in
 plain words, among them whether a level of heading **begins a new page**, as
@@ -1310,6 +1387,19 @@ often ask for as simple choices, and the whole style, part by part, for the
 rest. What you change is kept as a format or a style of your own; those that
 came with Glaukopis stay as they were.
 
+**Title, authors, abstract**, over the preview, or **Document details…** in
+the menu of the element in view, is what stands on the first page: the
+title, which is the element's name until one is written; the subtitle; the
+authors, with their affiliations; the abstract; the keywords; the date; the
+language of the text; and the cover of an e-book. The authors, the keywords,
+the date, the language and the cover are the element's own where it sets
+them, and otherwise taken from the nearest element over it that does, up to
+the project itself: under such a setting the dialog says **From** which
+element it comes. The format and the reference style are taken the same
+way. Set them once on the project, and every chapter printed alone has them.
+The title, the subtitle and the abstract are never taken from above: they
+are each element's own.
+
 **Export** makes the manuscript: PDF, Word, OpenDocument, LaTeX, Markdown, a
 web page, or an **e-book** (EPUB), in which the reader sets the text and each
 chapter is a part of its own. A cover for the e-book, a picture of the
@@ -1324,7 +1414,7 @@ Code* and *Section Break*; the character styles *Speaker*, *Stage
 Direction*, *Foreign*, *Title of a Work*, *Term* and *Mention*; and, for a
 kind of your own, a style of its name. In every document that is made,
 foreign words carry their language, a mention stands in the quotation
-marks of the language of the map, code is kept letter for letter, and a
+marks of the language of the text, code is kept letter for letter, and a
 break prints the sign the format gives it; a draft note and a highlight go
 into none of them.
 The numbers of the lines of verse do not stand in the margin of Word,
@@ -1459,15 +1549,16 @@ project, which tells who changed what, and when; where the history is not
 kept, the panel says so, and offers to keep it from then on.
 
 **Changes**, in the panel at the side (**Ctrl+Shift+E**), is where the
-changes of a map are reviewed, beside its text. It lists the changes of the map in the
-order of the text, says how many are left, and shows one at a time: where it
-is, as it was and as it is, with the words that changed marked, each person's
-in their colour, and who made it and when. While the panel is open, the text
-shows the changes where they are: what was added under a tint of the colour
-of who added it, what was deleted struck through, where it stood. Opening the
-panel leaves the view as it is; going on to a change from the panel turns the
-pane of its map to the text, where the change you look at is brought into
-view, opened where it is folded away, and marked more strongly.
+changes of the element in view, and of all under it, are reviewed, beside
+its text. It lists them in the order of the text, says how many are left,
+and shows one at a time: where it is, as it was and as it is, with the words
+that changed marked, each person's in their colour, and who made it and
+when. While the panel is open, the text shows the changes where they are:
+what was added under a tint of the colour of who added it, what was deleted
+struck through, where it stood. Opening the panel leaves the view as it is;
+going on to a change from the panel turns the pane to the text, where the
+change you look at is brought into view, opened where it is folded away, and
+marked more strongly.
 
 What is one change:
 
@@ -1513,11 +1604,11 @@ makes the text what it was then, and accepts it.
 
 The review goes from where you last reviewed: what you have accepted is kept
 in the project, so that it holds on every computer you work on. When nothing
-is left that you have not accepted, in any map, the review begins anew from
-then. Your first review goes from when the history began. At the top of the
-panel another moment can be chosen to review from: a session of the history,
-or a moment given a name. Your own changes are left out, unless you ask for
-**Your own changes too**.
+is left that you have not accepted, anywhere in the project, the review
+begins anew from then. Your first review goes from when the history began.
+At the top of the panel another moment can be chosen to review from: a
+session of the history, or a moment given a name. Your own changes are left
+out, unless you ask for **Your own changes too**.
 
 ## Languages
 
@@ -1536,31 +1627,34 @@ of the computer, where it has it, and English where it does not.
 *Settings* › *Language* changes it, at once.
 
 Your texts have a language of their own, which need not be that of
-Glaukopis: each map is written in one, which is shown, and can be changed,
-under **Languages…** in the menu of the map (the button beside its name),
-and with the details of its document (**Title, authors, abstract** over the
-preview). The same dialog has **the language of new maps in this project**,
-for a project written in another language than you usually write in: it is
-kept with the project, so that everyone it is shared with makes their new
-maps alike. Where none is chosen there, a new map is given the language of
-new texts, which is set under *Settings* › *Language*: at first that of the
-computer, where documents have words in it (every language Glaukopis
-speaks), and English otherwise. A map made from a document keeps the language the document
-says it is in. The language is written into the map, so that those you share
-the project with make the same document of it.
+Glaukopis. It is shown, and can be changed, under **Languages…** in the menu
+of the element in view (**This element**, beside its name in the bar), and
+with the details of its document (**Title, authors, abstract** over the
+preview). The dialog has **The language of the project**, what the project
+is written in, for everyone it is shared with; and **The language of this
+element**, for a part written in another language than the rest: it holds
+for the element and everything under it that is given no other. Where the
+project chooses none, it is written in the language of new texts, which is
+set under *Settings* › *Language*: at first that of the computer, where
+documents have words in it (every language Glaukopis speaks), and English
+otherwise. A document brought in keeps the language the document says it is
+in. The language is written into the project, so that those you share it
+with make the same document of it.
 
-The language of a map decides what its document prints in words of its own:
-the headings of the notes, the abstract and the bibliography, what a figure
-and a table are called, and the words of the reference style, such as
+The language of an element decides what its document prints in words of its
+own: the headings of the notes, the abstract and the bibliography, what a
+figure and a table are called, and the words of the reference style, such as
 "and", "p." and "edited by". A format that has words of its own keeps them;
-those it has as they are in English are printed in the language of the map.
+those it has as they are in English are printed in the language of the
+text.
 
 ## The words of Glaukopis
 
 The words of the interface in any language can be read through and mended
 in Glaukopis itself. Under *Settings* › *Language*, **The words of Glaukopis,
-as a project** makes a project, *Words:* and the language, with a map for
-each part of the application and an element for each message, named by it.
+as a project** makes a project, *Words:* and the language, with an element
+for each part of the application, and under it an element for each message,
+named by it.
 In its text the English stands above, as a quotation, with what it says to
 translators where it says anything; under it are the words of the language,
 which are what you change. Spelling is checked in the language, search and
@@ -1594,7 +1688,7 @@ Glaukopis.
 ## Spelling
 
 Glaukopis checks the spelling of what you write as you write it, in the
-language of the map: the text, the names of the elements, and the notes.
+language of the text: the text, the names of the elements, and the notes.
 **Foreign words** (see *Kinds of paragraph and of words*) are checked in
 their own language where there is a dictionary for it, and left alone where
 there is none. A word that the dictionary does not know has a wavy line
@@ -1608,7 +1702,7 @@ after the cursor (**Shift+F7**, to the one before), and its menu has:
   place. In Norwegian, whose words are long, it can take half a second to
   find.
 - **Add to my words**: the word is right from then on, in all your projects,
-  in the language of the map. A word added in English holds in American and
+  in the language of the text. A word added in English holds in American and
   British English alike.
 - **Ignore in this project**: the word is left alone in this project, and
   for those you share it with. One written in small letters is left alone
@@ -1633,7 +1727,7 @@ dictionary extension of LibreOffice or Firefox (`.oxt`, `.xpi`), or the
 of the server, **Change** gives another, or a folder on the computer, for
 packages of your own or where there is no network.
 
-A map in English without a country is checked with the American and the
+A text in English without a country is checked with the American and the
 British dictionary both, and a word is right if either has it. The
 dictionaries of the computer are used as well: on Linux the packages named
 `hunspell-…` put them in `/usr/share/hunspell`, and the packages of Glaukopis
@@ -1642,7 +1736,8 @@ have imported comes before the computer's of the same language. A dictionary
 of your own can also be put, as its `.aff` and `.dic` file, in the folder
 `dictionaries` of the data directory, which is shown under *Settings*; it
 comes before all the others of its language. Where there is no dictionary
-for the language of a map, nothing in it is underlined, and **F7** says so.
+for the language of the text, nothing in it is underlined, and **F7** says
+so.
 
 *Settings* › *Spelling* turns the checking off and on, lists the dictionaries
 there are and where they came from, and shows the words you have added,
@@ -1708,16 +1803,18 @@ what is to be done by its name, and does it.
 | **Ctrl+1**, **Ctrl+2**, **Ctrl+3** | The projects, the library, the pictures |
 | **Ctrl+,** | Settings, in a window over what is open; closing it leaves you where you were |
 | **Ctrl+D** | Diagram or text |
+| **Alt+Up** | Up to the element over this one |
 | **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+Shift+L** | The list of projects at the left of a project |
 | **Ctrl+P** | The preview |
-| **Ctrl+Shift+R** | The references of the map |
-| **Ctrl+Shift+P** | The pictures of the map |
+| **Ctrl+Shift+R** | The references |
+| **Ctrl+Shift+P** | The pictures of the project |
 | **Ctrl+Shift+M** | The comments |
 | **Ctrl+Alt+C** | A comment on the passage selected, or on the element |
 | **Ctrl+Shift+H** | The history of the project |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
 | **Tab**, **Enter** | In the diagram: a new element under, or beside |
+| **Ctrl+Enter** | In the diagram: open the element selected as a map, with what is under it |
 | **Ctrl+Enter**, **Alt+Enter** | In the text: a new element after this one, from the cursor on |
 | **Alt+Shift+Enter** | In the text: a new element under this one |
 | **Alt+Shift** and the arrows | In the diagram and the text: move the element up, down, deeper, less deep |

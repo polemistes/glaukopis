@@ -1226,7 +1226,12 @@
 
 {#if whenUi.element && project}
   {#key whenUi.element}
-    <WhenDialog {project} id={whenUi.element} onclose={() => (whenUi.element = null)} />
+    <WhenDialog
+      {project}
+      id={whenUi.element}
+      at={pane.at}
+      onclose={() => (whenUi.element = null)}
+    />
   {/key}
 {/if}
 

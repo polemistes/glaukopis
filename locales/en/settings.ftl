@@ -35,7 +35,7 @@ settings-sample = Sing, goddess, the wrath of Achilles, son of Peleus
 ## New documents
 
 settings-new-documents = New documents
-settings-new-documents-hint = What a map begins with. Each map can be given another, in the preview.
+settings-new-documents-hint = What the documents of a new project begin with. Any element can be given another, in the preview.
 settings-reference-style = Reference style
 settings-document-format = Document format
 
@@ -79,7 +79,7 @@ settings-lookup-about = DOIs at doi.org, Crossref and DataCite; books in the cat
 
 settings-language = Language
 settings-language-interface = The interface
-settings-language-interface-hint = The words of the application. Your texts are in the language of their maps.
+settings-language-interface-hint = The words of the application. Your texts are in the language of their projects.
 settings-language-system = As the system ({ $language })
 settings-language-texts = Language of new texts
-settings-language-texts-hint = What a new map is written in, which decides the words its document prints and the dictionary its spelling is checked by. Each map can be given another under Languages… in its menu, and a project a language of its own for its new maps.
+settings-language-texts-hint = What a new project is written in, which decides the words its documents print and the dictionary its spelling is checked by. Any element can be given another under Languages… in its menu, and what is under it follows.

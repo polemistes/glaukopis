@@ -104,13 +104,13 @@ core-import-document-notebook = Jupyter notebook
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] { $count } citation was found that is not yet tied to a reference of your library, made by a program that keeps references. It stands as the text it was written as, and can be gone through when the map is made, and later.
-       *[none] { $count } citation was found that is not yet tied to a reference of your library. It stands as the text it was written as, and can be gone through when the map is made, and later.
+        [all] { $count } citation was found that is not yet tied to a reference of your library, made by a program that keeps references. It stands as the text it was written as, and can be gone through when the document has been brought in, and later.
+       *[none] { $count } citation was found that is not yet tied to a reference of your library. It stands as the text it was written as, and can be gone through when the document has been brought in, and later.
     }
    *[other] { $made ->
-        [all] { $count } citations were found that are not yet tied to references of your library, all made by a program that keeps references. They stand as the text they were written as, and can be gone through when the map is made, and later.
-        [some] { $count } citations were found that are not yet tied to references of your library, { $some } of them made by a program that keeps references. They stand as the text they were written as, and can be gone through when the map is made, and later.
-       *[none] { $count } citations were found that are not yet tied to references of your library. They stand as the text they were written as, and can be gone through when the map is made, and later.
+        [all] { $count } citations were found that are not yet tied to references of your library, all made by a program that keeps references. They stand as the text they were written as, and can be gone through when the document has been brought in, and later.
+        [some] { $count } citations were found that are not yet tied to references of your library, { $some } of them made by a program that keeps references. They stand as the text they were written as, and can be gone through when the document has been brought in, and later.
+       *[none] { $count } citations were found that are not yet tied to references of your library. They stand as the text they were written as, and can be gone through when the document has been brought in, and later.
     }
 }
 core-import-document-endnote = { $count ->
@@ -121,8 +121,8 @@ core-import-document-bookmarks = { $count ->
     [one] The document keeps { $count } citation in a bookmark, and what it cites could not be read: it is text as it stands. Zotero keeps them otherwise where its document preferences say so.
    *[other] The document keeps { $count } citations in bookmarks, and what they cite could not be read: they are text as they stand. Zotero keeps them otherwise where its document preferences say so.
 }
-core-import-document-bibliography = The document has a list of what it cites, under “{ $heading }”. It is brought in as text, like the rest. The map makes a bibliography of its own from what is cited in it.
-core-import-document-bibliography-made = The document has a list of what it cites, made by the program that keeps its references. It is brought in as text, like the rest. The map makes a bibliography of its own from what is cited in it.
+core-import-document-bibliography = The document has a list of what it cites, under “{ $heading }”. It is brought in as text, like the rest. Glaukopis makes a bibliography of its own from what is cited.
+core-import-document-bibliography-made = The document has a list of what it cites, made by the program that keeps its references. It is brought in as text, like the rest. Glaukopis makes a bibliography of its own from what is cited.
 core-import-document-tracked = The document has changes that are tracked. The text is brought in as it stands when all of them are accepted.
 core-import-document-comments = The document has comments in the margin, which are left out.
 core-import-document-heading-notes = { $count ->
@@ -131,8 +131,8 @@ core-import-document-heading-notes = { $count ->
 }
 # What a caption began with is shown as the document has it: “Figure 1:”.
 core-import-document-labels = { $count ->
-    [one] { $count } caption began with a word and a number, such as “{ $first }”. It is left out: the map numbers its figures and tables itself. Where the text names one of them by its number, that is text as it was written, and does not follow the numbers of the map.
-   *[other] { $count } captions began with a word and a number, such as “{ $first }”. They are left out: the map numbers its figures and tables itself. Where the text names one of them by its number, that is text as it was written, and does not follow the numbers of the map.
+    [one] { $count } caption began with a word and a number, such as “{ $first }”. It is left out: Glaukopis numbers figures and tables itself. Where the text names one of them by its number, that is text as it was written, and does not follow the numbers as they are printed.
+   *[other] { $count } captions began with a word and a number, such as “{ $first }”. They are left out: Glaukopis numbers figures and tables itself. Where the text names one of them by its number, that is text as it was written, and does not follow the numbers as they are printed.
 }
 core-import-document-label-example = Figure 1:
 core-import-document-caption-notes = { $count ->

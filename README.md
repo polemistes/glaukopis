@@ -7,14 +7,15 @@ writing, and producing the manuscript.
 It is made for a way of working that begins with references and ideas, and
 for scholars in the humanities first, the social sciences second.
 
-- **Maps that are documents.** Ideas are elements of a map, with text,
-  citations, notes, figures, tables and mathematics. The same map is read
-  as a diagram, as text, and as the manuscript.
-- **What you have written already** is brought in as a map of its own, from
+- **A map that is the document.** A project is one tree of ideas, each an
+  element with text, citations, notes, figures, tables and mathematics. Any
+  element, with all under it, is read as a diagram, as text, and as the
+  manuscript.
+- **What you have written already** is brought in as a tree of elements, from
   Word, OpenDocument, Markdown, LaTeX, HTML and other kinds of file; tables
   from CSV files and from spreadsheets.
 - **Text in scans and pictures** is read by Tesseract: a scanned PDF or a
-  picture becomes a map, a page to an element, and a PDF of the library is
+  picture becomes elements, a page to each, and a PDF of the library is
   made searchable, looking as it did.
 - **One store of pictures** for all projects, with what you have said of
   each: its caption, what it shows, your notes.

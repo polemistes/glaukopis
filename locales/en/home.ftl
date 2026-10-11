@@ -71,7 +71,7 @@ home-map-failed = The map of the projects could not be made
 ## When there are none yet
 
 home-welcome = Welcome to Glaukopis
-home-welcome-text = A project holds the work on one book or article: the maps of your ideas, the texts you write into them, and the references they rest on.
+home-welcome-text = A project holds the work on one book or article: the map of your ideas, the texts you write into it, and the references they rest on.
 home-begin = Begin a project
 
 ## A project in the list
@@ -79,8 +79,8 @@ home-begin = Begin a project
 # Under the names of the first four maps.
 home-more-maps = and { $count } more
 home-maps = { $count ->
-    [one] { $count } map
-   *[other] { $count } maps
+    [one] { $count } tree
+   *[other] { $count } trees
 }
 home-elements = { $count ->
     [one] { $count } element
