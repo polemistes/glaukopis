@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
 Name=Glaukopis
-GenericName=Research and writing
-GenericName[nb]=Forskning og skriving
-Comment=References, ideas in mind maps, writing, and the manuscript
-Comment[nb]=Referanser, ideer i tankekart, skriving og manuskript
+GenericName=Writing
+GenericName[nb]=Skriving
+Comment=Ideas in mind maps, references, writing, and the finished document
+Comment[nb]=Ideer i tankekart, referanser, skriving og det ferdige dokumentet
 Exec=glaukopis %F
 Icon=org.glaukopis.app
 Terminal=false

@@ -1,11 +1,13 @@
 # Glaukopis
 
-A desktop application for scholarly work. It is where the work on an academic
-book or article is done: collecting references, developing ideas in mind maps,
-writing, and producing the manuscript.
+A desktop application for writing: a book, an article, a thesis, a novel, a
+play, a report, a letter, whatever is to be written. The work is done in one
+place: developing ideas in mind maps, collecting what has been read, writing,
+and producing the finished text in the form it is to be published in.
 
-It is made for a way of working that begins with references and ideas, and
-for scholars in the humanities first, the social sciences second.
+It is made for a way of working that begins with ideas, and that lets the
+text grow out of them. Scholarly writing, with its references and citations,
+is one of the kinds of writing it is made for, and was the first.
 
 - **A map that is the document.** A project is one tree of ideas, each an
   element with text, citations, notes, figures, tables and mathematics. Any

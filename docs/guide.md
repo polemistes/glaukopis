@@ -1,11 +1,12 @@
 # A guide to Glaukopis
 
-Glaukopis is where the work on an academic book or article is done: collecting
-what you have read, working out what you think, writing it, and producing the
-manuscript a publisher asks for.
+Glaukopis is where a text is written, of whatever kind: a book, an article,
+a thesis, a novel, a play, a report, a letter. The work is done in one place:
+working out what you think, collecting what you have read, writing, and
+producing the finished text in the form it is to be published in.
 
 It has two places, reached from the left edge of the window: the **projects**,
-one for each book or article, and the **library**, which holds your
+one for each piece of writing, and the **library**, which holds your
 references and is the same for all projects.
 
 ## The idea

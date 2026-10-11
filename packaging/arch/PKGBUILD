@@ -57,7 +57,7 @@ check() {
 }
 
 package_glaukopis() {
-  pkgdesc='A hub for scholarly work: references, ideas in mind maps, writing, and the manuscript'
+  pkgdesc='Writing of every kind, from ideas in mind maps to the finished document'
   # Libertinus is the serif Typst falls back on, the first that stands in for
   # a font the format asks for that is not installed, and has a font for
   # mathematics, which Typst sets no equation without.

@@ -1,9 +1,9 @@
 # Glaukopis — plan
 
-Glaukopis is a desktop application where the work on an academic book or article
-is done in one place: collecting references, developing ideas in mind maps,
-writing, and producing the manuscript. It suggests a workflow led by references
-and ideas, without enforcing one.
+Glaukopis is a desktop application where a text of any kind is written in one
+place: developing ideas in mind maps, collecting references, writing, and
+producing the finished document. It suggests a workflow led by ideas, without
+enforcing one; scholarly writing was the first kind it was made for.
 
 The owner's description is kept verbatim in [docs/brief.md](docs/brief.md). This
 plan answers it. Decisions that shape the whole application are recorded one by
