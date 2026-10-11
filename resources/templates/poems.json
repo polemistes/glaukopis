@@ -1,0 +1,29 @@
+{
+  "id": "poems",
+  "name": "Poems",
+  "group": "poetry",
+  "description": "A collection of poems: a title page and dedication, the contents, each poem an element with its lines written as verse, then acknowledgements and a note on the poet.",
+  "source": {
+    "name": "The parts of a published collection of poems, as the poetry layout has it",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "low",
+    "notes": "Each poem is an element under the collection, its name the title; the acknowledgements name where the poems first appeared. No publisher's page is reproduced."
+  },
+  "basedOn": "plain",
+  "layout": "poetry",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "dedication" },
+    { "part": "contents" },
+    { "part": "body" },
+    { "kind": "acknowledgements" },
+    { "kind": "about-the-author" }
+  ],
+  "kinds": ["dedication", "epigraph", "acknowledgements", "about-the-author"],
+  "passageKinds": ["verse"],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "nature",
+  "name": "Nature",
+  "group": "journal",
+  "description": "Manuscripts for Nature: a standard font, preferably Times New Roman 12, double-spaced, with line numbers; a summary paragraph of ideally no more than 200 words in place of an abstract, and numbered references in the journal's own style.",
+  "source": {
+    "name": "Nature, Formatting guide",
+    "url": "https://www.nature.com/nature/for-authors/formatting-guide",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: margins, alignment, paragraph indent, hyphenation, the form and numbering of headings (subheadings have at most 40 characters, spaces included; short bold headings in Methods), block quotations, notes, the layout of the reference list (the source speaks of 'references'; 'References' is entered), page numbers, keywords, anonymisation. The page size is not stated: A4 was chosen for a British journal. There are no footnotes in the sense of the humanities: the values for notes are the general default. The summary paragraph is the first paragraph, in bold and with references, and has no label of its own, which cannot be expressed here. The title has at most 75 characters, spaces included. Linked fields from reference managers are to be removed. Word is preferred; LaTeX is accepted. Spelling as the Oxford English Dictionary."
+  },
+  "basedOn": "article",
+  "layout": "nature",
+  "style": "nature",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "keywords" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "acknowledgements" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix", "acknowledgements"],
+  "passageKinds": [],
+  "requirements": {
+    "words": null,
+    "abstractWords": 200,
+    "keywords": null,
+    "anonymous": false,
+    "note": "No word limit is entered: the typical text has 2,500 words for an article of 6 pages and 4,300 for one of 8, not counting title, authors, acknowledgements and references. Methods typically at most 3,000 words; about 50 references. Summary paragraph ideally of no more than 200 words."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "novel-manuscript",
+  "name": "Novel manuscript",
+  "group": "fiction",
+  "description": "A novel as a manuscript for an agent or a publisher: a title page and the chapters, in the standard manuscript format.",
+  "source": {
+    "name": "Standard manuscript format, as the novel-manuscript layout has it",
+    "url": "https://en.wikipedia.org/wiki/Standard_manuscript_format",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "Agents and publishers of fiction ask for the text alone, with the author's details on the title page; the front and back matter of the book are the publisher's to make."
+  },
+  "basedOn": "plain",
+  "layout": "novel-manuscript",
+  "contents": [
+    { "part": "title-page" },
+    { "part": "body" }
+  ],
+  "kinds": [],
+  "passageKinds": ["break"],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}

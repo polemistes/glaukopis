@@ -1,0 +1,60 @@
+{
+  "id": "cappelen-damm-kunst-og-kultur",
+  "name": "Cappelen Damm Forskning: Kunst og kultur i opplæring",
+  "group": "publisher",
+  "description": "The series Kunst og kultur i opplæring from Cappelen Damm Forskning (NOASP): Calibri 11, double-spaced and justified, headings in the APA form in at most three levels, quotations of over 40 words set off, and APA 7 references.",
+  "source": {
+    "name": "Cappelen Damm Forskning, Retningslinjer for innsending av prosjektbeskrivelser og manus, Kunst og kultur i opplæring (PDF of September 2025)",
+    "url": "https://cdforskning.no/cdf/libraryFiles/downloadPublic/32",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "These are the rules of one series. The publisher's general guide for authors prescribes no layout, and its other series (Libelli) differs on almost every value. Not specified, and taken from the general default: top and bottom margins (only left and right, 2.5 cm, are stated), the amount of indentation, hyphenation, size of headings and title, the indent of block quotations, size and spacing of notes, the heading and layout of the reference list, page numbers. The page size is not stated: A4 was chosen for a Norwegian publisher. The text has 'straight margins on each side', entered as justified. New paragraphs are shown by a line break and a tab indent. Quotations of over 40 words (entered as from 41) are indented, with a blank line above and below and no quotation marks. Footnotes are allowed but to be kept few. The author's name, affiliation and e-mail stand first in the text; it is the editor who sends an anonymised version to the reviewers. The abstract is in italics, between the title and the keywords; texts in Scandinavian languages also need an English title and abstract. The labels for abstract and keywords are the general default, in English. Captions are in Calibri 11 and stand above the figure. The series follows APA 7; the index also holds 'norsk-apa-manual' for texts in Norwegian."
+  },
+  "basedOn": "book",
+  "layout": "cappelen-damm-kunst-og-kultur",
+  "style": "apa",
+  "contents": [
+    { "part": "half-title" },
+    { "part": "title-page" },
+    { "kind": "copyright" },
+    { "kind": "dedication" },
+    { "kind": "epigraph" },
+    { "part": "contents" },
+    { "kind": "foreword" },
+    { "kind": "preface" },
+    { "kind": "acknowledgements" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "glossary" },
+    { "part": "notes" },
+    { "part": "bibliography" },
+    { "kind": "about-the-author" }
+  ],
+  "kinds": [
+    "abstract",
+    "copyright",
+    "dedication",
+    "epigraph",
+    "foreword",
+    "preface",
+    "acknowledgements",
+    "appendix",
+    "glossary",
+    "afterword",
+    "about-the-author"
+  ],
+  "passageKinds": ["epigraph", "attribution", "headword", "gloss"],
+  "requirements": {
+    "words": 7000,
+    "abstractWords": 250,
+    "keywords": 6,
+    "anonymous": false,
+    "note": "Chapters of anthologies 5000-7000 words; monographs up to 300 pages. Abstract of 150-250 words; 4-6 keywords."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

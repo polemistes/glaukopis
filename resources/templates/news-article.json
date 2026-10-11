@@ -1,0 +1,25 @@
+{
+  "id": "news-article",
+  "name": "News article",
+  "group": "other",
+  "description": "A news article: a standfirst above the text, for the web, a word processor or print.",
+  "source": {
+    "name": "The shape of an article in a newspaper or a magazine",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "The headline is the element's name, the standfirst the element of that kind under it; the byline is the author in the details. Desks set the length; put it in the requirements of a template of your own."
+  },
+  "basedOn": "plain",
+  "layout": "reading",
+  "contents": [
+    { "kind": "standfirst" },
+    { "part": "body" }
+  ],
+  "kinds": ["standfirst"],
+  "passageKinds": [],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["html", "markdown", "docx", "odt", "pdf"] }
+  ]
+}

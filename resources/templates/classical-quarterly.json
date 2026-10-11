@@ -1,0 +1,40 @@
+{
+  "id": "classical-quarterly",
+  "name": "The Classical Quarterly",
+  "group": "journal",
+  "description": "Articles for The Classical Quarterly: Times New Roman 12 throughout, footnotes included, double-spaced and justified; section titles in capitals and centred, sub-section titles in italics, nothing in bold; footnotes and no bibliography; anonymised.",
+  "source": {
+    "name": "The Classical Quarterly, Guidance for Contributors (before submission) and detailed house style (Cambridge University Press)",
+    "url": "https://www.cambridge.org/core/journals/classical-quarterly/information/author-instructions/preparing-your-materials",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Only six points are required before submission: Times New Roman for the Roman alphabet, New Athena Unicode for Greek, another Unicode font for other alphabets, 12 pt throughout, double spacing throughout, footnotes numbered consecutively. The rest of the house style (justified margins, the form of titles, indentation) applies after acceptance. Not specified, and taken from the general default: margins, the amount of indentation, hyphenation, whether headings are numbered, space around headings, the block-quotation threshold and indent, page numbers, line numbers. The page size is not stated: A4 was chosen for a British journal. The first paragraph of the article or of a section is not indented; later ones are. Block quotations are never in italics. There is no bibliography, references being given in footnotes: the bibliography values are the general default. In the house style the author's affiliation and name stand at the end of the article and acknowledgements in a first footnote marked with an asterisk, which cannot be expressed here. The reference style is the journal's own, and the index holds none under its name, so none is given. UK spelling with -ize; single quotation marks."
+  },
+  "basedOn": "article",
+  "layout": "classical-quarterly",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "keywords" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "acknowledgements" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix", "acknowledgements"],
+  "passageKinds": [],
+  "requirements": {
+    "words": 12000,
+    "abstractWords": 250,
+    "keywords": 8,
+    "anonymous": true,
+    "note": "At most 12,000 words, footnotes and abstract included: 'a maximum, not a target'. Abstract of up to 250 words; six to eight keywords."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

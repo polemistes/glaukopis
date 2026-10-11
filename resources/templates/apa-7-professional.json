@@ -1,0 +1,41 @@
+{
+  "id": "apa-7-professional",
+  "name": "APA 7 (professional paper)",
+  "group": "style-guide",
+  "description": "The professional paper of the APA Publication Manual, 7th edition, for manuscripts sent to journals: a title page with author note, a running head of the shortened title in capitals, an abstract of at most 250 words; double spacing throughout and five levels of unnumbered headings.",
+  "source": {
+    "name": "APA Style, 7th ed.: Paper Format (apastyle.apa.org)",
+    "url": "https://apastyle.apa.org/style-grammar-guidelines/paper-format",
+    "checked": "2026-09-18",
+    "confidence": "high",
+    "notes": "Read from Internet Archive snapshots of the official APA Style pages, taken between 2026-03-30 (margins) and 2026-09-21 (the live site refuses automated requests); the date given is that of the snapshot of the main page. The page size is not stated: letter was chosen for a North American source. APA permits several fonts: sans serif 12 pt Aptos, 11 pt Calibri, 11 pt Arial, 10 pt Lucida Sans Unicode; serif 12 pt Times New Roman, 11 pt Georgia, 10 pt Computer Modern. Headings are in the type of the text; the source forbids extra blank lines above or below them, which is entered as 16.8pt, the distance between double-spaced lines of 12-point type. Footnotes are left by the source to the word processor's defaults ('usually single-spaced and a slightly smaller font'): 10 pt and single spacing are the general default. They may also be gathered on a page after the references. Not specified: file format, anonymisation. The running head is a shortened title of at most 50 characters, in capitals, flush left, without the label 'Running head:'; here the title itself is used, so a long title must be shortened by hand. The author note of the professional title page cannot be shown here. The label 'Keywords:' is italic and indented in the source. Of the fonts the source permits, Times New Roman is entered, being the one most manuscripts in the humanities are set in; any of the others may be chosen in its place. Figures are set as the Publication Manual has them in its chapter on tables and figures, which the page named here does not cover: the number in bold above the figure, and the title in italics on the line beneath the number. Tables are set as the same chapter of the manual has them: the number in bold above the table, the title in italics on the line beneath it, the table at the left margin, with lines over it, under its headings and under it, and none between its columns."
+  },
+  "basedOn": "article",
+  "layout": "apa-7-professional",
+  "style": "apa",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "keywords" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "acknowledgements" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix", "acknowledgements"],
+  "passageKinds": [],
+  "requirements": {
+    "words": null,
+    "abstractWords": 250,
+    "keywords": 5,
+    "anonymous": false,
+    "note": "Abstract at most 250 words unless the journal says otherwise; three to five keywords. The source sets no limit on length and recommends counting words rather than pages."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

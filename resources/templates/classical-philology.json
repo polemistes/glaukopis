@@ -1,0 +1,39 @@
+{
+  "id": "classical-philology",
+  "name": "Classical Philology",
+  "group": "journal",
+  "description": "Articles for Classical Philology: 12-point type, everything double-spaced, footnotes and not endnotes, author-date references given in the notes with a list of literature cited; anonymised, at most 45 pages.",
+  "source": {
+    "name": "Classical Philology, Instructions for Authors (University of Chicago Press)",
+    "url": "https://www.journals.uchicago.edu/journals/cp/instruct",
+    "checked": "2025-07-06",
+    "confidence": "medium",
+    "notes": "Read from an Internet Archive snapshot of 2025-07-06; the live page refused automated requests, so the values may have changed. Not specified, and taken from the general default: margins (only 'ample'), typeface, alignment, paragraph indent, hyphenation, headings, the indent of block quotations, the heading and layout of the list of literature cited, the position of page numbers (pages must be numbered), keywords, line numbers. The page size is not stated: letter was chosen for a North American journal. 'The entire text' is double-spaced and in 12 points, which is entered for notes and block quotations too. The block-quotation threshold is not a number and is not entered: quotations 'longer than two lines of verse or several lines of prose' are indented and double-spaced. The author's name and affiliation appear only in the cover letter. Reference style: the Chicago Manual, 17th ed., is the general authority, but the journal's form is its own (author-date cited in the notes, place without publisher, titles of articles without quotation marks); the index holds no style under the journal's name, so none is given. PDF or .doc."
+  },
+  "basedOn": "article",
+  "layout": "classical-philology",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "keywords" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix"],
+  "passageKinds": [],
+  "requirements": {
+    "words": null,
+    "abstractWords": 100,
+    "keywords": null,
+    "anonymous": true,
+    "note": "The limit is stated in pages: manuscripts longer than 45 double-spaced pages are not considered. Abstract of 100 words or fewer."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

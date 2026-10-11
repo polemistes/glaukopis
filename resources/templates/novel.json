@@ -1,0 +1,42 @@
+{
+  "id": "novel",
+  "name": "Novel",
+  "group": "fiction",
+  "description": "A novel as a printed book or an e-book: the cover, half-title and title page, copyright, dedication and epigraph, the contents, the chapters, then acknowledgements and a note on the author.",
+  "source": {
+    "name": "The parts of a published novel, as the novel-book layout and the Chicago Manual of Style's front and back matter have them",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "The cover is printed only by a cover output, which is a later piece; the e-book takes the first picture of the cover element. For a manuscript to send to an agent or a publisher, use the novel manuscript instead."
+  },
+  "basedOn": "plain",
+  "layout": "novel-book",
+  "contents": [
+    { "kind": "cover" },
+    { "part": "half-title" },
+    { "part": "title-page" },
+    { "kind": "copyright" },
+    { "kind": "dedication" },
+    { "kind": "epigraph" },
+    { "part": "contents" },
+    { "part": "body" },
+    { "kind": "acknowledgements" },
+    { "kind": "about-the-author" }
+  ],
+  "kinds": [
+    "cover",
+    "blurb",
+    "copyright",
+    "dedication",
+    "epigraph",
+    "acknowledgements",
+    "afterword",
+    "about-the-author"
+  ],
+  "passageKinds": ["epigraph", "attribution", "break"],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}

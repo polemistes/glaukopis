@@ -1,0 +1,40 @@
+{
+  "id": "past-and-present",
+  "name": "Past & Present",
+  "group": "journal",
+  "description": "Articles for Past & Present: Times New Roman 12, double-spaced, indented paragraphs, sections numbered in roman numerals, footnotes only and no bibliography, quotations of 50 words or more inset from both margins; anonymised.",
+  "source": {
+    "name": "Past & Present, General Instructions and Style Guide (Oxford University Press)",
+    "url": "https://academic.oup.com/past/pages/General_Instructions",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Confidence is high for what comes from the style guide (PDF, read in full) and medium for what comes only from the instructions page, which could be read only through an extraction tool: length, abstract, anonymisation, the limit on illustrations. Not specified, and taken from the general default: margins, alignment, the amount of indentation, the typographic form of headings, the amount by which block quotations are inset (the same on both sides is entered), size and spacing of notes, the position of page numbers (the text must be paginated), keywords, line numbers. The page size is not stated: A4 was chosen for a British journal. The text may be divided into sections 'with or without individual headings', numbered with roman numerals; numbering here is in the application's own form. Block quotations are double-spaced, in roman, with a blank line above and below and no quotation marks. Notes are footnotes with arabic numerals, kept few, and should 'rarely exceed 10-20% of the text'. There is no bibliography: the bibliography values are the general default. A word count for text and notes stands on the first page. The file name must not contain the author's name. Single quotation marks; spelling as the Oxford English Dictionary."
+  },
+  "basedOn": "article",
+  "layout": "past-and-present",
+  "style": "past-and-present",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "keywords" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix"],
+  "passageKinds": [],
+  "requirements": {
+    "words": 12000,
+    "abstractWords": 250,
+    "keywords": null,
+    "anonymous": true,
+    "note": "The target is 8,000-10,000 words excluding notes; articles should not exceed 12,000 words including footnotes. Abstract of 200-250 words. Up to twelve illustrations."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

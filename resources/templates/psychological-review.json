@@ -1,0 +1,41 @@
+{
+  "id": "psychological-review",
+  "name": "Psychological Review",
+  "group": "journal",
+  "description": "Manuscripts for Psychological Review (American Psychological Association): the professional paper of APA 7, double-spaced throughout with five levels of unnumbered headings, an abstract of at most 250 words on a page of its own and up to five keywords.",
+  "source": {
+    "name": "Psychological Review, submission guidelines (American Psychological Association), with the APA Style pages on paper format",
+    "url": "https://www.apa.org/pubs/journals/rev",
+    "checked": "2025-09-06",
+    "confidence": "medium",
+    "notes": "Read from Internet Archive snapshots, the journal page of 2025-09-06 and the APA Style pages of 2025-06-27 to 2025-10-04 (the APA sites refuse automated requests), so the values may have changed; those of the journal itself (review, length, abstract) are most at risk. The journal page says little of layout and refers to the Publication Manual, 7th ed.; the layout is therefore that of APA Style. Three values are not on the pages read for this journal and are taken from the later snapshots of APA Style read for the format 'APA 7 (professional paper)': the block-quotation threshold of 40 words, page numbers at the top right, and the running head of the shortened title in capitals (at most 50 characters; here the title itself is used). The page size is not stated: letter was chosen for a North American journal. APA permits several fonts; the pages read for this journal list 11 pt Calibri, 11 pt Arial, 10 pt Lucida Sans Unicode, 12 pt Times New Roman, 11 pt Georgia, 10 pt Computer Modern, and the first is entered. Headings are in the type of the text; extra blank lines above or below them are not allowed, which is entered as 15.4pt, the distance between double-spaced lines of 11-point type. Footnotes are left to the word processor's defaults: 10 pt and single spacing are the general default. Review is open by default; masked review is given on request, so the format is not anonymous. Word or Open Office format; LaTeX as a ZIP of sources with a PDF. Of the fonts the source permits, Times New Roman is entered, being the one most manuscripts in the humanities are set in; any of the others may be chosen in its place."
+  },
+  "basedOn": "article",
+  "layout": "psychological-review",
+  "style": "apa",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "keywords" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "acknowledgements" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix", "acknowledgements"],
+  "passageKinds": [],
+  "requirements": {
+    "words": null,
+    "abstractWords": 250,
+    "keywords": 5,
+    "anonymous": false,
+    "note": "No upper bound on length, but authors of texts longer than 15,000 words are asked to justify it. Abstract of at most 250 words, on a separate page; up to five keywords."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

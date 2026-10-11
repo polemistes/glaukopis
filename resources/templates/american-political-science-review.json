@@ -1,0 +1,41 @@
+{
+  "id": "american-political-science-review",
+  "name": "American Political Science Review",
+  "group": "journal",
+  "description": "Manuscripts for the American Political Science Review: 12-point type, double-spaced main text, footnotes and not endnotes, page numbers on all pages, Chicago author-date references; anonymised, with an abstract of 150 words or less.",
+  "source": {
+    "name": "American Political Science Review, author instructions: Preparing your materials (Cambridge University Press)",
+    "url": "https://www.cambridge.org/core/journals/american-political-science-review/information/author-instructions/preparing-your-materials",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The journal does not require first submissions to keep to its stylistic requirements. Not specified, and taken from the general default: margins, typeface, alignment, paragraph indent, hyphenation, headings, block quotations, size and spacing of notes (double spacing is 'not necessary' for footnotes and references), the heading and layout of the reference list (the source speaks of the 'reference list'; 'References' is entered), the position of page numbers, keywords, line numbers. The page size is not stated: letter was chosen for a North American journal. The type is 12 points for the main text and appendices. Footnotes are not for simple citations. A word count stands on the front page. Own work is cited sparingly and in the third person, and self-citations are not redacted. Reference style: the Chicago Manual, 17th ed., author-date."
+  },
+  "basedOn": "article",
+  "layout": "american-political-science-review",
+  "style": "chicago-author-date-17th-edition",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "keywords" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "acknowledgements" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix", "acknowledgements"],
+  "passageKinds": [],
+  "requirements": {
+    "words": null,
+    "abstractWords": 150,
+    "keywords": null,
+    "anonymous": true,
+    "note": "No strict limit on length: most articles are under 11,000 words and research notes under 7,000. The count includes tables, figures and footnotes, and excludes the reference list and supplementary material. Abstract of 150 words or less."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

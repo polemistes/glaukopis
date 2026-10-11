@@ -1,0 +1,48 @@
+{
+  "id": "book",
+  "name": "Academic book",
+  "group": "book",
+  "description": "An academic book: half-title and title page, copyright, dedication and epigraph, the contents, foreword, preface and acknowledgements, the chapters, then appendices, glossary, notes, bibliography and a note on the author.",
+  "source": {
+    "name": "The front and back matter of a scholarly monograph, as the Chicago Manual of Style and the publishers surveyed have them",
+    "url": "",
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "notes": "Publishers ask for structure, not appearance (docs/research/formats-publishers.md); the order here is the customary one, and a part the book has not is simply not printed. The publishers' own templates are based on this one."
+  },
+  "basedOn": "plain",
+  "contents": [
+    { "part": "half-title" },
+    { "part": "title-page" },
+    { "kind": "copyright" },
+    { "kind": "dedication" },
+    { "kind": "epigraph" },
+    { "part": "contents" },
+    { "kind": "foreword" },
+    { "kind": "preface" },
+    { "kind": "acknowledgements" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "glossary" },
+    { "part": "notes" },
+    { "part": "bibliography" },
+    { "kind": "about-the-author" }
+  ],
+  "kinds": [
+    "copyright",
+    "dedication",
+    "epigraph",
+    "foreword",
+    "preface",
+    "acknowledgements",
+    "appendix",
+    "glossary",
+    "afterword",
+    "about-the-author"
+  ],
+  "passageKinds": ["epigraph", "attribution", "headword", "gloss"],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    { "id": "document", "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"] }
+  ]
+}
