@@ -790,6 +790,8 @@
     language={inherited.settings.language}
     onsaved={(id) => {
       editingStyle = null;
+      // What the style holds may have changed under the same name: the pages are made anew.
+      documents.changed++;
       write({ style: id || undefined });
     }}
     onclose={() => (editingStyle = null)}
