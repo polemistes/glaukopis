@@ -2049,6 +2049,30 @@ mod tests {
         assert!(!t.contains("Zzblurbzz"), "{t}");
         assert!(at(&t, "Zznotezz") < at(&t, "Before the first section."), "{t}");
         assert!(t.contains("A note"), "{t}");
+
+        // Deeper down, a section made from an element of a kind is set by
+        // the kind's look at the level it stands at: the chapter's abstract
+        // under the chapter, with its heading unnumbered, in a block of the kind.
+        r.document.sections.push(Section {
+            level: 2,
+            heading: Some(vec![crate::document::fixtures::text("Summary")]),
+            blocks: vec![Block::Paragraph {
+                content: vec![crate::document::fixtures::text("Zzsummaryzz of the chapter.")],
+            }],
+            element: Some("e-sum".into()),
+            kind: Some("abstract".into()),
+        });
+        let typ = out.join("unlisted-3.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        let heading = at(&t, "#heading(level: 2, numbering: none)[Summary]");
+        let block = at(&t, "] <gk-part-abstract>");
+        assert!(at(&t, "Before the first section.") < heading && heading < block, "{t}");
+        assert!(t[heading..block].contains("Zzsummaryzz"), "{t}");
+        let docx = out.join("unlisted.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let xml = unzip(&docx, "word/document.xml");
+        assert!(xml.contains("Summary") && xml.contains("Zzsummaryzz"), "{xml}");
     }
 
     #[test]
