@@ -649,7 +649,7 @@
                     name: formatFrom,
                     what: layoutName(choice.format),
                   })
-                : t('document-window-as-template', { name: layoutName(choice.format) })}
+                : t('document-window-as-template', { name: broughtLayout })}
             </option>
             {#each formatGroups as group (group.name)}
               <optgroup label={group.name}>
@@ -683,7 +683,7 @@
             <option value="">
               {styleFrom
                 ? t('document-window-from-with', { name: styleFrom, what: styleName(choice.style) })
-                : t('document-window-as-template', { name: styleName(choice.style) })}
+                : t('document-window-as-template', { name: broughtStyle })}
             </option>
             {#each styleGroups as [name, styles] (name)}
               <optgroup label={name}>
@@ -838,6 +838,7 @@
   .form {
     padding: 18px 24px 28px;
     overflow-y: auto;
+    overflow-x: hidden;
     min-width: 0;
   }
   .from {
