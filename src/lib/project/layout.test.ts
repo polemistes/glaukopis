@@ -49,6 +49,28 @@ describe('the layout of the view of a project', () => {
     expect(arranged(new Set(), {}, { at: PROJECT }).panes[0].at).toBe(PROJECT);
   });
 
+  it('opens another project beside as it was left, in its diagram or its text', () => {
+    const stored = {
+      panes: [
+        { at: 'a', mode: 'diagram' as const, project: 'other' },
+        { at: 'elsewhere', mode: 'timeline' as const, project: 'other' },
+      ],
+    };
+    // The first pane is always of the project of the view.
+    expect(arranged(elements, stored, null).panes).toEqual([
+      { at: 'a', mode: 'diagram' },
+      { at: 'elsewhere', mode: 'diagram', project: 'other' },
+    ]);
+    // A place in the application that names an element shows that one alone.
+    expect(arranged(elements, stored, { at: 'b' }).panes).toHaveLength(1);
+    const layout = arranged(elements, stored, null);
+    expect(toStore(layout, elements, []).panes?.[1]).toEqual({
+      at: 'elsewhere',
+      mode: 'diagram',
+      project: 'other',
+    });
+  });
+
   it('opens the changes only when they are asked for, and reads what was kept before there were tabs', () => {
     expect(arranged(elements, { side: 'changes' }, null).side).toBeNull();
     expect(arranged(elements, { history: true }, null).side).toBe('history');

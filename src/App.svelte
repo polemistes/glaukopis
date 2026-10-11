@@ -12,6 +12,7 @@
   import { settings } from '$lib/state/settings.svelte';
   import { applyOwn, clearOwn } from '$lib/theme/own';
   import ConfirmHost from '$lib/ui/ConfirmHost.svelte';
+  import PickerHost from '$lib/project/PickerHost.svelte';
   import DragGhost from '$lib/ui/DragGhost.svelte';
   import ReferenceHost from '$lib/library/ReferenceHost.svelte';
   import MenuHost from '$lib/ui/MenuHost.svelte';
@@ -186,6 +187,7 @@
 
   <ReferenceHost />
   <ConfirmHost />
+  <PickerHost />
   {#if keysUi.sheet}<KeySheet onclose={() => (keysUi.sheet = false)} />{/if}
   {#if keysUi.palette}<Palette onclose={() => (keysUi.palette = false)} />{/if}
   <SettingsDialog />

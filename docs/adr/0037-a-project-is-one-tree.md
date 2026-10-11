@@ -1,6 +1,6 @@
 # 0037 — A project is one tree, entered at any element
 
-Date: 2026-10-11. Status: accepted.
+Date: 2026-10-11. Status: accepted. Stages 1 and 2 built on 2026-10-11; stage 3, templates, to come.
 
 ## Context
 

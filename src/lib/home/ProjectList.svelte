@@ -9,10 +9,13 @@
    */
   const unfoldedByHand = new SvelteSet<string>();
   const foldedByHand = new SvelteSet<string>();
+  /** The projects that are not open whose trees are shown under their rows in the pane, by id. */
+  const closedUnfolded = new SvelteSet<string>();
 </script>
 
 <script lang="ts">
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
+  import Columns2 from '@lucide/svelte/icons/columns-2';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import Folder from '@lucide/svelte/icons/folder';
   import FolderInput from '@lucide/svelte/icons/folder-input';
@@ -21,10 +24,13 @@
   import Pencil from '@lucide/svelte/icons/pencil';
   import Search from '@lucide/svelte/icons/search';
   import Trash2 from '@lucide/svelte/icons/trash-2';
-  import Users from '@lucide/svelte/icons/users';
   import type { Folder as FolderInfo, ProjectInfo } from '$lib/api/projects';
   import { t } from '$lib/i18n';
   import type { Project } from '$lib/project/model/project.svelte';
+  import type { Tree } from '$lib/project/model/tree';
+  import { viewing } from '$lib/project/ProjectView.svelte';
+  import { router } from '$lib/state/router.svelte';
+  import Spinner from '$lib/ui/Spinner.svelte';
   import { PROJECT } from '$lib/project/model/types';
   import { projects } from '$lib/state/projects.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -44,8 +50,10 @@
     foldersOpenTo,
     rows as makeRows,
   } from './folders';
+  import { closedTrees } from './closed.svelte';
   import { listUi } from './list.svelte';
   import type { ProjectActions } from './project-actions.svelte';
+  import ProjectBadge from './ProjectBadge.svelte';
 
   interface Props {
     /** What opens a project, its menu, and the dialog that asks for a name: the place's own. */
@@ -165,6 +173,14 @@
     const folder = folderOf(projects.folders, p);
     const into = intoFolders(projects.folders, folder, (id) => moveProject(p, id));
     const base = actions.items(p, { here: p.id === current });
+    // While a project is open, another may be opened beside it: after Open.
+    if (current && p.id !== current) {
+      base.splice(1, 0, {
+        label: t('home-open-beside'),
+        icon: Columns2,
+        action: () => viewing.beside?.(p.id),
+      });
+    }
     // Before the last part of the menu, which deletes.
     const cut = base.findIndex((item, i) => item.kind === 'separator' && i === base.length - 2);
     const moving: MenuItem[] = [
@@ -271,29 +287,105 @@
     return parts.join(' · ');
   }
 
-  // ---- the tree of the open project ----
+  // ---- the trees of the projects: the open one, and those unfolded in the pane ----
+
+  /** A tree shown under the row of its project. */
+  interface Shown {
+    /** The project, by id. */
+    project: string;
+    tree: Tree;
+    name: (id: string) => string;
+    /** The way down to the element in view: unfolded, unless folded by hand. */
+    way: Set<string>;
+    /** The element in view, marked; none in a project that is not open. */
+    at: string | null;
+    enter: (id: string) => void;
+    /** Whether it is the project that is open, rather than one read from disk. */
+    own: boolean;
+  }
 
   const tree = $derived(project ? project.tree() : null);
   /** The way from the project down to the element in view: unfolded, unless folded by hand. */
   const way = $derived(new Set(project && at ? project.pathTo(at) : []));
 
-  const foldKey = (id: string) => `${current}:${id}`;
+  const ownShown = $derived.by((): Shown | null => {
+    const pr = project;
+    if (!pr || !tree || !current) return null;
+    return {
+      project: current,
+      tree,
+      name: (id) => pr.node(id)?.title || '',
+      way,
+      at,
+      enter: (id) => onenter?.(id),
+      own: true,
+    };
+  });
 
-  function isUnfolded(id: string): boolean {
-    const key = foldKey(id);
-    if (foldedByHand.has(key)) return false;
-    return unfoldedByHand.has(key) || way.has(id);
+  const nowhere = new Set<string>();
+
+  /** The tree of a project that is not open, as it was read from disk: folded but for its top-level trees. */
+  function closedShown(p: ProjectInfo, read: Tree, names: Map<string, string>): Shown {
+    return {
+      project: p.id,
+      tree: read,
+      name: (id) => names.get(id) || '',
+      way: nowhere,
+      at: null,
+      enter: (id) => router.go({ view: 'project', project: p.id, at: id }),
+      own: false,
+    };
   }
 
-  function toggleFold(id: string) {
-    const key = foldKey(id);
-    if (isUnfolded(id)) {
+  /** Whether the tree of a project that is not open can be unfolded under its row: in the pane. */
+  const unfoldable = (p: ProjectInfo) => compact && p.id !== current;
+
+  function toggleClosed(p: ProjectInfo) {
+    if (closedUnfolded.has(p.id)) closedUnfolded.delete(p.id);
+    else closedUnfolded.add(p.id);
+  }
+
+  // What is unfolded is read from disk, and again when the project has changed.
+  $effect(() => {
+    if (!compact) return;
+    for (const p of projects.list) {
+      if (p.id !== current && closedUnfolded.has(p.id)) closedTrees.want(p);
+    }
+  });
+
+  const foldKey = (src: Shown, id: string) => `${src.project}:${id}`;
+
+  function isUnfolded(src: Shown, id: string): boolean {
+    const key = foldKey(src, id);
+    if (foldedByHand.has(key)) return false;
+    return unfoldedByHand.has(key) || src.way.has(id);
+  }
+
+  function toggleFold(src: Shown, id: string) {
+    const key = foldKey(src, id);
+    if (isUnfolded(src, id)) {
       unfoldedByHand.delete(key);
       foldedByHand.add(key);
     } else {
       foldedByHand.delete(key);
       unfoldedByHand.add(key);
     }
+  }
+
+  /** The menu of an element of a project that is not open: open it there, or beside. */
+  function elementItems(src: Shown, id: string): MenuItem[] {
+    return [
+      { label: t('common-open'), action: () => src.enter(id) },
+      ...(current
+        ? [
+            {
+              label: t('home-open-beside'),
+              icon: Columns2,
+              action: () => viewing.beside?.(src.project, id),
+            } as MenuItem,
+          ]
+        : []),
+    ];
   }
 
   // Entering an element unfolds the way to it, whatever was folded by hand before.
@@ -306,10 +398,20 @@
     });
   });
 
-  function onelementkey(event: KeyboardEvent, id: string, holds: boolean) {
-    if (event.key === 'Enter' || event.key === ' ') onenter?.(id);
-    else if (event.key === 'ArrowRight' && holds && !isUnfolded(id)) toggleFold(id);
-    else if (event.key === 'ArrowLeft' && holds && isUnfolded(id)) toggleFold(id);
+  function onelementkey(event: KeyboardEvent, src: Shown, id: string, holds: boolean) {
+    if (event.key === 'Enter' || event.key === ' ') src.enter(id);
+    else if (event.key === 'ArrowRight' && holds && !isUnfolded(src, id)) toggleFold(src, id);
+    else if (event.key === 'ArrowLeft' && holds && isUnfolded(src, id)) toggleFold(src, id);
+    else return;
+    event.preventDefault();
+  }
+
+  function onprojectkey(event: KeyboardEvent, p: ProjectInfo) {
+    if (event.key === 'Enter' || event.key === ' ') open(p);
+    else if (event.key === 'ArrowRight' && unfoldable(p) && !closedUnfolded.has(p.id))
+      toggleClosed(p);
+    else if (event.key === 'ArrowLeft' && unfoldable(p) && closedUnfolded.has(p.id))
+      toggleClosed(p);
     else return;
     event.preventDefault();
   }
@@ -403,19 +505,37 @@
         data-project={p.id}
         data-current={p.id === current ? '' : undefined}
         title={compact ? p.name : undefined}
-        style:padding-left="{(compact ? 4 : 8) + row.depth * step + 22}px"
+        style:padding-left="{(compact ? 4 : 8) + row.depth * step + (compact ? 0 : 22)}px"
         onclick={() => open(p)}
-        onkeydown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            open(p);
-          }
-        }}
+        onkeydown={(e) => onprojectkey(e, p)}
         oncontextmenu={(e) => openContextMenu(e, projectItems(p))}
         onpointerdown={(e) => startDrag(e, () => ({ kind: 'project', data: p.id, label: p.name }))}
       >
+        {#if compact}
+          {@const unfolded = unfoldable(p) && closedUnfolded.has(p.id)}
+          <button
+            type="button"
+            class="fold"
+            class:open={unfolded}
+            class:hidden={!unfoldable(p)}
+            tabindex="-1"
+            aria-label={unfolded ? t('home-tree-fold') : t('home-tree-unfold')}
+            aria-expanded={unfoldable(p) ? unfolded : undefined}
+            onclick={(e) => {
+              e.stopPropagation();
+              toggleClosed(p);
+            }}
+            onpointerdown={(e) => e.stopPropagation()}
+          >
+            <ChevronRight size={12} />
+          </button>
+        {/if}
+        <ProjectBadge
+          name={p.name}
+          sharing={p.sharing ? { owner: p.sharing.owner } : null}
+          size={compact ? 14 : 16}
+        />
         <span class="name serif truncate">{p.name}</span>
-        {#if p.sharing}<span class="shared" title={t('home-shared')}><Users size={12} /></span>{/if}
         {#if !compact}
           <span class="facts truncate">{facts(p)}</span>
           <span class="when">{t('home-changed', { ago: ago(p.modified) })}</span>
@@ -433,13 +553,36 @@
           <Ellipsis size={15} />
         </button>
       </div>
-      {#if p.id === current && tree && (tree.children.get(PROJECT)?.length ?? 0) > 0}
+      {#if p.id === current && ownShown && (ownShown.tree.children.get(PROJECT)?.length ?? 0) > 0}
         <div class="tree" data-project-tree={p.id}>
           {@render branch(
-            tree.children.get(PROJECT) ?? [],
+            ownShown,
+            ownShown.tree.children.get(PROJECT) ?? [],
             0,
             (compact ? 4 : 8) + row.depth * step + 22,
           )}
+        </div>
+      {:else if unfoldable(p) && closedUnfolded.has(p.id)}
+        {@const reading = closedTrees.get(p.id)}
+        {@const indent = (compact ? 4 : 8) + row.depth * step + 22}
+        <div class="tree closed" data-closed-tree={p.id}>
+          {#if reading?.state === 'read'}
+            {@const top = reading.tree.tree.children.get(PROJECT) ?? []}
+            {#if top.length}
+              {@render branch(
+                closedShown(p, reading.tree.tree, reading.tree.names),
+                top,
+                0,
+                indent,
+              )}
+            {:else}
+              <p class="say" style:padding-left="{indent + 18}px">{t('home-tree-empty')}</p>
+            {/if}
+          {:else if reading?.state === 'failed'}
+            <p class="say" style:padding-left="{indent + 18}px">{t('home-tree-unreadable')}</p>
+          {:else}
+            <p class="say" style:padding-left="{indent + 18}px"><Spinner size={12} /></p>
+          {/if}
         </div>
       {/if}
     {/if}
@@ -451,24 +594,25 @@
 </div>
 
 <!-- The elements of the open project, each a line, those under an unfolded one drawn in a step further. -->
-{#snippet branch(ids: string[], depth: number, indent: number)}
+{#snippet branch(src: Shown, ids: string[], depth: number, indent: number)}
   {#each ids as id (id)}
-    {@const node = project?.node(id)}
-    {@const holds = (tree?.children.get(id)?.length ?? 0) > 0}
-    {@const open = holds && isUnfolded(id)}
+    {@const name = src.name(id)}
+    {@const holds = (src.tree.children.get(id)?.length ?? 0) > 0}
+    {@const open = holds && isUnfolded(src, id)}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div
       class="row element"
-      class:current={id === at}
+      class:current={id === src.at}
       role="button"
       tabindex="0"
-      aria-current={id === at ? 'location' : undefined}
+      aria-current={id === src.at ? 'location' : undefined}
       data-element={id}
-      data-current={id === at ? '' : undefined}
-      title={compact ? node?.title || undefined : undefined}
+      data-current={id === src.at ? '' : undefined}
+      title={compact ? name || undefined : undefined}
       style:padding-left="{indent + depth * step}px"
-      onclick={() => onenter?.(id)}
-      onkeydown={(e) => onelementkey(e, id, holds)}
+      onclick={() => src.enter(id)}
+      onkeydown={(e) => onelementkey(e, src, id, holds)}
+      oncontextmenu={src.own ? undefined : (e) => openContextMenu(e, elementItems(src, id))}
     >
       <button
         type="button"
@@ -480,16 +624,16 @@
         aria-expanded={holds ? open : undefined}
         onclick={(e) => {
           e.stopPropagation();
-          toggleFold(id);
+          toggleFold(src, id);
         }}
         onpointerdown={(e) => e.stopPropagation()}
       >
         <ChevronRight size={12} />
       </button>
-      <span class="name serif truncate">{node?.title || t('project-untitled')}</span>
+      <span class="name serif truncate">{name || t('project-untitled')}</span>
     </div>
     {#if open}
-      {@render branch(tree?.children.get(id) ?? [], depth + 1, indent)}
+      {@render branch(src, src.tree.children.get(id) ?? [], depth + 1, indent)}
     {/if}
   {/each}
 {/snippet}
@@ -581,10 +725,6 @@
     width: 150px;
     text-align: right;
   }
-  .shared {
-    display: inline-flex;
-    color: var(--accent-strong);
-  }
   .menu {
     display: inline-flex;
     padding: 5px;
@@ -622,6 +762,16 @@
   .tree {
     display: flex;
     flex-direction: column;
+  }
+  /* What is said under a project that is not open, while it is read or when it cannot be. */
+  .say {
+    display: flex;
+    align-items: center;
+    min-height: 24px;
+    margin: 0;
+    color: var(--ink-4);
+    font-size: var(--text-sm);
+    font-style: italic;
   }
   .row.element {
     gap: 2px;

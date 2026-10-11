@@ -1,7 +1,8 @@
 /**
  * What the list of projects keeps while the application runs, the same on
  * the home page and in the pane of projects (ADR 0033): which folders are
- * closed. And the pane itself: whether it is open and how wide, which the
+ * closed; and on the owl map, which folders were folded or unfolded by
+ * hand (ADR 0037). And the pane itself: whether it is open and how wide, which the
  * settings remember.
  */
 
@@ -16,6 +17,19 @@ class ListUi {
     if (next.has(id)) next.delete(id);
     else next.add(id);
     this.collapsed = next;
+  }
+
+  /**
+   * The folders of the owl map folded (true) or unfolded (false) by hand.
+   * One not here is folded as it starts: where it holds many projects.
+   */
+  owlFolds = $state.raw(new Map<string, boolean>());
+
+  /** Folds a folder of the owl map, or unfolds it. */
+  owlFold(id: string, folded: boolean) {
+    const next = new Map(this.owlFolds);
+    next.set(id, folded);
+    this.owlFolds = next;
   }
 
   /** Opens the folders given, so that what is in them is seen. */

@@ -39,9 +39,9 @@ const TRASH: &str = ".trash";
 const TOKEN: &str = "sharing.key";
 const FOLDERS: &str = "folders.json";
 
-/// The two forms of the page of projects: the last used, as cards; all of
-/// them, as a list in folders.
-pub const SHOWN: [&str; 2] = ["recent", "list"];
+/// The three forms of the page of projects: the last used, as cards; all of
+/// them, as a list in folders; all of them, as a map around the owl.
+pub const SHOWN: [&str; 3] = ["recent", "list", "map"];
 
 /// One at a time changes the file of folders: it is read, changed and written whole.
 static FOLDERS_LOCK: Mutex<()> = Mutex::new(());
@@ -1064,6 +1064,8 @@ mod tests {
         // Which form is shown.
         p.set_shown("list").unwrap();
         assert_eq!(p.shown().unwrap(), "list");
+        p.set_shown("map").unwrap();
+        assert_eq!(p.shown().unwrap(), "map");
         assert!(p.set_shown("cards").is_err());
         assert_eq!(next_order(None), "000001");
         assert_eq!(next_order(Some("000009")), "000010");

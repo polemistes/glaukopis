@@ -16,7 +16,7 @@
 import { t } from '$lib/i18n';
 import { router } from '$lib/state/router.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
-import { writeElsewhere } from './elsewhere';
+import { idOf, writeElsewhere } from './elsewhere';
 import type { Project } from './model/project.svelte';
 import { makePortable, portable, type Place, type Portable } from './model/portable';
 import { isAncestor, topmost } from './model/tree';
@@ -47,7 +47,8 @@ function openId(): string | null {
  * Otherwise it is made anew, as it was when it was copied.
  */
 function asCopies(held: Held, project: Project): boolean {
-  const here = held.project === project || (!!held.from && held.from === openId());
+  const here =
+    held.project === project || (!!held.from && held.from === (idOf(project) ?? openId()));
   return here && held.ids.every((id) => project.node(id));
 }
 
@@ -66,7 +67,7 @@ export function copyElements(project: Project, ids: string[], cut = false): numb
     ids.filter((id) => project.node(id)),
   ).filter((id) => id !== PROJECT);
   clipboard.held = top.length
-    ? { project, from: openId(), ids: top, portable: portable(project, top), cut }
+    ? { project, from: idOf(project) ?? openId(), ids: top, portable: portable(project, top), cut }
     : null;
   return top.length;
 }

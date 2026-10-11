@@ -14,7 +14,15 @@ export interface Pane {
   /** The element in view. */
   at: string;
   mode: MapMode;
+  /**
+   * Another project the pane shows, beside the one of the view: the second
+   * pane only. None for the project of the view.
+   */
+  project?: string;
 }
+
+/** What a pane showing another project shows: its diagram or its text. */
+export const guestMode = (mode: MapMode): MapMode => (mode === 'text' ? 'text' : 'diagram');
 
 /** The elements there are, by id: `project.nodes` will do. */
 export interface Elements {
@@ -87,7 +95,11 @@ export function arranged(
   };
   const panes = [first];
   const second = stored.panes?.[1];
-  if (!route?.at && second && known(second.at)) panes.push({ at: second.at, mode: second.mode });
+  // Another project is opened beside as it was left: what is in view there is looked for when it is open.
+  if (!route?.at && second?.project)
+    panes.push({ at: second.at || PROJECT, mode: guestMode(second.mode), project: second.project });
+  else if (!route?.at && second && known(second.at))
+    panes.push({ at: second.at, mode: second.mode });
   // The changes are gone through when asked for, not when the project opens.
   const kept =
     stored.side !== undefined

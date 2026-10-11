@@ -59,14 +59,14 @@ class ProjectsState {
       ]);
       this.list = list;
       this.folders = folders;
-      this.shown = shown === 'list' ? 'list' : 'recent';
+      this.shown = shown === 'list' || shown === 'map' ? shown : 'recent';
     } catch (error) {
       notifyError(t('project-list-unreadable'), error);
     }
     this.loaded = true;
   }
 
-  /** Shows the other form of the page, and remembers it. Failing to remember it is no matter. */
+  /** Shows a form of the page, and remembers it. Failing to remember it is no matter. */
   show(kind: ProjectsShown) {
     this.shown = kind;
     projectsShown(kind).catch(() => {});

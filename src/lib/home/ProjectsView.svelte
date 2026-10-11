@@ -3,6 +3,7 @@
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import LayoutGrid from '@lucide/svelte/icons/layout-grid';
   import List from '@lucide/svelte/icons/list';
+  import Network from '@lucide/svelte/icons/network';
   import Plus from '@lucide/svelte/icons/plus';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import Users from '@lucide/svelte/icons/users';
@@ -24,6 +25,7 @@
   } from '$lib/api/projects';
   import { ProjectActions } from './project-actions.svelte';
   import ProjectActionsHost from './ProjectActionsHost.svelte';
+  import OwlMap from './OwlMap.svelte';
   import ProjectList from './ProjectList.svelte';
   import ProjectsMapDialog from './ProjectsMapDialog.svelte';
   import TrashDialog from './TrashDialog.svelte';
@@ -49,7 +51,10 @@
   const forms: { value: ProjectsShown; label: string; icon: typeof LayoutGrid }[] = $derived([
     { value: 'recent', label: t('home-recent'), icon: LayoutGrid },
     { value: 'list', label: t('home-all'), icon: List },
+    { value: 'map', label: t('home-owl'), icon: Network },
   ]);
+  /** The owl map fills the page: the welcome and its buttons stand small above it. */
+  const mapped = $derived(projects.loaded && !!projects.list.length && projects.shown === 'map');
 
   function pageMenu(anchor: HTMLElement) {
     openMenu(
@@ -116,41 +121,48 @@
 
 <div
   class="home"
+  class:mapped
   use:dropTarget={{
     accepts: (p) => p.kind === 'files' && (p.data as string[]).some(written),
     ondrop: (e) => fromDocument((e.payload.data as string[]).find(written)),
   }}
 >
   <div class="inner">
-    <div class="welcome" class:alone={projects.loaded && !projects.list.length}>
-      <Mark size={120} />
-      <h2>{t('home-welcome')}</h2>
-      <p>
-        {t('home-welcome-text')}
-      </p>
-      <div class="actions">
-        <Button variant="secondary" onclick={() => actions.newProject()}>
-          {#snippet icon()}<Plus size={15} />{/snippet}
-          {t('home-begin')}
-        </Button>
-        <Button variant="secondary" onclick={() => (joining = true)}>
-          {#snippet icon()}<Users size={15} />{/snippet}
-          {t('home-join')}
-        </Button>
-        <Button variant="secondary" onclick={() => fromDocument()}>
-          {#snippet icon()}<FileInput size={15} />{/snippet}
-          {t('home-from-document')}
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={actions.filing}
-          onclick={() => void actions.openFile()}
-        >
-          {#snippet icon()}<FolderOpen size={15} />{/snippet}
-          {t('home-file-open')}
-        </Button>
+    {#snippet begin()}
+      <Button variant="secondary" size={mapped ? 'sm' : 'md'} onclick={() => actions.newProject()}>
+        {#snippet icon()}<Plus size={15} />{/snippet}
+        {t('home-begin')}
+      </Button>
+      <Button variant="secondary" size={mapped ? 'sm' : 'md'} onclick={() => (joining = true)}>
+        {#snippet icon()}<Users size={15} />{/snippet}
+        {t('home-join')}
+      </Button>
+      <Button variant="secondary" size={mapped ? 'sm' : 'md'} onclick={() => fromDocument()}>
+        {#snippet icon()}<FileInput size={15} />{/snippet}
+        {t('home-from-document')}
+      </Button>
+      <Button
+        variant="secondary"
+        size={mapped ? 'sm' : 'md'}
+        disabled={actions.filing}
+        onclick={() => void actions.openFile()}
+      >
+        {#snippet icon()}<FolderOpen size={15} />{/snippet}
+        {t('home-file-open')}
+      </Button>
+    {/snippet}
+    {#if !mapped}
+      <div class="welcome" class:alone={projects.loaded && !projects.list.length}>
+        <Mark size={120} />
+        <h2>{t('home-welcome')}</h2>
+        <p>
+          {t('home-welcome-text')}
+        </p>
+        <div class="actions">
+          {@render begin()}
+        </div>
       </div>
-    </div>
+    {/if}
 
     {#if !projects.loaded}
       <div class="centre"><Spinner size={22} /></div>
@@ -159,6 +171,9 @@
         <div class="title">
           <h1>{t('home-title')}</h1>
         </div>
+        {#if mapped}
+          <div class="actions">{@render begin()}</div>
+        {/if}
         <div class="forms">
           <Segmented
             value={projects.shown}
@@ -176,7 +191,11 @@
           </IconButton>
         </div>
       </header>
-      {#if projects.shown === 'list'}
+      {#if projects.shown === 'map'}
+        <div class="map-area">
+          <OwlMap {actions} open={(p) => open(p)} />
+        </div>
+      {:else if projects.shown === 'list'}
         <ProjectList {actions} />
       {:else}
         <div class="grid">
@@ -293,6 +312,42 @@
   .home {
     height: 100%;
     overflow-y: auto;
+  }
+  /* The owl map fills the page, and the page does not scroll. */
+  .home.mapped {
+    overflow: hidden;
+  }
+  .home.mapped .inner {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    height: 100%;
+    padding: 18px 24px 16px;
+  }
+  .home.mapped header {
+    flex: none;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .home.mapped header .actions {
+    flex: 1;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .home.mapped .forms {
+    padding-bottom: 0;
+  }
+  .home.mapped .under {
+    flex: none;
+    margin-top: 10px;
+  }
+  .map-area {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
   }
   .inner {
     max-width: 1080px;

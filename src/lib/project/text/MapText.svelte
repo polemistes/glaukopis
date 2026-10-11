@@ -44,6 +44,7 @@
   } from '../elements';
   import { openDrawnWordMenu } from '$lib/spelling/drawn';
   import { replaceWhenShown } from '$lib/spelling/menu';
+  import { carryAcross } from '../elsewhere';
   import type { Project } from '../model/project.svelte';
   import { isAncestor } from '../model/tree';
   import { pieces } from '../pieces';
@@ -68,6 +69,11 @@
     outline?: boolean;
     /** Called with the element at the top of what is in view, for the outline. */
     ontop?: (id: string | null) => void;
+    /**
+     * Another project, shown in the other pane: elements dragged from it
+     * are carried here, copied, or moved and taken away there (ADR 0037).
+     */
+    besideProject?: Project | null;
   }
 
   let {
@@ -79,7 +85,13 @@
     folding,
     outline = false,
     ontop,
+    besideProject = null,
   }: Props = $props();
+
+  /** Whether what is dragged is elements this text takes: its own, or those of the project beside. */
+  function takes(data: ElementsPayload): boolean {
+    return data.project === project || (!!besideProject && data.project === besideProject);
+  }
 
   /** How wide the outline is, as it was last dragged. */
 
@@ -911,17 +923,29 @@
       return;
     }
     const payload = event.payload.data as ElementsPayload;
-    if (payload.project !== project) return;
+    if (!takes(payload)) return;
     const parent = target.where === 'inside' ? target.id : (tree.parent.get(target.id) ?? null);
     if (!parent) return;
     const list = tree.children.get(parent) ?? [];
     const index =
       target.where === 'inside' ? 0 : list.indexOf(target.id) + (target.where === 'after' ? 1 : 0);
-    project.checkpoint();
-    const made = event.copy
-      ? project.copy(payload.ids, parent, index, { pos: null })
-      : project.move(payload.ids, parent, index, { pos: null });
-    project.checkpoint();
+    let made: string[];
+    if (payload.project !== project) {
+      // From the project beside: made here, and with a move taken away there.
+      made = carryAcross(
+        payload.project,
+        payload.ids,
+        project,
+        { under: parent, index },
+        !event.copy,
+      );
+    } else {
+      project.checkpoint();
+      made = event.copy
+        ? project.copy(payload.ids, parent, index, { pos: null })
+        : project.move(payload.ids, parent, index, { pos: null });
+      project.checkpoint();
+    }
     if (made[0]) {
       current = made[0];
       folding.reveal(project.tree(at), made[0]);
@@ -1119,7 +1143,7 @@
     }}
     use:dropTarget={{
       accepts: (p) =>
-        (p.kind === 'elements' && (p.data as ElementsPayload).project === project) ||
+        (p.kind === 'elements' && takes(p.data as ElementsPayload)) ||
         p.kind === PICTURES_DRAGGED ||
         p.kind === 'references',
       ondrop,

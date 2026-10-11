@@ -5,11 +5,12 @@ home-join = Bli med i et delt prosjekt
 home-from-document = Et prosjekt av et dokument …
 home-new = Nytt prosjekt
 
-## Sidens to former: de sist brukte prosjektene som kort, alle som en liste
+## Sidens tre former: de sist brukte prosjektene som kort, alle som en liste, alle som et kart rundt uglen
 
 home-shown = Hva som vises
 home-recent = Sist brukt
 home-all = Alle prosjekter
+home-owl = Kart
 home-show-all = Vis alle { $count } prosjektene
 home-page-menu = Mer
 home-search = Finn et prosjekt
@@ -46,6 +47,15 @@ home-pane-between = Mellom prosjektlisten og prosjektet
 home-tree-unfold = Vis det som står under
 home-tree-fold = Skjul det som står under
 home-open-now = Det er åpent nå
+home-open-beside = Åpne ved siden av
+home-tree-unreadable = Det kunne ikke leses
+home-tree-empty = Ingenting i det ennå
+
+## Uglekartet: prosjektene tegnet rundt uglen, mappene som enkle merkelapper
+
+home-owl-fit = Vis alt
+home-owl-fold = Skjul prosjektene i den
+home-owl-unfold = Vis prosjektene i den
 
 ## Et kart over prosjektene
 

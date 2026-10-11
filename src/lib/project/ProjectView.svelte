@@ -5,12 +5,14 @@
    * What the pane of projects, which stands outside the view and lasts from
    * one project to the next, is told of the one that is open: the project,
    * the element in view of the pane that has the focus, and how an element
-   * is entered. Nothing while no project is open.
+   * is entered; and how another project, or an element of it, is opened
+   * beside, in the second pane. Nothing while no project is open.
    */
   class Viewing {
     project = $state.raw<Project | null>(null);
     at = $state<string | null>(null);
     enter: ((id: string) => void) | null = null;
+    beside: ((projectId: string, at?: string) => void) | null = null;
   }
 
   export const viewing = new Viewing();
@@ -47,8 +49,8 @@
   import { pictures } from '$lib/figures/pictures.svelte';
   import { picturesUi, type PictureScope } from '$lib/pictures/store.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
-  import { dropTarget } from '$lib/ui/drag.svelte';
-  import { notify } from '$lib/ui/toast.svelte';
+  import { drag, dropTarget } from '$lib/ui/drag.svelte';
+  import { notify, notifyError } from '$lib/ui/toast.svelte';
   import CommentsPanel from '$lib/comments/CommentsPanel.svelte';
   import { selectedPassage } from '$lib/comments/marks';
   import { commentsUi } from '$lib/comments/ui.svelte';
@@ -90,9 +92,15 @@
   import KindsDialog from './KindsDialog.svelte';
   import { kindsUi } from './kinds.svelte';
   import { filesDropped, mapOfIt } from './drops';
+  import type { ElementsPayload } from './elements';
+  import { closedHere, openHere } from './elsewhere';
+  import type { ProjectInfo } from '$lib/api/projects';
+  import { recordOf } from '$lib/editor/references.svelte';
+  import { libraryGet } from '$lib/api/library';
   import {
     arranged,
     clamp,
+    guestMode,
     sideWidth,
     toStore,
     type Pane,
@@ -167,13 +175,185 @@
   /** The diagrams in the panes, where a pane shows the diagram. */
   let diagrams = $state<(ReturnType<typeof MapDiagram> | undefined)[]>([]);
 
+  /** The pane that has the focus, whichever project it shows. */
   const pane = $derived(panes[Math.min(focused, panes.length - 1)]);
+
+  // ---- another project beside (ADR 0037) ----
+
+  /**
+   * Another project, open in the second pane beside the one of the view,
+   * with its own sharing, so that one that is shared stays in touch. The
+   * panels at the side, the preview, the history, the review and the
+   * comments are of the project of the view, and say nothing of it.
+   */
+  interface Guest {
+    id: string;
+    info: ProjectInfo;
+    project: Project;
+    sharing: ProjectSharing;
+    folding: Folding;
+  }
+  let guest = $state.raw<Guest | null>(null);
+  /** The project being opened beside, until it is open. */
+  let guestOpening: string | null = null;
+  /** The view has gone: a project opened beside after that is let go at once. */
+  let gone = false;
+
+  /** The project a pane shows; none while the one beside is being opened. */
+  function projectOf(p: Pane | undefined): Project | null {
+    if (!p) return null;
+    if (!p.project) return project;
+    return guest?.id === p.project ? guest.project : null;
+  }
+
+  /** Whether the two panes show two projects. */
+  const across = $derived(panes.length > 1 && !!panes[1].project);
+
+  /**
+   * The pane of the project of the view that the panels follow: the one
+   * that has the focus, or the first where the focus is on another project.
+   */
+  const ownIndex = $derived(pane && !pane.project ? Math.min(focused, panes.length - 1) : 0);
+  const ownPane = $derived(panes[ownIndex]);
+  /** The project of the pane that has the focus: what the keys, the undo and the dialogs act on. */
+  const focusedProject = $derived(projectOf(pane) ?? project);
+
+  /** How a project is named first in the bar of its pane, where two are side by side. */
+  function namedIn(p: Pane): { name: string; sharing: { owner: boolean } | null } | null {
+    if (!across) return null;
+    const of = p.project ? guest : null;
+    const name = (of ? of.project.name || of.info.name : project?.name) ?? '';
+    const sharing = of ? of.sharing.sharing : shared?.sharing;
+    return { name, sharing: sharing ? { owner: sharing.owner } : null };
+  }
+
+  /** The key of the camera of a pane: elements of two projects may have the same id. */
+  const cameraOf = (p: Pane) => (p.project ? `${p.project}:${p.at}` : p.at);
+
+  // The project beside follows what the second pane asks for: opened, or let go.
+  const wantedGuest = $derived(panes[1]?.project ?? null);
+  $effect(() => {
+    const id = wantedGuest;
+    untrack(() => void turnGuest(id));
+  });
+
+  async function turnGuest(id: string | null) {
+    if (guest?.id === id || (id && guestOpening === id)) return;
+    const was = guest;
+    guest = null;
+    if (was) letGo(was);
+    guestOpening = id;
+    if (!id) return;
+    try {
+      // What was written in it when it was last let go is on disk first.
+      await projects.closed(id);
+      if (gone || guestOpening !== id) return;
+      // It is opened beside: not the project last opened.
+      const last = projects.lastOpened;
+      const opened = await openProject(id);
+      projects.lastOpened = last;
+      const p = opened.project;
+      const g: Guest = {
+        id,
+        info: opened.info,
+        project: p,
+        sharing: new ProjectSharing(id, p, opened.info),
+        folding: new Folding([], (e) => {
+          const node = p.nodes.get(e);
+          return !!node && (!node.empty || !!node.include);
+        }),
+      };
+      if (gone || guestOpening !== id) {
+        letGo(g);
+        return;
+      }
+      guestOpening = null;
+      openHere(id, p);
+      p.setMe(me());
+      guest = g;
+    } catch (error) {
+      if (guestOpening !== id) return;
+      guestOpening = null;
+      notifyError(t('project-beside-failed'), error);
+      if (panes[1]?.project === id) closePane(1);
+    }
+  }
+
+  /** Lets go of the project beside: on disk, out of touch with the others, and closed. */
+  function letGo(g: Guest): Promise<void> {
+    closedHere(g.id, g.project);
+    g.sharing.close();
+    const done = g.project.close();
+    // What reads it from disk meanwhile waits for it.
+    projects.closing(g.id, done);
+    return done.catch((error) => console.error(error));
+  }
+
+  /** Lets go of the project beside, where there is one, when the view goes. */
+  function leaveGuest(): Promise<void> {
+    gone = true;
+    guestOpening = null;
+    const g = guest;
+    guest = null;
+    return g ? letGo(g) : Promise.resolve();
+  }
+
+  /**
+   * Opens a project beside, in the second pane, at an element of it or at
+   * the project itself; the project of the view in an ordinary second pane.
+   */
+  function besideProject(id: string, at?: string) {
+    if (!project || !panes.length) return;
+    if (id === ownId) {
+      beside(at ?? PROJECT);
+      return;
+    }
+    const mode = guestMode(panes[1]?.mode ?? panes[0].mode);
+    panes = [panes[0], { at: at ?? PROJECT, mode, project: id }];
+    focused = 1;
+  }
+
+  /** Up from the project: to all the projects, as the owl's map shows them. */
+  function goHome() {
+    projects.show('map');
+    router.go({ view: 'projects' });
+  }
+
+  /** Elements dragged from the other pane, of another project, over a pane: where, and what a drop will do. */
+  const carrying = $derived.by(() => {
+    const d = drag.payload;
+    if (!across || d?.kind !== 'elements' || !drag.welcome) return null;
+    const from = (d.data as ElementsPayload).project;
+    const i = panes.findIndex((p) => {
+      const of = projectOf(p);
+      return !!of && of !== from;
+    });
+    const to = projectOf(panes[i]);
+    const r = paneEls[i]?.getBoundingClientRect();
+    if (!to || !r || panes.every((p) => projectOf(p) !== from)) return null;
+    if (drag.x < r.left || drag.x > r.right || drag.y < r.top || drag.y > r.bottom) return null;
+    return { pane: i, name: namedIn(panes[i])?.name ?? to.name, copy: drag.copy };
+  });
+
+  /** A reference cited in a project is kept with it: in that of the view as the editor keeps it, in another here. */
+  async function keepIn(p: Project | null, id: string) {
+    if (p === project) {
+      keep(id);
+      return;
+    }
+    try {
+      p?.putReference(recordOf(await libraryGet(id)));
+    } catch {
+      // Not in this user's library: the project has its own copy already.
+    }
+  }
 
   // The pane of projects, outside the view, shows the project and where one is in it.
   $effect(() => {
     viewing.project = project;
-    viewing.at = pane?.at ?? null;
+    viewing.at = ownPane?.at ?? null;
     viewing.enter = (id) => show(id);
+    viewing.beside = besideProject;
   });
 
   /** The review of the changes of the element in view, while its panel is open (ADR 0022). */
@@ -186,7 +366,7 @@
 
   /** Opens the panel of changes beside the text, or closes it. */
   function toggleReview(open = !review) {
-    if (!open || !project || !pane) {
+    if (!open || !project || !ownPane) {
       review?.close();
       review = null;
       if (sideKind === 'changes') sideKind = null;
@@ -195,7 +375,7 @@
     sideKind = lastSide = 'changes';
     if (review) return;
     looking = null;
-    review = new Review(project, sourceFor(project, ownId), pane.at);
+    review = new Review(project, sourceFor(project, ownId), ownPane.at);
     review.later(0);
   }
 
@@ -222,12 +402,12 @@
   const sideElement = $derived(
     sideKind === 'history'
       ? undefined
-      : project?.node((sideKind === 'changes' && review?.at) || pane?.at),
+      : project?.node((sideKind === 'changes' && review?.at) || ownPane?.at),
   );
 
   // The review follows the element in view, and what is written.
   $effect(() => {
-    const at = pane?.at;
+    const at = ownPane?.at;
     if (at) untrack(() => review?.turnTo(at));
   });
 
@@ -239,6 +419,8 @@
   onMount(async () => {
     library.load();
     try {
+      // What was written in it when it was last let go, beside another, is on disk first.
+      await projects.closed(ownId);
       // svelte-ignore state_referenced_locally
       const opened = await openProject(projectId);
       stored = (opened.info.view ?? {}) as StoredView;
@@ -258,7 +440,10 @@
       pictures.open(ownId, () => p.usedPictures());
       void pictures.nameFrom(p.usedPictures());
       project = p;
-      release = beforeClose(() => leave(p));
+      openHere(ownId, p);
+      release = beforeClose(async () => {
+        await Promise.all([leave(p), leaveGuest()]);
+      });
       // The citations of a document the project was made of are gone through, where that was asked for.
       const found = takeWaiting(ownId);
       if (found && p.node(found)) goThrough(found);
@@ -316,7 +501,11 @@
     const who = me();
     const p = project;
     if (!p) return;
-    untrack(() => p.setMe(who));
+    const g = guest?.project;
+    untrack(() => {
+      p.setMe(who);
+      g?.setMe(who);
+    });
     // For the tests of the running application, which ask the history as the review does.
     (window as unknown as Record<string, unknown>).__glaukopisHistory = {
       history: historyOf(p, ownId),
@@ -348,7 +537,10 @@
   // once: a style sheet in the head of the document sets them from what
   // they are based on (`passageKindsCss`), anew whenever they change.
   $effect(() => {
-    const css = project ? passageKindsCss(project.passageKinds) : '';
+    // Those of a project beside as well: their ids are their own.
+    const css = project
+      ? passageKindsCss([...project.passageKinds, ...(guest?.project.passageKinds ?? [])])
+      : '';
     let sheet = document.getElementById('passage-kinds');
     if (!sheet) {
       sheet = document.createElement('style');
@@ -381,7 +573,10 @@
       viewing.project = null;
       viewing.at = null;
       viewing.enter = null;
+      viewing.beside = null;
     }
+    if (project) closedHere(ownId, project);
+    void leaveGuest();
     if (pictures.project === ownId) pictures.open(null);
     // What reads the project from disk meanwhile, as the search through everything, waits for it.
     if (project)
@@ -465,13 +660,17 @@
   $effect(() => {
     if (!project) return;
     void project.structure;
-    const p = project;
+    void guest?.project.structure;
     const next = panes.map((pane) => {
+      const p = projectOf(pane);
+      // A project beside that is being opened, or has not been fetched, is looked at when it is there.
+      if (!p || !p.node(PROJECT)) return pane;
+      const key = cameraOf(pane);
       if (p.node(pane.at)) {
-        ways.set(pane.at, p.pathTo(pane.at));
+        ways.set(key, p.pathTo(pane.at));
         return pane;
       }
-      const way = ways.get(pane.at) ?? [];
+      const way = ways.get(key) ?? [];
       const at = [...way].reverse().find((id) => p.node(id)) ?? PROJECT;
       return { ...pane, at };
     });
@@ -480,7 +679,8 @@
 
   /** Enters an element: makes it the element in view of a pane; with an element within it, that one is shown. */
   function show(at: string, options: { pane?: number; element?: string; mode?: MapMode } = {}) {
-    const i = options.pane ?? focused;
+    // Unless a pane is named, the one of the project of the view.
+    const i = options.pane ?? ownIndex;
     if (!panes[i]) return;
     // Set anew, so that an element asked for again is shown again.
     reveal = null;
@@ -494,23 +694,33 @@
    * when the element is within it, else the tree under the project that
    * holds the element, or the project for the project itself.
    */
-  function holding(element: string, i = focused): string {
+  function holding(element: string, i = ownIndex): string {
     const p = panes[i];
-    if (!project || !p) return PROJECT;
-    if (project.tree(p.at).depth.has(element)) return p.at;
-    return project.pathTo(element)[1] ?? PROJECT;
+    const of = projectOf(p);
+    if (!of || !p) return PROJECT;
+    if (of.tree(p.at).depth.has(element)) return p.at;
+    return of.pathTo(element)[1] ?? PROJECT;
   }
 
   /** Goes to an element from a panel: in the pane as it is, where the element is within view, else entering the tree that holds it. */
   function goTo(element: string, options: { pane?: number; mode?: MapMode } = {}) {
-    show(holding(element, options.pane ?? focused), { ...options, element });
+    const i = options.pane ?? ownIndex;
+    show(holding(element, i), { ...options, pane: i, element });
   }
 
-  /** Goes up: enters the parent of the element in view, where there is one, with the element one came from shown. */
+  /**
+   * Goes up in the pane that has the focus: enters the parent of the
+   * element in view, with the element one came from shown; from the
+   * project itself, in the first pane, to all the projects.
+   */
   function up() {
-    if (!project || !pane) return;
-    const parent = project.tree().parent.get(pane.at);
-    if (parent) show(parent, { element: pane.at });
+    const i = Math.min(focused, panes.length - 1);
+    const p = panes[i];
+    const of = projectOf(p);
+    if (!of || !p) return;
+    const parent = of.tree().parent.get(p.at);
+    if (parent) show(parent, { pane: i, element: p.at });
+    else if (i === 0 && p.at === PROJECT) goHome();
   }
 
   /** Alt+Up goes up from anywhere in the view but a field or a text, which have their own use for it. */
@@ -526,7 +736,8 @@
   /** Shows an element in the other pane, beside the one in view; opens the other pane for it where there is none. */
   function beside(at: string) {
     if (panes.length > 1) {
-      panes[1] = { ...panes[1], at };
+      // Where the other pane shows another project, it turns to this one.
+      panes[1] = panes[1].project ? { at, mode: panes[1].mode } : { ...panes[1], at };
     } else {
       panes = [panes[0], { at, mode: panes[0].mode }];
     }
@@ -536,7 +747,8 @@
   /** Two side by side: the element in view as diagram and as text, until another is chosen for a side. */
   function sideBySide() {
     if (panes.length > 1) {
-      closePane(1 - focused);
+      // The project of the view stays in the first pane: one beside it goes.
+      closePane(across ? 1 : 1 - focused);
       return;
     }
     const one = panes[0];
@@ -571,6 +783,8 @@
    * the element the cursor is in; or on the element selected in the diagram.
    */
   function beginComment() {
+    // The comments are of the project of the view.
+    if (pane?.project) return;
     const view = editorUi.selection?.view;
     const element = view ? hooksOf.get(view)?.element : undefined;
     if (view && element && view.hasFocus()) {
@@ -583,7 +797,16 @@
 
   // What the comments ask of the view: that their panel open.
   $effect(() => {
-    if (commentsUi.asked) untrack(() => side('comments', true));
+    if (!commentsUi.asked) return;
+    untrack(() => {
+      // A thread of a project beside, begun or asked for, is not for the panel of this one.
+      if (pane?.project) {
+        commentsUi.done();
+        notify(t('project-beside-no-comments'));
+        return;
+      }
+      side('comments', true);
+    });
   });
 
   // What the citations that were found ask of the view: that their panel
@@ -592,37 +815,38 @@
   $effect(() => {
     const n = foundUi.asked;
     const p = project;
-    if (!p || !pane) return;
+    if (!p || !ownPane) return;
     untrack(() => {
       if (n === foundHandled) return;
       foundHandled = n;
       const asked = foundUi.request;
       if (!asked || !p.node(asked.at)) return;
       const at = holding(asked.at);
-      if (pane.at !== at) show(at);
+      if (ownPane.at !== at) show(at);
       side('found', true);
     });
   });
 
   /** How many citations that were found the element in view has left, for the tab of their panel. */
   const foundCount = $derived.by(() => {
-    if (!project || !pane) return 0;
+    if (!project || !ownPane) return 0;
     void project.revision;
-    return countFound(project, pane.at);
+    return countFound(project, ownPane.at);
   });
 
   /** Shows a citation that was found where a pane shows the element in view as text: scrolled to, and selected. */
   function showFound(at: string, entry: Entry) {
     panes.forEach((p, i) => {
-      if (p.at !== at || p.mode !== 'text') return;
+      if (p.project || p.at !== at || p.mode !== 'text') return;
       const surface = texts[i]?.searchSurface();
       if (surface) void revealFound(surface, entry.target, entry.element);
     });
   }
 
   /** Whether an element has anything to show as a timeline: one within it that says when it is, or settings. */
-  function timed(at: string): boolean {
-    if (!project) return false;
+  function timed(at: string, p: Pane | undefined = undefined): boolean {
+    // A project beside shows its diagram or its text.
+    if (!project || p?.project) return false;
     const settings = project.node(at)?.timeline;
     if (settings && (settings.axis || settings.lanes?.length)) return true;
     for (const id of project.tree(at).sequence) if (project.node(id)?.when) return true;
@@ -660,7 +884,9 @@
   });
 
   function closePane(i: number) {
-    panes = panes.filter((_, j) => j !== i);
+    // The first pane is of the project of the view: where the other shows another, that one goes.
+    const going = i === 0 && panes[1]?.project ? 1 : i;
+    panes = panes.filter((_, j) => j !== going);
     focused = 0;
   }
 
@@ -671,8 +897,8 @@
   /** Documents are brought in one after another, each a branch under the element in view; the last that was made is shown in the text. */
   async function documentsIn(paths: (string | null)[]) {
     for (const path of paths) {
-      if (!path || !project || !pane) continue;
-      const brought = await bringIn(path, project, pane.at);
+      if (!path || !project || !ownPane) continue;
+      const brought = await bringIn(path, project, ownPane.at);
       if (brought) goTo(brought.top, { mode: 'text' });
       if (brought?.goThrough) goThrough(brought.top);
     }
@@ -721,9 +947,10 @@
       },
       find: { run: () => findInText(false), when: () => !!pane },
       replace: { run: () => findInText(true), when: () => !!pane },
-      undo: { run: () => project?.undo(), when: () => !!project },
-      redo: { run: () => project?.redo(), when: () => !!project },
-      'redo-y': { run: () => project?.redo(), when: () => !!project },
+      // The keys act in the project of the pane that has the focus.
+      undo: { run: () => focusedProject?.undo(), when: () => !!project },
+      redo: { run: () => focusedProject?.redo(), when: () => !!project },
+      'redo-y': { run: () => focusedProject?.redo(), when: () => !!project },
       'review-next': { run: () => review?.next(), when: reviewing },
       'review-previous': { run: () => review?.previous(), when: reviewing },
       'review-accept': { run: () => void review?.accept(), when: reviewing },
@@ -770,7 +997,7 @@
         options={[
           { value: 'diagram', label: t('project-diagram'), icon: Network },
           { value: 'text', label: t('project-text'), icon: FileText },
-          ...(timed(pane.at) || pane.mode === 'timeline'
+          ...(timed(pane.at, pane) || pane.mode === 'timeline'
             ? [{ value: 'timeline' as const, label: t('timeline-title'), icon: Clock }]
             : []),
         ]}
@@ -850,19 +1077,20 @@
         {/if}
       </div>
 
+      <!-- In the project of the pane that has the focus, as the keys. -->
       <IconButton
         label={t('common-undo')}
         shortcut="Ctrl+Z"
-        disabled={!project.canUndo}
-        onclick={() => project?.undo()}
+        disabled={!focusedProject?.canUndo}
+        onclick={() => focusedProject?.undo()}
       >
         <Undo2 size={16} />
       </IconButton>
       <IconButton
         label={t('project-redo')}
         shortcut="Ctrl+Shift+Z"
-        disabled={!project.canRedo}
-        onclick={() => project?.redo()}
+        disabled={!focusedProject?.canRedo}
+        onclick={() => focusedProject?.redo()}
       >
         <Redo2 size={16} />
       </IconButton>
@@ -887,8 +1115,9 @@
         ondrop: (e) => filesDropped(e, { project, documentsIn, keep }),
       }}
     >
-      <div class="panes" class:two={panes.length > 1}>
+      <div class="panes" class:two={panes.length > 1} class:across>
         {#each panes as p, i (i)}
+          {@const of = projectOf(p)}
           {#if i === 1}
             <Divider
               label={t('project-between-maps')}
@@ -908,7 +1137,8 @@
             <div
               class="pane-bar"
               use:dropTarget={{
-                accepts: (d) => d.kind === 'files' && (d.data as string[]).some(mapOfIt),
+                accepts: (d) =>
+                  !p.project && d.kind === 'files' && (d.data as string[]).some(mapOfIt),
                 ondrop: (e) => documentsIn((e.payload.data as string[]).filter(mapOfIt)),
               }}
             >
@@ -934,19 +1164,25 @@
               >
                 <ListTree size={15} />
               </IconButton>
-              <MapBar
-                {project}
-                at={p.at}
-                beside={panes.length > 1 ? panes[1 - i]?.at : null}
-                onselect={(id, mode) => show(id, { pane: i, mode })}
-                onbeside={beside}
-                ondocument={async () => documentsIn([await chooseDocument()])}
-              />
-              {#if p.mode === 'text'}
+              {#if of}
+                <MapBar
+                  project={of}
+                  at={p.at}
+                  beside={panes.length > 1 && !across ? panes[1 - i]?.at : null}
+                  onselect={(id, mode) => show(id, { pane: i, mode })}
+                  onbeside={p.project ? (id) => show(id, { pane: i }) : beside}
+                  ondocument={p.project
+                    ? undefined
+                    : async () => documentsIn([await chooseDocument()])}
+                  named={namedIn(p)}
+                  home={i === 0}
+                />
+              {/if}
+              {#if p.mode === 'text' && of}
                 <span class="bar-divider"></span>
                 <div class="writing">
                   <WritingTools
-                    {project}
+                    project={of}
                     scope={paneEls[i]}
                     at={p.at}
                     onelement={(what) => texts[i]?.newElement(what)}
@@ -967,7 +1203,7 @@
                       iconOnly: true,
                     },
                     { value: 'text', label: t('project-text'), icon: FileText, iconOnly: true },
-                    ...(timed(p.at) || p.mode === 'timeline'
+                    ...(timed(p.at, p) || p.mode === 'timeline'
                       ? [
                           {
                             value: 'timeline' as const,
@@ -980,66 +1216,90 @@
                   ]}
                   onchange={(mode) => (panes[i] = { ...p, mode })}
                 />
-                <IconButton label={t('project-close-side')} size="sm" onclick={() => closePane(i)}>
-                  <X size={14} />
-                </IconButton>
+                <!-- The first pane stays where the second shows another project. -->
+                {#if !(across && i === 0)}
+                  <IconButton
+                    label={t('project-close-side')}
+                    size="sm"
+                    onclick={() => closePane(i)}
+                  >
+                    <X size={14} />
+                  </IconButton>
+                {/if}
               {/if}
             </div>
             <div class="pane-body">
-              {#if showOutline}
-                <Outline
-                  {project}
-                  at={p.at}
-                  items={outlineItems(project, p.at, folding)}
-                  current={p.mode === 'text' ? (tops[i] ?? null) : null}
-                  ongo={(id) =>
-                    p.mode === 'text' && texts[i] ? texts[i].goTo(id) : goTo(id, { pane: i })}
-                  onclose={() => (showOutline = false)}
-                  width={outlineWidth}
-                />
-                <Divider
-                  label={t('text-outline-between')}
-                  onmove={(dx) => (outlineWidth = Math.max(160, Math.min(520, outlineWidth + dx)))}
-                  onreset={() => (outlineWidth = OUTLINE_WIDTH)}
-                />
-              {/if}
-              <div class="view">
-                {#key `${p.at}:${p.mode}`}
-                  {#if looking && looking.pane === i}
-                    <PastView {project} at={p.at} {looking} onback={() => (looking = null)} />
-                  {:else if p.mode === 'timeline'}
-                    <TimelineView
-                      {project}
-                      at={p.at}
-                      ongo={(element) => goTo(element, { pane: i, mode: 'text' })}
-                      reveal={i === focused ? reveal : null}
-                    />
-                  {:else if p.mode === 'diagram'}
-                    <MapDiagram
-                      bind:this={diagrams[i]}
-                      {project}
-                      at={p.at}
-                      camera={cameras[p.at] ?? null}
-                      oncamera={(c) => (cameras[p.at] = c)}
-                      onkeep={keep}
-                      onenter={(id) => show(id, { pane: i })}
-                      reveal={i === focused ? reveal : null}
-                    />
-                  {:else}
-                    <MapText
-                      bind:this={texts[i]}
-                      {project}
-                      at={p.at}
-                      onkeep={keep}
-                      onenter={(id) => show(id, { pane: i })}
-                      reveal={i === focused ? reveal : null}
-                      {folding}
-                      outline={showOutline}
-                      ontop={(id) => (tops[i] = id)}
-                    />
+              {#if !of || !of.node(PROJECT)}
+                <!-- A project beside, being opened, or on its way from the others. -->
+                <div class="centre"><Spinner size={20} /></div>
+              {:else}
+                {@const paneFolding = (p.project ? guest?.folding : null) ?? folding}
+                {#if showOutline}
+                  <Outline
+                    project={of}
+                    at={p.at}
+                    items={outlineItems(of, p.at, paneFolding)}
+                    current={p.mode === 'text' ? (tops[i] ?? null) : null}
+                    ongo={(id) =>
+                      p.mode === 'text' && texts[i] ? texts[i].goTo(id) : goTo(id, { pane: i })}
+                    onclose={() => (showOutline = false)}
+                    width={outlineWidth}
+                  />
+                  <Divider
+                    label={t('text-outline-between')}
+                    onmove={(dx) =>
+                      (outlineWidth = Math.max(160, Math.min(520, outlineWidth + dx)))}
+                    onreset={() => (outlineWidth = OUTLINE_WIDTH)}
+                  />
+                {/if}
+                <div class="view">
+                  {#key `${p.project ?? ''}:${p.at}:${p.mode}`}
+                    {#if looking && looking.pane === i && !p.project}
+                      <PastView {project} at={p.at} {looking} onback={() => (looking = null)} />
+                    {:else if p.mode === 'timeline' && !p.project}
+                      <TimelineView
+                        {project}
+                        at={p.at}
+                        ongo={(element) => goTo(element, { pane: i, mode: 'text' })}
+                        reveal={i === focused ? reveal : null}
+                      />
+                    {:else if p.mode === 'diagram' || p.mode === 'timeline'}
+                      <MapDiagram
+                        bind:this={diagrams[i]}
+                        project={of}
+                        at={p.at}
+                        camera={cameras[cameraOf(p)] ?? null}
+                        oncamera={(c) => (cameras[cameraOf(p)] = c)}
+                        onkeep={(id) => keepIn(of, id)}
+                        onenter={(id) => show(id, { pane: i })}
+                        reveal={i === focused ? reveal : null}
+                        besideProject={across ? projectOf(panes[1 - i]) : null}
+                      />
+                    {:else}
+                      <MapText
+                        bind:this={texts[i]}
+                        project={of}
+                        at={p.at}
+                        onkeep={(id) => keepIn(of, id)}
+                        onenter={(id) => show(id, { pane: i })}
+                        reveal={i === focused ? reveal : null}
+                        folding={paneFolding}
+                        outline={showOutline}
+                        ontop={(id) => (tops[i] = id)}
+                        besideProject={across ? projectOf(panes[1 - i]) : null}
+                      />
+                    {/if}
+                  {/key}
+                  {#if carrying?.pane === i}
+                    <!-- What a drop of elements from the other project will do, before it is done. -->
+                    <div class="carrying" role="status">
+                      {carrying.copy
+                        ? t('project-copy-to-project', { name: carrying.name })
+                        : t('project-move-to-project', { name: carrying.name })}
+                    </div>
                   {/if}
-                {/key}
-              </div>
+                </div>
+              {/if}
             </div>
           </div>
         {/each}
@@ -1060,18 +1320,20 @@
           <PreviewPanel
             {project}
             {projectId}
-            at={pane.at}
+            at={ownPane.at}
             onclose={() => (showPreview = false)}
             ongo={(element) => {
               // In the text of this element where it is shown; else the pane in view turns to the text.
-              const i = panes.findIndex((p) => p.at === pane.at && p.mode === 'text');
+              const i = panes.findIndex(
+                (p) => !p.project && p.at === ownPane.at && p.mode === 'text',
+              );
               goTo(element, { mode: 'text', ...(i >= 0 ? { pane: i } : {}) });
             }}
             current={() => {
               const i =
-                pane.mode === 'text'
-                  ? focused
-                  : panes.findIndex((p) => p.at === pane.at && p.mode === 'text');
+                ownPane.mode === 'text'
+                  ? ownIndex
+                  : panes.findIndex((p) => !p.project && p.at === ownPane.at && p.mode === 'text');
               return texts[i]?.currentElement() ?? null;
             }}
           />
@@ -1117,7 +1379,7 @@
               {project}
               history={historyOf(project, ownId)}
               {looking}
-              pane={focused}
+              pane={ownIndex}
               onlook={(l) => (looking = l)}
               head={tabs}
               onclose={closeSide}
@@ -1125,32 +1387,32 @@
           {:else if sideKind === 'comments'}
             <CommentsPanel
               {project}
-              at={pane.at}
+              at={ownPane.at}
               head={tabs}
               onclose={closeSide}
               ongo={(element) => goTo(element)}
               onopen={(element) => {
                 // In the diagram, where the element is within view, its box opens; else the text is gone to.
-                if (pane.mode === 'diagram' && holding(element) === pane.at)
-                  diagrams[focused]?.write(element);
+                if (ownPane.mode === 'diagram' && holding(element) === ownPane.at)
+                  diagrams[ownIndex]?.write(element);
                 else goTo(element, { mode: 'text' });
               }}
             />
           {:else if sideKind === 'found'}
-            {#key pane.at}
+            {#key ownPane.at}
               <FoundPanel
                 {project}
-                at={pane.at}
+                at={ownPane.at}
                 head={tabs}
                 onclose={closeSide}
                 onkeep={keep}
-                onshow={(entry) => showFound(pane.at, entry)}
+                onshow={(entry) => showFound(ownPane.at, entry)}
               />
             {/key}
           {:else if sideKind === 'pictures'}
             <PicturePanel
               {project}
-              at={pane.at}
+              at={ownPane.at}
               bind:scope={pictureScope}
               head={tabs}
               onclose={closeSide}
@@ -1159,7 +1421,7 @@
           {:else}
             <ReferencePanel
               {project}
-              at={pane.at}
+              at={ownPane.at}
               head={tabs}
               onclose={closeSide}
               show={citationsOf}
@@ -1175,19 +1437,20 @@
   <DocumentHost />
 {/if}
 
-{#if comparing.copy && project}
+<!-- What is asked from the menu of an element is done in the project of the pane that has the focus. -->
+{#if comparing.copy && focusedProject}
   <CopyDialog
-    {project}
+    project={focusedProject}
     id={comparing.copy}
     onclose={() => (comparing.copy = null)}
-    ongo={(element) => goTo(element)}
+    ongo={(element) => goTo(element, { pane: Math.min(focused, panes.length - 1) })}
   />
 {/if}
 
-{#if kindsUi.editing && project}
+{#if kindsUi.editing && focusedProject}
   {#key kindsUi.editing.id}
     <KindDialog
-      {project}
+      project={focusedProject}
       id={kindsUi.editing.id}
       assign={kindsUi.editing.assign}
       onclose={() => (kindsUi.editing = null)}
@@ -1195,10 +1458,10 @@
   {/key}
 {/if}
 
-{#if ownKindsUi.editing && project}
+{#if ownKindsUi.editing && focusedProject}
   {#key ownKindsUi.editing.id}
     <PassageKindDialog
-      {project}
+      project={focusedProject}
       id={ownKindsUi.editing.id}
       family={ownKindsUi.editing.family}
       apply={ownKindsUi.editing.apply}
@@ -1224,10 +1487,10 @@
   />
 {/if}
 
-{#if whenUi.element && project}
+{#if whenUi.element && focusedProject}
   {#key whenUi.element}
     <WhenDialog
-      {project}
+      project={focusedProject}
       id={whenUi.element}
       at={pane.at}
       onclose={() => (whenUi.element = null)}
@@ -1235,8 +1498,8 @@
   {/key}
 {/if}
 
-{#if kindsUi.managing && project}
-  <KindsDialog {project} onclose={() => (kindsUi.managing = false)} />
+{#if kindsUi.managing && focusedProject}
+  <KindsDialog project={focusedProject} onclose={() => (kindsUi.managing = false)} />
 {/if}
 
 {#if showShare && shared && project}
@@ -1367,6 +1630,35 @@
   .pane.focused .pane-bar {
     background: var(--accent-softer);
   }
+  /* Two projects side by side: the line between them is doubled. */
+  .panes.across > :global(.divider) {
+    width: 5px;
+    background: transparent;
+    border-left: 1px solid var(--line-strong);
+    border-right: 1px solid var(--line-strong);
+  }
+  .panes.across > :global(.divider)::after {
+    left: 1px;
+  }
+  .pane-body > .view > .carrying {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    z-index: 5;
+    max-width: calc(100% - 24px);
+    transform: translateX(-50%);
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    box-shadow: var(--shadow-2);
+  }
   .pane-bar :global([data-drop-over]) {
     box-shadow: inset 0 0 0 2px var(--accent);
   }
@@ -1389,6 +1681,9 @@
     display: flex;
     flex: 1;
     min-height: 0;
+  }
+  .pane-body > .centre {
+    flex: 1;
   }
   /* The view beside the outline, where that is shown. */
   .pane-body > .view {

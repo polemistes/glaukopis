@@ -73,6 +73,17 @@ project-up-hint = Up to “{ $name }” · Alt+Up
 project-siblings-hint = The elements beside this one: choose one to show it
 project-trees-hint = The elements under the project: choose one to show it
 project-shown-beside = beside this one
+# The owl before the name of the project itself, in the first pane: up to all the projects.
+project-up-home-hint = Up to all the projects · Alt+Up
+# The sign of a project, read aloud, where it is shared.
+project-badge-shared = { $name }, shared by you
+project-badge-joined = { $name }, joined
+# Two projects side by side.
+project-beside-failed = The project could not be opened beside this one
+project-beside-no-comments = The comments are those of the project you opened: open the other on its own to comment in it
+# Said over the other pane while elements of one project are dragged over it.
+project-copy-to-project = Copy to “{ $name }”
+project-move-to-project = Move to “{ $name }”
 project-element-name = Name of the element
 project-this-element-actions = This element
 project-document-details = Document details…
@@ -119,6 +130,30 @@ project-copy = Copy
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Paste under it
 project-move-to = Move to
+# Opening a dialog with the tree of the project, to choose where the elements go: first in Copy to and Move to.
+project-choose-where = Choose where…
+# Opening the same dialog, to choose the element this one stands for.
+project-choose-element = Choose an element…
+# The title of the dialog that chooses where elements are copied to: the name of the one copied, or how many.
+project-pick-copy-title = { $count ->
+    [one] Copy “{ $name }” to
+   *[other] Copy { $count } elements to
+}
+project-pick-move-title = { $count ->
+    [one] Move “{ $name }” to
+   *[other] Move { $count } elements to
+}
+project-pick-stand-title = What “{ $name }” stands for
+# The buttons of the dialog, saying what will be done with the element chosen.
+project-pick-copy = Copy here
+project-pick-move = Move here
+project-pick-stand = Stand for this
+project-pick-find = Find an element by name
+project-pick-none = No element has that name
+# Why an element cannot be chosen, when it is hovered.
+project-pick-itself = An element cannot go into itself, or into what is under it
+project-pick-self = An element cannot stand for itself
+project-pick-loop = The document would hold itself
 project-tidy-branch = Tidy this branch
 project-place-automatically = Place automatically
 project-delete-keeping = Delete, keeping what is under it

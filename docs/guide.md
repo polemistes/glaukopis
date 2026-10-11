@@ -62,7 +62,7 @@ project until you close it, and its edge can be dragged to make it wider.
 
 ### Many projects
 
-The page of projects has two forms, chosen at its head and remembered.
+The page of projects has three forms, chosen at its head and remembered.
 **Last used** shows the twelve projects last worked on, as cards. **All
 projects** is a line for each, in folders: make a folder with **New folder**,
 or inside another from that folder's menu; drag a project onto a folder, or
@@ -72,6 +72,21 @@ with a click. Deleting a folder keeps what is in it, which moves up to where
 the folder was. The folders are kept on this computer alone, not in the
 projects: a project you share is in your folders, not in the others'. The
 field above the list finds a project by its name.
+
+**Map** shows all your projects as a map around the owl: the folders as
+plain names, nested as they are, and the projects as cards under them, those
+in no folder hanging from the owl itself. A click on a project opens it; a
+click on a folder folds it or opens it, and a folder of many projects begins
+folded. The map is moved by dragging and turned larger and smaller as the
+diagram is. A project you share has a sign of people beside its name, and one
+you joined a sign of a link, here, in the list and in the bar over the map.
+From the top of any project, **All projects** at the left of the bar, with
+the owl, or **Alt+Up**, comes back here.
+
+In the list at the left of a project, a project that is not open can be
+unfolded too: its trees are read from the disk and shown, and a click on one
+of them opens the project there. **Open beside**, in the menu of another
+project or of one of its elements, shows it beside the project you are in.
 
 **A map of the projects…**, in the menu at the head of the page, makes a new
 project of the projects themselves: the folders as elements, nested as the
@@ -1038,7 +1053,10 @@ consumed by the writing:
 - **Copy to** and **Move to**, in the menu of an element, list the project
   itself and the other trees under it: a chapter is lifted out of the plan
   for the book as a tree of its own, or a tree is put into the book where it
-  belongs. Enter the tree to work in it alone.
+  belongs. Enter the tree to work in it alone. **Choose where…**, first in
+  both, shows the whole tree, with a field that finds an element by its
+  name, so that the elements can be put under any element of the project;
+  what cannot take them, they themselves and what is under them, is grey.
 - **To another project** as well: below them, **Copy to** and **Move to**
   list the other projects; the elements go in under the top of the project
   chosen, without its having to be open, and **Show** in the message that
@@ -1057,13 +1075,23 @@ consumed by the writing:
   which brings the elements back, but leaves the copy there.
 - An element can have **another element take its place in the document**:
   **Stand for another element**, in its menu, lists the trees under the
-  project. The tree of the book then has one element for each chapter, each
+  project, and **Choose an element…** any element of it; what would make the
+  document hold itself cannot be chosen. The tree of the book then has one element for each chapter, each
   of which stands for the tree of that chapter, written elsewhere in the
   project. The preview of the book shows the book.
 - **Side by side**, in the bar of the project, shows the project as diagram
   and as text beside one another; enter another element on either side to
   see two parts of the project, and move elements between them, by dragging
   or by cutting and pasting. Each side can be diagram, text or timeline.
+- **Another project beside**: **Open beside**, in the list of projects at
+  the left, shows another project in the second side. Then both bars begin
+  with the name of their project, with its sign, and the line between them is
+  doubled, so that the two are not taken for one. Elements dragged from one
+  to the other are copied there, or moved with a plain drop, as **Copy to**
+  and **Move to** another project do; undo takes a move back in both. The
+  keys, and undo, work in the side you are in. The panel at the side, the
+  preview and the history stay with your own project; the other is shown as
+  diagram or text, and closes with its side.
 
 The line between the two sides can be dragged, as can those beside the
 preview, the references and the outline. A double click on a line puts it

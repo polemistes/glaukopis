@@ -10,6 +10,7 @@ import CircleDashed from '@lucide/svelte/icons/circle-dashed';
 import Clock from '@lucide/svelte/icons/clock';
 import Heading from '@lucide/svelte/icons/heading';
 import LayoutGrid from '@lucide/svelte/icons/layout-grid';
+import ListTree from '@lucide/svelte/icons/list-tree';
 import Link2 from '@lucide/svelte/icons/link-2';
 import MessageSquare from '@lucide/svelte/icons/message-square';
 import MoveRight from '@lucide/svelte/icons/move-right';
@@ -31,13 +32,14 @@ import { compareCopy } from './copies.svelte';
 import { canPaste } from './clipboard.svelte';
 import { notify, notifyError, toasts } from '$lib/ui/toast.svelte';
 import { openProject, projects } from '$lib/state/projects.svelte';
-import { openElsewhere, type Elsewhere } from './elsewhere';
+import { idOf, openElsewhere, type Elsewhere } from './elsewhere';
 import { router } from '$lib/state/router.svelte';
 import type { ProjectInfo } from '$lib/api/projects';
 import { makePortable, portable } from './model/portable';
 import type { Project } from './model/project.svelte';
 import { PROJECT, STATUSES } from './model/types';
 import { subtree, topmost, type Tree } from './model/tree';
+import { carriedWithin, pickElement } from './picker.svelte';
 
 /** What is dragged when elements are. */
 export interface ElementsPayload {
@@ -69,6 +71,8 @@ export interface ElementActions {
   paste?: (id: string) => void;
   /** Enter an element, making it the one in view: after elements went to it. */
   enter?: (id: string) => void;
+  /** The element in view where the menu is opened: the picker of a target opens the way to it. */
+  at?: string;
 }
 
 /** The words with which a placement in time is said. */
@@ -190,10 +194,16 @@ function hereId(): string | null {
   return route.view === 'project' ? route.project : null;
 }
 
-/** The other projects, as the list of projects has them. */
-function otherProjects(): ProjectInfo[] {
+/** The element in view, as the place says. */
+function routeAt(): string | undefined {
+  const route = router.route;
+  return route.view === 'project' ? route.at : undefined;
+}
+
+/** The projects other than this one, as the list of projects has them: this one may be the one beside. */
+function otherProjects(project: Project): ProjectInfo[] {
   if (!projects.loaded) void projects.load();
-  const here = hereId();
+  const here = idOf(project) ?? hereId();
   return projects.list.filter((p) => p.id !== here);
 }
 
@@ -226,8 +236,11 @@ export async function sendElements(
     try {
       const under = to.at ?? PROJECT;
       if (!there.project.node(under)) throw new Error(t('project-send-no-element'));
+      // A project open beside keeps its undo: what was made there is a step of its own.
+      if (there.here) there.project.checkpoint();
       const made = makePortable(there.project, carried, { under });
-      there.project.undoManager.clear();
+      if (there.here) there.project.checkpoint();
+      else there.project.undoManager.clear();
       await there.project.flush();
       if (there.project.status === 'error') throw new Error(there.project.saveError ?? '');
       return made.length;
@@ -270,30 +283,54 @@ export function elementMenu(
   );
   const nameOf = (id: string) =>
     id === PROJECT ? project.name : project.node(id)?.title || t('project-untitled');
-  const elsewhere = otherProjects();
+  const elsewhere = otherProjects(project);
+  // The element in view, as the view says, or as the place says; else where the elements stand.
+  const inView =
+    [actions.at, routeAt()].find((id) => id && project.node(id)) ??
+    tree.parent.get(first.id) ??
+    PROJECT;
   const hasChildren = one ? (tree.children.get(one.id)?.length ?? 0) > 0 : false;
   const pinned = nodes.some((n) => n.pos && tree.parent.get(n.id));
   const branchPinned =
     pinned || ids.some((id) => subtree(tree, id).some((d) => d !== id && project.node(d)?.pos));
 
-  // Where elements can go: the project itself, its other trees, and other projects.
+  // Copies or moves what is chosen to the end of an element of this project.
+  const sendHere = (target: string, copy: boolean) => {
+    project.checkpoint();
+    const made = copy ? project.copy(movable, target) : project.move(movable, target);
+    project.checkpoint();
+    if (made.length) {
+      toasts.show({
+        kind: 'ok',
+        message: copy
+          ? t('project-copied-to', { name: nameOf(target) })
+          : t('project-moved-to', { name: nameOf(target) }),
+        action: { label: t('common-show'), run: () => actions.enter?.(target) },
+      });
+    }
+  };
+
+  // Any element of the project, chosen in its tree: not one carried, nor one under it.
+  const chooseWhere = async (copy: boolean) => {
+    const carried = carriedWithin(project.tree(), movable);
+    const words = { count: movable.length, name: nameOf(movable[0]) };
+    const target = await pickElement(project, {
+      title: copy ? t('project-pick-copy-title', words) : t('project-pick-move-title', words),
+      action: copy ? t('project-pick-copy') : t('project-pick-move'),
+      refuse: (id) => (carried.has(id) ? t('project-pick-itself') : null),
+      at: inView,
+    });
+    if (target) sendHere(target, copy);
+  };
+
+  // Where elements can go: anywhere in the tree, the project itself, its
+  // other trees, and other projects.
   const targets = (copy: boolean): MenuItem[] => [
+    { label: t('project-choose-where'), icon: ListTree, action: () => void chooseWhere(copy) },
+    { kind: 'separator' },
     ...[PROJECT, ...trees].map((target): MenuItem => ({
       label: nameOf(target),
-      action: () => {
-        project.checkpoint();
-        const made = copy ? project.copy(movable, target) : project.move(movable, target);
-        project.checkpoint();
-        if (made.length) {
-          toasts.show({
-            kind: 'ok',
-            message: copy
-              ? t('project-copied-to', { name: nameOf(target) })
-              : t('project-moved-to', { name: nameOf(target) }),
-            action: { label: t('common-show'), run: () => actions.enter?.(target) },
-          });
-        }
-      },
+      action: () => sendHere(target, copy),
     })),
     ...(elsewhere.length
       ? ([
@@ -337,6 +374,22 @@ export function elementMenu(
           },
         }))
     : [];
+
+  // Any element of the project, chosen in its tree, but itself and what would loop.
+  const chooseIncluded = async (id: string) => {
+    const target = await pickElement(project, {
+      title: t('project-pick-stand-title', { name: nameOf(id) }),
+      action: t('project-pick-stand'),
+      refuse: (e) =>
+        e === id
+          ? t('project-pick-self')
+          : project.wouldLoop(id, e)
+            ? t('project-pick-loop')
+            : null,
+      at: project.node(id)?.include ?? inView,
+    });
+    if (target) project.setInclude(id, target);
+  };
 
   const items: MenuItem[] = [];
 
@@ -482,7 +535,7 @@ export function elementMenu(
           project.transact(() => nodes.forEach((n) => project.setExcluded(n.id, !allOut))),
       },
     );
-    if (one && (includes.length || one.include)) {
+    if (one) {
       items.push({
         kind: 'submenu',
         label: one.include
@@ -490,7 +543,17 @@ export function elementMenu(
           : t('project-stand-for'),
         icon: FileInput,
         items: [
-          { kind: 'heading', label: t('project-stand-for-heading') },
+          {
+            label: t('project-choose-element'),
+            icon: ListTree,
+            action: () => void chooseIncluded(one.id),
+          },
+          ...(includes.length
+            ? ([
+                { kind: 'separator' },
+                { kind: 'heading', label: t('project-stand-for-heading') },
+              ] as MenuItem[])
+            : []),
           ...includes,
           ...(one.include
             ? ([

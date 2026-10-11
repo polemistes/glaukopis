@@ -69,6 +69,13 @@ project-up-hint = Opp til «{ $name }» · Alt+Pil opp
 project-siblings-hint = Elementene ved siden av dette: velg ett for å vise det
 project-trees-hint = Elementene under prosjektet: velg ett for å vise det
 project-shown-beside = ved siden av dette
+project-up-home-hint = Opp til alle prosjektene · Alt+Pil opp
+project-badge-shared = { $name }, delt av deg
+project-badge-joined = { $name }, som du har blitt med i
+project-beside-failed = Prosjektet kunne ikke åpnes ved siden av dette
+project-beside-no-comments = Kommentarene hører til prosjektet du åpnet: åpne det andre for seg selv for å kommentere i det
+project-copy-to-project = Kopier til «{ $name }»
+project-move-to-project = Flytt til «{ $name }»
 project-element-name = Navnet på elementet
 project-this-element-actions = Dette elementet
 project-document-details = Dokumentopplysninger …
@@ -111,6 +118,25 @@ project-cut-not-removed = Det som ble klippet ut, ble limt inn, men kunne ikke t
 project-copy = Kopier
 project-paste-under = Lim inn under
 project-move-to = Flytt til
+project-choose-where = Velg hvor …
+project-choose-element = Velg et element …
+project-pick-copy-title = { $count ->
+    [one] Kopier «{ $name }» til
+   *[other] Kopier { $count } elementer til
+}
+project-pick-move-title = { $count ->
+    [one] Flytt «{ $name }» til
+   *[other] Flytt { $count } elementer til
+}
+project-pick-stand-title = Hva «{ $name }» står for
+project-pick-copy = Kopier hit
+project-pick-move = Flytt hit
+project-pick-stand = Stå for dette
+project-pick-find = Finn et element etter navn
+project-pick-none = Ingen elementer har det navnet
+project-pick-itself = Et element kan ikke legges i seg selv eller i det som står under det
+project-pick-self = Et element kan ikke stå for seg selv
+project-pick-loop = Dokumentet ville inneholde seg selv
 project-tidy-branch = Rydd i denne grenen
 project-place-automatically = Plasser automatisk
 project-delete-keeping = Slett, men behold det som står under

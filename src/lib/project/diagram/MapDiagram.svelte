@@ -26,6 +26,7 @@
     pasteElements,
   } from '../clipboard.svelte';
   import { elementMenu, type ElementActions, type ElementsPayload } from '../elements';
+  import { carryAcross } from '../elsewhere';
   import { notify, notifyOk } from '$lib/ui/toast.svelte';
   import ElementTooltip from '../ElementTooltip.svelte';
   import type { Project } from '../model/project.svelte';
@@ -61,9 +62,28 @@
     onenter: (id: string) => void;
     /** An element to select and bring into view when the map appears. */
     reveal?: string | null;
+    /**
+     * Another project, shown in the other pane: elements dragged from it
+     * are carried here, copied, or moved and taken away there (ADR 0037).
+     */
+    besideProject?: Project | null;
   }
 
-  let { project, at, camera = null, oncamera, onkeep, onenter, reveal = null }: Props = $props();
+  let {
+    project,
+    at,
+    camera = null,
+    oncamera,
+    onkeep,
+    onenter,
+    reveal = null,
+    besideProject = null,
+  }: Props = $props();
+
+  /** Whether what is dragged is elements this map takes: its own, or those of the project beside. */
+  function takes(data: ElementsPayload): boolean {
+    return data.project === project || (!!besideProject && data.project === besideProject);
+  }
 
   let viewport = $state<HTMLDivElement>();
   let width = $state(0);
@@ -557,7 +577,23 @@
 
     if (payload.kind !== 'elements') return;
     const data = payload.data as ElementsPayload;
-    if (data.project !== project) return;
+    if (!takes(data)) return;
+    if (data.project !== project) {
+      // From the project beside: onto an element, under it; else under the element in view, where dropped.
+      const target = hit(world);
+      const made = carryAcross(
+        data.project,
+        data.ids,
+        project,
+        target ? { under: target } : { under: at, pos: world },
+        !event.copy,
+      );
+      if (made.length) {
+        select(made);
+        viewport?.focus({ preventScroll: true });
+      }
+      return;
+    }
     // What stands on this map is moved about on it; what is brought from
     // another pane, or from the text, goes under the element in view.
     const onMap = shownHere(data.ids);
@@ -1032,7 +1068,7 @@
   tabindex="0"
   use:dropTarget={{
     accepts: (p) =>
-      (p.kind === 'elements' && (p.data as ElementsPayload).project === project) ||
+      (p.kind === 'elements' && takes(p.data as ElementsPayload)) ||
       p.kind === 'references' ||
       p.kind === PICTURES_DRAGGED,
     ondrop,

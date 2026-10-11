@@ -6,7 +6,10 @@
    * be shown, or, for the project itself, the trees under it; and beside it
    * a button with what can be done with the element:
    * rename, the details of its document, the citations that were found, its
-   * languages, a new element under it, a document into it, delete.
+   * languages, a new element under it, a document into it, delete. At the
+   * project itself, before all, the owl, which goes up to all the projects.
+   * Where the two panes show two projects, the project's name stands first,
+   * in full, with its badge.
    */
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -20,6 +23,10 @@
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import { tick } from 'svelte';
   import { goThrough } from '$lib/found/found.svelte';
+  import ProjectBadge from '$lib/home/ProjectBadge.svelte';
+  import Mark from '$lib/shell/Mark.svelte';
+  import { projects } from '$lib/state/projects.svelte';
+  import { router } from '$lib/state/router.svelte';
   import { countFound } from '$lib/found/gather';
   import { t } from '$lib/i18n';
   import DocumentDetails from '$lib/preview/DocumentDetails.svelte';
@@ -42,9 +49,22 @@
     onbeside: (id: string) => void;
     /** A document is to be brought in, under the element in view. */
     ondocument?: () => void;
+    /** The project named first, with its badge: where the two panes show two projects. */
+    named?: { name: string; sharing?: { owner: boolean } | null } | null;
+    /** Whether the owl at the project goes up to all the projects: in the first pane. */
+    home?: boolean;
   }
 
-  let { project, at, beside = null, onselect, onbeside, ondocument }: Props = $props();
+  let {
+    project,
+    at,
+    beside = null,
+    onselect,
+    onbeside,
+    ondocument,
+    named = null,
+    home = true,
+  }: Props = $props();
 
   const tree = $derived(project.tree());
   /** The parent of the element in view; none for the project itself. */
@@ -62,6 +82,12 @@
   let languagesOf = $state<string | null>(null);
   /** The element whose document's details are open in the dialog, if any. */
   let detailsOf = $state<string | null>(null);
+
+  /** Up from the project: to all the projects, as the owl's map shows them. */
+  function goHome() {
+    projects.show('map');
+    router.go({ view: 'projects' });
+  }
 
   function nameOf(id: string): string {
     return project.node(id)?.title || t('project-untitled');
@@ -170,7 +196,36 @@
       }}
     />
   {:else}
-    {#if parent}
+    {#if at === PROJECT && home}
+      <button
+        type="button"
+        class="up home"
+        aria-label={t('project-all-projects')}
+        use:tooltip={{ text: t('project-up-home-hint'), side: 'bottom' }}
+        onclick={goHome}
+      >
+        <Mark size={16} />
+        <span>{t('project-all-projects')}</span>
+        <ChevronRight size={12} />
+      </button>
+    {/if}
+    {#if named}
+      {#if at === PROJECT}
+        <ProjectBadge name={named.name} sharing={named.sharing} />
+      {:else}
+        <button
+          type="button"
+          class="project"
+          use:tooltip={{ text: t('project-up-hint', { name: named.name }), side: 'bottom' }}
+          onclick={() => onselect(PROJECT)}
+        >
+          <ProjectBadge name={named.name} sharing={named.sharing} />
+          <span class="project-name">{named.name}</span>
+          <ChevronRight size={12} />
+        </button>
+      {/if}
+    {/if}
+    {#if parent && !(named && parent === PROJECT)}
       <button
         type="button"
         class="up"
@@ -185,6 +240,7 @@
     <button
       type="button"
       class="map"
+      class:full={!!named && at === PROJECT}
       aria-haspopup="menu"
       use:tooltip={{
         text: parent ? t('project-siblings-hint') : t('project-trees-hint'),
@@ -268,6 +324,34 @@
     background: var(--paper-hover);
     color: var(--ink);
   }
+  .up.home {
+    gap: 5px;
+    max-width: none;
+    padding-left: 4px;
+    white-space: nowrap;
+  }
+  /* The project, named first where two are side by side: its name whole, never cut. */
+  .project {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    height: 26px;
+    padding: 0 4px 0 4px;
+    border: none;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--ink-2);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .project:hover {
+    background: var(--paper-hover);
+    color: var(--ink);
+  }
   .map {
     display: inline-flex;
     align-items: center;
@@ -282,6 +366,10 @@
     color: var(--ink);
     font: inherit;
     cursor: pointer;
+  }
+  /* The project's own name, where two projects are side by side, stands whole. */
+  .map.full {
+    max-width: none;
   }
   .map:hover {
     background: var(--paper-hover);

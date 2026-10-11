@@ -5,11 +5,12 @@ home-join = Join a shared project
 home-from-document = A project from a document…
 home-new = New project
 
-## The two forms of the page: the last used projects as cards, all of them as a list
+## The three forms of the page: the last used projects as cards, all of them as a list, all of them as a map around the owl
 
 home-shown = What is shown
 home-recent = Last used
 home-all = All projects
+home-owl = Map
 # Under the cards, when there are more projects than they show.
 home-show-all = Show all { $count } projects
 # The button that opens the menu of the page.
@@ -50,6 +51,20 @@ home-tree-unfold = Show what is under it
 home-tree-fold = Hide what is under it
 # Why the project that is open cannot be renamed or deleted from its menu.
 home-open-now = It is open now
+# On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
+home-open-beside = Open beside
+# Under a project that is not open, in the pane, when what it holds could not be read.
+home-tree-unreadable = It could not be read
+# Under a project that is not open, in the pane, when it holds no elements yet.
+home-tree-empty = Nothing in it yet
+
+## The owl map: the projects drawn around the owl, the folders as plain labels
+
+# The button that shows all of the map at once.
+home-owl-fit = Show all of it
+# On a folder of the map: its projects are hidden, or shown.
+home-owl-fold = Hide the projects in it
+home-owl-unfold = Show the projects in it
 
 ## A map of the projects
 
