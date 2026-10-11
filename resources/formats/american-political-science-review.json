@@ -63,9 +63,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "chicago-author-date-17th-edition",
-  "limits": {
-    "abstractWords": 150,
-    "note": "No strict limit on length: most articles are under 11,000 words and research notes under 7,000. The count includes tables, figures and footnotes, and excludes the reference list and supplementary material. Abstract of 150 words or less."
-  }
+  "style": "chicago-author-date-17th-edition"
 }

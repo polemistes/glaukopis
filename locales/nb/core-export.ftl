@@ -52,3 +52,12 @@ core-export-format-needs-name = Et dokumentformat må ha et navn.
 core-export-format-own-only = Bare dine egne dokumentformater kan slettes.
 core-export-not-a-length = «{ $length }» er ikke en lengde
 core-export-the-format = dokumentformatet «{ $id }»
+
+## Maler.
+
+core-export-template-bad-id = «{ $id }» kan ikke være id-en til en mal
+core-export-template-needs-name = En mal må ha et navn.
+core-export-template-own-only = Bare dine egne maler kan slettes.
+core-export-the-template = malen «{ $id }»
+core-export-output-not-yet = Utdataen «{ $id }» i malen kan ikke lages ennå: bare dokumentet kan.
+core-export-output-unknown = Malen har ingen utdata «{ $id }».

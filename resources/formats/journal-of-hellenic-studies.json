@@ -117,11 +117,5 @@
     "case": "none"
   },
   "lineNumbers": false,
-  "style": "the-journal-of-hellenic-studies",
-  "limits": {
-    "words": 9000,
-    "abstractWords": 200,
-    "keywords": 5,
-    "note": "Normally at most 9,000 words including footnotes. Abstract of at most 200 words; up to 5 keywords."
-  }
+  "style": "the-journal-of-hellenic-studies"
 }

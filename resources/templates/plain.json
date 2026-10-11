@@ -1,0 +1,16 @@
+{
+  "id": "plain",
+  "name": "Plain document",
+  "group": "plain",
+  "description": "A document of nothing but its text: the title, the body, the notes and the bibliography.",
+  "contents": [{ "part": "title-page" }, { "part": "body" }, { "part": "notes" }, { "part": "bibliography" }],
+  "kinds": [],
+  "passageKinds": [],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "pdf-latex", "docx", "odt", "latex", "typst", "markdown", "html", "epub"]
+    }
+  ]
+}

@@ -63,10 +63,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "science",
-  "limits": {
-    "words": 3000,
-    "abstractWords": 125,
-    "note": "Research Articles at most 3,000 words of main text, with 3 to 5 display items and about 50 references; up to 6,000 words in the extended online format. Abstract of 125 words or less."
-  }
+  "style": "science"
 }

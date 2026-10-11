@@ -70,10 +70,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "past-and-present",
-  "limits": {
-    "words": 12000,
-    "abstractWords": 250,
-    "note": "The target is 8,000-10,000 words excluding notes; articles should not exceed 12,000 words including footnotes. Abstract of 200-250 words. Up to twelve illustrations."
-  }
+  "style": "past-and-present"
 }

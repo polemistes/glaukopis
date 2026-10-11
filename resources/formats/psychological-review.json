@@ -139,10 +139,5 @@
     "case": "upper"
   },
   "lineNumbers": false,
-  "style": "apa",
-  "limits": {
-    "abstractWords": 250,
-    "keywords": 5,
-    "note": "No upper bound on length, but authors of texts longer than 15,000 words are asked to justify it. Abstract of at most 250 words, on a separate page; up to five keywords."
-  }
+  "style": "apa"
 }

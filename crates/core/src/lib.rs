@@ -27,6 +27,7 @@ pub mod settings;
 pub mod sharing;
 pub mod spelling;
 pub mod styles;
+pub mod templates;
 #[cfg(test)]
 pub(crate) mod testing;
 pub mod written;

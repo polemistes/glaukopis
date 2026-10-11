@@ -63,6 +63,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": true,
-  "style": "plos",
-  "limits": { "abstractWords": 300, "note": "Manuscripts can be of any length. Abstract of at most 300 words." }
+  "style": "plos"
 }

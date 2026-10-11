@@ -21,16 +21,16 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
 use crate::document::bibliography::{Bibliography, gather};
-use crate::document::pandoc::{
-    Converter, Extras, Flavour, meta_blocks, meta_inlines, meta_list, meta_string, meta_text,
-};
-use crate::document::{Document, Inline, NotePlace, OwnKind};
+use crate::document::pandoc::{Converter, Extras, Flavour, meta_inlines, meta_list, meta_string, meta_text};
+use crate::document::{Block, Document, Inline, NotePlace, OwnKind, Part, Section};
 use crate::error::{Error, IoContext, Result};
 use crate::formats::typst::{Particulars, preamble};
 use crate::formats::{DocumentFormat, NoteKind, TitlePlacement};
 use crate::fsutil::write_atomic;
 use crate::library::Library;
 use crate::styles::Styles;
+use crate::templates::kinds::{Place as PartPlace, one_of, place_of};
+use crate::templates::{ContentsItem, GeneratedPart, Output, Template};
 use crate::tr;
 
 pub use tools::{Tool, Tools};
@@ -99,9 +99,47 @@ pub struct Request {
     /// The id of the reference style.
     pub style: String,
     pub format: DocumentFormat,
+    /// The template whole (ADR 0038); the plain one where nothing is given.
+    #[serde(default = "Template::plain")]
+    pub template: Template,
+    /// Which of the template's outputs: the document where nothing is given.
+    #[serde(default = "document_output")]
+    pub output: String,
     /// Tells apart the work of different projects: the id of the project.
     #[serde(default)]
     pub key: String,
+}
+
+fn document_output() -> String {
+    Output::DOCUMENT.into()
+}
+
+impl Request {
+    /// A request of a document, with the plain template and the document output.
+    pub fn new(document: Document, style: impl Into<String>, format: DocumentFormat, key: impl Into<String>) -> Self {
+        Request {
+            document,
+            style: style.into(),
+            format,
+            template: Template::plain(),
+            output: document_output(),
+            key: key.into(),
+        }
+    }
+
+    /// Only the document output is made in this piece; a request of another
+    /// output is refused, and says so.
+    pub fn check_output(&self) -> Result<()> {
+        let id = self.output.trim();
+        if id.is_empty() || id == Output::DOCUMENT {
+            return Ok(());
+        }
+        Err(Error::invalid(if self.template.output(id).is_some() {
+            tr!("core-export-output-not-yet", id = id)
+        } else {
+            tr!("core-export-output-unknown", id = id)
+        }))
+    }
 }
 
 /// A page of the preview.
@@ -269,10 +307,184 @@ struct Prepared {
     has_citations: bool,
     /// What there is to say of the document that was prepared.
     remarks: Vec<String>,
+    /// The lists the template asks for, which Pandoc makes where its
+    /// pattern has them: the contents, the figures, the tables.
+    toc: bool,
+    lof: bool,
+    lot: bool,
 }
 
-/// Makes the document that Pandoc reads.
-fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: bool, placed: Placed) -> Prepared {
+/// One thing of the order of a document: a part the core makes, or an
+/// element of a kind.
+enum Item<'a> {
+    Made(GeneratedPart),
+    Part(&'a Part),
+}
+
+/// The order of a document, as the template's contents say. A kind item
+/// stands for every element of that kind, in tree order; of a kind a
+/// document has one of, the first is used and the rest passed over. A part
+/// of a kind the template does not list is printed by its place, after what
+/// is listed there: a front kind before the body, a back kind at the end,
+/// and one of place `here` with the back matter, since where it stood among
+/// its siblings is not known here. A kind of place `cover` is printed only
+/// by a cover output, and one of place `none` nowhere. A template that does
+/// not list the body has it after what it lists, so that the text is never
+/// lost; a part the template lists twice is printed once.
+fn order<'a>(template: &Template, parts: &'a [Part]) -> Vec<Item<'a>> {
+    let mut seen: Vec<&str> = Vec::new();
+    let usable: Vec<&'a Part> = parts
+        .iter()
+        .filter(|p| {
+            if one_of(&p.kind) {
+                if seen.contains(&p.kind.as_str()) {
+                    return false;
+                }
+                seen.push(&p.kind);
+            }
+            true
+        })
+        .collect();
+    let mut out: Vec<Item<'a>> = Vec::new();
+    let mut made: Vec<GeneratedPart> = Vec::new();
+    let mut placed: Vec<usize> = Vec::new();
+    for item in &template.contents {
+        match item {
+            ContentsItem::Part { part } => {
+                if !made.contains(part) {
+                    made.push(*part);
+                    out.push(Item::Made(*part));
+                }
+            }
+            ContentsItem::Kind { kind } => {
+                for (i, p) in usable.iter().enumerate() {
+                    if p.kind == *kind && !placed.contains(&i) {
+                        placed.push(i);
+                        out.push(Item::Part(p));
+                    }
+                }
+            }
+        }
+    }
+    let rest = |place: PartPlace| -> Vec<Item<'a>> {
+        usable
+            .iter()
+            .enumerate()
+            .filter(|(i, p)| !placed.contains(i) && place_of(&p.kind) == place)
+            .map(|(_, p)| Item::Part(p))
+            .collect()
+    };
+    let front = rest(PartPlace::Front);
+    let mut back = rest(PartPlace::Here);
+    back.extend(rest(PartPlace::Back));
+    let at = out.iter().position(|i| matches!(i, Item::Made(GeneratedPart::Body))).unwrap_or(out.len());
+    let n = front.len();
+    out.splice(at..at, front);
+    if !made.contains(&GeneratedPart::Body) {
+        out.insert(at + n, Item::Made(GeneratedPart::Body));
+    }
+    out.extend(back);
+    out
+}
+
+/// The letter of the n-th lettered part: A, B, … Z, AA, BB.
+fn letter_of(n: u32) -> String {
+    let n = n.max(1) - 1;
+    let letter = (b'A' + (n % 26) as u8) as char;
+    std::iter::repeat_n(letter, (n / 26 + 1) as usize).collect()
+}
+
+/// A part as sections, handed to the converter: its own text (the sections
+/// at level 0) under a heading of the element's name at level 1, which the
+/// kind's look may leave out, and its children a level deeper. Appendices
+/// and their like are lettered in the order they are printed.
+fn part_sections(converter: &Converter, part: &Part, letters: &mut u32, out: &mut Vec<Value>) {
+    let look = converter.extras.parts.get(&part.kind).map(|i| &i.look);
+    let mut title = part.title.clone();
+    if look.is_some_and(|l| l.lettered && l.heading) && !crate::document::plain(&title).is_empty() {
+        *letters += 1;
+        title.insert(0, Inline::Text { text: format!("{} ", letter_of(*letters)), marks: Default::default() });
+    }
+    let own: Vec<Block> =
+        part.sections.iter().filter(|s| s.level == 0).flat_map(|s| s.blocks.iter().cloned()).collect();
+    let head = Section {
+        level: 1,
+        heading: Some(title),
+        blocks: own,
+        element: part.element.clone(),
+        kind: Some(part.kind.clone()),
+    };
+    converter.section(&head, out);
+    for s in part.sections.iter().filter(|s| s.level > 0) {
+        let deeper = Section { level: s.level.saturating_add(1), ..s.clone() };
+        converter.section(&deeper, out);
+    }
+}
+
+/// An outline of Typst: the contents, or the figures or the tables.
+fn outline(title: &str, target: Option<&str>) -> Value {
+    let title = crate::document::pandoc::typst_text(title.trim());
+    let target = target.map(|t| format!(", target: {t}")).unwrap_or_default();
+    json!({"t": "RawBlock", "c": ["typst", format!("#outline(title: [{title}], indent: auto{target})")]})
+}
+
+/// The metadata that Pandoc reads from the identifiers of a document, by
+/// their names: `isbn`, `doi`, `publisher`, `edition`, `place`, and the
+/// like. For a book of EPUB, an ISBN or a DOI is also the identifier of the
+/// book, with its scheme. Names that the document's own metadata uses are
+/// not overwritten.
+fn identifier_meta(meta: &mut Map<String, Value>, doc: &Document, target: Target) {
+    const TAKEN: [&str; 12] = [
+        "title",
+        "subtitle",
+        "author",
+        "date",
+        "abstract",
+        "abstract-title",
+        "keywords",
+        "lang",
+        "toc-title",
+        "bibliography",
+        "csl",
+        "identifier",
+    ];
+    for (name, value) in &doc.identifiers {
+        let name: String = name
+            .trim()
+            .chars()
+            .map(|c| c.to_ascii_lowercase())
+            .filter(|c| c.is_ascii_alphanumeric() || *c == '-')
+            .take(40)
+            .collect();
+        let value = value.trim();
+        if name.is_empty() || value.is_empty() || TAKEN.contains(&name.as_str()) || name.starts_with("gk-") {
+            continue;
+        }
+        if target == Target::Epub {
+            let scheme = match name.as_str() {
+                "isbn" if value.chars().filter(char::is_ascii_digit).count() == 10 => Some("ISBN-10"),
+                "isbn" => Some("ISBN-13"),
+                "doi" => Some("DOI"),
+                _ => None,
+            };
+            if let Some(scheme) = scheme
+                && !meta.contains_key("identifier")
+            {
+                meta.insert(
+                    "identifier".into(),
+                    json!({"t": "MetaMap", "c": {"text": meta_text(value), "scheme": meta_text(scheme)}}),
+                );
+            }
+        }
+        meta.insert(name, meta_text(value));
+    }
+}
+
+/// Makes the document that Pandoc reads: the parts in the order the
+/// template says (ADR 0038), the body among them, and the bibliography
+/// where it is listed.
+fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: bool, placed: Placed) -> Result<Prepared> {
+    request.check_output()?;
     // Where a citation stands beside punctuation is the style's to say
     // (`document/beside.rs`): after it in a style of notes, before it
     // otherwise. Where the citations are kept as they are, for another
@@ -324,6 +536,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         f64::from(f.page.dimensions().0 - f.page.margin_left.points() - f.page.margin_right.points()).max(72.0);
     converter.extras.targets = converter.targets(doc, f.headings.numbered);
     converter.extras.kinds = crate::formats::kinds::table(f, &doc.kinds);
+    converter.extras.parts = crate::templates::kinds::table(f);
     converter.extras.italics_underlined = f.text.italics == crate::formats::Italics::Underline;
     converter.extras.classes = matches!(target, Target::Html | Target::Epub);
 
@@ -343,7 +556,6 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     } else {
         doc.authors.iter().filter(|a| !a.name.trim().is_empty()).collect()
     };
-    let abstract_text = doc.abstract_text.as_deref().map(str::trim).filter(|a| !a.is_empty() && f.title.show_abstract);
     let keywords: Vec<&str> = doc.keywords.iter().map(|k| k.trim()).filter(|k| !k.is_empty()).collect();
     let date = doc.date.as_deref().map(str::trim).filter(|d| !d.is_empty() && f.title.show_date);
     let keywords_para = (!keywords.is_empty() && f.title.show_abstract).then(|| {
@@ -352,104 +564,38 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         inlines.extend(meta_text(&keywords.join(", "))["c"].as_array().cloned().unwrap_or_default());
         json!({"t": "Para", "c": inlines})
     });
-
-    let mut front: Vec<Value> = Vec::new();
+    // The abstract is the element of that kind: its blocks, set as the
+    // format sets the abstract, under the format's label.
+    let abstract_blocks: Option<Vec<Value>> = doc
+        .parts
+        .iter()
+        .find(|p| p.kind == "abstract")
+        .filter(|_| f.title.show_abstract)
+        .map(|p| {
+            let mut out = Vec::new();
+            converter.blocks(&p.blocks(), &mut out);
+            out
+        })
+        .filter(|b| !b.is_empty());
     let typst = matches!(target, Target::Pdf | Target::Typst);
-    if typst {
-        // The title block as blocks with labels, which the preamble gives their form.
-        let mut parts: Vec<Value> = Vec::new();
-        if !title.is_empty() {
-            parts.push(div("gk-title", vec![json!({"t": "Para", "c": title})]));
-        }
-        if let Some(s) = doc.subtitle.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
-            parts.push(div("gk-subtitle", vec![para_text(s)]));
-        }
-        if !authors.is_empty() {
-            let names = authors.iter().map(|a| a.name.trim()).collect::<Vec<_>>().join(", ");
-            parts.push(div("gk-authors", vec![para_text(&names)]));
-            if f.title.show_affiliations {
-                let mut lines: Vec<String> = Vec::new();
-                for a in &authors {
-                    let line = [a.affiliation.as_deref(), a.email.as_deref(), a.orcid.as_deref().map(|_| "")]
-                        .into_iter()
-                        .flatten()
-                        .map(str::trim)
-                        .filter(|s| !s.is_empty())
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    let line = match a.orcid.as_deref().map(str::trim).filter(|o| !o.is_empty()) {
-                        Some(o) if line.is_empty() => format!("ORCID {o}"),
-                        Some(o) => format!("{line}, ORCID {o}"),
-                        None => line,
-                    };
-                    if !line.is_empty() && !lines.contains(&line) {
-                        lines.push(line);
-                    }
-                }
-                if !lines.is_empty() {
-                    parts.push(div("gk-affiliations", lines.iter().map(|l| para_text(l)).collect()));
-                }
-            }
-        }
-        if let Some(d) = date {
-            parts.push(div("gk-date", vec![para_text(d)]));
-        }
-        if let Some(a) = abstract_text {
-            parts.push(div("gk-abstract-title", vec![para_text(&f.title.abstract_label)]));
-            parts.push(div("gk-abstract", meta_blocks(a)["c"].as_array().cloned().unwrap_or_default()));
-        }
-        if let Some(k) = &keywords_para {
-            parts.push(div("gk-keywords", vec![k.clone()]));
-        }
-        if !parts.is_empty() {
-            front.push(div("gk-front", parts));
-        }
-    } else {
-        if !title.is_empty() {
-            meta.insert("title".into(), meta_inlines(title));
-        }
-        if let Some(s) = doc.subtitle.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
-            meta.insert("subtitle".into(), meta_text(s));
-        }
-        if !authors.is_empty() {
-            meta.insert("author".into(), meta_list(authors.iter().map(|a| meta_text(a.name.trim())).collect()));
-        }
-        if let Some(d) = date {
-            meta.insert("date".into(), meta_text(d));
-        }
-        if let Some(a) = abstract_text {
-            if target == Target::Odt {
-                // Pandoc's pattern for ODT sets an abstract of one paragraph as
-                // bare text; here it is given as paragraphs with their styles.
-                let styled = |style: &str, blocks: Vec<Value>| json!({"t": "Div", "c": [["", [], [["custom-style", style]]], blocks]});
-                front.push(styled("AbstractTitle", vec![para_text(&f.title.abstract_label)]));
-                front.push(styled("Abstract", meta_blocks(a)["c"].as_array().cloned().unwrap_or_default()));
-            } else {
-                meta.insert("abstract".into(), meta_blocks(a));
-                meta.insert("abstract-title".into(), meta_text(&f.title.abstract_label));
-            }
-        }
-        if !keywords.is_empty() {
-            meta.insert("keywords".into(), meta_list(keywords.iter().map(|k| meta_text(k)).collect()));
-        }
-        if let Some(k) = keywords_para {
-            front.push(k);
-        }
-        if f.title.placement == TitlePlacement::OwnPage
-            && let Some(b) = target.page_break()
-        {
-            front.push(b);
-        }
-    }
+    let words = |id: &str| crate::document::term(doc.language.as_deref(), id);
 
-    let mut json = converter.document(doc, &ctx.tools.pandoc_api, meta);
-    let blocks = json["blocks"].as_array_mut().expect("a document has blocks");
-    for (i, b) in front.into_iter().enumerate() {
-        blocks.insert(i, b);
-    }
-
-    // The bibliography: its heading, and the place where Pandoc puts the entries.
-    if has_citations && style_has_bibliography && !keep_citations {
+    // The title block of Typst: blocks with labels, gathered in one block
+    // that the preamble sets on a page of its own or at the top. The
+    // abstract and the keywords go into it where they follow the title
+    // page, as they did before the parts were the writer's.
+    let mut front: Vec<Value> = Vec::new();
+    let mut blocks: Vec<Value> = Vec::new();
+    let flush = |front: &mut Vec<Value>, blocks: &mut Vec<Value>| {
+        if !front.is_empty() {
+            blocks.push(div("gk-front", std::mem::take(front)));
+        }
+    };
+    let (mut toc, mut lof, mut lot) = (false, false, false);
+    let mut letters = 0u32;
+    let mut bibliography_placed = false;
+    let wants_bibliography = has_citations && style_has_bibliography && !keep_citations;
+    let bibliography_blocks = |blocks: &mut Vec<Value>| {
         if f.bibliography.new_page
             && let Some(b) = target.page_break()
         {
@@ -462,7 +608,176 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
             }));
         }
         blocks.push(div("refs", vec![]));
+    };
+    for item in order(&request.template, &doc.parts) {
+        match item {
+            Item::Made(GeneratedPart::HalfTitle) => {
+                flush(&mut front, &mut blocks);
+                if !title.is_empty() {
+                    let para = json!({"t": "Para", "c": title.clone()});
+                    if typst {
+                        blocks.push(div("gk-half-title", vec![para]));
+                    } else {
+                        blocks.push(
+                            json!({"t": "Div", "c": [["", ["gk-half-title"], [["custom-style", "Title"]]], [para]]}),
+                        );
+                        blocks.extend(target.page_break());
+                    }
+                }
+            }
+            Item::Made(GeneratedPart::TitlePage) => {
+                if !typst {
+                    // The title block is metadata, which Pandoc sets at the head of the document.
+                    if f.title.placement == TitlePlacement::OwnPage
+                        && let Some(b) = target.page_break()
+                    {
+                        blocks.push(b);
+                    }
+                    continue;
+                }
+                let mut parts: Vec<Value> = Vec::new();
+                if !title.is_empty() {
+                    parts.push(div("gk-title", vec![json!({"t": "Para", "c": title.clone()})]));
+                }
+                if let Some(s) = doc.subtitle.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+                    parts.push(div("gk-subtitle", vec![para_text(s)]));
+                }
+                if !authors.is_empty() {
+                    let names = authors.iter().map(|a| a.name.trim()).collect::<Vec<_>>().join(", ");
+                    parts.push(div("gk-authors", vec![para_text(&names)]));
+                    if f.title.show_affiliations {
+                        let mut lines: Vec<String> = Vec::new();
+                        for a in &authors {
+                            let line = [a.affiliation.as_deref(), a.email.as_deref(), a.orcid.as_deref().map(|_| "")]
+                                .into_iter()
+                                .flatten()
+                                .map(str::trim)
+                                .filter(|s| !s.is_empty())
+                                .collect::<Vec<_>>()
+                                .join(", ");
+                            let line = match a.orcid.as_deref().map(str::trim).filter(|o| !o.is_empty()) {
+                                Some(o) if line.is_empty() => format!("ORCID {o}"),
+                                Some(o) => format!("{line}, ORCID {o}"),
+                                None => line,
+                            };
+                            if !line.is_empty() && !lines.contains(&line) {
+                                lines.push(line);
+                            }
+                        }
+                        if !lines.is_empty() {
+                            parts.push(div("gk-affiliations", lines.iter().map(|l| para_text(l)).collect()));
+                        }
+                    }
+                }
+                if let Some(d) = date {
+                    parts.push(div("gk-date", vec![para_text(d)]));
+                }
+                front.extend(parts);
+            }
+            Item::Made(GeneratedPart::Keywords) => {
+                let Some(k) = &keywords_para else { continue };
+                if typst {
+                    front.push(div("gk-keywords", vec![k.clone()]));
+                } else {
+                    blocks.push(k.clone());
+                }
+            }
+            // The lists: in Typst outlines where they are listed; elsewhere
+            // Pandoc makes them, and places them where its pattern has them,
+            // after the title block, whatever the template's order says.
+            Item::Made(GeneratedPart::Contents) => {
+                flush(&mut front, &mut blocks);
+                if typst {
+                    blocks.push(outline(&words("document-contents"), None));
+                } else {
+                    toc = true;
+                    meta.insert("toc-title".into(), meta_text(&words("document-contents")));
+                }
+            }
+            Item::Made(GeneratedPart::ListOfFigures) => {
+                flush(&mut front, &mut blocks);
+                if typst {
+                    blocks.push(outline(&f.figures.end_title, Some("figure.where(kind: image)")));
+                } else {
+                    lof = true;
+                }
+            }
+            Item::Made(GeneratedPart::ListOfTables) => {
+                flush(&mut front, &mut blocks);
+                if typst {
+                    blocks.push(outline(&f.tables.end_title, Some("figure.where(kind: table)")));
+                } else {
+                    lot = true;
+                }
+            }
+            Item::Made(GeneratedPart::Body) => {
+                flush(&mut front, &mut blocks);
+                for s in &doc.sections {
+                    converter.section(s, &mut blocks);
+                }
+            }
+            // The notes are placed by the filter (`resources/pandoc/notes.lua`),
+            // before the bibliography or at the end, as before: the item
+            // has no place of its own in this piece.
+            Item::Made(GeneratedPart::Notes) => flush(&mut front, &mut blocks),
+            Item::Made(GeneratedPart::Bibliography) => {
+                flush(&mut front, &mut blocks);
+                if wants_bibliography {
+                    bibliography_blocks(&mut blocks);
+                }
+                bibliography_placed = true;
+            }
+            Item::Part(p) if p.kind == "abstract" => {
+                let Some(a) = &abstract_blocks else { continue };
+                if typst {
+                    front.push(div("gk-abstract-title", vec![para_text(&f.title.abstract_label)]));
+                    front.push(div("gk-abstract", a.clone()));
+                } else if target == Target::Odt {
+                    // Pandoc's pattern for ODT sets an abstract of one paragraph as
+                    // bare text; here it is given as paragraphs with their styles.
+                    let styled = |style: &str, blocks: Vec<Value>| json!({"t": "Div", "c": [["", [], [["custom-style", style]]], blocks]});
+                    blocks.push(styled("AbstractTitle", vec![para_text(&f.title.abstract_label)]));
+                    blocks.push(styled("Abstract", a.clone()));
+                } else {
+                    meta.insert("abstract".into(), json!({"t": "MetaBlocks", "c": a}));
+                    meta.insert("abstract-title".into(), meta_text(&f.title.abstract_label));
+                }
+            }
+            Item::Part(p) => {
+                flush(&mut front, &mut blocks);
+                part_sections(&converter, p, &mut letters, &mut blocks);
+            }
+        }
     }
+    flush(&mut front, &mut blocks);
+    // The bibliography is never lost: where the template has no place for it, it stands at the end.
+    if wants_bibliography && !bibliography_placed {
+        bibliography_blocks(&mut blocks);
+    }
+
+    if !typst {
+        if !title.is_empty() {
+            meta.insert("title".into(), meta_inlines(title));
+        }
+        if let Some(s) = doc.subtitle.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+            meta.insert("subtitle".into(), meta_text(s));
+        }
+        if !authors.is_empty() {
+            meta.insert("author".into(), meta_list(authors.iter().map(|a| meta_text(a.name.trim())).collect()));
+        }
+        if let Some(d) = date {
+            meta.insert("date".into(), meta_text(d));
+        }
+        if !keywords.is_empty() {
+            meta.insert("keywords".into(), meta_list(keywords.iter().map(|k| meta_text(k)).collect()));
+        }
+        // The identifiers, for the formats that carry metadata. Typst's
+        // `#set document` has no field for them.
+        identifier_meta(&mut meta, doc, target);
+    }
+
+    let mut json = json!({ "pandoc-api-version": ctx.tools.pandoc_api, "meta": meta, "blocks": blocks });
+    let blocks = json["blocks"].as_array_mut().expect("a document has blocks");
 
     // The figures, where the format has them at the end.
     let held = converter.extras.held();
@@ -503,7 +818,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
         })
         .collect();
 
-    Prepared { json, bibliography, has_citations, remarks }
+    Ok(Prepared { json, bibliography, has_citations, remarks, toc, lof, lot })
 }
 
 /// The arguments for Pandoc that are the same for every target.
@@ -542,6 +857,21 @@ fn arguments(
         && !matches!(target, Target::Pdf | Target::Typst | Target::Latex | Target::PdfLatex)
     {
         args.push("--number-sections".into());
+    }
+    // The lists, where Pandoc makes them: not in Typst, where they are
+    // written as outlines. The lists of figures and tables came with
+    // Pandoc 3.1.11.
+    if !matches!(target, Target::Pdf | Target::Typst) {
+        if prepared.toc {
+            args.push("--toc".into());
+        }
+        let has_lists = ctx.tools.pandoc.as_ref().is_some_and(|p| !tools::older(&p.version, "3.1.11"));
+        if prepared.lof && has_lists {
+            args.push("--list-of-figures".into());
+        }
+        if prepared.lot && has_lists {
+            args.push("--list-of-tables".into());
+        }
     }
     Ok(args)
 }
@@ -598,7 +928,7 @@ fn typst_source(
     let pandoc = ctx.tools.pandoc()?;
     let began = std::time::Instant::now();
     let placed = place_files(ctx, request, dir, files, light);
-    let prepared = prepare(ctx, request, Target::Typst, false, placed);
+    let prepared = prepare(ctx, request, Target::Typst, false, placed)?;
     let bib = dir.join("references.bib");
     write_atomic(&bib, prepared.bibliography.text.as_bytes())?;
     let args = arguments(ctx, request, Target::Typst, &prepared, &bib, false)?;
@@ -645,7 +975,7 @@ pub fn preview_ready(ctx: &Context, request: &Request) -> Result<Readied> {
     let began = std::time::Instant::now();
     let dir = work_dir(ctx, &request.key, "preview")?;
     let placed = place_files(ctx, request, &dir, "files", true);
-    let prepared = prepare(ctx, request, Target::Typst, false, placed);
+    let prepared = prepare(ctx, request, Target::Typst, false, placed)?;
     let bib = dir.join("references.bib");
     write_atomic(&bib, prepared.bibliography.text.as_bytes())?;
     let args = arguments(ctx, request, Target::Typst, &prepared, &bib, false)?;
@@ -826,7 +1156,7 @@ pub fn export_until(
     let keep_citations = target == Target::Latex && options.biblatex || target == Target::Markdown;
     let files = files_name(target, Some(path));
     let placed = place_files(ctx, request, &dir, &files, false);
-    let prepared = prepare(ctx, request, target, keep_citations, placed);
+    let prepared = prepare(ctx, request, target, keep_citations, placed)?;
     exported.warnings.extend(prepared.remarks.iter().cloned());
     let bib = dir.join("references.bib");
     write_atomic(&bib, prepared.bibliography.text.as_bytes())?;
@@ -939,12 +1269,19 @@ pub fn export_until(
             args.push(css.display().to_string());
             args.push("--epub-chapter-level=1".into());
             args.push("--epub-title-page=false".into());
-            // The cover, where the document has one and the store has the picture.
-            if let (Some(cover), Some(pictures)) = (&request.document.cover, ctx.pictures)
-                && let Ok(source) = crate::pictures::file_in(pictures, &cover.hash, &cover.extension)
+            // The cover: the first picture of the cover part, where the
+            // document has one and the store has the picture.
+            let cover = request
+                .document
+                .parts
+                .iter()
+                .filter(|p| place_of(&p.kind) == PartPlace::Cover)
+                .find_map(|p| p.first_figure());
+            if let (Some((hash, extension)), Some(pictures)) = (cover, ctx.pictures)
+                && let Ok(source) = crate::pictures::file_in(pictures, &hash, &extension)
                 && source.is_file()
             {
-                let target = dir.join(format!("cover.{}", cover.extension));
+                let target = dir.join(format!("cover.{extension}"));
                 if fs::copy(&source, &target).is_ok() {
                     args.push("--epub-cover-image".into());
                     args.push(target.display().to_string());
@@ -1025,6 +1362,48 @@ table.gk-parallel td {{ vertical-align: top; width: 50%; padding: 0 0.5em; borde
         h2_style = if h2.italic { "italic" } else { "normal" },
     );
     css.push_str(&kind_styles(f, own));
+    css.push_str(&part_styles(f));
+    css
+}
+
+/// The styles of the kinds of elements that make a document, for a page of
+/// the web and for an e-book: a rule on the class of each kind
+/// (`gk-part-<id>`), with the look as the format resolves it. A page of its
+/// own begins a new page, where pages are known, and a way down it.
+fn part_styles(f: &DocumentFormat) -> String {
+    use crate::formats::Align;
+    let to = |a: Align| match a {
+        Align::Left => "left",
+        Align::Center => "center",
+        Align::Right => "right",
+        Align::Justified => "justify",
+    };
+    let mut css = String::new();
+    for (id, info) in crate::templates::kinds::styled(f) {
+        let look = &info.look;
+        let class = format!("gk-part-{}", crate::document::pandoc::label(&id));
+        let mut rules: Vec<String> = Vec::new();
+        if look.align != Align::Left {
+            rules.push(format!("text-align: {}", to(look.align)));
+            rules.push("text-indent: 0".into());
+        }
+        if look.italic {
+            rules.push("font-style: italic".into());
+        }
+        if look.size > 0.0 {
+            rules.push(format!("font-size: {}pt", look.size));
+        }
+        if look.own_page || look.new_page {
+            rules.push("page-break-before: always".into());
+        }
+        if look.own_page {
+            rules.push("margin-top: 25vh".into());
+        }
+        if rules.is_empty() {
+            continue;
+        }
+        let _ = writeln!(css, ".{class} {{ {}; }}", rules.join("; "));
+    }
     css
 }
 
@@ -1073,6 +1452,7 @@ fn html_styles(f: &DocumentFormat, own: &[OwnKind]) -> String {
         table_above = above(f.tables.caption_position),
     );
     css.push_str(&kind_styles(f, own));
+    css.push_str(&part_styles(f));
     css
 }
 
@@ -1368,16 +1748,331 @@ mod tests {
         }
     }
 
+    /// A part of a document: an element of a kind, with its text at level 0.
+    fn part(kind: &str, name: &str, element: &str, words: &str) -> Part {
+        use crate::document::fixtures::text;
+        Part {
+            kind: kind.into(),
+            element: Some(element.into()),
+            title: vec![text(name)],
+            sections: vec![Section {
+                level: 0,
+                blocks: vec![Block::Paragraph { content: vec![text(words)] }],
+                element: Some(element.into()),
+                kind: Some(kind.into()),
+                ..Default::default()
+            }],
+        }
+    }
+
     fn request(style: &str) -> Request {
         let mut document = sample();
-        document.abstract_text = Some("What the wrath of Achilles is.".into());
+        document.parts = vec![part("abstract", "Abstract", "p-abs", "What the wrath of Achilles is.")];
         document.keywords = vec!["Homer".into(), "wrath".into()];
-        Request {
-            document,
-            style: style.into(),
-            format: DocumentFormat { name: "Test".into(), ..Default::default() },
-            key: "test".into(),
+        Request::new(document, style, DocumentFormat { name: "Test".into(), ..Default::default() }, "test")
+    }
+
+    /// The order of a document of the kind a journal asks for, with the
+    /// abstract, an appendix and the acknowledgements in their places.
+    fn article() -> Template {
+        use GeneratedPart::{Bibliography, Body, Contents, Keywords, Notes, TitlePage};
+        let made = |part| ContentsItem::Part { part };
+        let kind = |kind: &str| ContentsItem::Kind { kind: kind.into() };
+        Template {
+            contents: vec![
+                made(TitlePage),
+                kind("abstract"),
+                made(Keywords),
+                made(Contents),
+                made(Body),
+                kind("appendix"),
+                kind("acknowledgements"),
+                made(Notes),
+                made(Bibliography),
+            ],
+            ..Template::plain()
         }
+    }
+
+    /// A document with the parts of an article and of a book: an abstract,
+    /// a dedication, an appendix, the acknowledgements; and a second
+    /// abstract, which is passed over.
+    fn with_parts() -> Request {
+        let mut r = request("chicago-author-date");
+        r.document.parts = vec![
+            part("dedication", "Dedication", "p-ded", "For the goddess."),
+            part("abstract", "Abstract", "p-abs", "What the wrath of Achilles is."),
+            part("abstract", "Abstract again", "p-abs2", "Zzsecondzz abstract, passed over."),
+            part("appendix", "The scholia", "p-app", "Notes of the scholiasts."),
+            part("acknowledgements", "Acknowledgements", "p-ack", "Thanks are due to the Muses."),
+        ];
+        r.template = article();
+        r
+    }
+
+    /// Where the first of some words stands in a text; the test fails where they are not there.
+    fn at(text: &str, words: &str) -> usize {
+        text.find(words).unwrap_or_else(|| panic!("“{words}” is not in the document:\n{text}"))
+    }
+
+    #[test]
+    fn the_order_of_the_parts_is_the_templates() {
+        let r = with_parts();
+        let names = |template: &Template| -> Vec<String> {
+            order(template, &r.document.parts)
+                .iter()
+                .map(|i| match i {
+                    Item::Made(p) => format!("{p:?}"),
+                    Item::Part(p) => format!("{}:{}", p.kind, p.element.as_deref().unwrap_or("")),
+                })
+                .collect()
+        };
+        // The second abstract is passed over; the dedication, which the
+        // template does not list, is printed by its place, before the body.
+        assert_eq!(
+            names(&r.template),
+            [
+                "TitlePage",
+                "abstract:p-abs",
+                "Keywords",
+                "Contents",
+                "dedication:p-ded",
+                "Body",
+                "appendix:p-app",
+                "acknowledgements:p-ack",
+                "Notes",
+                "Bibliography"
+            ]
+        );
+        // The plain template lists no kind: the front matter before the
+        // body, the back matter after what is listed.
+        assert_eq!(
+            names(&Template::plain()),
+            [
+                "TitlePage",
+                "dedication:p-ded",
+                "abstract:p-abs",
+                "Body",
+                "Notes",
+                "Bibliography",
+                "appendix:p-app",
+                "acknowledgements:p-ack"
+            ]
+        );
+        // A template that lists no body has it after what it lists; a part listed twice is printed once.
+        let odd = Template {
+            contents: vec![
+                ContentsItem::Kind { kind: "appendix".into() },
+                ContentsItem::Kind { kind: "appendix".into() },
+                ContentsItem::Part { part: GeneratedPart::TitlePage },
+            ],
+            ..Template::plain()
+        };
+        assert_eq!(
+            names(&odd),
+            ["appendix:p-app", "TitlePage", "dedication:p-ded", "abstract:p-abs", "Body", "acknowledgements:p-ack"]
+        );
+        assert_eq!(letter_of(1), "A");
+        assert_eq!(letter_of(26), "Z");
+        assert_eq!(letter_of(27), "AA");
+    }
+
+    #[test]
+    fn another_output_than_the_document_is_refused() {
+        let mut r = with_parts();
+        r.output = "cover".into();
+        let e = r.check_output().unwrap_err();
+        assert!(e.to_string().contains("cover"), "{e}");
+        r.template.outputs.push(crate::templates::Output { id: "cover".into(), ..Default::default() });
+        let e = r.check_output().unwrap_err();
+        assert!(e.to_string().contains("cannot be made yet"), "{e}");
+        r.output = Output::DOCUMENT.into();
+        r.check_output().unwrap();
+        r.output = String::new();
+        r.check_output().unwrap();
+    }
+
+    #[test]
+    fn the_parts_of_a_document_are_placed_as_the_template_says() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let r = with_parts();
+
+        // Typst: the abstract under the format's label, the dedication on a
+        // page of its own before the body, the appendix lettered after it,
+        // then the acknowledgements, and the second abstract nowhere.
+        let typ = out.join("parts.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("<gk-abstract>"), "{t}");
+        assert!(!t.contains("Zzsecondzz"), "the second abstract is passed over:\n{t}");
+        assert!(t.contains("#show <gk-part-dedication>") && t.contains("<gk-part-dedication>"), "{t}");
+        assert!(t.contains("#show <gk-part-appendix>"), "{t}");
+        assert!(t.contains("#outline(title: [Contents], indent: auto)"), "{t}");
+        assert!(t.contains("#metadata(\"p-app\") <gk-el-p-app>"), "the parts are marked for the preview: {t}");
+        let abstract_at = at(&t, "What the wrath of Achilles is.");
+        let dedication = at(&t, "For the goddess.");
+        let body = at(&t, "Before the first section.");
+        let appendix = at(&t, "A The scholia");
+        let acknowledgements = at(&t, "Thanks are due to the Muses.");
+        let refs = at(&t, "] <refs>");
+        assert!(abstract_at < dedication && dedication < body, "{t}");
+        assert!(body < appendix && appendix < acknowledgements && acknowledgements < refs, "{t}");
+        let before_dedication = &t[..dedication];
+        assert!(
+            before_dedication.trim_end().ends_with("#pagebreak(weak: true)\n#block[")
+                || before_dedication.contains("#pagebreak(weak: true)"),
+            "{t}"
+        );
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        assert!(p.count >= 3, "the dedication has a page of its own: {} pages", p.count);
+        assert!(p.places.iter().any(|pl| pl.element == "p-ded"), "{:?}", p.places);
+
+        // Word: each part in a style of its name, which the pattern defines;
+        // the abstract as Word's; the second abstract nowhere.
+        let docx = out.join("parts.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let xml = unzip(&docx, "word/document.xml");
+        assert!(xml.contains("w:val=\"Dedication\"") && xml.contains("For the goddess."), "{xml}");
+        assert!(xml.contains("w:val=\"Appendix\"") && xml.contains("A The scholia"), "{xml}");
+        assert!(xml.contains("w:val=\"Acknowledgements\""), "{xml}");
+        assert!(xml.contains("What the wrath of Achilles is."), "{xml}");
+        assert!(!xml.contains("Zzsecondzz"), "{xml}");
+        let styles = unzip(&docx, "word/styles.xml");
+        assert!(styles.contains("w:styleId=\"Dedication\"") && styles.contains("w:styleId=\"Appendix\""), "{styles}");
+        assert!(styles.contains("w:styleId=\"EpigraphPage\"") && styles.contains("w:styleId=\"Epigraph\""), "{styles}");
+        let body_xml = at(&xml, "Before the first section.");
+        assert!(at(&xml, "For the goddess.") < body_xml && body_xml < at(&xml, "A The scholia"), "{xml}");
+
+        // Writer: the styles, as in Word.
+        let odt = out.join("parts.odt");
+        export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        let content = unzip(&odt, "content.xml");
+        assert!(
+            content.contains("text:style-name=\"Dedication\"") && content.contains("For the goddess."),
+            "{content}"
+        );
+        assert!(unzip(&odt, "styles.xml").contains("style:name=\"Dedication\""));
+
+        // The e-book: the parts with their classes, and the cover the
+        // first picture of the cover part.
+        {
+            use crate::pictures::fixtures::PNG;
+            let pictures = Pictures::open(&s.pictures).unwrap();
+            let picture = pictures.add("cover.png", &PNG).unwrap();
+            let mut with_cover = r.clone();
+            with_cover.document.identifiers.insert("isbn".into(), "978-0-00-000000-0".into());
+            with_cover.document.identifiers.insert("publisher".into(), "The Press".into());
+            with_cover.document.parts.push(Part {
+                kind: "cover".into(),
+                element: Some("p-cov".into()),
+                title: vec![crate::document::fixtures::text("Cover")],
+                sections: vec![Section {
+                    level: 0,
+                    blocks: vec![Block::Figure {
+                        id: String::new(),
+                        file: picture.hash.clone(),
+                        extension: "png".into(),
+                        name: "cover.png".into(),
+                        caption: vec![],
+                        alt: String::new(),
+                        width: 100,
+                        numbered: false,
+                        align: None,
+                        wrap: None,
+                    }],
+                    element: Some("p-cov".into()),
+                    kind: Some("cover".into()),
+                    ..Default::default()
+                }],
+            });
+            let epub = out.join("parts.epub");
+            export(&s.ctx(), &with_cover, Target::Epub, &epub, &ExportOptions::default()).unwrap();
+            let archive = zip::ZipArchive::new(fs::File::open(&epub).unwrap()).unwrap();
+            let names: Vec<String> = archive.file_names().map(str::to_owned).collect();
+            assert!(names.iter().any(|n| n.contains("cover")), "{names:?}");
+            let text: String = names.iter().filter(|n| n.starts_with("EPUB/text/")).map(|n| unzip(&epub, n)).collect();
+            assert!(text.contains("gk-part-dedication") && text.contains("For the goddess."), "{text}");
+            assert!(text.contains("gk-part-appendix"), "{text}");
+            assert!(!text.contains("Zzsecondzz"), "{text}");
+            let opf = unzip(&epub, "EPUB/content.opf");
+            assert!(opf.contains("978-0-00-000000-0") && opf.contains("The Press"), "{opf}");
+            let css = unzip(&epub, "EPUB/styles/stylesheet1.css");
+            assert!(css.contains(".gk-part-dedication {"), "{css}");
+        }
+
+        // A page of the web: the identifiers in its metadata, and the parts with their classes.
+        let html = out.join("parts.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let h = fs::read_to_string(&html).unwrap();
+        assert!(h.contains("class=\"gk-part-dedication\"") && h.contains(".gk-part-dedication {"), "{h}");
+        assert!(h.contains("What the wrath of Achilles is."), "{h}");
+        assert!(h.contains("id=\"TOC\"") || h.contains("id=\"toc\""), "the contents are listed: {h}");
+
+        // LaTeX: a group around each part.
+        let tex = out.join("parts.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("\\centering\\itshape") && l.contains("For the goddess."), "{l}");
+        assert!(l.contains("\\tableofcontents"), "{l}");
+        assert!(!l.contains("Zzsecondzz"), "{l}");
+    }
+
+    #[test]
+    fn a_part_the_template_does_not_list_is_printed_by_its_place() {
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = with_parts();
+        // The plain template lists no kind: the dedication goes before the
+        // body, the appendix and the acknowledgements after the bibliography.
+        r.template = Template::plain();
+        let typ = out.join("unlisted.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        let dedication = at(&t, "For the goddess.");
+        let body = at(&t, "Before the first section.");
+        let refs = at(&t, "] <refs>");
+        let appendix = at(&t, "A The scholia");
+        let acknowledgements = at(&t, "Thanks are due to the Muses.");
+        assert!(dedication < body && body < refs && refs < appendix && appendix < acknowledgements, "{t}");
+        assert!(t.contains("What the wrath of Achilles is."), "the abstract is set as the abstract all the same: {t}");
+        assert!(!t.contains("#outline("), "{t}");
+        // A kind of the cover is printed by no document; one that is not known is a section of the front matter.
+        r.document.parts.push(part("blurb", "Blurb", "p-blurb", "Zzblurbzz: a book to read."));
+        r.document.parts.push(part("authors-note", "A note", "p-note", "Zznotezz: a word before."));
+        let typ = out.join("unlisted-2.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(!t.contains("Zzblurbzz"), "{t}");
+        assert!(at(&t, "Zznotezz") < at(&t, "Before the first section."), "{t}");
+        assert!(t.contains("A note"), "{t}");
+
+        // Deeper down, a section made from an element of a kind is set by
+        // the kind's look at the level it stands at: the chapter's abstract
+        // under the chapter, with its heading unnumbered, in a block of the kind.
+        r.document.sections.push(Section {
+            level: 2,
+            heading: Some(vec![crate::document::fixtures::text("Summary")]),
+            blocks: vec![Block::Paragraph {
+                content: vec![crate::document::fixtures::text("Zzsummaryzz of the chapter.")],
+            }],
+            element: Some("e-sum".into()),
+            kind: Some("abstract".into()),
+        });
+        let typ = out.join("unlisted-3.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        let heading = at(&t, "#heading(level: 2, numbering: none)[Summary]");
+        let block = at(&t, "] <gk-part-abstract>");
+        assert!(at(&t, "Before the first section.") < heading && heading < block, "{t}");
+        assert!(t[heading..block].contains("Zzsummaryzz"), "{t}");
+        let docx = out.join("unlisted.docx");
+        export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let xml = unzip(&docx, "word/document.xml");
+        assert!(xml.contains("Summary") && xml.contains("Zzsummaryzz"), "{xml}");
     }
 
     #[test]
@@ -1414,6 +2109,7 @@ mod tests {
             heading: Some(vec![text("Afterwards")]),
             blocks: (0..30).map(|_| para("Many words follow. ")).collect(),
             element: Some("e2".into()),
+            kind: None,
         });
         let p = preview(&s.ctx(), &r).unwrap();
         assert!(p.warnings.is_empty(), "{:?}", p.warnings);
@@ -1493,6 +2189,7 @@ mod tests {
                 part(ScriptPart::Transition, "Cut to:"),
             ],
             element: Some("act".into()),
+            kind: None,
         });
         let out = s.work.join("out");
         fs::create_dir_all(&out).unwrap();
@@ -2131,6 +2828,7 @@ mod tests {
                 },
             ],
             element: Some("nurse".into()),
+            kind: None,
         });
 
         // Typst: the lines are blocks the opening sets, numbered; the pages are made.
@@ -2187,7 +2885,29 @@ mod tests {
             let pictures = Pictures::open(&s.pictures).unwrap();
             let picture = pictures.add("cover.png", &PNG).unwrap();
             let mut with_cover = r.clone();
-            with_cover.document.cover = Some(crate::document::Cover { hash: picture.hash, extension: "png".into() });
+            with_cover.document.parts.push(Part {
+                kind: "cover".into(),
+                element: Some("p-cov".into()),
+                title: vec![crate::document::fixtures::text("Cover")],
+                sections: vec![Section {
+                    level: 0,
+                    blocks: vec![Block::Figure {
+                        id: String::new(),
+                        file: picture.hash.clone(),
+                        extension: "png".into(),
+                        name: "cover.png".into(),
+                        caption: vec![],
+                        alt: String::new(),
+                        width: 100,
+                        numbered: false,
+                        align: None,
+                        wrap: None,
+                    }],
+                    element: Some("p-cov".into()),
+                    kind: Some("cover".into()),
+                    ..Default::default()
+                }],
+            });
             let epub = out.join("covered.epub");
             export(&s.ctx(), &with_cover, Target::Epub, &epub, &ExportOptions::default()).unwrap();
             let archive = zip::ZipArchive::new(fs::File::open(&epub).unwrap()).unwrap();
@@ -2268,6 +2988,7 @@ mod tests {
                 ],
             }],
             element: Some("e2".into()),
+            kind: None,
         });
 
         let typ = out.join("points.typ");
@@ -2519,6 +3240,7 @@ mod tests {
                 },
             ],
             element: Some("kinds".into()),
+            kind: None,
         });
         r
     }

@@ -104,6 +104,5 @@
     "case": "none"
   },
   "lineNumbers": false,
-  "style": "chicago-notes-bibliography",
-  "suggests": ["verse", "speaker", "direction"]
+  "style": "chicago-notes-bibliography"
 }

@@ -63,11 +63,5 @@
   "pageNumbers": { "show": false, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "american-sociological-association",
-  "limits": {
-    "words": 15000,
-    "abstractWords": 200,
-    "keywords": 5,
-    "note": "At most 15,000 words including text, references and footnotes, excluding tables and figures. Abstract of 150 to 200 words; four or five key words."
-  }
+  "style": "american-sociological-association"
 }

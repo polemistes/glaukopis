@@ -306,6 +306,7 @@ mod tests {
                     Block::Blockquote { content: vec![para(vec![text("Quoted "), cite("b", None), text(".")])] },
                 ],
                 element: None,
+                kind: None,
             }],
             ..Default::default()
         };

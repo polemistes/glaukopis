@@ -730,6 +730,32 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>, own: &[OwnKind]) 
         }
     }
 
+    // The kinds of elements that make a document (ADR 0038), each a
+    // paragraph style of its name, from the looks the format resolves (see
+    // `templates/kinds.rs`): as the text, aligned and in italics and in a
+    // size as the look says. A kind whose style is there already, as the
+    // abstract's is, keeps that one.
+    for (_, info) in crate::templates::kinds::styled(f) {
+        let id = style_id(&info.style);
+        let name = xml(&info.style);
+        if id.is_empty()
+            || s.contains(&format!("w:styleId=\"{id}\""))
+            || s.contains(&format!("<w:name w:val=\"{name}\"/>"))
+        {
+            continue;
+        }
+        let look = &info.look;
+        let p = Para {
+            first: if look.align == Align::Left { first_line } else { 0 },
+            after: between,
+            line: Some(body_line),
+            align: Some(look.align),
+            ..Default::default()
+        };
+        let r = Run { size: (look.size > 0.0).then_some(look.size), italic: Some(look.italic), ..Default::default() };
+        s.push_str(&paragraph_style(&id, &name, Some("Normal"), Some("BodyText"), None, &p, &r));
+    }
+
     // The lines of a table: over it, under it and under its headings, as
     // books have them; around every cell; or none.
     let rule =
@@ -1501,6 +1527,32 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
                 );
             }
         }
+    }
+
+    // The kinds of elements that make a document (ADR 0038), each a
+    // paragraph style of its name, as in Word above.
+    for (_, info) in crate::templates::kinds::styled(f) {
+        let name = info.style.replace(' ', "_20_");
+        if s.contains(&format!("style:name=\"{name}\"")) {
+            continue;
+        }
+        let look = &info.look;
+        let display = (name != info.style).then_some(info.style.as_str());
+        let (first, after) = match f.text.paragraphs {
+            Paragraphs::Indent if look.align == Align::Left => (f.text.indent.points(), 0.0),
+            Paragraphs::Indent => (0.0, 0.0),
+            Paragraphs::Spaced => (0.0, f.text.space_between.points()),
+        };
+        let style = OdtStyle {
+            name: &name,
+            display,
+            parent: Some("Standard"),
+            next: Some("Text_20_body"),
+            outline: None,
+            paragraph: odt_paragraph(0.0, after, body, look.align, 0.0, 0.0, first, false),
+            text: odt_text((look.size > 0.0).then_some(look.size), None, Some(look.italic), Case::None),
+        };
+        replace_style(&mut s, &name, &style.xml());
     }
 
     // What the text flows around: a frame at the side of the text.

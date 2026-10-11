@@ -174,10 +174,5 @@
     "case": "upper"
   },
   "lineNumbers": false,
-  "style": "apa",
-  "limits": {
-    "abstractWords": 250,
-    "keywords": 5,
-    "note": "Abstract at most 250 words unless the journal says otherwise; three to five keywords. The source sets no limit on length and recommends counting words rather than pages."
-  }
+  "style": "apa"
 }

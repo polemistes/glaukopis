@@ -8,10 +8,11 @@ use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
-use glaukopis_core::document::{Author, Block, CarriedReference, Document, Inline, OwnKind, Section};
+use glaukopis_core::document::{Author, Block, CarriedReference, Document, Inline, OwnKind, Part, Section};
 use glaukopis_core::export::{self, Context, ExportOptions, Exported, Page, Preview, Request, Target, Tools};
 use glaukopis_core::formats::{DocumentFormat, FormatSummary};
 use glaukopis_core::styles::{Found, StyleSummary};
+use glaukopis_core::templates::{Output, Template};
 
 use crate::error::CommandResult;
 use crate::state::AppState;
@@ -150,6 +151,10 @@ pub struct LeanSection {
     pub heading: Option<Vec<Inline>>,
     #[serde(default)]
     pub element: Option<String>,
+    /// The kind of element it was made from, where that is a kind of the
+    /// catalogue of parts (ADR 0038).
+    #[serde(default)]
+    pub kind: Option<String>,
     /// Tells this text from every other, and from itself as it was before
     /// it was changed.
     pub stamp: String,
@@ -166,12 +171,11 @@ pub struct LeanDocument {
     pub subtitle: Option<String>,
     pub authors: Vec<Author>,
     pub date: Option<String>,
-    #[serde(rename = "abstract")]
-    pub abstract_text: Option<String>,
     pub keywords: Vec<String>,
     pub language: Option<String>,
-    #[serde(default)]
-    pub cover: Option<glaukopis_core::document::Cover>,
+    pub identifiers: std::collections::BTreeMap<String, String>,
+    /// The parts of the document, sent whole: they are short.
+    pub parts: Vec<Part>,
     pub sections: Vec<LeanSection>,
     pub references: Vec<CarriedReference>,
     /// The kinds of paragraph and of words that are the writer's own.
@@ -184,8 +188,18 @@ pub struct LeanRequest {
     pub document: LeanDocument,
     pub style: String,
     pub format: DocumentFormat,
+    /// The template whole; the plain one where nothing is given.
+    #[serde(default = "Template::plain")]
+    pub template: Template,
+    /// Which of the template's outputs: the document where nothing is given.
+    #[serde(default = "document_output")]
+    pub output: String,
     #[serde(default)]
     pub key: String,
+}
+
+fn document_output() -> String {
+    Output::DOCUMENT.into()
 }
 
 /// What is kept of the previews, for each key: the texts that were sent,
@@ -232,6 +246,7 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
             heading: section.heading,
             blocks: blocks.as_ref().clone(),
             element: section.element,
+            kind: section.kind,
         });
     }
     if lacking > 0 {
@@ -250,17 +265,27 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
         subtitle: request.document.subtitle,
         authors: request.document.authors,
         date: request.document.date,
-        abstract_text: request.document.abstract_text,
         keywords: request.document.keywords,
         language: request.document.language,
-        cover: request.document.cover,
+        identifiers: request.document.identifiers,
+        parts: request.document.parts,
         sections,
         references: request.document.references,
         kinds: request.document.kinds,
     };
     let mut format = request.format;
     format.speak(document.language.as_deref());
-    Ok((Request { document, style: request.style, format, key: request.key }, kept.stop.clone()))
+    Ok((
+        Request {
+            document,
+            style: request.style,
+            format,
+            template: request.template,
+            output: request.output,
+            key: request.key,
+        },
+        kept.stop.clone(),
+    ))
 }
 
 /// The pages of a document: how many there are, and those that are asked

@@ -61,11 +61,5 @@
   },
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
-  "lineNumbers": false,
-  "limits": {
-    "words": 12000,
-    "abstractWords": 250,
-    "keywords": 8,
-    "note": "At most 12,000 words, footnotes and abstract included: 'a maximum, not a target'. Abstract of up to 250 words; six to eight keywords."
-  }
+  "lineNumbers": false
 }

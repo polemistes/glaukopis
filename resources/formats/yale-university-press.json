@@ -70,6 +70,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "chicago-notes-bibliography",
-  "limits": { "note": "Length and the number of illustrations are as the contract stipulates." }
+  "style": "chicago-notes-bibliography"
 }

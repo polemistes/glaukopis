@@ -14,6 +14,7 @@ use glaukopis_core::projects::Projects;
 use glaukopis_core::settings;
 use glaukopis_core::spelling::Spelling;
 use glaukopis_core::styles::Styles;
+use glaukopis_core::templates::Templates;
 
 pub struct AppState {
     pub data: DataDir,
@@ -26,6 +27,7 @@ pub struct AppState {
     pub resources: PathBuf,
     pub styles: Styles,
     pub formats: Formats,
+    pub templates: Templates,
     /// The dictionaries, and the writer's own words.
     pub spelling: Spelling,
     library: Mutex<Library>,
@@ -85,6 +87,7 @@ impl AppState {
         tracing::info!(resources = %resources.display(), "resources");
         let styles = Styles::new(&resources, &data.styles());
         let formats = Formats::new(&resources, &data.formats());
+        let templates = Templates::new(&resources, &data.templates());
         let spelling = Spelling::open(&data, &resources);
         let state = AppState {
             projects,
@@ -92,6 +95,7 @@ impl AppState {
             resources,
             styles,
             formats,
+            templates,
             spelling,
             library: Mutex::new(library),
             tools: RwLock::new(Tools::default()),
