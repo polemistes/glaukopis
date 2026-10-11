@@ -2,6 +2,7 @@
 
 import type { Block, Inline } from '$lib/project/model/text';
 import { call } from './backend';
+import type { PartLook, Template } from './templates';
 
 export interface Tool {
   path: string;
@@ -140,8 +141,10 @@ export interface DocumentFormat {
   basedOn?: string;
   /** How the kinds of paragraph and of words are set, where the format says otherwise than the kind has it: by the id of the kind. */
   kinds?: Record<string, Look>;
-  /** Kinds the format puts in the writer's hand, by id. */
+  /** Kinds the format puts in the writer's hand, by id. Moves to the template (ADR 0038). */
   suggests?: string[];
+  /** How the kinds of elements that make a document are set, where the layout says otherwise than the kind has it: by the id of the kind (ADR 0038). */
+  parts?: Record<string, PartLook>;
   page: {
     size: string;
     width: string;
@@ -271,6 +274,19 @@ export interface ExportSection {
   heading: Inline[] | null;
   blocks: Block[];
   element: string | null;
+  /** The kind of element the section was made from, where it is a kind of the catalogue (ADR 0038). */
+  kind?: string;
+}
+
+/**
+ * An element of a matter or cover kind among the direct children of the
+ * element printed: its text at level 0, its children from level 1 (ADR 0038).
+ */
+export interface ExportPart {
+  kind: string;
+  element: string | null;
+  title: Inline[];
+  sections: ExportSection[];
 }
 
 export interface ExportAuthor {
@@ -308,6 +324,10 @@ export interface DocumentRequest {
   document: ExportDocument;
   style: string;
   format: DocumentFormat;
+  /** The template whole (ADR 0038); the plain one where nothing is given. */
+  template?: Template;
+  /** Which of the template's outputs: `document` where nothing is given. */
+  output?: string;
   key: string;
 }
 
@@ -330,6 +350,8 @@ export interface PreviewRequest {
   document: LeanDocument;
   style: string;
   format: DocumentFormat;
+  template?: Template;
+  output?: string;
   key: string;
 }
 
