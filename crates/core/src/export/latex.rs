@@ -313,6 +313,29 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
 /// group that sets its margins, its type and its room, and what closes it.
 /// `text` is the look of the text, against which a size and a spacing are
 /// told: what is the same as the text's is left unsaid.
+/// What is written around the text of a part of a document, as its look
+/// says (`templates/kinds.rs`): a page of its own begins a third of the way
+/// down; centred or set right, in italics, in a size of its own.
+pub fn around_part(look: &crate::templates::kinds::Resolved) -> (String, String) {
+    let mut open = String::from("{\\par");
+    if look.own_page {
+        open.push_str("\\vspace*{0.3\\textheight}");
+    }
+    match look.align {
+        Align::Center => open.push_str("\\centering"),
+        Align::Right => open.push_str("\\raggedleft"),
+        Align::Left | Align::Justified => {}
+    }
+    if look.italic {
+        open.push_str("\\itshape");
+    }
+    if look.size > 0.0 {
+        let _ = write!(open, "\\fontsize{{{}}}{{{}}}\\selectfont", look.size, (look.size * 1.2 * 10.0).round() / 10.0);
+    }
+    open.push('\n');
+    (open, "\\par}".into())
+}
+
 pub fn around(look: &Resolved, text: Option<&Resolved>) -> (String, String) {
     let mut open = String::from("{\\par");
     if look.space_before.points() > 0.0 {

@@ -69,11 +69,5 @@
   "pageNumbers": { "show": true, "position": "top-right", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "language",
-  "limits": {
-    "words": 18000,
-    "abstractWords": 100,
-    "keywords": 7,
-    "note": "Abstract of about 100 words (the Cambridge page: at most 200); 5-7 keywords. Research articles ideally at most 12,000 words and never more than 18,000, including notes, charts, tables and appendices but excluding references."
-  }
+  "style": "language"
 }

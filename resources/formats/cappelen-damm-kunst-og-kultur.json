@@ -70,11 +70,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "apa",
-  "limits": {
-    "words": 7000,
-    "abstractWords": 250,
-    "keywords": 6,
-    "note": "Chapters of anthologies 5000-7000 words; monographs up to 300 pages. Abstract of 150-250 words; 4-6 keywords."
-  }
+  "style": "apa"
 }

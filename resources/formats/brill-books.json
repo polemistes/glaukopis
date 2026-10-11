@@ -62,10 +62,5 @@
   },
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
-  "lineNumbers": false,
-  "limits": {
-    "abstractWords": 200,
-    "keywords": 10,
-    "note": "For contributions to edited volumes: an abstract of about 200 words and about 6-10 keywords. The total word count, bibliography and footnotes included, is reported with the proposal."
-  }
+  "lineNumbers": false
 }

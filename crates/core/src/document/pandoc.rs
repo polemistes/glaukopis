@@ -11,6 +11,7 @@ use serde_json::{Value, json};
 use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, RefForm, Section};
 use crate::formats::kinds::{self, KindInfo, Resolved};
 use crate::formats::{Case, Equations, Figures, Tables};
+use crate::templates::kinds::PartInfo;
 use crate::written::locators::{locale_for, terms};
 
 /// The locator of a citation as Pandoc wants it: in braces, which says that
@@ -112,6 +113,8 @@ pub struct Extras {
     pub flows: bool,
     /// What is known of every kind of paragraph and of words: see `formats/kinds.rs`.
     pub kinds: HashMap<String, KindInfo>,
+    /// What is known of every kind of element that makes a document: see `templates/kinds.rs`.
+    pub parts: HashMap<String, PartInfo>,
     /// Whether the format sets italics as underline.
     pub italics_underlined: bool,
     /// Whether the document can carry the classes of kinds, as a page of the web can.
@@ -205,7 +208,7 @@ fn anchor_of(id: &str) -> String {
 }
 
 /// Text as Typst takes it within square brackets.
-pub(super) fn typst_text(text: &str) -> String {
+pub(crate) fn typst_text(text: &str) -> String {
     let mut out = String::with_capacity(text.len() + 4);
     for c in text.chars() {
         if matches!(c, '\\' | '#' | '[' | ']' | '$' | '*' | '_' | '`' | '<' | '>' | '@') {
@@ -643,7 +646,12 @@ impl Converter<'_> {
         Some(json!({"t": "RawBlock", "c": ["typst", format!("#metadata(\"{id}\") <{ELEMENT_LABEL}{id}>")]}))
     }
 
-    fn section(&self, section: &Section, out: &mut Vec<Value>) {
+    pub fn section(&self, section: &Section, out: &mut Vec<Value>) {
+        if let Some(kind) = section.kind.as_deref()
+            && let Some(info) = self.extras.parts.get(kind)
+        {
+            return self.part_section(section, kind, info, out);
+        }
         let heading = section.heading.as_ref().map(|h| self.inlines(h)).filter(|h| !h.is_empty());
         let level = section.level.clamp(1, self.deepest.max(1));
         let mut body = Vec::new();
@@ -699,6 +707,54 @@ impl Converter<'_> {
         }
         out.extend(mark);
         out.extend(body);
+    }
+
+    /// A section made from an element of a kind that makes a document (ADR
+    /// 0038), set by the kind's look at the level it stands at: its heading,
+    /// where the look prints one, unnumbered; a page of its own, or a new
+    /// page, where the look says so; its text in a block of the kind, which
+    /// in Typst is a show rule on `<gk-part-ID>`, in LaTeX a group around
+    /// it, in Word and Writer a paragraph style of the kind's name, and on
+    /// the web and in the e-book a class `gk-part-ID`.
+    fn part_section(&self, section: &Section, kind: &str, info: &PartInfo, out: &mut Vec<Value>) {
+        let look = &info.look;
+        let level = section.level.clamp(1, self.deepest.max(1));
+        let heading =
+            section.heading.as_ref().filter(|_| look.heading).map(|h| self.inlines(h)).filter(|h| !h.is_empty());
+        if (look.own_page || look.new_page)
+            && let Some(b) = &self.page_break
+        {
+            out.push(b.clone());
+        }
+        out.extend(self.mark(section));
+        if let Some(h) = heading {
+            let place = section.element.as_deref().and_then(|id| self.extras.anchor(id));
+            let id = place.as_ref().and_then(|p| p["c"][0][0].as_str()).unwrap_or("").to_owned();
+            out.push(json!({"t": "Header", "c": [level, [id, ["unnumbered"], []], h]}));
+        }
+        let mut body = Vec::new();
+        self.blocks(&section.blocks, &mut body);
+        if !body.is_empty() {
+            let class = format!("gk-part-{}", label(kind));
+            match self.extras.flavour {
+                Flavour::Typst => out.push(json!({"t": "Div", "c": [[class, [], []], body]})),
+                Flavour::Latex => {
+                    let (open, close) = crate::export::latex::around_part(look);
+                    out.push(json!({"t": "RawBlock", "c": ["latex", open]}));
+                    out.extend(body);
+                    out.push(json!({"t": "RawBlock", "c": ["latex", close]}));
+                }
+                Flavour::Docx | Flavour::Odt => {
+                    out.push(json!({"t": "Div", "c": [["", [class], [["custom-style", info.style]]], body]}))
+                }
+                Flavour::Plain => out.push(json!({"t": "Div", "c": [["", [class], []], body]})),
+            }
+        }
+        if look.own_page
+            && let Some(b) = &self.page_break
+        {
+            out.push(b.clone());
+        }
     }
 
     pub fn document(&self, doc: &Document, api_version: &[u32], meta: serde_json::Map<String, Value>) -> Value {
@@ -1138,15 +1194,23 @@ mod tests {
                     heading: Some(vec![text("One")]),
                     blocks: vec![para(vec![text("Text.")])],
                     element: None,
+                    kind: None,
                 },
                 Section {
                     level: 3,
                     heading: Some(vec![text("Deep")]),
                     blocks: vec![para(vec![text("More.")])],
                     element: None,
+                    kind: None,
                 },
-                Section { level: 5, heading: Some(vec![text("Deeper?")]), blocks: vec![], element: None },
-                Section { level: 2, heading: None, blocks: vec![para(vec![text("No heading.")])], element: None },
+                Section { level: 5, heading: Some(vec![text("Deeper?")]), blocks: vec![], element: None, kind: None },
+                Section {
+                    level: 2,
+                    heading: None,
+                    blocks: vec![para(vec![text("No heading.")])],
+                    element: None,
+                    kind: None,
+                },
             ],
             ..Default::default()
         };
@@ -1174,20 +1238,23 @@ mod tests {
                     heading: Some(vec![text("One")]),
                     blocks: vec![para(vec![text("Text.")])],
                     element: Some("e1".into()),
+                    kind: None,
                 },
                 Section {
                     level: 2,
                     heading: Some(vec![text("Run")]),
                     blocks: vec![para(vec![text("In.")])],
                     element: Some("e2 <x>".into()),
+                    kind: None,
                 },
                 Section {
                     level: 0,
                     heading: None,
                     blocks: vec![para(vec![text("Bare.")])],
                     element: Some("e3".into()),
+                    kind: None,
                 },
-                Section { level: 1, heading: Some(vec![text("None")]), blocks: vec![], element: None },
+                Section { level: 1, heading: Some(vec![text("None")]), blocks: vec![], element: None, kind: None },
             ],
             ..Default::default()
         };

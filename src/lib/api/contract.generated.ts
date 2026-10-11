@@ -6,6 +6,7 @@ import type { Summary, Reference, LibraryListing, ImportPlan, DuplicateGroup } f
 import type { ProjectInfo, Folder } from './projects';
 import type { Picture } from './pictures';
 import type { ToolsInfo, DocumentFormat, FormatSummary, StyleSummary, Preview, KindEntry } from './documents';
+import type { Template, TemplateSummary, PartKindEntry } from './templates';
 
 export const summary: Summary = {
   "added": "2026-01-01T00:00:00Z",
@@ -404,12 +405,6 @@ export const format: DocumentFormat = {
   },
   "id": "manuscript",
   "kind": "general",
-  "limits": {
-    "abstractWords": null,
-    "keywords": null,
-    "note": "",
-    "words": null
-  },
   "lineNumbers": false,
   "name": "Manuscript",
   "notes": {
@@ -1547,5 +1542,266 @@ export const kinds: KindEntry[] = [
     "id": "highlight",
     "look": {},
     "style": ""
+  }
+];
+
+export const template: Template = {
+  "contents": [
+    {
+      "part": "title-page"
+    },
+    {
+      "part": "body"
+    },
+    {
+      "part": "notes"
+    },
+    {
+      "part": "bibliography"
+    }
+  ],
+  "description": "A document of nothing but its text: the title, the body, the notes and the bibliography.",
+  "group": "plain",
+  "id": "plain",
+  "kinds": [],
+  "name": "Plain document",
+  "outputs": [
+    {
+      "id": "document",
+      "targets": [
+        "pdf",
+        "pdf-latex",
+        "docx",
+        "odt",
+        "latex",
+        "typst",
+        "markdown",
+        "html",
+        "epub"
+      ]
+    }
+  ],
+  "passageKinds": [],
+  "requirements": {
+    "abstractWords": null,
+    "anonymous": false,
+    "keywords": null,
+    "note": "",
+    "words": null
+  }
+};
+
+export const templates: TemplateSummary[] = [
+  {
+    "checked": "",
+    "confidence": "",
+    "description": "A document of nothing but its text: the title, the body, the notes and the bibliography.",
+    "group": "plain",
+    "id": "plain",
+    "name": "Plain document",
+    "own": false
+  }
+];
+
+export const partKinds: PartKindEntry[] = [
+  {
+    "basedOn": null,
+    "group": "front",
+    "id": "front-section",
+    "look": {},
+    "one": false,
+    "place": "front",
+    "style": "Front Section"
+  },
+  {
+    "basedOn": null,
+    "group": "back",
+    "id": "back-section",
+    "look": {},
+    "one": false,
+    "place": "back",
+    "style": "Back Section"
+  },
+  {
+    "basedOn": null,
+    "group": "front",
+    "id": "own-page",
+    "look": {
+      "align": "center",
+      "heading": false,
+      "ownPage": true
+    },
+    "one": false,
+    "place": "front",
+    "style": "Own Page"
+  },
+  {
+    "basedOn": null,
+    "group": "cover",
+    "id": "cover",
+    "look": {
+      "heading": false
+    },
+    "one": true,
+    "place": "cover",
+    "style": "Cover"
+  },
+  {
+    "basedOn": "front-section",
+    "group": "front",
+    "id": "abstract",
+    "look": {},
+    "one": true,
+    "place": "front",
+    "style": "Abstract"
+  },
+  {
+    "basedOn": "own-page",
+    "group": "front",
+    "id": "dedication",
+    "look": {
+      "italic": true
+    },
+    "one": false,
+    "place": "front",
+    "style": "Dedication"
+  },
+  {
+    "basedOn": "own-page",
+    "group": "front",
+    "id": "epigraph",
+    "look": {},
+    "one": false,
+    "place": "front",
+    "style": "Epigraph Page"
+  },
+  {
+    "basedOn": "own-page",
+    "group": "front",
+    "id": "copyright",
+    "look": {
+      "align": "left",
+      "size": 9.0
+    },
+    "one": true,
+    "place": "front",
+    "style": "Copyright"
+  },
+  {
+    "basedOn": "front-section",
+    "group": "front",
+    "id": "foreword",
+    "look": {},
+    "one": false,
+    "place": "front",
+    "style": "Foreword"
+  },
+  {
+    "basedOn": "front-section",
+    "group": "front",
+    "id": "preface",
+    "look": {},
+    "one": false,
+    "place": "front",
+    "style": "Preface"
+  },
+  {
+    "basedOn": "front-section",
+    "group": "front",
+    "id": "cast",
+    "look": {},
+    "one": false,
+    "place": "front",
+    "style": "Cast"
+  },
+  {
+    "basedOn": "front-section",
+    "group": "front",
+    "id": "setting",
+    "look": {},
+    "one": false,
+    "place": "front",
+    "style": "Setting"
+  },
+  {
+    "basedOn": "front-section",
+    "group": "front",
+    "id": "standfirst",
+    "look": {
+      "heading": false,
+      "italic": true
+    },
+    "one": true,
+    "place": "front",
+    "style": "Standfirst"
+  },
+  {
+    "basedOn": "back-section",
+    "group": "back",
+    "id": "acknowledgements",
+    "look": {},
+    "one": false,
+    "place": "back",
+    "style": "Acknowledgements"
+  },
+  {
+    "basedOn": "back-section",
+    "group": "back",
+    "id": "appendix",
+    "look": {
+      "lettered": true
+    },
+    "one": false,
+    "place": "back",
+    "style": "Appendix"
+  },
+  {
+    "basedOn": "back-section",
+    "group": "back",
+    "id": "afterword",
+    "look": {},
+    "one": false,
+    "place": "back",
+    "style": "Afterword"
+  },
+  {
+    "basedOn": "back-section",
+    "group": "back",
+    "id": "glossary",
+    "look": {},
+    "one": false,
+    "place": "back",
+    "style": "Glossary"
+  },
+  {
+    "basedOn": "back-section",
+    "group": "back",
+    "id": "about-the-author",
+    "look": {},
+    "one": true,
+    "place": "back",
+    "style": "About the Author"
+  },
+  {
+    "basedOn": "back-section",
+    "group": "back",
+    "id": "signature",
+    "look": {
+      "heading": false
+    },
+    "one": true,
+    "place": "back",
+    "style": "Signature"
+  },
+  {
+    "basedOn": "cover",
+    "group": "cover",
+    "id": "blurb",
+    "look": {
+      "heading": false
+    },
+    "one": true,
+    "place": "cover",
+    "style": "Blurb"
   }
 ];

@@ -115,9 +115,5 @@
     "align": "left",
     "case": "none"
   },
-  "lineNumbers": false,
-  "limits": {
-    "abstractWords": 200,
-    "note": "An abstract of 100-200 words is required for every chapter, introduction and conclusion included. The contracted word count includes notes and references."
-  }
+  "lineNumbers": false
 }

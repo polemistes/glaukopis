@@ -14,4 +14,5 @@ pub mod sources;
 pub mod spelling;
 pub mod system;
 pub mod tables;
+pub mod templates;
 pub mod words;

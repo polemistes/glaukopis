@@ -63,10 +63,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "chicago-author-date",
-  "limits": {
-    "words": 8000,
-    "abstractWords": 200,
-    "note": "Research articles at most 8,000 words at first submission, including figures, tables, references and notes, and excluding transcriptions and the abstract; up to 10,500 after acceptance. Abstract of 200 words."
-  }
+  "style": "chicago-author-date"
 }

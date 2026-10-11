@@ -379,6 +379,57 @@ pub struct Section {
     pub blocks: Vec<Block>,
     /// The element the section was made from, for finding it again.
     pub element: Option<String>,
+    /// The kind of element the section was made from, where it is a kind of
+    /// the catalogue of parts (`templates/kinds.rs`): the first section of
+    /// an element of such a kind, deeper down than the parts, is set by the
+    /// kind's look at the level it stands at. See ADR 0038.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+}
+
+/// An element of a matter or cover kind among the direct children of the
+/// element printed, in tree order: its text at level 0, its children from
+/// level 1. Placed as the template says (ADR 0038).
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Part {
+    /// The id of a kind of the catalogue of parts.
+    pub kind: String,
+    /// The element the part was made from.
+    pub element: Option<String>,
+    /// The name of the element, which is the heading where the kind prints one.
+    pub title: Vec<Inline>,
+    pub sections: Vec<Section>,
+}
+
+impl Part {
+    /// The blocks of the part, its own text and its children's, without
+    /// their headings: for a part that is set as a whole, as the abstract is.
+    pub fn blocks(&self) -> Vec<Block> {
+        self.sections.iter().flat_map(|s| s.blocks.iter().cloned()).collect()
+    }
+
+    /// The first figure of the part, as `(hash, extension)`: the picture of a cover.
+    pub fn first_figure(&self) -> Option<(String, String)> {
+        let mut found = None;
+        for s in &self.sections {
+            walk(
+                &s.blocks,
+                &mut |b| {
+                    if found.is_none()
+                        && let Block::Figure { file, extension, .. } = b
+                    {
+                        found = Some((file.clone(), extension.trim_start_matches('.').to_ascii_lowercase()));
+                    }
+                },
+                &mut |_| {},
+            );
+            if found.is_some() {
+                break;
+            }
+        }
+        found
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
@@ -402,14 +453,6 @@ pub struct CarriedReference {
     pub names: BTreeMap<String, Vec<Person>>,
 }
 
-/// The cover of an e-book.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Cover {
-    pub hash: String,
-    pub extension: String,
-}
-
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Document {
@@ -417,14 +460,17 @@ pub struct Document {
     pub subtitle: Option<String>,
     pub authors: Vec<Author>,
     pub date: Option<String>,
-    #[serde(rename = "abstract")]
-    pub abstract_text: Option<String>,
     pub keywords: Vec<String>,
     /// BCP 47: en-GB, nb, de, el.
     pub language: Option<String>,
-    /// The cover of an e-book: a picture of the store, and its kind of file.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cover: Option<Cover>,
+    /// What the file formats carry as metadata beyond the above: isbn,
+    /// edition, publisher, place, doi, and the like, by those names.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub identifiers: BTreeMap<String, String>,
+    /// The elements of a matter or cover kind among the direct children of
+    /// the element printed, in tree order. See ADR 0038.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub parts: Vec<Part>,
     pub sections: Vec<Section>,
     /// The references the project carries for what is cited. The library's own
     /// entries are preferred to these where it has them.
@@ -479,12 +525,18 @@ impl Document {
     /// of every section its heading and its blocks.
     pub fn walk<'a>(&'a self, block: &mut dyn FnMut(&'a Block), line: &mut dyn FnMut(&'a [Inline])) {
         line(&self.title);
-        for s in &self.sections {
+        for s in self.all_sections() {
             if let Some(h) = &s.heading {
                 line(h);
             }
             walk(&s.blocks, block, line);
         }
+    }
+
+    /// Every section, in the order of the text: those of the parts, then
+    /// those of the body.
+    pub fn all_sections(&self) -> impl Iterator<Item = &Section> {
+        self.parts.iter().flat_map(|p| p.sections.iter()).chain(self.sections.iter())
     }
 
     /// Whether the text flows around something, where the format has
@@ -505,7 +557,7 @@ impl Document {
             }
         }
         let mut in_rows: Vec<&Block> = Vec::new();
-        for s in &self.sections {
+        for s in self.all_sections() {
             rows(&s.blocks, &mut in_rows);
         }
         self.walk(
@@ -654,7 +706,7 @@ pub(crate) mod fixtures_for_samples {
             // Each paragraph a section of its own, so that each can be found again.
             sections: blocks
                 .into_iter()
-                .map(|b| Section { level: 0, heading: None, blocks: vec![b], element: None })
+                .map(|b| Section { level: 0, heading: None, blocks: vec![b], ..Default::default() })
                 .collect(),
             references: references.to_vec(),
             ..Default::default()
@@ -709,7 +761,7 @@ pub(crate) mod fixtures {
                     level: 0,
                     heading: None,
                     blocks: vec![para(vec![text("Before the first section.")])],
-                    element: None,
+                    ..Default::default()
                 },
                 Section {
                     level: 1,
@@ -727,6 +779,7 @@ pub(crate) mod fixtures {
                         Block::Blockquote { content: vec![para(vec![text("Sing, goddess, the wrath.")])] },
                     ],
                     element: Some("e1".into()),
+                    kind: None,
                 },
             ],
             references: vec![
@@ -757,6 +810,9 @@ mod tests {
           "authors": [{"name":"A. Scholar","affiliation":"Oslo"}],
           "abstract": "Short.",
           "language": "nb",
+          "identifiers": {"isbn": "978-0-00-000000-0"},
+          "parts": [{"kind":"dedication","element":"d","title":[{"kind":"text","text":"Dedication","marks":{}}],
+                     "sections":[{"level":0,"heading":null,"blocks":[],"element":"d","kind":"dedication"}]}],
           "sections": [
             {"level":1,"heading":[{"kind":"text","text":"One","marks":{"em":true}}],
              "blocks":[
@@ -773,7 +829,11 @@ mod tests {
           "references": [{"id":"r1","key":"k","type":"book","fields":{"title":"T"},"names":{"author":[{"family":"F","given":"G"}]}}]
         }"#;
         let doc: Document = serde_json::from_str(json).unwrap();
-        assert_eq!(doc.abstract_text.as_deref(), Some("Short."));
+        // The abstract is an element now; a request of before is read without it.
+        assert_eq!(doc.identifiers["isbn"], "978-0-00-000000-0");
+        assert_eq!(doc.parts[0].kind, "dedication");
+        assert_eq!(doc.parts[0].sections[0].kind.as_deref(), Some("dedication"));
+        assert_eq!(doc.sections[0].kind, None);
         assert_eq!(doc.cited(), vec!["r1"]);
         match &doc.sections[0].blocks[0] {
             Block::Paragraph { content } => match &content[1] {

@@ -70,10 +70,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "chicago-notes-bibliography",
-  "limits": {
-    "abstractWords": 300,
-    "keywords": 8,
-    "note": "No word limit as such; successful articles are generally of 8,000-10,000 words, including notes, abstract and keywords. Abstract of 200-300 words; 6 to 8 keywords."
-  }
+  "style": "chicago-notes-bibliography"
 }

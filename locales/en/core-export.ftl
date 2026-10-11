@@ -54,3 +54,12 @@ core-export-format-own-only = Only your own formats can be deleted.
 core-export-not-a-length = “{ $length }” is not a length
 # Shown after "not found: ".
 core-export-the-format = the format “{ $id }”
+
+## Templates.
+
+core-export-template-bad-id = “{ $id }” cannot be the id of a template
+core-export-template-needs-name = A template needs a name.
+core-export-template-own-only = Only your own templates can be deleted.
+core-export-the-template = the template “{ $id }”
+core-export-output-not-yet = The output “{ $id }” of the template cannot be made yet: only the document can.
+core-export-output-unknown = The template has no output “{ $id }”.

@@ -430,16 +430,6 @@ pub struct RunningHead {
     pub case: Case,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub struct Limits {
-    pub words: Option<u32>,
-    pub abstract_words: Option<u32>,
-    pub keywords: Option<u32>,
-    /// What the limit counts, and anything else to know: "notes included".
-    pub note: String,
-}
-
 /// Where something that stands by itself stands: a figure, a table, an equation.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -695,16 +685,16 @@ pub struct DocumentFormat {
     /// The reference style that goes with the format, by id.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub style: Option<String>,
-    pub limits: Limits,
     /// How the kinds of paragraph and of words are set, where the format
     /// says otherwise than the kind has it of itself: by the id of the kind.
     /// See `kinds.rs`.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub kinds: BTreeMap<String, kinds::Look>,
-    /// Kinds the format puts in the writer's hand, by id: a format for a
-    /// screenplay suggests the parts of a script.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub suggests: Vec<String>,
+    /// How the kinds of elements that make a document are set, where the
+    /// layout says otherwise than the kind has it of itself: by the id of
+    /// the kind. See `templates/kinds.rs` and ADR 0038.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub parts: BTreeMap<String, crate::templates::PartLook>,
 }
 
 impl DocumentFormat {
@@ -781,8 +771,7 @@ impl DocumentFormat {
             self.font.family = "Times New Roman".into();
         }
         kinds::sanitise(&mut self.kinds);
-        self.suggests.retain(|k| !k.is_empty() && k.len() <= 80);
-        self.suggests.truncate(40);
+        crate::templates::kinds::sanitise(&mut self.parts);
         let (w, h) = self.page.dimensions();
         for m in [&mut self.page.margin_left, &mut self.page.margin_right] {
             if m.points() < 0.0 || m.points() > w / 2.0 - 36.0 {

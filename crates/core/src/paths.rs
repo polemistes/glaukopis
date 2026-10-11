@@ -101,6 +101,11 @@ impl DataDir {
         self.root.join("formats")
     }
 
+    /// The writer's own templates (ADR 0038).
+    pub fn templates(&self) -> PathBuf {
+        self.root.join("templates")
+    }
+
     pub fn projects(&self) -> PathBuf {
         self.root.join("projects")
     }

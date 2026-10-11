@@ -69,11 +69,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "chicago-shortened-notes-bibliography",
-  "limits": {
-    "words": 35000,
-    "abstractWords": 250,
-    "keywords": 7,
-    "note": "50-100 standard pages (17,500-35,000 words), notes, bibliography and illustrations included. English abstract of 150-250 words; 5-7 English keywords."
-  }
+  "style": "chicago-shortened-notes-bibliography"
 }

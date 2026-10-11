@@ -591,6 +591,42 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
     let math: Vec<String> = MATH_FONTS.iter().map(|f| string(f)).collect();
     let _ = writeln!(out, "#show math.equation: set text(font: ({},))", math.join(", "));
 
+    // The parts of a document (ADR 0038), each a show rule on its label
+    // (`<gk-part-ID>`), as its look under the format says. A page of its own
+    // begins a quarter of the way down; the breaks of the page stand around
+    // the block, written by the converter.
+    for (id, info) in crate::templates::kinds::styled(f) {
+        let look = &info.look;
+        let _ = writeln!(
+            out,
+            "#show <gk-part-{id}>: it => {{
+  set text(size: {size}, style: {style})
+  set par(first-line-indent: 0pt, justify: {justify})
+  set align({align})
+  {down}block(width: 100%, it.body)
+}}",
+            id = crate::document::pandoc::label(&id),
+            size = pt(if look.size > 0.0 { look.size } else { f.font.size }),
+            style = if look.italic { "\"italic\"" } else { "\"normal\"" },
+            justify = look.align == Align::Justified,
+            align = align(look.align),
+            down = if look.own_page { "v(25%)\n  " } else { "" },
+        );
+    }
+    // The half-title: the title alone on the first leaf.
+    let _ = writeln!(
+        out,
+        "#show <gk-half-title>: it => {{
+  set text(size: {size}, weight: \"regular\", style: \"normal\", hyphenate: false)
+  set par(first-line-indent: 0pt, justify: false)
+  set align(center)
+  v(30%)
+  block(width: 100%, it.body)
+  pagebreak(weak: true)
+}}",
+        size = pt(f.title.size),
+    );
+
     // The title block.
     let t = &f.title;
     let block_leading = leading(f.text.line_spacing.min(1.5));

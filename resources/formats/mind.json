@@ -69,9 +69,5 @@
   },
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
-  "lineNumbers": true,
-  "limits": {
-    "abstractWords": 200,
-    "note": "No formal limit on length (until recently 8,000 words); Discussions about 4,000 words. Abstract of 50-200 words."
-  }
+  "lineNumbers": true
 }

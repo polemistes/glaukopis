@@ -25,6 +25,7 @@ use glaukopis_core::paths::DataDir;
 use glaukopis_core::pictures::Pictures;
 use glaukopis_core::projects::{MapInfo, Projects, Summary};
 use glaukopis_core::styles::Styles;
+use glaukopis_core::templates::Templates;
 
 use crate::commands::documents::ToolsInfo;
 use crate::commands::library::{full, listing};
@@ -118,6 +119,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     let project = projects.move_to_folder(&project.id, Some(&folder.id)).unwrap();
     let formats = Formats::new(&resources, &data.formats());
     let styles = Styles::new(&resources, &data.styles());
+    let templates = Templates::new(&resources, &data.templates());
     let tools = ToolsInfo {
         tools: Tools {
             pandoc: Some(Tool { path: "/usr/bin/pandoc".into(), version: "3.10.2".into(), least: None, data: None }),
@@ -160,6 +162,9 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("styles", "StyleSummary[]", "documents", &styles.list());
     put("preview", "Preview", "documents", &preview);
     put("kinds", "KindEntry[]", "documents", &glaukopis_core::formats::kinds::catalogue());
+    put("template", "Template", "templates", &templates.get("plain").unwrap());
+    put("templates", "TemplateSummary[]", "templates", &templates.list());
+    put("partKinds", "PartKindEntry[]", "templates", &glaukopis_core::templates::kinds::catalogue());
 
     let mut out = String::from(
         "// Made by the test `contract` in src-tauri/src/contract.rs: what the Rust side\n\

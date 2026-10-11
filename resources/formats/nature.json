@@ -63,9 +63,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": true,
-  "style": "nature",
-  "limits": {
-    "abstractWords": 200,
-    "note": "No word limit is entered: the typical text has 2,500 words for an article of 6 pages and 4,300 for one of 8, not counting title, authors, acknowledgements and references. Methods typically at most 3,000 words; about 50 references. Summary paragraph ideally of no more than 200 words."
-  }
+  "style": "nature"
 }

@@ -63,9 +63,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "chicago-author-date",
-  "limits": {
-    "abstractWords": 100,
-    "note": "The limit is stated in pages: it is strongly recommended that manuscripts not exceed 40 pages in 11-point type, or 45 in 12-point, with 1.5 spacing and 1-inch margins, figures, tables, references and appendices included. Abstract of 100 words or fewer."
-  }
+  "style": "chicago-author-date"
 }
