@@ -48,7 +48,6 @@ format-section-notes = Noter
 format-section-bibliography = Litteraturliste
 format-section-figures = Figurer, tabeller, ligninger
 format-section-margins = Sidetal og sidehoved
-format-section-limits = Grænser
 format-section-about = Om dette format
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = som teksten
 format-size-zero-hint = 0 for tekstens størrelse
 # Beside a number of 0, in the place of its unit.
 format-not-said = ikke angivet
-format-no-limit = ingen grænse
 format-unless-said = Medmindre andet er sagt om den enkelte
 format-as-it-will-stand = Som det kommer til at stå
 format-align-left = Venstre
@@ -349,15 +347,6 @@ format-running-head-author = Forfatterne
 format-running-head-author-title = Forfattere og titel
 format-running-head-text = Egne ord
 format-running-head-words = Ordene
-
-## Limits.
-
-format-limits-hint = Forhåndsvisningen tæller tekstens ord mod disse, og dialogen for titel og resumé tæller mod de andre. Intet skæres væk.
-format-limits-words = Ord i teksten
-format-limits-abstract-words = Ord i resuméet
-format-limits-keywords = Nøgleord
-format-limits-note = Hvad grænserne tæller
-format-limits-note-placeholder = Noter medregnet; litteraturlisten ikke
 
 ## About the format: where its requirements are from.
 

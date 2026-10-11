@@ -23,7 +23,7 @@ settings-own-gold = Andre stemme
 settings-own-begin = Begynn fra
 settings-own-weak = Vanskelig å lese: blekket står { $ink } til 1 mot papiret og aksenten { $accent } til 1; 4,5 og 3 eller mer leses godt.
 settings-text-size = Størrelsen på teksten din
-settings-text-size-hint = I kartene og i tekstvisningen. Det som eksporteres, følger dokumentformatet.
+settings-text-size-hint = I kartene og i tekstvisningen. Det som eksporteres, følger oppsettet.
 settings-interface-size = Størrelsen på grensesnittet
 settings-interface-size-hint = Alt i vinduet, også teksten. For teksten din alene, størrelsen under.
 settings-sample = Syng, gudinne, om vreden til Peleus-sønnen Akilles
@@ -31,9 +31,10 @@ settings-sample = Syng, gudinne, om vreden til Peleus-sønnen Akilles
 ## Nye dokumenter
 
 settings-new-documents = Nye dokumenter
-settings-new-documents-hint = Det dokumentene i et nytt prosjekt begynner med. Hvert element kan få andre i forhåndsvisningen.
+settings-new-documents-hint = Det dokumentene i et nytt prosjekt begynner med. Hvert element kan få andre i dokumentinnstillingene sine.
+settings-template = Mal
+settings-document-format = Oppsett
 settings-reference-style = Referansestil
-settings-document-format = Dokumentformat
 
 ## Om deg
 

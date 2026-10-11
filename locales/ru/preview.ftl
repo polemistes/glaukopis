@@ -4,29 +4,13 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Предпросмотр
-# Small, over the choice of the document format.
-preview-format = Формат
-preview-format-label = Формат документа
-# Small, over the choice of the reference style.
-preview-style = Ссылки
-preview-style-label = Стиль цитирования
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Другие стили…
-preview-change = Изменить формат или стиль
-preview-change-format = Изменить этот формат…
-preview-change-format-hint = Страница, шрифт, интервалы, заголовки
-preview-change-style = Изменить этот стиль цитирования…
-preview-change-style-hint = Под требования издателя
-preview-details = Заглавие, авторы, аннотация
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Перейти к этому месту в тексте
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Показать, где текст
 preview-hide = Скрыть предпросмотр
-# When a format that goes with a reference style is chosen, the style is taken with it.
-preview-style-taken = Стиль цитирования теперь { $style }
-preview-style-taken-why = С ним идёт этот формат.
-preview-style-keep-other = Оставить прежний
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } не установлен
 preview-programs-needed = Предпросмотр и экспорт делаются с помощью Pandoc и Typst. Установите их менеджером пакетов вашей системы или укажите в настройках, где они.
@@ -85,51 +69,6 @@ preview-works-missing = { $count ->
 preview-works-missing-where = ни в вашей библиотеке, ни в проекте. Такие места отмечены в тексте.
 # Over what Pandoc and Typst said while they made the document.
 preview-remarks-warnings = Сказано при создании документа
-
-## The details of a document: what stands on its first page.
-
-preview-details-dialog = Документ
-preview-details-dialog-subtitle = Что стоит на его первой странице
-preview-details-title = Заглавие
-preview-details-title-placeholder = Название центра карты
-preview-details-title-hint = Если пусто, заглавием служит название центра карты.
-preview-details-subtitle = Подзаголовок
-preview-details-authors = Авторы
-preview-details-name = Имя
-preview-details-author-name = Имя автора { $number }
-preview-details-affiliation = Организация
-preview-details-author-affiliation = Организация автора { $number }
-preview-details-email = Эл. почта
-preview-details-author-email = Эл. почта автора { $number }
-# Beside a plus, under the authors: adds one.
-preview-details-add-author = автор
-preview-details-abstract = Аннотация
-preview-details-words = { $count ->
-    [one] { $count } слово
-    [few] { $count } слова
-    [many] { $count } слов
-   *[other] { $count } слова
-}
-# The words of the abstract, and the most the format allows.
-preview-details-words-of = { $limit ->
-    [one] { $count } из { $limit } слова
-    [few] { $count } из { $limit } слов
-    [many] { $count } из { $limit } слов
-   *[other] { $count } из { $limit } слова
-}
-preview-details-keywords = Ключевые слова
-# The keywords given, and the most the format allows.
-preview-details-keywords-of = { $count } из { $limit }
-preview-details-keywords-placeholder = Через запятую
-preview-details-date = Дата
-preview-details-date-placeholder = Как её напечатать
-preview-details-language = Язык текста
-# A map that was given no language is printed in English.
-preview-details-language-none = Не указан (английский)
-preview-details-cover = Обложка
-preview-details-cover-choose = Выбрать изображение…
-preview-details-cover-other = Другое…
-preview-details-cover-hint = Обложка электронной книги: изображение, хранящееся в хранилище изображений. Больше оно нигде не используется.
 
 ## The export: the kinds of file a document is made as.
 

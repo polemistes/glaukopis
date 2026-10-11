@@ -29,6 +29,7 @@ keys-diagram-or-text = Diagram eller tekst
 keys-projects-pane = Prosjektlisten til venstre
 keys-up = Opp til elementet over dette
 keys-preview = Forhåndsvisning og eksport
+keys-document-settings = Dokumentinnstillinger
 keys-side-references = Referanser
 keys-side-pictures = Bildene i prosjektet
 keys-side-comments = Kommentarer

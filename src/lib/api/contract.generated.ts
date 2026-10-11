@@ -1593,12 +1593,471 @@ export const template: Template = {
 
 export const templates: TemplateSummary[] = [
   {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "A student's or a conference paper: a title page, the text, the notes and the bibliography, as the writer's usual layout and citation style set them.",
+    "group": "plain",
+    "id": "paper",
+    "name": "Paper",
+    "own": false
+  },
+  {
     "checked": "",
     "confidence": "",
     "description": "A document of nothing but its text: the title, the body, the notes and the bibliography.",
     "group": "plain",
     "id": "plain",
     "name": "Plain document",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "An article for a journal: a title page, the abstract and keywords, the text, then appendices, acknowledgements, notes and bibliography, with no limits until a journal's template sets them.",
+    "group": "article",
+    "id": "article",
+    "name": "Journal article",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "A report: a title page, an abstract, the contents, the text, then appendices and bibliography.",
+    "group": "article",
+    "id": "report",
+    "name": "Report",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "An academic book: half-title and title page, copyright, dedication and epigraph, the contents, foreword, preface and acknowledgements, the chapters, then appendices, glossary, notes, bibliography and a note on the author.",
+    "group": "book",
+    "id": "book",
+    "name": "Academic book",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "A thesis or dissertation: a title page, the abstract and acknowledgements, the table of contents with the lists of figures and tables, the chapters, then appendices and bibliography.",
+    "group": "book",
+    "id": "thesis",
+    "name": "Thesis",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "A collection of stories as a book: the cover, title page, copyright and dedication, the contents, each story an element, then acknowledgements and a note on the author.",
+    "group": "fiction",
+    "id": "story-collection",
+    "name": "Collection of stories",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "A novel as a printed book or an e-book: the cover, half-title and title page, copyright, dedication and epigraph, the contents, the chapters, then acknowledgements and a note on the author.",
+    "group": "fiction",
+    "id": "novel",
+    "name": "Novel",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "A novel as a manuscript for an agent or a publisher: a title page and the chapters, in the standard manuscript format.",
+    "group": "fiction",
+    "id": "novel-manuscript",
+    "name": "Novel manuscript",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "A short story for submission to a magazine or a competition: a title page and the text, in the standard manuscript format.",
+    "group": "fiction",
+    "id": "short-story",
+    "name": "Short story",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "low",
+    "description": "A stage play: a title page, the cast and the setting, then the acts and scenes, with the speeches written as verse, each with its speaker and its directions.",
+    "group": "stage",
+    "id": "play",
+    "name": "Play",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "low",
+    "description": "A screenplay: a title page and the script, with its scene headings, action, characters, dialogue, parentheticals and transitions on the standard page.",
+    "group": "stage",
+    "id": "screenplay",
+    "name": "Screenplay",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "low",
+    "description": "A collection of poems: a title page and dedication, the contents, each poem an element with its lines written as verse, then acknowledgements and a note on the poet.",
+    "group": "poetry",
+    "id": "poems",
+    "name": "Poems",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "A blog post: the text alone, as a web page or as Markdown for a site that makes its own pages.",
+    "group": "other",
+    "id": "blog-post",
+    "name": "Blog post",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "A letter: the text and a signature.",
+    "group": "other",
+    "id": "letter",
+    "name": "Letter",
+    "own": false
+  },
+  {
+    "checked": "2026-10-11",
+    "confidence": "medium",
+    "description": "A news article: a standfirst above the text, for the web, a word processor or print.",
+    "group": "other",
+    "id": "news-article",
+    "name": "News article",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Manuscripts for American Anthropologist: Times New Roman 12, double-spaced and aligned left, endnotes and not footnotes, Chicago author-date references; anonymised, and at most 8,000 words at first submission.",
+    "group": "journal",
+    "id": "american-anthropologist",
+    "name": "American Anthropologist",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Manuscripts for the American Economic Review: 11-point type with spacing of 1.5 and one-inch margins, the layout by which the journal measures length; sections numbered in roman numerals, footnotes, no title page, and an abstract of 100 words or fewer.",
+    "group": "journal",
+    "id": "american-economic-review",
+    "name": "American Economic Review",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Manuscripts for the American Political Science Review: 12-point type, double-spaced main text, footnotes and not endnotes, page numbers on all pages, Chicago author-date references; anonymised, with an abstract of 150 words or less.",
+    "group": "journal",
+    "id": "american-political-science-review",
+    "name": "American Political Science Review",
+    "own": false
+  },
+  {
+    "checked": "2025-07-18",
+    "confidence": "medium",
+    "description": "Articles for the American Sociological Review: Times New Roman 12, everything double-spaced, notes and references included, margins of at least one inch, endnotes under the heading NOTES, no page numbers, ASA references; anonymised, at most 15,000 words.",
+    "group": "journal",
+    "id": "american-sociological-review",
+    "name": "American Sociological Review",
+    "own": false
+  },
+  {
+    "checked": "2025-07-06",
+    "confidence": "medium",
+    "description": "Articles for Classical Philology: 12-point type, everything double-spaced, footnotes and not endnotes, author-date references given in the notes with a list of literature cited; anonymised, at most 45 pages.",
+    "group": "journal",
+    "id": "classical-philology",
+    "name": "Classical Philology",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Articles for History and Theory: footnotes in a house style based on the Chicago Manual, with no bibliography; quotations of more than seventy words set off; an abstract of 200 to 300 words and six to eight keywords. The journal prescribes no page layout.",
+    "group": "journal",
+    "id": "history-and-theory",
+    "name": "History and Theory",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Articles for the Journal of Biblical Literature: a standard 12-point font, double-spaced, footnotes included; block quotations of five or more lines single-spaced; footnotes in SBL style with no bibliography and no cover page; anonymised, at most 10,000 words.",
+    "group": "journal",
+    "id": "journal-of-biblical-literature",
+    "name": "Journal of Biblical Literature",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Accepted manuscripts for Language (Linguistic Society of America) by the LSA Journals Style Sheet: letter paper with one-inch margins, 12-point type and spacing of 1.5 throughout, aligned left, two levels of numbered headings in small capitals that run into the text, and endnotes after the references.",
+    "group": "journal",
+    "id": "language-accepted",
+    "name": "Language (accepted manuscript)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Manuscripts sent to Language (Linguistic Society of America) for review: double-spaced throughout and anonymised, with an abstract of at most 200 words and five to seven keywords; at most 18,000 words.",
+    "group": "journal",
+    "id": "language-submission",
+    "name": "Language (submission for review)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Papers for Mind: line spacing of 1.15 or 1.5 and never double, continuous line numbers, sections numbered in arabic numerals with bold headings and italic sub-headings, quotations of about thirty words or more set off; anonymised.",
+    "group": "journal",
+    "id": "mind",
+    "name": "Mind",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Manuscripts for Nature: a standard font, preferably Times New Roman 12, double-spaced, with line numbers; a summary paragraph of ideally no more than 200 words in place of an abstract, and numbered references in the journal's own style.",
+    "group": "journal",
+    "id": "nature",
+    "name": "Nature",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Articles for Past & Present: Times New Roman 12, double-spaced, indented paragraphs, sections numbered in roman numerals, footnotes only and no bibliography, quotations of 50 words or more inset from both margins; anonymised.",
+    "group": "journal",
+    "id": "past-and-present",
+    "name": "Past & Present",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Manuscripts for PLOS ONE: double-spaced in any standard font, with page numbers and continuous line numbers, a title page as the first page, at most three levels of heading, no footnotes, and an abstract of at most 300 words.",
+    "group": "journal",
+    "id": "plos-one",
+    "name": "PLOS ONE",
+    "own": false
+  },
+  {
+    "checked": "2025-09-06",
+    "confidence": "medium",
+    "description": "Manuscripts for Psychological Review (American Psychological Association): the professional paper of APA 7, double-spaced throughout with five levels of unnumbered headings, an abstract of at most 250 words on a page of its own and up to five keywords.",
+    "group": "journal",
+    "id": "psychological-review",
+    "name": "Psychological Review",
+    "own": false
+  },
+  {
+    "checked": "2025-08-10",
+    "confidence": "medium",
+    "description": "Research articles for Science: letter paper, Times New Roman, single-spaced throughout, references and notes in one numbered list, an abstract of 125 words or less and at most 3,000 words of main text.",
+    "group": "journal",
+    "id": "science",
+    "name": "Science",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Articles for the American Historical Review: Times New Roman 12, double-spaced, on letter paper with one-inch margins; no headings, only section breaks; all references in footnotes of 10 points, with no bibliography; fully anonymised.",
+    "group": "journal",
+    "id": "american-historical-review",
+    "name": "The American Historical Review",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Articles for The Art Bulletin (College Art Association): Times New Roman 12 for everything, all copy double-spaced and aligned left, endnotes in Chicago style with no bibliography, quotations of 50 words or more set off; anonymised, at most 16,000 words.",
+    "group": "journal",
+    "id": "art-bulletin",
+    "name": "The Art Bulletin",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Articles for The Classical Quarterly: Times New Roman 12 throughout, footnotes included, double-spaced and justified; section titles in capitals and centred, sub-section titles in italics, nothing in bold; footnotes and no bibliography; anonymised.",
+    "group": "journal",
+    "id": "classical-quarterly",
+    "name": "The Classical Quarterly",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Articles for The Journal of Hellenic Studies: a generic font, three levels of heading numbered by hand, footnotes with author-date references and a bibliography, quotations of more than four lines set off; anonymised, at most 9,000 words.",
+    "group": "journal",
+    "id": "journal-of-hellenic-studies",
+    "name": "The Journal of Hellenic Studies",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "medium",
+    "description": "Typescripts for Bloomsbury Academic: at least double-spaced throughout, margins of at least 2.5 cm, page numbers centred at the foot in one sequence, endnotes, and quotations of over sixty words set off as a block.",
+    "group": "publisher",
+    "id": "bloomsbury-academic",
+    "name": "Bloomsbury Academic (books)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Book manuscripts for Brill: indented paragraphs, headings numbered decimally in arabic numerals, footnotes numbered anew in every chapter, a separate bibliography, and a manuscript anonymised for review.",
+    "group": "publisher",
+    "id": "brill-books",
+    "name": "Brill (books)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "The series Kunst og kultur i opplæring from Cappelen Damm Forskning (NOASP): Calibri 11, double-spaced and justified, headings in the APA form in at most three levels, quotations of over 40 words set off, and APA 7 references.",
+    "group": "publisher",
+    "id": "cappelen-damm-kunst-og-kultur",
+    "name": "Cappelen Damm Forskning: Kunst og kultur i opplæring",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "The series Libelli from Cappelen Damm Forskning (NOASP): Calibri 12 with spacing of 1.5, headings of 16 and 14 points, endnotes, quotations of over three lines set off in single-spaced 10-point type, and Chicago short notes with a full bibliography.",
+    "group": "publisher",
+    "id": "cappelen-damm-libelli",
+    "name": "Cappelen Damm Forskning: Libelli",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Book chapters for Routledge and Taylor & Francis: a blank line between paragraphs and no indent, at most three levels of unnumbered subheading, notes as endnotes numbered by chapter, and an abstract of 100 to 200 words for every chapter.",
+    "group": "publisher",
+    "id": "routledge-books",
+    "name": "Routledge / Taylor & Francis (books)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Book manuscripts for SAGE: Times New Roman 12, double-spaced, paragraphs parted by a blank line without indent, no page numbers, headers or footers, at most four levels of heading, notes at the end of each chapter, and APA references.",
+    "group": "publisher",
+    "id": "sage-books",
+    "name": "SAGE (books)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "The general layout for articles sent to Taylor & Francis journals: Times New Roman 12, double spacing, margins of at least 2.5 cm, and five levels of heading of which the fourth and fifth run into the paragraph.",
+    "group": "publisher",
+    "id": "taylor-francis-journals",
+    "name": "Taylor & Francis journals",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Book manuscripts for Universitetsforlaget (Scandinavian University Press) by its general guide for authors: the simplest possible formatting, a blank line between paragraphs, a ragged right margin, no hyphenation, and quotations of more than two lines set off as paragraphs of their own.",
+    "group": "publisher",
+    "id": "universitetsforlaget-books",
+    "name": "Universitetsforlaget (books, general guide)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Chapters for open access monographs and anthologies from Universitetsforlaget (Scandinavian University Press): Times New Roman 12 with spacing of 1.5, at most three levels of unnumbered heading, and for every chapter an English abstract of 150 to 250 words and four or five keywords.",
+    "group": "publisher",
+    "id": "universitetsforlaget-open-access",
+    "name": "Universitetsforlaget (open access research books)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Book manuscripts for the University of Chicago Press: minimal formatting, headings told apart by size (18, 16 and 14 points, bold), notes made with the word processor's note function, a title page, and Chicago style for references.",
+    "group": "publisher",
+    "id": "university-of-chicago-press-books",
+    "name": "University of Chicago Press (books)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Book manuscripts for Yale University Press: endnotes numbered anew in each chapter, subheads used sparingly and never numbered, quotations set off as a block only from 100 words, and Chicago notes and bibliography.",
+    "group": "publisher",
+    "id": "yale-university-press",
+    "name": "Yale University Press (books)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-18",
+    "confidence": "high",
+    "description": "The professional paper of the APA Publication Manual, 7th edition, for manuscripts sent to journals: a title page with author note, a running head of the shortened title in capitals, an abstract of at most 250 words; double spacing throughout and five levels of unnumbered headings.",
+    "group": "style-guide",
+    "id": "apa-7-professional",
+    "name": "APA 7 (professional paper)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-18",
+    "confidence": "high",
+    "description": "The student paper of the APA Publication Manual, 7th edition: a title page with course, instructor and due date, no running head and normally no abstract; double spacing throughout, five levels of unnumbered headings, and block quotations from 40 words.",
+    "group": "style-guide",
+    "id": "apa-7-student",
+    "name": "APA 7 (student paper)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "The paper format of Turabian's Manual for Writers, 9th edition, which follows the Chicago Manual of Style: double-spaced text with single-spaced block quotations, notes and bibliography entries, margins of at least one inch, and a title page of its own.",
+    "group": "style-guide",
+    "id": "chicago-turabian-paper",
+    "name": "Chicago / Turabian (paper)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "Copy prepared as the MHRA Style Guide, 4th edition (2024) asks: a serif font in one size throughout, double or one-and-a-half spacing, few levels of heading, and prose quotations of more than forty words set off as a block without quotation marks.",
+    "group": "style-guide",
+    "id": "mhra-4",
+    "name": "MHRA Style Guide 4",
+    "own": false
+  },
+  {
+    "checked": "2025-01-19",
+    "confidence": "high",
+    "description": "The research paper format of the MLA Handbook, 9th edition: everything double-spaced, one-inch margins, no title page, the writer's surname before the page number at the top right, and a list headed Works Cited.",
+    "group": "style-guide",
+    "id": "mla-9",
+    "name": "MLA 9 (research paper)",
+    "own": false
+  },
+  {
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "description": "The term paper of the Student Supplement to the SBL Handbook of Style, 2nd edition: 12-point type, double-spaced text with single-spaced block quotations and bibliography, footnotes, a title page in capitals, and five forms of heading.",
+    "group": "style-guide",
+    "id": "sbl-2-student",
+    "name": "SBL Handbook of Style 2 (student paper)",
     "own": false
   }
 ];

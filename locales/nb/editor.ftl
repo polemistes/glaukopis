@@ -50,7 +50,7 @@ editor-gloss-hint = Hva oppslagsordet betyr
 editor-code = Kode
 editor-code-hint = Beholdt bokstav for bokstav, i bokstaver med lik bredde
 editor-break = Skille
-editor-break-hint = Et opphold mellom deler, med tegnet formatet gir det
+editor-break-hint = Et opphold mellom deler, med tegnet oppsettet gir det
 editor-draft = Kladd
 editor-draft-hint = For dine øyne: det kommer ikke med i noe dokument
 editor-foreign = Annet språk
@@ -88,7 +88,7 @@ editor-paragraph-kind = Slags avsnitt
 editor-paragraph-kind-now = Slags avsnitt: { $kind }
 
 ## Menyen over slagene: slagene for hånden, hele katalogen under «Mer …», og
-## formatet som setter dem, nederst. Menyen over ordene, med slagene ord. Og
+## oppsettet som setter dem, nederst. Menyen over ordene, med slagene ord. Og
 ## et eget slag, i vinduet sitt.
 
 editor-kinds-menu-more = Mer …
@@ -96,9 +96,9 @@ editor-kinds-in-hand = Slag for hånden
 editor-kinds-own = Dine egne
 editor-kinds-make = Lag et slag …
 editor-kinds-change-own = Endre et av dine egne …
-# Over valget som åpner formatredigeringen: formatet bestemmer hvordan hvert slag ser ut.
+# Over valget som åpner oppsettredigeringen: oppsettet bestemmer hvordan hvert slag ser ut.
 editor-kinds-set-by = Satt slik «{ $format }» har dem
-editor-kinds-change-format = Endre formatet …
+editor-kinds-change-format = Endre oppsettet …
 editor-kinds-change-format-hint = Hvordan hvert slag settes i dette dokumentet
 editor-words = Ord
 editor-words-hint = Understreking, hevet skrift, kode; ord på et annet språk, tittelen på et verk, en term
@@ -229,7 +229,7 @@ editor-locator-sub-verbo = Sub verbo
 # Tallet er notens nummer, eller en bokstav for en note som står et eget sted.
 editor-note-numbered = Note { $number }
 editor-note-place = Hvor noten står
-editor-note-place-format = Der formatet har notene sine
+editor-note-place-format = Der oppsettet har notene sine
 editor-note-place-foot = Nederst på siden
 editor-note-place-end = Til slutt i teksten
 editor-note-placeholder = Teksten i noten

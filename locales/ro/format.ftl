@@ -48,7 +48,6 @@ format-section-notes = Note
 format-section-bibliography = Bibliografie
 format-section-figures = Figuri, tabele, ecuații
 format-section-margins = Numerele paginilor și colontitlul
-format-section-limits = Limite
 format-section-about = Despre acest format
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = ca textul
 format-size-zero-hint = 0 pentru mărimea textului
 # Beside a number of 0, in the place of its unit.
 format-not-said = nespus
-format-no-limit = fără limită
 format-unless-said = Dacă nu se spune altceva despre vreunul
 format-as-it-will-stand = Așa cum va sta
 format-align-left = La stânga
@@ -349,15 +347,6 @@ format-running-head-author = Autorii
 format-running-head-author-title = Autorii și titlul
 format-running-head-text = Cuvinte ale mele
 format-running-head-words = Cuvintele
-
-## Limits.
-
-format-limits-hint = Previzualizarea numără cuvintele textului față de acestea, iar dialogul pentru titlu și rezumat față de celelalte. Nimic nu se taie.
-format-limits-words = Cuvinte de text
-format-limits-abstract-words = Cuvinte în rezumat
-format-limits-keywords = Cuvinte-cheie
-format-limits-note = Ce numără limitele
-format-limits-note-placeholder = Cu notele; fără bibliografie
 
 ## About the format: where its requirements are from.
 

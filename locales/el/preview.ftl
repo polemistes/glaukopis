@@ -4,29 +4,13 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Προεπισκόπηση
-# Small, over the choice of the document format.
-preview-format = Μορφή
-preview-format-label = Μορφή εγγράφου
-# Small, over the choice of the reference style.
-preview-style = Αναφορές
-preview-style-label = Στυλ παραπομπών
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Περισσότερα στυλ…
-preview-change = Αλλαγή της μορφής ή του στυλ
-preview-change-format = Αλλαγή αυτής της μορφής…
-preview-change-format-hint = Σελίδα, γράμματα, διάστιχο, επικεφαλίδες
-preview-change-style = Αλλαγή αυτού του στυλ παραπομπών…
-preview-change-style-hint = Σύμφωνα με τις επιθυμίες ενός εκδότη
-preview-details = Τίτλος, συγγραφείς, περίληψη
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Μετάβαση σε αυτό το σημείο του κειμένου
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Εμφάνιση του σημείου όπου είναι το κείμενο
 preview-hide = Απόκρυψη της προεπισκόπησης
-# When a format that goes with a reference style is chosen, the style is taken with it.
-preview-style-taken = Το στυλ παραπομπών είναι τώρα { $style }
-preview-style-taken-why = Είναι αυτό που συνοδεύει τη μορφή.
-preview-style-keep-other = Να μείνει το άλλο
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = Το { $program } δεν είναι εγκατεστημένο
 preview-programs-needed = Η προεπισκόπηση και η εξαγωγή γίνονται με το Pandoc και το Typst. Εγκαταστήστε τα με τον διαχειριστή πακέτων του συστήματός σας, ή πείτε στις ρυθμίσεις πού βρίσκονται.
@@ -75,47 +59,6 @@ preview-works-missing = { $count ->
 preview-works-missing-where = ούτε στη βιβλιοθήκη σας ούτε στο έργο. Σημειώνονται μέσα στο κείμενο.
 # Over what Pandoc and Typst said while they made the document.
 preview-remarks-warnings = Ειπώθηκαν ενώ φτιαχνόταν το έγγραφο
-
-## The details of a document: what stands on its first page.
-
-preview-details-dialog = Το έγγραφο
-preview-details-dialog-subtitle = Τι μπαίνει στην πρώτη του σελίδα
-preview-details-title = Τίτλος
-preview-details-title-placeholder = Το όνομα του κέντρου του χάρτη
-preview-details-title-hint = Αν μείνει κενό, τίτλος είναι το όνομα του κέντρου του χάρτη.
-preview-details-subtitle = Υπότιτλος
-preview-details-authors = Συγγραφείς
-preview-details-name = Όνομα
-preview-details-author-name = Όνομα του συγγραφέα { $number }
-preview-details-affiliation = Φορέας
-preview-details-author-affiliation = Φορέας του συγγραφέα { $number }
-preview-details-email = Ηλεκτρονική διεύθυνση
-preview-details-author-email = Ηλεκτρονική διεύθυνση του συγγραφέα { $number }
-# Beside a plus, under the authors: adds one.
-preview-details-add-author = συγγραφέας
-preview-details-abstract = Περίληψη
-preview-details-words = { $count ->
-    [one] { $count } λέξη
-   *[other] { $count } λέξεις
-}
-# The words of the abstract, and the most the format allows.
-preview-details-words-of = { $limit ->
-    [one] { $count } από { $limit } λέξη
-   *[other] { $count } από { $limit } λέξεις
-}
-preview-details-keywords = Λέξεις-κλειδιά
-# The keywords given, and the most the format allows.
-preview-details-keywords-of = { $count } από { $limit }
-preview-details-keywords-placeholder = Χωρισμένες με κόμματα
-preview-details-date = Ημερομηνία
-preview-details-date-placeholder = Όπως θα τυπωθεί
-preview-details-language = Γλώσσα του κειμένου
-# A map that was given no language is printed in English.
-preview-details-language-none = Δεν ορίζεται (αγγλικά)
-preview-details-cover = Εξώφυλλο
-preview-details-cover-choose = Επιλογή εικόνας…
-preview-details-cover-other = Άλλη…
-preview-details-cover-hint = Το εξώφυλλο του ηλεκτρονικού βιβλίου: μια εικόνα, που φυλάσσεται στην αποθήκη εικόνων. Τίποτα άλλο δεν τη χρησιμοποιεί.
 
 ## The export: the kinds of file a document is made as.
 

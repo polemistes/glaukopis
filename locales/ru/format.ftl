@@ -48,7 +48,6 @@ format-section-notes = Сноски
 format-section-bibliography = Список литературы
 format-section-figures = Рисунки, таблицы, уравнения
 format-section-margins = Номера страниц и колонтитул
-format-section-limits = Ограничения
 format-section-about = Об этом формате
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = как текст
 format-size-zero-hint = 0 — размер текста
 # Beside a number of 0, in the place of its unit.
 format-not-said = не задано
-format-no-limit = без ограничения
 format-unless-said = Если о каком-то не сказано иное
 format-as-it-will-stand = Как это будет выглядеть
 format-align-left = По левому краю
@@ -349,15 +347,6 @@ format-running-head-author = Авторы
 format-running-head-author-title = Авторы и заглавие
 format-running-head-text = Свои слова
 format-running-head-words = Слова
-
-## Limits.
-
-format-limits-hint = Предпросмотр сверяет с этими число слов текста, а окно заглавия и аннотации — с остальными. Ничего не обрезается.
-format-limits-words = Слов текста
-format-limits-abstract-words = Слов аннотации
-format-limits-keywords = Ключевых слов
-format-limits-note = Что считают ограничения
-format-limits-note-placeholder = Со сносками; без списка литературы
 
 ## About the format: where its requirements are from.
 

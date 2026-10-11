@@ -25,7 +25,7 @@ settings-own-begin = Begin from
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Hard to read: the ink stands at { $ink } to 1 on the paper and the accent at { $accent } to 1; 4.5 and 3 or more read well.
 settings-text-size = Size of your text
-settings-text-size-hint = In the maps and the text view. What is exported follows the document format.
+settings-text-size-hint = In the maps and the text view. What is exported follows the layout.
 settings-interface-size = Size of the interface
 settings-interface-size-hint = Everything in the window, the writing as well. For your text alone, the size below.
 # A line of text in the size chosen, which shows the face of the letters; a
@@ -35,9 +35,10 @@ settings-sample = Sing, goddess, the wrath of Achilles, son of Peleus
 ## New documents
 
 settings-new-documents = New documents
-settings-new-documents-hint = What the documents of a new project begin with. Any element can be given another, in the preview.
+settings-new-documents-hint = What the documents of a new project begin with. Any element can be given others in its document settings.
+settings-template = Template
+settings-document-format = Layout
 settings-reference-style = Reference style
-settings-document-format = Document format
 
 ## You
 

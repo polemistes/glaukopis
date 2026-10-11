@@ -48,7 +48,6 @@ format-section-notes = Przypisy
 format-section-bibliography = Bibliografia
 format-section-figures = Ryciny, tabele, równania
 format-section-margins = Numery stron i żywa pagina
-format-section-limits = Limity
 format-section-about = O tym formacie
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = jak tekst
 format-size-zero-hint = 0 dla rozmiaru tekstu
 # Beside a number of 0, in the place of its unit.
 format-not-said = nie podano
-format-no-limit = bez limitu
 format-unless-said = O ile o którymś nie powiedziano inaczej
 format-as-it-will-stand = Jak będzie stało
 format-align-left = Do lewej
@@ -349,15 +347,6 @@ format-running-head-author = Autorzy
 format-running-head-author-title = Autorzy i tytuł
 format-running-head-text = Własne słowa
 format-running-head-words = Słowa
-
-## Limits.
-
-format-limits-hint = Podgląd liczy słowa tekstu względem tych limitów, a okno tytułu i streszczenia względem pozostałych. Nic nie jest ucinane.
-format-limits-words = Słów tekstu
-format-limits-abstract-words = Słów streszczenia
-format-limits-keywords = Słów kluczowych
-format-limits-note = Co liczą limity
-format-limits-note-placeholder = Z przypisami; bez bibliografii
 
 ## About the format: where its requirements are from.
 

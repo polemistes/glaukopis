@@ -48,7 +48,6 @@ format-section-notes = Poznámky
 format-section-bibliography = Bibliografia
 format-section-figures = Vyobrazenia, tabuľky, rovnice
 format-section-margins = Čísla strán a živé záhlavie
-format-section-limits = Limity
 format-section-about = O tomto formáte
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = ako text
 format-size-zero-hint = 0 pre veľkosť textu
 # Beside a number of 0, in the place of its unit.
 format-not-said = neurčené
-format-no-limit = bez limitu
 format-unless-said = Ak nie je o niektorom povedané inak
 format-as-it-will-stand = Ako to bude stáť
 format-align-left = Vľavo
@@ -349,15 +347,6 @@ format-running-head-author = Autori
 format-running-head-author-title = Autori a názov
 format-running-head-text = Vlastné slová
 format-running-head-words = Slová
-
-## Limits.
-
-format-limits-hint = Náhľad počíta slová textu voči týmto, dialóg názvu a abstraktu voči ostatným. Nič sa neoreže.
-format-limits-words = Slov textu
-format-limits-abstract-words = Slov abstraktu
-format-limits-keywords = Kľúčových slov
-format-limits-note = Čo limity počítajú
-format-limits-note-placeholder = Poznámky áno; bibliografia nie
 
 ## About the format: where its requirements are from.
 

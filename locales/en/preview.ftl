@@ -1,38 +1,24 @@
-# The preview, and the making of documents: the panel beside the map, the
-# details of a document, and the export.
+# The preview, and the making of documents: the panel beside the text, and
+# the export.
 
 ## The panel beside the map, and what is chosen over it.
 
 preview = Preview
-# Small, over the choice of the document format.
-preview-format = Format
-preview-format-label = Document format
-# Small, over the choice of the reference style.
-preview-style = References
-preview-style-label = Reference style
+# Small, over the names of the template, the layout and the reference style in use, which open the document settings.
+preview-made-by = Template, layout, references
 # The last among the reference styles, which opens the search for more.
 preview-style-more = More styles…
-preview-change = Change the format or the style
-preview-change-format = Change this format…
-preview-change-format-hint = Page, type, spacing, headings
-preview-change-style = Change this reference style…
-preview-change-style-hint = To a publisher’s wishes
-preview-details = Title, authors, abstract
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Go to this place in the text
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Show where the text is
 preview-hide = Hide the preview
-# When a format that goes with a reference style is chosen, the style is taken with it.
-preview-style-taken = The reference style is now { $style }
-preview-style-taken-why = It is the one this format goes with.
-preview-style-keep-other = Keep the other
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } is not installed
 preview-programs-needed = Preview and export are made with Pandoc and Typst. Install them with the package manager of your system, or say in the settings where they are.
 preview-look-again = Look again
 preview-looking-failed = The programs could not be looked for
-preview-reading-failed = The styles and formats could not be read
+preview-reading-failed = The styles, layouts and templates could not be read
 preview-failed = The preview could not be made
 preview-failed-message = The preview could not be made.
 # A page of the preview, as it is told to those who cannot see it.
@@ -50,7 +36,7 @@ preview-words = { $count ->
     [one] { $count } word
    *[other] { $count } words
 }
-# The words of the text, and the most the format allows.
+# The words of the text, and the most the template allows.
 preview-words-of = { $limit ->
     [one] { $count } of { $limit } word
    *[other] { $count } of { $limit } words
@@ -64,8 +50,8 @@ preview-remarks-count = { $count ->
 preview-remarks = Remarks
 preview-remarks-font = Font
 preview-font-missing = { $font } is not installed.
-# The first name is that of the font the format asks for; this is of the one used in its place.
-preview-font-substitute = { $font } is used in its place, here in the preview and in a PDF that is made. In a document that is exported for Word, LibreOffice or LaTeX, the font is named as the format asks, and is there for whoever opens the document and has it.
+# The first name is that of the font the layout asks for; this is of the one used in its place.
+preview-font-substitute = { $font } is used in its place, here in the preview and in a PDF that is made. In a document that is exported for Word, LibreOffice or LaTeX, the font is named as the layout asks, and is there for whoever opens the document and has it.
 preview-remarks-references = References
 # In bold, and the next follows it in the same sentence.
 preview-works-missing = { $count ->
@@ -75,47 +61,6 @@ preview-works-missing = { $count ->
 preview-works-missing-where = neither in your library nor in the project. They are marked in the text.
 # Over what Pandoc and Typst said while they made the document.
 preview-remarks-warnings = Said while the document was made
-
-## The details of a document: what stands on its first page.
-
-preview-details-dialog = The document
-preview-details-dialog-subtitle = What stands on its first page
-preview-details-title = Title
-preview-details-title-placeholder = The name of the element
-preview-details-title-hint = Left empty, the name of the element is the title.
-preview-details-subtitle = Subtitle
-preview-details-authors = Authors
-preview-details-name = Name
-preview-details-author-name = Name of author { $number }
-preview-details-affiliation = Affiliation
-preview-details-author-affiliation = Affiliation of author { $number }
-preview-details-email = E-mail
-preview-details-author-email = E-mail of author { $number }
-# Beside a plus, under the authors: adds one.
-preview-details-add-author = author
-preview-details-abstract = Abstract
-preview-details-words = { $count ->
-    [one] { $count } word
-   *[other] { $count } words
-}
-# The words of the abstract, and the most the format allows.
-preview-details-words-of = { $limit ->
-    [one] { $count } of { $limit } word
-   *[other] { $count } of { $limit } words
-}
-preview-details-keywords = Keywords
-# The keywords given, and the most the format allows.
-preview-details-keywords-of = { $count } of { $limit }
-preview-details-keywords-placeholder = Separated by commas
-preview-details-date = Date
-preview-details-date-placeholder = As it is to be printed
-preview-details-language = Language of the text
-# A map that was given no language is printed in English.
-preview-details-language-none = Not stated (English)
-preview-details-cover = Cover
-preview-details-cover-choose = Choose a picture…
-preview-details-cover-other = Another…
-preview-details-cover-hint = The cover of the e-book: a picture, kept in the store of pictures. Nothing else uses it.
 
 ## The export: the kinds of file a document is made as.
 

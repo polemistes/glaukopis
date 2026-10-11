@@ -48,7 +48,6 @@ format-section-notes = Noten
 format-section-bibliography = Bibliografie
 format-section-figures = Figuren, tabellen, vergelijkingen
 format-section-margins = Paginanummers en kopregel
-format-section-limits = Grenzen
 format-section-about = Over dit formaat
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = als de tekst
 format-size-zero-hint = 0 voor de grootte van de tekst
 # Beside a number of 0, in the place of its unit.
 format-not-said = niet gezegd
-format-no-limit = geen grens
 format-unless-said = Tenzij over een ervan iets anders is gezegd
 format-as-it-will-stand = Zoals het komt te staan
 format-align-left = Links
@@ -349,15 +347,6 @@ format-running-head-author = De auteurs
 format-running-head-author-title = Auteurs en titel
 format-running-head-text = Eigen woorden
 format-running-head-words = De woorden
-
-## Limits.
-
-format-limits-hint = Het voorbeeld telt de woorden van de tekst tegen deze grenzen, en het venster voor titel en samenvatting tegen de andere. Er wordt niets afgeknipt.
-format-limits-words = Woorden tekst
-format-limits-abstract-words = Woorden samenvatting
-format-limits-keywords = Trefwoorden
-format-limits-note = Wat de grenzen tellen
-format-limits-note-placeholder = Noten meegeteld; bibliografie niet
 
 ## About the format: where its requirements are from.
 

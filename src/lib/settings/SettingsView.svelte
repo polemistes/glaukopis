@@ -21,6 +21,8 @@
     type ToolsInfo,
   } from '$lib/api/documents';
   import { lookupAcknowledgements } from '$lib/api/sources';
+  import { templatesList, type TemplateSummary } from '$lib/api/templates';
+  import { templateGroupWords, TEMPLATE_GROUPS } from '$lib/document/templates';
   import { languageName, languages, t, TEXT_LANGUAGES } from '$lib/i18n';
   import { apart, PLACE } from '$lib/util/words';
   import { systemInfo, type Settings, type SystemInfo, type Theme } from '$lib/api/system';
@@ -39,6 +41,7 @@
   let tools = $state<ToolsInfo | null>(null);
   let styles = $state.raw<StyleSummary[]>([]);
   let formats = $state.raw<FormatSummary[]>([]);
+  let templates = $state.raw<TemplateSummary[]>([]);
   let looking = $state(false);
   let thanks = $state.raw<{ service: string; words: string }[]>([]);
 
@@ -61,11 +64,13 @@
     contact = settings.value.contactEmail ?? '';
     pandoc = settings.value.pandocPath ?? '';
     try {
-      [system, tools, styles, formats] = await Promise.all([
+      [system, tools, styles, formats, templates] = await Promise.all([
         systemInfo(),
         toolsInfo(),
         stylesList(),
         formatsList(),
+        // Nothing, where the core has no templates to list.
+        templatesList().catch(() => []),
       ]);
       thanks = await lookupAcknowledgements();
     } catch (error) {
@@ -134,6 +139,15 @@
     [...formats]
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((f) => ({ value: f.id, label: f.name })),
+  );
+  /** The templates in their groups, as the chooser of the document settings has them. */
+  const templateOptions = $derived(
+    TEMPLATE_GROUPS.flatMap((group) =>
+      templates
+        .filter((s) => s.group === group)
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((s) => ({ value: s.id, label: s.name, group: templateGroupWords(group) })),
+    ),
   );
 
   // The name of the file of the library is shown as code, where the language puts it.
@@ -301,13 +315,13 @@
     <section>
       <h2>{t('settings-new-documents')}</h2>
       <p class="about">{t('settings-new-documents-hint')}</p>
-      <div class="pair">
-        {#if styleOptions.length}
+      <div class="pair three">
+        {#if templateOptions.length}
           <Select
-            value={settings.value.defaultStyle}
-            label={t('settings-reference-style')}
-            options={styleOptions}
-            onchange={(id) => settings.set('defaultStyle', id)}
+            value={settings.value.defaultTemplate}
+            label={t('settings-template')}
+            options={templateOptions}
+            onchange={(id) => settings.set('defaultTemplate', id)}
           />
         {/if}
         {#if formatOptions.length}
@@ -316,6 +330,14 @@
             label={t('settings-document-format')}
             options={formatOptions}
             onchange={(id) => settings.set('defaultFormat', id)}
+          />
+        {/if}
+        {#if styleOptions.length}
+          <Select
+            value={settings.value.defaultStyle}
+            label={t('settings-reference-style')}
+            options={styleOptions}
+            onchange={(id) => settings.set('defaultStyle', id)}
           />
         {/if}
       </div>
@@ -511,6 +533,9 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
+  }
+  .pair.three {
+    grid-template-columns: 1fr 1fr 1fr;
   }
   .size {
     display: flex;

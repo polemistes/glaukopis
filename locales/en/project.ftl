@@ -86,7 +86,6 @@ project-copy-to-project = Copy to “{ $name }”
 project-move-to-project = Move to “{ $name }”
 project-element-name = Name of the element
 project-this-element-actions = This element
-project-document-details = Document details…
 project-new-element-under = New element under it
 project-document-into = A document into it…
 project-drop-on-map = Drop on a map to move there · hold Ctrl to copy

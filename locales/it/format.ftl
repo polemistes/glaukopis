@@ -48,7 +48,6 @@ format-section-notes = Note
 format-section-bibliography = Bibliografia
 format-section-figures = Figure, tabelle, equazioni
 format-section-margins = Numeri di pagina e testatina
-format-section-limits = Limiti
 format-section-about = Su questo formato
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = come il testo
 format-size-zero-hint = 0 per la dimensione del testo
 # Beside a number of 0, in the place of its unit.
 format-not-said = non detto
-format-no-limit = nessun limite
 format-unless-said = Se di uno non è detto altro
 format-as-it-will-stand = Come apparirà
 format-align-left = A sinistra
@@ -349,15 +347,6 @@ format-running-head-author = Gli autori
 format-running-head-author-title = Autori e titolo
 format-running-head-text = Parole mie
 format-running-head-words = Le parole
-
-## Limits.
-
-format-limits-hint = L'anteprima conta le parole del testo rispetto a questi, e la finestra per titolo e abstract rispetto agli altri. Nulla è tagliato.
-format-limits-words = Parole di testo
-format-limits-abstract-words = Parole dell'abstract
-format-limits-keywords = Parole chiave
-format-limits-note = Che cosa contano i limiti
-format-limits-note-placeholder = Note comprese; bibliografia no
 
 ## About the format: where its requirements are from.
 

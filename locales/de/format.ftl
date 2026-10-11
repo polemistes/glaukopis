@@ -48,7 +48,6 @@ format-section-notes = Anmerkungen
 format-section-bibliography = Literaturverzeichnis
 format-section-figures = Abbildungen, Tabellen, Gleichungen
 format-section-margins = Seitenzahlen und Kopfzeile
-format-section-limits = Grenzen
 format-section-about = Über dieses Format
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = wie der Text
 format-size-zero-hint = 0 für die Größe des Textes
 # Beside a number of 0, in the place of its unit.
 format-not-said = nicht gesagt
-format-no-limit = keine Grenze
 format-unless-said = Wenn von einer nichts anderes gesagt ist
 format-as-it-will-stand = So wird es stehen
 format-align-left = Links
@@ -349,15 +347,6 @@ format-running-head-author = Die Autoren
 format-running-head-author-title = Autoren und Titel
 format-running-head-text = Eigene Worte
 format-running-head-words = Die Worte
-
-## Limits.
-
-format-limits-hint = Die Vorschau zählt die Wörter des Textes gegen diese, der Dialog für Titel und Zusammenfassung gegen die anderen. Nichts wird abgeschnitten.
-format-limits-words = Wörter des Textes
-format-limits-abstract-words = Wörter der Zusammenfassung
-format-limits-keywords = Schlüsselwörter
-format-limits-note = Was die Grenzen zählen
-format-limits-note-placeholder = Anmerkungen eingeschlossen; Literaturverzeichnis nicht
 
 ## About the format: where its requirements are from.
 

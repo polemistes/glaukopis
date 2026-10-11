@@ -4,29 +4,13 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Forhåndsvisning
-# Small, over the choice of the document format.
-preview-format = Format
-preview-format-label = Dokumentformat
-# Small, over the choice of the reference style.
-preview-style = Referencer
-preview-style-label = Referencestil
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Flere stile…
-preview-change = Skift format eller stil
-preview-change-format = Ændr dette format…
-preview-change-format-hint = Side, skrift, afstand, overskrifter
-preview-change-style = Ændr denne referencestil…
-preview-change-style-hint = Efter et forlags ønsker
-preview-details = Titel, forfattere, resumé
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Gå til dette sted i teksten
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Vis, hvor teksten er
 preview-hide = Skjul forhåndsvisningen
-# When a format that goes with a reference style is chosen, the style is taken with it.
-preview-style-taken = Referencestilen er nu { $style }
-preview-style-taken-why = Det er den, dette format hører sammen med.
-preview-style-keep-other = Behold den anden
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } er ikke installeret
 preview-programs-needed = Forhåndsvisning og eksport laves med Pandoc og Typst. Installer dem med dit systems pakkehåndtering, eller sig i indstillingerne, hvor de er.
@@ -75,47 +59,6 @@ preview-works-missing = { $count ->
 preview-works-missing-where = hverken i dit bibliotek eller i projektet. De er markeret i teksten.
 # Over what Pandoc and Typst said while they made the document.
 preview-remarks-warnings = Sagt, mens dokumentet blev lavet
-
-## The details of a document: what stands on its first page.
-
-preview-details-dialog = Dokumentet
-preview-details-dialog-subtitle = Hvad der står på dets første side
-preview-details-title = Titel
-preview-details-title-placeholder = Navnet på kortets midte
-preview-details-title-hint = Står feltet tomt, er navnet på kortets midte titlen.
-preview-details-subtitle = Undertitel
-preview-details-authors = Forfattere
-preview-details-name = Navn
-preview-details-author-name = Navn på forfatter { $number }
-preview-details-affiliation = Tilhørsforhold
-preview-details-author-affiliation = Tilhørsforhold for forfatter { $number }
-preview-details-email = E-mail
-preview-details-author-email = E-mail til forfatter { $number }
-# Beside a plus, under the authors: adds one.
-preview-details-add-author = forfatter
-preview-details-abstract = Resumé
-preview-details-words = { $count ->
-    [one] { $count } ord
-   *[other] { $count } ord
-}
-# The words of the abstract, and the most the format allows.
-preview-details-words-of = { $limit ->
-    [one] { $count } af { $limit } ord
-   *[other] { $count } af { $limit } ord
-}
-preview-details-keywords = Nøgleord
-# The keywords given, and the most the format allows.
-preview-details-keywords-of = { $count } af { $limit }
-preview-details-keywords-placeholder = Adskilt af kommaer
-preview-details-date = Dato
-preview-details-date-placeholder = Som den skal trykkes
-preview-details-language = Tekstens sprog
-# A map that was given no language is printed in English.
-preview-details-language-none = Ikke angivet (engelsk)
-preview-details-cover = Omslag
-preview-details-cover-choose = Vælg et billede…
-preview-details-cover-other = Et andet…
-preview-details-cover-hint = E-bogens omslag: et billede, gemt i billedlageret. Intet andet bruger det.
 
 ## The export: the kinds of file a document is made as.
 

@@ -261,7 +261,8 @@ export interface DocumentFormat {
   };
   lineNumbers: boolean;
   style?: string;
-  limits: {
+  /** Gone with ADR 0038: limits are the template's requirements. Tolerated in old files. */
+  limits?: {
     words: number | null;
     abstractWords: number | null;
     keywords: number | null;

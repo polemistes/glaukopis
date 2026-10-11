@@ -32,6 +32,7 @@ keys-diagram-or-text = Diagram or text
 keys-projects-pane = The list of projects at the left
 keys-up = Up to the element over this one
 keys-preview = Preview and export
+keys-document-settings = Document settings
 keys-side-references = References
 keys-side-pictures = Pictures of the project
 keys-side-comments = Comments

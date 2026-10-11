@@ -48,7 +48,6 @@ format-section-notes = 注
 format-section-bibliography = 参考文献
 format-section-figures = 図・表・数式
 format-section-margins = ページ番号と柱
-format-section-limits = 制限
 format-section-about = この書式について
 
 ## Words that stand in several parts.
@@ -65,7 +64,6 @@ format-as-the-text-zero = 本文と同じ
 format-size-zero-hint = 0で本文と同じサイズ
 # Beside a number of 0, in the place of its unit.
 format-not-said = 指定なし
-format-no-limit = 制限なし
 format-unless-said = 個別の指定がなければ
 format-as-it-will-stand = 組まれる姿
 format-align-left = 左
@@ -349,15 +347,6 @@ format-running-head-author = 著者
 format-running-head-author-title = 著者とタイトル
 format-running-head-text = 自分で書く語句
 format-running-head-words = 語句
-
-## Limits.
-
-format-limits-hint = プレビューはテキストの語数をこれと照らし合わせ、タイトルと要旨のダイアログはその他と照らし合わせます。何も削られません。
-format-limits-words = 本文の語数
-format-limits-abstract-words = 要旨の語数
-format-limits-keywords = キーワード数
-format-limits-note = 制限で数えるもの
-format-limits-note-placeholder = 注を含む、参考文献を含まない
 
 ## About the format: where its requirements are from.
 

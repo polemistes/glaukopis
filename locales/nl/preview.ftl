@@ -4,29 +4,13 @@
 ## The panel beside the map, and what is chosen over it.
 
 preview = Voorbeeld
-# Small, over the choice of the document format.
-preview-format = Formaat
-preview-format-label = Documentformaat
-# Small, over the choice of the reference style.
-preview-style = Referenties
-preview-style-label = Citeerstijl
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Meer stijlen…
-preview-change = Het formaat of de stijl wijzigen
-preview-change-format = Dit formaat wijzigen…
-preview-change-format-hint = Pagina, letter, regelafstand, koppen
-preview-change-style = Deze citeerstijl wijzigen…
-preview-change-style-hint = Naar de wensen van een uitgever
-preview-details = Titel, auteurs, samenvatting
 # Shows in the text the element whose place in the pages is looked at.
 preview-go-to-text = Naar deze plaats in de tekst gaan
 # Moves the pages to where the element the text is at begins.
 preview-show-text = Tonen waar de tekst is
 preview-hide = Het voorbeeld verbergen
-# When a format that goes with a reference style is chosen, the style is taken with it.
-preview-style-taken = De citeerstijl is nu { $style }
-preview-style-taken-why = Het is de stijl waar dit formaat bij hoort.
-preview-style-keep-other = De andere houden
 # The name of the program is Pandoc, Typst or LaTeX.
 preview-program-missing = { $program } is niet geïnstalleerd
 preview-programs-needed = Voorbeeld en export worden gemaakt met Pandoc en Typst. Installeer ze met de pakketbeheerder van je systeem, of zeg in de instellingen waar ze staan.
@@ -75,47 +59,6 @@ preview-works-missing = { $count ->
 preview-works-missing-where = noch in je bibliotheek, noch in het project. Ze zijn in de tekst gemarkeerd.
 # Over what Pandoc and Typst said while they made the document.
 preview-remarks-warnings = Gezegd terwijl het document werd gemaakt
-
-## The details of a document: what stands on its first page.
-
-preview-details-dialog = Het document
-preview-details-dialog-subtitle = Wat op de eerste pagina staat
-preview-details-title = Titel
-preview-details-title-placeholder = De naam van de kern van de mindmap
-preview-details-title-hint = Leeg gelaten is de naam van de kern van de mindmap de titel.
-preview-details-subtitle = Ondertitel
-preview-details-authors = Auteurs
-preview-details-name = Naam
-preview-details-author-name = Naam van auteur { $number }
-preview-details-affiliation = Instelling
-preview-details-author-affiliation = Instelling van auteur { $number }
-preview-details-email = E-mail
-preview-details-author-email = E-mail van auteur { $number }
-# Beside a plus, under the authors: adds one.
-preview-details-add-author = auteur
-preview-details-abstract = Samenvatting
-preview-details-words = { $count ->
-    [one] { $count } woord
-   *[other] { $count } woorden
-}
-# The words of the abstract, and the most the format allows.
-preview-details-words-of = { $limit ->
-    [one] { $count } van { $limit } woord
-   *[other] { $count } van { $limit } woorden
-}
-preview-details-keywords = Trefwoorden
-# The keywords given, and the most the format allows.
-preview-details-keywords-of = { $count } van { $limit }
-preview-details-keywords-placeholder = Gescheiden door komma's
-preview-details-date = Datum
-preview-details-date-placeholder = Zoals ze moet worden gedrukt
-preview-details-language = Taal van de tekst
-# A map that was given no language is printed in English.
-preview-details-language-none = Niet opgegeven (Engels)
-preview-details-cover = Omslag
-preview-details-cover-choose = Een afbeelding kiezen…
-preview-details-cover-other = Een andere…
-preview-details-cover-hint = Het omslag van het e-boek: een afbeelding, bewaard in de beeldbank. Niets anders gebruikt haar.
 
 ## The export: the kinds of file a document is made as.
 

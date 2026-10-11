@@ -193,7 +193,6 @@
     ['bibliography', t('format-section-bibliography')],
     ['figures', t('format-section-figures')],
     ['margins', t('format-section-margins')],
-    ['limits', t('format-section-limits')],
     ['about', t('format-section-about')],
   ]);
 
@@ -640,18 +639,6 @@
     if (spec.basedOn) return specOf(spec.basedOn)?.label() ?? spec.basedOn;
     return spec.family === 'words' ? t('editor-plain-words') : t('editor-text');
   }
-
-  const limitRows: Row<F>[] = $derived([
-    { heading: t('format-section-limits') },
-    { note: t('format-limits-hint') },
-    number(t('format-limits-words'), 'limits.words', counted(1000000, 500, t('format-no-limit'))),
-    number(
-      t('format-limits-abstract-words'),
-      'limits.abstractWords',
-      counted(5000, 10, t('format-no-limit')),
-    ),
-    number(t('format-limits-keywords'), 'limits.keywords', counted(50, 1, t('format-no-limit'))),
-  ]);
 </script>
 
 {#snippet captioned(
@@ -825,15 +812,6 @@
           </div>
         {:else if section === 'margins'}
           <Settings target={f} rows={marginRows} />
-        {:else if section === 'limits'}
-          <Settings target={f} rows={limitRows} />
-          <label class="row tall">
-            <span class="what">{t('format-limits-note')}</span>
-            <textarea
-              rows="3"
-              bind:value={f.limits.note}
-              placeholder={t('format-limits-note-placeholder')}></textarea>
-          </label>
         {:else if section === 'about'}
           <h3>{t('format-section-about')}</h3>
           <label class="row tall">
