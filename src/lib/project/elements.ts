@@ -466,9 +466,8 @@ export function elementMenu(
   // first element puts in hand, or that the project uses already; any of
   // the catalogue, by group, under "More…" (ADR 0038).
   const kindSaid = nodes.every((n) => n.kind === nodes[0].kind) ? nodes[0].kind : undefined;
-  const template = documents.templateCached(
-    documents.choice(project.documentOf(first.id).settings).template,
-  );
+  const chosen = documents.choice(project.documentOf(first.id).settings, project).template;
+  const template = documents.templateCached(chosen) ?? project.templateCopy(chosen);
   const inHand = partsAmong([
     ...(template?.kinds ?? []),
     ...(template?.contents ?? []).flatMap((c) => ('kind' in c ? [c.kind] : [])),

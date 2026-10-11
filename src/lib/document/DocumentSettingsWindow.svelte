@@ -32,7 +32,7 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import { DOCUMENT_SECTIONS, type DocumentSection } from './document-settings.svelte';
   import { checklist, type Remark } from './checklist';
-  import { documents } from '$lib/preview/documents.svelte';
+  import { documents, templateFor, templateName } from '$lib/preview/documents.svelte';
   import { partOf, type PartSpec as PartKind } from '$lib/project/parts';
   import { templateEditorUi } from './template-editor.svelte';
   import {
@@ -61,7 +61,7 @@
   const own = $derived(node?.document ?? {});
   /** What is said of the element with what it inherits, and which element says each thing. */
   const inherited = $derived(project.documentOf(at));
-  const choice = $derived(documents.choice(inherited.settings));
+  const choice = $derived(documents.choice(inherited.settings, project));
 
   $effect(() => {
     documents.load();
@@ -73,9 +73,9 @@
   $effect(() => {
     const id = choice.template;
     void documents.changed;
+    void project.templates;
     untrack(() =>
-      documents
-        .templateOf(id)
+      templateFor(project, id)
         .then((loaded) => {
           if (id === choice.template) template = loaded;
         })
@@ -122,6 +122,23 @@
 
   let query = $state('');
   const templateFrom = $derived(own.template ? null : from('template'));
+  /** A template the chooser lists: as the application lists it, or the project's copy that the application lacks. */
+  interface Listed {
+    id: string;
+    name: string;
+    description: string;
+    ofProject?: boolean;
+  }
+  /**
+   * The templates the project carries a copy of that the application
+   * lacks: brought by a shared project or a file from a computer that has
+   * them. They stand among the writer's own.
+   */
+  const ofProject = $derived<Listed[]>(
+    project.templates
+      .filter((tp) => !documents.templateSummary(tp.id))
+      .map((tp) => ({ id: tp.id, name: tp.name, description: tp.description, ofProject: true })),
+  );
   const templateGroups = $derived.by(() => {
     const q = query.trim().toLocaleLowerCase();
     const fits = (s: { name: string; description: string }) =>
@@ -129,7 +146,10 @@
     return TEMPLATE_GROUPS.map((group) => ({
       group,
       label: templateGroupWords(group),
-      templates: documents.templates.filter((s) => s.group === group && fits(s)),
+      templates: [
+        ...documents.templates.filter((s) => s.group === group && fits(s)),
+        ...(group === 'own' ? ofProject.filter(fits) : []),
+      ] as Listed[],
     })).filter((g) => g.templates.length);
   });
   /** The usual layout and style, from the settings, by name. */
@@ -156,18 +176,36 @@
         : t('document-window-usual', { name: usualStyle }),
   );
 
+  /**
+   * Chooses a template for the element. One of the writer's own is copied
+   * into the project, so that a shared project and a file carry it; one
+   * that came with the application is on every computer already.
+   */
   function setTemplate(id: string) {
     if (id === choice.template && own.template) return;
     write({ template: id });
+    keep(id);
+  }
+
+  function keep(id: string) {
+    if (!documents.templateSummary(id)?.own) return;
+    documents
+      .templateOf(id)
+      .then((tp) => project.keepTemplate($state.snapshot(tp) as Template))
+      .catch(() => {});
   }
 
   function editTemplate(fresh: boolean) {
+    const id = choice.template;
     templateEditorUi.open({
-      id: choice.template,
+      id,
       fresh,
-      onsaved: (id) => {
-        documents.forgetTemplate(id);
-        write({ template: id });
+      // Where the application lacks it, the editor begins from the project's copy.
+      copy: documents.templateSummary(id) ? undefined : project.templateCopy(id),
+      onsaved: (saved) => {
+        documents.forgetTemplate(saved);
+        write({ template: saved });
+        keep(saved);
       },
     });
   }
@@ -375,9 +413,10 @@
         <p class="hint top">{t('document-window-template-hint')}</p>
         {#if templateFrom}
           <p class="from">
-            {t('documents-inherited-from', { name: templateFrom })} · {documents.templateSummary(
+            {t('documents-inherited-from', { name: templateFrom })} · {templateName(
+              project,
               choice.template,
-            )?.name ?? choice.template}
+            )}
           </p>
         {/if}
         {#if own.template}
@@ -414,6 +453,9 @@
                 >
                   <span class="name">{s.name}</span>
                   {#if s.description}<span class="description">{s.description}</span>{/if}
+                  {#if s.ofProject}
+                    <span class="description">{t('document-window-template-of-project')}</span>
+                  {/if}
                 </button>
                 {#if chosen && template && template.id === s.id}
                   <div class="about">

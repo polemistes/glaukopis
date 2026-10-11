@@ -165,11 +165,15 @@ class Documents {
    * element says, or the writer's usual; the style and the format its
    * element says, else what the template brings, else the writer's usual.
    * The template is read if it has not been, and the choice made again
-   * when it arrives.
+   * when it arrives; where the application lacks it, the project's copy
+   * says what it brings.
    */
-  choice(document: { template?: string; style?: string; format?: string }): Choice {
+  choice(
+    document: { template?: string; style?: string; format?: string },
+    project?: Project | null,
+  ): Choice {
     const template = document.template || settings.value.defaultTemplate || PLAIN_TEMPLATE;
-    const brings = this.templateCached(template);
+    const brings = this.templateCached(template) ?? project?.templateCopy(template);
     return {
       template,
       style: document.style || brings?.style || settings.value.defaultStyle,
@@ -179,6 +183,31 @@ class Documents {
 }
 
 export const documents = new Documents();
+
+/**
+ * A template whole, for a document of a project: the application's, or
+ * the project's copy where the application lacks it (ADR 0038). The
+ * application's is the newer where both have it: the project's copy is
+ * made from it. Without a copy, the application's or its error.
+ */
+export async function templateFor(
+  project: Project | null | undefined,
+  id: string,
+): Promise<Template> {
+  const copy = project?.templateCopy(id);
+  if (!copy) return documents.templateOf(id);
+  await documents.load();
+  if (!documents.templateSummary(id)) return copy;
+  return documents.templateOf(id).catch(() => copy);
+}
+
+/**
+ * The name of a template, for a document of a project: as the application
+ * lists it, else as the project's copy has it, else its id.
+ */
+export function templateName(project: Project | null | undefined, id: string): string {
+  return documents.templateSummary(id)?.name || project?.templateCopy(id)?.name || id;
+}
 
 /**
  * The document of an element whole, with the template, the style and the
@@ -192,9 +221,9 @@ export async function documentRequest(
   at: string,
 ): Promise<DocumentRequest> {
   const { settings } = project.documentOf(at);
-  const template = await documents.templateOf(documents.choice(settings).template);
+  const template = await templateFor(project, documents.choice(settings, project).template);
   // The choice again, with the template read: it may bring the style or the format.
-  const choice = documents.choice(settings);
+  const choice = documents.choice(settings, project);
   const format = await documents.format(choice.format);
   return {
     document: buildDocument(project, at),

@@ -30,7 +30,7 @@
   import Popover from '$lib/ui/Popover.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
-  import { documentRequest } from './documents.svelte';
+  import { documentRequest, templateFor, templateName } from './documents.svelte';
   import ExportDialog from './ExportDialog.svelte';
 
   interface Props {
@@ -163,7 +163,7 @@
 
   /** What is said of the element as a document, with what it inherits from those over it. */
   const settings = $derived(project.documentOf(at).settings);
-  const choice = $derived(documents.choice(settings));
+  const choice = $derived(documents.choice(settings, project));
   /**
    * The words of the document, a moment behind the writing: what is shown
    * under the pages is not written anew at every key, which would have the
@@ -294,7 +294,7 @@
         forced = false;
         force = false;
         const f = $state.snapshot(await documents.format(choice.format)) as DocumentFormat;
-        const tp = $state.snapshot(await documents.templateOf(choice.template)) as Template;
+        const tp = $state.snapshot(await templateFor(project, choice.template)) as Template;
         let document = leanDocument(project, at, sent);
         // With what has been changed under the same name: a style saved anew is made anew.
         const from = `${documents.changed}\n${choice.style}\n${JSON.stringify(f)}\n${JSON.stringify(tp)}\n${documentMark(document)}`;
@@ -430,6 +430,7 @@
     void choice.style;
     void choice.format;
     void choice.template;
+    void project.templates;
     void documents.loaded;
     void documents.changed;
     untrack(later);
@@ -447,7 +448,7 @@
 
   /** What the document is made by, named: its template, its layout and its reference style. */
   const inUse = $derived([
-    documents.templateSummary(choice.template)?.name ?? choice.template,
+    templateName(project, choice.template),
     documents.formatSummary(choice.format)?.name ?? choice.format,
     documents.style(choice.style)?.title ?? choice.style,
   ]);

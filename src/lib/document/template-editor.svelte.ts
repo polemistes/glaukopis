@@ -5,11 +5,15 @@
  * as it does the editor of a layout.
  */
 
+import type { Template } from '$lib/api/templates';
+
 export interface TemplateEditorRequest {
   /** The template to begin from. */
   id: string;
   /** A new template is made from it, rather than this one changed. */
   fresh?: boolean;
+  /** The project's copy of the template, to begin from where the application lacks it. */
+  copy?: Template;
   /** Called with the id of the template as saved. */
   onsaved?: (id: string) => void;
 }

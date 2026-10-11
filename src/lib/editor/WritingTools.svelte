@@ -129,7 +129,7 @@
   $effect(() => {
     documents.load();
   });
-  const choice = $derived(documents.choice(ofDocument?.settings ?? {}));
+  const choice = $derived(documents.choice(ofDocument?.settings ?? {}, project));
   let format = $state.raw<DocumentFormat | null>(null);
   $effect(() => {
     const id = choice.format;

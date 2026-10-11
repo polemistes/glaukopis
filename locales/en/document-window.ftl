@@ -35,6 +35,8 @@ document-window-template-layout = Layout: { $layout }
 document-window-template-style = Reference style: { $style }
 document-window-template-change = Change this template…
 document-window-template-new = New template…
+# A template the project carries a copy of, that is not among the writer's own on this computer.
+document-window-template-of-project = Kept in the project: not among your own templates on this computer.
 
 ## The details: what stands on the first page, and in the metadata of the files.
 
