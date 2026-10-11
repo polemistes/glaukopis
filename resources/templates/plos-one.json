@@ -1,0 +1,40 @@
+{
+  "id": "plos-one",
+  "name": "PLOS ONE",
+  "group": "journal",
+  "description": "Manuscripts for PLOS ONE: double-spaced in any standard font, with page numbers and continuous line numbers, a title page as the first page, at most three levels of heading, no footnotes, and an abstract of at most 300 words.",
+  "source": {
+    "name": "PLOS ONE, Submission Guidelines",
+    "url": "https://journals.plos.org/plosone/s/submission-guidelines",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: margins, typeface and size ('a standard font size and any standard font, except for the font named Symbol'), alignment, paragraph indent, hyphenation, the form and numbering of headings, block quotations, the layout of the reference list (the source speaks of the 'reference list'; 'References' is entered), the position of page numbers, keywords. The page size is not stated: letter was chosen for a North American journal. FOOTNOTES ARE NOT PERMITTED: what would be a note goes into the text or the reference list; the values for notes are the general default and should not be used. The text is in one column. The title page bears title, authors and affiliations; the full title has at most 250 characters and is in sentence case. The source does not speak of anonymisation. Figures are not included in the manuscript file. Reference style: Vancouver, numbered in order of citation, numbers in square brackets. DOC, DOCX or RTF; LaTeX as PDF. Submissions are not copyedited."
+  },
+  "basedOn": "article",
+  "layout": "plos-one",
+  "style": "plos",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "keywords" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "acknowledgements" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix", "acknowledgements"],
+  "passageKinds": [],
+  "requirements": {
+    "words": null,
+    "abstractWords": 300,
+    "keywords": null,
+    "anonymous": false,
+    "note": "Manuscripts can be of any length. Abstract of at most 300 words."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

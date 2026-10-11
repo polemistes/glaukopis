@@ -101,6 +101,5 @@
     "content": "none"
   },
   "lineNumbers": false,
-  "style": "chicago-notes-bibliography",
-  "suggests": ["verse"]
+  "style": "chicago-notes-bibliography"
 }

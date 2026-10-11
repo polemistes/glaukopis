@@ -70,6 +70,5 @@
   "pageNumbers": { "show": false, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "apa",
-  "limits": { "note": "The word limit and the count of artwork are set in the contract." }
+  "style": "apa"
 }

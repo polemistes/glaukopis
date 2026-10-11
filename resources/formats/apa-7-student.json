@@ -174,8 +174,5 @@
     "case": "none"
   },
   "lineNumbers": false,
-  "style": "apa",
-  "limits": {
-    "note": "Student papers normally have no abstract. Where one is requested: at most 250 words, and three to five keywords."
-  }
+  "style": "apa"
 }

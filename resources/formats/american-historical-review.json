@@ -63,11 +63,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "chicago-notes-bibliography-17th-edition",
-  "limits": {
-    "words": 8000,
-    "abstractWords": 200,
-    "keywords": 5,
-    "note": "At most 8,000 words, not counting notes, tables and charts; footnotes should be between 4,000 and 5,000 words. Abstract of 150-200 words and four or five keywords, entered in the submission form."
-  }
+  "style": "chicago-notes-bibliography-17th-edition"
 }

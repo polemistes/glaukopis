@@ -69,11 +69,5 @@
   "pageNumbers": { "show": true, "position": "top-right", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "language",
-  "limits": {
-    "words": 18000,
-    "abstractWords": 200,
-    "keywords": 7,
-    "note": "Research articles ideally at most 12,000 words and never more than 18,000, including notes, charts, tables and appendices but excluding references; research reports under 9,000. Abstract of at most 200 words; 5-7 keywords."
-  }
+  "style": "language"
 }

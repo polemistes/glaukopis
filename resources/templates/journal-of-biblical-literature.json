@@ -1,0 +1,40 @@
+{
+  "id": "journal-of-biblical-literature",
+  "name": "Journal of Biblical Literature",
+  "group": "journal",
+  "description": "Articles for the Journal of Biblical Literature: a standard 12-point font, double-spaced, footnotes included; block quotations of five or more lines single-spaced; footnotes in SBL style with no bibliography and no cover page; anonymised, at most 10,000 words.",
+  "source": {
+    "name": "Journal of Biblical Literature, Submission Guidelines (rev. 2026-03-27)",
+    "url": "https://jbl.scholasticahq.com/for-authors",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: alignment, paragraph indent, hyphenation, headings, the indent of block quotations, keywords, page numbers, line numbers. The page size is not stated: letter was chosen for a North American journal. Margins are '1 to 1.25 inches on all sides' (1 inch entered). The font is 'a standard 12-point font ... such as Times New Roman'. Block quotations are in the font and size of the text, without quotation marks. One note per sentence, at its end; no endnotes. No bibliography is sent in with the submission, full details being given at the first citation of each source: the bibliography values are the general default. The abstract is entered at submission. The author's own work is not cited and acknowledgements are left out. Reference style: the SBL Handbook of Style, 2nd ed., traditional footnote style, supplemented by the Chicago Manual, 17th ed.; manuscripts using author-date are returned. Hebrew and Greek in Unicode fonts such as SBL Hebrew and SBL Greek. Submission as searchable PDF, not Word. American spelling."
+  },
+  "basedOn": "article",
+  "layout": "journal-of-biblical-literature",
+  "style": "society-of-biblical-literature-fullnote-bibliography",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "keywords" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix"],
+  "passageKinds": [],
+  "requirements": {
+    "words": 10000,
+    "abstractWords": 200,
+    "keywords": null,
+    "anonymous": true,
+    "note": "At most 10,000 words including footnotes, roughly 38-40 pages. Abstract of no more than 200 words."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

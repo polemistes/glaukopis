@@ -68,10 +68,5 @@
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
   "lineNumbers": false,
-  "style": "chicago-notes-bibliography",
-  "limits": {
-    "words": 16000,
-    "abstractWords": 100,
-    "note": "At most 16,000 words including endnotes. Abstract of 100 words. The title, subtitle included, has at most 85 characters. At most 20 figures."
-  }
+  "style": "chicago-notes-bibliography"
 }

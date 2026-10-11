@@ -1,0 +1,53 @@
+{
+  "id": "university-of-chicago-press-books",
+  "name": "University of Chicago Press (books)",
+  "group": "publisher",
+  "description": "Book manuscripts for the University of Chicago Press: minimal formatting, headings told apart by size (18, 16 and 14 points, bold), notes made with the word processor's note function, a title page, and Chicago style for references.",
+  "source": {
+    "name": "University of Chicago Press, Manuscript Preparation Guidelines",
+    "url": "https://press.uchicago.edu/resource/emsguide.html",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The Press page states almost no layout values; confidence is high only for what it states: the heading sizes (a recommendation, given for 12-point text), left-indented extracts, linked notes, the title page, and Chicago style. Two values are not from the Press page but from the Chicago Manual's free Q&A pages, which speak of manuscripts in general: margins of 1 inch ('a typical default setting') and double spacing of everything, 'even notes and block quotations'. Not specified, and taken from the general default: typeface and size, paragraph indent, alignment, hyphenation, alignment and numbering of headings, the block-quotation threshold, the size of notes, position of page numbers (every page must be numbered), running head. The page size is not stated: letter was chosen for a North American publisher. Notes may be footnotes or endnotes (footnotes entered). References may be notes or author-date, not mixed (notes entered; 'chicago-author-date' is the other). Abstracts are to be removed from the chapters of edited volumes, so none is shown. All text goes in one Word file; each table and figure in a file of its own."
+  },
+  "basedOn": "book",
+  "layout": "university-of-chicago-press-books",
+  "style": "chicago-notes-bibliography",
+  "contents": [
+    { "part": "half-title" },
+    { "part": "title-page" },
+    { "kind": "copyright" },
+    { "kind": "dedication" },
+    { "kind": "epigraph" },
+    { "part": "contents" },
+    { "kind": "foreword" },
+    { "kind": "preface" },
+    { "kind": "acknowledgements" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "glossary" },
+    { "part": "notes" },
+    { "part": "bibliography" },
+    { "kind": "about-the-author" }
+  ],
+  "kinds": [
+    "copyright",
+    "dedication",
+    "epigraph",
+    "foreword",
+    "preface",
+    "acknowledgements",
+    "appendix",
+    "glossary",
+    "afterword",
+    "about-the-author"
+  ],
+  "passageKinds": ["epigraph", "attribution", "headword", "gloss"],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

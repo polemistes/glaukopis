@@ -62,11 +62,5 @@
   },
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
-  "lineNumbers": false,
-  "limits": {
-    "words": 8000,
-    "abstractWords": 250,
-    "keywords": 5,
-    "note": "A chapter should as a rule be 6000-8000 words; the length of the whole is agreed with the publisher. English abstract of 150-250 words and 4-5 English keywords for every chapter."
-  }
+  "lineNumbers": false
 }

@@ -64,9 +64,5 @@
   },
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
-  "lineNumbers": false,
-  "limits": {
-    "keywords": 6,
-    "note": "Five or six keywords where the journal gives no number. Limits on length and abstract are the journal's own."
-  }
+  "lineNumbers": false
 }

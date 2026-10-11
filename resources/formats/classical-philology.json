@@ -62,9 +62,5 @@
   },
   "pageNumbers": { "show": true, "position": "bottom-center", "firstPage": true },
   "runningHead": { "content": "none", "text": "", "align": "left", "case": "none" },
-  "lineNumbers": false,
-  "limits": {
-    "abstractWords": 100,
-    "note": "The limit is stated in pages: manuscripts longer than 45 double-spaced pages are not considered. Abstract of 100 words or fewer."
-  }
+  "lineNumbers": false
 }

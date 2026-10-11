@@ -1,0 +1,59 @@
+{
+  "id": "sage-books",
+  "name": "SAGE (books)",
+  "group": "publisher",
+  "description": "Book manuscripts for SAGE: Times New Roman 12, double-spaced, paragraphs parted by a blank line without indent, no page numbers, headers or footers, at most four levels of heading, notes at the end of each chapter, and APA references.",
+  "source": {
+    "name": "Sage manuscript guidelines (books)",
+    "url": "https://www.sagepub.com/book-author-editors/book-proposal-manuscript-guidelines/sage-manuscript-guidelines",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: margins, alignment, hyphenation, size of headings and of notes, the indent of block quotations, the heading and layout of the reference list, title page, abstract and keywords. The page size is not stated: letter was chosen, SAGE being a North American publisher, though the guide's punctuation is British. The blank line between paragraphs is entered as 12pt. Headings: at most four levels, of which the source describes three (bold; bold italic; italic), with capitals only for the first word and proper nouns; numbering is optional and must not go beyond the second level. Quotations of more than 50 words (entered as from 51) are set off, indented, with space above and below and no quotation marks; short ones take single quotation marks. Notes are double-spaced and gathered at the end of each chapter. No special formatting is to be applied, and bibliographic software such as EndNote is not to be used. Word files only. SAGE journals are not covered: they follow each journal's own guidelines."
+  },
+  "basedOn": "book",
+  "layout": "sage-books",
+  "style": "apa",
+  "contents": [
+    { "part": "half-title" },
+    { "part": "title-page" },
+    { "kind": "copyright" },
+    { "kind": "dedication" },
+    { "kind": "epigraph" },
+    { "part": "contents" },
+    { "kind": "foreword" },
+    { "kind": "preface" },
+    { "kind": "acknowledgements" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "glossary" },
+    { "part": "notes" },
+    { "part": "bibliography" },
+    { "kind": "about-the-author" }
+  ],
+  "kinds": [
+    "copyright",
+    "dedication",
+    "epigraph",
+    "foreword",
+    "preface",
+    "acknowledgements",
+    "appendix",
+    "glossary",
+    "afterword",
+    "about-the-author"
+  ],
+  "passageKinds": ["epigraph", "attribution", "headword", "gloss"],
+  "requirements": {
+    "words": null,
+    "abstractWords": null,
+    "keywords": null,
+    "anonymous": false,
+    "note": "The word limit and the count of artwork are set in the contract."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

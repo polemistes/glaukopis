@@ -1,0 +1,37 @@
+{
+  "id": "apa-7-student",
+  "name": "APA 7 (student paper)",
+  "group": "style-guide",
+  "description": "The student paper of the APA Publication Manual, 7th edition: a title page with course, instructor and due date, no running head and normally no abstract; double spacing throughout, five levels of unnumbered headings, and block quotations from 40 words.",
+  "source": {
+    "name": "APA Style, 7th ed.: Paper Format (apastyle.apa.org)",
+    "url": "https://apastyle.apa.org/style-grammar-guidelines/paper-format",
+    "checked": "2026-09-18",
+    "confidence": "high",
+    "notes": "Read from Internet Archive snapshots of the official APA Style pages, taken between 2026-03-30 (margins) and 2026-09-21 (the live site refuses automated requests); the date given is that of the snapshot of the main page. The page size is not stated: letter was chosen for a North American source. APA permits several fonts: sans serif 12 pt Aptos, 11 pt Calibri, 11 pt Arial, 10 pt Lucida Sans Unicode; serif 12 pt Times New Roman, 11 pt Georgia, 10 pt Computer Modern. Headings are in the type of the text; the source forbids extra blank lines above or below them, which is entered as 16.8pt, the distance between double-spaced lines of 12-point type. Footnotes are left by the source to the word processor's defaults ('usually single-spaced and a slightly smaller font'): 10 pt and single spacing are the general default. They may also be gathered on a page after the references. Not specified: file format, anonymisation. The student title page also bears the course number and name, the instructor's name and the assignment due date, of which only the date can be shown here. Student papers 'generally do not include an abstract unless requested', so none is shown. Of the fonts the source permits, Times New Roman is entered, being the one most manuscripts in the humanities are set in; any of the others may be chosen in its place. Figures are set as the Publication Manual has them in its chapter on tables and figures, which the page named here does not cover: the number in bold above the figure, and the title in italics on the line beneath the number. Tables are set as the same chapter of the manual has them: the number in bold above the table, the title in italics on the line beneath it, the table at the left margin, with lines over it, under its headings and under it, and none between its columns."
+  },
+  "basedOn": "paper",
+  "layout": "apa-7-student",
+  "style": "apa",
+  "contents": [
+    { "part": "title-page" },
+    { "part": "body" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": [],
+  "passageKinds": [],
+  "requirements": {
+    "words": null,
+    "abstractWords": null,
+    "keywords": null,
+    "anonymous": false,
+    "note": "Student papers normally have no abstract. Where one is requested: at most 250 words, and three to five keywords."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "american-anthropologist",
+  "name": "American Anthropologist",
+  "group": "journal",
+  "description": "Manuscripts for American Anthropologist: Times New Roman 12, double-spaced and aligned left, endnotes and not footnotes, Chicago author-date references; anonymised, and at most 8,000 words at first submission.",
+  "source": {
+    "name": "American Anthropologist, Submitting to the Journal",
+    "url": "https://www.americananthropologist.org/how-to-submit",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "Not specified, and taken from the general default: margins, paragraph indent, hyphenation, headings, block quotations, size and spacing of notes, the heading and layout of the reference list (the source speaks of 'references'; 'References' is entered), page numbers, keywords, line numbers. The page size is not stated: letter was chosen for a North American journal. The title page, with the authors' details, is a file of its own. The list of references must not be embedded in the endnotes. For review the author's own citations are replaced by 'Author', as in '(Author 2003, 13)', and the entries themselves are removed from the list; this must be done by hand. The file name must not contain the author's name. Reference style: any format at submission; for accepted papers the Chicago Manual, author-date, the edition not named. The AAA's own style guide was not read, and the style the index holds under the Association's name was not compared with it. Word files. Figures and tables preferably at the end of sections; captions and alternative text after the references."
+  },
+  "basedOn": "article",
+  "layout": "american-anthropologist",
+  "style": "chicago-author-date",
+  "contents": [
+    { "part": "title-page" },
+    { "kind": "abstract" },
+    { "part": "keywords" },
+    { "part": "body" },
+    { "kind": "appendix" },
+    { "kind": "acknowledgements" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": ["abstract", "appendix", "acknowledgements"],
+  "passageKinds": [],
+  "requirements": {
+    "words": 8000,
+    "abstractWords": 200,
+    "keywords": null,
+    "anonymous": true,
+    "note": "Research articles at most 8,000 words at first submission, including figures, tables, references and notes, and excluding transcriptions and the abstract; up to 10,500 after acceptance. Abstract of 200 words."
+  },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}

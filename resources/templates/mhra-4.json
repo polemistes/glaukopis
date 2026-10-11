@@ -1,0 +1,31 @@
+{
+  "id": "mhra-4",
+  "name": "MHRA Style Guide 4",
+  "group": "style-guide",
+  "description": "Copy prepared as the MHRA Style Guide, 4th edition (2024) asks: a serif font in one size throughout, double or one-and-a-half spacing, few levels of heading, and prose quotations of more than forty words set off as a block without quotation marks.",
+  "source": {
+    "name": "MHRA Style Guide, 4th ed. (2024), chapters 1, 2, 7 and 8",
+    "url": "https://www.mhra.org.uk/style/",
+    "checked": "2026-09-27",
+    "confidence": "high",
+    "notes": "The guide is deliberately sparing about layout ('Do not overdesign your copy'). Not specified, and taken from the general default: margins, font size (12), alignment, hyphenation, the amount of indentation, whether headings are numbered, the position of page numbers (which must be visible), the layout of the bibliography, title page, abstract and keywords (left to the journal or series). The page size is not stated: A4 was chosen for a British source. The source asks for 'a serif font such as Times New Roman', in one size throughout, notes and long quotations included: hence 12 for notes, headings and title. Line spacing may be double or 1.5 (double entered). A new paragraph may be shown by indentation or by more space (indentation entered). Headings are to be told apart 'for instance, by putting headings in bold and subheadings in italics'; excessive levels are to be avoided. Quotations: prose of more than forty words (entered as from 41) or verse of more than two lines. Notes may be footnotes or endnotes, as the publisher decides (footnotes entered). References may be in notes or author-date, on an equal footing; the notes style is given, and 'mhra-author-date' is the other."
+  },
+  "basedOn": "paper",
+  "layout": "mhra-4",
+  "style": "mhra-notes",
+  "contents": [
+    { "part": "title-page" },
+    { "part": "body" },
+    { "part": "notes" },
+    { "part": "bibliography" }
+  ],
+  "kinds": [],
+  "passageKinds": [],
+  "requirements": { "words": null, "abstractWords": null, "keywords": null, "anonymous": false, "note": "" },
+  "outputs": [
+    {
+      "id": "document",
+      "targets": ["pdf", "docx", "odt", "latex", "pdf-latex", "markdown", "html", "epub", "typst"]
+    }
+  ]
+}
