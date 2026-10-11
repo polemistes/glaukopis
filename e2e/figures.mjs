@@ -158,6 +158,10 @@ try {
   await sleep(200);
   check('an equation likewise', (await app.text('.formula-panel .note-number')).toLowerCase() === 'equation');
   await app.clickText('.formula-panel .signs button', '∑');
+  // The caret is put within the first braces once the sign is in.
+  await until('the caret within the sign', () =>
+    app.exec(`const t = document.querySelector('.formula-panel textarea'); return t.value.includes('sum_{}^{}') && t.selectionStart === 6`),
+  );
   await app.keys('i=1');
   await app.exec(`const t = document.querySelector('.formula-panel textarea'); t.focus(); t.setSelectionRange(t.value.length, t.value.length);`);
   await app.keys(' i = \\frac{n(n+1)}{2}');
@@ -294,13 +298,18 @@ try {
   await until('the figures in the text of the map', async () => (await app.count('.text-view figure img[src^="blob:"]')) === 3, 10000);
   check('in the text of the map the figures are shown', true);
   check('and the mathematics', (await app.count('.text-view .math math')) === 2, String(await app.count('.text-view .math math')));
-  const counted = await until('the numbers of the figures', async () => {
-    const labels = await app.exec(
+  // The numbers are counted through the document of the element in view, the
+  // project: the third figure, on the element under it, is the third. The label
+  // of a figure may be set a moment after it is drawn.
+  const labelsOf = () =>
+    app.exec(
       `return Array.from(document.querySelectorAll('.text-view figure figcaption')).map((f) => (f.dataset.label || '').replace(/\u00a0/g, ' ').trim()).join('|')`,
     );
-    return labels.split('|').every(Boolean) ? labels : null;
-  });
-  check('the figures are counted through the map', counted === 'Figure 1.|Figure 2.|Figure 3', counted);
+  const counted = await until('the numbers of the figures', async () => {
+    const labels = await labelsOf();
+    return labels === 'Figure 1.|Figure 2.|Figure 3' ? labels : null;
+  }).catch(labelsOf);
+  check('the figures are counted through the element in view', counted === 'Figure 1.|Figure 2.|Figure 3', counted);
   await sleep(400);
   await app.screenshot('figures-6-text');
 

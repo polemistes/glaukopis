@@ -114,7 +114,7 @@ function formula(tex) {
   return el;
 }
 
-/** The text that is written into the centre of the map. */
+/** The text that is written into the project element, the top of the project's one tree. */
 const written = () => [
   paragraph(
     'The wrath is that of a hero ',
@@ -181,9 +181,8 @@ try {
     if (loaded.state) Y.applyUpdate(doc, fromBase64(loaded.state));
     for (const update of loaded.updates) Y.applyUpdate(doc, fromBase64(update));
     const before = Y.encodeStateVector(doc);
-    const [map] = [...doc.getMap('maps').values()];
-    const centre = doc.getMap('nodes').get(map.get('root'));
-    doc.transact(() => centre.get('body').insert(0, written()));
+    const top = doc.getMap('nodes').get('project');
+    doc.transact(() => top.get('body').insert(0, written()));
     await app.projectAppend(id, toBase64(Y.encodeStateAsUpdate(doc, before)));
   }
   await app.clickText('.card h3', 'Homer');
@@ -300,7 +299,7 @@ try {
   await app.openThisMap();
   const ofTab = await menu();
   check(
-    'the menu of the tab of the map has it, with how many there are',
+    'the menu of the element in view has it, with how many there are',
     ofTab.some((m) => /^Citations that were found…\s*7 to go through/.test(m)),
     ofTab.join(' ‖ '),
   );

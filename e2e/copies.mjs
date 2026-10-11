@@ -1,4 +1,4 @@
-// Copies between maps: a copy says when its original has changed since it
+// Copies between trees of a project: a copy says when its original has changed since it
 // was made, and the two can be compared, and the copy take what the
 // original is now.
 
@@ -41,27 +41,22 @@ try {
   await app.click('.diagram .node.root');
   await add('Tab', 'The word menis');
 
-  // A second map, and back to the first.
+  // A second tree under the project, beside the first; the view stays at the project.
   await app.newMap();
   await app.keys('Article');
   await app.press('Enter');
-  // A new map opens as text: the diagram is turned to.
-  await app.clickText('header [role="radio"]', 'Diagram');
-  await app.waitFor('.diagram .node.root', 8000);
+  await app.waitForText('.diagram .node .caption', 'Article', 5000);
   await sleep(400);
-  await app.openMap('Wrath');
-  await app.waitFor('.diagram .node:not(.root)', 5000);
-  await sleep(300);
 
-  // --- The element is copied to the other map ---
+  // --- The element is copied to the other tree ---
   await app.rightClick(await app.findByText('.diagram .node', 'The word menis'));
   await app.waitFor('.menu');
   await sleep(150);
-  await app.clickText('.menu [role="menuitem"]', 'Copy to map');
+  await app.clickText('.menu [role="menuitem"]', 'Copy to');
   await sleep(200);
   await app.clickText('.menu [role="menuitem"]', 'Article');
   await sleep(400);
-  check('an element is copied to another map', true);
+  check('an element is copied to another tree', true);
 
   // --- The original changes ---
   await app.click(await app.findByText('.diagram .node', 'The word menis'));
@@ -74,7 +69,7 @@ try {
   await app.waitGone('.diagram .node.renaming', 3000);
   await sleep(300);
 
-  // --- The copy says so ---
+  // --- The copy says so: the tree is entered from the bar ---
   await app.openMap('Article');
   await app.waitFor('.diagram .node .mark.behind', 5000);
   await sleep(300);

@@ -12,7 +12,7 @@
  * write the text of elements through y-prosemirror.
  */
 
-import { t } from '$lib/i18n';
+import { newTextLanguage, t } from '$lib/i18n';
 import type { Bound, When } from '$lib/timeline/solve';
 import { SvelteMap } from 'svelte/reactivity';
 import * as Y from 'yjs';
@@ -417,7 +417,7 @@ export class Project {
    */
   begin(name: string): boolean {
     if (!needsMigration(this.doc)) return false;
-    this.doc.transact(() => migrate(this.doc, name), TIDY);
+    this.doc.transact(() => migrate(this.doc, name, newTextLanguage()), TIDY);
     return true;
   }
 

@@ -327,6 +327,7 @@
             fragment={body}
             kind="body"
             element={node.id}
+            {at}
             placeholder={level === 0 ? t('text-first-section') : ''}
             autofocus={focus?.part === 'body' ? focus.at : null}
             onaction={(a, v) => onaction(node.id, 'body', a, v)}
@@ -338,7 +339,7 @@
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           <div
             class="prose body static"
-            use:hydrate={{ html, project, element: node.id }}
+            use:hydrate={{ html, project, element: node.id, at }}
             use:spellingMarks={{
               project,
               element: node.id,

@@ -61,10 +61,10 @@ try {
       y,
     );
   const said = () => app.exec(`return document.querySelector('.search-bar .said')?.textContent.trim() ?? null`);
-  /** The paragraphs of the text of the centre, the first section. */
+  /** The paragraphs of the text of the document's top element, a tree under the project. */
   const paragraphs = () =>
     app.exec(
-      `const s = document.querySelector('.text-view .section'); return Array.from(s.querySelectorAll('.body p')).map((p) => p.textContent)`,
+      `const s = Array.from(document.querySelectorAll('.text-view .section')).find((e) => e.querySelector('.heading .title')?.textContent.trim() === 'The wrath'); return Array.from(s.querySelectorAll('.body p')).map((p) => p.textContent)`,
     );
   const fill = async (index, words) => {
     await app.exec(`const i = document.querySelectorAll('.search-bar input')[arguments[0]]; i.focus(); i.select();`, index);
@@ -84,9 +84,10 @@ try {
   );
   await drop([join(desk, 'wrath.md')], at.x, at.y);
   await app.waitFor('dialog [data-fact="words"]', 15000);
-  await app.clickText('dialog footer button', 'Make the map');
+  // The document is brought in as a tree under the project, and shown in the text.
+  await app.clickText('dialog footer button', 'Bring it in');
   await app.waitGone('dialog[open]', 15000);
-  await app.waitFor('.text-view .section', 8000);
+  await app.waitForText('.text-view .section .heading .title', 'The wrath', 8000);
   await sleep(800);
 
   // ---- the break within a paragraph is drawn, and is not text ----
@@ -198,23 +199,22 @@ try {
   check('with its text', !!text && text.includes('Under one, a text.'), text);
   await app.screenshot('breaks-4-pasted');
 
-  // ---- the menu of an element offers the other projects ----
+  // ---- the menu of an element offers the project, its trees and the other projects ----
   await app.clickText('header [role="radio"]', 'Diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
   await app.rightClick(await app.findByText('.diagram .node', 'One'));
   await app.waitFor('.menu');
   await sleep(200);
-  await app.clickText('.menu [role="menuitem"]', 'Copy to map');
+  await app.clickText('.menu [role="menuitem"]', 'Copy to');
   await sleep(400);
   const offered = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((m) => m.textContent.trim())`);
-  check('Copy to map offers the other projects', offered.some((m) => m.includes('Wrath')), offered.join(' | '));
+  check('Copy to offers the project itself', offered.some((m) => m === 'Odyssey'), offered.join(' | '));
+  check('and the other projects', offered.some((m) => m.includes('Wrath')), offered.join(' | '));
+  // Another project chosen: the element goes there at once, under its project element.
   await app.clickText('.menu [role="menuitem"]', 'Wrath');
-  await sleep(400);
-  const maps = await app.exec(`const menus = document.querySelectorAll('.menu'); return Array.from(menus[menus.length - 1].querySelectorAll('[role="menuitem"]')).map((m) => m.textContent.trim())`);
-  await app.exec(`const menus = document.querySelectorAll('.menu'); menus[menus.length - 1].querySelector('[role="menuitem"]').click()`);
   const toast = await until('the toast of the copy', () => app.exec(`return Array.from(document.querySelectorAll('.toast, [role="status"]')).map((t) => t.textContent).find((t) => /copied/i.test(t)) ?? null`), 15000);
-  check('and copies the element there', !!toast, `${maps.join(' | ')} → ${toast}`);
+  check('and copies the element there', !!toast, toast);
   await app.screenshot('breaks-5-copied');
 
   const errors = await app.pageErrors();

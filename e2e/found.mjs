@@ -168,6 +168,14 @@ try {
     app.exec(
       `const b = Array.from(document.querySelectorAll('${W} .taken button')).find((b) => /certain/.test(b.textContent)); return b ? b.textContent.replace(/\\s+/g, ' ').trim() : null`,
     );
+  /** Presses that button; it may stand scrolled half out of the panel, where a click of the pointer is refused. */
+  const takeCertain = async () => {
+    await press(
+      await app.exec(
+        `return Array.from(document.querySelectorAll('${W} .taken button')).find((b) => /certain/.test(b.textContent)) || null`,
+      ),
+    );
+  };
   /** The list of all there is, folded open; it stays open once opened. */
   const openList = async () => {
     const toggle = await app.exec(
@@ -207,7 +215,34 @@ try {
          text: body.map((b) => b.textContent).join(' ').replace(/\\s+/g, ' '),
        };`,
     );
+  /** The trees under the project, as the bar lists them while the project is in view. */
   const tabs = () => app.mapNames();
+  /** Enters a tree under the project from the bar, by its whole name, so that its text is read alone. */
+  const enter = async (name) => {
+    await app.openMaps();
+    await press(
+      await until(`${name} among the trees`, () =>
+        app.exec(
+          `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).find((m) => m.textContent.trim() === arguments[0]) || null`,
+          name,
+        ),
+      ),
+    );
+    await until(
+      `${name} in view`,
+      async () =>
+        (await app.exec(`return document.querySelector('.maps .map .name')?.textContent.trim()`)) ===
+        name,
+    );
+    await sleep(400);
+  };
+  /** Back up to the project, under which the next document is to go. */
+  const up = async () => {
+    if (!(await app.exists('.maps .up'))) return;
+    await app.click('.maps .up');
+    await until('the project in view', async () => !(await app.exists('.maps .up')));
+    await sleep(300);
+  };
   const fact = (name) =>
     app.exec(
       `const e = document.querySelector('dialog [data-fact="' + arguments[0] + '"]'); return e ? e.textContent.replace(/\\s+/g, ' ').trim() : null`,
@@ -275,13 +310,14 @@ try {
     /cited 6 times/.test(await fact('cited')),
     await fact('cited'),
   );
-  await app.clickText('dialog footer button', 'Make the map');
+  await app.clickText('dialog footer button', 'Bring it in');
   await opened(15000);
   check(
-    'when the map is made, the panel opens for it',
-    JSON.stringify(await tabs()) === '["Homer","The wrath, cited by tags"]',
+    'when the tree is made, the panel opens for it',
+    JSON.stringify(await tabs()) === '["The wrath, cited by tags"]',
     JSON.stringify(await tabs()),
   );
+  await enter('The wrath, cited by tags');
   const tagged = await rows();
   check(
     'with the tags that name a work the library does not have',
@@ -334,6 +370,7 @@ try {
   // =====================================================================
   // A Word file with citations made by Zotero and Mendeley
   // =====================================================================
+  await up();
   await dropOnProject(join(documents, 'cited.docx'));
   check(
     'of a document written with Zotero, the dialog says how many were found, and that a program made them',
@@ -346,8 +383,9 @@ try {
     (await choice('at-once')) === true && (await choice('go-through')) === true,
   );
   await app.screenshot('found-doc-2-dialog');
-  await app.clickText('dialog footer button', 'Make the map');
+  await app.clickText('dialog footer button', 'Bring it in');
   await opened(15000);
+  await enter('The wrath, cited');
   let text = await inText();
   check(
     'made at once: those of which the library has every work by the key of its item',
@@ -558,6 +596,7 @@ try {
   // =====================================================================
   // An OpenDocument file, with nothing made at once
   // =====================================================================
+  await up();
   await dropOnProject(join(documents, 'cited.odt'));
   check(
     'of an OpenDocument file written with Zotero, the dialog says the same',
@@ -575,8 +614,9 @@ try {
   );
   await app.exec(`const i = document.querySelector('dialog input'); i.focus(); i.select();`);
   await app.keys('The wrath, from LibreOffice');
-  await app.clickText('dialog footer button', 'Make the map');
+  await app.clickText('dialog footer button', 'Bring it in');
   await opened(15000);
+  await enter('The wrath, from LibreOffice');
   await sleep(200);
   text = await inText();
   list = await rows();
@@ -600,7 +640,7 @@ try {
     (await atOnce()) === 'Make citations of the 4 that are certain',
     await atOnce(),
   );
-  await app.clickText(`${W} .taken button`, 'that are certain');
+  await takeCertain();
   await sleep(900);
   text = await inText();
   list = await rows();
@@ -727,7 +767,7 @@ try {
     (await rows()).length === 3,
     JSON.stringify(await rows()),
   );
-  await app.clickText(`${W} .taken button`, 'that are certain');
+  await takeCertain();
   await sleep(900);
   list = await rows();
   check(
@@ -762,7 +802,7 @@ try {
       (await current()) === list[0].split(' | ')[0],
       await current(),
     );
-    await app.clickText(`${W} .taken button`, 'that are certain');
+    await takeCertain();
     await sleep(900);
     text = await inText();
     check(
@@ -848,6 +888,7 @@ try {
   await app.clickText('.card h3', 'Homer');
   await app.waitFor('.maps .map', 8000);
   await sleep(600);
+  await up();
 
   // =====================================================================
   // What only looks like a citation
@@ -857,11 +898,13 @@ try {
     'of a text in which nothing was found, nothing is said of it, and nothing asked',
     (await fact('found')) === null && (await choice('go-through')) === null,
   );
-  await app.clickText('dialog footer button', 'Make the map');
+  await app.clickText('dialog footer button', 'Bring it in');
   await app.waitGone('dialog[open]', 15000);
   await app.waitFor('.text-view .section', 8000);
   await sleep(600);
-  check('and no panel opens when the map is made', !(await app.exists(W)));
+  check('and no panel opens when the tree is made', !(await app.exists(W)));
+  // Entered, the panel is of this tree alone.
+  await enter('What looks like citations');
   await openWindow();
   const nothing = await app.text(`${W} .nothing`);
   check(

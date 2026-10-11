@@ -127,9 +127,12 @@ try {
   );
   await drop([join(desk, 'book.md')], at.x, at.y);
   await app.waitFor('dialog [data-fact="words"]', 15000);
-  await app.clickText('dialog footer button', 'Make the map');
+  // The document is a tree under the project; entered from the bar, its text is read alone.
+  await app.clickText('dialog footer button', 'Bring it in');
   await app.waitGone('dialog[open]', 15000);
-  await app.waitFor('.text-view .section', 8000);
+  await app.waitForText('.text-view .section .heading .prose.title', 'The book', 8000);
+  await app.openMap('The book');
+  await until('the book in view', async () => (await shown())[0] === 'The book');
   await sleep(600);
   check('the text has all its elements', JSON.stringify(await shown()) === JSON.stringify(ALL), JSON.stringify(await shown()));
   const counted = await words();

@@ -921,8 +921,10 @@ describe('the language of the text', () => {
   it('is that of the project element where one is chosen, and reaches every element that says nothing itself', () => {
     const { p, root } = project();
     const a = p.addChild(root, { title: 'A' })!;
-    expect(p.language).toBeNull();
-    expect(p.documentOf(a).settings.language).toBeUndefined();
+    // A project that begins is in the language of new texts, written into it (ADR 0020).
+    expect(p.language).toBe('en-US');
+    expect(p.documentOf(a).settings.language).toBe('en-US');
+    expect(p.documentOf(a).from.get('language')).toBe(root);
     p.setLanguage('nn');
     expect(p.language).toBe('nn');
     expect(p.node(root)!.document.language).toBe('nn');

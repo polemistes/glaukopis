@@ -1,4 +1,4 @@
-// Documents brought in from files, each to become a map of its own.
+// Documents brought in from files, each to become a tree under the element in view.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -175,6 +175,7 @@ try {
     const at = await middleOf('.project .work .panes');
     await drop([join(desk, file)], at.x, at.y);
   };
+  /** The trees under the project, as the bar lists them while the project is in view. */
   const tabs = () => app.mapNames();
   const facts = () =>
     app.exec(
@@ -187,7 +188,7 @@ try {
     app.exec(
       `return Array.from(document.querySelectorAll('dialog .remarks li')).map((e) => e.textContent.trim())`,
     );
-  /** The parts of the text of the map: the level of each with its name. */
+  /** The parts of the text of the element in view: the level of each with its name. */
   const parts = () =>
     app.exec(
       `return Array.from(document.querySelectorAll('.text-view .section')).map((s) => {
@@ -226,9 +227,9 @@ try {
   await sleep(300);
   await app.openThisMap();
   check(
-    'among the maps, a map can be made from a document',
+    'in the menu of the element in view, a document can be brought into it',
     await app.exec(
-      `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).some((m) => m.textContent.includes('A map from a document'))`,
+      `return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).some((m) => m.textContent.includes('A document into it'))`,
     ),
   );
   await app.press('Escape');
@@ -248,7 +249,7 @@ try {
     await app.screenshot('documents-1-failure');
     await app.clickText('dialog footer button', 'Close');
     await app.waitGone('dialog[open]');
-    check('and nothing is made of it', (await tabs()).length === 1);
+    check('and nothing is made of it', (await tabs()).length === 0, JSON.stringify(await tabs()));
   }
 
   // ---- a document dropped on the project, and let be ----
@@ -257,7 +258,9 @@ try {
   await sleep(200);
   check(
     'a document dropped on the project is read',
-    (await app.text('dialog h2, dialog .title, dialog header')).includes('A map from a document'),
+    (await app.text('dialog h2, dialog .title, dialog header')).includes(
+      'A document into the element in view',
+    ),
   );
   const title = await app.exec(`return document.querySelector('dialog input').value`);
   check('its title is shown, to be changed', title === 'The wrath of Achilles', title);
@@ -301,15 +304,15 @@ try {
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]');
   await sleep(300);
-  check('let be, no map is made', (await tabs()).length === 1, (await tabs()).join(', '));
+  check('let be, no tree is made', (await tabs()).length === 0, (await tabs()).join(', '));
   check('and its picture is not kept', files().length === 0, files().join(', '));
 
-  // ---- the map is made ----
+  // ---- the tree is made ----
   await dropOnProject('wrath.md');
   await app.waitFor('dialog [data-fact="words"]', 15000);
   await sleep(200);
   check('dropped again, it is read again', (await facts()).parts === '6');
-  await app.clickText('dialog footer button', 'Make the map');
+  await app.clickText('dialog footer button', 'Bring it in');
   // The document has a citation that was found: the panel in which such are gone through opens.
   await app.waitFor('.found-panel .detail', 15000);
   await sleep(300);
@@ -329,12 +332,26 @@ try {
   await app.waitFor('.text-view .section', 8000);
   await sleep(600);
   check(
-    'the map is made, beside the one that was there',
-    JSON.stringify(await tabs()) === '["Homer","The wrath of Achilles"]',
+    'the tree is made under the project',
+    JSON.stringify(await tabs()) === '["The wrath of Achilles"]',
     JSON.stringify(await tabs()),
   );
   check(
-    'and shown',
+    'and shown in the text, under the project',
+    JSON.stringify((await parts()).slice(0, 3)) ===
+      JSON.stringify(['0 Homer', '1 The wrath of Achilles', '2 The word']),
+    JSON.stringify(await parts()),
+  );
+  // Entered from the bar, it is read as a document of its own.
+  await app.openMap('The wrath of Achilles');
+  await app.waitForText(
+    '.text-view .section.level-0 .heading .prose.title',
+    'The wrath of Achilles',
+    8000,
+  );
+  await sleep(400);
+  check(
+    'entered, it is the element in view',
     (await app.exec(`return document.querySelector('.maps .map .name').textContent.trim()`)) ===
       'The wrath of Achilles',
   );
@@ -477,14 +494,14 @@ try {
   // Where a work is cited is shown when it is chosen, and gone to with a click.
   const citedIn = () =>
     app.exec(
-      `return Array.from(document.querySelectorAll('.side .cited .map')).map((m) =>
-         m.querySelector('.map-name').textContent.trim() + ': ' +
+      `return Array.from(document.querySelectorAll('.side .cited .tree')).map((m) =>
+         m.querySelector('.tree-name').textContent.trim() + ': ' +
          Array.from(m.querySelectorAll('.element')).map((e) => e.textContent.trim()).join(', '))`,
     );
   await app.click(await app.findByText('.side [role="option"]', 'Nagy'));
   await app.waitFor('.side .cited .element', 5000);
   check(
-    'where a chosen work is cited is shown, by map and element',
+    'where a chosen work is cited is shown, by tree and element',
     JSON.stringify(await citedIn()) === '["The wrath of Achilles: The word"]',
     JSON.stringify(await citedIn()),
   );
@@ -533,20 +550,25 @@ try {
   );
   await app.screenshot('documents-5-diagram');
 
-  // ---- undo takes the whole map back ----
+  // ---- undo takes the whole tree back; the view, in it, goes up to the project ----
   await app.click('header button[aria-label^="Undo"]');
   await sleep(500);
   check(
-    'undo takes the whole map back, in one step',
-    JSON.stringify(await tabs()) === '["Homer"]',
+    'undo takes the whole tree back, in one step',
+    JSON.stringify(await tabs()) === '[]',
     JSON.stringify(await tabs()),
   );
-  check('and what is shown is the map that is left', await app.exists('.diagram .node.root'));
+  check(
+    'and what is shown is the project, which is left',
+    (await app.exec(
+      `return document.querySelector('.diagram .node.root .caption')?.textContent.trim()`,
+    )) === 'Homer',
+  );
   await app.click('header button[aria-label^="Redo"]');
   await sleep(500);
   check(
     'redo makes it again',
-    JSON.stringify(await tabs()) === '["Homer","The wrath of Achilles"]',
+    JSON.stringify(await tabs()) === '["The wrath of Achilles"]',
     JSON.stringify(await tabs()),
   );
   await app.screenshot('documents-6-again');
@@ -575,15 +597,23 @@ try {
        i.dispatchEvent(new Event('input', { bubbles: true }));`,
     );
     await app.screenshot('documents-7-word');
-    await app.clickText('dialog footer button', 'Make the map');
+    await app.clickText('dialog footer button', 'Bring it in');
     await app.waitGone('dialog[open]', 15000);
     await app.waitFor('.text-view .section', 8000);
     await sleep(600);
     check(
-      'the map has the title it was given',
-      JSON.stringify(await tabs()) === '["Homer","The wrath of Achilles","The wrath, from Word"]',
+      'the tree has the title it was given',
+      JSON.stringify(await tabs()) === '["The wrath of Achilles","The wrath, from Word"]',
       JSON.stringify(await tabs()),
     );
+    // Entered, so that it is read alone.
+    await app.openMap('The wrath, from Word');
+    await app.waitForText(
+      '.text-view .section.level-0 .heading .prose.title',
+      'The wrath, from Word',
+      8000,
+    );
+    await sleep(400);
     const again = await parts();
     check(
       'and the same parts',
@@ -634,6 +664,12 @@ try {
       files().join(', '),
     );
     await app.screenshot('documents-8-word-text');
+    // Back up to the project, under which the documents that follow are to go.
+    await app.click('.maps .up');
+    await until('the project in view', () =>
+      app.exec(`return document.querySelector('.maps .map .name')?.textContent.trim() === 'Homer'`),
+    );
+    await sleep(300);
   } else {
     console.log('Pandoc is not installed: the document from Word is passed over');
   }
@@ -673,14 +709,15 @@ try {
      }, 10);`,
   );
   const clicked = Date.now();
-  await app.clickText('dialog footer button', 'Make the map');
+  await app.clickText('dialog footer button', 'Bring it in');
   await app.waitGone('dialog[open]', 60000);
   const made = Date.now() - clicked;
+  // A tree under the project, shown in the text of the project.
   await until(
     'the long document to be shown',
     () =>
       app.exec(
-        `const n = document.querySelector('.text-view .section.level-0 .heading .prose.title'); return !!n && n.textContent.trim() === 'A long book'`,
+        `return Array.from(document.querySelectorAll('.text-view .section .heading .prose.title')).some((n) => n.textContent.trim() === 'A long book')`,
       ),
     30000,
   );
@@ -696,14 +733,14 @@ try {
   );
   const still = Math.round(await app.exec(`clearInterval(window.__probe); return window.__still;`));
   console.log(
-    `      a document of 2000 paragraphs under 60 headings: read in ${read} ms, the map made in ${made} ms, shown after ${shown} ms (${drawn.parts} parts and ${drawn.paragraphs} paragraphs drawn); the window stood still for ${still} ms at the most`,
+    `      a document of 2000 paragraphs under 60 headings: read in ${read} ms, the tree made in ${made} ms, shown after ${shown} ms (${drawn.parts} parts and ${drawn.paragraphs} paragraphs drawn); the window stood still for ${still} ms at the most`,
   );
   await app.exec(
     `document.querySelector('.text-view .section').scrollIntoView({ block: 'start' });`,
   );
   await sleep(300);
   check(
-    'the map of it is made without the window standing still for long',
+    'the tree of it is made without the window standing still for long',
     still < 4000,
     `${still} ms`,
   );
@@ -720,7 +757,7 @@ try {
     JSON.stringify(await tabs()),
   );
   console.log(
-    `      the maps of the project, as they were last written: ${JSON.stringify(elements)}`,
+    `      the trees of the project, as they were last written: ${JSON.stringify(elements)}`,
   );
 
   // ---- while a file is read, the reading can be stopped ----
@@ -762,10 +799,11 @@ try {
   const named = await app.exec(`return document.title.replace(/^Glaukopis – /, '')`);
   check('the project is named after the document', named === 'The wrath of Achilles', named);
   check(
-    'and has the document as its map, and no other',
+    'and has the document as its one tree, and no other',
     JSON.stringify(await tabs()) === '["The wrath of Achilles"]',
     JSON.stringify(await tabs()),
   );
+  // The project opens entered at the document's top element: its seven parts are read alone.
   check('with its parts', (await parts()).length === 7, JSON.stringify(await parts()));
   check(
     'there is nothing to take back: the project begins with it',

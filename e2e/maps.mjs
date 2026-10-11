@@ -615,22 +615,41 @@ try {
   );
   await app.screenshot('maps-12-diagram-again');
 
-  // --- A second map, and the two side by side ---
+  // --- A second tree under the project, entered and left; then two side by side ---
+  // "New element under it" in the bar adds a child of the element in view, the
+  // project, and names it there; the view stays where it was.
   await app.newMap();
   await app.keys('Article');
   await app.press('Enter');
-  // A new map opens as text: the diagram is turned to.
-  await app.clickText('header [role="radio"]', 'Diagram');
   await app.waitFor('.diagram .node.root', 8000);
   await sleep(300);
-  check('a second map', (await app.mapNames()).length === 2, (await app.mapNames()).join(' | '));
+  const rootName = () =>
+    app.exec(`return document.querySelector('.diagram .node.root .caption')?.textContent.trim()`);
   check(
-    'whose centre is named with it',
-    (await titles(app)).includes('Article'),
+    'a new element under the project is one of its trees',
+    (await app.mapNames()).includes('Article'),
+    (await app.mapNames()).join(' | '),
+  );
+  check(
+    'and is in the diagram, under the project',
+    (await titles(app)).includes('Article') && (await rootName()) === 'Wrath and the hero',
     (await titles(app)).join(' | '),
   );
-  // Side by side, from the bar; the other pane shows the map chosen in its own bar.
-  await app.openMap('Wrath and the hero');
+  // Entered from the bar: the name of the project pulls down its trees.
+  await app.openMap('Article');
+  await app.waitFor('.diagram .node.root', 8000);
+  await sleep(300);
+  check('entered from the bar, it is the element in view', (await rootName()) === 'Article', await rootName());
+  // And left by the parent's name, small, before it.
+  await app.click('.maps .up');
+  await app.waitFor('.diagram .node.root', 8000);
+  await sleep(300);
+  check(
+    "the parent's name in the bar goes up",
+    (await rootName()) === 'Wrath and the hero',
+    await rootName(),
+  );
+  // Side by side; the other pane shows the element chosen in its own bar.
   await app.click('header button[aria-label="Two side by side"]');
   await sleep(500);
   check('two maps side by side, from the bar', (await app.count('.pane')) === 2);
@@ -701,9 +720,10 @@ try {
   await app.installErrorHook();
   await app.waitFor('.card', 8000);
   const facts = await app.exec(`return document.querySelector('.card .facts').textContent`);
+  // The trees under the project: the five made here and Article.
   check(
     'the list of projects tells what is in the project',
-    /2 maps/.test(facts) && /words/.test(facts),
+    /6 trees/.test(facts) && /words/.test(facts),
     facts,
   );
   await app.screenshot('maps-14-projects');

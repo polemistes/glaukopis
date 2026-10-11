@@ -1,5 +1,6 @@
 // Text read from PDFs and pictures by Tesseract (ADR 0018): a scanned PDF
-// and a picture brought into a project as maps, a reading stopped, a PDF
+// and a picture brought into a project as trees under the element in view
+// (ADR 0037), a reading stopped, a PDF
 // attached to a reference made searchable (with how it is read changed, and
 // the text it has taken away), a map from a PDF of the library, the text of a
 // picture of the store, and Tesseract in the settings.
@@ -145,6 +146,13 @@ try {
     app.exec(
       `return Array.from(document.querySelectorAll('dialog [data-languages] .chip')).map((e) => e.dataset.language)`,
     );
+  /** Waits for the text view to read the element of this name as its document. */
+  const inView = (name) =>
+    app.waitUntil(
+      `return document.querySelector('.text-view .section.level-0 .heading .prose.title')?.textContent.trim() === ${JSON.stringify(name)}`,
+      8000,
+      `${name} in view`,
+    );
   const sections = () =>
     app.exec(
       `return Array.from(document.querySelectorAll('.text-view .section')).map((s) => ({
@@ -178,7 +186,7 @@ try {
   await app.waitFor('.text-view .section', 20000);
   await sleep(500);
   check(
-    'the project is made, and its map is the scan',
+    'the project is made, and the scan is the tree under it',
     JSON.stringify(await tabs()) === '["The Wrath of Achilles"]',
     JSON.stringify(await tabs()),
   );
@@ -186,7 +194,7 @@ try {
   await app.waitFor('.home', 5000);
   await sleep(300);
 
-  // ---- a scanned PDF becomes a map, in a project ----
+  // ---- a scanned PDF becomes a tree under the element in view, in a project ----
   await app.clickText('button', 'Begin a project');
   await app.waitFor('dialog input');
   await app.type('dialog input', 'Homer');
@@ -248,15 +256,19 @@ try {
     told.join(' ‖ '),
   );
   await app.screenshot('ocr-2-read');
-  await app.clickText('dialog footer button', 'Make the map');
+  await app.clickText('dialog footer button', 'Bring it in');
   await app.waitGone('dialog[open]', 15000);
   await app.waitFor('.text-view .section', 8000);
   await sleep(500);
   check(
-    'the map is made, named after the document',
-    JSON.stringify(await tabs()) === '["Homer","The Wrath of Achilles"]',
+    'a tree is made under the project, named after the document',
+    JSON.stringify(await tabs()) === '["The Wrath of Achilles"]',
     JSON.stringify(await tabs()),
   );
+  // Entered, it is read as a document of its own.
+  await app.openMap('The Wrath of Achilles');
+  await inView('The Wrath of Achilles');
+  await sleep(300);
   const read = await sections();
   check(
     'its elements are the pages, named by their numbers',
@@ -279,7 +291,10 @@ try {
   );
   await app.screenshot('ocr-3-map');
 
-  // ---- a picture becomes a map ----
+  // ---- a picture becomes a tree under the project ----
+  await app.click('.maps .up');
+  await inView('Homer');
+  await sleep(300);
   await dropOnTabs(picture);
   await app.waitFor('dialog [data-ocr="asking"]', 15000);
   check(
@@ -295,12 +310,15 @@ try {
       await app.exec(`return document.querySelector('dialog').textContent`),
     ) && (await facts()).parts === '0',
   );
-  await app.clickText('dialog footer button', 'Make the map');
+  await app.clickText('dialog footer button', 'Bring it in');
   await app.waitGone('dialog[open]', 15000);
   await sleep(600);
+  await app.openMap('one');
+  await inView('one');
+  await sleep(300);
   const fromPicture = await sections();
   check(
-    'and its text is the text of the centre of its map',
+    'and its text is the text of the element made of it',
     fromPicture.length === 1 &&
       fromPicture[0].name === 'one' &&
       /Many a brave soul/.test(fromPicture[0].text),
@@ -308,6 +326,9 @@ try {
   );
 
   // ---- a PDF that has text: taken as it is, or read anew ----
+  await app.click('.maps .up');
+  await inView('Homer');
+  await sleep(300);
   await dropOnTabs(written);
   await app.waitFor('dialog [data-ocr="asking"]', 15000);
   const aboutText = await app.text('dialog [data-ocr="asking"] .about');
@@ -351,7 +372,7 @@ try {
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
   await sleep(1500);
-  check('cancelled, no map is made', (await tabs()).length === 3, JSON.stringify(await tabs()));
+  check('cancelled, no tree is made', (await tabs()).length === 2, JSON.stringify(await tabs()));
   check('and what was made on the way is gone', leftOver().length === 0, leftOver().join(', '));
 
   // ---- a PDF of the library made searchable ----

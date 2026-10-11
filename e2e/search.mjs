@@ -1,6 +1,6 @@
-// Searching: in the text of a map, with the options and replacing; in the
-// edit box of an element in the diagram; and through everything, in two
-// projects.
+// Searching: in the text of the element in view, with the options and
+// replacing; in the edit box of an element in the diagram; and through
+// everything, in two projects.
 
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -128,11 +128,15 @@ try {
   );
   await drop([join(desk, 'wrath.md')], at.x, at.y);
   await app.waitFor('dialog [data-fact="words"]', 15000);
-  await app.clickText('dialog footer button', 'Make the map');
+  await app.clickText('dialog footer button', 'Bring it in');
   await app.waitGone('dialog[open]', 15000);
   await app.waitFor('.text-view .section', 8000);
   await sleep(600);
-  check('the map is made of the document', (await names()).join('|') === 'The wrath|One|One A|Two|Three', (await names()).join('|'));
+  // The document is a tree under the project, which is entered, so that its text is the one searched.
+  await app.openMap('The wrath');
+  await until('the tree of the document', async () => (await names())[0] === 'The wrath', 8000);
+  await sleep(300);
+  check('a tree is made of the document, and entered', (await names()).join('|') === 'The wrath|One|One A|Two|Three', (await names()).join('|'));
 
   // ---- One is folded, so that what is under it is hidden ----
   await section('One');
@@ -353,7 +357,7 @@ try {
   await app.keys('wrath');
   await until('the projects again', async () => (await results()).length === 2, 15000);
   await sleep(400);
-  // Choosing what was found in the element that was folded opens the map at it.
+  // Choosing what was found in the element that was folded opens the project at the tree that holds it.
   await app.exec(`Array.from(document.querySelectorAll('.search-view .hit')).find((h) => h.textContent.includes('Deep under')).dataset.pick = '1'`);
   const chosen = await app.exec(`return document.querySelector('.search-view .hit[data-pick]').textContent.replace(/\\s+/g, ' ').trim()`);
   await app.click('.search-view .hit[data-pick]');
@@ -363,7 +367,7 @@ try {
     let marked = null; for (const r of CSS.highlights.get('search-current') ?? []) marked = r;
     const section = marked && marked.startContainer.parentElement.closest('[data-section]');
     return { said: document.querySelector('.search-bar .said').textContent.trim(), text: marked && marked.toString(), element: section && section.querySelector('.heading').textContent.trim() };`);
-  check('choosing what was found opens the map at it, with the search in the bar', there.text === 'wrath' && there.element === 'One A' && there.said === '5 of 5', `${chosen} → ${JSON.stringify(there)}`);
+  check('choosing what was found opens the project at it, with the search in the bar', there.text === 'wrath' && there.element === 'One A' && there.said === '5 of 5', `${chosen} → ${JSON.stringify(there)}`);
   await app.screenshot('search-9-gone-to');
 
   // ---- in a table and an equation, drawn without an editor ----
@@ -394,11 +398,17 @@ $$E = mc^2$$
   const middleOfPanes = await app.exec(
     `const r = document.querySelector('.project .work .panes').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }`,
   );
+  // Up to the project, so that the document becomes a tree beside the first, and then into it.
+  await app.click('.maps .up');
+  await until('the project in view', async () => (await names())[0] === 'Wrath', 8000);
+  await sleep(300);
   await drop([join(desk, 'table.md')], middleOfPanes.x, middleOfPanes.y);
   await app.waitFor('dialog [data-fact="words"]', 15000);
-  await app.clickText('dialog footer button', 'Make the map');
+  await app.clickText('dialog footer button', 'Bring it in');
   await app.waitGone('dialog[open]', 15000);
-  await until('the map of the table', async () => (await names()).includes('Second'), 10000);
+  await until('the tree of the table', async () => (await names()).includes('Second'), 10000);
+  await app.openMap('The table');
+  await until('the tree of the table in view', async () => (await names())[0] === 'The table', 8000);
   await sleep(800);
   // No editor has the cursor: the search begins at the top of the text.
   await app.exec(`document.activeElement?.blur()`);

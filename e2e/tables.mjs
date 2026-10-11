@@ -760,8 +760,8 @@ try {
   // What is no table, and what is too large.
   where = await at(`${text} > p:last-of-type`);
   await drop([join(desk, 'a letter.txt')], where.x, where.y);
-  // It is a document then, of which a map can be made.
-  await app.waitForText('dialog', 'A map from a document', 8000);
+  // It is a document then, of which a tree can be made under the element in view.
+  await app.waitForText('dialog', 'A document into the element in view', 8000);
   check(
     'a text that holds no table is not taken for one',
     !(await app.exists('dialog .from-file')),

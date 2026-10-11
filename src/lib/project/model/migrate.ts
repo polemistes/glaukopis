@@ -26,14 +26,17 @@ const record = (value: unknown): Record<string, unknown> | null =>
 
 /**
  * Brings the document into shape. `name` is the project's name, for its
- * element when that is made and nothing else names it. Returns whether
- * anything was changed.
+ * element when that is made and nothing else names it; `language` is the
+ * language new texts are given, for a project that begins now, written
+ * into it as it was into a new map, so that it is the same for all who
+ * share it. Returns whether anything was changed.
  */
-export function migrate(doc: Y.Doc, name: string): boolean {
+export function migrate(doc: Y.Doc, name: string, language?: string): boolean {
   const yMaps = doc.getMap<YNode>('maps');
   const yNodes = doc.getMap<YNode>('nodes');
   const yMeta = doc.getMap<unknown>('meta');
   let changed = false;
+  let made = false;
 
   if (!yNodes.has(PROJECT)) {
     const n = new Y.Map<unknown>();
@@ -45,16 +48,21 @@ export function migrate(doc: Y.Doc, name: string): boolean {
     yNodes.set(PROJECT, n);
     fillTitle(title, (str(yMeta.get('name')) || name).replace(/\s+/g, ' ').trim());
     changed = true;
+    made = true;
   }
   const project = yNodes.get(PROJECT)!;
 
   // The language new maps were given becomes the project's own, which every element inherits.
-  const language = str(yMeta.get('language')).trim();
-  if (language) {
+  const had = str(yMeta.get('language')).trim();
+  if (had) {
     const own = record(project.get('document')) ?? {};
-    if (!own.language) project.set('document', { ...own, language });
+    if (!own.language) project.set('document', { ...own, language: had });
     yMeta.delete('language');
     changed = true;
+  } else if (made && language) {
+    // A project that begins now: in the language new texts are given.
+    const own = record(project.get('document')) ?? {};
+    if (!own.language) project.set('document', { ...own, language });
   }
 
   if (!yMaps.size) return changed;

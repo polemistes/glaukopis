@@ -263,6 +263,7 @@
         fragment={text}
         kind="body"
         element={id}
+        at={within}
         placeholder={t('project-write-here')}
         autofocus={begin === 'body' ? 'end' : null}
         onaction={bodyAction}
