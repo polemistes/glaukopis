@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
+import { term } from '$lib/i18n';
 import { buildDocument } from './document';
 import { migrate, needsMigration } from './migrate';
 import { Project } from './project.svelte';
@@ -152,7 +153,7 @@ describe('an abstract or a cover in the settings of an element', () => {
     expect(needsMigration(p.doc)).toBe(true);
     const doc = new Y.Doc();
     Y.applyUpdate(doc, Y.encodeStateAsUpdate(p.doc));
-    expect(migrate(doc, 'Wrath')).toBe(true);
+    expect(migrate(doc, 'Wrath', undefined, term)).toBe(true);
     expect(needsMigration(doc)).toBe(false);
 
     const q = new Project(null);

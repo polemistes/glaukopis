@@ -325,7 +325,7 @@ try {
     JSON.stringify(mapFacts),
   );
   await app.screenshot('library-7b-map-dialog');
-  await app.clickText('dialog footer button', 'Make the project');
+  await app.clickText('dialog footer button', 'Make the map');
   await app.waitFor('.text-view .section', 15000);
   await sleep(600);
   const projectName = await app.exec(`return document.title.replace(/^Glaukopis – /, '')`);

@@ -121,6 +121,8 @@ try {
   await app.exec(
     `const l = Array.from(document.querySelectorAll('.text-view .verse .verse-line')).pop(); const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
   );
+  // The editor takes up a selection set from outside on the next event: give it time before the keys.
+  await sleep(150);
   await app.press('Enter');
   await app.press('Enter');
   await sleep(200);

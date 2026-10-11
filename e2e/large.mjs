@@ -152,7 +152,7 @@ async function make() {
     const said = await app.exec(
       `return document.querySelector('dialog [data-fact="words"]').textContent.replace(/\\s+/g, ' ').trim()`,
     );
-    await app.clickText('dialog footer button', 'Make the map');
+    await app.clickText('dialog footer button', 'Bring it in');
     await until('the map', () => app.exec(`return !document.querySelector('dialog[open]')`), 60000);
     if (await app.exists('.found-panel')) {
       await app.click('.found-panel header button[aria-label="Close"]');
@@ -351,11 +351,9 @@ async function measure() {
          const begins = await h.begins();
          at = performance.now();
          let passages = 0;
-         // Every map of the project, since the text that was written in is in one of them.
-         for (const map of h.project.maps) {
-           const c = await h.compare(map.id, { moment: begins.snapshot, accepted: [] });
-           passages += c.passages.length;
-         }
+         // The whole tree of the project, since the text that was written in is in it (ADR 0037).
+         const c = await h.compare('project', { moment: begins.snapshot, accepted: [] });
+         passages += c.passages.length;
          const comparing = Math.round(performance.now() - at);
          return { reading, comparing, sessions: sessions.length, passages, room: await h.room() };`,
       );

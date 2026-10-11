@@ -10,7 +10,6 @@
 
 import { generateKeyBetween } from 'fractional-indexing';
 import * as Y from 'yjs';
-import { term } from '$lib/i18n';
 import { newId } from '$lib/util/id';
 import { str } from './origins';
 import { fillBody, fillTitle, inlineText, readTitle } from './text';
@@ -44,9 +43,17 @@ export function needsMigration(doc: Y.Doc): boolean {
  * element when that is made and nothing else names it; `language` is the
  * language new texts are given, for a project that begins now, written
  * into it as it was into a new map, so that it is the same for all who
- * share it. Returns whether anything was changed.
+ * share it. `word` gives a word of documents in a language (`term` of the
+ * words of the interface), left out where this runs in a thread of its own
+ * that must not take the interface in (the search through everything).
+ * Returns whether anything was changed.
  */
-export function migrate(doc: Y.Doc, name: string, language?: string): boolean {
+export function migrate(
+  doc: Y.Doc,
+  name: string,
+  language?: string,
+  word?: (language: string | null | undefined, id: string) => string | null,
+): boolean {
   const yMaps = doc.getMap<YNode>('maps');
   const yNodes = doc.getMap<YNode>('nodes');
   const yMeta = doc.getMap<unknown>('meta');
@@ -80,7 +87,7 @@ export function migrate(doc: Y.Doc, name: string, language?: string): boolean {
     if (!own.language) project.set('document', { ...own, language });
   }
 
-  if (!yMaps.size) return partsOut(yNodes) || changed;
+  if (!yMaps.size) return partsOut(yNodes, word) || changed;
 
   const maps = [...yMaps.entries()]
     .filter((entry): entry is [string, YNode] => entry[1] instanceof Y.Map)
@@ -190,7 +197,7 @@ export function migrate(doc: Y.Doc, name: string, language?: string): boolean {
   }
 
   for (const map of maps) yMaps.delete(map.id);
-  partsOut(yNodes);
+  partsOut(yNodes, word);
   return true;
 }
 
@@ -216,7 +223,10 @@ function languageOf(yNodes: Y.Map<YNode>, id: string): string | undefined {
  * an element of the kind `cover`, whose text is the picture as a figure.
  * The settings lose the two. Returns whether anything was changed.
  */
-function partsOut(yNodes: Y.Map<YNode>): boolean {
+function partsOut(
+  yNodes: Y.Map<YNode>,
+  word?: (language: string | null | undefined, id: string) => string | null,
+): boolean {
   let changed = false;
   for (const [id, n] of [...yNodes.entries()]) {
     if (!holdsParts(n)) continue;
@@ -251,7 +261,7 @@ function partsOut(yNodes: Y.Map<YNode>): boolean {
       fill(body);
     };
     if (abstract)
-      make(term(languageOf(yNodes, id), 'document-abstract') ?? 'Abstract', 'abstract', (body) =>
+      make(word?.(languageOf(yNodes, id), 'document-abstract') ?? 'Abstract', 'abstract', (body) =>
         fillBody(body, abstract),
       );
     if (hash)

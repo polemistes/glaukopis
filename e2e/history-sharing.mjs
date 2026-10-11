@@ -39,7 +39,7 @@ async function changes(app, since) {
   return ask(
     app,
     `const people = new Map((await h.people()).map((p) => [p.id, p.name]));
-     const map = h.project.maps[0].id;
+     const map = h.project.tree().root;
      const c = await h.compare(map, { moment: new Uint8Array(arguments[0]), accepted: [] });
      const p = c.passages.find((x) => x.kind === 'paragraph');
      return p ? p.pieces.filter((x) => x.status !== 'same').map((x) => [x.status, x.text, people.get(x.by) ?? x.by]) : [];`,

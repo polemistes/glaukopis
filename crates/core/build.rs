@@ -39,6 +39,16 @@ fn main() {
     }
     out.push_str("];\n");
 
+    // A program without its words says "a message has no words" everywhere: a
+    // build that finds no English files, as when the folder is being rewritten
+    // under it, stops rather than make one.
+    if !out.contains("(\"en\", \"core") {
+        panic!(
+            "no Fluent files of the core were found in {}: build again when the folder is whole",
+            root.display()
+        );
+    }
+
     let target = Path::new(&std::env::var("OUT_DIR").expect("cargo sets OUT_DIR")).join("locales.rs");
     fs::write(target, out).expect("the list of Fluent files could not be written");
 }

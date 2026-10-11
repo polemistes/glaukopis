@@ -52,7 +52,7 @@ try {
   await sleep(1200);
 
   // ---- compare ----
-  const map = await app.exec(`return window.__glaukopisHistory.history.project.maps[0].id`);
+  const map = await app.exec(`return window.__glaukopisHistory.history.project.tree().root`);
   const changes = await ask(
     app,
     `const c = await h.compare(arguments[0], { moment: new Uint8Array(arguments[1]), accepted: [] });

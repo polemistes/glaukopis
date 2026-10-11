@@ -33,6 +33,9 @@ const DATA = [
   '.row .container',
   '.work .title',
   '.fonts',
+  // The names of templates, layouts and styles, and what the built-in templates say of themselves.
+  '.in-use',
+  '.template',
 ].join(', ');
 
 // Names that are English, and words that are quoted as they are written
@@ -68,6 +71,18 @@ async function english(where) {
   if (found.length) leftovers.push(`${where}: ${found.join(' | ')}`);
 }
 const leftovers = [];
+
+/** Turns to a part of the open document settings, by the words of this language. */
+async function settingsSection(name) {
+  await app.clickText('dialog[open] .window nav button', name);
+  await app.waitForText('dialog[open] .window .settings h3', name, 3000);
+  await sleep(150);
+}
+async function closeSettings() {
+  await app.clickText('dialog[open] footer button', 'Avbryt');
+  await app.waitGone('dialog[open] .window nav', 5000);
+  await sleep(150);
+}
 
 const app = await App.launch({ width: 1360, height: 900, env: { GLAUKOPIS_LANGUAGE: 'nb-NO' } });
 try {
@@ -162,94 +177,115 @@ try {
   await app.press('Escape');
   await sleep(200);
 
-  // ---- the preview, and the details of the document ----
+  // ---- the preview, and the settings of the document ----
   await app.keys(['Control', 'p']);
   await app.waitFor('.preview', 8000);
   await sleep(1500);
   await english('the preview');
-  await app.click('.preview button[aria-label="Tittel, forfattere, sammendrag"]');
-  await app.waitFor('dialog select');
-  await sleep(200);
-  await english('the details of the document');
-  const written = await app.exec(`return document.querySelector('dialog select').value`);
-  check('a new map is written in the language of the system', written === 'nb', written);
+  // The document settings are a window; the preview's button opens it.
+  await app.click('.preview button.in-use');
+  await app.waitForText('dialog[open] h2', 'Dokumentinnstillinger', 5000);
+  await sleep(300);
+  await english('the document settings');
   await app.screenshot('languages-4-details');
-  await app.press('Escape');
-  await sleep(200);
+  await settingsSection('Språk');
+  await english('the language in the document settings');
+  const written = await app.exec(`return document.querySelector('dialog select').value`);
+  check('a new project is written in the language of the system', written === 'nb', written);
+  await closeSettings();
   await app.keys(['Control', 'p']);
   await sleep(300);
 
-  // ---- the languages of the map and of the project, from the menu of the map ----
+  // ---- the language of the element in view and of the project, from the menu of the element ----
+  // The language of the project is that of the project's own element; what
+  // an element does not say is taken from the nearest that does.
   const chosen = () =>
     app.exec(`return Array.from(document.querySelectorAll('dialog select')).map((s) => s.value)`);
-  const choose = (which, value) =>
+  const inherited = () =>
+    app.exec(`return document.querySelector('dialog[open] .window .from')?.textContent.trim() ?? ''`);
+  const choose = (value) =>
     app.exec(
-      `const s = document.querySelectorAll('dialog select')[arguments[0]];
-       s.value = arguments[1]; s.dispatchEvent(new Event('change', { bubbles: true }));`,
-      which,
+      `const s = document.querySelector('dialog select');
+       s.value = arguments[0]; s.dispatchEvent(new Event('change', { bubbles: true }));`,
       value,
     );
   const openLanguages = async () => {
     await app.openThisMap();
     await app.clickText('.menu [role="menuitem"]', 'Språk …');
+    await app.waitForText('dialog[open] h2', 'Dokumentinnstillinger', 5000);
     await app.waitFor('dialog select');
     await sleep(200);
   };
+  const up = async () => {
+    await app.click('.maps .up');
+    await sleep(300);
+  };
   await app.openThisMap();
-  await english('the menu of the map');
+  await english('the menu of the element in view');
   await app.press('Escape');
   await sleep(200);
   await openLanguages();
-  await english('the languages of the map and of the project');
+  await english('the language of the project');
   check(
-    'the dialog has the language of the map, and none chosen for the project',
-    JSON.stringify(await chosen()) === '["nb",""]',
+    'the project has the language of the system',
+    JSON.stringify(await chosen()) === '["nb"]',
     JSON.stringify(await chosen()),
   );
   await app.screenshot('languages-4d-languages');
-  await choose(0, 'en-GB');
-  await choose(1, 'nn');
+  await choose('nn');
   await sleep(200);
   check(
-    'the languages are written as they are chosen',
-    JSON.stringify(await chosen()) === '["en-GB","nn"]',
+    'the language is written as it is chosen',
+    JSON.stringify(await chosen()) === '["nn"]',
     JSON.stringify(await chosen()),
   );
-  await app.press('Escape');
-  await app.waitGone('dialog');
+  await closeSettings();
+  // The first tree under the project takes its language, and is given one of its own.
+  await app.openMap((await app.mapNames())[0]);
+  await openLanguages();
+  check(
+    'the first tree takes the language of the project',
+    JSON.stringify(await chosen()) === '[""]' && /nynorsk/i.test(await inherited()),
+    JSON.stringify(await chosen()) + ' ' + (await inherited()),
+  );
+  await choose('en-GB');
   await sleep(200);
-  // A new map is written in the language of the project.
+  await closeSettings();
+  // Up to the project, and a new element made under it, in the language of the project.
+  await up();
   await app.openThisMap();
-  await app.clickText('.menu [role="menuitem"]', 'Nytt kart');
+  await app.clickText('.menu [role="menuitem"]', 'Nytt element under');
   await app.waitFor('.maps .naming');
   await sleep(150);
   await app.keys('Annen sang');
   await app.press('Enter');
   await app.waitGone('.maps .naming');
   await sleep(300);
+  await app.openMap('Annen sang');
   await openLanguages();
   check(
-    'a new map is written in the language of the project',
-    JSON.stringify(await chosen()) === '["nn","nn"]',
-    JSON.stringify(await chosen()),
+    'a new element is written in the language of the project',
+    JSON.stringify(await chosen()) === '[""]' && /nynorsk/i.test(await inherited()),
+    JSON.stringify(await chosen()) + ' ' + (await inherited()),
   );
-  await app.press('Escape');
-  await app.waitGone('dialog');
-  await sleep(200);
-  // The first map keeps the language it was given, and is put back as it was.
-  await app.openMap((await app.mapNames())[0]);
+  await closeSettings();
+  // The first tree keeps the language it was given; the project is put back as it was.
+  await up();
+  await app.openMap('Første sang');
   await openLanguages();
   check(
-    'the first map keeps the language it was given',
-    JSON.stringify(await chosen()) === '["en-GB","nn"]',
+    'the first tree keeps the language it was given',
+    JSON.stringify(await chosen()) === '["en-GB"]',
     JSON.stringify(await chosen()),
   );
-  await choose(0, 'nb');
-  await choose(1, '');
+  await choose('');
   await sleep(200);
-  await app.press('Escape');
-  await app.waitGone('dialog');
+  await closeSettings();
+  await up();
+  await openLanguages();
+  await choose('nb');
   await sleep(200);
+  await closeSettings();
 
   // ---- the history of the project ----
   await app.keys(['Control', 'Shift', 'h']);
