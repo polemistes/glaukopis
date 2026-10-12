@@ -959,7 +959,7 @@ try {
   check('and so in the document', /#gk-around\(/.test(typ()));
   await sleep(1500);
   await app.screenshot('tables-12-around-preview');
-  await app.clickText('.table-panel [role="radiogroup"] button', 'As the format');
+  await app.clickText('.table-panel [role="radiogroup"] button', 'As the layout');
   await app.clickText('.table-panel button', 'Stands apart');
   await sleep(200);
   await app.clickText('.table-panel button', 'Done');
