@@ -122,8 +122,8 @@ describe('the Org form of a project', () => {
       lines(
         ':COMMENTS:',
         '- [2026-10-12 Robert] on "gods before men": Is this Nagy\'s phrase?',
-        '  - [2026-10-13 Anna Berg]: Yes, Best of the Achaeans, p. 73. (settled)',
-        '- [2026-10-12 Robert]: A note on the scene,',
+        '  - [2026-10-13 Anna Berg] Yes, Best of the Achaeans, p. 73. (settled)',
+        '- [2026-10-12 Robert] A note on the scene,',
         '    \\- on two lines',
         '    \\:END:',
         '    \\\\ and more \\(settled)',

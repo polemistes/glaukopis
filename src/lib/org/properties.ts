@@ -134,7 +134,7 @@ export function readPlist(s: string): Map<string, unknown> {
 export function writeKv(said: [string, Value | null | undefined][]): string {
   return said
     .filter((p): p is [string, Value] => p[1] !== null && p[1] !== undefined && p[1] !== '')
-    .map(([k, v]) => (v === true && k !== 'yes' ? k : `${k}=${valueText(v)}`))
+    .map(([k, v]) => (v === true ? k : `${k}=${valueText(v)}`))
     .join(' ');
 }
 
@@ -684,27 +684,35 @@ export function readTemplate(lines: string[]): Template | null {
 
 const SETTLED = ' (settled)';
 
-/** The first line of a note: who, when, on which words, and the first line of what it says. */
+/**
+ * The head of a note: when, who, and on which words, as the record has it:
+ * `[2026-10-12 Robert] on "gods before men":`. The author is written as
+ * JSON where a bracket or a quote would end the head too soon.
+ */
 function noteHead(note: OrgNote, words: string | null | undefined): string {
   const author =
     /^[^\s"\]\\][^\]\\]*$/.test(note.author) && note.author === note.author.trim()
       ? note.author
       : JSON.stringify(note.author);
   const date = note.date.replace(/\s+/g, '') || '-';
-  const on = words !== undefined && words !== null ? ` on ${JSON.stringify(words)}` : '';
-  return `[${date} ${author}]${on}:`;
+  const on = words !== undefined && words !== null ? ` on ${JSON.stringify(words)}:` : '';
+  return `[${date} ${author}]${on}`;
 }
 
-/** What a note says, as lines under its head: each further line indented, with a backslash where it would read as something else. */
+/**
+ * What a note says, as lines: the first after its head, each further one
+ * indented under it, with a backslash where it would read as something
+ * else; `(settled)` after the last note of a settled thread.
+ */
 function noteLines(text: string, indent: string, last: boolean, resolved: boolean): string[] {
   const lines = text.split('\n');
   const n = lines.length - 1;
-  // Words that end as a settled thread does, which this one is not, keep a backslash.
+  // Words that end as a settled thread does, where it is not that, keep a backslash.
   if (!(last && resolved) && lines[n].endsWith('(settled)'))
     lines[n] = `${lines[n].slice(0, -'(settled)'.length)}\\(settled)`;
   if (last && resolved) lines[n] += SETTLED;
   return lines.map((l, k) => {
-    if (!k) return l ? ` ${l}` : '';
+    if (!k) return l ? ` ${/^(\\|:|on ")/.test(l) ? '\\' : ''}${l}` : '';
     return `${indent}${/^[\s\-:\\]/.test(l) || !l ? '\\' : ''}${l}`;
   });
 }
@@ -721,7 +729,6 @@ export function writeComments(threads: OrgThread[]): string[] {
       else out.push(`  - ${noteHead(note, undefined)}${first}`);
       out.push(...rest);
     });
-    if (!t.notes.length) out.push(`- ${noteHead({ author: '', date: '', text: '' }, t.words)}`);
   }
   out.push(':END:');
   return out;
@@ -731,8 +738,7 @@ export function writeComments(threads: OrgThread[]): string[] {
 export function readComments(lines: string[], element: string): OrgThread[] {
   const out: OrgThread[] = [];
   let note: OrgNote | null = null;
-  const head =
-    /^(\s*)-\s+\[(\S+)\s+("(?:\\.|[^"\\])*"|[^\]]*)\](?:\s+on\s+("(?:\\.|[^"\\])*"))?:\s?(.*)$/;
+  const head = /^(\s*)-\s+\[(\S+)\s+("(?:\\.|[^"\\])*"|[^\]]*)\](.*)$/;
   for (const line of lines) {
     const m = head.exec(line);
     if (m) {
@@ -743,17 +749,24 @@ export function readComments(lines: string[], element: string): OrgThread[] {
         } catch {
           // As it is.
         }
-      note = { author, date: m[2] === '-' ? '' : m[2], text: m[5] };
-      if (!m[1] || !out.length) {
-        let words: string | null = null;
-        if (m[4])
-          try {
-            words = JSON.parse(m[4]);
-          } catch {
-            words = m[4].slice(1, -1);
-          }
-        out.push({ element, words, resolved: false, notes: [note] });
-      } else out[out.length - 1].notes.push(note);
+      let rest = m[4];
+      let words: string | null = null;
+      const on = /^\s+on\s+("(?:\\.|[^"\\])*"):/.exec(rest);
+      if (on) {
+        try {
+          words = JSON.parse(on[1]);
+        } catch {
+          words = on[1].slice(1, -1);
+        }
+        rest = rest.slice(on[0].length);
+      }
+      // A colon after the head where it is on no words is not part of what is said.
+      if (!on && rest.startsWith(':')) rest = rest.slice(1);
+      if (rest.startsWith(' ')) rest = rest.slice(1);
+      if (rest.startsWith('\\')) rest = rest.slice(1);
+      note = { author, date: m[2] === '-' ? '' : m[2], text: rest };
+      if (!m[1] || !out.length) out.push({ element, words, resolved: false, notes: [note] });
+      else out[out.length - 1].notes.push(note);
       continue;
     }
     if (!note) continue;
@@ -769,9 +782,8 @@ export function readComments(lines: string[], element: string): OrgThread[] {
       last.text = '';
       t.resolved = true;
     }
-    if (last.text.endsWith('\\(settled)')) last.text = `${last.text.slice(0, -10)}(settled)`;
-    // A thread with no note but its head was written as one with no words.
-    t.notes = t.notes.filter((n, k) => k || n.author || n.date || n.text || t.notes.length > 1);
+    for (const n of t.notes)
+      if (n.text.endsWith('\\(settled)')) n.text = `${n.text.slice(0, -10)}(settled)`;
   }
   return out;
 }

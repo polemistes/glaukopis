@@ -721,7 +721,11 @@ export function everything(): OrgProject {
         element: 'kinds',
         words: 'say "this"',
         resolved: false,
-        notes: [{ author: 'Anna', date: '2026-10-14', text: '' }],
+        notes: [
+          { author: 'Anna', date: '2026-10-14', text: '' },
+          { author: 'Bob ] "B"', date: '', text: 'on "this": not words\n' },
+          { author: 'Cy', date: '2026-10-15', text: ': a colon, (settled)\n- and a dash' },
+        ],
       },
     ],
     references: [
