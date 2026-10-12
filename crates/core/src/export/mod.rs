@@ -2868,7 +2868,7 @@ mod tests {
                 export(&s.ctx(), &marked, Target::Typst, &typ, &ExportOptions::default()).unwrap();
                 let t = fs::read_to_string(&typ).unwrap();
                 assert!(t.contains("#gk-refmark(\"2\");"), "{t}");
-                assert_eq!(t.contains("here().position()"), margin, "{t}");
+                assert_eq!(t.contains("gk-refmark(label) = context"), margin, "{t}");
                 let p = preview(&s.ctx(), &marked).unwrap();
                 assert!(p.warnings.is_empty(), "{:?}", p.warnings);
             }
@@ -2993,7 +2993,7 @@ mod tests {
         export(&s.ctx(), &prose, Target::Typst, &typ, &ExportOptions::default()).unwrap();
         let t = fs::read_to_string(&typ).unwrap();
         assert!(t.contains("#gk-beside(\"left\", gk-number(\"327a\"));"), "{t}");
-        assert!(t.contains("#gk-beside(\"left\", gk-number(\"327b\"));"), "{t}");
+        assert!(t.contains("#gk-beside(\"left\", gk-number(\"328\"));"), "the count goes on from the digits: {t}");
         assert!(t.contains("#quote(block: true)"), "{t}");
         let p = preview(&s.ctx(), &prose).unwrap();
         assert!(p.warnings.is_empty(), "{:?}", p.warnings);
@@ -3002,7 +3002,7 @@ mod tests {
         assert!(l.contains("\\llap{{\\footnotesize 327a}\\hspace{0.9em}}I went down"), "{l}");
         export(&s.ctx(), &prose, Target::Docx, &docx, &ExportOptions::default()).unwrap();
         let xml = unzip(&docx, "word/document.xml");
-        assert!(xml.contains("VerseNumber") && xml.contains(">327b\u{a0}\u{a0}<"), "{xml}");
+        assert!(xml.contains("VerseNumber") && xml.contains(">328\u{a0}\u{a0}<"), "{xml}");
     }
 
     #[test]

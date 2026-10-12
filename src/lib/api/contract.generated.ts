@@ -496,6 +496,10 @@ export const format: DocumentFormat = {
     "showAuthors": true,
     "showDate": false,
     "size": 16.0
+  },
+  "verse": {
+    "every": 5,
+    "side": "left"
   }
 };
 
@@ -1259,289 +1263,227 @@ export const preview: Preview = {
 export const kinds: KindEntry[] = [
   {
     "basedOn": null,
+    "counted": false,
     "family": "paragraph",
     "group": "text",
     "id": "text",
-    "look": {},
+    "joins": false,
     "style": "Body Text"
   },
   {
     "basedOn": null,
+    "counted": true,
     "family": "paragraph",
-    "group": "text",
+    "group": "quotation",
     "id": "quote",
-    "look": {},
+    "joins": false,
     "style": "Block Text"
   },
   {
-    "basedOn": null,
-    "family": "paragraph",
-    "group": "text",
-    "id": "list",
-    "look": {},
-    "style": ""
-  },
-  {
-    "basedOn": null,
-    "family": "paragraph",
-    "group": "text",
-    "id": "numbered",
-    "look": {},
-    "style": ""
-  },
-  {
     "basedOn": "quote",
-    "family": "paragraph",
-    "group": "quotation",
-    "id": "attribution",
-    "look": {
-      "align": "right",
-      "firstLine": "0pt",
-      "italic": false,
-      "spaceBefore": "0pt"
-    },
-    "style": "Attribution"
-  },
-  {
-    "basedOn": "quote",
+    "counted": true,
     "family": "paragraph",
     "group": "quotation",
     "id": "epigraph",
-    "look": {
-      "firstLine": "0pt",
-      "indentLeft": "4cm",
-      "indentRight": "0pt",
-      "spaceAfter": "18pt"
-    },
+    "joins": false,
     "style": "Epigraph"
   },
   {
-    "basedOn": null,
+    "basedOn": "quote",
+    "counted": false,
     "family": "paragraph",
-    "group": "verse",
-    "id": "verse",
-    "look": {},
-    "style": ""
+    "group": "quotation",
+    "id": "attribution",
+    "joins": true,
+    "style": "Attribution"
   },
   {
     "basedOn": null,
-    "family": "words",
+    "counted": true,
+    "family": "paragraph",
+    "group": "verse",
+    "id": "line",
+    "joins": false,
+    "style": "Line"
+  },
+  {
+    "basedOn": null,
+    "counted": false,
+    "family": "paragraph",
     "group": "verse",
     "id": "speaker",
-    "look": {
-      "case": "smallcaps"
-    },
+    "joins": false,
     "style": "Speaker"
   },
   {
     "basedOn": null,
-    "family": "words",
+    "counted": false,
+    "family": "paragraph",
     "group": "verse",
     "id": "direction",
-    "look": {
-      "italic": true
-    },
+    "joins": false,
     "style": "Stage Direction"
   },
   {
     "basedOn": null,
+    "counted": true,
     "family": "paragraph",
     "group": "script",
     "id": "scene",
-    "look": {
-      "align": "left",
-      "bold": true,
-      "case": "upper",
-      "firstLine": "0pt",
-      "keepWithNext": true,
-      "spaceAfter": "11pt",
-      "spaceBefore": "19pt"
-    },
+    "joins": false,
     "style": "Scene Heading"
   },
   {
     "basedOn": null,
+    "counted": true,
     "family": "paragraph",
     "group": "script",
     "id": "action",
-    "look": {
-      "align": "left",
-      "firstLine": "0pt",
-      "spaceAfter": "11pt",
-      "spaceBefore": "11pt"
-    },
+    "joins": false,
     "style": "Action"
   },
   {
     "basedOn": null,
+    "counted": true,
     "family": "paragraph",
     "group": "script",
     "id": "character",
-    "look": {
-      "align": "left",
-      "case": "upper",
-      "firstLine": "0pt",
-      "indentLeft": "5.6cm",
-      "keepWithNext": true,
-      "spaceAfter": "0pt",
-      "spaceBefore": "11pt"
-    },
+    "joins": false,
     "style": "Character"
   },
   {
     "basedOn": null,
+    "counted": true,
     "family": "paragraph",
     "group": "script",
     "id": "dialogue",
-    "look": {
-      "align": "left",
-      "firstLine": "0pt",
-      "indentLeft": "2.5cm",
-      "indentRight": "3.8cm",
-      "spaceAfter": "0pt",
-      "spaceBefore": "0pt"
-    },
+    "joins": false,
     "style": "Dialogue"
   },
   {
     "basedOn": null,
+    "counted": true,
     "family": "paragraph",
     "group": "script",
     "id": "parenthetical",
-    "look": {
-      "align": "left",
-      "firstLine": "0pt",
-      "indentLeft": "4cm",
-      "indentRight": "4cm",
-      "keepWithNext": true,
-      "spaceAfter": "0pt",
-      "spaceBefore": "0pt"
-    },
+    "joins": false,
     "style": "Parenthetical"
   },
   {
     "basedOn": null,
+    "counted": true,
     "family": "paragraph",
     "group": "script",
     "id": "transition",
-    "look": {
-      "align": "right",
-      "case": "upper",
-      "firstLine": "0pt",
-      "spaceAfter": "11pt",
-      "spaceBefore": "11pt"
-    },
+    "joins": false,
     "style": "Transition"
   },
   {
     "basedOn": null,
+    "counted": true,
     "family": "paragraph",
-    "group": "more",
+    "group": "glossary",
     "id": "headword",
-    "look": {
-      "bold": true,
-      "firstLine": "0pt",
-      "keepWithNext": true,
-      "spaceAfter": "0pt",
-      "spaceBefore": "6pt"
-    },
+    "joins": false,
     "style": "Headword"
   },
   {
     "basedOn": null,
+    "counted": true,
     "family": "paragraph",
-    "group": "more",
+    "group": "glossary",
     "id": "gloss",
-    "look": {
-      "firstLine": "0pt",
-      "indentLeft": "1.27cm",
-      "spaceAfter": "6pt",
-      "spaceBefore": "0pt"
-    },
+    "joins": false,
     "style": "Gloss"
   },
   {
     "basedOn": null,
+    "counted": true,
     "family": "paragraph",
-    "group": "more",
-    "id": "code",
-    "look": {
-      "align": "left",
-      "firstLine": "0pt",
-      "lineSpacing": 1.0,
-      "monospace": true,
-      "spaceAfter": "6pt",
-      "spaceBefore": "6pt"
-    },
-    "style": "Source Code"
-  },
-  {
-    "basedOn": null,
-    "family": "paragraph",
-    "group": "more",
-    "id": "break",
-    "look": {
-      "align": "center",
-      "firstLine": "0pt",
-      "keepWithNext": true,
-      "spaceAfter": "12pt",
-      "spaceBefore": "12pt",
-      "text": "* * *"
-    },
-    "style": "Section Break"
-  },
-  {
-    "basedOn": null,
-    "family": "paragraph",
-    "group": "more",
-    "id": "draft",
-    "look": {},
+    "group": "list",
+    "id": "item",
+    "joins": false,
     "style": ""
   },
   {
     "basedOn": null,
+    "counted": true,
+    "family": "paragraph",
+    "group": "list",
+    "id": "numbered",
+    "joins": false,
+    "style": ""
+  },
+  {
+    "basedOn": null,
+    "counted": true,
+    "family": "paragraph",
+    "group": "code",
+    "id": "code",
+    "joins": false,
+    "style": "Source Code"
+  },
+  {
+    "basedOn": null,
+    "counted": false,
+    "family": "paragraph",
+    "group": "break",
+    "id": "break",
+    "joins": false,
+    "style": "Section Break"
+  },
+  {
+    "basedOn": null,
+    "counted": true,
+    "family": "paragraph",
+    "group": "draft",
+    "id": "draft",
+    "joins": false,
+    "style": ""
+  },
+  {
+    "basedOn": null,
+    "counted": false,
     "family": "words",
     "group": "words",
     "id": "foreign",
-    "look": {
-      "italic": true
-    },
+    "joins": false,
     "style": "Foreign"
   },
   {
     "basedOn": null,
+    "counted": false,
     "family": "words",
     "group": "words",
     "id": "title",
-    "look": {
-      "italic": true
-    },
+    "joins": false,
     "style": "Title of a Work"
   },
   {
     "basedOn": null,
+    "counted": false,
     "family": "words",
     "group": "words",
     "id": "term",
-    "look": {
-      "italic": true
-    },
+    "joins": false,
     "style": "Term"
   },
   {
     "basedOn": null,
+    "counted": false,
     "family": "words",
     "group": "words",
     "id": "mention",
-    "look": {},
+    "joins": false,
     "style": "Mention"
   },
   {
     "basedOn": null,
+    "counted": false,
     "family": "words",
     "group": "words",
     "id": "highlight",
-    "look": {},
+    "joins": false,
     "style": ""
   }
 ];

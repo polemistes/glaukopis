@@ -347,18 +347,15 @@ impl Converter<'_> {
                 let span = |text: &str, margin: bool, gap_before: bool| {
                     let (class, style) =
                         if margin { ("verse-margin", "Verse Margin") } else { ("verse-number", "Verse Number") };
-                    let inner = if margin {
-                        vec![json!({"t": "Emph", "c": words(text)})]
-                    } else {
-                        vec![json!({"t": "Str", "c": text})]
+                    // The gap between it and the words of the line stands within the span.
+                    let gap = "\u{a0}\u{a0}";
+                    let inner = match (margin, gap_before) {
+                        (true, true) => vec![json!({"t": "Str", "c": gap}), json!({"t": "Emph", "c": words(text)})],
+                        (true, false) => vec![json!({"t": "Emph", "c": words(text)}), json!({"t": "Str", "c": gap})],
+                        (false, true) => vec![json!({"t": "Str", "c": format!("{gap}{text}")})],
+                        (false, false) => vec![json!({"t": "Str", "c": format!("{text}{gap}")})],
                     };
-                    let mut out = vec![json!({"t": "Span", "c": [["", [class], [["custom-style", style]]], inner]})];
-                    if gap_before {
-                        out.insert(0, json!({"t": "Str", "c": "\u{a0}\u{a0}"}));
-                    } else {
-                        out.push(json!({"t": "Str", "c": "\u{a0}\u{a0}"}));
-                    }
-                    out
+                    vec![json!({"t": "Span", "c": [["", [class], [["custom-style", style]]], inner]})]
                 };
                 if let (Some(text), margin) = at_right {
                     inner.extend(span(text, margin, true));
@@ -669,7 +666,7 @@ mod tests {
                 line("line", 0, None, "had never flown").with_margin("ia."),
             ],
         );
-        let out = written(&c, &[verse.clone()]);
+        let out = written(&c, std::slice::from_ref(&verse));
         assert_eq!(out.len(), 1);
         // In the style of a line, as a line block.
         assert_eq!(out[0]["c"][0][2], json!([["custom-style", "Line"]]));
@@ -678,10 +675,10 @@ mod tests {
         // The speaker in the character style the line block needs.
         assert_eq!(lines[0][0]["c"][0][2], json!([["custom-style", "Speaker Char"]]));
         assert_eq!(lines[1][0]["c"][0][2], json!([["custom-style", "Verse Number"]]));
-        assert_eq!(lines[1][0]["c"][1][0]["c"], "1");
+        assert_eq!(lines[1][0]["c"][1][0]["c"], "1\u{a0}\u{a0}");
         // The second line counted shows its number, every second being shown; it is indented by spaces that do not break.
-        assert_eq!(lines[2][0]["c"][1][0]["c"], "2");
-        assert_eq!(lines[2][2]["c"], "\u{a0}\u{a0}\u{a0}\u{a0}");
+        assert_eq!(lines[2][0]["c"][1][0]["c"], "2\u{a0}\u{a0}");
+        assert_eq!(lines[2][1]["c"], "\u{a0}\u{a0}\u{a0}\u{a0}");
         // The third is not shown; its margin words stand at the end.
         let last = lines[3].as_array().unwrap();
         assert_eq!(last[0]["c"], "had");
@@ -717,7 +714,7 @@ mod tests {
             ],
         );
         let c = converter(&keys, Flavour::Typst);
-        let out = written(&c, &[verse.clone()]);
+        let out = written(&c, std::slice::from_ref(&verse));
         assert_eq!(out[0]["c"][1], "#gk-verse[");
         assert_eq!(out[1]["c"][1], "#gk-line(\"speaker\", 0, n: none, margin: none, side: \"left\")[");
         assert_eq!(out[4]["c"][1], "#gk-line(\"line\", 0, n: \"1\", margin: none, side: \"left\")[");
@@ -769,8 +766,8 @@ mod tests {
         assert_eq!(out.len(), 1);
         let paras = out[0]["c"].as_array().unwrap();
         assert_eq!(paras[0]["c"][0]["c"], "First.", "nothing before the first number given");
-        assert_eq!(paras[1]["c"][0]["c"][1][0]["c"], "327a");
-        assert_eq!(paras[2]["c"][0]["c"][1][0]["c"], "328", "the count goes on from the digits");
+        assert_eq!(paras[1]["c"][0]["c"][1][0]["c"], "327a\u{a0}\u{a0}");
+        assert_eq!(paras[2]["c"][0]["c"][1][0]["c"], "328\u{a0}\u{a0}", "the count goes on from the digits");
     }
 
     #[test]
