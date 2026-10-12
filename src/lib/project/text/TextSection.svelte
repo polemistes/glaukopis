@@ -4,6 +4,8 @@
   import CircleOff from '@lucide/svelte/icons/circle-off';
   import FileInput from '@lucide/svelte/icons/file-input';
   import GripVertical from '@lucide/svelte/icons/grip-vertical';
+  import Maximize2 from '@lucide/svelte/icons/maximize-2';
+  import Minimize2 from '@lucide/svelte/icons/minimize-2';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import type { EditorView } from 'prosemirror-view';
   import type { KeyAction } from '$lib/editor/plugins';
@@ -66,8 +68,10 @@
     onmenu: (id: string, event: MouseEvent, anchor: HTMLElement) => void;
     onpick: (id: string) => void;
     onkeep: (ref: string) => void;
-    /** Enters an element: the one this one stands for. */
+    /** Enters an element: this one, by the button by its name, or the one it stands for. */
     onenter: (id: string) => void;
+    /** On the element in view: goes up, to the element over it, by the button by its name. */
+    onleave?: () => void;
     onready?: (
       id: string,
       editors: { title?: ReturnType<typeof RichText>; body?: ReturnType<typeof RichText> } | null,
@@ -98,6 +102,7 @@
     onpick,
     onkeep,
     onenter,
+    onleave,
     onready,
   }: Props = $props();
 
@@ -129,6 +134,12 @@
   const doubled = $derived(!!kind?.part && isDoubled(project, node.id));
   /** The threads of comments on it that are open: a marker in the right margin. */
   const commented = $derived(project.threadsOf(node.id).filter((th) => !th.resolved));
+  /** The name of the element over it, which going up enters: said only of the element in view. */
+  const above = $derived.by(() => {
+    if (level !== 0 || !onleave) return '';
+    const parent = project.tree().parent.get(node.id);
+    return (parent && project.node(parent)?.title) || t('project-untitled');
+  });
 
   $effect(() => {
     const id = node.id;
@@ -180,9 +191,43 @@
     }
     onactivate(node.id, part, { left: event.clientX, top: event.clientY });
   }
+
+  /**
+   * A press in the gaps of the section, beside its name and text or between
+   * them: the cursor goes into the nearer of the two, where the press was,
+   * rather than the focus being lost.
+   */
+  function pressGap(event: MouseEvent) {
+    if (event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('.heading, .body, .away, .include, button, a, input')) return;
+    if (linkable) {
+      event.preventDefault();
+      onpick(node.id);
+      return;
+    }
+    const section = event.currentTarget as HTMLElement;
+    const heading = section.querySelector<HTMLElement>(':scope > .content > .heading');
+    const text = section.querySelector<HTMLElement>(':scope > .content > .body');
+    if (!heading) return;
+    event.preventDefault();
+    const within = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      const clamp = (n: number, low: number, high: number) => Math.max(low, Math.min(high, n));
+      return {
+        left: clamp(event.clientX, r.left + 1, r.right - 1),
+        top: clamp(event.clientY, r.top + 1, r.bottom - 1),
+      };
+    };
+    if (text && event.clientY >= heading.getBoundingClientRect().bottom)
+      onactivate(node.id, 'body', within(text));
+    else onactivate(node.id, 'title', within(heading));
+  }
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <section
+  onmousedown={pressGap}
   class="section level-{Math.min(level, 4)}"
   class:selected
   class:excluded
@@ -234,6 +279,31 @@
     >
       <GripVertical size={15} />
     </button>
+    {#if level > 0}
+      <button
+        type="button"
+        class="corner enter"
+        aria-label={t('text-open-as-map')}
+        use:tooltip={{ text: t('text-open-as-map'), side: 'top' }}
+        tabindex="-1"
+        onmousedown={(e) => e.preventDefault()}
+        onclick={() => onenter(node.id)}
+      >
+        <Maximize2 size={11} />
+      </button>
+    {:else if onleave}
+      <button
+        type="button"
+        class="corner leave"
+        aria-label={t('project-leave-map', { name: above })}
+        use:tooltip={{ text: t('project-leave-map', { name: above }), side: 'top' }}
+        tabindex="-1"
+        onmousedown={(e) => e.preventDefault()}
+        onclick={() => onleave()}
+      >
+        <Minimize2 size={11} />
+      </button>
+    {/if}
     {#each others.slice(0, 3) as o (o.client)}
       <span
         class="other"
@@ -335,7 +405,6 @@
             kind="body"
             element={node.id}
             {at}
-            placeholder={level === 0 ? t('text-first-section') : ''}
             autofocus={focus?.part === 'body' ? focus.at : null}
             onaction={(a, v) => onaction(node.id, 'body', a, v)}
             onfocus={() => onfocused(node.id, 'body')}
@@ -401,9 +470,42 @@
     padding: 0;
   }
   .gutter {
+    position: relative;
     display: flex;
     justify-content: flex-end;
     padding: 0 4px 0 0;
+  }
+  /*
+   * Opens the element as a map, or, on the element in view, goes up: before
+   * the grip, out in the margin, while the pointer is at the name or beside it.
+   */
+  .corner {
+    position: absolute;
+    top: calc(var(--grip-top, 4px) + 3px);
+    right: 100%;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--fast) var(--ease);
+  }
+  .section:has(> .content > .heading:hover) > .gutter .corner,
+  .section > .gutter:hover .corner {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .corner:hover {
+    background: var(--accent);
+    color: var(--accent-ink);
   }
   .fold {
     display: inline-flex;
@@ -539,9 +641,9 @@
   .static {
     white-space: pre-wrap;
   }
+  /* An empty text is a line high, as it is when it is written in: there is room to press it. */
   .static.blank {
-    min-height: 0.8em;
-    line-height: 0.8;
+    min-height: 1lh;
   }
   .body {
     cursor: text;

@@ -3,7 +3,6 @@
 
 text-title = Tittel
 text-name = Navnet på elementet
-text-first-section = Skriv her, eller trykk Ctrl+Enter for å begynne på første del.
 text-not-printed = skrives ikke ut
 text-grip = Flytt eller endre dette elementet
 text-include = I dokumentet står { $name } her, med alt under seg.

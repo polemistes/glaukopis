@@ -60,6 +60,8 @@
     onkeep: (id: string) => void;
     /** Asks for an element to be made the one in view. */
     onenter: (id: string) => void;
+    /** Goes up, to the element over the one in view, where there is one to go up to. */
+    onleave?: () => void;
     /** An element to select and bring into view when the map appears. */
     reveal?: string | null;
     /**
@@ -76,6 +78,7 @@
     oncamera,
     onkeep,
     onenter,
+    onleave,
     reveal = null,
     besideProject = null,
   }: Props = $props();
@@ -1223,6 +1226,7 @@
             ontoggle={(nodeId) => project.setCollapsed(nodeId, !project.node(nodeId)?.collapsed)}
             onlinkstart={linkStart}
             {onenter}
+            {onleave}
           />
         </div>
       {/if}

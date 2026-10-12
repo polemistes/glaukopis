@@ -70,6 +70,8 @@ project-where = Where you are
 # The small button before the name of the element in view: its parent's name.
 project-up = Up
 project-up-hint = Up to “{ $name }” · Alt+Up
+# The small round button by the element in view, in the diagram and the text: up to the element over it.
+project-leave-map = Up to “{ $name }”
 project-siblings-hint = The elements beside this one: choose one to show it
 project-trees-hint = The elements under the project: choose one to show it
 project-shown-beside = beside this one

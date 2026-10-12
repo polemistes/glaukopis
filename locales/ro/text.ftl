@@ -2,7 +2,6 @@
 
 text-title = Titlu
 text-name = Numele elementului
-text-first-section = Scrieți aici, sau apăsați Ctrl+Enter ca să începeți prima secțiune.
 text-not-printed = nu se tipărește
 text-grip = Mută sau modifică acest element
 text-include-open = Deschide-o

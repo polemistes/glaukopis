@@ -66,6 +66,7 @@ project-untitled = Uten navn
 project-where = Hvor du er
 project-up = Opp
 project-up-hint = Opp til «{ $name }» · Alt+Pil opp
+project-leave-map = Opp til «{ $name }»
 project-siblings-hint = Elementene ved siden av dette: velg ett for å vise det
 project-trees-hint = Elementene under prosjektet: velg ett for å vise det
 project-shown-beside = ved siden av dette

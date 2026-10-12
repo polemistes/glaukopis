@@ -731,12 +731,11 @@
   }
 
   /**
-   * Goes up in the pane that has the focus: enters the parent of the
+   * Goes up in a pane, the one that has the focus unless one is named: enters the parent of the
    * element in view, with the element one came from shown; from the
    * project itself, in the first pane, to all the projects.
    */
-  function up() {
-    const i = Math.min(focused, panes.length - 1);
+  function up(i = Math.min(focused, panes.length - 1)) {
     const p = panes[i];
     const of = projectOf(p);
     if (!of || !p) return;
@@ -1301,6 +1300,7 @@
                         oncamera={(c) => (cameras[cameraOf(p)] = c)}
                         onkeep={(id) => keepIn(of, id)}
                         onenter={(id) => show(id, { pane: i })}
+                        onleave={of.tree().parent.get(p.at) ? () => up(i) : undefined}
                         reveal={i === focused ? reveal : null}
                         besideProject={across ? projectOf(panes[1 - i]) : null}
                       />
@@ -1311,7 +1311,9 @@
                         at={p.at}
                         onkeep={(id) => keepIn(of, id)}
                         onenter={(id) => show(id, { pane: i })}
+                        onleave={of.tree().parent.get(p.at) ? () => up(i) : undefined}
                         reveal={i === focused ? reveal : null}
+                        focused={i === focused}
                         folding={paneFolding}
                         outline={showOutline}
                         ontop={(id) => (tops[i] = id)}

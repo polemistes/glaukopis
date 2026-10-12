@@ -4,6 +4,7 @@
   import FileInput from '@lucide/svelte/icons/file-input';
   import GitCompare from '@lucide/svelte/icons/git-compare';
   import Maximize2 from '@lucide/svelte/icons/maximize-2';
+  import Minimize2 from '@lucide/svelte/icons/minimize-2';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import type { EditorView } from 'prosemirror-view';
   import { untrack } from 'svelte';
@@ -44,8 +45,10 @@
     typedAhead?: () => { text: string; then: KeyAction | null } | null;
     ontoggle: (id: string) => void;
     onlinkstart: (id: string, event: PointerEvent) => void;
-    /** Makes the element the one in view: a button on it while it is selected. */
+    /** Makes the element the one in view: a button on it, under the pointer or selected. */
     onenter?: (id: string) => void;
+    /** On the element in view: goes up, to the element over it, with a button where the other is. */
+    onleave?: () => void;
   }
 
   let {
@@ -66,6 +69,7 @@
     ontoggle,
     onlinkstart,
     onenter,
+    onleave,
   }: Props = $props();
 
   let el = $state<HTMLDivElement>();
@@ -99,6 +103,12 @@
   const commented = $derived(project.threadsOf(node.id).filter((th) => !th.resolved));
   /** Its kind, with its colour, where it has one. */
   const kind = $derived(kindLabel(project, node.kind));
+  /** The name of the element over it, which going up enters: said only of the element in view. */
+  const above = $derived.by(() => {
+    if (placed.depth !== 0 || !onleave) return '';
+    const parent = project.tree().parent.get(node.id);
+    return (parent && project.node(parent)?.title) || t('project-untitled');
+  });
 
   function action(a: KeyAction, _view: EditorView): boolean {
     if (a === 'enter' || a === 'escape' || a === 'tab') {
@@ -240,10 +250,10 @@
     </button>
   {/if}
 
-  {#if selected && !renaming && placed.depth !== 0 && onenter}
+  {#if !renaming && placed.depth !== 0 && onenter}
     <button
       type="button"
-      class="enter"
+      class="corner enter"
       aria-label={t('diagram-open-as-map')}
       use:tooltip={{ text: t('diagram-open-as-map'), shortcut: 'Ctrl+Enter' }}
       tabindex="-1"
@@ -255,6 +265,22 @@
       }}
     >
       <Maximize2 size={11} />
+    </button>
+  {:else if !renaming && placed.depth === 0 && onleave}
+    <button
+      type="button"
+      class="corner leave"
+      aria-label={t('project-leave-map', { name: above })}
+      use:tooltip={{ text: t('project-leave-map', { name: above }), shortcut: 'Alt+Up' }}
+      tabindex="-1"
+      onpointerdown={(e) => e.stopPropagation()}
+      ondblclick={(e) => e.stopPropagation()}
+      onclick={(e) => {
+        e.stopPropagation();
+        onleave();
+      }}
+    >
+      <Minimize2 size={11} />
     </button>
   {/if}
 
@@ -544,8 +570,11 @@
     color: var(--accent-strong);
   }
 
-  /* Opens the element as a map: on the selected element, at its upper left corner. */
-  .enter {
+  /*
+   * Opens the element as a map, or, on the element in view, goes up: at the
+   * upper left corner, under the pointer or while selected.
+   */
+  .corner {
     position: absolute;
     top: -10px;
     left: -10px;
@@ -561,10 +590,22 @@
     color: var(--accent-strong);
     cursor: pointer;
     box-shadow: var(--shadow-1);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--fast) var(--ease);
   }
-  .enter:hover {
+  .node:hover .corner,
+  .node.selected .corner {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .corner:hover {
     background: var(--accent);
     color: var(--accent-ink);
+  }
+  /* On the element in view, which is of the colour of the buttons: a ring of the paper's. */
+  .corner.leave {
+    border-color: var(--paper-raised);
   }
 
   .link-handle {

@@ -2,7 +2,6 @@
 
 text-title = Název
 text-name = Název prvku
-text-first-section = Pište sem, nebo stiskněte Ctrl+Enter a začněte první oddíl.
 text-not-printed = netiskne se
 text-grip = Přesunout nebo změnit tento prvek
 text-include-open = Otevřít ji

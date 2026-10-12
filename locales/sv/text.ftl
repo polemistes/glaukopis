@@ -2,7 +2,6 @@
 
 text-title = Titel
 text-name = Elementets namn
-text-first-section = Skriv här, eller tryck Ctrl+Retur för att börja det första avsnittet.
 text-not-printed = skrivs inte ut
 text-grip = Flytta eller ändra det här elementet
 text-include-open = Öppna den

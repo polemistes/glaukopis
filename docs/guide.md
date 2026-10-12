@@ -117,8 +117,8 @@ project opens on its text.
 | Select several | **Ctrl**-click or **Shift**-click, or drag a frame around them |
 | Delete | **Delete** |
 | Undo, redo | **Ctrl+Z**, **Ctrl+Shift+Z** |
-| Enter an element: it comes to the centre, with what is under it, and the rest is out of the way | The small button on it while it is selected, **Ctrl+Enter**, or **Open as a map** in its menu |
-| Go up, to the element over the one in view | **Alt+Up**, or its name, small, at the left of the bar |
+| Enter an element: it comes to the centre, with what is under it, and the rest is out of the way | The small round button at its corner, which shows when the pointer is on it or it is selected; **Ctrl+Enter**; or **Open as a map** in its menu |
+| Go up, to the element over the one in view | **Alt+Up**; the small round button at the corner of the element in view; or its name, small, at the left of the bar |
 | Move about the map | Drag the background; scroll to zoom |
 | Everything else | Right-click an element, or **Shift+F10** |
 
@@ -152,6 +152,9 @@ in view is the title, and each element under it is a section: its name is
 the heading, and the depth of the heading is how deep the element stands
 under the one in view. Of a project entered at its top, as a new one is, the
 project's name is the title, and its text comes before the first section.
+When the element in view has no text yet, the cursor is in its text as it
+is shown, and what is typed goes there; an empty text is a line high, and a
+press on it, or beside it, puts the cursor in it.
 
 Write as in any editor. The tools are over the text: the kind of the
 paragraph the cursor is in, a button that opens the kinds (text, quotation,
@@ -186,8 +189,8 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Make the element deeper or less deep | **Tab**, **Shift+Tab** in its name; or **Alt** and the arrows left and right |
 | Move the element up or down | **Alt** and the arrows up and down |
 | Join an element to the one above | Right-click: **Join to the element above** |
-| Enter an element, to see it alone with what is under it | **Open as a map**, from the grip beside its heading |
-| Go up, to the element over the one in view | Its name, small, at the left of the bar |
+| Enter an element, to see it alone with what is under it | The small round button before its heading, which shows when the pointer is on the heading; or **Open as a map**, from the grip beside it |
+| Go up, to the element over the one in view | The small round button before the title, which shows when the pointer is on it; or its name, small, at the left of the bar |
 
 A text has two breaks: **Enter** begins a new paragraph, and
 **Shift+Enter** breaks the line within the paragraph, as in an address or a
@@ -1027,11 +1030,15 @@ the element in view, at the centre of the diagram, the title of the text and
 the document of the preview, with all that is under it, and the rest of the
 project is out of the way. The project itself is an element, at the top: a
 new project opens there, with everything in it. Enter an element with the
-small button that appears on it while it is selected in the diagram, with
-**Ctrl+Enter**, or with **Open as a map** in its menu, in the diagram and
-from the grip beside its heading in the text. Go up with **Alt+Up**, or by
-pressing the name of the element over it, which stands small at the left of
-the bar over the map.
+small round button that appears at its corner in the diagram, when the
+pointer is on it or it is selected, and before its heading in the text, when
+the pointer is on the heading; with **Ctrl+Enter** in the diagram; or with
+**Open as a map** in its menu, in the diagram and from the grip beside its
+heading in the text. Go up with **Alt+Up**; with the button of the same kind
+on the element in view, at its corner in the diagram and before the title in
+the text; or by pressing the name of the element over it, which stands small
+at the left of the bar over the map. The project itself has no such button:
+the owl at the left of the bar goes up from it, to all the projects.
 
 The bar says where you are: the name of the element over the one in view,
 small, which goes up; then the name of the element in view, which pulls down

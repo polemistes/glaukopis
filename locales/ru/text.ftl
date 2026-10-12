@@ -2,7 +2,6 @@
 
 text-title = Заглавие
 text-name = Название элемента
-text-first-section = Пишите здесь или нажмите Ctrl+Enter, чтобы начать первый раздел.
 text-not-printed = не печатается
 text-grip = Переместить или изменить этот элемент
 text-include-open = Открыть её

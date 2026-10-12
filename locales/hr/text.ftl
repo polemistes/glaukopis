@@ -2,7 +2,6 @@
 
 text-title = Naslov
 text-name = Naziv elementa
-text-first-section = Pišite ovdje, ili pritisnite Ctrl+Enter da započnete prvi odjeljak.
 text-not-printed = ne tiska se
 text-grip = Premjesti ili izmijeni ovaj element
 text-include-open = Otvori je

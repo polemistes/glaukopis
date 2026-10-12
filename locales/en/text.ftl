@@ -3,7 +3,6 @@
 
 text-title = Title
 text-name = Name of the element
-text-first-section = Write here, or press Ctrl+Enter to begin the first section.
 text-not-printed = not printed
 text-grip = Move or change this element
 # The element an element stands for, whose name is shown in bold where the variable stands.

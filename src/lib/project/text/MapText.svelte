@@ -61,6 +61,10 @@
     onkeep: (id: string) => void;
     /** Enters an element: it becomes the one in view. */
     onenter: (id: string) => void;
+    /** Goes up, to the element over the one in view, where there is one to go up to. */
+    onleave?: () => void;
+    /** Whether the pane of the text has the focus: only there is the cursor put in an empty text when it is shown. */
+    focused?: boolean;
     /** An element to bring into view when the map appears. */
     reveal?: string | null;
     /** What is folded away in the text of the project. */
@@ -81,6 +85,8 @@
     at,
     onkeep,
     onenter,
+    onleave,
+    focused = true,
     reveal = null,
     folding,
     outline = false,
@@ -255,7 +261,8 @@
   function activate(id: string, part: Part, at: FocusAt) {
     const mounted = editors.get(id)?.[part];
     current = id;
-    if (active.includes(id) && mounted) {
+    const was = active.includes(id);
+    if (was && mounted) {
       mounted.focus(at);
       return;
     }
@@ -264,6 +271,15 @@
     // The one with the focus is never let go.
     while (kept.length >= KEPT_ACTIVE) kept.shift();
     active = [...kept, id];
+    // Its editors are there, or being made, but not yet known here: one that
+    // is made already does not look at where the cursor is to go again, so
+    // it is put there when it is known.
+    if (was) {
+      void tick().then(() => {
+        if (focus?.id !== id || focus.part !== part) return;
+        editors.get(id)?.[part]?.focus(at);
+      });
+    }
   }
 
   async function go(id: string | undefined | null, part: Part, at: FocusAt) {
@@ -483,12 +499,13 @@
       }
       case 'delete-at-end':
         return false;
+      // In a text, Tab that nothing else takes does nothing: the cursor stays in the text.
       case 'tab':
         if (part === 'title') return indent(id) || true;
-        return false;
+        return true;
       case 'shift-tab':
         if (part === 'title') return outdent(id) || true;
-        return false;
+        return true;
       case 'escape':
         if (editorUi.picking || editorUi.citation) return false;
         // The search over the text is closed first; the cursor stays where it is.
@@ -690,7 +707,43 @@
   onMount(() => {
     const jump = takeJump(at);
     if (jump) void tick().then(() => jumpTo(jump));
+    else beginEmpty();
   });
+
+  /**
+   * An element in view that has no text yet is written in at once: the
+   * cursor is put in its text when it is shown, unless another element is
+   * to be shown, or another pane has the focus.
+   */
+  function beginEmpty() {
+    const root = tree.root;
+    const node = project.node(root);
+    if (!focused || !node?.empty || node.include || folding.has(root)) return;
+    if (reveal && reveal !== root) return;
+    void go(root, 'body', 'start');
+  }
+
+  /**
+   * A press between the elements, or under the last: the cursor goes to the
+   * end of the element before it, rather than the focus being lost.
+   */
+  function pressBetween(event: MouseEvent) {
+    if (event.button !== 0 || linkFrom || !column) return;
+    const target = event.target as HTMLElement;
+    if (target !== event.currentTarget && target !== column) return;
+    const sections = column.querySelectorAll<HTMLElement>(':scope > [data-section]');
+    if (!sections.length) return;
+    let before = sections[0];
+    for (const section of sections) {
+      if (section.getBoundingClientRect().top > event.clientY) break;
+      before = section;
+    }
+    const id = before.dataset.section;
+    if (!id) return;
+    event.preventDefault();
+    if (before.getBoundingClientRect().top > event.clientY) void go(id, 'title', 'start');
+    else void go(id, endOf(id), 'end');
+  }
 
   async function jumpTo(jump: Jump) {
     if (!jump.element) return;
@@ -1152,7 +1205,8 @@
     onkeydowncapture={onkeydown}
     {oncontextmenu}
   >
-    <div class="page">
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="page" onmousedown={pressBetween}>
       <!-- The associations stand in the left margin, beside the names they join. -->
       <div class="margin" aria-label={t('text-associations')}>
         <svg width={marginWidth} height={columnHeight} aria-hidden="true">
@@ -1225,6 +1279,7 @@
               onpick={pick}
               {onkeep}
               {onenter}
+              onleave={row.id === tree.root ? onleave : undefined}
               onready={(id, e) => {
                 if (e) editors.set(id, e);
                 else editors.delete(id);

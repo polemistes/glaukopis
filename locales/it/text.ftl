@@ -2,7 +2,6 @@
 
 text-title = Titolo
 text-name = Nome dell'elemento
-text-first-section = Scrivi qui, o premi Ctrl+Invio per cominciare la prima sezione.
 text-not-printed = non stampato
 text-grip = Sposta o modifica questo elemento
 text-include-open = Aprila

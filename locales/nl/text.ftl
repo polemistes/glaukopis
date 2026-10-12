@@ -2,7 +2,6 @@
 
 text-title = Titel
 text-name = Naam van het element
-text-first-section = Schrijf hier, of druk op Ctrl+Enter om het eerste deel te beginnen.
 text-not-printed = niet gedrukt
 text-grip = Dit element verplaatsen of wijzigen
 text-include-open = Openen
