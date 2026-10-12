@@ -63,6 +63,26 @@
     return () => dialogClosed(dialog);
   });
 
+  // What had the focus before the dialog opened has it again when the dialog
+  // goes, closed or taken away: the text one was writing in, so that its
+  // tools stay awake. Not where the focus has gone on to somewhere else.
+  let before: HTMLElement | null = null;
+  $effect.pre(() => {
+    if (!open) return;
+    before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    return () => {
+      const back = before;
+      before = null;
+      const now = document.activeElement;
+      const lost = !now || now === document.body || (!!el && el.contains(now));
+      if (back?.isConnected && back !== document.body && lost)
+        queueMicrotask(() => {
+          const still = document.activeElement;
+          if (!still || still === document.body) back.focus({ preventScroll: true });
+        });
+    };
+  });
+
   // The scrollbars of what lies behind are drawn over the dialog by WebKitGTK;
   // while a dialog is open they are made to be unseen (see app.css).
   $effect(() => {

@@ -42,8 +42,15 @@ export interface OpenMenu {
 
 class MenuState {
   current = $state<OpenMenu | null>(null);
+  /**
+   * What had the focus when the menu opened, taken before the menu takes it,
+   * and given it back when the menu closes: the text the writer was in.
+   */
+  #restore: HTMLElement | null = null;
 
   open(menu: OpenMenu) {
+    if (!this.current && typeof document !== 'undefined')
+      this.#restore = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.current?.onclose?.();
     this.current = menu;
   }
@@ -51,6 +58,10 @@ class MenuState {
   close() {
     const was = this.current;
     this.current = null;
+    const restore = this.#restore;
+    this.#restore = null;
+    if (was && restore?.isConnected && restore !== document.body)
+      restore.focus({ preventScroll: true });
     was?.onclose?.();
   }
 }

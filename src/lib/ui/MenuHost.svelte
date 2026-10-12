@@ -3,16 +3,11 @@
   import { menuState } from './menu.svelte';
   import { onTop } from './top';
 
-  let restore: HTMLElement | null = null;
-
-  $effect(() => {
-    if (menuState.current) {
-      restore = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    } else if (restore) {
-      if (restore.isConnected) restore.focus({ preventScroll: true });
-      restore = null;
-    }
-  });
+  /** Whether a point lies on what the menu was opened from: a press there only closes it. */
+  const onAnchor = (x: number, y: number) => {
+    const a = menuState.current?.anchor;
+    return !!a && x >= a.left && x <= a.right && y >= a.top && y <= a.bottom;
+  };
 </script>
 
 {#if menuState.current}
@@ -24,7 +19,10 @@
       class="backdrop"
       use:onTop
       onpointerdown={(e) => {
-        e.preventDefault();
+        // A press elsewhere closes the menu and goes on to what lies under it,
+        // as a click into the text puts the cursor there; one on what opened
+        // the menu only closes it.
+        if (onAnchor(e.clientX, e.clientY)) e.preventDefault();
         menuState.close();
       }}
       oncontextmenu={(e) => {
