@@ -79,8 +79,13 @@ try {
   await sleep(150);
   await app.click('.pane-bar .tools .style');
   await app.clickText('[role="menuitem"]', 'Speaker');
-  await sleep(250);
-  check('a line can be the speaker', await app.exists('.text-view .passage[data-family="verse"] > p.speaker'));
+  check(
+    'a line can be the speaker',
+    await app.waitFor('.text-view .passage[data-family="verse"] > p[data-kind="speaker"]', 3000).then(
+      () => true,
+      () => false,
+    ),
+  );
   await app.exec(
     `const l = document.querySelectorAll('.text-view .passage[data-family="verse"] > p')[2]; const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
   );
