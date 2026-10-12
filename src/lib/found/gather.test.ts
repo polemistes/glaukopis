@@ -11,7 +11,7 @@ import {
   passageOf,
   placeOf,
 } from './gather';
-import { HASH, cell, note, p, project, t, zotero } from './testing';
+import { HASH, cell, list, note, p, project, quote, t, zotero } from './testing';
 
 describe('the passages of an element in view', () => {
   it('are its paragraphs, with one sign for each thing that is no text', () => {
@@ -53,14 +53,8 @@ describe('the passages of an element in view', () => {
 
   it('are found in quotations, lists, cells, and what is said of figures and tables', () => {
     const { pr, at } = project([
-      { kind: 'blockquote', content: [p(t('Quoted.'))] },
-      {
-        kind: 'bullet_list',
-        items: [
-          [p(t('one')), { kind: 'ordered_list', start: 1, items: [[p(t('nested'))]] }],
-          [p(t('two'))],
-        ],
-      },
+      quote(t('Quoted.')),
+      list([t('one')], [t('nested')], [t('two')]),
       {
         kind: 'figure',
         id: 'f1',

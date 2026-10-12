@@ -3,7 +3,7 @@ import * as Y from 'yjs';
 import { writeBody, writeName } from './blocks';
 import { Project } from './project.svelte';
 import { citedIds, citedRecords, keepRecords, rewriteReferences } from './rewrite-refs';
-import type { Block, Inline } from './text';
+import { paragraph, type Block, type Inline } from './text';
 import { PROJECT, type RefRecord } from './types';
 
 const t = (text: string): Inline => ({ kind: 'text', text, marks: {} });

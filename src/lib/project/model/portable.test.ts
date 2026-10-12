@@ -4,7 +4,7 @@ import { sendElements } from '../elements';
 import { writeBody } from './blocks';
 import { makePortable, portable } from './portable';
 import { Project } from './project.svelte';
-import type { Block, Inline } from './text';
+import { paragraph, passage, type Block, type Inline } from './text';
 import { PROJECT, type RefRecord } from './types';
 
 const HASH = 'b'.repeat(64);
@@ -14,7 +14,7 @@ const t = (text: string, marks: Record<string, Record<string, unknown>> = {}): I
   text,
   marks,
 });
-const para = (...content: Inline[]): Block => ({ kind: 'paragraph', content });
+const para = (...content: Inline[]): Block => paragraph(content);
 
 /** A project begun, with its own element at the top, named so. */
 function project(name: string) {
@@ -53,19 +53,20 @@ function text(own: { passage: string; words: string }, pointsTo: string): Block[
         ],
       },
     ),
-    { kind: 'passage', name: own.passage, content: [t('In a kind of my own.')] },
-    { kind: 'passage', name: 'epigraph', content: [t('Sing, goddess.')] },
+    passage('quotation', [
+      paragraph([t('In a kind of my own.')], own.passage),
+      paragraph([t('Sing, goddess.')], 'epigraph'),
+    ]),
     { kind: 'equation', id: 'e1', tex: 'a^2 + b^2 = c^2', numbered: true },
-    {
-      kind: 'verse',
-      start: 1,
-      by: 5,
-      lines: [
-        { kind: 'speaker', indent: 0, content: [t('Nurse')] },
-        { kind: 'line', indent: 1, content: [t('If only the Argo')] },
+    passage(
+      'verse',
+      [
+        paragraph([t('Nurse')], 'speaker'),
+        paragraph([t('If only the Argo')], 'line', { indent: 1, number: '1' }),
       ],
-    },
-    { kind: 'script', part: 'dialogue', content: [t('If only.')] },
+      'counted',
+    ),
+    passage('script', [paragraph([t('If only.')], 'dialogue')]),
     {
       kind: 'figure',
       id: 'f1',
@@ -247,11 +248,12 @@ describe('elements to another project', () => {
     expect(uses).not.toContain(s.passage);
     expect(uses).toContain(s.words);
     const text = d.p.blocksOf(a);
-    expect(text[1]).toEqual({
-      kind: 'passage',
-      name: lament,
-      content: [t('In a kind of my own.')],
-    });
+    expect(text[1]).toEqual(
+      passage('quotation', [
+        paragraph([t('In a kind of my own.')], lament),
+        paragraph([t('Sing, goddess.')], 'epigraph'),
+      ]),
+    );
   });
 
   it('a kind of paragraph goes with the kind it is based on, and the kind an element begins in', () => {
@@ -277,7 +279,7 @@ describe('elements to another project', () => {
     const kind = s.p.createKind({ name: 'Place', colour: 'green', template: '', begins: scene })!;
     const a = s.p.addChild(s.root, { title: 'Troy' })!;
     s.p.setKind([a], kind);
-    write(s.p, a, [{ kind: 'passage', name: lament, content: [t('Alas.')] }]);
+    write(s.p, a, [passage('quotation', [paragraph([t('Alas.')], lament)])]);
 
     const carried = portable(s.p, [a]);
     expect(carried.passageKinds.map((k) => k.name).sort()).toEqual(['Lament', 'Scene', 'Speech']);

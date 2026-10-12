@@ -11,6 +11,7 @@
  * note in what is said of a figure, anything but paragraphs in a cell.
  */
 
+import { ySyncPluginKey } from 'y-prosemirror';
 import * as Y from 'yjs';
 import { figureWidth, foundAttrs, tableWidth } from '$lib/editor/schema';
 import { newId } from '$lib/util/id';
@@ -328,18 +329,30 @@ export function nameElement(name: Inline[]): Y.XmlElement {
 }
 
 /**
+ * Puts elements in a place of the project in place of what stood there, in
+ * one transaction, as the editors write: so that undo takes it back where
+ * it is not within a transaction of the project's already.
+ */
+function replace(fragment: Y.XmlFragment, elements: Y.XmlElement[]) {
+  const write = () => {
+    if (fragment.length) fragment.delete(0, fragment.length);
+    fragment.insert(0, elements);
+  };
+  if (fragment.doc) fragment.doc.transact(write, ySyncPluginKey);
+  else write();
+}
+
+/**
  * Writes a text into the place the project has for it, in place of what
  * stood there. Nothing is written of a text that is empty.
  */
 export function writeBody(fragment: Y.XmlFragment, blocks: Block[]) {
   if (!blocks.length) return;
   const elements = blockElements(blocks);
-  if (fragment.length) fragment.delete(0, fragment.length);
-  fragment.insert(0, elements.length ? elements : [emptyParagraph()]);
+  replace(fragment, elements.length ? elements : [emptyParagraph()]);
 }
 
 /** Writes a name into the place the project has for it, in place of what stood there. */
 export function writeName(fragment: Y.XmlFragment, name: Inline[]) {
-  if (fragment.length) fragment.delete(0, fragment.length);
-  fragment.insert(0, [nameElement(name)]);
+  replace(fragment, [nameElement(name)]);
 }

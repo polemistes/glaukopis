@@ -3,7 +3,7 @@ import type { Imported, ImportedSection } from '$lib/api/imported';
 import { buildDocument } from './document';
 import { makeImported, titleOf } from './import';
 import { Project } from './project.svelte';
-import { inlineText, readBody, readTitle, type Block, type Inline } from './text';
+import { inlineText, paragraph, readBody, readTitle, type Block, type Inline } from './text';
 import { PROJECT } from './types';
 
 const t = (text: string, marks: Record<string, true> = {}): Inline => ({
