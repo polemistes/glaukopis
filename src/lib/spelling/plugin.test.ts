@@ -108,6 +108,20 @@ describe('spelling in an editor', () => {
     expect(asked.some(([language]) => language === 'xx')).toBe(false);
   });
 
+  it('checks a passage in its language, which holds before that of foreign words', async () => {
+    const lang = (tag: string) => bodySchema.marks.lang.create({ tag });
+    const foreign = bodySchema.marks.kind.create({ name: 'foreign', lang: 'xx' });
+    const view = editor([
+      p('The ', bodySchema.text('Kaltschmerz Weltschmerz', [lang('de')]), ' is recieved.'),
+      p(bodySchema.text('zzyx Kaltschmerz', [foreign, lang('de')])),
+      p(bodySchema.text('qqqq', [lang('xx')])),
+    ]);
+    await settle();
+    expect(misspeltIn(view.state)).toEqual(['Kaltschmerz', 'recieved', 'Kaltschmerz']);
+    const asked = vi.mocked(spellingCheck).mock.calls.map(([language]) => language);
+    expect(asked.includes('xx')).toBe(false);
+  });
+
   it('looks again only at what a change touched', async () => {
     const view = editor([
       p('The wrath of Achilles is recieved by teh gods.'),

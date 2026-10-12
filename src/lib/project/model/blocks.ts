@@ -39,6 +39,11 @@ function marksOf(schema: Schema, marks: InlineText['marks']): readonly Mark[] {
       if (typeof kind !== 'string' || !kind) continue;
       const lang = typeof value === 'object' && typeof value.lang === 'string' ? value.lang : '';
       set = type.create({ name: kind, lang }).addToSet(set);
+    } else if (name === 'lang') {
+      // The language of a passage.
+      const tag = typeof value === 'object' ? value.tag : undefined;
+      if (typeof tag !== 'string' || !tag.trim()) continue;
+      set = type.create({ tag: tag.trim() }).addToSet(set);
     } else set = type.create().addToSet(set);
   }
   return set;

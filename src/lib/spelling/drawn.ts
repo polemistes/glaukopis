@@ -3,9 +3,10 @@
  * misspelt words are wrapped in spans that underline them as the editors
  * do. The text is put in whole by Svelte (`{@html}` is the only child of its
  * element), which sweeps the spans away with the old text when it is drawn
- * anew; they are then made again. Foreign words, which stand in a span with
- * their language (`html.ts`), are checked in that language where there is a
- * dictionary for it, and left alone where there is none.
+ * anew; they are then made again. A passage in another language, and
+ * foreign words, which stand in a span with their language (`html.ts`), are
+ * checked in that language where there is a dictionary for it, and left
+ * alone where there is none.
  *
  * A text is looked at when it comes into view, and again when it changes;
  * one that waits for words to be answered is looked at again when they are.
@@ -185,11 +186,16 @@ function look(el: HTMLElement, s: Shown) {
   s.changes.takeRecords();
 }
 
-/** The language of a node of text: that of the foreign words it is among, else that of the map. */
+/**
+ * The language of a node of text: that of the passage it is in, else that of
+ * the foreign words it is among, else that of the map.
+ */
 function languageOf(parent: Element, root: HTMLElement, language: string): string {
-  const foreign = parent.closest<HTMLElement>('.kind[lang]');
-  const lang = foreign && root.contains(foreign) ? foreign.getAttribute('lang')?.trim() : '';
-  return lang || language;
+  const said = (selector: string) => {
+    const by = parent.closest<HTMLElement>(selector);
+    return by && root.contains(by) ? (by.getAttribute('lang')?.trim() ?? '') : '';
+  };
+  return said('.lang[lang]') || said('.kind[lang]') || language;
 }
 
 function markAll(el: HTMLElement, s: Shown) {

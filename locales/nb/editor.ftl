@@ -101,12 +101,22 @@ editor-kinds-set-by = Satt slik «{ $format }» har dem
 editor-kinds-change-format = Endre oppsettet …
 editor-kinds-change-format-hint = Hvordan hvert slag settes i dette dokumentet
 editor-words = Ord
-editor-words-hint = Understreking, hevet skrift, kode; ord på et annet språk, tittelen på et verk, en term
+editor-words-hint = Understreking, hevet skrift, kode; språket i et stykke, ord på et annet språk, tittelen på et verk, en term
 editor-words-make = Lag et slag ord …
 # Først blant språkene ord på et annet språk kan være på: det teksten selv er på.
 editor-foreign-of-text = Språket i teksten
 # Det et slag ord bygger på når det ikke bygger på noe bestemt slag.
 editor-plain-words = Vanlige ord
+# Språket i et avsnitt av teksten, fra ett ord til mange avsnitt: det har ikke noe eget utseende.
+editor-language = Språk
+editor-language-of-text = Tekstens eget språk
+editor-language-other = Annet språk …
+editor-language-other-title = Språket i dette stykket
+editor-language-tag = Språkkode
+editor-language-no-tag = Det er ingen språkkode: en kode er som «grc», «la» eller «de-CH».
+editor-language-unnamed = Et språk systemet ikke har navn på: koden beholdes slik den er skrevet.
+editor-language-suggested = Språk som ofte siteres
+editor-language-other-hint = Stykket kontrolleres med ordlisten for språket, der en er importert, og får være i fred der ingen er; et dokument som lages, forteller Word, OpenDocument, Typst og LaTeX hvilket språk det er.
 editor-own-kind-new = Et eget slag
 editor-own-kind-change = Endre slaget
 editor-own-kind-name = Navn

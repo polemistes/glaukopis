@@ -101,12 +101,22 @@ editor-kinds-set-by = Set as “{ $format }” has them
 editor-kinds-change-format = Change the layout…
 editor-kinds-change-format-hint = How each kind is set in this document
 editor-words = Words
-editor-words-hint = Underlining, superscript, code; foreign words, the title of a work, a term
+editor-words-hint = Underlining, superscript, code; the language of a passage, foreign words, the title of a work, a term
 editor-words-make = Make a kind of words…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = The language of the text
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Plain words
+# The language of a passage, from a word to many paragraphs: it has no look of its own.
+editor-language = Language
+editor-language-of-text = The text's own language
+editor-language-other = Other language…
+editor-language-other-title = The language of the passage
+editor-language-tag = Language tag
+editor-language-no-tag = That is not a language tag: a tag is such as “grc”, “la” or “de-CH”.
+editor-language-unnamed = A language the system has no name for: the tag is kept as it is written.
+editor-language-suggested = Languages often quoted
+editor-language-other-hint = The passage is checked by the dictionary of its language, where one is imported, and left alone where none is; a document that is made tells the language to Word, OpenDocument, Typst and LaTeX.
 editor-own-kind-new = A kind of your own
 editor-own-kind-change = Change the kind
 editor-own-kind-name = Name

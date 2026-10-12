@@ -1266,6 +1266,17 @@ span.math.selected {
 .prose .kind[data-kind='mention']::after {
   content: close-quote;
 }
+/* The language of a passage (ADR 0020) is no look: a faint dotted line
+   under it, below where spelling draws its wave, and its name on hover,
+   as the title. */
+.prose .lang {
+  border-bottom: 1px dotted color-mix(in srgb, var(--ink-4) 55%, transparent);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.prose .lang:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
 /* A highlight is for the eye on the screen, and goes into no document. */
 .prose .kind[data-kind='highlight'] {
   background: var(--highlight);

@@ -17,6 +17,7 @@
   import Code from '@lucide/svelte/icons/code';
   import Columns2 from '@lucide/svelte/icons/columns-2';
   import Drama from '@lucide/svelte/icons/drama';
+  import Globe from '@lucide/svelte/icons/globe';
   import Hash from '@lucide/svelte/icons/hash';
   import Highlighter from '@lucide/svelte/icons/highlighter';
   import ImagePlus from '@lucide/svelte/icons/image-plus';
@@ -72,11 +73,14 @@
     insertMath,
     kindMarkOf,
     kindOf,
+    languageOf,
     setKind,
+    setLanguage,
     toggle,
     toggleKind,
   } from './commands';
   import { CATALOGUE, GROUPS, inHand, specOf, type KindGroup } from './kinds';
+  import LanguageDialog from './LanguageDialog.svelte';
   import LineNumbersDialog from './LineNumbersDialog.svelte';
   import { editPassageKind, newPassageKind } from './own-kinds.svelte';
   import { editorUi, hooksOf } from './ui.svelte';
@@ -113,10 +117,14 @@
   const inVerse = $derived(kind === 'verse' || kind === 'speaker' || kind === 'direction');
   /** The kind of words at the cursor, or the first in what is selected. */
   const wordKind = $derived(s ? kindMarkOf(s.view.state) : null);
+  /** The language of the passage at the cursor, or the first in what is selected, where it has one of its own. */
+  const passageLanguage = $derived(s ? languageOf(s.view.state) : null);
   /** Whether what is selected has any of what the words menu holds. */
   const wordsOn = $derived(
     !!s &&
-      (!!wordKind || ['underline', 'sup', 'sub', 'strike', 'code'].some((name) => s.marks[name])),
+      (!!wordKind ||
+        !!passageLanguage ||
+        ['underline', 'sup', 'sub', 'strike', 'code'].some((name) => s.marks[name])),
   );
 
   /** The element whose text has the cursor, or, where none has it, the one in view: its document sets the tools. */
@@ -219,6 +227,9 @@
       by: at.verse.attrs.by as number,
     };
   }
+
+  /** The language of what is selected, by its tag, asked for in a dialog. */
+  let asking = $state<{ view: EditorView; tag: string | null } | null>(null);
 
   function run(command: Command, view: EditorView | undefined = s?.view) {
     if (!view || view.isDestroyed) return;
@@ -549,6 +560,39 @@
         action: () => run(toggleKind('foreign', tag), view),
       })),
     };
+    // The language of the passage: the languages of texts but the text's own, and any other by its tag.
+    const offered = [
+      ...(passageLanguage &&
+      (passageLanguage === language || !TEXT_LANGUAGES.includes(passageLanguage))
+        ? [passageLanguage]
+        : []),
+      ...TEXT_LANGUAGES.filter((l) => l !== language),
+    ];
+    const ofPassage: MenuItem = {
+      kind: 'submenu',
+      label: t('editor-language'),
+      icon: Globe,
+      items: [
+        {
+          label: t('editor-language-of-text'),
+          hint: language ? languageName(language) : undefined,
+          checked: !passageLanguage,
+          action: () => run(setLanguage(null), view),
+        },
+        { kind: 'separator' },
+        ...offered.map((tag): MenuItem => ({
+          label: languageName(tag),
+          hint: TEXT_LANGUAGES.includes(tag) ? undefined : tag,
+          checked: passageLanguage === tag,
+          action: () => run(setLanguage(tag), view),
+        })),
+        { kind: 'separator' },
+        {
+          label: t('editor-language-other'),
+          action: () => (asking = { view, tag: passageLanguage }),
+        },
+      ],
+    };
     openMenu(
       event.currentTarget as HTMLElement,
       [
@@ -557,6 +601,8 @@
         mark('sub', t('editor-subscript'), Subscript, 'Ctrl+,'),
         mark('strike', t('editor-struck'), Strikethrough, 'Ctrl+Shift+X'),
         mark('code', t('editor-code-words'), Code, undefined, t('editor-code-words-hint')),
+        { kind: 'separator' },
+        ofPassage,
         { kind: 'separator' },
         foreign,
         ofWords('title'),
@@ -760,6 +806,14 @@
     <CornerDownLeft size={15} />
   </button>
 </div>
+
+{#if asking}
+  <LanguageDialog
+    tag={asking.tag}
+    onclose={() => (asking = null)}
+    onset={(tag) => asking && run(setLanguage(tag), asking.view)}
+  />
+{/if}
 
 {#if numbering}
   <LineNumbersDialog

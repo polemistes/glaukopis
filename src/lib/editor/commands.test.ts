@@ -4,7 +4,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   kindMarkOf,
   kindOf,
+  languageOf,
   setKind,
+  setLanguage,
   setStyle,
   splitCitation,
   styleOf,
@@ -203,6 +205,52 @@ describe('the kind of words', () => {
     expect(span.getAttribute('lang')).toBe('grc');
     toggleKind('term')(v.state, v.dispatch, v);
     expect(v.dom.querySelector('span.kind')!.hasAttribute('lang')).toBe(false);
+  });
+});
+
+describe('the language of a passage', () => {
+  it('runs over paragraphs, goes with a kind of words, and is taken off', () => {
+    const v = editor('Er sagte');
+    v.dispatch(v.state.tr.split(v.state.selection.to).insertText('Weltschmerz'));
+    const end = v.state.doc.content.size - 1;
+    v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 4, end)));
+    expect(languageOf(v.state)).toBeNull();
+    expect(setLanguage('de')(v.state, v.dispatch, v)).toBe(true);
+    expect(languageOf(v.state)).toBe('de');
+    // In each paragraph, as far as the selection runs.
+    const second = v.state.doc.child(1).firstChild!;
+    expect(second.marks.map((m) => [m.type.name, m.attrs.tag])).toEqual([['lang', 'de']]);
+    expect(v.state.doc.child(0).child(1).text).toBe('sagte');
+    // A kind of words does not take its place, nor it a kind.
+    toggleKind('term')(v.state, v.dispatch, v);
+    expect(languageOf(v.state)).toBe('de');
+    expect(kindMarkOf(v.state)).toEqual({ name: 'term', lang: '' });
+    setLanguage('grc')(v.state, v.dispatch, v);
+    expect(languageOf(v.state)).toBe('grc');
+    expect(kindMarkOf(v.state)).toEqual({ name: 'term', lang: '' });
+    setLanguage(null)(v.state, v.dispatch, v);
+    expect(languageOf(v.state)).toBeNull();
+    expect(kindMarkOf(v.state)).toEqual({ name: 'term', lang: '' });
+  });
+
+  it('is drawn as a span with the language, inside the kind of words, named on hover', () => {
+    const v = editor('ἄνδρα');
+    v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 1, 6)));
+    toggleKind('foreign', 'el')(v.state, v.dispatch, v);
+    setLanguage('grc')(v.state, v.dispatch, v);
+    const span = v.dom.querySelector('span.lang')!;
+    expect(span.getAttribute('lang')).toBe('grc');
+    expect(span.getAttribute('title')).toBeTruthy();
+    // The nearest language is that of the passage.
+    expect(span.closest('[lang]')).toBe(span);
+    expect(span.parentElement!.closest('.kind')).not.toBeNull();
+  });
+
+  it('with nothing selected is what is typed next', () => {
+    const v = editor();
+    setLanguage('la')(v.state, v.dispatch, v);
+    v.dispatch(v.state.tr.insertText('arma'));
+    expect(v.state.doc.firstChild!.firstChild!.marks[0].attrs).toEqual({ tag: 'la' });
   });
 });
 

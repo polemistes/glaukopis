@@ -3,6 +3,7 @@
 import { citationLabel, isMissing } from '$lib/editor/references.svelte';
 import { figureWidth, foundAttrs, tableWidth } from '$lib/editor/schema';
 import { isPictureName } from '$lib/figures/pictures.svelte';
+import { languageName } from '$lib/i18n';
 import type { Block, Inline } from './text';
 
 function escape(text: string): string {
@@ -27,6 +28,11 @@ function inlines(list: Inline[], notes: { n: number }): string {
         if (i.marks.strike) html = `<s>${html}</s>`;
         if (i.marks.underline) html = `<u>${html}</u>`;
         if (i.marks.code) html = `<code>${html}</code>`;
+        // The language of a passage, inside any kind of words, as the editor has it: its name is told on hover.
+        const lang = i.marks.lang;
+        const tag = typeof lang === 'object' && typeof lang.tag === 'string' ? lang.tag.trim() : '';
+        if (tag)
+          html = `<span class="lang" lang="${escape(tag)}" title="${escape(languageName(tag))}">${html}</span>`;
         // A kind of words: a foreign word with its language, the title of a work, a term.
         const kind = i.marks.kind;
         if (typeof kind === 'object' && typeof kind.name === 'string' && kind.name) {

@@ -258,6 +258,51 @@ export function toggleKind(name: string, lang = ''): Command {
   };
 }
 
+/**
+ * The language of the passage at the cursor, or of the first words in what
+ * is selected that have one, as a tag; nothing where it is the text's own.
+ */
+export function languageOf(state: EditorState): string | null {
+  const type = state.schema.marks.lang;
+  if (!type) return null;
+  const { from, to, empty, $from } = state.selection;
+  let found: Mark | undefined;
+  if (empty) found = type.isInSet(state.storedMarks ?? $from.marks());
+  else
+    state.doc.nodesBetween(from, to, (node) => {
+      if (found) return false;
+      if (node.isText) found = type.isInSet(node.marks);
+      return !found;
+    });
+  const tag = typeof found?.attrs.tag === 'string' ? found.attrs.tag.trim() : '';
+  return tag || null;
+}
+
+/**
+ * Gives the selected text a language of its own, over as many paragraphs as
+ * it runs, whatever else it is marked with; or takes it away, given none,
+ * so that the text is in the language of the text again. With nothing
+ * selected, what is typed next is in it.
+ */
+export function setLanguage(tag: string | null): Command {
+  return (state, dispatch) => {
+    const type = state.schema.marks.lang;
+    if (!type || !markApplies(state, type)) return false;
+    const lang = tag?.trim() ?? '';
+    if (dispatch) {
+      const { from, to, empty, $from } = state.selection;
+      const tr = state.tr;
+      if (empty) {
+        const marks = type.removeFromSet(state.storedMarks ?? $from.marks());
+        tr.setStoredMarks(lang ? type.create({ tag: lang }).addToSet(marks) : marks);
+      } else if (lang) tr.addMark(from, to, type.create({ tag: lang }));
+      else tr.removeMark(from, to, type);
+      dispatch(tr.scrollIntoView());
+    }
+    return true;
+  };
+}
+
 /** The kinds of paragraph the tools knew before the catalogue; `kindOf` and `setKind` know every kind. */
 export type ParagraphStyle =
   'text' | 'quote' | 'list' | 'numbered' | 'verse' | 'speaker' | 'direction' | ScriptPart;

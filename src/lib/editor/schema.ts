@@ -9,6 +9,7 @@
 
 import { Schema, type MarkSpec, type NodeSpec } from 'prosemirror-model';
 import { tableNodes } from 'prosemirror-tables';
+import { languageName } from '$lib/i18n';
 
 /**
  * Whether a link may be followed: to the web, to an address, or within the
@@ -140,6 +141,28 @@ const marks: Record<string, MarkSpec> = {
     toDOM: (mark) => [
       'span',
       { class: 'kind', 'data-kind': mark.attrs.name, lang: mark.attrs.lang || null },
+      0,
+    ],
+  },
+  /**
+   * The language of a passage, from a word to many paragraphs: `tag` is its
+   * tag, "grc", "la", "de". It has no look of its own, and goes with every
+   * other mark, a kind of words among them; where foreign words say a
+   * language as well, this one holds. A passage over several paragraphs is
+   * marked in each. It stands inside a kind of words, so that the nearest
+   * language is its own. See ADR 0020.
+   */
+  lang: {
+    attrs: { tag: { default: '' } },
+    parseDOM: [
+      {
+        tag: 'span.lang[lang]',
+        getAttrs: (node) => ({ tag: (node as HTMLElement).getAttribute('lang') ?? '' }),
+      },
+    ],
+    toDOM: (mark) => [
+      'span',
+      { class: 'lang', lang: mark.attrs.tag, title: languageName(mark.attrs.tag) },
       0,
     ],
   },
