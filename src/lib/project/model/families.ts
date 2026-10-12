@@ -109,7 +109,9 @@ export function factsOf(id: string, own: readonly BasedKind[] = []): KindFacts {
     seen.add(at);
     const known = KIND_FACTS[at];
     if (known) {
-      if (known.family === 'text' && at !== id) return { ...known, family: id as Family };
+      // A kind of the writer's own based on text is a family of its own, whose paragraphs count.
+      if (known.family === 'text' && at !== id)
+        return { ...known, family: id as Family, counted: true, next: undefined };
       return known;
     }
     const kind = own.find((k) => k.id === at);
@@ -117,7 +119,7 @@ export function factsOf(id: string, own: readonly BasedKind[] = []): KindFacts {
     at = kind.basedOn ? renamed(kind.basedOn) : 'text';
   }
   return seen.size > 1 || own.some((k) => k.id === id)
-    ? { ...KIND_FACTS.text, family: id as Family }
+    ? { ...KIND_FACTS.text, family: id as Family, counted: true, next: undefined }
     : KIND_FACTS.text;
 }
 

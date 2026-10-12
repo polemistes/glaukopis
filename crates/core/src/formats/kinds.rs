@@ -549,8 +549,9 @@ pub fn facts(id: &str, own: &[OwnKind]) -> Facts {
     while seen.len() < 8 && !seen.contains(&at) {
         seen.push(at);
         if let Some(e) = entry_of(at) {
+            // A kind of the writer's own based on text is a family of its own, whose paragraphs count.
             if e.group == "text" && at != id {
-                return Facts { group: id.to_owned(), ..Facts::of(e) };
+                return Facts { group: id.to_owned(), counted: true, ..Facts::of(e) };
             }
             return Facts::of(e);
         }
@@ -559,7 +560,7 @@ pub fn facts(id: &str, own: &[OwnKind]) -> Facts {
         at = if base.is_empty() { "text" } else { renamed(base) };
     }
     if seen.len() > 1 || own.iter().any(|k| k.id == id) {
-        Facts { group: id.to_owned(), ..Facts::of(text) }
+        Facts { group: id.to_owned(), counted: true, ..Facts::of(text) }
     } else {
         Facts::of(text)
     }
@@ -841,7 +842,7 @@ mod tests {
         assert_eq!(of("chorus"), Facts { group: "verse".into(), counted: false, joins: false, base: "speaker" });
         assert_eq!(of("verse2").base, "line");
         // One based on text, or on nothing that is known, is a family of its own; one not known at all is text.
-        assert_eq!(of("letter"), Facts { group: "letter".into(), counted: false, joins: false, base: "text" });
+        assert_eq!(of("letter"), Facts { group: "letter".into(), counted: true, joins: false, base: "text" });
         assert_eq!(of("odd").group, "odd");
         assert_eq!(of("c1").group, "c1");
         assert_eq!(of("nothing").group, "text");
