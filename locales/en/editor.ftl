@@ -60,15 +60,18 @@ editor-line-number-press = The number of this paragraph: press to change it
 ## Numbers belong to what they number (ADR 0040): the Numbers menu offers
 ## the three, each saying what it numbers.
 editor-numbers = Numbers
-editor-numbers-hint = Number the lines of this passage, mark a place in prose, or number the lines of the page
+editor-numbers-hint = Number the lines of a passage or the paragraphs of a text, mark a place in prose, or number the lines of the page
 editor-numbers-passage = Number the lines of this passage…
 editor-numbers-passage-hint = The lines you write, counted by the passage: from which number, every how many, on which side
+editor-numbers-paragraphs-hint = The paragraphs of this text, or those selected, counted: from which number, every how many, on which side
+editor-numbers-paragraphs = Number these paragraphs…
 editor-numbers-refmark-hint = A place in prose, by a verse, a page or a number of an edition: 3:16, 327a
-editor-numbers-page = Number the lines of the page…
-editor-numbers-page-hint = Every line of the page, numbered by the layout
+editor-numbers-page = Number the lines of the page
+editor-numbers-page-hint = Every line of the printed page, numbered in the margin, in this document and those under it
 
 ## The bracket of a passage, at its left, named by its family; its menu
 ## says what is said of the passage.
+editor-family-text = Numbered text
 editor-family-quotation = Quotation
 editor-family-verse = Verse
 editor-family-script = Script

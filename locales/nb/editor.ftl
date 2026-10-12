@@ -60,15 +60,18 @@ editor-line-number-press = Nummeret til dette avsnittet: trykk for å endre det
 ## Numrene hører til det de nummererer (ADR 0040): Nummer-menyen tilbyr de
 ## tre, og hver sier hva den nummererer.
 editor-numbers = Nummer
-editor-numbers-hint = Nummerer linjene i dette stykket, merk et sted i prosa, eller nummerer linjene på siden
+editor-numbers-hint = Nummerer linjene i et stykke eller avsnittene i en tekst, merk et sted i prosa, eller nummerer linjene på siden
 editor-numbers-passage = Nummerer linjene i dette stykket …
 editor-numbers-passage-hint = Linjene du skriver, telt av stykket: fra hvilket nummer, hver hvor mange, på hvilken side
+editor-numbers-paragraphs-hint = Avsnittene i denne teksten, eller de som er merket, talt: fra hvilket tall, hvor ofte, på hvilken side
+editor-numbers-paragraphs = Nummerer disse avsnittene …
 editor-numbers-refmark-hint = Et sted i prosa, ved et vers, en side eller et nummer i en utgave: 3:16, 327a
-editor-numbers-page = Nummerer linjene på siden …
-editor-numbers-page-hint = Hver linje på siden, nummerert av oppsettet
+editor-numbers-page = Nummerer linjene på siden
+editor-numbers-page-hint = Hver linje på den trykte siden, nummerert i margen, i dette dokumentet og dem under det
 
 ## Klammen til et stykke, til venstre for det, med navnet på familien; menyen
 ## dens sier det som sies om stykket.
+editor-family-text = Nummerert tekst
 editor-family-quotation = Sitat
 editor-family-verse = Vers
 editor-family-script = Manus

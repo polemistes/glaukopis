@@ -262,6 +262,31 @@ rewritten by it.
   (Ctrl+Alt+K), *Number the lines of the page…* (the layout's line
   numbering, in the document settings).
 
+## Amended the same day, after the owner tried it
+
+- **Text can be numbered.** Rule 6 gave the numbering of prose to
+  reference marks and the page, which left numbered paragraphs out. Text
+  still forms no passage of itself, but *Number these paragraphs…* makes
+  the paragraphs of text the cursor is in (or those selected) a passage of
+  family `text`, numbered, every paragraph counted from 1. A passage of
+  text stands only while it is numbered: set to *Not numbered*, its
+  paragraphs are lifted out. The kind `text` is counted (it is counted only
+  in such a passage, since it stands in no other).
+- **Stanzas.** A poem is often written as paragraphs of lines broken by
+  hand. Made verse, such paragraphs are read as written: each broken line
+  a line, each paragraph a stanza, an empty line between. Made another kind,
+  lines with an empty line among them become a paragraph for each stanza,
+  its lines broken by hand. An empty line in verse is the break between
+  stanzas: Enter on an empty last line begins a stanza, Enter again leaves
+  the verse; Backspace takes the break away. An empty paragraph is never
+  counted, in either rule of numbering, and the documents keep the room of
+  the break (`#v(1em)` in Typst, a skip of a line in LaTeX, an empty line
+  of the line block elsewhere).
+- **The lines of the page** are numbered from the Numbers menu at once, a
+  check that is said of the document of the element in view
+  (`DocumentSettings.lineNumbers`, inherited), over the layout's
+  `lineNumbers`; the layout keeps its own as the default.
+
 ## Why not otherwise
 
 - *Two buttons, Passage and Paragraph*: explicit, but two taxonomies to

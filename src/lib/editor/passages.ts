@@ -13,7 +13,8 @@
  *   and so put in a passage of its own;
  * - passages of one family that stand next to each other are joined, the
  *   first one's settings holding;
- * - an empty passage goes.
+ * - an empty passage goes, and so does a passage of text that is not
+ *   numbered: text stands in a passage only while it is numbered.
  *
  * Each step is a step of the transaction, so that the cursor follows and
  * undo is one. The walk is from the top, and begins again after each step,
@@ -124,6 +125,15 @@ function fixIn(tr: Transaction, parent: Node, start: number, own: readonly Based
       if (child.childCount === 0) {
         tr.delete(pos, pos + child.nodeSize);
         return true;
+      }
+      // A passage of text is there only while it is numbered: its paragraphs are lifted out when it is not.
+      if (child.attrs.family === 'text' && (child.attrs.numbering ?? 'none') === 'none') {
+        const range = rangeOf(tr.doc, child, pos + 1, 0, child.childCount);
+        const target = liftTarget(range);
+        if (target !== null) {
+          tr.lift(range, target);
+          return true;
+        }
       }
       // Two passages of one family, next to each other, are one.
       const next = i + 1 < parent.childCount ? parent.child(i + 1) : null;

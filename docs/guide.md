@@ -393,9 +393,19 @@ Lines of poetry, drama or a transcript are kept as lines: choose **Verse**
 as the kind of paragraph, for the paragraphs selected or for the one the
 cursor is in, and each paragraph is a line. Lines that stand together form
 a **verse**, shown by a bracket at their left, which names them *Verse*
-while the cursor is among them; Enter at the end of a line makes a new
-line, and Enter on an empty last line makes it text, which leaves the
-verse. A line can be the **speaker**, or a **stage direction**:
+while the cursor is among them. Enter at the end of a line makes a new
+line. An empty line is the break between two **stanzas**: Enter on an
+empty last line keeps it as that break and begins the next stanza, and
+Enter once more leaves the verse; Backspace in an empty line between two
+stanzas takes the break away. An empty line is never counted.
+
+A poem written as paragraphs of lines broken with **Shift+Enter** is read
+as it was written: made verse, each broken line becomes a line and each
+paragraph a stanza, with an empty line between them. Made text again, as
+from **Make it text** in the bracket's menu, each stanza becomes a paragraph
+of lines broken by hand, as it was.
+
+A line can be the **speaker**, or a **stage direction**:
 choose it as the kind of the line, and it stays in the verse. Set a line in
 the middle to text, and the verse parts around it; set it back, and the
 verse is whole again. Tab indents a line a step, for the shorter lines of
@@ -404,10 +414,15 @@ lyric; Shift+Tab takes it back.
 Numbers belong to what they number. **Numbers**, the **#** button among
 the tools, offers the three things that number, each saying what it
 numbers: **Number the lines of this passage…**, the lines you write, counted
-by the verse, quotation, list or other passage the cursor is in;
-**Reference mark…**, a place in prose (see *Reference marks*); and **Number
-the lines of the page…**, every line of the page, numbered by the layout,
-which opens the document settings at the layout. The first is also
+by the verse, quotation, list or other passage the cursor is in, or, in
+text, **Number these paragraphs…**, the paragraphs of the text the cursor
+is in, or those selected, every one counted from 1 unless you say
+otherwise; **Reference mark…**, a place in prose (see *Reference marks*);
+and **Number the lines of the page**, every line of the printed page,
+numbered in the margin, which is marked when it is on and is said of the
+document of the element in view and of all under it, over what its layout
+says. Numbered paragraphs of text stand in a bracket named *Numbered
+text*; numbered as *Not numbered*, they are plain text again. The first is also
 **Numbers…** in the menu of the passage's bracket (see *Kinds of paragraph
 and of words*). In its window, **Numbering** is one of three: **Not
 numbered**; **Counted from the first number given**, which counts the lines

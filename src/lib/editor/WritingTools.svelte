@@ -91,7 +91,7 @@
   import { editPassageKind, newPassageKind } from './own-kinds.svelte';
   import { editorUi, hooksOf } from './ui.svelte';
   import { askRefMark } from './refmarks';
-  import { insertParallel, passageAt } from './verse';
+  import { insertParallel, passageAt, textRun } from './verse';
 
   interface Props {
     project: Project;
@@ -127,6 +127,17 @@
   const kindLabel = $derived(mixed ? t('editor-kinds-mixed') : nameOf(kind));
   /** Whether the cursor is in a passage, of any family, whose paragraphs the Numbers menu can number. */
   const inPassage = $derived(!!s && body && passageAt(s.view.state) !== null);
+  /**
+   * What the cursor stands in that can be numbered: a passage, whose lines
+   * are numbered, or text, whose paragraphs are, in a passage of text of
+   * their own; nothing elsewhere, as in a table.
+   */
+  const numberable = $derived.by((): 'lines' | 'paragraphs' | null => {
+    if (!s || !body) return null;
+    const at = passageAt(s.view.state);
+    if (at) return at.passage.attrs.family === 'text' ? 'paragraphs' : 'lines';
+    return textRun(s.view.state) ? 'paragraphs' : null;
+  });
   /** The kind of words at the cursor, or the first in what is selected. */
   const wordKind = $derived(s ? kindMarkOf(s.view.state) : null);
   /** The language of the passage at the cursor, or the first in what is selected, where it has one of its own. */
@@ -151,6 +162,8 @@
   });
   const choice = $derived(documents.choice(ofDocument?.settings ?? {}, project));
   let format = $state.raw<DocumentFormat | null>(null);
+  /** Whether the lines of the page are numbered: as the document says, else as its layout does. */
+  const pageNumbered = $derived(ofDocument?.settings.lineNumbers ?? format?.lineNumbers ?? false);
   $effect(() => {
     const id = choice.format;
     void documents.changed;
@@ -243,13 +256,21 @@
     openMenu(
       event.currentTarget as HTMLElement,
       [
-        {
-          label: t('editor-numbers-passage'),
-          hint: t('editor-numbers-passage-hint'),
-          icon: Hash,
-          disabled: !inPassage || !hooks?.askNumbers,
-          action: () => hooks?.askNumbers?.(view),
-        },
+        numberable === 'paragraphs'
+          ? {
+              label: t('editor-numbers-paragraphs'),
+              hint: t('editor-numbers-paragraphs-hint'),
+              icon: Hash,
+              disabled: !hooks?.askNumbers,
+              action: () => hooks?.askNumbers?.(view),
+            }
+          : {
+              label: t('editor-numbers-passage'),
+              hint: t('editor-numbers-passage-hint'),
+              icon: Hash,
+              disabled: !numberable || !hooks?.askNumbers,
+              action: () => hooks?.askNumbers?.(view),
+            },
         {
           label: t('editor-refmark'),
           hint: t('editor-numbers-refmark-hint'),
@@ -259,12 +280,17 @@
         },
         { kind: 'separator' },
         {
+          // Said of the document of the element in view, and of all under it, over what its layout says.
           label: t('editor-numbers-page'),
           hint: t('editor-numbers-page-hint'),
           icon: FileDigit,
+          checked: pageNumbered,
           disabled: !settingsAt,
           action: () => {
-            if (settingsAt) documentSettingsUi.open({ project, at: settingsAt, section: 'layout' });
+            if (!settingsAt) return;
+            const on = ofDocument?.from.get('lineNumbers') ?? settingsAt;
+            project.setDocument(on, { lineNumbers: !pageNumbered });
+            view.focus();
           },
         },
       ],

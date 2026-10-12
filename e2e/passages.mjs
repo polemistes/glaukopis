@@ -231,18 +231,21 @@ try {
       numbersItems.some((w) => w.startsWith('Number the lines of the page')),
     numbersItems.join(' | '),
   );
+  // The lines of the page are numbered at once, from the menu, which marks it so.
   await app.clickText('.menu [role="menuitem"]', 'Number the lines of the page');
-  const settings = await app.waitForText('dialog[open] h2', 'Document settings', 5000).then(
-    () => true,
-    () => false,
-  );
-  check(
-    'and the lines of the page are numbered in the document settings',
-    settings && (await app.exists('dialog[open] .window nav')),
-  );
   await sleep(300);
+  await toLine(0);
+  await app.click('.pane-bar .tools button.lines');
+  await app.waitFor('.menu');
+  await sleep(150);
+  const page = await app.exec(
+    `const m = Array.from(document.querySelectorAll('.menu [role="menuitem"], .menu [role="menuitemcheckbox"]')).find((m) => m.textContent.includes('Number the lines of the page'));
+     return m ? (m.getAttribute('aria-checked') ?? (m.querySelector('.check svg') ? 'true' : 'false')) : null;`,
+  );
+  check('the lines of the page are numbered from the Numbers menu, which shows it', page === 'true', String(page));
   await app.screenshot('passages-6-page-numbers');
-  await app.closeDocumentSettings(false);
+  await app.press('Escape');
+  await sleep(200);
 
   // --- The layout editor: a part for the numbers, and every kind with its look ---
   await toLine(0);

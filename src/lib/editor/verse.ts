@@ -5,7 +5,7 @@
  * sides, each a text of its own (ADR 0027).
  */
 
-import type { Node } from 'prosemirror-model';
+import { NodeRange, type Node } from 'prosemirror-model';
 import {
   Plugin,
   PluginKey,
@@ -24,6 +24,7 @@ import {
   type Side,
 } from '$lib/project/model/families';
 import { lineNumbers, type Shown } from '$lib/project/model/lines';
+import { blank } from './stanzas';
 
 /** The passage the cursor is in, with where it begins, and the paragraph within it. */
 export function passageAt(state: EditorState): {
@@ -84,7 +85,9 @@ export function numberLines(how: PassageNumbering): Command {
 export function isCounted(paragraph: Node, own: readonly BasedKind[] = []): boolean {
   return (
     countedKind(renamed((paragraph.attrs.kind as string) || 'text'), own) &&
-    paragraph.attrs.counted !== false
+    paragraph.attrs.counted !== false &&
+    // An empty paragraph is never counted: in verse it is the break between two stanzas.
+    !blank(paragraph)
   );
 }
 
@@ -133,6 +136,8 @@ export interface LineMarks {
 
 /** What the dialog of the numbers asks about: see `LineNumbersDialog.svelte`. */
 export interface NumbersAsked {
+  /** Whether the cursor stands in text, which is made a numbered passage of text when the dialog says to number it. */
+  text?: boolean;
   passage: PassageNumbering;
   /** The number the first counted paragraph has, and whether it is the one the cursor is in; nothing where none is counted. */
   from: { number: string | null; here: boolean } | null;
@@ -151,7 +156,25 @@ export function numbersAsked(
   own: readonly BasedKind[] = [],
 ): NumbersAsked | null {
   const at = passageAt(state);
-  if (!at) return null;
+  if (!at) {
+    // In text: its paragraphs are to be numbered, every one, counted from 1 unless the writer says otherwise.
+    const run = textRun(state);
+    if (!run) return null;
+    const { attrs } = run.paragraph;
+    return {
+      text: true,
+      passage: { numbering: 'counted', every: 1, side: null },
+      from: { number: '1', here: run.here },
+      line: {
+        kind: 'text',
+        number: run.here ? '1' : ((attrs.number as string | null) ?? null),
+        counted: attrs.counted !== false,
+        margin: (attrs.margin as string | null) ?? null,
+        words: run.paragraph.textContent,
+        countable: true,
+      },
+    };
+  }
   const { attrs } = at.paragraph;
   const first = firstCounted(at.passage, own);
   return {
@@ -175,6 +198,68 @@ export function numbersAsked(
       // Whether its kind is counted at all: only then can it be given a number, or left out of the count.
       countable: countedKind(renamed(String(attrs.kind ?? 'text')), own),
     },
+  };
+}
+
+/**
+ * The paragraphs of text the cursor stands among, outside any passage: those
+ * the selection touches, or, where nothing is selected, the run of
+ * paragraphs of text the cursor is in, up to whatever is not one. With the
+ * paragraph the cursor is in, and whether it is the first of them. Nothing
+ * where the cursor is in a passage, or in a paragraph of a kind, or where a
+ * passage cannot stand.
+ */
+export function textRun(
+  state: EditorState,
+): { from: number; to: number; depth: number; paragraph: Node; here: boolean } | null {
+  const { $from, $to, empty } = state.selection;
+  let d = $from.depth;
+  while (d > 0 && $from.node(d).type.name !== 'paragraph') d--;
+  if (!d) return null;
+  const parent = $from.node(d - 1);
+  const passage = state.schema.nodes.passage;
+  if (!passage || parent.type === passage) return null;
+  const isText = (n: Node | null | undefined) =>
+    !!n && n.type.name === 'paragraph' && renamed((n.attrs.kind as string) || 'text') === 'text';
+  const at = $from.index(d - 1);
+  if (!isText(parent.child(at))) return null;
+  let first = at;
+  let last = at;
+  if (!empty && $to.depth >= d && $to.node(d - 1) === parent) last = $to.index(d - 1);
+  if (empty) {
+    while (first > 0 && isText(parent.child(first - 1))) first--;
+    while (last + 1 < parent.childCount && isText(parent.child(last + 1))) last++;
+  }
+  for (let i = first; i <= last; i++) if (!isText(parent.child(i))) return null;
+  if (!parent.canReplaceWith(first, last + 1, passage)) return null;
+  let from = $from.start(d - 1);
+  for (let i = 0; i < first; i++) from += parent.child(i).nodeSize;
+  let to = from;
+  for (let i = first; i <= last; i++) to += parent.child(i).nodeSize;
+  return { from, to, depth: d - 1, paragraph: parent.child(at), here: at === first };
+}
+
+/** Makes the paragraphs of text the cursor stands among a passage of text, numbered as said (ADR 0040). */
+export function numberText(how: PassageNumbering): Command {
+  return (state, dispatch) => {
+    const run = textRun(state);
+    const passage = state.schema.nodes.passage;
+    if (!run || !passage || how.numbering === 'none') return false;
+    if (dispatch) {
+      const range = new NodeRange(
+        state.doc.resolve(run.from + 1),
+        state.doc.resolve(run.to - 1),
+        run.depth,
+      );
+      const attrs = {
+        family: 'text',
+        numbering: how.numbering,
+        every: how.every && how.every >= 1 ? Math.round(how.every) : null,
+        side: how.side === 'left' || how.side === 'right' ? how.side : null,
+      };
+      dispatch(state.tr.wrap(range, [{ type: passage, attrs }]).scrollIntoView());
+    }
+    return true;
   };
 }
 

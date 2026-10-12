@@ -97,6 +97,17 @@ fn code_text(content: &[Inline]) -> String {
     out
 }
 
+/// Whether a paragraph holds nothing to read: no words, or only spaces and
+/// breaks. An empty line of verse is the break between two stanzas; nothing
+/// empty is counted.
+fn blank(content: &[Inline]) -> bool {
+    content.iter().all(|i| match i {
+        Inline::Text { text, .. } => text.trim().is_empty(),
+        Inline::Break => true,
+        _ => false,
+    })
+}
+
 /// The number a list begins at, from the number given its first item.
 fn list_start(number: Option<&str>) -> u32 {
     let digits: String = number.unwrap_or("").chars().filter(char::is_ascii_digit).collect();
@@ -110,10 +121,10 @@ impl Converter<'_> {
         self.extras.kinds.get(name).map_or("text", |info| info.base)
     }
 
-    /// Whether a numbering counts a paragraph: its kind is counted, and the
-    /// paragraph does not say otherwise.
+    /// Whether a numbering counts a paragraph: its kind is counted, the
+    /// paragraph does not say otherwise, and it is not empty.
     fn counts(&self, p: &Para) -> bool {
-        p.counted && self.extras.kinds.get(p.name).is_some_and(|info| info.counted)
+        p.counted && !blank(p.content) && self.extras.kinds.get(p.name).is_some_and(|info| info.counted)
     }
 
     /// A passage, as its family and its numbering ask.
@@ -195,6 +206,11 @@ impl Converter<'_> {
                 // The numbers are counted here, and each line is given what it shows.
                 out.push(raw("typst", "#gk-verse["));
                 for (line, shown) in lines.iter().zip(shown) {
+                    // An empty line is the room between two stanzas.
+                    if blank(line.content) && line.margin.is_none() && shown.is_none() {
+                        out.push(raw("typst", "#v(1em)"));
+                        continue;
+                    }
                     let n = shown.as_ref().map_or("none".to_owned(), |s| string(&s.label));
                     let margin = line.margin.map_or("none".to_owned(), string);
                     out.push(raw(
@@ -218,6 +234,11 @@ impl Converter<'_> {
                 let indent = line_look.map_or("2.4em".to_owned(), |l| l.indent_left.to_string());
                 out.push(raw("latex", format!("{{\\par\\leftskip={indent}\\relax\\parindent=0pt\\parskip=0pt")));
                 for (line, shown) in lines.iter().zip(shown) {
+                    // An empty line is the room between two stanzas.
+                    if blank(line.content) && line.margin.is_none() && shown.is_none() {
+                        out.push(raw("latex", "\\vspace{\\baselineskip}"));
+                        continue;
+                    }
                     let mut inner = self.inlines(line.content);
                     let mut lead = vec![raw_inline("latex", "\\noindent")];
                     match self.base_of(line.name) {
@@ -731,6 +752,48 @@ mod tests {
         let second = out[2]["c"].as_array().unwrap();
         assert_eq!(second[1]["c"][1], "\\llap{{\\footnotesize ");
         assert_eq!(second[2]["c"], "1");
+    }
+
+    #[test]
+    fn an_empty_line_parts_two_stanzas_and_is_not_counted() {
+        let keys = HashMap::new();
+        let verse = numbered(
+            "verse",
+            None,
+            vec![
+                line("line", 0, Some("1"), "One a"),
+                line("line", 0, None, "One b"),
+                line("line", 0, None, ""),
+                line("line", 0, None, "Two a"),
+            ],
+        );
+        let c = converter(&keys, Flavour::Typst);
+        let out = written(&c, std::slice::from_ref(&verse));
+        let typst: Vec<&str> = out.iter().filter_map(|v| v["c"][1].as_str()).collect();
+        assert!(typst.contains(&"#v(1em)"), "{typst:?}");
+        // Counted every two: the empty line is passed over, and the line after it is the third.
+        assert!(typst.contains(&"#gk-line(\"line\", 0, n: \"2\", margin: none, side: \"left\")["), "{typst:?}");
+        assert!(!typst.iter().any(|l| l.contains("n: \"3\"")), "{typst:?}");
+        let c = converter(&keys, Flavour::Latex);
+        let out = written(&c, &[verse]);
+        assert!(out.iter().any(|v| v["c"][1] == "\\vspace{\\baselineskip}"));
+    }
+
+    #[test]
+    fn paragraphs_of_text_are_counted_in_a_numbered_passage_of_text() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Docx);
+        let prose = Block::Passage {
+            family: "text".into(),
+            numbering: Numbering::Counted,
+            every: Some(1),
+            side: None,
+            content: vec![line("text", 0, Some("1"), "First."), line("text", 0, None, "Second.")],
+        };
+        let out = written(&c, &[prose]);
+        let said = serde_json::to_string(&out).unwrap();
+        // Each paragraph has its number at its head, the second counted on from the first.
+        assert!(said.contains("\"Verse Number\"") && said.contains("\"2\u{a0}\u{a0}\""), "{said}");
     }
 
     #[test]

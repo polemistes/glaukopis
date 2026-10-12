@@ -32,6 +32,7 @@
     numberFrom,
     numberLines,
     numbersAsked,
+    numberText,
     relayoutNumbers,
     type NumbersAsked,
     type NumbersLayout,
@@ -566,6 +567,8 @@
     onset={(how, from, line) => {
       if (!numbering) return;
       const v = numbering.view;
+      // In text, its paragraphs are made a passage of text first, numbered as said.
+      if (numbering.text) run(numberText(how), v);
       run(numberLines(how), v);
       if (from !== undefined) run(numberFrom(from, ownKinds), v);
       if (line) run(markLine(line), v);

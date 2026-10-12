@@ -8,6 +8,8 @@ import {
   markLine,
   numberFrom,
   numberLines,
+  numberText,
+  numbersAsked,
   passageAt,
   passageNumbers,
   relayoutNumbers,
@@ -257,5 +259,59 @@ describe('what is said of a passage and a paragraph by hand', () => {
     // Not where no paragraph begins.
     expect(giveNumber(0, '1')(state)).toBe(false);
     expect(giveNumber(9, '1')(state)).toBe(false);
+  });
+});
+
+describe('numbers, stanzas and text', () => {
+  it('pass over an empty line, which is the break between two stanzas', () => {
+    const state = EditorState.create({
+      doc: verse({ numbering: 'counted', every: 1 }, [
+        p('line', 'One a', { number: '1' }),
+        p('line', 'One b'),
+        nodes.paragraph.create({ kind: 'line' }),
+        p('line', 'Two a'),
+      ]),
+    });
+    expect(drawn(state)).toEqual(['1*', '2', null, '3']);
+  });
+
+  it('make the paragraphs of text around the cursor a numbered passage of text', () => {
+    const doc = nodes.doc.create(null, [p('text', 'One.'), p('text', 'Two.'), p('text', 'Three.')]);
+    let state = EditorState.create({ doc });
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 7)));
+    const asked = numbersAsked(state);
+    expect(asked?.text).toBe(true);
+    expect(asked?.passage.numbering).toBe('counted');
+    expect(asked?.passage.every).toBe(1);
+    expect(asked?.from).toEqual({ number: '1', here: false });
+    let tr = state.tr;
+    expect(numberText({ numbering: 'counted', every: 1, side: null })(state, (t) => (tr = t))).toBe(
+      true,
+    );
+    state = state.apply(tr);
+    const passage = state.doc.firstChild!;
+    expect(passage.type.name).toBe('passage');
+    expect(passage.attrs.family).toBe('text');
+    expect(passage.childCount).toBe(3);
+  });
+
+  it('make only what is selected a passage, and nothing of what is not text', () => {
+    const doc = nodes.doc.create(null, [
+      p('text', 'One.'),
+      p('text', 'Two.'),
+      p('quote', 'Three.'),
+    ]);
+    let state = EditorState.create({ doc });
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 2, 4)));
+    let tr = state.tr;
+    numberText({ numbering: 'counted', every: null, side: null })(state, (t) => (tr = t));
+    state = state.apply(tr);
+    expect(state.doc.firstChild!.type.name).toBe('passage');
+    expect(state.doc.firstChild!.childCount).toBe(1);
+    // In a paragraph of a kind, outside a passage, there is no text to number.
+    state = state.apply(
+      state.tr.setSelection(TextSelection.create(state.doc, state.doc.content.size - 2)),
+    );
+    expect(numbersAsked(state)).toBeNull();
   });
 });

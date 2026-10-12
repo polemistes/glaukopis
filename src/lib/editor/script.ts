@@ -14,8 +14,10 @@
  * is based on.
  */
 
+import type { Node } from 'prosemirror-model';
 import { TextSelection, type Command, type EditorState } from 'prosemirror-state';
-import { nextOf, renamed, tabOf, type BasedKind } from '$lib/project/model/families';
+import { familyOf, nextOf, renamed, tabOf, type BasedKind } from '$lib/project/model/families';
+import { blank } from './stanzas';
 import { indentParagraph, paragraphAt, setKind, type ParagraphAt } from './commands';
 
 /** The kind of the paragraph the cursor is in, with the paragraph; nothing where it is in none. */
@@ -30,6 +32,16 @@ function lastOfPassage(state: EditorState, at: ParagraphAt): boolean {
   const parent = $from.node(at.depth - 1);
   if (parent.type.name !== 'passage') return true;
   return $from.index(at.depth - 1) === parent.childCount - 1;
+}
+
+/** The paragraph before the one at a depth, within its passage; nothing for the first, or one that stands in none. */
+function lineBefore(state: EditorState, at: ParagraphAt): { node: Node; pos: number } | null {
+  const { $from } = state.selection;
+  const parent = $from.node(at.depth - 1);
+  const index = $from.index(at.depth - 1);
+  if (parent.type.name !== 'passage' || index === 0) return null;
+  const node = parent.child(index - 1);
+  return { node, pos: at.pos - node.nodeSize };
 }
 
 /** Whether the paragraph at a depth is the first of a passage, or stands in none. */
@@ -54,8 +66,23 @@ export function enterKind(own: () => readonly BasedKind[] = () => []): Command {
     const { $from, $to, empty } = state.selection;
     if (!$from.sameParent($to) || $from.parent !== at.node) return false;
     const kinds = own();
-    if (empty && at.node.content.size === 0 && lastOfPassage(state, at))
-      return setKind('text', kinds)(state, dispatch);
+    if (empty && at.node.content.size === 0 && lastOfPassage(state, at)) {
+      // In verse an empty line is the break between two stanzas: Enter on the
+      // empty last line begins the next stanza, and Enter again, on the empty
+      // line after that break, leaves the verse.
+      const before = lineBefore(state, at);
+      if (familyOf(at.kind, kinds) !== 'verse' || !before)
+        return setKind('text', kinds)(state, dispatch);
+      if (blank(before.node)) {
+        if (dispatch) {
+          const tr = state.tr.delete(before.pos, before.pos + before.node.nodeSize);
+          const pos = tr.mapping.map(at.pos);
+          tr.setNodeMarkup(pos, undefined, { ...at.node.attrs, kind: 'text', indent: 0 });
+          dispatch(tr.scrollIntoView());
+        }
+        return true;
+      }
+    }
     const atEnd = $to.parentOffset === at.node.content.size;
     if (dispatch) {
       const tr = state.tr;
@@ -138,6 +165,9 @@ export function backOutOfKind(own: () => readonly BasedKind[] = () => []): Comma
     const { $from } = state.selection;
     if ($from.parent !== at.node || $from.parentOffset !== 0) return false;
     if (at.node.content.size !== 0 && !firstOfPassage(state, at)) return false;
+    // An empty line between two stanzas goes, as any empty line: the stanzas are one again.
+    if (at.node.content.size === 0 && familyOf(at.kind, own()) === 'verse' && lineBefore(state, at))
+      return false;
     return setKind('text', own())(state, dispatch);
   };
 }

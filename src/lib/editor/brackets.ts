@@ -31,6 +31,7 @@ import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
 import { languageItems } from './language-menu';
 import { hooksOf } from './ui.svelte';
 import { passageAt } from './verse';
+import { asWritten, type Given } from './stanzas';
 
 export const bracketsKey = new PluginKey<DecorationSet>('passage-brackets');
 
@@ -60,10 +61,19 @@ export function selectPassage(pos: number): Command {
  * passage then goes, since text forms none (`passages.ts`); the cursor
  * stays where it was.
  */
-export function passageToText(pos: number): Command {
+export function passageToText(pos: number, own: readonly BasedKind[] = []): Command {
   return (state, dispatch) => {
     const passage = passageNode(state, pos);
     if (!passage) return false;
+    // Verse with stanzas becomes a paragraph for each stanza, its lines broken by hand.
+    const given: Given[] = [];
+    passage.forEach((node, offset) => given.push({ node, pos: pos + 1 + offset }));
+    const written = asWritten(state.schema, given, 'text', own);
+    if (written) {
+      if (dispatch)
+        dispatch(state.tr.replaceWith(written.from, written.to, written.nodes).scrollIntoView());
+      return true;
+    }
     if (dispatch) {
       const tr = state.tr;
       passage.forEach((paragraph, offset) => {
@@ -206,7 +216,7 @@ export function passageMenu(view: EditorView, pos: number, anchor: HTMLElement) 
       label: t('editor-passage-to-text'),
       hint: t('editor-passage-to-text-hint'),
       icon: Pilcrow,
-      action: () => run(passageToText(pos)),
+      action: () => run(passageToText(pos, hooks?.passageKinds?.() ?? [])),
     },
     {
       label: t('editor-passage-split'),

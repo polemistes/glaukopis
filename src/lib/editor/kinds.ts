@@ -104,6 +104,8 @@ export const GROUPS: { id: KindGroup; families: readonly string[]; label(): stri
 
 /** The words for each family that comes with the application, by which the bracket of a passage names it. */
 const FAMILY_WORDS: Record<string, string> = {
+  // A passage of text is there only while it is numbered.
+  text: 'editor-family-text',
   quotation: 'editor-family-quotation',
   verse: 'editor-family-verse',
   script: 'editor-family-script',

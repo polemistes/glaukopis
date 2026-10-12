@@ -93,6 +93,22 @@ describe('the shape of a text', () => {
     expect(doc.firstChild!.attrs).toMatchObject({ numbering: 'counted', every: 3, side: null });
   });
 
+  it('keeps text in a numbered passage of text, and lifts it out when the passage is not numbered', () => {
+    const numbered = kept([
+      P('text', [p('text', 'One'), p('text', 'Two')], { numbering: 'counted' }),
+      p('text'),
+    ]);
+    expect(numbered.did).toBe(false);
+    expect(numbered.shape).toBe('text[text text] text');
+    const plain = kept([P('text', [p('text', 'One'), p('text', 'Two')]), p('text')]);
+    expect(plain.shape).toBe('text text text');
+    // What is not text does not stay in it.
+    const mixed = kept([
+      P('text', [p('text', 'One'), p('quote', 'Two')], { numbering: 'counted' }),
+    ]);
+    expect(mixed.shape).toBe('text[text] quotation[quote]');
+  });
+
   it('takes an empty passage away', () => {
     const { shape } = kept([p('text'), passage.create({ family: 'verse' }), p('text')]);
     expect(shape).toBe('text text');

@@ -14,7 +14,7 @@ const own = [
 describe('the facts of kinds', () => {
   it('follow the catalogue', () => {
     expect(familyOf('line')).toBe('verse');
-    expect(countedKind('line') && !countedKind('speaker') && !countedKind('text')).toBe(true);
+    expect(countedKind('line') && !countedKind('speaker') && countedKind('text')).toBe(true);
     expect(joinsBefore('attribution') && !joinsBefore('quote')).toBe(true);
     expect(nextOf('character')).toBe('dialogue');
     expect(nextOf('code')).toBe('code');

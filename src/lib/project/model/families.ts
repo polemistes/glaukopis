@@ -52,7 +52,8 @@ const f = (
 
 /** The kinds of the catalogue, by id. The ids are stored in projects and must not change. */
 export const KIND_FACTS: Record<string, KindFacts> = {
-  text: f('text', false, { next: 'text' }),
+  // Text forms no passage of itself; in a passage of text, made when paragraphs of text are numbered, they are counted.
+  text: f('text', true, { next: 'text' }),
   quote: f('quotation', true),
   epigraph: f('quotation', true, { next: 'attribution' }),
   attribution: f('quotation', false, { joins: true, next: 'text' }),

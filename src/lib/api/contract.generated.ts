@@ -1263,7 +1263,7 @@ export const preview: Preview = {
 export const kinds: KindEntry[] = [
   {
     "basedOn": null,
-    "counted": false,
+    "counted": true,
     "family": "paragraph",
     "group": "text",
     "id": "text",

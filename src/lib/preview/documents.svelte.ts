@@ -242,11 +242,13 @@ export async function documentRequest(
   const template = await templateFor(project, documents.choice(settings, project).template);
   // The choice again, with the template read: it may bring the style or the format.
   const choice = documents.choice(settings, project);
-  const format = await documents.format(choice.format);
+  const format = $state.snapshot(await documents.format(choice.format)) as DocumentFormat;
+  // Whether the lines of the page are numbered, where the document says, over its layout.
+  if (settings.lineNumbers !== undefined) format.lineNumbers = settings.lineNumbers;
   return {
     document: buildDocument(project, at),
     style: choice.style,
-    format: $state.snapshot(format) as DocumentFormat,
+    format,
     template: $state.snapshot(template) as Template,
     output: 'document',
     key: projectId,

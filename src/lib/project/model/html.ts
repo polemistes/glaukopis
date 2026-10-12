@@ -126,7 +126,11 @@ export function passageNumbers(p: PassageBlock, own: readonly BasedKind[]): (Sho
     p.numbering,
     p.every ?? 5,
     p.content.map((line) => ({
-      counted: countedKind(line.name, own) && line.counted !== false,
+      // An empty paragraph is never counted: in verse it is the break between two stanzas.
+      counted:
+        countedKind(line.name, own) &&
+        line.counted !== false &&
+        line.content.some((i) => i.kind !== 'break' && (i.kind !== 'text' || !!i.text.trim())),
       number: line.number,
     })),
   );

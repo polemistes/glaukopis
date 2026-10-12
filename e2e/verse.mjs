@@ -132,19 +132,21 @@ try {
   );
   await app.screenshot('verse-1-lines');
 
-  // --- Enter at the end twice leaves the verse ---
+  // --- Enter at the end three times leaves the verse ---
   await app.exec(
     `const l = Array.from(document.querySelectorAll('.text-view .passage[data-family="verse"] > p')).pop(); const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
   );
   // The editor takes up a selection set from outside on the next event: give it time before the keys.
   await sleep(150);
+  // Enter, and Enter on the empty line, begins a stanza; Enter once more leaves the verse.
+  await app.press('Enter');
   await app.press('Enter');
   await app.press('Enter');
   await sleep(200);
   await app.keys('So the nurse begins.');
   await sleep(200);
   check(
-    'Enter on an empty last line leaves the verse for a paragraph',
+    'Enter on an empty line after a stanza break leaves the verse for a paragraph',
     (await app.exec(`return document.querySelectorAll('.text-view .passage[data-family="verse"] > p').length`)) ===
       6 &&
       (await app.exec(

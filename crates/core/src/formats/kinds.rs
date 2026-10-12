@@ -296,7 +296,9 @@ const fn entry(
 pub const CATALOGUE: &[Entry] = {
     use Family::{Paragraph, Words};
     &[
-        entry("text", Paragraph, "text", None, "Body Text", false),
+        // Text forms no passage of itself; in a passage of text, which is made
+        // when the writer numbers paragraphs of text, they are counted.
+        entry("text", Paragraph, "text", None, "Body Text", true),
         // A quotation set off from the text, one at the head of a part, and the line that names the source.
         entry("quote", Paragraph, "quotation", None, "Block Text", true),
         entry("epigraph", Paragraph, "quotation", Some("quote"), "Epigraph", true),
@@ -864,7 +866,7 @@ mod tests {
         ];
         let of = |id: &str| facts(id, &own);
         assert_eq!(of("line").group, "verse");
-        assert!(of("line").counted && !of("speaker").counted && !of("text").counted);
+        assert!(of("line").counted && !of("speaker").counted && of("text").counted);
         assert!(of("attribution").joins && !of("quote").joins);
         // The old ids are read.
         assert_eq!(of("verse").base, "line");

@@ -331,11 +331,23 @@ describe('the keys in a paragraph of a kind', () => {
   });
 
   it('Enter on an empty last paragraph of a passage makes it text, leaving the passage', () => {
+    const q = editor('a');
+    setKind('quote')(q.state, q.dispatch, q);
+    end(q);
+    press(q, enterKind());
+    expect(shape(q)).toBe('quotation[quote quote]');
+    press(q, enterKind());
+    expect(shape(q)).toBe('quotation[quote] text');
+    expect(kindOf(q.state)).toBe('text');
+    q.destroy();
+    // In verse, the first Enter on an empty line begins a stanza; the next leaves the verse.
     const v = editor('a');
     setKind('line')(v.state, v.dispatch, v);
     end(v);
     press(v, enterKind());
     expect(shape(v)).toBe('verse[line line]');
+    press(v, enterKind());
+    expect(shape(v)).toBe('verse[line line line]');
     press(v, enterKind());
     expect(shape(v)).toBe('verse[line] text');
     expect(kindOf(v.state)).toBe('text');
@@ -477,5 +489,83 @@ describe('the words of a citation parted from it', () => {
       ),
     );
     expect(splitCitation(one.state.selection.from - 1)(one.state)).toBe(false);
+  });
+});
+
+describe('verse read as it was written', () => {
+  /** A text of paragraphs, each of lines broken by hand. */
+  function poem(...stanzas: string[][]): EditorView {
+    const v = editor();
+    const { paragraph, hard_break } = bodySchema.nodes;
+    const nodes = stanzas.map((lines) =>
+      paragraph.create(
+        null,
+        lines.flatMap((l, i) =>
+          i ? [hard_break.create(), bodySchema.text(l)] : [bodySchema.text(l)],
+        ),
+      ),
+    );
+    v.dispatch(v.state.tr.replaceWith(0, v.state.doc.content.size, nodes));
+    v.dispatch(
+      v.state.tr.setSelection(TextSelection.create(v.state.doc, 1, v.state.doc.content.size - 1)),
+    );
+    return v;
+  }
+  const lines = (v: EditorView) => {
+    const out: string[] = [];
+    v.state.doc.descendants((node) => {
+      if (node.type.name !== 'paragraph') return true;
+      out.push(`${node.attrs.kind}:${node.textContent}`);
+      return false;
+    });
+    return out;
+  };
+
+  it('makes each line broken by hand a line, and each paragraph a stanza, with an empty line between', () => {
+    const v = poem(['One a', 'One b', 'One c'], ['Two a', 'Two b']);
+    setKind('line')(v.state, v.dispatch, v);
+    expect(shape(v)).toBe('verse[line line line line line line]');
+    expect(lines(v)).toEqual([
+      'line:One a',
+      'line:One b',
+      'line:One c',
+      'line:',
+      'line:Two a',
+      'line:Two b',
+    ]);
+  });
+
+  it('makes the stanzas paragraphs again, their lines broken by hand, when the verse is made text', () => {
+    const v = poem(['One a', 'One b'], ['Two a']);
+    setKind('line')(v.state, v.dispatch, v);
+    v.dispatch(
+      v.state.tr.setSelection(TextSelection.create(v.state.doc, 2, v.state.doc.content.size - 2)),
+    );
+    setKind('text')(v.state, v.dispatch, v);
+    expect(shape(v)).toBe('text text');
+    let breaks = 0;
+    v.state.doc.descendants((n) => {
+      if (n.type.name === 'hard_break') breaks++;
+    });
+    expect(breaks).toBe(1);
+  });
+
+  it('makes paragraphs without breaks one line each, as before', () => {
+    const v = poem(['alpha'], ['beta']);
+    setKind('line')(v.state, v.dispatch, v);
+    expect(lines(v)).toEqual(['line:alpha', 'line:beta']);
+  });
+
+  it('takes away the break between stanzas with Backspace', () => {
+    const w = poem(['One a', 'One b'], ['Two a']);
+    setKind('line')(w.state, w.dispatch, w);
+    // The cursor in the empty line between the stanzas.
+    let at = 0;
+    w.state.doc.descendants((n, pos) => {
+      if (n.type.name === 'paragraph' && n.content.size === 0) at = pos + 1;
+      return n.type.name !== 'paragraph';
+    });
+    w.dispatch(w.state.tr.setSelection(TextSelection.create(w.state.doc, at)));
+    expect(backOutOfKind()(w.state, w.dispatch)).toBe(false);
   });
 });

@@ -47,6 +47,8 @@ export interface DocumentSettings {
   language?: string;
   /** What the file formats carry as metadata: isbn, edition, publisher, place, doi. */
   identifiers?: Record<string, string>;
+  /** Whether every line of the page is numbered, over what the layout says (ADR 0040). */
+  lineNumbers?: boolean;
 }
 
 /** The settings an element has of its own, never from one over it: a chapter printed alone is not titled as the book. */

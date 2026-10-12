@@ -20,6 +20,7 @@ import { renamed, tabOf, type BasedKind } from '$lib/project/model/families';
 import type { Inline, RefForm } from '$lib/project/model/text';
 import { newId } from '$lib/util/id';
 import { specOf } from './kinds';
+import { asWritten } from './stanzas';
 import { bodySchema, type CiteItem, type CiteMode } from './schema';
 
 export function markActive(state: EditorState, type: MarkType): boolean {
@@ -114,6 +115,19 @@ export function setKind(id: string, own: readonly BasedKind[] = []): Command {
     if (specOf(kind)?.family === 'words') return toggleKind(kind)(state, dispatch, view);
     const paragraphs = paragraphsIn(state);
     if (!paragraphs.length) return false;
+    // A poem written as paragraphs of lines broken by hand, made verse, or verse with stanzas made text: read as written.
+    const written = asWritten(state.schema, paragraphs, kind, own);
+    if (written) {
+      if (dispatch) {
+        const tr = state.tr.replaceWith(written.from, written.to, written.nodes);
+        const end = written.from + written.nodes.reduce((n, node) => n + node.nodeSize, 0);
+        tr.setSelection(
+          TextSelection.create(tr.doc, written.from + 1, Math.max(written.from + 1, end - 1)),
+        );
+        dispatch(tr.scrollIntoView());
+      }
+      return true;
+    }
     if (dispatch) {
       const tr = state.tr;
       const indents = tabOf(kind, own) === 'indent';
