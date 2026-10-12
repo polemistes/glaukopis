@@ -2191,9 +2191,56 @@ on a desk of another shade, so that where the text goes is seen.
   do not go with it.
 - **Everything is in one folder**, shown under *Settings*. To keep a copy of
   your work, copy the folder.
-- **To read your text without Glaukopis**, export it. The references are in
-  `library.bib` at all times, which other tools can read; the text of a
-  project is in a form that only Glaukopis reads.
+- **To read your text without Glaukopis**, export it, or open its folder:
+  every project is kept there as Org as well (see below). The references are
+  in `library.bib` at all times, which other tools can read.
+
+### Your project as Org
+
+Every project is also kept as plain text that you, and other programs, can
+read without Glaukopis. Its folder, under *projects* in the folder shown
+under *Settings* (each named by the letters and digits Glaukopis knows the
+project by; its `project.org` begins with the project's name), holds beside
+what Glaukopis works from:
+
+- `project.org`: the whole project in Org, the plain text form of Org mode.
+  Each element is a headline at its depth in the tree, the project first;
+  its text is under it, with its kinds of paragraph as Org's blocks
+  (`#+BEGIN_QUOTE`, `#+BEGIN_VERSE`, lists with `- `), its marks as Org's
+  (`/italic/`, `*bold*`), its notes as `[fn::…]` and its citations as
+  `[cite:@key]`. What is said of an element (its kind, how far it has come,
+  when it is, its associations, its settings as a document) is in a drawer
+  under its headline, and its comments in another.
+- `references.bib`: the works the project cites, by the keys the citations
+  use.
+- `pictures/`: the pictures its figures show.
+
+It is written anew a few seconds after the project is saved, and Glaukopis
+never reads it back: it cannot get your project wrong, and nothing is lost
+if you change it or delete it. To have it somewhere else, right-click a
+project, on the home page or in the list of projects, and choose **Save as
+Org…**, and choose a folder: the same three are written into it.
+
+**Open an Org file…**, on the home page, makes a new project of an Org file,
+or of a folder that holds `project.org`, as a project file does: its works
+are compared with your library, and you choose where they differ. A file
+written by Glaukopis comes back as the project it was; one you wrote
+yourself, or one from Org mode, is read as well as it can be, and what has
+no place in a project is kept as a draft paragraph, so that nothing is lost.
+
+**The clipboard** speaks Org too. What you copy is, as plain text, its Org
+form, so that a quotation or a list keeps its shape when it is pasted into a
+plain text editor; text pasted that is written in Org (a block, a list, a
+citation) comes in with its kinds and marks. Text that is not Org is pasted
+as before, line by line.
+
+**The history and the review** can show what changed as Org: tick **Show as
+Org** to see the text as it was and as it is, the lines taken out and put in
+marked, and within a changed line the words that changed.
+
+`project.org` is read by Org mode in Emacs, with its outline, folding and
+tables, and by Pandoc, which turns it into many other forms; any editor of
+plain text shows it as it is.
 
 ## Keys
 
