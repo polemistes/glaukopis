@@ -241,7 +241,8 @@ impl Converter<'_> {
             };
             if opens_lines {
                 let from = i;
-                i += 1;
+                // The speakers and directions before the first stanza, and the stanza.
+                i = words_end(i) + 1;
                 while i < n && !paras[i].new {
                     if self.grouping(paras[i].name) == "lines" {
                         i += 1;
@@ -789,5 +790,429 @@ impl Converter<'_> {
                 ]}));
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use super::super::fixtures::{kind, lines, mark, text};
+    use super::super::pandoc::Extras;
+    use super::*;
+    use crate::formats::DocumentFormat;
+
+    fn converter(keys: &HashMap<String, String>, flavour: Flavour) -> Converter<'_> {
+        let mut extras = Extras::default();
+        extras.flavour = flavour;
+        extras.kinds = crate::formats::kinds::table(&DocumentFormat::default(), &[]);
+        Converter {
+            keys,
+            language: Some("en-GB"),
+            run_in: vec![],
+            new_page: vec![],
+            page_break: None,
+            deepest: 6,
+            extras,
+        }
+    }
+
+    fn written(c: &Converter, blocks: &[Block]) -> Vec<Value> {
+        let mut out = Vec::new();
+        c.blocks(blocks, &mut out);
+        out
+    }
+
+    /// The raw lines of Typst or LaTeX among what is written.
+    fn raws(out: &[Value]) -> Vec<&str> {
+        out.iter().filter_map(|v| v["c"][1].as_str()).collect()
+    }
+
+    /// Paragraphs numbered together, every so many, on the side given.
+    fn numbered(every: u32, side: Option<Side>, blocks: Vec<Block>) -> Vec<Block> {
+        blocks.into_iter().map(|b| b.numbered(Numbering::Counted, Some(every), side)).collect()
+    }
+
+    /// A speaker, and a stanza of three lines: the first given a number, the
+    /// second indented, the third with words in the margin.
+    fn nurse(side: Option<Side>) -> Vec<Block> {
+        numbered(
+            2,
+            side,
+            vec![
+                kind("speaker", vec![text("Nurse")]),
+                lines(
+                    "line",
+                    vec![
+                        (Some(mark().number("1").done()), "If only"),
+                        (Some(mark().indent(1).done()), "the Argo"),
+                        (Some(mark().margin("ia.").done()), "had never flown"),
+                    ],
+                ),
+            ],
+        )
+    }
+
+    #[test]
+    fn a_verse_is_a_line_block_with_its_numbers_at_the_head_or_the_end() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Docx);
+        let out = written(&c, &nurse(None));
+        assert_eq!(out.len(), 1);
+        // In the style of a line, as a line block.
+        assert_eq!(out[0]["c"][0][2], json!([["custom-style", "Line"]]));
+        let lines = out[0]["c"][1][0]["c"].as_array().unwrap();
+        assert_eq!(lines.len(), 4);
+        // The speaker in the character style the line block needs.
+        assert_eq!(lines[0][0]["c"][0][2], json!([["custom-style", "Speaker Char"]]));
+        assert_eq!(lines[1][0]["c"][0][2], json!([["custom-style", "Verse Number"]]));
+        assert_eq!(lines[1][0]["c"][1][0]["c"], "1\u{a0}\u{a0}");
+        // The second line counted shows its number, every second being shown; it is indented by spaces that do not break.
+        assert_eq!(lines[2][0]["c"][1][0]["c"], "2\u{a0}\u{a0}");
+        assert_eq!(lines[2][1]["c"], "\u{a0}\u{a0}\u{a0}\u{a0}");
+        // The third is not shown; its margin words stand at the end.
+        let last = lines[3].as_array().unwrap();
+        assert_eq!(last[0]["c"], "had");
+        assert_eq!(last[last.len() - 1]["c"][0][2], json!([["custom-style", "Verse Margin"]]));
+        // On the right side the number stands at the end and the margin words at the head.
+        let out = written(&c, &nurse(Some(Side::Right)));
+        let lines = out[0]["c"][1][0]["c"].as_array().unwrap();
+        let second = lines[1].as_array().unwrap();
+        assert_eq!(second[0]["c"], "If");
+        assert_eq!(second[second.len() - 1]["c"][0][2], json!([["custom-style", "Verse Number"]]));
+        let last = lines[3].as_array().unwrap();
+        assert_eq!(last[0]["c"][0][2], json!([["custom-style", "Verse Margin"]]));
+    }
+
+    #[test]
+    fn a_verse_in_typst_and_latex() {
+        let keys = HashMap::new();
+        let verse = nurse(None);
+        let c = converter(&keys, Flavour::Typst);
+        let out = written(&c, &verse);
+        assert_eq!(out[0]["c"][1], "#gk-verse[");
+        assert_eq!(out[1]["c"][1], "#gk-line(\"speaker\", 0, n: none, margin: none, side: \"left\")[");
+        assert_eq!(out[4]["c"][1], "#gk-line(\"line\", 0, n: \"1\", margin: none, side: \"left\")[");
+        assert_eq!(out[7]["c"][1], "#gk-line(\"line\", 1, n: \"2\", margin: none, side: \"left\")[");
+        assert_eq!(out[10]["c"][1], "#gk-line(\"line\", 0, n: none, margin: \"ia.\", side: \"left\")[");
+        let c = converter(&keys, Flavour::Latex);
+        let out = written(&c, &verse);
+        assert_eq!(
+            out[0]["c"][1], "{\\par\\leftskip=1cm\\relax\\parindent=0pt\\parskip=0pt",
+            "as far in as a line looks"
+        );
+        let first = out[1]["c"].as_array().unwrap();
+        assert_eq!(first[0]["c"][1], "\\medskip\\noindent");
+        assert_eq!(first[1]["t"], "SmallCaps");
+        let second = out[2]["c"].as_array().unwrap();
+        assert_eq!(second[1]["c"][1], "\\llap{{\\footnotesize ");
+        assert_eq!(second[2]["c"], "1");
+    }
+
+    #[test]
+    fn two_stanzas_have_room_between_them_and_are_counted_on() {
+        let keys = HashMap::new();
+        let verse = numbered(
+            2,
+            None,
+            vec![
+                lines("line", vec![(Some(mark().number("1").done()), "One a"), (None, "One b")]),
+                lines("line", vec![(None, "Two a"), (None, "Two b")]),
+            ],
+        );
+        let c = converter(&keys, Flavour::Typst);
+        let out = written(&c, &verse);
+        let typst = raws(&out);
+        assert_eq!(typst.iter().filter(|l| **l == "#gk-verse[").count(), 1, "one block of lines: {typst:?}");
+        assert_eq!(typst.iter().filter(|l| **l == "#v(1em)").count(), 1, "{typst:?}");
+        // Counted every two, across the stanzas: the second line of each shows its number.
+        assert!(typst.contains(&"#gk-line(\"line\", 0, n: \"2\", margin: none, side: \"left\")["), "{typst:?}");
+        assert!(typst.contains(&"#gk-line(\"line\", 0, n: \"4\", margin: none, side: \"left\")["), "{typst:?}");
+        assert!(!typst.iter().any(|l| l.contains("n: \"3\"")), "{typst:?}");
+        let c = converter(&keys, Flavour::Latex);
+        let out = written(&c, &verse);
+        assert_eq!(raws(&out).iter().filter(|l| **l == "\\vspace{\\baselineskip}").count(), 1);
+        // Elsewhere an empty line in the line block.
+        let c = converter(&keys, Flavour::Plain);
+        let out = written(&c, &verse);
+        assert_eq!(out.len(), 1);
+        let block = out[0]["c"].as_array().unwrap();
+        assert_eq!(block.len(), 5);
+        assert_eq!(block[2], json!([]));
+        // Two lines parted by an empty one within a stanza are parted as two stanzas are.
+        let one = vec![lines("line", vec![(None, "a"), (None, ""), (None, "b")])];
+        let out = written(&c, &one);
+        assert_eq!(out[0]["c"].as_array().unwrap().len(), 3);
+    }
+
+    #[test]
+    fn a_line_marked_hidden_is_counted_and_shows_nothing() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Typst);
+        let verse = numbered(
+            2,
+            None,
+            vec![lines(
+                "line",
+                vec![
+                    (Some(mark().number("1").done()), "one"),
+                    (Some(mark().hidden().done()), "two"),
+                    (None, "three"),
+                    (None, "four"),
+                ],
+            )],
+        );
+        let out = written(&c, &verse);
+        let typst = raws(&out);
+        // Every two: the second holds its 2 back, and the fourth shows 4.
+        assert!(!typst.iter().any(|l| l.contains("n: \"2\"")), "{typst:?}");
+        assert!(typst.iter().any(|l| l.contains("n: \"4\"")), "{typst:?}");
+    }
+
+    #[test]
+    fn the_count_runs_on_through_a_speaker_and_a_direction() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Typst);
+        let verse = numbered(
+            1,
+            None,
+            vec![
+                lines("line", vec![(Some(mark().number("1").done()), "a"), (None, "b")]),
+                kind("speaker", vec![text("Chorus")]),
+                kind("direction", vec![text("They dance.")]),
+                lines("line", vec![(None, "c"), (None, "d")]),
+            ],
+        );
+        let out = written(&c, &verse);
+        let typst = raws(&out);
+        assert_eq!(typst.iter().filter(|l| **l == "#gk-verse[").count(), 1, "{typst:?}");
+        assert!(typst.contains(&"#gk-line(\"speaker\", 0, n: none, margin: none, side: \"left\")["), "{typst:?}");
+        assert!(typst.contains(&"#gk-line(\"direction\", 0, n: none, margin: none, side: \"left\")["), "{typst:?}");
+        assert!(typst.contains(&"#gk-line(\"line\", 0, n: \"3\", margin: none, side: \"left\")["), "{typst:?}");
+        assert!(typst.contains(&"#gk-line(\"line\", 0, n: \"4\", margin: none, side: \"left\")["), "{typst:?}");
+        // A speaker parts the stanzas: no room is added between them.
+        assert!(!typst.contains(&"#v(1em)"), "{typst:?}");
+    }
+
+    #[test]
+    fn prose_numbered_is_a_line_a_paragraph_and_a_line_at_each_break() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Docx);
+        let prose = numbered(
+            1,
+            None,
+            vec![
+                Block::paragraph(vec![mark().number("1").done(), text("First."), Inline::Break, text("And on.")]),
+                Block::paragraph(vec![text("Second.")]),
+            ],
+        );
+        let out = written(&c, &prose);
+        assert_eq!(out.len(), 2);
+        let first = out[0]["c"].as_array().unwrap();
+        assert_eq!(first[0]["c"][1][0]["c"], "1\u{a0}\u{a0}");
+        assert_eq!(first[1]["c"], "First.");
+        assert_eq!(first[2]["t"], "LineBreak");
+        assert_eq!(first[3]["c"][1][0]["c"], "2\u{a0}\u{a0}", "a number at each line where it breaks");
+        assert_eq!(out[1]["c"][0]["c"][1][0]["c"], "3\u{a0}\u{a0}");
+        // In Typst beside each line, in the margin.
+        let c = converter(&keys, Flavour::Typst);
+        let said = serde_json::to_string(&written(&c, &prose)).unwrap();
+        for n in ["1", "2", "3"] {
+            assert!(said.contains(&format!("#gk-beside(\\\"left\\\", gk-number(\\\"{n}\\\"));")), "{said}");
+        }
+    }
+
+    #[test]
+    fn a_quotation_is_a_block_quote_with_its_attribution_after_it() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Docx);
+        let quotation = vec![
+            kind("quote", vec![text("Sing, goddess.")]),
+            kind("quote", vec![text("The wrath.")]),
+            kind("attribution", vec![text("Homer")]),
+            kind("epigraph", vec![text("At the head.")]),
+        ];
+        let out = written(&c, &quotation);
+        assert_eq!(out.len(), 3);
+        assert_eq!(out[0]["t"], "BlockQuote");
+        assert_eq!(out[0]["c"].as_array().unwrap().len(), 2);
+        assert_eq!(out[1]["c"][0][2], json!([["custom-style", "Attribution"]]));
+        assert_eq!(out[2]["c"][0][2], json!([["custom-style", "Epigraph"]]));
+        // Numbered, the quoted paragraphs carry their numbers.
+        let quoted = numbered(
+            1,
+            None,
+            vec![
+                kind("quote", vec![text("First.")]),
+                lines("quote", vec![(Some(mark().number("327a").done()), "Second.")]),
+                kind("quote", vec![text("Third.")]),
+            ],
+        );
+        let out = written(&c, &quoted);
+        assert_eq!(out.len(), 1);
+        let paras = out[0]["c"].as_array().unwrap();
+        assert_eq!(paras[0]["c"][0]["c"], "First.", "nothing before the first number given");
+        assert_eq!(paras[1]["c"][0]["c"][1][0]["c"], "327a\u{a0}\u{a0}");
+        assert_eq!(paras[2]["c"][0]["c"][1][0]["c"], "328\u{a0}\u{a0}", "the count goes on from the digits");
+    }
+
+    #[test]
+    fn a_new_run_begins_where_a_paragraph_says_so() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Plain);
+        let blocks = vec![
+            kind("quote", vec![text("One.")]),
+            kind("quote", vec![text("Two.")]).begins_run(),
+            kind("line", vec![text("a")]),
+            kind("speaker", vec![text("Nurse")]),
+            kind("line", vec![text("b")]).begins_run(),
+        ];
+        let out = written(&c, &blocks);
+        let tags: Vec<&str> = out.iter().map(|v| v["t"].as_str().unwrap()).collect();
+        assert_eq!(tags, ["BlockQuote", "BlockQuote", "LineBlock", "LineBlock"]);
+        // The speaker before a stanza that begins a run goes with it.
+        assert_eq!(out[2]["c"].as_array().unwrap().len(), 1);
+        assert_eq!(out[3]["c"].as_array().unwrap().len(), 2);
+        // A run in a numbered stretch is counted on from the run before.
+        let blocks = numbered(
+            1,
+            None,
+            vec![
+                lines("line", vec![(Some(mark().number("7").done()), "a")]),
+                kind("line", vec![text("b")]).begins_run(),
+            ],
+        );
+        let out = written(&c, &blocks);
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[1]["c"][0][0]["c"][1][0]["c"], "8\u{a0}\u{a0}");
+    }
+
+    #[test]
+    fn a_list_is_nested_by_indent() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Plain);
+        let item = |name: &str, indent: u32, words: &str| kind(name, vec![text(words)]).indented(indent);
+        let list = vec![
+            item("item", 0, "one"),
+            item("item", 0, "two"),
+            lines("numbered", vec![(Some(mark().number("3").done()), "nested")]).indented(1),
+            item("numbered", 1, "more"),
+            item("item", 2, "deeper"),
+            item("item", 0, "three"),
+            item("numbered", 0, "apart"),
+        ];
+        let out = written(&c, &list);
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0]["t"], "BulletList");
+        let items = out[0]["c"].as_array().unwrap();
+        assert_eq!(items.len(), 3);
+        assert_eq!(items[1][1]["t"], "OrderedList");
+        assert_eq!(items[1][1]["c"][0][0], 3);
+        let nested = items[1][1]["c"][1].as_array().unwrap();
+        assert_eq!(nested.len(), 2);
+        assert_eq!(nested[1][1]["t"], "BulletList");
+        assert_eq!(out[1]["t"], "OrderedList");
+        assert_eq!(out[1]["c"][0][0], 1);
+    }
+
+    #[test]
+    fn a_glossary_is_a_description_list() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Docx);
+        let glossary = vec![
+            kind("headword", vec![text("Argo")]),
+            kind("gloss", vec![text("A ship.")]),
+            kind("gloss", vec![text("The first.")]),
+            kind("headword", vec![text("Colchis")]),
+            kind("gloss", vec![text("A land.")]),
+        ];
+        let out = written(&c, &glossary);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0]["t"], "DefinitionList");
+        let items = out[0]["c"].as_array().unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0][0][0]["c"], "Argo");
+        assert_eq!(items[0][1].as_array().unwrap().len(), 2, "each gloss a definition");
+        assert_eq!(items[0][1][1][0]["t"], "Para");
+        assert_eq!(items[1][1].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn code_and_a_kind_of_the_writers_own() {
+        let keys = HashMap::new();
+        let mut c = converter(&keys, Flavour::Docx);
+        let own = vec![crate::formats::kinds::OwnKind {
+            id: "k1".into(),
+            name: "Letter".into(),
+            family: crate::formats::kinds::Family::Paragraph,
+            based_on: "text".into(),
+            look: Default::default(),
+        }];
+        c.extras.kinds = crate::formats::kinds::table(&DocumentFormat::default(), &own);
+        let blocks = vec![
+            kind("code", vec![text("let x = 1;")]),
+            kind("code", vec![]),
+            kind("code", vec![text("let y;"), Inline::Break, text("let z;")]),
+            kind("k1", vec![text("Dear friend,")]),
+            kind("k1", vec![text("I write.")]),
+            kind("draft", vec![text("Look this up.")]),
+            kind("break", vec![]),
+        ];
+        let out = written(&c, &blocks);
+        assert_eq!(out.len(), 4);
+        assert_eq!(out[0]["t"], "CodeBlock");
+        assert_eq!(out[0]["c"][1], "let x = 1;\n\nlet y;\nlet z;");
+        assert_eq!(out[1]["c"][0][2], json!([["custom-style", "Letter"]]));
+        assert_eq!(out[2]["c"][0][2], json!([["custom-style", "Letter"]]));
+        assert_eq!(out[3]["c"][0][2], json!([["custom-style", "Section Break"]]));
+        assert_eq!(out[3]["c"][1][0]["c"][0]["c"], "*");
+    }
+
+    #[test]
+    fn breaks_of_the_page_and_the_column_in_every_kind_of_document() {
+        let keys = HashMap::new();
+        let breaks = [Block::Break { what: BreakKind::Page }, Block::Break { what: BreakKind::Column }];
+        let said = |flavour: Flavour, classes: bool, columns: u8| -> Vec<(String, String)> {
+            let mut c = converter(&keys, flavour);
+            c.extras.classes = classes;
+            c.extras.columns = columns;
+            written(&c, &breaks)
+                .iter()
+                .map(|v| (v["c"][0].as_str().unwrap().to_owned(), v["c"][1].as_str().unwrap().to_owned()))
+                .collect()
+        };
+        let pair = |format: &str, page: &str, column: &str| {
+            vec![(format.to_owned(), page.to_owned()), (format.to_owned(), column.to_owned())]
+        };
+        assert_eq!(said(Flavour::Typst, false, 1), pair("typst", "#pagebreak()", "#colbreak()"));
+        assert_eq!(said(Flavour::Latex, false, 2), pair("latex", "\\newpage", "\\columnbreak"));
+        // Without columns a break of the column begins a new page, as in Typst and Word.
+        assert_eq!(said(Flavour::Latex, false, 1), pair("latex", "\\newpage", "\\newpage"));
+        assert_eq!(
+            said(Flavour::Docx, false, 1),
+            pair(
+                "openxml",
+                "<w:p><w:r><w:br w:type=\"page\"/></w:r></w:p>",
+                "<w:p><w:r><w:br w:type=\"column\"/></w:r></w:p>"
+            )
+        );
+        assert_eq!(
+            said(Flavour::Odt, false, 1),
+            pair(
+                "opendocument",
+                "<text:p text:style-name=\"Page_20_Break\"/>",
+                "<text:p text:style-name=\"Column_20_Break\"/>"
+            )
+        );
+        assert_eq!(
+            said(Flavour::Plain, true, 1),
+            pair("html", "<div style=\"break-before: page\"></div>", "<div style=\"break-before: column\"></div>")
+        );
+        // Markdown has a break of the page as TeX writes it, and none of the column.
+        assert_eq!(said(Flavour::Plain, false, 1), vec![("latex".to_owned(), "\\newpage".to_owned())]);
+        // Within texts side by side no break is written.
+        let c = converter(&keys, Flavour::Typst);
+        let out = written(&c, &[Block::Parallel { left: breaks.to_vec(), right: vec![] }]);
+        assert!(!raws(&out).iter().any(|l| l.contains("break")), "{out:?}");
     }
 }

@@ -1066,6 +1066,7 @@ mod tests {
         let f: DocumentFormat = serde_json::from_str(r#"{"id":"x","name":"X"}"#).unwrap();
         assert_eq!(f.font.size, 12.0);
         assert_eq!(f.page.size, "a4");
+        assert_eq!((f.page.columns, f.page.column_gap), (1, Length::cm(1.0)), "one column, where nothing is said");
         assert_eq!(f.headings.levels.len(), 3);
         assert_eq!(f.heading(9), f.heading(3));
         assert_eq!(f.heading(0), f.heading(1));
@@ -1078,7 +1079,7 @@ mod tests {
     fn nonsense_is_put_right() {
         let mut f: DocumentFormat = serde_json::from_str(
             r#"{"font":{"family":" ","size":400},"text":{"lineSpacing":-1},
-                "page":{"size":"a4","marginLeft":"40cm","marginTop":"1in"},
+                "page":{"size":"a4","marginLeft":"40cm","marginTop":"1in","columns":9,"columnGap":"-2cm"},
                 "headings":{"levels":[]}}"#,
         )
         .unwrap();
@@ -1088,7 +1089,14 @@ mod tests {
         assert_eq!(f.text.line_spacing, 1.5);
         assert_eq!(f.page.margin_left, Length::cm(2.5));
         assert_eq!(f.page.margin_top.points(), 72.0);
+        assert_eq!((f.page.columns, f.page.column_gap), (4, Length::cm(1.0)));
         assert!(!f.headings.levels.is_empty());
+        let mut none: DocumentFormat = serde_json::from_str(r#"{"page":{"columns":0}}"#).unwrap();
+        none.sanitise();
+        assert_eq!(none.page.columns, 1);
+        // Written as the interface reads it.
+        let page = serde_json::to_value(&none.page).unwrap();
+        assert_eq!((page["columns"].as_u64(), page["columnGap"].as_str()), (Some(1), Some("1cm")));
     }
 
     #[test]

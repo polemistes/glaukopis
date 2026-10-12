@@ -2348,6 +2348,84 @@ mod tests {
     }
 
     #[test]
+    fn breaks_and_columns_in_every_kind_of_document() {
+        use crate::document::fixtures::text;
+        use crate::document::{Block, BreakKind};
+        let Some(s) = setup() else { return };
+        let out = s.work.join("out");
+        fs::create_dir_all(&out).unwrap();
+        let mut r = request("chicago-author-date");
+        r.format.page.columns = 2;
+        r.format.page.column_gap = crate::formats::Length::cm(0.8);
+        let blocks = &mut r.document.sections[1].blocks;
+        blocks.push(Block::Break { what: BreakKind::Page });
+        blocks.push(Block::paragraph(vec![text("At the top of a page.")]));
+        blocks.push(Block::Break { what: BreakKind::Column });
+        blocks.push(Block::paragraph(vec![text("At the top of a column.")]));
+
+        // Typst: the page in two columns, and its own breaks; the pages are made.
+        let typ = out.join("columns.typ");
+        export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("\n  columns: 2,\n") && t.contains("#set columns(gutter: 0.8cm)"), "{t}");
+        assert!(t.contains("#pagebreak()") && t.contains("#colbreak()"), "{t}");
+        let p = preview(&s.ctx(), &r).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        assert!(p.pages.len() >= 2, "a break of the page makes a page");
+
+        // LaTeX: the body in a `multicols`, and its breaks.
+        let tex = out.join("columns.tex");
+        export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("\\usepackage{multicol}") && l.contains("\\setlength{\\columnsep}{0.8cm}"), "{l}");
+        let open = l.find("\\begin{multicols}{2}").expect("the body in two columns");
+        let close = l.find("\\end{multicols}").expect("and their end");
+        let column = l.find("\\columnbreak").expect("a break of the column");
+        assert!(open < column && column < close, "{l}");
+        assert!(l.contains("\\newpage"), "{l}");
+        if s.tools.latex_engine().is_ok() {
+            let pdf = out.join("columns.pdf");
+            let e = export(&s.ctx(), &r, Target::PdfLatex, &pdf, &ExportOptions::default()).unwrap();
+            assert!(fs::read(&pdf).unwrap().starts_with(b"%PDF"), "{:?}", e.warnings);
+        }
+
+        // Word: the section in two columns, and breaks of the page and the column.
+        let docx = out.join("columns.docx");
+        let e = export(&s.ctx(), &r, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let document = unzip(&docx, "word/document.xml");
+        roxmltree::Document::parse(&document).unwrap();
+        let section = &document[document.rfind("<w:sectPr").unwrap_or(0)..];
+        assert!(section.contains("<w:cols w:num=\"2\""), "{section}");
+        assert!(document.contains("w:br w:type=\"column\"") && document.contains("w:br w:type=\"page\""), "{document}");
+
+        // Writer: the page style in two columns, and the breaks paragraphs in styles that break.
+        let odt = out.join("columns.odt");
+        let e = export(&s.ctx(), &r, Target::Odt, &odt, &ExportOptions::default()).unwrap();
+        assert!(e.warnings.is_empty(), "{:?}", e.warnings);
+        let content = unzip(&odt, "content.xml");
+        roxmltree::Document::parse(&content).unwrap();
+        let styles = unzip(&odt, "styles.xml");
+        roxmltree::Document::parse(&styles).unwrap();
+        assert!(styles.contains("fo:column-count=\"2\""), "{styles}");
+        for (name, what) in [("Page_20_Break", "page"), ("Column_20_Break", "column")] {
+            assert!(content.contains(&format!("text:style-name=\"{name}\"")), "{name}: {content}");
+            let at = styles.find(&format!("style:name=\"{name}\"")).unwrap_or_else(|| panic!("no {name}"));
+            assert!(styles[at..].contains(&format!("fo:break-before=\"{what}\"")), "{styles}");
+        }
+
+        // A page of the web is told by its style; Markdown as TeX writes it.
+        let html = out.join("columns.html");
+        export(&s.ctx(), &r, Target::Html, &html, &ExportOptions::default()).unwrap();
+        let h = fs::read_to_string(&html).unwrap();
+        assert!(h.contains("break-before: page") && h.contains("break-before: column"), "{h}");
+        let md = out.join("columns.md");
+        export(&s.ctx(), &r, Target::Markdown, &md, &ExportOptions::default()).unwrap();
+        let m = fs::read_to_string(&md).unwrap();
+        assert!(m.contains("\\newpage") && !m.contains("break-before"), "{m}");
+    }
+
+    #[test]
     fn documents_for_word_processors() {
         let Some(s) = setup() else { return };
         let out = s.work.join("out");
