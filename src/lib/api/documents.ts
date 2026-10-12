@@ -108,18 +108,24 @@ export interface Look {
 /** Of paragraphs, or of words within them. */
 export type KindFamily = 'paragraph' | 'words';
 
-/** A kind that comes with the application, as the core has it: see `formats/kinds.rs`. */
+/**
+ * A kind that comes with the application, as the core has it: see
+ * `formats/kinds.rs`. It carries no look: the base looks of the kinds are
+ * the core's, and every layout is resolved against them (ADR 0040).
+ */
 export interface KindEntry {
   id: string;
   family: KindFamily;
-  /** The group the tools show it in. */
+  /** The family of its passages, which the tools group it by: `text` for none, `words` for a kind of words (`project/model/families.ts`). */
   group: string;
   /** The id of the kind it is based on; nothing for text, or plain words. */
   basedOn: string | null;
   /** The name of its style in Word and Writer; empty where it has none. */
   style: string;
-  /** How it differs from what it is based on. */
-  look: Look;
+  /** Whether a numbering counts its paragraphs. */
+  counted: boolean;
+  /** Whether it stands in the passage before it, whatever its family. */
+  joins: boolean;
 }
 
 /** A kind of the writer's own, as the document carries it. */
@@ -192,6 +198,12 @@ export interface DocumentFormat {
     italic: boolean;
     fromWords: number | null;
     fromLines: number | null;
+  };
+  /** How the numbers of a numbered passage are shown, where the passage does not say (ADR 0040). */
+  verse: {
+    /** Every how many: 5 shows 5, 10, 15. */
+    every: number;
+    side: 'left' | 'right';
   };
   notes: { kind: 'footnotes' | 'endnotes'; size: number; lineSpacing: number; title: string };
   bibliography: {

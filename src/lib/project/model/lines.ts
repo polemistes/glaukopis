@@ -1,37 +1,39 @@
 /**
- * The numbers of the lines of verse: which lines show one, and what it
- * says. The same rule is kept in Rust (`document/verse.rs`), by which the
- * documents are made; the editor and the text shown without one follow
- * this one. See ADR 0039.
+ * The numbers of the paragraphs of a numbered passage: which show one, and
+ * what it says. The same rule is kept in Rust (`document/numbers.rs`), by
+ * which the documents are made; the editor and the text shown without one
+ * follow this one. See ADR 0039 and 0040.
  *
- * Only lines that are lines are counted: not a speaker's name, not a
- * stage direction. The count begins at the start of the verse, where one
- * is given, or at the first line that was given a number by hand. A number
- * given by hand ("1234", "567a", "1094a1") is shown on its line, and the
- * count goes on from its last run of digits: after "1234" comes 1235,
+ * A passage that is *counted* counts its counted paragraphs — those whose
+ * kind is counted, less those the writer said are not — and the count
+ * begins at the first of them that was given a number by hand. A number
+ * given by hand ("1234", "567a", "1094a1") is shown on its paragraph, and
+ * the count goes on from its last run of digits: after "1234" comes 1235,
  * after "1094a1" comes "1094a2", and after "567a" comes 568. One without
- * digits is shown and leaves the count as it was. A line that is not
+ * digits is shown and leaves the count as it was. A paragraph that is not
  * counted shows only what was given it by hand. Of the others, those whose
- * number can be divided by `by` show it, and so does the first line of a
- * verse numbered from its start.
+ * number can be divided by `every` show it. A passage whose numbering is
+ * *given* shows only the numbers given by hand, and counts nothing; one
+ * numbered *not at all* shows nothing.
  */
 
-/** What the count needs of a line. */
+import type { Numbering } from './families';
+
+/** What the count needs of a paragraph. */
 export interface CountedLine {
-  kind: string;
+  /** Whether the count takes it in: its kind is counted, and the writer did not say otherwise. */
+  counted: boolean;
   /** The number or label given by hand, if any. */
   number?: string | null;
-  /** False for a line that is not counted. */
-  counted?: boolean;
 }
 
-/** The number a line shows, and whether it was given by hand. */
+/** The number a paragraph shows, and whether it was given by hand. */
 export interface Shown {
   label: string;
   set: boolean;
 }
 
-/** The count as it stands: what the next line counted is, and what comes before its digits. */
+/** The count as it stands: what the next paragraph counted is, and what comes before its digits. */
 interface Count {
   prefix: string;
   next: number;
@@ -54,29 +56,25 @@ function written(count: Count, n: number): string {
   return `${count.prefix}${n < 0 ? '-' : ''}${digits}`;
 }
 
-/** What each line shows in the margin: its number, or nothing. */
+/** What each paragraph shows in the margin: its number, or nothing. `every` is the passage's, or the layout's. */
 export function lineNumbers(
-  start: number | null,
-  by: number,
+  numbering: Numbering,
+  every: number,
   lines: readonly CountedLine[],
 ): (Shown | null)[] {
-  const every = Math.max(1, Math.round(by) || 5);
-  let count: Count | null = start === null ? null : { prefix: '', next: start, width: 0 };
-  let first = start !== null;
+  if (numbering === 'none') return lines.map(() => null);
+  const step = Math.max(1, Math.round(every) || 1);
+  let count: Count | null = null;
   return lines.map((line) => {
-    if (line.kind !== 'line') return null;
     const given = (line.number ?? '').trim();
-    if (line.counted === false) return given ? { label: given, set: true } : null;
+    if (numbering === 'given' || !line.counted) return given ? { label: given, set: true } : null;
     if (given) {
       const read = readLabel(given);
       if (read) count = { prefix: read.prefix, next: read.n + 1, width: read.width };
-      first = false;
       return { label: given, set: true };
     }
     if (!count) return null;
     const n = count.next++;
-    const shown = first || n % every === 0;
-    first = false;
-    return shown ? { label: written(count, n), set: false } : null;
+    return n % step === 0 ? { label: written(count, n), set: false } : null;
   });
 }
