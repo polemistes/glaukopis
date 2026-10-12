@@ -8,6 +8,7 @@ pub mod ocr;
 pub mod pictures;
 pub mod projectfile;
 pub mod projects;
+pub mod readable;
 pub mod reading;
 pub mod sharing;
 pub mod sources;

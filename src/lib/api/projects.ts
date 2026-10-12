@@ -277,6 +277,32 @@ export async function projectFileRead(path: string): Promise<ProjectFile> {
   return { ...head, state: part() };
 }
 
+/**
+ * Writes the readable copy of a project (ADR 0041): its Org form, the works
+ * it cites as BibLaTeX and the pictures it shows. Into the project's own
+ * folder, by its id, or into a folder the writer chose.
+ */
+export const projectReadableWrite = (
+  place: { id: string } | { path: string },
+  readable: { pictures: string[]; records: ProjectFileWriting['records'] },
+  org: string,
+) =>
+  call<void>(
+    'project_readable_write',
+    withHead({ ...place, ...readable }, new TextEncoder().encode(org)),
+  );
+
+/** An Org file read back, with the works beside it, each by its key, and how many pictures the store did not have. */
+export interface ReadOrg {
+  org: string;
+  records: ProjectFileWriting['records'];
+  pictures: number;
+}
+
+/** Reads an Org file, or the folder that holds `project.org`; its pictures are taken into the store. */
+export const projectReadableRead = (path: string) =>
+  call<ReadOrg>('project_readable_read', { path });
+
 /** What each work a project file cites is to the library. */
 export const projectFileReferences = (records: WorkRecord[]) =>
   call<FoundWork[]>('project_file_references', { records });

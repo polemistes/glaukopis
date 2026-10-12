@@ -32,3 +32,4 @@ core-projects-forgetting-token = forgetting the token
 core-projects-reading-token = reading the token
 core-projects-to-trash = moving the project to the trash
 core-projects-bringing-back = bringing the project back
+core-readable-empty = The Org file holds nothing to make a project of.

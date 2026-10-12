@@ -188,6 +188,11 @@ impl Projects {
         out
     }
 
+    /// Where the readable copy of a project is kept: its own folder, beside its state (ADR 0041).
+    pub fn readable_dir(&self, id: &str) -> Result<PathBuf> {
+        self.existing_dir(id)
+    }
+
     pub(crate) fn existing_dir(&self, id: &str) -> Result<PathBuf> {
         let dir = self.dir(id)?;
         if dir.join(INFO).is_file() { Ok(dir) } else { Err(Error::not_found(tr!("core-projects-the-project"))) }

@@ -23,6 +23,7 @@ pub mod paths;
 pub mod pictures;
 pub mod projectfile;
 pub mod projects;
+pub mod readable;
 pub mod settings;
 pub mod sharing;
 pub mod spelling;

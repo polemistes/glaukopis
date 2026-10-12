@@ -118,6 +118,8 @@ pub fn run() {
             commands::projects::project_save_view,
             commands::projectfile::project_file_write,
             commands::projectfile::project_file_read,
+            commands::readable::project_readable_write,
+            commands::readable::project_readable_read,
             commands::projectfile::project_file_references,
             commands::projectfile::project_file_settle,
             commands::projects::project_history,

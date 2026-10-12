@@ -30,3 +30,4 @@ core-projects-forgetting-token = kunne ikke glemme tilgangsnøkkelen
 core-projects-reading-token = kunne ikke lese tilgangsnøkkelen
 core-projects-to-trash = kunne ikke flytte prosjektet til papirkurven
 core-projects-bringing-back = kunne ikke hente prosjektet tilbake
+core-readable-empty = Org-fila har ingenting å lage et prosjekt av.
