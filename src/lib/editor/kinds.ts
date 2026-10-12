@@ -1,34 +1,39 @@
 /**
  * The kinds of paragraph and of words that come with the application, with
  * the words the tools name them by: the catalogue of the editor. What a
- * kind is for the shape of a text — its family, whether it is counted,
- * whether it joins, what Enter and Tab make — is said once, in
- * `project/model/families.ts`, and taken from there; a kind carries no
- * look, which every layout has (ADR 0040). Also the kinds at hand of a
- * project, and the cues on screen of a kind of the writer's own. The core
- * has the same catalogue (`formats/kinds.rs`); a test holds the two alike.
+ * kind is for the shape of a text — how the document groups paragraphs of
+ * it, whether a numbering counts its lines, whether it may stand on words
+ * too — is said once, in `project/model/families.ts`, and taken from there;
+ * a kind carries no look, which every layout has. A kind is a label and
+ * nothing more: no kind follows another on Enter, and Tab does the same in
+ * every kind (ADR 0041). Also the kinds at hand of a project, and the cues
+ * on screen of a kind of the writer's own. The core has the same catalogue
+ * (`formats/kinds.rs`); a test holds the two alike.
  */
 
 import type { KindFamily, Look } from '$lib/api/documents';
 import { t } from '$lib/i18n';
 import {
-  FAMILIES,
   KIND_FACTS,
+  WORD_KINDS,
+  factsOf,
   renamed,
   type BasedKind,
-  type Family,
+  type Grouping,
 } from '$lib/project/model/families';
 import type { Project } from '$lib/project/model/project.svelte';
 import type { PassageKindRecord } from '$lib/project/model/types';
 
-/** The groups the tools show the kinds in: the families, with the small ones together under `more`. */
+export { WORD_KINDS };
+
+/** The groups the tools show the kinds in. They are the menu's only: the document groups paragraphs by `families.ts`. */
 export type KindGroup = 'text' | 'quotation' | 'verse' | 'script' | 'list' | 'more' | 'words';
 
 export interface KindSpec {
   id: string;
   family: KindFamily;
-  /** The family of its passages, as `families.ts` has it: `text` for none, `words` for a kind of words. */
-  group: Family | 'words';
+  /** How the document groups paragraphs of it, as `families.ts` has it; `words` for a kind of words. */
+  group: Grouping | 'words';
   /** The id of the kind it is based on, where it is based on one. */
   basedOn?: string;
   label(): string;
@@ -36,7 +41,7 @@ export interface KindSpec {
   shortcut?: string;
 }
 
-/** The words of each kind, by id, and what some are based on. */
+/** The words of each kind, by id. */
 const WORDS: Record<string, string> = {
   text: 'editor-text',
   quote: 'editor-quotation',
@@ -78,8 +83,8 @@ export const CATALOGUE: KindSpec[] = Object.entries(KIND_FACTS).map(([id, facts]
   const words = WORDS[id] ?? `editor-${id}`;
   return {
     id,
-    family: facts.family === 'words' ? 'words' : 'paragraph',
-    group: facts.family,
+    family: facts.grouping === 'words' ? 'words' : 'paragraph',
+    group: facts.grouping,
     ...(BASED_ON[id] ? { basedOn: BASED_ON[id] } : {}),
     ...(SHORTCUTS[id] ? { shortcut: SHORTCUTS[id] } : {}),
     label: () => t(words),
@@ -87,57 +92,85 @@ export const CATALOGUE: KindSpec[] = Object.entries(KIND_FACTS).map(([id, facts]
   };
 });
 
-/** The groups of the kind menu, each with the families it shows. */
-export const GROUPS: { id: KindGroup; families: readonly string[]; label(): string }[] = [
-  { id: 'text', families: ['text'], label: () => t('editor-kinds-text') },
-  { id: 'quotation', families: ['quotation'], label: () => t('editor-kinds-quotation') },
-  { id: 'verse', families: ['verse'], label: () => t('editor-kinds-verse') },
-  { id: 'script', families: ['script'], label: () => t('editor-kinds-script') },
-  { id: 'list', families: ['list'], label: () => t('editor-kinds-list') },
+/** The groups of the kind menu, each with the kinds of the catalogue it shows, in order. */
+export const GROUPS: { id: KindGroup; kinds: readonly string[]; label(): string }[] = [
+  { id: 'text', kinds: ['text'], label: () => t('editor-kinds-text') },
+  {
+    id: 'quotation',
+    kinds: ['quote', 'epigraph', 'attribution'],
+    label: () => t('editor-kinds-quotation'),
+  },
+  { id: 'verse', kinds: ['line', 'speaker', 'direction'], label: () => t('editor-kinds-verse') },
+  {
+    id: 'script',
+    kinds: ['scene', 'action', 'character', 'dialogue', 'parenthetical', 'transition'],
+    label: () => t('editor-kinds-script'),
+  },
+  { id: 'list', kinds: ['item', 'numbered'], label: () => t('editor-kinds-list') },
   {
     id: 'more',
-    families: ['glossary', 'code', 'break', 'draft'],
+    kinds: ['headword', 'gloss', 'code', 'break', 'draft'],
     label: () => t('editor-kinds-more'),
   },
-  { id: 'words', families: ['words'], label: () => t('editor-kinds-words') },
+  {
+    id: 'words',
+    kinds: ['foreign', 'title', 'term', 'mention', 'highlight'],
+    label: () => t('editor-kinds-words'),
+  },
 ];
 
-/** The words for each family that comes with the application, by which the bracket of a passage names it. */
-const FAMILY_WORDS: Record<string, string> = {
-  // A passage of text is there only while it is numbered.
-  text: 'editor-family-text',
-  quotation: 'editor-family-quotation',
-  verse: 'editor-family-verse',
-  script: 'editor-family-script',
-  glossary: 'editor-family-glossary',
-  list: 'editor-family-list',
-  code: 'editor-family-code',
-  break: 'editor-family-break',
-  draft: 'editor-family-draft',
-};
+/** The group of the menu a kind of the catalogue is shown in; `more` for one that is in none. */
+export function groupOf(id: string): KindGroup {
+  const at = renamed(id);
+  return GROUPS.find((g) => g.kinds.includes(at))?.id ?? 'more';
+}
 
 /**
- * The name of a family of passages: of the catalogue by its words, or of
- * a kind of the writer's own based on text by the kind's name. The id
- * itself for one that is not known.
+ * The kinds that are written together, which the kind menu offers first
+ * while the cursor is among them: lines of verse with speakers and
+ * directions, the parts of a script, a headword and its gloss, a quotation
+ * and what goes with it, the two kinds of item.
  */
-export function familyName(
-  family: string,
-  own: readonly { id: string; name?: string }[] = [],
-): string {
-  const words = FAMILY_WORDS[family];
-  if (words) return t(words);
-  return own.find((k) => k.id === family)?.name ?? family;
+const FELLOWS: readonly (readonly string[])[] = [
+  ['line', 'speaker', 'direction'],
+  ['scene', 'action', 'character', 'dialogue', 'parenthetical', 'transition'],
+  ['headword', 'gloss'],
+  ['quote', 'epigraph', 'attribution'],
+  ['item', 'numbered'],
+];
+
+/** The kind of the catalogue a kind is, or is based on through the writer's own; text for one based on nothing known. */
+export function catalogueKindOf(id: string, own: readonly BasedKind[] = []): string {
+  const seen = new Set<string>();
+  let at = renamed(id);
+  for (let depth = 0; depth < 8 && !seen.has(at); depth++) {
+    seen.add(at);
+    if (KIND_FACTS[at]) return at;
+    const kind = own.find((k) => k.id === at);
+    if (!kind?.basedOn) break;
+    at = renamed(kind.basedOn);
+  }
+  return 'text';
 }
 
-/** The group of the menu a family is shown in; `more` for one that is no group of its own. */
-export function groupOf(family: string): KindGroup {
-  return GROUPS.find((g) => g.families.includes(family))?.id ?? 'more';
+/**
+ * The kinds written together with a kind, of the catalogue and the
+ * writer's own (those based on one of them), in the catalogue's order and
+ * the writer's own after; the kind itself alone where it has no fellows.
+ */
+export function fellowsOf(id: string, own: readonly BasedKind[] = []): string[] {
+  const base = catalogueKindOf(id, own);
+  const fellows = FELLOWS.find((f) => f.includes(base));
+  if (!fellows) return [renamed(id)];
+  return [
+    ...fellows,
+    ...own.filter((k) => fellows.includes(catalogueKindOf(k.id, own))).map((k) => k.id),
+  ];
 }
 
-/** Whether a family is one that comes with the application, and not a kind of the writer's own. */
-export function knownFamily(family: string): family is Family {
-  return (FAMILIES as readonly string[]).includes(family);
+/** Whether a kind is a speaker or a direction, or based on one: such paragraphs stand among others without parting them. */
+export function amongOthers(id: string, own: readonly BasedKind[] = []): boolean {
+  return !!factsOf(id, own).words;
 }
 
 /** The kinds that are always at hand. */
@@ -148,6 +181,14 @@ const byId = new Map(CATALOGUE.map((s) => [s.id, s]));
 /** A kind of the catalogue by its id, by its old id too; nothing for a kind of the writer's own, or one that is not known. */
 export function specOf(id: string): KindSpec | undefined {
   return byId.get(renamed(id));
+}
+
+/**
+ * The name of a kind: of the catalogue by its words, or of the writer's
+ * own by its name; the id itself for one that is not known.
+ */
+export function kindName(id: string, own: readonly { id: string; name?: string }[] = []): string {
+  return specOf(id)?.label() ?? own.find((k) => k.id === id)?.name ?? id;
 }
 
 /** A kind of the writer's own, as much of it as the shape of a text needs: what it is based on. */
@@ -299,7 +340,8 @@ function declarations(look: Look, family: KindFamily): string[] {
   if (family === 'paragraph') {
     if (look.align) out.push(`text-align: ${look.align === 'justified' ? 'justify' : look.align};`);
     const indentLeft = points(look.indentLeft);
-    if (indentLeft !== null) out.push(`margin-left: ${em(indentLeft)};`);
+    // The bracket of a run and the numbers in the margin stand where the paragraph would without it (app.css).
+    if (indentLeft !== null) out.push(`--inset: ${em(indentLeft)}; margin-left: ${em(indentLeft)};`);
     const indentRight = points(look.indentRight);
     if (indentRight !== null) out.push(`margin-right: ${em(indentRight)};`);
     const firstLine = points(look.firstLine);
