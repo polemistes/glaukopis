@@ -505,6 +505,8 @@ export function languageName(tag: string): string {
   try {
     const names = new Intl.DisplayNames([languages.current], { type: 'language' });
     const name = names.of(tag) ?? tag;
+    // A language the system has no name for, of those a scholar may quote: the application names it.
+    if (name === tag && has(`language-name-${tag}`)) return t(`language-name-${tag}`);
     return name.charAt(0).toLocaleUpperCase(languages.current) + name.slice(1);
   } catch {
     return tag;

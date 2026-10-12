@@ -137,7 +137,7 @@ function merged(ranges: Range[], size: number): Range[] {
   return out;
 }
 
-/** A word, and the language it is checked in: that of the document, or that of the foreign words it is among. */
+/** A word, and the language it is checked in: that of the document, or that of the passage or the foreign words it is among. */
 interface Spoken extends Word {
   language: string;
 }
@@ -158,9 +158,12 @@ function runs(block: Node, language: string): { text: string; language: string |
       out.push({ text: NOT_TEXT.repeat(text.length), language: null });
       return;
     }
-    const kind = child.marks.find((m) => m.type.name === 'kind');
-    const lang = typeof kind?.attrs.lang === 'string' ? kind.attrs.lang.trim() : '';
-    out.push({ text, language: lang || language });
+    // The language of the passage holds before that of foreign words.
+    const said = (name: string, attr: string) => {
+      const value = child.marks.find((m) => m.type.name === name)?.attrs[attr];
+      return typeof value === 'string' ? value.trim() : '';
+    };
+    out.push({ text, language: said('lang', 'tag') || said('kind', 'lang') || language });
   });
   return out;
 }

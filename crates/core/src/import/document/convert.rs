@@ -69,6 +69,11 @@ pub(super) struct Reading<'a, 'b> {
     /// Figures that stood where none can stand, to stand after it.
     hoisted: Vec<Block>,
     tally: Tally,
+    /// The language the document says it is in.
+    language: Option<String>,
+    /// The language of the part of the document now read, where it says
+    /// one of its own: every word in it is marked with it.
+    passage: Option<String>,
 }
 
 pub(super) fn tag(v: &Value) -> &str {
@@ -318,10 +323,31 @@ fn stand_of(align: &Value) -> Option<Stand> {
 impl Reading<'_, '_> {
     /// Text, under the mark of the citation it is of, if it is of one.
     fn push(&self, out: &mut Vec<Piece>, text: &str, marks: &Marks) {
-        match &self.within {
-            Some(mark) => push_text(out, text, &with(marks, found::MARK, mark.clone())),
-            None => push_text(out, text, marks),
+        let mut marks = marks.clone();
+        match marks.get("lang") {
+            // Words in the document's language, within a part that is not.
+            Some(Value::Null) => {
+                marks.remove("lang");
+            }
+            Some(_) => {}
+            None => {
+                if let Some(tag) = &self.passage {
+                    marks.insert("lang".into(), json!({ "tag": tag }));
+                }
+            }
         }
+        match &self.within {
+            Some(mark) => push_text(out, text, &with(&marks, found::MARK, mark.clone())),
+            None => push_text(out, text, &marks),
+        }
+    }
+
+    /// The language a part of the document says it is in, where it is not
+    /// that of the document: none, where it says nothing.
+    fn language_of(&self, attr: &Value) -> Option<Option<String>> {
+        let tag = named(attr, "lang").map(str::trim).filter(|l| !l.is_empty())?;
+        let own = self.language.as_deref().is_some_and(|l| l.eq_ignore_ascii_case(tag));
+        Some((!own).then(|| tag.to_owned()))
     }
 
     /// Text of the file, in which the signs may stand that a citation made
@@ -398,11 +424,19 @@ impl Reading<'_, '_> {
                     }
                 }
                 "Span" => {
+                    let mut marks = marks.clone();
                     if classes(&c[0]).contains(&"smallcaps") {
-                        self.inlines(list(&c[1]), &with(marks, "smallcaps", Value::Bool(true)), out);
-                    } else {
-                        self.inlines(list(&c[1]), marks, out);
+                        marks = with(&marks, "smallcaps", Value::Bool(true));
                     }
+                    // Words in a language of their own; or in the document's, within a part that is not.
+                    match self.language_of(&c[0]) {
+                        Some(Some(tag)) => marks = with(&marks, "lang", json!({ "tag": tag })),
+                        Some(None) => {
+                            marks.insert("lang".into(), Value::Null);
+                        }
+                        None => {}
+                    }
+                    self.inlines(list(&c[1]), &marks, out);
                 }
                 "Image" => {
                     let named = c[2][0].as_str().unwrap_or("");
@@ -668,9 +702,15 @@ impl Reading<'_, '_> {
             "Table" => self.table(c, out),
             "Figure" => self.pandoc_figure(c, out),
             "Div" => {
+                // A part in a language of its own: every word in it is marked with it.
+                let before = self.passage.clone();
+                if let Some(language) = self.language_of(&c[0]) {
+                    self.passage = language;
+                }
                 for b in list(&c[1]) {
                     self.block(b, out);
                 }
+                self.passage = before;
             }
             _ => {}
         }
@@ -842,7 +882,15 @@ impl Reading<'_, '_> {
                     }
                     parts.push(Part { level: c[0].as_i64().unwrap_or(1).max(1), heading, notes, blocks: Vec::new() });
                 }
-                "Div" => self.parts(list(&inner(b)[1]), parts),
+                "Div" => {
+                    // A part in a language of its own, as in `block`; its headings are not.
+                    let before = self.passage.clone();
+                    if let Some(language) = self.language_of(&inner(b)[0]) {
+                        self.passage = language;
+                    }
+                    self.parts(list(&inner(b)[1]), parts);
+                    self.passage = before;
+                }
                 _ => {
                     let mut out = Vec::new();
                     self.block(b, &mut out);
@@ -1118,6 +1166,8 @@ pub(super) fn convert_with(
         told: (made.endnote > 0).then(|| told_of(meta)),
         hoisted: Vec::new(),
         tally: Tally::default(),
+        language: language.clone(),
+        passage: None,
     };
 
     let mut parts = vec![Part { level: 0, heading: Vec::new(), notes: Vec::new(), blocks: Vec::new() }];

@@ -127,3 +127,35 @@ the languages written from right to left, which the layout is not made for.
   mention stands in.
 - **Fonts**: on Linux the packages offer or recommend Noto for the Indian
   scripts and for Chinese and Japanese; Windows and macOS have such fonts.
+
+## Addendum of 2026-10-12: the language of a passage
+
+A text in one language quotes others: a Greek line, a Latin phrase, a
+German paragraph in a Norwegian text. Foreign words could say their
+language, but they are a kind of words, and italic; a passage could not be
+in Greek and a term, or the title of a work, or a quotation of a whole
+paragraph that is not foreign but only in another language.
+
+- **The language of a passage is a mark of its own**, `lang`, with the tag
+  of the language as `tag`: from a word to many paragraphs, each paragraph
+  marked as far as the selection runs, with no attribute of the paragraph.
+  It has no look, and goes with every other mark, a kind of words among
+  them. Where foreign words say a language as well, that of the passage
+  holds. Foreign words stay as they were, for the projects that have them.
+- **It is set under *Words* › *Language***: the languages of texts, the
+  text's own language to take it away, and *Other language…*, a dialog for
+  any tag, which offers some that scholars quote (`grc`, `la`, `hbo`, `non`
+  and their like) by name. A name the system does not know is the
+  application's own (`language-name-<tag>`), or the tag.
+- **On the screen** it has a faint dotted line under it, below where
+  spelling draws its wave, and its name as a title on hover. The span is
+  drawn inside a kind of words, so that the nearest language is its own.
+- **Spelling** checks it by the dictionary of its language, as it checks
+  foreign words, in the editors and in the text drawn without one.
+- **Every document** carries it as a Pandoc span with `lang` alone: `w:lang`
+  in Word, `fo:language` in OpenDocument, `text(lang:)` in Typst, which the
+  preview shares, `\foreignlanguage` in LaTeX, `lang` in HTML.
+- **A document brought in** keeps the language its spans and divisions say,
+  where it is not the document's own: Pandoc reads it from HTML, Markdown
+  and LaTeX. It does not read it from Word or OpenDocument, which say what
+  language the computer had more often than that of the text.

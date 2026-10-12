@@ -54,6 +54,7 @@ describe('passages and the kinds of words', () => {
         ['code', { code: true }],
         ['mênis', { kind: { name: 'foreign', lang: 'el' } }],
         ['Iliad', { kind: { name: 'title', lang: '' }, em: {} }],
+        ['ἄειδε', { kind: { name: 'term', lang: '' }, lang: { tag: 'grc' } }],
       ]),
     );
     const [p] = readBody(fragment);
@@ -63,6 +64,11 @@ describe('passages and the kinds of words', () => {
       { kind: 'text', text: 'code', marks: { code: true } },
       { kind: 'text', text: 'mênis', marks: { kind: { name: 'foreign', lang: 'el' } } },
       { kind: 'text', text: 'Iliad', marks: { kind: { name: 'title', lang: '' }, em: {} } },
+      {
+        kind: 'text',
+        text: 'ἄειδε',
+        marks: { kind: { name: 'term', lang: '' }, lang: { tag: 'grc' } },
+      },
     ]);
   });
 

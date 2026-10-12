@@ -252,6 +252,46 @@ fn marks_breaks_and_links() {
 }
 
 #[test]
+fn words_and_parts_in_a_language_of_their_own() {
+    let span = |lang: &str, words: &str| {
+        format!(r#"{{"t":"Span","c":[["",[],[["lang","{lang}"]]],[{{"t":"Str","c":"{words}"}}]]}}"#)
+    };
+    let read = read_json(
+        &doc(
+            r#"{"lang":{"t":"MetaInlines","c":[{"t":"Str","c":"nb"}]}}"#,
+            &[
+                format!(
+                    r#"{{"t":"Para","c":[{},{{"t":"Space"}},{},{{"t":"Space"}},{{"t":"Str","c":"og"}},{{"t":"Space"}},{}]}}"#,
+                    words("Han sa"),
+                    span("de", "Weltschmerz"),
+                    span("nb", "ord")
+                ),
+                format!(
+                    r#"{{"t":"Div","c":[["",[],[["lang","la"]]],[{},{{"t":"Para","c":[{},{{"t":"Space"}},{}]}}]]}}"#,
+                    para("Arma virumque"),
+                    words("Cano"),
+                    span("nb", "norsk")
+                ),
+            ],
+        ),
+        &none,
+    );
+    let lang = |s: &str, tag: &str| Inline::Text {
+        text: s.into(),
+        marks: BTreeMap::from([("lang".to_owned(), json!({ "tag": tag }))]),
+    };
+    // The language of the document is no language of their own, even within a part that has one.
+    assert_eq!(
+        read.sections[0].blocks,
+        vec![
+            paragraph(vec![text("Han sa "), lang("Weltschmerz", "de"), text(" og ord")]),
+            paragraph(vec![lang("Arma virumque", "la")]),
+            paragraph(vec![lang("Cano ", "la"), text("norsk")]),
+        ]
+    );
+}
+
+#[test]
 fn notes_are_one_line() {
     let read = read_json(
         &doc(

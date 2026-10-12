@@ -940,13 +940,16 @@ impl Converter<'_> {
         }
     }
 
-    /// Inlines within their marks: italics and bold, and the kinds of words.
+    /// Inlines within their marks: italics and bold, the language of a
+    /// passage, and the kinds of words.
     fn wrap(&self, inner: Vec<Value>, marks: &std::collections::BTreeMap<String, Value>) -> Vec<Value> {
         let x = &self.extras;
         let mut current = inner;
         // From the innermost outwards. The order is fixed, so that the same marks
         // always nest the same way.
-        for name in ["sub", "sup", "smallcaps", "strike", "underline", "code", "kind", "strong", "em", "link"] {
+        let language = marks.get("lang").and_then(|v| v.get("tag")).and_then(Value::as_str).map(str::trim);
+        let language = language.filter(|l| !l.is_empty());
+        for name in ["sub", "sup", "smallcaps", "strike", "underline", "code", "lang", "kind", "strong", "em", "link"] {
             let Some(value) = marks.get(name) else { continue };
             if value.is_null() || value == &Value::Bool(false) {
                 continue;
@@ -962,9 +965,17 @@ impl Converter<'_> {
                 "underline" => json!({"t": "Underline", "c": current}),
                 // Code holds its letters as they stand, without marks within.
                 "code" => json!({"t": "Code", "c": [attr(), plain_of(&current)]}),
+                // The language of a passage, and nothing more: Word's w:lang, Typst's
+                // text(lang:), LaTeX's \foreignlanguage, HTML's lang.
+                "lang" => {
+                    let Some(l) = language else { continue };
+                    json!({"t": "Span", "c": [["", [], [["lang", l]]], current]})
+                }
                 "kind" => {
                     let kind = value.get("name").and_then(Value::as_str).unwrap_or("").trim();
+                    // The language of the passage holds, where it says one.
                     let lang = value.get("lang").and_then(Value::as_str).map(str::trim).filter(|l| !l.is_empty());
+                    let lang = if language.is_some() { None } else { lang };
                     // What is marked for the eye alone is not in the document.
                     if kind == "highlight" || kind.is_empty() {
                         continue;

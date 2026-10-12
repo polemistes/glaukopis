@@ -3238,6 +3238,24 @@ mod tests {
                         text("."),
                     ],
                 },
+                // Words and a whole paragraph in a language of their own; where foreign words
+                // say another, the language of the passage holds.
+                Block::Paragraph {
+                    content: vec![
+                        text("Of longing, "),
+                        marked("Weltschmerz", "lang", json!({"tag": "de"})),
+                        text("; of song, "),
+                        Inline::Text {
+                            text: "ἄειδε".into(),
+                            marks: BTreeMap::from([
+                                ("kind".to_owned(), json!({"name": "foreign", "lang": "el"})),
+                                ("lang".to_owned(), json!({"tag": "grc"})),
+                            ]),
+                        },
+                        text("."),
+                    ],
+                },
+                Block::Paragraph { content: vec![marked("Arma virumque cano.", "lang", json!({"tag": "la"}))] },
             ],
             element: Some("kinds".into()),
             kind: None,
@@ -3282,6 +3300,17 @@ mod tests {
         assert!(document.contains("<w:rStyle w:val=\"Foreign\""), "{document}");
         assert!(word_style(&styles, "Foreign").contains("<w:i />"));
         assert!(document.contains("«wrath»"), "{document}");
+        // A passage in a language of its own carries it, and has no look of its own.
+        for tag in ["de", "grc", "la"] {
+            assert!(document.contains(&format!("<w:lang w:val=\"{tag}\"")), "{tag}: {document}");
+        }
+        let run = |word: &str| {
+            let at = document.find(word).unwrap_or_else(|| panic!("no {word}"));
+            &document[document[..at].rfind("<w:r>").unwrap()..at]
+        };
+        assert!(run("Weltschmerz").contains("w:val=\"de\"") && !run("Weltschmerz").contains("<w:i"), "{document}");
+        assert!(run("ἄειδε").contains("w:val=\"grc\"") && !run("ἄειδε").contains("w:val=\"el\""), "{document}");
+        assert!(run("ἄειδε").contains("<w:rStyle w:val=\"Foreign\""), "{document}");
         // Underlined by the mark, and by the format, which sets italics so: here and in the sample's heading.
         assert_eq!(document.matches("<w:u ").count(), 3, "{document}");
         assert!(document.contains("let x = 1;") && document.contains("let y = 2;"), "{document}");
@@ -3313,6 +3342,9 @@ mod tests {
         assert!(t.contains("#underline[underlined]"), "{t}");
         assert!(t.contains("```\nlet x = 1;\nlet y = 2;\n```"), "{t}");
         assert!(t.contains("#text(lang: \"el\")["), "{t}");
+        assert!(t.contains("#text(lang: \"de\")[Weltschmerz]"), "{t}");
+        assert!(t.contains("#text(lang: \"grc\")[ἄειδε]"), "{t}");
+        assert!(t.contains("#text(lang: \"la\")[Arma virumque cano.]"), "{t}");
         assert!(t.contains("“wrath”"), "{t}");
         assert!(!t.contains("Zzdraftzz"));
         let p = preview(&s.ctx(), &r).unwrap();
@@ -3322,6 +3354,8 @@ mod tests {
         export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
         let l = fs::read_to_string(&tex).unwrap();
         assert!(l.contains("\\foreignlanguage{greek}{\\emph{μῆνις}}"), "{l}");
+        assert!(l.contains("\\foreignlanguage{ngerman}{Weltschmerz}"), "{l}");
+        assert!(l.contains("\\foreignlanguage{latin}{Arma virumque cano.}"), "{l}");
         assert!(l.contains("\\ul{underlined}"), "{l}");
         assert!(l.contains("\\begin{verbatim}\nlet x = 1;\nlet y = 2;\n\\end{verbatim}"), "{l}");
         assert!(l.contains("\\leftskip=4cm") && l.contains("\\itshape\\raggedright\\noindent Dear friend"), "{l}");
@@ -3340,6 +3374,8 @@ mod tests {
         assert!(h.contains("class=\"gk-kind-epigraph\"") && h.contains("class=\"gk-kind-k1\""), "{h}");
         assert!(h.contains(".gk-kind-k1 { ") && h.contains("span.gk-kind-foreign { font-style: italic; }"), "{h}");
         assert!(h.contains("lang=\"el\""), "{h}");
+        assert!(h.contains("<span lang=\"de\">Weltschmerz</span>"), "{h}");
+        assert!(h.contains("<span lang=\"la\">Arma virumque cano.</span>"), "{h}");
         assert!(h.contains("<u>underlined</u>") && h.contains("<pre"), "{h}");
         assert!(!h.contains("Zzdraftzz"));
 
@@ -3354,6 +3390,9 @@ mod tests {
             assert!(content.contains(&format!("text:style-name=\"{style}\"")), "{style} is not used: {content}");
         }
         assert!(content.contains("<text:span text:style-name=\"Foreign\">"), "{content}");
+        for tag in ["de", "la"] {
+            assert!(content.contains(&format!("fo:language=\"{tag}\"")), "{tag}: {content}");
+        }
         for style in ["Epigraph", "Letter", "Foreign", "Source_20_Code", "Stage_20_Direction"] {
             assert!(styles.contains(&format!("style:name=\"{style}\"")), "{style} is not defined");
         }

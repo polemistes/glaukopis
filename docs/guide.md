@@ -452,6 +452,21 @@ language of the text, « » in Norwegian, “ ” in English, „ “ in German;
 a **Highlight**, for the eye on the screen. Select the words first; with
 nothing selected, what you type next is of the kind.
 
+**Language**, under **Words**, gives what is selected a language of its
+own, from one word to many paragraphs: a Greek quotation, a Latin phrase, a
+German paragraph in a Norwegian text. It has no look: the passage keeps its
+italics, its kind of words and all else, and has only a faint dotted line
+under it, with the name of its language when the pointer rests on it. The
+menu offers the languages of texts; **Other language…** takes any other by
+its tag, such as *grc* for Ancient Greek, *hbo* for Biblical Hebrew or *non*
+for Old Norse, and offers some that scholars often quote; **The text's own
+language** takes it away. Spelling checks the passage by the dictionary of
+its language, and leaves it alone where there is none, and every document
+that is made carries the language, for Word's dictionaries, for the
+hyphenation of Typst and LaTeX. Where foreign words say one language and
+the passage another, the passage's holds: foreign words are a kind, and
+italic, while a passage in another language is only that.
+
 **Make a kind…**, at the foot of **More…**, makes a kind of paragraph of
 your own, and **Make a kind of words…**, under **Words**, a kind of words.
 Give it a name, say what it is based on, and say only how it differs:
@@ -1206,7 +1221,8 @@ A file with changes that are tracked is brought in as it stands when all of
 them are accepted; comments in the margin of a Word file are left out. You
 are told of both. The language of the text is not taken from Word and
 OpenDocument files, which say what language the computer had, and not
-always that of the text. OpenDocument files lose their mathematics in the
+always that of the text; a web page, Markdown or LaTeX that says a passage
+is in another language keeps it as the language of the passage. OpenDocument files lose their mathematics in the
 reading, which is a limit of Pandoc.
 
 A PDF or a picture can be brought in the same way, and has its text read:
@@ -1650,7 +1666,8 @@ Code* and *Section Break*; the character styles *Speaker*, *Stage
 Direction*, *Foreign*, *Title of a Work*, *Term* and *Mention*; for a kind
 of your own, a style of its name; and for each part of the document, an
 abstract or an appendix, a paragraph style of its name as well. In every
-document that is made, foreign words carry their language, a mention stands
+document that is made, foreign words and a passage in another language
+carry their language, a mention stands
 in the quotation marks of the language of the text, code is kept letter for
 letter, and a break prints the sign the layout gives it; a draft note and a
 highlight go into none of them.
@@ -1920,9 +1937,9 @@ Glaukopis.
 
 Glaukopis checks the spelling of what you write as you write it, in the
 language of the text: the text, the names of the elements, and the notes.
-**Foreign words** (see *Kinds of paragraph and of words*) are checked in
-their own language where there is a dictionary for it, and left alone where
-there is none. A word that the dictionary does not know has a wavy line
+**Foreign words** and a passage given a **Language** (see *Kinds of
+paragraph and of words*) are checked in their own language where there is a
+dictionary for it, and left alone where there is none. A word that the dictionary does not know has a wavy line
 under it, in the text you are writing and in the text that is only shown.
 The word you are in the middle of writing is left alone until you leave it.
 
