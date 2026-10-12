@@ -220,6 +220,17 @@
    */
   const ownIndex = $derived(pane && !pane.project ? Math.min(focused, panes.length - 1) : 0);
   const ownPane = $derived(panes[ownIndex]);
+  /**
+   * The pane the preview follows: the one that has the focus, where it
+   * shows the project beside; else the pane of the project of the view.
+   */
+  const previewIndex = $derived(
+    pane?.project && projectOf(pane) ? Math.min(focused, panes.length - 1) : ownIndex,
+  );
+  const previewPane = $derived(panes[previewIndex]);
+  const previewOf = $derived(projectOf(previewPane));
+  const previewId = $derived(previewPane?.project ?? projectId);
+
   /** The project of the pane that has the focus: what the keys, the undo and the dialogs act on. */
   const focusedProject = $derived(projectOf(pane) ?? project);
 
@@ -1354,26 +1365,37 @@
           bind:this={previewEl}
           style:width={sizes.preview ? `${sizes.preview}px` : undefined}
         >
-          <PreviewPanel
-            {project}
-            {projectId}
-            at={ownPane.at}
-            onclose={() => (showPreview = false)}
-            ongo={(element) => {
-              // In the text of this element where it is shown; else the pane in view turns to the text.
-              const i = panes.findIndex(
-                (p) => !p.project && p.at === ownPane.at && p.mode === 'text',
-              );
-              goTo(element, { mode: 'text', ...(i >= 0 ? { pane: i } : {}) });
-            }}
-            current={() => {
-              const i =
-                ownPane.mode === 'text'
-                  ? ownIndex
-                  : panes.findIndex((p) => !p.project && p.at === ownPane.at && p.mode === 'text');
-              return texts[i]?.currentElement() ?? null;
-            }}
-          />
+          <!-- Of the project of the pane it follows: made anew when that is another. -->
+          {#key previewId}
+            <PreviewPanel
+              project={previewOf ?? project}
+              projectId={previewId}
+              at={previewPane.at}
+              onclose={() => (showPreview = false)}
+              ongo={(element) => {
+                // In the text of this element where it is shown; else the pane it follows turns to the text.
+                const i = panes.findIndex(
+                  (p) =>
+                    p.project === previewPane.project &&
+                    p.at === previewPane.at &&
+                    p.mode === 'text',
+                );
+                goTo(element, { mode: 'text', pane: i >= 0 ? i : previewIndex });
+              }}
+              current={() => {
+                const i =
+                  previewPane.mode === 'text'
+                    ? previewIndex
+                    : panes.findIndex(
+                        (p) =>
+                          p.project === previewPane.project &&
+                          p.at === previewPane.at &&
+                          p.mode === 'text',
+                      );
+                return texts[i]?.currentElement() ?? null;
+              }}
+            />
+          {/key}
         </div>
       {/if}
       {#if sideKind}

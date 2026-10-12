@@ -351,14 +351,15 @@ export const elementChanges = {
    * children. Elements cannot be moved under themselves; the project itself
    * cannot be moved. `pos` is where the first will stand, relative to the
    * parent, the rest below it; null has them placed automatically; nothing
-   * leaves their places as they were. Returns the ids that were moved.
+   * leaves their places as they were. The parent is unfolded, unless it is
+   * to stay folded. Returns the ids that were moved.
    */
   move(
     this: Project,
     ids: string[],
     parentId: string,
     index?: number,
-    options: { pos?: Position | null } = {},
+    options: { pos?: Position | null; keepFolded?: boolean } = {},
   ): string[] {
     if (!this.node(parentId)) return [];
     const tree = this.tree();
@@ -390,7 +391,7 @@ export const elementChanges = {
         n.delete('side');
       });
       const p = this.yNodes.get(parentId);
-      if (p?.get('collapsed') === true) p.delete('collapsed');
+      if (!options.keepFolded && p?.get('collapsed') === true) p.delete('collapsed');
     });
     return movable;
   },

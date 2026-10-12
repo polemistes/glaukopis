@@ -588,11 +588,12 @@
         data.project,
         data.ids,
         project,
-        target ? { under: target } : { under: at, pos: world },
+        target ? { under: target, keepFolded: true } : { under: at, pos: world },
         !event.copy,
       );
       if (made.length) {
-        select(made);
+        // Onto a folded element: it stays folded, and is itself what is selected.
+        select(target && project.node(target)?.collapsed ? [target] : made);
         viewport?.focus({ preventScroll: true });
       }
       return;
@@ -614,8 +615,9 @@
     project.checkpoint();
     let result: string[] = [];
     if (target) {
-      // Under another element, with all that is under it, Shift or not.
-      result = project.move(data.ids, target, undefined, { pos: null });
+      // Under another element, with all that is under it, Shift or not; folded, it stays folded.
+      result = project.move(data.ids, target, undefined, { pos: null, keepFolded: true });
+      if (result.length && project.node(target)?.collapsed) result = [target];
     } else if (onMap) {
       data.ids.forEach((id, i) => {
         const to = { x: world.x - data.grab.x, y: world.y - data.grab.y + i * 52 };

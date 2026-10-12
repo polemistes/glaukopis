@@ -63,6 +63,8 @@ export interface Portable {
 export interface Place {
   under: string;
   pos?: Position;
+  /** The element they go under stays folded, where it was: as a drop onto it in the diagram leaves it. */
+  keepFolded?: boolean;
 }
 
 /** What of an element does not cross, or is made anew where it arrives. */
@@ -350,7 +352,7 @@ export function makePortable(p: Project, carried: Portable, place: Place): strin
       else n.delete('pos');
     }
     const under = p.yNodes.get(parent.id);
-    if (under?.get('collapsed') === true) under.delete('collapsed');
+    if (!place.keepFolded && under?.get('collapsed') === true) under.delete('collapsed');
 
     for (const l of carried.links) {
       const from = ids.get(l.from);

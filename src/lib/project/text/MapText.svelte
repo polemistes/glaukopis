@@ -30,6 +30,8 @@
   import { remembered, TextSearch, type Surface } from '$lib/search/text.svelte';
   import { truncate } from '$lib/library/format';
   import { t } from '$lib/i18n';
+  import { selectedPassage } from '$lib/comments/marks';
+  import { commentsUi } from '$lib/comments/ui.svelte';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import { pointRect } from '$lib/ui/floating';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
@@ -901,13 +903,16 @@
   }
 
   function menuFor(id: string, anchor: HTMLElement | null): MenuItem[] {
-    const base = elementMenu(project, [id], actions, anchor, 'text').filter(
+    const view = editors.get(id)?.body?.getView();
+    // Text selected where the menu is opened is what a comment is on: taken now, before the menu takes the focus.
+    const passage = view && view.hasFocus() ? selectedPassage(view) : null;
+    const comment = (element: string) => commentsUi.begin(element, element === id ? passage : null);
+    const base = elementMenu(project, [id], { ...actions, comment }, anchor, 'text').filter(
       (item) =>
         !('label' in item) ||
         (item.label !== t('project-write-text') && item.label !== t('common-rename')),
     );
     const i = indexOf(id);
-    const view = editors.get(id)?.body?.getView();
     const extra: MenuItem[] = [];
     if (view && view.hasFocus()) {
       extra.push({

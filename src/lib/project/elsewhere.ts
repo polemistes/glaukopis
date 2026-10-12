@@ -108,9 +108,13 @@ export function carryAcross(
   const carried = portable(from, going);
   if (!carried.elements.length || !to.node(place.under)) return [];
   to.checkpoint();
-  let made = makePortable(to, carried, { under: place.under, pos: place.pos });
+  let made = makePortable(to, carried, {
+    under: place.under,
+    pos: place.pos,
+    keepFolded: place.keepFolded,
+  });
   if (made.length && place.index !== undefined) {
-    made = to.move(made, place.under, place.index, { pos: null });
+    made = to.move(made, place.under, place.index, { pos: null, keepFolded: place.keepFolded });
   }
   to.checkpoint();
   if (move && made.length) {

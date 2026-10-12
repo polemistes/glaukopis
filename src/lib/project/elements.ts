@@ -73,6 +73,8 @@ export interface ElementActions {
   paste?: (id: string) => void;
   /** Enter an element, making it the one in view: after elements went to it. */
   enter?: (id: string) => void;
+  /** Begin a comment on the element, or on a passage of it, as the view does it; where the view does not say, on the element. */
+  comment?: (id: string) => void;
   /** The element in view where the menu is opened: the picker of a target opens the way to it. */
   at?: string;
 }
@@ -444,7 +446,7 @@ export function elementMenu(
       label: t('comments-comment-on'),
       icon: MessageSquare,
       shortcut: 'Ctrl+Alt+C',
-      action: () => commentsUi.begin(one.id),
+      action: () => (actions.comment ? actions.comment(one.id) : commentsUi.begin(one.id)),
     });
     items.push({
       label: one.when ? t('when-change') : t('when-say'),
