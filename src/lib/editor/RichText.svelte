@@ -161,6 +161,12 @@
     });
   });
 
+  /** What the Org form of what is copied or pasted needs: the kinds of the writer's own, and the works cited, by whose keys it cites them. */
+  const orgOptions = () => ({
+    paragraphKinds: project.passageKinds,
+    references: [...project.refs.values()],
+  });
+
   /** The kinds of paragraph of the writer's own, as much as the shape of a text needs of them. */
   const ownKinds = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
 
@@ -412,11 +418,13 @@
           spellcheck: 'false',
         },
         handlePaste: (v, event) => kind === 'body' && pasted(v, event),
-        // Text pasted as text keeps every line break (see `clipboard.ts`).
+        // Text pasted as text is read as Org where it is, and keeps every line break where it is not (see `clipboard.ts`).
         clipboardTextParser:
-          kind === 'body' ? (text, $context) => pastedTextSlice(text, $context, schema) : undefined,
-        // What is copied carries its citations as they are shown.
-        clipboardTextSerializer: (slice) => copiedText(slice, language),
+          kind === 'body'
+            ? (text, $context) => pastedTextSlice(text, $context, schema, orgOptions)
+            : undefined,
+        // What is copied as text is Org; as HTML, it carries its citations as they are shown.
+        clipboardTextSerializer: (slice) => copiedText(slice, language, orgOptions),
         clipboardSerializer: copiedHtml(schema, () => language),
         // A citation that was found is gone through where it is pressed; a
         // commented passage shows its thread.
