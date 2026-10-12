@@ -1,6 +1,6 @@
 # 0029 — Kinds of passage and of words, and their looks
 
-Date: 2026-10-01. Status: accepted.
+Date: 2026-10-01. Status: accepted. Amended by ADR 0040.
 
 ## Context
 

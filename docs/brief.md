@@ -564,3 +564,37 @@ What this settles:
   two projects side by side, told apart in the bars and by the divider.
 - The project's text takes the place of its description.
 - Templates are left for after, with their place in the settings kept.
+
+## 2026-10-12 — the kind of a paragraph, and passages, thought through anew
+
+> The paragraph style system needs some reworking. Now it is unclear when a style pertains to a paragraph or a whole element (at least sometimes changing the style changes all the paragraphs in an element, other times it only changes the paragraph with the caret. And I don't know when or why). But most important, there is a mix up between type of text and formatting. Type of text should not bring any formatting in the export (but should for most types be indicated somehow in the text view). The formatting should be part of the template and layout system. Now, for example, the explanation of stage direction says it will be in italics. I guess this is only something the help text says, and the system actually works almost as I say, that the appearance is not hard coded in the text type, but it shows that there is something we need to work on for the logic of the whole thing. For example, I can no longer remember what the "Kinds in hand" menu is supposed to be. It has almost the same things inside as the More menu. It seems to me that the text types and the kinds of paragraph somehow has overlapping functions, and it does not at all seem unintuitive to me. There are also some assumptions made about types of text that seem too strict or not well thought out for me. I will use verse as an example, but it pertains to most types, like scripts also. Verse includes the function of line numbering. The first problem with this is that there are a lot of text types that may need line numbering, perhaps all text types could at some point need it. The other problem is that the appearance of line numbers in verse is unflexible it seems. Sometimes we want them on the right side. And as I have mentioned before, sometimes they do not follow the actual lines, and need to be set manually. Now it is made possible to change the number at a place, and the next numbers will follow. But sometimies there is need of numbering that is complex, so like ten lines were five of the lines are numbered 45 77, 46, 50, 53. Now, I have only given you some of the symptoms of the problems with the logic of the text types. I want you to rethink the whole logic, not only find adjustments that fix the problems I have presented, but to rework how text types works in a way that makes it much more intutitve, flexible and logical than it is now. Try to see what similar problems could arise from the system we use now for all kinds of texts, and see if you can come up with a new way of treating text types that makes sense, where such problems get resolved by the logic itself, not by making admissions for all kinds of things. I thik you understand what I am after. Think hard about this, and come back to me with a plan, or some options if you see more than one good way of dealing with this.
+
+What was found: a paragraph of a kind was stored three ways (a container,
+a typed paragraph, the role of a line in a container), and the menu listed
+the three as one; the catalogue carried the looks, and no layout said
+anything of a kind; line numbering was the verse container's. Seven rules
+were proposed — one choice, the kind of a paragraph; passages as
+consequences; families; what is said of a passage said on it; no look in a
+kind; numbers belonging to what they number; one list of kinds — with six
+choices put to the owner.
+
+> My choices: A Yes, lists as kinds. B Yes, Screen cues as you suggest. But in the future it we should make settings for the appearance of the screen cues as well. C. D. and E. I agree with you. F. We call it Verse, but it could be used in any type of text. Many dramas do not have verse. Some poetry does not have verse. Intuitive and sensivle default should be presented, with flexibility and versatility as well as simplicity built in. That is the way to go. Let's do it.
+
+What this settles (ADR 0040):
+
+- Every paragraph has one kind, set on the paragraphs selected; passages
+  form of themselves from paragraphs of one family, shown by a bracket,
+  and what is said of a passage is said from the bracket; nothing acts on
+  the element.
+- Lists are paragraphs of kind *item* or *numbered* with an indent; the
+  list structures go.
+- No kind carries a look: the base looks live in the core as the table
+  every layout is resolved against, and the layout editor shows every kind.
+  The editor's cues (a bracket, small capitals for a speaker, italics for a
+  direction) are its own and reach no document; settings for them are a
+  later piece.
+- Any passage can be numbered: not at all, counted from the first number
+  given, or only by the numbers given; the side and every-how-many are the
+  layout's, with a passage's choice over it; numbers are edited in place.
+- One list of kinds, no pinning; the verse family is called *Verse* and
+  serves poetry, drama and transcripts alike.

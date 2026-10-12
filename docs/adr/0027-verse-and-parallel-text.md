@@ -1,6 +1,6 @@
 # 0027 — Verse, and texts side by side
 
-Date: 2026-10-01. Status: accepted.
+Date: 2026-10-01. Status: accepted. Amended by ADR 0040.
 
 ## Context
 

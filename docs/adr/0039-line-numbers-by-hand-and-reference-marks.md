@@ -1,6 +1,6 @@
 # 0039 — Line numbers given by hand, and reference marks
 
-Date: 2026-10-12. Status: accepted.
+Date: 2026-10-12. Status: accepted. Amended by ADR 0040.
 
 ## Context
 
