@@ -243,7 +243,7 @@
     GROUPS.map((g) => ({
       id: g.id,
       label: g.label(),
-      kinds: CATALOGUE.filter((k) => k.group === g.id),
+      kinds: CATALOGUE.filter((k) => g.kinds.includes(k.id)),
     })).filter((g) => g.kinds.length),
   );
   function setPassageKind(kindId: string, yes: boolean) {
