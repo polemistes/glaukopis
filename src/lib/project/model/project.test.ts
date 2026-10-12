@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import type { Template } from '$lib/api/templates';
 import { Project, type Persistence, type Summary } from './project.svelte';
-import { fillBody, paragraph, passage } from './text';
+import { fillBody, paragraph } from './text';
 import { PROJECT } from './types';
 
 /** A project begun: its own element at the top, named after it. */
@@ -848,9 +848,9 @@ describe('kinds of paragraph and of words of the writer`s own', () => {
 
     p.deletePassageKind(letter);
     expect(p.passageKinds.map((k) => k.name)).toEqual(['Ship']);
-    // The paragraph stays as it is, in the passage of its family, which it keeps.
+    // The paragraph stays as it is, of the kind that is gone.
     expect(p.blocksOf(a)).toEqual([
-      passage('quotation', [paragraph([{ kind: 'text', text: 'Dear reader', marks: {} }], letter)]),
+      paragraph([{ kind: 'text', text: 'Dear reader', marks: {} }], letter),
     ]);
     p.deletePassageKind(word);
     expect(p.passageKinds).toEqual([]);
@@ -877,11 +877,11 @@ describe('kinds of paragraph and of words of the writer`s own', () => {
     const c = p.addChild(root, { title: 'C', body: 'Written already.' })!;
     p.setKind([a], scene);
     expect(p.blocksOf(a)).toEqual([
-      passage('script', [paragraph([{ kind: 'text', text: 'INT. HOUSE', marks: {} }], 'scene')]),
+      paragraph([{ kind: 'text', text: 'INT. HOUSE', marks: {} }], 'scene'),
     ]);
     // Without a text to begin with, the writing begins in the kind.
     p.setKind([b, c], chorus);
-    expect(p.blocksOf(b)).toEqual([passage('verse', [paragraph([], 'line')])]);
+    expect(p.blocksOf(b)).toEqual([paragraph([], 'line')]);
     expect(p.blocksOf(c)).toEqual([
       paragraph([{ kind: 'text', text: 'Written already.', marks: {} }]),
     ]);

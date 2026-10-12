@@ -5,7 +5,8 @@
  * after each node with the attributes the node has, and a text of XML for
  * each run of words, whose formatting attributes are the marks. The inverse
  * of `readBody` and `readTitle`. Only the shape texts are written in now is
- * written (ADR 0040); the old shape never.
+ * written (ADR 0041): paragraphs with their kind, indent and stretch
+ * settings, line marks at the start of lines, and page and column breaks.
  *
  * What the schema has no place for is not written: a note within a note, a
  * note in what is said of a figure, anything but paragraphs in a cell.
@@ -21,8 +22,8 @@ import {
   type Block,
   type Inline,
   type InlineText,
+  type InlineLineMark,
   type ParagraphBlock,
-  type PassageBlock,
   type TableCell,
 } from './text';
 
@@ -146,6 +147,10 @@ function inlineChildren(inlines: Inline[], line: Line, known = BODY_MARKS): Chil
         if (line !== 'said' && i.label.trim())
           out.push(element('refmark', { label: i.label.trim() }));
         break;
+      case 'linemark':
+        // A line is a line of the text, not of a note or of what is said of a figure.
+        if (line === 'text') out.push(lineMarkElement(i));
+        break;
       case 'footnote':
         if (line === 'text')
           out.push(
@@ -157,49 +162,49 @@ function inlineChildren(inlines: Inline[], line: Line, known = BODY_MARKS): Chil
   return out;
 }
 
-/** A paragraph as the editors write one: its kind, indent and count always, its number and margin where given. */
+/** A line mark: what it says, and nothing of what it does not. */
+function lineMarkElement(m: InlineLineMark): Y.XmlElement {
+  const indent = indentOf(m.indent);
+  return element('linemark', {
+    number: m.number?.trim() || null,
+    counted: m.counted === false ? false : null,
+    hidden: m.hidden ? true : null,
+    margin: m.margin?.trim() || null,
+    indent: indent > 0 ? indent : null,
+  });
+}
+
+/**
+ * A paragraph as the editors write one: its kind and indent always; how its
+ * stretch is numbered, every how many, the side and whether it begins a new
+ * run only where said.
+ */
 function paragraphElement(p: ParagraphBlock): Y.XmlElement {
+  const every = Math.round(Number(p.every));
   return element(
     'paragraph',
     {
       kind: p.name || 'text',
       indent: indentOf(p.indent),
-      number: p.number?.trim() || null,
-      counted: p.counted !== false,
-      // As the editor writes it: not there unless it is so.
-      ...(p.hidden ? { hidden: true } : {}),
-      margin: p.margin?.trim() || null,
+      numbering: p.numbering === 'counted' || p.numbering === 'given' ? p.numbering : null,
+      every: p.every != null && Number.isFinite(every) && every > 0 ? every : null,
+      side: p.side === 'left' || p.side === 'right' ? p.side : null,
+      new: p.new ? true : null,
     },
     inlineChildren(p.content, 'text'),
   );
 }
 
-/** A passage: its family and numbering always, every how many and the side where the passage says. */
-function passageElement(p: PassageBlock): Y.XmlElement | null {
-  if (!p.content.length) return null;
-  const every = Math.round(Number(p.every));
-  return element(
-    'passage',
-    {
-      family: p.family,
-      numbering: p.numbering,
-      every: p.every != null && Number.isFinite(every) && every > 0 ? every : null,
-      side: p.side === 'left' || p.side === 'right' ? p.side : null,
-    },
-    p.content.map(paragraphElement),
-  );
-}
-
 const flowOf = (wrap: boolean | undefined) => (wrap === undefined ? '' : wrap ? 'around' : 'apart');
 
-const emptyParagraph = () => element('paragraph', { kind: 'text', indent: 0, counted: true });
+const emptyParagraph = () => element('paragraph', { kind: 'text', indent: 0 });
 
 function cellElement(cell: TableCell): Y.XmlElement {
   // A cell holds paragraphs, of whatever kind; what else stands in it is written as the text it has.
   const content: Y.XmlElement[] = [];
   for (const block of cell.content) {
     if (block.kind === 'paragraph') content.push(paragraphElement(block));
-    else if (block.kind === 'passage') content.push(...block.content.map(paragraphElement));
+    else if (block.kind === 'break') continue;
     else {
       for (const line of blocksText([block]).split('\n')) {
         if (line.trim())
@@ -280,7 +285,7 @@ function setOff(block: Block): Y.XmlElement | null {
 
 /**
  * A text as the elements of XML the project keeps it in. Figures, equations
- * and tables that have no id are given one; a passage of nothing is not written.
+ * and tables that have no id are given one.
  */
 export function blockElements(blocks: readonly Block[]): Y.XmlElement[] {
   const out: Y.XmlElement[] = [];
@@ -289,11 +294,9 @@ export function blockElements(blocks: readonly Block[]): Y.XmlElement[] {
       case 'paragraph':
         out.push(paragraphElement(block));
         break;
-      case 'passage': {
-        const el = passageElement(block);
-        if (el) out.push(el);
+      case 'break':
+        out.push(element('pagebreak', { what: block.what === 'column' ? 'column' : 'page' }));
         break;
-      }
       case 'parallel': {
         const side = (list: Block[]) => {
           const content = blockElements(list);

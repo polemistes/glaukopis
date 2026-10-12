@@ -7,7 +7,6 @@ import { Project } from '$lib/project/model/project.svelte';
 import {
   fillTitle,
   paragraph,
-  passage,
   type Block,
   type Inline,
   type TableCell,
@@ -22,15 +21,11 @@ export const t = (text: string, marks: Record<string, object> = {}): Inline => (
   marks: marks as Record<string, Record<string, unknown>>,
 });
 export const p = (...content: Inline[]): Block => paragraph(content);
-/** A quotation of one quote paragraph. */
-export const quote = (...content: Inline[]): Block =>
-  passage('quotation', [paragraph(content, 'quote')]);
-/** A list of items, one paragraph each. */
-export const list = (...items: Inline[][]): Block =>
-  passage(
-    'list',
-    items.map((content) => paragraph(content, 'item')),
-  );
+/** A quote paragraph. */
+export const quote = (...content: Inline[]): Block => paragraph(content, 'quote');
+/** Items of a list, one paragraph each. */
+export const list = (...items: Inline[][]): Block[] =>
+  items.map((content) => paragraph(content, 'item'));
 export const note = (...content: Inline[]): Inline => ({ kind: 'footnote', content });
 export const cell = (...content: Inline[]): TableCell => ({
   content: [p(...content)],

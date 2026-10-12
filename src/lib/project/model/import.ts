@@ -36,7 +36,6 @@ function citedIn(blocks: Block[], out: Set<string>) {
   };
   for (const b of blocks) {
     if (b.kind === 'paragraph') line(b.content);
-    else if (b.kind === 'passage') for (const p of b.content) line(p.content);
     else if (b.kind === 'parallel') {
       citedIn(b.left, out);
       citedIn(b.right, out);

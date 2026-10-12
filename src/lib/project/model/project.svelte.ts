@@ -444,7 +444,7 @@ export class Project {
   #readAll() {
     this.#readMeta();
     this.#readLinks();
-    // The kinds of the writer's own first: a text in the old shape has the family of a kind of theirs through them.
+    // The kinds of the writer's own first: what is read of the texts may need them.
     this.#readPassageKinds();
     this.nodes.clear();
     for (const id of this.yNodes.keys()) this.#readNode(id);
@@ -684,7 +684,6 @@ export class Project {
     const out: string[] = [];
     for (const b of this.blocksOf(PROJECT)) {
       if (b.kind === 'paragraph') out.push(inlineText(b.content));
-      else if (b.kind === 'passage') out.push(...b.content.map((p) => inlineText(p.content)));
       if (out.join(' ').length > 280) break;
     }
     return out.join(' ').replace(/\s+/g, ' ').trim().slice(0, 300);

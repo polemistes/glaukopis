@@ -401,6 +401,8 @@ function label(pieces: Piece[], project: Project) {
         );
       else if (object.kind === 'math') object.label = String(object.attrs.tex ?? '');
       else if (object.kind === 'refmark') object.label = String(object.attrs.label ?? '');
+      // A line mark is shown by the number given its line, where it has one.
+      else if (object.kind === 'linemark') object.label = String(object.attrs.number ?? '');
     }
   }
 }

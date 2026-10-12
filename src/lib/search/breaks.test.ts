@@ -13,7 +13,7 @@ import * as Y from 'yjs';
 import { bodySchema } from '$lib/editor/schema';
 import { HASH, cell, note, p, project, t } from '$lib/found/testing';
 import { blocksHtml } from '$lib/project/model/html';
-import { paragraph, passage, readBody, type Block, type Inline } from '$lib/project/model/text';
+import { paragraph, readBody, type Block, type Inline } from '$lib/project/model/text';
 import { readProject, searchProject } from './everything';
 import { Matcher, NO_OPTIONS, type SearchOptions } from './matching';
 import { PARAGRAPH, bodyPassages, joined } from './passages';
@@ -84,12 +84,11 @@ function replaceIn(
   return replaceAll(pr, replacing(search(texts, elements, m), m, by, texts));
 }
 
-/** A quotation of one paragraph of a kind. */
-const kind = (name: string, ...content: Inline[]): Block =>
-  passage('quotation', [paragraph(content, name)]);
+/** A paragraph of a kind. */
+const kind = (name: string, ...content: Inline[]): Block => paragraph(content, name);
 
-/** Whether the editor's schema is that of ADR 0040, with passages that hold paragraphs: what writes texts anew needs it. */
-const NEW_SCHEMA = !!bodySchema.nodes.passage?.spec.content?.includes('paragraph');
+/** Whether the editor's schema is that of the shape of now, with line marks: what writes texts anew needs it. */
+const NEW_SCHEMA = !!bodySchema.nodes.linemark;
 
 describe('the two breaks in a regular expression', () => {
   it('finds a paragraph break by \\p, and a break within a paragraph by \\n', () => {
@@ -293,16 +292,14 @@ describe('replacing with breaks', () => {
       ]);
       const view = open ? editor(pr.fragment(elements[0], 'body')!) : null;
       expect(replaceIn(pr, elements, '(Sing\\.) ', '$1\\p')).toBe(1);
-      // The two stand in the passage the one stood in.
+      // Two of the kind stand where the one stood.
       expect(readBody(pr.fragment(elements[0], 'body')!)).toEqual([
         p(t('First.')),
-        passage('quotation', [
-          paragraph([t('Sing.')], 'epigraph'),
-          paragraph([t('Goddess.')], 'epigraph'),
-        ]),
+        paragraph([t('Sing.')], 'epigraph'),
+        paragraph([t('Goddess.')], 'epigraph'),
         p(t('Last.')),
       ]);
-      if (view) expect(view.state.doc.childCount).toBe(3);
+      if (view) expect(view.state.doc.childCount).toBe(4);
     }
   });
 

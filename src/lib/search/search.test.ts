@@ -5,7 +5,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { bodySchema, titleSchema } from '$lib/editor/schema';
 import { HASH, cell, list, note, p, project, quote, t } from '$lib/found/testing';
-import { readBody, readTitle, type Block, type Inline } from '$lib/project/model/text';
+import {
+  linemark,
+  paragraph,
+  readBody,
+  readTitle,
+  type Block,
+  type Inline,
+} from '$lib/project/model/text';
 import { Matcher, NO_OPTIONS, fold, type SearchOptions } from './matching';
 import { NO_TEXT, bodyPassages, titlePassage, type Labels } from './passages';
 import { offsetOf, positionOf, readBodyDoc, readTitleDoc } from './prosemirror';
@@ -54,7 +61,7 @@ const rich: Block[] = [
     t(', the accursed wrath.'),
   ),
   quote(t('A wrath that brought countless sorrows.')),
-  list([t('First wrath')], [t('Second')]),
+  ...list([t('First wrath')], [t('Second')]),
   {
     kind: 'figure',
     id: 'f1',
@@ -87,8 +94,8 @@ const rich: Block[] = [
   ),
 ];
 
-/** Whether the editor's schema is that of ADR 0040, with passages that hold paragraphs: an editor on a text with passages needs it. */
-const NEW_SCHEMA = !!bodySchema.nodes.passage?.spec.content?.includes('paragraph');
+/** Whether the editor's schema is that of the shape of now, with line marks: an editor on a text with them needs it. */
+const NEW_SCHEMA = !!bodySchema.nodes.linemark;
 
 const options = (change: Partial<SearchOptions> = {}): SearchOptions => ({
   ...NO_OPTIONS,
@@ -172,6 +179,64 @@ describe('the passages of a text', () => {
       const [hit] = matcher('so loved').find(read.passages[0].text);
       expect(positionOf(read, 0, hit.end)).toBeGreaterThan(positionOf(read, 0, hit.start) + 8);
     }
+  });
+
+  it('pass over line marks, and find words across them, read from the blocks and from the project', () => {
+    const verse = [
+      paragraph(
+        [
+          linemark({ number: '1' }),
+          t('If only the'),
+          { kind: 'break' },
+          linemark({ counted: false, margin: 'ia.' }),
+          t('Argo had flown'),
+        ],
+        'line',
+        { indent: 0, numbering: 'counted' },
+      ),
+    ];
+    const text = 'If only the\nArgo had flown';
+    expect(bodyPassages(verse)[0].text).toBe(text);
+    const { pr, elements } = project(verse);
+    const fragment = pr.fragment(elements[0], 'body')!;
+    expect(readBodyY(fragment).passages[0].text).toBe(text);
+    const texts = new Texts(pr);
+    expect(search(texts, elements, matcher('the Argo')).map((x) => x.text)).toEqual(['the\nArgo']);
+    // What is replaced at the start of a line leaves its mark where it was.
+    const m = matcher('If only|Argo', { regex: true });
+    expect(replaceAll(pr, replacing(search(texts, elements, m), m, 'Ah', texts))).toBe(2);
+    expect(readBody(fragment)).toEqual([
+      paragraph(
+        [
+          linemark({ number: '1' }),
+          t('Ah the'),
+          { kind: 'break' },
+          linemark({ counted: false, margin: 'ia.' }),
+          t('Ah had flown'),
+        ],
+        'line',
+        { indent: 0, numbering: 'counted' },
+      ),
+    ]);
+  });
+
+  it.skipIf(!NEW_SCHEMA)('pass over line marks where an editor holds them', () => {
+    const verse = [
+      paragraph(
+        [linemark({ number: '1' }), t('If only the'), { kind: 'break' }, linemark(), t('Argo')],
+        'line',
+      ),
+    ];
+    const { pr, elements } = project(verse);
+    const view = editor(pr.fragment(elements[0], 'body')!);
+    const read = readBodyDoc(view.state.doc, null);
+    expect(read.passages[0].text).toBe('If only the\nArgo');
+    const [hit] = matcher('the Argo').find(read.passages[0].text);
+    const between = view.state.doc.textBetween(
+      positionOf(read, 0, hit.start),
+      positionOf(read, 0, hit.end, true),
+    );
+    expect(between.replace(/\s/g, '')).toBe('theArgo');
   });
 
   it.skipIf(!NEW_SCHEMA)('are found again where an editor holds them', () => {
@@ -395,9 +460,9 @@ describe('replacing', () => {
     expect(JSON.stringify(after)).toContain('The anger is ');
     expect(JSON.stringify(after)).toContain('anger in numbers');
     // What is not text is where it was.
-    expect(after[6]).toEqual({
-      ...(rich[6] as object),
-      content: (rich[6] as { content: Inline[] }).content.map((i) =>
+    expect(after[7]).toEqual({
+      ...(rich[7] as object),
+      content: (rich[7] as { content: Inline[] }).content.map((i) =>
         i.kind === 'text' ? { ...i, text: i.text.replace('wrath', 'anger') } : i,
       ),
     });

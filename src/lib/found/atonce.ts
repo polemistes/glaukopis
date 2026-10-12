@@ -94,8 +94,6 @@ function lines(blocks: Block[], change: (line: Inline[]) => Inline[]): Block[] {
     switch (b.kind) {
       case 'paragraph':
         return { ...b, content: line(b.content) };
-      case 'passage':
-        return { ...b, content: b.content.map((p) => ({ ...p, content: line(p.content) })) };
       case 'parallel':
         return { ...b, left: lines(b.left, change), right: lines(b.right, change) };
       case 'figure':

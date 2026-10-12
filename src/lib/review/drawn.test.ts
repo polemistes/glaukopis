@@ -18,7 +18,7 @@ function el(
 
 const text = (s: string) => new Y.XmlText(s);
 
-/** A text with what is drawn and what is not: an equation without a formula, a list, a row of one figure, a table. */
+/** A text with what is drawn and what is not: an equation without a formula, a list, a row of one figure, a table, a break, numbered verse. */
 function drawn() {
   const doc = new Y.Doc();
   const body = doc.getXmlFragment('body');
@@ -29,20 +29,20 @@ function drawn() {
       text(' sat.'),
     ]),
     el('equation', [], { tex: '' }),
-    el(
-      'passage',
-      [
-        el('paragraph', [text('One')], { kind: 'item' }),
-        el('paragraph', [text('Two')], { kind: 'item', indent: 1 }),
-      ],
-      { family: 'list' },
-    ),
+    el('paragraph', [text('One')], { kind: 'item' }),
+    el('paragraph', [text('Two')], { kind: 'item', indent: 1 }),
     el('row', [el('figure', [text('A shield.')], { id: 'f', file: '', extension: '' })]),
     el('tabular', [
       el('table_caption', [text('A table.')]),
       el('table', [el('table_row', [el('table_cell', [el('paragraph', [text('Cell')])])])]),
     ]),
     el('paragraph', [text('Last'), el('footnote', [text('Note.')])]),
+    el('pagebreak', [], { what: 'page' }),
+    el(
+      'paragraph',
+      [el('linemark', [], { number: '1' }), text('Sing'), el('hard_break'), text('goddess')],
+      { kind: 'line', numbering: 'counted', every: 1 },
+    ),
   ]);
   const root = document.createElement('div');
   root.innerHTML = blocksHtml(readBody(body));
@@ -78,11 +78,15 @@ describe('drawn text', () => {
       'The black cat(x) sat.'.replace('(x)', root.querySelector('.citation')!.textContent!),
     );
     expect(at([1])).toBeUndefined();
-    expect(at([2, 1])).toBe('Two');
-    expect(at([3, 0])).toBe('A shield.');
-    expect(at([4, 0])).toBe('A table.');
-    expect(at([4, 1, 0, 0, 0])).toBe('Cell');
-    expect(drawnHolder(root, body, 'body', [5, 'note', 0])?.matches('sup.footnote')).toBe(true);
+    // Items that stand together are drawn as one list, each paragraph in an item.
+    expect(at([2])).toBe('One');
+    expect(at([3])).toBe('Two');
+    expect(at([4, 0])).toBe('A shield.');
+    expect(at([5, 0])).toBe('A table.');
+    expect(at([5, 1, 0, 0, 0])).toBe('Cell');
+    expect(drawnHolder(root, body, 'body', [6, 'note', 0])?.matches('sup.footnote')).toBe(true);
+    expect(drawnHolder(root, body, 'body', [7])?.matches('div.pagebreak')).toBe(true);
+    expect(at([8])).toBe('Singgoddess');
   });
 
   it('marks what was added and what was deleted, and takes the marks away again', () => {
@@ -94,7 +98,10 @@ describe('drawn text', () => {
       [
         mark('added', [0], 4, 10),
         mark('removed', [0], 14, 14, 'lazily'),
-        mark('gone', [2], 0, 0, 'Gone.'),
+        mark('gone', [4], 0, 0, 'Gone.'),
+        // A line mark is one sign, as it is in the text, and its number none.
+        mark('added', [8], 1, 5),
+        mark('added', [8], 6, 13),
       ],
       'body',
     );
@@ -106,8 +113,13 @@ describe('drawn text', () => {
     // After the citation, before " sat.".
     expect(removed.previousElementSibling?.matches('.citation')).toBe(true);
     expect(
-      root.querySelector('div.review-removed.block')!.nextElementSibling?.matches('div.passage'),
+      root.querySelector('div.review-removed.block')!.nextElementSibling?.matches('figure'),
     ).toBe(true);
+    const verse = root.querySelectorAll('p')[root.querySelectorAll('p').length - 1];
+    expect([...verse.querySelectorAll('.review-added')].map((s) => s.textContent)).toEqual([
+      'Sing',
+      'goddess',
+    ]);
     unmarkDrawn(made);
     expect(root.innerHTML).toBe(before);
   });

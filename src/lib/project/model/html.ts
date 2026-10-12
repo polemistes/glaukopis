@@ -1,20 +1,27 @@
 /**
  * The text of an element as HTML, for showing it where it is not being
  * written, and for the clipboard. A paragraph is a `p`, with its kind and
- * what else is said of it as data attributes, as the editor draws one; a
- * passage a `div.passage` naming its family, its numbers counted here as
- * the editor counts them (`lines.ts`). A passage of a list is a list of
- * `ul` or `ol`, nested by the indent of its items, so that other programs
- * get lists; each item holds its paragraph.
+ * what else is said of it as data attributes, as the editor draws one, its
+ * lines parted by line breaks; where its stretch is numbered, each line that
+ * shows a number has it before it, counted here as the editor counts them
+ * (`lines.ts`). Items of a list that stand together are a list of `ul` or
+ * `ol`, nested by their indent, so that other programs get lists; each item
+ * holds its paragraph. A page or column break is a `div.pagebreak`.
  */
 
 import { citationLabel, isMissing } from '$lib/editor/references.svelte';
 import { figureWidth, foundAttrs, tableWidth } from '$lib/editor/schema';
 import { isPictureName } from '$lib/figures/pictures.svelte';
 import { languageName } from '$lib/i18n';
-import { countedKind, type BasedKind } from './families';
-import { lineNumbers, type Shown } from './lines';
-import type { Block, Inline, ParagraphBlock, PassageBlock } from './text';
+import { groupingOf, type BasedKind } from './families';
+import { linesOf, stretches, stretchNumbers, type Shown } from './lines';
+import type { Block, Inline, InlineLineMark, ParagraphBlock } from './text';
+
+/** The notes met so far. */
+type Notes = { n: number };
+
+/** A line break, as an editor draws it: the style sheet puts a faint sign at the end of the line. */
+const BREAK = '<span class="hard-break"><br></span>';
 
 function escape(text: string): string {
   return text
@@ -24,7 +31,7 @@ function escape(text: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function inlines(list: Inline[], notes: { n: number }): string {
+function inlines(list: Inline[], notes: Notes): string {
   let out = '';
   for (const i of list) {
     switch (i.kind) {
@@ -59,8 +66,7 @@ function inlines(list: Inline[], notes: { n: number }): string {
         break;
       }
       case 'break':
-        // As an editor draws it: the style sheet puts a faint sign at the end of the line.
-        out += '<span class="hard-break"><br></span>';
+        out += BREAK;
         break;
       case 'citation':
         out += `<span class="citation${isMissing(i.items) ? ' missing' : ''}">${escape(citationLabel(i.items, i.mode, speaking))}</span>`;
@@ -95,7 +101,9 @@ function plain(list: Inline[]): string {
           ? citationLabel(i.items, i.mode, speaking)
           : i.kind === 'math'
             ? i.tex
-            : ' ',
+            : i.kind === 'linemark'
+              ? ''
+              : ' ',
     )
     .join('');
 }
@@ -108,56 +116,93 @@ function placing(b: { align?: string; wrap?: boolean }): string {
   );
 }
 
-/** The attributes of a paragraph beyond its words, those that are the defaults left out; and its number, where it shows one. */
-function paragraphAttrs(p: ParagraphBlock, shown: Shown | null): string {
+/**
+ * The attributes of a paragraph beyond its words, those that are the
+ * defaults left out: its kind, its indent, and the settings of the stretch
+ * it stands in.
+ */
+function paragraphAttrs(p: ParagraphBlock): string {
   return (
     (p.name !== 'text' ? ` data-kind="${escape(p.name)}"` : '') +
     (p.indent ? ` data-indent="${p.indent}" style="--indent: ${p.indent}"` : '') +
-    (p.number ? ` data-number="${escape(p.number)}"` : '') +
-    (p.counted === false ? ' data-uncounted' : '') +
-    (p.hidden ? ' data-hidden' : '') +
-    (p.margin ? ` data-margin="${escape(p.margin)}"` : '') +
-    (shown ? ` data-n="${escape(shown.label)}"${shown.set ? ' data-n-set' : ''}` : '')
-  );
-}
-
-/** The numbers the paragraphs of a passage show, by the rule the editor and the documents follow. */
-export function passageNumbers(p: PassageBlock, own: readonly BasedKind[]): (Shown | null)[] {
-  const shown = lineNumbers(
-    p.numbering,
-    p.every ?? 5,
-    p.content.map((line) => ({
-      // An empty paragraph is never counted: in verse it is the break between two stanzas.
-      counted:
-        countedKind(line.name, own) &&
-        line.counted !== false &&
-        line.content.some((i) => i.kind !== 'break' && (i.kind !== 'text' || !!i.text.trim())),
-      number: line.number,
-    })),
-  );
-  // A paragraph whose number is hidden is counted as any other, and shows nothing.
-  return shown.map((s, i) => (p.content[i]?.hidden ? null : s));
-}
-
-/** The attributes of a passage beyond its family, those that are the defaults left out. */
-function passageAttrs(p: PassageBlock): string {
-  return (
-    ` data-family="${escape(p.family)}"` +
-    (p.numbering !== 'none' ? ` data-numbering="${p.numbering}"` : '') +
+    (p.numbering ? ` data-numbering="${p.numbering}"` : '') +
     (p.every ? ` data-every="${p.every}"` : '') +
-    (p.side ? ` data-side="${p.side}"` : '')
+    (p.side ? ` data-side="${p.side}"` : '') +
+    (p.new ? ' data-new' : '')
+  );
+}
+
+/** The number a line shows, as a sign before it: what it says, and whether it was given by hand. */
+function numberHtml(shown: Shown | null | undefined): string {
+  return shown
+    ? `<span class="line-number" data-n="${escape(shown.label)}"${shown.set ? ' data-n-set' : ''}></span>`
+    : '';
+}
+
+/**
+ * A line mark, as the editor keeps one in its page: an empty span that
+ * shows nothing and says what the mark says, so that the clipboard carries
+ * it, and so that it stands as one thing in the line, as it does in the
+ * text, for what counts the places of a line (the marks of a review).
+ */
+function lineMarkHtml(m: InlineLineMark | null): string {
+  if (!m) return '';
+  return (
+    '<span class="linemark"' +
+    (m.number ? ` data-number="${escape(m.number)}"` : '') +
+    (m.counted === false ? ' data-uncounted' : '') +
+    (m.hidden ? ' data-hidden' : '') +
+    (m.margin ? ` data-margin="${escape(m.margin)}"` : '') +
+    (m.indent ? ` data-indent="${m.indent}"` : '') +
+    '></span>'
   );
 }
 
 /**
- * A passage of a list, in its `div.passage`, as nested lists: an item
- * deeper than the one before it begins a list within that item; a run of
- * items of the other kind at one depth is a list of its own. An item given
- * a number keeps it.
+ * A paragraph: its lines, parted by line breaks, each with the number it
+ * shows before it, where it shows one, and its line mark, which shows
+ * nothing.
  */
-function listHtml(p: PassageBlock, notes: { n: number }, own: readonly BasedKind[]): string {
-  const numbers = passageNumbers(p, own);
-  const items = p.content.map((item, i) => ({ item, shown: numbers[i] }));
+function paragraphHtml(
+  p: ParagraphBlock,
+  shown: (Shown | null)[] | undefined,
+  notes: Notes,
+): string {
+  const lines = linesOf(p.content)
+    .map(
+      (line, i) => numberHtml(shown?.[i]) + lineMarkHtml(line.mark) + inlines(line.content, notes),
+    )
+    .join(BREAK);
+  return `<p${paragraphAttrs(p)}>${lines}</p>`;
+}
+
+/** What the lines of each numbered paragraph of a text show, by its index among the blocks. */
+function numbersOf(list: Block[], own: readonly BasedKind[]): Map<number, (Shown | null)[]> {
+  const out = new Map<number, (Shown | null)[]>();
+  for (const s of stretches(list)) {
+    const paragraphs = list.slice(s.from, s.to) as ParagraphBlock[];
+    // The layout is not known here: every fifth, where the stretch does not say.
+    stretchNumbers(paragraphs, s.numbering, s.every ?? 5, own).forEach((shown, i) =>
+      out.set(s.from + i, shown),
+    );
+  }
+  return out;
+}
+
+/** Whether a paragraph is an item of a list, by its kind. */
+const listed = (b: Block | undefined, own: readonly BasedKind[]): b is ParagraphBlock =>
+  b?.kind === 'paragraph' && groupingOf(b.name, own) === 'list';
+
+/**
+ * Items of a list that stand together, as nested lists of `ul` or `ol`, so
+ * that other programs get lists: an item deeper than the one before it
+ * begins a list within that item; a run of items of the other kind at one
+ * depth is a list of its own. An item given a number keeps it.
+ */
+function listHtml(
+  items: { item: ParagraphBlock; shown: (Shown | null)[] | undefined }[],
+  notes: Notes,
+): string {
   let at = 0;
   const level = (depth: number): string => {
     let out = '';
@@ -168,8 +213,9 @@ function listHtml(p: PassageBlock, notes: { n: number }, own: readonly BasedKind
         const { item, shown } = items[at];
         if ((item.name === 'numbered' ? 'ol' : 'ul') !== tag && item.indent === depth) break;
         at++;
-        const value = /^\d+$/.test(item.number ?? '') ? ` value="${item.number}"` : '';
-        out += `<li${value}><p${paragraphAttrs(item, shown)}>${inlines(item.content, notes)}</p>`;
+        const given = linesOf(item.content)[0]?.mark?.number ?? '';
+        const value = /^\d+$/.test(given) ? ` value="${given}"` : '';
+        out += `<li${value}>${paragraphHtml(item, shown, notes)}`;
         // What is deeper stands within this item.
         if (at < items.length && items[at].item.indent > depth) out += level(depth + 1);
         out += '</li>';
@@ -178,30 +224,32 @@ function listHtml(p: PassageBlock, notes: { n: number }, own: readonly BasedKind
     }
     return out;
   };
-  return `<div class="passage"${passageAttrs(p)}>${level(Math.min(...items.map((i) => i.item.indent)))}</div>`;
+  return level(Math.min(...items.map((i) => i.item.indent)));
 }
 
-function blocks(list: Block[], notes: { n: number }, own: readonly BasedKind[]): string {
+function blocks(list: Block[], notes: Notes, own: readonly BasedKind[]): string {
+  const numbers = numbersOf(list, own);
   let out = '';
-  for (const b of list) {
+  for (let at = 0; at < list.length; at++) {
+    const b = list[at];
     switch (b.kind) {
-      case 'paragraph':
-        out += `<p${paragraphAttrs(b, null)}>${inlines(b.content, notes)}</p>`;
-        break;
-      case 'passage': {
-        if (!b.content.length) break;
-        if (b.family === 'list') {
-          out += listHtml(b, notes, own);
+      case 'paragraph': {
+        if (listed(b, own)) {
+          // The items that stand together, until one begins a new run.
+          const items = [{ item: b, shown: numbers.get(at) }];
+          while (listed(list[at + 1], own) && !(list[at + 1] as ParagraphBlock).new) {
+            at++;
+            items.push({ item: list[at] as ParagraphBlock, shown: numbers.get(at) });
+          }
+          out += listHtml(items, notes);
           break;
         }
-        const numbers = passageNumbers(b, own);
-        out += `<div class="passage"${passageAttrs(b)}>`;
-        b.content.forEach((line, i) => {
-          out += `<p${paragraphAttrs(line, numbers[i])}>${inlines(line.content, notes)}</p>`;
-        });
-        out += '</div>';
+        out += paragraphHtml(b, numbers.get(at), notes);
         break;
       }
+      case 'break':
+        out += `<div class="pagebreak" data-what="${b.what === 'column' ? 'column' : 'page'}"></div>`;
+        break;
       case 'parallel':
         out +=
           `<div class="parallel"><div class="parallel-side">${blocks(b.left, notes, own)}</div>` +
@@ -283,8 +331,8 @@ export function excerpt(list: Block[], characters = 600): { blocks: Block[]; cut
   const size = (b: Block): number =>
     b.kind === 'paragraph'
       ? plain(b.content).length
-      : b.kind === 'passage'
-        ? b.content.reduce((n, l) => n + plain(l.content).length + 1, 0)
+      : b.kind === 'break'
+        ? 0
         : b.kind === 'parallel'
           ? [...b.left, ...b.right].reduce((n, c) => n + size(c), 0)
           : b.kind === 'figure'

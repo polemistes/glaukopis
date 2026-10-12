@@ -148,8 +148,11 @@ class Reader {
         case 'parallel':
           this.blocks(child);
           break;
+        case 'pagebreak':
+          // A break of the page or the column holds no text.
+          break;
         case 'passage':
-          // A run of paragraphs of one family (ADR 0040); of the old shape, a paragraph of a kind.
+          // As texts were once written: the paragraphs it holds, or, of the oldest shape, a paragraph.
           if (child.toArray().some((c) => c instanceof Y.XmlElement && c.nodeName === 'paragraph'))
             this.blocks(child);
           else this.line(child, 'line');

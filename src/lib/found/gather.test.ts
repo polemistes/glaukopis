@@ -54,7 +54,7 @@ describe('the passages of an element in view', () => {
   it('are found in quotations, lists, cells, and what is said of figures and tables', () => {
     const { pr, at } = project([
       quote(t('Quoted.')),
-      list([t('one')], [t('nested')], [t('two')]),
+      ...list([t('one')], [t('nested')], [t('two')]),
       {
         kind: 'figure',
         id: 'f1',

@@ -6,9 +6,9 @@
    * project, with the colour it had then.
    */
   import { untrack } from 'svelte';
-  import { CATALOGUE, GROUPS } from '$lib/editor/kinds';
+  import { CATALOGUE } from '$lib/editor/kinds';
   import { t } from '$lib/i18n';
-  import { FAMILIES, KIND_FACTS, PARAGRAPH_KINDS } from './model/families';
+  import { PARAGRAPH_KINDS } from './model/families';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
@@ -44,20 +44,15 @@
   let field = $state<HTMLInputElement>();
 
   /**
-   * The kinds of paragraph a text can begin in, by family (ADR 0040): every
-   * kind of the catalogue but text and a break, which no text is begun in.
-   * The words for them are the editor's catalogue's, where it has them.
+   * The kinds of paragraph a text can begin in: every kind of the catalogue
+   * but text, which is the first choice, and a break, which no text is
+   * begun in. The words for them are the editor's catalogue's, where it has
+   * them; the id where it has none.
    */
-  const beginsGroups = $derived(
-    FAMILIES.filter((family) => family !== 'text' && family !== 'break').map((family) => ({
-      id: family,
-      label: GROUPS.find((g) => (g.id as string) === family)?.label() ?? family,
-      kinds: PARAGRAPH_KINDS.filter((id) => KIND_FACTS[id].family === family).map((id) => ({
-        id,
-        label: () => CATALOGUE.find((k) => k.id === id)?.label() ?? id,
-      })),
-    })),
-  );
+  const beginsKinds = PARAGRAPH_KINDS.filter((id) => id !== 'text' && id !== 'break').map((id) => ({
+    id,
+    label: () => CATALOGUE.find((k) => k.id === id)?.label() ?? id,
+  }));
   const ownParagraphs = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
 
   const uid = $props.id();
@@ -173,11 +168,7 @@
       <span class="label">{t('kinds-begins')}</span>
       <select bind:value={begins}>
         <option value="">{t('editor-text')}</option>
-        {#each beginsGroups as g (g.id)}
-          <optgroup label={g.label}>
-            {#each g.kinds as k (k.id)}<option value={k.id}>{k.label()}</option>{/each}
-          </optgroup>
-        {/each}
+        {#each beginsKinds as k (k.id)}<option value={k.id}>{k.label()}</option>{/each}
         {#if ownParagraphs.length}
           <optgroup label={t('editor-kinds-own')}>
             {#each ownParagraphs as k (k.id)}<option value={k.id}>{k.name}</option>{/each}

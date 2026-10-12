@@ -3,12 +3,14 @@ import * as Y from 'yjs';
 import { blockElements, writeBody, writeName } from './blocks';
 import {
   bodyFacts,
+  linemark,
+  pagebreak,
   paragraph,
-  passage,
   readBody,
   readTitle,
   type Block,
   type Inline,
+  type ParagraphBlock,
 } from './text';
 
 const HASH = 'a'.repeat(64);
@@ -19,6 +21,15 @@ const t = (text: string, marks: Record<string, Record<string, unknown>> = {}): I
   marks,
 });
 const p = (...content: Inline[]): Block => paragraph(content);
+const br: Inline = { kind: 'break' };
+
+/** The settings of a numbered stretch of verse. */
+const V: Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side'> = {
+  indent: 0,
+  numbering: 'counted',
+  every: 2,
+  side: 'right',
+};
 
 /** A text with everything in it, as the application reads a text. */
 const everything: Block[] = [
@@ -76,43 +87,55 @@ const everything: Block[] = [
   ),
   { kind: 'equation', id: 'e1', tex: 'a^2 + b^2 = c^2', numbered: true, align: 'left' },
   { kind: 'equation', id: 'e2', tex: '\\sum_{i=1}^{n} i', numbered: false },
-  passage('quotation', [
-    paragraph([t('Sing, goddess, the wrath.')], 'quote'),
-    paragraph([t('Of Achilles.', { em: {} })], 'epigraph'),
-    paragraph([t('Homer')], 'attribution'),
-  ]),
-  passage(
-    'verse',
+  paragraph([t('Sing, goddess, the wrath.')], 'quote'),
+  paragraph([t('Of Achilles.', { em: {} })], 'epigraph'),
+  paragraph([t('Homer')], 'attribution'),
+  // A numbered stretch of verse, its stanzas paragraphs of lines, a speaker and a direction among them.
+  paragraph([t('Nurse')], 'speaker', V),
+  paragraph(
     [
-      paragraph([t('Nurse')], 'speaker'),
-      paragraph([t('If only the Argo had never flown')], 'line', { indent: 0, number: '1' }),
-      paragraph([t('through the dark '), t('Clashing Rocks', { em: {} })], 'line', 1),
-      paragraph([t('She weeps.')], 'direction', { indent: 0, margin: 'aside' }),
-      paragraph([t('Nor had the heroes rowed')], 'line', { indent: 0, number: '1094a1' }),
-      paragraph([t('for Pelias')], 'line', { indent: 2, counted: false }),
-      paragraph([t('the golden fleece.')], 'line', { indent: 0, margin: 'ia. trim.' }),
+      linemark({ number: '1' }),
+      t('If only the Argo had never flown'),
+      br,
+      linemark({ indent: 1 }),
+      t('through the dark '),
+      t('Clashing Rocks', { em: {} }),
     ],
-    'counted',
-    { every: 2, side: 'right' },
+    'line',
+    V,
   ),
-  passage('script', [
-    paragraph([t('Int. Palace – night')], 'scene'),
-    paragraph([t('Nurse')], 'character'),
-    paragraph([t('If only.')], 'dialogue'),
-  ]),
+  paragraph([linemark({ margin: 'aside' }), t('She weeps.')], 'direction', V),
+  paragraph(
+    [
+      linemark({ number: '1094a1' }),
+      t('Nor had the heroes rowed'),
+      br,
+      linemark({ counted: false, indent: 2 }),
+      t('for Pelias'),
+      br,
+      linemark({ hidden: true, margin: 'ia. trim.' }),
+      t('the golden fleece.'),
+    ],
+    'line',
+    V,
+  ),
+  paragraph([t('A second run of verse.')], 'line', { ...V, new: true }),
+  paragraph([t('Int. Palace – night')], 'scene'),
+  paragraph([t('Nurse')], 'character'),
+  paragraph([t('If only.')], 'dialogue'),
+  pagebreak(),
   {
     kind: 'parallel',
-    left: [passage('verse', [paragraph([t('Εἴθ᾽ ὤφελ᾽')], 'line')], 'given')],
+    left: [paragraph([t('Εἴθ᾽ ὤφελ᾽')], 'line', { indent: 0, numbering: 'given' })],
     right: [p(t('If only.'))],
   },
-  passage('list', [
-    paragraph([t('one')], 'item'),
-    paragraph([t('two')], 'item'),
-    paragraph([t('nested')], 'numbered', { indent: 1, number: '3' }),
-    paragraph([t('more')], 'numbered', 1),
-    paragraph([t('first')], 'numbered'),
-  ]),
-  passage('k1', [paragraph([t('Dear reader,')], 'k1')]),
+  paragraph([t('one')], 'item'),
+  paragraph([t('two')], 'item'),
+  paragraph([linemark({ number: '3' }), t('nested')], 'numbered', 1),
+  paragraph([t('more')], 'numbered', 1),
+  paragraph([t('first')], 'numbered'),
+  paragraph([t('Dear reader,')], 'k1'),
+  pagebreak('column'),
   {
     kind: 'figure',
     id: 'f1',
@@ -216,67 +239,68 @@ describe('text written without an editor', () => {
     expect(readBody(written(everything))).toEqual(everything);
   });
 
-  it('writes the shape the editors write: paragraphs of a kind in passages, with the attributes they have', () => {
-    const [plain, quoted] = elements([
+  it('writes the shape the editors write: paragraphs of a kind with the attributes they have', () => {
+    const [plain, verse, page, column] = elements([
       p(t('Plain '), t('words', { em: {} })),
-      passage(
-        'verse',
+      paragraph(
         [
-          paragraph([t('Nurse')], 'speaker'),
-          paragraph([t('If only')], 'line', {
-            indent: 1,
-            number: '45',
-            counted: false,
-            margin: 'ia.',
-          }),
+          linemark({ number: '45', counted: false, hidden: true, margin: 'ia.', indent: 2 }),
+          t('If only'),
+          br,
+          linemark({ number: '46a' }),
+          t('the Argo'),
+          br,
+          linemark(),
+          t('had never'),
         ],
-        'counted',
-        { every: 5, side: 'right' },
+        'line',
+        { indent: 1, numbering: 'counted', every: 5, side: 'right', new: true },
       ),
+      pagebreak('page'),
+      pagebreak('column'),
     ]);
+    // What a paragraph leaves to the layout, or does not say, is not written.
     expect(shape(plain)).toEqual({
       name: 'paragraph',
-      attrs: { kind: 'text', indent: 0, counted: true },
+      attrs: { kind: 'text', indent: 0 },
       children: [['Plain ', ['words', { em: {} }]]],
     });
-    expect(shape(quoted)).toEqual({
-      name: 'passage',
-      attrs: { family: 'verse', numbering: 'counted', every: 5, side: 'right' },
+    expect(shape(verse)).toEqual({
+      name: 'paragraph',
+      attrs: { kind: 'line', indent: 1, numbering: 'counted', every: 5, side: 'right', new: true },
       children: [
         {
-          name: 'paragraph',
-          attrs: { kind: 'speaker', indent: 0, counted: true },
-          children: [['Nurse']],
+          name: 'linemark',
+          attrs: { number: '45', counted: false, hidden: true, margin: 'ia.', indent: 2 },
+          children: [],
         },
-        {
-          name: 'paragraph',
-          attrs: { kind: 'line', indent: 1, number: '45', counted: false, margin: 'ia.' },
-          children: [['If only']],
-        },
+        ['If only'],
+        { name: 'hard_break', attrs: {}, children: [] },
+        { name: 'linemark', attrs: { number: '46a' }, children: [] },
+        ['the Argo'],
+        { name: 'hard_break', attrs: {}, children: [] },
+        { name: 'linemark', attrs: {}, children: [] },
+        ['had never'],
       ],
     });
-    // What the passage leaves to the layout is not written.
-    const [bare] = elements([passage('quotation', [paragraph([], 'quote')])]);
-    expect(bare.getAttributes() as Record<string, unknown>).toEqual({
-      family: 'quotation',
-      numbering: 'none',
-    });
+    expect(shape(page)).toEqual({ name: 'pagebreak', attrs: { what: 'page' }, children: [] });
+    expect(shape(column)).toEqual({ name: 'pagebreak', attrs: { what: 'column' }, children: [] });
+    // A numbering of none is no numbering.
+    const [none] = elements([paragraph([t('x')], 'line', { indent: 0, numbering: 'none' })]);
+    expect(none.getAttributes() as Record<string, unknown>).toEqual({ kind: 'line', indent: 0 });
   });
 
-  it('keeps a number held back, and says nothing of one that is not', () => {
-    const verse = passage(
-      'verse',
-      [
-        paragraph([t('one')], 'line', { indent: 0, number: '1' }),
-        paragraph([t('two')], 'line', { indent: 0, hidden: true }),
-      ],
-      'counted',
-    );
-    const [el] = elements([verse]);
-    const lines = el.toArray() as Y.XmlElement[];
-    expect(lines[1].getAttribute('hidden')).toBe(true);
-    expect(lines[0].getAttribute('hidden')).toBeUndefined();
-    expect(readBody(written([verse]))).toEqual([verse]);
+  it('reads a line mark again with each thing it says', () => {
+    for (const said of [
+      { number: '1234' },
+      { counted: false as const },
+      { hidden: true as const },
+      { margin: 'ia. trim.' },
+      { indent: 3 },
+    ]) {
+      const text = [paragraph([linemark(said), t('a line')], 'line')];
+      expect(readBody(written(text))).toEqual(text);
+    }
   });
 
   it('writes what is not words as the elements the editors have for it', () => {
@@ -288,7 +312,10 @@ describe('text written without an editor', () => {
         { kind: 'citation', items: [{ id: 'r1' }], mode: 'intext' },
         { kind: 'crossref', target: 'f1', form: 'name' },
         { kind: 'refmark', label: '3:16' },
-        { kind: 'footnote', content: [t('Note'), { kind: 'footnote', content: [t('no')] }] },
+        {
+          kind: 'footnote',
+          content: [t('Note'), { kind: 'footnote', content: [t('no')] }, linemark({ number: '1' })],
+        },
         { kind: 'footnote', content: [t('End')], place: 'end' },
         t('b'),
       ),
@@ -417,7 +444,7 @@ describe('text written without an editor', () => {
           file: HASH,
           extension: 'png',
           name: '',
-          caption: [t('Said'), note, { kind: 'refmark', label: '1' }],
+          caption: [t('Said'), note, { kind: 'refmark', label: '1' }, linemark({ number: '1' })],
           alt: '',
           width: 100,
           numbered: true,
@@ -429,10 +456,12 @@ describe('text written without an editor', () => {
           rows: [
             [
               {
-                // A passage in a cell is its paragraphs; what else is the text it has.
+                // A cell holds paragraphs; what else is the text it has, and a break nothing.
                 content: [
-                  passage('list', [paragraph([t('one')], 'item'), paragraph([t('two')], 'item')]),
+                  paragraph([t('one')], 'item'),
+                  paragraph([t('two')], 'item'),
                   { kind: 'equation', id: 'e', tex: 'x', numbered: false },
+                  pagebreak(),
                 ],
                 colspan: 1,
                 rowspan: 1,
@@ -443,7 +472,6 @@ describe('text written without an editor', () => {
           numbered: true,
           width: 0,
         },
-        passage('quotation', []),
         { kind: 'row', items: [] },
       ]),
     );
@@ -463,7 +491,7 @@ describe('text written without an editor', () => {
     writeBody(fragment, [p(t('Second.'))]);
     expect(readBody(fragment)).toEqual([p(t('Second.'))]);
     // A text of nothing that is written is one empty paragraph, in which the writing begins.
-    writeBody(fragment, [passage('quotation', [])]);
+    writeBody(fragment, [{ kind: 'row', items: [] }]);
     expect(fragment.length).toBe(1);
     expect(readBody(fragment)).toEqual([]);
   });

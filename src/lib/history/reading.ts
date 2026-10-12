@@ -37,18 +37,14 @@ export const OBJECT = '￼';
 
 /**
  * Blocks that hold other blocks, and are not changes of their own. A
- * `passage` holds paragraphs (ADR 0040); of the old shape, it was a
- * paragraph of a kind, and is told by what it holds (`holdsBlocks`).
+ * `passage`, as texts were once written, held paragraphs, and is read as
+ * what it holds; of an older shape still, it was a paragraph of a kind, and
+ * is told by what it holds (`holdsBlocks`).
  */
 const CONTAINERS = new Set([
-  'blockquote',
-  'verse',
   'passage',
   'parallel',
   'parallel_side',
-  'bullet_list',
-  'ordered_list',
-  'list_item',
   'row',
   'table',
   'table_row',
@@ -61,6 +57,7 @@ const OBJECTS: Record<string, string> = {
   figure: 'figure',
   equation: 'equation',
   tabular: 'table',
+  pagebreak: 'break',
 };
 
 /** Who is who: by the copy that made an item, and by what they deleted. */
@@ -698,9 +695,8 @@ function readBlocks(
   }
 }
 
-/** Whether an element holds paragraphs, as a passage does now, rather than text, as one of the old shape did. */
+/** Whether a passage of before holds paragraphs, rather than text, as one of an older shape did. */
 function holdsBlocks(element: Y.XmlElement): boolean {
-  if (element._map.has('family')) return true;
   for (const item of children(element))
     if (item.content instanceof Y.ContentType && item.content.type instanceof Y.XmlElement)
       if ((item.content.type as Y.XmlElement).nodeName === 'paragraph') return true;

@@ -192,9 +192,6 @@ function blocks(maker: PassageMaker, list: Block[]): void {
       case 'paragraph':
         line(maker, b.content, 'line');
         break;
-      case 'passage':
-        for (const p of b.content) line(maker, p.content, 'line');
-        break;
       case 'parallel':
         maker.part();
         blocks(maker, b.left);
