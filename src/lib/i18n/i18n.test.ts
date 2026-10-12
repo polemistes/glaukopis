@@ -59,12 +59,15 @@ function languagesOf(document: boolean): string[] {
   return [...tags];
 }
 
-/** The code of the interface, by its path. */
-const sources = import.meta.glob(['/src/**/*.ts', '/src/**/*.svelte', '!/src/**/*.test.ts'], {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>;
+/** The code of the interface, by its path; not the tests, nor what they are given to work on. */
+const sources = import.meta.glob(
+  ['/src/**/*.ts', '/src/**/*.svelte', '!/src/**/*.test.ts', '!/src/**/fixtures.ts'],
+  {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  },
+) as Record<string, string>;
 
 describe('the words of the interface', () => {
   it('are read without fault', () => {
