@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { lineNumbers, type CountedLine } from './lines';
+import { lineNumbers, linesOf, stretches, stretchNumbers, type CountedLine } from './lines';
+import { linemark, pagebreak, paragraph, type Inline } from './text';
 import type { Numbering } from './families';
 
 const line = (number: string | null = null, counted = true): CountedLine => ({ counted, number });
@@ -92,5 +93,122 @@ describe('the numbers of the paragraphs of a passage', () => {
 
   it('take every number as at least one', () => {
     expect(shown('counted', 0, [line('1'), line()])).toEqual(['1!', '2']);
+  });
+});
+
+// ---- lines, stretches, and the numbers of a stretch ----
+
+const w = (text: string): Inline => ({ kind: 'text', text, marks: {} });
+const br: Inline = { kind: 'break' };
+const shownOf = (rows: ({ label: string; set: boolean } | null)[][]) =>
+  rows.map((r) => r.map((s) => (s ? (s.set ? `${s.label}!` : s.label) : '-')).join(' '));
+
+// The same cases as the test of `stretch_numbers` in `crates/core/src/document/numbers.rs`.
+describe('the lines of a paragraph', () => {
+  it('are parted by its line breaks, each with the mark that begins it', () => {
+    const lines = linesOf([
+      linemark({ number: '45' }),
+      w('one'),
+      br,
+      w('two'),
+      br,
+      linemark({ hidden: true }),
+      w('three'),
+    ]);
+    expect(
+      lines.map((l) => [l.mark?.number ?? l.mark?.hidden ?? null, l.content.length, l.blank]),
+    ).toEqual([
+      ['45', 1, false],
+      [null, 1, false],
+      [true, 1, false],
+    ]);
+  });
+
+  it('are one blank line for an empty paragraph, and a blank line between two breaks', () => {
+    expect(linesOf([]).map((l) => l.blank)).toEqual([true]);
+    expect(linesOf([w('a'), br, br, w('b')]).map((l) => l.blank)).toEqual([false, true, false]);
+  });
+});
+
+describe('the stretches of a text', () => {
+  it('are runs of paragraphs with the same numbering settings, whatever their kinds', () => {
+    const blocks = [
+      paragraph([w('prose')]),
+      paragraph([w('Nurse')], 'speaker', { indent: 0, numbering: 'counted' }),
+      paragraph([w('a')], 'line', { indent: 0, numbering: 'counted' }),
+      paragraph([w('b')], 'text', { indent: 0, numbering: 'counted', every: 2 }),
+      pagebreak(),
+      paragraph([w('c')], 'line', { indent: 0, numbering: 'counted', every: 2 }),
+    ];
+    expect(stretches(blocks).map((s) => [s.from, s.to, s.every])).toEqual([
+      [1, 3, null],
+      [3, 4, 2],
+      [5, 6, 2],
+    ]);
+  });
+});
+
+describe('the numbers of a stretch', () => {
+  it('count lines across stanzas and through a speaker, and pass over an empty line', () => {
+    const rows = stretchNumbers(
+      [
+        paragraph([w('Nurse')], 'speaker'),
+        paragraph([linemark({ number: '1' }), w('one'), br, w('two'), br, w('three')], 'line'),
+        paragraph([w('four'), br, br, w('five')], 'line'),
+      ],
+      'counted',
+      1,
+    );
+    expect(shownOf(rows)).toEqual(['-', '1! 2 3', '4 - 5']);
+  });
+
+  it('count a line marked hidden and show nothing on it, and pass over one not counted', () => {
+    const rows = stretchNumbers(
+      [
+        paragraph(
+          [
+            linemark({ number: '1' }),
+            w('a'),
+            br,
+            linemark({ hidden: true }),
+            w('b'),
+            br,
+            w('c'),
+            br,
+            linemark({ counted: false }),
+            w('d'),
+            br,
+            w('e'),
+          ],
+          'line',
+        ),
+      ],
+      'counted',
+      2,
+    );
+    expect(shownOf(rows)).toEqual(['1! - - - 4']);
+  });
+
+  it('number prose paragraph by paragraph, each one line', () => {
+    const rows = stretchNumbers(
+      [paragraph([linemark({ number: '1' }), w('First.')]), paragraph([w('Second.')])],
+      'counted',
+      1,
+    );
+    expect(shownOf(rows)).toEqual(['1!', '2']);
+  });
+
+  it('show only what was given where the numbering is given', () => {
+    const rows = stretchNumbers(
+      [
+        paragraph(
+          [linemark({ number: '45' }), w('a'), br, w('b'), br, linemark({ number: '77' }), w('c')],
+          'line',
+        ),
+      ],
+      'given',
+      1,
+    );
+    expect(shownOf(rows)).toEqual(['45! - 77!']);
   });
 });

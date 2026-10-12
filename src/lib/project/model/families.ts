@@ -1,30 +1,34 @@
 /**
- * What the kinds of paragraph are, as far as the shape of a text needs to
- * know, without the words of the interface: the family of each kind of the
- * catalogue, whether its paragraphs are counted by a numbering, whether it
- * joins the passage before it, and what Enter and Tab make. Read here by
- * the readers of texts, the search in its thread of its own, the migration
- * of old projects and the editor alike; the editor's catalogue
- * (`editor/kinds.ts`) adds the words. See ADR 0040.
+ * What the kinds of paragraph and of words are, as far as the shape of a
+ * text needs to know, without the words of the interface: how the document
+ * groups paragraphs of a kind that stand together, whether a numbering
+ * counts their lines, and whether a kind may also stand on words. Read by
+ * the readers of texts, the search in its thread of its own and the editor
+ * alike; the editor's catalogue (`editor/kinds.ts`) adds the words. See
+ * ADR 0041.
  *
- * A passage is a run of paragraphs of one family. Text forms no passage.
+ * A kind is a label and nothing more: no kind follows another, joins what
+ * is before it, or belongs anywhere by rule. The grouping is the
+ * document's business, which the writer never sees or steers.
  */
 
-/** The families that come with the application, in the order the tools show them. */
-export const FAMILIES = [
-  'text',
-  'quotation',
-  'verse',
-  'script',
-  'glossary',
+/**
+ * How the document sets paragraphs of a kind that stand together: lines of
+ * verse as a line block, quoted paragraphs as a block quote, items as a
+ * list, lines of code as a code block, headwords and glosses as a
+ * description list; each a paragraph of its own where nothing groups them.
+ */
+export type Grouping = 'lines' | 'quote' | 'list' | 'code' | 'glossary' | 'none';
+export const GROUPINGS: readonly Grouping[] = [
+  'lines',
+  'quote',
   'list',
   'code',
-  'break',
-  'draft',
-] as const;
-export type Family = (typeof FAMILIES)[number];
+  'glossary',
+  'none',
+];
 
-/** How a passage numbers its paragraphs: not at all, counted from the first number given, or only by the numbers given. */
+/** How a stretch numbers its lines: not at all, counted from the first number given, or only by the numbers given. */
 export type Numbering = 'none' | 'counted' | 'given';
 export const NUMBERINGS: readonly Numbering[] = ['none', 'counted', 'given'];
 
@@ -32,47 +36,39 @@ export const NUMBERINGS: readonly Numbering[] = ['none', 'counted', 'given'];
 export type Side = 'left' | 'right';
 
 export interface KindFacts {
-  /** The family of its passages; `text` for none; `words` for a kind of words. */
-  family: Family | 'words';
-  /** Whether a numbering counts its paragraphs. */
+  /** `words` for a kind of words only; otherwise how the document groups paragraphs of it. */
+  grouping: Grouping | 'words';
+  /** Whether a numbering counts its lines by default. */
   counted: boolean;
-  /** Whether it stands in the passage before it, whatever its family. */
-  joins: boolean;
-  /** The kind Enter makes after it; itself where not said. */
-  next?: string;
-  /** The kind Tab makes of it, in a script or a glossary; `indent` where Tab indents. */
-  tab?: string | 'indent';
+  /** Whether the kind may also stand on a run of words, as a speaker and a direction may. */
+  words?: boolean;
 }
 
-const f = (
-  family: Family | 'words',
-  counted: boolean,
-  more: Partial<Omit<KindFacts, 'family' | 'counted'>> = {},
-): KindFacts => ({ family, counted, joins: false, ...more });
+const f = (grouping: Grouping | 'words', counted: boolean, words = false): KindFacts =>
+  words ? { grouping, counted, words } : { grouping, counted };
 
-/** The kinds of the catalogue, by id. The ids are stored in projects and must not change. */
+/** The kinds of the catalogue, by id, in the order the tools list them. The ids are stored in projects and must not change. */
 export const KIND_FACTS: Record<string, KindFacts> = {
-  // Text forms no passage of itself; in a passage of text, made when paragraphs of text are numbered, they are counted.
-  text: f('text', true, { next: 'text' }),
-  quote: f('quotation', true),
-  epigraph: f('quotation', true, { next: 'attribution' }),
-  attribution: f('quotation', false, { joins: true, next: 'text' }),
-  line: f('verse', true, { tab: 'indent' }),
-  speaker: f('verse', false, { next: 'line' }),
-  direction: f('verse', false, { next: 'line' }),
-  scene: f('script', true, { next: 'action', tab: 'action' }),
-  action: f('script', true, { tab: 'character' }),
-  character: f('script', true, { next: 'dialogue', tab: 'transition' }),
-  dialogue: f('script', true, { next: 'action', tab: 'parenthetical' }),
-  parenthetical: f('script', true, { next: 'dialogue', tab: 'dialogue' }),
-  transition: f('script', true, { next: 'scene', tab: 'scene' }),
-  headword: f('glossary', true, { next: 'gloss', tab: 'gloss' }),
-  gloss: f('glossary', true, { next: 'headword', tab: 'headword' }),
-  item: f('list', true, { tab: 'indent' }),
-  numbered: f('list', true, { tab: 'indent' }),
+  text: f('none', true),
+  quote: f('quote', true),
+  epigraph: f('none', true),
+  attribution: f('none', false),
+  line: f('lines', true),
+  speaker: f('none', false, true),
+  direction: f('none', false, true),
+  scene: f('none', true),
+  action: f('none', true),
+  character: f('none', true),
+  dialogue: f('none', true),
+  parenthetical: f('none', true),
+  transition: f('none', true),
+  headword: f('glossary', true),
+  gloss: f('glossary', true),
+  item: f('list', true),
+  numbered: f('list', true),
   code: f('code', true),
-  break: f('break', false, { next: 'text' }),
-  draft: f('draft', true),
+  break: f('none', false),
+  draft: f('none', false),
   foreign: f('words', false),
   title: f('words', false),
   term: f('words', false),
@@ -82,10 +78,16 @@ export const KIND_FACTS: Record<string, KindFacts> = {
 
 /** The ids of the kinds of paragraph of the catalogue, in its order. */
 export const PARAGRAPH_KINDS: readonly string[] = Object.keys(KIND_FACTS).filter(
-  (id) => KIND_FACTS[id].family !== 'words',
+  (id) => KIND_FACTS[id].grouping !== 'words',
 );
 
-/** The ids kinds had before ADR 0040, and what they are now. */
+/** The ids of the kinds that may stand on words, in the catalogue's order: the kinds of words, then speaker and direction. */
+export const WORD_KINDS: readonly string[] = [
+  ...Object.keys(KIND_FACTS).filter((id) => KIND_FACTS[id].grouping === 'words'),
+  ...Object.keys(KIND_FACTS).filter((id) => KIND_FACTS[id].words),
+];
+
+/** The ids kinds had before, and what they are now. */
 export const RENAMED: Record<string, string> = { verse: 'line', list: 'item' };
 
 /** A kind's id as it is now, for one read from an old project. */
@@ -100,8 +102,8 @@ export interface BasedKind {
 /**
  * The facts of a kind: of the catalogue, or of the writer's own through
  * what it is based on. A kind of the writer's own based on text, or on
- * nothing known, is a family of its own, named by its id. One that is not
- * known at all is taken for text.
+ * nothing known, has text's facts; one that is not known at all is taken
+ * for text.
  */
 export function factsOf(id: string, own: readonly BasedKind[] = []): KindFacts {
   const seen = new Set<string>();
@@ -109,43 +111,26 @@ export function factsOf(id: string, own: readonly BasedKind[] = []): KindFacts {
   for (let depth = 0; depth < 8 && !seen.has(at); depth++) {
     seen.add(at);
     const known = KIND_FACTS[at];
-    if (known) {
-      // A kind of the writer's own based on text is a family of its own, whose paragraphs count.
-      if (known.family === 'text' && at !== id)
-        return { ...known, family: id as Family, counted: true, next: undefined };
-      return known;
-    }
+    if (known) return known;
     const kind = own.find((k) => k.id === at);
     if (!kind) break;
     at = kind.basedOn ? renamed(kind.basedOn) : 'text';
   }
-  return seen.size > 1 || own.some((k) => k.id === id)
-    ? { ...KIND_FACTS.text, family: id as Family, counted: true, next: undefined }
-    : KIND_FACTS.text;
+  return KIND_FACTS.text;
 }
 
-/** The family of a kind: that of its passages; `text` for none. */
-export function familyOf(id: string, own: readonly BasedKind[] = []): string {
-  return factsOf(id, own).family;
+/** How the document groups paragraphs of a kind; `words` for a kind of words only. */
+export function groupingOf(id: string, own: readonly BasedKind[] = []): Grouping | 'words' {
+  return factsOf(id, own).grouping;
 }
 
-/** The kind Enter makes after a paragraph of a kind: the one it names, else itself. */
-export function nextOf(id: string, own: readonly BasedKind[] = []): string {
-  const facts = factsOf(id, own);
-  return facts.next ?? id;
-}
-
-/** What Tab makes of a paragraph of a kind: another kind, `indent`, or nothing. */
-export function tabOf(id: string, own: readonly BasedKind[] = []): string | undefined {
-  return factsOf(id, own).tab;
-}
-
-/** Whether a numbering counts a paragraph of a kind, before what the paragraph itself says. */
+/** Whether a numbering counts the lines of a paragraph of a kind, before what a line itself says. */
 export function countedKind(id: string, own: readonly BasedKind[] = []): boolean {
   return factsOf(id, own).counted;
 }
 
-/** Whether a paragraph of a kind stands in the passage before it. */
-export function joinsBefore(id: string, own: readonly BasedKind[] = []): boolean {
-  return factsOf(id, own).joins;
+/** Whether a kind may stand on words: a kind of words, or a speaker or a direction. */
+export function wordsKind(id: string, own: readonly BasedKind[] = []): boolean {
+  const facts = factsOf(id, own);
+  return facts.grouping === 'words' || !!facts.words;
 }

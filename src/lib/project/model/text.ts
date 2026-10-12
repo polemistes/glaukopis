@@ -80,6 +80,23 @@ export interface InlineRefMark {
   kind: 'refmark';
   label: string;
 }
+/**
+ * What the writer said of one line by hand, where lines are numbered (ADR
+ * 0041): a mark at the start of the line — the first thing in its
+ * paragraph, or the first after a line break. A number or label given by
+ * hand, from which the count goes on (`lines.ts`); `counted: false` for a
+ * line the count passes over; `hidden: true` for one that is counted and
+ * shows no number; words in the margin; and the line's indent, for verse.
+ * What is not said is left out. A mark that says nothing is not written.
+ */
+export interface InlineLineMark {
+  kind: 'linemark';
+  number?: string;
+  counted?: false;
+  hidden?: true;
+  margin?: string;
+  indent?: number;
+}
 export type Inline =
   | InlineText
   | InlineCitation
@@ -87,7 +104,8 @@ export type Inline =
   | InlineBreak
   | InlineMath
   | InlineCrossRef
-  | InlineRefMark;
+  | InlineRefMark
+  | InlineLineMark;
 
 export function refForm(value: unknown): RefForm {
   return value === 'number' || value === 'name' ? value : 'full';
@@ -97,41 +115,35 @@ export function refForm(value: unknown): RefForm {
 export type Stand = 'left' | 'center' | 'right';
 
 /**
- * A paragraph, of a kind (ADR 0040). `name` is the id of its kind,
- * `text` for plain text; `indent` its steps of indentation, for lines of
- * verse and items of lists. `number`, `counted` and `margin` are what ADR
- * 0039 gave a line of verse, on any paragraph: a number or label given by
- * hand, from which the count goes on (`lines.ts`); false for one the count
- * passes over; words shown in the margin beside it. What is not said is as
- * the defaults have it, and is left out when written.
+ * A paragraph, of a kind (ADR 0041). `name` is the id of its kind, `text`
+ * for plain text; `indent` its steps of indentation, for items of lists and
+ * any paragraph that is indented. A paragraph is lines, parted by line
+ * breaks (`InlineBreak`); what is said of one line stands in a line mark at
+ * its start. `numbering`, `every` and `side` are the settings of the
+ * stretch it stands in: consecutive paragraphs with the same settings are
+ * one stretch, numbered together, whatever their kinds (`lines.ts`).
+ * `new` begins a new run of its kind, where two runs of one kind stand
+ * together. What is not said is left out when written.
  */
 export interface ParagraphBlock {
   kind: 'paragraph';
   name: string;
   indent: number;
-  number?: string;
-  counted?: boolean;
-  /** True for a paragraph that is counted and shows no number. */
-  hidden?: boolean;
-  margin?: string;
+  /** Absent for a paragraph that is not numbered. */
+  numbering?: Numbering;
+  /** Every how many a number shows; absent for the layout's. */
+  every?: number;
+  /** The side the numbers stand on; absent for the layout's. */
+  side?: Side;
+  /** Begins a new run of its kind. */
+  new?: true;
   content: Inline[];
 }
 
-/**
- * A passage: paragraphs of one family, one after another, which the
- * document sets as one — a quotation, a verse, a script, a list. `family`
- * is one of `families.ts`, or the id of a kind of the writer's own based
- * on text. `numbering` says how its paragraphs are numbered; `every` and
- * `side` how the numbers are shown, where the passage says otherwise than
- * the layout. A passage holds no passage.
- */
-export interface PassageBlock {
-  kind: 'passage';
-  family: string;
-  numbering: Numbering;
-  every?: number | null;
-  side?: Side | null;
-  content: ParagraphBlock[];
+/** A break of the page or of the column: the next text stands at the top of the next. */
+export interface BreakBlock {
+  kind: 'break';
+  what: 'page' | 'column';
 }
 
 /** A picture with what is said of it. The picture is a file of the project. */
@@ -176,13 +188,7 @@ export interface RowBlock {
 }
 
 export type Block =
-  | ParagraphBlock
-  | PassageBlock
-  | ParallelBlock
-  | EquationBlock
-  | FigureBlock
-  | TableBlock
-  | RowBlock;
+  ParagraphBlock | BreakBlock | ParallelBlock | EquationBlock | FigureBlock | TableBlock | RowBlock;
 
 /** The parts of a screenplay, as the old shape named them: a script paragraph of a part. */
 export type ScriptPart =
@@ -241,36 +247,40 @@ export interface SetOff {
 export function paragraph(
   content: Inline[],
   name = 'text',
-  more: Pick<ParagraphBlock, 'indent' | 'number' | 'counted' | 'hidden' | 'margin'> | number = 0,
+  more: Pick<ParagraphBlock, 'indent' | 'numbering' | 'every' | 'side' | 'new'> | number = 0,
 ): ParagraphBlock {
   const said = typeof more === 'number' ? { indent: more } : more;
   return {
     kind: 'paragraph',
     name,
-    indent: said.indent,
-    ...(said.number ? { number: said.number } : {}),
-    ...(said.counted === false ? { counted: false } : {}),
-    ...(said.hidden ? { hidden: true } : {}),
-    ...(said.margin ? { margin: said.margin } : {}),
+    indent: said.indent ?? 0,
+    ...(said.numbering && said.numbering !== 'none' ? { numbering: said.numbering } : {}),
+    ...(said.every ? { every: said.every } : {}),
+    ...(said.side ? { side: said.side } : {}),
+    ...(said.new ? { new: true as const } : {}),
     content,
   };
 }
 
-/** A passage of a family, of these paragraphs. */
-export function passage(
-  family: string,
-  content: ParagraphBlock[],
-  numbering: Numbering = 'none',
-  more: Pick<PassageBlock, 'every' | 'side'> = {},
-): PassageBlock {
+/** A line mark that says what is given; nothing said, nothing written but the kind. */
+export function linemark(said: Omit<InlineLineMark, 'kind'> = {}): InlineLineMark {
   return {
-    kind: 'passage',
-    family,
-    numbering,
-    ...(more.every ? { every: more.every } : {}),
-    ...(more.side ? { side: more.side } : {}),
-    content,
+    kind: 'linemark',
+    ...(said.number?.trim() ? { number: said.number.trim() } : {}),
+    ...(said.counted === false ? { counted: false as const } : {}),
+    ...(said.hidden ? { hidden: true as const } : {}),
+    ...(said.margin?.trim() ? { margin: said.margin.trim() } : {}),
+    ...(said.indent ? { indent: said.indent } : {}),
   };
+}
+
+/** Whether a line mark says anything. */
+export const saysAnything = (m: InlineLineMark): boolean =>
+  !!(m.number || m.counted === false || m.hidden || m.margin || m.indent);
+
+/** A break of the page or of the column. */
+export function pagebreak(what: BreakBlock['what'] = 'page'): BreakBlock {
+  return { kind: 'break', what };
 }
 
 /** Steps of indentation as they are kept: none to eight. */

@@ -150,16 +150,16 @@ export type KindFamily = 'paragraph' | 'words';
 export interface KindEntry {
   id: string;
   family: KindFamily;
-  /** The family of its passages, which the tools group it by: `text` for none, `words` for a kind of words (`project/model/families.ts`). */
+  /** How the document groups paragraphs of it, `words` for a kind of words only (`project/model/families.ts`). */
   group: string;
   /** The id of the kind it is based on; nothing for text, or plain words. */
   basedOn: string | null;
   /** The name of its style in Word and Writer; empty where it has none. */
   style: string;
-  /** Whether a numbering counts its paragraphs. */
+  /** Whether a numbering counts its lines. */
   counted: boolean;
-  /** Whether it stands in the passage before it, whatever its family. */
-  joins: boolean;
+  /** Whether it may also stand on words, as a speaker and a direction may. */
+  words: boolean;
 }
 
 /** A kind of the writer's own, as the document carries it. */
@@ -193,6 +193,10 @@ export interface DocumentFormat {
     marginBottom: string;
     marginLeft: string;
     marginRight: string;
+    /** How many columns the text is set in: 1 for none. */
+    columns: number;
+    /** The room between two columns. */
+    columnGap: string;
   };
   font: { family: string; size: number };
   text: {
