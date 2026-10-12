@@ -1,7 +1,7 @@
 import { EditorState, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { afterEach, describe, expect, it } from 'vitest';
-import { setStyle, styleOf } from './commands';
+import { kindOf, setKind } from './commands';
 import { bodyPlugins } from './plugins';
 import { DOMSerializer } from 'prosemirror-model';
 import { bodySchema, safeHref } from './schema';
@@ -101,38 +101,43 @@ describe('what is put right as it is typed', () => {
     expect(written(v)).toBe('pp. 12–14 — so…');
   });
 
-  it('begins a quotation and a list at the start of a line', () => {
+  it('begins a quotation and a list at the start of a line, a numbered list from its number', () => {
     const v = editor();
     type(v, '> Sing, goddess');
-    expect(styleOf(v.state)).toBe('quote');
+    expect(kindOf(v.state)).toBe('quote');
+    expect(v.state.doc.textContent).toBe('Sing, goddess');
     const w = editor();
     type(w, '1. First');
-    expect(styleOf(w.state)).toBe('numbered');
+    expect(kindOf(w.state)).toBe('numbered');
+    expect(w.state.doc.firstChild!.firstChild!.attrs.number).toBeNull();
     w.destroy();
+    const u = editor();
+    type(u, '7. Seventh');
+    expect(u.state.doc.firstChild!.firstChild!.attrs.number).toBe('7');
+    expect(u.state.doc.firstChild!.attrs.family).toBe('list');
+    u.destroy();
+    // Not within a paragraph of a kind already.
+    const x = editor();
+    type(x, '- Point');
+    type(x, ' > not');
+    expect(kindOf(x.state)).toBe('item');
+    expect(x.state.doc.textContent).toBe('Point > not');
+    x.destroy();
   });
 });
 
 describe('the kind of a paragraph', () => {
-  it('is changed from any to any', () => {
+  it('is changed from any to any, and the passage comes and goes with it', () => {
     const v = editor();
     type(v, 'Sing, goddess');
-    expect(styleOf(v.state)).toBe('text');
-    for (const style of [
-      'quote',
-      'list',
-      'numbered',
-      'quote',
-      'text',
-      'numbered',
-      'list',
-      'text',
-    ] as const) {
-      setStyle(style)(v.state, v.dispatch, v);
-      expect(styleOf(v.state)).toBe(style);
+    expect(kindOf(v.state)).toBe('text');
+    for (const kind of ['quote', 'item', 'numbered', 'quote', 'text', 'numbered', 'item', 'text']) {
+      setKind(kind)(v.state, v.dispatch, v);
+      expect(kindOf(v.state)).toBe(kind);
       expect(v.state.doc.textContent).toBe('Sing, goddess');
+      expect(v.state.doc.childCount).toBe(1);
+      expect(v.state.doc.firstChild?.type.name).toBe(kind === 'text' ? 'paragraph' : 'passage');
     }
-    expect(v.state.doc.childCount).toBe(1);
-    expect(v.state.doc.firstChild?.type.name).toBe('paragraph');
   });
 
   it('is changed for the paragraph the cursor is in, and no other', () => {
@@ -141,8 +146,10 @@ describe('the kind of a paragraph', () => {
     v.dispatch(v.state.tr.split(v.state.selection.from));
     type(v, 'Two');
     v.dispatch(v.state.tr.setSelection(TextSelection.atStart(v.state.doc)));
-    setStyle('quote')(v.state, v.dispatch, v);
-    expect(v.state.doc.child(0).type.name).toBe('blockquote');
+    setKind('quote')(v.state, v.dispatch, v);
+    expect(v.state.doc.child(0).type.name).toBe('passage');
+    expect(v.state.doc.child(0).attrs.family).toBe('quotation');
     expect(v.state.doc.child(1).type.name).toBe('paragraph');
+    expect(v.state.doc.child(1).attrs.kind).toBe('text');
   });
 });

@@ -17,23 +17,23 @@ editor-block-quotation = Block quotation
 editor-list = List
 editor-text = Text
 editor-text-hint = A paragraph
-editor-quotation-hint = Set apart from the text
-editor-list-hint = With a mark before each point
+editor-quotation-hint = Words of another, set apart from the text
+editor-list-hint = A point of a list; Tab makes a list within the list
 editor-numbered-list = Numbered list
-editor-numbered-list-hint = With a number before each point
+editor-numbered-list-hint = A point of a list that is counted; Tab makes a list within the list
 editor-verse = Verse
-editor-verse-hint = Lines of poetry or drama, each kept as a line
+editor-verse-hint = A line of poetry, drama or a transcript, kept as a line
 editor-speaker = Speaker
 editor-speaker-hint = Who speaks, in a line of its own
 editor-direction = Stage direction
-editor-direction-hint = What is done, in italics
-editor-line-numbers = Line numbers
-editor-line-numbers-hint = Number the lines of this verse: from which line, and every how many; and give the line the cursor is in a number of its own, or words in the margin
-editor-line-numbers-from = Number the lines from
-editor-line-numbers-none = Leave empty for no numbers
+editor-direction-hint = What is done on the stage
+editor-line-numbers = Numbers
+editor-line-numbers-hint = Number the paragraphs of this passage: how they are counted, from which number, every how many and on which side; and say what is said of the one the cursor is in
+editor-line-numbers-from = Number from
+editor-line-numbers-from-hint = The first paragraph that is counted is given this number, and the count goes on from it.
 editor-line-numbers-every = Show a number every
 editor-line-numbers-number = A whole number is wanted.
-editor-line-this = This line
+editor-line-this = This paragraph
 editor-line-number = Its number or label
 editor-line-number-placeholder = Counted as the others are
 editor-line-number-hint = 1234, 567a: always shown; the lines after it are counted on from it.
@@ -41,15 +41,28 @@ editor-line-uncounted = Not counted
 editor-line-uncounted-hint = As the second half of a line shared between speakers: the count passes over it.
 editor-line-margin = Words in the margin
 editor-line-margin-placeholder = A metre, another edition's number
-editor-line-margin-hint = Shown in the right margin beside the line; not counted.
+editor-line-margin-hint = Shown in the margin beside it, across from the numbers; not counted.
+# How the paragraphs of a passage are numbered: see ADR 0040.
+editor-numbering = Numbering
+editor-numbering-none = Not numbered
+editor-numbering-counted = Counted from the first number given
+editor-numbering-given = Only the numbers given
+editor-line-numbers-every-layout = As the layout: every { $every }
+editor-line-numbers-side = Numbers on the
+editor-side-layout = Side the layout says ({ $side })
+editor-side-left = Left
+editor-side-right = Right
+# The first counted paragraph of the passage is the one the cursor is in: its number is where the count begins.
+editor-line-number-first-hint = The count of the passage begins here.
 editor-kinds-text = Text
 editor-kinds-quotation = Quotation
 editor-kinds-verse = Verse
 editor-kinds-script = Script
+editor-kinds-list = List
 editor-kinds-more = More
 editor-kinds-words = Words
 editor-attribution = Attribution
-editor-attribution-hint = Whose words they are, under a quotation, at the right
+editor-attribution-hint = Whose words a quotation is
 editor-epigraph = Epigraph
 editor-epigraph-hint = A quotation at the head of a part
 editor-headword = Headword
@@ -57,7 +70,7 @@ editor-headword-hint = The word a glossary explains
 editor-gloss = Gloss
 editor-gloss-hint = What the headword means
 editor-code = Code
-editor-code-hint = Kept letter for letter, in letters of equal width
+editor-code-hint = A line of code or of anything kept letter for letter
 editor-break = Break
 editor-break-hint = A pause between parts, with the sign the layout gives it
 editor-draft = Draft note
@@ -76,17 +89,17 @@ editor-underline = Underlined
 editor-code-words = Code in the line
 editor-code-words-hint = Letters of equal width, within the line
 editor-scene = Scene heading
-editor-scene-hint = INT. HOUSE – NIGHT
+editor-scene-hint = Where and when a scene is: INT. HOUSE – NIGHT
 editor-action = Action
 editor-action-hint = What is seen and done
 editor-character = Character
-editor-character-hint = Who speaks, over the dialogue
+editor-character-hint = Who speaks the dialogue that follows
 editor-dialogue = Dialogue
 editor-dialogue-hint = What is said
 editor-parenthetical = Parenthetical
-editor-parenthetical-hint = How it is said, in parentheses
+editor-parenthetical-hint = How a line is said
 editor-transition = Transition
-editor-transition-hint = CUT TO:, at the right
+editor-transition-hint = How one scene gives way to the next: CUT TO:
 editor-comment = Comment
 editor-comment-hint = A comment on what is selected
 editor-comment-element-hint = A comment on this element; select words to comment on them
@@ -96,12 +109,12 @@ editor-paragraph-kind = Kind of paragraph
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Kind of paragraph: { $kind }
 
-## The kind menu: the kinds in hand, the whole catalogue under "More…", and
-## the layout that sets them at its foot. The words menu, with the kinds of
-## words. And a kind of the writer's own, in its dialog.
+## The kind menu: the kinds of the passage the cursor is in, the kinds at hand,
+## the whole catalogue under "More…", and the layout that sets them at its foot.
+## The words menu, with the kinds of words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = More…
-editor-kinds-in-hand = Kinds in hand
+editor-kinds-mixed = Mixed
 editor-kinds-own = Your own
 editor-kinds-make = Make a kind…
 editor-kinds-change-own = Change a kind of your own…

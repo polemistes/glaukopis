@@ -1,9 +1,8 @@
 /**
- * Verse in the editor: paragraphs made lines of verse and lines made
- * paragraphs again, the kind of a line (a line, a speaker, a stage
- * direction), its indentation, the numbering of the lines, and the
- * numbers drawn in the margin. And texts side by side: a block of two
- * sides, each a text of its own.
+ * Passages in the editor: the one the cursor is in, how its paragraphs are
+ * numbered, what is said by hand of one paragraph, and the numbers drawn in
+ * the margin (ADR 0039 and 0040). And texts side by side: a block of two
+ * sides, each a text of its own (ADR 0027).
  */
 
 import type { Node } from 'prosemirror-model';
@@ -13,26 +12,147 @@ import {
   TextSelection,
   type Command,
   type EditorState,
+  type Transaction,
 } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
+import {
+  countedKind,
+  renamed,
+  type BasedKind,
+  type Numbering,
+  type Side,
+} from '$lib/project/model/families';
 import { lineNumbers } from '$lib/project/model/lines';
-import type { VerseLineKind } from '$lib/project/model/text';
 
-/** The verse the cursor is in, with where it begins, and the line within it. */
-export function verseAt(
-  state: EditorState,
-): { verse: Node; pos: number; line: Node; linePos: number } | null {
+/** The passage the cursor is in, with where it begins, and the paragraph within it. */
+export function passageAt(state: EditorState): {
+  passage: Node;
+  pos: number;
+  paragraph: Node;
+  paragraphPos: number;
+  /** Which paragraph of the passage it is. */
+  index: number;
+} | null {
   const { $from } = state.selection;
   for (let d = $from.depth; d > 0; d--) {
     const node = $from.node(d);
-    if (node.type.name === 'verse') {
-      const line = $from.node(d + 1);
-      if (!line || line.type.name !== 'verse_line') return null;
-      return { verse: node, pos: $from.before(d), line, linePos: $from.before(d + 1) };
+    if (node.type.name === 'passage') {
+      const paragraph = $from.node(d + 1);
+      if (!paragraph || paragraph.type.name !== 'paragraph') return null;
+      return {
+        passage: node,
+        pos: $from.before(d),
+        paragraph,
+        paragraphPos: $from.before(d + 1),
+        index: $from.index(d),
+      };
     }
   }
   return null;
 }
+
+/** How a passage numbers its paragraphs: see `passage` in `schema.ts`. */
+export interface PassageNumbering {
+  numbering: Numbering;
+  /** Every how many a counted number is shown; nothing for the layout's. */
+  every: number | null;
+  /** The side the numbers stand on; nothing for the layout's. */
+  side: Side | null;
+}
+
+/** Numbers the paragraphs of the passage the cursor is in as said; with `none`, numbers them no more. */
+export function numberLines(how: PassageNumbering): Command {
+  return (state, dispatch) => {
+    const at = passageAt(state);
+    if (!at) return false;
+    const attrs = {
+      ...at.passage.attrs,
+      numbering: how.numbering,
+      every: how.every && how.every >= 1 ? Math.round(how.every) : null,
+      side: how.side === 'left' || how.side === 'right' ? how.side : null,
+    };
+    const same = (['numbering', 'every', 'side'] as const).every(
+      (k) => (at.passage.attrs[k] ?? null) === attrs[k],
+    );
+    if (dispatch && !same) dispatch(state.tr.setNodeMarkup(at.pos, undefined, attrs));
+    return true;
+  };
+}
+
+/** Whether a paragraph is counted by a numbering: its kind is counted, and the writer did not say otherwise. */
+export function isCounted(paragraph: Node, own: readonly BasedKind[] = []): boolean {
+  return (
+    countedKind(renamed((paragraph.attrs.kind as string) || 'text'), own) &&
+    paragraph.attrs.counted !== false
+  );
+}
+
+/** The first counted paragraph of a passage, with where it begins within the passage's content; nothing where none is counted. */
+export function firstCounted(
+  passage: Node,
+  own: readonly BasedKind[] = [],
+): { node: Node; offset: number; index: number } | null {
+  let found: { node: Node; offset: number; index: number } | null = null;
+  passage.forEach((node, offset, index) => {
+    if (!found && isCounted(node, own)) found = { node, offset, index };
+  });
+  return found;
+}
+
+/**
+ * Numbers the passage the cursor is in from a number: the first counted
+ * paragraph is given it, from which the count goes on. With nothing, the
+ * number it had is taken away. `own` is the kinds of the writer's own, for
+ * which paragraphs are counted.
+ */
+export function numberFrom(from: string | null, own: readonly BasedKind[] = []): Command {
+  return (state, dispatch) => {
+    const at = passageAt(state);
+    if (!at) return false;
+    const first = firstCounted(at.passage, own);
+    if (!first) return false;
+    const number = from?.trim() || null;
+    if (dispatch && (first.node.attrs.number ?? null) !== number)
+      dispatch(
+        state.tr.setNodeMarkup(at.pos + 1 + first.offset, undefined, {
+          ...first.node.attrs,
+          number,
+        }),
+      );
+    return true;
+  };
+}
+
+/** What is said of one paragraph by hand: see `paragraph` in `schema.ts`. */
+export interface LineMarks {
+  number: string | null;
+  counted: boolean;
+  margin: string | null;
+}
+
+/** Gives the paragraph the cursor is in a number or a label, counts it or not, and gives it words in the margin. */
+export function markLine(marks: LineMarks): Command {
+  return (state, dispatch) => {
+    const { $from } = state.selection;
+    let depth = $from.depth;
+    while (depth > 0 && $from.node(depth).type.name !== 'paragraph') depth--;
+    if (!depth) return false;
+    const node = $from.node(depth);
+    const attrs = {
+      ...node.attrs,
+      number: marks.number?.trim() || null,
+      counted: marks.counted,
+      margin: marks.margin?.trim() || null,
+    };
+    const same = (['number', 'counted', 'margin'] as const).every(
+      (k) => (node.attrs[k] ?? null) === attrs[k],
+    );
+    if (dispatch && !same) dispatch(state.tr.setNodeMarkup($from.before(depth), undefined, attrs));
+    return true;
+  };
+}
+
+// ---- texts side by side ----
 
 /** The side of a parallel text the cursor is in. */
 function sideAt(
@@ -54,178 +174,6 @@ function sideAt(
   }
   return null;
 }
-
-/** The paragraphs the selection touches, side by side in what holds them: made lines of one verse. */
-export const makeVerse: Command = (state, dispatch) => {
-  const { verse, verse_line, paragraph } = state.schema.nodes;
-  if (!verse || !verse_line || !paragraph) return false;
-  if (verseAt(state)) return false;
-  // Everything selected stands at the top: the ends are taken within the blocks.
-  const { doc } = state;
-  const $from =
-    state.selection.$from.depth === 0 && doc.content.size
-      ? doc.resolve(Math.min(state.selection.from + 1, doc.content.size))
-      : state.selection.$from;
-  const $to =
-    state.selection.$to.depth === 0 && state.selection.to > 0
-      ? doc.resolve(Math.max(state.selection.to - 1, 0))
-      : state.selection.$to;
-  let depth = $from.depth;
-  while (depth > 0 && $from.node(depth).type !== paragraph) depth--;
-  if (!depth) return false;
-  const parent = $from.node(depth - 1);
-  const first = $from.index(depth - 1);
-  const last =
-    $to.depth >= depth - 1 && $to.node(depth - 1) === parent ? $to.index(depth - 1) : first;
-  const lines: Node[] = [];
-  let size = 0;
-  for (let i = first; i <= last; i++) {
-    const child = parent.child(i);
-    if (child.type !== paragraph) break;
-    lines.push(verse_line.create(null, child.content));
-    size += child.nodeSize;
-  }
-  if (!lines.length) return false;
-  if (dispatch) {
-    const from = $from.before(depth);
-    const tr = state.tr.replaceWith(from, from + size, verse.create(null, lines));
-    tr.setSelection(TextSelection.near(tr.doc.resolve(from + 2)));
-    dispatch(tr.scrollIntoView());
-  }
-  return true;
-};
-
-/** The verse the cursor is in made paragraphs again. */
-export const unmakeVerse: Command = (state, dispatch) => {
-  const at = verseAt(state);
-  const { paragraph } = state.schema.nodes;
-  if (!at || !paragraph) return false;
-  if (dispatch) {
-    const paragraphs: Node[] = [];
-    at.verse.forEach((line) => paragraphs.push(paragraph.create(null, line.content)));
-    const offset = state.selection.from - at.pos;
-    const tr = state.tr.replaceWith(at.pos, at.pos + at.verse.nodeSize, paragraphs);
-    tr.setSelection(
-      TextSelection.near(tr.doc.resolve(Math.min(at.pos + offset, tr.doc.content.size))),
-    );
-    dispatch(tr.scrollIntoView());
-  }
-  return true;
-};
-
-/** Says what the line the cursor is in is. */
-export function setLineKind(kind: VerseLineKind): Command {
-  return (state, dispatch) => {
-    const at = verseAt(state);
-    if (!at) return false;
-    if (dispatch && at.line.attrs.kind !== kind)
-      dispatch(state.tr.setNodeMarkup(at.linePos, undefined, { ...at.line.attrs, kind }));
-    return true;
-  };
-}
-
-/** The line the cursor is in indented a step more, or less. */
-export function indentLine(by: 1 | -1): Command {
-  return (state, dispatch) => {
-    const at = verseAt(state);
-    if (!at) return false;
-    const indent = Math.max(0, Math.min(8, (at.line.attrs.indent as number) + by));
-    if (dispatch && indent !== at.line.attrs.indent)
-      dispatch(state.tr.setNodeMarkup(at.linePos, undefined, { ...at.line.attrs, indent }));
-    return true;
-  };
-}
-
-/** Numbers the lines of the verse the cursor is in from `start` every `by`; with nothing, numbers them no more. */
-export function numberLines(start: number | null, by: number): Command {
-  return (state, dispatch) => {
-    const at = verseAt(state);
-    if (!at) return false;
-    if (dispatch)
-      dispatch(
-        state.tr.setNodeMarkup(at.pos, undefined, { start, by: Math.max(1, Math.round(by) || 5) }),
-      );
-    return true;
-  };
-}
-
-/** What is said of one line of verse by hand: see `verse_line` in `schema.ts`. */
-export interface LineMarks {
-  number: string | null;
-  counted: boolean;
-  margin: string | null;
-}
-
-/** Gives the line the cursor is in a number or a label, counts it or not, and gives it words in the margin. */
-export function markLine(marks: LineMarks): Command {
-  return (state, dispatch) => {
-    const at = verseAt(state);
-    if (!at) return false;
-    const attrs = {
-      ...at.line.attrs,
-      number: marks.number?.trim() || null,
-      counted: marks.counted,
-      margin: marks.margin?.trim() || null,
-    };
-    const same = (['number', 'counted', 'margin'] as const).every(
-      (k) => (at.line.attrs[k] ?? null) === attrs[k],
-    );
-    if (dispatch && !same) dispatch(state.tr.setNodeMarkup(at.linePos, undefined, attrs));
-    return true;
-  };
-}
-
-/**
- * Enter within a line that was given a number, words in the margin, or was
- * not counted: the line that is split off is a plain one, so that what was
- * said of the line is not said twice. At the end of a line Enter makes a
- * plain line anyway.
- */
-export const splitLine: Command = (state, dispatch) => {
-  const at = verseAt(state);
-  if (!at) return false;
-  const { number, margin, counted } = at.line.attrs;
-  if (number == null && margin == null && counted !== false) return false;
-  const { $to } = state.selection;
-  if ($to.parentOffset === $to.parent.content.size) return false;
-  if (dispatch) {
-    const tr = state.tr;
-    if (!state.selection.empty) tr.deleteSelection();
-    const plain = { ...at.line.attrs, number: null, counted: true, margin: null };
-    tr.split(tr.selection.from, 1, [{ type: at.line.type, attrs: plain }]);
-    dispatch(tr.scrollIntoView());
-  }
-  return true;
-};
-
-/** Enter on an empty last line leaves the verse: a paragraph after it. */
-export const leaveVerse: Command = (state, dispatch) => {
-  const at = verseAt(state);
-  const { paragraph } = state.schema.nodes;
-  if (!at || !paragraph || at.line.content.size || !state.selection.empty) return false;
-  const last = at.verse.lastChild === at.line;
-  if (!last) return false;
-  if (dispatch) {
-    const after = at.pos + at.verse.nodeSize;
-    let tr = state.tr;
-    if (at.verse.childCount > 1) tr = tr.delete(at.linePos, at.linePos + at.line.nodeSize);
-    const where = at.verse.childCount > 1 ? after - at.line.nodeSize : after;
-    tr = tr.insert(where, paragraph.create());
-    tr.setSelection(TextSelection.near(tr.doc.resolve(where + 1)));
-    // A verse of one empty line is nothing.
-    if (at.verse.childCount === 1) tr = tr.delete(at.pos, at.pos + at.verse.nodeSize);
-    dispatch(tr.scrollIntoView());
-  }
-  return true;
-};
-
-/** Backspace at the start of the first line of a verse makes it a paragraph. */
-export const backOutOfVerse: Command = (state, dispatch) => {
-  const at = verseAt(state);
-  if (!at || !state.selection.empty || state.selection.from !== at.linePos + 1) return false;
-  if (at.verse.firstChild !== at.line) return false;
-  return unmakeVerse(state, dispatch);
-};
 
 /** Two texts side by side where the cursor is, each a paragraph to begin with. */
 export const insertParallel: Command = (state, dispatch) => {
@@ -279,48 +227,78 @@ export function acrossParallel(back: boolean): Command {
 
 // ---- the numbers in the margin ----
 
-const key = new PluginKey<DecorationSet>('verse-numbers');
+/** How the layout shows the numbers of a passage that does not say: every how many, and on which side. */
+export interface NumbersLayout {
+  every: number;
+  side: Side;
+}
 
-function numbers(doc: Node): DecorationSet {
+export const LAYOUT_NUMBERS: NumbersLayout = { every: 5, side: 'left' };
+
+const key = new PluginKey<DecorationSet>('passage-numbers');
+
+/**
+ * The numbers of every numbered passage, as decorations: `data-n` on each
+ * paragraph that shows one, `data-n-set` where it was given by hand, so
+ * that it is drawn as dark as the text; and on the passage the side its
+ * numbers stand on, the passage's own or the layout's.
+ */
+function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): DecorationSet {
   const list: Decoration[] = [];
   doc.descendants((node, pos) => {
-    if (node.type.name !== 'verse') return true;
-    const lines: { kind: string; number: string | null; counted: boolean }[] = [];
-    node.forEach((line) =>
+    if (node.type.name !== 'passage') return !node.isTextblock;
+    const side = (node.attrs.side as Side | null) ?? layout.side;
+    list.push(Decoration.node(pos, pos + node.nodeSize, { 'data-numbers': side }));
+    if (node.attrs.numbering === 'none' || !node.attrs.numbering) return false;
+    const lines: { counted: boolean; number: string | null }[] = [];
+    node.forEach((paragraph) =>
       lines.push({
-        kind: line.type.name === 'verse_line' ? (line.attrs.kind as string) : '',
-        number: line.attrs.number as string | null,
-        counted: line.attrs.counted !== false,
+        counted: isCounted(paragraph, own),
+        number: paragraph.attrs.number as string | null,
       }),
     );
-    const shown = lineNumbers(node.attrs.start as number | null, node.attrs.by as number, lines);
+    const every = (node.attrs.every as number | null) ?? layout.every;
+    const shown = lineNumbers(node.attrs.numbering as Numbering, every, lines);
     let at = pos + 1;
-    node.forEach((line, _offset, i) => {
+    node.forEach((paragraph, _offset, i) => {
       const s = shown[i];
-      // A number given by hand is drawn so that it is seen to be one.
       if (s)
         list.push(
           Decoration.node(
             at,
-            at + line.nodeSize,
+            at + paragraph.nodeSize,
             s.set ? { 'data-n': s.label, 'data-n-set': '' } : { 'data-n': s.label },
           ),
         );
-      at += line.nodeSize;
+      at += paragraph.nodeSize;
     });
     return false;
   });
   return DecorationSet.create(doc, list);
 }
 
-/** Draws the numbers of the lines of verse, where the lines are numbered. */
-export function verseNumbers(): Plugin<DecorationSet> {
+/**
+ * Draws the numbers of the paragraphs of the passages that are numbered.
+ * `own` gives the kinds of the writer's own, for which paragraphs are
+ * counted; `layout` what the document's layout says of the numbers, which
+ * the editor is told anew by `relayoutNumbers` when it changes.
+ */
+export function passageNumbers(
+  own: () => readonly BasedKind[] = () => [],
+  layout: () => NumbersLayout = () => LAYOUT_NUMBERS,
+): Plugin<DecorationSet> {
   return new Plugin<DecorationSet>({
     key,
     state: {
-      init: (_config, state) => numbers(state.doc),
-      apply: (tr, set) => (tr.docChanged ? numbers(tr.doc) : set),
+      init: (_config, state) => numbers(state.doc, own(), layout()),
+      apply: (tr, set) =>
+        tr.docChanged || tr.getMeta(key) ? numbers(tr.doc, own(), layout()) : set,
     },
     props: { decorations: (state) => key.getState(state) },
   });
+}
+
+/** Has the numbers drawn anew, as when the layout or the kinds of the writer's own have changed. */
+export function relayoutNumbers(view: { state: EditorState; dispatch: (tr: Transaction) => void }) {
+  view.dispatch(view.state.tr.setMeta(key, true).setMeta('addToHistory', false));
 }

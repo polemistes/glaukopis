@@ -17,23 +17,23 @@ editor-block-quotation = Blokksitat
 editor-list = Liste
 editor-text = Tekst
 editor-text-hint = Et avsnitt
-editor-quotation-hint = Skilt ut fra teksten
-editor-list-hint = Med et merke foran hvert punkt
+editor-quotation-hint = En annens ord, skilt ut fra teksten
+editor-list-hint = Et punkt i en liste; Tab lager en liste i listen
 editor-numbered-list = Nummerert liste
-editor-numbered-list-hint = Med et tall foran hvert punkt
+editor-numbered-list-hint = Et punkt i en liste som telles; Tab lager en liste i listen
 editor-verse = Vers
-editor-verse-hint = Linjer av dikt eller drama, hver beholdt som en linje
+editor-verse-hint = En linje av dikt, drama eller en transkripsjon, beholdt som en linje
 editor-speaker = Taler
 editor-speaker-hint = Hvem som taler, på en egen linje
 editor-direction = Sceneanvisning
-editor-direction-hint = Det som gjøres, i kursiv
-editor-line-numbers = Linjenummer
-editor-line-numbers-hint = Nummerer linjene i dette verset: fra hvilken linje, og hver hvor mange; og gi linjen markøren står i et eget nummer, eller ord i margen
-editor-line-numbers-from = Nummerer linjene fra
-editor-line-numbers-none = La stå tomt for ingen nummer
+editor-direction-hint = Det som gjøres på scenen
+editor-line-numbers = Nummer
+editor-line-numbers-hint = Nummerer avsnittene i dette stykket: hvordan de telles, fra hvilket nummer, hver hvor mange og på hvilken side; og si hva som sies om det markøren står i
+editor-line-numbers-from = Nummerer fra
+editor-line-numbers-from-hint = Det første avsnittet som telles, får dette nummeret, og tellingen går videre fra det.
 editor-line-numbers-every = Vis et nummer hver
 editor-line-numbers-number = Et helt tall trengs.
-editor-line-this = Denne linjen
+editor-line-this = Dette avsnittet
 editor-line-number = Nummeret eller merket dens
 editor-line-number-placeholder = Telles som de andre
 editor-line-number-hint = 1234, 567a: vises alltid; linjene etter telles videre fra det.
@@ -41,15 +41,28 @@ editor-line-uncounted = Telles ikke
 editor-line-uncounted-hint = Som andre halvdel av en linje to talere deler: tellingen går forbi den.
 editor-line-margin = Ord i margen
 editor-line-margin-placeholder = Et versemål, en annen utgaves nummer
-editor-line-margin-hint = Vises i høyre marg ved siden av linjen; telles ikke.
+editor-line-margin-hint = Vises i margen ved siden av det, overfor numrene; telles ikke.
+# Hvordan avsnittene i et stykke nummereres: se ADR 0040.
+editor-numbering = Nummerering
+editor-numbering-none = Ikke nummerert
+editor-numbering-counted = Telt fra det første nummeret som er gitt
+editor-numbering-given = Bare numrene som er gitt
+editor-line-numbers-every-layout = Som oppsettet: hver { $every }
+editor-line-numbers-side = Numrene på
+editor-side-layout = Siden oppsettet sier ({ $side })
+editor-side-left = Venstre
+editor-side-right = Høyre
+# Det første avsnittet som telles i stykket, er det markøren står i: nummeret dets er der tellingen begynner.
+editor-line-number-first-hint = Tellingen i stykket begynner her.
 editor-kinds-text = Tekst
 editor-kinds-quotation = Sitat
 editor-kinds-verse = Vers
 editor-kinds-script = Manus
+editor-kinds-list = Liste
 editor-kinds-more = Mer
 editor-kinds-words = Ord
 editor-attribution = Kildeangivelse
-editor-attribution-hint = Hvem ordene er fra, under et sitat, til høyre
+editor-attribution-hint = Hvem et sitat er fra
 editor-epigraph = Epigraf
 editor-epigraph-hint = Et sitat i begynnelsen av en del
 editor-headword = Oppslagsord
@@ -57,7 +70,7 @@ editor-headword-hint = Ordet en ordliste forklarer
 editor-gloss = Forklaring
 editor-gloss-hint = Hva oppslagsordet betyr
 editor-code = Kode
-editor-code-hint = Beholdt bokstav for bokstav, i bokstaver med lik bredde
+editor-code-hint = En linje kode, eller noe annet som beholdes bokstav for bokstav
 editor-break = Skille
 editor-break-hint = Et opphold mellom deler, med tegnet oppsettet gir det
 editor-draft = Kladd
@@ -76,17 +89,17 @@ editor-underline = Understreket
 editor-code-words = Kode i linjen
 editor-code-words-hint = Bokstaver med lik bredde, inne i linjen
 editor-scene = Sceneoverskrift
-editor-scene-hint = INT. HUS – NATT
+editor-scene-hint = Hvor og når en scene er: INT. HUS – NATT
 editor-action = Handling
 editor-action-hint = Det som ses og gjøres
 editor-character = Rolle
-editor-character-hint = Hvem som snakker, over replikken
+editor-character-hint = Hvem som sier replikken som følger
 editor-dialogue = Replikk
 editor-dialogue-hint = Det som sies
 editor-parenthetical = Parentes
-editor-parenthetical-hint = Hvordan det sies, i parentes
+editor-parenthetical-hint = Hvordan en replikk sies
 editor-transition = Overgang
-editor-transition-hint = KLIPP TIL:, til høyre
+editor-transition-hint = Hvordan en scene går over i den neste: KLIPP TIL:
 editor-comment = Kommentar
 editor-comment-hint = En kommentar til det som er merket
 editor-comment-element-hint = En kommentar til dette elementet; merk ord for å kommentere dem
@@ -96,12 +109,12 @@ editor-paragraph-kind = Slags avsnitt
 # Sies om knappen som viser hva slags avsnitt markøren står i.
 editor-paragraph-kind-now = Slags avsnitt: { $kind }
 
-## Menyen over slagene: slagene for hånden, hele katalogen under «Mer …», og
-## oppsettet som setter dem, nederst. Menyen over ordene, med slagene ord. Og
-## et eget slag, i vinduet sitt.
+## Menyen over slagene: slagene i stykket markøren står i, slagene for hånden,
+## hele katalogen under «Mer …», og oppsettet som setter dem, nederst. Menyen
+## over ordene, med slagene ord. Og et eget slag, i vinduet sitt.
 
 editor-kinds-menu-more = Mer …
-editor-kinds-in-hand = Slag for hånden
+editor-kinds-mixed = Blandet
 editor-kinds-own = Dine egne
 editor-kinds-make = Lag et slag …
 editor-kinds-change-own = Endre et av dine egne …

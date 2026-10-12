@@ -13,16 +13,9 @@ import {
 } from 'prosemirror-commands';
 import { dropCursor } from 'prosemirror-dropcursor';
 import { gapCursor } from 'prosemirror-gapcursor';
-import {
-  InputRule,
-  inputRules,
-  textblockTypeInputRule,
-  undoInputRule,
-  wrappingInputRule,
-} from 'prosemirror-inputrules';
+import { InputRule, inputRules, undoInputRule } from 'prosemirror-inputrules';
 import { keymap } from 'prosemirror-keymap';
 import type { Schema } from 'prosemirror-model';
-import { liftListItem, sinkListItem, splitListItem } from 'prosemirror-schema-list';
 import {
   NodeSelection,
   Plugin,
@@ -44,21 +37,20 @@ import {
   insertMath,
   isAtEnd,
   isAtStart,
+  kindOf,
   leaveCaption,
+  setKind,
   toggle,
-  toggleList,
-  toggleQuote,
 } from './commands';
+import { passages } from './passages';
 import { refMarkKey } from './refmarks';
-import { backOutOfPassage, nextPassage, tabPassage } from './script';
+import { backOutOfKind, enterKind, tabKind, untabKind } from './script';
 import {
   acrossParallel,
   backOutOfParallel,
-  backOutOfVerse,
-  indentLine,
-  leaveVerse,
-  splitLine,
-  verseNumbers,
+  LAYOUT_NUMBERS,
+  passageNumbers,
+  type NumbersLayout,
 } from './verse';
 
 export type KeyAction =
@@ -95,10 +87,13 @@ export interface EditorHooks {
   at?: string;
   /**
    * The kinds of paragraph of the writer's own, by which Enter and Tab
-   * know what follows a paragraph of such a kind: as the kind it is based
-   * on has it. None, where they are not given.
+   * know what follows a paragraph of such a kind, and the passages their
+   * family: as the kind it is based on has it. None, where they are not
+   * given.
    */
   passageKinds?: () => { id: string; basedOn: string }[];
+  /** What the document's layout says of the numbers of a passage that does not say: every how many, and on which side. */
+  numbers?: () => NumbersLayout;
 }
 
 /**
@@ -136,24 +131,34 @@ const dashes = [
   new InputRule(/\.\.\.$/, '…'),
 ];
 
+/**
+ * A rule that makes a text paragraph of a kind when a sign is typed at its
+ * start: "> " a quotation, "- " an item, "1. " a numbered item, which is
+ * given the number where that is not one. The sign is taken away.
+ */
+function kindRule(
+  regexp: RegExp,
+  kind: string,
+  number?: (match: RegExpMatchArray) => string | null,
+) {
+  return new InputRule(regexp, (state, match, start, end) => {
+    const $start = state.doc.resolve(start);
+    const paragraph = $start.parent;
+    if (paragraph.type.name !== 'paragraph' || paragraph.attrs.kind !== 'text') return null;
+    // Only at the very start of the paragraph.
+    if ($start.parentOffset !== 0) return null;
+    const attrs = { ...paragraph.attrs, kind, number: number?.(match) ?? null };
+    return state.tr.delete(start, end).setNodeMarkup($start.before(), undefined, attrs);
+  });
+}
+
 function blockRules(schema: Schema): InputRule[] {
-  const rules: InputRule[] = [];
-  const { blockquote, bullet_list, ordered_list, paragraph } = schema.nodes;
-  if (blockquote) rules.push(wrappingInputRule(/^\s*>\s$/, blockquote));
-  if (bullet_list) rules.push(wrappingInputRule(/^\s*([-+*])\s$/, bullet_list));
-  if (ordered_list) {
-    rules.push(
-      wrappingInputRule(
-        /^(\d+)\.\s$/,
-        ordered_list,
-        (match) => ({ start: Number(match[1]) }),
-        (match, node) => node.childCount + node.attrs.start === Number(match[1]),
-      ),
-    );
-  }
-  void paragraph;
-  void textblockTypeInputRule;
-  return rules;
+  if (!schema.nodes.passage) return [];
+  return [
+    kindRule(/^\s*>\s$/, 'quote'),
+    kindRule(/^\s*([-+*])\s$/, 'item'),
+    kindRule(/^(\d+)\.\s$/, 'numbered', (match) => (match[1] === '1' ? null : match[1])),
+  ];
 }
 
 const placeholderKey = new PluginKey('placeholder');
@@ -239,8 +244,10 @@ export function passes(): Plugin {
 }
 
 export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
-  const item = schema.nodes.list_item;
+  const passage = schema.nodes.passage;
   const br = schema.nodes.hard_break;
+  // The kinds of the writer's own, for the family of a paragraph of one and what Enter and Tab make after it.
+  const own = () => hooks.passageKinds?.() ?? [];
 
   const keys: Record<string, Command> = {
     'Mod-z': () => (hooks.undo(), true),
@@ -253,9 +260,12 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     'Mod-,': toggle('sub'),
     'Shift-Mod-k': toggle('smallcaps'),
     'Shift-Mod-x': toggle('strike'),
-    "Mod-'": toggleQuote,
-    'Shift-Mod-8': toggleList('bullet_list'),
-    'Shift-Mod-7': toggleList('ordered_list'),
+    "Mod-'": (state, dispatch, view) =>
+      setKind(kindOf(state) === 'quote' ? 'text' : 'quote', own())(state, dispatch, view),
+    'Shift-Mod-8': (state, dispatch, view) =>
+      setKind(kindOf(state) === 'item' ? 'text' : 'item', own())(state, dispatch, view),
+    'Shift-Mod-7': (state, dispatch, view) =>
+      setKind(kindOf(state) === 'numbered' ? 'text' : 'numbered', own())(state, dispatch, view),
     'Mod-Alt-f': insertFootnote,
     'Mod-Alt-m': insertMath,
     'Mod-Alt-e': insertEquation,
@@ -291,39 +301,22 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
       act(hooks, 'delete-at-end', (state) => isAtEnd(state) && state.selection.$from.depth === 1),
     ),
   };
-  if (item) {
-    // The kinds of the writer's own, for what Enter and Tab make after a paragraph of one.
-    const own = () => hooks.passageKinds?.() ?? [];
+  if (passage) {
     keys.Enter = chainCommands(
       openSelected,
       leaveCaption,
-      leaveVerse,
-      splitLine,
-      nextPassage(own),
-      splitListItem(item),
+      enterKind(own),
       createParagraphNear,
       liftEmptyBlock,
       splitBlock,
     );
-    keys.Tab = chainCommands(
-      indentLine(1),
-      tabPassage(own),
-      acrossParallel(false),
-      sinkListItem(item),
-      act(hooks, 'tab'),
-    );
+    keys.Tab = chainCommands(tabKind(own), acrossParallel(false), act(hooks, 'tab'));
     keys['Shift-Tab'] = chainCommands(
-      indentLine(-1),
+      untabKind(own),
       acrossParallel(true),
-      liftListItem(item),
       act(hooks, 'shift-tab'),
     );
-    keys.Backspace = chainCommands(
-      backOutOfVerse,
-      backOutOfPassage,
-      backOutOfParallel,
-      keys.Backspace,
-    );
+    keys.Backspace = chainCommands(backOutOfKind(own), backOutOfParallel, keys.Backspace);
   }
   if (br) {
     const hardBreak: Command = chainCommands(exitCode, (state, dispatch) => {
@@ -353,8 +346,10 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     cite,
     ids(),
     rows(),
-    // The numbers of the lines of verse: see `verse.ts`.
-    verseNumbers(),
+    // The shape of the text, kept after every change: see `passages.ts`.
+    passages(own),
+    // The numbers of the paragraphs of a numbered passage: see `verse.ts`.
+    passageNumbers(own, () => hooks.numbers?.() ?? LAYOUT_NUMBERS),
     // Tables: before the keys of the text, since Tab and the arrows mean something of their own in them.
     ...tablePlugins(),
     keymap(keys),

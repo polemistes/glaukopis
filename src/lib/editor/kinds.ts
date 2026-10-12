@@ -1,229 +1,163 @@
 /**
- * The kinds of paragraph and of words that come with the application, and
- * what each does while writing: what it is in the editor, what Enter makes
- * after it, what Tab makes of it, and how the tools name it. Also the
- * kinds in the project's hand, and the look on screen of a kind of the
- * writer's own. The core has the same catalogue with the look each kind has in a
- * document (`formats/kinds.rs`); a test holds the two alike. See ADR 0029.
+ * The kinds of paragraph and of words that come with the application, with
+ * the words the tools name them by: the catalogue of the editor. What a
+ * kind is for the shape of a text — its family, whether it is counted,
+ * whether it joins, what Enter and Tab make — is said once, in
+ * `project/model/families.ts`, and taken from there; a kind carries no
+ * look, which every layout has (ADR 0040). Also the kinds at hand of a
+ * project, and the cues on screen of a kind of the writer's own. The core
+ * has the same catalogue (`formats/kinds.rs`); a test holds the two alike.
  */
 
 import type { KindFamily, Look } from '$lib/api/documents';
 import { t } from '$lib/i18n';
+import {
+  FAMILIES,
+  KIND_FACTS,
+  renamed,
+  type BasedKind,
+  type Family,
+} from '$lib/project/model/families';
 import type { Project } from '$lib/project/model/project.svelte';
 import type { PassageKindRecord } from '$lib/project/model/types';
 
-/** The groups the tools show the kinds in. */
-export type KindGroup = 'text' | 'quotation' | 'verse' | 'script' | 'more' | 'words';
-
-/**
- * What a kind is in the editor: a paragraph of text; a quotation or a list,
- * which hold paragraphs; a line of verse, a speaker or a stage direction;
- * a part of a script; a passage of a kind; or a mark on words.
- */
-export type KindStructure =
-  | 'text'
-  | 'quote'
-  | 'list'
-  | 'numbered'
-  | 'verse'
-  | 'speaker'
-  | 'direction'
-  | 'script'
-  | 'passage'
-  | 'mark';
+/** The groups the tools show the kinds in: the families, with the small ones together under `more`. */
+export type KindGroup = 'text' | 'quotation' | 'verse' | 'script' | 'list' | 'more' | 'words';
 
 export interface KindSpec {
   id: string;
   family: KindFamily;
-  group: KindGroup;
-  structure: KindStructure;
+  /** The family of its passages, as `families.ts` has it: `text` for none, `words` for a kind of words. */
+  group: Family | 'words';
   /** The id of the kind it is based on, where it is based on one. */
   basedOn?: string;
-  /** The kind Enter makes at the end of one of this kind; a paragraph of text where nothing is said. */
-  next?: string;
-  /** The kind Tab makes of an empty one of this kind, or begins after a full one. */
-  tab?: string;
   label(): string;
   hint(): string;
   shortcut?: string;
 }
 
-function spec(
-  id: string,
-  family: KindFamily,
-  group: KindGroup,
-  structure: KindStructure,
-  words: string,
-  more: Pick<KindSpec, 'basedOn' | 'next' | 'tab' | 'shortcut'> = {},
-): KindSpec {
+/** The words of each kind, by id, and what some are based on. */
+const WORDS: Record<string, string> = {
+  text: 'editor-text',
+  quote: 'editor-quotation',
+  epigraph: 'editor-epigraph',
+  attribution: 'editor-attribution',
+  line: 'editor-verse',
+  speaker: 'editor-speaker',
+  direction: 'editor-direction',
+  scene: 'editor-scene',
+  action: 'editor-action',
+  character: 'editor-character',
+  dialogue: 'editor-dialogue',
+  parenthetical: 'editor-parenthetical',
+  transition: 'editor-transition',
+  headword: 'editor-headword',
+  gloss: 'editor-gloss',
+  item: 'editor-list',
+  numbered: 'editor-numbered-list',
+  code: 'editor-code',
+  break: 'editor-break',
+  draft: 'editor-draft',
+  foreign: 'editor-foreign',
+  title: 'editor-title-of-work',
+  term: 'editor-term',
+  mention: 'editor-mention',
+  highlight: 'editor-highlight',
+};
+
+const BASED_ON: Record<string, string> = { epigraph: 'quote', attribution: 'quote' };
+
+const SHORTCUTS: Record<string, string> = {
+  quote: "Ctrl+'",
+  item: 'Ctrl+Shift+8',
+  numbered: 'Ctrl+Shift+7',
+};
+
+/** The kinds that come with the application, in the order the tools list them: the order of `families.ts`, which is the core's. */
+export const CATALOGUE: KindSpec[] = Object.entries(KIND_FACTS).map(([id, facts]) => {
+  const words = WORDS[id] ?? `editor-${id}`;
   return {
     id,
-    family,
-    group,
-    structure,
-    ...more,
+    family: facts.family === 'words' ? 'words' : 'paragraph',
+    group: facts.family,
+    ...(BASED_ON[id] ? { basedOn: BASED_ON[id] } : {}),
+    ...(SHORTCUTS[id] ? { shortcut: SHORTCUTS[id] } : {}),
     label: () => t(words),
     hint: () => t(`${words}-hint`),
   };
+});
+
+/** The groups of the kind menu, each with the families it shows. */
+export const GROUPS: { id: KindGroup; families: readonly string[]; label(): string }[] = [
+  { id: 'text', families: ['text'], label: () => t('editor-kinds-text') },
+  { id: 'quotation', families: ['quotation'], label: () => t('editor-kinds-quotation') },
+  { id: 'verse', families: ['verse'], label: () => t('editor-kinds-verse') },
+  { id: 'script', families: ['script'], label: () => t('editor-kinds-script') },
+  { id: 'list', families: ['list'], label: () => t('editor-kinds-list') },
+  {
+    id: 'more',
+    families: ['glossary', 'code', 'break', 'draft'],
+    label: () => t('editor-kinds-more'),
+  },
+  { id: 'words', families: ['words'], label: () => t('editor-kinds-words') },
+];
+
+/** The group of the menu a family is shown in; `more` for one that is no group of its own. */
+export function groupOf(family: string): KindGroup {
+  return GROUPS.find((g) => g.families.includes(family))?.id ?? 'more';
 }
 
-/** The kinds that come with the application, in the order the tools list them: the core's order. */
-export const CATALOGUE: KindSpec[] = [
-  // Text.
-  spec('text', 'paragraph', 'text', 'text', 'editor-text'),
-  spec('quote', 'paragraph', 'text', 'quote', 'editor-quotation', { shortcut: "Ctrl+'" }),
-  spec('list', 'paragraph', 'text', 'list', 'editor-list', { shortcut: 'Ctrl+Shift+8' }),
-  spec('numbered', 'paragraph', 'text', 'numbered', 'editor-numbered-list', {
-    shortcut: 'Ctrl+Shift+7',
-  }),
-  // What goes with a quotation.
-  spec('attribution', 'paragraph', 'quotation', 'passage', 'editor-attribution', {
-    basedOn: 'quote',
-    next: 'text',
-  }),
-  spec('epigraph', 'paragraph', 'quotation', 'passage', 'editor-epigraph', {
-    basedOn: 'quote',
-    next: 'attribution',
-  }),
-  // Verse: the lines, the speaker, the stage direction.
-  spec('verse', 'paragraph', 'verse', 'verse', 'editor-verse'),
-  spec('speaker', 'words', 'verse', 'speaker', 'editor-speaker'),
-  spec('direction', 'words', 'verse', 'direction', 'editor-direction'),
-  // A screenplay: Enter goes from a part to the one that follows it, Tab to the other that commonly does.
-  spec('scene', 'paragraph', 'script', 'script', 'editor-scene', { next: 'action', tab: 'action' }),
-  spec('action', 'paragraph', 'script', 'script', 'editor-action', {
-    next: 'action',
-    tab: 'character',
-  }),
-  spec('character', 'paragraph', 'script', 'script', 'editor-character', {
-    next: 'dialogue',
-    tab: 'transition',
-  }),
-  spec('dialogue', 'paragraph', 'script', 'script', 'editor-dialogue', {
-    next: 'action',
-    tab: 'parenthetical',
-  }),
-  spec('parenthetical', 'paragraph', 'script', 'script', 'editor-parenthetical', {
-    next: 'dialogue',
-    tab: 'dialogue',
-  }),
-  spec('transition', 'paragraph', 'script', 'script', 'editor-transition', {
-    next: 'scene',
-    tab: 'scene',
-  }),
-  // More kinds of paragraph.
-  spec('headword', 'paragraph', 'more', 'passage', 'editor-headword', {
-    next: 'gloss',
-    tab: 'gloss',
-  }),
-  spec('gloss', 'paragraph', 'more', 'passage', 'editor-gloss', {
-    next: 'headword',
-    tab: 'headword',
-  }),
-  spec('code', 'paragraph', 'more', 'passage', 'editor-code', { next: 'code' }),
-  spec('break', 'paragraph', 'more', 'passage', 'editor-break', { next: 'text' }),
-  spec('draft', 'paragraph', 'more', 'passage', 'editor-draft', { next: 'draft' }),
-  // Kinds of words.
-  spec('foreign', 'words', 'words', 'mark', 'editor-foreign'),
-  spec('title', 'words', 'words', 'mark', 'editor-title-of-work'),
-  spec('term', 'words', 'words', 'mark', 'editor-term'),
-  spec('mention', 'words', 'words', 'mark', 'editor-mention'),
-  spec('highlight', 'words', 'words', 'mark', 'editor-highlight'),
-];
+/** Whether a family is one that comes with the application, and not a kind of the writer's own. */
+export function knownFamily(family: string): family is Family {
+  return (FAMILIES as readonly string[]).includes(family);
+}
 
-export const GROUPS: { id: KindGroup; label(): string }[] = [
-  { id: 'text', label: () => t('editor-kinds-text') },
-  { id: 'quotation', label: () => t('editor-kinds-quotation') },
-  { id: 'verse', label: () => t('editor-kinds-verse') },
-  { id: 'script', label: () => t('editor-kinds-script') },
-  { id: 'more', label: () => t('editor-kinds-more') },
-  { id: 'words', label: () => t('editor-kinds-words') },
-];
-
-/** The kinds that are always in hand. */
-export const PLAIN_KINDS: readonly string[] = ['text', 'quote', 'list', 'numbered'];
+/** The kinds that are always at hand. */
+export const PLAIN_KINDS: readonly string[] = ['text', 'quote', 'item', 'numbered'];
 
 const byId = new Map(CATALOGUE.map((s) => [s.id, s]));
 
-/** A kind of the catalogue by its id; nothing for a kind of the writer's own, or one that is not known. */
+/** A kind of the catalogue by its id, by its old id too; nothing for a kind of the writer's own, or one that is not known. */
 export function specOf(id: string): KindSpec | undefined {
-  return byId.get(id);
+  return byId.get(renamed(id));
 }
 
-/** A kind of the writer's own, as much of it as Enter and Tab need: what it is based on. */
-export interface OwnKindLike {
-  id: string;
-  basedOn: string;
-}
+/** A kind of the writer's own, as much of it as the shape of a text needs: what it is based on. */
+export type OwnKindLike = BasedKind;
 
 /**
- * What a kind says of itself, or, for a kind of the writer's own, what the
- * kind it is based on says. A kind that is followed by itself is followed
- * by the writer's own kind where that is based on it.
+ * The kinds at hand of a project, by id: the plain kinds, every kind the
+ * project's texts use, and those the template brings; in the catalogue's
+ * order, the writer's own kinds after, each once. Text is always at hand.
+ * There is no pinning: the menu learns from use (ADR 0040).
  */
-function inherited(
-  id: string,
-  own: OwnKindLike[],
-  pick: (spec: KindSpec) => string | undefined,
-): string | undefined {
-  const seen = new Set<string>();
-  let at = id;
-  for (let depth = 0; depth < 8 && !seen.has(at); depth++) {
-    seen.add(at);
-    const spec = specOf(at);
-    if (spec) {
-      const picked = pick(spec);
-      return picked === at ? id : picked;
-    }
-    const kind = own.find((k) => k.id === at);
-    if (!kind) return undefined;
-    at = kind.basedOn || 'text';
-  }
-  return undefined;
-}
-
-/** The kind Enter makes at the end of a paragraph of a kind: text, where nothing is said. */
-export function nextOf(id: string, own: OwnKindLike[] = []): string {
-  return inherited(id, own, (s) => s.next) ?? 'text';
-}
-
-/** The kind Tab makes of an empty paragraph of a kind, or begins after a full one; nothing where Tab means nothing to it. */
-export function tabOf(id: string, own: OwnKindLike[] = []): string | undefined {
-  return inherited(id, own, (s) => s.tab);
-}
-
-/**
- * The kinds in hand of a project, by id: the plain kinds, every kind the
- * project's texts use, the kinds the writer has pinned, and those the
- * format suggests, less those the writer has unpinned; in the catalogue's
- * order, the writer's own kinds after, each once. Text is always in hand.
- */
-export function inHand(project: Project, suggests: string[] = []): string[] {
+export function inHand(project: Project, templateKinds: readonly string[] = []): string[] {
   const wanted = new Set<string>(PLAIN_KINDS);
-  for (const node of project.nodes.values()) for (const id of node.uses) wanted.add(id);
-  for (const id of project.hand.pinned) wanted.add(id);
-  for (const id of suggests) wanted.add(id);
-  for (const id of project.hand.unpinned) if (id !== 'text') wanted.delete(id);
+  for (const node of project.nodes.values()) for (const id of node.uses) wanted.add(renamed(id));
+  for (const id of templateKinds) wanted.add(renamed(id));
   const out: string[] = [];
   for (const spec of CATALOGUE) if (wanted.has(spec.id)) out.push(spec.id);
   for (const kind of project.passageKinds) if (wanted.has(kind.id)) out.push(kind.id);
   return out;
 }
 
-// ---- the looks on screen ----
+// ---- the cues on screen ----
 
 /**
- * How each kind of the catalogue looks on screen, by the measures a look
- * has: the look of the kind it is based on, and these. The style sheet
- * (`app.css`) sets the kinds of the catalogue by hand to the same
- * measures; a kind of the writer's own is set from them by `passageKindsCss`.
+ * The cues by which the editor shows the kinds of the catalogue where one
+ * writes, by the measures a look has: these are the editor's own and reach
+ * no document; every look lives in a layout (ADR 0040). The style sheet
+ * (`app.css`) sets the kinds of the catalogue by hand to the same measures;
+ * a kind of the writer's own is set from them by `passageKindsCss`, through
+ * the kinds it is based on.
  */
-const SCREEN: Record<string, Look> = {
+const CUES: Record<string, Look> = {
   quote: { indentLeft: '1.27cm', spaceBefore: '6pt', spaceAfter: '6pt' },
   attribution: { align: 'right', spaceBefore: '0pt', italic: false, firstLine: '0pt' },
   epigraph: { indentLeft: '4cm', indentRight: '0pt', spaceAfter: '18pt', firstLine: '0pt' },
-  speaker: { case: 'smallcaps' },
-  direction: { italic: true },
+  line: { indentLeft: '1cm' },
+  speaker: { case: 'smallcaps', indentLeft: '1cm', spaceBefore: '6pt' },
+  direction: { italic: true, indentLeft: '1cm' },
   scene: { bold: true, case: 'upper', spaceBefore: '19pt', spaceAfter: '11pt', align: 'left' },
   action: { spaceBefore: '11pt', spaceAfter: '11pt', align: 'left' },
   character: { indentLeft: '5.6cm', case: 'upper', spaceBefore: '11pt', spaceAfter: '0pt' },
@@ -232,6 +166,8 @@ const SCREEN: Record<string, Look> = {
   transition: { align: 'right', case: 'upper', spaceBefore: '11pt', spaceAfter: '11pt' },
   headword: { bold: true, spaceBefore: '6pt', spaceAfter: '0pt', firstLine: '0pt' },
   gloss: { indentLeft: '1.27cm', spaceBefore: '0pt', spaceAfter: '6pt' },
+  item: { indentLeft: '1.27cm' },
+  numbered: { indentLeft: '1.27cm' },
   code: { monospace: true, lineSpacing: 1, align: 'left', spaceBefore: '6pt', spaceAfter: '6pt' },
   break: { align: 'center', spaceBefore: '12pt', spaceAfter: '12pt', text: '* * *' },
   foreign: { italic: true },
@@ -240,7 +176,7 @@ const SCREEN: Record<string, Look> = {
 };
 
 /** What some kinds have on screen beyond the measures, which a kind based on them has too. */
-const SCREEN_MORE: Record<string, string> = {
+const CUES_MORE: Record<string, string> = {
   draft: 'color: var(--ink-3); border-left: 2px dashed var(--line-strong); padding-left: 0.8em;',
   highlight:
     'background: var(--highlight); border-radius: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone;',
@@ -294,8 +230,8 @@ function selectorId(id: string): string | null {
 }
 
 /**
- * The look of a kind of the writer's own as it comes to be on screen: the
- * looks of the kinds it is based on, through the catalogue and other own
+ * The cues of a kind of the writer's own as they come to be on screen: the
+ * cues of the kinds it is based on, through the catalogue and other own
  * kinds, with its own look over them; and the kinds of the catalogue it
  * passed through, for what they have beyond the measures.
  */
@@ -303,20 +239,20 @@ function screenLook(kind: PassageKindRecord, own: PassageKindRecord[]) {
   const looks: Look[] = [];
   const through = new Set<string>();
   const seen = new Set<string>([kind.id]);
-  let at: string | undefined = kind.basedOn;
+  let at: string | undefined = kind.basedOn ? renamed(kind.basedOn) : undefined;
   for (let depth = 0; at && depth < 8 && !seen.has(at); depth++) {
     seen.add(at);
     const catalogued = specOf(at);
     if (catalogued) {
       through.add(at);
-      looks.unshift(SCREEN[at] ?? {});
+      looks.unshift(CUES[at] ?? {});
       at = catalogued.basedOn;
       continue;
     }
     const other = own.find((k) => k.id === at);
     if (!other) break;
     looks.unshift(other.look);
-    at = other.basedOn;
+    at = other.basedOn ? renamed(other.basedOn) : undefined;
   }
   looks.push(kind.look);
   const look: Record<string, unknown> = {};
@@ -363,9 +299,10 @@ function declarations(look: Look, family: KindFamily): string[] {
 
 /**
  * The style sheet for the kinds of the writer's own: a rule for each, on
- * `.prose .passage[data-kind=ID]` for a kind of paragraph and
- * `.prose .kind[data-kind=ID]` for a kind of words, from the look on screen
- * of what it is based on and its own. So a kind is seen at once.
+ * `.prose p[data-kind=ID]` for a kind of paragraph and
+ * `.prose .kind[data-kind=ID]` for a kind of words, from the cues of what
+ * it is based on and its own look. So a kind is seen at once where one
+ * writes; what it reaches in a document, the layout says.
  */
 export function passageKindsCss(kinds: PassageKindRecord[]): string {
   const rules: string[] = [];
@@ -373,15 +310,13 @@ export function passageKindsCss(kinds: PassageKindRecord[]): string {
     const id = selectorId(kind.id);
     if (!id) continue;
     const words = kind.family === 'words';
-    const selector = words
-      ? `.prose .kind[data-kind="${id}"]`
-      : `.prose .passage[data-kind="${id}"]`;
+    const selector = words ? `.prose .kind[data-kind="${id}"]` : `.prose p[data-kind="${id}"]`;
     const { look, through } = screenLook(kind, kinds);
     const own = declarations(look, kind.family);
-    for (const base of through) if (SCREEN_MORE[base]) own.push(SCREEN_MORE[base]);
+    for (const base of through) if (CUES_MORE[base]) own.push(CUES_MORE[base]);
     if (own.length) rules.push(`${selector} { ${own.join(' ')} }`);
     if (!words && look.text) {
-      // The sign of a break, drawn where the passage holds nothing.
+      // The sign of a break, drawn where the paragraph holds nothing.
       const sign = `content: "${css(look.text)}"; letter-spacing: 0.4em; color: var(--ink-3);`;
       rules.push(`${selector}:empty::before { ${sign} }`);
       rules.push(`${selector}:has(> .ProseMirror-trailingBreak:only-child)::before { ${sign} }`);

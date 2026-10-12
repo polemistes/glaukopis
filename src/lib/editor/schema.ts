@@ -256,63 +256,20 @@ export function foundAttrs(value: unknown): {
 
 const bodyNodes: Record<string, NodeSpec> = {
   doc: { content: 'block+' },
+  /**
+   * A paragraph of a kind. `kind` is the id of its kind (`editor/kinds.ts`,
+   * `project/model/families.ts`), `text` by default; `indent` its steps in,
+   * for lines of verse and items of a list; `number` a number or a label
+   * given to it by hand ("1234", "567a"), from which the count of its
+   * passage goes on; `counted` is false for one the count passes over, as
+   * the second half of a line shared between speakers; `margin` is words
+   * shown in the margin beside it. See ADR 0040 and `project/model/lines.ts`.
+   */
   paragraph: {
     group: 'block',
     content: 'inline*',
-    parseDOM: [{ tag: 'p' }],
-    toDOM: () => ['p', 0],
-  },
-  blockquote: {
-    group: 'block',
-    content: 'block+',
-    defining: true,
-    parseDOM: [{ tag: 'blockquote' }],
-    toDOM: () => ['blockquote', 0],
-  },
-  /**
-   * Lines of verse: a quotation of poetry or drama, each line kept as a
-   * line, numbered where `start` is given. A line may be a speaker's name
-   * or a stage direction.
-   */
-  verse: {
-    group: 'block',
-    content: 'verse_line+',
-    defining: true,
-    attrs: { start: { default: null }, by: { default: 5 } },
-    parseDOM: [
-      {
-        tag: 'div.verse',
-        getAttrs: (node) => {
-          const el = node as HTMLElement;
-          const start = el.getAttribute('data-start');
-          return {
-            start: start === null || start === '' ? null : Number(start) || 0,
-            by: Number(el.getAttribute('data-by') ?? 5) || 5,
-          };
-        },
-      },
-    ],
-    toDOM: (node) => [
-      'div',
-      {
-        class: 'verse',
-        ...(node.attrs.start === null ? {} : { 'data-start': String(node.attrs.start) }),
-        'data-by': String(node.attrs.by),
-      },
-      0,
-    ],
-  },
-  /**
-   * A line of verse. `number` is a number or a label given to the line by
-   * hand ("1234", "567a"), from which the count goes on; `counted` is false
-   * for a line the count passes over, as the second half of a line shared
-   * between speakers; `margin` is words shown in the margin beside it. See
-   * `project/model/lines.ts`.
-   */
-  verse_line: {
-    content: 'inline*',
     attrs: {
-      kind: { default: 'line' },
+      kind: { default: 'text' },
       indent: { default: 0 },
       number: { default: null },
       counted: { default: true },
@@ -320,13 +277,12 @@ const bodyNodes: Record<string, NodeSpec> = {
     },
     parseDOM: [
       {
-        tag: 'p.verse-line',
+        tag: 'p',
         getAttrs: (node) => {
           const el = node as HTMLElement;
-          const kind = ['speaker', 'direction'].find((k) => el.classList.contains(k)) ?? 'line';
           return {
-            kind,
-            indent: Number(el.getAttribute('data-indent') ?? 0) || 0,
+            kind: el.getAttribute('data-kind') || 'text',
+            indent: Math.max(0, Math.round(Number(el.getAttribute('data-indent') ?? 0)) || 0),
             number: el.getAttribute('data-number') || null,
             counted: !el.hasAttribute('data-uncounted'),
             margin: el.getAttribute('data-margin') || null,
@@ -337,52 +293,65 @@ const bodyNodes: Record<string, NodeSpec> = {
     toDOM: (node) => [
       'p',
       {
-        class: `verse-line ${node.attrs.kind}`,
-        ...(node.attrs.indent
-          ? { 'data-indent': String(node.attrs.indent), style: `--indent: ${node.attrs.indent}` }
-          : {}),
-        ...(node.attrs.number ? { 'data-number': node.attrs.number } : {}),
-        ...(node.attrs.counted === false ? { 'data-uncounted': '' } : {}),
-        ...(node.attrs.margin ? { 'data-margin': node.attrs.margin } : {}),
+        'data-kind': node.attrs.kind && node.attrs.kind !== 'text' ? node.attrs.kind : null,
+        'data-indent': node.attrs.indent ? String(node.attrs.indent) : null,
+        style: node.attrs.indent ? `--indent: ${node.attrs.indent}` : null,
+        'data-number': node.attrs.number || null,
+        'data-uncounted': node.attrs.counted === false ? '' : null,
+        'data-margin': node.attrs.margin || null,
       },
       0,
     ],
   },
-  /** A paragraph of a screenplay: a scene heading, action, a character, dialogue, a parenthetical, a transition. */
-  script: {
-    group: 'block',
-    content: 'inline*',
-    attrs: { part: { default: 'action' } },
-    parseDOM: [
-      {
-        tag: 'p.script',
-        getAttrs: (node) => ({
-          part:
-            ['scene', 'action', 'character', 'dialogue', 'parenthetical', 'transition'].find((p) =>
-              (node as HTMLElement).classList.contains(p),
-            ) ?? 'action',
-        }),
-      },
-    ],
-    toDOM: (node) => ['p', { class: `script ${node.attrs.part}` }, 0],
-  },
   /**
-   * A paragraph of a kind: an epigraph, a headword, a break, a draft note,
-   * or a kind of the writer's own. `name` is the id of the kind
-   * (`editor/kinds.ts`). The parts of a script and the lines of verse are
-   * kinds too, kept as they were. See ADR 0029.
+   * A run of paragraphs of one family, which the editor keeps around them
+   * (`passages.ts`): a quotation, a verse, a script, a glossary, a list, a
+   * code block, a draft; or a kind of the writer's own based on text, named
+   * by its id. `numbering` says how its paragraphs are numbered: not at
+   * all, counted from the first number given, or only by the numbers given;
+   * `every` how often a counted number is shown and `side` where, each null
+   * for what the layout says. Text, which forms no passage, is the default
+   * of `family` only so that a passage read without one is not lost: the
+   * editor undoes it. See ADR 0040.
    */
   passage: {
     group: 'block',
-    content: 'inline*',
-    attrs: { name: { default: '' } },
+    content: 'paragraph+',
+    defining: true,
+    attrs: {
+      family: { default: 'text' },
+      numbering: { default: 'none' },
+      every: { default: null },
+      side: { default: null },
+    },
     parseDOM: [
       {
-        tag: 'p.passage[data-kind]',
-        getAttrs: (node) => ({ name: (node as HTMLElement).getAttribute('data-kind') ?? '' }),
+        tag: 'div.passage[data-family]',
+        getAttrs: (node) => {
+          const el = node as HTMLElement;
+          const numbering = el.getAttribute('data-numbering');
+          const every = Number(el.getAttribute('data-every'));
+          const side = el.getAttribute('data-side');
+          return {
+            family: el.getAttribute('data-family') || 'text',
+            numbering: numbering === 'counted' || numbering === 'given' ? numbering : 'none',
+            every: every >= 1 ? Math.round(every) : null,
+            side: side === 'left' || side === 'right' ? side : null,
+          };
+        },
       },
     ],
-    toDOM: (node) => ['p', { class: 'passage', 'data-kind': node.attrs.name }, 0],
+    toDOM: (node) => [
+      'div',
+      {
+        class: 'passage',
+        'data-family': node.attrs.family,
+        'data-numbering': node.attrs.numbering !== 'none' ? node.attrs.numbering : null,
+        'data-every': node.attrs.every ? String(node.attrs.every) : null,
+        'data-side': node.attrs.side || null,
+      },
+      0,
+    ],
   },
   /** Two texts side by side: an original and its translation. */
   parallel: {
@@ -394,37 +363,11 @@ const bodyNodes: Record<string, NodeSpec> = {
     toDOM: () => ['div', { class: 'parallel' }, 0],
   },
   parallel_side: {
-    content: 'block+',
+    content: '(paragraph | passage)+',
     defining: true,
     isolating: true,
     parseDOM: [{ tag: 'div.parallel-side' }],
     toDOM: () => ['div', { class: 'parallel-side' }, 0],
-  },
-  bullet_list: {
-    group: 'block',
-    content: 'list_item+',
-    parseDOM: [{ tag: 'ul' }],
-    toDOM: () => ['ul', 0],
-  },
-  ordered_list: {
-    group: 'block',
-    content: 'list_item+',
-    attrs: { start: { default: 1 } },
-    parseDOM: [
-      {
-        tag: 'ol',
-        getAttrs: (node) => ({
-          start: Number((node as HTMLElement).getAttribute('start') ?? 1) || 1,
-        }),
-      },
-    ],
-    toDOM: (node) => (node.attrs.start === 1 ? ['ol', 0] : ['ol', { start: node.attrs.start }, 0]),
-  },
-  list_item: {
-    content: 'paragraph block*',
-    defining: true,
-    parseDOM: [{ tag: 'li' }],
-    toDOM: () => ['li', 0],
   },
   text: { group: 'inline' },
   // A break within a paragraph. It is drawn as a line break with a faint
