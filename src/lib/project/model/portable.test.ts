@@ -4,7 +4,7 @@ import { sendElements } from '../elements';
 import { writeBody } from './blocks';
 import { makePortable, portable } from './portable';
 import { Project } from './project.svelte';
-import { paragraph, passage, type Block, type Inline } from './text';
+import { linemark, paragraph, type Block, type Inline } from './text';
 import { PROJECT, type RefRecord } from './types';
 
 const HASH = 'b'.repeat(64);
@@ -53,20 +53,15 @@ function text(own: { passage: string; words: string }, pointsTo: string): Block[
         ],
       },
     ),
-    passage('quotation', [
-      paragraph([t('In a kind of my own.')], own.passage),
-      paragraph([t('Sing, goddess.')], 'epigraph'),
-    ]),
+    paragraph([t('In a kind of my own.')], own.passage),
+    paragraph([t('Sing, goddess.')], 'epigraph'),
     { kind: 'equation', id: 'e1', tex: 'a^2 + b^2 = c^2', numbered: true },
-    passage(
-      'verse',
-      [
-        paragraph([t('Nurse')], 'speaker'),
-        paragraph([t('If only the Argo')], 'line', { indent: 1, number: '1' }),
-      ],
-      'counted',
-    ),
-    passage('script', [paragraph([t('If only.')], 'dialogue')]),
+    paragraph([t('Nurse')], 'speaker', { indent: 0, numbering: 'counted' }),
+    paragraph([linemark({ number: '1' }), t('If only the Argo')], 'line', {
+      indent: 1,
+      numbering: 'counted',
+    }),
+    paragraph([t('If only.')], 'dialogue'),
     {
       kind: 'figure',
       id: 'f1',
@@ -248,12 +243,10 @@ describe('elements to another project', () => {
     expect(uses).not.toContain(s.passage);
     expect(uses).toContain(s.words);
     const text = d.p.blocksOf(a);
-    expect(text[1]).toEqual(
-      passage('quotation', [
-        paragraph([t('In a kind of my own.')], lament),
-        paragraph([t('Sing, goddess.')], 'epigraph'),
-      ]),
-    );
+    expect(text.slice(1, 3)).toEqual([
+      paragraph([t('In a kind of my own.')], lament),
+      paragraph([t('Sing, goddess.')], 'epigraph'),
+    ]);
   });
 
   it('a kind of paragraph goes with the kind it is based on, and the kind an element begins in', () => {
@@ -279,7 +272,7 @@ describe('elements to another project', () => {
     const kind = s.p.createKind({ name: 'Place', colour: 'green', template: '', begins: scene })!;
     const a = s.p.addChild(s.root, { title: 'Troy' })!;
     s.p.setKind([a], kind);
-    write(s.p, a, [passage('quotation', [paragraph([t('Alas.')], lament)])]);
+    write(s.p, a, [paragraph([t('Alas.')], lament)]);
 
     const carried = portable(s.p, [a]);
     expect(carried.passageKinds.map((k) => k.name).sort()).toEqual(['Lament', 'Scene', 'Speech']);

@@ -245,13 +245,6 @@ function retold(blocks: Block[], kind: (id: string) => string, point: (id: strin
     switch (b.kind) {
       case 'paragraph':
         return { ...b, name: kind(b.name), content: line(b.content) };
-      case 'passage':
-        // A family that is a kind of the writer's own is named as the kind is here.
-        return {
-          ...b,
-          family: kind(b.family),
-          content: b.content.map((p) => ({ ...p, name: kind(p.name), content: line(p.content) })),
-        };
       case 'parallel':
         return { ...b, left: list(b.left), right: list(b.right) };
       case 'figure':

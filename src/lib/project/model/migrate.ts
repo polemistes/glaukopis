@@ -3,36 +3,20 @@
  * element is made where there is none, and a document written before, as
  * maps with a centre each and loose elements beside them, becomes one tree.
  * An abstract or a cover written into an element's settings becomes an
- * element under it (ADR 0038). A text written in the shape of before ADR
- * 0040 — block quotes, verse, script paragraphs, passages of a name, lists
- * — is written anew as paragraphs of a kind in passages; the hand of the
- * project goes, and the kinds `verse` and `list` are named `line` and
- * `item` wherever the project names them. Done within a transaction of the
- * caller's; nothing happens to a project that is in shape, so it can be
- * asked of every document that is read.
+ * element under it (ADR 0038). Texts are not written anew: what is read of
+ * them takes old shapes without falling over (`text.ts`). Done within a
+ * transaction of the caller's; nothing happens to a project that is in
+ * shape, so it can be asked of every document that is read.
  */
 
 import { generateKeyBetween } from 'fractional-indexing';
 import * as Y from 'yjs';
 import { newId } from '$lib/util/id';
-import { blockElements } from './blocks';
-import { RENAMED, type BasedKind } from './families';
 import { str } from './origins';
-import {
-  fillBody,
-  fillTitle,
-  inlineText,
-  isOldShape,
-  readBasedKinds,
-  readBlocks,
-  readTitle,
-} from './text';
+import { fillBody, fillTitle, inlineText, readTitle } from './text';
 import { PROJECT, type DocumentSettings, type TimelineSettings } from './types';
 
 type YNode = Y.Map<unknown>;
-
-/** The shape of texts as they are written now: kept in `meta.texts`, so that a document in shape is not read through again. */
-export const TEXTS_SHAPE = 2;
 
 const record = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
@@ -47,13 +31,12 @@ const holdsParts = (n: YNode): boolean => {
 
 /**
  * Whether the document is not yet in shape: without its project element,
- * with maps, with an abstract or a cover in an element's settings, or
- * without the word that its texts were written in the shape of now.
+ * with maps, or with an abstract or a cover in an element's settings.
  */
 export function needsMigration(doc: Y.Doc): boolean {
   if (doc.getMap('maps').size > 0 || !doc.getMap('nodes').has(PROJECT)) return true;
   for (const n of doc.getMap<YNode>('nodes').values()) if (holdsParts(n)) return true;
-  return doc.getMap<unknown>('meta').get('texts') !== TEXTS_SHAPE;
+  return false;
 }
 
 /**
@@ -110,7 +93,6 @@ export function migrate(
     changed = true;
   }
   if (partsOut(yNodes, word)) changed = true;
-  if (textsInShape(doc)) changed = true;
   return changed;
 }
 
@@ -283,72 +265,4 @@ function partsOut(
       });
   }
   return changed;
-}
-
-/**
- * The texts of a project written in the shape of now (ADR 0040), where the
- * document does not say they are: every element of the old shape in a
- * text, with those next to it, is read as `text.ts` reads it and written
- * as `blocks.ts` writes it, in its place; what else stands in the text is
- * left as it is, so that comments on it keep their place. The hand goes,
- * and the kinds `verse` and `list` are named anew in the kinds of the
- * writer's own and in what kinds of elements begin in. Returns whether
- * anything was changed, which is whether the document did not say so yet.
- */
-function textsInShape(doc: Y.Doc): boolean {
-  const yMeta = doc.getMap<unknown>('meta');
-  if (yMeta.get('texts') === TEXTS_SHAPE) return false;
-  const yNodes = doc.getMap<YNode>('nodes');
-  const yPassageKinds = doc.getMap<unknown>('passageKinds');
-  const yKinds = doc.getMap<unknown>('kinds');
-
-  for (const k of yPassageKinds.values()) {
-    if (!(k instanceof Y.Map)) continue;
-    const basedOn = k.get('basedOn');
-    if (typeof basedOn === 'string' && basedOn in RENAMED) k.set('basedOn', RENAMED[basedOn]);
-  }
-  for (const k of yKinds.values()) {
-    if (!(k instanceof Y.Map)) continue;
-    const begins = k.get('begins');
-    if (typeof begins === 'string' && begins in RENAMED) k.set('begins', RENAMED[begins]);
-  }
-  const own = readBasedKinds(yPassageKinds);
-  for (const n of yNodes.values()) {
-    const body = n.get('body');
-    if (body instanceof Y.XmlFragment) rewriteIn(body, own);
-  }
-  yMeta.delete('hand');
-  yMeta.set('texts', TEXTS_SHAPE);
-  return true;
-}
-
-/**
- * Rewrites the elements of the old shape in a text or a side of a parallel
- * text: each run of them, read together so that what belongs together is
- * joined, is written anew in its place.
- */
-function rewriteIn(parent: Y.XmlFragment | Y.XmlElement, own: readonly BasedKind[]) {
-  let i = 0;
-  while (i < parent.length) {
-    const child = parent.get(i);
-    if (child instanceof Y.XmlElement && child.nodeName === 'parallel') {
-      for (const side of child.toArray()) if (side instanceof Y.XmlElement) rewriteIn(side, own);
-      i++;
-      continue;
-    }
-    if (!(child instanceof Y.XmlElement) || !isOldShape(child)) {
-      i++;
-      continue;
-    }
-    const run: Y.XmlElement[] = [];
-    for (let j = i; j < parent.length; j++) {
-      const next = parent.get(j);
-      if (next instanceof Y.XmlElement && isOldShape(next)) run.push(next);
-      else break;
-    }
-    const made = blockElements(readBlocks(run, own));
-    parent.delete(i, run.length);
-    if (made.length) parent.insert(i, made);
-    i += made.length;
-  }
 }

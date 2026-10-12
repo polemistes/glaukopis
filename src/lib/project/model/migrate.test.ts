@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { term } from '$lib/i18n';
 import { buildDocument } from './document';
-import { migrate, needsMigration, TEXTS_SHAPE } from './migrate';
+import { migrate, needsMigration } from './migrate';
 import { Project } from './project.svelte';
-import { fillTitle, paragraph, passage, readBody, type Inline } from './text';
+import { fillTitle, linemark, paragraph, readBody } from './text';
 import { PROJECT } from './types';
 
 /** A document as it was written before ADR 0037: maps with a centre each, elements naming their map. */
@@ -86,7 +86,6 @@ describe('a project brought into one tree', () => {
     expect(doc.getMap('meta').get('language')).toBeUndefined();
     // The hand of a map goes, as the hand of the project does (ADR 0040).
     expect(doc.getMap('meta').get('hand')).toBeUndefined();
-    expect(doc.getMap('meta').get('texts')).toBe(TEXTS_SHAPE);
 
     const p = new Project(null);
     p.load(Y.encodeStateAsUpdate(doc), []);
@@ -220,181 +219,29 @@ describe('an abstract or a cover in the settings of an element', () => {
   });
 });
 
-describe('texts written in the shape of before ADR 0040', () => {
-  type Make = (parent: Y.XmlElement | Y.XmlFragment) => void;
-  const el =
-    (name: string, attrs: Record<string, unknown>, ...content: (string | Make)[]): Make =>
-    (parent) => {
-      const e = new Y.XmlElement(name);
-      for (const [key, value] of Object.entries(attrs)) e.setAttribute(key, value as string);
-      parent.insert(parent.length, [e]);
-      for (const c of content) {
-        if (typeof c === 'string') e.insert(e.length, [new Y.XmlText(c)]);
-        else c(e);
-      }
-    };
-  const t = (text: string): Inline => ({ kind: 'text', text, marks: {} });
-
-  /** A project in one tree whose texts, own kinds, kinds of elements and hand are as they were written before. */
-  function oldTexts() {
+describe('texts written in a shape of before', () => {
+  it('are left as they are, and read without falling over', () => {
     const p = new Project(null);
     p.begin('Wrath');
     const a = p.addChild(PROJECT, { title: 'A' })!;
-    const b = p.addChild(PROJECT, { title: 'B' })!;
-    const letter = p.createPassageKind({
-      name: 'Letter',
-      family: 'paragraph',
-      basedOn: 'text',
-      look: {},
-    })!;
-    const chorus = p.createPassageKind({
-      name: 'Chorus',
-      family: 'paragraph',
-      basedOn: 'verse',
-      look: {},
-    })!;
-    const kind = p.createKind({ name: 'Poem', colour: 'teal', template: '', begins: 'verse' })!;
-    const item = p.createKind({ name: 'List', colour: 'rose', template: '', begins: 'list' })!;
     p.transact(() => {
       const body = p.fragment(a, 'body')!;
       body.delete(0, body.length);
-      for (const make of [
-        el('paragraph', {}, 'Before.'),
-        el(
-          'blockquote',
-          {},
-          el('paragraph', {}, 'Quoted.'),
-          el('passage', { name: 'attribution' }, 'Homer'),
-        ),
-        el(
-          'verse',
-          { start: 45, by: 5 },
-          el('verse_line', { kind: 'speaker', indent: 0 }, 'Nurse'),
-          el('verse_line', { kind: 'line', indent: 1, margin: 'ia.' }, 'If only'),
-        ),
-        el('passage', { name: chorus }, 'Of the chorus'),
-        el('script', { part: 'scene' }, 'INT. HOUSE'),
-        el('passage', { name: letter }, 'Dear reader,'),
-        el(
-          'bullet_list',
-          {},
-          el('list_item', {}, el('paragraph', {}, 'one')),
-          el(
-            'list_item',
-            {},
-            el('paragraph', {}, 'two'),
-            el('ordered_list', { start: 4 }, el('list_item', {}, el('paragraph', {}, 'four'))),
-          ),
-        ),
-        el('paragraph', {}, 'After.'),
-        el(
-          'parallel',
-          {},
-          el('parallel_side', {}, el('verse', {}, el('verse_line', {}, 'Left'))),
-          el('parallel_side', {}, el('paragraph', {}, 'Right')),
-        ),
-      ])
-        make(body);
-      const other = p.fragment(b, 'body')!;
-      other.delete(0, other.length);
-      el('paragraph', {}, 'Plain only.')(other);
-      p.yMeta.set('hand', { pinned: ['epigraph'], unpinned: [] });
-      p.yMeta.delete('texts');
+      const passage = new Y.XmlElement('passage');
+      passage.setAttribute('family', 'verse');
+      const line = new Y.XmlElement('paragraph');
+      line.setAttribute('kind', 'line');
+      line.setAttribute('number', '45');
+      line.insert(0, [new Y.XmlText('If only')]);
+      passage.insert(0, [line]);
+      body.insert(0, [passage]);
     });
-    return { p, a, b, letter, chorus, kind, item };
-  }
-
-  it('are written anew as paragraphs of a kind in passages, in their place, once', () => {
-    const { p, a, b, letter, chorus, kind, item } = oldTexts();
-    expect(needsMigration(p.doc)).toBe(true);
-    const body = p.fragment(a, 'body')!;
-    const before = body.get(0) as Y.XmlElement;
-    const after = body.get(7) as Y.XmlElement;
-    const plain = p.fragment(b, 'body')!.get(0);
-    expect(migrate(p.doc, 'Wrath')).toBe(true);
     expect(needsMigration(p.doc)).toBe(false);
     expect(migrate(p.doc, 'Wrath')).toBe(false);
-
-    // What was no old shape stays as it was, so that comments on it keep their place.
-    expect(body.get(0)).toBe(before);
-    expect(body.get(6)).toBe(after);
-    expect(p.fragment(b, 'body')!.get(0)).toBe(plain);
-    expect(body.toArray().map((e) => (e as Y.XmlElement).nodeName)).toEqual([
-      'paragraph',
-      'passage',
-      'passage',
-      'passage',
-      'passage',
-      'passage',
-      'paragraph',
-      'parallel',
+    const body = p.fragment(a, 'body')!;
+    expect((body.get(0) as Y.XmlElement).nodeName).toBe('passage');
+    expect(readBody(body)).toEqual([
+      paragraph([linemark({ number: '45' }), { kind: 'text', text: 'If only', marks: {} }], 'line'),
     ]);
-    expect(readBody(body, p.passageKinds)).toEqual([
-      paragraph([t('Before.')]),
-      passage('quotation', [
-        paragraph([t('Quoted.')], 'quote'),
-        paragraph([t('Homer')], 'attribution'),
-      ]),
-      passage(
-        'verse',
-        [
-          paragraph([t('Nurse')], 'speaker'),
-          paragraph([t('If only')], 'line', { indent: 1, number: '45', margin: 'ia.' }),
-          paragraph([t('Of the chorus')], chorus),
-        ],
-        'counted',
-      ),
-      passage('script', [paragraph([t('INT. HOUSE')], 'scene')]),
-      passage(letter, [paragraph([t('Dear reader,')], letter)]),
-      passage('list', [
-        paragraph([t('one')], 'item'),
-        paragraph([t('two')], 'item'),
-        paragraph([t('four')], 'numbered', { indent: 1, number: '4' }),
-      ]),
-      paragraph([t('After.')]),
-      {
-        kind: 'parallel',
-        left: [passage('verse', [paragraph([t('Left')], 'line')])],
-        right: [paragraph([t('Right')])],
-      },
-    ]);
-    // The hand goes; verse and list are line and item in the writer's own kinds and in what elements begin in.
-    expect(p.yMeta.has('hand')).toBe(false);
-    expect(p.yMeta.get('texts')).toBe(TEXTS_SHAPE);
-    expect(p.yPassageKinds.get(chorus)!.get('basedOn')).toBe('line');
-    expect(p.yPassageKinds.get(letter)!.get('basedOn')).toBe('text');
-    expect(p.yKinds.get(kind)!.get('begins')).toBe('line');
-    expect(p.yKinds.get(item)!.get('begins')).toBe('item');
-  });
-
-  it('is done by the project when it begins, outside undo, and the project reads the new shape', () => {
-    const { p, a } = oldTexts();
-    const q = new Project(null);
-    q.load(Y.encodeStateAsUpdate(p.doc), []);
-    expect(q.begin('Wrath')).toBe(true);
-    expect(q.canUndo).toBe(false);
-    expect(q.begin('Wrath')).toBe(false);
-    expect(q.blocksOf(a)[1]).toEqual(
-      passage('quotation', [
-        paragraph([t('Quoted.')], 'quote'),
-        paragraph([t('Homer')], 'attribution'),
-      ]),
-    );
-    expect(q.node(a)!.uses).toEqual(
-      expect.arrayContaining([
-        'quote',
-        'attribution',
-        'speaker',
-        'line',
-        'scene',
-        'item',
-        'numbered',
-      ]),
-    );
-    // A project that begins now says its texts are in shape, and is not read through again.
-    const fresh = new Project(null);
-    expect(fresh.begin('New')).toBe(true);
-    expect(fresh.yMeta.get('texts')).toBe(TEXTS_SHAPE);
-    expect(fresh.begin('New')).toBe(false);
   });
 });
