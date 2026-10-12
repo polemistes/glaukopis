@@ -101,7 +101,7 @@ export interface Look {
   /** Kept on the page with what follows it. */
   keepWithNext?: boolean;
   newPage?: boolean;
-  /** What stands in a passage that holds no text of its own: the sign of a break. */
+  /** What stands in a paragraph that holds no text of its own: the sign of a break. */
   text?: string;
 }
 
@@ -237,7 +237,7 @@ export interface DocumentFormat {
     fromWords: number | null;
     fromLines: number | null;
   };
-  /** How the numbers of a numbered passage are shown, where the passage does not say (ADR 0040). */
+  /** How the numbers of a numbered stretch are shown, where the stretch does not say (ADR 0041). */
   verse: {
     /** Every how many: 5 shows 5, 10, 15. */
     every: number;
