@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::document::Side;
 use crate::error::{Error, IoContext, Result};
 use crate::fsutil::write_atomic;
 use crate::tr;
@@ -328,6 +329,22 @@ impl Default for Quote {
             from_words: None,
             from_lines: None,
         }
+    }
+}
+
+/// How the numbers of a numbered passage are shown, where the passage does
+/// not say (ADR 0040): every how many, and on which side of the text.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Verse {
+    /// Every how many: 5 shows 5, 10, 15.
+    pub every: u32,
+    pub side: Side,
+}
+
+impl Default for Verse {
+    fn default() -> Self {
+        Verse { every: 5, side: Side::Left }
     }
 }
 
@@ -688,6 +705,8 @@ pub struct DocumentFormat {
     pub headings: Headings,
     pub title: TitleBlock,
     pub quote: Quote,
+    /// How the numbers of a numbered passage are shown, where the passage does not say.
+    pub verse: Verse,
     pub notes: Notes,
     pub bibliography: BibliographyFormat,
     pub figures: Figures,
@@ -760,6 +779,9 @@ impl DocumentFormat {
         clamp(&mut self.notes.line_spacing, 0.8, 4.0, 1.0);
         clamp(&mut self.quote.size, 0.0, 36.0, 0.0);
         clamp(&mut self.quote.line_spacing, 0.0, 4.0, 0.0);
+        if self.verse.every == 0 || self.verse.every > 1000 {
+            self.verse.every = 5;
+        }
         clamp(&mut self.bibliography.size, 0.0, 36.0, 0.0);
         clamp(&mut self.bibliography.line_spacing, 0.0, 4.0, 0.0);
         clamp(&mut self.figures.caption_size, 0.0, 36.0, 0.0);

@@ -576,7 +576,7 @@ pub fn make_searchable(
 // ---------------------------------------------------------------------------
 
 fn paragraph(text: String) -> Block {
-    Block::Paragraph { content: vec![Inline::Text { text, marks: BTreeMap::new() }] }
+    Block::paragraph(vec![Inline::Text { text, marks: BTreeMap::new() }])
 }
 
 fn counts(sections: &[Section]) -> Counts {
@@ -584,7 +584,7 @@ fn counts(sections: &[Section]) -> Counts {
         .iter()
         .flat_map(|s| &s.blocks)
         .map(|b| match b {
-            Block::Paragraph { content } => content
+            Block::Paragraph { content, .. } => content
                 .iter()
                 .map(|i| match i {
                     Inline::Text { text, .. } => count_words(text),

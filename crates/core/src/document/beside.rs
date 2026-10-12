@@ -42,23 +42,11 @@ pub fn place_citations(doc: &mut Document, notes: bool) {
 fn place_blocks(list: &mut [Block], notes: bool) {
     for block in list {
         match block {
-            Block::Paragraph { content } | Block::Script { content, .. } | Block::Passage { content, .. } => {
-                place_line(content, notes)
-            }
-            Block::Blockquote { content } => place_blocks(content, notes),
-            Block::Verse { lines, .. } => {
-                for line in lines {
-                    place_line(&mut line.content, notes);
-                }
-            }
+            Block::Paragraph { content, .. } => place_line(content, notes),
+            Block::Passage { content, .. } => place_blocks(content, notes),
             Block::Parallel { left, right } => {
                 place_blocks(left, notes);
                 place_blocks(right, notes);
-            }
-            Block::BulletList { items } | Block::OrderedList { items, .. } => {
-                for item in items {
-                    place_blocks(item, notes);
-                }
             }
             Block::Figure { caption, .. } => place_line(caption, notes),
             Block::Equation { .. } => {}
@@ -296,14 +284,14 @@ mod tests {
 
     #[test]
     fn through_the_whole_document() {
-        use super::super::fixtures::para;
+        use super::super::fixtures::{kind, para, passage};
         let mut doc = Document {
             sections: vec![super::super::Section {
                 level: 1,
                 heading: None,
                 blocks: vec![
                     para(vec![text("Said. "), cite("a", None)]),
-                    Block::Blockquote { content: vec![para(vec![text("Quoted "), cite("b", None), text(".")])] },
+                    passage("quotation", vec![kind("quote", vec![text("Quoted "), cite("b", None), text(".")])]),
                 ],
                 element: None,
                 kind: None,
@@ -311,10 +299,10 @@ mod tests {
             ..Default::default()
         };
         place_citations(&mut doc, true);
-        let Block::Paragraph { content } = &doc.sections[0].blocks[0] else { panic!() };
+        let Block::Paragraph { content, .. } = &doc.sections[0].blocks[0] else { panic!() };
         assert_eq!(said(content), "Said.[c]");
-        let Block::Blockquote { content } = &doc.sections[0].blocks[1] else { panic!() };
-        let Block::Paragraph { content } = &content[0] else { panic!() };
+        let Block::Passage { content, .. } = &doc.sections[0].blocks[1] else { panic!() };
+        let Block::Paragraph { content, .. } = &content[0] else { panic!() };
         assert_eq!(said(content), "Quoted.[c]");
     }
 }

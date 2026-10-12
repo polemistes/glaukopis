@@ -1,17 +1,19 @@
-//! The kinds of passage and of words, and their looks.
+//! The kinds of paragraph and of words, and their looks.
 //!
-//! A passage has a kind, which is a meaning and not a look: a quotation, an
-//! epigraph, the heading of a scene, a word in another language. The look
-//! of a kind lives in the format, as a row of its table (`DocumentFormat::
-//! kinds`), never in the text; and a kind says only how it differs from the
-//! kind it is based on, so that a kind of the writer's own works in every
-//! format. See ADR 0029.
+//! A paragraph has a kind, which is a meaning and not a look: a quotation,
+//! a line of verse, the heading of a scene, a word in another language. The
+//! look of a kind lives in the layout, as a row of its table (`DocumentFormat::
+//! kinds`), never in the text, and never in the kind itself; a kind says
+//! only how it differs from the kind it is based on, so that a kind of the
+//! writer's own works in every layout. See ADR 0029 and 0040.
 //!
-//! The catalogue here is the kinds that come with the application: what
-//! each is based on, how it differs by default, and what its style is
-//! called in Word and Writer. The interface has the same catalogue
-//! (`src/lib/editor/kinds.ts`) with what each kind does while writing; the
-//! contract test holds the two alike.
+//! The catalogue here is the kinds that come with the application: the
+//! family of their passages, whether a numbering counts them, what each is
+//! based on, and what its style is called in Word and Writer. The base
+//! looks, which every layout is resolved against, stand beside it. The
+//! interface has the same facts (`src/lib/project/model/families.ts`) and
+//! adds what each kind does while writing; the contract test holds the two
+//! alike.
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::OnceLock;
@@ -254,63 +256,123 @@ pub struct OwnKind {
     pub look: Look,
 }
 
-/// A kind that comes with the application. Written as the interface
-/// declares a `KindEntry`, for the contract test.
+/// A kind that comes with the application: what it means, as far as the
+/// shape of a text needs to know, and nothing of how it looks. Written as
+/// the interface declares a `KindEntry`, for the contract test; the
+/// interface has the same facts in `src/lib/project/model/families.ts`.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Entry {
     pub id: &'static str,
     pub family: Family,
-    /// The group the tools show it in.
+    /// The family of its passages, which the tools group it by: `text` for
+    /// none, `words` for a kind of words.
     pub group: &'static str,
     pub based_on: Option<&'static str>,
     /// The name of its style in Word and Writer; empty where the kind is
     /// set by the program that writes the document, as lists are.
     pub style: &'static str,
-    pub look: Look,
+    /// Whether a numbering counts its paragraphs.
+    pub counted: bool,
+    /// Whether it stands in the passage before it, whatever its family.
+    pub joins: bool,
 }
 
-fn entry(
+const fn entry(
     id: &'static str,
     family: Family,
     group: &'static str,
     based_on: Option<&'static str>,
     style: &'static str,
-    look: Look,
+    counted: bool,
 ) -> Entry {
-    Entry { id, family, group, based_on, style, look }
+    Entry { id, family, group, based_on, style, counted, joins: false }
+}
+
+/// The kinds that come with the application, in the order the tools list
+/// them. The ids are stored in projects and must not change.
+pub const CATALOGUE: &[Entry] = {
+    use Family::{Paragraph, Words};
+    &[
+        entry("text", Paragraph, "text", None, "Body Text", false),
+        // A quotation set off from the text, one at the head of a part, and the line that names the source.
+        entry("quote", Paragraph, "quotation", None, "Block Text", true),
+        entry("epigraph", Paragraph, "quotation", Some("quote"), "Epigraph", true),
+        Entry {
+            id: "attribution",
+            family: Paragraph,
+            group: "quotation",
+            based_on: Some("quote"),
+            style: "Attribution",
+            counted: false,
+            joins: true,
+        },
+        // Verse, which serves poetry, drama and transcripts alike: the lines, the speaker, the stage direction.
+        entry("line", Paragraph, "verse", None, "Line", true),
+        entry("speaker", Paragraph, "verse", None, "Speaker", false),
+        entry("direction", Paragraph, "verse", None, "Stage Direction", false),
+        // A screenplay.
+        entry("scene", Paragraph, "script", None, "Scene Heading", true),
+        entry("action", Paragraph, "script", None, "Action", true),
+        entry("character", Paragraph, "script", None, "Character", true),
+        entry("dialogue", Paragraph, "script", None, "Dialogue", true),
+        entry("parenthetical", Paragraph, "script", None, "Parenthetical", true),
+        entry("transition", Paragraph, "script", None, "Transition", true),
+        // A glossary.
+        entry("headword", Paragraph, "glossary", None, "Headword", true),
+        entry("gloss", Paragraph, "glossary", None, "Gloss", true),
+        // Lists, which the program that writes the document sets.
+        entry("item", Paragraph, "list", None, "", true),
+        entry("numbered", Paragraph, "list", None, "", true),
+        entry("code", Paragraph, "code", None, "Source Code", true),
+        entry("break", Paragraph, "break", None, "Section Break", false),
+        entry("draft", Paragraph, "draft", None, "", true),
+        // Kinds of words.
+        entry("foreign", Words, "words", None, "Foreign", false),
+        entry("title", Words, "words", None, "Title of a Work", false),
+        entry("term", Words, "words", None, "Term", false),
+        entry("mention", Words, "words", None, "Mention", false),
+        entry("highlight", Words, "words", None, "", false),
+    ]
+};
+
+pub fn catalogue() -> &'static [Entry] {
+    CATALOGUE
+}
+
+/// The ids kinds had before ADR 0040, and what they are now.
+pub fn renamed(id: &str) -> &str {
+    match id {
+        "verse" => "line",
+        "list" => "item",
+        other => other,
+    }
+}
+
+pub fn entry_of(id: &str) -> Option<&'static Entry> {
+    let id = renamed(id);
+    CATALOGUE.iter().find(|e| e.id == id)
 }
 
 const NONE: Length = Length::pt(0.0);
 
-/// The kinds that come with the application, in the order the tools list them.
-pub fn catalogue() -> &'static [Entry] {
-    static ALL: OnceLock<Vec<Entry>> = OnceLock::new();
+/// The looks of the kinds of the catalogue before any layout says anything
+/// of them: what every layout is resolved against (ADR 0040). A kind that
+/// is not here, or that is here with nothing said, is as the kind it is
+/// based on; text is as the layout's text, and a quotation as its `quote`.
+fn base_looks() -> &'static HashMap<&'static str, Look> {
+    static ALL: OnceLock<HashMap<&'static str, Look>> = OnceLock::new();
     ALL.get_or_init(|| {
-        use Family::{Paragraph, Words};
-        let plain = Look::default;
         let flat = || Look { first_line: Some(NONE), ..Look::default() };
-        vec![
-            // Text.
-            entry("text", Paragraph, "text", None, "Body Text", plain()),
-            entry("quote", Paragraph, "text", None, "Block Text", plain()),
-            entry("list", Paragraph, "text", None, "", plain()),
-            entry("numbered", Paragraph, "text", None, "", plain()),
-            // What goes with a quotation.
-            entry(
+        // A line of verse stands in from the text; a speaker and a direction stand with the lines.
+        let verse = || Look { indent_left: Some(Length::cm(1.0)), align: Some(Align::Left), ..flat() };
+        HashMap::from([
+            (
                 "attribution",
-                Paragraph,
-                "quotation",
-                Some("quote"),
-                "Attribution",
                 Look { align: Some(Align::Right), space_before: Some(NONE), italic: Some(false), ..flat() },
             ),
-            entry(
+            (
                 "epigraph",
-                Paragraph,
-                "quotation",
-                Some("quote"),
-                "Epigraph",
                 Look {
                     indent_left: Some(Length::cm(4.0)),
                     indent_right: Some(NONE),
@@ -318,17 +380,28 @@ pub fn catalogue() -> &'static [Entry] {
                     ..flat()
                 },
             ),
-            // Verse: the lines, the speaker, the stage direction.
-            entry("verse", Paragraph, "verse", None, "", plain()),
-            entry("speaker", Words, "verse", None, "Speaker", Look { case: Some(Case::Smallcaps), ..plain() }),
-            entry("direction", Words, "verse", None, "Stage Direction", Look { italic: Some(true), ..plain() }),
+            ("line", verse()),
+            (
+                "speaker",
+                Look {
+                    case: Some(Case::Smallcaps),
+                    space_before: Some(Length::pt(8.0)),
+                    space_after: Some(Length::pt(3.0)),
+                    ..verse()
+                },
+            ),
+            (
+                "direction",
+                Look {
+                    italic: Some(true),
+                    space_before: Some(Length::pt(3.0)),
+                    space_after: Some(Length::pt(3.0)),
+                    ..verse()
+                },
+            ),
             // A screenplay: the measures of the standard script page, from the margin of the text.
-            entry(
+            (
                 "scene",
-                Paragraph,
-                "script",
-                None,
-                "Scene Heading",
                 Look {
                     bold: Some(true),
                     case: Some(Case::Upper),
@@ -339,12 +412,8 @@ pub fn catalogue() -> &'static [Entry] {
                     ..flat()
                 },
             ),
-            entry(
+            (
                 "action",
-                Paragraph,
-                "script",
-                None,
-                "Action",
                 Look {
                     space_before: Some(Length::pt(11.0)),
                     space_after: Some(Length::pt(11.0)),
@@ -352,12 +421,8 @@ pub fn catalogue() -> &'static [Entry] {
                     ..flat()
                 },
             ),
-            entry(
+            (
                 "character",
-                Paragraph,
-                "script",
-                None,
-                "Character",
                 Look {
                     indent_left: Some(Length::cm(5.6)),
                     case: Some(Case::Upper),
@@ -368,12 +433,8 @@ pub fn catalogue() -> &'static [Entry] {
                     ..flat()
                 },
             ),
-            entry(
+            (
                 "dialogue",
-                Paragraph,
-                "script",
-                None,
-                "Dialogue",
                 Look {
                     indent_left: Some(Length::cm(2.5)),
                     indent_right: Some(Length::cm(3.8)),
@@ -383,12 +444,8 @@ pub fn catalogue() -> &'static [Entry] {
                     ..flat()
                 },
             ),
-            entry(
+            (
                 "parenthetical",
-                Paragraph,
-                "script",
-                None,
-                "Parenthetical",
                 Look {
                     indent_left: Some(Length::cm(4.0)),
                     indent_right: Some(Length::cm(4.0)),
@@ -399,12 +456,8 @@ pub fn catalogue() -> &'static [Entry] {
                     ..flat()
                 },
             ),
-            entry(
+            (
                 "transition",
-                Paragraph,
-                "script",
-                None,
-                "Transition",
                 Look {
                     align: Some(Align::Right),
                     case: Some(Case::Upper),
@@ -413,13 +466,8 @@ pub fn catalogue() -> &'static [Entry] {
                     ..flat()
                 },
             ),
-            // More kinds of paragraph.
-            entry(
+            (
                 "headword",
-                Paragraph,
-                "more",
-                None,
-                "Headword",
                 Look {
                     bold: Some(true),
                     space_before: Some(Length::pt(6.0)),
@@ -428,12 +476,8 @@ pub fn catalogue() -> &'static [Entry] {
                     ..flat()
                 },
             ),
-            entry(
+            (
                 "gloss",
-                Paragraph,
-                "more",
-                None,
-                "Gloss",
                 Look {
                     indent_left: Some(Length::cm(1.27)),
                     space_before: Some(NONE),
@@ -441,12 +485,8 @@ pub fn catalogue() -> &'static [Entry] {
                     ..flat()
                 },
             ),
-            entry(
+            (
                 "code",
-                Paragraph,
-                "more",
-                None,
-                "Source Code",
                 Look {
                     monospace: Some(true),
                     line_spacing: Some(1.0),
@@ -456,12 +496,8 @@ pub fn catalogue() -> &'static [Entry] {
                     ..flat()
                 },
             ),
-            entry(
+            (
                 "break",
-                Paragraph,
-                "more",
-                None,
-                "Section Break",
                 Look {
                     align: Some(Align::Center),
                     space_before: Some(Length::pt(12.0)),
@@ -471,28 +507,75 @@ pub fn catalogue() -> &'static [Entry] {
                     ..flat()
                 },
             ),
-            entry("draft", Paragraph, "more", None, "", plain()),
-            // Kinds of words.
-            entry("foreign", Words, "words", None, "Foreign", Look { italic: Some(true), ..plain() }),
-            entry("title", Words, "words", None, "Title of a Work", Look { italic: Some(true), ..plain() }),
-            entry("term", Words, "words", None, "Term", Look { italic: Some(true), ..plain() }),
-            entry("mention", Words, "words", None, "Mention", plain()),
-            entry("highlight", Words, "words", None, "", plain()),
-        ]
+            ("foreign", Look { italic: Some(true), ..Look::default() }),
+            ("title", Look { italic: Some(true), ..Look::default() }),
+            ("term", Look { italic: Some(true), ..Look::default() }),
+        ])
     })
 }
 
-pub fn entry_of(id: &str) -> Option<&'static Entry> {
-    catalogue().iter().find(|e| e.id == id)
+/// The look of a kind of the catalogue before any layout says anything of
+/// it; nothing for a kind that is as the kind it is based on.
+pub fn base_look(id: &str) -> Option<&'static Look> {
+    base_looks().get(renamed(id))
 }
 
-/// The look of a kind, with everything the format and the kinds it is based
-/// on say; of a kind that is not known, that of text or of plain words.
+/// What is known of a kind as far as the shape of a text goes: the family
+/// of its passages, whether a numbering counts its paragraphs, whether it
+/// joins the passage before it, and the kind of the catalogue it rests on.
+/// Of a kind of the writer's own, through what it is based on, as
+/// `factsOf` has it in `src/lib/project/model/families.ts`: one based on
+/// text, or on nothing that is known, is a family of its own, named by its
+/// id. One that is not known at all is taken for text.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Facts {
+    pub group: String,
+    pub counted: bool,
+    pub joins: bool,
+    /// The id of the kind of the catalogue the kind is, or rests on.
+    pub base: &'static str,
+}
+
+impl Facts {
+    fn of(e: &'static Entry) -> Facts {
+        Facts { group: e.group.to_owned(), counted: e.counted, joins: e.joins, base: e.id }
+    }
+}
+
+pub fn facts(id: &str, own: &[OwnKind]) -> Facts {
+    let text = entry_of("text").expect("text is of the catalogue");
+    let mut seen: Vec<&str> = Vec::new();
+    let mut at = renamed(id);
+    while seen.len() < 8 && !seen.contains(&at) {
+        seen.push(at);
+        if let Some(e) = entry_of(at) {
+            if e.group == "text" && at != id {
+                return Facts { group: id.to_owned(), ..Facts::of(e) };
+            }
+            return Facts::of(e);
+        }
+        let Some(kind) = own.iter().find(|k| k.id == at) else { break };
+        let base = kind.based_on.trim();
+        at = if base.is_empty() { "text" } else { renamed(base) };
+    }
+    if seen.len() > 1 || own.iter().any(|k| k.id == id) {
+        Facts { group: id.to_owned(), ..Facts::of(text) }
+    } else {
+        Facts::of(text)
+    }
+}
+
+/// The look of a kind, with everything the layout and the kinds it is
+/// based on say: the base of the chain (the layout's text, its quotation,
+/// or plain words), then the base look of each kind along the chain and
+/// the layout's row for it; of a kind that is not known, that of text or of
+/// plain words.
 pub fn resolve(f: &DocumentFormat, id: &str, own: &[OwnKind]) -> Resolved {
     fn go(f: &DocumentFormat, id: &str, own: &[OwnKind], depth: u8) -> Resolved {
         if depth > 8 {
             return Resolved::text(f);
         }
+        let id = renamed(id);
         let with_format = |mut r: Resolved| {
             if let Some(look) = f.kinds.get(id) {
                 r.apply(look);
@@ -510,7 +593,9 @@ pub fn resolve(f: &DocumentFormat, id: &str, own: &[OwnKind]) -> Resolved {
                 (Family::Words, None) => Resolved::words(),
                 (Family::Paragraph, base) => go(f, base.unwrap_or("text"), own, depth + 1),
             };
-            r.apply(&e.look);
+            if let Some(look) = base_look(id) {
+                r.apply(look);
+            }
             return with_format(r);
         }
         if let Some(k) = own.iter().find(|k| k.id == id) {
@@ -535,11 +620,18 @@ pub fn family_of(id: &str, own: &[OwnKind]) -> Option<Family> {
     entry_of(id).map(|e| e.family).or_else(|| own.iter().find(|k| k.id == id).map(|k| k.family))
 }
 
-/// What is known of a kind where a document is made: its family, the name
-/// of its style in Word and Writer, and its look.
+/// What is known of a kind where a document is made: its family, the
+/// family of its passages, whether a numbering counts it, the kind of the
+/// catalogue it rests on, the name of its style in Word and Writer, and its
+/// look.
 #[derive(Debug, Clone, PartialEq)]
 pub struct KindInfo {
     pub family: Family,
+    /// The family of its passages: `text`, `verse`, `list`; `words` for a kind of words.
+    pub group: String,
+    pub counted: bool,
+    /// The id of the kind of the catalogue it is, or rests on.
+    pub base: &'static str,
     /// Empty where the kind has no style of its own.
     pub style: String,
     pub look: Resolved,
@@ -565,7 +657,15 @@ pub fn table(f: &DocumentFormat, own: &[OwnKind]) -> HashMap<String, KindInfo> {
     for e in catalogue() {
         out.insert(
             e.id.to_owned(),
-            KindInfo { family: e.family, style: e.style.to_owned(), look: resolve(f, e.id, own), own: false },
+            KindInfo {
+                family: e.family,
+                group: e.group.to_owned(),
+                counted: e.counted,
+                base: e.id,
+                style: e.style.to_owned(),
+                look: resolve(f, e.id, own),
+                own: false,
+            },
         );
     }
     for k in own {
@@ -579,7 +679,19 @@ pub fn table(f: &DocumentFormat, own: &[OwnKind]) -> HashMap<String, KindInfo> {
             n += 1;
         }
         names.push(style.to_ascii_lowercase());
-        out.insert(k.id.clone(), KindInfo { family: k.family, style, look: resolve(f, &k.id, own), own: true });
+        let facts = facts(&k.id, own);
+        out.insert(
+            k.id.clone(),
+            KindInfo {
+                family: k.family,
+                group: if k.family == Family::Words { "words".to_owned() } else { facts.group },
+                counted: facts.counted,
+                base: facts.base,
+                style,
+                look: resolve(f, &k.id, own),
+                own: true,
+            },
+        );
     }
     out
 }
@@ -697,7 +809,62 @@ mod tests {
         let table = table(&DocumentFormat::default(), &own);
         assert_eq!(table["x"].style, "Epigraph 2");
         assert_eq!(table["y"].style, "Epigraph 3");
-        assert_eq!(styled(&DocumentFormat::default(), &own).len(), catalogue().len() - 7 + 2);
+        // Text and quote are Pandoc's own; items and drafts and highlights have no style.
+        assert_eq!(styled(&DocumentFormat::default(), &own).len(), catalogue().len() - 6 + 2);
+    }
+
+    #[test]
+    fn the_facts_of_kinds_follow_the_chain_of_what_they_are_based_on() {
+        let f = |id: &str, based_on: &str| OwnKind {
+            id: id.into(),
+            name: id.into(),
+            family: Family::Paragraph,
+            based_on: based_on.into(),
+            look: Look::default(),
+        };
+        let own = vec![
+            f("letter", "text"),
+            f("chorus", "speaker"),
+            f("verse2", "verse"),
+            f("odd", "gone"),
+            f("c1", "c2"),
+            f("c2", "c1"),
+        ];
+        let of = |id: &str| facts(id, &own);
+        assert_eq!(of("line").group, "verse");
+        assert!(of("line").counted && !of("speaker").counted && !of("text").counted);
+        assert!(of("attribution").joins && !of("quote").joins);
+        // The old ids are read.
+        assert_eq!(of("verse").base, "line");
+        assert_eq!(of("list").base, "item");
+        // A kind of the writer's own takes the facts of what it is based on.
+        assert_eq!(of("chorus"), Facts { group: "verse".into(), counted: false, joins: false, base: "speaker" });
+        assert_eq!(of("verse2").base, "line");
+        // One based on text, or on nothing that is known, is a family of its own; one not known at all is text.
+        assert_eq!(of("letter"), Facts { group: "letter".into(), counted: false, joins: false, base: "text" });
+        assert_eq!(of("odd").group, "odd");
+        assert_eq!(of("c1").group, "c1");
+        assert_eq!(of("nothing").group, "text");
+        let table = table(&DocumentFormat::default(), &own);
+        assert_eq!(table["chorus"].group, "verse");
+        assert_eq!(table["chorus"].base, "speaker");
+        assert!(table["item"].counted && table["item"].style.is_empty());
+    }
+
+    #[test]
+    fn the_base_looks_are_the_kinds_before_any_layout() {
+        let f = DocumentFormat::default();
+        let line = resolve(&f, "line", &[]);
+        assert_eq!(line.indent_left, Length::cm(1.0), "a line stands in from the text");
+        assert_eq!(line.first_line, Length::pt(0.0));
+        assert_eq!(resolve(&f, "speaker", &[]).case, Case::Smallcaps);
+        assert!(resolve(&f, "direction", &[]).italic);
+        assert_eq!(base_look("verse"), base_look("line"));
+        assert!(base_look("item").is_none() && base_look("nothing").is_none());
+        // A layout says otherwise of a line, and the lines follow it.
+        let mut f = f;
+        f.kinds.insert("line".into(), Look { indent_left: Some(Length::cm(3.0)), ..Default::default() });
+        assert_eq!(resolve(&f, "line", &[]).indent_left, Length::cm(3.0));
     }
 
     #[test]
