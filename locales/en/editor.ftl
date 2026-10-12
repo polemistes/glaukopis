@@ -54,6 +54,37 @@ editor-side-left = Left
 editor-side-right = Right
 # The first counted paragraph of the passage is the one the cursor is in: its number is where the count begins.
 editor-line-number-first-hint = The count of the passage begins here.
+# Over a number in the margin of the text, which opens a field for it when pressed.
+editor-line-number-press = The number of this paragraph: press to change it
+
+## Numbers belong to what they number (ADR 0040): the Numbers menu offers
+## the three, each saying what it numbers.
+editor-numbers = Numbers
+editor-numbers-hint = Number the lines of this passage, mark a place in prose, or number the lines of the page
+editor-numbers-passage = Number the lines of this passage…
+editor-numbers-passage-hint = The lines you write, counted by the passage: from which number, every how many, on which side
+editor-numbers-refmark-hint = A place in prose, by a verse, a page or a number of an edition: 3:16, 327a
+editor-numbers-page = Number the lines of the page…
+editor-numbers-page-hint = Every line of the page, numbered by the layout
+
+## The bracket of a passage, at its left, named by its family; its menu
+## says what is said of the passage.
+editor-family-quotation = Quotation
+editor-family-verse = Verse
+editor-family-script = Script
+editor-family-glossary = Glossary
+editor-family-list = List
+editor-family-code = Code
+editor-family-break = Break
+editor-family-draft = Draft
+editor-passage-label-hint = { $family } · press for what is said of the passage
+editor-passage-numbers = Numbers…
+editor-passage-numbers-hint = How the lines of this passage are counted, from which number, every how many and on which side
+editor-passage-select = Select the passage
+editor-passage-to-text = Make it text
+editor-passage-to-text-hint = Every paragraph of the passage becomes text, and the passage goes
+editor-passage-split = Split the passage here
+editor-passage-split-hint = Into two, before the paragraph the cursor is in; an empty paragraph of text stands between the two
 editor-kinds-text = Text
 editor-kinds-quotation = Quotation
 editor-kinds-verse = Verse

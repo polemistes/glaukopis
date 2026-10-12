@@ -10,7 +10,8 @@
  * on has it. See ADR 0029.
  */
 
-import type { DocumentFormat, KindFamily, Look } from '$lib/api/documents';
+import type { DocumentFormat, KindFamily, Look, ResolvedLook } from '$lib/api/documents';
+import { points } from '$lib/editor/kinds';
 import { t } from '$lib/i18n';
 import { lengthOk, rowsOf, type Choices, type Row } from '$lib/ui/settings/rows';
 
@@ -98,15 +99,21 @@ export function setKindLook(format: DocumentFormat, id: string, key: keyof Look,
  * The rows by which a look is set, for a kind of one family: each measure
  * as the base has it unless something is said. A kind of paragraph has
  * them all; a kind of words only what words can have. With `sign`, a row
- * for what stands in a break.
+ * for what stands in a break. With `resolved`, the look as it will stand
+ * where nothing is said, each measure of it shown in the place of "as the
+ * base", so that the writer sees what the base comes to (ADR 0040).
  */
 export function lookRows<T>(
   family: KindFamily,
   reach: LookReach<T>,
-  options: { sign?: boolean } = {},
+  options: { sign?: boolean; resolved?: ResolvedLook } = {},
 ): Row<T>[] {
   const { text, number, choice } = rowsOf<T>();
+  const { resolved } = options;
   const asBase = t('format-as-the-base');
+  /** "As the base (…)", with what the base comes to, where that is known. */
+  const asBaseIs = (value: string | undefined) =>
+    value === undefined ? asBase : t('format-as-the-base-is', { value });
   const get = (target: T, key: keyof Look) => reach.get(target)?.[key];
 
   /** As the base, yes, or no. */
@@ -122,7 +129,7 @@ export function lookRows<T>(
           reach.set(target, key, value === 'yes' ? true : value === 'no' ? false : undefined),
       },
       [
-        ['', asBase],
+        ['', asBaseIs(resolved ? (resolved[key] ? t('format-yes') : t('format-no')) : undefined)],
         ['yes', t('format-yes')],
         ['no', t('format-no')],
       ],
@@ -136,7 +143,18 @@ export function lookRows<T>(
         get: (target) => String(get(target, key) ?? ''),
         set: (target, value) => reach.set(target, key, value === '' ? undefined : value),
       },
-      [['', asBase], ...choices],
+      [
+        [
+          '',
+          asBaseIs(
+            resolved
+              ? (choices.find(([value]) => value === String(resolved[key]))?.[1] ??
+                  String(resolved[key]))
+              : undefined,
+          ),
+        ],
+        ...choices,
+      ],
     );
   /** A length with its unit, or nothing for as the base. */
   const length = (label: string, key: keyof Look, hint?: string) =>
@@ -146,7 +164,7 @@ export function lookRows<T>(
         get: (target) => String(get(target, key) ?? ''),
         set: (target, value) => reach.set(target, key, value.trim() || undefined),
       },
-      { placeholder: asBase, hint },
+      { placeholder: resolved ? String(resolved[key]) : asBase, hint },
     );
 
   const italic = yesNo(t('format-italic'), 'italic');
@@ -163,7 +181,16 @@ export function lookRows<T>(
       get: (target) => (get(target, 'size') as number | undefined) ?? null,
       set: (target, value) => reach.set(target, 'size', value ?? undefined),
     },
-    { min: 5, max: 72, unit: 'pt', nullable: true, blank: t('format-as-the-base-blank') },
+    {
+      min: 5,
+      max: 72,
+      unit: 'pt',
+      nullable: true,
+      blank:
+        resolved && resolved.size > 0
+          ? asBaseIs(t('format-level-size', { size: resolved.size }))
+          : t('format-as-the-base-blank'),
+    },
   );
   const monospace = yesNo(t('format-equal-width'), 'monospace', t('format-equal-width-hint'));
 
@@ -196,7 +223,11 @@ export function lookRows<T>(
               get: (target) => String(get(target, 'text') ?? ''),
               set: (target, value) => reach.set(target, 'text', value || undefined),
             },
-            { hint: t('format-break-text-hint'), placeholder: asBase, literal: true },
+            {
+              hint: t('format-break-text-hint'),
+              placeholder: resolved?.text || asBase,
+              literal: true,
+            },
           ),
         ]
       : []),
@@ -243,6 +274,45 @@ export function lookWords(look: Look | undefined, family: KindFamily): string {
     said(look.keepWithNext, t('format-look-kept'), t('format-look-not-kept'));
     said(look.newPage, t('format-level-new-page-said'), t('format-look-no-new-page'));
     if (look.text !== undefined) out.push(t('format-look-text', { text: look.text }));
+  }
+  return out.join(', ');
+}
+
+/**
+ * What a look comes to, in a few words: "11 pt, italic, indent on the left
+ * 1cm". For the line under a kind in the layout editor that says how it
+ * will stand, whatever says it. Nothing where the look is not known yet.
+ */
+export function resolvedWords(look: ResolvedLook | undefined, family: KindFamily): string {
+  if (!look) return '';
+  const out: string[] = [];
+  const measure = (value: string, id: string) => {
+    if (points(value) !== 0) out.push(t(id, { length: value }));
+  };
+  if (look.size > 0) out.push(t('format-level-size', { size: look.size }));
+  if (look.bold) out.push(t('format-level-bold'));
+  if (look.italic) out.push(t('format-level-italic'));
+  if (look.underline) out.push(t('format-look-underlined'));
+  if (look.case === 'upper') out.push(t('format-level-capitals'));
+  else if (look.case === 'smallcaps') out.push(t('format-level-small-caps'));
+  if (family === 'paragraph') {
+    if (look.align === 'center') out.push(t('format-level-centred'));
+    else if (look.align === 'right') out.push(t('format-level-right'));
+    else if (look.align === 'justified') out.push(t('format-look-justified'));
+    else out.push(t('format-look-left'));
+    measure(look.indentLeft, 'format-look-indent-left');
+    measure(look.indentRight, 'format-look-indent-right');
+    measure(look.firstLine, 'format-look-first-line');
+    measure(look.spaceBefore, 'format-look-space-before');
+    measure(look.spaceAfter, 'format-look-space-after');
+    if (look.lineSpacing > 0)
+      out.push(t('format-look-line-spacing', { spacing: look.lineSpacing }));
+  }
+  if (look.monospace) out.push(t('format-look-equal-width'));
+  if (family === 'paragraph') {
+    if (look.keepWithNext) out.push(t('format-look-kept'));
+    if (look.newPage) out.push(t('format-level-new-page-said'));
+    if (look.text) out.push(t('format-look-text', { text: look.text }));
   }
   return out.join(', ');
 }

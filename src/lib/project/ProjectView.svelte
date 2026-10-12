@@ -1534,6 +1534,7 @@
     id={asked.id}
     section={asked.section}
     kind={asked.kind}
+    passageKinds={project.passageKinds}
     request={asked.at ? sampleOf(asked.at) : undefined}
     onsaved={(id) => {
       // Held before the editor goes: what it was asked for goes with it.

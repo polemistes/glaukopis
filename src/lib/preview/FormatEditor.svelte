@@ -6,6 +6,7 @@
   import {
     documentPreviewWhole,
     fontsList,
+    formatKindLooks,
     formatsDelete,
     formatsGet,
     formatsSave,
@@ -15,10 +16,14 @@
     type DocumentFormat,
     type DocumentRequest,
     type HeadingLevel,
+    type KindFamily,
+    type KindLooks,
+    type OwnKind,
     type Position,
   } from '$lib/api/documents';
-  import { CATALOGUE, GROUPS, specOf, type KindSpec } from '$lib/editor/kinds';
+  import { CATALOGUE, GROUPS, specOf } from '$lib/editor/kinds';
   import { languages, t } from '$lib/i18n';
+  import type { PassageKindRecord } from '$lib/project/model/types';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
@@ -27,7 +32,13 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import { documents } from './documents.svelte';
-  import { lengthsOk, lookRows, lookWords, setKindLook } from './format-editor.svelte';
+  import {
+    lengthsOk,
+    lookRows,
+    lookWords,
+    resolvedWords,
+    setKindLook,
+  } from './format-editor.svelte';
 
   interface Props {
     /** The format to begin from. */
@@ -38,12 +49,22 @@
     section?: string;
     /** The kind whose look is opened and brought into view, in the part of the kinds. */
     kind?: string;
+    /** The kinds of paragraph and of words of the writer's own, which the part of the kinds lists with the catalogue's. */
+    passageKinds?: PassageKindRecord[];
     /** Called with the id of the format as saved. */
     onsaved: (id: string) => void;
     onclose: () => void;
   }
 
-  let { id, request, section: openAt, kind: kindInView, onsaved, onclose }: Props = $props();
+  let {
+    id,
+    request,
+    section: openAt,
+    kind: kindInView,
+    passageKinds = [],
+    onsaved,
+    onclose,
+  }: Props = $props();
 
   let format = $state<DocumentFormat | null>(null);
   let original = '';
@@ -92,6 +113,32 @@
         at.querySelector(`details[data-kind="${wanted}"]`)?.scrollIntoView({ block: 'start' }),
       );
     });
+  });
+
+  // The look of every kind as it will stand, resolved by the core against
+  // the base looks, the kinds each is based on and what this layout says;
+  // again a moment after each change (ADR 0040).
+  let resolved = $state.raw<KindLooks>({});
+  const ownKinds = $derived<OwnKind[]>(
+    passageKinds.map(({ id, name, family, basedOn, look }) => ({
+      id,
+      name,
+      family,
+      basedOn,
+      look,
+    })),
+  );
+  $effect(() => {
+    if (!format) return;
+    const snapshot = JSON.stringify($state.snapshot(format));
+    const kinds = ownKinds;
+    const timer = setTimeout(() => {
+      formatKindLooks(JSON.parse(snapshot), kinds).then(
+        (looks) => (resolved = looks),
+        () => {},
+      );
+    }, 150);
+    return () => clearTimeout(timer);
   });
 
   // The sample follows the changes, a moment behind.
@@ -189,6 +236,7 @@
     ['title', t('format-section-title')],
     ['quotations', t('format-section-quotations')],
     ['kinds', t('format-section-kinds')],
+    ['numbers', t('format-section-numbers')],
     ['notes', t('format-section-notes')],
     ['bibliography', t('format-section-bibliography')],
     ['figures', t('format-section-figures')],
@@ -346,6 +394,25 @@
     length(t('format-margin-left'), 'page.marginLeft'),
     length(t('format-margin-right'), 'page.marginRight'),
     { note: t('format-lengths-hint') },
+  ]);
+
+  // Numbers belong to what they number (ADR 0040): the lines of a numbered
+  // passage are shown as the layout says where the passage does not; the
+  // lines of the page are the layout's alone.
+  const numbersRows: Row<F>[] = $derived([
+    { heading: t('format-section-numbers') },
+    { note: t('format-numbers-hint') },
+    number(t('format-verse-every'), 'verse.every', {
+      min: 1,
+      max: 1000,
+      step: 1,
+      hint: t('format-verse-every-hint'),
+    }),
+    choice(t('format-verse-side'), 'verse.side', [
+      ['left', t('format-side-left')],
+      ['right', t('format-side-right')],
+    ]),
+    { subheading: t('format-numbers-page') },
     toggle(t('format-line-numbers'), 'lineNumbers', { hint: t('format-line-numbers-hint') }),
   ]);
 
@@ -614,44 +681,86 @@
 
   // ---- the kinds of paragraph and of words ----
 
+  /** A kind as the part of the kinds lists it: its name, and what it is based on, by name. */
+  interface Listed {
+    id: string;
+    family: KindFamily;
+    label: string;
+    /** What it is based on, by name; nothing for text itself. */
+    base: string;
+  }
+
+  /** The name of a kind, of the catalogue or the writer's own. */
+  function nameOf(id: string): string {
+    return specOf(id)?.label() ?? passageKinds.find((k) => k.id === id)?.name ?? id;
+  }
+
+  /** What a kind is based on, by name: text, or plain words, where it says nothing; nothing for text itself. */
+  function baseOf(id: string, family: KindFamily, basedOn: string | undefined): string {
+    if (id === 'text') return '';
+    if (basedOn) return nameOf(basedOn);
+    return family === 'words' ? t('editor-plain-words') : t('editor-text');
+  }
+
   /**
-   * The kinds of the catalogue that have no style of their own, and so
-   * nothing a format can say of them. The part that lists every kind with
-   * its look as resolved against the base looks is a later stage (ADR 0040).
+   * Every kind, with its look as resolved: the catalogue's in their
+   * groups, then the writer's own. The layout says of each only what
+   * differs; the base look of the kind, and the kinds it is based on, give
+   * the rest (ADR 0040).
    */
-  const UNSTYLED = ['text', 'quote', 'item', 'numbered', 'line', 'draft', 'highlight'];
-  /** The kinds a format can set, in their groups. */
-  const styledGroups = $derived(
-    GROUPS.map((g) => ({
+  const kindGroups = $derived<{ id: string; label: string; kinds: Listed[] }[]>([
+    ...GROUPS.map((g) => ({
       id: g.id,
       label: g.label(),
-      kinds: CATALOGUE.filter((k) => g.families.includes(k.group) && !UNSTYLED.includes(k.id)),
+      kinds: CATALOGUE.filter((k) => g.families.includes(k.group)).map((k): Listed => ({
+        id: k.id,
+        family: k.family,
+        label: k.label(),
+        base: baseOf(k.id, k.family, k.basedOn),
+      })),
     })).filter((g) => g.kinds.length),
-  );
-  /** The rows of each kind's look, which write into the format's table of kinds, by the id of the kind. */
+    ...(passageKinds.length
+      ? [
+          {
+            id: 'own',
+            label: t('editor-kinds-own'),
+            kinds: passageKinds.map((k): Listed => ({
+              id: k.id,
+              family: k.family,
+              label: k.name,
+              base: baseOf(k.id, k.family, k.basedOn || undefined),
+            })),
+          },
+        ]
+      : []),
+  ]);
+  /**
+   * The rows of each kind's look, which write into the format's table of
+   * kinds, by the id of the kind; each measure shows what the base comes
+   * to where the row says nothing.
+   */
   const kindRows = $derived(
     new Map(
-      CATALOGUE.filter((k) => !UNSTYLED.includes(k.id)).map((k) => [
-        k.id,
-        lookRows<F>(
-          k.family,
-          {
-            get: (f) => f.kinds?.[k.id],
-            set: (f, key, value) => setKindLook(f, k.id, key, value),
-          },
-          { sign: k.id === 'break' },
-        ),
-      ]),
+      kindGroups
+        .flatMap((g) => g.kinds)
+        .map((k) => [
+          k.id,
+          lookRows<F>(
+            k.family,
+            {
+              get: (f) => f.kinds?.[k.id],
+              set: (f, key, value) => setKindLook(f, k.id, key, value),
+            },
+            { sign: k.id === 'break', resolved: resolved[k.id]?.look },
+          ),
+        ]),
     ),
   );
   /** Whether every length the format says of a kind is written with its unit. */
   const kindsOk = $derived(Object.values(format?.kinds ?? {}).every(lengthsOk));
 
-  /** What a kind is based on, by name: text, or plain words, where it says nothing. */
-  function baseOf(spec: KindSpec): string {
-    if (spec.basedOn) return specOf(spec.basedOn)?.label() ?? spec.basedOn;
-    return spec.family === 'words' ? t('editor-plain-words') : t('editor-text');
-  }
+  /** Whether this layout's own row says anything of a kind. */
+  const says = (f: F, id: string) => Object.keys(f.kinds?.[id] ?? {}).length > 0;
 </script>
 
 {#snippet captioned(
@@ -778,20 +887,38 @@
           <Settings target={f} rows={quotationRows} />
         {:else if section === 'kinds'}
           <p class="hint top">{t('format-kinds-hint')}</p>
-          {#each styledGroups as group (group.id)}
+          {#each kindGroups as group (group.id)}
             <h3>{group.label}</h3>
-            {#each group.kinds as spec (spec.id)}
-              <details open={spec.id === kindInView} data-kind={spec.id}>
+            {#each group.kinds as k (k.id)}
+              {@const said = says(f, k.id)}
+              {@const look = resolved[k.id]?.look}
+              <details open={k.id === kindInView} data-kind={k.id} data-said={said ? '' : null}>
                 <summary>
-                  <strong>{spec.label()}</strong>
-                  <span>{t('format-kind-based-on', { base: baseOf(spec) })}</span>
-                  <span class="said">{lookWords(f.kinds?.[spec.id], spec.family)}</span>
+                  <strong>{k.label}</strong>
+                  <span
+                    >{k.base
+                      ? t('format-kind-based-on', { base: k.base })
+                      : t('format-kind-text-note')}</span
+                  >
+                  <span class="said" class:quiet={!said}
+                    >{said ? lookWords(f.kinds?.[k.id], k.family) : t('format-kind-as-base')}</span
+                  >
                 </summary>
-                <Settings target={f} rows={kindRows.get(spec.id) ?? []} />
+                {#if look}
+                  {@const words = resolvedWords(look, k.family)}
+                  <p class="resolved" data-resolved>
+                    {words
+                      ? t('format-kind-resolved', { look: words })
+                      : t('format-kind-resolved-nothing')}
+                  </p>
+                {/if}
+                <Settings target={f} rows={kindRows.get(k.id) ?? []} />
               </details>
             {/each}
           {/each}
           <p class="hint" class:bad={!kindsOk}>{t('format-lengths-hint')}</p>
+        {:else if section === 'numbers'}
+          <Settings target={f} rows={numbersRows} />
         {:else if section === 'notes'}
           <Settings target={f} rows={noteRows} />
         {:else if section === 'bibliography'}
@@ -1013,7 +1140,7 @@
     font-size: var(--text-sm);
     color: var(--ink-3);
   }
-  /* What the format says of a kind, at the right of its line. */
+  /* What the format says of a kind, at the right of its line; quieter where it says nothing. */
   summary .said {
     flex: 1;
     min-width: 0;
@@ -1022,6 +1149,17 @@
     white-space: nowrap;
     text-align: right;
     color: var(--ink-2);
+  }
+  summary .said.quiet {
+    color: var(--ink-4);
+    font-style: italic;
+  }
+  /* The look of a kind as it will stand, whatever says it. */
+  .resolved {
+    margin: 2px 0 8px;
+    font-size: var(--text-sm);
+    color: var(--ink-3);
+    line-height: 1.5;
   }
   .hint.bad {
     color: var(--danger);

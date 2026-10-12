@@ -14,7 +14,8 @@ import {
   type EditorState,
   type Transaction,
 } from 'prosemirror-state';
-import { Decoration, DecorationSet } from 'prosemirror-view';
+import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
+import { t } from '$lib/i18n';
 import {
   countedKind,
   renamed,
@@ -22,7 +23,7 @@ import {
   type Numbering,
   type Side,
 } from '$lib/project/model/families';
-import { lineNumbers } from '$lib/project/model/lines';
+import { lineNumbers, type Shown } from '$lib/project/model/lines';
 
 /** The passage the cursor is in, with where it begins, and the paragraph within it. */
 export function passageAt(state: EditorState): {
@@ -128,6 +129,53 @@ export interface LineMarks {
   number: string | null;
   counted: boolean;
   margin: string | null;
+}
+
+/** What the dialog of the numbers asks about: see `LineNumbersDialog.svelte`. */
+export interface NumbersAsked {
+  passage: PassageNumbering;
+  /** The number the first counted paragraph has, and whether it is the one the cursor is in; nothing where none is counted. */
+  from: { number: string | null; here: boolean } | null;
+  /** The paragraph the cursor is in: what is said of it, its words, and whether its kind is counted at all. */
+  line: LineMarks & { kind: string; words: string; countable: boolean };
+}
+
+/**
+ * How the passage the cursor is in is numbered, and what is said of the
+ * paragraph the cursor is in, as the dialog asks about them; nothing
+ * outside a passage. `own` is the kinds of the writer's own, for which
+ * paragraphs are counted.
+ */
+export function numbersAsked(
+  state: EditorState,
+  own: readonly BasedKind[] = [],
+): NumbersAsked | null {
+  const at = passageAt(state);
+  if (!at) return null;
+  const { attrs } = at.paragraph;
+  const first = firstCounted(at.passage, own);
+  return {
+    passage: {
+      numbering: (at.passage.attrs.numbering as Numbering) ?? 'none',
+      every: (at.passage.attrs.every as number | null) ?? null,
+      side: (at.passage.attrs.side as Side | null) ?? null,
+    },
+    from: first
+      ? {
+          number: (first.node.attrs.number as string | null) ?? null,
+          here: first.index === at.index,
+        }
+      : null,
+    line: {
+      kind: String(attrs.kind ?? 'text'),
+      number: (attrs.number as string | null) ?? null,
+      counted: attrs.counted !== false,
+      margin: (attrs.margin as string | null) ?? null,
+      words: at.paragraph.textContent,
+      // Whether its kind is counted at all: only then can it be given a number, or left out of the count.
+      countable: countedKind(renamed(String(attrs.kind ?? 'text')), own),
+    },
+  };
 }
 
 /** Gives the paragraph the cursor is in a number or a label, counts it or not, and gives it words in the margin. */
@@ -238,10 +286,116 @@ export const LAYOUT_NUMBERS: NumbersLayout = { every: 5, side: 'left' };
 const key = new PluginKey<DecorationSet>('passage-numbers');
 
 /**
+ * Gives the paragraph that begins at `pos` a number or a label by hand, or,
+ * with nothing, takes away the one it had: what the field in the margin
+ * does. Whether it is counted, and its words in the margin, stay.
+ */
+export function giveNumber(pos: number, number: string | null): Command {
+  return (state, dispatch) => {
+    const node = pos >= 0 && pos < state.doc.content.size ? state.doc.nodeAt(pos) : null;
+    if (!node || node.type.name !== 'paragraph') return false;
+    const given = number?.trim() || null;
+    if (dispatch && (node.attrs.number ?? null) !== given)
+      dispatch(state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, number: given }));
+    return true;
+  };
+}
+
+/**
+ * Opens the field for the number of the paragraph a number stands by, in
+ * the place of the number: Enter gives the paragraph what is written, an
+ * empty field takes its number away, Escape leaves it as it was. The text
+ * has the cursor again afterwards.
+ */
+function editNumber(view: EditorView, getPos: () => number | undefined, el: HTMLElement) {
+  const at = getPos();
+  if (at === undefined || !view.editable || el.classList.contains('editing')) return;
+  const $at = view.state.doc.resolve(at);
+  const paragraph = $at.parent;
+  if (paragraph.type.name !== 'paragraph') return;
+  const was = el.textContent;
+  const input = document.createElement('input');
+  input.className = 'line-number-field';
+  input.type = 'text';
+  input.value = String(paragraph.attrs.number ?? '');
+  input.placeholder = '#';
+  input.setAttribute('aria-label', t('editor-line-number'));
+  input.spellcheck = false;
+  el.classList.add('editing');
+  el.replaceChildren(input);
+  let done = false;
+  const finish = (keep: boolean) => {
+    if (done) return;
+    done = true;
+    const value = input.value;
+    el.classList.remove('editing');
+    el.textContent = was;
+    if (keep && !view.isDestroyed) {
+      // The paragraph may have moved while the field was open: it is found anew from the widget.
+      const now = getPos();
+      if (now !== undefined) {
+        const $now = view.state.doc.resolve(now);
+        if ($now.parent.type.name === 'paragraph')
+          giveNumber($now.before(), value)(view.state, view.dispatch);
+      }
+    }
+    if (!view.isDestroyed) view.focus();
+  };
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      finish(true);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      finish(false);
+    }
+  });
+  input.addEventListener('blur', () => finish(false));
+  input.focus();
+  input.select();
+}
+
+/**
+ * The number in the margin of a paragraph, as a widget at its head: the
+ * label, or an empty place where none is shown, which is seen when the
+ * pointer rests on the paragraph; pressing either opens the field for the
+ * paragraph's number.
+ */
+function numberWidget(
+  shown: Shown | null,
+): (view: EditorView, getPos: () => number | undefined) => HTMLElement {
+  return (view, getPos) => {
+    const el = document.createElement('span');
+    el.className = shown ? 'line-number' : 'line-number blank';
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '-1');
+    if (shown) {
+      el.textContent = shown.label;
+      el.dataset.label = shown.label;
+      if (shown.set) el.dataset.given = '';
+    }
+    el.title = t('editor-line-number-press');
+    el.addEventListener('mousedown', (event) => {
+      // The text keeps its cursor: the number is not a place in it.
+      if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
+    });
+    el.addEventListener('click', (event) => {
+      if (event.target instanceof HTMLInputElement) return;
+      event.preventDefault();
+      editNumber(view, getPos, el);
+    });
+    return el;
+  };
+}
+
+/**
  * The numbers of every numbered passage, as decorations: `data-n` on each
  * paragraph that shows one, `data-n-set` where it was given by hand, so
- * that it is drawn as dark as the text; and on the passage the side its
- * numbers stand on, the passage's own or the layout's.
+ * that it is drawn as dark as the text; a widget at the head of each
+ * paragraph that draws the number, or the place for one, by which it is
+ * edited; and on the passage the side its numbers stand on, the passage's
+ * own or the layout's. A passage that is not numbered gets nothing but
+ * the side.
  */
 function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): DecorationSet {
   const list: Decoration[] = [];
@@ -270,6 +424,14 @@ function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): D
             s.set ? { 'data-n': s.label, 'data-n-set': '' } : { 'data-n': s.label },
           ),
         );
+      list.push(
+        Decoration.widget(at + 1, numberWidget(s), {
+          side: -1,
+          key: s ? `line-number:${s.label}${s.set ? ':given' : ''}` : 'line-number:blank',
+          ignoreSelection: true,
+          stopEvent: () => true,
+        }),
+      );
       at += paragraph.nodeSize;
     });
     return false;

@@ -392,19 +392,27 @@ follow the file when the file is changed. One table may have 2000 rows and
 Lines of poetry, drama or a transcript are kept as lines: choose **Verse**
 as the kind of paragraph, for the paragraphs selected or for the one the
 cursor is in, and each paragraph is a line. Lines that stand together form
-a **verse**, shown by a thin line at their left; Enter at the end of a line
-makes a new line, and Enter on an empty last line makes it text, which
-leaves the verse. A line can be the **speaker**, or a **stage direction**:
+a **verse**, shown by a bracket at their left, which names them *Verse*
+while the cursor is among them; Enter at the end of a line makes a new
+line, and Enter on an empty last line makes it text, which leaves the
+verse. A line can be the **speaker**, or a **stage direction**:
 choose it as the kind of the line, and it stays in the verse. Set a line in
 the middle to text, and the verse parts around it; set it back, and the
 verse is whole again. Tab indents a line a step, for the shorter lines of
 lyric; Shift+Tab takes it back.
 
-The **#** button, which appears whenever the cursor is in a verse, a
-quotation, a list or any other passage, numbers its paragraphs. **Numbering**
-is one of three: **Not numbered**; **Counted from the first number given**,
-which counts the lines and begins where you gave a number; or **Only the
-numbers given**, which shows the numbers you gave and counts nothing.
+Numbers belong to what they number. **Numbers**, the **#** button among
+the tools, offers the three things that number, each saying what it
+numbers: **Number the lines of this passage…**, the lines you write, counted
+by the verse, quotation, list or other passage the cursor is in;
+**Reference mark…**, a place in prose (see *Reference marks*); and **Number
+the lines of the page…**, every line of the page, numbered by the layout,
+which opens the document settings at the layout. The first is also
+**Numbers…** in the menu of the passage's bracket (see *Kinds of paragraph
+and of words*). In its window, **Numbering** is one of three: **Not
+numbered**; **Counted from the first number given**, which counts the lines
+and begins where you gave a number; or **Only the numbers given**, which
+shows the numbers you gave and counts nothing.
 **Number from** gives the first counted line its number, 45 for a passage
 that begins at line 45. **Show a number every** and the side the numbers
 stand on are the layout's unless you say otherwise here: every fifth line,
@@ -433,6 +441,13 @@ Greek drama do not:
 on the page: with numbers every five, the lines numbered 1235 and 1240 show
 theirs, whatever lines were passed over between them. Enter within a line
 that was given any of these makes the new line a plain one.
+
+The numbers in the margin are edited in place: press one, and a field opens
+where it stood, with the number the line was given, or empty where it is
+counted; Enter gives the line what you wrote, an empty field takes its
+number away, and Escape leaves it as it was. Where the pointer rests on a
+line of a numbered passage that shows no number, a faint **#** marks the
+place for one. A passage that is not numbered shows nothing to press.
 
 A **screenplay** is written with the kinds of paragraph under *Script*:
 **scene heading**, **action**, **character**, **dialogue**,
@@ -469,6 +484,21 @@ list, lines of code a code block. The editor shows a passage by a thin line
 at its left, and the document sets it as one. Nothing makes or unmakes a
 passage: it follows from the kinds. A paragraph of text in the middle of a
 quotation parts the quotation around it; set to a quotation again, it joins.
+
+The thin line is the **bracket** of the passage. While the cursor is in the
+passage, or the pointer rests on it, the head of the bracket names what the
+passage is: *Quotation*, *Verse*, *Script*, *List*, *Glossary*, *Code*,
+*Break*, *Draft*, or the name of a kind of your own. What is said of a
+passage is said there: press the name for its menu. **Numbers…** numbers
+its lines (see *Verse, and texts side by side*); **Language** gives the
+whole passage a language of its own, as *Language* under *Words* gives one
+to what is selected; **Select the passage** selects it; **Make it text**
+makes every paragraph of it text, so that the passage goes, the numbers its
+lines were given kept for when they are lines again; **Split the passage
+here** parts it in two before the paragraph the cursor is in, each half
+keeping the numbering of the whole. Since passages of one kind that stand
+next to each other are always one, an empty paragraph of text stands
+between the halves and keeps them apart; take it away, and they join again.
 
 The menu shows first the kinds of the passage the cursor is in — in a verse,
 **Verse**, **Speaker** and **Stage direction**; in a script, every part —
@@ -511,7 +541,8 @@ nothing selected, what you type next is of the kind.
 
 **Language**, under **Words**, gives what is selected a language of its
 own, from one word to many paragraphs: a Greek quotation, a Latin phrase, a
-German paragraph in a Norwegian text. It has no look: the passage keeps its
+German paragraph in a Norwegian text; from the bracket of a passage it is
+given to the whole passage at once. It has no look: the passage keeps its
 italics, its kind of words and all else, and has only a faint dotted line
 under it, with the name of its language when the pointer rests on it. The
 menu offers the languages of texts; **Other language…** takes any other by
@@ -612,8 +643,9 @@ the preview remarks on it.
 
 Some texts are cited by numbers of their own that run through the prose:
 the verses of the Bible (*3:16*), the pages of Stephanus in Plato (*327a*),
-the numbers of Bekker in Aristotle. Put one in with **Insert › Reference
-mark…**, or **Ctrl+Alt+K**, and give its label; the window proposes the one
+the numbers of Bekker in Aristotle. Put one in with **Reference mark…**,
+under **Numbers** or under **Insert**, or **Ctrl+Alt+K**, and give its
+label; the window proposes the one
 that follows the mark before it, *3:17* after *3:16* and *327b* after
 *327a*. Press a mark to change its label, or to take it away.
 
@@ -1715,13 +1747,22 @@ changed at any time.
 Both can be changed, from the document settings. **Change this layout…**
 opens the layout editor, which has every measure of the page in plain words,
 among them whether a level of heading **begins a new page**, as the chapters
-of a book do. Under **Kinds of paragraph and words** it says of each kind
-what it is based on and how it differs from that: size, line spacing,
-alignment, indents, the first line, space before and after, bold, italic,
-letters, underlining, letters of equal width, whether it keeps with what
-follows, and whether it begins a new page. A kind the layout says nothing of
-is as its base, so a kind of your own needs nothing said of it. Under **Type
-and spacing**, **Italics are set** says whether italics stand as italics or
+of a book do. Under **Kinds of paragraph and words** every kind is listed,
+by its group, and your own kinds after them, each with what it is based on
+and, at the right of its line, what this layout says of it, or *as the
+base* where it says nothing. Open a kind, and a line says how it will stand,
+**As it will stand**: the base look of the kind, then the kinds it is based
+on, then what this layout says, resolved into one, so that you see where
+every look comes from. The rows under it change only what this layout says:
+size, alignment, indents, the first line, space before and after, bold,
+italic, letters, underlining, letters of equal width, whether it keeps with
+what follows, and whether it begins a new page; where a row says nothing it
+shows what the base comes to, *As the base (1.27cm)*. A kind the layout says
+nothing of is as its base, so a kind of your own needs nothing said of it.
+Under **Numbers** the layout says how the numbers of a numbered passage are
+shown where the passage does not say otherwise, **Show a number every** and
+**Numbers on the** left or the right, and whether the lines of the page are
+numbered, as some journals ask for review. Under **Type and spacing**, **Italics are set** says whether italics stand as italics or
 are underlined, as the manuscript of the typewriter had them; the mark in
 the text is the same. **Change this reference style…** has the changes
 publishers most often ask for as simple choices, and the whole style, part

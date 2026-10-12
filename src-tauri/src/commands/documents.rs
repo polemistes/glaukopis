@@ -1,6 +1,6 @@
 //! Commands for preview and export, reference styles and document formats.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -10,6 +10,7 @@ use tauri::State;
 
 use glaukopis_core::document::{Author, Block, CarriedReference, Document, Inline, OwnKind, Part, Section};
 use glaukopis_core::export::{self, Context, ExportOptions, Exported, Page, Preview, Request, Target, Tools};
+use glaukopis_core::formats::kinds::{self, KindLook};
 use glaukopis_core::formats::{DocumentFormat, FormatSummary};
 use glaukopis_core::styles::{Found, StyleSummary};
 use glaukopis_core::templates::{Output, Template};
@@ -93,6 +94,14 @@ pub fn formats_save(state: State<'_, AppState>, format: DocumentFormat) -> Comma
 #[tauri::command(async)]
 pub fn formats_delete(state: State<'_, AppState>, id: String) -> CommandResult<()> {
     Ok(state.formats.delete(&id)?)
+}
+
+/// The look of every kind as a format resolves it, with the writer's own
+/// kinds: what the layout editor shows beside each kind (ADR 0040).
+#[tauri::command(async)]
+pub fn format_kind_looks(mut format: DocumentFormat, own: Vec<OwnKind>) -> CommandResult<BTreeMap<String, KindLook>> {
+    format.sanitise();
+    Ok(kinds::looks(&format, &own))
 }
 
 // ---- documents ----

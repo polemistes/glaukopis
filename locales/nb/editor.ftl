@@ -54,6 +54,37 @@ editor-side-left = Venstre
 editor-side-right = Høyre
 # Det første avsnittet som telles i stykket, er det markøren står i: nummeret dets er der tellingen begynner.
 editor-line-number-first-hint = Tellingen i stykket begynner her.
+# Over et nummer i margen av teksten, som åpner et felt for det når det trykkes.
+editor-line-number-press = Nummeret til dette avsnittet: trykk for å endre det
+
+## Numrene hører til det de nummererer (ADR 0040): Nummer-menyen tilbyr de
+## tre, og hver sier hva den nummererer.
+editor-numbers = Nummer
+editor-numbers-hint = Nummerer linjene i dette stykket, merk et sted i prosa, eller nummerer linjene på siden
+editor-numbers-passage = Nummerer linjene i dette stykket …
+editor-numbers-passage-hint = Linjene du skriver, telt av stykket: fra hvilket nummer, hver hvor mange, på hvilken side
+editor-numbers-refmark-hint = Et sted i prosa, ved et vers, en side eller et nummer i en utgave: 3:16, 327a
+editor-numbers-page = Nummerer linjene på siden …
+editor-numbers-page-hint = Hver linje på siden, nummerert av oppsettet
+
+## Klammen til et stykke, til venstre for det, med navnet på familien; menyen
+## dens sier det som sies om stykket.
+editor-family-quotation = Sitat
+editor-family-verse = Vers
+editor-family-script = Manus
+editor-family-glossary = Ordliste
+editor-family-list = Liste
+editor-family-code = Kode
+editor-family-break = Skille
+editor-family-draft = Kladd
+editor-passage-label-hint = { $family } · trykk for det som sies om stykket
+editor-passage-numbers = Nummer …
+editor-passage-numbers-hint = Hvordan linjene i dette stykket telles, fra hvilket nummer, hver hvor mange og på hvilken side
+editor-passage-select = Merk stykket
+editor-passage-to-text = Gjør det til tekst
+editor-passage-to-text-hint = Hvert avsnitt i stykket blir tekst, og stykket forsvinner
+editor-passage-split = Del stykket her
+editor-passage-split-hint = I to, foran avsnittet markøren står i; et tomt avsnitt med tekst står mellom de to
 editor-kinds-text = Tekst
 editor-kinds-quotation = Sitat
 editor-kinds-verse = Vers
