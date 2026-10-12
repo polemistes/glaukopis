@@ -1,7 +1,11 @@
-// Verse and texts side by side: lines of drama kept as lines, with a
-// speaker and a stage direction, numbered in the margin from the line the
-// writer says; an original and its translation side by side; and the
-// preview set with them, without remark.
+// Verse and texts side by side (ADR 0041): a poem typed as one types any
+// text, Shift+Enter for a line and Enter for a stanza, made Verse from the
+// kind menu; a speaker before it; Tab indenting one line; the lines
+// numbered through the speaker and across the stanza from the Numbers
+// dialog; Enter on an empty paragraph of verse leaving it for text; an
+// original and its translation side by side; a script whose parts are
+// chosen from the kind menu, Enter keeping the kind; and the preview set
+// with them, without remark.
 
 import { App, sleep } from './harness.mjs';
 
@@ -9,6 +13,65 @@ const checks = [];
 function check(name, ok, detail = '') {
   checks.push({ name, ok });
   console.log(`${ok ? 'ok  ' : 'FAIL'}  ${name}${detail ? `  (${detail})` : ''}`);
+}
+
+/** The text of the element written in: found by its section once it is made. */
+let prose = '.text-view .section .body .prose';
+
+/**
+ * The paragraphs of the text, each as its kind and its lines: the label of a
+ * run, the numbers and the margin words are widgets in the paragraph, and are
+ * taken out before its words are read.
+ */
+const paragraphs = () =>
+  app.exec(
+    `return Array.from(document.querySelectorAll(arguments[0] + ' > p')).map((p) => {
+       const c = p.cloneNode(true);
+       c.querySelectorAll('.run-line, .line-number, .line-margin').forEach((w) => w.remove());
+       c.querySelectorAll('.hard-break').forEach((b) => b.replaceWith('\\n'));
+       return { kind: p.getAttribute('data-kind') ?? 'text', lines: c.textContent.split('\\n').map((l) => l.trim()) };
+     })`,
+    prose,
+  );
+
+/** Puts the cursor right after these words in the text, and gives the editor time to take it up. */
+async function cursorAfter(words) {
+  await app.exec(
+    `const walker = document.createTreeWalker(document.querySelector(arguments[0]), NodeFilter.SHOW_TEXT);
+     let node;
+     while ((node = walker.nextNode())) {
+       if (node.parentElement.closest('.run-line, .line-number, .line-margin')) continue;
+       const at = node.data.indexOf(arguments[1]);
+       if (at < 0) continue;
+       const s = getSelection(); s.collapse(node, at + arguments[1].length);
+       return;
+     }
+     throw new Error('no words ' + arguments[1] + ' in the text');`,
+    prose,
+    words,
+  );
+  await sleep(200);
+}
+
+/** Opens the kind menu and chooses a kind; under More… where it is not in hand. */
+async function chooseKind(name, more = false) {
+  await app.click('.pane-bar .tools .style');
+  await app.waitFor('.menu', 3000);
+  await sleep(150);
+  if (more) {
+    await app.clickText('[role="menuitem"]', 'More…');
+    await sleep(200);
+  }
+  await app.exec(
+    `const item = Array.from(document.querySelectorAll('.menu [role="menuitem"], .menu [role="menuitemradio"], .menu [role="menuitemcheckbox"]'))
+       .filter((i) => i.offsetParent !== null)
+       .reverse()
+       .find((i) => (i.querySelector('.label > .truncate') ?? i).textContent.replace(/\\s+/g, ' ').trim() === arguments[0]);
+     if (!item) throw new Error('no kind ' + arguments[0] + ' in the menu');
+     item.click();`,
+    name,
+  );
+  await sleep(300);
 }
 
 const app = await App.launch({ width: 1360, height: 900 });
@@ -38,82 +101,89 @@ try {
     `const s = Array.from(document.querySelectorAll('.text-view .section')).find((e) => e.querySelector('.heading').textContent.includes('prologue'));
      return s.querySelector('.body');`,
   );
+  prose = `.text-view .section[data-section="${await app.exec(
+    `return Array.from(document.querySelectorAll('.text-view .section')).find((e) => e.querySelector('.heading').textContent.includes(arguments[0])).dataset.section`,
+    'prologue',
+  )}"] .body .prose`;
   await app.click(body['element-6066-11e4-a52e-4f735466cecf']);
-  await app.waitFor('.text-view .section .body .prose[contenteditable="true"]');
+  await app.waitFor(`${prose}[contenteditable="true"]`);
   await sleep(200);
 
-  // --- Lines written as paragraphs, made verse ---
+  // --- A poem typed: Shift+Enter for a line, Enter for a stanza ---
   await app.keys('Nurse');
   await app.press('Enter');
   await app.keys('If only the Argo had never flown');
-  await app.press('Enter');
+  await app.keys(['Shift', 'Enter']);
   await app.keys('through the dark Clashing Rocks');
-  await app.press('Enter');
+  await app.keys(['Shift', 'Enter']);
   await app.keys('to the land of Colchis,');
   await app.press('Enter');
   await app.keys('nor the pine been felled');
-  await app.press('Enter');
+  await app.keys(['Shift', 'Enter']);
   await app.keys('in the glens of Pelion.');
   await sleep(200);
+  let ps = await paragraphs();
+  check(
+    'Shift+Enter makes lines within a paragraph, Enter a new paragraph',
+    ps.length === 3 && ps.map((p) => p.lines.length).join(',') === '1,3,2' && ps[1].lines[2] === 'to the land of Colchis,',
+    JSON.stringify(ps),
+  );
+
+  // --- Made Verse from the kind menu: a label, nothing else changes ---
   await app.keys(['Control', 'a']);
-  await app.click('.pane-bar .tools .style');
-  // Verse is not in hand until it is used: it is found under More….
-  await app.clickText('[role="menuitem"]', 'More…');
-  await sleep(200);
-  await app.clickText('[role="menuitem"]', 'Verse');
-  await sleep(300);
-  const lines = await app.exec(
-    `return Array.from(document.querySelectorAll('.text-view .passage[data-family="verse"] > p')).map((l) => l.textContent.trim())`,
+  await chooseKind('Verse', true);
+  ps = await paragraphs();
+  check(
+    'the paragraphs are verse, their lines as they were typed',
+    ps.length === 3 && ps.every((p) => p.kind === 'line') && ps.map((p) => p.lines.length).join(',') === '1,3,2',
+    JSON.stringify(ps),
   );
   check(
-    'the paragraphs are lines of one verse',
-    lines.length === 6 && lines[0] === 'Nurse',
-    lines.join(' | '),
+    'the editor makes no passages, no lines of their own, no lists',
+    !(await app.exists(`${prose} .passage, ${prose} .verse-line, ${prose} blockquote, ${prose} ul, ${prose} ol`)),
   );
   await app.waitForText('.pane-bar .tools .style', 'Verse', 3000);
-
-  // --- The first line is the speaker; the third is indented ---
-  await app.exec(
-    `const l = document.querySelector('.text-view .passage[data-family="verse"] > p'); const s = getSelection(); s.selectAllChildren(l); s.collapseToStart();`,
+  const label = await app.exec(
+    `const first = document.querySelectorAll(arguments[0] + ' > p[data-run="line"]');
+     return { run: first.length, head: document.querySelector(arguments[0] + ' > p[data-run-first] .run-label')?.textContent.trim() ?? null };`,
+    prose,
   );
-  await sleep(150);
-  await app.click('.pane-bar .tools .style');
-  await app.clickText('[role="menuitem"]', 'Speaker');
+  check('the verse is one run, bracketed and named', label.run === 3 && label.head === 'Verse', JSON.stringify(label));
+
+  // --- The first paragraph is the speaker, chosen from the kinds of the verse ---
+  await cursorAfter('Nurse');
+  await chooseKind('Speaker');
+  ps = await paragraphs();
   check(
-    'a line can be the speaker',
-    await app.waitFor('.text-view .passage[data-family="verse"] > p[data-kind="speaker"]', 3000).then(
-      () => true,
-      () => false,
-    ),
+    'a paragraph of the verse is made the speaker, and stays in its run',
+    ps[0].kind === 'speaker' &&
+      (await app.exists(`${prose} > p[data-kind="speaker"][data-run="line"][data-run-first]`)),
+    ps.map((p) => p.kind).join(' '),
   );
-  await app.exec(
-    `const l = document.querySelectorAll('.text-view .passage[data-family="verse"] > p')[2]; const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
-  );
-  await sleep(150);
-  await app.press('Tab');
-  await sleep(200);
-  const indented = await app.exec(
-    `return document.querySelectorAll('.text-view .passage[data-family="verse"] > p')[2].getAttribute('data-indent')`,
-  );
-  check('Tab indents a line', indented === '1', String(indented));
 
-  // --- The lines are numbered from 1, every 2: the cursor stands in the speaker, so the count begins at the first line ---
-  await app.exec(
-    `const l = document.querySelector('.text-view .passage[data-family="verse"] > p'); const s = getSelection(); s.selectAllChildren(l); s.collapseToStart();`,
+  // --- Tab indents the line the cursor is in, by itself ---
+  await cursorAfter('through the dark Clashing Rocks');
+  await app.press('Tab');
+  await sleep(250);
+  const indent = await app.exec(
+    `const p = document.querySelectorAll(arguments[0] + ' > p')[1];
+     return Array.from(p.querySelectorAll('span.linemark')).map((m) => m.getAttribute('data-indent')).join(',') + '|' + (p.getAttribute('data-indent') ?? '');`,
+    prose,
   );
-  await sleep(150);
-  // The # button is a menu: the numbers of the passage are its first item.
+  check('Tab indents one line of verse by its mark, not the paragraph', indent === '1|', indent);
+
+  // --- Numbered through the speaker and across the stanza, every 2, from 1 ---
+  await cursorAfter('Nurse');
   await app.click('.pane-bar .tools button.lines');
   await app.waitFor('.menu', 3000);
-  await app.clickText('.menu [role="menuitem"]', 'Number the lines of this passage');
+  await app.clickText('.menu [role="menuitem"]', 'Number these lines…');
   await app.waitForText('dialog[open] h2', 'Numbers', 3000);
   await sleep(200);
+  const numbering = await app.exec(`return document.querySelector('dialog[open] select').value`);
+  check('the dialog proposes to count the lines', numbering === 'counted', numbering);
   await app.exec(
-    `const s = document.querySelector('dialog[open] select'); s.value = 'counted';
-     s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true }));`,
+    `const i = document.querySelector('dialog[open] input[data-number-from], dialog[open] [data-number-from] input'); i.focus(); i.select();`,
   );
-  await sleep(150);
-  await app.exec(`const i = document.querySelector('dialog[open] [data-number-from] input, dialog[open] input[data-number-from]'); i.focus(); i.select();`);
   await app.keys('1');
   await app.exec(
     `const i = Array.from(document.querySelectorAll('dialog[open] input')).find((i) => i.placeholder && /5/.test(i.placeholder)); i.focus(); i.select();`,
@@ -123,35 +193,43 @@ try {
   await app.waitGone('dialog[open]', 3000);
   await sleep(300);
   const numbers = await app.exec(
-    `return Array.from(document.querySelectorAll('.text-view .passage[data-family="verse"] > p')).map((l) => l.getAttribute('data-n') ?? '-').join(' ')`,
+    `return Array.from(document.querySelectorAll(arguments[0] + ' > p span.line-number')).map((w) =>
+       w.classList.contains('blank') ? '-' : w.dataset.label + ('given' in w.dataset ? '!' : '')).join(' ')`,
+    prose,
   );
   check(
-    'the lines are numbered in the margin, the speaker not counted',
-    numbers === '- 1 2 - 4 -' || numbers === '- 1 2 - 4 6',
+    'every line has its place for a number; the speaker is not counted, the count runs across the stanza',
+    numbers === '- 1! 2 - 4 -',
     numbers,
+  );
+  const ns = await app.exec(
+    `return Array.from(document.querySelectorAll(arguments[0] + ' > p')).map((p) => (p.getAttribute('data-n') ?? '-') + (p.hasAttribute('data-n-set') ? '!' : '') + ':' + (p.getAttribute('data-numbering') ?? '')).join(' ')`,
+    prose,
+  );
+  check('the stretch is numbered on each paragraph', ns === '-:counted 1!:counted 4:counted', ns);
+  check(
+    'the bracket says the verse is numbered',
+    (await app.exec(`return document.querySelector(arguments[0] + ' > p[data-run-first] .run-label')?.textContent.trim()`, prose)) ===
+      'Verse · numbered',
   );
   await app.screenshot('verse-1-lines');
 
-  // --- Enter at the end three times leaves the verse ---
-  await app.exec(
-    `const l = Array.from(document.querySelectorAll('.text-view .passage[data-family="verse"] > p')).pop(); const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
-  );
-  // The editor takes up a selection set from outside on the next event: give it time before the keys.
+  // --- Enter at the end, then Enter on the empty paragraph of verse, leaves it for text ---
+  await cursorAfter('in the glens of Pelion.');
+  await app.press('Enter');
   await sleep(150);
-  // Enter, and Enter on the empty line, begins a stanza; Enter once more leaves the verse.
-  await app.press('Enter');
-  await app.press('Enter');
+  ps = await paragraphs();
+  check('Enter makes a new paragraph of verse', ps.length === 4 && ps[3].kind === 'line', ps.map((p) => p.kind).join(' '));
   await app.press('Enter');
   await sleep(200);
   await app.keys('So the nurse begins.');
   await sleep(200);
+  ps = await paragraphs();
   check(
-    'Enter on an empty line after a stanza break leaves the verse for a paragraph',
-    (await app.exec(`return document.querySelectorAll('.text-view .passage[data-family="verse"] > p').length`)) ===
-      6 &&
-      (await app.exec(
-        `return Array.from(document.querySelectorAll('.text-view .body .prose > p')).some((p) => p.textContent.includes('So the nurse'))`,
-      )),
+    'Enter on an empty paragraph of verse makes it text',
+    ps.length === 4 && ps[3].kind === 'text' && ps[3].lines[0] === 'So the nurse begins.' &&
+      (await app.count(`${prose} > p[data-run="line"]`)) === 3,
+    ps.map((p) => `${p.kind}:${p.lines.join('/')}`).join(' | '),
   );
 
   // --- Two texts side by side ---
@@ -173,34 +251,39 @@ try {
   );
   await app.screenshot('verse-2-parallel');
 
-  // --- A script: the parts follow one another with Enter and Tab ---
+  // --- A script: each part chosen from the kind menu, Enter keeping the kind ---
   await app.exec(
-    `const ps = Array.from(document.querySelectorAll('.text-view .body .prose > p')); const l = ps[ps.length - 1]; const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
+    `const ps = Array.from(document.querySelectorAll(arguments[0] + ' > p')); const l = ps[ps.length - 1]; const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
+    prose,
   );
+  await sleep(150);
   await app.press('Enter');
   await sleep(150);
-  await app.click('.pane-bar .tools .style');
   // The parts of a script are not in hand until one is used: under More….
-  await app.clickText('[role="menuitem"]', 'More…');
-  await sleep(200);
-  await app.clickText('[role="menuitem"]', 'Scene heading');
-  await sleep(200);
+  await chooseKind('Scene heading', true);
   await app.keys('Int. Palace – night');
   await app.press('Enter');
+  await sleep(150);
+  const kept = await app.exec(`return Array.from(document.querySelectorAll(arguments[0] + ' > p')).pop().getAttribute('data-kind')`, prose);
+  check('Enter after a scene heading makes another of the same kind', kept === 'scene', String(kept));
+  // In a script, its parts are in hand at the head of the menu.
+  await chooseKind('Action');
   await app.keys('Medea paces.');
-  await app.press('Tab');
-  await sleep(100);
+  await app.press('Enter');
+  await chooseKind('Character');
   await app.keys('Nurse');
   await app.press('Enter');
+  await chooseKind('Dialogue');
   await app.keys('If only the Argo had never flown.');
   await sleep(200);
-  const script = await app.exec(
-    `return Array.from(document.querySelectorAll('.text-view .body .passage[data-family="script"] > p')).map((p) => p.getAttribute('data-kind') + ':' + p.textContent.trim()).join(' | ')`,
-  );
+  ps = await paragraphs();
+  const script = ps
+    .filter((p) => ['scene', 'action', 'character', 'dialogue'].includes(p.kind))
+    .map((p) => `${p.kind}:${p.lines.join('/')}`)
+    .join(' | ');
   check(
-    'a scene heading, then action; Tab makes a character, Enter its dialogue',
-    script ===
-      'scene:Int. Palace – night | action:Medea paces. | character:Nurse | dialogue:If only the Argo had never flown.',
+    'a scene heading, an action, a character and its dialogue',
+    script === 'scene:Int. Palace – night | action:Medea paces. | character:Nurse | dialogue:If only the Argo had never flown.',
     script,
   );
   await app.waitForText('.pane-bar .tools .style', 'Dialogue', 3000);
