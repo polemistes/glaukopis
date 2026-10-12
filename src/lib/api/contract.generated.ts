@@ -414,6 +414,8 @@ export const format: DocumentFormat = {
     "title": "Notes"
   },
   "page": {
+    "columnGap": "1cm",
+    "columns": 1,
     "height": "297mm",
     "marginBottom": "2.5cm",
     "marginLeft": "2.5cm",
@@ -1265,118 +1267,118 @@ export const kinds: KindEntry[] = [
     "basedOn": null,
     "counted": true,
     "family": "paragraph",
-    "group": "text",
+    "group": "none",
     "id": "text",
-    "joins": false,
-    "style": "Body Text"
+    "style": "Body Text",
+    "words": false
   },
   {
     "basedOn": null,
     "counted": true,
     "family": "paragraph",
-    "group": "quotation",
+    "group": "quote",
     "id": "quote",
-    "joins": false,
-    "style": "Block Text"
+    "style": "Block Text",
+    "words": false
   },
   {
     "basedOn": "quote",
     "counted": true,
     "family": "paragraph",
-    "group": "quotation",
+    "group": "none",
     "id": "epigraph",
-    "joins": false,
-    "style": "Epigraph"
+    "style": "Epigraph",
+    "words": false
   },
   {
     "basedOn": "quote",
     "counted": false,
     "family": "paragraph",
-    "group": "quotation",
+    "group": "none",
     "id": "attribution",
-    "joins": true,
-    "style": "Attribution"
+    "style": "Attribution",
+    "words": false
   },
   {
     "basedOn": null,
     "counted": true,
     "family": "paragraph",
-    "group": "verse",
+    "group": "lines",
     "id": "line",
-    "joins": false,
-    "style": "Line"
+    "style": "Line",
+    "words": false
   },
   {
     "basedOn": null,
     "counted": false,
     "family": "paragraph",
-    "group": "verse",
+    "group": "none",
     "id": "speaker",
-    "joins": false,
-    "style": "Speaker"
+    "style": "Speaker",
+    "words": true
   },
   {
     "basedOn": null,
     "counted": false,
     "family": "paragraph",
-    "group": "verse",
+    "group": "none",
     "id": "direction",
-    "joins": false,
-    "style": "Stage Direction"
+    "style": "Stage Direction",
+    "words": true
   },
   {
     "basedOn": null,
     "counted": true,
     "family": "paragraph",
-    "group": "script",
+    "group": "none",
     "id": "scene",
-    "joins": false,
-    "style": "Scene Heading"
+    "style": "Scene Heading",
+    "words": false
   },
   {
     "basedOn": null,
     "counted": true,
     "family": "paragraph",
-    "group": "script",
+    "group": "none",
     "id": "action",
-    "joins": false,
-    "style": "Action"
+    "style": "Action",
+    "words": false
   },
   {
     "basedOn": null,
     "counted": true,
     "family": "paragraph",
-    "group": "script",
+    "group": "none",
     "id": "character",
-    "joins": false,
-    "style": "Character"
+    "style": "Character",
+    "words": false
   },
   {
     "basedOn": null,
     "counted": true,
     "family": "paragraph",
-    "group": "script",
+    "group": "none",
     "id": "dialogue",
-    "joins": false,
-    "style": "Dialogue"
+    "style": "Dialogue",
+    "words": false
   },
   {
     "basedOn": null,
     "counted": true,
     "family": "paragraph",
-    "group": "script",
+    "group": "none",
     "id": "parenthetical",
-    "joins": false,
-    "style": "Parenthetical"
+    "style": "Parenthetical",
+    "words": false
   },
   {
     "basedOn": null,
     "counted": true,
     "family": "paragraph",
-    "group": "script",
+    "group": "none",
     "id": "transition",
-    "joins": false,
-    "style": "Transition"
+    "style": "Transition",
+    "words": false
   },
   {
     "basedOn": null,
@@ -1384,8 +1386,8 @@ export const kinds: KindEntry[] = [
     "family": "paragraph",
     "group": "glossary",
     "id": "headword",
-    "joins": false,
-    "style": "Headword"
+    "style": "Headword",
+    "words": false
   },
   {
     "basedOn": null,
@@ -1393,8 +1395,8 @@ export const kinds: KindEntry[] = [
     "family": "paragraph",
     "group": "glossary",
     "id": "gloss",
-    "joins": false,
-    "style": "Gloss"
+    "style": "Gloss",
+    "words": false
   },
   {
     "basedOn": null,
@@ -1402,8 +1404,8 @@ export const kinds: KindEntry[] = [
     "family": "paragraph",
     "group": "list",
     "id": "item",
-    "joins": false,
-    "style": ""
+    "style": "",
+    "words": false
   },
   {
     "basedOn": null,
@@ -1411,8 +1413,8 @@ export const kinds: KindEntry[] = [
     "family": "paragraph",
     "group": "list",
     "id": "numbered",
-    "joins": false,
-    "style": ""
+    "style": "",
+    "words": false
   },
   {
     "basedOn": null,
@@ -1420,26 +1422,26 @@ export const kinds: KindEntry[] = [
     "family": "paragraph",
     "group": "code",
     "id": "code",
-    "joins": false,
-    "style": "Source Code"
+    "style": "Source Code",
+    "words": false
   },
   {
     "basedOn": null,
     "counted": false,
     "family": "paragraph",
-    "group": "break",
+    "group": "none",
     "id": "break",
-    "joins": false,
-    "style": "Section Break"
+    "style": "Section Break",
+    "words": false
   },
   {
     "basedOn": null,
-    "counted": true,
+    "counted": false,
     "family": "paragraph",
-    "group": "draft",
+    "group": "none",
     "id": "draft",
-    "joins": false,
-    "style": ""
+    "style": "",
+    "words": false
   },
   {
     "basedOn": null,
@@ -1447,8 +1449,8 @@ export const kinds: KindEntry[] = [
     "family": "words",
     "group": "words",
     "id": "foreign",
-    "joins": false,
-    "style": "Foreign"
+    "style": "Foreign",
+    "words": false
   },
   {
     "basedOn": null,
@@ -1456,8 +1458,8 @@ export const kinds: KindEntry[] = [
     "family": "words",
     "group": "words",
     "id": "title",
-    "joins": false,
-    "style": "Title of a Work"
+    "style": "Title of a Work",
+    "words": false
   },
   {
     "basedOn": null,
@@ -1465,8 +1467,8 @@ export const kinds: KindEntry[] = [
     "family": "words",
     "group": "words",
     "id": "term",
-    "joins": false,
-    "style": "Term"
+    "style": "Term",
+    "words": false
   },
   {
     "basedOn": null,
@@ -1474,8 +1476,8 @@ export const kinds: KindEntry[] = [
     "family": "words",
     "group": "words",
     "id": "mention",
-    "joins": false,
-    "style": "Mention"
+    "style": "Mention",
+    "words": false
   },
   {
     "basedOn": null,
@@ -1483,8 +1485,8 @@ export const kinds: KindEntry[] = [
     "family": "words",
     "group": "words",
     "id": "highlight",
-    "joins": false,
-    "style": ""
+    "style": "",
+    "words": false
   }
 ];
 
