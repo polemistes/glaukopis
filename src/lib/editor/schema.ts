@@ -9,7 +9,18 @@
 
 import { Schema, type MarkSpec, type NodeSpec } from 'prosemirror-model';
 import { tableNodes } from 'prosemirror-tables';
-import { languageName } from '$lib/i18n';
+
+/**
+ * How a language is named where a passage says it is in one. The interface
+ * gives its own names when it starts (main.ts); elsewhere, as in the thread of
+ * the search, where the words of the interface cannot be, the tag is the name.
+ */
+let nameOfLanguage: (tag: string) => string = (tag) => tag;
+
+/** Gives the names of languages, in the language of the interface. */
+export function nameLanguagesBy(name: (tag: string) => string): void {
+  nameOfLanguage = name;
+}
 
 /**
  * Whether a link may be followed: to the web, to an address, or within the
@@ -162,7 +173,7 @@ const marks: Record<string, MarkSpec> = {
     ],
     toDOM: (mark) => [
       'span',
-      { class: 'lang', lang: mark.attrs.tag, title: languageName(mark.attrs.tag) },
+      { class: 'lang', lang: mark.attrs.tag, title: nameOfLanguage(mark.attrs.tag) },
       0,
     ],
   },
