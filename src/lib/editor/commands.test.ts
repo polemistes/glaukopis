@@ -234,12 +234,18 @@ describe('the keys, the same in every kind', () => {
     v.dispatch(v.state.tr.setSelection(TextSelection.atEnd(v.state.doc)));
     press(v, 'Enter');
     expect(shapeOf(v)[2]).toBe('line>1 #counted/5: |');
-    // Enter on it again: the paragraph is text, which is how one leaves the verse.
+    // Enter on it again: the paragraph is text, which is how one leaves the verse, and its numbering with it.
     press(v, 'Enter');
-    expect(shapeOf(v)[2]).toBe('text #counted/5: |');
+    expect(shapeOf(v)[2]).toBe('text: |');
     // And on an empty paragraph of text, Enter parts it as ever.
     press(v, 'Enter');
     expect(shapeOf(v)).toHaveLength(4);
+  });
+
+  it('an empty paragraph of a kind made text in the middle of a stretch stays in it', () => {
+    const v = at(['line #counted: one', 'line #counted: |', 'line #counted: three']);
+    press(v, 'Enter');
+    expect(shapeOf(v)[1]).toBe('text #counted: |');
   });
 
   it('Shift+Enter at the start of a line leaves its mark with it', () => {

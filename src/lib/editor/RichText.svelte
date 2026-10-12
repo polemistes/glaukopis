@@ -25,7 +25,7 @@
   import { dropTarget } from '$lib/ui/drag.svelte';
   import { editorUi, rectAt } from './ui.svelte';
   import { sharedUndo } from './undo';
-  import { markActive, setLanguage } from './commands';
+  import { markActive, paragraphsIn, setLanguage } from './commands';
   import {
     LAYOUT_NUMBERS,
     markLine,
@@ -570,10 +570,17 @@
       if (!numbering) return;
       const v = numbering.view;
       if (v.isDestroyed) return;
-      // The stretch the cursor is in, or, where it is in none, the paragraphs a numbering is set on from there.
-      const paragraphs = (stretchAt(v.state)?.paragraphs ?? stretchToNumber(v.state, ownKinds)).map(
-        (p) => ({ pos: p.pos }),
-      );
+      // What is selected, where something is: so that a part of a stretch can be numbered
+      // otherwise, or not at all. Else the stretch the cursor is in, or, where it is in
+      // none, the paragraphs a numbering is set on from there.
+      const chosen = v.state.selection.empty
+        ? (stretchAt(v.state)?.paragraphs ?? stretchToNumber(v.state, ownKinds))
+        : paragraphsIn(v.state).filter(
+            (p) =>
+              v.state.doc.resolve(p.pos).parent ===
+              v.state.doc.resolve(v.state.selection.from).node(-1),
+          );
+      const paragraphs = chosen.map((p) => ({ pos: p.pos }));
       run(numberStretch(paragraphs, how), v);
       if (from !== undefined && how.numbering !== 'none')
         run(numberFrom(paragraphs, from, ownKinds), v);

@@ -473,11 +473,14 @@ body.dragging * {
    the run. */
 .prose .run-label {
   position: absolute;
-  top: -0.95em;
-  left: -1px;
-  padding: 0 0.35em 0 0.3em;
-  border-left: 1px solid var(--line-strong);
-  border-radius: 0 2px 0 0;
+  /* Along the bracket, at its left, reading upwards from the run's first
+     line: it covers no text, whatever stands before the run. */
+  top: 0;
+  right: 3px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  padding: 0.3em 0 0.35em;
+  border-radius: 2px;
   background: var(--paper);
   font-family: var(--font-ui);
   font-size: 0.62em;

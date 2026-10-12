@@ -81,10 +81,25 @@ export const enterKey: Command = (state, dispatch) => {
   if (!$from.sameParent($to) || $from.parent.type.name !== 'paragraph') return false;
   const paragraph = $from.parent;
   if (selection.empty && emptyParagraph(paragraph) && kindOfNode(paragraph) !== 'text') {
+    // Leaving a list, a verse or a dialogue leaves its numbering too, where
+    // the paragraph is the last of its stretch: what is written after it is
+    // not numbered unless the writer says so.
+    const next = $from.node(-1).maybeChild($from.index(-1) + 1);
+    const sameStretch =
+      next?.type.name === 'paragraph' &&
+      (['numbering', 'every', 'side'] as const).every(
+        (k) => (next.attrs[k] ?? null) === (paragraph.attrs[k] ?? null),
+      );
+    const leaves = sameStretch ? {} : { numbering: null, every: null, side: null };
     if (dispatch)
       dispatch(
         state.tr
-          .setNodeMarkup($from.before(), undefined, { ...paragraph.attrs, kind: 'text', indent: 0 })
+          .setNodeMarkup($from.before(), undefined, {
+            ...paragraph.attrs,
+            kind: 'text',
+            indent: 0,
+            ...leaves,
+          })
           .scrollIntoView(),
       );
     return true;
