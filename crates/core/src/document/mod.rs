@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use crate::bib::names::Person;
 use crate::formats::Stand;
 pub use crate::formats::kinds::OwnKind;
-pub use numbers::{Shown, numbers};
+pub use numbers::{Line, Mark, Shown, Stretch, lines_of, numbers, stretch_numbers, stretches};
 
 /// A word the document prints, in the language of the document; in English
 /// where documents have no words in that language (ADR 0020).

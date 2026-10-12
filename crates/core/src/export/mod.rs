@@ -2379,10 +2379,13 @@ mod tests {
         let l = fs::read_to_string(&tex).unwrap();
         assert!(l.contains("\\usepackage{multicol}") && l.contains("\\setlength{\\columnsep}{0.8cm}"), "{l}");
         let open = l.find("\\begin{multicols}{2}").expect("the body in two columns");
-        let close = l.find("\\end{multicols}").expect("and their end");
+        let close = l.rfind("\\end{multicols}").expect("and their end");
         let column = l.find("\\columnbreak").expect("a break of the column");
         assert!(open < column && column < close, "{l}");
-        assert!(l.contains("\\newpage"), "{l}");
+        assert!(
+            l.contains("\\end{multicols}\\newpage\\begin{multicols}{2}"),
+            "a new page begun outside the columns: {l}"
+        );
         if s.tools.latex_engine().is_ok() {
             let pdf = out.join("columns.pdf");
             let e = export(&s.ctx(), &r, Target::PdfLatex, &pdf, &ExportOptions::default()).unwrap();

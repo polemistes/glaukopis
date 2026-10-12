@@ -335,9 +335,11 @@ impl Converter<'_> {
             // Typst allows no break within a block; there it is left out.
             Flavour::Typst if x.contained.get() => {}
             Flavour::Typst => out.push(raw("typst", if column { "#colbreak()" } else { "#pagebreak()" })),
-            Flavour::Latex => {
-                out.push(raw("latex", if column && x.columns > 1 { "\\columnbreak" } else { "\\newpage" }))
-            }
+            Flavour::Latex if column && x.columns > 1 => out.push(raw("latex", "\\columnbreak")),
+            // Within `multicols` a new page is begun outside it, where the body is not within a group.
+            Flavour::Latex if x.columns > 1 && !x.contained.get() => out
+                .push(raw("latex", format!("\\end{{multicols}}\\newpage\\begin{{multicols}}{{{}}}", x.columns.min(4)))),
+            Flavour::Latex => out.push(raw("latex", "\\newpage")),
             Flavour::Docx => out.push(raw(
                 "openxml",
                 format!("<w:p><w:r><w:br w:type=\"{}\"/></w:r></w:p>", if column { "column" } else { "page" }),
@@ -1185,7 +1187,10 @@ mod tests {
             vec![(format.to_owned(), page.to_owned()), (format.to_owned(), column.to_owned())]
         };
         assert_eq!(said(Flavour::Typst, false, 1), pair("typst", "#pagebreak()", "#colbreak()"));
-        assert_eq!(said(Flavour::Latex, false, 2), pair("latex", "\\newpage", "\\columnbreak"));
+        assert_eq!(
+            said(Flavour::Latex, false, 2),
+            pair("latex", "\\end{multicols}\\newpage\\begin{multicols}{2}", "\\columnbreak")
+        );
         // Without columns a break of the column begins a new page, as in Typst and Word.
         assert_eq!(said(Flavour::Latex, false, 1), pair("latex", "\\newpage", "\\newpage"));
         assert_eq!(

@@ -735,8 +735,8 @@ impl Converter<'_> {
             out.push(json!({"t": "Header", "c": [level, [id, ["unnumbered"], []], h]}));
         }
         let mut body = Vec::new();
-        // In Typst the text of a part stands in a block.
-        let contained = self.extras.contained.replace(self.extras.flavour == Flavour::Typst);
+        // In Typst the text of a part stands in a block, and in LaTeX in a group.
+        let contained = self.extras.contained.replace(matches!(self.extras.flavour, Flavour::Typst | Flavour::Latex));
         self.blocks(&section.blocks, &mut body);
         self.extras.contained.set(contained);
         if !body.is_empty() {

@@ -389,7 +389,7 @@ fn lists_quotations_and_what_has_no_place() {
                     .to_owned(),
                 // Breaks of the page, as TeX and as a division say them, and one of the column.
                 r#"{"t":"RawBlock","c":["latex","\\newpage"]}"#.to_owned(),
-                format!(r#"{{"t":"Div","c":[["",["page-break"],[]],[]]}}"#),
+                r#"{"t":"Div","c":[["",["page-break"],[]],[]]}"#.to_owned(),
                 r#"{"t":"RawBlock","c":["tex","\\columnbreak"]}"#.to_owned(),
             ],
         ),
