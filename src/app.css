@@ -1201,27 +1201,81 @@ span.math.selected {
 
 /* The numbers in the margin of a numbered passage, on the side the passage
    or the layout says (`data-numbers`, which the editor sets), and words in
-   the margin beside a paragraph, on the other side. */
+   the margin beside a paragraph, on the other side. Where one writes, the
+   numbers are widgets at the head of their paragraphs (editor/verse.ts),
+   which open a field for the paragraph's number when pressed; in a text
+   shown without an editor they are drawn from `data-n`. */
+.prose .passage > p,
 .prose p[data-n] {
   position: relative;
 }
-.prose p[data-n]::before {
-  content: attr(data-n);
+.prose .line-number,
+.prose.static p[data-n]::before {
   position: absolute;
+  top: 0;
   /* From the edge of the paragraph's box, which is the same for every paragraph of the passage, indented or not. */
   right: calc(100% + 0.4em);
   white-space: nowrap;
   text-align: right;
+  font-family: var(--font-text);
   font-size: 0.8em;
+  font-style: normal;
+  font-weight: normal;
+  font-variant-caps: normal;
+  letter-spacing: 0;
+  text-transform: none;
+  text-indent: 0;
   line-height: inherit;
   color: var(--ink-4);
   font-variant-numeric: tabular-nums;
   user-select: none;
+  -webkit-user-select: none;
+}
+.prose.static p[data-n]::before {
+  content: attr(data-n);
+}
+.prose .line-number {
+  min-width: 1em;
+  cursor: text;
 }
 /* A number given by hand: as dark as the text, so that it is seen to be one. */
-.prose p[data-n-set]::before {
+.prose .line-number[data-given],
+.prose.static p[data-n-set]::before {
   color: var(--ink-2);
   font-weight: 600;
+}
+/* The place for a number where none is shown: seen when the pointer rests on the paragraph. */
+.prose .line-number.blank {
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease);
+}
+.prose .line-number.blank::before {
+  content: '#';
+}
+.prose .passage > p:hover > .line-number.blank {
+  opacity: 0.6;
+}
+.prose .line-number.editing,
+.prose .passage > p:hover > .line-number.editing {
+  opacity: 1;
+}
+.prose .line-number.editing::before {
+  content: none;
+}
+/* The field for the number, in the place of the number. */
+.prose .line-number-field {
+  box-sizing: border-box;
+  width: 4em;
+  height: 1.5em;
+  margin: 0;
+  padding: 0 3px;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  background: var(--paper-raised, var(--paper));
+  color: var(--ink);
+  font: inherit;
+  text-align: right;
+  outline: none;
 }
 .prose p[data-margin] {
   position: relative;
@@ -1247,7 +1301,8 @@ span.math.selected {
   margin-right: 8em;
 }
 /* The numbers at the right: the margin words then go to the left. */
-.prose .passage[data-numbers='right'] > p[data-n]::before {
+.prose .passage[data-numbers='right'] > p > .line-number,
+.prose.static .passage[data-numbers='right'] > p[data-n]::before {
   right: auto;
   left: calc(100% + 0.6em);
   text-align: left;
@@ -1260,9 +1315,6 @@ span.math.selected {
 .prose .passage[data-numbers='right']:has(> p[data-margin]) {
   margin-right: 0;
   margin-left: 8em;
-}
-.prose p.is-empty[data-n]::before {
-  content: none;
 }
 /* Two texts side by side. */
 .prose .parallel {

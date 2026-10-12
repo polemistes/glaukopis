@@ -54,6 +54,8 @@ editor-side-left = Left
 editor-side-right = Right
 # The first counted paragraph of the passage is the one the cursor is in: its number is where the count begins.
 editor-line-number-first-hint = The count of the passage begins here.
+# Over a number in the margin of the text, which opens a field for it when pressed.
+editor-line-number-press = The number of this paragraph: press to change it
 
 ## Numbers belong to what they number (ADR 0040): the Numbers menu offers
 ## the three, each saying what it numbers.

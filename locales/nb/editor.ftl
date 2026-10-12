@@ -54,6 +54,8 @@ editor-side-left = Venstre
 editor-side-right = Høyre
 # Det første avsnittet som telles i stykket, er det markøren står i: nummeret dets er der tellingen begynner.
 editor-line-number-first-hint = Tellingen i stykket begynner her.
+# Over et nummer i margen av teksten, som åpner et felt for det når det trykkes.
+editor-line-number-press = Nummeret til dette avsnittet: trykk for å endre det
 
 ## Numrene hører til det de nummererer (ADR 0040): Nummer-menyen tilbyr de
 ## tre, og hver sier hva den nummererer.

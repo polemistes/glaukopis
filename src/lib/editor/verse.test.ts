@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { bodySchema } from './schema';
 import {
   firstCounted,
+  giveNumber,
   markLine,
   numberFrom,
   numberLines,
@@ -40,7 +41,7 @@ function drawn(state: EditorState): (string | null)[] {
     .find();
   const out: (string | null)[] = [];
   state.doc.firstChild!.forEach((_line, offset) => {
-    const d = set.find((d) => d.from === offset + 1 && 'data-n' in attrsOf(d));
+    const d = set.find((d) => d.from === offset + 1 && 'data-n' in (attrsOf(d) ?? {}));
     const attrs = d ? attrsOf(d) : null;
     out.push(attrs ? attrs['data-n'] + ('data-n-set' in attrs ? '*' : '') : null);
   });
@@ -48,7 +49,24 @@ function drawn(state: EditorState): (string | null)[] {
 }
 
 /** The attributes a node decoration sets, which the decoration keeps in its type. */
-const attrsOf = (d: unknown) => (d as { type: { attrs: Record<string, string> } }).type.attrs;
+const attrsOf = (d: unknown) => (d as { type: { attrs?: Record<string, string> } }).type.attrs;
+
+/** The widgets of the numbers in the margin, in order: the label and whether it was given by hand, or `-` for the place where none is shown. */
+function widgets(state: EditorState): string[] {
+  const set = passageNumbers()
+    .spec.state!.init.call(null, {} as never, state)
+    .find();
+  return set
+    .filter((d) => !attrsOf(d))
+    .map((d) => {
+      const el = (
+        d as unknown as { type: { toDOM: (view: unknown, getPos: () => number) => HTMLElement } }
+      ).type.toDOM({} as never, () => d.from);
+      return el.classList.contains('blank')
+        ? '-'
+        : el.textContent + ('given' in el.dataset ? '*' : '');
+    });
+}
 
 describe('the numbers of a passage', () => {
   it('are counted from the first number given, only on counted paragraphs, every so many as the passage or the layout says', () => {
@@ -114,6 +132,17 @@ describe('the numbers of a passage', () => {
     ]);
   });
 
+  it('are drawn as widgets at the head of their paragraphs, with a place for one where none is shown, and none in a passage that is not numbered', () => {
+    expect(widgets(EditorState.create({ doc: verse() }))).toEqual([]);
+    const counted = verse({ numbering: 'counted', every: 2 }, [
+      p('speaker', 'Nurse'),
+      p('line', 'a', { number: '45' }),
+      p('line', 'b'),
+      p('line', 'c'),
+    ]);
+    expect(widgets(EditorState.create({ doc: counted }))).toEqual(['-', '45*', '46', '-']);
+  });
+
   it('a kind of the writer`s own is counted as its base is, and the side is the passage`s or the layout`s', () => {
     const own = [{ id: 'k1', basedOn: 'speaker' }];
     const doc = nodes.doc.create(null, [
@@ -133,7 +162,7 @@ describe('the numbers of a passage', () => {
       ],
     });
     const found = state.plugins[0].getState(state).find();
-    expect(found.map(attrsOf)).toEqual([
+    expect(found.map(attrsOf).filter(Boolean)).toEqual([
       { 'data-numbers': 'right' },
       { 'data-n': '1', 'data-n-set': '' },
       { 'data-n': '2' },
@@ -152,7 +181,9 @@ describe('the numbers of a passage', () => {
     side = 'left';
     let now = again;
     relayoutNumbers({ state: now, dispatch: (tr) => (now = now.apply(tr)) });
-    expect(now.plugins[0].getState(now).find().map(attrsOf)[0]).toEqual({ 'data-numbers': 'left' });
+    expect(now.plugins[0].getState(now).find().map(attrsOf).filter(Boolean)[0]).toEqual({
+      'data-numbers': 'left',
+    });
   });
 });
 
@@ -211,5 +242,20 @@ describe('what is said of a passage and a paragraph by hand', () => {
       counted: true,
       margin: null,
     });
+  });
+
+  it('gives the paragraph at a position a number from the field in the margin, and takes it away with an empty field', () => {
+    let state = EditorState.create({ doc: verse() });
+    // The second paragraph: after the passage's opening (1) and the speaker (7).
+    const second = 8;
+    expect(state.doc.nodeAt(second)?.textContent).toBe('If only the Argo');
+    giveNumber(second, ' 45 ')(state, (tr) => (state = state.apply(tr)));
+    expect(state.doc.firstChild!.child(1).attrs.number).toBe('45');
+    expect(state.doc.firstChild!.child(1).attrs.counted).toBe(true);
+    giveNumber(second, '')(state, (tr) => (state = state.apply(tr)));
+    expect(state.doc.firstChild!.child(1).attrs.number).toBeNull();
+    // Not where no paragraph begins.
+    expect(giveNumber(0, '1')(state)).toBe(false);
+    expect(giveNumber(9, '1')(state)).toBe(false);
   });
 });
