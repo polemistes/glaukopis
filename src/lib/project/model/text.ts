@@ -4,17 +4,15 @@
  * nodes are XML elements named after their type, text is XML text whose
  * formatting attributes are the marks.
  *
- * Two shapes are read (ADR 0040). The shape texts are written in now: a
- * `paragraph` of a kind, with its indent, its number, whether it is counted
- * and its margin words; and a `passage`, a run of paragraphs of one family
- * with its numbering. And the shape texts were written in before: a
- * `blockquote` holding paragraphs, a `verse` of `verse_line`s, a `script`
- * paragraph of a part, a `passage` of a name, and the lists of items. The
- * old shape is read into the new as the migration rewrites it
- * (`migrate.ts`), by the one conversion here, since the history of a
- * project and the search through projects on disk read texts as they were
- * written. Nothing here reads the words of the interface: it runs in the
- * thread of the search as well.
+ * A text is paragraphs, each of a kind and with the settings of the stretch
+ * it stands in, holding lines parted by line breaks, with a line mark at the
+ * start of a line where the writer said something of it; page and column
+ * breaks; and what is not text: figures, formulas, tables, rows and texts
+ * side by side (ADR 0041). Old shapes are not read well, only without
+ * falling over: a `passage` is read as the paragraphs it holds, standing
+ * where it stands, and the number, count and margin an old paragraph kept
+ * become a line mark at its start. Nothing here reads the words of the
+ * interface: it runs in the thread of the search as well.
  */
 
 import * as Y from 'yjs';
@@ -27,8 +25,7 @@ import {
   type CiteMode,
 } from '$lib/editor/schema';
 import {
-  familyOf,
-  joinsBefore,
+  factsOf,
   NUMBERINGS,
   renamed,
   type BasedKind,
@@ -174,7 +171,7 @@ export interface EquationBlock {
   align?: Stand;
 }
 
-/** Two texts side by side: an original and its translation. Each side holds paragraphs and passages. */
+/** Two texts side by side: an original and its translation. Each side holds paragraphs. */
 export interface ParallelBlock {
   kind: 'parallel';
   left: Block[];
@@ -189,19 +186,6 @@ export interface RowBlock {
 
 export type Block =
   ParagraphBlock | BreakBlock | ParallelBlock | EquationBlock | FigureBlock | TableBlock | RowBlock;
-
-/** The parts of a screenplay, as the old shape named them: a script paragraph of a part. */
-export type ScriptPart =
-  'scene' | 'action' | 'character' | 'dialogue' | 'parenthetical' | 'transition';
-
-export const SCRIPT_PARTS: readonly ScriptPart[] = [
-  'scene',
-  'action',
-  'character',
-  'dialogue',
-  'parenthetical',
-  'transition',
-];
 
 /** A cell of a table. */
 export interface TableCell {
@@ -373,6 +357,9 @@ function inlinesOf(parent: Y.XmlElement | Y.XmlFragment): Inline[] {
           if (label) out.push({ kind: 'refmark', label });
           break;
         }
+        case 'linemark':
+          out.push(lineMarkOf(child));
+          break;
         default:
           out.push(...inlinesOf(child));
       }
@@ -384,179 +371,62 @@ function inlinesOf(parent: Y.XmlElement | Y.XmlFragment): Inline[] {
 const elementsOf = (parent: Y.XmlElement | Y.XmlFragment): Y.XmlElement[] =>
   parent.toArray().filter((c): c is Y.XmlElement => c instanceof Y.XmlElement);
 
-/** Whether an element of a text is a passage as texts are written now: it names its family, or holds paragraphs. */
-function newPassage(el: Y.XmlElement): boolean {
-  return (
-    el.getAttribute('family') !== undefined ||
-    el.toArray().some((c) => c instanceof Y.XmlElement && c.nodeName === 'paragraph')
-  );
+/** What a line mark, or an old paragraph, says of its line: the defaults left out. */
+function saidOf(el: Y.XmlElement): Omit<InlineLineMark, 'kind' | 'indent'> {
+  return {
+    number: text(el.getAttribute('number') as unknown),
+    ...((el.getAttribute('counted') as unknown) === false ? { counted: false as const } : {}),
+    ...((el.getAttribute('hidden') as unknown) === true ? { hidden: true as const } : {}),
+    margin: text(el.getAttribute('margin') as unknown),
+  };
 }
 
-/** The names of the elements of the old shape, which the migration rewrites. */
-const OLD = new Set([
-  'blockquote',
-  'verse',
-  'verse_line',
-  'script',
-  'bullet_list',
-  'ordered_list',
-  'list_item',
-]);
-
-/** Whether an element of a text is of the shape texts were written in before ADR 0040. */
-export function isOldShape(el: Y.XmlElement): boolean {
-  return OLD.has(el.nodeName) || (el.nodeName === 'passage' && !newPassage(el));
+/** A line mark from the element y-prosemirror keeps it in. */
+function lineMarkOf(el: Y.XmlElement): InlineLineMark {
+  return linemark({ ...saidOf(el), indent: indentOf(el.getAttribute('indent') as unknown) });
 }
 
 /**
  * A paragraph from an element that holds inline content, with what is said
- * of it: its kind (`kind` as paragraphs have it, or the kind given), its
- * indent, number, whether it is counted, and its margin words.
+ * of it: its kind, its indent, and the settings of the stretch it stands in.
+ * A paragraph of the shape before kept a number, whether it was counted,
+ * whether its number was hidden and its margin words on itself: those
+ * become a line mark at its start, where it has none.
  */
-function paragraphOf(el: Y.XmlElement, kind?: string): ParagraphBlock {
-  const name = renamed(kind ?? text(el.getAttribute('kind') as unknown).trim()) || 'text';
-  const number = text(el.getAttribute('number') as unknown).trim();
-  const margin = text(el.getAttribute('margin') as unknown).trim();
-  return paragraph(inlinesOf(el), name, {
+function paragraphOf(el: Y.XmlElement): ParagraphBlock {
+  const name = renamed(text(el.getAttribute('kind') as unknown).trim()) || 'text';
+  const content = inlinesOf(el);
+  const old = linemark(saidOf(el));
+  if (saysAnything(old) && content[0]?.kind !== 'linemark') content.unshift(old);
+  return paragraph(content, name, {
     indent: indentOf(el.getAttribute('indent') as unknown),
-    ...(number ? { number } : {}),
-    ...((el.getAttribute('counted') as unknown) === false ? { counted: false } : {}),
-    ...((el.getAttribute('hidden') as unknown) === true ? { hidden: true } : {}),
-    ...(margin ? { margin } : {}),
+    numbering: numberingOf(el.getAttribute('numbering') as unknown),
+    every: everyOf(el.getAttribute('every') as unknown) ?? undefined,
+    side: sideOf(el.getAttribute('side') as unknown) ?? undefined,
+    new: (el.getAttribute('new') as unknown) === true ? true : undefined,
   });
 }
 
-/** The kind of a line of verse as the old shape had it. */
-function verseLineKind(value: unknown): string {
-  return value === 'speaker' || value === 'direction' ? value : 'line';
-}
-
-/**
- * A verse of the old shape as a passage: counted where it was given a
- * start, or where a line was given a number (which the count began at,
- * ADR 0039); `every` the old `by` where that was not five; the first
- * counted line without a number given the start as its number.
- */
-function verseOf(verse: Y.XmlElement): PassageBlock | null {
-  const lines = elementsOf(verse)
-    .filter((l) => l.nodeName === 'verse_line')
-    .map((l) => paragraphOf(l, verseLineKind(l.getAttribute('kind') as unknown)));
-  if (!lines.length) return null;
-  const given = verse.getAttribute('start') as unknown;
-  const start = Number(given);
-  const hasStart = given !== undefined && given !== null && Number.isFinite(start);
-  const by = Math.max(1, Math.round(Number(verse.getAttribute('by') as unknown)) || 5);
-  if (hasStart) {
-    const first = lines.find((l) => l.name === 'line' && l.counted !== false && !l.number);
-    if (first) first.number = String(start);
-  }
-  const counted =
-    hasStart || lines.some((l) => l.name === 'line' && l.counted !== false && l.number);
-  return passage('verse', lines, counted ? 'counted' : 'none', by !== 5 ? { every: by } : {});
-}
-
-/**
- * A list of the old shape as paragraphs of `item` or `numbered`, their
- * indent the depth; a list within an item one step deeper; a numbered list
- * that did not start at one giving its first item that number. A second
- * paragraph of an item is an item; what else stands in an item stands
- * after it.
- */
-function listOf(list: Y.XmlElement, depth: number, own: readonly BasedKind[]): Block[] {
-  const numbered = list.nodeName === 'ordered_list';
-  const kind = numbered ? 'numbered' : 'item';
-  const start = numbered ? Math.round(Number(list.getAttribute('start') as unknown)) || 1 : 1;
-  const out: Block[] = [];
-  let first = true;
-  for (const item of elementsOf(list)) {
-    const parts = item.nodeName === 'list_item' ? elementsOf(item) : [item];
-    for (const part of parts) {
-      if (part.nodeName === 'paragraph') {
-        const p = paragraphOf(part, kind);
-        p.indent = indentOf(depth);
-        if (first && start !== 1) p.number = String(start);
-        first = false;
-        out.push(p);
-      } else if (part.nodeName === 'bullet_list' || part.nodeName === 'ordered_list') {
-        out.push(...listOf(part, depth + 1, own));
-      } else out.push(...rawOf(part, own));
-    }
-  }
-  return out;
-}
-
-/**
- * A block quote of the old shape: its paragraphs as `quote` paragraphs, a
- * passage of a name among them as a paragraph of that kind; what stood in
- * it that was no paragraph stands after it, as itself.
- */
-function quotedOf(quote: Y.XmlElement, own: readonly BasedKind[]): Block[] {
-  const out: Block[] = [];
-  for (const child of elementsOf(quote)) {
-    if (child.nodeName === 'paragraph') {
-      const p = paragraphOf(child);
-      if (p.name === 'text') p.name = 'quote';
-      out.push(p);
-    } else if (child.nodeName === 'blockquote') out.push(...quotedOf(child, own));
-    else out.push(...rawOf(child, own));
-  }
-  return out;
-}
-
-/**
- * The blocks an element of a text stands for, before they are brought into
- * shape: paragraphs of a kind loose, where the old shape had them in
- * containers or typed, and passages as they are.
- */
-function rawOf(child: Y.XmlElement, own: readonly BasedKind[]): Block[] {
+/** The blocks an element of a text stands for. */
+function blocksOfElement(child: Y.XmlElement): Block[] {
   switch (child.nodeName) {
     case 'paragraph':
     case 'title':
       return [paragraphOf(child)];
-    case 'passage': {
-      if (!newPassage(child)) {
-        // A passage of a name, as it was: a paragraph of that kind; of no name, a paragraph.
-        return [paragraphOf(child, text(child.getAttribute('name') as unknown).trim())];
-      }
-      const content = elementsOf(child)
-        .filter((p) => p.nodeName === 'paragraph')
-        .map((p) => paragraphOf(p));
-      if (!content.length) return [];
-      return [
-        passage(
-          text(child.getAttribute('family') as unknown).trim() || familyOf(content[0].name, own),
-          content,
-          numberingOf(child.getAttribute('numbering') as unknown),
-          {
-            every: everyOf(child.getAttribute('every') as unknown),
-            side: sideOf(child.getAttribute('side') as unknown),
-          },
-        ),
-      ];
-    }
-    case 'blockquote':
-      return quotedOf(child, own);
-    case 'verse': {
-      const verse = verseOf(child);
-      return verse ? [verse] : [];
-    }
-    case 'verse_line':
-      return [paragraphOf(child, verseLineKind(child.getAttribute('kind') as unknown))];
-    case 'script':
-      return [
-        paragraphOf(child, SCRIPT_PARTS.find((p) => p === child.getAttribute('part')) ?? 'action'),
-      ];
-    case 'bullet_list':
-    case 'ordered_list':
-    case 'list_item':
-      return listOf(child, 0, own);
+    case 'passage':
+      // A passage as texts were once written: what it holds, standing where it stands.
+      if (child.toArray().some((c) => c instanceof Y.XmlElement && c.nodeName === 'paragraph'))
+        return blocksOf(child);
+      return [paragraph(inlinesOf(child))];
+    case 'pagebreak':
+      return [pagebreak((child.getAttribute('what') as unknown) === 'column' ? 'column' : 'page')];
     case 'parallel': {
       const sides = elementsOf(child).filter((c) => c.nodeName === 'parallel_side');
       return [
         {
           kind: 'parallel',
-          left: sides[0] ? blocksOf(sides[0], own) : [],
-          right: sides[1] ? blocksOf(sides[1], own) : [],
+          left: sides[0] ? blocksOf(sides[0]) : [],
+          right: sides[1] ? blocksOf(sides[1]) : [],
         },
       ];
     }
@@ -583,8 +453,8 @@ function rawOf(child: Y.XmlElement, own: readonly BasedKind[]): Block[] {
           elementsOf(row).map((cell): TableCell => {
             const to = stand(cell.getAttribute('align') as unknown);
             return {
-              // A cell holds paragraphs, of whatever kind, and no passage.
-              content: elementsOf(cell).flatMap((c) => rawOf(c, own)),
+              // A cell holds paragraphs, of whatever kind.
+              content: blocksOf(cell),
               colspan: Math.max(1, Number(cell.getAttribute('colspan') as unknown) || 1),
               rowspan: Math.max(1, Number(cell.getAttribute('rowspan') as unknown) || 1),
               header: cell.nodeName === 'table_header',
@@ -610,7 +480,7 @@ function rawOf(child: Y.XmlElement, own: readonly BasedKind[]): Block[] {
       ];
     }
     case 'row': {
-      const items = elementsOf(child).flatMap((c) => rawOf(c, own));
+      const items = blocksOf(child);
       // One alone stands as it would without the row.
       if (items.length === 1) return items;
       return items.length ? [{ kind: 'row', items }] : [];
@@ -636,70 +506,27 @@ function rawOf(child: Y.XmlElement, own: readonly BasedKind[]): Block[] {
       ];
     }
     default:
-      // Something a later version added: keep its text.
+      // Something a later version added, or an earlier one had: keep its text.
       return [paragraph(inlinesOf(child))];
   }
 }
 
-/**
- * Blocks brought into the shape the editor keeps (ADR 0040): a paragraph
- * of a kind that is not text standing loose is put in a passage of its
- * family, or in the passage before it where its kind joins; passages of
- * one family that stand next to each other are joined, the first one's
- * settings holding; a passage of nothing goes. Paragraphs of text stand
- * loose. The same shaping on blocks in shape changes nothing.
- */
-export function shaped(blocks: readonly Block[], own: readonly BasedKind[] = []): Block[] {
-  const out: Block[] = [];
-  for (const b of blocks) {
-    const before = out[out.length - 1];
-    if (b.kind === 'paragraph') {
-      const family = familyOf(b.name, own);
-      if (family === 'text') {
-        out.push(b);
-        continue;
-      }
-      if (before?.kind === 'passage' && (before.family === family || joinsBefore(b.name, own)))
-        before.content.push(b);
-      else out.push(passage(family, [b]));
-    } else if (b.kind === 'passage') {
-      if (!b.content.length) continue;
-      if (before?.kind === 'passage' && before.family === b.family)
-        before.content.push(...b.content);
-      else out.push({ ...b, content: [...b.content] });
-    } else if (b.kind === 'parallel') {
-      out.push({ kind: 'parallel', left: shaped(b.left, own), right: shaped(b.right, own) });
-    } else out.push(b);
-  }
-  return out;
-}
-
-/** The blocks of these elements of a text, which stand next to each other, in shape. */
-export function readBlocks(
-  elements: readonly Y.XmlElement[],
-  own: readonly BasedKind[] = [],
-): Block[] {
-  return shaped(
-    elements.flatMap((el) => rawOf(el, own)),
-    own,
-  );
-}
-
-function blocksOf(parent: Y.XmlElement | Y.XmlFragment, own: readonly BasedKind[]): Block[] {
-  return readBlocks(elementsOf(parent), own);
+/** The blocks of the elements a part of a text holds, in order. */
+function blocksOf(parent: Y.XmlElement | Y.XmlFragment): Block[] {
+  return elementsOf(parent).flatMap(blocksOfElement);
 }
 
 /**
- * The text of an element as blocks. `own` are the kinds of paragraph of the
- * writer's own, by which a kind of theirs in the old shape has its family.
- * Empty paragraphs of text at the end are dropped.
+ * The text of an element as blocks. Empty paragraphs of text at the end are
+ * dropped. `own`, the kinds of paragraph of the writer's own, are not needed
+ * to read a text any more, and are taken for the callers that give them.
  */
 export function readBody(
   fragment: Y.XmlFragment | undefined,
   own: readonly BasedKind[] = [],
 ): Block[] {
   if (!fragment) return [];
-  const blocks = blocksOf(fragment, own);
+  const blocks = blocksOf(fragment);
   while (blocks.length) {
     const last = blocks[blocks.length - 1];
     if (last.kind === 'paragraph' && last.name === 'text' && !last.content.length) blocks.pop();
@@ -725,14 +552,14 @@ export function readBasedKinds(map: Y.Map<unknown> | undefined): BasedKind[] {
 }
 
 /**
- * What a text begins in when its kind of paragraph is given: `text` for
- * paragraphs of text, else the family of the kind, whose passage the
- * paragraphs are written in.
+ * The kind of paragraph a text begins in when a kind is given: the kind as
+ * it is now named; `text` for nothing, and for a kind of words only, which
+ * no paragraph is of. `own` are the kinds of the writer's own.
  */
 export function beginsIn(kind: string, own: readonly BasedKind[] = []): string {
   const id = renamed(kind.trim());
-  if (!id) return 'text';
-  return familyOf(id, own);
+  if (!id || factsOf(id, own).grouping === 'words') return 'text';
+  return id;
 }
 
 /** The name of an element as inline content. */
@@ -756,8 +583,6 @@ export function blocksText(blocks: Block[], withNotes = false): string {
   const parts: string[] = [];
   for (const b of blocks) {
     if (b.kind === 'paragraph') parts.push(inlineText(b.content, withNotes));
-    else if (b.kind === 'passage')
-      parts.push(b.content.map((p) => inlineText(p.content, withNotes)).join('\n'));
     else if (b.kind === 'parallel')
       parts.push(blocksText(b.left, withNotes), blocksText(b.right, withNotes));
     else if (b.kind === 'figure') parts.push(inlineText(b.caption, withNotes));
@@ -858,12 +683,7 @@ export function bodyFacts(blocks: Block[]): BodyFacts {
   const visit = (list: Block[]) => {
     for (const b of list) {
       if (b.kind === 'paragraph') visitParagraph(b);
-      else if (b.kind === 'passage') {
-        for (const p of b.content) {
-          visitParagraph(p);
-          text += '\n';
-        }
-      } else if (b.kind === 'parallel') {
+      else if (b.kind === 'parallel') {
         visit(b.left);
         visit(b.right);
       } else if (b.kind === 'figure') {
@@ -921,7 +741,6 @@ function paragraphElement(kind: string, words: string): Y.XmlElement {
   const el = new Y.XmlElement('paragraph');
   el.setAttribute('kind', kind);
   el.setAttribute('indent', 0 as unknown as string);
-  el.setAttribute('counted', true as unknown as string);
   if (words) el.insert(0, [new Y.XmlText(words)]);
   return el;
 }
@@ -929,9 +748,8 @@ function paragraphElement(kind: string, words: string): Y.XmlElement {
 /**
  * Makes the content of a text from plain text: one paragraph to a line.
  * With `begins`, the kind of paragraph the text is written in: paragraphs
- * of that kind in a passage of its family, and one empty one, where there
- * is no text, so that the writing begins in it. `own` are the kinds of
- * the writer's own, by which one of theirs has its family.
+ * of that kind, and one empty one where there is no text, so that the
+ * writing begins in it. `own` are the kinds of the writer's own.
  */
 export function fillBody(
   fragment: Y.XmlFragment,
@@ -941,21 +759,16 @@ export function fillBody(
 ) {
   if (fragment.length) fragment.delete(0, fragment.length);
   const lines = text.split(/\n+/).filter((p) => p.trim());
-  const kind = renamed(begins.trim());
-  const family = beginsIn(kind, own);
-  if (family === 'text') {
+  const kind = beginsIn(begins, own);
+  if (kind === 'text') {
     fragment.insert(
       0,
       lines.map((l) => paragraphElement('text', l)),
     );
     return;
   }
-  const el = new Y.XmlElement('passage');
-  el.setAttribute('family', family);
-  el.setAttribute('numbering', 'none');
-  el.insert(
+  fragment.insert(
     0,
     (lines.length ? lines : ['']).map((l) => paragraphElement(kind, l)),
   );
-  fragment.insert(0, [el]);
 }
