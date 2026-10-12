@@ -54,6 +54,7 @@
   import { listUi } from './list.svelte';
   import type { ProjectActions } from './project-actions.svelte';
   import ProjectBadge from './ProjectBadge.svelte';
+  import Mark from '$lib/shell/Mark.svelte';
 
   interface Props {
     /** What opens a project, its menu, and the dialog that asks for a name: the place's own. */
@@ -72,6 +73,8 @@
     at?: string | null;
     /** Enters an element of the open project. */
     onenter?: (id: string) => void;
+    /** Whether the owl map is in view: its row, at the top, is marked. */
+    owlHere?: boolean;
   }
 
   let {
@@ -81,6 +84,7 @@
     project = null,
     at = null,
     onenter,
+    owlHere = false,
   }: Props = $props();
 
   let filter = $state('');
@@ -91,6 +95,8 @@
   );
   /** How far each step deeper is drawn in. */
   const step = $derived(compact ? 14 : 20);
+  /** Where the folders and projects begin: a step in from the owl, which holds them all. */
+  const left = $derived((compact ? 4 : 8) + step);
 
   const open = (p: ProjectInfo) => actions.open(p);
   const toggle = (id: string) => listUi.toggle(id);
@@ -452,6 +458,28 @@
     {/if}
   </div>
 
+  <!-- The owl map, at the top: all the projects, as one map. -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <div
+    class="row owl"
+    class:current={owlHere}
+    role="button"
+    tabindex="0"
+    aria-current={owlHere ? 'page' : undefined}
+    data-owl
+    data-current={owlHere ? '' : undefined}
+    style:padding-left="{compact ? 4 : 8}px"
+    onclick={() => router.go({ view: 'owl' })}
+    onkeydown={(e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      router.go({ view: 'owl' });
+    }}
+  >
+    <Mark size={compact ? 15 : 17} />
+    <span class="name serif truncate">{t('project-all-projects')}</span>
+  </div>
+
   {#each rows as row (row.kind === 'folder' ? `f:${row.folder.id}` : `p:${row.project.id}`)}
     {#if row.kind === 'folder'}
       {@const f = row.folder}
@@ -462,7 +490,7 @@
         tabindex="0"
         data-depth={row.depth}
         data-folder={f.id}
-        style:padding-left="{(compact ? 4 : 8) + row.depth * step}px"
+        style:padding-left="{left + row.depth * step}px"
         use:dropTarget={{ accepts: accepts(f.id), ondrop: (e) => drop(e, f.id) }}
         onclick={() => toggle(f.id)}
         oncontextmenu={(e) => openContextMenu(e, folderItems(f))}
@@ -505,7 +533,7 @@
         data-project={p.id}
         data-current={p.id === current ? '' : undefined}
         title={compact ? p.name : undefined}
-        style:padding-left="{(compact ? 4 : 8) + row.depth * step + (compact ? 0 : 22)}px"
+        style:padding-left="{left + row.depth * step + (compact ? 0 : 22)}px"
         onclick={() => open(p)}
         onkeydown={(e) => onprojectkey(e, p)}
         oncontextmenu={(e) => openContextMenu(e, projectItems(p))}
@@ -559,12 +587,12 @@
             ownShown,
             ownShown.tree.children.get(PROJECT) ?? [],
             0,
-            (compact ? 4 : 8) + row.depth * step + 22,
+            left + row.depth * step + 22,
           )}
         </div>
       {:else if unfoldable(p) && closedUnfolded.has(p.id)}
         {@const reading = closedTrees.get(p.id)}
-        {@const indent = (compact ? 4 : 8) + row.depth * step + 22}
+        {@const indent = left + row.depth * step + 22}
         <div class="tree closed" data-closed-tree={p.id}>
           {#if reading?.state === 'read'}
             {@const top = reading.tree.tree.children.get(PROJECT) ?? []}
@@ -750,8 +778,18 @@
     text-align: center;
   }
   /* The project that is open, as the outline marks the element in view. */
+  .row.owl .name {
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .row.owl.current,
   .row.project.current {
     background: var(--accent-soft);
+  }
+  .row.owl.current .name {
+    color: var(--accent-strong);
+    font-weight: 550;
   }
   .row.project.current .name {
     color: var(--accent-strong);

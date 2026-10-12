@@ -264,7 +264,7 @@
         onenter(node.id);
       }}
     >
-      <Maximize2 size={11} />
+      <Minimize2 size={11} />
     </button>
   {:else if !renaming && placed.depth === 0 && onleave}
     <button
@@ -280,7 +280,7 @@
         onleave();
       }}
     >
-      <Minimize2 size={11} />
+      <Maximize2 size={11} />
     </button>
   {/if}
 

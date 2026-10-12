@@ -314,7 +314,7 @@
         onmousedown={(e) => e.preventDefault()}
         onclick={() => onenter(node.id)}
       >
-        <Maximize2 size={11} />
+        <Minimize2 size={11} />
       </button>
     {:else if onleave}
       <button
@@ -330,7 +330,7 @@
         onmousedown={(e) => e.preventDefault()}
         onclick={() => onleave()}
       >
-        <Minimize2 size={11} />
+        <Maximize2 size={11} />
       </button>
     {/if}
     {#each others.slice(0, 3) as o (o.client)}

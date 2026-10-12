@@ -59,7 +59,7 @@ class ProjectsState {
       ]);
       this.list = list;
       this.folders = folders;
-      this.shown = shown === 'list' || shown === 'map' ? shown : 'recent';
+      this.shown = shown === 'list' ? shown : 'recent';
     } catch (error) {
       notifyError(t('project-list-unreadable'), error);
     }

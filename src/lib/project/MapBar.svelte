@@ -25,7 +25,6 @@
   import { goThrough } from '$lib/found/found.svelte';
   import ProjectBadge from '$lib/home/ProjectBadge.svelte';
   import Mark from '$lib/shell/Mark.svelte';
-  import { projects } from '$lib/state/projects.svelte';
   import { router } from '$lib/state/router.svelte';
   import { countFound } from '$lib/found/gather';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
@@ -80,8 +79,7 @@
 
   /** Up from the project: to all the projects, as the owl's map shows them. */
   function goHome() {
-    projects.show('map');
-    router.go({ view: 'projects' });
+    router.go({ view: 'owl' });
   }
 
   function nameOf(id: string): string {

@@ -20,6 +20,7 @@
   import Rail from '$lib/shell/Rail.svelte';
   import ProjectsPane from '$lib/home/ProjectsPane.svelte';
   import ProjectsView from '$lib/home/ProjectsView.svelte';
+  import OwlView from '$lib/home/OwlView.svelte';
   import LibraryView from '$lib/library/LibraryView.svelte';
   import PicturesView from '$lib/pictures/PicturesView.svelte';
   import ProjectView, { viewing } from '$lib/project/ProjectView.svelte';
@@ -183,6 +184,15 @@
             {#key route.project}
               <ProjectView projectId={route.project} />
             {/key}
+          </div>
+        </div>
+      {:else if route.view === 'owl'}
+        <div class="in-project">
+          {#if settings.value.projectsPane}
+            <ProjectsPane owlHere />
+          {/if}
+          <div class="project-view">
+            <OwlView />
           </div>
         </div>
       {:else if route.view === 'search'}

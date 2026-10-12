@@ -9,10 +9,10 @@ function check(name, ok, detail = '') {
   console.log(`${ok ? 'ok  ' : 'FAIL'}  ${name}${detail ? `  (${detail})` : ''}`);
 }
 
-/** The rows of the list, as "depth:kind:name". */
+/** The rows of the list under the owl, as "depth:kind:name". */
 const rowsOf = (app) =>
   app.exec(
-    `return Array.from(document.querySelectorAll('.list .row')).map((r) =>
+    `return Array.from(document.querySelectorAll('.list .row:not([data-owl])')).map((r) =>
        r.dataset.depth + ':' + (r.classList.contains('folder') ? 'folder' : 'project') + ':' + r.querySelector('.name').textContent.trim())`,
   );
 
@@ -64,6 +64,10 @@ try {
     JSON.stringify(await rowsOf(app)) ===
       JSON.stringify(['0:project:Alpha', '0:project:Beta', '0:project:Gamma']),
     JSON.stringify(await rowsOf(app)),
+  );
+  check(
+    'the owl stands above them all, and goes to the map of the projects',
+    (await app.exec(`return document.querySelector('.list .row')?.hasAttribute('data-owl')`)) === true,
   );
 
   // A folder.

@@ -3,7 +3,7 @@
   import { untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import Maximize from '@lucide/svelte/icons/maximize';
-  import Maximize2 from '@lucide/svelte/icons/maximize-2';
+  import Minimize2 from '@lucide/svelte/icons/minimize-2';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
@@ -792,7 +792,7 @@
       {
         label: t('diagram-open-as-map'),
         hint: t('diagram-open-as-map-hint'),
-        icon: Maximize2,
+        icon: Minimize2,
         shortcut: 'Alt+Shift+↓',
         action: () => onenter(one),
       },

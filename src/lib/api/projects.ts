@@ -53,7 +53,8 @@ export interface Folder {
  * The three forms of the page of projects: the last used, as cards; all of
  * them, as a list in folders; and all of them as a map around the owl.
  */
-export type ProjectsShown = 'recent' | 'list' | 'map';
+/** The forms of the page of projects; the owl map, once a third, is a place of its own. */
+export type ProjectsShown = 'recent' | 'list';
 
 export interface ProjectSummary {
   name?: string;

@@ -81,6 +81,11 @@ earnest yet: what is there need only open and look right.
   opens it; going up from the project element returns here. Its elements
   look unlike those in a project, so that the top map is not taken for one.
   The badge of a project is the same here, in the pane and in the bar.
+  *Changed 2026-10-12:* the owl map is no longer a form of the home page
+  but a place of its own, shown as the map above every project: the top
+  row of the pane of projects and of the list of projects, and the owl in
+  the bar of a project at its top. It has the diagram only, with no text,
+  preview or second pane.
 - **Old projects open as they are.** A document with a table of maps is
   changed once on opening, outside undo: the project element is made with
   the project's name; each map's centre becomes a child of it in the maps'

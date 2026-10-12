@@ -28,17 +28,19 @@
   import ProjectList from './ProjectList.svelte';
 
   interface Props {
-    /** The project that is open. */
-    current: string;
+    /** The project that is open; none where the owl map is in view. */
+    current?: string | null;
     /** The open project itself, where the view gives it: its tree is shown under its row. */
     project?: Project | null;
     /** The element in view in it, marked in the tree. */
     at?: string | null;
     /** Enters an element of the open project. */
     onenter?: (id: string) => void;
+    /** Whether the owl map is in view. */
+    owlHere?: boolean;
   }
 
-  let { current, project = null, at = null, onenter }: Props = $props();
+  let { current = null, project = null, at = null, onenter, owlHere = false }: Props = $props();
 
   const width = $derived(paneWidth(settings.value.projectsPaneWidth, 0));
 
@@ -83,7 +85,7 @@
   </header>
   <div class="body">
     {#if projects.loaded}
-      <ProjectList {actions} {current} {project} {at} {onenter} compact />
+      <ProjectList {actions} {current} {project} {at} {onenter} {owlHere} compact />
     {:else}
       <div class="centre"><Spinner size={18} /></div>
     {/if}

@@ -7,6 +7,8 @@ export type MapMode = 'diagram' | 'text' | 'timeline';
 
 export type Route =
   | { view: 'projects' }
+  /** The owl map: all the projects, as the map above them. */
+  | { view: 'owl' }
   | { view: 'library'; collection?: string; entry?: string }
   | { view: 'pictures'; picture?: string }
   /** A project, and the element in view within it (ADR 0037): the project itself where none is named. */
@@ -35,6 +37,8 @@ export function parseRoute(hash: string): Route {
         at: parts[2],
         mode: (['text', 'diagram', 'timeline'] as const).find((m) => m === params.get('mode')),
       };
+    case 'owl':
+      return { view: 'owl' };
     case 'settings':
       return { view: 'settings', section: parts[1] };
     case 'search':
@@ -49,6 +53,8 @@ export function formatRoute(route: Route): string {
   switch (route.view) {
     case 'projects':
       return '#/';
+    case 'owl':
+      return '#/owl';
     case 'library': {
       const params = new URLSearchParams();
       if (route.collection) params.set('collection', route.collection);
