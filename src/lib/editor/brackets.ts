@@ -282,43 +282,45 @@ export function runMenu(view: EditorView, pos: number, anchor: HTMLElement) {
   openMenu(anchor, items, { align: 'start', onclose: () => view.focus() });
 }
 
-/** The label of a run, as a widget at its head: pressing it opens the menu of the run. */
-function label(
-  words: string,
-  kind: string,
+/**
+ * The line of a bracket beside one paragraph of a run, as a widget at its
+ * start; at the head of the run, with the label of the run on it, which is
+ * pressed for the menu of the run.
+ */
+function line(
+  head: { words: string; kind: string } | null,
 ): (view: EditorView, getPos: () => number | undefined) => HTMLElement {
   return (view, getPos) => {
     const el = document.createElement('span');
-    el.className = 'run-label';
-    el.setAttribute('role', 'button');
-    el.setAttribute('tabindex', '-1');
-    el.dataset.kind = kind;
-    el.textContent = words;
-    el.title = t('editor-run-label-hint', { kind: words });
+    el.className = 'run-line';
+    if (!head) {
+      el.setAttribute('aria-hidden', 'true');
+      return el;
+    }
+    const label = document.createElement('span');
+    label.className = 'run-label';
+    label.setAttribute('role', 'button');
+    label.setAttribute('tabindex', '-1');
+    label.dataset.kind = head.kind;
+    label.textContent = head.words;
+    label.title = t('editor-run-label-hint', { kind: head.words });
     // The text keeps its cursor: the label is not a place in it.
-    el.addEventListener('mousedown', (event) => event.preventDefault());
-    el.addEventListener('click', (event) => {
+    label.addEventListener('mousedown', (event) => event.preventDefault());
+    label.addEventListener('click', (event) => {
       event.preventDefault();
       const pos = getPos();
       if (pos === undefined || !view.editable) return;
-      runMenu(view, view.state.doc.resolve(pos).before(), el);
+      runMenu(view, view.state.doc.resolve(pos).before(), label);
     });
+    el.append(label);
     return el;
   };
 }
 
-/** The line of a bracket beside one paragraph of a run. */
-function line(): HTMLElement {
-  const el = document.createElement('span');
-  el.className = 'run-line';
-  el.setAttribute('aria-hidden', 'true');
-  return el;
-}
-
 /**
  * The brackets of every run: on each paragraph its run's kind, on the
- * first that it is the first, the line beside each, the label at the head,
- * and `data-current` on the paragraphs of the run the cursor is in. `name`
+ * first that it is the first, the line beside each with the label on the
+ * first, and `data-current` on the paragraphs of the run the cursor is in. `name`
  * gives the words for a kind: of the catalogue, or a kind of the writer's
  * own.
  */
@@ -345,22 +347,16 @@ function brackets(
             ...(current ? { 'data-current': '' } : {}),
           }),
         );
+        const head = i === 0 ? { words, kind: run.kind } : null;
         list.push(
-          Decoration.widget(pos + 1, line, {
+          Decoration.widget(pos + 1, line(head), {
             side: -3,
-            key: 'run-line',
+            key: head ? `run-head:${run.kind}:${words}` : 'run-line',
             ignoreSelection: true,
+            stopEvent: () => !!head,
           }),
         );
       });
-      list.push(
-        Decoration.widget(first, label(words, run.kind), {
-          side: -4,
-          key: `run-label:${run.kind}:${words}`,
-          ignoreSelection: true,
-          stopEvent: () => true,
-        }),
-      );
     }
   });
   return DecorationSet.create(state.doc, list);
