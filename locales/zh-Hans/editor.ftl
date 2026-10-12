@@ -30,7 +30,6 @@ editor-direction-hint = 所做的动作，用斜体
 editor-line-numbers = 行号
 editor-line-numbers-hint = 为这段韵文编行号：从第几行起，每隔几行标一次
 editor-line-numbers-from = 行号起始于
-editor-line-numbers-none = 留空则不编号
 editor-line-numbers-every = 每隔几行标号
 editor-line-numbers-number = 请输入一个整数。
 editor-kinds-text = 正文
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = 段落类型：{ $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = 更多…
-editor-kinds-in-hand = 常用类型
 editor-kinds-own = 自定义
 editor-kinds-make = 新建类型…
 editor-kinds-change-own = 修改自定义类型…

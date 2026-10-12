@@ -30,7 +30,6 @@ editor-direction-hint = Kaj se dogaja, ležeče
 editor-line-numbers = Številke vrstic
 editor-line-numbers-hint = Oštevilči vrstice teh verzov: od katere vrstice in na koliko
 editor-line-numbers-from = Številči vrstice od
-editor-line-numbers-none = Pustite prazno, če številk ne želite
 editor-line-numbers-every = Pokaži številko na vsakih
 editor-line-numbers-number = Potrebno je celo število.
 editor-kinds-text = Besedilo
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Vrsta odstavka: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Več…
-editor-kinds-in-hand = Vrste pri roki
 editor-kinds-own = Vaše lastne
 editor-kinds-make = Naredi vrsto…
 editor-kinds-change-own = Spremeni lastno vrsto…

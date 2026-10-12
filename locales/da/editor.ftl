@@ -30,7 +30,6 @@ editor-direction-hint = Det, der gøres, i kursiv
 editor-line-numbers = Linjenumre
 editor-line-numbers-hint = Nummerer linjerne i dette vers: fra hvilken linje, og for hver hvor mange
 editor-line-numbers-from = Nummerer linjerne fra
-editor-line-numbers-none = Lad stå tomt for ingen numre
 editor-line-numbers-every = Vis et nummer for hver
 editor-line-numbers-number = Der skal stå et helt tal.
 editor-kinds-text = Tekst
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Afsnittets art: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Mere…
-editor-kinds-in-hand = Arter ved hånden
 editor-kinds-own = Dine egne
 editor-kinds-make = Lav en art…
 editor-kinds-change-own = Ændr en af dine egne…

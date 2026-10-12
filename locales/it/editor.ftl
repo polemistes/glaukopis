@@ -30,7 +30,6 @@ editor-direction-hint = Ciò che si fa, in corsivo
 editor-line-numbers = Numeri dei versi
 editor-line-numbers-hint = Numera i versi di questo brano: da quale verso, e ogni quanti
 editor-line-numbers-from = Numera i versi da
-editor-line-numbers-none = Lascia vuoto per nessun numero
 editor-line-numbers-every = Mostra un numero ogni
 editor-line-numbers-number = Ci vuole un numero intero.
 editor-kinds-text = Testo
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Tipo di paragrafo: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Altro…
-editor-kinds-in-hand = Tipi a portata di mano
 editor-kinds-own = I tuoi
 editor-kinds-make = Crea un tipo…
 editor-kinds-change-own = Modifica un tipo tuo…

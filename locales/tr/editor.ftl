@@ -30,7 +30,6 @@ editor-direction-hint = Yapılan, italik olarak
 editor-line-numbers = Satır numaraları
 editor-line-numbers-hint = Bu dizelerin satırlarını numarala: hangi satırdan ve kaç satırda bir
 editor-line-numbers-from = Satırları şundan başlayarak numarala
-editor-line-numbers-none = Numara olmaması için boş bırakın
 editor-line-numbers-every = Şu kadar satırda bir numara göster
 editor-line-numbers-number = Bir tam sayı gerekiyor.
 editor-kinds-text = Metin
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Paragraf türü: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Diğer…
-editor-kinds-in-hand = Eldeki türler
 editor-kinds-own = Kendi türleriniz
 editor-kinds-make = Tür oluştur…
 editor-kinds-change-own = Kendi türünüzü değiştir…

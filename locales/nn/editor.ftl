@@ -30,7 +30,6 @@ editor-direction-hint = Det som blir gjort, i kursiv
 editor-line-numbers = Linjenummer
 editor-line-numbers-hint = Nummerer linjene i dette verset: frå kva linje, og kvar kor mange
 editor-line-numbers-from = Nummerer linjene frå
-editor-line-numbers-none = La stå tomt for ingen nummer
 editor-line-numbers-every = Vis eit nummer kvar
 editor-line-numbers-number = Det trengst eit heilt tal.
 editor-kinds-text = Tekst
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Slag avsnitt: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Meir …
-editor-kinds-in-hand = Slag for handa
 editor-kinds-own = Dine eigne
 editor-kinds-make = Lag eit slag …
 editor-kinds-change-own = Endre eitt av dine eigne …

@@ -30,7 +30,6 @@ editor-direction-hint = Шта се чини, курзивом
 editor-line-numbers = Бројеви стихова
 editor-line-numbers-hint = Нумериши стихове овог блока: од ког стиха, и на колико
 editor-line-numbers-from = Бројеви од стиха
-editor-line-numbers-none = Празно: без бројева
 editor-line-numbers-every = Број на сваких
 editor-line-numbers-number = Треба цео број.
 editor-kinds-text = Текст
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Врста пасуса: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Још…
-editor-kinds-in-hand = Врсте при руци
 editor-kinds-own = Ваше сопствене
 editor-kinds-make = Направи врсту…
 editor-kinds-change-own = Измени сопствену врсту…

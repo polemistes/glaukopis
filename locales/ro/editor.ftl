@@ -30,7 +30,6 @@ editor-direction-hint = Ce se face, cu cursive
 editor-line-numbers = Numerele versurilor
 editor-line-numbers-hint = Numerotează versurile de aici: de la care vers și din câte în câte
 editor-line-numbers-from = Numerotează versurile de la
-editor-line-numbers-none = Lăsați gol pentru niciun număr
 editor-line-numbers-every = Arată un număr la fiecare
 editor-line-numbers-number = Este nevoie de un număr întreg.
 editor-kinds-text = Text
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Tip de paragraf: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Altele…
-editor-kinds-in-hand = Tipuri la îndemână
 editor-kinds-own = Ale dumneavoastră
 editor-kinds-make = Fă un tip…
 editor-kinds-change-own = Modifică un tip propriu…

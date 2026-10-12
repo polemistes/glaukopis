@@ -30,7 +30,6 @@ editor-direction-hint = Ce qui se fait, en italique
 editor-line-numbers = Numéros de vers
 editor-line-numbers-hint = Numéroter les vers de ce passage : à partir de quel vers, et tous les combien
 editor-line-numbers-from = Numéroter les vers à partir de
-editor-line-numbers-none = Laisser vide pour aucun numéro
 editor-line-numbers-every = Afficher un numéro tous les
 editor-line-numbers-number = Il faut un nombre entier.
 editor-kinds-text = Texte
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Type de paragraphe : { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Autres…
-editor-kinds-in-hand = Types sous la main
 editor-kinds-own = Les vôtres
 editor-kinds-make = Créer un type…
 editor-kinds-change-own = Modifier un type à vous…

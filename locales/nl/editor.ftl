@@ -30,7 +30,6 @@ editor-direction-hint = Wat er gebeurt, cursief
 editor-line-numbers = Regelnummers
 editor-line-numbers-hint = De regels van dit vers nummeren: vanaf welke regel, en om de hoeveel
 editor-line-numbers-from = De regels nummeren vanaf
-editor-line-numbers-none = Leeg laten voor geen nummers
 editor-line-numbers-every = Een nummer tonen om de
 editor-line-numbers-number = Er wordt een geheel getal verwacht.
 editor-kinds-text = Tekst
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Soort alinea: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Meer…
-editor-kinds-in-hand = Soorten bij de hand
 editor-kinds-own = Eigen soorten
 editor-kinds-make = Een soort maken…
 editor-kinds-change-own = Een eigen soort wijzigen…

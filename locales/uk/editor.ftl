@@ -30,7 +30,6 @@ editor-direction-hint = Що робиться, курсивом
 editor-line-numbers = Номери рядків
 editor-line-numbers-hint = Нумерувати рядки цього вірша: з якого рядка і через скільки
 editor-line-numbers-from = Нумерувати рядки з
-editor-line-numbers-none = Залиште порожнім, щоб без номерів
 editor-line-numbers-every = Показувати номер кожні
 editor-line-numbers-number = Потрібне ціле число.
 editor-kinds-text = Текст
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Вид абзацу: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Інше…
-editor-kinds-in-hand = Види напохваті
 editor-kinds-own = Ваші власні
 editor-kinds-make = Створити вид…
 editor-kinds-change-own = Змінити власний вид…

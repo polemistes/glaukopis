@@ -30,7 +30,6 @@ editor-direction-hint = Čo sa deje, kurzívou
 editor-line-numbers = Čísla riadkov
 editor-line-numbers-hint = Číslovať riadky tohto verša: od ktorého riadku a po koľkých
 editor-line-numbers-from = Číslovať riadky od
-editor-line-numbers-none = Nechajte prázdne, ak nechcete čísla
 editor-line-numbers-every = Zobraziť číslo každých
 editor-line-numbers-number = Treba celé číslo.
 editor-kinds-text = Text
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Druh odseku: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Ďalšie…
-editor-kinds-in-hand = Druhy poruke
 editor-kinds-own = Vaše vlastné
 editor-kinds-make = Vytvoriť druh…
 editor-kinds-change-own = Zmeniť vlastný druh…

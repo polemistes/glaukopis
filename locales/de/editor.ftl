@@ -30,7 +30,6 @@ editor-direction-hint = Was geschieht, kursiv
 editor-line-numbers = Zeilennummern
 editor-line-numbers-hint = Die Zeilen dieses Verses nummerieren: ab welcher Zeile, und jede wievielte
 editor-line-numbers-from = Zeilen nummerieren ab
-editor-line-numbers-none = Leer lassen für keine Nummern
 editor-line-numbers-every = Eine Nummer zeigen alle
 editor-line-numbers-number = Eine ganze Zahl ist gefragt.
 editor-kinds-text = Text
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Absatzart: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Mehr…
-editor-kinds-in-hand = Arten zur Hand
 editor-kinds-own = Eigene
 editor-kinds-make = Art anlegen…
 editor-kinds-change-own = Eigene Art ändern…

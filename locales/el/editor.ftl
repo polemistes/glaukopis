@@ -30,7 +30,6 @@ editor-direction-hint = Τι γίνεται, με πλάγια
 editor-line-numbers = Αρίθμηση στίχων
 editor-line-numbers-hint = Αρίθμηση των στίχων: από ποιον στίχο, και κάθε πόσους
 editor-line-numbers-from = Αρίθμηση των στίχων από
-editor-line-numbers-none = Αφήστε το κενό για να μην υπάρχουν αριθμοί
 editor-line-numbers-every = Ένας αριθμός κάθε
 editor-line-numbers-number = Χρειάζεται ακέραιος αριθμός.
 editor-kinds-text = Κείμενο
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Είδος παραγράφου: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Περισσότερα…
-editor-kinds-in-hand = Είδη στο χέρι
 editor-kinds-own = Δικά σας
 editor-kinds-make = Δημιουργία είδους…
 editor-kinds-change-own = Αλλαγή δικού σας είδους…

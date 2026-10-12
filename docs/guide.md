@@ -389,18 +389,28 @@ follow the file when the file is changed. One table may have 2000 rows and
 
 ### Verse, and texts side by side
 
-Lines of poetry or drama are kept as lines: choose **Verse** as the kind of
-paragraph, for the paragraphs selected or for the one the cursor is in,
-and each paragraph becomes a line; Enter makes a new line, and Enter on an
-empty last line leaves the verse. A line can be the **speaker**, set in
-small capitals, or a **stage direction**, in italics: choose it as the kind
-of the line. Tab indents a line a step, for the shorter lines of lyric;
-Shift+Tab takes it back.
+Lines of poetry, drama or a transcript are kept as lines: choose **Verse**
+as the kind of paragraph, for the paragraphs selected or for the one the
+cursor is in, and each paragraph is a line. Lines that stand together form
+a **verse**, shown by a thin line at their left; Enter at the end of a line
+makes a new line, and Enter on an empty last line makes it text, which
+leaves the verse. A line can be the **speaker**, or a **stage direction**:
+choose it as the kind of the line, and it stays in the verse. Set a line in
+the middle to text, and the verse parts around it; set it back, and the
+verse is whole again. Tab indents a line a step, for the shorter lines of
+lyric; Shift+Tab takes it back.
 
-The **#** button that appears beside the kind of paragraph numbers the
-lines: from which line, and every how many. Speakers and directions are
-not counted. The numbers stand in the margin, in the text and in the
-document; in Word and Writer they stand at the head of their lines, small.
+The **#** button, which appears whenever the cursor is in a verse, a
+quotation, a list or any other passage, numbers its paragraphs. **Numbering**
+is one of three: **Not numbered**; **Counted from the first number given**,
+which counts the lines and begins where you gave a number; or **Only the
+numbers given**, which shows the numbers you gave and counts nothing.
+**Number from** gives the first counted line its number, 45 for a passage
+that begins at line 45. **Show a number every** and the side the numbers
+stand on are the layout's unless you say otherwise here: every fifth line,
+at the left, in the layouts that ship. Speakers and directions are not
+counted. The numbers stand in the margin, in the text and in the document;
+in Word and Writer they stand at the head of their lines, small.
 
 The same window says what is to be said of the line the cursor is in, for
 editions whose numbers do not follow the lines as they are set, as those of
@@ -409,17 +419,15 @@ Greek drama do not:
 - **Its number or label**: *1234*, *567a*, *1094a1*. It is always shown, as
   dark as the text where you write, so that you see which numbers you gave;
   and the count goes on from its last number: after *1234* comes 1235, after
-  *1094a1* comes *1094a2*, and after *567a* comes 568. A verse that is not
-  numbered from a line is numbered from the first line given a number. A
-  label without a number, such as *\**, is shown and leaves the count as
-  it was.
+  *1094a1* comes *1094a2*, and after *567a* comes 568. A label without a
+  number, such as *\**, is shown and leaves the count as it was.
 - **Not counted**: the count passes over the line, as over the second half
   of a line shared between two speakers, or a line the edition does not
   count. With a label of its own it shows the label, and nothing otherwise.
 - **Words in the margin**: a note of the metre, the number another edition
   gives, anything to stand beside the line. They are not counted. They
-  stand in the right margin, across from the numbers, and in Word and
-  Writer at the end of their line, small.
+  stand in the margin across from the numbers, and in Word and Writer at
+  the end of their line, small.
 
 *Every so many* is counted by the numbers of the edition, not by the lines
 on the page: with numbers every five, the lines numbered 1235 and 1240 show
@@ -431,9 +439,9 @@ A **screenplay** is written with the kinds of paragraph under *Script*:
 **parenthetical** and **transition**. Enter goes from a character to its
 dialogue and from dialogue to action; Tab goes to the other part that
 follows (action to character, dialogue to parenthetical), as a new
-paragraph after text or in place of an empty one. Scene headings,
-characters and transitions are set in capitals; the *Screenplay* layout
-sets every part where the standard script page has it.
+paragraph after text or in place of an empty one. The parts stand together
+as one script; the *Screenplay* layout sets every part where the standard
+script page has it.
 
 **Two texts side by side**, under *Insert*, puts an original beside its
 translation: two columns, each a text of its own, in which verse and
@@ -444,33 +452,51 @@ as a table without lines.
 ### Kinds of paragraph and of words
 
 Every paragraph is of a **kind**, and a run of words may be: a quotation,
-an epigraph, the heading of a scene, a word in another language. A kind
-says what the words are, not how they look. The look comes from the
-layout of the document, which has a look for every kind and changes with
-the layout; where you write, each kind has a plain look of its own, so that it
-is seen.
+an epigraph, a line of verse, the heading of a scene, a point of a list, a
+word in another language. A kind says what the words are, not how they
+look. The look comes from the layout of the document, which has a look
+for every kind and changes with the layout; where you write, the editor
+shows each kind by cues of its own — a quotation set in, a speaker in small
+capitals, a direction in italics — which go into no document.
 
-The button at the left of the tools shows the kind of the paragraph the
-cursor is in, and opens the kinds **in hand**: **Text**, **Quotation**,
-**List** and **Numbered list**; every kind the project uses; and those you
-have pinned. A kind chosen there is given to the paragraphs
-selected, or to the one the cursor is in. **More…** has every kind, by its
-group, and **Kinds in hand** a check beside each kind in hand: choose a
-kind there to pin it, so that it stays in the menu, or to unpin it.
+You choose one thing: the kind of a paragraph. The button at the left of
+the tools shows the kind of the paragraph the cursor is in, or **Mixed**
+over a selection of several kinds, and a kind chosen from its menu is given
+to the paragraphs selected, or to the one the cursor is in: never more,
+never less. Paragraphs of kinds that belong together, one after another,
+form a **passage**: lines a verse, quoted paragraphs a quotation, items a
+list, lines of code a code block. The editor shows a passage by a thin line
+at its left, and the document sets it as one. Nothing makes or unmakes a
+passage: it follows from the kinds. A paragraph of text in the middle of a
+quotation parts the quotation around it; set to a quotation again, it joins.
+
+The menu shows first the kinds of the passage the cursor is in — in a verse,
+**Verse**, **Speaker** and **Stage direction**; in a script, every part —
+then the kinds **at hand**: **Text**, **Quotation**, **List** and
+**Numbered list**, every kind the project's texts use, and those the
+template brings. There is nothing to pin: the menu learns from what you
+write. **More…** has every kind, by its group:
 
 | Group | Kinds |
 | --- | --- |
-| **Text** | **Text**, **Quotation**, **List**, **Numbered list** |
-| **Quotation** | **Attribution**, whose words they are, under a quotation, at the right; **Epigraph**, a quotation at the head of a part |
-| **Verse** | **Verse**, and the **Speaker** and **Stage direction** of a line: see *Verse, and texts side by side* |
+| **Text** | **Text**, which forms no passage |
+| **Quotation** | **Quotation**, words of another, set apart from the text; **Epigraph**, a quotation at the head of a part; **Attribution**, whose words a quotation is, which stands in whatever passage precedes it, under quoted verse as under quoted prose |
+| **Verse** | **Verse**, a line of poetry, drama or a transcript, kept as a line; the **Speaker** and **Stage direction** of a line: see *Verse, and texts side by side* |
 | **Script** | **Scene heading**, **Action**, **Character**, **Dialogue**, **Parenthetical** and **Transition**: the parts of a screenplay |
-| **More** | **Headword** and **Gloss**, the two paragraphs of a glossary; **Code**, kept letter for letter, in letters of equal width; **Break**, a pause between parts, which holds no text and prints the sign the layout gives it, `* * *` unless the layout says otherwise; **Draft note**, for your eyes, which goes into no document |
+| **List** | **List**, a point with a mark before it, and **Numbered list**, a point that is counted; Tab indents a point, which makes a list within the list, and Shift+Tab takes it back |
+| **More** | **Headword** and **Gloss**, the two paragraphs of a glossary; **Code**, a line kept letter for letter; **Break**, a pause between parts, which holds no text and prints the sign the layout gives it; **Draft note**, for your eyes, which goes into no document |
 
-Each kind says what **Enter** makes next: after a scene heading comes
-action, after a character its dialogue and after dialogue action, after a
-headword its gloss and after a gloss the next headword, after an epigraph
-its attribution and after an attribution text. **Backspace** at the start
-of an empty paragraph makes it text.
+Each kind says what **Enter** makes next: after a line of verse a line,
+after a speaker a line, after a scene heading action, after a character its
+dialogue and after dialogue action, after a headword its gloss and after a
+gloss the next headword, after an epigraph its attribution and after an
+attribution text. Enter on an empty last paragraph of a passage makes it
+text, and so leaves the passage. **Backspace** at the start of an empty
+paragraph makes it text, as at the start of the first paragraph of a
+passage. In a list, **Tab** indents a point and Shift+Tab takes it back; in
+a script or a glossary Tab goes to the other kind that commonly follows.
+Typing `> `, `- ` or `1. ` at the start of a paragraph of text makes it a
+quotation, a point or a numbered point, as Markdown has it.
 
 **Words**, among the tools, has the marks beyond italics, bold and small
 capitals — **Underlined** (**Ctrl+U**), **Superscript**, **Subscript**,
@@ -502,11 +528,15 @@ italic, while a passage in another language is only that.
 your own, and **Make a kind of words…**, under **Words**, a kind of words.
 Give it a name, say what it is based on, and say only how it differs:
 italic, bold, underlined, letters, alignment, indents, space before and
-after, size; what you do not say is as the base has it. What was selected
-is given the kind at once. A kind of your own is kept with the project, so
-that those you share it with have it, and works in every layout, since it
-says no more than how it differs from a kind the layout knows;
-its name is offered in your other projects when a kind is named there.
+after, size; what you do not say is as the base has it. A kind of your own
+belongs with the kinds it is based on — one based on a line of verse is a
+line, and stands in a verse — and one based on text forms passages of its
+own, so that paragraphs of a kind *Letter* stand together as a letter.
+What was selected is given the kind at once. A kind of your own is kept
+with the project, so that those you share it with have it, and works in
+every layout, since it says no more than how it differs from a kind the
+layout knows; its name is offered in your other projects when a kind is
+named there.
 
 The foot of the kind menu says where the looks come from: **Set as
 “Manuscript” has them**, naming the layout of the document, and under it

@@ -30,7 +30,6 @@ editor-direction-hint = 動作の指示。斜体で組む
 editor-line-numbers = 行番号
 editor-line-numbers-hint = この韻文の行に番号を振る：開始の行と間隔
 editor-line-numbers-from = 行番号の開始
-editor-line-numbers-none = 番号を振らないときは空欄に
 editor-line-numbers-every = 番号を表示する間隔
 editor-line-numbers-number = 整数を入力してください。
 editor-kinds-text = 本文
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = 段落の種類：{ $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = その他…
-editor-kinds-in-hand = よく使う種類
 editor-kinds-own = 独自の種類
 editor-kinds-make = 種類を作る…
 editor-kinds-change-own = 独自の種類を変更…

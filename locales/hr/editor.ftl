@@ -30,7 +30,6 @@ editor-direction-hint = Što se radi, kurzivom
 editor-line-numbers = Brojevi redaka
 editor-line-numbers-hint = Numeriraj retke ovih stihova: od kojeg retka i svakih koliko
 editor-line-numbers-from = Numeriraj retke od
-editor-line-numbers-none = Prazno: bez brojeva
 editor-line-numbers-every = Prikaži broj svakih
 editor-line-numbers-number = Potreban je cijeli broj.
 editor-kinds-text = Tekst
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Vrsta odlomka: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Više…
-editor-kinds-in-hand = Vrste pri ruci
 editor-kinds-own = Vaše vlastite
 editor-kinds-make = Načini vrstu…
 editor-kinds-change-own = Izmijeni vlastitu vrstu…

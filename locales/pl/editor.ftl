@@ -30,7 +30,6 @@ editor-direction-hint = Co się dzieje, kursywą
 editor-line-numbers = Numery wersów
 editor-line-numbers-hint = Numeruj wersy tego wiersza: od którego wersu i co ile
 editor-line-numbers-from = Numeruj wersy od
-editor-line-numbers-none = Zostaw puste, by nie numerować
 editor-line-numbers-every = Pokazuj numer co
 editor-line-numbers-number = Potrzebna jest liczba całkowita.
 editor-kinds-text = Tekst
@@ -92,7 +91,6 @@ editor-paragraph-kind-now = Rodzaj akapitu: { $kind }
 ## words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Więcej…
-editor-kinds-in-hand = Rodzaje pod ręką
 editor-kinds-own = Własne
 editor-kinds-make = Utwórz rodzaj…
 editor-kinds-change-own = Zmień własny rodzaj…
