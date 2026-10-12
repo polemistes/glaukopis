@@ -109,12 +109,16 @@ describe('what is put right as it is typed', () => {
     const w = editor();
     type(w, '1. First');
     expect(kindOf(w.state)).toBe('numbered');
-    expect(w.state.doc.firstChild!.firstChild!.attrs.number).toBeNull();
+    // Counted from one: nothing is said of its line.
+    expect(w.state.doc.firstChild!.firstChild!.isText).toBe(true);
     w.destroy();
     const u = editor();
     type(u, '7. Seventh');
-    expect(u.state.doc.firstChild!.firstChild!.attrs.number).toBe('7');
-    expect(u.state.doc.firstChild!.attrs.family).toBe('list');
+    // Begun at another number: its line says so, by its mark.
+    const mark = u.state.doc.firstChild!.firstChild!;
+    expect(mark.type.name).toBe('linemark');
+    expect(mark.attrs.number).toBe('7');
+    expect(u.state.doc.textContent).toBe('Seventh');
     u.destroy();
     // Not within a paragraph of a kind already.
     const x = editor();
@@ -127,7 +131,7 @@ describe('what is put right as it is typed', () => {
 });
 
 describe('the kind of a paragraph', () => {
-  it('is changed from any to any, and the passage comes and goes with it', () => {
+  it('is changed from any to any, and nothing else changes', () => {
     const v = editor();
     type(v, 'Sing, goddess');
     expect(kindOf(v.state)).toBe('text');
@@ -136,7 +140,7 @@ describe('the kind of a paragraph', () => {
       expect(kindOf(v.state)).toBe(kind);
       expect(v.state.doc.textContent).toBe('Sing, goddess');
       expect(v.state.doc.childCount).toBe(1);
-      expect(v.state.doc.firstChild?.type.name).toBe(kind === 'text' ? 'paragraph' : 'passage');
+      expect(v.state.doc.firstChild?.type.name).toBe('paragraph');
     }
   });
 
@@ -147,8 +151,7 @@ describe('the kind of a paragraph', () => {
     type(v, 'Two');
     v.dispatch(v.state.tr.setSelection(TextSelection.atStart(v.state.doc)));
     setKind('quote')(v.state, v.dispatch, v);
-    expect(v.state.doc.child(0).type.name).toBe('passage');
-    expect(v.state.doc.child(0).attrs.family).toBe('quotation');
+    expect(v.state.doc.child(0).attrs.kind).toBe('quote');
     expect(v.state.doc.child(1).type.name).toBe('paragraph');
     expect(v.state.doc.child(1).attrs.kind).toBe('text');
   });

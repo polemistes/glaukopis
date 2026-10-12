@@ -1,153 +1,171 @@
-import type { Node } from 'prosemirror-model';
-import { EditorState, TextSelection } from 'prosemirror-state';
-import type { Decoration } from 'prosemirror-view';
-import { describe, expect, it } from 'vitest';
+import { TextSelection } from 'prosemirror-state';
+import type { EditorView } from 'prosemirror-view';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
-  canSplitPassage,
-  languageOverPassage,
-  passageBrackets,
-  passageLanguage,
-  passageToText,
-  selectPassage,
-  splitPassage,
+  beginRun,
+  canBeginRun,
+  joinRunBefore,
+  languageOverRun,
+  runAt,
+  runLanguage,
+  runToText,
+  selectRun,
 } from './brackets';
-import { passages } from './passages';
-import { bodySchema } from './schema';
+import { runsIn } from './shape';
+import { editorOf, shapeOf, text } from './testing';
 
-const { doc, paragraph, passage } = bodySchema.nodes;
+const views: EditorView[] = [];
 
-/** What a decoration is, which it keeps in its type: a widget has `toDOM`, a node decoration its attributes. */
-const typeOf = (d: Decoration) =>
-  (d as unknown as { type: { toDOM?: unknown; attrs?: Record<string, string> } }).type;
-
-const p = (kind: string, words: string, attrs: Record<string, unknown> = {}) =>
-  paragraph.create({ kind, ...attrs }, bodySchema.text(words));
-
-/** A text whose shape is kept after every change, as the editor keeps it. */
-function state(children: Node[], at?: number) {
-  let s = EditorState.create({ doc: doc.create(null, children), plugins: [passages()] });
-  if (at !== undefined) s = s.apply(s.tr.setSelection(TextSelection.create(s.doc, at)));
-  return s;
+function at(blocks: string[], own: { id: string; basedOn: string; name?: string }[] = []) {
+  const v = editorOf(blocks, { passageKinds: () => own });
+  views.push(v);
+  return v;
 }
 
-/** The shape of a text, written out as `passages.test.ts` writes it. */
-function shape(node: Node): string {
+/** The runs of a text: each its kind and its paragraphs' words, `*` for one of speakers and directions alone. */
+function runs(...blocks: string[]): string[] {
+  const { doc } = text(...blocks);
+  return runsIn(doc, 0).map(
+    (r) =>
+      `${r.among ? '*' : ''}${r.kind}[${r.paragraphs.map((p) => p.node.textContent).join(',')}]`,
+  );
+}
+
+/** The words of a paragraph as drawn, without the bracket and the numbers beside it. */
+function words(p: Element): string {
+  const copy = p.cloneNode(true) as Element;
+  for (const widget of copy.querySelectorAll('.run-line, .line-number')) widget.remove();
+  return copy.textContent ?? '';
+}
+
+/** The brackets drawn: the label of each, and the words of the paragraphs it is beside. */
+function brackets(v: EditorView): string[] {
   const out: string[] = [];
-  node.forEach((child) => {
-    if (child.type === passage) {
-      const kinds: string[] = [];
-      child.forEach((para) => kinds.push(para.attrs.kind as string));
-      out.push(`${child.attrs.family}[${kinds.join(' ')}]`);
-    } else out.push(child.attrs.kind as string);
-  });
-  return out.join(' ');
+  for (const p of v.dom.querySelectorAll(':scope > p')) {
+    const label = p.querySelector('.run-label');
+    if (label) out.push(`${label.textContent}:`);
+    if (p.hasAttribute('data-run')) out[out.length - 1] += ` ${words(p)}`;
+  }
+  return out;
 }
 
-describe('what is said of a passage from its bracket', () => {
-  const verse = () =>
-    passage.create({ family: 'verse', numbering: 'counted', every: 3, side: 'right' }, [
-      p('line', 'If only the Argo', { number: '45' }),
-      p('line', 'had never flown'),
-      p('line', 'through the dark rocks'),
+afterEach(() => {
+  for (const v of views.splice(0)) v.destroy();
+  document.body.innerHTML = '';
+});
+
+describe('runs', () => {
+  it('are paragraphs of one kind standing together, speakers and directions among them not parting them', () => {
+    expect(
+      runs(
+        'text: a',
+        'text: b',
+        'speaker: Nurse',
+        'line: c',
+        'direction: She weeps.',
+        'line: d',
+        'quote: e',
+        'quote: f',
+      ),
+    ).toEqual(['text[a,b]', 'line[Nurse,c,She weeps.,d]', 'quote[e,f]']);
+  });
+
+  it('a direction after a verse is the verse`s, before text; speakers alone are a run of their own', () => {
+    expect(runs('line: a', 'direction: Exit.', 'text: b')).toEqual(['line[a,Exit.]', 'text[b]']);
+    expect(runs('speaker: Nurse', 'pagebreak', 'speaker: Chorus', 'text: b')).toEqual([
+      '*speaker[Nurse]',
+      '*speaker[Chorus]',
+      'text[b]',
     ]);
-
-  it('selects the whole passage', () => {
-    const s = state([p('text', 'Before'), verse()], 2);
-    let next = s;
-    expect(selectPassage(8)(s, (tr) => (next = s.apply(tr)))).toBe(true);
-    const { from, to } = next.selection;
-    expect(next.doc.textBetween(from, to, '/')).toBe(
-      'If only the Argo/had never flown/through the dark rocks',
-    );
-    // Nothing where no passage begins.
-    expect(selectPassage(0)(s)).toBe(false);
   });
 
-  it('makes every paragraph of the passage text, so that the passage goes, and leaves the cursor in its paragraph', () => {
-    const s = state([p('text', 'Before'), verse()], 2);
-    const next = s.apply(
-      (() => {
-        let tr = s.tr;
-        passageToText(8)(s, (t) => (tr = t));
-        return tr;
-      })(),
-    );
-    expect(shape(next.doc)).toBe('text text text text');
-    // The numbers given by hand stay with their paragraphs, for when the lines are lines again.
-    expect(next.doc.child(1).attrs.number).toBe('45');
-    expect(next.selection.from).toBe(2);
-  });
-
-  it('splits the passage before the paragraph the cursor is in, with an empty paragraph of text between the halves, which keep the settings', () => {
-    // The cursor in the second line: after "Before" (8), the passage (1), the first line (18), into the second.
-    const s = state([p('text', 'Before'), verse()], 30);
-    expect(canSplitPassage(s)).toBe(true);
-    let next = s;
-    expect(splitPassage(s, (tr) => (next = s.apply(tr)))).toBe(true);
-    expect(shape(next.doc)).toBe('text verse[line] text verse[line line]');
-    for (const i of [1, 3]) {
-      expect(next.doc.child(i).attrs).toMatchObject({
-        family: 'verse',
-        numbering: 'counted',
-        every: 3,
-        side: 'right',
-      });
-    }
-    expect(next.doc.child(2).content.size).toBe(0);
-    // The cursor stays in its line, which now begins the second half.
-    expect(next.selection.$from.parent.textContent).toBe('had never flown');
-    // Not before the first paragraph, and not outside a passage.
-    expect(canSplitPassage(state([p('text', 'Before'), verse()], 10))).toBe(false);
-    expect(splitPassage(state([p('text', 'Before'), verse()], 10))).toBe(false);
-    expect(canSplitPassage(state([p('text', 'Before')], 2))).toBe(false);
-  });
-
-  it('gives the whole passage a language, reads it, and takes it away again', () => {
-    const s = state([verse()]);
-    expect(passageLanguage(s, 0)).toBeNull();
-    let next = s;
-    languageOverPassage(0, 'grc')(s, (tr) => (next = s.apply(tr)));
-    expect(passageLanguage(next, 0)).toBe('grc');
-    next.doc.child(0).descendants((node) => {
-      if (node.isText) expect(node.marks.map((m) => m.attrs.tag)).toEqual(['grc']);
-    });
-    // Left selected, so that what was given it is seen.
-    expect(next.selection.from).toBe(1);
-    expect(next.selection.to).toBe(next.doc.child(0).nodeSize - 1);
-    let gone = next;
-    languageOverPassage(0, null)(next, (tr) => (gone = next.apply(tr)));
-    expect(passageLanguage(gone, 0)).toBeNull();
-  });
-
-  it('labels every passage by its family, and marks the one the cursor is in', () => {
-    const named: string[] = [];
-    const plugin = passageBrackets((family) => {
-      named.push(family);
-      return family === 'k1' ? 'Letter' : family.toUpperCase();
-    });
-    const s = EditorState.create({
-      doc: doc.create(null, [
-        p('text', 'Before'),
-        verse(),
-        passage.create({ family: 'k1' }, [p('k1', 'Dear')]),
-      ]),
-      plugins: [plugin],
-    });
-    const found = plugin.getState(s)!.find();
-    const widgets = found.filter((d) => 'toDOM' in typeOf(d));
-    expect(widgets.map((d) => d.from)).toEqual([9, 70]);
-    expect(widgets.map((d) => d.spec.key)).toEqual([
-      'passage-label:verse:VERSE',
-      'passage-label:k1:Letter',
+  it('a paragraph that begins a new run begins one, though the one before is of its kind', () => {
+    expect(runs('line: a', 'line: b', 'line new: c', 'line: d')).toEqual([
+      'line[a,b]',
+      'line[c,d]',
     ]);
-    expect(named).toEqual(['verse', 'k1']);
-    // No passage has the cursor while it stands in the first paragraph.
-    expect(found.some((d) => typeOf(d).attrs?.['data-current'] !== undefined)).toBe(false);
-    const inside = s.apply(s.tr.setSelection(TextSelection.create(s.doc, 12)));
-    const current = plugin
-      .getState(inside)!
-      .find()
-      .filter((d) => typeOf(d).attrs?.['data-current'] !== undefined);
-    expect(current.map((d) => [d.from, d.to])).toEqual([[8, 69]]);
+    expect(runs('line: a', 'speaker new: Nurse', 'line: c')).toEqual(['line[a]', 'line[Nurse,c]']);
+    // Anything that is not a paragraph ends a run.
+    expect(runs('quote: a', 'pagebreak', 'quote: b')).toEqual(['quote[a]', 'quote[b]']);
+  });
+
+  it('the cursor is in one, at one of its paragraphs', () => {
+    const v = at(['speaker: Nurse', 'line: a', 'line: b|']);
+    const found = runAt(v.state)!;
+    expect(found.run.kind).toBe('line');
+    expect(found.index).toBe(2);
+  });
+});
+
+describe('the bracket of a run', () => {
+  it('is drawn beside the paragraphs of a kind, named by it, and not beside text, unless it is numbered', () => {
+    const v = at(
+      [
+        'text: a',
+        'speaker: Nurse',
+        'line: b',
+        'line: c',
+        'text #counted: d',
+        'text #counted: e',
+        'k1: f',
+      ],
+      [{ id: 'k1', basedOn: 'text', name: 'Letter' }],
+    );
+    expect(brackets(v)).toEqual(['Verse: Nurse b c', 'Text · numbered: d e', 'Letter: f']);
+    const first = v.dom.querySelectorAll(':scope > p')[1];
+    expect(first.getAttribute('data-run')).toBe('line');
+    expect(first.hasAttribute('data-run-first')).toBe(true);
+    expect(first.querySelector('.run-line > .run-label')).not.toBeNull();
+    // A line beside each paragraph of the run.
+    expect(v.dom.querySelectorAll('.run-line')).toHaveLength(6);
+  });
+
+  it('is marked current while the cursor is in its run', () => {
+    const v = at(['quote: a|', 'quote: b', 'text: c', 'line: d']);
+    const current = () =>
+      [...v.dom.querySelectorAll('p[data-current]')].map((p) => words(p)).join(',');
+    expect(current()).toBe('a,b');
+    v.dispatch(v.state.tr.setSelection(TextSelection.atEnd(v.state.doc)));
+    expect(current()).toBe('d');
+  });
+});
+
+describe('the menu of a run', () => {
+  it('makes it text: the kind and nothing else, its lines, indents and speakers as they were', () => {
+    const v = at(['speaker: Nurse', 'line>1 #counted: {n=1}a / {i=2}b', 'line: c|', 'quote: q']);
+    expect(runToText(0)(v.state, v.dispatch)).toBe(true);
+    expect(shapeOf(v)).toEqual([
+      'speaker: Nurse',
+      'text>1 #counted: {n=1}a / {i=2}b',
+      'text: c|',
+      'quote: q',
+    ]);
+  });
+
+  it('selects the run, and gives it a language', () => {
+    const v = at(['text: x', 'quote: Arma virumque', 'quote: cano|']);
+    expect(selectRun(3)(v.state, v.dispatch)).toBe(true);
+    expect(v.state.doc.textBetween(v.state.selection.from, v.state.selection.to)).toBe(
+      'Arma virumquecano',
+    );
+    languageOverRun(3, 'la')(v.state, v.dispatch);
+    expect(runLanguage(v.state, 3)).toBe('la');
+    languageOverRun(3, null)(v.state, v.dispatch);
+    expect(runLanguage(v.state, 3)).toBeNull();
+    // Only where a run begins.
+    expect(selectRun(4)(v.state)).toBe(false);
+  });
+
+  it('begins a new run at the cursor`s paragraph, not at the first, and joins it with the one before again', () => {
+    const v = at(['line: a|', 'line: b', 'line: c']);
+    expect(canBeginRun(v.state)).toBe(false);
+    v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 4)));
+    expect(canBeginRun(v.state)).toBe(true);
+    beginRun()(v.state, v.dispatch);
+    expect(shapeOf(v)).toEqual(['line: a', 'line new: |b', 'line: c']);
+    expect(brackets(v)).toEqual(['Verse: a', 'Verse: b c']);
+    expect(joinRunBefore(3)(v.state, v.dispatch)).toBe(true);
+    expect(shapeOf(v)).toEqual(['line: a', 'line: |b', 'line: c']);
+    expect(joinRunBefore(0)(v.state)).toBe(false);
   });
 });

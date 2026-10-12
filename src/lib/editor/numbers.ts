@@ -337,7 +337,9 @@ export function numbersAsked(
       ...marks,
       number: !stretch && here && !marks.number ? '1' : marks.number,
       kind,
-      words: state.doc.textBetween(found.line.start, found.line.end, ' ', ' '),
+      words: state.doc.textBetween(found.line.start, found.line.end, ' ', (leaf) =>
+        leaf.type.name === 'linemark' ? '' : ' ',
+      ),
       countable: countedKind(kind, own),
     },
   };
