@@ -1587,6 +1587,14 @@
     padding: 0 10px 0 8px;
     border-bottom: 1px solid var(--line);
     background: var(--paper);
+    container-type: inline-size;
+  }
+  /* In a narrow window the buttons of the bar keep their pictures only; the tooltips still name them. */
+  @container (max-width: 700px) {
+    .tool > span,
+    header :global(.segmented span) {
+      display: none;
+    }
   }
   .divider {
     width: 1px;
@@ -1728,10 +1736,11 @@
     flex: none;
     background: var(--line);
   }
-  /* The tools take the room there is before anything springs; they wrap only when there is none. */
+  /* The tools take the room there is before anything springs. Where there is
+     too little beside the name, they go to a line of their own under it. */
   .writing {
     flex: 1000 1 0;
-    min-width: 0;
+    min-width: min(100%, 520px);
   }
   .spring {
     flex: 1;

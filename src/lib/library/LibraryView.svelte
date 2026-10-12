@@ -582,6 +582,31 @@
     border-right: 1px solid var(--line);
     overflow-y: auto;
   }
+  /* In a narrow window the columns share what there is, and narrower still
+     the collections lie over the references as a strip. */
+  @media (max-width: 1060px) {
+    .library {
+      grid-template-columns: 180px minmax(0, 1fr) minmax(0, 360px);
+    }
+  }
+  @media (max-width: 760px) {
+    .library {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+    .side {
+      grid-column: 1 / -1;
+      max-height: 28vh;
+      border-right: none;
+      border-bottom: 1px solid var(--line);
+    }
+    .middle header {
+      flex-wrap: wrap;
+      height: auto;
+      min-height: var(--bar-h);
+      padding-block: 6px;
+    }
+  }
   .middle {
     display: flex;
     flex-direction: column;

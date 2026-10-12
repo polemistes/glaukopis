@@ -17,8 +17,8 @@
         "title": "Glaukopis",
         "width": 1360,
         "height": 880,
-        "minWidth": 900,
-        "minHeight": 600,
+        "minWidth": 480,
+        "minHeight": 400,
         "dragDropEnabled": true
       }
     ],

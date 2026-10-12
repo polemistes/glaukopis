@@ -1353,9 +1353,14 @@
     border-top: 1px solid var(--line);
     font-size: var(--text-xs);
     color: var(--ink-3);
+    white-space: nowrap;
   }
+  /* The keys give way first where the line is narrow. */
   .keys {
     margin-left: auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: var(--ink-4);
   }
   .keys kbd {

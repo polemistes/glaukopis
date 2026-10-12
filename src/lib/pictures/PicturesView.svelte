@@ -289,6 +289,12 @@
     height: 100%;
     min-height: 0;
   }
+  /* In a narrow window the two halves share what there is. */
+  @media (max-width: 900px) {
+    .pictures {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 45%);
+    }
+  }
   .pictures:global([data-drop-over]) .middle {
     box-shadow: inset 0 0 0 2px var(--accent);
   }
