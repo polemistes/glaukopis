@@ -10,7 +10,7 @@ use serde_json::{Value, json};
 
 use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, RefForm, Section};
 use crate::formats::kinds::{self, KindInfo, Resolved};
-use crate::formats::{Case, Equations, Figures, RefMarks, Tables};
+use crate::formats::{Case, Equations, Figures, RefMarks, Tables, Verse};
 use crate::templates::kinds::PartInfo;
 use crate::written::locators::{locale_for, terms};
 
@@ -119,6 +119,8 @@ pub struct Extras {
     pub italics_underlined: bool,
     /// How the format sets reference marks.
     pub refmarks: RefMarks,
+    /// How the layout shows the numbers of a numbered passage, where the passage does not say.
+    pub verse: Verse,
     /// Whether the document can carry the classes of kinds, as a page of the web can.
     pub classes: bool,
     /// What has been given a place that can be gone to.
@@ -261,23 +263,11 @@ impl Converter<'_> {
         fn blocks(list: &[Block], c: &mut Counted) {
             for block in list {
                 match block {
-                    Block::Paragraph { content } | Block::Script { content, .. } | Block::Passage { content, .. } => {
-                        inlines(content, c.to)
-                    }
-                    Block::Blockquote { content } => blocks(content, c),
-                    Block::Verse { lines, .. } => {
-                        for l in lines {
-                            inlines(&l.content, c.to);
-                        }
-                    }
+                    Block::Paragraph { content, .. } => inlines(content, c.to),
+                    Block::Passage { content, .. } => blocks(content, c),
                     Block::Parallel { left, right } => {
                         blocks(left, c);
                         blocks(right, c);
-                    }
-                    Block::BulletList { items } | Block::OrderedList { items, .. } => {
-                        for item in items {
-                            blocks(item, c);
-                        }
                     }
                     Block::Row { items } => blocks(items, c),
                     Block::Table(table) => {
@@ -603,44 +593,27 @@ impl Converter<'_> {
                 matches!(block, Block::Equation { .. } | Block::Figure { .. } | Block::Table(_) | Block::Row { .. }),
             );
             match block {
-                Block::Paragraph { content } => {
+                Block::Paragraph { name, content, .. } if name == "text" => {
                     let inner = self.inlines(content);
                     if !inner.is_empty() {
                         out.push(if after { self.paragraph_after(inner) } else { json!({"t": "Para", "c": inner}) });
                     }
                 }
-                Block::Blockquote { content } => {
-                    let mut inner = Vec::new();
-                    self.blocks(content, &mut inner);
-                    if !inner.is_empty() {
-                        out.push(json!({"t": "BlockQuote", "c": inner}));
-                    }
+                // A paragraph of a kind outside any passage: the interface
+                // puts every one in a passage, but a document may hold one.
+                Block::Paragraph { name, content, .. } => self.stray_paragraph(name, content, out),
+                Block::Passage { family, numbering, every, side, content } => {
+                    self.passage_block(family, *numbering, *every, *side, content, out)
                 }
-                Block::Verse { start, by, lines } => self.verse(*start, *by, lines, out),
                 Block::Parallel { left, right } => self.parallel(left, right, out),
-                Block::Script { part, content } => self.passage(part.name(), content, out),
-                Block::Passage { name, content } => self.passage(name, content, out),
-                Block::BulletList { items } => {
-                    let list = self.items(items);
-                    if !list.is_empty() {
-                        out.push(json!({"t": "BulletList", "c": list}));
-                    }
-                }
-                Block::OrderedList { start, items } => {
-                    let list = self.items(items);
-                    if !list.is_empty() {
-                        out.push(json!({
-                            "t": "OrderedList",
-                            "c": [[start, {"t": "Decimal"}, {"t": "Period"}], list],
-                        }));
-                    }
-                }
                 Block::Equation { .. } | Block::Figure { .. } | Block::Table(_) | Block::Row { .. } => {
                     // Where the text that flows around something must be
-                    // given to it, it is the paragraphs that follow.
+                    // given to it, it is the paragraphs of text that follow.
                     let mut around = Vec::new();
                     if self.takes_text(block) {
-                        while let Some(Block::Paragraph { content }) = list.get(at) {
+                        while let Some(Block::Paragraph { name, content, .. }) = list.get(at)
+                            && name == "text"
+                        {
                             let inner = self.inlines(content);
                             if !inner.is_empty() {
                                 around.push(json!({"t": "Para", "c": inner}));
@@ -653,20 +626,6 @@ impl Converter<'_> {
                 }
             }
         }
-    }
-
-    fn items(&self, items: &[Vec<Block>]) -> Vec<Value> {
-        items
-            .iter()
-            .map(|item| {
-                let mut inner = Vec::new();
-                self.blocks(item, &mut inner);
-                if inner.is_empty() {
-                    inner.push(json!({"t": "Plain", "c": []}));
-                }
-                Value::Array(inner)
-            })
-            .collect()
     }
 
     /// The mark of the element a section was made from, in the Typst that
@@ -888,97 +847,7 @@ fn plain_of(inlines: &[Value]) -> String {
     out
 }
 
-/// The text of a passage of code, line by line, as it was written.
-fn code_text(content: &[Inline]) -> String {
-    let mut out = String::new();
-    for i in content {
-        match i {
-            Inline::Text { text, .. } => out.push_str(text),
-            Inline::Break => out.push('\n'),
-            Inline::Math { tex } => out.push_str(tex),
-            _ => {}
-        }
-    }
-    out
-}
-
 impl Converter<'_> {
-    /// A paragraph of a kind, set as the kind's look says: in Typst by the
-    /// opening of the document, in LaTeX by what is written around it, in
-    /// Word and Writer by a paragraph style named after the kind, and
-    /// elsewhere as plainly as the look can be shown. A part of a script is
-    /// such a paragraph, by the name of the part.
-    pub(super) fn passage(&self, name: &str, content: &[Inline], out: &mut Vec<Value>) {
-        let x = &self.extras;
-        // A note to oneself goes into no document.
-        if name == "draft" {
-            return;
-        }
-        let Some(info) = x.kinds.get(name) else {
-            let inner = self.inlines(content);
-            if !inner.is_empty() {
-                out.push(json!({"t": "Para", "c": inner}));
-            }
-            return;
-        };
-        let look = &info.look;
-        if name == "code" {
-            let text = code_text(content);
-            if !text.trim().is_empty() {
-                out.push(json!({"t": "CodeBlock", "c": [attr(), text.trim_end()]}));
-            }
-            return;
-        }
-        let mut inner = self.inlines(content);
-        if name == "break" {
-            // A break holds no text of its own: the format says what stands in it.
-            inner.clear();
-            let sign = look.text.trim();
-            tokens(if sign.is_empty() { "\u{a0}" } else { sign }, &mut inner);
-        }
-        if inner.is_empty() {
-            return;
-        }
-        if name == "parenthetical" {
-            inner.insert(0, json!({"t": "Str", "c": "("}));
-            inner.push(json!({"t": "Str", "c": ")"}));
-        }
-        if look.new_page
-            && let Some(b) = &self.page_break
-        {
-            out.push(b.clone());
-        }
-        match x.flavour {
-            Flavour::Typst => out.push(json!({"t": "Div", "c": [[format!("gk-kind-{}", label(name)), [], []],
-                [{"t": "Plain", "c": inner}]]})),
-            Flavour::Latex => {
-                if look.case == Case::Upper {
-                    upper(&mut inner);
-                }
-                let (open, close) = crate::export::latex::around(look, x.kinds.get("text").map(|t| &t.look));
-                inner.insert(0, json!({"t": "RawInline", "c": ["latex", open]}));
-                inner.push(json!({"t": "RawInline", "c": ["latex", close]}));
-                out.push(json!({"t": "Plain", "c": inner}));
-            }
-            Flavour::Docx | Flavour::Odt => {
-                if info.style.is_empty() {
-                    out.push(json!({"t": "Para", "c": inner}));
-                } else {
-                    out.push(json!({"t": "Div", "c": [["", [format!("gk-kind-{}", label(name))], [["custom-style", info.style]]],
-                        [{"t": "Para", "c": inner}]]}));
-                }
-            }
-            Flavour::Plain => {
-                if look.case == Case::Upper {
-                    upper(&mut inner);
-                }
-                let inner = looked(inner, look);
-                out.push(json!({"t": "Div", "c": [["", [format!("gk-kind-{}", label(name))], []],
-                    [{"t": "Para", "c": inner}]]}));
-            }
-        }
-    }
-
     /// Inlines within their marks: italics and bold, the language of a
     /// passage, and the kinds of words.
     fn wrap(&self, inner: Vec<Value>, marks: &std::collections::BTreeMap<String, Value>) -> Vec<Value> {

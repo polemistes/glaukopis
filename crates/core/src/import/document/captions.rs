@@ -182,7 +182,7 @@ enum Known {
 }
 
 fn known(block: Option<&Block>) -> Option<Known> {
-    let Some(Block::Paragraph { content }) = block else { return None };
+    let Some(Block::Paragraph { content, .. }) = block else { return None };
     if marked(content) {
         Some(Known::ByStyle)
     } else if label(&beginning(content), false).is_some() {
@@ -197,17 +197,6 @@ fn known(block: Option<&Block>) -> Option<Known> {
 /// over it first, of a figure under it; one that is known by its style
 /// before one that is known by its shape.
 pub(super) fn attach(blocks: &mut Vec<Block>, taken: &mut Taken) {
-    for block in blocks.iter_mut() {
-        match block {
-            Block::Blockquote { content } => attach(content, taken),
-            Block::BulletList { items } | Block::OrderedList { items, .. } => {
-                for item in items {
-                    attach(item, taken);
-                }
-            }
-            _ => {}
-        }
-    }
     let mut at = 0;
     while at < blocks.len() {
         let over_first = match &blocks[at] {
@@ -225,7 +214,7 @@ pub(super) fn attach(blocks: &mut Vec<Block>, taken: &mut Taken) {
             .into_iter()
             .find_map(|how| places.into_iter().flatten().find(|place| known(blocks.get(*place)) == Some(how)));
         if let Some(place) = found {
-            let Block::Paragraph { content } = blocks.remove(place) else { unreachable!("it was seen to be one") };
+            let Block::Paragraph { content, .. } = blocks.remove(place) else { unreachable!("it was seen to be one") };
             if place < at {
                 at -= 1;
             }
@@ -263,23 +252,19 @@ fn unmark_line(line: &mut Vec<Inline>) {
 pub(super) fn unmark(blocks: &mut Vec<Block>) {
     for block in blocks.iter_mut() {
         match block {
-            Block::Paragraph { content } | Block::Script { content, .. } | Block::Passage { content, .. } => {
-                unmark_line(content)
-            }
-            Block::Blockquote { content } => unmark(content),
-            Block::BulletList { items } | Block::OrderedList { items, .. } => items.iter_mut().for_each(unmark),
+            Block::Paragraph { content, .. } => unmark_line(content),
+            Block::Passage { content, .. } => unmark(content),
             Block::Figure { caption, .. } => unmark_line(caption),
             Block::Table(table) => {
                 unmark_line(&mut table.caption);
                 for cell in table.rows.iter_mut().flatten() {
                     unmark(&mut cell.content);
                     if cell.content.is_empty() {
-                        cell.content.push(Block::Paragraph { content: Vec::new() });
+                        cell.content.push(Block::paragraph(Vec::new()));
                     }
                 }
             }
             Block::Row { items } => unmark(items),
-            Block::Verse { lines, .. } => lines.iter_mut().for_each(|l| unmark_line(&mut l.content)),
             Block::Parallel { left, right } => {
                 unmark(left);
                 unmark(right);
@@ -287,8 +272,8 @@ pub(super) fn unmark(blocks: &mut Vec<Block>) {
             Block::Equation { .. } => {}
         }
     }
-    // A paragraph that held nothing but the mark holds nothing.
-    blocks.retain(|b| !matches!(b, Block::Paragraph { content } if content.is_empty()));
+    // A paragraph of text that held nothing but the mark holds nothing.
+    blocks.retain(|b| !matches!(b, Block::Paragraph { name, content, .. } if name == "text" && content.is_empty()));
 }
 
 /// Whether what a picture shows is said in the same words as what is said
@@ -323,7 +308,7 @@ mod tests {
     }
 
     fn paragraph(s: &str) -> Block {
-        Block::Paragraph { content: vec![text(s)] }
+        Block::paragraph(vec![text(s)])
     }
 
     fn table(caption: &str) -> Block {
@@ -479,7 +464,8 @@ mod tests {
             paragraph("Homer 1: the first book"),
             table(""),
             paragraph(&format!("{MARK}Forms of the word")),
-            Block::Blockquote { content: vec![figure(""), paragraph(&format!("{MARK}Figur 1 Skjoldet"))] },
+            figure(""),
+            paragraph(&format!("{MARK}Figur 1 Skjoldet")),
             paragraph(&format!("{MARK}Text 1: Of nothing that stands here")),
         ];
         attach(&mut blocks, &mut taken);
@@ -489,7 +475,7 @@ mod tests {
             vec![
                 paragraph("Homer 1: the first book"),
                 table("Forms of the word"),
-                Block::Blockquote { content: vec![numbered("Skjoldet")] },
+                numbered("Skjoldet"),
                 paragraph("Text 1: Of nothing that stands here"),
             ]
         );

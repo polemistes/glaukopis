@@ -538,38 +538,81 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
         );
     }
 
-    // Lines of verse: each a line, with the number it shows in the margin at
-    // the left, as the converter has counted them (`document/verse.rs`), and
-    // words given in the margin at the right; speakers and stage directions
-    // as their kinds of words are set. And texts side by side.
-    let speaker = worded(&kinds::resolve(f, "speaker", &p.own_kinds), "body");
-    let direction = worded(&kinds::resolve(f, "direction", &p.own_kinds), "body");
+    // What stands beside a paragraph (ADR 0040): its number, small and
+    // faint, and words given in the margin, in italics besides. `gk-beside`
+    // places them from where a paragraph begins, in the margin of the page
+    // on the side asked for, taking no room in the line; the lines of a
+    // verse place theirs from the edge of the verse (`gk-at`), so that the
+    // numbers of texts side by side stand beside their own columns.
     let _ = writeln!(
         out,
-        "#let gk-verse(body) = block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em, inset: (left: 2.4em), body)
-#let gk-margin-words(words) = place(left + horizon, dx: 100% + 1em,
-  box(width: {right} - 1.6em, text(size: 0.8em, fill: luma(45%), style: \"italic\", hyphenate: false, words)))
-#let gk-line(kind, indent, n: none, margin: none, body) = {{
+        "#let gk-number(n) = text(size: 0.8em, fill: luma(45%), hyphenate: false, n)
+#let gk-margin(words) = text(size: 0.8em, fill: luma(45%), style: \"italic\", hyphenate: false, words)
+#let gk-at(side, inset, body) = if side == \"left\" {{
+  place(left + horizon, dx: -inset - 4.6em, box(width: 4em, align(right, body)))
+}} else {{
+  place(left + horizon, dx: 100% + 0.8em, box(width: {right} - 1.6em, body))
+}}
+#let gk-beside(side, body) = context {{
+  let x = here().position().x
+  if side == \"left\" {{
+    box(width: 0pt, place(left + horizon, dx: {left} - x - 4.6em, box(width: 4em, align(right, body))))
+  }} else {{
+    box(width: 0pt, place(left + horizon, dx: page.width - {right} - x + 0.8em, box(width: {right} - 1.6em, body)))
+  }}
+}}",
+        left = f.page.margin_left,
+        right = f.page.margin_right,
+    );
+
+    // Lines of verse: each a line, standing in as far as the look of a line
+    // says, with the number it shows beside it, as the converter has counted
+    // them (`document/numbers.rs`), and words given in the margin on the
+    // other side; speakers and stage directions as their kinds look. And
+    // texts side by side.
+    let line = kinds::resolve(f, "line", &p.own_kinds);
+    let mut speaker_look = kinds::resolve(f, "speaker", &p.own_kinds);
+    let mut direction_look = kinds::resolve(f, "direction", &p.own_kinds);
+    // Within a verse the speaker and the direction are set as words of the
+    // line: a size that is the text's is not said.
+    for look in [&mut speaker_look, &mut direction_look] {
+        if (look.size - f.font.size).abs() < 0.01 {
+            look.size = 0.0;
+        }
+    }
+    let speaker = worded(&speaker_look, "body");
+    let direction = worded(&direction_look, "body");
+    let _ = writeln!(
+        out,
+        "#let gk-verse(body) = block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em, inset: (left: {inset}), body)
+#let gk-line(kind, indent, n: none, margin: none, side: \"left\", body) = {{
+  let other = if side == \"left\" {{ \"right\" }} else {{ \"left\" }}
   if kind == \"speaker\" {{
-    block(width: 100%, above: 0.7em, below: 0.25em, breakable: false, {{
-      if margin != none {{ gk-margin-words(margin) }}
+    block(width: 100%, above: {speaker_above}, below: {speaker_below}, breakable: false, {{
+      if n != none {{ gk-at(side, {inset}, gk-number(n)) }}
+      if margin != none {{ gk-at(other, {inset}, gk-margin(margin)) }}
       {speaker}
     }})
   }} else if kind == \"direction\" {{
-    block(width: 100%, above: 0.25em, below: 0.25em, breakable: false, {{
-      if margin != none {{ gk-margin-words(margin) }}
+    block(width: 100%, above: {direction_above}, below: {direction_below}, breakable: false, {{
+      if n != none {{ gk-at(side, {inset}, gk-number(n)) }}
+      if margin != none {{ gk-at(other, {inset}, gk-margin(margin)) }}
       {direction}
     }})
   }} else {{
     block(width: 100%, above: 0pt, below: 0pt, breakable: false, inset: (left: indent * 1.5em), {{
-      if n != none {{ place(left + horizon, dx: -2.4em - indent * 1.5em, text(size: 0.8em, fill: luma(45%), n)) }}
-      if margin != none {{ gk-margin-words(margin) }}
+      if n != none {{ gk-at(side, {inset} + indent * 1.5em, gk-number(n)) }}
+      if margin != none {{ gk-at(other, {inset} + indent * 1.5em, gk-margin(margin)) }}
       body
     }})
   }}
 }}
 {refmark}",
-        right = f.page.margin_right,
+        inset = line.indent_left,
+        speaker_above = speaker_look.space_before,
+        speaker_below = speaker_look.space_after,
+        direction_above = direction_look.space_before,
+        direction_below = direction_look.space_after,
         refmark = refmark_rule(f),
     );
     let _ = writeln!(
@@ -784,7 +827,12 @@ mod tests {
             "{out}"
         );
         assert!(out.contains("inset: (left: 4cm, right: 0pt)"), "{out}");
-        assert!(out.contains("if margin != none { gk-margin-words(margin) }\n      smallcaps(body)\n"), "{out}");
+        assert!(
+            out.contains("if margin != none { gk-at(other, 1cm, gk-margin(margin)) }\n      smallcaps(body)\n"),
+            "{out}"
+        );
+        assert!(out.contains("inset: (left: 1cm), body)"), "the verse stands in as far as a line looks: {out}");
+        assert!(out.contains("#show <gk-kind-line>"), "{out}");
         assert!(!out.contains("<gk-kind-draft>"), "a note to oneself has no look");
 
         f.title.anonymous = true;

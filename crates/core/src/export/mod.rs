@@ -539,6 +539,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     converter.extras.parts = crate::templates::kinds::table(f);
     converter.extras.italics_underlined = f.text.italics == crate::formats::Italics::Underline;
     converter.extras.refmarks = f.text.refmarks;
+    converter.extras.verse = f.verse.clone();
     converter.extras.classes = matches!(target, Target::Html | Target::Epub);
 
     let mut meta = Map::new();
@@ -1653,12 +1654,13 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
         use crate::document::Block;
         for b in list {
             match b {
-                Block::Paragraph { content } | Block::Script { content, .. } => inlines(content, with_notes, out),
-                Block::Passage { name, content } => {
+                Block::Paragraph { name, content, .. } => {
+                    // A note to oneself is in no document.
                     if name != "draft" {
                         inlines(content, with_notes, out);
                     }
                 }
+                Block::Passage { content, .. } => blocks(content, with_notes, out),
                 Block::Figure { caption, .. } => inlines(caption, with_notes, out),
                 Block::Equation { .. } => {}
                 Block::Row { items } => blocks(items, with_notes, out),
@@ -1671,21 +1673,9 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
                         }
                     }
                 }
-                Block::Blockquote { content } => blocks(content, with_notes, out),
-                Block::Verse { lines, .. } => {
-                    for l in lines {
-                        inlines(&l.content, with_notes, out);
-                        out.push('\n');
-                    }
-                }
                 Block::Parallel { left, right } => {
                     blocks(left, with_notes, out);
                     blocks(right, with_notes, out);
-                }
-                Block::BulletList { items } | Block::OrderedList { items, .. } => {
-                    for item in items {
-                        blocks(item, with_notes, out);
-                    }
                 }
             }
             out.push('\n');
@@ -1758,7 +1748,7 @@ mod tests {
             title: vec![text(name)],
             sections: vec![Section {
                 level: 0,
-                blocks: vec![Block::Paragraph { content: vec![text(words)] }],
+                blocks: vec![Block::paragraph(vec![text(words)])],
                 element: Some(element.into()),
                 kind: Some(kind.into()),
                 ..Default::default()
@@ -2057,9 +2047,7 @@ mod tests {
         r.document.sections.push(Section {
             level: 2,
             heading: Some(vec![crate::document::fixtures::text("Summary")]),
-            blocks: vec![Block::Paragraph {
-                content: vec![crate::document::fixtures::text("Zzsummaryzz of the chapter.")],
-            }],
+            blocks: vec![Block::paragraph(vec![crate::document::fixtures::text("Zzsummaryzz of the chapter.")])],
             element: Some("e-sum".into()),
             kind: Some("abstract".into()),
         });
@@ -2104,7 +2092,7 @@ mod tests {
         // Two sections made from elements: the sample's, and one more of many
         // paragraphs, so that it may reach a page of its own.
         assert_eq!(r.document.sections[1].element.as_deref(), Some("e1"));
-        let para = |w: &str| Block::Paragraph { content: vec![text(&w.repeat(40))] };
+        let para = |w: &str| Block::paragraph(vec![text(&w.repeat(40))]);
         r.document.sections.push(Section {
             level: 1,
             heading: Some(vec![text("Afterwards")]),
@@ -2171,24 +2159,27 @@ mod tests {
     #[test]
     fn a_screenplay_is_set_as_scripts_are() {
         use crate::document::fixtures::text;
-        use crate::document::{Block, ScriptPart, Section};
+        use crate::document::{Block, Section};
         let Some(s) = setup() else { return };
         let formats = crate::formats::Formats::new(&s.resources, &s.work.join("formats"));
         let screenplay = formats.all().into_iter().map(|(f, _)| f).find(|f| f.id == "screenplay").unwrap();
         let mut r = request("chicago-notes-bibliography");
         r.format = screenplay;
-        let part = |part: ScriptPart, words: &str| Block::Script { part, content: vec![text(words)] };
+        let part = |part: &str, words: &str| Block::of_kind(part, vec![text(words)]);
         r.document.sections.push(Section {
             level: 1,
             heading: Some(vec![text("Act one")]),
-            blocks: vec![
-                part(ScriptPart::Scene, "Int. Palace – night"),
-                part(ScriptPart::Action, "Medea paces. The nurse watches."),
-                part(ScriptPart::Character, "Nurse"),
-                part(ScriptPart::Parenthetical, "quietly"),
-                part(ScriptPart::Dialogue, "If only the Argo had never flown."),
-                part(ScriptPart::Transition, "Cut to:"),
-            ],
+            blocks: vec![Block::passage(
+                "script",
+                vec![
+                    part("scene", "Int. Palace – night"),
+                    part("action", "Medea paces. The nurse watches."),
+                    part("character", "Nurse"),
+                    part("parenthetical", "quietly"),
+                    part("dialogue", "If only the Argo had never flown."),
+                    part("transition", "Cut to:"),
+                ],
+            )],
             element: Some("act".into()),
             kind: None,
         });
@@ -2259,7 +2250,7 @@ mod tests {
     fn place_first_note(r: &mut Request, place: NotePlace) {
         for section in &mut r.document.sections {
             for block in &mut section.blocks {
-                if let crate::document::Block::Paragraph { content } = block {
+                if let crate::document::Block::Paragraph { content, .. } = block {
                     for inline in content.iter_mut() {
                         if let Inline::Footnote { place: p, .. } = inline {
                             *p = Some(place);
@@ -2484,9 +2475,11 @@ mod tests {
             width: 40,
             numbered: true,
         });
-        blocks.push(Block::Paragraph {
-            content: vec![text("Where "), Inline::Math { tex: "x_i \\leq \\alpha".into() }, text(" holds:")],
-        });
+        blocks.push(Block::paragraph(vec![
+            text("Where "),
+            Inline::Math { tex: "x_i \\leq \\alpha".into() },
+            text(" holds:"),
+        ]));
         blocks.push(Block::Equation {
             align: None,
             id: "eq-sum".into(),
@@ -2616,7 +2609,7 @@ mod tests {
         use crate::document::{Block, Cell, Table};
         use crate::formats::Stand;
         let cell = |words: &str, header: bool, to: Option<Stand>| Cell {
-            content: vec![Block::Paragraph { content: vec![text(words)] }],
+            content: vec![Block::paragraph(vec![text(words)])],
             header,
             align: to,
             ..Default::default()
@@ -2644,7 +2637,7 @@ mod tests {
         let out = s.work.join("out");
         fs::create_dir_all(&out).unwrap();
         let mut r = with_figures(&s);
-        let para = |words: &str| Block::Paragraph { content: vec![text(words)] };
+        let para = |words: &str| Block::paragraph(vec![text(words)]);
         let long = "The wrath of Achilles is the first word of the poem and its subject. ".repeat(6);
         {
             let blocks = &mut r.document.sections[1].blocks;
@@ -2662,13 +2655,11 @@ mod tests {
                 }
             }
             blocks.push(para(&long));
-            blocks.push(Block::Paragraph {
-                content: vec![
-                    text("See "),
-                    Inline::CrossRef { target: "t-poems".into(), form: RefForm::Full },
-                    text("."),
-                ],
-            });
+            blocks.push(Block::paragraph(vec![
+                text("See "),
+                Inline::CrossRef { target: "t-poems".into(), form: RefForm::Full },
+                text("."),
+            ]));
             blocks.push(Block::Table(poems("t-poems", "The poems")));
             blocks.push(para(&long));
             blocks.push(Block::Table(Table {
@@ -2794,34 +2785,36 @@ mod tests {
     #[test]
     fn verse_and_texts_side_by_side() {
         use crate::document::fixtures::text;
-        use crate::document::{Block, Section, VerseLine, VerseLineKind};
+        use crate::document::{Block, Numbering, Section};
         let Some(s) = setup() else { return };
         let out = s.work.join("out");
         fs::create_dir_all(&out).unwrap();
         let mut r = request("chicago-author-date");
-        let line = |kind: VerseLineKind, indent: u32, words: &str| VerseLine {
-            kind,
+        let line = |kind: &str, indent: u32, words: &str| Block::Paragraph {
+            name: kind.into(),
             indent,
             number: None,
             counted: true,
             margin: None,
             content: vec![text(words)],
         };
-        let verse = Block::Verse {
-            start: Some(1),
-            by: 5,
-            lines: vec![
-                line(VerseLineKind::Speaker, 0, "Nurse"),
-                line(VerseLineKind::Line, 0, "If only the Argo had never flown"),
-                line(VerseLineKind::Line, 1, "through the dark Clashing Rocks"),
-                line(VerseLineKind::Direction, 0, "She weeps."),
-                line(VerseLineKind::Line, 0, "to the land of Colchis,"),
-                line(VerseLineKind::Line, 0, "nor the pine been felled"),
-                line(VerseLineKind::Line, 0, "in the glens of Pelion."),
+        let verse = Block::Passage {
+            family: "verse".into(),
+            numbering: Numbering::Counted,
+            every: None,
+            side: None,
+            content: vec![
+                line("speaker", 0, "Nurse"),
+                line("line", 0, "If only the Argo had never flown").with_number("1"),
+                line("line", 1, "through the dark Clashing Rocks"),
+                line("direction", 0, "She weeps."),
+                line("line", 0, "to the land of Colchis,"),
+                line("line", 0, "nor the pine been felled"),
+                line("line", 0, "in the glens of Pelion."),
                 // A number given by hand, a line not counted, and words in the margin.
-                VerseLine { number: Some("1094a1".into()), ..line(VerseLineKind::Line, 0, "Nor had the heroes rowed") },
-                VerseLine { counted: false, ..line(VerseLineKind::Line, 2, "for Pelias") },
-                VerseLine { margin: Some("ia. trim.".into()), ..line(VerseLineKind::Line, 0, "the golden fleece.") },
+                line("line", 0, "Nor had the heroes rowed").with_number("1094a1"),
+                line("line", 2, "for Pelias").not_counted(),
+                line("line", 0, "the golden fleece.").with_margin("ia. trim."),
             ],
         };
         r.document.sections.push(Section {
@@ -2830,12 +2823,11 @@ mod tests {
             blocks: vec![
                 verse.clone(),
                 Block::Parallel {
-                    left: vec![Block::Verse {
-                        start: None,
-                        by: 5,
-                        lines: vec![line(VerseLineKind::Line, 0, "Εἴθ᾽ ὤφελ᾽ Ἀργοῦς μὴ διαπτάσθαι σκάφος")],
-                    }],
-                    right: vec![Block::Paragraph { content: vec![text("If only the Argo had never flown.")] }],
+                    left: vec![Block::passage(
+                        "verse",
+                        vec![line("line", 0, "Εἴθ᾽ ὤφελ᾽ Ἀργοῦς μὴ διαπτάσθαι σκάφος")],
+                    )],
+                    right: vec![Block::paragraph(vec![text("If only the Argo had never flown.")])],
                 },
             ],
             element: Some("nurse".into()),
@@ -2847,13 +2839,13 @@ mod tests {
         export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
         let t = fs::read_to_string(&typ).unwrap();
         assert!(t.contains("#gk-verse["), "{t}");
-        assert!(t.contains("#gk-line(\"speaker\", 0, n: none, margin: none)["), "{t}");
-        assert!(t.contains("#gk-line(\"line\", 0, n: \"1\", margin: none)["), "{t}");
-        assert!(t.contains("#gk-line(\"line\", 1, n: none, margin: none)["), "{t}");
-        assert!(t.contains("#gk-line(\"line\", 0, n: \"5\", margin: none)["), "{t}");
-        assert!(t.contains("#gk-line(\"line\", 0, n: \"1094a1\", margin: none)["), "{t}");
-        assert!(t.contains("#gk-line(\"line\", 2, n: none, margin: none)["), "{t}");
-        assert!(t.contains("#gk-line(\"line\", 0, n: none, margin: \"ia. trim.\")["), "{t}");
+        assert!(t.contains("#gk-line(\"speaker\", 0, n: none, margin: none, side: \"left\")["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 0, n: \"1\", margin: none, side: \"left\")["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 1, n: none, margin: none, side: \"left\")["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 0, n: \"5\", margin: none, side: \"left\")["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 0, n: \"1094a1\", margin: none, side: \"left\")["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 2, n: none, margin: none, side: \"left\")["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 0, n: none, margin: \"ia. trim.\", side: \"left\")["), "{t}");
         assert!(t.contains("#gk-parallel(["), "{t}");
         let p = preview(&s.ctx(), &r).unwrap();
         assert!(p.warnings.is_empty(), "{:?}", p.warnings);
@@ -2863,13 +2855,11 @@ mod tests {
         // Reference marks, raised and in the margin: the pages are made either way.
         {
             let mut marked = r.clone();
-            marked.document.sections[0].blocks.push(Block::Paragraph {
-                content: vec![
-                    text("In the beginning. "),
-                    Inline::RefMark { label: "2".into() },
-                    text("And the earth was without form."),
-                ],
-            });
+            marked.document.sections[0].blocks.push(Block::paragraph(vec![
+                text("In the beginning. "),
+                Inline::RefMark { label: "2".into() },
+                text("And the earth was without form."),
+            ]));
             for margin in [false, true] {
                 if margin {
                     marked.format.text.refmarks = crate::formats::RefMarks::Margin;
@@ -2878,7 +2868,7 @@ mod tests {
                 export(&s.ctx(), &marked, Target::Typst, &typ, &ExportOptions::default()).unwrap();
                 let t = fs::read_to_string(&typ).unwrap();
                 assert!(t.contains("#gk-refmark(\"2\");"), "{t}");
-                assert_eq!(t.contains("here().position()"), margin, "{t}");
+                assert_eq!(t.contains("gk-refmark(label) = context"), margin, "{t}");
                 let p = preview(&s.ctx(), &marked).unwrap();
                 assert!(p.warnings.is_empty(), "{:?}", p.warnings);
             }
@@ -2889,6 +2879,7 @@ mod tests {
         export(&s.ctx(), &r, Target::Latex, &tex, &ExportOptions::default()).unwrap();
         let l = fs::read_to_string(&tex).unwrap();
         assert!(l.contains("\\textsc{Nurse}"), "{l}");
+        assert!(l.contains("{\\par\\leftskip=1cm\\relax"), "the lines stand in as far as a line looks: {l}");
         assert!(l.contains("\\llap{{\\footnotesize 1}\\hspace{0.9em}}If only the Argo had never flown"), "{l}");
         assert!(l.contains("\\llap{{\\footnotesize 5}\\hspace{0.9em}}in the glens"), "{l}");
         assert!(l.contains("\\hspace*{1.5em}through the dark"), "{l}");
@@ -2969,7 +2960,49 @@ mod tests {
             xml.contains("VerseNumber") && xml.contains(">5\u{a0}\u{a0}<"),
             "the numbers stand at the head of their lines: {xml}"
         );
+        assert!(xml.contains("<w:pStyle w:val=\"Line\""), "the lines are in the style of a line: {xml}");
+        assert!(xml.contains("<w:rStyle w:val=\"SpeakerChar\""), "the speaker in its character style: {xml}");
+        let styles = unzip(&docx, "word/styles.xml");
+        assert!(styles.contains("w:styleId=\"SpeakerChar\"") && styles.contains("w:styleId=\"Line\""), "{styles}");
         assert!(xml.contains("<w:tbl>"), "no table for the texts side by side");
+
+        // With the numbers at the right, as the layout says: at the end of their lines in Word.
+        let mut right = r.clone();
+        right.format.verse.side = crate::document::Side::Right;
+        export(&s.ctx(), &right, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let xml = unzip(&docx, "word/document.xml");
+        assert!(xml.contains(">\u{a0}\u{a0}5<"), "the numbers stand at the end of their lines: {xml}");
+        export(&s.ctx(), &right, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("#gk-line(\"line\", 0, n: \"5\", margin: none, side: \"right\")["), "{t}");
+        let p = preview(&s.ctx(), &right).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+
+        // A numbered passage of prose: the numbers beside the paragraphs, in every kind of document.
+        let mut prose = r.clone();
+        prose.document.sections[0].blocks = vec![Block::Passage {
+            family: "quotation".into(),
+            numbering: Numbering::Counted,
+            every: Some(1),
+            side: None,
+            content: vec![
+                line("quote", 0, "I went down yesterday to the Piraeus.").with_number("327a"),
+                line("quote", 0, "Polemarchus saw us from a distance."),
+            ],
+        }];
+        export(&s.ctx(), &prose, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+        let t = fs::read_to_string(&typ).unwrap();
+        assert!(t.contains("#gk-beside(\"left\", gk-number(\"327a\"));"), "{t}");
+        assert!(t.contains("#gk-beside(\"left\", gk-number(\"328\"));"), "the count goes on from the digits: {t}");
+        assert!(t.contains("#quote(block: true)"), "{t}");
+        let p = preview(&s.ctx(), &prose).unwrap();
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        export(&s.ctx(), &prose, Target::Latex, &tex, &ExportOptions::default()).unwrap();
+        let l = fs::read_to_string(&tex).unwrap();
+        assert!(l.contains("\\llap{{\\footnotesize 327a}\\hspace{0.9em}}I went down"), "{l}");
+        export(&s.ctx(), &prose, Target::Docx, &docx, &ExportOptions::default()).unwrap();
+        let xml = unzip(&docx, "word/document.xml");
+        assert!(xml.contains("VerseNumber") && xml.contains(">328\u{a0}\u{a0}<"), "{xml}");
     }
 
     #[test]
@@ -3008,27 +3041,25 @@ mod tests {
         r.document.sections.push(Section {
             level: 2,
             heading: Some(vec![text("Under the word")]),
-            blocks: vec![Block::Paragraph {
-                content: vec![
-                    text("See "),
-                    to("fig-vase", RefForm::Full),
-                    text(", and "),
-                    to("fig-shield", RefForm::Number),
-                    text("; by "),
-                    to("eq-series", RefForm::Full),
-                    text(" and "),
-                    to("eq-sum", RefForm::Number),
-                    text("; in "),
-                    to("e1", RefForm::Full),
-                    text(", that is “"),
-                    to("e1", RefForm::Name),
-                    text("”, and here in "),
-                    to("e2", RefForm::Full),
-                    text("; and "),
-                    to("gone", RefForm::Full),
-                    text("."),
-                ],
-            }],
+            blocks: vec![Block::paragraph(vec![
+                text("See "),
+                to("fig-vase", RefForm::Full),
+                text(", and "),
+                to("fig-shield", RefForm::Number),
+                text("; by "),
+                to("eq-series", RefForm::Full),
+                text(" and "),
+                to("eq-sum", RefForm::Number),
+                text("; in "),
+                to("e1", RefForm::Full),
+                text(", that is “"),
+                to("e1", RefForm::Name),
+                text("”, and here in "),
+                to("e2", RefForm::Full),
+                text("; and "),
+                to("gone", RefForm::Full),
+                text("."),
+            ])],
             element: Some("e2".into()),
             kind: None,
         });
@@ -3247,7 +3278,7 @@ mod tests {
             based_on: "epigraph".into(),
             look: Look { italic: Some(true), ..Default::default() },
         }];
-        let passage = |name: &str, words: &str| Block::Passage { name: name.into(), content: vec![text(words)] };
+        let kind = |name: &str, words: &str| Block::of_kind(name, vec![text(words)]);
         let marked = |words: &str, mark: &str, value: Value| Inline::Text {
             text: words.into(),
             marks: BTreeMap::from([(mark.to_owned(), value)]),
@@ -3256,48 +3287,49 @@ mod tests {
             level: 1,
             heading: Some(vec![text("Kinds")]),
             blocks: vec![
-                passage("epigraph", "Sing, goddess, the wrath."),
-                passage("attribution", "Homer"),
-                passage("k1", "Dear friend, I write of wrath."),
-                Block::Passage { name: "break".into(), content: vec![] },
-                passage("draft", "Zzdraftzz: look this up again."),
-                Block::Passage {
-                    name: "code".into(),
-                    content: vec![text("let x = 1;"), Inline::Break, text("let y = 2;")],
-                },
-                Block::Paragraph {
-                    content: vec![
-                        text("The word "),
-                        marked("μῆνις", "kind", json!({"name": "foreign", "lang": "el"})),
-                        text(" is "),
-                        marked("wrath", "kind", json!({"name": "mention"})),
-                        text(", "),
-                        marked("underlined", "underline", json!(true)),
-                        text(", "),
-                        marked("x_1", "code", json!(true)),
-                        text(" and "),
-                        marked("stressed", "em", json!(true)),
-                        text("."),
+                Block::passage(
+                    "quotation",
+                    vec![
+                        kind("epigraph", "Sing, goddess, the wrath."),
+                        kind("attribution", "Homer"),
+                        kind("k1", "Dear friend, I write of wrath."),
                     ],
-                },
+                ),
+                Block::passage("break", vec![kind("break", "")]),
+                Block::passage("draft", vec![kind("draft", "Zzdraftzz: look this up again.")]),
+                Block::passage(
+                    "code",
+                    vec![Block::of_kind("code", vec![text("let x = 1;"), Inline::Break, text("let y = 2;")])],
+                ),
+                Block::paragraph(vec![
+                    text("The word "),
+                    marked("μῆνις", "kind", json!({"name": "foreign", "lang": "el"})),
+                    text(" is "),
+                    marked("wrath", "kind", json!({"name": "mention"})),
+                    text(", "),
+                    marked("underlined", "underline", json!(true)),
+                    text(", "),
+                    marked("x_1", "code", json!(true)),
+                    text(" and "),
+                    marked("stressed", "em", json!(true)),
+                    text("."),
+                ]),
                 // Words and a whole paragraph in a language of their own; where foreign words
                 // say another, the language of the passage holds.
-                Block::Paragraph {
-                    content: vec![
-                        text("Of longing, "),
-                        marked("Weltschmerz", "lang", json!({"tag": "de"})),
-                        text("; of song, "),
-                        Inline::Text {
-                            text: "ἄειδε".into(),
-                            marks: BTreeMap::from([
-                                ("kind".to_owned(), json!({"name": "foreign", "lang": "el"})),
-                                ("lang".to_owned(), json!({"tag": "grc"})),
-                            ]),
-                        },
-                        text("."),
-                    ],
-                },
-                Block::Paragraph { content: vec![marked("Arma virumque cano.", "lang", json!({"tag": "la"}))] },
+                Block::paragraph(vec![
+                    text("Of longing, "),
+                    marked("Weltschmerz", "lang", json!({"tag": "de"})),
+                    text("; of song, "),
+                    Inline::Text {
+                        text: "ἄειδε".into(),
+                        marks: BTreeMap::from([
+                            ("kind".to_owned(), json!({"name": "foreign", "lang": "el"})),
+                            ("lang".to_owned(), json!({"tag": "grc"})),
+                        ]),
+                    },
+                    text("."),
+                ]),
+                Block::paragraph(vec![marked("Arma virumque cano.", "lang", json!({"tag": "la"}))]),
             ],
             element: Some("kinds".into()),
             kind: None,
@@ -3467,9 +3499,10 @@ mod tests {
             tex: "a = b".into(),
             numbered: true,
         });
-        d.sections[1].blocks.push(crate::document::Block::Paragraph {
-            content: vec![crate::document::fixtures::text("where"), Inline::Math { tex: "x".into() }],
-        });
+        d.sections[1].blocks.push(crate::document::Block::paragraph(vec![
+            crate::document::fixtures::text("where"),
+            Inline::Math { tex: "x".into() },
+        ]));
         assert_eq!(count_words(&d, false), 22 + 5 + 2);
     }
 

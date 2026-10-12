@@ -7,9 +7,10 @@
 
 pub mod beside;
 pub mod bibliography;
+mod numbers;
 pub mod pandoc;
+mod passages;
 mod placing;
-mod verse;
 
 use std::collections::BTreeMap;
 
@@ -18,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use crate::bib::names::Person;
 use crate::formats::Stand;
 pub use crate::formats::kinds::OwnKind;
+pub use numbers::{Shown, numbers};
 
 /// A word the document prints, in the language of the document; in English
 /// where documents have no words in that language (ADR 0020).
@@ -118,45 +120,45 @@ pub enum CiteMode {
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Block {
+    /// A paragraph of a kind: text, a line of verse, a speaker, an item of
+    /// a list, the heading of a scene, or a kind of the writer's own. `name`
+    /// is the id of the kind (`formats/kinds.rs`), `text` where nothing is
+    /// said. What is said of its number is as ADR 0039 and 0040 have it.
     Paragraph {
+        #[serde(default = "text_kind")]
+        name: String,
+        /// Steps of indentation, of a line of verse or an item of a list.
+        #[serde(default)]
+        indent: u32,
+        /// A number or a label given by hand, from which the count goes on.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        number: Option<String>,
+        /// False for a paragraph the count passes over.
+        #[serde(default = "yes")]
+        counted: bool,
+        /// Words in the margin beside the paragraph.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        margin: Option<String>,
         content: Vec<Inline>,
     },
-    Blockquote {
+    /// A run of paragraphs of kinds that belong together: a quotation, a
+    /// verse, a script, a list (ADR 0040). `family` is one of the families
+    /// of the catalogue, or the id of a kind of the writer's own based on
+    /// text. The content holds paragraphs and nothing else.
+    Passage {
+        family: String,
+        #[serde(default)]
+        numbering: Numbering,
+        /// Every how many the numbers are shown; nothing for the layout's.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        every: Option<u32>,
+        /// The side the numbers stand on; nothing for the layout's.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        side: Option<Side>,
         content: Vec<Block>,
     },
-    /// Lines of verse, as a quotation of poetry or drama: each line kept as
-    /// a line, numbered from `start` every `by` lines where `start` is given.
-    Verse {
-        #[serde(default)]
-        start: Option<i64>,
-        #[serde(default = "five")]
-        by: u32,
-        lines: Vec<VerseLine>,
-    },
     /// Two texts side by side: an original and its translation.
-    Parallel {
-        left: Vec<Block>,
-        right: Vec<Block>,
-    },
-    /// A paragraph of a screenplay.
-    Script {
-        part: ScriptPart,
-        content: Vec<Inline>,
-    },
-    /// A paragraph of a kind: an epigraph, a headword, a break, or a kind
-    /// of the writer's own. `name` is the id of the kind (`formats/kinds.rs`).
-    Passage {
-        name: String,
-        content: Vec<Inline>,
-    },
-    BulletList {
-        items: Vec<Vec<Block>>,
-    },
-    OrderedList {
-        #[serde(default = "one")]
-        start: u32,
-        items: Vec<Vec<Block>>,
-    },
+    Parallel { left: Vec<Block>, right: Vec<Block> },
     /// Mathematics on a line of its own, in the notation of TeX.
     Equation {
         /// By which words in the text point to it.
@@ -172,9 +174,7 @@ pub enum Block {
     /// A table, with what is said of it.
     Table(Table),
     /// Figures, tables and equations that stand beside each other.
-    Row {
-        items: Vec<Block>,
-    },
+    Row { items: Vec<Block> },
     /// A picture, with what is said of it.
     Figure {
         /// By which words in the text point to it.
@@ -319,68 +319,94 @@ fn yes() -> bool {
     true
 }
 
-fn five() -> u32 {
-    5
-}
-
-/// A line of verse: the line itself, a speaker's name, or a stage direction.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VerseLine {
-    #[serde(default)]
-    pub kind: VerseLineKind,
-    /// Steps of indentation.
-    #[serde(default)]
-    pub indent: u32,
-    /// A number or a label given by hand, from which the count goes on.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub number: Option<String>,
-    /// False for a line the count passes over.
-    #[serde(default = "yes")]
-    pub counted: bool,
-    /// Words in the margin beside the line.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub margin: Option<String>,
-    pub content: Vec<Inline>,
-}
-
-/// What a paragraph of a screenplay is.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+/// How a passage numbers its paragraphs: not at all, counted from the
+/// first number given by hand, or only by the numbers given.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum ScriptPart {
-    Scene,
+pub enum Numbering {
     #[default]
-    Action,
-    Character,
-    Dialogue,
-    Parenthetical,
-    Transition,
+    None,
+    Counted,
+    Given,
 }
 
-impl ScriptPart {
+/// The side of the text the numbers of a passage stand on.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Side {
+    #[default]
+    Left,
+    Right,
+}
+
+impl Side {
+    /// The other side: where the words in the margin stand.
+    pub fn other(self) -> Side {
+        match self {
+            Side::Left => Side::Right,
+            Side::Right => Side::Left,
+        }
+    }
+
     pub fn name(self) -> &'static str {
         match self {
-            ScriptPart::Scene => "scene",
-            ScriptPart::Action => "action",
-            ScriptPart::Character => "character",
-            ScriptPart::Dialogue => "dialogue",
-            ScriptPart::Parenthetical => "parenthetical",
-            ScriptPart::Transition => "transition",
+            Side::Left => "left",
+            Side::Right => "right",
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum VerseLineKind {
-    #[default]
-    Line,
-    Speaker,
-    Direction,
+fn text_kind() -> String {
+    "text".to_owned()
 }
 
-fn one() -> u32 {
-    1
+impl Block {
+    /// A paragraph of text.
+    pub fn paragraph(content: Vec<Inline>) -> Block {
+        Block::of_kind("text", content)
+    }
+
+    /// A paragraph of a kind, with nothing said of its number.
+    pub fn of_kind(name: &str, content: Vec<Inline>) -> Block {
+        Block::Paragraph { name: name.to_owned(), indent: 0, number: None, counted: true, margin: None, content }
+    }
+
+    /// A passage of a family, not numbered.
+    pub fn passage(family: &str, content: Vec<Block>) -> Block {
+        Block::Passage { family: family.to_owned(), numbering: Numbering::None, every: None, side: None, content }
+    }
+
+    /// The same paragraph, given a number by hand; any other block as it is.
+    pub fn with_number(mut self, given: &str) -> Block {
+        if let Block::Paragraph { number, .. } = &mut self {
+            *number = Some(given.to_owned());
+        }
+        self
+    }
+
+    /// The same paragraph, with words in the margin beside it.
+    pub fn with_margin(mut self, words: &str) -> Block {
+        if let Block::Paragraph { margin, .. } = &mut self {
+            *margin = Some(words.to_owned());
+        }
+        self
+    }
+
+    /// The same paragraph, which the count passes over.
+    pub fn not_counted(mut self) -> Block {
+        if let Block::Paragraph { counted, .. } = &mut self {
+            *counted = false;
+        }
+        self
+    }
+
+    /// The text of a paragraph; nothing of any other block.
+    pub fn paragraph_content(&self) -> Option<&[Inline]> {
+        match self {
+            Block::Paragraph { content, .. } => Some(content),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
@@ -502,23 +528,11 @@ pub fn walk<'a>(list: &'a [Block], block: &mut dyn FnMut(&'a Block), line: &mut 
     for b in list {
         block(b);
         match b {
-            Block::Paragraph { content } | Block::Script { content, .. } | Block::Passage { content, .. } => {
-                line(content)
-            }
-            Block::Blockquote { content } => walk(content, block, line),
-            Block::Verse { lines, .. } => {
-                for l in lines {
-                    line(&l.content);
-                }
-            }
+            Block::Paragraph { content, .. } => line(content),
+            Block::Passage { content, .. } => walk(content, block, line),
             Block::Parallel { left, right } => {
                 walk(left, block, line);
                 walk(right, block, line);
-            }
-            Block::BulletList { items } | Block::OrderedList { items, .. } => {
-                for item in items {
-                    walk(item, block, line);
-                }
             }
             Block::Figure { caption, .. } => line(caption),
             Block::Equation { .. } => {}
@@ -676,7 +690,7 @@ pub(crate) mod fixtures_for_samples {
     }
 
     fn cite(items: Vec<CiteItem>, mode: CiteMode) -> Block {
-        Block::Paragraph { content: vec![Inline::Citation { items, mode }] }
+        Block::paragraph(vec![Inline::Citation { items, mode }])
     }
 
     fn item(id: &str) -> CiteItem {
@@ -705,12 +719,10 @@ pub(crate) mod fixtures_for_samples {
             if ids.len() > 2 {
                 blocks.push(cite(vec![item(at(1)), item(at(2))], CiteMode::Normal));
             }
-            blocks.push(Block::Paragraph {
-                content: vec![
-                    Inline::Citation { items: vec![item(at(ids.len().min(3) - 1))], mode: CiteMode::Intext },
-                    text(&format!(" {}", term(language, "document-sample-argues"))),
-                ],
-            });
+            blocks.push(Block::paragraph(vec![
+                Inline::Citation { items: vec![item(at(ids.len().min(3) - 1))], mode: CiteMode::Intext },
+                text(&format!(" {}", term(language, "document-sample-argues"))),
+            ]));
             // The rest, so that the bibliography shows every kind of work given.
             for id in ids.iter().skip(3) {
                 blocks.push(cite(vec![item(id)], CiteMode::Normal));
@@ -752,7 +764,17 @@ pub(crate) mod fixtures {
     }
 
     pub fn para(content: Vec<Inline>) -> Block {
-        Block::Paragraph { content }
+        Block::paragraph(content)
+    }
+
+    /// A paragraph of a kind.
+    pub fn kind(name: &str, content: Vec<Inline>) -> Block {
+        Block::of_kind(name, content)
+    }
+
+    /// A passage of a family, not numbered.
+    pub fn passage(family: &str, content: Vec<Block>) -> Block {
+        Block::passage(family, content)
     }
 
     pub fn reference(id: &str, key: &str, src: &str) -> CarriedReference {
@@ -791,7 +813,7 @@ pub(crate) mod fixtures {
                                 place: None,
                             },
                         ]),
-                        Block::Blockquote { content: vec![para(vec![text("Sing, goddess, the wrath.")])] },
+                        passage("quotation", vec![kind("quote", vec![text("Sing, goddess, the wrath.")])]),
                     ],
                     element: Some("e1".into()),
                     kind: None,
@@ -836,9 +858,10 @@ mod tests {
                  {"kind":"citation","items":[{"id":"r1","locator":"45","label":"chapter","suppressAuthor":true}],"mode":"intext"},
                  {"kind":"footnote","content":[{"kind":"text","text":"n","marks":{}}]},
                  {"kind":"break"}]},
-               {"kind":"ordered_list","start":3,"items":[[{"kind":"paragraph","content":[]}]]},
-               {"kind":"bullet_list","items":[]},
-               {"kind":"blockquote","content":[]}
+               {"kind":"passage","family":"verse","numbering":"counted","every":null,"side":"right","content":[
+                 {"kind":"paragraph","name":"line","indent":1,"number":"45","counted":false,"margin":"trochaic","content":[]},
+                 {"kind":"paragraph","name":"speaker","content":[]}]},
+               {"kind":"passage","family":"list","content":[]}
              ]}
           ],
           "references": [{"id":"r1","key":"k","type":"book","fields":{"title":"T"},"names":{"author":[{"family":"F","given":"G"}]}}]
@@ -851,7 +874,7 @@ mod tests {
         assert_eq!(doc.sections[0].kind, None);
         assert_eq!(doc.cited(), vec!["r1"]);
         match &doc.sections[0].blocks[0] {
-            Block::Paragraph { content } => match &content[1] {
+            Block::Paragraph { content, .. } => match &content[1] {
                 Inline::Citation { items, mode } => {
                     assert_eq!(*mode, CiteMode::Intext);
                     assert!(items[0].suppress_author);
@@ -861,7 +884,25 @@ mod tests {
             },
             other => panic!("{other:?}"),
         }
-        assert!(matches!(doc.sections[0].blocks[1], Block::OrderedList { start: 3, .. }));
+        let Block::Paragraph { name, indent, counted, .. } = &doc.sections[0].blocks[0] else { panic!() };
+        assert_eq!(
+            (name.as_str(), *indent, *counted),
+            ("text", 0, true),
+            "a paragraph is text unless it says otherwise"
+        );
+        let Block::Passage { family, numbering, every, side, content } = &doc.sections[0].blocks[1] else { panic!() };
+        assert_eq!(
+            (family.as_str(), *numbering, *every, *side),
+            ("verse", Numbering::Counted, None, Some(Side::Right))
+        );
+        let Block::Paragraph { name, indent, number, counted, margin, .. } = &content[0] else { panic!() };
+        assert_eq!(name, "line");
+        assert_eq!((*indent, number.as_deref(), *counted, margin.as_deref()), (1, Some("45"), false, Some("trochaic")));
+        assert!(matches!(&content[1], Block::Paragraph { name, counted: true, .. } if name == "speaker"));
+        assert!(matches!(&doc.sections[0].blocks[2], Block::Passage { numbering: Numbering::None, .. }));
+        // Written again, a paragraph says what it is.
+        let json = serde_json::to_string(&Block::paragraph(vec![])).unwrap();
+        assert_eq!(json, r#"{"kind":"paragraph","name":"text","indent":0,"counted":true,"content":[]}"#);
     }
 
     #[test]

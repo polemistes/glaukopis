@@ -716,15 +716,27 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>, own: &[OwnKind]) 
                     outline: None,
                     page_break_before: look.new_page,
                 };
+                // A line block holds its speakers and directions as words within
+                // it: a character style stands beside the paragraph style of every
+                // kind of the verse, linked to it as Word links its own.
+                let link = (info.group == "verse").then(|| format!("{id}Char"));
                 s.push_str(&paragraph_style(
                     &id,
                     &name,
                     Some("Normal"),
                     Some("BodyText"),
-                    None,
+                    link.as_deref(),
                     &p,
                     &Run::of(look, true),
                 ));
+                if let Some(link) = link {
+                    s.push_str(&character_style(
+                        &link,
+                        &format!("{name} Char"),
+                        Some(&id),
+                        &Run::of(look, false).inner(),
+                    ));
+                }
             }
             Family::Words => s.push_str(&character_style(&id, &name, None, &Run::of(look, false).inner())),
         }
@@ -1512,6 +1524,21 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
                     let code = OdtStyle { name: "Preformatted_20_Text", display: Some("Preformatted Text"), ..style };
                     replace_style(&mut s, code.name, &code.xml());
                 }
+                // As in Word, a text style beside the paragraph style of every kind of the verse.
+                if info.group == "verse" {
+                    let text = odt_text_of(look, false);
+                    let properties =
+                        if text.is_empty() { String::new() } else { format!("<style:text-properties {text}/>") };
+                    let name = format!("{name}_20_Char");
+                    replace_style(
+                        &mut s,
+                        &name,
+                        &format!(
+                            "<style:style style:name=\"{name}\" style:display-name=\"{} Char\" style:family=\"text\">{properties}</style:style>",
+                            info.style
+                        ),
+                    );
+                }
             }
             Family::Words => {
                 let text = odt_text_of(look, false);
@@ -1816,7 +1843,14 @@ mod tests {
         let foreign =
             style_of(&styles, "<w:style w:type=\"character\" w:customStyle=\"1\" w:styleId=\"Foreign\"", "</w:style>");
         assert!(foreign.contains("<w:i/>") && !foreign.contains("<w:b/>"), "{foreign}");
-        assert!(of("Speaker").contains("<w:smallCaps/>"));
+        assert!(of("Speaker").contains("<w:smallCaps/>") && of("Speaker").contains("<w:link w:val=\"SpeakerChar\"/>"));
+        let speaker_char = style_of(
+            &styles,
+            "<w:style w:type=\"character\" w:customStyle=\"1\" w:styleId=\"SpeakerChar\"",
+            "</w:style>",
+        );
+        assert!(speaker_char.contains("<w:name w:val=\"Speaker Char\"/>") && speaker_char.contains("<w:smallCaps/>"));
+        assert!(of("Line").contains("<w:ind w:left=\"567\""), "a line stands in: {}", of("Line"));
         assert!(of("Term").contains("<w:u w:val=\"single\"/>"), "the format says that terms are underlined");
         assert!(of("SourceCode").contains("<w:rFonts w:ascii=\"Courier New\""));
         let own = of("Letter");
@@ -1865,6 +1899,11 @@ mod tests {
         assert!(foreign.contains("style:family=\"text\"") && foreign.contains("fo:font-style=\"italic\""), "{foreign}");
         assert!(!foreign.contains("font-weight"), "only what the kind adds: {foreign}");
         assert!(of("Speaker").contains("fo:font-variant=\"small-caps\""));
+        let speaker_char = of("Speaker_20_Char");
+        assert!(
+            speaker_char.contains("style:family=\"text\"") && speaker_char.contains("small-caps"),
+            "{speaker_char}"
+        );
         assert!(of("Preformatted_20_Text").contains("style:font-name=\"Liberation Mono\""), "code as Pandoc names it");
         let own = of("Letter");
         assert!(own.contains("fo:margin-left=\"1.5748in\"") && own.contains("fo:font-style=\"italic\""), "{own}");

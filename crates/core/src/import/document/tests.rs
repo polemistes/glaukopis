@@ -63,7 +63,7 @@ fn marked(s: &str, marks: &[&str]) -> Inline {
 }
 
 fn paragraph(content: Vec<Inline>) -> Block {
-    Block::Paragraph { content }
+    Block::paragraph(content)
 }
 
 /// What the mark of a citation that was found holds, of a piece of text.
@@ -389,30 +389,51 @@ fn lists_quotations_and_what_has_no_place() {
         ),
         &none,
     );
+    let item = |name: &str, indent: u32, number: Option<&str>, words: &str| Block::Paragraph {
+        name: name.into(),
+        indent,
+        number: number.map(Into::into),
+        counted: true,
+        margin: None,
+        content: vec![text(words)],
+    };
     assert_eq!(
         read.sections[0].blocks,
         vec![
-            Block::Blockquote { content: vec![paragraph(vec![text("Sing, goddess.")])] },
-            Block::BulletList {
-                items: vec![
-                    vec![paragraph(vec![text("one")])],
-                    vec![
-                        paragraph(vec![text("two")]),
-                        Block::OrderedList { start: 3, items: vec![vec![paragraph(vec![text("nested")])]] },
-                    ],
-                ],
-            },
-            paragraph(vec![text("first line")]),
-            paragraph(vec![text("second line")]),
-            paragraph(vec![marked("Term", &["strong"])]),
-            paragraph(vec![text("What it means.")]),
+            Block::passage("quotation", vec![Block::of_kind("quote", vec![text("Sing, goddess.")])]),
+            // The items with their depths, the list within a step deeper and numbered from three.
+            Block::passage(
+                "list",
+                vec![
+                    item("item", 0, None, "one"),
+                    item("item", 0, None, "two"),
+                    item("numbered", 1, Some("3"), "nested")
+                ]
+            ),
+            Block::passage(
+                "code",
+                vec![
+                    Block::of_kind("code", vec![text("first line")]),
+                    Block::of_kind("code", vec![]),
+                    Block::of_kind("code", vec![text("second line")]),
+                ]
+            ),
+            Block::passage(
+                "glossary",
+                vec![
+                    Block::of_kind("headword", vec![text("Term")]),
+                    Block::of_kind("gloss", vec![text("What it means.")])
+                ]
+            ),
             paragraph(vec![text("In a division.")]),
-            paragraph(vec![text("A"), Inline::Break, text("B")]),
+            Block::passage(
+                "verse",
+                vec![Block::of_kind("line", vec![text("A")]), Block::of_kind("line", vec![text("B")])]
+            ),
         ]
     );
     let all = read.remarks.join("\n");
-    assert!(all.contains("1 block of code is brought in as plain paragraphs"), "{all}");
-    assert!(all.contains("1 list of terms"), "{all}");
+    assert!(!all.contains("block of code") && !all.contains("list of terms"), "code and glossaries are read: {all}");
     assert!(all.contains("1 line across the page is left out"), "{all}");
     assert!(all.contains("1 piece written in HTML or TeX"), "{all}");
 }
@@ -552,7 +573,7 @@ fn tables_with_headings_and_spans() {
             row.iter()
                 .map(|c| {
                     let said = match &c.content[0] {
-                        Block::Paragraph { content } => document::plain(content),
+                        Block::Paragraph { content, .. } => document::plain(content),
                         other => panic!("{other:?}"),
                     };
                     (said, c.colspan, c.rowspan, c.header, c.align)
@@ -609,7 +630,7 @@ fn citations_by_key() {
         ),
         &library,
     );
-    let Block::Paragraph { content } = &read.sections[0].blocks[0] else { panic!() };
+    let Block::Paragraph { content, .. } = &read.sections[0].blocks[0] else { panic!() };
     assert_eq!(
         content[..4],
         [
@@ -700,7 +721,7 @@ fn a_citation_that_was_found_keeps_the_marks_it_stands_in_and_is_text_in_a_name(
         &library,
     );
     assert_eq!(read.title, vec![text("One [@nokey]")]);
-    let Block::Paragraph { content } = &read.sections[0].blocks[0] else { panic!() };
+    let Block::Paragraph { content, .. } = &read.sections[0].blocks[0] else { panic!() };
     assert_eq!(content[0], marked("As ", &["em"]));
     let Inline::Text { text: said, marks } = &content[1] else { panic!() };
     assert_eq!(said, "[@nokey]");
@@ -958,17 +979,20 @@ fn kinds(blocks: &[Block]) -> Vec<&'static str> {
         .iter()
         .map(|b| match b {
             Block::Paragraph { .. } => "paragraph",
-            Block::Blockquote { .. } => "blockquote",
-            Block::BulletList { .. } => "bullet_list",
-            Block::OrderedList { .. } => "ordered_list",
             Block::Equation { .. } => "equation",
             Block::Table(_) => "table",
             Block::Row { .. } => "row",
             Block::Figure { .. } => "figure",
-            Block::Verse { .. } => "verse",
             Block::Parallel { .. } => "parallel",
-            Block::Script { .. } => "script",
-            Block::Passage { .. } => "passage",
+            // A passage by its family.
+            Block::Passage { family, .. } => match family.as_str() {
+                "quotation" => "quotation",
+                "verse" => "verse",
+                "list" => "list",
+                "code" => "code",
+                "glossary" => "glossary",
+                _ => "passage",
+            },
         })
         .collect()
 }
@@ -1000,8 +1024,12 @@ fn markdown_with_everything_in_it() {
             Inline::Footnote { content: vec![text("The note. In two paragraphs.")], place: None },
         ])]
     );
-    assert_eq!(kinds(&read.sections[1].blocks), vec!["paragraph", "equation", "blockquote", "bullet_list"]);
-    let Block::Paragraph { content } = &read.sections[1].blocks[0] else { panic!() };
+    assert_eq!(kinds(&read.sections[1].blocks), vec!["paragraph", "equation", "quotation", "list"]);
+    let Block::Passage { content, .. } = &read.sections[1].blocks[3] else { panic!() };
+    assert_eq!(content.len(), 3, "the list within the list is its items a step deeper");
+    assert!(matches!(&content[2], Block::Paragraph { name, indent: 1, .. } if name == "numbered"));
+    assert_eq!(kinds(&read.sections[3].blocks), vec!["code"]);
+    let Block::Paragraph { content, .. } = &read.sections[1].blocks[0] else { panic!() };
     assert_eq!(
         content[1],
         Inline::Citation {
@@ -1059,7 +1087,6 @@ fn markdown_with_everything_in_it() {
     let all = read.remarks.join("\n");
     assert!(all.contains("1 citation was found that is not yet tied to a reference of your library."), "{all}");
     assert!(all.contains("under “References”"), "{all}");
-    assert!(all.contains("1 block of code"), "{all}");
 
     // Read again, the picture is in the store already, and is not one to be taken out.
     let again = s.read(&everything(&s)).unwrap();
@@ -1092,10 +1119,10 @@ fn word_and_opendocument_made_of_the_same() {
         assert_eq!((read.counts.cited, read.counts.not_found), (0, 0), "{ending}");
         assert_eq!((read.counts.found, read.counts.found_made), (0, 0), "{ending}");
         let word = read.sections.iter().find(|s| document::plain(&s.heading) == "The word").unwrap();
-        let Block::Paragraph { content } = &word.blocks[0] else { panic!("{ending}") };
+        let Block::Paragraph { content, .. } = &word.blocks[0] else { panic!("{ending}") };
         assert!(document::plain(content).starts_with("A wrath [@nagy1979, 73] that @west1988"), "{ending}");
-        assert!(kinds(&word.blocks).contains(&"blockquote"), "{ending}");
-        assert!(kinds(&word.blocks).contains(&"bullet_list"), "{ending}");
+        assert!(kinds(&word.blocks).contains(&"quotation"), "{ending}");
+        assert!(kinds(&word.blocks).contains(&"list"), "{ending}");
         let figure = read
             .sections
             .iter()
@@ -1186,7 +1213,7 @@ fn latex_with_citations_and_parts_of_its_own() {
     assert_eq!(document::plain(&read.title), "Wrath");
     assert_eq!(read.authors.len(), 2);
     assert_eq!(shape(&read), vec![(1, "One".into()), (1, "From another file".into())]);
-    let Block::Paragraph { content } = &read.sections[0].blocks[0] else { panic!() };
+    let Block::Paragraph { content, .. } = &read.sections[0].blocks[0] else { panic!() };
     assert_eq!(
         content[1],
         Inline::Citation {
@@ -1646,7 +1673,7 @@ fn what_zotero_made_is_found_with_all_that_the_file_says_of_it() {
 
         // What stands in italics within a citation is a piece of it, and is in italics.
         let word = read.sections.iter().find(|s| document::plain(&s.heading) == "The word").unwrap();
-        let Block::Paragraph { content } = &word.blocks[1] else { panic!("{name}") };
+        let Block::Paragraph { content, .. } = &word.blocks[1] else { panic!("{name}") };
         let pieces: Vec<(&str, Vec<&str>)> = content
             .iter()
             .filter_map(|i| match i {
@@ -1669,7 +1696,7 @@ fn what_zotero_made_is_found_with_all_that_the_file_says_of_it() {
         );
 
         // In a note, with what else the note says.
-        let Block::Paragraph { content } = &word.blocks[2] else { panic!("{name}") };
+        let Block::Paragraph { content, .. } = &word.blocks[2] else { panic!("{name}") };
         assert_eq!(content[0], text("Not all agree."), "{name}");
         let Inline::Footnote { content: note, .. } = &content[1] else { panic!("{name}") };
         assert_eq!(note.len(), 5, "{name}: {note:?}");
@@ -1763,13 +1790,13 @@ fn tags_that_the_library_has_and_has_not_in_files_of_text() {
         // The one in the note names a work the library has, and one it has not.
         assert_eq!(keys(found.len() - 1), vec!["nagy1979", "parry1971"], "{name}");
         let word = &read.sections[0];
-        let Block::Paragraph { content } = &word.blocks[2] else { panic!("{name}") };
+        let Block::Paragraph { content, .. } = &word.blocks[2] else { panic!("{name}") };
         let Inline::Footnote { content: note, .. } = &content[1] else { panic!("{name}") };
         assert_eq!(note[0], text("See "), "{name}");
         assert_eq!(found_of(&note[1]).map(|f| f.id), Some(found[found.len() - 1].1.id.clone()), "{name}");
         assert_eq!(note[2], text("; but he says otherwise elsewhere."), "{name}");
         // Those of which the library has every work are citations.
-        let Block::Paragraph { content } = &word.blocks[0] else { panic!("{name}") };
+        let Block::Paragraph { content, .. } = &word.blocks[0] else { panic!("{name}") };
         let cited: Vec<(&str, Option<&str>, CiteMode)> = content
             .iter()
             .filter_map(|i| match i {
@@ -1839,7 +1866,7 @@ fn what_endnote_made_is_found_where_pandoc_reads_it() {
         }]
     );
     let word = read.sections.iter().find(|s| document::plain(&s.heading) == "The word").unwrap();
-    let Block::Paragraph { content } = &word.blocks[0] else { panic!() };
+    let Block::Paragraph { content, .. } = &word.blocks[0] else { panic!() };
     assert_eq!(content[0], text("The wrath of Achilles is what the poem is of "));
     assert_eq!(content[2], text(", as is often said."));
     // Where EndNote keeps what it says apart from the field, the text is text, and that is said.

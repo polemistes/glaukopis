@@ -83,7 +83,7 @@ pub(super) fn plain(text: &str, stem: &str) -> Imported {
                 }
                 content.push(Inline::Text { text: clean(line), marks: BTreeMap::new() });
             }
-            Block::Paragraph { content }
+            Block::paragraph(content)
         })
         .collect();
     let sections = if blocks.is_empty() { Vec::new() } else { vec![Section { level: 0, heading: Vec::new(), blocks }] };
