@@ -614,14 +614,18 @@
 
   // ---- the kinds of paragraph and of words ----
 
-  /** The kinds of the catalogue that have no style of their own, and so nothing a format can say of them. */
-  const UNSTYLED = ['text', 'quote', 'list', 'numbered', 'verse', 'draft', 'highlight'];
+  /**
+   * The kinds of the catalogue that have no style of their own, and so
+   * nothing a format can say of them. The part that lists every kind with
+   * its look as resolved against the base looks is a later stage (ADR 0040).
+   */
+  const UNSTYLED = ['text', 'quote', 'item', 'numbered', 'line', 'draft', 'highlight'];
   /** The kinds a format can set, in their groups. */
   const styledGroups = $derived(
     GROUPS.map((g) => ({
       id: g.id,
       label: g.label(),
-      kinds: CATALOGUE.filter((k) => k.group === g.id && !UNSTYLED.includes(k.id)),
+      kinds: CATALOGUE.filter((k) => g.families.includes(k.group) && !UNSTYLED.includes(k.id)),
     })).filter((g) => g.kinds.length),
   );
   /** The rows of each kind's look, which write into the format's table of kinds, by the id of the kind. */

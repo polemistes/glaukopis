@@ -60,8 +60,6 @@ export interface ActiveSelection {
   empty: boolean;
   rect: RectLike;
   marks: Record<string, boolean>;
-  quote: boolean;
-  list: boolean;
   /** Whether the editor can hold notes and citations: the text of an element can, its name and a note cannot hold notes. */
   kind: 'body' | 'title' | 'note';
 }

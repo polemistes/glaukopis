@@ -73,9 +73,7 @@
 .prose .tabular:not([data-around]),
 .prose .equation,
 .prose .row-of,
-.prose blockquote,
-.prose ul,
-.prose ol {
+.prose .passage {
   clear: both;
 }
 .prose::after {

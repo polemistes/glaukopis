@@ -40,14 +40,15 @@ function drawn(state: EditorState): (string | null)[] {
     .find();
   const out: (string | null)[] = [];
   state.doc.firstChild!.forEach((_line, offset) => {
-    const d = set.find(
-      (d) => d.from === offset + 1 && 'data-n' in (d.type as never as { attrs: object }).attrs,
-    );
-    const attrs = d ? (d.type as never as { attrs: Record<string, string> }).attrs : null;
+    const d = set.find((d) => d.from === offset + 1 && 'data-n' in attrsOf(d));
+    const attrs = d ? attrsOf(d) : null;
     out.push(attrs ? attrs['data-n'] + ('data-n-set' in attrs ? '*' : '') : null);
   });
   return out;
 }
+
+/** The attributes a node decoration sets, which the decoration keeps in its type. */
+const attrsOf = (d: unknown) => (d as { type: { attrs: Record<string, string> } }).type.attrs;
 
 describe('the numbers of a passage', () => {
   it('are counted from the first number given, only on counted paragraphs, every so many as the passage or the layout says', () => {
@@ -132,7 +133,6 @@ describe('the numbers of a passage', () => {
       ],
     });
     const found = state.plugins[0].getState(state).find();
-    const attrsOf = (d: { type: unknown }) => (d.type as { attrs: Record<string, string> }).attrs;
     expect(found.map(attrsOf)).toEqual([
       { 'data-numbers': 'right' },
       { 'data-n': '1', 'data-n-set': '' },

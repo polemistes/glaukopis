@@ -426,20 +426,53 @@ body.dragging * {
 .prose p + p {
   margin-top: 0.62em;
 }
-.prose blockquote {
-  margin: 0.75em 0 0.75em 0;
+/* A passage: a run of paragraphs of one family (ADR 0040). The editor shows
+   it by a thin faint line at its left, the first form of its bracket; the
+   paragraphs within stand as close as lines. The cues of each kind here are
+   the editor's own, and reach no document: every look lives in a layout. */
+.prose .passage {
+  position: relative;
+  margin: 0.62em 0;
+  padding-left: 0.6em;
+  border-left: 1px solid var(--line);
+}
+.prose .passage > p + p {
+  margin-top: 0.3em;
+}
+.prose .passage[data-family='quotation'] {
+  margin: 0.75em 0;
   padding-left: 1.4em;
-  border-left: 2px solid var(--line-strong);
   color: var(--ink-2);
   font-size: 0.96em;
 }
-.prose ul,
-.prose ol {
-  margin: 0.5em 0;
-  padding-left: 1.6em;
+.prose .passage[data-family='quotation'] > p + p {
+  margin-top: 0.62em;
 }
-.prose li > p + p {
-  margin-top: 0.3em;
+/* Lists: items with a bullet or a number before them, a deeper indent a list within the list. */
+.prose .passage[data-family='list'] {
+  counter-reset: item;
+}
+.prose p[data-kind='item'],
+.prose p[data-kind='numbered'] {
+  position: relative;
+  margin-left: 1.6em;
+}
+.prose p[data-kind='item']::before,
+.prose p[data-kind='numbered']::before {
+  position: absolute;
+  right: calc(100% + 0.5em);
+  color: var(--ink-3);
+  user-select: none;
+}
+.prose p[data-kind='item']::before {
+  content: '•';
+}
+.prose p[data-kind='numbered'] {
+  counter-increment: item;
+}
+.prose p[data-kind='numbered']::before {
+  content: counter(item) '.';
+  font-variant-numeric: tabular-nums;
 }
 .prose a {
   color: var(--accent-strong);
@@ -1096,21 +1129,42 @@ span.math.selected {
   border-bottom: 1px dotted var(--ink-4);
 }
 
-/* Lines of verse: each a line, the numbers in the margin where the lines are numbered. */
-.prose .verse {
-  margin: 0.6em 0 0.8em 2.4em;
-  position: relative;
+/* Verse: each paragraph a line, indented as lines were, a step more for
+   each indent given it (the numbers in the margin are below). */
+.prose .passage[data-family='verse'] {
+  margin: 0.6em 0 0.8em;
 }
-.prose .verse-line {
-  position: relative;
-  margin: 0;
-  padding-left: calc(var(--indent, 0) * 1.5em);
+.prose .passage[data-family='verse'] > p {
+  margin-left: 2.4em;
   text-indent: 0;
 }
-.prose .verse-line[data-n]::before {
+.prose .passage[data-family='verse'] > p + p {
+  margin-top: 0;
+}
+.prose p[data-indent] {
+  padding-left: calc(var(--indent, 0) * 1.5em);
+}
+.prose p[data-kind='speaker'] {
+  margin-top: 0.6em;
+  font-variant: small-caps;
+  letter-spacing: 0.03em;
+}
+.prose p[data-kind='direction'] {
+  font-style: italic;
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+}
+
+/* The numbers in the margin of a numbered passage, on the side the passage
+   or the layout says (`data-numbers`, which the editor sets), and words in
+   the margin beside a paragraph, on the other side. */
+.prose p[data-n] {
+  position: relative;
+}
+.prose p[data-n]::before {
   content: attr(data-n);
   position: absolute;
-  /* From the edge of the line's box, which is the same for every line, indented or not. */
+  /* From the edge of the paragraph's box, which is the same for every paragraph of the passage, indented or not. */
   right: calc(100% + 0.4em);
   white-space: nowrap;
   text-align: right;
@@ -1121,12 +1175,14 @@ span.math.selected {
   user-select: none;
 }
 /* A number given by hand: as dark as the text, so that it is seen to be one. */
-.prose .verse-line[data-n-set]::before {
+.prose p[data-n-set]::before {
   color: var(--ink-2);
   font-weight: 600;
 }
-/* Words in the margin beside a line: in the other margin from the numbers. */
-.prose .verse-line[data-margin]::after {
+.prose p[data-margin] {
+  position: relative;
+}
+.prose p[data-margin]::after {
   content: attr(data-margin);
   position: absolute;
   top: 0;
@@ -1143,19 +1199,25 @@ span.math.selected {
   pointer-events: none;
 }
 /* Room for them, where there are any. */
-.prose .verse:has(> .verse-line[data-margin]) {
+.prose .passage:has(> p[data-margin]) {
   margin-right: 8em;
 }
-.prose .verse-line.speaker {
-  margin-top: 0.6em;
-  font-variant: small-caps;
-  letter-spacing: 0.03em;
+/* The numbers at the right: the margin words then go to the left. */
+.prose .passage[data-numbers='right'] > p[data-n]::before {
+  right: auto;
+  left: calc(100% + 0.6em);
+  text-align: left;
 }
-.prose .verse-line.direction {
-  font-style: italic;
-  margin: 0.2em 0;
+.prose .passage[data-numbers='right'] > p[data-margin]::after {
+  left: auto;
+  right: calc(100% + 1em);
+  text-align: right;
 }
-.prose .verse-line.is-empty::before {
+.prose .passage[data-numbers='right']:has(> p[data-margin]) {
+  margin-right: 0;
+  margin-left: 8em;
+}
+.prose p.is-empty[data-n]::before {
   content: none;
 }
 /* Two texts side by side. */
@@ -1172,71 +1234,68 @@ span.math.selected {
   padding: 2px 4px;
   border-left: 2px solid var(--line);
 }
-.prose .parallel-side .verse {
-  margin-left: 2.4em;
-}
 
 /* A screenplay: each paragraph a part of the script, set as scripts are. */
-.prose .script {
+.prose .passage[data-family='script'] > p {
   text-indent: 0;
 }
-.prose .script.scene {
+.prose p[data-kind='scene'] {
   margin-top: 1.4em;
   font-weight: 600;
   text-transform: uppercase;
 }
-.prose .script.character {
+.prose p[data-kind='character'] {
   margin: 0.9em 0 0 38%;
   text-transform: uppercase;
 }
-.prose .script.dialogue {
+.prose p[data-kind='dialogue'] {
   margin: 0 22% 0 17%;
 }
-.prose .script.parenthetical {
+.prose p[data-kind='parenthetical'] {
   margin: 0 28% 0 24%;
   font-style: italic;
 }
-.prose .script.parenthetical::before {
+.prose p[data-kind='parenthetical']::before {
   content: '(';
 }
-.prose .script.parenthetical::after {
+.prose p[data-kind='parenthetical']::after {
   content: ')';
 }
-.prose .script.transition {
+.prose p[data-kind='transition'] {
   margin-top: 0.9em;
   text-align: right;
   text-transform: uppercase;
 }
-.prose .script.character + .script.dialogue,
-.prose .script.parenthetical + .script.dialogue,
-.prose .script.dialogue + .script.parenthetical {
+.prose p[data-kind='character'] + p[data-kind='dialogue'],
+.prose p[data-kind='parenthetical'] + p[data-kind='dialogue'],
+.prose p[data-kind='dialogue'] + p[data-kind='parenthetical'] {
   margin-top: 0;
 }
 
-/* The kinds of paragraph beyond the script, each seen at once on neutral
-   paper, by the same measures that give a kind of the writer's own its look
+/* The other kinds of paragraph, each seen at once on neutral paper, by the
+   same measures that give a kind of the writer's own its cues
    (editor/kinds.ts, where the measures of these are declared): a
    centimetre of the format is about 2.4em here, 12pt about an em. */
-.prose .passage {
+.prose p[data-kind] {
   text-indent: 0;
 }
-.prose .passage[data-kind='attribution'] {
+.prose p[data-kind='attribution'] {
   margin-top: 0;
   margin-left: 3.05em;
   text-align: right;
 }
-.prose .passage[data-kind='epigraph'] {
+.prose p[data-kind='epigraph'] {
   margin: 0.51em 0 1.52em 9.6em;
 }
-.prose .passage[data-kind='headword'] {
+.prose p[data-kind='headword'] {
   margin-top: 0.51em;
   margin-bottom: 0;
   font-weight: 600;
 }
-.prose .passage[data-kind='gloss'] {
+.prose p[data-kind='gloss'] {
   margin: 0 0 0.51em 3.05em;
 }
-.prose .passage[data-kind='code'] {
+.prose .passage[data-family='code'] {
   margin: 0.51em 0;
   font-family: var(--font-mono);
   font-size: 0.86em;
@@ -1246,28 +1305,31 @@ span.math.selected {
   font-variant-numeric: lining-nums;
   hanging-punctuation: none;
 }
-.prose .passage[data-kind='code'] code {
+.prose .passage[data-family='code'] > p + p {
+  margin-top: 0;
+}
+.prose p[data-kind='code'] code {
   font-size: inherit;
 }
-.prose .passage[data-kind='break'] {
+.prose p[data-kind='break'] {
   margin: 1.02em 0;
   text-align: center;
 }
-/* The sign of a break stands where the passage holds nothing: in text
+/* The sign of a break stands where the paragraph holds nothing: in text
    that is drawn, and in the editor, where an empty paragraph holds a line
    break and nothing else. */
-.prose .passage[data-kind='break']:empty::before {
+.prose p[data-kind='break']:empty::before {
   content: '* * *';
   letter-spacing: 0.4em;
   color: var(--ink-3);
 }
-.prose .passage[data-kind='break']:has(> .ProseMirror-trailingBreak:only-child)::before {
+.prose p[data-kind='break']:has(> .ProseMirror-trailingBreak:only-child)::before {
   content: '* * *';
   letter-spacing: 0.4em;
   color: var(--ink-3);
 }
 /* A draft note goes into no document. */
-.prose .passage[data-kind='draft'] {
+.prose p[data-kind='draft'] {
   padding-left: 0.8em;
   border-left: 2px dashed var(--line-strong);
   color: var(--ink-3);

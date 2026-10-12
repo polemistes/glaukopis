@@ -19,7 +19,9 @@
   import { dropTarget } from '$lib/ui/drag.svelte';
   import { editorUi, rectAt } from './ui.svelte';
   import { sharedUndo } from './undo';
-  import { markActive, insideNode } from './commands';
+  import { markActive } from './commands';
+  import { LAYOUT_NUMBERS, relayoutNumbers, type NumbersLayout } from './verse';
+  import { documents } from '$lib/preview/documents.svelte';
   import { CitationView, FootnoteView } from './views.svelte';
   import { RefMarkView } from './refmarks';
   import { topOf } from '$lib/figures/numbering.svelte';
@@ -116,6 +118,27 @@
       if (!view) return;
       if (now) view.dom.setAttribute('lang', now);
       else view.dom.removeAttribute('lang');
+    });
+  });
+
+  // What the layout of the document says of the numbers of a passage that
+  // does not say: every how many, and on which side (ADR 0040). The editor
+  // is given it through a hook, and told to draw the numbers anew when it
+  // changes, or when the kinds of the writer's own do.
+  const numbersLayout = $derived.by<NumbersLayout>(() => {
+    if (kind !== 'body' || !owner || !project.node(owner)) return LAYOUT_NUMBERS;
+    const choice = documents.choice(project.documentOf(owner).settings, project);
+    return documents.formatCached(choice.format)?.verse ?? LAYOUT_NUMBERS;
+  });
+  let numbersNow: NumbersLayout = LAYOUT_NUMBERS;
+  $effect(() => {
+    const now = numbersLayout;
+    void project.passageKinds;
+    void made;
+    untrack(() => {
+      const changed = now.every !== numbersNow.every || now.side !== numbersNow.side;
+      numbersNow = now;
+      if (view && kind === 'body' && changed) relayoutNumbers(view);
     });
   });
 
@@ -250,7 +273,6 @@
     const marks: Record<string, boolean> = {};
     for (const [name, type] of Object.entries(state.schema.marks))
       marks[name] = markActive(state, type);
-    const nodes = state.schema.nodes;
     editorUi.selection = {
       view: v,
       // A figure, a formula, a note or a citation that is selected is not
@@ -262,8 +284,6 @@
         state.selection instanceof CellSelection,
       rect,
       marks,
-      quote: !!nodes.blockquote && insideNode(state, nodes.blockquote),
-      list: !!nodes.list_item && insideNode(state, nodes.list_item),
       kind,
     };
   }
@@ -296,8 +316,10 @@
       point: kind === 'body' ? point : undefined,
       element: untrack(() => element),
       at: untrack(() => at),
-      // The kinds of the writer's own, for what Enter and Tab make after a paragraph of one.
+      // The kinds of the writer's own, for the family of a paragraph of one and what Enter and Tab make after it.
       passageKinds: () => project.passageKinds,
+      // What the layout says of the numbers of a passage: see above.
+      numbers: () => numbersNow,
     };
 
     const created = untrack(() => {
