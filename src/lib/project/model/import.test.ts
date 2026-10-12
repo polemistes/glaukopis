@@ -11,7 +11,7 @@ const t = (text: string, marks: Record<string, true> = {}): Inline => ({
   text,
   marks,
 });
-const p = (...content: Inline[]): Block => ({ kind: 'paragraph', content });
+const p = (...content: Inline[]): Block => paragraph(content);
 
 function imported(sections: ImportedSection[], more: Partial<Imported> = {}): Imported {
   return {
@@ -111,7 +111,7 @@ describe('a document made into a branch', () => {
     expect(made.elements[0]).toBe(made.top);
     expect(project.node(made.elements[1])?.kind).toBe('abstract');
     expect(readBody(project.fragment(made.elements[1], 'body')!)).toEqual([
-      { kind: 'paragraph', content: [{ kind: 'text', text: 'Short.', marks: {} }] },
+      paragraph([{ kind: 'text', text: 'Short.', marks: {} }]),
     ]);
     expect(project.tree().parent.get(made.top)).toBe(PROJECT);
     // The marks of the title are those of the name of the top.
@@ -121,10 +121,7 @@ describe('a document made into a branch', () => {
     ]);
     expect(project.node(made.top)?.titleHtml).toBe('Wrath and the <em>hero</em>');
     expect(readBody(project.fragment(made.top, 'body')!)).toEqual([
-      {
-        kind: 'paragraph',
-        content: [{ kind: 'text', text: 'Before the first heading.', marks: {} }],
-      },
+      paragraph([{ kind: 'text', text: 'Before the first heading.', marks: {} }]),
     ]);
     expect(project.node(made.elements[3])?.words).toBe(1);
     expect(project.node(made.top)?.document).toEqual({

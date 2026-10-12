@@ -10,7 +10,7 @@ import { t } from '$lib/i18n';
 import { saidWords } from '$lib/project/elements';
 import { writeBody } from '$lib/project/model/blocks';
 import type { Project } from '$lib/project/model/project.svelte';
-import type { Block, Inline, TableCell } from '$lib/project/model/text';
+import { paragraph, type Block, type Inline, type TableCell } from '$lib/project/model/text';
 import { newId } from '$lib/util/id';
 import { timelineOf, type Event } from './lanes';
 import { describeWhen } from './solve';
@@ -26,7 +26,7 @@ export function addChronology(project: Project, at: string): string | null {
   events.sort((a, b) => a.placed.from - b.placed.from || a.placed.to - b.placed.to);
   const text = (words: string): Inline[] => [{ kind: 'text', text: words, marks: {} }];
   const cell = (content: Inline[], header = false): TableCell => ({
-    content: [{ kind: 'paragraph', content }],
+    content: [paragraph(content)],
     colspan: 1,
     rowspan: 1,
     header,

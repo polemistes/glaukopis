@@ -1,11 +1,20 @@
-/** The text of an element as HTML, for showing it where it is not being written. */
+/**
+ * The text of an element as HTML, for showing it where it is not being
+ * written, and for the clipboard. A paragraph is a `p`, with its kind and
+ * what else is said of it as data attributes, as the editor draws one; a
+ * passage a `div.passage` naming its family, its numbers counted here as
+ * the editor counts them (`lines.ts`). A passage of a list is a list of
+ * `ul` or `ol`, nested by the indent of its items, so that other programs
+ * get lists; each item holds its paragraph.
+ */
 
 import { citationLabel, isMissing } from '$lib/editor/references.svelte';
 import { figureWidth, foundAttrs, tableWidth } from '$lib/editor/schema';
 import { isPictureName } from '$lib/figures/pictures.svelte';
 import { languageName } from '$lib/i18n';
-import { lineNumbers } from './lines';
-import type { Block, Inline } from './text';
+import { countedKind, type BasedKind } from './families';
+import { lineNumbers, type Shown } from './lines';
+import type { Block, Inline, ParagraphBlock, PassageBlock } from './text';
 
 function escape(text: string): string {
   return text
@@ -99,50 +108,100 @@ function placing(b: { align?: string; wrap?: boolean }): string {
   );
 }
 
-function blocks(list: Block[], notes: { n: number }): string {
+/** The attributes of a paragraph beyond its words, those that are the defaults left out; and its number, where it shows one. */
+function paragraphAttrs(p: ParagraphBlock, shown: Shown | null): string {
+  return (
+    (p.name !== 'text' ? ` data-kind="${escape(p.name)}"` : '') +
+    (p.indent ? ` data-indent="${p.indent}" style="--indent: ${p.indent}"` : '') +
+    (p.number ? ` data-number="${escape(p.number)}"` : '') +
+    (p.counted === false ? ' data-uncounted' : '') +
+    (p.margin ? ` data-margin="${escape(p.margin)}"` : '') +
+    (shown ? ` data-n="${escape(shown.label)}"${shown.set ? ' data-n-set' : ''}` : '')
+  );
+}
+
+/** The numbers the paragraphs of a passage show, by the rule the editor and the documents follow. */
+export function passageNumbers(p: PassageBlock, own: readonly BasedKind[]): (Shown | null)[] {
+  return lineNumbers(
+    p.numbering,
+    p.every ?? 5,
+    p.content.map((line) => ({
+      counted: countedKind(line.name, own) && line.counted !== false,
+      number: line.number,
+    })),
+  );
+}
+
+/** The attributes of a passage beyond its family, those that are the defaults left out. */
+function passageAttrs(p: PassageBlock): string {
+  return (
+    ` data-family="${escape(p.family)}"` +
+    (p.numbering !== 'none' ? ` data-numbering="${p.numbering}"` : '') +
+    (p.every ? ` data-every="${p.every}"` : '') +
+    (p.side ? ` data-side="${p.side}"` : '')
+  );
+}
+
+/**
+ * A passage of a list, in its `div.passage`, as nested lists: an item
+ * deeper than the one before it begins a list within that item; a run of
+ * items of the other kind at one depth is a list of its own. An item given
+ * a number keeps it.
+ */
+function listHtml(p: PassageBlock, notes: { n: number }, own: readonly BasedKind[]): string {
+  const numbers = passageNumbers(p, own);
+  const items = p.content.map((item, i) => ({ item, shown: numbers[i] }));
+  let at = 0;
+  const level = (depth: number): string => {
+    let out = '';
+    while (at < items.length && items[at].item.indent >= depth) {
+      const tag = items[at].item.name === 'numbered' ? 'ol' : 'ul';
+      out += `<${tag}>`;
+      while (at < items.length && items[at].item.indent >= depth) {
+        const { item, shown } = items[at];
+        if ((item.name === 'numbered' ? 'ol' : 'ul') !== tag && item.indent === depth) break;
+        at++;
+        const value = /^\d+$/.test(item.number ?? '') ? ` value="${item.number}"` : '';
+        out += `<li${value}><p${paragraphAttrs(item, shown)}>${inlines(item.content, notes)}</p>`;
+        // What is deeper stands within this item.
+        if (at < items.length && items[at].item.indent > depth) out += level(depth + 1);
+        out += '</li>';
+      }
+      out += `</${tag}>`;
+    }
+    return out;
+  };
+  return `<div class="passage"${passageAttrs(p)}>${level(Math.min(...items.map((i) => i.item.indent)))}</div>`;
+}
+
+function blocks(list: Block[], notes: { n: number }, own: readonly BasedKind[]): string {
   let out = '';
   for (const b of list) {
     switch (b.kind) {
       case 'paragraph':
-        out += `<p>${inlines(b.content, notes)}</p>`;
+        out += `<p${paragraphAttrs(b, null)}>${inlines(b.content, notes)}</p>`;
         break;
-      case 'blockquote':
-        out += `<blockquote>${blocks(b.content, notes)}</blockquote>`;
-        break;
-      case 'verse': {
-        const numbers = lineNumbers(b.start, b.by, b.lines);
-        out += `<div class="verse"${b.start === null ? '' : ` data-start="${b.start}"`}>`;
-        b.lines.forEach((line, i) => {
-          const shown = numbers[i];
-          out +=
-            `<p class="verse-line ${line.kind}"${line.indent ? ` style="--indent: ${line.indent}"` : ''}` +
-            `${shown ? ` data-n="${escape(shown.label)}"${shown.set ? ' data-n-set' : ''}` : ''}` +
-            `${line.margin ? ` data-margin="${escape(line.margin)}"` : ''}>${inlines(line.content, notes)}</p>`;
+      case 'passage': {
+        if (!b.content.length) break;
+        if (b.family === 'list') {
+          out += listHtml(b, notes, own);
+          break;
+        }
+        const numbers = passageNumbers(b, own);
+        out += `<div class="passage"${passageAttrs(b)}>`;
+        b.content.forEach((line, i) => {
+          out += `<p${paragraphAttrs(line, numbers[i])}>${inlines(line.content, notes)}</p>`;
         });
         out += '</div>';
         break;
       }
-      case 'script':
-        out += `<p class="script ${b.part}">${inlines(b.content, notes)}</p>`;
-        break;
-      case 'passage':
-        out += `<p class="passage" data-kind="${escape(b.name)}">${inlines(b.content, notes)}</p>`;
-        break;
       case 'parallel':
         out +=
-          `<div class="parallel"><div class="parallel-side">${blocks(b.left, notes)}</div>` +
-          `<div class="parallel-side">${blocks(b.right, notes)}</div></div>`;
-        break;
-      case 'bullet_list':
-        out += `<ul>${b.items.map((i) => `<li>${blocks(i, notes)}</li>`).join('')}</ul>`;
-        break;
-      case 'ordered_list':
-        out += `<ol${b.start !== 1 ? ` start="${b.start}"` : ''}>${b.items
-          .map((i) => `<li>${blocks(i, notes)}</li>`)
-          .join('')}</ol>`;
+          `<div class="parallel"><div class="parallel-side">${blocks(b.left, notes, own)}</div>` +
+          `<div class="parallel-side">${blocks(b.right, notes, own)}</div></div>`;
         break;
       case 'row':
-        out += `<div class="row-of" data-row>${blocks(b.items, notes)}</div>`;
+        out += `<div class="row-of" data-row>${blocks(b.items, notes, own)}</div>`;
         break;
       case 'table': {
         const said = inlines(b.caption, notes);
@@ -158,7 +217,7 @@ function blocks(list: Block[], notes: { n: number }): string {
                     const tag = cell.header ? 'th' : 'td';
                     return (
                       `<${tag}${cell.colspan > 1 ? ` colspan="${cell.colspan}"` : ''}${cell.rowspan > 1 ? ` rowspan="${cell.rowspan}"` : ''}${cell.align ? ` style="text-align: ${cell.align}"` : ''}>` +
-                      `${blocks(cell.content, notes)}</${tag}>`
+                      `${blocks(cell.content, notes, own)}</${tag}>`
                     );
                   })
                   .join('')}</tr>`,
@@ -193,10 +252,18 @@ function blocks(list: Block[], notes: { n: number }): string {
  */
 let speaking: string | null | undefined;
 
-export function blocksHtml(list: Block[], language?: string | null): string {
+/**
+ * The text as HTML. `own` are the kinds of paragraph of the writer's own,
+ * by which a kind of theirs is counted by a numbering or not.
+ */
+export function blocksHtml(
+  list: Block[],
+  language?: string | null,
+  own: readonly BasedKind[] = [],
+): string {
   speaking = language;
   try {
-    return blocks(list, { n: 0 });
+    return blocks(list, { n: 0 }, own);
   } finally {
     speaking = undefined;
   }
@@ -209,25 +276,19 @@ export function excerpt(list: Block[], characters = 600): { blocks: Block[]; cut
   const size = (b: Block): number =>
     b.kind === 'paragraph'
       ? plain(b.content).length
-      : b.kind === 'blockquote'
-        ? b.content.reduce((n, c) => n + size(c), 0)
-        : b.kind === 'verse'
-          ? b.lines.reduce((n, l) => n + plain(l.content).length + 1, 0)
-          : b.kind === 'script' || b.kind === 'passage'
-            ? plain(b.content).length
-            : b.kind === 'parallel'
-              ? [...b.left, ...b.right].reduce((n, c) => n + size(c), 0)
-              : b.kind === 'figure'
-                ? // A picture takes the room of some lines.
-                  plain(b.caption).length + 240
-                : b.kind === 'equation'
-                  ? 80
-                  : b.kind === 'row'
-                    ? b.items.reduce((n, c) => n + size(c), 0)
-                    : b.kind === 'table'
-                      ? // A row takes the room of a line.
-                        plain(b.caption).length + b.rows.length * 70
-                      : b.items.reduce((n, item) => n + item.reduce((m, c) => m + size(c), 0), 0);
+      : b.kind === 'passage'
+        ? b.content.reduce((n, l) => n + plain(l.content).length + 1, 0)
+        : b.kind === 'parallel'
+          ? [...b.left, ...b.right].reduce((n, c) => n + size(c), 0)
+          : b.kind === 'figure'
+            ? // A picture takes the room of some lines.
+              plain(b.caption).length + 240
+            : b.kind === 'equation'
+              ? 80
+              : b.kind === 'row'
+                ? b.items.reduce((n, c) => n + size(c), 0)
+                : // A row takes the room of a line.
+                  plain(b.caption).length + b.rows.length * 70;
   for (const b of list) {
     if (count >= characters) return { blocks: out, cut: true };
     const s = size(b);
@@ -252,7 +313,7 @@ export function excerpt(list: Block[], characters = 600): { blocks: Block[]; cut
           break;
         }
       }
-      out.push({ kind: 'paragraph', content });
+      out.push({ ...b, content });
       return { blocks: out, cut: true };
     }
     out.push(b);

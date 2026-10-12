@@ -174,6 +174,13 @@ function read(
 function walk(parent: Y.XmlFragment | Y.XmlElement, element: string, out: Gathered) {
   for (const child of parent.toArray()) {
     if (!(child instanceof Y.XmlElement)) continue;
+    // A passage holds paragraphs (ADR 0040).
+    if (child.nodeName === 'passage') {
+      if (child.toArray().some((c) => c instanceof Y.XmlElement && c.nodeName === 'paragraph'))
+        walk(child, element, out);
+      else read(child, element, out, undefined);
+      continue;
+    }
     const type = bodySchema.nodes[child.nodeName];
     // What a later version added is left alone: it cannot be changed safely here.
     if (!type) continue;

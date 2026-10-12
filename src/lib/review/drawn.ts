@@ -7,10 +7,11 @@
  * when the page changes elsewhere; highlights of the style sheet do.
  *
  * The blocks are found by walking the blocks of the document and what is
- * drawn of them together, by the rules `model/text.ts` draws them by: an
- * equation without a formula, and a table without cells, are not drawn, and
- * a row of one stands without the row. A text is marked when it comes into
- * view, and again when it is drawn anew or its marks change.
+ * drawn of them together, by the rules `model/html.ts` draws them by: an
+ * equation without a formula, and a table without cells, are not drawn, a
+ * row of one stands without the row, and the paragraphs of a passage of a
+ * list stand in the items of nested lists. A text is marked when it comes
+ * into view, and again when it is drawn anew or its marks change.
  */
 
 import * as Y from 'yjs';
@@ -64,10 +65,16 @@ function within(y: Y.XmlElement, dom: Element, index: number): [Y.XmlElement, El
   const child = kids[index];
   if (!child) return null;
   switch (y.nodeName) {
-    case 'bullet_list':
-    case 'ordered_list': {
-      const item = drawnOf(dom)[index];
-      return item ? [child, item] : null;
+    case 'passage': {
+      // A passage of a list is drawn as nested lists, each paragraph in an item, in the order of the text.
+      if (dom.firstElementChild?.matches('ul, ol')) {
+        const held = [...dom.querySelectorAll(':scope li > p')].filter(
+          (p) => !p.classList.contains(OURS),
+        )[index];
+        return held ? [child, held] : null;
+      }
+      const drawn = drawnBlocks(y, dom)[index];
+      return drawn ? [child, drawn] : null;
     }
     case 'tabular': {
       if (child.nodeName === 'table_caption') {
@@ -249,9 +256,7 @@ export function markDrawn(
         m.path.length > 1 ? drawnHolder(root, fragment, part, m.path.slice(0, -1)) : root;
       const before = drawnHolder(root, fragment, part, m.path);
       const block =
-        before?.closest(
-          'p, figure, div.equation, ul, ol, blockquote, div.row-of, div.verse, div.parallel',
-        ) ?? before;
+        before?.closest('p, figure, div.equation, div.row-of, div.passage, div.parallel') ?? before;
       if (block?.parentNode) block.parentNode.insertBefore(el, block);
       else (container ?? root).append(el);
       made.push(el);

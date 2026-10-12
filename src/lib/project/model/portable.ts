@@ -244,19 +244,16 @@ function retold(blocks: Block[], kind: (id: string) => string, point: (id: strin
   function block(b: Block): Block {
     switch (b.kind) {
       case 'paragraph':
-      case 'script':
-        return { ...b, content: line(b.content) };
-      case 'passage':
         return { ...b, name: kind(b.name), content: line(b.content) };
-      case 'blockquote':
-        return { ...b, content: list(b.content) };
-      case 'verse':
-        return { ...b, lines: b.lines.map((l) => ({ ...l, content: line(l.content) })) };
+      case 'passage':
+        // A family that is a kind of the writer's own is named as the kind is here.
+        return {
+          ...b,
+          family: kind(b.family),
+          content: b.content.map((p) => ({ ...p, name: kind(p.name), content: line(p.content) })),
+        };
       case 'parallel':
         return { ...b, left: list(b.left), right: list(b.right) };
-      case 'bullet_list':
-      case 'ordered_list':
-        return { ...b, items: b.items.map(list) };
       case 'figure':
         return { ...b, caption: line(b.caption) };
       case 'table':

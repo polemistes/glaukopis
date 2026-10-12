@@ -144,15 +144,15 @@ class Reader {
           this.blocks(child);
           this.maker.part();
           break;
-        case 'blockquote':
         case 'row':
-        case 'verse':
         case 'parallel':
           this.blocks(child);
           break;
-        case 'bullet_list':
-        case 'ordered_list':
-          for (const item of child.toArray()) if (item instanceof Y.XmlElement) this.blocks(item);
+        case 'passage':
+          // A run of paragraphs of one family (ADR 0040); of the old shape, a paragraph of a kind.
+          if (child.toArray().some((c) => c instanceof Y.XmlElement && c.nodeName === 'paragraph'))
+            this.blocks(child);
+          else this.line(child, 'line');
           break;
         case 'equation': {
           const tex = str(child.getAttribute('tex') as unknown).trim();
@@ -274,8 +274,8 @@ function rewrite(
   return done;
 }
 
-/** The lines that may be split by a paragraph break: those that are paragraphs, of whatever kind. */
-const SPLITS = new Set(['paragraph', 'passage', 'script', 'verse_line']);
+/** The lines that may be split by a paragraph break: paragraphs, of whatever kind. */
+const SPLITS = new Set(['paragraph']);
 
 /** The text from one place of the passages to another, with a paragraph separator where one broke. */
 function stretch(passages: Passage[], change: Replacing): string {

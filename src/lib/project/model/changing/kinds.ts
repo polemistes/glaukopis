@@ -90,7 +90,8 @@ export const kindChanges = {
         else n.delete('kind');
         if ((record?.template || record?.begins) && this.node(id)?.empty) {
           const body = n.get('body');
-          if (body instanceof Y.XmlFragment) fillBody(body, record.template, record.begins);
+          if (body instanceof Y.XmlFragment)
+            fillBody(body, record.template, record.begins, this.passageKinds);
         }
       }
     });

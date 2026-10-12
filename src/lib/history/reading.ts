@@ -35,10 +35,15 @@ import type {
 /** What stands for an object in the text of a piece. */
 export const OBJECT = '￼';
 
-/** Blocks that hold other blocks, and are not changes of their own. */
+/**
+ * Blocks that hold other blocks, and are not changes of their own. A
+ * `passage` holds paragraphs (ADR 0040); of the old shape, it was a
+ * paragraph of a kind, and is told by what it holds (`holdsBlocks`).
+ */
 const CONTAINERS = new Set([
   'blockquote',
   'verse',
+  'passage',
   'parallel',
   'parallel_side',
   'bullet_list',
@@ -683,7 +688,7 @@ function readBlocks(
       readText(element, here, place, 'caption', a, b, before, after, who, options, reading);
       continue;
     }
-    if (CONTAINERS.has(name)) {
+    if (CONTAINERS.has(name) && (name !== 'passage' || holdsBlocks(element))) {
       const inside = name === 'table_cell' || name === 'table_header' ? 'cell' : within;
       readBlocks(element, here, where, before, after, who, options, reading, inside);
       continue;
@@ -691,6 +696,15 @@ function readBlocks(
     const kind = where.part === 'title' ? 'name' : within === 'cell' ? 'cell' : 'paragraph';
     readText(element, here, place, kind, a, b, before, after, who, options, reading);
   }
+}
+
+/** Whether an element holds paragraphs, as a passage does now, rather than text, as one of the old shape did. */
+function holdsBlocks(element: Y.XmlElement): boolean {
+  if (element._map.has('family')) return true;
+  for (const item of children(element))
+    if (item.content instanceof Y.ContentType && item.content.type instanceof Y.XmlElement)
+      if ((item.content.type as Y.XmlElement).nodeName === 'paragraph') return true;
+  return false;
 }
 
 function tableShape(tabular: Y.XmlElement, at: At): { rows: number; columns: number } {

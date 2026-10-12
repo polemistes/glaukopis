@@ -3,6 +3,7 @@ import * as Y from 'yjs';
 import type { Reference } from '$lib/api/library';
 import type { FileSettlement, FoundWork, ProjectInfo } from '$lib/api/projects';
 import { writeBody } from '$lib/project/model/blocks';
+import { paragraph } from '$lib/project/model/text';
 import { Project } from '$lib/project/model/project.svelte';
 import { citedIds } from '$lib/project/model/rewrite-refs';
 import { PROJECT, type RefRecord } from '$lib/project/model/types';
@@ -105,13 +106,10 @@ function state(): Uint8Array {
   p.begin('Wrath');
   p.transact(() =>
     writeBody(p.fragment(PROJECT, 'body')!, [
-      {
-        kind: 'paragraph',
-        content: [
-          { kind: 'text', text: 'As ', marks: {} },
-          { kind: 'citation', items: [{ id: 'r1' }, { id: 'r2' }], mode: 'normal' },
-        ],
-      },
+      paragraph([
+        { kind: 'text', text: 'As ', marks: {} },
+        { kind: 'citation', items: [{ id: 'r1' }, { id: 'r2' }], mode: 'normal' },
+      ]),
       {
         kind: 'figure',
         id: 'f1',

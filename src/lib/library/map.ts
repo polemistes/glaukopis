@@ -9,6 +9,7 @@
 import type { Collection, Summary } from '$lib/api/library';
 import { t } from '$lib/i18n';
 import { writeBody, writeName } from '$lib/project/model/blocks';
+import { paragraph } from '$lib/project/model/text';
 import type { Project } from '$lib/project/model/project.svelte';
 import { sortEntries, type SortKey } from '$lib/state/library.svelte';
 
@@ -111,10 +112,7 @@ export function makeLibraryMap(project: Project, under: string, plan: Plan): str
     writeName(title, [{ kind: 'text', text: part.title, marks: {} }]);
     if (part.reference) {
       writeBody(body, [
-        {
-          kind: 'paragraph',
-          content: [{ kind: 'citation', items: [{ id: part.reference }], mode: 'normal' }],
-        },
+        paragraph([{ kind: 'citation', items: [{ id: part.reference }], mode: 'normal' }]),
       ]);
     }
   });

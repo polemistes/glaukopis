@@ -34,15 +34,12 @@ function written(): Uint8Array {
   p.begin('Wrath');
   const a = p.addChild(PROJECT, { title: 'A' })!;
   const body: Block[] = [
-    {
-      kind: 'paragraph',
-      content: [
-        t('As '),
-        cite('r1', 'r2'),
-        t(' says.'),
-        { kind: 'footnote', content: [t('So '), cite('r1')] },
-      ],
-    },
+    paragraph([
+      t('As '),
+      cite('r1', 'r2'),
+      t(' says.'),
+      { kind: 'footnote', content: [t('So '), cite('r1')] },
+    ]),
     {
       kind: 'figure',
       id: 'f1',
