@@ -401,7 +401,7 @@ try {
        missing: c[0] ? c[0].classList.contains('missing') : null,
        math: s.querySelectorAll('p .math math').length,
        equation: s.querySelectorAll('.equation math').length,
-       quote: (s.querySelector('.passage[data-family="quotation"], blockquote') || {}).textContent,
+       quote: (s.querySelector('p[data-kind="quote"]') || {}).textContent,
        items: Array.from(s.querySelectorAll('ul li')).map((e) => e.textContent.trim()),
        found: Array.from(s.querySelectorAll('.found')).map((e) => [e.dataset.by, e.textContent]),
      };`,
