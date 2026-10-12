@@ -462,6 +462,11 @@ body.dragging * {
 .prose p[data-run-first] > .run-line {
   top: 0;
 }
+/* Where the numbers stand at the left, the bracket stands outside them, so
+   that it runs past the numbers rather than through them. */
+.prose p[data-numbers='left'] > .run-line {
+  left: calc(-3.4em - var(--inset));
+}
 /* The bracket is darker while the cursor is in the run. */
 .prose p[data-current] > .run-line {
   background: var(--line-strong);
