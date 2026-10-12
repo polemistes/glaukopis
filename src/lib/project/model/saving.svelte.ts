@@ -7,6 +7,7 @@
  */
 
 import * as Y from 'yjs';
+import type { RefRecord } from './types';
 
 export interface Persistence {
   /**
@@ -16,6 +17,12 @@ export interface Persistence {
   append(update: Uint8Array, here: boolean, time: number): Promise<void>;
   /** With `keep`, where the project's full history is on, the log is kept in it. */
   saveState(state: Uint8Array, summary: Summary, keep: boolean): Promise<void>;
+  /**
+   * Writes the readable copy of the project into its folder: its Org form,
+   * the pictures it shows by their hash, and the works it cites. Where it
+   * is given, it is written a little after the whole is saved.
+   */
+  readable?(org: string, beside: { pictures: string[]; records: RefRecord[] }): Promise<void>;
 }
 
 /**
@@ -55,6 +62,8 @@ export interface Saved {
   beforeBatch(): void;
   /** Before the whole is written: the records of the history are put in order. */
   beforeState(): void;
+  /** After the whole was written: the readable copy is kept up. */
+  afterState?(): void;
 }
 
 const SNAPSHOT_AFTER_UPDATES = 150;
@@ -176,6 +185,7 @@ export class Saving {
     this.#sinceSnapshot = { updates: 0, bytes: 0 };
     this.#writing = this.#writing
       .then(() => this.#persistence!.saveState(state, summary, keep))
+      .then(() => this.#project.afterState?.())
       .catch((error) => {
         this.#sinceSnapshot.updates = 1;
         this.status = 'error';

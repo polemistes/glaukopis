@@ -100,3 +100,9 @@ history-cut-failed = The history could not be taken out.
 history-archive-until = until { $when }
 history-archived = The history before { $when } is archived.
 history-deleted = The history before { $when } is deleted.
+
+## The text as Org: as it was and as it is, as a difference of two Org texts
+
+history-show-org = Show as Org
+history-org-about = The text of the element in view and all under it, as Org: as it was then, and as it is now. Lines taken out are marked −, lines put in +, and within a changed line the words that changed.
+history-org-same = The text is now as it was then.

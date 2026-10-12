@@ -20,6 +20,9 @@
   import type { Change } from './grouping';
   import { colour, type Review } from './review.svelte';
   import type { Choice } from './source';
+  import { branchText } from '$lib/org/of-project';
+  import OrgDiff from '$lib/org/OrgDiff.svelte';
+  import { branchTextOf } from '$lib/org/past';
 
   interface Props {
     review: Review;
@@ -192,6 +195,37 @@
     }
   }
 
+  /**
+   * Whether the text of the element of the change looked at is shown as
+   * Org: as it was at the moment reviewed from and as it is, as a difference.
+   */
+  let asOrg = $state(false);
+  let orgThen = $state.raw<{ key: string; text: string } | null>(null);
+  const canOrg = $derived(!!review.source.history?.stateAt);
+  const orgElement = $derived(current?.element ?? null);
+  const orgNow = $derived.by(() => {
+    if (!asOrg || !orgElement) return '';
+    void project.revision;
+    return branchText(project, orgElement, false);
+  });
+
+  $effect(() => {
+    const history = review.source.history;
+    const since = review.since;
+    const element = orgElement;
+    if (!asOrg || !element || !since || !history?.stateAt) return;
+    const key = `${element} ${since.time}`;
+    if (orgThen?.key === key) return;
+    orgThen = null;
+    history
+      .stateAt(since.snapshot)
+      .then((state) => branchTextOf(state, element, false))
+      .then((text) => {
+        if (orgElement === element && review.since === since) orgThen = { key, text };
+      })
+      .catch((error) => console.error('the text could not be read as Org as it was', error));
+  });
+
   function onkeydown(event: KeyboardEvent) {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     if ((event.target as HTMLElement).closest('input, textarea, button')) return;
@@ -278,6 +312,12 @@
           />
           {t('review-own')}
         </label>
+        {#if canOrg}
+          <label class="own">
+            <input type="checkbox" data-show-org bind:checked={asOrg} />
+            {t('review-show-org')}
+          </label>
+        {/if}
       </div>
     </div>
 
@@ -342,6 +382,15 @@
                         {t('review-now-under', { element: named(c.change.after.parent) })}
                       </p>{/if}
                   {/if}
+                {/if}
+                {#if asOrg && c.element}
+                  <div class="as-org">
+                    {#if orgThen?.key.startsWith(`${c.element} `)}
+                      <OrgDiff before={orgThen.text} after={orgNow} />
+                    {:else}
+                      <Spinner size={14} />
+                    {/if}
+                  </div>
                 {/if}
                 {#each c.stretches as s, i (i)}
                   {#if c.kind === 'changed' || c.kind === 'moved' || s.pieces.some((p) => p.status === 'removed')}
@@ -629,6 +678,9 @@
     line-height: 1.5;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+  }
+  .as-org {
+    margin: 6px 0;
   }
   .new {
     background: color-mix(in srgb, var(--by) 22%, transparent);

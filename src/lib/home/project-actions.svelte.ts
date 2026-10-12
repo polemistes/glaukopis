@@ -9,6 +9,7 @@
 import { open as chooseFile, save } from '@tauri-apps/plugin-dialog';
 import Copy from '@lucide/svelte/icons/copy';
 import FileDown from '@lucide/svelte/icons/file-down';
+import FolderDown from '@lucide/svelte/icons/folder-down';
 import History from '@lucide/svelte/icons/history';
 import Pencil from '@lucide/svelte/icons/pencil';
 import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -21,6 +22,7 @@ import type { MapMode } from '$lib/state/router.svelte';
 import { confirm } from '$lib/ui/confirm.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { describeError, notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
+import { makeFromOrg, ORG_ENDING, writeOrgFolder } from './org-file';
 import { ENDING, fileName, given, makeFromFile, writeProjectFile } from './project-file';
 
 /** What a name is asked for. */
@@ -212,6 +214,30 @@ export class ProjectActions {
     }
   }
 
+  /**
+   * Saves a project as Org into a folder the user chooses (ADR 0041): its
+   * Org form, the works it cites and its pictures. The project that is
+   * open (`here`) is written to disk first.
+   */
+  async saveAsOrg(p: ProjectInfo, here = false) {
+    const path = await chooseFile({
+      title: t('home-org-save-title'),
+      directory: true,
+      multiple: false,
+    });
+    if (typeof path !== 'string') return;
+    this.filing = true;
+    try {
+      const open = here ? currentProject() : null;
+      await writeOrgFolder(p, path, open ? () => open.flush() : undefined);
+      notifyOk(t('home-org-saved', { name: p.name }));
+    } catch (error) {
+      notifyError(t('home-org-save-failed'), error);
+    } finally {
+      this.filing = false;
+    }
+  }
+
   /** Makes a new project of a project file the user chooses, and opens it. */
   async openFile() {
     if (this.filing) return;
@@ -221,9 +247,35 @@ export class ProjectActions {
       filters: [{ name: t('home-file-filter'), extensions: [ENDING] }],
     });
     if (typeof path !== 'string') return;
+    await this.makeOf(path, makeFromFile, t('home-file-open-failed'));
+  }
+
+  /** Makes a new project of an Org file the user chooses, and opens it. */
+  async openOrg() {
+    if (this.filing) return;
+    const path = await chooseFile({
+      title: t('home-org-open-title'),
+      multiple: false,
+      filters: [{ name: t('home-org-filter'), extensions: [ORG_ENDING] }],
+    });
+    if (typeof path !== 'string') return;
+    await this.openOrgAt(path);
+  }
+
+  /** Makes a new project of the Org file, or the folder that holds one, at `path`, and opens it. */
+  openOrgAt(path: string): Promise<void> {
+    return this.makeOf(path, makeFromOrg, t('home-org-open-failed'));
+  }
+
+  /**
+   * Makes a new project of the file at `path` by `maker`, asking what is
+   * to be done with its works where something is to be chosen, and opens it.
+   */
+  async makeOf(path: string, maker: typeof makeFromFile, failed: string) {
+    if (this.filing) return;
     this.filing = true;
     try {
-      const made = await makeFromFile(
+      const made = await maker(
         path,
         (name, works) =>
           new Promise((resolve) => {
@@ -246,7 +298,7 @@ export class ProjectActions {
         notify(t('home-file-problems', { count: made.problems.length }), made.problems.join('\n'));
       this.open(made.info);
     } catch (error) {
-      notifyError(t('home-file-open-failed'), error);
+      notifyError(failed, error);
     } finally {
       this.asking = null;
       this.filing = false;
@@ -286,6 +338,12 @@ export class ProjectActions {
         icon: FileDown,
         disabled: this.filing,
         action: () => void this.saveAsFile(p, here),
+      },
+      {
+        label: t('home-menu-save-org'),
+        icon: FolderDown,
+        disabled: this.filing,
+        action: () => void this.saveAsOrg(p, here),
       },
       { kind: 'separator' },
       {

@@ -114,6 +114,7 @@ home-menu-rename = Gi nytt navn …
 home-menu-duplicate = Dupliser …
 home-menu-history = Tidligere versjoner …
 home-menu-save-file = Lagre som fil …
+home-menu-save-org = Lagre som Org …
 
 ## Å gi et prosjekt navn
 
@@ -198,3 +199,13 @@ home-file-added = { $count ->
    *[other] { $count } verk er ikke i biblioteket ditt, og legges til.
 }
 home-file-make = Lag prosjektet
+
+## Et prosjekt som Org: den lesbare kopien i en mappe, og et nytt prosjekt laget av en Org-fil
+
+home-org-open = Åpne en Org-fil …
+home-org-open-title = Åpne en Org-fil
+home-org-filter = Org-fil
+home-org-open-failed = Org-filen kunne ikke åpnes
+home-org-save-title = Velg mappen prosjektet skal lagres som Org i
+home-org-saved = «{ $name }» ble lagret som Org
+home-org-save-failed = Prosjektet kunne ikke lagres som Org

@@ -37,6 +37,7 @@ import {
   type Summary,
 } from './saving.svelte';
 import { isCatalogueKind } from '$lib/project/parts';
+import { gather, ReadableCopy } from '$lib/org/folder';
 import { migrate, needsMigration } from './migrate';
 import { bodyFacts, inlineText, readBody, readTitle, titleHtml, type Block } from './text';
 import { buildTree, pathTo, viewOf, type FlatNode, type Tree } from './tree';
@@ -215,6 +216,8 @@ export class Project {
   readonly #presence: Presence;
   readonly #saving: Saving;
   readonly #people: People;
+  /** The readable copy in the project's folder, where it has one: see `org/folder.ts`. */
+  readonly #copy: ReadableCopy | null;
   /** Those who are told that the project has changed: see `onChange`. */
   #listeners = new Set<() => void>();
   /** Whether what was on disk has been read. */
@@ -238,12 +241,15 @@ export class Project {
     this.yUsers = this.doc.getMap('users');
     this.#presence = new Presence(this.doc);
     this.#people = new People(this.doc, this.yUsers, () => this.history.on);
+    const readable = persistence?.readable?.bind(persistence);
+    this.#copy = readable ? new ReadableCopy(() => gather(this), readable) : null;
     this.#saving = new Saving(persistence, {
       doc: this.doc,
       summary: () => this.summary(),
       keepsHistory: () => this.history.on,
       beforeBatch: () => this.#people.noteDeleted(),
       beforeState: () => this.#people.tidy(),
+      afterState: () => this.#copy?.schedule(),
     });
 
     this.undoManager = new Y.UndoManager([this.yMeta, this.yNodes, this.yLinks], {
@@ -645,6 +651,8 @@ export class Project {
   async close(): Promise<void> {
     if (this.#closed) return;
     await this.snapshot();
+    // What the readable copy waits to write is written while the document is there.
+    await this.#copy?.finish();
     this.#closed = true;
     this.#listeners.clear();
     this.#saving.stop();

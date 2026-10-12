@@ -10,6 +10,7 @@
   import JoinDialog from '$lib/sharing/JoinDialog.svelte';
   import FileInput from '@lucide/svelte/icons/file-input';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
+  import FileText from '@lucide/svelte/icons/file-text';
   import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
   import { isReadPath } from '$lib/api/ocr';
   import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
@@ -85,6 +86,11 @@
   const actions = new ProjectActions({ open, deleted: readTrash });
   const items = (p: ProjectInfo) => actions.items(p);
 
+  // For the tests of the running application, which cannot answer the dialog that chooses a file.
+  (window as unknown as Record<string, unknown>).__glaukopisOrg = {
+    open: (path: string) => actions.openOrgAt(path),
+  };
+
   // A PDF or a picture has its text read.
   const written = (path: string) =>
     isDocumentPath(path) || isPlainTextPath(path) || isReadPath(path);
@@ -143,6 +149,15 @@
       >
         {#snippet icon()}<FolderOpen size={15} />{/snippet}
         {t('home-file-open')}
+      </Button>
+      <Button
+        variant="secondary"
+        size="md"
+        disabled={actions.filing}
+        onclick={() => void actions.openOrg()}
+      >
+        {#snippet icon()}<FileText size={15} />{/snippet}
+        {t('home-org-open')}
       </Button>
     {/snippet}
     <div class="welcome" class:alone={projects.loaded && !projects.list.length}>

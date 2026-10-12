@@ -126,6 +126,7 @@ home-menu-rename = Rename…
 home-menu-duplicate = Duplicate…
 home-menu-history = Earlier versions…
 home-menu-save-file = Save as a file…
+home-menu-save-org = Save as Org…
 
 ## Naming a project
 
@@ -214,3 +215,14 @@ home-file-added = { $count ->
    *[other] { $count } works are not in your library, and are added to it.
 }
 home-file-make = Make the project
+
+## A project as Org: its readable copy in a folder, and a new project made of an Org file
+
+home-org-open = Open an Org file…
+home-org-open-title = Open an Org file
+# The kind of file, in the dialog that asks for one.
+home-org-filter = Org file
+home-org-open-failed = The Org file could not be opened
+home-org-save-title = Choose the folder to save the project as Org in
+home-org-saved = “{ $name }” was saved as Org
+home-org-save-failed = The project could not be saved as Org

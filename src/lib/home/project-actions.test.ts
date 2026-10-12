@@ -157,6 +157,7 @@ describe('what is done with a project from a list of them', () => {
       t('home-menu-duplicate'),
       t('home-menu-history'),
       t('home-menu-save-file'),
+      t('home-menu-save-org'),
       '—',
       t('common-delete'),
     ]);

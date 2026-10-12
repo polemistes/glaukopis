@@ -13,6 +13,7 @@ import {
   projectList,
   projectLoad,
   projectMoveToFolder,
+  projectReadableWrite,
   projectRename,
   projectSaveState,
   projectsShown,
@@ -152,6 +153,7 @@ export async function openProject(id: string): Promise<OpenProject> {
       const info = await projectSaveState(id, state, summary, keep);
       projects.put(info);
     },
+    readable: (org, beside) => projectReadableWrite({ id }, beside, org),
   };
   const project = new Project(persistence);
   project.load(loaded.state, loaded.updates);

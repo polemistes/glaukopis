@@ -12,6 +12,7 @@ review-since-named = Since “{ $name }”
 review-since-when = From { $when }
 review-choose-since = Review from another moment
 review-own = Your own changes too
+review-show-org = Show as Org
 review-unit = Review by
 review-by-sentence = Sentence
 review-by-paragraph = Paragraph

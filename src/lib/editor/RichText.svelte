@@ -12,6 +12,9 @@
   import { ySyncPlugin, yCursorPlugin } from 'y-prosemirror';
   import type * as Y from 'yjs';
   import type { Project } from '$lib/project/model/project.svelte';
+  import type { RefRecord } from '$lib/project/model/types';
+  import { library } from '$lib/state/library.svelte';
+  import type { ResolvedPos, Slice } from 'prosemirror-model';
   import { t } from '$lib/i18n';
   import { insertCitation } from './commands';
   import {
@@ -20,7 +23,7 @@
     titlePlugins,
     type KeyAction,
   } from './plugins';
-  import { copiedHtml, copiedText, pastedTextSlice } from './clipboard';
+  import { copiedHtml, copiedText, looksLikeOrg, pastedTextSlice } from './clipboard';
   import { bodySchema, titleSchema } from './schema';
   import { dropTarget } from '$lib/ui/drag.svelte';
   import { editorUi, rectAt } from './ui.svelte';
@@ -161,6 +164,64 @@
     });
   });
 
+  /**
+   * What the Org form of what is copied or pasted needs: the kinds of the
+   * writer's own, and the works, by whose keys citations are written and
+   * read: those of the library, and over them those the project keeps.
+   */
+  const orgOptions = () => {
+    const references: RefRecord[] = library.entries.map((e) => ({
+      id: e.id,
+      key: e.key,
+      type: e.type,
+      fields: {},
+      names: {},
+      modified: '',
+      authors: e.authors,
+      year: e.year,
+      title: e.title,
+      container: e.container,
+    }));
+    references.push(...project.refs.values());
+    return { paragraphKinds: project.passageKinds, references };
+  };
+
+  /** Text pasted as text; the works it cites that the project keeps no copy of are kept. */
+  function pastedText(text: string, $context: ResolvedPos): Slice {
+    const slice = pastedTextSlice(text, $context, bodySchema, orgOptions);
+    const cited = new Set<string>();
+    slice.content.descendants((node) => {
+      if (node.type.name !== 'citation') return;
+      for (const item of node.attrs.items as { id: string }[])
+        if (item?.id && !project.refs.has(item.id)) cited.add(item.id);
+    });
+    if (cited.size) queueMicrotask(() => cited.forEach((id) => oncite?.(id)));
+    return slice;
+  }
+
+  /**
+   * Org pasted as text into an empty paragraph of the text: its first
+   * paragraph comes whole, of its own kind, where the editor would have
+   * it take the kind of the paragraph it is pasted into.
+   */
+  function pastedOrg(v: EditorView, event: ClipboardEvent): boolean {
+    const data = event.clipboardData;
+    const text = data?.getData('text/plain') ?? '';
+    if (!text || data?.getData('text/html') || !looksLikeOrg(text)) return false;
+    const { empty } = v.state.selection;
+    const at = v.state.selection.$from;
+    if (!empty || at.depth !== 1 || !at.parent.isTextblock || at.parent.content.size) return false;
+    event.preventDefault();
+    v.dispatch(
+      v.state.tr
+        .replaceSelection(pastedText(text, at))
+        .scrollIntoView()
+        .setMeta('paste', true)
+        .setMeta('uiEvent', 'paste'),
+    );
+    return true;
+  }
+
   /** The kinds of paragraph of the writer's own, as much as the shape of a text needs of them. */
   const ownKinds = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
 
@@ -276,6 +337,7 @@
 
   /** Pictures that were pasted become figures. Returns whether there were any. */
   function pasted(v: EditorView, event: ClipboardEvent): boolean {
+    if (pastedOrg(v, event)) return true;
     const files = [...(event.clipboardData?.files ?? [])].filter((f) =>
       f.type.startsWith('image/'),
     );
@@ -412,11 +474,10 @@
           spellcheck: 'false',
         },
         handlePaste: (v, event) => kind === 'body' && pasted(v, event),
-        // Text pasted as text keeps every line break (see `clipboard.ts`).
-        clipboardTextParser:
-          kind === 'body' ? (text, $context) => pastedTextSlice(text, $context, schema) : undefined,
-        // What is copied carries its citations as they are shown.
-        clipboardTextSerializer: (slice) => copiedText(slice, language),
+        // Text pasted as text is read as Org where it is, and keeps every line break where it is not (see `clipboard.ts`).
+        clipboardTextParser: kind === 'body' ? pastedText : undefined,
+        // What is copied as text is Org; as HTML, it carries its citations as they are shown.
+        clipboardTextSerializer: (slice) => copiedText(slice, language, orgOptions),
         clipboardSerializer: copiedHtml(schema, () => language),
         // A citation that was found is gone through where it is pressed; a
         // commented passage shows its thread.
