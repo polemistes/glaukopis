@@ -151,6 +151,23 @@ describe('the passages of a text', () => {
     expect(readTitleDoc(editor(title, 'title').state.doc).passages[0].text).toBe(named);
   });
 
+  it('pass over reference marks, read from the blocks, from the project and from an editor', () => {
+    const marked = [p(t('For God so '), { kind: 'refmark', label: '3:16' }, t('loved the world'))];
+    expect(bodyPassages(marked)[0].text).toBe('For God so loved the world');
+    const { pr, elements } = project(marked);
+    const fragment = pr.fragment(elements[0], 'body')!;
+    const view = editor(fragment);
+    expect(view.state.doc.firstChild?.childCount).toBe(3);
+    for (const labels of [null, LABELS]) {
+      expect(readBodyY(fragment, labels).passages[0].text).toBe('For God so loved the world');
+      const read = readBodyDoc(view.state.doc, labels);
+      expect(read.passages[0].text).toBe('For God so loved the world');
+      // What is found across the mark is found where the editor has it.
+      const [hit] = matcher('so loved').find(read.passages[0].text);
+      expect(positionOf(read, 0, hit.end)).toBeGreaterThan(positionOf(read, 0, hit.start) + 8);
+    }
+  });
+
   it('are found again where an editor holds them', () => {
     const { pr, elements } = project(rich);
     const view = editor(pr.fragment(elements[0], 'body')!);

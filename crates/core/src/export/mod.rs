@@ -538,6 +538,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     converter.extras.kinds = crate::formats::kinds::table(f, &doc.kinds);
     converter.extras.parts = crate::templates::kinds::table(f);
     converter.extras.italics_underlined = f.text.italics == crate::formats::Italics::Underline;
+    converter.extras.refmarks = f.text.refmarks;
     converter.extras.classes = matches!(target, Target::Html | Target::Epub);
 
     let mut meta = Map::new();
@@ -2798,8 +2799,14 @@ mod tests {
         let out = s.work.join("out");
         fs::create_dir_all(&out).unwrap();
         let mut r = request("chicago-author-date");
-        let line =
-            |kind: VerseLineKind, indent: u32, words: &str| VerseLine { kind, indent, content: vec![text(words)] };
+        let line = |kind: VerseLineKind, indent: u32, words: &str| VerseLine {
+            kind,
+            indent,
+            number: None,
+            counted: true,
+            margin: None,
+            content: vec![text(words)],
+        };
         let verse = Block::Verse {
             start: Some(1),
             by: 5,
@@ -2811,6 +2818,10 @@ mod tests {
                 line(VerseLineKind::Line, 0, "to the land of Colchis,"),
                 line(VerseLineKind::Line, 0, "nor the pine been felled"),
                 line(VerseLineKind::Line, 0, "in the glens of Pelion."),
+                // A number given by hand, a line not counted, and words in the margin.
+                VerseLine { number: Some("1094a1".into()), ..line(VerseLineKind::Line, 0, "Nor had the heroes rowed") },
+                VerseLine { counted: false, ..line(VerseLineKind::Line, 2, "for Pelias") },
+                VerseLine { margin: Some("ia. trim.".into()), ..line(VerseLineKind::Line, 0, "the golden fleece.") },
             ],
         };
         r.document.sections.push(Section {
@@ -2835,14 +2846,43 @@ mod tests {
         let typ = out.join("verse.typ");
         export(&s.ctx(), &r, Target::Typst, &typ, &ExportOptions::default()).unwrap();
         let t = fs::read_to_string(&typ).unwrap();
-        assert!(t.contains("#gk-verse(start: 1, by: 5)["), "{t}");
-        assert!(t.contains("#gk-line(\"speaker\", 0)["), "{t}");
-        assert!(t.contains("#gk-line(\"line\", 1)["), "{t}");
+        assert!(t.contains("#gk-verse["), "{t}");
+        assert!(t.contains("#gk-line(\"speaker\", 0, n: none, margin: none)["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 0, n: \"1\", margin: none)["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 1, n: none, margin: none)["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 0, n: \"5\", margin: none)["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 0, n: \"1094a1\", margin: none)["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 2, n: none, margin: none)["), "{t}");
+        assert!(t.contains("#gk-line(\"line\", 0, n: none, margin: \"ia. trim.\")["), "{t}");
         assert!(t.contains("#gk-parallel(["), "{t}");
         let p = preview(&s.ctx(), &r).unwrap();
         assert!(p.warnings.is_empty(), "{:?}", p.warnings);
         let svg: String = p.pages.iter().map(|page| page.svg.as_str()).collect();
         assert!(!svg.is_empty());
+
+        // Reference marks, raised and in the margin: the pages are made either way.
+        {
+            let mut marked = r.clone();
+            marked.document.sections[0].blocks.push(Block::Paragraph {
+                content: vec![
+                    text("In the beginning. "),
+                    Inline::RefMark { label: "2".into() },
+                    text("And the earth was without form."),
+                ],
+            });
+            for margin in [false, true] {
+                if margin {
+                    marked.format.text.refmarks = crate::formats::RefMarks::Margin;
+                }
+                let typ = out.join("marks.typ");
+                export(&s.ctx(), &marked, Target::Typst, &typ, &ExportOptions::default()).unwrap();
+                let t = fs::read_to_string(&typ).unwrap();
+                assert!(t.contains("#gk-refmark(\"2\");"), "{t}");
+                assert_eq!(t.contains("here().position()"), margin, "{t}");
+                let p = preview(&s.ctx(), &marked).unwrap();
+                assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+            }
+        }
 
         // LaTeX: each line a paragraph, the speaker in small capitals, the numbers in the margin.
         let tex = out.join("verse.tex");
@@ -2852,6 +2892,8 @@ mod tests {
         assert!(l.contains("\\llap{{\\footnotesize 1}\\hspace{0.9em}}If only the Argo had never flown"), "{l}");
         assert!(l.contains("\\llap{{\\footnotesize 5}\\hspace{0.9em}}in the glens"), "{l}");
         assert!(l.contains("\\hspace*{1.5em}through the dark"), "{l}");
+        assert!(l.contains("\\llap{{\\footnotesize 1094a1}\\hspace{0.9em}}Nor had"), "{l}");
+        assert!(l.contains("\\rlap{\\hspace{1em}\\footnotesize\\itshape ia. trim.}"), "{l}");
         assert!(l.contains("\\begin{minipage}[t]{0.48\\textwidth}"), "{l}");
 
         // An e-book: the chapters are its parts, and the lines stay lines.

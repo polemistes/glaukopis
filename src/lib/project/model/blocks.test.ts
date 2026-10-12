@@ -51,7 +51,9 @@ const everything: Block[] = [
     { kind: 'citation', items: [{ id: 'r2' }], mode: 'intext' },
     t(' says, as in '),
     { kind: 'crossref', target: 'f1', form: 'number' },
-    t('.'),
+    t('. '),
+    { kind: 'refmark', label: '3:16' },
+    t('For God so loved.'),
     {
       kind: 'footnote',
       content: [
@@ -82,7 +84,10 @@ const everything: Block[] = [
         indent: 1,
         content: [t('through the dark '), t('Clashing Rocks', { em: {} })],
       },
-      { kind: 'direction', indent: 0, content: [t('She weeps.')] },
+      { kind: 'direction', indent: 0, margin: 'aside', content: [t('She weeps.')] },
+      { kind: 'line', indent: 0, number: '1094a1', content: [t('Nor had the heroes rowed')] },
+      { kind: 'line', indent: 2, counted: false, content: [t('for Pelias')] },
+      { kind: 'line', indent: 0, margin: 'ia. trim.', content: [t('the golden fleece.')] },
     ],
   },
   { kind: 'script', part: 'scene', content: [t('Int. Palace – night')] },
@@ -232,6 +237,11 @@ describe('text written without an editor', () => {
     const table = everything.find((b) => b.kind === 'table')!;
     // Forms of the word; Form, Where, mênis, 12, lines, 3, Iliad.
     expect(bodyFacts([table]).words).toBe(11);
+  });
+
+  it('counts no reference mark as a word', () => {
+    const marked = p(t('For God so '), { kind: 'refmark', label: '3:16' }, t('loved the world'));
+    expect(bodyFacts([marked]).words).toBe(6);
   });
 
   it('keeps what is known of a citation that was found with its text', () => {

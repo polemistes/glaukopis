@@ -140,6 +140,7 @@ export const KEYS: KeyEntry[] = [
   { id: 'writing-formula', keys: 'Ctrl+Alt+M', place: 'writing' },
   { id: 'writing-equation', keys: 'Ctrl+Alt+E', place: 'writing' },
   { id: 'writing-crossref', keys: 'Ctrl+Alt+R', place: 'writing' },
+  { id: 'writing-refmark', keys: 'Ctrl+Alt+K', place: 'writing' },
   { id: 'writing-spelling', keys: 'F7', place: 'writing' },
   { id: 'writing-spelling-back', keys: 'Shift+F7', place: 'writing' },
   // The editor's own; the project's undo is the same undo.

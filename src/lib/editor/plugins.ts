@@ -49,6 +49,7 @@ import {
   toggleList,
   toggleQuote,
 } from './commands';
+import { refMarkKey } from './refmarks';
 import { backOutOfPassage, nextPassage, tabPassage } from './script';
 import {
   acrossParallel,
@@ -56,6 +57,7 @@ import {
   backOutOfVerse,
   indentLine,
   leaveVerse,
+  splitLine,
   verseNumbers,
 } from './verse';
 
@@ -207,7 +209,7 @@ function onEdgeLine(view: EditorView, edge: 'top' | 'bottom'): boolean {
 }
 
 /** What is opened by Enter when it is selected: what has a box of its own. */
-const OPENED = ['citation', 'footnote', 'math', 'equation', 'figure', 'crossref'];
+const OPENED = ['citation', 'footnote', 'math', 'equation', 'figure', 'crossref', 'refmark'];
 
 /**
  * Opens what is selected, if it is something that has a box of its own. The
@@ -265,6 +267,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
       if (view && hooks.point) hooks.point(view);
       return !!hooks.point;
     },
+    'Mod-Alt-k': refMarkKey,
     'Shift-Mod-c': (_state, _dispatch, view) => {
       if (view && hooks.cite) hooks.cite(view, false);
       return !!hooks.cite;
@@ -295,6 +298,7 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
       openSelected,
       leaveCaption,
       leaveVerse,
+      splitLine,
       nextPassage(own),
       splitListItem(item),
       createParagraphNear,

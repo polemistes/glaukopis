@@ -30,6 +30,7 @@
   import ListOrdered from '@lucide/svelte/icons/list-ordered';
   import ListPlus from '@lucide/svelte/icons/list-plus';
   import MessageSquare from '@lucide/svelte/icons/message-square';
+  import Milestone from '@lucide/svelte/icons/milestone';
   import Pencil from '@lucide/svelte/icons/pencil';
   import PenLine from '@lucide/svelte/icons/pen-line';
   import Pilcrow from '@lucide/svelte/icons/pilcrow';
@@ -84,7 +85,8 @@
   import LineNumbersDialog from './LineNumbersDialog.svelte';
   import { editPassageKind, newPassageKind } from './own-kinds.svelte';
   import { editorUi, hooksOf } from './ui.svelte';
-  import { insertParallel, numberLines, verseAt } from './verse';
+  import { askRefMark } from './refmarks';
+  import { insertParallel, markLine, numberLines, verseAt, type LineMarks } from './verse';
 
   interface Props {
     project: Project;
@@ -215,16 +217,32 @@
     commentsUi.begin(element, selectedPassage(view));
   }
 
-  /** How the lines of the verse the cursor is in are numbered, asked for in a dialog. */
-  let numbering = $state<{ view: EditorView; start: number | null; by: number } | null>(null);
+  /**
+   * How the lines of the verse the cursor is in are numbered, and what is
+   * said of the line it is in, asked for in a dialog.
+   */
+  let numbering = $state<{
+    view: EditorView;
+    start: number | null;
+    by: number;
+    line: (LineMarks & { kind: string; words: string }) | null;
+  } | null>(null);
   function lineNumbers() {
     const view = s?.view;
     const at = view ? verseAt(view.state) : null;
     if (!view || !at) return;
+    const { attrs } = at.line;
     numbering = {
       view,
       start: at.verse.attrs.start as number | null,
       by: at.verse.attrs.by as number,
+      line: {
+        kind: attrs.kind as string,
+        number: (attrs.number as string | null) ?? null,
+        counted: attrs.counted !== false,
+        margin: (attrs.margin as string | null) ?? null,
+        words: at.line.textContent,
+      },
     };
   }
 
@@ -310,6 +328,13 @@
           icon: Sigma,
           shortcut: 'Ctrl+Alt+M',
           action: () => void insertMath(view.state, view.dispatch, view),
+        },
+        {
+          label: t('editor-refmark'),
+          hint: t('editor-refmark-hint'),
+          icon: Milestone,
+          shortcut: 'Ctrl+Alt+K',
+          action: () => void askRefMark(view),
         },
         ...(hooks?.point
           ? [
@@ -821,7 +846,12 @@
     start={numbering.start}
     by={numbering.by}
     onclose={() => (numbering = null)}
-    onset={(start, by) => numbering && run(numberLines(start, by), numbering.view)}
+    line={numbering.line}
+    onset={(start, by, line) => {
+      if (!numbering) return;
+      run(numberLines(start, by), numbering.view);
+      if (line) run(markLine(line), numbering.view);
+    }}
   />
 {/if}
 

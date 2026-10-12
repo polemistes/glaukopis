@@ -165,6 +165,8 @@ export interface DocumentFormat {
     hyphenate: boolean;
     /** How italics are set: as italics, or underlined as typewritten manuscripts had them. */
     italics: 'italic' | 'underline';
+    /** How reference marks are set: raised in the line, or in the margin beside it. */
+    refmarks: 'raised' | 'margin';
   };
   headings: { numbered: boolean; levels: HeadingLevel[] };
   title: {

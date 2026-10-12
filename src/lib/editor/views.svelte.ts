@@ -13,6 +13,7 @@ import { insertMath, splitCitation, toggle, updateCitation } from './commands';
 import { openSelected, passes, placeholder, type EditorHooks } from './plugins';
 import { pressedFound } from '$lib/found/found.svelte';
 import { pastedTextSlice } from './clipboard';
+import { refMarkKey, RefMarkView } from './refmarks';
 import { citationLabel, currentProject, isMissing, languageOf } from './references.svelte';
 import { notePlace, type CiteItem, type CiteMode } from './schema';
 import { editorUi, hooksOf, OPEN, passing, SHOW, viewsByDom, type ShowIn } from './ui.svelte';
@@ -319,6 +320,7 @@ export class FootnoteView implements NodeView {
       'Mod-,': toggle('sub'),
       'Shift-Mod-k': toggle('smallcaps'),
       'Mod-Alt-m': insertMath,
+      'Mod-Alt-k': refMarkKey,
       'Mod-Alt-r': (_s, _d, v) => {
         if (v && hooks?.point) hooks.point(v);
         return true;
@@ -374,6 +376,7 @@ export class FootnoteView implements NodeView {
         citation: (node, v, getPos) => new CitationView(node, v, getPos),
         math: (node, v, getPos) => new FormulaView(node, v, getPos),
         crossref: (node, v, getPos) => new CrossRefView(node, v, getPos),
+        refmark: (node, v, getPos) => new RefMarkView(node, v, getPos),
       },
       dispatchTransaction: (tr) => {
         const inner = this.#inner;

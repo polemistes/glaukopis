@@ -74,6 +74,9 @@ function inlineNodes(inlines: Inline[], line: Line): Node[] {
       case 'crossref':
         if (i.target) out.push(nodes.crossref.create({ target: i.target, form: i.form }));
         break;
+      case 'refmark':
+        if (i.label.trim()) out.push(nodes.refmark.create({ label: i.label.trim() }));
+        break;
       case 'footnote':
         if (line === 'text')
           out.push(nodes.footnote.create({ place: i.place ?? '' }, inlineNodes(i.content, 'note')));
@@ -187,7 +190,13 @@ function blockNodes(blocks: Block[]): Node[] {
               { start: block.start, by: block.by },
               block.lines.map((line) =>
                 nodes.verse_line.create(
-                  { kind: line.kind, indent: line.indent },
+                  {
+                    kind: line.kind,
+                    indent: line.indent,
+                    number: line.number?.trim() || null,
+                    counted: line.counted !== false,
+                    margin: line.margin?.trim() || null,
+                  },
                   inlineNodes(line.content, 'text'),
                 ),
               ),

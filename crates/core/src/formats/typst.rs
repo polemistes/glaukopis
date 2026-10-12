@@ -8,8 +8,8 @@ use std::fmt::Write;
 
 use super::kinds::{self, Family, OwnKind, Resolved};
 use super::{
-    Align, Case, DocumentFormat, HeadContent, HeadingLevel, MATH_FONTS, NoteKind, Paragraphs, Position, Rules,
-    TitlePlacement, fallbacks,
+    Align, Case, DocumentFormat, HeadContent, HeadingLevel, MATH_FONTS, NoteKind, Paragraphs, Position, RefMarks,
+    Rules, TitlePlacement, fallbacks,
 };
 
 /// What the running head and the properties of the file are made from.
@@ -267,6 +267,23 @@ fn margin_row(format: &DocumentFormat, p: &Particulars, top: bool) -> Option<Str
     ))
 }
 
+/// How a reference mark is set (ADR 0039): raised in the line, or in the
+/// margin at the right of its line, found from where the mark stands on the
+/// page, and taking no room in the line.
+fn refmark_rule(f: &DocumentFormat) -> String {
+    match f.text.refmarks {
+        RefMarks::Raised => "#let gk-refmark(label) = super(typographic: false, label)".to_owned(),
+        RefMarks::Margin => format!(
+            "#let gk-refmark(label) = context {{
+  let x = here().position().x
+  box(width: 0pt, place(left + bottom, dx: page.width - {right} - x + 0.8em,
+    text(size: 0.75em, fill: luma(30%), bottom-edge: \"baseline\", hyphenate: false, label)))
+}}",
+            right = f.page.margin_right,
+        ),
+    }
+}
+
 /// The opening of the document: everything up to where Pandoc's text begins.
 pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
     let mut out = String::new();
@@ -521,39 +538,43 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
         );
     }
 
-    // Lines of verse: each a line, numbered in the margin from the line the
-    // writer said, every so many lines; speakers and stage directions as
-    // their kinds of words are set. And texts side by side.
+    // Lines of verse: each a line, with the number it shows in the margin at
+    // the left, as the converter has counted them (`document/verse.rs`), and
+    // words given in the margin at the right; speakers and stage directions
+    // as their kinds of words are set. And texts side by side.
     let speaker = worded(&kinds::resolve(f, "speaker", &p.own_kinds), "body");
     let direction = worded(&kinds::resolve(f, "direction", &p.own_kinds), "body");
     let _ = writeln!(
         out,
-        "#let gk-line-counter = counter(\"gk-verse-line\")
-#let gk-verse-numbering = state(\"gk-verse-numbering\", none)
-#let gk-verse(start: none, by: 5, body) = {{
-  if start != none {{ gk-line-counter.update(start - 1) }}
-  gk-verse-numbering.update(if start == none {{ none }} else {{ (start: start, by: by) }})
-  block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em, inset: (left: 2.4em), body)
-}}
-#let gk-line(kind, indent, body) = {{
+        "#let gk-verse(body) = block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em, inset: (left: 2.4em), body)
+#let gk-margin-words(words) = place(left + horizon, dx: 100% + 1em,
+  box(width: {right} - 1.6em, text(size: 0.8em, fill: luma(45%), style: \"italic\", hyphenate: false, words)))
+#let gk-line(kind, indent, n: none, margin: none, body) = {{
   if kind == \"speaker\" {{
-    block(above: 0.7em, below: 0.25em, breakable: false, {speaker})
+    block(width: 100%, above: 0.7em, below: 0.25em, breakable: false, {{
+      if margin != none {{ gk-margin-words(margin) }}
+      {speaker}
+    }})
   }} else if kind == \"direction\" {{
-    block(above: 0.25em, below: 0.25em, breakable: false, {direction})
+    block(width: 100%, above: 0.25em, below: 0.25em, breakable: false, {{
+      if margin != none {{ gk-margin-words(margin) }}
+      {direction}
+    }})
   }} else {{
-    gk-line-counter.step()
-    context {{
-      let numbering = gk-verse-numbering.get()
-      let n = gk-line-counter.get().first()
-      let shown = numbering != none and (n == numbering.start or calc.rem(n, numbering.by) == 0)
-      block(above: 0pt, below: 0pt, breakable: false, inset: (left: indent * 1.5em), {{
-        if shown {{ place(left + horizon, dx: -2.4em - indent * 1.5em, text(size: 0.8em, fill: luma(45%), str(n))) }}
-        body
-      }})
-    }}
+    block(width: 100%, above: 0pt, below: 0pt, breakable: false, inset: (left: indent * 1.5em), {{
+      if n != none {{ place(left + horizon, dx: -2.4em - indent * 1.5em, text(size: 0.8em, fill: luma(45%), n)) }}
+      if margin != none {{ gk-margin-words(margin) }}
+      body
+    }})
   }}
 }}
-#let gk-parallel(left, right) = block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em,
+{refmark}",
+        right = f.page.margin_right,
+        refmark = refmark_rule(f),
+    );
+    let _ = writeln!(
+        out,
+        "#let gk-parallel(left, right) = block(width: 100%, above: {body_leading} + 0.6em, below: {body_leading} + 0.6em,
   grid(columns: (1fr, 1fr), column-gutter: 2em, left, right))"
     );
 
@@ -763,7 +784,7 @@ mod tests {
             "{out}"
         );
         assert!(out.contains("inset: (left: 4cm, right: 0pt)"), "{out}");
-        assert!(out.contains("breakable: false, smallcaps(body))"), "{out}");
+        assert!(out.contains("if margin != none { gk-margin-words(margin) }\n      smallcaps(body)\n"), "{out}");
         assert!(!out.contains("<gk-kind-draft>"), "a note to oneself has no look");
 
         f.title.anonymous = true;

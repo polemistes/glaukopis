@@ -21,6 +21,7 @@
   import { sharedUndo } from './undo';
   import { markActive, insideNode } from './commands';
   import { CitationView, FootnoteView } from './views.svelte';
+  import { RefMarkView } from './refmarks';
   import { topOf } from '$lib/figures/numbering.svelte';
   import { pictures, PICTURES_DRAGGED } from '$lib/figures/pictures.svelte';
   import { choosePicture, CrossRefView, FigureView, FormulaView } from '$lib/figures/views.svelte';
@@ -331,6 +332,7 @@
                 equation: (node, v, getPos) => new FormulaView(node, v, getPos),
                 figure: (node, v, getPos) => new FigureView(node, v, getPos),
                 crossref: (node, v, getPos) => new CrossRefView(node, v, getPos),
+                refmark: (node, v, getPos) => new RefMarkView(node, v, getPos),
               }
             : {},
         attributes: {

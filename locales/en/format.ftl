@@ -110,6 +110,10 @@ format-space-between = Space between paragraphs
 format-italics = Italics are set
 format-italics-italic = As italics
 format-italics-underline = Underlined, as typewritten manuscripts had them
+format-refmarks = Reference marks are set
+format-refmarks-raised = Small and raised in the line
+format-refmarks-margin = In the margin beside their line
+format-refmarks-hint = Verses, pages of Stephanus, numbers of Bekker. Word and Writer have no room in the margin: there they are raised.
 
 ## Headings.
 

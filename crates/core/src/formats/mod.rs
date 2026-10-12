@@ -139,6 +139,17 @@ pub enum Italics {
     Underline,
 }
 
+/// How reference marks are set (ADR 0039): small and raised in the line,
+/// or in the margin beside their line. Word and Writer have no room in the
+/// margin, and raise them.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum RefMarks {
+    #[default]
+    Raised,
+    Margin,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Text {
@@ -154,6 +165,8 @@ pub struct Text {
     pub hyphenate: bool,
     /// How italics are set.
     pub italics: Italics,
+    /// How reference marks are set: verses, pages of Stephanus, numbers of Bekker.
+    pub refmarks: RefMarks,
 }
 
 impl Default for Text {
@@ -167,6 +180,7 @@ impl Default for Text {
             space_between: Length::pt(12.0),
             hyphenate: false,
             italics: Italics::Italic,
+            refmarks: RefMarks::Raised,
         }
     }
 }

@@ -4,6 +4,7 @@ import { citationLabel, isMissing } from '$lib/editor/references.svelte';
 import { figureWidth, foundAttrs, tableWidth } from '$lib/editor/schema';
 import { isPictureName } from '$lib/figures/pictures.svelte';
 import { languageName } from '$lib/i18n';
+import { lineNumbers } from './lines';
 import type { Block, Inline } from './text';
 
 function escape(text: string): string {
@@ -59,6 +60,9 @@ function inlines(list: Inline[], notes: { n: number }): string {
         // Shown as it was written until it is shown as mathematics: see `figures/hydrate.ts`.
         out += `<span class="math" data-math="${escape(i.tex)}">${escape(i.tex)}</span>`;
         break;
+      case 'refmark':
+        out += `<span class="refmark" data-refmark="${escape(i.label)}">${escape(i.label)}</span>`;
+        break;
       case 'crossref':
         // What the words say is put in where they are shown: see `figures/hydrate.svelte.ts`.
         out += `<span class="crossref" data-crossref="${escape(i.target)}" data-form="${i.form}"></span>`;
@@ -106,16 +110,15 @@ function blocks(list: Block[], notes: { n: number }): string {
         out += `<blockquote>${blocks(b.content, notes)}</blockquote>`;
         break;
       case 'verse': {
-        let n = b.start ?? 0;
+        const numbers = lineNumbers(b.start, b.by, b.lines);
         out += `<div class="verse"${b.start === null ? '' : ` data-start="${b.start}"`}>`;
-        for (const line of b.lines) {
-          const numbered = b.start !== null && line.kind === 'line';
-          const number = numbered ? n++ : null;
-          const shown = number !== null && (number === b.start || number % b.by === 0);
+        b.lines.forEach((line, i) => {
+          const shown = numbers[i];
           out +=
             `<p class="verse-line ${line.kind}"${line.indent ? ` style="--indent: ${line.indent}"` : ''}` +
-            `${shown ? ` data-n="${number}"` : ''}>${inlines(line.content, notes)}</p>`;
-        }
+            `${shown ? ` data-n="${escape(shown.label)}"${shown.set ? ' data-n-set' : ''}` : ''}` +
+            `${line.margin ? ` data-margin="${escape(line.margin)}"` : ''}>${inlines(line.content, notes)}</p>`;
+        });
         out += '</div>';
         break;
       }

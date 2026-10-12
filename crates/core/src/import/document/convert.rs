@@ -1046,7 +1046,8 @@ pub(super) fn count(sections: &[Section], cited: usize, not_found: usize) -> Cou
                     line(content, text, notes, found);
                     text.push(' ');
                 }
-                Inline::Citation { .. } => {}
+                // A reference mark is no part of the words.
+                Inline::Citation { .. } | Inline::RefMark { .. } => {}
             }
         }
     }

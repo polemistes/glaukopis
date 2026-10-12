@@ -400,6 +400,7 @@ function label(pieces: Piece[], project: Project) {
           (object.attrs.mode as CiteMode | undefined) ?? 'normal',
         );
       else if (object.kind === 'math') object.label = String(object.attrs.tex ?? '');
+      else if (object.kind === 'refmark') object.label = String(object.attrs.label ?? '');
     }
   }
 }

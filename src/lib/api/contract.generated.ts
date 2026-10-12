@@ -479,6 +479,7 @@ export const format: DocumentFormat = {
     "italics": "italic",
     "lineSpacing": 2.0,
     "paragraphs": "indent",
+    "refmarks": "raised",
     "spaceBetween": "0pt"
   },
   "title": {

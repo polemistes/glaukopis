@@ -110,6 +110,10 @@ format-space-between = Luft mellom avsnittene
 format-italics = Kursiv settes
 format-italics-italic = Som kursiv
 format-italics-underline = Understreket, slik maskinskrevne manuskripter hadde det
+format-refmarks = Referansemerker settes
+format-refmarks-raised = Små og hevet i linjen
+format-refmarks-margin = I margen ved siden av linjen sin
+format-refmarks-hint = Vers, Stephanus-sider, Bekker-numre. Word og Writer har ikke plass i margen: der heves de.
 
 ## Overskrifter.
 

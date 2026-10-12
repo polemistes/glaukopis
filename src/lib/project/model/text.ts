@@ -51,8 +51,22 @@ export interface InlineCrossRef {
   target: string;
   form: RefForm;
 }
+/**
+ * A reference mark: a verse of the Bible, a page of Stephanus, a number of
+ * Bekker. No part of the words; the layout says how it is set.
+ */
+export interface InlineRefMark {
+  kind: 'refmark';
+  label: string;
+}
 export type Inline =
-  InlineText | InlineCitation | InlineFootnote | InlineBreak | InlineMath | InlineCrossRef;
+  | InlineText
+  | InlineCitation
+  | InlineFootnote
+  | InlineBreak
+  | InlineMath
+  | InlineCrossRef
+  | InlineRefMark;
 
 export function refForm(value: unknown): RefForm {
   return value === 'number' || value === 'name' ? value : 'full';
@@ -136,6 +150,12 @@ export interface VerseLine {
   kind: VerseLineKind;
   /** Steps of indentation, for the shorter lines of lyric. */
   indent: number;
+  /** A number or a label given by hand, from which the count goes on: see `lines.ts`. */
+  number?: string;
+  /** False for a line the count passes over. */
+  counted?: boolean;
+  /** Words shown in the margin beside the line. */
+  margin?: string;
   content: Inline[];
 }
 
@@ -243,6 +263,11 @@ function inlinesOf(parent: Y.XmlElement | Y.XmlFragment): Inline[] {
             out.push({ kind: 'crossref', target, form: refForm(child.getAttribute('form')) });
           break;
         }
+        case 'refmark': {
+          const label = text(child.getAttribute('label') as unknown).trim();
+          if (label) out.push({ kind: 'refmark', label });
+          break;
+        }
         default:
           out.push(...inlinesOf(child));
       }
@@ -273,11 +298,18 @@ function blocksOf(parent: Y.XmlElement | Y.XmlFragment): Block[] {
           .filter(
             (l): l is Y.XmlElement => l instanceof Y.XmlElement && l.nodeName === 'verse_line',
           )
-          .map((l) => ({
-            kind: verseLineKind(l.getAttribute('kind') as unknown),
-            indent: Math.max(0, Math.min(8, Number(l.getAttribute('indent') as unknown) || 0)),
-            content: inlinesOf(l),
-          }));
+          .map((l) => {
+            const number = text(l.getAttribute('number') as unknown).trim();
+            const margin = text(l.getAttribute('margin') as unknown).trim();
+            return {
+              kind: verseLineKind(l.getAttribute('kind') as unknown),
+              indent: Math.max(0, Math.min(8, Number(l.getAttribute('indent') as unknown) || 0)),
+              ...(number ? { number } : {}),
+              ...((l.getAttribute('counted') as unknown) === false ? { counted: false } : {}),
+              ...(margin ? { margin } : {}),
+              content: inlinesOf(l),
+            };
+          });
         if (!lines.length) break;
         const start = Number(child.getAttribute('start') as unknown);
         out.push({

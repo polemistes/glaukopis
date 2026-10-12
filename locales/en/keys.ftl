@@ -105,6 +105,7 @@ keys-writing-table = A table
 keys-writing-formula = A formula in the line
 keys-writing-equation = An equation
 keys-writing-crossref = A cross-reference
+keys-writing-refmark = A reference mark
 keys-writing-spelling = The next misspelt word
 keys-writing-spelling-back = The misspelt word before
 keys-writing-undo = Undo

@@ -634,6 +634,27 @@ span.math.selected {
   background: var(--accent-softer);
   box-shadow: 0 0 0 1px var(--accent);
 }
+/* A reference mark: small and raised on screen, whatever the layout makes of it. */
+.refmark {
+  font-family: var(--font-ui);
+  font-size: 0.66em;
+  font-variant-numeric: lining-nums;
+  vertical-align: super;
+  line-height: 0;
+  padding: 0 0.15em;
+  border-radius: 3px;
+  color: var(--accent-strong);
+  white-space: nowrap;
+  user-select: none;
+}
+.prose:not(.static) .refmark {
+  cursor: pointer;
+}
+.prose:not(.static) .refmark:hover,
+.refmark.ProseMirror-selectednode {
+  background: var(--accent-softer);
+  box-shadow: 0 0 0 1px var(--accent);
+}
 /* What was written, where it cannot be shown as mathematics. */
 .math.waiting,
 .math.unread,
@@ -1090,14 +1111,40 @@ span.math.selected {
   content: attr(data-n);
   position: absolute;
   /* From the edge of the line's box, which is the same for every line, indented or not. */
-  left: -2.4em;
-  width: 2em;
+  right: calc(100% + 0.4em);
+  white-space: nowrap;
   text-align: right;
   font-size: 0.8em;
   line-height: inherit;
   color: var(--ink-4);
   font-variant-numeric: tabular-nums;
   user-select: none;
+}
+/* A number given by hand: as dark as the text, so that it is seen to be one. */
+.prose .verse-line[data-n-set]::before {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+/* Words in the margin beside a line: in the other margin from the numbers. */
+.prose .verse-line[data-margin]::after {
+  content: attr(data-margin);
+  position: absolute;
+  top: 0;
+  left: calc(100% + 1em);
+  max-width: 8.5em;
+  font-size: 0.8em;
+  line-height: 2;
+  font-style: italic;
+  color: var(--ink-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+  pointer-events: none;
+}
+/* Room for them, where there are any. */
+.prose .verse:has(> .verse-line[data-margin]) {
+  margin-right: 8em;
 }
 .prose .verse-line.speaker {
   margin-top: 0.6em;

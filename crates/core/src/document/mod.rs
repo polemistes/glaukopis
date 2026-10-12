@@ -74,6 +74,12 @@ pub enum Inline {
         place: Option<NotePlace>,
     },
     Break,
+    /// A reference mark: a verse of the Bible, a page of Stephanus, a
+    /// number of Bekker. No part of the words; the format says how it is
+    /// set (ADR 0039).
+    RefMark {
+        label: String,
+    },
 }
 
 /// What words point by.
@@ -326,6 +332,15 @@ pub struct VerseLine {
     /// Steps of indentation.
     #[serde(default)]
     pub indent: u32,
+    /// A number or a label given by hand, from which the count goes on.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub number: Option<String>,
+    /// False for a line the count passes over.
+    #[serde(default = "yes")]
+    pub counted: bool,
+    /// Words in the margin beside the line.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub margin: Option<String>,
     pub content: Vec<Inline>,
 }
 

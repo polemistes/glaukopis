@@ -43,6 +43,17 @@ export interface CitationRequest {
   onclose: () => void;
 }
 
+/** A request for the label of a reference mark: of a new one, or of one that stands in the text. */
+export interface RefMarkRequest {
+  anchor: RectLike;
+  /** What the field begins with. */
+  label: string;
+  /** Whether the mark stands in the text already, and so can be taken away: by an empty label. */
+  editing: boolean;
+  onset: (label: string) => void;
+  oncancel?: () => void;
+}
+
 /** The selection of the editor that has the focus, for the bar that formats it. */
 export interface ActiveSelection {
   view: EditorView;
@@ -59,6 +70,7 @@ class EditorUi {
   picking = $state.raw<PickRequest | null>(null);
   citation = $state.raw<CitationRequest | null>(null);
   pointing = $state.raw<TargetRequest | null>(null);
+  marking = $state.raw<RefMarkRequest | null>(null);
   selection = $state.raw<ActiveSelection | null>(null);
   /** True while the pointer is held down in an editor: the bar waits for the selection to be made. */
   selecting = $state(false);
@@ -85,6 +97,17 @@ class EditorUi {
     if (cancelled) p?.oncancel?.();
   }
 
+  markRef(request: RefMarkRequest) {
+    this.marking?.oncancel?.();
+    this.marking = request;
+  }
+
+  closeMarking(cancelled = true) {
+    const m = this.marking;
+    this.marking = null;
+    if (cancelled) m?.oncancel?.();
+  }
+
   editCitation(request: CitationRequest) {
     this.citation?.onclose();
     this.citation = request;
@@ -100,6 +123,7 @@ class EditorUi {
     this.closePicker();
     this.closeTargets();
     this.closeCitation();
+    this.closeMarking();
     this.selection = null;
   }
 }

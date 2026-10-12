@@ -361,6 +361,15 @@
       ['italic', t('format-italics-italic')],
       ['underline', t('format-italics-underline')],
     ]),
+    choice(
+      t('format-refmarks'),
+      'text.refmarks',
+      [
+        ['raised', t('format-refmarks-raised')],
+        ['margin', t('format-refmarks-margin')],
+      ],
+      { hint: t('format-refmarks-hint') },
+    ),
   ]);
 
   const paragraphRows: Row<F>[] = $derived([

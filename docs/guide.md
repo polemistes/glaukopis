@@ -402,6 +402,30 @@ lines: from which line, and every how many. Speakers and directions are
 not counted. The numbers stand in the margin, in the text and in the
 document; in Word and Writer they stand at the head of their lines, small.
 
+The same window says what is to be said of the line the cursor is in, for
+editions whose numbers do not follow the lines as they are set, as those of
+Greek drama do not:
+
+- **Its number or label**: *1234*, *567a*, *1094a1*. It is always shown, as
+  dark as the text where you write, so that you see which numbers you gave;
+  and the count goes on from its last number: after *1234* comes 1235, after
+  *1094a1* comes *1094a2*, and after *567a* comes 568. A verse that is not
+  numbered from a line is numbered from the first line given a number. A
+  label without a number, such as *\**, is shown and leaves the count as
+  it was.
+- **Not counted**: the count passes over the line, as over the second half
+  of a line shared between two speakers, or a line the edition does not
+  count. With a label of its own it shows the label, and nothing otherwise.
+- **Words in the margin**: a note of the metre, the number another edition
+  gives, anything to stand beside the line. They are not counted. They
+  stand in the right margin, across from the numbers, and in Word and
+  Writer at the end of their line, small.
+
+*Every so many* is counted by the numbers of the edition, not by the lines
+on the page: with numbers every five, the lines numbered 1235 and 1240 show
+theirs, whatever lines were passed over between them. Enter within a line
+that was given any of these makes the new line a plain one.
+
 A **screenplay** is written with the kinds of paragraph under *Script*:
 **scene heading**, **action**, **character**, **dialogue**,
 **parenthetical** and **transition**. Enter goes from a character to its
@@ -553,6 +577,23 @@ In a PDF and on a web page a cross-reference leads to what it refers to when
 it is pressed. If that is taken away, or left out of the document, it is
 shown as **?** in red where you write and as **[?]** in the document, and
 the preview remarks on it.
+
+### Reference marks
+
+Some texts are cited by numbers of their own that run through the prose:
+the verses of the Bible (*3:16*), the pages of Stephanus in Plato (*327a*),
+the numbers of Bekker in Aristotle. Put one in with **Insert › Reference
+mark…**, or **Ctrl+Alt+K**, and give its label; the window proposes the one
+that follows the mark before it, *3:17* after *3:16* and *327b* after
+*327a*. Press a mark to change its label, or to take it away.
+
+A mark is no part of the words: spelling, search and the count of words
+pass over it, so that *so loved* is found in *so ¹⁶loved*. Where you write
+it is small and raised. How the document sets them all is said by the
+layout, under *Type and spacing*: **small and raised in the line**, or **in
+the margin beside their line**, the right one. Word and Writer have no room
+in the margin, and raise them; the character style *Reference Mark* can be
+changed there.
 
 ## Pictures
 
@@ -1680,7 +1721,8 @@ letter, and a break prints the sign the layout gives it; a draft note and a
 highlight go into none of them.
 The numbers of the lines of verse do not stand in the margin of Word,
 which numbers lines only by the section: they stand at the head of their
-lines, small.
+lines, small, and the words in the margin of a line at its end. Reference
+marks are raised there, whatever the layout says.
 
 There are two kinds of PDF. **PDF** is what the preview shows. **PDF, set by
 LaTeX** is the same document in the typesetting of LaTeX, for those who
@@ -2085,6 +2127,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Alt+T** | In the text: a table |
 | **Ctrl+Alt+M**, **Ctrl+Alt+E** | In the text: a formula in the line, an equation |
 | **Ctrl+Alt+R** | In the text: a cross-reference to a figure, a table, an equation, a part |
+| **Ctrl+Alt+K** | In the text: a reference mark, a verse or a page of an edition |
 | **Ctrl+Alt+U**, **Ctrl+Alt+Shift+U** | In the text: fold the element away, or open it; open all that is folded under it |
 | **Ctrl+F**, **Ctrl+H** | In the text and in the edit box of an element: search; search and replace |
 | **Enter**, **Shift+Enter** | In the search: the next that is found, the one before; **F3** and **Shift+F3** as well |

@@ -15,6 +15,7 @@ import {
   type EditorState,
 } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
+import { lineNumbers } from '$lib/project/model/lines';
 import type { VerseLineKind } from '$lib/project/model/text';
 
 /** The verse the cursor is in, with where it begins, and the line within it. */
@@ -148,6 +149,55 @@ export function numberLines(start: number | null, by: number): Command {
   };
 }
 
+/** What is said of one line of verse by hand: see `verse_line` in `schema.ts`. */
+export interface LineMarks {
+  number: string | null;
+  counted: boolean;
+  margin: string | null;
+}
+
+/** Gives the line the cursor is in a number or a label, counts it or not, and gives it words in the margin. */
+export function markLine(marks: LineMarks): Command {
+  return (state, dispatch) => {
+    const at = verseAt(state);
+    if (!at) return false;
+    const attrs = {
+      ...at.line.attrs,
+      number: marks.number?.trim() || null,
+      counted: marks.counted,
+      margin: marks.margin?.trim() || null,
+    };
+    const same = (['number', 'counted', 'margin'] as const).every(
+      (k) => (at.line.attrs[k] ?? null) === attrs[k],
+    );
+    if (dispatch && !same) dispatch(state.tr.setNodeMarkup(at.linePos, undefined, attrs));
+    return true;
+  };
+}
+
+/**
+ * Enter within a line that was given a number, words in the margin, or was
+ * not counted: the line that is split off is a plain one, so that what was
+ * said of the line is not said twice. At the end of a line Enter makes a
+ * plain line anyway.
+ */
+export const splitLine: Command = (state, dispatch) => {
+  const at = verseAt(state);
+  if (!at) return false;
+  const { number, margin, counted } = at.line.attrs;
+  if (number == null && margin == null && counted !== false) return false;
+  const { $to } = state.selection;
+  if ($to.parentOffset === $to.parent.content.size) return false;
+  if (dispatch) {
+    const tr = state.tr;
+    if (!state.selection.empty) tr.deleteSelection();
+    const plain = { ...at.line.attrs, number: null, counted: true, margin: null };
+    tr.split(tr.selection.from, 1, [{ type: at.line.type, attrs: plain }]);
+    dispatch(tr.scrollIntoView());
+  }
+  return true;
+};
+
 /** Enter on an empty last line leaves the verse: a paragraph after it. */
 export const leaveVerse: Command = (state, dispatch) => {
   const at = verseAt(state);
@@ -235,17 +285,27 @@ function numbers(doc: Node): DecorationSet {
   const list: Decoration[] = [];
   doc.descendants((node, pos) => {
     if (node.type.name !== 'verse') return true;
-    const start = node.attrs.start as number | null;
-    if (start === null) return false;
-    const by = Math.max(1, node.attrs.by as number);
-    let n = start;
+    const lines: { kind: string; number: string | null; counted: boolean }[] = [];
+    node.forEach((line) =>
+      lines.push({
+        kind: line.type.name === 'verse_line' ? (line.attrs.kind as string) : '',
+        number: line.attrs.number as string | null,
+        counted: line.attrs.counted !== false,
+      }),
+    );
+    const shown = lineNumbers(node.attrs.start as number | null, node.attrs.by as number, lines);
     let at = pos + 1;
-    node.forEach((line) => {
-      if (line.type.name === 'verse_line' && line.attrs.kind === 'line') {
-        if (n === start || n % by === 0)
-          list.push(Decoration.node(at, at + line.nodeSize, { 'data-n': String(n) }));
-        n++;
-      }
+    node.forEach((line, _offset, i) => {
+      const s = shown[i];
+      // A number given by hand is drawn so that it is seen to be one.
+      if (s)
+        list.push(
+          Decoration.node(
+            at,
+            at + line.nodeSize,
+            s.set ? { 'data-n': s.label, 'data-n-set': '' } : { 'data-n': s.label },
+          ),
+        );
       at += line.nodeSize;
     });
     return false;

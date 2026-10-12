@@ -4,6 +4,7 @@
   import TargetPicker from '$lib/figures/TargetPicker.svelte';
   import CitationEditor from './CitationEditor.svelte';
   import ReferencePicker from './ReferencePicker.svelte';
+  import RefMarkDialog from './RefMarkDialog.svelte';
   import { recordOf, setProject } from './references.svelte';
   import { editorUi } from './ui.svelte';
 
@@ -61,6 +62,15 @@
       request={editorUi.citation}
       oncite={keep}
       onclose={() => editorUi.closeCitation()}
+    />
+  {/key}
+{/if}
+
+{#if editorUi.marking}
+  {#key editorUi.marking}
+    <RefMarkDialog
+      request={editorUi.marking}
+      onclose={(cancelled) => editorUi.closeMarking(cancelled)}
     />
   {/key}
 {/if}

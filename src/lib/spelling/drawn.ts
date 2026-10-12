@@ -64,7 +64,7 @@ const PIECE = 8;
 
 /** What is not text, whose words are not checked. */
 const NOT_WORDS =
-  '.citation, .math, [data-math], .crossref, .found, .footnote, .equation, code, svg';
+  '.citation, .math, [data-math], .crossref, .refmark, .found, .footnote, .equation, code, svg';
 
 /** Elements that are blocks, between which words do not run on. */
 const BLOCKS = new Set([

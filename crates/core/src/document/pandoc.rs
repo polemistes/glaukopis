@@ -10,7 +10,7 @@ use serde_json::{Value, json};
 
 use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, RefForm, Section};
 use crate::formats::kinds::{self, KindInfo, Resolved};
-use crate::formats::{Case, Equations, Figures, Tables};
+use crate::formats::{Case, Equations, Figures, RefMarks, Tables};
 use crate::templates::kinds::PartInfo;
 use crate::written::locators::{locale_for, terms};
 
@@ -117,6 +117,8 @@ pub struct Extras {
     pub parts: HashMap<String, PartInfo>,
     /// Whether the format sets italics as underline.
     pub italics_underlined: bool,
+    /// How the format sets reference marks.
+    pub refmarks: RefMarks,
     /// Whether the document can carry the classes of kinds, as a page of the web can.
     pub classes: bool,
     /// What has been given a place that can be gone to.
@@ -532,9 +534,46 @@ impl Converter<'_> {
                     }
                 }
                 Inline::Break => out.push(json!({"t": "LineBreak"})),
+                Inline::RefMark { label } => self.refmark(label.trim(), &mut out),
             }
         }
         out
+    }
+
+    /// A reference mark, as the format sets it (ADR 0039): raised, or in
+    /// the margin where the kind of document has one. In Word and Writer it
+    /// is raised, in a character style of its own that can be changed there.
+    fn refmark(&self, label: &str, out: &mut Vec<Value>) {
+        if label.is_empty() {
+            return;
+        }
+        let margin = self.extras.refmarks == RefMarks::Margin;
+        let mut words = Vec::new();
+        tokens(label, &mut words);
+        match self.extras.flavour {
+            Flavour::Typst => {
+                // The semicolon ends the call, whatever follows it.
+                let call = json!({"t": "RawInline", "c": ["typst", format!("#gk-refmark({});", crate::formats::typst::string(label))]});
+                // In the margin it takes no room in the line: a space before it goes after it, so that one is left.
+                if margin && matches!(out.last(), Some(v) if v["t"] == "Space") {
+                    out.pop();
+                    out.push(call);
+                    out.push(json!({"t": "Space"}));
+                } else {
+                    out.push(call);
+                }
+            }
+            Flavour::Latex if margin => {
+                out.push(json!({"t": "RawInline", "c": ["latex", "\\marginpar{\\footnotesize "]}));
+                out.extend(words);
+                out.push(json!({"t": "RawInline", "c": ["latex", "}"]}));
+            }
+            Flavour::Docx | Flavour::Odt => out.push(json!({"t": "Span", "c": [
+                ["", ["refmark"], [["custom-style", "Reference Mark"]]],
+                [{"t": "Superscript", "c": words}],
+            ]})),
+            _ => out.push(json!({"t": "Span", "c": [["", ["refmark"], []], [{"t": "Superscript", "c": words}]]})),
+        }
     }
 
     /// A paragraph that follows a figure or an equation: it begins as the
@@ -1154,6 +1193,37 @@ mod tests {
                 {"t":"Str","c":"!"}
             ])
         );
+    }
+
+    #[test]
+    fn reference_marks_are_set_as_the_format_says() {
+        let keys = HashMap::new();
+        let mut c = converter(&keys);
+        let mark = |label: &str| Inline::RefMark { label: label.into() };
+        let line = [text("earth. "), mark("2"), text("And"), mark(" ")];
+        // Raised, in a span that a page of the web or an e-book can style.
+        assert_eq!(
+            Value::Array(c.inlines(&line)),
+            json!([{"t":"Str","c":"earth."},{"t":"Space"},
+                {"t":"Span","c":[["",["refmark"],[]],[{"t":"Superscript","c":[{"t":"Str","c":"2"}]}]]},
+                {"t":"Str","c":"And"}])
+        );
+        // In Word and Writer, by a character style of its own.
+        c.extras.flavour = Flavour::Docx;
+        assert_eq!(c.inlines(&line)[2]["c"][0][2], json!([["custom-style", "Reference Mark"]]));
+        // In Typst by the opening of the document; in the margin it takes the space before it after it.
+        c.extras.flavour = Flavour::Typst;
+        assert_eq!(c.inlines(&line)[2], json!({"t":"RawInline","c":["typst","#gk-refmark(\"2\");"]}));
+        c.extras.refmarks = RefMarks::Margin;
+        let out = c.inlines(&line);
+        assert_eq!(out[1], json!({"t":"RawInline","c":["typst","#gk-refmark(\"2\");"]}));
+        assert_eq!(out[2], json!({"t":"Space"}));
+        // In LaTeX in the margin, or raised.
+        c.extras.flavour = Flavour::Latex;
+        let out = c.inlines(&line);
+        assert_eq!(out[2], json!({"t":"RawInline","c":["latex","\\marginpar{\\footnotesize "]}));
+        c.extras.refmarks = RefMarks::Raised;
+        assert_eq!(c.inlines(&line)[2]["t"], "Span");
     }
 
     #[test]

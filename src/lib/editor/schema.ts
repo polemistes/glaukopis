@@ -291,16 +291,35 @@ const bodyNodes: Record<string, NodeSpec> = {
       0,
     ],
   },
+  /**
+   * A line of verse. `number` is a number or a label given to the line by
+   * hand ("1234", "567a"), from which the count goes on; `counted` is false
+   * for a line the count passes over, as the second half of a line shared
+   * between speakers; `margin` is words shown in the margin beside it. See
+   * `project/model/lines.ts`.
+   */
   verse_line: {
     content: 'inline*',
-    attrs: { kind: { default: 'line' }, indent: { default: 0 } },
+    attrs: {
+      kind: { default: 'line' },
+      indent: { default: 0 },
+      number: { default: null },
+      counted: { default: true },
+      margin: { default: null },
+    },
     parseDOM: [
       {
         tag: 'p.verse-line',
         getAttrs: (node) => {
           const el = node as HTMLElement;
           const kind = ['speaker', 'direction'].find((k) => el.classList.contains(k)) ?? 'line';
-          return { kind, indent: Number(el.getAttribute('data-indent') ?? 0) || 0 };
+          return {
+            kind,
+            indent: Number(el.getAttribute('data-indent') ?? 0) || 0,
+            number: el.getAttribute('data-number') || null,
+            counted: !el.hasAttribute('data-uncounted'),
+            margin: el.getAttribute('data-margin') || null,
+          };
         },
       },
     ],
@@ -311,6 +330,9 @@ const bodyNodes: Record<string, NodeSpec> = {
         ...(node.attrs.indent
           ? { 'data-indent': String(node.attrs.indent), style: `--indent: ${node.attrs.indent}` }
           : {}),
+        ...(node.attrs.number ? { 'data-number': node.attrs.number } : {}),
+        ...(node.attrs.counted === false ? { 'data-uncounted': '' } : {}),
+        ...(node.attrs.margin ? { 'data-margin': node.attrs.margin } : {}),
       },
       0,
     ],
@@ -457,6 +479,30 @@ const bodyNodes: Record<string, NodeSpec> = {
       'span',
       { 'data-footnote': '', 'data-place': node.attrs.place || null, class: 'footnote' },
       ['span', 0],
+    ],
+  },
+  /**
+   * A reference mark: a verse of the Bible (3:16), a page of Stephanus
+   * (327a), a number of Bekker. It is no part of the words: spelling, search
+   * and the count of words pass over it. How it is set, raised in the line or
+   * in the margin, the layout says. See ADR 0039.
+   */
+  refmark: {
+    group: 'inline',
+    inline: true,
+    atom: true,
+    draggable: true,
+    attrs: { label: { default: '' } },
+    parseDOM: [
+      {
+        tag: 'span[data-refmark]',
+        getAttrs: (el) => ({ label: (el as HTMLElement).getAttribute('data-refmark') ?? '' }),
+      },
+    ],
+    toDOM: (node) => [
+      'span',
+      { 'data-refmark': node.attrs.label, class: 'refmark' },
+      node.attrs.label,
     ],
   },
 };

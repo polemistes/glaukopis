@@ -21,7 +21,8 @@ import './review.css';
 const OURS = 'review-mark';
 
 /** What stands in drawn text as one sign, and is not gone into. */
-const ATOMS = 'span.citation, span.math, span.crossref, sup.footnote, span.hard-break, br';
+const ATOMS =
+  'span.citation, span.math, span.crossref, span.refmark, sup.footnote, span.hard-break, br';
 
 function elements(y: Y.XmlFragment): Y.XmlElement[] {
   return y.toArray().filter((c): c is Y.XmlElement => c instanceof Y.XmlElement);

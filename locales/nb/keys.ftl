@@ -102,6 +102,7 @@ keys-writing-table = En tabell
 keys-writing-formula = En formel i linjen
 keys-writing-equation = En ligning
 keys-writing-crossref = En kryssreferanse
+keys-writing-refmark = Et referansemerke
 keys-writing-spelling = Neste feilstavede ord
 keys-writing-spelling-back = Det feilstavede ordet før
 keys-writing-undo = Angre
