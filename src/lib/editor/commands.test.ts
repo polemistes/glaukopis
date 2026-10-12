@@ -172,7 +172,7 @@ describe('the kind of a paragraph', () => {
     expect(p.getAttribute('data-every')).toBe('2');
     expect(p.getAttribute('data-side')).toBe('right');
     expect(p.hasAttribute('data-new')).toBe(true);
-    const mark = p.querySelector('span.linemark')!;
+    const mark = p.querySelector<HTMLElement>('span.linemark')!;
     expect(mark.getAttribute('data-number')).toBe('5');
     expect(mark.hasAttribute('data-uncounted')).toBe(true);
     expect(mark.hasAttribute('data-hidden')).toBe(false);
