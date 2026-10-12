@@ -23,6 +23,7 @@ import { inlineText, readTitle } from '$lib/project/model/text';
 import { PROJECT, type Note, type RefRecord } from '$lib/project/model/types';
 import { newId } from '$lib/util/id';
 import type { OrgElement, OrgLink, OrgProject, OrgThread } from './types';
+import { writeBlocks } from './write';
 
 /** A record of settings with nothing empty in it; nothing at all where it says nothing. */
 function said<T extends object>(given: T | null | undefined): T | null {
@@ -338,4 +339,29 @@ export function findWords(
     search((c, last) => c !== ' ' || last !== ' ', wanted) ??
     search((c) => c !== ' ', wanted.replace(/ /g, ''))
   );
+}
+
+/**
+ * The Org form of an element's text, for a difference: its name as a
+ * headline and its text under it; with `under`, and so of every element
+ * under it, each at its depth below it. Nothing of what is said of them.
+ */
+export function branchText(project: Project, at: string, under = true): string {
+  if (!project.node(at)) return '';
+  const tree = project.tree(at);
+  const top = tree.depth.get(at) ?? 0;
+  const options = {
+    paragraphKinds: project.passageKinds,
+    references: [...project.refs.values()],
+  };
+  const out: string[] = [];
+  for (const id of under ? tree.sequence : [at]) {
+    const depth = (tree.depth.get(id) ?? top) - top;
+    const name = (project.node(id)?.title ?? '').replace(/\s+/g, ' ').trim();
+    out.push(`${'*'.repeat(depth + 1)} ${name}`.trimEnd());
+    const body = writeBlocks(project.blocksOf(id), options);
+    if (body) out.push('', body.replace(/\n$/, ''));
+    out.push('');
+  }
+  return out.join('\n');
 }

@@ -6,7 +6,8 @@ import type { Block, Inline } from '$lib/project/model/text';
 import { PROJECT, type RefRecord } from '$lib/project/model/types';
 import { everything, mark, p, t, trapBlocks } from './fixtures';
 import { normalInlines } from './inline';
-import { findWords, intoProject, orgOf } from './of-project';
+import { branchText, findWords, intoProject, orgOf } from './of-project';
+import { branchTextOf } from './past';
 import { readProject } from './read';
 import type { OrgProject } from './types';
 import { writeProject } from './write';
@@ -264,5 +265,24 @@ describe('the Org form of a project as the program has it', () => {
     console.log(
       `the Org form of 2000 elements: gathered in ${(between - begun).toFixed(1)} ms, written in ${(done - between).toFixed(1)} ms`,
     );
+  });
+
+  it('the Org of an element and all under it, then and now, for a difference', async () => {
+    const pr = new Project(null);
+    pr.begin('Medea');
+    const scene = pr.addChild(PROJECT, { title: 'Scene', body: 'Sing, goddess.' })!;
+    pr.addChild(scene, { title: 'Nurse', body: 'If only.' });
+    const then = Y.encodeStateAsUpdate(pr.doc);
+    pr.transact(() => writeBody(pr.fragment(scene, 'body')!, [p([t('Sing, Muse.')], 'quote')]));
+    expect(branchText(pr, scene)).toBe(
+      '* Scene\n\n#+BEGIN_QUOTE\nSing, Muse.\n#+END_QUOTE\n\n** Nurse\n\nIf only.\n',
+    );
+    expect(branchText(pr, scene, false)).toBe(
+      '* Scene\n\n#+BEGIN_QUOTE\nSing, Muse.\n#+END_QUOTE\n',
+    );
+    expect(await branchTextOf(then, scene)).toBe(
+      '* Scene\n\nSing, goddess.\n\n** Nurse\n\nIf only.\n',
+    );
+    expect(await branchTextOf(then, 'nowhere')).toBe('');
   });
 });

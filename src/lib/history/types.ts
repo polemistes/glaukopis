@@ -260,4 +260,6 @@ export interface History {
   revert(passage: Passage, pieces: Piece[]): Promise<void>;
   /** Makes a stretch as it was at a moment again. */
   restore(place: Place, from: Uint8Array, to: Uint8Array, moment: Uint8Array): Promise<void>;
+  /** The whole project as it was at a moment, as a state of the document: to be read as Org. */
+  stateAt?(moment: Uint8Array): Promise<Uint8Array>;
 }

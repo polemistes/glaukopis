@@ -96,3 +96,9 @@ history-cut-failed = Historikken kunne ikke tas ut.
 history-archive-until = til { $when }
 history-archived = Historikken før { $when } er arkivert.
 history-deleted = Historikken før { $when } er slettet.
+
+## Teksten som Org: slik den var og slik den er, som en forskjell mellom to Org-tekster
+
+history-show-org = Vis som Org
+history-org-about = Teksten til elementet du ser på og alt under det, som Org: slik den var da, og slik den er nå. Linjer som er tatt ut er merket −, linjer som er satt inn +, og i en endret linje ordene som ble endret.
+history-org-same = Teksten er nå slik den var da.

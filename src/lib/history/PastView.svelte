@@ -25,6 +25,9 @@
   import type { BranchAt } from './history.svelte';
   import type { Looking } from './looking';
   import type { Passage, Piece } from './types';
+  import { branchText } from '$lib/org/of-project';
+  import OrgDiff from '$lib/org/OrgDiff.svelte';
+  import { branchTextOf } from '$lib/org/past';
 
   interface Props {
     project: Project;
@@ -44,6 +47,34 @@
 
   const history = $derived(looking.history);
   const own = $derived(!history.archive);
+
+  /** Whether the text is shown as Org: as it was then and as it is now, as a difference. */
+  let asOrg = $state(false);
+  let orgThen = $state.raw<string | null>(null);
+  let orgFailed = $state(false);
+  const orgNow = $derived.by(() => {
+    if (!asOrg) return '';
+    void project.revision;
+    return branchText(project, at);
+  });
+
+  $effect(() => {
+    if (!asOrg) return;
+    const l = looking;
+    const element = at;
+    orgThen = null;
+    orgFailed = false;
+    l.history
+      .stateAt(l.when)
+      .then((state) => branchTextOf(state, element))
+      .then((text) => {
+        if (l === looking && element === at) orgThen = text;
+      })
+      .catch((error) => {
+        orgFailed = true;
+        console.error('the element in view could not be read as Org as it was', error);
+      });
+  });
 
   $effect(() => {
     const l = looking;
@@ -197,12 +228,27 @@
         onclick={() => bringBack(null)}><RotateCcw size={15} /></IconButton
       >
     {/if}
+    <label class="as-org">
+      <input type="checkbox" data-show-org bind:checked={asOrg} />
+      {t('history-show-org')}
+    </label>
     <IconButton label={t('history-open-copy')} size="sm" disabled={busy} onclick={openCopy}
       ><CopyPlus size={15} /></IconButton
     >
   </div>
 
-  {#if failed}
+  {#if asOrg}
+    <div class="org">
+      <p class="about">{t('history-org-about')}</p>
+      {#if orgFailed}
+        <p class="note">{t('history-failed')}</p>
+      {:else if orgThen === null}
+        <div class="note"><Spinner size={18} /></div>
+      {:else}
+        <OrgDiff before={orgThen} after={orgNow} />
+      {/if}
+    </div>
+  {:else if failed}
     <p class="note">{t('history-failed')}</p>
   {:else if !reading}
     <div class="note"><Spinner size={18} /></div>
@@ -301,6 +347,24 @@
     min-width: 0;
     color: var(--ink-2);
     font-size: var(--text-sm);
+  }
+  .as-org {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .as-org input {
+    accent-color: var(--accent);
+  }
+  .org {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 24px 40px;
   }
   .naming {
     width: 200px;
