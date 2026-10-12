@@ -125,7 +125,9 @@
     // The record is made anew whenever the text changes.
     void node.words;
     void node.cited;
-    return body ? blocksHtml(readBody(body), language) : '';
+    // The kinds of the writer's own say which of their paragraphs a numbering counts.
+    const own = project.passageKinds;
+    return body ? blocksHtml(readBody(body, own), language, own) : '';
   });
   /** The element it stands for in the document, where it stands for one. */
   const included = $derived(node.include ? project.node(node.include) : undefined);

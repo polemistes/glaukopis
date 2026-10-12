@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Collection, Summary } from '$lib/api/library';
 import { Project } from '$lib/project/model/project.svelte';
-import { readBody } from '$lib/project/model/text';
+import { paragraph, readBody } from '$lib/project/model/text';
 import { PROJECT } from '$lib/project/model/types';
 import { elementName, makeLibraryMap, planMap } from './map';
 
@@ -117,10 +117,7 @@ describe('a map of the library', () => {
     ]);
     const lordNode = nodes[3];
     expect(readBody(project.fragment(lordNode, 'body') ?? undefined)).toEqual([
-      {
-        kind: 'paragraph',
-        content: [{ kind: 'citation', items: [{ id: 'lord' }], mode: 'normal' }],
-      },
+      paragraph([{ kind: 'citation', items: [{ id: 'lord' }], mode: 'normal' }]),
     ]);
     // A collection has no text of its own.
     expect(readBody(project.fragment(nodes[2], 'body') ?? undefined)).toEqual([]);
