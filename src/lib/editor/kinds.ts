@@ -102,6 +102,32 @@ export const GROUPS: { id: KindGroup; families: readonly string[]; label(): stri
   { id: 'words', families: ['words'], label: () => t('editor-kinds-words') },
 ];
 
+/** The words for each family that comes with the application, by which the bracket of a passage names it. */
+const FAMILY_WORDS: Record<string, string> = {
+  quotation: 'editor-family-quotation',
+  verse: 'editor-family-verse',
+  script: 'editor-family-script',
+  glossary: 'editor-family-glossary',
+  list: 'editor-family-list',
+  code: 'editor-family-code',
+  break: 'editor-family-break',
+  draft: 'editor-family-draft',
+};
+
+/**
+ * The name of a family of passages: of the catalogue by its words, or of
+ * a kind of the writer's own based on text by the kind's name. The id
+ * itself for one that is not known.
+ */
+export function familyName(
+  family: string,
+  own: readonly { id: string; name?: string }[] = [],
+): string {
+  const words = FAMILY_WORDS[family];
+  if (words) return t(words);
+  return own.find((k) => k.id === family)?.name ?? family;
+}
+
 /** The group of the menu a family is shown in; `more` for one that is no group of its own. */
 export function groupOf(family: string): KindGroup {
   return GROUPS.find((g) => g.families.includes(family))?.id ?? 'more';

@@ -18,6 +18,7 @@
   import Code from '@lucide/svelte/icons/code';
   import Columns2 from '@lucide/svelte/icons/columns-2';
   import Drama from '@lucide/svelte/icons/drama';
+  import FileDigit from '@lucide/svelte/icons/file-digit';
   import Globe from '@lucide/svelte/icons/globe';
   import Hash from '@lucide/svelte/icons/hash';
   import Highlighter from '@lucide/svelte/icons/highlighter';
@@ -59,11 +60,12 @@
   import type { DocumentFormat } from '$lib/api/documents';
   import { selectedPassage } from '$lib/comments/marks';
   import { commentsUi } from '$lib/comments/ui.svelte';
+  import { documentSettingsUi } from '$lib/document/document-settings.svelte';
   import { languageName, t, TEXT_LANGUAGES } from '$lib/i18n';
   import { showPictures } from '$lib/pictures/store.svelte';
   import { documents } from '$lib/preview/documents.svelte';
   import { formatEditorUi } from '$lib/preview/format-editor.svelte';
-  import { countedKind, familyOf, renamed } from '$lib/project/model/families';
+  import { familyOf } from '$lib/project/model/families';
   import type { Project } from '$lib/project/model/project.svelte';
   import { spelling } from '$lib/spelling/spelling.svelte';
   import { settings } from '$lib/state/settings.svelte';
@@ -85,22 +87,11 @@
   } from './commands';
   import { CATALOGUE, GROUPS, groupOf, inHand, knownFamily, specOf, type KindGroup } from './kinds';
   import LanguageDialog from './LanguageDialog.svelte';
-  import LineNumbersDialog from './LineNumbersDialog.svelte';
+  import { languageItems } from './language-menu';
   import { editPassageKind, newPassageKind } from './own-kinds.svelte';
   import { editorUi, hooksOf } from './ui.svelte';
   import { askRefMark } from './refmarks';
-  import {
-    firstCounted,
-    insertParallel,
-    LAYOUT_NUMBERS,
-    markLine,
-    numberFrom,
-    numberLines,
-    passageAt,
-    type LineMarks,
-    type NumbersLayout,
-    type PassageNumbering,
-  } from './verse';
+  import { insertParallel, passageAt } from './verse';
 
   interface Props {
     project: Project;
@@ -134,7 +125,7 @@
   const mixed = $derived(s && body ? kindsIn(s.view.state).length > 1 : false);
   /** What the kind is called: by the catalogue, or by the writer; or "Mixed". */
   const kindLabel = $derived(mixed ? t('editor-kinds-mixed') : nameOf(kind));
-  /** The passage the cursor is in, of any family, whose paragraphs the # button numbers. */
+  /** Whether the cursor is in a passage, of any family, whose paragraphs the Numbers menu can number. */
   const inPassage = $derived(!!s && body && passageAt(s.view.state) !== null);
   /** The kind of words at the cursor, or the first in what is selected. */
   const wordKind = $derived(s ? kindMarkOf(s.view.state) : null);
@@ -181,8 +172,6 @@
   const formatName = $derived(
     documents.formatSummary(choice.format)?.name ?? format?.name ?? choice.format,
   );
-  /** What the layout says of the numbers of a passage that does not say: every how many, and on which side. */
-  const numbersLayout = $derived<NumbersLayout>(format?.verse ?? LAYOUT_NUMBERS);
   const ownParagraphs = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
   const ownWords = $derived(project.passageKinds.filter((k) => k.family === 'words'));
 
@@ -240,44 +229,47 @@
   }
 
   /**
-   * How the paragraphs of the passage the cursor is in are numbered, and
-   * what is said of the paragraph it is in, asked for in a dialog.
+   * Numbers belong to what they number (ADR 0040): the lines one writes to
+   * a passage, a place in prose to a reference mark, the lines the page
+   * makes to the layout. The menu offers the three, each saying what it
+   * numbers. The dialog of a passage is the editor's own, reached through
+   * its hooks; the layout's line numbering is in the document settings.
    */
-  let numbering = $state<{
-    view: EditorView;
-    passage: PassageNumbering;
-    from: { number: string | null; here: boolean } | null;
-    line: (LineMarks & { kind: string; words: string; countable: boolean }) | null;
-  } | null>(null);
-  function lineNumbers() {
+  function numbers(event: MouseEvent) {
     const view = s?.view;
-    const at = view ? passageAt(view.state) : null;
-    if (!view || !at) return;
-    const { attrs } = at.paragraph;
-    const first = firstCounted(at.passage, own);
-    numbering = {
-      view,
-      passage: {
-        numbering: (at.passage.attrs.numbering as PassageNumbering['numbering']) ?? 'none',
-        every: (at.passage.attrs.every as number | null) ?? null,
-        side: (at.passage.attrs.side as PassageNumbering['side']) ?? null,
-      },
-      from: first
-        ? {
-            number: (first.node.attrs.number as string | null) ?? null,
-            here: first.index === at.index,
-          }
-        : null,
-      line: {
-        kind: attrs.kind as string,
-        number: (attrs.number as string | null) ?? null,
-        counted: attrs.counted !== false,
-        margin: (attrs.margin as string | null) ?? null,
-        words: at.paragraph.textContent,
-        // Whether its kind is counted at all: only then can it be given a number, or left out of the count.
-        countable: countedKind(renamed(attrs.kind as string), own),
-      },
-    };
+    if (!view) return;
+    const hooks = hooksOf.get(view);
+    const settingsAt = at ?? element;
+    openMenu(
+      event.currentTarget as HTMLElement,
+      [
+        {
+          label: t('editor-numbers-passage'),
+          hint: t('editor-numbers-passage-hint'),
+          icon: Hash,
+          disabled: !inPassage || !hooks?.askNumbers,
+          action: () => hooks?.askNumbers?.(view),
+        },
+        {
+          label: t('editor-refmark'),
+          hint: t('editor-numbers-refmark-hint'),
+          icon: Milestone,
+          shortcut: 'Ctrl+Alt+K',
+          action: () => void askRefMark(view),
+        },
+        { kind: 'separator' },
+        {
+          label: t('editor-numbers-page'),
+          hint: t('editor-numbers-page-hint'),
+          icon: FileDigit,
+          disabled: !settingsAt,
+          action: () => {
+            if (settingsAt) documentSettingsUi.open({ project, at: settingsAt, section: 'layout' });
+          },
+        },
+      ],
+      { align: 'start' },
+    );
   }
 
   /** The language of what is selected, by its tag, asked for in a dialog. */
@@ -602,38 +594,17 @@
         action: () => run(toggleKind('foreign', tag), view),
       })),
     };
-    // The language of the passage: the languages of texts but the text's own, and any other by its tag.
-    const offered = [
-      ...(passageLanguage &&
-      (passageLanguage === language || !TEXT_LANGUAGES.includes(passageLanguage))
-        ? [passageLanguage]
-        : []),
-      ...TEXT_LANGUAGES.filter((l) => l !== language),
-    ];
+    // The language of what is selected: the languages of texts but the text's own, and any other by its tag.
     const ofPassage: MenuItem = {
       kind: 'submenu',
       label: t('editor-language'),
       icon: Globe,
-      items: [
-        {
-          label: t('editor-language-of-text'),
-          hint: language ? languageName(language) : undefined,
-          checked: !passageLanguage,
-          action: () => run(setLanguage(null), view),
-        },
-        { kind: 'separator' },
-        ...offered.map((tag): MenuItem => ({
-          label: languageName(tag),
-          hint: TEXT_LANGUAGES.includes(tag) ? undefined : tag,
-          checked: passageLanguage === tag,
-          action: () => run(setLanguage(tag), view),
-        })),
-        { kind: 'separator' },
-        {
-          label: t('editor-language-other'),
-          action: () => (asking = { view, tag: passageLanguage }),
-        },
-      ],
+      items: languageItems({
+        language,
+        current: passageLanguage,
+        set: (tag) => run(setLanguage(tag), view),
+        other: () => (asking = { view, tag: passageLanguage }),
+      }),
     };
     openMenu(
       event.currentTarget as HTMLElement,
@@ -703,17 +674,17 @@
     <ChevronDown size={13} />
   </button>
 
-  {#if inPassage}
-    <button
-      type="button"
-      class="lines"
-      aria-label={t('editor-line-numbers')}
-      use:tooltip={{ text: t('editor-line-numbers-hint'), side: 'bottom' }}
-      onclick={lineNumbers}
-    >
-      <Hash size={14} />
-    </button>
-  {/if}
+  <button
+    type="button"
+    class="lines"
+    disabled={!body}
+    aria-label={t('editor-numbers')}
+    use:tooltip={{ text: t('editor-numbers-hint'), side: 'bottom' }}
+    onclick={numbers}
+  >
+    <Hash size={14} />
+    <ChevronDown size={13} />
+  </button>
 
   <span class="rule"></span>
 
@@ -857,22 +828,6 @@
   />
 {/if}
 
-{#if numbering}
-  <LineNumbersDialog
-    passage={numbering.passage}
-    layout={numbersLayout}
-    from={numbering.from}
-    line={numbering.line}
-    onclose={() => (numbering = null)}
-    onset={(how, from, line) => {
-      if (!numbering) return;
-      run(numberLines(how), numbering.view);
-      if (from !== undefined) run(numberFrom(from, own), numbering.view);
-      if (line) run(markLine(line), numbering.view);
-    }}
-  />
-{/if}
-
 <style>
   .tools {
     display: flex;
@@ -933,6 +888,10 @@
     gap: 4px;
     padding: 0 5px 0 7px;
     font-weight: 500;
+  }
+  .lines {
+    gap: 2px;
+    padding: 0 4px 0 6px;
   }
   .element {
     gap: 4px;

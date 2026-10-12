@@ -42,6 +42,8 @@ import {
   setKind,
   toggle,
 } from './commands';
+import { passageBrackets } from './brackets';
+import { familyName } from './kinds';
 import { passages } from './passages';
 import { refMarkKey } from './refmarks';
 import { backOutOfKind, enterKind, tabKind, untabKind } from './script';
@@ -91,7 +93,13 @@ export interface EditorHooks {
    * family: as the kind it is based on has it. None, where they are not
    * given.
    */
-  passageKinds?: () => { id: string; basedOn: string }[];
+  passageKinds?: () => { id: string; name?: string; basedOn: string }[];
+  /** Asks how the passage the cursor is in is numbered, in the dialog of it (ADR 0039). */
+  askNumbers?: (view: EditorView) => void;
+  /** Asks for the language of what is selected, by its tag; `tag` is the one it has now. */
+  askLanguage?: (view: EditorView, tag: string | null) => void;
+  /** The language of the document whose text the editor holds, as a tag; nothing where it is not known. */
+  language?: () => string | null;
   /** What the document's layout says of the numbers of a passage that does not say: every how many, and on which side. */
   numbers?: () => NumbersLayout;
 }
@@ -350,6 +358,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     passages(own),
     // The numbers of the paragraphs of a numbered passage: see `verse.ts`.
     passageNumbers(own, () => hooks.numbers?.() ?? LAYOUT_NUMBERS),
+    // The bracket of every passage, with its name: see `brackets.ts`.
+    passageBrackets((family) => familyName(family, own())),
     // Tables: before the keys of the text, since Tab and the arrows mean something of their own in them.
     ...tablePlugins(),
     keymap(keys),

@@ -130,6 +130,53 @@ export interface LineMarks {
   margin: string | null;
 }
 
+/** What the dialog of the numbers asks about: see `LineNumbersDialog.svelte`. */
+export interface NumbersAsked {
+  passage: PassageNumbering;
+  /** The number the first counted paragraph has, and whether it is the one the cursor is in; nothing where none is counted. */
+  from: { number: string | null; here: boolean } | null;
+  /** The paragraph the cursor is in: what is said of it, its words, and whether its kind is counted at all. */
+  line: LineMarks & { kind: string; words: string; countable: boolean };
+}
+
+/**
+ * How the passage the cursor is in is numbered, and what is said of the
+ * paragraph the cursor is in, as the dialog asks about them; nothing
+ * outside a passage. `own` is the kinds of the writer's own, for which
+ * paragraphs are counted.
+ */
+export function numbersAsked(
+  state: EditorState,
+  own: readonly BasedKind[] = [],
+): NumbersAsked | null {
+  const at = passageAt(state);
+  if (!at) return null;
+  const { attrs } = at.paragraph;
+  const first = firstCounted(at.passage, own);
+  return {
+    passage: {
+      numbering: (at.passage.attrs.numbering as Numbering) ?? 'none',
+      every: (at.passage.attrs.every as number | null) ?? null,
+      side: (at.passage.attrs.side as Side | null) ?? null,
+    },
+    from: first
+      ? {
+          number: (first.node.attrs.number as string | null) ?? null,
+          here: first.index === at.index,
+        }
+      : null,
+    line: {
+      kind: String(attrs.kind ?? 'text'),
+      number: (attrs.number as string | null) ?? null,
+      counted: attrs.counted !== false,
+      margin: (attrs.margin as string | null) ?? null,
+      words: at.paragraph.textContent,
+      // Whether its kind is counted at all: only then can it be given a number, or left out of the count.
+      countable: countedKind(renamed(String(attrs.kind ?? 'text')), own),
+    },
+  };
+}
+
 /** Gives the paragraph the cursor is in a number or a label, counts it or not, and gives it words in the margin. */
 export function markLine(marks: LineMarks): Command {
   return (state, dispatch) => {

@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { EditorState, NodeSelection, TextSelection, AllSelection } from 'prosemirror-state';
+  import {
+    EditorState,
+    NodeSelection,
+    TextSelection,
+    AllSelection,
+    type Command,
+  } from 'prosemirror-state';
   import { CellSelection } from 'prosemirror-tables';
   import { EditorView } from 'prosemirror-view';
   import { untrack } from 'svelte';
@@ -19,8 +25,19 @@
   import { dropTarget } from '$lib/ui/drag.svelte';
   import { editorUi, rectAt } from './ui.svelte';
   import { sharedUndo } from './undo';
-  import { markActive } from './commands';
-  import { LAYOUT_NUMBERS, relayoutNumbers, type NumbersLayout } from './verse';
+  import { markActive, setLanguage } from './commands';
+  import {
+    LAYOUT_NUMBERS,
+    markLine,
+    numberFrom,
+    numberLines,
+    numbersAsked,
+    relayoutNumbers,
+    type NumbersAsked,
+    type NumbersLayout,
+  } from './verse';
+  import LanguageDialog from './LanguageDialog.svelte';
+  import LineNumbersDialog from './LineNumbersDialog.svelte';
   import { documents } from '$lib/preview/documents.svelte';
   import { CitationView, FootnoteView } from './views.svelte';
   import { RefMarkView } from './refmarks';
@@ -141,6 +158,31 @@
       if (view && kind === 'body' && changed) relayoutNumbers(view);
     });
   });
+
+  /** The kinds of paragraph of the writer's own, as much as the shape of a text needs of them. */
+  const ownKinds = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
+
+  // The dialogs of a passage, which the tools and the bracket of a passage
+  // ask for through the hooks: how the passage the cursor is in is
+  // numbered (ADR 0039), and the language of what is selected (ADR 0020).
+  let numbering = $state<(NumbersAsked & { view: EditorView }) | null>(null);
+  let asking = $state<{ view: EditorView; tag: string | null } | null>(null);
+  function askNumbers(v: EditorView) {
+    const asked = numbersAsked(
+      v.state,
+      untrack(() => ownKinds),
+    );
+    if (asked) numbering = { ...asked, view: v };
+  }
+  function askLanguage(v: EditorView, tag: string | null) {
+    asking = { view: v, tag };
+  }
+  /** Does something to the text of an editor, and gives it the cursor again. */
+  function run(command: Command, v: EditorView) {
+    if (v.isDestroyed) return;
+    command(v.state, v.dispatch, v);
+    v.focus();
+  }
 
   // The spelling is looked at again when the language of the document changes, or
   // the words ignored in the project do.
@@ -320,6 +362,10 @@
       passageKinds: () => project.passageKinds,
       // What the layout says of the numbers of a passage: see above.
       numbers: () => numbersNow,
+      // The dialogs of a passage, and the language of the document for the one of its language.
+      askNumbers: kind === 'body' ? askNumbers : undefined,
+      askLanguage: kind === 'body' ? askLanguage : undefined,
+      language: () => untrack(() => language),
     };
 
     const created = untrack(() => {
@@ -509,6 +555,31 @@
     },
   }}
 ></div>
+
+{#if numbering}
+  <LineNumbersDialog
+    passage={numbering.passage}
+    layout={numbersLayout}
+    from={numbering.from}
+    line={numbering.line}
+    onclose={() => (numbering = null)}
+    onset={(how, from, line) => {
+      if (!numbering) return;
+      const v = numbering.view;
+      run(numberLines(how), v);
+      if (from !== undefined) run(numberFrom(from, ownKinds), v);
+      if (line) run(markLine(line), v);
+    }}
+  />
+{/if}
+
+{#if asking}
+  <LanguageDialog
+    tag={asking.tag}
+    onclose={() => (asking = null)}
+    onset={(tag) => asking && run(setLanguage(tag), asking.view)}
+  />
+{/if}
 
 <style>
   .rich-text {

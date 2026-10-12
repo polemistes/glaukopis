@@ -439,6 +439,50 @@ body.dragging * {
 .prose .passage > p + p {
   margin-top: 0.3em;
 }
+/* The bracket is darker while the cursor is in the passage. */
+.prose .passage[data-current] {
+  border-left-color: var(--line-strong);
+}
+/* The label of a passage, at the head of its bracket (editor/brackets.ts):
+   the name of its family, small, hanging over the bracket's top in the gap
+   before the passage, so that it takes no room from the text; seen while
+   the cursor is in the passage or the pointer rests on it, and pressed for
+   the menu of the passage. */
+.prose .passage > .passage-label {
+  position: absolute;
+  top: -0.95em;
+  left: -1px;
+  padding: 0 0.35em 0 0.3em;
+  border-left: 1px solid var(--line-strong);
+  border-radius: 0 2px 0 0;
+  background: var(--paper);
+  font-family: var(--font-ui);
+  font-size: 0.62em;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-style: normal;
+  font-variant: normal;
+  text-indent: 0;
+  color: var(--ink-3);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease);
+}
+.prose .passage:hover > .passage-label,
+.prose .passage[data-current] > .passage-label {
+  opacity: 1;
+}
+.prose .passage > .passage-label:hover {
+  color: var(--ink);
+}
+.prose.static .passage > .passage-label {
+  display: none;
+}
 .prose .passage[data-family='quotation'] {
   margin: 0.75em 0;
   padding-left: 1.4em;
