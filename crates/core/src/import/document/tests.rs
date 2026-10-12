@@ -394,6 +394,7 @@ fn lists_quotations_and_what_has_no_place() {
         indent,
         number: number.map(Into::into),
         counted: true,
+        hidden: false,
         margin: None,
         content: vec![text(words)],
     };

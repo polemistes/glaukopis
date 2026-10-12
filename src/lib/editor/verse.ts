@@ -131,6 +131,8 @@ export function numberFrom(from: string | null, own: readonly BasedKind[] = []):
 export interface LineMarks {
   number: string | null;
   counted: boolean;
+  /** Counted, and its number not shown. */
+  hidden: boolean;
   margin: string | null;
 }
 
@@ -169,6 +171,7 @@ export function numbersAsked(
         kind: 'text',
         number: run.here ? '1' : ((attrs.number as string | null) ?? null),
         counted: attrs.counted !== false,
+        hidden: attrs.hidden === true,
         margin: (attrs.margin as string | null) ?? null,
         words: run.paragraph.textContent,
         countable: true,
@@ -193,6 +196,7 @@ export function numbersAsked(
       kind: String(attrs.kind ?? 'text'),
       number: (attrs.number as string | null) ?? null,
       counted: attrs.counted !== false,
+      hidden: attrs.hidden === true,
       margin: (attrs.margin as string | null) ?? null,
       words: at.paragraph.textContent,
       // Whether its kind is counted at all: only then can it be given a number, or left out of the count.
@@ -275,9 +279,11 @@ export function markLine(marks: LineMarks): Command {
       ...node.attrs,
       number: marks.number?.trim() || null,
       counted: marks.counted,
+      // Nothing where it is not so, never false: see `hidden` in `schema.ts`.
+      hidden: marks.counted && marks.hidden ? true : null,
       margin: marks.margin?.trim() || null,
     };
-    const same = (['number', 'counted', 'margin'] as const).every(
+    const same = (['number', 'counted', 'hidden', 'margin'] as const).every(
       (k) => (node.attrs[k] ?? null) === attrs[k],
     );
     if (dispatch && !same) dispatch(state.tr.setNodeMarkup($from.before(depth), undefined, attrs));
@@ -448,18 +454,21 @@ function editNumber(view: EditorView, getPos: () => number | undefined, el: HTML
  */
 function numberWidget(
   shown: Shown | null,
+  held = false,
 ): (view: EditorView, getPos: () => number | undefined) => HTMLElement {
   return (view, getPos) => {
     const el = document.createElement('span');
-    el.className = shown ? 'line-number' : 'line-number blank';
+    el.className = shown ? (held ? 'line-number held' : 'line-number') : 'line-number blank';
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '-1');
     if (shown) {
       el.textContent = shown.label;
       el.dataset.label = shown.label;
       if (shown.set) el.dataset.given = '';
+      // Counted, and not shown in the document: seen here, in parentheses, so that the writer knows it is there.
+      if (held) el.dataset.held = '';
     }
-    el.title = t('editor-line-number-press');
+    el.title = held ? t('editor-line-number-held') : t('editor-line-number-press');
     el.addEventListener('mousedown', (event) => {
       // The text keeps its cursor: the number is not a place in it.
       if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
@@ -501,7 +510,9 @@ function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): D
     let at = pos + 1;
     node.forEach((paragraph, _offset, i) => {
       const s = shown[i];
-      if (s)
+      // A number held back is counted, and shows nothing in the document.
+      const held = paragraph.attrs.hidden === true;
+      if (s && !held)
         list.push(
           Decoration.node(
             at,
@@ -510,9 +521,11 @@ function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): D
           ),
         );
       list.push(
-        Decoration.widget(at + 1, numberWidget(s), {
+        Decoration.widget(at + 1, numberWidget(s, held), {
           side: -1,
-          key: s ? `line-number:${s.label}${s.set ? ':given' : ''}` : 'line-number:blank',
+          key: s
+            ? `line-number:${s.label}${s.set ? ':given' : ''}${held ? ':held' : ''}`
+            : 'line-number:blank',
           ignoreSelection: true,
           stopEvent: () => true,
         }),

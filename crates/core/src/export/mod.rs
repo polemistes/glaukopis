@@ -2795,6 +2795,7 @@ mod tests {
             indent,
             number: None,
             counted: true,
+            hidden: false,
             margin: None,
             content: vec![text(words)],
         };

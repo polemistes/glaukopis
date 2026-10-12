@@ -56,6 +56,7 @@ struct Para<'a> {
     name: &'a str,
     indent: u32,
     counted: bool,
+    hidden: bool,
     number: Option<&'a str>,
     margin: Option<&'a str>,
     content: &'a [Inline],
@@ -63,9 +64,17 @@ struct Para<'a> {
 
 impl<'a> Para<'a> {
     fn of(block: &'a Block) -> Option<Self> {
-        let Block::Paragraph { name, indent, number, counted, margin, content } = block else { return None };
+        let Block::Paragraph { name, indent, number, counted, hidden, margin, content } = block else { return None };
         let given = |s: &'a Option<String>| s.as_deref().map(str::trim).filter(|s| !s.is_empty());
-        Some(Para { name, indent: *indent, counted: *counted, number: given(number), margin: given(margin), content })
+        Some(Para {
+            name,
+            indent: *indent,
+            counted: *counted,
+            hidden: *hidden,
+            number: given(number),
+            margin: given(margin),
+            content,
+        })
     }
 }
 
@@ -144,7 +153,12 @@ impl Converter<'_> {
         let every = every.filter(|e| *e > 0).unwrap_or(self.extras.verse.every);
         let side = side.unwrap_or(self.extras.verse.side);
         let counted: Vec<(bool, Option<&str>)> = paras.iter().map(|p| (self.counts(p), p.number)).collect();
-        let shown = numbers(numbering, every, &counted);
+        // A paragraph whose number is hidden is counted as any other, and shows nothing.
+        let shown: Vec<Option<Shown>> = numbers(numbering, every, &counted)
+            .into_iter()
+            .zip(&paras)
+            .map(|(shown, p)| shown.filter(|_| !p.hidden))
+            .collect();
         match family {
             "verse" => self.verse(&paras, &shown, side, out),
             _ if numbering != Numbering::None => self.numbered(&paras, &shown, side, out),
@@ -664,6 +678,7 @@ mod tests {
             indent,
             number: number.map(Into::into),
             counted: true,
+            hidden: false,
             margin: None,
             content: vec![text(words_)],
         }
@@ -777,6 +792,31 @@ mod tests {
         let c = converter(&keys, Flavour::Latex);
         let out = written(&c, &[verse]);
         assert!(out.iter().any(|v| v["c"][1] == "\\vspace{\\baselineskip}"));
+    }
+
+    #[test]
+    fn a_number_held_back_is_counted_and_not_shown() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Typst);
+        let mut hidden = line("line", 0, None, "two");
+        if let Block::Paragraph { hidden: h, .. } = &mut hidden {
+            *h = true;
+        }
+        let verse = numbered(
+            "verse",
+            None,
+            vec![
+                line("line", 0, Some("1"), "one"),
+                hidden,
+                line("line", 0, None, "three"),
+                line("line", 0, None, "four"),
+            ],
+        );
+        let out = written(&c, &[verse]);
+        let typst: Vec<&str> = out.iter().filter_map(|v| v["c"][1].as_str()).collect();
+        // Every two: the second holds its 2 back, and the fourth shows 4.
+        assert!(!typst.iter().any(|l| l.contains("n: \"2\"")), "{typst:?}");
+        assert!(typst.iter().any(|l| l.contains("n: \"4\"")), "{typst:?}");
     }
 
     #[test]

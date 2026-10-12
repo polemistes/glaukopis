@@ -1244,6 +1244,17 @@ span.math.selected {
   color: var(--ink-2);
   font-weight: 600;
 }
+/* A number that is counted and held back: seen where one writes, in parentheses; the document shows none. */
+.prose .line-number.held {
+  color: var(--ink-4);
+  font-weight: normal;
+}
+.prose .line-number.held::before {
+  content: '(';
+}
+.prose .line-number.held::after {
+  content: ')';
+}
 /* The place for a number where none is shown: seen when the pointer rests on the paragraph. */
 .prose .line-number.blank {
   opacity: 0;

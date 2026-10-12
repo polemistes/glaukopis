@@ -111,6 +111,8 @@ export interface ParagraphBlock {
   indent: number;
   number?: string;
   counted?: boolean;
+  /** True for a paragraph that is counted and shows no number. */
+  hidden?: boolean;
   margin?: string;
   content: Inline[];
 }
@@ -239,7 +241,7 @@ export interface SetOff {
 export function paragraph(
   content: Inline[],
   name = 'text',
-  more: Pick<ParagraphBlock, 'indent' | 'number' | 'counted' | 'margin'> | number = 0,
+  more: Pick<ParagraphBlock, 'indent' | 'number' | 'counted' | 'hidden' | 'margin'> | number = 0,
 ): ParagraphBlock {
   const said = typeof more === 'number' ? { indent: more } : more;
   return {
@@ -248,6 +250,7 @@ export function paragraph(
     indent: said.indent,
     ...(said.number ? { number: said.number } : {}),
     ...(said.counted === false ? { counted: false } : {}),
+    ...(said.hidden ? { hidden: true } : {}),
     ...(said.margin ? { margin: said.margin } : {}),
     content,
   };
@@ -408,6 +411,7 @@ function paragraphOf(el: Y.XmlElement, kind?: string): ParagraphBlock {
     indent: indentOf(el.getAttribute('indent') as unknown),
     ...(number ? { number } : {}),
     ...((el.getAttribute('counted') as unknown) === false ? { counted: false } : {}),
+    ...((el.getAttribute('hidden') as unknown) === true ? { hidden: true } : {}),
     ...(margin ? { margin } : {}),
   });
 }

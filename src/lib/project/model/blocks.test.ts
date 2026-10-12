@@ -263,6 +263,22 @@ describe('text written without an editor', () => {
     });
   });
 
+  it('keeps a number held back, and says nothing of one that is not', () => {
+    const verse = passage(
+      'verse',
+      [
+        paragraph([t('one')], 'line', { indent: 0, number: '1' }),
+        paragraph([t('two')], 'line', { indent: 0, hidden: true }),
+      ],
+      'counted',
+    );
+    const [el] = elements([verse]);
+    const lines = el.toArray() as Y.XmlElement[];
+    expect(lines[1].getAttribute('hidden')).toBe(true);
+    expect(lines[0].getAttribute('hidden')).toBeUndefined();
+    expect(readBody(written([verse]))).toEqual([verse]);
+  });
+
   it('writes what is not words as the elements the editors have for it', () => {
     const [made] = elements([
       p(

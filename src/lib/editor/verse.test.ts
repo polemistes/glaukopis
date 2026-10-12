@@ -66,7 +66,7 @@ function widgets(state: EditorState): string[] {
       ).type.toDOM({} as never, () => d.from);
       return el.classList.contains('blank')
         ? '-'
-        : el.textContent + ('given' in el.dataset ? '*' : '');
+        : el.textContent + ('given' in el.dataset ? '*' : '') + ('held' in el.dataset ? '~' : '');
     });
 }
 
@@ -226,7 +226,7 @@ describe('what is said of a passage and a paragraph by hand', () => {
   it('gives a paragraph a number, leaves it uncounted, and gives it words in the margin', () => {
     let state = EditorState.create({ doc: verse() });
     state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 10)));
-    markLine({ number: ' 1094a1 ', counted: false, margin: 'ia. trim.' })(
+    markLine({ number: ' 1094a1 ', counted: false, hidden: false, margin: 'ia. trim.' })(
       state,
       (tr) => (state = state.apply(tr)),
     );
@@ -238,7 +238,10 @@ describe('what is said of a passage and a paragraph by hand', () => {
     });
     expect(state.doc.firstChild!.child(0).attrs.number).toBeNull();
     // Taken away again.
-    markLine({ number: '', counted: true, margin: '' })(state, (tr) => (state = state.apply(tr)));
+    markLine({ number: '', counted: true, hidden: false, margin: '' })(
+      state,
+      (tr) => (state = state.apply(tr)),
+    );
     expect(state.doc.firstChild!.child(1).attrs).toMatchObject({
       number: null,
       counted: true,
@@ -313,5 +316,38 @@ describe('numbers, stanzas and text', () => {
       state.tr.setSelection(TextSelection.create(state.doc, state.doc.content.size - 2)),
     );
     expect(numbersAsked(state)).toBeNull();
+  });
+});
+
+describe('a number held back', () => {
+  it('is counted, and shows nothing in the document, while the editor shows it struck through', () => {
+    const state = EditorState.create({
+      doc: verse({ numbering: 'counted', every: 2 }, [
+        p('line', 'one', { number: '1' }),
+        p('line', 'two', { hidden: true }),
+        p('line', 'three'),
+        p('line', 'four'),
+      ]),
+    });
+    // The second would show 2: it is held back, and the fourth shows 4.
+    expect(drawn(state)).toEqual(['1*', null, null, '4']);
+    expect(widgets(state)).toContain('2~');
+  });
+
+  it('is said by the dialog, and only of a paragraph that is counted', () => {
+    let state = EditorState.create({ doc: verse({ numbering: 'counted' }) });
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 10)));
+    markLine({ number: null, counted: true, hidden: true, margin: null })(
+      state,
+      (tr) => (state = state.apply(tr)),
+    );
+    expect(state.doc.firstChild!.child(1).attrs.hidden).toBe(true);
+    expect(numbersAsked(state)?.line.hidden).toBe(true);
+    markLine({ number: null, counted: false, hidden: true, margin: null })(
+      state,
+      (tr) => (state = state.apply(tr)),
+    );
+    // Not counted, there is nothing to hold back: nothing is said of it, never false.
+    expect(state.doc.firstChild!.child(1).attrs.hidden).toBeNull();
   });
 });

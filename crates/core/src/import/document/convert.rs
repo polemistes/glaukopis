@@ -290,7 +290,7 @@ fn as_kind(blocks: Vec<Block>, name: &str, aside: &mut Vec<Block>) -> Vec<Block>
     let mut out = Vec::new();
     for b in blocks {
         match b {
-            Block::Paragraph { content, number, counted, margin, .. } => {
+            Block::Paragraph { content, number, counted, hidden, margin, .. } => {
                 if name == "line" {
                     for line in content.split(|i| matches!(i, Inline::Break)) {
                         let (indent, content) = indented(line.to_vec());
@@ -299,12 +299,21 @@ fn as_kind(blocks: Vec<Block>, name: &str, aside: &mut Vec<Block>) -> Vec<Block>
                             indent,
                             number: None,
                             counted: true,
+                            hidden: false,
                             margin: None,
                             content,
                         });
                     }
                 } else {
-                    out.push(Block::Paragraph { name: name.to_owned(), indent: 0, number, counted, margin, content });
+                    out.push(Block::Paragraph {
+                        name: name.to_owned(),
+                        indent: 0,
+                        number,
+                        counted,
+                        hidden,
+                        margin,
+                        content,
+                    });
                 }
             }
             other => aside.push(other),
@@ -843,18 +852,22 @@ impl Reading<'_, '_> {
                             indent: 0,
                             number,
                             counted: true,
+                            hidden: false,
                             margin: None,
                             content: words,
                         });
                     }
                     Block::Passage { family, content: within, .. } if family == "list" => {
                         for p in within {
-                            if let Block::Paragraph { name, indent, number, counted, margin, content: words } = p {
+                            if let Block::Paragraph { name, indent, number, counted, hidden, margin, content: words } =
+                                p
+                            {
                                 content.push(Block::Paragraph {
                                     name,
                                     indent: indent + 1,
                                     number,
                                     counted,
+                                    hidden,
                                     margin,
                                     content: words,
                                 });

@@ -44,6 +44,7 @@
   let side = $state<Side | ''>(untrack(() => passage.side ?? ''));
   let number = $state(untrack(() => line?.number ?? ''));
   let counted = $state(untrack(() => line?.counted !== false));
+  let hidden = $state(untrack(() => line?.hidden === true));
   let margin = $state(untrack(() => line?.margin ?? ''));
 
   const everyGiven = $derived(!every.trim() || (/^\d+$/.test(every.trim()) && Number(every) >= 1));
@@ -74,6 +75,7 @@
         ? {
             number: line.countable ? number.trim() || null : line.number,
             counted: line.countable ? counted : line.counted,
+            hidden: line.countable ? counted && hidden : line.hidden,
             margin: margin.trim() || null,
           }
         : null,
@@ -131,6 +133,19 @@
               <small>{t('editor-line-uncounted-hint')}</small>
             </span>
           </label>
+          <label class="check" class:off={!counted}>
+            <input
+              type="checkbox"
+              data-hidden
+              disabled={!counted}
+              checked={counted && hidden}
+              onchange={(e) => (hidden = e.currentTarget.checked)}
+            />
+            <span>
+              {t('editor-line-hidden')}
+              <small>{t('editor-line-hidden-hint')}</small>
+            </span>
+          </label>
         {/if}
         <TextField
           bind:value={margin}
@@ -179,6 +194,10 @@
     font-size: var(--text-sm);
     color: var(--ink-2);
     cursor: pointer;
+  }
+  .check.off {
+    opacity: 0.5;
+    cursor: default;
   }
   .check input {
     accent-color: var(--accent);

@@ -273,6 +273,12 @@ const bodyNodes: Record<string, NodeSpec> = {
       indent: { default: 0 },
       number: { default: null },
       counted: { default: true },
+      /**
+       * True for a paragraph that is counted and shows no number (ADR 0040);
+       * nothing otherwise, never false, so that a text written before is
+       * the same to the shared document as it was, and is not written anew.
+       */
+      hidden: { default: null },
       margin: { default: null },
     },
     parseDOM: [
@@ -285,6 +291,7 @@ const bodyNodes: Record<string, NodeSpec> = {
             indent: Math.max(0, Math.round(Number(el.getAttribute('data-indent') ?? 0)) || 0),
             number: el.getAttribute('data-number') || null,
             counted: !el.hasAttribute('data-uncounted'),
+            hidden: el.hasAttribute('data-hidden') ? true : null,
             margin: el.getAttribute('data-margin') || null,
           };
         },
@@ -298,6 +305,7 @@ const bodyNodes: Record<string, NodeSpec> = {
         style: node.attrs.indent ? `--indent: ${node.attrs.indent}` : null,
         'data-number': node.attrs.number || null,
         'data-uncounted': node.attrs.counted === false ? '' : null,
+        'data-hidden': node.attrs.hidden === true ? '' : null,
         'data-margin': node.attrs.margin || null,
       },
       0,

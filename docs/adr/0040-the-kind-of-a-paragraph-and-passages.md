@@ -282,6 +282,12 @@ rewritten by it.
   counted, in either rule of numbering, and the documents keep the room of
   the break (`#v(1em)` in Typst, a skip of a line in LaTeX, an empty line
   of the line block elsewhere).
+- **A number held back.** A paragraph may be counted and show no number
+  (`hidden`, true or nothing): the count goes on through it, and what it
+  would show is left out of every document; the editor shows it in
+  parentheses. The attribute is nothing, never false, where it is not so, so
+  that the shared document of a text written before compares equal and
+  is not written anew.
 - **The lines of the page** are numbered from the Numbers menu at once, a
   check that is said of the document of the element in view
   (`DocumentSettings.lineNumbers`, inherited), over the layout's

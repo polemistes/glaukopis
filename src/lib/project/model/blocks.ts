@@ -166,6 +166,8 @@ function paragraphElement(p: ParagraphBlock): Y.XmlElement {
       indent: indentOf(p.indent),
       number: p.number?.trim() || null,
       counted: p.counted !== false,
+      // As the editor writes it: not there unless it is so.
+      ...(p.hidden ? { hidden: true } : {}),
       margin: p.margin?.trim() || null,
     },
     inlineChildren(p.content, 'text'),

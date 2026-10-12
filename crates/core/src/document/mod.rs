@@ -136,6 +136,10 @@ pub enum Block {
         /// False for a paragraph the count passes over.
         #[serde(default = "yes")]
         counted: bool,
+        /// True for a paragraph that is counted and shows no number: what it
+        /// would show is held back, and the count goes on as it would.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        hidden: bool,
         /// Words in the margin beside the paragraph.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         margin: Option<String>,
@@ -368,7 +372,15 @@ impl Block {
 
     /// A paragraph of a kind, with nothing said of its number.
     pub fn of_kind(name: &str, content: Vec<Inline>) -> Block {
-        Block::Paragraph { name: name.to_owned(), indent: 0, number: None, counted: true, margin: None, content }
+        Block::Paragraph {
+            name: name.to_owned(),
+            indent: 0,
+            number: None,
+            counted: true,
+            hidden: false,
+            margin: None,
+            content,
+        }
     }
 
     /// A passage of a family, not numbered.

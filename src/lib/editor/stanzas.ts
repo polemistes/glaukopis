@@ -92,7 +92,7 @@ export function asWritten(
   const to = last.pos + last.node.nodeSize;
   const made = (content?: Fragment, more: Record<string, unknown> = {}) =>
     paragraph.create(
-      { kind, indent: 0, number: null, counted: true, margin: null, ...more },
+      { kind, indent: 0, number: null, counted: true, hidden: null, margin: null, ...more },
       content,
     );
 

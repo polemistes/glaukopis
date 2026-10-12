@@ -115,6 +115,7 @@ function paragraphAttrs(p: ParagraphBlock, shown: Shown | null): string {
     (p.indent ? ` data-indent="${p.indent}" style="--indent: ${p.indent}"` : '') +
     (p.number ? ` data-number="${escape(p.number)}"` : '') +
     (p.counted === false ? ' data-uncounted' : '') +
+    (p.hidden ? ' data-hidden' : '') +
     (p.margin ? ` data-margin="${escape(p.margin)}"` : '') +
     (shown ? ` data-n="${escape(shown.label)}"${shown.set ? ' data-n-set' : ''}` : '')
   );
@@ -122,7 +123,7 @@ function paragraphAttrs(p: ParagraphBlock, shown: Shown | null): string {
 
 /** The numbers the paragraphs of a passage show, by the rule the editor and the documents follow. */
 export function passageNumbers(p: PassageBlock, own: readonly BasedKind[]): (Shown | null)[] {
-  return lineNumbers(
+  const shown = lineNumbers(
     p.numbering,
     p.every ?? 5,
     p.content.map((line) => ({
@@ -134,6 +135,8 @@ export function passageNumbers(p: PassageBlock, own: readonly BasedKind[]): (Sho
       number: line.number,
     })),
   );
+  // A paragraph whose number is hidden is counted as any other, and shows nothing.
+  return shown.map((s, i) => (p.content[i]?.hidden ? null : s));
 }
 
 /** The attributes of a passage beyond its family, those that are the defaults left out. */

@@ -447,6 +447,11 @@ Greek drama do not:
 - **Not counted**: the count passes over the line, as over the second half
   of a line shared between two speakers, or a line the edition does not
   count. With a label of its own it shows the label, and nothing otherwise.
+- **Counted, its number not shown**: the count goes on through the line as
+  through any other, but no number stands beside it in the document, even
+  where one would fall, as where a number would crowd a short line or
+  stand beside a speaker's turn. Where you write, the number it holds back
+  stands faint in parentheses, so that you see it is counted.
 - **Words in the margin**: a note of the metre, the number another edition
   gives, anything to stand beside the line. They are not counted. They
   stand in the margin across from the numbers, and in Word and Writer at

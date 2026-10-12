@@ -96,6 +96,7 @@ export function enterKind(own: () => readonly BasedKind[] = () => []): Command {
         indent,
         number: null,
         counted: true,
+        hidden: null,
         margin: null,
       };
       tr.split(tr.selection.from, 1, [{ type: at.node.type, attrs }]);
@@ -126,6 +127,7 @@ export function tabKind(own: () => readonly BasedKind[] = () => []): Command {
         indent: 0,
         number: null,
         counted: true,
+        hidden: null,
         margin: null,
       };
       if (at.node.content.size === 0) {
