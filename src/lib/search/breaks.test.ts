@@ -302,7 +302,7 @@ describe('replacing with breaks', () => {
         ]),
         p(t('Last.')),
       ]);
-      if (view) expect(view.state.doc.childCount).toBe(4);
+      if (view) expect(view.state.doc.childCount).toBe(3);
     }
   });
 

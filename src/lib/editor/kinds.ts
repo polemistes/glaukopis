@@ -135,8 +135,10 @@ export function inHand(project: Project, templateKinds: readonly string[] = []):
   const wanted = new Set<string>(PLAIN_KINDS);
   for (const node of project.nodes.values()) for (const id of node.uses) wanted.add(renamed(id));
   for (const id of templateKinds) wanted.add(renamed(id));
-  const out: string[] = [];
-  for (const spec of CATALOGUE) if (wanted.has(spec.id)) out.push(spec.id);
+  // The plain kinds first, then the rest in the catalogue's order, then the writer's own.
+  const out: string[] = [...PLAIN_KINDS];
+  for (const spec of CATALOGUE)
+    if (wanted.has(spec.id) && !PLAIN_KINDS.includes(spec.id)) out.push(spec.id);
   for (const kind of project.passageKinds) if (wanted.has(kind.id)) out.push(kind.id);
   return out;
 }
