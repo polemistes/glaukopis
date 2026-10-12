@@ -186,10 +186,8 @@ export function lookRows<T>(
       max: 72,
       unit: 'pt',
       nullable: true,
-      blank:
-        resolved && resolved.size > 0
-          ? asBaseIs(t('format-level-size', { size: resolved.size }))
-          : t('format-as-the-base-blank'),
+      // The field is narrow: the size as it will stand, and no more, as the lengths have it.
+      blank: resolved && resolved.size > 0 ? String(resolved.size) : t('format-as-the-base-blank'),
     },
   );
   const monospace = yesNo(t('format-equal-width'), 'monospace', t('format-equal-width-hint'));
