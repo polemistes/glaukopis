@@ -86,6 +86,11 @@
   const actions = new ProjectActions({ open, deleted: readTrash });
   const items = (p: ProjectInfo) => actions.items(p);
 
+  // For the tests of the running application, which cannot answer the dialog that chooses a file.
+  (window as unknown as Record<string, unknown>).__glaukopisOrg = {
+    open: (path: string) => actions.openOrgAt(path),
+  };
+
   // A PDF or a picture has its text read.
   const written = (path: string) =>
     isDocumentPath(path) || isPlainTextPath(path) || isReadPath(path);

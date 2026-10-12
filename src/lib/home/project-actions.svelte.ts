@@ -259,7 +259,12 @@ export class ProjectActions {
       filters: [{ name: t('home-org-filter'), extensions: [ORG_ENDING] }],
     });
     if (typeof path !== 'string') return;
-    await this.makeOf(path, makeFromOrg, t('home-org-open-failed'));
+    await this.openOrgAt(path);
+  }
+
+  /** Makes a new project of the Org file, or the folder that holds one, at `path`, and opens it. */
+  openOrgAt(path: string): Promise<void> {
+    return this.makeOf(path, makeFromOrg, t('home-org-open-failed'));
   }
 
   /**

@@ -23,7 +23,7 @@
     titlePlugins,
     type KeyAction,
   } from './plugins';
-  import { copiedHtml, copiedText, pastedTextSlice } from './clipboard';
+  import { copiedHtml, copiedText, looksLikeOrg, pastedTextSlice } from './clipboard';
   import { bodySchema, titleSchema } from './schema';
   import { dropTarget } from '$lib/ui/drag.svelte';
   import { editorUi, rectAt } from './ui.svelte';
@@ -199,6 +199,29 @@
     return slice;
   }
 
+  /**
+   * Org pasted as text into an empty paragraph of the text: its first
+   * paragraph comes whole, of its own kind, where the editor would have
+   * it take the kind of the paragraph it is pasted into.
+   */
+  function pastedOrg(v: EditorView, event: ClipboardEvent): boolean {
+    const data = event.clipboardData;
+    const text = data?.getData('text/plain') ?? '';
+    if (!text || data?.getData('text/html') || !looksLikeOrg(text)) return false;
+    const { empty } = v.state.selection;
+    const at = v.state.selection.$from;
+    if (!empty || at.depth !== 1 || !at.parent.isTextblock || at.parent.content.size) return false;
+    event.preventDefault();
+    v.dispatch(
+      v.state.tr
+        .replaceSelection(pastedText(text, at))
+        .scrollIntoView()
+        .setMeta('paste', true)
+        .setMeta('uiEvent', 'paste'),
+    );
+    return true;
+  }
+
   /** The kinds of paragraph of the writer's own, as much as the shape of a text needs of them. */
   const ownKinds = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
 
@@ -314,6 +337,7 @@
 
   /** Pictures that were pasted become figures. Returns whether there were any. */
   function pasted(v: EditorView, event: ClipboardEvent): boolean {
+    if (pastedOrg(v, event)) return true;
     const files = [...(event.clipboardData?.files ?? [])].filter((f) =>
       f.type.startsWith('image/'),
     );
