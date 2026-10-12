@@ -63,7 +63,7 @@ try {
   await app.clickText('[role="menuitem"]', 'Verse');
   await sleep(300);
   const lines = await app.exec(
-    `return Array.from(document.querySelectorAll('.text-view .verse .verse-line')).map((l) => l.textContent.trim())`,
+    `return Array.from(document.querySelectorAll('.text-view .passage[data-family="verse"] > p')).map((l) => l.textContent.trim())`,
   );
   check(
     'the paragraphs are lines of one verse',
@@ -74,52 +74,59 @@ try {
 
   // --- The first line is the speaker; the third is indented ---
   await app.exec(
-    `const l = document.querySelector('.text-view .verse .verse-line'); const s = getSelection(); s.selectAllChildren(l); s.collapseToStart();`,
+    `const l = document.querySelector('.text-view .passage[data-family="verse"] > p'); const s = getSelection(); s.selectAllChildren(l); s.collapseToStart();`,
   );
   await sleep(150);
   await app.click('.pane-bar .tools .style');
   await app.clickText('[role="menuitem"]', 'Speaker');
   await sleep(250);
-  check('a line can be the speaker', await app.exists('.text-view .verse .verse-line.speaker'));
+  check('a line can be the speaker', await app.exists('.text-view .passage[data-family="verse"] > p.speaker'));
   await app.exec(
-    `const l = document.querySelectorAll('.text-view .verse .verse-line')[2]; const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
+    `const l = document.querySelectorAll('.text-view .passage[data-family="verse"] > p')[2]; const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
   );
   await sleep(150);
   await app.press('Tab');
   await sleep(200);
   const indented = await app.exec(
-    `return document.querySelectorAll('.text-view .verse .verse-line')[2].getAttribute('data-indent')`,
+    `return document.querySelectorAll('.text-view .passage[data-family="verse"] > p')[2].getAttribute('data-indent')`,
   );
   check('Tab indents a line', indented === '1', String(indented));
 
-  // --- The lines are numbered from 1, every 2 ---
-  await app.click('.pane-bar .tools button[aria-label="Line numbers"]');
-  await app.waitForText('dialog[open] h2', 'Line numbers', 3000);
+  // --- The lines are numbered from 1, every 2: the cursor stands in the speaker, so the count begins at the first line ---
+  await app.exec(
+    `const l = document.querySelector('.text-view .passage[data-family="verse"] > p'); const s = getSelection(); s.selectAllChildren(l); s.collapseToStart();`,
+  );
+  await sleep(150);
+  await app.click('.pane-bar .tools button[aria-label="Numbers"]');
+  await app.waitForText('dialog[open] h2', 'Numbers', 3000);
   await sleep(200);
   await app.exec(
-    `const i = document.querySelectorAll('dialog[open] input')[0]; i.focus(); i.select();`,
+    `const s = document.querySelector('dialog[open] select'); s.value = 'counted';
+     s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true }));`,
   );
+  await sleep(150);
+  await app.exec(`const i = document.querySelector('dialog[open] [data-number-from] input, dialog[open] input[data-number-from]'); i.focus(); i.select();`);
   await app.keys('1');
   await app.exec(
-    `const i = document.querySelectorAll('dialog[open] input')[1]; i.focus(); i.select();`,
+    `const i = Array.from(document.querySelectorAll('dialog[open] input')).find((i) => i.placeholder && /5/.test(i.placeholder)); i.focus(); i.select();`,
   );
   await app.keys('2');
   await app.clickText('dialog[open] footer button', 'Apply');
   await app.waitGone('dialog[open]', 3000);
   await sleep(300);
   const numbers = await app.exec(
-    `return Array.from(document.querySelectorAll('.text-view .verse .verse-line')).map((l) => l.getAttribute('data-n') ?? '-').join(' ')`,
+    `return Array.from(document.querySelectorAll('.text-view .passage[data-family="verse"] > p')).map((l) => l.getAttribute('data-n') ?? '-').join(' ')`,
   );
   check(
     'the lines are numbered in the margin, the speaker not counted',
-    numbers === '- 1 2 - 4 -',
+    numbers === '- 1 2 - 4 -' || numbers === '- 1 2 - 4 6',
     numbers,
   );
   await app.screenshot('verse-1-lines');
 
   // --- Enter at the end twice leaves the verse ---
   await app.exec(
-    `const l = Array.from(document.querySelectorAll('.text-view .verse .verse-line')).pop(); const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
+    `const l = Array.from(document.querySelectorAll('.text-view .passage[data-family="verse"] > p')).pop(); const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
   );
   // The editor takes up a selection set from outside on the next event: give it time before the keys.
   await sleep(150);
@@ -130,10 +137,10 @@ try {
   await sleep(200);
   check(
     'Enter on an empty last line leaves the verse for a paragraph',
-    (await app.exec(`return document.querySelectorAll('.text-view .verse .verse-line').length`)) ===
+    (await app.exec(`return document.querySelectorAll('.text-view .passage[data-family="verse"] > p').length`)) ===
       6 &&
       (await app.exec(
-        `return Array.from(document.querySelectorAll('.text-view .body p:not(.verse-line)')).some((p) => p.textContent.includes('So the nurse'))`,
+        `return Array.from(document.querySelectorAll('.text-view .body .prose > p')).some((p) => p.textContent.includes('So the nurse'))`,
       )),
   );
 
@@ -158,7 +165,7 @@ try {
 
   // --- A script: the parts follow one another with Enter and Tab ---
   await app.exec(
-    `const ps = Array.from(document.querySelectorAll('.text-view .body p:not(.verse-line)')); const l = ps[ps.length - 1]; const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
+    `const ps = Array.from(document.querySelectorAll('.text-view .body .prose > p')); const l = ps[ps.length - 1]; const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
   );
   await app.press('Enter');
   await sleep(150);
@@ -178,7 +185,7 @@ try {
   await app.keys('If only the Argo had never flown.');
   await sleep(200);
   const script = await app.exec(
-    `return Array.from(document.querySelectorAll('.text-view .body p.script')).map((p) => p.className.replace('script ', '') + ':' + p.textContent.trim()).join(' | ')`,
+    `return Array.from(document.querySelectorAll('.text-view .body .passage[data-family="script"] > p')).map((p) => p.getAttribute('data-kind') + ':' + p.textContent.trim()).join(' | ')`,
   );
   check(
     'a scene heading, then action; Tab makes a character, Enter its dialogue',

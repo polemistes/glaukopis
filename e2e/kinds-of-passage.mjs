@@ -17,11 +17,9 @@ function check(name, ok, detail = '') {
 const CATALOGUE = [
   'text',
   'quote',
-  'list',
-  'numbered',
-  'attribution',
   'epigraph',
-  'verse',
+  'attribution',
+  'line',
   'speaker',
   'direction',
   'scene',
@@ -32,6 +30,8 @@ const CATALOGUE = [
   'transition',
   'headword',
   'gloss',
+  'item',
+  'numbered',
   'code',
   'break',
   'draft',
@@ -107,12 +107,13 @@ try {
     await sleep(150);
   };
 
-  /** The kind of the paragraph that holds these words: "passage:epigraph" for a passage, else its class. */
+  /** The kind of the paragraph that holds these words: "kind:epigraph" for one of a kind, else "p", with the family of its passage. */
   const kindOf = (words) =>
     app.exec(
       `const p = Array.from(document.querySelectorAll('.text-view .body p')).find((e) => e.textContent.includes(arguments[0]));
        if (!p) return null;
-       return p.classList.contains('passage') ? 'passage:' + p.getAttribute('data-kind') : p.className || 'p';`,
+       const family = p.parentElement.classList.contains('passage') ? '@' + p.parentElement.getAttribute('data-family') : '';
+       return (p.hasAttribute('data-kind') ? 'kind:' + p.getAttribute('data-kind') : 'p') + family;`,
       words,
     );
 
@@ -153,7 +154,7 @@ try {
   await app.clickText('.menu [role="menuitem"]', 'Epigraph');
   await sleep(300);
   const epigraph = await kindOf('frigate');
-  check('the paragraph is an epigraph', epigraph === 'passage:epigraph', String(epigraph));
+  check('the paragraph is an epigraph, in a quotation passage', epigraph === 'kind:epigraph@quotation', String(epigraph));
   check('the kind button reads Epigraph', await buttonReads('Epigraph'));
   await app.screenshot('kinds-1-epigraph');
 
@@ -166,7 +167,7 @@ try {
   const attribution = await kindOf('Emily Dickinson');
   check(
     'Enter after an epigraph makes an attribution',
-    attribution === 'passage:attribution',
+    attribution === 'kind:attribution@quotation',
     String(attribution),
   );
   const order = await app.exec(
@@ -187,14 +188,14 @@ try {
   await app.clickText('.menu [role="menuitem"]', 'Headword');
   await sleep(300);
   const headword = await kindOf('Argo');
-  check('a paragraph is made a headword', headword === 'passage:headword', String(headword));
+  check('a paragraph is made a headword, in a glossary passage', headword === 'kind:headword@glossary', String(headword));
   await cursorAtEnd('Argo');
   await app.press('Enter');
   await sleep(200);
   await app.keys('The ship in which Jason sailed.');
   await sleep(200);
   const gloss = await kindOf('Jason');
-  check('Enter after a headword makes a gloss', gloss === 'passage:gloss', String(gloss));
+  check('Enter after a headword makes a gloss, in the same passage', gloss === 'kind:gloss@glossary', String(gloss));
   check('the kind button reads Gloss', await buttonReads('Gloss'));
   await app.screenshot('kinds-2-glossary');
 
@@ -244,7 +245,7 @@ try {
   await sleep(400);
   const own = await app.exec(
     `const p = Array.from(document.querySelectorAll('.text-view .body p')).find((e) => e.textContent.includes('Dear reader'));
-     return p && p.classList.contains('passage') ? p.getAttribute('data-kind') : null;`,
+     return p ? p.getAttribute('data-kind') : null;`,
   );
   check(
     'the paragraph is of a kind of its own, not of the catalogue',
@@ -252,6 +253,11 @@ try {
     String(own),
   );
   check('the kind button reads Letter', await buttonReads('Letter'));
+  check(
+    'a kind based on an epigraph stands in a quotation passage',
+    (await kindOf('Dear reader')).endsWith('@quotation'),
+    await kindOf('Dear reader'),
+  );
   await app.screenshot('kinds-4-own-kind');
 
   // --- The preview sets them all ---

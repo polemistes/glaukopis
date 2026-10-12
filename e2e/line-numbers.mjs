@@ -27,7 +27,7 @@ const app = await App.launch({ width: 1360, height: 900, keepData: true });
 /** Puts the cursor at the end of the line of verse given, and gives the editor time to take it up. */
 async function toLine(i) {
   await app.exec(
-    `const l = document.querySelectorAll('.text-view .verse .verse-line')[arguments[0]]; const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
+    `const l = document.querySelectorAll('.text-view .passage[data-family="verse"] > p')[arguments[0]]; const s = getSelection(); s.selectAllChildren(l); s.collapseToEnd();`,
     i,
   );
   await sleep(200);
@@ -43,14 +43,14 @@ async function fill(selector, words) {
 
 /** Opens the window of the numbers of the lines, for the line the cursor is in. */
 async function numbersWindow() {
-  await app.click('.pane-bar .tools button[aria-label="Line numbers"]');
-  await app.waitForText('dialog[open] h2', 'Line numbers', 3000);
+  await app.click('.pane-bar .tools button[aria-label="Numbers"]');
+  await app.waitForText('dialog[open] h2', 'Numbers', 3000);
   await sleep(200);
 }
 
 const shownNumbers = () =>
   app.exec(
-    `return Array.from(document.querySelectorAll('.text-view .verse .verse-line')).map((l) => (l.getAttribute('data-n') ?? '-') + (l.hasAttribute('data-n-set') ? '!' : '')).join(' ')`,
+    `return Array.from(document.querySelectorAll('.text-view .passage[data-family="verse"] > p')).map((l) => (l.getAttribute('data-n') ?? '-') + (l.hasAttribute('data-n-set') ? '!' : '')).join(' ')`,
   );
 
 try {
@@ -108,17 +108,22 @@ try {
   await sleep(300);
   check(
     'the paragraphs are ten lines of verse',
-    (await app.exec(`return document.querySelectorAll('.text-view .verse .verse-line').length`)) === 10,
+    (await app.exec(`return document.querySelectorAll('.text-view .passage[data-family="verse"] > p').length`)) === 10,
   );
 
-  // --- Numbered from 1 every 5 ---
+  // --- Numbered from 1 every 5: the first line is given 1, and the passage is counted ---
   await toLine(0);
   await numbersWindow();
-  await fill('dialog[open] input', '1');
+  await app.exec(
+    `const s = document.querySelector('dialog[open] select'); s.value = 'counted';
+     s.dispatchEvent(new Event('input', { bubbles: true })); s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
+  await sleep(150);
+  await fill('dialog[open] [data-this-line] input:not([type="checkbox"])', '1');
   await app.clickText('dialog[open] footer button', 'Apply');
   await app.waitGone('dialog[open]', 3000);
   await sleep(300);
-  check('the lines are numbered from 1 every 5', (await shownNumbers()) === '1 - - - 5 - - - - 10', await shownNumbers());
+  check('the lines are numbered from 1 every 5', (await shownNumbers()) === '1! - - - 5 - - - - 10', await shownNumbers());
 
   // --- The third line is given 1234 ---
   await toLine(2);
@@ -134,7 +139,7 @@ try {
   await sleep(300);
   check(
     'a number given by hand is shown as such, and the count goes on from it',
-    (await shownNumbers()) === '1 - 1234! 1235 - - - - 1240 -',
+    (await shownNumbers()) === '1! - 1234! 1235 - - - - 1240 -',
     await shownNumbers(),
   );
 
@@ -148,7 +153,7 @@ try {
   await sleep(300);
   check(
     'a line not counted is passed over by the count',
-    (await shownNumbers()) === '1 - 1234! 1235 - - - - - 1240',
+    (await shownNumbers()) === '1! - 1234! 1235 - - - - - 1240',
     await shownNumbers(),
   );
 
@@ -163,7 +168,7 @@ try {
   await app.waitGone('dialog[open]', 3000);
   await sleep(300);
   const margin = await app.exec(
-    `const l = document.querySelectorAll('.text-view .verse .verse-line')[5]; return [l.getAttribute('data-margin'), getComputedStyle(l, '::after').content]`,
+    `const l = document.querySelectorAll('.text-view .passage[data-family="verse"] > p')[5]; return [l.getAttribute('data-margin'), getComputedStyle(l, '::after').content]`,
   );
   check(
     'the words in the margin are shown beside their line',
@@ -171,9 +176,9 @@ try {
     JSON.stringify(margin),
   );
   const given = await app.exec(
-    `return Array.from(document.querySelectorAll('.text-view .verse .verse-line')).map((l) => (l.getAttribute('data-number') ?? '') + (l.hasAttribute('data-uncounted') ? '~' : '')).join('|')`,
+    `return Array.from(document.querySelectorAll('.text-view .passage[data-family="verse"] > p')).map((l) => (l.getAttribute('data-number') ?? '') + (l.hasAttribute('data-uncounted') ? '~' : '')).join('|')`,
   );
-  check('what was given stays on its lines', given === '||1234||~|||||', given);
+  check('what was given stays on its lines', given === '1||1234||~|||||', given);
   await app.screenshot('line-numbers-1-verse');
 
   // --- Out of the verse, a paragraph with reference marks ---
@@ -252,10 +257,10 @@ try {
   const at = typst.indexOf('#gk-verse[');
   check(
     'the Typst of the preview has the numbers and the words in the margin',
-    typst.includes('#gk-line("line", 0, n: "1", margin: none)[') &&
-      typst.includes('#gk-line("line", 0, n: "1234", margin: none)[') &&
-      typst.includes('#gk-line("line", 0, n: none, margin: "ia. trim.")[') &&
-      typst.includes('#gk-line("line", 0, n: "1240", margin: none)[') &&
+    typst.includes('#gk-line("line", 0, n: "1", margin: none, side: "left")[') &&
+      typst.includes('#gk-line("line", 0, n: "1234", margin: none, side: "left")[') &&
+      typst.includes('#gk-line("line", 0, n: none, margin: "ia. trim.", side: "left")[') &&
+      typst.includes('#gk-line("line", 0, n: "1240", margin: none, side: "left")[') &&
       (typst.match(/, n: "/g) ?? []).length === 4,
     typst.slice(at, at + 900),
   );
@@ -280,11 +285,11 @@ try {
          sections: [{ level: 1, heading: [t('Genesis')], element: null, blocks: [
            { kind: 'paragraph', content: [{ kind: 'refmark', label: '1:1' }, t('In the beginning. '),
              { kind: 'refmark', label: '1:2' }, t('And the earth.')] },
-           { kind: 'verse', start: null, by: 5, lines: [
-             { kind: 'line', indent: 0, number: '567', content: [t('one')] },
-             { kind: 'line', indent: 0, number: '567a', content: [t('two')] },
-             { kind: 'line', indent: 0, counted: false, content: [t('three')] },
-             { kind: 'line', indent: 0, margin: 'lyr.', content: [t('four')] },
+           { kind: 'passage', family: 'verse', numbering: 'counted', content: [
+             { kind: 'paragraph', name: 'line', indent: 0, number: '567', content: [t('one')] },
+             { kind: 'paragraph', name: 'line', indent: 0, number: '567a', content: [t('two')] },
+             { kind: 'paragraph', name: 'line', indent: 0, counted: false, content: [t('three')] },
+             { kind: 'paragraph', name: 'line', indent: 0, margin: 'lyr.', content: [t('four')] },
            ] },
          ] }],
        };
@@ -300,9 +305,9 @@ try {
       'the exported Typst sets the marks in the margin, and counts on from a label',
       text.includes('here().position()') &&
         text.includes('#gk-refmark("1:2"); And the earth') &&
-        text.includes('#gk-line("line", 0, n: "567a", margin: none)[') &&
-        text.includes('#gk-line("line", 0, n: none, margin: none)[') &&
-        text.includes('#gk-line("line", 0, n: none, margin: "lyr.")['),
+        text.includes('#gk-line("line", 0, n: "567a", margin: none, side: "left")[') &&
+        text.includes('#gk-line("line", 0, n: none, margin: none, side: "left")[') &&
+        text.includes('#gk-line("line", 0, n: none, margin: "lyr.", side: "left")['),
       text.slice(text.indexOf('#gk-refmark("1:1")'), text.indexOf('#gk-refmark("1:1")') + 600),
     );
   }

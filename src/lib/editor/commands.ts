@@ -58,7 +58,11 @@ export function paragraphAt(state: EditorState): ParagraphAt | null {
     const node = $from.node(d);
     if (node.type.name === 'paragraph') return { node, pos: $from.before(d), depth: d };
   }
-  return null;
+  // A selection that begins outside every paragraph, as of the whole text: the first paragraph it touches.
+  const first = paragraphsIn(state)[0];
+  if (!first) return null;
+  const $inside = state.doc.resolve(first.pos + 1);
+  return { node: first.node, pos: first.pos, depth: $inside.depth };
 }
 
 /** The paragraphs the selection touches, each with where it begins; those of the whole text where everything is selected. */
