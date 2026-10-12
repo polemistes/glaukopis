@@ -208,13 +208,16 @@ function unitsOf(ps: ParagraphBlock[], ctx: TextContext): Unit[] {
   const out: Unit[] = [];
   let k = 0;
   while (k < ps.length) {
-    // Speakers and directions go into the run that follows them, where it can hold them.
+    // Speakers and directions go into the run that follows them, where it can hold them,
+    // unless they come after a run of another kind that could: then they stand by themselves.
     let m = k;
     while (m < ps.length && isSD(ps[m])) m++;
     const head = ps[m];
     const form = head ? formOf(head.name, ctx) : null;
     const holdsSD = form?.t === 'block' && form.form !== 'src';
-    if (m > k && !holdsSD) {
+    const last = out[out.length - 1];
+    const after = last?.t === 'block' && last.form !== 'src' && last.kind !== head?.name;
+    if (m > k && (!holdsSD || after)) {
       for (let j = k; j < m; j++) out.push({ t: 'sd', p: ps[j] });
       k = m;
       continue;
@@ -523,16 +526,14 @@ function tableLines(t: TableBlock, ctx: TextContext): string[] {
 function checked(lines: string[], ps: ParagraphBlock[], ctx: TextContext): string[] | null {
   const plain = (q: ParagraphBlock[]) =>
     stableJson(
-      q
-        .filter(holds)
-        .map((p) => ({
-          ...p,
-          content: normalInlines(p.content),
-          numbering: undefined,
-          every: undefined,
-          side: undefined,
-          new: undefined,
-        })),
+      q.filter(holds).map((p) => ({
+        ...p,
+        content: normalInlines(p.content),
+        numbering: undefined,
+        every: undefined,
+        side: undefined,
+        new: undefined,
+      })),
     );
   const back = readBody(lines, ctx).filter((b): b is ParagraphBlock => b.kind === 'paragraph');
   return plain(back) === plain(ps) ? lines : null;

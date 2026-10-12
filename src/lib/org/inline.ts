@@ -300,7 +300,8 @@ const couldClose = (before: string, after: string) =>
 
 /**
  * Words with a backslash before every sign they would make where they
- * stand. `before` is the sign written before them ('' at a line's start,
+ * stand, and before a space at either end of a line, which would be taken
+ * for the line's indentation or trimmed away. `before` is the sign written before them ('' at a line's start,
  * '\n' after a line break), `after` the first sign of what follows them.
  */
 function escapeWords(text: string, before: string, after: string, mode: Mode): string {
@@ -312,7 +313,11 @@ function escapeWords(text: string, before: string, after: string, mode: Mode): s
     const a = k + 1 < chars.length ? chars[k + 1] : after;
     let escape = false;
     if (c === '\\') escape = ESCAPABLE.has(a) || a === '(';
-    else if (isSpace(c)) escape = b === '' || b === '\n';
+    else if (isSpace(c) && (a === '' || a === '\n')) {
+      // A space at a line's end, kept from whatever trims lines by empty braces after it.
+      out += `\\${c}{}`;
+      continue;
+    } else if (isSpace(c)) escape = b === '' || b === '\n';
     else if (EMPHASIS_SIGNS.has(c))
       escape = mode > 0 || couldOpen(b, a) || couldClose(b, a) || (c === '_' && a === '{');
     else if (c === '$' || c === '{' || c === '}') escape = true;
@@ -709,8 +714,8 @@ class Reader {
       this.places.set(j, this.places.size);
   }
 
-  /** What stands from here until `stop` says to stop, or to the end. */
-  seq(stop: () => boolean): Item[] {
+  /** What stands from here until `stop` says to stop, or to the end: of the line, unless `lines` says to go on over breaks, as a note does. */
+  seq(stop: () => boolean, lines = false): Item[] {
     const s = this.s;
     const out: Item[] = [];
     let words = '';
@@ -721,6 +726,7 @@ class Reader {
     while (this.i < s.length) {
       if (stop()) break;
       const c = s[this.i];
+      if (c === '\n' && !lines) break;
       if (c === '\\') {
         const next = s[this.i + 1];
         if (next === '(') {
@@ -765,7 +771,32 @@ class Reader {
     return out;
   }
 
+  /** What was read at each place where something may begin, so that nothing is read twice. */
+  readonly read = new Map<number, { got: Item[] | null; end: number }>();
+
+  /** How many signs are open around what is being read: past a limit, one more is taken for itself. */
+  depth = 0;
+
   construct(c: string): Item[] | null {
+    const at = this.i;
+    const known = this.read.get(at);
+    if (known) {
+      this.i = known.end;
+      return known.got;
+    }
+    if (this.depth > 48) return null;
+    this.depth++;
+    let got: Item[] | null;
+    try {
+      got = this.attempt(c);
+    } finally {
+      this.depth--;
+    }
+    this.read.set(at, { got, end: this.i });
+    return got;
+  }
+
+  attempt(c: string): Item[] | null {
     const s = this.s;
     const at = this.i;
     let got: Item[] | null = null;
@@ -783,6 +814,11 @@ class Reader {
     else if (c === '~' || c === '=') got = this.verbatim(c);
     else if (c === '$') got = this.math();
     else if (c === '{' && s[at + 1] === '#') got = this.refmark();
+    else if (c === '{' && s[at + 1] === '}') {
+      // Empty braces, as Org writes after an entity or a space at a line's end: nothing.
+      this.i += 2;
+      got = [];
+    }
     if (!got) this.i = at;
     return got;
   }
@@ -937,7 +973,7 @@ class Reader {
       this.i += said[0].length;
       if (s[this.i] === ' ') this.i++;
     }
-    const kids = this.seq(() => this.s[this.i] === ']');
+    const kids = this.seq(() => this.s[this.i] === ']', true);
     if (this.s[this.i] !== ']') return null;
     this.i++;
     return [
@@ -986,7 +1022,7 @@ class Reader {
 
 /** Inline content from text in which `\n` is a line break and `\0` stands where a line mark was. */
 function parseItems(s: string, ctx: InlineReading): Item[] {
-  return new Reader(s, ctx).seq(() => false);
+  return new Reader(s, ctx).seq(() => false, true);
 }
 
 /** Merges runs of words with the same marks, as `normalInlines` does, keeping placeholders where they are. */
