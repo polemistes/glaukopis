@@ -43,7 +43,10 @@ async function fill(selector, words) {
 
 /** Opens the window of the numbers of the lines, for the line the cursor is in. */
 async function numbersWindow() {
-  await app.click('.pane-bar .tools button[aria-label="Numbers"]');
+  // The # button is a menu: the numbers of the passage are its first item.
+  await app.click('.pane-bar .tools button.lines');
+  await app.waitFor('.menu', 3000);
+  await app.clickText('.menu [role="menuitem"]', 'Number the lines of this passage');
   await app.waitForText('dialog[open] h2', 'Numbers', 3000);
   await sleep(200);
 }
