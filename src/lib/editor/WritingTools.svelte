@@ -4,9 +4,9 @@
    * the marks and the kinds of words, citing and notes. They act on the text
    * that has the cursor.
    *
-   * The kind menu shows the kinds of the passage the cursor is in, then the
-   * kinds at hand, then the whole catalogue under "More…", and at its foot
-   * names the layout that sets them (ADR 0040). The bar that appears over a
+   * The kind menu shows the kinds written together with the run the cursor
+   * is in, then the kinds at hand, then the whole catalogue under "More…",
+   * and at its foot names the layout that sets them (ADR 0041). The bar that appears over a
    * selection does the same as the marks for what is selected; the keys do
    * it without either.
    */
@@ -17,7 +17,9 @@
   import Clapperboard from '@lucide/svelte/icons/clapperboard';
   import Code from '@lucide/svelte/icons/code';
   import Columns2 from '@lucide/svelte/icons/columns-2';
+  import Columns3 from '@lucide/svelte/icons/columns-3';
   import Drama from '@lucide/svelte/icons/drama';
+  import FileMinus from '@lucide/svelte/icons/file-minus';
   import FileDigit from '@lucide/svelte/icons/file-digit';
   import Globe from '@lucide/svelte/icons/globe';
   import Hash from '@lucide/svelte/icons/hash';
@@ -65,14 +67,15 @@
   import { showPictures } from '$lib/pictures/store.svelte';
   import { documents } from '$lib/preview/documents.svelte';
   import { formatEditorUi } from '$lib/preview/format-editor.svelte';
-  import { familyOf } from '$lib/project/model/families';
   import type { Project } from '$lib/project/model/project.svelte';
   import { spelling } from '$lib/spelling/spelling.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import { askForTable, chooseTable } from '$lib/tables/ask';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
+  import { runAt } from './brackets';
   import {
+    insertBreak,
     insertEquation,
     insertFootnote,
     insertMath,
@@ -80,18 +83,19 @@
     kindOf,
     kindsIn,
     languageOf,
+    paragraphAt,
     setKind,
     setLanguage,
     toggle,
     toggleKind,
   } from './commands';
-  import { CATALOGUE, GROUPS, groupOf, inHand, knownFamily, specOf, type KindGroup } from './kinds';
+  import { fellowsOf, GROUPS, groupOf, inHand, specOf, WORD_KINDS, type KindGroup } from './kinds';
   import LanguageDialog from './LanguageDialog.svelte';
   import { languageItems } from './language-menu';
   import { editPassageKind, newPassageKind } from './own-kinds.svelte';
   import { editorUi, hooksOf } from './ui.svelte';
   import { askRefMark } from './refmarks';
-  import { insertParallel, passageAt, textRun } from './verse';
+  import { insertParallel } from './parallel';
 
   interface Props {
     project: Project;
@@ -125,19 +129,8 @@
   const mixed = $derived(s && body ? kindsIn(s.view.state).length > 1 : false);
   /** What the kind is called: by the catalogue, or by the writer; or "Mixed". */
   const kindLabel = $derived(mixed ? t('editor-kinds-mixed') : nameOf(kind));
-  /** Whether the cursor is in a passage, of any family, whose paragraphs the Numbers menu can number. */
-  const inPassage = $derived(!!s && body && passageAt(s.view.state) !== null);
-  /**
-   * What the cursor stands in that can be numbered: a passage, whose lines
-   * are numbered, or text, whose paragraphs are, in a passage of text of
-   * their own; nothing elsewhere, as in a table.
-   */
-  const numberable = $derived.by((): 'lines' | 'paragraphs' | null => {
-    if (!s || !body) return null;
-    const at = passageAt(s.view.state);
-    if (at) return at.passage.attrs.family === 'text' ? 'paragraphs' : 'lines';
-    return textRun(s.view.state) ? 'paragraphs' : null;
-  });
+  /** Whether the cursor is in a paragraph, whose lines the Numbers menu can number: the dialog says which. */
+  const numberable = $derived(!!s && body && paragraphAt(s.view.state) !== null);
   /** The kind of words at the cursor, or the first in what is selected. */
   const wordKind = $derived(s ? kindMarkOf(s.view.state) : null);
   /** The language of the passage at the cursor, or the first in what is selected, where it has one of its own. */
@@ -214,7 +207,7 @@
   };
   function iconOf(id: string): typeof Pilcrow {
     const spec = specOf(id);
-    return spec ? (ICONS[spec.id] ?? GROUP_ICONS[groupOf(spec.group)]) : PenLine;
+    return spec ? (ICONS[spec.id] ?? GROUP_ICONS[groupOf(spec.id)]) : PenLine;
   }
 
   /** The name of a kind, of the catalogue or the writer's own. */
@@ -242,11 +235,12 @@
   }
 
   /**
-   * Numbers belong to what they number (ADR 0040): the lines one writes to
-   * a passage, a place in prose to a reference mark, the lines the page
-   * makes to the layout. The menu offers the three, each saying what it
-   * numbers. The dialog of a passage is the editor's own, reached through
-   * its hooks; the layout's line numbering is in the document settings.
+   * Numbers belong to what they number (ADR 0041): the lines one writes to
+   * a numbered stretch, a place in prose to a reference mark, the lines the
+   * page makes to the layout. The menu offers the three, each saying what
+   * it numbers. The dialog of the numbers is the editor's own, reached
+   * through its hooks, and says which lines it numbers; the layout's line
+   * numbering is in the document settings.
    */
   function numbers(event: MouseEvent) {
     const view = s?.view;
@@ -256,21 +250,13 @@
     openMenu(
       event.currentTarget as HTMLElement,
       [
-        numberable === 'paragraphs'
-          ? {
-              label: t('editor-numbers-paragraphs'),
-              hint: t('editor-numbers-paragraphs-hint'),
-              icon: Hash,
-              disabled: !hooks?.askNumbers,
-              action: () => hooks?.askNumbers?.(view),
-            }
-          : {
-              label: t('editor-numbers-passage'),
-              hint: t('editor-numbers-passage-hint'),
-              icon: Hash,
-              disabled: !numberable || !hooks?.askNumbers,
-              action: () => hooks?.askNumbers?.(view),
-            },
+        {
+          label: t('editor-numbers-lines'),
+          hint: t('editor-numbers-lines-hint'),
+          icon: Hash,
+          disabled: !numberable || !hooks?.askNumbers,
+          action: () => hooks?.askNumbers?.(view),
+        },
         {
           label: t('editor-refmark'),
           hint: t('editor-numbers-refmark-hint'),
@@ -372,6 +358,19 @@
                 icon: Columns2,
                 action: () => run(insertParallel, view),
               },
+              { kind: 'separator' as const },
+              {
+                label: t('editor-page-break'),
+                hint: t('editor-page-break-hint'),
+                icon: FileMinus,
+                action: () => run(insertBreak('page'), view),
+              },
+              {
+                label: t('editor-column-break'),
+                hint: t('editor-column-break-hint'),
+                icon: Columns3,
+                action: () => run(insertBreak('column'), view),
+              },
             ]
           : []),
         {
@@ -466,26 +465,23 @@
   function grouped(item: (id: string) => MenuItem): MenuItem[] {
     const out: MenuItem[] = [];
     for (const g of GROUPS) {
-      const kinds = CATALOGUE.filter((k) => g.families.includes(k.group) && ofParagraphs(k.id));
+      const kinds = g.kinds.filter((id) => !!specOf(id) && ofParagraphs(id));
       if (!kinds.length) continue;
-      out.push({ kind: 'heading', label: g.label() }, ...kinds.map((k) => item(k.id)));
+      out.push({ kind: 'heading', label: g.label() }, ...kinds.map((id) => item(id)));
     }
     return out;
   }
 
   /**
-   * The kinds of the passage the cursor is in: the roles of its family, of
-   * the catalogue and the writer's own; for a passage of a kind of the
-   * writer's own based on text, that kind. Nothing outside a passage.
+   * The kinds written together with the run the cursor is in: for lines of
+   * verse, lines, speakers and directions; for a part of a script, every
+   * part; for a headword, headwords and glosses; of the catalogue and the
+   * writer's own. Nothing in text.
    */
   function rolesOf(view: EditorView): string[] {
-    const at = passageAt(view.state);
-    if (!at) return [];
-    const family = at.passage.attrs.family as string;
-    const ids = [...CATALOGUE.map((k) => k.id), ...ownParagraphs.map((k) => k.id)];
-    if (!knownFamily(family))
-      return ids.filter((id) => id === family || familyOf(id, own) === family);
-    return ids.filter((id) => ofParagraphs(id) && familyOf(id, own) === family);
+    const at = runAt(view.state, own);
+    if (!at || at.run.kind === 'text') return [];
+    return fellowsOf(at.run.kind, own).filter((id) => ofParagraphs(id));
   }
 
   /** The kinds of the writer's own, each to be changed in its dialog. */
@@ -552,9 +548,9 @@
     // The text loses the cursor while the menu is open: what it was is kept.
     const view = s?.view;
     if (!view) return;
-    // The kinds of the passage the cursor is in first: a speaker and a stage
-    // direction in verse, every part of a script in one; then the kinds at
-    // hand, less those shown already.
+    // The kinds written with the run the cursor is in first: a speaker and a
+    // stage direction in verse, every part of a script in one; then the kinds
+    // at hand, less those shown already.
     const roles = rolesOf(view);
     const hand = inHand(project, suggests).filter((id) => ofParagraphs(id) && !roles.includes(id));
     openMenu(
@@ -644,10 +640,8 @@
         ofPassage,
         { kind: 'separator' },
         foreign,
-        ofWords('title'),
-        ofWords('term'),
-        ofWords('mention'),
-        ofWords('highlight'),
+        // The kinds of words, then a speaker and a direction within a line.
+        ...WORD_KINDS.filter((id) => id !== 'foreign').map((id) => ofWords(id)),
         ...ownWords.map((k) => ofWords(k.id)),
         { kind: 'separator' },
         {

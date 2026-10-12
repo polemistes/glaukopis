@@ -393,11 +393,29 @@
     length(t('format-margin-bottom'), 'page.marginBottom'),
     length(t('format-margin-left'), 'page.marginLeft'),
     length(t('format-margin-right'), 'page.marginRight'),
+    { subheading: t('format-columns-heading') },
+    // A layout written before there were columns has none to say: one column, and the gap as the core's default.
+    number(
+      t('format-columns'),
+      {
+        get: (f) => f.page.columns ?? 1,
+        set: (f, value) => (f.page.columns = Math.max(1, Math.min(4, Math.round(value ?? 1)))),
+      },
+      { min: 1, max: 4, step: 1, hint: t('format-columns-hint') },
+    ),
+    length(
+      t('format-column-gap'),
+      {
+        get: (f) => f.page.columnGap ?? '1cm',
+        set: (f, value) => (f.page.columnGap = value),
+      },
+      { when: (f) => (f.page.columns ?? 1) > 1 },
+    ),
     { note: t('format-lengths-hint') },
   ]);
 
-  // Numbers belong to what they number (ADR 0040): the lines of a numbered
-  // passage are shown as the layout says where the passage does not; the
+  // Numbers belong to what they number (ADR 0041): the lines of a numbered
+  // stretch are shown as the layout says where the stretch does not; the
   // lines of the page are the layout's alone.
   const numbersRows: Row<F>[] = $derived([
     { heading: t('format-section-numbers') },
@@ -712,7 +730,7 @@
     ...GROUPS.map((g) => ({
       id: g.id,
       label: g.label(),
-      kinds: CATALOGUE.filter((k) => g.families.includes(k.group)).map((k): Listed => ({
+      kinds: CATALOGUE.filter((k) => g.kinds.includes(k.id)).map((k): Listed => ({
         id: k.id,
         family: k.family,
         label: k.label(),

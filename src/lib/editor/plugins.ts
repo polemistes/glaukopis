@@ -42,18 +42,12 @@ import {
   setKind,
   toggle,
 } from './commands';
-import { passageBrackets } from './brackets';
-import { familyName } from './kinds';
-import { passages } from './passages';
+import { runBrackets } from './brackets';
+import { breakKey, enterKey, indentKey, joinLineKey, lineMarks } from './keys';
+import { kindName } from './kinds';
+import { LAYOUT_NUMBERS, stretchNumbersPlugin, type NumbersLayout } from './numbers';
+import { acrossParallel, backOutOfParallel } from './parallel';
 import { refMarkKey } from './refmarks';
-import { backOutOfKind, enterKind, tabKind, untabKind } from './script';
-import {
-  acrossParallel,
-  backOutOfParallel,
-  LAYOUT_NUMBERS,
-  passageNumbers,
-  type NumbersLayout,
-} from './verse';
 
 export type KeyAction =
   | 'enter'
@@ -88,19 +82,19 @@ export interface EditorHooks {
    */
   at?: string;
   /**
-   * The kinds of paragraph of the writer's own, by which Enter and Tab
-   * know what follows a paragraph of such a kind, and the passages their
-   * family: as the kind it is based on has it. None, where they are not
-   * given.
+   * The kinds of paragraph of the writer's own, by which Tab knows a line
+   * of verse, the count which lines are counted, and the brackets the
+   * names of runs: as the kind it is based on has it. None, where they are
+   * not given.
    */
   passageKinds?: () => { id: string; name?: string; basedOn: string }[];
-  /** Asks how the passage the cursor is in is numbered, in the dialog of it (ADR 0039). */
+  /** Asks how the lines where the cursor is are numbered, in the dialog of it (ADR 0041). */
   askNumbers?: (view: EditorView) => void;
   /** Asks for the language of what is selected, by its tag; `tag` is the one it has now. */
   askLanguage?: (view: EditorView, tag: string | null) => void;
   /** The language of the document whose text the editor holds, as a tag; nothing where it is not known. */
   language?: () => string | null;
-  /** What the document's layout says of the numbers of a passage that does not say: every how many, and on which side. */
+  /** What the document's layout says of the numbers of a stretch that does not say: every how many, and on which side. */
   numbers?: () => NumbersLayout;
 }
 
@@ -141,8 +135,9 @@ const dashes = [
 
 /**
  * A rule that makes a text paragraph of a kind when a sign is typed at its
- * start: "> " a quotation, "- " an item, "1. " a numbered item, which is
- * given the number where that is not one. The sign is taken away.
+ * start: "> " a quotation, "- " an item, "1. " a numbered item; one that
+ * begins at another number is given that number by hand, in the mark of
+ * its line. The sign is taken away.
  */
 function kindRule(
   regexp: RegExp,
@@ -153,15 +148,26 @@ function kindRule(
     const $start = state.doc.resolve(start);
     const paragraph = $start.parent;
     if (paragraph.type.name !== 'paragraph' || paragraph.attrs.kind !== 'text') return null;
-    // Only at the very start of the paragraph.
-    if ($start.parentOffset !== 0) return null;
-    const attrs = { ...paragraph.attrs, kind, number: number?.(match) ?? null };
-    return state.tr.delete(start, end).setNodeMarkup($start.before(), undefined, attrs);
+    // Only at the very start of the paragraph, after the mark of its line if it has one.
+    const marks = paragraph.firstChild?.type.name === 'linemark' ? 1 : 0;
+    if ($start.parentOffset !== marks) return null;
+    const tr = state.tr
+      .delete(start, end)
+      .setNodeMarkup($start.before(), undefined, { ...paragraph.attrs, kind });
+    const given = number?.(match);
+    const linemark = state.schema.nodes.linemark;
+    if (given && linemark) {
+      const at = $start.start();
+      const had = marks ? paragraph.firstChild : null;
+      if (had) tr.setNodeMarkup(at, undefined, { ...had.attrs, number: given });
+      else tr.insert(at, linemark.create({ number: given }));
+    }
+    return tr;
   });
 }
 
 function blockRules(schema: Schema): InputRule[] {
-  if (!schema.nodes.passage) return [];
+  if (!schema.nodes.linemark) return [];
   return [
     kindRule(/^\s*>\s$/, 'quote'),
     kindRule(/^\s*([-+*])\s$/, 'item'),
@@ -252,9 +258,8 @@ export function passes(): Plugin {
 }
 
 export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
-  const passage = schema.nodes.passage;
   const br = schema.nodes.hard_break;
-  // The kinds of the writer's own, for the family of a paragraph of one and what Enter and Tab make after it.
+  // The kinds of the writer's own, for what they are based on: a line of verse, a kind that is counted, the name of a run.
   const own = () => hooks.passageKinds?.() ?? [];
 
   const keys: Record<string, Command> = {
@@ -301,6 +306,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
         'backspace-at-start',
         (state) => isAtStart(state) && state.selection.$from.depth === 1,
       ),
+      backOutOfParallel,
+      joinLineKey,
       joinBackward,
       selectNodeBackward,
     ),
@@ -309,28 +316,24 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
       act(hooks, 'delete-at-end', (state) => isAtEnd(state) && state.selection.$from.depth === 1),
     ),
   };
-  if (passage) {
-    keys.Enter = chainCommands(
-      openSelected,
-      leaveCaption,
-      enterKind(own),
-      createParagraphNear,
-      liftEmptyBlock,
-      splitBlock,
-    );
-    keys.Tab = chainCommands(tabKind(own), acrossParallel(false), act(hooks, 'tab'));
-    keys['Shift-Tab'] = chainCommands(
-      untabKind(own),
-      acrossParallel(true),
-      act(hooks, 'shift-tab'),
-    );
-    keys.Backspace = chainCommands(backOutOfKind(own), backOutOfParallel, keys.Backspace);
-  }
+  // The same in every kind of paragraph: see `keys.ts`.
+  keys.Enter = chainCommands(
+    openSelected,
+    leaveCaption,
+    enterKey,
+    createParagraphNear,
+    liftEmptyBlock,
+    splitBlock,
+  );
+  // In a table, the table's own Tab comes first (its plugins stand before the keys); across texts side by side next.
+  keys.Tab = chainCommands(acrossParallel(false), indentKey(1, own), act(hooks, 'tab'));
+  keys['Shift-Tab'] = chainCommands(
+    acrossParallel(true),
+    indentKey(-1, own),
+    act(hooks, 'shift-tab'),
+  );
   if (br) {
-    const hardBreak: Command = chainCommands(exitCode, (state, dispatch) => {
-      if (dispatch) dispatch(state.tr.replaceSelectionWith(br.create()).scrollIntoView());
-      return true;
-    });
+    const hardBreak: Command = chainCommands(exitCode, breakKey);
     keys['Shift-Enter'] = hardBreak;
     keys['Mod-Enter'] = hardBreak;
   }
@@ -354,12 +357,12 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     cite,
     ids(),
     rows(),
-    // The shape of the text, kept after every change: see `passages.ts`.
-    passages(own),
-    // The numbers of the paragraphs of a numbered passage: see `verse.ts`.
-    passageNumbers(own, () => hooks.numbers?.() ?? LAYOUT_NUMBERS),
-    // The bracket of every passage, with its name: see `brackets.ts`.
-    passageBrackets((family) => familyName(family, own())),
+    // The marks of lines kept at the start of their lines: see `keys.ts`.
+    lineMarks(),
+    // The numbers of the lines of a numbered stretch: see `numbers.ts`.
+    stretchNumbersPlugin(own, () => hooks.numbers?.() ?? LAYOUT_NUMBERS),
+    // The bracket of every run, with its name: see `brackets.ts`.
+    runBrackets(own, (kind) => kindName(kind, own())),
     // Tables: before the keys of the text, since Tab and the arrows mean something of their own in them.
     ...tablePlugins(),
     keymap(keys),

@@ -501,3 +501,45 @@ export class FootnoteView implements NodeView {
     this.#close();
   }
 }
+
+/**
+ * A break of the page or of the column, where one writes: a dashed line
+ * with its name across it. What it is named is the interface's; the
+ * document sets the break itself.
+ */
+export class PageBreakView implements NodeView {
+  dom: HTMLElement;
+  #what: string;
+
+  constructor(node: Node) {
+    this.#what = node.attrs.what === 'column' ? 'column' : 'page';
+    this.dom = document.createElement('div');
+    this.dom.className = 'pagebreak';
+    this.dom.contentEditable = 'false';
+    this.#draw();
+  }
+
+  #draw() {
+    const label = t(this.#what === 'column' ? 'editor-column-break' : 'editor-page-break');
+    this.dom.dataset.what = this.#what;
+    this.dom.dataset.label = label;
+    const words = document.createElement('span');
+    words.className = 'pagebreak-label';
+    words.textContent = label;
+    this.dom.replaceChildren(words);
+  }
+
+  update(node: Node): boolean {
+    if (node.type.name !== 'pagebreak') return false;
+    const what = node.attrs.what === 'column' ? 'column' : 'page';
+    if (what !== this.#what) {
+      this.#what = what;
+      this.#draw();
+    }
+    return true;
+  }
+
+  ignoreMutation(): boolean {
+    return true;
+  }
+}

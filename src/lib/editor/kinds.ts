@@ -341,7 +341,8 @@ function declarations(look: Look, family: KindFamily): string[] {
     if (look.align) out.push(`text-align: ${look.align === 'justified' ? 'justify' : look.align};`);
     const indentLeft = points(look.indentLeft);
     // The bracket of a run and the numbers in the margin stand where the paragraph would without it (app.css).
-    if (indentLeft !== null) out.push(`--inset: ${em(indentLeft)}; margin-left: ${em(indentLeft)};`);
+    if (indentLeft !== null)
+      out.push(`--inset: ${em(indentLeft)}; margin-left: ${em(indentLeft)};`);
     const indentRight = points(look.indentRight);
     if (indentRight !== null) out.push(`margin-right: ${em(indentRight)};`);
     const firstLine = points(look.firstLine);

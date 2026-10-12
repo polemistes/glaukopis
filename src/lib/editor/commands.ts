@@ -16,11 +16,10 @@ import {
   type Command,
   type EditorState,
 } from 'prosemirror-state';
-import { renamed, tabOf, type BasedKind } from '$lib/project/model/families';
+import { renamed, type BasedKind } from '$lib/project/model/families';
 import type { Inline, RefForm } from '$lib/project/model/text';
 import { newId } from '$lib/util/id';
-import { specOf } from './kinds';
-import { asWritten } from './stanzas';
+import { catalogueKindOf, specOf } from './kinds';
 import { bodySchema, type CiteItem, type CiteMode } from './schema';
 
 export function markActive(state: EditorState, type: MarkType): boolean {
@@ -100,14 +99,17 @@ export function kindsIn(state: EditorState): string[] {
   return out;
 }
 
+/** The kinds whose paragraphs keep their indent when a paragraph is made one of them: items, and lines of verse. */
+const KEEPS_INDENT = ['item', 'numbered', 'line'];
+
 /**
  * Makes the paragraphs the selection touches of one kind, or the one the
- * cursor is in: never more, never less. The passages follow (`passages.ts`).
- * A kind whose Tab does not indent has no indent; a number, whether the
- * paragraph is counted, and words in the margin stay. A kind of words is
- * toggled on the words instead, as `toggleKind` does. An id that is not in
- * the catalogue is a kind of the writer's own, which `own` says what it is
- * based on, so that its indent is kept or not.
+ * cursor is in: never more, never less, and nothing but the label changes
+ * (ADR 0041). The indent is kept where the kind is an item or a line of
+ * verse, or based on one, and taken away otherwise; the numbering, the line
+ * marks and every word stay. A kind of words is toggled on the words
+ * instead, as `toggleKind` does. An id that is not in the catalogue is a
+ * kind of the writer's own, which `own` says what it is based on.
  */
 export function setKind(id: string, own: readonly BasedKind[] = []): Command {
   return (state, dispatch, view) => {
@@ -115,24 +117,11 @@ export function setKind(id: string, own: readonly BasedKind[] = []): Command {
     if (specOf(kind)?.family === 'words') return toggleKind(kind)(state, dispatch, view);
     const paragraphs = paragraphsIn(state);
     if (!paragraphs.length) return false;
-    // A poem written as paragraphs of lines broken by hand, made verse, or verse with stanzas made text: read as written.
-    const written = asWritten(state.schema, paragraphs, kind, own);
-    if (written) {
-      if (dispatch) {
-        const tr = state.tr.replaceWith(written.from, written.to, written.nodes);
-        const end = written.from + written.nodes.reduce((n, node) => n + node.nodeSize, 0);
-        tr.setSelection(
-          TextSelection.create(tr.doc, written.from + 1, Math.max(written.from + 1, end - 1)),
-        );
-        dispatch(tr.scrollIntoView());
-      }
-      return true;
-    }
     if (dispatch) {
       const tr = state.tr;
-      const indents = tabOf(kind, own) === 'indent';
+      const keeps = KEEPS_INDENT.includes(catalogueKindOf(kind, own));
       for (const { node, pos } of paragraphs) {
-        const attrs = { ...node.attrs, kind, indent: indents ? node.attrs.indent : 0 };
+        const attrs = { ...node.attrs, kind, indent: keeps ? node.attrs.indent : 0 };
         if (attrs.kind === node.attrs.kind && attrs.indent === node.attrs.indent) continue;
         tr.setNodeMarkup(pos, undefined, attrs);
       }
@@ -143,24 +132,45 @@ export function setKind(id: string, own: readonly BasedKind[] = []): Command {
 }
 
 /**
- * Indents the paragraphs the selection touches a step more or less, where
- * their kind is indented by Tab: lines of verse, items of a list; from no
- * indent up to eight. Nothing for a paragraph of any other kind.
+ * Indents the paragraphs the selection touches a step more or less, from
+ * no indent up to eight, whatever their kind: what an indent means, the
+ * layout says. Lines of verse are indented line by line by Tab instead
+ * (`keys.ts`).
  */
-export function indentParagraph(by: 1 | -1, own: readonly BasedKind[] = []): Command {
+export function indentParagraph(by: 1 | -1): Command {
   return (state, dispatch) => {
-    const paragraphs = paragraphsIn(state).filter(
-      ({ node }) => tabOf(renamed((node.attrs.kind as string) || 'text'), own) === 'indent',
-    );
+    const paragraphs = paragraphsIn(state);
     if (!paragraphs.length) return false;
+    const tr = state.tr;
+    for (const { node, pos } of paragraphs) {
+      const indent = Math.max(0, Math.min(8, (Number(node.attrs.indent) || 0) + by));
+      if (indent !== node.attrs.indent) tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent });
+    }
+    if (!tr.docChanged) return false;
+    if (dispatch) dispatch(tr.scrollIntoView());
+    return true;
+  };
+}
+
+/**
+ * A break of the page or of the column, where the cursor is: in place of
+ * the paragraph when that is empty, and after it otherwise. The writing
+ * goes on in the paragraph after it.
+ */
+export function insertBreak(what: 'page' | 'column'): Command {
+  return (state, dispatch) => {
+    const type = state.schema.nodes.pagebreak;
+    const paragraph = state.schema.nodes.paragraph;
+    if (!type || !paragraph) return false;
+    const at = placeForBlock(state, type);
+    if (!at) return false;
     if (dispatch) {
-      const tr = state.tr;
-      for (const { node, pos } of paragraphs) {
-        const indent = Math.max(0, Math.min(8, (Number(node.attrs.indent) || 0) + by));
-        if (indent !== node.attrs.indent)
-          tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent });
-      }
-      if (tr.docChanged) dispatch(tr.scrollIntoView());
+      const tr = state.tr.replaceWith(at.from, at.to, type.create({ what }));
+      const after = at.from + 1;
+      const next = tr.doc.resolve(after).nodeAfter;
+      if (!next || next.type !== paragraph) tr.insert(after, paragraph.create());
+      tr.setSelection(TextSelection.create(tr.doc, after + 1));
+      dispatch(tr.scrollIntoView());
     }
     return true;
   };
@@ -614,7 +624,14 @@ export function cursorTo(where: 'start' | 'end'): Command {
 
 export function isAtStart(state: EditorState): boolean {
   const { selection } = state;
-  return selection.empty && selection.from <= TextSelection.atStart(state.doc).from;
+  const start = TextSelection.atStart(state.doc).$from;
+  // The marks of the first line stand before the place where one writes.
+  let marks = 0;
+  for (let i = 0; i < start.parent.childCount; i++) {
+    if (start.parent.child(i).type.name !== 'linemark') break;
+    marks += 1;
+  }
+  return selection.empty && selection.from <= start.pos + marks;
 }
 
 export function isAtEnd(state: EditorState): boolean {

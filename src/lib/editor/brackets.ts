@@ -1,22 +1,28 @@
 /**
- * The bracket of a passage (ADR 0040): the thin line at the left of every
- * passage, which the style sheet draws, and a small label with the name of
- * its family at its head, which is seen while the cursor is in the passage
- * or the pointer rests on it. What is said of a passage is said from the
- * label: how its paragraphs are numbered, its language, selecting it,
- * making it text, splitting it.
+ * The bracket of a run (ADR 0041): paragraphs of one kind standing
+ * together, with the speakers and directions among them, are seen as one,
+ * by a thin line at their left and a small label at its head with the name
+ * of the kind, and "numbered" where the run lies in a numbered stretch.
+ * Nothing is stored: the run is found anew from the kinds of the
+ * paragraphs (`shape.ts`). Text has no bracket, unless it is numbered; nor
+ * have speakers and directions of their own.
  *
- * The label is a widget at the start of the passage, so that it takes no
- * room from the text and is no part of it; the passage the cursor is in is
- * marked `data-current`.
+ * The label is seen while the cursor is in the run or the pointer rests on
+ * it, and pressed for the menu of the run: how its lines are numbered, its
+ * language, selecting it, making it text, and where a run begins.
+ *
+ * The line and the label are widgets at the start of the run's paragraphs,
+ * so that they take no room from the text and are no part of it; the
+ * paragraphs of a run are marked `data-run` with its kind, the first
+ * `data-run-first`, and those of the run the cursor is in `data-current`.
  */
 
 import Globe from '@lucide/svelte/icons/globe';
 import Hash from '@lucide/svelte/icons/hash';
+import Merge from '@lucide/svelte/icons/merge';
 import Pilcrow from '@lucide/svelte/icons/pilcrow';
 import SplitSquareVertical from '@lucide/svelte/icons/split-square-vertical';
 import TextSelect from '@lucide/svelte/icons/box-select';
-import type { Node } from 'prosemirror-model';
 import {
   Plugin,
   PluginKey,
@@ -29,124 +35,162 @@ import { t } from '$lib/i18n';
 import type { BasedKind } from '$lib/project/model/families';
 import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
 import { languageItems } from './language-menu';
+import { eachHolder, kindOfNode, runsIn, type Run } from './shape';
 import { hooksOf } from './ui.svelte';
-import { passageAt } from './verse';
-import { asWritten, type Given } from './stanzas';
 
-export const bracketsKey = new PluginKey<DecorationSet>('passage-brackets');
+export const bracketsKey = new PluginKey<DecorationSet>('run-brackets');
 
-/** The passage at a position, where there is one. */
-function passageNode(state: EditorState, pos: number): Node | null {
-  const node = pos >= 0 && pos < state.doc.content.size ? state.doc.nodeAt(pos) : null;
-  return node?.type.name === 'passage' ? node : null;
+/** Whether a run is drawn with a bracket: a run of a kind, or of text that is numbered. */
+export function bracketed(run: Run): boolean {
+  return !run.among && (run.kind !== 'text' || numbered(run));
 }
 
-/** Selects the whole passage that begins at `pos`. */
-export function selectPassage(pos: number): Command {
+/** Whether a run lies in a numbered stretch. */
+export function numbered(run: Run): boolean {
+  return run.paragraphs.some((p) => !!p.node.attrs.numbering);
+}
+
+/** The run whose first paragraph begins at `pos`, where there is one. */
+export function runFrom(
+  state: EditorState,
+  pos: number,
+  own: readonly BasedKind[] = [],
+): Run | null {
+  if (pos < 0 || pos >= state.doc.content.size) return null;
+  const $pos = state.doc.resolve(pos);
+  return runsIn($pos.parent, $pos.start(), own).find((r) => r.paragraphs[0].pos === pos) ?? null;
+}
+
+/** The run the cursor is in, and which of its paragraphs the cursor is in; nothing outside a paragraph. */
+export function runAt(
+  state: EditorState,
+  own: readonly BasedKind[] = [],
+): { run: Run; index: number } | null {
+  const { $from } = state.selection;
+  for (let d = $from.depth; d > 0; d--) {
+    if ($from.node(d).type.name !== 'paragraph') continue;
+    const pos = $from.before(d);
+    for (const run of runsIn($from.node(d - 1), $from.start(d - 1), own)) {
+      const index = run.paragraphs.findIndex((p) => p.pos === pos);
+      if (index >= 0) return { run, index };
+    }
+    return null;
+  }
+  return null;
+}
+
+/** Where a run's text begins and ends. */
+function spanOf(run: Run): { from: number; to: number } {
+  const last = run.paragraphs[run.paragraphs.length - 1];
+  return { from: run.paragraphs[0].pos + 1, to: last.pos + last.node.nodeSize - 1 };
+}
+
+/** Selects the whole run that begins at `pos`. */
+export function selectRun(pos: number, own: readonly BasedKind[] = []): Command {
   return (state, dispatch) => {
-    const passage = passageNode(state, pos);
-    if (!passage) return false;
-    if (dispatch)
-      dispatch(
-        state.tr
-          .setSelection(TextSelection.create(state.doc, pos + 1, pos + passage.nodeSize - 1))
-          .scrollIntoView(),
-      );
+    const run = runFrom(state, pos, own);
+    if (!run) return false;
+    if (dispatch) {
+      const { from, to } = spanOf(run);
+      dispatch(state.tr.setSelection(TextSelection.create(state.doc, from, to)).scrollIntoView());
+    }
     return true;
   };
 }
 
 /**
- * Makes every paragraph of the passage that begins at `pos` text. The
- * passage then goes, since text forms none (`passages.ts`); the cursor
- * stays where it was.
+ * Makes the paragraphs of the kind of the run that begins at `pos` text,
+ * and changes nothing else: their lines, their indents, their numbering,
+ * and the speakers and directions among them, stay as they are.
  */
-export function passageToText(pos: number, own: readonly BasedKind[] = []): Command {
+export function runToText(pos: number, own: readonly BasedKind[] = []): Command {
   return (state, dispatch) => {
-    const passage = passageNode(state, pos);
-    if (!passage) return false;
-    // Verse with stanzas becomes a paragraph for each stanza, its lines broken by hand.
-    const given: Given[] = [];
-    passage.forEach((node, offset) => given.push({ node, pos: pos + 1 + offset }));
-    const written = asWritten(state.schema, given, 'text', own);
-    if (written) {
-      if (dispatch)
-        dispatch(state.tr.replaceWith(written.from, written.to, written.nodes).scrollIntoView());
-      return true;
-    }
+    const run = runFrom(state, pos, own);
+    if (!run || run.kind === 'text') return false;
     if (dispatch) {
       const tr = state.tr;
-      passage.forEach((paragraph, offset) => {
-        if (paragraph.type.name !== 'paragraph') return;
-        if (paragraph.attrs.kind === 'text' && !paragraph.attrs.indent) return;
-        tr.setNodeMarkup(pos + 1 + offset, undefined, {
-          ...paragraph.attrs,
-          kind: 'text',
-          indent: 0,
-        });
-      });
+      for (const { node, pos: at } of run.paragraphs)
+        if (kindOfNode(node) === run.kind)
+          tr.setNodeMarkup(at, undefined, { ...node.attrs, kind: 'text' });
       dispatch(tr.scrollIntoView());
     }
     return true;
   };
 }
 
-/**
- * Whether the passage the cursor is in can be split before the paragraph
- * the cursor is in: not before its first paragraph.
- */
-export function canSplitPassage(state: EditorState): boolean {
-  const at = passageAt(state);
+/** Whether a new run can begin at the paragraph the cursor is in: within a run, and not at its first. */
+export function canBeginRun(state: EditorState, own: readonly BasedKind[] = []): boolean {
+  const at = runAt(state, own);
   return !!at && at.index > 0;
 }
 
-/**
- * Splits the passage the cursor is in before the paragraph the cursor is
- * in. Passages of one family that stand next to each other are always one
- * (ADR 0040, rule 2), so an empty paragraph of text is put between the two
- * halves, which keeps them apart; each half keeps the settings of the
- * whole. The cursor stays in its paragraph, which begins the second half.
- */
-export const splitPassage: Command = (state, dispatch) => {
-  const at = passageAt(state);
-  if (!at || at.index === 0) return false;
-  const paragraph = state.schema.nodes.paragraph;
-  if (!paragraph) return false;
-  if (dispatch) dispatch(state.tr.insert(at.paragraphPos, paragraph.create()).scrollIntoView());
-  return true;
-};
+/** A new run of its kind begins at the paragraph the cursor is in, though the one before is of the same kind. */
+export function beginRun(own: readonly BasedKind[] = []): Command {
+  return (state, dispatch) => {
+    const at = runAt(state, own);
+    if (!at || at.index === 0) return false;
+    const { node, pos } = at.run.paragraphs[at.index];
+    if (dispatch)
+      dispatch(
+        state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, new: true }).scrollIntoView(),
+      );
+    return true;
+  };
+}
 
-/** The language the passage that begins at `pos` is in, by the first of its words that have one of their own; nothing where it is the text's. */
-export function passageLanguage(state: EditorState, pos: number): string | null {
-  const passage = passageNode(state, pos);
+/** The run that begins at `pos` is joined with the run before it again, where it was begun as a new one. */
+export function joinRunBefore(pos: number, own: readonly BasedKind[] = []): Command {
+  return (state, dispatch) => {
+    const run = runFrom(state, pos, own);
+    const begun = run?.paragraphs.find((p) => p.node.attrs.new === true);
+    if (!begun) return false;
+    if (dispatch)
+      dispatch(state.tr.setNodeMarkup(begun.pos, undefined, { ...begun.node.attrs, new: null }));
+    return true;
+  };
+}
+
+/** The language the run that begins at `pos` is in, by the first of its words that have one of their own; nothing where it is the text's. */
+export function runLanguage(
+  state: EditorState,
+  pos: number,
+  own: readonly BasedKind[] = [],
+): string | null {
+  const run = runFrom(state, pos, own);
   const type = state.schema.marks.lang;
-  if (!passage || !type) return null;
+  if (!run || !type) return null;
   let found: string | null = null;
-  passage.descendants((node) => {
-    if (found) return false;
-    if (node.isText) {
-      const mark = type.isInSet(node.marks);
-      const tag = typeof mark?.attrs.tag === 'string' ? mark.attrs.tag.trim() : '';
-      if (tag) found = tag;
-    }
-    return !found;
-  });
+  for (const { node } of run.paragraphs) {
+    node.descendants((child) => {
+      if (found) return false;
+      if (child.isText) {
+        const mark = type.isInSet(child.marks);
+        const tag = typeof mark?.attrs.tag === 'string' ? mark.attrs.tag.trim() : '';
+        if (tag) found = tag;
+      }
+      return !found;
+    });
+    if (found) break;
+  }
   return found;
 }
 
 /**
- * Gives the whole passage that begins at `pos` a language of its own, or,
- * with nothing, takes it away, so that it is in the language of the text
- * again. The passage is left selected, so that what was given it is seen.
+ * Gives the whole run that begins at `pos` a language of its own, or, with
+ * nothing, takes it away, so that it is in the language of the text again.
+ * The run is left selected, so that what was given it is seen.
  */
-export function languageOverPassage(pos: number, tag: string | null): Command {
+export function languageOverRun(
+  pos: number,
+  tag: string | null,
+  own: readonly BasedKind[] = [],
+): Command {
   return (state, dispatch) => {
-    const passage = passageNode(state, pos);
+    const run = runFrom(state, pos, own);
     const type = state.schema.marks.lang;
-    if (!passage || !type) return false;
+    if (!run || !type) return false;
     if (dispatch) {
-      const from = pos + 1;
-      const to = pos + passage.nodeSize - 1;
+      const { from, to } = spanOf(run);
       const lang = tag?.trim() ?? '';
       const tr = state.tr;
       if (lang) tr.addMark(from, to, type.create({ tag: lang }));
@@ -159,32 +203,33 @@ export function languageOverPassage(pos: number, tag: string | null): Command {
 }
 
 /**
- * Opens the menu of the passage that begins at `pos`, beside `anchor`. What
- * numbers the passage and what asks for another language are the editor's
+ * Opens the menu of the run that begins at `pos`, beside `anchor`. What
+ * numbers the run and what asks for another language are the editor's
  * dialogs, reached through its hooks.
  */
-export function passageMenu(view: EditorView, pos: number, anchor: HTMLElement) {
+export function runMenu(view: EditorView, pos: number, anchor: HTMLElement) {
   const { state } = view;
-  const passage = passageNode(state, pos);
-  if (!passage) return;
   const hooks = hooksOf.get(view);
-  const at = passageAt(state);
-  const inside = at?.pos === pos;
-  const run = (command: Command) => {
+  const own = hooks?.passageKinds?.() ?? [];
+  const run = runFrom(state, pos, own);
+  if (!run) return;
+  const at = runAt(state, own);
+  const inside = at?.run.paragraphs[0].pos === pos;
+  const exec = (command: Command) => {
     if (view.isDestroyed) return;
     command(view.state, view.dispatch, view);
     view.focus();
   };
-  /** The cursor into the passage, where it is not there, so that what is asked of the passage the cursor is in is asked of this one. */
+  /** The cursor into the run, where it is not there, so that what is asked of the lines where the cursor is is asked of this run. */
   const enter = () => {
     if (inside || view.isDestroyed) return;
     view.dispatch(view.state.tr.setSelection(TextSelection.near(view.state.doc.resolve(pos + 1))));
   };
-  const current = passageLanguage(state, pos);
+  const current = runLanguage(state, pos, own);
   const items: MenuItem[] = [
     {
-      label: t('editor-passage-numbers'),
-      hint: t('editor-passage-numbers-hint'),
+      label: t('editor-run-numbers'),
+      hint: t('editor-run-numbers-hint'),
       icon: Hash,
       disabled: !hooks?.askNumbers,
       action: () => {
@@ -199,105 +244,148 @@ export function passageMenu(view: EditorView, pos: number, anchor: HTMLElement) 
       items: languageItems({
         language: hooks?.language?.() ?? null,
         current,
-        set: (tag) => run(languageOverPassage(pos, tag)),
+        set: (tag) => exec(languageOverRun(pos, tag, own)),
         other: () => {
-          run(selectPassage(pos));
+          exec(selectRun(pos, own));
           hooks?.askLanguage?.(view, current);
         },
       }),
     },
     { kind: 'separator' },
     {
-      label: t('editor-passage-select'),
+      label: t('editor-run-select'),
       icon: TextSelect,
-      action: () => run(selectPassage(pos)),
+      action: () => exec(selectRun(pos, own)),
     },
     {
-      label: t('editor-passage-to-text'),
-      hint: t('editor-passage-to-text-hint'),
+      label: t('editor-run-to-text'),
+      hint: t('editor-run-to-text-hint'),
       icon: Pilcrow,
-      action: () => run(passageToText(pos, hooks?.passageKinds?.() ?? [])),
+      disabled: run.kind === 'text',
+      action: () => exec(runToText(pos, own)),
     },
     {
-      label: t('editor-passage-split'),
-      hint: t('editor-passage-split-hint'),
+      label: t('editor-run-begin'),
+      hint: t('editor-run-begin-hint'),
       icon: SplitSquareVertical,
-      disabled: !inside || !canSplitPassage(state),
-      action: () => run(splitPassage),
+      disabled: !inside || !canBeginRun(state, own),
+      action: () => exec(beginRun(own)),
+    },
+    {
+      label: t('editor-run-join'),
+      hint: t('editor-run-join-hint'),
+      icon: Merge,
+      disabled: !run.paragraphs.some((p) => p.node.attrs.new === true),
+      action: () => exec(joinRunBefore(pos, own)),
     },
   ];
   openMenu(anchor, items, { align: 'start', onclose: () => view.focus() });
 }
 
-/** The label of a passage, as a widget at its head: pressing it opens the menu of the passage. */
+/** The label of a run, as a widget at its head: pressing it opens the menu of the run. */
 function label(
-  name: string,
-  family: string,
+  words: string,
+  kind: string,
 ): (view: EditorView, getPos: () => number | undefined) => HTMLElement {
   return (view, getPos) => {
     const el = document.createElement('span');
-    el.className = 'passage-label';
+    el.className = 'run-label';
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '-1');
-    el.dataset.family = family;
-    el.textContent = name;
-    el.title = t('editor-passage-label-hint', { family: name });
+    el.dataset.kind = kind;
+    el.textContent = words;
+    el.title = t('editor-run-label-hint', { kind: words });
     // The text keeps its cursor: the label is not a place in it.
     el.addEventListener('mousedown', (event) => event.preventDefault());
     el.addEventListener('click', (event) => {
       event.preventDefault();
       const pos = getPos();
       if (pos === undefined || !view.editable) return;
-      passageMenu(view, view.state.doc.resolve(pos).before(), el);
+      runMenu(view, view.state.doc.resolve(pos).before(), el);
     });
     return el;
   };
 }
 
+/** The line of a bracket beside one paragraph of a run. */
+function line(): HTMLElement {
+  const el = document.createElement('span');
+  el.className = 'run-line';
+  el.setAttribute('aria-hidden', 'true');
+  return el;
+}
+
 /**
- * The label of every passage, and `data-current` on the passage the
- * cursor is in. `name` gives the words for a family: of the catalogue, or
- * a kind of the writer's own.
+ * The brackets of every run: on each paragraph its run's kind, on the
+ * first that it is the first, the line beside each, the label at the head,
+ * and `data-current` on the paragraphs of the run the cursor is in. `name`
+ * gives the words for a kind: of the catalogue, or a kind of the writer's
+ * own.
  */
-function brackets(state: EditorState, name: (family: string) => string): DecorationSet {
+function brackets(
+  state: EditorState,
+  own: readonly BasedKind[],
+  name: (kind: string) => string,
+): DecorationSet {
   const list: Decoration[] = [];
-  const { $from } = state.selection;
-  state.doc.descendants((node, pos) => {
-    if (node.type.name !== 'passage') return !node.isTextblock;
-    const family = String(node.attrs.family ?? 'text');
-    const words = name(family);
-    list.push(
-      Decoration.widget(pos + 1, label(words, family), {
-        side: -1,
-        key: `passage-label:${family}:${words}`,
-        ignoreSelection: true,
-        stopEvent: () => true,
-      }),
-    );
-    if ($from.pos > pos && $from.pos < pos + node.nodeSize)
-      list.push(Decoration.node(pos, pos + node.nodeSize, { 'data-current': '' }));
-    return false;
+  const { from, to } = state.selection;
+  eachHolder(state.doc, (parent, start) => {
+    for (const run of runsIn(parent, start, own)) {
+      if (!bracketed(run)) continue;
+      const { from: first, to: last } = spanOf(run);
+      const current = from <= last + 1 && to >= first - 1;
+      const words = numbered(run)
+        ? `${name(run.kind)} · ${t('editor-bracket-numbered')}`
+        : name(run.kind);
+      run.paragraphs.forEach(({ node, pos }, i) => {
+        list.push(
+          Decoration.node(pos, pos + node.nodeSize, {
+            'data-run': run.kind,
+            ...(i === 0 ? { 'data-run-first': '' } : {}),
+            ...(current ? { 'data-current': '' } : {}),
+          }),
+        );
+        list.push(
+          Decoration.widget(pos + 1, line, {
+            side: -3,
+            key: 'run-line',
+            ignoreSelection: true,
+          }),
+        );
+      });
+      list.push(
+        Decoration.widget(first, label(words, run.kind), {
+          side: -4,
+          key: `run-label:${run.kind}:${words}`,
+          ignoreSelection: true,
+          stopEvent: () => true,
+        }),
+      );
+    }
   });
   return DecorationSet.create(state.doc, list);
 }
 
 /**
- * Draws the brackets of the passages: their labels, and which one the
- * cursor is in. `name` gives the words for a family, which are read anew
- * whenever the decorations are, so that a kind of the writer's own that is
- * renamed is seen under its new name at the next change.
+ * Draws the brackets of the runs: their lines and labels, and which run the
+ * cursor is in. `own` gives the kinds of the writer's own, and `name` the
+ * words for a kind, which are read anew whenever the decorations are, so
+ * that a kind of the writer's own that is renamed is seen under its new
+ * name at the next change.
  */
-export function passageBrackets(name: (family: string) => string): Plugin<DecorationSet> {
+export function runBrackets(
+  own: () => readonly BasedKind[] = () => [],
+  name: (kind: string) => string = (kind) => kind,
+): Plugin<DecorationSet> {
   return new Plugin<DecorationSet>({
     key: bracketsKey,
     state: {
-      init: (_config, state) => brackets(state, name),
+      init: (_config, state) => brackets(state, own(), name),
       apply: (tr, set, _old, state) =>
-        tr.docChanged || tr.selectionSet || tr.getMeta(bracketsKey) ? brackets(state, name) : set,
+        tr.docChanged || tr.selectionSet || tr.getMeta(bracketsKey)
+          ? brackets(state, own(), name)
+          : set,
     },
     props: { decorations: (state) => bracketsKey.getState(state) },
   });
 }
-
-/** The kinds of the writer's own, with their names, as the hooks give them. */
-export type NamedKind = BasedKind & { name?: string };
