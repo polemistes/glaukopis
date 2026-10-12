@@ -253,7 +253,7 @@ pub(super) fn unmark(blocks: &mut Vec<Block>) {
     for block in blocks.iter_mut() {
         match block {
             Block::Paragraph { content, .. } => unmark_line(content),
-            Block::Passage { content, .. } => unmark(content),
+
             Block::Figure { caption, .. } => unmark_line(caption),
             Block::Table(table) => {
                 unmark_line(&mut table.caption);
@@ -269,7 +269,7 @@ pub(super) fn unmark(blocks: &mut Vec<Block>) {
                 unmark(left);
                 unmark(right);
             }
-            Block::Equation { .. } => {}
+            Block::Equation { .. } | Block::Break { .. } => {}
         }
     }
     // A paragraph of text that held nothing but the mark holds nothing.

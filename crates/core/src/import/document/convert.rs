@@ -6,7 +6,7 @@ use super::locating::{locator, terms_for};
 use super::pictures::{name_of, width_for};
 use super::plain::{clean, text_of};
 use super::*;
-use crate::document::Numbering;
+use crate::document::BreakKind;
 use crate::formats::kinds;
 
 // =========================================================================
@@ -228,7 +228,7 @@ fn line_of(blocks: Vec<Block>, aside: &mut Vec<Block>) -> Vec<Inline> {
                         out.extend(content);
                     }
                 }
-                Block::Passage { content, .. } => walk(content, out, aside),
+                Block::Break { .. } => {}
                 Block::Parallel { left, right } => {
                     walk(left, out, aside);
                     walk(right, out, aside);
@@ -264,7 +264,7 @@ fn paragraphs_of(blocks: Vec<Block>, aside: &mut Vec<Block>) -> Vec<Block> {
     for b in blocks {
         match b {
             Block::Paragraph { content, .. } => out.push(Block::paragraph(content)),
-            Block::Passage { content, .. } => out.extend(paragraphs_of(content, aside)),
+            Block::Break { .. } => {}
             Block::Parallel { left, right } => {
                 out.extend(paragraphs_of(left, aside));
                 out.extend(paragraphs_of(right, aside));
@@ -282,96 +282,52 @@ fn paragraphs_of(blocks: Vec<Block>, aside: &mut Vec<Block>) -> Vec<Block> {
     out
 }
 
-/// The paragraphs among blocks, each given a kind, for a passage of it:
-/// what is no paragraph is set aside, to stand after the passage, since
-/// nothing stands in a passage but paragraphs. A passage among them is set
-/// aside whole. Of lines, a paragraph broken into lines is each of them.
-fn as_kind(blocks: Vec<Block>, name: &str, aside: &mut Vec<Block>) -> Vec<Block> {
-    let mut out = Vec::new();
-    for b in blocks {
-        match b {
-            Block::Paragraph { content, number, counted, hidden, margin, .. } => {
-                if name == "line" {
-                    for line in content.split(|i| matches!(i, Inline::Break)) {
-                        let (indent, content) = indented(line.to_vec());
-                        out.push(Block::Paragraph {
-                            name: name.to_owned(),
-                            indent,
-                            number: None,
-                            counted: true,
-                            hidden: false,
-                            margin: None,
-                            content,
-                        });
-                    }
-                } else {
-                    out.push(Block::Paragraph {
-                        name: name.to_owned(),
-                        indent: 0,
-                        number,
-                        counted,
-                        hidden,
-                        margin,
-                        content,
-                    });
-                }
-            }
-            other => aside.push(other),
-        }
-    }
-    out
+/// The paragraphs of text among blocks given a kind: those of a quotation,
+/// a gloss, a style of a kind. What is not a paragraph of text, a list
+/// within a quotation, a verse, stays as it is, where it stands.
+fn as_kind(blocks: Vec<Block>, name: &str) -> Vec<Block> {
+    blocks
+        .into_iter()
+        .map(|b| match b {
+            Block::Paragraph { name: kind, content, .. } if kind == "text" => Block::of_kind(name, content),
+            other => other,
+        })
+        .collect()
 }
 
-/// A line of verse as a line block has it: with the spaces that do not
-/// break at its head, four to a step, as the steps of its indentation.
-fn indented(mut line: Vec<Inline>) -> (u32, Vec<Inline>) {
-    let Some(Inline::Text { text, .. }) = line.first_mut() else { return (0, line) };
-    let spaces = text.chars().take_while(|c| *c == '\u{a0}' || *c == ' ').count();
-    if spaces == 0 {
-        return (0, line);
+/// The steps of indentation of a line of verse as a line block has it:
+/// the spaces that do not break at its head, four to a step.
+fn indent_of(line: &[Value]) -> u32 {
+    let mut spaces = 0;
+    for v in line {
+        let lead = match tag(v) {
+            "Str" => inner(v).as_str().unwrap_or("").chars().take_while(|c| *c == '\u{a0}' || *c == ' ').count(),
+            "Space" => 1,
+            _ => 0,
+        };
+        spaces += lead;
+        let whole = tag(v) == "Space" || inner(v).as_str().is_some_and(|t| t.chars().count() == lead);
+        if !whole {
+            break;
+        }
     }
-    *text = text.chars().skip(spaces).collect();
-    trim(&mut line);
-    (spaces.div_ceil(4) as u32, line)
+    spaces.div_ceil(4) as u32
+}
+
+/// The break a division of Pandoc stands for, by its class: one of the
+/// page, or one of the column.
+fn break_of(attr: &Value) -> Option<BreakKind> {
+    classes(attr).iter().find_map(|k| match *k {
+        "page-break" | "pagebreak" => Some(BreakKind::Page),
+        "column-break" | "columnbreak" => Some(BreakKind::Column),
+        _ => None,
+    })
 }
 
 /// The kind of the catalogue whose style in Word and Writer a name is.
 fn kind_of_style(name: &str) -> Option<&'static kinds::Entry> {
     let name = name.trim();
     kinds::catalogue().iter().find(|e| !e.style.is_empty() && e.style.eq_ignore_ascii_case(name))
-}
-
-/// Keeps the shape of a text as the editor keeps it (ADR 0040): a paragraph
-/// of a kind that is not text standing outside a passage is put in one of
-/// its family; one whose kind joins the passage before it, an attribution,
-/// goes into it; passages of one family that stand next to each other are
-/// joined, the first one's settings holding.
-pub(super) fn settle(blocks: &mut Vec<Block>) {
-    let mut out: Vec<Block> = Vec::with_capacity(blocks.len());
-    for b in blocks.drain(..) {
-        let b = match b {
-            Block::Paragraph { ref name, .. } if name != "text" => {
-                let facts = kinds::facts(name, &[]);
-                if facts.joins
-                    && let Some(Block::Passage { content, .. }) = out.last_mut()
-                {
-                    content.push(b);
-                    continue;
-                }
-                if facts.group == "text" { b } else { Block::passage(&facts.group, vec![b]) }
-            }
-            other => other,
-        };
-        if let Block::Passage { family, content, .. } = &b
-            && let Some(Block::Passage { family: before, content: into, .. }) = out.last_mut()
-            && before == family
-        {
-            into.extend(content.iter().cloned());
-            continue;
-        }
-        out.push(b);
-    }
-    *blocks = out;
 }
 
 /// A width in hundredths, where the file gives one so.
@@ -723,21 +679,56 @@ impl Reading<'_, '_> {
         match tag(b) {
             "Para" | "Plain" => self.paragraph(list(c), &Marks::new(), out),
             "LineBlock" => {
-                // Lines of verse, each a paragraph of a line; a line with nothing on it stays a line.
-                let mut content = Vec::new();
+                // Lines of verse: a paragraph of verse for each stanza, a run
+                // of lines with something on them, its lines parted by line
+                // breaks, the spaces at the head of a line its indent.
                 let mut aside = Vec::new();
+                let mut stanza: Vec<Inline> = Vec::new();
+                let mut lines = 0;
+                let mut stanzas = Vec::new();
                 for line in list(c) {
+                    let indent = indent_of(list(line));
                     let mut blocks = Vec::new();
                     self.paragraph(list(line), &Marks::new(), &mut blocks);
-                    if blocks.is_empty() {
-                        content.push(Block::of_kind("line", Vec::new()));
-                    } else {
-                        content.extend(as_kind(blocks, "line", &mut aside));
+                    let mut words: Vec<Inline> = Vec::new();
+                    for b in blocks {
+                        match b {
+                            Block::Paragraph { content, .. } => {
+                                if !words.is_empty() && !content.is_empty() {
+                                    words.push(text_of(" "));
+                                }
+                                words.extend(content);
+                            }
+                            other => aside.push(other),
+                        }
                     }
+                    if words.is_empty() {
+                        if lines > 0 {
+                            stanzas.push(Block::of_kind("line", std::mem::take(&mut stanza)));
+                            lines = 0;
+                        }
+                        continue;
+                    }
+                    trim(&mut words);
+                    if lines > 0 {
+                        stanza.push(Inline::Break);
+                    }
+                    if indent > 0 {
+                        stanza.push(Inline::LineMark {
+                            number: None,
+                            counted: true,
+                            hidden: false,
+                            margin: None,
+                            indent,
+                        });
+                    }
+                    stanza.extend(words);
+                    lines += 1;
                 }
-                if !content.is_empty() {
-                    out.push(Block::passage("verse", content));
+                if lines > 0 {
+                    stanzas.push(Block::of_kind("line", stanza));
                 }
+                out.extend(stanzas);
                 out.extend(aside);
             }
             "Header" => {
@@ -747,14 +738,9 @@ impl Reading<'_, '_> {
             }
             "BlockQuote" => {
                 // A quotation of its paragraphs; what stood in it that was no
-                // paragraph, a list or a verse, stands after it, since nothing
-                // stands in a passage but paragraphs.
-                let mut aside = Vec::new();
-                let content = as_kind(self.blocks(list(c)), "quote", &mut aside);
-                if !content.is_empty() {
-                    out.push(Block::passage("quotation", content));
-                }
-                out.extend(aside);
+                // paragraph of text, a list or a verse, stands as it is.
+                let blocks = self.blocks(list(c));
+                out.extend(as_kind(blocks, "quote"));
             }
             "BulletList" => self.list_items(list(c), "item", 1, out),
             "OrderedList" => {
@@ -763,44 +749,55 @@ impl Reading<'_, '_> {
             }
             "DefinitionList" => {
                 // A glossary: each term a headword, what it means its gloss.
-                let mut content = Vec::new();
-                let mut aside = Vec::new();
                 for entry in list(c) {
                     let mut term = Vec::new();
                     self.paragraph(list(&entry[0]), &Marks::new(), &mut term);
-                    content.extend(as_kind(term, "headword", &mut aside));
+                    out.extend(as_kind(term, "headword"));
                     for definition in list(&entry[1]) {
                         let blocks = self.blocks(list(definition));
-                        content.extend(as_kind(blocks, "gloss", &mut aside));
+                        out.extend(as_kind(blocks, "gloss"));
                     }
                 }
-                if !content.is_empty() {
-                    out.push(Block::passage("glossary", content));
-                }
-                out.extend(aside);
             }
             "CodeBlock" => {
-                // A passage of code, its lines the paragraphs, kept as they stand.
+                // A paragraph of code, its lines parted by line breaks, kept as they stand.
                 let text = c[1].as_str().unwrap_or("");
                 let mut lines: Vec<&str> = text.lines().collect();
                 while lines.last().is_some_and(|l| l.trim().is_empty()) {
                     lines.pop();
                 }
-                let content: Vec<Block> = lines
-                    .into_iter()
-                    .map(|l| {
-                        let line = l.trim_end();
-                        Block::of_kind("code", if line.is_empty() { Vec::new() } else { vec![text_of(&clean(line))] })
-                    })
-                    .collect();
+                let mut content = Vec::new();
+                for (i, l) in lines.into_iter().enumerate() {
+                    if i > 0 {
+                        content.push(Inline::Break);
+                    }
+                    let line = l.trim_end();
+                    if !line.is_empty() {
+                        content.push(text_of(&clean(line)));
+                    }
+                }
                 if !content.is_empty() {
-                    out.push(Block::passage("code", content));
+                    out.push(Block::of_kind("code", content));
                 }
             }
             "HorizontalRule" => self.tally.rules += 1,
-            "RawBlock" => self.tally.raw += 1,
+            "RawBlock" => {
+                // A break of the page, as TeX writes it; anything else raw is not read.
+                let said = c[1].as_str().unwrap_or("").trim();
+                let tex = matches!(c[0].as_str(), Some("latex" | "tex" | "context"));
+                match said {
+                    "\\newpage" | "\\pagebreak" | "\\clearpage" if tex => {
+                        out.push(Block::Break { what: BreakKind::Page })
+                    }
+                    "\\columnbreak" if tex => out.push(Block::Break { what: BreakKind::Column }),
+                    _ => self.tally.raw += 1,
+                }
+            }
             "Table" => self.table(c, out),
             "Figure" => self.pandoc_figure(c, out),
+            "Div" if break_of(&c[0]).is_some() => {
+                out.extend(break_of(&c[0]).map(|what| Block::Break { what }));
+            }
             "Div" => {
                 // A part in a language of its own: every word in it is marked with it.
                 let before = self.passage.clone();
@@ -814,15 +811,10 @@ impl Reading<'_, '_> {
                 self.passage = before;
                 // Paragraphs in the style of a kind of paragraph, as Glaukopis
                 // writes them and as a writer may have named them: paragraphs
-                // of that kind, in a passage of its family.
+                // of that kind.
                 match named(&c[0], "custom-style").and_then(kind_of_style) {
-                    Some(e) if e.family == kinds::Family::Paragraph && e.group != "text" => {
-                        let mut aside = Vec::new();
-                        let content = as_kind(inner, e.id, &mut aside);
-                        if !content.is_empty() {
-                            out.push(Block::passage(e.group, content));
-                        }
-                        out.extend(aside);
+                    Some(e) if e.family == kinds::Family::Paragraph && e.id != "text" => {
+                        out.extend(as_kind(inner, e.id))
                     }
                     _ => out.extend(inner),
                 }
@@ -832,57 +824,40 @@ impl Reading<'_, '_> {
         out.append(&mut self.hoisted);
     }
 
-    /// A list as a passage of items with their depths, as Word has them:
-    /// each item's paragraphs items of the kind, a list within an item its
-    /// items a step deeper. A numbered list that does not begin at one gives
-    /// its first item the number it begins at. What is no paragraph stands
-    /// after the list.
+    /// A list as items with their depths, as Word has them: each item's
+    /// paragraphs items of the kind, a list within an item its items a step
+    /// deeper. A numbered list that does not begin at one gives its first
+    /// item the number it begins at, in a mark at the head of its line. What
+    /// is no paragraph of text stands after the item it stood in.
     fn list_items(&mut self, items: &[Value], kind: &str, start: u32, out: &mut Vec<Block>) {
-        let mut content: Vec<Block> = Vec::new();
-        let mut aside = Vec::new();
         let mut first = start != 1;
         for item in items {
+            let mut aside = Vec::new();
             for b in self.blocks(list(item)) {
                 match b {
-                    Block::Paragraph { content: words, .. } => {
-                        let number = first.then(|| start.to_string());
-                        first = false;
-                        content.push(Block::Paragraph {
-                            name: kind.to_owned(),
-                            indent: 0,
-                            number,
-                            counted: true,
-                            hidden: false,
-                            margin: None,
-                            content: words,
-                        });
+                    Block::Paragraph { name, indent, content, .. } if matches!(name.as_str(), "item" | "numbered") => {
+                        out.push(Block::of_kind(&name, content).indented(indent + 1));
                     }
-                    Block::Passage { family, content: within, .. } if family == "list" => {
-                        for p in within {
-                            if let Block::Paragraph { name, indent, number, counted, hidden, margin, content: words } =
-                                p
-                            {
-                                content.push(Block::Paragraph {
-                                    name,
-                                    indent: indent + 1,
-                                    number,
-                                    counted,
-                                    hidden,
-                                    margin,
-                                    content: words,
-                                });
-                            }
+                    Block::Paragraph { name, mut content, .. } if name == "text" => {
+                        if std::mem::take(&mut first) {
+                            content.insert(
+                                0,
+                                Inline::LineMark {
+                                    number: Some(start.to_string()),
+                                    counted: true,
+                                    hidden: false,
+                                    margin: None,
+                                    indent: 0,
+                                },
+                            );
                         }
+                        out.push(Block::of_kind(kind, content));
                     }
                     other => aside.push(other),
                 }
             }
+            out.extend(aside);
         }
-        if !content.is_empty() {
-            let numbering = if kind == "numbered" { Numbering::Counted } else { Numbering::None };
-            out.push(Block::Passage { family: "list".into(), numbering, every: None, side: None, content });
-        }
-        out.extend(aside);
     }
 
     /// What is said of a figure or a table: a line, in which no note
@@ -1046,7 +1021,7 @@ impl Reading<'_, '_> {
                     }
                     parts.push(Part { level: c[0].as_i64().unwrap_or(1).max(1), heading, notes, blocks: Vec::new() });
                 }
-                "Div" => {
+                "Div" if break_of(&inner(b)[0]).is_none() => {
                     // A part in a language of its own, as in `block`; its headings are not.
                     let before = self.passage.clone();
                     if let Some(language) = self.language_of(&inner(b)[0]) {
@@ -1210,8 +1185,8 @@ pub(super) fn count(sections: &[Section], cited: usize, not_found: usize) -> Cou
                     line(content, text, notes, found);
                     text.push(' ');
                 }
-                // A reference mark is no part of the words.
-                Inline::Citation { .. } | Inline::RefMark { .. } => {}
+                // A reference mark, and what is said of a line, are no part of the words.
+                Inline::Citation { .. } | Inline::RefMark { .. } | Inline::LineMark { .. } => {}
             }
         }
     }
@@ -1435,7 +1410,6 @@ pub(super) fn convert_with(
     let mut sections: Vec<Section> = Vec::new();
     let mut bibliography: Option<String> = None;
     for mut part in parts {
-        settle(&mut part.blocks);
         captions::attach(&mut part.blocks, &mut reading.tally.said);
         part.heading = captions::unmarked(part.heading);
         part.notes = captions::unmarked(part.notes);

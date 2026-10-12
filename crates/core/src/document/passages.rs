@@ -1,38 +1,48 @@
-//! Passages, their paragraphs, and texts side by side: how each kind of
-//! document sets them (ADR 0040).
+//! Paragraphs, how each kind of document groups them, and texts side by
+//! side (ADR 0041).
 //!
-//! A passage is a run of paragraphs of one family, and the family says what
-//! is made of it:
+//! A text is paragraphs, each of a kind, and a paragraph is lines. Nothing
+//! groups them in the text itself: the document does, here. The paragraphs
+//! that stand together are cut into stretches, runs of paragraphs with the
+//! same numbering settings, and within a stretch, and outside any, into
+//! runs by how their kind is grouped (`formats/kinds.rs`), a paragraph that
+//! says it is new beginning a run of its own:
 //!
-//! - **Verse**: each line kept as a line. In Typst the lines are blocks with
+//! - **Lines**: the lines of verse as one block. A paragraph of verse is a
+//!   stanza, and its lines are the lines of the block; between two stanzas
+//!   stands an empty line. Speakers and directions among the lines stand in
+//!   the block as lines of their kind. In Typst the lines are blocks with
 //!   labels, which the opening of the document (`formats/typst.rs`) sets,
-//!   with the number each shows beside it, as counted here
-//!   (`document/numbers.rs`), and the speakers and stage directions as their
-//!   kinds look. In LaTeX each line is a paragraph of its own, with the
-//!   number hanging in the margin. Elsewhere a line block, which every
-//!   writer of Pandoc keeps as lines, with the number at the head of its line
-//!   or at its end, small, and the speakers and directions in character
-//!   styles of their own.
-//! - **Quotation**: a block quote of the quoted paragraphs; an epigraph or
-//!   an attribution a paragraph of its kind.
+//!   with the number each shows beside it; in LaTeX each line is a
+//!   paragraph of its own, with the number hanging in the margin. Elsewhere
+//!   a line block, which every writer of Pandoc keeps as lines, with the
+//!   number at the head of its line or at its end, small, and the speakers
+//!   and directions in character styles of their own.
+//! - **Quote**: a block quote of the quoted paragraphs.
 //! - **List**: a bullet or numbered list, nested by indent.
-//! - **Code**: a code block, its paragraphs the lines.
+//! - **Code**: a code block, the lines of its paragraphs its lines.
+//! - **Glossary**: a description list, each headword a term and the glosses
+//!   after it its definitions.
 //! - Everything else, paragraph by paragraph, as its kind looks: in Typst by
 //!   the opening of the document, in LaTeX by what is written around it, in
 //!   Word and Writer by a paragraph style named after the kind, and
 //!   elsewhere as plainly as the look can be shown.
-//! - A numbered passage of any family but verse is written paragraph by
-//!   paragraph with its number beside it, in the look of its kind.
 //!
-//! **Parallel**: an original and its translation side by side. A grid in
-//! Typst, two minipages in LaTeX, and a table without lines in Word and
+//! The numbers of a numbered stretch are counted over the whole stretch
+//! (`document/numbers.rs`), across stanzas, speakers and runs, and each
+//! line shows its own beside it. A paragraph of prose is one line unless it
+//! has line breaks.
+//!
+//! **Breaks** of the page and of the column, as each kind of document has
+//! them. **Parallel**: an original and its translation side by side. A grid
+//! in Typst, two minipages in LaTeX, and a table without lines in Word and
 //! Writer.
 
 use serde_json::{Value, json};
 
-use super::numbers::{Shown, numbers};
+use super::numbers::{Shown, lines_of, stretch_numbers, stretches};
 use super::pandoc::{Converter, Flavour, attr, label, looked, tokens, upper};
-use super::{Block, Inline, Numbering, Side};
+use super::{Block, BreakKind, Inline, Numbering, Side};
 use crate::formats::Case;
 use crate::formats::typst::string;
 
@@ -51,34 +61,26 @@ fn words(text: &str) -> Vec<Value> {
     inner
 }
 
-/// A paragraph of a passage, as the writers need it.
+/// A paragraph as the writers need it: its kind, its indent, whether it
+/// begins a run, its content, and what each of its lines shows in the
+/// margin, where it stands in a numbered stretch (nothing where it does not).
 struct Para<'a> {
     name: &'a str,
     indent: u32,
-    counted: bool,
-    hidden: bool,
-    number: Option<&'a str>,
-    margin: Option<&'a str>,
+    new: bool,
     content: &'a [Inline],
+    shown: &'a [Option<Shown>],
 }
 
-impl<'a> Para<'a> {
-    fn of(block: &'a Block) -> Option<Self> {
-        let Block::Paragraph { name, indent, number, counted, hidden, margin, content } = block else { return None };
-        let given = |s: &'a Option<String>| s.as_deref().map(str::trim).filter(|s| !s.is_empty());
-        Some(Para {
-            name,
-            indent: *indent,
-            counted: *counted,
-            hidden: *hidden,
-            number: given(number),
-            margin: given(margin),
-            content,
-        })
-    }
+/// What stands beside the lines of a paragraph: what each line shows, and
+/// the side the numbers stand on. The words in the margin are the lines' own.
+#[derive(Clone, Copy)]
+pub(super) struct Numbers<'a> {
+    pub shown: &'a [Option<Shown>],
+    pub side: Side,
 }
 
-/// What stands beside a paragraph: its number on one side, and words in the
+/// What stands beside a line: its number on one side, and words in the
 /// margin on the other.
 pub(super) struct Beside<'a> {
     pub number: Option<&'a Shown>,
@@ -106,21 +108,25 @@ fn code_text(content: &[Inline]) -> String {
     out
 }
 
-/// Whether a paragraph holds nothing to read: no words, or only spaces and
-/// breaks. An empty line of verse is the break between two stanzas; nothing
-/// empty is counted.
-fn blank(content: &[Inline]) -> bool {
-    content.iter().all(|i| match i {
-        Inline::Text { text, .. } => text.trim().is_empty(),
-        Inline::Break => true,
-        _ => false,
-    })
-}
-
 /// The number a list begins at, from the number given its first item.
 fn list_start(number: Option<&str>) -> u32 {
     let digits: String = number.unwrap_or("").chars().filter(char::is_ascii_digit).collect();
     digits.parse().ok().filter(|n| *n > 0).unwrap_or(1)
+}
+
+/// A line of a block of lines, as the writers of each kind of document need it.
+enum VerseItem<'a> {
+    /// The room between two stanzas.
+    Gap,
+    Line {
+        /// The kind of the catalogue the line's kind rests on: line, speaker, direction.
+        base: &'static str,
+        name: &'a str,
+        content: &'a [Inline],
+        indent: u32,
+        margin: Option<&'a str>,
+        shown: Option<&'a Shown>,
+    },
 }
 
 impl Converter<'_> {
@@ -130,113 +136,286 @@ impl Converter<'_> {
         self.extras.kinds.get(name).map_or("text", |info| info.base)
     }
 
-    /// Whether a numbering counts a paragraph: its kind is counted, the
-    /// paragraph does not say otherwise, and it is not empty.
-    fn counts(&self, p: &Para) -> bool {
-        p.counted && !blank(p.content) && self.extras.kinds.get(p.name).is_some_and(|info| info.counted)
+    /// How the document groups paragraphs of a kind: `lines`, `quote`,
+    /// `list`, `code`, `glossary`, or `none`.
+    fn grouping(&self, name: &str) -> &'static str {
+        match self.extras.kinds.get(name).map(|info| info.group) {
+            Some(g @ ("lines" | "quote" | "list" | "code" | "glossary")) => g,
+            _ => "none",
+        }
     }
 
-    /// A passage, as its family and its numbering ask.
-    pub(super) fn passage_block(
-        &self,
-        family: &str,
-        numbering: Numbering,
-        every: Option<u32>,
-        side: Option<Side>,
-        content: &[Block],
-        out: &mut Vec<Value>,
-    ) {
-        let paras: Vec<Para> = content.iter().filter_map(Para::of).collect();
-        if paras.is_empty() {
-            return;
+    /// Whether a kind of paragraph may also stand on words, as a speaker
+    /// and a direction may: such paragraphs stand among lines of verse.
+    fn on_words(&self, name: &str) -> bool {
+        self.extras.kinds.get(name).is_some_and(|info| info.words)
+    }
+
+    /// Paragraphs that stand together, as the document groups them: cut
+    /// into stretches by their numbering, and into runs by their kinds.
+    /// `after` says that they follow a figure or an equation, after which
+    /// the first paragraph of text begins as the first under a heading does.
+    pub(super) fn paragraphs(&self, list: &[Block], after: bool, out: &mut Vec<Value>) {
+        // The stretches, and the room between them, in order.
+        let mut segments: Vec<(usize, usize, Option<super::numbers::Stretch>)> = Vec::new();
+        let mut at = 0;
+        for s in stretches(list) {
+            if s.from > at {
+                segments.push((at, s.from, None));
+            }
+            segments.push((s.from, s.to, Some(s)));
+            at = s.to;
         }
-        let every = every.filter(|e| *e > 0).unwrap_or(self.extras.verse.every);
-        let side = side.unwrap_or(self.extras.verse.side);
-        let counted: Vec<(bool, Option<&str>)> = paras.iter().map(|p| (self.counts(p), p.number)).collect();
-        // A paragraph whose number is hidden is counted as any other, and shows nothing.
-        let shown: Vec<Option<Shown>> = numbers(numbering, every, &counted)
-            .into_iter()
-            .zip(&paras)
-            .map(|(shown, p)| shown.filter(|_| !p.hidden))
-            .collect();
-        match family {
-            "verse" => self.verse(&paras, &shown, side, out),
-            _ if numbering != Numbering::None => self.numbered(&paras, &shown, side, out),
-            "quotation" => self.quotation(&paras, out),
-            "list" => self.list(&paras, out),
-            "code" => self.code(&paras, out),
+        if at < list.len() {
+            segments.push((at, list.len(), None));
+        }
+        let counted = |name: &str| self.extras.kinds.get(name).is_none_or(|info| info.counted);
+        let mut first = after;
+        for (from, to, stretch) in segments {
+            let blocks = &list[from..to];
+            let both: Vec<(&str, &[Inline])> = blocks
+                .iter()
+                .filter_map(|b| match b {
+                    Block::Paragraph { name, content, .. } => Some((name.as_str(), content.as_slice())),
+                    _ => None,
+                })
+                .collect();
+            let (shown, side) = match stretch {
+                Some(s) if s.numbering != Numbering::None => {
+                    let every = s.every.filter(|e| *e > 0).unwrap_or(self.extras.verse.every);
+                    (stretch_numbers(&both, s.numbering, every, &counted), s.side.unwrap_or(self.extras.verse.side))
+                }
+                _ => (vec![Vec::new(); both.len()], self.extras.verse.side),
+            };
+            let paras: Vec<Para> = blocks
+                .iter()
+                .zip(&shown)
+                .filter_map(|(b, shown)| match b {
+                    Block::Paragraph { name, indent, new, content, .. } => {
+                        Some(Para { name, indent: *indent, new: *new, content, shown })
+                    }
+                    _ => None,
+                })
+                .collect();
+            for (group, from, to) in self.runs(&paras) {
+                let run = &paras[from..to];
+                if std::mem::take(&mut first)
+                    && group == "none"
+                    && run[0].name == "text"
+                    && run[0].shown.iter().all(Option::is_none)
+                {
+                    let inner = self.lined(run[0].content, Numbers { shown: run[0].shown, side });
+                    if !inner.is_empty() {
+                        out.push(self.paragraph_after(inner));
+                    }
+                    continue;
+                }
+                self.run(group, run, side, out);
+            }
+        }
+    }
+
+    /// The runs of paragraphs of a stretch, or of paragraphs outside any:
+    /// as `(grouping, from, to)`. Paragraphs whose kinds are grouped alike
+    /// and stand together are one run, unless one says it begins a new one;
+    /// a paragraph whose kind is grouped as nothing is a run of its own.
+    /// Speakers and directions stand in the run of lines they are in, or
+    /// in the one that begins after them.
+    fn runs(&self, paras: &[Para]) -> Vec<(&'static str, usize, usize)> {
+        let n = paras.len();
+        // Where the speakers and directions that begin at `i` end.
+        let words_end = |i: usize| {
+            let mut k = i;
+            while k < n && self.on_words(paras[k].name) && self.grouping(paras[k].name) != "lines" {
+                k += 1;
+            }
+            k
+        };
+        let mut out = Vec::new();
+        let mut i = 0;
+        while i < n {
+            let group = self.grouping(paras[i].name);
+            let opens_lines = group == "lines" || {
+                let k = words_end(i);
+                k > i && k < n && self.grouping(paras[k].name) == "lines"
+            };
+            if opens_lines {
+                let from = i;
+                i += 1;
+                while i < n && !paras[i].new {
+                    if self.grouping(paras[i].name) == "lines" {
+                        i += 1;
+                        continue;
+                    }
+                    let k = words_end(i);
+                    if k == i {
+                        break;
+                    }
+                    // Speakers before a stanza that begins a run of its own go with it.
+                    if k < n && self.grouping(paras[k].name) == "lines" && paras[k].new {
+                        break;
+                    }
+                    i = k;
+                }
+                out.push(("lines", from, i));
+                continue;
+            }
+            let from = i;
+            i += 1;
+            if group != "none" {
+                while i < n && !paras[i].new && self.grouping(paras[i].name) == group {
+                    i += 1;
+                }
+            }
+            out.push((group, from, i));
+        }
+        out
+    }
+
+    /// A run of paragraphs, as its grouping asks.
+    fn run(&self, group: &str, run: &[Para], side: Side, out: &mut Vec<Value>) {
+        match group {
+            "lines" => self.lines(run, side, out),
+            "quote" => {
+                let mut inner = Vec::new();
+                for p in run {
+                    self.kind_paragraph(p.name, p.content, Numbers { shown: p.shown, side }, &mut inner);
+                }
+                if !inner.is_empty() {
+                    out.push(json!({"t": "BlockQuote", "c": inner}));
+                }
+            }
+            "list" => self.list(run, side, out),
+            "code" => {
+                let text: Vec<String> = run.iter().map(|p| code_text(p.content)).collect();
+                let text = text.join("\n");
+                if !text.trim().is_empty() {
+                    out.push(json!({"t": "CodeBlock", "c": [attr(), text.trim_end()]}));
+                }
+            }
+            "glossary" => self.glossary(run, side, out),
             _ => {
-                for p in &paras {
-                    self.kind_paragraph(p.name, p.content, None, out);
+                for p in run {
+                    self.kind_paragraph(p.name, p.content, Numbers { shown: p.shown, side }, out);
                 }
             }
         }
-        // What is no paragraph has no place in a passage; it stands after it.
-        let rest: Vec<Block> = content.iter().filter(|b| !matches!(b, Block::Paragraph { .. })).cloned().collect();
-        if !rest.is_empty() {
-            self.blocks(&rest, out);
-        }
     }
 
-    /// A paragraph of a kind that stands outside any passage, as the
-    /// interface does not send them but a document may hold them.
-    pub(super) fn stray_paragraph(&self, name: &str, content: &[Inline], out: &mut Vec<Value>) {
-        if name == "quote" {
-            let mut inner = Vec::new();
-            self.kind_paragraph(name, content, None, &mut inner);
-            if !inner.is_empty() {
-                out.push(json!({"t": "BlockQuote", "c": inner}));
+    /// The inlines of a paragraph, line by line, each with what stands
+    /// beside it: its number, and the words in its margin.
+    pub(super) fn lined(&self, content: &[Inline], numbers: Numbers) -> Vec<Value> {
+        let mut out = Vec::new();
+        for (j, line) in lines_of(content).iter().enumerate() {
+            if j > 0 {
+                out.push(json!({"t": "LineBreak"}));
             }
-        } else {
-            self.kind_paragraph(name, content, None, out);
+            let mut inner = self.inlines(line.content);
+            let beside = Beside {
+                number: numbers.shown.get(j).and_then(Option::as_ref),
+                side: numbers.side,
+                margin: line.mark.and_then(|m| m.margin),
+            };
+            self.beside(&mut inner, &beside);
+            out.extend(inner);
+        }
+        out
+    }
+
+    /// A break of the page or of the column, as each kind of document has
+    /// it. Where a kind of document has no columns, a break of the column
+    /// is one of the page, as Typst and Word make it; a page of the web and
+    /// an e-book are told by their style, and Markdown has a break of the
+    /// page as TeX writes it, and none of the column.
+    pub(super) fn break_block(&self, what: BreakKind, out: &mut Vec<Value>) {
+        let column = what == BreakKind::Column;
+        let x = &self.extras;
+        match x.flavour {
+            // Typst allows no break within a block; there it is left out.
+            Flavour::Typst if x.contained.get() => {}
+            Flavour::Typst => out.push(raw("typst", if column { "#colbreak()" } else { "#pagebreak()" })),
+            Flavour::Latex => {
+                out.push(raw("latex", if column && x.columns > 1 { "\\columnbreak" } else { "\\newpage" }))
+            }
+            Flavour::Docx => out.push(raw(
+                "openxml",
+                format!("<w:p><w:r><w:br w:type=\"{}\"/></w:r></w:p>", if column { "column" } else { "page" }),
+            )),
+            Flavour::Odt => out.push(raw(
+                "opendocument",
+                format!("<text:p text:style-name=\"{}\"/>", if column { "Column_20_Break" } else { "Page_20_Break" }),
+            )),
+            Flavour::Plain if x.classes => out.push(raw(
+                "html",
+                format!("<div style=\"break-before: {}\"></div>", if column { "column" } else { "page" }),
+            )),
+            Flavour::Plain if !column => out.push(raw("latex", "\\newpage")),
+            Flavour::Plain => {}
         }
     }
 
     /// Lines of verse: a line block, or the blocks of Typst and the
-    /// paragraphs of LaTeX that stand for one. A paragraph among them whose
-    /// kind is not of the verse, an attribution under a quoted poem, is a
-    /// paragraph of its kind, and the lines go on after it.
-    fn verse(&self, paras: &[Para], shown: &[Option<Shown>], side: Side, out: &mut Vec<Value>) {
-        let mut at = 0;
-        while at < paras.len() {
-            let from = at;
-            while at < paras.len() && matches!(self.base_of(paras[at].name), "line" | "speaker" | "direction") {
-                at += 1;
+    /// paragraphs of LaTeX that stand for one. Each paragraph of verse is a
+    /// stanza, with room between it and the next; a speaker or a direction
+    /// among them a line of its kind.
+    fn lines(&self, run: &[Para], side: Side, out: &mut Vec<Value>) {
+        let mut items: Vec<VerseItem> = Vec::new();
+        let mut stanza_before = false;
+        for p in run {
+            let base = match self.base_of(p.name) {
+                b @ ("speaker" | "direction") => b,
+                _ if self.on_words(p.name) => "speaker",
+                _ => "line",
+            };
+            let stanza = base == "line";
+            if stanza && stanza_before && !matches!(items.last(), None | Some(VerseItem::Gap)) {
+                items.push(VerseItem::Gap);
             }
-            if at > from {
-                self.lines(&paras[from..at], &shown[from..at], side, out);
-            } else {
-                self.kind_paragraph(paras[at].name, paras[at].content, None, out);
-                at += 1;
+            stanza_before = stanza;
+            for (j, line) in lines_of(p.content).into_iter().enumerate() {
+                let shown = p.shown.get(j).and_then(Option::as_ref);
+                let margin = line.mark.and_then(|m| m.margin);
+                // An empty line is the room between two stanzas.
+                if line.blank && margin.is_none() && shown.is_none() {
+                    if !matches!(items.last(), None | Some(VerseItem::Gap)) {
+                        items.push(VerseItem::Gap);
+                    }
+                    continue;
+                }
+                items.push(VerseItem::Line {
+                    base,
+                    name: p.name,
+                    content: line.content,
+                    indent: line.mark.map_or(0, |m| m.indent),
+                    margin,
+                    shown,
+                });
             }
         }
-    }
-
-    fn lines(&self, lines: &[Para], shown: &[Option<Shown>], side: Side, out: &mut Vec<Value>) {
+        while matches!(items.last(), Some(VerseItem::Gap)) {
+            items.pop();
+        }
+        if items.is_empty() {
+            return;
+        }
         let x = &self.extras;
         let line_look = x.kinds.get("line").map(|info| &info.look);
         match x.flavour {
             Flavour::Typst => {
                 // The numbers are counted here, and each line is given what it shows.
                 out.push(raw("typst", "#gk-verse["));
-                for (line, shown) in lines.iter().zip(shown) {
-                    // An empty line is the room between two stanzas.
-                    if blank(line.content) && line.margin.is_none() && shown.is_none() {
+                for item in &items {
+                    let VerseItem::Line { base, content, indent, margin, shown, .. } = item else {
                         out.push(raw("typst", "#v(1em)"));
                         continue;
-                    }
-                    let n = shown.as_ref().map_or("none".to_owned(), |s| string(&s.label));
-                    let margin = line.margin.map_or("none".to_owned(), string);
+                    };
+                    let n = shown.map_or("none".to_owned(), |s| string(&s.label));
+                    let margin = margin.map_or("none".to_owned(), string);
                     out.push(raw(
                         "typst",
-                        format!(
-                            "#gk-line(\"{}\", {}, n: {n}, margin: {margin}, side: \"{}\")[",
-                            self.base_of(line.name),
-                            line.indent,
-                            side.name()
-                        ),
+                        format!("#gk-line(\"{base}\", {indent}, n: {n}, margin: {margin}, side: \"{}\")[", side.name()),
                     ));
-                    out.push(json!({"t": "Plain", "c": self.inlines(line.content)}));
+                    out.push(json!({"t": "Plain", "c": self.inlines(content)}));
                     out.push(raw("typst", "]"));
                 }
                 out.push(raw("typst", "]"));
@@ -247,51 +426,54 @@ impl Converter<'_> {
                 // in the margin on its side, and words in the margin on the other.
                 let indent = line_look.map_or("2.4em".to_owned(), |l| l.indent_left.to_string());
                 out.push(raw("latex", format!("{{\\par\\leftskip={indent}\\relax\\parindent=0pt\\parskip=0pt")));
-                for (line, shown) in lines.iter().zip(shown) {
-                    // An empty line is the room between two stanzas.
-                    if blank(line.content) && line.margin.is_none() && shown.is_none() {
+                for item in &items {
+                    let VerseItem::Line { base, name, content, indent, margin, shown } = item else {
                         out.push(raw("latex", "\\vspace{\\baselineskip}"));
                         continue;
-                    }
-                    let mut inner = self.inlines(line.content);
+                    };
+                    let mut inner = self.inlines(content);
                     let mut lead = vec![raw_inline("latex", "\\noindent")];
-                    match self.base_of(line.name) {
+                    match *base {
                         "speaker" => {
                             lead = vec![raw_inline("latex", "\\medskip\\noindent")];
-                            inner = self.line_words(inner, line.name);
+                            inner = self.line_words(inner, name);
                         }
-                        "direction" => inner = self.line_words(inner, line.name),
+                        "direction" => inner = self.line_words(inner, name),
                         _ => {
-                            if line.indent > 0 {
-                                lead.push(raw_inline("latex", format!("\\hspace*{{{}em}}", line.indent as f32 * 1.5)));
+                            if *indent > 0 {
+                                lead.push(raw_inline("latex", format!("\\hspace*{{{}em}}", *indent as f32 * 1.5)));
                             }
                         }
                     }
                     inner.splice(0..0, lead);
-                    self.beside(&mut inner, &Beside { number: shown.as_ref(), side, margin: line.margin });
+                    self.beside(&mut inner, &Beside { number: *shown, side, margin: *margin });
                     inner.push(raw_inline("latex", "\\par"));
                     out.push(json!({"t": "Plain", "c": inner}));
                 }
                 out.push(raw("latex", "\\par}\\medskip"));
             }
             _ => {
-                // A line block: lines, each as its kind has it. Indentation is
-                // spaces that do not break, which Pandoc keeps at the head of a
-                // line; a number stands at the head of its line or at its end,
-                // small, and words in the margin at the other end: Word and
-                // Writer have no margin to set them in.
+                // A line block: lines, each as its kind has it, and an empty
+                // line between two stanzas. Indentation is spaces that do not
+                // break, which Pandoc keeps at the head of a line; a number
+                // stands at the head of its line or at its end, small, and
+                // words in the margin at the other end: Word and Writer have
+                // no margin to set them in.
                 let mut block = Vec::new();
-                for (line, shown) in lines.iter().zip(shown) {
-                    let mut inner = self.inlines(line.content);
-                    inner = match self.base_of(line.name) {
-                        "speaker" | "direction" => self.line_words(inner, line.name),
-                        _ => inner,
+                for item in &items {
+                    let VerseItem::Line { base, name, content, indent, margin, shown } = item else {
+                        block.push(json!([]));
+                        continue;
                     };
-                    if line.indent > 0 {
-                        let spaces = "\u{a0}".repeat((line.indent as usize) * 4);
+                    let mut inner = self.inlines(content);
+                    if *base != "line" {
+                        inner = self.line_words(inner, name);
+                    }
+                    if *indent > 0 {
+                        let spaces = "\u{a0}".repeat((*indent as usize) * 4);
                         inner.insert(0, json!({"t": "Str", "c": spaces}));
                     }
-                    self.beside(&mut inner, &Beside { number: shown.as_ref(), side, margin: line.margin });
+                    self.beside(&mut inner, &Beside { number: *shown, side, margin: *margin });
                     block.push(Value::Array(inner));
                 }
                 let lines = json!({"t": "LineBlock", "c": block});
@@ -330,10 +512,10 @@ impl Converter<'_> {
         }
     }
 
-    /// Puts what stands beside a paragraph into its line: the number on its
-    /// side, the words in the margin on the other. In Typst and LaTeX they
-    /// are placed in the margin; in Word, Writer and the formats made from
-    /// a line block they stand at the head of the line or at its end.
+    /// Puts what stands beside a line into it: the number on its side, the
+    /// words in the margin on the other. In Typst and LaTeX they are placed
+    /// in the margin; in Word, Writer and the formats made from a line block
+    /// they stand at the head of the line or at its end.
     pub(super) fn beside(&self, inner: &mut Vec<Value>, beside: &Beside) {
         if beside.is_empty() {
             return;
@@ -402,97 +584,49 @@ impl Converter<'_> {
         }
     }
 
-    /// A numbered passage of any family but verse: paragraph by paragraph,
-    /// each with its number beside it, in the look of its kind. Quoted
-    /// paragraphs that follow each other stand in one block quote.
-    fn numbered(&self, paras: &[Para], shown: &[Option<Shown>], side: Side, out: &mut Vec<Value>) {
-        let mut at = 0;
-        while at < paras.len() {
-            if paras[at].name == "quote" {
-                let mut inner = Vec::new();
-                while at < paras.len() && paras[at].name == "quote" {
-                    let p = &paras[at];
-                    let beside = Beside { number: shown[at].as_ref(), side, margin: p.margin };
-                    self.kind_paragraph(p.name, p.content, Some(&beside), &mut inner);
-                    at += 1;
-                }
-                if !inner.is_empty() {
-                    out.push(json!({"t": "BlockQuote", "c": inner}));
-                }
-            } else {
-                let p = &paras[at];
-                let beside = Beside { number: shown[at].as_ref(), side, margin: p.margin };
-                self.kind_paragraph(p.name, p.content, Some(&beside), out);
-                at += 1;
-            }
-        }
-    }
-
-    /// A quotation: the quoted paragraphs in a block quote, and an epigraph
-    /// or an attribution among them a paragraph of its kind.
-    fn quotation(&self, paras: &[Para], out: &mut Vec<Value>) {
-        let mut at = 0;
-        while at < paras.len() {
-            let from = at;
-            let mut inner = Vec::new();
-            while at < paras.len() && paras[at].name == "quote" {
-                self.kind_paragraph("quote", paras[at].content, None, &mut inner);
-                at += 1;
-            }
-            if at > from {
-                if !inner.is_empty() {
-                    out.push(json!({"t": "BlockQuote", "c": inner}));
-                }
-            } else {
-                self.kind_paragraph(paras[at].name, paras[at].content, None, out);
-                at += 1;
-            }
-        }
-    }
-
     /// A list: the items as a bullet or a numbered list, those indented
     /// further a list within the item before them. A run of items of the
     /// other kind at the same depth is a list of its own.
-    fn list(&self, paras: &[Para], out: &mut Vec<Value>) {
+    fn list(&self, paras: &[Para], side: Side, out: &mut Vec<Value>) {
         let mut at = 0;
         while at < paras.len() {
-            if matches!(self.base_of(paras[at].name), "item" | "numbered") {
-                let (list, next) = self.list_from(paras, at, paras[at].indent);
-                out.push(list);
-                at = next;
-            } else {
-                self.kind_paragraph(paras[at].name, paras[at].content, None, out);
-                at += 1;
-            }
+            let (list, next) = self.list_from(paras, at, paras[at].indent, side);
+            out.push(list);
+            at = next.max(at + 1);
         }
     }
 
     /// The list that begins at `at`, of the items at `level` of the kind of
     /// the first, each with the items indented further as a list within it;
-    /// it ends before an item that stands shallower, one of the other kind
-    /// at this depth, or a paragraph that is no item. Returns the list and
-    /// where to go on from.
-    fn list_from(&self, paras: &[Para], at: usize, level: u32) -> (Value, usize) {
-        let is_item = |p: &Para| matches!(self.base_of(p.name), "item" | "numbered");
-        let kind = self.base_of(paras[at].name);
-        let start = list_start(paras[at].number);
+    /// it ends before an item that stands shallower, or one of the other
+    /// kind at this depth. Returns the list and where to go on from. A
+    /// numbered list begins at the number given its first item, where its
+    /// lines are not numbered.
+    fn list_from(&self, paras: &[Para], at: usize, level: u32, side: Side) -> (Value, usize) {
+        let numbered = |p: &Para| self.base_of(p.name) == "numbered";
+        let kind = numbered(&paras[at]);
+        let start = if paras[at].shown.is_empty() {
+            list_start(lines_of(paras[at].content).first().and_then(|l| l.mark).and_then(|m| m.number))
+        } else {
+            1
+        };
         let mut items = Vec::new();
         let mut i = at;
         while i < paras.len() {
             let p = &paras[i];
-            if !is_item(p) || p.indent < level || self.base_of(p.name) != kind {
+            if p.indent < level || (i > at && p.indent == level && numbered(p) != kind) {
                 break;
             }
-            let mut inner = vec![json!({"t": "Plain", "c": self.inlines(p.content)})];
+            let mut inner = vec![json!({"t": "Plain", "c": self.lined(p.content, Numbers { shown: p.shown, side })})];
             i += 1;
-            while i < paras.len() && is_item(&paras[i]) && paras[i].indent > level {
-                let (sub, next) = self.list_from(paras, i, paras[i].indent);
+            while i < paras.len() && paras[i].indent > level {
+                let (sub, next) = self.list_from(paras, i, paras[i].indent, side);
                 inner.push(sub);
                 i = next;
             }
             items.push(Value::Array(inner));
         }
-        let list = if kind == "numbered" {
+        let list = if kind {
             json!({"t": "OrderedList", "c": [[start, {"t": "Decimal"}, {"t": "Period"}], items]})
         } else {
             json!({"t": "BulletList", "c": items})
@@ -500,12 +634,28 @@ impl Converter<'_> {
         (list, i)
     }
 
-    /// A passage of code: one block, its paragraphs the lines.
-    fn code(&self, paras: &[Para], out: &mut Vec<Value>) {
-        let text: Vec<String> = paras.iter().map(|p| code_text(p.content)).collect();
-        let text = text.join("\n");
-        if !text.trim().is_empty() {
-            out.push(json!({"t": "CodeBlock", "c": [attr(), text.trim_end()]}));
+    /// A glossary: a description list, each headword a term and the glosses
+    /// after it its definitions, each a paragraph.
+    fn glossary(&self, paras: &[Para], side: Side, out: &mut Vec<Value>) {
+        let mut items: Vec<(Vec<Value>, Vec<Value>)> = Vec::new();
+        for p in paras {
+            let inner = self.lined(p.content, Numbers { shown: p.shown, side });
+            if self.base_of(p.name) == "headword" {
+                items.push((inner, Vec::new()));
+                continue;
+            }
+            if items.is_empty() {
+                items.push((Vec::new(), Vec::new()));
+            }
+            if !inner.is_empty()
+                && let Some((_, definitions)) = items.last_mut()
+            {
+                definitions.push(json!([{"t": "Para", "c": inner}]));
+            }
+        }
+        let items: Vec<Value> = items.into_iter().map(|(term, definitions)| json!([term, definitions])).collect();
+        if !items.is_empty() {
+            out.push(json!({"t": "DefinitionList", "c": items}));
         }
     }
 
@@ -515,21 +665,15 @@ impl Converter<'_> {
     /// elsewhere as plainly as the look can be shown. A paragraph of text or
     /// of a quotation is a plain paragraph, which what calls this puts where
     /// it belongs; one of code a code block; a break the sign of its look.
-    /// What stands beside the paragraph, where it is numbered, goes in.
-    pub(super) fn kind_paragraph(&self, name: &str, content: &[Inline], beside: Option<&Beside>, out: &mut Vec<Value>) {
+    /// What stands beside its lines, where they are numbered, goes in.
+    pub(super) fn kind_paragraph(&self, name: &str, content: &[Inline], numbers: Numbers, out: &mut Vec<Value>) {
         let x = &self.extras;
         // A note to oneself goes into no document.
         if name == "draft" {
             return;
         }
-        let with_beside = |mut inner: Vec<Value>| {
-            if let Some(b) = beside {
-                self.beside(&mut inner, b);
-            }
-            inner
-        };
         let Some(info) = x.kinds.get(name) else {
-            let inner = with_beside(self.inlines(content));
+            let inner = self.lined(content, numbers);
             if !inner.is_empty() {
                 out.push(json!({"t": "Para", "c": inner}));
             }
@@ -537,26 +681,29 @@ impl Converter<'_> {
         };
         let look = &info.look;
         if matches!(name, "text" | "quote" | "item" | "numbered") {
-            let inner = with_beside(self.inlines(content));
+            let inner = self.lined(content, numbers);
             if !inner.is_empty() {
                 out.push(json!({"t": "Para", "c": inner}));
             }
             return;
         }
-        if name == "code" {
+        if info.base == "draft" {
+            return;
+        }
+        if info.base == "code" {
             let text = code_text(content);
             if !text.trim().is_empty() {
                 out.push(json!({"t": "CodeBlock", "c": [attr(), text.trim_end()]}));
             }
             return;
         }
-        let mut inner = self.inlines(content);
-        if info.base == "break" {
+        let mut inner = if info.base == "break" {
             // A break holds no text of its own: the layout says what stands in it.
-            inner.clear();
             let sign = look.text.trim();
-            tokens(if sign.is_empty() { "\u{a0}" } else { sign }, &mut inner);
-        }
+            words(if sign.is_empty() { "\u{a0}" } else { sign })
+        } else {
+            self.lined(content, numbers)
+        };
         if inner.is_empty() {
             return;
         }
@@ -572,7 +719,6 @@ impl Converter<'_> {
         let class = format!("gk-kind-{}", label(name));
         match x.flavour {
             Flavour::Typst => {
-                let inner = with_beside(inner);
                 out.push(json!({"t": "Div", "c": [[class, [], []], [{"t": "Plain", "c": inner}]]}));
             }
             Flavour::Latex => {
@@ -581,12 +727,10 @@ impl Converter<'_> {
                 }
                 let (open, close) = crate::export::latex::around(look, x.kinds.get("text").map(|t| &t.look));
                 inner.insert(0, raw_inline("latex", open));
-                let mut inner = with_beside(inner);
                 inner.push(raw_inline("latex", close));
                 out.push(json!({"t": "Plain", "c": inner}));
             }
             Flavour::Docx | Flavour::Odt => {
-                let inner = with_beside(inner);
                 if info.style.is_empty() {
                     out.push(json!({"t": "Para", "c": inner}));
                 } else {
@@ -598,17 +742,23 @@ impl Converter<'_> {
                 if look.case == Case::Upper {
                     upper(&mut inner);
                 }
-                let inner = with_beside(looked(inner, look));
+                let inner = looked(inner, look);
                 out.push(json!({"t": "Div", "c": [["", [class], []], [{"t": "Para", "c": inner}]]}));
             }
         }
     }
 
     pub(super) fn parallel(&self, left: &[Block], right: &[Block], out: &mut Vec<Value>) {
+        // A break has no place within one side of two.
+        let unbroken = |side: &[Block]| -> Vec<Block> {
+            side.iter().filter(|b| !matches!(b, Block::Break { .. })).cloned().collect()
+        };
+        let contained = self.extras.contained.replace(true);
         let mut l = Vec::new();
-        self.blocks(left, &mut l);
+        self.blocks(&unbroken(left), &mut l);
         let mut r = Vec::new();
-        self.blocks(right, &mut r);
+        self.blocks(&unbroken(right), &mut r);
+        self.extras.contained.set(contained);
         match self.extras.flavour {
             Flavour::Typst => {
                 out.push(raw("typst", "#gk-parallel(["));
@@ -639,298 +789,5 @@ impl Converter<'_> {
                 ]}));
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::collections::HashMap;
-
-    use super::super::fixtures::{kind, passage, text};
-    use super::super::pandoc::Extras;
-    use super::*;
-    use crate::formats::DocumentFormat;
-
-    fn converter(keys: &HashMap<String, String>, flavour: Flavour) -> Converter<'_> {
-        let mut extras = Extras::default();
-        extras.flavour = flavour;
-        extras.kinds = crate::formats::kinds::table(&DocumentFormat::default(), &[]);
-        Converter {
-            keys,
-            language: Some("en-GB"),
-            run_in: vec![],
-            new_page: vec![],
-            page_break: None,
-            deepest: 6,
-            extras,
-        }
-    }
-
-    fn written(c: &Converter, blocks: &[Block]) -> Vec<Value> {
-        let mut out = Vec::new();
-        c.blocks(blocks, &mut out);
-        out
-    }
-
-    fn line(name: &str, indent: u32, number: Option<&str>, words_: &str) -> Block {
-        Block::Paragraph {
-            name: name.into(),
-            indent,
-            number: number.map(Into::into),
-            counted: true,
-            hidden: false,
-            margin: None,
-            content: vec![text(words_)],
-        }
-    }
-
-    fn numbered(family: &str, side: Option<Side>, content: Vec<Block>) -> Block {
-        Block::Passage { family: family.into(), numbering: Numbering::Counted, every: Some(2), side, content }
-    }
-
-    #[test]
-    fn a_verse_is_a_line_block_with_its_numbers_at_the_head_or_the_end() {
-        let keys = HashMap::new();
-        let c = converter(&keys, Flavour::Docx);
-        let verse = numbered(
-            "verse",
-            None,
-            vec![
-                line("speaker", 0, None, "Nurse"),
-                line("line", 0, Some("1"), "If only"),
-                line("line", 1, None, "the Argo"),
-                line("line", 0, None, "had never flown").with_margin("ia."),
-            ],
-        );
-        let out = written(&c, std::slice::from_ref(&verse));
-        assert_eq!(out.len(), 1);
-        // In the style of a line, as a line block.
-        assert_eq!(out[0]["c"][0][2], json!([["custom-style", "Line"]]));
-        let lines = out[0]["c"][1][0]["c"].as_array().unwrap();
-        assert_eq!(lines.len(), 4);
-        // The speaker in the character style the line block needs.
-        assert_eq!(lines[0][0]["c"][0][2], json!([["custom-style", "Speaker Char"]]));
-        assert_eq!(lines[1][0]["c"][0][2], json!([["custom-style", "Verse Number"]]));
-        assert_eq!(lines[1][0]["c"][1][0]["c"], "1\u{a0}\u{a0}");
-        // The second line counted shows its number, every second being shown; it is indented by spaces that do not break.
-        assert_eq!(lines[2][0]["c"][1][0]["c"], "2\u{a0}\u{a0}");
-        assert_eq!(lines[2][1]["c"], "\u{a0}\u{a0}\u{a0}\u{a0}");
-        // The third is not shown; its margin words stand at the end.
-        let last = lines[3].as_array().unwrap();
-        assert_eq!(last[0]["c"], "had");
-        assert_eq!(last[last.len() - 1]["c"][0][2], json!([["custom-style", "Verse Margin"]]));
-        // On the right side the number stands at the end and the margin words at the head.
-        let Block::Passage { content, .. } = verse else { panic!() };
-        let right = Block::Passage {
-            family: "verse".into(),
-            numbering: Numbering::Counted,
-            every: Some(2),
-            side: Some(Side::Right),
-            content,
-        };
-        let out = written(&c, &[right]);
-        let lines = out[0]["c"][1][0]["c"].as_array().unwrap();
-        let second = lines[1].as_array().unwrap();
-        assert_eq!(second[0]["c"], "If");
-        assert_eq!(second[second.len() - 1]["c"][0][2], json!([["custom-style", "Verse Number"]]));
-        let last = lines[3].as_array().unwrap();
-        assert_eq!(last[0]["c"][0][2], json!([["custom-style", "Verse Margin"]]));
-    }
-
-    #[test]
-    fn a_verse_in_typst_and_latex() {
-        let keys = HashMap::new();
-        let verse = numbered(
-            "verse",
-            None,
-            vec![
-                line("speaker", 0, None, "Nurse"),
-                line("line", 0, Some("1"), "If only"),
-                line("line", 1, None, "the Argo"),
-            ],
-        );
-        let c = converter(&keys, Flavour::Typst);
-        let out = written(&c, std::slice::from_ref(&verse));
-        assert_eq!(out[0]["c"][1], "#gk-verse[");
-        assert_eq!(out[1]["c"][1], "#gk-line(\"speaker\", 0, n: none, margin: none, side: \"left\")[");
-        assert_eq!(out[4]["c"][1], "#gk-line(\"line\", 0, n: \"1\", margin: none, side: \"left\")[");
-        assert_eq!(out[7]["c"][1], "#gk-line(\"line\", 1, n: \"2\", margin: none, side: \"left\")[");
-        let c = converter(&keys, Flavour::Latex);
-        let out = written(&c, &[verse]);
-        assert_eq!(
-            out[0]["c"][1], "{\\par\\leftskip=1cm\\relax\\parindent=0pt\\parskip=0pt",
-            "as far in as a line looks"
-        );
-        let first = out[1]["c"].as_array().unwrap();
-        assert_eq!(first[0]["c"][1], "\\medskip\\noindent");
-        assert_eq!(first[1]["t"], "SmallCaps");
-        let second = out[2]["c"].as_array().unwrap();
-        assert_eq!(second[1]["c"][1], "\\llap{{\\footnotesize ");
-        assert_eq!(second[2]["c"], "1");
-    }
-
-    #[test]
-    fn an_empty_line_parts_two_stanzas_and_is_not_counted() {
-        let keys = HashMap::new();
-        let verse = numbered(
-            "verse",
-            None,
-            vec![
-                line("line", 0, Some("1"), "One a"),
-                line("line", 0, None, "One b"),
-                line("line", 0, None, ""),
-                line("line", 0, None, "Two a"),
-            ],
-        );
-        let c = converter(&keys, Flavour::Typst);
-        let out = written(&c, std::slice::from_ref(&verse));
-        let typst: Vec<&str> = out.iter().filter_map(|v| v["c"][1].as_str()).collect();
-        assert!(typst.contains(&"#v(1em)"), "{typst:?}");
-        // Counted every two: the empty line is passed over, and the line after it is the third.
-        assert!(typst.contains(&"#gk-line(\"line\", 0, n: \"2\", margin: none, side: \"left\")["), "{typst:?}");
-        assert!(!typst.iter().any(|l| l.contains("n: \"3\"")), "{typst:?}");
-        let c = converter(&keys, Flavour::Latex);
-        let out = written(&c, &[verse]);
-        assert!(out.iter().any(|v| v["c"][1] == "\\vspace{\\baselineskip}"));
-    }
-
-    #[test]
-    fn a_number_held_back_is_counted_and_not_shown() {
-        let keys = HashMap::new();
-        let c = converter(&keys, Flavour::Typst);
-        let mut hidden = line("line", 0, None, "two");
-        if let Block::Paragraph { hidden: h, .. } = &mut hidden {
-            *h = true;
-        }
-        let verse = numbered(
-            "verse",
-            None,
-            vec![
-                line("line", 0, Some("1"), "one"),
-                hidden,
-                line("line", 0, None, "three"),
-                line("line", 0, None, "four"),
-            ],
-        );
-        let out = written(&c, &[verse]);
-        let typst: Vec<&str> = out.iter().filter_map(|v| v["c"][1].as_str()).collect();
-        // Every two: the second holds its 2 back, and the fourth shows 4.
-        assert!(!typst.iter().any(|l| l.contains("n: \"2\"")), "{typst:?}");
-        assert!(typst.iter().any(|l| l.contains("n: \"4\"")), "{typst:?}");
-    }
-
-    #[test]
-    fn paragraphs_of_text_are_counted_in_a_numbered_passage_of_text() {
-        let keys = HashMap::new();
-        let c = converter(&keys, Flavour::Docx);
-        let prose = Block::Passage {
-            family: "text".into(),
-            numbering: Numbering::Counted,
-            every: Some(1),
-            side: None,
-            content: vec![line("text", 0, Some("1"), "First."), line("text", 0, None, "Second.")],
-        };
-        let out = written(&c, &[prose]);
-        let said = serde_json::to_string(&out).unwrap();
-        // Each paragraph has its number at its head, the second counted on from the first.
-        assert!(said.contains("\"Verse Number\"") && said.contains("\"2\u{a0}\u{a0}\""), "{said}");
-    }
-
-    #[test]
-    fn a_quotation_is_a_block_quote_with_its_attribution_after_it() {
-        let keys = HashMap::new();
-        let c = converter(&keys, Flavour::Docx);
-        let quotation = passage(
-            "quotation",
-            vec![
-                kind("quote", vec![text("Sing, goddess.")]),
-                kind("quote", vec![text("The wrath.")]),
-                kind("attribution", vec![text("Homer")]),
-                kind("epigraph", vec![text("At the head.")]),
-            ],
-        );
-        let out = written(&c, &[quotation]);
-        assert_eq!(out.len(), 3);
-        assert_eq!(out[0]["t"], "BlockQuote");
-        assert_eq!(out[0]["c"].as_array().unwrap().len(), 2);
-        assert_eq!(out[1]["c"][0][2], json!([["custom-style", "Attribution"]]));
-        assert_eq!(out[2]["c"][0][2], json!([["custom-style", "Epigraph"]]));
-        // Numbered, the quoted paragraphs carry their numbers.
-        let numbered = numbered(
-            "quotation",
-            None,
-            vec![
-                kind("quote", vec![text("First.")]),
-                line("quote", 0, Some("327a"), "Second."),
-                kind("quote", vec![text("Third.")]),
-            ],
-        );
-        let out = written(&c, &[numbered]);
-        assert_eq!(out.len(), 1);
-        let paras = out[0]["c"].as_array().unwrap();
-        assert_eq!(paras[0]["c"][0]["c"], "First.", "nothing before the first number given");
-        assert_eq!(paras[1]["c"][0]["c"][1][0]["c"], "327a\u{a0}\u{a0}");
-        assert_eq!(paras[2]["c"][0]["c"][1][0]["c"], "328\u{a0}\u{a0}", "the count goes on from the digits");
-    }
-
-    #[test]
-    fn a_list_is_nested_by_indent() {
-        let keys = HashMap::new();
-        let c = converter(&keys, Flavour::Plain);
-        let list = passage(
-            "list",
-            vec![
-                line("item", 0, None, "one"),
-                line("item", 0, None, "two"),
-                line("numbered", 1, Some("3"), "nested"),
-                line("numbered", 1, None, "more"),
-                line("item", 2, None, "deeper"),
-                line("item", 0, None, "three"),
-                line("numbered", 0, None, "apart"),
-            ],
-        );
-        let out = written(&c, &[list]);
-        assert_eq!(out.len(), 2);
-        assert_eq!(out[0]["t"], "BulletList");
-        let items = out[0]["c"].as_array().unwrap();
-        assert_eq!(items.len(), 3);
-        assert_eq!(items[1][1]["t"], "OrderedList");
-        assert_eq!(items[1][1]["c"][0][0], 3);
-        let nested = items[1][1]["c"][1].as_array().unwrap();
-        assert_eq!(nested.len(), 2);
-        assert_eq!(nested[1][1]["t"], "BulletList");
-        assert_eq!(out[1]["t"], "OrderedList");
-        assert_eq!(out[1]["c"][0][0], 1);
-    }
-
-    #[test]
-    fn code_and_a_family_of_the_writers_own() {
-        let keys = HashMap::new();
-        let mut c = converter(&keys, Flavour::Docx);
-        let own = vec![crate::formats::kinds::OwnKind {
-            id: "k1".into(),
-            name: "Letter".into(),
-            family: crate::formats::kinds::Family::Paragraph,
-            based_on: "text".into(),
-            look: Default::default(),
-        }];
-        c.extras.kinds = crate::formats::kinds::table(&DocumentFormat::default(), &own);
-        let blocks = vec![
-            passage(
-                "code",
-                vec![kind("code", vec![text("let x = 1;")]), kind("code", vec![]), kind("code", vec![text("let y;")])],
-            ),
-            passage("k1", vec![kind("k1", vec![text("Dear friend,")]), kind("k1", vec![text("I write.")])]),
-            passage("draft", vec![kind("draft", vec![text("Look this up.")])]),
-            passage("break", vec![kind("break", vec![])]),
-        ];
-        let out = written(&c, &blocks);
-        assert_eq!(out.len(), 4);
-        assert_eq!(out[0]["t"], "CodeBlock");
-        assert_eq!(out[0]["c"][1], "let x = 1;\n\nlet y;");
-        assert_eq!(out[1]["c"][0][2], json!([["custom-style", "Letter"]]));
-        assert_eq!(out[2]["c"][0][2], json!([["custom-style", "Letter"]]));
-        assert_eq!(out[3]["c"][0][2], json!([["custom-style", "Section Break"]]));
-        assert_eq!(out[3]["c"][1][0]["c"][0]["c"], "*");
     }
 }

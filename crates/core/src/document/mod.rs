@@ -82,6 +82,25 @@ pub enum Inline {
     RefMark {
         label: String,
     },
+    /// What the writer said of one line by hand, where lines are numbered:
+    /// it stands at the start of the line, first in its paragraph or right
+    /// after a line break. A number or label given by hand, from which the
+    /// count goes on; `counted: false` for a line the count passes over;
+    /// `hidden` for one that is counted and shows no number; words in the
+    /// margin; and the line's indent, for verse. No part of the words.
+    #[serde(rename = "linemark")]
+    LineMark {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        number: Option<String>,
+        #[serde(default = "yes", skip_serializing_if = "is_true")]
+        counted: bool,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        hidden: bool,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        margin: Option<String>,
+        #[serde(default, skip_serializing_if = "is_zero")]
+        indent: u32,
+    },
 }
 
 /// What words point by.
@@ -123,35 +142,19 @@ pub enum Block {
     /// A paragraph of a kind: text, a line of verse, a speaker, an item of
     /// a list, the heading of a scene, or a kind of the writer's own. `name`
     /// is the id of the kind (`formats/kinds.rs`), `text` where nothing is
-    /// said. What is said of its number is as ADR 0039 and 0040 have it.
+    /// said. A paragraph is lines, parted by line breaks; what is said of
+    /// one line by hand stands in a line mark at its start. `numbering`,
+    /// `every` and `side` are the settings of the stretch it stands in:
+    /// consecutive paragraphs with the same settings are numbered together,
+    /// whatever their kinds. `new` begins a new run of its kind, where two
+    /// runs of one kind stand together. See ADR 0041.
     Paragraph {
         #[serde(default = "text_kind")]
         name: String,
-        /// Steps of indentation, of a line of verse or an item of a list.
+        /// Steps of indentation, of an item of a list or any paragraph indented.
         #[serde(default)]
         indent: u32,
-        /// A number or a label given by hand, from which the count goes on.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        number: Option<String>,
-        /// False for a paragraph the count passes over.
-        #[serde(default = "yes")]
-        counted: bool,
-        /// True for a paragraph that is counted and shows no number: what it
-        /// would show is held back, and the count goes on as it would.
-        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-        hidden: bool,
-        /// Words in the margin beside the paragraph.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        margin: Option<String>,
-        content: Vec<Inline>,
-    },
-    /// A run of paragraphs of kinds that belong together: a quotation, a
-    /// verse, a script, a list (ADR 0040). `family` is one of the families
-    /// of the catalogue, or the id of a kind of the writer's own based on
-    /// text. The content holds paragraphs and nothing else.
-    Passage {
-        family: String,
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "Numbering::is_none")]
         numbering: Numbering,
         /// Every how many the numbers are shown; nothing for the layout's.
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -159,8 +162,14 @@ pub enum Block {
         /// The side the numbers stand on; nothing for the layout's.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         side: Option<Side>,
-        content: Vec<Block>,
+        /// Begins a new run of its kind.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        new: bool,
+        content: Vec<Inline>,
     },
+    /// A break of the page or of the column: what follows stands at the top
+    /// of the next.
+    Break { what: BreakKind },
     /// Two texts side by side: an original and its translation.
     Parallel { left: Vec<Block>, right: Vec<Block> },
     /// Mathematics on a line of its own, in the notation of TeX.
@@ -323,8 +332,25 @@ fn yes() -> bool {
     true
 }
 
-/// How a passage numbers its paragraphs: not at all, counted from the
-/// first number given by hand, or only by the numbers given.
+fn is_true(b: &bool) -> bool {
+    *b
+}
+
+fn is_zero(n: &u32) -> bool {
+    *n == 0
+}
+
+/// What a break breaks: the page, or the column.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BreakKind {
+    #[default]
+    Page,
+    Column,
+}
+
+/// How a stretch numbers its lines: not at all, counted from the first
+/// number given by hand, or only by the numbers given.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Numbering {
@@ -334,7 +360,13 @@ pub enum Numbering {
     Given,
 }
 
-/// The side of the text the numbers of a passage stand on.
+impl Numbering {
+    pub fn is_none(&self) -> bool {
+        *self == Numbering::None
+    }
+}
+
+/// The side of the text the numbers of a stretch stand on.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Side {
@@ -370,44 +402,41 @@ impl Block {
         Block::of_kind("text", content)
     }
 
-    /// A paragraph of a kind, with nothing said of its number.
+    /// A paragraph of a kind, not numbered.
     pub fn of_kind(name: &str, content: Vec<Inline>) -> Block {
         Block::Paragraph {
             name: name.to_owned(),
             indent: 0,
-            number: None,
-            counted: true,
-            hidden: false,
-            margin: None,
+            numbering: Numbering::None,
+            every: None,
+            side: None,
+            new: false,
             content,
         }
     }
 
-    /// A passage of a family, not numbered.
-    pub fn passage(family: &str, content: Vec<Block>) -> Block {
-        Block::Passage { family: family.to_owned(), numbering: Numbering::None, every: None, side: None, content }
-    }
-
-    /// The same paragraph, given a number by hand; any other block as it is.
-    pub fn with_number(mut self, given: &str) -> Block {
-        if let Block::Paragraph { number, .. } = &mut self {
-            *number = Some(given.to_owned());
+    /// The same paragraph, numbered as said; any other block as it is.
+    pub fn numbered(mut self, how: Numbering, step: Option<u32>, on: Option<Side>) -> Block {
+        if let Block::Paragraph { numbering, every, side, .. } = &mut self {
+            *numbering = how;
+            *every = step;
+            *side = on;
         }
         self
     }
 
-    /// The same paragraph, with words in the margin beside it.
-    pub fn with_margin(mut self, words: &str) -> Block {
-        if let Block::Paragraph { margin, .. } = &mut self {
-            *margin = Some(words.to_owned());
+    /// The same paragraph, indented so many steps.
+    pub fn indented(mut self, steps: u32) -> Block {
+        if let Block::Paragraph { indent, .. } = &mut self {
+            *indent = steps;
         }
         self
     }
 
-    /// The same paragraph, which the count passes over.
-    pub fn not_counted(mut self) -> Block {
-        if let Block::Paragraph { counted, .. } = &mut self {
-            *counted = false;
+    /// The same paragraph, beginning a new run of its kind.
+    pub fn begins_run(mut self) -> Block {
+        if let Block::Paragraph { new, .. } = &mut self {
+            *new = true;
         }
         self
     }
@@ -541,13 +570,12 @@ pub fn walk<'a>(list: &'a [Block], block: &mut dyn FnMut(&'a Block), line: &mut 
         block(b);
         match b {
             Block::Paragraph { content, .. } => line(content),
-            Block::Passage { content, .. } => walk(content, block, line),
             Block::Parallel { left, right } => {
                 walk(left, block, line);
                 walk(right, block, line);
             }
             Block::Figure { caption, .. } => line(caption),
-            Block::Equation { .. } => {}
+            Block::Equation { .. } | Block::Break { .. } => {}
             Block::Table(table) => {
                 line(&table.caption);
                 for row in &table.rows {
@@ -784,9 +812,62 @@ pub(crate) mod fixtures {
         Block::of_kind(name, content)
     }
 
-    /// A passage of a family, not numbered.
-    pub fn passage(family: &str, content: Vec<Block>) -> Block {
-        Block::passage(family, content)
+    /// A line mark that says nothing; what it says is filled in after.
+    pub fn mark() -> LineMarkSaid {
+        LineMarkSaid::default()
+    }
+
+    /// What a line mark says, for building one in a test.
+    #[derive(Default)]
+    pub struct LineMarkSaid {
+        pub number: Option<&'static str>,
+        pub uncounted: bool,
+        pub hidden: bool,
+        pub margin: Option<&'static str>,
+        pub indent: u32,
+    }
+
+    impl LineMarkSaid {
+        pub fn number(self, n: &'static str) -> Self {
+            LineMarkSaid { number: Some(n), ..self }
+        }
+        pub fn margin(self, m: &'static str) -> Self {
+            LineMarkSaid { margin: Some(m), ..self }
+        }
+        pub fn indent(self, indent: u32) -> Self {
+            LineMarkSaid { indent, ..self }
+        }
+        pub fn hidden(self) -> Self {
+            LineMarkSaid { hidden: true, ..self }
+        }
+        pub fn uncounted(self) -> Self {
+            LineMarkSaid { uncounted: true, ..self }
+        }
+        pub fn done(self) -> Inline {
+            Inline::LineMark {
+                number: self.number.map(Into::into),
+                counted: !self.uncounted,
+                hidden: self.hidden,
+                margin: self.margin.map(Into::into),
+                indent: self.indent,
+            }
+        }
+    }
+
+    /// A paragraph of a kind whose lines are the words given, each line
+    /// begun by the mark given with it, if any.
+    pub fn lines(name: &str, lines: Vec<(Option<Inline>, &str)>) -> Block {
+        let mut content = Vec::new();
+        for (i, (mark, words)) in lines.into_iter().enumerate() {
+            if i > 0 {
+                content.push(Inline::Break);
+            }
+            content.extend(mark);
+            if !words.is_empty() {
+                content.push(text(words));
+            }
+        }
+        Block::of_kind(name, content)
     }
 
     pub fn reference(id: &str, key: &str, src: &str) -> CarriedReference {
@@ -825,7 +906,7 @@ pub(crate) mod fixtures {
                                 place: None,
                             },
                         ]),
-                        passage("quotation", vec![kind("quote", vec![text("Sing, goddess, the wrath.")])]),
+                        kind("quote", vec![text("Sing, goddess, the wrath.")]),
                     ],
                     element: Some("e1".into()),
                     kind: None,
@@ -870,10 +951,14 @@ mod tests {
                  {"kind":"citation","items":[{"id":"r1","locator":"45","label":"chapter","suppressAuthor":true}],"mode":"intext"},
                  {"kind":"footnote","content":[{"kind":"text","text":"n","marks":{}}]},
                  {"kind":"break"}]},
-               {"kind":"passage","family":"verse","numbering":"counted","every":null,"side":"right","content":[
-                 {"kind":"paragraph","name":"line","indent":1,"number":"45","counted":false,"margin":"trochaic","content":[]},
-                 {"kind":"paragraph","name":"speaker","content":[]}]},
-               {"kind":"passage","family":"list","content":[]}
+               {"kind":"paragraph","name":"speaker","numbering":"counted","every":5,"side":"right","content":[{"kind":"text","text":"Nurse","marks":{}}]},
+               {"kind":"paragraph","name":"line","indent":0,"numbering":"counted","every":5,"side":"right","new":true,"content":[
+                 {"kind":"linemark","number":"45","counted":false,"hidden":true,"margin":"ia.","indent":1},
+                 {"kind":"text","text":"If only","marks":{}},
+                 {"kind":"break"},
+                 {"kind":"linemark"},
+                 {"kind":"text","text":"the Argo","marks":{}}]},
+               {"kind":"break","what":"column"}
              ]}
           ],
           "references": [{"id":"r1","key":"k","type":"book","fields":{"title":"T"},"names":{"author":[{"family":"F","given":"G"}]}}]
@@ -896,25 +981,49 @@ mod tests {
             },
             other => panic!("{other:?}"),
         }
-        let Block::Paragraph { name, indent, counted, .. } = &doc.sections[0].blocks[0] else { panic!() };
+        let Block::Paragraph { name, indent, numbering, new, .. } = &doc.sections[0].blocks[0] else { panic!() };
         assert_eq!(
-            (name.as_str(), *indent, *counted),
-            ("text", 0, true),
+            (name.as_str(), *indent, *numbering, *new),
+            ("text", 0, Numbering::None, false),
             "a paragraph is text unless it says otherwise"
         );
-        let Block::Passage { family, numbering, every, side, content } = &doc.sections[0].blocks[1] else { panic!() };
+        let Block::Paragraph { name, numbering, every, side, .. } = &doc.sections[0].blocks[1] else { panic!() };
         assert_eq!(
-            (family.as_str(), *numbering, *every, *side),
-            ("verse", Numbering::Counted, None, Some(Side::Right))
+            (name.as_str(), *numbering, *every, *side),
+            ("speaker", Numbering::Counted, Some(5), Some(Side::Right))
         );
-        let Block::Paragraph { name, indent, number, counted, margin, .. } = &content[0] else { panic!() };
-        assert_eq!(name, "line");
-        assert_eq!((*indent, number.as_deref(), *counted, margin.as_deref()), (1, Some("45"), false, Some("trochaic")));
-        assert!(matches!(&content[1], Block::Paragraph { name, counted: true, .. } if name == "speaker"));
-        assert!(matches!(&doc.sections[0].blocks[2], Block::Passage { numbering: Numbering::None, .. }));
-        // Written again, a paragraph says what it is.
+        let Block::Paragraph { name, new, content, .. } = &doc.sections[0].blocks[2] else { panic!() };
+        assert_eq!((name.as_str(), *new), ("line", true));
+        assert_eq!(
+            content[0],
+            Inline::LineMark {
+                number: Some("45".into()),
+                counted: false,
+                hidden: true,
+                margin: Some("ia.".into()),
+                indent: 1
+            }
+        );
+        assert_eq!(
+            content[3],
+            Inline::LineMark { number: None, counted: true, hidden: false, margin: None, indent: 0 },
+            "a mark that says nothing is counted"
+        );
+        assert_eq!(doc.sections[0].blocks[3], Block::Break { what: BreakKind::Column });
+        // Written again, each says what it says and nothing more, as it was sent.
         let json = serde_json::to_string(&Block::paragraph(vec![])).unwrap();
-        assert_eq!(json, r#"{"kind":"paragraph","name":"text","indent":0,"counted":true,"content":[]}"#);
+        assert_eq!(json, r#"{"kind":"paragraph","name":"text","indent":0,"content":[]}"#);
+        let json = serde_json::to_string(&doc.sections[0].blocks[2]).unwrap();
+        assert!(
+            json.starts_with(
+                r#"{"kind":"paragraph","name":"line","indent":0,"numbering":"counted","every":5,"side":"right","new":true,"content":[{"kind":"linemark","number":"45","counted":false,"hidden":true,"margin":"ia.","indent":1},"#
+            ),
+            "{json}"
+        );
+        assert!(json.contains(r#"{"kind":"break"},{"kind":"linemark"},"#), "{json}");
+        assert_eq!(serde_json::to_string(&doc.sections[0].blocks[3]).unwrap(), r#"{"kind":"break","what":"column"}"#);
+        // A passage, which is no more, is not read.
+        assert!(serde_json::from_str::<Block>(r#"{"kind":"passage","family":"verse","content":[]}"#).is_err());
     }
 
     #[test]

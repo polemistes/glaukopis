@@ -541,6 +541,7 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     converter.extras.refmarks = f.text.refmarks;
     converter.extras.verse = f.verse.clone();
     converter.extras.classes = matches!(target, Target::Html | Target::Epub);
+    converter.extras.columns = f.page.columns;
 
     let mut meta = Map::new();
     if let Some(lang) = doc.language.as_deref().filter(|l| !l.trim().is_empty()) {
@@ -714,8 +715,17 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
             }
             Item::Made(GeneratedPart::Body) => {
                 flush(&mut front, &mut blocks);
+                // In LaTeX the columns are an environment around the body.
+                let columns = crate::export::latex::columns_around(f)
+                    .filter(|_| matches!(target, Target::Latex | Target::PdfLatex));
+                if let Some((open, _)) = &columns {
+                    blocks.push(json!({"t": "RawBlock", "c": ["latex", open]}));
+                }
                 for s in &doc.sections {
                     converter.section(s, &mut blocks);
+                }
+                if let Some((_, close)) = &columns {
+                    blocks.push(json!({"t": "RawBlock", "c": ["latex", close]}));
                 }
             }
             // The notes are placed by the filter (`resources/pandoc/notes.lua`),
@@ -1644,7 +1654,8 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
                     inlines(content, with_notes, out);
                     out.push(' ');
                 }
-                // A formula in the line stands for a word, and so do words that point.
+                // A formula in the line stands for a word, and so do words that point;
+                // what is said of a line by hand is no word.
                 Inline::Math { .. } | Inline::CrossRef { .. } => out.push_str(" x "),
                 _ => {}
             }
@@ -1660,9 +1671,8 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
                         inlines(content, with_notes, out);
                     }
                 }
-                Block::Passage { content, .. } => blocks(content, with_notes, out),
                 Block::Figure { caption, .. } => inlines(caption, with_notes, out),
-                Block::Equation { .. } => {}
+                Block::Equation { .. } | Block::Break { .. } => {}
                 Block::Row { items } => blocks(items, with_notes, out),
                 Block::Table(table) => {
                     inlines(&table.caption, with_notes, out);
@@ -2169,17 +2179,14 @@ mod tests {
         r.document.sections.push(Section {
             level: 1,
             heading: Some(vec![text("Act one")]),
-            blocks: vec![Block::passage(
-                "script",
-                vec![
-                    part("scene", "Int. Palace – night"),
-                    part("action", "Medea paces. The nurse watches."),
-                    part("character", "Nurse"),
-                    part("parenthetical", "quietly"),
-                    part("dialogue", "If only the Argo had never flown."),
-                    part("transition", "Cut to:"),
-                ],
-            )],
+            blocks: vec![
+                part("scene", "Int. Palace – night"),
+                part("action", "Medea paces. The nurse watches."),
+                part("character", "Nurse"),
+                part("parenthetical", "quietly"),
+                part("dialogue", "If only the Argo had never flown."),
+                part("transition", "Cut to:"),
+            ],
             element: Some("act".into()),
             kind: None,
         });
@@ -2790,47 +2797,45 @@ mod tests {
         let out = s.work.join("out");
         fs::create_dir_all(&out).unwrap();
         let mut r = request("chicago-author-date");
-        let line = |kind: &str, indent: u32, words: &str| Block::Paragraph {
-            name: kind.into(),
-            indent,
-            number: None,
-            counted: true,
-            hidden: false,
-            margin: None,
-            content: vec![text(words)],
-        };
-        let verse = Block::Passage {
-            family: "verse".into(),
-            numbering: Numbering::Counted,
-            every: None,
-            side: None,
-            content: vec![
-                line("speaker", 0, "Nurse"),
-                line("line", 0, "If only the Argo had never flown").with_number("1"),
-                line("line", 1, "through the dark Clashing Rocks"),
-                line("direction", 0, "She weeps."),
-                line("line", 0, "to the land of Colchis,"),
-                line("line", 0, "nor the pine been felled"),
-                line("line", 0, "in the glens of Pelion."),
-                // A number given by hand, a line not counted, and words in the margin.
-                line("line", 0, "Nor had the heroes rowed").with_number("1094a1"),
-                line("line", 2, "for Pelias").not_counted(),
-                line("line", 0, "the golden fleece.").with_margin("ia. trim."),
-            ],
-        };
+        use crate::document::fixtures::{lines, mark};
+        let counted = |b: Block| b.numbered(Numbering::Counted, None, None);
+        // A speaker, two stanzas with a direction between them, and a third
+        // with a number given by hand, a line not counted, and words in the margin.
+        let mut blocks = vec![
+            counted(Block::of_kind("speaker", vec![text("Nurse")])),
+            counted(lines(
+                "line",
+                vec![
+                    (Some(mark().number("1").done()), "If only the Argo had never flown"),
+                    (Some(mark().indent(1).done()), "through the dark Clashing Rocks"),
+                ],
+            )),
+            counted(Block::of_kind("direction", vec![text("She weeps.")])),
+            counted(lines(
+                "line",
+                vec![
+                    (None, "to the land of Colchis,"),
+                    (None, "nor the pine been felled"),
+                    (None, "in the glens of Pelion."),
+                ],
+            )),
+            counted(lines(
+                "line",
+                vec![
+                    (Some(mark().number("1094a1").done()), "Nor had the heroes rowed"),
+                    (Some(mark().indent(2).uncounted().done()), "for Pelias"),
+                    (Some(mark().margin("ia. trim.").done()), "the golden fleece."),
+                ],
+            )),
+        ];
+        blocks.push(Block::Parallel {
+            left: vec![Block::of_kind("line", vec![text("Εἴθ᾽ ὤφελ᾽ Ἀργοῦς μὴ διαπτάσθαι σκάφος")])],
+            right: vec![Block::paragraph(vec![text("If only the Argo had never flown.")])],
+        });
         r.document.sections.push(Section {
             level: 1,
             heading: Some(vec![text("The nurse")]),
-            blocks: vec![
-                verse.clone(),
-                Block::Parallel {
-                    left: vec![Block::passage(
-                        "verse",
-                        vec![line("line", 0, "Εἴθ᾽ ὤφελ᾽ Ἀργοῦς μὴ διαπτάσθαι σκάφος")],
-                    )],
-                    right: vec![Block::paragraph(vec![text("If only the Argo had never flown.")])],
-                },
-            ],
+            blocks,
             element: Some("nurse".into()),
             kind: None,
         });
@@ -2847,6 +2852,10 @@ mod tests {
         assert!(t.contains("#gk-line(\"line\", 0, n: \"1094a1\", margin: none, side: \"left\")["), "{t}");
         assert!(t.contains("#gk-line(\"line\", 2, n: none, margin: none, side: \"left\")["), "{t}");
         assert!(t.contains("#gk-line(\"line\", 0, n: none, margin: \"ia. trim.\", side: \"left\")["), "{t}");
+        // One verse, the direction a line of it, and room between two stanzas that follow each other.
+        assert_eq!(t.matches("#gk-verse[").count(), 2, "the verse, and the one beside its translation: {t}");
+        assert!(t.contains("#gk-line(\"direction\", 0, n: none, margin: none, side: \"left\")["), "{t}");
+        assert_eq!(t.matches("#v(1em)").count(), 1, "{t}");
         assert!(t.contains("#gk-parallel(["), "{t}");
         let p = preview(&s.ctx(), &r).unwrap();
         assert!(p.warnings.is_empty(), "{:?}", p.warnings);
@@ -2981,16 +2990,13 @@ mod tests {
 
         // A numbered passage of prose: the numbers beside the paragraphs, in every kind of document.
         let mut prose = r.clone();
-        prose.document.sections[0].blocks = vec![Block::Passage {
-            family: "quotation".into(),
-            numbering: Numbering::Counted,
-            every: Some(1),
-            side: None,
-            content: vec![
-                line("quote", 0, "I went down yesterday to the Piraeus.").with_number("327a"),
-                line("quote", 0, "Polemarchus saw us from a distance."),
-            ],
-        }];
+        prose.document.sections[0].blocks = vec![
+            lines("quote", vec![(Some(mark().number("327a").done()), "I went down yesterday to the Piraeus.")]),
+            lines("quote", vec![(None, "Polemarchus saw us from a distance.")]),
+        ]
+        .into_iter()
+        .map(|b| b.numbered(Numbering::Counted, Some(1), None))
+        .collect();
         export(&s.ctx(), &prose, Target::Typst, &typ, &ExportOptions::default()).unwrap();
         let t = fs::read_to_string(&typ).unwrap();
         assert!(t.contains("#gk-beside(\"left\", gk-number(\"327a\"));"), "{t}");
@@ -3288,22 +3294,15 @@ mod tests {
             level: 1,
             heading: Some(vec![text("Kinds")]),
             blocks: vec![
-                Block::passage(
-                    "quotation",
-                    vec![
-                        kind("epigraph", "Sing, goddess, the wrath."),
-                        kind("attribution", "Homer"),
-                        kind("k1", "Dear friend, I write of wrath."),
-                    ],
-                ),
-                Block::passage("break", vec![kind("break", "")]),
-                Block::passage("draft", vec![kind("draft", "Zzdraftzz: look this up again.")]),
-                Block::passage(
-                    "code",
-                    vec![Block::of_kind("code", vec![text("let x = 1;"), Inline::Break, text("let y = 2;")])],
-                ),
+                kind("epigraph", "Sing, goddess, the wrath."),
+                kind("attribution", "Homer"),
+                kind("k1", "Dear friend, I write of wrath."),
+                kind("break", ""),
+                kind("draft", "Zzdraftzz: look this up again."),
+                Block::of_kind("code", vec![text("let x = 1;"), Inline::Break, text("let y = 2;")]),
                 Block::paragraph(vec![
-                    text("The word "),
+                    marked("Me.", "kind", json!({"name": "speaker"})),
+                    text(" The word "),
                     marked("μῆνις", "kind", json!({"name": "foreign", "lang": "el"})),
                     text(" is "),
                     marked("wrath", "kind", json!({"name": "mention"})),
@@ -3391,6 +3390,10 @@ mod tests {
         assert!(document.contains("let x = 1;") && document.contains("let y = 2;"), "{document}");
         assert!(document.contains("* * *"), "{document}");
         assert!(!document.contains("Zzdraftzz"), "a note to oneself goes into no document");
+        // A speaker within a line, in the character style beside the paragraph style of a speaker.
+        assert!(document.contains("<w:rStyle w:val=\"SpeakerChar\""), "{document}");
+        assert!(word_style(&styles, "SpeakerChar").contains("<w:smallCaps"), "{styles}");
+        assert!(styles.contains("w:styleId=\"StageDirectionChar\""), "{styles}");
 
         // In English the marks are the English ones, and italics are italics.
         let r = with_kinds("en-GB");

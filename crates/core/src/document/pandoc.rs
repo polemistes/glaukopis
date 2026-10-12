@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 
 use serde_json::{Value, json};
 
-use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, RefForm, Section};
+use super::{Block, CiteItem, CiteMode, Document, Inline, NotePlace, Numbering, RefForm, Section};
 use crate::formats::kinds::{self, KindInfo, Resolved};
 use crate::formats::{Case, Equations, Figures, RefMarks, Tables, Verse};
 use crate::templates::kinds::PartInfo;
@@ -123,6 +123,10 @@ pub struct Extras {
     pub verse: Verse,
     /// Whether the document can carry the classes of kinds, as a page of the web can.
     pub classes: bool,
+    /// How many columns the text is set in, as the layout says: 1, or nought for one.
+    pub columns: u8,
+    /// Whether what is written stands within a block, in which Typst allows no break.
+    pub(super) contained: Cell<bool>,
     /// What has been given a place that can be gone to.
     anchored: RefCell<HashSet<String>>,
     /// How many pointers point to nothing that is in the document.
@@ -264,7 +268,7 @@ impl Converter<'_> {
             for block in list {
                 match block {
                     Block::Paragraph { content, .. } => inlines(content, c.to),
-                    Block::Passage { content, .. } => blocks(content, c),
+                    Block::Break { .. } => {}
                     Block::Parallel { left, right } => {
                         blocks(left, c);
                         blocks(right, c);
@@ -525,6 +529,8 @@ impl Converter<'_> {
                 }
                 Inline::Break => out.push(json!({"t": "LineBreak"})),
                 Inline::RefMark { label } => self.refmark(label.trim(), &mut out),
+                // What is said of a line stands beside it, where the paragraph is written.
+                Inline::LineMark { .. } => {}
             }
         }
         out
@@ -568,7 +574,7 @@ impl Converter<'_> {
 
     /// A paragraph that follows a figure or an equation: it begins as the
     /// first paragraph under a heading does, in every kind of document.
-    fn paragraph_after(&self, mut inner: Vec<Value>) -> Value {
+    pub(super) fn paragraph_after(&self, mut inner: Vec<Value>) -> Value {
         match self.extras.flavour {
             Flavour::Latex if !self.extras.first_indented => {
                 inner.insert(0, json!({"t": "RawInline", "c": ["latex", "\\noindent "]}));
@@ -593,25 +599,23 @@ impl Converter<'_> {
                 matches!(block, Block::Equation { .. } | Block::Figure { .. } | Block::Table(_) | Block::Row { .. }),
             );
             match block {
-                Block::Paragraph { name, content, .. } if name == "text" => {
-                    let inner = self.inlines(content);
-                    if !inner.is_empty() {
-                        out.push(if after { self.paragraph_after(inner) } else { json!({"t": "Para", "c": inner}) });
+                // The paragraphs that stand together, grouped as the document groups them.
+                Block::Paragraph { .. } => {
+                    let from = at - 1;
+                    while matches!(list.get(at), Some(Block::Paragraph { .. })) {
+                        at += 1;
                     }
+                    self.paragraphs(&list[from..at], after, out);
                 }
-                // A paragraph of a kind outside any passage: the interface
-                // puts every one in a passage, but a document may hold one.
-                Block::Paragraph { name, content, .. } => self.stray_paragraph(name, content, out),
-                Block::Passage { family, numbering, every, side, content } => {
-                    self.passage_block(family, *numbering, *every, *side, content, out)
-                }
+                Block::Break { what } => self.break_block(*what, out),
                 Block::Parallel { left, right } => self.parallel(left, right, out),
                 Block::Equation { .. } | Block::Figure { .. } | Block::Table(_) | Block::Row { .. } => {
                     // Where the text that flows around something must be
                     // given to it, it is the paragraphs of text that follow.
                     let mut around = Vec::new();
                     if self.takes_text(block) {
-                        while let Some(Block::Paragraph { name, content, .. }) = list.get(at)
+                        while let Some(Block::Paragraph { name, content, numbering: Numbering::None, .. }) =
+                            list.get(at)
                             && name == "text"
                         {
                             let inner = self.inlines(content);
@@ -731,7 +735,10 @@ impl Converter<'_> {
             out.push(json!({"t": "Header", "c": [level, [id, ["unnumbered"], []], h]}));
         }
         let mut body = Vec::new();
+        // In Typst the text of a part stands in a block.
+        let contained = self.extras.contained.replace(self.extras.flavour == Flavour::Typst);
         self.blocks(&section.blocks, &mut body);
+        self.extras.contained.set(contained);
         if !body.is_empty() {
             let class = format!("gk-part-{}", label(kind));
             match self.extras.flavour {
@@ -898,7 +905,13 @@ impl Converter<'_> {
                             if let Some(i) = info
                                 && !i.style.is_empty()
                             {
-                                attrs.push(json!(["custom-style", i.style]));
+                                // A kind of paragraph that stands on words, a speaker in
+                                // a line, has a character style beside its paragraph style.
+                                if i.family == kinds::Family::Paragraph {
+                                    attrs.push(json!(["custom-style", format!("{} Char", i.style)]));
+                                } else {
+                                    attrs.push(json!(["custom-style", i.style]));
+                                }
                             }
                         }
                         _ => {

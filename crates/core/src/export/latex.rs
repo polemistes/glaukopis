@@ -291,6 +291,11 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
     if f.line_numbers {
         let _ = writeln!(h, "\\usepackage{{lineno}}\n\\linenumbers");
     }
+    // The columns the text is set in: the body stands in a `multicols`
+    // environment (`columns_around`), and a break of the column ends one.
+    if f.page.columns > 1 {
+        let _ = writeln!(h, "\\usepackage{{multicol}}\n\\setlength{{\\columnsep}}{{{}}}", f.page.column_gap);
+    }
 
     // Figures stand where they are written, and mathematics has what it needs.
     let _ = writeln!(h, "\\usepackage{{float}}\n\\usepackage{{amsmath}}\n\\usepackage{{graphicx}}");
@@ -307,6 +312,13 @@ pub fn settings(f: &DocumentFormat, p: &Particulars) -> Settings {
     }
 
     Settings { variables: v, header: h, number_sections: f.headings.numbered }
+}
+
+/// What is written around the body of the document where its text is set
+/// in more than one column: the beginning and the end of `multicols`.
+pub fn columns_around(f: &DocumentFormat) -> Option<(String, String)> {
+    (f.page.columns > 1)
+        .then(|| (format!("\\begin{{multicols}}{{{}}}", f.page.columns.min(4)), "\\end{multicols}".to_owned()))
 }
 
 /// What is written around a paragraph of a kind, from the kind's look: the

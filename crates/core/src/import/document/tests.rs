@@ -384,53 +384,44 @@ fn lists_quotations_and_what_has_no_place() {
                 r#"{"t":"HorizontalRule"}"#.to_owned(),
                 r#"{"t":"RawBlock","c":["html","<hr>"]}"#.to_owned(),
                 format!(r#"{{"t":"Div","c":[["",[],[]],[{}]]}}"#, para("In a division.")),
-                r#"{"t":"LineBlock","c":[[{"t":"Str","c":"A"}],[{"t":"Str","c":"B"}]]}"#.to_owned(),
+                // Two stanzas, the second a line indented a step.
+                r#"{"t":"LineBlock","c":[[{"t":"Str","c":"A"}],[{"t":"Str","c":"B"}],[],[{"t":"Str","c":"\u00a0\u00a0\u00a0\u00a0C"}]]}"#
+                    .to_owned(),
+                // Breaks of the page, as TeX and as a division say them, and one of the column.
+                r#"{"t":"RawBlock","c":["latex","\\newpage"]}"#.to_owned(),
+                format!(r#"{{"t":"Div","c":[["",["page-break"],[]],[]]}}"#),
+                r#"{"t":"RawBlock","c":["tex","\\columnbreak"]}"#.to_owned(),
             ],
         ),
         &none,
     );
-    let item = |name: &str, indent: u32, number: Option<&str>, words: &str| Block::Paragraph {
-        name: name.into(),
-        indent,
+    let item = |name: &str, indent: u32, words: &str| Block::of_kind(name, vec![text(words)]).indented(indent);
+    let mark = |number: Option<&str>, indent: u32| Inline::LineMark {
         number: number.map(Into::into),
         counted: true,
         hidden: false,
         margin: None,
-        content: vec![text(words)],
+        indent,
     };
     assert_eq!(
         read.sections[0].blocks,
         vec![
-            Block::passage("quotation", vec![Block::of_kind("quote", vec![text("Sing, goddess.")])]),
+            Block::of_kind("quote", vec![text("Sing, goddess.")]),
             // The items with their depths, the list within a step deeper and numbered from three.
-            Block::passage(
-                "list",
-                vec![
-                    item("item", 0, None, "one"),
-                    item("item", 0, None, "two"),
-                    item("numbered", 1, Some("3"), "nested")
-                ]
-            ),
-            Block::passage(
-                "code",
-                vec![
-                    Block::of_kind("code", vec![text("first line")]),
-                    Block::of_kind("code", vec![]),
-                    Block::of_kind("code", vec![text("second line")]),
-                ]
-            ),
-            Block::passage(
-                "glossary",
-                vec![
-                    Block::of_kind("headword", vec![text("Term")]),
-                    Block::of_kind("gloss", vec![text("What it means.")])
-                ]
-            ),
+            item("item", 0, "one"),
+            item("item", 0, "two"),
+            Block::of_kind("numbered", vec![mark(Some("3"), 0), text("nested")]).indented(1),
+            // Code is one paragraph, its lines parted by line breaks.
+            Block::of_kind("code", vec![text("first line"), Inline::Break, Inline::Break, text("second line")]),
+            Block::of_kind("headword", vec![text("Term")]),
+            Block::of_kind("gloss", vec![text("What it means.")]),
             paragraph(vec![text("In a division.")]),
-            Block::passage(
-                "verse",
-                vec![Block::of_kind("line", vec![text("A")]), Block::of_kind("line", vec![text("B")])]
-            ),
+            // A paragraph of verse for each stanza, its lines parted by line breaks.
+            Block::of_kind("line", vec![text("A"), Inline::Break, text("B")]),
+            Block::of_kind("line", vec![mark(None, 1), text("C")]),
+            Block::Break { what: crate::document::BreakKind::Page },
+            Block::Break { what: crate::document::BreakKind::Page },
+            Block::Break { what: crate::document::BreakKind::Column },
         ]
     );
     let all = read.remarks.join("\n");
@@ -979,23 +970,28 @@ fn kinds(blocks: &[Block]) -> Vec<&'static str> {
     blocks
         .iter()
         .map(|b| match b {
-            Block::Paragraph { .. } => "paragraph",
+            Block::Paragraph { name, .. } => match name.as_str() {
+                "quote" => "quotation",
+                "line" => "verse",
+                "item" | "numbered" => "list",
+                "code" => "code",
+                "headword" | "gloss" => "glossary",
+                _ => "paragraph",
+            },
             Block::Equation { .. } => "equation",
             Block::Table(_) => "table",
             Block::Row { .. } => "row",
             Block::Figure { .. } => "figure",
             Block::Parallel { .. } => "parallel",
-            // A passage by its family.
-            Block::Passage { family, .. } => match family.as_str() {
-                "quotation" => "quotation",
-                "verse" => "verse",
-                "list" => "list",
-                "code" => "code",
-                "glossary" => "glossary",
-                _ => "passage",
-            },
+            Block::Break { .. } => "break",
         })
-        .collect()
+        // Paragraphs of a kind that the document groups, by the grouping, once for each run.
+        .fold(Vec::new(), |mut out: Vec<&'static str>, k| {
+            if k == "paragraph" || out.last() != Some(&k) {
+                out.push(k);
+            }
+            out
+        })
 }
 
 #[test]
@@ -1026,7 +1022,7 @@ fn markdown_with_everything_in_it() {
         ])]
     );
     assert_eq!(kinds(&read.sections[1].blocks), vec!["paragraph", "equation", "quotation", "list"]);
-    let Block::Passage { content, .. } = &read.sections[1].blocks[3] else { panic!() };
+    let content = &read.sections[1].blocks[3..];
     assert_eq!(content.len(), 3, "the list within the list is its items a step deeper");
     assert!(matches!(&content[2], Block::Paragraph { name, indent: 1, .. } if name == "numbered"));
     assert_eq!(kinds(&read.sections[3].blocks), vec!["code"]);

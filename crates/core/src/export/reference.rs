@@ -717,9 +717,10 @@ pub fn docx_styles(f: &DocumentFormat, language: Option<&str>, own: &[OwnKind]) 
                     page_break_before: look.new_page,
                 };
                 // A line block holds its speakers and directions as words within
-                // it: a character style stands beside the paragraph style of every
-                // kind of the verse, linked to it as Word links its own.
-                let link = (info.group == "verse").then(|| format!("{id}Char"));
+                // it, and a line may have a speaker within it: a character style
+                // stands beside the paragraph style of every kind that may stand
+                // on words, linked to it as Word links its own.
+                let link = info.words.then(|| format!("{id}Char"));
                 s.push_str(&paragraph_style(
                     &id,
                     &name,
@@ -944,6 +945,15 @@ pub fn docx(default: &[u8], f: &DocumentFormat, p: &Particulars) -> Result<Vec<u
         );
         if f.line_numbers {
             section.push_str("<w:lnNumType w:countBy=\"1\" w:restart=\"continuous\"/>");
+        }
+        // The columns the text is set in.
+        if f.page.columns > 1 {
+            let _ = write!(
+                section,
+                "<w:cols w:num=\"{}\" w:space=\"{}\"/>",
+                f.page.columns,
+                f.page.column_gap.twips().max(0)
+            );
         }
         if first_differs {
             section.push_str("<w:titlePg/>");
@@ -1524,8 +1534,8 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
                     let code = OdtStyle { name: "Preformatted_20_Text", display: Some("Preformatted Text"), ..style };
                     replace_style(&mut s, code.name, &code.xml());
                 }
-                // As in Word, a text style beside the paragraph style of every kind of the verse.
-                if info.group == "verse" {
+                // As in Word, a text style beside the paragraph style of every kind that may stand on words.
+                if info.words {
                     let text = odt_text_of(look, false);
                     let properties =
                         if text.is_empty() { String::new() } else { format!("<style:text-properties {text}/>") };
@@ -1554,6 +1564,22 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
                 );
             }
         }
+    }
+
+    // A break of the page and one of the column, each an empty paragraph
+    // in a style that begins the next page or column, as Writer has them.
+    for (name, display, what) in
+        [("Page_20_Break", "Page Break", "page"), ("Column_20_Break", "Column Break", "column")]
+    {
+        replace_style(
+            &mut s,
+            name,
+            &format!(
+                "<style:style style:name=\"{name}\" style:display-name=\"{display}\" style:family=\"paragraph\" \
+                 style:parent-style-name=\"Standard\"><style:paragraph-properties fo:break-before=\"{what}\" \
+                 fo:margin-top=\"0in\" fo:margin-bottom=\"0in\"/><style:text-properties fo:font-size=\"1pt\"/></style:style>"
+            ),
+        );
     }
 
     // The kinds of elements that make a document (ADR 0038), each a
@@ -1621,6 +1647,16 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
             format!("<style:{which}-style/>")
         }
     };
+    // The columns the text is set in, on the style of the page.
+    let columns = if f.page.columns > 1 {
+        format!(
+            "<style:columns fo:column-count=\"{}\" fo:column-gap=\"{}\"/>",
+            f.page.columns,
+            inches(f.page.column_gap)
+        )
+    } else {
+        String::new()
+    };
     let layout = |name: &str, header: bool, footer: bool| {
         // The margins of the page hold the header and footer; their room is taken from them.
         let top_margin = (f.page.margin_top.points() - if header { 32.0 } else { 0.0 }).max(18.0);
@@ -1629,7 +1665,7 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
             "<style:page-layout style:name=\"{name}\"><style:page-layout-properties fo:page-width=\"{}\" fo:page-height=\"{}\" \
              style:num-format=\"1\" style:print-orientation=\"portrait\" fo:margin-top=\"{}\" fo:margin-bottom=\"{}\" \
              fo:margin-left=\"{}\" fo:margin-right=\"{}\" style:writing-mode=\"lr-tb\" style:footnote-max-height=\"0in\">\
-             <style:footnote-sep style:width=\"0.0071in\" style:distance-before-sep=\"0.0398in\" style:distance-after-sep=\"0.0398in\" \
+             {}<style:footnote-sep style:width=\"0.0071in\" style:distance-before-sep=\"0.0398in\" style:distance-after-sep=\"0.0398in\" \
              style:line-style=\"solid\" style:adjustment=\"left\" style:rel-width=\"25%\" style:color=\"#000000\"/>\
              </style:page-layout-properties>{}{}</style:page-layout>",
             inches_pt(w),
@@ -1638,6 +1674,7 @@ pub fn odt_styles(default: &str, f: &DocumentFormat, p: &Particulars) -> String 
             inches_pt(bottom_margin),
             inches(f.page.margin_left),
             inches(f.page.margin_right),
+            columns,
             head_style(header, "header"),
             head_style(footer, "footer"),
         )

@@ -43,13 +43,12 @@ fn place_blocks(list: &mut [Block], notes: bool) {
     for block in list {
         match block {
             Block::Paragraph { content, .. } => place_line(content, notes),
-            Block::Passage { content, .. } => place_blocks(content, notes),
             Block::Parallel { left, right } => {
                 place_blocks(left, notes);
                 place_blocks(right, notes);
             }
             Block::Figure { caption, .. } => place_line(caption, notes),
-            Block::Equation { .. } => {}
+            Block::Equation { .. } | Block::Break { .. } => {}
             Block::Table(table) => {
                 place_line(&mut table.caption, notes);
                 for row in &mut table.rows {
@@ -284,14 +283,14 @@ mod tests {
 
     #[test]
     fn through_the_whole_document() {
-        use super::super::fixtures::{kind, para, passage};
+        use super::super::fixtures::{kind, para};
         let mut doc = Document {
             sections: vec![super::super::Section {
                 level: 1,
                 heading: None,
                 blocks: vec![
                     para(vec![text("Said. "), cite("a", None)]),
-                    passage("quotation", vec![kind("quote", vec![text("Quoted "), cite("b", None), text(".")])]),
+                    kind("quote", vec![text("Quoted "), cite("b", None), text(".")]),
                 ],
                 element: None,
                 kind: None,
@@ -301,8 +300,7 @@ mod tests {
         place_citations(&mut doc, true);
         let Block::Paragraph { content, .. } = &doc.sections[0].blocks[0] else { panic!() };
         assert_eq!(said(content), "Said.[c]");
-        let Block::Passage { content, .. } = &doc.sections[0].blocks[1] else { panic!() };
-        let Block::Paragraph { content, .. } = &content[0] else { panic!() };
+        let Block::Paragraph { content, .. } = &doc.sections[0].blocks[1] else { panic!() };
         assert_eq!(said(content), "Quoted.[c]");
     }
 }

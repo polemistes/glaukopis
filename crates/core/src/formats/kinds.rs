@@ -7,9 +7,10 @@
 //! only how it differs from the kind it is based on, so that a kind of the
 //! writer's own works in every layout. See ADR 0029 and 0040.
 //!
-//! The catalogue here is the kinds that come with the application: the
-//! family of their passages, whether a numbering counts them, what each is
-//! based on, and what its style is called in Word and Writer. The base
+//! The catalogue here is the kinds that come with the application: how the
+//! document groups paragraphs of each that stand together, whether a
+//! numbering counts their lines, whether a kind may also stand on words,
+//! what each is based on, and what its style is called in Word and Writer. The base
 //! looks, which every layout is resolved against, stand beside it. The
 //! interface has the same facts (`src/lib/project/model/families.ts`) and
 //! adds what each kind does while writing; the contract test holds the two
@@ -267,17 +268,19 @@ pub struct OwnKind {
 pub struct Entry {
     pub id: &'static str,
     pub family: Family,
-    /// The family of its passages, which the tools group it by: `text` for
-    /// none, `words` for a kind of words.
+    /// How the document groups paragraphs of it that stand together:
+    /// `lines` (a line block), `quote` (a block quote), `list`, `code`,
+    /// `glossary` (a description list), `none` (each a paragraph of its
+    /// own); `words` for a kind of words only.
     pub group: &'static str,
     pub based_on: Option<&'static str>,
     /// The name of its style in Word and Writer; empty where the kind is
     /// set by the program that writes the document, as lists are.
     pub style: &'static str,
-    /// Whether a numbering counts its paragraphs.
+    /// Whether a numbering counts its lines.
     pub counted: bool,
-    /// Whether it stands in the passage before it, whatever its family.
-    pub joins: bool,
+    /// Whether it may also stand on words, as a speaker and a direction may.
+    pub words: bool,
 }
 
 const fn entry(
@@ -288,40 +291,36 @@ const fn entry(
     style: &'static str,
     counted: bool,
 ) -> Entry {
-    Entry { id, family, group, based_on, style, counted, joins: false }
+    Entry { id, family, group, based_on, style, counted, words: false }
+}
+
+/// A kind of paragraph that may also stand on words.
+const fn on_words(id: &'static str, style: &'static str) -> Entry {
+    Entry { id, family: Family::Paragraph, group: "none", based_on: None, style, counted: false, words: true }
 }
 
 /// The kinds that come with the application, in the order the tools list
-/// them. The ids are stored in projects and must not change.
+/// them, as `src/lib/project/model/families.ts` has them. The ids are
+/// stored in projects and must not change.
 pub const CATALOGUE: &[Entry] = {
     use Family::{Paragraph, Words};
     &[
-        // Text forms no passage of itself; in a passage of text, which is made
-        // when the writer numbers paragraphs of text, they are counted.
-        entry("text", Paragraph, "text", None, "Body Text", true),
+        entry("text", Paragraph, "none", None, "Body Text", true),
         // A quotation set off from the text, one at the head of a part, and the line that names the source.
-        entry("quote", Paragraph, "quotation", None, "Block Text", true),
-        entry("epigraph", Paragraph, "quotation", Some("quote"), "Epigraph", true),
-        Entry {
-            id: "attribution",
-            family: Paragraph,
-            group: "quotation",
-            based_on: Some("quote"),
-            style: "Attribution",
-            counted: false,
-            joins: true,
-        },
+        entry("quote", Paragraph, "quote", None, "Block Text", true),
+        entry("epigraph", Paragraph, "none", Some("quote"), "Epigraph", true),
+        entry("attribution", Paragraph, "none", Some("quote"), "Attribution", false),
         // Verse, which serves poetry, drama and transcripts alike: the lines, the speaker, the stage direction.
-        entry("line", Paragraph, "verse", None, "Line", true),
-        entry("speaker", Paragraph, "verse", None, "Speaker", false),
-        entry("direction", Paragraph, "verse", None, "Stage Direction", false),
+        entry("line", Paragraph, "lines", None, "Line", true),
+        on_words("speaker", "Speaker"),
+        on_words("direction", "Stage Direction"),
         // A screenplay.
-        entry("scene", Paragraph, "script", None, "Scene Heading", true),
-        entry("action", Paragraph, "script", None, "Action", true),
-        entry("character", Paragraph, "script", None, "Character", true),
-        entry("dialogue", Paragraph, "script", None, "Dialogue", true),
-        entry("parenthetical", Paragraph, "script", None, "Parenthetical", true),
-        entry("transition", Paragraph, "script", None, "Transition", true),
+        entry("scene", Paragraph, "none", None, "Scene Heading", true),
+        entry("action", Paragraph, "none", None, "Action", true),
+        entry("character", Paragraph, "none", None, "Character", true),
+        entry("dialogue", Paragraph, "none", None, "Dialogue", true),
+        entry("parenthetical", Paragraph, "none", None, "Parenthetical", true),
+        entry("transition", Paragraph, "none", None, "Transition", true),
         // A glossary.
         entry("headword", Paragraph, "glossary", None, "Headword", true),
         entry("gloss", Paragraph, "glossary", None, "Gloss", true),
@@ -329,8 +328,8 @@ pub const CATALOGUE: &[Entry] = {
         entry("item", Paragraph, "list", None, "", true),
         entry("numbered", Paragraph, "list", None, "", true),
         entry("code", Paragraph, "code", None, "Source Code", true),
-        entry("break", Paragraph, "break", None, "Section Break", false),
-        entry("draft", Paragraph, "draft", None, "", true),
+        entry("break", Paragraph, "none", None, "Section Break", false),
+        entry("draft", Paragraph, "none", None, "", false),
         // Kinds of words.
         entry("foreign", Words, "words", None, "Foreign", false),
         entry("title", Words, "words", None, "Title of a Work", false),
@@ -524,50 +523,41 @@ pub fn base_look(id: &str) -> Option<&'static Look> {
     base_looks().get(renamed(id))
 }
 
-/// What is known of a kind as far as the shape of a text goes: the family
-/// of its passages, whether a numbering counts its paragraphs, whether it
-/// joins the passage before it, and the kind of the catalogue it rests on.
-/// Of a kind of the writer's own, through what it is based on, as
+/// What is known of a kind as far as the shape of a text goes: how the
+/// document groups paragraphs of it, whether a numbering counts its lines,
+/// whether it may also stand on words, and the kind of the catalogue it
+/// rests on. Of a kind of the writer's own, through what it is based on, as
 /// `factsOf` has it in `src/lib/project/model/families.ts`: one based on
-/// text, or on nothing that is known, is a family of its own, named by its
-/// id. One that is not known at all is taken for text.
+/// text, or on nothing that is known, has text's facts, and so has one that
+/// is not known at all.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Facts {
-    pub group: String,
+    pub group: &'static str,
     pub counted: bool,
-    pub joins: bool,
+    pub words: bool,
     /// The id of the kind of the catalogue the kind is, or rests on.
     pub base: &'static str,
 }
 
 impl Facts {
     fn of(e: &'static Entry) -> Facts {
-        Facts { group: e.group.to_owned(), counted: e.counted, joins: e.joins, base: e.id }
+        Facts { group: e.group, counted: e.counted, words: e.words, base: e.id }
     }
 }
 
 pub fn facts(id: &str, own: &[OwnKind]) -> Facts {
-    let text = entry_of("text").expect("text is of the catalogue");
     let mut seen: Vec<&str> = Vec::new();
     let mut at = renamed(id);
     while seen.len() < 8 && !seen.contains(&at) {
         seen.push(at);
         if let Some(e) = entry_of(at) {
-            // A kind of the writer's own based on text is a family of its own, whose paragraphs count.
-            if e.group == "text" && at != id {
-                return Facts { group: id.to_owned(), counted: true, ..Facts::of(e) };
-            }
             return Facts::of(e);
         }
         let Some(kind) = own.iter().find(|k| k.id == at) else { break };
         let base = kind.based_on.trim();
         at = if base.is_empty() { "text" } else { renamed(base) };
     }
-    if seen.len() > 1 || own.iter().any(|k| k.id == id) {
-        Facts { group: id.to_owned(), counted: true, ..Facts::of(text) }
-    } else {
-        Facts::of(text)
-    }
+    Facts::of(entry_of("text").expect("text is of the catalogue"))
 }
 
 /// The look of a kind, with everything the layout and the kinds it is
@@ -654,16 +644,19 @@ pub fn family_of(id: &str, own: &[OwnKind]) -> Option<Family> {
     entry_of(id).map(|e| e.family).or_else(|| own.iter().find(|k| k.id == id).map(|k| k.family))
 }
 
-/// What is known of a kind where a document is made: its family, the
-/// family of its passages, whether a numbering counts it, the kind of the
-/// catalogue it rests on, the name of its style in Word and Writer, and its
-/// look.
+/// What is known of a kind where a document is made: its family, how the
+/// document groups its paragraphs, whether a numbering counts its lines,
+/// whether it may stand on words, the kind of the catalogue it rests on,
+/// the name of its style in Word and Writer, and its look.
 #[derive(Debug, Clone, PartialEq)]
 pub struct KindInfo {
     pub family: Family,
-    /// The family of its passages: `text`, `verse`, `list`; `words` for a kind of words.
-    pub group: String,
+    /// How the document groups its paragraphs: `lines`, `quote`, `list`,
+    /// `code`, `glossary`, `none`; `words` for a kind of words only.
+    pub group: &'static str,
     pub counted: bool,
+    /// Whether it may also stand on words, as a speaker and a direction may.
+    pub words: bool,
     /// The id of the kind of the catalogue it is, or rests on.
     pub base: &'static str,
     /// Empty where the kind has no style of its own.
@@ -693,8 +686,9 @@ pub fn table(f: &DocumentFormat, own: &[OwnKind]) -> HashMap<String, KindInfo> {
             e.id.to_owned(),
             KindInfo {
                 family: e.family,
-                group: e.group.to_owned(),
+                group: e.group,
                 counted: e.counted,
+                words: e.words,
                 base: e.id,
                 style: e.style.to_owned(),
                 look: resolve(f, e.id, own),
@@ -718,8 +712,9 @@ pub fn table(f: &DocumentFormat, own: &[OwnKind]) -> HashMap<String, KindInfo> {
             k.id.clone(),
             KindInfo {
                 family: k.family,
-                group: if k.family == Family::Words { "words".to_owned() } else { facts.group },
+                group: if k.family == Family::Words { "words" } else { facts.group },
                 counted: facts.counted,
+                words: k.family == Family::Paragraph && facts.words,
                 base: facts.base,
                 style,
                 look: resolve(f, &k.id, own),
@@ -865,24 +860,62 @@ mod tests {
             f("c2", "c1"),
         ];
         let of = |id: &str| facts(id, &own);
-        assert_eq!(of("line").group, "verse");
-        assert!(of("line").counted && !of("speaker").counted && of("text").counted);
-        assert!(of("attribution").joins && !of("quote").joins);
+        assert_eq!(of("line").group, "lines");
+        assert_eq!(of("quote").group, "quote");
+        assert_eq!(of("gloss").group, "glossary");
+        assert_eq!(of("attribution").group, "none");
+        assert_eq!(of("title").group, "words");
+        assert!(of("line").counted && !of("speaker").counted && of("text").counted && !of("attribution").counted);
+        assert!(of("speaker").words && of("direction").words && !of("line").words && !of("title").words);
         // The old ids are read.
         assert_eq!(of("verse").base, "line");
         assert_eq!(of("list").base, "item");
         // A kind of the writer's own takes the facts of what it is based on.
-        assert_eq!(of("chorus"), Facts { group: "verse".into(), counted: false, joins: false, base: "speaker" });
+        assert_eq!(of("chorus"), Facts { group: "none", counted: false, words: true, base: "speaker" });
         assert_eq!(of("verse2").base, "line");
-        // One based on text, or on nothing that is known, is a family of its own; one not known at all is text.
-        assert_eq!(of("letter"), Facts { group: "letter".into(), counted: true, joins: false, base: "text" });
-        assert_eq!(of("odd").group, "odd");
-        assert_eq!(of("c1").group, "c1");
-        assert_eq!(of("nothing").group, "text");
+        assert_eq!(of("verse2").group, "lines");
+        // One based on text, or on nothing that is known, has text's; so has one not known at all.
+        let text = Facts { group: "none", counted: true, words: false, base: "text" };
+        for id in ["letter", "odd", "c1", "nothing"] {
+            assert_eq!(of(id), text, "{id}");
+        }
         let table = table(&DocumentFormat::default(), &own);
-        assert_eq!(table["chorus"].group, "verse");
+        assert_eq!(table["chorus"].group, "none");
         assert_eq!(table["chorus"].base, "speaker");
+        assert!(table["chorus"].words && table["speaker"].words);
         assert!(table["item"].counted && table["item"].style.is_empty());
+        // In the order of the facts the interface has.
+        let ids: Vec<&str> = catalogue().iter().map(|e| e.id).collect();
+        assert_eq!(
+            ids,
+            [
+                "text",
+                "quote",
+                "epigraph",
+                "attribution",
+                "line",
+                "speaker",
+                "direction",
+                "scene",
+                "action",
+                "character",
+                "dialogue",
+                "parenthetical",
+                "transition",
+                "headword",
+                "gloss",
+                "item",
+                "numbered",
+                "code",
+                "break",
+                "draft",
+                "foreign",
+                "title",
+                "term",
+                "mention",
+                "highlight"
+            ]
+        );
     }
 
     #[test]

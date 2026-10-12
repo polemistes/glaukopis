@@ -323,8 +323,9 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
   margin: (top: {top}, bottom: {bottom}, left: {left}, right: {right}),
   numbering: none,
   header: {header},
-  footer: {footer},
+  footer: {footer},{columns}
 )",
+        columns = if f.page.columns > 1 { format!("\n  columns: {},", f.page.columns) } else { String::new() },
         top = f.page.margin_top,
         bottom = f.page.margin_bottom,
         left = f.page.margin_left,
@@ -332,6 +333,10 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
         header = header.as_deref().unwrap_or("none"),
         footer = footer.as_deref().unwrap_or("none"),
     );
+    // The room between the columns, where the text is set in more than one.
+    if f.page.columns > 1 {
+        let _ = writeln!(out, "#set columns(gutter: {})", f.page.column_gap);
+    }
 
     // The text.
     let _ = writeln!(

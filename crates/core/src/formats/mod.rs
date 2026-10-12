@@ -66,6 +66,10 @@ pub struct Page {
     pub margin_bottom: Length,
     pub margin_left: Length,
     pub margin_right: Length,
+    /// How many columns the text is set in: 1 for none, at most 4.
+    pub columns: u8,
+    /// The room between two columns.
+    pub column_gap: Length,
 }
 
 impl Default for Page {
@@ -78,6 +82,8 @@ impl Default for Page {
             margin_bottom: Length::cm(2.5),
             margin_left: Length::cm(2.5),
             margin_right: Length::cm(2.5),
+            columns: 1,
+            column_gap: Length::cm(1.0),
         }
     }
 }
@@ -818,6 +824,11 @@ impl DocumentFormat {
             if m.points() < 0.0 || m.points() > h / 2.0 - 36.0 {
                 *m = Length::cm(2.5);
             }
+        }
+        self.page.columns = self.page.columns.clamp(1, 4);
+        let gap = self.page.column_gap.points();
+        if !gap.is_finite() || !(0.0..=w / 4.0).contains(&gap) {
+            self.page.column_gap = Length::cm(1.0);
         }
     }
 
