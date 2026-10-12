@@ -105,6 +105,40 @@ export interface Look {
   text?: string;
 }
 
+/**
+ * The look of a kind with everything said, as the core resolves it against
+ * the base looks, the kinds it is based on and the layout's row
+ * (`Resolved` in `formats/kinds.rs`): lengths with their unit, a size of
+ * nought that of the text around, for a kind of words.
+ */
+export interface ResolvedLook {
+  size: number;
+  lineSpacing: number;
+  align: Align;
+  indentLeft: string;
+  indentRight: string;
+  firstLine: string;
+  spaceBefore: string;
+  spaceAfter: string;
+  bold: boolean;
+  italic: boolean;
+  case: Case;
+  underline: boolean;
+  monospace: boolean;
+  keepWithNext: boolean;
+  newPage: boolean;
+  text: string;
+}
+
+/** The look of a kind as the layout editor shows it, and whether the layout's own row says anything of it (ADR 0040). */
+export interface KindLook {
+  look: ResolvedLook;
+  said: boolean;
+}
+
+/** The resolved look of every kind, by id: the catalogue's and the writer's own. */
+export type KindLooks = Record<string, KindLook>;
+
 /** Of paragraphs, or of words within them. */
 export type KindFamily = 'paragraph' | 'words';
 
@@ -447,6 +481,9 @@ export const formatsGet = (id: string) => call<DocumentFormat>('formats_get', { 
 export const formatsSave = (format: DocumentFormat) =>
   call<DocumentFormat>('formats_save', { format });
 export const formatsDelete = (id: string) => call<void>('formats_delete', { id });
+/** The look of every kind as the format resolves it, with the writer's own kinds. */
+export const formatKindLooks = (format: DocumentFormat, own: OwnKind[]) =>
+  call<KindLooks>('format_kind_looks', { format, own });
 
 /**
  * The pages of a document: how many there are, and those that are asked

@@ -44,6 +44,7 @@ format-section-headings = Headings
 format-section-title = Title and abstract
 format-section-quotations = Quotations
 format-section-kinds = Kinds of paragraph and words
+format-section-numbers = Numbers
 format-section-notes = Notes
 format-section-bibliography = Bibliography
 format-section-figures = Figures, tables, equations
@@ -92,6 +93,16 @@ format-margin-bottom = Bottom
 format-margin-left = Left
 format-margin-right = Right
 format-lengths-hint = Lengths are written with their unit: 2.5cm, 1in, 25mm, 12pt.
+## Numbers belong to what they number (ADR 0040): the lines of a numbered
+## passage are shown as the layout says where the passage does not; the
+## lines of the page are the layout's alone.
+format-numbers-hint = How the numbers of a numbered passage are shown, where the passage does not say otherwise; and whether the lines of the page are numbered.
+format-verse-every = Show a number every
+format-verse-every-hint = Of the lines of a numbered passage: 5 shows 5, 10, 15
+format-verse-side = Numbers on the
+format-side-left = Left
+format-side-right = Right
+format-numbers-page = The lines of the page
 format-line-numbers = Number the lines
 format-line-numbers-hint = As some journals ask for review
 
@@ -182,9 +193,17 @@ format-bibliography-style-none = None in particular
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Each kind is set as the kind it is based on, with the differences given here. What is not said is as the base has it.
+format-kinds-hint = Every kind, with its look as it will stand: the base look of the kind, then the kinds it is based on, then what this layout says of it. The rows change only what this layout says; what is not said is as the base has it.
 format-kind-based-on = based on { $base }
+# Of the kind Text, which the parts for type and paragraphs set.
+format-kind-text-note = as the type and the paragraphs of the layout have it
+# At the right of a kind's line where this layout says nothing of it.
+format-kind-as-base = as the base
+format-kind-resolved = As it will stand: { $look }
+format-kind-resolved-nothing = As it will stand: as the text around it
 format-as-the-base = As the base
+# "As the base", with what the base comes to: "As the base (Yes)", "As the base (11 pt)".
+format-as-the-base-is = As the base ({ $value })
 # In an empty field for a size, in the place of its number.
 format-as-the-base-blank = as the base
 format-yes = Yes

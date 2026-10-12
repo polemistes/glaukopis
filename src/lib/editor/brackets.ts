@@ -184,7 +184,7 @@ export function passageMenu(view: EditorView, pos: number, anchor: HTMLElement) 
     },
     {
       kind: 'submenu',
-      label: t('editor-passage-language'),
+      label: t('editor-language'),
       icon: Globe,
       items: languageItems({
         language: hooks?.language?.() ?? null,

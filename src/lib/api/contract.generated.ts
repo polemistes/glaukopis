@@ -5,7 +5,7 @@
 import type { Summary, Reference, LibraryListing, ImportPlan, DuplicateGroup } from './library';
 import type { ProjectInfo, Folder } from './projects';
 import type { Picture } from './pictures';
-import type { ToolsInfo, DocumentFormat, FormatSummary, StyleSummary, Preview, KindEntry } from './documents';
+import type { ToolsInfo, DocumentFormat, FormatSummary, StyleSummary, Preview, KindEntry, KindLooks } from './documents';
 import type { Template, TemplateSummary, PartKindEntry } from './templates';
 
 export const summary: Summary = {
@@ -1487,6 +1487,534 @@ export const kinds: KindEntry[] = [
     "style": ""
   }
 ];
+
+export const kindLooks: KindLooks = {
+  "action": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "11pt",
+      "spaceBefore": "11pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "attribution": {
+    "look": {
+      "align": "right",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "1.27cm",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "6pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "break": {
+    "look": {
+      "align": "center",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": true,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "12pt",
+      "spaceBefore": "12pt",
+      "text": "* * *",
+      "underline": false
+    },
+    "said": false
+  },
+  "character": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "upper",
+      "firstLine": "0pt",
+      "indentLeft": "5.6cm",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": true,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "11pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "code": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 1.0,
+      "monospace": true,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "6pt",
+      "spaceBefore": "6pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "dialogue": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "2.5cm",
+      "indentRight": "3.8cm",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "direction": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "1cm",
+      "indentRight": "0pt",
+      "italic": true,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "3pt",
+      "spaceBefore": "3pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "draft": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "1.27cm",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "epigraph": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "4cm",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "18pt",
+      "spaceBefore": "6pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "foreign": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": true,
+      "keepWithNext": false,
+      "lineSpacing": 0.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 0.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "gloss": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "1.27cm",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "6pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "headword": {
+    "look": {
+      "align": "left",
+      "bold": true,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": true,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "6pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "highlight": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 0.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 0.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "item": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "1.27cm",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "line": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "1cm",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "mention": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 0.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 0.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "numbered": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "1.27cm",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "parenthetical": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "4cm",
+      "indentRight": "4cm",
+      "italic": false,
+      "keepWithNext": true,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "quote": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "1.27cm",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "6pt",
+      "spaceBefore": "6pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "scene": {
+    "look": {
+      "align": "left",
+      "bold": true,
+      "case": "upper",
+      "firstLine": "0pt",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": true,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "11pt",
+      "spaceBefore": "19pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "speaker": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "smallcaps",
+      "firstLine": "0pt",
+      "indentLeft": "1cm",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "3pt",
+      "spaceBefore": "8pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "term": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": true,
+      "keepWithNext": false,
+      "lineSpacing": 0.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 0.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "text": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "1.27cm",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "title": {
+    "look": {
+      "align": "left",
+      "bold": false,
+      "case": "none",
+      "firstLine": "0pt",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": true,
+      "keepWithNext": false,
+      "lineSpacing": 0.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 0.0,
+      "spaceAfter": "0pt",
+      "spaceBefore": "0pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  },
+  "transition": {
+    "look": {
+      "align": "right",
+      "bold": false,
+      "case": "upper",
+      "firstLine": "0pt",
+      "indentLeft": "0pt",
+      "indentRight": "0pt",
+      "italic": false,
+      "keepWithNext": false,
+      "lineSpacing": 2.0,
+      "monospace": false,
+      "newPage": false,
+      "size": 12.0,
+      "spaceAfter": "11pt",
+      "spaceBefore": "11pt",
+      "text": "",
+      "underline": false
+    },
+    "said": false
+  }
+};
 
 export const template: Template = {
   "contents": [

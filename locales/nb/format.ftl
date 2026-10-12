@@ -44,6 +44,7 @@ format-section-headings = Overskrifter
 format-section-title = Tittel og sammendrag
 format-section-quotations = Sitater
 format-section-kinds = Slag avsnitt og ord
+format-section-numbers = Nummer
 format-section-notes = Noter
 format-section-bibliography = Litteraturliste
 format-section-figures = Figurer, tabeller, ligninger
@@ -92,6 +93,13 @@ format-margin-bottom = Nederst
 format-margin-left = Venstre
 format-margin-right = Høyre
 format-lengths-hint = Lengder skrives med enhet: 2,5cm, 1in, 25mm, 12pt.
+format-numbers-hint = Hvordan numrene i et nummerert stykke vises, der stykket ikke sier noe annet; og om linjene på siden nummereres.
+format-verse-every = Vis et nummer hver
+format-verse-every-hint = Av linjene i et nummerert stykke: 5 viser 5, 10, 15
+format-verse-side = Numrene på
+format-side-left = Venstre
+format-side-right = Høyre
+format-numbers-page = Linjene på siden
 format-line-numbers = Nummerer linjene
 format-line-numbers-hint = Som noen tidsskrifter ber om til fagfellevurdering
 
@@ -182,7 +190,12 @@ format-bibliography-style-none = Ingen bestemt
 ## på. Radene er også dem i vinduet for et eget slag; det som ikke sies, er
 ## som grunnlaget har det.
 
-format-kinds-hint = Hvert slag settes som slaget det bygger på, med forskjellene som oppgis her. Det som ikke sies, er som grunnlaget har det.
+format-kinds-hint = Hvert slag, med utseendet slik det blir: grunnutseendet til slaget, så slagene det bygger på, så det dette oppsettet sier om det. Radene endrer bare det dette oppsettet sier; det som ikke sies, er som grunnlaget har det.
+format-kind-text-note = som skriften og avsnittene i oppsettet har det
+format-kind-as-base = som grunnlaget
+format-kind-resolved = Slik det blir: { $look }
+format-kind-resolved-nothing = Slik det blir: som teksten rundt
+format-as-the-base-is = Som grunnlaget ({ $value })
 format-kind-based-on = bygger på { $base }
 format-as-the-base = Som grunnlaget
 # I et tomt felt for en størrelse, der tallet ellers står.

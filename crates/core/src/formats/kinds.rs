@@ -112,8 +112,10 @@ impl Look {
 }
 
 /// The look of a kind with everything said: what the format and the kinds it
-/// is based on come to.
-#[derive(Debug, Clone, PartialEq)]
+/// is based on come to. Sent to the layout editor as it is, lengths with
+/// their unit (`ResolvedLook` in `src/lib/api/documents.ts`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Resolved {
     pub size: f32,
     pub line_spacing: f32,
@@ -616,6 +618,35 @@ pub fn resolve(f: &DocumentFormat, id: &str, own: &[OwnKind]) -> Resolved {
     go(f, id, own, 0)
 }
 
+/// The look of a kind as the layout editor shows it: resolved against the
+/// base looks, the chain of what it is based on and the layout's row, and
+/// whether the layout's own row says anything of it, so that the writer
+/// sees where every look comes from (ADR 0040).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KindLook {
+    pub look: Resolved,
+    /// Whether the layout's row for the kind says anything.
+    pub said: bool,
+}
+
+/// The resolved look of every kind, by id: those of the catalogue, and the
+/// writer's own.
+pub fn looks(f: &DocumentFormat, own: &[OwnKind]) -> BTreeMap<String, KindLook> {
+    let said = |id: &str| f.kinds.get(id).is_some_and(|l| !l.is_empty());
+    let mut out = BTreeMap::new();
+    for e in catalogue() {
+        out.insert(e.id.to_owned(), KindLook { look: resolve(f, e.id, own), said: said(e.id) });
+    }
+    for k in own {
+        if k.id.trim().is_empty() || out.contains_key(&k.id) {
+            continue;
+        }
+        out.insert(k.id.clone(), KindLook { look: resolve(f, &k.id, own), said: said(&k.id) });
+    }
+    out
+}
+
 /// Of what family a kind is; nothing for one that is not known.
 pub fn family_of(id: &str, own: &[OwnKind]) -> Option<Family> {
     entry_of(id).map(|e| e.family).or_else(|| own.iter().find(|k| k.id == id).map(|k| k.family))
@@ -850,6 +881,33 @@ mod tests {
         assert_eq!(table["chorus"].group, "verse");
         assert_eq!(table["chorus"].base, "speaker");
         assert!(table["item"].counted && table["item"].style.is_empty());
+    }
+
+    #[test]
+    fn the_looks_of_every_kind_say_whether_the_layout_speaks() {
+        let mut f = DocumentFormat::default();
+        f.kinds.insert("scene".into(), Look { bold: Some(false), ..Look::default() });
+        f.kinds.insert("action".into(), Look::default());
+        let own = vec![OwnKind {
+            id: "k1".into(),
+            name: "Letter".into(),
+            family: Family::Paragraph,
+            based_on: "text".into(),
+            look: Look { italic: Some(true), ..Look::default() },
+        }];
+        let all = looks(&f, &own);
+        assert_eq!(all.len(), catalogue().len() + 1);
+        assert!(all["scene"].said);
+        assert!(!all["scene"].look.bold);
+        assert_eq!(all["scene"].look.case, Case::Upper);
+        // A row that says nothing is as none.
+        assert!(!all["action"].said);
+        assert!(!all["k1"].said);
+        assert!(all["k1"].look.italic);
+        let json = serde_json::to_value(&all["direction"]).unwrap();
+        assert_eq!(json["said"], false);
+        assert_eq!(json["look"]["italic"], true);
+        assert_eq!(json["look"]["indentLeft"], "1cm");
     }
 
     #[test]

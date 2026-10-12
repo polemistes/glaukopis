@@ -162,6 +162,12 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("styles", "StyleSummary[]", "documents", &styles.list());
     put("preview", "Preview", "documents", &preview);
     put("kinds", "KindEntry[]", "documents", &glaukopis_core::formats::kinds::catalogue());
+    put(
+        "kindLooks",
+        "KindLooks",
+        "documents",
+        &glaukopis_core::formats::kinds::looks(&formats.get("manuscript").unwrap(), &[]),
+    );
     put("template", "Template", "templates", &templates.get("plain").unwrap());
     put("templates", "TemplateSummary[]", "templates", &templates.list());
     put("partKinds", "PartKindEntry[]", "templates", &glaukopis_core::templates::kinds::catalogue());

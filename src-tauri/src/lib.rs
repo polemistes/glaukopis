@@ -171,6 +171,7 @@ pub fn run() {
             commands::documents::formats_get,
             commands::documents::formats_save,
             commands::documents::formats_delete,
+            commands::documents::format_kind_looks,
             commands::templates::templates_list,
             commands::templates::templates_get,
             commands::templates::templates_save,
