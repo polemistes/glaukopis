@@ -262,12 +262,10 @@ try {
   };
   const style = async (id) => {
     const before = source();
-    await app.exec(
-      `const s = document.querySelector('.preview select[aria-label="Reference style"]');
-       s.value = arguments[0];
-       s.dispatchEvent(new Event('change', { bubbles: true }));`,
-      id,
-    );
+    // The style is the element's, in its document settings (ADR 0038).
+    await app.openDocumentSettings('Layout and citations');
+    await app.documentChoose('Reference style', id);
+    await app.closeDocumentSettings(true);
     await until(`the preview in the style ${id}`, async () => source() !== before, 20000).catch(
       () => {},
     );
@@ -723,12 +721,14 @@ try {
   await app.click('header button[aria-label="Preview and export"]');
   await app.waitFor('.preview .page', 30000);
   await sleep(1500);
+  await app.openDocumentSettings('Layout and citations');
   const styles = await app.exec(
-    `return Array.from(document.querySelectorAll('.preview select[aria-label="Reference style"] option')).map((o) => o.value)`,
+    `const row = Array.from(document.querySelectorAll('dialog[open] .window label.row'))
+       .find((r) => r.querySelector('.what')?.firstChild?.textContent.trim() === 'Reference style');
+     return Array.from(row?.querySelectorAll('select option') ?? []).map((o) => o.value)`,
   );
-  const was = await app.exec(
-    `return document.querySelector('.preview select[aria-label="Reference style"]').value`,
-  );
+  const was = await app.documentChosen('Reference style');
+  await app.closeDocumentSettings();
   let typ = source();
   const around = (t, words) => {
     const at = t.indexOf(words);
@@ -739,7 +739,8 @@ try {
     'in a style of notes, the citation that was made of the note is set as a note, with its words before and after',
     // Between the page and words that begin with a sign of punctuation there is room, which is
     // for the one who writes what Pandoc is given to mend: both are taken here.
-    was === 'chicago-notes-bibliography' &&
+    // Nothing chosen is the layout's own style, which is one of notes.
+    (was === 'chicago-notes-bibliography' || was === '') &&
       /Not all agree\.#footnote\[See Gregory Nagy,.*?73 ?\\?; but he says otherwise elsewhere\.?\]/.test(
         typ.replace(/\s+/g, ' '),
       ),
