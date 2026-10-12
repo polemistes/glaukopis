@@ -228,7 +228,7 @@ describe('citations are made at once of what was read', () => {
     const text: Block[] = [
       p(t('Said'), note(t('See '), t('Nagy 1979, 73', { found: found(1) }), t('.'))),
       quote(t('(Nagy 1979, 73)', { found: found(2) })),
-      list([t('(Nagy 1979, 73)', { found: found(3) })]),
+      ...list([t('(Nagy 1979, 73)', { found: found(3) })]),
       {
         kind: 'table',
         id: 't1',
@@ -263,8 +263,8 @@ describe('citations are made at once of what was read', () => {
     expect(cited).toEqual(['r-nagy']);
     expect(texts[0]).toMatchObject([
       { content: [t('Said'), { kind: 'footnote', content: [t('See '), c, t('.')] }] },
-      { content: [{ content: [c] }] },
-      { content: [{ content: [c] }] },
+      { content: [c] },
+      { content: [c] },
       { caption: [t('Forms '), c], rows: [[{ content: [{ content: [c] }] }]] },
       { items: [{ caption: [c] }, { kind: 'equation' }] },
     ]);

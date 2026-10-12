@@ -122,8 +122,8 @@ function newRound() {
 
 const ATOMS = 'span.citation, span.math, span.crossref, sup.footnote, span.hard-break, br';
 
-/** What stands in drawn text and is not read at all. */
-const PASSED = 'span.refmark';
+/** What stands in drawn text and is not read at all: a reference mark, the number of a line, a line mark. */
+const PASSED = 'span.refmark, span.line-number, span.linemark';
 
 /**
  * Where a place of a passage is in drawn text: text is found by counting its
@@ -149,7 +149,7 @@ function drawnPoint(
         }
         at += length;
       } else if (child instanceof Element) {
-        // A reference mark is no part of the passage: it is passed over.
+        // A reference mark, or the number of a line, is no part of the passage: it is passed over.
         if (child.matches(PASSED)) continue;
         if (child.matches(ATOMS)) {
           const piece = atoms[k++];

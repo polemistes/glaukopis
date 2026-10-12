@@ -174,7 +174,7 @@ function read(
 function walk(parent: Y.XmlFragment | Y.XmlElement, element: string, out: Gathered) {
   for (const child of parent.toArray()) {
     if (!(child instanceof Y.XmlElement)) continue;
-    // A passage holds paragraphs (ADR 0040).
+    // A passage, as texts were once written: the paragraphs it holds, or, of the oldest shape, a line.
     if (child.nodeName === 'passage') {
       if (child.toArray().some((c) => c instanceof Y.XmlElement && c.nodeName === 'paragraph'))
         walk(child, element, out);

@@ -17,7 +17,7 @@
 
 import { writeBody } from '$lib/project/model/blocks';
 import { TIDY, type Project } from '$lib/project/model/project.svelte';
-import { paragraph, passage, type Block, type Inline } from '$lib/project/model/text';
+import { paragraph, type Block, type Inline } from '$lib/project/model/text';
 import { PROJECT } from '$lib/project/model/types';
 import { readFile, tidy, type Change } from './fluent';
 
@@ -64,7 +64,7 @@ export function elementText(english: string, note: string, words: string, tag: s
   const foreign: InlineMarks = tag === 'en' ? {} : { kind: { name: 'foreign', lang: 'en' } };
   const quoted = [paragraph(lines(english, foreign), 'quote')];
   if (note) quoted.push(paragraph(lines(note, { ...foreign, em: true }), 'quote'));
-  return [passage('quotation', quoted), paragraph(lines(words))];
+  return [...quoted, paragraph(lines(words))];
 }
 
 /**
@@ -114,8 +114,10 @@ export function fillWords(
 export function wordsIn(blocks: Block[]): string {
   const inline = (content: Inline[]) =>
     content.map((i) => (i.kind === 'text' ? i.text : i.kind === 'break' ? '\n' : '')).join('');
-  // The quotation of the English is a passage; the words are the paragraphs that stand loose.
-  const out = blocks.flatMap((b) => (b.kind === 'paragraph' ? [inline(b.content)] : []));
+  // The English is quoted; the words are the paragraphs that are not.
+  const out = blocks.flatMap((b) =>
+    b.kind === 'paragraph' && b.name !== 'quote' ? [inline(b.content)] : [],
+  );
   return tidy(out.join('\n'));
 }
 

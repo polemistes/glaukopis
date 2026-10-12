@@ -111,7 +111,7 @@ export function readProject(
   const yLinks = doc.getMap<Y.Map<unknown>>('links');
   const yRefs = doc.getMap<RefRecord>('refs');
   const yNotes = doc.getMap<Y.Text>('notes');
-  // The kinds of the writer's own, by which a kind of theirs has its family.
+  // The kinds of the writer's own, which the reading of texts takes.
   const own = readBasedKinds(doc.getMap<unknown>('passageKinds'));
 
   const flat: FlatNode[] = [];
