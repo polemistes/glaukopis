@@ -12,6 +12,9 @@
   import { ySyncPlugin, yCursorPlugin } from 'y-prosemirror';
   import type * as Y from 'yjs';
   import type { Project } from '$lib/project/model/project.svelte';
+  import type { RefRecord } from '$lib/project/model/types';
+  import { library } from '$lib/state/library.svelte';
+  import type { ResolvedPos, Slice } from 'prosemirror-model';
   import { t } from '$lib/i18n';
   import { insertCitation } from './commands';
   import {
@@ -161,11 +164,40 @@
     });
   });
 
-  /** What the Org form of what is copied or pasted needs: the kinds of the writer's own, and the works cited, by whose keys it cites them. */
-  const orgOptions = () => ({
-    paragraphKinds: project.passageKinds,
-    references: [...project.refs.values()],
-  });
+  /**
+   * What the Org form of what is copied or pasted needs: the kinds of the
+   * writer's own, and the works, by whose keys citations are written and
+   * read: those of the library, and over them those the project keeps.
+   */
+  const orgOptions = () => {
+    const references: RefRecord[] = library.entries.map((e) => ({
+      id: e.id,
+      key: e.key,
+      type: e.type,
+      fields: {},
+      names: {},
+      modified: '',
+      authors: e.authors,
+      year: e.year,
+      title: e.title,
+      container: e.container,
+    }));
+    references.push(...project.refs.values());
+    return { paragraphKinds: project.passageKinds, references };
+  };
+
+  /** Text pasted as text; the works it cites that the project keeps no copy of are kept. */
+  function pastedText(text: string, $context: ResolvedPos): Slice {
+    const slice = pastedTextSlice(text, $context, bodySchema, orgOptions);
+    const cited = new Set<string>();
+    slice.content.descendants((node) => {
+      if (node.type.name !== 'citation') return;
+      for (const item of node.attrs.items as { id: string }[])
+        if (item?.id && !project.refs.has(item.id)) cited.add(item.id);
+    });
+    if (cited.size) queueMicrotask(() => cited.forEach((id) => oncite?.(id)));
+    return slice;
+  }
 
   /** The kinds of paragraph of the writer's own, as much as the shape of a text needs of them. */
   const ownKinds = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
@@ -419,10 +451,7 @@
         },
         handlePaste: (v, event) => kind === 'body' && pasted(v, event),
         // Text pasted as text is read as Org where it is, and keeps every line break where it is not (see `clipboard.ts`).
-        clipboardTextParser:
-          kind === 'body'
-            ? (text, $context) => pastedTextSlice(text, $context, schema, orgOptions)
-            : undefined,
+        clipboardTextParser: kind === 'body' ? pastedText : undefined,
         // What is copied as text is Org; as HTML, it carries its citations as they are shown.
         clipboardTextSerializer: (slice) => copiedText(slice, language, orgOptions),
         clipboardSerializer: copiedHtml(schema, () => language),
