@@ -15,6 +15,7 @@ import {
   projectFileSettle,
   projectFileWrite,
   projectLoad,
+  projectReadableWrite,
   projectSaveState,
   type FileChoice,
   type Finding,
@@ -22,6 +23,8 @@ import {
   type ProjectInfo,
 } from '$lib/api/projects';
 import { recordOf } from '$lib/editor/references.svelte';
+import { gather } from '$lib/org/folder';
+import { writeProject } from '$lib/org/write';
 import { TIDY } from '$lib/project/model/origins';
 import { Project } from '$lib/project/model/project.svelte';
 import {
@@ -70,13 +73,25 @@ export function given(finding: Finding): FileChoice | null {
 }
 
 /** A project as it is on disk, read and not written, brought into shape as it is when opened (ADR 0037). */
-async function read(info: ProjectInfo): Promise<Project> {
+export async function read(info: ProjectInfo): Promise<Project> {
   await projects.closed(info.id);
   const loaded = await projectLoad(info.id);
   const project = new Project(null);
   project.load(loaded.state, loaded.updates);
   project.begin(info.name);
   return project;
+}
+
+/**
+ * Keeps the records of the works a project cites as the library has them;
+ * those it lacks, as the project has them.
+ */
+export async function withLibraryRecords(project: Project) {
+  const cited = [...citedIds(project)];
+  // An entry that was merged into another is found under the other's id: the
+  // project keeps its own record of it, which the library finds again.
+  const known = cited.length ? await libraryGetMany(cited) : [];
+  keepRecords(project, known.filter((r) => cited.includes(r.id)).map(recordOf));
 }
 
 /**
@@ -93,11 +108,7 @@ export async function writeProjectFile(
   await flush?.();
   const project = await read(info);
   try {
-    const cited = [...citedIds(project)];
-    // An entry that was merged into another is found under the other's id: the
-    // project keeps its own record of it, which the library finds again.
-    const known = cited.length ? await libraryGetMany(cited) : [];
-    keepRecords(project, known.filter((r) => cited.includes(r.id)).map(recordOf));
+    await withLibraryRecords(project);
     await projectFileWrite(
       path,
       {
@@ -141,52 +152,79 @@ export async function makeFromFile(
   try {
     project.load(file.state, []);
     const name = freeName(
-      file.manifest.name || project.name || path.replace(/^.*[\\/]/, '').replace(/\.[^.]*$/, ''),
+      file.manifest.name || project.name || baseName(path),
       projects.list.map((p) => p.name),
     );
     project.begin(name);
-    const records = citedRecords(project);
-    const found = records.length ? await projectFileReferences(records) : [];
-    let choices: Record<string, FileChoice> = {};
-    if (found.some((w) => given(w.finding))) {
-      const chosen = await ask(name, found);
-      if (!chosen) return null;
-      choices = chosen;
-    }
-    const settlement = records.length ? await projectFileSettle(records, choices) : null;
-    if (settlement)
-      rewriteReferences(
-        project,
-        settlement.settled.map((s) => ({
-          from: s.from,
-          to: s.to,
-          record: s.reference ? recordOf(s.reference) : null,
-        })),
-      );
-    // Named as the new project is, and saved so, but not undone.
-    project.doc.transact(() => project.setName(name), TIDY);
-
-    if (settlement && (settlement.added.length || settlement.changed.length)) void library.reload();
-
-    const made = await projects.create(name);
-    let info: ProjectInfo;
-    try {
-      info = await projectSaveState(made.id, Y.encodeStateAsUpdate(project.doc), project.summary());
-      const description = file.manifest.description.trim();
-      if (description) info = await projectDescribe(made.id, description);
-    } catch (error) {
-      // A project that holds nothing of the file is not left behind.
-      await projects.remove(made.id).catch(() => {});
-      throw error;
-    }
-    projects.put(info);
-    return {
-      info,
-      added: settlement?.added.length ?? 0,
-      pictures: file.pictures,
-      problems: settlement?.problems ?? [],
-    };
+    return await make(project, name, file.manifest.description, file.pictures, ask);
   } finally {
     await project.close();
   }
+}
+
+/** The name of a file without its folder and its ending. */
+export const baseName = (path: string) => path.replace(/^.*[\\/]/, '').replace(/\.[^.]*$/, '');
+
+/**
+ * Makes a new project of a project read from a file, named `name`: its
+ * works are compared with the library, and where something is to be
+ * chosen, `ask` is asked, which gives the choices, or nothing to make
+ * nothing. Where a work is to be cited by another id than it was, its
+ * citations are written anew. The project is on disk, with its readable
+ * copy, and is among the projects, when this returns.
+ */
+export async function make(
+  project: Project,
+  name: string,
+  description: string,
+  pictures: number,
+  ask: (name: string, works: FoundWork[]) => Promise<Record<string, FileChoice> | null>,
+): Promise<Made | null> {
+  const records = citedRecords(project);
+  const found = records.length ? await projectFileReferences(records) : [];
+  let choices: Record<string, FileChoice> = {};
+  if (found.some((w) => given(w.finding))) {
+    const chosen = await ask(name, found);
+    if (!chosen) return null;
+    choices = chosen;
+  }
+  const settlement = records.length ? await projectFileSettle(records, choices) : null;
+  if (settlement)
+    rewriteReferences(
+      project,
+      settlement.settled.map((s) => ({
+        from: s.from,
+        to: s.to,
+        record: s.reference ? recordOf(s.reference) : null,
+      })),
+    );
+  // Named as the new project is, and saved so, but not undone.
+  project.doc.transact(() => project.setName(name), TIDY);
+
+  if (settlement && (settlement.added.length || settlement.changed.length)) void library.reload();
+
+  const made = await projects.create(name);
+  let info: ProjectInfo;
+  try {
+    info = await projectSaveState(made.id, Y.encodeStateAsUpdate(project.doc), project.summary());
+    if (description.trim()) info = await projectDescribe(made.id, description.trim());
+  } catch (error) {
+    // A project that holds nothing of the file is not left behind.
+    await projects.remove(made.id).catch(() => {});
+    throw error;
+  }
+  projects.put(info);
+  // Its readable copy is there from the first, as it will be after every save.
+  try {
+    const { org, beside } = gather(project);
+    await projectReadableWrite({ id: made.id }, beside, writeProject(org));
+  } catch (error) {
+    console.warn('the readable copy of the project could not be written', error);
+  }
+  return {
+    info,
+    added: settlement?.added.length ?? 0,
+    pictures,
+    problems: settlement?.problems ?? [],
+  };
 }

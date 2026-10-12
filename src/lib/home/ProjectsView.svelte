@@ -10,6 +10,7 @@
   import JoinDialog from '$lib/sharing/JoinDialog.svelte';
   import FileInput from '@lucide/svelte/icons/file-input';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
+  import FileText from '@lucide/svelte/icons/file-text';
   import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
   import { isReadPath } from '$lib/api/ocr';
   import { bringIn, chooseDocument } from '$lib/documents/bringing.svelte';
@@ -143,6 +144,15 @@
       >
         {#snippet icon()}<FolderOpen size={15} />{/snippet}
         {t('home-file-open')}
+      </Button>
+      <Button
+        variant="secondary"
+        size="md"
+        disabled={actions.filing}
+        onclick={() => void actions.openOrg()}
+      >
+        {#snippet icon()}<FileText size={15} />{/snippet}
+        {t('home-org-open')}
       </Button>
     {/snippet}
     <div class="welcome" class:alone={projects.loaded && !projects.list.length}>
