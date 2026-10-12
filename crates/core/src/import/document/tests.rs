@@ -1849,7 +1849,7 @@ fn what_endnote_made_is_found_where_pandoc_reads_it() {
     assert_eq!(read.remarks.len(), 2, "{:?}", read.remarks);
     assert_eq!(
         read.remarks[1],
-        "1 citation made by EndNote is brought in as the text it shows, and is not among those that were found: \
+        "1 citation made by EndNote is brought in as the text it shows, and is not among the loose citations: \
              what EndNote says of the works could not be read."
     );
 }
