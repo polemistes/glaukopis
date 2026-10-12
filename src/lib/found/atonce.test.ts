@@ -1,11 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import type { Found, FoundItem, Suggestion } from '$lib/api/found';
 import type { Imported } from '$lib/api/imported';
-import { blocksToDoc } from '$lib/project/model/blocks';
-import type { Block, Inline } from '$lib/project/model/text';
+import { writeBody } from '$lib/project/model/blocks';
+import { readBody, type Block, type Inline } from '$lib/project/model/text';
+import * as Y from 'yjs';
 import { citeAtOnce, citeAtOnceIn } from './atonce';
-import { HASH, cell, note, p, t, zotero } from './testing';
+import { HASH, cell, list, note, p, quote, t, zotero } from './testing';
 import { certain, citeItem, describeItem, wordsOf, zoteroKey } from './works';
+
+/** A text written into a project and read again: what the editors can hold. */
+function roundTrip(blocks: Block[]): Block[] {
+  const fragment = new Y.Doc().getXmlFragment('body');
+  writeBody(fragment, blocks);
+  return readBody(fragment);
+}
 
 /** A library that has these items of Zotero, and is asked as `found_suggest` is. */
 function library(has: Record<string, Suggestion[]>) {
@@ -173,7 +181,7 @@ describe('citations are made at once of what was read', () => {
     expect(text[0]).toMatchObject({
       content: [{}, { marks: { found: NAGY } }, {}, {}, {}, {}, {}, {}, {}],
     });
-    expect(() => blocksToDoc(texts[0]).check()).not.toThrow();
+    expect(roundTrip(texts[0])).toEqual(texts[0]);
   });
 
   it('not of what is only likely, nor where one work of several is not certain', async () => {
@@ -219,8 +227,8 @@ describe('citations are made at once of what was read', () => {
     };
     const text: Block[] = [
       p(t('Said'), note(t('See '), t('Nagy 1979, 73', { found: found(1) }), t('.'))),
-      { kind: 'blockquote', content: [p(t('(Nagy 1979, 73)', { found: found(2) }))] },
-      { kind: 'bullet_list', items: [[p(t('(Nagy 1979, 73)', { found: found(3) }))]] },
+      quote(t('(Nagy 1979, 73)', { found: found(2) })),
+      list([t('(Nagy 1979, 73)', { found: found(3) })]),
       {
         kind: 'table',
         id: 't1',
@@ -256,12 +264,12 @@ describe('citations are made at once of what was read', () => {
     expect(texts[0]).toMatchObject([
       { content: [t('Said'), { kind: 'footnote', content: [t('See '), c, t('.')] }] },
       { content: [{ content: [c] }] },
-      { items: [[{ content: [c] }]] },
+      { content: [{ content: [c] }] },
       { caption: [t('Forms '), c], rows: [[{ content: [{ content: [c] }] }]] },
       { items: [{ caption: [c] }, { kind: 'equation' }] },
     ]);
     expect(texts[1]).toEqual([p(c)]);
-    expect(() => blocksToDoc(texts[0]).check()).not.toThrow();
+    expect(roundTrip(texts[0])).toEqual(texts[0]);
   });
 
   it('of a document that was read, whose counts then say what is left', async () => {

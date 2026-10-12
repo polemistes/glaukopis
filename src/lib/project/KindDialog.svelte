@@ -8,6 +8,7 @@
   import { untrack } from 'svelte';
   import { CATALOGUE, GROUPS } from '$lib/editor/kinds';
   import { t } from '$lib/i18n';
+  import { FAMILIES, KIND_FACTS, PARAGRAPH_KINDS } from './model/families';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { confirm } from '$lib/ui/confirm.svelte';
@@ -43,21 +44,19 @@
   let field = $state<HTMLInputElement>();
 
   /**
-   * The kinds of paragraph a text can begin in, in their groups: the lines
-   * of verse, the parts of a script, the others. Not a quotation or a
-   * list, which a text is not begun in.
+   * The kinds of paragraph a text can begin in, by family (ADR 0040): every
+   * kind of the catalogue but text and a break, which no text is begun in.
+   * The words for them are the editor's catalogue's, where it has them.
    */
-  const BEGINS = ['verse', 'script', 'quotation', 'more'] as const;
   const beginsGroups = $derived(
-    BEGINS.map((id) => ({
-      id,
-      label: GROUPS.find((g) => g.id === id)?.label() ?? id,
-      kinds: CATALOGUE.filter(
-        (k) =>
-          k.group === id &&
-          (k.structure === 'verse' || k.structure === 'script' || k.structure === 'passage'),
-      ),
-    })).filter((g) => g.kinds.length),
+    FAMILIES.filter((family) => family !== 'text' && family !== 'break').map((family) => ({
+      id: family,
+      label: GROUPS.find((g) => (g.id as string) === family)?.label() ?? family,
+      kinds: PARAGRAPH_KINDS.filter((id) => KIND_FACTS[id].family === family).map((id) => ({
+        id,
+        label: () => CATALOGUE.find((k) => k.id === id)?.label() ?? id,
+      })),
+    })),
   );
   const ownParagraphs = $derived(project.passageKinds.filter((k) => k.family === 'paragraph'));
 

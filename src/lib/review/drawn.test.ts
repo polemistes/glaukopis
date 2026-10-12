@@ -29,10 +29,14 @@ function drawn() {
       text(' sat.'),
     ]),
     el('equation', [], { tex: '' }),
-    el('bullet_list', [
-      el('list_item', [el('paragraph', [text('One')])]),
-      el('list_item', [el('paragraph', [text('Two')])]),
-    ]),
+    el(
+      'passage',
+      [
+        el('paragraph', [text('One')], { kind: 'item' }),
+        el('paragraph', [text('Two')], { kind: 'item', indent: 1 }),
+      ],
+      { family: 'list' },
+    ),
     el('row', [el('figure', [text('A shield.')], { id: 'f', file: '', extension: '' })]),
     el('tabular', [
       el('table_caption', [text('A table.')]),
@@ -74,7 +78,7 @@ describe('drawn text', () => {
       'The black cat(x) sat.'.replace('(x)', root.querySelector('.citation')!.textContent!),
     );
     expect(at([1])).toBeUndefined();
-    expect(at([2, 1, 0])).toBe('Two');
+    expect(at([2, 1])).toBe('Two');
     expect(at([3, 0])).toBe('A shield.');
     expect(at([4, 0])).toBe('A table.');
     expect(at([4, 1, 0, 0, 0])).toBe('Cell');
@@ -101,7 +105,9 @@ describe('drawn text', () => {
     expect((removed as HTMLElement).dataset.text).toBe('lazily');
     // After the citation, before " sat.".
     expect(removed.previousElementSibling?.matches('.citation')).toBe(true);
-    expect(root.querySelector('div.review-removed.block')!.nextElementSibling?.tagName).toBe('UL');
+    expect(
+      root.querySelector('div.review-removed.block')!.nextElementSibling?.matches('div.passage'),
+    ).toBe(true);
     unmarkDrawn(made);
     expect(root.innerHTML).toBe(before);
   });

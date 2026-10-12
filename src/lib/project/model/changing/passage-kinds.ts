@@ -122,20 +122,11 @@ export const passageKindChanges = {
   },
 
   /**
-   * Deletes a kind. The passages that were of it stay as they are, and
-   * are set as text where a document is made; the hand of the project lets
-   * it go.
+   * Deletes a kind. The paragraphs that were of it stay as they are, and
+   * are set as text where a document is made.
    */
   deletePassageKind(this: Project, id: string) {
     if (!this.yPassageKinds.has(id)) return;
-    this.transact(() => {
-      const hand = this.hand;
-      if (hand.pinned.includes(id) || hand.unpinned.includes(id))
-        this.setHand({
-          pinned: hand.pinned.filter((k) => k !== id),
-          unpinned: hand.unpinned.filter((k) => k !== id),
-        });
-      this.yPassageKinds.delete(id);
-    });
+    this.transact(() => this.yPassageKinds.delete(id));
   },
 };

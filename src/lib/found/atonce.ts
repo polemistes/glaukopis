@@ -93,18 +93,11 @@ function lines(blocks: Block[], change: (line: Inline[]) => Inline[]): Block[] {
   return blocks.map((b): Block => {
     switch (b.kind) {
       case 'paragraph':
-      case 'script':
-      case 'passage':
         return { ...b, content: line(b.content) };
-      case 'blockquote':
-        return { ...b, content: lines(b.content, change) };
-      case 'verse':
-        return { ...b, lines: b.lines.map((l) => ({ ...l, content: line(l.content) })) };
+      case 'passage':
+        return { ...b, content: b.content.map((p) => ({ ...p, content: line(p.content) })) };
       case 'parallel':
         return { ...b, left: lines(b.left, change), right: lines(b.right, change) };
-      case 'bullet_list':
-      case 'ordered_list':
-        return { ...b, items: b.items.map((item) => lines(item, change)) };
       case 'figure':
         return { ...b, caption: line(b.caption) };
       case 'table':

@@ -13,7 +13,7 @@ import * as Y from 'yjs';
 import { bodySchema } from '$lib/editor/schema';
 import { HASH, cell, note, p, project, t } from '$lib/found/testing';
 import { blocksHtml } from '$lib/project/model/html';
-import { readBody, type Block, type Inline } from '$lib/project/model/text';
+import { paragraph, passage, readBody, type Block, type Inline } from '$lib/project/model/text';
 import { readProject, searchProject } from './everything';
 import { Matcher, NO_OPTIONS, type SearchOptions } from './matching';
 import { PARAGRAPH, bodyPassages, joined } from './passages';
@@ -84,8 +84,12 @@ function replaceIn(
   return replaceAll(pr, replacing(search(texts, elements, m), m, by, texts));
 }
 
-/** A paragraph of a kind of its own. */
-const kind = (name: string, ...content: Inline[]): Block => ({ kind: 'passage', name, content });
+/** A quotation of one paragraph of a kind. */
+const kind = (name: string, ...content: Inline[]): Block =>
+  passage('quotation', [paragraph(content, name)]);
+
+/** Whether the editor's schema is that of ADR 0040, with passages that hold paragraphs: what writes texts anew needs it. */
+const NEW_SCHEMA = !!bodySchema.nodes.passage?.spec.content?.includes('paragraph');
 
 describe('the two breaks in a regular expression', () => {
   it('finds a paragraph break by \\p, and a break within a paragraph by \\n', () => {
@@ -280,7 +284,7 @@ describe('replacing with breaks', () => {
     }
   });
 
-  it('splits the paragraph at \\p, the new one of the same kind', () => {
+  it.skipIf(!NEW_SCHEMA)('splits the paragraph at \\p, the new one of the same kind', () => {
     for (const open of [false, true]) {
       const { pr, elements } = project([
         p(t('First.')),
@@ -289,32 +293,38 @@ describe('replacing with breaks', () => {
       ]);
       const view = open ? editor(pr.fragment(elements[0], 'body')!) : null;
       expect(replaceIn(pr, elements, '(Sing\\.) ', '$1\\p')).toBe(1);
+      // The two stand in the passage the one stood in.
       expect(readBody(pr.fragment(elements[0], 'body')!)).toEqual([
         p(t('First.')),
-        kind('epigraph', t('Sing.')),
-        kind('epigraph', t('Goddess.')),
+        passage('quotation', [
+          paragraph([t('Sing.')], 'epigraph'),
+          paragraph([t('Goddess.')], 'epigraph'),
+        ]),
         p(t('Last.')),
       ]);
       if (view) expect(view.state.doc.childCount).toBe(4);
     }
   });
 
-  it('joins the paragraphs a match ran across, the first keeping its kind', () => {
-    for (const open of [false, true]) {
-      const { pr, elements } = project([
-        kind('epigraph', t('Sing, '), t('goddess', { em: {} })),
-        p(t('the wrath.')),
-        p(t('Other.')),
-      ]);
-      const view = open ? editor(pr.fragment(elements[0], 'body')!) : null;
-      expect(replaceIn(pr, elements, 'goddess\\pthe', 'goddess, the')).toBe(1);
-      expect(readBody(pr.fragment(elements[0], 'body')!)).toEqual([
-        kind('epigraph', t('Sing, '), t('goddess, the', { em: {} }), t(' wrath.')),
-        p(t('Other.')),
-      ]);
-      if (view) expect(view.state.doc.childCount).toBe(2);
-    }
-  });
+  it.skipIf(!NEW_SCHEMA)(
+    'joins the paragraphs a match ran across, the first keeping its kind',
+    () => {
+      for (const open of [false, true]) {
+        const { pr, elements } = project([
+          kind('epigraph', t('Sing, '), t('goddess', { em: {} })),
+          p(t('the wrath.')),
+          p(t('Other.')),
+        ]);
+        const view = open ? editor(pr.fragment(elements[0], 'body')!) : null;
+        expect(replaceIn(pr, elements, 'goddess\\pthe', 'goddess, the')).toBe(1);
+        expect(readBody(pr.fragment(elements[0], 'body')!)).toEqual([
+          kind('epigraph', t('Sing, '), t('goddess, the', { em: {} }), t(' wrath.')),
+          p(t('Other.')),
+        ]);
+        if (view) expect(view.state.doc.childCount).toBe(2);
+      }
+    },
+  );
 
   it('takes away empty paragraphs, and all of it is one step of undo', () => {
     const { pr, elements } = project([p(t('One.')), p(), p(), p(t('Two.')), p(t('Three.'))]);

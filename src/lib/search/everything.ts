@@ -22,6 +22,7 @@ import { migrate, needsMigration } from '$lib/project/model/migrate';
 import {
   bodyFacts,
   inlineText,
+  readBasedKinds,
   readBody,
   readTitle,
   refForm,
@@ -110,6 +111,8 @@ export function readProject(
   const yLinks = doc.getMap<Y.Map<unknown>>('links');
   const yRefs = doc.getMap<RefRecord>('refs');
   const yNotes = doc.getMap<Y.Text>('notes');
+  // The kinds of the writer's own, by which a kind of theirs has its family.
+  const own = readBasedKinds(doc.getMap<unknown>('passageKinds'));
 
   const flat: FlatNode[] = [];
   const nodes = new Map<string, Y.Map<unknown>>();
@@ -128,7 +131,7 @@ export function readProject(
     const n = nodes.get(nodeId);
     if (!n) continue;
     const title = readTitle(n.get('title') as Y.XmlFragment | undefined);
-    const blocks = readBody(n.get('body') as Y.XmlFragment | undefined);
+    const blocks = readBody(n.get('body') as Y.XmlFragment | undefined, own);
     elements.push({
       id: nodeId,
       name: inlineText(title).trim(),

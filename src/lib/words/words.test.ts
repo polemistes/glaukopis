@@ -96,7 +96,7 @@ describe('a project of the words of a language', () => {
     expect(p.node(one)?.title).toBe('a-one');
     expect(p.node(hint)?.title).toBe('a-one.hint');
     const blocks = p.blocksOf(one);
-    expect(blocks[0].kind).toBe('blockquote');
+    expect(blocks[0]).toMatchObject({ kind: 'passage', family: 'quotation' });
     expect(wordsIn(blocks)).toBe('{ $count } funnet');
     expect(wordsIn(p.blocksOf(hint))).toBe('');
     expect(changesIn(p)).toEqual([]);

@@ -7,9 +7,9 @@
  * under its own element, and under that an element for each part of a
  * message: its name is the name of the message (`common-cancel`, or
  * `field-title.hint` for an attribute), and its text is the English, as a
- * quotation in foreign words,
- * with the note the English file has for translators, and after it the
- * words of the language, as plain paragraphs, which are what is mended.
+ * quotation in foreign words, with the note the English file has for
+ * translators, and after it the words of the language, as plain
+ * paragraphs, which are what is mended.
  * Each element keeps which part it is, and its words as they were when the
  * project was made (`was`), so that only what was changed is written back,
  * and nothing that was changed in the files meanwhile.
@@ -17,7 +17,7 @@
 
 import { writeBody } from '$lib/project/model/blocks';
 import { TIDY, type Project } from '$lib/project/model/project.svelte';
-import type { Block, Inline } from '$lib/project/model/text';
+import { paragraph, passage, type Block, type Inline } from '$lib/project/model/text';
 import { PROJECT } from '$lib/project/model/types';
 import { readFile, tidy, type Change } from './fluent';
 
@@ -62,12 +62,9 @@ type InlineMarks = Record<string, Record<string, unknown> | true>;
 /** The text of an element as it is shown, for its words. */
 export function elementText(english: string, note: string, words: string, tag: string): Block[] {
   const foreign: InlineMarks = tag === 'en' ? {} : { kind: { name: 'foreign', lang: 'en' } };
-  const quoted: Block[] = [{ kind: 'paragraph', content: lines(english, foreign) }];
-  if (note) quoted.push({ kind: 'paragraph', content: lines(note, { ...foreign, em: true }) });
-  return [
-    { kind: 'blockquote', content: quoted },
-    { kind: 'paragraph', content: lines(words) },
-  ];
+  const quoted = [paragraph(lines(english, foreign), 'quote')];
+  if (note) quoted.push(paragraph(lines(note, { ...foreign, em: true }), 'quote'));
+  return [passage('quotation', quoted), paragraph(lines(words))];
 }
 
 /**
@@ -117,17 +114,8 @@ export function fillWords(
 export function wordsIn(blocks: Block[]): string {
   const inline = (content: Inline[]) =>
     content.map((i) => (i.kind === 'text' ? i.text : i.kind === 'break' ? '\n' : '')).join('');
-  const out: string[] = [];
-  const read = (list: Block[]) => {
-    for (const b of list) {
-      if (b.kind === 'blockquote') continue;
-      if ('content' in b && Array.isArray(b.content)) {
-        if (b.kind === 'paragraph' || b.kind === 'script' || b.kind === 'passage')
-          out.push(inline(b.content as Inline[]));
-      }
-    }
-  };
-  read(blocks);
+  // The quotation of the English is a passage; the words are the paragraphs that stand loose.
+  const out = blocks.flatMap((b) => (b.kind === 'paragraph' ? [inline(b.content)] : []));
   return tidy(out.join('\n'));
 }
 

@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
-import { blocksToDoc, nameToDoc, writeBody, writeName } from './blocks';
-import { bodyFacts, readBody, readTitle, type Block, type Inline } from './text';
+import { blockElements, writeBody, writeName } from './blocks';
+import {
+  bodyFacts,
+  paragraph,
+  passage,
+  readBody,
+  readTitle,
+  type Block,
+  type Inline,
+} from './text';
 
 const HASH = 'a'.repeat(64);
 
@@ -10,7 +18,7 @@ const t = (text: string, marks: Record<string, Record<string, unknown>> = {}): I
   text,
   marks,
 });
-const p = (...content: Inline[]): Block => ({ kind: 'paragraph', content });
+const p = (...content: Inline[]): Block => paragraph(content);
 
 /** A text with everything in it, as the application reads a text. */
 const everything: Block[] = [
@@ -68,51 +76,43 @@ const everything: Block[] = [
   ),
   { kind: 'equation', id: 'e1', tex: 'a^2 + b^2 = c^2', numbered: true, align: 'left' },
   { kind: 'equation', id: 'e2', tex: '\\sum_{i=1}^{n} i', numbered: false },
-  {
-    kind: 'blockquote',
-    content: [p(t('Sing, goddess, the wrath.')), p(t('Of Achilles.', { em: {} }))],
-  },
-  {
-    kind: 'verse',
-    start: 1,
-    by: 5,
-    lines: [
-      { kind: 'speaker', indent: 0, content: [t('Nurse')] },
-      { kind: 'line', indent: 0, content: [t('If only the Argo had never flown')] },
-      {
-        kind: 'line',
-        indent: 1,
-        content: [t('through the dark '), t('Clashing Rocks', { em: {} })],
-      },
-      { kind: 'direction', indent: 0, margin: 'aside', content: [t('She weeps.')] },
-      { kind: 'line', indent: 0, number: '1094a1', content: [t('Nor had the heroes rowed')] },
-      { kind: 'line', indent: 2, counted: false, content: [t('for Pelias')] },
-      { kind: 'line', indent: 0, margin: 'ia. trim.', content: [t('the golden fleece.')] },
+  passage('quotation', [
+    paragraph([t('Sing, goddess, the wrath.')], 'quote'),
+    paragraph([t('Of Achilles.', { em: {} })], 'epigraph'),
+    paragraph([t('Homer')], 'attribution'),
+  ]),
+  passage(
+    'verse',
+    [
+      paragraph([t('Nurse')], 'speaker'),
+      paragraph([t('If only the Argo had never flown')], 'line', { indent: 0, number: '1' }),
+      paragraph([t('through the dark '), t('Clashing Rocks', { em: {} })], 'line', 1),
+      paragraph([t('She weeps.')], 'direction', { indent: 0, margin: 'aside' }),
+      paragraph([t('Nor had the heroes rowed')], 'line', { indent: 0, number: '1094a1' }),
+      paragraph([t('for Pelias')], 'line', { indent: 2, counted: false }),
+      paragraph([t('the golden fleece.')], 'line', { indent: 0, margin: 'ia. trim.' }),
     ],
-  },
-  { kind: 'script', part: 'scene', content: [t('Int. Palace – night')] },
-  { kind: 'script', part: 'character', content: [t('Nurse')] },
-  { kind: 'script', part: 'dialogue', content: [t('If only.')] },
+    'counted',
+    { every: 2, side: 'right' },
+  ),
+  passage('script', [
+    paragraph([t('Int. Palace – night')], 'scene'),
+    paragraph([t('Nurse')], 'character'),
+    paragraph([t('If only.')], 'dialogue'),
+  ]),
   {
     kind: 'parallel',
-    left: [
-      {
-        kind: 'verse',
-        start: null,
-        by: 5,
-        lines: [{ kind: 'line', indent: 0, content: [t('Εἴθ᾽ ὤφελ᾽')] }],
-      },
-    ],
+    left: [passage('verse', [paragraph([t('Εἴθ᾽ ὤφελ᾽')], 'line')], 'given')],
     right: [p(t('If only.'))],
   },
-  {
-    kind: 'bullet_list',
-    items: [
-      [p(t('one'))],
-      [p(t('two')), { kind: 'ordered_list', start: 3, items: [[p(t('nested'))], [p(t('more'))]] }],
-    ],
-  },
-  { kind: 'ordered_list', start: 1, items: [[p(t('first'))]] },
+  passage('list', [
+    paragraph([t('one')], 'item'),
+    paragraph([t('two')], 'item'),
+    paragraph([t('nested')], 'numbered', { indent: 1, number: '3' }),
+    paragraph([t('more')], 'numbered', 1),
+    paragraph([t('first')], 'numbered'),
+  ]),
+  passage('k1', [paragraph([t('Dear reader,')], 'k1')]),
   {
     kind: 'figure',
     id: 'f1',
@@ -153,7 +153,7 @@ const everything: Block[] = [
       ],
       [
         { content: [p(t('3'))], colspan: 1, rowspan: 1, header: false },
-        { content: [p(t('Iliad'))], colspan: 1, rowspan: 1, header: false },
+        { content: [paragraph([t('Iliad')], 'quote')], colspan: 1, rowspan: 1, header: false },
       ],
     ],
     numbered: true,
@@ -181,11 +181,6 @@ const everything: Block[] = [
   p(t('After it all.')),
 ];
 
-/** The text as it is read. */
-function read(fragment: Y.XmlFragment): Block[] {
-  return readBody(fragment);
-}
-
 function written(blocks: Block[]): Y.XmlFragment {
   const doc = new Y.Doc();
   const fragment = doc.getXmlFragment('body');
@@ -193,22 +188,110 @@ function written(blocks: Block[]): Y.XmlFragment {
   return fragment;
 }
 
+/** The elements a text is written as, in a document, so that they can be read. */
+function elements(blocks: Block[]): Y.XmlElement[] {
+  const doc = new Y.Doc();
+  const fragment = doc.getXmlFragment('body');
+  fragment.insert(0, blockElements(blocks));
+  return fragment.toArray() as Y.XmlElement[];
+}
+
+/** An element of XML as a plain record: its name, attributes and children, text with its marks. */
+function shape(node: Y.XmlElement | Y.XmlText): unknown {
+  if (node instanceof Y.XmlText)
+    return node
+      .toDelta()
+      .map((op: { insert: string; attributes?: unknown }) =>
+        op.attributes ? [op.insert, op.attributes] : op.insert,
+      );
+  return {
+    name: node.nodeName,
+    attrs: node.getAttributes(),
+    children: node.toArray().map((c) => shape(c as Y.XmlElement | Y.XmlText)),
+  };
+}
+
 describe('text written without an editor', () => {
   it('is read again as it was written', () => {
-    const doc = blocksToDoc(everything);
-    // What is written is what the editors can hold.
-    expect(() => doc.check()).not.toThrow();
-    expect(read(written(everything))).toEqual(everything);
+    expect(readBody(written(everything))).toEqual(everything);
   });
 
-  it('is the same written into the project and read from an editor', () => {
-    // As an editor would write it: the document of ProseMirror, and back.
-    const again = blocksToDoc(readBody(written(everything)));
-    expect(again.toJSON()).toEqual(blocksToDoc(everything).toJSON());
+  it('writes the shape the editors write: paragraphs of a kind in passages, with the attributes they have', () => {
+    const [plain, quoted] = elements([
+      p(t('Plain '), t('words', { em: {} })),
+      passage(
+        'verse',
+        [
+          paragraph([t('Nurse')], 'speaker'),
+          paragraph([t('If only')], 'line', {
+            indent: 1,
+            number: '45',
+            counted: false,
+            margin: 'ia.',
+          }),
+        ],
+        'counted',
+        { every: 5, side: 'right' },
+      ),
+    ]);
+    expect(shape(plain)).toEqual({
+      name: 'paragraph',
+      attrs: { kind: 'text', indent: 0, counted: true },
+      children: [['Plain ', ['words', { em: {} }]]],
+    });
+    expect(shape(quoted)).toEqual({
+      name: 'passage',
+      attrs: { family: 'verse', numbering: 'counted', every: 5, side: 'right' },
+      children: [
+        {
+          name: 'paragraph',
+          attrs: { kind: 'speaker', indent: 0, counted: true },
+          children: [['Nurse']],
+        },
+        {
+          name: 'paragraph',
+          attrs: { kind: 'line', indent: 1, number: '45', counted: false, margin: 'ia.' },
+          children: [['If only']],
+        },
+      ],
+    });
+    // What the passage leaves to the layout is not written.
+    const [bare] = elements([passage('quotation', [paragraph([], 'quote')])]);
+    expect(bare.getAttributes() as Record<string, unknown>).toEqual({
+      family: 'quotation',
+      numbering: 'none',
+    });
+  });
+
+  it('writes what is not words as the elements the editors have for it', () => {
+    const [made] = elements([
+      p(
+        t('a'),
+        { kind: 'break' },
+        { kind: 'math', tex: ' x ' },
+        { kind: 'citation', items: [{ id: 'r1' }], mode: 'intext' },
+        { kind: 'crossref', target: 'f1', form: 'name' },
+        { kind: 'refmark', label: '3:16' },
+        { kind: 'footnote', content: [t('Note'), { kind: 'footnote', content: [t('no')] }] },
+        { kind: 'footnote', content: [t('End')], place: 'end' },
+        t('b'),
+      ),
+    ]);
+    expect((shape(made) as { children: unknown[] }).children).toEqual([
+      ['a'],
+      { name: 'hard_break', attrs: {}, children: [] },
+      { name: 'math', attrs: { tex: 'x' }, children: [] },
+      { name: 'citation', attrs: { items: [{ id: 'r1' }], mode: 'intext' }, children: [] },
+      { name: 'crossref', attrs: { target: 'f1', form: 'name' }, children: [] },
+      { name: 'refmark', attrs: { label: '3:16' }, children: [] },
+      { name: 'footnote', attrs: { place: '' }, children: [['Note']] },
+      { name: 'footnote', attrs: { place: 'end' }, children: [['End']] },
+      ['b'],
+    ]);
   });
 
   it('takes marks as they come from a file that was read', () => {
-    const back = read(
+    const back = readBody(
       written([
         p({ kind: 'text', text: 'so', marks: { em: true, sup: true, sub: true, unknown: true } }),
       ]),
@@ -318,7 +401,7 @@ describe('text written without an editor', () => {
           file: HASH,
           extension: 'png',
           name: '',
-          caption: [t('Said'), note],
+          caption: [t('Said'), note, { kind: 'refmark', label: '1' }],
           alt: '',
           width: 100,
           numbered: true,
@@ -330,7 +413,11 @@ describe('text written without an editor', () => {
           rows: [
             [
               {
-                content: [{ kind: 'bullet_list', items: [[p(t('one'))], [p(t('two'))]] }],
+                // A passage in a cell is its paragraphs; what else is the text it has.
+                content: [
+                  passage('list', [paragraph([t('one')], 'item'), paragraph([t('two')], 'item')]),
+                  { kind: 'equation', id: 'e', tex: 'x', numbered: false },
+                ],
                 colspan: 1,
                 rowspan: 1,
                 header: false,
@@ -340,28 +427,29 @@ describe('text written without an editor', () => {
           numbered: true,
           width: 0,
         },
-        {
-          kind: 'bullet_list',
-          items: [[{ kind: 'equation', id: 'e', tex: 'x', numbered: false }]],
-        },
-        { kind: 'blockquote', content: [] },
-        { kind: 'bullet_list', items: [] },
+        passage('quotation', []),
+        { kind: 'row', items: [] },
       ]),
     );
     expect(back[0]).toEqual(p(t('Text.'), { kind: 'footnote', content: [t('Outer')] }));
     expect(back[1]).toMatchObject({ kind: 'figure', caption: [t('Said')] });
-    expect(back[2]).toMatchObject({ rows: [[{ content: [p(t('one')), p(t('two'))] }]] });
-    // An item of a list begins with a paragraph.
-    expect(back[3]).toEqual({
-      kind: 'bullet_list',
-      items: [[p(), { kind: 'equation', id: 'e', tex: 'x', numbered: false }]],
+    expect(back[2]).toMatchObject({
+      rows: [
+        [{ content: [paragraph([t('one')], 'item'), paragraph([t('two')], 'item'), p(t('x'))] }],
+      ],
     });
-    expect(back).toHaveLength(4);
+    expect(back).toHaveLength(3);
   });
 
-  it('writes nothing of a text that is empty', () => {
+  it('writes nothing of a text that is empty, and replaces what stood there otherwise', () => {
     expect(written([]).length).toBe(0);
-    expect(() => blocksToDoc([]).check()).not.toThrow();
+    const fragment = written([p(t('First.'))]);
+    writeBody(fragment, [p(t('Second.'))]);
+    expect(readBody(fragment)).toEqual([p(t('Second.'))]);
+    // A text of nothing that is written is one empty paragraph, in which the writing begins.
+    writeBody(fragment, [passage('quotation', [])]);
+    expect(fragment.length).toBe(1);
+    expect(readBody(fragment)).toEqual([]);
   });
 
   it('writes a name with the marks a name can have', () => {
@@ -374,11 +462,11 @@ describe('text written without an editor', () => {
       { kind: 'math', tex: 'x' },
       { kind: 'footnote', content: [t('No note.')] },
     ];
-    expect(() => nameToDoc(name).check()).not.toThrow();
     writeName(fragment, name);
     expect(readTitle(fragment)).toEqual([t('The word '), t('mênis', { em: {} }), t(' x')]);
     // Written again, it is replaced, and not written twice.
     writeName(fragment, [t('Another')]);
     expect(readTitle(fragment)).toEqual([t('Another')]);
+    expect(fragment.length).toBe(1);
   });
 });

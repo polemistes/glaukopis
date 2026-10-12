@@ -4,7 +4,14 @@ import * as Y from 'yjs';
 import type { Found } from '$lib/api/found';
 import { writeBody } from '$lib/project/model/blocks';
 import { Project } from '$lib/project/model/project.svelte';
-import { fillTitle, type Block, type Inline, type TableCell } from '$lib/project/model/text';
+import {
+  fillTitle,
+  paragraph,
+  passage,
+  type Block,
+  type Inline,
+  type TableCell,
+} from '$lib/project/model/text';
 import { PROJECT } from '$lib/project/model/types';
 
 export const HASH = 'a'.repeat(64);
@@ -14,7 +21,16 @@ export const t = (text: string, marks: Record<string, object> = {}): Inline => (
   text,
   marks: marks as Record<string, Record<string, unknown>>,
 });
-export const p = (...content: Inline[]): Block => ({ kind: 'paragraph', content });
+export const p = (...content: Inline[]): Block => paragraph(content);
+/** A quotation of one quote paragraph. */
+export const quote = (...content: Inline[]): Block =>
+  passage('quotation', [paragraph(content, 'quote')]);
+/** A list of items, one paragraph each. */
+export const list = (...items: Inline[][]): Block =>
+  passage(
+    'list',
+    items.map((content) => paragraph(content, 'item')),
+  );
 export const note = (...content: Inline[]): Inline => ({ kind: 'footnote', content });
 export const cell = (...content: Inline[]): TableCell => ({
   content: [p(...content)],

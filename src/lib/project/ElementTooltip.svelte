@@ -27,8 +27,9 @@
     void node?.words;
     const f = project.fragment(id, 'body');
     if (!(f instanceof Y.XmlFragment)) return { html: '', cut: false };
-    const { blocks, cut } = excerpt(readBody(f), 520);
-    return { html: blocksHtml(blocks, project.documentOf(id).settings.language), cut };
+    const own = project.passageKinds;
+    const { blocks, cut } = excerpt(readBody(f, own), 520);
+    return { html: blocksHtml(blocks, project.documentOf(id).settings.language, own), cut };
   });
   /** The element whose branch stands in this element's place in the document. */
   const included = $derived(node?.include ? project.node(node.include) : undefined);

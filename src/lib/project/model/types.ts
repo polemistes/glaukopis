@@ -53,15 +53,6 @@ export interface DocumentSettings {
 export const OWN_SETTINGS: readonly (keyof DocumentSettings)[] = ['title', 'subtitle'];
 
 /**
- * The kinds of paragraph and of words the writer has pinned to the hand of
- * the project, by id, and those taken out of it: see `editor/kinds.ts`, `inHand`.
- */
-export interface Hand {
-  pinned: string[];
-  unpinned: string[];
-}
-
-/**
  * A lane of a timeline: an element, whose branch the lane holds, or each of
  * its children a lane of their own; or a kind of element, every element of
  * which is a lane.
@@ -102,7 +93,7 @@ export interface KindRecord {
   colour: string;
   /** What the text of a new element of the kind begins with: lines, one paragraph each. */
   template: string;
-  /** The kind of paragraph the text of an element of the kind is written in (`editor/kinds.ts`); nothing for text. */
+  /** The kind of paragraph the text of an element of the kind is written in (`model/families.ts`); nothing for text. */
   begins?: string;
   /** The kind of the catalogue of `project/parts.ts` it is in the document; nothing for a name and a colour only (ADR 0038). */
   basedOn?: string;

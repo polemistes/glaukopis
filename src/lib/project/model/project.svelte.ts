@@ -45,7 +45,6 @@ import {
   PROJECT,
   STATUSES,
   type DocumentSettings,
-  type Hand,
   type KindRecord,
   type TimelineSettings,
   type LinkRecord,
@@ -111,14 +110,6 @@ function readWhen(value: unknown): When | null {
   if (!start) return null;
   const end = given.end ? bound(given.end) : null;
   return end ? { start, end } : { start };
-}
-
-/** The kinds in hand of the project, as the document holds them: lists of ids, empty where nothing is said. */
-function readHand(value: unknown): Hand {
-  const list = (ids: unknown) =>
-    Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string' && !!id) : [];
-  const given = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
-  return { pinned: list(given.pinned), unpinned: list(given.unpinned) };
 }
 
 /** A record of settings as the document holds it: an object, or nothing. */
@@ -197,8 +188,6 @@ export class Project {
   // ---- what the interface reads ----
   /** The name of the project: that of its element (`PROJECT`), as plain text. */
   name = $state('');
-  /** The kinds of paragraph and of words the writer has pinned to the hand, and those taken out of it. */
-  hand = $state.raw<Hand>({ pinned: [], unpinned: [] });
   readonly nodes = new SvelteMap<string, NodeRecord>();
   links = $state.raw<LinkRecord[]>([]);
   readonly refs = new SvelteMap<string, RefRecord>();
@@ -455,6 +444,8 @@ export class Project {
   #readAll() {
     this.#readMeta();
     this.#readLinks();
+    // The kinds of the writer's own first: a text in the old shape has the family of a kind of theirs through them.
+    this.#readPassageKinds();
     this.nodes.clear();
     for (const id of this.yNodes.keys()) this.#readNode(id);
     this.refs.clear();
@@ -465,7 +456,6 @@ export class Project {
     this.comments.clear();
     for (const id of this.yComments.keys()) this.#readThread(id);
     this.#readKinds();
-    this.#readPassageKinds();
     this.#readTemplates();
     this.structure++;
   }
@@ -693,8 +683,8 @@ export class Project {
   #description(): string {
     const out: string[] = [];
     for (const b of this.blocksOf(PROJECT)) {
-      if (b.kind === 'paragraph' || b.kind === 'passage' || b.kind === 'script')
-        out.push(inlineText(b.content));
+      if (b.kind === 'paragraph') out.push(inlineText(b.content));
+      else if (b.kind === 'passage') out.push(...b.content.map((p) => inlineText(p.content)));
       if (out.join(' ').length > 280) break;
     }
     return out.join(' ').replace(/\s+/g, ' ').trim().slice(0, 300);
@@ -707,7 +697,6 @@ export class Project {
   #readMeta() {
     // The name is the project element's; until that has arrived, what was written here.
     if (!this.yNodes.has(PROJECT)) this.name = str(this.yMeta.get('name'));
-    this.hand = readHand(this.yMeta.get('hand'));
   }
 
   #readLinks() {
@@ -736,7 +725,7 @@ export class Project {
       return;
     }
     const title = readTitle(n.get('title') as Y.XmlFragment | undefined);
-    const blocks = readBody(n.get('body') as Y.XmlFragment | undefined);
+    const blocks = readBody(n.get('body') as Y.XmlFragment | undefined, this.passageKinds);
     const facts = bodyFacts(blocks);
     const pos = n.get('pos') as Position | null | undefined;
     const origin = n.get('origin') as NodeRecord['origin'] | undefined;
@@ -820,7 +809,7 @@ export class Project {
   blocksOf(id: string): Block[] {
     const record = this.nodes.get(id);
     const kept = record && this.#texts.get(record);
-    return kept ? kept.blocks : readBody(this.fragment(id, 'body') ?? undefined);
+    return kept ? kept.blocks : readBody(this.fragment(id, 'body') ?? undefined, this.passageKinds);
   }
 
   /**
@@ -1036,26 +1025,6 @@ export class Project {
     const clean = language?.trim() || null;
     if (clean === this.language) return;
     this.setDocument(PROJECT, { language: clean ?? undefined });
-  }
-
-  /**
-   * Changes the kinds in hand: those the writer has pinned, those taken
-   * out. A kind pinned is no longer taken out, and the other way round.
-   * Nothing is kept of a hand that says nothing.
-   */
-  setHand(patch: Partial<Hand>) {
-    const list = (ids: string[] | undefined) => [
-      ...new Set((ids ?? []).map((k) => k.trim()).filter(Boolean)),
-    ];
-    this.transact(() => {
-      const current = this.hand;
-      let pinned = list(patch.pinned ?? current.pinned);
-      let unpinned = list(patch.unpinned ?? current.unpinned);
-      if (patch.unpinned) pinned = pinned.filter((k) => !unpinned.includes(k));
-      else unpinned = unpinned.filter((k) => !pinned.includes(k));
-      if (pinned.length || unpinned.length) this.yMeta.set('hand', { pinned, unpinned });
-      else this.yMeta.delete('hand');
-    });
   }
 }
 

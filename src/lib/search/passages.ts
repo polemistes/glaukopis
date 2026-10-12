@@ -2,7 +2,7 @@
  * What a search reads of a text: its passages. See ADR 0017.
  *
  * A passage is a line of text as the writer wrote it: the name of an
- * element, a paragraph (in a quotation, a list or a cell as well), what is
+ * element, a paragraph (of whatever kind, in a cell as well), what is
  * said of a figure or a table, the text of a note, and the formula of an
  * equation. The passages of a text are numbered in the order they are read,
  * and a note is read right after the passage it stands in, so that every
@@ -190,15 +190,10 @@ function blocks(maker: PassageMaker, list: Block[]): void {
   for (const b of list) {
     switch (b.kind) {
       case 'paragraph':
-      case 'script':
-      case 'passage':
         line(maker, b.content, 'line');
         break;
-      case 'blockquote':
-        blocks(maker, b.content);
-        break;
-      case 'verse':
-        for (const l of b.lines) line(maker, l.content, 'line');
+      case 'passage':
+        for (const p of b.content) line(maker, p.content, 'line');
         break;
       case 'parallel':
         maker.part();
@@ -206,10 +201,6 @@ function blocks(maker: PassageMaker, list: Block[]): void {
         maker.part();
         blocks(maker, b.right);
         maker.part();
-        break;
-      case 'bullet_list':
-      case 'ordered_list':
-        for (const item of b.items) blocks(maker, item);
         break;
       case 'figure':
         line(maker, b.caption, 'line', undefined, true);

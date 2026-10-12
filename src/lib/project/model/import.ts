@@ -10,7 +10,7 @@ import type { Imported } from '$lib/api/imported';
 import { t, term } from '$lib/i18n';
 import { writeBody, writeName } from './blocks';
 import type { Project } from './project.svelte';
-import { inlineText, type Block, type Inline } from './text';
+import { inlineText, paragraph, type Block, type Inline } from './text';
 import type { DocumentSettings } from './types';
 
 export interface Made {
@@ -35,15 +35,12 @@ function citedIn(blocks: Block[], out: Set<string>) {
     }
   };
   for (const b of blocks) {
-    if (b.kind === 'paragraph' || b.kind === 'script' || b.kind === 'passage') line(b.content);
-    else if (b.kind === 'blockquote') citedIn(b.content, out);
-    else if (b.kind === 'verse') for (const l of b.lines) line(l.content);
+    if (b.kind === 'paragraph') line(b.content);
+    else if (b.kind === 'passage') for (const p of b.content) line(p.content);
     else if (b.kind === 'parallel') {
       citedIn(b.left, out);
       citedIn(b.right, out);
-    } else if (b.kind === 'bullet_list' || b.kind === 'ordered_list')
-      for (const item of b.items) citedIn(item, out);
-    else if (b.kind === 'figure') line(b.caption);
+    } else if (b.kind === 'figure') line(b.caption);
     else if (b.kind === 'row') citedIn(b.items, out);
     else if (b.kind === 'table') {
       line(b.caption);
@@ -108,10 +105,7 @@ export function makeImported(
       blocks: abstract
         .split(/\n+/)
         .filter((line) => line.trim())
-        .map((line) => ({
-          kind: 'paragraph',
-          content: [{ kind: 'text', text: line.trim(), marks: {} }],
-        })),
+        .map((line) => paragraph([{ kind: 'text', text: line.trim(), marks: {} }])),
     });
   }
 

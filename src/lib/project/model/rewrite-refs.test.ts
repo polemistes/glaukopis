@@ -3,7 +3,7 @@ import * as Y from 'yjs';
 import { writeBody, writeName } from './blocks';
 import { Project } from './project.svelte';
 import { citedIds, citedRecords, keepRecords, rewriteReferences } from './rewrite-refs';
-import type { Block, Inline } from './text';
+import { paragraph, type Block, type Inline } from './text';
 import { PROJECT, type RefRecord } from './types';
 
 const t = (text: string): Inline => ({ kind: 'text', text, marks: {} });
@@ -34,15 +34,12 @@ function written(): Uint8Array {
   p.begin('Wrath');
   const a = p.addChild(PROJECT, { title: 'A' })!;
   const body: Block[] = [
-    {
-      kind: 'paragraph',
-      content: [
-        t('As '),
-        cite('r1', 'r2'),
-        t(' says.'),
-        { kind: 'footnote', content: [t('So '), cite('r1')] },
-      ],
-    },
+    paragraph([
+      t('As '),
+      cite('r1', 'r2'),
+      t(' says.'),
+      { kind: 'footnote', content: [t('So '), cite('r1')] },
+    ]),
     {
       kind: 'figure',
       id: 'f1',

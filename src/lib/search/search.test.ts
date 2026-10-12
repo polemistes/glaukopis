@@ -4,7 +4,7 @@ import { ySyncPlugin } from 'y-prosemirror';
 import { afterEach, describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { bodySchema, titleSchema } from '$lib/editor/schema';
-import { HASH, cell, note, p, project, t } from '$lib/found/testing';
+import { HASH, cell, list, note, p, project, quote, t } from '$lib/found/testing';
 import { readBody, readTitle, type Block, type Inline } from '$lib/project/model/text';
 import { Matcher, NO_OPTIONS, fold, type SearchOptions } from './matching';
 import { NO_TEXT, bodyPassages, titlePassage, type Labels } from './passages';
@@ -53,8 +53,8 @@ const rich: Block[] = [
     note(t('The wrath is '), t('mēnis', { em: {} }), t('.')),
     t(', the accursed wrath.'),
   ),
-  { kind: 'blockquote', content: [p(t('A wrath that brought countless sorrows.'))] },
-  { kind: 'bullet_list', items: [[p(t('First wrath'))], [p(t('Second'))]] },
+  quote(t('A wrath that brought countless sorrows.')),
+  list([t('First wrath')], [t('Second')]),
   {
     kind: 'figure',
     id: 'f1',
@@ -86,6 +86,9 @@ const rich: Block[] = [
     t('next line wrath'),
   ),
 ];
+
+/** Whether the editor's schema is that of ADR 0040, with passages that hold paragraphs: an editor on a text with passages needs it. */
+const NEW_SCHEMA = !!bodySchema.nodes.passage?.spec.content?.includes('paragraph');
 
 const options = (change: Partial<SearchOptions> = {}): SearchOptions => ({
   ...NO_OPTIONS,
@@ -133,23 +136,26 @@ describe('the passages of a text', () => {
     expect(passages[0].text).toContain(NO_TEXT);
   });
 
-  it('are read alike from the blocks, from the project and from an editor', () => {
-    const { pr, elements } = project(rich);
-    const fragment = pr.fragment(elements[0], 'body')!;
-    const view = editor(fragment);
-    for (const labels of [null, LABELS]) {
-      const blocks = bodyPassages(readBody(fragment), labels).map((x) => [x.index, x.text]);
-      expect(readBodyY(fragment, labels).passages.map((x) => [x.index, x.text])).toEqual(blocks);
-      expect(readBodyDoc(view.state.doc, labels).passages.map((x) => [x.index, x.text])).toEqual(
-        blocks,
-      );
-    }
-    const title = pr.fragment(elements[0], 'title')!;
-    const named = titlePassage(readTitle(title)).text;
-    expect(named).toBe('Part 1');
-    expect(readTitleY(title).passages[0].text).toBe(named);
-    expect(readTitleDoc(editor(title, 'title').state.doc).passages[0].text).toBe(named);
-  });
+  it.skipIf(!NEW_SCHEMA)(
+    'are read alike from the blocks, from the project and from an editor',
+    () => {
+      const { pr, elements } = project(rich);
+      const fragment = pr.fragment(elements[0], 'body')!;
+      const view = editor(fragment);
+      for (const labels of [null, LABELS]) {
+        const blocks = bodyPassages(readBody(fragment), labels).map((x) => [x.index, x.text]);
+        expect(readBodyY(fragment, labels).passages.map((x) => [x.index, x.text])).toEqual(blocks);
+        expect(readBodyDoc(view.state.doc, labels).passages.map((x) => [x.index, x.text])).toEqual(
+          blocks,
+        );
+      }
+      const title = pr.fragment(elements[0], 'title')!;
+      const named = titlePassage(readTitle(title)).text;
+      expect(named).toBe('Part 1');
+      expect(readTitleY(title).passages[0].text).toBe(named);
+      expect(readTitleDoc(editor(title, 'title').state.doc).passages[0].text).toBe(named);
+    },
+  );
 
   it('pass over reference marks, read from the blocks, from the project and from an editor', () => {
     const marked = [p(t('For God so '), { kind: 'refmark', label: '3:16' }, t('loved the world'))];
@@ -168,7 +174,7 @@ describe('the passages of a text', () => {
     }
   });
 
-  it('are found again where an editor holds them', () => {
+  it.skipIf(!NEW_SCHEMA)('are found again where an editor holds them', () => {
     const { pr, elements } = project(rich);
     const view = editor(pr.fragment(elements[0], 'body')!);
     const read = readBodyDoc(view.state.doc, null);

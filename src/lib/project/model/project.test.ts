@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import type { Template } from '$lib/api/templates';
 import { Project, type Persistence, type Summary } from './project.svelte';
-import { fillBody } from './text';
+import { fillBody, paragraph, passage } from './text';
 import { PROJECT } from './types';
 
 /** A project begun: its own element at the top, named after it. */
@@ -833,9 +833,8 @@ describe('kinds of paragraph and of words of the writer`s own', () => {
     expect(p.passageKind(word)).toMatchObject({ family: 'words', basedOn: '', look: {} });
 
     const a = p.addChild(root, { title: 'A' })!;
-    p.transact(() => fillBody(p.fragment(a, 'body')!, 'Dear reader', letter));
+    p.transact(() => fillBody(p.fragment(a, 'body')!, 'Dear reader', letter, p.passageKinds));
     expect(p.node(a)!.uses).toEqual([letter]);
-    p.setHand({ pinned: [letter], unpinned: [word] });
 
     p.updatePassageKind(letter, { name: 'Note', look: { bold: true }, basedOn: 'text' });
     expect(p.passageKind(letter)).toMatchObject({
@@ -849,37 +848,12 @@ describe('kinds of paragraph and of words of the writer`s own', () => {
 
     p.deletePassageKind(letter);
     expect(p.passageKinds.map((k) => k.name)).toEqual(['Ship']);
-    // The passage stays as it is; the hand lets the kind go.
+    // The paragraph stays as it is, in the passage of its family, which it keeps.
     expect(p.blocksOf(a)).toEqual([
-      {
-        kind: 'passage',
-        name: letter,
-        content: [{ kind: 'text', text: 'Dear reader', marks: {} }],
-      },
+      passage('quotation', [paragraph([{ kind: 'text', text: 'Dear reader', marks: {} }], letter)]),
     ]);
-    expect(p.hand).toEqual({ pinned: [], unpinned: [word] });
     p.deletePassageKind(word);
-    expect(p.hand).toEqual({ pinned: [], unpinned: [] });
-    expect(p.yMeta.has('hand')).toBe(false);
-  });
-
-  it('the hand of the project is pinned and unpinned, and kept only while it says something', () => {
-    const { p } = project();
-    expect(p.hand).toEqual({ pinned: [], unpinned: [] });
-    p.setHand({ pinned: ['epigraph', ' scene ', 'epigraph', ''] });
-    expect(p.hand).toEqual({ pinned: ['epigraph', 'scene'], unpinned: [] });
-    // What is unpinned is pinned no more, and the other way round.
-    p.setHand({ unpinned: ['scene', 'quote'] });
-    expect(p.hand).toEqual({ pinned: ['epigraph'], unpinned: ['scene', 'quote'] });
-    p.setHand({ pinned: ['quote'] });
-    expect(p.hand).toEqual({ pinned: ['quote'], unpinned: ['scene'] });
-    p.setHand({ pinned: [], unpinned: [] });
-    expect(p.yMeta.has('hand')).toBe(false);
-    // It is the project's, and so reaches every copy of it.
-    p.setHand({ pinned: ['code'] });
-    const other = new Project(null);
-    other.load(Y.encodeStateAsUpdate(p.doc), []);
-    expect(other.hand).toEqual({ pinned: ['code'], unpinned: [] });
+    expect(p.passageKinds).toEqual([]);
   });
 
   it('a kind of element says in which kind of paragraph its text begins', () => {
@@ -894,24 +868,22 @@ describe('kinds of paragraph and of words of the writer`s own', () => {
       name: 'Chorus',
       colour: 'rose',
       template: '',
-      begins: ' verse ',
+      begins: ' line ',
     })!;
     expect(p.kind(scene)!.begins).toBe('scene');
-    expect(p.kind(chorus)!.begins).toBe('verse');
+    expect(p.kind(chorus)!.begins).toBe('line');
     const a = p.addChild(root, { title: 'A' })!;
     const b = p.addChild(root, { title: 'B' })!;
     const c = p.addChild(root, { title: 'C', body: 'Written already.' })!;
     p.setKind([a], scene);
     expect(p.blocksOf(a)).toEqual([
-      { kind: 'script', part: 'scene', content: [{ kind: 'text', text: 'INT. HOUSE', marks: {} }] },
+      passage('script', [paragraph([{ kind: 'text', text: 'INT. HOUSE', marks: {} }], 'scene')]),
     ]);
     // Without a text to begin with, the writing begins in the kind.
     p.setKind([b, c], chorus);
-    expect(p.blocksOf(b)).toEqual([
-      { kind: 'verse', start: null, by: 5, lines: [{ kind: 'line', indent: 0, content: [] }] },
-    ]);
+    expect(p.blocksOf(b)).toEqual([passage('verse', [paragraph([], 'line')])]);
     expect(p.blocksOf(c)).toEqual([
-      { kind: 'paragraph', content: [{ kind: 'text', text: 'Written already.', marks: {} }] },
+      paragraph([{ kind: 'text', text: 'Written already.', marks: {} }]),
     ]);
     p.updateKind(chorus, { begins: '' });
     expect(p.kind(chorus)!.begins).toBeUndefined();
