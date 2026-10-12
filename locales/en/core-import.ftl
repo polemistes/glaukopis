@@ -114,8 +114,8 @@ core-import-document-found = { $count ->
     }
 }
 core-import-document-endnote = { $count ->
-    [one] { $count } citation made by EndNote is brought in as the text it shows, and is not among those that were found: what EndNote says of the works could not be read.
-   *[other] { $count } citations made by EndNote are brought in as the text they show, and are not among those that were found: what EndNote says of the works could not be read.
+    [one] { $count } citation made by EndNote is brought in as the text it shows, and is not among the loose citations: what EndNote says of the works could not be read.
+   *[other] { $count } citations made by EndNote are brought in as the text they show, and are not among the loose citations: what EndNote says of the works could not be read.
 }
 core-import-document-bookmarks = { $count ->
     [one] The document keeps { $count } citation in a bookmark, and what it cites could not be read: it is text as it stands. Zotero keeps them otherwise where its document preferences say so.

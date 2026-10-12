@@ -300,20 +300,20 @@ try {
   const ofTab = await menu();
   check(
     'the menu of the element in view has it, with how many there are',
-    ofTab.some((m) => /^Citations that were found…\s*7 to go through/.test(m)),
+    ofTab.some((m) => /^Loose citations…\s*7 to go through/.test(m)),
     ofTab.join(' ‖ '),
   );
   await app.press('Escape');
   await app.waitGone('.menu');
 
-  await app.thisMap('Citations that were found…');
+  await app.thisMap('Loose citations…');
   await opened();
 
   // ---- the panel ----
   check(
     'the panel at the side opens, under its tab, which says how many there are',
     (await app.text('.side-tabs [data-kind="found"]')).replace(/\s+/g, ' ').trim() ===
-      'Citations found 7',
+      'Loose citations 7',
     await app.text('.side-tabs [data-kind="found"]'),
   );
   const all = await rows();
@@ -644,7 +644,7 @@ try {
   await app.clickText('.card h3', 'Homer');
   await app.waitFor('.text-view .section, .diagram .node.root', 8000);
   await sleep(500);
-  await app.thisMap('Citations that were found…');
+  await app.thisMap('Loose citations…');
   await opened();
   check(
     'opened again later, the panel has what was left',
@@ -667,7 +667,7 @@ try {
   check(
     'and the tab counts none',
     (await app.text('.side-tabs [data-kind="found"]')).replace(/\s+/g, ' ').trim() ===
-      'Citations found',
+      'Loose citations',
     await app.text('.side-tabs [data-kind="found"]'),
   );
   await app.screenshot('found-6-nothing');

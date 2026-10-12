@@ -3,9 +3,9 @@
 
 ## Panelet.
 
-found-title = Funne kildehenvisninger
-found-tab = Funne henvisninger
-found-between = Mellom kartet og de funne kildehenvisningene
+found-title = Løse kildehenvisninger
+found-tab = Løse henvisninger
+found-between = Mellom kartet og de løse kildehenvisningene
 found-taken = Det som tas for kildehenvisninger
 found-taken-always = Det et program har laget, og tagger
 found-taken-years = Parenteser med et årstall i
@@ -23,9 +23,9 @@ found-made = { $count ->
 found-made-undo = Ctrl+Z angrer dem, i ett steg.
 found-library-failed = Det gikk ikke å spørre biblioteket.
 found-nothing = Ingenting å gå gjennom
-found-nothing-looked = Ingen funnet kildehenvisning er igjen i teksten som vises, og ingenting i den ser ut som en.
-found-nothing-looked-more = Ingen funnet kildehenvisning er igjen i teksten som vises, og ingenting i den ser ut som en. Mer kan tas for kildehenvisninger ovenfor.
-found-nothing-not-looked = Ingen funnet kildehenvisning er igjen i teksten som vises. Tekst som bare ser ut som en kildehenvisning, letes det etter når du sier ovenfor hva som skal tas for en: parenteser med et årstall i, eller noter.
+found-nothing-looked = Ingen løs kildehenvisning er igjen i teksten som vises, heller ikke tekst som bare ser ut som en.
+found-nothing-looked-more = Ingen løs kildehenvisning er igjen i teksten som vises, heller ikke tekst som bare ser ut som en. Mer kan tas for kildehenvisninger ovenfor.
+found-nothing-not-looked = Ingen løs kildehenvisning laget av et program, og ingen tagg, er igjen i teksten som vises. Tekst som bare ser ut som en kildehenvisning, letes det etter når du sier ovenfor hva som skal tas for en: parenteser med et årstall i, eller noter.
 found-list-label = Det som skal gås gjennom
 found-untitled = Uten navn
 found-in-a-note = I en note
@@ -87,7 +87,7 @@ found-note-holds = Noten inneholder { $what ->
         [hard_break] et linjeskift
        *[other] noe som ikke er tekst
     }, som teksten foran og etter et verk ikke kan inneholde.
-found-note-another = Noten inneholder en annen funnet kildehenvisning, som ville gått tapt i teksten etter denne.
+found-note-another = Noten inneholder en annen løs kildehenvisning, som ville gått tapt i teksten etter denne.
 
 ## Hvorfor det som ble bedt om, ikke lot seg gjøre.
 

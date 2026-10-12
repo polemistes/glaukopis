@@ -164,7 +164,7 @@ editor-pasted-picture = bilde
 
 ## Mer.
 
-editor-found = Funne kildehenvisninger …
+editor-found = Løse kildehenvisninger …
 editor-found-count = { $count } å gå gjennom og gjøre til kildehenvisninger
 editor-found-none = Og tekst som ser ut som kildehenvisninger, i dette kartet
 

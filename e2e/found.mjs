@@ -198,7 +198,7 @@ try {
     await sleep(300);
   };
   const openWindow = async () => {
-    await app.thisMap('Citations that were found…');
+    await app.thisMap('Loose citations…');
     await opened();
   };
 
@@ -238,9 +238,9 @@ try {
   };
   /** Back up to the project, under which the next document is to go. */
   const up = async () => {
-    if (!(await app.exists('.maps .up'))) return;
-    await app.click('.maps .up');
-    await until('the project in view', async () => !(await app.exists('.maps .up')));
+    if (!(await app.exists('.maps .up:not(.home)'))) return;
+    await app.click('.maps .up:not(.home)');
+    await until('the project in view', async () => !(await app.exists('.maps .up:not(.home)')));
     await sleep(300);
   };
   const fact = (name) =>

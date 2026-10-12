@@ -164,7 +164,7 @@ editor-pasted-picture = picture
 
 ## More.
 
-editor-found = Citations that were found…
+editor-found = Loose citations…
 editor-found-count = { $count } to go through, and make citations of
 editor-found-none = And text that looks like citations, in this map
 

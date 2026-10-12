@@ -78,7 +78,7 @@ documents-found-made = { $count ->
 documents-found-some-made = { $count } citations were found, { $made } of them made by a program that keeps references.
 documents-at-once = Make citations at once of those made by Zotero of works your library has
 # Under the choice: what becomes of a note that holds one of them.
-documents-at-once-notes = A note that is nothing but a citation becomes a citation in the line, which the reference style sets in a note or in the line; a note that says more keeps its citation. What you have chosen for notes in the panel of found citations, for all that follow, holds here too.
+documents-at-once-notes = A note that is nothing but a citation becomes a citation in the line, which the reference style sets in a note or in the line; a note that says more keeps its citation. What you have chosen for notes in the panel of loose citations, for all that follow, holds here too.
 documents-go-through-element = Go through the citations when the document is brought in
 documents-go-through-project = Go through the citations when the project is made
 

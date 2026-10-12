@@ -93,7 +93,7 @@ project-open-beside = Open beside
 project-open-beside-hint = Two maps side by side, to move elements between them
 project-side-by-side-short = Side by side
 project-preview-short = Preview
-project-found = Citations that were found…
+project-found = Loose citations…
 # The count is of those found in the element in view, and under it.
 project-found-hint = { $count } to go through, and make citations of
 project-found-none = And text that looks like citations

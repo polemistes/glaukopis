@@ -109,8 +109,8 @@ core-import-document-found = { $count ->
     }
 }
 core-import-document-endnote = { $count ->
-    [one] Én kildehenvisning laget av EndNote er hentet inn som teksten den viser, og er ikke blant dem som ble funnet: det EndNote sier om verkene, kunne ikke leses.
-   *[other] { $count } kildehenvisninger laget av EndNote er hentet inn som teksten de viser, og er ikke blant dem som ble funnet: det EndNote sier om verkene, kunne ikke leses.
+    [one] Én kildehenvisning laget av EndNote er hentet inn som teksten den viser, og er ikke blant de løse kildehenvisningene: det EndNote sier om verkene, kunne ikke leses.
+   *[other] { $count } kildehenvisninger laget av EndNote er hentet inn som teksten de viser, og er ikke blant de løse kildehenvisningene: det EndNote sier om verkene, kunne ikke leses.
 }
 core-import-document-bookmarks = { $count ->
     [one] Dokumentet har én kildehenvisning i et bokmerke, og det den viser til, kunne ikke leses: den står som tekst. Zotero lagrer dem på en annen måte når dokumentinnstillingene sier det.

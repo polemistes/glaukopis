@@ -627,20 +627,20 @@ add to; your own stay as you wrote them.
 References are found by what is written about them, as by their authors and
 titles.
 
-### Citations that were found
+### Loose citations
 
 A text that was written elsewhere has its citations as they were made
 there: by Zotero or Mendeley, by a tag such as `[@nagy1979]`, or as words
 and nothing else. When such a text is brought in, what could not be made a
 citation at once stands in the text as the text it was, with a line of dots
-under it. It is a citation that was *found*, and waits to be tied to a
-reference of your library.
+under it. It is a *loose* citation, and waits to be tied to a reference of
+your library.
 
 They are gone through in the panel at the side, under its tab with the
 magnifying glass, which says how many are left in the element in view and
-under it (**Ctrl+Shift+T**). **Citations that were found…** in the menu of
+under it (**Ctrl+Shift+T**). **Loose citations…** in the menu of
 the element in view (**This element**, beside its name in the bar) opens it
-as well, and says how many there are; and pressing found text in the text
+as well, and says how many there are; and pressing loose text in the text
 opens the panel at that one. The panel is there for any element, whether its
 text was brought in or written here: what is to be taken for a citation is
 said at its top, as below.
@@ -843,7 +843,7 @@ there. Importing the same a second time adds nothing.
 
 ## The panel at the side
 
-The references, the pictures, the comments, the citations that were found,
+The references, the pictures, the comments, the loose citations,
 the history and the changes to review share one panel at the side of the
 map, one at a time. The button with the panel on it, in the bar over the
 map, opens it as it was last, and closes it; the tabs at its head change
@@ -1038,7 +1038,7 @@ small, which goes up; then the name of the element in view, which pulls down
 the elements beside it, to show one of them in its place, or, for the
 project itself, the trees under it. Beside the name is **This element**,
 with what can be done with the element in view: **Rename**, **Document
-settings…**, **Citations that were found…**, **Languages…**, which opens
+settings…**, **Loose citations…**, **Languages…**, which opens
 the document settings at the language, **New element under it**, **A
 document into it…** and **Delete**, which takes the element
 with all under it, and goes up. The project itself is not deleted here, but
@@ -1184,10 +1184,10 @@ What becomes of what is in the document:
   become citations when the key is in your library, with page and words
   before and after. Those that are not, and citations made by Zotero or
   Mendeley in Word and OpenDocument files, stay the text they were written
-  as, and are marked as citations that were *found*. You are told how many
+  as, and are marked as *loose* citations. You are told how many
   there are, and choose whether those that Zotero made of works your
   library has are made citations at once, and whether the rest are gone
-  through when the document is brought in: see *Citations that were found*.
+  through when the document is brought in: see *Loose citations*.
 - **A list of works cited** is brought in as text. The document makes its
   own from what is cited in it, so the part can be left out of the document
   or deleted.
@@ -1933,8 +1933,8 @@ after the cursor (**Shift+F7**, to the one before), and its menu has:
   with a capital as well.
 
 What is not checked: citations, formulas and the other things in the text
-that are not words; citations that were found in a text you brought in, and
-are not yet citations; words with digits, such as *1990s*; addresses of web
+that are not words; loose citations in a text you brought in, which are
+not yet citations; words with digits, such as *1990s*; addresses of web
 pages and of mail; and words written in another script than the
 dictionary's, such as Greek in an English text.
 

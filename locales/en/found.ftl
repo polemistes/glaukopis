@@ -4,10 +4,10 @@
 
 ## The panel.
 
-found-title = Citations that were found
+found-title = Loose citations
 # On the tab of the panel, beside the other tabs: short.
-found-tab = Citations found
-found-between = Between the map and the citations that were found
+found-tab = Loose citations
+found-between = Between the map and the loose citations
 found-taken = What is taken for citations
 found-taken-always = What a program made, and tags
 found-taken-years = Parentheses with a year in them
@@ -25,9 +25,9 @@ found-made = { $count ->
 found-made-undo = Ctrl+Z takes them back, as one step.
 found-library-failed = The library could not be asked.
 found-nothing = Nothing to go through
-found-nothing-looked = No citation that was found is left in the text in view, and nothing in it looks like one.
-found-nothing-looked-more = No citation that was found is left in the text in view, and nothing in it looks like one. More can be taken for citations, above.
-found-nothing-not-looked = No citation that was found is left in the text in view. Text that only looks like a citation is looked for when you say above what is to be taken for one: parentheses with a year in them, or notes.
+found-nothing-looked = No loose citation is left in the text in view, not even text that only looks like one.
+found-nothing-looked-more = No loose citation is left in the text in view, not even text that only looks like one. More can be taken for citations, above.
+found-nothing-not-looked = No loose citation made by a program, and no tag, is left in the text in view. Text that only looks like a citation is looked for when you say above what is to be taken for one: parentheses with a year in them, or notes.
 found-list-label = What there is to go through
 found-untitled = Untitled
 found-in-a-note = In a note
@@ -93,7 +93,7 @@ found-note-holds = The note holds { $what ->
         [hard_break] a second line
        *[other] something that is no text
     }, which the words before and after a work cannot hold.
-found-note-another = The note holds another citation that was found, which would be lost in the words after this one.
+found-note-another = The note holds another loose citation, which would be lost in the words after this one.
 
 ## Why what was asked could not be done.
 
