@@ -7,6 +7,9 @@ text-not-printed = skrives ikke ut
 text-grip = Flytt eller endre dette elementet
 text-include = I dokumentet står { $name } her, med alt under seg.
 text-include-open = Åpne det
+text-drop-under = Under «{ $name }»
+text-drop-after = Etter «{ $name }»
+text-drop-before = Foran «{ $name }»
 text-split = Del her
 text-split-hint = Det som står etter markøren, blir et nytt element
 text-join = Slå sammen med elementet over
@@ -58,4 +61,4 @@ text-notes = { $count ->
     [one] { $count } note
    *[other] { $count } noter
 }
-text-keys = { $alt }+{ $enter } nytt element · { $alt }+{ $shift }+{ $enter } ett under · { $at } kildehenvisning
+text-keys = { $ctrl }+{ $enter } nytt element · { $ctrl }+{ $shift }+{ $enter } ett under · { $at } kildehenvisning

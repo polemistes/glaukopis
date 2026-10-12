@@ -82,7 +82,7 @@ folded. The map is moved by dragging and turned larger and smaller as the
 diagram is. A project you share has a sign of people beside its name, and one
 you joined a sign of a link, here, in the list and in the bar over the map.
 From the top of any project, **All projects** at the left of the bar, with
-the owl, or **Alt+Up**, comes back here.
+the owl, or **Alt+Shift+Up**, comes back here.
 
 In the list at the left of a project, a project that is not open can be
 unfolded too: its trees are read from the disk and shown, and a click on one
@@ -102,23 +102,24 @@ project opens on its text.
 
 | To | Do this |
 | --- | --- |
-| Add an element under the one selected | **Tab** |
-| Add one beside it | **Enter** |
+| Add an element under the one selected | **Ctrl+Shift+Enter**, or **Tab** |
+| Add one after it | **Ctrl+Enter**, or **Enter** |
 | Add an element under the one in view, where you click | Double-click the background, or **New element here** in its menu |
 | Write the text of an element | Double-click it |
 | Rename an element | **F2**, or begin to type |
 | Read its text without opening it | Rest the pointer on it |
 | Move an element, with all that is under it | Drag it onto another element |
 | Move an element without moving what is under it, which stays where it stood, still its own | Drag it with **Shift** held |
-| Move it up or down, deeper or less deep | **Alt+Shift** and the arrows |
+| Move it up or down among those beside it | **Alt+Up**, **Alt+Down** |
+| Move it sideways, as the arrow points: deeper on the right of the map, less deep on the left | **Alt+Right**, **Alt+Left** |
 | Copy elements, with all under them; paste them under the element selected, or, where none is, under the element in view, where the pointer is | **Ctrl+C**, **Ctrl+V**; or the menu |
 | Cut elements, to move them where they are pasted: elsewhere in the project, or in another project | **Ctrl+X**, then **Ctrl+V**; or the menu |
 | Go from element to element | The arrows |
 | Select several | **Ctrl**-click or **Shift**-click, or drag a frame around them |
 | Delete | **Delete** |
 | Undo, redo | **Ctrl+Z**, **Ctrl+Shift+Z** |
-| Enter an element: it comes to the centre, with what is under it, and the rest is out of the way | The small round button at its corner, which shows when the pointer is on it or it is selected; **Ctrl+Enter**; or **Open as a map** in its menu |
-| Go up, to the element over the one in view | **Alt+Up**; the small round button at the corner of the element in view; or its name, small, at the left of the bar |
+| Enter an element: it comes to the centre, with what is under it, and the rest is out of the way | The small round button at its corner, which shows when the pointer is on it or it is selected; **Alt+Shift+Down**; or **Open as a map** in its menu |
+| Go up, to the element over the one in view | **Alt+Shift+Up**; the small round button at the corner of the element in view; or its name, small, at the left of the bar |
 | Move about the map | Drag the background; scroll to zoom |
 | Everything else | Right-click an element, or **Shift+F10** |
 
@@ -155,6 +156,11 @@ project's name is the title, and its text comes before the first section.
 When the element in view has no text yet, the cursor is in its text as it
 is shown, and what is typed goes there; an empty text is a line high, and a
 press on it, or beside it, puts the cursor in it.
+How deep each element stands is shown in the margin beside its heading, on
+the screen only: by its number, as in an outline (1, 1.2, 1.2.3, counting
+only the names printed as headings), by a dot for each level, or by setting
+each level further in, with a faint line down from the element it is under.
+Choose which under **Depth in the text** in the settings.
 
 Write as in any editor. The tools are over the text: the kind of the
 paragraph the cursor is in, a button that opens the kinds (text, quotation,
@@ -184,13 +190,14 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Begin a quotation or a list | Type `> `, `- ` or `1. ` at the start of a line |
 | Make a dash | Type `--` for –, `---` for — |
 | Divide an element in two | Right-click where it is to be divided: **Split here**; or **Ctrl+Enter** |
-| Add an element after the one the cursor is in | **Alt+Enter**; in a text, what follows the cursor goes into it |
-| Add an element under it | **Alt+Shift+Enter** |
-| Make the element deeper or less deep | **Tab**, **Shift+Tab** in its name; or **Alt** and the arrows left and right |
-| Move the element up or down | **Alt** and the arrows up and down |
+| Add an element after the one the cursor is in | **Ctrl+Enter**; in a text, what follows the cursor goes into it |
+| Add an element under it, the first, right after its text | **Ctrl+Shift+Enter**; in a text, what follows the cursor goes into it |
+| Make the element deeper or less deep | **Alt+Right**, **Alt+Left**; or **Tab**, **Shift+Tab** in its name |
+| Move the element up or down among those beside it | **Alt+Up**, **Alt+Down**; the cursor stays where it is |
 | Join an element to the one above | Right-click: **Join to the element above** |
-| Enter an element, to see it alone with what is under it | The small round button before its heading, which shows when the pointer is on the heading; or **Open as a map**, from the grip beside it |
-| Go up, to the element over the one in view | The small round button before the title, which shows when the pointer is on it; or its name, small, at the left of the bar |
+| Enter an element, to see it alone with what is under it | **Alt+Shift+Down**; the small round button before its heading, which shows when the pointer is on the heading; or **Open as a map**, from the grip beside it |
+| Go up, to the element over the one in view | **Alt+Shift+Up**, with the cursor anywhere in the text; the small round button before the title, which shows when the pointer is on it; or its name, small, at the left of the bar |
+| Move an element to another place | Drag it by the grip beside its heading: the line shows where it goes, and how far to the right the pointer is says how deep, under the element above, after it, or as far out as before the element below |
 
 A text has two breaks: **Enter** begins a new paragraph, and
 **Shift+Enter** breaks the line within the paragraph, as in an address or a
@@ -227,8 +234,8 @@ Press a name to go there; what it is folded under is opened. An entry with
 something under it has a chevron, which folds that away in the outline and
 opens it again, as the left and right arrows do; this folding is the
 outline's own and changes nothing in the text. The up and down arrows go
-from name to name, and **Alt+Shift** with the arrows moves an element, as
-in the text.
+from name to name, and **Alt** with the arrows moves an element, as in the
+text.
 
 ### Folding elements away
 
@@ -1047,9 +1054,9 @@ project is out of the way. The project itself is an element, at the top: a
 new project opens there, with everything in it. Enter an element with the
 small round button that appears at its corner in the diagram, when the
 pointer is on it or it is selected, and before its heading in the text, when
-the pointer is on the heading; with **Ctrl+Enter** in the diagram; or with
+the pointer is on the heading; with **Alt+Shift+Down**; or with
 **Open as a map** in its menu, in the diagram and from the grip beside its
-heading in the text. Go up with **Alt+Up**; with the button of the same kind
+heading in the text. Go up with **Alt+Shift+Up**; with the button of the same kind
 on the element in view, at its corner in the diagram and before the title in
 the text; or by pressing the name of the element over it, which stands small
 at the left of the bar over the map. The project itself has no such button:
@@ -2051,7 +2058,7 @@ what is to be done by its name, and does it.
 | **Ctrl+1**, **Ctrl+2**, **Ctrl+3** | The projects, the library, the pictures |
 | **Ctrl+,** | Settings, in a window over what is open; closing it leaves you where you were |
 | **Ctrl+D** | Diagram or text |
-| **Alt+Up** | Up to the element over this one |
+| **Alt+Shift+Up** | Up to the element over this one, in the diagram and in the text |
 | **Ctrl+Shift+O** | The outline beside the text |
 | **Ctrl+Shift+L** | The list of projects at the left of a project |
 | **Ctrl+P** | The preview |
@@ -2062,11 +2069,12 @@ what is to be done by its name, and does it.
 | **Ctrl+Alt+C** | A comment on the passage selected, or on the element |
 | **Ctrl+Shift+H** | The history of the project |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
-| **Tab**, **Enter** | In the diagram: a new element under, or beside |
-| **Ctrl+Enter** | In the diagram: open the element selected as a map, with what is under it |
-| **Ctrl+Enter**, **Alt+Enter** | In the text: a new element after this one, from the cursor on |
-| **Alt+Shift+Enter** | In the text: a new element under this one |
-| **Alt+Shift** and the arrows | In the diagram and the text: move the element up, down, deeper, less deep |
+| **Ctrl+Enter** | In the diagram and the text: a new element after this one; in a text, from the cursor on |
+| **Ctrl+Shift+Enter** | In the diagram and the text: a new element under this one; in a text, the first under it, from the cursor on |
+| **Enter**, **Tab** | In the diagram: a new element after, or under |
+| **Alt+Shift+Down** | In the diagram and the text: open the element as a map, with what is under it |
+| **Alt+Up**, **Alt+Down** | In the diagram and the text: move the element up or down among those beside it |
+| **Alt+Right**, **Alt+Left** | In the text: the element deeper, or less deep; in the diagram, as the arrow points |
 | **Alt** and the arrows | In the text: move the element, or make it deeper or less deep, as in Org mode |
 | **Shift+F10** | In the diagram: the menu of what is selected |
 | **F2** | Rename |

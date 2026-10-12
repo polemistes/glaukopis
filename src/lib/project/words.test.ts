@@ -98,13 +98,13 @@ describe('the words of a text', () => {
   it('count what is under the text', () => {
     expect(t('text-notes', { count: 2 })).toBe('2 notes');
     const keys = pieces((m) => t('text-keys', m), {
-      alt: 'Alt',
+      ctrl: 'Ctrl',
       shift: 'Shift',
       enter: 'Enter',
       at: '@',
     });
     expect(keys.map((p) => (p.name ? `[${p.text}]` : p.text)).join('')).toBe(
-      '[Alt]+[Enter] new element · [Alt]+[Shift]+[Enter] one under it · [@] cite',
+      '[Ctrl]+[Enter] new element · [Ctrl]+[Shift]+[Enter] one under it · [@] cite',
     );
   });
 });

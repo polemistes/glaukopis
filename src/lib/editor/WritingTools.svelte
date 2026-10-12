@@ -338,13 +338,14 @@
         {
           label: t('editor-new-after'),
           icon: Plus,
-          shortcut: 'Alt+Enter',
+          // In a text, the key makes the new element from the cursor on: the last of these.
+          shortcut: body ? undefined : 'Ctrl+Enter',
           action: () => add('after'),
         },
         {
           label: t('editor-new-under'),
           icon: CornerDownRight,
-          shortcut: 'Alt+Shift+Enter',
+          shortcut: 'Ctrl+Shift+Enter',
           action: () => add('under'),
         },
         {
@@ -638,7 +639,7 @@
       type="button"
       class="word element"
       aria-label={t('editor-new-element')}
-      use:tooltip={{ text: t('editor-new-element-hint'), shortcut: 'Alt+Enter', side: 'bottom' }}
+      use:tooltip={{ text: t('editor-new-element-hint'), shortcut: 'Ctrl+Enter', side: 'bottom' }}
       onclick={newElement}
     >
       <ListPlus size={14} />

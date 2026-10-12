@@ -53,6 +53,8 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
   const mod = event.ctrlKey || event.metaKey;
   const one = selection.length === 1 ? selection[0] : null;
   const last = selection[selection.length - 1] ?? null;
+  /** A new element after one: after the element in view, which has nothing beside it, the first under it. */
+  const after = (id: string) => d.add(id === tree.root ? 'child' : 'sibling', id);
 
   if (mod && !event.altKey) {
     const key = event.key.toLowerCase();
@@ -66,16 +68,29 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
     else if (key === '=' || key === '+') d.zoomBy(1.2);
     else if (key === '-') d.zoomBy(1 / 1.2);
     else if (key === 'enter') {
-      // The element selected becomes the one in view.
-      if (one && one !== tree.root) d.enter(one);
+      // Ctrl+Enter a new element after the one selected, and with Shift one
+      // under it, as in the text; with nothing selected, under the element in view.
+      if (event.shiftKey) {
+        if (one) d.add('child', one);
+        else if (!selection.length) d.add('child', tree.root);
+      } else if (one) after(one);
     } else return false;
     return true;
   }
 
-  // Alt+Shift and the arrows move the element, as in the text: up and down
-  // among those beside it, and deeper or less deep, which is outwards or
-  // inwards on the side of the map where it stands.
+  // Alt+Shift and the arrows up and down go in and out: the element selected
+  // becomes the one in view; up, to the element over the one in view, is the
+  // view's to do. Alt+Shift with the arrows sideways does nothing.
   if (event.altKey && event.shiftKey && !mod && event.key.startsWith('Arrow')) {
+    if (event.key === 'ArrowUp') return false;
+    if (event.key === 'ArrowDown' && one && one !== tree.root) d.enter(one);
+    return true;
+  }
+
+  // Alt and the arrows move the element, as in the text: up and down among
+  // those beside it; sideways as the arrow points on the screen, which is
+  // deeper on the right of the map and less deep on the left.
+  if (event.altKey && !event.shiftKey && !mod && event.key.startsWith('Arrow')) {
     if (!one) return true;
     const outwards = lay.placed.get(one)?.side === 'left' ? 'ArrowLeft' : 'ArrowRight';
     const inwards = outwards === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft';
@@ -112,7 +127,7 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
         if (d.linkFrom !== one) project.addLink(d.linkFrom, one);
         d.linkFrom = null;
       } else if (one && event.altKey) d.open(one);
-      else if (one) d.add('sibling', one);
+      else if (one) after(one);
       else if (!selection.length) d.select([tree.root]);
       break;
     case 'F2':
@@ -141,8 +156,6 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
     case 'ArrowRight':
     case 'ArrowUp':
     case 'ArrowDown': {
-      // Alt+Up goes up, to the parent of the element in view: the view does that, not the diagram.
-      if (event.altKey) return false;
       const from = last ?? tree.root;
       if (!last) {
         d.select([from]);

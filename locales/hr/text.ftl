@@ -63,4 +63,4 @@ text-notes = { $count ->
    *[other] { $count } bilježaka
 }
 # The keys are shown as keys, where the variables stand.
-text-keys = { $alt }+{ $enter } novi element · { $alt }+{ $shift }+{ $enter } jedan ispod njega · { $at } citiraj
+text-keys = { $ctrl }+{ $enter } novi element · { $ctrl }+{ $shift }+{ $enter } jedan ispod njega · { $at } citiraj

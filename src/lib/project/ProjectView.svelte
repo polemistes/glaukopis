@@ -744,12 +744,18 @@
     else if (i === 0 && p.at === PROJECT) goHome();
   }
 
-  /** Alt+Up goes up from anywhere in the view but a field or a text, which have their own use for it. */
+  /**
+   * Alt+Shift+Up goes up from anywhere in the view, the text of the map as
+   * well, with the cursor in a name or a text; not from a field, or from the
+   * box of an element in the diagram, which is written in over the map.
+   */
   function onkeydown(event: KeyboardEvent) {
     if (event.defaultPrevented || event.key !== 'ArrowUp' || !event.altKey) return;
-    if (event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (event.ctrlKey || event.metaKey || !event.shiftKey) return;
     const target = event.target as HTMLElement | null;
-    if (target?.closest?.('input, textarea, select, [contenteditable="true"], .prose')) return;
+    if (target?.closest?.('input, textarea, select')) return;
+    const writing = target?.closest?.('[contenteditable="true"], .prose');
+    if (writing && !writing.closest('.text-view')) return;
     event.preventDefault();
     up();
   }
@@ -987,7 +993,7 @@
   });
 </script>
 
-<!-- Alt+Up is a key of the whole window, like those of `shell/keys`, which cannot hold an arrow. -->
+<!-- Alt+Shift+Up is a key of the whole window, like those of `shell/keys`, which cannot hold an arrow. -->
 <svelte:window {onblur} {onkeydown} />
 
 {#if failure !== null}

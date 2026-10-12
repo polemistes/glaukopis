@@ -230,21 +230,21 @@ try {
   await sleep(300);
   check('and taken back', (await app.count('.diagram .association')) === 1);
 
-  // --- An element moved by Alt+Shift and the arrows ---
+  // --- An element moved by Alt and the arrows ---
   const top = (name) =>
     app.exec(
       `return Array.from(document.querySelectorAll('.diagram .node')).find((e) => e.textContent.includes(${JSON.stringify(name)})).getBoundingClientRect().top`,
     );
   await app.click(await app.findByText('.diagram .node', 'Milton'));
   await sleep(100);
-  await app.keys(['Alt', 'Shift', 'ArrowUp']);
+  await app.keys(['Alt', 'ArrowUp']);
   await sleep(400);
   const up = (await top('Milton')) < (await top('Virgil'));
-  await app.keys(['Alt', 'Shift', 'ArrowDown']);
+  await app.keys(['Alt', 'ArrowDown']);
   await sleep(400);
   const down = (await top('Milton')) > (await top('Virgil'));
   check(
-    'Alt+Shift and the arrows move an element among those beside it',
+    'Alt and the arrows move an element among those beside it',
     up && down,
     JSON.stringify({ up, down }),
   );
@@ -357,12 +357,12 @@ try {
     after.join(' | '),
   );
 
-  // Org mode's keys do the same: Alt+Enter one after, Alt+Shift+Enter one under.
-  await app.keys(['Alt', 'Enter']);
+  // Ctrl+Enter one after, Ctrl+Shift+Enter one under.
+  await app.keys(['Control', 'Enter']);
   await sleep(400);
   await app.keys('The gifts of Agamemnon');
   await sleep(150);
-  await app.keys(['Alt', 'Shift', 'Enter']);
+  await app.keys(['Control', 'Shift', 'Enter']);
   await sleep(400);
   await app.keys('The embassy');
   await sleep(300);
@@ -370,12 +370,12 @@ try {
     `return Array.from(document.querySelectorAll('.text-view .section')).map((s) => s.querySelector('.heading .title').textContent.trim() + ':' + (s.className.match(/level-(\\d)/) || [])[1])`,
   );
   check(
-    'Alt+Enter begins a new element after this one',
+    'Ctrl+Enter at the end of a text begins a new element after this one',
     org[5]?.startsWith('The gifts of Agamemnon:'),
     org.join(' | '),
   );
   check(
-    'and Alt+Shift+Enter one under it',
+    'and Ctrl+Shift+Enter one under it',
     org[6] === 'The embassy:' + (Number(org[5]?.split(':')[1]) + 1),
     org.join(' | '),
   );
@@ -586,13 +586,13 @@ try {
   check('and the outline marks it', marked === 'Reception', marked);
   await app.screenshot('maps-11c-outline');
   // Moved from the outline, and taken back.
-  await app.keys(['Alt', 'Shift', 'ArrowUp']);
+  await app.keys(['Alt', 'ArrowUp']);
   await sleep(300);
   const movedUp = await app.exec(
     `return Array.from(document.querySelectorAll('.outline [data-outline]')).map((b) => b.textContent.trim())`,
   );
   check(
-    'Alt+Shift and the arrows move an element from the outline',
+    'Alt and the arrows move an element from the outline',
     movedUp.indexOf('Reception') < outlined.indexOf('Reception'),
     movedUp.join(' | '),
   );

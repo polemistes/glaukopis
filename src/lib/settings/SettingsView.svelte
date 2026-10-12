@@ -8,6 +8,9 @@
   import Sun from '@lucide/svelte/icons/sun';
   import Flower2 from '@lucide/svelte/icons/flower-2';
   import Palette from '@lucide/svelte/icons/palette';
+  import Ellipsis from '@lucide/svelte/icons/ellipsis';
+  import IndentIncrease from '@lucide/svelte/icons/list-indent-increase';
+  import ListOrdered from '@lucide/svelte/icons/list-ordered';
   import { judge, STARTS } from '$lib/theme/own';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import { open as chooseFile } from '@tauri-apps/plugin-dialog';
@@ -25,7 +28,13 @@
   import { templateGroupWords, TEMPLATE_GROUPS } from '$lib/document/templates';
   import { languageName, languages, t, TEXT_LANGUAGES } from '$lib/i18n';
   import { apart, PLACE } from '$lib/util/words';
-  import { systemInfo, type Settings, type SystemInfo, type Theme } from '$lib/api/system';
+  import {
+    systemInfo,
+    type Settings,
+    type SystemInfo,
+    type TextDepth,
+    type Theme,
+  } from '$lib/api/system';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
@@ -281,6 +290,22 @@
           </span>
           <span class="number">{settings.value.textSize}</span>
         </div>
+      </div>
+      <div class="row top">
+        <div class="what">
+          <div class="label">{t('settings-text-depth')}</div>
+          <div class="hint">{t('settings-text-depth-hint')}</div>
+        </div>
+        <Segmented
+          value={settings.value.textDepth ?? 'numbers'}
+          label={t('settings-text-depth')}
+          options={[
+            { value: 'numbers', label: t('settings-text-depth-numbers'), icon: ListOrdered },
+            { value: 'dots', label: t('settings-text-depth-dots'), icon: Ellipsis },
+            { value: 'indent', label: t('settings-text-depth-indent'), icon: IndentIncrease },
+          ]}
+          onchange={(depth: TextDepth) => settings.set('textDepth', depth)}
+        />
       </div>
       <p class="sample serif" style:font-size="{settings.value.textSize}px">
         {t('settings-sample')} — <span lang="grc">μῆνιν ἄειδε θεά</span>.

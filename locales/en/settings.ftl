@@ -26,6 +26,12 @@ settings-own-begin = Begin from
 settings-own-weak = Hard to read: the ink stands at { $ink } to 1 on the paper and the accent at { $accent } to 1; 4.5 and 3 or more read well.
 settings-text-size = Size of your text
 settings-text-size-hint = In the maps and the text view. What is exported follows the layout.
+# How the text of a map shows how deep each element stands: on the screen only.
+settings-text-depth = Depth in the text
+settings-text-depth-hint = How the text of a map shows how deep each element stands. On the screen only: nothing of it is printed.
+settings-text-depth-numbers = Numbers
+settings-text-depth-dots = Dots
+settings-text-depth-indent = Set in, with lines
 settings-interface-size = Size of the interface
 settings-interface-size-hint = Everything in the window, the writing as well. For your text alone, the size below.
 # A line of text in the size chosen, which shows the face of the letters; a

@@ -51,6 +51,7 @@
   import type { Folding } from './folding.svelte';
   import TextSection, { type Part } from './TextSection.svelte';
   import { progressOf, progressWords } from '../status';
+  import { settings } from '$lib/state/settings.svelte';
   import { reviewing } from '$lib/review/context';
   import type { Change } from '$lib/review/grouping';
 
@@ -102,6 +103,20 @@
   /** How wide the outline is, as it was last dragged. */
 
   const KEPT_ACTIVE = 10;
+  /** The width of the gutter of a section, before its name: see `TextSection`. */
+  const GUTTER = 44;
+
+  interface DropSlot {
+    /** Where the elements go: under which, at which place among those under it. */
+    parent: string;
+    index: number;
+    /** How deep they would stand, from one, for the elements under the one in view. */
+    depth: number;
+    label: string;
+    /** Where the line is drawn in the column, and how far in. */
+    top: number;
+    indent: number;
+  }
 
   let root = $state<HTMLDivElement>();
   let scroller = $state<HTMLDivElement>();
@@ -117,6 +132,8 @@
   });
   let linkFrom = $state<string | null>(null);
   let drop = $state<{ id: string; where: 'before' | 'after' | 'inside' } | null>(null);
+  /** Where elements dragged in the text would go, if dropped now: see `slotAt`. */
+  let slot = $state<DropSlot | null>(null);
   let labelling = $state<{ id: string; value: string; top: number } | null>(null);
 
   const editors = new Map<
@@ -181,6 +198,27 @@
 
   /** The elements that are shown. */
   const rows = $derived(all.filter((r) => !r.away));
+
+  /** How deep each element stands is shown, on the screen only: see `Settings.textDepth`. */
+  const depthShown = $derived(settings.value.textDepth ?? 'numbers');
+
+  /**
+   * The numbers of the elements, as in an outline: 1, 1.2, 1.2.3, counted
+   * among those whose names are printed as headings, what is folded away
+   * as well, so that they do not change as it is folded.
+   */
+  const numbers = $derived.by(() => {
+    const out = new Map<string, string>();
+    if (depthShown !== 'numbers') return out;
+    const counters: number[] = [];
+    for (const r of all) {
+      if (r.level === 0 || r.excluded || !project.nodes.get(r.id)?.heading) continue;
+      counters.length = r.level;
+      counters[r.level - 1] = (counters[r.level - 1] ?? 0) + 1;
+      out.set(r.id, Array.from(counters, (n) => n ?? 0).join('.'));
+    }
+    return out;
+  });
 
   // ---- the element at the top of what is in view, for the outline ----
 
@@ -252,7 +290,7 @@
 
   // What is said under the text besides the count, with the keys shown as keys.
   const keysHint = $derived(
-    pieces((m) => t('text-keys', m), { alt: 'Alt', shift: 'Shift', enter: 'Enter', at: '@' }),
+    pieces((m) => t('text-keys', m), { ctrl: 'Ctrl', shift: 'Shift', enter: 'Enter', at: '@' }),
   );
   const linkingHint = $derived(pieces((m) => t('text-hint-linking', m), { esc: 'Esc' }));
 
@@ -356,8 +394,11 @@
   const outdent = (id: string) => outdentElement(project, tree, id);
   const shift = (id: string, by: -1 | 1) => shiftElement(project, tree, id, by);
 
-  /** What follows the cursor becomes a new element, after this one. */
-  function split(id: string, view: EditorView) {
+  /**
+   * What follows the cursor becomes a new element, after this one; with
+   * `under`, the first under it, which comes right after its text.
+   */
+  function split(id: string, view: EditorView, under = false) {
     const { state } = view;
     const { from } = state.selection;
     const end = state.doc.content.size;
@@ -369,7 +410,9 @@
       const hasChildren = (tree.children.get(id)?.length ?? 0) > 0;
       const isRoot = id === tree.root;
       const newId =
-        isRoot || hasChildren ? project.addChild(id, { index: 0 }) : project.addSibling(id);
+        under || isRoot || hasChildren
+          ? project.addChild(id, { index: 0 })
+          : project.addSibling(id);
       if (!newId) return null;
       if (rest && rest.content.size) {
         const doc = bodySchema.topNodeType.createAndFill(null, rest.content);
@@ -393,18 +436,22 @@
     if (made) go(made, 'title', 'start');
   }
 
-  /** A new element under this one, after all that is there, the cursor in its name. */
+  /** A new element under this one, the first, right after its text: the cursor in its name. */
   function addUnder(id: string) {
     project.checkpoint();
-    const made = project.addChild(id);
+    const made = project.addChild(id, { index: 0 });
     project.checkpoint();
     if (made) go(made, 'title', 'start');
   }
 
-  /** A new element where the cursor is: in a text, from the cursor on; in a name, after the element. */
-  function addHere(id: string, part: Part | undefined) {
+  /**
+   * A new element where the cursor is, after the element or under it: in a
+   * text, from the cursor on; in a name, with nothing in it.
+   */
+  function addHere(id: string, part: Part | undefined, under = false) {
     const view = editors.get(id)?.body?.getView();
-    if (part === 'body' && view) split(id, view);
+    if (part === 'body' && view) split(id, view, under);
+    else if (under) addUnder(id);
     else addAfter(id);
   }
 
@@ -537,17 +584,20 @@
     const id = section?.dataset.section;
     if (!id) return;
 
-    // Ctrl+Enter, and Alt+Enter as in Org mode: a new element here; with
-    // Alt+Shift, one under this one.
-    const alt = event.altKey && !mod;
-    if (event.key === 'Enter' && ((mod && !event.altKey) || alt)) {
-      if (mod && event.shiftKey) return;
+    // Ctrl+Enter a new element after this one, and Ctrl+Shift+Enter one under
+    // it, as in the diagram: in a text, from the cursor on.
+    if (event.key === 'Enter' && mod && !event.altKey) {
       const part = (event.target as HTMLElement).closest<HTMLElement>('[data-part]')?.dataset
         .part as Part | undefined;
       event.preventDefault();
       event.stopPropagation();
-      if (alt && event.shiftKey) addUnder(id);
-      else addHere(id, part);
+      addHere(id, part, event.shiftKey);
+      return;
+    }
+    // Alt+Enter makes nothing here: it is not let through to the text either.
+    if (event.key === 'Enter' && event.altKey && !mod) {
+      event.preventDefault();
+      event.stopPropagation();
       return;
     }
 
@@ -559,8 +609,22 @@
       return;
     }
 
-    // Alt+Shift and the arrows move the element; so do the arrows with Alt alone, as in Org mode.
-    if (alt) {
+    // Alt+Shift and the arrows down and up go in and out: down makes the
+    // element the one in view; up, to the element over the one in view, is
+    // the view's, and is let through to it. Sideways they do nothing here.
+    const alt = event.altKey && !mod;
+    if (alt && event.shiftKey && event.key.startsWith('Arrow')) {
+      if (event.key === 'ArrowUp') return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.key === 'ArrowDown' && id !== tree.root) onenter(id);
+      return;
+    }
+
+    // Alt and the arrows move the element, as in the diagram: up and down
+    // among those beside it, right deeper and left less deep. The cursor
+    // stays where it is in the text.
+    if (alt && event.key.startsWith('Arrow')) {
       let done = false;
       if (event.key === 'ArrowUp') done = shift(id, -1);
       else if (event.key === 'ArrowDown') done = shift(id, 1);
@@ -570,9 +634,15 @@
       event.preventDefault();
       event.stopPropagation();
       if (done) {
-        tick().then(() =>
-          scroller?.querySelector(`[data-section="${id}"]`)?.scrollIntoView({ block: 'nearest' }),
-        );
+        // The section is moved in the page, which takes the focus from its
+        // editor: it is given back, the cursor where it was.
+        const part = (event.target as HTMLElement).closest<HTMLElement>('[data-part]')?.dataset
+          .part as Part | undefined;
+        const view = part ? editors.get(id)?.[part]?.getView() : undefined;
+        tick().then(() => {
+          if (view && !view.isDestroyed && !view.hasFocus()) view.focus();
+          scroller?.querySelector(`[data-section="${id}"]`)?.scrollIntoView({ block: 'nearest' });
+        });
       }
     }
   }
@@ -859,6 +929,7 @@
       extra.push({
         label: t('text-open-as-map'),
         icon: MapIcon,
+        shortcut: 'Alt+Shift+↓',
         hint: t('text-open-as-map-hint'),
         action: () => onenter(id),
       });
@@ -926,29 +997,109 @@
     });
   }
 
+  /** For a picture or a reference: the element it is dropped on, whose text takes it. */
   function targetAt(event: DropEvent): { id: string; where: 'before' | 'after' | 'inside' } | null {
     const el = document.elementFromPoint(event.x, event.y)?.closest<HTMLElement>('[data-section]');
     const id = el?.dataset.section;
-    if (!el || !id) return null;
-    // A picture goes to the end of the text of the element it is dropped on.
-    if (event.payload.kind === PICTURES_DRAGGED) return { id, where: 'after' };
-    // And so does a reference, which is cited there.
-    if (event.payload.kind === 'references') return { id, where: 'after' };
-    const payload = event.payload.data as ElementsPayload;
-    if (payload.project === project) {
-      for (const dragged of payload.ids) {
-        if (dragged === id || isAncestor(tree, dragged, id)) return null;
-      }
+    return el && id ? { id, where: 'after' } : null;
+  }
+
+  /** How far each level of a drop is indented, from where the names begin. */
+  const DROP_STEP = 24;
+
+  /** How deep an element stands under the element in view, which is at nought. */
+  function depthOf(id: string): number {
+    let depth = 0;
+    for (let at = id; at !== tree.root; depth++) {
+      const parent = tree.parent.get(at);
+      if (!parent) break;
+      at = parent;
     }
-    const rect = el.getBoundingClientRect();
-    const upper = event.y < rect.top + Math.min(rect.height / 2, 60);
-    const hasChildren = (tree.children.get(id)?.length ?? 0) > 0;
-    if (id === tree.root) return { id, where: 'inside' };
-    if (upper) return { id, where: 'before' };
-    return { id, where: hasChildren ? 'inside' : 'after' };
+    return depth;
+  }
+
+  /**
+   * Where elements dragged in the text would go. The pointer's height says
+   * between which two elements, as they are shown; how far it is to the
+   * right says how deep among the depths that place allows: under the
+   * element above, beside it, or beside one over it, as far out as beside
+   * the element below. Moving sideways never changes the place between the two.
+   */
+  function slotAt(event: DropEvent): DropSlot | null {
+    if (!column) return null;
+    const payload = event.payload.data as ElementsPayload;
+    const sections = [...column.querySelectorAll<HTMLElement>(':scope > [data-section]')];
+    if (!sections.length) return null;
+    // The element above the place, and the one below it.
+    let above = 0;
+    for (let i = 0; i < sections.length; i++) {
+      const r = sections[i].getBoundingClientRect();
+      if (event.y < r.top) break;
+      const upper = event.y < r.top + Math.min(r.height / 2, 60);
+      above = upper ? Math.max(0, i - 1) : i;
+      if (upper || event.y <= r.bottom) break;
+    }
+    const a = sections[above].dataset.section!;
+    const b = sections[above + 1]?.dataset.section ?? null;
+    // Elements are not put into themselves.
+    const inside = (id: string) =>
+      payload.project === project && payload.ids.some((d) => d === id || isAncestor(tree, d, id));
+    // From the deepest the place allows to the shallowest, each with where it puts them.
+    const deepest = depthOf(a) + 1;
+    const shallowest = b ? depthOf(b) : 1;
+    const choices: { depth: number; parent: string; index: number; label: string }[] = [];
+    const name = (id: string) => project.node(id)?.title || t('project-untitled');
+    if (!inside(a))
+      choices.push({
+        depth: deepest,
+        parent: a,
+        index: 0,
+        label: t('text-drop-under', { name: name(a) }),
+      });
+    // After the element above, or after the one over it at each depth out.
+    let x: string | undefined = a;
+    for (let depth = deepest - 1; depth >= shallowest && x && x !== tree.root; depth--) {
+      const parent = tree.parent.get(x);
+      if (!parent) break;
+      if (!inside(parent)) {
+        const list = tree.children.get(parent) ?? [];
+        choices.push({
+          depth,
+          parent,
+          index: list.indexOf(x) + 1,
+          label:
+            b && depthOf(b) === depth
+              ? t('text-drop-before', { name: name(b) })
+              : t('text-drop-after', { name: name(x) }),
+        });
+      }
+      x = parent;
+    }
+    if (!choices.length) return null;
+    // The depth the pointer is at, from where the names begin.
+    const left = column.getBoundingClientRect().left + GUTTER;
+    const wanted = 1 + Math.round((event.x - left) / DROP_STEP);
+    const chosen = choices.reduce((best, c) =>
+      Math.abs(c.depth - wanted) < Math.abs(best.depth - wanted) ? c : best,
+    );
+    const base = column.getBoundingClientRect().top;
+    const ra = sections[above].getBoundingClientRect();
+    const rb = sections[above + 1]?.getBoundingClientRect();
+    const top = Math.round((rb ? (ra.bottom + rb.top) / 2 : ra.bottom + 6) - base);
+    return {
+      ...chosen,
+      top,
+      indent: Math.min(GUTTER + (chosen.depth - 1) * DROP_STEP, column.offsetWidth - 80),
+    };
   }
 
   function ondrop(event: DropEvent) {
+    if (event.payload.kind === 'elements') {
+      const at = slotAt(event);
+      slot = null;
+      if (at) dropElements(event, at);
+      return;
+    }
     const target = drop ?? targetAt(event);
     drop = null;
     if (!target) return;
@@ -975,13 +1126,13 @@
       current = target.id;
       return;
     }
+  }
+
+  /** Puts the elements dragged where the place chosen says. */
+  function dropElements(event: DropEvent, place: DropSlot) {
     const payload = event.payload.data as ElementsPayload;
     if (!takes(payload)) return;
-    const parent = target.where === 'inside' ? target.id : (tree.parent.get(target.id) ?? null);
-    if (!parent) return;
-    const list = tree.children.get(parent) ?? [];
-    const index =
-      target.where === 'inside' ? 0 : list.indexOf(target.id) + (target.where === 'after' ? 1 : 0);
+    const { parent, index } = place;
     let made: string[];
     if (payload.project !== project) {
       // From the project beside: made here, and with a move taken away there.
@@ -1200,7 +1351,10 @@
         p.kind === PICTURES_DRAGGED ||
         p.kind === 'references',
       ondrop,
-      onover: (e) => (drop = e ? targetAt(e) : null),
+      onover: (e) => {
+        drop = e && e.payload.kind !== 'elements' ? targetAt(e) : null;
+        slot = e && e.payload.kind === 'elements' ? slotAt(e) : null;
+      },
     }}
     onkeydowncapture={onkeydown}
     {oncontextmenu}
@@ -1250,6 +1404,12 @@
       </div>
 
       <div class="column" bind:this={column} data-notes>
+        {#if slot && drag.payload}
+          <!-- Where what is dragged would go: the line indented as deep as it would stand. -->
+          <div class="drop-line" style:top="{slot.top}px" style:left="{slot.indent}px">
+            <span>{slot.label}</span>
+          </div>
+        {/if}
         {#each rows as row (row.id)}
           {@const node = project.nodes.get(row.id)}
           {#if node}
@@ -1258,6 +1418,8 @@
               {at}
               {node}
               level={row.level}
+              {depthShown}
+              number={numbers.get(row.id) ?? null}
               active={active.includes(row.id)}
               focus={focus?.id === row.id ? focus : null}
               selected={current === row.id}
@@ -1345,7 +1507,42 @@
     border-right: 1px solid var(--line);
   }
   .column {
+    position: relative;
     min-width: 0;
+    /* The text is set in by the width it has: see `TextSection`. */
+    container-type: inline-size;
+  }
+  .drop-line {
+    position: absolute;
+    right: 0;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 2px;
+    background: var(--accent);
+    pointer-events: none;
+    z-index: 3;
+  }
+  .drop-line::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .drop-line span {
+    position: absolute;
+    left: 10px;
+    bottom: 4px;
+    padding: 1px 6px;
+    border-radius: var(--radius-s);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    white-space: nowrap;
   }
   .margin {
     position: relative;

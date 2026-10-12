@@ -69,14 +69,14 @@ project-untitled = Untitled
 project-where = Where you are
 # The small button before the name of the element in view: its parent's name.
 project-up = Up
-project-up-hint = Up to “{ $name }” · Alt+Up
+project-up-hint = Up to “{ $name }” · Alt+Shift+Up
 # The small round button by the element in view, in the diagram and the text: up to the element over it.
 project-leave-map = Up to “{ $name }”
 project-siblings-hint = The elements beside this one: choose one to show it
 project-trees-hint = The elements under the project: choose one to show it
 project-shown-beside = beside this one
 # The owl before the name of the project itself, in the first pane: up to all the projects.
-project-up-home-hint = Up to all the projects · Alt+Up
+project-up-home-hint = Up to all the projects · Alt+Shift+Up
 # The sign of a project, read aloud, where it is shared.
 project-badge-shared = { $name }, shared by you
 project-badge-joined = { $name }, joined

@@ -791,7 +791,7 @@
         label: t('diagram-open-as-map'),
         hint: t('diagram-open-as-map-hint'),
         icon: Maximize2,
-        shortcut: 'Ctrl+Enter',
+        shortcut: 'Alt+Shift+↓',
         action: () => onenter(one),
       },
       { kind: 'separator' },

@@ -3,7 +3,7 @@
   element under it by its name, as deep as it stands, the one in view marked. A name is pressed to go there;
   what has something under it folds and opens by its chevron, or with the
   left and right arrows; the up and down arrows go through the names, and
-  Alt+Shift with the arrows moves an element, as in the text and the diagram.
+  Alt with the arrows moves an element, as in the text and the diagram.
 -->
 <script lang="ts">
   import { tick } from 'svelte';
@@ -60,7 +60,9 @@
 
   async function onkeydown(event: KeyboardEvent, i: number) {
     const id = items[i].id;
-    if (event.altKey && event.shiftKey && event.key.startsWith('Arrow')) {
+    // Alt+Shift and the arrows are the view's: in and out of an element.
+    if (event.altKey && event.shiftKey) return;
+    if (event.altKey && !event.shiftKey && event.key.startsWith('Arrow')) {
       event.preventDefault();
       event.stopPropagation();
       const tree = project.tree(at);

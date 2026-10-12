@@ -8,6 +8,10 @@ text-grip = Move or change this element
 # The element an element stands for, whose name is shown in bold where the variable stands.
 text-include = In the document, { $name } stands here, with all under it.
 text-include-open = Open it
+# Where elements dragged in the text would go, said by the line drawn there.
+text-drop-under = Under “{ $name }”
+text-drop-after = After “{ $name }”
+text-drop-before = Before “{ $name }”
 text-split = Split here
 text-split-hint = What follows the cursor becomes a new element
 text-join = Join to the element above
@@ -64,4 +68,4 @@ text-notes = { $count ->
    *[other] { $count } notes
 }
 # The keys are shown as keys, where the variables stand.
-text-keys = { $alt }+{ $enter } new element · { $alt }+{ $shift }+{ $enter } one under it · { $at } cite
+text-keys = { $ctrl }+{ $enter } new element · { $ctrl }+{ $shift }+{ $enter } one under it · { $at } cite

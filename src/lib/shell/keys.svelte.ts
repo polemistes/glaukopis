@@ -54,8 +54,8 @@ export const KEYS: KeyEntry[] = [
   { id: 'diagram-or-text', keys: 'Ctrl+D', place: 'project', bound: true },
   // L for the list of projects.
   { id: 'projects-pane', keys: 'Ctrl+Shift+L', place: 'project', bound: true },
-  // Bound by the project view itself: the table cannot match an arrow.
-  { id: 'up', keys: 'Alt+↑', place: 'project' },
+  // Bound by the project view itself: the table cannot match an arrow. It holds in the text as well.
+  { id: 'up', keys: 'Alt+Shift+↑', place: 'project' },
   { id: 'preview', keys: 'Ctrl+P', place: 'project', bound: true },
   { id: 'document-settings', keys: 'Ctrl+Shift+D', place: 'project', bound: true },
   { id: 'side-references', keys: 'Ctrl+Shift+R', place: 'project', bound: true },
@@ -81,16 +81,21 @@ export const KEYS: KeyEntry[] = [
   { id: 'review-accept', keys: 'Ctrl+Alt+Y', place: 'review', bound: true },
   { id: 'review-reject', keys: 'Ctrl+Alt+N', place: 'review', bound: true },
 
-  // In the diagram.
-  { id: 'diagram-child', keys: 'Tab', place: 'diagram' },
+  // In the diagram: the keys of the text that make, enter and move elements,
+  // and Enter and Tab besides.
+  { id: 'diagram-new-after', keys: 'Ctrl+Enter', place: 'diagram' },
   { id: 'diagram-sibling', keys: 'Enter', place: 'diagram' },
+  { id: 'diagram-new-under', keys: 'Ctrl+Shift+Enter', place: 'diagram' },
+  { id: 'diagram-child', keys: 'Tab', place: 'diagram' },
+  { id: 'diagram-enter', keys: 'Alt+Shift+↓', place: 'diagram' },
+  { id: 'diagram-shift', keys: 'Alt+↑↓', place: 'diagram' },
+  { id: 'diagram-depth', keys: 'Alt+←→', place: 'diagram' },
   { id: 'diagram-open', keys: 'Alt+Enter', place: 'diagram' },
   { id: 'diagram-rename', keys: 'F2', place: 'diagram' },
   { id: 'diagram-fold', keys: 'Space', place: 'diagram' },
   { id: 'diagram-delete', keys: 'Delete', place: 'diagram' },
   { id: 'diagram-go', keys: '↑↓←→', place: 'diagram' },
   { id: 'diagram-more', keys: 'Shift+↑↓←→', place: 'diagram' },
-  { id: 'diagram-move', keys: 'Alt+Shift+↑↓←→', place: 'diagram' },
   { id: 'diagram-menu', keys: 'Shift+F10', place: 'diagram' },
   { id: 'diagram-all', keys: 'Ctrl+A', place: 'diagram' },
   { id: 'diagram-copy', keys: 'Ctrl+C', place: 'diagram' },
@@ -99,15 +104,14 @@ export const KEYS: KeyEntry[] = [
   { id: 'diagram-closer', keys: 'Ctrl+=', place: 'diagram' },
   { id: 'diagram-farther', keys: 'Ctrl+-', place: 'diagram' },
 
-  // In the text of a map.
-  { id: 'text-new', keys: 'Ctrl+Enter', place: 'text', over: ['writing-break'] },
-  // As in Org mode: the same, and one under; the arrows with Alt alone move the element.
-  { id: 'text-new-after', keys: 'Alt+Enter', place: 'text' },
-  { id: 'text-new-under', keys: 'Alt+Shift+Enter', place: 'text' },
+  // In the text of a map: the keys of the diagram, and Tab in a name.
+  { id: 'text-new-after', keys: 'Ctrl+Enter', place: 'text', over: ['writing-break'] },
+  { id: 'text-new-under', keys: 'Ctrl+Shift+Enter', place: 'text' },
+  { id: 'text-enter', keys: 'Alt+Shift+↓', place: 'text' },
+  { id: 'text-shift', keys: 'Alt+↑↓', place: 'text' },
+  { id: 'text-depth', keys: 'Alt+←→', place: 'text' },
   { id: 'text-deeper', keys: 'Tab', place: 'text', over: ['writing-list-in'] },
   { id: 'text-shallower', keys: 'Shift+Tab', place: 'text', over: ['writing-list-out'] },
-  { id: 'text-move', keys: 'Alt+Shift+↑↓←→', place: 'text' },
-  { id: 'text-move-alt', keys: 'Alt+↑↓←→', place: 'text' },
   { id: 'text-outline', keys: 'Ctrl+Shift+O', place: 'project', bound: true },
   { id: 'text-fold', keys: 'Ctrl+Alt+U', place: 'text' },
   { id: 'text-unfold-all', keys: 'Ctrl+Alt+Shift+U', place: 'text' },

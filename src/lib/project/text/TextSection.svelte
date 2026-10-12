@@ -9,6 +9,7 @@
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import type { EditorView } from 'prosemirror-view';
   import type { KeyAction } from '$lib/editor/plugins';
+  import type { TextDepth } from '$lib/api/system';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import RichText, { type FocusAt } from '$lib/editor/RichText.svelte';
   import { blocksHtml } from '../model/html';
@@ -40,6 +41,10 @@
     node: NodeRecord;
     /** 0 for the element in view, whose name is the title of the document. */
     level: number;
+    /** How deep it stands is shown: by its number, by dots, or set in, with lines. On the screen only. */
+    depthShown?: TextDepth;
+    /** Its number, as in an outline, where it has one: its name is printed as a heading. */
+    number?: string | null;
     /** Whether the editors are there; otherwise the text is shown as it stands. */
     active: boolean;
     /** Where the cursor goes when the editors appear. */
@@ -83,6 +88,8 @@
     at,
     node,
     level,
+    depthShown = 'numbers',
+    number = null,
     active,
     focus,
     selected,
@@ -165,6 +172,11 @@
     return () => cancelAnimationFrame(frame);
   });
 
+  /** What stands in the gutter for how deep it is, while the pointer is not on it: a number, or dots. */
+  const mark = $derived(
+    level === 0 || depthShown === 'indent' ? null : depthShown === 'numbers' ? number : level,
+  );
+
   /** What is folded away, in words. */
   const away = $derived.by(() => {
     if (!hidden) return '';
@@ -228,7 +240,8 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <section
   onmousedown={pressGap}
-  class="section level-{Math.min(level, 4)}"
+  class="section level-{Math.min(level, 4)} depth-{depthShown}"
+  style:--level={level}
   class:selected
   class:excluded
   class:plain={!node.heading && level > 0}
@@ -246,6 +259,18 @@
   style:--by={changedAsElement?.colour}
 >
   <div class="gutter">
+    {#if depthShown === 'indent' && level > 1}
+      <!-- A faint line for each level over it, down from the names of those it is under. -->
+      {#each Array.from({ length: level - 1 }, (_, i) => i + 1) as over (over)}
+        <span class="guide" aria-hidden="true" style:--over={over}></span>
+      {/each}
+    {/if}
+    {#if mark !== null}
+      <span class="depth" aria-hidden="true">
+        {#if typeof mark === 'string'}{mark}{:else}{#each Array.from({ length: mark }, (_, i) => i) as i (i)}<i
+            ></i>{/each}{/if}
+      </span>
+    {/if}
     {#if foldable}
       <button
         type="button"
@@ -284,7 +309,7 @@
         type="button"
         class="corner enter"
         aria-label={t('text-open-as-map')}
-        use:tooltip={{ text: t('text-open-as-map'), side: 'top' }}
+        use:tooltip={{ text: t('text-open-as-map'), shortcut: 'Alt+Shift+↓', side: 'top' }}
         tabindex="-1"
         onmousedown={(e) => e.preventDefault()}
         onclick={() => onenter(node.id)}
@@ -296,7 +321,11 @@
         type="button"
         class="corner leave"
         aria-label={t('project-leave-map', { name: above })}
-        use:tooltip={{ text: t('project-leave-map', { name: above }), side: 'top' }}
+        use:tooltip={{
+          text: t('project-leave-map', { name: above }),
+          shortcut: 'Alt+Shift+↑',
+          side: 'top',
+        }}
         tabindex="-1"
         onmousedown={(e) => e.preventDefault()}
         onclick={() => onleave()}
@@ -528,6 +557,66 @@
   .section.selected > .gutter .fold,
   .section.folded > .gutter .fold {
     opacity: 1;
+  }
+
+  /*
+   * How deep it stands, on the screen only: its number as in an outline, or
+   * a dot for each level, faint before the chevron, out in the margin, until
+   * the pointer comes, when the button to enter takes its place.
+   */
+  .depth {
+    position: absolute;
+    top: calc(var(--grip-top, 4px) + 4px);
+    right: calc(100% + 3px);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 18px;
+    color: var(--ink-4);
+    font-family: var(--font-ui);
+    font-size: 10.5px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    transition: opacity var(--fast) var(--ease);
+  }
+  .depth i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+  }
+  .section:has(> .content > .heading:hover) > .gutter .depth,
+  .section > .gutter:hover .depth {
+    opacity: 0;
+  }
+
+  /*
+   * Set in: each level a step further in, the steps smaller and fewer in a
+   * narrow column, with a faint line for each level over it, down from the
+   * chevron of the element it is under.
+   */
+  .section.depth-indent {
+    --step: min(24px, 4cqi);
+    --cap: 30cqi;
+    margin-left: min(calc((var(--level) - 1) * var(--step)), var(--cap));
+  }
+  .section.depth-indent.level-0 {
+    margin-left: 0;
+  }
+  .guide {
+    position: absolute;
+    top: -2em;
+    bottom: 0;
+    width: 1px;
+    left: calc(
+      min(calc((var(--over) - 1) * var(--step)), var(--cap)) -
+        min(calc((var(--level) - 1) * var(--step)), var(--cap)) + 9px
+    );
+    background: var(--line);
+    pointer-events: none;
   }
   .section.folded > .gutter .fold {
     color: var(--accent-strong);

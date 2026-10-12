@@ -409,13 +409,13 @@ export function elementMenu(
       {
         label: t('project-add-under'),
         icon: CornerDownRight,
-        shortcut: where === 'text' ? 'Alt+Shift+Enter' : 'Tab',
+        shortcut: 'Ctrl+Shift+Enter',
         action: () => add('under'),
       },
       {
         label: isProject ? t('project-add') : t('project-add-after'),
         icon: Plus,
-        shortcut: where === 'text' ? 'Alt+Enter' : 'Enter',
+        shortcut: 'Ctrl+Enter',
         action: () => add('after'),
       },
       { kind: 'separator' },

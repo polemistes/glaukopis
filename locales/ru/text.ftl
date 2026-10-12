@@ -67,4 +67,4 @@ text-notes = { $count ->
    *[other] { $count } сноски
 }
 # The keys are shown as keys, where the variables stand.
-text-keys = { $alt }+{ $enter } новый элемент · { $alt }+{ $shift }+{ $enter } под ним · { $at } сослаться
+text-keys = { $ctrl }+{ $enter } новый элемент · { $ctrl }+{ $shift }+{ $enter } под ним · { $at } сослаться

@@ -59,6 +59,9 @@ export interface FoundSettings {
   inNotes: '' | 'citation' | 'within';
 }
 
+/** How the text shows how deep each element stands: see `Settings.textDepth`. */
+export type TextDepth = 'numbers' | 'dots' | 'indent';
+
 /** Settings kept in `settings.json` in the data directory. */
 export interface Settings {
   theme: Theme;
@@ -72,6 +75,11 @@ export interface Settings {
   textSize: number;
   /** Size of the whole interface, as a zoom of the window: 1 as it is made. */
   interfaceSize: number;
+  /**
+   * How the text of a map shows how deep each element stands, on the screen
+   * only: numbers as in an outline, dots, or the names set in, with lines.
+   */
+  textDepth: TextDepth;
   /** Paths to external programs, when not found automatically. */
   pandocPath: string | null;
   tesseractPath: string | null;
@@ -124,6 +132,7 @@ export const defaultSettings: Settings = {
   textLanguage: 'system',
   textSize: 17,
   interfaceSize: 1,
+  textDepth: 'numbers',
   pandocPath: null,
   tesseractPath: null,
   ocrLanguages: [],
