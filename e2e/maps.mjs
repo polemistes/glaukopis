@@ -534,10 +534,10 @@ try {
   await app.click('.pane-bar .tools .style');
   await app.clickText('[role="menuitem"]', 'Quotation');
   await sleep(200);
-  // A paragraph set to a quotation stands in a passage of quotations (ADR 0040).
+  // A paragraph set to a quotation is labelled so, and seen as a run of quotations (ADR 0041).
   check(
     'the kind of paragraph is chosen from a list',
-    /data-family="quotation"/.test(await written()) && /<p[^>]*data-kind="quote"/.test(await written()),
+    /<p[^>]*data-kind="quote"/.test(await written()) && /<p[^>]*data-run="quote"/.test(await written()),
     await written(),
   );
   await app.waitForText('.pane-bar .tools .style', 'Quotation', 3000);
@@ -546,7 +546,7 @@ try {
   await app.click('.pane-bar .tools .style');
   await app.clickText('[role="menuitem"]', 'Text');
   await sleep(200);
-  check('and changed back', !/data-family=|data-kind="quote"/.test(await written()), await written());
+  check('and changed back', !/data-run=|data-kind="quote"/.test(await written()), await written());
 
   // Ctrl+, in the text lowers the writing, and does not leave for the settings.
   const inProse = await app.exec(`return !!document.activeElement?.closest('.text-view .prose')`);

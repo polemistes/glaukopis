@@ -1537,6 +1537,15 @@ span.math.selected {
 .prose .kind[data-kind='term'] {
   font-style: italic;
 }
+/* A speaker and a stage direction within a line have the cues of their
+   paragraphs: small capitals, and italic (ADR 0041). */
+.prose .kind[data-kind='speaker'] {
+  font-variant: small-caps;
+  letter-spacing: 0.03em;
+}
+.prose .kind[data-kind='direction'] {
+  font-style: italic;
+}
 .prose .kind[data-kind='mention'] {
   quotes: '\201C' '\201D' '\2018' '\2019';
 }
