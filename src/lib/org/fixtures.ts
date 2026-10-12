@@ -137,7 +137,7 @@ const S = { numbering: 'counted' as const, every: 5, side: 'right' as const };
 
 /** The verse, with everything said of its lines, numbered through speakers and stanzas. */
 const verse: Block[] = [
-  p([t('Nurse')], 'speaker', S),
+  p([t('Nurse, '), t('τροφός', lang('grc'))], 'speaker', S),
   p(
     [
       mark({ number: '1' }),

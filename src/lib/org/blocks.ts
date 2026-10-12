@@ -288,7 +288,7 @@ function proseBlockLines(
     if (out.length) out.push('');
     out.push(...said);
     const content = blockLang || wholeLang(p) ? withoutLang(p.content) : p.content;
-    out.push(...(isSD(p) ? sdLines(p, ctx, true) : prose(content, ctx)));
+    out.push(...(isSD(p) ? sdLines(p, ctx, !!(blockLang || wholeLang(p))) : prose(content, ctx)));
   }
   return out;
 }
@@ -307,7 +307,7 @@ function verseLines(ps: ParagraphBlock[], ctx: TextContext, blockLang: string | 
     if (last && (last.name === p.name || (!isSD(last) && !isSD(p)))) out.push('');
     out.push(...said);
     const content = blockLang || wholeLang(p) ? withoutLang(p.content) : p.content;
-    if (isSD(p)) out.push(...sdLines(p, ctx, true));
+    if (isSD(p)) out.push(...sdLines(p, ctx, !!(blockLang || wholeLang(p))));
     else out.push(...writeContentLines(content, 'verse', ctx.writing, ctx.reading));
     last = p;
   }

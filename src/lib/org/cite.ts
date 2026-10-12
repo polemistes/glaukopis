@@ -11,7 +11,7 @@
 
 import { LOCATOR_LABELS, type CiteItem, type CiteMode } from '$lib/editor/schema';
 import type { InlineCitation } from '$lib/project/model/text';
-import { unescapeSigns } from './escape';
+import { escapeSigns, unescapeSigns } from './escape';
 
 /** The signs that a backslash goes before in the words of a citation. */
 const SIGNS = ';[]@{}';
@@ -22,11 +22,7 @@ const WORDS: [string, string][] = (
   [...LOCATOR_LABELS.map(([label, short]) => [short, label]), ['pp.', 'page']] as [string, string][]
 ).sort((a, b) => b[0].length - a[0].length);
 
-const escape = (s: string): string => {
-  let out = '';
-  for (const c of s) out += c === '\\' || SIGNS.includes(c) ? `\\${c}` : c;
-  return out;
-};
+const escape = (s: string): string => escapeSigns(s, SIGNS);
 
 /** The short word a suffix begins with, if it begins with one followed by a space. */
 const labelWord = (s: string): [string, string] | undefined =>
