@@ -39,11 +39,12 @@ describe('a text as HTML', () => {
     expect(html).toBe(
       '<p data-kind="speaker" data-numbering="counted" data-every="2" data-side="right">Nurse</p>' +
         '<p data-kind="line" data-numbering="counted" data-every="2" data-side="right">' +
-        '<span class="line-number" data-n="1" data-n-set></span>If only the Argo' +
+        '<span class="line-number" data-n="1" data-n-set></span>' +
+        '<span class="linemark" data-number="1"></span>If only the Argo' +
         BR +
         '<span class="line-number" data-n="2"></span>had never flown' +
         BR +
-        'through the dark' +
+        '<span class="linemark" data-uncounted data-margin="ia."></span>through the dark' +
         BR +
         'Clashing Rocks</p>',
     );
@@ -63,7 +64,7 @@ describe('a text as HTML', () => {
     ]);
     expect(html.match(/data-n="[^"]*"/g)).toEqual(['data-n="1"', 'data-n="5"']);
     expect(html).toContain('<span class="line-number" data-n="5"></span>l1');
-    expect(html).toContain(`${BR}held</p>`);
+    expect(html).toContain(`${BR}<span class="linemark" data-hidden></span>held</p>`);
     expect(html).toContain('<p data-kind="line">after</p>');
   });
 
@@ -78,7 +79,8 @@ describe('a text as HTML', () => {
     ]);
     expect(html).toBe(
       '<ul><li><p data-kind="item">one</p>' +
-        '<ol><li value="3"><p data-kind="numbered" data-indent="1" style="--indent: 1">three</p></li></ol>' +
+        '<ol><li value="3"><p data-kind="numbered" data-indent="1" style="--indent: 1">' +
+        '<span class="linemark" data-number="3"></span>three</p></li></ol>' +
         '</li><li><p data-kind="item">two</p></li></ul>' +
         '<div class="pagebreak" data-what="column"></div>' +
         '<ul><li><p data-kind="item">again</p></li></ul>' +

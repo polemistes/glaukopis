@@ -178,6 +178,38 @@ describe('the history of a project', () => {
     ]);
   });
 
+  it('shows a line mark as an object in the line, and a page break as a whole', async () => {
+    const { a, b, ann, at, root, flush } = await two();
+    paragraph(a, root, 'If only the Argo');
+    await flush();
+    const since = engineOf(ann, 'ann').moment(Infinity);
+    b.transact(() => {
+      const para = b.fragment(root, 'body')!.get(0) as Y.XmlElement;
+      const mark = new Y.XmlElement('linemark');
+      mark.setAttribute('number', '45');
+      para.insert(0, [mark]);
+      const pagebreak = new Y.XmlElement('pagebreak');
+      pagebreak.setAttribute('what', 'page');
+      b.fragment(root, 'body')!.insert(1, [pagebreak]);
+    });
+    await flush();
+    const changes = engineOf(ann, 'ann').compare(at, { moment: since.snapshot, accepted: [] });
+    const passages = changes.passages.filter((p) => p.place.part === 'body');
+    // The break is no passage of text.
+    expect(passages.map((p) => p.place.path)).toEqual([[0]]);
+    const marked = passages[0].pieces.find((p) => p.object)!;
+    expect(marked).toMatchObject({ status: 'added', by: 'bo', text: '￼' });
+    expect(marked.object).toMatchObject({ kind: 'linemark', attrs: { number: '45' } });
+    expect(changes.objects).toEqual([
+      expect.objectContaining({
+        kind: 'break',
+        status: 'added',
+        by: 'bo',
+        place: expect.objectContaining({ path: [1] }),
+      }),
+    ]);
+  });
+
   it('knows elements added, removed and moved, and by whom', async () => {
     const { a, b, ann, at, root, flush } = await two();
     const achilles = a.addChild(root, { title: 'Achilles' })!;

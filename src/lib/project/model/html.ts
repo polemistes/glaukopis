@@ -15,7 +15,7 @@ import { isPictureName } from '$lib/figures/pictures.svelte';
 import { languageName } from '$lib/i18n';
 import { groupingOf, type BasedKind } from './families';
 import { linesOf, stretches, stretchNumbers, type Shown } from './lines';
-import type { Block, Inline, ParagraphBlock } from './text';
+import type { Block, Inline, InlineLineMark, ParagraphBlock } from './text';
 
 /** The notes met so far. */
 type Notes = { n: number };
@@ -140,8 +140,28 @@ function numberHtml(shown: Shown | null | undefined): string {
 }
 
 /**
+ * A line mark, as the editor keeps one in its page: an empty span that
+ * shows nothing and says what the mark says, so that the clipboard carries
+ * it, and so that it stands as one thing in the line, as it does in the
+ * text, for what counts the places of a line (the marks of a review).
+ */
+function lineMarkHtml(m: InlineLineMark | null): string {
+  if (!m) return '';
+  return (
+    '<span class="linemark"' +
+    (m.number ? ` data-number="${escape(m.number)}"` : '') +
+    (m.counted === false ? ' data-uncounted' : '') +
+    (m.hidden ? ' data-hidden' : '') +
+    (m.margin ? ` data-margin="${escape(m.margin)}"` : '') +
+    (m.indent ? ` data-indent="${m.indent}"` : '') +
+    '></span>'
+  );
+}
+
+/**
  * A paragraph: its lines, parted by line breaks, each with the number it
- * shows before it, where it shows one. A line mark draws nothing of itself.
+ * shows before it, where it shows one, and its line mark, which shows
+ * nothing.
  */
 function paragraphHtml(
   p: ParagraphBlock,
@@ -149,7 +169,9 @@ function paragraphHtml(
   notes: Notes,
 ): string {
   const lines = linesOf(p.content)
-    .map((line, i) => numberHtml(shown?.[i]) + inlines(line.content, notes))
+    .map(
+      (line, i) => numberHtml(shown?.[i]) + lineMarkHtml(line.mark) + inlines(line.content, notes),
+    )
     .join(BREAK);
   return `<p${paragraphAttrs(p)}>${lines}</p>`;
 }

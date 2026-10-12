@@ -9,9 +9,10 @@
  * The blocks are found by walking the blocks of the document and what is
  * drawn of them together, by the rules `model/html.ts` draws them by: an
  * equation without a formula, and a table without cells, are not drawn, a
- * row of one stands without the row, and the paragraphs of a passage of a
- * list stand in the items of nested lists. A text is marked when it comes
- * into view, and again when it is drawn anew or its marks change.
+ * row of one stands without the row, and items of a list that stand
+ * together are drawn as nested lists, each paragraph in an item. A text is
+ * marked when it comes into view, and again when it is drawn anew or its
+ * marks change.
  */
 
 import * as Y from 'yjs';
@@ -23,7 +24,7 @@ const OURS = 'review-mark';
 
 /** What stands in drawn text as one sign, and is not gone into. */
 const ATOMS =
-  'span.citation, span.math, span.crossref, span.refmark, sup.footnote, span.hard-break, br';
+  'span.citation, span.math, span.crossref, span.refmark, span.linemark, sup.footnote, span.hard-break, br';
 
 function elements(y: Y.XmlFragment): Y.XmlElement[] {
   return y.toArray().filter((c): c is Y.XmlElement => c instanceof Y.XmlElement);
@@ -37,6 +38,9 @@ function drawnOf(dom: Element): Element[] {
 /** How many elements a block is drawn as: none, where it is not drawn. */
 function drawnCount(y: Y.XmlElement): number {
   switch (y.nodeName) {
+    case 'passage':
+      // As texts were once written: what it holds is drawn where it stands.
+      return elements(y).reduce((sum, c) => sum + drawnCount(c), 0);
     case 'equation':
       return String(y.getAttribute('tex') ?? '').trim() ? 1 : 0;
     case 'tabular': {
@@ -52,11 +56,31 @@ function drawnCount(y: Y.XmlElement): number {
   }
 }
 
+/**
+ * What is drawn of a container, a block to an element: a list drawn of
+ * items that stood together stands for each of their paragraphs, in order.
+ */
+function drawnUnits(dom: Element): Element[] {
+  return drawnOf(dom).flatMap((el) =>
+    el.matches('ul, ol')
+      ? [...el.querySelectorAll(':scope li > p')].filter((p) => !p.classList.contains(OURS))
+      : [el],
+  );
+}
+
 /** The elements drawn for the blocks of a container, by the place of each block in it. */
 function drawnBlocks(y: Y.XmlFragment, dom: Element): (Element | null)[] {
-  const drawn = drawnOf(dom);
+  const drawn = drawnUnits(dom);
   let at = 0;
-  return elements(y).map((child) => (drawnCount(child) ? (drawn[at++] ?? null) : null));
+  return elements(y).map((child) => {
+    const count = drawnCount(child);
+    // A passage of before is drawn as what it holds, which is not looked into.
+    if (child.nodeName === 'passage') {
+      at += count;
+      return null;
+    }
+    return count ? (drawn[at++] ?? null) : null;
+  });
 }
 
 /** The element drawn for a block within one that is drawn. */
@@ -65,17 +89,6 @@ function within(y: Y.XmlElement, dom: Element, index: number): [Y.XmlElement, El
   const child = kids[index];
   if (!child) return null;
   switch (y.nodeName) {
-    case 'passage': {
-      // A passage of a list is drawn as nested lists, each paragraph in an item, in the order of the text.
-      if (dom.firstElementChild?.matches('ul, ol')) {
-        const held = [...dom.querySelectorAll(':scope li > p')].filter(
-          (p) => !p.classList.contains(OURS),
-        )[index];
-        return held ? [child, held] : null;
-      }
-      const drawn = drawnBlocks(y, dom)[index];
-      return drawn ? [child, drawn] : null;
-    }
     case 'tabular': {
       if (child.nodeName === 'table_caption') {
         const said = dom.querySelector(':scope > figcaption');
@@ -256,7 +269,8 @@ export function markDrawn(
         m.path.length > 1 ? drawnHolder(root, fragment, part, m.path.slice(0, -1)) : root;
       const before = drawnHolder(root, fragment, part, m.path);
       const block =
-        before?.closest('p, figure, div.equation, div.row-of, div.passage, div.parallel') ?? before;
+        before?.closest('p, figure, div.equation, div.pagebreak, div.row-of, div.parallel') ??
+        before;
       if (block?.parentNode) block.parentNode.insertBefore(el, block);
       else (container ?? root).append(el);
       made.push(el);
