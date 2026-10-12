@@ -14,7 +14,7 @@
 
 <div class="org-diff" data-org-diff>
   {#if !anyChange(lines)}
-    <p class="same">{t('history-org-same')}</p>
+    <p class="unchanged">{t('history-org-same')}</p>
   {/if}
   <pre class="selectable">{#each lines as line, i (i)}{#if line.kind === 'changed'}<span
           class="line removed"
@@ -28,7 +28,7 @@
               >{:else}{w.text}{/if}{/each}</span
         >{:else}<span class="line {line.kind}" data-line={line.kind}
           ><span class="sign"
-            >{line.kind === 'added' ? '+' : line.kind === 'removed' ? '−' : ' '}</span
+            >{line.kind === 'added' ? '+' : line.kind === 'removed' ? '−' : '\u00a0'}</span
           >{line.text}</span
         >{/if}{/each}</pre>
 </div>
@@ -37,7 +37,7 @@
   .org-diff {
     min-width: 0;
   }
-  .same {
+  .unchanged {
     margin: 0 0 8px;
     color: var(--ink-3);
     font-size: var(--text-sm);
@@ -58,11 +58,15 @@
   .line {
     display: block;
     min-height: 1.5em;
-    padding: 0 10px 0 0;
+    /* A line that wraps goes on under its words, not under its sign. */
+    padding: 0 10px 0 1.8em;
+    text-indent: -1.8em;
   }
   .sign {
     display: inline-block;
     width: 1.8em;
+    text-indent: 0;
+    vertical-align: top;
     color: var(--ink-3);
     text-align: center;
     user-select: none;
