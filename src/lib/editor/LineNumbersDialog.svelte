@@ -1,11 +1,11 @@
 <script lang="ts">
   /**
-   * How the paragraphs of a passage are numbered (ADR 0039 and 0040): not at
-   * all, counted from the first number given, or only by the numbers given;
-   * from which number, every how many and on which side, where the passage
-   * says otherwise than the layout. And what is said by hand of the
-   * paragraph the cursor is in: a number or a label of its own, whether it
-   * is counted, and words in the margin.
+   * How the lines of a stretch are numbered (ADR 0041): not at all, counted
+   * from the first number given, or only by the numbers given; from which
+   * number, every how many and on which side, where the stretch says
+   * otherwise than the layout. And what is said by hand of the line the
+   * cursor is in: a number or a label of its own, whether it is counted,
+   * and words in the margin.
    */
   import { untrack } from 'svelte';
   import { t } from '$lib/i18n';
@@ -14,41 +14,41 @@
   import Dialog from '$lib/ui/Dialog.svelte';
   import Select from '$lib/ui/Select.svelte';
   import TextField from '$lib/ui/TextField.svelte';
-  import type { LineMarks, NumbersLayout, PassageNumbering } from './verse';
+  import type { LineMarks, NumbersLayout, StretchNumbering } from './numbers';
 
   interface Props {
-    /** How the passage numbers its paragraphs now. */
-    passage: PassageNumbering;
-    /** What the layout says, where the passage does not. */
+    /** How the stretch numbers its lines now, or how the lines not yet numbered would be. */
+    stretch: StretchNumbering;
+    /** What the layout says, where the stretch does not. */
     layout: NumbersLayout;
     /**
-     * The number the first counted paragraph of the passage has, from which
-     * the count begins; `here` when that paragraph is the one the cursor is
-     * in, whose own number is then the same thing. Nothing where no paragraph
-     * of the passage is counted.
+     * The number the first counted line of the stretch has, from which the
+     * count begins; `here` when that line is the one the cursor is in, whose
+     * own number is then the same thing. Nothing where no line of the
+     * stretch is counted.
      */
     from: { number: string | null; here: boolean } | null;
-    /** The paragraph the cursor is in: what is said of it, its words, to tell which it is, and whether its kind is counted. */
+    /** The line the cursor is in: what is said of it, its words, to tell which it is, and whether the kind of its paragraph is counted. */
     line: (LineMarks & { kind: string; words: string; countable: boolean }) | null;
     onclose: () => void;
     /** `from` is undefined where the number the count begins from is not to be touched. */
-    onset: (how: PassageNumbering, from: string | null | undefined, line: LineMarks | null) => void;
+    onset: (how: StretchNumbering, from: string | null | undefined, line: LineMarks | null) => void;
   }
 
-  let { passage, layout, from, line, onclose, onset }: Props = $props();
+  let { stretch, layout, from, line, onclose, onset }: Props = $props();
 
-  // What the passage had when the dialog opened: the form starts from it.
-  let numbering = $state<Numbering>(untrack(() => passage.numbering));
+  // What the stretch had when the dialog opened: the form starts from it.
+  let numbering = $state<Numbering>(untrack(() => stretch.numbering));
   let begin = $state(untrack(() => from?.number ?? ''));
-  let every = $state(untrack(() => (passage.every === null ? '' : String(passage.every))));
-  let side = $state<Side | ''>(untrack(() => passage.side ?? ''));
+  let every = $state(untrack(() => (stretch.every === null ? '' : String(stretch.every))));
+  let side = $state<Side | ''>(untrack(() => stretch.side ?? ''));
   let number = $state(untrack(() => line?.number ?? ''));
   let counted = $state(untrack(() => line?.counted !== false));
   let hidden = $state(untrack(() => line?.hidden === true));
   let margin = $state(untrack(() => line?.margin ?? ''));
 
   const everyGiven = $derived(!every.trim() || (/^\d+$/.test(every.trim()) && Number(every) >= 1));
-  /** The number the count begins from is asked for here, unless the paragraph the cursor is in is where it begins. */
+  /** The number the count begins from is asked for here, unless the line the cursor is in is where it begins. */
   const asksFrom = $derived(numbering === 'counted' && !!from && !from.here);
 
   const numberings: { value: Numbering; label: string }[] = [

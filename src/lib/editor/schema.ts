@@ -254,16 +254,43 @@ export function foundAttrs(value: unknown): {
   };
 }
 
+/** Steps of indentation, from what may be one: none to eight. */
+function indentAttr(value: unknown): number {
+  return Math.max(0, Math.min(8, Math.round(Number(value ?? 0)) || 0));
+}
+
+/** How a stretch is numbered, from what may say it: nothing where it is not numbered. */
+export function numberingAttr(value: unknown): 'counted' | 'given' | null {
+  return value === 'counted' || value === 'given' ? value : null;
+}
+
+/** Every how many a number is shown: a whole number from one, or nothing for the layout's. */
+export function everyAttr(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) && n >= 1 ? n : null;
+}
+
+/** The side the numbers stand on, or nothing for the layout's. */
+export function sideAttr(value: unknown): 'left' | 'right' | null {
+  return value === 'left' || value === 'right' ? value : null;
+}
+
 const bodyNodes: Record<string, NodeSpec> = {
   doc: { content: 'block+' },
   /**
    * A paragraph of a kind. `kind` is the id of its kind (`editor/kinds.ts`,
    * `project/model/families.ts`), `text` by default; `indent` its steps in,
-   * for lines of verse and items of a list; `number` a number or a label
-   * given to it by hand ("1234", "567a"), from which the count of its
-   * passage goes on; `counted` is false for one the count passes over, as
-   * the second half of a line shared between speakers; `margin` is words
-   * shown in the margin beside it. See ADR 0040 and `project/model/lines.ts`.
+   * from none to eight. A paragraph is lines, parted by `hard_break`; what
+   * is said of one line by hand stands in a `linemark` at its start.
+   * `numbering`, `every` and `side` are the settings of the numbered
+   * stretch it stands in: consecutive paragraphs with the same settings are
+   * numbered together, whatever their kinds (`project/model/lines.ts`).
+   * `numbering` is `counted` or `given`, nothing where it is not numbered;
+   * `every` how often a counted number is shown and `side` where, nothing
+   * for what the layout says. `new` is true where the paragraph begins a
+   * new run of its kind beside another of the same kind. What is not said
+   * is nothing, never false, so that it is not stored. See ADR 0041.
    */
   paragraph: {
     group: 'block',
@@ -271,15 +298,10 @@ const bodyNodes: Record<string, NodeSpec> = {
     attrs: {
       kind: { default: 'text' },
       indent: { default: 0 },
-      number: { default: null },
-      counted: { default: true },
-      /**
-       * True for a paragraph that is counted and shows no number (ADR 0040);
-       * nothing otherwise, never false, so that a text written before is
-       * the same to the shared document as it was, and is not written anew.
-       */
-      hidden: { default: null },
-      margin: { default: null },
+      numbering: { default: null },
+      every: { default: null },
+      side: { default: null },
+      new: { default: null },
     },
     parseDOM: [
       {
@@ -288,77 +310,100 @@ const bodyNodes: Record<string, NodeSpec> = {
           const el = node as HTMLElement;
           return {
             kind: el.getAttribute('data-kind') || 'text',
-            indent: Math.max(0, Math.round(Number(el.getAttribute('data-indent') ?? 0)) || 0),
+            indent: indentAttr(el.getAttribute('data-indent')),
+            numbering: numberingAttr(el.getAttribute('data-numbering')),
+            every: everyAttr(el.getAttribute('data-every')),
+            side: sideAttr(el.getAttribute('data-side')),
+            new: el.hasAttribute('data-new') ? true : null,
+          };
+        },
+      },
+    ],
+    toDOM: (node) => {
+      const every = everyAttr(node.attrs.every);
+      return [
+        'p',
+        {
+          'data-kind': node.attrs.kind && node.attrs.kind !== 'text' ? node.attrs.kind : null,
+          'data-indent': node.attrs.indent ? String(node.attrs.indent) : null,
+          style: node.attrs.indent ? `--indent: ${node.attrs.indent}` : null,
+          'data-numbering': numberingAttr(node.attrs.numbering),
+          'data-every': every ? String(every) : null,
+          'data-side': sideAttr(node.attrs.side),
+          'data-new': node.attrs.new === true ? '' : null,
+        },
+        0,
+      ];
+    },
+  },
+  /**
+   * What the writer said of one line by hand, where lines are numbered: it
+   * stands at the start of the line, first in its paragraph or right after
+   * a line break, and shows nothing itself; the numbers in the margin are
+   * drawn by the editor (`editor/numbers.ts`). `number` a number or a label
+   * given by hand ("1234", "567a"), from which the count goes on; `counted`
+   * false for a line the count passes over; `hidden` true for one that is
+   * counted and shows no number; `margin` words shown in the margin beside
+   * it; `indent` the line's own steps in, for verse. Each is nothing where
+   * it is not said. A mark that says nothing is taken away.
+   */
+  linemark: {
+    group: 'inline',
+    inline: true,
+    atom: true,
+    selectable: false,
+    attrs: {
+      number: { default: null },
+      counted: { default: null },
+      hidden: { default: null },
+      margin: { default: null },
+      indent: { default: null },
+    },
+    parseDOM: [
+      {
+        tag: 'span.linemark',
+        getAttrs: (node) => {
+          const el = node as HTMLElement;
+          return {
             number: el.getAttribute('data-number') || null,
-            counted: !el.hasAttribute('data-uncounted'),
+            counted: el.hasAttribute('data-uncounted') ? false : null,
             hidden: el.hasAttribute('data-hidden') ? true : null,
             margin: el.getAttribute('data-margin') || null,
+            indent: indentAttr(el.getAttribute('data-indent')) || null,
           };
         },
       },
     ],
     toDOM: (node) => [
-      'p',
+      'span',
       {
-        'data-kind': node.attrs.kind && node.attrs.kind !== 'text' ? node.attrs.kind : null,
-        'data-indent': node.attrs.indent ? String(node.attrs.indent) : null,
-        style: node.attrs.indent ? `--indent: ${node.attrs.indent}` : null,
+        class: 'linemark',
         'data-number': node.attrs.number || null,
         'data-uncounted': node.attrs.counted === false ? '' : null,
         'data-hidden': node.attrs.hidden === true ? '' : null,
         'data-margin': node.attrs.margin || null,
+        'data-indent': node.attrs.indent ? String(node.attrs.indent) : null,
+        style: node.attrs.indent ? `--indent: ${node.attrs.indent}` : null,
       },
-      0,
     ],
   },
-  /**
-   * A run of paragraphs of one family, which the editor keeps around them
-   * (`passages.ts`): a quotation, a verse, a script, a glossary, a list, a
-   * code block, a draft; or a kind of the writer's own based on text, named
-   * by its id. `numbering` says how its paragraphs are numbered: not at
-   * all, counted from the first number given, or only by the numbers given;
-   * `every` how often a counted number is shown and `side` where, each null
-   * for what the layout says. Text, which forms no passage, is the default
-   * of `family` only so that a passage read without one is not lost: the
-   * editor undoes it. See ADR 0040.
-   */
-  passage: {
+  /** A break of the page or of the column: what follows stands at the top of the next. */
+  pagebreak: {
     group: 'block',
-    content: 'paragraph+',
-    defining: true,
-    attrs: {
-      family: { default: 'text' },
-      numbering: { default: 'none' },
-      every: { default: null },
-      side: { default: null },
-    },
+    atom: true,
+    selectable: true,
+    attrs: { what: { default: 'page' } },
     parseDOM: [
       {
-        tag: 'div.passage[data-family]',
-        getAttrs: (node) => {
-          const el = node as HTMLElement;
-          const numbering = el.getAttribute('data-numbering');
-          const every = Number(el.getAttribute('data-every'));
-          const side = el.getAttribute('data-side');
-          return {
-            family: el.getAttribute('data-family') || 'text',
-            numbering: numbering === 'counted' || numbering === 'given' ? numbering : 'none',
-            every: every >= 1 ? Math.round(every) : null,
-            side: side === 'left' || side === 'right' ? side : null,
-          };
-        },
+        tag: 'div.pagebreak',
+        getAttrs: (node) => ({
+          what: (node as HTMLElement).getAttribute('data-what') === 'column' ? 'column' : 'page',
+        }),
       },
     ],
     toDOM: (node) => [
       'div',
-      {
-        class: 'passage',
-        'data-family': node.attrs.family,
-        'data-numbering': node.attrs.numbering !== 'none' ? node.attrs.numbering : null,
-        'data-every': node.attrs.every ? String(node.attrs.every) : null,
-        'data-side': node.attrs.side || null,
-      },
-      0,
+      { class: 'pagebreak', 'data-what': node.attrs.what === 'column' ? 'column' : 'page' },
     ],
   },
   /** Two texts side by side: an original and its translation. */
@@ -371,7 +416,7 @@ const bodyNodes: Record<string, NodeSpec> = {
     toDOM: () => ['div', { class: 'parallel' }, 0],
   },
   parallel_side: {
-    content: '(paragraph | passage)+',
+    content: 'paragraph+',
     defining: true,
     isolating: true,
     parseDOM: [{ tag: 'div.parallel-side' }],

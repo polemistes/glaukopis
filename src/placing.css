@@ -73,7 +73,7 @@
 .prose .tabular:not([data-around]),
 .prose .equation,
 .prose .row-of,
-.prose .passage {
+.prose .pagebreak {
   clear: both;
 }
 .prose::after {

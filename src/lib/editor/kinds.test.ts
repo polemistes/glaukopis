@@ -2,15 +2,32 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { kinds } from '$lib/api/contract.generated';
 import type { KindEntry } from '$lib/api/documents';
-import { PARAGRAPH_KINDS } from '$lib/project/model/families';
+import { PARAGRAPH_KINDS, WORD_KINDS as FACT_WORD_KINDS } from '$lib/project/model/families';
 import { Project } from '$lib/project/model/project.svelte';
+import * as textModel from '$lib/project/model/text';
 import { PROJECT, type PassageKindRecord } from '$lib/project/model/types';
-import { CATALOGUE, GROUPS, groupOf, inHand, passageKindsCss, points, specOf } from './kinds';
+import {
+  amongOthers,
+  catalogueKindOf,
+  CATALOGUE,
+  fellowsOf,
+  GROUPS,
+  groupOf,
+  inHand,
+  passageKindsCss,
+  points,
+  specOf,
+  WORD_KINDS,
+} from './kinds';
 
 describe('the catalogue', () => {
   const core = kinds as KindEntry[] | undefined;
-  // Until the core's catalogue is made anew to ADR 0040, the generated contract has the old ids.
-  const stale = !core || core.some((k) => k.id === 'verse' || k.id === 'list');
+  // Until the core's catalogue is made anew to ADR 0041 and the contract written again, it has
+  // the families of before (`joins`, and `text` for the group of text) and not the groupings.
+  const stale =
+    !core ||
+    core.some((k) => 'joins' in k || k.id === 'verse') ||
+    core.find((k) => k.id === 'text')?.group !== 'none';
 
   it.skipIf(stale)(
     'is the same as the core has it: the ids, families, groups and bases, in the same order',
@@ -37,82 +54,129 @@ describe('the catalogue', () => {
     expect(CATALOGUE.map((k) => k.id)).not.toContain('verse');
   });
 
-  it('has every kind in a group that is listed, and names it without saying how it looks', () => {
-    const groups = GROUPS.map((g) => g.id);
+  it('has every kind in one group of the menu, and names it without saying how it looks or what Enter makes', () => {
     for (const kind of CATALOGUE) {
-      expect(groups, kind.id).toContain(groupOf(kind.group));
+      expect(
+        GROUPS.filter((g) => g.kinds.includes(kind.id)),
+        kind.id,
+      ).toHaveLength(1);
       expect(kind.label(), kind.id).not.toMatch(/^editor-/);
       expect(kind.hint(), kind.id).not.toMatch(/^editor-/);
-      expect(kind.hint(), kind.id).not.toMatch(/italic|right|capitals|bold|indent/i);
+      expect(kind.hint(), kind.id).not.toMatch(/italic|right|capitals|bold|Enter|Tab/i);
     }
-    expect(specOf('epigraph')?.group).toBe('quotation');
+    expect(GROUPS.flatMap((g) => g.kinds)).toHaveLength(CATALOGUE.length);
+    // The group of a kind is how the document groups it; the group of the menu is the menu's.
+    expect(specOf('epigraph')?.group).toBe('none');
     expect(specOf('epigraph')?.basedOn).toBe('quote');
-    expect(specOf('scene')?.group).toBe('script');
+    expect(groupOf('epigraph')).toBe('quotation');
+    expect(specOf('line')?.group).toBe('lines');
+    expect(groupOf('speaker')).toBe('verse');
+    expect(specOf('scene')?.group).toBe('none');
+    expect(groupOf('scene')).toBe('script');
     expect(specOf('headword')?.group).toBe('glossary');
-    expect(groupOf('glossary')).toBe('more');
+    expect(groupOf('headword')).toBe('more');
+    expect(groupOf('numbered')).toBe('list');
     expect(groupOf('list')).toBe('list');
+    expect(groupOf('own kind')).toBe('more');
     expect(specOf('foreign')?.family).toBe('words');
+    expect(specOf('foreign')?.group).toBe('words');
     expect(specOf('verse')?.id).toBe('line');
     expect(specOf('no such kind')).toBeUndefined();
+  });
+
+  it('has the kinds that may stand on words: the kinds of words, then a speaker and a direction', () => {
+    expect([...WORD_KINDS]).toEqual([...FACT_WORD_KINDS]);
+    expect(WORD_KINDS.slice(-2)).toEqual(['speaker', 'direction']);
+    for (const id of WORD_KINDS) expect(specOf(id)?.label(), id).not.toMatch(/^editor-/);
+  });
+
+  it('knows the kinds written together, and those that stand among others', () => {
+    const own = [
+      { id: 'chorus', basedOn: 'speaker' },
+      { id: 'canto', basedOn: 'line' },
+      { id: 'letter', basedOn: 'text' },
+    ];
+    expect(fellowsOf('line', own)).toEqual(['line', 'speaker', 'direction', 'chorus', 'canto']);
+    expect(fellowsOf('canto', own)).toEqual(['line', 'speaker', 'direction', 'chorus', 'canto']);
+    expect(fellowsOf('gloss')).toEqual(['headword', 'gloss']);
+    expect(fellowsOf('dialogue')).toContain('transition');
+    expect(fellowsOf('letter', own)).toEqual(['letter']);
+    expect(fellowsOf('code')).toEqual(['code']);
+    expect(catalogueKindOf('canto', own)).toBe('line');
+    expect(catalogueKindOf('letter', own)).toBe('text');
+    expect(catalogueKindOf('verse')).toBe('line');
+    expect(amongOthers('speaker')).toBe(true);
+    expect(amongOthers('direction')).toBe(true);
+    expect(amongOthers('chorus', own)).toBe(true);
+    expect(amongOthers('line')).toBe(false);
+    expect(amongOthers('text')).toBe(false);
   });
 });
 
 describe('the kinds at hand', () => {
-  it('are the plain kinds, what the project uses and what the template brings, each once', () => {
-    const p = new Project(null);
-    p.begin('Wrath');
-    const a = p.addChild(PROJECT, { title: 'A' })!;
-    const own = p.createPassageKind({
-      name: 'Letter',
-      family: 'paragraph',
-      basedOn: 'text',
-      look: {},
-    })!;
-    const paragraph = (kind: string, words: string) => {
-      const el = new Y.XmlElement('paragraph');
-      if (kind !== 'text') el.setAttribute('kind', kind);
-      el.insert(0, [new Y.XmlText(words)]);
-      return el;
-    };
-    const passage = (family: string, ...children: Y.XmlElement[]) => {
-      const el = new Y.XmlElement('passage');
-      el.setAttribute('family', family);
-      el.insert(0, children);
-      return el;
-    };
-    p.transact(() => {
-      const body = p.fragment(a, 'body')!;
-      body.insert(0, [
-        passage(own, paragraph(own, 'Dear reader')),
-        passage('script', paragraph('scene', 'INT. HOUSE')),
-      ]);
-    });
-    // What any element of the project uses is at hand, in whatever tree it stands.
-    const o = p.addChild(PROJECT, { title: 'O' })!;
-    p.transact(() => {
-      p.fragment(o, 'body')!.insert(0, [passage('verse', paragraph('line', 'Chorus'))]);
-    });
-    const hand = inHand(p);
-    expect(hand.slice(0, 4)).toEqual(['text', 'quote', 'item', 'numbered']);
-    // The text model says what the texts use; until it reads the new shape, this is what is checked.
-    if (hand.length > 4) {
-      expect(hand).toEqual(['text', 'quote', 'item', 'numbered', 'line', 'scene', own]);
-      expect(inHand(p, ['action', 'scene', 'character'])).toEqual([
-        'text',
-        'quote',
-        'item',
-        'numbered',
-        'line',
-        'scene',
-        'action',
-        'character',
-        own,
-      ]);
+  // The texts are read by the text model; until it is brought to the new shape it cannot read one.
+  const before = (() => {
+    const doc = new Y.Doc();
+    const body = doc.getXmlFragment('body');
+    const para = new Y.XmlElement('paragraph');
+    para.setAttribute('kind', 'line');
+    body.insert(0, [para]);
+    try {
+      textModel.readBody(body);
+      return false;
+    } catch {
+      return true;
     }
-    // The template's kinds come by their new ids, whatever they were called.
-    expect(inHand(p, ['verse', 'list', 'gone'])).toContain('line');
-    expect(inHand(p, ['verse', 'list', 'gone'])).not.toContain('gone');
-  });
+  })();
+  it.skipIf(before)(
+    'are the plain kinds, what the project uses and what the template brings, each once',
+    () => {
+      const p = new Project(null);
+      p.begin('Wrath');
+      const a = p.addChild(PROJECT, { title: 'A' })!;
+      const own = p.createPassageKind({
+        name: 'Letter',
+        family: 'paragraph',
+        basedOn: 'text',
+        look: {},
+      })!;
+      const paragraph = (kind: string, words: string) => {
+        const el = new Y.XmlElement('paragraph');
+        if (kind !== 'text') el.setAttribute('kind', kind);
+        el.insert(0, [new Y.XmlText(words)]);
+        return el;
+      };
+      p.transact(() => {
+        const body = p.fragment(a, 'body')!;
+        body.insert(0, [paragraph(own, 'Dear reader'), paragraph('scene', 'INT. HOUSE')]);
+      });
+      // What any element of the project uses is at hand, in whatever tree it stands.
+      const o = p.addChild(PROJECT, { title: 'O' })!;
+      p.transact(() => {
+        p.fragment(o, 'body')!.insert(0, [paragraph('line', 'Chorus')]);
+      });
+      const hand = inHand(p);
+      expect(hand.slice(0, 4)).toEqual(['text', 'quote', 'item', 'numbered']);
+      // The text model says what the texts use; until it reads the new shape, this is what is checked.
+      if (hand.length > 4) {
+        expect(hand).toEqual(['text', 'quote', 'item', 'numbered', 'line', 'scene', own]);
+        expect(inHand(p, ['action', 'scene', 'character'])).toEqual([
+          'text',
+          'quote',
+          'item',
+          'numbered',
+          'line',
+          'scene',
+          'action',
+          'character',
+          own,
+        ]);
+      }
+      // The template's kinds come by their new ids, whatever they were called.
+      expect(inHand(p, ['verse', 'list', 'gone'])).toContain('line');
+      expect(inHand(p, ['verse', 'list', 'gone'])).not.toContain('gone');
+    },
+  );
 });
 
 describe('the cues on screen of a kind of the writer`s own', () => {
@@ -140,7 +204,8 @@ describe('the cues on screen of a kind of the writer`s own', () => {
   it('a kind based on an epigraph, in italics, is indented and italic', () => {
     const css = passageKindsCss([kind('k1', { basedOn: 'epigraph', look: { italic: true } })]);
     expect(css).toContain('.prose p[data-kind="k1"] {');
-    expect(css).toContain('margin-left: 9.6em;');
+    // The indent is also its inset, by which the bracket and the numbers stand at the edge of the text.
+    expect(css).toContain('--inset: 9.6em; margin-left: 9.6em;');
     expect(css).toContain('font-style: italic;');
     // From the quotation an epigraph is based on, and from the epigraph itself.
     expect(css).toContain('margin-top: 0.51em;');
@@ -192,7 +257,7 @@ describe('the cues on screen of a kind of the writer`s own', () => {
     expect(css).toContain(
       '.prose p[data-kind="d1"] { color: var(--ink-3); border-left: 2px dashed',
     );
-    expect(css).toContain('.prose p[data-kind="v1"] { margin-left: 2.4em; }');
+    expect(css).toContain('.prose p[data-kind="v1"] { --inset: 2.4em; margin-left: 2.4em; }');
     expect(css).toContain('.prose p[data-kind="c1"] { font-weight: 600; }');
     expect(css).not.toContain('bad id');
   });

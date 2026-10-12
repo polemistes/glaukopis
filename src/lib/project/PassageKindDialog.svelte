@@ -60,7 +60,7 @@
   const groups = $derived(
     GROUPS.map((g) => ({
       label: g.label(),
-      kinds: CATALOGUE.filter((k) => k.group === g.id && k.family === family),
+      kinds: CATALOGUE.filter((k) => g.kinds.includes(k.id) && k.family === family),
     })).filter((g) => g.kinds.length),
   );
   /** The other kinds of the writer's own, of this family. */

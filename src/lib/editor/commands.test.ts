@@ -3,6 +3,7 @@ import { EditorView } from 'prosemirror-view';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   indentParagraph,
+  insertBreak,
   kindMarkOf,
   kindOf,
   kindsIn,
@@ -14,9 +15,10 @@ import {
 } from './commands';
 import { bodyPlugins } from './plugins';
 import { bodySchema } from './schema';
-import { backOutOfKind, enterKind, tabKind, untabKind } from './script';
+import { editorOf, press, shapeOf, type } from './testing';
 
 let view: EditorView | undefined;
+const views: EditorView[] = [];
 
 function editor(text = '', own: { id: string; basedOn: string }[] = []): EditorView {
   const place = document.body.appendChild(document.createElement('div'));
@@ -26,21 +28,24 @@ function editor(text = '', own: { id: string; basedOn: string }[] = []): EditorV
       plugins: bodyPlugins(bodySchema, { undo: () => {}, redo: () => {}, passageKinds: () => own }),
     }),
   });
+  views.push(view);
   if (text) view.dispatch(view.state.tr.insertText(text));
   return view;
 }
 
-/** The shape of the text: a passage as its family with the kinds of its paragraphs in brackets, a paragraph as its kind. */
-function shape(v: EditorView): string {
+/** An editor holding a text written out as `testing.ts` writes it. */
+function at(blocks: string[], own: { id: string; basedOn: string }[] = []): EditorView {
+  const v = editorOf(blocks, { passageKinds: () => own });
+  views.push(v);
+  return v;
+}
+
+/** The kinds of the paragraphs, in order. */
+function kinds(v: EditorView): string {
   const out: string[] = [];
-  v.state.doc.forEach((node) => {
-    if (node.type.name === 'passage') {
-      const kinds: string[] = [];
-      node.forEach((p) => kinds.push(p.attrs.kind as string));
-      out.push(`${node.attrs.family}[${kinds.join(' ')}]`);
-    } else if (node.type.name === 'paragraph') out.push(node.attrs.kind as string);
-    else out.push(node.type.name);
-  });
+  v.state.doc.forEach((node) =>
+    out.push(node.type.name === 'paragraph' ? (node.attrs.kind as string) : node.type.name),
+  );
   return out.join(' ');
 }
 
@@ -53,15 +58,23 @@ function paragraphs(v: EditorView, ...words: string[]) {
 }
 
 afterEach(() => {
-  view?.destroy();
+  for (const v of views.splice(0)) v.destroy();
   view = undefined;
   document.body.innerHTML = '';
 });
 
 describe('the kind of a paragraph', () => {
-  it('is made of every kind from every kind, the text stays, and the passage follows', () => {
-    const v = editor('Sing, goddess');
-    expect(kindOf(v.state)).toBe('text');
+  it('is a label: made of every kind from every kind, nothing but the kind changes', () => {
+    const v = at(['text: {n=12,m=ia.}Sing, goddess / the wrath', 'text #counted/5: of Achilles']);
+    v.dispatch(
+      v.state.tr.setSelection(TextSelection.create(v.state.doc, 2, v.state.doc.content.size - 1)),
+    );
+    const content = () => {
+      const out: unknown[] = [];
+      v.state.doc.forEach((p) => out.push(p.content.toJSON()));
+      return JSON.stringify(out);
+    };
+    const before = content();
     for (const kind of [
       'epigraph',
       'quote',
@@ -75,99 +88,63 @@ describe('the kind of a paragraph', () => {
       'draft',
       'numbered',
       'code',
-      'text',
       'break',
       'k1',
       'text',
     ]) {
       expect(setKind(kind)(v.state, v.dispatch, v), kind).toBe(true);
-      expect(kindOf(v.state), kind).toBe(kind);
-      expect(v.state.doc.textContent, kind).toBe('Sing, goddess');
+      expect(kindsIn(v.state), kind).toEqual([kind]);
+      expect(content(), kind).toBe(before);
+      // The numbering of the second stays as it was.
+      expect(v.state.doc.child(1).attrs.numbering, kind).toBe('counted');
+      expect(v.state.doc.child(1).attrs.every, kind).toBe(5);
     }
-    expect(shape(v)).toBe('text');
-    setKind('line')(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('verse[line]');
-    setKind('quote')(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('quotation[quote]');
+    expect(v.state.doc.childCount).toBe(2);
     // The old ids are understood.
     setKind('verse')(v.state, v.dispatch, v);
     expect(kindOf(v.state)).toBe('line');
     setKind('list')(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('list[item]');
-  });
-
-  it('a kind of the writer`s own forms a passage of its base`s family, or of its own', () => {
-    const own = [
-      { id: 'k1', basedOn: 'epigraph' },
-      { id: 'letter', basedOn: 'text' },
-    ];
-    const v = editor('Dear reader', own);
-    setKind('k1', own)(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('quotation[k1]');
-    setKind('letter', own)(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('letter[letter]');
-    expect(kindOf(v.state)).toBe('letter');
+    expect(kindOf(v.state)).toBe('item');
   });
 
   it('is changed for the paragraphs that are selected, and no other', () => {
     const v = editor();
     paragraphs(v, 'One', 'Two', 'Three');
-    // The first two.
     v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 1, 7)));
     setKind('headword')(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('glossary[headword headword] text');
+    expect(kinds(v)).toBe('headword headword text');
     expect(kindsIn(v.state)).toEqual(['headword']);
-    // The second and the third, over the edge of the passage.
     v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 8, 15)));
     expect(kindsIn(v.state)).toEqual(['headword', 'text']);
     setKind('line')(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('glossary[headword] verse[line line]');
+    expect(kinds(v)).toBe('headword line line');
     expect(v.state.doc.textContent).toBe('OneTwoThree');
-    setKind('text')(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('glossary[headword] text text');
   });
 
-  it('a paragraph set to text in the middle of a verse splits it, and set back joins it again', () => {
-    const v = editor();
-    paragraphs(v, 'a', 'b', 'c');
-    v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 1, 8)));
-    setKind('line')(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('verse[line line line]');
-    v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 5)));
-    expect(kindOf(v.state)).toBe('line');
-    setKind('text')(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('verse[line] text verse[line]');
-    expect(v.state.selection.$from.parent.textContent).toBe('b');
-    setKind('line')(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('verse[line line line]');
+  it('keeps the indent of an item and a line, and of a kind based on one, and takes it away otherwise', () => {
+    const own = [
+      { id: 'k1', basedOn: 'line' },
+      { id: 'k2', basedOn: 'k1' },
+    ];
+    const v = at(['item>2: Point|'], own);
+    const indent = () => v.state.doc.firstChild!.attrs.indent;
+    setKind('numbered', own)(v.state, v.dispatch, v);
+    expect(indent()).toBe(2);
+    setKind('line', own)(v.state, v.dispatch, v);
+    expect(indent()).toBe(2);
+    setKind('k2', own)(v.state, v.dispatch, v);
+    expect(indent()).toBe(2);
+    setKind('quote', own)(v.state, v.dispatch, v);
+    expect(indent()).toBe(0);
   });
 
-  it('keeps a number, the margin words and the uncounted state, and the indent only where the kind is indented', () => {
-    const v = editor('Nurse');
-    setKind('line')(v.state, v.dispatch, v);
-    indentParagraph(1)(v.state, v.dispatch);
-    indentParagraph(1)(v.state, v.dispatch);
-    const at = () => v.state.doc.firstChild!.firstChild!;
-    v.dispatch(
-      v.state.tr.setNodeMarkup(1, undefined, {
-        ...at().attrs,
-        number: '12',
-        counted: false,
-        margin: 'ia.',
-      }),
-    );
-    expect(at().attrs).toMatchObject({ indent: 2, number: '12', counted: false, margin: 'ia.' });
-    setKind('item')(v.state, v.dispatch, v);
-    expect(at().attrs).toMatchObject({ kind: 'item', indent: 2, number: '12', margin: 'ia.' });
-    setKind('speaker')(v.state, v.dispatch, v);
-    expect(at().attrs).toMatchObject({ kind: 'speaker', indent: 0, number: '12', counted: false });
-    // Not indented past eight, nor below nought; nothing to a kind that is not indented.
+  it('is indented by indentParagraph whatever its kind, from none to eight', () => {
+    const v = at(['quote: Sing|']);
     expect(indentParagraph(-1)(v.state)).toBe(false);
-    setKind('line')(v.state, v.dispatch, v);
     for (let i = 0; i < 12; i++) indentParagraph(1)(v.state, v.dispatch);
-    expect(at().attrs.indent).toBe(8);
+    expect(v.state.doc.firstChild!.attrs.indent).toBe(8);
     for (let i = 0; i < 12; i++) indentParagraph(-1)(v.state, v.dispatch);
-    expect(at().attrs.indent).toBe(0);
+    expect(v.state.doc.firstChild!.attrs.indent).toBe(0);
   });
 
   it('leaves what holds text and is no paragraph as it is', () => {
@@ -182,20 +159,193 @@ describe('the kind of a paragraph', () => {
     );
     v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 2)));
     expect(setKind('epigraph')(v.state, v.dispatch, v)).toBe(false);
-    expect(shape(v)).toBe('figure');
+    expect(kinds(v)).toBe('figure');
   });
 
-  it('is drawn as a paragraph with its kind, in a passage of its family', () => {
-    const v = editor('Nurse');
-    setKind('speaker')(v.state, v.dispatch, v);
-    const passage = v.dom.querySelector('div.passage')!;
-    expect(passage.getAttribute('data-family')).toBe('verse');
-    expect(passage.hasAttribute('data-numbering')).toBe(false);
-    const p = passage.querySelector('p')!;
+  it('is drawn as a paragraph with its kind and its settings, and read back', () => {
+    const v = at(['speaker>1 #given/2 right new: {n=5,-,m=ia.,i=2}Nurse']);
+    const p = v.dom.querySelector('p')!;
     expect(p.getAttribute('data-kind')).toBe('speaker');
-    setKind('text')(v.state, v.dispatch, v);
-    expect(v.dom.querySelector('div.passage')).toBeNull();
-    expect(v.dom.querySelector('p')!.hasAttribute('data-kind')).toBe(false);
+    expect(p.getAttribute('data-indent')).toBe('1');
+    expect(p.getAttribute('style')).toContain('--indent: 1');
+    expect(p.getAttribute('data-numbering')).toBe('given');
+    expect(p.getAttribute('data-every')).toBe('2');
+    expect(p.getAttribute('data-side')).toBe('right');
+    expect(p.hasAttribute('data-new')).toBe(true);
+    const mark = p.querySelector<HTMLElement>('span.linemark')!;
+    expect(mark.getAttribute('data-number')).toBe('5');
+    expect(mark.hasAttribute('data-uncounted')).toBe(true);
+    expect(mark.hasAttribute('data-hidden')).toBe(false);
+    expect(mark.getAttribute('data-margin')).toBe('ia.');
+    expect(mark.getAttribute('data-indent')).toBe('2');
+    expect(mark.textContent).toBe('');
+    // Read back from what is drawn, as when it is pasted.
+    const parsed = bodySchema.nodes.paragraph.spec.parseDOM![0].getAttrs!(p) as Record<
+      string,
+      unknown
+    >;
+    expect(parsed).toEqual({
+      kind: 'speaker',
+      indent: 1,
+      numbering: 'given',
+      every: 2,
+      side: 'right',
+      new: true,
+    });
+    const markAttrs = bodySchema.nodes.linemark.spec.parseDOM![0].getAttrs!(mark);
+    expect(markAttrs).toEqual({
+      number: '5',
+      counted: false,
+      hidden: null,
+      margin: 'ia.',
+      indent: 2,
+    });
+    // Text says nothing of what it does not have.
+    const w = at(['text: Plain']);
+    const plain = w.dom.querySelector('p')!;
+    expect([...plain.attributes].map((a) => a.name)).toEqual([]);
+  });
+});
+
+describe('the keys, the same in every kind', () => {
+  it('Enter parts a paragraph of prose; Shift+Enter breaks the line; Backspace joins them again', () => {
+    const v = at(['text: Sing, |goddess']);
+    expect(press(v, 'Enter')).toBe(true);
+    expect(shapeOf(v)).toEqual(['text: Sing, ', 'text: |goddess']);
+    press(v, 'Backspace');
+    expect(shapeOf(v)).toEqual(['text: Sing, |goddess']);
+    press(v, 'Enter', { shiftKey: true });
+    expect(shapeOf(v)).toEqual(['text: Sing,  / |goddess']);
+    press(v, 'Backspace');
+    expect(shapeOf(v)).toEqual(['text: Sing, |goddess']);
+  });
+
+  it('Enter in verse makes a new stanza of the same kind, indent and numbering, the mark staying with its line', () => {
+    const v = at(['line>1 #counted/5 new: {n=1}Sing, goddess / |{n=2,i=1}the wrath']);
+    // The cursor is put after the mark of its line.
+    expect(shapeOf(v)).toEqual(['line>1 #counted/5 new: {n=1}Sing, goddess / {n=2,i=1}|the wrath']);
+    press(v, 'Enter');
+    // The line break became the break between the stanzas; the second is no new run.
+    expect(shapeOf(v)).toEqual([
+      'line>1 #counted/5 new: {n=1}Sing, goddess',
+      'line>1 #counted/5: {n=2,i=1}|the wrath',
+    ]);
+    // At the end of the last line, a new stanza, empty.
+    v.dispatch(v.state.tr.setSelection(TextSelection.atEnd(v.state.doc)));
+    press(v, 'Enter');
+    expect(shapeOf(v)[2]).toBe('line>1 #counted/5: |');
+    // Enter on it again: the paragraph is text, which is how one leaves the verse.
+    press(v, 'Enter');
+    expect(shapeOf(v)[2]).toBe('text #counted/5: |');
+    // And on an empty paragraph of text, Enter parts it as ever.
+    press(v, 'Enter');
+    expect(shapeOf(v)).toHaveLength(4);
+  });
+
+  it('Shift+Enter at the start of a line leaves its mark with it', () => {
+    const v = at(['line: Sing / {n=5}|goddess']);
+    press(v, 'Enter', { shiftKey: true });
+    expect(shapeOf(v)).toEqual(['line: Sing /  / {n=5}|goddess']);
+  });
+
+  it('Backspace at the start of a line takes the break and the line`s mark; at the start of a paragraph joins it, the first`s kind holding', () => {
+    const v = at(['line: Sing / {n=5}|goddess', 'quote: the wrath']);
+    press(v, 'Backspace');
+    expect(shapeOf(v)).toEqual(['line: Sing|goddess', 'quote: the wrath']);
+    const w = at(['quote: Sing', 'line #counted: {n=5}|goddess']);
+    press(w, 'Backspace');
+    expect(shapeOf(w)).toEqual(['quote: Sing|goddess']);
+    const x = at(['item>1: One', 'text: |Two']);
+    press(x, 'Backspace');
+    expect(shapeOf(x)).toEqual(['item>1: One|Two']);
+  });
+
+  it('Enter in a list makes an item with its indent, and on an empty item leaves the list', () => {
+    const v = at(['item>2: Point|']);
+    press(v, 'Enter');
+    expect(shapeOf(v)).toEqual(['item>2: Point', 'item>2: |']);
+    press(v, 'Enter');
+    expect(shapeOf(v)).toEqual(['item>2: Point', 'text: |']);
+  });
+
+  it('Enter on an empty paragraph of any kind makes it text, keeping its line marks', () => {
+    for (const kind of ['quote', 'speaker', 'scene', 'code', 'k1']) {
+      const v = at([`${kind}: {n=4}|`], [{ id: 'k1', basedOn: 'dialogue' }]);
+      press(v, 'Enter');
+      expect(shapeOf(v), kind).toEqual(['text: {n=4}|']);
+    }
+  });
+
+  it('Tab indents a line of verse by its mark, and any other paragraph as a whole', () => {
+    const v = at(['line: Sing / |goddess / the wrath']);
+    press(v, 'Tab');
+    expect(shapeOf(v)).toEqual(['line: Sing / {i=1}|goddess / the wrath']);
+    press(v, 'Tab');
+    expect(shapeOf(v)).toEqual(['line: Sing / {i=2}|goddess / the wrath']);
+    press(v, 'Tab', { shiftKey: true });
+    press(v, 'Tab', { shiftKey: true });
+    // The mark goes when it says nothing more.
+    expect(shapeOf(v)).toEqual(['line: Sing / |goddess / the wrath']);
+    // A mark that says more stays.
+    const w = at(['line: {n=7}|Sing']);
+    press(w, 'Tab');
+    press(w, 'Tab', { shiftKey: true });
+    expect(shapeOf(w)).toEqual(['line: {n=7}|Sing']);
+    // A kind based on a line does the same.
+    const k = at(['k1: |Sing'], [{ id: 'k1', basedOn: 'line' }]);
+    press(k, 'Tab');
+    expect(shapeOf(k)).toEqual(['k1: {i=1}|Sing']);
+    // Prose and a list: the paragraph.
+    const x = at(['text: |Sing', 'item: Point']);
+    press(x, 'Tab');
+    expect(shapeOf(x)).toEqual(['text>1: |Sing', 'item: Point']);
+    x.dispatch(x.state.tr.setSelection(TextSelection.atEnd(x.state.doc)));
+    for (let i = 0; i < 10; i++) press(x, 'Tab');
+    expect(shapeOf(x)[1]).toBe('item>8: Point|');
+    // Shift+Tab with no indent to take away does nothing.
+    const y = at(['text: |Sing']);
+    press(y, 'Tab', { shiftKey: true });
+    expect(shapeOf(y)).toEqual(['text: |Sing']);
+  });
+
+  it('Tab over lines of verse selected indents each of them', () => {
+    const v = at(['line: Sing / goddess / the wrath']);
+    const start = 1;
+    const end = v.state.doc.content.size - 1;
+    v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, start, end)));
+    press(v, 'Tab');
+    expect(shapeOf(v)).toEqual(['line: {i=1}Sing / {i=1}goddess / {i=1}the wrath']);
+  });
+
+  it('keeps line marks at the start of their lines: what is typed goes after, and a mark that is joined into a line goes', () => {
+    const v = at(['line: {n=5}|']);
+    type(v, 'Sing');
+    expect(shapeOf(v)).toEqual(['line: {n=5}Sing|']);
+    // Delete at the end of a paragraph joins the next to it: the mark of its first line no longer begins one.
+    const w = at(['line: Sing|', 'line: {n=5}goddess']);
+    press(w, 'Delete');
+    expect(shapeOf(w)).toEqual(['line: Sing|goddess']);
+  });
+
+  it('turns "> ", "- " and "1. " at the start of a paragraph of text into its kind, and "7. " gives the number', () => {
+    const v = at(['text: |']);
+    type(v, '7. Seventh');
+    expect(shapeOf(v)).toEqual(['numbered: {n=7}Seventh|']);
+    const w = at(['text: |']);
+    type(w, '> Sing');
+    expect(shapeOf(w)).toEqual(['quote: Sing|']);
+  });
+});
+
+describe('a break of the page or of the column', () => {
+  it('stands after the paragraph, or in place of an empty one, and the writing goes on after it', () => {
+    const v = at(['text: Sing|']);
+    expect(insertBreak('page')(v.state, v.dispatch)).toBe(true);
+    expect(shapeOf(v)).toEqual(['text: Sing', 'pagebreak', 'text: |']);
+    insertBreak('column')(v.state, v.dispatch);
+    expect(shapeOf(v)).toEqual(['text: Sing', 'pagebreak', 'pagebreak column', 'text: |']);
+    const div = v.dom.querySelectorAll('div.pagebreak')[1];
+    expect(div.getAttribute('data-what')).toBe('column');
   });
 });
 
@@ -228,7 +378,7 @@ describe('the kind of words', () => {
       name: 'highlight',
       lang: '',
     });
-    expect(shape(v)).toBe('text');
+    expect(kinds(v)).toBe('text');
   });
 
   it('is drawn as a span with the kind, and the language of foreign words', () => {
@@ -289,166 +439,6 @@ describe('the language of a passage', () => {
   });
 });
 
-describe('the keys in a paragraph of a kind', () => {
-  const press = (v: EditorView, command: ReturnType<typeof enterKind>) =>
-    command(v.state, v.dispatch, v);
-  const end = (v: EditorView) =>
-    v.dispatch(v.state.tr.setSelection(TextSelection.atEnd(v.state.doc)));
-
-  it('Enter at the end begins the kind that follows, within the passage, and text leaves it', () => {
-    const v = editor('Sing, goddess');
-    setKind('epigraph')(v.state, v.dispatch, v);
-    end(v);
-    expect(press(v, enterKind())).toBe(true);
-    expect(shape(v)).toBe('quotation[epigraph attribution]');
-    expect(kindOf(v.state)).toBe('attribution');
-    v.dispatch(v.state.tr.insertText('Homer'));
-    expect(press(v, enterKind())).toBe(true);
-    expect(shape(v)).toBe('quotation[epigraph attribution] text');
-    expect(kindOf(v.state)).toBe('text');
-    // In a text paragraph the base keys do it.
-    expect(press(v, enterKind())).toBe(false);
-  });
-
-  it('Enter within a paragraph splits it, the part after of the same kind without what was said of the whole', () => {
-    const v = editor('Nor had the heroes rowed');
-    setKind('line')(v.state, v.dispatch, v);
-    v.dispatch(
-      v.state.tr.setNodeMarkup(1, undefined, {
-        ...v.state.doc.firstChild!.firstChild!.attrs,
-        number: '1094a1',
-        margin: 'ia.',
-        indent: 1,
-      }),
-    );
-    v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 20)));
-    expect(press(v, enterKind())).toBe(true);
-    expect(shape(v)).toBe('verse[line line]');
-    const verse = v.state.doc.firstChild!;
-    expect(verse.child(0).attrs).toMatchObject({ number: '1094a1', margin: 'ia.', indent: 1 });
-    expect(verse.child(1).attrs).toMatchObject({ number: null, margin: null, indent: 1 });
-    expect(verse.child(1).textContent).toBe(' rowed');
-  });
-
-  it('Enter on an empty last paragraph of a passage makes it text, leaving the passage', () => {
-    const q = editor('a');
-    setKind('quote')(q.state, q.dispatch, q);
-    end(q);
-    press(q, enterKind());
-    expect(shape(q)).toBe('quotation[quote quote]');
-    press(q, enterKind());
-    expect(shape(q)).toBe('quotation[quote] text');
-    expect(kindOf(q.state)).toBe('text');
-    q.destroy();
-    // In verse, the first Enter on an empty line begins a stanza; the next leaves the verse.
-    const v = editor('a');
-    setKind('line')(v.state, v.dispatch, v);
-    end(v);
-    press(v, enterKind());
-    expect(shape(v)).toBe('verse[line line]');
-    press(v, enterKind());
-    expect(shape(v)).toBe('verse[line line line]');
-    press(v, enterKind());
-    expect(shape(v)).toBe('verse[line] text');
-    expect(kindOf(v.state)).toBe('text');
-    // A speaker is followed by a line, a direction by a line.
-    const w = editor('Nurse');
-    setKind('speaker')(w.state, w.dispatch, w);
-    end(w);
-    press(w, enterKind());
-    expect(shape(w)).toBe('verse[speaker line]');
-    w.destroy();
-  });
-
-  it('Enter after code is code, after an item an item with its indent, and after a part of a script the part that follows', () => {
-    const v = editor('let x');
-    setKind('code')(v.state, v.dispatch, v);
-    end(v);
-    press(v, enterKind());
-    expect(shape(v)).toBe('code[code code]');
-    const w = editor('MARY');
-    setKind('character')(w.state, w.dispatch, w);
-    end(w);
-    press(w, enterKind());
-    expect(shape(w)).toBe('script[character dialogue]');
-    w.destroy();
-    const u = editor('First');
-    setKind('item')(u.state, u.dispatch, u);
-    indentParagraph(1)(u.state, u.dispatch);
-    end(u);
-    press(u, enterKind());
-    expect(shape(u)).toBe('list[item item]');
-    expect(u.state.doc.firstChild!.child(1).attrs.indent).toBe(1);
-    u.destroy();
-  });
-
-  it('a kind of the writer`s own is followed as the kind it is based on', () => {
-    const own = [
-      { id: 'k1', basedOn: 'headword' },
-      { id: 'k2', basedOn: 'draft' },
-    ];
-    const v = editor('Dear reader', own);
-    setKind('k1', own)(v.state, v.dispatch, v);
-    end(v);
-    press(
-      v,
-      enterKind(() => own),
-    );
-    expect(shape(v)).toBe('glossary[k1 gloss]');
-    const w = editor('Dear reader', own);
-    setKind('k2', own)(w.state, w.dispatch, w);
-    end(w);
-    press(
-      w,
-      enterKind(() => own),
-    );
-    expect(shape(w)).toBe('draft[k2 k2]');
-    w.destroy();
-  });
-
-  it('Tab makes an empty paragraph the other kind, begins one after a full one, and indents a line or an item', () => {
-    const v = editor();
-    setKind('headword')(v.state, v.dispatch, v);
-    expect(press(v, tabKind())).toBe(true);
-    expect(shape(v)).toBe('glossary[gloss]');
-    v.dispatch(v.state.tr.insertText('What it means'));
-    expect(press(v, tabKind())).toBe(true);
-    expect(shape(v)).toBe('glossary[gloss headword]');
-    expect(kindOf(v.state)).toBe('headword');
-    // Tab means nothing to an epigraph.
-    setKind('epigraph')(v.state, v.dispatch, v);
-    expect(press(v, tabKind())).toBe(false);
-    // A line is indented, and back.
-    setKind('line')(v.state, v.dispatch, v);
-    expect(press(v, tabKind())).toBe(true);
-    expect(v.state.selection.$from.parent.attrs.indent).toBe(1);
-    expect(press(v, untabKind())).toBe(true);
-    expect(v.state.selection.$from.parent.attrs.indent).toBe(0);
-    expect(press(v, untabKind())).toBe(true);
-    expect(v.state.selection.$from.parent.attrs.indent).toBe(0);
-  });
-
-  it('Backspace at the start of an empty paragraph of a kind makes it text, as at the start of the first of a passage', () => {
-    const v = editor();
-    setKind('draft')(v.state, v.dispatch, v);
-    expect(press(v, backOutOfKind())).toBe(true);
-    expect(shape(v)).toBe('text');
-    const w = editor();
-    paragraphs(w, 'Not empty', 'Second');
-    w.dispatch(w.state.tr.setSelection(TextSelection.create(w.state.doc, 1, 14)));
-    setKind('draft')(w.state, w.dispatch, w);
-    expect(shape(w)).toBe('draft[draft draft]');
-    // Within the passage, with words before: the base keys join.
-    w.dispatch(w.state.tr.setSelection(TextSelection.create(w.state.doc, 13)));
-    expect(press(w, backOutOfKind())).toBe(false);
-    // At the start of the first paragraph: text.
-    w.dispatch(w.state.tr.setSelection(TextSelection.atStart(w.state.doc)));
-    expect(press(w, backOutOfKind())).toBe(true);
-    expect(shape(w)).toBe('text draft[draft]');
-    w.destroy();
-  });
-});
-
 describe('the words of a citation parted from it', () => {
   it('makes the words text of the line and each work a citation of its own, parted by semicolons where no words stand between', () => {
     const v = editor('Not all agree. ');
@@ -489,83 +479,5 @@ describe('the words of a citation parted from it', () => {
       ),
     );
     expect(splitCitation(one.state.selection.from - 1)(one.state)).toBe(false);
-  });
-});
-
-describe('verse read as it was written', () => {
-  /** A text of paragraphs, each of lines broken by hand. */
-  function poem(...stanzas: string[][]): EditorView {
-    const v = editor();
-    const { paragraph, hard_break } = bodySchema.nodes;
-    const nodes = stanzas.map((lines) =>
-      paragraph.create(
-        null,
-        lines.flatMap((l, i) =>
-          i ? [hard_break.create(), bodySchema.text(l)] : [bodySchema.text(l)],
-        ),
-      ),
-    );
-    v.dispatch(v.state.tr.replaceWith(0, v.state.doc.content.size, nodes));
-    v.dispatch(
-      v.state.tr.setSelection(TextSelection.create(v.state.doc, 1, v.state.doc.content.size - 1)),
-    );
-    return v;
-  }
-  const lines = (v: EditorView) => {
-    const out: string[] = [];
-    v.state.doc.descendants((node) => {
-      if (node.type.name !== 'paragraph') return true;
-      out.push(`${node.attrs.kind}:${node.textContent}`);
-      return false;
-    });
-    return out;
-  };
-
-  it('makes each line broken by hand a line, and each paragraph a stanza, with an empty line between', () => {
-    const v = poem(['One a', 'One b', 'One c'], ['Two a', 'Two b']);
-    setKind('line')(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('verse[line line line line line line]');
-    expect(lines(v)).toEqual([
-      'line:One a',
-      'line:One b',
-      'line:One c',
-      'line:',
-      'line:Two a',
-      'line:Two b',
-    ]);
-  });
-
-  it('makes the stanzas paragraphs again, their lines broken by hand, when the verse is made text', () => {
-    const v = poem(['One a', 'One b'], ['Two a']);
-    setKind('line')(v.state, v.dispatch, v);
-    v.dispatch(
-      v.state.tr.setSelection(TextSelection.create(v.state.doc, 2, v.state.doc.content.size - 2)),
-    );
-    setKind('text')(v.state, v.dispatch, v);
-    expect(shape(v)).toBe('text text');
-    let breaks = 0;
-    v.state.doc.descendants((n) => {
-      if (n.type.name === 'hard_break') breaks++;
-    });
-    expect(breaks).toBe(1);
-  });
-
-  it('makes paragraphs without breaks one line each, as before', () => {
-    const v = poem(['alpha'], ['beta']);
-    setKind('line')(v.state, v.dispatch, v);
-    expect(lines(v)).toEqual(['line:alpha', 'line:beta']);
-  });
-
-  it('takes away the break between stanzas with Backspace', () => {
-    const w = poem(['One a', 'One b'], ['Two a']);
-    setKind('line')(w.state, w.dispatch, w);
-    // The cursor in the empty line between the stanzas.
-    let at = 0;
-    w.state.doc.descendants((n, pos) => {
-      if (n.type.name === 'paragraph' && n.content.size === 0) at = pos + 1;
-      return n.type.name !== 'paragraph';
-    });
-    w.dispatch(w.state.tr.setSelection(TextSelection.create(w.state.doc, at)));
-    expect(backOutOfKind()(w.state, w.dispatch)).toBe(false);
   });
 });
