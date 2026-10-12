@@ -18,22 +18,22 @@ editor-list = List
 editor-text = Text
 editor-text-hint = A paragraph
 editor-quotation-hint = Words of another, set apart from the text
-editor-list-hint = A point of a list; Tab makes a list within the list
+editor-list-hint = A point of a list; an indent makes a list within the list
 editor-numbered-list = Numbered list
-editor-numbered-list-hint = A point of a list that is counted; Tab makes a list within the list
+editor-numbered-list-hint = A point of a list that is counted; an indent makes a list within the list
 editor-verse = Verse
 editor-verse-hint = A line of poetry, drama or a transcript, kept as a line
 editor-speaker = Speaker
-editor-speaker-hint = Who speaks, in a line of its own
+editor-speaker-hint = Who speaks: on a line of its own, or as words within a line
 editor-direction = Stage direction
-editor-direction-hint = What is done on the stage
+editor-direction-hint = What is done on the stage: on a line of its own, or as words within a line
 editor-line-numbers = Numbers
-editor-line-numbers-hint = Number the paragraphs of this passage: how they are counted, from which number, every how many and on which side; and say what is said of the one the cursor is in
+editor-line-numbers-hint = Number these lines: how they are counted, from which number, every how many and on which side; and say what is said of the line the cursor is in. Lines numbered together with the same settings are counted as one, whatever their kinds.
 editor-line-numbers-from = Number from
-editor-line-numbers-from-hint = The first paragraph that is counted is given this number, and the count goes on from it.
+editor-line-numbers-from-hint = The first line that is counted is given this number, and the count goes on from it.
 editor-line-numbers-every = Show a number every
 editor-line-numbers-number = A whole number is wanted.
-editor-line-this = This paragraph
+editor-line-this = This line
 editor-line-number = Its number or label
 editor-line-number-placeholder = Counted as the others are
 editor-line-number-hint = 1234, 567a: always shown; the lines after it are counted on from it.
@@ -45,7 +45,7 @@ editor-line-number-held = Counted, and not shown in the document. Press to give 
 editor-line-margin = Words in the margin
 editor-line-margin-placeholder = A metre, another edition's number
 editor-line-margin-hint = Shown in the margin beside it, across from the numbers; not counted.
-# How the paragraphs of a passage are numbered: see ADR 0040.
+# How the lines of a stretch are numbered: see ADR 0041.
 editor-numbering = Numbering
 editor-numbering-none = Not numbered
 editor-numbering-counted = Counted from the first number given
@@ -55,42 +55,35 @@ editor-line-numbers-side = Numbers on the
 editor-side-layout = Side the layout says ({ $side })
 editor-side-left = Left
 editor-side-right = Right
-# The first counted paragraph of the passage is the one the cursor is in: its number is where the count begins.
-editor-line-number-first-hint = The count of the passage begins here.
+# The first counted line of the stretch is the one the cursor is in: its number is where the count begins.
+editor-line-number-first-hint = The count begins here.
 # Over a number in the margin of the text, which opens a field for it when pressed.
-editor-line-number-press = The number of this paragraph: press to change it
+editor-line-number-press = The number of this line: press to change it
 
-## Numbers belong to what they number (ADR 0040): the Numbers menu offers
+## Numbers belong to what they number (ADR 0041): the Numbers menu offers
 ## the three, each saying what it numbers.
 editor-numbers = Numbers
-editor-numbers-hint = Number the lines of a passage or the paragraphs of a text, mark a place in prose, or number the lines of the page
-editor-numbers-passage = Number the lines of this passage…
-editor-numbers-passage-hint = The lines you write, counted by the passage: from which number, every how many, on which side
-editor-numbers-paragraphs-hint = The paragraphs of this text, or those selected, counted: from which number, every how many, on which side
-editor-numbers-paragraphs = Number these paragraphs…
+editor-numbers-hint = Number the lines you write, mark a place in prose, or number the lines of the page
+editor-numbers-lines = Number these lines…
+editor-numbers-lines-hint = The lines of the paragraphs where the cursor is, or of those selected: from which number, every how many, on which side
 editor-numbers-refmark-hint = A place in prose, by a verse, a page or a number of an edition: 3:16, 327a
 editor-numbers-page = Number the lines of the page
 editor-numbers-page-hint = Every line of the printed page, numbered in the margin, in this document and those under it
 
-## The bracket of a passage, at its left, named by its family; its menu
-## says what is said of the passage.
-editor-family-text = Numbered text
-editor-family-quotation = Quotation
-editor-family-verse = Verse
-editor-family-script = Script
-editor-family-glossary = Glossary
-editor-family-list = List
-editor-family-code = Code
-editor-family-break = Break
-editor-family-draft = Draft
-editor-passage-label-hint = { $family } · press for what is said of the passage
-editor-passage-numbers = Numbers…
-editor-passage-numbers-hint = How the lines of this passage are counted, from which number, every how many and on which side
-editor-passage-select = Select the passage
-editor-passage-to-text = Make it text
-editor-passage-to-text-hint = Every paragraph of the passage becomes text, and the passage goes
-editor-passage-split = Split the passage here
-editor-passage-split-hint = Into two, before the paragraph the cursor is in; an empty paragraph of text stands between the two
+## The bracket at the left of paragraphs of one kind standing together (a
+## run), named by the kind; its menu says what is said of them.
+# After the name of the kind, where the lines of the run are numbered: "Verse · numbered".
+editor-bracket-numbered = numbered
+editor-run-label-hint = { $kind } · press for what is said of these paragraphs
+editor-run-numbers = Numbers…
+editor-run-numbers-hint = How the lines here are counted, from which number, every how many and on which side
+editor-run-select = Select these paragraphs
+editor-run-to-text = Make it text
+editor-run-to-text-hint = The paragraphs of this kind become text; their lines, and everything else, stay as they are
+editor-run-begin = Begin a new run here
+editor-run-begin-hint = The paragraph the cursor is in begins a bracket of its own, though the one before is of the same kind
+editor-run-join = Join with the run before
+editor-run-join-hint = These paragraphs are one with those of the same kind before them again
 editor-kinds-text = Text
 editor-kinds-quotation = Quotation
 editor-kinds-verse = Verse
@@ -142,11 +135,15 @@ editor-comment-hint = A comment on what is selected
 editor-comment-element-hint = A comment on this element; select words to comment on them
 editor-parallel = Two texts side by side
 editor-parallel-hint = An original and its translation, each a text of its own
+editor-page-break = Page break
+editor-page-break-hint = What follows begins on a new page
+editor-column-break = Column break
+editor-column-break-hint = What follows begins at the top of the next column, where the layout sets the text in columns
 editor-paragraph-kind = Kind of paragraph
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Kind of paragraph: { $kind }
 
-## The kind menu: the kinds of the passage the cursor is in, the kinds at hand,
+## The kind menu: the kinds written with those where the cursor is, the kinds at hand,
 ## the whole catalogue under "More…", and the layout that sets them at its foot.
 ## The words menu, with the kinds of words. And a kind of the writer's own, in its dialog.
 
@@ -160,7 +157,7 @@ editor-kinds-set-by = Set as “{ $format }” has them
 editor-kinds-change-format = Change the layout…
 editor-kinds-change-format-hint = How each kind is set in this document
 editor-words = Words
-editor-words-hint = Underlining, superscript, code; the language of a passage, foreign words, the title of a work, a term
+editor-words-hint = Underlining, superscript, code; the language of a passage, foreign words, the title of a work, a term, a speaker within a line
 editor-words-make = Make a kind of words…
 # Beside the language of the map, first among the languages foreign words may be in.
 editor-foreign-of-text = The language of the text

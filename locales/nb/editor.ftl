@@ -18,22 +18,22 @@ editor-list = Liste
 editor-text = Tekst
 editor-text-hint = Et avsnitt
 editor-quotation-hint = En annens ord, skilt ut fra teksten
-editor-list-hint = Et punkt i en liste; Tab lager en liste i listen
+editor-list-hint = Et punkt i en liste; et innrykk lager en liste i listen
 editor-numbered-list = Nummerert liste
-editor-numbered-list-hint = Et punkt i en liste som telles; Tab lager en liste i listen
+editor-numbered-list-hint = Et punkt i en liste som telles; et innrykk lager en liste i listen
 editor-verse = Vers
 editor-verse-hint = En linje av dikt, drama eller en transkripsjon, beholdt som en linje
 editor-speaker = Taler
-editor-speaker-hint = Hvem som taler, på en egen linje
+editor-speaker-hint = Hvem som taler: på en egen linje, eller som ord i en linje
 editor-direction = Sceneanvisning
-editor-direction-hint = Det som gjøres på scenen
+editor-direction-hint = Det som gjøres på scenen: på en egen linje, eller som ord i en linje
 editor-line-numbers = Nummer
-editor-line-numbers-hint = Nummerer avsnittene i dette stykket: hvordan de telles, fra hvilket nummer, hver hvor mange og på hvilken side; og si hva som sies om det markøren står i
+editor-line-numbers-hint = Nummerer disse linjene: hvordan de telles, fra hvilket nummer, hver hvor mange og på hvilken side; og si hva som sies om linjen markøren står i. Linjer som nummereres sammen med de samme innstillingene, telles som én, hva slags de enn er.
 editor-line-numbers-from = Nummerer fra
-editor-line-numbers-from-hint = Det første avsnittet som telles, får dette nummeret, og tellingen går videre fra det.
+editor-line-numbers-from-hint = Den første linjen som telles, får dette nummeret, og tellingen går videre fra den.
 editor-line-numbers-every = Vis et nummer hver
 editor-line-numbers-number = Et helt tall trengs.
-editor-line-this = Dette avsnittet
+editor-line-this = Denne linjen
 editor-line-number = Nummeret eller merket dens
 editor-line-number-placeholder = Telles som de andre
 editor-line-number-hint = 1234, 567a: vises alltid; linjene etter telles videre fra det.
@@ -45,7 +45,7 @@ editor-line-number-held = Talt, men vises ikke i dokumentet. Trykk for å gi den
 editor-line-margin = Ord i margen
 editor-line-margin-placeholder = Et versemål, en annen utgaves nummer
 editor-line-margin-hint = Vises i margen ved siden av det, overfor numrene; telles ikke.
-# Hvordan avsnittene i et stykke nummereres: se ADR 0040.
+# Hvordan linjene i en strekning nummereres: se ADR 0041.
 editor-numbering = Nummerering
 editor-numbering-none = Ikke nummerert
 editor-numbering-counted = Telt fra det første nummeret som er gitt
@@ -55,42 +55,35 @@ editor-line-numbers-side = Numrene på
 editor-side-layout = Siden oppsettet sier ({ $side })
 editor-side-left = Venstre
 editor-side-right = Høyre
-# Det første avsnittet som telles i stykket, er det markøren står i: nummeret dets er der tellingen begynner.
-editor-line-number-first-hint = Tellingen i stykket begynner her.
+# Den første linjen som telles, er den markøren står i: nummeret dens er der tellingen begynner.
+editor-line-number-first-hint = Tellingen begynner her.
 # Over et nummer i margen av teksten, som åpner et felt for det når det trykkes.
-editor-line-number-press = Nummeret til dette avsnittet: trykk for å endre det
+editor-line-number-press = Nummeret til denne linjen: trykk for å endre det
 
-## Numrene hører til det de nummererer (ADR 0040): Nummer-menyen tilbyr de
+## Numrene hører til det de nummererer (ADR 0041): Nummer-menyen tilbyr de
 ## tre, og hver sier hva den nummererer.
 editor-numbers = Nummer
-editor-numbers-hint = Nummerer linjene i et stykke eller avsnittene i en tekst, merk et sted i prosa, eller nummerer linjene på siden
-editor-numbers-passage = Nummerer linjene i dette stykket …
-editor-numbers-passage-hint = Linjene du skriver, telt av stykket: fra hvilket nummer, hver hvor mange, på hvilken side
-editor-numbers-paragraphs-hint = Avsnittene i denne teksten, eller de som er merket, talt: fra hvilket tall, hvor ofte, på hvilken side
-editor-numbers-paragraphs = Nummerer disse avsnittene …
+editor-numbers-hint = Nummerer linjene du skriver, merk et sted i prosa, eller nummerer linjene på siden
+editor-numbers-lines = Nummerer disse linjene …
+editor-numbers-lines-hint = Linjene i avsnittene der markøren står, eller i dem som er merket: fra hvilket nummer, hver hvor mange, på hvilken side
 editor-numbers-refmark-hint = Et sted i prosa, ved et vers, en side eller et nummer i en utgave: 3:16, 327a
 editor-numbers-page = Nummerer linjene på siden
 editor-numbers-page-hint = Hver linje på den trykte siden, nummerert i margen, i dette dokumentet og dem under det
 
-## Klammen til et stykke, til venstre for det, med navnet på familien; menyen
-## dens sier det som sies om stykket.
-editor-family-text = Nummerert tekst
-editor-family-quotation = Sitat
-editor-family-verse = Vers
-editor-family-script = Manus
-editor-family-glossary = Ordliste
-editor-family-list = Liste
-editor-family-code = Kode
-editor-family-break = Skille
-editor-family-draft = Kladd
-editor-passage-label-hint = { $family } · trykk for det som sies om stykket
-editor-passage-numbers = Nummer …
-editor-passage-numbers-hint = Hvordan linjene i dette stykket telles, fra hvilket nummer, hver hvor mange og på hvilken side
-editor-passage-select = Merk stykket
-editor-passage-to-text = Gjør det til tekst
-editor-passage-to-text-hint = Hvert avsnitt i stykket blir tekst, og stykket forsvinner
-editor-passage-split = Del stykket her
-editor-passage-split-hint = I to, foran avsnittet markøren står i; et tomt avsnitt med tekst står mellom de to
+## Klammen til venstre for avsnitt av ett slag som står sammen (et løp), med
+## navnet på slaget; menyen dens sier det som sies om dem.
+# Etter navnet på slaget, der linjene i løpet er nummerert: «Vers · nummerert».
+editor-bracket-numbered = nummerert
+editor-run-label-hint = { $kind } · trykk for det som sies om disse avsnittene
+editor-run-numbers = Nummer …
+editor-run-numbers-hint = Hvordan linjene her telles, fra hvilket nummer, hver hvor mange og på hvilken side
+editor-run-select = Merk disse avsnittene
+editor-run-to-text = Gjør det til tekst
+editor-run-to-text-hint = Avsnittene av dette slaget blir tekst; linjene deres, og alt annet, blir som de er
+editor-run-begin = Begynn et nytt løp her
+editor-run-begin-hint = Avsnittet markøren står i, begynner en egen klamme, selv om det foran er av samme slag
+editor-run-join = Slå sammen med løpet foran
+editor-run-join-hint = Disse avsnittene blir ett med dem av samme slag foran dem igjen
 editor-kinds-text = Tekst
 editor-kinds-quotation = Sitat
 editor-kinds-verse = Vers
@@ -142,11 +135,15 @@ editor-comment-hint = En kommentar til det som er merket
 editor-comment-element-hint = En kommentar til dette elementet; merk ord for å kommentere dem
 editor-parallel = To tekster side om side
 editor-parallel-hint = En original og dens oversettelse, hver sin tekst
+editor-page-break = Sideskift
+editor-page-break-hint = Det som følger, begynner på en ny side
+editor-column-break = Spalteskift
+editor-column-break-hint = Det som følger, begynner øverst i neste spalte, der oppsettet setter teksten i spalter
 editor-paragraph-kind = Slags avsnitt
 # Sies om knappen som viser hva slags avsnitt markøren står i.
 editor-paragraph-kind-now = Slags avsnitt: { $kind }
 
-## Menyen over slagene: slagene i stykket markøren står i, slagene for hånden,
+## Menyen over slagene: slagene som skrives med dem markøren står i, slagene for hånden,
 ## hele katalogen under «Mer …», og oppsettet som setter dem, nederst. Menyen
 ## over ordene, med slagene ord. Og et eget slag, i vinduet sitt.
 
@@ -160,7 +157,7 @@ editor-kinds-set-by = Satt slik «{ $format }» har dem
 editor-kinds-change-format = Endre oppsettet …
 editor-kinds-change-format-hint = Hvordan hvert slag settes i dette dokumentet
 editor-words = Ord
-editor-words-hint = Understreking, hevet skrift, kode; språket i et stykke, ord på et annet språk, tittelen på et verk, en term
+editor-words-hint = Understreking, hevet skrift, kode; språket i et stykke, ord på et annet språk, tittelen på et verk, en term, en taler i en linje
 editor-words-make = Lag et slag ord …
 # Først blant språkene ord på et annet språk kan være på: det teksten selv er på.
 editor-foreign-of-text = Språket i teksten

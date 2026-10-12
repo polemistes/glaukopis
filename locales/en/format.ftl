@@ -92,13 +92,17 @@ format-margin-top = Top
 format-margin-bottom = Bottom
 format-margin-left = Left
 format-margin-right = Right
+format-columns-heading = Columns
+format-columns = Columns
+format-columns-hint = The text is set in so many columns on the page; 1 for none. A column break in the text begins the next.
+format-column-gap = Gap between columns
 format-lengths-hint = Lengths are written with their unit: 2.5cm, 1in, 25mm, 12pt.
-## Numbers belong to what they number (ADR 0040): the lines of a numbered
-## passage are shown as the layout says where the passage does not; the
-## lines of the page are the layout's alone.
-format-numbers-hint = How the numbers of a numbered passage are shown, where the passage does not say otherwise; and whether the lines of the page are numbered.
+## Numbers belong to what they number (ADR 0041): the lines one numbers
+## are shown as the layout says where they do not say otherwise; the lines
+## of the page are the layout's alone.
+format-numbers-hint = How the numbers of lines you number are shown, where they do not say otherwise; and whether the lines of the page are numbered.
 format-verse-every = Show a number every
-format-verse-every-hint = Of the lines of a numbered passage: 5 shows 5, 10, 15
+format-verse-every-hint = Of the lines you number: 5 shows 5, 10, 15
 format-verse-side = Numbers on the
 format-side-left = Left
 format-side-right = Right
