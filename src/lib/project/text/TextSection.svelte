@@ -367,8 +367,9 @@
           ><span class="dot"></span>{kind.name}{#if doubled}<span
               class="doubled"
               title={t('parts-doubled')}><CircleOff size={10} /></span
-            >{/if}{#if placed}<span class="placed">· {placed}</span>{/if}</span
+            >{/if}</span
         >
+        {#if placed}<span class="tag placed">{placed}</span>{/if}
       {/if}
       {#if node.when}
         <span class="tag when"
@@ -843,11 +844,9 @@
     font-style: normal;
     color: var(--ink-3);
   }
-  .tag.kind .placed {
-    font-weight: 400;
-    font-style: italic;
-    letter-spacing: 0;
-    opacity: 0.85;
+  /* Where the kind puts the element in the document, beside the kind. */
+  .tag.placed {
+    margin: 0 10px 0 -4px;
   }
   .tag.kind .dot {
     width: 7px;
