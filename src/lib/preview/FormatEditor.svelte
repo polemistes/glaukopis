@@ -141,11 +141,14 @@
     return () => clearTimeout(timer);
   });
 
-  // The sample follows the changes, a moment behind.
+  // The sample follows the changes, a moment behind. Only the layout is
+  // followed: the pages shown are read without being followed, or every
+  // sample made would set off the next.
   $effect(() => {
     if (!format || !request) return;
     const snapshot = JSON.stringify($state.snapshot(format));
-    const timer = setTimeout(() => untrack(() => show(snapshot)), pages.length ? 700 : 100);
+    const delay = untrack(() => pages.length) ? 700 : 100;
+    const timer = setTimeout(() => untrack(() => show(snapshot)), delay);
     return () => clearTimeout(timer);
   });
 
@@ -1011,7 +1014,8 @@
           {:else if !pages.length}
             <div class="centre"><Spinner size={20} /></div>
           {:else}
-            {#each pages as url, i (url)}
+            <!-- By their place, so that a page made anew takes the place of the one before it and the scroll stays. -->
+            {#each pages as url, i (i)}
               <img src={url} alt={t('format-sample-page', { number: i + 1 })} draggable="false" />
             {/each}
           {/if}
