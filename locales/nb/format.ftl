@@ -13,43 +13,18 @@ format-kind-poetry = Lyrikk
 
 ## Redigeringen av et oppsett.
 
-format-editor = Oppsett
 format-name = Navnet på oppsettet
 # Navnet et eget oppsett først får, laget av navnet på oppsettet det lages av.
 format-name-changed = { $name }, endret
-format-sections = Delene av oppsettet
-format-sample-page = Prøveside { $number }
-format-bundled = Oppsettene som følger med Glaukopis, forblir som de er. Endringene dine lagres som et eget oppsett.
-format-delete = Slett dette oppsettet
-format-save-own = Lagre som mitt eget
 format-saved = «{ $name }» er lagret blant dine egne oppsett
-format-read-failed = Oppsettet kunne ikke leses.
-format-sample-failed = Prøven kunne ikke lages.
 format-save-failed = Oppsettet kunne ikke lagres.
 format-delete-failed = Oppsettet kunne ikke slettes.
 format-delete-title = Slette oppsettet «{ $name }»?
 format-delete-message = Elementer som bruker det, vil bruke det generelle manusoppsettet i stedet.
 format-delete-confirm = Slett oppsettet
-format-leave-title = Gå ut uten å lagre?
-format-leave-message = Endringene du har gjort i oppsettet, går tapt.
-format-leave-confirm = Gå ut
-format-leave-cancel = Fortsett å redigere
 
 ## Delene av et oppsett, slik de velges til venstre.
 
-format-section-page = Side
-format-section-type = Skrift og avstand
-format-section-paragraphs = Avsnitt
-format-section-headings = Overskrifter
-format-section-title = Tittel og sammendrag
-format-section-quotations = Sitater
-format-section-kinds = Slag avsnitt og ord
-format-section-numbers = Nummer
-format-section-notes = Noter
-format-section-bibliography = Litteraturliste
-format-section-figures = Figurer, tabeller, ligninger
-format-section-margins = Sidetall og topptekst
-format-section-about = Om dette oppsettet
 
 ## Ord som står i flere deler.
 
@@ -169,7 +144,6 @@ format-title-keywords-label = Ord foran nøkkelordene
 
 ## Sitater, noter og litteraturlisten.
 
-format-quotations = Blokksitater
 format-quote-indent-left = Innrykk til venstre
 format-quote-indent-right = Innrykk til høyre
 format-quote-when = Når et sitat settes som blokksitat
@@ -186,9 +160,6 @@ format-bibliography-title-hint = Litteratur, Referanser, Kilder
 format-bibliography-new-page = Begynner på ny side
 format-bibliography-hanging-indent = Hengende innrykk
 format-bibliography-entry-spacing = Luft mellom oppføringene
-format-bibliography-style = Referansestil
-format-bibliography-style-hint = Den som hører til dette oppsettet; den gjelder der malen ikke nevner noen
-format-bibliography-style-none = Ingen bestemt
 
 ## Slagene avsnitt og ord: hvordan hvert skiller seg fra slaget det bygger
 ## på. Radene er også dem i vinduet for et eget slag; det som ikke sies, er

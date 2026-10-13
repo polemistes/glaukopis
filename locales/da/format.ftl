@@ -13,42 +13,18 @@ format-kind-poetry = Lyrik
 
 ## The format editor.
 
-format-editor = Dokumentformat
 format-name = Formatets navn
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }, ændret
-format-sections = Formatets dele
-format-sample-page = Prøveside { $number }
-format-bundled = Formater, der følger med Glaukopis, bliver, som de er. Dine ændringer gemmes som et format af dine egne.
-format-delete = Slet dette format
-format-save-own = Gem som mit eget
 format-saved = »{ $name }« er gemt blandt dine egne formater
-format-read-failed = Formatet kunne ikke læses.
-format-sample-failed = Prøven kunne ikke laves.
 format-save-failed = Formatet kunne ikke gemmes.
 format-delete-failed = Formatet kunne ikke slettes.
 format-delete-title = Slet formatet »{ $name }«?
 format-delete-message = Kort, der bruger det, vil bruge det almindelige manuskriptformat i stedet.
 format-delete-confirm = Slet formatet
-format-leave-title = Forlad uden at gemme?
-format-leave-message = De ændringer, du har lavet i formatet, går tabt.
-format-leave-confirm = Forlad
-format-leave-cancel = Rediger videre
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = Side
-format-section-type = Skrift og afstand
-format-section-paragraphs = Afsnit
-format-section-headings = Overskrifter
-format-section-title = Titel og resumé
-format-section-quotations = Citater
-format-section-kinds = Arter af afsnit og ord
-format-section-notes = Noter
-format-section-bibliography = Litteraturliste
-format-section-figures = Figurer, tabeller, ligninger
-format-section-margins = Sidetal og sidehoved
-format-section-about = Om dette format
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = Ord foran nøgleordene
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Citater sat for sig
 format-quote-indent-left = Indrykning til venstre
 format-quote-indent-right = Indrykning til højre
 format-quote-when = Hvornår et citat sættes for sig
@@ -170,9 +145,6 @@ format-bibliography-title-hint = Litteratur, Referencer, Anvendt litteratur
 format-bibliography-new-page = Begynder på en ny side
 format-bibliography-hanging-indent = Hængende indrykning
 format-bibliography-entry-spacing = Luft mellem posterne
-format-bibliography-style = Referencestil
-format-bibliography-style-hint = Den, dette format hører sammen med; den tages i brug, når formatet vælges
-format-bibliography-style-none = Ingen bestemt
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

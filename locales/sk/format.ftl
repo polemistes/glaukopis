@@ -13,42 +13,18 @@ format-kind-poetry = Poézia
 
 ## The format editor.
 
-format-editor = Formát dokumentu
 format-name = Názov formátu
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }, zmenený
-format-sections = Časti formátu
-format-sample-page = Ukážková strana { $number }
-format-bundled = Formáty, ktoré prichádzajú s Glaukopisom, ostávajú, ako sú. Vaše zmeny sa uložia ako váš vlastný formát.
-format-delete = Odstrániť tento formát
-format-save-own = Uložiť ako vlastný
 format-saved = „{ $name }“ je uložený medzi vašimi vlastnými formátmi
-format-read-failed = Formát sa nepodarilo prečítať.
-format-sample-failed = Ukážku sa nepodarilo vytvoriť.
 format-save-failed = Formát sa nepodarilo uložiť.
 format-delete-failed = Formát sa nepodarilo odstrániť.
 format-delete-title = Odstrániť formát „{ $name }“?
 format-delete-message = Mapy, ktoré ho používajú, budú namiesto neho používať všeobecný formát rukopisu.
 format-delete-confirm = Odstrániť formát
-format-leave-title = Odísť bez uloženia?
-format-leave-message = Zmeny, ktoré ste vo formáte urobili, sa stratia.
-format-leave-confirm = Odísť
-format-leave-cancel = Pokračovať v úpravách
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = Strana
-format-section-type = Písmo a riadkovanie
-format-section-paragraphs = Odseky
-format-section-headings = Nadpisy
-format-section-title = Názov a abstrakt
-format-section-quotations = Citáty
-format-section-kinds = Druhy odsekov a slov
-format-section-notes = Poznámky
-format-section-bibliography = Bibliografia
-format-section-figures = Vyobrazenia, tabuľky, rovnice
-format-section-margins = Čísla strán a živé záhlavie
-format-section-about = O tomto formáte
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = Slovo pred kľúčovými slovami
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Citáty oddelené od textu
 format-quote-indent-left = Odsadenie vľavo
 format-quote-indent-right = Odsadenie vpravo
 format-quote-when = Kedy sa citát oddelí
@@ -170,9 +145,6 @@ format-bibliography-title-hint = Bibliografia, Literatúra, Citovaná literatúr
 format-bibliography-new-page = Začína na novej strane
 format-bibliography-hanging-indent = Predsadenie
 format-bibliography-entry-spacing = Medzera medzi záznamami
-format-bibliography-style = Citačný štýl
-format-bibliography-style-hint = Ten, ku ktorému tento formát patrí; vezme sa pri voľbe formátu
-format-bibliography-style-none = Žiadny konkrétny
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

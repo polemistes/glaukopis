@@ -20,6 +20,7 @@
   } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
+  import { lookUi } from '$lib/look/look.svelte';
   import { documents } from './documents.svelte';
   import { t } from '$lib/i18n';
   import { countWords, documentMark, leanDocument } from '$lib/project/model/document';
@@ -466,13 +467,13 @@
 
 <aside class="preview" aria-label={t('preview')}>
   <header>
-    <!-- The template, the layout and the style in use; the window of settings opens from them. -->
+    <!-- The template, the layout and the style in use; the look of the document opens from them. -->
     <button
       type="button"
       class="in-use"
-      aria-label={t('document-window-menu')}
-      title={t('document-window-menu')}
-      onclick={openSettings}
+      aria-label={t('look-open')}
+      title={t('look-open')}
+      onclick={() => lookUi.open()}
     >
       <span class="small">{t('preview-made-by')}</span>
       <span class="names truncate">{inUse.join(' · ')}</span>

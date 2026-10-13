@@ -113,3 +113,28 @@
 .settings .hint.top {
   margin: 0 0 12px;
 }
+/* Where the value of the row above comes from, where it is not as it first
+   was: "changed here · take Manuscript's again". */
+.settings .from {
+  margin: -1px 0 0;
+  padding: 2px 0 5px;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-xs);
+  color: var(--accent-strong);
+  line-height: 1.4;
+}
+.settings .row:has(+ .from) {
+  border-bottom: none;
+}
+.settings .from .again {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.settings .from .again:hover {
+  color: var(--ink);
+}

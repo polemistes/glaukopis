@@ -1,4 +1,4 @@
-# Layouts, which the files and the code call formats: their kinds, and the editor of a layout.
+# Layouts, which the files and the code call formats: their kinds, and the rows by which their looks are set in the look of a document.
 
 ## The kinds of document layout, as the layouts are grouped by them.
 
@@ -11,45 +11,17 @@ format-kind-fiction = Fiction
 format-kind-stage = Stage and screen
 format-kind-poetry = Poetry
 
-## The layout editor.
+## Layouts of the writer's own, kept from the changes of a document.
 
-format-editor = Layout
 format-name = Name of the layout
 # The name a layout of one's own is first given, made from that of the layout it is made from.
 format-name-changed = { $name }, changed
-format-sections = Parts of the layout
-format-sample-page = Sample page { $number }
-format-bundled = Layouts that come with Glaukopis stay as they are. Your changes are saved as a layout of your own.
-format-delete = Delete this layout
-format-save-own = Save as my own
 format-saved = “{ $name }” is saved among your own layouts
-format-read-failed = The layout could not be read.
-format-sample-failed = The sample could not be made.
 format-save-failed = The layout could not be saved.
 format-delete-failed = The layout could not be deleted.
 format-delete-title = Delete the layout “{ $name }”?
 format-delete-message = Elements that use it will use the general manuscript layout instead.
 format-delete-confirm = Delete layout
-format-leave-title = Leave without saving?
-format-leave-message = The changes you have made to the layout will be lost.
-format-leave-confirm = Leave
-format-leave-cancel = Go on editing
-
-## The parts of a layout, as they are chosen at the left.
-
-format-section-page = Page
-format-section-type = Type and spacing
-format-section-paragraphs = Paragraphs
-format-section-headings = Headings
-format-section-title = Title and abstract
-format-section-quotations = Quotations
-format-section-kinds = Kinds of paragraph and words
-format-section-numbers = Numbers
-format-section-notes = Notes
-format-section-bibliography = Bibliography
-format-section-figures = Figures, tables, equations
-format-section-margins = Page numbers and running head
-format-section-about = About this layout
 
 ## Words that stand in several parts.
 
@@ -112,7 +84,7 @@ format-line-numbers-hint = As some journals ask for review
 
 ## Type and spacing, and paragraphs.
 
-format-typeface = Typeface
+format-typeface = Font
 format-typeface-hint = Where it is not installed, the nearest is used in the preview
 format-hyphenate = Divide words at the ends of lines
 format-paragraphs = Paragraphs are told apart by
@@ -172,7 +144,6 @@ format-title-keywords-label = Word before the keywords
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Quotations set off from the text
 format-quote-indent-left = Indent on the left
 format-quote-indent-right = Indent on the right
 format-quote-when = When a quotation is set off
@@ -189,9 +160,6 @@ format-bibliography-title-hint = Bibliography, References, Works Cited
 format-bibliography-new-page = Begins on a new page
 format-bibliography-hanging-indent = Hanging indent
 format-bibliography-entry-spacing = Space between entries
-format-bibliography-style = Reference style
-format-bibliography-style-hint = The one this layout goes with; it holds where the template names none
-format-bibliography-style-none = None in particular
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

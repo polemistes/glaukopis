@@ -1,47 +1,14 @@
 /**
- * The editor of a document format, as it is asked for from anywhere in the
- * view of a project: from the preview, and from the tools for writing,
- * which open it at the look of a kind. The view mounts it once
- * (`ProjectView.svelte`).
- *
- * With it, the rows by which the look of a kind of paragraph or of words is
- * set, which the editor and the dialog for a kind of the writer's own share
- * (`PassageKindDialog.svelte`): what is not said is as the kind it is based
- * on has it. See ADR 0029.
+ * The rows by which the look of a kind of paragraph or of words is set,
+ * which the panel of the look of a document and the dialog for a kind of
+ * the writer's own share (`LookPanel.svelte`, `PassageKindDialog.svelte`):
+ * what is not said is as the kind it is based on has it. See ADR 0029.
  */
 
 import type { DocumentFormat, KindFamily, Look, ResolvedLook } from '$lib/api/documents';
 import { points } from '$lib/editor/kinds';
 import { t } from '$lib/i18n';
 import { lengthOk, rowsOf, type Choices, type Row } from '$lib/ui/settings/rows';
-
-export interface FormatEditorRequest {
-  /** The format to begin from. */
-  id: string;
-  /** The element whose document the format is shown on; the caller gives the element the format that is saved. */
-  at?: string;
-  /** The part of the format to open at: `kinds`, `page`, … */
-  section?: string;
-  /** The kind whose look is to be in view, in the part of the kinds. */
-  kind?: string;
-  /** Called with the id of the format as saved. */
-  onsaved?: (id: string) => void;
-}
-
-class FormatEditorUi {
-  /** What the editor is asked for; nothing while it is closed. */
-  request = $state.raw<FormatEditorRequest | null>(null);
-
-  open(request: FormatEditorRequest) {
-    this.request = request;
-  }
-
-  close() {
-    this.request = null;
-  }
-}
-
-export const formatEditorUi = new FormatEditorUi();
 
 // ---- the rows of a look ----
 
@@ -106,9 +73,15 @@ export function setKindLook(format: DocumentFormat, id: string, key: keyof Look,
 export function lookRows<T>(
   family: KindFamily,
   reach: LookReach<T>,
-  options: { sign?: boolean; resolved?: ResolvedLook } = {},
+  options: {
+    sign?: boolean;
+    resolved?: ResolvedLook;
+    /** Where each measure is in what the rows set, for the line that says where its value comes from. */
+    path?: (key: keyof Look) => string;
+  } = {},
 ): Row<T>[] {
   const { text, number, choice } = rowsOf<T>();
+  const path = (key: keyof Look) => (options.path ? { path: options.path(key) } : {});
   const { resolved } = options;
   const asBase = t('format-as-the-base');
   /** "As the base (…)", with what the base comes to, where that is known. */
@@ -133,7 +106,7 @@ export function lookRows<T>(
         ['yes', t('format-yes')],
         ['no', t('format-no')],
       ],
-      { hint },
+      { hint, ...path(key) },
     );
   /** One of a few words, or as the base. */
   const oneOf = (label: string, key: keyof Look, choices: Choices) =>
@@ -155,6 +128,7 @@ export function lookRows<T>(
         ],
         ...choices,
       ],
+      path(key),
     );
   /** A length with its unit, or nothing for as the base. */
   const length = (label: string, key: keyof Look, hint?: string) =>
@@ -164,7 +138,7 @@ export function lookRows<T>(
         get: (target) => String(get(target, key) ?? ''),
         set: (target, value) => reach.set(target, key, value.trim() || undefined),
       },
-      { placeholder: resolved ? String(resolved[key]) : asBase, hint },
+      { placeholder: resolved ? String(resolved[key]) : asBase, hint, ...path(key) },
     );
 
   const italic = yesNo(t('format-italic'), 'italic');
@@ -188,6 +162,7 @@ export function lookRows<T>(
       nullable: true,
       // The field is narrow: the size as it will stand, and no more, as the lengths have it.
       blank: resolved && resolved.size > 0 ? String(resolved.size) : t('format-as-the-base-blank'),
+      ...path('size'),
     },
   );
   const monospace = yesNo(t('format-equal-width'), 'monospace', t('format-equal-width-hint'));
@@ -225,6 +200,7 @@ export function lookRows<T>(
               hint: t('format-break-text-hint'),
               placeholder: resolved?.text || asBase,
               literal: true,
+              ...path('text'),
             },
           ),
         ]

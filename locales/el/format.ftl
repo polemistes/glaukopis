@@ -13,42 +13,18 @@ format-kind-poetry = Ποίηση
 
 ## The format editor.
 
-format-editor = Μορφή εγγράφου
 format-name = Όνομα της μορφής
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }, αλλαγμένη
-format-sections = Μέρη της μορφής
-format-sample-page = Δείγμα σελίδας { $number }
-format-bundled = Οι μορφές που έρχονται με το Glaukopis μένουν όπως είναι. Οι αλλαγές σας αποθηκεύονται ως δική σας μορφή.
-format-delete = Διαγραφή αυτής της μορφής
-format-save-own = Αποθήκευση ως δικής μου
 format-saved = Η «{ $name }» αποθηκεύτηκε στις δικές σας μορφές
-format-read-failed = Η μορφή δεν διαβάζεται.
-format-sample-failed = Το δείγμα δεν μπόρεσε να φτιαχτεί.
 format-save-failed = Η μορφή δεν μπόρεσε να αποθηκευτεί.
 format-delete-failed = Η μορφή δεν μπόρεσε να διαγραφεί.
 format-delete-title = Διαγραφή της μορφής «{ $name }»;
 format-delete-message = Οι χάρτες που τη χρησιμοποιούν θα χρησιμοποιούν αντ’ αυτής τη γενική μορφή χειρογράφου.
 format-delete-confirm = Διαγραφή μορφής
-format-leave-title = Έξοδος χωρίς αποθήκευση;
-format-leave-message = Οι αλλαγές που κάνατε στη μορφή θα χαθούν.
-format-leave-confirm = Έξοδος
-format-leave-cancel = Συνέχεια της επεξεργασίας
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = Σελίδα
-format-section-type = Γραμματοσειρά και διάστιχο
-format-section-paragraphs = Παράγραφοι
-format-section-headings = Επικεφαλίδες
-format-section-title = Τίτλος και περίληψη
-format-section-quotations = Παραθέματα
-format-section-kinds = Είδη παραγράφων και λέξεων
-format-section-notes = Σημειώσεις
-format-section-bibliography = Βιβλιογραφία
-format-section-figures = Σχήματα, πίνακες, εξισώσεις
-format-section-margins = Αριθμοί σελίδων και κεφαλίδα
-format-section-about = Για αυτή τη μορφή
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = Λέξη πριν από τις λέξεις-κλ�
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Παραθέματα χωριστά από το κείμενο
 format-quote-indent-left = Εσοχή αριστερά
 format-quote-indent-right = Εσοχή δεξιά
 format-quote-when = Πότε ένα παράθεμα μπαίνει χωριστά
@@ -170,9 +145,6 @@ format-bibliography-title-hint = Βιβλιογραφία, Βιβλιογραφ�
 format-bibliography-new-page = Αρχίζει σε νέα σελίδα
 format-bibliography-hanging-indent = Προεξοχή πρώτης γραμμής
 format-bibliography-entry-spacing = Διάστημα ανάμεσα στις εγγραφές
-format-bibliography-style = Στυλ παραπομπών
-format-bibliography-style-hint = Αυτό που συνοδεύει τη μορφή· επιλέγεται μαζί της
-format-bibliography-style-none = Κανένα συγκεκριμένο
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

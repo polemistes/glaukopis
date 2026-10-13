@@ -8,14 +8,13 @@
 import type { Project } from '$lib/project/model/project.svelte';
 
 /** The parts of the window, as they stand down its left. */
-export type DocumentSection =
-  'template' | 'details' | 'parts' | 'layout' | 'language' | 'checklist';
+export type DocumentSection = 'template' | 'details' | 'parts' | 'look' | 'language' | 'checklist';
 
 export const DOCUMENT_SECTIONS: readonly DocumentSection[] = [
   'template',
   'details',
   'parts',
-  'layout',
+  'look',
   'language',
   'checklist',
 ];

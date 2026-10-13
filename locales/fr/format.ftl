@@ -13,42 +13,18 @@ format-kind-poetry = Poésie
 
 ## The format editor.
 
-format-editor = Format du document
 format-name = Nom du format
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }, modifié
-format-sections = Parties du format
-format-sample-page = Page d’exemple { $number }
-format-bundled = Les formats fournis avec Glaukopis restent tels quels. Vos modifications sont enregistrées comme un format à vous.
-format-delete = Supprimer ce format
-format-save-own = Enregistrer comme format à moi
 format-saved = « { $name } » est enregistré parmi vos formats
-format-read-failed = Le format n’a pas pu être lu.
-format-sample-failed = L’exemple n’a pas pu être produit.
 format-save-failed = Le format n’a pas pu être enregistré.
 format-delete-failed = Le format n’a pas pu être supprimé.
 format-delete-title = Supprimer le format « { $name } » ?
 format-delete-message = Les cartes qui l’utilisent prendront le format général de manuscrit à la place.
 format-delete-confirm = Supprimer le format
-format-leave-title = Quitter sans enregistrer ?
-format-leave-message = Les modifications que vous avez faites au format seront perdues.
-format-leave-confirm = Quitter
-format-leave-cancel = Continuer à modifier
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = Page
-format-section-type = Caractères et interligne
-format-section-paragraphs = Paragraphes
-format-section-headings = Titres
-format-section-title = Titre et résumé
-format-section-quotations = Citations
-format-section-kinds = Types de paragraphe et de mots
-format-section-notes = Notes
-format-section-bibliography = Bibliographie
-format-section-figures = Figures, tableaux, équations
-format-section-margins = Numéros de page et titre courant
-format-section-about = À propos de ce format
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = Mot devant les mots-clés
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Citations détachées du texte
 format-quote-indent-left = Retrait à gauche
 format-quote-indent-right = Retrait à droite
 format-quote-when = Quand une citation est détachée
@@ -170,9 +145,6 @@ format-bibliography-title-hint = Bibliographie, Références, Ouvrages cités
 format-bibliography-new-page = Commence sur une nouvelle page
 format-bibliography-hanging-indent = Retrait suspendu
 format-bibliography-entry-spacing = Espace entre les notices
-format-bibliography-style = Style de référence
-format-bibliography-style-hint = Celui qui va avec ce format ; il est pris quand le format est choisi
-format-bibliography-style-none = Aucun en particulier
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

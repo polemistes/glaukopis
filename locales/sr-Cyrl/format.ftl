@@ -13,42 +13,18 @@ format-kind-poetry = Поезија
 
 ## The format editor.
 
-format-editor = Формат документа
 format-name = Назив формата
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }, измењен
-format-sections = Делови формата
-format-sample-page = Пробна страна { $number }
-format-bundled = Формати који долазе с програмом Glaukopis остају какви јесу. Ваше измене чувају се као ваш сопствени формат.
-format-delete = Обриши овај формат
-format-save-own = Сачувај као мој
 format-saved = „{ $name }“ је сачуван међу вашим форматима
-format-read-failed = Формат није могао да се прочита.
-format-sample-failed = Проба није могла да се направи.
 format-save-failed = Формат није могао да се сачува.
 format-delete-failed = Формат није могао да се обрише.
 format-delete-title = Обрисати формат „{ $name }“?
 format-delete-message = Мапе које га користе користиће уместо њега општи формат рукописа.
 format-delete-confirm = Обриши формат
-format-leave-title = Изаћи без чувања?
-format-leave-message = Измене које сте направили у формату биће изгубљене.
-format-leave-confirm = Изађи
-format-leave-cancel = Настави уређивање
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = Страна
-format-section-type = Слово и проред
-format-section-paragraphs = Пасуси
-format-section-headings = Наслови
-format-section-title = Наслов и сажетак
-format-section-quotations = Наводи
-format-section-kinds = Врсте пасуса и речи
-format-section-notes = Напомене
-format-section-bibliography = Библиографија
-format-section-figures = Илустрације, табеле, једначине
-format-section-margins = Бројеви страна и живо заглавље
-format-section-about = О овом формату
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = Реч испред кључних речи
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Наводи издвојени из текста
 format-quote-indent-left = Увлачење слева
 format-quote-indent-right = Увлачење здесна
 format-quote-when = Кад се навод издваја
@@ -170,9 +145,6 @@ format-bibliography-title-hint = Библиографија, Литератур�
 format-bibliography-new-page = Почиње на новој страни
 format-bibliography-hanging-indent = Висеће увлачење
 format-bibliography-entry-spacing = Размак између јединица
-format-bibliography-style = Стил цитирања
-format-bibliography-style-hint = Онај уз који овај формат иде; узима се кад се формат изабере
-format-bibliography-style-none = Ниједан посебно
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

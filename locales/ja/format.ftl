@@ -13,42 +13,18 @@ format-kind-poetry = 詩
 
 ## The format editor.
 
-format-editor = 文書の書式
 format-name = 書式の名前
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }（変更）
-format-sections = 書式の項目
-format-sample-page = 見本ページ{ $number }
-format-bundled = Glaukopisに付属の書式はそのまま保たれます。変更は独自の書式として保存されます。
-format-delete = この書式を削除
-format-save-own = 独自の書式として保存
 format-saved = 「{ $name }」を独自の書式に保存しました
-format-read-failed = 書式を読み込めませんでした。
-format-sample-failed = 見本を作れませんでした。
 format-save-failed = 書式を保存できませんでした。
 format-delete-failed = 書式を削除できませんでした。
 format-delete-title = 書式「{ $name }」を削除しますか？
 format-delete-message = この書式を使っているマップは、代わりに一般的な原稿の書式を使います。
 format-delete-confirm = 書式を削除
-format-leave-title = 保存せずに閉じますか？
-format-leave-message = 書式に加えた変更は失われます。
-format-leave-confirm = 閉じる
-format-leave-cancel = 編集を続ける
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = ページ
-format-section-type = 文字と行間
-format-section-paragraphs = 段落
-format-section-headings = 見出し
-format-section-title = タイトルと要旨
-format-section-quotations = 引用文
-format-section-kinds = 段落と語句の種類
-format-section-notes = 注
-format-section-bibliography = 参考文献
-format-section-figures = 図・表・数式
-format-section-margins = ページ番号と柱
-format-section-about = この書式について
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = キーワードの前の語
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = 本文から離して組む引用文
 format-quote-indent-left = 左の字下げ
 format-quote-indent-right = 右の字下げ
 format-quote-when = 引用文を離して組むとき
@@ -170,9 +145,6 @@ format-bibliography-title-hint = 参考文献、引用文献、文献一覧
 format-bibliography-new-page = 改ページして始める
 format-bibliography-hanging-indent = ぶら下げインデント
 format-bibliography-entry-spacing = 項目間のスペース
-format-bibliography-style = 引用スタイル
-format-bibliography-style-hint = この書式に合うもの。書式を選ぶと適用されます
-format-bibliography-style-none = 特になし
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

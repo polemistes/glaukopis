@@ -13,42 +13,18 @@ format-kind-poetry = Lyrikk
 
 ## The format editor.
 
-format-editor = Dokumentformat
 format-name = Namnet på formatet
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }, endra
-format-sections = Delane av formatet
-format-sample-page = Prøveside { $number }
-format-bundled = Formata som følgjer med Glaukopis, blir verande som dei er. Endringane dine blir lagra som eit eige format.
-format-delete = Slett dette formatet
-format-save-own = Lagre som mitt eige
 format-saved = «{ $name }» er lagra blant dine eigne format
-format-read-failed = Formatet kunne ikkje lesast.
-format-sample-failed = Prøven kunne ikkje lagast.
 format-save-failed = Formatet kunne ikkje lagrast.
 format-delete-failed = Formatet kunne ikkje slettast.
 format-delete-title = Slette formatet «{ $name }»?
 format-delete-message = Kart som bruker det, vil bruke det generelle manusformatet i staden.
 format-delete-confirm = Slett formatet
-format-leave-title = Gå ut utan å lagre?
-format-leave-message = Endringane du har gjort i formatet, går tapt.
-format-leave-confirm = Gå ut
-format-leave-cancel = Hald fram med å redigere
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = Side
-format-section-type = Skrift og avstand
-format-section-paragraphs = Avsnitt
-format-section-headings = Overskrifter
-format-section-title = Tittel og samandrag
-format-section-quotations = Sitat
-format-section-kinds = Slag avsnitt og ord
-format-section-notes = Notar
-format-section-bibliography = Litteraturliste
-format-section-figures = Figurar, tabellar, likningar
-format-section-margins = Sidetal og topptekst
-format-section-about = Om dette formatet
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = Ord framfor nøkkelorda
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Blokksitat
 format-quote-indent-left = Innrykk til venstre
 format-quote-indent-right = Innrykk til høgre
 format-quote-when = Når eit sitat blir sett som blokksitat
@@ -170,9 +145,6 @@ format-bibliography-title-hint = Litteratur, Referansar, Kjelder
 format-bibliography-new-page = Byrjar på ny side
 format-bibliography-hanging-indent = Hengande innrykk
 format-bibliography-entry-spacing = Luft mellom oppføringane
-format-bibliography-style = Referansestil
-format-bibliography-style-hint = Den som høyrer til dette formatet; den blir teken i bruk når formatet blir valt
-format-bibliography-style-none = Ingen bestemt
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

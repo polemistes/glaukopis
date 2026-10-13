@@ -18,7 +18,7 @@ document-window-from-with = From { $name } ({ $what })
 document-window-section-template = Template
 document-window-section-details = Details
 document-window-section-parts = Parts
-document-window-section-layout = Layout and citations
+document-window-section-look = Look
 document-window-section-language = Language
 document-window-section-checklist = Checklist
 
@@ -86,13 +86,14 @@ document-window-parts-make = Make one
 # On the second element of a kind a document has one of.
 document-window-parts-doubled = Only the first is used
 
-## The layout and the citations.
+## The look: the layout and the citations, which are chosen and set in the
+## panel beside the preview, where the rest of the look is.
 
+document-window-look-hint = How the pages look, and how the document cites, are set in Look, the panel beside the preview: the layout and the reference style, the font, the page, the looks of the kinds.
+document-window-look-now = Layout: { $layout } · Reference style: { $style }
+document-window-look-open = Open Look
 document-window-layout = Layout
-document-window-layout-hint = How the page looks: page, type, spacing, headings, the looks of the kinds
-document-window-layout-change = Change this layout…
 document-window-style = Reference style
-document-window-style-hint = How citations and the bibliography are written
 document-window-style-change = Change this reference style…
 
 ## The language.

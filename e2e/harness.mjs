@@ -552,7 +552,7 @@ export class App {
     if (section) await this.documentSection(section);
   }
 
-  /** Turns to a part of the open document settings: "Template", "Details", "Parts", "Layout and citations", "Language", "Checklist". */
+  /** Turns to a part of the open document settings: "Template", "Details", "Parts", "Look", "Language", "Checklist". */
   async documentSection(section) {
     await this.clickText('dialog[open] .window nav button', section);
     await this.waitForText('dialog[open] .window .settings h3', section, 3000);
@@ -600,6 +600,75 @@ export class App {
     await this.clickText('dialog[open] footer button', save ? 'Save' : 'Cancel');
     await this.waitGone('dialog[open] .window nav', 5000);
     await sleep(150);
+  }
+
+  // ---- the look of a document, in the panel at the side (ADR 0042) ----
+
+  /** Opens the look of the document the preview shows by Ctrl+Shift+A, at a part named as its chips name it. */
+  async openLook(section) {
+    if (!(await this.exists('.side .look'))) await this.keys(['Control', 'Shift', 'a']);
+    await this.waitFor('.side .look', 5000);
+    await this.waitFor('.side .look .chips, .side .look .finds', 15000);
+    await sleep(200);
+    if (section) await this.lookSection(section);
+  }
+
+  /** Turns to a part of the look: "Type", "Page", "Kinds", "Numbers"… */
+  async lookSection(section) {
+    await this.exec(`const q = document.querySelector('.side .look .search input'); if (q.value) { q.value = ''; q.dispatchEvent(new Event('input', { bubbles: true })); }`);
+    await this.waitFor('.side .look .chips', 3000);
+    await this.clickText('.side .look .chips button', section);
+    await sleep(200);
+  }
+
+  /** A row of the look, found by the words of its label, as a script finds it in the page: an expression. */
+  lookRow(label) {
+    return `Array.from(document.querySelectorAll('.side .look .row')).find((r) => r.querySelector('.what')?.firstChild?.textContent.trim() === ${JSON.stringify(label)})`;
+  }
+
+  /** Chooses in a chooser of the look, found by the words of its label, the value given. Says whether it was offered. */
+  async lookChoose(label, value) {
+    return this.exec(
+      `const row = ${this.lookRow(label)};
+       const s = row?.querySelector('select');
+       if (!s) throw new Error('no chooser labelled ' + arguments[0]);
+       const offered = Array.from(s.options).some((o) => o.value === arguments[1]);
+       if (!offered) {
+         const o = document.createElement('option');
+         o.value = arguments[1];
+         o.textContent = arguments[1];
+         s.append(o);
+       }
+       s.value = arguments[1];
+       s.dispatchEvent(new Event('change', { bubbles: true }));
+       return offered;`,
+      label,
+      value,
+    );
+  }
+
+  /** What a chooser of the look holds. */
+  async lookChosen(label) {
+    return this.exec(`return ${this.lookRow(label)}?.querySelector('select')?.value ?? null`);
+  }
+
+  /** Writes into the field of a row of the look, in place of what it holds, as typing does. */
+  async lookWrite(label, value) {
+    await this.exec(
+      `const i = ${this.lookRow(label)}?.querySelector('input, textarea');
+       if (!i) throw new Error('no field labelled ' + arguments[0]);
+       if (i.type === 'checkbox') { if (i.checked !== arguments[1]) i.click(); return; }
+       i.value = arguments[1];
+       i.dispatchEvent(new Event('input', { bubbles: true }));
+       i.dispatchEvent(new Event('change', { bubbles: true }));`,
+      label,
+      value,
+    );
+  }
+
+  /** The line at the top of the look: "Template → Layout · 2 changes → Style". */
+  async lookMap() {
+    return this.exec(`return document.querySelector('.side .look .map')?.textContent.replace(/\\s+/g, ' ').trim() ?? ''`);
   }
 
   async pageErrors() {

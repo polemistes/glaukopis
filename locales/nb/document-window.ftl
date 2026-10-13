@@ -18,7 +18,7 @@ document-window-from-with = Fra { $name } ({ $what })
 document-window-section-template = Mal
 document-window-section-details = Opplysninger
 document-window-section-parts = Deler
-document-window-section-layout = Oppsett og kildehenvisninger
+document-window-section-look = Utseende
 document-window-section-language = Språk
 document-window-section-checklist = Sjekkliste
 
@@ -85,13 +85,14 @@ document-window-parts-make = Lag en
 # På det andre elementet av et slag et dokument har ett av.
 document-window-parts-doubled = Bare det første brukes
 
-## Oppsettet og kildehenvisningene.
+## Utseendet: oppsettet og kildehenvisningene, som velges og stilles inn i
+## panelet ved siden av forhåndsvisningen.
 
+document-window-look-hint = Hvordan sidene ser ut, og hvordan dokumentet henviser til kilder, stilles inn i Utseende, panelet ved siden av forhåndsvisningen: oppsettet og referansestilen, skriften, siden, hvordan slagene settes.
+document-window-look-now = Oppsett: { $layout } · Referansestil: { $style }
+document-window-look-open = Åpne Utseende
 document-window-layout = Oppsett
-document-window-layout-hint = Hvordan siden ser ut: side, skrift, avstand, overskrifter, hvordan slagene settes
-document-window-layout-change = Endre dette oppsettet …
 document-window-style = Referansestil
-document-window-style-hint = Hvordan kildehenvisningene og litteraturlisten skrives
 document-window-style-change = Endre denne referansestilen …
 
 ## Språket.

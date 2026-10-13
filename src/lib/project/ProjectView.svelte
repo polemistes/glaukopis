@@ -117,10 +117,10 @@
   import SideTabs, { type SideKind } from './SideTabs.svelte';
   import MapText from './text/MapText.svelte';
   import PreviewPanel from '$lib/preview/PreviewPanel.svelte';
-  import FormatEditor from '$lib/preview/FormatEditor.svelte';
-  import { documentRequest, documents } from '$lib/preview/documents.svelte';
+  import { documents } from '$lib/preview/documents.svelte';
+  import LookPanel from '$lib/look/LookPanel.svelte';
+  import { lookUi } from '$lib/look/look.svelte';
   import type { Template } from '$lib/api/templates';
-  import { formatEditorUi } from '$lib/preview/format-editor.svelte';
   import DocumentSettingsWindow from '$lib/document/DocumentSettingsWindow.svelte';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
   import TemplateEditor from '$lib/document/TemplateEditor.svelte';
@@ -417,7 +417,9 @@
   const sideElement = $derived(
     sideKind === 'history'
       ? undefined
-      : project?.node((sideKind === 'changes' && review?.at) || ownPane?.at),
+      : sideKind === 'look'
+        ? (previewOf ?? project)?.node(previewPane?.at)
+        : project?.node((sideKind === 'changes' && review?.at) || ownPane?.at),
   );
 
   // The review follows the element in view, and what is written.
@@ -580,21 +582,12 @@
       .catch(() => {});
   }
 
-  /** The document of an element whole, for the sample pages of the format editor. */
-  function sampleOf(at: string) {
-    return () => {
-      if (!project) throw new Error('The project is closed.');
-      return documentRequest(project, ownId, at);
-    };
-  }
-
   onDestroy(() => {
     document.title = 'Glaukopis';
     void getCurrentWindow()
       .setTitle('Glaukopis')
       .catch(() => {});
     document.getElementById('passage-kinds')?.remove();
-    formatEditorUi.close();
     documentSettingsUi.close();
     templateEditorUi.close();
     ownKindsUi.editing = null;
@@ -909,6 +902,15 @@
     if (sideKind) side(sideKind, false);
   }
 
+  // The look of the document is asked for from elsewhere: the preview, the kind menu, the palette.
+  let lookAsked = untrack(() => lookUi.asked);
+  $effect(() => {
+    const asked = lookUi.asked;
+    if (asked === lookAsked) return;
+    lookAsked = asked;
+    untrack(() => side('look', true));
+  });
+
   // The pictures are asked for from elsewhere, as from the tools for writing.
   $effect(() => {
     const wanted = picturesUi.wanted;
@@ -974,6 +976,8 @@
         when: () => !!pane && !!focusedProject,
       },
       'projects-pane': toggleProjectsPane,
+      'side-look': () => side('look'),
+      'look-type': () => lookUi.open({ section: 'type' }),
       'side-references': () => side('references'),
       // Not Ctrl+Shift+I, which the window keeps for itself while the application is being developed.
       'side-pictures': () => side('pictures'),
@@ -1406,15 +1410,17 @@
           />
         {/snippet}
         <Divider
-          label={sideKind === 'pictures'
-            ? t('project-between-pictures')
-            : sideKind === 'history'
-              ? t('history-between')
-              : sideKind === 'comments'
-                ? t('comments-between')
-                : sideKind === 'found'
-                  ? t('found-between')
-                  : t('project-between-references')}
+          label={sideKind === 'look'
+            ? t('look-between')
+            : sideKind === 'pictures'
+              ? t('project-between-pictures')
+              : sideKind === 'history'
+                ? t('history-between')
+                : sideKind === 'comments'
+                  ? t('comments-between')
+                  : sideKind === 'found'
+                    ? t('found-between')
+                    : t('project-between-references')}
           onstart={() => measure('references')}
           onmove={(dx) => moveSide('references', dx)}
           onreset={() => (sizes.references = 0)}
@@ -1430,7 +1436,21 @@
               <strong>{sideElement.title || t('project-untitled')}</strong>
             </div>
           {/if}
-          {#if sideKind === 'changes' && review}
+          {#if sideKind === 'look'}
+            <!-- The look of the document the preview shows. -->
+            {@const lookOf = previewOf ?? project}
+            {#key `${previewId}\n${previewPane.at}`}
+              <LookPanel
+                project={lookOf}
+                at={previewPane.at}
+                passageKinds={lookOf.passageKinds}
+                previewing={showPreview}
+                onpreview={() => (showPreview = true)}
+                head={tabs}
+                onclose={closeSide}
+              />
+            {/key}
+          {:else if sideKind === 'changes' && review}
             <ReviewPanel {review} head={tabs} onclose={closeSide} />
           {:else if sideKind === 'history'}
             <HistoryPanel
@@ -1526,24 +1546,6 @@
       onclose={() => (ownKindsUi.editing = null)}
     />
   {/key}
-{/if}
-
-{#if formatEditorUi.request && project}
-  {@const asked = formatEditorUi.request}
-  <FormatEditor
-    id={asked.id}
-    section={asked.section}
-    kind={asked.kind}
-    passageKinds={project.passageKinds}
-    request={asked.at ? sampleOf(asked.at) : undefined}
-    onsaved={(id) => {
-      // Held before the editor goes: what it was asked for goes with it.
-      const given = asked.onsaved;
-      formatEditorUi.close();
-      given?.(id);
-    }}
-    onclose={() => formatEditorUi.close()}
-  />
 {/if}
 
 {#if documentSettingsUi.request}

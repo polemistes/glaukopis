@@ -20,10 +20,7 @@
   import { openPath, type DocumentFormat } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
   import { languageName, newTextLanguage, t, TEXT_LANGUAGES } from '$lib/i18n';
-  import { formatKindWords, kindWords } from '$lib/preview/documents.svelte';
-  import { formatEditorUi } from '$lib/preview/format-editor.svelte';
-  import StyleBrowser from '$lib/preview/StyleBrowser.svelte';
-  import StyleEditor from '$lib/preview/StyleEditor.svelte';
+  import { lookUi } from '$lib/look/look.svelte';
   import { countWords } from '$lib/project/model/document';
   import type { Project } from '$lib/project/model/project.svelte';
   import { PROJECT, type DocumentSettings, type Person } from '$lib/project/model/types';
@@ -321,43 +318,6 @@
   function go(element: string) {
     onclose();
     ongo(element);
-  }
-
-  // ---- the layout and the citations ----
-
-  let browsing = $state(false);
-  let editingStyle = $state<string | null>(null);
-  const formatFrom = $derived(own.format ? null : from('format'));
-  const styleFrom = $derived(own.style ? null : from('style'));
-
-  const formatGroups = $derived(
-    ['own', 'general', 'fiction', 'stage', 'poetry', 'style-guide', 'publisher', 'journal']
-      .map((kind) => ({
-        name: formatKindWords(kind) ?? kind,
-        formats: documents.formats.filter((f) => f.kind === kind),
-      }))
-      .filter((g) => g.formats.length),
-  );
-  const styleGroups = $derived.by(() => {
-    const groups = new Map<string, typeof documents.styles>();
-    const other = t('style-kind-other');
-    for (const s of documents.styles) {
-      const name = kindWords(s.kind) || other;
-      groups.set(name, [...(groups.get(name) ?? []), s]);
-    }
-    const order = [
-      ...['note', 'author-date', 'numeric', 'label', 'author'].map((kind) => kindWords(kind)),
-      other,
-    ];
-    return [...groups].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
-  });
-
-  function editLayout() {
-    formatEditorUi.open({
-      id: choice.format,
-      at,
-      onsaved: (id) => write({ format: id }),
-    });
   }
 
   // ---- the language ----
@@ -677,74 +637,22 @@
         {:else}
           <p class="hint">{t('document-window-parts-none')}</p>
         {/each}
-      {:else if section === 'layout'}
-        <h3>{t('document-window-section-layout')}</h3>
-        <label class="row">
+      {:else if section === 'look'}
+        <h3>{t('document-window-section-look')}</h3>
+        <p class="hint top">{t('document-window-look-hint')}</p>
+        <div class="row">
           <span class="what"
-            >{t('document-window-layout')}<small>{t('document-window-layout-hint')}</small></span
+            >{t('document-window-look-now', {
+              layout: layoutName(choice.format),
+              style: styleName(choice.style),
+            })}</span
           >
-          <select
-            value={own.format ?? ''}
-            onchange={(e) => write({ format: e.currentTarget.value || undefined })}
-          >
-            <option value="">
-              {formatFrom
-                ? t('document-window-from-with', {
-                    name: formatFrom,
-                    what: layoutName(choice.format),
-                  })
-                : t('document-window-as-template', { name: broughtLayout })}
-            </option>
-            {#each formatGroups as group (group.name)}
-              <optgroup label={group.name}>
-                {#each group.formats as f (f.id)}
-                  <option value={f.id}>{f.name}</option>
-                {/each}
-              </optgroup>
-            {/each}
-            {#if own.format && !documents.formatSummary(own.format)}
-              <option value={own.format}>{own.format}</option>
-            {/if}
-          </select>
-        </label>
-        <div class="actions">
-          <Button size="sm" onclick={editLayout}>{t('document-window-layout-change')}</Button>
-        </div>
-        <label class="row">
-          <span class="what"
-            >{t('document-window-style')}<small>{t('document-window-style-hint')}</small></span
-          >
-          <select
-            value={own.style ?? ''}
-            onchange={(e) => {
-              const v = e.currentTarget.value;
-              if (v === '…') {
-                e.currentTarget.value = own.style ?? '';
-                browsing = true;
-              } else write({ style: v || undefined });
-            }}
-          >
-            <option value="">
-              {styleFrom
-                ? t('document-window-from-with', { name: styleFrom, what: styleName(choice.style) })
-                : t('document-window-as-template', { name: broughtStyle })}
-            </option>
-            {#each styleGroups as [name, styles] (name)}
-              <optgroup label={name}>
-                {#each styles as s (s.id)}
-                  <option value={s.id}>{s.title}</option>
-                {/each}
-              </optgroup>
-            {/each}
-            {#if own.style && !documents.style(own.style)}
-              <option value={own.style}>{own.style}</option>
-            {/if}
-            <option value="…">{t('preview-style-more')}</option>
-          </select>
-        </label>
-        <div class="actions">
-          <Button size="sm" onclick={() => (editingStyle = choice.style)}
-            >{t('document-window-style-change')}</Button
+          <Button
+            size="sm"
+            onclick={() => {
+              lookUi.open();
+              onclose();
+            }}>{t('document-window-look-open')}</Button
           >
         </div>
       {:else if section === 'language'}
@@ -817,30 +725,6 @@
     <Button variant="primary" onclick={save}>{t('common-save')}</Button>
   {/snippet}
 </Dialog>
-
-{#if browsing}
-  <StyleBrowser
-    onchoose={(id) => {
-      browsing = false;
-      write({ style: id });
-    }}
-    onclose={() => (browsing = false)}
-  />
-{/if}
-{#if editingStyle}
-  <StyleEditor
-    id={editingStyle}
-    references={project.usedReferences(at)}
-    language={inherited.settings.language}
-    onsaved={(id) => {
-      editingStyle = null;
-      // What the style holds may have changed under the same name: the pages are made anew.
-      documents.changed++;
-      write({ style: id || undefined });
-    }}
-    onclose={() => (editingStyle = null)}
-  />
-{/if}
 
 <style>
   .window {

@@ -13,42 +13,18 @@ format-kind-poetry = Poëzie
 
 ## The format editor.
 
-format-editor = Documentformaat
 format-name = Naam van het formaat
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }, gewijzigd
-format-sections = Onderdelen van het formaat
-format-sample-page = Voorbeeldpagina { $number }
-format-bundled = Formaten die met Glaukopis meekomen, blijven zoals ze zijn. Je wijzigingen worden opgeslagen als een eigen formaat.
-format-delete = Dit formaat wissen
-format-save-own = Opslaan als eigen formaat
 format-saved = ‘{ $name }’ is opgeslagen bij je eigen formaten
-format-read-failed = Het formaat kon niet worden gelezen.
-format-sample-failed = Het voorbeeld kon niet worden gemaakt.
 format-save-failed = Het formaat kon niet worden opgeslagen.
 format-delete-failed = Het formaat kon niet worden gewist.
 format-delete-title = Het formaat ‘{ $name }’ wissen?
 format-delete-message = Mindmaps die het gebruiken, gebruiken dan het algemene manuscriptformaat.
 format-delete-confirm = Formaat wissen
-format-leave-title = Weggaan zonder op te slaan?
-format-leave-message = De wijzigingen die je in het formaat hebt gemaakt, gaan verloren.
-format-leave-confirm = Weggaan
-format-leave-cancel = Verder bewerken
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = Pagina
-format-section-type = Letter en regelafstand
-format-section-paragraphs = Alinea's
-format-section-headings = Koppen
-format-section-title = Titel en samenvatting
-format-section-quotations = Citaten
-format-section-kinds = Soorten alinea en woorden
-format-section-notes = Noten
-format-section-bibliography = Bibliografie
-format-section-figures = Figuren, tabellen, vergelijkingen
-format-section-margins = Paginanummers en kopregel
-format-section-about = Over dit formaat
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = Woord voor de trefwoorden
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Citaten los van de tekst
 format-quote-indent-left = Inspringing links
 format-quote-indent-right = Inspringing rechts
 format-quote-when = Wanneer een citaat los wordt gezet
@@ -170,9 +145,6 @@ format-bibliography-title-hint = Bibliografie, Literatuur, Geciteerde werken
 format-bibliography-new-page = Begint op een nieuwe pagina
 format-bibliography-hanging-indent = Hangende inspringing
 format-bibliography-entry-spacing = Witruimte tussen de items
-format-bibliography-style = Citeerstijl
-format-bibliography-style-hint = De stijl waar dit formaat bij hoort; ze wordt genomen wanneer het formaat wordt gekozen
-format-bibliography-style-none = Geen in het bijzonder
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

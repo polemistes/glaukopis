@@ -379,19 +379,25 @@ pub fn preamble(format: &DocumentFormat, p: &Particulars) -> String {
         heading_rule(&mut out, level, &f.heading(level), f);
     }
 
-    // Quotations set off from the text.
-    let quote_leading = if f.quote.line_spacing > 0.0 { leading(f.quote.line_spacing) } else { body_leading.clone() };
+    // Quotations set off from the text: as the part of quotations has them,
+    // with what the format says of the kind Quotation over it.
+    let quote = kinds::resolve(f, "quote", &[]);
+    let said = f.kinds.get("quote");
+    let spacing = said.and_then(|l| l.line_spacing).unwrap_or(f.quote.line_spacing);
+    let quote_leading = if spacing > 0.0 { leading(spacing) } else { body_leading.clone() };
+    let size = said.and_then(|l| l.size).unwrap_or(f.quote.size);
     let _ = writeln!(
         out,
         "#show quote.where(block: true): it => {{
-  set text({size}style: {style})
+  set text({size}style: {style}{weight})
   set par(leading: {quote_leading}, spacing: {quote_leading}, first-line-indent: 0pt)
   block(width: 100%, inset: (left: {left}, right: {right}), above: {gap}, below: {gap}, it.body)
 }}",
-        size = if f.quote.size > 0.0 { format!("size: {}, ", pt(f.quote.size)) } else { String::new() },
-        style = if f.quote.italic { "\"italic\"" } else { "\"normal\"" },
-        left = f.quote.indent_left,
-        right = f.quote.indent_right,
+        size = if size > 0.0 { format!("size: {}, ", pt(size)) } else { String::new() },
+        style = if quote.italic { "\"italic\"" } else { "\"normal\"" },
+        weight = if quote.bold { ", weight: \"bold\"" } else { "" },
+        left = quote.indent_left,
+        right = quote.indent_right,
         gap = format!("{body_leading} + 0.6em"),
     );
 
@@ -787,6 +793,20 @@ mod tests {
         assert_eq!(language(Some("nb")), ("nb".into(), None));
         assert_eq!(language(Some("sr-Latn-RS")), ("sr".into(), Some("rs".into())));
         assert!(fonts("Times New Roman").starts_with("(\"Times New Roman\", \"Liberation Serif\""));
+    }
+
+    #[test]
+    fn a_quotation_is_set_as_the_format_says_of_the_kind_over_its_part_of_quotations() {
+        let mut f = DocumentFormat { name: "Test".into(), ..Default::default() };
+        f.quote.italic = false;
+        let plain = preamble(&f, &Particulars::default());
+        assert!(plain.contains("set text(style: \"normal\")"), "{plain}");
+        f.kinds.insert(
+            "quote".into(),
+            kinds::Look { italic: Some(true), bold: Some(true), size: Some(10.0), ..Default::default() },
+        );
+        let said = preamble(&f, &Particulars::default());
+        assert!(said.contains("set text(size: 10pt, style: \"italic\", weight: \"bold\")"), "{said}");
     }
 
     #[test]

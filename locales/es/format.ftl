@@ -13,42 +13,18 @@ format-kind-poetry = Poesía
 
 ## The format editor.
 
-format-editor = Formato del documento
 format-name = Nombre del formato
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }, modificado
-format-sections = Partes del formato
-format-sample-page = Página de muestra { $number }
-format-bundled = Los formatos que vienen con Glaukopis se quedan como están. Sus cambios se guardan como un formato propio.
-format-delete = Eliminar este formato
-format-save-own = Guardar como propio
 format-saved = «{ $name }» se ha guardado entre sus formatos propios
-format-read-failed = No se pudo leer el formato.
-format-sample-failed = No se pudo hacer la muestra.
 format-save-failed = No se pudo guardar el formato.
 format-delete-failed = No se pudo eliminar el formato.
 format-delete-title = ¿Eliminar el formato «{ $name }»?
 format-delete-message = Los mapas que lo usan pasarán a usar el formato general de manuscrito.
 format-delete-confirm = Eliminar el formato
-format-leave-title = ¿Salir sin guardar?
-format-leave-message = Los cambios que ha hecho en el formato se perderán.
-format-leave-confirm = Salir
-format-leave-cancel = Seguir editando
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = Página
-format-section-type = Letra y espaciado
-format-section-paragraphs = Párrafos
-format-section-headings = Encabezados
-format-section-title = Título y resumen
-format-section-quotations = Citas textuales
-format-section-kinds = Tipos de párrafo y de palabras
-format-section-notes = Notas
-format-section-bibliography = Bibliografía
-format-section-figures = Figuras, tablas, ecuaciones
-format-section-margins = Números de página y cabecera
-format-section-about = Sobre este formato
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = Palabra antes de las palabras clave
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Citas separadas del texto
 format-quote-indent-left = Sangría a la izquierda
 format-quote-indent-right = Sangría a la derecha
 format-quote-when = Cuándo se separa una cita
@@ -170,9 +145,6 @@ format-bibliography-title-hint = Bibliografía, Referencias, Obras citadas
 format-bibliography-new-page = Empieza en página nueva
 format-bibliography-hanging-indent = Sangría francesa
 format-bibliography-entry-spacing = Espacio entre entradas
-format-bibliography-style = Estilo de citas
-format-bibliography-style-hint = El que acompaña a este formato; se toma al elegir el formato
-format-bibliography-style-none = Ninguno en particular
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

@@ -13,42 +13,18 @@ format-kind-poetry = Poezie
 
 ## The format editor.
 
-format-editor = Format de document
 format-name = Numele formatului
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }, modificat
-format-sections = Părțile formatului
-format-sample-page = Pagina de probă { $number }
-format-bundled = Formatele care vin cu Glaukopis rămân cum sunt. Modificările dumneavoastră se salvează ca un format propriu.
-format-delete = Șterge acest format
-format-save-own = Salvează ca al meu
 format-saved = „{ $name }” este salvat printre formatele dumneavoastră
-format-read-failed = Formatul nu s-a putut citi.
-format-sample-failed = Proba nu s-a putut face.
 format-save-failed = Formatul nu s-a putut salva.
 format-delete-failed = Formatul nu s-a putut șterge.
 format-delete-title = Ștergeți formatul „{ $name }”?
 format-delete-message = Hărțile care îl folosesc vor folosi în schimb formatul general de manuscris.
 format-delete-confirm = Șterge formatul
-format-leave-title = Ieșiți fără să salvați?
-format-leave-message = Modificările pe care le-ați făcut formatului se vor pierde.
-format-leave-confirm = Ieși
-format-leave-cancel = Continuă modificarea
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = Pagina
-format-section-type = Litera și spațierea
-format-section-paragraphs = Paragrafe
-format-section-headings = Titluri
-format-section-title = Titlul și rezumatul
-format-section-quotations = Citate
-format-section-kinds = Tipuri de paragraf și de cuvinte
-format-section-notes = Note
-format-section-bibliography = Bibliografie
-format-section-figures = Figuri, tabele, ecuații
-format-section-margins = Numerele paginilor și colontitlul
-format-section-about = Despre acest format
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = Cuvântul dinaintea cuvintelor-cheie
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Citate despărțite de text
 format-quote-indent-left = Retragere la stânga
 format-quote-indent-right = Retragere la dreapta
 format-quote-when = Când se desparte un citat
@@ -170,9 +145,6 @@ format-bibliography-title-hint = Bibliografie, Referințe, Lucrări citate
 format-bibliography-new-page = Începe pe o pagină nouă
 format-bibliography-hanging-indent = Alineat agățat
 format-bibliography-entry-spacing = Spațiu între intrări
-format-bibliography-style = Stil de citare
-format-bibliography-style-hint = Cel cu care merge acest format; se ia când se alege formatul
-format-bibliography-style-none = Niciunul anume
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

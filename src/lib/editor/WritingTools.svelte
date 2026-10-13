@@ -42,7 +42,7 @@
   import Quote from '@lucide/svelte/icons/quote';
   import Sheet from '@lucide/svelte/icons/sheet';
   import Sigma from '@lucide/svelte/icons/sigma';
-  import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
+  import Palette from '@lucide/svelte/icons/palette';
   import CornerDownLeft from '@lucide/svelte/icons/corner-down-left';
   import SpellCheck from '@lucide/svelte/icons/spell-check';
   import SplitSquareVertical from '@lucide/svelte/icons/split-square-vertical';
@@ -66,7 +66,7 @@
   import { languageName, t, TEXT_LANGUAGES } from '$lib/i18n';
   import { showPictures } from '$lib/pictures/store.svelte';
   import { documents } from '$lib/preview/documents.svelte';
-  import { formatEditorUi } from '$lib/preview/format-editor.svelte';
+  import { lookUi } from '$lib/look/look.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
   import { spelling } from '$lib/spelling/spelling.svelte';
   import { settings } from '$lib/state/settings.svelte';
@@ -525,23 +525,9 @@
     ];
   }
 
-  /**
-   * Opens the editor of the document's format at the look of the kind the
-   * cursor is in, on the document of the element in view. The format that
-   * is saved goes where the format is set now: on the element that sets
-   * it, or, where none does, on the element in view.
-   */
-  function changeFormat() {
-    const id = element;
-    if (!id) return;
-    const on = ofDocument?.from.get('format') ?? at ?? id;
-    formatEditorUi.open({
-      id: choice.format,
-      at: at ?? id,
-      section: 'kinds',
-      kind,
-      onsaved: (format) => project.setDocument(on, { format }),
-    });
+  /** Opens the look of the document at the look of the kind the cursor is in. */
+  function changeLook() {
+    lookUi.open({ section: 'kinds', kind });
   }
 
   function kinds(event: MouseEvent) {
@@ -564,11 +550,11 @@
         { kind: 'separator' },
         { kind: 'heading', label: t('editor-kinds-set-by', { format: formatName }) },
         {
-          label: t('editor-kinds-change-format'),
-          hint: t('editor-kinds-change-format-hint'),
-          icon: SlidersHorizontal,
+          label: t('editor-kinds-change-look', { kind: nameOf(kind) }),
+          hint: t('editor-kinds-change-look-hint'),
+          icon: Palette,
           disabled: !element,
-          action: changeFormat,
+          action: changeLook,
         },
       ],
       { align: 'start' },

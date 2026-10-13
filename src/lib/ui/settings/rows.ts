@@ -28,6 +28,11 @@ type Reach<T, V> =
 interface Named<T> {
   label: string;
   hint?: string;
+  /**
+   * Where the value is in what the rows set, as a path, for the line that
+   * says where it comes from: the path of the row where it has one.
+   */
+  path?: string;
   /** The row is shown only while this holds. */
   when?: (target: T) => boolean;
 }
@@ -62,6 +67,16 @@ export type Row<T> =
     } & Reach<T, number | null>)
   | (Named<T> & { kind: 'choice'; options: Choices } & Reach<T, string | number>);
 
+/**
+ * Where the value of a row comes from, where something other than the
+ * first source says it: "changed here", with a way to take the first
+ * source's value again.
+ */
+export interface Provenance {
+  words: string;
+  again?: { label: string; take: () => void };
+}
+
 /** A row that sets something, and not a heading or a note. */
 export type Setting<T> = Extract<Row<T>, { kind: string }>;
 
@@ -70,6 +85,7 @@ type Where<T, V> = Paths<T, V> | { get: (target: T) => V; set: (target: T, value
 
 interface More<T> {
   hint?: string;
+  path?: string;
   when?: (target: T) => boolean;
 }
 

@@ -196,9 +196,7 @@ try {
     (await inUse()).split(' · ').length === 3,
     await inUse(),
   );
-  await app.click('.preview button.in-use');
-  await app.waitForText('dialog[open] h2', 'Document settings', 5000);
-  await sleep(200);
+  await app.openDocumentSettings();
   await app.type('dialog[open] input[aria-label="Search the templates"]', 'APA 7');
   await sleep(200);
   await app.clickText('dialog[open] .templates [role="radio"]', 'APA 7 (professional paper)');
@@ -216,18 +214,19 @@ try {
   );
   await app.screenshot('preview-2-apa');
 
-  // --- The layouts are in groups, and a novel is a book ---
-  await app.documentSection('Layout and citations');
+  // --- The layouts are in groups, and a novel is a book: chosen in the look of the document ---
+  await app.closeDocumentSettings();
+  await app.click('.preview button.in-use');
+  await app.openLook();
   const groups = await app.exec(
-    `const row = Array.from(document.querySelectorAll('dialog[open] .window label.row')).find((r) => r.querySelector('.what').firstChild.textContent.trim() === 'Layout');
-     return Array.from(row.querySelectorAll('optgroup')).map((g) => g.label)`,
+    `return Array.from(${app.lookRow('Layout')}.querySelectorAll('optgroup')).map((g) => g.label)`,
   );
   check(
     'the layouts are offered by kind',
     ['Fiction', 'Stage and screen', 'Poetry'].every((g) => groups.includes(g)),
     groups.join(' | '),
   );
-  check('the layout chosen is a choice of its own', await app.documentChoose('Layout', 'novel-book'));
+  check('the layout chosen is a choice of its own', await app.lookChoose('Layout', 'novel-book'));
   await sleep(4500);
   typ = source();
   check(
@@ -238,12 +237,12 @@ try {
   );
   await app.screenshot('preview-2b-novel');
   // The layout of the template again.
-  await app.documentChoose('Layout', '');
+  await app.lookChoose('Layout', '');
   await sleep(4500);
   check('left to the template, the layout is the template’s again', /^APA 7 \(professional paper\) · APA 7 \(professional paper\) · /.test(await inUse()), await inUse());
 
   // --- The particulars of the document ---
-  await app.documentSection('Details');
+  await app.openDocumentSettings('Details');
   await app.type('dialog[open] input[aria-label="Name of author 1"]', 'A. Scholar');
   await app.screenshot('preview-3-details');
   await app.closeDocumentSettings(true);
@@ -314,9 +313,8 @@ try {
   await app.click('header button[aria-label="Preview and export"]');
   await app.waitFor('.preview .in-use', 8000);
   await sleep(500);
-  await app.openDocumentSettings('Layout and citations');
-  await app.documentChoose('Layout', own);
-  await app.closeDocumentSettings();
+  await app.openLook();
+  await app.lookChoose('Layout', own);
   await app.waitFor('.preview footer .issues', 15000);
   {
     await app.click('.preview footer .issues');

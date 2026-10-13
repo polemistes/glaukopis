@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DocumentFormat, KindFamily, Look } from '$lib/api/documents';
 import { setValue, valueOf, type Row, type Setting } from '$lib/ui/settings/rows';
-import { lengthsOk, lookRows, lookWords, setKindLook, unsaid } from './format-editor.svelte';
+import { lengthsOk, lookRows, lookWords, setKindLook, unsaid } from './rows.svelte';
 
 describe('what a format says of a kind', () => {
   const format = () => ({}) as DocumentFormat;

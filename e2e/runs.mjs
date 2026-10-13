@@ -305,26 +305,26 @@ try {
   );
   await app.screenshot('runs-7-breaks');
 
-  // --- The layout editor: a part for the numbers, every kind with its look, and the columns ---
+  // --- The look of the document: a part for the numbers, every kind with its look, and the columns ---
   await toLine(0);
   await app.click('.pane-bar .tools .style');
-  await app.clickText('[role="menuitem"]', 'Change the layout');
-  await app.waitFor('dialog[open] .editor nav', 8000);
+  await app.clickText('[role="menuitem"]', 'looks…');
+  await app.waitFor('.side .look .chips', 8000);
   await sleep(300);
-  const nav = await app.exec(`return Array.from(document.querySelectorAll('dialog[open] .editor nav button')).map((b) => b.textContent.trim())`);
-  check('the layout editor has a part for the numbers', nav.includes('Numbers'), nav.join(' | '));
-  await app.clickText('dialog[open] .editor nav button', 'Kinds of paragraph');
+  const nav = await app.exec(`return Array.from(document.querySelectorAll('.side .look .chips button')).map((b) => b.textContent.trim())`);
+  check('the look has a part for the numbers', nav.includes('Numbers'), nav.join(' | '));
+  await app.lookSection('Kinds');
   await app
-    .waitUntil(`return !!document.querySelector('dialog[open] details[data-kind="scene"] p.resolved[data-resolved]')`, 8000, 'the looks as resolved')
+    .waitUntil(`return !!document.querySelector('.side .look details[data-kind="scene"] p.resolved[data-resolved]')`, 8000, 'the looks as resolved')
     .catch(() => {});
   const scene = await app.exec(
-    `const d = document.querySelector('dialog[open] details[data-kind="scene"]');
+    `const d = document.querySelector('.side .look details[data-kind="scene"]');
      if (!d) return null;
      d.open = true;
      return { said: d.hasAttribute('data-said'), quiet: !!d.querySelector('summary .said.quiet'),
               summary: d.querySelector('summary .said')?.textContent.trim() ?? null,
               resolved: d.querySelector('p.resolved[data-resolved]')?.textContent.trim() ?? null,
-              kinds: document.querySelectorAll('dialog[open] details[data-kind]').length };`,
+              kinds: document.querySelectorAll('.side .look details[data-kind]').length };`,
   );
   check(
     'the kinds part lists every kind, and one the layout says nothing of is shown as resolved',
@@ -332,34 +332,30 @@ try {
     JSON.stringify(scene),
   );
   await sleep(200);
-  await app.exec(`document.querySelector('dialog[open] details[data-kind="scene"]').scrollIntoView({ block: 'center' });`);
+  await app.exec(`document.querySelector('.side .look details[data-kind="scene"]').scrollIntoView({ block: 'center' });`);
   await sleep(200);
   await app.screenshot('runs-8-layout-kinds');
 
   // The page in two columns: the gap between them is asked for only then.
-  await app.clickText('dialog[open] .editor nav button', 'Page');
+  await app.lookSection('Page');
   await sleep(300);
-  const row = (label) =>
-    `Array.from(document.querySelectorAll('dialog[open] label.row')).find((r) => r.querySelector('.what')?.firstChild?.textContent.trim() === ${JSON.stringify(label)})`;
+  const row = (label) => app.lookRow(label);
   const gapBefore = await app.exec(`return !!${row('Gap between columns')}`);
   await app.exec(
     `const i = ${row('Columns')}.querySelector('input'); i.value = '2'; i.dispatchEvent(new Event('input', { bubbles: true }));`,
   );
-  await sleep(300);
+  await sleep(600);
   const gapAfter = await app.exec(`return ${row('Gap between columns')}?.querySelector('input')?.value ?? null`);
   check(
-    'the layout has a field for its columns, and the gap between them is asked for where there are more than one',
+    'the look has a field for the columns, and the gap between them is asked for where there are more than one',
     !gapBefore && gapAfter === '1cm',
     `${gapBefore} ${gapAfter}`,
   );
+  const lookMap = await app.lookMap();
+  check('the columns are the document’s change, not a new layout', /Manuscript · 1 change →/.test(lookMap), lookMap);
   await app.exec(`${row('Columns')}.scrollIntoView({ block: 'center' });`);
   await sleep(150);
   await app.screenshot('runs-9-layout-columns');
-  await app.clickText('dialog[open] footer button', 'Save as my own');
-  await app.waitUntil(`return !document.querySelector('dialog[open] .editor nav')`, 8000, 'the layout editor to go').catch(async () => {
-    await app.clickText('dialog[open] footer button', 'Cancel');
-    await app.waitUntil(`return !document.querySelector('dialog[open] .editor nav')`, 5000, 'the layout editor to go');
-  });
   await sleep(300);
 
   // --- The preview: the breaks and the columns set by Typst ---

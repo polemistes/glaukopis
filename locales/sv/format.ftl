@@ -13,42 +13,18 @@ format-kind-poetry = Poesi
 
 ## The format editor.
 
-format-editor = Dokumentformat
 format-name = Formatets namn
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }, ändrat
-format-sections = Formatets delar
-format-sample-page = Provsida { $number }
-format-bundled = Format som följer med Glaukopis förblir som de är. Dina ändringar sparas som ett eget format.
-format-delete = Radera det här formatet
-format-save-own = Spara som mitt eget
 format-saved = ”{ $name }” är sparat bland dina egna format
-format-read-failed = Formatet kunde inte läsas.
-format-sample-failed = Provet kunde inte göras.
 format-save-failed = Formatet kunde inte sparas.
 format-delete-failed = Formatet kunde inte raderas.
 format-delete-title = Radera formatet ”{ $name }”?
 format-delete-message = Kartor som använder det kommer att använda det allmänna manuskriptformatet i stället.
 format-delete-confirm = Radera formatet
-format-leave-title = Lämna utan att spara?
-format-leave-message = Ändringarna du har gjort i formatet går förlorade.
-format-leave-confirm = Lämna
-format-leave-cancel = Fortsätt redigera
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = Sida
-format-section-type = Skrift och avstånd
-format-section-paragraphs = Stycken
-format-section-headings = Rubriker
-format-section-title = Titel och sammanfattning
-format-section-quotations = Citat
-format-section-kinds = Slag av stycken och ord
-format-section-notes = Noter
-format-section-bibliography = Litteraturförteckning
-format-section-figures = Figurer, tabeller, ekvationer
-format-section-margins = Sidnummer och kolumntitel
-format-section-about = Om det här formatet
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = Ordet före nyckelorden
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Citat avskilda från texten
 format-quote-indent-left = Indrag till vänster
 format-quote-indent-right = Indrag till höger
 format-quote-when = När ett citat avskiljs
@@ -170,9 +145,6 @@ format-bibliography-title-hint = Litteraturförteckning, Referenser, Källor
 format-bibliography-new-page = Börjar på ny sida
 format-bibliography-hanging-indent = Hängande indrag
 format-bibliography-entry-spacing = Mellanrum mellan posterna
-format-bibliography-style = Referensstil
-format-bibliography-style-hint = Den som hör till det här formatet; den tas när formatet väljs
-format-bibliography-style-none = Ingen särskild
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

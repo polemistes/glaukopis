@@ -496,9 +496,9 @@ as a table without lines.
 **Page break** and **Column break**, under *Insert*, begin what follows on a
 new page, or at the top of the next column. Where you write each is a dashed
 line across the text with its name on it; every kind of document sets it.
-How many columns the text is set in, and the gap between them, is the
-layout's: **Columns** and **Gap between columns**, in the *Page* part of the
-layout editor (see *The preview, and the manuscript*). One column is none.
+How many columns the text is set in, and the gap between them, is part of
+the look of the document: **Columns** and **Gap between columns**, in the
+*Page* part of Look (see *The look of a document*). One column is none.
 
 ### Kinds of paragraph and of words
 
@@ -607,9 +607,10 @@ your other projects when a kind is named there.
 
 The foot of the kind menu says where the looks come from: **Set as
 “Manuscript” has them**, naming the layout of the document, and under it
-**Change the layout…**, which opens the layout at its kinds, where the
-look of each is changed; see *The preview, and the manuscript*. A draft
-note and a highlight are for the screen alone, and go into no document.
+**How “Quotation” looks…**, named for the kind the cursor is in, which
+opens Look beside the preview at the look of that kind, where it is
+changed; see *The look of a document*. A draft note and a highlight are for
+the screen alone, and go into no document.
 
 ### Mathematics
 
@@ -687,8 +688,8 @@ that follows the mark before it, *3:17* after *3:16* and *327b* after
 
 A mark is no part of the words: spelling, search and the count of words
 pass over it, so that *so loved* is found in *so ¹⁶loved*. Where you write
-it is small and raised. How the document sets them all is said by the
-layout, under *Type and spacing*: **small and raised in the line**, or **in
+it is small and raised. How the document sets them all is part of its
+look, under *Type* in Look: **small and raised in the line**, or **in
 the margin beside their line**, the right one. Word and Writer have no room
 in the margin, and raise them; the character style *Reference Mark* can be
 changed there.
@@ -1007,11 +1008,11 @@ there. Importing the same a second time adds nothing.
 
 ## The panel at the side
 
-The references, the pictures, the comments, the loose citations,
-the history and the changes to review share one panel at the side of the
-map, one at a time. The button with the panel on it, in the bar over the
+The look of the document, the references, the pictures, the comments, the
+loose citations, the history and the changes to review share one panel at
+the side of the map, one at a time. The button with the panel on it, in the bar over the
 map, opens it as it was last, and closes it; the tabs at its head change
-what it shows. Each has its key as well: **Ctrl+Shift+R**, **Ctrl+Shift+P**,
+what it shows. Each has its key as well: **Ctrl+Shift+A**, **Ctrl+Shift+R**, **Ctrl+Shift+P**,
 **Ctrl+Shift+M**, **Ctrl+Shift+T**, **Ctrl+Shift+H** and **Ctrl+Shift+E**.
 What the panel shows is of the element in view, with all under it, named in
 the line over its tabs: with two views side by side, that of the pane in
@@ -1709,14 +1710,9 @@ for the front matter and last for the rest; pressing an element goes to it
 in the text. Where a document has one of a kind and more are there, the
 second and the later say **Only the first is used**.
 
-**Layout and citations** chooses the **layout** and the **reference
-style**. The first choice of each is **As the template has it**, naming what
-the template brings, or **From** the element over this one that chose,
-naming what it chose; then come the layouts by kind, and the reference
-styles by kind, with **More styles…**, which fetches any of the ten thousand
-styles of the Citation Style Language by name. **Change this layout…**
-opens the layout editor and **Change this reference style…** the editor of
-the style (see *The preview, and the manuscript*).
+**Look** names the layout and the reference style in use, and says where
+they are chosen and changed: in Look, the panel beside the preview, which
+**Open Look** opens (see *The look of a document*).
 
 **Language** is the language of the text of this element, and of everything
 under it that is given no other, for a part written in another language
@@ -1763,9 +1759,10 @@ pages are in view; **Show where the text is** moves the pages to where the
 element you are writing in begins, and points its page out for a moment.
 
 One line over the preview names what the document is made by: the
-template, the layout and the reference style in use. Pressing it, or the
-button beside it, opens the document settings, where all three are chosen
-(see *The document settings*).
+template, the layout and the reference style in use. Pressing it opens
+Look, where the look of the document is set (see *The look of a
+document*); the button with the sliders, at the right, opens the document
+settings (see *The document settings*).
 
 The **layout** is the page, the type, the spacing, the headings, as a
 publisher or a journal asks for them. The layouts that come with Glaukopis
@@ -1780,31 +1777,8 @@ Citation Style Language can be fetched by name. A project is not of one
 kind: any template, layout or style can be given to any element, and
 changed at any time.
 
-Both can be changed, from the document settings. **Change this layout…**
-opens the layout editor, which has every measure of the page in plain words,
-among them whether a level of heading **begins a new page**, as the chapters
-of a book do, and in its *Page* part how many **Columns** the text is set in
-and the **Gap between columns**. Under **Kinds of paragraph and words** every kind is listed,
-by its group, and your own kinds after them, each with what it is based on
-and, at the right of its line, what this layout says of it, or *as the
-base* where it says nothing. Open a kind, and a line says how it will stand,
-**As it will stand**: the base look of the kind, then the kinds it is based
-on, then what this layout says, resolved into one, so that you see where
-every look comes from. The rows under it change only what this layout says:
-size, alignment, indents, the first line, space before and after, bold,
-italic, letters, underlining, letters of equal width, whether it keeps with
-what follows, and whether it begins a new page; where a row says nothing it
-shows what the base comes to, *As the base (1.27cm)*. A kind the layout says
-nothing of is as its base, so a kind of your own needs nothing said of it.
-Under **Numbers** the layout says how the numbers of lines you number are
-shown where they do not say otherwise, **Show a number every** and
-**Numbers on the** left or the right, and whether the lines of the page are
-numbered, as some journals ask for review. Under **Type and spacing**, **Italics are set** says whether italics stand as italics or
-are underlined, as the manuscript of the typewriter had them; the mark in
-the text is the same. **Change this reference style…** has the changes
-publishers most often ask for as simple choices, and the whole style, part
-by part, for the rest. What you change is kept as a layout or a style of
-your own; those that came with Glaukopis stay as they were.
+Both are chosen, and the look changed, in Look (see *The look of a
+document*).
 
 **Export** makes the manuscript: PDF, Word, OpenDocument, LaTeX, Markdown, a
 web page, or an **e-book** (EPUB), in which the reader sets the text and each
@@ -1845,6 +1819,74 @@ the words of the text against what the template allows.
 Two programs do the work. Pandoc turns the text into the document, and sets
 every citation and the bibliography in the reference style. Typst sets the
 pages: those of the preview, and those of the PDF, which are the same.
+
+## The look of a document
+
+Everything that decides how the pages look is in one place: **Look**, a
+panel at the side, beside the preview. It opens from the line over the
+preview, from the foot of the kind menu, from the document settings, from
+the palette, where **Change the font…** opens it at the type, and by
+**Ctrl+Shift+A**. It is the look of the document the preview shows: of the
+element in view, with all under it.
+
+At its top one line says what makes the look: the **template**, what the
+document consists of; the **layout**, how the page looks, with the number
+of changes the document makes to it; and the **reference style**, how it
+cites: *Plain document → Manuscript · 2 changes → Chicago*. Pressing the
+template opens it in the document settings; pressing the changes lists
+them, each with where it was made. Under the line the layout and the
+reference style are chosen. The first choice of each is **As the template
+has it**, naming what the template brings, or **From** the element over
+this one that chose, naming what it chose; then come the layouts by kind,
+and the reference styles by kind, with **More styles…**, which fetches any
+of the ten thousand styles of the Citation Style Language by name. **Change
+this reference style…** has the changes publishers most often ask for as
+simple choices, and the whole style, part by part, for the rest; what you
+change in it is kept as a style of your own.
+
+A field under them finds any setting by its words: *font*, *margins*, *page
+numbers*. Otherwise the settings stand in parts, which the buttons under
+the field turn to: **Type** (the font, its size, the spacing, how italics
+and reference marks are set), **Page** (its size, the margins, the
+**Columns** and the **Gap between columns**, the page numbers and the
+running head), **Paragraphs**, **Headings** (with whether a level of
+heading **begins a new page**, as the chapters of a book do), **Kinds**,
+**Quotations**, **Numbers**, **Notes**, **Bibliography**, **Figures and
+tables**, **Title and abstract**, and **About the layout**, which says where
+its requirements were found, and when.
+
+Under **Kinds** every kind is listed: first those this document uses, then
+the rest by group, and your own kinds after them, each with what it is
+based on and, at the right of its line, what is said of it, or *as the
+base* where nothing is. Open a kind, and a line says how it will stand,
+**As it will stand**: the base look of the kind, then the kinds it is based
+on, then what the layout and the document say, resolved into one. The rows
+under it are size, alignment, indents, the first line, space before and
+after, bold, italic, letters, underlining, letters of equal width, whether
+it keeps with what follows, and whether it begins a new page; where a row
+says nothing it shows what the base comes to, *As the base (1.27cm)*.
+Under **Numbers**, how the numbers of lines you number are shown where they
+do not say otherwise, **Show a number every** and **Numbers on the** left or
+the right, and whether the lines of the page are numbered, as some journals
+ask for review.
+
+What you change in Look is the document's own: the layout stays as it is,
+and the change is shown at once in the preview. Under a row you have
+changed it says **Changed here**, and beside it **take Manuscript’s
+again**, which takes the change away. The changes reach every element under
+the one they are made on, as the language does: in a chapter, a change made
+on the book says **Changed in “The book”**, and the chapter can change it
+again for itself. The changes are kept with the project, and in its Org
+form as the element's **LOOK**.
+
+To use the same look elsewhere, **Keep these changes as a layout of my
+own…** at the foot of Look asks for a name and makes a layout of the
+layout with the changes in it, which the document then uses, with no
+changes of its own; it is offered among your own layouts in every project.
+Where the layout is already one of your own, **Put these changes into** it
+does the same without a new name, for every document that uses it. A layout
+of your own is deleted under **About the layout**. The layouts that come
+with Glaukopis stay as they are.
 
 ## Working together
 
@@ -2260,6 +2302,7 @@ what is to be done by its name, and does it.
 | **Ctrl+Shift+L** | The list of projects at the left of a project |
 | **Ctrl+P** | The preview |
 | **Ctrl+Shift+D** | The document settings of the element in view |
+| **Ctrl+Shift+A** | The look of the document: font, page, the looks of the kinds |
 | **Ctrl+Shift+R** | The references |
 | **Ctrl+Shift+P** | The pictures of the project |
 | **Ctrl+Shift+M** | The comments |

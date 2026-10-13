@@ -58,6 +58,8 @@ export const KEYS: KeyEntry[] = [
   { id: 'up', keys: 'Alt+Shift+↑', place: 'project' },
   { id: 'preview', keys: 'Ctrl+P', place: 'project', bound: true },
   { id: 'document-settings', keys: 'Ctrl+Shift+D', place: 'project', bound: true },
+  { id: 'side-look', keys: 'Ctrl+Shift+A', place: 'project', bound: true },
+  { id: 'look-type', keys: '', place: 'project', bound: true },
   { id: 'side-references', keys: 'Ctrl+Shift+R', place: 'project', bound: true },
   { id: 'side-pictures', keys: 'Ctrl+Shift+P', place: 'project', bound: true },
   { id: 'side-comments', keys: 'Ctrl+Shift+M', place: 'project', bound: true },

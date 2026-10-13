@@ -336,9 +336,7 @@ try {
   await newProject('Vreden');
   await app.keys(['Control', 'p']);
   await app.waitFor('.preview', 8000);
-  await app.click('.preview button.in-use');
-  await app.waitForText('dialog[open] h2', 'Document settings', 5000);
-  await app.documentSection('Language');
+  await app.openDocumentSettings('Language');
   await app.documentChoose('Language of the text', 'nb');
   await app.closeDocumentSettings();
   await app.keys(['Control', 'p']);
@@ -389,9 +387,7 @@ try {
   // A language without a dictionary: nothing is underlined, and F7 says why.
   await app.keys(['Control', 'p']);
   await app.waitFor('.preview', 8000);
-  await app.click('.preview button.in-use');
-  await app.waitForText('dialog[open] h2', 'Document settings', 5000);
-  await app.documentSection('Language');
+  await app.openDocumentSettings('Language');
   await app.documentChoose('Language of the text', 'la');
   await app.closeDocumentSettings();
   await app.keys(['Control', 'p']);

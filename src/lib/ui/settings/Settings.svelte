@@ -1,13 +1,23 @@
 <script lang="ts" generics="T">
-  import { lengthOk, setValue, valueOf, type Row } from './rows';
+  import { lengthOk, setValue, valueOf, type Provenance, type Row, type Setting } from './rows';
 
   interface Props {
     /** What the rows set. */
     target: T;
     rows: Row<T>[];
+    /** Where the value at a path comes from; nothing where it is as it first was. */
+    from?: (path: string) => Provenance | null;
+    /** What stands before the path of a row in what `from` is asked: `figures.` for the rows of the figures. */
+    prefix?: string;
   }
 
-  let { target, rows }: Props = $props();
+  let { target, rows, from, prefix = '' }: Props = $props();
+
+  function provenance(row: Setting<T>): Provenance | null {
+    if (!from) return null;
+    const path = row.path ?? (row.at !== undefined ? prefix + row.at : undefined);
+    return path ? from(path) : null;
+  }
 </script>
 
 <!-- The rows of a form of settings: see rows.ts. How they look is in settings.css. -->
@@ -21,6 +31,7 @@
       <p class="hint">{row.note}</p>
     {:else}
       {@const value = valueOf(row, target)}
+      {@const said = provenance(row)}
       <label class="row" class:check={row.kind === 'toggle'}>
         <span class="what"
           >{row.label}{#if row.hint}<small>{row.hint}</small>{/if}</span
@@ -85,6 +96,16 @@
           </select>
         {/if}
       </label>
+      {#if said}
+        <!-- Out of the label: a button within it would be what the label clicks. -->
+        <p class="from" data-from>
+          {said.words}{#if said.again}{' · '}<button
+              type="button"
+              class="again"
+              onclick={said.again.take}>{said.again.label}</button
+            >{/if}
+        </p>
+      {/if}
     {/if}
   {/if}
 {/each}

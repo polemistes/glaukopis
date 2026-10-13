@@ -13,42 +13,18 @@ format-kind-poetry = 诗歌
 
 ## The format editor.
 
-format-editor = 文档格式
 format-name = 格式名称
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }（已修改）
-format-sections = 格式的各部分
-format-sample-page = 示例页 { $number }
-format-bundled = Glaukopis 自带的格式保持不变。你的修改会另存为自定义格式。
-format-delete = 删除此格式
-format-save-own = 另存为自定义格式
 format-saved = “{ $name }”已保存到你的自定义格式中
-format-read-failed = 无法读取此格式。
-format-sample-failed = 无法生成示例。
 format-save-failed = 无法保存此格式。
 format-delete-failed = 无法删除此格式。
 format-delete-title = 删除格式“{ $name }”？
 format-delete-message = 使用它的导图将改用通用文稿格式。
 format-delete-confirm = 删除格式
-format-leave-title = 不保存就离开？
-format-leave-message = 你对此格式所做的修改将会丢失。
-format-leave-confirm = 离开
-format-leave-cancel = 继续编辑
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = 页面
-format-section-type = 字体与间距
-format-section-paragraphs = 段落
-format-section-headings = 标题
-format-section-title = 题名与摘要
-format-section-quotations = 引文
-format-section-kinds = 段落与词语的类型
-format-section-notes = 注释
-format-section-bibliography = 参考文献
-format-section-figures = 插图、表格、公式
-format-section-margins = 页码与页眉
-format-section-about = 关于此格式
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = 关键词前的引导词
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = 独立引文
 format-quote-indent-left = 左缩进
 format-quote-indent-right = 右缩进
 format-quote-when = 何时独立成段
@@ -170,9 +145,6 @@ format-bibliography-title-hint = 参考文献、引用文献、主要参考书�
 format-bibliography-new-page = 另起一页
 format-bibliography-hanging-indent = 悬挂缩进
 format-bibliography-entry-spacing = 条目间距
-format-bibliography-style = 引用样式
-format-bibliography-style-hint = 与此格式配套的样式；选择此格式时一并采用
-format-bibliography-style-none = 不指定
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own

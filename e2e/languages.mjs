@@ -182,8 +182,8 @@ try {
   await app.waitFor('.preview', 8000);
   await sleep(1500);
   await english('the preview');
-  // The document settings are a window; the preview's button opens it.
-  await app.click('.preview button.in-use');
+  // The document settings are a window; the preview's button with the sliders opens it.
+  await app.click('.preview header button[aria-label="Dokumentinnstillinger …"]');
   await app.waitForText('dialog[open] h2', 'Dokumentinnstillinger', 5000);
   await sleep(300);
   await english('the document settings');

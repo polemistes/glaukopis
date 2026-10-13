@@ -6,7 +6,8 @@
   The panel puts its own tools, and the way to close it, after these.
 -->
 <script lang="ts" module>
-  export type SideKind = 'references' | 'pictures' | 'comments' | 'found' | 'history' | 'changes';
+  export type SideKind =
+    'look' | 'references' | 'pictures' | 'comments' | 'found' | 'history' | 'changes';
 </script>
 
 <script lang="ts">
@@ -14,6 +15,7 @@
   import FileDiff from '@lucide/svelte/icons/file-diff';
   import HistoryIcon from '@lucide/svelte/icons/history';
   import Images from '@lucide/svelte/icons/images';
+  import Palette from '@lucide/svelte/icons/palette';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import TextSearch from '@lucide/svelte/icons/text-search';
   import { t } from '$lib/i18n';
@@ -29,6 +31,12 @@
   let { current, onpick, counts = {} }: Props = $props();
 
   const kinds = $derived([
+    {
+      kind: 'look' as const,
+      label: t('look-title'),
+      icon: Palette,
+      shortcut: 'Ctrl+Shift+A',
+    },
     {
       kind: 'references' as const,
       label: t('project-references'),

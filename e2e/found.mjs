@@ -262,10 +262,9 @@ try {
   };
   const style = async (id) => {
     const before = source();
-    // The style is the element's, in its document settings (ADR 0038).
-    await app.openDocumentSettings('Layout and citations');
-    await app.documentChoose('Reference style', id);
-    await app.closeDocumentSettings(true);
+    // The style is the element's, chosen in the look of its document (ADR 0042).
+    await app.openLook();
+    await app.lookChoose('Reference style', id);
     await until(`the preview in the style ${id}`, async () => source() !== before, 20000).catch(
       () => {},
     );
@@ -721,14 +720,11 @@ try {
   await app.click('header button[aria-label="Preview and export"]');
   await app.waitFor('.preview .page', 30000);
   await sleep(1500);
-  await app.openDocumentSettings('Layout and citations');
+  await app.openLook();
   const styles = await app.exec(
-    `const row = Array.from(document.querySelectorAll('dialog[open] .window label.row'))
-       .find((r) => r.querySelector('.what')?.firstChild?.textContent.trim() === 'Reference style');
-     return Array.from(row?.querySelectorAll('select option') ?? []).map((o) => o.value)`,
+    `return Array.from(${app.lookRow('Reference style')}?.querySelectorAll('select option') ?? []).map((o) => o.value)`,
   );
-  const was = await app.documentChosen('Reference style');
-  await app.closeDocumentSettings();
+  const was = await app.lookChosen('Reference style');
   let typ = source();
   const around = (t, words) => {
     const at = t.indexOf(words);

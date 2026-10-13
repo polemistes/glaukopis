@@ -1,4 +1,5 @@
-// The editors of layouts and reference styles, opened from the document settings.
+// The look of a document changed and kept as a layout of one's own, and the
+// editor of reference styles, opened from the look.
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -48,41 +49,33 @@ try {
 
   /** The template, the layout and the style in use, as the bar over the preview names them. */
   const inUse = () => app.exec(`return document.querySelector('.preview .in-use .names')?.textContent.trim() ?? ''`);
-  // The editors are opened from the document settings, which the bar over the preview opens.
+  // The look of the document opens from the bar over the preview, and the editor of the style from it.
   await app.click('.preview button.in-use');
-  await app.waitForText('dialog[open] h2', 'Document settings', 5000);
-  await app.documentSection('Layout and citations');
-  /** Whether only the document settings are open: an editor over them has gone. */
+  await app.waitFor('.side .look .chips', 15000);
+  await sleep(300);
+  /** Whether the editor of the style has gone. */
   const editorGone = () =>
-    app.waitUntil(`return document.querySelectorAll('dialog[open]').length === 1`, 8000, 'the editor to go');
+    app.waitUntil(`return !document.querySelector('dialog[open]')`, 8000, 'the editor to go');
 
-  // --- The layout ---
-  await app.clickText('dialog[open] .window button', 'Change this layout…');
-  await app.waitFor('dialog .editor nav');
-  await app.waitFor('dialog .sample img', 20000);
+  // --- The layout, changed in Look and kept as one's own ---
   await app.screenshot('editors-1-format');
-  await app.clickText('dialog nav button', 'Type and spacing');
-  await app.exec(
-    `const selects = document.querySelectorAll('dialog .editor .form select');
-     const spacing = Array.from(selects).find((s) => Array.from(s.options).some((o) => o.textContent === 'Double'));
-     spacing.value = '1.5';
-     spacing.dispatchEvent(new Event('change', { bubbles: true }));`,
-  );
-  await app.clickText('dialog nav button', 'Headings');
+  await app.lookSection('Type');
+  await app.lookChoose('Line spacing', '1.5');
+  await app.lookSection('Headings');
   await sleep(300);
   await app.screenshot('editors-2-format-headings');
   // What a figure is called, and where the figures stand.
-  await app.clickText('dialog nav button', 'Figures, tables, equations');
+  await app.lookSection('Figures and tables');
   await sleep(300);
   await app.exec(
     `const set = (el, value) => { el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); };
-     const fields = Array.from(document.querySelectorAll('dialog .editor .form input[type="text"], dialog .editor .form input:not([type])'));
+     const fields = Array.from(document.querySelectorAll('.side .look .part input[type="text"], .side .look .part input:not([type])'));
      set(fields.find((i) => i.value === 'Figure'), 'Fig.');
-     const selects = Array.from(document.querySelectorAll('dialog .editor .form select'));
+     const selects = Array.from(document.querySelectorAll('.side .look .part select'));
      set(selects.find((s) => Array.from(s.options).some((o) => o.value === 'at-end')), 'at-end');`,
   );
-  await sleep(400);
-  const told = await app.text('dialog .editor .form');
+  await sleep(600);
+  const told = await app.exec(`return document.querySelector('.side .look .part').textContent`);
   check(
     'the layout says what a figure is called, and shows it',
     /Fig\. 1/.test(told),
@@ -93,16 +86,20 @@ try {
     /Heading over the figures/.test(told) && /about here/.test(told),
   );
   await app.screenshot('editors-2b-format-figures');
-  await app.clickText('dialog .editor nav button', 'About this layout');
+  await app.lookSection('About the layout');
   await sleep(200);
   await app.screenshot('editors-3-format-about');
+  await app.clickText('.side .look footer button', 'Keep these changes as a layout of my own');
+  await app.waitFor('.side .look footer input.kept-name', 3000);
   await app.exec(
-    `const n = document.querySelector('dialog input.name'); n.value = 'My publisher'; n.dispatchEvent(new Event('input', { bubbles: true }));`,
+    `const n = document.querySelector('.side .look footer input.kept-name'); n.value = 'My publisher'; n.dispatchEvent(new Event('input', { bubbles: true }));`,
   );
-  await app.clickText('dialog footer button', 'Save as my own');
-  await editorGone();
+  await app.clickText('.side .look footer button', 'Keep');
+  await app
+    .waitUntil(`return /My publisher · no changes/.test(document.querySelector('.side .look .map')?.textContent ?? '')`, 8000, 'the layout kept')
+    .catch(() => {});
   await sleep(3500);
-  const format = await app.documentChosen('Layout');
+  const format = await app.lookChosen('Layout');
   check(
     'a changed layout is saved as one’s own and taken into use',
     format === 'my-publisher' && (await inUse()).includes('My publisher'),
@@ -135,7 +132,7 @@ try {
   check('the preview is in the new layout', /leading: 0\.8em/.test(typ()));
 
   // --- The style ---
-  await app.clickText('dialog[open] .window button', 'Change this reference style…');
+  await app.clickText('.side .look button', 'Change this reference style…');
   await app.waitFor('dialog .editor .form');
   await app.waitFor('dialog .sample dd', 20000);
   await sleep(300);
@@ -211,8 +208,7 @@ try {
   await app.clickText('dialog footer button', 'Save as my own');
   await editorGone();
   await sleep(3500);
-  const style = await app.documentChosen('Reference style');
-  await app.closeDocumentSettings();
+  const style = await app.lookChosen('Reference style');
   check(
     'a changed style is saved as one’s own and taken into use',
     style === 'chicago-with-initials' && (await inUse()).includes('Chicago with initials'),

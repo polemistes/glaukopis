@@ -13,42 +13,18 @@ format-kind-poetry = Поезія
 
 ## The format editor.
 
-format-editor = Формат документа
 format-name = Назва формату
 # The name a format of one's own is first given, made from that of the format it is made from.
 format-name-changed = { $name }, змінений
-format-sections = Частини формату
-format-sample-page = Зразок сторінки { $number }
-format-bundled = Формати, що йдуть із Glaukopis, залишаються як є. Ваші зміни зберігаються як ваш власний формат.
-format-delete = Видалити цей формат
-format-save-own = Зберегти як власний
 format-saved = «{ $name }» збережено серед ваших власних форматів
-format-read-failed = Не вдалося прочитати формат.
-format-sample-failed = Не вдалося створити зразок.
 format-save-failed = Не вдалося зберегти формат.
 format-delete-failed = Не вдалося видалити формат.
 format-delete-title = Видалити формат «{ $name }»?
 format-delete-message = Мапи, що ним користуються, натомість користуватимуться загальним форматом рукопису.
 format-delete-confirm = Видалити формат
-format-leave-title = Вийти, не зберігши?
-format-leave-message = Зміни, які ви внесли у формат, буде втрачено.
-format-leave-confirm = Вийти
-format-leave-cancel = Редагувати далі
 
 ## The parts of a format, as they are chosen at the left.
 
-format-section-page = Сторінка
-format-section-type = Шрифт та інтервали
-format-section-paragraphs = Абзаци
-format-section-headings = Заголовки
-format-section-title = Назва й анотація
-format-section-quotations = Цитати
-format-section-kinds = Види абзаців і слів
-format-section-notes = Примітки
-format-section-bibliography = Бібліографія
-format-section-figures = Рисунки, таблиці, рівняння
-format-section-margins = Номери сторінок і колонтитул
-format-section-about = Про цей формат
 
 ## Words that stand in several parts.
 
@@ -153,7 +129,6 @@ format-title-keywords-label = Слово перед ключовими слов�
 
 ## Quotations, notes and the bibliography.
 
-format-quotations = Цитати, виокремлені з тексту
 format-quote-indent-left = Відступ ліворуч
 format-quote-indent-right = Відступ праворуч
 format-quote-when = Коли цитата виокремлюється
@@ -170,9 +145,6 @@ format-bibliography-title-hint = Бібліографія, Список літе
 format-bibliography-new-page = Починається з нової сторінки
 format-bibliography-hanging-indent = Виступ
 format-bibliography-entry-spacing = Проміжок між записами
-format-bibliography-style = Стиль цитування
-format-bibliography-style-hint = Той, що йде з цим форматом; береться, коли формат вибирають
-format-bibliography-style-none = Жоден зокрема
 
 ## The kinds of paragraph and of words: how each differs from the kind it
 ## is based on. The rows are those of the dialog for a kind of one's own
