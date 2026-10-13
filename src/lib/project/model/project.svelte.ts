@@ -38,6 +38,7 @@ import {
 } from './saving.svelte';
 import { isCatalogueKind } from '$lib/project/parts';
 import { gather, ReadableCopy } from '$lib/org/folder';
+import { getAt, pathsOf, setAt, type LookChanges, type LookPath } from '$lib/look/changes';
 import { migrate, needsMigration } from './migrate';
 import { bodyFacts, inlineText, readBody, readTitle, titleHtml, type Block } from './text';
 import { buildTree, pathTo, viewOf, type FlatNode, type Tree } from './tree';
@@ -912,6 +913,24 @@ export class Project {
       }
     }
     return { settings: settings as DocumentSettings, from };
+  }
+
+  /**
+   * The changes of an element's document to its layout: those of the
+   * elements over it, laid over by its own, path by path; and which element
+   * sets each path (ADR 0042).
+   */
+  lookOf(id: string): { changes: LookChanges; from: Map<LookPath, string> } {
+    const changes: LookChanges = {};
+    const from = new Map<LookPath, string>();
+    for (const at of this.pathTo(id)) {
+      const own = this.nodes.get(at)?.document?.look;
+      for (const path of pathsOf(own)) {
+        setAt(changes, path, structuredClone(getAt(own, path)));
+        from.set(path, at);
+      }
+    }
+    return { changes, from };
   }
 
   /** The content of an element's name or text, for an editor to bind to. */

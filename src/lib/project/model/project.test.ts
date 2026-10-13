@@ -1015,3 +1015,21 @@ describe('the templates the project carries a copy of', () => {
     });
   });
 });
+
+describe('the changes of a document to its layout', () => {
+  it('reach down the tree, each said by the element that makes it', () => {
+    const { p, root } = project();
+    const book = p.addChild(root, { title: 'Book' })!;
+    const chapter = p.addChild(book, { title: 'Chapter' })!;
+    p.setDocument(book, { look: { font: { family: 'EB Garamond', size: 12 } } });
+    p.setDocument(chapter, { look: { font: { size: 11 } } });
+    const { changes, from } = p.lookOf(chapter);
+    expect(changes).toEqual({ font: { family: 'EB Garamond', size: 11 } });
+    expect(from.get('font.family')).toBe(book);
+    expect(from.get('font.size')).toBe(chapter);
+    expect(p.lookOf(book).changes).toEqual({ font: { family: 'EB Garamond', size: 12 } });
+    // Every change taken back leaves nothing behind.
+    p.setDocument(chapter, { look: {} });
+    expect(p.yNodes.get(chapter)!.has('document')).toBe(false);
+  });
+});

@@ -293,9 +293,8 @@
         again = false;
         forced = false;
         force = false;
-        const f = $state.snapshot(await documents.format(choice.format)) as DocumentFormat;
-        // Whether the lines of the page are numbered, where the document says, over its layout.
-        if (settings.lineNumbers !== undefined) f.lineNumbers = settings.lineNumbers;
+        // The layout as the document uses it: with its changes, and its lines numbered where it says.
+        const f = await documents.formatFor(project, at);
         const tp = $state.snapshot(await templateFor(project, choice.template)) as Template;
         let document = leanDocument(project, at, sent);
         // With what has been changed under the same name: a style saved anew is made anew.

@@ -110,6 +110,9 @@ describe('the Org form of a project', () => {
     );
     expect(text).toContain(':IDENTIFIERS:  isbn=978-3-16-148410-0 doi="10.1000/xyz 1"\n');
     expect(text).toContain(':LINE_NUMBERS: t\n');
+    expect(text).toContain(
+      ':LOOK:         {"font":{"family":"EB Garamond"},"kinds":{"quote":{"italic":null}}}\n',
+    );
     expect(text).toContain('*** Kinds\n:PROPERTIES:\n:ID:     kinds\n:KIND:   Character\n');
     expect(text).toContain('** \\TODO Buy milk :work\\:\n');
     expect(text).toContain('*** \\[#A] * star :a:b\\:\n');

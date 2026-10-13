@@ -125,7 +125,14 @@ function set(p: Project, id: string, key: string, value: unknown, absentWhen: un
 function clean<T extends object>(given: T): Record<string, unknown> {
   const out: Record<string, unknown> = { ...(given as Record<string, unknown>) };
   for (const [k, v] of Object.entries(out)) {
-    if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) delete out[k];
+    if (
+      v === undefined ||
+      v === null ||
+      v === '' ||
+      (Array.isArray(v) && !v.length) ||
+      (typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length)
+    )
+      delete out[k];
   }
   return out;
 }

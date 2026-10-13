@@ -149,8 +149,7 @@
   // changes, or when the kinds of the writer's own do.
   const numbersLayout = $derived.by<NumbersLayout>(() => {
     if (kind !== 'body' || !owner || !project.node(owner)) return LAYOUT_NUMBERS;
-    const choice = documents.choice(project.documentOf(owner).settings, project);
-    return documents.formatCached(choice.format)?.verse ?? LAYOUT_NUMBERS;
+    return documents.formatForCached(project, owner)?.verse ?? LAYOUT_NUMBERS;
   });
   let numbersNow: NumbersLayout = LAYOUT_NUMBERS;
   $effect(() => {

@@ -18,6 +18,7 @@ import {
   type TemplateSummary,
 } from '$lib/api/templates';
 import { t } from '$lib/i18n';
+import { laidOver } from '$lib/look/changes';
 import { buildDocument } from '$lib/project/model/document';
 import type { Project } from '$lib/project/model/project.svelte';
 import { settings } from '$lib/state/settings.svelte';
@@ -124,6 +125,47 @@ class Documents {
     const known = this.#formats.get(id);
     if (known === undefined) queueMicrotask(() => this.format(id).catch(() => {}));
     return known;
+  }
+
+  /**
+   * The layout of an element's document as it is to be used (ADR 0042): the
+   * layout chosen, with the document's changes laid over it, and whether the
+   * lines of the page are numbered where the document says so.
+   */
+  async formatFor(project: Project, at: string): Promise<DocumentFormat> {
+    const { settings } = project.documentOf(at);
+    const layout = $state.snapshot(
+      await this.format(this.choice(settings, project).format),
+    ) as DocumentFormat;
+    return this.#laid(layout, project, at, settings.lineNumbers);
+  }
+
+  /** The same, as read already: reactive in the changes; nothing until the layout has arrived. */
+  formatForCached(project: Project, at: string): DocumentFormat | undefined {
+    const { settings } = project.documentOf(at);
+    const layout = this.formatCached(this.choice(settings, project).format);
+    if (!layout) return undefined;
+    const key = `${layout.id}\n${this.changed}\n${settings.lineNumbers}\n${JSON.stringify(project.lookOf(at).changes)}`;
+    const kept = this.#laidOut.get(key);
+    if (kept && kept.layout === layout) return kept.format;
+    const format = this.#laid(
+      $state.snapshot(layout) as DocumentFormat,
+      project,
+      at,
+      settings.lineNumbers,
+    );
+    if (this.#laidOut.size > 32) this.#laidOut.clear();
+    this.#laidOut.set(key, { layout, format });
+    return format;
+  }
+
+  /** What `formatForCached` has made, by what it was made of, so that the same is the same object. */
+  #laidOut = new Map<string, { layout: DocumentFormat; format: DocumentFormat }>();
+
+  #laid(layout: DocumentFormat, project: Project, at: string, lineNumbers: boolean | undefined) {
+    const format = laidOver(layout, project.lookOf(at).changes);
+    if (lineNumbers !== undefined) format.lineNumbers = lineNumbers;
+    return format;
   }
 
   templateSummary(id: string | undefined): TemplateSummary | undefined {
@@ -242,9 +284,7 @@ export async function documentRequest(
   const template = await templateFor(project, documents.choice(settings, project).template);
   // The choice again, with the template read: it may bring the style or the format.
   const choice = documents.choice(settings, project);
-  const format = $state.snapshot(await documents.format(choice.format)) as DocumentFormat;
-  // Whether the lines of the page are numbered, where the document says, over its layout.
-  if (settings.lineNumbers !== undefined) format.lineNumbers = settings.lineNumbers;
+  const format = await documents.formatFor(project, at);
   return {
     document: buildDocument(project, at),
     style: choice.style,
