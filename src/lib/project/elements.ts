@@ -27,7 +27,7 @@ import { describeWhen } from '$lib/timeline/solve';
 import { sayWhen } from '$lib/timeline/when.svelte';
 import { kindColour } from './kinds';
 import { manageKinds, newKind } from './kinds.svelte';
-import { PART_GROUPS, PARTS, partsAmong, type PartSpec } from './parts';
+import { PART_GROUPS, PARTS, partsAmong, placeOf, placeWords, type PartSpec } from './parts';
 import { documents } from '$lib/preview/documents.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { compareCopy } from './copies.svelte';
@@ -477,6 +477,8 @@ export function elementMenu(
   ]);
   const partItem = (p: PartSpec): MenuItem => ({
     label: p.label(),
+    // Where it puts the element in the document, where that is not where it stands.
+    hint: placeWords(p.place) ?? undefined,
     checked: kindSaid === p.id,
     action: () => project.setKind(ids, p.id),
   });
@@ -488,6 +490,7 @@ export function elementMenu(
     items: [
       ...project.kinds.map((k): MenuItem => ({
         label: k.name,
+        hint: placeWords(placeOf(project, k.id)) ?? undefined,
         colour: kindColour(k.colour).ink,
         checked: kindSaid === k.id,
         action: () => project.setKind(ids, k.id),

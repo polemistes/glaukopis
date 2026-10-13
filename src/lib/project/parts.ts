@@ -104,6 +104,17 @@ export function partOf(
   return base ? (byId.get(base) ?? null) : null;
 }
 
+/**
+ * Where a kind puts an element in the document, in words, where that is
+ * not where it stands in the tree: before the rest of its level, after it,
+ * on the cover only, or nowhere. Nothing for a kind that leaves it where it
+ * stands. `short` for the tag beside the element's kind in the text.
+ */
+export function placeWords(place: PartPlace | null | undefined, short = false): string | null {
+  if (place !== 'front' && place !== 'back' && place !== 'cover' && place !== 'none') return null;
+  return t(short ? `parts-placed-${place}-short` : `parts-placed-${place}`);
+}
+
 /** Where an element of a kind is printed; nothing where the kind says nothing of the document. */
 export function placeOf(project: Project, kindId: string | null | undefined): PartPlace | null {
   return partOf(project, kindId)?.place ?? null;

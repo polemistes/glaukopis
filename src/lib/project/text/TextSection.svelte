@@ -24,7 +24,7 @@
   import type { NodeRecord } from '../model/types';
   import { saidWords } from '../elements';
   import { kindColour } from '../kinds';
-  import { isDoubled, kindLabel } from '../parts';
+  import { isDoubled, kindLabel, placeOf, placeWords } from '../parts';
   import { describeWhen } from '$lib/timeline/solve';
   import { pieces } from '../pieces';
   import { reviewing } from '$lib/review/context';
@@ -139,6 +139,8 @@
   );
   /** Its kind, where it has one: a tag by its name. */
   const kind = $derived(kindLabel(project, node.kind));
+  /** Where its kind puts it in the document, where that is not where it stands: said beside the kind. */
+  const placed = $derived(placeWords(placeOf(project, node.kind), true));
   /** A second of a kind the document has one of, among its siblings: not printed. */
   const doubled = $derived(!!kind?.part && isDoubled(project, node.id));
   /** The threads of comments on it that are open: a marker in the right margin. */
@@ -365,7 +367,7 @@
           ><span class="dot"></span>{kind.name}{#if doubled}<span
               class="doubled"
               title={t('parts-doubled')}><CircleOff size={10} /></span
-            >{/if}</span
+            >{/if}{#if placed}<span class="placed">· {placed}</span>{/if}</span
         >
       {/if}
       {#if node.when}
@@ -840,6 +842,12 @@
     margin-right: 10px;
     font-style: normal;
     color: var(--ink-3);
+  }
+  .tag.kind .placed {
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 0;
+    opacity: 0.85;
   }
   .tag.kind .dot {
     width: 7px;

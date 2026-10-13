@@ -37,3 +37,14 @@ parts-blurb = Blurb
 
 # On the label of a second element of a kind a document has one of.
 parts-doubled = Not printed: another element of this kind comes first among its siblings.
+
+## Where a kind puts an element in the document, where not where it stands.
+
+parts-placed-front = Printed at the front, before the rest of its level
+parts-placed-back = Printed at the back, after the rest of its level
+parts-placed-cover = Printed on the cover only
+parts-placed-none = Not printed in the document
+parts-placed-front-short = printed at the front
+parts-placed-back-short = printed at the back
+parts-placed-cover-short = on the cover only
+parts-placed-none-short = not printed
