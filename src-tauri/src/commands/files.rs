@@ -8,6 +8,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 
 use glaukopis_core::i18n::tr;
+use glaukopis_core::library::export::{ExportSelection, Exported};
 use glaukopis_core::library::files::{self, FileFolder};
 use glaukopis_core::library::{FileView, Library, TakenIn, attachments};
 use glaukopis_core::pictures::Picture;
@@ -291,4 +292,35 @@ fn with_ending(name: &str, extension: &str) -> String {
     } else {
         format!("{name}{ending}")
     }
+}
+
+// ---- export ----
+
+/// Writes the files of the selection into the folder `into`, under readable
+/// names in the folders of the store, with a `references.bib` beside them
+/// where `with_bib` is asked for. The library is copied, and let go before
+/// the files are, so that it may be used meanwhile. What was written before
+/// it was stopped stays.
+#[tauri::command(async)]
+pub fn files_export(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    selection: ExportSelection,
+    into: String,
+    with_bib: Option<bool>,
+    ticket: Option<String>,
+) -> CommandResult<Exported> {
+    let work = Ticket::begin(ticket);
+    let library = {
+        let mut library = state.library();
+        library.refresh()?;
+        library.clone()
+    };
+    Ok(library.export_files(
+        &selection,
+        Path::new(&into),
+        with_bib.unwrap_or(false),
+        &mut work.teller(&app),
+        &work.stop,
+    )?)
 }

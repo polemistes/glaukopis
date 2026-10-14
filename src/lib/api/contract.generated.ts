@@ -3,7 +3,7 @@
 // fails where the two differ. Not to be changed by hand: run the tests.
 
 import type { Summary, Reference, LibraryListing, ImportPlan, DuplicateGroup } from './library';
-import type { FilesListing, TakenIn } from './files';
+import type { FilesListing, TakenIn, Exported } from './files';
 import type { ProjectInfo, Folder } from './projects';
 import type { Picture } from './pictures';
 import type { ToolsInfo, DocumentFormat, FormatSummary, StyleSummary, Preview, KindEntry, KindLooks } from './documents';
@@ -217,6 +217,15 @@ export const takenIn: TakenIn = {
   "folders": 0,
   "problems": [],
   "same": []
+};
+
+export const exported: Exported = {
+  "bib": "/data/exported/references.bib",
+  "files": 2,
+  "folders": 1,
+  "problems": [],
+  "stopped": false,
+  "total": 2
 };
 
 export const importPlan: ImportPlan = {
