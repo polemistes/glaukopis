@@ -10,14 +10,32 @@
 
 const dialogs: HTMLDialogElement[] = [];
 
+function forget(dialog: HTMLDialogElement) {
+  const at = dialogs.indexOf(dialog);
+  if (at >= 0) dialogs.splice(at, 1);
+}
+
 export function dialogOpened(dialog: HTMLDialogElement) {
-  dialogClosed(dialog);
+  forget(dialog);
   dialogs.push(dialog);
 }
 
+/**
+ * What floats and is shown within a dialog that closes, or goes, would go
+ * with it. What is to outlive it (`data-outlives-dialog`: the messages, which
+ * may have come while it was open) is put where what floats is put now, and
+ * stays shown; menus and tooltips of the dialog go with it, as they should.
+ */
 export function dialogClosed(dialog: HTMLDialogElement) {
-  const at = dialogs.indexOf(dialog);
-  if (at >= 0) dialogs.splice(at, 1);
+  forget(dialog);
+  for (const node of Array.from(
+    dialog.querySelectorAll<HTMLElement>(':scope > [data-outlives-dialog]'),
+  )) {
+    // A dialog that is taken away has hidden what it held already: what has
+    // anything in it is shown again where it is put, the rest only put there.
+    if (node.children.length) raise(node);
+    else document.body.appendChild(node);
+  }
 }
 
 /** The dialog that lies over the others, or the page when none is open. */

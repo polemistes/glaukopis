@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { fly } from 'svelte/transition';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
   import CircleCheck from '@lucide/svelte/icons/circle-check';
   import X from '@lucide/svelte/icons/x';
@@ -17,9 +16,12 @@
   });
 </script>
 
-<div class="toaster" aria-live="polite" bind:this={el}>
+<div class="toaster" aria-live="polite" data-outlives-dialog bind:this={el}>
   {#each toasts.list as toast (toast.id)}
-    <div class="toast {toast.kind}" role="status" transition:fly={{ y: 12, duration: 180 }}>
+    <!-- It comes in by an animation of its own, not a transition of Svelte's: one that came
+         while a dialog was open is moved out of the dialog when it goes (see top.ts), and a
+         transition cut short so was never done, and its message never went away. -->
+    <div class="toast {toast.kind}" role="status">
       {#if toast.kind === 'error'}
         <span class="mark"><CircleAlert size={16} /></span>
       {:else if toast.kind === 'ok'}
@@ -68,6 +70,7 @@
     pointer-events: none;
   }
   .toast {
+    animation: toast-in 180ms var(--ease);
     pointer-events: auto;
     display: flex;
     align-items: flex-start;
@@ -124,5 +127,11 @@
   .action:hover {
     opacity: 1;
     background: rgba(255, 255, 255, 0.12);
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
   }
 </style>
