@@ -1008,12 +1008,13 @@ came from.
 **Folders.** The files stand in folders of their own, which may lie in
 folders, in the tree at the left. **New folder** makes one; a folder is
 renamed with F2 or from its menu, and moved by dragging it onto another, or
-with **Move to**. Files are moved by dragging them onto a folder. Deleting a
+with **Move to**; **New folder** is in the menu beside **Add files…**. Files are moved by dragging them onto a folder. Deleting a
 folder keeps what is in it: its files and folders move up to where it was.
 The folders are not the collections: a collection gathers works, and a work
 may be in many; a folder is where a file is kept, one place for each.
 
-**Taking files in.** **Add files…** and **Add a folder…**, at the head, or
+**Taking files in.** **Add files…** at the head, **Add a folder…** in the
+menu beside it, or
 files and folders dropped on the view, are taken into the folder in view. A
 folder comes with the folders in it, as they were on your disk. A file the
 library has already, under any name, is not taken twice: you are told it is
@@ -1026,16 +1027,17 @@ kind:
 
 | Kind | What can be done |
 | --- | --- |
-| PDF | Open it; make it searchable; make elements of its text |
-| Picture | Open it; make elements of the text read in it; take it into the pictures, so that it can become a figure |
-| Document (Word, OpenDocument, EPUB, HTML, Markdown, Org, plain text) | Open it; bring it in as elements |
+| PDF | Open it; **Make searchable…**; **Read into elements…** |
+| Picture | Open it; **Read the text…**, to copy or make an element of; **Take into the pictures**, so that it can become a figure |
+| Document (Word, OpenDocument, EPUB, HTML, Markdown, Org, plain text) | Open it; **Bring in as elements…** |
 | Anything else | Open it with the program your system has for it |
 
 **Files and references.** A file may belong to one reference, to several (a
 chapter and its book), or to none yet. **Assign to a reference…** finds the
 reference as when you cite; the *×* beside a reference in the pane takes the
-file from it. **Unassigned only**, among the filters, shows the files that
-belong to none.
+file from it, and so does **Remove from this reference** in the pane of the
+reference. **Unassigned only**, under the filter button, shows the files
+that belong to none.
 
 **Going through the files.** **Go through…** looks at the files that belong
 to no reference (or at those you have selected) and proposes a reference for
@@ -1052,8 +1054,8 @@ another day.
 **Files stay.** A file leaves the library only when you remove the file
 itself, and you are told first which references it belongs to. Taking a file
 from a reference keeps it among the files. When references are removed,
-their files stay, unless you choose **Remove with the files**, which removes
-those that no other reference has.
+their files stay (**Delete, keep the files**), unless you choose **Delete
+with the files**, which removes those that no other reference has.
 
 **Exporting.** **Export…**, in the menu of a folder, of the files selected,
 or of a file, and **Export all files…**, write copies into a folder you
