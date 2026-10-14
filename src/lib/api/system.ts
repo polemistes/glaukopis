@@ -4,6 +4,8 @@ import type { Layout } from './ocr';
 export interface SystemInfo {
   version: string;
   dataDir: string;
+  /** The folder of the logs of the last runs. */
+  logs: string;
   platform: string;
   /** The name the system gives the user: their full name where it is known, or their login. */
   user: string;
@@ -169,3 +171,7 @@ export const defaultSettings: Settings = {
 
 export const settingsLoad = () => call<Partial<Settings>>('settings_load');
 export const settingsSave = (settings: Settings) => call<void>('settings_save', { settings });
+
+/** Writes into the log of the run what went wrong in the page. */
+export const logPage = (level: 'error' | 'warn', message: string) =>
+  call<void>('log_page', { level, message });

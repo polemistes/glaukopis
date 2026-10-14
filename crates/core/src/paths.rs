@@ -142,7 +142,9 @@ impl DataDir {
     }
 }
 
-fn default_root() -> PathBuf {
+/// Where the data is when nothing else is said: `GLAUKOPIS_DATA_DIR`, or the
+/// place of the system for the data of programs.
+pub fn default_root() -> PathBuf {
     if let Some(dir) = std::env::var_os("GLAUKOPIS_DATA_DIR").filter(|v| !v.is_empty()) {
         return PathBuf::from(dir);
     }

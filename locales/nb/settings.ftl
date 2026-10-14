@@ -82,3 +82,8 @@ settings-language-interface-hint = Ordene i programmet. Tekstene dine er på spr
 settings-language-system = Som systemet ({ $language })
 settings-language-texts = Språk for nye tekster
 settings-language-texts-hint = Språket et nytt prosjekt skrives på. Det avgjør hvilke ord dokumentene skriver ut, og hvilken ordbok rettskrivingen kontrolleres mot. Hvert element kan få et annet språk under Språk … i menyen sin, og det som står under, følger med.
+
+## The log of the runs.
+
+settings-logs = Loggen
+settings-logs-hint = Det Glaukopis forteller om seg selv i hver kjøring, for de siste { $count } kjøringene: hva det gjorde, hva som gikk galt, og hva som ble av vinduet. Til nytte når noe har gått galt og ingen så hvorfor.

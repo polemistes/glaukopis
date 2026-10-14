@@ -12,6 +12,8 @@ use crate::state::AppState;
 pub struct SystemInfo {
     pub version: &'static str,
     pub data_dir: String,
+    /// The folder of the logs of the last runs (`log.rs`).
+    pub logs: String,
     pub platform: &'static str,
     /// The name the system gives the user: the history of a project names
     /// them so where they have not given a name of their own.
@@ -23,6 +25,7 @@ pub fn system_info(state: State<'_, AppState>) -> CommandResult<SystemInfo> {
     Ok(SystemInfo {
         version: env!("CARGO_PKG_VERSION"),
         data_dir: state.data.root().display().to_string(),
+        logs: state.data.root().join(crate::log::DIR).display().to_string(),
         platform: std::env::consts::OS,
         user: user_name(),
     })
@@ -108,4 +111,16 @@ pub fn reveal_path(app: AppHandle, path: String) -> CommandResult<()> {
     app.opener()
         .reveal_item_in_dir(std::path::Path::new(&path))
         .map_err(|e| CommandError { kind: "open", message: e.to_string() })
+}
+
+/// What went wrong in the page, for the log of the run: an error that was
+/// not caught, or a promise that failed with no one to hear it.
+#[tauri::command(async)]
+pub fn log_page(level: String, message: String) {
+    let message: String = message.chars().take(4000).collect();
+    if level == "error" {
+        tracing::error!(target: "page", "{message}");
+    } else {
+        tracing::warn!(target: "page", "{message}");
+    }
 }

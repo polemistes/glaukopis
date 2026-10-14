@@ -4,6 +4,7 @@ mod commands;
 #[cfg(test)]
 mod contract;
 mod error;
+mod log;
 mod state;
 
 use glaukopis_core::i18n::tr;
@@ -12,10 +13,7 @@ use tauri::Manager;
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 
 pub fn run() {
-    tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::try_from_env("GLAUKOPIS_LOG").unwrap_or_else(|_| "info".into()))
-        .with_writer(std::io::stderr)
-        .init();
+    log::start(&glaukopis_core::paths::default_root());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -53,6 +51,9 @@ pub fn run() {
             };
             let state = state::AppState::open(data, claim, app.path().resource_dir().ok())?;
             app.manage(state);
+            for window in app.webview_windows().values() {
+                watch(window);
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -62,6 +63,7 @@ pub fn run() {
             commands::system::languages,
             commands::system::language_set,
             commands::system::reveal_path,
+            commands::system::log_page,
             commands::library::library_list,
             commands::library::library_refresh,
             commands::library::library_get,
@@ -232,6 +234,44 @@ pub fn run() {
             commands::spelling::spelling_add_word,
             commands::spelling::spelling_remove_word,
         ])
-        .run(tauri::generate_context!())
-        .expect("the application could not start");
+        .build(tauri::generate_context!())
+        .expect("the application could not start")
+        .run(|_, event| match event {
+            tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::CloseRequested { .. }, .. } => {
+                tracing::info!(window = label, "the window is asked to close")
+            }
+            tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::Destroyed, .. } => {
+                tracing::info!(window = label, "the window is destroyed")
+            }
+            tauri::RunEvent::ExitRequested { code, .. } => tracing::info!(?code, "the application is asked to end"),
+            tauri::RunEvent::Exit => tracing::info!("the application ends"),
+            _ => {}
+        });
+}
+
+/// Logs what becomes of a window that the log of the run cannot see from
+/// the events of Tauri: taken off the screen or put back by the desktop,
+/// and the end of the page's own process, with why.
+fn watch(window: &tauri::WebviewWindow) {
+    #[cfg(target_os = "linux")]
+    {
+        use gtk::prelude::WidgetExt;
+        use webkit2gtk::WebViewExt;
+        let label = window.label().to_owned();
+        if let Ok(gtk) = window.gtk_window() {
+            let shown = label.clone();
+            gtk.connect_map(move |_| tracing::info!(window = shown, "the window is on the screen"));
+            let hidden = label.clone();
+            gtk.connect_unmap(move |_| tracing::warn!(window = hidden, "the window is taken off the screen"));
+        }
+        let page = label.clone();
+        let _ = window.with_webview(move |webview| {
+            let page = page.clone();
+            webview.inner().connect_web_process_terminated(move |_, reason| {
+                tracing::error!(window = page, ?reason, "the page's own process ended")
+            });
+        });
+    }
+    #[cfg(not(target_os = "linux"))]
+    let _ = window;
 }

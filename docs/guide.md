@@ -2325,6 +2325,11 @@ on a desk of another shade, so that where the text goes is seen.
   name made of what it holds) and `files.json`, which says what each file is
   called and which folder it is in; **Export all files…** gives a copy you
   can read in any file manager.
+- **What Glaukopis did is written down.** Each run keeps a log in the folder
+  `logs`, beside the rest, and the last ten are kept: what was done, what
+  went wrong, and what became of the window. **The log**, under *Settings*,
+  opens the folder. When something has gone wrong, such as a window that
+  closed, the log of that run is what to look at, or to send.
 - **To read your text without Glaukopis**, export it, or open its folder:
   every project is kept there as Org as well (see below). The references are
   in `library.bib` at all times, which other tools can read.

@@ -90,3 +90,8 @@ settings-language-interface-hint = The words of the application. Your texts are 
 settings-language-system = As the system ({ $language })
 settings-language-texts = Language of new texts
 settings-language-texts-hint = What a new project is written in, which decides the words its documents print and the dictionary its spelling is checked by. Any element can be given another under Languages… in its menu, and what is under it follows.
+
+## The log of the runs.
+
+settings-logs = The log
+settings-logs-hint = What Glaukopis tells of itself in each run, of the last { $count } runs: what it did, what went wrong, and what became of its window. Of use when something has gone wrong and no one saw why.

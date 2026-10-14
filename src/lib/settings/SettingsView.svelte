@@ -476,6 +476,21 @@
           {t('common-open')}
         </Button>
       </div>
+      <div class="row top">
+        <div class="what">
+          <div class="label">{t('settings-logs')}</div>
+          <div class="hint">{t('settings-logs-hint', { count: 10 })}</div>
+        </div>
+        <Button
+          size="sm"
+          disabled={!system}
+          onclick={() => system && openPath(system.logs)}
+          data-open-logs
+        >
+          {#snippet icon()}<FolderOpen size={13} />{/snippet}
+          {t('common-open')}
+        </Button>
+      </div>
       <div>
         <div class="label">{t('settings-lookup')}</div>
         <div class="hint">
