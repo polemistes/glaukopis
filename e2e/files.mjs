@@ -229,6 +229,38 @@ try {
   await app.screenshot('files-1-view-dark');
   await app.setTheme('light');
 
+  // The columns at the sides are dragged wider, and stay so for the references.
+  const widths = () =>
+    app.exec(
+      `const v = document.querySelector('.files-view, .library');
+       return [v.querySelector('.side').getBoundingClientRect().width,
+               v.querySelector('.detail').getBoundingClientRect().width].map(Math.round)`,
+    );
+  const [side0, detail0] = await widths();
+  const dividers = await app.findAll('.files-view > [role="separator"]');
+  check('the folders and the pane can be dragged wider', dividers.length === 2, String(dividers.length));
+  await app.drag(dividers[0], { dx: 120, dy: 0 });
+  await app.drag(dividers[1], { dx: -90, dy: 0 });
+  await sleep(200);
+  const [side1, detail1] = await widths();
+  check(
+    'the folders are wider, and so is the pane',
+    side1 >= side0 + 100 && detail1 >= detail0 + 70,
+    `${side0}→${side1}, ${detail0}→${detail1}`,
+  );
+  await app.screenshot('files-1-wider');
+  await app.clickText('[data-library-switch] button', 'References');
+  await app.waitFor('.library .side', 5000);
+  const [side2, detail2] = await widths();
+  check('the references have the same columns', side2 === side1 && detail2 === detail1, `${side2}, ${detail2}`);
+  await app.drag('.library > [role="separator"]', { dx: -120, dy: 0 });
+  await sleep(200);
+  const [side3] = await widths();
+  check('and narrower again there', side3 <= side1 - 100, `${side1}→${side3}`);
+  await app.clickText('[data-library-switch] button', 'Files');
+  await app.waitFor('.files-view .side', 5000);
+  await filter('Unassigned only'); // The filters start anew with the view.
+
   // The PDF is given to its reference, through the pane and the chooser.
   const pdf = listed.find((r) => r.kind === 'pdf');
   await app.click(`[data-file-list] [data-hash="${pdf.hash}"]`);

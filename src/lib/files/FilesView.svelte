@@ -46,6 +46,8 @@
   import LibrarySwitch from './LibrarySwitch.svelte';
   import ReferenceChooser from './ReferenceChooser.svelte';
   import GoThroughDialog from './GoThroughDialog.svelte';
+  import { columns } from '$lib/library/columns.svelte';
+  import Divider from '$lib/ui/Divider.svelte';
   import ExportDialog from './ExportDialog.svelte';
   import {
     assign,
@@ -396,6 +398,8 @@
 
 <div
   class="files-view"
+  style:--side="{columns.side}px"
+  style:--detail="{columns.detail}px"
   use:dropTarget={{
     accepts: ['files'],
     ondrop: (e) => void takeIn(e.payload.data as string[], folderId, true).then(taken),
@@ -404,6 +408,11 @@
   <nav class="side" aria-label={t('files-folders')}>
     <FolderTree bind:this={tree} selected={folderId} onselect={selectFolder} />
   </nav>
+  <Divider
+    label={t('library-resize-side')}
+    onmove={(dx) => columns.moveSide(dx)}
+    onreset={() => columns.resetSide()}
+  />
 
   <section class="middle" aria-label={t('files-title')}>
     <header>
@@ -532,6 +541,11 @@
     {/if}
   </section>
 
+  <Divider
+    label={t('library-resize-detail')}
+    onmove={(dx) => columns.moveDetail(dx)}
+    onreset={() => columns.resetDetail()}
+  />
   <aside class="detail" aria-label={t('files-file')}>
     {#if single && files.get(single)}
       {#key single}
@@ -609,9 +623,13 @@
 <DocumentHost />
 
 <style>
+  /* The columns at the sides are as wide as they were dragged to be, the
+     same as for the references; in a narrow window they give way first. */
   .files-view {
     display: grid;
-    grid-template-columns: 224px minmax(320px, 1fr) minmax(360px, 440px);
+    grid-template-columns:
+      minmax(0, var(--side)) auto minmax(360px, 1fr) auto
+      minmax(0, var(--detail));
     height: 100%;
     min-height: 0;
   }
@@ -620,18 +638,15 @@
   }
   .side {
     background: var(--paper-sunken);
-    border-right: 1px solid var(--line);
     overflow-y: auto;
-  }
-  @media (max-width: 1060px) {
-    .files-view {
-      grid-template-columns: 180px minmax(0, 1fr) minmax(0, 360px);
-    }
   }
   @media (max-width: 760px) {
     .files-view {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       grid-template-rows: auto minmax(0, 1fr);
+    }
+    .files-view > :global(.divider) {
+      display: none;
     }
     .side {
       grid-column: 1 / -1;
@@ -651,6 +666,7 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
+    container-type: inline-size;
   }
   header {
     display: flex;
@@ -785,6 +801,19 @@
     min-height: 0;
     overflow-y: auto;
     background: var(--paper-raised);
-    border-left: 1px solid var(--line);
+  }
+  /* Where the columns beside it have been dragged wide, the head takes two
+     lines: the search below the buttons, as wide as the column. */
+  @container (max-width: 620px) {
+    header {
+      flex-wrap: wrap;
+      height: auto;
+      min-height: var(--bar-h);
+      padding-block: 6px;
+    }
+    .search {
+      order: 10;
+      flex: 1 0 100%;
+    }
   }
 </style>

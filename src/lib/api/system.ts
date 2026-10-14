@@ -129,6 +129,10 @@ export interface Settings {
   projectsPane: boolean;
   /** How wide it is, in pixels. */
   projectsPaneWidth: number;
+  /** How wide the collections or folders of the library are, in pixels; the same for references and files. */
+  librarySideWidth: number;
+  /** How wide the pane of what is selected in the library is, in pixels. */
+  libraryDetailWidth: number;
 }
 
 export const defaultSettings: Settings = {
@@ -159,6 +163,8 @@ export const defaultSettings: Settings = {
   kinds: [],
   projectsPane: false,
   projectsPaneWidth: 240,
+  librarySideWidth: 224,
+  libraryDetailWidth: 400,
 };
 
 export const settingsLoad = () => call<Partial<Settings>>('settings_load');

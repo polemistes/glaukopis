@@ -25,7 +25,7 @@
     filesList,
     type FileFolder,
   } from '$lib/api/files';
-  import { ancestors, byName, parentOf } from '$lib/home/folders';
+  import { ancestors, byName, parentOf, pathOf } from '$lib/home/folders';
   import { languages, t } from '$lib/i18n';
   import { confirm } from '$lib/ui/confirm.svelte';
   import { dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
@@ -326,6 +326,7 @@
         role="button"
         tabindex="0"
         data-folder={f.id}
+        title={pathOf(files.folders, f.id)}
         style:padding-left="{10 + node.depth * 14}px"
         use:dropTarget={{ accepts: accepts(f), ondrop: (e) => void drop(e, f) }}
         onclick={() => onselect(f.id)}

@@ -510,3 +510,8 @@ library-notes-unsaved = Your note could not be kept
 library-switch = References or files
 library-switch-references = References
 library-switch-files = Files
+
+## The columns of the library, which can be dragged wider or narrower.
+
+library-resize-side = Drag to make the collections or folders wider or narrower
+library-resize-detail = Drag to make the pane at the right wider or narrower

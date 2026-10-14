@@ -50,6 +50,8 @@
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import { citing } from './citing.svelte';
   import CollectionTree from './CollectionTree.svelte';
+  import { columns } from './columns.svelte';
+  import Divider from '$lib/ui/Divider.svelte';
   import FilterPopover from './FilterPopover.svelte';
   import { activeFilters, applyFilters, noFilters, type Filters } from './filters';
   import MapDialog from './MapDialog.svelte';
@@ -397,6 +399,8 @@
 
 <div
   class="library"
+  style:--side="{columns.side}px"
+  style:--detail="{columns.detail}px"
   use:dropTarget={{
     accepts: ['files'],
     ondrop: (e) => void importDropped(e.payload.data as string[], collectionId),
@@ -405,6 +409,11 @@
   <nav class="side" aria-label={t('library-collections')}>
     <CollectionTree selected={collectionId} onselect={selectCollection} />
   </nav>
+  <Divider
+    label={t('library-resize-side')}
+    onmove={(dx) => columns.moveSide(dx)}
+    onreset={() => columns.resetSide()}
+  />
 
   <section class="middle" aria-label={t('library-references')}>
     <header>
@@ -522,6 +531,11 @@
     {/if}
   </section>
 
+  <Divider
+    label={t('library-resize-detail')}
+    onmove={(dx) => columns.moveDetail(dx)}
+    onreset={() => columns.resetDetail()}
+  />
   <div class="detail">
     {#if single}
       <ReferencePane
@@ -584,28 +598,28 @@
 />
 
 <style>
+  /* The columns at the sides are as wide as they were dragged to be; in a
+     narrow window they give way before the references do. */
   .library {
     display: grid;
-    grid-template-columns: 224px minmax(320px, 1fr) minmax(360px, 440px);
+    grid-template-columns:
+      minmax(0, var(--side)) auto minmax(360px, 1fr) auto
+      minmax(0, var(--detail));
     height: 100%;
     min-height: 0;
   }
   .side {
     background: var(--paper-sunken);
-    border-right: 1px solid var(--line);
     overflow-y: auto;
   }
-  /* In a narrow window the columns share what there is, and narrower still
-     the collections lie over the references as a strip. */
-  @media (max-width: 1060px) {
-    .library {
-      grid-template-columns: 180px minmax(0, 1fr) minmax(0, 360px);
-    }
-  }
+  /* Narrower still, the collections lie over the references as a strip. */
   @media (max-width: 760px) {
     .library {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       grid-template-rows: auto minmax(0, 1fr);
+    }
+    .library > :global(.divider) {
+      display: none;
     }
     .side {
       grid-column: 1 / -1;
@@ -625,6 +639,7 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
+    container-type: inline-size;
   }
   header {
     display: flex;
@@ -752,5 +767,19 @@
     height: 100%;
     background: var(--paper-raised);
     border-left: 1px solid var(--line);
+  }
+  /* Where the columns beside it have been dragged wide, the head takes two
+     lines: the search below the buttons, as wide as the column. */
+  @container (max-width: 620px) {
+    header {
+      flex-wrap: wrap;
+      height: auto;
+      min-height: var(--bar-h);
+      padding-block: 6px;
+    }
+    .search {
+      order: 10;
+      flex: 1 0 100%;
+    }
   }
 </style>

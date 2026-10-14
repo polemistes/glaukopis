@@ -486,3 +486,8 @@ library-notes-unsaved = Notatet ditt kunne ikke lagres
 library-switch = Referanser eller filer
 library-switch-references = Referanser
 library-switch-files = Filer
+
+## The columns of the library, which can be dragged wider or narrower.
+
+library-resize-side = Dra for å gjøre samlingene eller mappene bredere eller smalere
+library-resize-detail = Dra for å gjøre ruten til høyre bredere eller smalere

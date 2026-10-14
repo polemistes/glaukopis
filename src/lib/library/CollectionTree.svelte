@@ -67,6 +67,17 @@
     library.setCollections(await collectionList());
   }
 
+  /** The names from the top down to a collection, for when its own is cut short. */
+  function pathOf(id: string): string {
+    const names: string[] = [];
+    let at = library.collection(id);
+    for (let steps = 0; at && steps <= library.collections.length; steps++) {
+      names.unshift(at.name);
+      at = at.parent ? library.collection(at.parent) : undefined;
+    }
+    return names.join(' / ');
+  }
+
   async function begin(parent: string | null) {
     if (parent) {
       collapsed.delete(parent);
@@ -306,6 +317,7 @@
         class:selected={selected === c.id}
         role="button"
         tabindex="0"
+        title={pathOf(c.id)}
         style:padding-left="{10 + node.depth * 14}px"
         use:dropTarget={{
           accepts: (p) =>
