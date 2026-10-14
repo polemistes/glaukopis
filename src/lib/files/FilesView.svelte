@@ -6,7 +6,7 @@
    * kind is taken, and what can be done with one depends on its kind.
    */
   import { open } from '@tauri-apps/plugin-dialog';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import ArrowDownUp from '@lucide/svelte/icons/arrow-down-up';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ExternalLink from '@lucide/svelte/icons/external-link';
@@ -116,20 +116,27 @@
   // The file the route names is selected, once it is known; what is selected
   // here is named by the route in its turn, without a step in the history.
   let applied: string | undefined;
+  /** The file this view last had the route name: the route is changed when the selection changes, not when the route does. */
+  let named: string | undefined;
   $effect(() => {
     const wanted = route.file;
     if (!files.loaded || wanted === applied) return;
     applied = wanted;
     if (wanted && files.get(wanted)) {
+      named = wanted;
       selection = [wanted];
       queueMicrotask(() => list?.scrollTo(wanted));
     }
   });
   $effect(() => {
     const file = single ?? undefined;
-    if (!files.loaded || file === route.file || (!file && selection.length)) return;
+    if (!files.loaded || file === named || (!file && selection.length)) return;
+    named = file;
     applied = file;
-    router.replace({ view: 'files', folder: folderId ?? undefined, file });
+    untrack(() => {
+      if (file !== route.file)
+        router.replace({ view: 'files', folder: folderId ?? undefined, file });
+    });
   });
 
   // What is selected must exist.
@@ -140,8 +147,10 @@
   });
 
   function selectFolder(id: string | null) {
-    selection = [];
+    // The route of the folder names no file; it comes when the window says the place has changed.
+    named = undefined;
     applied = undefined;
+    selection = [];
     router.go({ view: 'files', folder: id ?? undefined });
   }
 

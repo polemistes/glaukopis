@@ -146,7 +146,8 @@
       message: files ? `${message}\n\n${t('library-delete-files', { files })}` : message,
       confirm: files ? t('library-delete-keep-files') : t('common-delete'),
       alternative: files ? t('files-remove-with-files') : undefined,
-      danger: true,
+      // Where there are files, what Enter chooses keeps them, and is not marked as what loses most.
+      danger: !files,
     });
     if (answer === 'cancel') return;
     try {
