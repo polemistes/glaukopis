@@ -24,8 +24,15 @@ fn readings() -> std::sync::MutexGuard<'static, Vec<(String, Arc<AtomicBool>)>> 
 /// Reads a document from a file: its parts, what it says of itself, and
 /// what the one who brings it in should know. Its pictures are taken into
 /// the store. With a ticket, the reading can be stopped while it goes on.
+/// With `stored`, the path is that of a file of the library, in its store.
 #[tauri::command(async)]
-pub fn document_read(state: State<'_, AppState>, path: PathBuf, ticket: Option<String>) -> CommandResult<Imported> {
+pub fn document_read(
+    state: State<'_, AppState>,
+    path: PathBuf,
+    ticket: Option<String>,
+    stored: Option<bool>,
+) -> CommandResult<Imported> {
+    let path = if stored.unwrap_or(false) { state.library().attachment_path(&path.to_string_lossy())? } else { path };
     let stop = Arc::new(AtomicBool::new(false));
     if let Some(ticket) = &ticket {
         readings().push((ticket.clone(), stop.clone()));

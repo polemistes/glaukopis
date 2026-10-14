@@ -104,9 +104,12 @@ export function isPlainTextPath(path: string): boolean {
   return ['txt', 'text'].includes(ending(path));
 }
 
-/** Reads a document. With a ticket, the reading can be stopped while it goes on. */
-export const documentRead = (path: string, ticket?: string) =>
-  call<Imported>('document_read', { path, ticket });
+/**
+ * Reads a document. With a ticket, the reading can be stopped while it goes on;
+ * with `stored`, the path is that of a file of the library, in its store.
+ */
+export const documentRead = (path: string, ticket?: string, stored = false) =>
+  call<Imported>('document_read', { path, ticket, stored });
 
 export const documentReadStop = (ticket: string) => call<void>('document_read_stop', { ticket });
 

@@ -3,6 +3,7 @@
 // fails where the two differ. Not to be changed by hand: run the tests.
 
 import type { Summary, Reference, LibraryListing, ImportPlan, DuplicateGroup } from './library';
+import type { FilesListing, TakenIn } from './files';
 import type { ProjectInfo, Folder } from './projects';
 import type { Picture } from './pictures';
 import type { ToolsInfo, DocumentFormat, FormatSummary, StyleSummary, Preview, KindEntry, KindLooks } from './documents';
@@ -49,6 +50,7 @@ export const reference: Reference = {
     {
       "exists": true,
       "hash": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+      "kind": "pdf",
       "name": "Nagy 1979 - The Best of the Achaeans.pdf",
       "path": "attachments/e1/e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e/Nagy 1979 - The Best of the Achaeans.pdf",
       "size": 8
@@ -141,6 +143,80 @@ export const listing: LibraryListing = {
   ],
   "file": "/data/data/library/library.bib",
   "warnings": []
+};
+
+export const files: FilesListing = {
+  "files": [
+    {
+      "added": "2026-01-01T00:00:00Z",
+      "exists": true,
+      "folder": null,
+      "hash": "e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e",
+      "kind": "pdf",
+      "name": "Nagy 1979 - The Best of the Achaeans.pdf",
+      "origin": null,
+      "path": "attachments/e1/e16fa5d9b51928755db85b917f0297babaf22c7a47e97d9212adab56e61ba04e/Nagy 1979 - The Best of the Achaeans.pdf",
+      "references": [
+        {
+          "added": "2026-01-01T00:00:00Z",
+          "attachments": 1,
+          "authors": "Nagy",
+          "authorsSort": "nagy gregory",
+          "container": "",
+          "hasNote": true,
+          "id": "00000000-0000-4000-8000-000000000000",
+          "key": "nagy1979",
+          "modified": "2026-01-01T00:00:00Z",
+          "publisher": "Johns Hopkins",
+          "search": "gregory nagy some else the best of the achaeans concepts of the hero  johns hopkins baltimore hero epic 10 1 x 9780801823886 read again 1979 nagy1979",
+          "title": "The Best of the Achaeans: Concepts of the Hero",
+          "type": "book",
+          "year": "1979",
+          "yearNumber": 1979
+        }
+      ],
+      "size": 8
+    },
+    {
+      "added": "2026-01-01T00:00:00Z",
+      "exists": true,
+      "folder": "00000000-0000-4000-8000-000000000000",
+      "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "kind": "picture",
+      "name": "plate.png",
+      "origin": "/data/plate.png",
+      "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+      "references": [],
+      "size": 70
+    }
+  ],
+  "folders": [
+    {
+      "id": "00000000-0000-4000-8000-000000000000",
+      "name": "Greek",
+      "order": "000001"
+    }
+  ]
+};
+
+export const takenIn: TakenIn = {
+  "files": [
+    {
+      "added": "2026-01-01T00:00:00Z",
+      "exists": true,
+      "folder": "00000000-0000-4000-8000-000000000000",
+      "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+      "kind": "picture",
+      "name": "plate.png",
+      "origin": "/data/plate.png",
+      "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+      "references": [],
+      "size": 70
+    }
+  ],
+  "folders": 0,
+  "problems": [],
+  "same": []
 };
 
 export const importPlan: ImportPlan = {

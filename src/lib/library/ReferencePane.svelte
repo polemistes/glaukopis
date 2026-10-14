@@ -506,7 +506,8 @@
   <SearchableDialog
     {reference}
     file={searchable}
-    ondone={(made) => {
+    ondone={(_, made) => {
+      if (!made) return;
       if (made.id === reference?.id) reference = made;
       library.put(made);
     }}

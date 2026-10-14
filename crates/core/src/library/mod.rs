@@ -3,6 +3,7 @@
 pub mod attachments;
 pub mod collections;
 pub mod entry;
+pub mod files;
 pub mod keys;
 pub mod schema;
 
@@ -10,6 +11,8 @@ use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
+
+use serde::Serialize;
 
 use crate::bib::{self, RawEntry};
 use crate::error::{Error, IoContext, Result};
@@ -20,6 +23,7 @@ use crate::tr;
 pub use attachments::StoredFile;
 pub use collections::{Collection, Collections};
 pub use entry::{Draft, Entry, EntryView, Summary};
+pub use files::{FileFolder, FileKind, FileRecord, Files};
 
 const HEADER: &str = "\
 % The reference library of Glaukopis. BibLaTeX, UTF-8.
@@ -61,11 +65,17 @@ pub struct Library {
     dir: PathBuf,
     file: PathBuf,
     collections_file: PathBuf,
+    files_file: PathBuf,
     entries: Vec<Entry>,
     by_id: HashMap<String, usize>,
     /// Ids of entries merged away, pointing to the entry that absorbed them.
     aliases: HashMap<String, String>,
     pub collections: Collections,
+    /// What is known of the files of the store, and their folders (`files.rs`).
+    pub files: Files,
+    /// Whether the record of the files was changed and is not written yet:
+    /// it is written with the library, or by `save_files`.
+    files_dirty: bool,
     stamp: Option<Stamp>,
     /// What was found amiss when the file was last read.
     pub warnings: Vec<String>,
@@ -94,10 +104,13 @@ impl Library {
             dir: dir.to_owned(),
             file: dir.join("library.bib"),
             collections_file: dir.join("collections.json"),
+            files_file: dir.join(files::FILE),
             entries: Vec::new(),
             by_id: HashMap::new(),
             aliases: HashMap::new(),
             collections: Collections::default(),
+            files: Files::default(),
+            files_dirty: false,
             stamp: None,
             warnings: Vec::new(),
             kept: Vec::new(),
@@ -164,11 +177,32 @@ impl Library {
         }
         self.reindex();
         self.collections = Collections::load(&self.collections_file)?;
+        self.load_files();
 
         if needs_saving {
             self.save()?;
         }
+        self.save_files_if_changed()?;
         Ok(())
+    }
+
+    /// Reads the record of the files, and enters what the store has that it
+    /// lacks. A record that cannot be read is put aside under another name,
+    /// not written over, and said to be.
+    fn load_files(&mut self) {
+        self.files = match Files::load(&self.files_file) {
+            Ok(files) => files,
+            Err(e) => {
+                let aside =
+                    self.files_file.with_extension(format!("unreadable-{}.json", uuid::Uuid::new_v4().simple()));
+                let _ = fs::rename(&self.files_file, &aside);
+                self.warnings.push(tr!("core-library-files-unreadable", path = &aside, message = e.to_string()));
+                Files::default()
+            }
+        };
+        if self.files.reconcile(&self.dir) {
+            self.files_dirty = true;
+        }
     }
 
     fn reindex(&mut self) {
@@ -233,11 +267,22 @@ impl Library {
         }
         write_atomic_with_backup(&self.file, out.as_bytes())?;
         self.stamp = stamp_of(&self.file);
-        Ok(())
+        self.save_files_if_changed()
     }
 
     pub(crate) fn save_collections(&self) -> Result<()> {
         self.collections.save(&self.collections_file)
+    }
+
+    /// Writes the record of the files.
+    pub fn save_files(&mut self) -> Result<()> {
+        self.files.save(&self.files_file)?;
+        self.files_dirty = false;
+        Ok(())
+    }
+
+    fn save_files_if_changed(&mut self) -> Result<()> {
+        if self.files_dirty { self.save_files() } else { Ok(()) }
     }
 
     // ---- reading ----
@@ -490,7 +535,10 @@ impl Library {
         self.update(id, &draft)
     }
 
-    pub fn remove(&mut self, ids: &[String]) -> Result<usize> {
+    /// Removes entries. Their files stay in the store, belonging to no entry,
+    /// unless `with_files` is asked for: then those that no other entry has
+    /// are removed from the store with them.
+    pub fn remove(&mut self, ids: &[String], with_files: bool) -> Result<usize> {
         self.refresh()?;
         let doomed: HashSet<&String> = ids.iter().filter(|id| self.by_id.contains_key(*id)).collect();
         if doomed.is_empty() {
@@ -512,8 +560,16 @@ impl Library {
         if self.collections.forget_entries(&gone) {
             self.save_collections()?;
         }
-        for f in files {
-            self.delete_file_if_unused(&f);
+        if with_files {
+            for f in files {
+                let used = self.entries.iter().any(|e| e.attachments().contains(&f));
+                if let (false, Some(hash)) = (used, attachments::hash_of_path(&f)) {
+                    let hash = hash.to_owned();
+                    if let Err(e) = self.remove_file(&hash) {
+                        tracing::warn!(%e, f, "could not remove a stored file");
+                    }
+                }
+            }
         }
         Ok(count)
     }
@@ -575,7 +631,16 @@ impl Library {
     // ---- attachments ----
 
     pub fn attachments_of(&self, id: &str) -> Result<Vec<StoredFile>> {
-        Ok(self.require(id)?.attachments().iter().map(|p| attachments::describe(&self.dir, p)).collect())
+        Ok(self.require(id)?.attachments().iter().map(|p| self.describe_file(p)).collect())
+    }
+
+    /// A stored file as the lists show it: by the name the record gives it.
+    pub fn describe_file(&self, stored: &str) -> StoredFile {
+        let mut file = attachments::describe(&self.dir, stored);
+        if let Some(record) = self.files.get(&file.hash) {
+            file.name = record.name.clone();
+        }
+        file
     }
 
     pub fn attachment_path(&self, relative: &str) -> Result<PathBuf> {
@@ -583,7 +648,7 @@ impl Library {
     }
 
     /// A name for a file of this entry: `Nagy 1979 - The Best of the Achaeans`.
-    fn file_name_for(entry: &Entry) -> String {
+    pub fn file_name_for(entry: &Entry) -> String {
         let s = entry.summary();
         let mut name = String::new();
         let authors = bib::names::short_list(&entry.creators());
@@ -612,7 +677,7 @@ impl Library {
         let index = *self.by_id.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
         let name = Self::file_name_for(&self.entries[index]);
         let stored = attachments::store_file(&self.dir, source, &name)?;
-        self.link_file(index, stored)
+        self.link_file(index, stored, Some(&source.display().to_string()))
     }
 
     /// The name a file of an entry is given in the store, and where the store
@@ -623,25 +688,31 @@ impl Library {
         Ok((Self::file_name_for(entry), self.dir.clone()))
     }
 
-    /// Links a file that is already in the store.
-    pub fn attach_stored(&mut self, id: &str, stored: &str) -> Result<Entry> {
+    /// Links a file that is already in the store; `origin` is where it was
+    /// copied from, for the record, where it is new to it.
+    pub fn attach_stored(&mut self, id: &str, stored: &str, origin: Option<&str>) -> Result<Entry> {
         self.refresh()?;
         let index = *self.by_id.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
         let path = attachments::absolute(&self.dir, stored)?;
         if !path.is_file() {
             return Err(Error::not_found(tr!("core-library-the-stored-file", path = stored)));
         }
-        self.link_file(index, stored.to_owned())
+        self.link_file(index, stored.to_owned(), origin)
     }
 
-    fn link_file(&mut self, index: usize, stored: String) -> Result<Entry> {
-        if self.link_file_unsaved(index, stored) {
+    fn link_file(&mut self, index: usize, stored: String, origin: Option<&str>) -> Result<Entry> {
+        if self.link_file_unsaved(index, stored, origin) {
             self.save()?;
+        } else {
+            self.save_files_if_changed()?;
         }
         Ok(self.entries[index].clone())
     }
 
-    fn link_file_unsaved(&mut self, index: usize, stored: String) -> bool {
+    fn link_file_unsaved(&mut self, index: usize, stored: String, origin: Option<&str>) -> bool {
+        if self.files.record(&stored, None, origin, &now()) {
+            self.files_dirty = true;
+        }
         let entry = &mut self.entries[index];
         let mut files = entry.attachments();
         if files.contains(&stored) {
@@ -658,11 +729,11 @@ impl Library {
         let index = *self.by_id.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
         let name = Self::file_name_for(&self.entries[index]);
         let stored = attachments::store_file(&self.dir, source, &name)?;
-        Ok(self.link_file_unsaved(index, stored))
+        Ok(self.link_file_unsaved(index, stored, Some(&source.display().to_string())))
     }
 
-    /// Unlinks a file from the entry. The file is deleted from the store when
-    /// no other entry links to it.
+    /// Unlinks a file from the entry. The file stays in the store, whether
+    /// another entry has it or none: it leaves only by `remove_file`.
     pub fn detach(&mut self, id: &str, stored: &str) -> Result<Entry> {
         self.refresh()?;
         let index = *self.by_id.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
@@ -677,17 +748,65 @@ impl Library {
         entry.modified = now();
         let result = entry.clone();
         self.save()?;
-        self.delete_file_if_unused(stored);
         Ok(result)
+    }
+
+    /// Removes a file from the store: from every entry that has it, from the
+    /// record, and from the disk. The one way a file leaves the library.
+    pub fn remove_file(&mut self, hash: &str) -> Result<()> {
+        self.refresh()?;
+        let mut stored: Vec<String> = self.files.get(hash).map(|r| vec![r.path.clone()]).unwrap_or_default();
+        let mut changed = false;
+        for entry in &mut self.entries {
+            let mut files = entry.attachments();
+            let before = files.len();
+            files.retain(|f| {
+                let ours = attachments::hash_of_path(f) == Some(hash);
+                if ours && !stored.contains(f) {
+                    stored.push(f.clone());
+                }
+                !ours
+            });
+            if files.len() != before {
+                entry.set_attachments(&files);
+                entry.modified = now();
+                changed = true;
+            }
+        }
+        if stored.is_empty() && attachments::find_by_hash(&self.dir, hash).is_none() {
+            return Err(Error::not_found(tr!("core-library-the-file-of-library")));
+        }
+        if let Some(found) = attachments::find_by_hash(&self.dir, hash)
+            && !stored.contains(&found)
+        {
+            stored.push(found);
+        }
+        if self.files.forget(hash).is_some() {
+            self.files_dirty = true;
+        }
+        if changed {
+            self.save()?;
+        } else {
+            self.save_files_if_changed()?;
+        }
+        for path in stored {
+            attachments::delete(&self.dir, &path)?;
+        }
+        Ok(())
     }
 
     /// Puts other content in the place of a stored file, for every entry
     /// that links to it: a PDF made searchable in the place of the scan it
     /// was made of. It is stored under the name the file had, and the file
-    /// is deleted from the store. The entries that were changed.
-    pub fn replace_file(&mut self, stored: &str, content: &[u8]) -> Result<Vec<Entry>> {
+    /// is deleted from the store; the record of the new one is that of the
+    /// old, its folder, name and origin. The stored path of the new file,
+    /// and the entries that were changed.
+    pub fn replace_file(&mut self, stored: &str, content: &[u8]) -> Result<(String, Vec<Entry>)> {
         self.refresh()?;
-        if !self.entries.iter().any(|e| e.attachments().iter().any(|f| f == stored)) {
+        let old_hash = attachments::hash_of_path(stored).unwrap_or_default().to_owned();
+        let linked = self.entries.iter().any(|e| e.attachments().iter().any(|f| f == stored));
+        let on_disk = attachments::absolute(&self.dir, stored).is_ok_and(|p| p.is_file());
+        if !linked && !(on_disk && self.files.get(&old_hash).is_some()) {
             return Err(Error::not_found(stored.to_owned()));
         }
         let name = stored.rsplit('/').next().unwrap_or(stored);
@@ -704,18 +823,27 @@ impl Library {
             entry.modified = now();
             changed.push(entry.clone());
         }
-        self.save()?;
         if new != stored {
-            self.delete_file_if_unused(stored);
+            let new_hash = attachments::hash_of_path(&new).unwrap_or_default().to_owned();
+            let old = self.files.forget(&old_hash);
+            self.files.forget(&new_hash);
+            let mut record = old.unwrap_or_else(|| FileRecord {
+                name: stored.rsplit('/').next().unwrap_or(stored).to_owned(),
+                added: now(),
+                ..Default::default()
+            });
+            record.hash = new_hash;
+            record.path = new.clone();
+            self.files.files.push(record);
+            self.files_dirty = true;
         }
-        Ok(changed)
-    }
-
-    fn delete_file_if_unused(&self, stored: &str) {
-        let used = self.entries.iter().any(|e| e.attachments().iter().any(|f| f == stored));
-        if !used && let Err(e) = attachments::delete(&self.dir, stored) {
+        self.save()?;
+        if new != stored
+            && let Err(e) = attachments::delete(&self.dir, stored)
+        {
             tracing::warn!(%e, stored, "could not delete a stored file");
         }
+        Ok((new, changed))
     }
 
     /// The entries that link to content with this hash.
@@ -724,6 +852,80 @@ impl Library {
             .iter()
             .filter(|e| e.attachments().iter().any(|f| attachments::hash_of_path(f) == Some(hash)))
             .collect()
+    }
+
+    /// A file of the store as the files view shows it.
+    pub fn file_view(&self, hash: &str) -> Option<FileView> {
+        let record = self.files.get(hash)?;
+        Some(self.view_of(record))
+    }
+
+    /// Every file of the store, in the order of the record.
+    pub fn file_views(&self) -> Vec<FileView> {
+        let mut by_hash: HashMap<&str, Vec<Summary>> = HashMap::new();
+        for e in &self.entries {
+            for f in e.attachments() {
+                if let Some(hash) = attachments::hash_of_path(&f)
+                    && let Some(record) = self.files.get(hash)
+                {
+                    let list = by_hash.entry(record.hash.as_str()).or_default();
+                    if !list.iter().any(|s| s.id == e.id) {
+                        list.push(e.summary());
+                    }
+                }
+            }
+        }
+        self.files
+            .files
+            .iter()
+            .map(|r| FileView::of(&self.dir, r, by_hash.remove(r.hash.as_str()).unwrap_or_default()))
+            .collect()
+    }
+
+    fn view_of(&self, record: &FileRecord) -> FileView {
+        let references = self.entries_with_file_hash(&record.hash).into_iter().map(Entry::summary).collect();
+        FileView::of(&self.dir, record, references)
+    }
+
+    /// Enters into the record files that were copied into the store by
+    /// `files::store_paths`, each in its folder: the folders of `structure`
+    /// made where they are not, under `folder`. Nothing is linked to any
+    /// entry. A file the record knew already is said to be the same, and
+    /// left where it was.
+    pub fn enter_taken(&mut self, taken: &[files::Taken], folder: Option<&str>) -> Result<TakenIn> {
+        if let Some(folder) = folder {
+            self.files.folder(folder)?;
+        }
+        let before = self.files.folders.len();
+        let mut out = TakenIn::default();
+        let mut seen = HashSet::new();
+        for t in taken {
+            let Some(hash) = attachments::hash_of_path(&t.stored).map(str::to_owned) else { continue };
+            if self.files.get(&hash).is_some() || !seen.insert(hash.clone()) {
+                if let Some(view) = self.file_view(&hash)
+                    && !out.same.iter().any(|v: &FileView| v.hash == hash)
+                {
+                    out.same.push(view);
+                }
+                continue;
+            }
+            let mut at = folder.map(str::to_owned);
+            for name in &t.folders {
+                match self.files.folder_named(name, at.as_deref()) {
+                    Ok(f) => at = Some(f.id),
+                    Err(e) => out.problems.push(format!("{name}: {e}")),
+                }
+            }
+            self.files.record(&t.stored, at.as_deref(), Some(&t.origin), &now());
+            if let Some(view) = self.file_view(&hash) {
+                out.files.push(view);
+            }
+        }
+        out.folders = self.files.folders.len() - before;
+        if !out.files.is_empty() || out.folders > 0 {
+            self.save_files()?;
+        }
+        Ok(out)
     }
 
     // ---- collections ----
@@ -883,6 +1085,55 @@ fn tidy_note(text: &str) -> String {
         .join("\n\n")
 }
 
+/// A file of the store, with what the record and the entries say of it.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileView {
+    pub hash: String,
+    /// The stored path, as the entries name it.
+    pub path: String,
+    pub name: String,
+    pub kind: FileKind,
+    pub size: u64,
+    pub exists: bool,
+    pub folder: Option<String>,
+    pub origin: Option<String>,
+    pub added: String,
+    /// The references the file belongs to, in the order of the library.
+    pub references: Vec<Summary>,
+}
+
+impl FileView {
+    fn of(dir: &Path, record: &FileRecord, references: Vec<Summary>) -> Self {
+        let meta = attachments::absolute(dir, &record.path).ok().and_then(|p| fs::metadata(p).ok());
+        FileView {
+            hash: record.hash.clone(),
+            path: record.path.clone(),
+            name: record.name.clone(),
+            kind: files::kind_of(&record.name),
+            size: meta.as_ref().map(|m| m.len()).unwrap_or(0),
+            exists: meta.is_some_and(|m| m.is_file()),
+            folder: record.folder.clone(),
+            origin: record.origin.clone(),
+            added: record.added.clone(),
+            references,
+        }
+    }
+}
+
+/// What came of taking files in.
+#[derive(Debug, Clone, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TakenIn {
+    /// The files that are new to the library.
+    pub files: Vec<FileView>,
+    /// Those it had already, left where they were.
+    pub same: Vec<FileView>,
+    /// How many folders were made.
+    pub folders: usize,
+    pub problems: Vec<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -968,7 +1219,7 @@ mod tests {
         assert_eq!(updated.get("ids"), Some("nagy1979"));
         assert_eq!(lib.by_key("nagy1979").unwrap().id, a.id);
 
-        assert_eq!(lib.remove(&[a.id.clone(), "nonsense".into()]).unwrap(), 1);
+        assert_eq!(lib.remove(&[a.id.clone(), "nonsense".into()], false).unwrap(), 1);
         assert!(lib.get(&a.id).is_none());
         assert_eq!(lib.len(), 1);
     }
@@ -1088,7 +1339,7 @@ mod tests {
         let (name, dir) = lib.file_name_of(&e.id).unwrap();
         assert_eq!(name, "Nagy 1996 - Homeric Questions");
         let stored = attachments::store_file(&dir, &source, &name).unwrap();
-        let linked = lib.attach_stored(&e.id, &stored).unwrap();
+        let linked = lib.attach_stored(&e.id, &stored, None).unwrap();
         assert_eq!(linked.attachments(), [stored]);
     }
 
@@ -1238,14 +1489,85 @@ mod tests {
 
         lib.detach(&a.id, &stored).unwrap();
         assert!(lib.attachment_path(&stored).unwrap().exists(), "still used by b");
-        lib.remove(std::slice::from_ref(&b.id)).unwrap();
-        assert!(!lib.attachment_path(&stored).unwrap().exists());
+        lib.remove(std::slice::from_ref(&b.id), false).unwrap();
+        assert!(lib.attachment_path(&stored).unwrap().exists(), "a file stays when its references go");
+        let view = lib.file_view(&hash).unwrap();
+        assert!(view.references.is_empty(), "it belongs to none");
+        assert_eq!(view.kind, FileKind::Pdf);
+        assert_eq!(view.origin.as_deref(), Some(pdf.display().to_string().as_str()));
 
         // An update from the form does not lose attachments.
         let a3 = lib.attach(&a.id, &pdf).unwrap();
         let d = Draft::from_entry(&a3);
         assert!(!d.fields.contains_key("file"));
         assert_eq!(lib.update(&a.id, &d).unwrap().attachments().len(), 1);
+    }
+
+    #[test]
+    fn a_tree_of_files_is_taken_in_with_its_folders() {
+        use std::sync::atomic::AtomicBool;
+        let (tmp, mut lib) = library();
+        let desk = tmp.path().join("Greek");
+        fs::create_dir_all(desk.join("Homer")).unwrap();
+        fs::write(desk.join("Homer/Nagy 1979.pdf"), b"%PDF nagy").unwrap();
+        fs::write(desk.join("Homer/West 1988.pdf"), b"%PDF west").unwrap();
+        fs::write(desk.join("plate.png"), b"png plate").unwrap();
+        fs::write(desk.join("notes.txt"), b"notes").unwrap();
+        fs::write(desk.join(".hidden"), b"hidden").unwrap();
+        fs::write(desk.join("empty.pdf"), b"").unwrap();
+        let loose = tmp.path().join("copy of nagy.pdf");
+        fs::write(&loose, b"%PDF nagy").unwrap();
+        let top = lib.files.folder_create("Sources", None).unwrap();
+        lib.save_files().unwrap();
+
+        let mut told = Vec::new();
+        let stop = AtomicBool::new(false);
+        let (taken, problems) =
+            files::store_paths(lib.dir(), &[desk.clone()], true, &mut |d, t, _| told.push((d, t)), &stop);
+        assert!(problems.is_empty(), "{problems:?}");
+        assert_eq!(taken.len(), 4);
+        assert_eq!(told.last(), Some(&(4, 4)));
+        let got = lib.enter_taken(&taken, Some(&top.id)).unwrap();
+        assert_eq!((got.files.len(), got.same.len(), got.folders), (4, 0, 2));
+        let homer = lib.files.folders.iter().find(|f| f.name == "Homer").unwrap().clone();
+        let greek = lib.files.folder(homer.parent.as_deref().unwrap()).unwrap().clone();
+        assert_eq!((greek.name.as_str(), greek.parent.as_deref()), ("Greek", Some(top.id.as_str())));
+        let nagy = got.files.iter().find(|f| f.name == "Nagy 1979.pdf").unwrap();
+        assert_eq!(nagy.folder.as_deref(), Some(homer.id.as_str()));
+        assert!(nagy.references.is_empty());
+
+        // The same tree again: the same files, no new folders.
+        let (again, _) = files::store_paths(lib.dir(), &[desk.clone()], true, &mut |_, _, _| {}, &stop);
+        let got = lib.enter_taken(&again, Some(&top.id)).unwrap();
+        assert_eq!((got.files.len(), got.same.len(), got.folders), (0, 4, 0));
+
+        // One content under two names is one file.
+        let (copy, _) = files::store_paths(lib.dir(), &[loose], true, &mut |_, _, _| {}, &stop);
+        let got = lib.enter_taken(&copy, None).unwrap();
+        assert_eq!((got.files.len(), got.same.len()), (0, 1));
+
+        // The record is read back as it was written; a file is removed from everything.
+        let again = Library::open_at(lib.dir()).unwrap();
+        assert_eq!(again.files, lib.files);
+        let e = lib.add(&draft("@book{n, title={Best}}")).unwrap();
+        lib.attach_stored(&e.id, &nagy.path, None).unwrap();
+        lib.remove_file(&nagy.hash).unwrap();
+        assert!(lib.require(&e.id).unwrap().attachments().is_empty());
+        assert!(lib.file_view(&nagy.hash).is_none());
+        assert!(!lib.attachment_path(&nagy.path).unwrap().exists());
+        assert_eq!(lib.remove_file(&nagy.hash).unwrap_err().kind(), "not-found");
+
+        // Removing a reference with its files removes those no other has.
+        let west = lib.file_views().into_iter().find(|f| f.name == "West 1988.pdf").unwrap();
+        let plate = lib.file_views().into_iter().find(|f| f.name == "plate.png").unwrap();
+        let w = lib.add(&draft("@book{w, title={West}}")).unwrap();
+        let o = lib.add(&draft("@book{o, title={Other}}")).unwrap();
+        lib.attach_stored(&w.id, &west.path, None).unwrap();
+        lib.attach_stored(&w.id, &plate.path, None).unwrap();
+        lib.attach_stored(&o.id, &plate.path, None).unwrap();
+        lib.remove(std::slice::from_ref(&w.id), true).unwrap();
+        assert!(lib.file_view(&west.hash).is_none(), "had no other");
+        assert_eq!(lib.file_view(&plate.hash).unwrap().references.len(), 1, "another has it");
     }
 
     #[test]
@@ -1261,7 +1583,10 @@ mod tests {
         let stored = lib.attach(&a.id, &scan).unwrap().attachments()[1].clone();
         lib.attach(&b.id, &scan).unwrap();
 
-        let changed = lib.replace_file(&stored, b"%PDF scan, searchable").unwrap();
+        let scan_hash = attachments::hash_of_path(&stored).unwrap().to_owned();
+        let folder = lib.files.folder_create("Scans", None).unwrap();
+        lib.files.move_file(&scan_hash, Some(&folder.id)).unwrap();
+        let (new, changed) = lib.replace_file(&stored, b"%PDF scan, searchable").unwrap();
         assert_eq!(changed.len(), 2);
         let now = lib.require(&a.id).unwrap().attachments();
         assert_eq!(now.len(), 2);
@@ -1270,6 +1595,10 @@ mod tests {
         assert_eq!(lib.require(&b.id).unwrap().attachments(), vec![now[1].clone()]);
         assert_eq!(fs::read(lib.attachment_path(&now[1]).unwrap()).unwrap(), b"%PDF scan, searchable");
         assert!(!lib.attachment_path(&stored).unwrap().exists(), "the scan is gone from the store");
+        assert_eq!(now[1], new);
+        let record = lib.files.get(attachments::hash_of_path(&new).unwrap()).unwrap();
+        assert_eq!(record.folder.as_deref(), Some(folder.id.as_str()), "the new file stands where the scan stood");
+        assert!(lib.files.get(&scan_hash).is_none());
 
         assert_eq!(lib.replace_file(&stored, b"%PDF").unwrap_err().kind(), "not-found");
     }

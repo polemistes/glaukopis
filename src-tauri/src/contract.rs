@@ -80,7 +80,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     std::fs::write(&file, b"%PDF-1.4").unwrap();
     let (name, dir) = library.file_name_of(&work.id).unwrap();
     let stored = attachments::store_file(&dir, &file, &name).unwrap();
-    library.attach_stored(&work.id, &stored).unwrap();
+    library.attach_stored(&work.id, &stored, None).unwrap();
     let work = library.set_note(&work.id, "Read again.").unwrap();
     let epic = library.collection_create("Epic", None).unwrap();
     library.collection_add(&epic.id, std::slice::from_ref(&work.id)).unwrap();
@@ -95,6 +95,19 @@ fn what_is_sent_is_what_the_interface_declares() {
         None,
     );
     let plan = import::plan(&library, candidates, "pasted", warnings);
+    // A file of the library in a folder, belonging to no reference, beside the work's.
+    let shelf = library.files.folder_create("Greek", None).unwrap();
+    let loose = tmp.path().join("plate.png");
+    std::fs::write(&loose, DOT).unwrap();
+    let (taken, _) = glaukopis_core::library::files::store_paths(
+        library.dir(),
+        &[loose],
+        true,
+        &mut |_, _, _| {},
+        &std::sync::atomic::AtomicBool::new(false),
+    );
+    let taken_in = library.enter_taken(&taken, Some(&shelf.id)).unwrap();
+    let work = library.require(&work.id).unwrap().clone();
     let groups = glaukopis_core::duplicates::find_groups(library.entries());
     assert!(!groups.is_empty() && again.id != work.id);
 
@@ -151,6 +164,8 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("summary", "Summary", "library", &work.summary());
     put("reference", "Reference", "library", &full(&library, &work));
     put("listing", "LibraryListing", "library", &listing(&library));
+    put("files", "FilesListing", "files", &crate::commands::files::files_listing(&library));
+    put("takenIn", "TakenIn", "files", &taken_in);
     put("importPlan", "ImportPlan", "library", &plan);
     put("duplicates", "DuplicateGroup[]", "library", &groups);
     put("project", "ProjectInfo", "projects", &project);

@@ -116,8 +116,8 @@ pub fn library_set_note(state: State<'_, AppState>, id: String, text: String) ->
 }
 
 #[tauri::command(async)]
-pub fn library_remove(state: State<'_, AppState>, ids: Vec<String>) -> CommandResult<usize> {
-    Ok(state.library().remove(&ids)?)
+pub fn library_remove(state: State<'_, AppState>, ids: Vec<String>, with_files: Option<bool>) -> CommandResult<usize> {
+    Ok(state.library().remove(&ids, with_files.unwrap_or(false))?)
 }
 
 #[tauri::command(async)]
@@ -269,12 +269,12 @@ pub fn attachment_add(state: State<'_, AppState>, id: String, paths: Vec<String>
     let (name, dir) = state.library().file_name_of(&id)?;
     let mut stored = Vec::new();
     for p in &paths {
-        stored.push(glaukopis_core::library::attachments::store_file(&dir, Path::new(p), &name)?);
+        stored.push((glaukopis_core::library::attachments::store_file(&dir, Path::new(p), &name)?, p));
     }
     let mut library = state.library();
     let mut last = library.require(&id)?.clone();
-    for s in &stored {
-        last = library.attach_stored(&id, s)?;
+    for (s, from) in &stored {
+        last = library.attach_stored(&id, s, Some(from))?;
     }
     Ok(full(&library, &last))
 }

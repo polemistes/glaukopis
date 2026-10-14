@@ -1,4 +1,5 @@
 pub mod documents;
+pub mod files;
 pub mod found;
 pub mod history;
 pub mod import;

@@ -3,7 +3,7 @@
 import { listen } from '@tauri-apps/api/event';
 import { call, inTauri } from './backend';
 import type { Imported } from './imported';
-import type { Reference } from './library';
+import type { Reference, StoredFile } from './library';
 
 /**
  * How a page is laid out, where Tesseract is told rather than left to judge:
@@ -61,8 +61,10 @@ export interface Looked {
 
 /** What came of making a PDF of the library searchable. */
 export interface MadeSearchable {
-  /** The reference, which points to the file that has the text. */
-  reference: Reference;
+  /** The reference it was asked for, which points to the file that has the text. */
+  reference: Reference | null;
+  /** The file that has the text, as it stands in the store now. */
+  file: StoredFile;
   read: number;
   withText: number;
   /** The pages that could not be read, counted from one, with why. */
@@ -93,7 +95,7 @@ export const ocrRead = (path: string, asked: Asked, ticket?: string, stored?: bo
 export const ocrStop = (ticket: string) => call<void>('ocr_stop', { ticket });
 
 /** Makes a PDF attached to a reference searchable, by its path in the store. */
-export const ocrSearchable = (id: string, path: string, asked: Asked, ticket?: string) =>
+export const ocrSearchable = (id: string | null, path: string, asked: Asked, ticket?: string) =>
   call<MadeSearchable>('ocr_searchable', { id, path, asked, ticket });
 
 /** Reads the text of a picture of the store. */

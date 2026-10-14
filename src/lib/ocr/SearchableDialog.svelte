@@ -32,14 +32,15 @@
   import { reader } from './reader.svelte';
 
   interface Props {
-    reference: Reference;
+    /** The reference the file is made searchable from, where it is: its language is the first guess. */
+    reference?: Reference | null;
     file: StoredFile;
-    /** The reference as it is when the file has been replaced. */
-    ondone: (reference: Reference) => void;
+    /** The file as it is when it has been replaced, and the reference with it, where one was given. */
+    ondone: (file: StoredFile, reference: Reference | null) => void;
     onclose: () => void;
   }
 
-  let { reference, file, ondone, onclose }: Props = $props();
+  let { reference = null, file, ondone, onclose }: Props = $props();
 
   const ticket = newId();
   let phase = $state<'looking' | 'asking' | 'reading' | 'failed'>('looking');
@@ -77,7 +78,7 @@
       if (gone) return;
       looked = found;
       // The language of the work, where the reference says it.
-      const language = reference.fields.langid ?? reference.fields.language ?? null;
+      const language = reference?.fields.langid ?? reference?.fields.language ?? null;
       chosen = reader.first(language, languages.current);
       phase = 'asking';
     } catch (error) {
@@ -92,7 +93,7 @@
     const stopListening = await onProgress(ticket, (told) => (progress = told));
     try {
       const made = await ocrSearchable(
-        reference.id,
+        reference?.id ?? null,
         file.path,
         {
           languages: $state.snapshot(chosen),
@@ -107,7 +108,7 @@
         ? t('ocr-searchable-failed', { count: made.failed.length })
         : undefined;
       notifyOk(t('ocr-searchable-done', { count: made.read }), failed);
-      ondone(made.reference);
+      ondone(made.file, made.reference);
       onclose();
     } catch (error) {
       if (gone) return;

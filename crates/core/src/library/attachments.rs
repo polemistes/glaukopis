@@ -24,6 +24,8 @@ pub struct StoredFile {
     pub size: u64,
     pub exists: bool,
     pub hash: String,
+    /// What can be done with it, by the ending of its name.
+    pub kind: super::files::FileKind,
 }
 
 pub fn hash_file(path: &Path) -> Result<String> {
@@ -57,6 +59,11 @@ fn hex(bytes: &[u8]) -> String {
 /// The directory, relative to the library, where content with this hash lies.
 fn hash_dir(hash: &str) -> String {
     format!("{DIR}/{}/{}", &hash[..2], hash)
+}
+
+/// Whether a name is a hash as the store names its directories.
+pub fn is_hash(text: &str) -> bool {
+    text.len() == 64 && text.bytes().all(|b| b.is_ascii_hexdigit())
 }
 
 /// The hash a stored path belongs to.
@@ -151,6 +158,7 @@ pub fn describe(library_dir: &Path, relative: &str) -> StoredFile {
         size: meta.as_ref().map(|m| m.len()).unwrap_or(0),
         exists: meta.is_some_and(|m| m.is_file()),
         hash: hash_of_path(relative).unwrap_or_default().to_owned(),
+        kind: super::files::kind_of(relative),
     }
 }
 

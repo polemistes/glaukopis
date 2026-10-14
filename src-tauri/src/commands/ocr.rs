@@ -18,6 +18,7 @@ use glaukopis_core::ocr::text::IsWord;
 use glaukopis_core::ocr::{self, Asked, Looked, Progress};
 
 use crate::commands::library::{EntryFull, full};
+use glaukopis_core::library::StoredFile;
 use glaukopis_core::tr;
 
 use crate::error::CommandResult;
@@ -175,8 +176,10 @@ pub fn ocr_stop(ticket: String) {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MadeSearchable {
-    /// The reference, which points to the file that has the text.
-    pub reference: EntryFull,
+    /// The reference it was asked for, which points to the file that has the text.
+    pub reference: Option<EntryFull>,
+    /// The file that has the text, as it stands in the store now.
+    pub file: StoredFile,
     /// The pages that were read, and those that had text already.
     pub read: usize,
     pub with_text: usize,
@@ -184,15 +187,16 @@ pub struct MadeSearchable {
     pub failed: Vec<(usize, String)>,
 }
 
-/// Makes a PDF attached to a reference searchable: the file in the store is
-/// replaced by the one that has the text, which the reference then points
-/// to, as does every other that pointed to the file. The library is not
-/// held while the pages are read.
+/// Makes a PDF of the library searchable: the file in the store is
+/// replaced by the one that has the text, which every reference that
+/// pointed to the file then points to, and which takes the file's place
+/// among the files. `id` is a reference whose state is given back. The
+/// library is not held while the pages are read.
 #[tauri::command(async)]
 pub fn ocr_searchable(
     app: AppHandle,
     state: State<'_, AppState>,
-    id: String,
+    id: Option<String>,
     path: String,
     asked: Asked,
     ticket: Option<String>,
@@ -208,12 +212,19 @@ pub fn ocr_searchable(
         &reading.stop,
     )?;
     let mut library = state.library();
-    if let Some(pdf) = &made.pdf {
-        library.replace_file(&path, pdf)?;
-    }
-    let entry = library.resolve(&id).ok_or_else(|| glaukopis_core::Error::not_found(id.clone()))?.clone();
+    let now = match &made.pdf {
+        Some(pdf) => library.replace_file(&path, pdf)?.0,
+        None => path.clone(),
+    };
+    let reference = match &id {
+        Some(id) => {
+            Some(full(&library, library.resolve(id).ok_or_else(|| glaukopis_core::Error::not_found(id.clone()))?))
+        }
+        None => None,
+    };
     Ok(MadeSearchable {
-        reference: full(&library, &entry),
+        reference,
+        file: library.describe_file(&now),
         read: made.read,
         with_text: made.with_text,
         failed: made.failed,

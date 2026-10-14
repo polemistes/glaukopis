@@ -1,6 +1,7 @@
 /** The reference library. Mirrors `src-tauri/src/commands/library.rs` and `import.rs`. */
 
 import { call } from './backend';
+import type { FileKind } from './files';
 
 export interface Person {
   family: string;
@@ -38,6 +39,8 @@ export interface StoredFile {
   size: number;
   exists: boolean;
   hash: string;
+  /** What can be done with it, by the ending of its name. */
+  kind: FileKind;
 }
 
 export interface Reference {
@@ -170,7 +173,9 @@ export const libraryAddZoteroKeys = (id: string, keys: string[]) =>
   call<Reference>('library_add_zotero_keys', { id, keys });
 export const librarySetNote = (id: string, text: string) =>
   call<Reference>('library_set_note', { id, text });
-export const libraryRemove = (ids: string[]) => call<number>('library_remove', { ids });
+/** Removes references; with `withFiles`, their files that no other reference has go too. */
+export const libraryRemove = (ids: string[], withFiles = false) =>
+  call<number>('library_remove', { ids, withFiles });
 export const librarySource = (id: string) => call<string>('library_source', { id });
 export const libraryUpdateSource = (id: string, source: string) =>
   call<Reference>('library_update_source', { id, source });

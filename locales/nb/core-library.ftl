@@ -50,3 +50,12 @@ core-library-collection-in-itself = En samling kan ikke legges inni seg selv.
 
 core-library-not-in-library = «{ $path }» er ikke en sti i biblioteket
 core-library-not-a-file = { $path } er ikke en fil
+
+## Filene i biblioteket og mappene deres.
+
+core-library-the-file-of-library = filen i biblioteket
+core-library-the-folder = mappen
+core-library-needs-name = Et navn trengs.
+core-library-name-too-long = Det navnet er for langt.
+core-library-folder-in-itself = En mappe kan ikke legges i seg selv.
+core-library-files-unreadable = Oversikten over filene i biblioteket kunne ikke leses, og ble lagt til side som { $path }: { $message }
