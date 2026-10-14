@@ -292,7 +292,7 @@ try {
   await app.waitFor('[role="menu"]', 3000);
   await app.clickText('[role="menuitem"]', 'Delete');
   await app.waitForText('dialog footer button', 'Delete, keep the files', 3000);
-  const asked = await app.text('dialog[open]');
+  const asked = await app.exec(`return document.querySelector('dialog[open]')?.textContent.replace(/\\s+/g, ' ') ?? ''`);
   check(
     'deleting asks about the file',
     /One file belongs to what is deleted/.test(asked) &&
@@ -430,8 +430,8 @@ try {
   check('and is left for later', (await checkedIn('scan0001.pdf')) === 'Later');
   check(
     'the foot counts them',
-    /1 to assign, 1 later/.test(await app.text('dialog footer')),
-    await app.text('dialog footer'),
+    /1 to assign, 1 later/.test(await app.exec(`return document.querySelector('dialog[open] footer')?.textContent ?? ''`)),
+    await app.exec(`return document.querySelector('dialog[open] footer')?.textContent ?? ''`),
   );
   await app.screenshot('files-3-go-through');
   await app.setTheme('dark');
@@ -462,13 +462,13 @@ try {
   await app.waitFor('[role="menu"]', 3000);
   await app.clickText('[role="menuitem"]', 'Export all files');
   await app.waitFor('dialog [data-export]', 5000);
-  const asks = await app.text('dialog[open]');
+  const asks = await app.exec(`return document.querySelector('dialog[open]')?.textContent.replace(/\\s+/g, ' ') ?? ''`);
   check('the export says how many and how', /Export 5 files/.test(asks) && /Author Year - Title/.test(asks), asks.replace(/\s+/g, ' '));
   check(
     'and offers a references.bib',
     await app.exec(`return document.querySelector('dialog [data-with-bib]').checked`),
   );
-  check('before the folder is chosen', /Choose the folder/.test(await app.text('dialog footer')));
+  check('before the folder is chosen', /Choose the folder/.test(await app.exec(`return document.querySelector('dialog[open] footer')?.textContent ?? ''`)));
   await sleep(300);
   await app.screenshot('files-4-export');
   await app.setTheme('dark');
