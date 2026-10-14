@@ -15,6 +15,7 @@
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import FolderInput from '@lucide/svelte/icons/folder-input';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
+  import FolderOutput from '@lucide/svelte/icons/folder-output';
   import Images from '@lucide/svelte/icons/images';
   import Link from '@lucide/svelte/icons/link';
   import MapIcon from '@lucide/svelte/icons/map';
@@ -43,6 +44,7 @@
     KIND_ICONS,
     assign,
     bringInFile,
+    exportFiles,
     files,
     kindWords,
     removeFile,
@@ -124,11 +126,22 @@
     run: () => void;
   }
 
-  /**
-   * What can be done with the file, by its kind, in the order they are
-   * shown. More is added here: what exports it.
-   */
+  /** What can be done with the file, in the order they are shown: what its kind allows, then the export. */
   function actions(f: FileView): Action[] {
+    return [...kindActions(f), ...(f.exists ? [exporting(f)] : [])];
+  }
+
+  function exporting(f: FileView): Action {
+    return {
+      id: 'export',
+      label: t('files-export'),
+      icon: FolderOutput,
+      run: () => void exportFiles({ kind: 'files', hashes: [f.hash] }, 1),
+    };
+  }
+
+  /** What can be done with a file of its kind. */
+  function kindActions(f: FileView): Action[] {
     const opening: Action[] = [
       { id: 'open', label: t('files-open'), icon: ExternalLink, run: () => void show(f.path) },
       {

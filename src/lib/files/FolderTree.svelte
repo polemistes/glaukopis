@@ -16,6 +16,7 @@
   import Plus from '@lucide/svelte/icons/plus';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import ListChecks from '@lucide/svelte/icons/list-checks';
+  import FolderOutput from '@lucide/svelte/icons/folder-output';
   import {
     filesFolderCreate,
     filesFolderDelete,
@@ -31,7 +32,15 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
-  import { FILES_DRAGGED, files, goThrough, moveFiles, takeIn, unassignedIn } from './store.svelte';
+  import {
+    FILES_DRAGGED,
+    exportFiles,
+    files,
+    goThrough,
+    moveFiles,
+    takeIn,
+    unassignedIn,
+  } from './store.svelte';
 
   interface Props {
     /** The folder in view, or null for all the files. */
@@ -192,10 +201,7 @@
     ];
   }
 
-  /**
-   * What can be done with a folder, in its menu. More is added here: what
-   * goes through its files, and what exports them.
-   */
+  /** What can be done with a folder, in its menu. */
   function folderItems(f: FileFolder): MenuItem[] {
     return [
       { label: t('files-folder-new-inside'), icon: FolderPlus, action: () => begin(f.id) },
@@ -213,6 +219,12 @@
         icon: ListChecks,
         disabled: !unassignedIn(f.id).length,
         action: () => goThrough(unassignedIn(f.id)),
+      },
+      {
+        label: t('files-export'),
+        icon: FolderOutput,
+        disabled: !files.inFolder(f.id).length,
+        action: () => void exportFiles({ kind: 'folder', id: f.id }, files.inFolder(f.id).length),
       },
       { kind: 'separator' },
       { label: t('files-folder-delete'), icon: Trash2, danger: true, action: () => remove(f) },

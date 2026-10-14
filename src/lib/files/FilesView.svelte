@@ -11,6 +11,7 @@
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import FileStack from '@lucide/svelte/icons/file-stack';
+  import FolderOutput from '@lucide/svelte/icons/folder-output';
   import FilePlus from '@lucide/svelte/icons/file-plus';
   import Folder from '@lucide/svelte/icons/folder';
   import FolderInput from '@lucide/svelte/icons/folder-input';
@@ -48,6 +49,7 @@
   import ExportDialog from './ExportDialog.svelte';
   import {
     assign,
+    exportFiles,
     fileMatches,
     files,
     filesUi,
@@ -206,8 +208,7 @@
   }
 
   /**
-   * What can be done with the files chosen in the list, in its menu. More
-   * is added here: what goes through them, and what exports them.
+   * What can be done with the files chosen in the list, in its menu.
    */
   function fileItems(chosen: FileView[]): MenuItem[] {
     const one = chosen.length === 1 ? chosen[0] : null;
@@ -253,6 +254,11 @@
             } as MenuItem,
           ]
         : []),
+      {
+        label: one ? t('files-export') : t('files-export-chosen', { count: chosen.length }),
+        icon: FolderOutput,
+        action: () => void exportFiles({ kind: 'files', hashes }, hashes.length),
+      },
       { kind: 'separator' },
       {
         label: t('files-remove'),
@@ -279,7 +285,7 @@
     else notify(t('files-go-through-nothing'));
   }
 
-  /** What is done from the head, in the menu beside Add files. More is added here: what exports them all. */
+  /** What is done from the head, in the menu beside Add files. */
   function headItems(): MenuItem[] {
     return [
       { label: t('files-add'), icon: FilePlus, action: () => void addFiles() },
@@ -294,6 +300,13 @@
         label: folder ? t('files-folder-new-in', { name: folder.name }) : t('files-folder-new'),
         icon: FolderPlus,
         action: () => tree?.begin(folderId),
+      },
+      { kind: 'separator' },
+      {
+        label: t('files-export-all'),
+        icon: FolderOutput,
+        disabled: !files.files.length,
+        action: () => void exportFiles({ kind: 'all' }, files.files.length),
       },
     ];
   }
