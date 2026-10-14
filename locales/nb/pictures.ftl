@@ -72,3 +72,10 @@ pictures-this-project = Dette prosjektet
 pictures-untitled = Uten navn
 pictures-unused = Ingen prosjekter bruker bildet.
 pictures-remove = Fjern fra bildelageret
+
+## Et bilde gjort til en fil i biblioteket, og gitt til en referanse.
+
+pictures-attach = Legg ved en referanse …
+pictures-attach-title = Legg «{ $name }» ved en referanse
+pictures-attached = Bildet er nå blant filene til { $name }
+pictures-attach-failed = Bildet kunne ikke legges ved

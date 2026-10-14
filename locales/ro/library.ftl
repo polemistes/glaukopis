@@ -294,29 +294,6 @@ library-delete-many-title = { $count ->
     [few] Ștergeți { $count } referințe?
    *[other] Ștergeți { $count } de referințe?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Aceasta scoate referința din biblioteca dumneavoastră, din fiecare colecție{ $files ->
-        [0] {""}
-        [one] , împreună cu { $files } fișier atașat
-        [few] , împreună cu { $files } fișiere atașate
-       *[other] , împreună cu { $files } de fișiere atașate
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Este citată într-un proiect, care păstrează o copie a ei.
-        [few] {" "}Este citată în { $projects } proiecte, care păstrează o copie a ei.
-       *[other] {" "}Este citată în { $projects } de proiecte, care păstrează o copie a ei.
-    }
-library-delete-many = Aceasta le scoate din biblioteca dumneavoastră, din fiecare colecție{ $files ->
-        [0] {""}
-        [one] , împreună cu { $files } fișier atașat
-        [few] , împreună cu { $files } fișiere atașate
-       *[other] , împreună cu { $files } de fișiere atașate
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Un proiect care citează unele dintre ele păstrează o copie a acelora.
-        [few] {" "}{ $projects } proiecte care citează unele dintre ele păstrează o copie a acelora.
-       *[other] {" "}{ $projects } de proiecte care citează unele dintre ele păstrează o copie a acelora.
-    }
 library-delete-failed = Referințele nu s-au putut șterge
 library-not-done = Asta nu s-a putut face
 
@@ -490,9 +467,6 @@ library-pane-missing = lipsește
 library-pane-reveal = Arată în gestionarul de fișiere
 library-pane-reveal-failed = Dosarul nu s-a putut deschide
 library-pane-no-files = Niciun fișier. Atașați un PDF, sau trageți unul aici.
-library-pane-detach = Scoate fișierul
-library-pane-detach-title = Scoateți „{ $name }”?
-library-pane-detach-message = Fișierul se șterge din depozitul bibliotecii, dacă nu îl folosește altă referință.
 library-pane-detach-failed = Fișierul nu s-a putut scoate
 library-pane-leave-collection = Scoate din { $name }
 library-pane-duplicate = Dublează

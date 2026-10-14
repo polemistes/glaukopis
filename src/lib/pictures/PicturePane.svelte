@@ -21,7 +21,14 @@
   import { kindWords, noteKey, removePicture, usersOf } from './store.svelte';
   import Thumb from './Thumb.svelte';
   import ScanText from '@lucide/svelte/icons/scan-text';
+  import Paperclip from '@lucide/svelte/icons/paperclip';
   import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
+  import { pictureToFile } from '$lib/api/files';
+  import ReferenceChooser from '$lib/files/ReferenceChooser.svelte';
+  import { files } from '$lib/files/store.svelte';
+  import { shortLabel } from '$lib/library/format';
+  import { library } from '$lib/state/library.svelte';
+  import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
 
   interface Props {
     /** The name the store keeps the picture by. */
@@ -62,6 +69,21 @@
   let root = $state<HTMLDivElement>();
   /** Whether the text in the picture is being read (`ocr/PictureTextDialog.svelte`). */
   let reading = $state(false);
+  /** Whether a reference is being chosen to attach the picture to (`files/ReferenceChooser.svelte`). */
+  let attaching = $state(false);
+
+  /** Makes a file of the library of the picture, and gives it to a reference. The picture stays. */
+  async function attachTo(id: string) {
+    try {
+      await pictureToFile(own, id);
+      await library.reload();
+      if (files.loaded) void files.reload();
+      const entry = library.get(id);
+      notifyOk(t('pictures-attached', { name: entry ? shortLabel(entry) : id }));
+    } catch (error) {
+      notifyError(t('pictures-attach-failed'), error);
+    }
+  }
 
   /** What has been written here and is not kept yet. */
   const waiting = new Set<Field>();
@@ -250,14 +272,18 @@
         onblur={() => void keep('alt')}></textarea>
     </label>
 
-    {#if picture.extension !== 'svg'}
-      <div class="read">
+    <div class="read">
+      {#if picture.extension !== 'svg'}
         <Button size="sm" variant="ghost" onclick={() => (reading = true)} data-ocr-picture>
           {#snippet icon()}<ScanText size={13} />{/snippet}
           {t('ocr-picture-read')}
         </Button>
-      </div>
-    {/if}
+      {/if}
+      <Button size="sm" variant="ghost" onclick={() => (attaching = true)} data-attach-picture>
+        {#snippet icon()}<Paperclip size={13} />{/snippet}
+        {t('pictures-attach')}
+      </Button>
+    </div>
   {:else}
     <div class="absent">
       <p class="called serif">{named?.name || t('pictures-unnamed')}</p>
@@ -373,6 +399,14 @@
   {/if}
 </div>
 
+{#if attaching && picture}
+  <ReferenceChooser
+    title={t('pictures-attach-title', { name: picture.name })}
+    onpick={(id) => void attachTo(id)}
+    onclose={() => (attaching = false)}
+  />
+{/if}
+
 {#if reading && picture}
   <PictureTextDialog
     hash={own}
@@ -387,6 +421,8 @@
 <style>
   .read {
     display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
     margin-top: calc(-1 * var(--space-2));
   }
   .picture-pane {

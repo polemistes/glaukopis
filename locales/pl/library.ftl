@@ -316,33 +316,6 @@ library-delete-many-title = { $count ->
     [many] Usunąć { $count } pozycji?
    *[other] Usunąć { $count } pozycji?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = To usuwa pozycję z twojej biblioteki i z każdej kolekcji{ $files ->
-        [0] {""}
-        [one] , razem z { $files } załączonym plikiem
-        [few] , razem z { $files } załączonymi plikami
-        [many] , razem z { $files } załączonymi plikami
-       *[other] , razem z { $files } załączonymi plikami
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Jest cytowana w jednym projekcie, który zachowuje jej kopię.
-        [few] {" "}Jest cytowana w { $projects } projektach, które zachowują jej kopię.
-        [many] {" "}Jest cytowana w { $projects } projektach, które zachowują jej kopię.
-       *[other] {" "}Jest cytowana w { $projects } projektach, które zachowują jej kopię.
-    }
-library-delete-many = To usuwa je z twojej biblioteki i z każdej kolekcji{ $files ->
-        [0] {""}
-        [one] , razem z { $files } załączonym plikiem
-        [few] , razem z { $files } załączonymi plikami
-        [many] , razem z { $files } załączonymi plikami
-       *[other] , razem z { $files } załączonymi plikami
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Projekt, który cytuje niektóre z nich, zachowuje ich kopię.
-        [few] {" "}{ $projects } projekty, które cytują niektóre z nich, zachowują ich kopię.
-        [many] {" "}{ $projects } projektów, które cytują niektóre z nich, zachowuje ich kopię.
-       *[other] {" "}{ $projects } projektów, które cytują niektóre z nich, zachowuje ich kopię.
-    }
 library-delete-failed = Nie udało się usunąć pozycji
 library-not-done = Nie udało się tego zrobić
 
@@ -517,9 +490,6 @@ library-pane-missing = brak
 library-pane-reveal = Pokaż w menedżerze plików
 library-pane-reveal-failed = Nie udało się otworzyć folderu
 library-pane-no-files = Brak plików. Załącz PDF albo upuść go tutaj.
-library-pane-detach = Usuń plik
-library-pane-detach-title = Usunąć „{ $name }”?
-library-pane-detach-message = Plik jest usuwany ze zbioru biblioteki, chyba że używa go inna pozycja.
 library-pane-detach-failed = Nie udało się usunąć pliku
 library-pane-leave-collection = Usuń z { $name }
 library-pane-duplicate = Powiel

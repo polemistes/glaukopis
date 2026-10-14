@@ -30,8 +30,12 @@ export interface Brought {
 }
 
 export interface Bringing {
-  /** The file. */
+  /** The file: a path on this computer, or one in the store of the library's files where `stored`. */
   path: string;
+  /** Whether the path is that of a file of the library, in its store. */
+  stored?: boolean;
+  /** What the file is called, where its path does not say: a file of the library is called as its record says. */
+  name?: string;
   /** The project the tree is made in. Nothing, when a project is made of the document. */
   project: Project | null;
   /** The element the tree is made under: the one in view, or the project itself. */
@@ -45,15 +49,20 @@ class Documents {
 
 export const documents = new Documents();
 
-/** Reads a document and shows what it holds, for a tree to be made of it under `under`. */
+/**
+ * Reads a document and shows what it holds, for a tree to be made of it
+ * under `under`. A file of the library is read from the store, by its
+ * stored path, with `stored`.
+ */
 export function bringIn(
   path: string,
   project: Project | null,
   under: string = PROJECT,
+  options: { stored?: boolean; name?: string } = {},
 ): Promise<Brought | null> {
   return new Promise((resolve) => {
     documents.request?.resolve(null);
-    documents.request = { path, project, under, resolve };
+    documents.request = { path, project, under, ...options, resolve };
   });
 }
 

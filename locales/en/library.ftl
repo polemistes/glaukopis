@@ -274,24 +274,22 @@ library-delete-many-title = { $count ->
    *[other] Delete { $count } references?
 }
 # $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = This removes the reference from your library, from every collection{ $files ->
-        [0] {""}
-        [one] , together with { $files } attached file
-       *[other] , together with { $files } attached files
-    }.{ $projects ->
+library-delete-one-message = This removes the reference from your library and from every collection.{ $projects ->
         [0] {""}
         [one] {" "}It is cited in a project, which keeps a copy of it.
        *[other] {" "}It is cited in { $projects } projects, which keep a copy of it.
     }
-library-delete-many = This removes them from your library, from every collection{ $files ->
-        [0] {""}
-        [one] , together with { $files } attached file
-       *[other] , together with { $files } attached files
-    }.{ $projects ->
+library-delete-many-message = This removes them from your library and from every collection.{ $projects ->
         [0] {""}
         [one] {" "}A project that cites some of them keeps a copy of those.
        *[other] {" "}{ $projects } projects that cite some of them keep a copy of those.
     }
+# Said after the message above, where what is deleted has files.
+library-delete-files = { $files ->
+        [one] One file belongs to what is deleted. It stays among the files of the library, unless you delete it too.
+       *[other] { $files } files belong to what is deleted. They stay among the files of the library, unless you delete them too.
+    } A file that another reference has stays all the same.
+library-delete-keep-files = Delete, keep the files
 library-delete-failed = The references could not be deleted
 library-not-done = That could not be done
 
@@ -450,10 +448,10 @@ library-pane-missing = missing
 library-pane-reveal = Show in the file manager
 library-pane-reveal-failed = The folder could not be opened
 library-pane-no-files = No files. Attach a PDF, or drop one here.
-library-pane-detach = Remove file
-library-pane-detach-title = Remove “{ $name }”?
-library-pane-detach-message = The file is deleted from the library’s store, unless another reference uses it.
 library-pane-detach-failed = The file could not be removed
+library-pane-unassign = Remove from this reference
+library-pane-unassign-title = Remove “{ $name }” from this reference?
+library-pane-unassign-message = The file stays among the files of the library, where it can be found and given to another reference. It is deleted only from there.
 library-pane-leave-collection = Remove from { $name }
 library-pane-duplicate = Duplicate
     .hint = A new reference beginning with these details
@@ -506,3 +504,9 @@ library-notes-carried = The reference came with the project, and is not in your 
 library-notes-kept = Kept with the reference in your library. It goes with a project that cites the work.
 library-notes-unread = Your notes could not be read
 library-notes-unsaved = Your note could not be kept
+
+## The switch at the head of the library.
+
+library-switch = References or files
+library-switch-references = References
+library-switch-files = Files

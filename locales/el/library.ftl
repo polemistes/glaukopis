@@ -271,25 +271,6 @@ library-delete-many-title = { $count ->
     [one] Διαγραφή { $count } αναφοράς;
    *[other] Διαγραφή { $count } αναφορών;
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Αυτό αφαιρεί την αναφορά από τη βιβλιοθήκη σας, από κάθε συλλογή{ $files ->
-        [0] {""}
-        [one] , μαζί με { $files } συνημμένο αρχείο
-       *[other] , μαζί με { $files } συνημμένα αρχεία
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Παρατίθεται σε ένα έργο, που κρατά αντίγραφό της.
-       *[other] {" "}Παρατίθεται σε { $projects } έργα, που κρατούν αντίγραφό της.
-    }
-library-delete-many = Αυτό τις αφαιρεί από τη βιβλιοθήκη σας, από κάθε συλλογή{ $files ->
-        [0] {""}
-        [one] , μαζί με { $files } συνημμένο αρχείο
-       *[other] , μαζί με { $files } συνημμένα αρχεία
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Ένα έργο που παραθέτει μερικές από αυτές κρατά αντίγραφο εκείνων.
-       *[other] {" "}{ $projects } έργα που παραθέτουν μερικές από αυτές κρατούν αντίγραφο εκείνων.
-    }
 library-delete-failed = Οι αναφορές δεν μπόρεσαν να διαγραφούν
 library-not-done = Αυτό δεν μπόρεσε να γίνει
 
@@ -446,9 +427,6 @@ library-pane-missing = λείπει
 library-pane-reveal = Εμφάνιση στον διαχειριστή αρχείων
 library-pane-reveal-failed = Ο φάκελος δεν μπόρεσε να ανοίξει
 library-pane-no-files = Κανένα αρχείο. Επισυνάψτε ένα PDF, ή αφήστε ένα εδώ.
-library-pane-detach = Αφαίρεση αρχείου
-library-pane-detach-title = Αφαίρεση του «{ $name }»;
-library-pane-detach-message = Το αρχείο διαγράφεται από την αποθήκη της βιβλιοθήκης, εκτός αν το χρησιμοποιεί άλλη αναφορά.
 library-pane-detach-failed = Το αρχείο δεν μπόρεσε να αφαιρεθεί
 library-pane-leave-collection = Αφαίρεση από { $name }
 library-pane-duplicate = Αντίγραφο

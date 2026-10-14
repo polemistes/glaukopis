@@ -11,6 +11,8 @@ export type Route =
   | { view: 'owl' }
   | { view: 'library'; collection?: string; entry?: string }
   | { view: 'pictures'; picture?: string }
+  /** The files of the library, in the library's place: the folder in view, and the file selected. */
+  | { view: 'files'; folder?: string; file?: string }
   /** A project, and the element in view within it (ADR 0037): the project itself where none is named. */
   | { view: 'project'; project: string; at?: string; mode?: MapMode }
   | { view: 'search' }
@@ -29,6 +31,12 @@ export function parseRoute(hash: string): Route {
       };
     case 'pictures':
       return { view: 'pictures', picture: params.get('picture') ?? undefined };
+    case 'files':
+      return {
+        view: 'files',
+        folder: params.get('folder') ?? undefined,
+        file: params.get('file') ?? undefined,
+      };
     case 'project':
       if (!parts[1]) return { view: 'projects' };
       return {
@@ -64,6 +72,13 @@ export function formatRoute(route: Route): string {
     }
     case 'pictures':
       return '#/pictures' + (route.picture ? `?picture=${e(route.picture)}` : '');
+    case 'files': {
+      const params = new URLSearchParams();
+      if (route.folder) params.set('folder', route.folder);
+      if (route.file) params.set('file', route.file);
+      const q = params.toString();
+      return '#/files' + (q ? `?${q}` : '');
+    }
     case 'project': {
       let s = `#/project/${e(route.project)}`;
       if (route.at) s += `/${e(route.at)}`;

@@ -294,29 +294,6 @@ library-delete-many-title = { $count ->
     [few] Izbrisati { $count } reference?
    *[other] Izbrisati { $count } referenci?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Ovim se referenca uklanja iz vaše biblioteke, iz svake zbirke{ $files ->
-        [0] {""}
-        [one] , zajedno s { $files } priloženom datotekom
-        [few] , zajedno s { $files } priložene datoteke
-       *[other] , zajedno s { $files } priloženih datoteka
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Citirana je u jednom projektu, koji čuva njenu kopiju.
-        [few] {" "}Citirana je u { $projects } projekta, koji čuvaju njenu kopiju.
-       *[other] {" "}Citirana je u { $projects } projekata, koji čuvaju njenu kopiju.
-    }
-library-delete-many = Ovim se uklanjaju iz vaše biblioteke, iz svake zbirke{ $files ->
-        [0] {""}
-        [one] , zajedno s { $files } priloženom datotekom
-        [few] , zajedno s { $files } priložene datoteke
-       *[other] , zajedno s { $files } priloženih datoteka
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Projekat koji citira neke od njih čuva njihovu kopiju.
-        [few] {" "}{ $projects } projekta koja citiraju neke od njih čuvaju njihovu kopiju.
-       *[other] {" "}{ $projects } projekata koji citiraju neke od njih čuvaju njihovu kopiju.
-    }
 library-delete-failed = Reference nije bilo moguće izbrisati
 library-not-done = To nije bilo moguće učiniti
 
@@ -486,9 +463,6 @@ library-pane-missing = nedostaje
 library-pane-reveal = Prikaži u upravitelju datoteka
 library-pane-reveal-failed = Folder nije bilo moguće otvoriti
 library-pane-no-files = Nema datoteka. Priložite PDF, ili ga ispustite ovdje.
-library-pane-detach = Ukloni datoteku
-library-pane-detach-title = Ukloniti „{ $name }“?
-library-pane-detach-message = Datoteka se briše iz spremišta biblioteke, osim ako je koristi druga referenca.
 library-pane-detach-failed = Datoteku nije bilo moguće ukloniti
 library-pane-leave-collection = Ukloni iz { $name }
 library-pane-duplicate = Dupliciraj

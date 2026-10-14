@@ -262,24 +262,21 @@ library-delete-many-title = { $count ->
     [one] Slette { $count } referanse?
    *[other] Slette { $count } referanser?
 }
-library-delete-one = Referansen fjernes fra biblioteket ditt og fra alle samlinger{ $files ->
-        [0] {""}
-        [one] , sammen med { $files } vedlegg
-       *[other] , sammen med { $files } vedlegg
-    }.{ $projects ->
+library-delete-one-message = Referansen fjernes fra biblioteket ditt og fra alle samlinger.{ $projects ->
         [0] {""}
         [one] {" "}Den er sitert i et prosjekt, som har en kopi av den.
        *[other] {" "}Den er sitert i { $projects } prosjekter, som har en kopi av den.
     }
-library-delete-many = Referansene fjernes fra biblioteket ditt og fra alle samlinger{ $files ->
-        [0] {""}
-        [one] , sammen med { $files } vedlegg
-       *[other] , sammen med { $files } vedlegg
-    }.{ $projects ->
+library-delete-many-message = Referansene fjernes fra biblioteket ditt og fra alle samlinger.{ $projects ->
         [0] {""}
         [one] {" "}Et prosjekt som siterer noen av dem, har en kopi av disse.
        *[other] {" "}{ $projects } prosjekter som siterer noen av dem, har en kopi av disse.
     }
+library-delete-files = { $files ->
+        [one] Én fil hører til det som slettes. Den blir værende blant filene i biblioteket, med mindre du sletter den også.
+       *[other] { $files } filer hører til det som slettes. De blir værende blant filene i biblioteket, med mindre du sletter dem også.
+    } En fil som en annen referanse har, blir værende uansett.
+library-delete-keep-files = Slett, behold filene
 library-delete-failed = Referansene kunne ikke slettes
 library-not-done = Det lot seg ikke gjøre
 
@@ -429,10 +426,10 @@ library-pane-missing = mangler
 library-pane-reveal = Vis i filbehandleren
 library-pane-reveal-failed = Mappen kunne ikke åpnes
 library-pane-no-files = Ingen filer. Legg ved en PDF, eller slipp en her.
-library-pane-detach = Fjern filen
-library-pane-detach-title = Fjerne «{ $name }»?
-library-pane-detach-message = Filen slettes fra lageret til biblioteket, med mindre en annen referanse bruker den.
 library-pane-detach-failed = Filen kunne ikke fjernes
+library-pane-unassign = Fjern fra denne referansen
+library-pane-unassign-title = Fjerne «{ $name }» fra denne referansen?
+library-pane-unassign-message = Filen blir værende blant filene i biblioteket, der den kan finnes og gis til en annen referanse. Den slettes bare derfra.
 library-pane-leave-collection = Fjern fra { $name }
 library-pane-duplicate = Dupliser
     .hint = En ny referanse som begynner med disse opplysningene
@@ -483,3 +480,9 @@ library-notes-carried = Referansen fulgte med prosjektet og er ikke i biblioteke
 library-notes-kept = Lagres med referansen i biblioteket ditt. Det følger med et prosjekt som viser til verket.
 library-notes-unread = Notatene dine kunne ikke leses
 library-notes-unsaved = Notatet ditt kunne ikke lagres
+
+## Bryteren øverst i biblioteket.
+
+library-switch = Referanser eller filer
+library-switch-references = Referanser
+library-switch-files = Filer

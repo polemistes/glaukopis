@@ -12,7 +12,15 @@
 
 /** Where a key holds. */
 export type Place =
-  'everywhere' | 'project' | 'review' | 'diagram' | 'text' | 'writing' | 'library' | 'store';
+  | 'everywhere'
+  | 'project'
+  | 'review'
+  | 'diagram'
+  | 'text'
+  | 'writing'
+  | 'library'
+  | 'store'
+  | 'files';
 
 export interface KeyEntry {
   /** What it is called, and the words for it: `keys-<id>` in keys.ftl. */
@@ -30,7 +38,7 @@ export interface KeyEntry {
 
 /** Places whose keys are in force together: a key must mean one thing in each. */
 const TOGETHER: Record<Place, Place[]> = {
-  everywhere: ['everywhere', 'project', 'review', 'diagram', 'text', 'writing', 'library'],
+  everywhere: ['everywhere', 'project', 'review', 'diagram', 'text', 'writing', 'library', 'files'],
   project: ['everywhere', 'project', 'review', 'diagram', 'text', 'writing'],
   review: ['everywhere', 'project', 'review', 'text', 'writing'],
   diagram: ['everywhere', 'project', 'diagram'],
@@ -38,6 +46,7 @@ const TOGETHER: Record<Place, Place[]> = {
   writing: ['everywhere', 'project', 'review', 'text', 'writing'],
   library: ['everywhere', 'library'],
   store: ['everywhere', 'store'],
+  files: ['everywhere', 'files'],
 };
 
 export const KEYS: KeyEntry[] = [
@@ -45,6 +54,7 @@ export const KEYS: KeyEntry[] = [
   { id: 'projects', keys: 'Ctrl+1', place: 'everywhere', bound: true },
   { id: 'library', keys: 'Ctrl+2', place: 'everywhere', bound: true },
   { id: 'pictures', keys: 'Ctrl+3', place: 'everywhere', bound: true },
+  { id: 'files', keys: 'Ctrl+4', place: 'everywhere', bound: true },
   { id: 'settings', keys: 'Ctrl+,', place: 'everywhere', bound: true },
   { id: 'search-everything', keys: 'Ctrl+Shift+F', place: 'everywhere', bound: true },
   { id: 'palette', keys: 'Ctrl+K', place: 'everywhere', bound: true },
@@ -156,6 +166,9 @@ export const KEYS: KeyEntry[] = [
 
   // In the store of pictures.
   { id: 'store-find', keys: 'Ctrl+F', place: 'store', bound: true },
+
+  // Among the files of the library.
+  { id: 'files-find', keys: 'Ctrl+F', place: 'files', bound: true },
 ];
 
 /** Pairs of entries whose keys mean two things at once, where neither says it takes precedence. */

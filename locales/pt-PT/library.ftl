@@ -286,29 +286,6 @@ library-delete-many-title = { $count ->
     [many] Eliminar { $count } referências?
    *[other] Eliminar { $count } referências?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Isto remove a referência da biblioteca, de todas as coleções{ $files ->
-        [0] {""}
-        [one] , juntamente com { $files } ficheiro anexo
-        [many] , juntamente com { $files } ficheiros anexos
-       *[other] , juntamente com { $files } ficheiros anexos
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}É citada num projeto, que guarda uma cópia dela.
-        [many] {" "}É citada em { $projects } projetos, que guardam uma cópia dela.
-       *[other] {" "}É citada em { $projects } projetos, que guardam uma cópia dela.
-    }
-library-delete-many = Isto remove-as da biblioteca, de todas as coleções{ $files ->
-        [0] {""}
-        [one] , juntamente com { $files } ficheiro anexo
-        [many] , juntamente com { $files } ficheiros anexos
-       *[other] , juntamente com { $files } ficheiros anexos
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Um projeto que cita algumas delas guarda uma cópia dessas.
-        [many] {" "}{ $projects } projetos que citam algumas delas guardam uma cópia dessas.
-       *[other] {" "}{ $projects } projetos que citam algumas delas guardam uma cópia dessas.
-    }
 library-delete-failed = Não foi possível eliminar as referências
 library-not-done = Não foi possível fazer isso
 
@@ -478,9 +455,6 @@ library-pane-missing = em falta
 library-pane-reveal = Mostrar no gestor de ficheiros
 library-pane-reveal-failed = Não foi possível abrir a pasta
 library-pane-no-files = Sem ficheiros. Anexe um PDF, ou largue um aqui.
-library-pane-detach = Remover o ficheiro
-library-pane-detach-title = Remover «{ $name }»?
-library-pane-detach-message = O ficheiro é eliminado de onde a biblioteca o guarda, a não ser que outra referência o use.
 library-pane-detach-failed = Não foi possível remover o ficheiro
 library-pane-leave-collection = Remover de { $name }
 library-pane-duplicate = Duplicar

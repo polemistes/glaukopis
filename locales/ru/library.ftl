@@ -296,33 +296,6 @@ library-delete-many-title = { $count ->
     [many] Удалить { $count } источников?
    *[other] Удалить { $count } источника?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Источник будет убран из вашей библиотеки и из всех коллекций{ $files ->
-        [0] {""}
-        [one] , вместе с { $files } вложенным файлом
-        [few] , вместе с { $files } вложенными файлами
-        [many] , вместе с { $files } вложенными файлами
-       *[other] , вместе с { $files } вложенными файлами
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}На него ссылается { $projects } проект, у которого остаётся своя копия.
-        [few] {" "}На него ссылаются { $projects } проекта, у которых остаётся своя копия.
-        [many] {" "}На него ссылаются { $projects } проектов, у которых остаётся своя копия.
-       *[other] {" "}На него ссылаются { $projects } проекта, у которых остаётся своя копия.
-    }
-library-delete-many = Они будут убраны из вашей библиотеки и из всех коллекций{ $files ->
-        [0] {""}
-        [one] , вместе с { $files } вложенным файлом
-        [few] , вместе с { $files } вложенными файлами
-        [many] , вместе с { $files } вложенными файлами
-       *[other] , вместе с { $files } вложенными файлами
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}У { $projects } проекта, который ссылается на некоторые из них, остаётся своя копия тех.
-        [few] {" "}У { $projects } проектов, которые ссылаются на некоторые из них, остаётся своя копия тех.
-        [many] {" "}У { $projects } проектов, которые ссылаются на некоторые из них, остаётся своя копия тех.
-       *[other] {" "}У { $projects } проектов, которые ссылаются на некоторые из них, остаётся своя копия тех.
-    }
 library-delete-failed = Не удалось удалить источники
 library-not-done = Этого не удалось сделать
 
@@ -497,9 +470,6 @@ library-pane-missing = отсутствует
 library-pane-reveal = Показать в файловом менеджере
 library-pane-reveal-failed = Не удалось открыть папку
 library-pane-no-files = Файлов нет. Вложите PDF или перетащите его сюда.
-library-pane-detach = Убрать файл
-library-pane-detach-title = Убрать «{ $name }»?
-library-pane-detach-message = Файл удаляется из хранилища библиотеки, если его не использует другой источник.
 library-pane-detach-failed = Не удалось убрать файл
 library-pane-leave-collection = Убрать из { $name }
 library-pane-duplicate = Дублировать

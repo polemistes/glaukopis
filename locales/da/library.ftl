@@ -271,25 +271,6 @@ library-delete-many-title = { $count ->
     [one] Slet { $count } reference?
    *[other] Slet { $count } referencer?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Dette fjerner referencen fra dit bibliotek, fra alle samlinger{ $files ->
-        [0] {""}
-        [one] , sammen med { $files } vedhæftet fil
-       *[other] , sammen med { $files } vedhæftede filer
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Den er citeret i et projekt, som beholder en kopi af den.
-       *[other] {" "}Den er citeret i { $projects } projekter, som beholder en kopi af den.
-    }
-library-delete-many = Dette fjerner dem fra dit bibliotek, fra alle samlinger{ $files ->
-        [0] {""}
-        [one] , sammen med { $files } vedhæftet fil
-       *[other] , sammen med { $files } vedhæftede filer
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Et projekt, der citerer nogle af dem, beholder en kopi af dem.
-       *[other] {" "}{ $projects } projekter, der citerer nogle af dem, beholder en kopi af dem.
-    }
 library-delete-failed = Referencerne kunne ikke slettes
 library-not-done = Det kunne ikke gøres
 
@@ -446,9 +427,6 @@ library-pane-missing = mangler
 library-pane-reveal = Vis i filhåndteringen
 library-pane-reveal-failed = Mappen kunne ikke åbnes
 library-pane-no-files = Ingen filer. Vedhæft en PDF, eller slip en her.
-library-pane-detach = Fjern filen
-library-pane-detach-title = Fjern »{ $name }«?
-library-pane-detach-message = Filen slettes fra bibliotekets lager, medmindre en anden reference bruger den.
 library-pane-detach-failed = Filen kunne ikke fjernes
 library-pane-leave-collection = Fjern fra { $name }
 library-pane-duplicate = Dupliker

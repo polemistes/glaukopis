@@ -271,25 +271,6 @@ library-delete-many-title = { $count ->
     [one] Radera { $count } referens?
    *[other] Radera { $count } referenser?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Det här tar bort referensen ur ditt bibliotek, ur varje samling{ $files ->
-        [0] {""}
-        [one] , tillsammans med { $files } bifogad fil
-       *[other] , tillsammans med { $files } bifogade filer
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Den hänvisas till i ett projekt, som behåller en kopia av den.
-       *[other] {" "}Den hänvisas till i { $projects } projekt, som behåller en kopia av den.
-    }
-library-delete-many = Det här tar bort dem ur ditt bibliotek, ur varje samling{ $files ->
-        [0] {""}
-        [one] , tillsammans med { $files } bifogad fil
-       *[other] , tillsammans med { $files } bifogade filer
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Ett projekt som hänvisar till några av dem behåller en kopia av dem.
-       *[other] {" "}{ $projects } projekt som hänvisar till några av dem behåller en kopia av dem.
-    }
 library-delete-failed = Referenserna kunde inte raderas
 library-not-done = Det kunde inte göras
 
@@ -446,9 +427,6 @@ library-pane-missing = saknas
 library-pane-reveal = Visa i filhanteraren
 library-pane-reveal-failed = Mappen kunde inte öppnas
 library-pane-no-files = Inga filer. Bifoga en PDF, eller släpp en här.
-library-pane-detach = Ta bort filen
-library-pane-detach-title = Ta bort ”{ $name }”?
-library-pane-detach-message = Filen raderas från bibliotekets förråd, om inte en annan referens använder den.
 library-pane-detach-failed = Filen kunde inte tas bort
 library-pane-leave-collection = Ta bort från { $name }
 library-pane-duplicate = Kopiera

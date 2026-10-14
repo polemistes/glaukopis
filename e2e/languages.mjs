@@ -352,6 +352,9 @@ try {
   await sleep(500);
   await english('the library');
   await app.screenshot('languages-5-library');
+  await app.keys(['Control', '4']);
+  await sleep(500);
+  await english('the files of the library');
   await app.keys(['Control', '3']);
   await sleep(500);
   await english('the pictures');

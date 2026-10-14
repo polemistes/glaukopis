@@ -300,29 +300,6 @@ library-delete-many-title = { $count ->
     [few] Odstrániť { $count } záznamy?
    *[other] Odstrániť { $count } záznamov?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Záznam sa tým odstráni z vašej knižnice, z každej zbierky{ $files ->
-        [0] {""}
-        [one] , spolu s { $files } priloženým súborom
-        [few] , spolu s { $files } priloženými súbormi
-       *[other] , spolu s { $files } priloženými súbormi
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Cituje sa v jednom projekte, ktorý si uchová jeho kópiu.
-        [few] {" "}Cituje sa v { $projects } projektoch, ktoré si uchovajú jeho kópiu.
-       *[other] {" "}Cituje sa v { $projects } projektoch, ktoré si uchovajú jeho kópiu.
-    }
-library-delete-many = Tým sa odstránia z vašej knižnice, z každej zbierky{ $files ->
-        [0] {""}
-        [one] , spolu s { $files } priloženým súborom
-        [few] , spolu s { $files } priloženými súbormi
-       *[other] , spolu s { $files } priloženými súbormi
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Projekt, ktorý niektoré z nich cituje, si ich kópiu uchová.
-        [few] {" "}{ $projects } projekty, ktoré niektoré z nich citujú, si ich kópiu uchovajú.
-       *[other] {" "}{ $projects } projektov, ktoré niektoré z nich citujú, si ich kópiu uchová.
-    }
 library-delete-failed = Záznamy sa nepodarilo odstrániť
 library-not-done = To sa nepodarilo
 
@@ -492,9 +469,6 @@ library-pane-missing = chýba
 library-pane-reveal = Zobraziť v správcovi súborov
 library-pane-reveal-failed = Priečinok sa nepodarilo otvoriť
 library-pane-no-files = Žiadne súbory. Priložte PDF alebo ho sem pustite.
-library-pane-detach = Odobrať súbor
-library-pane-detach-title = Odobrať „{ $name }“?
-library-pane-detach-message = Súbor sa z úložiska knižnice odstráni, ak ho nepoužíva iný záznam.
 library-pane-detach-failed = Súbor sa nepodarilo odobrať
 library-pane-leave-collection = Odobrať zo zbierky { $name }
 library-pane-duplicate = Duplikovať
