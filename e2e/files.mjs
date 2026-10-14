@@ -307,6 +307,30 @@ try {
   check('a picture of the files is taken into the pictures', !!among, among);
   check('with a way to it', /Show/.test(among));
 
+  // A picture of the store attached to a reference is a file of that reference: the same file.
+  await app.go('#/pictures');
+  await app.waitFor('.tile', 5000);
+  await app.click('.tile');
+  await app.waitFor('[data-attach-picture]', 5000);
+  await app.click('[data-attach-picture]');
+  await app.waitFor('dialog [data-chooser]', 3000);
+  await app.type('dialog .search input', 'Singer of Tales');
+  await until('the chooser to find the work', async () =>
+    (await app.count('dialog [data-chooser] [role="option"]')) === 1,
+  );
+  await app.press('Enter');
+  await app.waitGone('dialog', 3000);
+  const attached = await until(
+    'the message of the attachment',
+    async () => (await toasts()).find((t) => /among the files of/.test(t)),
+    5000,
+  ).catch(() => '');
+  check('a picture is attached to a reference', /Lord 1960/.test(attached), attached);
+  await app.go('#/files');
+  await until('the files', async () => (await rows()).length === 3);
+  const given = (await rows()).find((r) => r.hash === plate.hash);
+  check('and is the same file of the library, now the reference’s', /Lord 1960/.test(given?.reference ?? ''), given?.reference);
+
   // A folder deleted: what was in it moves up.
   await app.rightClick(await app.findByText('[data-file-folders] [data-folder]', 'Homer'));
   await app.waitFor('[role="menu"]', 3000);
