@@ -87,6 +87,10 @@ export type Reason =
   | 'isbn'
   | 'identical'
   | 'file'
+  /** The name of a file says it (the going-through of the files). */
+  | 'name'
+  /** The title stands on the first page of a file, and the author's name with it. */
+  | 'first-page'
   | { alike: { title: Agreement; author: Agreement; year: Agreement } };
 
 export interface SummaryLite {

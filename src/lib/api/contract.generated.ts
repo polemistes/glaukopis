@@ -3,7 +3,7 @@
 // fails where the two differ. Not to be changed by hand: run the tests.
 
 import type { Summary, Reference, LibraryListing, ImportPlan, DuplicateGroup } from './library';
-import type { FilesListing, TakenIn } from './files';
+import type { FilesListing, TakenIn, Proposal } from './files';
 import type { ProjectInfo, Folder } from './projects';
 import type { Picture } from './pictures';
 import type { ToolsInfo, DocumentFormat, FormatSummary, StyleSummary, Preview, KindEntry, KindLooks } from './documents';
@@ -218,6 +218,73 @@ export const takenIn: TakenIn = {
   "problems": [],
   "same": []
 };
+
+export const proposal: Proposal[] = [
+  {
+    "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+    "lookup": {
+      "collections": [],
+      "draft": {
+        "fields": {
+          "date": "2000",
+          "journaltitle": "J",
+          "title": "Another"
+        },
+        "key": "z",
+        "names": {},
+        "type": "article"
+      },
+      "files": [],
+      "notes": [],
+      "origin": "z, line 2"
+    },
+    "matches": [
+      {
+        "certainty": "probable",
+        "gains": [],
+        "id": "00000000-0000-4000-8000-000000000000",
+        "reasons": [
+          "name"
+        ],
+        "summary": {
+          "authors": "Nagy",
+          "container": "",
+          "key": "nagy1979",
+          "title": "The Best of the Achaeans: Concepts of the Hero",
+          "type": "book",
+          "year": "1979"
+        }
+      },
+      {
+        "certainty": "probable",
+        "gains": [],
+        "id": "00000000-0000-4000-8000-000000000000",
+        "reasons": [
+          "name"
+        ],
+        "summary": {
+          "authors": "Nagy",
+          "container": "",
+          "key": "x",
+          "title": "The Best of the Achaeans",
+          "type": "book",
+          "year": "1979"
+        }
+      }
+    ],
+    "name": "Nagy 1979 - The Best of the Achaeans.pdf",
+    "named": {
+      "families": [
+        "Nagy"
+      ],
+      "title": "The Best of the Achaeans",
+      "year": 1979
+    },
+    "notes": [
+      "A remark."
+    ]
+  }
+];
 
 export const importPlan: ImportPlan = {
   "items": [

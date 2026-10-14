@@ -47,6 +47,10 @@ export function reasonWords(reasons: Reason[]): string {
         return t('library-reason-identical');
       case 'file':
         return t('library-reason-file');
+      case 'name':
+        return t('library-reason-name');
+      case 'first-page':
+        return t('library-reason-first-page');
     }
   };
   const list = reasons.map(words);

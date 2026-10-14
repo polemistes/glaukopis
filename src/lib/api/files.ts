@@ -2,7 +2,7 @@
 
 import { listen } from '@tauri-apps/api/event';
 import { call, inTauri } from './backend';
-import type { Summary } from './library';
+import type { Candidate, Match, Summary } from './library';
 import type { Picture } from './pictures';
 
 /** What can be done with a file, by the ending of its name. */
@@ -60,6 +60,46 @@ export interface FilesProgress {
   name: string;
 }
 
+/** What the name of a file says of the work in it: `Nagy 1979 - The Best of the Achaeans`. */
+export interface Named {
+  /** The family names of the authors, as the name writes them. */
+  families: string[];
+  year: number | null;
+  /** Empty where the name says only who wrote it and when. */
+  title: string;
+}
+
+/**
+ * What a file of the library may be, for the going-through to decide.
+ * Found by what the file says of itself (an identifier, its metadata), by
+ * what the services say of that identifier, by its name and by its first
+ * page; the reasons of each match say which (`reasonWords`).
+ */
+export interface Proposal {
+  hash: string;
+  /** What the file is called in the lists. */
+  name: string;
+  /**
+   * Works of the library it may belong to, the most certain first, at most
+   * five. Certain where an identifier agrees or the work has the file
+   * already; probable where the title and authors are alike, or where only
+   * the name (`'name'`) or the first page (`'first-page'`) says so.
+   * `gains` may be left unshown.
+   */
+  matches: Match[];
+  /**
+   * A new reference that the services describe, where the identifier
+   * printed in the file is not in the library; only where no match is
+   * certain. Its `draft` fills the form; its `files` name the file in the
+   * store as it was when found out.
+   */
+  lookup: Candidate | null;
+  /** What the name says, for filling in a new reference where there is no lookup. */
+  named: Named | null;
+  /** What was said in finding out: a number the services do not know, a service that failed, a file that could not be read. */
+  notes: string[];
+}
+
 export const filesList = () => call<FilesListing>('files_list');
 
 export const filesFolderCreate = (name: string, parent: string | null) =>
@@ -92,6 +132,15 @@ export const filesTakeIn = (
   structure = true,
   ticket?: string,
 ) => call<TakenIn>('files_take_in', { paths, folder, structure, ticket });
+/**
+ * Finds out what the files with these hashes may be, in their order; hashes
+ * the library does not know are left out. `ask`: whether the services are
+ * asked of the identifiers printed in PDFs. With a ticket, the progress
+ * comes as `onFilesProgress`, and `filesStop` stops it: what was found out
+ * before is given, and the files not finished are left out.
+ */
+export const filesIdentify = (hashes: string[], ask = true, ticket?: string) =>
+  call<Proposal[]>('files_identify', { hashes, ask, ticket });
 /** Stops the work on files with this ticket: taking in, finding out, exporting. */
 export const filesStop = (ticket: string) => call<void>('files_stop', { ticket });
 

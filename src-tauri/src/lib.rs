@@ -103,6 +103,7 @@ pub fn run() {
             commands::files::file_unassign,
             commands::files::file_path,
             commands::files::files_stop,
+            commands::files::files_identify,
             commands::files::files_take_in,
             commands::files::file_to_picture,
             commands::files::picture_to_file,
