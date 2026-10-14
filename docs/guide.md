@@ -993,6 +993,77 @@ Where the file is dropped decides what becomes of it:
 | A reference that is open | The file is attached to that reference |
 | An element of the diagram | A reference is made of it, and cited at the end of the element's text |
 
+Every file of a reference also stands among the files of the library, which
+the next section is about.
+
+### The files of the library
+
+The library keeps files as well as references: the PDFs of articles and
+books, scans and photographs of pages, papers in Word or OpenDocument,
+ebooks, and anything else you want at hand. **Files**, at the head of the
+library beside *References*, shows them all (Ctrl+4). A file is copied into
+the library when it is taken in, and Glaukopis does not depend on where it
+came from.
+
+**Folders.** The files stand in folders of their own, which may lie in
+folders, in the tree at the left. **New folder** makes one; a folder is
+renamed with F2 or from its menu, and moved by dragging it onto another, or
+with **Move to**. Files are moved by dragging them onto a folder. Deleting a
+folder keeps what is in it: its files and folders move up to where it was.
+The folders are not the collections: a collection gathers works, and a work
+may be in many; a folder is where a file is kept, one place for each.
+
+**Taking files in.** **Add files…** and **Add a folder…**, at the head, or
+files and folders dropped on the view, are taken into the folder in view. A
+folder comes with the folders in it, as they were on your disk. A file the
+library has already, under any name, is not taken twice: you are told it is
+there, and it stays where it was.
+
+**What a file is for.** The pane at the right says what is known of the file
+selected: its name, its folder, where it came from and when, its size, and
+the references it belongs to. Below are what can be done with a file of its
+kind:
+
+| Kind | What can be done |
+| --- | --- |
+| PDF | Open it; make it searchable; make elements of its text |
+| Picture | Open it; make elements of the text read in it; take it into the pictures, so that it can become a figure |
+| Document (Word, OpenDocument, EPUB, HTML, Markdown, Org, plain text) | Open it; bring it in as elements |
+| Anything else | Open it with the program your system has for it |
+
+**Files and references.** A file may belong to one reference, to several (a
+chapter and its book), or to none yet. **Assign to a reference…** finds the
+reference as when you cite; the *×* beside a reference in the pane takes the
+file from it. **Unassigned only**, among the filters, shows the files that
+belong to none.
+
+**Going through the files.** **Go through…** looks at the files that belong
+to no reference (or at those you have selected) and proposes a reference for
+each: by the DOI or the ISBN printed in it, looked up where your library
+does not have it; by its name, where it is named as files often are, *Nagy
+1979 - The Best of the Achaeans*; or by its first page, where a line of it
+is the title of a work by an author named there. The reason is said beside
+every proposal. For each file you take what is proposed, choose another
+reference, make a new one, or leave it for later; a row at the head answers
+for all that are in the same case. Nothing is assigned until you say so, and
+you can stop at any time: what is left stays unassigned, to be gone through
+another day.
+
+**Files stay.** A file leaves the library only when you remove the file
+itself, and you are told first which references it belongs to. Taking a file
+from a reference keeps it among the files. When references are removed,
+their files stay, unless you choose **Remove with the files**, which removes
+those that no other reference has.
+
+**Exporting.** **Export…**, in the menu of a folder, of the files selected,
+or of a file, and **Export all files…**, write copies into a folder you
+choose: the folders become folders on your disk, and every file that belongs
+to a reference is named by it, author or editor, year and title, as in
+*Snell 1971 - Tragicorum Graecorum Fragmenta.pdf*; a file without a reference
+keeps its own name. With **a references.bib**, the works the files belong to
+are written beside them, each naming its files where they now are, so that
+another reference manager can read the whole.
+
 ### Importing
 
 **Import a file…** reads `.bib` files, BibLaTeX or BibTeX. **Paste
@@ -1393,14 +1464,15 @@ reads text in pictures, in four places.
   quote can be found on its page. The text of a picture becomes the text of
   the one element made of it.
 - **A PDF of the library is made searchable.** In the files of a reference,
-  the button beside a PDF, **Make searchable…**, reads its pages and lays
+  or in the pane of a file among the files of the library, **Make
+  searchable…** reads its pages and lays
   their text unseen under what is shown. The PDF looks as it did, and its
   text can be searched, selected and copied in any program that shows PDFs.
   The file in the library is replaced by the searchable one, which the
   reference then points to, as does every other reference that had the same
   file.
-- **A PDF of the library becomes elements.** Beside it, **Its text as
-  elements…** reads the PDF where it is stored, and makes elements of what
+- **A PDF of the library becomes elements.** Beside it, or in the pane of
+  the file, **Its text as elements…** reads the PDF where it is stored, and makes elements of what
   is read, as of a PDF brought in, **into the project** you choose, under
   the element in view where that project is open, or into **a new project,
   named after it**. The file stays in the library as it was.
@@ -1915,7 +1987,7 @@ From then on:
 - The one who shared the project can see who has it, remove someone, and stop
   sharing. Those who are removed keep the project as it was then.
 
-Files attached to references are not shared; the references themselves are.
+The files of the library are not shared; the references themselves are.
 The pictures of the figures of the project are shared: they are sent to the
 server when they are put in, and fetched by the others from there, into
 their own stores. No other picture of your store is sent. A picture that
@@ -2229,10 +2301,14 @@ on a desk of another shade, so that where the text goes is seen.
   are compared with your library: those that are the same need nothing, new
   ones are added, and where the file's differs from yours, or looks like a
   work you have, you choose, in one window, which to keep; the citations follow
-  your choice. The history of the project, and the attachments of the library,
-  do not go with it.
+  your choice. The history of the project, and the files of the library, do
+  not go with it.
 - **Everything is in one folder**, shown under *Settings*. To keep a copy of
-  your work, copy the folder.
+  your work, copy the folder. In it, `library` holds the references
+  (`library.bib`), the files of the library (`attachments`, each under a
+  name made of what it holds) and `files.json`, which says what each file is
+  called and which folder it is in; **Export all files…** gives a copy you
+  can read in any file manager.
 - **To read your text without Glaukopis**, export it, or open its folder:
   every project is kept there as Org as well (see below). The references are
   in `library.bib` at all times, which other tools can read.
