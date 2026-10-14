@@ -598,3 +598,33 @@ What this settles (ADR 0040):
   layout's, with a passage's choice over it; numbers are edited in place.
 - One list of kinds, no pinning; the verse family is called *Verse* and
   serves poetry, drama and transcripts alike.
+
+## 2026-10-14 — the files of the library
+
+> One more new feature. Now it is possible to import attachments to references. What kinds of attachments make sense to attach? Only pdf? In any case, we should have a repository of all attached files, much like images. The function to make pdfs readable or add a pdf or an image as an element, should be easily reachable from the repository. The question is whether images and attachments, like pdfs, are part of the same repository, ordered by file type. Or if even references are in this menu. I lean towards not mixing references with files. But how do you suggest implementing this?
+
+A first answer proposed two stores, a files view inside the library, and
+that every file has a reference and goes with it. The owner objected:
+
+> Some users, and I am one of them, have a big store of pdfs with books and articles. I would like to import it, so it it becomes easily available from inside Glaukopis. I am not against the idea that each of these will get a reference. The problem is that my reference library already have references to most of these texts. Will the import system recognize that the pdf and the reference belong together? I am also a bit uneasy about the rigidity of the idea that all the pdfs must belong to references. No manual going through pdfs and assigning them to references? Perhaps this is the best way to do it, but it does feel a bit like "don't worry, the machine knows best", and the user becomes a bit estranged to how things actually belong together. The idea that the files I have imported will disappear when its reference makes me hesitate to embrace the solution.
+
+> This sounds great! Just one small question. How would you organize the files? I think at least they must have a folder system of sorts. How would you do it?
+
+> Let us do it your way. It should be possible to export folders or single files, where the folder structure then becomes what we see, and file names contain editor/author, title and year, where they exist. Make a plan for this that I can give to Opus 5.5 afterwards.
+
+What this settles (ADR 0043, built from `docs/plans/the-files-of-the-library.md`):
+
+- The files of the library are a store of their own beside the pictures,
+  divided from them by their role, not their kind; any kind of file is
+  taken, and what can be done with it depends on its kind. A file crosses
+  to the pictures, or a picture to the files, on purpose.
+- A file may belong to no reference, one or several; files are never
+  removed with a reference unless asked; folders of their own, nested, kept
+  in a record beside the store, with the store on disk unchanged; a folder
+  taken in keeps its structure.
+- A files view in the library's place, with the actions of each kind; the
+  going-through, where the machine proposes by identifier, name and first
+  page with its reason shown, and the writer decides, any day.
+- Export of a folder, chosen files or all, the folders becoming folders on
+  disk and every file named by author or editor, year and title where it
+  has a reference, with a `references.bib` beside when asked.
