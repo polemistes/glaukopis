@@ -12,6 +12,8 @@ pub mod bibfile;
 /// Documents, which become maps: apart from the references, and not in three steps.
 pub mod document;
 pub mod pdf;
+/// What the files of the library may be: the finding-out of the going-through.
+pub mod proposals;
 pub mod tables;
 pub mod zotero;
 
@@ -78,6 +80,8 @@ pub enum ReasonWord {
     Identical,
     Alike { title: Agreement, author: Agreement, year: Agreement },
     File,
+    Name,
+    FirstPage,
 }
 
 impl From<Certainty> for CertaintyWord {
@@ -97,6 +101,8 @@ impl From<Reason> for ReasonWord {
             Reason::Identical => ReasonWord::Identical,
             Reason::Alike { title, author, year } => ReasonWord::Alike { title, author, year },
             Reason::File => ReasonWord::File,
+            Reason::Name => ReasonWord::Name,
+            Reason::FirstPage => ReasonWord::FirstPage,
         }
     }
 }

@@ -70,15 +70,30 @@ pub fn lookup_find(state: State<'_, AppState>, input: String, scope: Option<Scop
     Ok(Found { query, hits, failures: outcome.failures })
 }
 
+/// What was found out of a PDF.
+pub(crate) struct Identified {
+    /// What the file says of itself.
+    pub facts: pdf::PdfFacts,
+    /// What it is taken to be: what the services said of it, where they were
+    /// asked and knew it, else what the file says.
+    pub candidate: Candidate,
+    /// Whether the candidate is what the services said.
+    pub looked_up: bool,
+    /// What was said of the asking: that the services do not know the
+    /// number, or could not be reached. In the candidate's notes as well.
+    pub said: Vec<String>,
+}
+
 /// What a PDF is, as far as it can be told: from the file itself, and from
-/// what is known elsewhere of the DOI or ISBN printed in it.
-fn identify(
+/// what is known elsewhere of the DOI or ISBN printed in it, where `ask`.
+/// A file that cannot be read is none, and said so in `warnings`.
+pub(crate) fn identify(
     state: &AppState,
     path: &Path,
     ask: bool,
     warnings: &mut Vec<String>,
     stop: &AtomicBool,
-) -> Option<Candidate> {
+) -> Option<Identified> {
     let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     // A scan has what it is read from pictures of its first pages, where Tesseract is there.
     let tools = state.tools();
@@ -91,6 +106,7 @@ fn identify(
         }
     };
     let mut candidate = pdf::candidate(path, &facts);
+    let mut said = Vec::new();
     if facts.doi.is_none() && facts.isbns.is_empty() && facts.arxiv.is_none() && facts.title.is_none() {
         // Nothing says what it is. The name of the file is something to know
         // it by until the details are filled in; the year would be that of
@@ -101,10 +117,7 @@ fn identify(
         }
         candidate.draft.fields.remove("date");
         candidate.draft.fields.remove("year");
-        return Some(candidate);
-    }
-    if !ask || stop.load(Ordering::Relaxed) {
-        return Some(candidate);
+        return Some(Identified { facts, candidate, looked_up: false, said });
     }
     let query = if let Some(doi) = &facts.doi {
         Some(Query::Doi(doi.clone()))
@@ -113,19 +126,24 @@ fn identify(
     } else {
         facts.isbns.first().map(|isbn| Query::Isbn(isbn.clone()))
     };
-    let Some(query) = query else { return Some(candidate) };
+    let Some(query) = query.filter(|_| ask && !stop.load(Ordering::Relaxed)) else {
+        return Some(Identified { facts, candidate, looked_up: false, said });
+    };
+    let mut looked_up = false;
     match lookup::lookup(&state.client(), &query, Scope::Any) {
         Ok(outcome) => match outcome.hits.into_iter().next() {
             Some(hit) => {
                 candidate.draft = hit.draft;
                 candidate.notes = hit.remarks;
                 candidate.notes.insert(0, tr!("core-import-details-from", service = &hit.source));
+                looked_up = true;
             }
-            None => candidate.notes.push(tr!("core-import-number-unknown")),
+            None => said.push(tr!("core-import-number-unknown")),
         },
-        Err(e) => candidate.notes.push(tr!("core-import-databases-failed", error = e.to_string())),
+        Err(e) => said.push(tr!("core-import-databases-failed", error = e.to_string())),
     }
-    Some(candidate)
+    candidate.notes.extend(said.iter().cloned());
+    Some(Identified { facts, candidate, looked_up, said })
 }
 
 /// The files that are being found out about, by the tickets they were asked
@@ -230,7 +248,7 @@ fn plan_pdfs(
                         tell(name.clone());
                         let mut said = Vec::new();
                         let candidate = if path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf")) {
-                            identify(state, path, ask, &mut said, stop)
+                            identify(state, path, ask, &mut said, stop).map(|found| found.candidate)
                         } else {
                             said.push(tr!("core-import-not-a-pdf", name = &name));
                             None

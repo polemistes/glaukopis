@@ -151,6 +151,124 @@ pub fn file_path(state: State<'_, AppState>, hash: String) -> CommandResult<Stri
     Ok(library.attachment_path(&path)?.display().to_string())
 }
 
+// ---- finding out ----
+
+use std::sync::atomic::AtomicUsize;
+
+use glaukopis_core::import::proposals::{self, Known, Proposal};
+use glaukopis_core::library::files::FileKind;
+
+use crate::commands::sources::identify;
+
+/// What may be found out of the files with these hashes, for the going-through:
+/// for each, the works of the library it may belong to, the most certain
+/// first, and a new reference where the services know the identifier printed
+/// in it and the library does not. A PDF is read, and its identifier looked
+/// up where `ask` (the default); every file is known by its name as well. The
+/// library is held only while what is needed of it is copied, so that it is
+/// free while the files are read and looked up. With a ticket, the interface
+/// is told how far it has come (`files-progress`), and it can be stopped
+/// (`files_stop`): it then gives what was found out before, and leaves out the
+/// files it had not finished. Hashes the library does not know are left out.
+#[tauri::command(async)]
+pub fn files_identify(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    hashes: Vec<String>,
+    ask: Option<bool>,
+    ticket: Option<String>,
+) -> CommandResult<Vec<Proposal>> {
+    let work = Ticket::begin(ticket);
+    let (entries, index, wanted) = {
+        let mut library = state.library();
+        library.refresh()?;
+        let mut wanted = Vec::new();
+        for hash in &hashes {
+            if let Some(record) = library.files.get(hash) {
+                let path = library.attachment_path(&record.path)?;
+                let kind = files::kind_of(&record.path);
+                wanted.push(Wanted { hash: hash.clone(), name: record.name.clone(), path, kind });
+            }
+        }
+        (library.entries().to_vec(), library.duplicates_index().clone(), wanted)
+    };
+    let ask = ask.unwrap_or(true);
+    let tell = Mutex::new(work.teller(&app));
+    let told = |done: usize, name: &str| {
+        let mut tell = tell.lock().unwrap_or_else(|p| p.into_inner());
+        (*tell)(done, wanted.len(), name);
+    };
+
+    // A few files at a time, as the import of PDF files has them: each is
+    // read, and may be looked up, which is mostly waiting. The interface is
+    // told how many are done, and of a file at hand, whenever either changes.
+    const AT_ONCE: usize = 3;
+    let next = AtomicUsize::new(0);
+    let done = AtomicUsize::new(0);
+    let found: Mutex<Vec<Option<Proposal>>> = Mutex::new(wanted.iter().map(|_| None).collect());
+    let at_hand: Mutex<Vec<String>> = Mutex::new(Vec::new());
+    std::thread::scope(|s| {
+        let working: Vec<_> = (0..AT_ONCE.min(wanted.len()))
+            .map(|_| {
+                s.spawn(|| {
+                    loop {
+                        let i = next.fetch_add(1, Ordering::Relaxed);
+                        let Some(file) = wanted.get(i) else { break };
+                        if work.stop.load(Ordering::Relaxed) {
+                            break;
+                        }
+                        at_hand.lock().unwrap_or_else(|p| p.into_inner()).push(file.name.clone());
+                        told(done.load(Ordering::Relaxed), &file.name);
+                        let known = known_of(&state, file, ask, &work.stop);
+                        let proposal = proposals::propose(&entries, &index, known);
+                        // What was cut short by the stop may be less than the file would tell.
+                        if !work.stop.load(Ordering::Relaxed) {
+                            found.lock().unwrap_or_else(|p| p.into_inner())[i] = Some(proposal);
+                        }
+                        let finished = done.fetch_add(1, Ordering::Relaxed) + 1;
+                        let still = {
+                            let mut at_hand = at_hand.lock().unwrap_or_else(|p| p.into_inner());
+                            at_hand.retain(|n| *n != file.name);
+                            at_hand.first().cloned()
+                        };
+                        told(finished, still.as_deref().unwrap_or(""));
+                    }
+                })
+            })
+            .collect();
+        // What went wrong in finding out about a file is not passed over in silence.
+        for h in working {
+            h.join().unwrap_or_else(|e| std::panic::resume_unwind(e));
+        }
+    });
+    // In the order the files were asked for, whatever order they were found out about in.
+    Ok(found.into_inner().unwrap_or_else(|p| p.into_inner()).into_iter().flatten().collect())
+}
+
+/// A file to find out about, as the library knows it.
+struct Wanted {
+    hash: String,
+    name: String,
+    path: PathBuf,
+    kind: FileKind,
+}
+
+/// What can be found out of a file before it is compared with the library:
+/// of a PDF, what it says of itself and what the services say of its
+/// identifier; of any other file, nothing but its name, which `propose` reads.
+fn known_of(state: &AppState, file: &Wanted, ask: bool, stop: &AtomicBool) -> Known {
+    let mut known = Known { hash: file.hash.clone(), name: file.name.clone(), ..Default::default() };
+    if file.kind != FileKind::Pdf {
+        return known;
+    }
+    if let Some(found) = identify(state, &file.path, ask, &mut known.notes, stop) {
+        known.notes.extend(found.said);
+        known.lookup = found.looked_up.then_some(found.candidate);
+        known.facts = Some(found.facts);
+    }
+    known
+}
+
 // ---- taking in ----
 
 #[derive(Clone, Serialize)]

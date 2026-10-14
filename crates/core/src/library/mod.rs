@@ -1534,7 +1534,7 @@ mod tests {
         let mut told = Vec::new();
         let stop = AtomicBool::new(false);
         let (taken, problems) =
-            files::store_paths(lib.dir(), &[desk.clone()], true, &mut |d, t, _| told.push((d, t)), &stop);
+            files::store_paths(lib.dir(), std::slice::from_ref(&desk), true, &mut |d, t, _| told.push((d, t)), &stop);
         assert!(problems.is_empty(), "{problems:?}");
         assert_eq!(taken.len(), 4);
         assert_eq!(told.last(), Some(&(4, 4)));
@@ -1548,7 +1548,7 @@ mod tests {
         assert!(nagy.references.is_empty());
 
         // The same tree again: the same files, no new folders.
-        let (again, _) = files::store_paths(lib.dir(), &[desk.clone()], true, &mut |_, _, _| {}, &stop);
+        let (again, _) = files::store_paths(lib.dir(), std::slice::from_ref(&desk), true, &mut |_, _, _| {}, &stop);
         let got = lib.enter_taken(&again, Some(&top.id)).unwrap();
         assert_eq!((got.files.len(), got.same.len(), got.folders), (0, 4, 0));
 

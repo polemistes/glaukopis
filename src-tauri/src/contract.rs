@@ -118,6 +118,19 @@ fn what_is_sent_is_what_the_interface_declares() {
         )
         .unwrap();
     let work = library.require(&work.id).unwrap().clone();
+    // What a file may be: two works by its name, and a new one the services describe.
+    let proposals = vec![glaukopis_core::import::proposals::propose(
+        library.entries(),
+        library.duplicates_index(),
+        glaukopis_core::import::proposals::Known {
+            hash: taken_in.files[0].hash.clone(),
+            name: "Nagy 1979 - The Best of the Achaeans.pdf".into(),
+            lookup: Some(plan.items[1].candidate.clone()),
+            notes: vec!["A remark.".into()],
+            ..Default::default()
+        },
+    )];
+    assert!(!proposals[0].matches.is_empty() && proposals[0].lookup.is_some());
     let groups = glaukopis_core::duplicates::find_groups(library.entries());
     assert!(!groups.is_empty() && again.id != work.id);
 
@@ -177,6 +190,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("files", "FilesListing", "files", &crate::commands::files::files_listing(&library));
     put("takenIn", "TakenIn", "files", &taken_in);
     put("exported", "Exported", "files", &exported);
+    put("proposal", "Proposal[]", "files", &proposals);
     put("importPlan", "ImportPlan", "library", &plan);
     put("duplicates", "DuplicateGroup[]", "library", &groups);
     put("project", "ProjectInfo", "projects", &project);

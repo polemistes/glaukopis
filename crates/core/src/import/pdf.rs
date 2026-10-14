@@ -48,6 +48,8 @@ const LARGEST_PAGE: usize = 4 << 20;
 /// A file larger than this is not read: it is held in memory as a whole, and
 /// more than once while it is taken apart.
 const LARGEST_FILE: u64 = 1 << 30;
+/// How much of the first page is kept: a title page, and the beginning of an article.
+const FIRST_PAGE: usize = 4000;
 /// How long a file may take to read before it is given up.
 const PATIENCE: Duration = Duration::from_secs(20);
 
@@ -74,6 +76,10 @@ pub struct PdfFacts {
     /// The beginning of the text, for showing to the user, with the
     /// whitespace normalised.
     pub beginning: String,
+    /// The text of the first page that has any, for finding the work by
+    /// what its title page says: the whitespace of each line normalised,
+    /// the lines kept apart, at most [`FIRST_PAGE`] characters.
+    pub first_page: String,
 }
 
 /// What was read out of the file, before anything is made of it.
@@ -779,6 +785,212 @@ fn split_authors(value: &str) -> Vec<String> {
 }
 
 // ---------------------------------------------------------------------------
+// The name of the file
+// ---------------------------------------------------------------------------
+
+/// What the name of a file says of the work in it.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Named {
+    /// The family names of the authors, as the name writes them.
+    pub families: Vec<String>,
+    pub year: Option<i32>,
+    /// Empty where the name says only who wrote it and when.
+    pub title: String,
+}
+
+/// What scanners, cameras and programs call the files they make: a name
+/// that is one of these, with numbers, says nothing of the work.
+const NO_NAMES: &[&str] = &[
+    "scan",
+    "scans",
+    "scanned",
+    "document",
+    "doc",
+    "dokument",
+    "file",
+    "fil",
+    "img",
+    "image",
+    "bilde",
+    "photo",
+    "foto",
+    "dsc",
+    "dscn",
+    "pic",
+    "page",
+    "side",
+    "untitled",
+    "unnamed",
+    "noname",
+    "download",
+    "new",
+    "ny",
+    "copy",
+    "kopi",
+    "pdf",
+    "print",
+    "screenshot",
+    "skjermbilde",
+    "skanning",
+];
+
+/// Where a name is split into the authors, the year and the title.
+const NAME_DASHES: &[&str] = &[" - ", " – ", " — "];
+
+/// What may stand around the parts of a name.
+fn name_edge(c: char) -> bool {
+    c.is_whitespace() || "-–—,.;:()[]{}".contains(c)
+}
+
+/// The year of a word of a name: `1979`, `(1979)`, `[1979]`, `1979a`.
+fn year_of_word(word: &str) -> Option<i32> {
+    let core = word.trim_matches(|c: char| "()[]{},.;:".contains(c));
+    let digits = match core.len() {
+        4 => core,
+        5 if core.as_bytes()[4].is_ascii_lowercase() => &core[..4],
+        _ => return None,
+    };
+    if !digits.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    digits.parse().ok().filter(|y| (1450..=2099).contains(y))
+}
+
+/// A name with a year glued to it: `Nagy1979`, as the name and the year.
+fn glued_year(word: &str) -> Option<(&str, i32)> {
+    let core = word.trim_matches(|c: char| "()[]{},.;:".contains(c));
+    let split = core.len().checked_sub(4)?;
+    let (name, year) = (core.get(..split)?, core.get(split..)?);
+    let name_ok = name.chars().count() >= 2 && name.chars().all(char::is_alphabetic);
+    let year = year.parse::<i32>().ok().filter(|y| (1450..=2099).contains(y))?;
+    name_ok.then_some((name, year))
+}
+
+/// A name without what is put at its end by those who keep several
+/// versions of a file: `(1)`, `[2]`, `copy`, `final`, `v2`.
+fn without_versions(name: &str) -> &str {
+    let mut s = name;
+    loop {
+        s = s.trim_end_matches(|c: char| c.is_whitespace() || "-–—,.".contains(c));
+        // A number in brackets, glued or apart: `document(1)`, `document [2]`.
+        if let Some(open) = s.rfind(['(', '['])
+            && s.ends_with([')', ']'])
+            && s.len() - open > 2
+            && s[open + 1..s.len() - 1].bytes().all(|b| b.is_ascii_digit())
+        {
+            s = &s[..open];
+            continue;
+        }
+        let at = s
+            .rfind(|c: char| c.is_whitespace() || c == '-')
+            .map_or(0, |i| i + s[i..].chars().next().map_or(1, char::len_utf8));
+        let last = s[at..].to_lowercase();
+        let version = matches!(last.as_str(), "copy" | "kopi" | "final" | "endelig")
+            || (last.len() > 1 && last.starts_with('v') && last[1..].bytes().all(|b| b.is_ascii_digit()));
+        if at == 0 || !version {
+            return s;
+        }
+        s = &s[..at];
+    }
+}
+
+/// What stands before a name's year, or the whole of a name without one,
+/// split into the authors and the title at its dashes. The first part is
+/// the authors when it is short enough to be names: `Nagy - The Best of the
+/// Achaeans`; the last is, when the first is not and the last is:
+/// `The Best of the Achaeans - Nagy`. Else it is all the title.
+fn authors_and_title(text: &str) -> (String, String) {
+    let mut parts: Vec<&str> = vec![text];
+    for dash in NAME_DASHES {
+        parts = parts.iter().flat_map(|p| p.split(dash)).collect();
+    }
+    let parts: Vec<&str> = parts.into_iter().map(|p| p.trim_matches(name_edge)).filter(|p| !p.is_empty()).collect();
+    match parts.as_slice() {
+        [] => (String::new(), String::new()),
+        [one] => (String::new(), (*one).to_owned()),
+        [first, rest @ ..] if are_names(first, 3) => ((*first).to_owned(), rest.join(" - ")),
+        [most @ .., last] if are_names(last, 2) => ((*last).to_owned(), most.join(" - ")),
+        _ => (String::new(), parts.join(" - ")),
+    }
+}
+
+/// The words that begin titles and never names.
+const NAME_ARTICLES: &[&str] = &["the", "a", "an", "der", "die", "das", "le", "la", "les", "il", "el", "den", "det"];
+
+/// Whether a part of a file's name may be the names of its authors: each
+/// name of no more than `words` words, and the first not an article.
+fn are_names(part: &str, words: usize) -> bool {
+    let first = part.split_whitespace().next().unwrap_or_default().to_lowercase();
+    if NAME_ARTICLES.contains(&first.as_str()) {
+        return false;
+    }
+    let mut text = format!(" {part} ");
+    for separator in [" and ", " og ", " und ", " et ", " & ", " + ", ";"] {
+        text = text.replace(separator, ",");
+    }
+    text.split(',').all(|name| name.split_whitespace().count() <= words)
+}
+
+/// The family names in what a file's name says of its authors.
+fn families_of(authors: &str) -> Vec<String> {
+    let mut text = format!(" {authors} ");
+    for (from, to) in [(" et al. ", " "), (" et al ", " "), (" og ", " and "), (" et ", " and "), (" + ", " and ")] {
+        text = text.replace(from, to);
+    }
+    split_authors(&text)
+        .into_iter()
+        .map(|name| parse_one(&name).family)
+        .filter(|family| family.chars().any(char::is_alphabetic))
+        .collect()
+}
+
+/// What the name of a file says of the work in it, as the common schemes
+/// name files: `Author - Year - Title`, `Author_Year_Title`, `Author (Year)
+/// Title`, `AuthorYear Title`, and without the year. `stem` is the name
+/// without its ending. A name that says nothing, as `scan0001` or
+/// `document (1)`, is none.
+pub fn from_name(stem: &str) -> Option<Named> {
+    let spaced = normalise_space(&stem.replace('_', " "));
+    let name = without_versions(&spaced);
+    let letters: String = name.chars().filter(|c| c.is_alphabetic()).flat_map(char::to_lowercase).collect();
+    if letters.is_empty() || NO_NAMES.contains(&letters.as_str()) {
+        return None;
+    }
+
+    // The first word that is a year, or a name with a year glued to it,
+    // with what stands before it and after it.
+    let mut found = None;
+    let mut at = 0;
+    for word in name.split(' ') {
+        let end = at + word.len();
+        if let Some(year) = year_of_word(word) {
+            found = Some((year, name[..at].to_owned(), &name[end..]));
+        } else if let Some((glued, year)) = glued_year(word) {
+            found = Some((year, format!("{}{glued}", &name[..at]), &name[end..]));
+        }
+        if found.is_some() {
+            break;
+        }
+        at = end + 1;
+    }
+    let (year, (authors, title)) = match found {
+        Some((year, before, after)) => {
+            let (before, after) = (before.trim_matches(name_edge), after.trim_matches(name_edge));
+            let parts = match (before.is_empty(), after.is_empty()) {
+                (false, false) => (before.to_owned(), after.to_owned()),
+                (true, _) => authors_and_title(after),
+                (false, true) => authors_and_title(before),
+            };
+            (Some(year), parts)
+        }
+        None => (None, authors_and_title(name)),
+    };
+    let named = Named { families: families_of(&authors), year, title: title.trim_matches(name_edge).to_owned() };
+    (!named.title.is_empty() || !named.families.is_empty()).then_some(named)
+}
+
+// ---------------------------------------------------------------------------
 // The metadata
 // ---------------------------------------------------------------------------
 
@@ -1212,7 +1424,29 @@ fn facts(raw: &Raw, file_name: &str) -> PdfFacts {
         pages: raw.pages,
         has_text: text.is_some() || raw.last.iter().any(|page| page.chars().any(char::is_alphanumeric)),
         beginning: text.map(|t| beginning(t)).unwrap_or_default(),
+        first_page: text.map(|t| first_page(t)).unwrap_or_default(),
     }
+}
+
+/// The first page as it is kept: each line with its whitespace normalised,
+/// without the empty ones, cut at [`FIRST_PAGE`] characters.
+fn first_page(text: &str) -> String {
+    let mut out = String::new();
+    let mut count = 0;
+    for line in text.lines().map(normalise_space).filter(|l| !l.is_empty()) {
+        let room = FIRST_PAGE.saturating_sub(count + usize::from(!out.is_empty()));
+        if room == 0 {
+            break;
+        }
+        if !out.is_empty() {
+            out.push('\n');
+            count += 1;
+        }
+        let taken: String = line.chars().take(room).collect();
+        count += taken.chars().count();
+        out.push_str(&taken);
+    }
+    out
 }
 
 /// A candidate made from the facts alone, for when nothing can be looked up.
@@ -1221,6 +1455,34 @@ fn facts(raw: &Raw, file_name: &str) -> PdfFacts {
 /// is an ISBN and either no DOI or the length of a book, and else `misc`. The
 /// notes say how far the details can be trusted.
 pub fn candidate(path: &Path, facts: &PdfFacts) -> Candidate {
+    let draft = draft(facts);
+
+    let mut notes = Vec::new();
+    if facts.pages == 0 {
+        notes.push(tr!("core-import-pdf-unreadable"));
+    } else if !facts.has_text {
+        notes.push(tr!("core-import-pdf-scan"));
+    }
+    let identified = facts.doi.is_some() || !facts.isbns.is_empty() || facts.arxiv.is_some();
+    let described = facts.title.is_some() || !facts.authors.is_empty();
+    notes.push(match (identified, described) {
+        (true, _) => tr!("core-import-pdf-from-file"),
+        (false, true) => tr!("core-import-pdf-from-metadata"),
+        (false, false) => tr!("core-import-pdf-unknown"),
+    });
+
+    Candidate {
+        draft,
+        files: vec![std::path::absolute(path).unwrap_or_else(|_| path.to_owned()).display().to_string()],
+        origin: file_name(path),
+        collections: Vec::new(),
+        notes,
+    }
+}
+
+/// A draft made of the facts alone: the identifiers, and the title, the
+/// authors and the year where the file says them.
+pub fn draft(facts: &PdfFacts) -> Draft {
     let entry_type = match (&facts.doi, facts.isbns.is_empty()) {
         (Some(_), true) => "article",
         (None, false) => "book",
@@ -1248,28 +1510,7 @@ pub fn candidate(path: &Path, facts: &PdfFacts) -> Candidate {
         draft.fields.insert("eprint".into(), arxiv.clone());
         draft.fields.insert("eprinttype".into(), "arxiv".into());
     }
-
-    let mut notes = Vec::new();
-    if facts.pages == 0 {
-        notes.push(tr!("core-import-pdf-unreadable"));
-    } else if !facts.has_text {
-        notes.push(tr!("core-import-pdf-scan"));
-    }
-    let identified = facts.doi.is_some() || !facts.isbns.is_empty() || facts.arxiv.is_some();
-    let described = facts.title.is_some() || !facts.authors.is_empty();
-    notes.push(match (identified, described) {
-        (true, _) => tr!("core-import-pdf-from-file"),
-        (false, true) => tr!("core-import-pdf-from-metadata"),
-        (false, false) => tr!("core-import-pdf-unknown"),
-    });
-
-    Candidate {
-        draft,
-        files: vec![std::path::absolute(path).unwrap_or_else(|_| path.to_owned()).display().to_string()],
-        origin: file_name(path),
-        collections: Vec::new(),
-        notes,
-    }
+    draft
 }
 
 #[cfg(test)]
@@ -1500,6 +1741,71 @@ mod tests {
         assert_eq!(year_of_date("March 2019"), Some(2019));
         assert_eq!(year_of_date("D:00000101000000Z"), None);
         assert_eq!(year_of_date(""), None);
+    }
+
+    fn named(families: &[&str], year: Option<i32>, title: &str) -> Option<Named> {
+        Some(Named { families: families.iter().map(|f| (*f).to_owned()).collect(), year, title: title.into() })
+    }
+
+    #[test]
+    fn what_names_of_files_say() {
+        let best = named(&["Nagy"], Some(1979), "The Best of the Achaeans");
+        // Author, year and title, in the schemes files are named by.
+        assert_eq!(from_name("Nagy 1979 - The Best of the Achaeans"), best);
+        assert_eq!(from_name("Nagy - 1979 - The Best of the Achaeans"), best);
+        assert_eq!(from_name("Nagy_1979_The_Best_of_the_Achaeans"), best);
+        assert_eq!(from_name("Nagy (1979) The Best of the Achaeans"), best);
+        assert_eq!(from_name("Nagy1979 Best of the Achaeans"), named(&["Nagy"], Some(1979), "Best of the Achaeans"));
+        assert_eq!(from_name("West, M. L. (1988) - Hesiod"), named(&["West"], Some(1988), "Hesiod"));
+        assert_eq!(
+            from_name("Snell_1971_Tragicorum_Graecorum_Fragmenta"),
+            named(&["Snell"], Some(1971), "Tragicorum Graecorum Fragmenta")
+        );
+        assert_eq!(
+            from_name("Muellner [1996] The Anger of Achilles"),
+            named(&["Muellner"], Some(1996), "The Anger of Achilles")
+        );
+        assert_eq!(from_name("Kirk et al. 1985a The Iliad"), named(&["Kirk"], Some(1985), "The Iliad"));
+        // The year at the end, and the title before the author.
+        assert_eq!(
+            from_name("The Best of the Achaeans - Nagy 1979"),
+            named(&["Nagy"], Some(1979), "The Best of the Achaeans")
+        );
+        // Several authors.
+        assert_eq!(
+            from_name("Lord & Nagy - 2000 - The Singer of Tales"),
+            named(&["Lord", "Nagy"], Some(2000), "The Singer of Tales")
+        );
+        assert_eq!(
+            from_name("Gregory Nagy og Leonard Muellner - Homeric Questions"),
+            named(&["Nagy", "Muellner"], None, "Homeric Questions")
+        );
+        // Without a year: the short part is the authors, wherever it stands.
+        assert_eq!(from_name("Nagy - The Best of the Achaeans"), named(&["Nagy"], None, "The Best of the Achaeans"));
+        assert_eq!(from_name("The Best of the Achaeans - Nagy"), named(&["Nagy"], None, "The Best of the Achaeans"));
+        assert_eq!(from_name("The Singer of Tales"), named(&[], None, "The Singer of Tales"));
+        // What is put at the end of versions of a file.
+        assert_eq!(from_name("Nagy 1979 - The Best of the Achaeans (1)"), best);
+        assert_eq!(from_name("Nagy 1979 - The Best of the Achaeans copy"), best);
+        assert_eq!(from_name("Nagy_1979_The_Best_of_the_Achaeans_v2"), best);
+        assert_eq!(from_name("Nagy 1979 - The Best of the Achaeans - final"), best);
+        // Names that say nothing.
+        for nothing in
+            ["scan0001", "document (1)", "document", "IMG_2034", "DSC01234", "12345", "Scan 2019-03-14", "_-_", ""]
+        {
+            assert_eq!(from_name(nothing), None, "{nothing}");
+        }
+    }
+
+    #[test]
+    fn the_first_page_is_kept() {
+        let page = "  The   Best of\n\n the Achaeans \nGregory Nagy";
+        let f = facts(&Raw { pages: 2, first: vec![String::new(), page.into()], ..Default::default() }, "x.pdf");
+        assert_eq!(f.first_page, "The Best of\nthe Achaeans\nGregory Nagy");
+        let long = "word ".repeat(2000);
+        let f = facts(&Raw { pages: 1, first: vec![long], ..Default::default() }, "x.pdf");
+        assert_eq!(f.first_page.chars().count(), FIRST_PAGE);
+        assert_eq!(facts(&Raw::default(), "x.pdf").first_page, "");
     }
 
     #[test]

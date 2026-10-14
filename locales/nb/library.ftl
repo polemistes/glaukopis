@@ -79,6 +79,8 @@ library-reason-alike = { $title ->
     }
 }
 library-reason-file = samme fil
+library-reason-name = navnet stemmer
+library-reason-first-page = første side stemmer
 library-reasons = { $others } og { $last }
 
 ## Størrelsen på en fil.

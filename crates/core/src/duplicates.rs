@@ -35,6 +35,11 @@ pub enum Reason {
         year: Agreement,
     },
     File,
+    /// The name of a file says the title, the author or the year of it.
+    Name,
+    /// A line or two of the first page of a file agree with its title, and
+    /// its author's name is on the page.
+    FirstPage,
 }
 
 /// How far two entries agree in one of what tells works apart. The order is
@@ -339,6 +344,11 @@ impl Index {
         out
     }
 
+    /// The fingerprints, in the order of the list the index was built from.
+    pub fn prints(&self) -> &[Fingerprint] {
+        &self.prints
+    }
+
     /// The entries that match, the most certain first.
     pub fn find(&self, print: &Fingerprint, except: Option<usize>) -> Vec<Match> {
         let mut out: Vec<Match> = self
@@ -352,6 +362,45 @@ impl Index {
         out.sort_by(|a, b| b.certainty.cmp(&a.certainty).then(a.index.cmp(&b.index)));
         out
     }
+}
+
+/// How alike a line of a first page must be to a title to be taken for it.
+const FIRST_PAGE_ALIKE: f64 = 0.9;
+/// How many works a first page is taken to be, at most.
+const FIRST_PAGE_MATCHES: usize = 5;
+
+/// The works whose title stands on the first page of a file, in a line or
+/// two lines one after the other, where the name of the first author stands
+/// on the page as well: what a title page or the head of an article says.
+/// Each is probable, the most alike first, at most five.
+pub fn by_first_page(prints: &[Fingerprint], page: &str) -> Vec<Match> {
+    let lines: Vec<String> = page.lines().map(fold).filter(|l| !l.is_empty()).collect();
+    let words: std::collections::HashSet<&str> = lines.iter().flat_map(|l| l.split(' ')).collect();
+    // Each line, and each two lines one after the other, as a title would be.
+    let mut titles: Vec<Fingerprint> = Vec::new();
+    for (i, line) in lines.iter().enumerate() {
+        let mut texts = vec![line.clone()];
+        if let Some(next) = lines.get(i + 1) {
+            texts.push(format!("{line} {next}"));
+        }
+        for text in texts {
+            let title = without_article(&text).to_owned();
+            titles.push(Fingerprint { main_title: title.clone(), title, ..Default::default() });
+        }
+    }
+    let mut out: Vec<(f64, Match)> = Vec::new();
+    for (index, print) in prints.iter().enumerate() {
+        let Some(family) = print.families.first() else { continue };
+        if print.title.is_empty() || !family.split(' ').all(|w| words.contains(w)) {
+            continue;
+        }
+        let best = titles.iter().map(|t| title_similarity(print, t)).fold(0.0, f64::max);
+        if best >= FIRST_PAGE_ALIKE {
+            out.push((best, Match { index, certainty: Certainty::Probable, reasons: vec![Reason::FirstPage] }));
+        }
+    }
+    out.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.index.cmp(&b.1.index)));
+    out.into_iter().take(FIRST_PAGE_MATCHES).map(|(_, m)| m).collect()
 }
 
 /// Groups of entries that match one another, for "Find duplicates".
@@ -618,6 +667,37 @@ mod tests {
         assert_eq!(groups[0].ids, vec!["a", "c", "f"]);
         assert_eq!(groups[1].ids, vec!["d", "e"]);
         assert_eq!(groups[1].certainty, Certainty::Certain);
+    }
+
+    #[test]
+    fn the_title_on_the_first_page() {
+        let entries = vec![
+            entry(
+                "@book{a, author={Nagy, Gregory}, title={The Best of the Achaeans}, subtitle={Concepts of the Hero in Archaic Greek Poetry}, date={1979}}",
+            ),
+            entry("@book{b, author={Lord, Albert B.}, title={The Singer of Tales}, date={1960}}"),
+            entry("@book{c, author={Nagy, Gregory}, title={Pindar's Homer}, date={1990}}"),
+        ];
+        let index = Index::new(&entries);
+        // A title page: the title over two lines, the author's name below it.
+        let page = "THE BEST OF\nTHE ACHAEANS\nConcepts of the Hero in Archaic Greek Poetry\n\nGREGORY NAGY\n\nThe Johns Hopkins University Press\nBaltimore and London";
+        let found = by_first_page(index.prints(), page);
+        assert_eq!(found, vec![Match { index: 0, certainty: Certainty::Probable, reasons: vec![Reason::FirstPage] }]);
+        // The head of an article, with the title on a line of its own.
+        let page = "Oral Tradition 12 (1997)\nThe Singer of Tales\nAlbert B. Lord";
+        assert_eq!(by_first_page(index.prints(), page).iter().map(|m| m.index).collect::<Vec<_>>(), vec![1]);
+    }
+
+    #[test]
+    fn the_name_without_the_title_is_not_enough() {
+        let entries = vec![entry("@book{a, author={Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}}")];
+        let index = Index::new(&entries);
+        // The author's name, and another of the author's works.
+        let page = "HOMERIC QUESTIONS\nGregory Nagy\nUniversity of Texas Press";
+        assert!(by_first_page(index.prints(), page).is_empty());
+        // The title, and another author: a review, or a work cited.
+        let page = "The Best of the Achaeans\nreviewed by M. L. West";
+        assert!(by_first_page(index.prints(), page).is_empty());
     }
 
     #[test]
