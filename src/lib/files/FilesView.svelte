@@ -449,10 +449,15 @@
         {#if filters}<span class="badge" aria-hidden="true">{filters}</span>{/if}
       </span>
       <IconButton label={t('files-sort')} onclick={sortMenu}><ArrowDownUp size={15} /></IconButton>
-      <Button onclick={goThroughHere} disabled={!files.files.length} data-go-through>
-        {#snippet icon()}<ListChecks size={15} />{/snippet}
-        {t('files-go-through')}
-      </Button>
+      <!-- An icon only: the search keeps its room in a narrow head. -->
+      <IconButton
+        label={t('files-go-through-head')}
+        onclick={goThroughHere}
+        disabled={!files.files.length}
+        data-go-through
+      >
+        <ListChecks size={15} />
+      </IconButton>
       <div class="split">
         <Button variant="primary" onclick={() => void addFiles()}>
           {#snippet icon()}<FilePlus size={15} />{/snippet}
@@ -561,14 +566,15 @@
           title={t('files-none-selected')}
           text={t('files-none-selected-text')}
           compact
-        />
-        <p class="tally">
-          {t('files-tally', {
-            name: folder?.name ?? t('files-all'),
-            count: here.length,
-            unassigned: here.filter((f) => !f.references.length).length,
-          })}
-        </p>
+        >
+          <p class="tally">
+            {t('files-tally', {
+              name: folder?.name ?? t('files-all'),
+              count: here.length,
+              unassigned: here.filter((f) => !f.references.length).length,
+            })}
+          </p>
+        </EmptyState>
       </div>
     {/if}
   </aside>
@@ -766,15 +772,10 @@
     color: var(--ink-3);
   }
   .unselected {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
     height: 100%;
-    padding-bottom: 10vh;
   }
   .tally {
     margin: 0;
-    padding: 0 24px;
     text-align: center;
     color: var(--ink-4);
     font-size: var(--text-sm);

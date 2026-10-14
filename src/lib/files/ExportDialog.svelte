@@ -1,9 +1,8 @@
 <script lang="ts">
   /**
-   * The last question before files are exported into the folder chosen:
-   * whether a references.bib of their works goes with them.
+   * What an export writes, and whether a references.bib of the works goes
+   * with the files; the folder they are written into is asked for after.
    */
-  import FolderOutput from '@lucide/svelte/icons/folder-output';
   import { t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
@@ -34,10 +33,6 @@
   onclose={() => answer(null)}
 >
   <div class="body" data-export>
-    <div class="into">
-      <FolderOutput size={16} strokeWidth={1.6} />
-      <span class="path selectable">{request.into}</span>
-    </div>
     <p class="what">{what}</p>
     <label class="check">
       <input type="checkbox" bind:checked={withBib} data-with-bib />
@@ -61,20 +56,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-  }
-  .into {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: var(--radius-s);
-    background: var(--paper-sunken);
-    color: var(--ink-2);
-  }
-  .path {
-    min-width: 0;
-    overflow-wrap: anywhere;
-    font-size: var(--text-sm);
   }
   .what {
     margin: 0;

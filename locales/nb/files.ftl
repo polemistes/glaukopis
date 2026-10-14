@@ -202,7 +202,7 @@ files-tally = { $name }: { $count ->
 
 ## Gjennomgangen: filer gitt til referansene sine.
 
-files-go-through = Gå gjennom …
+files-go-through-head = Gå gjennom filene, for å gi dem til referansene sine …
 files-go-through-chosen = { $count ->
     [one] Gå gjennom den …
    *[other] Gå gjennom disse { $count } …
@@ -269,15 +269,15 @@ files-export-title = { $count ->
     [one] Eksporter én fil
    *[other] Eksporter { $count } filer
 }
-files-export-all-what = Hver fil skrives til denne mappen under navnet på referansen sin, Forfatter År - Tittel, eller sitt eget der den ikke har noen; mappene i biblioteket blir mapper i den.
-files-export-folder-what = Filene i mappen skrives til denne under navnene på referansene sine, eller sine egne der de ikke har noen; mappene under den blir mapper i den.
+files-export-all-what = Hver fil skrives til mappen du velger etterpå, under navnet på referansen sin, Forfatter År - Tittel, eller sitt eget der den ikke har noen; mappene i biblioteket blir mapper i den.
+files-export-folder-what = Filene i mappen skrives til mappen du velger etterpå, under navnene på referansene sine, eller sine egne der de ikke har noen; mappene under den blir mapper i den.
 files-export-files-what = { $count ->
-    [one] Filen skrives til denne mappen under navnet på referansen sin, eller sitt eget der den ikke har noen.
-   *[other] Filene skrives til denne mappen under navnene på referansene sine, eller sine egne der de ikke har noen.
+    [one] Filen skrives til mappen du velger etterpå, under navnet på referansen sin, eller sitt eget der den ikke har noen.
+   *[other] Filene skrives til mappen du velger etterpå, under navnene på referansene sine, eller sine egne der de ikke har noen.
 }
 files-export-bib = Med en references.bib
 files-export-bib-hint = Verkene filene hører til, der hvert nevner filene sine der de skrives, slik at Zotero eller JabRef leser mappen hel.
-files-export-go = Eksporter
+files-export-go = Velg mappen …
 files-exporting = { $count ->
     [one] Eksporterer en fil …
    *[other] Eksporterer { $count } filer …

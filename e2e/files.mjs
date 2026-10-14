@@ -1,14 +1,18 @@
 // The files of the library (ADR 0043), through their view in the library's
-// place: a tree of folders and files dropped on it, taken in with its
-// structure; the folders, the list, the filters; a file given to a
-// reference through the pane and the chooser; and a reference deleted
-// while its file stays, unassigned.
+// place, in parts, each going on from what the one before left:
 //
-// Written in parts, each going on from what the one before left: more are
-// added after the first.
+// 1. a tree of folders and files dropped on it, taken in with its
+//    structure; the folders, the list, the filters; a file given to a
+//    reference through the pane and the chooser; and a reference deleted
+//    while its file stays, unassigned;
+// 2. the going-through: files given to their references, where the name
+//    alone says whose a file is, and a scan with nothing to say is left
+//    for later;
+// 3. the export of all the files into a folder, under the names of their
+//    references, with a references.bib beside them.
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { App, root, sleep } from './harness.mjs';
@@ -66,6 +70,17 @@ writeFileSync(
 );
 const notes = join(desk, 'notes.txt');
 writeFileSync(notes, 'What was said at the seminar on the hero.\n');
+// For the going-through: PDFs with nothing in them, so that only their names can say what they are.
+const scans = join(desk, 'scans');
+mkdirSync(scans);
+const stubOf = (name, mark) => {
+  writeFileSync(join(scans, name), `%PDF-1.4\n% ${mark}\n%%EOF\n`);
+  return join(scans, name);
+};
+const nagyByName = stubOf(NAGY, 'by name');
+const scan0001 = stubOf('scan0001.pdf', 'a scan');
+// Where everything is exported to.
+const out = join(desk, 'exported');
 
 const app = await App.launch({ width: 1360, height: 880 });
 try {
@@ -137,10 +152,13 @@ try {
   await app.waitGone('dialog', 10000);
   await app.waitUntil(`return document.querySelectorAll('.list .item').length >= 10`, 5000, 'the list');
 
-  // The message of the import was shown in its dialog, and went with it: the
-  // messages are seen again only once that one is over, which is a fault of
-  // the messages and not of the files.
-  await sleep(5000);
+  // The message of the import came while its dialog was open, and is seen when it has gone.
+  const imported = await until(
+    'the message of the import',
+    async () => (await toasts()).find((t) => /references added/.test(t)),
+    5000,
+  ).catch(() => '');
+  check('the message of the import outlives its dialog', !!imported, imported);
   // The switch at the head of the library leads to the files.
   check('the library has a switch to its files', await app.exists('[data-library-switch]'));
   await app.clickText('[data-library-switch] [role="radio"]', 'Files');
@@ -274,7 +292,7 @@ try {
   await app.waitFor('[role="menu"]', 3000);
   await app.clickText('[role="menuitem"]', 'Delete');
   await app.waitForText('dialog footer button', 'Delete, keep the files', 3000);
-  const asked = await app.text('dialog');
+  const asked = await app.text('dialog[open]');
   check(
     'deleting asks about the file',
     /One file belongs to what is deleted/.test(asked) &&
@@ -282,7 +300,7 @@ try {
       /Delete with the files/.test(asked),
     asked.replace(/\s+/g, ' '),
   );
-  await app.screenshot('files-3-delete-reference');
+  await app.screenshot('files-2b-delete-reference');
   await app.clickText('dialog footer button', 'Delete, keep the files');
   await app.waitGone('dialog', 3000);
   await app.waitGone(`.list [data-id="${id}"]`, 3000);
@@ -353,6 +371,140 @@ try {
     inGreek.map((r) => r.name).join(', '),
   );
   await filter('With the folders under it');
+
+  // ---- part 2: the going-through ----
+
+  // The work of the name is in the library again.
+  await app.go('#/library');
+  await app.waitFor('.list .item', 5000);
+  const nagyEntry = /@book\{nagy1979,[\s\S]*?\n\}/.exec(bib)[0];
+  await app.click('.split-more');
+  await app.clickText('[role="menuitem"]', 'Paste references');
+  await app.waitFor('dialog textarea');
+  await app.exec(
+    `const t = document.querySelector('dialog textarea');
+     t.value = arguments[0];
+     t.dispatchEvent(new Event('input', { bubbles: true }));`,
+    nagyEntry,
+  );
+  await app.clickText('dialog footer button', 'Continue');
+  await app.waitForText('dialog h2', 'Import references');
+  await app.clickText('dialog footer button', 'Import');
+  await app.waitGone('dialog', 10000);
+  await app.waitFor(`.list .item`, 5000);
+
+  // Two files dropped at the top: the message after offers to go through them.
+  await app.clickText('[data-library-switch] [role="radio"]', 'Files');
+  await app.waitFor('[data-file-list] [data-hash]', 5000);
+  await app.clickText('[data-file-folders] .item.all', 'All files');
+  await sleep(250);
+  const atTop = await middleOf('.files-view .middle .body');
+  await drop([nagyByName, scan0001], atTop.x, atTop.y);
+  const offer = await until(
+    'the offer to go through them',
+    async () => (await toasts()).find((t) => /Go through the 2 new files/.test(t)),
+    8000,
+  ).catch(() => '');
+  check('the message after taking in offers the going-through', !!offer, offer);
+  await app.clickText('.toaster .toast .action', 'Go through the 2 new files');
+  await app.waitFor('dialog [data-going="deciding"]', 20000);
+  const goingRow = (name) => `dialog [data-going-file="${name}"]`;
+  const checkedIn = (name) =>
+    app.exec(
+      `return document.querySelector(arguments[0] + ' [role="radio"][aria-checked="true"]')?.textContent.trim() ?? null`,
+      goingRow(name),
+    );
+  check('the going-through has the two new files', (await app.count('dialog [data-going-file]')) === 2);
+  const why = await app
+    .exec(`return document.querySelector(arguments[0] + ' [data-reasons]')?.textContent.replace(/\\s+/g, ' ').trim() ?? ''`, goingRow(NAGY))
+    .catch(() => '');
+  check('the name alone finds the work, as probable', /probable/.test(why) && /named like it/.test(why), why);
+  const proposed = await app.exec(
+    `return document.querySelector(arguments[0] + ' .proposal').textContent.replace(/\\s+/g, ' ').trim()`,
+    goingRow(NAGY),
+  );
+  check('and proposes that work', /Nagy/.test(proposed) && /Achaeans/.test(proposed), proposed);
+  check('This one is chosen for it', (await checkedIn(NAGY)) === 'This one');
+  const nothing = await app.text(`${goingRow('scan0001.pdf')} .proposal`);
+  check('the scan has nothing found', /Nothing found/.test(nothing), nothing);
+  check('and is left for later', (await checkedIn('scan0001.pdf')) === 'Later');
+  check(
+    'the foot counts them',
+    /1 to assign, 1 later/.test(await app.text('dialog footer')),
+    await app.text('dialog footer'),
+  );
+  await app.screenshot('files-3-go-through');
+  await app.setTheme('dark');
+  await sleep(200);
+  await app.screenshot('files-3-go-through-dark');
+  await app.setTheme('light');
+  await app.click('dialog [data-going-done]');
+  await app.waitGone('dialog', 10000);
+  const goneThrough = await until(
+    'the message of the going-through',
+    async () => (await toasts()).find((t) => /assigned/.test(t)),
+    5000,
+  ).catch(() => '');
+  check('the message says what was done', /One file assigned/.test(goneThrough) && /1 left for later/.test(goneThrough), goneThrough);
+  await sleep(300);
+  const byName = (await rows()).filter((r) => r.name === NAGY && /Nagy 1979/.test(r.reference));
+  check('the file of that name is the work’s now', byName.length === 1, JSON.stringify(await rows()));
+  const scanRow = (await rows()).find((r) => r.name === 'scan0001.pdf');
+  check('the scan stays unassigned', scanRow?.reference === 'No reference', scanRow?.reference);
+
+  // ---- part 3: the export ----
+
+  // What is written, and whether a references.bib goes with it, is asked
+  // first; the system's chooser of the folder comes after, and cannot be
+  // answered from here (the page cannot stand in for it), so the dialog is
+  // driven up to it, and the export itself is asked of the application.
+  await app.click('[data-files-more]');
+  await app.waitFor('[role="menu"]', 3000);
+  await app.clickText('[role="menuitem"]', 'Export all files');
+  await app.waitFor('dialog [data-export]', 5000);
+  const asks = await app.text('dialog[open]');
+  check('the export says how many and how', /Export 5 files/.test(asks) && /Author Year - Title/.test(asks), asks.replace(/\s+/g, ' '));
+  check(
+    'and offers a references.bib',
+    await app.exec(`return document.querySelector('dialog [data-with-bib]').checked`),
+  );
+  check('before the folder is chosen', /Choose the folder/.test(await app.text('dialog footer')));
+  await sleep(300);
+  await app.screenshot('files-4-export');
+  await app.setTheme('dark');
+  await sleep(200);
+  await app.screenshot('files-4-export-dark');
+  await app.setTheme('light');
+  await app.clickText('dialog footer button', 'Cancel');
+  await app.waitGone('dialog', 3000);
+  const invoke = (command, args = {}) =>
+    app.execAsync(
+      `return await window.__TAURI_INTERNALS__.invoke(arguments[0], arguments[1]);`,
+      command,
+      args,
+    );
+  const exported = await invoke('files_export', { selection: { kind: 'all' }, into: out, withBib: true });
+  check(
+    'every file is written, with the folders and a references.bib',
+    exported.files === 5 && exported.total === 5 && exported.folders === 1 && !!exported.bib && !exported.problems.length,
+    JSON.stringify(exported),
+  );
+  check('the folders become folders on disk', existsSync(join(out, 'Greek')));
+  check('a file is named by its reference', existsSync(join(out, NAGY)));
+  check('one without keeps its name', existsSync(join(out, 'scan0001.pdf')) && existsSync(join(out, 'notes.txt')));
+  check('in the folder it stands in', existsSync(join(out, 'Greek', NAGY)));
+  check(
+    'the picture is named by its reference too',
+    existsSync(join(out, 'Greek', 'Lord 1960 - The Singer of Tales.png')),
+  );
+  const written = existsSync(join(out, 'references.bib'))
+    ? readFileSync(join(out, 'references.bib'), 'utf8')
+    : '';
+  check(
+    'the references.bib names the files where they are',
+    written.includes(NAGY) && written.includes('Greek/Lord 1960 - The Singer of Tales.png'),
+    written.split('\n').filter((l) => /file/.test(l)).join(' | '),
+  );
 
   // ---- the end ----
   const errors = await app.pageErrors();

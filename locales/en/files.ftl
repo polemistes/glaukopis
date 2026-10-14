@@ -205,7 +205,7 @@ files-tally = { $name }: { $count ->
 
 ## The going-through: files given to their references.
 
-files-go-through = Go through…
+files-go-through-head = Go through the files, to give them to their references…
 files-go-through-chosen = { $count ->
     [one] Go through it…
    *[other] Go through these { $count }…
@@ -273,15 +273,15 @@ files-export-title = { $count ->
     [one] Export one file
    *[other] Export { $count } files
 }
-files-export-all-what = Every file is written into this folder under the name of its reference, Author Year - Title, or its own where it has none; the folders of the library become folders in it.
-files-export-folder-what = The files of the folder are written into this one under the names of their references, or their own where they have none; the folders under it become folders in it.
+files-export-all-what = Every file is written into the folder you choose next, under the name of its reference, Author Year - Title, or its own where it has none; the folders of the library become folders in it.
+files-export-folder-what = The files of the folder are written into the one you choose next, under the names of their references, or their own where they have none; the folders under it become folders in it.
 files-export-files-what = { $count ->
-    [one] The file is written into this folder under the name of its reference, or its own where it has none.
-   *[other] The files are written into this folder under the names of their references, or their own where they have none.
+    [one] The file is written into the folder you choose next, under the name of its reference, or its own where it has none.
+   *[other] The files are written into the folder you choose next, under the names of their references, or their own where they have none.
 }
 files-export-bib = With a references.bib
 files-export-bib-hint = The works the files belong to, each naming its files where they are written, so that Zotero or JabRef reads the folder whole.
-files-export-go = Export
+files-export-go = Choose the folder…
 files-exporting = { $count ->
     [one] Exporting a file…
    *[other] Exporting { $count } files…

@@ -154,13 +154,11 @@ export const proposals = new Map<string, Proposal>();
 /** What was decided of each, by hash, so that a going-through closed and opened again shows it. */
 export const decisions = new Map<string, Decision>();
 
-/** A folder for the export has been chosen; whether a references.bib goes with it is asked. */
+/** Files are to be exported: whether a references.bib goes with them is asked, before the folder is. */
 export interface ExportRequest {
   selection: ExportSelection;
   /** How many files are to be written. */
   count: number;
-  /** The folder they are written into. */
-  into: string;
   resolve: (withBib: boolean | null) => void;
 }
 
@@ -202,22 +200,23 @@ export function exportedWords(out: Exported): string {
 }
 
 /**
- * Exports files into a folder that is asked for: the folders of the store
- * as folders on disk, each file under the name of its reference, and a
- * references.bib beside them where that is wished. How far it has come is
- * shown at the foot of the window, where it can be stopped.
+ * Exports files into a folder: what is written, and whether a references.bib
+ * goes with it, is said and asked first; then the folder is asked for. The
+ * folders of the store become folders on disk, and each file is named by its
+ * reference. How far it has come is shown at the foot of the window, where
+ * it can be stopped.
  */
 export async function exportFiles(selection: ExportSelection, count: number): Promise<void> {
   if (!count) return;
-  const into = await open({ title: t('files-export-folder-title'), directory: true });
-  if (!into || Array.isArray(into)) return;
   const withBib = await new Promise<boolean | null>((resolve) => {
     filesUi.exporting?.resolve(null);
-    filesUi.exporting = { selection, count, into, resolve };
+    filesUi.exporting = { selection, count, resolve };
   });
   filesUi.exporting = null;
   if (withBib === null) return;
   lastWithBib = withBib;
+  const into = await open({ title: t('files-export-folder-title'), directory: true });
+  if (!into || Array.isArray(into)) return;
   const ticket = newId();
   dialogs.working = t('files-exporting', { count });
   dialogs.stop = () => void filesStop(ticket).catch(() => {});
