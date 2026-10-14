@@ -15,6 +15,7 @@
   import Pencil from '@lucide/svelte/icons/pencil';
   import Plus from '@lucide/svelte/icons/plus';
   import Trash2 from '@lucide/svelte/icons/trash-2';
+  import ListChecks from '@lucide/svelte/icons/list-checks';
   import {
     filesFolderCreate,
     filesFolderDelete,
@@ -30,7 +31,7 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
-  import { FILES_DRAGGED, files, moveFiles, takeIn } from './store.svelte';
+  import { FILES_DRAGGED, files, goThrough, moveFiles, takeIn, unassignedIn } from './store.svelte';
 
   interface Props {
     /** The folder in view, or null for all the files. */
@@ -205,6 +206,13 @@
         icon: FolderInput,
         disabled: !f.parent && files.folders.length < 2,
         items: moveItems(f),
+      },
+      { kind: 'separator' },
+      {
+        label: t('files-folder-go-through'),
+        icon: ListChecks,
+        disabled: !unassignedIn(f.id).length,
+        action: () => goThrough(unassignedIn(f.id)),
       },
       { kind: 'separator' },
       { label: t('files-folder-delete'), icon: Trash2, danger: true, action: () => remove(f) },

@@ -18,6 +18,7 @@
   import FolderUp from '@lucide/svelte/icons/folder-up';
   import Images from '@lucide/svelte/icons/images';
   import Link from '@lucide/svelte/icons/link';
+  import ListChecks from '@lucide/svelte/icons/list-checks';
   import ListFilter from '@lucide/svelte/icons/list-filter';
   import Search from '@lucide/svelte/icons/search';
   import SearchX from '@lucide/svelte/icons/search-x';
@@ -37,21 +38,26 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { notifyError } from '$lib/ui/toast.svelte';
+  import { notify, notifyError } from '$lib/ui/toast.svelte';
   import FileList from './FileList.svelte';
   import FilePane from './FilePane.svelte';
   import FolderTree from './FolderTree.svelte';
   import LibrarySwitch from './LibrarySwitch.svelte';
   import ReferenceChooser from './ReferenceChooser.svelte';
+  import GoThroughDialog from './GoThroughDialog.svelte';
+  import ExportDialog from './ExportDialog.svelte';
   import {
     assign,
     fileMatches,
     files,
+    filesUi,
+    goThrough,
     moveFiles,
     removeFiles,
     referenceWords,
     takeIn,
     toPictures,
+    unassignedIn,
   } from './store.svelte';
 
   type SortKey = 'name' | 'added' | 'size' | 'reference';
@@ -232,6 +238,12 @@
         icon: FolderInput,
         items: folderItems(hashes),
       },
+      {
+        label: t('files-go-through-chosen', { count: chosen.length }),
+        icon: ListChecks,
+        disabled: !library.entries.length,
+        action: () => goThrough(hashes),
+      },
       ...(one?.kind === 'picture' && one.exists
         ? [
             {
@@ -250,6 +262,21 @@
         action: () => void removeFiles(chosen),
       },
     ];
+  }
+
+  /**
+   * The going-through from the head: of the files selected, else of those of
+   * the folder in view and under it that have no reference, else of all
+   * that have none.
+   */
+  function goThroughHere() {
+    const hashes = selection.length
+      ? selection
+      : unassignedIn(folderId).length
+        ? unassignedIn(folderId)
+        : unassignedIn(null);
+    if (hashes.length) goThrough(hashes);
+    else notify(t('files-go-through-nothing'));
   }
 
   /** What is done from the head, in the menu beside Add files. More is added here: what exports them all. */
@@ -409,6 +436,10 @@
         {#if filters}<span class="badge" aria-hidden="true">{filters}</span>{/if}
       </span>
       <IconButton label={t('files-sort')} onclick={sortMenu}><ArrowDownUp size={15} /></IconButton>
+      <Button onclick={goThroughHere} disabled={!files.files.length} data-go-through>
+        {#snippet icon()}<ListChecks size={15} />{/snippet}
+        {t('files-go-through')}
+      </Button>
       <div class="split">
         <Button variant="primary" onclick={() => void addFiles()}>
           {#snippet icon()}<FilePlus size={15} />{/snippet}
@@ -509,6 +540,23 @@
           {t('files-remove')}
         </Button>
       </EmptyState>
+    {:else if files.loaded && files.files.length}
+      {@const here = files.inFolder(folderId, below)}
+      <div class="unselected" data-unselected>
+        <EmptyState
+          icon={FileStack}
+          title={t('files-none-selected')}
+          text={t('files-none-selected-text')}
+          compact
+        />
+        <p class="tally">
+          {t('files-tally', {
+            name: folder?.name ?? t('files-all'),
+            count: here.length,
+            unassigned: here.filter((f) => !f.references.length).length,
+          })}
+        </p>
+      </div>
     {/if}
   </aside>
 </div>
@@ -524,6 +572,18 @@
     }}
     onclose={() => (choosing = null)}
   />
+{/if}
+
+{#if filesUi.going}
+  {#key filesUi.going}
+    <GoThroughDialog hashes={filesUi.going} onclose={() => (filesUi.going = null)} />
+  {/key}
+{/if}
+
+{#if filesUi.exporting}
+  {#key filesUi.exporting}
+    <ExportDialog request={filesUi.exporting} onclose={() => (filesUi.exporting = null)} />
+  {/key}
 {/if}
 
 <!-- A document among the files is brought in as elements from here. -->
@@ -691,6 +751,20 @@
     border-top: 1px solid var(--line);
     font-size: var(--text-xs);
     color: var(--ink-3);
+  }
+  .unselected {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    padding-bottom: 10vh;
+  }
+  .tally {
+    margin: 0;
+    padding: 0 24px;
+    text-align: center;
+    color: var(--ink-4);
+    font-size: var(--text-sm);
   }
   .detail {
     min-width: 0;

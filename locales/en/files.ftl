@@ -192,3 +192,112 @@ files-choose-empty = The library has no references yet.
 files-choose-more = … and { $count } more: search to find them
 files-choose-new = New reference…
 files-choose = Choose
+
+## Nothing selected.
+
+files-none-selected = No file selected
+files-none-selected-text = Select a file to see what is known of it and what can be done with it.
+# $name is the folder in view, or “All files”.
+files-tally = { $name }: { $count ->
+    [one] one file
+   *[other] { $count } files
+}, { $unassigned } without a reference
+
+## The going-through: files given to their references.
+
+files-go-through = Go through…
+files-go-through-chosen = { $count ->
+    [one] Go through it…
+   *[other] Go through these { $count }…
+}
+files-go-through-new = { $count ->
+    [one] Go through the new file…
+   *[other] Go through the { $count } new files…
+}
+files-go-through-nothing = Every file here belongs to a reference
+files-folder-go-through = Go through the unassigned files…
+files-going-title = Give the files to their references
+files-going-subtitle = { $count ->
+    [one] One file
+   *[other] { $count } files
+}
+files-going-finding = { $count ->
+    [one] Finding out what the file is…
+   *[other] Finding out what the { $count } files are…
+}
+files-going-progress = { $done } of { $count }: { $name }
+files-going-finding-hint = Each file is read for an identifier and a title, its name is read, and its first page is compared with the library. What is found out is kept while the application is open.
+files-going-stop = Stop
+files-going-failed = What the files are could not be found out
+files-going-all-certain = { $count ->
+    [one] The one found for certain:
+   *[other] All { $count } found for certain:
+}
+files-going-all-probable = { $count ->
+    [one] The one found as probable:
+   *[other] All { $count } found as probable:
+}
+files-going-what = What { $name } becomes
+files-going-this = This one
+files-going-other = Another…
+files-going-new = New reference…
+files-going-later = Later
+files-going-certain = certain
+files-going-probable = probable
+files-going-which = Which work
+# $origin is where the description comes from: a service, or the file.
+files-going-lookup = A new reference · from { $origin }
+files-going-nothing = Nothing found
+files-going-chosen = Chosen
+files-going-made-here = Made here
+files-going-none = None of the files could be gone through.
+files-going-counts = { $assign } to assign, { $later } later
+files-going-done = Done
+files-going-applying = Giving the files to their references…
+files-going-source = The files of the library
+files-going-assigned = { $count ->
+    [0] No file assigned
+    [one] One file assigned
+   *[other] { $count } files assigned
+}
+files-going-made = { $count ->
+    [one] one new reference
+   *[other] { $count } new references
+}
+files-going-later-count = { $count } left for later
+
+## Exporting.
+
+files-export-folder-title = Choose the folder to export into
+files-export-title = { $count ->
+    [one] Export one file
+   *[other] Export { $count } files
+}
+files-export-all-what = Every file is written into this folder under the name of its reference, Author Year - Title, or its own where it has none; the folders of the library become folders in it.
+files-export-folder-what = The files of the folder are written into this one under the names of their references, or their own where they have none; the folders under it become folders in it.
+files-export-files-what = { $count ->
+    [one] The file is written into this folder under the name of its reference, or its own where it has none.
+   *[other] The files are written into this folder under the names of their references, or their own where they have none.
+}
+files-export-bib = With a references.bib
+files-export-bib-hint = The works the files belong to, each naming its files where they are written, so that Zotero or JabRef reads the folder whole.
+files-export-go = Export
+files-exporting = { $count ->
+    [one] Exporting a file…
+   *[other] Exporting { $count } files…
+}
+files-exporting-progress = Exporting { $done } of { $count }: { $name }
+files-exported = { $count ->
+    [0] No file exported
+    [one] One file exported
+   *[other] { $count } files exported
+}
+files-exported-folders = { $count ->
+    [one] one folder
+   *[other] { $count } folders
+}
+files-exported-bib = with a references.bib
+files-exported-stopped = stopped with { $count } left
+files-exported-show = Show
+files-export-failed = The files could not be exported
+files-reveal-failed = The folder could not be shown

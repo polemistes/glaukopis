@@ -16,6 +16,7 @@ import {
   fileRemove,
   fileRename,
   filesList,
+  filesExport,
   filesStop,
   filesTakeIn,
   fileToPicture,
@@ -24,8 +25,13 @@ import {
   type FileFolder,
   type FileKind,
   type FileView,
+  type ExportSelection,
+  type Exported,
+  type Proposal,
   type TakenIn,
 } from '$lib/api/files';
+import { open } from '@tauri-apps/plugin-dialog';
+import { revealPath } from '$lib/api/system';
 import { isBackendError } from '$lib/api/backend';
 import type { StoredFile, Summary } from '$lib/api/library';
 import type { Project } from '$lib/project/model/project.svelte';
@@ -64,6 +70,8 @@ class FilesState {
     if (!this.#loading) {
       this.#loading = filesList()
         .then((listing) => {
+          proposals.clear();
+          decisions.clear();
           this.folders = listing.folders;
           this.files = listing.files;
           this.loaded = true;
@@ -131,6 +139,119 @@ class FilesState {
 }
 
 export const files = new FilesState();
+
+/** What a file of the going-through is to become: the proposal, another reference, a new one, or nothing yet. */
+export interface Decision {
+  choice: 'this' | 'other' | 'new' | 'later';
+  /** Which of the proposal's matches, where it has several. */
+  match: number;
+  /** The reference chosen by hand, or made, for 'other' and 'new'. */
+  chosen: Summary | null;
+}
+
+/** What was found out of each file in this session, by hash: not found out again. */
+export const proposals = new Map<string, Proposal>();
+/** What was decided of each, by hash, so that a going-through closed and opened again shows it. */
+export const decisions = new Map<string, Decision>();
+
+/** A folder for the export has been chosen; whether a references.bib goes with it is asked. */
+export interface ExportRequest {
+  selection: ExportSelection;
+  /** How many files are to be written. */
+  count: number;
+  /** The folder they are written into. */
+  into: string;
+  resolve: (withBib: boolean | null) => void;
+}
+
+/** The dialogs of the files, which the files view shows. */
+class FilesUi {
+  /** The files being gone through (`GoThroughDialog.svelte`). */
+  going = $state.raw<string[] | null>(null);
+  exporting = $state.raw<ExportRequest | null>(null);
+}
+
+export const filesUi = new FilesUi();
+
+/** Opens the going-through over these files, in the files view. */
+export function goThrough(hashes: string[]) {
+  if (!hashes.length) return;
+  if (router.route.view !== 'files') router.go({ view: 'files' });
+  filesUi.going = hashes;
+}
+
+/** The files of a folder and those under it, or of all, that belong to no reference. */
+export function unassignedIn(folder: string | null): string[] {
+  return files
+    .inFolder(folder, true)
+    .filter((f) => !f.references.length)
+    .map((f) => f.hash);
+}
+
+/** Whether a references.bib went with the last export, offered again. */
+let lastWithBib = true;
+
+/** What came of an export, in words. */
+export function exportedWords(out: Exported): string {
+  const parts = [t('files-exported', { count: out.files })];
+  if (out.folders) parts.push(t('files-exported-folders', { count: out.folders }));
+  if (out.bib) parts.push(t('files-exported-bib'));
+  if (out.stopped) parts.push(t('files-exported-stopped', { count: out.total - out.files }));
+  if (out.problems.length) parts.push(t('files-problems', { count: out.problems.length }));
+  return parts.join(', ');
+}
+
+/**
+ * Exports files into a folder that is asked for: the folders of the store
+ * as folders on disk, each file under the name of its reference, and a
+ * references.bib beside them where that is wished. How far it has come is
+ * shown at the foot of the window, where it can be stopped.
+ */
+export async function exportFiles(selection: ExportSelection, count: number): Promise<void> {
+  if (!count) return;
+  const into = await open({ title: t('files-export-folder-title'), directory: true });
+  if (!into || Array.isArray(into)) return;
+  const withBib = await new Promise<boolean | null>((resolve) => {
+    filesUi.exporting?.resolve(null);
+    filesUi.exporting = { selection, count, into, resolve };
+  });
+  filesUi.exporting = null;
+  if (withBib === null) return;
+  lastWithBib = withBib;
+  const ticket = newId();
+  dialogs.working = t('files-exporting', { count });
+  dialogs.stop = () => void filesStop(ticket).catch(() => {});
+  const unlisten = await onFilesProgress(ticket, ({ done, total, name }) => {
+    if (name && total > 1)
+      dialogs.working = t('files-exporting-progress', { done: done + 1, count: total, name });
+  });
+  try {
+    const out = await filesExport(selection, into, withBib, ticket);
+    toasts.show(
+      {
+        kind: out.problems.length ? 'error' : 'ok',
+        message: exportedWords(out),
+        detail: out.problems.length ? out.problems.slice(0, 4).join('\n') : undefined,
+        action: {
+          label: t('files-exported-show'),
+          run: () => void revealPath(into).catch((e) => notifyError(t('files-reveal-failed'), e)),
+        },
+      },
+      out.problems.length ? 9000 : 6000,
+    );
+  } catch (error) {
+    notifyError(t('files-export-failed'), error);
+  } finally {
+    unlisten();
+    dialogs.working = null;
+    dialogs.stop = null;
+  }
+}
+
+/** Whether a references.bib is offered as going with the export, as it did last. */
+export function withBibAtFirst(): boolean {
+  return lastWithBib;
+}
 
 /** The icon of each kind of file. */
 export const KIND_ICONS: Record<FileKind, typeof FileIcon> = {
@@ -213,7 +334,21 @@ export async function takeIn(
     const taken = await filesTakeIn(paths, folder, structure, ticket);
     await files.reload();
     const words = takenWords(taken);
+    const fresh = taken.files.map((f) => f.hash);
     if (taken.problems.length) notifyError(words, taken.problems.slice(0, 4).join('\n'));
+    else if (fresh.length)
+      // What is new is gone through from here, to be given to its references.
+      toasts.show(
+        {
+          kind: 'ok',
+          message: words,
+          action: {
+            label: t('files-go-through-new', { count: fresh.length }),
+            run: () => goThrough(fresh),
+          },
+        },
+        9000,
+      );
     else notifyOk(words);
     return taken;
   } catch (error) {

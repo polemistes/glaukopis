@@ -190,3 +190,110 @@ files-choose-empty = Biblioteket har ingen referanser ennå.
 files-choose-more = … og { $count } til: søk for å finne dem
 files-choose-new = Ny referanse …
 files-choose = Velg
+
+## Ingenting valgt.
+
+files-none-selected = Ingen fil valgt
+files-none-selected-text = Velg en fil for å se hva som er kjent om den, og hva som kan gjøres med den.
+files-tally = { $name }: { $count ->
+    [one] én fil
+   *[other] { $count } filer
+}, { $unassigned } uten referanse
+
+## Gjennomgangen: filer gitt til referansene sine.
+
+files-go-through = Gå gjennom …
+files-go-through-chosen = { $count ->
+    [one] Gå gjennom den …
+   *[other] Gå gjennom disse { $count } …
+}
+files-go-through-new = { $count ->
+    [one] Gå gjennom den nye filen …
+   *[other] Gå gjennom de { $count } nye filene …
+}
+files-go-through-nothing = Hver fil her hører til en referanse
+files-folder-go-through = Gå gjennom filene uten referanse …
+files-going-title = Gi filene til referansene sine
+files-going-subtitle = { $count ->
+    [one] Én fil
+   *[other] { $count } filer
+}
+files-going-finding = { $count ->
+    [one] Finner ut hva filen er …
+   *[other] Finner ut hva de { $count } filene er …
+}
+files-going-progress = { $done } av { $count }: { $name }
+files-going-finding-hint = Hver fil leses etter en identifikator og en tittel, navnet leses, og første side sammenlignes med biblioteket. Det som blir funnet ut, huskes så lenge programmet er åpent.
+files-going-stop = Stopp
+files-going-failed = Det lot seg ikke finne ut hva filene er
+files-going-all-certain = { $count ->
+    [one] Den ene som er funnet sikkert:
+   *[other] Alle { $count } som er funnet sikkert:
+}
+files-going-all-probable = { $count ->
+    [one] Den ene som er funnet som sannsynlig:
+   *[other] Alle { $count } som er funnet som sannsynlige:
+}
+files-going-what = Hva { $name } blir
+files-going-this = Denne
+files-going-other = En annen …
+files-going-new = Ny referanse …
+files-going-later = Senere
+files-going-certain = sikker
+files-going-probable = sannsynlig
+files-going-which = Hvilket verk
+files-going-lookup = En ny referanse · fra { $origin }
+files-going-nothing = Ingenting funnet
+files-going-chosen = Valgt
+files-going-made-here = Laget her
+files-going-none = Ingen av filene kunne gås gjennom.
+files-going-counts = { $assign } å gi bort, { $later } senere
+files-going-done = Ferdig
+files-going-applying = Gir filene til referansene sine …
+files-going-source = Filene i biblioteket
+files-going-assigned = { $count ->
+    [0] Ingen fil gitt til en referanse
+    [one] Én fil gitt til en referanse
+   *[other] { $count } filer gitt til referanser
+}
+files-going-made = { $count ->
+    [one] én ny referanse
+   *[other] { $count } nye referanser
+}
+files-going-later-count = { $count } til senere
+
+## Eksportere.
+
+files-export-folder-title = Velg mappen det skal eksporteres til
+files-export-title = { $count ->
+    [one] Eksporter én fil
+   *[other] Eksporter { $count } filer
+}
+files-export-all-what = Hver fil skrives til denne mappen under navnet på referansen sin, Forfatter År - Tittel, eller sitt eget der den ikke har noen; mappene i biblioteket blir mapper i den.
+files-export-folder-what = Filene i mappen skrives til denne under navnene på referansene sine, eller sine egne der de ikke har noen; mappene under den blir mapper i den.
+files-export-files-what = { $count ->
+    [one] Filen skrives til denne mappen under navnet på referansen sin, eller sitt eget der den ikke har noen.
+   *[other] Filene skrives til denne mappen under navnene på referansene sine, eller sine egne der de ikke har noen.
+}
+files-export-bib = Med en references.bib
+files-export-bib-hint = Verkene filene hører til, der hvert nevner filene sine der de skrives, slik at Zotero eller JabRef leser mappen hel.
+files-export-go = Eksporter
+files-exporting = { $count ->
+    [one] Eksporterer en fil …
+   *[other] Eksporterer { $count } filer …
+}
+files-exporting-progress = Eksporterer { $done } av { $count }: { $name }
+files-exported = { $count ->
+    [0] Ingen fil eksportert
+    [one] Én fil eksportert
+   *[other] { $count } filer eksportert
+}
+files-exported-folders = { $count ->
+    [one] én mappe
+   *[other] { $count } mapper
+}
+files-exported-bib = med en references.bib
+files-exported-stopped = stoppet med { $count } igjen
+files-exported-show = Vis
+files-export-failed = Filene kunne ikke eksporteres
+files-reveal-failed = Mappen kunne ikke vises
