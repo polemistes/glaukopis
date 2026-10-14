@@ -24,9 +24,6 @@ ocr-about-text = { $pages ->
     [few] Svaka stranica ima tekst, koji se uzima kakav jeste.
    *[other] Svaka stranica ima tekst, koji se uzima kakav jeste.
 }
-ocr-read-all = Pročitaj i stranice koje imaju tekst
-ocr-read-all-hint = Njihov tekst ostaje, a pročitano se polaže preko njega.
-ocr-read-all-map-hint = Pročitano zauzima mjesto njihovog teksta: za kad je loš ili se ne može pročitati.
 ocr-read = Pročitaj tekst
 ocr-read-text-pages = Uzmi stranice koje imaju tekst
 ocr-take-text = Uzmi tekst
@@ -74,8 +71,6 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = PDF nije bilo moguće rastaviti radi izmjene: možda je oštećen. Njegov se tekst ipak može učitati u projekat kao mapa.
 ocr-searchable-make = Učini pretraživim
-ocr-strip = Ukloni nevidljivi tekst koji imaju i zadrži samo pročitano
-ocr-strip-hint = Za loš tekstualni sloj, kakav skener polaže ispod stranice. Slova koja se vide ostaju, a stranica izgleda kao i prije.
 ocr-searchable-done = { $count ->
     [one] PDF je pretraživ: pročitana je jedna stranica
     [few] PDF je pretraživ: pročitane su { $count } stranice

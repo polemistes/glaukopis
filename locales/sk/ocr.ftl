@@ -24,9 +24,6 @@ ocr-about-text = { $pages ->
     [few] Každá strana má text, ktorý sa berie, ako je.
    *[other] Každá strana má text, ktorý sa berie, ako je.
 }
-ocr-read-all = Čítať aj strany, ktoré majú text
-ocr-read-all-hint = Ich text ostane a prečítané sa položí naň.
-ocr-read-all-map-hint = Prečítané nahradí ich text: pre prípad, že je zlý alebo sa nedá prečítať.
 ocr-read = Prečítať text
 ocr-read-text-pages = Vziať strany, ktoré majú text
 ocr-take-text = Vziať text
@@ -74,8 +71,6 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = PDF sa nepodarilo rozobrať na úpravu: môže byť poškodené. Jeho text sa však dá načítať do projektu ako mapa.
 ocr-searchable-make = Urobiť prehľadávateľným
-ocr-strip = Odobrať neviditeľný text, ktorý majú, a ponechať len prečítaný
-ocr-strip-hint = Pre zlú textovú vrstvu, akú pod stranu kladie skener. Viditeľné písmená ostanú a strana vyzerá ako predtým.
 ocr-searchable-done = { $count ->
     [one] PDF je prehľadávateľné: prečítala sa jedna strana
     [few] PDF je prehľadávateľné: prečítali sa { $count } strany

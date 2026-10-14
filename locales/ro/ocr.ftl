@@ -36,9 +36,6 @@ ocr-about-text = { $pages ->
     [few] Fiecare pagină are text, care se ia cum este.
    *[other] Fiecare pagină are text, care se ia cum este.
 }
-ocr-read-all = Citește și paginile care au text
-ocr-read-all-hint = Textul lor rămâne, iar ce se citește se așază peste el.
-ocr-read-all-map-hint = Ce se citește ia locul textului lor: pentru când acesta este slab sau nu se poate citi.
 ocr-read = Citește textul
 ocr-read-text-pages = Ia paginile care au text
 ocr-take-text = Ia textul
@@ -102,8 +99,6 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = PDF-ul nu s-a putut desface ca să fie modificat: poate fi stricat. Textul lui poate fi totuși adus într-un proiect ca hartă.
 ocr-searchable-make = Fă-l căutabil
-ocr-strip = Scoate textul nevăzut pe care îl au și păstrează numai ce se citește
-ocr-strip-hint = Pentru un strat de text slab, cum îl așază un scaner sub pagină. Literele care se văd rămân, iar pagina arată ca înainte.
 ocr-searchable-done = { $count ->
     [one] PDF-ul se poate căuta: s-a citit o pagină
     [few] PDF-ul se poate căuta: s-au citit { $count } pagini

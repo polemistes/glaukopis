@@ -102,3 +102,42 @@ was poor.
 - **A map can be made of a PDF of the library**: `ocr_read` takes, as
   `ocr_look` does, whether the path is that of a file of the library within
   its store (`stored`), and resolves it there.
+
+## Addendum of 2026-10-15: the text a PDF has, kept or read anew
+
+Asked for by the one the application is made for, after reading into
+elements a PDF of Ancient Greek whose text layer was mostly gibberish: the
+pages counted as having text, were taken as they were, and the checkbox that
+would have read them anew said *Read the pages that have text as well*,
+which sounded like adding a second reading. Making a PDF searchable had the
+same checkbox, where it did lay a second text over the first, and a second
+checkbox to take the first away. No one wants two layers of text.
+
+- **One choice, the same wherever a PDF is read** (into elements, and made
+  searchable): *Keep the text the PDF has*, where only the pages without
+  text are read; or *Read every page anew, in place of the text the PDF
+  has*, where only what is read is kept, and in a searchable PDF the unseen
+  text the pages had is taken away (`Asked::all`; `strip` is gone, and
+  reading anew always takes it away). Laying new text over old is no more.
+- **The text is judged, not only counted.** A page has text when it has 100
+  letters and digits, as before. Its text is *poor* (`layer::sound`) where
+  fewer than three words in four are shaped as words (letters of one
+  script, with an apostrophe, hyphen or point within, or a number, with
+  punctuation only around them, and no capital after a small letter but in
+  a name such as *McNeill*); where more than one character in fifty is the
+  character of what could not be told, one a font keeps for itself, or a
+  control character; or where more than three letters in ten are the
+  accented letters of Western Europe, as Greek or Cyrillic read in the
+  wrong encoding become. Text laid here before is sound.
+- **What is shown before reading.** `Looked` gains `poor`, the pages whose
+  text is poor, and `sample`, the first five lines of the first page that
+  has text, as the PDF has them. The window shows the sample, says how many
+  pages read poorly, and chooses reading anew at first where half or more of
+  the pages with text are poor.
+
+What is left as it was: text whose wrong letters are still shaped as words
+(a font that maps Greek to plain Latin letters) is judged sound; the sample
+lets the writer see it and choose. Letters that are seen and stored wrong
+stay in a searchable PDF, under the new text. Telling the script of a page
+before reading, to propose its language, and judging the text of a PDF
+taken into the library, were proposed and are not built.

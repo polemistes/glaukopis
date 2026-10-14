@@ -25,3 +25,12 @@ export function howFromSettings(): How {
 
 /** The resolution as it is shown: 0 is the first offered. */
 export const shownDpi = (dpi: number) => (dpi === 0 ? DPIS[0] : dpi);
+
+/**
+ * Whether a PDF is read anew at first, in place of the text it has: where
+ * half or more of its pages that have text have text that does not read as
+ * text.
+ */
+export function anewAtFirst(looked: { withText: number; poor: number }): boolean {
+  return looked.withText > 0 && looked.poor * 2 >= looked.withText;
+}

@@ -133,9 +133,6 @@ fn a_scan_is_read_as_the_quality_asks() {
     let scan = kit.scan("scan.pdf");
     let asked = Asked { dpi: 200, layout: "block".into(), contrast: true, ..kit.asked() };
     assert_eq!(asked.quality(), drawing::Quality { dpi: 200, contrast: true });
-    assert!(!asked.strips(), "strip is only with all");
-    assert!(Asked { strip: true, all: true, ..Asked::default() }.strips());
-    assert!(!Asked { strip: true, ..Asked::default() }.strips());
     let read = read_pdf(&scan, &kit.tools, &kit.work(), &asked, None, &mut nothing, &never()).unwrap();
     let text = read.pages[0].paragraphs.join(" ");
     assert!(has(&text, "the quarrel between the king") && has(&text, "Milman Parry"), "{text}");
@@ -176,15 +173,9 @@ fn the_text_a_pdf_has_can_be_taken_away_as_it_is_made_searchable() {
     let text = pdf_extract::extract_text_from_mem(&before).unwrap();
     assert!(has(&text, "Wrong words altogether"), "{text}");
 
-    // Without strip, the wrong text stays beside the right.
+    // Read anew, only the right text is there, and the page looks as it did.
     let all = Asked { all: true, ..kit.asked() };
     let made = make_searchable(&scan, &kit.tools, &kit.work(), &all, &mut nothing, &never()).unwrap();
-    let text = pdf_extract::extract_text_from_mem(made.pdf.as_ref().unwrap()).unwrap();
-    assert!(has(&text, "Wrong words altogether") && has(&text, "Milman Parry"), "{text}");
-
-    // With it, only the right text is there, and the page looks as it did.
-    let strip = Asked { strip: true, ..all };
-    let made = make_searchable(&scan, &kit.tools, &kit.work(), &strip, &mut nothing, &never()).unwrap();
     assert_eq!((made.read, made.failed.len()), (1, 0));
     let after = made.pdf.unwrap();
     assert_eq!(drawn(&after), drawn(&before));
@@ -202,7 +193,21 @@ fn a_pdf_that_has_text_is_taken_as_it_is() {
     let Some(kit) = kit(false) else { return };
     let pdf = kit.typeset("text.pdf", PAGE);
     let looked = look(&pdf, &kit.tools).unwrap();
-    assert_eq!((looked.pages, looked.with_text), (1, 1));
+    assert_eq!((looked.pages, looked.with_text, looked.poor), (1, 1, 0));
+    let sample = looked.sample.clone().unwrap();
+    assert_eq!(sample.page, "1");
+    assert!(sample.lines[0].starts_with("The wrath of Achilles"), "{sample:?}");
+
+    // Text as an old font of Greek keeps it is text, but poor: shown, to be read anew.
+    let greek = kit.typeset(
+        "greek.pdf",
+        r#"#set page(width: 150mm, height: 100mm, margin: 14mm)
+#"Mh=nin a)/eide qea\\ Phlhi+a/dew *)Axilh=os ou)lome/nhn, h(\\ muri/' *)Axaioi=s a)/lge' e)/qhke, polla\\s d' i)fqi/mous yuxa\\s *)/Ai+di proi/+ayen h(rw/wn, au)tou\\s de\\ e(lw/ria teu=xe ku/nessin"
+"#,
+    );
+    let looked = look(&greek, &kit.tools).unwrap();
+    assert_eq!((looked.with_text, looked.poor), (1, 1));
+    assert!(looked.sample.unwrap().lines[0].starts_with("Mh=nin"));
 
     // No Tesseract is needed for it.
     let tools = Tools { tesseract: None, ..kit.tools.clone() };

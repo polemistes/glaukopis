@@ -21,9 +21,6 @@ ocr-about-text = { $pages ->
     [one] De pagina heeft tekst, die wordt overgenomen zoals ze is.
    *[other] Elke pagina heeft tekst, die wordt overgenomen zoals ze is.
 }
-ocr-read-all = Ook de pagina's met tekst lezen
-ocr-read-all-hint = Hun tekst blijft, en wat wordt gelezen, komt eroverheen.
-ocr-read-all-map-hint = Wat wordt gelezen, komt in de plaats van hun tekst: voor als die slecht is, of niet kan worden gelezen.
 ocr-read = De tekst lezen
 ocr-read-text-pages = De pagina's met tekst overnemen
 ocr-take-text = De tekst overnemen
@@ -69,8 +66,6 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = De PDF kon niet uit elkaar worden gehaald om te worden veranderd: hij is misschien beschadigd. Zijn tekst kan wel als mindmap in een project worden binnengehaald.
 ocr-searchable-make = Doorzoekbaar maken
-ocr-strip = De onzichtbare tekst die ze hebben weghalen, en alleen houden wat wordt gelezen
-ocr-strip-hint = Voor een tekstlaag die slecht is, zoals een scanner die onder de pagina legt. Letters die zichtbaar zijn, blijven, en de pagina ziet eruit zoals ze was.
 ocr-searchable-done = { $count ->
     [one] De PDF is doorzoekbaar: één pagina is gelezen
    *[other] De PDF is doorzoekbaar: { $count } pagina's zijn gelezen

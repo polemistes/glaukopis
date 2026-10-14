@@ -49,13 +49,12 @@ pub struct Asked {
     /// Tesseract's names of the languages the text is in, the likeliest
     /// first: `nor`, `eng`. English, where none are given.
     pub languages: Vec<String>,
-    /// Whether the pages that have text already are read as well.
+    /// Whether every page is read anew, in place of the text the PDF has:
+    /// for text that is poor, or cannot be read. Only what is read is kept;
+    /// in a PDF made searchable, the unseen text the pages had is taken
+    /// away, and the pages look as they did. Without it, the pages that have
+    /// text are taken as they are, and only the others are read.
     pub all: bool,
-    /// Whether the unseen text the pages have, as scanners and OCR programs
-    /// lay it, is taken away from a PDF made searchable, so that only what
-    /// is read stays: for a text layer that is poor. Only with `all`; the
-    /// pages look as they did, and letters that are seen stay.
-    pub strip: bool,
     /// The dots to the inch the pages are drawn at for Tesseract: nought
     /// for 300, else held within 150 and 600. A picture is not drawn, and
     /// is read as large as it is.
@@ -72,12 +71,6 @@ impl Asked {
     /// How the pages are drawn, as asked.
     pub fn quality(&self) -> Quality {
         Quality { dpi: self.dpi, contrast: self.contrast }
-    }
-
-    /// Whether the text the pages have is taken away: asked for, and all
-    /// pages read, since a page that is not read would be left with none.
-    pub fn strips(&self) -> bool {
-        self.strip && self.all
     }
 }
 
@@ -104,6 +97,12 @@ pub struct Looked {
     /// The pages that have text already, which are taken as they are
     /// unless all are asked to be read.
     pub with_text: usize,
+    /// Those of them whose text does not read as text (`layer::sound`):
+    /// where most are, the pages are best read anew.
+    pub poor: usize,
+    /// The first lines of the first page that has text, as the PDF has them,
+    /// to be seen before they are taken.
+    pub sample: Option<Sample>,
     /// The title the file gives itself, where it looks like one.
     pub title: Option<String>,
     /// Whether it can be made searchable: a PDF that is not locked, and can
@@ -111,6 +110,15 @@ pub struct Looked {
     pub searchable: bool,
     /// Whether it is locked (encrypted), and cannot be made searchable for that.
     pub locked: bool,
+}
+
+/// The first lines of the text a page has.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Sample {
+    /// The number it has in print, or counted from one.
+    pub page: String,
+    pub lines: Vec<String>,
 }
 
 /// A page with what was read of it.
@@ -339,9 +347,11 @@ pub fn look(path: &Path, tools: &Tools) -> Result<Looked> {
         n => n,
     };
     let with_text = (0..pages).filter(|i| layer.has_text(*i)).count();
+    let poor = (0..pages).filter(|i| layer.verdict(*i) == layer::Verdict::Poor).count();
+    let sample = layer.sample().map(|(index, lines)| Sample { page: layer.label(index), lines });
     let title = crate::import::pdf::identify(path).ok().and_then(|facts| facts.title);
     let searchable = !layer.locked && !layer.pages.is_empty();
-    Ok(Looked { file, picture: false, pages, with_text, title, searchable, locked: layer.locked })
+    Ok(Looked { file, picture: false, pages, with_text, poor, sample, title, searchable, locked: layer.locked })
 }
 
 // ---------------------------------------------------------------------------
@@ -510,9 +520,8 @@ pub fn first_pages(path: &Path, tools: &Tools, work: &Path, count: usize, stop: 
 
 /// Makes a PDF searchable: the pages that have no text are read, and what
 /// is read is laid over them, unseen. Pages that have text are left as they
-/// are, unless all are asked to be read; and where that is asked with
-/// `strip`, the unseen text the pages had is taken away, so that only what
-/// is read stays. The file itself is not touched: the one that has the text is
+/// are, unless all are asked to be read anew: then the unseen text the
+/// pages had is taken away, so that only what is read stays. The file itself is not touched: the one that has the text is
 /// given back, and has been read again to be sure it holds as many pages as
 /// the file.
 pub fn make_searchable(
@@ -557,7 +566,7 @@ pub fn make_searchable(
     }
     drop(pages);
     let bytes = Arc::try_unwrap(bytes).unwrap_or_else(|shared| shared.as_ref().clone());
-    let pdf = searchable::lay_over(bytes, doc, &layers, asked.strips())?;
+    let pdf = searchable::lay_over(bytes, doc, &layers, asked.all)?;
     // Read again as it is drawn, where it was drawn so before.
     if drawn_by_hayro {
         let pages = catch_unwind(AssertUnwindSafe(|| {

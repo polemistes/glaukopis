@@ -1483,15 +1483,29 @@ reads text in pictures, in four places.
   is looked at in a project, beside the map, **Make an element of it** makes
   an element of the text there, under the element in view.
 
-Pages that have text already, as the pages of a PDF made from a written
-document have, are taken as they are and not read. A page with only a little
-text, such as a scan with a line of text at its foot, is read. **Read the
-pages that have text as well** reads those too: into elements, what is read
-then takes the place of their text; in a searchable PDF, it is laid over
-their text, which stays, unless you ask for the unseen text to be **taken
-away**, so that only what is read is left: for a text layer that is poor, as
-a scanner lays it under the page. Letters that are seen stay, and the page
-looks as it did either way.
+Many PDFs have text already: those made from a written document, and scans
+that a scanner or another program has read. Where a PDF has text, the
+window shows its first lines as the PDF has them, and you choose what
+becomes of it, in the same words wherever a PDF is read:
+
+- **Keep the text the PDF has.** Its pages with text are taken as they are,
+  and only the pages without text are read.
+- **Read every page anew, in place of the text the PDF has.** Only what is
+  read is kept. In a searchable PDF the unseen text the pages had is taken
+  away, and what is read is laid in its place; the pages look as they did.
+
+Text does not always read as text. An old font of Greek, for instance, may
+keep its letters as Latin letters and signs (*Mh=nin a)/eide*), and a poor
+reading laid under a scan gives words that are not words. Where half or more
+of the pages that have text are like that, the window says so, and reading
+anew is chosen at first; otherwise keeping is. You can choose the other
+either way. A page with only a little text, such as a scan with a line of
+text at its foot, counts as a page without text, and is read.
+
+Where the letters that are seen on a page are themselves stored as the wrong
+letters, they cannot be taken away without changing how the page looks. In
+a searchable PDF the new text then lies over them unseen, and a search finds
+the new text.
 
 Before anything is read, you are asked for the languages of the text, the
 likeliest first. Those chosen under *Settings* are given at first; where

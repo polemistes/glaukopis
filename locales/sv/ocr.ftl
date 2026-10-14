@@ -21,9 +21,6 @@ ocr-about-text = { $pages ->
     [one] Sidan har text, som tas som den är.
    *[other] Varje sida har text, som tas som den är.
 }
-ocr-read-all = Läs också sidorna som har text
-ocr-read-all-hint = Deras text blir kvar, och det som läses läggs över den.
-ocr-read-all-map-hint = Det som läses tar deras texts plats: för när den är dålig, eller inte kan läsas.
 ocr-read = Läs texten
 ocr-read-text-pages = Ta sidorna som har text
 ocr-take-text = Ta texten
@@ -69,8 +66,6 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = PDF:en kunde inte tas isär för att ändras: den kan vara skadad. Dess text kan ändå hämtas in i ett projekt som en karta.
 ocr-searchable-make = Gör sökbar
-ocr-strip = Ta bort den osynliga text de har, och behåll bara det som läses
-ocr-strip-hint = För ett textlager som är dåligt, så som en skanner lägger det under sidan. Bokstäver som syns blir kvar, och sidan ser ut som förut.
 ocr-searchable-done = { $count ->
     [one] PDF:en är sökbar: en sida lästes
    *[other] PDF:en är sökbar: { $count } sidor lästes

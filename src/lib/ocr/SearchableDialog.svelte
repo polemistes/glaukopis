@@ -26,10 +26,11 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
-  import { howFromSettings } from './how';
+  import { anewAtFirst, howFromSettings } from './how';
   import HowDisclosure from './HowDisclosure.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
+  import TextChoice from './TextChoice.svelte';
 
   interface Props {
     /** The reference the file is made searchable from, where it is: its language is the first guess. */
@@ -46,9 +47,8 @@
   let phase = $state<'looking' | 'asking' | 'reading' | 'failed'>('looking');
   let looked = $state.raw<Looked | null>(null);
   let chosen = $state<string[]>([]);
+  /** Every page read anew, in place of the text the PDF has. */
   let all = $state(false);
-  /** With all pages read: the text they have is taken away, and only what is read stays. */
-  let strip = $state(false);
   /** How the pages are read, as the settings say until this reading says otherwise. */
   let how = $state(howFromSettings());
   let progress = $state.raw<Progress | null>(null);
@@ -77,6 +77,7 @@
       const [found] = await Promise.all([ocrLook(file.path, true), reader.load()]);
       if (gone) return;
       looked = found;
+      all = anewAtFirst(found);
       // The language of the work, where the reference says it.
       const language = reference?.fields.langid ?? reference?.fields.language ?? null;
       chosen = reader.first(language, languages.current);
@@ -98,7 +99,6 @@
         {
           languages: $state.snapshot(chosen),
           all,
-          strip: all && strip,
           ...$state.snapshot(how),
         },
         ticket,
@@ -127,6 +127,7 @@
   const without = $derived(looked ? looked.pages - looked.withText : 0);
   const about = $derived.by(() => {
     if (!looked) return '';
+    if (all) return t('ocr-searchable-anew', { pages: looked.pages });
     if (without === 0) return t('ocr-searchable-has-text', { pages: looked.pages });
     return t('ocr-searchable-about', { pages: looked.pages, without });
   });
@@ -168,18 +169,7 @@
           </p>
         {/if}
         {#if looked.withText > 0 && reader.installed}
-          <label class="check">
-            <input type="checkbox" data-choice="all" bind:checked={all} />
-            {t('ocr-read-all')}
-          </label>
-          {#if all}
-            {#if !strip}<p class="hint">{t('ocr-read-all-hint')}</p>{/if}
-            <label class="check">
-              <input type="checkbox" data-choice="strip" bind:checked={strip} />
-              {t('ocr-strip')}
-            </label>
-            {#if strip}<p class="hint">{t('ocr-strip-hint')}</p>{/if}
-          {/if}
+          <TextChoice {looked} bind:anew={all} searchable />
         {/if}
         {#if reader.installed}
           <HowDisclosure bind:value={how} />
@@ -246,17 +236,6 @@
     width: 100%;
     height: 6px;
     accent-color: var(--accent);
-  }
-  .check {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: var(--ink-2);
-    cursor: pointer;
-  }
-  .check input {
-    accent-color: var(--accent);
-    margin: 0;
   }
   .failure {
     display: flex;

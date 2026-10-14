@@ -21,9 +21,6 @@ ocr-about-text = { $pages ->
     [one] The page has text, which is taken as it is.
    *[other] Every page has text, which is taken as it is.
 }
-ocr-read-all = Read the pages that have text as well
-ocr-read-all-hint = Their text stays, and what is read is laid over it.
-ocr-read-all-map-hint = What is read takes the place of their text: for when it is poor, or cannot be read.
 ocr-read = Read the text
 ocr-read-text-pages = Take the pages that have text
 ocr-take-text = Take the text
@@ -69,8 +66,6 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = The PDF could not be taken apart to be changed: it may be damaged. Its text can still be brought into a project as a map.
 ocr-searchable-make = Make searchable
-ocr-strip = Take away the unseen text they have, and keep only what is read
-ocr-strip-hint = For a text layer that is poor, as a scanner lays it under the page. Letters that are seen stay, and the page looks as it did.
 ocr-searchable-done = { $count ->
     [one] The PDF is searchable: one page was read
    *[other] The PDF is searchable: { $count } pages were read
@@ -110,3 +105,32 @@ ocr-settings-has-none = It has the data of no language: import one below, or ins
 ocr-settings-first = Read in at first
 ocr-settings-first-hint = When none are chosen, the language of the text and that of the interface.
 ocr-settings-how = How text is read at first
+
+## What becomes of the text a PDF has (the same in every dialog that reads one).
+
+ocr-text-title = The text the PDF has
+# Said where some pages have text that does not read as text.
+ocr-text-poor = { $poor ->
+    [one] On one of the { $pages } pages that have text, it does not read as text, as when a font does not say which letters it shows, or a reading was poor.
+   *[other] On { $poor } of the { $pages } pages that have text, it does not read as text, as when a font does not say which letters it shows, or a reading was poor.
+}
+# Said where every page that has text has text that does not read as text.
+ocr-text-poor-all = { $pages ->
+    [one] The text the PDF has does not read as text, as when a font does not say which letters it shows, or a reading was poor.
+   *[other] On all { $pages } pages that have text, it does not read as text, as when a font does not say which letters it shows, or a reading was poor.
+}
+ocr-text-sample = As the PDF has it, on page { $page }:
+ocr-text-keep = Keep the text the PDF has
+ocr-text-keep-hint = Only the pages without text are read; the others are taken as they are.
+ocr-text-keep-searchable-hint = Only the pages without text are read; the others keep the text they have.
+ocr-text-anew = Read every page anew, in place of the text the PDF has
+ocr-text-anew-hint = Only what is read is kept: for text that is poor, or cannot be read.
+ocr-text-anew-searchable-hint = The unseen text the pages have is taken away, and what is read is laid in its place. The pages look as they did.
+ocr-about-anew = { $pages ->
+    [one] The page is read anew, from a picture of it.
+   *[other] All { $pages } pages are read anew, from pictures of them.
+}
+ocr-searchable-anew = { $pages ->
+    [one] The page is read anew, and its text is laid unseen under what is shown, in place of what it had. The PDF looks as it did.
+   *[other] All { $pages } pages are read anew, and their text is laid unseen under what is shown, in place of what they had. The PDF looks as it did.
+}

@@ -21,6 +21,159 @@ use crate::written::roman;
 /// A page has text when it has at least this many letters and digits.
 pub const TEXT_PAGE: usize = 100;
 
+/// How many lines of a page's text are shown before it is taken, and how
+/// much of each.
+const SAMPLE_LINES: usize = 5;
+const SAMPLE_WIDTH: usize = 110;
+
+/// What the text a page has is like.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Verdict {
+    /// Too little to count as text: the page is read.
+    None,
+    /// Text that does not read as text: letters of a font that does not say
+    /// which they are, as old fonts of Greek give, or what a poor reading
+    /// laid under a scan.
+    Poor,
+    Sound,
+}
+
+/// What may stand before or after a word without making it another thing.
+fn around(c: char) -> bool {
+    matches!(
+        c,
+        '.' | ','
+            | ';'
+            | ':'
+            | '!'
+            | '?'
+            | '\''
+            | '"'
+            | '’'
+            | '‘'
+            | '“'
+            | '”'
+            | '„'
+            | '«'
+            | '»'
+            | '‹'
+            | '›'
+            | '('
+            | ')'
+            | '['
+            | ']'
+            | '{'
+            | '}'
+            | '-'
+            | '–'
+            | '—'
+            | '…'
+            | '·'
+            | '*'
+            | '†'
+            | '‡'
+            | '§'
+            | '¶'
+            | '/'
+            | '\u{0387}'
+            | '\u{037E}'
+            | '¿'
+            | '¡'
+            | '°'
+            | '%'
+    ) || c.is_ascii_digit()
+}
+
+/// The script of a letter, roughly: enough to tell a word that mixes them.
+fn script(c: char) -> u8 {
+    match c as u32 {
+        0x0041..=0x024F | 0x1E00..=0x1EFF => 1,
+        0x0370..=0x03FF | 0x1F00..=0x1FFF => 2,
+        0x0400..=0x052F => 3,
+        _ => 0,
+    }
+}
+
+/// Whether a word, without what stands around it, is shaped as a word is:
+/// letters of one script, with an apostrophe, a hyphen or a point within
+/// (`l'homme`, `well-known`, `i.e`); or a number. A capital after a small
+/// letter is not, except in a name of two capitals (`McNeill`, `DuBois`).
+fn shaped(core: &str) -> bool {
+    if core.chars().all(|c| c.is_ascii_digit() || matches!(c, '.' | ',' | ':' | '-' | '–' | '/')) {
+        return true;
+    }
+    let mut scripts = 0u8;
+    let mut raised = 0;
+    let mut small_before = false;
+    for c in core.chars() {
+        if c.is_alphabetic() {
+            if c.is_uppercase() && small_before {
+                raised += 1;
+            }
+            small_before = c.is_lowercase();
+            let s = script(c);
+            if s != 0 {
+                scripts |= 1 << s;
+            }
+        } else if !matches!(
+            c,
+            '\'' | '’'
+                | '-'
+                | '‐'
+                | '.'
+                | '·'
+                | '\u{0313}'
+                | '\u{0314}'
+                | '\u{0301}'
+                | '\u{0300}'
+                | '\u{0342}'
+                | '\u{0345}'
+                | '\u{0308}'
+        ) {
+            return false;
+        }
+    }
+    scripts.count_ones() <= 1 && raised <= 1
+}
+
+/// Whether text reads as text. It does not where many of its words are
+/// not shaped as words (`Mh=nin a)/eide`, `ÌÞíé¶`), where many characters
+/// stand for nothing (the character of what could not be told, or those a
+/// font keeps for itself), or where most of its letters are the accented
+/// letters of Western Europe, as Greek or Cyrillic read in the wrong
+/// encoding become.
+pub fn sound(text: &str) -> bool {
+    let chars: Vec<char> = text.chars().filter(|c| !c.is_whitespace()).collect();
+    if chars.is_empty() {
+        return false;
+    }
+    let nothing = chars
+        .iter()
+        .filter(|c| matches!(**c as u32, 0xFFFD | 0xE000..=0xF8FF | 0x0000..=0x001F | 0x007F..=0x009F))
+        .count();
+    if nothing * 50 > chars.len() {
+        return false;
+    }
+    let letters: Vec<char> = chars.iter().copied().filter(|c| c.is_alphabetic()).collect();
+    let western = letters.iter().filter(|c| matches!(**c as u32, 0x00C0..=0x00FF)).count();
+    if letters.len() >= 20 && western * 10 > letters.len() * 3 {
+        return false;
+    }
+    let mut words = 0;
+    let mut good = 0;
+    for token in text.split_whitespace() {
+        let core = token.trim_matches(around);
+        if core.is_empty() {
+            continue;
+        }
+        words += 1;
+        if shaped(core) {
+            good += 1;
+        }
+    }
+    words > 0 && good * 4 >= words * 3
+}
+
 /// A page whose content is larger than this, as it is stored, is a drawing,
 /// and reading it for the sake of its text takes long.
 const LARGEST_PAGE: usize = 4 << 20;
@@ -49,6 +202,41 @@ impl Layer {
             || self.pages.get(index).and_then(Option::as_ref).is_some_and(|lines| {
                 lines.iter().map(|l| l.text.chars().filter(|c| c.is_alphanumeric()).count()).sum::<usize>() >= TEXT_PAGE
             })
+    }
+
+    /// What the text of a page is like: none, enough to count, and whether
+    /// it reads as text or as what a font without its letters gives.
+    pub fn verdict(&self, index: usize) -> Verdict {
+        if self.laid.get(index).copied().unwrap_or(false) {
+            return Verdict::Sound;
+        }
+        if !self.has_text(index) {
+            return Verdict::None;
+        }
+        let lines = self.pages.get(index).and_then(Option::as_ref).map(Vec::as_slice).unwrap_or_default();
+        let text = lines.iter().map(|l| l.text.as_str()).collect::<Vec<_>>().join("\n");
+        if sound(&text) { Verdict::Sound } else { Verdict::Poor }
+    }
+
+    /// The first lines of the first page that has text, to be shown before
+    /// it is taken: the page counted from nought, and the lines.
+    pub fn sample(&self) -> Option<(usize, Vec<String>)> {
+        let index = (0..self.pages.len()).find(|i| self.has_text(*i))?;
+        let lines = self.pages[index].as_ref()?;
+        let shown: Vec<String> = lines
+            .iter()
+            .map(|l| l.text.trim())
+            .filter(|t| t.chars().filter(|c| c.is_alphanumeric()).count() >= 3)
+            .take(SAMPLE_LINES)
+            .map(|t| {
+                let mut cut: String = t.chars().take(SAMPLE_WIDTH).collect();
+                if t.chars().count() > SAMPLE_WIDTH {
+                    cut.push('…');
+                }
+                cut
+            })
+            .collect();
+        (!shown.is_empty()).then_some((index, shown))
     }
 
     /// The label of a page, counted from nought.
@@ -349,6 +537,32 @@ pub fn read_file(path: &Path) -> crate::Result<Layer> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn text_that_reads_and_text_that_does_not() {
+        for good in [
+            "The wrath of Achilles is the subject of the Iliad, as Milman Parry (1928) showed; cf. pp. 23–45.",
+            "Μῆνιν ἄειδε θεὰ Πηληϊάδεω Ἀχιλῆος οὐλομένην, ἣ μυρί᾽ Ἀχαιοῖς ἄλγε᾽ ἔθηκε,",
+            "Det var en gang en konge som hadde tre døtre, og «den yngste» var vakrest av dem alle.",
+            "L'homme est né libre, et partout il est dans les fers. Tel se croit le maître des autres.",
+            "Война и мир — роман-эпопея Льва Николаевича Толстого, описывающий русское общество.",
+            "McNeill and DuBois wrote on the well-known e.g. matters of 1.2.3, in §4 and ¶7.",
+        ] {
+            assert!(sound(good), "{good}");
+        }
+        for poor in [
+            // Beta code, as an old font of Greek keeps the letters.
+            "Mh=nin a)/eide qea\\ Phlhi+a/dew *)Axilh=os ou)lome/nhn, h(\\ muri/' *)Axaioi=s a)/lge' e)/qhke,",
+            // Greek read in the encoding of Western Europe.
+            "ÌÞíéí ¢åéäå èåÜ Ðçëçúáäåù ¢÷éëÞïò ïõëïìÝíçí, ç ìõñß¢ ¢÷áéïÿò Üëãå¢ Ýèçêå",
+            // What a font that keeps its letters to itself gives.
+            "\u{F041}\u{F042}\u{F043} \u{F044}\u{F045} \u{F046}\u{F047}\u{F048} \u{F049}\u{F04A} \u{F04B}",
+            // A poor reading under a scan.
+            "Tbe vvr@th 0f Ach1lles iS tbe sub]ect 0f tbe I1iad, as Mi1man P@rry sh0w#d; c£ pp. 2З–4S.",
+        ] {
+            assert!(!sound(poor), "{poor}");
+        }
+    }
 
     #[test]
     fn numbers_in_print() {

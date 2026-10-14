@@ -24,9 +24,6 @@ ocr-about-text = { $pages ->
     [many] Chaque page a du texte, qui est pris tel quel.
    *[other] Chaque page a du texte, qui est pris tel quel.
 }
-ocr-read-all = Lire aussi les pages qui ont du texte
-ocr-read-all-hint = Leur texte reste, et ce qui est lu est posé par-dessus.
-ocr-read-all-map-hint = Ce qui est lu prend la place de leur texte : pour quand il est mauvais, ou illisible.
 ocr-read = Lire le texte
 ocr-read-text-pages = Prendre les pages qui ont du texte
 ocr-take-text = Prendre le texte
@@ -74,8 +71,6 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = Le PDF n’a pas pu être décomposé pour être modifié : il est peut-être abîmé. Son texte peut tout de même être importé dans un projet comme carte.
 ocr-searchable-make = Rendre interrogeable
-ocr-strip = Retirer le texte invisible qu’elles ont, et ne garder que ce qui est lu
-ocr-strip-hint = Pour une couche de texte mauvaise, telle qu’un scanner la pose sous la page. Les lettres visibles restent, et la page garde son apparence.
 ocr-searchable-done = { $count ->
     [one] Le PDF est interrogeable : une page a été lue
     [many] Le PDF est interrogeable : { $count } pages ont été lues

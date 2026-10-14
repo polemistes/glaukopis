@@ -27,9 +27,6 @@ ocr-about-text = { $pages ->
     [few] Vse strani imajo besedilo, ki se vzame, kakršno je.
    *[other] Vse strani imajo besedilo, ki se vzame, kakršno je.
 }
-ocr-read-all = Preberi tudi strani, ki imajo besedilo
-ocr-read-all-hint = Njihovo besedilo ostane, prebrano pa se položi čezenj.
-ocr-read-all-map-hint = Prebrano nadomesti njihovo besedilo: za kadar je slabo ali ga ni mogoče prebrati.
 ocr-read = Preberi besedilo
 ocr-read-text-pages = Vzemi strani, ki imajo besedilo
 ocr-take-text = Vzemi besedilo
@@ -79,8 +76,6 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = PDF-ja ni bilo mogoče razstaviti, da bi ga spremenili: morda je poškodovan. Njegovo besedilo je vseeno mogoče uvoziti v projekt kot miselni vzorec.
 ocr-searchable-make = Dodaj besedilo za iskanje
-ocr-strip = Odstrani nevidno besedilo, ki ga strani imajo, in obdrži le prebrano
-ocr-strip-hint = Za slabo besedilno plast, kakršno skener položi pod stran. Vidne črke ostanejo in stran je videti, kakor je bila.
 ocr-searchable-done = { $count ->
     [one] Po PDF-ju je mogoče iskati: prebrana je bila { $count } stran
     [two] Po PDF-ju je mogoče iskati: prebrani sta bili { $count } strani

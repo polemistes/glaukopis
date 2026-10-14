@@ -25,13 +25,19 @@ export interface How {
 export interface Asked extends How {
   /** Tesseract's names of the languages the text is in, the likeliest first: `nor`, `eng`. */
   languages: string[];
-  /** Whether the pages that have text already are read as well. */
-  all: boolean;
   /**
-   * Only with `all`, for a PDF made searchable: the text the pages have is
-   * taken away, and only what is read stays.
+   * Whether every page is read anew, in place of the text the PDF has: only
+   * what is read is kept, and in a PDF made searchable the unseen text the
+   * pages had is taken away. Without it, pages that have text are taken as they are.
    */
-  strip: boolean;
+  all: boolean;
+}
+
+/** The first lines of the text a page has, as the PDF has them. */
+export interface Sample {
+  /** The number the page has in print, or counted from one. */
+  page: string;
+  lines: string[];
 }
 
 /** How far a reading has come. */
@@ -51,6 +57,10 @@ export interface Looked {
   pages: number;
   /** The pages that have text already, which are taken as they are unless all are to be read. */
   withText: number;
+  /** Those of them whose text does not read as text: where most are, the pages are best read anew. */
+  poor: number;
+  /** The first lines of the first page that has text, to be seen before they are taken. */
+  sample: Sample | null;
   /** The title the file gives itself, where it looks like one. */
   title: string | null;
   /** Whether it can be made searchable: a PDF that is not locked, and can be taken apart to be changed. */

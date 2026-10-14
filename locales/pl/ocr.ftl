@@ -27,9 +27,6 @@ ocr-about-text = { $pages ->
     [many] Każda strona ma tekst, który brany jest, jak jest.
    *[other] Każda strona ma tekst, który brany jest, jak jest.
 }
-ocr-read-all = Czytaj także strony, które mają tekst
-ocr-read-all-hint = Ich tekst zostaje, a to, co odczytano, kładzie się na nim.
-ocr-read-all-map-hint = To, co odczytano, zajmuje miejsce ich tekstu: gdy jest kiepski albo nie da się go odczytać.
 ocr-read = Czytaj tekst
 ocr-read-text-pages = Weź strony, które mają tekst
 ocr-take-text = Weź tekst
@@ -79,8 +76,6 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = Nie udało się rozłożyć pliku PDF, by go zmienić: może być uszkodzony. Jego tekst można mimo to wczytać do projektu jako mapę.
 ocr-searchable-make = Uczyń przeszukiwalnym
-ocr-strip = Usuń niewidoczny tekst, który mają, i zachowaj tylko to, co odczytano
-ocr-strip-hint = Dla kiepskiej warstwy tekstowej, jaką skaner kładzie pod stroną. Widoczne litery zostają, a strona wygląda jak przedtem.
 ocr-searchable-done = { $count ->
     [one] PDF jest przeszukiwalny: odczytano jedną stronę
     [few] PDF jest przeszukiwalny: odczytano { $count } strony

@@ -97,6 +97,13 @@ const written = typst(
     'The wrath of Achilles is the subject of the Iliad. Homer sings of the quarrel between the king and the hero, and of all that came of it.',
   ),
 );
+// A PDF whose text is Greek as an old font keeps it: Latin letters and signs, which do not read as text.
+const betaCode = typst(
+  'beta.pdf',
+  PAGE(
+    '#"Mh=nin a)/eide qea\\\\ Phlhi+a/dew *)Axilh=os ou)lome/nhn, h(\\\\ muri/\' *)Axaioi=s a)/lge\' e)/qhke, polla\\\\s d\' i)fqi/mous yuxa\\\\s *)/Ai+di proi/+ayen h(rw/wn, au)tou\\\\s de\\\\ e(lw/ria teu=xe ku/nessin oi)wnoi=si/ te pa=si"',
+  ),
+);
 
 const app = await App.launch({ width: 1360, height: 900 });
 try {
@@ -338,9 +345,21 @@ try {
     aboutText,
   );
   check('no languages are asked for', !(await app.exists('dialog [data-languages]')));
-  await app.click('dialog [data-choice="all"]');
+  const sampled = await app.text('dialog [data-text-sample]');
+  check('what its text says is shown', /^The wrath of Achilles/.test(sampled.trim()), sampled);
+  check(
+    'and it reads as text, so it is kept at first',
+    !(await app.exists('dialog [data-text-poor]')) &&
+      (await app.exec(`return document.querySelector('dialog [data-choice="keep"]').checked`)),
+  );
+  await app.click('dialog [data-choice="anew"]');
   check('unless its pages are to be read anew', await app.exists('dialog [data-languages]'));
-  await app.click('dialog [data-choice="all"]');
+  check(
+    'which is said',
+    /read anew/.test(await app.text('dialog [data-ocr="asking"] .about')),
+    await app.text('dialog [data-ocr="asking"] .about'),
+  );
+  await app.click('dialog [data-choice="keep"]');
   check(
     'as it is, its text is taken',
     (await app.text('dialog [data-ocr-read]')).trim() === 'Take the text',
@@ -352,6 +371,30 @@ try {
     (await facts()).parts === '1' && (await remarks()).length === 0,
     JSON.stringify(await facts()),
   );
+  await app.clickText('dialog footer button', 'Cancel');
+  await app.waitGone('dialog[open]', 5000);
+
+  // ---- text that does not read as text ----
+  await dropOnTabs(betaCode);
+  await app.waitFor('dialog [data-ocr="asking"]', 15000);
+  const poorly = await app.exists('dialog [data-text-poor]');
+  check('text that does not read as text is said to be so', poorly);
+  check(
+    'and every page is to be read anew at first, with languages to read with',
+    (await app.exec(`return document.querySelector('dialog [data-choice="anew"]').checked`)) &&
+      (await app.exists('dialog [data-languages]')),
+  );
+  check(
+    'what the PDF has is shown, to judge by',
+    /^Mh=nin/.test((await app.text('dialog [data-text-sample]')).trim()),
+    await app.text('dialog [data-text-sample]'),
+  );
+  await sleep(300);
+  await app.screenshot('ocr-2c-poor-text');
+  await app.setTheme('dark');
+  await sleep(200);
+  await app.screenshot('ocr-2c-poor-text-dark');
+  await app.setTheme('light');
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
 
@@ -398,9 +441,8 @@ try {
     aboutPdf,
   );
   check(
-    'no page has text, so none is to be read as well, nor taken away',
-    !(await app.exists('dialog [data-choice="all"]')) &&
-      !(await app.exists('dialog [data-choice="strip"]')),
+    'no page has text, so there is nothing to keep or read anew',
+    !(await app.exists('dialog [data-text-choice]')),
   );
   check('how it is read can be opened here too', await app.exists('dialog [data-ocr-how]'));
   await app.screenshot('ocr-5-searchable');
@@ -455,21 +497,19 @@ try {
     /Every page has text/.test(await app.text('dialog [data-ocr="asking"] .about')),
   );
   check(
-    'the text it has is not taken away unless all pages are read',
-    !(await app.exists('dialog [data-choice="strip"]')),
+    'the text it has, which was read here, is kept at first',
+    await app.exec(`return document.querySelector('dialog [data-choice="keep"]').checked`),
   );
-  await app.click('dialog [data-choice="all"]');
-  await app.waitFor('dialog [data-choice="strip"]', 3000);
+  await app.click('dialog [data-choice="anew"]');
   check(
-    'with all pages read, the text they have can be taken away',
-    await app.exists('dialog [data-choice="strip"]'),
+    'read anew, the text it has is taken away, and that is said',
+    /unseen text the pages have is taken away/.test(await app.text('dialog [data-ocr="asking"]')),
   );
-  await app.click('dialog [data-choice="strip"]');
   check(
-    'and what that is for is said',
-    /text layer that is poor/.test(await app.text('dialog [data-ocr="asking"]')),
+    'and so is what is done',
+    /read anew/.test(await app.text('dialog [data-ocr="asking"] .about')),
   );
-  await app.screenshot('ocr-5b-strip');
+  await app.screenshot('ocr-5b-anew');
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
 

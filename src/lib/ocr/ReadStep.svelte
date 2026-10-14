@@ -21,10 +21,11 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
-  import { howFromSettings } from './how';
+  import { anewAtFirst, howFromSettings } from './how';
   import HowDisclosure from './HowDisclosure.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
+  import TextChoice from './TextChoice.svelte';
 
   interface Props {
     path: string;
@@ -74,6 +75,7 @@
       const [found] = await Promise.all([ocrLook(path, stored), reader.load()]);
       if (gone) return;
       looked = found;
+      all = anewAtFirst(found);
       chosen = reader.first(newTextLanguage(), languages.current);
       phase = 'asking';
     } catch (error) {
@@ -89,7 +91,7 @@
     try {
       const imported = await ocrRead(
         path,
-        { languages: $state.snapshot(chosen), all, strip: false, ...$state.snapshot(how) },
+        { languages: $state.snapshot(chosen), all, ...$state.snapshot(how) },
         ticket,
         stored,
       );
@@ -119,6 +121,7 @@
     if (!looked) return '';
     if (looked.picture) return t('ocr-about-picture');
     if (looked.withText === 0) return t('ocr-about-scan', { pages: looked.pages });
+    if (all) return t('ocr-about-anew', { pages: looked.pages });
     if (without === 0) return t('ocr-about-text', { pages: looked.pages });
     return t('ocr-about-some', { pages: looked.pages, without });
   });
@@ -149,11 +152,7 @@
       </p>
     {/if}
     {#if looked.withText > 0 && reader.installed}
-      <label class="check">
-        <input type="checkbox" data-choice="all" bind:checked={all} />
-        {t('ocr-read-all')}
-      </label>
-      {#if all}<p class="hint">{t('ocr-read-all-map-hint')}</p>{/if}
+      <TextChoice {looked} bind:anew={all} />
     {/if}
     {#if scanning && reader.installed}
       <HowDisclosure bind:value={how} />
@@ -216,17 +215,6 @@
     width: 100%;
     height: 6px;
     accent-color: var(--accent);
-  }
-  .check {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: var(--ink-2);
-    cursor: pointer;
-  }
-  .check input {
-    accent-color: var(--accent);
-    margin: 0;
   }
   .go {
     display: flex;

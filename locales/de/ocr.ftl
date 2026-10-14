@@ -21,9 +21,6 @@ ocr-about-text = { $pages ->
     [one] Die Seite hat Text, der genommen wird, wie er ist.
    *[other] Jede Seite hat Text, der genommen wird, wie er ist.
 }
-ocr-read-all = Auch die Seiten lesen, die Text haben
-ocr-read-all-hint = Ihr Text bleibt, und das Gelesene wird darübergelegt.
-ocr-read-all-map-hint = Das Gelesene tritt an die Stelle ihres Textes: wenn er schlecht ist oder nicht gelesen werden kann.
 ocr-read = Text lesen
 ocr-read-text-pages = Die Seiten mit Text nehmen
 ocr-take-text = Text nehmen
@@ -69,8 +66,6 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = Das PDF ließ sich nicht zum Ändern auseinandernehmen: es ist vielleicht beschädigt. Sein Text kann dennoch als Karte in ein Projekt eingelesen werden.
 ocr-searchable-make = Durchsuchbar machen
-ocr-strip = Den unsichtbaren Text, den sie haben, wegnehmen und nur das Gelesene behalten
-ocr-strip-hint = Für eine schlechte Textebene, wie ein Scanner sie unter die Seite legt. Sichtbare Buchstaben bleiben, und die Seite sieht aus wie zuvor.
 ocr-searchable-done = { $count ->
     [one] Das PDF ist durchsuchbar: eine Seite wurde gelesen
    *[other] Das PDF ist durchsuchbar: { $count } Seiten wurden gelesen

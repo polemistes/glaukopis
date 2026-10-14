@@ -21,9 +21,6 @@ ocr-about-text = { $pages ->
     [one] Siden har tekst, som tas slik den er.
    *[other] Alle sidene har tekst, som tas slik den er.
 }
-ocr-read-all = Les også sidene som har tekst
-ocr-read-all-hint = Teksten deres blir stående, og det som leses, legges over den.
-ocr-read-all-map-hint = Det som leses, tar plassen til teksten deres: når den er dårlig, eller ikke kan leses.
 ocr-read = Les teksten
 ocr-read-text-pages = Ta sidene som har tekst
 ocr-take-text = Ta teksten
@@ -69,8 +66,6 @@ ocr-searchable-has-text = { $pages ->
 }
 ocr-searchable-damaged = PDF-en kunne ikke tas fra hverandre for å endres: den kan være skadet. Teksten kan likevel tas inn i et prosjekt som et kart.
 ocr-searchable-make = Gjør søkbar
-ocr-strip = Ta bort den usynlige teksten de har, og behold bare det som leses
-ocr-strip-hint = For et tekstlag som er dårlig, slik en skanner legger det under siden. Bokstaver som synes, blir stående, og siden ser ut som før.
 ocr-searchable-done = { $count ->
     [one] PDF-en er søkbar: én side ble lest
    *[other] PDF-en er søkbar: { $count } sider ble lest
@@ -110,3 +105,30 @@ ocr-settings-has-none = Det har ikke dataene for noe språk: importer ett nedenf
 ocr-settings-first = Les på først
 ocr-settings-first-hint = Når ingen er valgt: språket i teksten og språket i grensesnittet.
 ocr-settings-how = Hvordan tekst leses først
+
+## Hva som blir av teksten en PDF har (det samme i hver dialog som leser en).
+
+ocr-text-title = Teksten PDF-en har
+ocr-text-poor = { $poor ->
+    [one] På én av de { $pages } sidene som har tekst, leses den ikke som tekst, slik det blir når en skrift ikke sier hvilke bokstaver den viser, eller en lesning var dårlig.
+   *[other] På { $poor } av de { $pages } sidene som har tekst, leses den ikke som tekst, slik det blir når en skrift ikke sier hvilke bokstaver den viser, eller en lesning var dårlig.
+}
+ocr-text-poor-all = { $pages ->
+    [one] Teksten PDF-en har, leses ikke som tekst, slik det blir når en skrift ikke sier hvilke bokstaver den viser, eller en lesning var dårlig.
+   *[other] På alle de { $pages } sidene som har tekst, leses den ikke som tekst, slik det blir når en skrift ikke sier hvilke bokstaver den viser, eller en lesning var dårlig.
+}
+ocr-text-sample = Slik PDF-en har den, på side { $page }:
+ocr-text-keep = Behold teksten PDF-en har
+ocr-text-keep-hint = Bare sidene uten tekst leses; de andre tas som de er.
+ocr-text-keep-searchable-hint = Bare sidene uten tekst leses; de andre beholder teksten de har.
+ocr-text-anew = Les hver side på nytt, i stedet for teksten PDF-en har
+ocr-text-anew-hint = Bare det som leses, beholdes: for tekst som er dårlig eller ikke kan leses.
+ocr-text-anew-searchable-hint = Den usynlige teksten sidene har, tas bort, og det som leses, legges i stedet. Sidene ser ut som før.
+ocr-about-anew = { $pages ->
+    [one] Siden leses på nytt, fra et bilde av den.
+   *[other] Alle { $pages } sidene leses på nytt, fra bilder av dem.
+}
+ocr-searchable-anew = { $pages ->
+    [one] Siden leses på nytt, og teksten legges usynlig under det som vises, i stedet for den den hadde. PDF-en ser ut som før.
+   *[other] Alle { $pages } sidene leses på nytt, og teksten legges usynlig under det som vises, i stedet for den de hadde. PDF-en ser ut som før.
+}

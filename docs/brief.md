@@ -628,3 +628,20 @@ What this settles (ADR 0043, built from `docs/plans/the-files-of-the-library.md`
 - Export of a folder, chosen files or all, the folders becoming folders on
   disk and every file named by author or editor, year and title where it
   has a reference, with a `references.bib` beside when asked.
+
+## 2026-10-15 — the text a PDF has, kept or read anew
+
+> A question: How does the ocr work on pdfs that already has text? I just tried to scan one with ancient Greek text, where the text that comes with the pdf is almost only giberish, and then the ocr also presented mostly giberish. There should be a function to totally disregard any text that comes with the pdf, becuase it is not rare that this is unreadable. Could you tell me how this works now, and suggest how you think it should be.
+
+> What I did, actually, was to read into an element. This does it differently, and I am not provided the option to not take the text already there into account. I cannot see any reason anyone would want two layers of text on their pdf. Should we not let them choose, either keep the text already there or substitute it with the newly read, both for reading into an element and for making a pdf readable?
+
+> Good, make this. And build the arch package when done.
+
+What this settles (addendum to ADR 0018):
+
+- One choice wherever a PDF is read: keep the text the PDF has, or read
+  every page anew in its place; laying new text over old is gone.
+- The text a PDF has is judged as well as counted; where it does not read
+  as text, that is said, and reading anew is chosen at first. Its first
+  lines are shown before anything is taken.
+

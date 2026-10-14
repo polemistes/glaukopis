@@ -8,7 +8,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 fn main() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../locales");
+    // Asked when the script runs, not when it is compiled: a build directory
+    // shared between working copies runs one compiled script for all of them.
+    let manifest = std::env::var("CARGO_MANIFEST_DIR").expect("Cargo says where the crate is");
+    let root = Path::new(&manifest).join("../../locales");
     // A directory is watched as a whole: a file that is added is seen.
     println!("cargo:rerun-if-changed={}", root.display());
 
