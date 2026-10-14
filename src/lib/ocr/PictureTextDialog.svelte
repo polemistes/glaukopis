@@ -3,7 +3,8 @@
    * The text of a picture of the store, read by Tesseract (ADR 0018): shown,
    * to be copied, or, where the picture is looked at in a project, made an
    * element of under the element in view, named after the picture, with the
-   * text as its text.
+   * text as its text. Also of a picture that is a file of the library, which
+   * is read from the library's store as a PDF of it is (`ReadStep.svelte`).
    */
   import { onMount } from 'svelte';
   import CircleAlert from '@lucide/svelte/icons/circle-alert';
@@ -11,6 +12,7 @@
   import Network from '@lucide/svelte/icons/network';
   import { isBackendError } from '$lib/api/backend';
   import type { Imported } from '$lib/api/imported';
+  import type { StoredFile } from '$lib/api/library';
   import { ocrPicture, ocrStop } from '$lib/api/ocr';
   import { languages, newTextLanguage, t } from '$lib/i18n';
   import type { Project } from '$lib/project/model/project.svelte';
@@ -25,11 +27,15 @@
   import { howFromSettings } from './how';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
+  import ReadStep from './ReadStep.svelte';
 
   interface Props {
-    hash: string;
+    /** The picture of the store of pictures, by its hash. */
+    hash?: string;
     /** What the picture is called. */
-    name: string;
+    name?: string;
+    /** Or a picture that is a file of the library, read from its store. */
+    file?: StoredFile;
     /** The project the picture is looked at in, where it is, and the element in view in it. */
     project?: Project | null;
     at?: string | null;
@@ -38,7 +44,9 @@
     onclose: () => void;
   }
 
-  let { hash, name, project = null, at = null, onenter, onclose }: Props = $props();
+  let { hash, name: called, file, project = null, at = null, onenter, onclose }: Props = $props();
+
+  const name = $derived(called ?? file?.name ?? '');
 
   const ticket = newId();
   let phase = $state<'asking' | 'reading' | 'shown' | 'failed'>('asking');
@@ -69,7 +77,7 @@
   );
 
   async function readIt() {
-    if (phase === 'reading') return;
+    if (phase === 'reading' || !hash) return;
     phase = 'reading';
     try {
       const imported = await ocrPicture(
@@ -115,7 +123,18 @@
 
 <Dialog open title={t('ocr-picture-title')} subtitle={name} width={560} onclose={cancel}>
   <div class="body" data-ocr={phase}>
-    {#if phase === 'asking'}
+    {#if phase === 'asking' && file}
+      <!-- A file of the library is looked at and read by the step that reads the library's PDFs. -->
+      <ReadStep
+        path={file.path}
+        stored
+        name={file.name}
+        onread={(imported) => {
+          read = imported;
+          phase = 'shown';
+        }}
+      />
+    {:else if phase === 'asking'}
       <p class="about">{t('ocr-about-picture')}</p>
       {#if reader.installed}
         <LanguagePicker
@@ -163,6 +182,8 @@
         </Button>
       {/if}
       <Button variant="primary" onclick={onclose}>{t('common-close')}</Button>
+    {:else if file}
+      <Button variant="ghost" onclick={cancel}>{t('common-cancel')}</Button>
     {:else}
       <Button variant="ghost" onclick={cancel}>{t('common-cancel')}</Button>
       <Button

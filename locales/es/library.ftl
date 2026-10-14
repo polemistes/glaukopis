@@ -286,29 +286,6 @@ library-delete-many-title = { $count ->
     [many] ¿Eliminar { $count } de referencias?
    *[other] ¿Eliminar { $count } referencias?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Esto quita la referencia de su biblioteca y de todas las colecciones{ $files ->
-        [0] {""}
-        [one] , junto con { $files } archivo adjunto
-        [many] , junto con { $files } de archivos adjuntos
-       *[other] , junto con { $files } archivos adjuntos
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Se cita en un proyecto, que conserva una copia de ella.
-        [many] {" "}Se cita en { $projects } de proyectos, que conservan una copia de ella.
-       *[other] {" "}Se cita en { $projects } proyectos, que conservan una copia de ella.
-    }
-library-delete-many = Esto las quita de su biblioteca y de todas las colecciones{ $files ->
-        [0] {""}
-        [one] , junto con { $files } archivo adjunto
-        [many] , junto con { $files } de archivos adjuntos
-       *[other] , junto con { $files } archivos adjuntos
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Un proyecto que cita algunas de ellas conserva una copia de esas.
-        [many] {" "}{ $projects } de proyectos que citan algunas de ellas conservan una copia de esas.
-       *[other] {" "}{ $projects } proyectos que citan algunas de ellas conservan una copia de esas.
-    }
 library-delete-failed = No se pudieron eliminar las referencias
 library-not-done = Eso no se pudo hacer
 
@@ -478,9 +455,6 @@ library-pane-missing = falta
 library-pane-reveal = Mostrar en el gestor de archivos
 library-pane-reveal-failed = No se pudo abrir la carpeta
 library-pane-no-files = No hay archivos. Adjunte un PDF, o suelte uno aquí.
-library-pane-detach = Quitar el archivo
-library-pane-detach-title = ¿Quitar «{ $name }»?
-library-pane-detach-message = El archivo se elimina del almacén de la biblioteca, salvo que otra referencia lo use.
 library-pane-detach-failed = No se pudo quitar el archivo
 library-pane-leave-collection = Quitar de { $name }
 library-pane-duplicate = Duplicar

@@ -286,29 +286,6 @@ library-delete-many-title = { $count ->
     [many] Eliminare { $count } riferimenti?
    *[other] Eliminare { $count } riferimenti?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Questo toglie il riferimento dalla tua biblioteca, da ogni raccolta{ $files ->
-        [0] {""}
-        [one] , insieme a { $files } file allegato
-        [many] , insieme a { $files } file allegati
-       *[other] , insieme a { $files } file allegati
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}È citato in un progetto, che ne tiene una copia.
-        [many] {" "}È citato in { $projects } progetti, che ne tengono una copia.
-       *[other] {" "}È citato in { $projects } progetti, che ne tengono una copia.
-    }
-library-delete-many = Questo li toglie dalla tua biblioteca, da ogni raccolta{ $files ->
-        [0] {""}
-        [one] , insieme a { $files } file allegato
-        [many] , insieme a { $files } file allegati
-       *[other] , insieme a { $files } file allegati
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Un progetto che ne cita alcuni ne tiene una copia.
-        [many] {" "}{ $projects } progetti che ne citano alcuni ne tengono una copia.
-       *[other] {" "}{ $projects } progetti che ne citano alcuni ne tengono una copia.
-    }
 library-delete-failed = I riferimenti non si sono potuti eliminare
 library-not-done = Questo non si è potuto fare
 
@@ -478,9 +455,6 @@ library-pane-missing = mancante
 library-pane-reveal = Mostra nel gestore dei file
 library-pane-reveal-failed = La cartella non si è potuta aprire
 library-pane-no-files = Nessun file. Allega un PDF, o lascialo cadere qui.
-library-pane-detach = Togli il file
-library-pane-detach-title = Togliere «{ $name }»?
-library-pane-detach-message = Il file è eliminato dal deposito della biblioteca, a meno che un altro riferimento non lo usi.
 library-pane-detach-failed = Il file non si è potuto togliere
 library-pane-leave-collection = Togli da { $name }
 library-pane-duplicate = Duplica

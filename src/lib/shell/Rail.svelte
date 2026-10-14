@@ -37,7 +37,7 @@
   <a
     href="#/library"
     class="place"
-    class:current={view === 'library'}
+    class:current={view === 'library' || view === 'files'}
     aria-label={t('shell-library')}
     use:tooltip={{ text: t('shell-library'), shortcut: 'Ctrl+2', side: 'right' }}
   >

@@ -14,6 +14,7 @@
     'writing',
     'review',
     'library',
+    'files',
     'store',
   ];
   // What is done by two keys is one row, with both.

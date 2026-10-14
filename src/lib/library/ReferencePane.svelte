@@ -5,8 +5,9 @@
   import Code from '@lucide/svelte/icons/code';
   import Copy from '@lucide/svelte/icons/copy';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
-  import FileText from '@lucide/svelte/icons/file-text';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
+  import Images from '@lucide/svelte/icons/images';
+  import Network from '@lucide/svelte/icons/network';
   import Map from '@lucide/svelte/icons/map';
   import Paperclip from '@lucide/svelte/icons/paperclip';
   import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -44,6 +45,14 @@
   import ReferenceForm from './ReferenceForm.svelte';
   import ScanText from '@lucide/svelte/icons/scan-text';
   import PdfMapDialog from '$lib/ocr/PdfMapDialog.svelte';
+  import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
+  import {
+    KIND_ICONS,
+    bringInFile,
+    files as filesState,
+    toPictures,
+  } from '$lib/files/store.svelte';
+  import { PROJECT } from '$lib/project/model/types';
   import SearchableDialog from '$lib/ocr/SearchableDialog.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
 
@@ -205,6 +214,7 @@
     try {
       reference = await attachmentAdd(reference.id, chosen);
       library.put(reference);
+      if (filesState.loaded) void filesState.reload();
     } catch (e) {
       notifyError(t('library-pane-attach-failed'), e);
     }
@@ -212,16 +222,17 @@
 
   async function detach(file: StoredFile) {
     if (!reference) return;
+    // The file stays among the files of the library: it is only taken from this reference.
     const ok = await confirm({
-      title: t('library-pane-detach-title', { name: file.name }),
-      message: t('library-pane-detach-message'),
-      confirm: t('library-pane-detach'),
-      danger: true,
+      title: t('library-pane-unassign-title', { name: file.name }),
+      message: t('library-pane-unassign-message'),
+      confirm: t('library-pane-unassign'),
     });
     if (!ok) return;
     try {
       reference = await attachmentRemove(reference.id, file.path);
       library.put(reference);
+      if (filesState.loaded) void filesState.reload();
     } catch (e) {
       notifyError(t('library-pane-detach-failed'), e);
     }
@@ -231,6 +242,8 @@
   let searchable = $state<StoredFile | null>(null);
   /** The PDF whose text is becoming a map (`ocr/PdfMapDialog.svelte`). */
   let mapping = $state<StoredFile | null>(null);
+  /** The picture whose text is being read (`ocr/PictureTextDialog.svelte`). */
+  let reading = $state<StoredFile | null>(null);
 
   async function leaveCollection(collectionId: string) {
     if (!reference) return;
@@ -370,6 +383,7 @@
           </Button>
         </div>
         {#each reference.files as file (file.path)}
+          {@const KindIcon = KIND_ICONS[file.kind] ?? KIND_ICONS.other}
           <div class="file" class:missing={!file.exists}>
             <button
               type="button"
@@ -380,7 +394,7 @@
                   notifyError(t('library-file-open-failed'), e),
                 )}
             >
-              <FileText size={15} strokeWidth={1.6} />
+              <KindIcon size={15} strokeWidth={1.6} />
               <span class="name truncate">{file.name}</span>
               <span class="size"
                 >{file.exists ? fileSize(file.size) : t('library-pane-missing')}</span
@@ -397,7 +411,7 @@
             >
               <FolderOpen size={13} />
             </IconButton>
-            {#if file.exists && /\.pdf$/i.test(file.name)}
+            {#if file.exists && file.kind === 'pdf'}
               <IconButton
                 label={t('ocr-searchable-button')}
                 size="sm"
@@ -414,9 +428,38 @@
               >
                 <Map size={13} />
               </IconButton>
+            {:else if file.exists && file.kind === 'picture'}
+              <IconButton
+                label={t('files-read-text')}
+                size="sm"
+                data-picture-text={file.name}
+                onclick={() => (reading = file)}
+              >
+                <ScanText size={13} />
+              </IconButton>
+              <IconButton
+                label={t('files-to-pictures')}
+                size="sm"
+                data-to-pictures={file.name}
+                onclick={() => void toPictures({ hash: file.hash })}
+              >
+                <Images size={13} />
+              </IconButton>
+            {:else if file.exists && file.kind === 'document'}
+              <IconButton
+                label={t('files-bring-in')}
+                size="sm"
+                data-bring-in={file.name}
+                onclick={() => void bringInFile(file, project, at ?? PROJECT)}
+              >
+                <Network size={13} />
+              </IconButton>
             {/if}
-            <IconButton label={t('common-remove')} size="sm" onclick={() => detach(file)}
-              ><X size={13} /></IconButton
+            <IconButton
+              label={t('library-pane-unassign')}
+              size="sm"
+              data-unassign={file.name}
+              onclick={() => detach(file)}><X size={13} /></IconButton
             >
           </div>
         {:else}
@@ -510,9 +553,14 @@
       if (!made) return;
       if (made.id === reference?.id) reference = made;
       library.put(made);
+      if (filesState.loaded) void filesState.reload();
     }}
     onclose={() => (searchable = null)}
   />
+{/if}
+
+{#if reading}
+  <PictureTextDialog file={reading} {project} {at} {onenter} onclose={() => (reading = null)} />
 {/if}
 
 {#if mapping}

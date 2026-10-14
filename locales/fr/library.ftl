@@ -286,29 +286,6 @@ library-delete-many-title = { $count ->
     [many] Supprimer { $count } références ?
    *[other] Supprimer { $count } références ?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Ceci retire la référence de votre bibliothèque et de toutes les collections{ $files ->
-        [0] {""}
-        [one] , avec { $files } fichier joint
-        [many] , avec { $files } fichiers joints
-       *[other] , avec { $files } fichiers joints
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Elle est citée dans un projet, qui en garde une copie.
-        [many] {" "}Elle est citée dans { $projects } projets, qui en gardent une copie.
-       *[other] {" "}Elle est citée dans { $projects } projets, qui en gardent une copie.
-    }
-library-delete-many = Ceci les retire de votre bibliothèque et de toutes les collections{ $files ->
-        [0] {""}
-        [one] , avec { $files } fichier joint
-        [many] , avec { $files } fichiers joints
-       *[other] , avec { $files } fichiers joints
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Un projet qui en cite certaines en garde une copie.
-        [many] {" "}{ $projects } projets qui en citent certaines en gardent une copie.
-       *[other] {" "}{ $projects } projets qui en citent certaines en gardent une copie.
-    }
 library-delete-failed = Les références n’ont pas pu être supprimées
 library-not-done = Cela n’a pas pu être fait
 
@@ -478,9 +455,6 @@ library-pane-missing = manquant
 library-pane-reveal = Afficher dans le gestionnaire de fichiers
 library-pane-reveal-failed = Le dossier n’a pas pu être ouvert
 library-pane-no-files = Pas de fichiers. Joignez un PDF, ou déposez-en un ici.
-library-pane-detach = Retirer le fichier
-library-pane-detach-title = Retirer « { $name } » ?
-library-pane-detach-message = Le fichier est supprimé de la réserve de la bibliothèque, à moins qu’une autre référence ne l’utilise.
 library-pane-detach-failed = Le fichier n’a pas pu être retiré
 library-pane-leave-collection = Retirer de { $name }
 library-pane-duplicate = Dupliquer

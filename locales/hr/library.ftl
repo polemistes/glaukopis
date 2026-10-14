@@ -294,31 +294,6 @@ library-delete-many-title = { $count ->
     [few] Izbrisati { $count } reference?
    *[other] Izbrisati { $count } referenci?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Ovo uklanja referencu iz vaše knjižnice, iz svake zbirke{ $files ->
-        [0] {""}
-        [one] , zajedno s { $files } priloženom datotekom
-        [few] , zajedno s { $files } priložene datoteke
-       *[other] , zajedno s { $files } priloženih datoteka
-    }.{ $projects ->
-        [0] {""}
-        [1] {" "}Citirana je u jednom projektu, koji zadržava njezinu kopiju.
-        [one] {" "}Citirana je u { $projects } projektu, koji zadržava njezinu kopiju.
-        [few] {" "}Citirana je u { $projects } projekta, koji zadržavaju njezinu kopiju.
-       *[other] {" "}Citirana je u { $projects } projekata, koji zadržavaju njezinu kopiju.
-    }
-library-delete-many = Ovo ih uklanja iz vaše knjižnice, iz svake zbirke{ $files ->
-        [0] {""}
-        [one] , zajedno s { $files } priloženom datotekom
-        [few] , zajedno s { $files } priložene datoteke
-       *[other] , zajedno s { $files } priloženih datoteka
-    }.{ $projects ->
-        [0] {""}
-        [1] {" "}Projekt koji citira neke od njih zadržava njihove kopije.
-        [one] {" "}{ $projects } projekt koji citira neke od njih zadržava njihove kopije.
-        [few] {" "}{ $projects } projekta koji citiraju neke od njih zadržavaju njihove kopije.
-       *[other] {" "}{ $projects } projekata koji citiraju neke od njih zadržava njihove kopije.
-    }
 library-delete-failed = Reference nije bilo moguće izbrisati
 library-not-done = To nije bilo moguće učiniti
 
@@ -489,9 +464,6 @@ library-pane-missing = nedostaje
 library-pane-reveal = Prikaži u upravitelju datoteka
 library-pane-reveal-failed = Direktorij nije bilo moguće otvoriti
 library-pane-no-files = Nema datoteka. Priložite PDF, ili ga ispustite ovdje.
-library-pane-detach = Ukloni datoteku
-library-pane-detach-title = Ukloniti „{ $name }”?
-library-pane-detach-message = Datoteka se briše iz spremišta knjižnice, osim ako je koristi druga referenca.
 library-pane-detach-failed = Datoteku nije bilo moguće ukloniti
 library-pane-leave-collection = Ukloni iz { $name }
 library-pane-duplicate = Udvostruči

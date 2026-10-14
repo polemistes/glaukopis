@@ -301,33 +301,6 @@ library-delete-many-title = { $count ->
     [many] Видалити { $count } джерел?
    *[other] Видалити { $count } джерела?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Це вилучає джерело з вашої бібліотеки, з усіх колекцій{ $files ->
-        [0] {""}
-        [one] , разом із { $files } вкладеним файлом
-        [few] , разом із { $files } вкладеними файлами
-        [many] , разом із { $files } вкладеними файлами
-       *[other] , разом із { $files } вкладеними файлами
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Воно цитується в { $projects } проєкті, який зберігає його копію.
-        [few] {" "}Воно цитується в { $projects } проєктах, які зберігають його копію.
-        [many] {" "}Воно цитується в { $projects } проєктах, які зберігають його копію.
-       *[other] {" "}Воно цитується в { $projects } проєктах, які зберігають його копію.
-    }
-library-delete-many = Це вилучає їх з вашої бібліотеки, з усіх колекцій{ $files ->
-        [0] {""}
-        [one] , разом із { $files } вкладеним файлом
-        [few] , разом із { $files } вкладеними файлами
-        [many] , разом із { $files } вкладеними файлами
-       *[other] , разом із { $files } вкладеними файлами
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}{ $projects } проєкт, який цитує деякі з них, зберігає їхні копії.
-        [few] {" "}{ $projects } проєкти, які цитують деякі з них, зберігають їхні копії.
-        [many] {" "}{ $projects } проєктів, які цитують деякі з них, зберігають їхні копії.
-       *[other] {" "}{ $projects } проєкту, які цитують деякі з них, зберігають їхні копії.
-    }
 library-delete-failed = Не вдалося видалити джерела
 library-not-done = Цього не вдалося зробити
 
@@ -502,9 +475,6 @@ library-pane-missing = відсутній
 library-pane-reveal = Показати у файловому менеджері
 library-pane-reveal-failed = Не вдалося відкрити теку
 library-pane-no-files = Файлів немає. Вкладіть PDF або перетягніть його сюди.
-library-pane-detach = Вилучити файл
-library-pane-detach-title = Вилучити «{ $name }»?
-library-pane-detach-message = Файл видаляється зі сховища бібліотеки, якщо ним не користується інше джерело.
 library-pane-detach-failed = Не вдалося вилучити файл
 library-pane-leave-collection = Вилучити з { $name }
 library-pane-duplicate = Дублювати

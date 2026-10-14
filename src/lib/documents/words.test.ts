@@ -54,14 +54,18 @@ describe('the words of the library that were put together', () => {
   });
 
   it('say what deleting references takes with it', () => {
-    expect(t('library-delete-one', { files: 0, projects: 0 })).toBe(
-      'This removes the reference from your library, from every collection.',
+    expect(t('library-delete-one-message', { projects: 0 })).toBe(
+      'This removes the reference from your library and from every collection.',
     );
-    expect(t('library-delete-one', { files: 0, projects: 2 })).toBe(
-      'This removes the reference from your library, from every collection. It is cited in 2 projects, which keep a copy of it.',
+    expect(t('library-delete-one-message', { projects: 2 })).toBe(
+      'This removes the reference from your library and from every collection. It is cited in 2 projects, which keep a copy of it.',
     );
-    expect(t('library-delete-many', { files: 1, projects: 1 })).toBe(
-      'This removes them from your library, from every collection, together with 1 attached file. A project that cites some of them keeps a copy of those.',
+    expect(t('library-delete-many-message', { projects: 1 })).toBe(
+      'This removes them from your library and from every collection. A project that cites some of them keeps a copy of those.',
+    );
+    // The files stay, unless they are asked to go too.
+    expect(t('library-delete-files', { files: 1 })).toBe(
+      'One file belongs to what is deleted. It stays among the files of the library, unless you delete it too. A file that another reference has stays all the same.',
     );
   });
 

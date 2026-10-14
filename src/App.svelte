@@ -23,6 +23,7 @@
   import OwlView from '$lib/home/OwlView.svelte';
   import LibraryView from '$lib/library/LibraryView.svelte';
   import PicturesView from '$lib/pictures/PicturesView.svelte';
+  import FilesView from '$lib/files/FilesView.svelte';
   import ProjectView, { viewing } from '$lib/project/ProjectView.svelte';
   import SearchView from '$lib/search/SearchView.svelte';
   import SettingsDialog from '$lib/settings/SettingsDialog.svelte';
@@ -139,6 +140,7 @@
       projects: () => go({ view: 'projects' }),
       library: () => go({ view: 'library' }),
       pictures: () => go({ view: 'pictures' }),
+      files: () => go({ view: 'files' }),
       settings: () => settingsUi.toggle(),
       'search-everything': () => go({ view: 'search' }),
       palette: () => keysUi.togglePalette(),
@@ -169,6 +171,8 @@
         <LibraryView />
       {:else if route.view === 'pictures'}
         <PicturesView />
+      {:else if route.view === 'files'}
+        <FilesView />
       {:else if route.view === 'project'}
         <!-- The pane of projects stands outside the view of a project, which is made anew for each. -->
         <div class="in-project">

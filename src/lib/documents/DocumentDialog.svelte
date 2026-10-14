@@ -23,7 +23,7 @@
   let { request, onclose }: { request: Bringing; onclose: () => void } = $props();
 
   // svelte-ignore state_referenced_locally
-  const file = request.path.split(/[\\/]/).pop() ?? request.path;
+  const file = request.name ?? request.path.split(/[\\/]/).pop() ?? request.path;
   const ticket = newId();
   /** A PDF or a picture, whose text is read by Tesseract (`ocr/ReadStep.svelte`). */
   // svelte-ignore state_referenced_locally
@@ -42,7 +42,7 @@
 
   async function begin() {
     try {
-      const imported = await documentRead(request.path, ticket);
+      const imported = await documentRead(request.path, ticket, !!request.stored);
       if (left) {
         if (imported.pictures.length) await documentForget(imported.pictures).catch(() => {});
         return;
@@ -171,6 +171,8 @@
   {:else if !read && scanned}
     <ReadStep
       path={request.path}
+      stored={!!request.stored}
+      name={request.name}
       onread={(imported) => {
         read = imported;
         title = titleOf(imported);

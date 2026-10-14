@@ -298,29 +298,6 @@ library-delete-many-title = { $count ->
     [few] Smazat { $count } záznamy?
    *[other] Smazat { $count } záznamů?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Tím se záznam odstraní z vaší knihovny, ze všech sbírek{ $files ->
-        [0] {""}
-        [one] , spolu s { $files } přiloženým souborem
-        [few] , spolu se { $files } přiloženými soubory
-       *[other] , spolu s { $files } přiloženými soubory
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Je citován v jednom projektu, který si ponechá jeho kopii.
-        [few] {" "}Je citován ve { $projects } projektech, které si ponechají jeho kopii.
-       *[other] {" "}Je citován v { $projects } projektech, které si ponechají jeho kopii.
-    }
-library-delete-many = Tím se odstraní z vaší knihovny, ze všech sbírek{ $files ->
-        [0] {""}
-        [one] , spolu s { $files } přiloženým souborem
-        [few] , spolu se { $files } přiloženými soubory
-       *[other] , spolu s { $files } přiloženými soubory
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Projekt, který některé z nich cituje, si jejich kopii ponechá.
-        [few] {" "}{ $projects } projekty, které některé z nich citují, si jejich kopii ponechají.
-       *[other] {" "}{ $projects } projektů, které některé z nich citují, si jejich kopii ponechá.
-    }
 library-delete-failed = Záznamy nelze smazat
 library-not-done = To se nepodařilo
 
@@ -490,9 +467,6 @@ library-pane-missing = chybí
 library-pane-reveal = Zobrazit ve správci souborů
 library-pane-reveal-failed = Složku nelze otevřít
 library-pane-no-files = Žádné soubory. Přiložte PDF, nebo je sem přetáhněte.
-library-pane-detach = Odebrat soubor
-library-pane-detach-title = Odebrat „{ $name }“?
-library-pane-detach-message = Soubor se smaže z úložiště knihovny, pokud ho nepoužívá jiný záznam.
 library-pane-detach-failed = Soubor nelze odebrat
 library-pane-leave-collection = Odebrat ze sbírky { $name }
 library-pane-duplicate = Duplikovat

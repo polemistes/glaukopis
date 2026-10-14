@@ -18,12 +18,14 @@ keys-place-text = In the text of a map
 keys-place-writing = Writing
 keys-place-library = In the library
 keys-place-store = In the store of pictures
+keys-place-files = Among the files of the library
 
 ## What they do
 
 keys-projects = The projects
 keys-library = The library
 keys-pictures = The pictures
+keys-files = The files of the library
 keys-settings = Settings
 keys-search-everything = Search through everything
 keys-palette = What is to be done?
@@ -116,3 +118,4 @@ keys-writing-redo-y = Redo
 keys-library-find = Search the library
 keys-library-new = A new reference
 keys-store-find = Search the pictures
+keys-files-find = Search the files

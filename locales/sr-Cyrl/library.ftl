@@ -294,29 +294,6 @@ library-delete-many-title = { $count ->
     [few] Обрисати { $count } референце?
    *[other] Обрисати { $count } референци?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Ово уклања референцу из ваше библиотеке, из сваке збирке{ $files ->
-        [0] {""}
-        [one] , заједно с { $files } приложеном датотеком
-        [few] , заједно с { $files } приложене датотеке
-       *[other] , заједно с { $files } приложених датотека
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Цитира се у { $projects } пројекту, који чува њену копију.
-        [few] {" "}Цитира се у { $projects } пројекта, који чувају њену копију.
-       *[other] {" "}Цитира се у { $projects } пројеката, који чувају њену копију.
-    }
-library-delete-many = Ово их уклања из ваше библиотеке, из сваке збирке{ $files ->
-        [0] {""}
-        [one] , заједно с { $files } приложеном датотеком
-        [few] , заједно с { $files } приложене датотеке
-       *[other] , заједно с { $files } приложених датотека
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Пројекат који неке од њих цитира чува њихову копију.
-        [few] {" "}{ $projects } пројекта која неке од њих цитирају чувају њихову копију.
-       *[other] {" "}{ $projects } пројеката која неке од њих цитирају чувају њихову копију.
-    }
 library-delete-failed = Референце нису могле да се обришу
 library-not-done = То није могло да се уради
 
@@ -482,9 +459,6 @@ library-pane-missing = недостаје
 library-pane-reveal = Прикажи у управљачу датотека
 library-pane-reveal-failed = Фасцикла није могла да се отвори
 library-pane-no-files = Нема датотека. Приложите PDF, или га спустите овде.
-library-pane-detach = Уклони датотеку
-library-pane-detach-title = Уклонити „{ $name }“?
-library-pane-detach-message = Датотека се брише из складишта библиотеке, осим ако је користи друга референца.
 library-pane-detach-failed = Датотека није могла да се уклони
 library-pane-leave-collection = Уклони из: { $name }
 library-pane-duplicate = Удвостручи

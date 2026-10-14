@@ -36,10 +36,13 @@
   } from '$lib/api/library';
   import { t } from '$lib/i18n';
   import { dropTarget } from '$lib/ui/drag.svelte';
+  import LibrarySwitch from '$lib/files/LibrarySwitch.svelte';
+  import DocumentHost from '$lib/documents/DocumentHost.svelte';
+  import { files as filesState } from '$lib/files/store.svelte';
   import { library, search, sortEntries, type SortKey } from '$lib/state/library.svelte';
   import { router } from '$lib/state/router.svelte';
   import Button from '$lib/ui/Button.svelte';
-  import { confirm } from '$lib/ui/confirm.svelte';
+  import { ask } from '$lib/ui/confirm.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
@@ -132,22 +135,27 @@
     const one = entries.length === 1 ? entries[0] : null;
     const files = entries.reduce((n, e) => n + e.attachments, 0);
     const projects = citing.count(entries.map((e) => e.id));
-    const ok = await confirm({
+    const message = one
+      ? t('library-delete-one-message', { projects })
+      : t('library-delete-many-message', { projects });
+    // The files stay among the files of the library, unless they are asked to go too.
+    const answer = await ask({
       title: one
         ? t('library-delete-one-title', { name: one.title || one.key })
         : t('library-delete-many-title', { count: entries.length }),
-      message: one
-        ? t('library-delete-one', { files, projects })
-        : t('library-delete-many', { files, projects }),
-      confirm: t('common-delete'),
+      message: files ? `${message}\n\n${t('library-delete-files', { files })}` : message,
+      confirm: files ? t('library-delete-keep-files') : t('common-delete'),
+      alternative: files ? t('files-remove-with-files') : undefined,
       danger: true,
     });
-    if (!ok) return;
+    if (answer === 'cancel') return;
     try {
       const ids = entries.map((e) => e.id);
-      await libraryRemove(ids);
+      await libraryRemove(ids, answer === 'alternative');
       library.forget(ids);
       selection = [];
+      // The files that were theirs are unassigned now, or gone.
+      if (files) void filesState.reload();
     } catch (error) {
       notifyError(t('library-delete-failed'), error);
     }
@@ -399,6 +407,7 @@
 
   <section class="middle" aria-label={t('library-references')}>
     <header>
+      <LibrarySwitch current="references" />
       <div class="search">
         <Search size={15} />
         <input
@@ -550,6 +559,9 @@
   </div>
 </div>
 
+<!-- A document among the files of a reference is brought in as elements from here. -->
+<DocumentHost />
+
 {#if findingDuplicates}
   <DuplicatesDialog onclose={() => (findingDuplicates = false)} />
 {/if}
@@ -624,6 +636,7 @@
   }
   .search {
     flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 8px;

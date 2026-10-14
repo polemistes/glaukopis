@@ -271,25 +271,6 @@ library-delete-many-title = { $count ->
     [one] { $count } referentie wissen?
    *[other] { $count } referenties wissen?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Dit verwijdert de referentie uit je bibliotheek, uit elke verzameling{ $files ->
-        [0] {""}
-        [one] , samen met { $files } bijgevoegd bestand
-       *[other] , samen met { $files } bijgevoegde bestanden
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Ze wordt geciteerd in een project, dat er een kopie van houdt.
-       *[other] {" "}Ze wordt geciteerd in { $projects } projecten, die er een kopie van houden.
-    }
-library-delete-many = Dit verwijdert ze uit je bibliotheek, uit elke verzameling{ $files ->
-        [0] {""}
-        [one] , samen met { $files } bijgevoegd bestand
-       *[other] , samen met { $files } bijgevoegde bestanden
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Een project dat er enkele van citeert, houdt daar een kopie van.
-       *[other] {" "}{ $projects } projecten die er enkele van citeren, houden daar een kopie van.
-    }
 library-delete-failed = De referenties konden niet worden gewist
 library-not-done = Dat kon niet worden gedaan
 
@@ -446,9 +427,6 @@ library-pane-missing = ontbreekt
 library-pane-reveal = Tonen in de bestandsbeheerder
 library-pane-reveal-failed = De map kon niet worden geopend
 library-pane-no-files = Geen bestanden. Voeg een PDF bij, of laat er hier een vallen.
-library-pane-detach = Bestand verwijderen
-library-pane-detach-title = ‘{ $name }’ verwijderen?
-library-pane-detach-message = Het bestand wordt uit de opslag van de bibliotheek gewist, tenzij een andere referentie het gebruikt.
 library-pane-detach-failed = Het bestand kon niet worden verwijderd
 library-pane-leave-collection = Uit { $name } verwijderen
 library-pane-duplicate = Dupliceren

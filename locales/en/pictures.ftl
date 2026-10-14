@@ -78,3 +78,10 @@ pictures-this-project = This project
 pictures-untitled = Untitled
 pictures-unused = No project uses the picture.
 pictures-remove = Remove from the store
+
+## A picture made a file of the library, and given to a reference.
+
+pictures-attach = Attach to a reference…
+pictures-attach-title = Attach “{ $name }” to a reference
+pictures-attached = The picture is among the files of { $name } now
+pictures-attach-failed = The picture could not be attached

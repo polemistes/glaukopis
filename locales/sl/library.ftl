@@ -311,33 +311,6 @@ library-delete-many-title = { $count ->
     [few] Izbrisati { $count } vire?
    *[other] Izbrisati { $count } virov?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = To odstrani vir iz vaše knjižnice, iz vsake zbirke{ $files ->
-        [0] {""}
-        [one] , skupaj s { $files } priloženo datoteko
-        [two] , skupaj s { $files } priloženima datotekama
-        [few] , skupaj s { $files } priloženimi datotekami
-       *[other] , skupaj s { $files } priloženimi datotekami
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Naveden je v enem projektu, ki obdrži svojo kopijo.
-        [two] {" "}Naveden je v { $projects } projektih, ki obdržita svojo kopijo.
-        [few] {" "}Naveden je v { $projects } projektih, ki obdržijo svojo kopijo.
-       *[other] {" "}Naveden je v { $projects } projektih, ki obdržijo svojo kopijo.
-    }
-library-delete-many = To jih odstrani iz vaše knjižnice, iz vsake zbirke{ $files ->
-        [0] {""}
-        [one] , skupaj s { $files } priloženo datoteko
-        [two] , skupaj s { $files } priloženima datotekama
-        [few] , skupaj s { $files } priloženimi datotekami
-       *[other] , skupaj s { $files } priloženimi datotekami
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Projekt, ki navaja nekatere od njih, obdrži svojo kopijo tistih.
-        [two] {" "}{ $projects } projekta, ki navajata nekatere od njih, obdržita svojo kopijo tistih.
-        [few] {" "}{ $projects } projekti, ki navajajo nekatere od njih, obdržijo svojo kopijo tistih.
-       *[other] {" "}{ $projects } projektov, ki navajajo nekatere od njih, obdrži svojo kopijo tistih.
-    }
 library-delete-failed = Virov ni bilo mogoče izbrisati
 library-not-done = Tega ni bilo mogoče narediti
 
@@ -517,9 +490,6 @@ library-pane-missing = manjka
 library-pane-reveal = Pokaži v upravitelju datotek
 library-pane-reveal-failed = Mape ni bilo mogoče odpreti
 library-pane-no-files = Ni datotek. Priložite PDF ali ga spustite sem.
-library-pane-detach = Odstrani datoteko
-library-pane-detach-title = Odstraniti »{ $name }«?
-library-pane-detach-message = Datoteka se izbriše iz shrambe knjižnice, razen če jo uporablja drug vir.
 library-pane-detach-failed = Datoteke ni bilo mogoče odstraniti
 library-pane-leave-collection = Odstrani iz { $name }
 library-pane-duplicate = Podvoji

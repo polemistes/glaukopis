@@ -271,25 +271,6 @@ library-delete-many-title = { $count ->
     [one] { $count } Quelle löschen?
    *[other] { $count } Quellen löschen?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Das entfernt die Quelle aus Ihrer Bibliothek und aus jeder Sammlung{ $files ->
-        [0] {""}
-        [one] , zusammen mit { $files } angehängten Datei
-       *[other] , zusammen mit { $files } angehängten Dateien
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Sie wird in einem Projekt zitiert, das eine Kopie von ihr behält.
-       *[other] {" "}Sie wird in { $projects } Projekten zitiert, die eine Kopie von ihr behalten.
-    }
-library-delete-many = Das entfernt sie aus Ihrer Bibliothek und aus jeder Sammlung{ $files ->
-        [0] {""}
-        [one] , zusammen mit { $files } angehängten Datei
-       *[other] , zusammen mit { $files } angehängten Dateien
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Ein Projekt, das einige von ihnen zitiert, behält eine Kopie davon.
-       *[other] {" "}{ $projects } Projekte, die einige von ihnen zitieren, behalten eine Kopie davon.
-    }
 library-delete-failed = Die Quellen konnten nicht gelöscht werden
 library-not-done = Das konnte nicht getan werden
 
@@ -446,9 +427,6 @@ library-pane-missing = fehlt
 library-pane-reveal = Im Dateimanager zeigen
 library-pane-reveal-failed = Der Ordner konnte nicht geöffnet werden
 library-pane-no-files = Keine Dateien. Hängen Sie ein PDF an, oder lassen Sie eines hier fallen.
-library-pane-detach = Datei entfernen
-library-pane-detach-title = „{ $name }“ entfernen?
-library-pane-detach-message = Die Datei wird aus dem Speicher der Bibliothek gelöscht, wenn keine andere Quelle sie verwendet.
 library-pane-detach-failed = Die Datei konnte nicht entfernt werden
 library-pane-leave-collection = Aus { $name } entfernen
 library-pane-duplicate = Duplizieren

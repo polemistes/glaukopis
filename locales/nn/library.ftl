@@ -271,25 +271,6 @@ library-delete-many-title = { $count ->
     [one] Slette { $count } referanse?
    *[other] Slette { $count } referansar?
 }
-# $projects is the number of projects that cite what is deleted, which keep copies of their own.
-library-delete-one = Referansen blir fjerna frå biblioteket ditt og frå alle samlingar{ $files ->
-        [0] {""}
-        [one] , saman med { $files } vedlegg
-       *[other] , saman med { $files } vedlegg
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Den er sitert i eit prosjekt, som har ein kopi av den.
-       *[other] {" "}Den er sitert i { $projects } prosjekt, som har ein kopi av den.
-    }
-library-delete-many = Referansane blir fjerna frå biblioteket ditt og frå alle samlingar{ $files ->
-        [0] {""}
-        [one] , saman med { $files } vedlegg
-       *[other] , saman med { $files } vedlegg
-    }.{ $projects ->
-        [0] {""}
-        [one] {" "}Eit prosjekt som siterer nokre av dei, har ein kopi av desse.
-       *[other] {" "}{ $projects } prosjekt som siterer nokre av dei, har ein kopi av desse.
-    }
 library-delete-failed = Referansane kunne ikkje slettast
 library-not-done = Det lét seg ikkje gjere
 
@@ -446,9 +427,6 @@ library-pane-missing = manglar
 library-pane-reveal = Vis i filhandsamaren
 library-pane-reveal-failed = Mappa kunne ikkje opnast
 library-pane-no-files = Ingen filer. Legg ved ein PDF, eller slepp ein her.
-library-pane-detach = Fjern fila
-library-pane-detach-title = Fjerne «{ $name }»?
-library-pane-detach-message = Fila blir sletta frå lageret til biblioteket, med mindre ein annan referanse bruker den.
 library-pane-detach-failed = Fila kunne ikkje fjernast
 library-pane-leave-collection = Fjern frå { $name }
 library-pane-duplicate = Dupliser
