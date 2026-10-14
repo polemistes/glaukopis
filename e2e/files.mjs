@@ -126,6 +126,7 @@ try {
   const filter = async (label) => {
     await app.click('[data-files-filter]');
     await app.waitFor('[role="menu"]', 3000);
+    await sleep(250); // the menu slides in: a click before it stands is caught by what is under it
     await app.clickText('[role="menuitem"]', label);
     await app.waitGone('[role="menu"]', 3000).catch(() => {});
     await sleep(200);
@@ -290,6 +291,7 @@ try {
   check('the link leads to the reference', (await app.exec('return location.hash')).includes(id));
   await app.rightClick(`.list [data-id="${id}"]`);
   await app.waitFor('[role="menu"]', 3000);
+  await sleep(250); // the menu slides in: a click before it stands is caught by what is under it
   await app.clickText('[role="menuitem"]', 'Delete');
   await app.waitForText('dialog footer button', 'Delete, keep the files', 3000);
   const asked = await app.exec(`return document.querySelector('dialog[open]')?.textContent.replace(/\\s+/g, ' ') ?? ''`);
@@ -352,6 +354,7 @@ try {
   // A folder deleted: what was in it moves up.
   await app.rightClick(await app.findByText('[data-file-folders] [data-folder]', 'Homer'));
   await app.waitFor('[role="menu"]', 3000);
+  await sleep(250); // the menu slides in: a click before it stands is caught by what is under it
   await app.clickText('[role="menuitem"]', 'Delete folder');
   await app.waitForText('dialog', 'move up to where it was', 3000);
   await app.clickText('dialog footer button', 'Delete folder');
@@ -460,6 +463,7 @@ try {
   // driven up to it, and the export itself is asked of the application.
   await app.click('[data-files-more]');
   await app.waitFor('[role="menu"]', 3000);
+  await sleep(250); // the menu slides in: a click before it stands is caught by what is under it
   await app.clickText('[role="menuitem"]', 'Export all files');
   await app.waitFor('dialog [data-export]', 5000);
   const asks = await app.exec(`return document.querySelector('dialog[open]')?.textContent.replace(/\\s+/g, ' ') ?? ''`);
