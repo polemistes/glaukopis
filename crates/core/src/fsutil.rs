@@ -44,6 +44,15 @@ pub fn write_atomic_with_backup(path: &Path, bytes: &[u8]) -> Result<()> {
 
 /// Turns a title into something safe to use as a file name on every platform.
 pub fn safe_file_name(name: &str, fallback: &str) -> String {
+    let mut cut: String = clean_file_name(name).chars().take(120).collect();
+    cut = cut.trim().to_owned();
+    if cut.is_empty() { fallback.to_owned() } else { cut }
+}
+
+/// A name with what no platform takes in a file name made spaces, the
+/// spaces made single, and dots and spaces taken off its ends; as long as
+/// it was, for those that cut it in their own way. It may be empty.
+pub fn clean_file_name(name: &str) -> String {
     let mut out = String::with_capacity(name.len());
     for c in name.chars() {
         match c {
@@ -53,10 +62,7 @@ pub fn safe_file_name(name: &str, fallback: &str) -> String {
         }
     }
     let collapsed = out.split_whitespace().collect::<Vec<_>>().join(" ");
-    let trimmed = collapsed.trim_matches(|c: char| c == '.' || c == ' ');
-    let mut cut: String = trimmed.chars().take(120).collect();
-    cut = cut.trim().to_owned();
-    if cut.is_empty() { fallback.to_owned() } else { cut }
+    collapsed.trim_matches(|c: char| c == '.' || c == ' ').to_owned()
 }
 
 #[cfg(test)]

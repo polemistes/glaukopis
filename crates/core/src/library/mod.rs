@@ -3,6 +3,7 @@
 pub mod attachments;
 pub mod collections;
 pub mod entry;
+pub mod export;
 pub mod files;
 pub mod keys;
 pub mod schema;
@@ -968,6 +969,21 @@ impl Library {
     /// The entries as a BibLaTeX file for use elsewhere: without the
     /// application's own fields. `ids` of `None` exports everything.
     pub fn export(&self, ids: Option<&[String]>, with_files: bool) -> String {
+        self.bib_of(ids, |e| {
+            with_files.then(|| {
+                e.attachments()
+                    .iter()
+                    .filter_map(|f| attachments::absolute(&self.dir, f).ok())
+                    .map(|p| p.display().to_string())
+                    .collect()
+            })
+        })
+    }
+
+    /// The body of `export` and of `export_with_paths` (`export.rs`): the
+    /// entries, with the parents they name, each with the `file` field that
+    /// `files` gives it, or none where it gives nothing.
+    fn bib_of(&self, ids: Option<&[String]>, files: impl Fn(&Entry) -> Option<Vec<String>>) -> String {
         let mut out = String::new();
         let mut wanted: Vec<&Entry> = match ids {
             None => self.entries.iter().collect(),
@@ -989,18 +1005,13 @@ impl Library {
         let (children, parents): (Vec<&Entry>, Vec<&Entry>) =
             wanted.into_iter().partition(|e| e.get("crossref").is_some());
         for e in children.into_iter().chain(parents) {
-            if with_files {
-                let mut copy = e.clone();
-                let absolute: Vec<String> = e
-                    .attachments()
-                    .iter()
-                    .filter_map(|f| attachments::absolute(&self.dir, f).ok())
-                    .map(|p| p.display().to_string())
-                    .collect();
-                copy.set_attachments(&absolute);
-                out.push_str(&copy.to_bib(false, true));
-            } else {
-                out.push_str(&e.to_bib(false, false));
+            match files(e) {
+                Some(paths) => {
+                    let mut copy = e.clone();
+                    copy.set_attachments(&paths);
+                    out.push_str(&copy.to_bib(false, true));
+                }
+                None => out.push_str(&e.to_bib(false, false)),
             }
             out.push('\n');
         }

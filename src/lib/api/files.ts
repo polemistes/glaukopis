@@ -111,3 +111,47 @@ export async function onFilesProgress(
     if (event.payload.ticket === ticket) told(event.payload);
   });
 }
+
+// ---- export ----
+
+/**
+ * What is exported: every file, the folders from the top each a folder on
+ * disk; the files of a folder directly in the folder exported into, the
+ * folders under it as folders on disk; or chosen files, directly in it.
+ */
+export type ExportSelection =
+  { kind: 'all' } | { kind: 'folder'; id: string } | { kind: 'files'; hashes: string[] };
+
+/** What came of an export. */
+export interface Exported {
+  /** How many files were written. */
+  files: number;
+  /** How many there were to write: more than were written where it was stopped, or where some could not be. */
+  total: number;
+  /** How many folders were written, those with nothing in them among them. */
+  folders: number;
+  /** The full path of the `references.bib` written, where one was asked for. */
+  bib: string | null;
+  /** Whether it was stopped before every file was written. What was written stays. */
+  stopped: boolean;
+  /** What could not be written, one sentence each. */
+  problems: string[];
+}
+
+/**
+ * Writes the files of the selection into the folder `into` (a full path,
+ * made where it is not): the folders of the store as folders on disk, every
+ * file named by its first reference, `Nagy 1979 - The Best of the
+ * Achaeans.pdf`, a second file of one work by that and its own name after a
+ * dash, a file with no reference by its own name. Nothing on disk is
+ * overwritten: a name that is taken is numbered, `… (2).pdf`. With
+ * `withBib`, a `references.bib` of the works is put beside them, naming the
+ * files by paths relative to `into`. With a `ticket`, how far it has come
+ * is told through `onFilesProgress`, and `filesStop` stops it between files.
+ */
+export const filesExport = (
+  selection: ExportSelection,
+  into: string,
+  withBib = false,
+  ticket?: string,
+) => call<Exported>('files_export', { selection, into, withBib, ticket });

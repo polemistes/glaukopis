@@ -28,6 +28,12 @@ export interface LanguagesInfo {
 export const languagesInfo = () => call<LanguagesInfo>('languages');
 /** Sets the language the core speaks in, which is that of the interface. */
 export const languageSet = (tag: string) => call<void>('language_set', { tag });
+/**
+ * Shows a file or a folder anywhere on this computer in the file manager,
+ * by its full path: what was exported, say. A file of the library is shown
+ * by `attachmentReveal`, with its stored path.
+ */
+export const revealPath = (path: string) => call<void>('reveal_path', { path });
 
 export type Theme = 'system' | 'light' | 'dark' | 'mellow' | 'own';
 

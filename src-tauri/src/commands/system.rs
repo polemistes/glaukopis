@@ -1,9 +1,10 @@
 use serde::Serialize;
-use tauri::State;
+use tauri::{AppHandle, State};
+use tauri_plugin_opener::OpenerExt;
 
 use glaukopis_core::i18n;
 
-use crate::error::CommandResult;
+use crate::error::{CommandError, CommandResult};
 use crate::state::AppState;
 
 #[derive(Serialize)]
@@ -97,4 +98,14 @@ pub fn languages() -> Languages {
 #[tauri::command]
 pub fn language_set(tag: String) {
     i18n::set_language(&tag);
+}
+
+/// Shows a file or a folder anywhere on this computer in the file manager:
+/// what was exported, say. A file of the library is shown by
+/// `attachment_reveal`, which takes its stored path.
+#[tauri::command(async)]
+pub fn reveal_path(app: AppHandle, path: String) -> CommandResult<()> {
+    app.opener()
+        .reveal_item_in_dir(std::path::Path::new(&path))
+        .map_err(|e| CommandError { kind: "open", message: e.to_string() })
 }

@@ -107,6 +107,16 @@ fn what_is_sent_is_what_the_interface_declares() {
         &std::sync::atomic::AtomicBool::new(false),
     );
     let taken_in = library.enter_taken(&taken, Some(&shelf.id)).unwrap();
+    // The whole store exported, with a references.bib.
+    let exported = library
+        .export_files(
+            &glaukopis_core::library::export::ExportSelection::All,
+            &tmp.path().join("exported"),
+            true,
+            &mut |_, _, _| {},
+            &std::sync::atomic::AtomicBool::new(false),
+        )
+        .unwrap();
     let work = library.require(&work.id).unwrap().clone();
     let groups = glaukopis_core::duplicates::find_groups(library.entries());
     assert!(!groups.is_empty() && again.id != work.id);
@@ -166,6 +176,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("listing", "LibraryListing", "library", &listing(&library));
     put("files", "FilesListing", "files", &crate::commands::files::files_listing(&library));
     put("takenIn", "TakenIn", "files", &taken_in);
+    put("exported", "Exported", "files", &exported);
     put("importPlan", "ImportPlan", "library", &plan);
     put("duplicates", "DuplicateGroup[]", "library", &groups);
     put("project", "ProjectInfo", "projects", &project);
