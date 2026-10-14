@@ -645,3 +645,36 @@ What this settles (addendum to ADR 0018):
   as text, that is said, and reading anew is chosen at first. Its first
   lines are shown before anything is taken.
 
+## 2026-10-15 — the text a PDF has: read right, shown whole, translated
+
+After the reading of an Oxford text of Aristophanes gave gibberish twice,
+from the PDF's own text and from Tesseract:
+
+> The text read from the pdf is still a grabled mess. I refuse to believe Tesseract cannot make a better job of it. The pdf is a modern ebook, made digitally, so not a poor scan. On screen the text is crisp and flawless.
+
+> What worries me the most now, is that we have made an option to very exlicitly not take the text coming with the pdf into account. I have suspected that it did that anyway, and have repeatedly asked if it does, and you have said no. Now it turns out that what it has done, is to read the text coming with the pdf, and not used tesseract to read the actual forms of the letters. Is there something I don't understand about this?
+
+> What I think we should have, is a clean an understandable inferface for this. If there is text in the pdf already, show a preview of it in a scrollable view, so I can look at the whole thing before I decide what to do with it. If it is, for example, Porson glyph (is that a standard thing, or are there a lot of non-standard ways of encoding Greek and other texts in pdfs?), then we should inform of that and give the option to translate them into readable unicode text. And for pages that cannot be read. I think we must solve that problem. All my open source pdf readers can read this pdf without problems, so there is a serious problem with the pdf reading library used, I suppose.
+
+> Making an ocered text based on this pdf as it is displayed as images of pages, no matter what its current included text is, will be one of the options for what we are making now?
+
+What was found on the book: the drawing library draws every page; the
+PDF's own map from glyph to Unicode is wrong, while the font names every
+Greek glyph by what it is; the text library drops glyphs whose names it
+does not know; Tesseract errs on rows of accents, on the lunate sigma, and
+when Latin-script languages are read with Greek; and a page Tesseract
+could not read fell back in silence to the PDF's text.
+
+What this settles (ADR 0044, built from `docs/plans/the-text-a-pdf-has.md`):
+
+- The glyph names reach the application, through the text library taken
+  into the tree and changed in that one respect.
+- Schemes recognise and translate how a font or a text keeps its letters:
+  composed Greek glyph names, Adobe's expert names, Beta Code.
+- Wherever a PDF is read: the whole text to look through, a line that says
+  what was found, and three choices, keep, translate, read anew. For a
+  searchable PDF, translation puts right the PDF's own tables.
+- Reading anew is Tesseract alone: a page that cannot be read is empty and
+  says so; the counts are said and logged; lines of accents are dropped,
+  final sigmas mended, Greek with Latin languages warned of.
+
