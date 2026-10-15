@@ -264,8 +264,55 @@ mod tests {
         assert_eq!(greek("dieresis"), "\u{a8}");
         assert_eq!(greek("dieresisacute"), "\u{0385}");
         // What is not a Greek name is not taken for one.
-        for name in ["a", "one", "comma", "Osmall", "Psmall", "Esmall", "alphax", "etaasperbold", "uni1F00", ""] {
+        for name in [
+            "a",
+            "one",
+            "comma",
+            "Osmall",
+            "Psmall",
+            "Esmall",
+            "alphax",
+            "etaasperbold",
+            "uni1F00",
+            "circumflex",
+            "numbersign",
+            "",
+        ] {
             assert!(!matches!(by_name(name), Some((Scheme::GreekNames, _))), "{name}");
+        }
+    }
+
+    #[test]
+    fn every_name_of_the_fonts_of_the_book() {
+        // The names of PorsonGreekSF and BemboExpert in Wilson's Aristophanes, all but the plain punctuation.
+        let names = "Alpha Alphalenis Alphalenisacute Asmall Beta Bsmall Chi Csmall Delta Dsmall Epsilon Eta Fsmall Gamma Iota \
+            Kappa Lambda Mu Nu Omega Omicron Osmall Phi Pi Psi Psmall Rho Sigma Sigmafinalt Tau Theta Upsilon Xi Xsmall \
+            Zeta acute alpha alphaacuteiota alphaiota alphatilde alphatildeasperiota alphatildeiota alphatildelenisiota \
+            asper asperacute aspergrave beta chi delta eightoldstyle epsilon epsilonacute epsilonasper epsilonasperacute \
+            epsilonaspergrave epsilongrave epsilonlenis epsilonlenisacute epsilonlenisgrave eta etaacute etaacuteiota \
+            etaasper etaasperacute etaaspergrave etaasperiota etagrave etagraveiota etaiota etalenis etalenisacute \
+            etalenisacuteiota etalenisgrave etalenisiota etatilde etatildeasper etatildeasperiota etatildeiota \
+            etatildelenis etatildelenisiota ff ffi fi fiveoldstyle fl fouroldstyle gamma grave iota iotaacute \
+            iotaacutedieresis iotaasper iotaasperacute iotaaspergrave iotadieresis iotagrave iotagravedieresis iotalenis \
+            iotalenisacute iotatilde iotatildeasper iotatildelenis kappa lambda lenis lenisacute lenisgrave mu \
+            nineoldstyle nu omega omegaacute omegaacuteiota omegaasper omegaasperacute omegaaspergrave omegagrave \
+            omegagraveiota omegaiota omegalenis omegalenisacute omegalenisacuteiota omegalenisgrave omegalenisiota \
+            omegatilde omegatildeasper omegatildeasperiota omegatildeiota omegatildelenis omegatildelenisiota omicron \
+            omicronacute omicronasper omicronasperacute omicronaspergrave omicrongrave omicronlenis omicronlenisacute \
+            omicronlenisgrave oneoldstyle onesuperior phi pi psi rho rhoasper sevenoldstyle sigma sigmafinalt sixoldstyle \
+            tau theta threeoldstyle threesuperior tilde tildeasper tildelenis twooldstyle twosuperior upsilon \
+            upsilonacute upsilonacutedieresis upsilonasper upsilonasperacute upsilonaspergrave upsilondieresis \
+            upsilongrave upsilonlenis upsilonlenisacute upsilontilde upsilontildeasper upsilontildelenis xi zerooldstyle \
+            zeta";
+        for name in names.split_whitespace() {
+            match by_name(name) {
+                // Every Greek glyph of the book is one character, its marks composed with its letter.
+                Some((Scheme::GreekNames, text)) => assert_eq!(text.chars().count(), 1, "{name} gave {text}"),
+                Some((Scheme::ExpertNames, text)) => {
+                    assert!((!text.is_empty() && text.is_ascii()) || text.chars().count() == 1, "{name} gave {text}")
+                }
+                other => panic!("{name} gave {other:?}"),
+            }
         }
     }
 

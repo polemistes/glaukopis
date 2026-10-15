@@ -57,7 +57,6 @@ const MARKS: &[(&str, Mark)] = &[
     ("grave", Mark::Grave),
     ("varia", Mark::Grave),
     ("tilde", Mark::Tilde),
-    ("circumflex", Mark::Tilde),
     ("perispomeni", Mark::Tilde),
     ("dieresis", Mark::Dieresis),
     ("diaeresis", Mark::Dieresis),
