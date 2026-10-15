@@ -185,6 +185,8 @@ pub struct MadeSearchable {
     pub with_text: usize,
     /// The pages that could not be read, counted from one, with why.
     pub failed: Vec<(usize, String)>,
+    /// How many fonts were given their letters, where the text was translated.
+    pub remapped: usize,
 }
 
 /// Makes a PDF of the library searchable: the file in the store is
@@ -228,7 +230,24 @@ pub fn ocr_searchable(
         read: made.read,
         with_text: made.with_text,
         failed: made.failed,
+        remapped: made.remapped,
     })
+}
+
+/// The text a PDF has, `count` pages from `from` (counted from nought), as
+/// it is and as translated: for the preview before it is read. With
+/// `stored`, the path is that of a file of the library. At most fifty pages
+/// at a time.
+#[tauri::command(async)]
+pub fn ocr_text(
+    state: State<'_, AppState>,
+    path: String,
+    stored: Option<bool>,
+    from: usize,
+    count: usize,
+) -> CommandResult<Vec<ocr::PageTextView>> {
+    let path = if stored.unwrap_or(false) { state.library().attachment_path(&path)? } else { PathBuf::from(path) };
+    Ok(ocr::text_of_pages(&path, from, count.min(50))?)
 }
 
 /// Reads the text of a picture of the store, to be shown, or made a map of.

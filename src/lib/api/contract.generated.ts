@@ -3,6 +3,7 @@
 // fails where the two differ. Not to be changed by hand: run the tests.
 
 import type { Summary, Reference, LibraryListing, ImportPlan, DuplicateGroup } from './library';
+import type { Looked, PageTextView } from './ocr';
 import type { FilesListing, TakenIn, Exported, Proposal } from './files';
 import type { ProjectInfo, Folder } from './projects';
 import type { Picture } from './pictures';
@@ -144,6 +145,64 @@ export const listing: LibraryListing = {
   "file": "/data/data/library/library.bib",
   "warnings": []
 };
+
+export const looked: Looked = {
+  "file": "porson.pdf",
+  "fonts": [
+    "PorsonGreekSF"
+  ],
+  "locked": false,
+  "pages": 1,
+  "picture": false,
+  "poor": 0,
+  "sample": {
+    "lines": [
+      ">\u0013θην \\πειλα9\u0013, %γ%λα\u0013α ψολοκομπ9αι\u0013,",
+      "\\πεπυδ\\ρι\u0013α μ%θωνα, περιεκ%κκα\u0013α.",
+      "ο<τοι μ\\ τ=ν Δ=μητρα, ε9 μ= %κφ\\γω",
+      "%κ τ=\u0013δε τ=\u0013 γ=\u0013, ο%δ%ποτε βι\\\u0013ομαι."
+    ],
+    "page": "1",
+    "translated": [
+      "ἥσθην ἀπειλαῖς, ἐγέλασα ψολοκομπίαις,",
+      "ἀπεπυδάρισα μόθωνα, περιεκόκκασα.",
+      "οὔτοι μὰ τὴν Δήμητρα, εἰ μὴ ἐκφάγω",
+      "ἐκ τῆσδε τῆς γῆς, οὐδέποτε βιώσομαι."
+    ]
+  },
+  "schemes": [
+    {
+      "fonts": [
+        "PorsonGreekSF"
+      ],
+      "pages": 1,
+      "scheme": "greek-names"
+    }
+  ],
+  "searchable": true,
+  "title": null,
+  "withText": 1
+};
+
+export const pageText: PageTextView[] = [
+  {
+    "hasText": true,
+    "label": "1",
+    "lines": [
+      ">\u0013θην \\πειλα9\u0013, %γ%λα\u0013α ψολοκομπ9αι\u0013,",
+      "\\πεπυδ\\ρι\u0013α μ%θωνα, περιεκ%κκα\u0013α.",
+      "ο<τοι μ\\ τ=ν Δ=μητρα, ε9 μ= %κφ\\γω",
+      "%κ τ=\u0013δε τ=\u0013 γ=\u0013, ο%δ%ποτε βι\\\u0013ομαι."
+    ],
+    "number": 1,
+    "translated": [
+      "ἥσθην ἀπειλαῖς, ἐγέλασα ψολοκομπίαις,",
+      "ἀπεπυδάρισα μόθωνα, περιεκόκκασα.",
+      "οὔτοι μὰ τὴν Δήμητρα, εἰ μὴ ἐκφάγω",
+      "ἐκ τῆσδε τῆς γῆς, οὐδέποτε βιώσομαι."
+    ]
+  }
+];
 
 export const files: FilesListing = {
   "files": [

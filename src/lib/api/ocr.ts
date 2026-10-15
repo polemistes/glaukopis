@@ -36,11 +36,36 @@ export interface Asked extends How {
 /** What becomes of the text a PDF has. */
 export type TextChoice = 'keep' | 'translate' | 'anew';
 
-/** The first lines of the text a page has, as the PDF has them. */
+/** How a font or a text keeps its letters, where it can be translated (ADR 0044). */
+export type Scheme = 'greek-names' | 'expert-names' | 'beta-code';
+
+/** A scheme that applies in a PDF: in which fonts, on how many pages. */
+export interface SchemeFound {
+  scheme: Scheme;
+  fonts: string[];
+  pages: number;
+}
+
+/** The first lines of the text a page has. */
 export interface Sample {
   /** The number the page has in print, or counted from one. */
   page: string;
+  /** As the PDF has them. */
   lines: string[];
+  /** As translated, where the page has a translation. */
+  translated: string[] | null;
+}
+
+/** The text of a page, for the preview: as the PDF has it, and as translated. */
+export interface PageTextView {
+  /** Counted from one. */
+  number: number;
+  /** The number it has in print, or counted from one. */
+  label: string;
+  lines: string[];
+  translated: string[] | null;
+  /** Whether it has text enough to be taken. */
+  hasText: boolean;
 }
 
 /** How far a reading has come. */
@@ -60,8 +85,12 @@ export interface Looked {
   pages: number;
   /** The pages that have text already, which are taken as they are unless all are to be read. */
   withText: number;
-  /** Those of them whose text does not read as text: where most are, the pages are best read anew. */
+  /** Those of them whose text does not read as text, as translated where it can be. */
   poor: number;
+  /** The fonts of the text, those with most glyphs first. */
+  fonts: string[];
+  /** The schemes that apply: how the text keeps its letters, where it can be translated. */
+  schemes: SchemeFound[];
   /** The first lines of the first page that has text, to be seen before they are taken. */
   sample: Sample | null;
   /** The title the file gives itself, where it looks like one. */
@@ -82,6 +111,8 @@ export interface MadeSearchable {
   withText: number;
   /** The pages that could not be read, counted from one, with why. */
   failed: [number, string][];
+  /** How many fonts were given their letters, where the text was translated. */
+  remapped: number;
 }
 
 /** The endings of the names of the pictures whose text is read. */
@@ -97,6 +128,10 @@ export function isReadPath(path: string): boolean {
 
 /** Looks at a file before it is read: with `stored`, one of the library, by its path in the store. */
 export const ocrLook = (path: string, stored = false) => call<Looked>('ocr_look', { path, stored });
+
+/** The text a PDF has, `count` pages from `from` (counted from nought), as it is and as translated. */
+export const ocrText = (path: string, stored: boolean, from: number, count: number) =>
+  call<PageTextView[]>('ocr_text', { path, stored, from, count });
 
 /**
  * Reads a PDF or a picture, to become a map. With a ticket, it can be stopped

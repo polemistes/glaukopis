@@ -134,6 +134,11 @@ fn what_is_sent_is_what_the_interface_declares() {
     let groups = glaukopis_core::duplicates::find_groups(library.entries());
     assert!(!groups.is_empty() && again.id != work.id);
 
+    // A PDF that keeps its Greek by the names of its glyphs, looked at and its text given.
+    let porson = tmp.path().join("porson.pdf");
+    std::fs::write(&porson, glaukopis_core::ocr::fixture::porson_pdf()).unwrap();
+    let looked = glaukopis_core::ocr::look(&porson, &Tools::default()).unwrap();
+    let page_text = glaukopis_core::ocr::text_of_pages(&porson, 0, 5).unwrap();
     let pictures = Pictures::open(data.pictures()).unwrap();
     let picture = pictures.add("dot.png", DOT).unwrap();
     // A project as it is after it was saved: with what it uses and cites.
@@ -187,6 +192,8 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("summary", "Summary", "library", &work.summary());
     put("reference", "Reference", "library", &full(&library, &work));
     put("listing", "LibraryListing", "library", &listing(&library));
+    put("looked", "Looked", "ocr", &looked);
+    put("pageText", "PageTextView[]", "ocr", &page_text);
     put("files", "FilesListing", "files", &crate::commands::files::files_listing(&library));
     put("takenIn", "TakenIn", "files", &taken_in);
     put("exported", "Exported", "files", &exported);
