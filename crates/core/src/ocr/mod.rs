@@ -14,6 +14,7 @@
 
 pub mod drawing;
 pub mod layer;
+pub mod schemes;
 pub mod searchable;
 pub mod tesseract;
 pub mod text;
