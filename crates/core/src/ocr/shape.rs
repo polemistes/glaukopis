@@ -409,6 +409,8 @@ struct Candidate {
     text: Option<String>,
     /// Its form and value, for a page number.
     number: Option<(String, i64)>,
+    /// Whether no other line stands beside it.
+    alone: bool,
     /// Its size: a running head keeps one.
     size: f32,
 }
@@ -488,12 +490,13 @@ fn edges(pages: &mut [PageLines]) {
             });
             for i in at.into_iter().take(2) {
                 let text = &page.lines[i].text;
-                let number = page_number(text).filter(|_| !beside(&page.lines, i));
+                let number = page_number(text);
+                let alone = !beside(&page.lines, i);
                 let head = normalized(text);
                 let head = (number.is_none() && head.chars().any(char::is_alphabetic)).then_some(head);
                 if number.is_some() || head.is_some() {
                     let size = size_of(&page.lines[i]);
-                    candidates.push(Candidate { page: p, line: i, edge, text: head, number, size });
+                    candidates.push(Candidate { page: p, line: i, edge, text: head, number, alone, size });
                 }
             }
         }
@@ -547,7 +550,7 @@ fn edges(pages: &mut [PageLines]) {
         }
     }
     // A number alone that nothing steps to, first or last on its page.
-    for c in candidates.iter().filter(|c| c.number.is_some()) {
+    for c in candidates.iter().filter(|c| c.number.is_some() && c.alone) {
         let left: Vec<usize> = (0..pages[c.page].lines.len()).filter(|&i| !gone.contains(&(c.page, i))).collect();
         if left.first() == Some(&c.line) || left.last() == Some(&c.line) {
             gone.insert((c.page, c.line));
@@ -1567,6 +1570,23 @@ mod tests {
         let text = all_text(&pieces);
         assert!(!text.contains("WIDOW") && !text.contains("NOVEL") && !text.contains("Printed"), "{text}");
         assert_eq!(pieces.iter().map(Vec::len).sum::<usize>(), 8);
+    }
+
+    #[test]
+    fn a_page_number_beside_the_running_head_goes_with_it() {
+        // The number on the head's row, but a line of its own, as some readers give it.
+        let pages: Vec<PageLines> = (0..3)
+            .map(|p| {
+                let mut pen = Pen::new();
+                pen.text(NOVEL[p], 11.0, 11.0, true).text(NOVEL[p + 3], 11.0, 11.0, true);
+                pen.lines.insert(0, at("THE WIDOW AT THE INN", LEFT, 40.0, 9.0));
+                pen.lines.insert(1, at(&format!("{}", p + 40), 510.0, 40.0, 9.0));
+                pen.page()
+            })
+            .collect();
+        let (pieces, _) = shape(pages);
+        let text = all_text(&pieces);
+        assert!(!text.contains("WIDOW") && !text.contains("41"), "{text}");
     }
 
     #[test]
