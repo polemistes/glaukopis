@@ -684,3 +684,27 @@ Built the same day; on the owner's Aristophanes, page 98 of the print reads
 as printed when translated, speakers, breathings, accents, iota below and the
 apparatus.
 
+## 2026-10-15 — the shape of a page, and a rule for the whole program
+
+Asked what it would take to keep a PDF's layout when making elements of it,
+a first answer proposed reading speakers and verse off the page, from the
+owner's Aristophanes. The owner set a rule:
+
+> I have a suspision that you have become somewhat stuck in my single problematic Greek drama pdf. Glaukopis is a general app for any type off text. The fact that I am sometimes woring with Greek texts does not say anything about the general purpose of the program. Please do not make design descisins based on my pecullar needs, but on making the program genrally useful for anyone working with texts. So here, for example, we do not want the ocr engine to specifically look for Greek drama texts, as it seems you are suggesting. Then it must do the same for any type of text. But all pdfs have a layout. It would be nice, if a text has headings, that it is detected, and if there are recurring elements with different styles, they could get their own kinds, but unless the program can deduce that this is a drama, this is a novel, this is a news paper scan and so on, it should not automatically give meaning to the kinds. […] I am not making a tool just for myself, but a tool useful for anyone writing texts. I do want it to meet my needs, but it should not center around those. It should make sure it meets anyone's needs.
+
+> Make the plan for me to give to Opus 5.5.
+
+What this settles (ADR 0045, built from `docs/plans/the-shape-of-a-page.md`):
+
+- The rule, for every feature: design from what texts in general have;
+  find structure, never give it a meaning the program cannot know; name what
+  is found by its look; the owner's texts are a case to test against.
+- The shape of a page read from its geometry, the same for a PDF's own text
+  and Tesseract's: headings become elements; lines kept where the page keeps
+  them, as text with line breaks; numbers in the margin the given numbers of
+  their lines; recurring styles shown with samples and named by the writer,
+  as a kind of the catalogue, a kind of their own, or plain text; running
+  heads and page numbers dropped; two columns ordered.
+- The warning on Greek with Latin languages made general, for any two
+  scripts whose letters look alike.
+
