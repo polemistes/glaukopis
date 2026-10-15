@@ -510,11 +510,23 @@ pub fn read_pdf(
                     let scale = if read.dpi > 0 { 72.0 / read.dpi as f32 } else { 1.0 };
                     let size = text::tsv_page_size(tsv).map_or((0.0, 0.0), |(w, h)| (w * scale, h * scale));
                     let mut groups = text::tsv_paragraphs(tsv);
-                    for line in groups.iter_mut().flatten() {
-                        for v in
-                            [&mut line.left, &mut line.right, &mut line.top, &mut line.bottom, &mut line.style.size]
-                        {
-                            *v *= scale;
+                    for group in &mut groups {
+                        // The lines of one of Tesseract's paragraphs are one size of type,
+                        // whatever their letters reach above and below: their height is the
+                        // group's middle one, so that the shape does not part them by size.
+                        let mut heights: Vec<f32> = group.iter().map(Line::height).collect();
+                        heights.sort_by(f32::total_cmp);
+                        let middle = heights.get(heights.len() / 2).copied().unwrap_or_default();
+                        for line in group.iter_mut() {
+                            if middle > 0.0 {
+                                line.top = line.bottom - middle;
+                                line.style.size = middle;
+                            }
+                            for v in
+                                [&mut line.left, &mut line.right, &mut line.top, &mut line.bottom, &mut line.style.size]
+                            {
+                                *v *= scale;
+                            }
                         }
                     }
                     Ok((groups, size))

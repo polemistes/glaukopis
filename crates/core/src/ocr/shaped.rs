@@ -278,11 +278,13 @@ pub fn sections(label: String, pieces: Vec<Shaped>) -> Vec<Section> {
             Shaped::Heading { level, content } => {
                 out.push(Section { level: 1 + level.clamp(1, 3), heading: content, blocks: Vec::new() })
             }
-            Shaped::Paragraph { content, indent, style } => {
+            // A first line set further in is how the layout begins a paragraph, not
+            // an indent of the paragraph, which in an element moves every line of it:
+            // it is left to the layout. A paragraph standing in as a whole is a style found.
+            Shaped::Paragraph { content, indent: _, style } => {
                 let mut block = Block::paragraph(content);
-                if let Block::Paragraph { name, indent: steps, .. } = &mut block {
+                if let Block::Paragraph { name, .. } = &mut block {
                     *name = kind_name(style);
-                    *steps = u32::from(indent);
                 }
                 out.last_mut().expect("the page's section").blocks.push(block);
             }

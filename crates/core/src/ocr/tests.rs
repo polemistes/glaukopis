@@ -764,9 +764,10 @@ fn the_shape_of_a_file_is_found() {
         .collect::<Vec<_>>()
         .join("\n");
     assert!(!text.contains("A Book of Tests"), "the running head is left out");
-    // The second paragraph begins further in; the italics are marked.
-    let indented = all.iter().filter(|b| matches!(b, Block::Paragraph { indent: 1, .. })).count();
-    assert_eq!(indented, 1);
+    // The second paragraph, which begins further in, is a paragraph of its own, its
+    // first line's indent left to the layout; the italics are marked.
+    assert!(all.iter().any(|b| matches!(b, Block::Paragraph { indent: 0, content, .. }
+        if plain(content).starts_with("A second paragraph begins further in"))));
     assert!(all.iter().any(|b| matches!(b, Block::Paragraph { content, .. }
         if content.iter().any(|i| matches!(i, Inline::Text { text, marks } if text.starts_with("these are set in italics") && marks.contains_key("em"))))));
     // The lines are kept, with the numbers given beside them on the right.

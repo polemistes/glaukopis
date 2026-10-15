@@ -472,6 +472,77 @@ try {
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
 
+  // ---- the shape of the pages: headings, kept lines, a style named ----
+  const shapePdf = join(root, 'e2e', 'fixtures', 'shape.pdf');
+  await dropOnTabs(shapePdf);
+  await app.waitFor('dialog [data-ocr="asking"]', 15000);
+  check(
+    'the shape of the pages is kept at first',
+    await app.exec(`return document.querySelector('dialog [data-choice="shape"]')?.checked === true`),
+  );
+  await app.click('dialog [data-ocr-read]');
+  await app.waitFor('dialog [data-styles-found] [data-style]', 30000);
+  await sleep(300);
+  const styles = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog [data-style]')).map((s) => s.textContent.replace(/\\s+/g, ' ').trim())`,
+  );
+  check(
+    'one style beside the body is found, shown with its sample and how often',
+    styles.length === 1 && /1\. A note at the foot/.test(styles[0]) && /4/.test(styles[0]),
+    JSON.stringify(styles),
+  );
+  await app.screenshot('ocr-6-styles');
+  await app.setTheme('dark');
+  await sleep(200);
+  await app.screenshot('ocr-6-styles-dark');
+  await app.setTheme('light');
+  await app.exec(
+    `const s = document.querySelector('dialog [data-style] select');
+     s.value = '+own';
+     s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
+  await app.waitFor('dialog [data-style-name] input, dialog input[data-style-name]', 5000);
+  await app.exec(
+    `const f = document.querySelector('dialog input[data-style-name]') ?? document.querySelector('dialog [data-style-name] input');
+     f.value = 'Foot notes';
+     f.dispatchEvent(new Event('input', { bubbles: true }));`,
+  );
+  await app.clickText('dialog footer button', 'Bring it in');
+  await app.waitGone('dialog[open]', 15000);
+  await sleep(600);
+  await app.openMap('shape');
+  await inView('shape');
+  await sleep(400);
+  const shaped = await sections();
+  const names = shaped.map((s) => s.name);
+  check(
+    'the headings are elements under the pages',
+    names.includes('The Measure of Things') && names.includes('Lines That Keep Their Place') && names.includes('The Last Part'),
+    JSON.stringify(names),
+  );
+  check(
+    'the running head is left out',
+    !shaped.some((s) => /A Book of Tests/.test(s.text)),
+  );
+  const marks = await app.exec(
+    `return Array.from(document.querySelectorAll('.text-view .linemark')).map((m) => m.dataset.number)`,
+  );
+  check('the lines are kept, with the numbers that stood in the margin', JSON.stringify(marks) === '["4","8"]', JSON.stringify(marks));
+  const footKinds = await app.exec(
+    `return Array.from(document.querySelectorAll('.text-view [data-kind]'))
+       .filter((p) => /^\\d\\. A note at the foot/.test(p.textContent.trim()))
+       .map((p) => p.dataset.kind)`,
+  );
+  check(
+    'the style found has the kind it was named, one of the project\'s own',
+    footKinds.length === 4 && new Set(footKinds).size === 1 && footKinds[0] !== 'text',
+    JSON.stringify(footKinds),
+  );
+  await app.screenshot('ocr-6-shape');
+  await app.click('.maps .up');
+  await inView('Homer');
+  await sleep(300);
+
   // ---- a reading stopped ----
   await dropOnTabs(long);
   await app.waitFor('dialog [data-ocr="asking"]', 15000);
@@ -489,7 +560,8 @@ try {
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
   await sleep(1500);
-  check('cancelled, no tree is made', (await tabs()).length === 2, JSON.stringify(await tabs()));
+  // The trees made before: the scan, the picture, and the file with a shape.
+  check('cancelled, no tree is made', (await tabs()).length === 3, JSON.stringify(await tabs()));
   check('and what was made on the way is gone', leftOver().length === 0, leftOver().join(', '));
 
   // ---- a PDF of the library made searchable ----
