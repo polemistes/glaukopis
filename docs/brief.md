@@ -877,4 +877,7 @@ written and was not changed.
   everything was built again from it.
 - All the files, the page with what is new, `SHA256SUMS` and the language
   packages, are in `packaging/release-0.2.0/`, to be uploaded into
-  `glaukopis/` of the site. No release is made on GitHub yet.
+  `glaukopis/` of the site.
+- A pre-release on GitHub, *Glaukopis 0.2.0, a version to test*, on the tag
+  `v0.2.0`, with the installers, the packages, the PKGBUILD and
+  `SHA256SUMS`, as 0.1.0 had (the language packages are on the site only).
