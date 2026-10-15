@@ -1484,28 +1484,61 @@ reads text in pictures, in four places.
   an element of the text there, under the element in view.
 
 Many PDFs have text already: those made from a written document, and scans
-that a scanner or another program has read. Where a PDF has text, the
-window shows its first lines as the PDF has them, and you choose what
-becomes of it, in the same words wherever a PDF is read:
+that a scanner or another program has read. Where a PDF has text, the window
+grows wide: beside the choices stands **the whole text the PDF has**, page by
+page under the numbers the pages have in print, to be scrolled through before
+anything is decided. A line above the choices says what was found: on how
+many pages there is text, in which fonts, and how the text keeps its letters
+where Glaukopis can tell.
+
+Then one choice, in the same words wherever a PDF is read, into elements or
+to be made searchable:
 
 - **Keep the text the PDF has.** Its pages with text are taken as they are,
   and only the pages without text are read.
-- **Read every page anew, in place of the text the PDF has.** Only what is
-  read is kept. In a searchable PDF the unseen text the pages had is taken
-  away, and what is read is laid in its place; the pages look as they did.
+- **Translate it into readable text.** Offered where the text keeps its
+  letters in a way Glaukopis knows (below). The text is made readable by
+  what the fonts say of their letters; no page is read from a picture for
+  it, and the preview shows the text as it will be. In a searchable PDF,
+  the PDF's own tables are put right instead (**Make readable**), so that
+  every reader copies and searches the text rightly; nothing that is shown
+  changes.
+- **Read every page anew with Tesseract.** Only what Tesseract reads from
+  pictures of the pages is kept, and the text the PDF has is taken from no
+  page. In a searchable PDF its unseen text is taken away, and what is read
+  is laid in its place; the pages look as they did.
 
-Text does not always read as text. An old font of Greek, for instance, may
-keep its letters as Latin letters and signs (*Mh=nin a)/eide*), and a poor
-reading laid under a scan gives words that are not words. Where half or more
-of the pages that have text are like that, the window says so, and reading
-anew is chosen at first; otherwise keeping is. You can choose the other
-either way. A page with only a little text, such as a scan with a line of
-text at its foot, counts as a page without text, and is read.
+What is chosen at first follows what was found: translating where the text
+can be translated, reading anew where it does not read as text and cannot
+be, and keeping otherwise. A page that Tesseract cannot read is never given
+the PDF's text in its place: it says, in a line of its own, that it could
+not be read, and the window says how many pages were read, taken and not
+read.
 
-Where the letters that are seen on a page are themselves stored as the wrong
-letters, they cannot be taken away without changing how the page looks. In
-a searchable PDF the new text then lies over them unseen, and a search finds
-the new text.
+**How a text may keep its letters.** Many scholarly editions set their
+Greek in fonts that keep the letters under other names, so that a PDF
+reader copies Latin signs or nothing where Greek stands. Glaukopis knows
+three such ways, and says which it found and in which fonts:
+
+- *Greek glyph names*, as the Porson fonts of Oxford and Teubner texts name
+  their letters (*etaasper*, *alphatildeiota*): each becomes the letter with
+  its breathing, accent and iota below, and an accent or breathing drawn
+  apart from its letter is put onto it. The sigmas come out as σ and ς by
+  their place in the word, whatever shape the print gives them.
+- *Small capitals and old-style figures* kept by name, as many book fonts
+  keep them: they become their letters and digits.
+- *Beta Code*, Greek written in Latin letters and signs (*mh=nin a)/eide*).
+
+A searchable PDF made readable keeps one limit: its tables give one letter
+for each shape, so a sigma printed in one shape for all places is copied as
+ς everywhere. The text read into elements has every sigma right.
+
+**Greek with other languages.** Where Greek is read together with a
+language of the Latin script, the window says so: Tesseract then often reads
+the lunate sigma, which looks like a Latin *c*, as Latin, and the words with
+it come out Latin. For Greek alone, take the others away. Rows of accents
+over closely set Greek, which Tesseract may read as lines of their own, are
+left out of what it reads.
 
 Before anything is read, you are asked for the languages of the text, the
 likeliest first. Those chosen under *Settings* are given at first; where

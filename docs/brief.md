@@ -678,3 +678,9 @@ What this settles (ADR 0044, built from `docs/plans/the-text-a-pdf-has.md`):
   says so; the counts are said and logged; lines of accents are dropped,
   final sigmas mended, Greek with Latin languages warned of.
 
+> I would like you to do the plan as written here: /home/proteus/koding/glaukopis/docs/plans/the-text-a-pdf-has.md
+
+Built the same day; on the owner's Aristophanes, page 98 of the print reads
+as printed when translated, speakers, breathings, accents, iota below and the
+apparatus.
+
