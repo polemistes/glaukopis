@@ -46,10 +46,7 @@ fn main() {
     // build that finds no English files, as when the folder is being rewritten
     // under it, stops rather than make one.
     if !out.contains("(\"en\", \"core") {
-        panic!(
-            "no Fluent files of the core were found in {}: build again when the folder is whole",
-            root.display()
-        );
+        panic!("no Fluent files of the core were found in {}: build again when the folder is whole", root.display());
     }
 
     let target = Path::new(&std::env::var("OUT_DIR").expect("cargo sets OUT_DIR")).join("locales.rs");

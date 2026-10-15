@@ -1,0 +1,3 @@
+# pdf-text is pdf-extract taken in as it is (see README.md): it is kept as
+# its authors wrote it, so that what was changed here can be told from it.
+disable_all_formatting = true
