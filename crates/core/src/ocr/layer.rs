@@ -12,8 +12,11 @@ use std::path::Path;
 use std::sync::{Arc, Mutex, PoisonError, mpsc};
 use std::time::Duration;
 
-use pdf_text::{Document, MediaBox, Object, OutputDev, OutputError, Transform};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
+use pdf_text::{Document, Glyph, MediaBox, Object, ObjectId, OutputDev, OutputError, Transform};
+
+use super::schemes::{self, Scheme};
 use super::text::Line;
 use crate::tr;
 use crate::written::roman;
@@ -181,8 +184,9 @@ const LARGEST_PAGE: usize = 4 << 20;
 /// What was read of the text of a PDF.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Layer {
-    /// The pages, each with the lines of its text; nothing where the page
-    /// could not be read, or the time was up before it was.
+    /// The pages, each with the lines of its text as the PDF's own map gives
+    /// it; nothing where the page could not be read, or the time was up
+    /// before it was.
     pub pages: Vec<Option<Vec<Line>>>,
     /// The number each page has in print, where the file tells it: `xiv`,
     /// `A-3`. The number of the page, counted from one, where it does not.
@@ -193,19 +197,42 @@ pub struct Layer {
     pub locked: bool,
     /// The pages that have the text that was laid over them here.
     pub laid: Vec<bool>,
+    /// The pages' lines as translated by the schemes (`schemes/`), where
+    /// any applied on the page; nothing where none did (ADR 0044).
+    pub translated: Vec<Option<Vec<Line>>>,
+    /// The schemes that applied on each page, each with the font it applied in.
+    pub schemes: Vec<Vec<(Scheme, String)>>,
+    /// The fonts whose glyphs were translated, each with every code seen of
+    /// it and the text it stands for: the right map of the font, to be
+    /// written into a PDF made readable.
+    pub maps: HashMap<ObjectId, BTreeMap<u32, String>>,
+    /// The fonts of the text, by their names without the prefix of a
+    /// subset, with how many glyphs of each were read.
+    pub fonts: BTreeMap<String, usize>,
 }
 
 impl Layer {
-    /// Whether a page has text enough not to be read by Tesseract.
+    /// Whether a page has text enough not to be read by Tesseract: as the
+    /// PDF has it, or as translated.
     pub fn has_text(&self, index: usize) -> bool {
+        let letters = |lines: Option<&Vec<Line>>| -> usize {
+            lines.map_or(0, |lines| lines.iter().map(|l| l.text.chars().filter(|c| c.is_alphanumeric()).count()).sum())
+        };
         self.laid.get(index).copied().unwrap_or(false)
-            || self.pages.get(index).and_then(Option::as_ref).is_some_and(|lines| {
-                lines.iter().map(|l| l.text.chars().filter(|c| c.is_alphanumeric()).count()).sum::<usize>() >= TEXT_PAGE
-            })
+            || letters(self.pages.get(index).and_then(Option::as_ref))
+                .max(letters(self.translated.get(index).and_then(Option::as_ref)))
+                >= TEXT_PAGE
+    }
+
+    /// The lines of a page as translated, where the schemes applied on it;
+    /// else as the PDF has them.
+    pub fn best_lines(&self, index: usize) -> Option<&Vec<Line>> {
+        self.translated.get(index).and_then(Option::as_ref).or_else(|| self.pages.get(index).and_then(Option::as_ref))
     }
 
     /// What the text of a page is like: none, enough to count, and whether
-    /// it reads as text or as what a font without its letters gives.
+    /// it reads as text or as what a font without its letters gives. The
+    /// text as translated is judged, where there is a translation.
     pub fn verdict(&self, index: usize) -> Verdict {
         if self.laid.get(index).copied().unwrap_or(false) {
             return Verdict::Sound;
@@ -213,36 +240,70 @@ impl Layer {
         if !self.has_text(index) {
             return Verdict::None;
         }
-        let lines = self.pages.get(index).and_then(Option::as_ref).map(Vec::as_slice).unwrap_or_default();
+        let lines = self.best_lines(index).map(Vec::as_slice).unwrap_or_default();
         let text = lines.iter().map(|l| l.text.as_str()).collect::<Vec<_>>().join("\n");
         if sound(&text) { Verdict::Sound } else { Verdict::Poor }
     }
 
     /// The first lines of the first page that has text, to be shown before
-    /// it is taken: the page counted from nought, and the lines.
-    pub fn sample(&self) -> Option<(usize, Vec<String>)> {
+    /// it is taken: the page counted from nought, the lines as the PDF has
+    /// them, and as translated where the page has a translation.
+    pub fn sample(&self) -> Option<(usize, Vec<String>, Option<Vec<String>>)> {
         let index = (0..self.pages.len()).find(|i| self.has_text(*i))?;
-        let lines = self.pages[index].as_ref()?;
-        let shown: Vec<String> = lines
-            .iter()
-            .map(|l| l.text.trim())
-            .filter(|t| t.chars().filter(|c| c.is_alphanumeric()).count() >= 3)
-            .take(SAMPLE_LINES)
-            .map(|t| {
-                let mut cut: String = t.chars().take(SAMPLE_WIDTH).collect();
-                if t.chars().count() > SAMPLE_WIDTH {
-                    cut.push('…');
+        let lines = self.pages[index].as_deref().unwrap_or_default();
+        let shown = sample_of(lines);
+        let translated = self.translated.get(index).and_then(Option::as_ref).map(|t| sample_of(t));
+        (!shown.is_empty() || translated.is_some()).then_some((index, shown, translated))
+    }
+
+    /// The schemes that applied anywhere, each with the fonts it applied in
+    /// and on how many pages, the most used first.
+    pub fn schemes_found(&self) -> Vec<(Scheme, Vec<String>, usize)> {
+        let mut found: Vec<(Scheme, Vec<String>, usize)> = Vec::new();
+        for page in &self.schemes {
+            let mut on_page: Vec<Scheme> = Vec::new();
+            for (scheme, font) in page {
+                let at = match found.iter().position(|(s, _, _)| s == scheme) {
+                    Some(at) => at,
+                    None => {
+                        found.push((*scheme, Vec::new(), 0));
+                        found.len() - 1
+                    }
+                };
+                if !font.is_empty() && !found[at].1.contains(font) {
+                    found[at].1.push(font.clone());
                 }
-                cut
-            })
-            .collect();
-        (!shown.is_empty()).then_some((index, shown))
+                if !on_page.contains(scheme) {
+                    on_page.push(*scheme);
+                    found[at].2 += 1;
+                }
+            }
+        }
+        found.sort_by_key(|a| std::cmp::Reverse(a.2));
+        found
     }
 
     /// The label of a page, counted from nought.
     pub fn label(&self, index: usize) -> String {
         self.labels.get(index).cloned().unwrap_or_else(|| (index + 1).to_string())
     }
+}
+
+/// The first lines of a page that have words, cut to be shown.
+fn sample_of(lines: &[Line]) -> Vec<String> {
+    lines
+        .iter()
+        .map(|l| l.text.trim())
+        .filter(|t| t.chars().filter(|c| c.is_alphanumeric()).count() >= 3)
+        .take(SAMPLE_LINES)
+        .map(|t| {
+            let mut cut: String = t.chars().take(SAMPLE_WIDTH).collect();
+            if t.chars().count() > SAMPLE_WIDTH {
+                cut.push('…');
+            }
+            cut
+        })
+        .collect()
 }
 
 /// Gathers the characters of a page into lines, with where each stands.
@@ -252,9 +313,31 @@ impl Layer {
 /// line begins wherever the writing moves off the line by half its height;
 /// a space is put wherever it moves on by more than a tenth of it, at the
 /// beginning of a run of characters. As `import/pdf.rs` does it.
+///
+/// Each character is put twice, in step: as the PDF's own map gives it, and
+/// as translated by the name of its glyph where a scheme knows the name and
+/// the map is wrong (ADR 0044).
 #[derive(Default)]
 struct Gatherer {
+    /// The lines, with where they stand; their text is made of `parts` at the end.
     lines: Vec<Line>,
+    /// The parts of each line, in step with `lines`: where the writing
+    /// jumps back to the left on the same line, a part begins, and the parts
+    /// are put in their order on the page when the line is done. A speaker's
+    /// name drawn after the verse it stands before comes first so.
+    parts: Vec<Vec<Part>>,
+    /// Whether a glyph's name was translated on each line, in step with `lines`.
+    named: Vec<bool>,
+    /// The font of the last glyph of each line, in step with `lines`.
+    fonts: Vec<String>,
+    /// The schemes that applied on the page, with the fonts.
+    schemes: Vec<(Scheme, String)>,
+    /// Every code seen of each font, with what it stands for.
+    maps: HashMap<ObjectId, BTreeMap<u32, String>>,
+    /// The fonts of which a glyph was translated.
+    translated_fonts: HashSet<ObjectId>,
+    /// How many glyphs of each font were read.
+    font_counts: BTreeMap<String, usize>,
     /// The top of the page, from which lines are measured down.
     top: f64,
     /// Where the last character ended.
@@ -265,14 +348,94 @@ struct Gatherer {
     begins: bool,
 }
 
+/// A part of a line: where it begins, and its text as the PDF has it and as translated.
+#[derive(Default)]
+struct Part {
+    left: f64,
+    text: String,
+    translated: String,
+}
+
 type Told = std::result::Result<(), OutputError>;
 
+/// Whether a character's text is only marks, accents and breathings, which
+/// stand over a letter and are not a letter of their own.
+fn only_marks(text: &str) -> bool {
+    !text.is_empty()
+        && text.chars().all(|c| {
+            matches!(c,
+                '\u{0300}'..='\u{036f}'
+                | '\u{0384}' | '\u{0385}'
+                | '\u{1fbd}' | '\u{1fbf}'..='\u{1fc1}'
+                | '\u{1fcd}'..='\u{1fcf}'
+                | '\u{1fdd}'..='\u{1fdf}'
+                | '\u{1fed}'..='\u{1fef}'
+                | '\u{1ffd}' | '\u{1ffe}'
+                | '\u{00b4}' | '`' | '\u{00a8}' | '\u{02dc}')
+        })
+}
+
 impl Gatherer {
-    fn line_for(&mut self, x: f64, baseline: f64, size: f64) -> &mut Line {
+    fn line_for(&mut self, x: f64, baseline: f64, size: f64) {
         let top = (self.top - baseline - size) as f32;
         let bottom = (self.top - baseline) as f32;
         self.lines.push(Line { text: String::new(), left: x as f32, right: x as f32, top, bottom });
-        self.lines.last_mut().expect("a line was pushed")
+        self.parts.push(vec![Part { left: x, ..Part::default() }]);
+        self.named.push(false);
+        self.fonts.push(String::new());
+    }
+
+    /// Puts a character where it stands: as the PDF's map gives it, and as
+    /// translated. A mark stands over the letter before it: it moves nothing
+    /// on, and no space is put before it.
+    fn put(&mut self, trm: &Transform, width: f64, font_size: f64, char: &str, shown: &str, mark: bool) {
+        let stretch = trm.m11.hypot(trm.m12);
+        let size = (font_size * trm.m21.hypot(trm.m22)).abs();
+        let direction = if stretch > 0.0 { (trm.m11 / stretch, trm.m12 / stretch) } else { (1.0, 0.0) };
+        let (x, y) = (trm.m31, trm.m32);
+        let mut new_line = self.lines.is_empty();
+        let mut space = false;
+        let mut back = false;
+        if (self.begins || mark) && !new_line {
+            let (dx, dy) = (x - self.end.0, y - self.end.1);
+            let along = dx * direction.0 + dy * direction.1;
+            let across = (dy * direction.0 - dx * direction.1).abs();
+            // Superscripts are smaller than the line they belong to.
+            let height = size.max(self.size);
+            if across > height * 0.5 {
+                new_line = true;
+            } else if mark {
+                // Over the letter before it, wherever it is drawn.
+            } else if along < -height {
+                back = true;
+            } else if along > size * 0.1 {
+                space = true;
+            }
+        }
+        let advance = width * font_size.abs() * stretch;
+        let (right, bottom) = ((x + direction.0 * advance) as f32, (self.top - y) as f32);
+        if new_line {
+            self.line_for(x, y, size);
+        } else if back && let Some(parts) = self.parts.last_mut() {
+            parts.push(Part { left: x, ..Part::default() });
+        }
+        let part = self.parts.last_mut().and_then(|p| p.last_mut()).expect("there is a part");
+        if space && !part.text.is_empty() && !part.text.ends_with(' ') {
+            part.text.push(' ');
+            part.translated.push(' ');
+        }
+        part.text.push_str(char);
+        part.translated.push_str(shown);
+        let line = self.lines.last_mut().expect("there is a line");
+        line.left = line.left.min(x as f32);
+        line.right = line.right.max(right);
+        line.top = line.top.min(bottom - size as f32);
+        line.bottom = line.bottom.max(bottom);
+        if !mark {
+            self.begins = false;
+            self.end = (x + direction.0 * advance, y + direction.1 * advance);
+            self.size = size;
+        }
     }
 }
 
@@ -287,38 +450,53 @@ impl OutputDev for Gatherer {
     }
 
     fn output_character(&mut self, trm: &Transform, width: f64, _spacing: f64, font_size: f64, char: &str) -> Told {
-        let stretch = trm.m11.hypot(trm.m12);
-        let size = (font_size * trm.m21.hypot(trm.m22)).abs();
-        let direction = if stretch > 0.0 { (trm.m11 / stretch, trm.m12 / stretch) } else { (1.0, 0.0) };
-        let (x, y) = (trm.m31, trm.m32);
-        let mut new_line = self.lines.is_empty();
-        let mut space = false;
-        if self.begins && !new_line {
-            let (dx, dy) = (x - self.end.0, y - self.end.1);
-            let along = dx * direction.0 + dy * direction.1;
-            let across = (dy * direction.0 - dx * direction.1).abs();
-            // Superscripts are smaller than the line they belong to.
-            let height = size.max(self.size);
-            if across > height * 0.5 {
-                new_line = true;
-            } else if along > size * 0.1 || along < -height {
-                space = true;
+        self.put(trm, width, font_size, char, char, false);
+        Ok(())
+    }
+
+    fn output_glyph(
+        &mut self,
+        trm: &Transform,
+        width: f64,
+        _spacing: f64,
+        font_size: f64,
+        char: &str,
+        glyph: &Glyph,
+    ) -> Told {
+        let mut shown = char.to_owned();
+        let mut named = false;
+        if let Some(name) = glyph.name
+            && schemes::map_is_wrong(char, name)
+            && let Some((scheme, text)) = schemes::by_name(name)
+        {
+            shown = text;
+            named = true;
+            let font = glyph.font_name.to_owned();
+            if !self.schemes.contains(&(scheme, font.clone())) {
+                self.schemes.push((scheme, font));
+            }
+            if let Some(id) = glyph.font {
+                self.translated_fonts.insert(id);
             }
         }
-        let advance = width * font_size.abs() * stretch;
-        let (right, bottom) = ((x + direction.0 * advance) as f32, (self.top - y) as f32);
-        let line = if new_line { self.line_for(x, y, size) } else { self.lines.last_mut().expect("there is a line") };
-        if space && !line.text.ends_with(' ') {
-            line.text.push(' ');
+        if let Some(id) = glyph.font
+            && !shown.is_empty()
+        {
+            self.maps.entry(id).or_default().entry(glyph.code).or_insert_with(|| shown.clone());
         }
-        line.text.push_str(char);
-        line.left = line.left.min(x as f32);
-        line.right = line.right.max(right);
-        line.top = line.top.min(bottom - size as f32);
-        line.bottom = line.bottom.max(bottom);
-        self.begins = false;
-        self.end = (x + direction.0 * advance, y + direction.1 * advance);
-        self.size = size;
+        // A mark is known by what it is translated to, or by what a Greek
+        // font's map gives for it: a Latin font's accents are letters' business.
+        let mark = only_marks(&shown) && (named || glyph.name.is_some_and(schemes::is_mark_name));
+        self.put(trm, width, font_size, char, &shown, mark);
+        if named && let Some(n) = self.named.last_mut() {
+            *n = true;
+        }
+        if let Some(f) = self.fonts.last_mut() {
+            glyph.font_name.clone_into(f);
+        }
+        if !glyph.font_name.is_empty() && !char.trim().is_empty() {
+            *self.font_counts.entry(glyph.font_name.to_owned()).or_default() += 1;
+        }
         Ok(())
     }
 
@@ -336,9 +514,20 @@ impl OutputDev for Gatherer {
     }
 }
 
-/// The lines of a page, as far as they can be read. The library panics on
-/// fonts and encodings it does not know; what it had read by then is kept.
-fn page_lines(doc: &Document, number: u32) -> Option<Vec<Line>> {
+/// What was read of one page.
+#[derive(Default)]
+struct PageRead {
+    lines: Vec<Line>,
+    translated: Option<Vec<Line>>,
+    schemes: Vec<(Scheme, String)>,
+    maps: HashMap<ObjectId, BTreeMap<u32, String>>,
+    fonts: BTreeMap<String, usize>,
+}
+
+/// The lines of a page, as far as they can be read, as the PDF has them and
+/// as translated. The library panics on fonts and encodings it does not
+/// know; what it had read by then is kept.
+fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
     let stored: usize = doc
         .get_pages()
         .get(&number)
@@ -357,11 +546,35 @@ fn page_lines(doc: &Document, number: u32) -> Option<Vec<Line>> {
         Ok(Err(e)) => tracing::debug!(%e, number, "a page of the PDF could not be read to its end"),
         Err(_) => tracing::debug!(number, "a page of the PDF could not be read to its end"),
     }
-    for line in &mut gatherer.lines {
-        line.text = line.text.trim().to_owned();
+    let Gatherer { lines, parts, named, fonts, mut schemes, maps, translated_fonts, font_counts, .. } = gatherer;
+    let mut out_lines = Vec::new();
+    let mut out_translated = Vec::new();
+    let mut any = !schemes.is_empty();
+    for (((line, mut parts), named), font) in lines.into_iter().zip(parts).zip(named).zip(fonts) {
+        parts.sort_by(|a, b| a.left.total_cmp(&b.left));
+        let join = |pick: fn(&Part) -> &str| -> String {
+            parts.iter().map(|p| pick(p).trim()).filter(|t| !t.is_empty()).collect::<Vec<_>>().join(" ")
+        };
+        let text = join(|p| &p.text);
+        let mut shown = join(|p| &p.translated);
+        if named {
+            shown = schemes::mend_greek(&shown);
+        } else if let Some(greek) = schemes::beta_code(&shown) {
+            shown = greek;
+            any = true;
+            if !schemes.contains(&(Scheme::BetaCode, font.clone())) {
+                schemes.push((Scheme::BetaCode, font));
+            }
+        }
+        if text.is_empty() && shown.is_empty() {
+            continue;
+        }
+        out_lines.push(Line { text, ..line.clone() });
+        out_translated.push(Line { text: shown, ..line });
     }
-    gatherer.lines.retain(|l| !l.text.is_empty());
-    Some(gatherer.lines)
+    out_lines.retain(|l| !l.text.is_empty());
+    let maps = maps.into_iter().filter(|(id, _)| translated_fonts.contains(id)).collect();
+    Some(PageRead { lines: out_lines, translated: any.then_some(out_translated), schemes, maps, fonts: font_counts })
 }
 
 // ---------------------------------------------------------------------------
@@ -485,9 +698,29 @@ fn read_into(bytes: &[u8], layer: &Mutex<Layer>) {
         l.laid = laid;
         l.locked = locked;
     });
+    keep(layer, |l| {
+        l.translated = vec![None; count];
+        l.schemes = vec![Vec::new(); count];
+    });
     for number in 1..=count {
-        let lines = page_lines(&doc, number as u32);
-        keep(layer, |l| l.pages[number - 1] = lines);
+        let read = page_lines(&doc, number as u32);
+        keep(layer, |l| match read {
+            Some(page) => {
+                l.pages[number - 1] = Some(page.lines);
+                l.translated[number - 1] = page.translated;
+                l.schemes[number - 1] = page.schemes;
+                for (font, count) in page.fonts {
+                    *l.fonts.entry(font).or_default() += count;
+                }
+                for (font, codes) in page.maps {
+                    let all = l.maps.entry(font).or_default();
+                    for (code, text) in codes {
+                        all.entry(code).or_insert(text);
+                    }
+                }
+            }
+            None => l.pages[number - 1] = None,
+        });
     }
 }
 

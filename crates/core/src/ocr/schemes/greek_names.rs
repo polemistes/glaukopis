@@ -130,6 +130,30 @@ pub(super) fn marks_of_spacing(c: char) -> Option<&'static [char]> {
     SPACING.iter().find(|(_, sign, marks)| *sign == c && !marks.is_empty()).map(|(_, _, marks)| *marks)
 }
 
+/// Whether a name is that of marks alone, breathings and accents with no
+/// letter: a glyph that stands over the letter before it.
+pub(super) fn is_marks_name(name: &str) -> bool {
+    parse(name).is_some_and(|p| p.letter.is_none() && !p.marks.is_empty())
+}
+
+/// The combining marks of a spacing sign that stands after the letter it
+/// belongs to: the Greek spacing signs of the table, and the accents of the
+/// Latin fonts (´ ` ¨ ˜) that a Greek font's map may give for its own.
+pub(super) fn marks_after(c: char) -> Option<Vec<char>> {
+    let c = if c == '\u{1fbf}' { '\u{1fbd}' } else { c };
+    match c {
+        '\u{b4}' => return Some(vec!['\u{0301}']),
+        '`' => return Some(vec!['\u{0300}']),
+        '\u{2dc}' => return Some(vec!['\u{0342}']),
+        _ => {}
+    }
+    SPACING
+        .iter()
+        .find(|(_, sign, _)| *sign == c)
+        .filter(|(marks, ..)| !marks.iter().any(|m| matches!(m, Mark::Macron | Mark::Breve)))
+        .map(|(marks, ..)| marks.iter().map(|m| m.combining()).collect())
+}
+
 /// A name taken apart: its letter, capital or not, and its marks.
 struct Parsed {
     letter: Option<char>,

@@ -198,7 +198,7 @@ fn a_pdf_that_has_text_is_taken_as_it_is() {
     assert_eq!(sample.page, "1");
     assert!(sample.lines[0].starts_with("The wrath of Achilles"), "{sample:?}");
 
-    // Text as an old font of Greek keeps it is text, but poor: shown, to be read anew.
+    // Beta Code, as an old font of Greek keeps it: poor as it is, and translated into Greek.
     let greek = kit.typeset(
         "greek.pdf",
         r#"#set page(width: 150mm, height: 100mm, margin: 14mm)
@@ -206,8 +206,12 @@ fn a_pdf_that_has_text_is_taken_as_it_is() {
 "#,
     );
     let looked = look(&greek, &kit.tools).unwrap();
-    assert_eq!((looked.with_text, looked.poor), (1, 1));
-    assert!(looked.sample.unwrap().lines[0].starts_with("Mh=nin"));
+    assert_eq!((looked.with_text, looked.poor), (1, 0), "judged as translated");
+    assert_eq!(looked.schemes.iter().map(|s| s.scheme).collect::<Vec<_>>(), vec![schemes::Scheme::BetaCode]);
+    let sample = looked.sample.unwrap();
+    assert!(sample.lines[0].starts_with("Mh=nin"));
+    let first = sample.translated.unwrap()[0].clone();
+    assert!(first.starts_with("μῆνιν ἄειδε θεὰ"), "{first}");
 
     // No Tesseract is needed for it.
     let tools = Tools { tesseract: None, ..kit.tools.clone() };
@@ -665,4 +669,54 @@ fn a_font_is_given_its_letters() {
     let doc = searchable::open(&before).unwrap();
     let none = searchable::FontMap { font: (9999, 0), entries: fixture::right_map() };
     assert_eq!(searchable::remap(before.clone(), doc, &[none]).unwrap(), (before, 0));
+}
+
+/// A PDF that keeps its Greek by the names of its glyphs, as the Oxford
+/// text of Aristophanes does: its text is translated, said to be so, read
+/// as asked, and a searchable copy of it is given its letters.
+#[test]
+fn greek_kept_by_glyph_names_is_translated() {
+    let tmp = tempfile::tempdir().unwrap();
+    let pdf = tmp.path().join("porson.pdf");
+    std::fs::write(&pdf, fixture::porson_pdf()).unwrap();
+    let tools = Tools::default();
+
+    let layer = layer::read_file(&pdf).unwrap();
+    let translated: Vec<String> =
+        text::by_place(layer.translated[0].clone().unwrap()).into_iter().flatten().map(|l| l.text).collect();
+    assert_eq!(translated, fixture::LINES.to_vec());
+    assert_eq!(layer.schemes[0], vec![(schemes::Scheme::GreekNames, "PorsonGreekSF".to_owned())]);
+    assert!(!layer::sound(
+        &layer.pages[0].as_ref().unwrap().iter().map(|l| l.text.as_str()).collect::<Vec<_>>().join(" ")
+    ));
+    assert_eq!(layer.verdict(0), layer::Verdict::Sound, "judged as translated");
+
+    let looked = look(&pdf, &tools).unwrap();
+    assert_eq!((looked.with_text, looked.poor), (1, 0));
+    assert_eq!(looked.fonts, vec!["PorsonGreekSF".to_owned()]);
+    assert_eq!(looked.schemes.len(), 1);
+    assert_eq!((looked.schemes[0].scheme, looked.schemes[0].pages), (schemes::Scheme::GreekNames, 1));
+    let sample = looked.sample.unwrap();
+    assert_eq!(sample.translated.unwrap()[0], fixture::LINES[0]);
+    assert_ne!(sample.lines[0], fixture::LINES[0]);
+
+    let pages = text_of_pages(&pdf, 0, 10).unwrap();
+    assert_eq!(pages.len(), 1);
+    assert_eq!(pages[0].translated.as_deref(), Some(&fixture::LINES.map(String::from)[..]));
+
+    // Read: kept, as the PDF has it; translated, in Greek; Tesseract is not needed for either.
+    let keep = read_pdf(&pdf, &tools, &tmp.path().join("w"), &Asked::default(), None, &mut nothing, &never()).unwrap();
+    assert!(!has(&keep.pages[0].paragraphs.join(" "), "ἐγέλασα"));
+    let asked = Asked { text: TextChoice::Translate, ..Asked::default() };
+    let read = read_pdf(&pdf, &tools, &tmp.path().join("w"), &asked, None, &mut nothing, &never()).unwrap();
+    let text = read.pages[0].paragraphs.join(" ");
+    assert!(has(&text, "ἥσθην ἀπειλαῖς, ἐγέλασα ψολοκομπίαις"), "{text}");
+    assert!(has(&text, "οὐδέποτε βιώσομαι."), "{text}");
+    assert_eq!((read.read, read.taken, read.failed), (0, 1, 0));
+
+    // Made searchable by translation: the font is given its letters; nothing is read.
+    let made = make_searchable(&pdf, &tools, &tmp.path().join("w"), &asked, &mut nothing, &never()).unwrap();
+    assert_eq!((made.remapped, made.read), (1, 0));
+    let text = pdf_text::extract_text_from_mem(made.pdf.as_ref().unwrap()).unwrap();
+    assert!(has(&text, fixture::LINES[3]), "{text}");
 }

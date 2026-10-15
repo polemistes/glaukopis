@@ -44,26 +44,62 @@ pub fn by_name(name: &str) -> Option<(Scheme, String)> {
 }
 
 /// Composes a standalone breathing or accent with the capital that follows
-/// it, and makes a σ at the end of a word ς: over a line already translated.
+/// it, or with the small vowel before it (as a font draws a mark as a glyph
+/// of its own over the letter it follows, the spaces between taken away),
+/// and makes a σ at the end of a word ς: over a line already translated.
 pub fn mend_greek(line: &str) -> String {
     let chars: Vec<char> = line.chars().collect();
-    let mut out = String::with_capacity(line.len());
+    let mut out: Vec<char> = Vec::with_capacity(chars.len());
     let mut i = 0;
     while i < chars.len() {
         let c = chars[i];
         if let (Some(marks), Some(&next)) = (greek_names::marks_of_spacing(c), chars.get(i + 1))
             && is_capital_for_marks(next)
         {
-            let composed: String =
-                std::iter::once(next).chain(marks.iter().copied()).collect::<String>().nfc().collect();
-            out.push_str(&composed);
+            out.extend(with_marks(next, marks));
             i += 2;
             continue;
+        }
+        if let Some(marks) = greek_names::marks_after(c) {
+            // The letter before it, over at most two spaces.
+            let spaces = out.iter().rev().take_while(|&&p| p == ' ').count();
+            if spaces <= 2
+                && let Some(&before) = out.get(out.len().wrapping_sub(spaces + 1))
+                && takes_marks(before, &marks)
+            {
+                out.truncate(out.len() - spaces - 1);
+                out.extend(with_marks(before, &marks));
+                i += 1;
+                continue;
+            }
         }
         out.push(c);
         i += 1;
     }
-    mend_sigmas(&out)
+    mend_sigmas(&out.into_iter().collect::<String>())
+}
+
+/// A letter with marks added to those it has, in the order Unicode composes
+/// them: breathing, diaeresis, accent, then the iota below.
+fn with_marks(letter: char, marks: &[char]) -> Vec<char> {
+    let mut parts: Vec<char> = letter.to_string().nfd().collect();
+    let base = parts.remove(0);
+    parts.extend(marks.iter().copied());
+    let rank = |m: &char| match m {
+        '\u{0313}' | '\u{0314}' => 0,
+        '\u{0308}' => 1,
+        '\u{0345}' => 3,
+        _ => 2,
+    };
+    parts.sort_by_key(rank);
+    parts.dedup();
+    std::iter::once(base).chain(parts).collect::<String>().nfc().collect()
+}
+
+/// Whether a small Greek letter takes marks drawn after it: a vowel, or ρ for the rough breathing alone.
+fn takes_marks(letter: char, marks: &[char]) -> bool {
+    let base = letter.to_string().nfd().next().unwrap_or(letter);
+    matches!(base, 'α' | 'ε' | 'η' | 'ι' | 'ο' | 'υ' | 'ω') || (base == 'ρ' && marks == ['\u{0314}'])
 }
 
 /// A capital that takes its breathing and accent before it in print: a vowel or Ρ.
@@ -87,7 +123,19 @@ pub fn map_is_wrong(mapped: &str, name: &str) -> bool {
         return true;
     }
     let name = name.split('.').next().unwrap_or(name);
-    greek_names::says_greek(name) && mapped.chars().any(|c| !is_greek(c) && !is_combining(c))
+    // A name that says a Greek letter or sign is the truth of the glyph: a
+    // map that gives anything else is wrong, a Greek letter as much as a
+    // Latin sign (the Oxford Aristophanes maps ἐ to ν and ή to ξ).
+    if greek_names::says_greek(name) {
+        let mapped: String = mapped.nfc().collect();
+        return greek_names::by_name(name).is_some_and(|text| text != mapped);
+    }
+    false
+}
+
+/// Whether a glyph's name is that of marks alone, which stand over the letter before them.
+pub fn is_mark_name(name: &str) -> bool {
+    greek_names::is_marks_name(name.split('.').next().unwrap_or(name))
 }
 
 fn is_private_use(c: char) -> bool {
@@ -109,24 +157,25 @@ fn is_greek_letter(c: char) -> bool {
     is_greek(c) && c.is_alphabetic() && !matches!(c, '\u{0345}' | '\u{037a}')
 }
 
-/// What a sigma before this character is left as it was given: a sign that
-/// may end a word or carry it on, the apostrophe or closing quote (elision
-/// or quotation) and the hyphen (a word broken at the end of a line).
+/// What a sigma before this character is left as it was given: the hyphen
+/// (a word broken at the end of a line).
 fn leaves_sigma(c: char) -> bool {
-    matches!(c, '\'' | '’' | '-' | '‐' | '\u{ad}')
+    matches!(c, '-' | '‐' | '\u{ad}')
 }
 
-/// Elision marks proper, before which a sigma stands as within a word (μή σ᾽).
+/// Elision marks, before which a sigma stands as within a word (μή σ᾽,
+/// ὅσ᾽): the Greek ones, and the apostrophe and right quotation mark, which
+/// editions set for elision far more often than a Greek word ending in ς
+/// stands before a closing quote.
 fn is_elision(c: char) -> bool {
-    matches!(c, '\u{1fbd}' | '\u{1fbf}' | '\u{02bc}')
+    matches!(c, '\u{1fbd}' | '\u{1fbf}' | '\u{02bc}' | '\'' | '’')
 }
 
 /// The sigmas as words have them: a σ at the end of a word becomes ς, and
 /// a ς within a word σ. A word ends at anything that is not a Greek letter
-/// or a combining mark. Before an elision mark (᾽ ʼ) a sigma is σ, as the
-/// elided word is written (σ᾽ for σε); before an apostrophe or a closing
-/// quote (' ’), which may mark elision or end a quotation, and before a
-/// hyphen, it is left as it was given.
+/// or a combining mark. Before an elision mark (᾽ ʼ ' ’) a sigma is σ, as
+/// the elided word is written (σ᾽ for σε), unless the ’ closes a quotation a
+/// ‘ opened before it; before a hyphen it is left as it was given.
 pub fn mend_sigmas(text: &str) -> String {
     let chars: Vec<char> = text.chars().collect();
     let mut out = String::with_capacity(text.len());
@@ -136,7 +185,15 @@ pub fn mend_sigmas(text: &str) -> String {
             continue;
         }
         let next = chars[i + 1..].iter().copied().find(|&n| !is_combining(n));
+        // A right quotation mark closes a quotation where a left one stands open before it.
+        let quoted = |n: char| {
+            n == '’' && {
+                let before = &chars[..i];
+                before.iter().filter(|&&b| b == '‘').count() > before.iter().filter(|&&b| b == '’').count()
+            }
+        };
         let mended = match next {
+            Some(n) if quoted(n) => 'ς',
             Some(n) if is_greek_letter(n) || is_elision(n) => 'σ',
             Some(n) if leaves_sigma(n) => c,
             _ => 'ς',
@@ -149,6 +206,26 @@ pub fn mend_sigmas(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// As the Oxford Aristophanes keeps its Greek: the map gives other Greek
+    /// letters for accented ones, and draws some marks as glyphs of their own
+    /// after the letter they stand over.
+    #[test]
+    fn a_map_that_lies_in_greek_and_marks_drawn_after_their_letter() {
+        assert!(map_is_wrong("ν", "epsilonlenis"));
+        assert!(map_is_wrong("ξ", "etaacute"));
+        assert!(!map_is_wrong("ἐ", "epsilonlenis"));
+        assert!(!map_is_wrong("α", "alpha"));
+        assert!(!map_is_wrong("`", "grave"), "an accent alone may be a Latin font's");
+        assert!(is_mark_name("lenisgrave") && is_mark_name("grave") && !is_mark_name("alphagrave"));
+        assert_eq!(mend_greek("μα ` τὴν"), "μὰ τὴν", "the space before the mark goes");
+        assert_eq!(mend_greek("κα῍ν"), "κἂν");
+        assert_eq!(mend_greek("α᾽πειλαῖς"), "ἀπειλαῖς");
+        assert_eq!(mend_greek("ά῾"), "ἅ", "a breathing goes before the accent the letter has");
+        assert_eq!(mend_greek("δ᾽ ἐκείνου"), "δ᾽ ἐκείνου", "after a consonant it is elision");
+        assert_eq!(mend_greek("μή ς’ ἐκφάγω"), "μή σ’ ἐκφάγω");
+        assert_eq!(mend_sigmas("‘λόγος’ ὅσ’"), "‘λόγος’ ὅσ’");
+    }
 
     fn greek(name: &str) -> String {
         match by_name(name) {

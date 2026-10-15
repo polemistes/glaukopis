@@ -113,9 +113,15 @@ pub struct Looked {
     /// The pages that have text already, which are taken as they are
     /// unless all are asked to be read.
     pub with_text: usize,
-    /// Those of them whose text does not read as text (`layer::sound`):
-    /// where most are, the pages are best read anew.
+    /// Those of them whose text does not read as text (`layer::sound`), as
+    /// translated where it can be: where most are, the pages are best read anew.
     pub poor: usize,
+    /// The fonts of the text, by their names without the prefix of a subset,
+    /// those with most glyphs first.
+    pub fonts: Vec<String>,
+    /// The schemes that apply: how the text keeps its letters, where it can
+    /// be translated (ADR 0044).
+    pub schemes: Vec<SchemeFound>,
     /// The first lines of the first page that has text, as the PDF has them,
     /// to be seen before they are taken.
     pub sample: Option<Sample>,
@@ -134,7 +140,35 @@ pub struct Looked {
 pub struct Sample {
     /// The number it has in print, or counted from one.
     pub page: String,
+    /// As the PDF has them.
     pub lines: Vec<String>,
+    /// As translated, where the page has a translation.
+    pub translated: Option<Vec<String>>,
+}
+
+/// A scheme that applies in a PDF: in which fonts, on how many pages.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SchemeFound {
+    pub scheme: schemes::Scheme,
+    pub fonts: Vec<String>,
+    pub pages: usize,
+}
+
+/// The text of a page, for the preview: as the PDF has it and as translated.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PageTextView {
+    /// Counted from one.
+    pub number: usize,
+    /// The number it has in print, or counted from one.
+    pub label: String,
+    /// The lines as the PDF has them, in the order they stand.
+    pub lines: Vec<String>,
+    /// As translated, where the page has a translation.
+    pub translated: Option<Vec<String>>,
+    /// Whether it has text enough to be taken.
+    pub has_text: bool,
 }
 
 /// A page with what was read of it.
@@ -174,6 +208,8 @@ pub struct Searchable {
     pub with_text: usize,
     /// The pages that could not be read, counted from one, with why.
     pub failed: Vec<(usize, String)>,
+    /// How many fonts were given their letters (`Translate`).
+    pub remapped: usize,
 }
 
 /// The endings of the names of the pictures whose text is read.
@@ -368,10 +404,28 @@ pub fn look(path: &Path, tools: &Tools) -> Result<Looked> {
     };
     let with_text = (0..pages).filter(|i| layer.has_text(*i)).count();
     let poor = (0..pages).filter(|i| layer.verdict(*i) == layer::Verdict::Poor).count();
-    let sample = layer.sample().map(|(index, lines)| Sample { page: layer.label(index), lines });
+    let sample =
+        layer.sample().map(|(index, lines, translated)| Sample { page: layer.label(index), lines, translated });
+    let mut fonts: Vec<(&String, &usize)> = layer.fonts.iter().collect();
+    fonts.sort_by(|a, b| b.1.cmp(a.1));
+    let fonts = fonts.into_iter().map(|(f, _)| f.clone()).collect();
+    let schemes =
+        layer.schemes_found().into_iter().map(|(scheme, fonts, pages)| SchemeFound { scheme, fonts, pages }).collect();
     let title = crate::import::pdf::identify(path).ok().and_then(|facts| facts.title);
     let searchable = !layer.locked && !layer.pages.is_empty();
-    Ok(Looked { file, picture: false, pages, with_text, poor, sample, title, searchable, locked: layer.locked })
+    Ok(Looked {
+        file,
+        picture: false,
+        pages,
+        with_text,
+        poor,
+        fonts,
+        schemes,
+        sample,
+        title,
+        searchable,
+        locked: layer.locked,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -465,11 +519,15 @@ pub fn read_pdf(
         }
     }
 
+    // Tesseract reads the lunate sigma as ς within words too: with Greek among
+    // the languages, each sigma is made what its place in the word says.
+    let greek = asked.languages.iter().any(|l| matches!(l.as_str(), "grc" | "ell" | "script/Greek"));
     let mut taken = 0;
     let mut paragraphs: Vec<Vec<String>> = (0..count)
         .map(|index| {
             if let Some(groups) = read.remove(&index) {
-                return text::page_paragraphs(groups, is_word);
+                let paragraphs = text::page_paragraphs(groups, is_word);
+                return if greek { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs };
             }
             if let Some((_, why)) = failed.iter().find(|(page, _)| *page == index + 1) {
                 return vec![tr!("ocr-page-failed-line", message = why.as_str())];
@@ -505,8 +563,32 @@ pub fn read_pdf(
 /// The lines of a page that are taken from the PDF, not read by Tesseract:
 /// as the PDF has them, or as translated where that is asked and there is a
 /// translation.
-fn taken_lines(layer: &Layer, index: usize, _text: TextChoice) -> Vec<Line> {
-    layer.pages.get(index).cloned().flatten().unwrap_or_default()
+fn taken_lines(layer: &Layer, index: usize, text: TextChoice) -> Vec<Line> {
+    let lines = match text {
+        TextChoice::Translate => layer.best_lines(index),
+        _ => layer.pages.get(index).and_then(Option::as_ref),
+    };
+    lines.cloned().unwrap_or_default()
+}
+
+/// The text a PDF has, `count` pages from `from` (counted from nought), as
+/// it is and as translated, for the preview: each page's lines in the order
+/// they stand. The file's text is read once and kept while it is looked at.
+pub fn text_of_pages(path: &Path, from: usize, count: usize) -> Result<Vec<PageTextView>> {
+    let bytes = read_pdf_file(path)?;
+    let layer = layer_of(path, &bytes);
+    let order = |lines: &Vec<Line>| -> Vec<String> {
+        text::by_place(lines.clone()).into_iter().flatten().map(|l| l.text).collect()
+    };
+    Ok((from..layer.pages.len().min(from.saturating_add(count)))
+        .map(|index| PageTextView {
+            number: index + 1,
+            label: layer.label(index),
+            lines: layer.pages[index].as_ref().map(order).unwrap_or_default(),
+            translated: layer.translated.get(index).and_then(Option::as_ref).map(order),
+            has_text: layer.has_text(index),
+        })
+        .collect())
 }
 
 /// Reads a picture as one page: the file of a picture, or a picture of the
@@ -576,9 +658,30 @@ pub fn make_searchable(
     let count = doc.get_pages().len();
     let layer = layer_of(path, &bytes);
     let with_text = (0..count).filter(|i| layer.has_text(*i)).count();
+    // Translated: the fonts whose glyphs were translated are given their
+    // letters first; the pages without text are then read, as when kept.
+    let mut remapped = 0;
+    let (bytes, doc) = if asked.text == TextChoice::Translate && !layer.maps.is_empty() {
+        let maps: Vec<searchable::FontMap> = layer
+            .maps
+            .iter()
+            .map(|(font, codes)| searchable::FontMap {
+                font: *font,
+                entries: codes.iter().map(|(code, text)| (*code, text.clone())).collect(),
+            })
+            .collect();
+        let (out, given) = searchable::remap(bytes.as_ref().clone(), doc, &maps)?;
+        remapped = given;
+        tracing::info!(fonts = given, "the fonts of a PDF were given their letters");
+        let doc = searchable::open(&out)?;
+        (Arc::new(out), doc)
+    } else {
+        (bytes, doc)
+    };
     let wanted: Vec<usize> = (0..count).filter(|i| asked.text == TextChoice::Anew || !layer.has_text(*i)).collect();
     if wanted.is_empty() {
-        return Ok(Searchable { pdf: None, read: 0, with_text, failed: Vec::new() });
+        let pdf = (remapped > 0).then(|| bytes.as_ref().clone());
+        return Ok(Searchable { pdf, read: 0, with_text, failed: Vec::new(), remapped });
     }
     let reader = ready(tools, asked)?;
     let pages = Pages::open(path, bytes.clone(), tools.pdftoppm.as_ref())?;
@@ -616,7 +719,8 @@ pub fn make_searchable(
             return Err(Error::invalid(tr!("ocr-searchable-unreadable", message = tr!("ocr-not-whole"))));
         }
     }
-    Ok(Searchable { pdf: Some(pdf), read: layers.len(), with_text, failed })
+    tracing::info!(pages = count, read = layers.len(), failed = failed.len(), text = ?asked.text, "a PDF was made searchable");
+    Ok(Searchable { pdf: Some(pdf), read: layers.len(), with_text, failed, remapped })
 }
 
 // ---------------------------------------------------------------------------
