@@ -167,4 +167,16 @@ ocr-searchable-readable-done = { $count ->
     [one] The PDF's text is readable now: one font was given its letters
    *[other] The PDF's text is readable now: { $count } fonts were given their letters
 }
-ocr-languages-greek-with-latin = Greek is read together with { $languages }: the lunate sigma, which looks like a Latin c, is then often read as Latin, and the words with it come out Latin. For Greek alone, take the others away.
+
+## The shape of the pages, and scripts whose letters look alike (ADR 0045).
+
+ocr-shape = Keep the shape of the pages
+ocr-shape-hint = Headings, lines kept as lines, numbers in the margin, and the running heads left out. Off, the pages become plain paragraphs.
+# A script among the languages chosen, as it stands in the warning below: "the Greek script is read together with the Latin".
+ocr-script = { $script ->
+    [Greek] Greek
+    [Cyrillic] Cyrillic
+   *[Latin] Latin
+}
+# $alike: the letters that look alike, in pairs, the first script's first: "ϲ c, ο o, ν v".
+ocr-languages-scripts-alike = The { $a } script is read together with the { $b }: letters that look alike in the two ({ $alike }) are often read as the other, and whole words come out wrong. For one script alone, take the others away.

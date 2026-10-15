@@ -164,4 +164,16 @@ ocr-searchable-readable-done = { $count ->
     [one] Teksten i PDF-en er lesbar nå: én skrift fikk bokstavene sine
    *[other] Teksten i PDF-en er lesbar nå: { $count } skrifter fikk bokstavene sine
 }
-ocr-languages-greek-with-latin = Gresk leses sammen med { $languages }: den runde sigmaen, som ligner en latinsk c, leses da ofte som latin, og ordene med den blir latinske. For bare gresk, ta de andre bort.
+
+## Formen på sidene, og alfabeter med bokstaver som ligner hverandre (ADR 0045).
+
+ocr-shape = Behold formen på sidene
+ocr-shape-hint = Overskrifter, linjer som holdes som linjer, numre i margen, og sidehodene tatt bort. Av blir sidene vanlige avsnitt.
+# Et alfabet blant de valgte språkene, slik det står i advarselen under: «det greske alfabetet leses sammen med det latinske».
+ocr-script = { $script ->
+    [Greek] greske
+    [Cyrillic] kyrilliske
+   *[Latin] latinske
+}
+# $alike: bokstavene som ligner hverandre, parvis, det første alfabetets først: «ϲ c, ο o, ν v».
+ocr-languages-scripts-alike = Det { $a } alfabetet leses sammen med det { $b }: bokstaver som ligner hverandre i de to ({ $alike }), leses ofte som hverandre, og hele ord blir feil. For bare ett alfabet, ta de andre bort.
