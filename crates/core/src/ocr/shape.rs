@@ -582,6 +582,8 @@ struct Segment {
     part: Part,
     left: f32,
     right: f32,
+    /// The right end of the type area: as far as three lines of any look reach.
+    measure: f32,
 }
 
 /// The lines of a page in the order they are read (`columns`). Where lines
@@ -592,7 +594,7 @@ struct Segment {
 /// the top, each with its own columns. A page without two columns keeps
 /// its order.
 fn columns(lines: Vec<Line>, file: &File) -> Vec<Segment> {
-    let whole = |lines: Vec<Line>| vec![Segment { lines, part: Part::Whole, left: 0.0, right: 0.0 }];
+    let whole = |lines: Vec<Line>| vec![Segment { lines, part: Part::Whole, left: 0.0, right: 0.0, measure: 0.0 }];
     let worded: Vec<&Line> = lines.iter().filter(|l| has_letters(&l.text)).collect();
     if worded.len() < 4 {
         return whole(lines);
@@ -650,7 +652,7 @@ fn columns(lines: Vec<Line>, file: &File) -> Vec<Segment> {
         }
         match segments.last_mut() {
             Some(last) if last.part == part && part == Part::Whole => last.lines.extend(lines),
-            _ => segments.push(Segment { lines, part, left: 0.0, right: 0.0 }),
+            _ => segments.push(Segment { lines, part, left: 0.0, right: 0.0, measure: 0.0 }),
         }
     };
     for [all, lefts, rights] in by_band {
@@ -664,9 +666,19 @@ fn columns(lines: Vec<Line>, file: &File) -> Vec<Segment> {
 
 /// The text's left and right edges in a run of lines: the 10th and 90th
 /// part of the lines' left and right ends, of the body's lines where it
-/// has any, and leaving out ends where a number stands.
-fn text_edges<'a>(lines: impl Iterator<Item = &'a Line> + Clone, file: &File) -> (f32, f32) {
+/// has any, and leaving out ends where a number stands. And the right end
+/// of the type area, the third farthest of any line's that has no number
+/// at its end: where a page of verse has notes across the whole width
+/// below it, the verse's own right edge is not the width of the page's text.
+fn text_edges<'a>(lines: impl Iterator<Item = &'a Line> + Clone, file: &File) -> (f32, f32, f32) {
     let worded = lines.filter(|l| has_text(&l.text) && !number_alone(&l.text));
+    let mut ends: Vec<f32> = worded
+        .clone()
+        .filter(|l| !l.text.split_whitespace().next_back().is_some_and(digits))
+        .map(|l| l.right)
+        .collect();
+    ends.sort_by(|a, b| b.total_cmp(a));
+    let measure = ends.get(2).or(ends.last()).copied().unwrap_or(0.0);
     let body: Vec<&Line> = worded.clone().filter(|l| file.key(l) == file.body).collect();
     let lines: Vec<&Line> = if body.is_empty() { worded.collect() } else { body };
     let first_word = |l: &&Line| l.text.split_whitespace().next().is_some_and(digits);
@@ -675,7 +687,7 @@ fn text_edges<'a>(lines: impl Iterator<Item = &'a Line> + Clone, file: &File) ->
     let rights = |all: bool| lines.iter().filter(|l| all || !last_word(l)).map(|l| l.right).collect::<Vec<_>>();
     let left = percentile(lefts(false), 0.1).or_else(|| percentile(lefts(true), 0.1)).unwrap_or(0.0);
     let right = percentile(rights(false), 0.9).or_else(|| percentile(rights(true), 0.9)).unwrap_or(0.0);
-    (left, right)
+    (left, right, measure.max(right))
 }
 
 // ---------------------------------------------------------------------------
@@ -982,12 +994,12 @@ fn headings(lines: &[Numbered], segment: &Segment, file: &File) -> Vec<Range<usi
 // ---------------------------------------------------------------------------
 
 /// Whether lines are set line by line, not run on as prose (`ragged`): their
-/// right ends differ by more than `RAGGED` of the text's width, or fall
-/// short of the text's right edge by that much on the mean (lines of verse
+/// right ends differ by more than `RAGGED` of the width of the type area,
+/// or fall short of its right end by that much on the mean (lines of verse
 /// of one length do); and more than half of them, the last aside, end
 /// short by choice: no sentence ends there, no word is broken there, and
-/// the next line's first word would have stood after it within the text's
-/// width. Prose set ragged ends its lines where the next word would not
+/// the next line's first word would have stood after it within the type
+/// area. Prose set ragged ends its lines where the next word would not
 /// fit; dialogue ends them where a sentence ends.
 fn ragged(lines: &[&Line], segment: &Segment, file: &File) -> bool {
     if lines.len() < 3 {
@@ -996,8 +1008,8 @@ fn ragged(lines: &[&Line], segment: &Segment, file: &File) -> bool {
     let rights: Vec<f32> = lines.iter().map(|l| l.right).collect();
     let most = rights.iter().copied().fold(f32::NEG_INFINITY, f32::max);
     let least = lines.iter().map(|l| l.left).fold(f32::INFINITY, f32::min);
-    let measure = segment.right.max(most);
-    let width = if segment.right > segment.left { segment.right - segment.left } else { most - least };
+    let measure = segment.measure.max(segment.right).max(most);
+    let width = if measure > segment.left { measure - segment.left } else { most - least };
     let short = rights.iter().map(|r| measure - r).sum::<f32>() / rights.len() as f32;
     if deviation(&rights) <= RAGGED * width && short <= RAGGED * width {
         return false;
@@ -1144,8 +1156,8 @@ fn paragraphs(lines: Vec<Line>, segment: &Segment, file: &File) -> Vec<Draft> {
 }
 
 /// Shapes a run of a page's lines read one after the other.
-fn shape_segment(mut segment: Segment, segments: &HashMap<Part, (f32, f32)>, file: &File) -> Vec<Draft> {
-    (segment.left, segment.right) = segments.get(&segment.part).copied().unwrap_or_default();
+fn shape_segment(mut segment: Segment, segments: &HashMap<Part, (f32, f32, f32)>, file: &File) -> Vec<Draft> {
+    (segment.left, segment.right, segment.measure) = segments.get(&segment.part).copied().unwrap_or_default();
     let lines = margin_numbers(&segment, file);
     let heads = headings(&lines, &segment, file);
     let blocks = kept(&lines, &heads, &segment, file);
@@ -1188,7 +1200,7 @@ fn shape_segment(mut segment: Segment, segments: &HashMap<Part, (f32, f32)>, fil
 fn shape_page(lines: Vec<Line>, file: &File) -> Vec<Draft> {
     let lines: Vec<Line> = lines.into_iter().filter(|l| has_text(&l.text)).collect();
     let segments = columns(lines, file);
-    let mut edges: HashMap<Part, (f32, f32)> = HashMap::new();
+    let mut edges: HashMap<Part, (f32, f32, f32)> = HashMap::new();
     for part in [Part::Whole, Part::Left, Part::Right] {
         let of = segments.iter().filter(|s| s.part == part).flat_map(|s| &s.lines);
         if of.clone().next().is_some() {
@@ -1860,6 +1872,35 @@ mod tests {
         assert_eq!((styles[1].count, styles[1].pages), (4, 2));
         assert_eq!(styles[1].sample, VERSE[..4].join("\n"));
         assert!(matches!(pieces[0][1], Piece::KeptLines { style: 1, .. }));
+    }
+
+    #[test]
+    fn verse_of_one_length_is_kept_against_the_width_of_the_notes_below() {
+        // Lines of one length, no numbers, and below them notes across the whole width.
+        let verse = [
+            "The rain came down upon the inn,",
+            "and all the road was turned to mud;",
+            "the horses stumbled in the yard",
+            "and blew, and would not be consoled,",
+            "until the boy who kept them came",
+            "and spoke to each of them by name,",
+            "as if they knew the words he said,",
+            "and they were quiet, one by one.",
+        ];
+        let pages: Vec<PageLines> = (0..2)
+            .map(|_| {
+                let mut pen = Pen::new();
+                pen.lines(&verse, LEFT, 11.0).lines(&verse, LEFT, 11.0).space(20.0);
+                pen.text(NOVEL[5], 9.0, 0.0, true);
+                pen.page()
+            })
+            .collect();
+        let (pieces, styles) = shape(pages);
+        assert_eq!(styles[0].style.size, 11.0);
+        for page in &pieces {
+            assert!(matches!(&page[0], Piece::KeptLines { lines, .. } if lines.len() == 16), "{page:#?}");
+            assert!(matches!(&page[1], Piece::Paragraph { .. }));
+        }
     }
 
     #[test]
