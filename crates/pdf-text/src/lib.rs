@@ -23,7 +23,7 @@ use std::collections::hash_map::Entry;
 use std::rc::Rc;
 use std::marker::PhantomData;
 use std::result::Result;
-use log::{warn, error, debug};
+use log::{error, debug};
 mod core_fonts;
 mod glyphnames;
 mod zapfglyphnames;
@@ -307,6 +307,14 @@ struct PdfSimpleFont<'a> {
     unicode_map: Option<HashMap<u32, String>>,
     widths: HashMap<CharCode, f64>, // should probably just use i32 here
     missing_width: f64,
+    // Glaukopis: the name of each code's glyph, as the encoding's differences,
+    // its base encoding or the embedded font give it; the codes for which
+    // neither the PDF's map nor the standard names give a character; the
+    // font's object and its name without the prefix of a subset.
+    names: HashMap<CharCode, String>,
+    blank: std::collections::HashSet<CharCode>,
+    id: Option<ObjectId>,
+    base: String,
 }
 
 #[derive(Clone)]
@@ -319,7 +327,7 @@ struct PdfType3Font<'a> {
 }
 
 
-fn make_font<'a>(doc: &'a Document, font: &'a Dictionary) -> Rc<dyn PdfFont + 'a> {
+fn make_font<'a>(doc: &'a Document, font: &'a Dictionary, id: Option<ObjectId>) -> Rc<dyn PdfFont + 'a> {
     let subtype = get_name_string(doc, font, b"Subtype");
     dlog!("MakeFont({})", subtype);
     if subtype == "Type0" {
@@ -327,7 +335,20 @@ fn make_font<'a>(doc: &'a Document, font: &'a Dictionary) -> Rc<dyn PdfFont + 'a
     } else if subtype == "Type3" {
         Rc::new(PdfType3Font::new(doc, font))
     } else {
-        Rc::new(PdfSimpleFont::new(doc, font))
+        let mut simple = PdfSimpleFont::new(doc, font);
+        simple.id = id;
+        Rc::new(simple)
+    }
+}
+
+/// Glaukopis: the names of the glyphs of a standard encoding, by code.
+fn encoding_names(name: &[u8]) -> Option<&'static [Option<&'static str>; 256]> {
+    match name {
+        b"MacRomanEncoding" => Some(&encodings::MAC_ROMAN_ENCODING),
+        b"MacExpertEncoding" => Some(&encodings::MAC_EXPERT_ENCODING),
+        b"WinAnsiEncoding" => Some(&encodings::WIN_ANSI_ENCODING),
+        b"StandardEncoding" => Some(&encodings::STANDARD_ENCODING),
+        _ => None,
     }
 }
 
@@ -380,6 +401,7 @@ impl<'a> PdfSimpleFont<'a> {
         let descriptor: Option<&Dictionary> = get(doc, font, b"FontDescriptor");
         let mut type1_encoding = None;
         let mut unicode_map = None;
+        let mut builtin_names: HashMap<CharCode, String> = HashMap::new();
         if let Some(descriptor) = descriptor {
             dlog!("descriptor {:?}", descriptor);
             if subtype == "Type1" {
@@ -415,6 +437,13 @@ impl<'a> PdfSimpleFont<'a> {
                         //File::create(format!("/tmp/{}", base_name)).unwrap().write_all(&s);
                         
                         let encoding = table.encoding.get_code_to_sid_table(&table.charset);
+                        for (code, sid) in encoding.iter() {
+                            if let Some(name) = cff_parser::string_by_id(&table, *sid) {
+                                if name != ".notdef" {
+                                    builtin_names.insert(*code as CharCode, name.to_string());
+                                }
+                            }
+                        }
 
                         let mapping: HashMap<u32, String> = encoding.into_iter().filter_map(|(cid, sid)| {
                             let name = cff_parser::string_by_id(&table, sid).unwrap();
@@ -425,7 +454,7 @@ impl<'a> PdfSimpleFont<'a> {
                                 zapfglyphnames::zapfdigbats_names_to_unicode(name)
                             });
                             if unicode.is_none() {
-                                warn!("Couldn't find unicode for {}", name);
+                                debug!("Couldn't find unicode for {}", name);
                                 return None;
                             }
                             let str = String::from_utf16(&[unicode.unwrap()]).unwrap();
@@ -460,16 +489,37 @@ impl<'a> PdfSimpleFont<'a> {
         };
 
 
+        if let Some(ref type1_encoding) = type1_encoding {
+            for (code, name) in type1_encoding.iter() {
+                builtin_names.insert(*code as CharCode, pdf_to_utf8(name));
+            }
+        }
+        let mut names = builtin_names;
+        let mut blank = std::collections::HashSet::new();
         let mut encoding_table = None;
         match encoding {
             Some(&Object::Name(ref encoding_name)) => {
                 dlog!("encoding {:?}", pdf_to_utf8(encoding_name));
                 encoding_table = Some(encoding_to_unicode_table(encoding_name));
+                if let Some(table) = encoding_names(encoding_name) {
+                    for (code, name) in table.iter().enumerate() {
+                        if let Some(name) = name {
+                            names.insert(code as CharCode, name.to_string());
+                        }
+                    }
+                }
             }
             Some(&Object::Dictionary(ref encoding)) => {
                 //dlog!("Encoding {:?}", encoding);
                 let mut table = if let Some(base_encoding) = maybe_get_name(doc, encoding, b"BaseEncoding") {
                     dlog!("BaseEncoding {:?}", base_encoding);
+                    if let Some(table) = encoding_names(base_encoding) {
+                        for (code, name) in table.iter().enumerate() {
+                            if let Some(name) = name {
+                                names.insert(code as CharCode, name.to_string());
+                            }
+                        }
+                    }
                     encoding_to_unicode_table(base_encoding)
                 } else {
                     Vec::from(PDFDocEncoding)
@@ -484,9 +534,16 @@ impl<'a> PdfSimpleFont<'a> {
                             &Object::Integer(i) => { code = i; },
                             &Object::Name(ref n) => {
                                 let name = pdf_to_utf8(&n);
+                                names.insert(code as CharCode, name.clone());
                                 // XXX: names of Type1 fonts can map to arbitrary strings instead of real
                                 // unicode names, so we should probably handle this differently
                                 let unicode = glyphnames::name_to_unicode(&name);
+                                // Glaukopis: a name the standard does not know, and no character
+                                // in the PDF's map: the code gives nothing, not what the base
+                                // encoding had at the place.
+                                if unicode.is_none() && !unicode_map.as_ref().map_or(false, |m| m.contains_key(&(code as u32))) {
+                                    blank.insert(code as CharCode);
+                                }
                                 if let Some(unicode) = unicode{
                                     table[code as usize] = unicode;
                                     if let Some(ref mut unicode_map) = unicode_map {
@@ -498,7 +555,7 @@ impl<'a> PdfSimpleFont<'a> {
                                                 if e.get() != &String::from_utf16(&be).unwrap() {
                                                     let normal_match  = e.get().nfkc().eq(String::from_utf16(&be).unwrap().nfkc());
                                                     if !normal_match {
-                                                        warn!("Unicode mismatch {} {} {:?} {:?} {:?}", normal_match, name, e.get(), String::from_utf16(&be), be);
+                                                        debug!("Unicode mismatch {} {} {:?} {:?} {:?}", normal_match, name, e.get(), String::from_utf16(&be), be);
                                                     }
                                                 }
                                             }
@@ -517,7 +574,7 @@ impl<'a> PdfSimpleFont<'a> {
                                             }
                                         }
                                         _ => {
-                                            warn!("unknown glyph name '{}' for font {}", name, base_name);
+                                            debug!("unknown glyph name '{}' for font {}", name, base_name);
                                         }
                                     }
                                 }
@@ -586,7 +643,7 @@ impl<'a> PdfSimpleFont<'a> {
             let name = if is_core_font(&base_name) {
                 &base_name
             } else {
-                warn!("no widths and not core font {:?}", base_name);
+                debug!("no widths and not core font {:?}", base_name);
 
                 // This situation is handled differently by different readers
                 // but basically we try to substitute the best font that we can.
@@ -655,7 +712,11 @@ impl<'a> PdfSimpleFont<'a> {
         }
 
         let missing_width = get::<Option<f64>>(doc, font, b"MissingWidth").unwrap_or(0.);
-        PdfSimpleFont {doc, font, widths: width_map, encoding: encoding_table, missing_width, unicode_map}
+        let base = match base_name.find('+') {
+            Some(at) if at == 6 => base_name[at + 1..].to_owned(),
+            _ => base_name.clone(),
+        };
+        PdfSimpleFont {doc, font, widths: width_map, encoding: encoding_table, missing_width, unicode_map, names, blank, id: None, base}
     }
 
     #[allow(dead_code)]
@@ -783,6 +844,12 @@ trait PdfFont : Debug {
     fn get_width(&self, id: CharCode) -> f64;
     fn next_char(&self, iter: &mut Iter<u8>) -> Option<(CharCode, u8)>;
     fn decode_char(&self, char: CharCode) -> String;
+    /// Glaukopis: the name of a code's glyph, where the font says it.
+    fn glyph_name(&self, _char: CharCode) -> Option<&str> { None }
+    /// Glaukopis: the font's object, where the page names it by reference.
+    fn object_id(&self) -> Option<ObjectId> { None }
+    /// Glaukopis: the font's name, without the prefix of a subset.
+    fn base_name(&self) -> &str { "" }
 
         /*fn char_codes<'a>(&'a self, chars: &'a [u8]) -> PdfFontIter {
             let p = self;
@@ -823,8 +890,20 @@ impl<'a> PdfFont for PdfSimpleFont<'a> {
     fn next_char(&self, iter: &mut Iter<u8>) -> Option<(CharCode, u8)> {
         iter.next().map(|x| (*x as CharCode, 1))
     }
+    fn glyph_name(&self, char: CharCode) -> Option<&str> {
+        self.names.get(&char).map(String::as_str)
+    }
+    fn object_id(&self) -> Option<ObjectId> {
+        self.id
+    }
+    fn base_name(&self) -> &str {
+        &self.base
+    }
     fn decode_char(&self, char: CharCode) -> String {
         let slice = [char as u8];
+        if self.blank.contains(&char) {
+            return String::new();
+        }
         if let Some(ref unicode_map) = self.unicode_map {
             let s = unicode_map.get(&char);
             let s = match s {
@@ -1216,8 +1295,8 @@ impl Function {
                 let contents = match obj {
                     &Object::Stream(ref stream) => {
                         let contents = get_contents(stream);
-                        warn!("unhandled type-4 function");
-                        warn!("Stream: {}", String::from_utf8(contents.clone()).unwrap());
+                        debug!("unhandled type-4 function");
+                        debug!("Stream: {}", String::from_utf8(contents.clone()).unwrap());
                         contents
                     }
                     _ => { panic!("type 4 functions should be streams") }
@@ -1311,7 +1390,8 @@ fn show_text(gs: &mut GraphicsState, s: &[u8],
         let is_space = c == 32 && length == 1;
         if is_space { spacing += ts.word_spacing }
 
-        output.output_character(&trm, w0, spacing, ts.font_size, &font.decode_char(c))?;
+        let glyph = Glyph { name: font.glyph_name(c), code: c, font: font.object_id(), font_name: font.base_name() };
+        output.output_glyph(&trm, w0, spacing, ts.font_size, &font.decode_char(c), &glyph)?;
         let tj = 0.;
         let ty = 0.;
         let tx = ts.horizontal_scaling * ((w0 - tj/1000.)* ts.font_size + spacing);
@@ -1709,7 +1789,8 @@ impl<'a> Processor<'a> {
                 "Tf" => {
                     let fonts: &Dictionary = get(&doc, resources, b"Font");
                     let name = operation.operands[0].as_name().unwrap();
-                    let font = self.font_table.entry(name.to_owned()).or_insert_with(|| make_font(doc, get::<&Dictionary>(doc, fonts, name))).clone();
+                    let id = fonts.get(name).ok().and_then(|o| o.as_reference().ok());
+                    let font = self.font_table.entry(name.to_owned()).or_insert_with(|| make_font(doc, get::<&Dictionary>(doc, fonts, name), id)).clone();
                     {
                         /*let file = font.get_descriptor().and_then(|desc| desc.get_file());
                     if let Some(file) = file {
@@ -1786,7 +1867,7 @@ impl<'a> Processor<'a> {
                     if let Some(s) = s {
                         gs = s;
                     } else {
-                        warn!("No state to pop");
+                        debug!("No state to pop");
                     }
                 }
                 "gs" => {
@@ -1876,10 +1957,26 @@ impl<'a> Processor<'a> {
 }
 
 
+/// Glaukopis: what is known of the glyph of a character: the name the font
+/// gives it, its code, and the font, by its object where the page names it
+/// by reference, and by its name without the prefix of a subset.
+#[derive(Debug, Clone, Copy)]
+pub struct Glyph<'n> {
+    pub name: Option<&'n str>,
+    pub code: u32,
+    pub font: Option<ObjectId>,
+    pub font_name: &'n str,
+}
+
 pub trait OutputDev {
     fn begin_page(&mut self, page_num: u32, media_box: &MediaBox, art_box: Option<(f64, f64, f64, f64)>)-> Result<(), OutputError>;
     fn end_page(&mut self)-> Result<(), OutputError>;
     fn output_character(&mut self, trm: &Transform, width: f64, spacing: f64, font_size: f64, char: &str) -> Result<(), OutputError>;
+    /// Glaukopis: a character with what is known of its glyph. By default, `output_character`.
+    fn output_glyph(&mut self, trm: &Transform, width: f64, spacing: f64, font_size: f64, char: &str, glyph: &Glyph) -> Result<(), OutputError> {
+        let _ = glyph;
+        self.output_character(trm, width, spacing, font_size, char)
+    }
     fn begin_word(&mut self)-> Result<(), OutputError>;
     fn end_word(&mut self)-> Result<(), OutputError>;
     fn end_line(&mut self)-> Result<(), OutputError>;
@@ -1936,7 +2033,7 @@ impl<'a> HTMLOutput<'a> {
             // get the length of one sized of the square with the same area with a rectangle of size (x, y)
             let transformed_font_size = (transformed_font_size_vec.x * transformed_font_size_vec.y).sqrt();
             let (x, y) = (position.m31, position.m32);
-            warn!("flush {} {:?}", self.buf, (x,y));
+            debug!("flush {} {:?}", self.buf, (x,y));
 
             write!(self.file, "<div style='position: absolute; left: {}px; top: {}px; font-size: {}px'>{}</div>\n",
                    x, y, transformed_font_size, insert_nbsp(&self.buf))?;
@@ -1967,10 +2064,10 @@ impl<'a> OutputDev for HTMLOutput<'a> {
             let position = trm.post_transform(&self.flip_ctm);
             let (x, y) = (position.m31, position.m32);
 
-            warn!("accum {} {:?}", char, (x,y));
+            debug!("accum {} {:?}", char, (x,y));
             self.buf += char;
         } else {
-            warn!("flush {} {:?} {:?} {} {} {}", char, trm, self.last_ctm, width, font_size, spacing);
+            debug!("flush {} {:?} {:?} {} {} {}", char, trm, self.last_ctm, width, font_size, spacing);
             self.flush_string()?;
             self.buf = char.to_owned();
             self.buf_font_size = font_size;
