@@ -720,3 +720,85 @@ fn greek_kept_by_glyph_names_is_translated() {
     let text = pdf_text::extract_text_from_mem(made.pdf.as_ref().unwrap()).unwrap();
     assert!(has(&text, fixture::LINES[3]), "{text}");
 }
+
+/// A file with a shape and no kind (`e2e/fixtures/shape.typ`): its shape is
+/// found, and without the shape kept, it is plain paragraphs as before.
+#[test]
+fn the_shape_of_a_file_is_found() {
+    use crate::document::{Block, Numbering, Side};
+    let pdf = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../e2e/fixtures/shape.pdf");
+    let tmp = tempfile::tempdir().unwrap();
+    let asked = Asked { shape: true, ..Asked::default() };
+    let read = read_pdf(&pdf, &Tools::default(), tmp.path(), &asked, None, &mut nothing, &never()).unwrap();
+    let imported = imported_pdf("shape.pdf", "Shape", read);
+    let plain = |content: &[Inline]| -> String {
+        content
+            .iter()
+            .map(|i| match i {
+                Inline::Text { text, .. } => text.clone(),
+                Inline::Break => "\n".into(),
+                _ => String::new(),
+            })
+            .collect()
+    };
+    let headings: Vec<(u8, String)> = imported.sections.iter().map(|s| (s.level, plain(&s.heading))).collect();
+    assert_eq!(
+        headings,
+        vec![
+            (1, "1".into()),
+            (2, "The Measure of Things".into()),
+            (1, "2".into()),
+            (3, "Lines That Keep Their Place".into()),
+            (1, "3".into()),
+            (1, "4".into()),
+            (3, "The Last Part".into()),
+        ]
+    );
+    let all = imported.sections.iter().flat_map(|s| &s.blocks).collect::<Vec<_>>();
+    let text: String = all
+        .iter()
+        .map(|b| match b {
+            Block::Paragraph { content, .. } => plain(content),
+            _ => String::new(),
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(!text.contains("A Book of Tests"), "the running head is left out");
+    // The second paragraph begins further in; the italics are marked.
+    let indented = all.iter().filter(|b| matches!(b, Block::Paragraph { indent: 1, .. })).count();
+    assert_eq!(indented, 1);
+    assert!(all.iter().any(|b| matches!(b, Block::Paragraph { content, .. }
+        if content.iter().any(|i| matches!(i, Inline::Text { text, marks } if text.starts_with("these are set in italics") && marks.contains_key("em"))))));
+    // The lines are kept, with the numbers given beside them on the right.
+    let kept = all
+        .iter()
+        .find_map(|b| match b {
+            Block::Paragraph { numbering: Numbering::Given, side, content, .. } => Some((side, content)),
+            _ => None,
+        })
+        .expect("the lines are kept with their numbers");
+    assert_eq!(*kept.0, Some(Side::Right));
+    assert_eq!(kept.1.iter().filter(|i| matches!(i, Inline::Break)).count(), 7);
+    let numbers: Vec<String> = kept
+        .1
+        .iter()
+        .filter_map(|i| match i {
+            Inline::LineMark { number, .. } => number.clone(),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(numbers, vec!["4", "8"]);
+    // The smaller text at every foot is a style found, named by nothing but its look.
+    assert_eq!(imported.styles.len(), 1);
+    let style = &imported.styles[0];
+    assert_eq!((style.count, style.pages, style.kept), (4, 4, false));
+    assert!(style.size < 0.85 && style.sample.starts_with("1. A note"), "{style:?}");
+    let named = all.iter().filter(|b| matches!(b, Block::Paragraph { name, .. } if name == "style:1")).count();
+    assert_eq!(named, 4);
+
+    // Without the shape kept: one section a page, plain paragraphs.
+    let read = read_pdf(&pdf, &Tools::default(), tmp.path(), &Asked::default(), None, &mut nothing, &never()).unwrap();
+    let imported = imported_pdf("shape.pdf", "Shape", read);
+    assert_eq!(imported.sections.len(), 4);
+    assert!(imported.styles.is_empty());
+}

@@ -4,6 +4,7 @@
 
 import type { Summary, Reference, LibraryListing, ImportPlan, DuplicateGroup } from './library';
 import type { Looked, PageTextView } from './ocr';
+import type { Imported } from './imported';
 import type { FilesListing, TakenIn, Exported, Proposal } from './files';
 import type { ProjectInfo, Folder } from './projects';
 import type { Picture } from './pictures';
@@ -182,6 +183,363 @@ export const looked: Looked = {
   "searchable": true,
   "title": null,
   "withText": 1
+};
+
+export const shapedImport: Imported = {
+  "abstract": null,
+  "authors": [],
+  "counts": {
+    "cited": 0,
+    "equations": 0,
+    "figures": 0,
+    "found": 0,
+    "foundMade": 0,
+    "notFound": 0,
+    "notes": 0,
+    "parts": 7,
+    "tables": 0,
+    "words": 338
+  },
+  "date": null,
+  "file": "shape.pdf",
+  "keywords": [],
+  "kind": "PDF",
+  "language": null,
+  "pictures": [],
+  "remarks": [],
+  "sections": [
+    {
+      "blocks": [],
+      "heading": [
+        {
+          "kind": "text",
+          "marks": {},
+          "text": "1"
+        }
+      ],
+      "level": 1
+    },
+    {
+      "blocks": [
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "Every page has a shape, whatever is written on it. This first paragraph is set in the body of the book, in the size most of its lines are in, and it runs on from one line to the next as prose does, filling the measure from the left edge to the right."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "text"
+        },
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "A second paragraph begins further in, as many books begin their paragraphs, and goes on as the first one did, to the end of its last line, which may stop short of the right edge."
+            }
+          ],
+          "indent": 1,
+          "kind": "paragraph",
+          "name": "text"
+        },
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "Some words stand out in it: "
+            },
+            {
+              "kind": "text",
+              "marks": {
+                "em": true
+              },
+              "text": "these are set in italics"
+            },
+            {
+              "kind": "text",
+              "marks": {},
+              "text": ", and the rest are not."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "text"
+        },
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "1. A note at the foot of the first page, in a smaller size."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "style:1"
+        }
+      ],
+      "heading": [
+        {
+          "kind": "text",
+          "marks": {
+            "strong": true
+          },
+          "text": "The Measure of Things"
+        }
+      ],
+      "level": 2
+    },
+    {
+      "blocks": [],
+      "heading": [
+        {
+          "kind": "text",
+          "marks": {},
+          "text": "2"
+        }
+      ],
+      "level": 1
+    },
+    {
+      "blocks": [
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "The first line is short,"
+            },
+            {
+              "kind": "break"
+            },
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "and the second a little longer than it,"
+            },
+            {
+              "kind": "break"
+            },
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "the third shorter again,"
+            },
+            {
+              "kind": "break"
+            },
+            {
+              "kind": "linemark",
+              "number": "4"
+            },
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "and the fourth stands beside a number."
+            },
+            {
+              "kind": "break"
+            },
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "A fifth line follows"
+            },
+            {
+              "kind": "break"
+            },
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "with a sixth that is longer than the fifth was,"
+            },
+            {
+              "kind": "break"
+            },
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "a seventh,"
+            },
+            {
+              "kind": "break"
+            },
+            {
+              "kind": "linemark",
+              "number": "8"
+            },
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "and an eighth with a number beside it once more."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "text",
+          "numbering": "given",
+          "side": "right"
+        },
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "After the lines the prose goes on again, as it did before them, in the body of the book, from the left edge to the right, for a few lines more."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "text"
+        },
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "2. A note at the foot of the second page, in a smaller size."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "style:1"
+        }
+      ],
+      "heading": [
+        {
+          "kind": "text",
+          "marks": {
+            "strong": true
+          },
+          "text": "Lines That Keep Their Place"
+        }
+      ],
+      "level": 3
+    },
+    {
+      "blocks": [
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "Another page of prose stands here, so that the body is the size most lines are in, and so that what recurs at the head and at the foot of the pages is seen to recur. It runs on for some lines, as prose does."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "text"
+        },
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "It has a second paragraph as well, which says nothing new, but says it at the length a paragraph has."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "text"
+        },
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "3. A note at the foot of the third page, in a smaller size."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "style:1"
+        }
+      ],
+      "heading": [
+        {
+          "kind": "text",
+          "marks": {},
+          "text": "3"
+        }
+      ],
+      "level": 1
+    },
+    {
+      "blocks": [],
+      "heading": [
+        {
+          "kind": "text",
+          "marks": {},
+          "text": "4"
+        }
+      ],
+      "level": 1
+    },
+    {
+      "blocks": [
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "The last page has a heading of the same size as the second page had, and prose under it, and nothing more than that, for a book of tests needs no more."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "text"
+        },
+        {
+          "content": [
+            {
+              "kind": "text",
+              "marks": {},
+              "text": "4. A note at the foot of the fourth page, in a smaller size."
+            }
+          ],
+          "indent": 0,
+          "kind": "paragraph",
+          "name": "style:1"
+        }
+      ],
+      "heading": [
+        {
+          "kind": "text",
+          "marks": {
+            "strong": true
+          },
+          "text": "The Last Part"
+        }
+      ],
+      "level": 3
+    }
+  ],
+  "styles": [
+    {
+      "bold": false,
+      "count": 4,
+      "family": "LibertinusSerif",
+      "id": 1,
+      "indent": false,
+      "italic": false,
+      "kept": false,
+      "pages": 4,
+      "sample": "1. A note at the foot of the first page, in a smaller size.",
+      "size": 0.7699999809265137
+    }
+  ],
+  "subtitle": null,
+  "title": [
+    {
+      "kind": "text",
+      "marks": {},
+      "text": "Shape"
+    }
+  ]
 };
 
 export const pageText: PageTextView[] = [

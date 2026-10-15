@@ -139,6 +139,22 @@ fn what_is_sent_is_what_the_interface_declares() {
     std::fs::write(&porson, glaukopis_core::ocr::fixture::porson_pdf()).unwrap();
     let looked = glaukopis_core::ocr::look(&porson, &Tools::default()).unwrap();
     let page_text = glaukopis_core::ocr::text_of_pages(&porson, 0, 5).unwrap();
+    // A file with a shape, read with its shape kept: headings, kept lines, a style found.
+    let shaped_import = {
+        let pdf = root.join("e2e/fixtures/shape.pdf");
+        let asked = glaukopis_core::ocr::Asked { shape: true, ..Default::default() };
+        let read = glaukopis_core::ocr::read_pdf(
+            &pdf,
+            &Tools::default(),
+            tmp.path(),
+            &asked,
+            None,
+            &mut |_| {},
+            &std::sync::atomic::AtomicBool::new(false),
+        )
+        .unwrap();
+        glaukopis_core::ocr::imported_pdf("shape.pdf", "Shape", read)
+    };
     let pictures = Pictures::open(data.pictures()).unwrap();
     let picture = pictures.add("dot.png", DOT).unwrap();
     // A project as it is after it was saved: with what it uses and cites.
@@ -193,6 +209,7 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("reference", "Reference", "library", &full(&library, &work));
     put("listing", "LibraryListing", "library", &listing(&library));
     put("looked", "Looked", "ocr", &looked);
+    put("shapedImport", "Imported", "imported", &shaped_import);
     put("pageText", "PageTextView[]", "ocr", &page_text);
     put("files", "FilesListing", "files", &crate::commands::files::files_listing(&library));
     put("takenIn", "TakenIn", "files", &taken_in);
