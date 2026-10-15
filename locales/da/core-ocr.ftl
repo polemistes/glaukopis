@@ -27,19 +27,6 @@ ocr-not-whole = det, der blev lavet, kunne ikke læses helt tilbage og blev ikke
 
 ## What the one who reads a PDF should know, before the map is made.
 
-ocr-remark-read = { $count ->
-    [one] Én side blev læst fra et billede af den.
-   *[other] { $count } sider blev læst fra billeder af dem.
-}
-ocr-remark-text = { $count ->
-    [one] Én side havde tekst, som tages, som filen har den.
-   *[other] { $count } sider havde tekst, som tages, som filen har den.
-}
-ocr-remark-no-tesseract = { $count ->
-    [one] Én side har ingen tekst og står tom: Tesseract, som læser tekst i billeder, er ikke installeret.
-   *[other] { $count } sider har ingen tekst og står tomme: Tesseract, som læser tekst i billeder, er ikke installeret.
-}
-ocr-remark-not-read = De sider, der ingen tekst har, kunne ikke læses: { $message }
 ocr-remark-failed = Side { $page } kunne ikke læses: { $message }
 ocr-remark-more-failed = { $count ->
     [one] Én side mere kunne ikke læses.

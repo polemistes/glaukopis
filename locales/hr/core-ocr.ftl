@@ -27,25 +27,6 @@ ocr-not-whole = što je načinjeno nije se dalo pročitati cijelo i nije sačuva
 
 ## What the one who reads a PDF should know, before the map is made.
 
-ocr-remark-read = { $count ->
-    [1] Jedna stranica pročitana je iz svoje slike.
-    [one] { $count } stranica pročitana je iz svoje slike.
-    [few] { $count } stranice pročitane su iz svojih slika.
-   *[other] { $count } stranica pročitano je iz njihovih slika.
-}
-ocr-remark-text = { $count ->
-    [1] Jedna stranica imala je tekst, koji je uzet kakav je u datoteci.
-    [one] { $count } stranica imala je tekst, koji je uzet kakav je u datoteci.
-    [few] { $count } stranice imale su tekst, koji je uzet kakav je u datoteci.
-   *[other] { $count } stranica imalo je tekst, koji je uzet kakav je u datoteci.
-}
-ocr-remark-no-tesseract = { $count ->
-    [1] Jedna stranica nema teksta i ostavljena je prazna: Tesseract, koji čita tekst na slikama, nije instaliran.
-    [one] { $count } stranica nema teksta i ostavljena je prazna: Tesseract, koji čita tekst na slikama, nije instaliran.
-    [few] { $count } stranice nemaju teksta i ostavljene su prazne: Tesseract, koji čita tekst na slikama, nije instaliran.
-   *[other] { $count } stranica nema teksta i ostavljene su prazne: Tesseract, koji čita tekst na slikama, nije instaliran.
-}
-ocr-remark-not-read = Stranice bez teksta nije bilo moguće pročitati: { $message }
 ocr-remark-failed = Stranicu { $page } nije bilo moguće pročitati: { $message }
 ocr-remark-more-failed = { $count ->
     [1] Još jednu stranicu nije bilo moguće pročitati.

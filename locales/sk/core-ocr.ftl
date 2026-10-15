@@ -27,22 +27,6 @@ ocr-not-whole = čo sa vytvorilo, sa nedalo spätne prečítať celé a nebolo u
 
 ## What the one who reads a PDF should know, before the map is made.
 
-ocr-remark-read = { $count ->
-    [one] Jedna strana bola prečítaná z jej obrázka.
-    [few] { $count } strany boli prečítané z ich obrázkov.
-   *[other] { $count } strán bolo prečítaných z ich obrázkov.
-}
-ocr-remark-text = { $count ->
-    [one] Jedna strana mala text, ktorý sa berie tak, ako ho má súbor.
-    [few] { $count } strany mali text, ktorý sa berie tak, ako ho má súbor.
-   *[other] { $count } strán malo text, ktorý sa berie tak, ako ho má súbor.
-}
-ocr-remark-no-tesseract = { $count ->
-    [one] Jedna strana nemá text a ostáva prázdna: Tesseract, ktorý číta text v obrázkoch, nie je nainštalovaný.
-    [few] { $count } strany nemajú text a ostávajú prázdne: Tesseract, ktorý číta text v obrázkoch, nie je nainštalovaný.
-   *[other] { $count } strán nemá text a ostáva prázdnych: Tesseract, ktorý číta text v obrázkoch, nie je nainštalovaný.
-}
-ocr-remark-not-read = Strany bez textu sa nepodarilo prečítať: { $message }
 ocr-remark-failed = Stranu { $page } sa nepodarilo prečítať: { $message }
 ocr-remark-more-failed = { $count ->
     [one] Ešte jednu stranu sa nepodarilo prečítať.

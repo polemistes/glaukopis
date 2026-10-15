@@ -27,22 +27,6 @@ ocr-not-whole = co bylo vytvořeno, se nepřečetlo zpět celé, a nebylo uchov�
 
 ## What the one who reads a PDF should know, before the map is made.
 
-ocr-remark-read = { $count ->
-    [one] Jedna stránka byla přečtena ze svého obrazu.
-    [few] { $count } stránky byly přečteny ze svých obrazů.
-   *[other] { $count } stránek bylo přečteno ze svých obrazů.
-}
-ocr-remark-text = { $count ->
-    [one] Jedna stránka měla text, který je převzat tak, jak jej má soubor.
-    [few] { $count } stránky měly text, který je převzat tak, jak jej má soubor.
-   *[other] { $count } stránek mělo text, který je převzat tak, jak jej má soubor.
-}
-ocr-remark-no-tesseract = { $count ->
-    [one] Jedna stránka nemá text a zůstává prázdná: Tesseract, který čte text v obrázcích, není nainstalován.
-    [few] { $count } stránky nemají text a zůstávají prázdné: Tesseract, který čte text v obrázcích, není nainstalován.
-   *[other] { $count } stránek nemá text a zůstává prázdných: Tesseract, který čte text v obrázcích, není nainstalován.
-}
-ocr-remark-not-read = Stránky bez textu nelze přečíst: { $message }
 ocr-remark-failed = Stránku { $page } nelze přečíst: { $message }
 ocr-remark-more-failed = { $count ->
     [one] Ještě jednu stránku nelze přečíst.

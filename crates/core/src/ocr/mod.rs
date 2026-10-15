@@ -42,6 +42,19 @@ use drawing::{Drawn, Pages, Quality};
 use layer::Layer;
 use text::{IsWord, Line};
 
+/// What becomes of the text a PDF has.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TextChoice {
+    /// The pages that have text are taken as they are; the others are read.
+    #[default]
+    Keep,
+    /// The pages that have text are taken as translated by the schemes; the others are read.
+    Translate,
+    /// Every page is read by Tesseract; no page takes the PDF's text.
+    Anew,
+}
+
 /// What a reading is asked to do.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -49,12 +62,12 @@ pub struct Asked {
     /// Tesseract's names of the languages the text is in, the likeliest
     /// first: `nor`, `eng`. English, where none are given.
     pub languages: Vec<String>,
-    /// Whether every page is read anew, in place of the text the PDF has:
-    /// for text that is poor, or cannot be read. Only what is read is kept;
-    /// in a PDF made searchable, the unseen text the pages had is taken
-    /// away, and the pages look as they did. Without it, the pages that have
-    /// text are taken as they are, and only the others are read.
-    pub all: bool,
+    /// What becomes of the text the PDF has (ADR 0044): kept, translated by
+    /// what its fonts say of their glyphs, or not taken from any page, every
+    /// page read anew by Tesseract. In a PDF made searchable, reading anew
+    /// takes the unseen text the pages had away, and translating puts the
+    /// PDF's own tables right.
+    pub text: TextChoice,
     /// The dots to the inch the pages are drawn at for Tesseract: nought
     /// for 300, else held within 150 and 600. A picture is not drawn, and
     /// is read as large as it is.
@@ -141,6 +154,10 @@ pub struct ReadPdf {
     pub pages: Vec<PageText>,
     /// What the one who asked should know.
     pub remarks: Vec<String>,
+    /// The pages read by Tesseract, those taken from the PDF, and those that could not be read.
+    pub read: usize,
+    pub taken: usize,
+    pub failed: usize,
 }
 
 /// What making a PDF searchable came to.
@@ -377,8 +394,11 @@ fn failures(failed: &[(usize, String)]) -> Vec<String> {
     out
 }
 
-/// Reads a PDF, page by page. Pages that have text are taken as they are,
-/// unless all are asked to be read; the others are read by Tesseract.
+/// Reads a PDF, page by page. With `Keep` and `Translate`, the pages that
+/// have text are taken as the PDF has them, or as translated, and the others
+/// are read by Tesseract; with `Anew`, every page is read by Tesseract, and
+/// the text the PDF has is not taken from any. A page that cannot be read
+/// says so in a line of its own, and is never given the PDF's text instead.
 /// `is_word` is the dictionary of the language, where there is one, by
 /// which words broken at the end of a line are joined again.
 pub fn read_pdf(
@@ -397,8 +417,9 @@ pub fn read_pdf(
     if count == 0 {
         return Err(drawing.err().unwrap_or_else(|| Error::invalid(tr!("ocr-no-pages", file = &file_name(path)))));
     }
-    let wanted: Vec<usize> = (0..count).filter(|i| asked.all || !layer.has_text(*i)).collect();
-    let with_text = (0..count).filter(|i| layer.has_text(*i)).count();
+    let anew = asked.text == TextChoice::Anew;
+    let wanted: Vec<usize> = (0..count).filter(|i| anew || !layer.has_text(*i)).collect();
+    let to_take = count - wanted.len();
 
     let mut remarks = Vec::new();
     let mut read: BTreeMap<usize, Vec<Vec<Line>>> = BTreeMap::new();
@@ -423,40 +444,48 @@ pub fn read_pdf(
                 if stop.load(Ordering::Relaxed) {
                     return Err(stopped());
                 }
-                if read.is_empty() && with_text == 0 {
+                if read.is_empty() && to_take == 0 {
                     let (_, why) = failed.first().cloned().unwrap_or_default();
                     return Err(Error::invalid(why));
                 }
-                if !read.is_empty() {
-                    remarks.push(tr!("ocr-remark-read", count = read.len()));
-                }
             }
-            // Nothing can be read: that is the answer, unless some pages have text.
-            Err(e) if with_text == 0 => return Err(e),
-            Err(Error::MissingProgram { .. }) => {
-                remarks.push(tr!("ocr-remark-no-tesseract", count = wanted.len() - with_text.min(wanted.len())))
+            // Nothing can be read by Tesseract: that is the answer where every
+            // page was to be read by it, and where no page has text to take.
+            Err(e) if anew || to_take == 0 => return Err(e),
+            Err(e) => {
+                let why = match &e {
+                    Error::MissingProgram { .. } => tr!("ocr-why-no-tesseract"),
+                    other => other.to_string(),
+                };
+                failed.extend(wanted.iter().map(|i| (i + 1, why.clone())));
             }
-            Err(e) => remarks.push(tr!("ocr-remark-not-read", message = e.to_string())),
         }
     }
-    if with_text > 0 && !asked.all && !read.is_empty() {
-        remarks.push(tr!("ocr-remark-text", count = with_text));
-    }
-    remarks.extend(failures(&failed));
 
+    let mut taken = 0;
     let mut paragraphs: Vec<Vec<String>> = (0..count)
-        .map(|index| match read.remove(&index) {
-            Some(groups) => text::page_paragraphs(groups, is_word),
-            None => {
-                let lines = layer.pages.get(index).cloned().flatten().unwrap_or_default();
-                text::page_paragraphs(text::by_place(lines), is_word)
+        .map(|index| {
+            if let Some(groups) = read.remove(&index) {
+                return text::page_paragraphs(groups, is_word);
             }
+            if let Some((_, why)) = failed.iter().find(|(page, _)| *page == index + 1) {
+                return vec![tr!("ocr-page-failed-line", message = why.as_str())];
+            }
+            taken += 1;
+            text::page_paragraphs(text::by_place(taken_lines(&layer, index, asked.text)), is_word)
         })
         .collect();
     text::mend_across(&mut paragraphs, is_word);
+    let done = wanted.len() - failed.len();
+    // Said where Tesseract was asked to read: a PDF whose text is all taken needs no counting.
+    if !wanted.is_empty() {
+        remarks.push(tr!("ocr-remark-counts", read = done, taken = taken, failed = failed.len()));
+    }
+    remarks.extend(failures(&failed));
     if paragraphs.iter().all(Vec::is_empty) {
         remarks.push(tr!("ocr-remark-empty"));
     }
+    tracing::info!(pages = count, read = done, taken, failed = failed.len(), text = ?asked.text, "a PDF was read");
     let pages = paragraphs
         .into_iter()
         .enumerate()
@@ -467,7 +496,14 @@ pub fn read_pdf(
             paragraphs,
         })
         .collect();
-    Ok(ReadPdf { pages, remarks })
+    Ok(ReadPdf { pages, remarks, read: done, taken, failed: failed.len() })
+}
+
+/// The lines of a page that are taken from the PDF, not read by Tesseract:
+/// as the PDF has them, or as translated where that is asked and there is a
+/// translation.
+fn taken_lines(layer: &Layer, index: usize, _text: TextChoice) -> Vec<Line> {
+    layer.pages.get(index).cloned().flatten().unwrap_or_default()
 }
 
 /// Reads a picture as one page: the file of a picture, or a picture of the
@@ -537,7 +573,7 @@ pub fn make_searchable(
     let count = doc.get_pages().len();
     let layer = layer_of(path, &bytes);
     let with_text = (0..count).filter(|i| layer.has_text(*i)).count();
-    let wanted: Vec<usize> = (0..count).filter(|i| asked.all || !layer.has_text(*i)).collect();
+    let wanted: Vec<usize> = (0..count).filter(|i| asked.text == TextChoice::Anew || !layer.has_text(*i)).collect();
     if wanted.is_empty() {
         return Ok(Searchable { pdf: None, read: 0, with_text, failed: Vec::new() });
     }
@@ -566,7 +602,7 @@ pub fn make_searchable(
     }
     drop(pages);
     let bytes = Arc::try_unwrap(bytes).unwrap_or_else(|shared| shared.as_ref().clone());
-    let pdf = searchable::lay_over(bytes, doc, &layers, asked.all)?;
+    let pdf = searchable::lay_over(bytes, doc, &layers, asked.text == TextChoice::Anew)?;
     // Read again as it is drawn, where it was drawn so before.
     if drawn_by_hayro {
         let pages = catch_unwind(AssertUnwindSafe(|| {

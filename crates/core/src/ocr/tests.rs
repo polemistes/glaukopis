@@ -112,7 +112,7 @@ fn a_scan_is_read_into_paragraphs() {
     assert!(has(&page.paragraphs[0], "The wrath of Achilles is the subject of the Iliad"), "{:?}", page.paragraphs);
     assert!(has(&page.paragraphs[0], "the quarrel between the king"), "{:?}", page.paragraphs);
     assert!(has(&page.paragraphs[1], "the oral theory of Milman Parry"), "{:?}", page.paragraphs);
-    assert_eq!(read.remarks, vec![tr!("ocr-remark-read", count = 1)]);
+    assert_eq!(read.remarks, vec![tr!("ocr-remark-counts", read = 1, taken = 0, failed = 0)]);
 
     let imported = imported_pdf("scan.pdf", "A scan", read);
     assert_eq!(imported.sections.len(), 1);
@@ -174,7 +174,7 @@ fn the_text_a_pdf_has_can_be_taken_away_as_it_is_made_searchable() {
     assert!(has(&text, "Wrong words altogether"), "{text}");
 
     // Read anew, only the right text is there, and the page looks as it did.
-    let all = Asked { all: true, ..kit.asked() };
+    let all = Asked { text: TextChoice::Anew, ..kit.asked() };
     let made = make_searchable(&scan, &kit.tools, &kit.work(), &all, &mut nothing, &never()).unwrap();
     assert_eq!((made.read, made.failed.len()), (1, 0));
     let after = made.pdf.unwrap();
@@ -444,7 +444,18 @@ fn pages_that_have_text_are_left_as_they_are() {
     let read = read_pdf(&mixed, &kit.tools, &kit.work(), &kit.asked(), None, &mut nothing, &never()).unwrap();
     assert_eq!(read.pages.iter().map(|p| p.read).collect::<Vec<_>>(), vec![false, true]);
     assert!(has(&read.pages[1].paragraphs[1], "Milman Parry"), "{:?}", read.pages[1]);
-    assert_eq!(read.remarks, vec![tr!("ocr-remark-read", count = 1), tr!("ocr-remark-text", count = 1)]);
+    assert_eq!(read.remarks, vec![tr!("ocr-remark-counts", read = 1, taken = 1, failed = 0)]);
+
+    // Without Tesseract, a page that is to be read is never given the PDF's
+    // text: the page without text says it could not be read, and every page
+    // read anew cannot be had at all.
+    let without = Tools { tesseract: None, ..kit.tools.clone() };
+    let read = read_pdf(&mixed, &without, &kit.work(), &kit.asked(), None, &mut nothing, &never()).unwrap();
+    assert_eq!((read.read, read.taken, read.failed), (0, 1, 1));
+    assert_eq!(read.pages[1].paragraphs, vec![tr!("ocr-page-failed-line", message = tr!("ocr-why-no-tesseract"))]);
+    assert!(has(&read.pages[0].paragraphs.join(" "), "Milman Parry"), "the written page is taken");
+    let anew = Asked { text: TextChoice::Anew, ..kit.asked() };
+    assert!(read_pdf(&mixed, &without, &kit.work(), &anew, None, &mut nothing, &never()).is_err());
 
     let laid = |pdf: &[u8]| -> Vec<bool> {
         let doc = Document::load_mem(pdf).unwrap();
@@ -467,7 +478,7 @@ fn pages_that_have_text_are_left_as_they_are() {
     assert_eq!(laid(made.pdf.as_ref().unwrap()), vec![false, true]);
 
     // Unless all are to be read.
-    let all = Asked { all: true, ..kit.asked() };
+    let all = Asked { text: TextChoice::Anew, ..kit.asked() };
     let made = make_searchable(&mixed, &kit.tools, &kit.work(), &all, &mut nothing, &never()).unwrap();
     assert_eq!(made.read, 2);
     assert_eq!(laid(made.pdf.as_ref().unwrap()), vec![true, true]);

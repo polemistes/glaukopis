@@ -27,16 +27,6 @@ ocr-not-whole = 作成したものを完全に読み戻せなかったため、�
 
 ## What the one who reads a PDF should know, before the map is made.
 
-ocr-remark-read = { $count ->
-   *[other] { $count }ページを画像から読み取りました。
-}
-ocr-remark-text = { $count ->
-   *[other] { $count }ページにはテキストがあり、ファイルにあるとおりに使います。
-}
-ocr-remark-no-tesseract = { $count ->
-   *[other] { $count }ページにはテキストがなく、空のままにします。画像の文字を読み取るTesseractがインストールされていません。
-}
-ocr-remark-not-read = テキストのないページを読み取れませんでした：{ $message }
 ocr-remark-failed = { $page }ページを読み取れませんでした：{ $message }
 ocr-remark-more-failed = { $count ->
    *[other] さらに{ $count }ページを読み取れませんでした。

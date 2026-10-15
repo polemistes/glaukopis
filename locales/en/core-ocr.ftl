@@ -27,22 +27,27 @@ ocr-not-whole = what was made did not read back whole, and was not kept.
 
 ## What the one who reads a PDF should know, before the map is made.
 
-ocr-remark-read = { $count ->
-    [one] One page was read from a picture of it.
-   *[other] { $count } pages were read from pictures of them.
-}
-ocr-remark-text = { $count ->
-    [one] One page had text, which is taken as the file has it.
-   *[other] { $count } pages had text, which is taken as the file has it.
-}
-ocr-remark-no-tesseract = { $count ->
-    [one] One page has no text, and is left empty: Tesseract, which reads text in pictures, is not installed.
-   *[other] { $count } pages have no text, and are left empty: Tesseract, which reads text in pictures, is not installed.
-}
-ocr-remark-not-read = The pages that have no text could not be read: { $message }
 ocr-remark-failed = Page { $page } could not be read: { $message }
 ocr-remark-more-failed = { $count ->
     [one] One more page could not be read.
    *[other] { $count } more pages could not be read.
 }
 ocr-remark-empty = No text was found.
+
+## What a reading of a PDF came to (ADR 0044).
+
+ocr-remark-counts = { $read ->
+    [0] No page read by Tesseract
+    [one] One page read by Tesseract
+   *[other] { $read } pages read by Tesseract
+}, { $taken ->
+    [one] one taken from the PDF's own text
+   *[other] { $taken } taken from the PDF's own text
+}, { $failed ->
+    [0] none that could not be read.
+    [one] one that could not be read.
+   *[other] { $failed } that could not be read.
+}
+# Stands in the element in the place of a page that could not be read.
+ocr-page-failed-line = [This page could not be read: { $message }]
+ocr-why-no-tesseract = Tesseract, which reads text in pictures, is not installed.

@@ -82,7 +82,7 @@
     try {
       const imported = await ocrPicture(
         hash,
-        { languages: $state.snapshot(chosen), all: false, ...howFromSettings() },
+        { languages: $state.snapshot(chosen), text: 'keep', ...howFromSettings() },
         ticket,
       );
       if (gone) return;

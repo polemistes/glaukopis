@@ -26,12 +26,15 @@ export interface Asked extends How {
   /** Tesseract's names of the languages the text is in, the likeliest first: `nor`, `eng`. */
   languages: string[];
   /**
-   * Whether every page is read anew, in place of the text the PDF has: only
-   * what is read is kept, and in a PDF made searchable the unseen text the
-   * pages had is taken away. Without it, pages that have text are taken as they are.
+   * What becomes of the text the PDF has: kept, translated by what its fonts
+   * say of their glyphs, or not taken from any page, every page read anew by
+   * Tesseract (in a searchable PDF, the old unseen text is then taken away).
    */
-  all: boolean;
+  text: TextChoice;
 }
+
+/** What becomes of the text a PDF has. */
+export type TextChoice = 'keep' | 'translate' | 'anew';
 
 /** The first lines of the text a page has, as the PDF has them. */
 export interface Sample {

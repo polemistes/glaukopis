@@ -27,19 +27,6 @@ ocr-not-whole = oluşturulan dosya bütün olarak geri okunamadı ve saklanmadı
 
 ## What the one who reads a PDF should know, before the map is made.
 
-ocr-remark-read = { $count ->
-    [one] Bir sayfa, resminden okundu.
-   *[other] { $count } sayfa, resimlerinden okundu.
-}
-ocr-remark-text = { $count ->
-    [one] Bir sayfada metin vardı; dosyadaki gibi alındı.
-   *[other] { $count } sayfada metin vardı; dosyadaki gibi alındı.
-}
-ocr-remark-no-tesseract = { $count ->
-    [one] Bir sayfada metin yok ve boş bırakıldı: resimlerdeki metni okuyan Tesseract kurulu değil.
-   *[other] { $count } sayfada metin yok ve boş bırakıldı: resimlerdeki metni okuyan Tesseract kurulu değil.
-}
-ocr-remark-not-read = Metni olmayan sayfalar okunamadı: { $message }
 ocr-remark-failed = Sayfa { $page } okunamadı: { $message }
 ocr-remark-more-failed = { $count ->
     [one] Bir sayfa daha okunamadı.

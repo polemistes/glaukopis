@@ -27,22 +27,6 @@ ocr-not-whole = o que se fez não se leu de volta inteiro, e não foi guardado.
 
 ## What the one who reads a PDF should know, before the map is made.
 
-ocr-remark-read = { $count ->
-    [one] Uma página foi lida de uma imagem dela.
-    [many] { $count } páginas foram lidas de imagens delas.
-   *[other] { $count } páginas foram lidas de imagens delas.
-}
-ocr-remark-text = { $count ->
-    [one] Uma página tinha texto, que se toma como o ficheiro o tem.
-    [many] { $count } páginas tinham texto, que se toma como o ficheiro o tem.
-   *[other] { $count } páginas tinham texto, que se toma como o ficheiro o tem.
-}
-ocr-remark-no-tesseract = { $count ->
-    [one] Uma página não tem texto, e fica vazia: o Tesseract, que lê texto em imagens, não está instalado.
-    [many] { $count } páginas não têm texto, e ficam vazias: o Tesseract, que lê texto em imagens, não está instalado.
-   *[other] { $count } páginas não têm texto, e ficam vazias: o Tesseract, que lê texto em imagens, não está instalado.
-}
-ocr-remark-not-read = Não foi possível ler as páginas que não têm texto: { $message }
 ocr-remark-failed = Não foi possível ler a página { $page }: { $message }
 ocr-remark-more-failed = { $count ->
     [one] Não foi possível ler mais uma página.

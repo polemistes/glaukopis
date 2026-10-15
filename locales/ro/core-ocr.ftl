@@ -27,22 +27,6 @@ ocr-not-whole = ce s-a făcut nu s-a citit înapoi întreg și nu a fost păstra
 
 ## What the one who reads a PDF should know, before the map is made.
 
-ocr-remark-read = { $count ->
-    [one] O pagină a fost citită dintr-o imagine a ei.
-    [few] { $count } pagini au fost citite din imagini ale lor.
-   *[other] { $count } de pagini au fost citite din imagini ale lor.
-}
-ocr-remark-text = { $count ->
-    [one] O pagină avea text, care este luat așa cum îl are fișierul.
-    [few] { $count } pagini aveau text, care este luat așa cum îl are fișierul.
-   *[other] { $count } de pagini aveau text, care este luat așa cum îl are fișierul.
-}
-ocr-remark-no-tesseract = { $count ->
-    [one] O pagină nu are text și este lăsată goală: Tesseract, care citește textul din imagini, nu este instalat.
-    [few] { $count } pagini nu au text și sunt lăsate goale: Tesseract, care citește textul din imagini, nu este instalat.
-   *[other] { $count } de pagini nu au text și sunt lăsate goale: Tesseract, care citește textul din imagini, nu este instalat.
-}
-ocr-remark-not-read = Paginile care nu au text nu s-au putut citi: { $message }
 ocr-remark-failed = Pagina { $page } nu s-a putut citi: { $message }
 ocr-remark-more-failed = { $count ->
     [one] Încă o pagină nu s-a putut citi.

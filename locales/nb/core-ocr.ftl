@@ -27,22 +27,26 @@ ocr-not-whole = det som ble laget, kunne ikke leses helt igjen, og ble ikke beho
 
 ## Det den som leser en PDF bør vite før kartet lages.
 
-ocr-remark-read = { $count ->
-    [one] Én side ble lest fra et bilde av den.
-   *[other] { $count } sider ble lest fra bilder av dem.
-}
-ocr-remark-text = { $count ->
-    [one] Én side hadde tekst, som tas slik filen har den.
-   *[other] { $count } sider hadde tekst, som tas slik filen har den.
-}
-ocr-remark-no-tesseract = { $count ->
-    [one] Én side har ingen tekst, og blir stående tom: Tesseract, som leser tekst i bilder, er ikke installert.
-   *[other] { $count } sider har ingen tekst, og blir stående tomme: Tesseract, som leser tekst i bilder, er ikke installert.
-}
-ocr-remark-not-read = Sidene uten tekst kunne ikke leses: { $message }
 ocr-remark-failed = Side { $page } kunne ikke leses: { $message }
 ocr-remark-more-failed = { $count ->
     [one] Én side til kunne ikke leses.
    *[other] { $count } sider til kunne ikke leses.
 }
 ocr-remark-empty = Ingen tekst ble funnet.
+
+## Hva en lesning av en PDF ga.
+
+ocr-remark-counts = { $read ->
+    [0] Ingen side lest av Tesseract
+    [one] Én side lest av Tesseract
+   *[other] { $read } sider lest av Tesseract
+}, { $taken ->
+    [one] én tatt fra PDF-ens egen tekst
+   *[other] { $taken } tatt fra PDF-ens egen tekst
+}, { $failed ->
+    [0] ingen som ikke kunne leses.
+    [one] én som ikke kunne leses.
+   *[other] { $failed } som ikke kunne leses.
+}
+ocr-page-failed-line = [Denne siden kunne ikke leses: { $message }]
+ocr-why-no-tesseract = Tesseract, som leser tekst i bilder, er ikke installert.

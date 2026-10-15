@@ -27,25 +27,6 @@ ocr-not-whole = to, co powstało, nie dało się odczytać w całości i nie zos
 
 ## What the one who reads a PDF should know, before the map is made.
 
-ocr-remark-read = { $count ->
-    [one] Jedną stronę odczytano z jej obrazu.
-    [few] { $count } strony odczytano z ich obrazów.
-    [many] { $count } stron odczytano z ich obrazów.
-   *[other] { $count } stron odczytano z ich obrazów.
-}
-ocr-remark-text = { $count ->
-    [one] Jedna strona miała tekst; wzięto go tak, jak jest w pliku.
-    [few] { $count } strony miały tekst; wzięto go tak, jak jest w pliku.
-    [many] { $count } stron miało tekst; wzięto go tak, jak jest w pliku.
-   *[other] { $count } stron miało tekst; wzięto go tak, jak jest w pliku.
-}
-ocr-remark-no-tesseract = { $count ->
-    [one] Jedna strona nie ma tekstu i pozostaje pusta: Tesseract, który czyta tekst na obrazach, nie jest zainstalowany.
-    [few] { $count } strony nie mają tekstu i pozostają puste: Tesseract, który czyta tekst na obrazach, nie jest zainstalowany.
-    [many] { $count } stron nie ma tekstu i pozostaje pustych: Tesseract, który czyta tekst na obrazach, nie jest zainstalowany.
-   *[other] { $count } stron nie ma tekstu i pozostaje pustych: Tesseract, który czyta tekst na obrazach, nie jest zainstalowany.
-}
-ocr-remark-not-read = Stron bez tekstu nie udało się odczytać: { $message }
 ocr-remark-failed = Nie udało się odczytać strony { $page }: { $message }
 ocr-remark-more-failed = { $count ->
     [one] Nie udało się odczytać jeszcze jednej strony.

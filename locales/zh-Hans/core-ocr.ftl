@@ -27,16 +27,6 @@ ocr-not-whole = 生成的文件重新读取时不完整，没有保留。
 
 ## What the one who reads a PDF should know, before the map is made.
 
-ocr-remark-read = { $count ->
-   *[other] { $count } 页是从页面图像中识别出来的。
-}
-ocr-remark-text = { $count ->
-   *[other] { $count } 页本身有文字，按文件中的原样采用。
-}
-ocr-remark-no-tesseract = { $count ->
-   *[other] { $count } 页没有文字，保持空白：没有安装识别图像中文字的 Tesseract。
-}
-ocr-remark-not-read = 无法识别没有文字的页面：{ $message }
 ocr-remark-failed = 无法识别第 { $page } 页：{ $message }
 ocr-remark-more-failed = { $count ->
    *[other] 另有 { $count } 页无法识别。

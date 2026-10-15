@@ -98,7 +98,7 @@
         file.path,
         {
           languages: $state.snapshot(chosen),
-          all,
+          text: all ? 'anew' : 'keep',
           ...$state.snapshot(how),
         },
         ticket,

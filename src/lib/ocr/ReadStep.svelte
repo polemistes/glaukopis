@@ -91,7 +91,11 @@
     try {
       const imported = await ocrRead(
         path,
-        { languages: $state.snapshot(chosen), all, ...$state.snapshot(how) },
+        {
+          languages: $state.snapshot(chosen),
+          text: all ? 'anew' : 'keep',
+          ...$state.snapshot(how),
+        },
         ticket,
         stored,
       );
