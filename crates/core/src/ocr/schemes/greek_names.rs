@@ -130,6 +130,25 @@ pub(super) fn marks_of_spacing(c: char) -> Option<&'static [char]> {
     SPACING.iter().find(|(_, sign, marks)| *sign == c && !marks.is_empty()).map(|(_, _, marks)| *marks)
 }
 
+/// The combining marks a name of marks alone stands for, in the order
+/// Unicode composes them: for a map from glyph to Unicode, where a reader
+/// then puts them onto the letter before.
+pub(super) fn combining_of(name: &str) -> Option<String> {
+    let parsed = parse(name)?;
+    if parsed.letter.is_some() || parsed.marks.is_empty() {
+        return None;
+    }
+    let mut marks: Vec<char> = parsed.marks.iter().map(|m| m.combining()).collect();
+    let rank = |m: &char| match m {
+        '\u{0313}' | '\u{0314}' => 0,
+        '\u{0308}' => 1,
+        '\u{0345}' => 3,
+        _ => 2,
+    };
+    marks.sort_by_key(rank);
+    Some(marks.into_iter().collect())
+}
+
 /// Whether a name is that of marks alone, breathings and accents with no
 /// letter: a glyph that stands over the letter before it.
 pub(super) fn is_marks_name(name: &str) -> bool {

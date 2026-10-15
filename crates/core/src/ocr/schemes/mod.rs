@@ -133,6 +133,12 @@ pub fn map_is_wrong(mapped: &str, name: &str) -> bool {
     false
 }
 
+/// What a glyph of marks alone stands for in a font's map: its combining
+/// marks, which a reader puts onto the letter before (ἀ, not α᾽).
+pub fn combining_of(name: &str) -> Option<String> {
+    greek_names::combining_of(name.split('.').next().unwrap_or(name))
+}
+
 /// Whether a glyph's name is that of marks alone, which stand over the letter before them.
 pub fn is_mark_name(name: &str) -> bool {
     greek_names::is_marks_name(name.split('.').next().unwrap_or(name))

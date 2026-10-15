@@ -158,7 +158,25 @@ pub fn only_marks(text: &str, confidence: Option<f32>) -> bool {
             run = 0;
         }
     }
-    in_words * 3 < signs && confidence.is_some_and(|c| c < 50.0)
+    if in_words * 3 < signs && confidence.is_some_and(|c| c < 50.0) {
+        return true;
+    }
+    // Three bits or more, none with four letters, where Tesseract was not
+    // sure of them: what it makes of a row of accents over a line of Greek
+    // (measured on Wilson's Aristophanes: such rows 46 to 58, lines of verse
+    // 71 to 88). A line of one bit, a speaker or a number, is a line.
+    // Of five bits or more, four in five short and a third bare: a garbled
+    // bit among the marks does not make the row a line.
+    let bits: Vec<usize> =
+        text.split_whitespace().map(|b| b.chars().filter(|&c| is_letter_or_digit(c)).count()).collect();
+    let short = bits.iter().filter(|&&n| n < 4).count();
+    let bare = bits.iter().filter(|&&n| n == 0).count();
+    let unsure = confidence.is_some_and(|c| c < 70.0);
+    // A third of them with no letter or digit at all, only marks: the
+    // apparatus, short words as it has, has none such.
+    unsure
+        && ((bits.len() >= 3 && short == bits.len())
+            || (bits.len() >= 5 && short * 5 >= bits.len() * 4 && bare * 3 >= bits.len()))
 }
 
 // ---------------------------------------------------------------------------
@@ -491,6 +509,19 @@ mod tests {
         // Letters standing alone are marks only where Tesseract was unsure of them.
         assert!(!only_marks("ΕΝ κ ο κ 2 ;", Some(80.0)));
         assert!(!only_marks("ΕΝ κ ο κ 2 ;", None));
+        // As unsure as Tesseract was of the rows of accents over the book's verse.
+        for (line, confidence) in [
+            ("3 ΄,ὔ ΄ ΄,", 53.1),
+            ("» Ν Ν ΄ ΄ὔ΄ 3 Ε ΄ὔ .,2 ΄ὔ΄", 57.3),
+            ("3 κ ν Ν ,ὔ᾿", 51.8),
+            ("\" Ν \" ΄ ΄ Ε 3 ΄ 2.ϑ»ϑβὲ2 ΄ὔ΄", 57.0),
+        ] {
+            assert!(only_marks(line, Some(confidence)), "{line}");
+        }
+        // And the lines of verse, of which it was sure, stay.
+        assert!(!only_marks("ἀπεπυδάριςα μόθωνα, περιεκόκκακα.", Some(85.6)));
+        assert!(!only_marks("ὁ δ᾽ ἐν τῷ", Some(80.0)), "short words it was sure of");
+        assert!(!only_marks("Πα. οὔτοι μὰ τὴν Δήμητρά γ᾽, εἰ μή σ᾿ ἐκφάγω", Some(60.0)), "a line of verse, unsure");
     }
 
     #[test]

@@ -482,7 +482,10 @@ impl OutputDev for Gatherer {
         if let Some(id) = glyph.font
             && !shown.is_empty()
         {
-            self.maps.entry(id).or_default().entry(glyph.code).or_insert_with(|| shown.clone());
+            // In the font's map, marks drawn as glyphs of their own are the
+            // combining marks, which a reader puts onto the letter before.
+            let in_map = glyph.name.filter(|_| named).and_then(schemes::combining_of).unwrap_or_else(|| shown.clone());
+            self.maps.entry(id).or_default().entry(glyph.code).or_insert(in_map);
         }
         // A mark is known by what it is translated to, or by what a Greek
         // font's map gives for it: a Latin font's accents are letters' business.
