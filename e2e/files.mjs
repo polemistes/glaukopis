@@ -7,9 +7,14 @@
 //    while its file stays, unassigned;
 // 2. the going-through: files given to their references, where the name
 //    alone says whose a file is, and a scan with nothing to say is left
-//    for later;
+//    for later; offered by the bar at the head, the only thing to do with
+//    several files but move, export and remove them; its rows in groups,
+//    and what it did undone at once;
 // 3. the export of all the files into a folder, under the names of their
-//    references, with a references.bib beside them.
+//    references, with a references.bib beside them;
+// 4. the folder a file stands in as a clue to the work it is part of; and
+//    the pane of a reference: files of the library added to it, all taken
+//    from it at once, and several from the disk asked about first.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
@@ -79,6 +84,10 @@ const stubOf = (name, mark) => {
 };
 const nagyByName = stubOf(NAGY, 'by name');
 const scan0001 = stubOf('scan0001.pdf', 'a scan');
+// A part of a book in a folder named for the book, for part 4.
+const bookFolder = join(desk, 'later', 'Nagy 1979 - The Best of the Achaeans');
+mkdirSync(bookFolder, { recursive: true });
+writeFileSync(join(bookFolder, 'chapter 3.pdf'), '%PDF-1.4\n% a chapter\n%%EOF\n');
 // Where everything is exported to.
 const out = join(desk, 'exported');
 
@@ -428,20 +437,61 @@ try {
   await app.waitGone('dialog', 10000);
   await app.waitFor(`.list .item`, 5000);
 
-  // Two files dropped at the top: the message after offers to go through them.
+  // Two files dropped at the top: they are selected, and the bar says how many have no reference.
   await app.clickText('[data-library-switch] [role="radio"]', 'Files');
   await app.waitFor('[data-file-list] [data-hash]', 5000);
   await app.clickText('[data-file-folders] .item.all', 'All files');
   await sleep(250);
+  const before = new Set((await rows()).map((r) => r.hash));
   const atTop = await middleOf('.files-view .middle .body');
   await drop([nagyByName, scan0001], atTop.x, atTop.y);
-  const offer = await until(
-    'the offer to go through them',
-    async () => (await toasts()).find((t) => /Go through the 2 new files/.test(t)),
+  await until('the two new files', async () => (await rows()).length === before.size + 2, 10000);
+  const fresh = (await rows()).filter((r) => !before.has(r.hash));
+  const nagyFresh = fresh.find((r) => r.name === NAGY);
+  const takenWords = await until(
+    'the message of taking in',
+    async () => (await toasts()).find((t) => /taken in/.test(t)),
     8000,
   ).catch(() => '');
-  check('the message after taking in offers the going-through', !!offer, offer);
-  await app.clickText('.toaster .toast .action', 'Go through the 2 new files');
+  check('the message after taking in offers nothing more', !/Go through/.test(takenWords), takenWords);
+  const unassignedCount = async () => (await rows()).filter((r) => r.reference === 'No reference').length;
+  const barCount = () =>
+    app.exec(`return Number(document.querySelector('[data-unassigned-bar]')?.dataset.count ?? 0)`);
+  const unassigned = await unassignedCount();
+  await until('the bar', () => app.exists('[data-unassigned-bar]'), 5000).catch(() => false);
+  const barWords = await app.exec(
+    `return document.querySelector('[data-unassigned-bar]')?.textContent.replace(/\\s+/g, ' ').trim() ?? ''`,
+  );
+  check(
+    'the bar says how many here belong to no reference',
+    (await barCount()) === unassigned &&
+      new RegExp(`${unassigned} files here belong to no reference`).test(barWords),
+    `${await barCount()} of ${unassigned}: ${barWords}`,
+  );
+  await app.screenshot('files-2-bar');
+  await until('the two to be selected', () => app.exists('[data-go-through-chosen]'), 5000);
+  const several = await app.exec(
+    `return document.querySelector('.files-view .detail')?.textContent.replace(/\\s+/g, ' ') ?? ''`,
+  );
+  check(
+    'over several files, the pane offers no assignment to one reference',
+    !/Assign to a reference/.test(several) && /Go through these 2/.test(several),
+    several,
+  );
+  await app.rightClick(`[data-file-list] [data-hash="${nagyFresh.hash}"]`);
+  await app.waitFor('[role="menu"]', 3000);
+  await sleep(250);
+  const menuOfTwo = await app.exec(
+    `return Array.from(document.querySelectorAll('[role="menu"] [role="menuitem"]')).map((e) => e.textContent.trim())`,
+  );
+  check(
+    'and their menu has the going-through first, and no assignment',
+    /Go through these 2/.test(menuOfTwo[0] ?? '') && !menuOfTwo.some((m) => /Assign/.test(m)),
+    menuOfTwo.join(' | '),
+  );
+  await app.press('Escape');
+  await app.waitGone('[role="menu"]', 3000).catch(() => {});
+  await app.click('[data-go-through-chosen]');
   await app.waitFor('dialog [data-going="deciding"]', 20000);
   const goingRow = (name) => `dialog [data-going-file="${name}"]`;
   const checkedIn = (name) =>
@@ -463,6 +513,24 @@ try {
   const nothing = await app.text(`${goingRow('scan0001.pdf')} .proposal`);
   check('the scan has nothing found', /Nothing found/.test(nothing), nothing);
   check('and is left for later', (await checkedIn('scan0001.pdf')) === 'Later');
+  const groupHead = (g) =>
+    app.exec(
+      `return document.querySelector('dialog [data-group="' + arguments[0] + '"] .row')?.textContent.replace(/\\s+/g, ' ').trim() ?? ''`,
+      g,
+    );
+  check(
+    'the rows stand in their groups, each with its head',
+    /The one found as probable/.test(await groupHead('probable')) &&
+      /The one with nothing found/.test(await groupHead('nothing')) &&
+      (await app.exists(`dialog [data-group="probable"] [data-going-file="${NAGY}"]`)) &&
+      (await app.exists(`dialog [data-group="nothing"] [data-going-file="scan0001.pdf"]`)),
+    `${await groupHead('probable')} / ${await groupHead('nothing')}`,
+  );
+  check(
+    'the button says how many it gives',
+    (await app.text('dialog [data-going-done]')).trim() === 'Give one file to its reference',
+    await app.text('dialog [data-going-done]'),
+  );
   check(
     'the foot counts them',
     /1 to assign, 1 later/.test(await app.exec(`return document.querySelector('dialog[open] footer')?.textContent ?? ''`)),
@@ -481,11 +549,60 @@ try {
     5000,
   ).catch(() => '');
   check('the message says what was done', /One file assigned/.test(goneThrough) && /1 left for later/.test(goneThrough), goneThrough);
+  check('and offers to undo it', /Undo/.test(goneThrough), goneThrough);
   await sleep(300);
   const byName = (await rows()).filter((r) => r.name === NAGY && /Nagy 1979/.test(r.reference));
   check('the file of that name is the work’s now', byName.length === 1, JSON.stringify(await rows()));
   const scanRow = (await rows()).find((r) => r.name === 'scan0001.pdf');
   check('the scan stays unassigned', scanRow?.reference === 'No reference', scanRow?.reference);
+  await until('the bar to count one fewer', async () => (await barCount()) === unassigned - 1, 5000).catch(() => {});
+  check('the bar counts one fewer', (await barCount()) === unassigned - 1, String(await barCount()));
+  await app.click('[data-files-more]');
+  await app.waitFor('[role="menu"]', 3000);
+  await sleep(250);
+  const headMenu = await app.exec(
+    `return Array.from(document.querySelectorAll('[role="menu"] [role="menuitem"]')).map((e) => e.textContent.trim())`,
+  );
+  check(
+    'the menu of the head can undo it too',
+    headMenu.some((m) => /Undo: one file given to its reference/.test(m)),
+    headMenu.join(' | '),
+  );
+  await app.press('Escape');
+  await app.waitGone('[role="menu"]', 3000).catch(() => {});
+
+  // Undone at once, from the message.
+  await app.clickText('.toaster .toast .action', 'Undo');
+  const undone = await until(
+    'the message of the undoing',
+    async () => (await toasts()).find((t) => /taken back/.test(t)),
+    5000,
+  ).catch(() => '');
+  check('Undo takes the file back', /One file taken back/.test(undone), undone);
+  await until('the file to be unassigned', async () =>
+    (await rows()).find((r) => r.hash === nagyFresh.hash)?.reference === 'No reference',
+  5000).catch(() => {});
+  check(
+    'and it belongs to no reference again',
+    (await rows()).find((r) => r.hash === nagyFresh.hash)?.reference === 'No reference',
+    (await rows()).find((r) => r.hash === nagyFresh.hash)?.reference,
+  );
+  check('the bar counts it again', (await barCount()) === unassigned, String(await barCount()));
+
+  // Given again, through the pane of the one file, for the export to find it so.
+  await app.click(`[data-file-list] [data-hash="${nagyFresh.hash}"]`);
+  await app.waitFor(`.file-pane[data-file="${nagyFresh.hash}"]`, 5000);
+  await app.click('.file-pane [data-assign]');
+  await app.waitFor('dialog [data-chooser]', 3000);
+  await app.type('dialog .search input', 'Achaeans');
+  await until('the chooser to find the work', async () =>
+    (await app.count('dialog [data-chooser] [role="option"]')) === 1,
+  );
+  await app.click('dialog [data-chooser] [role="option"]');
+  await app.waitGone('dialog', 3000);
+  await until('the file to be the work’s again', async () =>
+    /Nagy 1979/.test((await rows()).find((r) => r.hash === nagyFresh.hash)?.reference ?? ''),
+  5000);
 
   // ---- part 3: the export ----
 
@@ -540,6 +657,106 @@ try {
     'the references.bib names the files where they are',
     written.includes(NAGY) && written.includes('Greek/Lord 1960 - The Singer of Tales.png'),
     written.split('\n').filter((l) => /file/.test(l)).join(' | '),
+  );
+
+  // ---- part 4: the folder as a clue, and the pane of a reference ----
+
+  // A chapter in a folder named for its book: the folder says whose it is.
+  await app.go('#/files');
+  await app.waitFor('[data-file-list] [data-hash]', 5000);
+  await app.clickText('[data-file-folders] .item.all', 'All files');
+  await sleep(250);
+  const onTop = await middleOf('.files-view .middle .body');
+  await drop([bookFolder], onTop.x, onTop.y);
+  const chapter = await until(
+    'the chapter',
+    async () => (await rows()).find((r) => r.name === 'chapter 3.pdf'),
+    10000,
+  );
+  await app.rightClick(`[data-file-list] [data-hash="${chapter.hash}"]`);
+  await app.waitFor('[role="menu"]', 3000);
+  await sleep(250);
+  await app.clickText('[role="menuitem"]', 'Go through it');
+  await app.waitFor('dialog [data-going="deciding"]', 20000);
+  const byFolder = await app
+    .exec(
+      `return document.querySelector(arguments[0] + ' [data-reasons]')?.textContent.replace(/\\s+/g, ' ').trim() ?? ''`,
+      goingRow('chapter 3.pdf'),
+    )
+    .catch(() => '');
+  const folderProposal = await app.text(`${goingRow('chapter 3.pdf')} .proposal`).catch(() => '');
+  check(
+    'the folder named for the book proposes the book, as probable',
+    /probable/.test(byFolder) && /in a folder named like it/.test(byFolder) && /Achaeans/.test(folderProposal),
+    `${byFolder} / ${folderProposal.replace(/\s+/g, ' ')}`,
+  );
+  await app.clickText('dialog footer button', 'Cancel');
+  await app.waitGone('dialog', 3000);
+
+  // The pane of the book: the chapter added from the files of the library.
+  await app.click(`[data-file-list] [data-hash="${nagyFresh.hash}"]`);
+  await app.waitFor(`.file-pane[data-file="${nagyFresh.hash}"] [data-reference] a`, 5000);
+  await app.click('.file-pane [data-reference] a');
+  await app.waitFor('.pane [data-add-files]', 5000);
+  const paneFiles = () => app.count('.pane .file');
+  const had = await paneFiles();
+  await app.click('.pane [data-add-files]');
+  await app.waitFor('dialog [data-file-chooser]', 3000);
+  await app.type('dialog .search input', 'chapter');
+  await until('the chooser to find the chapter', () => app.exists('dialog [data-choose-file="chapter 3.pdf"]'));
+  await app.click('dialog [data-choose-file="chapter 3.pdf"]');
+  check(
+    'the chooser says how many it adds',
+    (await app.text('dialog [data-choose-add]')).trim() === 'Add one file',
+    await app.text('dialog [data-choose-add]'),
+  );
+  await app.screenshot('files-5-add-files');
+  await app.click('dialog [data-choose-add]');
+  await app.waitGone('dialog', 3000);
+  await until('the pane to have it', async () => (await paneFiles()) === had + 1, 5000).catch(() => {});
+  check('the reference has the chapter now', (await paneFiles()) === had + 1, `${had} → ${await paneFiles()}`);
+
+  // All taken from it at once, with one question that names the count.
+  const all = had + 1;
+  await app.click('.pane [data-unassign-all]');
+  await app.waitFor('dialog[open]', 3000);
+  const allAsked = await app.exec(`return document.querySelector('dialog[open]')?.textContent.replace(/\\s+/g, ' ') ?? ''`);
+  check(
+    'taking all asks once, with the count',
+    new RegExp(`Remove all ${all} files from “The Best of the Achaeans[^”]*”\\?`).test(allAsked) &&
+      new RegExp(`Remove ${all} files`).test(allAsked),
+    allAsked,
+  );
+  await app.clickText('dialog footer button', `Remove ${all} files`);
+  await app.waitGone('dialog', 3000);
+  await until('the pane to be without files', async () => (await paneFiles()) === 0, 5000).catch(() => {});
+  check('the reference has no files', (await paneFiles()) === 0, String(await paneFiles()));
+
+  // Several from the disk are asked about first.
+  const pane = await middleOf('.pane');
+  await drop([scan0001, nagyByName], pane.x, pane.y);
+  await app.waitFor('dialog[open]', 3000).catch(() => {});
+  const attachAsked = await app.exec(`return document.querySelector('dialog[open]')?.textContent.replace(/\\s+/g, ' ') ?? ''`);
+  check(
+    'attaching several from the disk asks first, with the count',
+    /Attach 2 files to “The Best of the Achaeans[^”]*”\?/.test(attachAsked) && /Attach 2 files/.test(attachAsked),
+    attachAsked,
+  );
+  await app.clickText('dialog footer button', 'Cancel');
+  await app.waitGone('dialog', 3000);
+  await sleep(300);
+  check('and cancelled, attaches nothing', (await paneFiles()) === 0, String(await paneFiles()));
+
+  // The files stay among the files of the library, unassigned.
+  await app.go('#/files');
+  await app.waitFor('[data-file-list] [data-hash]', 5000);
+  await app.clickText('[data-file-folders] .item.all', 'All files');
+  await sleep(300);
+  const left = (await rows()).filter((r) => r.hash === chapter.hash || r.hash === nagyFresh.hash);
+  check(
+    'and the files stay, unassigned',
+    left.length === 2 && left.every((r) => r.reference === 'No reference'),
+    JSON.stringify(left),
   );
 
   // ---- the end ----

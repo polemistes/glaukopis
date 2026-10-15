@@ -1033,23 +1033,44 @@ kind:
 | Anything else | Open it with the program your system has for it |
 
 **Files and references.** A file may belong to one reference, to several (a
-chapter and its book), or to none yet. **Assign to a reference…** finds the
-reference as when you cite; the *×* beside a reference in the pane takes the
-file from it, and so does **Remove from this reference** in the pane of the
-reference. **Unassigned only**, under the filter button, shows the files
-that belong to none.
+chapter and its book), or to none yet. **Assign to a reference…**, in the
+pane of one file, finds the reference as when you cite. Over several files
+there is no such thing: Glaukopis never gives one reference to many files in
+one step, since a thousand files given to one book by one click are a
+thousand to take back. Files that are parts of one work are added from the
+work's side: **Add files of the library…**, in the pane of the reference,
+finds them by name, several at once, and its button says how many it adds;
+files attached from your disk, by **Attach** or by dropping them on the
+pane, are asked about first where there are several. The *×* beside a file
+in the pane of a reference takes it from that reference, and **Remove all N
+from this reference** takes them all, with one question. **Unassigned
+only**, under the filter button, shows the files that belong to none.
 
-**Going through the files.** **Go through…** looks at the files that belong
-to no reference (or at those you have selected) and proposes a reference for
-each: by the DOI or the ISBN printed in it, looked up where your library
-does not have it; by its name, where it is named as files often are, *Nagy
-1979 - The Best of the Achaeans*; or by its first page, where a line of it
-is the title of a work by an author named there. The reason is said beside
-every proposal. For each file you take what is proposed, choose another
-reference, make a new one, or leave it for later; a row at the head answers
-for all that are in the same case. Nothing is assigned until you say so, and
-you can stop at any time: what is left stays unassigned, to be gone through
-another day.
+**Going through the files.** Where files of the folder in view belong to no
+reference, a line at the head of the list says how many, with **Go through
+them…**; it stays until they are gone through, or until you hide it, and
+comes back when more files are taken in. **Go through these…**, first in
+the menu of the files selected and the main button of their pane, does the
+same for those. Glaukopis finds out what each file is and proposes a
+reference for it: by the DOI or the ISBN printed in it, looked up where your
+library does not have it; by its name, where it is named as files often
+are, *Nagy 1979 - The Best of the Achaeans*; by the name of its folder,
+where the folder is named so, with a year, as a folder of a book's chapters
+may be; or by its first page, where a line of it is the title of a work by
+an author named there. The reason is said beside every proposal.
+
+The files are listed in four groups: found for certain, found as probable,
+new from the services, and nothing found. A row at the head of a group
+answers for all of it, and a group of many is folded, to be shown whole on
+asking; so a thousand files are a few decisions and a look at the doubtful
+ones. For each file you may also take what is proposed, choose another
+reference, make a new one, or leave it for later. Nothing is given until you
+press the button, which says how many files it gives, and you can stop at
+any time: what is left stays unassigned, to be gone through another day.
+What a going-through did can be undone at once, by **Undo** in the message
+after it, or in the menu beside **Add files…** while Glaukopis is open: the
+files are taken back, and the references made in it are removed, their files
+staying.
 
 **Files stay.** A file leaves the library only when you remove the file
 itself, and you are told first which references it belongs to. Taking a file
