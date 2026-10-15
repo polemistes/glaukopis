@@ -12,15 +12,22 @@ the same folder. The page links back to the front page of the site, `/`.
 When the language packages change, change their names and sizes in the page
 as well, from `packaging/languages/out/index.json`.
 
-When the packages are built anew, change the names and sizes in the page and
-make the checksums again, from `packaging/`:
+When a release is made (as 0.2.0 was): the Arch packages are built from the
+release's archive with `arch/release/PKGBUILD`; the installers, the deb and
+the rpm are made on GitHub by the workflow `Installers` when the tag `vX.Y.Z`
+is pushed, and fetched with `gh run download <run> -D build/run-<run>`. All
+of them, the PKGBUILD, the page and the language packages
+(`languages/out/*`) are gathered in one folder, `release-X.Y.Z/` (ignored by
+git), and the checksums are made there:
 
 ```
-(sha256sum arch/glaukopis-*-N-*.pkg.tar.zst installers/glaukopis-windows/msi/*.msi \
-  installers/glaukopis-windows/nsis/*.exe installers/glaukopis-macos/dmg/*.dmg \
-  installers/glaukopis-linux/deb/*.deb installers/glaukopis-linux/rpm/*.rpm \
-  | sed 's#  .*/#  #') > web/packages/SHA256SUMS
+cd release-X.Y.Z
+sha256sum Glaukopis_*-setup.exe Glaukopis_*.msi Glaukopis_*.dmg glaukopis-*.pkg.tar.zst \
+  PKGBUILD Glaukopis_*.deb Glaukopis-*.rpm > SHA256SUMS
 ```
+
+Change the names and the sizes in the page, copy it and `SHA256SUMS` back
+here, and upload the whole folder into `glaukopis/` of the site.
 
 The page stands on its own: one file, no scripts, its own styles, light and
 dark with the system.
