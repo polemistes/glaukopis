@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Imported, ImportedSection } from '$lib/api/imported';
 import { buildDocument } from './document';
-import { makeImported, titleOf } from './import';
+import { makeImported, nameStyles, titleOf } from './import';
 import { Project } from './project.svelte';
 import { inlineText, paragraph, readBody, readTitle, type Block, type Inline } from './text';
 import { PROJECT } from './types';
@@ -278,5 +278,130 @@ describe('a document made into a branch', () => {
     project.undo();
     expect(trees(project)).toEqual(['The first']);
     console.info(`taken back in ${Math.round(performance.now() - undone)} ms`);
+  });
+});
+
+describe('the styles found in a PDF, named by the writer', () => {
+  const styled = (style: number | string, text: string, more = 0): Block =>
+    paragraph([t(text)], typeof style === 'number' ? `style:${style}` : style, more);
+  const found = (id: number) => ({
+    id,
+    family: 'Bembo',
+    italic: false,
+    bold: false,
+    size: 0.8,
+    indent: false,
+    kept: false,
+    sample: 'A note at the foot',
+    count: 4,
+    pages: 4,
+  });
+  const names = (blocks: Block[]) =>
+    blocks.map((b) => (b.kind === 'paragraph' ? `${b.name} ${inlineText(b.content)}` : b.kind));
+
+  it('become the kinds given them wherever paragraphs stand, and text where none was given', () => {
+    const named = nameStyles(
+      imported(
+        [
+          section(0, '', styled(1, 'Before'), styled('quote', 'A quotation as it was')),
+          section(
+            1,
+            'One',
+            styled(2, 'Indented', 1),
+            { kind: 'parallel', left: [styled(1, 'Left')], right: [styled(3, 'Right')] },
+            { kind: 'row', items: [styled(2, 'In a row')] },
+            {
+              kind: 'table',
+              id: 'tab',
+              caption: [],
+              rows: [
+                [{ content: [styled(1, 'In a cell')], colspan: 1, rowspan: 1, header: false }],
+              ],
+              numbered: false,
+              width: 0,
+            },
+          ),
+        ],
+        { styles: [found(1), found(2), found(3)] },
+      ),
+      new Map([
+        [1, 'quote'],
+        [2, 'own-kind'],
+      ]),
+    );
+
+    expect(named.styles).toEqual([]);
+    expect(names(named.sections[0].blocks)).toEqual([
+      'quote Before',
+      'quote A quotation as it was',
+    ]);
+    const [indented, parallel, row, table] = named.sections[1].blocks;
+    expect(indented).toEqual(paragraph([t('Indented')], 'own-kind', 1));
+    expect(parallel.kind === 'parallel' && names([...parallel.left, ...parallel.right])).toEqual([
+      'quote Left',
+      'text Right',
+    ]);
+    expect(row.kind === 'row' && names(row.items)).toEqual(['own-kind In a row']);
+    expect(table.kind === 'table' && names(table.rows[0][0].content)).toEqual(['quote In a cell']);
+  });
+
+  it('make the kinds of the writer’s own named for them, once for each name, in the project', () => {
+    const project = begun();
+    const apparatus = project.createPassageKind({
+      name: 'Apparatus',
+      family: 'paragraph',
+      basedOn: 'quote',
+      look: { size: 9 },
+    })!;
+    const made = makeImported(
+      project,
+      PROJECT,
+      imported(
+        [
+          section(1, 'One', styled(1, 'Quoted'), styled(2, 'At the foot'), styled(3, 'Also')),
+          section(1, 'Two', styled(4, 'Variants'), styled(5, 'Nameless'), styled(6, 'Unsaid')),
+        ],
+        { styles: [1, 2, 3, 4, 5, 6].map(found) },
+      ),
+      undefined,
+      new Map([
+        [1, { kind: 'quote' }],
+        [2, { own: 'Foot notes' }],
+        [3, { own: '  foot   notes ' }],
+        [4, { own: 'apparatus' }],
+        [5, { own: '   ' }],
+      ]),
+    )!;
+
+    const own = project.passageKinds;
+    expect(own.map((k) => k.name)).toEqual(['Apparatus', 'Foot notes']);
+    const feet = own[1];
+    expect(feet).toMatchObject({ family: 'paragraph', basedOn: 'text', look: {} });
+    expect(names(readBody(project.fragment(made.elements[1], 'body')!, own))).toEqual([
+      'quote Quoted',
+      `${feet.id} At the foot`,
+      `${feet.id} Also`,
+    ]);
+    expect(names(readBody(project.fragment(made.elements[2], 'body')!, own))).toEqual([
+      `${apparatus} Variants`,
+      'text Nameless',
+      'text Unsaid',
+    ]);
+  });
+
+  it('are text where nothing is said of them', () => {
+    const project = begun();
+    const made = makeImported(
+      project,
+      PROJECT,
+      imported([section(0, '', styled(1, 'Small'), styled('text', 'Body'))], {
+        styles: [found(1)],
+      }),
+    )!;
+    expect(project.passageKinds).toEqual([]);
+    expect(names(readBody(project.fragment(made.top, 'body')!))).toEqual([
+      'text Small',
+      'text Body',
+    ]);
   });
 });
