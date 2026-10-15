@@ -27,8 +27,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
-  import { firstTextChoice, howFromSettings, latinWithGreek } from './how';
-  import { ocrLanguageName } from './languages';
+  import { firstTextChoice, howFromSettings, scriptsAlike } from './how';
   import HowDisclosure from './HowDisclosure.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
@@ -148,7 +147,8 @@
       (text === 'translate' || scanning) &&
       (!scanning || (reader.installed && chosen.length > 0)),
   );
-  const latin = $derived(scanning ? latinWithGreek(chosen) : []);
+  /** Scripts whose letters look alike among the languages chosen, whose letters are read as each other's. */
+  const alike = $derived(scanning ? scriptsAlike(chosen) : []);
   /** Room for the preview of the text the PDF has. */
   const wide = $derived(!!looked?.searchable && looked.withText > 0);
 </script>
@@ -187,13 +187,15 @@
                 hint={t('ocr-languages-hint')}
                 onchange={(value) => (chosen = value)}
               />
-              {#if latin.length}
-                <p class="warn" data-greek-with-latin>
-                  {t('ocr-languages-greek-with-latin', {
-                    languages: latin.map((l) => ocrLanguageName(l, true)).join(', '),
+              {#each alike as pair (pair.a + pair.b)}
+                <p class="warn" data-scripts-alike="{pair.a} {pair.b}">
+                  {t('ocr-languages-scripts-alike', {
+                    a: t('ocr-script', { script: pair.a }),
+                    b: t('ocr-script', { script: pair.b }),
+                    alike: pair.alike,
                   })}
                 </p>
-              {/if}
+              {/each}
               <HowDisclosure bind:value={how} />
             {:else if scanning}
               <p class="failure selectable" role="alert">

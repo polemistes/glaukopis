@@ -81,6 +81,7 @@ ocr-map-button = Teksten i den som elementer…
 ocr-map-title = Teksten som elementer
 ocr-map-into = Inn i prosjektet
 ocr-map-new-project = Et nytt prosjekt, oppkalt etter den
+ocr-map-make = Lag elementene
 ocr-map-making = Lager elementene…
 ocr-map-failed = Elementene kunne ikke lages.
 
@@ -164,4 +165,61 @@ ocr-searchable-readable-done = { $count ->
     [one] Teksten i PDF-en er lesbar nå: én skrift fikk bokstavene sine
    *[other] Teksten i PDF-en er lesbar nå: { $count } skrifter fikk bokstavene sine
 }
-ocr-languages-greek-with-latin = Gresk leses sammen med { $languages }: den runde sigmaen, som ligner en latinsk c, leses da ofte som latin, og ordene med den blir latinske. For bare gresk, ta de andre bort.
+
+## Formen på sidene, og alfabeter med bokstaver som ligner hverandre (ADR 0045).
+
+ocr-shape = Behold formen på sidene
+ocr-shape-hint = Overskrifter, linjer som holdes som linjer, numre i margen, og sidehodene tatt bort. Av blir sidene vanlige avsnitt.
+
+# Tekststilene som går igjen ved siden av brødteksten, vist etter lesingen, så den som skriver kan si hva hver er.
+ocr-styles-title = Stiler funnet
+ocr-styles-about = { $count ->
+    [one] Én tekststil går igjen ved siden av brødteksten. Si hva den er, eller la den være tekst.
+   *[other] { $count } tekststiler går igjen ved siden av brødteksten. Si hva hver av dem er, eller la dem være tekst.
+}
+# Hvor ofte en stil forekommer: «12 ganger på 9 sider».
+ocr-styles-often = { $count ->
+    [one] Én gang
+   *[other] { $count } ganger
+} på { $pages ->
+    [one] én side
+   *[other] { $pages } sider
+}
+ocr-styles-kind = Hva det er
+ocr-styles-own = Et eget slag …
+ocr-styles-own-name = Navn på slaget
+ocr-styles-own-hint = Lages når dokumentet tas inn, uten eget utseende før du gir det et.
+# Første gjetning på navnet til et eget slag: utseendet til stilen i ord, satt sammen som «{ $look } tekst», «Mindre kursiv tekst», «Innrykket tekst», eller for linjer som holdes som linjer, «{ $look } linjer», «Linjer». $kept er yes for linjer som holdes, så ordene for utseendet kan bøyes etter det.
+ocr-style-guess = { $kept ->
+    [yes] { $look } linjer
+   *[other] { $look } tekst
+}
+ocr-style-indented = { $kept ->
+    [yes] innrykkede
+   *[other] innrykket
+}
+ocr-style-smaller = { $kept ->
+   *[other] mindre
+}
+ocr-style-larger = { $kept ->
+   *[other] større
+}
+ocr-style-bold = { $kept ->
+    [yes] halvfete
+   *[other] halvfet
+}
+ocr-style-italic = { $kept ->
+    [yes] kursive
+   *[other] kursiv
+}
+# En stil som skiller seg fra brødteksten bare ved skriften.
+ocr-style-family = Tekst i { $family }
+ocr-style-other = Annen tekst
+# Et alfabet blant de valgte språkene, slik det står i advarselen under: «det greske alfabetet leses sammen med det latinske».
+ocr-script = { $script ->
+    [Greek] greske
+    [Cyrillic] kyrilliske
+   *[Latin] latinske
+}
+# $alike: bokstavene som ligner hverandre, parvis, det første alfabetets først: «ϲ c, ο o, ν v».
+ocr-languages-scripts-alike = Det { $a } alfabetet leses sammen med det { $b }: bokstaver som ligner hverandre i de to ({ $alike }), leses ofte som hverandre, og hele ord blir feil. For bare ett alfabet, ta de andre bort.

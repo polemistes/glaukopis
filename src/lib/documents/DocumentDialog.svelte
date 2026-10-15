@@ -7,7 +7,8 @@
   import { citeAtOnceIn } from '$lib/found/atonce';
   import { languages, t } from '$lib/i18n';
   import { settings } from '$lib/state/settings.svelte';
-  import { makeImported, titleOf } from '$lib/project/model/import';
+  import { SvelteMap } from 'svelte/reactivity';
+  import { makeImported, titleOf, type StyleChoice } from '$lib/project/model/import';
   import { PROJECT } from '$lib/project/model/types';
   import { openProject, projects } from '$lib/state/projects.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -18,6 +19,7 @@
   import { newId } from '$lib/util/id';
   import { isReadPath } from '$lib/api/ocr';
   import ReadStep from '$lib/ocr/ReadStep.svelte';
+  import StylesFound from '$lib/ocr/StylesFound.svelte';
   import { keepReferences, type Bringing, type Brought } from './bringing.svelte';
 
   let { request, onclose }: { request: Bringing; onclose: () => void } = $props();
@@ -35,6 +37,8 @@
   let title = $state('');
   let failure = $state<string | null>(null);
   let making = $state(false);
+  /** What each style found in a PDF whose shape was kept was said to be, by its number; text where nothing is said. */
+  const styles = new SvelteMap<number, StyleChoice>();
   /** The dialog was left while the file was being read: what is read then is not wanted. */
   let left = false;
 
@@ -103,7 +107,7 @@
       // Those that are left are gone through when the tree is made, if the writer has said so.
       const goThrough = text.counts.found > 0 && settings.value.found.goThrough;
       if (request.project) {
-        const made = makeImported(request.project, request.under, text, title);
+        const made = makeImported(request.project, request.under, text, title, styles);
         if (!made) throw new Error(t('documents-failed'));
         await keepReferences(request.project, made.cited);
         done({ top: made.top, goThrough });
@@ -113,7 +117,7 @@
       const name = title.replace(/\s+/g, ' ').trim() || titleOf(read) || t('documents-untitled');
       const info = await projects.create(name);
       const opened = await openProject(info.id);
-      const made = makeImported(opened.project, PROJECT, text, title);
+      const made = makeImported(opened.project, PROJECT, text, title, styles);
       if (made) await keepReferences(opened.project, made.cited);
       await opened.project.close();
       if (!made) throw new Error(t('documents-failed'));
@@ -217,6 +221,9 @@
       {/each}
     </dl>
     {#if cited}<p class="cited" data-fact="cited">{cited}</p>{/if}
+    {#if read.styles.length}
+      <StylesFound styles={read.styles} choices={styles} disabled={making} />
+    {/if}
     {#if found}
       <p class="cited" data-fact="found">{found}</p>
       <div class="choices">

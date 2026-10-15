@@ -12,7 +12,8 @@
   import type { Imported } from '$lib/api/imported';
   import type { StoredFile } from '$lib/api/library';
   import { t } from '$lib/i18n';
-  import { makeImported, titleOf } from '$lib/project/model/import';
+  import { SvelteMap } from 'svelte/reactivity';
+  import { makeImported, titleOf, type StyleChoice } from '$lib/project/model/import';
   import type { Project } from '$lib/project/model/project.svelte';
   import { PROJECT } from '$lib/project/model/types';
   import { openProject, projects } from '$lib/state/projects.svelte';
@@ -23,6 +24,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import ReadStep from './ReadStep.svelte';
+  import StylesFound from './StylesFound.svelte';
 
   interface Props {
     file: StoredFile;
@@ -46,6 +48,10 @@
   let into = $state<string>(project && projectId ? projectId : NEW);
   let making = $state(false);
   let failure = $state<string | null>(null);
+  /** What was read, where styles were found in it for the writer to name before the elements are made. */
+  let read = $state.raw<Imported | null>(null);
+  /** What each style found was said to be, by its number; text where nothing is said. */
+  const styles = new SvelteMap<number, StyleChoice>();
 
   onMount(() => {
     if (!projects.loaded) void projects.load();
@@ -56,13 +62,20 @@
     ...projects.list.map((p) => ({ value: p.id, label: p.name })),
   ]);
 
+  /** What was read is made into elements at once, or once the styles found in it are named. */
+  function readDone(imported: Imported) {
+    if (imported.styles.length) read = imported;
+    else void made(imported);
+  }
+
   async function made(imported: Imported) {
+    if (making) return;
     making = true;
     failure = null;
     const title = titleOf(imported) || file.name.replace(/\.pdf$/i, '');
     try {
       if (project && into === projectId) {
-        const made = makeImported(project, at ?? PROJECT, imported, title);
+        const made = makeImported(project, at ?? PROJECT, imported, title, styles);
         if (!made) throw new Error(t('ocr-map-failed'));
         onclose();
         onenter?.(made.top);
@@ -70,7 +83,7 @@
       }
       const id = into === NEW ? (await projects.create(title)).id : into;
       const opened = await openProject(id);
-      const made = makeImported(opened.project, PROJECT, imported, title);
+      const made = makeImported(opened.project, PROJECT, imported, title, styles);
       await opened.project.close();
       if (!made) throw new Error(t('ocr-map-failed'));
       onclose();
@@ -86,7 +99,7 @@
   open
   title={t('ocr-map-title')}
   subtitle={file.name}
-  width={wide && !making ? 960 : 520}
+  width={wide && !making && !read ? 960 : 520}
   dismissable={!making}
   {onclose}
 >
@@ -99,8 +112,10 @@
         <Spinner size={18} />
         <div class="doing">{t('ocr-map-making')}</div>
       </div>
+    {:else if read}
+      <StylesFound styles={read.styles} choices={styles} />
     {:else}
-      <ReadStep path={file.path} stored name={file.name} onread={made} bind:wide />
+      <ReadStep path={file.path} stored name={file.name} onread={readDone} bind:wide />
     {/if}
     {#if failure}
       <p class="failure selectable" role="alert">
@@ -111,6 +126,11 @@
 
   {#snippet footer()}
     <Button variant="ghost" disabled={making} onclick={onclose}>{t('common-cancel')}</Button>
+    {#if read}
+      <Button variant="primary" disabled={making} onclick={() => read && made(read)}>
+        {t('ocr-map-make')}
+      </Button>
+    {/if}
   {/snippet}
 </Dialog>
 

@@ -29,8 +29,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
-  import { firstTextChoice, howFromSettings, latinWithGreek } from './how';
-  import { ocrLanguageName } from './languages';
+  import { firstTextChoice, howFromSettings, scriptsAlike } from './how';
   import HowDisclosure from './HowDisclosure.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
@@ -60,6 +59,8 @@
   let chosen = $state<string[]>([]);
   /** What becomes of the text the PDF has. */
   let text = $state<TextChoice>('keep');
+  /** Whether the shape of a PDF's pages is kept: headings, lines kept as lines, numbers in the margin. */
+  let shape = $state(true);
   /** How the pages are read, as the settings say until this reading says otherwise. */
   let how = $state(howFromSettings());
   let progress = $state.raw<Progress | null>(null);
@@ -108,7 +109,8 @@
         {
           languages: $state.snapshot(chosen),
           text,
-          shape: true,
+          // A picture is one page: there is no shape across pages to keep.
+          shape: !looked?.picture && shape,
           ...$state.snapshot(how),
         },
         ticket,
@@ -147,8 +149,8 @@
     if (without === 0) return t('ocr-about-text', { pages: looked.pages });
     return t('ocr-about-some', { pages: looked.pages, without });
   });
-  /** The languages of the Latin script chosen with Greek, with which the lunate sigma reads as Latin. */
-  const latin = $derived(scanning ? latinWithGreek(chosen) : []);
+  /** Scripts whose letters look alike among the languages chosen, whose letters are read as each other's. */
+  const alike = $derived(scanning ? scriptsAlike(chosen) : []);
   const go = $derived(
     !scanning ? t('ocr-take-text') : reader.installed ? t('ocr-read') : t('ocr-read-text-pages'),
   );
@@ -167,6 +169,15 @@
         {#if !looked.picture && looked.withText > 0}
           <TextPart {looked} bind:choice={text} canRead={reader.installed} />
         {/if}
+        {#if !looked.picture}
+          <label class="option">
+            <input type="checkbox" data-choice="shape" bind:checked={shape} />
+            <span>
+              {t('ocr-shape')}
+              <small>{t('ocr-shape-hint')}</small>
+            </span>
+          </label>
+        {/if}
         {#if scanning && reader.installed}
           <LanguagePicker
             value={chosen}
@@ -175,13 +186,15 @@
             hint={t('ocr-languages-hint')}
             onchange={(value) => (chosen = value)}
           />
-          {#if latin.length}
-            <p class="warn" data-greek-with-latin>
-              {t('ocr-languages-greek-with-latin', {
-                languages: latin.map((l) => ocrLanguageName(l, true)).join(', '),
+          {#each alike as pair (pair.a + pair.b)}
+            <p class="warn" data-scripts-alike="{pair.a} {pair.b}">
+              {t('ocr-languages-scripts-alike', {
+                a: t('ocr-script', { script: pair.a }),
+                b: t('ocr-script', { script: pair.b }),
+                alike: pair.alike,
               })}
             </p>
-          {/if}
+          {/each}
         {:else if scanning}
           <p class="failure selectable" role="alert">
             <CircleAlert size={15} /> <span>{t('ocr-no-tesseract')}</span>
@@ -266,6 +279,26 @@
     color: var(--ink);
     font-size: var(--text-sm);
     line-height: 1.45;
+  }
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .option input {
+    accent-color: var(--accent);
+    margin: 3px 0 0;
+  }
+  .option span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .option small {
+    font-size: var(--text-sm);
+    color: var(--ink-3);
   }
   .about {
     margin: 0;

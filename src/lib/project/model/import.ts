@@ -49,17 +49,116 @@ function citedIn(blocks: Block[], out: Set<string>) {
 }
 
 /**
+ * What the writer said a style found is (ADR 0045): a kind of the
+ * catalogue or of the project, by its id (`text` for plain text), or a kind
+ * of their own to be made, by its name.
+ */
+export type StyleChoice = { kind: string } | { own: string };
+
+/** The prefix of the name of a paragraph of a style found, before the writer has said what it is. */
+const STYLE = 'style:';
+
+function renamedBlocks(blocks: Block[], rename: (name: string) => string): Block[] {
+  return blocks.map((b): Block => {
+    switch (b.kind) {
+      case 'paragraph': {
+        const name = rename(b.name);
+        return name === b.name ? b : { ...b, name };
+      }
+      case 'parallel':
+        return { ...b, left: renamedBlocks(b.left, rename), right: renamedBlocks(b.right, rename) };
+      case 'row':
+        return { ...b, items: renamedBlocks(b.items, rename) };
+      case 'table':
+        return {
+          ...b,
+          rows: b.rows.map((row) =>
+            row.map((cell) => ({ ...cell, content: renamedBlocks(cell.content, rename) })),
+          ),
+        };
+      default:
+        return b;
+    }
+  });
+}
+
+/**
+ * A document with the paragraphs of its styles found named by the kinds
+ * they were given, by the number of the style: `style:<n>` becomes the id
+ * of the kind given to style `n`, or `text` where none was. Wherever
+ * paragraphs stand, in sections, side by side, in rows and in tables. The
+ * styles are then said.
+ */
+export function nameStyles(imported: Imported, kinds: ReadonlyMap<number, string>): Imported {
+  const rename = (name: string) => {
+    if (!name.startsWith(STYLE)) return name;
+    return kinds.get(Number(name.slice(STYLE.length))) || 'text';
+  };
+  return {
+    ...imported,
+    sections: imported.sections.map((s) => ({ ...s, blocks: renamedBlocks(s.blocks, rename) })),
+    styles: [],
+  };
+}
+
+/**
+ * The kinds the styles found were given, by the number of the style; the
+ * kinds of the writer's own among them are made first, based on text,
+ * with no look, as every kind is made, last among the project's. A name
+ * the project already has a kind of paragraph by is that kind, and a name
+ * given to two styles makes one kind. A style given no kind, or a name of
+ * nothing but spaces, is text.
+ */
+function styleKinds(
+  project: Project,
+  choices: ReadonlyMap<number, StyleChoice> | undefined,
+): Map<number, string> {
+  const out = new Map<number, string>();
+  if (!choices) return out;
+  const key = (name: string) => name.replace(/\s+/g, ' ').trim().toLocaleLowerCase();
+  const byName = new Map(
+    project.passageKinds.filter((k) => k.family === 'paragraph').map((k) => [key(k.name), k.id]),
+  );
+  for (const [style, choice] of choices) {
+    if ('kind' in choice) {
+      if (choice.kind) out.set(style, choice.kind);
+      continue;
+    }
+    const name = key(choice.own);
+    if (!name) continue;
+    let id = byName.get(name);
+    if (!id) {
+      id =
+        project.createPassageKind({
+          name: choice.own,
+          family: 'paragraph',
+          basedOn: 'text',
+          look: {},
+        }) ?? undefined;
+      if (!id) continue;
+      byName.set(name, id);
+    }
+    out.set(style, id);
+  }
+  return out;
+}
+
+/**
  * Makes the branch under an element, in one step that undo takes back as
  * one. `title` is the title as it was changed by the one who brings the
  * document in; when it is as the document has it, the marks it has there
- * are kept.
+ * are kept. `styles`: what the writer said each style found is, by its
+ * number; the kinds of their own named there are made in the project, and
+ * a style not said is text.
  */
 export function makeImported(
   project: Project,
   under: string,
-  imported: Imported,
+  read: Imported,
   title?: string,
+  styles?: ReadonlyMap<number, StyleChoice>,
 ): Made | null {
+  const imported = nameStyles(read, styleKinds(project, styles));
   const given = titleOf(imported);
   const wanted = title?.replace(/\s+/g, ' ').trim() || given || t('project-untitled');
   const name: Inline[] =
