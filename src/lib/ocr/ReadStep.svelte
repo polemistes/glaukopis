@@ -26,6 +26,7 @@
   } from '$lib/api/ocr';
   import { languages, newTextLanguage, t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
+  import Segmented from '$lib/ui/Segmented.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
@@ -61,6 +62,10 @@
   let text = $state<TextChoice>('keep');
   /** Whether the shape of a PDF's pages is kept: headings, lines kept as lines, numbers in the margin. */
   let shape = $state(true);
+  /** With the shape kept: the document's tree by its headings, or an element for each page (ADR 0047). */
+  let structure = $state<'headings' | 'pages'>('headings');
+  /** By its headings: a mark with the page's number where each page begins. */
+  let pageMarks = $state(true);
   /** How the pages are read, as the settings say until this reading says otherwise. */
   let how = $state(howFromSettings());
   let progress = $state.raw<Progress | null>(null);
@@ -111,6 +116,8 @@
           text,
           // A picture is one page: there is no shape across pages to keep.
           shape: !looked?.picture && shape,
+          structure,
+          pageMarks: structure === 'headings' && pageMarks,
           ...$state.snapshot(how),
         },
         ticket,
@@ -177,6 +184,35 @@
               <small>{t('ocr-shape-hint')}</small>
             </span>
           </label>
+          {#if shape}
+            <div class="structure">
+              <div data-choice="structure">
+                <Segmented
+                  value={structure}
+                  label={t('ocr-structure')}
+                  size="sm"
+                  options={[
+                    { value: 'headings', label: t('ocr-structure-headings') },
+                    { value: 'pages', label: t('ocr-structure-pages') },
+                  ]}
+                  onchange={(v: 'headings' | 'pages') => (structure = v)}
+                />
+              </div>
+              <label class="option">
+                <input
+                  type="checkbox"
+                  data-choice="page-marks"
+                  checked={structure === 'headings' && pageMarks}
+                  disabled={structure !== 'headings'}
+                  onchange={(e) => (pageMarks = e.currentTarget.checked)}
+                />
+                <span>
+                  {t('ocr-page-marks')}
+                  <small>{t('ocr-page-marks-hint')}</small>
+                </span>
+              </label>
+            </div>
+          {/if}
         {/if}
         {#if scanning && reader.installed}
           <LanguagePicker
@@ -295,6 +331,12 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+  }
+  .structure {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 24px;
   }
   .option small {
     font-size: var(--text-sm);

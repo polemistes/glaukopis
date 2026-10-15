@@ -177,6 +177,15 @@ ocr-searchable-readable-done = { $count ->
 
 ocr-shape = Keep the shape of the pages
 ocr-shape-hint = Headings, lines kept as lines, numbers in the margin, and the running heads left out. Off, the pages become plain paragraphs.
+# How a PDF read with its shape kept becomes a map: the document's own tree, or an element for each page.
+ocr-structure = Elements
+ocr-structure-headings = By its headings
+ocr-structure-pages = By its pages
+ocr-page-marks = Mark where each page begins
+ocr-page-marks-hint = A reference mark with the page's number, where it began.
+# The outline shown before a PDF read by its headings is made into a map.
+ocr-outline-title = What will be made
+ocr-outline-all = Show all { $count }
 
 # The styles of text that recur beside the body, shown after the reading, for the writer to say what each is.
 ocr-styles-title = Styles found

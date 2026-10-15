@@ -935,6 +935,7 @@ pub fn imported_pdf(file: &str, title: &str, read: ReadPdf) -> Imported {
         counts: counts(&sections),
         sections,
         styles: shaped::views(&read.styles),
+        structured: by_headings,
         remarks,
         ..Default::default()
     }

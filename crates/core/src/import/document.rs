@@ -320,6 +320,10 @@ pub struct Imported {
     /// was kept (ADR 0045): paragraphs of style `n` are named `style:n`
     /// until the writer says what each is.
     pub styles: Vec<StyleFoundView>,
+    /// Whether its parts are the document's own headings, read from the
+    /// shape of a PDF's pages (ADR 0047), for its outline to be shown before
+    /// it is made; not where they are its pages.
+    pub structured: bool,
     /// What the one who brings the document in should know.
     pub remarks: Vec<String>,
     pub counts: Counts,

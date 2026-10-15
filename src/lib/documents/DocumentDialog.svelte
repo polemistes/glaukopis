@@ -19,6 +19,7 @@
   import { newId } from '$lib/util/id';
   import { isReadPath } from '$lib/api/ocr';
   import ReadStep from '$lib/ocr/ReadStep.svelte';
+  import Outline from '$lib/ocr/Outline.svelte';
   import StylesFound from '$lib/ocr/StylesFound.svelte';
   import { keepReferences, type Bringing, type Brought } from './bringing.svelte';
 
@@ -221,6 +222,9 @@
       {/each}
     </dl>
     {#if cited}<p class="cited" data-fact="cited">{cited}</p>{/if}
+    {#if read.structured}
+      <Outline imported={read} {title} />
+    {/if}
     {#if read.styles.length}
       <StylesFound styles={read.styles} choices={styles} disabled={making} />
     {/if}

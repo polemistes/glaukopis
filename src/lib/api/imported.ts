@@ -50,6 +50,8 @@ export interface Imported {
    * what each is (ADR 0045).
    */
   styles: StyleFoundView[];
+  /** Whether its parts are the document's own headings, read from the shape of a PDF's pages: its outline is shown before it is made. */
+  structured: boolean;
   /** What the one who brings the document in should know. */
   remarks: string[];
   counts: ImportedCounts;

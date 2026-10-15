@@ -26,6 +26,7 @@ function imported(sections: ImportedSection[], more: Partial<Imported> = {}): Im
     language: null,
     sections,
     styles: [],
+    structured: false,
     remarks: [],
     counts: {
       parts: sections.filter((s) => s.level > 0).length,

@@ -481,6 +481,7 @@ export const shapedImport: Imported = {
       "level": 1
     }
   ],
+  "structured": true,
   "styles": [
     {
       "bold": false,

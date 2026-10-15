@@ -1513,6 +1513,7 @@ pub(super) fn convert_with(
         counts,
         sections,
         styles: Vec::new(),
+        structured: false,
         remarks,
         pictures: Vec::new(),
     }

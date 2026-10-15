@@ -24,6 +24,7 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError } from '$lib/ui/toast.svelte';
   import ReadStep from './ReadStep.svelte';
+  import Outline from './Outline.svelte';
   import StylesFound from './StylesFound.svelte';
 
   interface Props {
@@ -64,7 +65,8 @@
 
   /** What was read is made into elements at once, or once the styles found in it are named. */
   function readDone(imported: Imported) {
-    if (imported.styles.length) read = imported;
+    // Where there is something to see or say first: the outline, or the styles found.
+    if (imported.styles.length || imported.structured) read = imported;
     else void made(imported);
   }
 
@@ -113,7 +115,12 @@
         <div class="doing">{t('ocr-map-making')}</div>
       </div>
     {:else if read}
-      <StylesFound styles={read.styles} choices={styles} />
+      {#if read.structured}
+        <Outline imported={read} title={titleOf(read) || file.name.replace(/\.pdf$/i, '')} />
+      {/if}
+      {#if read.styles.length}
+        <StylesFound styles={read.styles} choices={styles} />
+      {/if}
     {:else}
       <ReadStep path={file.path} stored name={file.name} onread={readDone} bind:wide />
     {/if}

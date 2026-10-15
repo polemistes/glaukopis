@@ -174,6 +174,15 @@ ocr-searchable-readable-done = { $count ->
 
 ocr-shape = Behold formen på sidene
 ocr-shape-hint = Overskrifter, linjer som holdes som linjer, numre i margen, og sidehodene tatt bort. Av blir sidene vanlige avsnitt.
+# How a PDF read with its shape kept becomes a map: the document's own tree, or an element for each page.
+ocr-structure = Elementer
+ocr-structure-headings = Etter overskriftene
+ocr-structure-pages = Etter sidene
+ocr-page-marks = Merk hvor hver side begynner
+ocr-page-marks-hint = Et referansemerke med sidetallet, der siden begynte.
+# The outline shown before a PDF read by its headings is made into a map.
+ocr-outline-title = Dette blir laget
+ocr-outline-all = Vis alle { $count }
 
 # Tekststilene som går igjen ved siden av brødteksten, vist etter lesingen, så den som skriver kan si hva hver er.
 ocr-styles-title = Stiler funnet

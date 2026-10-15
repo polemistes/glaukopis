@@ -36,6 +36,10 @@ export interface Asked extends How {
    * numbers in the margin, the styles that recur. Without it, plain paragraphs.
    */
   shape: boolean;
+  /** With the shape kept: the document's tree by its headings, or an element for each page. */
+  structure?: 'headings' | 'pages';
+  /** By its headings: whether a mark with the page's number stands where each page begins. */
+  pageMarks?: boolean;
 }
 
 /** What becomes of the text a PDF has. */
