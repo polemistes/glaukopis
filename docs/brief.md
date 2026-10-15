@@ -784,3 +784,22 @@ Done otherwise than the plan, and why:
   export, so that the export counts what it counted.
 
 > Build arch packages when finished.
+
+## 2026-10-15 — the settings window, ordered and said briefly
+
+The owner asked for most help texts to go, and for an order: Appearance
+(with an editor font and *Document structure*, and a pangram as the sample,
+in English and Bokmål only for now); New documents; Language, holding the
+interface, new texts, Spelling and OCR, each list of languages saying
+*System* or *Imported* with a cross for an imported one, an import button
+whose list closes, no importing from files, and the words added to
+dictionaries in a window of their own; Your details (first and last name,
+organization, title, address, phone, email, ORCID); then the translation
+project of Glaukopis's strings at the foot, before About, which shows the
+credits and licences behind a button.
+
+Built the same day; the credits were gathered by an agent from the
+packages' own metadata. Kept, though not asked for: a line under Email
+saying it is sent to bibliographic services with each lookup, as before;
+Tesseract's place among the programs. Other languages keep their old sample
+sentence until someone gives a pangram.
