@@ -81,6 +81,7 @@ ocr-map-button = Its text as elements…
 ocr-map-title = The text as elements
 ocr-map-into = Into the project
 ocr-map-new-project = A new project, named after it
+ocr-map-make = Make the elements
 ocr-map-making = Making the elements…
 ocr-map-failed = The elements could not be made.
 
@@ -172,6 +173,48 @@ ocr-searchable-readable-done = { $count ->
 
 ocr-shape = Keep the shape of the pages
 ocr-shape-hint = Headings, lines kept as lines, numbers in the margin, and the running heads left out. Off, the pages become plain paragraphs.
+
+# The styles of text that recur beside the body, shown after the reading, for the writer to say what each is.
+ocr-styles-title = Styles found
+ocr-styles-about = { $count ->
+    [one] One style of text recurs beside the body. Say what it is, or leave it as text.
+   *[other] { $count } styles of text recur beside the body. Say what each is, or leave them as text.
+}
+# How often a style found occurs: "12 times on 9 pages".
+ocr-styles-often = { $count ->
+    [one] Once
+   *[other] { $count } times
+} on { $pages ->
+    [one] one page
+   *[other] { $pages } pages
+}
+ocr-styles-kind = What it is
+ocr-styles-own = A kind of your own…
+ocr-styles-own-name = Name of the kind
+ocr-styles-own-hint = Made when the document is brought in, with no look of its own until you give it one.
+# The first guess of the name of a kind of your own: the look of the style in words, put together as "{ $look } text", "Smaller italic text", "Indented text", or for lines kept as lines, "{ $look } lines kept", "Lines kept". $kept is yes for lines kept, where a language bends the words of the look by it.
+ocr-style-guess = { $kept ->
+    [yes] { $look } lines kept
+   *[other] { $look } text
+}
+ocr-style-indented = { $kept ->
+   *[other] indented
+}
+ocr-style-smaller = { $kept ->
+   *[other] smaller
+}
+ocr-style-larger = { $kept ->
+   *[other] larger
+}
+ocr-style-bold = { $kept ->
+   *[other] bold
+}
+ocr-style-italic = { $kept ->
+   *[other] italic
+}
+# A style that differs from the body only by its font.
+ocr-style-family = Text in { $family }
+ocr-style-other = Other text
 # A script among the languages chosen, as it stands in the warning below: "the Greek script is read together with the Latin".
 ocr-script = { $script ->
     [Greek] Greek
