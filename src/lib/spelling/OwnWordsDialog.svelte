@@ -13,11 +13,17 @@
   import Select from '$lib/ui/Select.svelte';
   import TextField from '$lib/ui/TextField.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
-  import { languageKey, spelling } from './spelling.svelte';
+  import { spelling } from './spelling.svelte';
 
   let { onclose }: { onclose: () => void } = $props();
 
-  /** The words added, by the language as maps have it: `en`, `nb`. */
+  /**
+   * The language added words are kept by, as the core keeps them: the first
+   * part of its tag, `en` for `en-US` and `en-GB` both.
+   */
+  const keyOf = (tag: string) => tag.trim().split(/[-_]/)[0].toLowerCase();
+
+  /** The words added, by that language: `en`, `nb`. */
   let words = $state.raw<Record<string, string[]>>({});
   let language = $state('');
   let adding = $state('');
@@ -37,12 +43,12 @@
     await load();
     // At first, the first language with words, else that of new texts.
     const have = Object.keys(words).filter((k) => words[k].length);
-    language = have[0] ?? languageKey(languages.textDefault);
+    language = have[0] ?? keyOf(languages.textDefault);
   });
 
   /** The languages to choose among: those with words, and those texts are written in. */
   const options = $derived(
-    [...new Set([...Object.keys(words), ...TEXT_LANGUAGES.map(languageKey), language])]
+    [...new Set([...Object.keys(words), ...TEXT_LANGUAGES.map(keyOf), language])]
       .filter(Boolean)
       .map((value) => ({
         value,

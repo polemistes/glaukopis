@@ -89,8 +89,10 @@
 
   <div data-dictionaries>
     <div class="label">{t('spelling-dictionaries')}</div>
-    {#if dictionaries}
+    {#if dictionaries?.length}
       <LanguageRows {rows} {busy} onremove={remove} />
+    {:else if dictionaries}
+      <p class="none">{t('spelling-dictionaries-none')}</p>
     {/if}
   </div>
 
@@ -140,5 +142,10 @@
   }
   .label {
     font-weight: 550;
+  }
+  .none {
+    margin: 4px 0 0;
+    color: var(--ink-3);
+    font-size: var(--text-sm);
   }
 </style>

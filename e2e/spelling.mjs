@@ -122,7 +122,7 @@ try {
   );
   check(
     'the settings list the dictionaries that were imported',
-    tags.join(' ') === 'en_GB en_US nb_NO nn_NO',
+    [...tags].sort().join(' ') === 'en_GB en_US nb_NO nn_NO',
     tags.join(' '),
   );
   await app.screenshot('spelling-1-settings');

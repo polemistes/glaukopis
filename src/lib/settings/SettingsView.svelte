@@ -347,7 +347,7 @@
         <div class="font" data-editor-font>
           <Select
             value={settings.value.editorFont ?? ''}
-            label={t('settings-editor-font')}
+            ariaLabel={t('settings-editor-font')}
             options={fontOptions}
             onchange={(font) => settings.set('editorFont', font || null)}
           />

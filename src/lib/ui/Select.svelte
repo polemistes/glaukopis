@@ -11,6 +11,8 @@
     value: T;
     options: Option[];
     label?: string;
+    /** The name a screen reader gives it, where no label is shown. */
+    ariaLabel?: string;
     size?: 'sm' | 'md';
     disabled?: boolean;
     onchange?: (value: T) => void;
@@ -20,6 +22,7 @@
     value = $bindable(),
     options,
     label,
+    ariaLabel,
     size = 'md',
     disabled = false,
     onchange,
@@ -43,6 +46,7 @@
   <div class="box">
     <select
       id="select-{uid}"
+      aria-label={label ? undefined : ariaLabel}
       bind:value
       {disabled}
       onchange={(e) => onchange?.(e.currentTarget.value as T)}

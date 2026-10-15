@@ -24,6 +24,7 @@ spelling-check = Kontroller stavingen mens du skriver
 spelling-on = På
 spelling-off-short = Av
 spelling-dictionaries = Ordbokspråk
+spelling-dictionaries-none = Ingen ennå: importer en nedenfor, eller installer en med pakkebehandleren på systemet ditt.
 spelling-source-application = Følger med Glaukopis
 spelling-source-imported = Importert
 spelling-source-system = System

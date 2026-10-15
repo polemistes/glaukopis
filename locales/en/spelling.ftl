@@ -25,6 +25,7 @@ spelling-check = Check spelling as you write
 spelling-on = On
 spelling-off-short = Off
 spelling-dictionaries = Dictionary languages
+spelling-dictionaries-none = None yet: import one below, or install one with the package manager of your system.
 spelling-source-application = Comes with Glaukopis
 spelling-source-imported = Imported
 spelling-source-system = System
