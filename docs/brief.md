@@ -742,3 +742,18 @@ text at the foot a style found. That smaller text comes as three styles, as
 the edition sets its Greek and its Latin in two fonts a point apart: to be
 named the same, which makes one kind. Fonts set together in one line as one
 face is a later step.
+
+## 2026-10-15 — files given to their references one by one
+
+The owner added a folder of over a thousand PDFs, selected all and chose *Assign to a reference…*, expecting a going-through:
+
+> I assumed that there would be some kind of batch process, trying to automatically assign them to a reference, so when the dialog asked: "Choose", I thought I was choosing which book to assign, not which reference to assign all my 1000 pdfs to. I did the mistake twice, and now there are two pdfs with 1000 references, and it seems the only way to remove them is one by one, with confirmation for each. Do not worry about my reference problem now. Worry about how this cannot happen again. I cannot see any reason for providing mass assignment of one reference to a lot of pdfs, can you? What I would like, instead, is a streamlined way of assigning pdfs to the right reference, or if not, suggest to make a reference. I cannot see why this cannot be very similar to the converting citations when importing a text.
+
+The going-through that was wanted existed since 2026-10-14; it stood third in the menu, and the one action that gave a reference to many files said nothing of what it did. Proposed and accepted (ADR 0046, plan `docs/plans/files-given-to-their-references.md`, for Opus 5.5):
+
+- No reference is given to many files in one step from a selection; *Assign to a reference…* only in the pane of one file. Several files of one work are added from the work's side, *Add files of the library…* in the reference's pane; attaching several from the disk asks first, with the count.
+- The going-through is the one action over several files: first in the menu, the main button, and offered by a bar at the head of the folder that stands until the files are gone through. It learns the folder's name as a clue, where the folder is named as files are, with a year, and groups its rows by case, each group with a head row.
+- A rule for the program: a button over many things says how many and to what; what was done to many can be undone at once (*Undo* after a going-through, *Remove all N from this reference*).
+- No threshold that asks only above some number, and nothing assigned without the writer's say.
+
+> Yes, make a plan for Opus 5.5 to build it.
