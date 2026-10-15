@@ -1294,19 +1294,25 @@ fn all_text(read: &Imported) -> String {
     text
 }
 
-const CAPTIONS: &str = "3 captions began with a word and a number, such as “Figure 1:”. They are left out: Glaukopis \
-                            numbers figures and tables itself. Where the text names one of them by its number, \
-                            that is text as it was written, and does not follow the numbers as they are printed.";
+/// The remark on the captions that lost a word and a number, with the one shown of them:
+/// the first in the order of the alphabet, as each file writes it.
+fn captions(first: &str) -> String {
+    format!(
+        "3 captions began with a word and a number, such as “{first}”. They are left out: Glaukopis \
+         numbers figures and tables itself. Where the text names one of them by its number, \
+         that is text as it was written, and does not follow the numbers as they are printed."
+    )
+}
 const TRACKED: &str = "The document has changes that are tracked. The text is brought in as it stands when all of \
                            them are accepted.";
 
 #[test]
 fn a_picture_in_a_frame_with_what_is_said_of_it() {
     let Some(s) = setup() else { return };
-    for (name, keywords, shows) in [
-        ("captions.odt", vec!["Homer", "the shield"], ["", ""]),
+    for (name, keywords, shows, first) in [
+        ("captions.odt", vec!["Homer", "the shield"], ["", ""], "Figure 1."),
         // LibreOffice writes the keywords of a DOCX with nothing but room between them.
-        ("captions.docx", vec!["Homer", "the", "shield"], ["A round shield", "The river round the rim"]),
+        ("captions.docx", vec!["Homer", "the", "shield"], ["A round shield", "The river round the rim"], "Figure 1."),
     ] {
         let read = s.read(&written(name)).unwrap();
         assert_eq!(read.title, vec![text("The shield of "), marked("Achilles", &["em"])], "{name}");
@@ -1325,7 +1331,7 @@ fn a_picture_in_a_frame_with_what_is_said_of_it() {
             ],
             "{name}"
         );
-        assert_eq!(read.remarks, vec![CAPTIONS, TRACKED], "{name}");
+        assert_eq!(read.remarks, vec![captions(first), TRACKED.to_owned()], "{name}");
 
         // The frame stood in the paragraph that is before it now.
         assert_eq!(kinds(&read.sections[1].blocks), vec!["paragraph", "paragraph", "figure"], "{name}");

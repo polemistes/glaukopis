@@ -25,7 +25,9 @@ pub(super) struct Taken {
     pub captions: usize,
     /// Those of all that is said of figures and tables that lost a word and a number.
     pub labels: usize,
-    /// The first of them, as it was written: "Table 1:".
+    /// One of them as it was written, "Table 1:": the first in the order of
+    /// the alphabet, so that it is the same whatever order a version of
+    /// Pandoc gives the figures and tables in.
     pub first: Option<String>,
     /// Notes that stand in brackets now, since what is said of a figure has none.
     pub bracketed: usize,
@@ -152,8 +154,9 @@ pub(super) fn said(mut line: Vec<Inline>, taken: &mut Taken) -> Vec<Inline> {
     let begins = beginning(&line);
     if let Some(signs) = label(&begins, by_style) {
         taken.labels += 1;
-        if taken.first.is_none() {
-            taken.first = Some(begins.chars().take(signs).collect::<String>().trim().to_owned());
+        let written = begins.chars().take(signs).collect::<String>().trim().to_owned();
+        if taken.first.as_ref().is_none_or(|first| written < *first) {
+            taken.first = Some(written);
         }
         without(&mut line, signs);
     }
@@ -454,7 +457,8 @@ mod tests {
         );
         assert_eq!(taken.captions, 3);
         assert_eq!(taken.labels, 3);
-        assert_eq!(taken.first.as_deref(), Some("Table 1:"));
+        // The first of them in the order of the alphabet, whatever order they came in.
+        assert_eq!(taken.first.as_deref(), Some("Figure 1:"));
     }
 
     #[test]
