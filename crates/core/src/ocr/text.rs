@@ -380,7 +380,11 @@ fn goes_on(before: &str, next: &str) -> bool {
 pub fn page_paragraphs(groups: Vec<Vec<Line>>, is_word: Option<&IsWord>) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for lines in groups {
-        let lines = lines.iter().map(|l| l.text.as_str()).filter(|t| t.chars().any(char::is_alphanumeric));
+        // Every letter with its accents as the one character Unicode has for
+        // it, where it has one (ἀ, not α and a breathing), however the PDF or
+        // Tesseract gave it.
+        let lines: Vec<String> = lines.iter().map(|l| composed(&l.text)).collect();
+        let lines = lines.iter().map(String::as_str).filter(|t| t.chars().any(char::is_alphanumeric));
         let text = join_lines(lines, is_word);
         if text.is_empty() {
             continue;
@@ -397,6 +401,12 @@ pub fn page_paragraphs(groups: Vec<Vec<Line>>, is_word: Option<&IsWord>) -> Vec<
         out.pop();
     }
     out
+}
+
+/// Text with its letters and their marks composed (NFC).
+pub fn composed(text: &str) -> String {
+    use unicode_normalization::UnicodeNormalization;
+    text.nfc().collect()
 }
 
 /// A word broken at the foot of one page is joined again with its end at
@@ -486,6 +496,16 @@ mod tests {
         assert_eq!(read[0][0], line("Forskningen på", 142.0, 140.0, 437.0).with_bottom(183.0));
         assert_eq!(read[1][0].text, "Den andre");
         assert!(tsv_paragraphs("").is_empty());
+    }
+
+    #[test]
+    fn letters_and_their_marks_are_one_character() {
+        let line = |text: &str| Line { text: text.into(), left: 0.0, right: 100.0, top: 0.0, bottom: 10.0 };
+        // α with breathing and accent as three code points, as a PDF may give it.
+        let paragraphs =
+            page_paragraphs(vec![vec![line("\u{3b1}\u{313}\u{301}λλα \u{3b5}\u{313}\u{301}\u{3c0}\u{3b7}")]], None);
+        assert_eq!(paragraphs, vec!["ἄλλα ἔπη".to_owned()]);
+        assert_eq!(paragraphs[0].chars().count(), 8);
     }
 
     #[test]

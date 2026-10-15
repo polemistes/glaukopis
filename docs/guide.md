@@ -1529,9 +1529,13 @@ three such ways, and says which it found and in which fonts:
   keep them: they become their letters and digits.
 - *Beta Code*, Greek written in Latin letters and signs (*mh=nin a)/eide*).
 
-A searchable PDF made readable keeps one limit: its tables give one letter
+A searchable PDF made readable keeps two limits: its tables give one letter
 for each shape, so a sigma printed in one shape for all places is copied as
-ς everywhere. The text read into elements has every sigma right.
+ς everywhere; and an accent or breathing drawn apart from its letter is
+copied as a mark after the letter, which most programs show on it. The text
+read into elements has every sigma right, and every letter with its accents
+as the one character Unicode has for it (ἄ, not α with two marks after it),
+whether it was kept, translated or read by Tesseract.
 
 **Greek with other languages.** Where Greek is read together with a
 language of the Latin script, the window says so: Tesseract then often reads

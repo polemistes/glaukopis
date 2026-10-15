@@ -578,7 +578,7 @@ pub fn text_of_pages(path: &Path, from: usize, count: usize) -> Result<Vec<PageT
     let bytes = read_pdf_file(path)?;
     let layer = layer_of(path, &bytes);
     let order = |lines: &Vec<Line>| -> Vec<String> {
-        text::by_place(lines.clone()).into_iter().flatten().map(|l| l.text).collect()
+        text::by_place(lines.clone()).into_iter().flatten().map(|l| text::composed(&l.text)).collect()
     };
     Ok((from..layer.pages.len().min(from.saturating_add(count)))
         .map(|index| PageTextView {
