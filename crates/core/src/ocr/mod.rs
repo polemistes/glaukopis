@@ -903,7 +903,8 @@ pub fn imported_pdf(file: &str, title: &str, read: ReadPdf) -> Imported {
         .flat_map(|p| &p.pieces)
         .any(|piece| matches!(piece, shaped::Shaped::Heading { level, .. } if *level > 0));
     let mut remarks = read.remarks;
-    if shaped && read.structure == Structure::Headings && !headed {
+    // Said where there are pages to be the elements: a single page has nothing to choose.
+    if shaped && read.structure == Structure::Headings && !headed && read.pages.len() > 1 {
         remarks.push(tr!("ocr-no-headings"));
     }
     let named = read.title.clone();

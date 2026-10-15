@@ -507,19 +507,34 @@ try {
      f.value = 'Foot notes';
      f.dispatchEvent(new Event('input', { bubbles: true }));`,
   );
+  const outlined = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog [data-outline] li')).map((l) => l.dataset.outlineLevel + ' ' + l.textContent.trim())`,
+  );
+  check(
+    'the outline of what will be made is shown first',
+    JSON.stringify(outlined) === JSON.stringify(['0 The Measure of Things', '1 Lines That Keep Their Place', '1 The Last Part']),
+    JSON.stringify(outlined),
+  );
   await app.clickText('dialog footer button', 'Bring it in');
   await app.waitGone('dialog[open]', 15000);
   await sleep(600);
-  await app.openMap('shape');
-  await inView('shape');
+  check('the title found names the map', (await tabs()).includes('The Measure of Things'), JSON.stringify(await tabs()));
+  await app.openMap('The Measure of Things');
+  await inView('The Measure of Things');
   await sleep(400);
   const shaped = await sections();
   const names = shaped.map((s) => s.name);
   check(
-    'the headings are elements under the pages',
-    names.includes('The Measure of Things') && names.includes('Lines That Keep Their Place') && names.includes('The Last Part'),
-    JSON.stringify(names),
+    'the headings are elements under the document, and the pages are not',
+    names.includes('Lines That Keep Their Place') &&
+      names.includes('The Last Part') &&
+      !names.some((n) => /^[1-4]$/.test(n ?? '')) &&
+      shaped.filter((s) => s.level === '1').length === 2,
+    JSON.stringify(shaped.map((s) => [s.level, s.name])),
   );
+  const pageMarks = () =>
+    app.exec(`return Array.from(document.querySelectorAll('.text-view .refmark')).map((m) => m.dataset.refmark)`);
+  check('a mark stands where each page begins', JSON.stringify(await pageMarks()) === '["1","2","3","4"]', JSON.stringify(await pageMarks()));
   check(
     'the running head is left out',
     !shaped.some((s) => /A Book of Tests/.test(s.text)),
@@ -539,6 +554,86 @@ try {
     JSON.stringify(footKinds),
   );
   await app.screenshot('ocr-6-shape');
+  await app.setTheme('dark');
+  await sleep(200);
+  await app.screenshot('ocr-6-shape-dark');
+  await app.setTheme('light');
+
+  await app.click('.maps .up');
+  await inView('Homer');
+  await sleep(300);
+
+  // ---- a file made from a written document, with an outline of its own headings ----
+  const structurePdf = join(root, 'e2e', 'fixtures', 'structure.pdf');
+  const readStructure = async (pages) => {
+    await dropOnTabs(structurePdf);
+    await app.waitFor('dialog [data-ocr="asking"]', 15000);
+    if (pages) await app.clickText('dialog [data-choice="structure"] [role="radio"]', 'By its pages');
+    await sleep(200);
+    await app.click('dialog [data-ocr-read]');
+    await app.waitFor('dialog form input', 30000);
+    await sleep(400);
+  };
+  await readStructure(false);
+  const treatise = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog [data-outline] li')).map((l) => l.dataset.outlineLevel + ' ' + l.textContent.trim())`,
+  );
+  check(
+    'its outline nests the headings as the file and their numbers say',
+    JSON.stringify(treatise) ===
+      JSON.stringify(['0 A Short Treatise', '1 1 Beginnings', '2 1.1 The First Part', '2 1.2 The Second Part', '1 2 Endings']),
+    JSON.stringify(treatise),
+  );
+  const titleField = () => app.exec(`return document.querySelector('dialog form input').value`);
+  check('the title found is the title offered', (await titleField()) === 'A Short Treatise', await titleField());
+  await app.screenshot('ocr-6b-outline');
+  await app.setTheme('dark');
+  await sleep(200);
+  await app.screenshot('ocr-6b-outline-dark');
+  await app.setTheme('light');
+  await app.clickText('dialog footer button', 'Bring it in');
+  await app.waitGone('dialog[open]', 15000);
+  await sleep(600);
+  await app.openMap('A Short Treatise');
+  await inView('A Short Treatise');
+  await sleep(400);
+  const tree = await sections();
+  check(
+    'the map has the document’s structure',
+    JSON.stringify(tree.filter((s) => s.level !== '0').map((s) => [s.level, s.name])) ===
+      JSON.stringify([['1', '1 Beginnings'], ['2', '1.1 The First Part'], ['2', '1.2 The Second Part'], ['1', '2 Endings']]),
+    JSON.stringify(tree.map((s) => [s.level, s.name])),
+  );
+  check('what stood before the first heading is the document’s own', /Anna Lind/.test(tree[0]?.text ?? ''), tree[0]?.text);
+  const beginnings = await app.exec(
+    `const s = Array.from(document.querySelectorAll('.text-view .section')).find((s) => s.querySelector('.heading .prose.title')?.textContent.trim() === '1 Beginnings');
+     return Array.from(s.querySelectorAll('.prose.body p')).map((p) => p.querySelectorAll('.refmark').length)`,
+  );
+  check(
+    'the paragraph that runs over the edge of the page is one, with the mark of the page within it',
+    JSON.stringify(beginnings) === '[0,1]',
+    JSON.stringify(beginnings),
+  );
+  // By its pages: an element for each page, the headings under them, and no marks.
+  await app.click('.maps .up');
+  await inView('Homer');
+  await sleep(300);
+  await readStructure(true);
+  check('by its pages, no outline is shown', !(await app.exists('dialog [data-outline]')));
+  await app.exec(
+    `const f = document.querySelector('dialog form input');
+     f.value = 'A Short Treatise by its pages';
+     f.dispatchEvent(new Event('input', { bubbles: true }));`,
+  );
+  await app.clickText('dialog footer button', 'Bring it in');
+  await app.waitGone('dialog[open]', 15000);
+  await sleep(600);
+  await app.openMap('A Short Treatise by its pages');
+  await inView('A Short Treatise by its pages');
+  await sleep(400);
+  const byPages = (await sections()).filter((s) => s.level === '1').map((s) => s.name);
+  check('by its pages, the pages are the elements', JSON.stringify(byPages) === '["1","2"]', JSON.stringify(byPages));
+  check('and no mark stands in the text', (await pageMarks()).length === 0, JSON.stringify(await pageMarks()));
   await app.click('.maps .up');
   await inView('Homer');
   await sleep(300);
@@ -560,8 +655,8 @@ try {
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
   await sleep(1500);
-  // The trees made before: the scan, the picture, and the file with a shape.
-  check('cancelled, no tree is made', (await tabs()).length === 3, JSON.stringify(await tabs()));
+  // The trees made before: the scan, the picture, the file with a shape, and the treatise twice.
+  check('cancelled, no tree is made', (await tabs()).length === 5, JSON.stringify(await tabs()));
   check('and what was made on the way is gone', leftOver().length === 0, leftOver().join(', '));
 
   // ---- a PDF of the library made searchable ----
