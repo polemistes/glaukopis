@@ -19,6 +19,7 @@ pub mod layer;
 pub mod schemes;
 pub mod searchable;
 pub mod shape;
+pub mod shaped;
 pub mod tesseract;
 pub mod text;
 
@@ -177,7 +178,7 @@ pub struct PageTextView {
 }
 
 /// A page with what was read of it.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PageText {
     /// Counted from one.
@@ -188,14 +189,21 @@ pub struct PageText {
     pub paragraphs: Vec<String>,
     /// Whether Tesseract read it, or its text was taken as the file has it.
     pub read: bool,
+    /// What the page was found to be made of, where its shape was kept
+    /// (ADR 0045): what the document is made of then, in the place of the
+    /// paragraphs.
+    #[serde(skip)]
+    pub pieces: Vec<shaped::Shaped>,
 }
 
 /// What reading a PDF came to.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct ReadPdf {
     pub pages: Vec<PageText>,
     /// What the one who asked should know.
     pub remarks: Vec<String>,
+    /// The styles of the file, the body first, where the shape was kept.
+    pub styles: Vec<shape::StyleFound>,
     /// The pages read by Tesseract, those taken from the PDF, and those that could not be read.
     pub read: usize,
     pub taken: usize,
@@ -273,7 +281,10 @@ impl Reader<'_> {
         stop: &AtomicBool,
     ) -> Result<tesseract::Read> {
         let (picture, dpi) = pages.draw(index, place, self.quality, stop)?;
-        let read = self.read(&picture, dpi, wanted, stop);
+        let read = self.read(&picture, dpi, wanted, stop).map(|mut read| {
+            read.dpi = dpi;
+            read
+        });
         for made in [picture.clone(), picture.with_extension("tsv"), picture.with_extension("pdf")] {
             let _ = std::fs::remove_file(made);
         }
@@ -484,7 +495,8 @@ pub fn read_pdf(
     let to_take = count - wanted.len();
 
     let mut remarks = Vec::new();
-    let mut read: BTreeMap<usize, Vec<Vec<Line>>> = BTreeMap::new();
+    // What Tesseract read of each page, and the page's size, in points.
+    let mut read: BTreeMap<usize, ReadPage> = BTreeMap::new();
     let mut failed: Vec<(usize, String)> = Vec::new();
     if !wanted.is_empty() {
         let can = ready(tools, asked).and_then(|ready| drawing.map(|pages| (ready, pages)));
@@ -493,12 +505,24 @@ pub fn read_pdf(
                 let place = place_in(work)?;
                 let one = |index: usize| {
                     let read = reader.draw_and_read(&pages, index, place.path(), (true, false), stop)?;
-                    Ok(text::tsv_paragraphs(read.tsv.as_deref().unwrap_or_default()))
+                    let tsv = read.tsv.as_deref().unwrap_or_default();
+                    // In points, as the text a PDF has is: its pages and Tesseract's are shaped together.
+                    let scale = if read.dpi > 0 { 72.0 / read.dpi as f32 } else { 1.0 };
+                    let size = text::tsv_page_size(tsv).map_or((0.0, 0.0), |(w, h)| (w * scale, h * scale));
+                    let mut groups = text::tsv_paragraphs(tsv);
+                    for line in groups.iter_mut().flatten() {
+                        for v in
+                            [&mut line.left, &mut line.right, &mut line.top, &mut line.bottom, &mut line.style.size]
+                        {
+                            *v *= scale;
+                        }
+                    }
+                    Ok((groups, size))
                 };
                 for (index, result) in several(&wanted, &one, told, stop) {
                     match result {
-                        Ok(groups) => {
-                            read.insert(index, groups);
+                        Ok(page) => {
+                            read.insert(index, page);
                         }
                         Err(e) => failed.push((index + 1, e.to_string())),
                     }
@@ -528,20 +552,62 @@ pub fn read_pdf(
     // the languages, each sigma is made what its place in the word says.
     let greek = asked.languages.iter().any(|l| matches!(l.as_str(), "grc" | "ell" | "script/Greek"));
     let mut taken = 0;
-    let mut paragraphs: Vec<Vec<String>> = (0..count)
-        .map(|index| {
-            if let Some(groups) = read.remove(&index) {
-                let paragraphs = text::page_paragraphs(groups, is_word);
-                return if greek { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs };
-            }
-            if let Some((_, why)) = failed.iter().find(|(page, _)| *page == index + 1) {
-                return vec![tr!("ocr-page-failed-line", message = why.as_str())];
-            }
+    // Each page: what it is, and its lines and size for the shape.
+    enum Got {
+        Read(Vec<Vec<Line>>),
+        Failed(String),
+        Taken(Vec<Line>),
+    }
+    let mut got: Vec<Got> = Vec::with_capacity(count);
+    let mut pages_lines: Vec<shape::PageLines> = Vec::with_capacity(count);
+    for index in 0..count {
+        let (page, lines, size) = if let Some((groups, size)) = read.remove(&index) {
+            let lines = groups.iter().flatten().cloned().collect();
+            (Got::Read(groups), lines, size)
+        } else if let Some((_, why)) = failed.iter().find(|(page, _)| *page == index + 1) {
+            (Got::Failed(why.clone()), Vec::new(), (0.0, 0.0))
+        } else {
             taken += 1;
-            text::page_paragraphs(text::by_place(taken_lines(&layer, index, asked.text)), is_word)
-        })
-        .collect();
-    text::mend_across(&mut paragraphs, is_word);
+            let lines = taken_lines(&layer, index, asked.text);
+            (Got::Taken(lines.clone()), lines, layer.sizes.get(index).copied().unwrap_or_default())
+        };
+        got.push(page);
+        pages_lines.push(shape::PageLines { lines, width: size.0, height: size.1 });
+    }
+    let (mut paragraphs, mut pieces, styles): (Vec<Vec<String>>, Vec<Vec<shaped::Shaped>>, Vec<shape::StyleFound>) =
+        if asked.shape {
+            let (shaped_pages, styles) = shape::shape(pages_lines);
+            let mut pieces: Vec<Vec<shaped::Shaped>> = shaped_pages
+                .into_iter()
+                .zip(&got)
+                .map(|(page, got)| match got {
+                    Got::Failed(why) => {
+                        vec![shaped::Shaped::failure(tr!("ocr-page-failed-line", message = why.as_str()))]
+                    }
+                    Got::Read(_) => shaped::of(page, is_word, greek),
+                    Got::Taken(_) => shaped::of(page, is_word, false),
+                })
+                .collect();
+            shaped::mend_across(&mut pieces, is_word);
+            let paragraphs = pieces.iter().map(|page| page.iter().map(shaped::Shaped::plain).collect()).collect();
+            (paragraphs, pieces, styles)
+        } else {
+            let paragraphs = got
+                .into_iter()
+                .map(|page| match page {
+                    Got::Read(groups) => {
+                        let paragraphs = text::page_paragraphs(groups, is_word);
+                        if greek { paragraphs.iter().map(|p| schemes::mend_sigmas(p)).collect() } else { paragraphs }
+                    }
+                    Got::Failed(why) => vec![tr!("ocr-page-failed-line", message = why.as_str())],
+                    Got::Taken(lines) => text::page_paragraphs(text::by_place(lines), is_word),
+                })
+                .collect();
+            (paragraphs, vec![Vec::new(); count], Vec::new())
+        };
+    if !asked.shape {
+        text::mend_across(&mut paragraphs, is_word);
+    }
     let done = wanted.len() - failed.len();
     // Said where Tesseract was asked to read: a PDF whose text is all taken needs no counting.
     if !wanted.is_empty() {
@@ -560,10 +626,14 @@ pub fn read_pdf(
             label: layer.label(index),
             read: wanted.contains(&index) && !failed.iter().any(|(page, _)| *page == index + 1),
             paragraphs,
+            pieces: std::mem::take(&mut pieces[index]),
         })
         .collect();
-    Ok(ReadPdf { pages, remarks, read: done, taken, failed: failed.len() })
+    Ok(ReadPdf { pages, remarks, styles, read: done, taken, failed: failed.len() })
 }
+
+/// What Tesseract read of a page, in groups of lines, and the page's size in points.
+type ReadPage = (Vec<Vec<Line>>, (f32, f32));
 
 /// The lines of a page that are taken from the PDF, not read by Tesseract:
 /// as the PDF has them, or as translated where that is asked and there is a
@@ -758,13 +828,20 @@ fn counts(sections: &[Section]) -> Counts {
 /// centre, and under it a part for each page, named by its number as it is
 /// printed, holding what was read of the page.
 pub fn imported_pdf(file: &str, title: &str, read: ReadPdf) -> Imported {
+    let shaped = read.pages.iter().any(|p| !p.pieces.is_empty());
     let sections: Vec<Section> = read
         .pages
         .into_iter()
-        .map(|page| Section {
-            level: 1,
-            heading: vec![Inline::Text { text: page.label, marks: BTreeMap::new() }],
-            blocks: page.paragraphs.into_iter().map(paragraph).collect(),
+        .flat_map(|page| {
+            if shaped {
+                shaped::sections(page.label, page.pieces)
+            } else {
+                vec![Section {
+                    level: 1,
+                    heading: vec![Inline::Text { text: page.label, marks: BTreeMap::new() }],
+                    blocks: page.paragraphs.into_iter().map(paragraph).collect(),
+                }]
+            }
         })
         .collect();
     Imported {
@@ -773,6 +850,7 @@ pub fn imported_pdf(file: &str, title: &str, read: ReadPdf) -> Imported {
         title: vec![Inline::Text { text: title.to_owned(), marks: BTreeMap::new() }],
         counts: counts(&sections),
         sections,
+        styles: shaped::views(&read.styles),
         remarks: read.remarks,
         ..Default::default()
     }

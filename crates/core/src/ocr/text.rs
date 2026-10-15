@@ -95,6 +95,17 @@ impl Style {
 // What Tesseract read
 // ---------------------------------------------------------------------------
 
+/// The size of the page Tesseract read, from its TSV: the width and height
+/// of the page's row, in the dots the page was drawn at.
+pub fn tsv_page_size(tsv: &str) -> Option<(f32, f32)> {
+    tsv.lines().skip(1).find_map(|row| {
+        let columns: Vec<&str> = row.split('\t').collect();
+        (columns.len() >= 10 && columns[0] == "1")
+            .then(|| Some((columns[8].trim().parse().ok()?, columns[9].trim().parse().ok()?)))
+            .flatten()
+    })
+}
+
 /// The paragraphs of what Tesseract read, from its TSV, each as its lines.
 /// A row of the TSV is a page, a block, a paragraph, a line or a word, by
 /// its level; the words (level 5) say which of the others they are in.
@@ -156,6 +167,10 @@ pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
         line.top = line.top.min(top);
         line.bottom = line.bottom.max(top + height);
         last = Some(at);
+    }
+    // Tesseract tells no fonts: the size of a line is its height.
+    for line in paragraphs.iter_mut().flatten() {
+        line.style.size = line.height();
     }
     paragraphs
         .into_iter()
@@ -385,7 +400,7 @@ fn last_word(text: &str) -> (&str, bool) {
 
 /// Joins what follows to what went before, as the end of one line to the
 /// beginning of the next.
-fn join_to(out: &mut String, next: &str, is_word: Option<&IsWord>) {
+pub(crate) fn join_to(out: &mut String, next: &str, is_word: Option<&IsWord>) {
     let next = next.trim();
     if next.is_empty() {
         return;
@@ -559,7 +574,9 @@ mod tests {
         let read = tsv_paragraphs(tsv);
         assert_eq!(read.len(), 2);
         assert_eq!(read[0].iter().map(|l| l.text.as_str()).collect::<Vec<_>>(), vec!["Forskningen på", "Homer."]);
-        assert_eq!(read[0][0], line("Forskningen på", 142.0, 140.0, 437.0).with_bottom(183.0));
+        let mut first = line("Forskningen på", 142.0, 140.0, 437.0).with_bottom(183.0);
+        first.style.size = 43.0;
+        assert_eq!(read[0][0], first, "its size is its height");
         assert_eq!(read[1][0].text, "Den andre");
         assert!(tsv_paragraphs("").is_empty());
     }

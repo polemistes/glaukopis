@@ -15,6 +15,9 @@ pub struct Read {
     /// A page of text alone, unseen, as large as the picture: to be laid
     /// over the page it was drawn from (`searchable.rs`).
     pub layer: Option<Vec<u8>>,
+    /// The dots to the inch the page was drawn at, where it was drawn: what
+    /// the places of the TSV are counted in.
+    pub dpi: u32,
 }
 
 /// Whether a name is one Tesseract may be given for a language: `eng`,
@@ -105,7 +108,7 @@ pub fn read(
     } else {
         None
     };
-    Ok(Read { tsv, layer })
+    Ok(Read { tsv, layer, dpi: 0 })
 }
 
 #[cfg(test)]
