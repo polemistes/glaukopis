@@ -529,6 +529,98 @@ pub fn has_laid(doc: &Document, page: &Dictionary) -> bool {
         .is_some_and(|x| x.iter().any(|(name, _)| name.starts_with(NAME.as_bytes())))
 }
 
+/// The right map of one font of a PDF, from code to text (ADR 0044).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FontMap {
+    /// The font's object.
+    pub font: ObjectId,
+    /// Each code of the font, with the text it stands for.
+    pub entries: Vec<(u32, String)>,
+}
+
+/// A map from code to Unicode as a PDF keeps it (a `ToUnicode` CMap): codes
+/// of one byte, text in UTF-16 written in hexadecimal, at most a hundred to
+/// a block, as the specification of CMaps asks.
+fn to_unicode_cmap(entries: &[(u32, String)]) -> Vec<u8> {
+    let mut out = String::from(
+        "/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n\
+         /CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n\
+         /CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n\
+         1 begincodespacerange\n<00> <FF>\nendcodespacerange\n",
+    );
+    let mut entries: Vec<&(u32, String)> =
+        entries.iter().filter(|(code, text)| *code < 256 && !text.is_empty()).collect();
+    entries.sort_by_key(|(code, _)| *code);
+    for block in entries.chunks(100) {
+        out.push_str(&format!("{} beginbfchar\n", block.len()));
+        for (code, text) in block {
+            let units: String = text.encode_utf16().map(|u| format!("{u:04X}")).collect();
+            out.push_str(&format!("<{code:02X}> <{units}>\n"));
+        }
+        out.push_str("endbfchar\n");
+    }
+    out.push_str("endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend\n");
+    out.into_bytes()
+}
+
+/// Writes into a PDF a right map from glyph to Unicode for each font in
+/// `maps`, as an addition to the file: the pages stay as they are, and every
+/// reader then copies and searches the text rightly. A font that is not a
+/// simple font, or not to be found, is left as it was. The file, and how
+/// many fonts were given a map.
+pub fn remap(bytes: Vec<u8>, doc: Document, maps: &[FontMap]) -> Result<(Vec<u8>, usize)> {
+    let count = doc.get_pages().len();
+    let largest = doc.trailer.get(b"Size").and_then(Object::as_i64).unwrap_or(0).max(1) as u32 - 1;
+    let mut new = Document::new_from_prev(&doc);
+    new.max_id = new.max_id.max(largest);
+    for key in OF_THE_STREAM.into_iter().filter(|k| *k != b"Prev") {
+        new.trailer.remove(key);
+    }
+    let mut given = 0;
+    for map in maps {
+        let Ok(font) = doc.get_dictionary(map.font) else {
+            tracing::warn!(font = ?map.font, "a font to be given its letters was not found");
+            continue;
+        };
+        let simple = matches!(font.get(b"Subtype").and_then(Object::as_name), Ok(b"Type1" | b"TrueType" | b"MMType1"));
+        if !simple || map.entries.is_empty() {
+            tracing::info!(font = ?map.font, "a font that is not simple is left as it was");
+            continue;
+        }
+        let mut stream = Stream::new(Dictionary::new(), to_unicode_cmap(&map.entries));
+        stream.compress().map_err(unreadable)?;
+        let cmap = new.add_object(stream);
+        let mut changed = font.clone();
+        changed.set("ToUnicode", Object::Reference(cmap));
+        new.objects.insert(map.font, Object::Dictionary(changed));
+        given += 1;
+    }
+    if given == 0 {
+        return Ok((bytes, 0));
+    }
+    let mut update = IncrementalDocument::create_from(bytes, doc);
+    update.new_document = new;
+    let mut out = Vec::new();
+    update.save_to(&mut out).map_err(unreadable)?;
+    let reads = std::panic::catch_unwind(|| Document::load_mem(&out)).ok().and_then(|d| d.ok());
+    if reads.is_some_and(|d| d.get_pages().len() == count) {
+        return Ok((out, given));
+    }
+    tracing::warn!("the update of the PDF did not read back as whole; the file is written anew");
+    let mut whole = update.get_prev_documents().clone();
+    let new = &update.new_document;
+    whole.max_id = whole.max_id.max(new.max_id);
+    for (id, object) in &new.objects {
+        whole.objects.insert(*id, object.clone());
+    }
+    for key in OF_THE_STREAM {
+        whole.trailer.remove(key);
+    }
+    let mut out = Vec::new();
+    whole.save_to(&mut out).map_err(unreadable)?;
+    Ok((out, given))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

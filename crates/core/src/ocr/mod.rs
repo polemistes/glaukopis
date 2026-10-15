@@ -13,6 +13,8 @@
 //! `searchable.rs`). A picture is read as one page ([`read_picture`]).
 
 pub mod drawing;
+#[doc(hidden)]
+pub mod fixture;
 pub mod layer;
 pub mod searchable;
 pub mod tesseract;

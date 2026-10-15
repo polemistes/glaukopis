@@ -631,3 +631,38 @@ fn a_locked_pdf_is_not_made_searchable() {
         Ok(_) => panic!("a locked PDF was opened to be changed"),
     }
 }
+
+/// A PDF whose fonts keep their letters by name is given its letters: the
+/// right map is written into it, a reader then gets the Greek out of it, and
+/// the page is drawn as it was.
+#[test]
+fn a_font_is_given_its_letters() {
+    let before = fixture::porson_pdf();
+    let doc = searchable::open(&before).unwrap();
+    let page = *doc.get_pages().values().next().unwrap();
+    let resources = doc.get_dictionary(page).unwrap().get(b"Resources").unwrap().as_reference().unwrap();
+    let fonts = doc.get_dictionary(resources).unwrap().get(b"Font").unwrap().as_dict().unwrap();
+    let font = fonts.get(b"F1").unwrap().as_reference().unwrap();
+    let map = searchable::FontMap { font, entries: fixture::right_map() };
+    let (after, given) = searchable::remap(before.clone(), doc, &[map]).unwrap();
+    assert_eq!(given, 1);
+    let text = pdf_text::extract_text_from_mem(&after).unwrap();
+    for line in fixture::LINES {
+        assert!(has(&text, line), "{line} in {text}");
+    }
+    assert_eq!(drawn(&after), drawn(&before));
+    // And so does another reader, where Poppler is installed.
+    let tmp = tempfile::tempdir().unwrap();
+    let file = tmp.path().join("given.pdf");
+    std::fs::write(&file, &after).unwrap();
+    if let Ok(out) = std::process::Command::new("pdftotext").arg(&file).arg("-").output()
+        && out.status.success()
+    {
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert!(has(&text, fixture::LINES[0]), "Poppler: {text}");
+    }
+    // A font that is not to be found is left alone, and nothing is written.
+    let doc = searchable::open(&before).unwrap();
+    let none = searchable::FontMap { font: (9999, 0), entries: fixture::right_map() };
+    assert_eq!(searchable::remap(before.clone(), doc, &[none]).unwrap(), (before, 0));
+}
