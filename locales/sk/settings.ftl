@@ -27,7 +27,6 @@ settings-own-weak = Ťažko čitateľné: atrament má na papieri kontrast { $in
 settings-text-size = Veľkosť vášho textu
 settings-text-size-hint = V mapách a v textovom zobrazení. Čo sa exportuje, sa riadi formátom dokumentu.
 settings-interface-size = Veľkosť rozhrania
-settings-interface-size-hint = Všetko v okne, aj písanie. Pre samotný text veľkosť nižšie.
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
 settings-sample = Hnev, bohyňa, ospievaj Achilla, Péleovho syna
@@ -35,17 +34,12 @@ settings-sample = Hnev, bohyňa, ospievaj Achilla, Péleovho syna
 ## New documents
 
 settings-new-documents = Nové dokumenty
-settings-new-documents-hint = S čím mapa začína. Každej mape možno v náhľade dať iný.
 settings-reference-style = Citačný štýl
 settings-document-format = Formát dokumentu
 
 ## You
 
 settings-you = Vy
-settings-name = Meno
-settings-name-hint = Zobrazuje sa tým, s ktorými zdieľate projekty. Inak sa nepoužíva.
-settings-contact = Adresa pre bibliografické služby
-settings-contact-hint = Služby ako Crossref odpovedajú ochotnejšie tým, ktorí povedia, ako ich zastihnúť. Ak zadáte adresu, posiela sa im s každým dohľadaním, a nikomu inému. Nechajte prázdne, ak nechcete posielať žiadnu.
 settings-contact-problem = To nevyzerá ako adresa.
 
 ## Programs: Pandoc and Typst
@@ -68,18 +62,13 @@ settings-error-programs = Programy sa nepodarilo hľadať
 
 settings-about = O aplikácii
 settings-licence = Slobodný softvér pod licenciou GNU General Public License, verzia 3 alebo novšia. Dodáva sa bez záruky.
-settings-owl = Sovu nakreslil Robert Emil Berge podľa fotografie aténskej tetradrachmy od Classical Numismatic Group, Inc. (http://www.cngcoins.com). Kresba je pod licenciou Creative Commons Attribution-Share Alike 3.0 Unported.
 settings-data = Kde sa všetko uchováva
 # "file" is the name of the file of the library, shown as code.
 settings-data-hint = Vaše záznamy sú v { $file }, ktorý prečíta každý nástroj pre BibLaTeX. Ak si chcete uchovať kópiu svojej práce, skopírujte tento priečinok.
-settings-lookup = Kde sa dohľadávajú záznamy
-settings-lookup-about = DOI na doi.org, v Crossrefe a DataCite; knihy v katalógoch K10plus, nórskych akademických knižníc, Deutsche Nationalbibliothek a Kongresovej knižnice; preprinty na arXive; medicínska literatúra v PubMede. Posiela sa im len to, čo napíšete do dohľadania.
 
 ## Language
 
 settings-language = Jazyk
 settings-language-interface = Rozhranie
-settings-language-interface-hint = Slová aplikácie. Vaše texty sú v jazyku svojich máp.
 settings-language-system = Ako systém ({ $language })
 settings-language-texts = Jazyk nových textov
-settings-language-texts-hint = V čom sa píše nová mapa, čo určuje slová, ktoré jej dokument tlačí, a slovník, podľa ktorého sa kontroluje pravopis. Každej mape možno dať iný pod Jazyky… v jej ponuke a projektu vlastný jazyk pre jeho nové mapy.

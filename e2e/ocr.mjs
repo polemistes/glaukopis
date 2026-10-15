@@ -743,14 +743,17 @@ try {
     /Tesseract\s*\d/.test(card) && /tesseract/.test(card),
     card.slice(0, 120),
   );
-  check('and the languages it reads', /It reads .*English/.test(card), card);
+  check(
+    'the languages it reads are listed under the languages, from the system',
+    await app.exists('[data-ocr-languages] [data-language="eng"][data-source="other"]'),
+  );
   check(
     'and how text is read at first',
     (await app.exists('[data-ocr-settings-how] [data-ocr-dpi]')) &&
-      /How text is read at first/.test(card),
+      /Default OCR settings/.test(await app.text('[data-ocr-settings-how]')),
   );
   await app.exec(
-    `const s = document.querySelector('[data-program="tesseract"] select.add');
+    `const s = document.querySelector('[data-ocr-settings] select.add');
      s.value = 'grc';
      s.dispatchEvent(new Event('change', { bubbles: true }));`,
   );

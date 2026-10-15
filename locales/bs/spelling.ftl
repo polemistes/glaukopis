@@ -20,18 +20,13 @@ spelling-off = Pravopis se ne provjerava. Uključuje se u postavkama.
 
 spelling-settings = Pravopis
 spelling-settings-about = Riječi kojih rječnik jezika mape nema podvlače se dok pišete. Kliknite jednu desnom tipkom, ili pritisnite F7, za ono što bi mogla biti.
-spelling-norwegian-source = Norveški rječnici napravljeni su od Bokmålsordboka i Nynorskordboka, Universitetet i Bergen og Språkrådet, ordbøkene.no, CC BY 4.0, s oblicima iz Norsk ordbank Nacionalne biblioteke.
 spelling-check = Provjeravaj pravopis dok pišete
 spelling-on = Uključeno
 spelling-off-short = Isključeno
 spelling-dictionaries = Rječnici
-# $folder is the folder of dictionaries in the data directory.
-spelling-dictionaries-hint = Tekstovi na drugim jezicima se ne provjeravaju. Hunspellov rječnik, njegove .aff i .dic datoteke, stavljen u { $folder } također se koristi, prije ostalih.
 spelling-source-application = Dolazi s Glaukopisom
 spelling-source-system = Instaliran na računaru
 spelling-source-own = Stavili ste ga vi
-spelling-own-words = Vaše riječi
-spelling-own-words-hint = Riječi koje ste dodali rječnicima. Vrijede u svim vašim projektima.
 spelling-own-words-none = Niste dodali nijednu riječ.
 spelling-remove-word = Ukloni „{ $word }“
 spelling-settings-failed = Rječnike nije bilo moguće nabrojati

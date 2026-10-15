@@ -20,18 +20,13 @@ spelling-off = Stavningen kontrolleres ikke. Det slås til i indstillingerne.
 
 spelling-settings = Stavning
 spelling-settings-about = Ord, som ordbogen for kortets sprog ikke har, understreges, mens du skriver. Højreklik på et, eller tryk F7, for at se, hvad det kan være.
-spelling-norwegian-source = De norske ordbøger er lavet af Bokmålsordboka og Nynorskordboka, Universitetet i Bergen og Språkrådet, ordbøkene.no, CC BY 4.0, med bøjningerne fra Norsk ordbank ved Nationalbiblioteket.
 spelling-check = Kontrollér stavningen, mens du skriver
 spelling-on = Til
 spelling-off-short = Fra
 spelling-dictionaries = Ordbøger
-# $folder is the folder of dictionaries in the data directory.
-spelling-dictionaries-hint = Tekster på andre sprog kontrolleres ikke. En Hunspell-ordbog, dens .aff- og .dic-filer, lagt i { $folder }, bruges også, før de andre.
 spelling-source-application = Følger med Glaukopis
 spelling-source-system = Installeret på computeren
 spelling-source-own = Lagt der af dig
-spelling-own-words = Dine ord
-spelling-own-words-hint = Ord, du har føjet til ordbøgerne. De gælder i alle dine projekter.
 spelling-own-words-none = Du har ikke tilføjet nogen ord.
 spelling-remove-word = Fjern »{ $word }«
 spelling-settings-failed = Ordbøgerne kunne ikke vises

@@ -203,10 +203,13 @@ try {
   );
   check('the size of the text follows', size === '20px', size);
 
-  const nameField = await app.exec(
-    `return Array.from(document.querySelectorAll('label')).find((l) => l.textContent.trim() === 'Name').getAttribute('for')`,
-  );
-  await app.type(`#${nameField}`, 'Anna Lind');
+  const fieldOf = (label) =>
+    app.exec(
+      `return Array.from(document.querySelectorAll('label')).find((l) => l.textContent.trim() === arguments[0]).getAttribute('for')`,
+      label,
+    );
+  await app.type(`#${await fieldOf('First name')}`, 'Anna');
+  await app.type(`#${await fieldOf('Last name')}`, 'Lind');
   const contact = await app.find('input[type="email"]');
   await app.type(contact, 'not an address');
   await app.click('dialog[open] header h2');
@@ -218,6 +221,8 @@ try {
     'what is set is on disk',
     kept.theme === 'light' &&
       kept.textSize === 20 &&
+      kept.firstName === 'Anna' &&
+      kept.lastName === 'Lind' &&
       kept.displayName === 'Anna Lind' &&
       !kept.contactEmail,
     JSON.stringify(kept),

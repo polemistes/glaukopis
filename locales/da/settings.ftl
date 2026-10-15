@@ -27,7 +27,6 @@ settings-own-weak = Svært at læse: blækket står { $ink } til 1 mod papiret o
 settings-text-size = Størrelsen på din tekst
 settings-text-size-hint = I kortene og i tekstvisningen. Det, der eksporteres, følger dokumentformatet.
 settings-interface-size = Grænsefladens størrelse
-settings-interface-size-hint = Alt i vinduet, også skriften. For din tekst alene, størrelsen nedenfor.
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
 settings-sample = Syng, gudinde, om Peleus’ søn Achilleus’ vrede
@@ -35,17 +34,12 @@ settings-sample = Syng, gudinde, om Peleus’ søn Achilleus’ vrede
 ## New documents
 
 settings-new-documents = Nye dokumenter
-settings-new-documents-hint = Hvad et kort begynder med. Hvert kort kan få andre i forhåndsvisningen.
 settings-reference-style = Referencestil
 settings-document-format = Dokumentformat
 
 ## You
 
 settings-you = Dig
-settings-name = Navn
-settings-name-hint = Vises for dem, du deler projekter med. Bruges ikke ellers.
-settings-contact = Adresse til bibliografiske tjenester
-settings-contact-hint = Tjenester som Crossref svarer hurtigere til dem, der siger, hvordan de kan nås. Indtaster du en adresse, sendes den til dem ved hvert opslag og til ingen andre. Lad feltet stå tomt for ikke at sende nogen.
 settings-contact-problem = Det ligner ikke en adresse.
 
 ## Programs: Pandoc and Typst
@@ -68,18 +62,13 @@ settings-error-programs = Der kunne ikke ledes efter programmerne
 
 settings-about = Om
 settings-licence = Fri software under GNU General Public License, version 3 eller senere. Den leveres uden garanti.
-settings-owl = Uglen er tegnet af Robert Emil Berge efter et fotografi af en athensk tetradrakme fra Classical Numismatic Group, Inc. (http://www.cngcoins.com). Tegningen er under licensen Creative Commons Attribution-Share Alike 3.0 Unported.
 settings-data = Hvor alt gemmes
 # "file" is the name of the file of the library, shown as code.
 settings-data-hint = Dine referencer er i { $file }, som ethvert BibLaTeX-værktøj kan læse. Kopiér denne mappe for at have en kopi af dit arbejde.
-settings-lookup = Hvor referencer slås op
-settings-lookup-about = DOI'er hos doi.org, Crossref og DataCite; bøger i katalogerne K10plus, de norske fagbibliotekers, Deutsche Nationalbibliotheks og Library of Congress'; preprints hos arXiv; medicinsk litteratur hos PubMed. Kun det, du skriver i opslaget, sendes til dem.
 
 ## Language
 
 settings-language = Sprog
 settings-language-interface = Grænsefladen
-settings-language-interface-hint = Programmets ord. Dine tekster er på deres korts sprog.
 settings-language-system = Som systemet ({ $language })
 settings-language-texts = Sprog for nye tekster
-settings-language-texts-hint = Det sprog, et nyt kort skrives på, og som afgør de ord, dets dokument udskriver, og den ordbog, stavningen kontrolleres med. Hvert kort kan få et andet under Sprog… i sin menu, og et projekt et eget sprog for sine nye kort.

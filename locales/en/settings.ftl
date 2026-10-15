@@ -24,35 +24,45 @@ settings-own-gold = Second voice
 settings-own-begin = Begin from
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Hard to read: the ink stands at { $ink } to 1 on the paper and the accent at { $accent } to 1; 4.5 and 3 or more read well.
-settings-text-size = Size of your text
-settings-text-size-hint = In the maps and the text view. What is exported follows the layout.
+settings-text-size = Size of your text in the text editor
+settings-text-size-hint = Relative to the interface. The font sizes of the document preview and export are not affected by this.
+settings-editor-font = Editor font
+settings-editor-font-hint = Select the font for your text in the editor.
+settings-editor-font-default = As the interface (Literata)
 # How the text of a map shows how deep each element stands: on the screen only.
-settings-text-depth = Depth in the text
-settings-text-depth-hint = How the text of a map shows how deep each element stands. On the screen only: nothing of it is printed.
+# How the text editor shows how deep each element stands: on the screen only.
+settings-text-depth = Document structure
+settings-text-depth-hint = How the text editor displays the document structure of your text.
 settings-text-depth-numbers = Numbers
 settings-text-depth-dots = Dots
 settings-text-depth-indent = Set in, with lines
 settings-interface-size = Size of the interface
-settings-interface-size-hint = Everything in the window, the writing as well. For your text alone, the size below.
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
-settings-sample = Sing, goddess, the wrath of Achilles, son of Peleus
+# A sentence with every letter of the language's alphabet (a pangram), set in
+# the size and the font chosen; where no good pangram is known, the alphabet.
+settings-sample = Pack my box with five dozen liquor jugs.
 
 ## New documents
 
 settings-new-documents = New documents
-settings-new-documents-hint = What the documents of a new project begin with. Any element can be given others in its document settings.
 settings-template = Template
 settings-document-format = Layout
 settings-reference-style = Reference style
 
 ## You
 
-settings-you = You
-settings-name = Name
-settings-name-hint = Shown to those you share projects with. Not used otherwise.
-settings-contact = Address for bibliographic services
-settings-contact-hint = Services such as Crossref answer more readily to those who say how they can be reached. If you enter an address, it is sent to them with each lookup, and to no one else. Leave it empty to send none.
+settings-you = Your details
+settings-first-name = First name
+settings-last-name = Last name
+settings-organization = Organization
+settings-position = Title/Position
+settings-address = Address
+settings-phone = Phone
+settings-email = Email
+settings-email-hint = Also sent with each lookup to bibliographic services such as Crossref, which answer more readily when they know how to reach you.
+settings-orcid = ORCID
+settings-orcid-problem = An ORCID iD is four groups of four digits: 0000-0002-1825-0097.
 settings-contact-problem = That does not look like an address.
 
 ## Programs: Pandoc and Typst
@@ -75,21 +85,16 @@ settings-error-programs = The programs could not be looked for
 
 settings-about = About
 settings-licence = Free software under the GNU General Public License, version 3 or later. It comes without warranty.
-settings-owl = The owl is drawn by Robert Emil Berge, after a photograph of an Athenian tetradrachm by Classical Numismatic Group, Inc. (http://www.cngcoins.com). The drawing is under the Creative Commons Attribution-Share Alike 3.0 Unported licence.
 settings-data = Where everything is kept
 # "file" is the name of the file of the library, shown as code.
 settings-data-hint = Your references are in { $file }, which any BibLaTeX tool can read. To keep a copy of your work, copy this folder.
-settings-lookup = Where references are looked up
-settings-lookup-about = DOIs at doi.org, Crossref and DataCite; books in the catalogues K10plus, of the Norwegian academic libraries, of the Deutsche Nationalbibliothek and of the Library of Congress; preprints at arXiv; medical literature at PubMed. Only what you type into the lookup is sent to them.
 
 ## Language
 
 settings-language = Language
 settings-language-interface = The interface
-settings-language-interface-hint = The words of the application. Your texts are in the language of their projects.
 settings-language-system = As the system ({ $language })
 settings-language-texts = Language of new texts
-settings-language-texts-hint = What a new project is written in, which decides the words its documents print and the dictionary its spelling is checked by. Any element can be given another under Languages… in its menu, and what is under it follows.
 
 ## The log of the runs.
 

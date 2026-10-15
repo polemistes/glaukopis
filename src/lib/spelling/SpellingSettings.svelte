@@ -1,32 +1,29 @@
 <script lang="ts">
+  /**
+   * Spelling, under the languages of the settings: whether it is checked,
+   * the dictionaries there are, of the system or imported, the importing of
+   * more, and the words added to them.
+   */
   import { onMount } from 'svelte';
-  import X from '@lucide/svelte/icons/x';
-  import { spellingLanguages, spellingWords, type Dictionary } from '$lib/api/spelling';
-  import { systemInfo } from '$lib/api/system';
-  import { languageName, t } from '$lib/i18n';
-  import { settings } from '$lib/state/settings.svelte';
+  import { languagesRemove } from '$lib/api/languages';
+  import { spellingLanguages, type Dictionary } from '$lib/api/spelling';
+  import { languageName, languages, t } from '$lib/i18n';
   import LanguagePackages from '$lib/languages/LanguagePackages.svelte';
+  import LanguageRows, { type LanguageRow } from '$lib/languages/LanguageRows.svelte';
+  import { settings } from '$lib/state/settings.svelte';
+  import Button from '$lib/ui/Button.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
+  import OwnWordsDialog from './OwnWordsDialog.svelte';
   import { spelling } from './spelling.svelte';
 
-  /** The dictionaries there are, and the writer's own words, by language. */
   let dictionaries = $state.raw<Dictionary[] | null>(null);
-  let words = $state.raw<[string, string[]][]>([]);
-  let folder = $state('');
-
-  const collator = $derived(new Intl.Collator(undefined, { sensitivity: 'base' }));
+  let busy = $state(false);
+  let managing = $state(false);
 
   async function load() {
     try {
-      const [found, own, system] = await Promise.all([
-        spellingLanguages(),
-        spellingWords(),
-        systemInfo(),
-      ]);
-      dictionaries = found;
-      words = Object.entries(own).sort(([a], [b]) => a.localeCompare(b));
-      folder = `${system.dataDir}/dictionaries`;
+      dictionaries = await spellingLanguages();
     } catch (error) {
       notifyError(t('spelling-settings-failed'), error);
     }
@@ -39,16 +36,6 @@
     spelling.anew();
   }
 
-  async function remove(language: string, word: string) {
-    try {
-      await spelling.removeWord(language, word);
-      const own = await spellingWords();
-      words = Object.entries(own).sort(([a], [b]) => a.localeCompare(b));
-    } catch (error) {
-      notifyError(t('spelling-remove-failed'), error);
-    }
-  }
-
   /** Where a dictionary was found, in words. */
   function source(d: Dictionary): string {
     if (d.source === 'imported') return t('spelling-source-imported');
@@ -56,13 +43,35 @@
     if (d.source === 'system') return t('spelling-source-system');
     return t('spelling-source-own');
   }
+
+  const rows = $derived<LanguageRow[]>(
+    (dictionaries ?? [])
+      .map((d) => ({
+        id: d.name,
+        name: languageName(d.tag),
+        source: source(d),
+        imported: d.source === 'imported',
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, languages.current)),
+  );
+
+  async function remove(row: LanguageRow) {
+    busy = true;
+    try {
+      await languagesRemove('spelling', row.id);
+      await load();
+      spelling.anew();
+    } catch (error) {
+      notifyError(t('packages-remove-failed', { name: row.name }), error);
+    } finally {
+      busy = false;
+    }
+  }
 </script>
 
-<section>
-  <h2>{t('spelling-settings')}</h2>
+<div class="part" data-spelling-settings>
+  <h3>{t('spelling-settings')}</h3>
   <p class="about">{t('spelling-settings-about')}</p>
-  <!-- The Norwegian dictionaries ask that their source is named where they are used. -->
-  <p class="about source">{t('spelling-norwegian-source')}</p>
   <div class="row">
     <div class="what">
       <div class="label">{t('spelling-check')}</div>
@@ -78,18 +87,10 @@
     />
   </div>
 
-  <div>
+  <div data-dictionaries>
     <div class="label">{t('spelling-dictionaries')}</div>
-    <div class="hint">{t('spelling-dictionaries-hint', { folder })}</div>
     {#if dictionaries}
-      <ul class="dictionaries" data-dictionaries>
-        {#each dictionaries as d (d.tag)}
-          <li data-tag={d.tag}>
-            <span class="name">{languageName(d.tag)}</span>
-            <span class="source">{source(d)}</span>
-          </li>
-        {/each}
-      </ul>
+      <LanguageRows {rows} {busy} onremove={remove} />
     {/if}
   </div>
 
@@ -102,47 +103,26 @@
   />
 
   <div>
-    <div class="label">{t('spelling-own-words')}</div>
-    <div class="hint">{t('spelling-own-words-hint')}</div>
-    {#if !words.length}
-      <p class="none">{t('spelling-own-words-none')}</p>
-    {/if}
-    {#each words as [language, list] (language)}
-      <div class="words" data-words={language}>
-        <div class="language">{languageName(language)}</div>
-        <ul>
-          {#each [...list].sort(collator.compare) as word (word)}
-            <li>
-              <span>{word}</span>
-              <button
-                type="button"
-                aria-label={t('spelling-remove-word', { word })}
-                title={t('spelling-remove-word', { word })}
-                onclick={() => remove(language, word)}
-              >
-                <X size={12} />
-              </button>
-            </li>
-          {/each}
-        </ul>
-      </div>
-    {/each}
+    <Button size="sm" onclick={() => (managing = true)} data-manage-words>
+      {t('spelling-manage-words')}
+    </Button>
   </div>
-</section>
+</div>
+
+{#if managing}
+  <OwnWordsDialog onclose={() => (managing = false)} />
+{/if}
 
 <style>
-  section {
+  .part {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    padding: 26px 0;
-    border-bottom: 1px solid var(--line);
   }
-  h2 {
+  h3 {
     font-family: var(--font-text);
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
     font-weight: 600;
-    letter-spacing: -0.005em;
   }
   .about {
     margin-top: -8px;
@@ -160,81 +140,5 @@
   }
   .label {
     font-weight: 550;
-  }
-  .hint {
-    margin-top: 2px;
-    color: var(--ink-3);
-    font-size: var(--text-sm);
-    line-height: 1.5;
-    overflow-wrap: anywhere;
-  }
-  .dictionaries {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin: 8px 0 0;
-    padding: 0;
-    list-style: none;
-  }
-  .dictionaries li {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 6px 12px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-s);
-    background: var(--paper-raised);
-  }
-  .source {
-    color: var(--ink-3);
-    font-size: var(--text-sm);
-  }
-  .none {
-    margin-top: 6px;
-    color: var(--ink-3);
-    font-style: italic;
-  }
-  .words {
-    margin-top: 10px;
-  }
-  .language {
-    margin-bottom: 6px;
-    color: var(--ink-2);
-    font-size: var(--text-sm);
-  }
-  .words ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .words li {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    height: 26px;
-    padding: 0 4px 0 10px;
-    border: 1px solid var(--line);
-    border-radius: 13px;
-    background: var(--paper-raised);
-  }
-  .words button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    padding: 0;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--ink-3);
-    cursor: pointer;
-  }
-  .words button:hover {
-    background: var(--paper-hover);
-    color: var(--danger);
   }
 </style>

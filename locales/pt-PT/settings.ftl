@@ -27,7 +27,6 @@ settings-own-weak = Difícil de ler: a tinta está a { $ink } para 1 sobre o pap
 settings-text-size = Tamanho do seu texto
 settings-text-size-hint = Nos mapas e na vista de texto. O que se exporta segue o formato do documento.
 settings-interface-size = Tamanho da interface
-settings-interface-size-hint = Tudo na janela, a escrita também. Só para o texto, o tamanho abaixo.
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
 settings-sample = Canta, ó deusa, a cólera de Aquiles, o Pelida
@@ -35,17 +34,12 @@ settings-sample = Canta, ó deusa, a cólera de Aquiles, o Pelida
 ## New documents
 
 settings-new-documents = Novos documentos
-settings-new-documents-hint = Com que um mapa começa. A cada mapa pode dar-se outro, na pré-visualização.
 settings-reference-style = Estilo de citação
 settings-document-format = Formato do documento
 
 ## You
 
 settings-you = Quem escreve
-settings-name = Nome
-settings-name-hint = Mostrado àqueles com quem partilha projetos. Não se usa para mais nada.
-settings-contact = Endereço para os serviços bibliográficos
-settings-contact-hint = Serviços como o Crossref respondem mais prontamente a quem diz como pode ser contactado. Se escrever um endereço, é-lhes enviado a cada consulta, e a mais ninguém. Deixe vazio para não enviar nenhum.
 settings-contact-problem = Isso não parece um endereço.
 
 ## Programs: Pandoc and Typst
@@ -68,18 +62,13 @@ settings-error-programs = Não foi possível procurar os programas
 
 settings-about = Sobre
 settings-licence = Software livre sob a GNU General Public License, versão 3 ou posterior. Vem sem garantia.
-settings-owl = A coruja foi desenhada por Robert Emil Berge, a partir de uma fotografia de um tetradracma ateniense do Classical Numismatic Group, Inc. (http://www.cngcoins.com). O desenho está sob a licença Creative Commons Atribuição-CompartilhaIgual 3.0 Não Adaptada.
 settings-data = Onde tudo se guarda
 # "file" is the name of the file of the library, shown as code.
 settings-data-hint = As referências estão em { $file }, que qualquer ferramenta BibLaTeX lê. Para guardar uma cópia do trabalho, copie esta pasta.
-settings-lookup = Onde se consultam as referências
-settings-lookup-about = DOI em doi.org, Crossref e DataCite; livros nos catálogos K10plus, das bibliotecas académicas norueguesas, da Deutsche Nationalbibliothek e da Library of Congress; pré-publicações no arXiv; literatura médica no PubMed. Só o que se escreve na consulta lhes é enviado.
 
 ## Language
 
 settings-language = Língua
 settings-language-interface = A interface
-settings-language-interface-hint = As palavras da aplicação. Os textos estão na língua dos seus mapas.
 settings-language-system = Como o sistema ({ $language })
 settings-language-texts = Língua dos novos textos
-settings-language-texts-hint = Em que se escreve um novo mapa, o que decide as palavras que o seu documento imprime e o dicionário por que se verifica a ortografia. A cada mapa pode dar-se outra em Línguas… no seu menu, e a um projeto uma língua própria para os seus novos mapas.

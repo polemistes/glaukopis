@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * In the settings of languages: the words of a language made into a
+   * At the foot of the settings, under its heading: the words of a language made into a
    * project, to be read through and mended in Glaukopis (ADR 0034); and the
    * languages that have own words in use, which can be taken away (ADR 0035).
    */
@@ -65,8 +65,6 @@
 </script>
 
 <div class="words" data-words-settings>
-  <div class="label">{t('words-title')}</div>
-  <div class="hint">{t('words-hint')}</div>
   <div class="row">
     <Select value={tag} label={t('words-language')} {options} onchange={(v) => (tag = v)} />
     <Button size="sm" disabled={making} onclick={make}>
@@ -86,15 +84,6 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin-top: 6px;
-  }
-  .label {
-    font-weight: 550;
-  }
-  .hint {
-    color: var(--ink-3);
-    font-size: var(--text-sm);
-    line-height: 1.5;
   }
   .row {
     display: flex;

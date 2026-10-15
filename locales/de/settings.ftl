@@ -27,7 +27,6 @@ settings-own-weak = Schwer zu lesen: die Tinte steht auf dem Papier bei { $ink }
 settings-text-size = Größe Ihres Textes
 settings-text-size-hint = In den Karten und der Textansicht. Was exportiert wird, folgt dem Dokumentformat.
 settings-interface-size = Größe der Oberfläche
-settings-interface-size-hint = Alles im Fenster, auch das Geschriebene. Für Ihren Text allein die Größe unten.
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
 settings-sample = Singe den Zorn, o Göttin, des Peleiaden Achilleus
@@ -35,17 +34,12 @@ settings-sample = Singe den Zorn, o Göttin, des Peleiaden Achilleus
 ## New documents
 
 settings-new-documents = Neue Dokumente
-settings-new-documents-hint = Womit eine Karte beginnt. Jede Karte kann in der Vorschau ein anderes bekommen.
 settings-reference-style = Zitierstil
 settings-document-format = Dokumentformat
 
 ## You
 
 settings-you = Sie
-settings-name = Name
-settings-name-hint = Denen gezeigt, mit denen Sie Projekte teilen. Sonst nicht verwendet.
-settings-contact = Adresse für bibliografische Dienste
-settings-contact-hint = Dienste wie Crossref antworten denen bereitwilliger, die sagen, wie sie zu erreichen sind. Wenn Sie eine Adresse eintragen, wird sie bei jedem Nachschlagen an sie gesendet, und an niemanden sonst. Lassen Sie sie leer, um keine zu senden.
 settings-contact-problem = Das sieht nicht wie eine Adresse aus.
 
 ## Programs: Pandoc and Typst
@@ -68,18 +62,13 @@ settings-error-programs = Nach den Programmen konnte nicht gesucht werden
 
 settings-about = Über
 settings-licence = Freie Software unter der GNU General Public License, Version 3 oder später. Sie kommt ohne Gewähr.
-settings-owl = Die Eule hat Robert Emil Berge gezeichnet, nach einer Fotografie einer athenischen Tetradrachme von Classical Numismatic Group, Inc. (http://www.cngcoins.com). Die Zeichnung steht unter der Lizenz Creative Commons Attribution-Share Alike 3.0 Unported.
 settings-data = Wo alles aufbewahrt wird
 # "file" is the name of the file of the library, shown as code.
 settings-data-hint = Ihre Quellen sind in { $file }, das jedes BibLaTeX-Werkzeug lesen kann. Um eine Kopie Ihrer Arbeit zu behalten, kopieren Sie diesen Ordner.
-settings-lookup = Wo Quellen nachgeschlagen werden
-settings-lookup-about = DOIs bei doi.org, Crossref und DataCite; Bücher in den Katalogen K10plus, der norwegischen wissenschaftlichen Bibliotheken, der Deutschen Nationalbibliothek und der Library of Congress; Preprints bei arXiv; medizinische Literatur bei PubMed. Nur was Sie in das Nachschlagen tippen, wird an sie gesendet.
 
 ## Language
 
 settings-language = Sprache
 settings-language-interface = Die Oberfläche
-settings-language-interface-hint = Die Wörter der Anwendung. Ihre Texte sind in der Sprache ihrer Karten.
 settings-language-system = Wie das System ({ $language })
 settings-language-texts = Sprache neuer Texte
-settings-language-texts-hint = Worin eine neue Karte geschrieben wird, was die Wörter bestimmt, die ihr Dokument druckt, und das Wörterbuch, mit dem ihre Rechtschreibung geprüft wird. Jede Karte kann unter Sprachen… in ihrem Menü eine andere bekommen, und ein Projekt eine eigene Sprache für seine neuen Karten.

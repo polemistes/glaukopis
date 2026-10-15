@@ -111,6 +111,14 @@
     document.documentElement.style.setProperty('--text-size', `${settings.value.textSize}px`);
   });
 
+  // The font of the text editor, where one is chosen; else that of the interface's text.
+  $effect(() => {
+    const font = settings.value.editorFont;
+    if (font)
+      document.documentElement.style.setProperty('--font-editor', `"${font}", var(--font-text)`);
+    else document.documentElement.style.removeProperty('--font-editor');
+  });
+
   // The size of the whole interface, as the window's own zoom: everything
   // grows alike, and the pointer stays where it is drawn.
   $effect(() => {

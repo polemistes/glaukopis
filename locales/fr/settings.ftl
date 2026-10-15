@@ -27,7 +27,6 @@ settings-own-weak = Difficile à lire : l’encre est à { $ink } pour 1 sur l
 settings-text-size = Taille de votre texte
 settings-text-size-hint = Dans les cartes et la vue texte. Ce qui est exporté suit le format du document.
 settings-interface-size = Taille de l’interface
-settings-interface-size-hint = Tout dans la fenêtre, l’écriture comprise. Pour votre texte seul, la taille ci-dessous.
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
 settings-sample = Chante, déesse, la colère d’Achille, le fils de Pélée
@@ -35,17 +34,12 @@ settings-sample = Chante, déesse, la colère d’Achille, le fils de Pélée
 ## New documents
 
 settings-new-documents = Nouveaux documents
-settings-new-documents-hint = Ce par quoi une carte commence. Chaque carte peut en recevoir un autre, dans l’aperçu.
 settings-reference-style = Style de référence
 settings-document-format = Format du document
 
 ## You
 
 settings-you = Vous
-settings-name = Nom
-settings-name-hint = Montré à ceux avec qui vous partagez des projets. Pas utilisé autrement.
-settings-contact = Adresse pour les services bibliographiques
-settings-contact-hint = Des services comme Crossref répondent plus volontiers à ceux qui disent comment les joindre. Si vous entrez une adresse, elle leur est envoyée à chaque recherche, et à personne d’autre. Laissez vide pour n’en envoyer aucune.
 settings-contact-problem = Cela ne ressemble pas à une adresse.
 
 ## Programs: Pandoc and Typst
@@ -68,18 +62,13 @@ settings-error-programs = Les programmes n’ont pas pu être cherchés
 
 settings-about = À propos
 settings-licence = Logiciel libre sous la GNU General Public License, version 3 ou ultérieure. Il est fourni sans garantie.
-settings-owl = La chouette est dessinée par Robert Emil Berge, d’après une photographie d’un tétradrachme athénien par Classical Numismatic Group, Inc. (http://www.cngcoins.com). Le dessin est sous licence Creative Commons Attribution – Partage dans les mêmes conditions 3.0 non transposé.
 settings-data = Où tout est gardé
 # "file" is the name of the file of the library, shown as code.
 settings-data-hint = Vos références sont dans { $file }, que tout outil BibLaTeX peut lire. Pour garder une copie de votre travail, copiez ce dossier.
-settings-lookup = Où les références sont cherchées
-settings-lookup-about = Les DOI à doi.org, Crossref et DataCite ; les livres dans les catalogues K10plus, des bibliothèques universitaires norvégiennes, de la Deutsche Nationalbibliothek et de la Library of Congress ; les prépublications à arXiv ; la littérature médicale à PubMed. Seul ce que vous tapez dans la recherche leur est envoyé.
 
 ## Language
 
 settings-language = Langue
 settings-language-interface = L’interface
-settings-language-interface-hint = Les mots de l’application. Vos textes sont dans la langue de leurs cartes.
 settings-language-system = Comme le système ({ $language })
 settings-language-texts = Langue des nouveaux textes
-settings-language-texts-hint = Dans quoi s’écrit une nouvelle carte, ce qui décide des mots que son document imprime et du dictionnaire qui vérifie son orthographe. Chaque carte peut en recevoir une autre sous Langues… dans son menu, et un projet une langue à lui pour ses nouvelles cartes.

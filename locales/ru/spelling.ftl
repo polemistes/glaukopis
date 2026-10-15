@@ -20,18 +20,13 @@ spelling-off = Орфография не проверяется. Это вклю
 
 spelling-settings = Орфография
 spelling-settings-about = Слова, которых нет в словаре языка карты, подчёркиваются при письме. Щёлкните такое правой кнопкой или нажмите F7, чтобы увидеть, что это может быть.
-spelling-norwegian-source = Норвежские словари сделаны из Bokmålsordboka и Nynorskordboka, Universitetet i Bergen og Språkrådet, ordbøkene.no, CC BY 4.0, со словоформами Norsk ordbank Национальной библиотеки.
 spelling-check = Проверять орфографию при письме
 spelling-on = Вкл.
 spelling-off-short = Выкл.
 spelling-dictionaries = Словари
-# $folder is the folder of dictionaries in the data directory.
-spelling-dictionaries-hint = Тексты на других языках не проверяются. Словарь Hunspell — его файлы .aff и .dic, — положенный в { $folder }, тоже используется, прежде остальных.
 spelling-source-application = Идёт с Glaukopis
 spelling-source-system = Установлен на компьютере
 spelling-source-own = Положен вами
-spelling-own-words = Ваши слова
-spelling-own-words-hint = Слова, которые вы добавили к словарям. Они действуют во всех ваших проектах.
 spelling-own-words-none = Вы не добавили ни одного слова.
 spelling-remove-word = Убрать «{ $word }»
 spelling-settings-failed = Не удалось перечислить словари

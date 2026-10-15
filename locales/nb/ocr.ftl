@@ -101,11 +101,15 @@ ocr-settings-missing = Ikke funnet. Trengs for å lese tekst fra skannede sider 
 ocr-settings-by-itself = Finnes av seg selv
 ocr-settings-where = Hvor Tesseract er
 ocr-settings-look-failed = Det gikk ikke å lete etter Tesseract
-ocr-settings-has = Det leser { $languages }.
+ocr-settings-title = Optisk tegngjenkjenning (OCR)
 ocr-settings-has-none = Det har ikke dataene for noe språk: importer ett nedenfor, eller installer ett med pakkebehandleren på systemet, for eksempel tesseract-data-eng.
-ocr-settings-first = Les på først
-ocr-settings-first-hint = Når ingen er valgt: språket i teksten og språket i grensesnittet.
-ocr-settings-how = Hvordan tekst leses først
+ocr-settings-first = Standardspråk for OCR
+ocr-settings-how = Standardinnstillinger for OCR
+ocr-settings-languages = Språk for OCR
+ocr-settings-languages-hint = Glaukopis bruker Tesseract til OCR. Språkfilene du importerer her, brukes i stedet for dem du kan ha installert på systemet ditt.
+ocr-source-system = System
+ocr-source-imported = Importert
+ocr-settings-not-found = Tesseract ble ikke funnet. Si hvor det er under Programmer, nedenfor.
 
 ## Hva som blir av teksten en PDF har (det samme i hver dialog som leser en).
 

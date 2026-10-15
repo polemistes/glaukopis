@@ -20,18 +20,13 @@ spelling-off = L'ortografia non è controllata. Si accende nelle impostazioni.
 
 spelling-settings = Ortografia
 spelling-settings-about = Le parole che il dizionario della lingua di una mappa non ha sono sottolineate mentre scrivi. Fai clic destro su una, o premi F7, per vedere che cosa potrebbe essere.
-spelling-norwegian-source = I dizionari norvegesi sono fatti da Bokmålsordboka e Nynorskordboka, Universitetet i Bergen og Språkrådet, ordbøkene.no, CC BY 4.0, con le flessioni di Norsk ordbank della Biblioteca nazionale.
 spelling-check = Controlla l'ortografia mentre scrivi
 spelling-on = Acceso
 spelling-off-short = Spento
 spelling-dictionaries = Dizionari
-# $folder is the folder of dictionaries in the data directory.
-spelling-dictionaries-hint = I testi in altre lingue non sono controllati. Un dizionario di Hunspell, i suoi file .aff e .dic, messo in { $folder } è usato anch'esso, prima degli altri.
 spelling-source-application = Viene con Glaukopis
 spelling-source-system = Installato sul computer
 spelling-source-own = Messo lì da te
-spelling-own-words = Le tue parole
-spelling-own-words-hint = Parole che hai aggiunto ai dizionari. Valgono in tutti i tuoi progetti.
 spelling-own-words-none = Non hai aggiunto parole.
 spelling-remove-word = Togli «{ $word }»
 spelling-settings-failed = I dizionari non si sono potuti elencare

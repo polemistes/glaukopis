@@ -27,7 +27,6 @@ settings-own-weak = Vanskeleg å lese: blekket står { $ink } til 1 mot papiret 
 settings-text-size = Storleiken på teksten din
 settings-text-size-hint = I karta og i tekstvisinga. Det som blir eksportert, følgjer dokumentformatet.
 settings-interface-size = Storleiken på grensesnittet
-settings-interface-size-hint = Alt i vindauget, teksten òg. For teksten din åleine, storleiken under.
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
 settings-sample = Syng, gudinne, om vreiden til Peleus-sonen Akillevs
@@ -35,17 +34,12 @@ settings-sample = Syng, gudinne, om vreiden til Peleus-sonen Akillevs
 ## New documents
 
 settings-new-documents = Nye dokument
-settings-new-documents-hint = Det eit nytt kart byrjar med. Kvart kart kan få andre i førehandsvisinga.
 settings-reference-style = Referansestil
 settings-document-format = Dokumentformat
 
 ## You
 
 settings-you = Om deg
-settings-name = Namn
-settings-name-hint = Blir vist for dei du deler prosjekt med. Blir ikkje brukt elles.
-settings-contact = E-postadresse for bibliografiske tenester
-settings-contact-hint = Tenester som Crossref svarer raskare når dei veit korleis du kan nåast. Skriv du inn ei adresse, blir den send til dei ved kvart oppslag, og ikkje til nokon andre. La feltet stå tomt for ikkje å sende noka.
 settings-contact-problem = Det ser ikkje ut som ei e-postadresse.
 
 ## Programs: Pandoc and Typst
@@ -68,18 +62,13 @@ settings-error-programs = Kunne ikkje leite etter programma
 
 settings-about = Om programmet
 settings-licence = Fri programvare under GNU General Public License, versjon 3 eller seinare. Det blir ikkje gitt nokon garanti.
-settings-owl = Ugla er teikna av Robert Emil Berge, etter eit fotografi av ein atensk tetradrakme frå Classical Numismatic Group, Inc. (http://www.cngcoins.com). Teikninga er under lisensen Creative Commons Attribution-Share Alike 3.0 Unported.
 settings-data = Kvar alt er lagra
 # "file" is the name of the file of the library, shown as code.
 settings-data-hint = Referansane dine er i { $file }, som alle BibLaTeX-verktøy kan lese. Kopier denne mappa for å ta vare på ein kopi av arbeidet ditt.
-settings-lookup = Kvar referansar blir slått opp
-settings-lookup-about = DOI-ar hos doi.org, Crossref og DataCite; bøker i katalogane til K10plus, dei norske fagbiblioteka, Deutsche Nationalbibliothek og Library of Congress; førehandstrykk hos arXiv; medisinsk litteratur hos PubMed. Berre det du skriv inn i oppslaget, blir sendt til dei.
 
 ## Language
 
 settings-language = Språk
 settings-language-interface = Grensesnittet
-settings-language-interface-hint = Orda i programmet. Tekstane dine er på språket til karta sine.
 settings-language-system = Som systemet ({ $language })
 settings-language-texts = Språk for nye tekstar
-settings-language-texts-hint = Språket eit nytt kart blir skrive på. Det avgjer kva ord dokumentet skriv ut, og kva ordbok stavinga blir kontrollert mot. Kvart kart kan få eit anna språk under Språk … i menyen sin, og eit prosjekt kan få eit eige språk for dei nye karta sine.

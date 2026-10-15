@@ -20,18 +20,13 @@ spelling-off = Die Rechtschreibung wird nicht geprüft. Sie wird in den Einstell
 
 spelling-settings = Rechtschreibung
 spelling-settings-about = Wörter, die das Wörterbuch der Sprache einer Karte nicht hat, werden beim Schreiben unterstrichen. Klicken Sie eines mit der rechten Maustaste an, oder drücken Sie F7, um zu sehen, was es sein könnte.
-spelling-norwegian-source = Die norwegischen Wörterbücher sind aus Bokmålsordboka und Nynorskordboka gemacht, Universitetet i Bergen og Språkrådet, ordbøkene.no, CC BY 4.0, mit den Flexionsformen der Norsk ordbank der Nationalbibliothek.
 spelling-check = Rechtschreibung beim Schreiben prüfen
 spelling-on = Ein
 spelling-off-short = Aus
 spelling-dictionaries = Wörterbücher
-# $folder is the folder of dictionaries in the data directory.
-spelling-dictionaries-hint = Texte in anderen Sprachen werden nicht geprüft. Ein Wörterbuch von Hunspell, seine .aff- und .dic-Dateien, in { $folder } gelegt, wird auch verwendet, vor den anderen.
 spelling-source-application = Kommt mit Glaukopis
 spelling-source-system = Auf dem Computer installiert
 spelling-source-own = Von Ihnen dort abgelegt
-spelling-own-words = Ihre Wörter
-spelling-own-words-hint = Wörter, die Sie den Wörterbüchern hinzugefügt haben. Sie gelten in allen Ihren Projekten.
 spelling-own-words-none = Sie haben keine Wörter hinzugefügt.
 spelling-remove-word = „{ $word }“ wegnehmen
 spelling-settings-failed = Die Wörterbücher konnten nicht aufgelistet werden

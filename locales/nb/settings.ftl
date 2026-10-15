@@ -22,32 +22,39 @@ settings-own-accent = Aksent
 settings-own-gold = Andre stemme
 settings-own-begin = Begynn fra
 settings-own-weak = Vanskelig å lese: blekket står { $ink } til 1 mot papiret og aksenten { $accent } til 1; 4,5 og 3 eller mer leses godt.
-settings-text-size = Størrelsen på teksten din
-settings-text-size-hint = I kartene og i tekstvisningen. Det som eksporteres, følger oppsettet.
-settings-text-depth = Dybde i teksten
-settings-text-depth-hint = Hvordan teksten i et kart viser hvor dypt hvert element står. Bare på skjermen: ingenting av det skrives ut.
+settings-text-size = Størrelsen på teksten din i tekstredigeringen
+settings-text-size-hint = I forhold til grensesnittet. Skriftstørrelsene i forhåndsvisningen og eksporten av dokumenter påvirkes ikke av dette.
+settings-editor-font = Skrift i tekstredigeringen
+settings-editor-font-hint = Velg skriften for teksten din i tekstredigeringen.
+settings-editor-font-default = Som grensesnittet (Literata)
+settings-text-depth = Dokumentstruktur
+settings-text-depth-hint = Hvordan tekstredigeringen viser dokumentstrukturen i teksten din.
 settings-text-depth-numbers = Tall
 settings-text-depth-dots = Prikker
 settings-text-depth-indent = Rykket inn, med streker
 settings-interface-size = Størrelsen på grensesnittet
-settings-interface-size-hint = Alt i vinduet, også teksten. For teksten din alene, størrelsen under.
-settings-sample = Syng, gudinne, om vreden til Peleus-sønnen Akilles
+settings-sample = Jeg begynte å fortære en sandwich mens jeg kjørte taxi på vei til quiz.
 
 ## Nye dokumenter
 
 settings-new-documents = Nye dokumenter
-settings-new-documents-hint = Det dokumentene i et nytt prosjekt begynner med. Hvert element kan få andre i dokumentinnstillingene sine.
 settings-template = Mal
 settings-document-format = Oppsett
 settings-reference-style = Referansestil
 
 ## Om deg
 
-settings-you = Om deg
-settings-name = Navn
-settings-name-hint = Vises for dem du deler prosjekter med. Brukes ikke ellers.
-settings-contact = E-postadresse for bibliografiske tjenester
-settings-contact-hint = Tjenester som Crossref svarer raskere når de vet hvordan du kan nås. Skriver du inn en adresse, sendes den til dem ved hvert oppslag, og ikke til noen andre. La feltet stå tomt for ikke å sende noen.
+settings-you = Opplysninger om deg
+settings-first-name = Fornavn
+settings-last-name = Etternavn
+settings-organization = Organisasjon
+settings-position = Tittel/stilling
+settings-address = Adresse
+settings-phone = Telefon
+settings-email = E-post
+settings-email-hint = Sendes også med hvert oppslag til bibliografiske tjenester som Crossref, som svarer raskere når de vet hvordan du kan nås.
+settings-orcid = ORCID
+settings-orcid-problem = En ORCID iD er fire grupper med fire sifre: 0000-0002-1825-0097.
 settings-contact-problem = Det ser ikke ut som en e-postadresse.
 
 ## Programmer: Pandoc og Typst
@@ -68,20 +75,15 @@ settings-error-programs = Kunne ikke lete etter programmene
 
 settings-about = Om programmet
 settings-licence = Fri programvare under GNU General Public License, versjon 3 eller senere. Det gis ingen garanti.
-settings-owl = Uglen er tegnet av Robert Emil Berge, etter et fotografi av en athensk tetradrakme fra Classical Numismatic Group, Inc. (http://www.cngcoins.com). Tegningen er under lisensen Creative Commons Attribution-Share Alike 3.0 Unported.
 settings-data = Hvor alt er lagret
 settings-data-hint = Referansene dine er i { $file }, som alle BibLaTeX-verktøy kan lese. Kopier denne mappen for å ta vare på en kopi av arbeidet ditt.
-settings-lookup = Hvor referanser slås opp
-settings-lookup-about = DOI-er hos doi.org, Crossref og DataCite; bøker i katalogene til K10plus, de norske fagbibliotekene, Deutsche Nationalbibliothek og Library of Congress; forhåndstrykk hos arXiv; medisinsk litteratur hos PubMed. Bare det du skriver inn i oppslaget, sendes til dem.
 
 ## Språk
 
 settings-language = Språk
 settings-language-interface = Grensesnittet
-settings-language-interface-hint = Ordene i programmet. Tekstene dine er på språket til prosjektene sine.
 settings-language-system = Som systemet ({ $language })
 settings-language-texts = Språk for nye tekster
-settings-language-texts-hint = Språket et nytt prosjekt skrives på. Det avgjør hvilke ord dokumentene skriver ut, og hvilken ordbok rettskrivingen kontrolleres mot. Hvert element kan få et annet språk under Språk … i menyen sin, og det som står under, følger med.
 
 ## The log of the runs.
 

@@ -27,7 +27,6 @@ settings-own-weak = Трудно читать: контраст чернил н�
 settings-text-size = Размер вашего текста
 settings-text-size-hint = В картах и в режиме текста. Экспортируемое следует формату документа.
 settings-interface-size = Размер интерфейса
-settings-interface-size-hint = Всё в окне, включая написанное. Для одного вашего текста — размер ниже.
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
 settings-sample = Гнев, богиня, воспой Ахиллеса, Пелеева сына
@@ -35,17 +34,12 @@ settings-sample = Гнев, богиня, воспой Ахиллеса, Пел�
 ## New documents
 
 settings-new-documents = Новые документы
-settings-new-documents-hint = С чего начинается карта. Каждой карте можно задать другое в предпросмотре.
 settings-reference-style = Стиль цитирования
 settings-document-format = Формат документа
 
 ## You
 
 settings-you = Вы
-settings-name = Имя
-settings-name-hint = Показывается тем, с кем вы делитесь проектами. Больше нигде не используется.
-settings-contact = Адрес для библиографических служб
-settings-contact-hint = Службы вроде Crossref охотнее отвечают тем, кто говорит, как с ним связаться. Если ввести адрес, он отправляется им с каждым поиском — и больше никому. Оставьте пустым, чтобы не отправлять.
 settings-contact-problem = Это не похоже на адрес.
 
 ## Programs: Pandoc and Typst
@@ -68,18 +62,13 @@ settings-error-programs = Не удалось поискать программ�
 
 settings-about = О программе
 settings-licence = Свободная программа под лицензией GNU General Public License версии 3 или новее. Поставляется без гарантий.
-settings-owl = Сову нарисовал Роберт Эмиль Берге по фотографии афинской тетрадрахмы, сделанной Classical Numismatic Group, Inc. (http://www.cngcoins.com). Рисунок распространяется под лицензией Creative Commons Attribution-Share Alike 3.0 Unported.
 settings-data = Где всё хранится
 # "file" is the name of the file of the library, shown as code.
 settings-data-hint = Ваши источники — в { $file }, который может прочитать любая программа для BibLaTeX. Чтобы сохранить копию своей работы, скопируйте эту папку.
-settings-lookup = Где ищутся источники
-settings-lookup-about = DOI — на doi.org, в Crossref и DataCite; книги — в каталогах K10plus, норвежских академических библиотек, Немецкой национальной библиотеки и Библиотеки Конгресса; препринты — в arXiv; медицинская литература — в PubMed. Им отправляется только то, что вы вводите в поиск.
 
 ## Language
 
 settings-language = Язык
 settings-language-interface = Интерфейс
-settings-language-interface-hint = Слова приложения. Ваши тексты — на языке их карт.
 settings-language-system = Как в системе ({ $language })
 settings-language-texts = Язык новых текстов
-settings-language-texts-hint = На каком языке пишется новая карта; от этого зависят слова, которые печатает её документ, и словарь, по которому проверяется орфография. Каждой карте можно задать другой под «Языки…» в её меню, а проекту — свой язык для его новых карт.

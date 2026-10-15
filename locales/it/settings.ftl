@@ -27,7 +27,6 @@ settings-own-weak = Difficile da leggere: l'inchiostro sta a { $ink } a 1 sulla 
 settings-text-size = Dimensione del tuo testo
 settings-text-size-hint = Nelle mappe e nella vista a testo. Ciò che si esporta segue il formato del documento.
 settings-interface-size = Dimensione dell'interfaccia
-settings-interface-size-hint = Tutto nella finestra, anche la scrittura. Per il solo tuo testo, la dimensione qui sotto.
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
 settings-sample = Cantami, o Diva, del Pelide Achille l'ira funesta
@@ -35,17 +34,12 @@ settings-sample = Cantami, o Diva, del Pelide Achille l'ira funesta
 ## New documents
 
 settings-new-documents = Nuovi documenti
-settings-new-documents-hint = Con che cosa comincia una mappa. A ogni mappa se ne può dare un altro, nell'anteprima.
 settings-reference-style = Stile di citazione
 settings-document-format = Formato del documento
 
 ## You
 
 settings-you = Tu
-settings-name = Nome
-settings-name-hint = Mostrato a quelli con cui condividi progetti. Non usato altrimenti.
-settings-contact = Indirizzo per i servizi bibliografici
-settings-contact-hint = Servizi come Crossref rispondono più volentieri a chi dice come può essere raggiunto. Se inserisci un indirizzo, è mandato a loro a ogni ricerca, e a nessun altro. Lascialo vuoto per non mandarne.
 settings-contact-problem = Questo non sembra un indirizzo.
 
 ## Programs: Pandoc and Typst
@@ -68,18 +62,13 @@ settings-error-programs = Non si sono potuti cercare i programmi
 
 settings-about = Informazioni
 settings-licence = Software libero sotto la GNU General Public License, versione 3 o successiva. Viene senza garanzia.
-settings-owl = La civetta è disegnata da Robert Emil Berge, da una fotografia di un tetradramma ateniese di Classical Numismatic Group, Inc. (http://www.cngcoins.com). Il disegno è sotto licenza Creative Commons Attribuzione – Condividi allo stesso modo 3.0 Unported.
 settings-data = Dove è conservato tutto
 # "file" is the name of the file of the library, shown as code.
 settings-data-hint = I tuoi riferimenti sono in { $file }, che qualunque strumento BibLaTeX può leggere. Per tenere una copia del tuo lavoro, copia questa cartella.
-settings-lookup = Dove si cercano i riferimenti
-settings-lookup-about = I DOI su doi.org, Crossref e DataCite; i libri nei cataloghi K10plus, delle biblioteche accademiche norvegesi, della Deutsche Nationalbibliothek e della Library of Congress; i preprint su arXiv; la letteratura medica su PubMed. A loro è mandato solo ciò che scrivi nella ricerca.
 
 ## Language
 
 settings-language = Lingua
 settings-language-interface = L'interfaccia
-settings-language-interface-hint = Le parole dell'applicazione. I tuoi testi sono nella lingua delle loro mappe.
 settings-language-system = Come il sistema ({ $language })
 settings-language-texts = Lingua dei nuovi testi
-settings-language-texts-hint = In che lingua è scritta una nuova mappa, il che decide le parole che il suo documento stampa e il dizionario con cui se ne controlla l'ortografia. A ogni mappa se ne può dare un'altra sotto Lingue… nel suo menu, e a un progetto una lingua sua per le sue nuove mappe.

@@ -118,11 +118,11 @@ try {
   await app.keys(['Control', ',']);
   await app.waitFor('[data-dictionaries] li', 8000);
   const tags = await app.exec(
-    `return Array.from(document.querySelectorAll('[data-dictionaries] li')).map((l) => l.dataset.tag)`,
+    `return Array.from(document.querySelectorAll('[data-dictionaries] li[data-source="imported"]')).map((l) => l.dataset.language)`,
   );
   check(
     'the settings list the dictionaries that were imported',
-    tags.join(' ') === 'en-GB en-US nb-NO nn-NO',
+    tags.join(' ') === 'en_GB en_US nb_NO nn_NO',
     tags.join(' '),
   );
   await app.screenshot('spelling-1-settings');
@@ -266,6 +266,7 @@ try {
   // The settings are a window over the view; Ctrl+1, in newProject, closes it.
   await app.click('nav.rail button[aria-label="Settings"]');
   await sleep(500);
+  await app.click('[data-manage-words]');
   await app.waitFor('[data-words="en"] li', 8000);
   const listed = await app.exec(
     `return Array.from(document.querySelectorAll('[data-words="en"] li')).map((l) => l.textContent.trim())`,
@@ -280,8 +281,10 @@ try {
     'the word to be taken away',
     async () => !readFileSync(own, 'utf8').includes('Glaukopis'),
   );
-  await until('the list to be read again', async () => !(await app.exists('[data-words="en"]')));
+  await until('the list to be read again', async () => !(await app.exists('[data-words="en"] li')));
   check('and can be taken away', true);
+  await app.click('[data-close-words]');
+  await app.waitGone('[data-own-words]', 3000);
   await app.click(
     '[role="radiogroup"][aria-label="Check spelling as you write"] button[aria-label="Off"]',
   );

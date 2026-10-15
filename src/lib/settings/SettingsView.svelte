@@ -15,6 +15,7 @@
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import { open as chooseFile } from '@tauri-apps/plugin-dialog';
   import {
+    fontsList,
     formatsList,
     openPath,
     stylesList,
@@ -23,7 +24,6 @@
     type StyleSummary,
     type ToolsInfo,
   } from '$lib/api/documents';
-  import { lookupAcknowledgements } from '$lib/api/sources';
   import { templatesList, type TemplateSummary } from '$lib/api/templates';
   import { templateGroupWords, TEMPLATE_GROUPS } from '$lib/document/templates';
   import { languageName, languages, t, TEXT_LANGUAGES } from '$lib/i18n';
@@ -42,7 +42,9 @@
   import TextField from '$lib/ui/TextField.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
   import Mark from '$lib/shell/Mark.svelte';
+  import OcrLanguageSettings from '$lib/ocr/OcrLanguageSettings.svelte';
   import OcrSettings from '$lib/ocr/OcrSettings.svelte';
+  import CreditsDialog from './CreditsDialog.svelte';
   import SpellingSettings from '$lib/spelling/SpellingSettings.svelte';
   import WordsSettings from '$lib/words/WordsSettings.svelte';
 
@@ -52,11 +54,19 @@
   let formats = $state.raw<FormatSummary[]>([]);
   let templates = $state.raw<TemplateSummary[]>([]);
   let looking = $state(false);
-  let thanks = $state.raw<{ service: string; words: string }[]>([]);
+  let fonts = $state.raw<string[]>([]);
+  /** The window of credits and licences is open. */
+  let crediting = $state(false);
 
   // Fields that are written as they are typed, and kept when they are left.
-  let name = $state('');
+  let firstName = $state('');
+  let lastName = $state('');
+  let organization = $state('');
+  let position = $state('');
+  let address = $state('');
+  let phone = $state('');
   let contact = $state('');
+  let orcid = $state('');
   let pandoc = $state('');
 
   const contactProblem = $derived(
@@ -65,13 +75,37 @@
       : null,
   );
 
+  /** An ORCID iD, alone or as its address: 0000-0002-1825-0097. */
+  const ORCID = /^(https?:\/\/orcid\.org\/)?\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/i;
+
+  const orcidProblem = $derived(
+    orcid.trim() && !ORCID.test(orcid.trim()) ? t('settings-orcid-problem') : null,
+  );
+
   onMount(async () => {
     const wait = () =>
       settings.loaded ? Promise.resolve() : new Promise((r) => setTimeout(r, 60));
     while (!settings.loaded) await wait();
-    name = settings.value.displayName ?? '';
-    contact = settings.value.contactEmail ?? '';
-    pandoc = settings.value.pandocPath ?? '';
+    const v = settings.value;
+    // A name given before the first and the last were asked for: its last word is the last name.
+    if (v.firstName == null && v.lastName == null && v.displayName?.trim()) {
+      const words = v.displayName.trim().split(/\s+/);
+      lastName = words.length > 1 ? words.pop()! : '';
+      firstName = words.join(' ');
+    } else {
+      firstName = v.firstName ?? '';
+      lastName = v.lastName ?? '';
+    }
+    organization = v.organization ?? '';
+    position = v.position ?? '';
+    address = v.address ?? '';
+    phone = v.phone ?? '';
+    contact = v.contactEmail ?? '';
+    orcid = v.orcid ?? '';
+    pandoc = v.pandocPath ?? '';
+    fontsList()
+      .then((list) => (fonts = list))
+      .catch(() => {});
     try {
       [system, tools, styles, formats, templates] = await Promise.all([
         systemInfo(),
@@ -81,7 +115,6 @@
         // Nothing, where the core has no templates to list.
         templatesList().catch(() => []),
       ]);
-      thanks = await lookupAcknowledgements();
     } catch (error) {
       notifyError(t('settings-error-system'), error);
     }
@@ -93,6 +126,22 @@
     settings.set(key, clean as Settings[K]);
     return true;
   }
+
+  /** The first and the last name kept, and the name shown to collaborators made of them. */
+  function keepName() {
+    keep('firstName', firstName);
+    keep('lastName', lastName);
+    const whole = `${firstName.trim()} ${lastName.trim()}`.trim();
+    if (whole) keep('displayName', whole);
+  }
+
+  /** The fonts the editor may set the text in: that of the interface first. */
+  const fontOptions = $derived([
+    { value: '', label: t('settings-editor-font-default') },
+    ...[...fonts]
+      .sort((a, b) => a.localeCompare(b, languages.current))
+      .map((f) => ({ value: f, label: f })),
+  ]);
 
   async function lookAgain() {
     looking = true;
@@ -248,7 +297,6 @@
       <div class="row top">
         <div class="what">
           <label class="label" for="interface-size">{t('settings-interface-size')}</label>
-          <div class="hint">{t('settings-interface-size-hint')}</div>
         </div>
         <div class="size">
           <span class="slider" style:--fill={along(interfaceShown, 0.9, 1.5)}>
@@ -293,6 +341,20 @@
       </div>
       <div class="row top">
         <div class="what">
+          <div class="label">{t('settings-editor-font')}</div>
+          <div class="hint">{t('settings-editor-font-hint')}</div>
+        </div>
+        <div class="font" data-editor-font>
+          <Select
+            value={settings.value.editorFont ?? ''}
+            label={t('settings-editor-font')}
+            options={fontOptions}
+            onchange={(font) => settings.set('editorFont', font || null)}
+          />
+        </div>
+      </div>
+      <div class="row top">
+        <div class="what">
           <div class="label">{t('settings-text-depth')}</div>
           <div class="hint">{t('settings-text-depth-hint')}</div>
         </div>
@@ -307,39 +369,13 @@
           onchange={(depth: TextDepth) => settings.set('textDepth', depth)}
         />
       </div>
-      <p class="sample serif" style:font-size="{settings.value.textSize}px">
-        {t('settings-sample')} — <span lang="grc">μῆνιν ἄειδε θεά</span>.
+      <p class="sample" style:font-size="{settings.value.textSize}px">
+        {t('settings-sample')}
       </p>
     </section>
-
-    <section>
-      <h2>{t('settings-language')}</h2>
-      <p class="about">
-        {t('settings-language-interface-hint')}
-        {t('settings-language-texts-hint')}
-      </p>
-      <div class="pair">
-        <Select
-          value={settings.value.language}
-          label={t('settings-language-interface')}
-          options={interfaceOptions}
-          onchange={(tag) => settings.set('language', tag)}
-        />
-        <Select
-          value={settings.value.textLanguage}
-          label={t('settings-language-texts')}
-          options={textOptions}
-          onchange={(tag) => settings.set('textLanguage', tag)}
-        />
-      </div>
-      <WordsSettings />
-    </section>
-
-    <SpellingSettings />
 
     <section>
       <h2>{t('settings-new-documents')}</h2>
-      <p class="about">{t('settings-new-documents-hint')}</p>
       <div class="pair three">
         {#if templateOptions.length}
           <Select
@@ -369,22 +405,89 @@
     </section>
 
     <section>
+      <h2>{t('settings-language')}</h2>
+      <div class="pair">
+        <Select
+          value={settings.value.language}
+          label={t('settings-language-interface')}
+          options={interfaceOptions}
+          onchange={(tag) => settings.set('language', tag)}
+        />
+        <Select
+          value={settings.value.textLanguage}
+          label={t('settings-language-texts')}
+          options={textOptions}
+          onchange={(tag) => settings.set('textLanguage', tag)}
+        />
+      </div>
+      <div class="sub">
+        <SpellingSettings />
+      </div>
+      <div class="sub">
+        <OcrLanguageSettings {tools} onlooked={(found) => (tools = found)} />
+      </div>
+    </section>
+
+    <section data-your-details>
       <h2>{t('settings-you')}</h2>
-      <div class="fields">
+      <div class="fields two">
         <TextField
-          bind:value={name}
-          label={t('settings-name')}
-          hint={t('settings-name-hint')}
-          onblur={() => keep('displayName', name)}
+          bind:value={firstName}
+          label={t('settings-first-name')}
+          autocomplete="given-name"
+          onblur={keepName}
+        />
+        <TextField
+          bind:value={lastName}
+          label={t('settings-last-name')}
+          autocomplete="family-name"
+          onblur={keepName}
+        />
+        <TextField
+          bind:value={organization}
+          label={t('settings-organization')}
+          autocomplete="organization"
+          onblur={() => keep('organization', organization)}
+        />
+        <TextField
+          bind:value={position}
+          label={t('settings-position')}
+          autocomplete="organization-title"
+          onblur={() => keep('position', position)}
+        />
+        <div class="wide">
+          <TextField
+            bind:value={address}
+            label={t('settings-address')}
+            autocomplete="street-address"
+            onblur={() => keep('address', address)}
+          />
+        </div>
+        <TextField
+          bind:value={phone}
+          type="tel"
+          label={t('settings-phone')}
+          autocomplete="tel"
+          spellcheck="false"
+          onblur={() => keep('phone', phone)}
         />
         <TextField
           bind:value={contact}
           type="email"
-          label={t('settings-contact')}
-          hint={t('settings-contact-hint')}
+          label={t('settings-email')}
+          hint={t('settings-email-hint')}
           error={contactProblem}
+          autocomplete="email"
           spellcheck="false"
           onblur={() => !contactProblem && keep('contactEmail', contact)}
+        />
+        <TextField
+          bind:value={orcid}
+          label={t('settings-orcid')}
+          placeholder="0000-0000-0000-0000"
+          error={orcidProblem}
+          spellcheck="false"
+          onblur={() => !orcidProblem && keep('orcid', orcid)}
         />
       </div>
     </section>
@@ -449,6 +552,12 @@
       </div>
     </section>
 
+    <section data-translation-project>
+      <h2>{t('words-title')}</h2>
+      <p class="about">{t('words-hint')}</p>
+      <WordsSettings />
+    </section>
+
     <section class="last">
       <h2>{t('settings-about')}</h2>
       <div class="aboutus">
@@ -458,8 +567,10 @@
           <div class="hint">
             {t('settings-licence')}
           </div>
-          <div class="hint credit">
-            {t('settings-owl')}
+          <div class="credits">
+            <Button size="sm" onclick={() => (crediting = true)} data-credits-button>
+              {t('credits-button')}
+            </Button>
           </div>
         </div>
       </div>
@@ -491,18 +602,13 @@
           {t('common-open')}
         </Button>
       </div>
-      <div>
-        <div class="label">{t('settings-lookup')}</div>
-        <div class="hint">
-          {t('settings-lookup-about')}
-        </div>
-        {#each thanks as t (t.service)}
-          <div class="hint">{t.words}</div>
-        {/each}
-      </div>
     </section>
   </div>
 </div>
+
+{#if crediting}
+  <CreditsDialog onclose={() => (crediting = false)} />
+{/if}
 
 <style>
   .settings {
@@ -556,8 +662,15 @@
     font-size: var(--text-sm);
     line-height: 1.5;
   }
-  .hint.credit {
-    margin-top: 4px;
+  .credits {
+    margin-top: 8px;
+  }
+  .sub {
+    padding-top: 12px;
+  }
+  .font {
+    flex: none;
+    width: 240px;
   }
   .hint code {
     font-family: var(--font-mono);
@@ -658,6 +771,7 @@
     font-variant-numeric: tabular-nums;
   }
   .sample {
+    font-family: var(--font-editor, var(--font-text));
     padding: 14px 18px;
     border-radius: var(--radius-m);
     background: var(--paper-raised);
@@ -668,6 +782,14 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+  .fields.two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .fields .wide {
+    grid-column: 1 / -1;
   }
   .program {
     display: flex;

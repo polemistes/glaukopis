@@ -406,7 +406,7 @@ body.dragging * {
  * --------------------------------------------------------------------- */
 
 .prose {
-  font-family: var(--font-text);
+  font-family: var(--font-editor, var(--font-text));
   font-size: var(--text-size, 17px);
   line-height: 1.62;
   color: var(--ink);

@@ -2,8 +2,8 @@
 # mended in Glaukopis, and written back as Fluent files (ADR 0034). In the
 # settings of languages, and over such a project. See locales/README.md.
 
-words-title = The words of Glaukopis, as a project
-words-hint = Makes a project of the words of the interface in a language, to read them through and mend them here, with spelling, search and history: a tree for each part of the application, an element for each message, with the English above the words. What you change is written back as Fluent files with the button over the project, into the folder of the language in a copy of Glaukopis's code, or into any folder, to be sent to us.
+words-title = Make a translation project of Glaukopis strings
+words-hint = For translators of the user interface of Glaukopis. Users can also use this to change the user interface strings of their language of choice in their own installation of Glaukopis.
 words-language = Language
 words-make = Make the project
 words-making = Making it…

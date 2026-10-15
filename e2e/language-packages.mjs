@@ -50,18 +50,18 @@ try {
   // ---- spelling: Bokmål from the server ----
   await app.keys(['Control', ',']);
   await app.waitFor('[data-packages="spelling"]', 8000);
-  await press(app, '[data-packages="spelling"]', 'Show languages on the server');
+  await press(app, '[data-packages="spelling"]', 'Import spelling dictionaries');
   await app.waitFor('[data-packages="spelling"] [data-offered-name="nb_NO"]', 8000);
   const offered = await app.exec(
     `return [...document.querySelectorAll('[data-packages="spelling"] [data-offered-name]')].map((li) => li.dataset.offeredName)`,
   );
   check('the server offers the nine dictionaries', offered.length === 9, offered.join(' '));
   await press(app, '[data-packages="spelling"] [data-offered-name="nb_NO"]', 'Import');
-  await app.waitFor('[data-packages="spelling"] [data-installed="nb_NO"]', 15000);
+  await app.waitFor('[data-dictionaries] [data-language="nb_NO"][data-source="imported"]', 15000);
   check('Bokmål is imported', true);
   await sleep(400);
   const listed = await app.exec(
-    `return document.querySelector('[data-dictionaries] li[data-tag="nb-NO"] .source')?.textContent.trim()`,
+    `return document.querySelector('[data-dictionaries] li[data-language="nb_NO"] .source')?.textContent.trim()`,
   );
   check('and listed among the dictionaries as imported', listed === 'Imported', listed);
   const nb = await invoke(app, 'spelling_prepare', { language: 'nb' });
@@ -79,10 +79,10 @@ try {
 
   // ---- OCR: Norwegian from the server ----
   await app.waitFor('[data-packages="ocr"]', 8000);
-  await press(app, '[data-packages="ocr"]', 'Show languages on the server');
+  await press(app, '[data-packages="ocr"]', 'Import OCR language files');
   await app.waitFor('[data-packages="ocr"] [data-offered-name="nor"]', 8000);
   await press(app, '[data-packages="ocr"] [data-offered-name="nor"]', 'Import');
-  await app.waitFor('[data-packages="ocr"] [data-installed="nor"]', 30000);
+  await app.waitFor('[data-ocr-languages] [data-language="nor"][data-source="imported"]', 30000);
   check('the Norwegian of Tesseract is imported', true);
   const tessdata = join(data, 'languages/tessdata');
   const link = (name) => {
@@ -114,7 +114,7 @@ try {
   }
 
   // ---- taken away ----
-  await app.exec(`document.querySelector('[data-packages="ocr"] [data-installed="nor"] button').click()`);
+  await app.exec(`document.querySelector('[data-ocr-languages] [data-language="nor"] button').click()`);
   await sleep(1500);
   const left = await invoke(app, 'tools_info', { again: false });
   check('taken away, Tesseract has its own again', !existsSync(tessdata) && left.ocrLanguages.includes('nor'), left.ocrLanguages.join(' '));

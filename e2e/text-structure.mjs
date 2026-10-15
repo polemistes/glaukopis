@@ -355,7 +355,7 @@ try {
     await app.keys(['Control', ',']);
     await app.waitForText('dialog[open] header h2', 'Settings');
     await sleep(300);
-    await app.clickText('dialog[open] [role="radiogroup"][aria-label="Depth in the text"] [role="radio"]', label);
+    await app.clickText('dialog[open] [role="radiogroup"][aria-label="Document structure"] [role="radio"]', label);
     await sleep(200);
     await app.press('Escape');
     await app.waitGone('dialog[open]', 3000);

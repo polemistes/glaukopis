@@ -101,11 +101,15 @@ ocr-settings-missing = Not found. Needed to read text from scans and pictures. I
 ocr-settings-by-itself = Found by itself
 ocr-settings-where = Where Tesseract is
 ocr-settings-look-failed = Tesseract could not be looked for
-ocr-settings-has = It reads { $languages }.
+ocr-settings-title = Optical Character Recognition (OCR)
 ocr-settings-has-none = It has the data of no language: import one below, or install one with the package manager of your system, such as tesseract-data-eng.
-ocr-settings-first = Read in at first
-ocr-settings-first-hint = When none are chosen, the language of the text and that of the interface.
-ocr-settings-how = How text is read at first
+ocr-settings-first = Default OCR language(s)
+ocr-settings-how = Default OCR settings
+ocr-settings-languages = OCR languages
+ocr-settings-languages-hint = Glaukopis uses Tesseract for OCR. The language files you import here will be used instead of the ones you may have installed on your system.
+ocr-source-system = System
+ocr-source-imported = Imported
+ocr-settings-not-found = Tesseract was not found. Say where it is under Programs, below.
 
 ## What becomes of the text a PDF has (the same in every dialog that reads one).
 

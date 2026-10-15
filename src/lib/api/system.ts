@@ -100,10 +100,23 @@ export interface Settings {
   ocrDpi: number;
   ocrLayout: Layout;
   ocrContrast: boolean;
-  /** Identifies the user to bibliographic services that ask for a contact address. */
+  /**
+   * The user's email address, among their details; also sent to bibliographic
+   * services that ask for a contact address.
+   */
   contactEmail: string | null;
-  /** Name shown to collaborators. */
+  /** Name shown to collaborators: the first and the last name, where they are given. */
   displayName: string | null;
+  /** The user's details, for documents and letters that ask for them. */
+  firstName: string | null;
+  lastName: string | null;
+  organization: string | null;
+  position: string | null;
+  address: string | null;
+  phone: string | null;
+  orcid: string | null;
+  /** The font the text editor sets the user's text in; none for that of the interface's text. */
+  editorFont: string | null;
   /**
    * Who this installation is, in the history of projects (ADR 0021): made
    * once, when the settings are first read.
@@ -153,6 +166,14 @@ export const defaultSettings: Settings = {
   ocrContrast: false,
   contactEmail: null,
   displayName: null,
+  firstName: null,
+  lastName: null,
+  organization: null,
+  position: null,
+  address: null,
+  phone: null,
+  orcid: null,
+  editorFont: null,
   person: null,
   server: null,
   defaultStyle: 'chicago-notes-bibliography',

@@ -12,28 +12,31 @@ spelling-add-failed = The word could not be added
 
 spelling-nothing = Nothing is misspelt here.
 # $language is the name of the language of the map: Latin.
-spelling-no-dictionary = There is no dictionary for { $language }: its spelling is not checked. Dictionaries are imported under Settings › Spelling.
+# $language is the name of the language of the map: Latin.
+spelling-no-dictionary = There is no dictionary for { $language }: its spelling is not checked. Dictionaries are imported under Settings › Language › Spelling.
 spelling-not-ready = The dictionary is being read. Try again in a moment.
 spelling-off = Spelling is not checked. It is turned on in the settings.
 
 ## The settings.
 
 spelling-settings = Spelling
-spelling-settings-about = Words that the dictionary of a map’s language does not have are underlined as you write. Right-click one, or press F7, for what it may be.
-spelling-norwegian-source = The Norwegian dictionaries are made from Bokmålsordboka and Nynorskordboka, Universitetet i Bergen og Språkrådet, ordbøkene.no, CC BY 4.0, with the inflections of Norsk ordbank of the National Library.
+spelling-settings-about = Spelling uses Hunspell dictionaries. Dictionaries you import here will be used instead of the ones you may have installed on your system.
 spelling-check = Check spelling as you write
 spelling-on = On
 spelling-off-short = Off
-spelling-dictionaries = Dictionaries
-# $folder is the folder of dictionaries in the data directory.
-spelling-dictionaries-hint = Texts in other languages are not checked. A dictionary of Hunspell’s, its .aff and .dic files, put in { $folder } is used before the others, those imported next, then those installed on the computer.
+spelling-dictionaries = Dictionary languages
 spelling-source-application = Comes with Glaukopis
 spelling-source-imported = Imported
-spelling-source-system = Installed on the computer
+spelling-source-system = System
 spelling-source-own = Put there by you
-spelling-own-words = Your words
-spelling-own-words-hint = Words you have added to the dictionaries. They hold in all your projects.
 spelling-own-words-none = You have added no words.
+spelling-manage-words = Manage words added to dictionaries
+spelling-manage-words-title = Words added to dictionaries
+spelling-words-language-label = Language
+# A language among those with words added, and how many: "English (12)".
+spelling-words-language = { $language } ({ $count })
+spelling-word-to-add = A word to add
+spelling-add-word-here = Add
 spelling-remove-word = Take away “{ $word }”
 spelling-settings-failed = The dictionaries could not be listed
 spelling-remove-failed = The word could not be taken away

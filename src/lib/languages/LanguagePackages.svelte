@@ -1,20 +1,17 @@
 <script lang="ts">
   /**
-   * The languages of a kind that are imported, those a server offers, and
-   * the importing of one from files (ADR 0032): in the settings of spelling
-   * and of Tesseract. The server is the project's own unless another is
-   * said; it may be a folder.
+   * The importing of languages of a kind from a server (ADR 0032), in the
+   * settings of spelling and of OCR: a button, and the languages the server
+   * offers, shown until they are closed. The server is the project's own
+   * unless another is said; it may be a folder. The languages there are,
+   * imported or of the system, are listed by the settings themselves.
    */
   import { onMount } from 'svelte';
-  import X from '@lucide/svelte/icons/x';
-  import { open as chooseFile } from '@tauri-apps/plugin-dialog';
   import {
     DEFAULT_LANGUAGES_SERVER,
-    languagesImport,
     languagesInstall,
     languagesInstalled,
     languagesOffered,
-    languagesRemove,
     type InstalledLanguage,
     type LanguageKind,
     type LanguageOffer,
@@ -37,6 +34,8 @@
 
   let installed = $state.raw<InstalledLanguage[]>([]);
   let offer = $state.raw<LanguageOffer | null>(null);
+  /** The languages offered are shown. */
+  let open = $state(false);
   let looking = $state(false);
   /** The name of the language being imported or taken away. */
   let busy = $state<string | null>(null);
@@ -75,7 +74,10 @@
     looking = true;
     try {
       await settings.saveNow();
+      // What is imported may have been taken away in the list of the settings since.
+      await reload();
       offer = await languagesOffered(null);
+      open = true;
     } catch (error) {
       notifyError(t('packages-look-failed', { server: shownServer }), error);
     } finally {
@@ -103,43 +105,6 @@
     }
   }
 
-  async function fromFiles() {
-    const chosen = await chooseFile({
-      title: t('packages-from-files'),
-      multiple: true,
-      filters: [
-        {
-          name: t(kind === 'spelling' ? 'packages-files-spelling' : 'packages-files-ocr'),
-          extensions:
-            kind === 'spelling' ? ['zip', 'oxt', 'xpi', 'aff', 'dic'] : ['zip', 'traineddata'],
-        },
-      ],
-    });
-    const paths = Array.isArray(chosen) ? chosen : typeof chosen === 'string' ? [chosen] : [];
-    if (!paths.length) return;
-    busy = '';
-    try {
-      await done(await languagesImport(paths));
-    } catch (error) {
-      notifyError(t('packages-import-files-failed'), error);
-    } finally {
-      busy = null;
-    }
-  }
-
-  async function remove(l: InstalledLanguage) {
-    busy = l.name;
-    try {
-      await languagesRemove(l.kind, l.name);
-      await reload();
-      onchanged();
-    } catch (error) {
-      notifyError(t('packages-remove-failed', { name: named(l) }), error);
-    } finally {
-      busy = null;
-    }
-  }
-
   function change() {
     server = settings.value.languagesServer ?? '';
     changing = true;
@@ -149,46 +114,22 @@
     const clean = server.trim();
     settings.set('languagesServer', clean && clean !== DEFAULT_LANGUAGES_SERVER ? clean : null);
     changing = false;
-    offer = null;
+    void look();
   }
 </script>
 
 <div class="packages" data-packages={kind}>
-  <div class="label">{t('packages-title')}</div>
-  <div class="hint">
-    {t(kind === 'spelling' ? 'packages-hint-spelling' : 'packages-hint-ocr')}
-  </div>
-
-  {#if installed.length}
-    <ul class="installed">
-      {#each installed as l (l.name)}
-        <li data-installed={l.name}>
-          <span class="name">{named(l)}</span>
-          <span class="meta">{l.version}</span>
-          <button
-            type="button"
-            aria-label={t('packages-remove', { name: named(l) })}
-            title={t('packages-remove', { name: named(l) })}
-            disabled={busy !== null}
-            onclick={() => remove(l)}
-          >
-            <X size={12} />
-          </button>
-        </li>
-      {/each}
-    </ul>
+  {#if !open}
+    <div class="actions">
+      <Button size="sm" disabled={looking || busy !== null} onclick={look} data-import-languages>
+        {looking
+          ? t('packages-looking')
+          : t(kind === 'spelling' ? 'packages-import-spelling' : 'packages-import-ocr')}
+      </Button>
+    </div>
   {/if}
 
-  <div class="actions">
-    <Button size="sm" disabled={looking || busy !== null} onclick={look}>
-      {looking ? t('packages-looking') : t('packages-look')}
-    </Button>
-    <Button size="sm" variant="ghost" disabled={busy !== null} onclick={fromFiles}>
-      {t('packages-from-files')}
-    </Button>
-  </div>
-
-  {#if offer}
+  {#if open && offer}
     {#if offered.length}
       <ul class="offered" data-offered>
         {#each offered as { p, have } (p.name)}
@@ -216,22 +157,29 @@
     {/if}
   {/if}
 
-  <div class="server">
-    {#if changing}
-      <TextField
-        bind:value={server}
-        size="sm"
-        placeholder={DEFAULT_LANGUAGES_SERVER}
-        aria-label={t('packages-server-label')}
-        spellcheck="false"
-        onblur={keepServer}
-        onkeydown={(e: KeyboardEvent) => e.key === 'Enter' && keepServer()}
-      />
-    {:else}
-      <span class="hint">{t('packages-server', { server: shownServer })}</span>
-      <Button size="sm" variant="ghost" onclick={change}>{t('packages-server-change')}</Button>
-    {/if}
-  </div>
+  {#if open}
+    <div class="server">
+      {#if changing}
+        <TextField
+          bind:value={server}
+          size="sm"
+          placeholder={DEFAULT_LANGUAGES_SERVER}
+          aria-label={t('packages-server-label')}
+          spellcheck="false"
+          onblur={keepServer}
+          onkeydown={(e: KeyboardEvent) => e.key === 'Enter' && keepServer()}
+        />
+      {:else}
+        <span class="hint">{t('packages-server', { server: shownServer })}</span>
+        <Button size="sm" variant="ghost" onclick={change}>{t('packages-server-change')}</Button>
+      {/if}
+    </div>
+    <div class="actions">
+      <Button size="sm" variant="ghost" onclick={() => (open = false)} data-close-languages>
+        {t('common-close')}
+      </Button>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -239,9 +187,6 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-  }
-  .label {
-    font-weight: 550;
   }
   .hint {
     color: var(--ink-3);
@@ -275,23 +220,6 @@
   .have {
     color: var(--ink-3);
     font-size: var(--text-sm);
-  }
-  li button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    padding: 0;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--ink-3);
-    cursor: pointer;
-  }
-  li button:hover:not(:disabled) {
-    background: var(--paper-hover);
-    color: var(--danger);
   }
   .actions,
   .server {

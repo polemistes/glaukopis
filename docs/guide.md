@@ -160,7 +160,9 @@ How deep each element stands is shown in the margin beside its heading, on
 the screen only: by its number, as in an outline (1, 1.2, 1.2.3, counting
 only the names printed as headings), by a dot for each level, or by setting
 each level further in, with a faint line down from the element it is under.
-Choose which under **Depth in the text** in the settings.
+Choose which under **Document structure** in the settings, where **Editor
+font** chooses the font your text is set in while you write, and the size
+beside it how large; neither touches the preview or what is exported.
 
 Write as in any editor. The tools are over the text: the kind of the
 paragraph the cursor is in, a button that opens the kinds (text, quotation,
@@ -1579,12 +1581,14 @@ of new texts, of the project, or of the reference), and that of the
 interface. Tesseract reads only the
 languages it has data for, and each one more makes the reading slower, and
 not always better. The data of more languages is imported under *Settings* ›
-*Programs*, below Tesseract, at **Imported languages**, as the dictionaries
-of spelling are (see *Spelling*): from the server of Glaukopis, which offers
+*Language* › *OCR*, by **Import OCR language files**, as the dictionaries of
+spelling are (see *Spelling*): from the server of Glaukopis, which offers
 the best data there is for English, Norwegian, Swedish, Danish, German,
-French, Italian, Ancient Greek and Latin, for now, or from a `.traineddata` file of any language
-Tesseract has, such as those of `tessdata_best` on GitHub. A language you
-have imported is read with before the computer's of the same name. A page takes a few seconds; several are read at a time,
+French, Italian, Ancient Greek and Latin, for now. The list of **OCR
+languages** says of each whether it is the system's or imported, and **×**
+takes an imported one away. A language you have imported is read with
+before the computer's of the same name. **Default OCR settings**, below,
+are how a text is read at first. A page takes a few seconds; several are read at a time,
 and you are shown how many are read. **Cancel** stops the reading, and
 nothing is made or changed.
 
@@ -2295,8 +2299,8 @@ text.
 ## The words of Glaukopis
 
 The words of the interface in any language can be read through and mended
-in Glaukopis itself. Under *Settings* › *Language*, **The words of Glaukopis,
-as a project** makes a project, *Words:* and the language, with an element
+in Glaukopis itself. At the foot of *Settings*, **Make a translation project
+of Glaukopis strings** makes a project, *Words:* and the language, with an element
 for each part of the application, and under it an element for each message,
 named by it.
 In its text the English stands above, as a quotation, with what it says to
@@ -2323,8 +2327,8 @@ Glaukopis speaks, at once, without waiting for a new version: the menus and
 dialogs show your words as soon as the button is pressed. They are kept in
 the folder `words` of the data directory, and are used each time Glaukopis
 starts; a word that no longer fits a newer version, having lost a variable
-the English has, is left out, and the English one stands. *Settings* ›
-*Language* says which languages have words you changed in use, and takes
+the English has, is left out, and the English one stands. The same part of
+the settings says which languages have words you changed in use, and takes
 them away again. Files of words from someone else work the same way: put them
 in `words`, in a folder named by the language (`words/nb`), and start
 Glaukopis.
@@ -2358,18 +2362,17 @@ not yet citations; words with digits, such as *1990s*; addresses of web
 pages and of mail; and words written in another script than the
 dictionary's, such as Greek in an English text.
 
-Dictionaries are imported under *Settings* › *Spelling*, at **Imported
-languages**. **Show languages on the server** lists those the server of
-Glaukopis offers: English (American and British), Norwegian (Bokmål and
-Nynorsk), Swedish, Danish, German, French and Italian, for now. **Import**
-fetches one, and it is used at once; one that is newer on the server than
-the one you have can be **Updated**, and **×** takes it away again. Under
-**Import from files…** you can import a language package of your own, a
-dictionary extension of LibreOffice or Firefox (`.oxt`, `.xpi`), or the
-`.aff` and the `.dic` file of any dictionary of Hunspell's, chosen together;
-`docs/language-packages.md` tells how a package is made. Beside the address
-of the server, **Change** gives another, or a folder on the computer, for
-packages of your own or where there is no network.
+Dictionaries are imported under *Settings* › *Language* › *Spelling*.
+**Import spelling dictionaries** lists those the server of Glaukopis offers:
+English (American and British), Norwegian (Bokmål and Nynorsk), Swedish,
+Danish, German, French and Italian, for now. **Import** fetches one, and it
+is used at once; one that is newer on the server than the one you have can
+be **Updated**, and **Close** hides the list again. In the list of
+**Dictionary languages**, each says whether it is the system's or imported,
+and **×** beside an imported one takes it away. Beside the address of the
+server, **Change** gives another, or a folder on the computer, for packages
+of your own or where there is no network; `docs/language-packages.md` tells
+how a package is made.
 
 A text in English without a country is checked with the American and the
 British dictionary both, and a word is right if either has it. The
@@ -2383,9 +2386,10 @@ comes before all the others of its language. Where there is no dictionary
 for the language of the text, nothing in it is underlined, and **F7** says
 so.
 
-*Settings* › *Spelling* turns the checking off and on, lists the dictionaries
-there are and where they came from, and shows the words you have added,
-where they can be taken away. The last button of the tools over the text
+*Settings* › *Language* › *Spelling* turns the checking off and on, and lists
+the dictionaries there are and where they came from. **Manage words added to
+dictionaries** shows the words you have added, a language at a time, where
+they can be taken away and others added. The last button of the tools over the text
 turns the checking off and on as well; it is pressed in while spelling is
 checked.
 
