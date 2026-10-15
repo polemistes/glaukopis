@@ -165,8 +165,8 @@ impl AppState {
         glaukopis_core::export::typeset::families()
     }
 
-    /// A client for the network that names the address the user has given.
+    /// A client for the network. It names the program, never the user.
     pub fn client(&self) -> Client {
-        Client::new(self.setting("contactEmail").as_deref())
+        Client::new()
     }
 }

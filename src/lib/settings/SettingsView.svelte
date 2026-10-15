@@ -475,7 +475,6 @@
           bind:value={contact}
           type="email"
           label={t('settings-email')}
-          hint={t('settings-email-hint')}
           error={contactProblem}
           autocomplete="email"
           spellcheck="false"

@@ -52,7 +52,6 @@ settings-position = Tittel/stilling
 settings-address = Adresse
 settings-phone = Telefon
 settings-email = E-post
-settings-email-hint = Sendes også med hvert oppslag til bibliografiske tjenester som Crossref, som svarer raskere når de vet hvordan du kan nås.
 settings-orcid = ORCID
 settings-orcid-problem = En ORCID iD er fire grupper med fire sifre: 0000-0002-1825-0097.
 settings-contact-problem = Det ser ikke ut som en e-postadresse.

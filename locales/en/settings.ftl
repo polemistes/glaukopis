@@ -60,7 +60,6 @@ settings-position = Title/Position
 settings-address = Address
 settings-phone = Phone
 settings-email = Email
-settings-email-hint = Also sent with each lookup to bibliographic services such as Crossref, which answer more readily when they know how to reach you.
 settings-orcid = ORCID
 settings-orcid-problem = An ORCID iD is four groups of four digits: 0000-0002-1825-0097.
 settings-contact-problem = That does not look like an address.

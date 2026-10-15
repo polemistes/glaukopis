@@ -101,8 +101,8 @@ export interface Settings {
   ocrLayout: Layout;
   ocrContrast: boolean;
   /**
-   * The user's email address, among their details; also sent to bibliographic
-   * services that ask for a contact address.
+   * The user's email address, among their details. Like every detail, it is
+   * never sent anywhere by Glaukopis itself.
    */
   contactEmail: string | null;
   /** Name shown to collaborators: the first and the last name, where they are given. */

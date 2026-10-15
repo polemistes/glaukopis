@@ -36,7 +36,7 @@ async fn the_pictures_of_a_project_are_brought_to_be_the_same() {
 
     let root = tmp.path().to_owned();
     tokio::task::spawn_blocking(move || {
-        let client = Client::new(None);
+        let client = Client::new();
         let remote = Remote::new(&client, &address).unwrap();
         let owner = remote.publish(ROOM, "Wrath", None).unwrap();
         let code = remote.invite(ROOM, &owner, "", None, None).unwrap().code.unwrap();

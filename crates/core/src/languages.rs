@@ -525,7 +525,7 @@ fn get(server: &str, file: &str, limit: u64) -> Result<Vec<u8>> {
         .new_agent();
     let mut response = agent
         .get(&url)
-        .header("User-Agent", &crate::net::user_agent(None))
+        .header("User-Agent", &crate::net::user_agent())
         .call()
         .map_err(|e| Error::Network(tr!("core-packages-fetch-failed", url = &url, message = e.to_string())))?;
     let status = response.status().as_u16();

@@ -779,7 +779,7 @@ mod tests {
 
     fn client() -> Client {
         // No address to be reached at is given.
-        Client::new(None)
+        Client::new()
     }
 
     #[test]
