@@ -61,10 +61,13 @@ pub struct StyleFound {
 // The measures
 // ---------------------------------------------------------------------------
 
-/// Two sizes of type are one where the larger is less than this times the
-/// smaller: 10.5 and 11 points are two sizes, the heights Tesseract gives
-/// the lines of one size, which differ by a pixel or two, are one.
+/// Two sizes of type a font tells are one where the larger is less than
+/// this times the smaller: 10.5 and 11 points are two sizes.
 const SAME_SIZE: f32 = 1.04;
+/// The same for the heights of lines where no font tells the size: the
+/// heights Tesseract gives the lines of one size differ by a pixel or two,
+/// which at a low resolution is more than `SAME_SIZE`.
+const SAME_HEIGHT: f32 = 1.1;
 /// A line is a heading by its size where it is at least this times the body's.
 const HEADING_SIZE: f32 = 1.15;
 /// The part of the page at its head and at its foot where running heads and
@@ -73,6 +76,9 @@ const EDGE: f32 = 1.0 / 8.0;
 /// How many pages before and after a page are looked at for the same
 /// running head or the next page number.
 const NEAR_PAGES: usize = 4;
+/// The sizes of one running head on two pages differ by less than this
+/// times: what Tesseract measures of it differs a little.
+const HEAD_SIZES: f32 = 1.25;
 /// Lines are kept as lines where their right ends differ by more than this
 /// part of the text's width (as a standard deviation).
 const RAGGED: f32 = 0.08;
@@ -84,6 +90,9 @@ const INDENT: f32 = 0.8;
 const ROOM: f32 = 0.4;
 /// The most lines a heading has.
 const HEADING_LINES: usize = 3;
+/// How far a number within the text's edges stands from its line, at the
+/// least, in the body's size, to be the line's number.
+const APART: f32 = 2.0;
 /// The most levels of headings.
 const LEVELS: usize = 3;
 /// How many characters a style's sample has.
@@ -227,30 +236,42 @@ fn page_number(text: &str) -> Option<(String, i64)> {
 
 /// The sizes of type of a file: the sizes of its lines gathered where each
 /// is less than `SAME_SIZE` times the one below it, each with the size
-/// measured, the middle size of its lines by their characters.
+/// measured, the middle size of its lines by their characters. The sizes a
+/// font tells and the heights alone of lines (what Tesseract gives) are
+/// gathered apart, the heights by `SAME_HEIGHT`.
 #[derive(Debug, Clone, Default)]
 struct Sizes {
-    /// The least and the greatest size of each, and its measured size, from the smallest.
-    classes: Vec<(f32, f32, f32)>,
+    /// The least and the greatest size of each, its measured size, and
+    /// whether the sizes are a font's, from the smallest.
+    classes: Vec<(f32, f32, f32, bool)>,
+}
+
+/// Whether a line's size is its font's, not its height alone.
+fn told(line: &Line) -> bool {
+    !line.style.family.is_empty()
 }
 
 impl Sizes {
-    fn of<'a>(lines: impl Iterator<Item = &'a Line>) -> Sizes {
-        let mut sized: Vec<(f32, usize)> =
-            lines.map(|l| (size_of(l), signs(l).max(1))).filter(|(size, _)| *size > 0.0).collect();
-        sized.sort_by(|a, b| a.0.total_cmp(&b.0));
-        let mut groups: Vec<Vec<(f32, usize)>> = Vec::new();
-        for (size, weight) in sized {
-            match groups.last_mut() {
-                Some(group) if size < group.last().expect("a group has a size").0 * SAME_SIZE => {
-                    group.push((size, weight))
+    fn of<'a>(lines: impl Iterator<Item = &'a Line> + Clone) -> Sizes {
+        let mut classes = Vec::new();
+        for (font, same) in [(true, SAME_SIZE), (false, SAME_HEIGHT)] {
+            let mut sized: Vec<(f32, usize)> = lines
+                .clone()
+                .filter(|l| told(l) == font)
+                .map(|l| (size_of(l), signs(l).max(1)))
+                .filter(|(size, _)| *size > 0.0)
+                .collect();
+            sized.sort_by(|a, b| a.0.total_cmp(&b.0));
+            let mut groups: Vec<Vec<(f32, usize)>> = Vec::new();
+            for (size, weight) in sized {
+                match groups.last_mut() {
+                    Some(group) if size < group.last().expect("a group has a size").0 * same => {
+                        group.push((size, weight))
+                    }
+                    _ => groups.push(vec![(size, weight)]),
                 }
-                _ => groups.push(vec![(size, weight)]),
             }
-        }
-        let classes = groups
-            .into_iter()
-            .map(|group| {
+            classes.extend(groups.into_iter().map(|group| {
                 let total: usize = group.iter().map(|g| g.1).sum();
                 let mut seen = 0;
                 let measured = group
@@ -260,15 +281,16 @@ impl Sizes {
                         seen * 2 >= total
                     })
                     .map_or(group[0].0, |g| g.0);
-                (group[0].0, group.last().expect("a group has a size").0, measured)
-            })
-            .collect();
+                (group[0].0, group.last().expect("a group has a size").0, measured, font)
+            }));
+        }
         Sizes { classes }
     }
 
-    /// The size a line's size is of, by its index: the one it falls within, or the nearest.
-    fn class(&self, size: f32) -> usize {
-        let distance = |(low, high, _): &(f32, f32, f32)| {
+    /// The size a line's size is of, by its index: the one it falls within,
+    /// or the nearest, of those told as it is told where there are such.
+    fn class(&self, size: f32, font: bool) -> usize {
+        let distance = |(low, high, _, _): &(f32, f32, f32, bool)| {
             if size < *low {
                 low / size.max(f32::MIN_POSITIVE)
             } else if size > *high {
@@ -277,7 +299,9 @@ impl Sizes {
                 1.0
             }
         };
+        let alike = self.classes.iter().any(|c| c.3 == font);
         (0..self.classes.len())
+            .filter(|&c| !alike || self.classes[c].3 == font)
             .min_by(|&a, &b| distance(&self.classes[a]).total_cmp(&distance(&self.classes[b])))
             .unwrap_or(0)
     }
@@ -317,13 +341,13 @@ impl File {
             family: line.style.family.clone(),
             italic: line.style.italic,
             bold: line.style.bold,
-            size: self.sizes.class(size_of(line)),
+            size: self.sizes.class(size_of(line), told(line)),
         }
     }
 
     /// A line's size as measured for its size of type.
     fn size(&self, line: &Line) -> f32 {
-        self.sizes.measured(self.sizes.class(size_of(line)))
+        self.sizes.measured(self.sizes.class(size_of(line), told(line)))
     }
 
     /// How much room the lines of the body have between them, as a part of their size.
@@ -385,6 +409,8 @@ struct Candidate {
     text: Option<String>,
     /// Its form and value, for a page number.
     number: Option<(String, i64)>,
+    /// Its size: a running head keeps one.
+    size: f32,
 }
 
 /// A running head's text as it is compared: small letters, a run of digits as `#`, and nothing else.
@@ -466,15 +492,20 @@ fn edges(pages: &mut [PageLines]) {
                 let head = normalized(text);
                 let head = (number.is_none() && head.chars().any(char::is_alphabetic)).then_some(head);
                 if number.is_some() || head.is_some() {
-                    candidates.push(Candidate { page: p, line: i, edge, text: head, number });
+                    let size = size_of(&page.lines[i]);
+                    candidates.push(Candidate { page: p, line: i, edge, text: head, number, size });
                 }
             }
         }
     }
 
     let near = |a: &Candidate, b: &Candidate| a.page != b.page && a.page.abs_diff(b.page) <= NEAR_PAGES;
+    // The same text at the same edge in the same size: a title with the
+    // words of the running head is not one.
     let same_head = |a: &Candidate, b: &Candidate| {
-        a.edge == b.edge && matches!((&a.text, &b.text), (Some(x), Some(y)) if similar(x, y))
+        a.edge == b.edge
+            && a.size.max(b.size) <= a.size.min(b.size) * HEAD_SIZES
+            && matches!((&a.text, &b.text), (Some(x), Some(y)) if similar(x, y))
     };
     // Whether a running head's text stands again two pages on or back.
     let again = |c: &Candidate| {
@@ -682,7 +713,8 @@ fn cut(line: &Line, from: usize, to: usize) -> Line {
 /// on. Where a line's text begins or ends with figures, and the line
 /// reaches beyond the edge on that side by more than the body's size, the
 /// figures were drawn in the margin on the line's own baseline: they are
-/// split off by place and given to the line so.
+/// split off by place and given to the line so. Numbers within the edges
+/// are given to their lines on the terms of `numbers_inside`.
 fn margin_numbers(segment: &Segment, file: &File) -> Vec<Numbered> {
     let all: Vec<&Line> = segment.lines.iter().collect();
     let width = sign_width(&all, file);
@@ -723,13 +755,7 @@ fn margin_numbers(segment: &Segment, file: &File) -> Vec<Numbered> {
             let mut rest = cut(line, after, text.len());
             let number_right = line.left + number.len() as f32 * width;
             let guess = (line.right - rest.text.chars().count() as f32 * width).max(number_right + width);
-            // Where the guess falls near where other lines begin, it begins there.
-            rest.left = lefts
-                .iter()
-                .copied()
-                .filter(|l| (l - guess).abs() < 1.5 * file.size)
-                .min_by(|a, b| (a - guess).abs().total_cmp(&(b - guess).abs()))
-                .unwrap_or(guess);
+            rest.left = snapped(guess, &lefts, file);
             out.push((rest, Some((number.to_owned(), Side::Left))));
             continue;
         }
@@ -758,7 +784,143 @@ fn margin_numbers(segment: &Segment, file: &File) -> Vec<Numbered> {
             gone[i] = true;
         }
     }
+    numbers_inside(&mut out, &mut gone, width, &lefts, file);
     out.into_iter().zip(gone).filter(|(_, gone)| !gone).map(|(n, _)| n).collect()
+}
+
+/// Where a number found by `numbers_inside` stood: at the end or the
+/// beginning of its line's own text, or on a line of its own.
+enum Stood {
+    InLine(Line),
+    Alone(usize),
+}
+
+/// A number beside a line within the text's edges.
+struct Inside {
+    line: usize,
+    number: String,
+    value: i64,
+    side: Side,
+    stood: Stood,
+}
+
+/// Where the guess of where a line's text begins falls near where other
+/// lines begin, it begins there.
+fn snapped(guess: f32, lefts: &[f32], file: &File) -> f32 {
+    lefts
+        .iter()
+        .copied()
+        .filter(|l| (l - guess).abs() < 1.5 * file.size)
+        .min_by(|a, b| (a - guess).abs().total_cmp(&(b - guess).abs()))
+        .unwrap_or(guess)
+}
+
+/// The numbers beside lines within the text's edges (`margin_numbers`, the
+/// second case), as where the numbers of lines of verse stand at the right
+/// edge of a page of prose. A number in figures stands apart from its line,
+/// on a line of its own beside it with more than `APART` times the body's
+/// size between them, or at the end or the beginning of the line's own
+/// text with room enough between that a guess of the text's width cannot
+/// be wrong by it (`APART` times the size, and a quarter of the line).
+/// Such numbers on one side are given to their lines only where they count
+/// upward down the page, two at least, with a line between each two: as
+/// the numbers of lines do, and the figures of a table do not.
+fn numbers_inside(out: &mut [Numbered], gone: &mut [bool], width: f32, lefts: &[f32], file: &File) {
+    let apart = APART * file.size;
+    let mut found: Vec<Inside> = Vec::new();
+    for i in 0..out.len() {
+        let (line, number) = &out[i];
+        if gone[i] || number.is_some() || !has_letters(&line.text) {
+            continue;
+        }
+        let room = apart.max(0.25 * (line.right - line.left));
+        let text = &line.text;
+        let trimmed = text.trim_end();
+        if let Some(at) = trimmed.rfind(char::is_whitespace)
+            && digits(&trimmed[at + 1..])
+            && has_letters(&trimmed[..at])
+        {
+            let number = &trimmed[at + 1..];
+            let mut rest = cut(line, 0, trimmed[..at].trim_end().len());
+            let end = line.left + rest.text.chars().count() as f32 * width;
+            if line.right - number.len() as f32 * width - end > room {
+                rest.right = end;
+                let value = number.parse().unwrap_or_default();
+                let (number, side, stood) = (number.to_owned(), Side::Right, Stood::InLine(rest));
+                found.push(Inside { line: i, number, value, side, stood });
+                continue;
+            }
+        }
+        let start = text.len() - text.trim_start().len();
+        if let Some(len) = text[start..].find(char::is_whitespace)
+            && digits(&text[start..start + len])
+            && has_letters(&text[start + len..])
+        {
+            let number = &text[start..start + len];
+            let after = start + len + (text[start + len..].len() - text[start + len..].trim_start().len());
+            let mut rest = cut(line, after, text.len());
+            let begins = line.right - rest.text.chars().count() as f32 * width;
+            if begins - (line.left + number.len() as f32 * width) > room {
+                rest.left = snapped(begins, lefts, file);
+                let value = number.parse().unwrap_or_default();
+                let (number, side, stood) = (number.to_owned(), Side::Left, Stood::InLine(rest));
+                found.push(Inside { line: i, number, value, side, stood });
+            }
+        }
+    }
+    for j in 0..out.len() {
+        let number = &out[j].0;
+        if gone[j] || out[j].1.is_some() || !digits(number.text.trim()) {
+            continue;
+        }
+        let middle = (number.top + number.bottom) / 2.0;
+        let beside = (0..out.len())
+            .filter(|&t| t != j && !gone[t] && out[t].1.is_none() && has_letters(&out[t].0.text))
+            .filter(|&t| out[t].0.top <= middle && middle <= out[t].0.bottom)
+            .filter_map(|t| {
+                let line = &out[t].0;
+                if number.left - line.right > apart {
+                    Some((t, Side::Right, number.left - line.right))
+                } else if line.left - number.right > apart {
+                    Some((t, Side::Left, line.left - number.right))
+                } else {
+                    None
+                }
+            })
+            .min_by(|a, b| a.2.total_cmp(&b.2));
+        if let Some((t, side, _)) = beside
+            && !found.iter().any(|f| f.line == t)
+        {
+            let value = number.text.trim().parse().unwrap_or_default();
+            found.push(Inside { line: t, number: number.text.trim().to_owned(), value, side, stood: Stood::Alone(j) });
+        }
+    }
+    for side in [Side::Left, Side::Right] {
+        let mut these: Vec<Inside> = Vec::new();
+        let mut others: Vec<Inside> = Vec::new();
+        for f in found.drain(..) {
+            if f.side == side { these.push(f) } else { others.push(f) }
+        }
+        found = others;
+        these.sort_by(|a, b| out[a.line].0.top.total_cmp(&out[b.line].0.top));
+        let counts_up = these.len() >= 2
+            && these.windows(2).all(|w| {
+                let (a, b) = (&out[w[0].line].0, &out[w[1].line].0);
+                let between = (0..out.len())
+                    .any(|k| !gone[k] && has_letters(&out[k].0.text) && out[k].0.top > a.top && out[k].0.top < b.top);
+                w[1].value > w[0].value && between
+            });
+        if !counts_up {
+            continue;
+        }
+        for f in these {
+            match f.stood {
+                Stood::InLine(rest) => out[f.line].0 = rest,
+                Stood::Alone(j) => gone[j] = true,
+            }
+            out[f.line].1 = Some((f.number, f.side));
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -771,7 +933,11 @@ fn margin_numbers(segment: &Segment, file: &File) -> Vec<Numbered> {
 /// size, with more room above and below than the body's lines have, that
 /// has no number in the margin, and whose look is not that of the lines
 /// it stands apart from (a heading stands apart from text in another look).
-fn headings(lines: &[Numbered], file: &File) -> Vec<Range<usize>> {
+/// One larger than the body may have no more room below than the body's
+/// lines where its last line ends short of the text's right edge by twice
+/// the body's size, as the headings of many programs are set; the first
+/// line of a paragraph set larger reaches the edge.
+fn headings(lines: &[Numbered], segment: &Segment, file: &File) -> Vec<Range<usize>> {
     let stands_out = |(line, number): &Numbered| {
         let size = file.size(line);
         number.is_none()
@@ -793,7 +959,10 @@ fn headings(lines: &[Numbered], file: &File) -> Vec<Range<usize>> {
         let last = &lines[end - 1].0;
         let looks: BTreeSet<Key> = lines[i..end].iter().map(|l| file.key(&l.0)).collect();
         let apart_above = i == 0 || file.room_between(&lines[i - 1].0, first);
-        let apart_below = end == lines.len() || file.room_between(last, &lines[end].0);
+        let larger = lines[i..end].iter().all(|l| file.size(&l.0) >= HEADING_SIZE * file.size);
+        let apart_below = end == lines.len()
+            || file.room_between(last, &lines[end].0)
+            || (larger && last.right < segment.right - 2.0 * file.size);
         let other_look = |n: Option<&Numbered>| n.is_none_or(|n| !looks.contains(&file.key(&n.0)));
         if end - i <= HEADING_LINES
             && apart_above
@@ -978,7 +1147,7 @@ fn paragraphs(lines: Vec<Line>, segment: &Segment, file: &File) -> Vec<Draft> {
 fn shape_segment(mut segment: Segment, segments: &HashMap<Part, (f32, f32)>, file: &File) -> Vec<Draft> {
     (segment.left, segment.right) = segments.get(&segment.part).copied().unwrap_or_default();
     let lines = margin_numbers(&segment, file);
-    let heads = headings(&lines, file);
+    let heads = headings(&lines, &segment, file);
     let blocks = kept(&lines, &heads, &segment, file);
     let mut out: Vec<Draft> = Vec::new();
     let mut loose: Vec<Line> = Vec::new();
@@ -1319,6 +1488,38 @@ mod tests {
     }
 
     #[test]
+    fn a_page_of_a_novel_as_tesseract_reads_it_is_the_same() {
+        // No font: the size is the line's height, which wanders with the
+        // letters of the line, and the left ends are a little uneven.
+        let mut pages = novel(3);
+        for (k, line) in pages.iter_mut().flat_map(|p| &mut p.lines).enumerate() {
+            let height = 11.0 * (0.85 + 0.03 * (k % 9) as f32);
+            line.bottom = line.top + height;
+            line.style = Style { size: height, ..Default::default() };
+            line.left += [0.0, 1.0, -1.0, 0.5][k % 4];
+        }
+        let (pieces, styles) = shape(pages);
+        assert_eq!(styles.len(), 1, "{styles:#?}");
+        for page in &pieces {
+            assert_eq!(page.len(), 12);
+            assert!(page.iter().all(|p| matches!(p, Piece::Paragraph { style: 0, indent: true, .. })));
+        }
+        assert!(!all_text(&pieces).contains("17"));
+    }
+
+    #[test]
+    fn an_address_is_kept_as_lines() {
+        let mut pen = Pen::new();
+        pen.text(NOVEL[0], 11.0, 11.0, true).space(13.2);
+        pen.lines(&["Mrs Anne Holt", "The Old Inn", "Upper Valley Road", "Hilltown"], LEFT, 11.0).space(13.2);
+        pen.text(NOVEL[5], 11.0, 11.0, true);
+        let (pieces, _) = shape(vec![pen.page()]);
+        let Piece::KeptLines { lines, side: None, style: 0 } = &pieces[0][1] else { panic!("{:#?}", pieces[0]) };
+        assert_eq!(lines.len(), 4);
+        assert!(matches!(pieces[0][2], Piece::Paragraph { .. }));
+    }
+
+    #[test]
     fn prose_set_ragged_is_not_kept() {
         // Not justified, not indented, the paragraphs apart by a line.
         let pages: Vec<PageLines> = (0..2)
@@ -1446,6 +1647,51 @@ mod tests {
         assert_eq!(lines.len(), 2);
     }
 
+    #[test]
+    fn a_larger_heading_needs_no_room_below_a_larger_first_line_is_none() {
+        // Room above, none below, short: a heading as many programs set one.
+        let mut pen = Pen::new();
+        pen.text(NOVEL[0], 11.0, 11.0, true).space(12.0);
+        pen.lines(&["The first evening"], LEFT, 14.0);
+        pen.text(NOVEL[3], 11.0, 0.0, true).space(12.0);
+        // A first line set larger that reaches the right edge runs into its paragraph.
+        let lead = pen.lines.len();
+        pen.text(NOVEL[5], 11.0, 0.0, true);
+        let mut page = pen.page();
+        let line = &mut page.lines[lead];
+        line.style.size = 14.0;
+        line.bottom = line.top + 14.0;
+        let (pieces, _) = shape(vec![page]);
+        let heads: Vec<String> = pieces[0]
+            .iter()
+            .filter_map(|p| match p {
+                Piece::Heading { lines, .. } => Some(texts(lines)),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(heads, ["The first evening"]);
+    }
+
+    #[test]
+    fn a_title_in_the_words_of_the_running_head_stays() {
+        let pages: Vec<PageLines> = (0..4)
+            .map(|p| {
+                let mut pen = Pen::new();
+                pen.top = 60.0;
+                if p == 0 {
+                    pen.lines(&["The Widow at the Inn"], LEFT, 18.0).space(14.0);
+                } else {
+                    pen.lines.push(at("THE WIDOW AT THE INN", LEFT, 40.0, 9.0));
+                }
+                pen.text(NOVEL[p], 11.0, 11.0, true).text(NOVEL[p + 2], 11.0, 11.0, true);
+                pen.page()
+            })
+            .collect();
+        let (pieces, _) = shape(pages);
+        assert!(matches!(&pieces[0][0], Piece::Heading { level: 1, .. }), "{:#?}", pieces[0][0]);
+        assert!(!all_text(&pieces[1..]).contains("WIDOW"));
+    }
+
     const VERSE: [&str; 12] = [
         "Sing, goddess, of the anger",
         "of the son of Peleus,",
@@ -1501,6 +1747,68 @@ mod tests {
             // Once, on one page: the body's.
             assert_eq!(styles.len(), 1);
         }
+    }
+
+    #[test]
+    fn numbers_within_the_edges_that_count_up_are_the_lines_numbers() {
+        // At the right edge of a page of prose, as in many editions: within the text's edges.
+        for on_the_line in [true, false] {
+            let mut pen = Pen::new();
+            pen.text(NOVEL[3], 11.0, 11.0, true).space(13.2);
+            let first = pen.lines.len();
+            pen.lines(&VERSE, LEFT, 11.0).space(13.2);
+            pen.text(NOVEL[5], 11.0, 11.0, true);
+            let mut page = pen.page();
+            // From the last, so that the places of the others hold.
+            for (k, n) in [(9, "10"), (4, "5")] {
+                let verse = &mut page.lines[first + k];
+                if on_the_line {
+                    verse.text = format!("{} {n}", verse.text);
+                    verse.right = LEFT + MEASURE;
+                } else {
+                    let left = LEFT + MEASURE - n.len() as f32 * 5.5;
+                    let number = line(n, left, LEFT + MEASURE, verse.top, verse.bottom, 11.0);
+                    page.lines.insert(first + k + 1, number);
+                }
+            }
+            let (pieces, _) = shape(vec![page]);
+            let page = &pieces[0];
+            let Piece::KeptLines { lines, side, .. } = &page[1] else { panic!("{page:#?}") };
+            assert_eq!(*side, Some(Side::Right));
+            let numbers: Vec<(usize, &str)> =
+                lines.iter().enumerate().filter_map(|(i, l)| Some((i, l.1.as_deref()?))).collect();
+            assert_eq!(numbers, [(4, "5"), (9, "10")]);
+            assert_eq!(lines[9].0.text, "was being brought to fulfilment,");
+            assert_eq!(page.len(), 3);
+        }
+    }
+
+    #[test]
+    fn figures_of_a_table_and_years_in_prose_are_not_numbers_of_lines() {
+        let mut pen = Pen::new();
+        pen.text(NOVEL[3], 11.0, 11.0, true).space(13.2);
+        let first = pen.lines.len();
+        pen.lines(&["Apples", "Pears", "Plums", "Cherries"], LEFT, 11.0).space(13.2);
+        // Prose whose lines end with years, a few lines apart.
+        let prose = pen.lines.len();
+        pen.text(NOVEL[5], 11.0, 11.0, true);
+        let mut page = pen.page();
+        for (k, n) in ["4", "7", "9", "12"].iter().enumerate() {
+            let row = &page.lines[first + k];
+            let figure = line(n, 500.0, 500.0 + n.len() as f32 * 5.5, row.top, row.bottom, 11.0);
+            page.lines.insert(first + k * 2 + 1, figure);
+        }
+        let prose = prose + 4;
+        for (k, year) in [(0, "1914"), (2, "1918")] {
+            let l = &mut page.lines[prose + k];
+            let text = l.text.rsplit_once(' ').map_or(l.text.clone(), |(head, _)| head.to_owned());
+            l.text = format!("{text} {year}");
+        }
+        let (pieces, _) = shape(vec![page]);
+        let text = all_text(&pieces);
+        assert!(text.contains("Apples 4") || text.contains("Apples") && text.contains(" 4"), "{text}");
+        assert!(text.contains("1914") && text.contains("1918"));
+        assert!(pieces[0].iter().all(|p| !matches!(p, Piece::KeptLines { side: Some(_), .. })), "{:#?}", pieces[0]);
     }
 
     #[test]
@@ -1654,9 +1962,17 @@ mod tests {
             [44.0, 45.0, 46.0, 47.0, 44.0, 9.0, 11.0, 10.5].iter().map(|&s| at("word", 0.0, 0.0, s)).collect();
         let sizes = Sizes::of(lines.iter());
         assert_eq!(sizes.classes.len(), 4);
-        assert_eq!(sizes.class(45.5), sizes.class(44.0));
-        assert_ne!(sizes.class(10.5), sizes.class(11.0));
-        assert_eq!(sizes.measured(sizes.class(46.0)), 45.0);
+        assert_eq!(sizes.class(45.5, true), sizes.class(44.0, true));
+        assert_ne!(sizes.class(10.5, true), sizes.class(11.0, true));
+        assert_eq!(sizes.measured(sizes.class(46.0, true)), 45.0);
+        // Heights alone, at a low resolution: 17 to 21 dots are one size, 26 another.
+        let heights: Vec<Line> = [17.0, 18.0, 19.0, 20.0, 21.0, 26.0]
+            .iter()
+            .map(|&s| Line { style: Style { size: s, ..Default::default() }, ..at("word", 0.0, 0.0, s) })
+            .collect();
+        let sizes = Sizes::of(heights.iter());
+        assert_eq!(sizes.classes.len(), 2);
+        assert_eq!(sizes.class(17.0, false), sizes.class(21.0, false));
     }
 
     #[test]
