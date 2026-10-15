@@ -119,12 +119,11 @@ ocr-text-poor-all = { $pages ->
     [one] The text the PDF has does not read as text, as when a font does not say which letters it shows, or a reading was poor.
    *[other] On all { $pages } pages that have text, it does not read as text, as when a font does not say which letters it shows, or a reading was poor.
 }
-ocr-text-sample = As the PDF has it, on page { $page }:
 ocr-text-keep = Keep the text the PDF has
 ocr-text-keep-hint = Only the pages without text are read; the others are taken as they are.
 ocr-text-keep-searchable-hint = Only the pages without text are read; the others keep the text they have.
-ocr-text-anew = Read every page anew, in place of the text the PDF has
-ocr-text-anew-hint = Only what is read is kept: for text that is poor, or cannot be read.
+ocr-text-anew = Read every page anew with Tesseract
+ocr-text-anew-hint = Only what Tesseract reads from pictures of the pages is kept; the text the PDF has is taken from no page.
 ocr-text-anew-searchable-hint = The unseen text the pages have is taken away, and what is read is laid in its place. The pages look as they did.
 ocr-about-anew = { $pages ->
     [one] The page is read anew, from a picture of it.
@@ -134,3 +133,38 @@ ocr-searchable-anew = { $pages ->
     [one] The page is read anew, and its text is laid unseen under what is shown, in place of what it had. The PDF looks as it did.
    *[other] All { $pages } pages are read anew, and their text is laid unseen under what is shown, in place of what they had. The PDF looks as it did.
 }
+
+## What is found of the text a PDF has, and what can be done with it (ADR 0044).
+
+ocr-text-found = Text on { $withText } of { $pages } pages, in { $fonts }.
+ocr-text-found-no-fonts = Text on { $withText } of { $pages } pages.
+# The first fonts, and how many more there are.
+ocr-text-fonts-more = { $fonts } and { $count ->
+    [one] one more
+   *[other] { $count } more
+}
+ocr-text-scheme-greek-names = The Greek is stored as the glyph names of { $fonts }, and can be made into Greek letters.
+ocr-text-scheme-expert-names = Small capitals and old-style figures of { $fonts } are stored by name, and can be made into their letters and digits.
+ocr-text-scheme-beta-code = Greek is written in Beta Code, and can be made into Greek letters.
+ocr-text-translate = Translate it into readable text
+ocr-text-translate-hint = The text is made readable by what the fonts say of their letters; no page is read from a picture for it.
+ocr-text-translate-searchable-hint = The PDF's own tables are put right, so that every reader copies and searches the text rightly; nothing drawn changes.
+ocr-text-anew-no-tesseract = Tesseract, which reads text in pictures, is not installed.
+ocr-text-page = Page { $label }
+ocr-text-page-none = No text on this page: it is read from a picture of it.
+ocr-about-translate = { $without ->
+    [0] The text the PDF has is made readable; no page is read from a picture.
+    [one] The text the PDF has is made readable, and the one page without text is read from a picture of it.
+   *[other] The text the PDF has is made readable, and the { $without } pages without text are read from pictures of them.
+}
+ocr-searchable-translate = { $without ->
+    [0] The fonts of the PDF are given their letters, so that its text can be copied and searched rightly. The PDF looks as it did.
+    [one] The fonts of the PDF are given their letters, and the one page without text is read and given text. The PDF looks as it did.
+   *[other] The fonts of the PDF are given their letters, and the { $without } pages without text are read and given text. The PDF looks as it did.
+}
+ocr-searchable-make-readable = Make readable
+ocr-searchable-readable-done = { $count ->
+    [one] The PDF's text is readable now: one font was given its letters
+   *[other] The PDF's text is readable now: { $count } fonts were given their letters
+}
+ocr-languages-greek-with-latin = Greek is read together with { $languages }: the lunate sigma, which looks like a Latin c, is then often read as Latin, and the words with it come out Latin. For Greek alone, take the others away.

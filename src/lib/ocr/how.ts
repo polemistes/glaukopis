@@ -34,3 +34,84 @@ export const shownDpi = (dpi: number) => (dpi === 0 ? DPIS[0] : dpi);
 export function anewAtFirst(looked: { withText: number; poor: number }): boolean {
   return looked.withText > 0 && looked.poor * 2 >= looked.withText;
 }
+
+/**
+ * What becomes of the text a PDF has at first: translated where a scheme
+ * applies, read anew where the text is poor and none does, kept otherwise.
+ */
+export function firstTextChoice(looked: {
+  withText: number;
+  poor: number;
+  schemes: unknown[];
+}): 'keep' | 'translate' | 'anew' {
+  if (looked.schemes.length) return 'translate';
+  return anewAtFirst(looked) ? 'anew' : 'keep';
+}
+
+/** Tesseract's languages whose script is not the Latin one, as far as they are offered. */
+const NOT_LATIN = new Set([
+  'grc',
+  'ell',
+  'rus',
+  'ukr',
+  'bel',
+  'bul',
+  'mkd',
+  'srp',
+  'kaz',
+  'kir',
+  'mon',
+  'tgk',
+  'tat',
+  'uzb_cyrl',
+  'heb',
+  'yid',
+  'ara',
+  'fas',
+  'urd',
+  'pus',
+  'syr',
+  'hin',
+  'mar',
+  'nep',
+  'san',
+  'ben',
+  'asm',
+  'guj',
+  'pan',
+  'ori',
+  'tam',
+  'tel',
+  'kan',
+  'mal',
+  'sin',
+  'tha',
+  'lao',
+  'khm',
+  'mya',
+  'bod',
+  'dzo',
+  'amh',
+  'tir',
+  'kat',
+  'kat_old',
+  'hye',
+  'chi_sim',
+  'chi_tra',
+  'jpn',
+  'kor',
+  'chr',
+  'iku',
+  'div',
+  'osd',
+  'equ',
+]);
+
+/**
+ * The languages of the Latin script chosen together with Greek: with them,
+ * Tesseract reads the lunate sigma, which looks like a Latin c, as Latin.
+ */
+export function latinWithGreek(chosen: string[]): string[] {
+  if (!chosen.some((l) => l === 'grc' || l === 'ell' || l === 'script/Greek')) return [];
+  return chosen.filter((l) => !NOT_LATIN.has(l) && !l.startsWith('script/'));
+}

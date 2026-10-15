@@ -41,6 +41,7 @@ ocr-remark-counts = { $read ->
     [one] Én side lest av Tesseract
    *[other] { $read } sider lest av Tesseract
 }, { $taken ->
+    [0] ingen tatt fra PDF-ens egen tekst
     [one] én tatt fra PDF-ens egen tekst
    *[other] { $taken } tatt fra PDF-ens egen tekst
 }, { $failed ->

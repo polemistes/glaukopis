@@ -117,12 +117,11 @@ ocr-text-poor-all = { $pages ->
     [one] Teksten PDF-en har, leses ikke som tekst, slik det blir når en skrift ikke sier hvilke bokstaver den viser, eller en lesning var dårlig.
    *[other] På alle de { $pages } sidene som har tekst, leses den ikke som tekst, slik det blir når en skrift ikke sier hvilke bokstaver den viser, eller en lesning var dårlig.
 }
-ocr-text-sample = Slik PDF-en har den, på side { $page }:
 ocr-text-keep = Behold teksten PDF-en har
 ocr-text-keep-hint = Bare sidene uten tekst leses; de andre tas som de er.
 ocr-text-keep-searchable-hint = Bare sidene uten tekst leses; de andre beholder teksten de har.
-ocr-text-anew = Les hver side på nytt, i stedet for teksten PDF-en har
-ocr-text-anew-hint = Bare det som leses, beholdes: for tekst som er dårlig eller ikke kan leses.
+ocr-text-anew = Les hver side på nytt med Tesseract
+ocr-text-anew-hint = Bare det Tesseract leser fra bilder av sidene, beholdes; teksten PDF-en har, tas ikke fra noen side.
 ocr-text-anew-searchable-hint = Den usynlige teksten sidene har, tas bort, og det som leses, legges i stedet. Sidene ser ut som før.
 ocr-about-anew = { $pages ->
     [one] Siden leses på nytt, fra et bilde av den.
@@ -132,3 +131,37 @@ ocr-searchable-anew = { $pages ->
     [one] Siden leses på nytt, og teksten legges usynlig under det som vises, i stedet for den den hadde. PDF-en ser ut som før.
    *[other] Alle { $pages } sidene leses på nytt, og teksten legges usynlig under det som vises, i stedet for den de hadde. PDF-en ser ut som før.
 }
+
+## Hva som er funnet av teksten en PDF har, og hva som kan gjøres med den.
+
+ocr-text-found = Tekst på { $withText } av { $pages } sider, i { $fonts }.
+ocr-text-found-no-fonts = Tekst på { $withText } av { $pages } sider.
+ocr-text-fonts-more = { $fonts } og { $count ->
+    [one] én til
+   *[other] { $count } til
+}
+ocr-text-scheme-greek-names = Gresken er lagret som tegnnavnene i { $fonts }, og kan gjøres om til greske bokstaver.
+ocr-text-scheme-expert-names = Kapitéler og gammeldagse tall i { $fonts } er lagret ved navn, og kan gjøres om til bokstavene og sifrene sine.
+ocr-text-scheme-beta-code = Gresk er skrevet i Beta Code, og kan gjøres om til greske bokstaver.
+ocr-text-translate = Oversett den til lesbar tekst
+ocr-text-translate-hint = Teksten gjøres lesbar ut fra det skriftene sier om bokstavene sine; ingen side leses fra et bilde for det.
+ocr-text-translate-searchable-hint = PDF-ens egne tabeller rettes, så hver leser kopierer og søker i teksten riktig; ingenting av det som vises, endres.
+ocr-text-anew-no-tesseract = Tesseract, som leser tekst i bilder, er ikke installert.
+ocr-text-page = Side { $label }
+ocr-text-page-none = Ingen tekst på denne siden: den leses fra et bilde av den.
+ocr-about-translate = { $without ->
+    [0] Teksten PDF-en har, gjøres lesbar; ingen side leses fra et bilde.
+    [one] Teksten PDF-en har, gjøres lesbar, og den ene siden uten tekst leses fra et bilde av den.
+   *[other] Teksten PDF-en har, gjøres lesbar, og de { $without } sidene uten tekst leses fra bilder av dem.
+}
+ocr-searchable-translate = { $without ->
+    [0] Skriftene i PDF-en får bokstavene sine, så teksten kan kopieres og søkes i riktig. PDF-en ser ut som før.
+    [one] Skriftene i PDF-en får bokstavene sine, og den ene siden uten tekst leses og får tekst. PDF-en ser ut som før.
+   *[other] Skriftene i PDF-en får bokstavene sine, og de { $without } sidene uten tekst leses og får tekst. PDF-en ser ut som før.
+}
+ocr-searchable-make-readable = Gjør lesbar
+ocr-searchable-readable-done = { $count ->
+    [one] Teksten i PDF-en er lesbar nå: én skrift fikk bokstavene sine
+   *[other] Teksten i PDF-en er lesbar nå: { $count } skrifter fikk bokstavene sine
+}
+ocr-languages-greek-with-latin = Gresk leses sammen med { $languages }: den runde sigmaen, som ligner en latinsk c, leses da ofte som latin, og ordene med den blir latinske. For bare gresk, ta de andre bort.

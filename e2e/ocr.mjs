@@ -104,6 +104,15 @@ const betaCode = typst(
     '#"Mh=nin a)/eide qea\\\\ Phlhi+a/dew *)Axilh=os ou)lome/nhn, h(\\\\ muri/\' *)Axaioi=s a)/lge\' e)/qhke, polla\\\\s d\' i)fqi/mous yuxa\\\\s *)/Ai+di proi/+ayen h(rw/wn, au)tou\\\\s de\\\\ e(lw/ria teu=xe ku/nessin oi)wnoi=si/ te pa=si"',
   ),
 );
+// Greek read in the encoding of Western Europe: text that does not read as text, in no scheme.
+const junk = typst(
+  'junk.pdf',
+  PAGE(
+    'ÌÞíéí ¢åéäå èåÜ Ðçëçúáäåù ¢÷éëÞïò ïõëïìÝíçí, ç ìõñß¢ ¢÷áéïÿò Üëãå¢ Ýèçêå, ðïëëÜò ä¢ éöèßìïõò øõ÷Üò ¢Ûúäé ðñïÚáøåí çñþùí, áõôïýò äÝ åëþñéá ôåý÷å êýíåóóéí',
+  ),
+);
+// Greek kept by the names of its glyphs, as the Oxford Aristophanes keeps it (written by the core's tests).
+const porson = join(root, 'e2e', 'fixtures', 'porson.pdf');
 
 const app = await App.launch({ width: 1360, height: 900 });
 try {
@@ -259,7 +268,7 @@ try {
   const told = await remarks();
   check(
     'what was done is said',
-    told.includes('2 pages were read from pictures of them.'),
+    told.includes('2 pages read by Tesseract, none taken from the PDF\'s own text, none that could not be read.'),
     told.join(' ‖ '),
   );
   await app.screenshot('ocr-2-read');
@@ -345,8 +354,14 @@ try {
     aboutText,
   );
   check('no languages are asked for', !(await app.exists('dialog [data-languages]')));
-  const sampled = await app.text('dialog [data-text-sample]');
-  check('what its text says is shown', /^The wrath of Achilles/.test(sampled.trim()), sampled);
+  await app.waitFor('dialog [data-text-preview] [data-text-page]', 10000);
+  const previewed = await app.text('dialog [data-text-preview]');
+  check('the whole of its text is shown beside', /The wrath of Achilles/.test(previewed), previewed);
+  check(
+    'and what was found is said',
+    /Text on 1 of 1 pages/.test(await app.text('dialog [data-text-found]')),
+    await app.text('dialog [data-text-found]'),
+  );
   check(
     'and it reads as text, so it is kept at first',
     !(await app.exists('dialog [data-text-poor]')) &&
@@ -374,11 +389,69 @@ try {
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
 
-  // ---- text that does not read as text ----
+  // ---- Greek kept by the names of its glyphs: translated ----
+  await dropOnTabs(porson);
+  await app.waitFor('dialog [data-ocr="asking"] [data-text-preview] [data-text-page]', 15000);
+  check(
+    'the scheme of the font is said',
+    /glyph names of PorsonGreekSF/.test(await app.text('dialog [data-text-scheme="greek-names"]')),
+    await app.text('dialog [data-text-found]'),
+  );
+  check(
+    'and translating is chosen at first, with no languages to read with',
+    (await app.exec(`return document.querySelector('dialog [data-choice="translate"]').checked`)) &&
+      !(await app.exists('dialog [data-languages]')),
+  );
+  check(
+    'the preview shows the text as translated',
+    /ἥσθην ἀπειλαῖς, ἐγέλασα ψολοκομπίαις/.test(await app.text('dialog [data-text-preview]')),
+    await app.text('dialog [data-text-preview]'),
+  );
+  await sleep(300);
+  await app.screenshot('ocr-2d-translate');
+  await app.setTheme('dark');
+  await sleep(200);
+  await app.screenshot('ocr-2d-translate-dark');
+  await app.setTheme('light');
+  await app.click('dialog [data-choice="keep"]');
+  check(
+    'and as it is, when it is to be kept',
+    !/ἐγέλασα/.test(await app.text('dialog [data-text-preview]')),
+    await app.text('dialog [data-text-preview]'),
+  );
+  await app.click('dialog [data-choice="translate"]');
+  await app.clickText('dialog footer button', 'Cancel');
+  await app.waitGone('dialog[open]', 5000);
+  const translated = await invoke('ocr_read', {
+    path: porson,
+    asked: { languages: [], text: 'translate', dpi: 0, layout: '', contrast: false },
+  });
+  check(
+    'read with translation, the text is Greek, and nothing is read from a picture',
+    /ἐγέλασα ψολοκομπίαις/.test(JSON.stringify(translated.sections)) &&
+      translated.remarks.length === 0,
+    JSON.stringify(translated.remarks),
+  );
+
+  // ---- Beta Code: translated as well ----
   await dropOnTabs(betaCode);
-  await app.waitFor('dialog [data-ocr="asking"]', 15000);
-  const poorly = await app.exists('dialog [data-text-poor]');
-  check('text that does not read as text is said to be so', poorly);
+  await app.waitFor('dialog [data-ocr="asking"] [data-text-preview] [data-text-page]', 15000);
+  check(
+    'Beta Code is said to be that',
+    await app.exists('dialog [data-text-scheme="beta-code"]'),
+  );
+  check(
+    'and is shown in Greek',
+    /μῆνιν ἄειδε θεὰ/.test(await app.text('dialog [data-text-preview]')),
+    await app.text('dialog [data-text-preview]'),
+  );
+  await app.clickText('dialog footer button', 'Cancel');
+  await app.waitGone('dialog[open]', 5000);
+
+  // ---- text that does not read as text, in no scheme ----
+  await dropOnTabs(junk);
+  await app.waitFor('dialog [data-ocr="asking"] [data-text-preview] [data-text-page]', 15000);
+  check('text that does not read as text is said to be so', await app.exists('dialog [data-text-poor]'));
   check(
     'and every page is to be read anew at first, with languages to read with',
     (await app.exec(`return document.querySelector('dialog [data-choice="anew"]').checked`)) &&
@@ -386,9 +459,10 @@ try {
   );
   check(
     'what the PDF has is shown, to judge by',
-    /^Mh=nin/.test((await app.text('dialog [data-text-sample]')).trim()),
-    await app.text('dialog [data-text-sample]'),
+    /ÌÞíéí/.test(await app.text('dialog [data-text-preview]')),
+    await app.text('dialog [data-text-preview]'),
   );
+  check('there is nothing to translate', !(await app.exists('dialog [data-choice="translate"]')));
   await sleep(300);
   await app.screenshot('ocr-2c-poor-text');
   await app.setTheme('dark');
@@ -512,6 +586,28 @@ try {
   await app.screenshot('ocr-5b-anew');
   await app.clickText('dialog footer button', 'Cancel');
   await app.waitGone('dialog[open]', 5000);
+
+  // ---- a PDF of the library made readable by translation ----
+  const other = entries.entries.find((e) => e.id !== singer.id);
+  const given = await invoke('attachment_add', { id: other.id, paths: [porson] });
+  const porsonFile = given.files[given.files.length - 1];
+  const readable = await invoke('ocr_searchable', {
+    id: other.id,
+    path: porsonFile.path,
+    asked: { languages: [], text: 'translate', dpi: 0, layout: '', contrast: false },
+  });
+  check(
+    'a PDF kept by glyph names is made readable: its font given its letters, nothing read',
+    readable.remapped === 1 && readable.read === 0,
+    JSON.stringify({ remapped: readable.remapped, read: readable.read }),
+  );
+  const readableText = installed('pdftotext', [join(app.dataDir, 'library', readable.file.path), '-']);
+  if (readableText !== null)
+    check(
+      'and another reader gets the Greek out of it',
+      /ἐγέλασα ψολοκομπίαις/.test(readableText),
+      readableText.slice(0, 80),
+    );
 
   // ---- a map from a PDF of the library ----
   check('a PDF of the library can become a map', await app.exists('.pane [data-pdf-map]'));

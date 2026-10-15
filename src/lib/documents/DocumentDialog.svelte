@@ -21,6 +21,8 @@
   import { keepReferences, type Bringing, type Brought } from './bringing.svelte';
 
   let { request, onclose }: { request: Bringing; onclose: () => void } = $props();
+  /** Whether the reading step shows the text the PDF has beside its choices: the dialog widens. */
+  let wide = $state(false);
 
   // svelte-ignore state_referenced_locally
   const file = request.name ?? request.path.split(/[\\/]/).pop() ?? request.path;
@@ -162,7 +164,7 @@
   open
   title={request.project ? t('documents-title-element') : t('documents-title-project')}
   subtitle={read ? `${read.file} · ${read.kind}` : file}
-  width={560}
+  width={wide && !read ? 960 : 560}
   dismissable={!making}
   onclose={cancel}
 >
@@ -173,6 +175,7 @@
       path={request.path}
       stored={!!request.stored}
       name={request.name}
+      bind:wide
       onread={(imported) => {
         read = imported;
         title = titleOf(imported);

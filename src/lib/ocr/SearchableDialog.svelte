@@ -19,6 +19,7 @@
     onProgress,
     type Looked,
     type Progress,
+    type TextChoice,
   } from '$lib/api/ocr';
   import { languages, t } from '$lib/i18n';
   import Button from '$lib/ui/Button.svelte';
@@ -26,11 +27,13 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyOk } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
-  import { anewAtFirst, howFromSettings } from './how';
+  import { firstTextChoice, howFromSettings, latinWithGreek } from './how';
+  import { ocrLanguageName } from './languages';
   import HowDisclosure from './HowDisclosure.svelte';
   import LanguagePicker from './LanguagePicker.svelte';
   import { reader } from './reader.svelte';
-  import TextChoice from './TextChoice.svelte';
+  import TextPart from './TextPart.svelte';
+  import TextPreview from './TextPreview.svelte';
 
   interface Props {
     /** The reference the file is made searchable from, where it is: its language is the first guess. */
@@ -47,8 +50,8 @@
   let phase = $state<'looking' | 'asking' | 'reading' | 'failed'>('looking');
   let looked = $state.raw<Looked | null>(null);
   let chosen = $state<string[]>([]);
-  /** Every page read anew, in place of the text the PDF has. */
-  let all = $state(false);
+  /** What becomes of the text the PDF has. */
+  let text = $state<TextChoice>('keep');
   /** How the pages are read, as the settings say until this reading says otherwise. */
   let how = $state(howFromSettings());
   let progress = $state.raw<Progress | null>(null);
@@ -77,7 +80,7 @@
       const [found] = await Promise.all([ocrLook(file.path, true), reader.load()]);
       if (gone) return;
       looked = found;
-      all = anewAtFirst(found);
+      text = firstTextChoice(found);
       // The language of the work, where the reference says it.
       const language = reference?.fields.langid ?? reference?.fields.language ?? null;
       chosen = reader.first(language, languages.current);
@@ -98,7 +101,7 @@
         file.path,
         {
           languages: $state.snapshot(chosen),
-          text: all ? 'anew' : 'keep',
+          text,
           ...$state.snapshot(how),
         },
         ticket,
@@ -107,7 +110,11 @@
       const failed = made.failed.length
         ? t('ocr-searchable-failed', { count: made.failed.length })
         : undefined;
-      notifyOk(t('ocr-searchable-done', { count: made.read }), failed);
+      if (made.remapped > 0 && made.read === 0) {
+        notifyOk(t('ocr-searchable-readable-done', { count: made.remapped }), failed);
+      } else {
+        notifyOk(t('ocr-searchable-done', { count: made.read }), failed);
+      }
       ondone(made.file, made.reference);
       onclose();
     } catch (error) {
@@ -127,20 +134,31 @@
   const without = $derived(looked ? looked.pages - looked.withText : 0);
   const about = $derived.by(() => {
     if (!looked) return '';
-    if (all) return t('ocr-searchable-anew', { pages: looked.pages });
+    if (text === 'anew') return t('ocr-searchable-anew', { pages: looked.pages });
+    if (text === 'translate') return t('ocr-searchable-translate', { without });
     if (without === 0) return t('ocr-searchable-has-text', { pages: looked.pages });
     return t('ocr-searchable-about', { pages: looked.pages, without });
   });
+  /** Whether Tesseract is to read pages: those without text, or all where all are to be read anew. */
+  const scanning = $derived(!!looked && (without > 0 || text === 'anew'));
   const ready = $derived(
     phase === 'asking' &&
       !!looked?.searchable &&
-      reader.installed &&
-      chosen.length > 0 &&
-      (without > 0 || all),
+      (text === 'translate' || scanning) &&
+      (!scanning || (reader.installed && chosen.length > 0)),
   );
+  const latin = $derived(scanning ? latinWithGreek(chosen) : []);
+  /** Room for the preview of the text the PDF has. */
+  const wide = $derived(!!looked?.searchable && looked.withText > 0);
 </script>
 
-<Dialog open title={t('ocr-searchable-title')} subtitle={file.name} width={520} onclose={cancel}>
+<Dialog
+  open
+  title={t('ocr-searchable-title')}
+  subtitle={file.name}
+  width={wide && phase === 'asking' ? 960 : 520}
+  onclose={cancel}
+>
   <div class="body" data-ocr={phase}>
     {#if phase === 'looking'}
       <div class="working" aria-live="polite">
@@ -154,26 +172,43 @@
           <span>{looked.locked ? t('ocr-searchable-locked') : t('ocr-searchable-damaged')}</span>
         </p>
       {:else}
-        <p class="about">{about}</p>
-        {#if reader.installed}
-          <LanguagePicker
-            value={chosen}
-            installed={reader.languages}
-            label={t('ocr-languages')}
-            hint={t('ocr-languages-hint')}
-            onchange={(value) => (chosen = value)}
-          />
-        {:else}
-          <p class="failure selectable" role="alert">
-            <CircleAlert size={15} /> <span>{t('ocr-no-tesseract')}</span>
-          </p>
-        {/if}
-        {#if looked.withText > 0 && reader.installed}
-          <TextChoice {looked} bind:anew={all} searchable />
-        {/if}
-        {#if reader.installed}
-          <HowDisclosure bind:value={how} />
-        {/if}
+        <div class="asking" class:split={wide}>
+          <div class="side">
+            <p class="about">{about}</p>
+            {#if looked.withText > 0}
+              <TextPart {looked} bind:choice={text} searchable canRead={reader.installed} />
+            {/if}
+            {#if scanning && reader.installed}
+              <LanguagePicker
+                value={chosen}
+                installed={reader.languages}
+                label={t('ocr-languages')}
+                hint={t('ocr-languages-hint')}
+                onchange={(value) => (chosen = value)}
+              />
+              {#if latin.length}
+                <p class="warn" data-greek-with-latin>
+                  {t('ocr-languages-greek-with-latin', {
+                    languages: latin.map((l) => ocrLanguageName(l, true)).join(', '),
+                  })}
+                </p>
+              {/if}
+              <HowDisclosure bind:value={how} />
+            {:else if scanning}
+              <p class="failure selectable" role="alert">
+                <CircleAlert size={15} /> <span>{t('ocr-no-tesseract')}</span>
+              </p>
+            {/if}
+          </div>
+          {#if wide}
+            <TextPreview
+              path={file.path}
+              stored
+              pages={looked.pages}
+              translated={text === 'translate'}
+            />
+          {/if}
+        </div>
       {/if}
     {:else if phase === 'reading'}
       <div class="working" aria-live="polite">
@@ -200,12 +235,42 @@
   {#snippet footer()}
     <Button variant="ghost" onclick={cancel}>{t('common-cancel')}</Button>
     <Button variant="primary" disabled={!ready} onclick={make} data-ocr-make>
-      {t('ocr-searchable-make')}
+      {text === 'translate' && !scanning
+        ? t('ocr-searchable-make-readable')
+        : t('ocr-searchable-make')}
     </Button>
   {/snippet}
 </Dialog>
 
 <style>
+  .asking,
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+  /* The choices at the left, the text the PDF has beside them. */
+  .asking.split {
+    display: grid;
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-4, 20px);
+  }
+  @media (max-width: 760px) {
+    .asking.split {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .warn {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: var(--radius-m);
+    background: var(--gold-soft);
+    color: var(--ink);
+    font-size: var(--text-sm);
+    line-height: 1.45;
+  }
   .body {
     display: flex;
     flex-direction: column;

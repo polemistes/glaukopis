@@ -36,6 +36,8 @@
   }
 
   let { file, project = null, projectId = null, at = null, onenter, onclose }: Props = $props();
+  /** Whether the reading step shows the text the PDF has beside its choices: the dialog widens. */
+  let wide = $state(false);
 
   /** A new project, named after the PDF. Ids of projects are not words. */
   const NEW = 'new';
@@ -84,7 +86,7 @@
   open
   title={t('ocr-map-title')}
   subtitle={file.name}
-  width={520}
+  width={wide && !making ? 960 : 520}
   dismissable={!making}
   {onclose}
 >
@@ -98,7 +100,7 @@
         <div class="doing">{t('ocr-map-making')}</div>
       </div>
     {:else}
-      <ReadStep path={file.path} stored name={file.name} onread={made} />
+      <ReadStep path={file.path} stored name={file.name} onread={made} bind:wide />
     {/if}
     {#if failure}
       <p class="failure selectable" role="alert">
