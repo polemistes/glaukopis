@@ -1556,8 +1556,9 @@ fn same_heading(a: &str, b: &str) -> bool {
 /// The levels the file's outline gives the headings it names. Each entry
 /// with a page is matched with a heading on that page, or on the next, whose
 /// words are its words; where none is, with a paragraph of that page whose
-/// first line is its words, which is then a heading of its own, set in the
-/// body's size where the sizes could not see it. An outline that matches
+/// first line is its words, which is then a heading of its own (the whole
+/// paragraph, where it has one line), set in the body's size or near it,
+/// where the sizes could not see it. An outline that matches
 /// fewer than half its entries is of another version of the text, and is
 /// not used.
 fn outlined(drafts: &mut [Vec<Draft>], outline: &[OutlineEntry], file: &File) {
@@ -1588,7 +1589,7 @@ fn outlined(drafts: &mut [Vec<Draft>], outline: &[OutlineEntry], file: &File) {
         if hit.is_none() {
             for (i, d) in drafts.get(page - 1).into_iter().flatten().enumerate() {
                 if let Draft::Paragraph { lines, .. } = d
-                    && lines.len() > 1
+                    && !lines.is_empty()
                     && !taken(page - 1, i, &found)
                     && heading_words(&lines[0].text) == want
                 {
@@ -1605,15 +1606,18 @@ fn outlined(drafts: &mut [Vec<Draft>], outline: &[OutlineEntry], file: &File) {
         return;
     }
     // From the last, so that a piece cut in two leaves the places of those before it as they were.
-    found.sort_by(|a, b| (b.0, b.1).cmp(&(a.0, a.1)));
+    found.sort_by_key(|f| std::cmp::Reverse((f.0, f.1)));
     for (p, i, cut, depth) in found {
         if cut {
             let Draft::Paragraph { lines, look, .. } = drafts[p].remove(i) else { continue };
             let mut lines = lines.into_iter();
-            let first = lines.next().expect("more than one line");
+            let first = lines.next().expect("a line");
             let size = file.key(&first).size;
             let rest: Vec<Line> = lines.collect();
-            drafts[p].insert(i, Draft::Paragraph { lines: rest, indent: false, look });
+            // A paragraph of one line is the heading whole.
+            if !rest.is_empty() {
+                drafts[p].insert(i, Draft::Paragraph { lines: rest, indent: false, look });
+            }
             drafts[p].insert(i, Draft::Heading { lines: vec![first], size, given: Some(depth) });
         } else if let Draft::Heading { given, .. } = &mut drafts[p][i] {
             *given = Some(depth);

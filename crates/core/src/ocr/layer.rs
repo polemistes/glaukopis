@@ -17,6 +17,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use pdf_text::{Document, Glyph, MediaBox, Object, ObjectId, OutputDev, OutputError, Transform};
 
 use super::schemes::{self, Scheme};
+use super::shape::OutlineEntry;
 use super::text::{Gap, Line, Run, Style};
 use crate::tr;
 use crate::written::roman;
@@ -211,6 +212,9 @@ pub struct Layer {
     pub fonts: BTreeMap<String, usize>,
     /// The width and height of each page, in points: what its lines' places are counted in.
     pub sizes: Vec<(f32, f32)>,
+    /// The outline the file carries of its own headings, its bookmarks, in
+    /// their order (ADR 0047); empty where it has none.
+    pub outline: Vec<OutlineEntry>,
 }
 
 impl Layer {
@@ -829,6 +833,138 @@ fn numberings(doc: &Document, node: &Object, into: &mut Vec<Numbering>, depth: u
     }
 }
 
+// ---------------------------------------------------------------------------
+// The outline of the file
+// ---------------------------------------------------------------------------
+
+/// The most entries of an outline read, and how deep it is followed.
+const OUTLINE_MOST: usize = 10_000;
+const OUTLINE_DEEPEST: usize = 16;
+
+/// The outline the file carries of its own headings, as a program writes it
+/// for them: each entry's words, the page it points to and how deep it
+/// stands. An outline that is broken gives what could be read of it.
+fn outline_of(doc: &Document) -> Vec<OutlineEntry> {
+    let Some(root) = doc
+        .catalog()
+        .ok()
+        .and_then(|c| c.get(b"Outlines").ok())
+        .and_then(|o| doc.dereference(o).ok())
+        .and_then(|(_, o)| o.as_dict().ok())
+    else {
+        return Vec::new();
+    };
+    let pages: HashMap<ObjectId, usize> = doc.get_pages().into_iter().map(|(n, id)| (id, n as usize)).collect();
+    let named = named_destinations(doc);
+    let mut out = Vec::new();
+    let mut seen = HashSet::new();
+    let mut walk = Walk { doc, pages: &pages, named: &named, seen: &mut seen, out: &mut out };
+    walk.items(root.get(b"First").ok(), 1);
+    out
+}
+
+/// Going through the items of an outline, each once.
+struct Walk<'a> {
+    doc: &'a Document,
+    pages: &'a HashMap<ObjectId, usize>,
+    named: &'a HashMap<Vec<u8>, Object>,
+    seen: &'a mut HashSet<ObjectId>,
+    out: &'a mut Vec<OutlineEntry>,
+}
+
+impl Walk<'_> {
+    /// An item and those after it, each with the items under it.
+    fn items(&mut self, first: Option<&Object>, depth: usize) {
+        let mut at = first.and_then(|o| o.as_reference().ok());
+        while let Some(id) = at {
+            if !self.seen.insert(id) || self.out.len() >= OUTLINE_MOST {
+                return;
+            }
+            let Ok(item) = self.doc.get_dictionary(id) else { return };
+            let title = item
+                .get(b"Title")
+                .ok()
+                .and_then(|t| self.doc.dereference(t).ok())
+                .and_then(|(_, t)| pdf_text::decode_text_string(t).ok())
+                .map(|t| t.trim_start_matches('\u{feff}').split_whitespace().collect::<Vec<_>>().join(" "))
+                .unwrap_or_default();
+            let page = self.page_of_item(item);
+            self.out.push(OutlineEntry { title, page, depth: depth.min(u8::MAX as usize) as u8 });
+            if depth < OUTLINE_DEEPEST {
+                self.items(item.get(b"First").ok(), depth + 1);
+            }
+            at = item.get(b"Next").ok().and_then(|o| o.as_reference().ok());
+        }
+    }
+
+    /// The page an item points to: by its destination, or by an action that goes to one.
+    fn page_of_item(&self, item: &pdf_text::Dictionary) -> Option<usize> {
+        if let Ok(dest) = item.get(b"Dest") {
+            return self.page_of(dest, 0);
+        }
+        let (_, action) = self.doc.dereference(item.get(b"A").ok()?).ok()?;
+        let action = action.as_dict().ok()?;
+        (action.get(b"S").and_then(Object::as_name).ok()? == b"GoTo").then_some(())?;
+        self.page_of(action.get(b"D").ok()?, 0)
+    }
+
+    /// The page of a destination: an array whose first element is the page,
+    /// a dictionary that holds one, or the name of one.
+    fn page_of(&self, dest: &Object, depth: usize) -> Option<usize> {
+        if depth > 4 {
+            return None;
+        }
+        let (_, dest) = self.doc.dereference(dest).ok()?;
+        match dest {
+            Object::Array(a) => a.first()?.as_reference().ok().and_then(|id| self.pages.get(&id).copied()),
+            Object::Dictionary(d) => self.page_of(d.get(b"D").ok()?, depth + 1),
+            Object::Name(n) | Object::String(n, _) => self.page_of(self.named.get(n)?, depth + 1),
+            _ => None,
+        }
+    }
+}
+
+/// The named destinations of a file: those of the catalogue's `/Dests`, and
+/// those of the name tree `/Names` › `/Dests`.
+fn named_destinations(doc: &Document) -> HashMap<Vec<u8>, Object> {
+    let mut out = HashMap::new();
+    let Ok(catalog) = doc.catalog() else { return out };
+    fn dict<'a>(doc: &'a Document, o: &'a Object) -> Option<&'a pdf_text::Dictionary> {
+        doc.dereference(o).ok().and_then(|(_, o)| o.as_dict().ok())
+    }
+    let dict = |o| dict(doc, o);
+    if let Some(dests) = catalog.get(b"Dests").ok().and_then(dict) {
+        for (name, dest) in dests.iter() {
+            out.insert(name.clone(), dest.clone());
+        }
+    }
+    if let Some(tree) = catalog.get(b"Names").ok().and_then(dict).and_then(|n| n.get(b"Dests").ok()).and_then(dict) {
+        name_tree(doc, tree, &mut out, 0);
+    }
+    out
+}
+
+/// The pairs of a name tree: its `/Names`, and those of its kids.
+fn name_tree(doc: &Document, node: &pdf_text::Dictionary, into: &mut HashMap<Vec<u8>, Object>, depth: usize) {
+    if depth > OUTLINE_DEEPEST || into.len() >= OUTLINE_MOST {
+        return;
+    }
+    if let Ok(names) = node.get(b"Names").and_then(Object::as_array) {
+        for pair in names.chunks(2) {
+            if let [Object::String(name, _), dest] = pair {
+                into.insert(name.clone(), dest.clone());
+            }
+        }
+    }
+    if let Ok(kids) = node.get(b"Kids").and_then(Object::as_array) {
+        for kid in kids {
+            if let Some(kid) = doc.dereference(kid).ok().and_then(|(_, o)| o.as_dict().ok()) {
+                name_tree(doc, kid, into, depth + 1);
+            }
+        }
+    }
+}
+
 /// The labels of the pages, as the catalogue of the document gives them;
 /// the number of each page, counted from one, where it gives none.
 fn labels(doc: &Document, pages: usize) -> Vec<String> {
@@ -876,12 +1012,14 @@ fn read_into(bytes: &[u8], layer: &Mutex<Layer>) {
     let pages = doc.get_pages();
     let count = pages.len();
     let labels = labels(&doc, count);
+    let outline = outline_of(&doc);
     let laid = pages
         .values()
         .map(|id| doc.get_dictionary(*id).is_ok_and(|page| super::searchable::has_laid(&doc, page)))
         .collect();
     keep(layer, |l| {
         l.labels = labels;
+        l.outline = outline;
         l.pages = vec![None; count];
         l.laid = laid;
         l.locked = locked;
@@ -960,6 +1098,22 @@ pub fn read_file(path: &Path) -> crate::Result<Layer> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_outline_a_file_carries_of_its_headings() {
+        let pdf = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../e2e/fixtures/structure.pdf");
+        let layer = read_file(&pdf).unwrap();
+        let got: Vec<(String, Option<usize>, u8)> =
+            layer.outline.iter().map(|e| (e.title.clone(), e.page, e.depth)).collect();
+        assert_eq!(got.len(), 4, "{got:?}");
+        let words: Vec<&str> = got.iter().map(|g| g.0.as_str()).collect();
+        assert!(words[0].ends_with("Beginnings") && words[3].ends_with("Endings"), "{words:?}");
+        assert_eq!(got.iter().map(|g| g.2).collect::<Vec<_>>(), [1, 2, 2, 1], "{got:?}");
+        assert_eq!(got.iter().map(|g| g.1).collect::<Vec<_>>(), [Some(1), Some(2), Some(2), Some(2)], "{got:?}");
+        // A file without one has none.
+        let shape = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../e2e/fixtures/shape.pdf");
+        assert!(read_file(&shape).unwrap().outline.is_empty());
+    }
 
     #[test]
     fn an_accent_drawn_over_the_letter_before_is_its_combining_accent() {

@@ -741,19 +741,26 @@ fn the_shape_of_a_file_is_found() {
             })
             .collect()
     };
+    // By its headings: the title names it, what stands before the first heading is its own,
+    // the headings are the parts, and a mark stands where each page begins.
+    assert_eq!(plain(&imported.title), "The Measure of Things");
     let headings: Vec<(u8, String)> = imported.sections.iter().map(|s| (s.level, plain(&s.heading))).collect();
     assert_eq!(
         headings,
-        vec![
-            (1, "1".into()),
-            (2, "The Measure of Things".into()),
-            (1, "2".into()),
-            (3, "Lines That Keep Their Place".into()),
-            (1, "3".into()),
-            (1, "4".into()),
-            (3, "The Last Part".into()),
-        ]
+        vec![(0, String::new()), (1, "Lines That Keep Their Place".into()), (1, "The Last Part".into())]
     );
+    let page_marks = |sections: &[crate::import::document::Section]| -> Vec<String> {
+        sections
+            .iter()
+            .flat_map(|s| &s.blocks)
+            .flat_map(|b| match b {
+                Block::Paragraph { content, .. } => content.clone(),
+                _ => Vec::new(),
+            })
+            .filter_map(|i| if let Inline::RefMark { label } = i { Some(label) } else { None })
+            .collect()
+    };
+    assert_eq!(page_marks(&imported.sections), ["1", "2", "3", "4"]);
     let all = imported.sections.iter().flat_map(|s| &s.blocks).collect::<Vec<_>>();
     let text: String = all
         .iter()
@@ -797,9 +804,83 @@ fn the_shape_of_a_file_is_found() {
     let named = all.iter().filter(|b| matches!(b, Block::Paragraph { name, .. } if name == "style:1")).count();
     assert_eq!(named, 4);
 
+    // By its pages: a section for each page, the headings under it, the title among them, no marks.
+    let asked = Asked { shape: true, structure: Structure::Pages, ..Asked::default() };
+    let read = read_pdf(&pdf, &Tools::default(), tmp.path(), &asked, None, &mut nothing, &never()).unwrap();
+    let by_pages = imported_pdf("shape.pdf", "Shape", read);
+    let headings: Vec<(u8, String)> = by_pages.sections.iter().map(|s| (s.level, plain(&s.heading))).collect();
+    assert_eq!(
+        headings,
+        vec![
+            (1, "1".into()),
+            (2, "The Measure of Things".into()),
+            (1, "2".into()),
+            (2, "Lines That Keep Their Place".into()),
+            (1, "3".into()),
+            (1, "4".into()),
+            (2, "The Last Part".into()),
+        ]
+    );
+    assert!(page_marks(&by_pages.sections).is_empty());
+
     // Without the shape kept: one section a page, plain paragraphs.
     let read = read_pdf(&pdf, &Tools::default(), tmp.path(), &Asked::default(), None, &mut nothing, &never()).unwrap();
     let imported = imported_pdf("shape.pdf", "Shape", read);
     assert_eq!(imported.sections.len(), 4);
     assert!(imported.styles.is_empty());
+}
+
+/// A file made from a written document, with an outline of its own
+/// headings (ADR 0047): its title names it, its author and year stand
+/// before the first heading, the headings nest as the outline and their
+/// numbers say, and the paragraph that runs over the edge of the page is
+/// one, with the mark of the second page within it.
+#[test]
+fn the_structure_of_a_file_with_an_outline() {
+    use crate::document::Block;
+    let pdf = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../e2e/fixtures/structure.pdf");
+    let tmp = tempfile::tempdir().unwrap();
+    let asked = Asked { shape: true, ..Asked::default() };
+    let read = read_pdf(&pdf, &Tools::default(), tmp.path(), &asked, None, &mut nothing, &never()).unwrap();
+    let imported = imported_pdf("structure.pdf", "structure", read);
+    let plain = |content: &[Inline]| -> String {
+        content
+            .iter()
+            .map(|i| match i {
+                Inline::Text { text, .. } => text.clone(),
+                Inline::RefMark { label } => format!("[{label}]"),
+                _ => String::new(),
+            })
+            .collect()
+    };
+    assert_eq!(plain(&imported.title), "A Short Treatise");
+    let headings: Vec<(u8, String)> = imported.sections.iter().map(|s| (s.level, plain(&s.heading))).collect();
+    assert_eq!(
+        headings,
+        vec![
+            (0, String::new()),
+            (1, "1 Beginnings".into()),
+            (2, "1.1 The First Part".into()),
+            (2, "1.2 The Second Part".into()),
+            (1, "2 Endings".into()),
+        ]
+    );
+    let blocks = |s: &crate::import::document::Section| -> Vec<String> {
+        s.blocks
+            .iter()
+            .map(|b| match b {
+                Block::Paragraph { content, .. } => plain(content),
+                _ => String::new(),
+            })
+            .collect()
+    };
+    let front = blocks(&imported.sections[0]).join(" | ");
+    assert!(front.contains("Anna Lind") && front.contains("2026"), "{front}");
+    let beginnings = blocks(&imported.sections[1]);
+    assert_eq!(beginnings.len(), 2, "{beginnings:#?}");
+    assert!(beginnings[1].contains("[2]"), "the paragraph goes on over the edge: {}", beginnings[1]);
+    assert!(
+        !imported.sections.iter().flat_map(blocks).any(|b| b.trim() == "1" || b.trim() == "2"),
+        "page numbers left out"
+    );
 }

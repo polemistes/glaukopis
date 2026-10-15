@@ -4,6 +4,7 @@
 ## Hva en fil er.
 
 ocr-kind-pdf = PDF
+ocr-no-headings = Ingen overskrift ble funnet: sidene er elementene.
 ocr-kind-picture = Bilde
 
 ## Når tekst ikke kan leses.

@@ -271,6 +271,7 @@ pub fn mend_across(pages: &mut [Vec<Shaped>], is_word: Option<&IsWord>) {
 /// A page's pieces as the blocks of its section, and sections of its
 /// headings: what stands before the first heading is the page's own; each
 /// heading opens a section under the page, one level deeper for each level.
+/// The title is a heading here as the others are.
 pub fn sections(label: String, pieces: Vec<Shaped>) -> Vec<Section> {
     let mut out = vec![Section { level: 1, heading: vec![text_inline(label, Marks::default())], blocks: Vec::new() }];
     for piece in pieces {
@@ -278,45 +279,226 @@ pub fn sections(label: String, pieces: Vec<Shaped>) -> Vec<Section> {
             Shaped::Heading { level, content } => {
                 out.push(Section { level: 1 + level.clamp(1, 3), heading: content, blocks: Vec::new() })
             }
-            // A first line set further in is how the layout begins a paragraph, not
-            // an indent of the paragraph, which in an element moves every line of it:
-            // it is left to the layout. A paragraph standing in as a whole is a style found.
-            Shaped::Paragraph { content, indent: _, style } => {
-                let mut block = Block::paragraph(content);
-                if let Block::Paragraph { name, .. } = &mut block {
-                    *name = kind_name(style);
-                }
-                out.last_mut().expect("the page's section").blocks.push(block);
+            other => out.last_mut().expect("the page's section").blocks.push(block_of(other)),
+        }
+    }
+    out
+}
+
+/// A paragraph or lines kept as a block of the document. A first line set
+/// further in is how the layout begins a paragraph, not an indent of the
+/// paragraph, which in an element moves every line of it: it is left to the
+/// layout. A paragraph standing in as a whole is a style found.
+fn block_of(piece: Shaped) -> Block {
+    match piece {
+        Shaped::Heading { content, .. } => Block::paragraph(content),
+        Shaped::Paragraph { content, indent: _, style } => {
+            let mut block = Block::paragraph(content);
+            if let Block::Paragraph { name, .. } = &mut block {
+                *name = kind_name(style);
             }
-            Shaped::Kept { lines, side, style } => {
-                let numbered = lines.iter().any(|(_, n)| n.is_some());
-                let mut content = Vec::new();
-                for (i, (line, number)) in lines.into_iter().enumerate() {
-                    if i > 0 {
-                        content.push(Inline::Break);
-                    }
-                    if let Some(number) = number {
-                        content.push(Inline::LineMark {
-                            number: Some(number),
-                            counted: true,
-                            hidden: false,
-                            margin: None,
-                            indent: 0,
-                        });
-                    }
-                    content.extend(line);
+            block
+        }
+        Shaped::Kept { lines, side, style } => {
+            let numbered = lines.iter().any(|(_, n)| n.is_some());
+            let mut content = Vec::new();
+            for (i, (line, number)) in lines.into_iter().enumerate() {
+                if i > 0 {
+                    content.push(Inline::Break);
                 }
-                let mut block = Block::paragraph(content);
-                if let Block::Paragraph { name, numbering, side: on, .. } = &mut block {
-                    *name = kind_name(style);
-                    if numbered {
-                        *numbering = Numbering::Given;
-                        *on = side;
-                    }
+                if let Some(number) = number {
+                    content.push(Inline::LineMark {
+                        number: Some(number),
+                        counted: true,
+                        hidden: false,
+                        margin: None,
+                        indent: 0,
+                    });
                 }
-                out.last_mut().expect("the page's section").blocks.push(block);
+                content.extend(line);
+            }
+            let mut block = Block::paragraph(content);
+            if let Block::Paragraph { name, numbering, side: on, .. } = &mut block {
+                *name = kind_name(style);
+                if numbered {
+                    *numbering = Numbering::Given;
+                    *on = side;
+                }
+            }
+            block
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// The structure of the document (ADR 0047)
+// ---------------------------------------------------------------------------
+
+/// What stands in the row of the document's pieces: a piece, or where a page begins.
+enum Item {
+    Piece(Shaped),
+    Page(String),
+}
+
+/// Whether a piece is of the body's text: a paragraph of the body.
+fn of_body(item: &Item) -> bool {
+    matches!(item, Item::Piece(Shaped::Paragraph { style: 0, .. }))
+}
+
+/// Whether a piece stands between the halves of a paragraph that goes on
+/// over a page's edge: what is not the body and no heading, such as the
+/// smaller text at the foot of the page.
+fn aside(item: &Item) -> bool {
+    match item {
+        Item::Page(_) => true,
+        Item::Piece(Shaped::Heading { .. }) => false,
+        Item::Piece(p) => !of_body(&Item::Piece(p.clone())),
+    }
+}
+
+/// Whether a paragraph goes on in the next: where the next begins with a
+/// small letter, or the one before ends without the end of a sentence and
+/// the next is not set further in.
+fn goes_on(before: &[Inline], after: &[Inline], after_indent: bool) -> bool {
+    let first = plain_of(after).chars().find(|c| c.is_alphabetic());
+    if first.is_some_and(char::is_lowercase) {
+        return true;
+    }
+    let ended = plain_of(before).trim_end().chars().last().is_some_and(|c| {
+        matches!(c, '.' | '!' | '?' | ':' | ';' | '…' | '”' | '’' | '"' | '\'' | ')' | ']' | '»' | '·')
+    });
+    !ended && !after_indent
+}
+
+/// The document's pieces, page after page, as its structure: what stands
+/// before the first heading (a section of level 0), and a section for each
+/// heading at its level, the least of them made 1. Where `marks`, a
+/// reference mark with the page's label stands where each page begins. A
+/// paragraph of the body that goes on over a page's edge is one paragraph,
+/// what stood between its halves after it; lines kept of one style on both
+/// sides of an edge are one block. The title is left out: it names the
+/// document.
+pub fn structure(pages: Vec<(String, Vec<Shaped>)>, marks: bool) -> Vec<Section> {
+    let mut row: Vec<Item> = Vec::new();
+    for (k, (label, pieces)) in pages.into_iter().enumerate() {
+        let mut pieces: Vec<Shaped> =
+            pieces.into_iter().filter(|p| !matches!(p, Shaped::Heading { level: 0, .. })).collect();
+        let mark = marks.then(|| Inline::RefMark { label: label.clone() });
+        if k > 0 {
+            join_across(&mut row, &mut pieces, mark.as_ref());
+        }
+        // Where the page's first piece went into one before, the mark went with it.
+        if marks && !row_holds_mark(&row, &label) {
+            row.push(Item::Page(label));
+        }
+        row.extend(pieces.into_iter().map(Item::Piece));
+    }
+    cut(row)
+}
+
+/// Whether the row's last piece holds the mark of this page within it.
+fn row_holds_mark(row: &[Item], label: &str) -> bool {
+    let has = |content: &[Inline]| content.iter().any(|i| matches!(i, Inline::RefMark { label: l } if l == label));
+    row.iter().rev().take(8).any(|item| match item {
+        Item::Piece(Shaped::Paragraph { content, .. }) => has(content),
+        Item::Piece(Shaped::Kept { lines, .. }) => lines.iter().any(|(l, _)| has(l)),
+        _ => false,
+    })
+}
+
+/// At a page's edge: the paragraph that goes on over it, or the lines kept
+/// that go on, made one with their halves on the new page.
+fn join_across(row: &mut Vec<Item>, pieces: &mut Vec<Shaped>, mark: Option<&Inline>) {
+    // Lines kept: the last piece before the edge and the first after it, of one style and side.
+    if let (Some(Item::Piece(Shaped::Kept { lines, side, style })), Some(Shaped::Kept { side: s2, style: t2, .. })) =
+        (row.last_mut(), pieces.first())
+        && side == s2
+        && style == t2
+    {
+        let Shaped::Kept { lines: more, .. } = pieces.remove(0) else { unreachable!() };
+        for (i, (mut line, number)) in more.into_iter().enumerate() {
+            if i == 0
+                && let Some(mark) = mark
+            {
+                line.insert(0, mark.clone());
+            }
+            lines.push((line, number));
+        }
+        return;
+    }
+    // A paragraph of the body: the last before the edge, with nothing of the body or a heading after it.
+    let Some(last) = row.iter().rposition(of_body) else { return };
+    if !row[last + 1..].iter().all(aside) {
+        return;
+    }
+    let Some(first) = pieces.iter().position(|p| matches!(p, Shaped::Paragraph { style: 0, .. })) else { return };
+    if !pieces[..first].iter().all(|p| !matches!(p, Shaped::Heading { .. })) {
+        return;
+    }
+    let (Item::Piece(Shaped::Paragraph { content: before, .. }), Shaped::Paragraph { content: after, indent, .. }) =
+        (&row[last], &pieces[first])
+    else {
+        return;
+    };
+    if !goes_on(before, after, *indent) {
+        return;
+    }
+    // What stood between the halves goes after the paragraph made one.
+    let mut between: Vec<Item> = row.drain(last + 1..).filter(|i| !matches!(i, Item::Page(_))).collect();
+    between.extend(pieces.drain(..first).map(Item::Piece));
+    let Shaped::Paragraph { content: after, .. } = pieces.remove(0) else { unreachable!() };
+    if let Item::Piece(Shaped::Paragraph { content, .. }) = &mut row[last] {
+        content.push(text_inline(" ".into(), Marks::default()));
+        if let Some(mark) = mark {
+            content.push(mark.clone());
+        }
+        content.extend(after);
+        *content = inlines_merged(std::mem::take(content));
+    }
+    row.extend(between);
+}
+
+/// The row cut into sections by its headings, the marks of the pages put
+/// first in the block that follows them, or last in the last block where
+/// none follows.
+fn cut(row: Vec<Item>) -> Vec<Section> {
+    let least = row
+        .iter()
+        .filter_map(|i| match i {
+            Item::Piece(Shaped::Heading { level, .. }) if *level > 0 => Some(*level),
+            _ => None,
+        })
+        .min()
+        .unwrap_or(1);
+    let mut out = vec![Section { level: 0, heading: Vec::new(), blocks: Vec::new() }];
+    let mut waiting: Vec<Inline> = Vec::new();
+    for item in row {
+        match item {
+            Item::Page(label) => waiting.push(Inline::RefMark { label }),
+            Item::Piece(Shaped::Heading { level, content }) => {
+                out.push(Section { level: level + 1 - least, heading: content, blocks: Vec::new() })
+            }
+            Item::Piece(piece) => {
+                let mut block = block_of(piece);
+                if !waiting.is_empty()
+                    && let Block::Paragraph { content, .. } = &mut block
+                {
+                    let mut first: Vec<Inline> = std::mem::take(&mut waiting);
+                    first.append(content);
+                    *content = first;
+                }
+                out.last_mut().expect("a section").blocks.push(block);
             }
         }
+    }
+    // Marks at the very end go last in the last block there is.
+    if !waiting.is_empty()
+        && let Some(Block::Paragraph { content, .. }) = out.iter_mut().rev().find_map(|s| s.blocks.last_mut())
+    {
+        content.append(&mut waiting);
+    }
+    if out[0].blocks.is_empty() {
+        out.remove(0);
     }
     out
 }
@@ -364,6 +546,136 @@ mod tests {
             runs: vec![],
             gaps: None,
         }
+    }
+
+    fn words(text: &str) -> Vec<Inline> {
+        vec![text_inline(text.into(), Marks::default())]
+    }
+    fn para(text: &str, style: usize, indent: bool) -> Shaped {
+        Shaped::Paragraph { content: words(text), indent, style }
+    }
+    fn heading(text: &str, level: u8) -> Shaped {
+        Shaped::Heading { level, content: words(text) }
+    }
+    fn kept(lines: &[&str]) -> Shaped {
+        Shaped::Kept { lines: lines.iter().map(|l| (words(l), None)).collect(), side: None, style: 0 }
+    }
+    /// A block's text, the marks of the pages as [n].
+    fn shown(content: &[Inline]) -> String {
+        content
+            .iter()
+            .map(|i| match i {
+                Inline::Text { text, .. } => text.clone(),
+                Inline::RefMark { label } => format!("[{label}]"),
+                Inline::Break => " / ".into(),
+                _ => String::new(),
+            })
+            .collect()
+    }
+    fn outline(sections: &[Section]) -> Vec<(u8, String, Vec<String>)> {
+        sections
+            .iter()
+            .map(|s| {
+                let blocks = s
+                    .blocks
+                    .iter()
+                    .map(|b| match b {
+                        Block::Paragraph { content, .. } => shown(content),
+                        _ => String::new(),
+                    })
+                    .collect();
+                (s.level, shown(&s.heading), blocks)
+            })
+            .collect()
+    }
+
+    fn three_pages() -> Vec<(String, Vec<Shaped>)> {
+        vec![
+            (
+                "1".into(),
+                vec![
+                    heading("A Short Treatise", 0),
+                    para("Anna Lind", 0, false),
+                    heading("Beginnings", 1),
+                    para("It begins here, and it goes on over", 0, false),
+                    para("1. A note at the foot.", 1, false),
+                ],
+            ),
+            (
+                "2".into(),
+                vec![
+                    para("the edge of the page.", 0, false),
+                    heading("The First Part", 2),
+                    para("A part of it ends here.", 0, false),
+                    para("Another begins.", 0, true),
+                    kept(&["Lines kept,", "one by one,"]),
+                ],
+            ),
+            ("3".into(), vec![kept(&["and on the next page."]), heading("Endings", 1), para("The end.", 0, false)]),
+        ]
+    }
+
+    #[test]
+    fn the_structure_by_the_headings_across_the_pages() {
+        let got = outline(&structure(three_pages(), true));
+        assert_eq!(
+            got,
+            vec![
+                // Before the first heading, with the mark of the first page; the title names the document.
+                (0, String::new(), vec!["[1]Anna Lind".to_owned()]),
+                (
+                    1,
+                    "Beginnings".to_owned(),
+                    // The paragraph goes on over the edge, the mark where the page began; the note after it.
+                    vec![
+                        "It begins here, and it goes on over [2]the edge of the page.".to_owned(),
+                        "1. A note at the foot.".to_owned()
+                    ]
+                ),
+                (
+                    2,
+                    "The First Part".to_owned(),
+                    vec![
+                        "A part of it ends here.".to_owned(),
+                        "Another begins.".to_owned(),
+                        "Lines kept, / one by one, / [3]and on the next page.".to_owned(),
+                    ]
+                ),
+                (1, "Endings".to_owned(), vec!["The end.".to_owned()]),
+            ]
+        );
+        // Without marks there are none.
+        let plain = outline(&structure(three_pages(), false));
+        assert!(plain.iter().flat_map(|s| &s.2).all(|b| !b.contains('[')), "{plain:?}");
+        assert_eq!(plain[1].2[0], "It begins here, and it goes on over the edge of the page.");
+    }
+
+    #[test]
+    fn a_paragraph_that_ends_stays_apart_from_the_next_set_in() {
+        let pages = vec![
+            ("1".into(), vec![heading("One", 1), para("It ends here.", 0, false)]),
+            ("2".into(), vec![para("A new one begins.", 0, true), para("And a third.", 0, false)]),
+            ("3".into(), vec![para("Without its end", 0, false)]),
+            ("4".into(), vec![para("A capital goes on where nothing ended", 0, false)]),
+        ];
+        let got = outline(&structure(pages, true));
+        assert_eq!(
+            got[0].2,
+            vec![
+                "[1]It ends here.".to_owned(),
+                // Set in, a new paragraph; after a sentence's end, too.
+                "[2]A new one begins.".to_owned(),
+                "And a third.".to_owned(),
+                "[3]Without its end [4]A capital goes on where nothing ended".to_owned(),
+            ]
+        );
+    }
+
+    #[test]
+    fn the_least_level_is_the_first_under_the_document() {
+        let pages = vec![("1".into(), vec![heading("Two", 2), para("x.", 0, false), heading("Three", 3)])];
+        let got = outline(&structure(pages, false));
+        assert_eq!(got.iter().map(|s| s.0).collect::<Vec<_>>(), [1, 2]);
     }
 
     #[test]

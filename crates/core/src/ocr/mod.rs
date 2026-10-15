@@ -60,8 +60,20 @@ pub enum TextChoice {
     Anew,
 }
 
+/// How a PDF read with its shape kept becomes a map (ADR 0047).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Structure {
+    /// By its headings: the tree of the document, each heading an element
+    /// at its level, the pages marked where they begin.
+    #[default]
+    Headings,
+    /// By its pages: an element for each page, the headings under them.
+    Pages,
+}
+
 /// What a reading is asked to do.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Asked {
     /// Tesseract's names of the languages the text is in, the likeliest
@@ -87,6 +99,27 @@ pub struct Asked {
     /// kept as lines, numbers in the margin, the styles that recur. Without
     /// it, the pages become plain paragraphs.
     pub shape: bool,
+    /// With the shape kept, whether the document is made by its headings or
+    /// by its pages.
+    pub structure: Structure,
+    /// By its headings, whether a reference mark with the page's label
+    /// stands where each page begins.
+    pub page_marks: bool,
+}
+
+impl Default for Asked {
+    fn default() -> Self {
+        Asked {
+            languages: Vec::new(),
+            text: TextChoice::default(),
+            dpi: 0,
+            layout: String::new(),
+            contrast: false,
+            shape: false,
+            structure: Structure::Headings,
+            page_marks: true,
+        }
+    }
 }
 
 impl Asked {
@@ -204,6 +237,11 @@ pub struct ReadPdf {
     pub remarks: Vec<String>,
     /// The styles of the file, the body first, where the shape was kept.
     pub styles: Vec<shape::StyleFound>,
+    /// The title found on the pages, where the shape was kept and one was.
+    pub title: Option<Vec<Inline>>,
+    /// How it is to become a map, and whether the pages are marked, as asked.
+    pub structure: Structure,
+    pub page_marks: bool,
     /// The pages read by Tesseract, those taken from the PDF, and those that could not be read.
     pub read: usize,
     pub taken: usize,
@@ -592,7 +630,7 @@ pub fn read_pdf(
     }
     let (mut paragraphs, mut pieces, styles): (Vec<Vec<String>>, Vec<Vec<shaped::Shaped>>, Vec<shape::StyleFound>) =
         if asked.shape {
-            let (shaped_pages, styles) = shape::shape(pages_lines);
+            let (shaped_pages, styles) = shape::shape_with(pages_lines, &layer.outline);
             let mut pieces: Vec<Vec<shaped::Shaped>> = shaped_pages
                 .into_iter()
                 .zip(&got)
@@ -634,7 +672,7 @@ pub fn read_pdf(
         remarks.push(tr!("ocr-remark-empty"));
     }
     tracing::info!(pages = count, read = done, taken, failed = failed.len(), text = ?asked.text, "a PDF was read");
-    let pages = paragraphs
+    let pages: Vec<PageText> = paragraphs
         .into_iter()
         .enumerate()
         .map(|(index, paragraphs)| PageText {
@@ -645,7 +683,21 @@ pub fn read_pdf(
             pieces: std::mem::take(&mut pieces[index]),
         })
         .collect();
-    Ok(ReadPdf { pages, remarks, styles, read: done, taken, failed: failed.len() })
+    let title = pages.iter().flat_map(|p| &p.pieces).find_map(|piece| match piece {
+        shaped::Shaped::Heading { level: 0, content } => Some(content.clone()),
+        _ => None,
+    });
+    Ok(ReadPdf {
+        pages,
+        remarks,
+        styles,
+        title,
+        structure: asked.structure,
+        page_marks: asked.page_marks,
+        read: done,
+        taken,
+        failed: failed.len(),
+    })
 }
 
 /// What Tesseract read of a page, in groups of lines, and the page's size in points.
@@ -845,29 +897,45 @@ fn counts(sections: &[Section]) -> Counts {
 /// printed, holding what was read of the page.
 pub fn imported_pdf(file: &str, title: &str, read: ReadPdf) -> Imported {
     let shaped = read.pages.iter().any(|p| !p.pieces.is_empty());
-    let sections: Vec<Section> = read
+    let headed = read
         .pages
-        .into_iter()
-        .flat_map(|page| {
-            if shaped {
-                shaped::sections(page.label, page.pieces)
-            } else {
-                vec![Section {
-                    level: 1,
-                    heading: vec![Inline::Text { text: page.label, marks: BTreeMap::new() }],
-                    blocks: page.paragraphs.into_iter().map(paragraph).collect(),
-                }]
-            }
-        })
-        .collect();
+        .iter()
+        .flat_map(|p| &p.pieces)
+        .any(|piece| matches!(piece, shaped::Shaped::Heading { level, .. } if *level > 0));
+    let mut remarks = read.remarks;
+    if shaped && read.structure == Structure::Headings && !headed {
+        remarks.push(tr!("ocr-no-headings"));
+    }
+    let named = read.title.clone();
+    let by_headings = shaped && headed && read.structure == Structure::Headings;
+    let sections: Vec<Section> = if by_headings {
+        let marks = read.page_marks;
+        shaped::structure(read.pages.into_iter().map(|p| (p.label, p.pieces)).collect(), marks)
+    } else {
+        read.pages
+            .into_iter()
+            .flat_map(|page| {
+                if shaped {
+                    shaped::sections(page.label, page.pieces)
+                } else {
+                    vec![Section {
+                        level: 1,
+                        heading: vec![Inline::Text { text: page.label, marks: BTreeMap::new() }],
+                        blocks: page.paragraphs.into_iter().map(paragraph).collect(),
+                    }]
+                }
+            })
+            .collect()
+    };
     Imported {
         file: file.to_owned(),
         kind: tr!("ocr-kind-pdf"),
-        title: vec![Inline::Text { text: title.to_owned(), marks: BTreeMap::new() }],
+        // The title found on the pages names it; else what the file says of itself, or its name.
+        title: named.unwrap_or_else(|| vec![Inline::Text { text: title.to_owned(), marks: BTreeMap::new() }]),
         counts: counts(&sections),
         sections,
         styles: shaped::views(&read.styles),
-        remarks: read.remarks,
+        remarks,
         ..Default::default()
     }
 }

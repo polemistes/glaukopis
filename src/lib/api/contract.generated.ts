@@ -196,7 +196,7 @@ export const shapedImport: Imported = {
     "foundMade": 0,
     "notFound": 0,
     "notes": 0,
-    "parts": 7,
+    "parts": 2,
     "tables": 0,
     "words": 338
   },
@@ -209,20 +209,13 @@ export const shapedImport: Imported = {
   "remarks": [],
   "sections": [
     {
-      "blocks": [],
-      "heading": [
-        {
-          "kind": "text",
-          "marks": {},
-          "text": "1"
-        }
-      ],
-      "level": 1
-    },
-    {
       "blocks": [
         {
           "content": [
+            {
+              "kind": "refmark",
+              "label": "1"
+            },
             {
               "kind": "text",
               "marks": {},
@@ -282,32 +275,17 @@ export const shapedImport: Imported = {
           "name": "style:1"
         }
       ],
-      "heading": [
-        {
-          "kind": "text",
-          "marks": {
-            "strong": true
-          },
-          "text": "The Measure of Things"
-        }
-      ],
-      "level": 2
-    },
-    {
-      "blocks": [],
-      "heading": [
-        {
-          "kind": "text",
-          "marks": {},
-          "text": "2"
-        }
-      ],
-      "level": 1
+      "heading": [],
+      "level": 0
     },
     {
       "blocks": [
         {
           "content": [
+            {
+              "kind": "refmark",
+              "label": "2"
+            },
             {
               "kind": "text",
               "marks": {},
@@ -407,23 +385,13 @@ export const shapedImport: Imported = {
           "indent": 0,
           "kind": "paragraph",
           "name": "style:1"
-        }
-      ],
-      "heading": [
-        {
-          "kind": "text",
-          "marks": {
-            "strong": true
-          },
-          "text": "Lines That Keep Their Place"
-        }
-      ],
-      "level": 3
-    },
-    {
-      "blocks": [
+        },
         {
           "content": [
+            {
+              "kind": "refmark",
+              "label": "3"
+            },
             {
               "kind": "text",
               "marks": {},
@@ -462,19 +430,10 @@ export const shapedImport: Imported = {
       "heading": [
         {
           "kind": "text",
-          "marks": {},
-          "text": "3"
-        }
-      ],
-      "level": 1
-    },
-    {
-      "blocks": [],
-      "heading": [
-        {
-          "kind": "text",
-          "marks": {},
-          "text": "4"
+          "marks": {
+            "strong": true
+          },
+          "text": "Lines That Keep Their Place"
         }
       ],
       "level": 1
@@ -483,6 +442,10 @@ export const shapedImport: Imported = {
       "blocks": [
         {
           "content": [
+            {
+              "kind": "refmark",
+              "label": "4"
+            },
             {
               "kind": "text",
               "marks": {},
@@ -515,7 +478,7 @@ export const shapedImport: Imported = {
           "text": "The Last Part"
         }
       ],
-      "level": 3
+      "level": 1
     }
   ],
   "styles": [
@@ -536,8 +499,10 @@ export const shapedImport: Imported = {
   "title": [
     {
       "kind": "text",
-      "marks": {},
-      "text": "Shape"
+      "marks": {
+        "strong": true
+      },
+      "text": "The Measure of Things"
     }
   ]
 };

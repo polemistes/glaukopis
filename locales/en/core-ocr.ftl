@@ -4,6 +4,7 @@
 ## What a file is.
 
 ocr-kind-pdf = PDF
+ocr-no-headings = No heading was found: the pages are the elements.
 ocr-kind-picture = Picture
 
 ## When text cannot be read.
