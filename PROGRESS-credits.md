@@ -7,7 +7,7 @@ from an older commit without crates/pdf-text.
 - [x] 1. Gather and verify licences (notes below)
 - [x] 2. src/lib/settings/credits.ts
 - [x] 3. locales/en/credits.ftl, locales/nb/credits.ftl
-- [ ] 4. src/lib/settings/CreditsDialog.svelte
+- [x] 4. src/lib/settings/CreditsDialog.svelte
 - [ ] 5. pnpm check, pnpm test, check-locales, pnpm format
 
 ## Notes

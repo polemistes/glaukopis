@@ -472,7 +472,8 @@ export const CREDIT_GROUPS: CreditGroup[] = [
       {
         name: 'New Computer Modern',
         what: 'credits-what-typst-font',
-        licence: 'GUST Font License 1.0; GPL-3.0-or-later WITH Font-exception-2.0 (NewCM10 Regular)',
+        licence:
+          'GUST Font License 1.0; GPL-3.0-or-later WITH Font-exception-2.0 (NewCM10 Regular)',
         url: 'https://ctan.org/pkg/newcomputermodern',
       },
       {
