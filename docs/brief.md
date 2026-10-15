@@ -857,3 +857,24 @@ Done otherwise than the plan, and why:
 The owner's Aristophanes, print pages 98 to 120: no heading on those pages
 (the middle of a play), so by its pages, with the remark; the rule worked as
 written and was not changed.
+
+## 2026-10-15 — release 0.2.0
+
+> Now, let us make a full new release. It will be 0.2.0, I think. Make the packages of all the supported operating systems for Linux, bake Arch packages, deb and rpm. And make the windows and mac installers. Put all the files in one folder with the updated index.html for my Glaukopis download page.
+
+- Version 0.2.0, tagged `v0.2.0` and pushed with main; the installers for
+  Windows (NSIS and MSI) and macOS (Apple silicon), the deb and the rpm made
+  by the workflow `Installers` on GitHub; the Arch packages built here from
+  the release's archive with `packaging/arch/release/PKGBUILD`, made anew from
+  the PKGBUILD of the tree (the dictionaries' packages of 0.1.0 are gone).
+- The tests on GitHub had failed since 13 October, and the first run of the
+  installers stopped in its tests: the format check went over the vendored
+  pdf-text (now left alone by a `rustfmt.toml` of its own), a remark's
+  example caption depended on the order a newer Pandoc gives (now the first
+  in the order of the alphabet), and Poppler wrote the Greek of a test in
+  the code page of Windows (now asked for UTF-8). The tag was moved to the
+  commit with these mends, before anything was published from it, and
+  everything was built again from it.
+- All the files, the page with what is new, `SHA256SUMS` and the language
+  packages, are in `packaging/release-0.2.0/`, to be uploaded into
+  `glaukopis/` of the site. No release is made on GitHub yet.
