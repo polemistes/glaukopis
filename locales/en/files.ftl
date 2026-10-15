@@ -189,6 +189,18 @@ files-choose-references = References
 files-choose-none = No reference has those words.
 files-choose-empty = The library has no references yet.
 files-choose-more = … and { $count } more: search to find them
+files-choose-files = Files of the library
+files-choose-files-search = Search by name, or by the work a file belongs to
+files-choose-files-none = No file answers to that.
+files-choose-add = { $count ->
+    [0] Add files
+    [one] Add one file
+   *[other] Add { $count } files
+}
+files-added-to = { $count ->
+    [one] One file added to “{ $title }”
+   *[other] { $count } files added to “{ $title }”
+}
 files-choose-new = New reference…
 files-choose = Choose
 

@@ -9,6 +9,7 @@
   import Images from '@lucide/svelte/icons/images';
   import Network from '@lucide/svelte/icons/network';
   import Map from '@lucide/svelte/icons/map';
+  import FileStack from '@lucide/svelte/icons/file-stack';
   import Paperclip from '@lucide/svelte/icons/paperclip';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import X from '@lucide/svelte/icons/x';
@@ -16,6 +17,7 @@
     attachmentAdd,
     attachmentOpen,
     attachmentRemove,
+    attachmentRemoveAll,
     attachmentReveal,
     collectionList,
     collectionRemove,
@@ -46,6 +48,8 @@
   import ScanText from '@lucide/svelte/icons/scan-text';
   import PdfMapDialog from '$lib/ocr/PdfMapDialog.svelte';
   import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
+  import FileChooser from '$lib/files/FileChooser.svelte';
+  import { fileAssign } from '$lib/api/files';
   import {
     KIND_ICONS,
     bringInFile,
@@ -203,6 +207,12 @@
     }
   }
 
+  /** The reference as a question names it: its title, or its key where it has none. */
+  const named = $derived(reference ? reference.summary.title || reference.key : '');
+
+  /** Files of the library are being chosen for this reference (`FileChooser.svelte`). */
+  let addingFiles = $state(false);
+
   async function attach(paths?: string[]) {
     if (!reference) return;
     let chosen = paths;
@@ -211,12 +221,64 @@
       if (!picked) return;
       chosen = Array.isArray(picked) ? picked : [picked];
     }
+    // Several files given to one reference is asked first, with how many:
+    // files that are each another work are gone through among the files.
+    if (chosen.length > 1) {
+      const ok = await confirm({
+        title: t('library-pane-attach-many-title', { count: chosen.length, title: named }),
+        message: t('library-pane-attach-many-message'),
+        confirm: t('library-pane-attach-many', { count: chosen.length }),
+      });
+      if (!ok || !reference) return;
+    }
     try {
       reference = await attachmentAdd(reference.id, chosen);
       library.put(reference);
       if (filesState.loaded) void filesState.reload();
     } catch (e) {
       notifyError(t('library-pane-attach-failed'), e);
+    }
+  }
+
+  /** Files of the library made this reference's. */
+  async function addFiles(hashes: string[]) {
+    if (!reference) return;
+    const id = reference.id;
+    let added = 0;
+    try {
+      for (const hash of hashes) {
+        await fileAssign(hash, id);
+        added++;
+      }
+    } catch (e) {
+      notifyError(t('files-assign-failed'), e);
+    }
+    const fresh = await libraryGet(id).catch(() => null);
+    if (fresh) {
+      library.put(fresh);
+      if (reference?.id === id) reference = fresh;
+    }
+    if (filesState.loaded) void filesState.reload();
+    if (added) notifyOk(t('files-added-to', { count: added, title: named }));
+  }
+
+  /** Every file taken from this reference at once; they stay among the files of the library. */
+  async function detachAll() {
+    if (!reference) return;
+    const count = reference.files.length;
+    const ok = await confirm({
+      title: t('library-pane-unassign-all-title', { count, title: named }),
+      message: t('library-pane-unassign-all-message'),
+      confirm: t('library-pane-unassign-all-confirm', { count }),
+      danger: true,
+    });
+    if (!ok || !reference) return;
+    try {
+      reference = await attachmentRemoveAll(reference.id);
+      library.put(reference);
+      if (filesState.loaded) void filesState.reload();
+    } catch (e) {
+      notifyError(t('library-pane-detach-failed'), e);
     }
   }
 
@@ -377,10 +439,21 @@
       <section>
         <div class="section-head">
           <h3 class="overline">{t('library-pane-files')}</h3>
-          <Button variant="ghost" size="sm" onclick={() => attach()}>
-            {#snippet icon()}<Paperclip size={13} />{/snippet}
-            {t('library-pane-attach')}
-          </Button>
+          <div class="file-actions">
+            {#if reference.files.length > 1}
+              <Button variant="ghost" size="sm" onclick={() => void detachAll()} data-unassign-all>
+                {t('library-pane-unassign-all', { count: reference.files.length })}
+              </Button>
+            {/if}
+            <Button variant="ghost" size="sm" onclick={() => (addingFiles = true)} data-add-files>
+              {#snippet icon()}<FileStack size={13} />{/snippet}
+              {t('library-pane-add-files')}
+            </Button>
+            <Button variant="ghost" size="sm" onclick={() => attach()}>
+              {#snippet icon()}<Paperclip size={13} />{/snippet}
+              {t('library-pane-attach')}
+            </Button>
+          </div>
         </div>
         {#each reference.files as file (file.path)}
           {@const KindIcon = KIND_ICONS[file.kind] ?? KIND_ICONS.other}
@@ -559,6 +632,15 @@
   />
 {/if}
 
+{#if addingFiles && reference}
+  <FileChooser
+    title={t('library-pane-add-files-title', { title: named })}
+    except={reference.files.map((f) => f.hash)}
+    onpick={(hashes) => void addFiles(hashes)}
+    onclose={() => (addingFiles = false)}
+  />
+{/if}
+
 {#if reading}
   <PictureTextDialog file={reading} {project} {at} {onenter} onclose={() => (reading = null)} />
 {/if}
@@ -654,10 +736,17 @@
   }
   .section-head {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     min-height: 26px;
     margin-bottom: 4px;
+  }
+  .file-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 2px;
   }
   .file {
     display: flex;

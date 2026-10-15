@@ -187,6 +187,18 @@ files-choose-references = Referanser
 files-choose-none = Ingen referanse har de ordene.
 files-choose-empty = Biblioteket har ingen referanser ennå.
 files-choose-more = … og { $count } til: søk for å finne dem
+files-choose-files = Filer i biblioteket
+files-choose-files-search = Søk etter navn, eller etter verket en fil hører til
+files-choose-files-none = Ingen fil svarer til det.
+files-choose-add = { $count ->
+    [0] Legg til filer
+    [one] Legg til én fil
+   *[other] Legg til { $count } filer
+}
+files-added-to = { $count ->
+    [one] Én fil lagt til «{ $title }»
+   *[other] { $count } filer lagt til «{ $title }»
+}
 files-choose-new = Ny referanse …
 files-choose = Velg
 

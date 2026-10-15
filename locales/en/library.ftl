@@ -444,6 +444,15 @@ library-pane-files = Files
 library-pane-attach = Attach
 library-pane-attach-title = Attach files
 library-pane-attach-failed = The file could not be attached
+library-pane-attach-many-title = Attach { $count } files to “{ $title }”?
+library-pane-attach-many-message = Each becomes a file of this reference. To give many files each to its own reference, go through them among the files of the library.
+library-pane-attach-many = Attach { $count } files
+library-pane-add-files = Add files of the library…
+library-pane-add-files-title = Add files of the library to “{ $title }”
+library-pane-unassign-all = Remove all { $count } from this reference
+library-pane-unassign-all-title = Remove all { $count } files from “{ $title }”?
+library-pane-unassign-all-message = The files stay among the files of the library, where they can be found and given to other references. They are deleted only from there.
+library-pane-unassign-all-confirm = Remove { $count } files
 # Of a file that is attached, and not where it should be.
 library-pane-missing = missing
 library-pane-reveal = Show in the file manager
