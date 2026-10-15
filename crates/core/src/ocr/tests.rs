@@ -659,7 +659,8 @@ fn a_font_is_given_its_letters() {
     let tmp = tempfile::tempdir().unwrap();
     let file = tmp.path().join("given.pdf");
     std::fs::write(&file, &after).unwrap();
-    if let Ok(out) = std::process::Command::new("pdftotext").arg(&file).arg("-").output()
+    // In UTF-8, which Poppler writes on Windows only when asked: else the code page of the system.
+    if let Ok(out) = std::process::Command::new("pdftotext").args(["-enc", "UTF-8"]).arg(&file).arg("-").output()
         && out.status.success()
     {
         let text = String::from_utf8_lossy(&out.stdout);
