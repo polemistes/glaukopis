@@ -77,12 +77,12 @@ ocr-searchable-failed = { $count ->
 
 ## En PDF i biblioteket lest inn i et prosjekt, som et tre av elementer
 
-ocr-map-button = Teksten i den som elementer…
-ocr-map-title = Teksten som elementer
+ocr-map-button = Importer teksten i den som et kart…
+ocr-map-title = Importer teksten som et kart
 ocr-map-into = Inn i prosjektet
 ocr-map-new-project = Et nytt prosjekt, oppkalt etter den
-ocr-map-make = Lag elementene
-ocr-map-making = Lager elementene…
+ocr-map-make = Importer
+ocr-map-making = Importerer…
 ocr-map-failed = Elementene kunne ikke lages.
 
 ## Teksten i et bilde i lageret

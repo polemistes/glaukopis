@@ -1032,7 +1032,7 @@ kind:
 
 | Kind | What can be done |
 | --- | --- |
-| PDF | Open it; **Make searchable…**; **Read into elements…** |
+| PDF | Open it; **Make searchable…**; **Import the text as a map…** |
 | Picture | Open it; **Read the text…**, to copy or make an element of; **Take into the pictures**, so that it can become a figure |
 | Document (Word, OpenDocument, EPUB, HTML, Markdown, Org, plain text) | Open it; **Bring in as elements…** |
 | Anything else | Open it with the program your system has for it |
@@ -1502,7 +1502,7 @@ reads text in pictures, in four places.
   reference then points to, as does every other reference that had the same
   file.
 - **A PDF of the library becomes elements.** Beside it, or in the pane of
-  the file, **Its text as elements…** reads the PDF where it is stored, and makes elements of what
+  the file, **Import its text as a map…** reads the PDF where it is stored, and makes elements of what
   is read, as of a PDF brought in, **into the project** you choose, under
   the element in view where that project is open, or into **a new project,
   named after it**. The file stays in the library as it was.

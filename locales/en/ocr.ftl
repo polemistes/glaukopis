@@ -77,12 +77,12 @@ ocr-searchable-failed = { $count ->
 
 ## A PDF of the library read into a project, as a tree of elements
 
-ocr-map-button = Its text as elements…
-ocr-map-title = The text as elements
+ocr-map-button = Import its text as a map…
+ocr-map-title = Import the text as a map
 ocr-map-into = Into the project
 ocr-map-new-project = A new project, named after it
-ocr-map-make = Make the elements
-ocr-map-making = Making the elements…
+ocr-map-make = Import
+ocr-map-making = Importing…
 ocr-map-failed = The elements could not be made.
 
 ## The text of a picture of the store
