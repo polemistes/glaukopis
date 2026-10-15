@@ -19,6 +19,10 @@ is the crate as it was):
 - A code that the PDF's map does not give a character for is handed over as
   an empty string with its name, not left out.
 - Its warnings about glyph names and Unicode are debug messages.
+- The widths of a CID font given as a range (`c_first c_last width`) are
+  read from their three numbers, the last code within the range; they were
+  all read from the first, so that lines of such fonts ended in the wrong place.
+- A CID font tells its name and its object, as a simple font does.
 
 The changes are to be offered to pdf-extract; when it has them, this folder
 can go.

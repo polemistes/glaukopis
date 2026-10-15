@@ -331,7 +331,9 @@ fn make_font<'a>(doc: &'a Document, font: &'a Dictionary, id: Option<ObjectId>) 
     let subtype = get_name_string(doc, font, b"Subtype");
     dlog!("MakeFont({})", subtype);
     if subtype == "Type0" {
-        Rc::new(PdfCIDFont::new(doc, font))
+        let mut cid = PdfCIDFont::new(doc, font);
+        cid.id = id;
+        Rc::new(cid)
     } else if subtype == "Type3" {
         Rc::new(PdfType3Font::new(doc, font))
     } else {
@@ -994,6 +996,9 @@ struct PdfCIDFont<'a> {
     to_unicode: Option<HashMap<u32, String>>,
     widths: HashMap<CharCode, f64>, // should probably just use i32 here
     default_width: Option<f64>, // only used for CID fonts and we should probably brake out the different font types
+    // Glaukopis: the font's name without the prefix of a subset, and its object.
+    base: String,
+    id: Option<ObjectId>,
 }
 
 fn get_unicode_map<'a>(doc: &'a Document, font: &'a Dictionary) -> Option<HashMap<u32, String>> {
@@ -1102,21 +1107,32 @@ impl<'a> PdfCIDFont<'a> {
                     }
                     i += 2;
                 } else {
+                    // Glaukopis: `c_first c_last width`, the last within the range.
                     let c_first = w[i].as_i64().expect("first should be num");
-                    let c_last = w[i].as_i64().expect("last should be num");
-                    let c_width = as_num(&w[i]);
-                    for id in c_first..c_last {
+                    let c_last = w[i + 1].as_i64().expect("last should be num");
+                    let c_width = as_num(&w[i + 2]);
+                    for id in c_first..=c_last {
                         widths.insert(id as CharCode, c_width);
                     }
                     i += 3;
                 }
             }
         }
-        PdfCIDFont{doc, font, widths, to_unicode: unicode_map, encoding, default_width: Some(default_width as f64) }
+        let base = match base_name.find('+') {
+            Some(at) if at == 6 => base_name[at + 1..].to_owned(),
+            _ => base_name.clone(),
+        };
+        PdfCIDFont{doc, font, widths, to_unicode: unicode_map, encoding, default_width: Some(default_width as f64), base, id: None }
     }
 }
 
 impl<'a> PdfFont for PdfCIDFont<'a> {
+    fn base_name(&self) -> &str {
+        &self.base
+    }
+    fn object_id(&self) -> Option<ObjectId> {
+        self.id
+    }
     fn get_width(&self, id: CharCode) -> f64 {
         let width = self.widths.get(&id);
         if let Some(width) = width {
