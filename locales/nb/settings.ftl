@@ -34,6 +34,10 @@ settings-text-depth-dots = Prikker
 settings-text-depth-indent = Rykket inn, med streker
 settings-interface-size = Størrelsen på grensesnittet
 settings-sample = Jeg begynte å fortære en sandwich mens jeg kjørte taxi på vei til quiz.
+# The three levels of the sample of the document structure, the sample sentence under the third.
+settings-sample-heading = Overskrift
+settings-sample-subheading = Underoverskrift
+settings-sample-third = Et tredje nivå
 
 ## Nye dokumenter
 

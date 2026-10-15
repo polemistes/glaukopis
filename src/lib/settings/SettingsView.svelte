@@ -45,6 +45,7 @@
   import OcrLanguageSettings from '$lib/ocr/OcrLanguageSettings.svelte';
   import OcrSettings from '$lib/ocr/OcrSettings.svelte';
   import CreditsDialog from './CreditsDialog.svelte';
+  import StructureSample from './StructureSample.svelte';
   import SpellingSettings from '$lib/spelling/SpellingSettings.svelte';
   import WordsSettings from '$lib/words/WordsSettings.svelte';
 
@@ -369,9 +370,10 @@
           onchange={(depth: TextDepth) => settings.set('textDepth', depth)}
         />
       </div>
-      <p class="sample" style:font-size="{settings.value.textSize}px">
-        {t('settings-sample')}
-      </p>
+      <StructureSample
+        depth={settings.value.textDepth ?? 'numbers'}
+        size={settings.value.textSize}
+      />
     </section>
 
     <section>
@@ -768,14 +770,6 @@
     white-space: nowrap;
     color: var(--ink-2);
     font-variant-numeric: tabular-nums;
-  }
-  .sample {
-    font-family: var(--font-editor, var(--font-text));
-    padding: 14px 18px;
-    border-radius: var(--radius-m);
-    background: var(--paper-raised);
-    border: 1px solid var(--line);
-    line-height: 1.6;
   }
   .fields {
     display: flex;

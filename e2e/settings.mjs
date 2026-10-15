@@ -199,7 +199,7 @@ try {
     range.dispatchEvent(new Event('input', { bubbles: true }));`);
   await sleep(150);
   const size = await app.exec(
-    `return getComputedStyle(document.querySelector('.sample')).fontSize`,
+    `return getComputedStyle(document.querySelector('[data-structure-sample]')).fontSize`,
   );
   check('the size of the text follows', size === '20px', size);
 

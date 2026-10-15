@@ -42,6 +42,10 @@ settings-interface-size = Size of the interface
 # A sentence with every letter of the language's alphabet (a pangram), set in
 # the size and the font chosen; where no good pangram is known, the alphabet.
 settings-sample = Pack my box with five dozen liquor jugs.
+# The three levels of the sample of the document structure, the sample sentence under the third.
+settings-sample-heading = Heading
+settings-sample-subheading = Subheading
+settings-sample-third = A third level
 
 ## New documents
 
