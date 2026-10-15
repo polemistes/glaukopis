@@ -33,7 +33,8 @@ pub struct PageLines {
 /// What a page was found to be made of, in order.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Piece {
-    /// A heading, of level 1 (the largest) to 3.
+    /// A heading, of level 1 (the largest) to 3; of level 0, the title of
+    /// the document (`title_of`).
     Heading { level: u8, lines: Vec<Line> },
     /// Lines joined into a paragraph; `indent` where it begins further in
     /// than the lines around it. `style` is the index of its style in the
@@ -42,6 +43,16 @@ pub enum Piece {
     /// Lines kept as lines, each with the given number that stood beside it
     /// in the margin, and the side the numbers stood on.
     KeptLines { lines: Vec<(Line, Option<String>)>, side: Option<Side>, style: usize },
+}
+
+/// An entry of the outline a PDF carries of its own headings, its
+/// bookmarks: the heading's words, the page it points to, counted from one,
+/// where that could be read, and how deep it stands, 1 at the top.
+#[derive(Debug, Clone, PartialEq)]
+pub struct OutlineEntry {
+    pub title: String,
+    pub page: Option<usize>,
+    pub depth: u8,
 }
 
 /// A style of the file: its look, whether its paragraphs begin indented and
@@ -1209,9 +1220,22 @@ fn kept(lines: &[Numbered], heads: &[Range<usize>], segment: &Segment, file: &Fi
 
 /// A piece before the file's styles and levels are known.
 enum Draft {
-    Heading { lines: Vec<Line>, size: usize },
-    Paragraph { lines: Vec<Line>, indent: bool, look: Look },
-    Kept { lines: Vec<(Line, Option<String>)>, side: Option<Side>, look: Look },
+    /// `given` is the level the file's outline or the heading's number gives it.
+    Heading {
+        lines: Vec<Line>,
+        size: usize,
+        given: Option<u8>,
+    },
+    Paragraph {
+        lines: Vec<Line>,
+        indent: bool,
+        look: Look,
+    },
+    Kept {
+        lines: Vec<(Line, Option<String>)>,
+        side: Option<Side>,
+        look: Look,
+    },
 }
 
 /// The look of most of a run of lines, by their characters.
@@ -1304,7 +1328,7 @@ fn shape_segment(mut segment: Segment, segments: &HashMap<Part, (f32, f32, f32)>
         let part = &lines[range.clone()];
         if heading {
             let size = part.iter().map(|l| file.key(&l.0).size).max().unwrap_or(0);
-            out.push(Draft::Heading { lines: part.iter().map(|l| l.0.clone()).collect(), size });
+            out.push(Draft::Heading { lines: part.iter().map(|l| l.0.clone()).collect(), size, given: None });
         } else {
             let sides: Vec<Side> = part.iter().filter_map(|l| l.1.as_ref().map(|n| n.1)).collect();
             let rights = sides.iter().filter(|&&s| s == Side::Right).count();
@@ -1429,20 +1453,35 @@ fn styles(pages: &[Vec<Draft>], file: &File) -> (Vec<StyleFound>, Vec<Vec<usize>
 
 /// Shapes every page of a file: the pieces of each page, and the styles of
 /// the file, the body first. Running heads and page numbers are left out.
-pub fn shape(mut pages: Vec<PageLines>) -> (Vec<Vec<Piece>>, Vec<StyleFound>) {
+pub fn shape(pages: Vec<PageLines>) -> (Vec<Vec<Piece>>, Vec<StyleFound>) {
+    shape_with(pages, &[])
+}
+
+/// As `shape`, with the outline the file carries of its own headings, which
+/// gives the levels of the headings it names before their sizes do.
+///
+/// The levels of the headings come from the surest source: the file's
+/// outline, where it names them (`outlined`); their numbers, 1, 1.2, 1.2.3,
+/// where two or more are numbered so (`numbered`); else their sizes over the
+/// file, the largest first. The title (`title_of`) is a heading of level 0.
+pub fn shape_with(mut pages: Vec<PageLines>, outline: &[OutlineEntry]) -> (Vec<Vec<Piece>>, Vec<StyleFound>) {
     edges(&mut pages);
     let sizes = Sizes::of(pages.iter().flat_map(|p| &p.lines).filter(|l| has_text(&l.text)));
     let (body, step) = body_style(&pages, &sizes);
     let size = sizes.measured(body.size);
     let file = File { sizes, body, size, step };
-    let drafts: Vec<Vec<Draft>> = pages.into_iter().map(|page| shape_page(page.lines, &file)).collect();
+    let mut drafts: Vec<Vec<Draft>> = pages.into_iter().map(|page| shape_page(page.lines, &file)).collect();
+    outlined(&mut drafts, outline, &file);
+    numbered(&mut drafts);
+    let title = title_of(&drafts);
 
-    // The levels of the headings: their sizes over the file, the largest first.
+    // The levels of the other headings: their sizes over the file, the largest first.
     let heading_sizes: BTreeSet<usize> = drafts
         .iter()
-        .flatten()
-        .filter_map(|d| match d {
-            Draft::Heading { size, .. } => Some(*size),
+        .enumerate()
+        .flat_map(|(p, page)| page.iter().enumerate().map(move |(i, d)| ((p, i), d)))
+        .filter_map(|(at, d)| match d {
+            Draft::Heading { size, given: None, .. } if Some(at) != title => Some(*size),
             _ => None,
         })
         .collect();
@@ -1454,11 +1493,17 @@ pub fn shape(mut pages: Vec<PageLines>) -> (Vec<Vec<Piece>>, Vec<StyleFound>) {
     let shaped = drafts
         .into_iter()
         .zip(indices)
-        .map(|(page, indices)| {
+        .enumerate()
+        .map(|(p, (page, indices))| {
             page.into_iter()
                 .zip(indices)
-                .map(|(draft, style)| match draft {
-                    Draft::Heading { lines, size } => Piece::Heading { level: level(size), lines },
+                .enumerate()
+                .map(|(i, (draft, style))| match draft {
+                    Draft::Heading { lines, .. } if Some((p, i)) == title => Piece::Heading { level: 0, lines },
+                    Draft::Heading { lines, given: Some(given), .. } => {
+                        Piece::Heading { level: given.clamp(1, LEVELS as u8), lines }
+                    }
+                    Draft::Heading { lines, size, given: None } => Piece::Heading { level: level(size), lines },
                     Draft::Paragraph { lines, indent, .. } => Piece::Paragraph { lines, indent, style },
                     Draft::Kept { lines, side, .. } => Piece::KeptLines { lines, side, style },
                 })
@@ -1466,6 +1511,150 @@ pub fn shape(mut pages: Vec<PageLines>) -> (Vec<Vec<Piece>>, Vec<StyleFound>) {
         })
         .collect();
     (shaped, found)
+}
+
+// ---------------------------------------------------------------------------
+// The title, numbered headings and the file's outline
+// ---------------------------------------------------------------------------
+
+/// The title of the document: the first heading of the file, where its size
+/// is larger than every other heading's and no other heading has that size.
+/// A book whose chapters are named as large as its title has none.
+fn title_of(drafts: &[Vec<Draft>]) -> Option<(usize, usize)> {
+    let headings: Vec<((usize, usize), usize)> = drafts
+        .iter()
+        .enumerate()
+        .flat_map(|(p, page)| page.iter().enumerate().map(move |(i, d)| ((p, i), d)))
+        .filter_map(|(at, d)| match d {
+            Draft::Heading { size, .. } => Some((at, *size)),
+            _ => None,
+        })
+        .collect();
+    let (first, size) = *headings.first()?;
+    let alone = headings.iter().filter(|(_, s)| *s >= size).count() == 1;
+    alone.then_some(first)
+}
+
+/// The words of a heading as compared with the file's outline: small
+/// letters, digits and letters only, one space between words, a leading
+/// number (1, 1.2, IV.) left out.
+fn heading_words(text: &str) -> String {
+    let words: Vec<String> =
+        text.split(|c: char| !c.is_alphanumeric()).filter(|w| !w.is_empty()).map(str::to_lowercase).collect();
+    let numbered = |w: &str| w.chars().all(|c| c.is_ascii_digit()) || roman(w).is_some();
+    let start = words.iter().take_while(|w| numbered(w)).count().min(words.len().saturating_sub(1));
+    words[start..].join(" ")
+}
+
+/// Whether a heading's words and an entry of the outline say the same: the
+/// one the other, or the one the beginning of the other.
+fn same_heading(a: &str, b: &str) -> bool {
+    let (short, long) = if a.len() <= b.len() { (a, b) } else { (b, a) };
+    short.chars().count() >= 3 && (long == short || long.starts_with(&format!("{short} ")))
+}
+
+/// The levels the file's outline gives the headings it names. Each entry
+/// with a page is matched with a heading on that page, or on the next, whose
+/// words are its words; where none is, with a paragraph of that page whose
+/// first line is its words, which is then a heading of its own, set in the
+/// body's size where the sizes could not see it. An outline that matches
+/// fewer than half its entries is of another version of the text, and is
+/// not used.
+fn outlined(drafts: &mut [Vec<Draft>], outline: &[OutlineEntry], file: &File) {
+    let with_page = outline.iter().filter(|e| e.page.is_some()).count();
+    if with_page == 0 {
+        return;
+    }
+    // Where each entry is found: the page, the piece, whether its first line is cut off, the depth.
+    let mut found: Vec<(usize, usize, bool, u8)> = Vec::new();
+    for entry in outline {
+        let (Some(page), want) = (entry.page, heading_words(&entry.title)) else { continue };
+        if want.is_empty() || page == 0 {
+            continue;
+        }
+        let taken = |p: usize, i: usize, found: &[(usize, usize, bool, u8)]| found.iter().any(|f| f.0 == p && f.1 == i);
+        let mut hit = None;
+        'pages: for p in [page - 1, page] {
+            for (i, d) in drafts.get(p).into_iter().flatten().enumerate() {
+                if let Draft::Heading { lines, .. } = d
+                    && !taken(p, i, &found)
+                    && same_heading(&heading_words(&texts_of(lines)), &want)
+                {
+                    hit = Some((p, i, false));
+                    break 'pages;
+                }
+            }
+        }
+        if hit.is_none() {
+            for (i, d) in drafts.get(page - 1).into_iter().flatten().enumerate() {
+                if let Draft::Paragraph { lines, .. } = d
+                    && lines.len() > 1
+                    && !taken(page - 1, i, &found)
+                    && heading_words(&lines[0].text) == want
+                {
+                    hit = Some((page - 1, i, true));
+                    break;
+                }
+            }
+        }
+        if let Some((p, i, cut)) = hit {
+            found.push((p, i, cut, entry.depth.max(1)));
+        }
+    }
+    if found.len() * 2 < with_page {
+        return;
+    }
+    // From the last, so that a piece cut in two leaves the places of those before it as they were.
+    found.sort_by(|a, b| (b.0, b.1).cmp(&(a.0, a.1)));
+    for (p, i, cut, depth) in found {
+        if cut {
+            let Draft::Paragraph { lines, look, .. } = drafts[p].remove(i) else { continue };
+            let mut lines = lines.into_iter();
+            let first = lines.next().expect("more than one line");
+            let size = file.key(&first).size;
+            let rest: Vec<Line> = lines.collect();
+            drafts[p].insert(i, Draft::Paragraph { lines: rest, indent: false, look });
+            drafts[p].insert(i, Draft::Heading { lines: vec![first], size, given: Some(depth) });
+        } else if let Draft::Heading { given, .. } = &mut drafts[p][i] {
+            *given = Some(depth);
+        }
+    }
+}
+
+/// The depth of a heading's number: 1 of `1`, 3 of `1.2.3`, with a dot after
+/// it or not, where a space or nothing follows. None where it has no such
+/// number.
+fn number_depth(text: &str) -> Option<u8> {
+    let first = text.split_whitespace().next()?;
+    let number = first.strip_suffix('.').unwrap_or(first);
+    let parts: Vec<&str> = number.split('.').collect();
+    (!parts.is_empty() && parts.iter().all(|p| !p.is_empty() && p.len() <= 3 && p.chars().all(|c| c.is_ascii_digit())))
+        .then(|| parts.len().min(LEVELS) as u8)
+}
+
+/// The levels numbered headings have by their numbers, where two or more of
+/// the file's headings that the outline did not name are numbered: a single
+/// one, a year or a figure, is left to its size.
+fn numbered(drafts: &mut [Vec<Draft>]) {
+    let depth_of = |d: &Draft| match d {
+        Draft::Heading { lines, given: None, .. } => lines.first().and_then(|l| number_depth(&l.text)),
+        _ => None,
+    };
+    if drafts.iter().flatten().filter(|d| depth_of(d).is_some()).count() < 2 {
+        return;
+    }
+    for d in drafts.iter_mut().flatten() {
+        if let Some(depth) = depth_of(d)
+            && let Draft::Heading { given, .. } = d
+        {
+            *given = Some(depth);
+        }
+    }
+}
+
+/// The text of lines, a space between them.
+fn texts_of(lines: &[Line]) -> String {
+    lines.iter().map(|l| l.text.trim()).collect::<Vec<_>>().join(" ")
 }
 
 #[cfg(test)]
@@ -1784,13 +1973,115 @@ mod tests {
         assert_eq!(
             heads,
             [
-                (1, "The Widow at the Inn".to_owned()),
-                (2, "The first evening".to_owned()),
-                (3, "A note on the road".to_owned()),
-                (2, "The second evening".to_owned()),
+                // The one heading larger than all the others, the first, is the title.
+                (0, "The Widow at the Inn".to_owned()),
+                (1, "The first evening".to_owned()),
+                (2, "A note on the road".to_owned()),
+                (1, "The second evening".to_owned()),
             ]
         );
         assert_eq!(styles.len(), 1, "{styles:#?}");
+    }
+
+    #[test]
+    fn the_title_is_the_first_heading_larger_than_all_others_alone() {
+        let page = |first: &str, size: f32| {
+            let mut pen = Pen::new();
+            pen.lines(&[first], LEFT, size).space(14.0);
+            pen.text(NOVEL[0], 11.0, 0.0, true).space(10.0);
+            for (i, name) in ["The first evening", "The second evening"].iter().enumerate() {
+                pen.lines(&[name], LEFT, 14.0).space(6.0);
+                pen.text(NOVEL[i + 3], 11.0, 0.0, true).space(8.0);
+            }
+            pen.page()
+        };
+        let levels = |pages: Vec<PageLines>| -> Vec<u8> {
+            shape(pages)
+                .0
+                .iter()
+                .flatten()
+                .filter_map(|p| if let Piece::Heading { level, .. } = p { Some(*level) } else { None })
+                .collect()
+        };
+        assert_eq!(levels(vec![page("A Short Treatise", 20.0)]), [0, 1, 1]);
+        // As large as the chapters, it is one of them.
+        assert_eq!(levels(vec![page("Prologue", 14.0)]), [1, 1, 1]);
+        // A larger heading that is not the first is no title.
+        let mut pen = Pen::new();
+        pen.lines(&["The first evening"], LEFT, 14.0).space(6.0);
+        pen.text(NOVEL[0], 11.0, 0.0, true).space(8.0);
+        pen.lines(&["An Interlude"], LEFT, 20.0).space(14.0);
+        pen.text(NOVEL[3], 11.0, 0.0, true);
+        assert_eq!(levels(vec![pen.page()]), [2, 1]);
+    }
+
+    #[test]
+    fn numbered_headings_have_the_depth_of_their_numbers() {
+        let heads = |names: &[&str]| -> Vec<(u8, String)> {
+            let mut pen = Pen::new();
+            for (i, name) in names.iter().enumerate() {
+                pen.lines(&[name], LEFT, 14.0).space(6.0);
+                pen.text(NOVEL[i % 4], 11.0, 0.0, true).space(8.0);
+            }
+            shape(vec![pen.page()])
+                .0
+                .iter()
+                .flatten()
+                .filter_map(
+                    |p| if let Piece::Heading { level, lines } = p { Some((*level, texts(lines))) } else { None },
+                )
+                .collect()
+        };
+        let got = heads(&["1 One", "1.1 Under it", "2. Two"]);
+        assert_eq!(got.iter().map(|h| h.0).collect::<Vec<_>>(), [1, 2, 1], "{got:?}");
+        // One number alone, or a year, is left to its size.
+        let got = heads(&["1990 and after", "The next ones", "Last of all"]);
+        assert_eq!(got.iter().map(|h| h.0).collect::<Vec<_>>(), [1, 1, 1], "{got:?}");
+        assert_eq!(number_depth("1.2.3 Deep"), Some(3));
+        assert_eq!(number_depth("3. Methods"), Some(1));
+        assert_eq!(number_depth("1990 and after"), None);
+        assert_eq!(number_depth("Chapter 1"), None);
+    }
+
+    #[test]
+    fn the_files_outline_gives_the_levels_it_names() {
+        // Two headings of one size on two pages, the outline saying the second is under the first;
+        // and a heading in the body's size, the first line of a paragraph, that only the outline names.
+        let mut first = Pen::new();
+        first.lines(&["Beginnings"], LEFT, 14.0).space(6.0);
+        first.text(NOVEL[0], 11.0, 0.0, true);
+        let mut second = Pen::new();
+        second.lines(&["The first part"], LEFT, 14.0).space(6.0);
+        second.text(NOVEL[3], 11.0, 0.0, true).space(8.0);
+        second.lines(&["A part in the body's size"], LEFT, 11.0);
+        second.text(NOVEL[5], 11.0, 0.0, true);
+        let pages = vec![first.page(), second.page()];
+        let entry = |title: &str, page: usize, depth: u8| OutlineEntry { title: title.into(), page: Some(page), depth };
+        let outline =
+            [entry("1 Beginnings", 1, 1), entry("1.1 The first part", 2, 2), entry("A part in the body's size", 2, 2)];
+        let (pieces, _) = shape_with(pages.clone(), &outline);
+        let heads: Vec<(u8, String)> = pieces
+            .iter()
+            .flatten()
+            .filter_map(|p| if let Piece::Heading { level, lines } = p { Some((*level, texts(lines))) } else { None })
+            .collect();
+        assert_eq!(
+            heads,
+            [
+                (1, "Beginnings".to_owned()),
+                (2, "The first part".to_owned()),
+                (2, "A part in the body's size".to_owned()),
+            ]
+        );
+        // An outline that names almost nothing of the text is of another version of it.
+        let other = [entry("Beginnings", 1, 2), entry("Elsewhere", 2, 1), entry("Nowhere", 2, 1)];
+        let (pieces, _) = shape_with(pages, &other);
+        let levels: Vec<u8> = pieces
+            .iter()
+            .flatten()
+            .filter_map(|p| if let Piece::Heading { level, .. } = p { Some(*level) } else { None })
+            .collect();
+        assert_eq!(levels, [1, 1]);
     }
 
     #[test]
@@ -1799,7 +2090,7 @@ mod tests {
         pen.lines(&["The Widow", "at the Inn"], LEFT, 18.0).space(14.0);
         pen.text(NOVEL[0], 11.0, 0.0, true).text(NOVEL[3], 11.0, 11.0, true);
         let (pieces, _) = shape(vec![pen.page()]);
-        let Piece::Heading { level: 1, lines } = &pieces[0][0] else { panic!("{:#?}", pieces[0][0]) };
+        let Piece::Heading { level: 0, lines } = &pieces[0][0] else { panic!("{:#?}", pieces[0][0]) };
         assert_eq!(lines.len(), 2);
     }
 
@@ -1844,7 +2135,7 @@ mod tests {
             })
             .collect();
         let (pieces, _) = shape(pages);
-        assert!(matches!(&pieces[0][0], Piece::Heading { level: 1, .. }), "{:#?}", pieces[0][0]);
+        assert!(matches!(&pieces[0][0], Piece::Heading { level: 0, .. }), "{:#?}", pieces[0][0]);
         assert!(!all_text(&pieces[1..]).contains("WIDOW"));
     }
 
@@ -2178,7 +2469,7 @@ mod tests {
         }
         let (pieces, _) = shape(vec![page(lines)]);
         let page = &pieces[0];
-        assert!(matches!(&page[0], Piece::Heading { level: 1, .. }), "{:#?}", page[0]);
+        assert!(matches!(&page[0], Piece::Heading { level: 0, .. }), "{:#?}", page[0]);
         let paragraphs: Vec<String> = page[1..]
             .iter()
             .map(|p| match p {
