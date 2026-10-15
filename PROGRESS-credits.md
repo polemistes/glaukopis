@@ -8,7 +8,7 @@ from an older commit without crates/pdf-text.
 - [x] 2. src/lib/settings/credits.ts
 - [x] 3. locales/en/credits.ftl, locales/nb/credits.ftl
 - [x] 4. src/lib/settings/CreditsDialog.svelte
-- [ ] 5. pnpm check, pnpm test, check-locales, pnpm format
+- [x] 5. pnpm check, pnpm test, check-locales, pnpm format
 
 ## Notes
 
@@ -35,3 +35,11 @@ from an older commit without crates/pdf-text.
 - Programs: Pandoc GPL-2.0-or-later, Tesseract Apache-2.0 (pacman metadata).
 - WebKitGTK: LGPL + BSD-2-Clause among others (Arch licence file).
 - Opening a URL: openPath(url) from $lib/api/documents.
+
+## Result
+- Verified: pnpm check 0 errors; pnpm test 775 passed; check-locales 0
+  faults (nb complete); prettier on the files touched under src.
+- Credits: built-on 53, copied 2, fonts 7, data 13, programs 4, icons 2,
+  owl 2. Plus the lookup services, from lookupAcknowledgements().
+- Left for the orchestrator: the button (credits-button) in
+  SettingsView.svelte, and removing settings-owl and settings-lookup-about.
