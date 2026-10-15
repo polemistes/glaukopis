@@ -828,3 +828,32 @@ and the pages kept as marks. Record ADR 0047, plan
 - The outline shown in the dialog before the import is made.
 - No heading by its words, no fields from the title page, no table of
   contents read: for later or never.
+
+## 2026-10-15 — the structure of a document, built
+
+> Plase do the work of this plan: docs/plans/the-structure-of-a-document.md
+
+Built in five steps: the title and numbered headings in the shape; the
+file's own outline read and matched with the lines; the structure across
+the pages, with page marks, in the core; the choices and the outline in the
+dialogs; the fixture, the OCR script and the guide.
+
+Done otherwise than the plan, and why:
+
+- The title stays among the pieces of its page as a heading of level 0, not
+  a separate return value: by its pages it keeps its place, and by its
+  headings it is taken out to name the document.
+- `imported_pdf` keeps its signature: the way and the marks travel in what
+  `read_pdf` returns. `Imported` gains `structured`, so that the dialogs
+  show the outline only where the parts are the document's headings.
+- A one-line paragraph that the outline names is the heading whole: the
+  subheadings of the fixture, set in bold a little larger than the text,
+  came out so.
+- The remark that no heading was found is said only of files of more than
+  one page.
+- A page mark inside a joined paragraph stands before the first word of
+  the new page.
+
+The owner's Aristophanes, print pages 98 to 120: no heading on those pages
+(the middle of a play), so by its pages, with the remark; the rule worked as
+written and was not changed.

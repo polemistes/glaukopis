@@ -1487,12 +1487,20 @@ reads text in pictures, in four places.
   the file, or drop the file on the bar over the map; dropped elsewhere in a
   project, a PDF is taken into the library and a picture becomes a figure.
   Among the projects, **A project from a document…**, or drop the file
-  there. An element is made for the PDF under the element in view, named as
-  the PDF names itself, or after its file; each page becomes an element
-  under it, named by its number as it is printed where the file tells it
-  (*xiv*, *23*), and holding what was read of the page, so that what you
-  quote can be found on its page. The text of a picture becomes the text of
-  the one element made of it.
+  there. An element is made for the PDF under the element in view, named by
+  the title found on its pages, else as the PDF names itself, else after its
+  file. With the shape of the pages kept (below), the document becomes a map
+  **by its headings**: the headings of the text are elements under it, each
+  level under the one above, holding what follows each; what stands before
+  the first heading, an author or a date, is the document element's own
+  text; and a mark with the page's number as it is printed (*xiv*, *23*)
+  stands where each page began, so that what you quote can still be found on
+  its page, unless **Mark where each page begins** is turned off. **By its
+  pages** makes an element of each page instead, named by its number, with
+  the headings under it, as an edition cited by its pages may want; it is
+  what is made where no heading is found. Before anything is made, the
+  window shows the title and the headings as they will nest. The text of a
+  picture becomes the text of the one element made of it.
 - **A PDF of the library is made searchable.** In the files of a reference,
   or in the pane of a file among the files of the library, **Make
   searchable…** reads its pages and lays
@@ -1606,9 +1614,16 @@ and how large they are, the same for the text a PDF has and for what
 Tesseract reads, and kept in the elements made:
 
 - *Headings*, a line or two set larger or bolder than the text and standing
-  apart from it, become elements under the page's element, each holding what
-  follows it on the page up to the next heading. Their sizes over the whole
-  file give their levels, three at most.
+  apart from it, become elements, each holding what follows it up to the
+  next heading. Their levels, three at most, come from the surest source
+  there is: the outline a PDF made from a written document carries of its
+  own headings, which also finds those set no larger than the text; their
+  numbers, *1*, *1.2*, *1.2.3*, where two or more are numbered; else their
+  sizes over the whole file. The first heading, where it is larger than every
+  other and alone in its size, is the title, and names the document.
+- *The text goes on across the pages*: a paragraph that runs over a page's
+  edge is one paragraph, with the smaller text that stood at the page's foot
+  after it, and lines kept as lines go on as one block.
 - *Lines kept as lines*, set from one left edge and ragged at the right, as
   verse, addresses, lists and transcripts are, stay lines: one paragraph of
   text with a break at the end of each line. What they are is yours to say,
