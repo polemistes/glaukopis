@@ -24,6 +24,7 @@
   import Search from '@lucide/svelte/icons/search';
   import SearchX from '@lucide/svelte/icons/search-x';
   import Trash2 from '@lucide/svelte/icons/trash-2';
+  import Undo2 from '@lucide/svelte/icons/undo-2';
   import X from '@lucide/svelte/icons/x';
   import type { FileKind, FileView } from '$lib/api/files';
   import { attachmentOpen } from '$lib/api/library';
@@ -63,6 +64,7 @@
     takeIn,
     toPictures,
     unassignedIn,
+    undoLast,
   } from './store.svelte';
 
   type SortKey = 'name' | 'added' | 'size' | 'reference';
@@ -318,6 +320,15 @@
         action: () => tree?.begin(folderId),
       },
       { kind: 'separator' },
+      ...(filesUi.lastDone
+        ? [
+            {
+              label: t('files-undo-last', { count: filesUi.lastDone.assigned.length }),
+              icon: Undo2,
+              action: () => void undoLast(),
+            } as MenuItem,
+          ]
+        : []),
       {
         label: t('files-export-all'),
         icon: FolderOutput,

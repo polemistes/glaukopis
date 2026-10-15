@@ -239,6 +239,16 @@ files-going-all-probable = { $count ->
     [one] The one found as probable:
    *[other] All { $count } found as probable:
 }
+files-going-all-new = { $count ->
+    [one] The one new, from the services:
+   *[other] All { $count } new, from the services:
+}
+files-going-all-nothing = { $count ->
+    [one] The one with nothing found:
+   *[other] The { $count } with nothing found:
+}
+files-going-this-new = New reference
+files-going-show-all = Show all { $count }
 files-going-what = What { $name } becomes
 files-going-this = This one
 files-going-other = Another…
@@ -254,7 +264,11 @@ files-going-chosen = Chosen
 files-going-made-here = Made here
 files-going-none = None of the files could be gone through.
 files-going-counts = { $assign } to assign, { $later } later
-files-going-done = Done
+files-going-done = { $count ->
+    [0] Nothing to give
+    [one] Give one file to its reference
+   *[other] Give { $count } files to their references
+}
 files-going-applying = Giving the files to their references…
 files-going-source = The files of the library
 files-going-assigned = { $count ->
@@ -267,6 +281,21 @@ files-going-made = { $count ->
    *[other] { $count } new references
 }
 files-going-later-count = { $count } left for later
+files-going-undo = Undo
+files-going-undone = { $count ->
+    [0] No file taken back
+    [one] One file taken back
+   *[other] { $count } files taken back
+}
+files-going-undone-made = { $count ->
+    [one] one new reference removed
+   *[other] { $count } new references removed
+}
+# In the menu of the head of the files, while the last going-through can be undone.
+files-undo-last = { $count ->
+    [one] Undo: one file given to its reference
+   *[other] Undo: { $count } files given to their references
+}
 
 ## Exporting.
 

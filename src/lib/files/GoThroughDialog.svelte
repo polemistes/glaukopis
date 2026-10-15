@@ -15,7 +15,6 @@
   import {
     emptyDraft,
     importApply,
-    type Certainty,
     type Draft,
     type PlanItem,
     type SummaryLite,
@@ -28,15 +27,26 @@
   import Dialog from '$lib/ui/Dialog.svelte';
   import Segmented from '$lib/ui/Segmented.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
+  import { describeError, notifyError, toasts } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
   import ReferenceChooser from './ReferenceChooser.svelte';
-  import { KIND_ICONS, decisions, files, proposals, type Decision } from './store.svelte';
+  import {
+    KIND_ICONS,
+    decisions,
+    files,
+    filesUi,
+    proposals,
+    undoLast,
+    type Decision,
+  } from './store.svelte';
 
   let { hashes, onclose }: { hashes: string[]; onclose: () => void } = $props();
 
-  /** The most rows shown; the rest are decided as they stand, and said in a line. */
-  const MOST = 400;
+  /** The rows a group shows before it is unfolded: a thousand files are a few decisions, not a thousand rows. */
+  const FOLDED = 40;
+  /** The cases the rows are grouped by, in this order. */
+  const GROUPS = ['certain', 'probable', 'new', 'nothing'] as const;
+  type Group = (typeof GROUPS)[number];
 
   const ticket = newId();
   let phase = $state<'finding' | 'deciding' | 'applying'>('finding');
@@ -50,6 +60,13 @@
   /** Rises when a choice is taken back, so that the switches show what stands. */
   let shown = $state(0);
   let gone = false;
+  /** The groups shown whole. */
+  let unfolded = $state<Record<Group, boolean>>({
+    certain: false,
+    probable: false,
+    new: false,
+    nothing: false,
+  });
 
   const rows = $derived.by(() => {
     void found;
@@ -58,11 +75,6 @@
       return p && files.get(h) ? [p] : [];
     });
   });
-
-  function certainty(p: Proposal): Certainty | null {
-    // A new reference the services describe is found by an identifier.
-    return p.matches[0]?.certainty ?? (p.lookup ? 'certain' : null);
-  }
 
   function decisionOf(p: Proposal): Decision {
     return (
@@ -152,14 +164,17 @@
     decide(p.hash, { ...was, choice: value });
   }
 
-  // ---- for all in the same case ----
+  // ---- the groups, and for all in one ----
 
-  const alike = $derived.by(() => {
-    const out: Record<Certainty, Proposal[]> = { certain: [], probable: [] };
-    for (const p of rows) {
-      const c = certainty(p);
-      if (c) out[c].push(p);
-    }
+  /** The case of a proposal: by its first match, else by the services' description, else nothing. */
+  function groupOf(p: Proposal): Group {
+    if (p.matches.length) return p.matches[0].certainty;
+    return p.lookup ? 'new' : 'nothing';
+  }
+
+  const groups = $derived.by(() => {
+    const out: Record<Group, Proposal[]> = { certain: [], probable: [], new: [], nothing: [] };
+    for (const p of rows) out[groupOf(p)].push(p);
     return out;
   });
 
@@ -197,11 +212,17 @@
     let made = 0;
     let later = 0;
     const lookups: PlanItem[] = [];
+    // What is done, so that it can be undone at once.
+    const given: { hash: string; id: string }[] = [];
+    const madeIds: string[] = [];
+    const viaLookup: string[] = [];
     for (const p of rows) {
       const d = decisionOf(p);
       try {
         if (d.choice === 'this' && p.matches.length) {
-          await fileAssign(p.hash, p.matches[Math.min(d.match, p.matches.length - 1)].id);
+          const id = p.matches[Math.min(d.match, p.matches.length - 1)].id;
+          await fileAssign(p.hash, id);
+          given.push({ hash: p.hash, id });
           assigned++;
         } else if (d.choice === 'this' && p.lookup) {
           // The candidate names the file in the store already: the import links it.
@@ -212,8 +233,12 @@
             repeats: null,
             action: { kind: 'add' },
           });
+          viaLookup.push(p.hash);
         } else if ((d.choice === 'other' || d.choice === 'new') && d.chosen) {
           await fileAssign(p.hash, d.chosen.id);
+          given.push({ hash: p.hash, id: d.chosen.id });
+          // A reference made here, in the form, is the going-through's too.
+          if (d.choice === 'new') madeIds.push(d.chosen.id);
           assigned++;
         } else later++;
       } catch (error) {
@@ -228,6 +253,8 @@
           warnings: [],
         });
         made = outcome.added.length;
+        madeIds.push(...outcome.added);
+        if (outcome.added.length) given.push(...viaLookup.map((hash) => ({ hash, id: '' })));
         problems.push(...outcome.problems);
       } catch (error) {
         problems.push(describeError(error) ?? t('files-going-failed'));
@@ -238,14 +265,28 @@
     if (made) parts.push(t('files-going-made', { count: made }));
     if (later) parts.push(t('files-going-later-count', { count: later }));
     const words = parts.join(', ');
+    const done = given.length || madeIds.length;
+    filesUi.lastDone = done ? { assigned: given, made: madeIds } : filesUi.lastDone;
     if (problems.length) notifyError(words, problems.slice(0, 4).join('\n'));
-    else notifyOk(words);
+    else if (done)
+      // It stays until it is dismissed: what was done to many is undone at once.
+      toasts.show(
+        {
+          kind: 'ok',
+          message: words,
+          action: { label: t('files-going-undo'), run: () => void undoLast() },
+        },
+        0,
+      );
+    else toasts.show({ kind: 'ok', message: words });
     onclose();
   }
 
-  const forAll: Record<Certainty, (n: number) => string> = {
+  const heads: Record<Group, (n: number) => string> = {
     certain: (n) => t('files-going-all-certain', { count: n }),
     probable: (n) => t('files-going-all-probable', { count: n }),
+    new: (n) => t('files-going-all-new', { count: n }),
+    nothing: (n) => t('files-going-all-nothing', { count: n }),
   };
 </script>
 
@@ -253,6 +294,88 @@
   <span class="authors">{s.authors || '—'}</span>
   {#if s.year}<span class="year">{s.year}</span>{/if}
   <span class="serif title">{s.title || t('library-untitled')}</span>
+{/snippet}
+
+{#snippet item(p: Proposal)}
+  {@const d = decisionOf(p)}
+  {@const file = files.get(p.hash)}
+  {@const Icon = KIND_ICONS[file?.kind ?? 'other']}
+  {@const match = p.matches[Math.min(d.match, Math.max(0, p.matches.length - 1))]}
+  <div class="item" data-going-file={p.name} data-hash={p.hash}>
+    <div class="what">
+      <span class="icon"><Icon size={16} strokeWidth={1.6} /></span>
+      <span class="name selectable">{p.name}</span>
+    </div>
+    {#key shown}
+      <Segmented
+        size="sm"
+        value={d.choice}
+        label={t('files-going-what', { name: p.name })}
+        options={[
+          {
+            value: 'this',
+            label: t('files-going-this'),
+            disabled: !p.matches.length && !p.lookup,
+          },
+          { value: 'other', label: t('files-going-other') },
+          { value: 'new', label: t('files-going-new') },
+          { value: 'later', label: t('files-going-later') },
+        ]}
+        onchange={(value) => void choose(p, value)}
+      />
+    {/key}
+
+    <div class="proposal" class:off={d.choice !== 'this'}>
+      {#if match}
+        <div class="overline" data-reasons>
+          {t('library-in-library')} · {match.certainty === 'certain'
+            ? t('files-going-certain')
+            : t('files-going-probable')} · {reasonWords(match.reasons)}
+        </div>
+        {#if p.matches.length > 1}
+          <select
+            class="matches"
+            value={String(d.match)}
+            aria-label={t('files-going-which')}
+            onchange={(e) =>
+              decide(p.hash, {
+                ...d,
+                choice: 'this',
+                match: Number(e.currentTarget.value),
+              })}
+          >
+            {#each p.matches as m, i (m.id)}
+              <option value={String(i)}
+                >{m.summary.authors || '—'} {m.summary.year} · {m.summary.title}</option
+              >
+            {/each}
+          </select>
+        {:else}
+          <div class="work selectable">{@render work(match.summary)}</div>
+        {/if}
+      {:else if p.lookup}
+        <div class="overline">
+          {t('files-going-lookup', { origin: p.lookup.origin })}
+        </div>
+        <div class="work selectable">{@render work(lite(p.lookup.draft))}</div>
+      {:else}
+        <div class="nothing">{t('files-going-nothing')}</div>
+      {/if}
+    </div>
+
+    {#if (d.choice === 'other' || d.choice === 'new') && d.chosen}
+      <div class="chosen" data-chosen>
+        <span class="overline"
+          >{d.choice === 'new' ? t('files-going-made-here') : t('files-going-chosen')}</span
+        >
+        <div class="work selectable">{@render work(d.chosen)}</div>
+      </div>
+    {/if}
+
+    {#each p.notes as note}
+      <p class="note"><TriangleAlert size={12} /> {note}</p>
+    {/each}
+  </div>
 {/snippet}
 
 <Dialog
@@ -285,122 +408,55 @@
       {/if}
       <p class="hint">{t('files-going-finding-hint')}</p>
     {:else}
-      {#if alike.probable.length > 1 || alike.certain.length > 1}
-        <div class="for-all">
-          {#each ['certain', 'probable'] as const as c (c)}
-            {@const list = alike[c]}
-            {#if list.length > 1}
-              {@const words = forAll[c](list.length)}
-              <div class="row" data-certainty={c}>
-                <span>{words}</span>
+      {#if !rows.length}
+        <p class="none">{t('files-going-none')}</p>
+      {/if}
+
+      {#each GROUPS as g (g)}
+        {@const list = groups[g]}
+        {#if list.length}
+          {@const head = heads[g](list.length)}
+          <section class="group" data-group={g}>
+            <div class="row">
+              <span>{head}</span>
+              {#if g !== 'nothing'}
                 <Segmented
                   size="sm"
                   value={chosenByAll(list)}
-                  label={words}
+                  label={head}
                   options={[
-                    { value: 'this', label: t('files-going-this') },
+                    {
+                      value: 'this',
+                      label: g === 'new' ? t('files-going-this-new') : t('files-going-this'),
+                    },
                     { value: 'later', label: t('files-going-later') },
                   ]}
                   onchange={(value) => {
                     if (value) chooseForAll(list, value);
                   }}
                 />
-              </div>
-            {/if}
-          {/each}
-        </div>
-      {/if}
-
-      {#if !rows.length}
-        <p class="none">{t('files-going-none')}</p>
-      {/if}
-
-      <div class="items">
-        {#each rows.slice(0, MOST) as p (p.hash)}
-          {@const d = decisionOf(p)}
-          {@const file = files.get(p.hash)}
-          {@const Icon = KIND_ICONS[file?.kind ?? 'other']}
-          {@const match = p.matches[Math.min(d.match, Math.max(0, p.matches.length - 1))]}
-          <div class="item" data-going-file={p.name} data-hash={p.hash}>
-            <div class="what">
-              <span class="icon"><Icon size={16} strokeWidth={1.6} /></span>
-              <span class="name selectable">{p.name}</span>
-            </div>
-            {#key shown}
-              <Segmented
-                size="sm"
-                value={d.choice}
-                label={t('files-going-what', { name: p.name })}
-                options={[
-                  {
-                    value: 'this',
-                    label: t('files-going-this'),
-                    disabled: !p.matches.length && !p.lookup,
-                  },
-                  { value: 'other', label: t('files-going-other') },
-                  { value: 'new', label: t('files-going-new') },
-                  { value: 'later', label: t('files-going-later') },
-                ]}
-                onchange={(value) => void choose(p, value)}
-              />
-            {/key}
-
-            <div class="proposal" class:off={d.choice !== 'this'}>
-              {#if match}
-                <div class="overline" data-reasons>
-                  {t('library-in-library')} · {match.certainty === 'certain'
-                    ? t('files-going-certain')
-                    : t('files-going-probable')} · {reasonWords(match.reasons)}
-                </div>
-                {#if p.matches.length > 1}
-                  <select
-                    class="matches"
-                    value={String(d.match)}
-                    aria-label={t('files-going-which')}
-                    onchange={(e) =>
-                      decide(p.hash, {
-                        ...d,
-                        choice: 'this',
-                        match: Number(e.currentTarget.value),
-                      })}
-                  >
-                    {#each p.matches as m, i (m.id)}
-                      <option value={String(i)}
-                        >{m.summary.authors || '—'} {m.summary.year} · {m.summary.title}</option
-                      >
-                    {/each}
-                  </select>
-                {:else}
-                  <div class="work selectable">{@render work(match.summary)}</div>
-                {/if}
-              {:else if p.lookup}
-                <div class="overline">
-                  {t('files-going-lookup', { origin: p.lookup.origin })}
-                </div>
-                <div class="work selectable">{@render work(lite(p.lookup.draft))}</div>
-              {:else}
-                <div class="nothing">{t('files-going-nothing')}</div>
               {/if}
             </div>
-
-            {#if (d.choice === 'other' || d.choice === 'new') && d.chosen}
-              <div class="chosen" data-chosen>
-                <span class="overline"
-                  >{d.choice === 'new' ? t('files-going-made-here') : t('files-going-chosen')}</span
-                >
-                <div class="work selectable">{@render work(d.chosen)}</div>
-              </div>
-            {/if}
-
-            {#each p.notes as note}
-              <p class="note"><TriangleAlert size={12} /> {note}</p>
-            {/each}
-          </div>
-        {/each}
-        {#if rows.length > MOST}
-          <p class="more">{t('library-import-more', { count: rows.length - MOST })}</p>
+            <div class="items">
+              {#each unfolded[g] ? list : list.slice(0, FOLDED) as p (p.hash)}
+                {@render item(p)}
+              {/each}
+              {#if !unfolded[g] && list.length > FOLDED}
+                <div class="more">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onclick={() => (unfolded[g] = true)}
+                    data-show-all
+                  >
+                    {t('files-going-show-all', { count: list.length })}
+                  </Button>
+                </div>
+              {/if}
+            </div>
+          </section>
         {/if}
-      </div>
+      {/each}
     {/if}
   </div>
 
@@ -424,7 +480,7 @@
         onclick={() => void done()}
         data-going-done
       >
-        {t('files-going-done')}
+        {t('files-going-done', { count: counts.assign })}
       </Button>
     {/if}
   {/snippet}
@@ -475,12 +531,12 @@
     font-size: var(--text-sm);
     line-height: 1.5;
   }
-  .for-all {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 12px 0;
+  .group {
+    padding-top: 12px;
     border-bottom: 1px solid var(--line);
+  }
+  .group:last-child {
+    border-bottom: none;
   }
   .row {
     display: flex;

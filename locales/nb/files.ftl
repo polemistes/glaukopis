@@ -236,6 +236,16 @@ files-going-all-probable = { $count ->
     [one] Den ene som er funnet som sannsynlig:
    *[other] Alle { $count } som er funnet som sannsynlige:
 }
+files-going-all-new = { $count ->
+    [one] Den ene som er ny, fra tjenestene:
+   *[other] Alle { $count } som er nye, fra tjenestene:
+}
+files-going-all-nothing = { $count ->
+    [one] Den ene der ingenting ble funnet:
+   *[other] De { $count } der ingenting ble funnet:
+}
+files-going-this-new = Ny referanse
+files-going-show-all = Vis alle { $count }
 files-going-what = Hva { $name } blir
 files-going-this = Denne
 files-going-other = En annen …
@@ -250,7 +260,11 @@ files-going-chosen = Valgt
 files-going-made-here = Laget her
 files-going-none = Ingen av filene kunne gås gjennom.
 files-going-counts = { $assign } å gi bort, { $later } senere
-files-going-done = Ferdig
+files-going-done = { $count ->
+    [0] Ingenting å gi
+    [one] Gi én fil til referansen sin
+   *[other] Gi { $count } filer til referansene sine
+}
 files-going-applying = Gir filene til referansene sine …
 files-going-source = Filene i biblioteket
 files-going-assigned = { $count ->
@@ -263,6 +277,21 @@ files-going-made = { $count ->
    *[other] { $count } nye referanser
 }
 files-going-later-count = { $count } til senere
+files-going-undo = Angre
+files-going-undone = { $count ->
+    [0] Ingen fil tatt tilbake
+    [one] Én fil tatt tilbake
+   *[other] { $count } filer tatt tilbake
+}
+files-going-undone-made = { $count ->
+    [one] én ny referanse fjernet
+   *[other] { $count } nye referanser fjernet
+}
+# In the menu of the head of the files, while the last going-through can be undone.
+files-undo-last = { $count ->
+    [one] Angre: én fil gitt til referansen sin
+   *[other] Angre: { $count } filer gitt til referansene sine
+}
 
 ## Eksportere.
 

@@ -34,7 +34,7 @@ import {
 import { open } from '@tauri-apps/plugin-dialog';
 import { revealPath } from '$lib/api/system';
 import { isBackendError } from '$lib/api/backend';
-import type { StoredFile, Summary } from '$lib/api/library';
+import { libraryRemove, type StoredFile, type Summary } from '$lib/api/library';
 import type { Project } from '$lib/project/model/project.svelte';
 import { PROJECT } from '$lib/project/model/types';
 import { bringIn } from '$lib/documents/bringing.svelte';
@@ -47,7 +47,7 @@ import { dialogs } from '$lib/library/references.svelte';
 import { fold, library } from '$lib/state/library.svelte';
 import { router } from '$lib/state/router.svelte';
 import { confirm } from '$lib/ui/confirm.svelte';
-import { notifyError, notifyOk, toasts } from '$lib/ui/toast.svelte';
+import { describeError, notifyError, notifyOk, toasts } from '$lib/ui/toast.svelte';
 import { newId } from '$lib/util/id';
 
 /** What files dragged from the list are, for what takes them. Not 'files': that is what comes from the desktop. */
@@ -155,6 +155,18 @@ export const proposals = new Map<string, Proposal>();
 /** What was decided of each, by hash, so that a going-through closed and opened again shows it. */
 export const decisions = new Map<string, Decision>();
 
+/** What the last going-through did, while the application is open, so that it can be undone at once. */
+export interface Done {
+  /**
+   * The files given to references, each with the reference it went to; an
+   * empty `id` where it went to a reference made from the services'
+   * description, which `made` takes back.
+   */
+  assigned: { hash: string; id: string }[];
+  /** The references made in the going-through. */
+  made: string[];
+}
+
 /** Files are to be exported: whether a references.bib goes with them is asked, before the folder is. */
 export interface ExportRequest {
   selection: ExportSelection;
@@ -168,6 +180,8 @@ class FilesUi {
   /** The files being gone through (`GoThroughDialog.svelte`). */
   going = $state.raw<string[] | null>(null);
   exporting = $state.raw<ExportRequest | null>(null);
+  /** What the last going-through did, to be undone at once; `null` once it is undone. */
+  lastDone = $state.raw<Done | null>(null);
   /** The folders whose bar of unassigned files is hidden for the session; `null` is the top. */
   barHidden = new SvelteSet<string | null>();
 }
@@ -422,6 +436,43 @@ export async function unassign(file: FileView, id: string): Promise<void> {
   } catch (error) {
     notifyError(t('files-unassign-failed'), error);
   }
+}
+
+/**
+ * Undoes the last going-through at once: each file taken back from the
+ * reference it was given to, and the references made in it removed, their
+ * files staying in the library. What was decided of those files is
+ * forgotten, so that a going-through opened again starts from the proposals.
+ */
+export async function undoLast(): Promise<void> {
+  const last = filesUi.lastDone;
+  if (!last) return;
+  filesUi.lastDone = null;
+  const problems: string[] = [];
+  let back = 0;
+  for (const { hash, id } of last.assigned) {
+    decisions.delete(hash);
+    try {
+      if (id) await fileUnassign(hash, id);
+      back++;
+    } catch (error) {
+      problems.push(describeError(error) ?? hash);
+    }
+  }
+  let removed = 0;
+  if (last.made.length) {
+    try {
+      removed = await libraryRemove(last.made, false);
+    } catch (error) {
+      problems.push(describeError(error) ?? '');
+    }
+  }
+  await Promise.all([files.reload(), library.reload()]);
+  const parts = [t('files-going-undone', { count: back })];
+  if (removed) parts.push(t('files-going-undone-made', { count: removed }));
+  const words = parts.join(', ');
+  if (problems.length) notifyError(words, problems.slice(0, 4).join('\n'));
+  else notifyOk(words);
 }
 
 /** Puts files in a folder, or at the top in none. */
