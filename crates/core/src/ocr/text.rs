@@ -39,8 +39,13 @@ impl Line {
 /// The paragraphs of what Tesseract read, from its TSV, each as its lines.
 /// A row of the TSV is a page, a block, a paragraph, a line or a word, by
 /// its level; the words (level 5) say which of the others they are in.
+/// A line that is only marks (`only_marks`) is left out, by what it says
+/// and by how sure Tesseract was of its words, and so is a paragraph left
+/// with no line.
 pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
     let mut paragraphs: Vec<Vec<Line>> = Vec::new();
+    // Beside each line, the sum and the count of its words' confidences.
+    let mut sureness: Vec<Vec<(f32, u32)>> = Vec::new();
     // The page, block, paragraph and line of the word before.
     let mut last: Option<[u32; 4]> = None;
     for row in tsv.lines().skip(1) {
@@ -59,10 +64,21 @@ pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
         let (left, top, width, height) = (measure(6), measure(7), measure(8), measure(9));
         if last.is_none_or(|l| l[..3] != at[..3]) {
             paragraphs.push(Vec::new());
+            sureness.push(Vec::new());
         }
         let lines = paragraphs.last_mut().expect("a paragraph was begun");
+        let sure = sureness.last_mut().expect("a paragraph was begun");
         if last != Some(at) || lines.is_empty() {
             lines.push(Line { text: String::new(), left, right: left + width, top, bottom: top + height });
+            sure.push((0.0, 0));
+        }
+        // The word's confidence, from 0 to 100; -1 where there is none.
+        if let Ok(conf) = columns[10].trim().parse::<f32>()
+            && conf >= 0.0
+            && let Some((sum, count)) = sure.last_mut()
+        {
+            *sum += conf;
+            *count += 1;
         }
         let line = lines.last_mut().expect("a line was begun");
         if !line.text.is_empty() {
@@ -76,6 +92,73 @@ pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
         last = Some(at);
     }
     paragraphs
+        .into_iter()
+        .zip(sureness)
+        .map(|(lines, sure)| {
+            lines
+                .into_iter()
+                .zip(sure)
+                .filter(|(line, (sum, count))| !only_marks(&line.text, (*count > 0).then(|| sum / *count as f32)))
+                .map(|(line, _)| line)
+                .collect::<Vec<_>>()
+        })
+        .filter(|lines| !lines.is_empty())
+        .collect()
+}
+
+/// A combining mark of the block of combining diacritics.
+fn is_combining(c: char) -> bool {
+    matches!(c, '\u{0300}'..='\u{036f}')
+}
+
+/// A Greek spacing accent or breathing, or a combining mark.
+fn is_mark(c: char) -> bool {
+    is_combining(c)
+        || matches!(
+            c,
+            '\u{0384}'..='\u{0385}'
+                | '\u{1fbd}'..='\u{1fc1}'
+                | '\u{1fcd}'..='\u{1fcf}'
+                | '\u{1fdd}'..='\u{1fdf}'
+                | '\u{1fed}'..='\u{1fef}'
+                | '\u{1ffd}'..='\u{1ffe}'
+        )
+}
+
+/// A letter or a digit, and not a combining mark (the iota subscript is a letter to Unicode).
+fn is_letter_or_digit(c: char) -> bool {
+    c.is_alphanumeric() && !is_combining(c)
+}
+
+/// Whether a line Tesseract read is only marks, not text: the rows of
+/// breathings and accents over tightly set Greek, read as lines of their
+/// own. Such a line has (a) no letter or digit; or (b) fewer than a third
+/// of its characters, spaces aside, letters and digits that stand in a
+/// word of two or more, and a mean confidence under 50; or (c) more than
+/// half of its characters Greek spacing accents and breathings or
+/// combining marks. A letter standing alone among spaces and signs is what
+/// an accent read as a letter looks like; a word of two letters is not.
+pub fn only_marks(text: &str, confidence: Option<f32>) -> bool {
+    if !text.chars().any(is_letter_or_digit) {
+        return true;
+    }
+    let signs = text.chars().filter(|c| !c.is_whitespace()).count();
+    if text.chars().filter(|&c| is_mark(c)).count() * 2 > signs {
+        return true;
+    }
+    // The letters and digits in runs of two or more; a combining mark does not break a run.
+    let (mut in_words, mut run) = (0, 0);
+    for c in text.chars().chain(std::iter::once(' ')) {
+        if is_letter_or_digit(c) {
+            run += 1;
+        } else if !is_combining(c) {
+            if run >= 2 {
+                in_words += run;
+            }
+            run = 0;
+        }
+    }
+    in_words * 3 < signs && confidence.is_some_and(|c| c < 50.0)
 }
 
 // ---------------------------------------------------------------------------
@@ -385,6 +468,51 @@ mod tests {
         assert_eq!(read[0][0], line("Forskningen på", 142.0, 140.0, 437.0).with_bottom(183.0));
         assert_eq!(read[1][0].text, "Den andre");
         assert!(tsv_paragraphs("").is_empty());
+    }
+
+    #[test]
+    fn lines_that_are_only_marks() {
+        // What Tesseract made of the rows of accents over the verse of Wilson's Aristophanes.
+        let marks = ["\" Ν \" ΄ ΄ Ε 3 ΄ 2.ϑ»ϑβὲ2 ΄ὔ΄", "3 ΄,ὔ ΄ ΄,", "ΕΝ κ ο κ 2 ;", "» Ν Ν ΄ ΄ὔ΄ 3 Ε ΄ὔ .,2 ΄ὔ΄"];
+        let text = ["700", "Αλ.", "ἀπεπυδάρισα μόθωνα, περιεκόκκασα.", "698 γ᾽ εἰ R: ἐὰν cett."];
+        for line in marks {
+            assert!(only_marks(line, Some(30.0)), "{line}");
+        }
+        for line in text {
+            for confidence in [None, Some(30.0), Some(95.0)] {
+                assert!(!only_marks(line, confidence), "{line} at {confidence:?}");
+            }
+        }
+        // No letter or digit, or more than half marks, whatever the confidence.
+        assert!(only_marks("΄ ῾ , ;", None));
+        assert!(only_marks("῾΄ ᾽α", Some(95.0)));
+        // A combining mark within a word neither breaks it nor outweighs it.
+        assert!(!only_marks("λο\u{301}γος", Some(30.0)));
+        // Letters standing alone are marks only where Tesseract was unsure of them.
+        assert!(!only_marks("ΕΝ κ ο κ 2 ;", Some(80.0)));
+        assert!(!only_marks("ΕΝ κ ο κ 2 ;", None));
+    }
+
+    #[test]
+    fn a_line_of_marks_is_left_out_of_what_tesseract_read() {
+        let tsv = "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext\n\
+                   5\t1\t1\t1\t1\t1\t100\t100\t40\t20\t21.5\t3\n\
+                   5\t1\t1\t1\t1\t2\t150\t100\t40\t20\t30.2\t΄,ὔ\n\
+                   5\t1\t1\t1\t1\t3\t200\t100\t40\t20\t12.0\t΄\n\
+                   5\t1\t1\t1\t1\t4\t250\t100\t40\t20\t-1\t΄,\n\
+                   5\t1\t1\t1\t2\t1\t100\t130\t140\t30\t91.0\tἀπεπυδάρισα\n\
+                   5\t1\t1\t1\t2\t2\t250\t130\t90\t30\t88.5\tμόθωνα,\n\
+                   5\t1\t1\t2\t1\t1\t100\t200\t40\t20\t20.0\tΕΝ\n\
+                   5\t1\t1\t2\t1\t2\t150\t200\t10\t20\t15.0\tκ\n\
+                   5\t1\t1\t2\t1\t3\t170\t200\t10\t20\t25.0\tο\n\
+                   5\t1\t1\t2\t1\t4\t190\t200\t10\t20\t31.0\tκ\n\
+                   5\t1\t1\t2\t1\t5\t210\t200\t10\t20\t44.0\t2\n\
+                   5\t1\t1\t2\t1\t6\t230\t200\t10\t20\t9.0\t;\n";
+        let read = tsv_paragraphs(tsv);
+        // The line of marks goes, and the paragraph that had only such a line.
+        assert_eq!(read.len(), 1);
+        assert_eq!(read[0].iter().map(|l| l.text.as_str()).collect::<Vec<_>>(), vec!["ἀπεπυδάρισα μόθωνα,"]);
+        assert_eq!(read[0][0].top, 130.0);
     }
 
     impl Line {
