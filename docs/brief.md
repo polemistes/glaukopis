@@ -757,3 +757,30 @@ The going-through that was wanted existed since 2026-10-14; it stood third in th
 - No threshold that asks only above some number, and nothing assigned without the writer's say.
 
 > Yes, make a plan for Opus 5.5 to build it.
+
+## 2026-10-15 — files given one by one, built
+
+> Please work from this plan: docs/plans/files-given-to-their-references.md
+
+Built as planned, in five steps: every file taken from a reference at once
+in the core; the folder's name as a clue; no assignment of several files to
+one reference, the going-through first and offered by a bar at the head of
+the files; its rows grouped by case, its button counting, and Undo at once;
+the pane of a reference with *Add files of the library…*, *Remove all N from
+this reference*, and a question before several files are attached from the
+disk; the guide; the files script.
+
+Done otherwise than the plan, and why:
+
+- The folder named for a work leads, and the file's own name fills only what
+  the folder leaves out: a file in such a folder is named for its part
+  (*chapter 3*), and its name is not the work's title.
+- Every new word is in Norwegian as well as English: Norwegian is kept
+  complete, and the test of the words holds it so.
+- The undoing removes the references made in the form of a row, *New
+  reference…*, as well as those made from the services, since both were
+  made in the going-through.
+- The new checks of the files script come in a fourth part after the
+  export, so that the export counts what it counted.
+
+> Build arch packages when finished.
