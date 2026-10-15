@@ -49,7 +49,7 @@
   import PdfMapDialog from '$lib/ocr/PdfMapDialog.svelte';
   import PictureTextDialog from '$lib/ocr/PictureTextDialog.svelte';
   import FileChooser from '$lib/files/FileChooser.svelte';
-  import { fileAssign } from '$lib/api/files';
+  import { filesAssign } from '$lib/api/files';
   import {
     KIND_ICONS,
     bringInFile,
@@ -246,10 +246,9 @@
     const id = reference.id;
     let added = 0;
     try {
-      for (const hash of hashes) {
-        await fileAssign(hash, id);
-        added++;
-      }
+      const failed = await filesAssign(hashes.map((hash) => ({ hash, id })));
+      added = hashes.length - failed.length;
+      if (failed.length) notifyError(t('files-assign-failed'), failed.slice(0, 4).join('\n'));
     } catch (e) {
       notifyError(t('files-assign-failed'), e);
     }

@@ -14,7 +14,6 @@ import ImageIcon from '@lucide/svelte/icons/image';
 import {
   fileAssign,
   fileMove,
-  fileRemove,
   fileRename,
   filesList,
   filesExport,
@@ -22,6 +21,10 @@ import {
   filesTakeIn,
   fileToPicture,
   fileUnassign,
+  filesLeftEmpty,
+  filesMove,
+  filesRemove,
+  filesUnassign,
   onFilesProgress,
   type FileFolder,
   type FileKind,
@@ -46,7 +49,7 @@ import { shortLabel } from '$lib/library/format';
 import { dialogs } from '$lib/library/references.svelte';
 import { fold, library } from '$lib/state/library.svelte';
 import { router } from '$lib/state/router.svelte';
-import { confirm } from '$lib/ui/confirm.svelte';
+import { ask, confirm } from '$lib/ui/confirm.svelte';
 import { describeError, notifyError, notifyOk, toasts } from '$lib/ui/toast.svelte';
 import { newId } from '$lib/util/id';
 
@@ -368,53 +371,66 @@ export async function takeIn(
 }
 
 /** Removes a file from the library, after asking, and saying which references it belongs to. */
-export async function removeFile(file: FileView): Promise<boolean> {
+export function removeFile(file: FileView): Promise<boolean> {
   const names = file.references.map(referenceWords).join(', ');
-  const ok = await confirm({
-    title: t('files-remove-title', { name: file.name }),
-    message: file.references.length
+  return removeAsked(
+    [file],
+    t('files-remove-title', { name: file.name }),
+    file.references.length
       ? t('files-remove-message-assigned', { count: file.references.length, names })
       : t('files-remove-message'),
-    confirm: t('files-remove'),
-    danger: true,
-  });
-  if (!ok) return false;
-  try {
-    await fileRemove(file.hash);
-    files.forget(file.hash);
-    if (file.references.length) await library.reload();
-    return true;
-  } catch (error) {
-    notifyError(t('files-remove-failed'), error);
-    return false;
-  }
+  );
 }
 
 /** Removes several files at once, after asking once. */
-export async function removeFiles(chosen: FileView[]): Promise<boolean> {
+export function removeFiles(chosen: FileView[]): Promise<boolean> {
   if (chosen.length === 1) return removeFile(chosen[0]);
-  if (!chosen.length) return false;
+  if (!chosen.length) return Promise.resolve(false);
   const assigned = chosen.filter((f) => f.references.length).length;
-  const ok = await confirm({
-    title: t('files-remove-many-title', { count: chosen.length }),
-    message: assigned
+  return removeAsked(
+    chosen,
+    t('files-remove-many-title', { count: chosen.length }),
+    assigned
       ? t('files-remove-many-assigned', { count: assigned })
       : t('files-remove-many-message'),
-    confirm: t('files-remove'),
+  );
+}
+
+/**
+ * Asks, and removes the files in one step. Where the removal leaves
+ * folders empty, the question says how many, and the folders go with the
+ * files or stay, as answered; folders that were empty before are not
+ * asked about, and stay.
+ */
+async function removeAsked(chosen: FileView[], title: string, message: string): Promise<boolean> {
+  const hashes = chosen.map((f) => f.hash);
+  const emptied = await filesLeftEmpty(hashes).catch(() => [] as string[]);
+  const answer = await ask({
+    title,
+    message: emptied.length
+      ? `${message} ${t('files-remove-folders-left', { count: emptied.length })}`
+      : message,
+    confirm: emptied.length ? t('files-remove-with-folders') : t('files-remove'),
+    alternative: emptied.length ? t('files-remove-keep-folders') : undefined,
     danger: true,
   });
-  if (!ok) return false;
+  if (answer === 'cancel') return false;
+  if (chosen.length > 1) dialogs.working = t('files-removing', { count: chosen.length });
   try {
-    for (const file of chosen) {
-      await fileRemove(file.hash);
-      files.forget(file.hash);
+    const removed = await filesRemove(hashes, answer === 'confirm' && emptied.length > 0);
+    if (chosen.length > 1 || removed.folders) {
+      const parts = [t('files-removed', { count: removed.files })];
+      if (removed.folders) parts.push(t('files-removed-folders', { count: removed.folders }));
+      notifyOk(parts.join(', '));
     }
     return true;
   } catch (error) {
     notifyError(t('files-remove-failed'), error);
     return false;
   } finally {
-    if (assigned) await library.reload();
+    dialogs.working = null;
+    await files.reload();
+    if (chosen.some((f) => f.references.length)) await library.reload();
   }
 }
 
@@ -450,14 +466,13 @@ export async function undoLast(): Promise<void> {
   filesUi.lastDone = null;
   const problems: string[] = [];
   let back = 0;
-  for (const { hash, id } of last.assigned) {
-    decisions.delete(hash);
-    try {
-      if (id) await fileUnassign(hash, id);
-      back++;
-    } catch (error) {
-      problems.push(describeError(error) ?? hash);
-    }
+  for (const { hash } of last.assigned) decisions.delete(hash);
+  const pairs = last.assigned.filter((p) => p.id);
+  try {
+    if (pairs.length) await filesUnassign(pairs);
+    back = last.assigned.length;
+  } catch (error) {
+    problems.push(describeError(error) ?? '');
   }
   let removed = 0;
   if (last.made.length) {
@@ -477,13 +492,14 @@ export async function undoLast(): Promise<void> {
 
 /** Puts files in a folder, or at the top in none. */
 export async function moveFiles(hashes: string[], folder: string | null): Promise<void> {
+  const moving = hashes.filter((h) => (files.get(h)?.folder ?? null) !== folder);
+  if (!moving.length) return;
   try {
-    for (const hash of hashes) {
-      if ((files.get(hash)?.folder ?? null) === folder) continue;
-      files.put(await fileMove(hash, folder));
-    }
+    await filesMove(moving, folder);
   } catch (error) {
     notifyError(t('files-move-failed'), error);
+  } finally {
+    await files.reload();
   }
 }
 

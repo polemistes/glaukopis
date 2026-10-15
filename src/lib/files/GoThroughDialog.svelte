@@ -10,7 +10,7 @@
    */
   import { onMount } from 'svelte';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
-  import { filesIdentify, fileAssign, onFilesProgress, filesStop } from '$lib/api/files';
+  import { filesIdentify, filesAssign, onFilesProgress, filesStop } from '$lib/api/files';
   import type { FilesProgress, Proposal } from '$lib/api/files';
   import {
     emptyDraft,
@@ -216,14 +216,13 @@
     const given: { hash: string; id: string }[] = [];
     const madeIds: string[] = [];
     const viaLookup: string[] = [];
+    // The files given to works of the library, given in one step after.
+    const pairs: { hash: string; id: string }[] = [];
     for (const p of rows) {
       const d = decisionOf(p);
       try {
         if (d.choice === 'this' && p.matches.length) {
-          const id = p.matches[Math.min(d.match, p.matches.length - 1)].id;
-          await fileAssign(p.hash, id);
-          given.push({ hash: p.hash, id });
-          assigned++;
+          pairs.push({ hash: p.hash, id: p.matches[Math.min(d.match, p.matches.length - 1)].id });
         } else if (d.choice === 'this' && p.lookup) {
           // The candidate names the file in the store already: the import links it.
           lookups.push({
@@ -235,14 +234,22 @@
           });
           viaLookup.push(p.hash);
         } else if ((d.choice === 'other' || d.choice === 'new') && d.chosen) {
-          await fileAssign(p.hash, d.chosen.id);
-          given.push({ hash: p.hash, id: d.chosen.id });
+          pairs.push({ hash: p.hash, id: d.chosen.id });
           // A reference made here, in the form, is the going-through's too.
           if (d.choice === 'new') madeIds.push(d.chosen.id);
-          assigned++;
         } else later++;
       } catch (error) {
         problems.push(`${p.name}: ${describeError(error)}`);
+      }
+    }
+    if (pairs.length) {
+      try {
+        const failed = await filesAssign(pairs);
+        problems.push(...failed);
+        assigned = pairs.length - failed.length;
+        given.push(...pairs);
+      } catch (error) {
+        problems.push(describeError(error) ?? t('files-going-failed'));
       }
     }
     if (lookups.length) {

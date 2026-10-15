@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 
 use glaukopis_core::i18n::tr;
@@ -114,6 +114,62 @@ pub fn file_rename(state: State<'_, AppState>, hash: String, name: String) -> Co
 #[tauri::command(async)]
 pub fn file_remove(state: State<'_, AppState>, hash: String) -> CommandResult<()> {
     Ok(state.library().remove_file(&hash)?)
+}
+
+// ---- many files at once ----
+
+/// A file and a reference, for giving many files each to its own.
+#[derive(Deserialize)]
+pub struct FileAndReference {
+    hash: String,
+    id: String,
+}
+
+fn pairs_of(pairs: Vec<FileAndReference>) -> Vec<(String, String)> {
+    pairs.into_iter().map(|p| (p.hash, p.id)).collect()
+}
+
+/// What came of removing many files.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FilesRemoved {
+    files: usize,
+    folders: usize,
+}
+
+/// The folders that removing these files would leave empty, for asking
+/// whether they go too. Those that were empty before are not among them.
+#[tauri::command(async)]
+pub fn files_left_empty(state: State<'_, AppState>, hashes: Vec<String>) -> CommandResult<Vec<String>> {
+    let library = state.library();
+    let wanted = hashes.iter().map(String::as_str).collect();
+    Ok(library.files.left_empty(&wanted))
+}
+
+/// Removes many files from the library at once, as `file_remove` removes
+/// one; with `folders`, the folders this leaves empty go too.
+#[tauri::command(async)]
+pub fn files_remove(state: State<'_, AppState>, hashes: Vec<String>, folders: bool) -> CommandResult<FilesRemoved> {
+    let (files, folders) = state.library().remove_files(&hashes, folders)?;
+    Ok(FilesRemoved { files, folders })
+}
+
+/// Puts many files in a folder, or at the top in none.
+#[tauri::command(async)]
+pub fn files_move(state: State<'_, AppState>, hashes: Vec<String>, folder: Option<String>) -> CommandResult<()> {
+    Ok(state.library().move_files(&hashes, folder.as_deref())?)
+}
+
+/// Gives many files to references, each to its own; says what could not be given.
+#[tauri::command(async)]
+pub fn files_assign(state: State<'_, AppState>, pairs: Vec<FileAndReference>) -> CommandResult<Vec<String>> {
+    Ok(state.library().assign_files(&pairs_of(pairs))?)
+}
+
+/// Takes many files from references, each from its own; the files stay.
+#[tauri::command(async)]
+pub fn files_unassign(state: State<'_, AppState>, pairs: Vec<FileAndReference>) -> CommandResult<()> {
+    Ok(state.library().unassign_files(&pairs_of(pairs))?)
 }
 
 /// Makes a file one of a reference's.

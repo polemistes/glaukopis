@@ -812,6 +812,122 @@ impl Library {
         Ok(())
     }
 
+    /// Removes many files at once, as `remove_file` removes one: from every
+    /// entry that has them, from the record, and from the disk; the library
+    /// and the record written once. With `folders`, the folders this leaves
+    /// empty go too (`Files::left_empty`). Hashes the library does not know
+    /// are passed over. Returns how many files and folders went.
+    pub fn remove_files(&mut self, hashes: &[String], folders: bool) -> Result<(usize, usize)> {
+        self.refresh()?;
+        let wanted: HashSet<&str> = hashes.iter().map(String::as_str).collect();
+        let emptied = if folders { self.files.left_empty(&wanted) } else { Vec::new() };
+        let mut stored: HashSet<String> =
+            hashes.iter().filter_map(|h| self.files.get(h)).map(|r| r.path.clone()).collect();
+        let mut changed = false;
+        for entry in &mut self.entries {
+            let mut files = entry.attachments();
+            let before = files.len();
+            files.retain(|f| {
+                let ours = attachments::hash_of_path(f).is_some_and(|h| wanted.contains(h));
+                if ours {
+                    stored.insert(f.clone());
+                }
+                !ours
+            });
+            if files.len() != before {
+                entry.set_attachments(&files);
+                entry.modified = now();
+                changed = true;
+            }
+        }
+        let mut count = 0;
+        for hash in hashes {
+            let found = attachments::find_by_hash(&self.dir, hash);
+            let known = self.files.forget(hash).is_some();
+            if known {
+                self.files_dirty = true;
+            }
+            if let Some(found) = found {
+                stored.insert(found);
+                count += 1;
+            } else if known {
+                count += 1;
+            }
+        }
+        for id in &emptied {
+            if self.files.folder_delete(id).is_ok() {
+                self.files_dirty = true;
+            }
+        }
+        if changed {
+            self.save()?;
+        } else {
+            self.save_files_if_changed()?;
+        }
+        for path in stored {
+            attachments::delete(&self.dir, &path)?;
+        }
+        Ok((count, emptied.len()))
+    }
+
+    /// Puts many files in a folder, or at the top in none; the record written once.
+    pub fn move_files(&mut self, hashes: &[String], folder: Option<&str>) -> Result<()> {
+        for hash in hashes {
+            self.files.move_file(hash, folder)?;
+        }
+        self.save_files()
+    }
+
+    /// Gives files to references, each to its own, as `attach_stored` gives
+    /// one; the library written once. What could not be given is said, a
+    /// line each, and the rest is given all the same.
+    pub fn assign_files(&mut self, pairs: &[(String, String)]) -> Result<Vec<String>> {
+        self.refresh()?;
+        let mut problems = Vec::new();
+        let mut changed = false;
+        for (hash, id) in pairs {
+            let Some(path) = self.files.get(hash).map(|r| r.path.clone()) else {
+                problems.push(tr!("core-library-the-file-of-library"));
+                continue;
+            };
+            let Some(&index) = self.by_id.get(id.as_str()) else {
+                problems.push(tr!("core-library-the-reference"));
+                continue;
+            };
+            if !attachments::absolute(&self.dir, &path)?.is_file() {
+                problems.push(tr!("core-library-the-stored-file", path = &path));
+                continue;
+            }
+            changed |= self.link_file_unsaved(index, path, None);
+        }
+        if changed {
+            self.save()?;
+        } else {
+            self.save_files_if_changed()?;
+        }
+        Ok(problems)
+    }
+
+    /// Takes files from references, each from its own; the library written
+    /// once. The files stay in the library.
+    pub fn unassign_files(&mut self, pairs: &[(String, String)]) -> Result<()> {
+        self.refresh()?;
+        let mut changed = false;
+        for (hash, id) in pairs {
+            let Some(&index) = self.by_id.get(id.as_str()) else { continue };
+            let entry = &mut self.entries[index];
+            let mut files = entry.attachments();
+            let before = files.len();
+            files.retain(|f| attachments::hash_of_path(f) != Some(hash.as_str()));
+            if files.len() != before {
+                entry.set_attachments(&files);
+                entry.modified = now();
+                changed = true;
+            }
+        }
+        if changed { self.save() } else { Ok(()) }
+    }
+
     /// Puts other content in the place of a stored file, for every entry
     /// that links to it: a PDF made searchable in the place of the scan it
     /// was made of. It is stored under the name the file had, and the file

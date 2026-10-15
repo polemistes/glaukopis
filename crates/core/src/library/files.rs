@@ -8,6 +8,7 @@
 //! belong to no entry; it is in the store all the same, and leaves it only
 //! when it is removed itself.
 
+use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 
@@ -228,6 +229,36 @@ impl Files {
         }
         self.folders.retain(|f| f.id != id);
         Ok(())
+    }
+
+    /// The folders that removing these files would leave empty: those the
+    /// files stood in, and the folders above them, where nothing else would
+    /// be left in them or under them. A folder that was empty before, or
+    /// that holds one that was, is not among them: it was made for files to
+    /// come, and stays.
+    pub fn left_empty(&self, removed: &HashSet<&str>) -> Vec<String> {
+        let mut touched: HashSet<String> = HashSet::new();
+        for file in self.files.iter().filter(|f| removed.contains(f.hash.as_str())) {
+            if let Some(folder) = &file.folder {
+                touched.extend(self.path_of(folder).into_iter().map(|f| f.id));
+            }
+        }
+        let kept: Vec<&str> = self
+            .files
+            .iter()
+            .filter(|f| !removed.contains(f.hash.as_str()))
+            .filter_map(|f| f.folder.as_deref())
+            .collect();
+        let mut out: Vec<String> = touched
+            .iter()
+            .filter(|id| {
+                let under = self.with_descendants(id);
+                under.iter().all(|u| touched.contains(u)) && !kept.iter().any(|k| under.iter().any(|u| u == k))
+            })
+            .cloned()
+            .collect();
+        out.sort();
+        out
     }
 
     /// The folder and every folder under it.

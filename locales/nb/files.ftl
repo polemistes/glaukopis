@@ -177,6 +177,23 @@ files-remove-many-assigned = { $count ->
    *[other] { $count } av dem hører til referanser, som mister dem. De slettes fra bibliotekets lager.
 }
 files-remove-failed = Filen kunne ikke fjernes
+# Said in the question where removing the files leaves folders empty; folders empty before are not counted.
+files-remove-folders-left = { $count ->
+    [one] Én mappe blir tom av det.
+   *[other] { $count } mapper blir tomme av det.
+}
+files-remove-with-folders = Fjern, med de tomme mappene
+files-remove-keep-folders = Fjern, behold mappene
+files-removing = Fjerner { $count } filer …
+files-removed = { $count ->
+    [0] Ingen fil fjernet
+    [one] Én fil fjernet
+   *[other] { $count } filer fjernet
+}
+files-removed-folders = { $count ->
+    [one] én tom mappe med dem
+   *[other] { $count } tomme mapper med dem
+}
 files-remove-with-files = Slett med filene
 
 ## Velge en referanse.

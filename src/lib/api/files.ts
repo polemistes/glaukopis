@@ -119,6 +119,19 @@ export const fileRename = (hash: string, name: string) =>
   call<FileView>('file_rename', { hash, name });
 /** Removes the file from every reference that has it, and from the store. */
 export const fileRemove = (hash: string) => call<void>('file_remove', { hash });
+/** The folders that removing these files would leave empty; not those empty before. */
+export const filesLeftEmpty = (hashes: string[]) => call<string[]>('files_left_empty', { hashes });
+/** Removes many files at once; with `folders`, the folders this leaves empty too. */
+export const filesRemove = (hashes: string[], folders: boolean) =>
+  call<{ files: number; folders: number }>('files_remove', { hashes, folders });
+export const filesMove = (hashes: string[], folder: string | null) =>
+  call<void>('files_move', { hashes, folder });
+/** Gives many files each to its reference; what could not be given, a line each. */
+export const filesAssign = (pairs: { hash: string; id: string }[]) =>
+  call<string[]>('files_assign', { pairs });
+/** Takes many files each from its reference; the files stay in the library. */
+export const filesUnassign = (pairs: { hash: string; id: string }[]) =>
+  call<void>('files_unassign', { pairs });
 export const fileAssign = (hash: string, id: string) => call<FileView>('file_assign', { hash, id });
 export const fileUnassign = (hash: string, id: string) =>
   call<FileView>('file_unassign', { hash, id });

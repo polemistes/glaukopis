@@ -178,6 +178,23 @@ files-remove-many-assigned = { $count ->
    *[other] { $count } of them belong to references, which lose them. They are deleted from the library’s store.
 }
 files-remove-failed = The file could not be removed
+# Said in the question where removing the files leaves folders empty; folders empty before are not counted.
+files-remove-folders-left = { $count ->
+    [one] One folder is left empty by it.
+   *[other] { $count } folders are left empty by it.
+}
+files-remove-with-folders = Remove, with the empty folders
+files-remove-keep-folders = Remove, keep the folders
+files-removing = Removing { $count } files…
+files-removed = { $count ->
+    [0] No file removed
+    [one] One file removed
+   *[other] { $count } files removed
+}
+files-removed-folders = { $count ->
+    [one] one empty folder with them
+   *[other] { $count } empty folders with them
+}
 # When references are deleted: their files go too, unless another reference has them.
 files-remove-with-files = Delete with the files
 

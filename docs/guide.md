@@ -1073,7 +1073,9 @@ files are taken back, and the references made in it are removed, their files
 staying.
 
 **Files stay.** A file leaves the library only when you remove the file
-itself, and you are told first which references it belongs to. Taking a file
+itself, and you are told first which references it belongs to. Where
+removing files leaves folders empty, you are asked whether those folders go
+with them; folders that were empty already are not asked about, and stay. Taking a file
 from a reference keeps it among the files. When references are removed,
 their files stay (**Delete, keep the files**), unless you choose **Delete
 with the files**, which removes those that no other reference has.
