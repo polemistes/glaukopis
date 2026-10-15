@@ -7,6 +7,7 @@
  */
 
 import FileIcon from '@lucide/svelte/icons/file';
+import { SvelteSet } from 'svelte/reactivity';
 import FileText from '@lucide/svelte/icons/file-text';
 import FileType from '@lucide/svelte/icons/file-type';
 import ImageIcon from '@lucide/svelte/icons/image';
@@ -167,6 +168,8 @@ class FilesUi {
   /** The files being gone through (`GoThroughDialog.svelte`). */
   going = $state.raw<string[] | null>(null);
   exporting = $state.raw<ExportRequest | null>(null);
+  /** The folders whose bar of unassigned files is hidden for the session; `null` is the top. */
+  barHidden = new SvelteSet<string | null>();
 }
 
 export const filesUi = new FilesUi();
@@ -333,21 +336,9 @@ export async function takeIn(
     const taken = await filesTakeIn(paths, folder, structure, ticket);
     await files.reload();
     const words = takenWords(taken);
-    const fresh = taken.files.map((f) => f.hash);
+    // The bar offers to go through what is new, wherever it was hidden.
+    if (taken.files.length) filesUi.barHidden.clear();
     if (taken.problems.length) notifyError(words, taken.problems.slice(0, 4).join('\n'));
-    else if (fresh.length)
-      // What is new is gone through from here, to be given to its references.
-      toasts.show(
-        {
-          kind: 'ok',
-          message: words,
-          action: {
-            label: t('files-go-through-new', { count: fresh.length }),
-            run: () => goThrough(fresh),
-          },
-        },
-        9000,
-      );
     else notifyOk(words);
     return taken;
   } catch (error) {

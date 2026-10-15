@@ -133,7 +133,6 @@ files-references = References
 files-unassigned = Unassigned: the file belongs to no reference.
 files-assign = Assign to a reference…
 files-assign-title = Assign “{ $name }” to a reference
-files-assign-many-title = Assign { $count } files to a reference
 files-assign-failed = The file could not be assigned
 files-unassign = Take from “{ $name }”
 files-unassign-failed = The file could not be taken from the reference
@@ -210,12 +209,15 @@ files-go-through-chosen = { $count ->
     [one] Go through it…
    *[other] Go through these { $count }…
 }
-files-go-through-new = { $count ->
-    [one] Go through the new file…
-   *[other] Go through the { $count } new files…
-}
 files-go-through-nothing = Every file here belongs to a reference
 files-folder-go-through = Go through the unassigned files…
+# The bar at the head of the files, while files of the folder in view belong to no reference.
+files-unassigned-here = { $count ->
+    [one] One file here belongs to no reference.
+   *[other] { $count } files here belong to no reference.
+}
+files-unassigned-go = Go through them…
+files-unassigned-hide = Hide this
 files-going-title = Give the files to their references
 files-going-subtitle = { $count ->
     [one] One file

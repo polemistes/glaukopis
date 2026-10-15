@@ -45,6 +45,7 @@
   import FolderTree from './FolderTree.svelte';
   import LibrarySwitch from './LibrarySwitch.svelte';
   import ReferenceChooser from './ReferenceChooser.svelte';
+  import UnassignedBar from './UnassignedBar.svelte';
   import GoThroughDialog from './GoThroughDialog.svelte';
   import { columns } from '$lib/library/columns.svelte';
   import Divider from '$lib/ui/Divider.svelte';
@@ -79,12 +80,17 @@
   let searchField = $state<HTMLInputElement>();
   let list = $state<ReturnType<typeof FileList>>();
   let tree = $state<ReturnType<typeof FolderTree>>();
-  /** The files a reference is being chosen for (`ReferenceChooser.svelte`). */
-  let choosing = $state<FileView[] | null>(null);
+  /**
+   * The one file a reference is being chosen for (`ReferenceChooser.svelte`).
+   * Several are never given to one reference in a step: they are gone through.
+   */
+  let choosing = $state<FileView | null>(null);
 
   const route = $derived(router.route.view === 'files' ? router.route : { view: 'files' as const });
   const folderId = $derived(route.folder && files.folder(route.folder) ? route.folder : null);
   const folder = $derived(files.folder(folderId));
+  /** The files of the folder in view and under it, or of all, that belong to no reference. */
+  const unassignedHere = $derived(unassignedIn(folderId));
 
   const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
 
@@ -215,8 +221,37 @@
   function fileItems(chosen: FileView[]): MenuItem[] {
     const one = chosen.length === 1 ? chosen[0] : null;
     const hashes = chosen.map((f) => f.hash);
+    const goingThrough: MenuItem = {
+      label: t('files-go-through-chosen', { count: chosen.length }),
+      icon: ListChecks,
+      action: () => goThrough(hashes),
+    };
+    const moving: MenuItem = {
+      kind: 'submenu',
+      label: t('files-move-to'),
+      icon: FolderInput,
+      items: folderItems(hashes),
+    };
+    const exporting: MenuItem = {
+      label: one ? t('files-export') : t('files-export-chosen', { count: chosen.length }),
+      icon: FolderOutput,
+      action: () => void exportFiles({ kind: 'files', hashes }, hashes.length),
+    };
+    const removing: MenuItem[] = [
+      { kind: 'separator' },
+      {
+        label: t('files-remove'),
+        icon: Trash2,
+        danger: true,
+        shortcut: 'Del',
+        action: () => void removeFiles(chosen),
+      },
+    ];
+    // Several files are gone through, each to its own reference: none is
+    // given to one reference with the others in one step.
+    if (!one) return [goingThrough, moving, exporting, ...removing];
     return [
-      ...(one && one.exists
+      ...(one.exists
         ? [
             {
               label: t('files-open'),
@@ -233,21 +268,11 @@
         label: t('files-assign'),
         icon: Link,
         disabled: !library.entries.length,
-        action: () => (choosing = chosen),
+        action: () => (choosing = one),
       },
-      {
-        kind: 'submenu',
-        label: t('files-move-to'),
-        icon: FolderInput,
-        items: folderItems(hashes),
-      },
-      {
-        label: t('files-go-through-chosen', { count: chosen.length }),
-        icon: ListChecks,
-        disabled: !library.entries.length,
-        action: () => goThrough(hashes),
-      },
-      ...(one?.kind === 'picture' && one.exists
+      moving,
+      goingThrough,
+      ...(one.kind === 'picture' && one.exists
         ? [
             {
               label: t('files-to-pictures'),
@@ -256,19 +281,8 @@
             } as MenuItem,
           ]
         : []),
-      {
-        label: one ? t('files-export') : t('files-export-chosen', { count: chosen.length }),
-        icon: FolderOutput,
-        action: () => void exportFiles({ kind: 'files', hashes }, hashes.length),
-      },
-      { kind: 'separator' },
-      {
-        label: t('files-remove'),
-        icon: Trash2,
-        danger: true,
-        shortcut: 'Del',
-        action: () => void removeFiles(chosen),
-      },
+      exporting,
+      ...removing,
     ];
   }
 
@@ -484,6 +498,14 @@
       </div>
     </header>
 
+    {#if files.loaded && unassignedHere.length && !filesUi.barHidden.has(folderId)}
+      <UnassignedBar
+        count={unassignedHere.length}
+        ongo={() => goThrough(unassignedHere)}
+        onhide={() => filesUi.barHidden.add(folderId)}
+      />
+    {/if}
+
     <div class="body">
       {#if !files.loaded}
         <div class="centre"><Spinner size={22} /></div>
@@ -559,14 +581,24 @@
     {:else if selection.length > 1}
       {@const chosen = files.files.filter((f) => selection.includes(f.hash))}
       <EmptyState title={t('files-selected', { count: selection.length })} compact>
-        <Button onclick={() => (choosing = chosen)} disabled={!library.entries.length}>
-          {t('files-assign')}
+        <Button
+          variant="primary"
+          onclick={() => goThrough(chosen.map((f) => f.hash))}
+          data-go-through-chosen
+        >
+          {t('files-go-through-chosen', { count: chosen.length })}
         </Button>
         <Button
           onclick={(e) =>
             openMenu(e.currentTarget as HTMLElement, folderItems(selection), { align: 'start' })}
         >
           {t('files-move')}
+        </Button>
+        <Button
+          onclick={() =>
+            void exportFiles({ kind: 'files', hashes: chosen.map((f) => f.hash) }, chosen.length)}
+        >
+          {t('files-export-chosen', { count: chosen.length })}
         </Button>
         <Button variant="danger" onclick={() => void removeFiles(chosen)}>
           {t('files-remove')}
@@ -597,12 +629,8 @@
 {#if choosing}
   {@const chosen = choosing}
   <ReferenceChooser
-    title={chosen.length === 1
-      ? t('files-assign-title', { name: chosen[0].name })
-      : t('files-assign-many-title', { count: chosen.length })}
-    onpick={async (id) => {
-      for (const f of chosen) await assign(f, id);
-    }}
+    title={t('files-assign-title', { name: chosen.name })}
+    onpick={(id) => void assign(chosen, id)}
     onclose={() => (choosing = null)}
   />
 {/if}

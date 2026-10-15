@@ -133,7 +133,6 @@ files-references = Referanser
 files-unassigned = Uten referanse: filen hører ikke til noen referanse.
 files-assign = Gi til en referanse …
 files-assign-title = Gi «{ $name }» til en referanse
-files-assign-many-title = Gi { $count } filer til en referanse
 files-assign-failed = Filen kunne ikke gis til referansen
 files-unassign = Ta fra «{ $name }»
 files-unassign-failed = Filen kunne ikke tas fra referansen
@@ -207,12 +206,15 @@ files-go-through-chosen = { $count ->
     [one] Gå gjennom den …
    *[other] Gå gjennom disse { $count } …
 }
-files-go-through-new = { $count ->
-    [one] Gå gjennom den nye filen …
-   *[other] Gå gjennom de { $count } nye filene …
-}
 files-go-through-nothing = Hver fil her hører til en referanse
 files-folder-go-through = Gå gjennom filene uten referanse …
+# The bar at the head of the files, while files of the folder in view belong to no reference.
+files-unassigned-here = { $count ->
+    [one] Én fil her hører ikke til noen referanse.
+   *[other] { $count } filer her hører ikke til noen referanse.
+}
+files-unassigned-go = Gå gjennom dem …
+files-unassigned-hide = Skjul dette
 files-going-title = Gi filene til referansene sine
 files-going-subtitle = { $count ->
     [one] Én fil

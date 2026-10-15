@@ -218,8 +218,7 @@ export const attachmentAdd = (id: string, paths: string[]) =>
 export const attachmentRemove = (id: string, path: string) =>
   call<Reference>('attachment_remove', { id, path });
 /** Takes every file from the reference; the files stay in the library. */
-export const attachmentRemoveAll = (id: string) =>
-  call<Reference>('attachment_remove_all', { id });
+export const attachmentRemoveAll = (id: string) => call<Reference>('attachment_remove_all', { id });
 export const attachmentOpen = (path: string) => call<void>('attachment_open', { path });
 export const attachmentReveal = (path: string) => call<void>('attachment_reveal', { path });
 
