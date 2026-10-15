@@ -619,7 +619,7 @@ mod tests {
         let before = page_of(
             b"BT 3 Tr /F1 12 Tf 72 70 Td (Hello) Tj ET\n0 0 10 10 re f\nq BI /W 1 /H 1 /CS /DeviceGray /BPC 8 ID \x80 EI Q\n",
         );
-        assert!(pdf_extract::extract_text_from_mem(&before).unwrap().contains("Hello"));
+        assert!(pdf_text::extract_text_from_mem(&before).unwrap().contains("Hello"));
         // Laid: unseen, as Tesseract makes it.
         let laid = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Laid) Tj ET\n");
         let layers = [Layer { page: 0, pdf: laid.clone() }];
@@ -629,7 +629,7 @@ mod tests {
         assert!(holds(&kept, 1, &layers));
         let ops = operators(&kept);
         assert!(ops.contains(&"Tj".to_owned()) && ops.contains(&"re".to_owned()), "{ops:?}");
-        let text = pdf_extract::extract_text_from_mem(&kept).unwrap();
+        let text = pdf_text::extract_text_from_mem(&kept).unwrap();
         assert!(text.contains("Hello") && text.contains("Laid"), "{text}");
 
         let doc = open(&before).unwrap();
@@ -641,7 +641,7 @@ mod tests {
         assert_eq!(ops.iter().filter(|o| *o == "BI").count(), 1, "{ops:?}");
         assert_eq!(ops.iter().filter(|o| *o == "Do").count(), 1, "{ops:?}");
         assert_eq!(xobject_names(&stripped), vec!["GlaukopisText"]);
-        let text = pdf_extract::extract_text_from_mem(&stripped).unwrap();
+        let text = pdf_text::extract_text_from_mem(&stripped).unwrap();
         assert!(!text.contains("Hello") && text.contains("Laid"), "{text}");
         // The picture within the content is as it was.
         let doc = Document::load_mem(&stripped).unwrap();
@@ -658,7 +658,7 @@ mod tests {
         assert!(holds(&twice, 1, &layers));
         assert_eq!(xobject_names(&twice), vec!["GlaukopisText"]);
         assert_eq!(operators(&twice).iter().filter(|o| *o == "Do").count(), 1);
-        let text = pdf_extract::extract_text_from_mem(&twice).unwrap();
+        let text = pdf_text::extract_text_from_mem(&twice).unwrap();
         assert!(!text.contains("Hello") && !text.contains("Laid") && text.contains("Again"), "{text}");
         // Without strip, both texts stay, the second under a name of its own.
         let doc = open(&kept).unwrap();
@@ -683,7 +683,7 @@ mod tests {
         let doc = open(&before).unwrap();
         let stripped = lay_over(before.clone(), doc, &layers, true).unwrap();
         assert!(holds(&stripped, 1, &layers));
-        let text = pdf_extract::extract_text_from_mem(&stripped).unwrap();
+        let text = pdf_text::extract_text_from_mem(&stripped).unwrap();
         for word in ["Shown", "Restored", "Also", "Laid"] {
             assert!(text.contains(word), "{word} is gone: {text}");
         }
@@ -711,7 +711,7 @@ mod tests {
         let doc = open(&before).unwrap();
         let made = lay_over(before.clone(), doc, &layers, true).unwrap();
         assert!(holds(&made, 1, &layers));
-        let text = pdf_extract::extract_text_from_mem(&made).unwrap();
+        let text = pdf_text::extract_text_from_mem(&made).unwrap();
         assert!(text.contains("Hello") && text.contains("Laid"), "{text}");
         assert!(made.starts_with(&before), "the page is kept to the byte");
     }

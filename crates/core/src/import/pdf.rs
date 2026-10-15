@@ -18,7 +18,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex, PoisonError, mpsc};
 use std::time::Duration;
 
-use pdf_extract::{Document, MediaBox, Object, OutputDev, OutputError, Transform};
+use pdf_text::{Document, MediaBox, Object, OutputDev, OutputError, Transform};
 use serde::Serialize;
 use unicode_normalization::UnicodeNormalization;
 
@@ -1171,7 +1171,7 @@ fn page_text(doc: &Document, number: u32) -> String {
         return String::new();
     }
     let mut lines = Lines::default();
-    match catch_unwind(AssertUnwindSafe(|| pdf_extract::output_doc_page(doc, &mut lines, number))) {
+    match catch_unwind(AssertUnwindSafe(|| pdf_text::output_doc_page(doc, &mut lines, number))) {
         Ok(Ok(())) => {}
         Ok(Err(e)) => tracing::debug!(%e, number, "a page of the PDF could not be read to its end"),
         Err(_) => tracing::debug!(number, "a page of the PDF could not be read to its end"),
@@ -1186,7 +1186,7 @@ fn text_string(object: &Object) -> Option<String> {
     match std::str::from_utf8(bytes) {
         Ok(text) if !bytes.is_ascii() && !bytes.starts_with(b"\xEF\xBB\xBF") => Some(text.to_owned()),
         _ => {
-            let text = pdf_extract::decode_text_string(object).ok()?;
+            let text = pdf_text::decode_text_string(object).ok()?;
             Some(text.trim_start_matches('\u{feff}').to_owned())
         }
     }
@@ -2316,7 +2316,7 @@ We build on earlier work (arXiv:hep-th/9812209, arXiv:1706.03762). #lorem(80)
 
     #[test]
     fn a_pdf_protected_by_a_password() {
-        use pdf_extract::{EncryptionState, EncryptionVersion, Permissions};
+        use pdf_text::{EncryptionState, EncryptionVersion, Permissions};
 
         let tmp = tempfile::tempdir().unwrap();
         let Some(path) = typeset(tmp.path(), "open", ARTICLE) else { return };

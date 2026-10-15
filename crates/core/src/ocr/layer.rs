@@ -1,5 +1,5 @@
 //! The text a PDF has already, page by page, with where its lines stand:
-//! read with pdf-extract, as the library reads PDFs (`import/pdf.rs`).
+//! read with pdf-text (pdf-extract, in the tree), as the library reads PDFs (`import/pdf.rs`).
 //!
 //! Which pages have text decides which are read by Tesseract. A page that
 //! has only a little, such as a scan with a stamp or a line at its foot in
@@ -12,7 +12,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex, PoisonError, mpsc};
 use std::time::Duration;
 
-use pdf_extract::{Document, MediaBox, Object, OutputDev, OutputError, Transform};
+use pdf_text::{Document, MediaBox, Object, OutputDev, OutputError, Transform};
 
 use super::text::Line;
 use crate::tr;
@@ -352,7 +352,7 @@ fn page_lines(doc: &Document, number: u32) -> Option<Vec<Line>> {
         return None;
     }
     let mut gatherer = Gatherer::default();
-    match catch_unwind(AssertUnwindSafe(|| pdf_extract::output_doc_page(doc, &mut gatherer, number))) {
+    match catch_unwind(AssertUnwindSafe(|| pdf_text::output_doc_page(doc, &mut gatherer, number))) {
         Ok(Ok(())) => {}
         Ok(Err(e)) => tracing::debug!(%e, number, "a page of the PDF could not be read to its end"),
         Err(_) => tracing::debug!(number, "a page of the PDF could not be read to its end"),
@@ -420,7 +420,7 @@ fn numberings(doc: &Document, node: &Object, into: &mut Vec<Numbering>, depth: u
         let prefix = dict
             .get(b"P")
             .ok()
-            .and_then(|p| pdf_extract::decode_text_string(p).ok())
+            .and_then(|p| pdf_text::decode_text_string(p).ok())
             .map(|p| p.trim_start_matches('\u{feff}').to_owned())
             .unwrap_or_default();
         let start = dict.get(b"St").and_then(Object::as_i64).ok().filter(|s| *s > 0).unwrap_or(1);

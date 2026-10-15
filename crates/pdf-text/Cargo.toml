@@ -1,0 +1,26 @@
+# pdf-extract 0.12.1 by Jeff Muizelaar (https://github.com/jrmuizel/pdf-extract),
+# taken into the tree so that it can hand over the name of each glyph with
+# its character: see README.md. Its own edition and dependencies are kept.
+[package]
+name = "pdf-text"
+version = "0.12.1"
+authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>"]
+description = "Text out of PDFs: pdf-extract 0.12.1, with the names of the glyphs"
+edition = "2018"
+license = "MIT"
+publish = false
+
+[lib]
+name = "pdf_text"
+path = "src/lib.rs"
+
+[dependencies]
+adobe-cmap-parser = "0.4.1"
+encoding_rs = "0.8.34"
+euclid = "0.20.5"
+lopdf = { version = "0.42", default-features = false, features = ["wasm_js"] }
+postscript = "0.14"
+type1-encoding-parser = "0.1.1"
+unicode-normalization = "0.1.19"
+cff-parser = "0.2.0"
+log = "0.4.22"

@@ -170,7 +170,7 @@ fn the_text_a_pdf_has_can_be_taken_away_as_it_is_made_searchable() {
         doc.save(&scan).unwrap();
         std::fs::read(&scan).unwrap()
     };
-    let text = pdf_extract::extract_text_from_mem(&before).unwrap();
+    let text = pdf_text::extract_text_from_mem(&before).unwrap();
     assert!(has(&text, "Wrong words altogether"), "{text}");
 
     // Read anew, only the right text is there, and the page looks as it did.
@@ -179,7 +179,7 @@ fn the_text_a_pdf_has_can_be_taken_away_as_it_is_made_searchable() {
     assert_eq!((made.read, made.failed.len()), (1, 0));
     let after = made.pdf.unwrap();
     assert_eq!(drawn(&after), drawn(&before));
-    let text = pdf_extract::extract_text_from_mem(&after).unwrap();
+    let text = pdf_text::extract_text_from_mem(&after).unwrap();
     assert!(!has(&text, "Wrong words") && has(&text, "Milman Parry"), "{text}");
     let (on, of) = on_the_ink(&before, &after, 0);
     assert!(of > 100 && on * 100 >= of * 95, "{on} of {of} letters are on the ink");
@@ -331,7 +331,7 @@ fn a_scan_made_searchable_looks_the_same_and_its_text_can_be_read() {
     // It looks the same.
     assert_eq!(drawn(&after), drawn(&before));
     // Its text can be read, and lies where the words are.
-    let text = pdf_extract::extract_text_from_mem(&after).unwrap();
+    let text = pdf_text::extract_text_from_mem(&after).unwrap();
     assert!(has(&text, "The wrath of Achilles is the subject of the Iliad"), "{text}");
     assert!(has(&text, "Milman Parry"), "{text}");
     let (on, of) = on_the_ink(&before, &after, 0);
@@ -359,7 +359,7 @@ fn a_page_of_little_text_is_made_searchable_once() {
     assert_eq!(made.read, 1);
     let once = kit.path("once.pdf");
     std::fs::write(&once, made.pdf.unwrap()).unwrap();
-    let text = pdf_extract::extract_text(&once).unwrap();
+    let text = pdf_text::extract_text(&once).unwrap();
     assert!(has(&text, "The Iliad"), "{text}");
 
     // It has text now, if little: it is not read again.
@@ -423,7 +423,7 @@ fn the_text_lies_on_the_words_of_pages_turned_and_cropped() {
         let made = make_searchable(&pdf, &kit.tools, &kit.work(), &kit.asked(), &mut nothing, &never()).unwrap();
         let after = made.pdf.unwrap();
         assert_eq!(drawn(&after), drawn(&before), "{}", pdf.display());
-        let text = pdf_extract::extract_text_from_mem(&after).unwrap();
+        let text = pdf_text::extract_text_from_mem(&after).unwrap();
         assert!(has(&text, "Milman Parry"), "{}: {text}", pdf.display());
         let (on, of) = on_the_ink(&before, &after, 0);
         assert!(of > 100 && on * 100 >= of * 95, "{}: {on} of {of} letters are on the ink", pdf.display());
