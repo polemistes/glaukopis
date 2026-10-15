@@ -17,18 +17,77 @@ pub type IsWord<'a> = dyn Fn(&str) -> bool + Sync + 'a;
 
 /// A line of a page, and where it stands: from the top left of the page,
 /// in points or in dots, as long as it is the same for all its lines.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Line {
     pub text: String,
     pub left: f32,
     pub right: f32,
     pub top: f32,
     pub bottom: f32,
+    /// Its look, as far as it can be told (ADR 0045).
+    pub style: Style,
+    /// The runs of its text in one look, where the font says more than the
+    /// line's style: italic, bold, small capitals. Empty for one look throughout.
+    pub runs: Vec<Run>,
 }
 
 impl Line {
-    fn height(&self) -> f32 {
+    pub fn height(&self) -> f32 {
         (self.bottom - self.top).max(0.0)
+    }
+}
+
+/// The look of a line, as far as it can be told: from the font for the text
+/// a PDF has, from the size alone for what Tesseract reads.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Style {
+    /// The font's family, without the prefix of a subset and without what
+    /// says italic or bold: `Bembo`; empty where not known.
+    pub family: String,
+    pub italic: bool,
+    pub bold: bool,
+    /// The height of the line, in the page's units: the size of the type, near enough.
+    pub size: f32,
+}
+
+/// A run of a line's text in one look: from the byte offset in the line's
+/// text, with the marks it has, to the next run or the end.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Run {
+    pub from: usize,
+    pub italic: bool,
+    pub bold: bool,
+    pub smallcaps: bool,
+}
+
+/// The words in a font's name that say italic, and bold.
+const ITALIC: [&str; 5] = ["italic", "oblique", "it", "slanted", "kursiv"];
+const BOLD: [&str; 6] = ["bold", "semibold", "demibold", "black", "heavy", "extrabold"];
+
+impl Style {
+    /// The style a font's name tells, at a size: `ABCDEF+Bembo-Italic` is
+    /// Bembo in italic; `TimesNewRoman,Bold` Times New Roman in bold.
+    pub fn from_font(name: &str, size: f32) -> Style {
+        let name = match name.find('+') {
+            Some(6) => &name[7..],
+            _ => name,
+        };
+        let (family, rest) = match name.find(['-', ',']) {
+            Some(at) => (&name[..at], &name[at + 1..]),
+            None => (name, ""),
+        };
+        // The words of the rest, split where a capital begins one: SemiboldItalic.
+        let mut words: Vec<String> = Vec::new();
+        for c in rest.chars() {
+            if c.is_uppercase() || words.is_empty() || !c.is_alphanumeric() {
+                words.push(String::new());
+            }
+            if c.is_alphanumeric() {
+                words.last_mut().expect("a word was begun").push(c.to_ascii_lowercase());
+            }
+        }
+        let says = |list: &[&str]| words.iter().any(|w| list.contains(&w.as_str()));
+        Style { family: family.to_owned(), italic: says(&ITALIC), bold: says(&BOLD), size }
     }
 }
 
@@ -69,7 +128,14 @@ pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
         let lines = paragraphs.last_mut().expect("a paragraph was begun");
         let sure = sureness.last_mut().expect("a paragraph was begun");
         if last != Some(at) || lines.is_empty() {
-            lines.push(Line { text: String::new(), left, right: left + width, top, bottom: top + height });
+            lines.push(Line {
+                text: String::new(),
+                left,
+                right: left + width,
+                top,
+                bottom: top + height,
+                ..Default::default()
+            });
             sure.push((0.0, 0));
         }
         // The word's confidence, from 0 to 100; -1 where there is none.
@@ -439,7 +505,7 @@ mod tests {
     use super::*;
 
     fn line(text: &str, left: f32, top: f32, right: f32) -> Line {
-        Line { text: text.to_owned(), left, right, top, bottom: top + 10.0 }
+        Line { text: text.to_owned(), left, right, top, bottom: top + 10.0, ..Default::default() }
     }
 
     #[test]
@@ -499,8 +565,29 @@ mod tests {
     }
 
     #[test]
+    fn a_style_is_told_by_the_name_of_its_font() {
+        let style = |name: &str| {
+            let s = Style::from_font(name, 10.0);
+            (s.family, s.italic, s.bold)
+        };
+        assert_eq!(style("Bembo-Italic"), ("Bembo".into(), true, false));
+        assert_eq!(style("FCIOCM+PorsonGreekSF"), ("PorsonGreekSF".into(), false, false));
+        assert_eq!(style("Minion-SemiboldItalic"), ("Minion".into(), true, true));
+        assert_eq!(style("TimesNewRoman,Bold"), ("TimesNewRoman".into(), false, true));
+        assert_eq!(style("Helvetica"), ("Helvetica".into(), false, false));
+        assert_eq!(style("ABCDEF+Garamond-Regular"), ("Garamond".into(), false, false));
+    }
+
+    #[test]
     fn letters_and_their_marks_are_one_character() {
-        let line = |text: &str| Line { text: text.into(), left: 0.0, right: 100.0, top: 0.0, bottom: 10.0 };
+        let line = |text: &str| Line {
+            text: text.into(),
+            left: 0.0,
+            right: 100.0,
+            top: 0.0,
+            bottom: 10.0,
+            ..Default::default()
+        };
         // α with breathing and accent as three code points, as a PDF may give it.
         let paragraphs =
             page_paragraphs(vec![vec![line("\u{3b1}\u{313}\u{301}λλα \u{3b5}\u{313}\u{301}\u{3c0}\u{3b7}")]], None);
@@ -577,7 +664,7 @@ mod tests {
     fn paragraphs_of_a_page_by_where_the_lines_stand() {
         let lines = vec![
             // A heading in larger letters.
-            Line { text: "The wrath".into(), left: 50.0, right: 150.0, top: 40.0, bottom: 58.0 },
+            Line { text: "The wrath".into(), left: 50.0, right: 150.0, top: 40.0, bottom: 58.0, ..Default::default() },
             line("Sing, goddess, the wrath of the war-", 50.0, 70.0, 300.0),
             line("rior, son of Peleus, that brought", 50.0, 82.0, 300.0),
             line("countless woes.", 50.0, 94.0, 140.0),

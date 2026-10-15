@@ -31,6 +31,11 @@ export interface Asked extends How {
    * Tesseract (in a searchable PDF, the old unseen text is then taken away).
    */
   text: TextChoice;
+  /**
+   * Whether the shape of the pages is kept: headings, lines kept as lines,
+   * numbers in the margin, the styles that recur. Without it, plain paragraphs.
+   */
+  shape: boolean;
 }
 
 /** What becomes of the text a PDF has. */

@@ -379,7 +379,14 @@ impl Gatherer {
     fn line_for(&mut self, x: f64, baseline: f64, size: f64) {
         let top = (self.top - baseline - size) as f32;
         let bottom = (self.top - baseline) as f32;
-        self.lines.push(Line { text: String::new(), left: x as f32, right: x as f32, top, bottom });
+        self.lines.push(Line {
+            text: String::new(),
+            left: x as f32,
+            right: x as f32,
+            top,
+            bottom,
+            ..Default::default()
+        });
         self.parts.push(vec![Part { left: x, ..Part::default() }]);
         self.named.push(false);
         self.fonts.push(String::new());

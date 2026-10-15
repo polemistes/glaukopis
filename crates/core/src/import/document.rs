@@ -250,6 +250,29 @@ pub struct Section {
     pub blocks: Vec<Block>,
 }
 
+/// A style found beside the body, as the one who brings the document in is shown it.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct StyleFoundView {
+    /// The number its paragraphs are named by: `style:<id>`.
+    pub id: usize,
+    /// The font's family, where it is known.
+    pub family: String,
+    pub italic: bool,
+    pub bold: bool,
+    /// Its size, the body's being 1.
+    pub size: f32,
+    /// Whether its paragraphs begin indented.
+    pub indent: bool,
+    /// Whether its lines are kept as lines.
+    pub kept: bool,
+    /// The beginning of its first paragraph.
+    pub sample: String,
+    /// How many paragraphs or blocks of lines are in it, and on how many pages.
+    pub count: usize,
+    pub pages: usize,
+}
+
 /// How much there is of everything, for saying so before the map is made.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -293,6 +316,10 @@ pub struct Imported {
     /// BCP 47: en-GB, nb, de, el.
     pub language: Option<String>,
     pub sections: Vec<Section>,
+    /// The styles that recur beside the body, where the shape of the pages
+    /// was kept (ADR 0045): paragraphs of style `n` are named `style:n`
+    /// until the writer says what each is.
+    pub styles: Vec<StyleFoundView>,
     /// What the one who brings the document in should know.
     pub remarks: Vec<String>,
     pub counts: Counts,

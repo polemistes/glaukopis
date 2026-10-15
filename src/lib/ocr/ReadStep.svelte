@@ -108,6 +108,7 @@
         {
           languages: $state.snapshot(chosen),
           text,
+          shape: true,
           ...$state.snapshot(how),
         },
         ticket,

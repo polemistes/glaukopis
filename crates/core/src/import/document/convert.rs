@@ -1512,6 +1512,7 @@ pub(super) fn convert_with(
         language,
         counts,
         sections,
+        styles: Vec::new(),
         remarks,
         pictures: Vec::new(),
     }

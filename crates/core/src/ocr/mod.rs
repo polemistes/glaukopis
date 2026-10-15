@@ -18,6 +18,7 @@ pub mod fixture;
 pub mod layer;
 pub mod schemes;
 pub mod searchable;
+pub mod shape;
 pub mod tesseract;
 pub mod text;
 
@@ -81,6 +82,10 @@ pub struct Asked {
     /// Whether the page is made black and white before it is read, for
     /// faint or uneven print.
     pub contrast: bool,
+    /// Whether the shape of the pages is kept (ADR 0045): headings, lines
+    /// kept as lines, numbers in the margin, the styles that recur. Without
+    /// it, the pages become plain paragraphs.
+    pub shape: bool,
 }
 
 impl Asked {

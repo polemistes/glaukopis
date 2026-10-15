@@ -44,6 +44,12 @@ export interface Imported {
   keywords: string[];
   language: string | null;
   sections: ImportedSection[];
+  /**
+   * The styles that recur beside the body, where the shape of the pages was
+   * kept: paragraphs of style `n` are named `style:n` until the writer says
+   * what each is (ADR 0045).
+   */
+  styles: StyleFoundView[];
   /** What the one who brings the document in should know. */
   remarks: string[];
   counts: ImportedCounts;
@@ -115,3 +121,24 @@ export const documentReadStop = (ticket: string) => call<void>('document_read_st
 
 /** Takes out of the store the pictures that were taken in for a document of which no map is made. */
 export const documentForget = (pictures: string[]) => call<void>('document_forget', { pictures });
+
+/** A style found beside the body of a PDF, as the one who brings it in is shown it. */
+export interface StyleFoundView {
+  /** The number its paragraphs are named by: `style:<id>`. */
+  id: number;
+  /** The font's family, where it is known. */
+  family: string;
+  italic: boolean;
+  bold: boolean;
+  /** Its size, the body's being 1. */
+  size: number;
+  /** Whether its paragraphs begin indented. */
+  indent: boolean;
+  /** Whether its lines are kept as lines. */
+  kept: boolean;
+  /** The beginning of its first paragraph. */
+  sample: string;
+  /** How many paragraphs or blocks of lines are in it, and on how many pages. */
+  count: number;
+  pages: number;
+}
