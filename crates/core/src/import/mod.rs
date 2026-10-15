@@ -82,6 +82,7 @@ pub enum ReasonWord {
     File,
     Name,
     FirstPage,
+    Folder,
 }
 
 impl From<Certainty> for CertaintyWord {
@@ -103,6 +104,7 @@ impl From<Reason> for ReasonWord {
             Reason::File => ReasonWord::File,
             Reason::Name => ReasonWord::Name,
             Reason::FirstPage => ReasonWord::FirstPage,
+            Reason::Folder => ReasonWord::Folder,
         }
     }
 }

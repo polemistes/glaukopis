@@ -92,6 +92,7 @@ pub fn run() {
             commands::library::collection_list,
             commands::library::attachment_add,
             commands::library::attachment_remove,
+            commands::library::attachment_remove_all,
             commands::library::attachment_open,
             commands::library::attachment_reveal,
             commands::files::files_list,

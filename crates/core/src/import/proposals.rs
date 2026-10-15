@@ -43,6 +43,9 @@ pub struct Known {
     /// identifier, that they could not be reached, that the file could not
     /// be read.
     pub notes: Vec<String>,
+    /// The names of the folder the file stands in and of the folders above
+    /// it, the nearest first; empty for a file in no folder.
+    pub folders: Vec<String>,
 }
 
 /// What a file of the library may be, for the writer to decide.
@@ -77,6 +80,24 @@ pub fn draft_of_name(named: &Named) -> Draft {
         draft.names.insert("author".into(), named.families.iter().map(Person::literal).collect());
     }
     draft
+}
+
+/// What the nearest folder named as files are named, with a year, says of
+/// the work a file is part of: the folder names the work, and the file's
+/// own name fills only what the folder's leaves out, since a file in such a
+/// folder is often named for its part (`chapter 3`, `Introduction`). `None`
+/// where no folder is named so, or where it says no more than the file.
+fn with_folder(own: Option<&Named>, folders: &[String]) -> Option<Named> {
+    let mut merged = folders.iter().find_map(|f| pdf::from_name(f.trim()).filter(|n| n.year.is_some()))?;
+    if let Some(own) = own {
+        if merged.families.is_empty() {
+            merged.families = own.families.clone();
+        }
+        if merged.title.is_empty() {
+            merged.title = own.title.clone();
+        }
+    }
+    (Some(&merged) != own).then_some(merged)
 }
 
 /// The name of a file without its ending.
@@ -161,6 +182,14 @@ pub fn propose(entries: &[Entry], index: &Index, known: Known) -> Proposal {
         let print = duplicates::fingerprint(&draft_of_name(named).to_entry());
         gathered.add_found(index.find(&print, None), Some(Reason::Name), None);
     }
+    // Its folder's name, where it says what the file's own leaves out.
+    let folded = with_folder(named.as_ref(), &known.folders);
+    if !gathered.any_certain()
+        && let Some(folded) = &folded
+    {
+        let print = duplicates::fingerprint(&draft_of_name(folded).to_entry());
+        gathered.add_found(index.find(&print, None), Some(Reason::Folder), None);
+    }
     if !gathered.any_certain()
         && let Some(facts) = &known.facts
         && !facts.first_page.is_empty()
@@ -178,7 +207,7 @@ pub fn propose(entries: &[Entry], index: &Index, known: Known) -> Proposal {
         name: known.name,
         matches,
         lookup: if certain { None } else { known.lookup },
-        named,
+        named: folded.or(named),
         notes: known.notes,
     }
 }
@@ -298,6 +327,7 @@ mod tests {
             facts: Some(facts),
             lookup: Some(lookup),
             notes: vec!["said".into()],
+            ..Default::default()
         };
         let proposal = propose(&entries, &index, known);
         assert_eq!(proposal.matches[0].id, "nagy");
@@ -351,5 +381,48 @@ mod tests {
         let proposal = propose(&entries, &index, known("Nagy - Best of the Achaeans.pdf"));
         assert_eq!(proposal.matches.len(), 1);
         assert_eq!(proposal.matches[0].reasons, vec![ReasonWord::Name, ReasonWord::FirstPage]);
+    }
+
+    #[test]
+    fn a_folder_named_as_files_are_says_what_the_files_name_leaves_out() {
+        let entries = library_of(&[
+            "@book{nagy, author={Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}}",
+            "@book{lord, author={Lord, Albert B.}, title={The Singer of Tales}, date={1960}}",
+        ]);
+        let index = Index::new(&entries);
+        let known = |name: &str, folders: &[&str]| Known {
+            hash: "h".into(),
+            name: name.into(),
+            folders: folders.iter().map(|f| (*f).to_owned()).collect(),
+            ..Default::default()
+        };
+        // A part of a book in a folder named for the book.
+        let proposal = propose(&entries, &index, known("chapter 3.pdf", &["Nagy 1979 - The Best of the Achaeans"]));
+        assert_eq!(proposal.matches.len(), 1, "{:?}", proposal.matches);
+        assert_eq!(proposal.matches[0].id, "nagy");
+        assert_eq!(proposal.matches[0].certainty, CertaintyWord::Probable);
+        assert_eq!(proposal.matches[0].reasons, vec![ReasonWord::Folder]);
+        let named = proposal.named.unwrap();
+        assert_eq!(
+            (named.families, named.year, named.title.as_str()),
+            (vec!["Nagy".to_owned()], Some(1979), "The Best of the Achaeans")
+        );
+
+        // A folder without a year says nothing, whatever its name.
+        let proposal = propose(&entries, &index, known("Nagy 1979 - The Best of the Achaeans.pdf", &["Nagy"]));
+        assert!(proposal.matches.iter().all(|m| !m.reasons.contains(&ReasonWord::Folder)), "{:?}", proposal.matches);
+        assert_eq!(proposal.matches[0].reasons, vec![ReasonWord::Name]);
+        let proposal = propose(&entries, &index, known("scan0001.pdf", &["Greek", "To read"]));
+        assert!(proposal.matches.is_empty(), "{:?}", proposal.matches);
+        assert!(proposal.named.is_none());
+
+        // The nearest folder named so is the one that tells.
+        let proposal = propose(
+            &entries,
+            &index,
+            known("chapter 3.pdf", &["Lord 1960 - The Singer of Tales", "Nagy 1979 - The Best of the Achaeans"]),
+        );
+        assert_eq!(proposal.matches.len(), 1, "{:?}", proposal.matches);
+        assert_eq!(proposal.matches[0].id, "lord");
     }
 }

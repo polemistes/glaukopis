@@ -91,6 +91,8 @@ export type Reason =
   | 'name'
   /** The title stands on the first page of a file, and the author's name with it. */
   | 'first-page'
+  /** The folder it stands in is named as files are, with a year, and says it. */
+  | 'folder'
   | { alike: { title: Agreement; author: Agreement; year: Agreement } };
 
 export interface SummaryLite {
@@ -215,6 +217,9 @@ export const attachmentAdd = (id: string, paths: string[]) =>
   call<Reference>('attachment_add', { id, paths });
 export const attachmentRemove = (id: string, path: string) =>
   call<Reference>('attachment_remove', { id, path });
+/** Takes every file from the reference; the files stay in the library. */
+export const attachmentRemoveAll = (id: string) =>
+  call<Reference>('attachment_remove_all', { id });
 export const attachmentOpen = (path: string) => call<void>('attachment_open', { path });
 export const attachmentReveal = (path: string) => call<void>('attachment_reveal', { path });
 

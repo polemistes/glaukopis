@@ -25,6 +25,7 @@ describe('the words for things of the library', () => {
       'the same DOI, the same ISBN and the same file',
     );
     expect(reasonWords(['name', 'first-page'])).toBe('named like it and the first page agrees');
+    expect(reasonWords(['folder'])).toBe('in a folder named like it');
     languages.current = 'nb';
     expect(reasonWords(['doi', 'file'])).toBe('samme DOI og samme fil');
     expect(reasonWords(['name'])).toBe('navnet stemmer');

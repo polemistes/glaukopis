@@ -286,6 +286,14 @@ pub fn attachment_remove(state: State<'_, AppState>, id: String, path: String) -
     Ok(full(&library, &entry))
 }
 
+/// Takes every file from a reference at once; the files stay in the library.
+#[tauri::command(async)]
+pub fn attachment_remove_all(state: State<'_, AppState>, id: String) -> CommandResult<EntryFull> {
+    let mut library = state.library();
+    let entry = library.detach_all(&id)?;
+    Ok(full(&library, &entry))
+}
+
 /// Opens a stored file in the program the system uses for its kind.
 #[tauri::command(async)]
 pub fn attachment_open(app: AppHandle, state: State<'_, AppState>, path: String) -> CommandResult<()> {

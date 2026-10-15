@@ -752,6 +752,22 @@ impl Library {
         Ok(result)
     }
 
+    /// Unlinks every file from the entry, saved once. The files stay in the
+    /// store and the record, as `detach` leaves them.
+    pub fn detach_all(&mut self, id: &str) -> Result<Entry> {
+        self.refresh()?;
+        let index = *self.by_id.get(id).ok_or_else(|| Error::not_found(tr!("core-library-the-reference")))?;
+        let entry = &mut self.entries[index];
+        if entry.attachments().is_empty() {
+            return Ok(entry.clone());
+        }
+        entry.set_attachments(&[]);
+        entry.modified = now();
+        let result = entry.clone();
+        self.save()?;
+        Ok(result)
+    }
+
     /// Removes a file from the store: from every entry that has it, from the
     /// record, and from the disk. The one way a file leaves the library.
     pub fn remove_file(&mut self, hash: &str) -> Result<()> {
@@ -1512,6 +1528,33 @@ mod tests {
         let d = Draft::from_entry(&a3);
         assert!(!d.fields.contains_key("file"));
         assert_eq!(lib.update(&a.id, &d).unwrap().attachments().len(), 1);
+    }
+
+    #[test]
+    fn every_file_taken_from_a_reference_at_once_stays_in_the_library() {
+        let (tmp, mut lib) = library();
+        let a = lib.add(&draft("@book{a, author={Nagy, G.}, title={Best}, date={1979}}")).unwrap();
+        let mut hashes = Vec::new();
+        for (name, bytes) in [("x.pdf", b"%PDF one" as &[u8]), ("y.pdf", b"%PDF two"), ("z.pdf", b"%PDF three")] {
+            let path = tmp.path().join(name);
+            fs::write(&path, bytes).unwrap();
+            let stored = lib.attach(&a.id, &path).unwrap().attachments().last().unwrap().clone();
+            hashes.push((attachments::hash_of_path(&stored).unwrap().to_owned(), stored));
+        }
+        let before = lib.require(&a.id).unwrap().modified.clone();
+        std::thread::sleep(std::time::Duration::from_millis(1100));
+        let after = lib.detach_all(&a.id).unwrap();
+        assert!(after.attachments().is_empty());
+        assert_ne!(after.modified, before, "the reference was changed");
+        let reopened = Library::open_at(lib.dir()).unwrap();
+        assert!(reopened.require(&a.id).unwrap().attachments().is_empty(), "and saved");
+        for (hash, stored) in &hashes {
+            assert!(lib.attachment_path(stored).unwrap().exists(), "the file stays on the disk");
+            let view = lib.file_view(hash).unwrap();
+            assert!(view.references.is_empty(), "known to the record, unassigned");
+        }
+        // A reference without files is left as it is.
+        assert_eq!(lib.detach_all(&a.id).unwrap().modified, after.modified);
     }
 
     #[test]

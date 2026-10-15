@@ -85,6 +85,7 @@ library-reason-alike = { $title ->
 library-reason-file = the same file
 library-reason-name = named like it
 library-reason-first-page = the first page agrees
+library-reason-folder = in a folder named like it
 # Several reasons: those before the last, set apart by commas, and the last.
 library-reasons = { $others } and { $last }
 

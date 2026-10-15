@@ -51,6 +51,8 @@ export function reasonWords(reasons: Reason[]): string {
         return t('library-reason-name');
       case 'first-page':
         return t('library-reason-first-page');
+      case 'folder':
+        return t('library-reason-folder');
     }
   };
   const list = reasons.map(words);

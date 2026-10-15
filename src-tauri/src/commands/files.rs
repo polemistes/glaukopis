@@ -187,7 +187,13 @@ pub fn files_identify(
             if let Some(record) = library.files.get(hash) {
                 let path = library.attachment_path(&record.path)?;
                 let kind = files::kind_of(&record.path);
-                wanted.push(Wanted { hash: hash.clone(), name: record.name.clone(), path, kind });
+                // The folder it stands in and those above it, the nearest first.
+                let folders = record
+                    .folder
+                    .as_deref()
+                    .map(|f| library.files.path_of(f).into_iter().rev().map(|f| f.name).collect())
+                    .unwrap_or_default();
+                wanted.push(Wanted { hash: hash.clone(), name: record.name.clone(), path, kind, folders });
             }
         }
         (library.entries().to_vec(), library.duplicates_index().clone(), wanted)
@@ -251,13 +257,15 @@ struct Wanted {
     name: String,
     path: PathBuf,
     kind: FileKind,
+    folders: Vec<String>,
 }
 
 /// What can be found out of a file before it is compared with the library:
 /// of a PDF, what it says of itself and what the services say of its
 /// identifier; of any other file, nothing but its name, which `propose` reads.
 fn known_of(state: &AppState, file: &Wanted, ask: bool, stop: &AtomicBool) -> Known {
-    let mut known = Known { hash: file.hash.clone(), name: file.name.clone(), ..Default::default() };
+    let mut known =
+        Known { hash: file.hash.clone(), name: file.name.clone(), folders: file.folders.clone(), ..Default::default() };
     if file.kind != FileKind::Pdf {
         return known;
     }

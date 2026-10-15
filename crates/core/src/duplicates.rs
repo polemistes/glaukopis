@@ -40,6 +40,9 @@ pub enum Reason {
     /// A line or two of the first page of a file agree with its title, and
     /// its author's name is on the page.
     FirstPage,
+    /// The name of the folder a file stands in, named as files are, with a
+    /// year, says what the file's own name leaves out.
+    Folder,
 }
 
 /// How far two entries agree in one of what tells works apart. The order is
