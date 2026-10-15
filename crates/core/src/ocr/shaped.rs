@@ -362,6 +362,7 @@ mod tests {
             bottom: 10.0,
             style: Style::default(),
             runs: vec![],
+            gaps: None,
         }
     }
 

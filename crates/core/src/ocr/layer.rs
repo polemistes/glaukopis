@@ -17,7 +17,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use pdf_text::{Document, Glyph, MediaBox, Object, ObjectId, OutputDev, OutputError, Transform};
 
 use super::schemes::{self, Scheme};
-use super::text::{Line, Run, Style};
+use super::text::{Gap, Line, Run, Style};
 use crate::tr;
 use crate::written::roman;
 
@@ -351,10 +351,13 @@ struct Gatherer {
     begins: bool,
 }
 
-/// A part of a line: where it begins, and its text in runs of one font.
+/// A part of a line: where it begins and ends, and its text in runs of one
+/// font. A space parts a line too, so that each word is a part and where
+/// the spaces between them stand is known.
 #[derive(Default)]
 struct Part {
     left: f64,
+    right: f64,
     runs: Vec<PartRun>,
 }
 
@@ -367,6 +370,8 @@ struct PartRun {
     smallcaps: bool,
     text: String,
     translated: String,
+    /// On the first run of a part after another, the space before it on the page.
+    gap: Option<(f32, f32)>,
 }
 
 type Told = std::result::Result<(), OutputError>;
@@ -386,6 +391,26 @@ fn only_marks(text: &str) -> bool {
                 | '\u{1ffd}' | '\u{1ffe}'
                 | '\u{00b4}' | '`' | '\u{00a8}' | '\u{02dc}')
         })
+}
+
+/// A spacing accent drawn as a glyph of its own over the letter before it,
+/// as the combining accent it is there: ´ over a is á, not a´. In any script;
+/// Greek breathings are left to `schemes::mend_greek`, as the sign of a
+/// breathing is also that of a word cut short.
+fn over_letter(mark: &str, before: &str) -> String {
+    let letter = before.chars().last().filter(|c| c.is_alphabetic());
+    let mut chars = mark.chars();
+    let (Some(c), None, Some(letter)) = (chars.next(), chars.next(), letter) else { return mark.to_owned() };
+    let greek = matches!(letter, '\u{0370}'..='\u{03ff}' | '\u{1f00}'..='\u{1fff}');
+    match c {
+        '\u{b4}' => "\u{301}",
+        '`' => "\u{300}",
+        '\u{a8}' => "\u{308}",
+        '\u{2dc}' if greek => "\u{342}",
+        '\u{2dc}' => "\u{303}",
+        _ => mark,
+    }
+    .to_owned()
 }
 
 impl Gatherer {
@@ -443,28 +468,34 @@ impl Gatherer {
             }
         }
         let advance = width * font_size.abs() * stretch;
-        let (right, bottom) = ((x + direction.0 * advance) as f32, (self.top - y) as f32);
+        let reach = x + direction.0 * advance;
+        let (right, bottom) = (reach as f32, (self.top - y) as f32);
         if new_line {
             self.line_for(x, y, size);
         } else if back && let Some(parts) = self.parts.last_mut() {
             parts.push(Part { left: x, ..Part::default() });
         }
-        let part = self.parts.last_mut().and_then(|p| p.last_mut()).expect("there is a part");
         if space
-            && let Some(run) = part.runs.last_mut()
-            && !run.text.ends_with(' ')
+            && let Some(parts) = self.parts.last_mut()
+            && parts.last().is_some_and(|p| p.runs.iter().any(|r| !r.text.trim().is_empty()))
         {
-            run.text.push(' ');
-            run.translated.push(' ');
+            parts.push(Part { left: x, ..Part::default() });
         }
+        let part = self.parts.last_mut().and_then(|p| p.last_mut()).expect("there is a part");
+        part.right = part.right.max(reach);
         // A mark goes with the letter it stands over, whatever its font.
         let same = part.runs.last().is_some_and(|r| mark || (r.font == look.0 && r.smallcaps == look.1));
         if !same {
             part.runs.push(PartRun { font: look.0.to_owned(), smallcaps: look.1, ..PartRun::default() });
         }
         let run = part.runs.last_mut().expect("a run was begun");
-        run.text.push_str(char);
-        run.translated.push_str(shown);
+        if mark {
+            run.text.push_str(&over_letter(char, &run.text));
+            run.translated.push_str(&over_letter(shown, &run.translated));
+        } else {
+            run.text.push_str(char);
+            run.translated.push_str(shown);
+        }
         let line = self.lines.last_mut().expect("there is a line");
         line.left = line.left.min(x as f32);
         line.right = line.right.max(right);
@@ -562,10 +593,12 @@ impl OutputDev for Gatherer {
 
 /// The runs of a line, its parts in their order on the page: each part's
 /// runs trimmed at its ends, a space between the parts, runs that are empty
-/// left out.
+/// left out. The first run of each part after another tells the space
+/// between them, where there is room between them on the page.
 fn runs_of(mut parts: Vec<Part>) -> Vec<PartRun> {
     parts.sort_by(|a, b| a.left.total_cmp(&b.left));
     let mut out: Vec<PartRun> = Vec::new();
+    let mut reach: Option<f64> = None;
     for part in parts {
         let mut runs = part.runs;
         if let Some(first) = runs.first_mut() {
@@ -584,6 +617,12 @@ fn runs_of(mut parts: Vec<Part>) -> Vec<PartRun> {
             before.text.push(' ');
             before.translated.push(' ');
         }
+        if let Some(end) = reach
+            && part.left > end
+        {
+            runs[0].gap = Some((end as f32, part.left as f32));
+        }
+        reach = Some(reach.map_or(part.right, |r| r.max(part.right)));
         out.extend(runs);
     }
     out
@@ -595,11 +634,16 @@ fn flags(run: &PartRun) -> (bool, bool, bool) {
     (style.italic, style.bold, run.smallcaps)
 }
 
-/// A line's text of its runs, and where its marks change: nothing where one look holds throughout.
-fn joined(runs: &[PartRun], pick: fn(&PartRun) -> &String) -> (String, Vec<Run>) {
+/// A line's text of its runs, where its marks change (nothing where one
+/// look holds throughout), and the spaces between its words.
+fn joined(runs: &[PartRun], pick: fn(&PartRun) -> &String) -> (String, Vec<Run>, Vec<Gap>) {
     let mut text = String::new();
     let mut out: Vec<Run> = Vec::new();
+    let mut gaps: Vec<Gap> = Vec::new();
     for run in runs {
+        if let Some((from, to)) = run.gap {
+            gaps.push(Gap { at: text.len(), from, to });
+        }
         let (italic, bold, smallcaps) = flags(run);
         let changes = out.last().is_none_or(|r| (r.italic, r.bold, r.smallcaps) != (italic, bold, smallcaps));
         if changes && !pick(run).is_empty() {
@@ -610,7 +654,7 @@ fn joined(runs: &[PartRun], pick: fn(&PartRun) -> &String) -> (String, Vec<Run>)
     if out.len() == 1 && !(out[0].italic || out[0].bold || out[0].smallcaps) {
         out.clear();
     }
-    (text, out)
+    (text, out, gaps)
 }
 
 /// The style of a line: that of the font with most of its characters, at the line's height.
@@ -667,6 +711,8 @@ fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
     let mut any = !schemes.is_empty();
     for (((line, parts), named), font) in lines.into_iter().zip(parts).zip(named).zip(fonts) {
         let mut runs = runs_of(parts);
+        // Beta Code is read as a whole line: where its words stand is not kept.
+        let mut measured = true;
         if named {
             for run in &mut runs {
                 run.translated = schemes::mend_greek(&run.translated);
@@ -680,22 +726,30 @@ fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
                     ..runs[0].clone()
                 }];
                 any = true;
+                measured = false;
                 if !schemes.contains(&(Scheme::BetaCode, font.clone())) {
                     schemes.push((Scheme::BetaCode, font));
                 }
             }
         }
-        let (text, text_runs) = joined(&runs, |r| &r.text);
-        let (shown, shown_runs) = joined(&runs, |r| &r.translated);
+        let (text, text_runs, text_gaps) = joined(&runs, |r| &r.text);
+        let (shown, shown_runs, shown_gaps) = joined(&runs, |r| &r.translated);
         if text.is_empty() && shown.is_empty() {
             continue;
         }
         let height = line.height();
-        out_lines.push(Line { text, style: style_of(&runs, |r| &r.text, height), runs: text_runs, ..line.clone() });
+        out_lines.push(Line {
+            text,
+            style: style_of(&runs, |r| &r.text, height),
+            runs: text_runs,
+            gaps: measured.then_some(text_gaps),
+            ..line.clone()
+        });
         out_translated.push(Line {
             text: shown,
             style: style_of(&runs, |r| &r.translated, height),
             runs: shown_runs,
+            gaps: measured.then_some(shown_gaps),
             ..line
         });
     }
@@ -906,6 +960,17 @@ pub fn read_file(path: &Path) -> crate::Result<Layer> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_accent_drawn_over_the_letter_before_is_its_combining_accent() {
+        assert_eq!(over_letter("\u{b4}", "παραβα"), "\u{301}");
+        assert_eq!(over_letter("`", "tre"), "\u{300}");
+        assert_eq!(over_letter("\u{2dc}", "περισπ\u{3c9}"), "\u{342}");
+        assert_eq!(over_letter("\u{2dc}", "ma\u{f1}an"), "\u{303}");
+        // Over nothing, or a breathing, which is also the sign of a word cut short: as it is.
+        assert_eq!(over_letter("\u{b4}", "a "), "\u{b4}");
+        assert_eq!(over_letter("\u{1fbd}", "δι"), "\u{1fbd}");
+    }
 
     #[test]
     fn text_that_reads_and_text_that_does_not() {

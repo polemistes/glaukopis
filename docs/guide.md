@@ -1537,12 +1537,14 @@ read into elements has every sigma right, and every letter with its accents
 as the one character Unicode has for it (ἄ, not α with two marks after it),
 whether it was kept, translated or read by Tesseract.
 
-**Greek with other languages.** Where Greek is read together with a
-language of the Latin script, the window says so: Tesseract then often reads
-the lunate sigma, which looks like a Latin *c*, as Latin, and the words with
-it come out Latin. For Greek alone, take the others away. Rows of accents
-over closely set Greek, which Tesseract may read as lines of their own, are
-left out of what it reads.
+**Scripts whose letters look alike.** Where the languages chosen are of two
+scripts with letters of the same shapes, Greek and Latin, Cyrillic and
+Latin, or Greek and Cyrillic, the window says so, and names the letters:
+Tesseract then often reads a letter as the other script's, the lunate sigma
+as a Latin *c*, a Cyrillic *р* as a Latin *p*, and whole words come out
+wrong. For one script alone, take the others away. Rows of accents over
+closely set Greek, which Tesseract may read as lines of their own, are left
+out of what it reads.
 
 Before anything is read, you are asked for the languages of the text, the
 likeliest first. Those chosen under *Settings* are given at first; where
@@ -1567,6 +1569,50 @@ part before the hyphen does not look like a name: *for-* and *skning* make
 stands alone at the head or the foot of a page, which is its number, is left
 out, and so are lines without a letter or a digit, which are what is read
 of a rule or a picture on the page.
+
+**The shape of the pages.** Where **Keep the shape of the pages** is chosen,
+as it is at first, the shape of each page is read from where its lines stand
+and how large they are, the same for the text a PDF has and for what
+Tesseract reads, and kept in the elements made:
+
+- *Headings*, a line or two set larger or bolder than the text and standing
+  apart from it, become elements under the page's element, each holding what
+  follows it on the page up to the next heading. Their sizes over the whole
+  file give their levels, three at most.
+- *Lines kept as lines*, set from one left edge and ragged at the right, as
+  verse, addresses, lists and transcripts are, stay lines: one paragraph of
+  text with a break at the end of each line. What they are is yours to say,
+  by giving the paragraph a kind.
+- *Numbers in the margin* beside lines, or at the end of lines in one column
+  with them, become the numbers given to those lines, on the side they stood,
+  and the paragraph is numbered by **Only the numbers given** (see *Lines
+  and paragraphs, verse, and texts side by side*). They are taken so only
+  where they count upward down the page, so that the figures of a table, a
+  year in a sentence or a number a note cites stay in the text.
+- *Paragraphs* are joined from their lines as above. *Italic*, **bold** and
+  small capitals are kept where the fonts of the PDF say so; Tesseract tells
+  no fonts, and what it reads has none.
+- *Running heads and page numbers*, a line at the head or the foot that
+  recurs on three pages or more and a number at an edge that steps from page
+  to page, are left out: the page's element bears its number already.
+- *Two columns* are read the left before the right. Tables are not read:
+  their lines are kept as lines.
+
+Without it, the pages become plain paragraphs, as above.
+
+**Styles found.** Text that recurs over several pages in one look other than
+that of the body and the headings, such as smaller text at the foot of the
+pages, or indented text set apart, is a style found. After the reading,
+under **Styles found**, each is shown with a sample in its look and how often
+it occurs, and you say under **What it is** what it is: a kind of paragraph
+of the project, **A kind of your own…**, named there and made when the
+document is brought in, with no look until you give it one, or text, which
+it is where you say nothing. One name given to two styles makes one kind.
+
+Glaukopis does not guess what a text is. It does not call lines verse,
+smaller text notes or an apparatus, or a page a letter or a scene: it finds
+the shape a page has, names what it found by its look, and leaves to you
+what it means.
 
 Reading is not faultless: letters that are faint, worn, or in a type or a
 script the data of the language does not know are misread. Check what is

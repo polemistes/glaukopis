@@ -241,7 +241,7 @@ export const shapedImport: Imported = {
               "text": "A second paragraph begins further in, as many books begin their paragraphs, and goes on as the first one did, to the end of its last line, which may stop short of the right edge."
             }
           ],
-          "indent": 1,
+          "indent": 0,
           "kind": "paragraph",
           "name": "text"
         },

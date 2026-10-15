@@ -19,7 +19,7 @@ use std::ops::Range;
 
 use crate::document::Side;
 
-use super::text::{self, Line, Run, Style};
+use super::text::{self, Gap, Line, Run, Style};
 
 /// A page's lines, in reading order, as they are to be shaped, and its size
 /// in the lines' units.
@@ -93,6 +93,9 @@ const HEADING_LINES: usize = 3;
 /// How far a number within the text's edges stands from its line, at the
 /// least, in the body's size, to be the line's number.
 const APART: f32 = 2.0;
+/// How far a number stands from its line, at the least, in the body's size,
+/// where the space between them was measured: a word space is far less.
+const SPACE_APART: f32 = 1.0;
 /// The most levels of headings.
 const LEVELS: usize = 3;
 /// How many characters a style's sample has.
@@ -718,7 +721,30 @@ fn cut(line: &Line, from: usize, to: usize) -> Line {
             runs.push(Run { from: run.from.max(from) - from, ..run.clone() });
         }
     }
-    Line { text: line.text[from..to].to_owned(), runs, ..line.clone() }
+    let gaps = line
+        .gaps
+        .as_ref()
+        .map(|gaps| gaps.iter().filter(|g| g.at > from && g.at < to).map(|g| Gap { at: g.at - from, ..*g }).collect());
+    Line { text: line.text[from..to].to_owned(), runs, gaps, ..line.clone() }
+}
+
+/// What stands before the word of a line that begins at a byte, by the
+/// spaces measured between its words.
+enum Before {
+    /// The spaces were not measured: it must be guessed.
+    Unknown,
+    /// Room enough, from where the text before ends to where the word begins.
+    Apart(f32, f32),
+    /// A word space, or none.
+    Close,
+}
+
+fn before(line: &Line, at: usize, file: &File) -> Before {
+    let Some(gaps) = &line.gaps else { return Before::Unknown };
+    match gaps.iter().find(|g| g.at == at) {
+        Some(g) if g.to - g.from >= SPACE_APART * file.size => Before::Apart(g.from, g.to),
+        _ => Before::Close,
+    }
 }
 
 /// The numbers in the margin of a run of lines (`margin_numbers`). A number
@@ -748,13 +774,18 @@ fn margin_numbers(segment: &Segment, file: &File) -> Vec<Numbered> {
             && let Some(at) = trimmed.rfind(char::is_whitespace)
             && digits(&trimmed[at + 1..])
             && has_letters(&trimmed[..at])
+            && let room = before(line, trimmed.len() - trimmed[at + 1..].len(), file)
+            && !matches!(room, Before::Close)
         {
             let number = &trimmed[at + 1..];
-            let before = trimmed[..at].trim_end().len();
-            let mut rest = cut(line, 0, before);
-            let number_left = line.right - number.len() as f32 * width;
-            let guess = line.left + rest.text.chars().count() as f32 * width;
-            rest.right = guess.min(number_left - width).max(line.left + width);
+            let mut rest = cut(line, 0, trimmed[..at].trim_end().len());
+            rest.right = if let Before::Apart(end, _) = room {
+                end
+            } else {
+                let number_left = line.right - number.len() as f32 * width;
+                let guess = line.left + rest.text.chars().count() as f32 * width;
+                guess.min(number_left - width).max(line.left + width)
+            };
             out.push((rest, Some((number.to_owned(), Side::Right))));
             continue;
         }
@@ -764,13 +795,19 @@ fn margin_numbers(segment: &Segment, file: &File) -> Vec<Numbered> {
             && let Some(len) = text[start..].find(char::is_whitespace)
             && digits(&text[start..start + len])
             && has_letters(&text[start + len..])
+            && let after = start + len + (text[start + len..].len() - text[start + len..].trim_start().len())
+            && let room = before(line, after, file)
+            && !matches!(room, Before::Close)
         {
             let number = &text[start..start + len];
-            let after = start + len + (text[start + len..].len() - text[start + len..].trim_start().len());
             let mut rest = cut(line, after, text.len());
-            let number_right = line.left + number.len() as f32 * width;
-            let guess = (line.right - rest.text.chars().count() as f32 * width).max(number_right + width);
-            rest.left = snapped(guess, &lefts, file);
+            rest.left = if let Before::Apart(_, begins) = room {
+                begins
+            } else {
+                let number_right = line.left + number.len() as f32 * width;
+                let guess = (line.right - rest.text.chars().count() as f32 * width).max(number_right + width);
+                snapped(guess, &lefts, file)
+            };
             out.push((rest, Some((number.to_owned(), Side::Left))));
             continue;
         }
@@ -800,6 +837,7 @@ fn margin_numbers(segment: &Segment, file: &File) -> Vec<Numbered> {
         }
     }
     numbers_inside(&mut out, &mut gone, width, &lefts, file);
+    numbers_flush(&mut out, &gone, &segment.lines, width, file);
     out.into_iter().zip(gone).filter(|(_, gone)| !gone).map(|(n, _)| n).collect()
 }
 
@@ -838,8 +876,9 @@ fn snapped(guess: f32, lefts: &[f32], file: &File) -> f32 {
 /// text with room enough between that a guess of the text's width cannot
 /// be wrong by it (`APART` times the size, and a quarter of the line).
 /// Such numbers on one side are given to their lines only where they count
-/// upward down the page, two at least, with a line between each two: as
-/// the numbers of lines do, and the figures of a table do not.
+/// upward down the page, two at least, with a line between each two, the
+/// numbers already given on that side beyond the edge counted with them:
+/// as the numbers of lines do, and the figures of a table do not.
 fn numbers_inside(out: &mut [Numbered], gone: &mut [bool], width: f32, lefts: &[f32], file: &File) {
     let apart = APART * file.size;
     let mut found: Vec<Inside> = Vec::new();
@@ -857,8 +896,13 @@ fn numbers_inside(out: &mut [Numbered], gone: &mut [bool], width: f32, lefts: &[
         {
             let number = &trimmed[at + 1..];
             let mut rest = cut(line, 0, trimmed[..at].trim_end().len());
-            let end = line.left + rest.text.chars().count() as f32 * width;
-            if line.right - number.len() as f32 * width - end > room {
+            let guess = line.left + rest.text.chars().count() as f32 * width;
+            let end = match before(line, trimmed.len() - number.len(), file) {
+                Before::Apart(end, _) => Some(end),
+                Before::Unknown => (line.right - number.len() as f32 * width - guess > room).then_some(guess),
+                Before::Close => None,
+            };
+            if let Some(end) = end {
                 rest.right = end;
                 let value = number.parse().unwrap_or_default();
                 let (number, side, stood) = (number.to_owned(), Side::Right, Stood::InLine(rest));
@@ -874,9 +918,16 @@ fn numbers_inside(out: &mut [Numbered], gone: &mut [bool], width: f32, lefts: &[
             let number = &text[start..start + len];
             let after = start + len + (text[start + len..].len() - text[start + len..].trim_start().len());
             let mut rest = cut(line, after, text.len());
-            let begins = line.right - rest.text.chars().count() as f32 * width;
-            if begins - (line.left + number.len() as f32 * width) > room {
-                rest.left = snapped(begins, lefts, file);
+            let guess = line.right - rest.text.chars().count() as f32 * width;
+            let begins = match before(line, after, file) {
+                Before::Apart(_, begins) => Some(begins),
+                Before::Unknown => {
+                    (guess - (line.left + number.len() as f32 * width) > room).then(|| snapped(guess, lefts, file))
+                }
+                Before::Close => None,
+            };
+            if let Some(begins) = begins {
+                rest.left = begins;
                 let value = number.parse().unwrap_or_default();
                 let (number, side, stood) = (number.to_owned(), Side::Left, Stood::InLine(rest));
                 found.push(Inside { line: i, number, value, side, stood });
@@ -917,13 +968,22 @@ fn numbers_inside(out: &mut [Numbered], gone: &mut [bool], width: f32, lefts: &[
             if f.side == side { these.push(f) } else { others.push(f) }
         }
         found = others;
-        these.sort_by(|a, b| out[a.line].0.top.total_cmp(&out[b.line].0.top));
-        let counts_up = these.len() >= 2
-            && these.windows(2).all(|w| {
-                let (a, b) = (&out[w[0].line].0, &out[w[1].line].0);
+        if these.is_empty() {
+            continue;
+        }
+        // With the numbers already given on that side, beyond the edge: one column.
+        let mut column: Vec<(usize, i64)> = these.iter().map(|f| (f.line, f.value)).collect();
+        column.extend((0..out.len()).filter_map(|k| match &out[k].1 {
+            Some((number, s)) if *s == side && !gone[k] => Some((k, number.parse().ok()?)),
+            _ => None,
+        }));
+        column.sort_by(|a, b| out[a.0].0.top.total_cmp(&out[b.0].0.top));
+        let counts_up = column.len() >= 2
+            && column.windows(2).all(|w| {
+                let (a, b) = (&out[w[0].0].0, &out[w[1].0].0);
                 let between = (0..out.len())
                     .any(|k| !gone[k] && has_letters(&out[k].0.text) && out[k].0.top > a.top && out[k].0.top < b.top);
-                w[1].value > w[0].value && between
+                w[1].1 > w[0].1 && between
             });
         if !counts_up {
             continue;
@@ -934,6 +994,69 @@ fn numbers_inside(out: &mut [Numbered], gone: &mut [bool], width: f32, lefts: &[
                 Stood::Alone(j) => gone[j] = true,
             }
             out[f.line].1 = Some((f.number, f.side));
+        }
+    }
+}
+
+/// The numbers at the end of lines that stand flush with the numbers given
+/// on the right (`margin_numbers`, the last case), however near their text:
+/// the numbers of lines are set in one column, and a long line runs up to
+/// it. A number so is its line's where its line is of the size of a line
+/// whose number was given there, and where the column counts upward down
+/// the page with it, a line between each two. On the left every line
+/// begins flush, and standing so tells nothing.
+/// A number of the column: its line, its value, and, where it is new, its
+/// line without it and the number as written.
+type InColumn = (usize, i64, Option<(Line, String)>);
+
+fn numbers_flush(out: &mut [Numbered], gone: &[bool], lines: &[Line], width: f32, file: &File) {
+    let given: Vec<usize> = (0..out.len())
+        .filter(|&k| {
+            !gone[k] && matches!(&out[k].1, Some((n, Side::Right)) if lines[k].text.trim_end().ends_with(n.as_str()))
+        })
+        .collect();
+    let column: Vec<(f32, usize)> = given.iter().map(|&k| (lines[k].right, file.key(&lines[k]).size)).collect();
+    if column.is_empty() {
+        return;
+    }
+    let mut numbers: Vec<InColumn> =
+        given.iter().filter_map(|&k| Some((k, out[k].1.as_ref()?.0.parse().ok()?, None))).collect();
+    for (i, (line, number)) in out.iter().enumerate() {
+        if gone[i] || number.is_some() || !has_letters(&line.text) {
+            continue;
+        }
+        let trimmed = line.text.trim_end();
+        let Some(at) = trimmed.rfind(char::is_whitespace) else { continue };
+        let number = &trimmed[at + 1..];
+        let size = file.key(line).size;
+        if !digits(number)
+            || !has_letters(&trimmed[..at])
+            || !column.iter().any(|(right, s)| *s == size && (right - line.right).abs() < 0.5 * file.size)
+        {
+            continue;
+        }
+        let Ok(value) = number.parse() else { continue };
+        let mut rest = cut(line, 0, trimmed[..at].trim_end().len());
+        let guess = line.left + rest.text.chars().count() as f32 * width;
+        rest.right = guess.min(line.right - (number.len() + 1) as f32 * width).max(line.left + width);
+        numbers.push((i, value, Some((rest, number.to_owned()))));
+    }
+    if numbers.iter().all(|n| n.2.is_none()) {
+        return;
+    }
+    numbers.sort_by(|a, b| out[a.0].0.top.total_cmp(&out[b.0].0.top));
+    let counts_up = numbers.windows(2).all(|w| {
+        let (a, b) = (&out[w[0].0].0, &out[w[1].0].0);
+        let between = (0..out.len())
+            .any(|k| !gone[k] && has_letters(&out[k].0.text) && out[k].0.top > a.top && out[k].0.top < b.top);
+        w[1].1 > w[0].1 && between
+    });
+    if !counts_up {
+        return;
+    }
+    for (i, _, new) in numbers {
+        if let Some((rest, number)) = new {
+            out[i] = (rest, Some((number, Side::Right)));
         }
     }
 }
@@ -1365,6 +1488,7 @@ mod tests {
             bottom,
             style: Style { family: "Serif".into(), size, ..Default::default() },
             runs: Vec::new(),
+            gaps: None,
         }
     }
 
@@ -1812,6 +1936,57 @@ mod tests {
             assert_eq!(numbers, [(4, "5"), (9, "10")]);
             assert_eq!(lines[9].0.text, "was being brought to fulfilment,");
             assert_eq!(page.len(), 3);
+        }
+    }
+
+    #[test]
+    fn a_number_after_a_wide_space_measured_is_the_lines_and_after_a_word_space_text() {
+        // Long lines kept, their numbers at the end of the measure, too near
+        // for a guess from the width of letters to tell; below, smaller text
+        // as wide as the measure, one line ending in a number of what it cites.
+        // The first number stands beyond the edge too, or within it as the
+        // others; one line runs up to its number, a point from it, flush
+        // with the others.
+        for beyond in [false, true] {
+            let mut lines = Vec::new();
+            let mut top = 72.0;
+            for k in 0..10 {
+                let text = format!("Line {k} of a long verse that runs on nearly to the end of the measure");
+                let right = LEFT + 380.0 + (k % 3) as f32 * 20.0;
+                let mut verse = line(&text, LEFT, right, top, top + 11.0, 11.0);
+                verse.gaps = Some(Vec::new());
+                if let Some(n) = [(4, "765"), (7, "768"), (9, "770")].iter().find(|(at, _)| *at == k).map(|(_, n)| *n) {
+                    verse.text = format!("{text} {n}");
+                    verse.right = LEFT + MEASURE + if beyond && k == 4 { 30.0 } else { 0.0 };
+                    let begins = verse.right - 3.0 * 5.5;
+                    let from = if k == 7 { begins - 1.0 } else { right };
+                    verse.gaps = Some(vec![Gap { at: text.len() + 1, from, to: begins }]);
+                }
+                lines.push(verse);
+                top += 13.2;
+            }
+            top += 20.0;
+            for text in [
+                "697 Dindorf : -κκαυσα R: -κκυσα cett., Su. α 3033",
+                "698 γ᾽ εἰ R: ἐὰν cett. 700 εἰ . . . εἰ R: ἢν . . . ἢν cett. and more",
+            ] {
+                let mut note = line(text, LEFT, LEFT + MEASURE, top, top + 9.0, 9.0);
+                let at = text.rfind(' ').unwrap() + 1;
+                note.gaps = Some(vec![Gap { at, from: LEFT + MEASURE - 25.0, to: LEFT + MEASURE - 22.0 }]);
+                lines.push(note);
+                top += 11.0;
+            }
+            let (pieces, _) = shape(vec![page(lines)]);
+            let page = &pieces[0];
+            let Piece::KeptLines { lines, side, .. } = &page[0] else { panic!("{page:#?}") };
+            assert_eq!(*side, Some(Side::Right));
+            let numbers: Vec<(usize, &str)> =
+                lines.iter().enumerate().filter_map(|(i, l)| Some((i, l.1.as_deref()?))).collect();
+            assert_eq!(numbers, [(4, "765"), (7, "768"), (9, "770")]);
+            assert!(lines[7].0.text.ends_with("measure"), "{:?}", lines[7].0.text);
+            assert!(lines[4].0.text.ends_with("measure"), "{:?}", lines[4].0.text);
+            let notes = all_text(&pieces);
+            assert!(notes.contains("Su. α 3033 698"), "{notes}");
         }
     }
 

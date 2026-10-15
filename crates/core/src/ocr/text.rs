@@ -29,6 +29,18 @@ pub struct Line {
     /// The runs of its text in one look, where the font says more than the
     /// line's style: italic, bold, small capitals. Empty for one look throughout.
     pub runs: Vec<Run>,
+    /// The spaces between its words, where they were measured: from the
+    /// text a PDF has and from Tesseract's words. `None` where not known.
+    pub gaps: Option<Vec<Gap>>,
+}
+
+/// A space between two words of a line: the byte of the text where the
+/// word after it begins, and where on the page the space runs from and to.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct Gap {
+    pub at: usize,
+    pub from: f32,
+    pub to: f32,
 }
 
 impl Line {
@@ -145,6 +157,7 @@ pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
                 right: left + width,
                 top,
                 bottom: top + height,
+                gaps: Some(Vec::new()),
                 ..Default::default()
             });
             sure.push((0.0, 0));
@@ -160,6 +173,11 @@ pub fn tsv_paragraphs(tsv: &str) -> Vec<Vec<Line>> {
         let line = lines.last_mut().expect("a line was begun");
         if !line.text.is_empty() {
             line.text.push(' ');
+            if left > line.right
+                && let Some(gaps) = line.gaps.as_mut()
+            {
+                gaps.push(Gap { at: line.text.len(), from: line.right, to: left });
+            }
         }
         line.text.push_str(text);
         line.left = line.left.min(left);
@@ -576,6 +594,8 @@ mod tests {
         assert_eq!(read[0].iter().map(|l| l.text.as_str()).collect::<Vec<_>>(), vec!["Forskningen på", "Homer."]);
         let mut first = line("Forskningen på", 142.0, 140.0, 437.0).with_bottom(183.0);
         first.style.size = 43.0;
+        // The space between the words, from where one ends to where the next begins.
+        first.gaps = Some(vec![Gap { at: "Forskningen ".len(), from: 375.0, to: 393.0 }]);
         assert_eq!(read[0][0], first, "its size is its height");
         assert_eq!(read[1][0].text, "Den andre");
         assert!(tsv_paragraphs("").is_empty());

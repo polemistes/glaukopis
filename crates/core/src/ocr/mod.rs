@@ -527,6 +527,10 @@ pub fn read_pdf(
                             {
                                 *v *= scale;
                             }
+                            for gap in line.gaps.iter_mut().flatten() {
+                                gap.from *= scale;
+                                gap.to *= scale;
+                            }
                         }
                     }
                     Ok((groups, size))

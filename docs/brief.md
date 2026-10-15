@@ -708,3 +708,37 @@ What this settles (ADR 0045, built from `docs/plans/the-shape-of-a-page.md`):
 - The warning on Greek with Latin languages made general, for any two
   scripts whose letters look alike.
 
+
+## 2026-10-15 — the shape of a page, built
+
+> Please build after this plan: /home/proteus/koding/glaukopis/docs/plans/the-shape-of-a-page.md
+
+Built as planned: lines with their style and runs of marks, `ocr/shape.rs`
+(written by an agent from a brief) and `ocr/shaped.rs`, the choice *Keep the
+shape of the pages*, the styles found named before the document is brought
+in, the warning on scripts whose letters look alike, and the guide.
+
+Done otherwise than the record, and why:
+
+- A first line set further in is left to the layout, not made an indent of
+  the whole paragraph, which is what the indent of a paragraph is.
+- Numbers within the text's edges are taken where they count upward, and
+  lines are kept where they are short by choice, not only ragged: both
+  rules of the agent's, held by tests against tables, years and prose.
+- A line remembers where the spaces between its words stand, from the PDF
+  and from Tesseract's words, so that a number is taken from the end of a
+  line by the room measured before it, not by a guess from the width of
+  letters; and a number at the end of a line flush with the column of
+  numbers given beside lines of its size is one of them.
+- A spacing accent drawn over the letter before it becomes the combining
+  accent, in any script.
+- `pdf-text` reads the widths a CID font gives as a range, and tells a CID
+  font's name.
+
+The owner's Aristophanes, print pages 98 to 120, as one test: running heads
+and page numbers gone; the verse kept as lines, speakers at their heads, 107
+line numbers given, all counting up, none left in the text; the smaller
+text at the foot a style found. That smaller text comes as three styles, as
+the edition sets its Greek and its Latin in two fonts a point apart: to be
+named the same, which makes one kind. Fonts set together in one line as one
+face is a later step.

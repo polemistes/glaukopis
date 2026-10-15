@@ -143,7 +143,8 @@ mod tests {
         let picture = store.add("dot.png", &png).unwrap();
         let dir = tmp.path().join("project");
         let records = [record()];
-        let readable = Readable { org: "* Medea\nThe text.\n", records: &records, pictures: &[picture.hash.clone()] };
+        let readable =
+            Readable { org: "* Medea\nThe text.\n", records: &records, pictures: std::slice::from_ref(&picture.hash) };
         write(&dir, &readable, &store, None).unwrap();
         assert_eq!(fs::read_to_string(dir.join(ORG)).unwrap(), "* Medea\nThe text.\n");
         assert!(fs::read_to_string(dir.join(BIB)).unwrap().contains("@book{nagy1979,"));
