@@ -803,3 +803,28 @@ packages' own metadata. Kept, though not asked for: a line under Email
 saying it is sent to bibliographic services with each lookup, as before;
 Tesseract's place among the programs. Other languages keep their old sample
 sentence until someone gives a pangram.
+
+## 2026-10-15 — the structure of a document read from a PDF
+
+> The "Read as new element" should be renamed to something like "Import text to new map". When keep the shape is selected. We get each page as an element still. Would it not be better to try to recreate the actual structure of the document in question, so a title becomes a title and headings of different levels come in the right place in the structure of the map? Do you think this is possible and useful? If you think that, make a plan for it to be built by Opus 5.5.
+
+Renamed the same day: *Import the text as a map…*, with the button *Import*.
+Judged possible and useful: the shape already finds the headings and their
+levels over the file; what is left is the title, the tree across the pages,
+and the pages kept as marks. Record ADR 0047, plan
+`docs/plans/the-structure-of-a-document.md`, for Opus 5.5:
+
+- With the shape kept, the document is imported by its headings: a tree of
+  the headings' levels, the title naming the document's element, what stood
+  before the first heading as its own text; the pages not elements.
+- The levels from the surest source: the PDF's own outline where it has
+  one, matched to the lines by their words; numbered headings by their
+  numbers; the rest by size, as before.
+- Paragraphs and kept lines go on across a page's edge; a reference mark
+  with the page's number where each page begins, chosen in the dialog, on
+  at first.
+- *By its pages* stays as the other way, chosen at first where no heading
+  is found, and for editions cited by page.
+- The outline shown in the dialog before the import is made.
+- No heading by its words, no fields from the title page, no table of
+  contents read: for later or never.
