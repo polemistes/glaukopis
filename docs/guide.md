@@ -1009,7 +1009,10 @@ came from.
 folders, in the tree at the left. **New folder** makes one; a folder is
 renamed with F2 or from its menu, and moved by dragging it onto another, or
 with **Move to**; **New folder** is in the menu beside **Add files…**. Files are moved by dragging them onto a folder. Deleting a
-folder keeps what is in it: its files and folders move up to where it was.
+folder asks what becomes of what is in it: the folders under it **Move up one
+level** or are deleted with it (**Delete all folders under this one**), and
+the files in the folders deleted are put in the folder it stood in (**Place in
+parent folder**) or are deleted from the library, and from their references.
 The folders are not the collections: a collection gathers works, and a work
 may be in many; a folder is where a file is kept, one place for each.
 

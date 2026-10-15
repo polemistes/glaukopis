@@ -870,6 +870,39 @@ impl Library {
         Ok((count, emptied.len()))
     }
 
+    /// Deletes a folder of the files. With `with_folders`, every folder under
+    /// it goes too; without, they move up to where it was. The files in the
+    /// folders that go are removed from the library with `with_files`, as
+    /// `remove_files` removes them, from their references too; without, they
+    /// are put in the folder it stood in, or at the top. Returns how many
+    /// files were removed.
+    pub fn delete_folder(&mut self, id: &str, with_folders: bool, with_files: bool) -> Result<usize> {
+        self.refresh()?;
+        let parent = self.files.folder(id)?.parent.clone();
+        let gone: Vec<String> = if with_folders { self.files.with_descendants(id) } else { vec![id.to_owned()] };
+        let inside: Vec<String> = self
+            .files
+            .files
+            .iter()
+            .filter(|f| f.folder.as_ref().is_some_and(|at| gone.contains(at)))
+            .map(|f| f.hash.clone())
+            .collect();
+        let mut removed = 0;
+        if with_files {
+            removed = self.remove_files(&inside, false)?.0;
+        } else {
+            for hash in &inside {
+                self.files.move_file(hash, parent.as_deref())?;
+            }
+        }
+        // The deepest first, so that nothing moves up into a folder that goes.
+        for folder in gone.iter().rev() {
+            self.files.folder_delete(folder)?;
+        }
+        self.save_files()?;
+        Ok(removed)
+    }
+
     /// Puts many files in a folder, or at the top in none; the record written once.
     pub fn move_files(&mut self, hashes: &[String], folder: Option<&str>) -> Result<()> {
         for hash in hashes {

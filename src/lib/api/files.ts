@@ -109,8 +109,14 @@ export const filesFolderRename = (id: string, name: string) =>
 /** Refused where the folder would lie under itself. */
 export const filesFolderMove = (id: string, parent: string | null) =>
   call<FileFolder>('files_folder_move', { id, parent });
-/** What was in the folder moves up to where it was. */
-export const filesFolderDelete = (id: string) => call<void>('files_folder_delete', { id });
+/**
+ * Deletes a folder. With `withFolders` the folders under it go too, else they
+ * move up to where it was; with `withFiles` the files in the folders that go
+ * are removed from the library, else they are put where it was. Returns how
+ * many files were removed.
+ */
+export const filesFolderDelete = (id: string, withFolders: boolean, withFiles: boolean) =>
+  call<number>('files_folder_delete', { id, withFolders, withFiles });
 
 export const fileMove = (hash: string, folder: string | null) =>
   call<FileView>('file_move', { hash, folder });

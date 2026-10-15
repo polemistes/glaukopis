@@ -397,8 +397,8 @@ try {
   await app.waitFor('[role="menu"]', 3000);
   await sleep(250); // the menu slides in: a click before it stands is caught by what is under it
   await app.clickText('[role="menuitem"]', 'Delete folder');
-  await app.waitForText('dialog', 'move up to where it was', 3000);
-  await app.clickText('dialog footer button', 'Delete folder');
+  await app.waitForText('dialog', 'The folder contains one file', 3000);
+  await app.clickText('dialog footer button', 'Place in parent folder');
   await app.waitGone('dialog', 3000);
   await until('the folder to go', async () => (await folders()).length === 1);
   await sleep(300);

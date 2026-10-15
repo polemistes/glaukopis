@@ -119,11 +119,28 @@ files-folder-expand = Open
 files-folder-collapse = Close
 files-folder-delete = Delete folder
 files-folder-delete-title = Delete the folder “{ $name }”?
-files-folder-delete-message = { $count ->
-    [0] The folders in it move up to where it was.
-    [one] The file and the folders in it move up to where it was. No file is deleted.
-   *[other] The { $count } files and the folders in it move up to where it was. No file is deleted.
+files-folder-delete-empty = The folder is empty.
+files-folder-delete-subfolders = { $count ->
+    [one] The folder contains one subfolder. What should happen to it?
+   *[other] The folder contains { $count } subfolders. What should happen to these?
 }
+files-folder-move-up = Move up one level
+files-folder-delete-all-under = Delete all folders under this one
+files-folder-delete-files = { $count ->
+    [one] The folder contains one file. What should happen to it?
+   *[other] The folder contains { $count } files. What should happen to these?
+}
+files-folder-delete-files-under = { $count ->
+    [one] The folder and the folders under it contain one file. What should happen to it?
+   *[other] The folder and the folders under it contain { $count } files. What should happen to these?
+}
+# Said after the question above, where files to be deleted belong to references.
+files-folder-delete-files-assigned = { $count ->
+    [one] One of them belongs to a reference, which would lose it.
+   *[other] { $count } of them belong to references, which would lose them.
+}
+files-folder-files-to-parent = Place in parent folder
+files-folder-files-delete = Delete
 files-folder-delete-failed = The folder could not be deleted
 
 ## The pane of a file.

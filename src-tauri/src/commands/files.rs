@@ -81,13 +81,18 @@ pub fn files_folder_move(state: State<'_, AppState>, id: String, parent: Option<
     Ok(folder)
 }
 
-/// Deletes a folder; what was in it moves up to where it was.
+/// Deletes a folder. With `withFolders`, the folders under it go too, else
+/// they move up to where it was; with `withFiles`, the files in the folders
+/// that go are removed from the library, else they are put where it was.
+/// Returns how many files were removed.
 #[tauri::command(async)]
-pub fn files_folder_delete(state: State<'_, AppState>, id: String) -> CommandResult<()> {
-    let mut library = state.library();
-    library.files.folder_delete(&id)?;
-    library.save_files()?;
-    Ok(())
+pub fn files_folder_delete(
+    state: State<'_, AppState>,
+    id: String,
+    with_folders: bool,
+    with_files: bool,
+) -> CommandResult<usize> {
+    Ok(state.library().delete_folder(&id, with_folders, with_files)?)
 }
 
 // ---- one file ----

@@ -119,11 +119,28 @@ files-folder-expand = Åpne
 files-folder-collapse = Lukk
 files-folder-delete = Slett mappen
 files-folder-delete-title = Slette mappen «{ $name }»?
-files-folder-delete-message = { $count ->
-    [0] Mappene i den flyttes opp dit den var.
-    [one] Filen og mappene i den flyttes opp dit den var. Ingen fil slettes.
-   *[other] De { $count } filene og mappene i den flyttes opp dit den var. Ingen fil slettes.
+files-folder-delete-empty = Mappen er tom.
+files-folder-delete-subfolders = { $count ->
+    [one] Mappen inneholder én undermappe. Hva skal skje med den?
+   *[other] Mappen inneholder { $count } undermapper. Hva skal skje med dem?
 }
+files-folder-move-up = Flytt opp ett nivå
+files-folder-delete-all-under = Slett alle mappene under denne
+files-folder-delete-files = { $count ->
+    [one] Mappen inneholder én fil. Hva skal skje med den?
+   *[other] Mappen inneholder { $count } filer. Hva skal skje med dem?
+}
+files-folder-delete-files-under = { $count ->
+    [one] Mappen og mappene under den inneholder én fil. Hva skal skje med den?
+   *[other] Mappen og mappene under den inneholder { $count } filer. Hva skal skje med dem?
+}
+# Said after the question above, where files to be deleted belong to references.
+files-folder-delete-files-assigned = { $count ->
+    [one] Én av dem hører til en referanse, som ville miste den.
+   *[other] { $count } av dem hører til referanser, som ville miste dem.
+}
+files-folder-files-to-parent = Legg i overordnet mappe
+files-folder-files-delete = Slett
 files-folder-delete-failed = Mappen kunne ikke slettes
 
 ## Ruten til en fil.

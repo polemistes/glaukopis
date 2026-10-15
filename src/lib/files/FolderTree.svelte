@@ -27,11 +27,12 @@
   } from '$lib/api/files';
   import { ancestors, byName, parentOf, pathOf } from '$lib/home/folders';
   import { languages, t } from '$lib/i18n';
-  import { confirm } from '$lib/ui/confirm.svelte';
+  import { library } from '$lib/state/library.svelte';
+  import { ask, confirm } from '$lib/ui/confirm.svelte';
   import { dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu, type MenuItem } from '$lib/ui/menu.svelte';
-  import { notifyError } from '$lib/ui/toast.svelte';
+  import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import {
     FILES_DRAGGED,
     exportFiles,
@@ -145,22 +146,67 @@
     }
   }
 
+  /**
+   * Deletes a folder, after asking what becomes of what is in it: the
+   * folders under it move up a level or are deleted with it, and the files
+   * in the folders that are deleted are put in the folder it stood in or
+   * are deleted from the library.
+   */
   async function remove(f: FileFolder) {
-    const inside = files.inFolder(f.id).length;
-    const ok = await confirm({
-      title: t('files-folder-delete-title', { name: f.name }),
-      message: t('files-folder-delete-message', { count: inside }),
-      confirm: t('files-folder-delete'),
-      danger: true,
-    });
-    if (!ok) return;
+    const title = t('files-folder-delete-title', { name: f.name });
+    const subfolders = files.descendants(f.id).size - 1;
+    let withFolders = false;
+    if (subfolders) {
+      const answer = await ask({
+        title,
+        message: t('files-folder-delete-subfolders', { count: subfolders }),
+        confirm: t('files-folder-delete-all-under'),
+        alternative: t('files-folder-move-up'),
+        danger: true,
+      });
+      if (answer === 'cancel') return;
+      withFolders = answer === 'confirm';
+    }
+    const inside = files.inFolder(f.id, withFolders);
+    const assigned = inside.filter((file) => file.references.length).length;
+    let withFiles = false;
+    if (inside.length) {
+      const said = t(
+        withFolders ? 'files-folder-delete-files-under' : 'files-folder-delete-files',
+        {
+          count: inside.length,
+        },
+      );
+      const answer = await ask({
+        title,
+        message: assigned
+          ? `${said} ${t('files-folder-delete-files-assigned', { count: assigned })}`
+          : said,
+        confirm: t('files-folder-files-delete'),
+        alternative: t('files-folder-files-to-parent'),
+        danger: true,
+      });
+      if (answer === 'cancel') return;
+      withFiles = answer === 'confirm';
+    }
+    if (!subfolders && !inside.length) {
+      const ok = await confirm({
+        title,
+        message: t('files-folder-delete-empty'),
+        confirm: t('files-folder-delete'),
+        danger: true,
+      });
+      if (!ok) return;
+    }
     try {
-      await filesFolderDelete(f.id);
-      // What was in it is where the folder was.
+      const removed = await filesFolderDelete(f.id, withFolders, withFiles);
       if (selected && files.descendants(f.id).has(selected)) onselect(f.parent ?? null);
       await files.reload();
+      if (withFiles && assigned) await library.reload();
+      if (removed) notifyOk(t('files-removed', { count: removed }));
     } catch (error) {
       notifyError(t('files-folder-delete-failed'), error);
+      await files.reload();
     }
   }
 
