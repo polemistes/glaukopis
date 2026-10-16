@@ -1,3 +1,4 @@
+pub mod clipboard;
 pub mod documents;
 pub mod files;
 pub mod found;

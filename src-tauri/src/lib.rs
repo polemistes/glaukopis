@@ -64,6 +64,7 @@ pub fn run() {
             commands::system::language_set,
             commands::system::reveal_path,
             commands::system::log_page,
+            commands::clipboard::clipboard_read,
             commands::library::library_list,
             commands::library::library_refresh,
             commands::library::library_get,

@@ -10,6 +10,7 @@ import { nameLanguagesBy } from '$lib/editor/schema';
 import { languageName } from '$lib/i18n';
 import { inTauri } from '$lib/api/backend';
 import { logPage } from '$lib/api/system';
+import { guardPaste, pastesThroughGtk } from '$lib/util/paste';
 
 nameLanguagesBy(languageName);
 
@@ -36,6 +37,9 @@ if (inTauri) {
     tell(`a promise failed unheard: ${reason?.message ?? String(reason)}${stackOf(reason)}`);
   });
 }
+
+// WebKitGTK does not paste safely; the Rust side reads the clipboard instead (record 0048).
+if (inTauri && pastesThroughGtk) guardPaste();
 
 const app = mount(App, { target: document.getElementById('app')! });
 
