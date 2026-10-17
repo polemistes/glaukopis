@@ -290,6 +290,8 @@ try {
   check('Space unfolds its map: its trees stand under it in the order of the project', await waitUntil(async () => JSON.stringify(await elementNames()) === '["Wrath","Ships","Embassy"]', 6000), JSON.stringify(await elementNames()));
   check('drawn as the elements of a map', await app.exec(`return ${element('Wrath')}?.classList.contains('node') && ${element('Wrath')}?.classList.contains('depth-1')`));
   check('and the fold button closes it again', await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim() === '–'`));
+  // The off-screen webview paints what was just added a frame late: the picture waits for it.
+  await sleep(400);
   await app.screenshot('owl-5-map-shown');
   await app.exec(`${card('Iliad')}.querySelector('.fold').click()`);
   check('the fold button folds the map away, counting all that is under it', await waitUntil(async () => !(await hasElement('Wrath')) && (await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim()`)) === '3', 4000), await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim()`));
