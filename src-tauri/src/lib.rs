@@ -12,8 +12,39 @@ use glaukopis_core::paths::DataDir;
 use tauri::Manager;
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 
+/// The variable by which WebKitGTK 2.54 and later are told which compositor
+/// to use: `0` for TextureMapper, the one of the releases before, `1` for Skia.
+#[cfg(target_os = "linux")]
+const COMPOSITOR_SWITCH: &str = "WEBKIT_USE_SKIA_FOR_COMPOSITION";
+
+/// WebKitGTK 2.54 composites the page with Skia, where the releases before
+/// used TextureMapper. On some desktops (seen on Hyprland, 2026-10-17) the new
+/// compositor shows stale frames while something fades or moves: a menu that
+/// opens seems to open, close and open again. Until that is fixed upstream the
+/// previous compositor is asked for, before anything of GTK or WebKit starts;
+/// one who has set the variable themselves is not overruled (ADR 0049).
+/// Returns whether the application set it.
+#[cfg(target_os = "linux")]
+fn previous_compositor() -> bool {
+    if std::env::var_os(COMPOSITOR_SWITCH).is_some() {
+        return false;
+    }
+    // SAFETY: called first of all in `run`, before any thread is started, so
+    // nothing reads the environment while it is written.
+    unsafe { std::env::set_var(COMPOSITOR_SWITCH, "0") };
+    true
+}
+
 pub fn run() {
+    #[cfg(target_os = "linux")]
+    let compositor_asked = previous_compositor();
     log::start(&glaukopis_core::paths::default_root());
+    #[cfg(target_os = "linux")]
+    tracing::info!(
+        asked_by_the_application = compositor_asked,
+        value = ?std::env::var_os(COMPOSITOR_SWITCH),
+        "the compositor of WebKitGTK"
+    );
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
