@@ -118,8 +118,21 @@ It is worked as a project's diagram is, in a look of its own:
   out of the folder it is in. Or drag it: onto a folder, into it; onto a
   card, into that card's folder; onto the owl, out of all folders. What is
   dragged from the map can be dropped on the list, and the other way.
+- **Placing.** A folder or a project dragged onto the ground of the map
+  stays where it is let go, as an element does in a project's map; the
+  places are kept on this computer. **Place everything by itself**, in the
+  map's menu, puts them back in order.
 - **Folding.** **Space**, or the sign before a folder's name, hides the
   projects in it or shows them. A folder of many projects begins folded.
+- **The maps of the projects.** The line under a project's title, or
+  **Space** with the project selected, shows its map under the card, with
+  the names of its elements, folded as in the project. A double click on an
+  element, the button at its corner or **Alt+Shift+Down** opens the project
+  there. The elements are moved as in the project's own map: dragged onto
+  the ground they stand where they are let go, onto another element they go
+  under it, onto another project they are carried there; **Alt** and the
+  arrows move them up and down, under the one before, and out. Each move is
+  made in the project, and can be undone.
 - **Deleting.** **Delete** deletes what is selected, after asking: a
   project goes to the trash, and what is in a folder moves up.
 

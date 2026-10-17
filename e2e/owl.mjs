@@ -234,6 +234,122 @@ try {
   check('the pane marks the folder in view', await app.exists(`[data-projects-pane] [data-folder="${greek.id}"][data-current]`));
   await app.screenshot('owl-4-entered');
 
+  // --- 5. One map: titles whole, the maps of projects, placing by hand, moving elements ---
+  const long = 'The Wrath of Achilles and the Quarrel with Agamemnon over Briseis';
+  await invoke(app, 'project_create', { name: long, id: null, folder: null });
+  // Elements in Iliad, made in its own diagram.
+  await app.go('#/owl');
+  await app.waitFor('[data-owl-map]', 5000);
+  await sleep(600);
+  await app.exec('location.reload();');
+  await sleep(1500);
+  await app.installErrorHook();
+  await app.waitFor('[data-owl-map]', 10000);
+  await sleep(600);
+  const iliad = await app.exec(`return ${card('Iliad')}?.dataset.owlProject`);
+  await app.go(`#/project/${iliad}?mode=diagram`);
+  await app.waitFor('.diagram .node.root', 10000);
+  await sleep(500);
+  const add = async (key, text) => {
+    await app.press(key);
+    await app.waitFor('.diagram .node.renaming .prose', 3000);
+    await sleep(120);
+    await app.keys(text);
+    await app.press('Enter');
+    await app.waitGone('.diagram .node.renaming', 3000);
+    await sleep(100);
+  };
+  await app.click('.diagram .node.root');
+  await add('Tab', 'Wrath');
+  await add('Enter', 'Ships');
+  await add('Enter', 'Embassy');
+  await app.exec('history.back()');
+  await sleep(300);
+  await app.go('#/owl');
+  await app.waitFor('[data-owl-map]', 5000);
+  await sleep(800);
+
+  const nameBox = await app.exec(`const n = ${card(long)}?.querySelector('.name'); return n ? { h: n.offsetHeight, sw: n.scrollWidth, cw: n.clientWidth, text: n.textContent.trim() } : null;`);
+  check('a long title is shown whole, on more lines', !!nameBox && nameBox.text === long && nameBox.h > 30 && nameBox.sw <= nameBox.cw + 1, JSON.stringify(nameBox));
+
+  const element = (name) => `Array.from(document.querySelectorAll('[data-owl-element]')).find((e) => e.querySelector('.label')?.textContent.trim() === ${JSON.stringify(name)})`;
+  const hasElement = (name) => app.exec(`return !!${element(name)}`);
+  const elementEl = (name) => app.exec(`return ${element(name)} ?? null`);
+  const elementNames = () => app.exec(`return Array.from(document.querySelectorAll('[data-owl-element]')).map((e) => e.querySelector('.label').textContent.trim() + '<' + (e.dataset.owlParent ?? ''))`);
+  const iliadTree = async () => {
+    const loaded = await app.projectLoad(iliad);
+    return loaded;
+  };
+  await app.click(await cardEl(app, 'Iliad'));
+  await app.press('Space');
+  check('Space shows the map of a project under its card', await waitUntil(() => hasElement('Wrath'), 6000), JSON.stringify(await elementNames()));
+  check('in the order of the project', JSON.stringify((await elementNames()).map((n) => n.split('<')[0])) === JSON.stringify(['Wrath', 'Ships', 'Embassy']), JSON.stringify(await elementNames()));
+  await app.screenshot('owl-5-map-shown');
+
+  // Alt and the arrows move an element within its project.
+  await app.click(await elementEl('Embassy'));
+  await app.keys(['Alt', 'ArrowUp']);
+  check('Alt+Up moves an element up among those beside it, in its project', await waitUntil(async () => JSON.stringify((await elementNames()).map((n) => n.split('<')[0])) === JSON.stringify(['Wrath', 'Embassy', 'Ships']), 6000), JSON.stringify(await elementNames()));
+  const elementSide = await app.exec(`return ${element('Embassy')}?.dataset.side`);
+  await app.keys(['Alt', elementSide === 'left' ? 'ArrowLeft' : 'ArrowRight']);
+  const wrathKey = await app.exec(`return ${element('Wrath')}?.dataset.owlKey`);
+  check('Alt and the arrow outwards put it under the one before it', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlParent`)) === wrathKey, 6000), await app.exec(`return ${element('Embassy')}?.dataset.owlParent`));
+  await app.keys(['Control', 'z']);
+  check('Ctrl+Z puts it back', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlParent`)) === `project:${iliad}`, 6000));
+
+  const fitted = async () => {
+    await app.click('[data-owl-map] .controls button[aria-label="Show all of it"]');
+    await sleep(300);
+  };
+  // Dragged onto another element of the same project: under it.
+  await fitted();
+  await app.drag(await elementEl('Ships'), await elementEl('Wrath'));
+  check('an element dragged onto another goes under it', await waitUntil(async () => (await app.exec(`return ${element('Ships')}?.dataset.owlParent`)) === wrathKey, 6000), await app.exec(`return ${element('Ships')}?.dataset.owlParent`));
+
+  // Dragged onto the ground: it stays where it was let go, written into the project.
+  await fitted();
+  // Measured from the card of its project, from which its place is kept, as an element's is from its parent.
+  const fromCard = `const r = ${element('Embassy')}.getBoundingClientRect(), c = ${card('Iliad')}.getBoundingClientRect(); return { x: r.left - c.left, y: r.top - c.top };`;
+  const before = await app.exec(fromCard);
+  await app.drag(await elementEl('Embassy'), { dx: 60, dy: -120 });
+  await sleep(1500);
+  const after = await app.exec(fromCard);
+  check('an element dropped on the ground stays where it was let go', Math.abs(after.y - before.y + 120) < 30 && Math.abs(after.x - before.x - 60) < 30, JSON.stringify({ before, after }));
+  const posInProject = await app.execAsync(`const bytes = new Uint8Array(await window.__TAURI_INTERNALS__.invoke('project_load', { id: arguments[0] })); return bytes.length;`, iliad);
+  check('and the project was written', posInProject > 0);
+
+  // Folders and projects put by hand.
+  await fitted();
+  const notesBefore = await app.exec(`const r = ${card('Notes')}.getBoundingClientRect(); return { x: r.left, y: r.top };`);
+  await app.drag(await cardEl(app, 'Notes'), { dx: -40, dy: -160 });
+  await sleep(800);
+  const notesAfter = await app.exec(`const r = ${card('Notes')}.getBoundingClientRect(); return { x: r.left, y: r.top };`);
+  check('a card dropped on the ground stays where it was let go', Math.abs(notesAfter.y - notesBefore.y + 160) < 30, JSON.stringify({ notesBefore, notesAfter }));
+  check('and the place is kept on this computer', Object.keys(await invoke(app, 'owl_places', {})).includes(`project:${await app.exec(`return ${card('Notes')}?.dataset.owlProject`)}`));
+  await app.keys(['Control', 'z']);
+  await sleep(800);
+  const notesBack = await app.exec(`const r = ${card('Notes')}.getBoundingClientRect(); return { x: r.left, y: r.top };`);
+  check('Ctrl+Z puts it back in its place', Math.abs(notesBack.y - notesBefore.y) < 6, JSON.stringify({ notesBefore, notesBack }));
+
+  // Carried to another project.
+  await app.click(await cardEl(app, 'Odyssey'));
+  await app.press('Space');
+  await sleep(1200);
+  await fitted();
+  await app.drag(await elementEl('Embassy'), await cardEl(app, 'Odyssey'));
+  const odyssey = await app.exec(`return ${card('Odyssey')}?.dataset.owlProject`);
+  check('an element dragged onto another project is carried there', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlOf`)) === odyssey, 8000), await app.exec(`return ${element('Embassy')}?.dataset.owlOf`));
+  await app.keys(['Control', 'z']);
+  check('and Ctrl+Z carries it back', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlOf`)) === iliad, 8000), await app.exec(`return ${element('Embassy')}?.dataset.owlOf`));
+  await app.screenshot('owl-6-one-map');
+
+  // Jumping in anywhere.
+  await fitted();
+  await app.doubleClick(await elementEl('Wrath'));
+  check('a double click on an element opens its project there', await waitUntil(async () => (await app.exec('return location.hash')).startsWith(`#/project/${iliad}/`), 5000), await app.exec('return location.hash'));
+  await sleep(800);
+  check('with that element in view', await waitUntil(async () => (await app.exec(`return document.querySelector('.diagram .node.root .caption, .text-view .section .heading')?.textContent.trim()`)) === 'Wrath', 5000), await app.exec(`return document.querySelector('.diagram .node.root .caption, .text-view .section .heading')?.textContent.trim()`));
+
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, JSON.stringify(errors));
 } finally {

@@ -907,3 +907,19 @@ What this settles (ADR 0050, built from `docs/plans/the-owl-map-behaves-as-a-tre
   single click selects and a double click opens; Enter makes and no longer
   opens; where new things go; what *deeper* means; the undo is the home's
   and the session's.
+
+## 2026-10-17 — the map of the projects as one map
+
+> The project titles in the top owl map should wrap, so we can see the whole title. It should be possible to open the map under each project also on the top map, and jump in anywhere. I would also like to be able to move the project elements around just as in the normal maps.
+
+What this settles (ADR 0051):
+
+- Titles of projects wrap on their cards.
+- A project's map is shown under its card, read from disk, and any element
+  of it opens the project there.
+- "Move the project elements around" was read both ways, and both are
+  built: folders and projects are put by hand where they are dropped, kept
+  on this computer; and the elements of a project's map shown on the top
+  map are moved as in that project's own map, by dragging and by Alt and
+  the arrows, and carried to another project by dragging onto it, each
+  move written into the project and undone from its message.

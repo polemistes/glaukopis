@@ -1717,7 +1717,7 @@
     font-size: 15px;
     font-weight: 600;
     line-height: 1.3;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
   .head {
     align-items: flex-start;
@@ -1762,9 +1762,11 @@
   /* An element of a project's map: its name as a line of text, not a box, as in an outline. */
   .element {
     position: relative;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 6px;
+    /* As wide as its name, up to a width past which the name goes on to another line. */
+    width: max-content;
     max-width: 260px;
     padding: 3px 6px;
     border-bottom: 1px solid var(--line-strong);
@@ -1775,7 +1777,8 @@
     cursor: pointer;
   }
   .element .label {
-    overflow-wrap: anywhere;
+    min-width: 0;
+    overflow-wrap: break-word;
   }
   .element .untitled {
     color: var(--ink-4);

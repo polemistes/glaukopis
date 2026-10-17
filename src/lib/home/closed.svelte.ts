@@ -76,6 +76,17 @@ class ClosedTrees {
     return this.#read.get(id);
   }
 
+  /**
+   * Reads the tree of a project again, whatever its time of change says: it
+   * was written in just now, and the time of change is kept to the second.
+   */
+  again(id: string) {
+    const info = projects.list.find((p) => p.id === id);
+    if (!info || !this.#read.has(id)) return;
+    this.#asked.delete(id);
+    this.want(info);
+  }
+
   /** Reads the tree of a project, unless what was read of it, or is being read, is as new as it is. */
   want(info: ProjectInfo) {
     const modified = info.modified;

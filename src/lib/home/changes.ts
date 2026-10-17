@@ -18,6 +18,7 @@ import { projects } from '$lib/state/projects.svelte';
 import { confirm } from '$lib/ui/confirm.svelte';
 import type { DragPayload } from '$lib/ui/drag.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
+import { closedTrees } from './closed.svelte';
 import { ancestors, descendants, folderOf, parentOf } from './folders';
 import { listUi } from './list.svelte';
 import { homeUndo } from './undo.svelte';
@@ -367,8 +368,13 @@ export async function moveElements(
   message: string,
 ) {
   if (!to.length) return;
+  // Written, and read again for the map of the projects, which shows it.
+  const write = async (places: ElementPlace[]) => {
+    await writeElsewhere(projectId, (project) => putElements(project, places));
+    closedTrees.again(projectId);
+  };
   try {
-    await writeElsewhere(projectId, (project) => putElements(project, to));
+    await write(to);
   } catch (error) {
     notifyError(t('home-failed'), error);
     return;
@@ -376,9 +382,8 @@ export async function moveElements(
   homeUndo.remember({
     message,
     // Put back in the order opposite to that they were taken.
-    undo: () =>
-      writeElsewhere(projectId, (project) => putElements(project, from.slice().reverse())),
-    redo: () => writeElsewhere(projectId, (project) => putElements(project, to)),
+    undo: () => write(from.slice().reverse()),
+    redo: () => write(to),
   });
 }
 
@@ -428,7 +433,10 @@ export async function carryElements(
     })();
     projects.closing(a, done);
     projects.closing(b, done);
-    return done;
+    const result = await done;
+    closedTrees.again(a);
+    closedTrees.again(b);
+    return result;
   };
   try {
     made = await carry(fromId, ids, toId, { parent: under, before: null });
