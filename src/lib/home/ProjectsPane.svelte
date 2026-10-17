@@ -37,10 +37,11 @@
     /** Enters an element of the open project. */
     onenter?: (id: string) => void;
     /** Whether the owl map is in view. */
-    owlHere?: boolean;
+    /** Where the owl map is in view: null at the owl, a folder's id where one is entered. */
+    owlAt?: string | null;
   }
 
-  let { current = null, project = null, at = null, onenter, owlHere = false }: Props = $props();
+  let { current = null, project = null, at = null, onenter, owlAt = undefined }: Props = $props();
 
   const width = $derived(paneWidth(settings.value.projectsPaneWidth, 0));
 
@@ -85,7 +86,7 @@
   </header>
   <div class="body">
     {#if projects.loaded}
-      <ProjectList {actions} {current} {project} {at} {onenter} {owlHere} compact />
+      <ProjectList {actions} {current} {project} {at} {onenter} {owlAt} compact />
     {:else}
       <div class="centre"><Spinner size={18} /></div>
     {/if}

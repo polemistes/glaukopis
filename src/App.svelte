@@ -201,10 +201,10 @@
       {:else if route.view === 'owl'}
         <div class="in-project">
           {#if settings.value.projectsPane}
-            <ProjectsPane owlHere />
+            <ProjectsPane owlAt={route.at ?? null} />
           {/if}
           <div class="project-view">
-            <OwlView />
+            <OwlView at={route.at} />
           </div>
         </div>
       {:else if route.view === 'search'}

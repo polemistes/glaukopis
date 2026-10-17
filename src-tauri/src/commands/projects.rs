@@ -171,8 +171,16 @@ pub fn folders_list(state: State<'_, AppState>) -> CommandResult<Vec<Folder>> {
 }
 
 #[tauri::command(async)]
-pub fn folder_create(state: State<'_, AppState>, name: String, parent: Option<String>) -> CommandResult<Folder> {
-    Ok(state.projects.folder_create(&name, parent.as_deref())?)
+pub fn folder_create(
+    state: State<'_, AppState>,
+    name: String,
+    parent: Option<String>,
+    id: Option<String>,
+) -> CommandResult<Folder> {
+    Ok(match id {
+        Some(id) => state.projects.folder_create_with_id(&id, &name, parent.as_deref())?,
+        None => state.projects.folder_create(&name, parent.as_deref())?,
+    })
 }
 
 #[tauri::command(async)]

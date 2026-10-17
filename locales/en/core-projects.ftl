@@ -5,6 +5,7 @@ core-projects-bad-id = “{ $id }” is not the id of a project
 core-projects-needs-name = A project needs a name.
 core-projects-name-too-long = That name is too long.
 core-projects-id-taken = There is already a project with that id.
+core-projects-folder-id-taken = There is already a folder with that id.
 core-projects-id-exists = A project with that id exists already.
 core-projects-not-in-history = That is not an entry of the history.
 core-projects-no-token = The server gave no token.

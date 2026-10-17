@@ -147,8 +147,9 @@ export const projectSaveState = (
 export const projectSaveView = (id: string, view: unknown) =>
   call<void>('project_save_view', { id, view });
 export const foldersList = () => call<Folder[]>('folders_list');
-export const folderCreate = (name: string, parent: string | null) =>
-  call<Folder>('folder_create', { name, parent });
+/** Makes a folder; under the id given, where one is made again as it was. */
+export const folderCreate = (name: string, parent: string | null, id?: string) =>
+  call<Folder>('folder_create', { name, parent, id: id ?? null });
 export const folderRename = (id: string, name: string) =>
   call<Folder>('folder_rename', { id, name });
 /** Refused where the folder would lie under itself. */

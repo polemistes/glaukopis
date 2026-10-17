@@ -6,7 +6,11 @@
  * settings remember.
  */
 
+import { projects } from '$lib/state/projects.svelte';
+import { router } from '$lib/state/router.svelte';
 import { settings } from '$lib/state/settings.svelte';
+import { folderOf } from './folders';
+import { projectKey } from './owl';
 
 class ListUi {
   /** The folders that are closed, by id. */
@@ -24,6 +28,12 @@ class ListUi {
    * One not here is folded as it starts: where it holds many projects.
    */
   owlFolds = $state.raw(new Map<string, boolean>());
+
+  /**
+   * What the owl map is to select and show when it next comes up, by its
+   * key: the project one came up from, or the folder.
+   */
+  owlReveal = $state<string | null>(null);
 
   /** Folds a folder of the owl map, or unfolds it. */
   owlFold(id: string, folded: boolean) {
@@ -57,4 +67,15 @@ export function paneWidth(width: number, dx: number): number {
 /** Opens the pane of projects, or closes it. */
 export function toggleProjectsPane() {
   settings.set('projectsPane', !settings.value.projectsPane);
+}
+
+/**
+ * Up from the top of a project, to the owl map: at the folder the project
+ * lies in, or at the owl where it lies in none, with the project selected.
+ */
+export function upFromProject(id: string) {
+  const p = projects.list.find((x) => x.id === id);
+  const folder = p ? folderOf(projects.folders, p) : null;
+  listUi.owlReveal = projectKey(id);
+  router.go(folder ? { view: 'owl', at: folder } : { view: 'owl' });
 }

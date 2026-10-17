@@ -74,7 +74,12 @@
 
   onMount(() => {
     projects.load();
-    readTrash();
+  });
+
+  // Read again whenever a project goes into the trash or comes out of it, here or by an undo.
+  $effect(() => {
+    void projects.trashed;
+    void readTrash();
   });
 
   /** Opens a project; with a mode, in that view rather than where it was left. */

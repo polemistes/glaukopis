@@ -10,6 +10,7 @@
     'everywhere',
     'project',
     'diagram',
+    'owl',
     'text',
     'writing',
     'review',

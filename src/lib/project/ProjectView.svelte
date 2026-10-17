@@ -64,6 +64,7 @@
   import { jumpFor } from '$lib/search/everything.svelte';
   import { takeCitations } from '$lib/library/citing.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
+  import { upFromProject } from '$lib/home/list.svelte';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { shortcuts } from '$lib/shell/keys.svelte';
   import { toggleProjectsPane } from '$lib/home/list.svelte';
@@ -329,9 +330,9 @@
     focused = 1;
   }
 
-  /** Up from the project: to all the projects, as the owl's map shows them. */
+  /** Up from the project: to the map of the projects, at the folder it lies in. */
   function goHome() {
-    router.go({ view: 'owl' });
+    upFromProject(projectId);
   }
 
   /** Elements dragged from the other pane, of another project, over a pane: where, and what a drop will do. */
@@ -1224,6 +1225,7 @@
                     : async () => documentsIn([await chooseDocument()])}
                   named={namedIn(p)}
                   home={i === 0}
+                  onhome={goHome}
                 />
               {/if}
               {#if p.mode === 'text' && of}

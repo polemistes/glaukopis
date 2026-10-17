@@ -20,6 +20,7 @@ home-list-none = Det er ingen prosjekter.
 ## Mapper med prosjekter
 
 home-new-folder = Ny mappe
+home-folder-new-project = Nytt prosjekt inni …
 home-folder-new-inside = Ny mappe inni …
 home-folder-rename-title = Gi mappen nytt navn
 home-folder-name-placeholder = Det mappen rommer
@@ -56,6 +57,25 @@ home-tree-empty = Ingenting i det ennå
 home-owl-fit = Vis alt
 home-owl-fold = Skjul prosjektene i den
 home-owl-unfold = Vis prosjektene i den
+# Selve kartet, som en liste lest høyt.
+home-owl-label = Kartet over prosjektene
+# Hjørnet på et kort som åpner prosjektet, og på en mappe som viser den midt i kartet.
+home-owl-open = Åpne prosjektet
+home-owl-enter = Åpne mappen som kart
+# Hjørnet på mappen i midten: opp til det som rommer den.
+home-owl-leave = Opp til «{ $name }»
+# Menyene i kartet og på en mappe i det: noe nytt laget her, med navnet skrevet på stedet.
+home-owl-new-project = Nytt prosjekt her
+home-owl-new-folder = Ny mappe her
+# Det en ny mappe eller et nytt prosjekt heter til navnet er skrevet.
+home-owl-name = Navn
+# Ved pekeren, mens flere mapper og prosjekter dras.
+home-owl-dragged = { $count ->
+    [one] { $count } ting
+   *[other] { $count } ting
+}
+# Linjen over kartet, ved en mappe: det som rommer den.
+home-owl-in = I «{ $name }»
 
 ## Et kart over prosjektene
 
@@ -215,3 +235,35 @@ home-redo = Gjør om
 # Det som ble angret, slik meldingen om endringen sa det.
 home-undone = Angret: { $what }
 home-undo-failed = Det kunne ikke angres
+
+## Det en endring på hjemmesiden sier, med en vei tilbake
+home-renamed = «{ $old }» heter nå «{ $name }»
+home-project-made = «{ $name }» ble laget
+home-folder-made = Mappen «{ $name }» ble laget
+home-moved-many-to = { $count ->
+    [one] { $count } ting ble flyttet til { $folder }
+   *[other] { $count } ting ble flyttet til { $folder }
+}
+home-moved-many-out = { $count ->
+    [one] { $count } ting ligger ikke i noen mappe nå
+   *[other] { $count } ting ligger ikke i noen mappe nå
+}
+home-folder-deleted = Mappen «{ $name }» ble slettet; det som lå i den, ble flyttet opp
+home-deleted-many = { $count ->
+    [one] { $count } ting ble slettet
+   *[other] { $count } ting ble slettet
+}
+home-not-in-trash = Prosjektet ligger ikke lenger i papirkurven.
+home-folders-delete-title = { $count ->
+    [one] Slette { $count } mappe?
+   *[other] Slette { $count } mapper?
+}
+home-folders-delete-message = Mappene og prosjektene i dem beholdes: de flyttes opp dit mappene var.
+home-folders-delete-confirm = Slett mappene
+home-delete-many-title = { $count ->
+    [one] Slette { $count } prosjekt?
+   *[other] Slette { $count } prosjekter?
+}
+home-delete-many-message = Prosjektene flyttes til papirkurven i Glaukopis, og kan hentes tilbake derfra. Referansene dine blir ikke rørt.
+home-delete-many-shared = Prosjektene flyttes til papirkurven i Glaukopis, og kan hentes tilbake derfra. De du deler, blir liggende på serveren og hos de andre.
+home-delete-many-confirm = Slett prosjektene

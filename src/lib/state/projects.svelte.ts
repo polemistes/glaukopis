@@ -8,6 +8,7 @@ import {
   foldersList,
   projectAppend,
   projectCreate,
+  projectRestore,
   projectDelete,
   projectDuplicate,
   projectList,
@@ -91,9 +92,21 @@ class ProjectsState {
     return info;
   }
 
+  /** Counts the times a project went into the trash or came out of it: what shows the trash reads it again. */
+  trashed = $state(0);
+
   async remove(id: string) {
     await projectDelete(id);
     this.list = this.list.filter((p) => p.id !== id);
+    this.trashed++;
+  }
+
+  /** Brings a project back from the trash, by its entry there. */
+  async restore(entry: string): Promise<ProjectInfo> {
+    const info = await projectRestore(entry);
+    this.put(info);
+    this.trashed++;
+    return info;
   }
 
   put(info: ProjectInfo) {
@@ -108,8 +121,8 @@ class ProjectsState {
     return id ? this.folders.find((f) => f.id === id) : undefined;
   }
 
-  async createFolder(name: string, parent: string | null): Promise<Folder> {
-    const folder = await folderCreate(name, parent);
+  async createFolder(name: string, parent: string | null, id?: string): Promise<Folder> {
+    const folder = await folderCreate(name, parent, id);
     this.folders = [...this.folders, folder];
     return folder;
   }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { projectPurge, projectRestore, type Trashed } from '$lib/api/projects';
+  import { projectPurge, type Trashed } from '$lib/api/projects';
   import { t } from '$lib/i18n';
   import { projects } from '$lib/state/projects.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -24,7 +24,7 @@
 
   async function restore(gone: Trashed) {
     try {
-      projects.put(await projectRestore(gone.entry));
+      await projects.restore(gone.entry);
       notifyOk(t('home-restored', { name: gone.info.name }));
       onchange();
     } catch (error) {

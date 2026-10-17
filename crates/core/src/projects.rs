@@ -636,18 +636,25 @@ impl Projects {
     }
 
     pub fn folder_create(&self, name: &str, parent: Option<&str>) -> Result<Folder> {
+        self.folder_create_with_id(&uuid::Uuid::new_v4().to_string(), name, parent)
+    }
+
+    /// Makes a folder under a given id: one that was deleted is made again as
+    /// it was, when that is undone, so that what named it finds it.
+    pub fn folder_create_with_id(&self, id: &str, name: &str, parent: Option<&str>) -> Result<Folder> {
         let name = Self::check_name(name)?;
+        if id.trim().is_empty() {
+            return Err(Error::invalid(tr!("core-projects-folder-id-taken")));
+        }
         self.change_arrangement(|a| {
+            if a.folders.iter().any(|f| f.id == id) {
+                return Err(Error::invalid(tr!("core-projects-folder-id-taken")));
+            }
             if let Some(parent) = parent {
                 Self::folder_in(a, parent)?;
             }
             let last = a.folders.iter().map(|f| f.order.as_str()).max();
-            let folder = Folder {
-                id: uuid::Uuid::new_v4().to_string(),
-                name,
-                parent: parent.map(str::to_owned),
-                order: next_order(last),
-            };
+            let folder = Folder { id: id.to_owned(), name, parent: parent.map(str::to_owned), order: next_order(last) };
             a.folders.push(folder.clone());
             Ok(folder)
         })
@@ -1037,6 +1044,10 @@ mod tests {
         assert!(greek.order < epic.order, "a new folder comes after the last");
         assert!(p.folder_create("Lost", Some("nowhere")).is_err());
         assert!(p.folder_create("  ", None).is_err());
+        let again = p.folder_create_with_id("made-again", "Again", Some(&greek.id)).unwrap();
+        assert_eq!(again.id, "made-again");
+        assert!(p.folder_create_with_id("made-again", "Twice", None).is_err(), "an id is not taken twice");
+        p.folder_delete("made-again").unwrap();
 
         // Not in itself, nor in what lies under it.
         assert!(p.folder_move(&greek.id, Some(&greek.id)).is_err());

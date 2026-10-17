@@ -22,6 +22,7 @@ home-list-none = There are no projects.
 ## Folders of projects
 
 home-new-folder = New folder
+home-folder-new-project = New project inside…
 home-folder-new-inside = New folder inside…
 home-folder-rename-title = Rename folder
 home-folder-name-placeholder = What the folder holds
@@ -65,6 +66,25 @@ home-owl-fit = Show all of it
 # On a folder of the map: its projects are hidden, or shown.
 home-owl-fold = Hide the projects in it
 home-owl-unfold = Show the projects in it
+# The map itself, as a list read aloud.
+home-owl-label = The map of the projects
+# The corner of a card that opens the project, and of a folder that shows it at the centre of the map.
+home-owl-open = Open the project
+home-owl-enter = Open the folder as a map
+# The corner of the folder at the centre: up to what holds it.
+home-owl-leave = Up to “{ $name }”
+# The menus of the map and of a folder on it: a new one made here, its name written in place.
+home-owl-new-project = New project here
+home-owl-new-folder = New folder here
+# What a new folder or project is called until its name is written.
+home-owl-name = Name
+# Beside the pointer, while several folders and projects are dragged.
+home-owl-dragged = { $count ->
+    [one] { $count } thing
+   *[other] { $count } things
+}
+# The bar over the map, at a folder: what holds it.
+home-owl-in = In “{ $name }”
 
 ## A map of the projects
 
@@ -232,3 +252,35 @@ home-redo = Redo
 # What was undone, as the message of the change said it.
 home-undone = Undone: { $what }
 home-undo-failed = That could not be undone
+
+## What a change of the home says, with a way back
+home-renamed = “{ $old }” is now called “{ $name }”
+home-project-made = “{ $name }” was made
+home-folder-made = The folder “{ $name }” was made
+home-moved-many-to = { $count ->
+    [one] { $count } thing was moved to { $folder }
+   *[other] { $count } things were moved to { $folder }
+}
+home-moved-many-out = { $count ->
+    [one] { $count } thing is in no folder now
+   *[other] { $count } things are in no folder now
+}
+home-folder-deleted = The folder “{ $name }” was deleted; what was in it moved up
+home-deleted-many = { $count ->
+    [one] { $count } thing was deleted
+   *[other] { $count } things were deleted
+}
+home-not-in-trash = The project is no longer in the trash.
+home-folders-delete-title = { $count ->
+    [one] Delete { $count } folder?
+   *[other] Delete { $count } folders?
+}
+home-folders-delete-message = The folders and projects in them are kept: they move up to where the folders were.
+home-folders-delete-confirm = Delete folders
+home-delete-many-title = { $count ->
+    [one] Delete { $count } project?
+   *[other] Delete { $count } projects?
+}
+home-delete-many-message = The projects are moved to the trash of Glaukopis, from which they can be brought back. Your references are not touched.
+home-delete-many-shared = The projects are moved to the trash of Glaukopis, from which they can be brought back. Those you share stay on the server and with the others.
+home-delete-many-confirm = Delete projects

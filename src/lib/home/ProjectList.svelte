@@ -16,14 +16,11 @@
 <script lang="ts">
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import Columns2 from '@lucide/svelte/icons/columns-2';
+  import Minimize2 from '@lucide/svelte/icons/minimize-2';
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import Folder from '@lucide/svelte/icons/folder';
-  import FolderInput from '@lucide/svelte/icons/folder-input';
-  import FolderOutput from '@lucide/svelte/icons/folder-output';
   import FolderPlus from '@lucide/svelte/icons/folder-plus';
-  import Pencil from '@lucide/svelte/icons/pencil';
   import Search from '@lucide/svelte/icons/search';
-  import Trash2 from '@lucide/svelte/icons/trash-2';
   import type { Folder as FolderInfo, ProjectInfo } from '$lib/api/projects';
   import { t } from '$lib/i18n';
   import type { Project } from '$lib/project/model/project.svelte';
@@ -35,21 +32,13 @@
   import { projects } from '$lib/state/projects.svelte';
   import Button from '$lib/ui/Button.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
-  import { confirm } from '$lib/ui/confirm.svelte';
   import { dropTarget, startDrag, type DragPayload, type DropEvent } from '$lib/ui/drag.svelte';
   import { openContextMenu, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import TextField from '$lib/ui/TextField.svelte';
-  import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import { tick, untrack } from 'svelte';
   import { ago } from '$lib/util/time';
-  import {
-    ancestors,
-    descendants,
-    folderOf,
-    folderTree,
-    foldersOpenTo,
-    rows as makeRows,
-  } from './folders';
+  import { ancestors, folderOf, rows as makeRows } from './folders';
+  import { moveThings, thingsOf, wouldMove } from './changes';
   import { closedTrees } from './closed.svelte';
   import { listUi } from './list.svelte';
   import type { ProjectActions } from './project-actions.svelte';
@@ -73,8 +62,11 @@
     at?: string | null;
     /** Enters an element of the open project. */
     onenter?: (id: string) => void;
-    /** Whether the owl map is in view: its row, at the top, is marked. */
-    owlHere?: boolean;
+    /**
+     * Where the owl map is in view: null at the owl, whose row at the top
+     * is marked, or a folder's id where one is entered, whose row is marked.
+     */
+    owlAt?: string | null;
   }
 
   let {
@@ -84,8 +76,9 @@
     project = null,
     at = null,
     onenter,
-    owlHere = false,
+    owlAt = undefined,
   }: Props = $props();
+  const owlHere = $derived(owlAt === null);
 
   let filter = $state('');
   let listEl = $state<HTMLDivElement>();
@@ -117,173 +110,44 @@
     });
   });
 
-  async function moveProject(p: ProjectInfo, folder: string | null) {
-    if (folderOf(projects.folders, p) === folder) return;
-    try {
-      await projects.moveToFolder(p.id, folder);
-      reveal(folder);
-      const name = projects.folder(folder)?.name;
-      notifyOk(
-        folder && name
-          ? t('home-moved-to', { name: p.name, folder: name })
-          : t('home-moved-out', { name: p.name }),
-      );
-    } catch (error) {
-      notifyError(t('home-move-failed'), error);
-    }
-  }
-
-  async function moveFolder(id: string, parent: string | null) {
-    if (id === parent || (parent && descendants(projects.folders, id).has(parent))) return;
-    try {
-      await projects.moveFolder(id, parent);
-      reveal(parent);
-    } catch (error) {
-      notifyError(t('home-folder-failed'), error);
-    }
-  }
-
-  async function removeFolder(f: FolderInfo) {
-    const ok = await confirm({
-      title: t('home-folder-delete-title', { name: f.name }),
-      message: t('home-folder-delete-message'),
-      confirm: t('home-folder-delete-confirm'),
-      danger: true,
-    });
-    if (!ok) return;
-    try {
-      await projects.deleteFolder(f.id);
-    } catch (error) {
-      notifyError(t('home-folder-failed'), error);
-    }
-  }
-
-  /** The folders something may be moved into, as a menu: each under the one it lies in. */
-  function intoFolders(
-    open: FolderInfo[],
-    current: string | null,
-    move: (folder: string) => void,
-  ): MenuItem[] {
-    const ids = new Set(open.map((f) => f.id));
-    return folderTree(projects.folders)
-      .filter((x) => ids.has(x.folder.id))
-      .map((x) => ({
-        label: ' '.repeat(x.depth) + x.folder.name,
-        checked: x.folder.id === current,
-        disabled: x.folder.id === current,
-        action: () => move(x.folder.id),
-      }));
-  }
-
+  /** The menu of a project in the list: with Open beside while another is open, and the moves. */
   function projectItems(p: ProjectInfo): MenuItem[] {
-    const folder = folderOf(projects.folders, p);
-    const into = intoFolders(projects.folders, folder, (id) => moveProject(p, id));
-    const base = actions.items(p, { here: p.id === current });
-    // While a project is open, another may be opened beside it: after Open.
-    if (current && p.id !== current) {
-      base.splice(1, 0, {
-        label: t('home-open-beside'),
-        icon: Columns2,
-        action: () => viewing.beside?.(p.id),
-      });
-    }
-    // Before the last part of the menu, which deletes.
-    const cut = base.findIndex((item, i) => item.kind === 'separator' && i === base.length - 2);
-    const moving: MenuItem[] = [
-      { kind: 'separator' },
-      {
-        kind: 'submenu',
-        label: t('home-menu-move'),
-        icon: FolderInput,
-        items: into,
-        disabled: !into.length,
-      },
-      ...(folder
-        ? [
-            {
-              label: t('home-menu-out'),
-              icon: FolderOutput,
-              action: () => moveProject(p, null),
-            } as MenuItem,
-          ]
-        : []),
-    ];
-    return cut < 0 ? [...base, ...moving] : [...base.slice(0, cut), ...moving, ...base.slice(cut)];
+    const beside: MenuItem[] =
+      current && p.id !== current
+        ? [{ label: t('home-open-beside'), icon: Columns2, action: () => viewing.beside?.(p.id) }]
+        : [];
+    return actions.itemsWithMoves(p, { here: p.id === current, afterOpen: beside });
   }
 
-  function folderItems(f: FolderInfo): MenuItem[] {
-    const parent = f.parent ?? null;
-    const into = intoFolders(foldersOpenTo(projects.folders, f.id), parent, (folder) =>
-      moveFolder(f.id, folder),
-    );
-    return [
+  const openAsMap = (f: FolderInfo) => router.go({ view: 'owl', at: f.id });
+  const folderItems = (f: FolderInfo) =>
+    actions.folderItems(f, [
       {
-        label: t('home-folder-new-inside'),
-        icon: FolderPlus,
-        action: () => actions.newFolder(f.id),
+        label: t('home-owl-enter'),
+        icon: Minimize2,
+        disabled: owlAt === f.id,
+        action: () => openAsMap(f),
       },
-      {
-        label: t('common-rename'),
-        icon: Pencil,
-        shortcut: 'F2',
-        action: () => actions.renameFolder(f),
-      },
-      { kind: 'separator' },
-      {
-        kind: 'submenu',
-        label: t('home-menu-move'),
-        icon: FolderInput,
-        items: into,
-        disabled: !into.length,
-      },
-      ...(parent
-        ? [
-            {
-              label: t('home-menu-out'),
-              icon: FolderOutput,
-              action: () => moveFolder(f.id, null),
-            } as MenuItem,
-          ]
-        : []),
-      { kind: 'separator' },
-      {
-        label: t('home-folder-delete-confirm'),
-        icon: Trash2,
-        danger: true,
-        action: () => removeFolder(f),
-      },
-    ];
-  }
+    ]);
+
+  // The folder in view on the owl map is shown: the folders it lies in open.
+  $effect(() => {
+    const id = owlAt;
+    if (id) untrack(() => listUi.reveal(ancestors(projects.folders, id).slice(1)));
+  });
+  const removeFolder = (f: FolderInfo) => void actions.removeFolder(f);
 
   /** Whether what is dragged may be dropped into a folder, or at the top. */
   function accepts(target: string | null) {
     return (payload: DragPayload) => {
-      if (payload.kind === 'project') {
-        const p = projects.list.find((x) => x.id === payload.data);
-        return !!p && folderOf(projects.folders, p) !== target;
-      }
-      if (payload.kind === 'folder') {
-        const id = payload.data as string;
-        const f = projects.folder(id);
-        return (
-          !!f &&
-          id !== target &&
-          (f.parent ?? null) !== target &&
-          !(target && descendants(projects.folders, id).has(target))
-        );
-      }
-      return false;
+      const things = thingsOf(payload);
+      return !!things && wouldMove(things, target);
     };
   }
 
   function drop(event: DropEvent, target: string | null) {
-    const { payload } = event;
-    if (payload.kind === 'project') {
-      const p = projects.list.find((x) => x.id === payload.data);
-      if (p) moveProject(p, target);
-    } else if (payload.kind === 'folder') {
-      moveFolder(payload.data as string, target);
-    }
+    const things = thingsOf(event.payload);
+    if (things) void moveThings(things, target);
   }
 
   function facts(p: ProjectInfo): string {
@@ -490,9 +354,13 @@
         tabindex="0"
         data-depth={row.depth}
         data-folder={f.id}
+        class:current={owlAt === f.id}
+        aria-current={owlAt === f.id ? 'page' : undefined}
+        data-current={owlAt === f.id ? '' : undefined}
         style:padding-left="{left + row.depth * step}px"
         use:dropTarget={{ accepts: accepts(f.id), ondrop: (e) => drop(e, f.id) }}
         onclick={() => toggle(f.id)}
+        ondblclick={() => openAsMap(f)}
         oncontextmenu={(e) => openContextMenu(e, folderItems(f))}
         onkeydown={(e) => onfolderkey(e, f)}
         onpointerdown={(e) => startDrag(e, () => ({ kind: 'folder', data: f.id, label: f.name }))}

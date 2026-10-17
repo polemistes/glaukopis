@@ -5,6 +5,7 @@ core-projects-bad-id = «{ $id }» er ikke id-en til et prosjekt
 core-projects-needs-name = Et prosjekt må ha et navn.
 core-projects-name-too-long = Det navnet er for langt.
 core-projects-id-taken = Det finnes allerede et prosjekt med den id-en.
+core-projects-folder-id-taken = Det finnes allerede en mappe med den id-en.
 core-projects-id-exists = Det finnes allerede et prosjekt med den id-en.
 core-projects-not-in-history = Det er ikke en oppføring i historikken.
 core-projects-no-token = Serveren ga ingen tilgangsnøkkel.

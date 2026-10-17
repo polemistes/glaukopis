@@ -16,6 +16,7 @@ export type Place =
   | 'project'
   | 'review'
   | 'diagram'
+  | 'owl'
   | 'text'
   | 'writing'
   | 'library'
@@ -38,10 +39,21 @@ export interface KeyEntry {
 
 /** Places whose keys are in force together: a key must mean one thing in each. */
 const TOGETHER: Record<Place, Place[]> = {
-  everywhere: ['everywhere', 'project', 'review', 'diagram', 'text', 'writing', 'library', 'files'],
+  everywhere: [
+    'everywhere',
+    'project',
+    'review',
+    'diagram',
+    'owl',
+    'text',
+    'writing',
+    'library',
+    'files',
+  ],
   project: ['everywhere', 'project', 'review', 'diagram', 'text', 'writing'],
   review: ['everywhere', 'project', 'review', 'text', 'writing'],
   diagram: ['everywhere', 'project', 'diagram'],
+  owl: ['everywhere', 'owl'],
   text: ['everywhere', 'project', 'review', 'text', 'writing'],
   writing: ['everywhere', 'project', 'review', 'text', 'writing'],
   library: ['everywhere', 'library'],
@@ -115,6 +127,27 @@ export const KEYS: KeyEntry[] = [
   { id: 'diagram-whole', keys: 'Ctrl+0', place: 'diagram' },
   { id: 'diagram-closer', keys: 'Ctrl+=', place: 'diagram' },
   { id: 'diagram-farther', keys: 'Ctrl+-', place: 'diagram' },
+
+  // On the map of the projects: the keys of the diagram, over folders and projects.
+  { id: 'owl-new-project', keys: 'Enter', place: 'owl' },
+  { id: 'owl-new-project-ctrl', keys: 'Ctrl+Enter', place: 'owl' },
+  { id: 'owl-new-folder', keys: 'Tab', place: 'owl' },
+  { id: 'owl-new-folder-ctrl', keys: 'Ctrl+Shift+Enter', place: 'owl' },
+  { id: 'owl-open', keys: 'Alt+Shift+↓', place: 'owl' },
+  { id: 'owl-up', keys: 'Alt+Shift+↑', place: 'owl' },
+  { id: 'owl-depth', keys: 'Alt+←→', place: 'owl' },
+  { id: 'owl-rename', keys: 'F2', place: 'owl' },
+  { id: 'owl-fold', keys: 'Space', place: 'owl' },
+  { id: 'owl-delete', keys: 'Delete', place: 'owl' },
+  { id: 'owl-go', keys: '↑↓←→', place: 'owl' },
+  { id: 'owl-more', keys: 'Shift+↑↓←→', place: 'owl' },
+  { id: 'owl-menu', keys: 'Shift+F10', place: 'owl' },
+  { id: 'owl-all', keys: 'Ctrl+A', place: 'owl' },
+  { id: 'owl-undo', keys: 'Ctrl+Z', place: 'owl' },
+  { id: 'owl-redo', keys: 'Ctrl+Shift+Z', place: 'owl' },
+  { id: 'owl-whole', keys: 'Ctrl+0', place: 'owl' },
+  { id: 'owl-closer', keys: 'Ctrl+=', place: 'owl' },
+  { id: 'owl-farther', keys: 'Ctrl+-', place: 'owl' },
 
   // In the text of a map: the keys of the diagram, and Tab in a name.
   { id: 'text-new-after', keys: 'Ctrl+Enter', place: 'text', over: ['writing-break'] },

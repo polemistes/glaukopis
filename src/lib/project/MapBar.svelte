@@ -51,6 +51,8 @@
     named?: { name: string; sharing?: { owner: boolean } | null } | null;
     /** Whether the owl at the project goes up to all the projects: in the first pane. */
     home?: boolean;
+    /** Goes up from the project, to the map of the projects; where it is not given, to the owl. */
+    onhome?: () => void;
   }
 
   let {
@@ -62,6 +64,7 @@
     ondocument,
     named = null,
     home = true,
+    onhome,
   }: Props = $props();
 
   const tree = $derived(project.tree());
@@ -79,7 +82,8 @@
 
   /** Up from the project: to all the projects, as the owl's map shows them. */
   function goHome() {
-    router.go({ view: 'owl' });
+    if (onhome) onhome();
+    else router.go({ view: 'owl' });
   }
 
   function nameOf(id: string): string {

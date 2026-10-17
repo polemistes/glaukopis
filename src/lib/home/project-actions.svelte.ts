@@ -9,19 +9,31 @@
 import { open as chooseFile, save } from '@tauri-apps/plugin-dialog';
 import Copy from '@lucide/svelte/icons/copy';
 import FileDown from '@lucide/svelte/icons/file-down';
+import FilePlus from '@lucide/svelte/icons/file-plus';
 import FolderDown from '@lucide/svelte/icons/folder-down';
+import FolderInput from '@lucide/svelte/icons/folder-input';
+import FolderOutput from '@lucide/svelte/icons/folder-output';
+import FolderPlus from '@lucide/svelte/icons/folder-plus';
 import History from '@lucide/svelte/icons/history';
 import Pencil from '@lucide/svelte/icons/pencil';
 import Trash2 from '@lucide/svelte/icons/trash-2';
 import type { FileChoice, Folder, FoundWork, ProjectInfo } from '$lib/api/projects';
-import { sharingRename } from '$lib/api/sharing';
 import { currentProject } from '$lib/editor/references.svelte';
 import { t } from '$lib/i18n';
 import { projects } from '$lib/state/projects.svelte';
 import type { MapMode } from '$lib/state/router.svelte';
-import { confirm } from '$lib/ui/confirm.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { describeError, notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
+import {
+  copyProject,
+  deleteThings,
+  makeFolder,
+  makeProject,
+  moveThings,
+  renameFolder,
+  renameProject,
+} from './changes';
+import { folderOf, folderTree, foldersOpenTo } from './folders';
 import { makeFromOrg, ORG_ENDING, writeOrgFolder } from './org-file';
 import { ENDING, fileName, given, makeFromFile, writeProjectFile } from './project-file';
 
@@ -32,7 +44,7 @@ export interface Naming {
   purpose: Purpose;
   project?: ProjectInfo;
   folder?: Folder;
-  /** The folder a new folder is made in. */
+  /** The folder a new folder or project is made in. */
   parent?: string | null;
   value: string;
   error: string | null;
@@ -102,8 +114,9 @@ export class ProjectActions {
     this.#place.open(p, mode);
   }
 
-  newProject() {
-    this.naming = { purpose: 'new', value: '', error: null };
+  /** Asks the name of a new project, to be made in the folder given or in none. */
+  newProject(parent: string | null = null) {
+    this.naming = { purpose: 'new', parent, value: '', error: null };
   }
 
   newFolder(parent: string | null) {
@@ -141,23 +154,21 @@ export class ProjectActions {
     this.busy = true;
     try {
       if (naming.purpose === 'new') {
-        const made = await projects.create(name);
+        const made = await makeProject(name, naming.parent ?? null);
         this.naming = null;
         // The first time, on its text: a new project begins with writing.
         this.open(made, 'text');
       } else if (naming.purpose === 'folder') {
-        await projects.createFolder(name, naming.parent ?? null);
+        await makeFolder(name, naming.parent ?? null);
         this.naming = null;
       } else if (naming.purpose === 'folder-rename' && naming.folder) {
-        await projects.renameFolder(naming.folder.id, name);
+        await renameFolder(naming.folder, name);
         this.naming = null;
       } else if (naming.purpose === 'rename' && naming.project) {
-        await projects.rename(naming.project.id, name);
-        // Those who share it are told the name by the server; the server itself takes no harm from failing.
-        if (naming.project.sharing?.owner) sharingRename(naming.project.id, name).catch(() => {});
+        await renameProject(naming.project, name);
         this.naming = null;
       } else if (naming.purpose === 'copy' && naming.project) {
-        await projects.duplicate(naming.project.id, name);
+        await copyProject(naming.project, name);
         this.naming = null;
       }
     } catch (error) {
@@ -167,26 +178,112 @@ export class ProjectActions {
     }
   }
 
-  /** Moves a project to the trash, when that is confirmed. */
+  /** Moves a project to the trash, when that is confirmed; it can be undone. */
   async remove(p: ProjectInfo) {
-    const ok = await confirm({
-      title: t('home-delete-title', { name: p.name }),
-      message: p.sharing
-        ? p.sharing.owner
-          ? t('home-delete-owner')
-          : t('home-delete-member')
-        : t('home-delete-message'),
-      confirm: t('home-delete-confirm'),
-      danger: true,
-    });
-    if (!ok) return;
-    try {
-      await projects.remove(p.id);
-      notifyOk(t('home-deleted', { name: p.name }));
-      this.#place.deleted?.();
-    } catch (error) {
-      notifyError(t('home-delete-failed'), error);
-    }
+    if (await deleteThings({ projects: [p.id], folders: [] })) this.#place.deleted?.();
+  }
+
+  /** Deletes a folder, when that is confirmed: what is in it moves up. It can be undone. */
+  async removeFolder(f: Folder) {
+    await deleteThings({ projects: [], folders: [f.id] });
+  }
+
+  /** The folders something may be moved into, as a menu: each under the one it lies in. */
+  #intoFolders(open: Folder[], current: string | null, move: (folder: string) => void): MenuItem[] {
+    const ids = new Set(open.map((f) => f.id));
+    return folderTree(projects.folders)
+      .filter((x) => ids.has(x.folder.id))
+      .map((x) => ({
+        label: ' '.repeat(x.depth) + x.folder.name,
+        checked: x.folder.id === current,
+        disabled: x.folder.id === current,
+        action: () => move(x.folder.id),
+      }));
+  }
+
+  /** Moving a project into a folder or out of all, as items of its menu. */
+  moveItems(p: ProjectInfo): MenuItem[] {
+    const folder = folderOf(projects.folders, p);
+    const move = (into: string | null) => void moveThings({ projects: [p.id], folders: [] }, into);
+    const into = this.#intoFolders(projects.folders, folder, move);
+    return [
+      {
+        kind: 'submenu',
+        label: t('home-menu-move'),
+        icon: FolderInput,
+        items: into,
+        disabled: !into.length,
+      },
+      ...(folder
+        ? [{ label: t('home-menu-out'), icon: FolderOutput, action: () => move(null) } as MenuItem]
+        : []),
+    ];
+  }
+
+  /**
+   * The menu of a project with the moving into folders, before the last
+   * part, which deletes; and what the place adds after Open.
+   */
+  itemsWithMoves(p: ProjectInfo, options: { here?: boolean; afterOpen?: MenuItem[] } = {}) {
+    const base = this.items(p, options);
+    if (options.afterOpen?.length && !options.here) base.splice(1, 0, ...options.afterOpen);
+    const cut = base.findIndex((item, i) => item.kind === 'separator' && i === base.length - 2);
+    const moving: MenuItem[] = [{ kind: 'separator' }, ...this.moveItems(p)];
+    return cut < 0 ? [...base, ...moving] : [...base.slice(0, cut), ...moving, ...base.slice(cut)];
+  }
+
+  /**
+   * The menu of a folder; what the place adds stands first. Where `make` is
+   * given, a new project or folder in it is made in place, not by a dialog.
+   */
+  folderItems(
+    f: Folder,
+    first: MenuItem[] = [],
+    make?: (kind: 'project' | 'folder') => void,
+  ): MenuItem[] {
+    const parent = f.parent ?? null;
+    const move = (into: string | null) => void moveThings({ projects: [], folders: [f.id] }, into);
+    const into = this.#intoFolders(foldersOpenTo(projects.folders, f.id), parent, move);
+    return [
+      ...first,
+      ...(first.length ? [{ kind: 'separator' } as MenuItem] : []),
+      {
+        label: make ? t('home-owl-new-project') : t('home-folder-new-project'),
+        icon: FilePlus,
+        shortcut: make ? 'Enter' : undefined,
+        action: () => (make ? make('project') : this.newProject(f.id)),
+      },
+      {
+        label: make ? t('home-owl-new-folder') : t('home-folder-new-inside'),
+        icon: FolderPlus,
+        shortcut: make ? 'Tab' : undefined,
+        action: () => (make ? make('folder') : this.newFolder(f.id)),
+      },
+      {
+        label: t('common-rename'),
+        icon: Pencil,
+        shortcut: 'F2',
+        action: () => this.renameFolder(f),
+      },
+      { kind: 'separator' },
+      {
+        kind: 'submenu',
+        label: t('home-menu-move'),
+        icon: FolderInput,
+        items: into,
+        disabled: !into.length,
+      },
+      ...(parent
+        ? [{ label: t('home-menu-out'), icon: FolderOutput, action: () => move(null) } as MenuItem]
+        : []),
+      { kind: 'separator' },
+      {
+        label: t('home-folder-delete-confirm'),
+        icon: Trash2,
+        danger: true,
+        action: () => void this.removeFolder(f),
+      },
+    ];
   }
 
   /**

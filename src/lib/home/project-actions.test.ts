@@ -6,6 +6,9 @@ import type { MenuItem } from '$lib/ui/menu.svelte';
 
 const { projects, sharingRename, confirm, notifyOk, notifyError } = vi.hoisted(() => ({
   projects: {
+    list: [] as ProjectInfo[],
+    folders: [] as Folder[],
+    folder: vi.fn(),
     create: vi.fn(),
     createFolder: vi.fn(),
     renameFolder: vi.fn(),
@@ -57,6 +60,8 @@ describe('what is done with a project from a list of them', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    projects.list = [];
+    projects.folders = [];
     open = vi.fn();
     deleted = vi.fn();
     actions = new ProjectActions({ open, deleted });
@@ -69,7 +74,7 @@ describe('what is done with a project from a list of them', () => {
     expect(actions.naming?.purpose).toBe('new');
     actions.naming!.value = '  Odyssey ';
     await actions.commit();
-    expect(projects.create).toHaveBeenCalledWith('Odyssey');
+    expect(projects.create).toHaveBeenCalledWith('Odyssey', null);
     expect(open).toHaveBeenCalledWith(made, 'text');
     expect(actions.naming).toBeNull();
     expect(actions.busy).toBe(false);
@@ -88,10 +93,12 @@ describe('what is done with a project from a list of them', () => {
   });
 
   it('makes a folder inside another, and renames one', async () => {
+    projects.createFolder.mockResolvedValue({ id: 'e', name: 'Epic', parent: 'g', order: 'b' });
     actions.newFolder('g');
     actions.naming!.value = 'Epic';
     await actions.commit();
     expect(projects.createFolder).toHaveBeenCalledWith('Epic', 'g');
+    expect(actions.naming).toBeNull();
     actions.renameFolder(folder);
     expect(actions.naming?.value).toBe('Greek');
     actions.naming!.value = 'Hellenic';
@@ -119,10 +126,12 @@ describe('what is done with a project from a list of them', () => {
 
   it('duplicates a project under a name of its own', async () => {
     const p = project('p', 'Aeneid');
+    projects.duplicate.mockResolvedValue(project('c', t('home-copy-name', { name: 'Aeneid' })));
     actions.duplicate(p);
     expect(actions.naming?.value).toBe(t('home-copy-name', { name: 'Aeneid' }));
     await actions.commit();
     expect(projects.duplicate).toHaveBeenCalledWith('p', t('home-copy-name', { name: 'Aeneid' }));
+    expect(actions.naming).toBeNull();
   });
 
   it('keeps the dialog open, saying why, when it fails', async () => {
@@ -136,6 +145,7 @@ describe('what is done with a project from a list of them', () => {
 
   it('deletes only what is confirmed, and says so to its place', async () => {
     const p = project('p', 'Notes');
+    projects.list = [p];
     confirm.mockResolvedValueOnce(false);
     await actions.remove(p);
     expect(projects.remove).not.toHaveBeenCalled();
@@ -143,7 +153,6 @@ describe('what is done with a project from a list of them', () => {
     projects.remove.mockResolvedValue(undefined);
     await actions.remove(p);
     expect(projects.remove).toHaveBeenCalledWith('p');
-    expect(notifyOk).toHaveBeenCalled();
     expect(deleted).toHaveBeenCalledTimes(1);
   });
 
