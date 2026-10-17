@@ -91,14 +91,6 @@ home-owl-placed-many = { $count ->
     [one] { $count } ting ble satt der
    *[other] { $count } ting ble satt der
 }
-home-owl-elements-moved = { $count ->
-    [one] Et element i «{ $project }» ble flyttet
-   *[other] { $count } elementer i «{ $project }» ble flyttet
-}
-home-owl-elements-carried = { $count ->
-    [one] Et element ble flyttet til «{ $to }»
-   *[other] { $count } elementer ble flyttet til «{ $to }»
-}
 # Linjen over kartet, ved en mappe: det som rommer den.
 home-owl-in = I «{ $name }»
 

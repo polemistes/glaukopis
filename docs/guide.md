@@ -125,16 +125,17 @@ It is worked as a project's diagram is, in a look of its own:
 - **Folding.** **Space**, or the sign before a folder's name, hides the
   projects in it or shows them. A folder of many projects begins folded.
 - **The maps of the projects.** The line under a project's title, or
-  **Space** with the project selected, shows its map under the card, with
-  the names of its elements, folded as in the project. A double click on an
-  element, the button at its corner or **Alt+Shift+Down** opens the project
-  there. The elements are moved as in the project's own map: dragged onto
-  the ground they stand where they are let go, onto another element they go
-  under it, onto another project they are carried there; **Alt** and the
-  arrows move them up and down, under the one before, and out. Each move is
-  made in the project, and can be undone.
+  **Space** with the project selected, shows its map beside the card: first
+  the project's own element, closed, drawn as the top of a map; **Space**
+  opens it, and under it the elements stand as in the project's own map. A
+  double click on an element, the button at its corner or
+  **Alt+Shift+Down** opens the project there. Here they are only seen and
+  folded; they are moved, renamed and deleted in the project.
 - **Deleting.** **Delete** deletes what is selected, after asking: a
   project goes to the trash, and what is in a folder moves up.
+
+**Show all of it**, at the foot of the map, or **Ctrl+0**, shows all of the
+map at once, however far apart what is on it stands.
 
 **Shift+F10**, or a right click, opens the menu of what is selected, and the
 keyboard in the rail lists all of these keys under *On the map of the

@@ -27,9 +27,15 @@
   import type { Folder, ProjectInfo } from '$lib/api/projects';
   import { t } from '$lib/i18n';
   import { fitting, wheeled, zoomedAt, type View } from '$lib/project/diagram/camera';
+
+  /**
+   * The smallest the map is shown: smaller than a diagram's, so that all of
+   * it is seen at once, however wide the maps of projects shown in it.
+   */
+  const SMALLEST = 0.04;
   import { layout, type Size } from '$lib/project/diagram/layout';
   import { linesOf } from '$lib/project/diagram/lines';
-  import { isAncestor, subtree } from '$lib/project/model/tree';
+  import { subtree } from '$lib/project/model/tree';
   import { PROJECT, type NodeRecord, type Position } from '$lib/project/model/types';
   import Mark from '$lib/shell/Mark.svelte';
   import { projects } from '$lib/state/projects.svelte';
@@ -38,11 +44,8 @@
   import { notifyError } from '$lib/ui/toast.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import {
-    carryElements,
     deleteThings,
-    moveElements,
     placeThings,
-    type ElementPlace,
     makeFolder,
     makeProject,
     moveThings,
@@ -53,7 +56,7 @@
     wouldMove,
     type Things,
   } from './changes';
-  import { closedTrees, type ClosedTree } from './closed.svelte';
+  import { closedTrees } from './closed.svelte';
   import { folderOf } from './folders';
   import { listUi } from './list.svelte';
   import NameField from './NameField.svelte';
@@ -138,9 +141,7 @@
    * where it was let go until the change is on the map.
    */
   let dragging = $state<{ keys: string[]; grab: Position } | null>(null);
-  let settling = $state<{ at: Map<string, Position>; project?: string; reading?: unknown } | null>(
-    null,
-  );
+  let settling = $state<{ at: Map<string, Position> } | null>(null);
 
   const held = $derived.by(() => {
     const out = new Map<string, Position>();
@@ -168,13 +169,6 @@
     layout(owl.tree, owl.nodes as unknown as ReadonlyMap<string, NodeRecord>, sizes),
   );
   const lines = $derived(linesOf(lay, new Set()));
-
-  // Elements dropped stand where they were let go until their project's map is read anew.
-  $effect(() => {
-    const was = settling;
-    if (!was?.project) return;
-    if (closedTrees.get(was.project) !== was.reading) untrack(() => (settling = null));
-  });
 
   // What was dropped stands where it was let go until the map shows it moved, or for a few seconds.
   $effect(() => {
@@ -270,7 +264,7 @@
     const all = lay.order.every((key) => sizes.has(key));
     const fit = () => {
       if (fitted) return;
-      cam = fitting(lay.bounds, width, height);
+      cam = fitting(bounds(), width, height, SMALLEST);
       fitted = true;
     };
     if (all) {
@@ -319,7 +313,7 @@
       event.preventDefault();
       anchor = null;
       const rect = el.getBoundingClientRect();
-      cam = wheeled(cam, event, event.clientX - rect.left, event.clientY - rect.top);
+      cam = wheeled(cam, event, event.clientX - rect.left, event.clientY - rect.top, SMALLEST);
     };
     el.addEventListener('wheel', onwheel, { passive: false });
     return () => el.removeEventListener('wheel', onwheel);
@@ -331,14 +325,31 @@
     if (!active || active === document.body) viewport?.focus({ preventScroll: true });
   });
 
+  /** What the map takes up: where something has no place that is a number, about the centre alone. */
+  function bounds() {
+    const b = lay.bounds;
+    return [b.left, b.top, b.right, b.bottom].every(Number.isFinite)
+      ? b
+      : { left: -100, top: -100, right: 100, bottom: 100 };
+  }
+
+  // A view that has lost its place is fitted anew: with no number for where it is, nothing would be seen.
+  $effect(() => {
+    if ([cam.x, cam.y, cam.k].every(Number.isFinite) && cam.k > 0) return;
+    untrack(() => {
+      anchor = null;
+      fitted = false;
+    });
+  });
+
   function fit() {
     anchor = null;
-    if (width && height) cam = fitting(lay.bounds, width, height);
+    if (width && height) cam = fitting(bounds(), width, height, SMALLEST);
   }
 
   function zoomBy(factor: number) {
     anchor = null;
-    cam = zoomedAt(cam, width / 2, height / 2, cam.k * factor);
+    cam = zoomedAt(cam, width / 2, height / 2, cam.k * factor, SMALLEST);
   }
 
   /** Brings a thing into the view where it lies outside it, or near its edge. */
@@ -370,153 +381,9 @@
     return !!rect && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
   }
 
-  // ---- the elements of the maps shown under the cards ----
-
-  /** The map of a project as it is read, where it is shown. */
-  const mapOf = (project: string): ClosedTree | null => {
-    const m = maps.get(project);
-    return m && typeof m === 'object' ? m : null;
-  };
-
-  /** Where an element stands in its project now: under which, before which, placed where. */
-  function standing(map: ClosedTree, id: string): ElementPlace {
-    const parent = map.tree.parent.get(id) ?? PROJECT;
-    const list = map.tree.children.get(parent) ?? [];
-    return {
-      id,
-      parent,
-      before: list[list.indexOf(id) + 1] ?? null,
-      pos: map.places.get(id)?.pos ?? null,
-    };
-  }
-
-  /** The elements of one project among some keys, the topmost of them only, in the order given. */
-  function elementsIn(keys: string[], project: string): string[] {
-    const ids = keys.flatMap((k) => {
-      const e = keyed(k);
-      return e.kind === 'element' && e.project === project ? [e.id] : [];
-    });
-    const map = mapOf(project);
-    if (!map) return [];
-    return ids.filter((id) => !ids.some((o) => o !== id && isAncestor(map.tree, o, id)));
-  }
-
-  const projectName = (id: string) => projects.list.find((p) => p.id === id)?.name ?? '';
-
-  /** Moves elements of one project as `to` says, held where `at` says until the map shows it. */
-  function moveWithin(project: string, to: ElementPlace[], at?: Map<string, Position>) {
-    const map = mapOf(project);
-    if (!map || !to.length) return;
-    const from = to.map((m) => standing(map, m.id));
-    if (at?.size) settling = { at, project, reading: closedTrees.get(project) };
-    void moveElements(
-      project,
-      to,
-      from,
-      t('home-owl-elements-moved', { count: to.length, project: projectName(project) }),
-    );
-  }
-
-  /** One place up or down among those beside it: the last selected, as in the diagram. */
-  function shiftElements(keys: string[], by: -1 | 1) {
-    const k = keyed(keys[keys.length - 1] ?? '');
-    if (k.kind !== 'element') return;
-    const map = mapOf(k.project);
-    if (!map) return;
-    const here = standing(map, k.id);
-    const list = map.tree.children.get(here.parent) ?? [];
-    const i = list.indexOf(k.id);
-    const j = i + by;
-    if (j < 0 || j >= list.length) return;
-    const before = by < 0 ? list[j] : (list[j + 1] ?? null);
-    moveWithin(k.project, [{ ...here, before, pos: null }]);
-  }
-
-  /** Under the element before it, at the end; or out, after the element it was under. */
-  function deeperElements(keys: string[], deeper: boolean) {
-    const k = keyed(keys[keys.length - 1] ?? '');
-    if (k.kind !== 'element') return;
-    const map = mapOf(k.project);
-    if (!map) return;
-    const ids = elementsIn(keys, k.project);
-    const here = standing(map, k.id);
-    const list = map.tree.children.get(here.parent) ?? [];
-    let parent: string;
-    let before: string | null = null;
-    if (deeper) {
-      const prev = list.slice(0, list.indexOf(ids[0] ?? k.id)).filter((x) => !ids.includes(x));
-      if (!prev.length) return;
-      parent = prev[prev.length - 1];
-    } else {
-      if (here.parent === PROJECT) return;
-      parent = map.tree.parent.get(here.parent) ?? PROJECT;
-      const above = map.tree.children.get(parent) ?? [];
-      before = above[above.indexOf(here.parent) + 1] ?? null;
-    }
-    moveWithin(
-      k.project,
-      ids.map((id) => ({ id, parent, before, pos: null })),
-    );
-    if (deeper) listUi.owlElementFold(elementKey(k.project, parent), false);
-  }
-
-  /** The element of its project a key stands for when elements are dropped on it: an element, or the top of a card's. */
-  function underOf(key: string): { project: string; id: string } | null {
-    const k = keyed(key);
-    if (k.kind === 'element') return { project: k.project, id: k.id };
-    if (k.kind === 'project') return { project: k.id, id: PROJECT };
-    return null;
-  }
-
-  /** What is dragged from a map shown here: elements of one project. */
-  interface Carried {
-    project: string;
-    ids: string[];
-  }
-  const ELEMENTS = 'owl-elements';
-
-  /** Elements dropped on an element or on a card: under it, in its project or carried to it from another. */
-  function dropUnder(key: string) {
-    return {
-      accepts: (payload: DragPayload) => {
-        if (payload.kind !== ELEMENTS) return false;
-        const target = underOf(key);
-        const data = payload.data as Carried;
-        return !!target && !(target.project === data.project && data.ids.includes(target.id));
-      },
-      ondrop: (e: { payload: DragPayload }) => {
-        const target = underOf(key);
-        const data = e.payload.data as Carried;
-        if (!target) return;
-        if (target.project === data.project) {
-          moveWithin(
-            data.project,
-            data.ids.map((id) => ({ id, parent: target.id, before: null, pos: null })),
-          );
-        } else {
-          const map = mapOf(data.project);
-          if (!map || !data.ids.length) return;
-          const first = standing(map, data.ids[0]);
-          void carryElements(
-            data.project,
-            data.ids,
-            target.project,
-            target.id,
-            { parent: first.parent, before: first.before },
-            t('home-owl-elements-carried', {
-              count: data.ids.length,
-              to: projectName(target.project),
-            }),
-          );
-        }
-      },
-    };
-  }
-
   /** What is dropped on the ground of the map: put there, as in the diagram, under what holds it. */
   const ground = {
-    accepts: (payload: DragPayload) =>
-      !!dragging && (payload.kind === ELEMENTS || !!thingsOf(payload)),
+    accepts: (payload: DragPayload) => !!dragging && !!thingsOf(payload),
     quiet: true,
     ondrop: (e: { payload: DragPayload; x: number; y: number }) => {
       const was = dragging;
@@ -526,8 +393,7 @@
       was.keys.forEach((k, i) =>
         at.set(k, { x: world.x - was.grab.x, y: world.y - was.grab.y + i * 52 }),
       );
-      if (e.payload.kind === ELEMENTS) placeElements(e.payload.data as Carried, was.keys, at);
-      else placeThingsAt(was.keys, at);
+      placeThingsAt(was.keys, at);
     },
   };
 
@@ -553,40 +419,6 @@
     ).finally(() => {
       if (settling?.at === at) settling = null;
     });
-  }
-
-  /**
-   * Elements put where they were dropped, under the parent they have, as the
-   * diagram puts them: their place among those beside them follows from
-   * where they stand, on their side, from the top down.
-   */
-  function placeElements(data: Carried, keys: string[], at: Map<string, Position>) {
-    const map = mapOf(data.project);
-    if (!map) return;
-    const to: ElementPlace[] = [];
-    for (const key of keys) {
-      const k = keyed(key);
-      const world = at.get(key);
-      const parentKey = owl.tree.parent.get(key);
-      const pp = parentKey ? resting.placed.get(parentKey) : undefined;
-      if (k.kind !== 'element' || !world || !parentKey || !pp) continue;
-      const rel = { x: world.x - pp.x, y: world.y - pp.y };
-      const side = rel.x < 0 ? 'left' : 'right';
-      const siblings = (owl.tree.children.get(parentKey) ?? []).filter((x) => !keys.includes(x));
-      const same = siblings.filter((x) => resting.placed.get(x)?.side === side);
-      const below = same.find((x) => (resting.placed.get(x)?.y ?? 0) > world.y);
-      const after = below ?? (same.length ? undefined : side === 'right' ? siblings[0] : undefined);
-      const nextKey =
-        after ?? (same.length ? siblings[siblings.indexOf(same[same.length - 1]) + 1] : undefined);
-      const next = nextKey ? keyed(nextKey) : null;
-      to.push({
-        id: k.id,
-        parent: map.tree.parent.get(k.id) ?? PROJECT,
-        before: next?.kind === 'element' ? next.id : null,
-        pos: rel,
-      });
-    }
-    moveWithin(data.project, to, at);
   }
 
   function focusMap() {
@@ -698,7 +530,6 @@
   }
 
   function deeper(keys: string[]) {
-    if (keyed(keys[keys.length - 1] ?? '').kind === 'element') return deeperElements(keys, true);
     const from = keys[keys.length - 1];
     const target = from ? folderBefore(from, owl.tree) : null;
     if (!target) return;
@@ -707,7 +538,6 @@
   }
 
   function shallower(keys: string[]) {
-    if (keyed(keys[keys.length - 1] ?? '').kind === 'element') return deeperElements(keys, false);
     const from = keys[keys.length - 1];
     const target = from ? folderAbove(from, owl.tree) : null;
     if (!target) return;
@@ -735,6 +565,8 @@
     } else if (item?.kind === 'project') {
       keep();
       listUi.owlMap(item.project.id, !item.map);
+      // Shown, its own element is selected and brought into view once it is read: Space opens it.
+      if (!item.map) listUi.owlReveal = elementKey(item.project.id, PROJECT);
     } else if (item?.kind === 'element' && item.holds) {
       keep();
       listUi.owlElementFold(key, !item.folded);
@@ -892,7 +724,6 @@
     make,
     deeper,
     shallower,
-    shift: shiftElements,
     fold,
     remove: (keys) => void remove(keys),
     menu: menuOf,
@@ -915,31 +746,14 @@
 
   /** The payload of what is dragged: the thing pressed, or the selection it is part of. */
   /**
-   * The payload of what is dragged: the thing pressed, or the selection it
-   * is part of. Elements go with the others of their project; folders and
-   * projects with the others of theirs. It is remembered what is dragged,
-   * and where the pointer took hold of the first, to draw it under the pointer.
+   * The payload of what is dragged: the folder or project pressed, or the
+   * selection it is part of. It is remembered what is dragged, and where the
+   * pointer took hold of the first, to draw it under the pointer. The
+   * elements of projects' maps are not dragged: they are moved in their project.
    */
   function payloadFor(key: string, from: Position): DragPayload | null {
     const lead = lay.placed.get(key);
     const grab = { x: from.x - (lead?.x ?? from.x), y: from.y - (lead?.y ?? from.y) };
-    const k = keyed(key);
-    if (k.kind === 'element') {
-      const pool = selected.has(key) ? selection : [key];
-      const ids = [k.id, ...elementsIn(pool, k.project).filter((id) => id !== k.id)];
-      const map = mapOf(k.project);
-      const topmost = map
-        ? ids.filter((id) => !ids.some((o) => o !== id && isAncestor(map.tree, o, id)))
-        : [k.id];
-      dragging = { keys: topmost.map((id) => elementKey(k.project, id)), grab };
-      const item = owl.items.get(key);
-      const name = item?.kind === 'element' ? item.name || t('project-untitled') : '';
-      return {
-        kind: ELEMENTS,
-        data: { project: k.project, ids: topmost } satisfies Carried,
-        label: topmost.length === 1 ? name : t('project-elements', { count: topmost.length }),
-      };
-    }
     if (!movable(key)) return null;
     const keys = selected.has(key)
       ? [key, ...selection.filter((x) => x !== key && movable(x))]
@@ -1062,18 +876,6 @@
           if (moved && into) listUi.owlFold(into, false);
         });
       },
-    };
-  }
-
-  /** A card takes folders and projects into its folder, and elements under its project's top. */
-  function dropOnCard(key: string) {
-    const things = dropInto(intoOf(key));
-    const elements = dropUnder(key);
-    return {
-      accepts: (payload: DragPayload) =>
-        payload.kind === ELEMENTS ? elements.accepts(payload) : things.accepts(payload),
-      ondrop: (e: { payload: DragPayload }) =>
-        e.payload.kind === ELEMENTS ? elements.ondrop(e) : things.ondrop(e),
     };
   }
 
@@ -1268,7 +1070,7 @@
                 data-side={p.side}
                 data-selected={selected.has(key) ? '' : undefined}
                 use:measured={key}
-                use:dropTarget={dropOnCard(key)}
+                use:dropTarget={dropInto(intoOf(key))}
               >
                 <div class="head">
                   <ProjectBadge
@@ -1350,11 +1152,13 @@
                 {/if}
               </div>
             {:else if item.kind === 'element'}
-              <!-- An element of a project's map: its name, as it stands in its project. -->
+              <!-- An element of a project's map, drawn as the project's own map draws it; not changed here. -->
               <div
-                class="element"
+                class="node depth-{Math.min(item.depth, 2)} {p.side}"
+                class:root={item.depth === 0}
                 class:selected={selected.has(key)}
-                class:folded={item.folded}
+                class:plain={!item.heading}
+                class:excluded={item.excluded}
                 id={domId(key)}
                 role="treeitem"
                 aria-level={p.depth + 1}
@@ -1367,15 +1171,19 @@
                 data-side={p.side}
                 data-selected={selected.has(key) ? '' : undefined}
                 use:measured={key}
-                use:dropTarget={dropUnder(key)}
               >
-                <span class="label serif" class:untitled={!item.name}
-                  >{item.name || t('project-untitled')}</span
-                >
+                <span class="caption">
+                  {#if item.name}
+                    <span class="name">{item.name}</span>
+                  {:else}
+                    <span class="name unnamed">{t('project-untitled')}</span>
+                  {/if}
+                </span>
                 {#if item.holds}
                   <button
                     type="button"
-                    class="twig"
+                    class="fold"
+                    class:folded={item.folded}
                     tabindex="-1"
                     aria-label={item.folded
                       ? t('home-owl-unfold-element')
@@ -1390,7 +1198,7 @@
                     }}
                     ondblclick={(e) => e.stopPropagation()}
                   >
-                    {item.folded ? p.hidden : ''}
+                    {item.folded ? p.hidden : '–'}
                   </button>
                 {/if}
                 <button
@@ -1759,61 +1567,147 @@
     transform: rotate(90deg);
   }
 
-  /* An element of a project's map: its name as a line of text, not a box, as in an outline. */
-  .element {
+  /*
+   * An element of a project's map, as the project's own map draws it (see
+   * DiagramNode.svelte): a box, the project's own element as the top of a
+   * map, the trees under it bold, what is deeper lighter. It is seen and
+   * gone through here, and changed in the project.
+   */
+  .node {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 6px;
-    /* As wide as its name, up to a width past which the name goes on to another line. */
+    gap: 7px;
     width: max-content;
     max-width: 260px;
-    padding: 3px 6px;
-    border-bottom: 1px solid var(--line-strong);
-    border-radius: var(--radius-s) var(--radius-s) 0 0;
-    color: var(--ink-2);
-    font-size: 14px;
+    min-height: 34px;
+    padding: 6px 13px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    box-shadow: var(--shadow-1);
+    color: var(--ink);
+    font-family: var(--font-text);
+    font-size: 14.5px;
     line-height: 1.3;
-    cursor: pointer;
+    cursor: default;
   }
-  .element .label {
+  .node.root {
+    max-width: 320px;
+    min-height: 46px;
+    padding: 10px 22px;
+    background: var(--accent);
+    border-color: var(--accent-strong);
+    border-radius: 14px;
+    color: var(--accent-ink);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    box-shadow: var(--shadow-2);
+  }
+  .node.depth-1 {
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .node.depth-2 {
+    background: color-mix(in srgb, var(--paper-raised) 70%, transparent);
+    border-color: var(--line);
+    box-shadow: none;
+  }
+  .node.plain .name {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--ink-2);
+  }
+  .node .unnamed {
+    color: var(--ink-4);
+    font-style: italic;
+    font-weight: 400;
+  }
+  .node.root .unnamed {
+    color: inherit;
+  }
+  .node.excluded {
+    opacity: 0.5;
+  }
+  .node:hover {
+    border-color: var(--ink-4);
+  }
+  .node.selected {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow:
+      0 0 0 2px var(--focus-ring),
+      var(--shadow-1);
+  }
+  .node.root.selected {
+    box-shadow:
+      0 0 0 3px var(--focus-ring),
+      var(--shadow-2);
+  }
+  .node .caption {
     min-width: 0;
     overflow-wrap: break-word;
   }
-  .element .untitled {
-    color: var(--ink-4);
-    font-style: italic;
-  }
-  .element:hover {
-    color: var(--ink);
-  }
-  .twig {
-    flex: none;
-    min-width: 16px;
-    height: 16px;
-    padding: 0 4px;
+  .node .fold {
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    margin-top: -9px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: 1px solid var(--line-strong);
-    border-radius: 8px;
-    background: var(--paper);
-    color: var(--ink-3);
-    font-size: 10px;
-    line-height: 14px;
-    cursor: pointer;
-  }
-  .element.folded .twig {
+    border-radius: 50%;
     background: var(--paper-raised);
+    color: var(--ink-3);
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--fast) var(--ease);
   }
-  .element .corner {
-    right: -14px;
+  .node.right .fold {
+    right: -24px;
   }
-  .element:hover .corner {
+  .node.left .fold {
+    left: -24px;
+  }
+  .node:hover .fold,
+  .node.selected .fold,
+  .node .fold.folded {
+    opacity: 1;
+  }
+  .node .fold.folded {
+    min-width: 18px;
+    width: auto;
+    padding: 0 5px;
+    border-radius: 9px;
+  }
+  /* The corner that enters, as on an element of a map: round, in the colour of the buttons. */
+  .node .corner {
+    top: -10px;
+    right: auto;
+    left: -10px;
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+  }
+  .node:hover .corner {
     opacity: 1;
     pointer-events: auto;
   }
-  .element:global([data-drop-over]) {
-    outline: 2px dashed var(--accent);
-    outline-offset: 3px;
-    background: var(--accent-soft);
+  .node .corner:hover {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  .node.root .corner {
+    border-color: var(--paper-raised);
   }
 
   /* What is dragged: under the pointer, and not where it is dropped. */

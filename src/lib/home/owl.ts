@@ -77,6 +77,11 @@ export type OwlItem =
       folded: boolean;
       /** Whether anything stands under it. */
       holds: boolean;
+      /** How deep it stands in its project: 0 for the project's own element, drawn as the top of a map. */
+      depth: number;
+      /** Whether its name is printed as a heading, and whether it is left out of the document. */
+      heading: boolean;
+      excluded: boolean;
     }
   | { kind: 'provisional'; of: 'project' | 'folder' };
 
@@ -196,28 +201,37 @@ export function owlTree(
     if (read) mapUnder(p.id, key, read);
   });
 
-  /** The elements of a project's map, under its card, in the order of the project. */
+  /**
+   * The map of a project, under its card: the project's own element first,
+   * as the top of a map, closed until it is opened; under it the elements in
+   * the order of the project, folded as the project has them.
+   */
   function mapUnder(project: string, card: string, map: ClosedTree) {
-    const walk = (id: string, parentKey: string) => {
-      (map.tree.children.get(id) ?? []).forEach((child, i) => {
-        const key = elementKey(project, child);
-        const holds = (map.tree.children.get(child)?.length ?? 0) > 0;
-        const place = map.places.get(child);
-        const folded = holds && (elementFolds.get(key) ?? place?.collapsed ?? false);
-        items.set(key, {
-          kind: 'element',
-          project,
-          id: child,
-          name: map.names.get(child) ?? '',
-          folded,
-          holds,
-        });
-        nodes.set(key, { collapsed: folded, pos: place?.pos ?? null });
-        flat.push({ id: key, parent: parentKey, order: 'c' + String(i).padStart(6, '0') });
-        walk(child, key);
+    const add = (id: string, parentKey: string, order: string, depth: number) => {
+      const key = elementKey(project, id);
+      const holds = (map.tree.children.get(id)?.length ?? 0) > 0;
+      const look = map.places.get(id);
+      const folded =
+        holds && (elementFolds.get(key) ?? (depth === 0 ? true : (look?.collapsed ?? false)));
+      items.set(key, {
+        kind: 'element',
+        project,
+        id,
+        name: map.names.get(id) ?? '',
+        folded,
+        holds,
+        depth,
+        heading: look?.heading ?? true,
+        excluded: look?.excluded ?? false,
       });
+      // The project's own element is placed by itself: in its map it stands at the centre.
+      nodes.set(key, { collapsed: folded, pos: depth === 0 ? null : (look?.pos ?? null) });
+      flat.push({ id: key, parent: parentKey, order });
+      (map.tree.children.get(id) ?? []).forEach((child, i) =>
+        add(child, key, 'c' + String(i).padStart(6, '0'), depth + 1),
+      );
     };
-    walk(PROJECT, card);
+    add(PROJECT, card, 'c', 0);
   }
 
   if (provisional) {

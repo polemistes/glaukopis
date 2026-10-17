@@ -923,3 +923,19 @@ What this settles (ADR 0051):
   map are moved as in that project's own map, by dragging and by Alt and
   the arrows, and carried to another project by dragging onto it, each
   move written into the project and undone from its message.
+
+## 2026-10-17 — the maps of projects on the top map, seen as in a project; the view that was lost
+
+> What would be best, is that when opening the project trees from the top owl tree, the project element looks like a top element in the other trees, and that it opens closed. When opening sub elements of a project, they should look like they do in the normal tree, but not be editable before you enter a project (or element). Now somthing happened to the view, so I was able to se one of the connecting lines, but could find any of the map elements anymore. Pressing the zoom to see the whole tree button did not work.
+
+What this settles (ADR 0051, amended):
+
+- A project's map on the top map begins with the project's own element,
+  drawn as the top of a map and closed; the elements under it are drawn as
+  in the project's own map, and are not changed on the top map: moving
+  them there, built earlier the same day, is taken out.
+- *Show all of it* fits the whole top map, down to a twenty-fifth; a view
+  that loses its place is fitted anew. What was seen, one line and nothing
+  else, is what a map wider than a diagram's smallest scale showed when
+  centred on its middle.
+

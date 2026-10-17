@@ -38,20 +38,28 @@ export function kept(view: View, width: number, height: number): Camera {
   };
 }
 
-/** The view zoomed about a point of the viewport, which stays where it is. */
-export function zoomedAt(view: View, px: number, py: number, k: number): View {
-  const next = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, k));
+/** The view zoomed about a point of the viewport, which stays where it is; no smaller than `min`. */
+export function zoomedAt(view: View, px: number, py: number, k: number, min = MIN_ZOOM): View {
+  const next = Math.max(min, Math.min(MAX_ZOOM, k));
   const wx = (px - view.x) / view.k;
   const wy = (py - view.y) / view.k;
   return { x: px - wx * next, y: py - wy * next, k: next };
 }
 
-/** The view that shows all of a map, and nothing larger than it is. */
-export function fitting(bounds: Layout['bounds'], width: number, height: number): View {
+/**
+ * The view that shows all of a map, and nothing larger than it is; no
+ * smaller than `min`, where a map too large is shown about its middle.
+ */
+export function fitting(
+  bounds: Layout['bounds'],
+  width: number,
+  height: number,
+  min = MIN_ZOOM,
+): View {
   const w = bounds.right - bounds.left;
   const h = bounds.bottom - bounds.top;
   const k = Math.max(
-    MIN_ZOOM,
+    min,
     Math.min(1, (width - 120) / Math.max(w, 1), (height - 120) / Math.max(h, 1)),
   );
   return {
@@ -83,9 +91,15 @@ export function bringing(
 }
 
 /** The view after the wheel: zoomed about the pointer with Ctrl held, and moved otherwise. */
-export function wheeled(view: View, event: WheelEvent, px: number, py: number): View {
+export function wheeled(
+  view: View,
+  event: WheelEvent,
+  px: number,
+  py: number,
+  min = MIN_ZOOM,
+): View {
   if (event.ctrlKey || event.metaKey) {
-    return zoomedAt(view, px, py, view.k * Math.exp(-event.deltaY * 0.0022));
+    return zoomedAt(view, px, py, view.k * Math.exp(-event.deltaY * 0.0022), min);
   }
   const scale = event.deltaMode === 1 ? 32 : 1;
   return { ...view, x: view.x - event.deltaX * scale, y: view.y - event.deltaY * scale };

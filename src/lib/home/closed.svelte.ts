@@ -15,12 +15,22 @@ import { buildTree, type FlatNode, type Tree } from '$lib/project/model/tree';
 import type { Position } from '$lib/project/model/types';
 import { projects } from '$lib/state/projects.svelte';
 
+/** How an element stands in its project's map, as far as that map draws it. */
+export interface ElementLook {
+  pos: Position | null;
+  collapsed: boolean;
+  /** Whether its name is printed as a heading: one that is not is drawn in italics. */
+  heading: boolean;
+  /** Whether it is left out of the document: drawn faint. */
+  excluded: boolean;
+}
+
 /** The tree of a project that is not open, and the name of each element. */
 export interface ClosedTree {
   tree: Tree;
   names: Map<string, string>;
-  /** Where each element was put by hand, from its parent, and whether it is folded: as its map shows it. */
-  places: Map<string, { pos: Position | null; collapsed: boolean }>;
+  /** How each element stands in its map: where it was put by hand, from its parent, whether it is folded, a heading, left out. */
+  places: Map<string, ElementLook>;
 }
 
 /** Reads the tree of a project from its state and the changes after it, as the disk keeps them. */
@@ -41,7 +51,7 @@ export function readTree(
   if (needsMigration(doc)) migrate(doc, name);
   const flat: FlatNode[] = [];
   const names = new Map<string, string>();
-  const places = new Map<string, { pos: Position | null; collapsed: boolean }>();
+  const places = new Map<string, ElementLook>();
   for (const [id, n] of doc.getMap<Y.Map<unknown>>('nodes')) {
     if (!(n instanceof Y.Map)) continue;
     const order = n.get('order');
@@ -55,6 +65,8 @@ export function readTree(
     places.set(id, {
       pos: pos && Number.isFinite(pos.x) && Number.isFinite(pos.y) ? { x: pos.x, y: pos.y } : null,
       collapsed: n.get('collapsed') === true,
+      heading: n.get('heading') !== false,
+      excluded: n.get('excluded') === true,
     });
   }
   doc.destroy();
@@ -74,17 +86,6 @@ class ClosedTrees {
   /** What is known of the tree of a project: nothing until it is asked for. */
   get(id: string): Reading | undefined {
     return this.#read.get(id);
-  }
-
-  /**
-   * Reads the tree of a project again, whatever its time of change says: it
-   * was written in just now, and the time of change is kept to the second.
-   */
-  again(id: string) {
-    const info = projects.list.find((p) => p.id === id);
-    if (!info || !this.#read.has(id)) return;
-    this.#asked.delete(id);
-    this.want(info);
   }
 
   /** Reads the tree of a project, unless what was read of it, or is being read, is as new as it is. */

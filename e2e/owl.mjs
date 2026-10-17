@@ -272,51 +272,43 @@ try {
   const nameBox = await app.exec(`const n = ${card(long)}?.querySelector('.name'); return n ? { h: n.offsetHeight, sw: n.scrollWidth, cw: n.clientWidth, text: n.textContent.trim() } : null;`);
   check('a long title is shown whole, on more lines', !!nameBox && nameBox.text === long && nameBox.h > 30 && nameBox.sw <= nameBox.cw + 1, JSON.stringify(nameBox));
 
-  const element = (name) => `Array.from(document.querySelectorAll('[data-owl-element]')).find((e) => e.querySelector('.label')?.textContent.trim() === ${JSON.stringify(name)})`;
+  const element = (name) => `Array.from(document.querySelectorAll('[data-owl-element]')).find((e) => e.querySelector('.name')?.textContent.trim() === ${JSON.stringify(name)})`;
   const hasElement = (name) => app.exec(`return !!${element(name)}`);
   const elementEl = (name) => app.exec(`return ${element(name)} ?? null`);
-  const elementNames = () => app.exec(`return Array.from(document.querySelectorAll('[data-owl-element]')).map((e) => e.querySelector('.label').textContent.trim() + '<' + (e.dataset.owlParent ?? ''))`);
-  const iliadTree = async () => {
-    const loaded = await app.projectLoad(iliad);
-    return loaded;
-  };
-  await app.click(await cardEl(app, 'Iliad'));
-  await app.press('Space');
-  check('Space shows the map of a project under its card', await waitUntil(() => hasElement('Wrath'), 6000), JSON.stringify(await elementNames()));
-  check('in the order of the project', JSON.stringify((await elementNames()).map((n) => n.split('<')[0])) === JSON.stringify(['Wrath', 'Ships', 'Embassy']), JSON.stringify(await elementNames()));
-  await app.screenshot('owl-5-map-shown');
-
-  // Alt and the arrows move an element within its project.
-  await app.click(await elementEl('Embassy'));
-  await app.keys(['Alt', 'ArrowUp']);
-  check('Alt+Up moves an element up among those beside it, in its project', await waitUntil(async () => JSON.stringify((await elementNames()).map((n) => n.split('<')[0])) === JSON.stringify(['Wrath', 'Embassy', 'Ships']), 6000), JSON.stringify(await elementNames()));
-  const elementSide = await app.exec(`return ${element('Embassy')}?.dataset.side`);
-  await app.keys(['Alt', elementSide === 'left' ? 'ArrowLeft' : 'ArrowRight']);
-  const wrathKey = await app.exec(`return ${element('Wrath')}?.dataset.owlKey`);
-  check('Alt and the arrow outwards put it under the one before it', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlParent`)) === wrathKey, 6000), await app.exec(`return ${element('Embassy')}?.dataset.owlParent`));
-  await app.keys(['Control', 'z']);
-  check('Ctrl+Z puts it back', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlParent`)) === `project:${iliad}`, 6000));
-
+  const elementNames = () => app.exec(`return Array.from(document.querySelectorAll('[data-owl-element]')).map((e) => e.querySelector('.name').textContent.trim())`);
   const fitted = async () => {
     await app.click('[data-owl-map] .controls button[aria-label="Show all of it"]');
     await sleep(300);
   };
-  // Dragged onto another element of the same project: under it.
-  await fitted();
-  await app.drag(await elementEl('Ships'), await elementEl('Wrath'));
-  check('an element dragged onto another goes under it', await waitUntil(async () => (await app.exec(`return ${element('Ships')}?.dataset.owlParent`)) === wrathKey, 6000), await app.exec(`return ${element('Ships')}?.dataset.owlParent`));
 
-  // Dragged onto the ground: it stays where it was let go, written into the project.
   await fitted();
-  // Measured from the card of its project, from which its place is kept, as an element's is from its parent.
-  const fromCard = `const r = ${element('Embassy')}.getBoundingClientRect(), c = ${card('Iliad')}.getBoundingClientRect(); return { x: r.left - c.left, y: r.top - c.top };`;
+  await app.click(await cardEl(app, 'Iliad'));
+  await app.press('Space');
+  check('Space shows the map of a project: its own element, closed', await waitUntil(async () => JSON.stringify(await elementNames()) === '["Iliad"]', 6000), JSON.stringify(await elementNames()));
+  check('drawn as the top of a map', await app.exec(`return ${element('Iliad')}?.classList.contains('root') && ${element('Iliad')}?.classList.contains('node')`));
+  check('and selected, so that Space opens it', await waitUntil(async () => (await selectedName(app)) === 'Iliad'));
+  await app.press('Space');
+  check('opened, its elements stand under it in the order of the project', await waitUntil(async () => JSON.stringify(await elementNames()) === '["Iliad","Wrath","Ships","Embassy"]', 6000), JSON.stringify(await elementNames()));
+  check('drawn as the elements of a map', await app.exec(`return ${element('Wrath')}?.classList.contains('node') && ${element('Wrath')}?.classList.contains('depth-1')`));
+  await app.screenshot('owl-5-map-shown');
+
+  // Not changed here: the keys and the pointer move nothing of a project.
+  await app.click(await elementEl('Embassy'));
+  await app.keys(['Alt', 'ArrowUp']);
+  await app.keys(['Alt', (await app.exec(`return ${element('Embassy')}?.dataset.side`)) === 'left' ? 'ArrowLeft' : 'ArrowRight']);
+  await app.press('F2');
+  await app.press('Delete');
+  await sleep(800);
+  check('the keys change nothing of an element', JSON.stringify(await elementNames()) === '["Iliad","Wrath","Ships","Embassy"]' && !(await app.exists('[data-name-field]')) && !(await app.exists('dialog[open]')), JSON.stringify(await elementNames()));
+  const fromCard = `const r = ${element('Embassy')}.getBoundingClientRect(), c = ${card('Iliad')}.getBoundingClientRect(); return { x: Math.round(r.left - c.left), y: Math.round(r.top - c.top) };`;
   const before = await app.exec(fromCard);
-  await app.drag(await elementEl('Embassy'), { dx: 60, dy: -120 });
-  await sleep(1500);
+  await app.drag(await elementEl('Embassy'), { dx: 40, dy: -80 });
+  await sleep(800);
   const after = await app.exec(fromCard);
-  check('an element dropped on the ground stays where it was let go', Math.abs(after.y - before.y + 120) < 30 && Math.abs(after.x - before.x - 60) < 30, JSON.stringify({ before, after }));
-  const posInProject = await app.execAsync(`const bytes = new Uint8Array(await window.__TAURI_INTERNALS__.invoke('project_load', { id: arguments[0] })); return bytes.length;`, iliad);
-  check('and the project was written', posInProject > 0);
+  check('nor does dragging it', JSON.stringify(before) === JSON.stringify(after), JSON.stringify({ before, after }));
+  await app.drag(await elementEl('Embassy'), await elementEl('Wrath'));
+  await sleep(800);
+  check('nor dropping it on another', (await app.exec(`return ${element('Embassy')}?.dataset.owlParent`)) === (await app.exec(`return ${element('Wrath')}?.dataset.owlParent`)));
 
   // Folders and projects put by hand.
   await fitted();
@@ -325,25 +317,39 @@ try {
   await sleep(800);
   const notesAfter = await app.exec(`const r = ${card('Notes')}.getBoundingClientRect(); return { x: r.left, y: r.top };`);
   check('a card dropped on the ground stays where it was let go', Math.abs(notesAfter.y - notesBefore.y + 160) < 30, JSON.stringify({ notesBefore, notesAfter }));
-  check('and the place is kept on this computer', Object.keys(await invoke(app, 'owl_places', {})).includes(`project:${await app.exec(`return ${card('Notes')}?.dataset.owlProject`)}`));
+  const notesId = await app.exec(`return ${card('Notes')}?.dataset.owlProject`);
+  check('and the place is kept on this computer', Object.keys(await invoke(app, 'owl_places', {})).includes(`project:${notesId}`));
   await app.keys(['Control', 'z']);
   await sleep(800);
   const notesBack = await app.exec(`const r = ${card('Notes')}.getBoundingClientRect(); return { x: r.left, y: r.top };`);
   check('Ctrl+Z puts it back in its place', Math.abs(notesBack.y - notesBefore.y) < 6, JSON.stringify({ notesBefore, notesBack }));
 
-  // Carried to another project.
-  await app.click(await cardEl(app, 'Odyssey'));
-  await app.press('Space');
-  await sleep(1200);
+  // Far away, and all of it shown still.
+  await invoke(app, 'owl_places_set', { changes: { [`project:${notesId}`]: { x: -9000, y: 7000 } } });
+  await app.exec('location.reload();');
+  await sleep(1500);
+  await app.installErrorHook();
+  await app.waitFor('[data-owl-map]', 10000);
+  await sleep(800);
   await fitted();
-  await app.drag(await elementEl('Embassy'), await cardEl(app, 'Odyssey'));
-  const odyssey = await app.exec(`return ${card('Odyssey')}?.dataset.owlProject`);
-  check('an element dragged onto another project is carried there', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlOf`)) === odyssey, 8000), await app.exec(`return ${element('Embassy')}?.dataset.owlOf`));
-  await app.keys(['Control', 'z']);
-  check('and Ctrl+Z carries it back', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlOf`)) === iliad, 8000), await app.exec(`return ${element('Embassy')}?.dataset.owlOf`));
-  await app.screenshot('owl-6-one-map');
+  const outside = await app.exec(`const m = document.querySelector('[data-owl-map]').getBoundingClientRect();
+    return Array.from(document.querySelectorAll('[data-owl-key]')).filter((e) => { const r = e.getBoundingClientRect(); return r.right < m.left || r.left > m.right || r.bottom < m.top || r.top > m.bottom; }).map((e) => e.dataset.owlKey);`);
+  check('Show all shows all, a card put far away too', outside.length === 0, JSON.stringify(outside));
+  await app.screenshot('owl-6-far');
+  await invoke(app, 'owl_places_set', { changes: { [`project:${notesId}`]: null } });
+  await app.exec('location.reload();');
+  await sleep(1500);
+  await app.installErrorHook();
+  await app.waitFor('[data-owl-map]', 10000);
+  await sleep(800);
 
   // Jumping in anywhere.
+  await app.click(await cardEl(app, 'Iliad'));
+  await app.press('Space');
+  await waitUntil(() => hasElement('Iliad'), 6000);
+  await app.click(await elementEl('Iliad'));
+  await app.press('Space');
+  await waitUntil(() => hasElement('Wrath'), 6000);
   await fitted();
   await app.doubleClick(await elementEl('Wrath'));
   check('a double click on an element opens its project there', await waitUntil(async () => (await app.exec('return location.hash')).startsWith(`#/project/${iliad}/`), 5000), await app.exec('return location.hash'));

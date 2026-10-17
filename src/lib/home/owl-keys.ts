@@ -5,8 +5,8 @@
  * less deep, fold, delete, open the menu, enter a folder or open a project
  * at the element selected, go up, and zoom; and undo and redo what was
  * done on the home. A letter begins a new name for what is selected. The
- * elements of a project's map, shown under its card, are moved within
- * their project as its own map moves them, up and down as well.
+ * elements of a project's map, shown under its card, are gone through,
+ * folded and opened, but not changed: that is done in the project.
  */
 
 import type { Layout } from '$lib/project/diagram/layout';
@@ -30,8 +30,6 @@ export interface OwlSurface {
   make(kind: 'project' | 'folder'): void;
   deeper(keys: string[]): void;
   shallower(keys: string[]): void;
-  /** One place up or down among those beside them: for elements, whose order is their project's. */
-  shift(keys: string[], by: -1 | 1): void;
   fold(key: string): void;
   remove(keys: string[]): void;
   /** The menu of what is selected, or of the map where nothing is. */
@@ -58,7 +56,6 @@ export function pressed(event: KeyboardEvent, owl: OwlSurface): boolean {
   const last = selection[selection.length - 1] ?? null;
   // What stands at the centre is where one is: it is renamed, but not moved or deleted from here.
   const things = selection.filter((k) => thing(k) && k !== tree.root);
-  const elements = selection.filter((k) => keyed(k).kind === 'element');
   const onElement = !!last && keyed(last).kind === 'element';
 
   if (mod && !event.altKey) {
@@ -84,16 +81,14 @@ export function pressed(event: KeyboardEvent, owl: OwlSurface): boolean {
   }
 
   // Alt and the arrows sideways put deeper and less deep, as the arrow
-  // points on the screen. Up and down move elements among those beside
-  // them; folders and projects stand by their names, and are not moved so.
+  // points on the screen. Up and down change no order: folders and projects
+  // stand by their names. Elements are moved in their project, not here.
   if (event.altKey && !event.shiftKey && !mod && event.key.startsWith('Arrow')) {
-    const moving = onElement ? elements : things;
-    if (!last || !moving.length) return true;
+    if (!last || onElement || !things.length) return true;
     const outwards = lay.placed.get(last)?.side === 'left' ? 'ArrowLeft' : 'ArrowRight';
     const inwards = outwards === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft';
-    if (event.key === outwards) owl.deeper(moving);
-    else if (event.key === inwards) owl.shallower(moving);
-    else if (onElement) owl.shift(moving, event.key === 'ArrowUp' ? -1 : 1);
+    if (event.key === outwards) owl.deeper(things);
+    else if (event.key === inwards) owl.shallower(things);
     return true;
   }
 

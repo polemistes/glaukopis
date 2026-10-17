@@ -198,30 +198,37 @@ describe('the owl map', () => {
       ['ships', 'Ships'],
     ]),
     places: new Map([
-      ['wrath', { pos: null, collapsed: true }],
-      ['ships', { pos: { x: 200, y: 40 }, collapsed: false }],
+      ['wrath', { pos: null, collapsed: true, heading: true, excluded: false }],
+      ['ships', { pos: { x: 200, y: 40 }, collapsed: false, heading: false, excluded: true }],
     ]),
   });
 
-  it('shows the map of a project under its card, as the project has it', () => {
+  it('shows the map of a project under its card: its own element, closed, and its elements under it', () => {
+    const top = elementKey('2', PROJECT);
+    const closed = owlTree(folders, projects, new Map(), { maps: new Map([['2', map()]]) });
+    expect(closed.tree.children.get(projectKey('2'))).toEqual([top]);
+    expect(closed.items.get(top)).toMatchObject({ kind: 'element', depth: 0, folded: true });
+    expect(closed.nodes.get(top)?.collapsed).toBe(true);
+
     const { tree, items, nodes } = owlTree(folders, projects, new Map(), {
       maps: new Map([['2', map()]]),
+      elementFolds: new Map([[top, false]]),
     });
     const wrath = elementKey('2', 'wrath');
-    expect(tree.children.get(projectKey('2'))).toEqual([wrath, elementKey('2', 'ships')]);
+    expect(tree.children.get(top)).toEqual([wrath, elementKey('2', 'ships')]);
     expect(tree.children.get(wrath)).toEqual([elementKey('2', 'quarrel')]);
     expect(items.get(projectKey('2'))).toMatchObject({ map: 'read', elements: 2 });
-    expect(items.get(wrath)).toMatchObject({
-      kind: 'element',
-      name: 'Wrath',
-      holds: true,
-      folded: true,
-    });
+    expect(items.get(wrath)).toMatchObject({ name: 'Wrath', holds: true, folded: true, depth: 1 });
+    expect(items.get(elementKey('2', 'quarrel'))).toMatchObject({ depth: 2 });
+    expect(items.get(elementKey('2', 'ships'))).toMatchObject({ heading: false, excluded: true });
     expect(nodes.get(elementKey('2', 'ships'))?.pos).toEqual({ x: 200, y: 40 });
     // Folded on the map otherwise than in the project.
     const opened = owlTree(folders, projects, new Map(), {
       maps: new Map([['2', map()]]),
-      elementFolds: new Map([[wrath, false]]),
+      elementFolds: new Map([
+        [top, false],
+        [wrath, false],
+      ]),
     });
     expect(opened.nodes.get(wrath)?.collapsed).toBe(false);
     // Being read: nothing under the card yet.
