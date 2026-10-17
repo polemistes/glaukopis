@@ -35,6 +35,26 @@ class ListUi {
    */
   owlReveal = $state<string | null>(null);
 
+  /** The projects whose maps are shown under their cards on the owl map, by id. */
+  owlMaps = $state.raw(new Set<string>());
+
+  /** Shows the map of a project under its card on the owl map, or hides it. */
+  owlMap(id: string, shown: boolean) {
+    const next = new Set(this.owlMaps);
+    if (shown) next.add(id);
+    else next.delete(id);
+    this.owlMaps = next;
+  }
+
+  /** Elements of those maps folded (true) or unfolded (false) on the owl map, by key; one not here is as its project has it. */
+  owlElementFolds = $state.raw(new Map<string, boolean>());
+
+  owlElementFold(key: string, folded: boolean) {
+    const next = new Map(this.owlElementFolds);
+    next.set(key, folded);
+    this.owlElementFolds = next;
+  }
+
   /** Folds a folder of the owl map, or unfolds it. */
   owlFold(id: string, folded: boolean) {
     const next = new Map(this.owlFolds);

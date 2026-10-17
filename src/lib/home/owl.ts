@@ -6,9 +6,11 @@
  * map's centre is. Pure, so that it can be tested without the interface.
  */
 
-import type { Folder, ProjectInfo } from '$lib/api/projects';
+import type { Folder, Place, ProjectInfo } from '$lib/api/projects';
 import type { Tree } from '$lib/project/model/tree';
 import { buildTree, type FlatNode } from '$lib/project/model/tree';
+import { PROJECT, type Position } from '$lib/project/model/types';
+import type { ClosedTree } from './closed.svelte';
 import { byName, descendants, folderOf, parentOf } from './folders';
 
 /** The owl, at the centre. */
@@ -18,15 +20,26 @@ export const FOLD_OVER = 12;
 
 export const folderKey = (id: string) => `folder:${id}`;
 export const projectKey = (id: string) => `project:${id}`;
+/** The key of an element of a project whose map is shown under its card. */
+export const elementKey = (project: string, id: string) => `element:${project}/${id}`;
 /** The key of a folder or a project not yet made, while its name is written. */
 export const PROVISIONAL = 'new';
 
-/** What a key names: the owl, a folder or a project by its id, or the one being made. */
-export function keyed(
-  key: string,
-): { kind: 'owl' } | { kind: 'folder' | 'project'; id: string } | { kind: 'provisional' } {
+export type Keyed =
+  | { kind: 'owl' }
+  | { kind: 'folder' | 'project'; id: string }
+  | { kind: 'element'; project: string; id: string }
+  | { kind: 'provisional' };
+
+/** What a key names: the owl, a folder or a project by its id, an element of a project, or the one being made. */
+export function keyed(key: string): Keyed {
   if (key.startsWith('folder:')) return { kind: 'folder', id: key.slice(7) };
   if (key.startsWith('project:')) return { kind: 'project', id: key.slice(8) };
+  if (key.startsWith('element:')) {
+    const rest = key.slice(8);
+    const cut = rest.indexOf('/');
+    return { kind: 'element', project: rest.slice(0, cut), id: rest.slice(cut + 1) };
+  }
   if (key === PROVISIONAL) return { kind: 'provisional' };
   return { kind: 'owl' };
 }
@@ -48,15 +61,34 @@ export type OwlItem =
       /** Whether anything lies in it. */
       holds: boolean;
     }
-  | { kind: 'project'; project: ProjectInfo }
+  | {
+      kind: 'project';
+      project: ProjectInfo;
+      /** Its map as it is shown under the card: being read, read, or not readable. None where it is not shown. */
+      map: 'reading' | 'read' | 'failed' | null;
+      /** How many elements stand under the project itself, where its map is read. */
+      elements: number;
+    }
+  | {
+      kind: 'element';
+      project: string;
+      id: string;
+      name: string;
+      folded: boolean;
+      /** Whether anything stands under it. */
+      holds: boolean;
+    }
   | { kind: 'provisional'; of: 'project' | 'folder' };
+
+/** The map of a project as it is shown under its card. */
+export type ShownMap = ClosedTree | 'reading' | 'failed';
 
 export interface OwlTree {
   tree: Tree;
   /** What each place of the tree is, by its key. */
   items: Map<string, OwlItem>;
-  /** What the layout asks of each place: whether it is folded. */
-  nodes: Map<string, { collapsed?: boolean }>;
+  /** What the layout asks of each place: whether it is folded, and where it was put by hand. */
+  nodes: Map<string, { collapsed?: boolean; pos?: Position | null }>;
 }
 
 /** How many projects each folder holds, with those of the folders under it. */
@@ -93,6 +125,12 @@ export interface OwlOptions {
   at?: string;
   /** A folder or a project being named, shown first among its kind in its folder. */
   provisional?: Provisional | null;
+  /** Where folders and projects were put by hand, by key, from what holds them. */
+  places?: Readonly<Record<string, Place>>;
+  /** The maps shown under the cards of projects, by the project's id. */
+  maps?: ReadonlyMap<string, ShownMap>;
+  /** The elements folded or unfolded on the map, by key; one not here is as its project has it. */
+  elementFolds?: ReadonlyMap<string, boolean>;
 }
 
 /**
@@ -115,7 +153,11 @@ export function owlTree(
   const provisional = options.provisional ?? null;
   const counts = projectCounts(folders, projects);
   const items = new Map<string, OwlItem>([[OWL, { kind: 'owl' }]]);
-  const nodes = new Map<string, { collapsed?: boolean }>([[OWL, {}]]);
+  const nodes = new Map<string, { collapsed?: boolean; pos?: Position | null }>([[OWL, {}]]);
+  const places = options.places ?? {};
+  const placed = (key: string) => places[key] ?? null;
+  const maps = options.maps ?? new Map<string, ShownMap>();
+  const elementFolds = options.elementFolds ?? new Map<string, boolean>();
   const flat: FlatNode[] = [{ id: OWL, parent: null, order: '' }];
   const order = (prefix: string, i: number) => prefix + String(i).padStart(6, '0');
   // What has no folder, or none that exists, stands under the owl.
@@ -132,7 +174,7 @@ export function owlTree(
     const opened = provisional !== null && provisional.parent === f.id;
     const folded = holds && !opened && (chosen.get(f.id) ?? startsFolded(n));
     items.set(key, { kind: 'folder', folder: f, projects: n, folded, holds });
-    nodes.set(key, { collapsed: folded });
+    nodes.set(key, { collapsed: folded, pos: placed(key) });
     flat.push({ id: key, parent: key === at ? null : under(parent), order: order('a', i) });
   });
 
@@ -141,10 +183,42 @@ export function owlTree(
     const folder = folderOf(folders, p);
     if (within && !(folder && within.has(folder))) return;
     const key = projectKey(p.id);
-    items.set(key, { kind: 'project', project: p });
-    nodes.set(key, {});
+    const shown = maps.get(p.id);
+    const read = shown && typeof shown === 'object' ? shown : null;
+    items.set(key, {
+      kind: 'project',
+      project: p,
+      map: !shown ? null : read ? 'read' : (shown as 'reading' | 'failed'),
+      elements: read?.tree.children.get(PROJECT)?.length ?? 0,
+    });
+    nodes.set(key, { pos: placed(key) });
     flat.push({ id: key, parent: under(folder), order: order('b', i) });
+    if (read) mapUnder(p.id, key, read);
   });
+
+  /** The elements of a project's map, under its card, in the order of the project. */
+  function mapUnder(project: string, card: string, map: ClosedTree) {
+    const walk = (id: string, parentKey: string) => {
+      (map.tree.children.get(id) ?? []).forEach((child, i) => {
+        const key = elementKey(project, child);
+        const holds = (map.tree.children.get(child)?.length ?? 0) > 0;
+        const place = map.places.get(child);
+        const folded = holds && (elementFolds.get(key) ?? place?.collapsed ?? false);
+        items.set(key, {
+          kind: 'element',
+          project,
+          id: child,
+          name: map.names.get(child) ?? '',
+          folded,
+          holds,
+        });
+        nodes.set(key, { collapsed: folded, pos: place?.pos ?? null });
+        flat.push({ id: key, parent: parentKey, order: 'c' + String(i).padStart(6, '0') });
+        walk(child, key);
+      });
+    };
+    walk(PROJECT, card);
+  }
 
   if (provisional) {
     const parent = provisional.parent ? folderKey(provisional.parent) : at;
@@ -227,12 +301,13 @@ export function folderAbove(key: string, tree: Tree): string | null {
  * the last. A folder's id, or null for the top.
  */
 export function whereNew(selection: string[], tree: Tree): string | null {
-  const last = selection[selection.length - 1] ?? tree.root;
-  const k = keyed(last);
-  if (k.kind === 'folder') return k.id;
-  const parent = tree.parent.get(last) ?? tree.root;
-  const p = keyed(parent);
-  if (p.kind === 'folder') return p.id;
-  const centre = keyed(tree.root);
-  return centre.kind === 'folder' ? centre.id : null;
+  // The nearest folder from what is selected up: the folder itself, the
+  // folder of a project, or that of the project an element is of.
+  let at: string | null = selection[selection.length - 1] ?? tree.root;
+  while (at) {
+    const k = keyed(at);
+    if (k.kind === 'folder') return k.id;
+    at = tree.parent.get(at) ?? null;
+  }
+  return null;
 }

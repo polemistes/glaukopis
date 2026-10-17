@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { Folder, ProjectInfo } from '$lib/api/projects';
 import { layout, type Layout } from '$lib/project/diagram/layout';
 import type { NodeRecord } from '$lib/project/model/types';
-import { folderKey, OWL, owlTree, projectKey } from './owl';
+import { buildTree } from '$lib/project/model/tree';
+import { PROJECT } from '$lib/project/model/types';
+import { elementKey, folderKey, OWL, owlTree, projectKey } from './owl';
 import { pressed, type OwlSurface } from './owl-keys';
 
 const project = (id: string, name: string, folder?: string): ProjectInfo => ({
@@ -27,7 +29,24 @@ const folder = (id: string, name: string, parent?: string): Folder => ({
 function surface(selection: string[], at?: string) {
   const folders = [folder('g', 'Greek'), folder('l', 'Latin')];
   const projects = [project('1', 'Iliad', 'g'), project('2', 'Notes')];
-  const { tree, nodes } = owlTree(folders, projects, new Map(), { at });
+  const maps = new Map([
+    [
+      '2',
+      {
+        tree: buildTree([
+          { id: PROJECT, parent: null, order: '' },
+          { id: 'a', parent: PROJECT, order: 'a1' },
+          { id: 'b', parent: PROJECT, order: 'a2' },
+        ]),
+        names: new Map([
+          ['a', 'A'],
+          ['b', 'B'],
+        ]),
+        places: new Map(),
+      },
+    ],
+  ]);
+  const { tree, nodes } = owlTree(folders, projects, new Map(), { at, maps });
   const lay: Layout = layout(tree, nodes as unknown as ReadonlyMap<string, NodeRecord>, new Map());
   const calls: string[] = [];
   const log =
@@ -48,6 +67,7 @@ function surface(selection: string[], at?: string) {
     make: log('make'),
     deeper: log('deeper'),
     shallower: log('shallower'),
+    shift: log('shift'),
     fold: log('fold'),
     remove: log('remove'),
     menu: log('menu'),
@@ -151,12 +171,40 @@ describe('the keys of the owl map', () => {
     pressed(key('y', { ctrlKey: true }), owl);
     pressed(key('F10', { shiftKey: true }), owl);
     pressed(key('0', { ctrlKey: true }), owl);
-    expect(calls.slice(1)).toEqual(['undo', 'redo', 'redo', `menu "${projectKey('2')}"`, 'fit']);
+    const last = owl.selection[owl.selection.length - 1];
+    expect(calls.slice(1)).toEqual(['undo', 'redo', 'redo', `menu "${last}"`, 'fit']);
   });
 
   it('leave the keys that are not theirs', () => {
     const { owl } = surface([]);
     expect(pressed(key('q', { ctrlKey: true }), owl)).toBe(false);
     expect(pressed(key('Tab', { shiftKey: true }), owl)).toBe(false);
+  });
+
+  it('move elements of a project among those beside them, and deeper, and do not make things', () => {
+    const b = elementKey('2', 'b');
+    const { owl, calls, lay } = surface([b]);
+    const side = lay.placed.get(b)?.side;
+    const outwards = side === 'left' ? 'ArrowLeft' : 'ArrowRight';
+    pressed(key('ArrowUp', { altKey: true }), owl);
+    pressed(key(outwards, { altKey: true }), owl);
+    pressed(key('Enter'), owl);
+    pressed(key('Tab'), owl);
+    pressed(key('F2'), owl);
+    pressed(key('Delete'), owl);
+    pressed(key(' '), owl);
+    pressed(key('ArrowDown', { altKey: true, shiftKey: true }), owl);
+    expect(calls).toEqual([
+      `shift ${JSON.stringify([b])} -1`,
+      `deeper ${JSON.stringify([b])}`,
+      `fold "${b}"`,
+      `open "${b}"`,
+    ]);
+  });
+
+  it('show or hide the map of a project with Space', () => {
+    const { owl, calls } = surface([projectKey('2')]);
+    pressed(key(' '), owl);
+    expect(calls).toEqual([`fold "${projectKey('2')}"`]);
   });
 });

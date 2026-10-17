@@ -147,6 +147,17 @@ export const projectSaveState = (
 export const projectSaveView = (id: string, view: unknown) =>
   call<void>('project_save_view', { id, view });
 export const foldersList = () => call<Folder[]>('folders_list');
+
+/** A place on the map of the projects, from what holds the thing put there. */
+export interface Place {
+  x: number;
+  y: number;
+}
+/** Where folders and projects were put by hand on the map of the projects, by key. */
+export const owlPlaces = () => call<Record<string, Place>>('owl_places');
+/** Puts things on the map of the projects, or (null) lets them be placed by themselves; returns all places. */
+export const owlPlacesSet = (changes: Record<string, Place | null>) =>
+  call<Record<string, Place>>('owl_places_set', { changes });
 /** Makes a folder; under the id given, where one is made again as it was. */
 export const folderCreate = (name: string, parent: string | null, id?: string) =>
   call<Folder>('folder_create', { name, parent, id: id ?? null });

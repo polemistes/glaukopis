@@ -48,10 +48,11 @@
     open: (p, mode?: MapMode) => router.go({ view: 'project', project: p.id, mode }),
   });
 
-  /** Opens a project at its top, or enters a folder. */
+  /** Opens a project at its top or at an element of its map, or enters a folder. */
   function open(key: string) {
     const k = keyed(key);
     if (k.kind === 'project') router.go({ view: 'project', project: k.id });
+    else if (k.kind === 'element') router.go({ view: 'project', project: k.project, at: k.id });
     else if (k.kind === 'folder') router.go({ view: 'owl', at: k.id });
   }
 

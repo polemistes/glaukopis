@@ -34,3 +34,4 @@ core-projects-reading-token = reading the token
 core-projects-to-trash = moving the project to the trash
 core-projects-bringing-back = bringing the project back
 core-readable-empty = The Org file holds nothing to make a project of.
+core-projects-not-a-place = “{ $key }” is not something that can be put on the map of the projects.

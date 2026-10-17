@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Folder, ProjectInfo } from '$lib/api/projects';
 import { layout } from '$lib/project/diagram/layout';
-import type { NodeRecord } from '$lib/project/model/types';
+import { buildTree } from '$lib/project/model/tree';
+import { PROJECT, type NodeRecord } from '$lib/project/model/types';
+import type { ClosedTree } from './closed.svelte';
 import {
   centreOf,
+  elementKey,
   FOLD_OVER,
   folderAbove,
   folderBefore,
@@ -179,5 +182,66 @@ describe('the owl map', () => {
     const inside = owlTree(folders, projects, new Map(), { at: folderKey('g') }).tree;
     expect(whereNew([], inside)).toBe('g');
     expect(whereNew([projectKey('4')], inside)).toBe('g');
+  });
+
+  /** The map of a project: two trees under it, the first with an element under it. */
+  const map = (): ClosedTree => ({
+    tree: buildTree([
+      { id: PROJECT, parent: null, order: '' },
+      { id: 'wrath', parent: PROJECT, order: 'a1' },
+      { id: 'quarrel', parent: 'wrath', order: 'a1' },
+      { id: 'ships', parent: PROJECT, order: 'a2' },
+    ]),
+    names: new Map([
+      ['wrath', 'Wrath'],
+      ['quarrel', 'Quarrel'],
+      ['ships', 'Ships'],
+    ]),
+    places: new Map([
+      ['wrath', { pos: null, collapsed: true }],
+      ['ships', { pos: { x: 200, y: 40 }, collapsed: false }],
+    ]),
+  });
+
+  it('shows the map of a project under its card, as the project has it', () => {
+    const { tree, items, nodes } = owlTree(folders, projects, new Map(), {
+      maps: new Map([['2', map()]]),
+    });
+    const wrath = elementKey('2', 'wrath');
+    expect(tree.children.get(projectKey('2'))).toEqual([wrath, elementKey('2', 'ships')]);
+    expect(tree.children.get(wrath)).toEqual([elementKey('2', 'quarrel')]);
+    expect(items.get(projectKey('2'))).toMatchObject({ map: 'read', elements: 2 });
+    expect(items.get(wrath)).toMatchObject({
+      kind: 'element',
+      name: 'Wrath',
+      holds: true,
+      folded: true,
+    });
+    expect(nodes.get(elementKey('2', 'ships'))?.pos).toEqual({ x: 200, y: 40 });
+    // Folded on the map otherwise than in the project.
+    const opened = owlTree(folders, projects, new Map(), {
+      maps: new Map([['2', map()]]),
+      elementFolds: new Map([[wrath, false]]),
+    });
+    expect(opened.nodes.get(wrath)?.collapsed).toBe(false);
+    // Being read: nothing under the card yet.
+    const reading = owlTree(folders, projects, new Map(), { maps: new Map([['2', 'reading']]) });
+    expect(reading.items.get(projectKey('2'))).toMatchObject({ map: 'reading', elements: 0 });
+    expect(reading.tree.children.get(projectKey('2')) ?? []).toEqual([]);
+    expect(keyed(wrath)).toEqual({ kind: 'element', project: '2', id: 'wrath' });
+  });
+
+  it('keeps folders and projects where they were put by hand', () => {
+    const { nodes } = owlTree(folders, projects, new Map(), {
+      places: { [projectKey('3')]: { x: -300, y: 10 }, [folderKey('g')]: { x: 250, y: -90 } },
+    });
+    expect(nodes.get(projectKey('3'))?.pos).toEqual({ x: -300, y: 10 });
+    expect(nodes.get(folderKey('g'))?.pos).toEqual({ x: 250, y: -90 });
+    expect(nodes.get(projectKey('1'))?.pos).toBe(null);
+  });
+
+  it('makes a new thing in the folder of the project whose element is selected', () => {
+    const { tree } = owlTree(folders, projects, new Map(), { maps: new Map([['1', map()]]) });
+    expect(whereNew([elementKey('1', 'quarrel')], tree)).toBe('e');
   });
 });

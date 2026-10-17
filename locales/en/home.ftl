@@ -83,6 +83,31 @@ home-owl-dragged = { $count ->
     [one] { $count } thing
    *[other] { $count } things
 }
+# On a card: the map of the project, shown under it on the map of the projects, or hidden.
+home-owl-map-show = Show its map here
+home-owl-map-hide = Hide its map
+home-owl-map-reading = Reading its map…
+# On an element of a project's map: the project opened there.
+home-owl-jump = Open the project here
+home-owl-fold-element = Hide what is under it
+home-owl-unfold-element = Show what is under it
+# The menu of the map: what was put by hand is placed by itself again.
+home-owl-tidy = Place everything by itself
+home-owl-tidied = Everything on the map is placed by itself again
+# What a change of the map says, with a way back.
+home-owl-placed = “{ $name }” was put there
+home-owl-placed-many = { $count ->
+    [one] { $count } thing was put there
+   *[other] { $count } things were put there
+}
+home-owl-elements-moved = { $count ->
+    [one] An element of “{ $project }” was moved
+   *[other] { $count } elements of “{ $project }” were moved
+}
+home-owl-elements-carried = { $count ->
+    [one] An element was moved to “{ $to }”
+   *[other] { $count } elements were moved to “{ $to }”
+}
 # The bar over the map, at a folder: what holds it.
 home-owl-in = In “{ $name }”
 

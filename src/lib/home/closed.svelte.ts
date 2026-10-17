@@ -12,12 +12,15 @@ import { projectLoad, type ProjectInfo } from '$lib/api/projects';
 import { migrate, needsMigration } from '$lib/project/model/migrate';
 import { inlineText, readTitle } from '$lib/project/model/text';
 import { buildTree, type FlatNode, type Tree } from '$lib/project/model/tree';
+import type { Position } from '$lib/project/model/types';
 import { projects } from '$lib/state/projects.svelte';
 
 /** The tree of a project that is not open, and the name of each element. */
 export interface ClosedTree {
   tree: Tree;
   names: Map<string, string>;
+  /** Where each element was put by hand, from its parent, and whether it is folded: as its map shows it. */
+  places: Map<string, { pos: Position | null; collapsed: boolean }>;
 }
 
 /** Reads the tree of a project from its state and the changes after it, as the disk keeps them. */
@@ -38,6 +41,7 @@ export function readTree(
   if (needsMigration(doc)) migrate(doc, name);
   const flat: FlatNode[] = [];
   const names = new Map<string, string>();
+  const places = new Map<string, { pos: Position | null; collapsed: boolean }>();
   for (const [id, n] of doc.getMap<Y.Map<unknown>>('nodes')) {
     if (!(n instanceof Y.Map)) continue;
     const order = n.get('order');
@@ -47,9 +51,14 @@ export function readTree(
       order: typeof order === 'string' ? order : 'a0',
     });
     names.set(id, inlineText(readTitle(n.get('title') as Y.XmlFragment | undefined)).trim());
+    const pos = n.get('pos') as Position | null | undefined;
+    places.set(id, {
+      pos: pos && Number.isFinite(pos.x) && Number.isFinite(pos.y) ? { x: pos.x, y: pos.y } : null,
+      collapsed: n.get('collapsed') === true,
+    });
   }
   doc.destroy();
-  return { tree: buildTree(flat), names };
+  return { tree: buildTree(flat), names, places };
 }
 
 export type Reading =

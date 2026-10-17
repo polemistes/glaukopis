@@ -2,6 +2,8 @@
 //! it is: a project that is opened, and every change that is saved, is sent
 //! without being written out in text for the journey.
 
+use std::collections::BTreeMap;
+
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as B64;
 use serde::Serialize;
@@ -10,7 +12,7 @@ use tauri::State;
 use tauri::ipc::{InvokeBody, Request, Response};
 
 use glaukopis_core::i18n::tr;
-use glaukopis_core::projects::{Folder, HistoryEntry, ProjectInfo, Summary};
+use glaukopis_core::projects::{Folder, HistoryEntry, Place, ProjectInfo, Summary};
 
 use crate::error::{CommandError, CommandResult};
 use crate::state::AppState;
@@ -164,6 +166,21 @@ pub fn project_save_view(state: State<'_, AppState>, id: String, view: serde_jso
 }
 
 // ---- folders, and the form of the page of projects (ADR 0031) ----
+
+/// Where folders and projects were put by hand on the map of the projects (ADR 0051).
+#[tauri::command(async)]
+pub fn owl_places(state: State<'_, AppState>) -> CommandResult<BTreeMap<String, Place>> {
+    Ok(state.projects.places()?)
+}
+
+/// Puts things on the map of the projects, or lets them be placed by themselves (none); returns all the places.
+#[tauri::command(async)]
+pub fn owl_places_set(
+    state: State<'_, AppState>,
+    changes: BTreeMap<String, Option<Place>>,
+) -> CommandResult<BTreeMap<String, Place>> {
+    Ok(state.projects.set_places(&changes)?)
+}
 
 #[tauri::command(async)]
 pub fn folders_list(state: State<'_, AppState>) -> CommandResult<Vec<Folder>> {

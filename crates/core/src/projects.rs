@@ -18,6 +18,7 @@
 //! `projects/folders.json` (ADR 0031). A project says which folder it is in
 //! in its own `project.json`; the folders themselves are in the one file.
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -127,6 +128,17 @@ pub struct Arrangement {
     /// Which form of the page of projects is shown: one of `SHOWN`, or nothing yet.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub shown: String,
+    /// Where folders and projects were put by hand on the map of the projects,
+    /// each from what holds it, by its key there: `folder:<id>` or `project:<id>`.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub places: BTreeMap<String, Place>,
+}
+
+/// A place on the map of the projects, from what holds the thing put there.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+pub struct Place {
+    pub x: f64,
+    pub y: f64,
 }
 
 #[derive(Debug, Serialize)]
@@ -595,6 +607,34 @@ impl Projects {
         let mut folders = self.read_arrangement()?.folders;
         folders.sort_by(|a, b| a.order.cmp(&b.order).then(a.name.cmp(&b.name)));
         Ok(folders)
+    }
+
+    /// Where folders and projects were put by hand on the map of the projects.
+    pub fn places(&self) -> Result<BTreeMap<String, Place>> {
+        Ok(self.read_arrangement()?.places)
+    }
+
+    /// Puts things on the map of the projects, or (with none) lets them be placed
+    /// by themselves again; several at once, as one change. Returns all the places.
+    pub fn set_places(&self, changes: &BTreeMap<String, Option<Place>>) -> Result<BTreeMap<String, Place>> {
+        for (key, place) in changes {
+            let known = key.strip_prefix("folder:").or_else(|| key.strip_prefix("project:"));
+            if known.is_none_or(|id| id.is_empty()) || key.len() > 200 {
+                return Err(Error::invalid(tr!("core-projects-not-a-place", key = key.as_str())));
+            }
+            if place.is_some_and(|p| !p.x.is_finite() || !p.y.is_finite()) {
+                return Err(Error::invalid(tr!("core-projects-not-a-place", key = key.as_str())));
+            }
+        }
+        self.change_arrangement(|a| {
+            for (key, place) in changes {
+                match place {
+                    Some(p) => a.places.insert(key.clone(), Place { x: p.x.round(), y: p.y.round() }),
+                    None => a.places.remove(key),
+                };
+            }
+            Ok(a.places.clone())
+        })
     }
 
     /// Which form of the page of projects is shown: one of `SHOWN`, or an empty string where none was chosen.
@@ -1101,6 +1141,20 @@ mod tests {
         p.set_shown("list").unwrap();
         assert_eq!(p.shown().unwrap(), "list");
         assert!(p.set_shown("map").is_err(), "the map is a place of its own, not a form of the page");
+        // Places put by hand on the map: set, let go, and kept beside the form shown.
+        let put = BTreeMap::from([
+            ("project:a".to_owned(), Some(Place { x: 120.4, y: -30.0 })),
+            ("folder:g".to_owned(), Some(Place { x: -80.0, y: 10.0 })),
+        ]);
+        assert_eq!(p.set_places(&put).unwrap().get("project:a"), Some(&Place { x: 120.0, y: -30.0 }));
+        let places = p.set_places(&BTreeMap::from([("folder:g".to_owned(), None)])).unwrap();
+        assert_eq!(places.len(), 1);
+        assert_eq!(p.places().unwrap(), places);
+        assert_eq!(p.shown().unwrap(), "list");
+        assert!(p.set_places(&BTreeMap::from([("owl".to_owned(), None)])).is_err());
+        assert!(
+            p.set_places(&BTreeMap::from([("project:a".to_owned(), Some(Place { x: f64::NAN, y: 0.0 }))])).is_err()
+        );
         // One remembered from before is read as the last used.
         p.change_arrangement(|a| {
             a.shown = "map".into();

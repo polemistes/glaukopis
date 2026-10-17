@@ -1,10 +1,12 @@
 /**
  * What the keys do on the owl map that has the focus, as they do in a
- * project's diagram: go from one folder or project to the next, make a
- * project or a folder and name it in place, rename, put deeper and less
- * deep, fold, delete, open the menu, enter a folder or open a project, go
- * up, and zoom; and undo and redo what was done on the home. A letter
- * begins a new name for what is selected.
+ * project's diagram: go from one folder, project or element to the next,
+ * make a project or a folder and name it in place, rename, put deeper and
+ * less deep, fold, delete, open the menu, enter a folder or open a project
+ * at the element selected, go up, and zoom; and undo and redo what was
+ * done on the home. A letter begins a new name for what is selected. The
+ * elements of a project's map, shown under its card, are moved within
+ * their project as its own map moves them, up and down as well.
  */
 
 import type { Layout } from '$lib/project/diagram/layout';
@@ -28,6 +30,8 @@ export interface OwlSurface {
   make(kind: 'project' | 'folder'): void;
   deeper(keys: string[]): void;
   shallower(keys: string[]): void;
+  /** One place up or down among those beside them: for elements, whose order is their project's. */
+  shift(keys: string[], by: -1 | 1): void;
   fold(key: string): void;
   remove(keys: string[]): void;
   /** The menu of what is selected, or of the map where nothing is. */
@@ -54,6 +58,8 @@ export function pressed(event: KeyboardEvent, owl: OwlSurface): boolean {
   const last = selection[selection.length - 1] ?? null;
   // What stands at the centre is where one is: it is renamed, but not moved or deleted from here.
   const things = selection.filter((k) => thing(k) && k !== tree.root);
+  const elements = selection.filter((k) => keyed(k).kind === 'element');
+  const onElement = !!last && keyed(last).kind === 'element';
 
   if (mod && !event.altKey) {
     const key = event.key.toLowerCase();
@@ -72,19 +78,22 @@ export function pressed(event: KeyboardEvent, owl: OwlSurface): boolean {
   // Alt+Shift and the arrows up and down go in and out.
   if (event.altKey && event.shiftKey && !mod && event.key.startsWith('Arrow')) {
     if (event.key === 'ArrowUp') owl.up();
-    else if (event.key === 'ArrowDown' && last && last !== tree.root && thing(last)) owl.open(last);
+    else if (event.key === 'ArrowDown' && last && last !== tree.root && (thing(last) || onElement))
+      owl.open(last);
     return true;
   }
 
   // Alt and the arrows sideways put deeper and less deep, as the arrow
-  // points on the screen. Up and down change no order: folders and projects
-  // stand by their names.
+  // points on the screen. Up and down move elements among those beside
+  // them; folders and projects stand by their names, and are not moved so.
   if (event.altKey && !event.shiftKey && !mod && event.key.startsWith('Arrow')) {
-    if (!last || !things.length) return true;
+    const moving = onElement ? elements : things;
+    if (!last || !moving.length) return true;
     const outwards = lay.placed.get(last)?.side === 'left' ? 'ArrowLeft' : 'ArrowRight';
     const inwards = outwards === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft';
-    if (event.key === outwards) owl.deeper(things);
-    else if (event.key === inwards) owl.shallower(things);
+    if (event.key === outwards) owl.deeper(moving);
+    else if (event.key === inwards) owl.shallower(moving);
+    else if (onElement) owl.shift(moving, event.key === 'ArrowUp' ? -1 : 1);
     return true;
   }
 
@@ -96,17 +105,19 @@ export function pressed(event: KeyboardEvent, owl: OwlSurface): boolean {
   switch (event.key) {
     case 'Enter':
       if (event.altKey) return false;
-      owl.make('project');
+      // An element is its project's: what is made on this map is not made in a project.
+      if (!onElement) owl.make('project');
       break;
     case 'Tab':
       if (event.shiftKey) return false;
-      owl.make('folder');
+      if (!onElement) owl.make('folder');
       break;
     case 'F2':
       if (last && thing(last)) owl.rename(last);
       break;
     case ' ':
-      if (last && keyed(last).kind === 'folder' && last !== tree.root) owl.fold(last);
+      // A folder folded, a project's map shown or hidden, an element folded.
+      if (last && last !== tree.root && keyed(last).kind !== 'owl') owl.fold(last);
       break;
     case 'Delete':
     case 'Backspace':

@@ -183,6 +183,8 @@ pub fn run() {
             commands::projects::project_history,
             commands::projects::project_history_state,
             commands::projects::folders_list,
+            commands::projects::owl_places,
+            commands::projects::owl_places_set,
             commands::projects::folder_create,
             commands::projects::folder_rename,
             commands::projects::folder_move,

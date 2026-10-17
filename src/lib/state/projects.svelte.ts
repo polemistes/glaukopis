@@ -8,6 +8,9 @@ import {
   foldersList,
   projectAppend,
   projectCreate,
+  owlPlaces,
+  owlPlacesSet,
+  type Place,
   projectRestore,
   projectDelete,
   projectDuplicate,
@@ -33,6 +36,8 @@ class ProjectsState {
   /** Which form the page of projects shows. */
   shown = $state<ProjectsShown>('recent');
   loaded = $state(false);
+  /** Where folders and projects were put by hand on the map of the projects, by key. */
+  places = $state.raw<Record<string, Place>>({});
   /** The project that was opened last while the application has run. */
   lastOpened = $state<string | null>(null);
   /** Projects that are being closed, until what was written in them is on disk. */
@@ -54,13 +59,15 @@ class ProjectsState {
 
   async load() {
     try {
-      const [list, folders, shown] = await Promise.all([
+      const [list, folders, shown, places] = await Promise.all([
         projectList(),
         foldersList(),
         projectsShown(),
+        owlPlaces().catch(() => ({})),
       ]);
       this.list = list;
       this.folders = folders;
+      this.places = places;
       this.shown = shown === 'list' ? shown : 'recent';
     } catch (error) {
       notifyError(t('project-list-unreadable'), error);
@@ -143,6 +150,11 @@ class ProjectsState {
     const [list, folders] = await Promise.all([projectList(), foldersList()]);
     this.list = list;
     this.folders = folders;
+  }
+
+  /** Puts things on the map of the projects, or (null) lets them be placed by themselves. */
+  async setPlaces(changes: Record<string, Place | null>) {
+    this.places = await owlPlacesSet(changes);
   }
 
   async moveToFolder(id: string, folder: string | null) {
