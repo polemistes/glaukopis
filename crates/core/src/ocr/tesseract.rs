@@ -3,7 +3,7 @@
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
-use crate::error::{Error, IoContext, Result};
+use crate::error::{Error, Result};
 use crate::export::tools::{self, Tool};
 use crate::tr;
 
@@ -74,30 +74,40 @@ pub fn read(
     if let Some(psm) = with.psm {
         c.arg("--psm").arg(psm.to_string());
     }
-    if layer {
-        c.args(["-c", "textonly_pdf=1"]);
-    }
+    // What is to be made is asked for as settings, not by the names of the
+    // config files `tsv` and `pdf` in Tesseract's data folder: where that
+    // folder lacks them, as one put together on Windows may, Tesseract only
+    // warns, writes plain text instead, and ends as if all went well.
     if text {
-        c.arg("tsv");
+        c.args(["-c", "tessedit_create_tsv=1"]);
     }
     if layer {
-        c.arg("pdf");
+        c.args(["-c", "tessedit_create_pdf=1", "-c", "textonly_pdf=1"]);
     }
     // Several run at once, each on one core, as OCRmyPDF has them do; they
     // would otherwise fight for all of them.
     c.env("OMP_THREAD_LIMIT", "1");
-    tools::run_command_until(c, "Tesseract", None, stop)?;
+    let ran = tools::run_command_until(c, "Tesseract", None, stop)?;
 
     let made = |ending: &str| base.with_extension(ending);
+    // A file Tesseract was to make and did not: what it said is the reason, where it said anything.
+    let not_made = |path: &Path| Error::Program {
+        program: "Tesseract".into(),
+        message: if ran.messages.is_empty() {
+            tr!("ocr-not-made", path = path)
+        } else {
+            tr!("ocr-not-made-said", path = path, message = ran.messages.as_str())
+        },
+    };
     let tsv = if text {
         let path = made("tsv");
-        Some(std::fs::read_to_string(&path).context(|| tr!("io-reading", path = &path))?)
+        Some(std::fs::read_to_string(&path).map_err(|_| not_made(&path))?)
     } else {
         None
     };
     let layer = if layer {
         let path = made("pdf");
-        let bytes = std::fs::read(&path).context(|| tr!("io-reading", path = &path))?;
+        let bytes = std::fs::read(&path).map_err(|_| not_made(&path))?;
         if !bytes.starts_with(b"%PDF") {
             return Err(Error::Program {
                 program: "Tesseract".into(),

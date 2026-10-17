@@ -614,7 +614,14 @@ fn placed(source: &Path, target: &Path) -> bool {
     #[cfg(not(unix))]
     {
         match (fs::metadata(source), fs::metadata(target)) {
-            (Ok(s), Ok(t)) if s.is_dir() => t.is_dir(),
+            // A folder is placed when all that is in it is there too: one left
+            // half copied, as `configs` without its `pdf`, is made anew.
+            (Ok(s), Ok(t)) if s.is_dir() => {
+                t.is_dir()
+                    && fs::read_dir(source)
+                        .map(|entries| entries.flatten().all(|e| target.join(e.file_name()).exists()))
+                        .unwrap_or(false)
+            }
             (Ok(s), Ok(t)) => t.is_file() && s.len() == t.len(),
             _ => false,
         }

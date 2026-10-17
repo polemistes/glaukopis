@@ -18,6 +18,8 @@ ocr-locked = “{ $file }” is locked with a password, and its pages cannot be 
 ocr-unreadable = “{ $file }” could not be read as a PDF. It may be damaged.
 ocr-page-not-drawn = Page { $page } could not be drawn.
 ocr-picture-unreadable = The picture could not be read: { $message }
+ocr-not-made = Tesseract did not make { $path }.
+ocr-not-made-said = Tesseract did not make { $path }. It said: { $message }
 ocr-drawing = A drawing (SVG) has no picture in it to read text from.
 
 ## Making a PDF searchable.
