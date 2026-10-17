@@ -954,3 +954,20 @@ What this settles (ADR 0051, amended again):
   view under the pointer without end until the drawing broke. The keeping
   now lasts a moment, and never during a drag.
 
+## 2026-10-17 — the top map: nothing else moves, no message, one level at a time, elements moved
+
+> When moving the project elements, the other elements move randomly around somewhat. The "this was put there" message is just disturbing. When opening the elements under a project, open only the top levels, not the whole tree. It must also be possible to move the elements around.
+
+What this settles (ADR 0051, amended):
+
+- A thing placed by hand on the top map keeps its room among the rest, so
+  that nothing else moves; the project's own maps are as they were.
+- No message is made of placing a thing, nor of moving an element within
+  its project; Ctrl+Z undoes both, and says so.
+- Opening a project's map shows its trees only, each folded; every
+  unfolding shows one more level.
+- The elements of a project's map are moved on the top map as in the
+  project's own map, by dragging and by Alt and the arrows, each move
+  written into the project; renaming, making and deleting stay in the
+  project.
+

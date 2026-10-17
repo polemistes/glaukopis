@@ -50,7 +50,17 @@ export function layout(
   sizes: ReadonlyMap<string, Size>,
   /** Elements held at a place on the canvas whatever their parent: those being dragged. */
   held: ReadonlyMap<string, Position> = new Map(),
+  options: {
+    /**
+     * An element placed by the user keeps its room in the flow of those
+     * beside it, as one that is held does, so that nothing else moves when
+     * it is placed: for the map of the projects, where what is put somewhere
+     * must not shift the rest about.
+     */
+    keepRoom?: boolean;
+  } = {},
 ): Layout {
+  const keepRoom = !!options.keepRoom;
   const placed = new Map<string, Placed>();
   const order: string[] = [];
   const size = (id: string): Size => sizes.get(id) ?? DEFAULT_SIZE;
@@ -72,7 +82,9 @@ export function layout(
     const known = heights.get(id);
     if (known !== undefined) return known;
     // What is held keeps its room in the flow, so that nothing else moves while it is dragged.
-    const flowing = visibleChildren(id).filter((c) => !nodes.get(c)?.pos || held.has(c));
+    const flowing = visibleChildren(id).filter(
+      (c) => keepRoom || !nodes.get(c)?.pos || held.has(c),
+    );
     let kids = 0;
     flowing.forEach((c, i) => {
       kids += blockHeight(c) + (i ? V_GAP : 0);
@@ -117,7 +129,9 @@ export function layout(
       let top = y - total / 2;
       for (const c of list) {
         const block = blockHeight(c);
-        const at = held.get(c);
+        const pos = nodes.get(c)?.pos;
+        // Held where the pointer is; or, keeping its room, where the user put it.
+        const at = held.get(c) ?? (keepRoom && pos ? { x: x + pos.x, y: y + pos.y } : undefined);
         if (at) {
           // Held where the pointer is, its room in the flow kept for it.
           place(c, at.x, at.y, at.x < x ? 'left' : 'right', depth + 1, id);
@@ -138,7 +152,10 @@ export function layout(
     for (const c of children) {
       const n = nodes.get(c);
       const at = held.get(c);
-      if (at && n?.pos) {
+      if (keepRoom) {
+        // Placed or not, it flows with the rest, and is drawn where it is to be.
+        flowing.push(c);
+      } else if (at && n?.pos) {
         // Placed by the user, and held: where the pointer is, counted on the side it was placed.
         const to: Side = n.pos.x < 0 ? 'left' : n.pos.x > 0 ? 'right' : side;
         occupied[to] += blockHeight(c) + V_GAP;

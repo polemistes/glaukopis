@@ -216,15 +216,17 @@ export function owlTree(
   /**
    * The map of a project, under it: the project itself stands for its own
    * element, the top of its map, and its trees stand right under it, in the
-   * order of the project, each folded as the project has it and placed
-   * where the project put it.
+   * order of the project, each placed where the project put it. Every
+   * element with anything under it starts folded here, whatever the project
+   * has, so that opening shows one level at a time and the top map stays
+   * small; unfolded by hand, it stays so for the session.
    */
   function mapUnder(project: string, top: string, map: ClosedTree) {
     const add = (id: string, parentKey: string, order: string, depth: number) => {
       const key = elementKey(project, id);
       const holds = (map.tree.children.get(id)?.length ?? 0) > 0;
       const look = map.places.get(id);
-      const folded = holds && (elementFolds.get(key) ?? look?.collapsed ?? false);
+      const folded = holds && (elementFolds.get(key) ?? true);
       items.set(key, {
         kind: 'element',
         project,

@@ -32,10 +32,15 @@ class HomeUndo {
     this.#shown = toasts.show(toast);
   }
 
-  /** Remembers a change that was just made, and says so, with a way back. */
-  remember(change: HomeChange) {
+  /**
+   * Remembers a change that was just made, and says so, with a way back;
+   * quietly, where the change is the arranging of a map, which a message
+   * would only disturb. Undone, it is said either way.
+   */
+  remember(change: HomeChange, options: { quietly?: boolean } = {}) {
     this.done = [...this.done, change];
     this.undone = [];
+    if (options.quietly) return;
     this.#say({
       kind: 'ok',
       message: change.message,

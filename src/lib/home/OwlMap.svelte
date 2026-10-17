@@ -34,8 +34,8 @@
   const SMALLEST = 0.04;
   import { layout, type Size } from '$lib/project/diagram/layout';
   import { linesOf } from '$lib/project/diagram/lines';
-  import { subtree } from '$lib/project/model/tree';
-  import type { NodeRecord, Position } from '$lib/project/model/types';
+  import { isAncestor, subtree } from '$lib/project/model/tree';
+  import { PROJECT, type NodeRecord, type Position } from '$lib/project/model/types';
   import Mark from '$lib/shell/Mark.svelte';
   import { projects } from '$lib/state/projects.svelte';
   import { drag, dropTarget, startDrag, type DragPayload } from '$lib/ui/drag.svelte';
@@ -43,8 +43,11 @@
   import { notifyError } from '$lib/ui/toast.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import {
+    carryElements,
     deleteThings,
+    moveElements,
     placeThings,
+    type ElementPlace,
     makeFolder,
     makeProject,
     moveThings,
@@ -55,7 +58,7 @@
     wouldMove,
     type Things,
   } from './changes';
-  import { closedTrees } from './closed.svelte';
+  import { closedTrees, type ClosedTree } from './closed.svelte';
   import { folderOf } from './folders';
   import { listUi } from './list.svelte';
   import NameField from './NameField.svelte';
@@ -142,7 +145,9 @@
    * where it was let go until the change is on the map.
    */
   let dragging = $state<{ keys: string[]; grab: Position } | null>(null);
-  let settling = $state<{ at: Map<string, Position> } | null>(null);
+  let settling = $state<{ at: Map<string, Position>; project?: string; reading?: unknown } | null>(
+    null,
+  );
 
   const held = $derived.by(() => {
     const out = new Map<string, Position>();
@@ -162,14 +167,26 @@
     return out;
   });
 
+  // What is put somewhere keeps its room among the rest, so that placing one thing moves no other.
   const lay = $derived(
-    layout(owl.tree, owl.nodes as unknown as ReadonlyMap<string, NodeRecord>, sizes, held),
+    layout(owl.tree, owl.nodes as unknown as ReadonlyMap<string, NodeRecord>, sizes, held, {
+      keepRoom: true,
+    }),
   );
   /** The map as it is without what is dragged: where things were, and where the parents are. */
   const resting = $derived(
-    layout(owl.tree, owl.nodes as unknown as ReadonlyMap<string, NodeRecord>, sizes),
+    layout(owl.tree, owl.nodes as unknown as ReadonlyMap<string, NodeRecord>, sizes, new Map(), {
+      keepRoom: true,
+    }),
   );
   const lines = $derived(linesOf(lay, new Set()));
+
+  // Elements dropped stand where they were let go until their project's map is read anew.
+  $effect(() => {
+    const was = settling;
+    if (!was?.project) return;
+    if (closedTrees.get(was.project) !== was.reading) untrack(() => (settling = null));
+  });
 
   // What was dropped stands where it was let go until the map shows it moved, or for a few seconds.
   $effect(() => {
@@ -390,9 +407,153 @@
     return !!rect && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
   }
 
+  // ---- the elements of the maps shown under the cards ----
+
+  /** The map of a project as it is read, where it is shown. */
+  const mapOf = (project: string): ClosedTree | null => {
+    const m = maps.get(project);
+    return m && typeof m === 'object' ? m : null;
+  };
+
+  /** Where an element stands in its project now: under which, before which, placed where. */
+  function standing(map: ClosedTree, id: string): ElementPlace {
+    const parent = map.tree.parent.get(id) ?? PROJECT;
+    const list = map.tree.children.get(parent) ?? [];
+    return {
+      id,
+      parent,
+      before: list[list.indexOf(id) + 1] ?? null,
+      pos: map.places.get(id)?.pos ?? null,
+    };
+  }
+
+  /** The elements of one project among some keys, the topmost of them only, in the order given. */
+  function elementsIn(keys: string[], project: string): string[] {
+    const ids = keys.flatMap((k) => {
+      const e = keyed(k);
+      return e.kind === 'element' && e.project === project ? [e.id] : [];
+    });
+    const map = mapOf(project);
+    if (!map) return [];
+    return ids.filter((id) => !ids.some((o) => o !== id && isAncestor(map.tree, o, id)));
+  }
+
+  const projectName = (id: string) => projects.list.find((p) => p.id === id)?.name ?? '';
+
+  /** Moves elements of one project as `to` says, held where `at` says until the map shows it. */
+  function moveWithin(project: string, to: ElementPlace[], at?: Map<string, Position>) {
+    const map = mapOf(project);
+    if (!map || !to.length) return;
+    const from = to.map((m) => standing(map, m.id));
+    if (at?.size) settling = { at, project, reading: closedTrees.get(project) };
+    void moveElements(
+      project,
+      to,
+      from,
+      t('home-owl-elements-moved', { count: to.length, project: projectName(project) }),
+    );
+  }
+
+  /** One place up or down among those beside it: the last selected, as in the diagram. */
+  function shiftElements(keys: string[], by: -1 | 1) {
+    const k = keyed(keys[keys.length - 1] ?? '');
+    if (k.kind !== 'element') return;
+    const map = mapOf(k.project);
+    if (!map) return;
+    const here = standing(map, k.id);
+    const list = map.tree.children.get(here.parent) ?? [];
+    const i = list.indexOf(k.id);
+    const j = i + by;
+    if (j < 0 || j >= list.length) return;
+    const before = by < 0 ? list[j] : (list[j + 1] ?? null);
+    moveWithin(k.project, [{ ...here, before, pos: null }]);
+  }
+
+  /** Under the element before it, at the end; or out, after the element it was under. */
+  function deeperElements(keys: string[], deeper: boolean) {
+    const k = keyed(keys[keys.length - 1] ?? '');
+    if (k.kind !== 'element') return;
+    const map = mapOf(k.project);
+    if (!map) return;
+    const ids = elementsIn(keys, k.project);
+    const here = standing(map, k.id);
+    const list = map.tree.children.get(here.parent) ?? [];
+    let parent: string;
+    let before: string | null = null;
+    if (deeper) {
+      const prev = list.slice(0, list.indexOf(ids[0] ?? k.id)).filter((x) => !ids.includes(x));
+      if (!prev.length) return;
+      parent = prev[prev.length - 1];
+    } else {
+      if (here.parent === PROJECT) return;
+      parent = map.tree.parent.get(here.parent) ?? PROJECT;
+      const above = map.tree.children.get(parent) ?? [];
+      before = above[above.indexOf(here.parent) + 1] ?? null;
+    }
+    moveWithin(
+      k.project,
+      ids.map((id) => ({ id, parent, before, pos: null })),
+    );
+    if (deeper) listUi.owlElementFold(elementKey(k.project, parent), false);
+  }
+
+  /** The element of its project a key stands for when elements are dropped on it: an element, or the top of a card's. */
+  function underOf(key: string): { project: string; id: string } | null {
+    const k = keyed(key);
+    if (k.kind === 'element') return { project: k.project, id: k.id };
+    if (k.kind === 'project') return { project: k.id, id: PROJECT };
+    return null;
+  }
+
+  /** What is dragged from a map shown here: elements of one project. */
+  interface Carried {
+    project: string;
+    ids: string[];
+  }
+  const ELEMENTS = 'owl-elements';
+
+  /** Elements dropped on an element or on a card: under it, in its project or carried to it from another. */
+  function dropUnder(key: string) {
+    return {
+      accepts: (payload: DragPayload) => {
+        if (payload.kind !== ELEMENTS) return false;
+        const target = underOf(key);
+        const data = payload.data as Carried;
+        return !!target && !(target.project === data.project && data.ids.includes(target.id));
+      },
+      ondrop: (e: { payload: DragPayload }) => {
+        const target = underOf(key);
+        const data = e.payload.data as Carried;
+        if (!target) return;
+        if (target.project === data.project) {
+          moveWithin(
+            data.project,
+            data.ids.map((id) => ({ id, parent: target.id, before: null, pos: null })),
+          );
+        } else {
+          const map = mapOf(data.project);
+          if (!map || !data.ids.length) return;
+          const first = standing(map, data.ids[0]);
+          void carryElements(
+            data.project,
+            data.ids,
+            target.project,
+            target.id,
+            { parent: first.parent, before: first.before },
+            t('home-owl-elements-carried', {
+              count: data.ids.length,
+              to: projectName(target.project),
+            }),
+          );
+        }
+      },
+    };
+  }
+
   /** What is dropped on the ground of the map: put there, as in the diagram, under what holds it. */
   const ground = {
-    accepts: (payload: DragPayload) => !!dragging && !!thingsOf(payload),
+    accepts: (payload: DragPayload) =>
+      !!dragging && (payload.kind === ELEMENTS || !!thingsOf(payload)),
     quiet: true,
     ondrop: (e: { payload: DragPayload; x: number; y: number }) => {
       const was = dragging;
@@ -402,7 +563,8 @@
       was.keys.forEach((k, i) =>
         at.set(k, { x: world.x - was.grab.x, y: world.y - was.grab.y + i * 52 }),
       );
-      placeThingsAt(was.keys, at);
+      if (e.payload.kind === ELEMENTS) placeElements(e.payload.data as Carried, was.keys, at);
+      else placeThingsAt(was.keys, at);
     },
   };
 
@@ -428,6 +590,27 @@
     ).finally(() => {
       if (settling?.at === at) settling = null;
     });
+  }
+
+  /**
+   * Elements put where they were dropped, under the parent they have and in
+   * the order they have: on the top map a drop arranges the map, and does
+   * not change what the project's text says comes first. Each place is said
+   * from its parent, as the project's own map says it.
+   */
+  function placeElements(data: Carried, keys: string[], at: Map<string, Position>) {
+    const map = mapOf(data.project);
+    if (!map) return;
+    const to: ElementPlace[] = [];
+    for (const key of keys) {
+      const k = keyed(key);
+      const world = at.get(key);
+      const parentKey = owl.tree.parent.get(key);
+      const pp = parentKey ? resting.placed.get(parentKey) : undefined;
+      if (k.kind !== 'element' || !world || !parentKey || !pp) continue;
+      to.push({ ...standing(map, k.id), pos: { x: world.x - pp.x, y: world.y - pp.y } });
+    }
+    moveWithin(data.project, to, at);
   }
 
   function focusMap() {
@@ -539,6 +722,7 @@
   }
 
   function deeper(keys: string[]) {
+    if (keyed(keys[keys.length - 1] ?? '').kind === 'element') return deeperElements(keys, true);
     const from = keys[keys.length - 1];
     const target = from ? folderBefore(from, owl.tree) : null;
     if (!target) return;
@@ -547,6 +731,7 @@
   }
 
   function shallower(keys: string[]) {
+    if (keyed(keys[keys.length - 1] ?? '').kind === 'element') return deeperElements(keys, false);
     const from = keys[keys.length - 1];
     const target = from ? folderAbove(from, owl.tree) : null;
     if (!target) return;
@@ -738,6 +923,7 @@
     make,
     deeper,
     shallower,
+    shift: shiftElements,
     fold,
     remove: (keys) => void remove(keys),
     menu: menuOf,
@@ -760,14 +946,32 @@
 
   /** The payload of what is dragged: the thing pressed, or the selection it is part of. */
   /**
-   * The payload of what is dragged: the folder or project pressed, or the
-   * selection it is part of. It is remembered what is dragged, and where the
-   * pointer took hold of the first, to draw it under the pointer. The
-   * elements of projects' maps are not dragged: they are moved in their project.
+   * The payload of what is dragged: the thing pressed, or the selection it
+   * is part of. Elements go with the others of their project; folders and
+   * projects with the others of theirs. It is remembered what is dragged,
+   * and where the pointer took hold of the first, to draw it under the pointer.
    */
   function payloadFor(key: string, from: Position): DragPayload | null {
     const lead = lay.placed.get(key);
     const grab = { x: from.x - (lead?.x ?? from.x), y: from.y - (lead?.y ?? from.y) };
+    const k = keyed(key);
+    if (k.kind === 'element') {
+      // The elements of one project go together, the topmost of them, as the project's own map drags them.
+      const pool = selected.has(key) ? selection : [key];
+      const ids = [k.id, ...elementsIn(pool, k.project).filter((id) => id !== k.id)];
+      const map = mapOf(k.project);
+      const topmost = map
+        ? ids.filter((id) => !ids.some((o) => o !== id && isAncestor(map.tree, o, id)))
+        : [k.id];
+      dragging = { keys: topmost.map((id) => elementKey(k.project, id)), grab };
+      const item = owl.items.get(key);
+      const name = item?.kind === 'element' ? item.name || t('project-untitled') : '';
+      return {
+        kind: ELEMENTS,
+        data: { project: k.project, ids: topmost } satisfies Carried,
+        label: topmost.length === 1 ? name : t('project-elements', { count: topmost.length }),
+      };
+    }
     if (!movable(key)) return null;
     const keys = selected.has(key)
       ? [key, ...selection.filter((x) => x !== key && movable(x))]
@@ -895,7 +1099,19 @@
     };
   }
 
-  /** The folder a key stands for when something is dropped on it: a folder itself, a card's folder, or the top. */
+  /** A project takes folders and projects into its folder, and elements under its own element, the top of its map. */
+  function dropOnCard(key: string) {
+    const things = dropInto(intoOf(key));
+    const elements = dropUnder(key);
+    return {
+      accepts: (payload: DragPayload) =>
+        payload.kind === ELEMENTS ? elements.accepts(payload) : things.accepts(payload),
+      ondrop: (e: { payload: DragPayload }) =>
+        e.payload.kind === ELEMENTS ? elements.ondrop(e) : things.ondrop(e),
+    };
+  }
+
+  /** The folder a key stands for when something is dropped on it: a folder itself, a project's folder, or the top. */
   function intoOf(key: string): string | null {
     const k = keyed(key);
     if (k.kind === 'folder') return k.id;
@@ -1086,7 +1302,7 @@
                 data-side={p.side}
                 data-selected={selected.has(key) ? '' : undefined}
                 use:measured={key}
-                use:dropTarget={dropInto(intoOf(key))}
+                use:dropTarget={dropOnCard(key)}
               >
                 <span class="caption">
                   <ProjectBadge
@@ -1176,6 +1392,7 @@
                 data-side={p.side}
                 data-selected={selected.has(key) ? '' : undefined}
                 use:measured={key}
+                use:dropTarget={dropUnder(key)}
               >
                 <span class="caption">
                   {#if item.name}
@@ -1452,7 +1669,7 @@
   /* What would take what is dragged. */
   .owl:global([data-drop-over]),
   .folder:global([data-drop-over]),
-  .node.project:global([data-drop-over]) {
+  .node:global([data-drop-over]) {
     outline: 2px dashed var(--accent);
     outline-offset: 4px;
     background: var(--accent-soft);

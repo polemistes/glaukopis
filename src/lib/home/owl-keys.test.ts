@@ -71,6 +71,7 @@ function surface(selection: string[], at?: string) {
     make: log('make'),
     deeper: log('deeper'),
     shallower: log('shallower'),
+    shift: log('shift'),
     fold: log('fold'),
     remove: log('remove'),
     menu: log('menu'),
@@ -184,7 +185,7 @@ describe('the keys of the owl map', () => {
     expect(pressed(key('Tab', { shiftKey: true }), owl)).toBe(false);
   });
 
-  it('go through, fold and open the elements of a project, and change nothing of them', () => {
+  it('move the elements of a project among those beside them and deeper, and make, rename and delete nothing', () => {
     const b = elementKey('2', 'b');
     const { owl, calls, lay } = surface([b]);
     const side = lay.placed.get(b)?.side;
@@ -198,7 +199,12 @@ describe('the keys of the owl map', () => {
     pressed(key('a'), owl);
     pressed(key(' '), owl);
     pressed(key('ArrowDown', { altKey: true, shiftKey: true }), owl);
-    expect(calls).toEqual([`fold "${b}"`, `open "${b}"`]);
+    expect(calls).toEqual([
+      `shift ${JSON.stringify([b])} -1`,
+      `deeper ${JSON.stringify([b])}`,
+      `fold "${b}"`,
+      `open "${b}"`,
+    ]);
   });
 
   it('show or hide the map of a project with Space', () => {

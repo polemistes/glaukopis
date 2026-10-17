@@ -100,6 +100,14 @@ home-owl-placed-many = { $count ->
     [one] { $count } thing was put there
    *[other] { $count } things were put there
 }
+home-owl-elements-moved = { $count ->
+    [one] An element of “{ $project }” was moved
+   *[other] { $count } elements of “{ $project }” were moved
+}
+home-owl-elements-carried = { $count ->
+    [one] An element was moved to “{ $to }”
+   *[other] { $count } elements were moved to “{ $to }”
+}
 # The bar over the map, at a folder: what holds it.
 home-owl-in = In “{ $name }”
 

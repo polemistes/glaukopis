@@ -261,6 +261,8 @@ try {
   };
   await app.click('.diagram .node.root');
   await add('Tab', 'Wrath');
+  await add('Tab', 'Quarrel');
+  await app.press('ArrowLeft');
   await add('Enter', 'Ships');
   await add('Enter', 'Embassy');
   await app.exec('history.back()');
@@ -287,14 +289,20 @@ try {
   check('a project with nothing in it has no fold button', await app.exec(`return !${card('Notes')}?.querySelector('.fold')`));
   await app.click(await cardEl(app, 'Iliad'));
   await app.press('Space');
-  check('Space unfolds its map: its trees stand under it in the order of the project', await waitUntil(async () => JSON.stringify(await elementNames()) === '["Wrath","Ships","Embassy"]', 6000), JSON.stringify(await elementNames()));
+  check('Space unfolds its map: its trees stand under it in the order of the project, and nothing deeper', await waitUntil(async () => JSON.stringify(await elementNames()) === '["Wrath","Ships","Embassy"]', 6000), JSON.stringify(await elementNames()));
   check('drawn as the elements of a map', await app.exec(`return ${element('Wrath')}?.classList.contains('node') && ${element('Wrath')}?.classList.contains('depth-1')`));
+  check('a tree with something under it is folded, its fold button counting it', (await app.exec(`return ${element('Wrath')}?.querySelector('.fold')?.textContent.trim()`)) === '1');
+  await app.click(await elementEl('Wrath'));
+  await app.press('Space');
+  check('Space on the tree shows the next level', await waitUntil(() => hasElement('Quarrel'), 4000));
+  await app.press('Space');
+  await waitUntil(async () => !(await hasElement('Quarrel')), 4000);
   check('and the fold button closes it again', await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim() === '–'`));
   // The off-screen webview paints what was just added a frame late: the picture waits for it.
   await sleep(400);
   await app.screenshot('owl-5-map-shown');
   await app.exec(`${card('Iliad')}.querySelector('.fold').click()`);
-  check('the fold button folds the map away, counting all that is under it', await waitUntil(async () => !(await hasElement('Wrath')) && (await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim()`)) === '3', 4000), await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim()`));
+  check('the fold button folds the map away, counting all that is under it', await waitUntil(async () => !(await hasElement('Wrath')) && (await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim()`)) === '4', 4000), await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim()`));
   await app.exec(`${card('Iliad')}.querySelector('.fold').click()`);
   await waitUntil(() => hasElement('Wrath'), 4000);
   // Folding keeps the project where it stood for a moment only: a drag right after does not move the view without end.
@@ -308,35 +316,55 @@ try {
   await app.keys(['Control', 'z']);
   await sleep(600);
 
-  // Not changed here: the keys and the pointer move nothing of a project.
+  // Moved as in the project's own map; renamed, made and deleted only there.
   await fitted();
   await app.click(await elementEl('Embassy'));
   check('an element is selected by a click', (await selectedName(app)) === 'Embassy', await selectedName(app));
+  const toastsBefore = await app.count('.toast');
   await app.keys(['Alt', 'ArrowUp']);
-  await app.keys(['Alt', (await app.exec(`return ${element('Embassy')}?.dataset.side`)) === 'left' ? 'ArrowLeft' : 'ArrowRight']);
+  check('Alt+Up moves an element up among those beside it, in its project', await waitUntil(async () => JSON.stringify(await elementNames()) === '["Wrath","Embassy","Ships"]', 6000), JSON.stringify(await elementNames()));
+  check('and no message is made of it', (await app.count('.toast')) === toastsBefore);
+  const embassySide = await app.exec(`return ${element('Embassy')}?.dataset.side`);
+  await app.keys(['Alt', embassySide === 'left' ? 'ArrowLeft' : 'ArrowRight']);
+  const wrathKey = await app.exec(`return ${element('Wrath')}?.dataset.owlKey`);
+  check('Alt and the arrow outwards put it under the one before it', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlParent`)) === wrathKey, 6000), await app.exec(`return ${element('Embassy')}?.dataset.owlParent`));
+  await app.keys(['Control', 'z']);
+  check('Ctrl+Z puts it back', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlParent`)) === `project:${iliad}`, 6000));
   await app.press('F2');
   await app.press('Delete');
-  await sleep(800);
-  const untouched = { names: await elementNames(), field: await app.exists('[data-name-field]'), dialog: await app.exists('dialog[open]'), selected: await selectedName(app) };
-  check('the keys change nothing of an element', JSON.stringify(untouched.names) === '["Wrath","Ships","Embassy"]' && !untouched.field && !untouched.dialog, JSON.stringify(untouched));
-  const fromCard = `const r = ${element('Embassy')}.getBoundingClientRect(), c = ${card('Iliad')}.getBoundingClientRect(); return { x: Math.round(r.left - c.left), y: Math.round(r.top - c.top) };`;
+  await app.press('Enter');
+  await sleep(500);
+  const untouched = { names: await elementNames(), field: await app.exists('[data-name-field]'), dialog: await app.exists('dialog[open]') };
+  // The tree that took an element in was unfolded for it, and stays so after the undo.
+  check('F2, Delete and Enter change nothing of an element', JSON.stringify(untouched.names) === '["Wrath","Quarrel","Embassy","Ships"]' && !untouched.field && !untouched.dialog, JSON.stringify(untouched));
   await fitted();
-  const before = await app.exec(fromCard);
-  await app.drag(await elementEl('Embassy'), { dx: 40, dy: -80 });
-  await sleep(800);
-  const after = await app.exec(fromCard);
-  check('nor does dragging it', JSON.stringify(before) === JSON.stringify(after), JSON.stringify({ before, after }));
-  await app.drag(await elementEl('Embassy'), await elementEl('Wrath'));
-  await sleep(800);
-  check('nor dropping it on another', (await app.exec(`return ${element('Embassy')}?.dataset.owlParent`)) === (await app.exec(`return ${element('Wrath')}?.dataset.owlParent`)));
+  await app.drag(await elementEl('Ships'), await elementEl('Wrath'));
+  check('an element dragged onto another goes under it', await waitUntil(async () => (await app.exec(`return ${element('Ships')}?.dataset.owlParent`)) === wrathKey, 6000), await app.exec(`return ${element('Ships')}?.dataset.owlParent`));
+  await fitted();
+  const fromTop = `const r = ${element('Embassy')}.getBoundingClientRect(), c = ${card('Iliad')}.getBoundingClientRect(); return { x: Math.round(r.left - c.left), y: Math.round(r.top - c.top) };`;
+  const before = await app.exec(fromTop);
+  const wrathBefore = await app.exec(`const r = ${element('Wrath')}.getBoundingClientRect(), c = ${card('Iliad')}.getBoundingClientRect(); return { x: Math.round(r.left - c.left), y: Math.round(r.top - c.top) };`);
+  await app.drag(await elementEl('Embassy'), { dx: 40, dy: -110 });
+  await sleep(1500);
+  const after = await app.exec(fromTop);
+  check('an element dropped on the ground stays where it was let go, written into the project', Math.abs(after.y - before.y + 110) < 30 && Math.abs(after.x - before.x - 40) < 30, JSON.stringify({ before, after }));
+  const wrathAfter = await app.exec(`const r = ${element('Wrath')}.getBoundingClientRect(), c = ${card('Iliad')}.getBoundingClientRect(); return { x: Math.round(r.left - c.left), y: Math.round(r.top - c.top) };`);
+  check('and the others stay where they were', JSON.stringify(wrathBefore) === JSON.stringify(wrathAfter), JSON.stringify({ wrathBefore, wrathAfter }));
+  await app.keys(['Control', 'z']);
+  await sleep(1200);
 
   // Folders and projects put by hand.
   await fitted();
   const notesBefore = await app.exec(`const r = ${card('Notes')}.getBoundingClientRect(); return { x: r.left, y: r.top };`);
+  const othersBefore = await app.exec(`return Array.from(document.querySelectorAll('[data-owl-project], [data-owl-folder]')).filter((e) => !e.textContent.includes('Notes')).map((e) => { const r = e.getBoundingClientRect(); return [e.dataset.owlKey, Math.round(r.left), Math.round(r.top)]; })`);
+  const toastsBeforePlacing = await app.count('.toast');
   await app.drag(await cardEl(app, 'Notes'), { dx: -40, dy: -160 });
   await sleep(800);
   const notesAfter = await app.exec(`const r = ${card('Notes')}.getBoundingClientRect(); return { x: r.left, y: r.top };`);
-  check('a card dropped on the ground stays where it was let go', Math.abs(notesAfter.y - notesBefore.y + 160) < 30, JSON.stringify({ notesBefore, notesAfter }));
+  check('a project dropped on the ground stays where it was let go', Math.abs(notesAfter.y - notesBefore.y + 160) < 30, JSON.stringify({ notesBefore, notesAfter }));
+  const othersAfter = await app.exec(`return Array.from(document.querySelectorAll('[data-owl-project], [data-owl-folder]')).filter((e) => !e.textContent.includes('Notes')).map((e) => { const r = e.getBoundingClientRect(); return [e.dataset.owlKey, Math.round(r.left), Math.round(r.top)]; })`);
+  check('and nothing else moves', JSON.stringify(othersBefore) === JSON.stringify(othersAfter), JSON.stringify({ othersBefore, othersAfter }));
+  check('and no message is made of it', (await app.count('.toast')) === toastsBeforePlacing);
   const notesId = await app.exec(`return ${card('Notes')}?.dataset.owlProject`);
   check('and the place is kept on this computer', Object.keys(await invoke(app, 'owl_places', {})).includes(`project:${notesId}`));
   await app.keys(['Control', 'z']);
@@ -363,9 +391,22 @@ try {
   await app.waitFor('[data-owl-map]', 10000);
   await sleep(800);
 
-  // Jumping in anywhere.
+  // Carried to another project, whose map is open to show it.
   await app.click(await cardEl(app, 'Iliad'));
   await app.press('Space');
+  await waitUntil(() => hasElement('Embassy'), 6000);
+  await app.click(await cardEl(app, 'Odyssey'));
+  await app.press('Space');
+  await waitUntil(async () => (await app.exec(`return ${card('Odyssey')}?.hasAttribute('data-owl-folded')`)) === false, 6000);
+  await sleep(600);
+  await fitted();
+  await app.drag(await elementEl('Embassy'), await cardEl(app, 'Odyssey'));
+  const odyssey = await app.exec(`return ${card('Odyssey')}?.dataset.owlProject`);
+  check('an element dragged onto another project is carried there', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlOf`)) === odyssey, 8000), await app.exec(`return ${element('Embassy')}?.dataset.owlOf`));
+  await app.keys(['Control', 'z']);
+  check('and Ctrl+Z carries it back', await waitUntil(async () => (await app.exec(`return ${element('Embassy')}?.dataset.owlOf`)) === iliad, 8000), await app.exec(`return ${element('Embassy')}?.dataset.owlOf`));
+
+  // Jumping in anywhere.
   await waitUntil(() => hasElement('Wrath'), 6000);
   await fitted();
   await app.doubleClick(await elementEl('Wrath'));

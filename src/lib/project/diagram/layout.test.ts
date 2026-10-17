@@ -121,6 +121,29 @@ describe('the layout of a map', () => {
     expect(p('a').y).toBe(0);
   });
 
+  it('keeps the room of an element the user put somewhere, when asked to, so that nothing else moves', () => {
+    const spec = {
+      r: { parent: null },
+      a: { parent: 'r' },
+      b: { parent: 'r' },
+      c: { parent: 'r' },
+      d: { parent: 'r' },
+    };
+    const flowing = make(spec);
+    const before = layout(flowing.tree, flowing.nodes, flowing.sizes);
+    const placed = make({ ...spec, c: { parent: 'r', pos: { x: -400, y: 300 } } });
+    const kept = layout(placed.tree, placed.nodes, placed.sizes, new Map(), { keepRoom: true });
+    const p = (l: ReturnType<typeof layout>, id: string) => l.placed.get(id)!;
+    expect([p(kept, 'c').x, p(kept, 'c').y]).toEqual([-400, 300]);
+    expect(p(kept, 'c').pinned).toBe(true);
+    for (const id of ['a', 'b', 'd']) {
+      expect([p(kept, id).x, p(kept, id).y], id).toEqual([p(before, id).x, p(before, id).y]);
+    }
+    // Without that, the others close the gap and the sides are balanced anew.
+    const loose = layout(placed.tree, placed.nodes, placed.sizes);
+    expect(['a', 'b', 'd'].some((id) => p(loose, id).y !== p(before, id).y)).toBe(true);
+  });
+
   it('holds what is being dragged where the pointer has it', () => {
     const { tree, nodes, sizes } = make({
       r: { parent: null },

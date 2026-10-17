@@ -60,6 +60,15 @@ describe('the undo of the home', () => {
     expect(toasts.list).toHaveLength(1);
   });
 
+  it('remembers a quiet change without saying it, and says its undoing', async () => {
+    const log: string[] = [];
+    homeUndo.remember(change('placed', log), { quietly: true });
+    expect(toasts.list).toHaveLength(0);
+    await homeUndo.undo();
+    expect(log).toEqual(['undo placed']);
+    expect(toasts.list).toHaveLength(1);
+  });
+
   it('does one change at a time, in the order asked', async () => {
     const log: string[] = [];
     homeUndo.remember(change('a', log));

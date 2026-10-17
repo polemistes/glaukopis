@@ -223,6 +223,13 @@ describe('the owl map', () => {
     expect(nodes.get(projectKey('2'))?.collapsed).toBe(false);
     expect(tree.children.get(wrath)).toEqual([elementKey('2', 'quarrel')]);
     expect(items.get(wrath)).toMatchObject({ name: 'Wrath', holds: true, folded: true, depth: 1 });
+    // Folded here though not in the project: one level at a time.
+    const open = owlTree(folders, projects, new Map(), {
+      maps: new Map([['2', { ...map(), places: new Map() }]]),
+      openMaps: new Set(['2']),
+    });
+    expect(open.nodes.get(wrath)?.collapsed).toBe(true);
+    expect(open.nodes.get(elementKey('2', 'ships'))?.collapsed).toBe(false);
     expect(items.get(elementKey('2', 'quarrel'))).toMatchObject({ depth: 2 });
     expect(items.get(elementKey('2', 'ships'))).toMatchObject({ heading: false, excluded: true });
     expect(nodes.get(elementKey('2', 'ships'))?.pos).toEqual({ x: 200, y: 40 });

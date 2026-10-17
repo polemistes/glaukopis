@@ -120,20 +120,24 @@ It is worked as a project's diagram is, in a look of its own:
   card, into that card's folder; onto the owl, out of all folders. What is
   dragged from the map can be dropped on the list, and the other way.
 - **Placing.** A folder or a project dragged onto the ground of the map
-  stays where it is let go, as an element does in a project's map; the
-  places are kept on this computer. **Place everything by itself**, in the
-  map's menu, puts them back in order. Dropped on a folder, it goes into
-  it; on the owl, out of all folders.
+  stays where it is let go, and nothing else moves; the places are kept on
+  this computer. **Place everything by itself**, in the map's menu, puts
+  them back in order. Dropped on a folder, it goes into it; on the owl, out
+  of all folders.
 - **Folding.** **Space**, or the sign before a folder's name, hides the
   projects in it or shows them. A folder of many projects begins folded.
 - **The maps of the projects.** A project stands on the map as the top
   element of its own map stands in it, and opens as an element does: the
   small button at its side, with the number of what is folded away, or
-  **Space** with the project selected, shows its trees under it, as the
-  project's own map draws them; the same folds them away again. A double
-  click on an element, the button at its corner or **Alt+Shift+Down** opens
-  the project there. Here they are only seen and folded; they are moved,
-  renamed and deleted in the project.
+  **Space** with the project selected, shows its trees under it, each
+  folded; every unfolding shows one more level. A double click on an
+  element, the button at its corner or **Alt+Shift+Down** opens the project
+  there. The elements are moved as in the project's own map: dragged onto
+  the ground they stand where they are let go, onto another element they go
+  under it, onto another project they are carried there; **Alt** and the
+  arrows move them up and down, under the one before, and out. Each move is
+  made in the project itself, and **Ctrl+Z** undoes it. Renaming, making
+  and deleting elements is done in the project.
 - **Deleting.** **Delete** deletes what is selected, after asking: a
   project goes to the trash, and what is in a folder moves up.
 

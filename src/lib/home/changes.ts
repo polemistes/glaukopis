@@ -11,10 +11,14 @@ import type { Folder, Place, ProjectInfo } from '$lib/api/projects';
 import { projectTrash } from '$lib/api/projects';
 import { sharingRename } from '$lib/api/sharing';
 import { t } from '$lib/i18n';
+import { carryAcross, openElsewhere, writeElsewhere } from '$lib/project/elsewhere';
+import type { Project } from '$lib/project/model/project.svelte';
+import type { Position } from '$lib/project/model/types';
 import { projects } from '$lib/state/projects.svelte';
 import { confirm } from '$lib/ui/confirm.svelte';
 import type { DragPayload } from '$lib/ui/drag.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
+import { closedTrees } from './closed.svelte';
 import { ancestors, descendants, folderOf, parentOf } from './folders';
 import { listUi } from './list.svelte';
 import { homeUndo } from './undo.svelte';
@@ -319,9 +323,142 @@ export async function placeThings(places: Record<string, Place | null>, message:
     notifyError(t('home-failed'), error);
     return;
   }
+  homeUndo.remember(
+    {
+      message,
+      undo: () => projects.setPlaces(before),
+      redo: () => projects.setPlaces(places),
+    },
+    { quietly: true },
+  );
+}
+
+/**
+ * Where an element stands in its project: under which, before which of
+ * those beside it (none at the end), and where it was put by hand.
+ */
+export interface ElementPlace {
+  id: string;
+  parent: string;
+  before: string | null;
+  pos: Position | null;
+}
+
+/** Puts elements where they are to stand, each before the one named, as `move` counts places. */
+function putElements(project: Project, places: ElementPlace[]) {
+  project.checkpoint();
+  for (const place of places) {
+    const list = project.tree().children.get(place.parent) ?? [];
+    const at = place.before ? list.indexOf(place.before) : -1;
+    project.move([place.id], place.parent, at < 0 ? list.length : at, {
+      pos: place.pos,
+      keepFolded: true,
+    });
+  }
+  project.checkpoint();
+}
+
+/**
+ * Moves elements of a project that is shown on the map of the projects, as
+ * its own map moves them: to stand elsewhere under the same parent, under
+ * another, or where they were dropped. The project is opened to be written
+ * in, and let go. One change, undone as one: what was is given back.
+ */
+export async function moveElements(
+  projectId: string,
+  to: ElementPlace[],
+  from: ElementPlace[],
+  message: string,
+) {
+  if (!to.length) return;
+  // Written, and read again for the map of the projects, which shows it.
+  const write = async (places: ElementPlace[]) => {
+    await writeElsewhere(projectId, (project) => putElements(project, places));
+    closedTrees.again(projectId);
+  };
+  try {
+    await write(to);
+  } catch (error) {
+    notifyError(t('home-failed'), error);
+    return;
+  }
+  // Quietly, as a move in the project's own map is: the arranging of a map.
+  homeUndo.remember(
+    {
+      message,
+      // Put back in the order opposite to that they were taken.
+      undo: () => write(from.slice().reverse()),
+      redo: () => write(to),
+    },
+    { quietly: true },
+  );
+}
+
+/**
+ * Carries elements from one project to another, each with all under it,
+ * as a drop from one pane onto the other does: made there under the
+ * element given, removed here. Both are opened to be written in, and let
+ * go. Undone, they are carried back to where they stood.
+ */
+export async function carryElements(
+  fromId: string,
+  ids: string[],
+  toId: string,
+  under: string,
+  back: { parent: string; before: string | null },
+  message: string,
+) {
+  let made: string[] = [];
+  const carry = async (
+    a: string,
+    these: string[],
+    b: string,
+    place: { parent: string; before: string | null },
+  ) => {
+    const from = await openElsewhere(a);
+    const to = await openElsewhere(b);
+    const done = (async () => {
+      try {
+        const list = to.project.tree().children.get(place.parent) ?? [];
+        const at = place.before ? list.indexOf(place.before) : -1;
+        const result = carryAcross(
+          from.project,
+          these,
+          to.project,
+          { under: place.parent, keepFolded: true, index: at < 0 ? undefined : at },
+          true,
+        );
+        for (const side of [from, to]) {
+          if (!side.here) side.project.undoManager.clear();
+          await side.project.flush();
+        }
+        return result;
+      } finally {
+        await from.close();
+        await to.close();
+      }
+    })();
+    projects.closing(a, done);
+    projects.closing(b, done);
+    const result = await done;
+    closedTrees.again(a);
+    closedTrees.again(b);
+    return result;
+  };
+  try {
+    made = await carry(fromId, ids, toId, { parent: under, before: null });
+  } catch (error) {
+    notifyError(t('home-failed'), error);
+    return;
+  }
+  if (!made.length) return;
   homeUndo.remember({
     message,
-    undo: () => projects.setPlaces(before),
-    redo: () => projects.setPlaces(places),
+    undo: async () => {
+      made = await carry(toId, made, fromId, back);
+    },
+    redo: async () => {
+      made = await carry(fromId, made, toId, { parent: under, before: null });
+    },
   });
 }
