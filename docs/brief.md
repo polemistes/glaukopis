@@ -971,3 +971,19 @@ What this settles (ADR 0051, amended):
   written into the project; renaming, making and deleting stay in the
   project.
 
+
+## 2026-10-17 — release 0.2.1
+
+> push and make all packages for all systems, version 0.2.1. Update the index.html file and put everything in one folder
+
+- Version 0.2.1, tagged `v0.2.1` and pushed with main. The installers for
+  Windows (NSIS and MSI) and macOS (Apple silicon), the deb and the rpm made
+  by the workflow `Installers` on GitHub, all three systems built and tested;
+  the Arch packages built here from the tag's archive with
+  `packaging/arch/release/PKGBUILD`, which carries its checksum.
+- The page of packages says what is new in 0.2.1: the map of the projects
+  worked as a map, pasting and menus on Linux, making a PDF searchable on
+  Windows, projects made in folders.
+- All the files, the page, `SHA256SUMS` and the language packages are in
+  `packaging/release-0.2.1/`, to be uploaded into `glaukopis/` of the site.
+  No release on GitHub is made yet.
