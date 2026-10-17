@@ -881,3 +881,29 @@ written and was not changed.
 - A pre-release on GitHub, *Glaukopis 0.2.0, a version to test*, on the tag
   `v0.2.0`, with the installers, the packages, the PKGBUILD and
   `SHA256SUMS`, as 0.1.0 had (the language packages are on the site only).
+
+## 2026-10-17 — the owl map behaves as a tree
+
+> Did we make a plan for making the top level tree of folders and projects a similar interface as the trees inside projects?
+
+> Yes, I want to keep the distinct look, and bring over the behaviour. Make a plan that I can give to Opus 5.5.
+
+What this settles (ADR 0050, built from `docs/plans/the-owl-map-behaves-as-a-tree.md`):
+
+- The owl map keeps its look: the owl, folders as labels without a box,
+  projects as cards; nothing added looks like an element of a project.
+- What is done in a project's diagram is done on the owl map: selecting one
+  or several, going about with the arrows, making a project with Enter and a
+  folder with Tab and naming it in place, renaming with F2 or a letter,
+  moving with Alt and the arrows or by dragging onto a folder, the owl or a
+  card, folding with Space, deleting with Delete, undoing every change of
+  the home from its toast and with Ctrl+Z, for the session; menus on
+  folders and on the background; a place of its own in the key sheet.
+- A folder is entered as an element is, with a route of its own, the bar
+  saying where one is, and going up from a project coming to its folder.
+- Not brought: an order by hand (folders and projects stand by name
+  everywhere), positions, copying and pasting, associations, comments.
+- Choices made in the plan that the owner has not been asked about: a
+  single click selects and a double click opens; Enter makes and no longer
+  opens; where new things go; what *deeper* means; the undo is the home's
+  and the session's.
