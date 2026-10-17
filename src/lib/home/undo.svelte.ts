@@ -2,12 +2,15 @@
  * The changes made to folders and projects on the home, kept while the
  * application runs, so that each can be undone and done again: a name, a
  * move, a making, a deletion. Each is said in a message at the foot of the
- * window, with a button that undoes it. A change that cannot be undone any
- * more, because what it changed is gone, is said so, and forgotten.
+ * window, with a button that undoes it. Only the latest change is said: its
+ * button undoes the latest, so a message of an earlier one would undo the
+ * wrong thing; each takes the place of the one before. A change that cannot
+ * be undone any more, because what it changed is gone, is said so, and
+ * forgotten.
  */
 
 import { t } from '$lib/i18n';
-import { notifyError, toasts } from '$lib/ui/toast.svelte';
+import { notifyError, toasts, type Toast } from '$lib/ui/toast.svelte';
 
 export interface HomeChange {
   /** What was done, as the message says it: “Iliad” was moved to Greek. */
@@ -21,12 +24,19 @@ class HomeUndo {
   undone = $state.raw<HomeChange[]>([]);
   /** One change at a time: a second press of Ctrl+Z waits for the first. */
   #busy: Promise<void> = Promise.resolve();
+  /** The message that says the latest change, while it is shown. */
+  #shown: number | null = null;
+
+  #say(toast: Omit<Toast, 'id'>) {
+    if (this.#shown !== null) toasts.dismiss(this.#shown);
+    this.#shown = toasts.show(toast);
+  }
 
   /** Remembers a change that was just made, and says so, with a way back. */
   remember(change: HomeChange) {
     this.done = [...this.done, change];
     this.undone = [];
-    toasts.show({
+    this.#say({
       kind: 'ok',
       message: change.message,
       action: { label: t('common-undo'), run: () => void this.undo() },
@@ -45,7 +55,7 @@ class HomeUndo {
         return;
       }
       this.undone = [...this.undone, change];
-      toasts.show({
+      this.#say({
         kind: 'info',
         message: t('home-undone', { what: change.message }),
         action: { label: t('home-redo'), run: () => void this.redo() },
@@ -65,7 +75,7 @@ class HomeUndo {
         return;
       }
       this.done = [...this.done, change];
-      toasts.show({
+      this.#say({
         kind: 'ok',
         message: change.message,
         action: { label: t('common-undo'), run: () => void this.undo() },

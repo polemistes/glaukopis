@@ -218,10 +218,11 @@
     });
   });
 
-  // What the map was asked to show when it came up: selected, and brought into view.
+  // What the map was asked to show when it came up: selected, and brought into view. Not
+  // what stands at the centre: that is the folder being left, before the map has moved up.
   $effect(() => {
     const wanted = listUi.owlReveal;
-    if (!wanted || !fitted || !lay.placed.has(wanted)) return;
+    if (!wanted || !fitted || wanted === owl.tree.root || !lay.placed.has(wanted)) return;
     untrack(() => {
       listUi.owlReveal = null;
       selection = [wanted];
@@ -877,7 +878,7 @@
                   {/if}
                   <button
                     type="button"
-                    class="menu"
+                    class="more"
                     tabindex="-1"
                     aria-label={t('home-more-for', { name: pr.name })}
                     onclick={(e) => {
@@ -1235,7 +1236,7 @@
     color: var(--ink-4);
     font-size: var(--text-xs);
   }
-  .menu {
+  .more {
     display: inline-flex;
     flex: none;
     padding: 3px;
@@ -1247,11 +1248,11 @@
     opacity: 0;
     transition: opacity var(--fast) var(--ease);
   }
-  .card:hover .menu,
-  .card:focus-within .menu {
+  .card:hover .more,
+  .card.selected .more {
     opacity: 1;
   }
-  .menu:hover {
+  .more:hover {
     background: var(--paper-hover);
     color: var(--ink);
   }

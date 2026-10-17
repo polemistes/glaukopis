@@ -52,6 +52,14 @@ describe('the undo of the home', () => {
     expect(shown.action?.label).toBeTruthy();
   });
 
+  it('says only the latest change, whose way back is the one its button takes', async () => {
+    homeUndo.remember(change('a', []));
+    homeUndo.remember(change('b', []));
+    expect(toasts.list.map((t) => t.message)).toEqual(['b']);
+    await homeUndo.undo();
+    expect(toasts.list).toHaveLength(1);
+  });
+
   it('does one change at a time, in the order asked', async () => {
     const log: string[] = [];
     homeUndo.remember(change('a', log));

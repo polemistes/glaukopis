@@ -652,8 +652,14 @@
     font-weight: 500;
   }
   .row.owl.current,
+  .row.folder.current,
   .row.project.current {
     background: var(--accent-soft);
+  }
+  /* The folder in view on the map of the projects. */
+  .row.folder.current .name {
+    color: var(--accent-strong);
+    font-weight: 550;
   }
   .row.owl.current .name {
     color: var(--accent-strong);
