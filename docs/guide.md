@@ -63,26 +63,69 @@ project until you close it, and its edge can be dragged to make it wider.
 
 ### Many projects
 
-The page of projects has three forms, chosen at its head and remembered.
+The page of projects has two forms, chosen at its head and remembered.
 **Last used** shows the twelve projects last worked on, as cards. **All
 projects** is a line for each, in folders: make a folder with **New folder**,
 or inside another from that folder's menu; drag a project onto a folder, or
 choose **Move to folder** in its menu, and **Out of folders** to take it out
 again. A folder shows how many projects it holds, and is opened and closed
-with a click. Deleting a folder keeps what is in it, which moves up to where
-the folder was. The folders are kept on this computer alone, not in the
-projects: a project you share is in your folders, not in the others'. The
-field above the list finds a project by its name.
+with a click; a double click shows it as a map. Deleting a folder keeps what
+is in it, which moves up to where the folder was. The folders are kept on
+this computer alone, not in the projects: a project you share is in your
+folders, not in the others'. The field above the list finds a project by its
+name. Folders and projects stand in the order of their names, here and on
+the map.
 
-**Map** shows all your projects as a map around the owl: the folders as
-plain names, nested as they are, and the projects as cards under them, those
-in no folder hanging from the owl itself. A click on a project opens it; a
-click on a folder folds it or opens it, and a folder of many projects begins
-folded. The map is moved by dragging and turned larger and smaller as the
-diagram is. A project you share has a sign of people beside its name, and one
-you joined a sign of a link, here, in the list and in the bar over the map.
-From the top of any project, **All projects** at the left of the bar, with
-the owl, or **Alt+Shift+Up**, comes back here.
+Every change to folders and projects, wherever it is made, says itself in a
+message at the foot of the window with **Undo**: a name, a move, a new
+folder or project, a deletion. A project deleted is brought back from the
+trash, and a folder deleted is made again with what was in it. On the map,
+**Ctrl+Z** and **Ctrl+Shift+Z** undo and redo them, one after another, as
+long as Glaukopis runs.
+
+### The map of the projects
+
+Above every project stands the map of all of them: the owl at the centre,
+the folders as plain names, nested as they are, and the projects as cards
+under them, those in no folder hanging from the owl itself. It is reached
+from the owl at the top of the list of projects, and from the top of any
+project with **All projects** at the left of the bar, or **Alt+Shift+Up**,
+which comes to the folder the project is in, with the project selected. The
+map is moved by dragging its ground and turned larger and smaller as the
+diagram is. A project you share has a sign of people beside its name, and
+one you joined a sign of a link, here, in the list and in the bar over the
+map.
+
+It is worked as a project's diagram is, in a look of its own:
+
+- **Selecting.** A click selects a folder or a project, ringed in the colour
+  of the buttons; **Ctrl** and a click add one or take it away, **Shift**
+  adds, **Ctrl+A** selects all, **Escape** lets go. The arrows go from one to
+  the next, and with **Shift** select more.
+- **Opening.** A double click on a card, the small button at its corner, or
+  **Alt+Shift+Down** opens the project. The same on a folder shows the folder
+  at the centre, with what is in it; the bar says what holds it, and
+  **Alt+Shift+Up**, the button at its corner or a name in the bar goes up.
+- **Making.** **Enter** makes a new project and **Tab** a new folder, in the
+  folder selected, beside the project selected, or at the top; its name is
+  written where it stands, and **Enter** keeps it. **Escape**, or no name,
+  and nothing is made. The menu of a folder and of the map's ground has the
+  same, as **New project here** and **New folder here**.
+- **Renaming.** **F2** opens the name of what is selected for writing; a
+  letter typed begins a new name; **Escape** keeps the old one.
+- **Moving.** **Alt** and the arrow that points away from the owl put what
+  is selected into the folder before it; the arrow towards the owl takes it
+  out of the folder it is in. Or drag it: onto a folder, into it; onto a
+  card, into that card's folder; onto the owl, out of all folders. What is
+  dragged from the map can be dropped on the list, and the other way.
+- **Folding.** **Space**, or the sign before a folder's name, hides the
+  projects in it or shows them. A folder of many projects begins folded.
+- **Deleting.** **Delete** deletes what is selected, after asking: a
+  project goes to the trash, and what is in a folder moves up.
+
+**Shift+F10**, or a right click, opens the menu of what is selected, and the
+keyboard in the rail lists all of these keys under *On the map of the
+projects*.
 
 In the list at the left of a project, a project that is not open can be
 unfolded too: its trees are read from the disk and shown, and a click on one
@@ -1301,7 +1344,8 @@ heading in the text. Go up with **Alt+Shift+Up**; with the button of the same ki
 on the element in view, at its corner in the diagram and before the title in
 the text; or by pressing the name of the element over it, which stands small
 at the left of the bar over the map. The project itself has no such button:
-the owl at the left of the bar goes up from it, to all the projects.
+the owl at the left of the bar goes up from it, to the map of the projects,
+at the folder the project is in.
 
 The bar says where you are: the name of the element over the one in view,
 small, which goes up; then the name of the element in view, which pulls down

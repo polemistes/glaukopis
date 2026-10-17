@@ -344,6 +344,39 @@ try {
   await app.waitGone('.review-panel', 5000);
   await sleep(300);
 
+  // ---- the map of the projects ----
+  await app.go('#/owl');
+  await app.waitFor('[data-owl-map]', 8000);
+  await sleep(700);
+  await english('the map of the projects');
+  await app.click('[data-owl-key="owl"]');
+  await app.press('Tab');
+  await app.waitFor('[data-name-field]', 3000);
+  await sleep(200);
+  await english('a folder being named on the map');
+  await app.keys('Gresk');
+  await app.press('Enter');
+  await app.waitFor('[data-owl-folder]', 3000);
+  await sleep(300);
+  await english('a folder made on the map, and its message');
+  await app.keys(['Shift', 'F10']);
+  await app.waitFor('.menu', 3000);
+  await sleep(300);
+  await english('the menu of a folder on the map');
+  await app.press('Escape');
+  await sleep(200);
+  await app.doubleClick('[data-owl-folder]');
+  await app.waitFor('.folder.centre', 5000);
+  await sleep(600);
+  await english('a folder entered on the map');
+  await app.screenshot('languages-4d-owl');
+  await app.click('[data-owl-map]');
+  await app.keys(['Control', '/']);
+  await sleep(500);
+  await english('the keys, from the map');
+  await app.press('Escape');
+  await sleep(300);
+
   // ---- the library, the pictures, the settings ----
   await app.keys(['Control', '2']);
   await app.waitFor('.reference-row, .row', 8000);

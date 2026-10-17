@@ -1,6 +1,6 @@
 # 0050 — The owl map behaves as a tree: what is done in a project's diagram is done over folders and projects, in the owl map's own look
 
-Date: 2026-10-17. Status: accepted by the owner on 2026-10-17; to be built from `docs/plans/the-owl-map-behaves-as-a-tree.md`. Amends 0031 (folders of projects) and 0037 (the owl map), which hold otherwise.
+Date: 2026-10-17. Status: accepted by the owner on 2026-10-17; built from `docs/plans/the-owl-map-behaves-as-a-tree.md` on 2026-10-17. In the building, only the latest change of the home is said in a message: its *Undo* undoes the latest, so the message of an earlier one would have undone another change. Amends 0031 (folders of projects) and 0037 (the owl map), which hold otherwise.
 
 ## Context
 
