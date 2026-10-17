@@ -226,3 +226,9 @@ home-org-open-failed = The Org file could not be opened
 home-org-save-title = Choose the folder to save the project as Org in
 home-org-saved = “{ $name }” was saved as Org
 home-org-save-failed = The project could not be saved as Org
+
+## Changes of the home undone and done again
+home-redo = Redo
+# What was undone, as the message of the change said it.
+home-undone = Undone: { $what }
+home-undo-failed = That could not be undone

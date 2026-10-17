@@ -282,7 +282,7 @@
                   <span class="count">{t('home-folder-projects', { count: item.projects })}</span>
                 {/if}
               </button>
-            {:else}
+            {:else if item.kind === 'project'}
               {@const pr = item.project}
               <!-- svelte-ignore a11y_click_events_have_key_events -->
               <div

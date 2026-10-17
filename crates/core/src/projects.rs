@@ -41,7 +41,7 @@ const FOLDERS: &str = "folders.json";
 
 /// The three forms of the page of projects: the last used, as cards; all of
 /// them, as a list in folders; all of them, as a map around the owl.
-pub const SHOWN: [&str; 3] = ["recent", "list", "map"];
+pub const SHOWN: [&str; 2] = ["recent", "list"];
 
 /// One at a time changes the file of folders: it is read, changed and written whole.
 static FOLDERS_LOCK: Mutex<()> = Mutex::new(());
@@ -246,21 +246,35 @@ impl Projects {
     }
 
     pub fn create(&self, name: &str) -> Result<ProjectInfo> {
-        self.create_with_id(&uuid::Uuid::new_v4().to_string(), name)
+        self.create_in(name, None)
+    }
+
+    /// Creates a project in a folder, or in none. The folder must be there.
+    pub fn create_in(&self, name: &str, folder: Option<&str>) -> Result<ProjectInfo> {
+        self.create_with_id(&uuid::Uuid::new_v4().to_string(), name, folder)
     }
 
     /// Creates a project under a given id: the copy of a shared project has the
     /// id of the room it belongs to.
-    pub fn create_with_id(&self, id: &str, name: &str) -> Result<ProjectInfo> {
+    pub fn create_with_id(&self, id: &str, name: &str, folder: Option<&str>) -> Result<ProjectInfo> {
         let name = Self::check_name(name)?;
+        if let Some(folder) = folder {
+            Self::folder_in(&self.read_arrangement()?, folder)?;
+        }
         let dir = self.dir(id)?;
         if dir.exists() {
             return Err(Error::invalid(tr!("core-projects-id-taken")));
         }
         fs::create_dir_all(&dir).context(|| tr!("io-creating", path = &dir))?;
         let stamp = now();
-        let info =
-            ProjectInfo { id: id.to_owned(), name, created: stamp.clone(), modified: stamp, ..Default::default() };
+        let info = ProjectInfo {
+            id: id.to_owned(),
+            name,
+            created: stamp.clone(),
+            modified: stamp,
+            folder: folder.map(str::to_owned),
+            ..Default::default()
+        };
         Self::write_info(&dir, &info)?;
         Ok(info)
     }
@@ -585,7 +599,9 @@ impl Projects {
 
     /// Which form of the page of projects is shown: one of `SHOWN`, or an empty string where none was chosen.
     pub fn shown(&self) -> Result<String> {
-        Ok(self.read_arrangement()?.shown)
+        let shown = self.read_arrangement()?.shown;
+        // The map was once a form of the page; it is a place of its own now.
+        Ok(if shown == "map" { "recent".to_owned() } else { shown })
     }
 
     pub fn set_shown(&self, kind: &str) -> Result<()> {
@@ -1043,6 +1059,10 @@ mod tests {
         assert_eq!(a.modified, p.info(&a.id).unwrap().modified, "moving does not change the project");
         assert!(p.move_to_folder(&b.id, Some("nowhere")).is_err());
         p.move_to_folder(&b.id, Some(&latin.id)).unwrap();
+        let made = p.create_in("Odyssey", Some(&epic.id)).unwrap();
+        assert_eq!(made.folder.as_deref(), Some(epic.id.as_str()), "made in a folder");
+        assert_eq!(p.info(&made.id).unwrap().folder, made.folder);
+        assert!(p.create_in("Lost", Some("nowhere")).is_err(), "not in a folder that is not there");
         let copy = p.duplicate(&a.id, "Iliad, copy").unwrap();
         assert_eq!(copy.folder, a.folder, "a copy lies where the original does");
 
@@ -1069,8 +1089,14 @@ mod tests {
         // Which form is shown.
         p.set_shown("list").unwrap();
         assert_eq!(p.shown().unwrap(), "list");
-        p.set_shown("map").unwrap();
-        assert_eq!(p.shown().unwrap(), "map");
+        assert!(p.set_shown("map").is_err(), "the map is a place of its own, not a form of the page");
+        // One remembered from before is read as the last used.
+        p.change_arrangement(|a| {
+            a.shown = "map".into();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(p.shown().unwrap(), "recent");
         assert!(p.set_shown("cards").is_err());
         assert_eq!(next_order(None), "000001");
         assert_eq!(next_order(Some("000009")), "000010");

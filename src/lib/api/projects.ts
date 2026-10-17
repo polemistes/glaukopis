@@ -83,8 +83,9 @@ export interface Trashed {
 }
 
 export const projectList = () => call<ProjectInfo[]>('project_list');
-export const projectCreate = (name: string, id?: string) =>
-  call<ProjectInfo>('project_create', { name, id: id ?? null });
+/** Makes a project, in a folder where one is given. */
+export const projectCreate = (name: string, id?: string, folder?: string | null) =>
+  call<ProjectInfo>('project_create', { name, id: id ?? null, folder: folder ?? null });
 export const projectRename = (id: string, name: string) =>
   call<ProjectInfo>('project_rename', { id, name });
 export const projectDescribe = (id: string, description: string) =>

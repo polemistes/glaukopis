@@ -73,8 +73,9 @@ class ProjectsState {
     projectsShown(kind).catch(() => {});
   }
 
-  async create(name: string): Promise<ProjectInfo> {
-    const info = await projectCreate(name);
+  /** Makes a project, in the folder given or in none. */
+  async create(name: string, folder: string | null = null): Promise<ProjectInfo> {
+    const info = await projectCreate(name, undefined, folder);
     this.list = [info, ...this.list];
     return info;
   }

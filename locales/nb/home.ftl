@@ -209,3 +209,9 @@ home-org-open-failed = Org-filen kunne ikke åpnes
 home-org-save-title = Velg mappen prosjektet skal lagres som Org i
 home-org-saved = «{ $name }» ble lagret som Org
 home-org-save-failed = Prosjektet kunne ikke lagres som Org
+
+## Endringer på hjemmesiden angret og gjort om
+home-redo = Gjør om
+# Det som ble angret, slik meldingen om endringen sa det.
+home-undone = Angret: { $what }
+home-undo-failed = Det kunne ikke angres

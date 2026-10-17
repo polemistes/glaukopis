@@ -46,10 +46,15 @@ pub fn project_list(state: State<'_, AppState>) -> CommandResult<Vec<ProjectInfo
 }
 
 #[tauri::command(async)]
-pub fn project_create(state: State<'_, AppState>, name: String, id: Option<String>) -> CommandResult<ProjectInfo> {
+pub fn project_create(
+    state: State<'_, AppState>,
+    name: String,
+    id: Option<String>,
+    folder: Option<String>,
+) -> CommandResult<ProjectInfo> {
     Ok(match id {
-        Some(id) => state.projects.create_with_id(&id, &name)?,
-        None => state.projects.create(&name)?,
+        Some(id) => state.projects.create_with_id(&id, &name, folder.as_deref())?,
+        None => state.projects.create_in(&name, folder.as_deref())?,
     })
 }
 
@@ -196,7 +201,7 @@ pub fn project_move_to_folder(
     Ok(state.projects.move_to_folder(&id, folder.as_deref())?)
 }
 
-/// Which form of the page of projects is shown, "recent", "list" or "map": with
+/// Which form of the page of projects is shown, "recent" or "list": with
 /// `kind`, remembers it; without, says which was remembered, or "recent".
 #[tauri::command(async)]
 pub fn projects_shown(state: State<'_, AppState>, kind: Option<String>) -> CommandResult<String> {

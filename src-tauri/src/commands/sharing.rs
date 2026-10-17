@@ -97,7 +97,7 @@ pub fn sharing_join(
     };
     // One who was here before and comes back by a new code keeps what they have.
     if state.projects.info(&joined.room).is_err() {
-        state.projects.create_with_id(&joined.room, &joined.name)?;
+        state.projects.create_with_id(&joined.room, &joined.name, None)?;
     }
     Ok(state.projects.share(&joined.room, sharing, &joined.token)?)
 }

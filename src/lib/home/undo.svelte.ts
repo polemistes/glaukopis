@@ -1,0 +1,83 @@
+/**
+ * The changes made to folders and projects on the home, kept while the
+ * application runs, so that each can be undone and done again: a name, a
+ * move, a making, a deletion. Each is said in a message at the foot of the
+ * window, with a button that undoes it. A change that cannot be undone any
+ * more, because what it changed is gone, is said so, and forgotten.
+ */
+
+import { t } from '$lib/i18n';
+import { notifyError, toasts } from '$lib/ui/toast.svelte';
+
+export interface HomeChange {
+  /** What was done, as the message says it: “Iliad” was moved to Greek. */
+  message: string;
+  undo: () => Promise<void>;
+  redo: () => Promise<void>;
+}
+
+class HomeUndo {
+  done = $state.raw<HomeChange[]>([]);
+  undone = $state.raw<HomeChange[]>([]);
+  /** One change at a time: a second press of Ctrl+Z waits for the first. */
+  #busy: Promise<void> = Promise.resolve();
+
+  /** Remembers a change that was just made, and says so, with a way back. */
+  remember(change: HomeChange) {
+    this.done = [...this.done, change];
+    this.undone = [];
+    toasts.show({
+      kind: 'ok',
+      message: change.message,
+      action: { label: t('common-undo'), run: () => void this.undo() },
+    });
+  }
+
+  undo(): Promise<void> {
+    return this.#queue(async () => {
+      const change = this.done[this.done.length - 1];
+      if (!change) return;
+      this.done = this.done.slice(0, -1);
+      try {
+        await change.undo();
+      } catch (error) {
+        notifyError(t('home-undo-failed'), error);
+        return;
+      }
+      this.undone = [...this.undone, change];
+      toasts.show({
+        kind: 'info',
+        message: t('home-undone', { what: change.message }),
+        action: { label: t('home-redo'), run: () => void this.redo() },
+      });
+    });
+  }
+
+  redo(): Promise<void> {
+    return this.#queue(async () => {
+      const change = this.undone[this.undone.length - 1];
+      if (!change) return;
+      this.undone = this.undone.slice(0, -1);
+      try {
+        await change.redo();
+      } catch (error) {
+        notifyError(t('home-undo-failed'), error);
+        return;
+      }
+      this.done = [...this.done, change];
+      toasts.show({
+        kind: 'ok',
+        message: change.message,
+        action: { label: t('common-undo'), run: () => void this.undo() },
+      });
+    });
+  }
+
+  #queue(step: () => Promise<void>): Promise<void> {
+    const next = this.#busy.then(step);
+    this.#busy = next.catch(() => {});
+    return next;
+  }
+}
+
+export const homeUndo = new HomeUndo();
