@@ -86,8 +86,9 @@ long as Glaukopis runs.
 ### The map of the projects
 
 Above every project stands the map of all of them: the owl at the centre,
-the folders as plain names, nested as they are, and the projects as cards
-under them, those in no folder hanging from the owl itself. It is reached
+the folders as plain names, nested as they are, and the projects under
+them, each drawn as the top element of its own map, those in no folder
+hanging from the owl itself. It is reached
 from the owl at the top of the list of projects, and from the top of any
 project with **All projects** at the left of the bar, or **Alt+Shift+Up**,
 which comes to the folder the project is in, with the project selected. The
@@ -121,16 +122,18 @@ It is worked as a project's diagram is, in a look of its own:
 - **Placing.** A folder or a project dragged onto the ground of the map
   stays where it is let go, as an element does in a project's map; the
   places are kept on this computer. **Place everything by itself**, in the
-  map's menu, puts them back in order.
+  map's menu, puts them back in order. Dropped on a folder, it goes into
+  it; on the owl, out of all folders.
 - **Folding.** **Space**, or the sign before a folder's name, hides the
   projects in it or shows them. A folder of many projects begins folded.
-- **The maps of the projects.** The line under a project's title, or
-  **Space** with the project selected, shows its map beside the card: first
-  the project's own element, closed, drawn as the top of a map; **Space**
-  opens it, and under it the elements stand as in the project's own map. A
-  double click on an element, the button at its corner or
-  **Alt+Shift+Down** opens the project there. Here they are only seen and
-  folded; they are moved, renamed and deleted in the project.
+- **The maps of the projects.** A project stands on the map as the top
+  element of its own map stands in it, and opens as an element does: the
+  small button at its side, with the number of what is folded away, or
+  **Space** with the project selected, shows its trees under it, as the
+  project's own map draws them; the same folds them away again. A double
+  click on an element, the button at its corner or **Alt+Shift+Down** opens
+  the project there. Here they are only seen and folded; they are moved,
+  renamed and deleted in the project.
 - **Deleting.** **Delete** deletes what is selected, after asking: a
   project goes to the trash, and what is in a folder moves up.
 

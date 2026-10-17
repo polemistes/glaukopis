@@ -14,7 +14,6 @@
   import { onMount, tick, untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
-  import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import FilePlus from '@lucide/svelte/icons/file-plus';
   import FolderIcon from '@lucide/svelte/icons/folder';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
@@ -36,7 +35,7 @@
   import { layout, type Size } from '$lib/project/diagram/layout';
   import { linesOf } from '$lib/project/diagram/lines';
   import { subtree } from '$lib/project/model/tree';
-  import { PROJECT, type NodeRecord, type Position } from '$lib/project/model/types';
+  import type { NodeRecord, Position } from '$lib/project/model/types';
   import Mark from '$lib/shell/Mark.svelte';
   import { projects } from '$lib/state/projects.svelte';
   import { drag, dropTarget, startDrag, type DragPayload } from '$lib/ui/drag.svelte';
@@ -102,12 +101,13 @@
   /** A folder or project being named, not yet made. */
   let provisional = $state<Provisional | null>(null);
 
-  /** The maps shown under the cards of projects, as they are read from disk. */
+  /** The maps of projects as they are read from disk, by id: of every project that was asked for. */
   const maps = $derived.by(() => {
     const out = new Map<string, ShownMap>();
-    for (const id of listUi.owlMaps) {
-      const r = closedTrees.get(id);
-      out.set(id, !r || r.state === 'reading' ? 'reading' : r.state === 'read' ? r.tree : 'failed');
+    for (const p of projects.list) {
+      const r = closedTrees.get(p.id);
+      if (!r) continue;
+      out.set(p.id, r.state === 'reading' ? 'reading' : r.state === 'read' ? r.tree : 'failed');
     }
     return out;
   });
@@ -126,6 +126,7 @@
       provisional,
       places: projects.places,
       maps,
+      openMaps: listUi.owlMaps,
       elementFolds: listUi.owlElementFolds,
     }),
   );
@@ -192,7 +193,9 @@
    * it is kept there while what is under it comes and goes, until the view
    * is moved.
    */
-  let anchor: { key: string; sx: number; sy: number } | null = null;
+  let anchor: { key: string; sx: number; sy: number; until: number } | null = null;
+  /** How long a folded or unfolded thing is kept where it stood: long enough for what comes and goes to be measured. */
+  const ANCHOR_MS = 1200;
   /** Whether the pointer moved the view since it was pressed: the click that ends it is no click. */
   let dragged = false;
 
@@ -275,11 +278,17 @@
     return () => clearTimeout(timer);
   });
 
-  // A folder folded or unfolded stays where it stood on the screen.
+  // What was folded or unfolded stays where it stood on the screen, for a
+  // moment; not while something is dragged, since where the pointer holds it
+  // is read from the view, and moving the view would move it again, without end.
   $effect(() => {
     const placed = lay.placed;
     untrack(() => {
       if (!anchor) return;
+      if (dragging || drag.payload || performance.now() > anchor.until) {
+        anchor = null;
+        return;
+      }
       const p = placed.get(anchor.key);
       if (p) cam = { ...cam, x: anchor.sx - p.x * cam.k, y: anchor.sy - p.y * cam.k };
     });
@@ -558,15 +567,20 @@
     const item = owl.items.get(key);
     const p = lay.placed.get(key);
     const keep = () =>
-      (anchor = p ? { key, sx: cam.x + p.x * cam.k, sy: cam.y + p.y * cam.k } : null);
+      (anchor = p
+        ? {
+            key,
+            sx: cam.x + p.x * cam.k,
+            sy: cam.y + p.y * cam.k,
+            until: performance.now() + ANCHOR_MS,
+          }
+        : null);
     if (item?.kind === 'folder' && item.holds) {
       keep();
       listUi.owlFold(item.folder.id, !item.folded);
     } else if (item?.kind === 'project') {
       keep();
-      listUi.owlMap(item.project.id, !item.map);
-      // Shown, its own element is selected and brought into view once it is read: Space opens it.
-      if (!item.map) listUi.owlReveal = elementKey(item.project.id, PROJECT);
+      listUi.owlMap(item.project.id, item.folded);
     } else if (item?.kind === 'element' && item.holds) {
       keep();
       listUi.owlElementFold(key, !item.folded);
@@ -774,6 +788,8 @@
 
   function pointerdown(event: PointerEvent) {
     if (event.button !== 0 && event.button !== 1) return;
+    // A press takes hold of the map: nothing is kept in its place for it any more.
+    anchor = null;
     const target = event.target as HTMLElement;
     if (target.closest('.controls, [data-name-field]')) return;
     const item = target.closest<HTMLElement>('[data-owl-key]');
@@ -885,10 +901,6 @@
     if (k.kind === 'folder') return k.id;
     const p = projectOfKey(key);
     return p ? folderOf(projects.folders, p) : null;
-  }
-
-  function trees(p: ProjectInfo): string {
-    return p.maps.length ? t('home-maps', { count: p.maps.length }) : t('home-not-begun');
   }
 
   const domId = (key: string) => `owl-${key.replace(/[^\w-]/g, '_')}`;
@@ -1057,29 +1069,33 @@
               </div>
             {:else if item.kind === 'project'}
               {@const pr = item.project}
+              <!-- The project, as the top element of its map is drawn; its trees under it, folded away or shown. -->
               <div
-                class="card"
+                class="node root project {p.side}"
                 class:selected={selected.has(key)}
+                class:folded={item.folded}
                 id={domId(key)}
                 role="treeitem"
                 aria-level={p.depth + 1}
                 aria-selected={selected.has(key)}
+                aria-expanded={item.holds ? !item.folded : undefined}
                 data-owl-key={key}
                 data-owl-project={pr.id}
                 data-owl-parent={parent ?? undefined}
+                data-owl-folded={item.folded ? '' : undefined}
                 data-side={p.side}
                 data-selected={selected.has(key) ? '' : undefined}
                 use:measured={key}
                 use:dropTarget={dropInto(intoOf(key))}
               >
-                <div class="head">
+                <span class="caption">
                   <ProjectBadge
                     name={pr.name}
                     sharing={pr.sharing ? { owner: pr.sharing.owner } : null}
                     size={18}
                   />
                   {#if renaming?.key === key}
-                    <span class="name serif">
+                    <span class="name">
                       <NameField
                         value={pr.name}
                         startingWith={renaming.startingWith}
@@ -1088,52 +1104,42 @@
                       />
                     </span>
                   {:else}
-                    <span class="name serif">{pr.name}</span>
+                    <span class="name">{pr.name}</span>
                   {/if}
+                </span>
+                {#if (item.holds || item.map === 'reading' || item.map === 'failed') && renaming?.key !== key}
+                  <!-- Opens the project's map under it, or folds it away, as an element's is. -->
                   <button
                     type="button"
-                    class="more"
+                    class="fold"
+                    class:folded={item.folded}
                     tabindex="-1"
-                    aria-label={t('home-more-for', { name: pr.name })}
+                    aria-label={item.map === 'failed'
+                      ? t('home-tree-unreadable')
+                      : item.folded
+                        ? t('home-owl-map-show')
+                        : t('home-owl-map-hide')}
+                    use:tooltip={{
+                      text:
+                        item.map === 'reading'
+                          ? t('home-owl-map-reading')
+                          : item.map === 'failed'
+                            ? t('home-tree-unreadable')
+                            : item.folded
+                              ? t('home-owl-map-show')
+                              : t('home-owl-map-hide'),
+                      shortcut: 'Space',
+                    }}
                     onclick={(e) => {
                       e.stopPropagation();
-                      selection = [key];
-                      openMenu(e.currentTarget, itemsOf(key), { align: 'end' });
+                      fold(key);
                     }}
                     ondblclick={(e) => e.stopPropagation()}
                   >
-                    <Ellipsis size={15} />
+                    {#if item.map === 'reading'}…{:else if item.map === 'failed'}!{:else if item.folded}{p.hidden ||
+                        item.elements}{:else}–{/if}
                   </button>
-                </div>
-                {#if pr.description}<p class="description">{pr.description}</p>{/if}
-                <!-- The map of the project, shown under the card, or hidden. -->
-                <button
-                  type="button"
-                  class="facts map-toggle"
-                  class:shown={!!item.map}
-                  tabindex="-1"
-                  aria-expanded={!!item.map}
-                  use:tooltip={{
-                    text: item.map ? t('home-owl-map-hide') : t('home-owl-map-show'),
-                    shortcut: 'Space',
-                  }}
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    fold(key);
-                  }}
-                  ondblclick={(e) => e.stopPropagation()}
-                >
-                  <ChevronRight size={12} />
-                  {#if item.map === 'reading'}
-                    {t('home-owl-map-reading')}
-                  {:else if item.map === 'failed'}
-                    {t('home-tree-unreadable')}
-                  {:else if item.map === 'read' && !item.elements}
-                    {t('home-tree-empty')}
-                  {:else}
-                    {trees(pr)}
-                  {/if}
-                </button>
+                {/if}
                 {#if renaming?.key !== key}
                   <button
                     type="button"
@@ -1155,7 +1161,6 @@
               <!-- An element of a project's map, drawn as the project's own map draws it; not changed here. -->
               <div
                 class="node depth-{Math.min(item.depth, 2)} {p.side}"
-                class:root={item.depth === 0}
                 class:selected={selected.has(key)}
                 class:plain={!item.heading}
                 class:excluded={item.excluded}
@@ -1221,7 +1226,7 @@
               <div
                 class={item.of === 'folder'
                   ? 'folder provisional selected'
-                  : 'card provisional selected'}
+                  : 'node root project provisional selected'}
                 id={domId(key)}
                 role="treeitem"
                 aria-level={p.depth + 1}
@@ -1242,9 +1247,9 @@
                     />
                   </span>
                 {:else}
-                  <div class="head">
+                  <span class="caption">
                     <ProjectBadge name="" sharing={null} size={18} />
-                    <span class="name serif">
+                    <span class="name">
                       <NameField
                         value=""
                         placeholder={t('home-owl-name')}
@@ -1252,7 +1257,7 @@
                         oncancel={unmade}
                       />
                     </span>
-                  </div>
+                  </span>
                 {/if}
               </div>
             {/if}
@@ -1425,34 +1430,13 @@
     letter-spacing: 0;
   }
 
-  /* A project: a card, as on the page of cards, smaller. */
-  .card {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    width: 230px;
-    padding: 10px 8px 9px 12px;
-    background: var(--paper-raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-l);
-    box-shadow: var(--shadow-1);
-    cursor: pointer;
-    transition:
-      box-shadow var(--slow) var(--ease),
-      border-color var(--slow) var(--ease);
-  }
-  .card:hover {
-    box-shadow: var(--shadow-2);
-    border-color: var(--line-strong);
-  }
   .owl-map:focus {
     outline: none;
   }
 
   /* What is selected: a ring in the colour of the buttons, which keeps the shape of what it rings. */
   .owl,
-  .folder,
-  .card {
+  .folder {
     position: relative;
   }
   .owl {
@@ -1468,7 +1452,7 @@
   /* What would take what is dragged. */
   .owl:global([data-drop-over]),
   .folder:global([data-drop-over]),
-  .card:global([data-drop-over]) {
+  .node.project:global([data-drop-over]) {
     outline: 2px dashed var(--accent);
     outline-offset: 4px;
     background: var(--accent-soft);
@@ -1476,7 +1460,7 @@
   .provisional {
     cursor: text;
   }
-  .card.provisional {
+  .node.provisional {
     border-style: dashed;
   }
 
@@ -1504,67 +1488,12 @@
     right: -14px;
   }
   .folder:hover .corner,
-  .card:hover .corner,
   .selected .corner {
     opacity: 1;
     pointer-events: auto;
   }
   .corner:hover {
     background: var(--accent-soft);
-  }
-  .head {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-  }
-  /* The whole title, on as many lines as it takes. */
-  .name {
-    flex: 1;
-    min-width: 0;
-    color: var(--ink);
-    font-size: 15px;
-    font-weight: 600;
-    line-height: 1.3;
-    overflow-wrap: break-word;
-  }
-  .head {
-    align-items: flex-start;
-  }
-  .description {
-    margin: 0;
-    padding-right: 6px;
-    overflow: hidden;
-    color: var(--ink-2);
-    font-size: var(--text-sm);
-    line-height: 1.45;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .facts {
-    color: var(--ink-4);
-    font-size: var(--text-xs);
-  }
-  .map-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    align-self: flex-start;
-    margin-left: -3px;
-    padding: 1px 4px 1px 1px;
-    border: none;
-    border-radius: var(--radius-s);
-    background: transparent;
-    cursor: pointer;
-  }
-  .map-toggle:hover {
-    background: var(--paper-hover);
-    color: var(--ink-2);
-  }
-  .map-toggle :global(svg) {
-    transition: transform var(--fast) var(--ease);
-  }
-  .map-toggle.shown :global(svg) {
-    transform: rotate(90deg);
   }
 
   /*
@@ -1709,31 +1638,27 @@
   .node.root .corner {
     border-color: var(--paper-raised);
   }
+  .node.project .caption {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .node.project .name {
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .node.project :global(.badge) {
+    margin-top: 2px;
+    color: inherit;
+  }
+  .node.project .fold {
+    font-size: 11px;
+  }
 
   /* What is dragged: under the pointer, and not where it is dropped. */
   .lifted {
     pointer-events: none;
     opacity: 0.85;
-  }
-  .more {
-    display: inline-flex;
-    flex: none;
-    padding: 3px;
-    border: none;
-    border-radius: var(--radius-s);
-    background: transparent;
-    color: var(--ink-4);
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity var(--fast) var(--ease);
-  }
-  .card:hover .more,
-  .card.selected .more {
-    opacity: 1;
-  }
-  .more:hover {
-    background: var(--paper-hover);
-    color: var(--ink);
   }
 
   .controls {

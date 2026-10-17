@@ -282,25 +282,43 @@ try {
   };
 
   await fitted();
+  check('a project is drawn as the top element of a map', await app.exec(`return ${card('Iliad')}?.classList.contains('root') && ${card('Iliad')}?.classList.contains('node')`));
+  check('with its map folded away under it, and the fold button saying how many trees', (await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim()`)) === '3' && (await app.exec(`return ${card('Iliad')}?.hasAttribute('data-owl-folded')`)));
+  check('a project with nothing in it has no fold button', await app.exec(`return !${card('Notes')}?.querySelector('.fold')`));
   await app.click(await cardEl(app, 'Iliad'));
   await app.press('Space');
-  check('Space shows the map of a project: its own element, closed', await waitUntil(async () => JSON.stringify(await elementNames()) === '["Iliad"]', 6000), JSON.stringify(await elementNames()));
-  check('drawn as the top of a map', await app.exec(`return ${element('Iliad')}?.classList.contains('root') && ${element('Iliad')}?.classList.contains('node')`));
-  check('and selected, so that Space opens it', await waitUntil(async () => (await selectedName(app)) === 'Iliad'));
-  await app.press('Space');
-  check('opened, its elements stand under it in the order of the project', await waitUntil(async () => JSON.stringify(await elementNames()) === '["Iliad","Wrath","Ships","Embassy"]', 6000), JSON.stringify(await elementNames()));
+  check('Space unfolds its map: its trees stand under it in the order of the project', await waitUntil(async () => JSON.stringify(await elementNames()) === '["Wrath","Ships","Embassy"]', 6000), JSON.stringify(await elementNames()));
   check('drawn as the elements of a map', await app.exec(`return ${element('Wrath')}?.classList.contains('node') && ${element('Wrath')}?.classList.contains('depth-1')`));
+  check('and the fold button closes it again', await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim() === '–'`));
   await app.screenshot('owl-5-map-shown');
+  await app.exec(`${card('Iliad')}.querySelector('.fold').click()`);
+  check('the fold button folds the map away, counting all that is under it', await waitUntil(async () => !(await hasElement('Wrath')) && (await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim()`)) === '3', 4000), await app.exec(`return ${card('Iliad')}?.querySelector('.fold')?.textContent.trim()`));
+  await app.exec(`${card('Iliad')}.querySelector('.fold').click()`);
+  await waitUntil(() => hasElement('Wrath'), 4000);
+  // Folding keeps the project where it stood for a moment only: a drag right after does not move the view without end.
+  const worldBefore = await app.exec(`return document.querySelector('[data-owl-map] .world').style.transform`);
+  await app.drag(await cardEl(app, 'Iliad'), { dx: -60, dy: 90 });
+  await sleep(900);
+  const worldAfter = await app.exec(`return document.querySelector('[data-owl-map] .world').style.transform`);
+  const shift = (() => { const n = (s) => (s.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/) ?? [0, 0, 0]).slice(1).map(Number); const a = n(worldBefore), b = n(worldAfter); return Math.hypot(a[0] - b[0], a[1] - b[1]); })();
+  check('a drag right after folding leaves the view where it was', shift < 2, JSON.stringify({ worldBefore, worldAfter }));
+  check('and no error came of it', (await app.pageErrors()).length === 0, JSON.stringify(await app.pageErrors()));
+  await app.keys(['Control', 'z']);
+  await sleep(600);
 
   // Not changed here: the keys and the pointer move nothing of a project.
+  await fitted();
   await app.click(await elementEl('Embassy'));
+  check('an element is selected by a click', (await selectedName(app)) === 'Embassy', await selectedName(app));
   await app.keys(['Alt', 'ArrowUp']);
   await app.keys(['Alt', (await app.exec(`return ${element('Embassy')}?.dataset.side`)) === 'left' ? 'ArrowLeft' : 'ArrowRight']);
   await app.press('F2');
   await app.press('Delete');
   await sleep(800);
-  check('the keys change nothing of an element', JSON.stringify(await elementNames()) === '["Iliad","Wrath","Ships","Embassy"]' && !(await app.exists('[data-name-field]')) && !(await app.exists('dialog[open]')), JSON.stringify(await elementNames()));
+  const untouched = { names: await elementNames(), field: await app.exists('[data-name-field]'), dialog: await app.exists('dialog[open]'), selected: await selectedName(app) };
+  check('the keys change nothing of an element', JSON.stringify(untouched.names) === '["Wrath","Ships","Embassy"]' && !untouched.field && !untouched.dialog, JSON.stringify(untouched));
   const fromCard = `const r = ${element('Embassy')}.getBoundingClientRect(), c = ${card('Iliad')}.getBoundingClientRect(); return { x: Math.round(r.left - c.left), y: Math.round(r.top - c.top) };`;
+  await fitted();
   const before = await app.exec(fromCard);
   await app.drag(await elementEl('Embassy'), { dx: 40, dy: -80 });
   await sleep(800);
@@ -345,9 +363,6 @@ try {
 
   // Jumping in anywhere.
   await app.click(await cardEl(app, 'Iliad'));
-  await app.press('Space');
-  await waitUntil(() => hasElement('Iliad'), 6000);
-  await app.click(await elementEl('Iliad'));
   await app.press('Space');
   await waitUntil(() => hasElement('Wrath'), 6000);
   await fitted();

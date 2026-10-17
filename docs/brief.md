@@ -939,3 +939,18 @@ What this settles (ADR 0051, amended):
   else, is what a map wider than a diagram's smallest scale showed when
   centred on its middle.
 
+## 2026-10-17 — the top map: projects as the top elements of their maps, and the chaos after moving a tree
+
+> There are many strange things happening with the top owl tree. I want it to function as much as possible as the trees under the projects. Now the project becomes an element under the projects. That is very unintuitive. Let the project elements look like top elements in the project maps, and let it be possible to open these in the same way as in the project maps. I tried to move a big tree around, and it all became chaos, and even after undoing everything and closing the project with so many childeren, things are still very messy.
+
+What this settles (ADR 0051, amended again):
+
+- A project on the top map is drawn as the top element of its own map and
+  stands for it: no card, no element of its own under it. Its map opens as
+  an element's does, by the fold button at its side or Space, the trees
+  under it as the project's own map draws them.
+- The chaos was found and mended: a thing folded or unfolded was kept
+  where it stood on the screen for ever, and a drag that followed moved the
+  view under the pointer without end until the drawing broke. The keeping
+  now lasts a moment, and never during a drag.
+

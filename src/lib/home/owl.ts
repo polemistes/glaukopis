@@ -64,10 +64,14 @@ export type OwlItem =
   | {
       kind: 'project';
       project: ProjectInfo;
-      /** Its map as it is shown under the card: being read, read, or not readable. None where it is not shown. */
+      /** Its map as it is read for the top map: being read, read, or not readable. None where it was never asked for. */
       map: 'reading' | 'read' | 'failed' | null;
-      /** How many elements stand under the project itself, where its map is read. */
+      /** How many trees stand under the project itself: as read, or as the project last said of itself. */
       elements: number;
+      /** Whether its map is folded away under it, as a project's own map folds an element. */
+      folded: boolean;
+      /** Whether anything stands under it, as far as is known. */
+      holds: boolean;
     }
   | {
       kind: 'element';
@@ -77,7 +81,7 @@ export type OwlItem =
       folded: boolean;
       /** Whether anything stands under it. */
       holds: boolean;
-      /** How deep it stands in its project: 0 for the project's own element, drawn as the top of a map. */
+      /** How deep it stands in its project: 1 for its trees, which stand right under the project. */
       depth: number;
       /** Whether its name is printed as a heading, and whether it is left out of the document. */
       heading: boolean;
@@ -132,8 +136,10 @@ export interface OwlOptions {
   provisional?: Provisional | null;
   /** Where folders and projects were put by hand, by key, from what holds them. */
   places?: Readonly<Record<string, Place>>;
-  /** The maps shown under the cards of projects, by the project's id. */
+  /** The maps of projects as they are read for the top map, by the project's id. */
   maps?: ReadonlyMap<string, ShownMap>;
+  /** The projects whose maps are unfolded under them, by id; the others keep theirs folded away. */
+  openMaps?: ReadonlySet<string>;
   /** The elements folded or unfolded on the map, by key; one not here is as its project has it. */
   elementFolds?: ReadonlyMap<string, boolean>;
 }
@@ -162,6 +168,7 @@ export function owlTree(
   const places = options.places ?? {};
   const placed = (key: string) => places[key] ?? null;
   const maps = options.maps ?? new Map<string, ShownMap>();
+  const openMaps = options.openMaps ?? new Set<string>();
   const elementFolds = options.elementFolds ?? new Map<string, boolean>();
   const flat: FlatNode[] = [{ id: OWL, parent: null, order: '' }];
   const order = (prefix: string, i: number) => prefix + String(i).padStart(6, '0');
@@ -190,29 +197,34 @@ export function owlTree(
     const key = projectKey(p.id);
     const shown = maps.get(p.id);
     const read = shown && typeof shown === 'object' ? shown : null;
+    const trees = read ? (read.tree.children.get(PROJECT)?.length ?? 0) : (p.maps?.length ?? 0);
+    const open = openMaps.has(p.id);
     items.set(key, {
       kind: 'project',
       project: p,
       map: !shown ? null : read ? 'read' : (shown as 'reading' | 'failed'),
-      elements: read?.tree.children.get(PROJECT)?.length ?? 0,
+      elements: trees,
+      folded: !open,
+      holds: trees > 0,
     });
-    nodes.set(key, { pos: placed(key) });
+    // Its map, once read, is in the tree whether or not it is unfolded, so that what is folded away is counted.
+    nodes.set(key, { pos: placed(key), collapsed: !open });
     flat.push({ id: key, parent: under(folder), order: order('b', i) });
     if (read) mapUnder(p.id, key, read);
   });
 
   /**
-   * The map of a project, under its card: the project's own element first,
-   * as the top of a map, closed until it is opened; under it the elements in
-   * the order of the project, folded as the project has them.
+   * The map of a project, under it: the project itself stands for its own
+   * element, the top of its map, and its trees stand right under it, in the
+   * order of the project, each folded as the project has it and placed
+   * where the project put it.
    */
-  function mapUnder(project: string, card: string, map: ClosedTree) {
+  function mapUnder(project: string, top: string, map: ClosedTree) {
     const add = (id: string, parentKey: string, order: string, depth: number) => {
       const key = elementKey(project, id);
       const holds = (map.tree.children.get(id)?.length ?? 0) > 0;
       const look = map.places.get(id);
-      const folded =
-        holds && (elementFolds.get(key) ?? (depth === 0 ? true : (look?.collapsed ?? false)));
+      const folded = holds && (elementFolds.get(key) ?? look?.collapsed ?? false);
       items.set(key, {
         kind: 'element',
         project,
@@ -224,14 +236,15 @@ export function owlTree(
         heading: look?.heading ?? true,
         excluded: look?.excluded ?? false,
       });
-      // The project's own element is placed by itself: in its map it stands at the centre.
-      nodes.set(key, { collapsed: folded, pos: depth === 0 ? null : (look?.pos ?? null) });
+      nodes.set(key, { collapsed: folded, pos: look?.pos ?? null });
       flat.push({ id: key, parent: parentKey, order });
       (map.tree.children.get(id) ?? []).forEach((child, i) =>
         add(child, key, 'c' + String(i).padStart(6, '0'), depth + 1),
       );
     };
-    add(PROJECT, card, 'c', 0);
+    (map.tree.children.get(PROJECT) ?? []).forEach((child, i) =>
+      add(child, top, 'c' + String(i).padStart(6, '0'), 1),
+    );
   }
 
   if (provisional) {

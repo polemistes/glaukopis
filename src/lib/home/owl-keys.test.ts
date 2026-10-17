@@ -46,7 +46,11 @@ function surface(selection: string[], at?: string) {
       },
     ],
   ]);
-  const { tree, nodes } = owlTree(folders, projects, new Map(), { at, maps });
+  const { tree, nodes } = owlTree(folders, projects, new Map(), {
+    at,
+    maps,
+    openMaps: new Set(['2']),
+  });
   const lay: Layout = layout(tree, nodes as unknown as ReadonlyMap<string, NodeRecord>, new Map());
   const calls: string[] = [];
   const log =
