@@ -169,8 +169,10 @@ mod linux {
     pub(super) fn html_of(bytes: &[u8]) -> String {
         let utf16 = |bytes: &[u8], little: bool| {
             let units: Vec<u16> = bytes
-                .chunks_exact(2)
-                .map(|c| if little { u16::from_le_bytes([c[0], c[1]]) } else { u16::from_be_bytes([c[0], c[1]]) })
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|&c| if little { u16::from_le_bytes(c) } else { u16::from_be_bytes(c) })
                 .collect();
             String::from_utf16_lossy(&units)
         };
