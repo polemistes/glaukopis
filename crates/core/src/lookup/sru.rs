@@ -11,21 +11,19 @@
 //! e-books that name the printed book. They are all returned, the likeliest
 //! first, and the user chooses.
 
-use std::time::Duration;
-
 use crate::error::{Error, Result};
 use crate::net::{Client, encode};
 use crate::tr;
 use crate::written::identifiers::isbn;
 
+use super::Hit;
 use super::marc::{Described, Facts, Kind, Record, describe};
-use super::{Hit, pace};
 
 pub(crate) struct Catalogue {
     /// As the user is told. The Norwegian licence (NLOD) asks that the source be named.
     pub name: fn() -> String,
     /// The address up to the question, with the form of record asked for.
-    address: &'static str,
+    pub(crate) address: &'static str,
     /// The index that ISBNs are looked up in.
     isbn: &'static str,
     /// The question for books that have all of the words, where the catalogue is searched by words.
@@ -97,7 +95,6 @@ pub(crate) fn for_words() -> [&'static Catalogue; 2] {
 
 impl Catalogue {
     fn ask(&self, client: &Client, question: &str, records: usize) -> Result<String> {
-        pace(self.address, Duration::from_millis(500));
         let url = format!("{}&maximumRecords={records}&query={}", self.address, encode(question));
         client.get_ok(&url, None)
     }

@@ -8,15 +8,13 @@
 //! they have to do with the question. Those that share too few words with it
 //! are left out here.
 
-use std::time::Duration;
-
 use serde_json::Value;
 
 use crate::error::{Error, Result};
 use crate::net::{Client, encode};
 use crate::tr;
 
-use super::{Hit, csl, doi, pace};
+use super::{Hit, csl, doi};
 
 /// The fields asked for. `language` and `isbn-type` cannot be asked for in a
 /// search, although full records have them: Crossref answers 400.
@@ -34,9 +32,6 @@ pub(crate) fn address(words: &str, rows: usize) -> String {
 }
 
 pub(crate) fn search(client: &Client, words: &str, rows: usize) -> Result<Vec<Hit>> {
-    // One search a second is what Crossref allows those who give no address
-    // to be reached at; with an address it is three.
-    pace("api.crossref.org/works", Duration::from_millis(1000));
     let body = client.get_ok(&address(words, rows), Some("application/json"))?;
     hits(&body)
 }

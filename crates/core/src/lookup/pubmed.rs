@@ -8,8 +8,6 @@
 //! be read when the services were tried out; what was found says that the
 //! address to give is that of the developers.
 
-use std::time::Duration;
-
 use crate::bib::names::Person;
 use crate::error::{Error, Result};
 use crate::library::entry::Draft;
@@ -17,7 +15,7 @@ use crate::net::{Client, encode};
 use crate::tr;
 use crate::written::{identifiers::doi, languages};
 
-use super::{Hit, csl::is_issn, pace, text, xml_child, xml_child_text, xml_text};
+use super::{Hit, csl::is_issn, text, xml_child, xml_child_text, xml_text};
 
 pub(crate) const SOURCE: &str = "PubMed";
 
@@ -29,8 +27,6 @@ pub(crate) fn address(pmid: &str) -> String {
 }
 
 pub(crate) fn lookup(client: &Client, pmid: &str) -> Result<Vec<Hit>> {
-    // Three questions a second are allowed without a key.
-    pace("eutils.ncbi.nlm.nih.gov", Duration::from_millis(400));
     let xml = client.get_ok(&address(pmid), None)?;
     hits(&xml)
 }

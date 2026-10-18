@@ -26,10 +26,8 @@ mod samples;
 mod sru;
 mod text;
 
-use std::collections::HashMap;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 
@@ -550,27 +548,6 @@ pub(crate) fn failure(service: &str, error: &Error) -> String {
     format!("{service}: {what}.")
 }
 
-/// Waits until `gap` has passed since the service was last asked.
-///
-/// The services say how often they may be asked: arXiv once in three
-/// seconds, Crossref's search once a second. One lookup asks a service once
-/// or twice, so this matters when lookups follow each other closely, and it
-/// holds for all of them together, from whichever thread they come.
-pub(crate) fn pace(service: &str, gap: Duration) {
-    static LAST: Mutex<Option<HashMap<String, Instant>>> = Mutex::new(None);
-    let wait = {
-        let mut last = LAST.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let times = last.get_or_insert_with(HashMap::new);
-        let now = Instant::now();
-        let turn = times.get(service).map(|t| *t + gap).filter(|t| *t > now).unwrap_or(now);
-        times.insert(service.to_owned(), turn);
-        turn - now
-    };
-    if !wait.is_zero() {
-        std::thread::sleep(wait);
-    }
-}
-
 /// How XML from the network is read. PubMed's records name a DTD, which is
 /// not fetched; the number of nodes is bounded, so that no answer can take
 /// all the memory there is.
@@ -903,15 +880,18 @@ mod tests {
     }
 
     #[test]
-    fn services_are_not_asked_too_often() {
-        let start = Instant::now();
-        pace("a service of the tests", Duration::from_millis(60));
-        assert!(start.elapsed() < Duration::from_millis(50), "the first question need not wait");
-        pace("a service of the tests", Duration::from_millis(60));
-        pace("another service of the tests", Duration::from_millis(60));
-        assert!(start.elapsed() >= Duration::from_millis(60));
-        pace("a service of the tests", Duration::from_millis(60));
-        assert!(start.elapsed() >= Duration::from_millis(120));
+    fn every_service_asked_is_paced() {
+        // A service added here and not to the table of paces in `net` would
+        // be asked as often as it is asked.
+        let mut addresses =
+            vec![arxiv::address("1706.03762"), pubmed::address("19304878"), crossref::address("Nagy Achaeans", 5)];
+        addresses.extend(doi::addresses("10.1086/599247").map(|(_, url)| url));
+        for catalogue in [&sru::K10PLUS, &sru::NORWAY, &sru::DNB, &sru::CONGRESS] {
+            addresses.push(catalogue.address.to_owned());
+        }
+        for url in addresses {
+            assert!(crate::net::paced(&url), "{url} is not paced");
+        }
     }
 
     #[test]

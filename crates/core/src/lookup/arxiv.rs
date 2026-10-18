@@ -4,15 +4,13 @@
 //! products which use it say: "Thank you to arXiv for use of its open access
 //! interoperability." (see [`super::acknowledgements`]).
 
-use std::time::Duration;
-
 use crate::error::{Error, Result};
 use crate::library::entry::Draft;
 use crate::net::{Client, encode};
 use crate::tr;
 use crate::written::identifiers::doi;
 
-use super::{Hit, pace, text, xml_child, xml_child_text};
+use super::{Hit, text, xml_child, xml_child_text};
 
 pub(crate) const SOURCE: &str = "arXiv";
 
@@ -22,7 +20,6 @@ pub(crate) fn address(id: &str) -> String {
 }
 
 pub(crate) fn lookup(client: &Client, id: &str) -> Result<Vec<Hit>> {
-    pace("export.arxiv.org", Duration::from_secs(3));
     let xml = client.get_ok(&address(id), None)?;
     hits(
         &xml,
