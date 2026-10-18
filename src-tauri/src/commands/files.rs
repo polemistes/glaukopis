@@ -472,14 +472,16 @@ pub fn picture_to_file(
     view(&library, &file_hash)
 }
 
-/// A name with the ending of its kind, where it has none.
+/// A name with the ending of its kind, where it has none. What follows the
+/// last point is an ending only when it is one of a picture: "Fig. 3" and
+/// "Plate 2.1" have none, and would otherwise be files of no kind.
 fn with_ending(name: &str, extension: &str) -> String {
-    let ending = format!(".{}", extension.to_lowercase());
-    if Path::new(name).extension().is_some() || name.to_lowercase().ends_with(&ending) {
-        name.to_owned()
-    } else {
-        format!("{name}{ending}")
-    }
+    let extension = extension.to_lowercase();
+    let has = name.rsplit_once('.').is_some_and(|(_, after)| {
+        let after = after.to_lowercase();
+        after == extension || glaukopis_core::ocr::PICTURE_ENDINGS.contains(&after.as_str())
+    });
+    if has { name.to_owned() } else { format!("{name}.{extension}") }
 }
 
 // ---- export ----
@@ -511,4 +513,20 @@ pub fn files_export(
         &mut work.teller(&app),
         &work.stop,
     )?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_picture_becomes_a_file_with_the_ending_of_its_kind() {
+        assert_eq!(with_ending("Fig. 3", "png"), "Fig. 3.png");
+        assert_eq!(with_ending("Plate 2.1", "jpg"), "Plate 2.1.jpg");
+        assert_eq!(with_ending("map", "PNG"), "map.png");
+        assert_eq!(with_ending("map.png", "png"), "map.png");
+        assert_eq!(with_ending("Scan.TIFF", "tif"), "Scan.TIFF");
+        assert_eq!(with_ending("drawing.svg", "svg"), "drawing.svg");
+        assert_eq!(glaukopis_core::library::files::kind_of(&with_ending("Fig. 3", "png")), files::FileKind::Picture);
+    }
 }
