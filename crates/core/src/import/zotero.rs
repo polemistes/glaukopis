@@ -236,10 +236,15 @@ fn file_of(dir: &Path, attachment: &Attachment, bases: &[PathBuf]) -> std::resul
     let path = attachment.path.trim();
     let missing = |name: &str| tr!("core-import-file-not-found", name = name);
     if let Some(name) = path.strip_prefix("storage:") {
-        // Zotero keeps each file in a directory named by the key of the attachment.
-        let file = dir.join("storage").join(&attachment.key).join(name);
+        // Zotero keeps each file in a directory named by the key of the
+        // attachment, eight letters and digits. A key of anything else comes
+        // from a database that was not written by Zotero, and is not let lead
+        // the path out of the storage directory.
+        let key = &attachment.key;
+        let plain_key = !key.is_empty() && key.chars().all(|c| c.is_ascii_alphanumeric());
         let plain = !name.is_empty() && !name.contains(['/', '\\']) && name != "..";
-        return if plain && file.is_file() { Ok(file) } else { Err(missing(name)) };
+        let file = dir.join("storage").join(key).join(name);
+        return if plain_key && plain && file.is_file() { Ok(file) } else { Err(missing(name)) };
     }
     if let Some(relative) = path.strip_prefix("attachments:") {
         return bases

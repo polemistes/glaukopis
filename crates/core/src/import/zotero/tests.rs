@@ -679,6 +679,11 @@ fn linked_files() {
     z.attach(Some(item), "LINKGONE", 2, "application/pdf", Some("/nowhere/at/all.pdf"));
     z.attach(Some(item), "ODDPATH1", 0, "application/pdf", Some("storage:../../zotero.sqlite"));
     z.attach(Some(item), "NOPATH01", 0, "application/pdf", None);
+    // A key that is not one of Zotero's, which would lead out of storage/ to
+    // a file that is there.
+    fs::create_dir_all(z.path().join("storage")).unwrap();
+    fs::write(z.path().join("secret.txt"), b"not to be taken").unwrap();
+    z.attach(Some(item), "..", 0, "text/plain", Some("storage:secret.txt"));
 
     let bases = [elsewhere.path().join("base")];
     let (candidates, _) =
@@ -689,7 +694,11 @@ fn linked_files() {
     );
     assert_eq!(
         candidates[0].notes,
-        vec!["The file “/nowhere/at/all.pdf” was not found.", "The file “../../zotero.sqlite” was not found.",]
+        vec![
+            "The file “/nowhere/at/all.pdf” was not found.",
+            "The file “../../zotero.sqlite” was not found.",
+            "The file “secret.txt” was not found.",
+        ]
     );
 }
 
