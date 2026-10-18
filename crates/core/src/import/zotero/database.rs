@@ -8,6 +8,8 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs::{self, File};
+use std::io::{self, Read, Seek, SeekFrom, Write};
+use std::ops::Range;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
@@ -147,13 +149,85 @@ fn stamp(path: &Path) -> Option<(u64, Option<SystemTime>)> {
     Some((meta.len(), meta.modified().ok()))
 }
 
+/// The bytes SQLite takes its locks on: the pending byte, the reserved
+/// byte and the 510 shared bytes, from 1 GiB on. On Windows these are
+/// locked with `LockFileEx`, which forbids even reading them, and Zotero
+/// holds them for as long as it runs, so a plain copy of a database longer
+/// than 1 GiB fails there. SQLite never stores anything in the page that
+/// holds them, the lock-byte page of its file format, so a copy with zeros
+/// in their place is the same database.
+const LOCK_BYTES: Range<u64> = 0x4000_0000..0x4000_0200;
+
+/// How much is read at a time.
+const CHUNK: usize = 1 << 16;
+
+/// Copies what `source` holds into `target`, from the start of each, all
+/// but `LOCK_BYTES`, which are never read and are zeros in the copy. A
+/// chunk of zeros is passed over rather than written, so that a database
+/// with much empty room costs the temporary directory only what it holds.
+/// Says how long the copy is.
+fn copy_content(source: &mut (impl Read + Seek), target: &mut File) -> io::Result<u64> {
+    static ZEROS: [u8; CHUNK] = [0; CHUNK];
+    let mut buffer = vec![0; CHUNK];
+    let mut position = 0;
+    loop {
+        if LOCK_BYTES.contains(&position) {
+            // Only as far as the file goes: a file that ends among the
+            // lock bytes (no database does) is copied no longer than it is.
+            let length = source.seek(SeekFrom::End(0))?;
+            if length <= position {
+                break;
+            }
+            position = length.min(LOCK_BYTES.end);
+            source.seek(SeekFrom::Start(position))?;
+            target.seek(SeekFrom::Start(position))?;
+            continue;
+        }
+        // A read never reaches into the lock bytes.
+        let room =
+            if position < LOCK_BYTES.start { (LOCK_BYTES.start - position).min(CHUNK as u64) } else { CHUNK as u64 };
+        let read = match source.read(&mut buffer[..room as usize]) {
+            Ok(0) => break,
+            Ok(read) => read,
+            Err(e) if e.kind() == io::ErrorKind::Interrupted => continue,
+            Err(e) => return Err(e),
+        };
+        if buffer[..read] == ZEROS[..read] {
+            target.seek(SeekFrom::Current(read as i64))?;
+        } else {
+            target.write_all(&buffer[..read])?;
+        }
+        position += read as u64;
+    }
+    // What was passed over at the end is there only once the length is set.
+    target.set_len(position)?;
+    Ok(position)
+}
+
+/// Whether reading failed because another process holds the bytes locked:
+/// on Windows, ERROR_SHARING_VIOLATION or ERROR_LOCK_VIOLATION. Elsewhere
+/// SQLite's locks do not stop a reader.
+fn locked(error: &io::Error) -> bool {
+    cfg!(windows) && matches!(error.raw_os_error(), Some(32 | 33))
+}
+
+/// Whether the error is that of a database Zotero holds locked.
+fn locked_database(error: &Error) -> bool {
+    matches!(error, Error::Io { source, .. } if locked(source))
+}
+
 /// Copies the content only. `fs::copy` would copy the permissions too, and
 /// a copy that cannot be written to cannot be set right by SQLite.
 fn copy_file(from: &Path, to: &Path) -> Result<()> {
     let context = || tr!("core-import-zotero-copying", path = from);
     let mut source = File::open(from).context(context)?;
     let mut target = File::create(to).context(context)?;
-    std::io::copy(&mut source, &mut target).context(context)?;
+    copy_content(&mut source, &mut target).map_err(|source| {
+        // Should Zotero hold more than SQLite's lock bytes, the one who
+        // imports is told what lets the database be read.
+        let context = if locked(&source) { tr!("core-import-zotero-locked", path = from) } else { context() };
+        Error::io(context, source)
+    })?;
     Ok(())
 }
 
@@ -599,9 +673,104 @@ pub(super) fn with_database<T>(
     }
     match attempt(&backup) {
         Ok((value, mut warnings)) => {
-            warnings.insert(0, tr!("core-import-zotero-backup-read", error = error.to_string(), backup = BACKUP));
+            let warning = if locked_database(&error) {
+                tr!("core-import-zotero-backup-read-locked", backup = BACKUP)
+            } else {
+                tr!("core-import-zotero-backup-read", error = error.to_string(), backup = BACKUP)
+            };
+            warnings.insert(0, warning);
             Ok((value, warnings))
         }
         Err(_) => Err(error),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The data of the file `Locked` stands for; zeros elsewhere.
+    fn regions() -> [Range<u64>; 3] {
+        [0..2 * CHUNK as u64, LOCK_BYTES.start - CHUNK as u64 - 7..LOCK_BYTES.start, LOCK_BYTES.end..u64::MAX]
+    }
+
+    /// A file as long as asked, which holds data near its start, just
+    /// before the lock bytes and after them, and zeros elsewhere, the way
+    /// a sparse file does. Like a database Zotero holds open on Windows, it
+    /// fails a read that reaches into the lock bytes.
+    struct Locked {
+        length: u64,
+        position: u64,
+    }
+
+    /// What `Locked` holds from `start` on, as far as `buffer` goes.
+    fn fill(start: u64, buffer: &mut [u8]) {
+        buffer.fill(0);
+        let end = start + buffer.len() as u64;
+        for region in regions() {
+            for position in region.start.max(start)..region.end.min(end) {
+                buffer[(position - start) as usize] = (position % 251) as u8 | 1;
+            }
+        }
+    }
+
+    impl Read for Locked {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            let count = self.length.saturating_sub(self.position).min(buffer.len() as u64);
+            let asked = self.position..self.position + count;
+            if asked.start < LOCK_BYTES.end && LOCK_BYTES.start < asked.end {
+                return Err(io::Error::other("another process has locked a portion of the file"));
+            }
+            fill(self.position, &mut buffer[..count as usize]);
+            self.position += count;
+            Ok(count as usize)
+        }
+    }
+
+    impl Seek for Locked {
+        fn seek(&mut self, to: SeekFrom) -> io::Result<u64> {
+            self.position = match to {
+                SeekFrom::Start(n) => n,
+                SeekFrom::End(n) => self.length.checked_add_signed(n).unwrap(),
+                SeekFrom::Current(n) => self.position.checked_add_signed(n).unwrap(),
+            };
+            Ok(self.position)
+        }
+    }
+
+    /// Copies a file of the given length and checks the copy byte by byte:
+    /// the same as the source, with zeros in place of the lock bytes.
+    fn copied_whole_but_the_lock_bytes(length: u64) {
+        let mut target = tempfile::tempfile().unwrap();
+        let copied = copy_content(&mut Locked { length, position: 0 }, &mut target).unwrap();
+        assert_eq!(copied, length);
+        assert_eq!(target.metadata().unwrap().len(), length);
+
+        target.seek(SeekFrom::Start(0)).unwrap();
+        let (mut got, mut wanted) = (vec![0; CHUNK], vec![0; CHUNK]);
+        let mut position = 0;
+        while position < length {
+            let count = (length - position).min(CHUNK as u64) as usize;
+            target.read_exact(&mut got[..count]).unwrap();
+            fill(position, &mut wanted[..count]);
+            let end = position + count as u64;
+            let (from, to) = (LOCK_BYTES.start.clamp(position, end), LOCK_BYTES.end.clamp(position, end));
+            wanted[(from - position) as usize..(to - position) as usize].fill(0);
+            assert!(got[..count] == wanted[..count], "the copy differs within {position}..+{count}");
+            position += count as u64;
+        }
+        assert_eq!(target.read(&mut got).unwrap(), 0);
+    }
+
+    #[test]
+    fn a_database_longer_than_a_gibibyte_is_copied_around_the_lock_bytes() {
+        // Data on both sides of the lock-byte page, a length that is no
+        // multiple of the chunk, and zeros between that are passed over.
+        copied_whole_but_the_lock_bytes(LOCK_BYTES.end + 3 * CHUNK as u64 + 100);
+        // Before them the copy is that of any file.
+        copied_whole_but_the_lock_bytes(LOCK_BYTES.start);
+        copied_whole_but_the_lock_bytes(3 * CHUNK as u64 + 5);
+        // A file that ends among them is copied no longer than it is.
+        copied_whole_but_the_lock_bytes(LOCK_BYTES.start + 100);
     }
 }
