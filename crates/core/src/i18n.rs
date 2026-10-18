@@ -491,55 +491,72 @@ fn format(bundle: &Bundle, id: &str, args: Option<&FluentArgs>) -> Option<String
 }
 
 /// The first part of a tag of a language, in small letters: `nb` of
-/// `nb_NO.UTF-8`, `en` of `en-GB`.
+/// `nb_NO.UTF-8`, `en` of `en-GB`, and `nb` of `no`.
 fn primary(tag: &str) -> String {
-    tag.trim().split(['-', '_', '.', '@']).next().unwrap_or_default().to_ascii_lowercase()
+    Tag::parse(tag).language
 }
 
 /// The second part of a tag, where it names a country: `GB` of `en-GB`.
 fn region(tag: &str) -> Option<String> {
-    let rest = tag.trim().split(['.', '@']).next().unwrap_or_default();
-    rest.split(['-', '_'])
-        .skip(1)
-        .find(|p| p.len() == 2 && p.chars().all(|c| c.is_ascii_alphabetic()))
-        .map(|p| p.to_ascii_uppercase())
+    Tag::parse(tag).region
 }
 
-/// A tag taken apart: the language in small letters, the script as `Latn`,
-/// the region as `BR`. `nb_NO.UTF-8`, `zh-Hant-TW`, `sr_RS@latin` and
-/// `pt-BR` are all read. Norwegian without more is Bokmål.
-struct Pieces {
-    language: String,
-    script: Option<String>,
-    region: Option<String>,
+/// A tag of a language taken apart: the language in small letters, the
+/// script as `Latn`, the region as `BR`. This is the one reader of tags in
+/// the core: the language of the system, of a document and of a dictionary
+/// are all read by it, so that each is the same tag to all of them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Tag {
+    pub language: String,
+    pub script: Option<String>,
+    pub region: Option<String>,
 }
 
-fn pieces(tag: &str) -> Pieces {
-    let tag = tag.trim();
-    let (head, modifier) = tag.split_once('@').unwrap_or((tag, ""));
-    let head = head.split('.').next().unwrap_or_default();
-    let mut subtags = head.split(['-', '_']).filter(|s| !s.is_empty());
-    let language = subtags.next().unwrap_or_default().to_ascii_lowercase();
-    let language = if language == "no" { "nb".to_owned() } else { language };
-    let mut script = None;
-    let mut region = None;
-    for s in subtags {
-        if script.is_none() && s.len() == 4 && s.chars().all(|c| c.is_ascii_alphabetic()) {
-            let (first, rest) = s.split_at(1);
-            script = Some(format!("{}{}", first.to_ascii_uppercase(), rest.to_ascii_lowercase()));
-        } else if region.is_none()
-            && ((s.len() == 2 && s.chars().all(|c| c.is_ascii_alphabetic()))
-                || (s.len() == 3 && s.chars().all(|c| c.is_ascii_digit())))
-        {
-            region = Some(s.to_ascii_uppercase());
+impl Tag {
+    /// Reads a tag as the system, a document or a person writes it:
+    /// `nb_NO.UTF-8`, `zh-Hant-TW`, `sr_RS@latin`, `pt-BR` and `es_419` are
+    /// all read. The script is taken where it comes before the region; what
+    /// comes after the region (a variant, or the rest of a dictionary's name,
+    /// as `frami` of `de_DE_frami`) is left aside, as is what comes after a
+    /// dot. Norwegian without more is Bokmål.
+    pub fn parse(tag: &str) -> Tag {
+        let tag = tag.trim();
+        let (head, modifier) = tag.split_once('@').unwrap_or((tag, ""));
+        let head = head.split('.').next().unwrap_or_default();
+        let mut subtags = head.split(['-', '_']).filter(|s| !s.is_empty());
+        let language = subtags.next().unwrap_or_default().to_ascii_lowercase();
+        let language = if language == "no" { "nb".to_owned() } else { language };
+        let mut script = None;
+        let mut region = None;
+        for s in subtags {
+            if script.is_none() && s.len() == 4 && s.chars().all(|c| c.is_ascii_alphabetic()) {
+                let (first, rest) = s.split_at(1);
+                script = Some(format!("{}{}", first.to_ascii_uppercase(), rest.to_ascii_lowercase()));
+            } else if (s.len() == 2 && s.chars().all(|c| c.is_ascii_alphabetic()))
+                || (s.len() == 3 && s.chars().all(|c| c.is_ascii_digit()))
+            {
+                region = Some(s.to_ascii_uppercase());
+                break;
+            }
         }
+        match modifier.to_ascii_lowercase().as_str() {
+            "latin" => script = Some("Latn".to_owned()),
+            "cyrillic" => script = Some("Cyrl".to_owned()),
+            _ => {}
+        }
+        Tag { language, script, region }
     }
-    match modifier.to_ascii_lowercase().as_str() {
-        "latin" => script = Some("Latn".to_owned()),
-        "cyrillic" => script = Some("Cyrl".to_owned()),
-        _ => {}
+}
+
+/// The tag as BCP 47 writes it: `sr-Latn-RS`.
+impl std::fmt::Display for Tag {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.language)?;
+        for part in [&self.script, &self.region].into_iter().flatten() {
+            write!(f, "-{part}")?;
+        }
+        Ok(())
     }
-    Pieces { language, script, region }
 }
 
 /// The tag among those available that is nearest to a tag: the same with
@@ -549,7 +566,7 @@ fn pieces(tag: &str) -> Pieces {
 /// unless the region or the script says otherwise); then any of the
 /// language. Nothing, where the language is not among them.
 pub fn nearest<'a>(tag: &str, available: &[&'a str]) -> Option<&'a str> {
-    let p = pieces(tag);
+    let p = Tag::parse(tag);
     if p.language.is_empty() {
         return None;
     }
@@ -617,20 +634,11 @@ pub fn system_tag() -> String {
 /// `nb-NO`, `sr_RS@latin` is `sr-Latn-RS`; the language of no language,
 /// `C` and `POSIX`, is English.
 fn normalise(tag: &str) -> String {
-    let p = pieces(tag);
-    if p.language.is_empty() || p.language == "c" || p.language == "posix" {
+    let tag = Tag::parse(tag);
+    if tag.language.is_empty() || tag.language == "c" || tag.language == "posix" {
         return ENGLISH.to_owned();
     }
-    let mut out = p.language;
-    if let Some(script) = p.script {
-        out.push('-');
-        out.push_str(&script);
-    }
-    if let Some(region) = p.region {
-        out.push('-');
-        out.push_str(&region);
-    }
-    out
+    tag.to_string()
 }
 
 /// The languages that documents have words of their own in.

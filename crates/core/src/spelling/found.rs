@@ -10,6 +10,8 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
+use crate::i18n::Tag;
+
 /// Where a dictionary was found.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -136,53 +138,28 @@ fn in_dir(dir: &Path, source: Source) -> Vec<Found> {
 
 /// The language a dictionary is for, from the name of its files: `en_US` is
 /// `en-US`, `sr-Latn` is `sr-Latn`, `de_DE_frami` is `de-DE`. None when the
-/// name does not begin with a language.
+/// name does not begin with a language. The name is read as every tag is
+/// (see [`Tag::parse`]); what is special to the names of dictionaries is only
+/// that they must begin with a language of two or three letters.
 pub fn tag_of_name(name: &str) -> Option<String> {
-    let mut parts = name.split(['_', '-']);
-    let language = parts.next()?;
+    let language = name.split(['_', '-']).next()?;
     if !(2..=3).contains(&language.len()) || !language.chars().all(|c| c.is_ascii_alphabetic()) {
         return None;
     }
-    let mut tag = language.to_ascii_lowercase();
-    let mut rest = parts.peekable();
-    if let Some(script) = rest.next_if(|p| p.len() == 4 && p.chars().all(|c| c.is_ascii_alphabetic())) {
-        tag.push('-');
-        tag.push_str(&script[..1].to_ascii_uppercase());
-        tag.push_str(&script[1..].to_ascii_lowercase());
-    }
-    if let Some(region) = rest.next_if(|p| {
-        (p.len() == 2 && p.chars().all(|c| c.is_ascii_alphabetic()))
-            || (p.len() == 3 && p.chars().all(|c| c.is_ascii_digit()))
-    }) {
-        tag.push('-');
-        tag.push_str(&region.to_ascii_uppercase());
-    }
-    Some(tag)
+    Some(Tag::parse(name).to_string())
 }
 
 /// A tag as the dictionaries are named by: the language in small letters
 /// and the country in capitals, `nb-NO`; Norwegian without more is Bokmål.
+/// English, where nothing is said.
 pub fn normalise(language: &str) -> String {
-    let mut parts = language.trim().split(['-', '_']).filter(|p| !p.is_empty());
-    let first = parts.next().unwrap_or("en").to_ascii_lowercase();
-    let mut tag = if first == "no" { "nb".to_owned() } else { first };
-    for part in parts {
-        tag.push('-');
-        match part.len() {
-            2 => tag.push_str(&part.to_ascii_uppercase()),
-            4 => {
-                tag.push_str(&part[..1].to_ascii_uppercase());
-                tag.push_str(&part[1..].to_ascii_lowercase());
-            }
-            _ => tag.push_str(part),
-        }
-    }
-    tag
+    let tag = Tag::parse(language);
+    if tag.language.is_empty() { "en".to_owned() } else { tag.to_string() }
 }
 
 /// The language of a tag, without its country: `en` of `en-GB`.
-pub fn primary(tag: &str) -> &str {
-    tag.split('-').next().unwrap_or(tag)
+pub fn primary(tag: &str) -> String {
+    Tag::parse(tag).language
 }
 
 /// The country whose dictionary stands for a language as a whole, where it
@@ -227,8 +204,8 @@ pub fn choose<'a>(found: &'a [Found], language: Option<&str>) -> Vec<&'a Found> 
             return both;
         }
     }
-    let usual = format!("{language}-{}", usual_region(language).map_or(language.to_ascii_uppercase(), str::to_owned));
-    let whole = of_language.iter().find(|f| f.tag == usual || f.tag == language);
+    let usual = format!("{language}-{}", usual_region(&language).map_or(language.to_ascii_uppercase(), str::to_owned));
+    let whole = of_language.iter().find(|f| f.tag == usual || f.tag == language.as_str());
     whole.or(of_language.first()).map(|f| vec![*f]).unwrap_or_default()
 }
 
@@ -253,6 +230,10 @@ mod tests {
         assert_eq!(tag_of_name("la").as_deref(), Some("la"));
         assert_eq!(tag_of_name("hyph_en_US"), None);
         assert_eq!(tag_of_name("médical"), None);
+        // What follows the country is the dictionary's own, never a script.
+        assert_eq!(tag_of_name("en_US_wiki").as_deref(), Some("en-US"));
+        // Norwegian without more is Bokmål, in a dictionary's name as anywhere.
+        assert_eq!(tag_of_name("no_NO").as_deref(), Some("nb-NO"));
     }
 
     #[test]
@@ -261,6 +242,18 @@ mod tests {
         assert_eq!(normalise("no"), "nb");
         assert_eq!(normalise("no_NO"), "nb-NO");
         assert_eq!(normalise("sr-latn-rs"), "sr-Latn-RS");
+        assert_eq!(normalise(""), "en");
+    }
+
+    #[test]
+    fn a_tag_of_the_system_is_the_same_tag_to_spelling_as_to_the_interface() {
+        // These two were read differently by the two readers of tags there were.
+        assert_eq!(normalise("sr_RS@latin"), "sr-Latn-RS");
+        assert_eq!(normalise("zh_TW.UTF-8"), "zh-TW");
+        assert_eq!(primary("no_NO"), "nb");
+        for tag in ["nb_NO.UTF-8", "sr_RS@latin", "zh-Hant-TW", "pt-BR", "es_419", "de-CH-1996"] {
+            assert_eq!(normalise(tag), crate::i18n::Tag::parse(tag).to_string());
+        }
     }
 
     #[test]
