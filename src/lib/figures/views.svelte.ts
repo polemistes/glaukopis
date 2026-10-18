@@ -4,7 +4,7 @@ import { open as openFile } from '@tauri-apps/plugin-dialog';
 import type { Node } from 'prosemirror-model';
 import { NodeSelection, Selection, TextSelection, type Command } from 'prosemirror-state';
 import type { EditorView, NodeView } from 'prosemirror-view';
-import { mount, unmount } from 'svelte';
+import { mount, unmount, untrack } from 'svelte';
 import { captionOf, captionNodes } from '$lib/editor/commands';
 import { currentProject } from '$lib/editor/references.svelte';
 import type { DocumentFormat } from '$lib/api/documents';
@@ -110,7 +110,11 @@ function documentOf(
   const hooks = hooksOf.get(view);
   const element = hooks?.element;
   const project = currentProject();
-  if (!element || !project?.node(element)) return null;
+  // That the element is there, not what it is: its record is made anew for
+  // every word typed in it, and each figure, table, equation and pointer in
+  // it would be numbered again for each. The numbers are told of changes of
+  // their own, the removal of the element among them.
+  if (!element || !project || !untrack(() => project.node(element))) return null;
   // Of the element in view, where the editor was told of one; else of the tree the element stands in.
   const at = hooks?.at ?? topOf(project, element);
   return {

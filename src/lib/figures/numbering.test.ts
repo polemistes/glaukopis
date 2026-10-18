@@ -1,7 +1,7 @@
 import { EditorState } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { prosemirrorToYXmlFragment } from 'y-prosemirror';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { insertCrossRef, insertEquation, insertFigure } from '$lib/editor/commands';
 import { bodyPlugins } from '$lib/editor/plugins';
 import { bodySchema } from '$lib/editor/schema';
@@ -10,7 +10,15 @@ import { blocksHtml } from '$lib/project/model/html';
 import { Project } from '$lib/project/model/project.svelte';
 import { readBody } from '$lib/project/model/text';
 import { PROJECT } from '$lib/project/model/types';
-import { count, countingOf, formsOf, pointerText, type Counting } from './numbering.svelte';
+import {
+  count,
+  countingOf,
+  formsOf,
+  numbering,
+  pointerText,
+  sameNumbers,
+  type Counting,
+} from './numbering.svelte';
 
 const { paragraph, figure, equation, crossref } = bodySchema.nodes;
 const HASH = (c: string) => c.repeat(64);
@@ -264,5 +272,39 @@ describe('what is pointed to by', () => {
     expect(made.child(1).marks.map((m) => m.type.name)).toEqual(['em']);
     // The cursor is at the end of it, where the writing goes on.
     expect(v.state.selection.from).toBe(made.nodeSize - 1);
+  });
+});
+
+describe('the numbers as they are read', () => {
+  it('are counted once for a change, however many read them, and stay the same while no number changes', () => {
+    const { p, top, a, b } = sample();
+    const nodes = vi.spyOn(p, 'node');
+    const first = numbering.of(p, top);
+    const once = nodes.mock.calls.length;
+    expect(once).toBeGreaterThan(0);
+    // Every figure, equation and pointer shown asks again: nothing is counted again.
+    for (let i = 0; i < 20; i++) expect(numbering.of(p, top)).toBe(first);
+    expect(nodes.mock.calls.length).toBe(once);
+
+    // A word typed changes the record of its element, and so is counted, once; no number changes.
+    write(p, b, fig('f3', 'd', 'The shield'), text('After, and more.'));
+    nodes.mockClear();
+    for (let i = 0; i < 20; i++) expect(numbering.of(p, top)).toBe(first);
+    expect(nodes.mock.calls.length).toBe(once);
+
+    // A figure put before the others changes them all.
+    write(p, a, fig('f9', 'e', 'A new one'), text('Text.'), eq('q1', 'a = b'));
+    const after = numbering.of(p, top);
+    expect(after).not.toBe(first);
+    expect(after.byId.get('f9')?.number).toBe('2');
+    expect(after.byId.get('f3')?.number).toBe('3');
+    expect(numbering.of(p, top)).toBe(after);
+  });
+
+  it('tell two countings with the same numbers from two with different ones', () => {
+    const { p, top, a } = sample();
+    expect(sameNumbers(count(p, top, plain), count(p, top, plain))).toBe(true);
+    expect(sameNumbers(count(p, top, plain), count(p, top, numbered))).toBe(false);
+    expect(sameNumbers(count(p, top, plain), count(p, a, plain))).toBe(false);
   });
 });
