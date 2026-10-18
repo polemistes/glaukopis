@@ -28,9 +28,37 @@ export function openHere(id: string, project: Project) {
   open.set(id, project);
 }
 
+/** Those who wait for a project open in the view to be closed: see `goneHere`. */
+const waiting = new Map<string, Set<() => void>>();
+
 /** A project open in the view is closed; another opened since under the same id is left. */
 export function closedHere(id: string, project?: Project) {
-  if (!project || open.get(id) === project) open.delete(id);
+  if (project && open.get(id) !== project) return;
+  open.delete(id);
+  for (const told of waiting.get(id) ?? []) told();
+  waiting.delete(id);
+}
+
+/**
+ * When the project of that id is no longer open in the view: at once where
+ * it is not. Whether it was let go within `ms`, so that what waits for it
+ * never waits for ever.
+ */
+export function goneHere(id: string, ms: number): Promise<boolean> {
+  if (!open.has(id)) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const told = () => {
+      clearTimeout(timer);
+      resolve(true);
+    };
+    const timer = setTimeout(() => {
+      waiting.get(id)?.delete(told);
+      resolve(!open.has(id));
+    }, ms);
+    let those = waiting.get(id);
+    if (!those) waiting.set(id, (those = new Set()));
+    those.add(told);
+  });
 }
 
 /** The project of that id, where it is open in the view. */
