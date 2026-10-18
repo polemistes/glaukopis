@@ -15,8 +15,14 @@
  * Where no worker can be made (the tests), or the worker could not be
  * begun at all, the same answers are made here, in the window, by `here`.
  *
- * The worker's side is `serve`, which answers the same messages.
+ * The worker's side is `serve`, which answers the same messages. What the
+ * worker says on its console as a warning or an error is sent to the
+ * window too, and said there on the window's console under the worker's
+ * name, from where it reaches the log of the run (`shell/page-log.ts`):
+ * the log hears only the window's console, and a worker has its own.
  */
+
+import { line } from '$lib/shell/page-log';
 
 /** How a question to a worker failed. */
 export type WorkerFailure =
@@ -68,7 +74,9 @@ export type FromWorker =
   | { ask: number; error: string }
   | { fault: string }
   /** Said once, when the worker's code has run: a worker that fails before could not be begun. */
-  | { ready: true };
+  | { ready: true }
+  /** What the worker said on its console, as a warning or an error, as one line. */
+  | { said: 'warn' | 'error'; line: string };
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -76,13 +84,44 @@ function message(error: unknown): string {
 
 /**
  * Answers the messages of a client, in the worker: `serve(self, answerer)`.
- * Returns the function that takes one message, for a test to call.
+ * Returns the function that takes one message, for a test to call. The
+ * warnings and errors said on `into`, the worker's console, are sent to the
+ * window as well, and so are promises that failed with no one to hear.
  */
 export function serve<Q, T>(
-  scope: { onmessage: unknown; postMessage(message: FromWorker): void },
+  scope: {
+    onmessage: unknown;
+    postMessage(message: FromWorker): void;
+    addEventListener?: (type: 'unhandledrejection', listener: (event: never) => void) => void;
+  },
   answerer: Answerer<Q, T>,
+  into: Pick<Console, 'warn' | 'error'> = console,
 ): (message: ToWorker<Q, T>) => void {
   const post = (m: FromWorker) => scope.postMessage(m);
+  // What is said while it is sent is not sent again, lest a failure to send loop.
+  let saying = false;
+  const say = (level: 'warn' | 'error', args: unknown[]) => {
+    if (saying) return;
+    saying = true;
+    try {
+      post({ said: level, line: line(args) });
+    } catch {
+      // The console must work whatever the window does.
+    } finally {
+      saying = false;
+    }
+  };
+  for (const level of ['warn', 'error'] as const) {
+    const original = into[level].bind(into);
+    into[level] = (...args: unknown[]) => {
+      original(...args);
+      say(level, args);
+    };
+  }
+  scope.addEventListener?.('unhandledrejection', (event: PromiseRejectionEvent) => {
+    const reason = event.reason as { message?: unknown } | undefined;
+    say('error', [`a promise failed unheard: ${reason?.message ?? String(reason)}`]);
+  });
   const take = (m: ToWorker<Q, T>) => {
     if ('tell' in m) {
       try {
@@ -211,6 +250,12 @@ export class WorkerClient<Q, T = never> {
   #take(reply: FromWorker) {
     if ('ready' in reply) {
       this.#begun = true;
+      return;
+    }
+    if ('said' in reply) {
+      // On the window's console, which the log of the run hears.
+      if (reply.said === 'error') console.error(`${this.#options.name}: ${reply.line}`);
+      else console.warn(`${this.#options.name}: ${reply.line}`);
       return;
     }
     if ('fault' in reply) {

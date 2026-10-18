@@ -19,6 +19,8 @@ export class FakeWorker<A extends Answerer<never, never> = Answerer<never, never
   readonly held: (() => void)[] = [];
   #holding = false;
   readonly answerer: A;
+  /** The worker's own console: what is said on it as a warning or an error goes to the window. */
+  readonly console = { warn: (..._args: unknown[]) => {}, error: (..._args: unknown[]) => {} };
   readonly #scope = {
     onmessage: null as unknown,
     postMessage: (m: unknown) =>
@@ -29,7 +31,7 @@ export class FakeWorker<A extends Answerer<never, never> = Answerer<never, never
 
   constructor(answerer: A) {
     this.answerer = answerer;
-    serve(this.#scope, answerer as Answerer<unknown, unknown>);
+    serve(this.#scope, answerer as Answerer<unknown, unknown>, this.console);
   }
 
   postMessage(m: unknown) {

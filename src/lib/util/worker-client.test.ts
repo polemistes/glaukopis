@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeWorker } from './fake-worker';
+import { forwardToLog } from '$lib/shell/page-log';
 import { wasEnded, WorkerClient, WorkerError, type Answerer } from './worker-client';
 
 type Question =
@@ -236,5 +237,47 @@ describe('the client of a worker', () => {
       timeout: 1000,
     });
     await expect(client.ask({ op: 'echo', value: 1 })).rejects.toMatchObject({ failure: 'fault' });
+  });
+
+  it('what the worker warns of, or says is an error, is said in the window under its name', async () => {
+    const { client, made } = setup();
+    expect(await client.ask({ op: 'echo', value: 0 })).toBe(0);
+    made[0].console.warn('the index is behind by', 3, { element: 'a' });
+    made[0].console.error(new Error('a page could not be read'));
+    await settle();
+    expect(warn).toHaveBeenCalledWith('the counter: the index is behind by 3 {"element":"a"}');
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error.mock.calls[0][0]).toMatch(/^the counter: Error: a page could not be read\n/);
+    // It goes on answering.
+    expect(await client.ask({ op: 'echo', value: 1 })).toBe(1);
+  });
+
+  it('what the worker warns of reaches the log of the run', async () => {
+    const write = vi.fn(async (_level: string, _message: string) => {});
+    const into = { warn: console.warn, error: console.error };
+    forwardToLog(write, new EventTarget() as unknown as Window, console);
+    try {
+      const { client, made } = setup();
+      expect(await client.ask({ op: 'echo', value: 0 })).toBe(0);
+      made[0].console.warn('the index is behind');
+      made[0].console.error('the index could not be kept');
+      await settle();
+      expect(write.mock.calls).toEqual([
+        ['warn', 'the counter: the index is behind'],
+        ['error', 'the counter: the index could not be kept'],
+      ]);
+    } finally {
+      console.warn = into.warn;
+      console.error = into.error;
+    }
+  });
+
+  it('what the worker says after it was ended is not said', async () => {
+    const { client, made } = setup();
+    expect(await client.ask({ op: 'echo', value: 0 })).toBe(0);
+    client.end();
+    made[0].console.warn('too late');
+    await settle();
+    expect(warn).not.toHaveBeenCalledWith('the counter: too late');
   });
 });
