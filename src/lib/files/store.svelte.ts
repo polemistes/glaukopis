@@ -52,6 +52,7 @@ import { router } from '$lib/state/router.svelte';
 import { ask, confirm } from '$lib/ui/confirm.svelte';
 import { describeError, notifyError, notifyOk, toasts } from '$lib/ui/toast.svelte';
 import { newId } from '$lib/util/id';
+import { forgetChanged, forgetStale } from './kept';
 
 /** What files dragged from the list are, for what takes them. Not 'files': that is what comes from the desktop. */
 export const FILES_DRAGGED = 'library-files';
@@ -74,8 +75,8 @@ class FilesState {
     if (!this.#loading) {
       this.#loading = filesList()
         .then((listing) => {
-          proposals.clear();
-          decisions.clear();
+          // What was found out and decided is kept for the session; only what no longer holds goes.
+          forgetStale(this.files, listing.files, proposals, decisions);
           this.folders = listing.folders;
           this.files = listing.files;
           this.loaded = true;
@@ -123,6 +124,8 @@ class FilesState {
 
   /** After a file was changed, or taken in. */
   put(view: FileView) {
+    // A file given to a reference, or taken from one, has its going-through to come anew.
+    forgetChanged(this.get(view.hash), view, decisions);
     const i = this.files.findIndex((f) => f.hash === view.hash);
     if (i >= 0) {
       const next = this.files.slice();
@@ -134,6 +137,8 @@ class FilesState {
   }
 
   forget(hash: string) {
+    proposals.delete(hash);
+    decisions.delete(hash);
     this.files = this.files.filter((f) => f.hash !== hash);
   }
 
