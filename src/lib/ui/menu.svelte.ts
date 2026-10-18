@@ -20,6 +20,8 @@ export type MenuItem =
       disabled?: boolean;
       danger?: boolean;
       checked?: boolean;
+      /** How deep it lies in a tree, shown as a margin before its label: see `tree-menu.ts`. */
+      depth?: number;
       action: () => void;
     }
   | { kind: 'separator' }

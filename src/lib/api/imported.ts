@@ -2,6 +2,7 @@
 
 import type { Block, Inline } from '$lib/project/model/text';
 import type { Person } from '$lib/project/model/types';
+import { fileEnding } from '$lib/util/file-name';
 import { call } from './backend';
 
 /** A part of the document: a heading with what stands under it. */
@@ -100,16 +101,14 @@ export const OTHER_ENDINGS = [
   'ipynb',
 ];
 
-const ending = (path: string) => path.split(/[\\/]/).pop()?.split('.').pop()?.toLowerCase() ?? '';
-
 /** Whether a file is taken for a document by its name. */
 export function isDocumentPath(path: string): boolean {
-  return path.includes('.') && DOCUMENT_ENDINGS.includes(ending(path));
+  return DOCUMENT_ENDINGS.includes(fileEnding(path));
 }
 
 /** Text without marks: a document when nothing else claims the file. */
 export function isPlainTextPath(path: string): boolean {
-  return ['txt', 'text'].includes(ending(path));
+  return ['txt', 'text'].includes(fileEnding(path));
 }
 
 /**

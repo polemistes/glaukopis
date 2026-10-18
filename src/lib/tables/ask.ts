@@ -13,6 +13,7 @@ import { placeForBlock } from '$lib/editor/commands';
 import { bodySchema } from '$lib/editor/schema';
 import { rectAt } from '$lib/editor/ui.svelte';
 import { t } from '$lib/i18n';
+import { fileEnding } from '$lib/util/file-name';
 import type { Project } from '$lib/project/model/project.svelte';
 import { notify, notifyError } from '$lib/ui/toast.svelte';
 import { emptyTable, insertTable, tableNode, type TableOf } from './commands';
@@ -22,10 +23,8 @@ import TableSize from './TableSize.svelte';
 /** The endings of files that tables are read from. */
 export const TABLE_ENDINGS = ['csv', 'tsv', 'tab', 'txt', 'ods', 'xlsx', 'xlsm', 'xlsb', 'xls'];
 
-const ending = (path: string) => path.split('.').pop()?.toLowerCase() ?? '';
-
 export function isTablePath(path: string): boolean {
-  return TABLE_ENDINGS.includes(ending(path));
+  return TABLE_ENDINGS.includes(fileEnding(path));
 }
 
 /** What a file is called, without where it is. */
@@ -185,17 +184,17 @@ export async function tablesDropped(paths: string[], place: Place): Promise<stri
     try {
       sheets = await tableRead(path, true);
     } catch (error) {
-      if (ending(path) === 'txt') others.push(path);
+      if (fileEnding(path) === 'txt') others.push(path);
       else notifyError(t('tables-unreadable', { file: nameOf(path) }), error);
       continue;
     }
-    if (ending(path) === 'txt' && (sheets[0]?.rows[0]?.length ?? 0) < 2) {
+    if (fileEnding(path) === 'txt' && (sheets[0]?.rows[0]?.length ?? 0) < 2) {
       others.push(path);
       continue;
     }
     if (!written && !known) {
       // Text that was dropped beside every text is a document rather than a table.
-      if (ending(path) === 'txt') others.push(path);
+      if (fileEnding(path) === 'txt') others.push(path);
       else notify(t('tables-drop-on-text'));
       continue;
     }

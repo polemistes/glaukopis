@@ -30,7 +30,7 @@ vi.mock('$lib/state/projects.svelte', () => ({
 
 vi.mock('$lib/state/router.svelte', () => ({ router: { go: () => {} } }));
 
-const { everything } = await import('./everything.svelte');
+const { everything, labelWordsOf } = await import('./everything.svelte');
 const { projects } = await import('$lib/state/projects.svelte');
 
 /** The workers made, each a reader; the first may be made to die when it is asked to read. */
@@ -106,5 +106,17 @@ describe('the search through everything, with a worker that fails', () => {
     await everything.search();
     expect(forgotten()).toEqual(['b', 'a']);
     projects.list = list;
+  });
+});
+
+describe('the words a document shows, for the worker', () => {
+  it('are those of its language, as the text in view has them', async () => {
+    const said = await labelWordsOf({ language: 'nb' });
+    expect(said.pointer.label).toBe('Figur');
+    expect(said.citation.locators.chapter).toBe('kap.');
+    expect(said.pointer.before).toBe('(');
+    const english = await labelWordsOf({});
+    expect(english.pointer.label).toBe('Figure');
+    expect(english.citation.noDate).toBe('n.d.');
   });
 });

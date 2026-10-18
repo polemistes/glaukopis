@@ -20,8 +20,14 @@ import type { Project } from '$lib/project/model/project.svelte';
 import { partOf } from '$lib/project/parts';
 import type { RefForm } from '$lib/project/model/text';
 import { PROJECT } from '$lib/project/model/types';
+import {
+  PLAIN_POINTER,
+  pointerText as pointerWords,
+  type PointedKind,
+  type PointerWords,
+} from '$lib/editor/labels';
 
-export type PointedKind = 'figure' | 'table' | 'equation' | 'part';
+export type { PointedKind };
 
 /** Something that stands in the document and can be pointed to. */
 export interface Pointed {
@@ -52,36 +58,24 @@ export interface Numbers {
   within: Map<string, Within>;
 }
 
-/** What of the format the numbers and the words depend on. */
-export interface Counting {
+/** What of the format the numbers and the words depend on: the words that point (`editor/labels.ts`), and more. */
+export interface Counting extends PointerWords {
   numberedHeadings: boolean;
   /** The levels of heading that run into the text, which have no number. */
   runIn: number[];
   deepest: number;
-  /** What a figure is called under it, and where it is pointed to. */
-  label: string;
-  reference: string;
+  /** What stands between the number of a figure or a table and its caption. */
   separator: string;
-  /** The same for a table. */
-  tableLabel: string;
-  tableReference: string;
   tableSeparator: string;
-  before: string;
-  after: string;
 }
 
 const PLAIN: Counting = {
+  ...PLAIN_POINTER,
   numberedHeadings: false,
   runIn: [],
   deepest: 6,
-  label: 'Figure',
-  reference: '',
   separator: '. ',
-  tableLabel: 'Table',
-  tableReference: '',
   tableSeparator: '. ',
-  before: '(',
-  after: ')',
 };
 
 /**
@@ -166,26 +160,13 @@ export function count(project: Project, at: string, counting: Counting = PLAIN):
   return { all, byId, within };
 }
 
-/** The words that point to something, as the document calls it. Nothing, when it cannot be pointed to. */
+/**
+ * The words that point to something, as the document calls it. Nothing,
+ * when it cannot be pointed to. The rule is `editor/labels.ts`, which the
+ * search through everything follows as well.
+ */
 export function pointerText(pointed: Pointed | undefined, form: RefForm, c: Counting): string {
-  if (!pointed) return '';
-  switch (pointed.kind) {
-    case 'figure':
-    case 'table': {
-      const called =
-        pointed.kind === 'figure'
-          ? (c.reference.trim() || c.label).trim()
-          : (c.tableReference.trim() || c.tableLabel).trim();
-      if (pointed.number === null) return called;
-      if (form === 'number' || !called) return pointed.number;
-      return `${called} ${pointed.number}`;
-    }
-    case 'equation':
-      if (pointed.number === null) return '';
-      return form === 'number' ? pointed.number : `${c.before}${pointed.number}${c.after}`;
-    case 'part':
-      return pointed.number !== null && form !== 'name' ? pointed.number : pointed.words;
-  }
+  return pointerWords(pointed, form, c);
 }
 
 /** The forms words can point by, for each kind, with what each is called in the interface. */

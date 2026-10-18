@@ -13,7 +13,7 @@ import { hooksOf, OPEN, passing } from '$lib/editor/ui.svelte';
 import { t } from '$lib/i18n';
 import { refForm } from '$lib/project/model/text';
 import { openMenu } from '$lib/ui/menu.svelte';
-import { place } from '$lib/ui/floating';
+import { belongs, Panel } from '$lib/ui/panel';
 import FigurePanel from './FigurePanel.svelte';
 import FormulaPanel from './FormulaPanel.svelte';
 import { showFormula } from './math.svelte';
@@ -41,66 +41,6 @@ import { notifyOk } from '$lib/ui/toast.svelte';
 interface Written {
   written: () => { tex: string; numbered: boolean };
   focus: () => void;
-}
-
-/**
- * A panel beside something in the text, of the kind a note is written in.
- * It stays beside what it belongs to as it grows and shrinks itself.
- */
-class Panel {
-  readonly el: HTMLElement;
-  #anchor: HTMLElement;
-  /** What the panel keeps clear of, when that is wider than what it belongs to. */
-  #beside: HTMLElement | null;
-  #watch: ResizeObserver | null = null;
-
-  /**
-   * With `beside`, the panel stands at the side of that, level with its
-   * top, where there is room: so it stays where it is while what it belongs
-   * to is made larger and smaller, and does not lie over it.
-   */
-  constructor(anchor: HTMLElement, label: string, kind: string, beside: HTMLElement | null = null) {
-    this.#anchor = anchor;
-    this.#beside = beside;
-    this.el = document.createElement('div');
-    this.el.className = `note-panel ${kind}`;
-    this.el.setAttribute('role', 'dialog');
-    this.el.setAttribute('aria-label', label);
-    document.body.append(this.el);
-    this.place();
-    if (typeof ResizeObserver !== 'undefined') {
-      this.#watch = new ResizeObserver(() => this.place());
-      this.#watch.observe(this.el);
-    }
-  }
-
-  place() {
-    const wide = this.#beside?.getBoundingClientRect();
-    if (wide) {
-      const needed = this.el.offsetWidth + 12 + 8;
-      const right = window.innerWidth - wide.right >= needed;
-      if (right || wide.left >= needed) {
-        place(this.el, wide, { side: right ? 'right' : 'left', align: 'start', gap: 12 });
-        return;
-      }
-    }
-    place(this.el, this.#anchor.getBoundingClientRect(), {
-      side: 'bottom',
-      align: 'start',
-      gap: 8,
-    });
-  }
-
-  remove() {
-    this.#watch?.disconnect();
-    this.el.remove();
-  }
-}
-
-/** Whether a pointer that went down did so in something that belongs to a panel. */
-function belongs(target: HTMLElement, panel: HTMLElement, dom: HTMLElement): boolean {
-  if (panel.contains(target) || dom.contains(target)) return true;
-  return !!target.closest('.popover, .menu, dialog, .backdrop');
 }
 
 /** The numbers of the document the text of an editor is part of, and what the document calls things. */

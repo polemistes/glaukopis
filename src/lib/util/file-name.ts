@@ -1,9 +1,24 @@
 /**
- * A title made into a name a file may have on every system the application
- * runs on, for the names a save dialog proposes. The rule is the core's
- * `safe_file_name` (crates/core/src/fsutil.rs), kept here once for the page,
- * with what Windows refuses beyond its signs: the names of its devices.
+ * Names of files on the page: a title made into a name a file may have on
+ * every system the application runs on, for the names a save dialog
+ * proposes, and the ending of a file's name, by which a file is taken for
+ * a document, a table, a picture or a PDF. The rule of the first is the
+ * core's `safe_file_name` (crates/core/src/fsutil.rs), kept here once for
+ * the page, with what Windows refuses beyond its signs: the names of its
+ * devices.
  */
+
+/**
+ * The ending of a file's name, in small letters: what follows its last
+ * dot, as the core's `Path::extension` has it. A name without a dot, or
+ * with one only at its start (`.bashrc`), has none; a dot in the name of a
+ * folder on the way to it is not the file's.
+ */
+export function fileEnding(path: string): string {
+  const name = path.slice(Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\')) + 1);
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? name.slice(dot + 1).toLowerCase() : '';
+}
 
 /** The longest name proposed, in characters, as the core cuts it. */
 const LONGEST = 120;

@@ -16,6 +16,7 @@
   import Dialog from '$lib/ui/Dialog.svelte';
   import Select from '$lib/ui/Select.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
+  import { indented } from '$lib/ui/tree-menu';
   import { describeError } from '$lib/ui/toast.svelte';
   import { wordsAround } from './format';
   import { importPlan, type ZoteroRequest } from './references.svelte';
@@ -170,7 +171,7 @@
             { value: '', label: t('library-zotero-everything') },
             ...collections.map((c) => ({
               value: c.key,
-              label: `${' '.repeat(Math.max(0, c.path.length - 1))}${c.name}`,
+              label: indented(c.name, c.path.length - 1),
             })),
           ]}
         />

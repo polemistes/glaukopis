@@ -6,8 +6,10 @@ import {
   openElsewhere,
   openedHere,
   openHere,
+  openProjectId,
   writeElsewhere,
 } from './elsewhere';
+import { router } from '$lib/state/router.svelte';
 import { clipboard, cutElements, pasteElements } from './clipboard.svelte';
 import { sendElements } from './elements';
 import { Project } from './model/project.svelte';
@@ -25,6 +27,21 @@ const titles = (p: Project, ids: string[]) => ids.map((id) => p.node(id)?.title)
 afterEach(() => {
   closedHere('iliad');
   closedHere('odyssey');
+});
+
+describe('the id of the project open', () => {
+  it('is the id it is open under, else the one the route names, else none', () => {
+    const iliad = begun('Iliad');
+    const opening = begun('Odyssey');
+    router.route = { view: 'project', project: 'odyssey' };
+    openHere('iliad', iliad);
+    expect(openProjectId(iliad)).toBe('iliad');
+    // Not yet among those open: the route names it.
+    expect(openProjectId(opening)).toBe('odyssey');
+    expect(openProjectId()).toBe('odyssey');
+    router.route = { view: 'library' };
+    expect(openProjectId(opening)).toBe(null);
+  });
 });
 
 describe('the projects open in the view', () => {

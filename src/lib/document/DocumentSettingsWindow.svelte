@@ -20,6 +20,7 @@
   import { openPath, type DocumentFormat } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
   import { languageName, newTextLanguage, t, TEXT_LANGUAGES } from '$lib/i18n';
+  import { layoutName, styleName } from '$lib/look/choosing.svelte';
   import { lookUi } from '$lib/look/look.svelte';
   import { countWords } from '$lib/project/model/document';
   import type { Project } from '$lib/project/model/project.svelte';
@@ -158,15 +159,8 @@
     })).filter((g) => g.templates.length);
   });
   /** The usual layout and style, from the settings, by name. */
-  const usualLayout = $derived(
-    documents.formatSummary(documents.choice({}).format)?.name ?? documents.choice({}).format,
-  );
-  const usualStyle = $derived(
-    documents.style(documents.choice({}).style)?.title ?? documents.choice({}).style,
-  );
-  const layoutName = (id: string | undefined) =>
-    id ? (documents.formatSummary(id)?.name ?? id) : '';
-  const styleName = (id: string | undefined) => (id ? (documents.style(id)?.title ?? id) : '');
+  const usualLayout = $derived(layoutName(documents.choice({}).format));
+  const usualStyle = $derived(styleName(documents.choice({}).style));
   /** What the template brings: its layout, and its style or the layout's. */
   const broughtLayout = $derived(
     template?.layout

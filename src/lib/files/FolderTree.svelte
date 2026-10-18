@@ -32,6 +32,7 @@
   import { dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu, type MenuItem } from '$lib/ui/menu.svelte';
+  import { treeMenu } from '$lib/ui/tree-menu';
   import { notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import {
     FILES_DRAGGED,
@@ -222,19 +223,6 @@
   /** The places a folder can be moved to: the top, and every folder but itself and those under it. */
   function moveItems(f: FileFolder): MenuItem[] {
     const under = files.descendants(f.id);
-    const walk = (parent: string | null, depth: number): MenuItem[] =>
-      files.folders
-        .filter((x) => parentOf(files.folders, x) === parent && !under.has(x.id))
-        .sort(byName)
-        .flatMap((x) => [
-          {
-            label: ' '.repeat(depth) + x.name,
-            icon: depth ? undefined : Folder,
-            disabled: x.id === f.parent,
-            action: () => move(f.id, x.id),
-          } as MenuItem,
-          ...walk(x.id, depth + 1),
-        ]);
     return [
       {
         label: t('files-folder-to-top'),
@@ -243,7 +231,11 @@
         action: () => move(f.id, null),
       },
       { kind: 'separator' },
-      ...walk(null, 0),
+      ...treeMenu(
+        files.folders,
+        (x) => ({ disabled: x.id === f.parent, action: () => move(f.id, x.id) }),
+        { leave: (x) => under.has(x.id), icon: Folder },
+      ),
     ];
   }
 

@@ -5,6 +5,9 @@
  */
 
 import type { Folder, ProjectInfo } from '$lib/api/projects';
+import { byName, inTreeOrder } from '$lib/ui/tree-menu';
+
+export { byName };
 
 export interface FolderRow {
   kind: 'folder';
@@ -25,11 +28,6 @@ export interface ProjectRow {
 }
 
 export type Row = FolderRow | ProjectRow;
-
-const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
-
-export const byName = (a: { name: string }, b: { name: string }) =>
-  collator.compare(a.name, b.name);
 
 /** The parent of a folder, where that is a folder that exists; else the top. */
 export function parentOf(folders: Folder[], folder: Folder): string | null {
@@ -130,16 +128,7 @@ export function pathOf(folders: Folder[], id: string): string {
  * in it, with their depth: for a menu that lists them.
  */
 export function folderTree(folders: Folder[]): { folder: Folder; depth: number }[] {
-  const out: { folder: Folder; depth: number }[] = [];
-  const walk = (parent: string | null, depth: number) => {
-    const children = folders.filter((f) => parentOf(folders, f) === parent).sort(byName);
-    for (const f of children) {
-      out.push({ folder: f, depth });
-      walk(f.id, depth + 1);
-    }
-  };
-  walk(null, 0);
-  return out;
+  return inTreeOrder(folders).map(({ node, depth }) => ({ folder: node, depth }));
 }
 
 export interface RowsOptions {

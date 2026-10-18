@@ -10,12 +10,17 @@
  * jump, which the text takes when it is shown (`MapText.svelte`).
  */
 
+import type { DocumentFormat } from '$lib/api/documents';
 import { projectLoad, type ProjectInfo } from '$lib/api/projects';
-import { PROJECT } from '$lib/project/model/types';
+import type { LabelWords } from '$lib/editor/labels';
+import { citationWordsData } from '$lib/editor/references.svelte';
+import { countingOf } from '$lib/figures/numbering.svelte';
+import { documents } from '$lib/preview/documents.svelte';
+import { PROJECT, type DocumentSettings } from '$lib/project/model/types';
 import { projects } from '$lib/state/projects.svelte';
 import { router } from '$lib/state/router.svelte';
 import { Engine } from './engine';
-import type { Found, ProjectFound } from './everything';
+import type { Found, ProjectFound, ReadDocument } from './everything';
 import { NO_OPTIONS, type SearchOptions } from './matching';
 
 export type Scope = 'last' | 'all';
@@ -58,6 +63,39 @@ export function jumpFor(project: string): Jump | null {
 
 const WAIT = 260;
 
+/**
+ * The words a document shows for what stands outside its text, as the text
+ * in view shows them: those of its layout and its language, worked out as
+ * the editor works them out (`figures/numbering.svelte.ts`,
+ * `editor/references.svelte.ts`), for the worker, which has neither. A
+ * layout that cannot be read is said in the log, and the words of a
+ * document without one are taken, as the text in view takes them until its
+ * layout is read.
+ */
+export async function labelWordsOf(settings: DocumentSettings): Promise<LabelWords> {
+  const id = documents.choice(settings).format;
+  let format: DocumentFormat | undefined;
+  if (id) {
+    try {
+      format = await documents.format(id);
+    } catch (error) {
+      console.warn(`The layout ${id} could not be read for the search through everything`, error);
+    }
+  }
+  const c = countingOf(format, settings.language);
+  return {
+    citation: citationWordsData(settings.language),
+    pointer: {
+      label: c.label,
+      reference: c.reference,
+      tableLabel: c.tableLabel,
+      tableReference: c.tableReference,
+      before: c.before,
+      after: c.after,
+    },
+  };
+}
+
 class Everything {
   words = $state('');
   scope = $state<Scope>('last');
@@ -83,6 +121,8 @@ class Everything {
   #engine: Engine | null = null;
   /** What was read of each project: its time of change when it was read. */
   #read = new Map<string, string>();
+  /** The documents of each project read, for the words they show. */
+  #documents = new Map<string, ReadDocument[]>();
   /** The beginning of the engine's worker that `#read` is of. */
   #generation = 0;
   #round = 0;
@@ -144,7 +184,9 @@ class Everything {
           await this.#readInto(engine, info);
         }
         if (round !== this.#round) return;
-        result = await engine.search(info.id, words, options);
+        const labels = await this.#labelsOf(info.id);
+        if (round !== this.#round) return;
+        result = await engine.search(info.id, words, options, labels);
       } catch (error) {
         console.error(`${info.name} could not be read`, error);
         if (round === this.#round) this.unread = [...this.unread, info.name];
@@ -202,8 +244,16 @@ class Everything {
   async #readInto(engine: Engine, info: ProjectInfo) {
     const generation = engine.generation;
     const loaded = await projectLoad(info.id);
-    await engine.read(info.id, info.name, loaded.state, loaded.updates);
+    const read = await engine.read(info.id, info.name, loaded.state, loaded.updates);
+    this.#documents.set(info.id, read);
     if (engine.generation === generation) this.#read.set(info.id, info.modified);
+  }
+
+  /** The words each document of a project that was read shows, by its tree. */
+  async #labelsOf(id: string): Promise<Record<string, LabelWords>> {
+    const out: Record<string, LabelWords> = {};
+    for (const d of this.#documents.get(id) ?? []) out[d.tree] = await labelWordsOf(d.settings);
+    return out;
   }
 
   /**
@@ -216,6 +266,7 @@ class Everything {
     for (const id of [...this.#read.keys()]) {
       if (keep.has(id)) continue;
       this.#read.delete(id);
+      this.#documents.delete(id);
       engine.forget(id).catch((error) => console.warn(`${id} could not be forgotten`, error));
     }
   }

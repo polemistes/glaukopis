@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
-import { note, oldDocument, p, project, t } from '$lib/found/testing';
-import type { Inline } from '$lib/project/model/text';
+import { PLAIN_POINTER, PLAIN_WORDS, type LabelWords } from '$lib/editor/labels';
+import { HASH, note, oldDocument, p, project, t } from '$lib/found/testing';
+import type { Block, Inline } from '$lib/project/model/text';
 import { PROJECT, type RefRecord } from '$lib/project/model/types';
 import { Engine } from './engine';
-import { around, readProject, searchProject, type ProjectFound } from './everything';
+import { around, documentsOf, readProject, searchProject, type ProjectFound } from './everything';
 import { NO_OPTIONS, type SearchOptions } from './matching';
 
 const options = (change: Partial<SearchOptions> = {}): SearchOptions => ({
@@ -184,5 +185,84 @@ describe('the search through everything', () => {
     expect(await engine.cited('a')).toEqual(['r1']);
     expect((await engine.cited('b')).sort()).toEqual(['r1', 'r2']);
     expect(await engine.cited('c')).toEqual([]);
+  });
+});
+
+describe('what stands outside the text, as each document of a project says it', () => {
+  const figure = (id: string): Block => ({
+    kind: 'figure',
+    id,
+    file: HASH,
+    extension: 'png',
+    name: 'shield.png',
+    caption: [t('The shield')],
+    alt: '',
+    width: 100,
+    numbered: true,
+  });
+  /** Two documents, each with a figure; the second points to its own and cites a chapter. */
+  function two() {
+    const { pr, elements } = project(
+      [figure('f0'), p(t('The first.'))],
+      [
+        figure('f1'),
+        p(t('See '), { kind: 'crossref', target: 'f1', form: 'full' }, t(' and '), {
+          kind: 'citation',
+          items: [{ id: 'r1', locator: '4', label: 'chapter' }],
+          mode: 'normal',
+        }),
+      ],
+    );
+    pr.putReference(nagy);
+    pr.setDocument(PROJECT, { language: 'de', title: 'Zorn' });
+    pr.setDocument(elements[1], { format: 'own-layout' });
+    return { pr, elements };
+  }
+  const german: LabelWords = {
+    citation: { ...PLAIN_WORDS.citation, noDate: 'o. J.', locators: { chapter: 'Kap.' } },
+    pointer: { ...PLAIN_POINTER, label: 'Abbildung' },
+  };
+
+  it('are the documents of the project, each with what is said of it over what the project says', () => {
+    const { pr, elements } = two();
+    expect(documentsOf(read(pr))).toEqual([
+      { tree: PROJECT, settings: { language: 'de', title: 'Zorn' } },
+      { tree: elements[0], settings: { language: 'de' } },
+      { tree: elements[1], settings: { language: 'de', format: 'own-layout' } },
+    ]);
+  });
+
+  it('say what the document calls a figure and a locator, with the words the window sent', () => {
+    const { pr, elements } = two();
+    const said = found(
+      searchProject(read(pr), 'Abbildung', options({ labels: true }), 300, {
+        [elements[1]]: german,
+      }),
+    );
+    expect(said.count).toBe(1);
+    // Counted in its own document, where it is the first. The words around
+    // what is found show every space as one.
+    expect(`${said.found[0].text}${said.found[0].after}`).toMatch(
+      /^Abbildung 1 and \(Nagy 1979, Kap\. 4\)/,
+    );
+    expect(
+      searchProject(read(pr), 'Figure', options({ labels: true }), 300, { [elements[1]]: german }),
+    ).toMatchObject({ count: 0 });
+  });
+
+  it('are those of a document without a layout of its own where none were sent', () => {
+    const { pr } = two();
+    const said = found(searchProject(read(pr), 'Figure', options({ labels: true })));
+    expect(said.count).toBe(1);
+    expect(said.found[0].after).toMatch(/^ 1 and \(Nagy 1979, ch\. 4\)/);
+  });
+
+  it('are read anew when other words are sent for the same project', () => {
+    const { pr, elements } = two();
+    const once = read(pr);
+    expect(searchProject(once, 'Figure', options({ labels: true }))).toMatchObject({ count: 1 });
+    expect(
+      searchProject(once, 'Abbildung', options({ labels: true }), 300, { [elements[1]]: german }),
+    ).toMatchObject({ count: 1 });
   });
 });

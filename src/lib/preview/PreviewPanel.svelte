@@ -20,6 +20,7 @@
   } from '$lib/api/documents';
   import type { Template } from '$lib/api/templates';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
+  import { layoutName, styleName } from '$lib/look/choosing.svelte';
   import { lookUi } from '$lib/look/look.svelte';
   import { documents } from './documents.svelte';
   import { t } from '$lib/i18n';
@@ -453,8 +454,8 @@
   /** What the document is made by, named: its template, its layout and its reference style. */
   const inUse = $derived([
     templateName(project, choice.template),
-    documents.formatSummary(choice.format)?.name ?? choice.format,
-    documents.style(choice.style)?.title ?? choice.style,
+    layoutName(choice.format),
+    styleName(choice.style),
   ]);
 
   /** The most words the template allows; nothing where it says none. */

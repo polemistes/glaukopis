@@ -12,6 +12,7 @@ import type { Project } from '$lib/project/model/project.svelte';
 import type { RefRecord } from '$lib/project/model/types';
 import terms from '../../../resources/csl/locator-terms.json';
 import { LOCATOR_LABELS, type CiteItem, type CiteMode } from './schema';
+import { citationText, itemText, type CitationWords, type LabelWords } from './labels';
 import { notifyError } from '$lib/ui/toast.svelte';
 
 export interface RefLabel {
@@ -107,12 +108,6 @@ export function recordOf(reference: Reference): RefRecord {
   };
 }
 
-function shortTitle(title: string): string {
-  const main = title.split(/[:.?!]\s/)[0];
-  const words = main.split(/\s+/);
-  return words.length > 5 ? `${words.slice(0, 5).join(' ')}…` : main;
-}
-
 /** The words of CSL for each kind of locator, long and short, in the singular and the plural. */
 const TERMS = terms as Record<string, Record<string, { long?: string[]; short?: string[] }>>;
 
@@ -166,35 +161,52 @@ export function locatorWord(kind: string, language?: string | null): string {
   return forms?.short?.[0] || forms?.long?.[0] || english;
 }
 
-function locatorText(item: CiteItem, language?: string | null): string {
-  if (!item.locator) return '';
-  const label = item.label && item.label !== 'page' ? locatorWord(item.label, language) : '';
-  return label ? `${label} ${item.locator}` : item.locator;
+/**
+ * The words a citation in a text is shown with: those of the interface for
+ * what is missing, and in the language of the text, where that is given,
+ * for a work without a year and for what a locator counts. Read as they
+ * are asked for.
+ */
+function citationWords(language?: string | null): CitationWords {
+  return {
+    get missing() {
+      return t('editor-citation-missing');
+    },
+    get empty() {
+      return t('editor-citation-empty');
+    },
+    // A word of the text, as documents have it in its language, where they have it.
+    get noDate() {
+      return documentWord(language, 'n.d.');
+    },
+    locator: (kind) => locatorWord(kind, language),
+  };
+}
+
+/**
+ * The words of a citation as data, for the search through everything,
+ * which shows citations as the text does without the interface at hand.
+ */
+export function citationWordsData(language?: string | null): LabelWords['citation'] {
+  return {
+    missing: t('editor-citation-missing'),
+    empty: t('editor-citation-empty'),
+    noDate: documentWord(language, 'n.d.'),
+    locators: Object.fromEntries(
+      LOCATOR_LABELS.map(([kind]) => [kind, locatorWord(kind, language)]),
+    ),
+  };
 }
 
 /**
  * One cited work in short: "Nagy 1979, 45". With the language of the text,
- * what the locator counts is said in it.
+ * what the locator counts is said in it. The rule is `labels.ts`.
  */
 export function itemLabel(
   item: CiteItem,
   options: { suppressAuthor?: boolean; language?: string | null } = {},
 ): string {
-  const ref = lookup(item.id);
-  if (!ref) return t('editor-citation-missing');
-  const who = ref.authors.replace(/ \(eds?\.\)$/, '') || shortTitle(ref.title) || ref.key;
-  const parts: string[] = [];
-  if (item.prefix) parts.push(item.prefix.trim());
-  // A word of the text, as documents have it in its language, where they have it.
-  const year = ref.year || documentWord(options.language, 'n.d.');
-  parts.push(item.suppressAuthor || options.suppressAuthor ? year : `${who} ${year}`);
-  let out = parts.join(' ');
-  const locator = locatorText(item, options.language);
-  if (locator) out += `, ${locator}`;
-  // Words that begin with a sign of their own stand close to what is before them.
-  const after = item.suffix?.trim();
-  if (after) out += /^[,;:.!?)]/.test(after) ? after : ` ${after}`;
-  return out;
+  return itemText(item, lookup(item.id), citationWords(options.language), options.suppressAuthor);
 }
 
 /**
@@ -203,20 +215,7 @@ export function itemLabel(
  * locators count in the language of the text, where that is given.
  */
 export function citationLabel(items: CiteItem[], mode: CiteMode, language?: string | null): string {
-  if (!items.length) return t('editor-citation-empty');
-  if (mode === 'intext') {
-    const [first, ...rest] = items;
-    const ref = lookup(first.id);
-    const who = ref
-      ? ref.authors.replace(/ \(eds?\.\)$/, '') || shortTitle(ref.title)
-      : t('editor-citation-missing');
-    const inside = [
-      itemLabel(first, { suppressAuthor: true, language }),
-      ...rest.map((i) => itemLabel(i, { language })),
-    ].join('; ');
-    return `${who} (${inside})`;
-  }
-  return `(${items.map((i) => itemLabel(i, { language })).join('; ')})`;
+  return citationText(items, mode, lookup, citationWords(language));
 }
 
 export function isMissing(items: CiteItem[]): boolean {

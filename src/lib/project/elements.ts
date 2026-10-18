@@ -35,7 +35,7 @@ import { compareCopy } from './copies.svelte';
 import { canPaste } from './clipboard.svelte';
 import { notify, notifyError, toasts } from '$lib/ui/toast.svelte';
 import { openProject, projects } from '$lib/state/projects.svelte';
-import { idOf, lastStep, openElsewhere, removeCarried, type Elsewhere } from './elsewhere';
+import { lastStep, openElsewhere, openProjectId, removeCarried, type Elsewhere } from './elsewhere';
 import { router } from '$lib/state/router.svelte';
 import type { ProjectInfo } from '$lib/api/projects';
 import { makePortable, portable } from './model/portable';
@@ -195,12 +195,6 @@ function remove(project: Project, tree: Tree, tops: string[], keepChildren: bool
 
 // ---- elements to another project (ADR 0033) ----
 
-/** The project that is open, as the place says. */
-function hereId(): string | null {
-  const route = router.route;
-  return route.view === 'project' ? route.project : null;
-}
-
 /** The element in view, as the place says. */
 function routeAt(): string | undefined {
   const route = router.route;
@@ -210,7 +204,7 @@ function routeAt(): string | undefined {
 /** The projects other than this one, as the list of projects has them: this one may be the one beside. */
 function otherProjects(project: Project): ProjectInfo[] {
   if (!projects.loaded) void projects.load();
-  const here = idOf(project) ?? hereId();
+  const here = openProjectId(project);
   return projects.list.filter((p) => p.id !== here);
 }
 

@@ -8,7 +8,8 @@
  */
 
 import { WorkerClient } from '$lib/util/worker-client';
-import type { ProjectFound } from './everything';
+import type { LabelWords } from '$lib/editor/labels';
+import type { ProjectFound, ReadDocument } from './everything';
 import type { SearchOptions } from './matching';
 import { reader, type Asked } from './reader';
 
@@ -37,23 +38,24 @@ export class Engine {
     return this.#client.generation;
   }
 
-  /** Reads a project from what is kept of it on disk. */
-  async read(
+  /** Reads a project from what is kept of it on disk. Returns its documents, for the words they show. */
+  read(
     id: string,
     name: string,
     state: Uint8Array | null,
     updates: Uint8Array[],
-  ): Promise<void> {
-    await this.#client.ask({ kind: 'read', id, name, state, updates });
+  ): Promise<ReadDocument[]> {
+    return this.#client.ask({ kind: 'read', id, name, state, updates });
   }
 
-  /** Searches a project that was read. */
+  /** Searches a project that was read; with the words each of its documents shows, by its tree. */
   search(
     id: string,
     words: string,
     options: SearchOptions,
+    labels?: Record<string, LabelWords>,
   ): Promise<ProjectFound | { error: string } | null> {
-    return this.#client.ask({ kind: 'search', id, words, options });
+    return this.#client.ask({ kind: 'search', id, words, options, labels });
   }
 
   /** The references a project that was read cites. */
