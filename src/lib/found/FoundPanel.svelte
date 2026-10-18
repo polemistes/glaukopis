@@ -86,14 +86,21 @@
   }
 
   onMount(() => {
+    // The panel may be gone before the library has loaded the first time:
+    // then nothing is opened (the going-through refuses as well).
+    let gone = false;
     // svelte-ignore state_referenced_locally
     void library.load().then(() => {
+      if (gone) return;
       libraryAt = library.revision;
       const asked = going.open(askedFor());
       focusKeys();
       return asked;
     });
-    return () => going.close();
+    return () => {
+      gone = true;
+      going.close();
+    };
   });
 
   // Asked again while open, as when another citation is pressed in the text: that one is looked at.
