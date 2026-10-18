@@ -9,6 +9,7 @@
 //! [`tables`].
 
 pub mod bibfile;
+pub mod decoding;
 /// Documents, which become maps: apart from the references, and not in three steps.
 pub mod document;
 pub mod pdf;

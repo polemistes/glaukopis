@@ -76,7 +76,15 @@ fn read_as(path: &Path, sure: bool) -> Result<Vec<Sheet>> {
         let name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
         let tabs = ending == "tsv" || ending == "tab" || (ending == "txt" && !sure);
         let sign = if tabs { Some('\t') } else { None };
-        vec![from_text(&name, &bytes, sign)]
+        // A table has no notes of its own to say a guess in, so the guess of
+        // Western European is told at the foot of the window.
+        let decoded = super::decoding::decode_text(&bytes);
+        if decoded.western {
+            tracing::warn!(path = %path.display(), "a table's file is neither UTF-8 nor UTF-16, and is read as Windows-1252");
+            let file = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            crate::notices::tell(move || tr!("core-import-read-as-western", name = file.as_str()));
+        }
+        vec![from_text(&name, &decoded.text, sign)]
     } else {
         return Err(Error::invalid(tr!("core-import-table-kinds")));
     };
@@ -135,26 +143,12 @@ fn tidy(name: &str, mut rows: Vec<Vec<String>>) -> Sheet {
 
 // ---- text ----
 
-/// The text of a file, whatever it was written as: UTF-8, with or without
-/// the mark at its beginning; UTF-16, which has the mark; and what is
-/// neither is taken for the Latin of Windows, which holds Latin-1.
-fn decode(bytes: &[u8]) -> String {
-    if let Some((encoding, mark)) = encoding_rs::Encoding::for_bom(bytes) {
-        return encoding.decode_without_bom_handling(&bytes[mark..]).0.into_owned();
-    }
-    match std::str::from_utf8(bytes) {
-        Ok(text) => text.to_string(),
-        Err(_) => encoding_rs::WINDOWS_1252.decode_without_bom_handling(bytes).0.into_owned(),
-    }
-}
-
 /// The table that a text holds. With no sign given, the sign that parts the
 /// values is told from the text.
-pub fn from_text(name: &str, bytes: &[u8], sign: Option<char>) -> Sheet {
-    let text = decode(bytes);
-    let sign = sign.unwrap_or_else(|| sign_of(&text));
+pub fn from_text(name: &str, text: &str, sign: Option<char>) -> Sheet {
+    let sign = sign.unwrap_or_else(|| sign_of(text));
     let refused = |problem| Sheet { name: name.to_string(), rows: Vec::new(), problem: Some(problem) };
-    match records(&text, sign, MAX_ROWS * 5, MAX_COLUMNS * 5) {
+    match records(text, sign, MAX_ROWS * 5, MAX_COLUMNS * 5) {
         Ok(rows) => tidy(name, rows),
         Err(Over::Rows) => refused(too_large(MAX_ROWS * 5 + 1, 0).unwrap_or_default()),
         Err(Over::Columns) => refused(tr!(
@@ -523,7 +517,7 @@ mod tests {
     }
 
     fn text(content: &str) -> Sheet {
-        from_text("table", content.as_bytes(), None)
+        from_text("table", content, None)
     }
 
     fn file(name: &str, content: &[u8]) -> (tempfile::TempDir, std::path::PathBuf) {
@@ -625,6 +619,9 @@ mod tests {
             bytes.extend_from_slice(&unit.to_le_bytes());
         }
         let (_c, path) = file("wide.txt", &bytes);
+        assert_eq!(rows(&read(&path).unwrap()[0]), [["a", "b"], ["ø", "2"]]);
+        // And without the mark.
+        let (_e, path) = file("unmarked.txt", &bytes[2..]);
         assert_eq!(rows(&read(&path).unwrap()[0]), [["a", "b"], ["ø", "2"]]);
 
         // A file of tabs is parted by tabs, whatever else it holds.

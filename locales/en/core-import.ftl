@@ -177,3 +177,8 @@ core-import-document-picture-outside = it is not in the file, but elsewhere on t
 core-import-document-picture-not-found = the file was not found where the document says it is
 core-import-document-picture-too-large = it is larger than 50 MB
 core-import-document-picture-file-unreadable = the file could not be read
+
+## A file of text that is neither UTF-8 nor UTF-16, brought in as references, a document or a table.
+
+# $name is the name of the file.
+core-import-read-as-western = “{ $name }” is written neither in UTF-8 nor in UTF-16, and was read as Western European (Windows-1252). Letters of other alphabets may have come out wrong: to be sure, save the file as UTF-8 and bring it in again.

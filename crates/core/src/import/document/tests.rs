@@ -1,7 +1,7 @@
 use super::convert::{convert_with, csl_date, found_remark, told_of};
 use super::locating::{locator, terms_for};
 use super::pictures::{name_of, picture_bytes};
-use super::plain::{decode, plain, text_of};
+use super::plain::{plain, text_of};
 use super::*;
 use crate::pictures::fixtures::PNG;
 
@@ -866,6 +866,7 @@ fn text_without_marks() {
         read.sections[0].blocks,
         vec![paragraph(vec![text("One.")]), paragraph(vec![]), paragraph(vec![]), paragraph(vec![text("Two.")])]
     );
+    let decode = |bytes: &[u8]| crate::import::decoding::decode_text(bytes).text;
     assert_eq!(decode(b"\xef\xbb\xbfna\xc3\xafve"), "naïve");
     assert_eq!(decode(b"na\xefve \x93so\x94"), "naïve “so”");
     assert_eq!(decode(&[0xff, 0xfe, b'a', 0, 0xe5, 0]), "aå");
