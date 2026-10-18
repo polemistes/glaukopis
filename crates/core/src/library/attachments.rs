@@ -87,16 +87,40 @@ pub fn absolute(library_dir: &Path, relative: &str) -> Result<PathBuf> {
     Ok(library_dir.join(rel))
 }
 
-/// The stored path of content with this hash, if it is in the store.
+/// How old a temporary file of the store must be before it is taken for what
+/// a crash left behind, and not for a copy that is being made just now.
+const LEFT_BEHIND: std::time::Duration = std::time::Duration::from_secs(3600);
+
+/// The stored path of content with this hash, if it is in the store. What is
+/// no hash finds nothing (the page may send anything). A temporary file is
+/// never the stored file: it may be a copy cut short by a crash, and one an
+/// hour old is cleared away.
 pub fn find_by_hash(library_dir: &Path, hash: &str) -> Option<String> {
+    if !is_hash(hash) {
+        return None;
+    }
     let dir = hash_dir(hash);
     let entries = fs::read_dir(library_dir.join(&dir)).ok()?;
+    let mut found = None;
     for e in entries.flatten() {
-        if e.file_type().map(|t| t.is_file()).unwrap_or(false) {
-            return Some(format!("{dir}/{}", e.file_name().to_string_lossy()));
+        if !e.file_type().map(|t| t.is_file()).unwrap_or(false) {
+            continue;
+        }
+        let name = e.file_name().to_string_lossy().into_owned();
+        if name.starts_with(".tmp-") {
+            let stale = e.metadata().and_then(|m| m.modified()).ok().and_then(|t| t.elapsed().ok());
+            if stale.is_some_and(|age| age > LEFT_BEHIND) {
+                if let Err(err) = fs::remove_file(e.path()) {
+                    tracing::warn!(%err, name, "could not clear away a copy cut short");
+                }
+            }
+            continue;
+        }
+        if found.is_none() {
+            found = Some(format!("{dir}/{name}"));
         }
     }
-    None
+    found
 }
 
 /// Copies a file into the store and returns its stored path. When the content
@@ -118,6 +142,13 @@ pub fn store_file(library_dir: &Path, source: &Path, name: &str) -> Result<Strin
     // Copy to a temporary name first: a crash must not leave half a file under its final name.
     let tmp = target_dir.join(format!(".tmp-{}", uuid::Uuid::new_v4()));
     fs::copy(source, &tmp).context(|| tr!("io-copying", path = source))?;
+    // On disk before the rename, or a crash may leave an empty file under
+    // the final name, which the next attach of the same content would find.
+    // Opened for writing: Windows flushes only a file it may write.
+    if let Err(e) = fs::File::options().write(true).open(&tmp).and_then(|f| f.sync_all()) {
+        let _ = fs::remove_file(&tmp);
+        return Err(Error::io(tr!("io-flushing", path = &target), e));
+    }
     fs::rename(&tmp, &target).context(|| tr!("io-storing", path = &target))?;
     Ok(format!("{dir}/{name}"))
 }
@@ -211,6 +242,41 @@ mod tests {
         delete(&lib, &first).unwrap();
         assert!(!describe(&lib, &first).exists);
         assert!(fs::read_dir(lib.join(DIR)).unwrap().next().is_none());
+    }
+
+    #[test]
+    fn a_hash_that_is_none_finds_nothing() {
+        let tmp = tempfile::tempdir().unwrap();
+        for hash in ["", "a", "€uro", "../../etc", &"g".repeat(64)] {
+            assert_eq!(find_by_hash(tmp.path(), hash), None, "{hash:?}");
+        }
+    }
+
+    #[test]
+    fn a_copy_cut_short_is_not_the_stored_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let lib = tmp.path().join("library");
+        let source = tmp.path().join("scan.pdf");
+        fs::write(&source, b"%PDF-1.4 the whole of it").unwrap();
+        let hash = hash_file(&source).unwrap();
+
+        // What a crash in the middle of a copy leaves in the hash's directory.
+        let dir = lib.join(hash_dir(&hash));
+        fs::create_dir_all(&dir).unwrap();
+        let left = dir.join(".tmp-0000");
+        fs::write(&left, b"%PDF-1.4 the wh").unwrap();
+        let old = std::time::SystemTime::now() - std::time::Duration::from_secs(2 * 3600);
+        fs::File::options().write(true).open(&left).unwrap().set_modified(old).unwrap();
+        // And one that another copy is writing just now.
+        fs::write(dir.join(".tmp-1111"), b"%PDF").unwrap();
+
+        assert_eq!(find_by_hash(&lib, &hash), None);
+        let stored = store_file(&lib, &source, "scan").unwrap();
+        assert!(stored.ends_with("/scan.pdf"), "{stored}");
+        assert_eq!(fs::read(lib.join(&stored)).unwrap(), b"%PDF-1.4 the whole of it");
+        assert_eq!(find_by_hash(&lib, &hash).as_deref(), Some(stored.as_str()));
+        assert!(!left.exists(), "a leftover of long ago is cleared away");
+        assert!(dir.join(".tmp-1111").exists(), "a copy being made is left alone");
     }
 
     #[test]
