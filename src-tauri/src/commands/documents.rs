@@ -283,7 +283,7 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
         kinds: request.document.kinds,
     };
     let mut format = request.format;
-    format.speak(document.language.as_deref());
+    format.readied(document.language.as_deref());
     Ok((
         Request {
             document,
@@ -302,8 +302,7 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
 /// the pages are made.
 #[tauri::command(async)]
 pub fn document_preview(state: State<'_, AppState>, request: LeanRequest, pages: Vec<u32>) -> CommandResult<Preview> {
-    let (mut request, stop) = whole(request)?;
-    request.format.sanitise();
+    let (request, stop) = whole(request)?;
     let readied = with_context(&state, Of::Held, &state.making, |ctx| export::preview_ready(ctx, &request))?;
     with_context(&state, Of::Nothing, &state.making, |ctx| export::preview_made(ctx, &request, readied, &pages, &stop))
 }
@@ -363,8 +362,7 @@ pub fn document_export(
     options: Option<ExportOptions>,
     ticket: Option<String>,
 ) -> CommandResult<Exported> {
-    request.format.sanitise();
-    request.format.speak(request.document.language.as_deref());
+    request.format.readied(request.document.language.as_deref());
     let stop = Arc::new(AtomicBool::new(false));
     if let Some(ticket) = &ticket {
         exporting().push((ticket.clone(), stop.clone()));
