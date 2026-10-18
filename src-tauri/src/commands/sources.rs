@@ -304,10 +304,20 @@ pub fn lookup_acknowledgements() -> Vec<Acknowledgement> {
     lookup::acknowledgements().into_iter().map(|(service, words)| Acknowledgement { service, words }).collect()
 }
 
-/// The libraries of Zotero on this computer.
+/// The libraries of Zotero on this computer. One that is there and cannot
+/// be read (locked while Zotero runs, of a form not known here) is given
+/// with what was wrong as its warning, not left out as if there were none.
 #[tauri::command(async)]
 pub fn zotero_find() -> Vec<ZoteroInfo> {
-    zotero::find().iter().filter_map(|dir| zotero::inspect(dir).ok()).collect()
+    zotero::find()
+        .iter()
+        .map(|dir| {
+            zotero::inspect(dir).unwrap_or_else(|e| {
+                tracing::warn!(dir = %dir.display(), %e, "a library of Zotero was found, and could not be read");
+                ZoteroInfo { path: dir.display().to_string(), warnings: vec![e.to_string()], ..Default::default() }
+            })
+        })
+        .collect()
 }
 
 #[tauri::command(async)]

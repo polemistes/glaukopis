@@ -76,7 +76,14 @@ pub fn picture_remove(state: State<'_, AppState>, hash: String) -> CommandResult
 /// done for a project that is not shared.
 #[tauri::command(async)]
 pub fn picture_sync(state: State<'_, AppState>, id: String, used: Vec<Used>) -> CommandResult<Synced> {
-    let Ok((sharing, token)) = state.projects.shared(&id) else { return Ok(Synced::default()) };
+    // A project that is not shared, or no longer there, has nothing to
+    // bring together; one whose sharing or token cannot be read fails, lest
+    // its figures stop being brought together without a word.
+    let (sharing, token) = match state.projects.shared(&id) {
+        Ok(shared) => shared,
+        Err(e) if matches!(e.kind(), "invalid" | "not-found") => return Ok(Synced::default()),
+        Err(e) => return Err(e.into()),
+    };
     let client = state.client();
     let remote = Remote::new(&client, &sharing.server)?;
     Ok(remote.sync_pictures(&sharing.room, &token, &state.pictures, &used)?)

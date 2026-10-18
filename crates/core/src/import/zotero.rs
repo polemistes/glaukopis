@@ -219,13 +219,15 @@ impl Tree {
 
 /// Whether an attachment is a file to take along. Snapshots of web pages
 /// are left behind: they are copies of what the address leads to, in many
-/// files or in one that only a browser shows. Links to the web have no
-/// file, and of a file without a path there is nothing to be said.
+/// files or in one that only a browser shows, and are what Zotero imports
+/// from an address (link mode 1) as a page. A page the user stored or
+/// linked as a file of their own (modes 0 and 2) is taken as any file is.
+/// Links to the web have no file, and of a file without a path there is
+/// nothing to be said. `database::count_alone` counts by the same rule.
 fn is_file(attachment: &Attachment) -> bool {
     let kind = attachment.content_type.trim().to_ascii_lowercase();
-    matches!(attachment.link_mode, 0..=2)
-        && !attachment.path.trim().is_empty()
-        && !matches!(kind.as_str(), "text/html" | "application/xhtml+xml")
+    let snapshot = attachment.link_mode == 1 && matches!(kind.as_str(), "text/html" | "application/xhtml+xml");
+    matches!(attachment.link_mode, 0..=2) && !attachment.path.trim().is_empty() && !snapshot
 }
 
 /// Where the file of an attachment is. `Err` holds what to tell the user
@@ -307,8 +309,18 @@ fn candidates(
         }
 
         let (mut draft, mut notes) = mapping::entry(&item);
-        if !remarks.is_empty() && !draft.fields.contains_key("annotation") {
-            draft.fields.insert("annotation".into(), remarks.join("\n\n"));
+        // The notes, after what Extra already gave as the annotation, if anything.
+        if !remarks.is_empty() {
+            let notes = remarks.join("\n\n");
+            match draft.fields.get_mut("annotation").filter(|there| !there.trim().is_empty()) {
+                Some(there) => {
+                    there.push_str("\n\n");
+                    there.push_str(&notes);
+                }
+                None => {
+                    draft.fields.insert("annotation".into(), notes);
+                }
+            }
         }
         let mut files = Vec::new();
         for attachment in &attached {
