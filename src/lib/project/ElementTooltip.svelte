@@ -1,5 +1,4 @@
 <script lang="ts">
-  import * as Y from 'yjs';
   import { t } from '$lib/i18n';
   import { place, type RectLike } from '$lib/ui/floating';
   import { hydrate } from '$lib/figures/hydrate.svelte';
@@ -9,7 +8,6 @@
   import { describeWhen } from '$lib/timeline/solve';
   import { blocksHtml, excerpt } from './model/html';
   import type { Project } from './model/project.svelte';
-  import { readBody } from './model/text';
 
   interface Props {
     project: Project;
@@ -23,12 +21,13 @@
 
   const node = $derived(project.node(id));
   const content = $derived.by(() => {
-    // Depends on the element's record, which changes when its text does.
-    void node?.words;
-    const f = project.fragment(id, 'body');
-    if (!(f instanceof Y.XmlFragment)) return { html: '', cut: false };
+    // The text as the model read it when the element last changed: it
+    // depends on the element's record, which is made anew when its text
+    // is, and the text is not read again for the excerpt of a tooltip. The
+    // language and the kinds of passage are what the excerpt is drawn with.
+    if (!node) return { html: '', cut: false };
     const own = project.passageKinds;
-    const { blocks, cut } = excerpt(readBody(f, own), 520);
+    const { blocks, cut } = excerpt(project.blocksOf(id), 520);
     return { html: blocksHtml(blocks, project.documentOf(id).settings.language, own), cut };
   });
   /** The element whose branch stands in this element's place in the document. */
