@@ -102,7 +102,12 @@ function taskWords(preamble: string[]): string[] {
 export function readProject(text: string, references: RefRecord[] = []): OrgProject {
   try {
     return readWhole(text, references);
-  } catch {
+  } catch (error) {
+    // A fault of the reader, not of the file: the log keeps it, so that it is mended.
+    console.error(
+      'the Org file could not be read as a project; its text is kept as a draft',
+      error,
+    );
     return {
       title: '',
       language: null,
