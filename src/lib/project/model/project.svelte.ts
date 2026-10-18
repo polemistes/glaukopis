@@ -258,22 +258,37 @@ export class Project {
     });
     this.#releaseClose = persistence ? beforeClose(() => this.#writeBeforeClose(), 'first') : null;
 
-    this.undoManager = new Y.UndoManager([this.yMeta, this.yNodes, this.yLinks], {
-      trackedOrigins: new Set<unknown>([LOCAL, ySyncPluginKey]),
-      captureTimeout: 600,
-      // Taking back a paragraph or an element one began must not take with it
-      // what another has written in it since: then only one's own words go.
-      deleteFilter: (item) => {
-        const me = this.doc.clientID;
-        const node = elementOf(this, item);
-        if (node) return !holdsWorkOfOthers(node, me);
-        return (
-          !(item.content instanceof Y.ContentType) ||
-          !(item.content.type instanceof Y.XmlElement || item.content.type instanceof Y.XmlText) ||
-          !holdsWorkOfOthers(item.content.type, me)
-        );
+    // Undo follows every part of the project that a change of one's own may
+    // touch, so that it takes back the whole of a change (ADR 0053): a kind
+    // deleted comes back as a kind, not only as a name on its elements, and
+    // an element removed comes back with its comments. What is changed there
+    // that is not to be undone has an origin of its own (see `origins.ts`).
+    this.undoManager = new Y.UndoManager(
+      [
+        this.yMeta,
+        this.yNodes,
+        this.yLinks,
+        this.yKinds,
+        this.yPassageKinds,
+        this.yTemplates,
+        this.yComments,
+      ],
+      {
+        trackedOrigins: new Set<unknown>([LOCAL, ySyncPluginKey]),
+        captureTimeout: 600,
+        // Taking back a paragraph or an element one began must not take with it
+        // what another has written in it since: then only one's own words go.
+        // So with a kind, a link or a thread another has changed since.
+        deleteFilter: (item) => {
+          const me = this.doc.clientID;
+          const node = elementOf(this, item);
+          if (node) return !holdsWorkOfOthers(node, me);
+          return (
+            !(item.content instanceof Y.ContentType) || !holdsWorkOfOthers(item.content.type, me)
+          );
+        },
       },
-    });
+    );
     const stacks = () => {
       this.canUndo = this.undoManager.undoStack.length > 0;
       this.canRedo = this.undoManager.redoStack.length > 0;
