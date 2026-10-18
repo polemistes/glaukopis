@@ -797,9 +797,7 @@ export class Project {
     // took writing the whole text out on every keystroke.
     let text = written ? undefined : this.#bodies.get(id);
     if (!text) {
-      const { blocks, facts } = this.#reading.read(
-        n.get('body') as Y.XmlFragment | undefined,
-      );
+      const { blocks, facts } = this.#reading.read(n.get('body') as Y.XmlFragment | undefined);
       text = { blocks, facts, stamp: `${id}.${++this.#stamped}` };
       this.#bodies.set(id, text);
     }

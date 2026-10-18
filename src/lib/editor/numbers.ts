@@ -598,7 +598,8 @@ export function stretchNumbersPlugin(
         const same =
           within?.onlyText &&
           within.written.every(
-            ({ before, after }) => !isNumbered(before) || (!!after && blanks(before) === blanks(after)),
+            ({ before, after }) =>
+              !isNumbered(before) || (!!after && blanks(before) === blanks(after)),
           );
         return same ? set.map(tr.mapping, tr.doc) : numbers(tr.doc, own(), layout());
       },

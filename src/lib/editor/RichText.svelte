@@ -160,7 +160,11 @@
   });
   let drawnWith: { numbers: NumbersLayout; kinds: unknown; language: string } | null = null;
   $effect(() => {
-    const now = { numbers: numbersLayout, kinds: project.passageKinds, language: languages.current };
+    const now = {
+      numbers: numbersLayout,
+      kinds: project.passageKinds,
+      language: languages.current,
+    };
     void made;
     untrack(() => {
       // At first, the editor was made with what is now, and the layout's numbers as given.

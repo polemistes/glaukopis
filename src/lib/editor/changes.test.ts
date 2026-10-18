@@ -103,8 +103,11 @@ describe('what is drawn over a text, on every change', () => {
     type(v, 'ever ');
     same();
     // Out of the verse and into the quotation: another run is current.
-    const quote = v.state.doc.child(0).nodeSize + v.state.doc.child(1).nodeSize +
-      v.state.doc.child(2).nodeSize + 3;
+    const quote =
+      v.state.doc.child(0).nodeSize +
+      v.state.doc.child(1).nodeSize +
+      v.state.doc.child(2).nodeSize +
+      3;
     v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, quote)));
     same();
     type(v, 'x');
@@ -162,7 +165,8 @@ describe('what is drawn over a text, on every change', () => {
 });
 
 describe('changes within lines', () => {
-  const state = () => EditorState.create({ doc: text('text: Sing, goddess', 'text: the wrath').doc });
+  const state = () =>
+    EditorState.create({ doc: text('text: Sing, goddess', 'text: the wrath').doc });
 
   it('are text written or taken out, and marks, in the same paragraphs', () => {
     const s = state();
@@ -171,9 +175,9 @@ describe('changes within lines', () => {
     expect(withinLines(s.tr.addMark(1, 20, bodySchema.marks.em.create()))).toMatchObject({
       written: [],
     });
-    expect(
-      withinLines(s.tr.insert(3, bodySchema.nodes.hard_break.create())),
-    ).toMatchObject({ onlyText: false });
+    expect(withinLines(s.tr.insert(3, bodySchema.nodes.hard_break.create()))).toMatchObject({
+      onlyText: false,
+    });
   });
 
   it('are not paragraphs split, joined, put in or given another kind', () => {
