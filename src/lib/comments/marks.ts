@@ -60,6 +60,39 @@ export function passageIn(state: EditorState, passage: NonNullable<Thread['passa
   return { from, to };
 }
 
+/**
+ * Whether a passage is gone from the text, read from the shared document
+ * alone, for where no editor is open on it: an end that cannot be found,
+ * an end in a paragraph that was deleted, or two ends in one paragraph
+ * that have come together, as they do when everything between them was
+ * deleted (or cut, to be pasted elsewhere as new text). Where the ends are
+ * in two paragraphs that are both still there the passage stands, in part
+ * at least, as it does in an editor.
+ */
+export function passageGone(doc: Y.Doc, passage: NonNullable<Thread['passage']>): boolean {
+  const at = (encoded: Uint8Array) => {
+    try {
+      return Y.createAbsolutePositionFromRelativePosition(Y.decodeRelativePosition(encoded), doc);
+    } catch {
+      return null;
+    }
+  };
+  const from = at(passage.from);
+  const to = at(passage.to);
+  if (!from || !to) return true;
+  const deleted = (type: Y.AbstractType<unknown>) => {
+    for (
+      let item = type._item;
+      item;
+      item = item.parent instanceof Y.AbstractType ? item.parent._item : null
+    )
+      if (item.deleted) return true;
+    return false;
+  };
+  if (deleted(from.type) || deleted(to.type)) return true;
+  return from.type === to.type && to.index <= from.index;
+}
+
 interface Marked {
   threads: Thread[];
   set: DecorationSet;

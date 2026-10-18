@@ -26,6 +26,7 @@ comments-edit = Endre
 comments-edited = endret
 comments-someone = Noen
 comments-note-deleted = Merknaden ble slettet
+comments-passage-gone = Dette stykket står ikke lenger i teksten: det ble slettet, eller klippet ut og limt inn et annet sted.
 comments-element-hint = Trykk for å gå til elementet; trykk to ganger for å skrive i det
 comments-mark = { $count ->
     [one] Én åpen kommentar

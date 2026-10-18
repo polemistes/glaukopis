@@ -13,7 +13,7 @@
   import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
   import Trash2 from '@lucide/svelte/icons/trash-2';
   import X from '@lucide/svelte/icons/x';
-  import { t } from '$lib/i18n';
+  import { languages, t } from '$lib/i18n';
   import type { Project } from '$lib/project/model/project.svelte';
   import type { Note, Thread } from '$lib/project/model/types';
   import { colourOf, initials } from '$lib/sharing/connection.svelte';
@@ -24,6 +24,7 @@
   import { toasts } from '$lib/ui/toast.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { ago } from '$lib/util/time';
+  import { passageGone } from './marks';
   import { commentsUi } from './ui.svelte';
 
   interface Props {
@@ -64,6 +65,27 @@
     ),
   );
   const open = $derived(threads.filter((th) => !th.resolved).length);
+
+  /**
+   * The threads shown whose passage is no longer in the text: deleted, or
+   * cut and pasted elsewhere as new text. Their mark is gone from every
+   * editor, so their quotation says so too. Read again with every change
+   * to the project, since the text changes without the threads changing.
+   */
+  const gone = $derived.by(() => {
+    void project.revision;
+    const out = new Set<string>();
+    for (const thread of shown)
+      if (thread.passage && passageGone(project.doc, thread.passage)) out.add(thread.id);
+    return out;
+  });
+
+  /** When a note was written, in full, in the language of the interface. */
+  function written(iso: string): string {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString(languages.current, { dateStyle: 'long', timeStyle: 'short' });
+  }
 
   const me = $derived(project.me?.id ?? '');
   const mine = (note: Note) => !!me && note.author.id === me;
@@ -273,7 +295,12 @@
             </IconButton>
           </div>
           {#if thread.passage}
-            <blockquote class="passage">{thread.passage.text}</blockquote>
+            <blockquote class="passage" class:gone={gone.has(thread.id)}>
+              {thread.passage.text}
+            </blockquote>
+            {#if gone.has(thread.id)}
+              <p class="gone-note">{t('comments-passage-gone')}</p>
+            {/if}
           {/if}
           <!-- Keyed by place: a note written by another copy may lack an id,
                or share one, and a key met twice throws. -->
@@ -287,9 +314,7 @@
               <div class="said">
                 <div class="by">
                   <span class="name">{note.author.name || t('comments-someone')}</span>
-                  <span
-                    class="when"
-                    use:tooltip={note.created ? new Date(note.created).toLocaleString() : ''}
+                  <span class="when" use:tooltip={note.created ? written(note.created) : ''}
                     >{ago(note.created)}{note.edited ? ` · ${t('comments-edited')}` : ''}</span
                   >
                   {#if mine(note) && !(editing?.note === note.id)}
@@ -442,6 +467,20 @@
   }
   .settled .passage {
     border-left-color: var(--line);
+  }
+  /* A passage no longer in the text: struck through and faint, with a word under it. */
+  .passage.gone {
+    margin-bottom: 2px;
+    border-left-style: dashed;
+    border-left-color: var(--line);
+    color: var(--ink-3);
+    text-decoration: line-through;
+  }
+  .gone-note {
+    margin: 0 0 8px;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    color: var(--ink-3);
   }
   .note {
     display: flex;
