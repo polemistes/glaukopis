@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { indent, outdent, shift } from './elements';
+import { afterEach, describe, expect, it } from 'vitest';
+import { toasts } from '$lib/ui/toast.svelte';
+import { indent, outdent, removeElements, shift } from './elements';
 import { Project } from './model/project.svelte';
 import { PROJECT } from './model/types';
 
@@ -63,5 +64,27 @@ describe('moving an element by the keys', () => {
     indent(p, p.tree(), b);
     p.undo();
     expect(names()).toBe('Wrath -A -B -C');
+  });
+});
+
+describe('deleting one element', () => {
+  afterEach(() => {
+    for (const toast of [...toasts.list]) toasts.dismiss(toast.id);
+  });
+
+  it('with text offers its undo, though the element is gone when that is asked', () => {
+    const p = new Project(null);
+    p.begin('Wrath');
+    const a = p.addChild(PROJECT, { title: 'A', body: 'Sing, goddess, the wrath.' })!;
+    expect(removeElements(p, [a])).toBe(1);
+    expect(toasts.list.filter((toast) => toast.action)).toHaveLength(1);
+  });
+
+  it('with no text and nothing under it goes without a word', () => {
+    const p = new Project(null);
+    p.begin('Wrath');
+    const a = p.addChild(PROJECT, { title: 'A' })!;
+    expect(removeElements(p, [a])).toBe(1);
+    expect(toasts.list).toEqual([]);
   });
 });

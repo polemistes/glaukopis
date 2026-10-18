@@ -254,6 +254,29 @@ export function foundAttrs(value: unknown): {
   };
 }
 
+/**
+ * The works of a citation, from what may be them: an array of objects each
+ * with the id of a reference, and of what else each holds only what a work
+ * of a citation says, as the type it says it in. Nothing, where it is not
+ * that, as a `data-citation` of another program's own.
+ */
+export function citeItems(value: unknown): CiteItem[] | null {
+  if (!Array.isArray(value)) return null;
+  const items: CiteItem[] = [];
+  for (const held of value as unknown[]) {
+    if (!held || typeof held !== 'object') return null;
+    const item = held as Record<string, unknown>;
+    if (typeof item.id !== 'string' || !item.id) return null;
+    const out: CiteItem = { id: item.id };
+    for (const key of ['locator', 'label', 'prefix', 'suffix'] as const) {
+      if (typeof item[key] === 'string') out[key] = item[key];
+    }
+    if (item.suppressAuthor === true) out.suppressAuthor = true;
+    items.push(out);
+  }
+  return items;
+}
+
 /** Steps of indentation, from what may be one: none to eight. */
 function indentAttr(value: unknown): number {
   return Math.max(0, Math.min(8, Math.round(Number(value ?? 0)) || 0));
@@ -446,10 +469,14 @@ const bodyNodes: Record<string, NodeSpec> = {
       {
         tag: 'span[data-citation]',
         getAttrs: (node) => {
+          // The attribute may come from another program's HTML, pasted:
+          // a span is taken for a citation only where it holds works.
           try {
             const el = node as HTMLElement;
+            const items = citeItems(JSON.parse(el.getAttribute('data-citation') ?? '[]'));
+            if (!items) return false;
             return {
-              items: JSON.parse(el.getAttribute('data-citation') ?? '[]'),
+              items,
               mode: el.getAttribute('data-mode') === 'intext' ? 'intext' : 'normal',
             };
           } catch {

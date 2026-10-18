@@ -65,6 +65,23 @@ describe('the words of a Fluent file', () => {
     expect(done.refused.map((r) => r.change.key)).toEqual(['x-nothing']);
   });
 
+  it('put a new part under its own message where a new message follows it', () => {
+    const english = new Map([
+      ['x.ftl', `a = A\n    .hint = A hint\n    .more = More\nc = C\n    .hint = C hint\nb = B\n`],
+    ]);
+    const own = new Map([['x.ftl', `a = Aa\nb = Bb\n`]]);
+    const done = apply('nb', english, own, [
+      { file: 'x.ftl', key: 'a.hint', text: 'Hint of a', was: '' },
+      { file: 'x.ftl', key: 'a.more', text: 'More of a', was: '' },
+      { file: 'x.ftl', key: 'c', text: 'Cc', was: '' },
+      { file: 'x.ftl', key: 'c.hint', text: 'Hint of c', was: '' },
+    ]);
+    expect(done.files.get('x.ftl')).toBe(
+      `a = Aa\n    .hint = Hint of a\n    .more = More of a\nc = Cc\n    .hint = Hint of c\nb = Bb\n`,
+    );
+    expect(done.refused).toEqual([]);
+  });
+
   it('make a file the language lacks, beginning as the English begins', () => {
     const english = new Map([
       ['b.ftl', `# The head.\n# Of the file.\n\n## A group\n\nb-one = One\n`],

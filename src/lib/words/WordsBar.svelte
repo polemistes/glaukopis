@@ -100,7 +100,7 @@
       {#if result.conflicts.length}
         <h3>{t('words-conflicts')}</h3>
         <ul>
-          {#each result.conflicts as c (c.file + c.key)}
+          {#each result.conflicts as c, i (i)}
             <li><code>{c.file.replace(/\.ftl$/, '')}: {c.key}</code></li>
           {/each}
         </ul>
@@ -108,7 +108,7 @@
       {#if result.refused.length}
         <h3>{used ? t('words-used-refused') : t('words-refused')}</h3>
         <ul>
-          {#each result.refused as r (r.change.file + r.change.key)}
+          {#each result.refused as r, i (i)}
             <li>
               <code>{r.change.file.replace(/\.ftl$/, '')}: {r.change.key}</code>
               <span>{why(r.fault.kind, r.fault.detail)}</span>

@@ -24,6 +24,7 @@
     copyElements,
     cutElements,
     pasteElements,
+    pastesUnderItself,
   } from '../clipboard.svelte';
   import { elementMenu, type ElementActions, type ElementsPayload } from '../elements';
   import { carryAcross } from '../elsewhere';
@@ -825,6 +826,10 @@
     }
     if (!canPaste(project)) {
       notify(t('diagram-pasted-elsewhere'));
+      return;
+    }
+    if (pastesUnderItself(project, under ?? at)) {
+      notify(t('project-pick-itself'));
       return;
     }
     const r = viewport?.getBoundingClientRect();

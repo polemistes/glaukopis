@@ -171,10 +171,12 @@ export function removeElements(project: Project, ids: string[], keepChildren = f
 function remove(project: Project, tree: Tree, tops: string[], keepChildren: boolean): number {
   const name = project.node(tops[0])?.title || t('project-untitled');
   const under = keepChildren ? 0 : tops.reduce((n, id) => n + subtree(tree, id).length - 1, 0);
+  // Read before the removal: after it the element is no longer there to ask.
+  const hadText = !(project.node(tops[0])?.empty ?? true);
   project.checkpoint();
   const gone = project.remove(tops, { keepChildren });
   project.checkpoint();
-  if (gone > 1 || under > 0 || !(project.node(tops[0])?.empty ?? true)) {
+  if (gone > 1 || under > 0 || hadText) {
     toasts.show(
       {
         kind: 'info',

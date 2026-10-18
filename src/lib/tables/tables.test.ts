@@ -561,6 +561,29 @@ describe('what is pasted', () => {
     expect(tablesOfHtml(words)).toBe(words);
   });
 
+  it('a cell that spans no column or row, or a word of them, spans one, and the tools work in it', () => {
+    for (const odd of ['rowspan="0"', 'colspan="0"', 'colspan="-1"', 'colspan="abc"']) {
+      const doc = parse(
+        `<table><tr><td ${odd}>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>`,
+      );
+      expect(shape(doc), odd).toBe('table()[c:a,c:b / c:c,c:d]');
+      const place = document.body.appendChild(document.createElement('div'));
+      const plugins = bodyPlugins(bodySchema, { undo: () => {}, redo: () => {} });
+      const v = new EditorView(place, {
+        state: EditorState.create({ schema: bodySchema, doc, plugins }),
+      });
+      views.push(v);
+      cursorIn(v, 0);
+      expect(() => tableNow(v.state), odd).not.toThrow();
+      expect(tableNow(v.state)?.cells, odd).toBe(true);
+      expect(() => tabForward(v.state, v.dispatch), odd).not.toThrow();
+    }
+    // What a page says within reason is kept, and what is too much is what HTML allows.
+    expect(
+      tablesOfHtml('<table><tr><td colspan="2" rowspan="70000">a</td></tr></table>'),
+    ).toContain('colspan="2" rowspan="65534"');
+  });
+
   it('cells that were copied by themselves become a table of their own', () => {
     const cells =
       '<table data-pm-slice="1 1 -2 [&quot;tabular&quot;,{},&quot;table&quot;,null]"><tbody><tr><th><p>Work</p></th><th><p>Lines</p></th></tr><tr><td><p>Iliad</p></td><td><p>15693</p></td></tr></tbody></table>';

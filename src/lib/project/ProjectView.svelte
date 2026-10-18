@@ -202,7 +202,10 @@
   let guest = $state.raw<Guest | null>(null);
   /** The project being opened beside, until it is open. */
   let guestOpening: string | null = null;
-  /** The view has gone: a project opened beside after that is let go at once. */
+  /**
+   * The view has gone: the project of the view, or one opened beside, that
+   * is still being opened is let go at once when it is.
+   */
   let gone = false;
 
   /** The project a pane shows; none while the one beside is being opened. */
@@ -439,10 +442,23 @@
     try {
       // What was written in it when it was last let go, beside another, is on disk first.
       await projects.closed(ownId);
+      // The view may have gone while it waited, as when another project is
+      // gone to while this one is opening: then nothing is opened for it.
+      if (gone) return;
       // svelte-ignore state_referenced_locally
       const opened = await openProject(projectId);
-      stored = (opened.info.view ?? {}) as StoredView;
       const p = opened.project;
+      // Gone while it was read: what was opened is let go at once, before it
+      // is shared, turns the store of pictures to it, or is counted as open
+      // here, since nothing would ever close it after.
+      if (gone) {
+        projects.closing(
+          ownId,
+          p.close().catch((error) => console.error(error)),
+        );
+        return;
+      }
+      stored = (opened.info.view ?? {}) as StoredView;
       folding = new Folding(Array.isArray(stored.folded) ? stored.folded : [], (id) => {
         const node = p.nodes.get(id);
         return !!node && (!node.empty || !!node.include);
@@ -466,6 +482,7 @@
       const found = takeWaiting(ownId);
       if (found && p.node(found)) goThrough(found);
     } catch (error) {
+      if (gone) return;
       // What is said of it is looked up when it is shown, in the language of that moment.
       failure = describeError(error) ?? '';
     }
@@ -584,6 +601,8 @@
   }
 
   onDestroy(() => {
+    // What is still being opened in onMount sees this after its awaits.
+    gone = true;
     document.title = 'Glaukopis';
     void getCurrentWindow()
       .setTitle('Glaukopis')

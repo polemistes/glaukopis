@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { canPaste, clipboard, cutElements, isCut, pasteElements } from './clipboard.svelte';
+import {
+  canPaste,
+  clipboard,
+  cutElements,
+  isCut,
+  pasteElements,
+  pastesUnderItself,
+} from './clipboard.svelte';
 import { Project } from './model/project.svelte';
 import { PROJECT } from './model/types';
 
@@ -40,8 +47,13 @@ describe('elements cut', () => {
     const a = p.addChild(one, { title: 'Achilles' })!;
     const a1 = p.addChild(a, { title: 'Peleus' })!;
     cutElements(p, [a]);
+    expect(pastesUnderItself(p, a1)).toBe(true);
+    expect(pastesUnderItself(p, a)).toBe(true);
+    expect(pastesUnderItself(p, one)).toBe(false);
     expect(pasteElements(p, { under: a1 })).toEqual([]);
-    cutElements(p, [a]);
+    expect(pasteElements(p, { under: a })).toEqual([]);
+    // Refused, it is still cut, to be pasted somewhere else.
+    expect(isCut(p, a)).toBe(true);
     expect(pasteElements(p, { under: PROJECT, pos: { x: 420, y: 180 } })).toEqual([a]);
     expect(p.tree().children.get(PROJECT)).toEqual([one, a]);
     expect(p.node(a)?.pos).toEqual({ x: 420, y: 180 });
