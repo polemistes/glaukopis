@@ -1,6 +1,6 @@
 import { EditorState } from 'prosemirror-state';
 import { describe, expect, it } from 'vitest';
-import { Slice } from 'prosemirror-model';
+import { DOMParser as PMParser, Slice } from 'prosemirror-model';
 import { copiedHtml, copiedText, looksLikeOrg, pastedTextSlice, wordsOf } from './clipboard';
 import { bodySchema } from './schema';
 
@@ -157,5 +157,40 @@ describe('text pasted as Org', () => {
     expect(looksLikeOrg('a *bold* word')).toBe(false);
     expect(looksLikeOrg('* A headline')).toBe(true);
     expect(looksLikeOrg('| a | b |')).toBe(true);
+  });
+});
+
+describe('HTML pasted with a data-citation of its own', () => {
+  /** The citations ProseMirror finds in HTML, as their works. */
+  function citations(html: string): unknown[] {
+    const place = document.createElement('div');
+    place.innerHTML = html;
+    const doc = PMParser.fromSchema(bodySchema).parse(place);
+    const found: unknown[] = [];
+    doc.descendants((n) => {
+      if (n.type.name === 'citation') found.push(n.attrs.items);
+    });
+    return found;
+  }
+
+  it('is a citation only where the attribute holds works, each with a reference', () => {
+    const values = ['12', '{}', '"nagy"', '[null]', '[{}]', '[{"id":""}]', '[{"id":3}]', 'oops'];
+    for (const value of values) {
+      const html = `<p>See <span data-citation='${value}'>here</span>.</p>`;
+      expect(citations(html), value).toEqual([]);
+    }
+  });
+
+  it('keeps of each work only what a work of a citation says', () => {
+    const items = JSON.stringify([
+      { id: 'nagy1979', locator: '12', label: 7, suppressAuthor: 'yes', colour: 'red' },
+      { id: 'nagy1979', locator: '30', suppressAuthor: true },
+    ]);
+    expect(citations(`<p><span data-citation='${items}'>Nagy</span></p>`)).toEqual([
+      [
+        { id: 'nagy1979', locator: '12' },
+        { id: 'nagy1979', locator: '30', suppressAuthor: true },
+      ],
+    ]);
   });
 });
