@@ -11,6 +11,8 @@
   import Ellipsis from '@lucide/svelte/icons/ellipsis';
   import IndentIncrease from '@lucide/svelte/icons/list-indent-increase';
   import ListOrdered from '@lucide/svelte/icons/list-ordered';
+  import Network from '@lucide/svelte/icons/network';
+  import FileText from '@lucide/svelte/icons/file-text';
   import { judge, STARTS } from '$lib/theme/own';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import { open as chooseFile } from '@tauri-apps/plugin-dialog';
@@ -378,6 +380,21 @@
 
     <section>
       <h2>{t('settings-new-documents')}</h2>
+      <div class="row top" data-new-project-view>
+        <div class="what">
+          <div class="label">{t('settings-new-project-view')}</div>
+          <div class="hint">{t('settings-new-project-view-hint')}</div>
+        </div>
+        <Segmented
+          value={settings.value.newProjectView ?? 'diagram'}
+          label={t('settings-new-project-view')}
+          options={[
+            { value: 'diagram', label: t('project-diagram'), icon: Network },
+            { value: 'text', label: t('project-text'), icon: FileText },
+          ]}
+          onchange={(view: 'diagram' | 'text') => settings.set('newProjectView', view)}
+        />
+      </div>
       <div class="pair three">
         {#if templateOptions.length}
           <Select

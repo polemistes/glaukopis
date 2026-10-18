@@ -31,6 +31,7 @@
   import { t } from '$lib/i18n';
   import { projects } from '$lib/state/projects.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
+  import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { openContextMenu, openMenu } from '$lib/ui/menu.svelte';
@@ -298,7 +299,7 @@
     onclose={() => (mapping = false)}
     onmade={({ project, at }) => {
       mapping = false;
-      router.go({ view: 'project', project, at, mode: 'text' });
+      router.go({ view: 'project', project, at, mode: settings.value.newProjectView ?? 'diagram' });
     }}
   />
 {/if}

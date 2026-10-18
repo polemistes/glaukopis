@@ -88,6 +88,8 @@ export interface Settings {
    * only: numbers as in an outline, dots, or the names set in, with lines.
    */
   textDepth: TextDepth;
+  /** The view a new project opens in: its diagram, or its text. */
+  newProjectView: 'diagram' | 'text';
   /** Paths to external programs, when not found automatically. */
   pandocPath: string | null;
   tesseractPath: string | null;
@@ -158,6 +160,7 @@ export const defaultSettings: Settings = {
   textSize: 17,
   interfaceSize: 1,
   textDepth: 'numbers',
+  newProjectView: 'diagram',
   pandocPath: null,
   tesseractPath: null,
   ocrLanguages: [],

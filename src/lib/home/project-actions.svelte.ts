@@ -21,6 +21,7 @@ import type { FileChoice, Folder, FoundWork, ProjectInfo } from '$lib/api/projec
 import { currentProject } from '$lib/editor/references.svelte';
 import { t } from '$lib/i18n';
 import { projects } from '$lib/state/projects.svelte';
+import { settings } from '$lib/state/settings.svelte';
 import type { MapMode } from '$lib/state/router.svelte';
 import type { MenuItem } from '$lib/ui/menu.svelte';
 import { describeError, notify, notifyError, notifyOk } from '$lib/ui/toast.svelte';
@@ -156,8 +157,8 @@ export class ProjectActions {
       if (naming.purpose === 'new') {
         const made = await makeProject(name, naming.parent ?? null);
         this.naming = null;
-        // The first time, on its text: a new project begins with writing.
-        this.open(made, 'text');
+        // The first time, in the view the settings say: its diagram, or its text.
+        this.open(made, settings.value.newProjectView ?? 'diagram');
       } else if (naming.purpose === 'folder') {
         await makeFolder(name, naming.parent ?? null);
         this.naming = null;

@@ -67,7 +67,7 @@ describe('what is done with a project from a list of them', () => {
     actions = new ProjectActions({ open, deleted });
   });
 
-  it('makes a new project, and opens it on its text', async () => {
+  it('makes a new project, and opens it in its diagram, as the settings say at first', async () => {
     const made = project('n', 'Odyssey');
     projects.create.mockResolvedValue(made);
     actions.newProject();
@@ -75,7 +75,7 @@ describe('what is done with a project from a list of them', () => {
     actions.naming!.value = '  Odyssey ';
     await actions.commit();
     expect(projects.create).toHaveBeenCalledWith('Odyssey', null);
-    expect(open).toHaveBeenCalledWith(made, 'text');
+    expect(open).toHaveBeenCalledWith(made, 'diagram');
     expect(actions.naming).toBeNull();
     expect(actions.busy).toBe(false);
   });

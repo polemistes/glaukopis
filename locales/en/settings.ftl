@@ -50,6 +50,9 @@ settings-sample-third = A third level
 ## New documents
 
 settings-new-documents = New documents
+# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
+settings-new-project-view = New projects open in
+settings-new-project-view-hint = The view a project opens in when it has just been made.
 settings-template = Template
 settings-document-format = Layout
 settings-reference-style = Reference style

@@ -93,6 +93,13 @@ export class App {
       throw new Error(`No application at ${app.binary}. Build it first.`);
     app.ownsData = !options.dataDir && !options.keepData;
     app.dataDir = options.dataDir ?? mkdtempSync(join(tmpdir(), 'glaukopis-e2e-'));
+    // The scripts were written when a new project opened on its text: so it
+    // does for them, where the settings say nothing yet. `newProjectView:
+    // null` leaves the settings as the application makes them.
+    const settingsFile = join(app.dataDir, 'settings.json');
+    const view = options.newProjectView === undefined ? 'text' : options.newProjectView;
+    if (view && !existsSync(settingsFile))
+      writeFileSync(settingsFile, JSON.stringify({ newProjectView: view }));
     const width = options.width ?? 1360;
     const height = options.height ?? 880;
     app.log = [];
