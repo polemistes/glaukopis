@@ -69,8 +69,24 @@ class SettingsState {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     this.#systemDark = media.matches;
     media.addEventListener('change', (e) => (this.#systemDark = e.matches));
+    let kept: Partial<AllSettings>;
     try {
-      const kept = await settingsLoad();
+      const loaded = await settingsLoad();
+      kept = loaded.settings;
+      // A damaged file was set aside, and the defaults are used: said, never in silence.
+      if (loaded.setAside)
+        notifyError(
+          t(loaded.setAside.personKept ? 'settings-set-aside' : 'settings-set-aside-person', {
+            path: loaded.setAside.path,
+          }),
+          loaded.setAside.reason,
+        );
+    } catch (error) {
+      notifyError(t('settings-error-read'), error);
+      this.loaded = true;
+      return;
+    }
+    try {
       // What was kept by a version that knew less of it has the rest as it is given.
       this.value = {
         ...defaultSettings,
@@ -84,7 +100,8 @@ class SettingsState {
         await this.saveNow();
       }
     } catch (error) {
-      notifyError(t('settings-error-read'), error);
+      // The first writing, of the person made: a failed save, not a failed read.
+      notifyError(t('settings-error-save'), error);
     }
     this.loaded = true;
   }

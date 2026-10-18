@@ -853,7 +853,7 @@ try {
      s.dispatchEvent(new Event('change', { bubbles: true }));`,
   );
   await sleep(800);
-  const kept = await invoke('settings_load');
+  const kept = (await invoke('settings_load')).settings;
   check(
     'a language to read in at first is kept',
     JSON.stringify(kept.ocrLanguages) === '["grc"]',
