@@ -51,6 +51,8 @@ static FOLDERS_LOCK: Mutex<()> = Mutex::new(());
 const HISTORY_LIMIT: usize = 40;
 /// The least time between two states kept in the history, in seconds.
 const HISTORY_INTERVAL: i64 = 10 * 60;
+/// The longest name of a project, in characters.
+const NAME_LIMIT: usize = 200;
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -251,10 +253,26 @@ impl Projects {
         if name.is_empty() {
             return Err(Error::invalid(tr!("core-projects-needs-name")));
         }
-        if name.chars().count() > 200 {
+        if name.chars().count() > NAME_LIMIT {
             return Err(Error::invalid(tr!("core-projects-name-too-long")));
         }
         Ok(name)
+    }
+
+    /// The name a project takes from the title of its top element, which the
+    /// user typed as a title and not as a name: one too long for a name is
+    /// cut, with an ellipsis, rather than refused. A refusal came after the
+    /// state was written, and told the user at every save that the project
+    /// could not be saved.
+    fn fit_name(title: &str) -> String {
+        let name = title.split_whitespace().collect::<Vec<_>>().join(" ");
+        if name.chars().count() <= NAME_LIMIT {
+            return name;
+        }
+        let mut cut: String = name.chars().take(NAME_LIMIT - 1).collect();
+        cut.truncate(cut.trim_end().len());
+        cut.push('…');
+        cut
     }
 
     pub fn create(&self, name: &str) -> Result<ProjectInfo> {
@@ -382,7 +400,7 @@ impl Projects {
                 info.pictures = s.pictures;
                 info.cited = s.cited;
                 if let Some(name) = s.name.filter(|n| !n.trim().is_empty()) {
-                    info.name = name;
+                    info.name = Self::fit_name(&name);
                 }
                 if let Some(description) = s.description {
                     info.description = description;
@@ -934,6 +952,22 @@ mod tests {
 
         p.append(&a.id, b"after").unwrap();
         assert_eq!(p.load(&a.id).unwrap().updates, vec![b"after".to_vec()]);
+    }
+
+    #[test]
+    fn a_long_title_is_cut_for_the_card_and_the_save_succeeds() {
+        let (_tmp, p) = projects();
+        let a = p.create("A").unwrap();
+        let title = format!("Of a long title: {}", "and its subtitle, ".repeat(20));
+        let summary = Summary { name: Some(title.clone()), words: 7, ..Default::default() };
+        let info = p.save_state(&a.id, b"STATE", Some(summary)).unwrap();
+        assert_eq!(info.words, 7);
+        assert!(info.name.chars().count() <= 200, "{}", info.name);
+        assert!(info.name.starts_with("Of a long title: and its subtitle"), "{}", info.name);
+        assert!(info.name.ends_with('…'), "{}", info.name);
+        assert_eq!(p.info(&a.id).unwrap().name, info.name);
+        // A name the user gives the project is still refused when too long.
+        assert!(p.rename(&a.id, &title).is_err());
     }
 
     #[test]
