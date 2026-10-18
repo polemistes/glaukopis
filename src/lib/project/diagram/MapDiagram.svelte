@@ -1,6 +1,6 @@
 <script lang="ts">
   import ClipboardPaste from '@lucide/svelte/icons/clipboard-paste';
-  import { untrack } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import Maximize from '@lucide/svelte/icons/maximize';
   import Minimize2 from '@lucide/svelte/icons/minimize-2';
@@ -87,6 +87,23 @@
   /** Whether what is dragged is elements this map takes: its own, or those of the project beside. */
   function takes(data: ElementsPayload): boolean {
     return data.project === project || (!!besideProject && data.project === besideProject);
+  }
+
+  /**
+   * Whether elements of this project, dragged, would go under one of
+   * themselves at `under`: from another pane of the same project, an
+   * element in view here may be under what is dragged, though this map does
+   * not show the dragged ones. Such a drop is refused, and said to be.
+   */
+  function underItself(data: ElementsPayload, under: string): boolean {
+    if (data.project !== project) return false;
+    const whole = project.tree();
+    return data.ids.some((id) => id === under || isAncestor(whole, id, under));
+  }
+
+  /** Whether what is dragged, from another pane of this project, holds this whole map: it can go nowhere on it. */
+  function holdsThis(data: ElementsPayload): boolean {
+    return data.project === project && !shownHere(data.ids) && underItself(data, at);
   }
 
   let viewport = $state<HTMLDivElement>();
@@ -179,7 +196,11 @@
       return null;
     if (!pointerInside(drag.x, drag.y)) return null;
     const world = toWorld(drag.x, drag.y);
-    return hit(world, p.kind === 'elements' ? lifted : new Set());
+    const target = hit(world, p.kind === 'elements' ? lifted : new Set());
+    // No promise of a move the project would refuse.
+    if (target && p.kind === 'elements' && underItself(p.data as ElementsPayload, target))
+      return null;
+    return target;
   });
 
   /**
@@ -289,6 +310,15 @@
     const snapshot: Camera = kept(cam, width, height);
     clearTimeout(cameraTimer);
     cameraTimer = setTimeout(() => oncamera?.(snapshot), 400);
+  });
+
+  // A diagram that goes leaves nothing to come after it: a camera told late
+  // would be kept under the element the pane has turned to, which is not
+  // this map, and would put that map's view off its elements.
+  onDestroy(() => {
+    clearTimeout(cameraTimer);
+    clearTimeout(hoverTimer);
+    clearTimeout(typedAheadTimer);
   });
 
   function zoomAt(clientX: number, clientY: number, k: number) {
@@ -612,6 +642,11 @@
       ? layout(tree, project.nodes, sizes, heldAt(data, world, event.alone))
       : lay;
     const target = hit(world, except, during);
+    const under = target ?? (onMap ? null : at);
+    if (under && underItself(data, under)) {
+      notify(t('project-pick-itself'));
+      return;
+    }
 
     project.checkpoint();
     let result: string[] = [];
@@ -1078,7 +1113,9 @@
   tabindex="0"
   use:dropTarget={{
     accepts: (p) =>
-      (p.kind === 'elements' && takes(p.data as ElementsPayload)) ||
+      (p.kind === 'elements' &&
+        takes(p.data as ElementsPayload) &&
+        !holdsThis(p.data as ElementsPayload)) ||
       p.kind === 'references' ||
       p.kind === PICTURES_DRAGGED,
     ondrop,
