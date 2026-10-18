@@ -6,7 +6,7 @@
   import { t } from '$lib/i18n';
   import { fold } from '$lib/state/library.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
-  import { KEYS, shortcuts } from './keys.svelte';
+  import { KEYS, keyLabel, keysFor, shortcuts } from './keys.svelte';
 
   let { onclose }: { onclose: () => void } = $props();
 
@@ -74,13 +74,13 @@
         onkeydown={() => {}}
       >
         <span class="label">{c.label}</span>
-        {#if c.keys}<kbd>{c.keys}</kbd>{/if}
+        {#if c.keys}<kbd>{keyLabel(c.keys)}</kbd>{/if}
       </li>
     {:else}
       <li class="none">{t('keys-palette-none')}</li>
     {/each}
   </ul>
-  <p class="hint">{t('keys-palette-hint', { keys: 'Ctrl+/' })}</p>
+  <p class="hint">{t('keys-palette-hint', { keys: keyLabel(keysFor('sheet')) })}</p>
 </Dialog>
 
 <style>

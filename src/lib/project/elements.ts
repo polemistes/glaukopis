@@ -20,6 +20,7 @@ import Scissors from '@lucide/svelte/icons/scissors';
 import Tag from '@lucide/svelte/icons/tag';
 import Trash2 from '@lucide/svelte/icons/trash-2';
 import { languages, t } from '$lib/i18n';
+import { keysFor } from '$lib/shell/keys.svelte';
 import { commentsUi } from '$lib/comments/ui.svelte';
 import { truncate } from '$lib/library/format';
 import { confirm } from '$lib/ui/confirm.svelte';
@@ -413,13 +414,13 @@ export function elementMenu(
       {
         label: t('project-add-under'),
         icon: CornerDownRight,
-        shortcut: 'Ctrl+Shift+Enter',
+        shortcut: keysFor('diagram-new-under'),
         action: () => add('under'),
       },
       {
         label: isProject ? t('project-add') : t('project-add-after'),
         icon: Plus,
-        shortcut: 'Ctrl+Enter',
+        shortcut: keysFor('diagram-new-after'),
         action: () => add('after'),
       },
       { kind: 'separator' },
@@ -434,7 +435,7 @@ export function elementMenu(
     if (actions.rename)
       items.push({
         label: t('common-rename'),
-        shortcut: 'F2',
+        shortcut: keysFor('diagram-rename'),
         action: () => actions.rename!(one.id),
       });
     if (actions.link)
@@ -447,7 +448,7 @@ export function elementMenu(
     items.push({
       label: t('comments-comment-on'),
       icon: MessageSquare,
-      shortcut: 'Ctrl+Alt+C',
+      shortcut: keysFor('comment'),
       action: () => (actions.comment ? actions.comment(one.id) : commentsUi.begin(one.id)),
     });
     items.push({
@@ -611,21 +612,21 @@ export function elementMenu(
       items.push({
         label: t('project-cut'),
         icon: Scissors,
-        shortcut: keyed ? 'Ctrl+X' : undefined,
+        shortcut: keyed ? keysFor('diagram-cut') : undefined,
         action: () => actions.cut?.(movable),
       });
     if (movable.length)
       items.push({
         label: t('project-copy'),
         icon: Copy,
-        shortcut: keyed ? 'Ctrl+C' : undefined,
+        shortcut: keyed ? keysFor('diagram-copy') : undefined,
         action: () => actions.copy?.(movable),
       });
     if (one)
       items.push({
         label: t('project-paste-under'),
         icon: ClipboardPaste,
-        shortcut: keyed ? 'Ctrl+V' : undefined,
+        shortcut: keyed ? keysFor('diagram-paste') : undefined,
         disabled: !canPaste(project),
         action: () => actions.paste?.(one.id),
       });
@@ -668,7 +669,7 @@ export function elementMenu(
       label: t('common-delete'),
       icon: Trash2,
       danger: true,
-      shortcut: 'Del',
+      shortcut: keysFor('diagram-delete'),
       action: () => removeElements(project, ids),
     });
   }

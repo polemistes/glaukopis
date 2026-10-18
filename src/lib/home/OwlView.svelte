@@ -16,7 +16,7 @@
   import Plus from '@lucide/svelte/icons/plus';
   import { t } from '$lib/i18n';
   import Mark from '$lib/shell/Mark.svelte';
-  import { shortcuts } from '$lib/shell/keys.svelte';
+  import { keysFor, shortcuts } from '$lib/shell/keys.svelte';
   import { projects } from '$lib/state/projects.svelte';
   import { router, type MapMode } from '$lib/state/router.svelte';
   import { settings } from '$lib/state/settings.svelte';
@@ -95,7 +95,7 @@
   <div class="pane-bar">
     <IconButton
       label={t('home-pane-toggle')}
-      shortcut="Ctrl+Shift+L"
+      shortcut={keysFor('projects-pane')}
       size="sm"
       active={settings.value.projectsPane}
       data-projects-button

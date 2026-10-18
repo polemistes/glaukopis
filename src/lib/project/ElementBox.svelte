@@ -24,6 +24,7 @@
   import IconButton from '$lib/ui/IconButton.svelte';
   import type { Project } from './model/project.svelte';
   import { PROJECT } from './model/types';
+  import { keyOf } from '$lib/shell/keys.svelte';
 
   interface Props {
     project: Project;
@@ -182,7 +183,7 @@
 
   function onkeydown(event: KeyboardEvent) {
     const mod = event.ctrlKey || event.metaKey;
-    const letter = event.key.toLowerCase();
+    const letter = keyOf(event);
     // Ctrl+F searches the name and the text, Ctrl+H replaces; F3 goes on to the next.
     const plain = mod && !event.altKey && !event.shiftKey;
     if (event.key === 'F3' || (plain && (letter === 'f' || letter === 'h'))) {

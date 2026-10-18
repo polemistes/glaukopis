@@ -14,6 +14,7 @@ import type { Layout } from '$lib/project/diagram/layout';
 import { neighbour } from '$lib/project/diagram/layout';
 import type { Tree } from '$lib/project/model/tree';
 import { keyed, PROVISIONAL } from './owl';
+import { keyOf } from '$lib/shell/keys.svelte';
 
 /** What the keys read of the owl map, and ask of it. */
 export interface OwlSurface {
@@ -63,7 +64,7 @@ export function pressed(event: KeyboardEvent, owl: OwlSurface): boolean {
   const onElement = !!last && keyed(last).kind === 'element';
 
   if (mod && !event.altKey) {
-    const key = event.key.toLowerCase();
+    const key = keyOf(event);
     if (key === 'z' && !event.shiftKey) owl.undo();
     else if (key === 'y' || (key === 'z' && event.shiftKey)) owl.redo();
     else if (key === 'a') owl.select(lay.order.filter((k) => k !== tree.root));

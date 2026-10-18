@@ -2,7 +2,7 @@
 <script lang="ts">
   import { t } from '$lib/i18n';
   import Dialog from '$lib/ui/Dialog.svelte';
-  import { KEYS, type Place } from './keys.svelte';
+  import { KEYS, keyLabel, type Place } from './keys.svelte';
 
   let { onclose }: { onclose: () => void } = $props();
 
@@ -40,7 +40,7 @@
           {#each group.rows as [label, keys] (label)}
             <dt>{label}</dt>
             <dd>
-              {#each keys as k}<kbd>{k}</kbd>{/each}
+              {#each keys as k}<kbd>{keyLabel(k)}</kbd>{/each}
             </dd>
           {/each}
         </dl>

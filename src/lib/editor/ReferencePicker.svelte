@@ -4,6 +4,7 @@
   import Search from '@lucide/svelte/icons/search';
   import type { Summary } from '$lib/api/library';
   import { t } from '$lib/i18n';
+  import { keyLabel } from '$lib/shell/keys.svelte';
   import { importFile, newReference } from '$lib/library/references.svelte';
   import NoteButton from '$lib/library/NoteButton.svelte';
   import TypeIcon from '$lib/library/TypeIcon.svelte';
@@ -182,7 +183,7 @@
       <button type="button" onclick={bringIn}
         ><FileUp size={14} /> {t('editor-picker-import')}</button
       >
-      <span class="keys"><kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd></span>
+      <span class="keys"><kbd>↑</kbd><kbd>↓</kbd> <kbd>{keyLabel('Enter')}</kbd></span>
     </div>
   </div>
 </Popover>

@@ -9,7 +9,7 @@
   import { router } from '$lib/state/router.svelte';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
   import { tooltip } from '$lib/ui/tooltip';
-  import { keysUi } from './keys.svelte';
+  import { keysFor, keysUi } from './keys.svelte';
   import Mark from './Mark.svelte';
 
   const view = $derived(router.route.view);
@@ -30,7 +30,7 @@
     class="place"
     class:current={view === 'projects' || view === 'project' || view === 'owl'}
     aria-label={t('shell-projects')}
-    use:tooltip={{ text: t('shell-projects'), shortcut: 'Ctrl+1', side: 'right' }}
+    use:tooltip={{ text: t('shell-projects'), shortcut: keysFor('projects'), side: 'right' }}
   >
     <House size={19} strokeWidth={1.7} />
   </a>
@@ -39,7 +39,7 @@
     class="place"
     class:current={view === 'library' || view === 'files'}
     aria-label={t('shell-library')}
-    use:tooltip={{ text: t('shell-library'), shortcut: 'Ctrl+2', side: 'right' }}
+    use:tooltip={{ text: t('shell-library'), shortcut: keysFor('library'), side: 'right' }}
   >
     <LibraryBig size={19} strokeWidth={1.7} />
   </a>
@@ -48,7 +48,7 @@
     class="place"
     class:current={view === 'pictures'}
     aria-label={t('shell-pictures')}
-    use:tooltip={{ text: t('shell-pictures'), shortcut: 'Ctrl+3', side: 'right' }}
+    use:tooltip={{ text: t('shell-pictures'), shortcut: keysFor('pictures'), side: 'right' }}
   >
     <Images size={19} strokeWidth={1.7} />
   </a>
@@ -57,7 +57,11 @@
     class="place"
     class:current={view === 'search'}
     aria-label={t('search-everything')}
-    use:tooltip={{ text: t('search-everything-title'), shortcut: 'Ctrl+Shift+F', side: 'right' }}
+    use:tooltip={{
+      text: t('search-everything-title'),
+      shortcut: keysFor('search-everything'),
+      side: 'right',
+    }}
   >
     <Search size={19} strokeWidth={1.7} />
   </a>
@@ -69,7 +73,7 @@
     class="place"
     class:current={keysUi.sheet}
     aria-label={t('keys-title')}
-    use:tooltip={{ text: t('keys-title'), shortcut: 'Ctrl+/', side: 'right' }}
+    use:tooltip={{ text: t('keys-title'), shortcut: keysFor('sheet'), side: 'right' }}
     onclick={() => keysUi.toggleSheet()}
   >
     <Keyboard size={19} strokeWidth={1.7} />
@@ -81,7 +85,7 @@
     class="place"
     class:current={settingsUi.open}
     aria-label={t('shell-settings')}
-    use:tooltip={{ text: t('shell-settings'), shortcut: 'Ctrl+,', side: 'right' }}
+    use:tooltip={{ text: t('shell-settings'), shortcut: keysFor('settings'), side: 'right' }}
     onclick={() => settingsUi.toggle()}
   >
     <Settings size={19} strokeWidth={1.7} />

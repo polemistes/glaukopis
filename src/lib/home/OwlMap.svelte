@@ -25,6 +25,7 @@
   import Scan from '@lucide/svelte/icons/scan';
   import type { Folder, ProjectInfo } from '$lib/api/projects';
   import { t } from '$lib/i18n';
+  import { keysFor } from '$lib/shell/keys.svelte';
   import { fitting, wheeled, zoomedAt, type View } from '$lib/project/diagram/camera';
 
   /**
@@ -791,17 +792,17 @@
       {
         label: t('home-owl-new-project'),
         icon: FilePlus,
-        shortcut: 'Enter',
+        shortcut: keysFor('owl-new-project'),
         action: () => make('project'),
       },
       {
         label: t('home-owl-new-folder'),
         icon: FolderPlus,
-        shortcut: 'Tab',
+        shortcut: keysFor('owl-new-folder'),
         action: () => make('folder'),
       },
       { kind: 'separator' },
-      { label: t('home-owl-fit'), icon: Scan, shortcut: 'Ctrl+0', action: fit },
+      { label: t('home-owl-fit'), icon: Scan, shortcut: keysFor('owl-whole'), action: fit },
       {
         label: t('home-owl-tidy'),
         disabled: !placedByHand().length,
@@ -827,7 +828,7 @@
               {
                 label: t('home-owl-enter'),
                 icon: Minimize2,
-                shortcut: 'Alt+Shift+↓',
+                shortcut: keysFor('owl-open'),
                 action: () => open(key),
               },
             ];
@@ -844,7 +845,7 @@
           {
             label: shown ? t('home-owl-map-hide') : t('home-owl-map-show'),
             icon: ChevronRight,
-            shortcut: 'Space',
+            shortcut: keysFor('owl-fold'),
             action: () => fold(key),
           },
         ],
@@ -856,14 +857,14 @@
         {
           label: t('home-owl-jump'),
           icon: Minimize2,
-          shortcut: 'Alt+Shift+↓',
+          shortcut: keysFor('owl-open'),
           action: () => open(key),
         },
         ...(item?.kind === 'element' && item.holds
           ? [
               {
                 label: item.folded ? t('home-owl-unfold-element') : t('home-owl-fold-element'),
-                shortcut: 'Space',
+                shortcut: keysFor('owl-fold'),
                 action: () => fold(key),
               } as MenuItem,
             ]
@@ -1228,7 +1229,7 @@
                     use:tooltip={item.holds
                       ? {
                           text: item.folded ? t('home-owl-unfold') : t('home-owl-fold'),
-                          shortcut: 'Space',
+                          shortcut: keysFor('owl-fold'),
                         }
                       : null}
                     onclick={(e) => {
@@ -1265,7 +1266,7 @@
                     aria-label={t('home-owl-leave', { name: above })}
                     use:tooltip={{
                       text: t('home-owl-leave', { name: above }),
-                      shortcut: 'Alt+Shift+↑',
+                      shortcut: keysFor('owl-up'),
                     }}
                     onclick={(e) => {
                       e.stopPropagation();
@@ -1281,7 +1282,7 @@
                     class="corner enter"
                     tabindex="-1"
                     aria-label={t('home-owl-enter')}
-                    use:tooltip={{ text: t('home-owl-enter'), shortcut: 'Alt+Shift+↓' }}
+                    use:tooltip={{ text: t('home-owl-enter'), shortcut: keysFor('owl-open') }}
                     onclick={(e) => {
                       e.stopPropagation();
                       open(key);
@@ -1353,7 +1354,7 @@
                             : item.folded
                               ? t('home-owl-map-show')
                               : t('home-owl-map-hide'),
-                      shortcut: 'Space',
+                      shortcut: keysFor('owl-fold'),
                     }}
                     onclick={(e) => {
                       e.stopPropagation();
@@ -1371,7 +1372,7 @@
                     class="corner enter"
                     tabindex="-1"
                     aria-label={t('home-owl-open')}
-                    use:tooltip={{ text: t('home-owl-open'), shortcut: 'Alt+Shift+↓' }}
+                    use:tooltip={{ text: t('home-owl-open'), shortcut: keysFor('owl-open') }}
                     onclick={(e) => {
                       e.stopPropagation();
                       open(key);
@@ -1421,7 +1422,7 @@
                       : t('home-owl-fold-element')}
                     use:tooltip={{
                       text: item.folded ? t('home-owl-unfold-element') : t('home-owl-fold-element'),
-                      shortcut: 'Space',
+                      shortcut: keysFor('owl-fold'),
                     }}
                     onclick={(e) => {
                       e.stopPropagation();
@@ -1437,7 +1438,7 @@
                   class="corner enter"
                   tabindex="-1"
                   aria-label={t('home-owl-jump')}
-                  use:tooltip={{ text: t('home-owl-jump'), shortcut: 'Alt+Shift+↓' }}
+                  use:tooltip={{ text: t('home-owl-jump'), shortcut: keysFor('owl-open') }}
                   onclick={(e) => {
                     e.stopPropagation();
                     open(key);
@@ -1522,7 +1523,7 @@
       <button
         type="button"
         aria-label={t('home-owl-fit')}
-        use:tooltip={{ text: t('home-owl-fit'), side: 'top', shortcut: 'Ctrl+0' }}
+        use:tooltip={{ text: t('home-owl-fit'), side: 'top', shortcut: keysFor('owl-whole') }}
         onclick={fit}
       >
         <Scan size={14} />

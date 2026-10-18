@@ -67,7 +67,7 @@
   import { router, type MapMode } from '$lib/state/router.svelte';
   import { upFromProject } from '$lib/home/list.svelte';
   import { getCurrentWindow } from '@tauri-apps/api/window';
-  import { shortcuts } from '$lib/shell/keys.svelte';
+  import { keysFor, shortcuts } from '$lib/shell/keys.svelte';
   import { toggleProjectsPane } from '$lib/home/list.svelte';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -1090,7 +1090,7 @@
         class:on={showPreview}
         aria-pressed={showPreview}
         aria-label={t('project-preview')}
-        use:tooltip={{ text: t('project-preview'), shortcut: 'Ctrl+P', side: 'bottom' }}
+        use:tooltip={{ text: t('project-preview'), shortcut: keysFor('preview'), side: 'bottom' }}
         onclick={() => (showPreview = !showPreview)}
       >
         <BookOpenText size={15} />
@@ -1146,7 +1146,7 @@
       <!-- In the project of the pane that has the focus, as the keys. -->
       <IconButton
         label={t('common-undo')}
-        shortcut="Ctrl+Z"
+        shortcut={keysFor('undo')}
         disabled={!focusedProject?.canUndo}
         onclick={() => focusedProject?.undo()}
       >
@@ -1154,7 +1154,7 @@
       </IconButton>
       <IconButton
         label={t('project-redo')}
-        shortcut="Ctrl+Shift+Z"
+        shortcut={keysFor('redo')}
         disabled={!focusedProject?.canRedo}
         onclick={() => focusedProject?.redo()}
       >
@@ -1212,7 +1212,7 @@
               {#if i === 0}
                 <IconButton
                   label={t('home-pane-toggle')}
-                  shortcut="Ctrl+Shift+L"
+                  shortcut={keysFor('projects-pane')}
                   size="sm"
                   active={settings.value.projectsPane}
                   data-projects-button
@@ -1223,7 +1223,7 @@
               {/if}
               <IconButton
                 label={t('text-outline')}
-                shortcut="Ctrl+Shift+O"
+                shortcut={keysFor('text-outline')}
                 size="sm"
                 active={showOutline}
                 onclick={() => (showOutline = !showOutline)}

@@ -10,6 +10,7 @@
   import { fileSize } from '$lib/library/format';
   import { startDrag } from '$lib/ui/drag.svelte';
   import { FILES_DRAGGED, KIND_ICONS, kindWords, referenceWords } from './store.svelte';
+  import { keyOf } from '$lib/shell/keys.svelte';
 
   interface Props {
     files: FileView[];
@@ -132,6 +133,12 @@
     const current = indexOf(focused);
     let next = current;
     const page = Math.max(1, Math.floor(height / ROW) - 1);
+    // Ctrl+A by its letter, which is found on a Greek or a Russian keyboard too.
+    if ((event.ctrlKey || event.metaKey) && keyOf(event) === 'a') {
+      selection = files.map((f) => f.hash);
+      event.preventDefault();
+      return;
+    }
     switch (event.key) {
       case 'ArrowDown':
         next = Math.min(files.length - 1, current + 1);
@@ -158,12 +165,6 @@
       case 'Delete':
         if (selection.length) ondelete?.(files.filter((f) => selected.has(f.hash)));
         event.preventDefault();
-        return;
-      case 'a':
-        if (event.ctrlKey || event.metaKey) {
-          selection = files.map((f) => f.hash);
-          event.preventDefault();
-        }
         return;
       case 'Escape':
         if (selection.length > 1 && focused) {

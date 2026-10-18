@@ -29,6 +29,7 @@
   import { countFound } from '$lib/found/gather';
   import { documentSettingsUi } from '$lib/document/document-settings.svelte';
   import { t } from '$lib/i18n';
+  import { keysFor } from '$lib/shell/keys.svelte';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { removeElements } from './elements';
@@ -144,7 +145,7 @@
       {
         label: t('document-window-menu'),
         icon: FileText,
-        shortcut: 'Ctrl+Shift+D',
+        shortcut: keysFor('document-settings'),
         action: () => documentSettingsUi.open({ project, at }),
       },
       {

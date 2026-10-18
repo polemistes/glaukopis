@@ -54,6 +54,7 @@
   import { placeholder as placeholderPlugin } from '$lib/editor/plugins';
   import { showFormula } from '$lib/figures/math.svelte';
   import { t } from '$lib/i18n';
+  import { keysFor } from '$lib/shell/keys.svelte';
   import type { Inline } from '$lib/project/model/text';
   import { tooltip } from '$lib/ui/tooltip';
 
@@ -252,7 +253,11 @@
       aria-label={t('pictures-italic')}
       aria-pressed={!!marks.em}
       tabindex="-1"
-      use:tooltip={{ text: t('pictures-italic'), shortcut: 'Ctrl+I', side: 'bottom' }}
+      use:tooltip={{
+        text: t('pictures-italic'),
+        shortcut: keysFor('writing-italic'),
+        side: 'bottom',
+      }}
       onclick={() => mark('em')}
     >
       <Italic size={14} />
@@ -264,7 +269,11 @@
       aria-label={t('pictures-small-caps')}
       aria-pressed={!!marks.smallcaps}
       tabindex="-1"
-      use:tooltip={{ text: t('pictures-small-caps'), shortcut: 'Ctrl+Shift+K', side: 'bottom' }}
+      use:tooltip={{
+        text: t('pictures-small-caps'),
+        shortcut: keysFor('writing-smallcaps'),
+        side: 'bottom',
+      }}
       onclick={() => mark('smallcaps')}
     >
       <span>Sc</span>

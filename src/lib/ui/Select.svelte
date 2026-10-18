@@ -64,6 +64,10 @@
           {/each}
         {/if}
       {/each}
+      <!-- A value among none of the options, such as a font removed since, is shown as it is, as the rows of the settings show it, not as an empty chooser. -->
+      {#if !options.some((o) => o.value === value)}
+        <option {value}>{value}</option>
+      {/if}
     </select>
     <span class="chevron"><ChevronDown size={14} /></span>
   </div>

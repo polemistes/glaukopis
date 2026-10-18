@@ -8,7 +8,15 @@
  * hands every key to `handle`. The keys of the diagram, of the text and of
  * the editors are done where they are, by those who know the element or the
  * cursor; they are in the table so that they are shown, and seen to clash.
+ *
+ * The table writes the keys as they are on a PC: `Ctrl` is the key commands
+ * are given with, which is Cmd on a Mac. What is shown of them, in a menu,
+ * a tooltip or the sheet, is written by `keyLabel`, as the computer names
+ * them; a menu takes the keys of an entry from here by `keysFor`, so that
+ * the table is the one place a key is written.
  */
+
+import { onMac } from './platform.svelte';
 
 /** Where a key holds. */
 export type Place =
@@ -34,11 +42,14 @@ export interface KeyEntry {
   /** Not taken while one writes in a field or a text, which has a key of its own for it. */
   notInFields?: boolean;
   /** Keys of other entries that hold where this one does, and that this one takes precedence over. */
-  over?: string[];
+  over?: readonly string[];
 }
 
-/** Places whose keys are in force together: a key must mean one thing in each. */
-const TOGETHER: Record<Place, Place[]> = {
+/**
+ * Places whose keys are in force together: a key must mean one thing in
+ * each. Each pair is named on both sides, which a test holds to.
+ */
+export const TOGETHER: Readonly<Record<Place, readonly Place[]>> = {
   everywhere: [
     'everywhere',
     'project',
@@ -48,6 +59,7 @@ const TOGETHER: Record<Place, Place[]> = {
     'text',
     'writing',
     'library',
+    'store',
     'files',
   ],
   project: ['everywhere', 'project', 'review', 'diagram', 'text', 'writing'],
@@ -61,7 +73,7 @@ const TOGETHER: Record<Place, Place[]> = {
   files: ['everywhere', 'files'],
 };
 
-export const KEYS: KeyEntry[] = [
+const ENTRIES = [
   // Everywhere.
   { id: 'projects', keys: 'Ctrl+1', place: 'everywhere', bound: true },
   { id: 'library', keys: 'Ctrl+2', place: 'everywhere', bound: true },
@@ -123,6 +135,7 @@ export const KEYS: KeyEntry[] = [
   { id: 'diagram-menu', keys: 'Shift+F10', place: 'diagram' },
   { id: 'diagram-all', keys: 'Ctrl+A', place: 'diagram' },
   { id: 'diagram-copy', keys: 'Ctrl+C', place: 'diagram' },
+  { id: 'diagram-cut', keys: 'Ctrl+X', place: 'diagram' },
   { id: 'diagram-paste', keys: 'Ctrl+V', place: 'diagram' },
   { id: 'diagram-whole', keys: 'Ctrl+0', place: 'diagram' },
   { id: 'diagram-closer', keys: 'Ctrl+=', place: 'diagram' },
@@ -168,6 +181,7 @@ export const KEYS: KeyEntry[] = [
   { id: 'writing-cite-keys', keys: 'Ctrl+Shift+C', place: 'writing' },
   { id: 'writing-italic', keys: 'Ctrl+I', place: 'writing' },
   { id: 'writing-bold', keys: 'Ctrl+B', place: 'writing' },
+  { id: 'writing-underline', keys: 'Ctrl+U', place: 'writing' },
   { id: 'writing-smallcaps', keys: 'Ctrl+Shift+K', place: 'writing' },
   { id: 'writing-strike', keys: 'Ctrl+Shift+X', place: 'writing' },
   { id: 'writing-raised', keys: 'Ctrl+.', place: 'writing' },
@@ -202,19 +216,79 @@ export const KEYS: KeyEntry[] = [
 
   // Among the files of the library.
   { id: 'files-find', keys: 'Ctrl+F', place: 'files', bound: true },
-];
+] as const satisfies readonly KeyEntry[];
+
+/** The name of an entry of the table. */
+export type KeyId = (typeof ENTRIES)[number]['id'];
+
+export const KEYS: readonly KeyEntry[] = ENTRIES;
+
+/** The keys of an entry, as the table writes them: for a menu or a tooltip, which show them by `keyLabel`. */
+export function keysFor(id: KeyId): string {
+  return KEYS.find((e) => e.id === id)!.keys;
+}
+
+/** Whether the keys of two places are in force together, whichever is named first. */
+function together(a: Place, b: Place): boolean {
+  return TOGETHER[a].includes(b) || TOGETHER[b].includes(a);
+}
 
 /** Pairs of entries whose keys mean two things at once, where neither says it takes precedence. */
-export function clashes(entries: KeyEntry[] = KEYS): [KeyEntry, KeyEntry][] {
+export function clashes(entries: readonly KeyEntry[] = KEYS): [KeyEntry, KeyEntry][] {
   const found: [KeyEntry, KeyEntry][] = [];
   entries.forEach((a, i) => {
     for (const b of entries.slice(i + 1)) {
-      if (!a.keys || a.keys !== b.keys || !TOGETHER[a.place].includes(b.place)) continue;
+      if (!a.keys || a.keys !== b.keys || !together(a.place, b.place)) continue;
       if (a.over?.includes(b.id) || b.over?.includes(a.id)) continue;
       found.push([a, b]);
     }
   });
   return found;
+}
+
+// ---- showing the keys ----
+
+const MODIFIERS = /^((?:(?:Ctrl|Mod|Alt|Shift)\+)*)(.+)$/;
+
+/** The names a Mac gives keys, where it has signs for them. */
+const MAC_NAMES: Record<string, string> = {
+  // Named alone, as a hint names them between its words.
+  Ctrl: '⌘',
+  Mod: '⌘',
+  Alt: '⌥',
+  Shift: '⇧',
+  Enter: '↩',
+  Tab: '⇥',
+  Delete: '⌦',
+  Del: '⌦',
+  Backspace: '⌫',
+  Esc: '⎋',
+  Escape: '⎋',
+};
+
+/**
+ * Keys as the table writes them (`Ctrl+Shift+Z`), as a computer names them:
+ * the same on Linux and Windows; on a Mac with its signs, in its order and
+ * without plus signs, Ctrl being Cmd there (`⇧⌘Z`). What is no keys, as
+ * "Double-click", is given back as it is.
+ */
+export function formatKeys(keys: string, mac: boolean): string {
+  const m = MODIFIERS.exec(keys);
+  if (!mac || !m) return keys;
+  const mods = m[1].split('+');
+  const has = (...names: string[]) => names.some((n) => mods.includes(n));
+  // The order of a Mac's menus: Control, Option, Shift, Command.
+  return (
+    (has('Alt') ? '⌥' : '') +
+    (has('Shift') ? '⇧' : '') +
+    (has('Ctrl', 'Mod') ? '⌘' : '') +
+    (MAC_NAMES[m[2]] ?? m[2])
+  );
+}
+
+/** Keys as the table writes them, as this computer names them: see `formatKeys`. Reactive: it follows what the system says it is. */
+export function keyLabel(keys: string): string {
+  return formatKeys(keys, onMac());
 }
 
 // ---- doing the keys that are bound ----
@@ -238,20 +312,42 @@ function parse(keys: string): Parsed {
   };
 }
 
+/** The Latin letter or the digit of the key at a place on the keyboard (`KeyR`, `Digit1`), if it has one. */
+function placedOf(code: string | undefined): string | null {
+  if (!code) return null;
+  if (/^Key[A-Z]$/.test(code)) return code.slice(3).toLowerCase();
+  if (/^Digit\d$/.test(code)) return code.slice(5);
+  return null;
+}
+
 /**
- * The key an event is of, as the table names it: by what it writes, and by
- * where it is on the keyboard. Ctrl+Shift+R is found on a Greek keyboard,
- * whose R writes ρ; Ctrl+/ on a Norwegian one, where / is over the 7; and
- * Ctrl+1 on a French one, where the 1 writes &.
+ * The keys an event may be of, as the table names them: by what it writes,
+ * and by where it is on the keyboard where what it writes is no Latin
+ * letter or digit. Ctrl+Shift+R is found on a Greek keyboard, whose R writes
+ * ρ; Ctrl+/ on a Norwegian one, where / is over the 7; and Ctrl+1 on a
+ * French one, where the 1 writes &. A key that writes a Latin letter is that
+ * letter, wherever it is: Ctrl+Z on a German keyboard, whose Z is where
+ * others have the Y, is not Ctrl+Y.
  */
-function keysOf(event: KeyboardEvent): string[] {
+function keysOfEvent(event: KeyboardEvent): string[] {
   const written = event.key.toLowerCase();
-  const placed = /^Key[A-Z]$/.test(event.code)
-    ? event.code.slice(3).toLowerCase()
-    : /^Digit\d$/.test(event.code)
-      ? event.code.slice(5)
-      : null;
+  if (/^[a-z0-9]$/.test(written)) return [written];
+  const placed = placedOf(event.code);
   return placed && placed !== written ? [written, placed] : [written];
+}
+
+/**
+ * The key an event is of, for a view that matches a letter itself
+ * (Ctrl+A, Ctrl+F): what it writes, where that is a Latin letter or a
+ * digit; where it writes another letter, as α on a Greek keyboard or ф on a
+ * Russian one, the Latin letter the key has; otherwise the key as the event
+ * names it, in small letters (`f3`, `enter`, `/`).
+ */
+export function keyOf(event: Pick<KeyboardEvent, 'key' | 'code'>): string {
+  const written = event.key.toLowerCase();
+  if (/^[a-z0-9]$/.test(written)) return written;
+  const placed = /^\p{L}$/u.test(written) ? placedOf(event.code) : null;
+  return placed && !/\d/.test(placed) ? placed : written;
 }
 
 export function matches(entry: KeyEntry, event: KeyboardEvent): boolean {
@@ -263,7 +359,7 @@ export function matches(entry: KeyEntry, event: KeyboardEvent): boolean {
     want.mod === (event.ctrlKey || event.metaKey) &&
     (want.shift === event.shiftKey || (sign && !want.shift)) &&
     want.alt === event.altKey &&
-    keysOf(event).includes(want.key)
+    keysOfEvent(event).includes(want.key)
   );
 }
 

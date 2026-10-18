@@ -13,6 +13,7 @@
 
 import type { KindFamily, Look } from '$lib/api/documents';
 import { t } from '$lib/i18n';
+import { keysFor } from '$lib/shell/keys.svelte';
 import {
   KIND_FACTS,
   WORD_KINDS,
@@ -73,9 +74,9 @@ const WORDS: Record<string, string> = {
 const BASED_ON: Record<string, string> = { epigraph: 'quote', attribution: 'quote' };
 
 const SHORTCUTS: Record<string, string> = {
-  quote: "Ctrl+'",
-  item: 'Ctrl+Shift+8',
-  numbered: 'Ctrl+Shift+7',
+  quote: keysFor('writing-quotation'),
+  item: keysFor('writing-list'),
+  numbered: keysFor('writing-numbered'),
 };
 
 /** The kinds that come with the application, in the order the tools list them: the order of `families.ts`, which is the core's. */

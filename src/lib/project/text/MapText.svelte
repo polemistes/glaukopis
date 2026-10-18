@@ -36,6 +36,7 @@
   import { remembered, TextSearch, type Surface } from '$lib/search/text.svelte';
   import { truncate } from '$lib/library/format';
   import { t } from '$lib/i18n';
+  import { keyLabel, keyOf, keysFor } from '$lib/shell/keys.svelte';
   import { selectedPassage } from '$lib/comments/marks';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import { drag, dropTarget, startDrag, type DropEvent } from '$lib/ui/drag.svelte';
@@ -298,9 +299,14 @@
 
   // What is said under the text besides the count, with the keys shown as keys.
   const keysHint = $derived(
-    pieces((m) => t('text-keys', m), { ctrl: 'Ctrl', shift: 'Shift', enter: 'Enter', at: '@' }),
+    pieces((m) => t('text-keys', m), {
+      ctrl: keyLabel('Ctrl'),
+      shift: keyLabel('Shift'),
+      enter: keyLabel('Enter'),
+      at: '@',
+    }),
   );
-  const linkingHint = $derived(pieces((m) => t('text-hint-linking', m), { esc: 'Esc' }));
+  const linkingHint = $derived(pieces((m) => t('text-hint-linking', m), { esc: keyLabel('Esc') }));
 
   // ---- activation and focus ----
 
@@ -595,7 +601,7 @@
   function onkeydown(event: KeyboardEvent) {
     const mod = event.ctrlKey || event.metaKey;
     // Ctrl+F searches the text and Ctrl+H replaces; F3 goes on to the next that is found.
-    const letter = event.key.toLowerCase();
+    const letter = keyOf(event);
     const plain = mod && !event.altKey && !event.shiftKey;
     if (event.key === 'F3' || (plain && (letter === 'f' || letter === 'h'))) {
       event.preventDefault();
@@ -946,7 +952,7 @@
       extra.push({
         label: t('text-split'),
         icon: SplitSquareVertical,
-        shortcut: 'Ctrl+Enter',
+        shortcut: keysFor('text-new-after'),
         hint: t('text-split-hint'),
         action: () => split(id, view),
       });
@@ -962,7 +968,7 @@
       extra.push({
         label: t('text-open-as-map'),
         icon: MapIcon,
-        shortcut: 'Alt+Shift+↓',
+        shortcut: keysFor('text-enter'),
         hint: t('text-open-as-map-hint'),
         action: () => onenter(id),
       });
@@ -974,14 +980,14 @@
       folds.push({
         label: folded ? t('text-open') : t('text-fold'),
         icon: folded ? UnfoldVertical : FoldVertical,
-        shortcut: 'Ctrl+Alt+U',
+        shortcut: keysFor('text-fold'),
         action: () => fold(id),
       });
       if (folding.anyFolded(tree, id))
         folds.push({
           label: t('text-open-all-under'),
           icon: ChevronsUpDown,
-          shortcut: 'Ctrl+Alt+Shift+U',
+          shortcut: keysFor('text-unfold-all'),
           action: () => fold(id, true),
         });
       if (folding.anyOpen(tree, id))

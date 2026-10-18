@@ -7,6 +7,7 @@
   import { t } from '$lib/i18n';
   import Placing from './Placing.svelte';
   import type { Usual } from './placing';
+  import { keyOf } from '$lib/shell/keys.svelte';
 
   interface Props {
     name: string;
@@ -93,7 +94,7 @@
       event.stopPropagation();
       if (described !== alt) onchange({ alt: described.trim() });
       onclose();
-    } else if ((event.ctrlKey || event.metaKey) && ['z', 'y'].includes(event.key.toLowerCase())) {
+    } else if ((event.ctrlKey || event.metaKey) && ['z', 'y'].includes(keyOf(event))) {
       event.stopPropagation();
     }
   }

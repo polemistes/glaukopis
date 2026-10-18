@@ -12,6 +12,7 @@
   import { onMount, untrack } from 'svelte';
   import { editorUi } from '$lib/editor/ui.svelte';
   import { t } from '$lib/i18n';
+  import { keyOf, keysFor } from '$lib/shell/keys.svelte';
   import Button from '$lib/ui/Button.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import { tooltip } from '$lib/ui/tooltip';
@@ -112,10 +113,10 @@
       event.preventDefault();
       if (mod && event.altKey) search.replaceAll();
       else search.replace();
-    } else if (mod && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'h') {
+    } else if (mod && !event.altKey && !event.shiftKey && keyOf(event) === 'h') {
       event.preventDefault();
       focusReplace();
-    } else if (mod && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'f') {
+    } else if (mod && !event.altKey && !event.shiftKey && keyOf(event) === 'f') {
       event.preventDefault();
       focusQuery();
     } else return;
@@ -137,7 +138,7 @@
   <div class="row">
     <IconButton
       label={search.replacing ? t('search-hide-replace') : t('search-show-replace')}
-      shortcut={search.replacing ? undefined : 'Ctrl+H'}
+      shortcut={search.replacing ? undefined : keysFor('replace')}
       size="sm"
       onclick={() => (search.replacing ? (search.replacing = false) : focusReplace())}
     >

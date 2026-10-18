@@ -11,6 +11,7 @@ import { indent, outdent, removeElements, shift, type ElementActions } from '../
 import type { Project } from '../model/project.svelte';
 import type { Tree } from '../model/tree';
 import { neighbour, type Layout } from './layout';
+import { keyOf } from '$lib/shell/keys.svelte';
 
 /** What the keys read of a diagram, and ask of it. */
 export interface Diagram {
@@ -57,7 +58,7 @@ export function pressed(event: KeyboardEvent, d: Diagram): boolean {
   const after = (id: string) => d.add(id === tree.root ? 'child' : 'sibling', id);
 
   if (mod && !event.altKey) {
-    const key = event.key.toLowerCase();
+    const key = keyOf(event);
     if (key === 'z' && !event.shiftKey) project.undo();
     else if (key === 'y' || (key === 'z' && event.shiftKey)) project.redo();
     else if (key === 'a') d.select(lay.order.slice());

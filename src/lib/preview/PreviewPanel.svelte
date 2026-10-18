@@ -23,6 +23,7 @@
   import { lookUi } from '$lib/look/look.svelte';
   import { documents } from './documents.svelte';
   import { t } from '$lib/i18n';
+  import { keysFor } from '$lib/shell/keys.svelte';
   import { countWords, documentMark, leanDocument } from '$lib/project/model/document';
   import type { Project } from '$lib/project/model/project.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -485,14 +486,18 @@
     <IconButton label={t('preview-show-text')} disabled={!places.length} onclick={showText}>
       <ScanEye size={15} />
     </IconButton>
-    <IconButton label={t('document-window-menu')} shortcut="Ctrl+Shift+D" onclick={openSettings}>
+    <IconButton
+      label={t('document-window-menu')}
+      shortcut={keysFor('document-settings')}
+      onclick={openSettings}
+    >
       <SlidersHorizontal size={15} />
     </IconButton>
     <Button variant="primary" size="sm" onclick={() => (exporting = true)}>
       {#snippet icon()}<Share size={13} />{/snippet}
       {t('preview-export')}
     </Button>
-    <IconButton label={t('preview-hide')} shortcut="Ctrl+P" onclick={onclose}
+    <IconButton label={t('preview-hide')} shortcut={keysFor('preview')} onclick={onclose}
       ><X size={15} /></IconButton
     >
   </header>

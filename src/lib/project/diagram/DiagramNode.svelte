@@ -12,6 +12,7 @@
   import RichText from '$lib/editor/RichText.svelte';
   import type { KeyAction } from '$lib/editor/plugins';
   import { t } from '$lib/i18n';
+  import { keysFor } from '$lib/shell/keys.svelte';
   import { initials } from '$lib/sharing/connection.svelte';
   import { tooltip } from '$lib/ui/tooltip';
   import { compareCopy } from '../copies.svelte';
@@ -255,7 +256,7 @@
       type="button"
       class="corner enter"
       aria-label={t('diagram-open-as-map')}
-      use:tooltip={{ text: t('diagram-open-as-map'), shortcut: 'Alt+Shift+↓' }}
+      use:tooltip={{ text: t('diagram-open-as-map'), shortcut: keysFor('diagram-enter') }}
       tabindex="-1"
       onpointerdown={(e) => e.stopPropagation()}
       ondblclick={(e) => e.stopPropagation()}
@@ -271,7 +272,7 @@
       type="button"
       class="corner leave"
       aria-label={t('project-leave-map', { name: above })}
-      use:tooltip={{ text: t('project-leave-map', { name: above }), shortcut: 'Alt+Shift+↑' }}
+      use:tooltip={{ text: t('project-leave-map', { name: above }), shortcut: keysFor('up') }}
       tabindex="-1"
       onpointerdown={(e) => e.stopPropagation()}
       ondblclick={(e) => e.stopPropagation()}

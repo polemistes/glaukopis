@@ -2,6 +2,7 @@
   import { tick } from 'svelte';
   import Check from '@lucide/svelte/icons/check';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
+  import { keyLabel } from '$lib/shell/keys.svelte';
   import { place, type Align, type RectLike, type Side } from './floating';
   import { onTop } from './top';
   import type { MenuItem } from './menu.svelte';
@@ -228,7 +229,7 @@
         {#if item.kind === 'submenu'}
           <span class="chevron"><ChevronRight size={14} /></span>
         {:else if item.shortcut}
-          <span class="shortcut">{item.shortcut}</span>
+          <span class="shortcut">{keyLabel(item.shortcut)}</span>
         {/if}
       </div>
     {/if}
