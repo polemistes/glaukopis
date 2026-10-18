@@ -32,6 +32,8 @@ core-sharing-bad-id = Serveren kan ikke bruke id-en til prosjektet.
 core-sharing-many-invitations = Det er allerede femti åpne invitasjoner; trekk tilbake noen.
 core-sharing-no-collaborator = Det finnes ingen slik medarbeider.
 core-sharing-not-whole = Filen kom ikke helt fram.
+core-sharing-bad-file-name = En fil har navn etter SHA-256 av det den inneholder: 64 tegn, hvert av dem 0 til 9 eller a til f.
+core-sharing-not-as-named = Det som ble sendt, er ikke det navnet sier at det er: SHA-256 av det er en annen.
 core-sharing-file-too-large = Filen er større enn denne serveren tar imot: én fil kan være på høyst { $most }.
 core-sharing-project-full = Det er ikke plass til filen: filene i ett prosjekt kan til sammen være på høyst { $most } på denne serveren.
 

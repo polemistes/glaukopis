@@ -105,8 +105,17 @@ pub enum Refusal {
     Exists,
     #[error("the server holds as many projects as it is allowed to")]
     Full,
-    #[error("{0}")]
-    Invalid(String),
+    // What a request asked that cannot be: each is a refusal of its own, so
+    // that every sentence the server may say is here, where the test of the
+    // client's words (in api.rs) finds it.
+    #[error("the id of the project is not one the server can use")]
+    BadId,
+    #[error("the project has no name")]
+    NoName,
+    #[error("there are fifty open invitations already; withdraw some")]
+    ManyInvitations,
+    #[error("there is no such collaborator")]
+    NoCollaborator,
     #[error("the server could not write to its disk: {0}")]
     Io(#[from] io::Error),
 }
@@ -193,7 +202,7 @@ impl Registry {
     /// Makes a room. Returns the owner's token, which is told once.
     pub fn create(&mut self, id: &str, name: &str, limit: Option<usize>) -> Result<String, Refusal> {
         if !valid_room_id(id) {
-            return Err(Refusal::Invalid("the id of the project is not one the server can use".into()));
+            return Err(Refusal::BadId);
         }
         if self.rooms.contains_key(id) {
             return Err(Refusal::Exists);
@@ -203,7 +212,7 @@ impl Registry {
         }
         let name = clean(name, 200);
         if name.is_empty() {
-            return Err(Refusal::Invalid("the project has no name".into()));
+            return Err(Refusal::NoName);
         }
         let token = secrets::token();
         self.rooms.insert(
@@ -246,7 +255,7 @@ impl Registry {
     pub fn rename(&mut self, room: &str, name: &str) -> Result<(), Refusal> {
         let name = clean(name, 200);
         if name.is_empty() {
-            return Err(Refusal::Invalid("the project has no name".into()));
+            return Err(Refusal::NoName);
         }
         self.rooms.get_mut(room).ok_or(Refusal::NoRoom)?.name = name;
         Ok(self.save(room)?)
@@ -264,7 +273,7 @@ impl Registry {
         // Codes that admit no one any more are of no use to anyone.
         meta.invitations.retain(|i| i.is_open(at) || i.used > 0);
         if meta.invitations.iter().filter(|i| i.is_open(at)).count() >= 50 {
-            return Err(Refusal::Invalid("there are fifty open invitations already; withdraw some".into()));
+            return Err(Refusal::ManyInvitations);
         }
         let code = secrets::code();
         let mut invitation = Invitation {
@@ -341,7 +350,7 @@ impl Registry {
         let before = meta.members.len();
         meta.members.retain(|m| m.id != member);
         if meta.members.len() == before {
-            return Err(Refusal::Invalid("there is no such collaborator".into()));
+            return Err(Refusal::NoCollaborator);
         }
         Ok(self.save(room)?)
     }
@@ -377,7 +386,7 @@ mod tests {
         let owner = r.create(ROOM, "  Wrath and  the hero ", None).unwrap();
         assert_eq!(r.get(ROOM).unwrap().name, "Wrath and the hero");
         assert!(matches!(r.create(ROOM, "Again", None), Err(Refusal::Exists)));
-        assert!(matches!(r.create("../x", "Bad", None), Err(Refusal::Invalid(_))));
+        assert!(matches!(r.create("../x", "Bad", None), Err(Refusal::BadId)));
         assert!(matches!(r.create("other", "One too many", Some(1)), Err(Refusal::Full)));
 
         assert_eq!(r.admit(ROOM, &owner).unwrap(), Who::Owner);

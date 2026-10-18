@@ -34,6 +34,8 @@ core-sharing-bad-id = The id of the project is not one the server can use.
 core-sharing-many-invitations = There are fifty open invitations already; withdraw some.
 core-sharing-no-collaborator = There is no such collaborator.
 core-sharing-not-whole = The file did not arrive whole.
+core-sharing-bad-file-name = A file is named by the SHA-256 of what it holds: 64 characters, each of 0 to 9 or a to f.
+core-sharing-not-as-named = What was sent is not what its name says it is: its SHA-256 is another.
 # The most is in the server's words: "25 MB".
 core-sharing-file-too-large = The file is larger than this server takes: one file may hold { $most } at the most.
 core-sharing-project-full = There is not room for the file: the files of one project may hold { $most } together at the most on this server.
