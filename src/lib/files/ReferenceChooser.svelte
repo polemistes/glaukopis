@@ -34,7 +34,10 @@
 
   $effect(() => void library.load());
 
-  const found = $derived(search(sortEntries(library.entries, 'authors', false), query));
+  // Sorted when the library changes; what is searched for is filtered out
+  // of that, in the same order, with every letter typed.
+  const ordered = $derived(sortEntries(library.entries, 'authors', false));
+  const found = $derived(search(ordered, query));
   const shown = $derived(found.slice(0, MOST));
 
   // The first is the one Enter picks, whenever the search changes.

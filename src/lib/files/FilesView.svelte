@@ -51,6 +51,7 @@
   import { columns } from '$lib/library/columns.svelte';
   import Divider from '$lib/ui/Divider.svelte';
   import ExportDialog from './ExportDialog.svelte';
+  import { sortFiles, type FileSortKey } from './order';
   import {
     assign,
     exportFiles,
@@ -60,14 +61,13 @@
     goThrough,
     moveFiles,
     removeFiles,
-    referenceWords,
     takeIn,
     toPictures,
     unassignedIn,
     undoLast,
   } from './store.svelte';
 
-  type SortKey = 'name' | 'added' | 'size' | 'reference';
+  type SortKey = FileSortKey;
 
   let query = $state('');
   let kind = $state<FileKind | 'all'>('all');
@@ -94,36 +94,22 @@
   /** The files of the folder in view and under it, or of all, that belong to no reference. */
   const unassignedHere = $derived(unassignedIn(folderId));
 
-  const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
-
-  const scoped = $derived(
-    query.trim() && searchAll ? files.files : files.inFolder(folderId, below),
-  );
+  // Whether the search goes over all the files: a word typed changes what is
+  // shown, not the files it is chosen from.
+  const searchingAll = $derived(!!query.trim() && searchAll);
+  const scoped = $derived(searchingAll ? files.files : files.inFolder(folderId, below));
   const filters = $derived((kind !== 'all' ? 1 : 0) + (unassignedOnly ? 1 : 0));
-  const shown = $derived.by(() => {
-    const passing = scoped.filter(
+  // Sorted when the files or the order change; what is searched for is
+  // filtered out of that, in the same order, with every letter typed.
+  const sorted = $derived(sortFiles(scoped, sortKey, descending));
+  const shown = $derived(
+    sorted.filter(
       (f) =>
         (kind === 'all' || f.kind === kind) &&
         (!unassignedOnly || !f.references.length) &&
         fileMatches(f, query),
-    );
-    const byName = (a: FileView, b: FileView) => collator.compare(a.name, b.name);
-    const compare: Record<SortKey, (a: FileView, b: FileView) => number> = {
-      name: byName,
-      added: (a, b) => a.added.localeCompare(b.added) || byName(a, b),
-      size: (a, b) => a.size - b.size || byName(a, b),
-      // Those with no reference go last, whatever the direction.
-      reference: (a, b) => {
-        const x = a.references[0];
-        const y = b.references[0];
-        if (!x || !y) return (x ? -1 : 0) + (y ? 1 : 0) || byName(a, b);
-        const said = collator.compare(referenceWords(x), referenceWords(y)) || byName(a, b);
-        return descending ? -said : said;
-      },
-    };
-    const sorted = passing.slice().sort(compare[sortKey]);
-    return descending && sortKey !== 'reference' ? sorted.reverse() : sorted;
-  });
+    ),
+  );
   const single = $derived(selection.length === 1 ? selection[0] : null);
 
   onMount(() => {
