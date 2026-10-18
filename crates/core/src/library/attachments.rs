@@ -109,10 +109,10 @@ pub fn find_by_hash(library_dir: &Path, hash: &str) -> Option<String> {
         let name = e.file_name().to_string_lossy().into_owned();
         if name.starts_with(".tmp-") {
             let stale = e.metadata().and_then(|m| m.modified()).ok().and_then(|t| t.elapsed().ok());
-            if stale.is_some_and(|age| age > LEFT_BEHIND) {
-                if let Err(err) = fs::remove_file(e.path()) {
-                    tracing::warn!(%err, name, "could not clear away a copy cut short");
-                }
+            if stale.is_some_and(|age| age > LEFT_BEHIND)
+                && let Err(err) = fs::remove_file(e.path())
+            {
+                tracing::warn!(%err, name, "could not clear away a copy cut short");
             }
             continue;
         }
