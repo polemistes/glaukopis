@@ -47,22 +47,77 @@ impl OwnWords {
         self.dir.join(format!("{language}.txt"))
     }
 
-    /// The words of a language, in the order they were added.
-    pub fn list(&self, language: &str) -> Vec<String> {
-        if check_language(language).is_err() {
-            return Vec::new();
-        }
-        let Ok(text) = fs::read_to_string(self.file(language)) else { return Vec::new() };
-        let mut words: Vec<String> = Vec::new();
+    /// The lines of a language's list, as they stand, each once: those that
+    /// are no word too (a hand edit may have put a space in one), so that
+    /// writing the list does not lose them. A list that is not there has
+    /// none. One that cannot be read, or is not UTF-8, is never taken for
+    /// empty, which the next word added would have written over it: what
+    /// is read only for checking is refused, and said in the log; what is
+    /// read to be written (`for_writing`) is set aside under its name with
+    /// `.broken-<time>` added, and the error that goes to the page says
+    /// where, so that the writer is told when they add or take away a word.
+    fn lines(&self, language: &str, for_writing: bool) -> Result<Vec<String>> {
+        let path = self.file(language);
+        let text = match fs::read(&path) {
+            Ok(bytes) => String::from_utf8(bytes).map_err(|e| e.utf8_error().to_string()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(e) => Err(e.to_string()),
+        };
+        let text = match text {
+            Ok(text) => text,
+            Err(message) if for_writing => return Err(self.set_aside(language, &message)),
+            Err(message) => {
+                tracing::warn!(path = %path.display(), message, "the own words could not be read, and are not used");
+                return Err(Error::invalid(tr!("spelling-own-unreadable", language = language, message = message)));
+            }
+        };
+        let mut lines: Vec<String> = Vec::new();
         for line in text.lines().map(str::trim).filter(|l| !l.is_empty()) {
-            if check_word(line).is_ok() && !words.iter().any(|w| w == line) {
-                words.push(line.to_owned());
+            if !lines.iter().any(|w| w == line) {
+                lines.push(line.to_owned());
             }
         }
-        words
+        Ok(lines)
     }
 
-    /// The words of every language that has some.
+    fn set_aside(&self, language: &str, message: &str) -> Error {
+        let path = self.file(language);
+        let t = time::OffsetDateTime::now_utc();
+        let stamp = format!(
+            "{:04}{:02}{:02}T{:02}{:02}{:02}Z",
+            t.year(),
+            u8::from(t.month()),
+            t.day(),
+            t.hour(),
+            t.minute(),
+            t.second()
+        );
+        let aside = self.dir.join(format!("{language}.txt.broken-{stamp}"));
+        if let Err(e) = fs::rename(&path, &aside) {
+            tracing::warn!(path = %path.display(), %e, message, "the own words could not be read, nor set aside");
+            return Error::io(tr!("io-reading", path = &path), e);
+        }
+        tracing::warn!(path = %path.display(), aside = %aside.display(), message, "the own words could not be read, and are set aside");
+        Error::invalid(tr!("spelling-own-set-aside", language = language, path = &aside, message = message))
+    }
+
+    /// The words of a language, in the order they were added. A line that
+    /// is no word is left out, and said in the log.
+    pub fn list(&self, language: &str) -> Result<Vec<String>> {
+        check_language(language)?;
+        let mut words = self.lines(language, false)?;
+        words.retain(|line| {
+            let good = check_word(line).is_ok();
+            if !good {
+                tracing::warn!(language, line, "a line of the own words is no word, and is not used");
+            }
+            good
+        });
+        Ok(words)
+    }
+
+    /// The words of every language that has some. A list that cannot be
+    /// read is said in the log, and left out.
     pub fn all(&self) -> BTreeMap<String, Vec<String>> {
         let Ok(entries) = fs::read_dir(&self.dir) else { return BTreeMap::new() };
         entries
@@ -73,7 +128,7 @@ impl OwnWords {
                     return None;
                 }
                 let language = path.file_stem()?.to_str()?.to_owned();
-                let words = self.list(&language);
+                let words = self.list(&language).ok()?;
                 (!words.is_empty()).then_some((language, words))
             })
             .collect()
@@ -90,7 +145,7 @@ impl OwnWords {
     pub fn add(&self, language: &str, word: &str) -> Result<bool> {
         check_language(language)?;
         check_word(word)?;
-        let mut words = self.list(language);
+        let mut words = self.lines(language, true)?;
         if words.iter().any(|w| w == word) {
             return Ok(false);
         }
@@ -102,7 +157,7 @@ impl OwnWords {
     /// Takes a word away. False when it was not there.
     pub fn remove(&self, language: &str, word: &str) -> Result<bool> {
         check_language(language)?;
-        let mut words = self.list(language);
+        let mut words = self.lines(language, true)?;
         let before = words.len();
         words.retain(|w| w != word);
         if words.len() == before {
@@ -121,12 +176,12 @@ mod tests {
     fn words_are_kept_for_each_language() {
         let tmp = tempfile::tempdir().unwrap();
         let own = OwnWords::new(tmp.path().join("words"));
-        assert!(own.list("en").is_empty());
+        assert!(own.list("en").unwrap().is_empty());
         assert!(own.add("en", "Glaukopis").unwrap());
         assert!(own.add("en", "Nagy").unwrap());
         assert!(!own.add("en", "Nagy").unwrap());
         assert!(own.add("nb", "Glaukopis").unwrap());
-        assert_eq!(own.list("en"), ["Glaukopis", "Nagy"]);
+        assert_eq!(own.list("en").unwrap(), ["Glaukopis", "Nagy"]);
 
         let again = OwnWords::new(tmp.path().join("words"));
         let all = again.all();
@@ -134,9 +189,49 @@ mod tests {
 
         assert!(again.remove("en", "Glaukopis").unwrap());
         assert!(!again.remove("en", "Glaukopis").unwrap());
-        assert_eq!(again.list("en"), ["Nagy"]);
+        assert_eq!(again.list("en").unwrap(), ["Nagy"]);
         assert!(again.remove("en", "Nagy").unwrap());
         assert!(!again.all().contains_key("en"));
+    }
+
+    #[test]
+    fn a_list_that_cannot_be_read_is_set_aside_and_not_written_over() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("words");
+        fs::create_dir_all(&dir).unwrap();
+        // Saved by an editor in Latin-1: "Müller" with the byte 0xFC.
+        let bytes = b"Glaukopis\nM\xfcller\nNagy\n".to_vec();
+        fs::write(dir.join("en.txt"), &bytes).unwrap();
+        let own = OwnWords::new(&dir);
+
+        let refused = own.add("en", "new").unwrap_err().to_string();
+        assert!(refused.contains(".broken-"), "{refused}");
+        let aside: Vec<_> = fs::read_dir(&dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n.starts_with("en.txt.broken-"))
+            .collect();
+        assert_eq!(aside.len(), 1, "{aside:?}");
+        assert_eq!(fs::read(dir.join(&aside[0])).unwrap(), bytes, "what was there is kept as it was");
+
+        // The list begins anew, and the file set aside is not taken for a language.
+        assert!(own.add("en", "new").unwrap());
+        assert_eq!(own.list("en").unwrap(), ["new"]);
+        assert_eq!(own.all().keys().collect::<Vec<_>>(), ["en"]);
+    }
+
+    #[test]
+    fn a_line_that_is_no_word_is_not_lost_when_the_list_is_written() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("words");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("en.txt"), "Glaukopis\nde Gaulle\nNagy\n").unwrap();
+        let own = OwnWords::new(&dir);
+        assert_eq!(own.list("en").unwrap(), ["Glaukopis", "Nagy"]);
+        assert!(own.add("en", "Achaeans").unwrap());
+        assert!(own.remove("en", "Nagy").unwrap());
+        assert_eq!(fs::read_to_string(dir.join("en.txt")).unwrap(), "Glaukopis\nde Gaulle\nAchaeans\n");
     }
 
     #[test]
