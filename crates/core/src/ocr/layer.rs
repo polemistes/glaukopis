@@ -228,6 +228,52 @@ pub(crate) fn too_large(doc: &Document, number: u32, stored_limit: usize) -> boo
     false
 }
 
+/// The content of a stream unpacked, where it comes to no more than `left`
+/// bytes; nothing where it would come to more, or is packed in a way not
+/// unpacked here. It is for what is unpacked in the application's own
+/// process, where no limit of the process stands guard: Flate is unpacked
+/// as far as the limit and no further, kept as far as it went where the
+/// stream is broken, as the PDF library keeps it; ASCII85 comes to at most
+/// four bytes for each it has and is unpacked by the library. LZW, which
+/// can unpack to thousands of times its size and cannot be stopped midway
+/// in the library, and filters with a predictor, which no content of a
+/// page has in practice, are not unpacked.
+pub(crate) fn unpacked_within(stream: &pdf_text::Stream, left: u64) -> Option<Vec<u8>> {
+    use std::io::Read;
+    let filters: Vec<&[u8]> = match stream.dict.get(b"Filter") {
+        Err(_) => Vec::new(),
+        Ok(Object::Name(name)) => vec![name.as_slice()],
+        Ok(Object::Array(list)) => list.iter().map(|f| f.as_name().ok()).collect::<Option<_>>()?,
+        Ok(_) => return None,
+    };
+    if stream.dict.has(b"DecodeParms") && !filters.is_empty() {
+        return None;
+    }
+    let mut data = stream.content.clone();
+    for filter in filters {
+        data = match filter {
+            b"FlateDecode" => {
+                let mut out = Vec::new();
+                let inflated = flate2::read::ZlibDecoder::new(data.as_slice()).take(left + 1).read_to_end(&mut out);
+                if inflated.is_err() && out.is_empty() && data.len() > 2 {
+                    // A broken checksum, as in some encrypted files: as raw deflate after the header.
+                    let _ = flate2::read::DeflateDecoder::new(&data[2..]).take(left + 1).read_to_end(&mut out);
+                }
+                out
+            }
+            b"ASCII85Decode" => {
+                let alone = pdf_text::Stream::new(lopdf::dictionary! { "Filter" => "ASCII85Decode" }, data);
+                alone.decompressed_content().ok()?
+            }
+            _ => return None,
+        };
+        if data.len() as u64 > left {
+            return None;
+        }
+    }
+    (data.len() as u64 <= left).then_some(data)
+}
+
 /// What was read of the text of a PDF. It is carried as JSON from the
 /// process that reads it (`isolated.rs`).
 #[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]

@@ -24,6 +24,7 @@ use std::io::Write;
 use lopdf::content::{Content, Operation};
 use lopdf::{Dictionary, Document, IncrementalDocument, Object, ObjectId, Stream, dictionary};
 
+use super::layer;
 use crate::error::{Error, Result};
 use crate::tr;
 
@@ -304,8 +305,11 @@ fn unseen(render_mode: i64) -> bool {
 }
 
 /// The content of a page decoded, its streams one after another. Nothing
-/// where a stream is packed in a way that cannot be unpacked here: what
-/// could not be read whole is not written anew.
+/// where a stream is packed in a way that cannot be unpacked here, or where
+/// they unpack to more than a page of text may be when it is read for its
+/// text ([`layer::LARGEST_UNPACKED`]): this is done in the application's
+/// own process, and a stream that packs small and unpacks without end would
+/// take its memory. What could not be read whole is not written anew.
 fn decoded_contents(doc: &Document, page: &Dictionary) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     for object in contents_of(doc, page) {
@@ -314,7 +318,8 @@ fn decoded_contents(doc: &Document, page: &Dictionary) -> Option<Vec<u8>> {
             other => other,
         };
         let Ok(stream) = stream.as_stream() else { continue };
-        out.extend(stream.decompressed_content().ok()?);
+        let left = layer::LARGEST_UNPACKED.saturating_sub(out.len() as u64);
+        out.extend(layer::unpacked_within(stream, left)?);
         out.push(b'\n');
     }
     Some(out)
@@ -351,6 +356,35 @@ fn delimiter(b: u8) -> bool {
     b.is_ascii_whitespace() || b"()<>[]{}/%".contains(&b)
 }
 
+/// Whether a byte may stand just before an operator: white space, or what
+/// ends the operand before it. Never `/`, after which `BI` or `ID` is a
+/// name, as of a state of drawing (`/BI gs`) or a tag (`/BI BMC`).
+fn before_operator(b: u8) -> bool {
+    b.is_ascii_whitespace() || b")>]}".contains(&b)
+}
+
+/// Where a string that begins at `start`, with `(`, ends: after its closing
+/// bracket, its brackets nested and its escapes gone past; or the end.
+fn past_string(raw: &[u8], start: usize) -> usize {
+    let mut i = start;
+    let mut depth = 0usize;
+    while i < raw.len() {
+        match raw[i] {
+            b'\\' => i += 1,
+            b'(' => depth += 1,
+            b')' => {
+                depth -= 1;
+                if depth == 0 {
+                    break;
+                }
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    (i + 1).min(raw.len())
+}
+
 /// Takes the pictures within the content (`BI … ID … EI`) out of it, each
 /// as it was written, and puts in their place an operator that stands for
 /// it. The library that reads contents reads such a picture only where it
@@ -368,22 +402,7 @@ fn take_inline_images(raw: &[u8]) -> Option<(Vec<u8>, Vec<Vec<u8>>)> {
             // A string, with its brackets nested and its escapes: passed whole.
             b'(' => {
                 let start = i;
-                let mut depth = 0usize;
-                while i < raw.len() {
-                    match raw[i] {
-                        b'\\' => i += 1,
-                        b'(' => depth += 1,
-                        b')' => {
-                            depth -= 1;
-                            if depth == 0 {
-                                break;
-                            }
-                        }
-                        _ => {}
-                    }
-                    i += 1;
-                }
-                i = (i + 1).min(raw.len());
+                i = past_string(raw, i);
                 out.extend_from_slice(&raw[start..i]);
             }
             // A comment, to the end of its line.
@@ -395,19 +414,24 @@ fn take_inline_images(raw: &[u8]) -> Option<(Vec<u8>, Vec<Vec<u8>>)> {
                 out.extend_from_slice(&raw[start..i]);
             }
             b'B' if raw.get(i + 1) == Some(&b'I')
-                && (i == 0 || delimiter(raw[i - 1]))
+                && (i == 0 || before_operator(raw[i - 1]))
                 && raw.get(i + 2).is_none_or(|b| delimiter(*b)) =>
             {
-                // What it says of itself runs to `ID`, and one byte of white after it.
+                // What it says of itself runs to `ID`, and one byte of white
+                // after it; a string in it, which may say ID, is gone past.
                 let start = i;
                 let mut j = i + 2;
                 let data = loop {
                     if j + 1 >= raw.len() {
                         return None;
                     }
+                    if raw[j] == b'(' {
+                        j = past_string(raw, j);
+                        continue;
+                    }
                     if raw[j] == b'I'
                         && raw[j + 1] == b'D'
-                        && delimiter(raw[j - 1])
+                        && before_operator(raw[j - 1])
                         && raw.get(j + 2).is_none_or(|b| b.is_ascii_whitespace())
                     {
                         break j + 3;
@@ -831,6 +855,58 @@ mod tests {
         assert!(written.windows(picture.len()).any(|w| w == picture), "{}", String::from_utf8_lossy(&written));
     }
 
+    /// A page whose content unpacks to more than the limit is not unpacked
+    /// whole to be stripped, in the application's own process: it is left
+    /// as it is, as a page that could not be read whole.
+    #[test]
+    fn a_content_that_unpacks_without_end_is_not_unpacked_to_be_stripped() {
+        let large = crate::ocr::fixture::inflating_pdf(layer::LARGEST_UNPACKED as usize + (8 << 20));
+        let doc = Document::load_mem(&large).unwrap();
+        let page = doc.get_dictionary(doc.get_pages()[&1]).unwrap();
+        assert!(decoded_contents(&doc, page).is_none());
+        // Within the limit, it is unpacked as before.
+        let small = crate::ocr::fixture::inflating_pdf(1 << 20);
+        let doc = Document::load_mem(&small).unwrap();
+        let page = doc.get_dictionary(doc.get_pages()[&1]).unwrap();
+        assert_eq!(decoded_contents(&doc, page).map(|c| c.len()), Some((1 << 20) + 1));
+
+        let laid = page_of(b"BT 3 Tr /F1 12 Tf 72 70 Td (Laid) Tj ET\n");
+        let layers = [Layer { page: 0, pdf: laid }];
+        let doc = open(&large).unwrap();
+        let kept = lay_over(large.clone(), doc, &layers, true).unwrap();
+        assert!(holds(&kept, 1, &layers));
+    }
+
+    /// Packed in more than one way, with Flate last, as PostScript makes it.
+    #[test]
+    fn a_content_packed_twice_is_unpacked_within_the_limit() {
+        use std::io::Write;
+        let content = b"0 0 m 10 10 l S\n".repeat(100);
+        let mut packer = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+        packer.write_all(&content).unwrap();
+        let packed = packer.finish().unwrap();
+        // ASCII85 of the packed bytes, by hand: four bytes to five letters.
+        let mut letters = Vec::new();
+        for chunk in packed.chunks(4) {
+            let mut word = [0u8; 4];
+            word[..chunk.len()].copy_from_slice(chunk);
+            let mut n = u32::from_be_bytes(word);
+            let mut five = [0u8; 5];
+            for c in five.iter_mut().rev() {
+                *c = b'!' + (n % 85) as u8;
+                n /= 85;
+            }
+            letters.extend_from_slice(&five[..chunk.len() + 1]);
+        }
+        letters.extend_from_slice(b"~>");
+        let stream = Stream::new(
+            dictionary! { "Filter" => vec![Object::from("ASCII85Decode"), Object::from("FlateDecode")] },
+            letters,
+        );
+        assert_eq!(layer::unpacked_within(&stream, 1 << 20).as_deref(), Some(content.as_slice()));
+        assert_eq!(layer::unpacked_within(&stream, 100), None);
+    }
+
     #[test]
     fn pictures_within_a_content_are_taken_out_and_strings_and_comments_gone_past() {
         let raw = b"(a BI in a string) Tj % BI in a comment\nBI /W 2 /H 1 /BPC 8 /CS /G ID \x00\x45\x49 EI Q";
@@ -844,6 +920,29 @@ mod tests {
         }
         // A picture with no end: the content is not read.
         assert!(take_inline_images(b"q BI /W 1 /H 1 ID \x00\x01").is_none());
+    }
+
+    /// The name `/BI` (of a state of drawing, an XObject, a tag) is no
+    /// picture, nor does a string that says ID end what a picture says of
+    /// itself.
+    #[test]
+    fn a_name_bi_is_no_picture_and_a_string_does_not_end_one() {
+        let raw: &[u8] = b"/BI gs /BI BMC EMC q /BI Do Q BT (ID card) Tj ET";
+        let (out, images) = take_inline_images(raw).unwrap();
+        assert!(images.is_empty(), "{images:?}");
+        assert_eq!(out, raw);
+        let raw: &[u8] = b"/BI gs BT (Seen) Tj ET BI /W 1 /H 1 /BPC 8 /CS /G ID \x80 EI Q";
+        let (out, images) = take_inline_images(raw).unwrap();
+        assert_eq!(images, vec![b"BI /W 1 /H 1 /BPC 8 /CS /G ID \x80 EI".to_vec()]);
+        assert!(
+            String::from_utf8_lossy(&out).starts_with("/BI gs BT (Seen) Tj ET"),
+            "{}",
+            String::from_utf8_lossy(&out)
+        );
+        // What a picture says of itself may hold a string, which is gone past.
+        let raw: &[u8] = b"BI /W 1 /H 1 /BPC 8 /CS /G /Note (an ID in it) ID \x80 EI Q";
+        let (_, images) = take_inline_images(raw).unwrap();
+        assert_eq!(images, vec![b"BI /W 1 /H 1 /BPC 8 /CS /G /Note (an ID in it) ID \x80 EI".to_vec()]);
     }
 
     #[test]
