@@ -6,6 +6,7 @@ import { normalInlines } from './inline';
 import { readBlocks, readProject } from './read';
 import type { OrgProject } from './types';
 import { writeBlocks, writeProject } from './write';
+import { growth } from '$lib/util/growth';
 
 /** Blocks as the Org form holds them: empty paragraphs dropped, as Org has none, and words in their plain form. */
 function normal(blocks: readonly Block[]): Block[] {
@@ -851,15 +852,17 @@ describe('reading an Org file written by hand', () => {
   });
 
   it('reads signs that open and never close without reading them over and over', () => {
-    const started = Date.now();
-    for (const bad of [
-      '['.repeat(2000),
-      '[x '.repeat(1000),
-      '*a /b _c +d [e '.repeat(300),
-      '[[a]['.repeat(500),
-    ])
+    for (const [sign, size] of [
+      ['[', 2000],
+      ['[x ', 1000],
+      ['*a /b _c +d [e ', 300],
+      ['[[a][', 500],
+    ] as const) {
+      const bad = sign.repeat(size);
       expect(readBlocks(bad)).toEqual([p([t(bad)])]);
-    expect(Date.now() - started).toBeLessThan(2000);
+      // Read over and over, four times as many take sixteen times as long.
+      expect(growth((n) => readBlocks(sign.repeat(n)), size)).toBeLessThan(8);
+    }
   });
 
   it('writes and reads a long text in good time', () => {
@@ -877,9 +880,11 @@ describe('reading an Org file written by hand', () => {
           n % 3 ? 'text' : 'line',
         ),
       );
-    const started = Date.now();
     const text = writeBlocks(blocks);
     expect(readBlocks(text)).toEqual(normal(blocks));
-    expect(Date.now() - started).toBeLessThan(3000);
+    // In good time: four times as long a text takes about four times as long, not sixteen.
+    expect(
+      growth((n) => readBlocks(writeBlocks(blocks.slice(0, n))), blocks.length / 8),
+    ).toBeLessThan(8);
   });
 });

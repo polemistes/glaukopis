@@ -59,6 +59,13 @@ const EMPHASIS_OF: Record<string, string> = {
   '+': 'strike',
 };
 
+/**
+ * The signs something may begin with (see `Reader.attempt`): at any other
+ * the reader goes on at once, without asking what begins there and keeping
+ * the answer for every letter of the text.
+ */
+const BEGINNINGS = new Set(['[', '_', '^', '~', '=', '$', '{', ...Object.keys(EMPHASIS_OF)]);
+
 /** The names the bracket form gives marks that are not kinds of words. */
 const SPAN_NAMES: Record<string, string> = {
   sc: 'smallcaps',
@@ -766,7 +773,7 @@ class Reader {
         this.i++;
         continue;
       }
-      const got = this.construct(c);
+      const got = BEGINNINGS.has(c) ? this.construct(c) : null;
       if (got) {
         flush();
         out.push(...got);
@@ -784,6 +791,37 @@ class Reader {
 
   /** How many signs are open around what is being read: past a limit, one more is taken for itself. */
   depth = 0;
+
+  /**
+   * Where a sign stands last in the text, found once. A sign that opens
+   * something is read as opening it only where what closes it stands later
+   * in the text: without that, each of a run of signs that never close read
+   * all the rest of the line before it was given up, each one again past
+   * the depth at which nothing more is opened, and a line of them took the
+   * square of its length.
+   */
+  readonly #last = new Map<string, number>();
+  lastOf(sign: string): number {
+    let at = this.#last.get(sign);
+    if (at === undefined) this.#last.set(sign, (at = this.s.lastIndexOf(sign)));
+    return at;
+  }
+
+  /** Where the last sign `c` stands that could close what it opened. */
+  readonly #lastCloser = new Map<string, number>();
+  lastCloser(c: string): number {
+    let at = this.#lastCloser.get(c);
+    if (at === undefined) {
+      at = -1;
+      for (let j = this.s.lastIndexOf(c); j > 0; j = this.s.lastIndexOf(c, j - 1))
+        if (this.closes(j, 0)) {
+          at = j;
+          break;
+        }
+      this.#lastCloser.set(c, at);
+    }
+    return at;
+  }
 
   construct(c: string): Item[] | null {
     const at = this.i;
@@ -852,7 +890,7 @@ class Reader {
 
   emphasis(c: string): Item[] | null {
     const from = this.i;
-    if (!this.opens(from)) return null;
+    if (!this.opens(from) || this.lastCloser(c) <= from + 1) return null;
     this.i++;
     const kids = this.seq(() => this.s[this.i] === c && this.closes(this.i, from + 1));
     if (this.s[this.i] !== c || !kids.length) return null;
@@ -863,7 +901,7 @@ class Reader {
   verbatim(c: string): Item[] | null {
     const s = this.s;
     const from = this.i;
-    if (!this.opens(from)) return null;
+    if (!this.opens(from) || this.lastCloser(c) <= from + 1) return null;
     for (let j = from + 2; j < s.length; j++) {
       if (s[j] === '\n' || s[j] === '\0') return null;
       if (s[j] === c && this.closes(j, from + 1)) {
@@ -878,13 +916,14 @@ class Reader {
     const s = this.s;
     const from = this.i;
     if (s.startsWith('$$', from)) {
+      if (this.lastOf('$$') < from + 2) return null;
       const end = s.indexOf('$$', from + 2);
       const tex = end > 0 ? s.slice(from + 2, end) : '';
       if (end < 0 || !tex.trim() || /[\n\0]/.test(tex)) return null;
       this.i = end + 2;
       return [{ kind: 'math', tex: tex.trim() }];
     }
-    if (!this.opens(from)) return null;
+    if (!this.opens(from) || this.lastCloser('$') <= from + 1) return null;
     for (let j = from + 2; j < s.length; j++) {
       if (s[j] === '\n' || s[j] === '\0') return null;
       if (s[j] === '$' && this.closes(j, from + 1)) {
@@ -897,6 +936,7 @@ class Reader {
 
   parenMath(): Inline | null {
     const s = this.s;
+    if (this.lastOf('\\)') < this.i + 2) return null;
     const end = s.indexOf('\\)', this.i + 2);
     if (end < 0) return null;
     const tex = s.slice(this.i + 2, end);
@@ -906,6 +946,7 @@ class Reader {
   }
 
   script(name: 'sup' | 'sub'): Item[] | null {
+    if (this.lastOf('}') < this.i + 2) return null;
     this.i += 2;
     const kids = this.seq(() => this.s[this.i] === '}');
     if (this.s[this.i] !== '}' || !kids.length) return null;
@@ -915,6 +956,7 @@ class Reader {
 
   refmark(): Item[] | null {
     const s = this.s;
+    if (this.lastOf('}') < this.i + 2) return null;
     let label = '';
     for (let j = this.i + 2; j < s.length; j++) {
       const c = s[j];
@@ -951,6 +993,7 @@ class Reader {
     }
     if (s[j + 1] !== '[') return null;
     const descFrom = j + 2;
+    if (this.lastOf(']]') < descFrom) return null;
     this.i = descFrom;
     const kids = this.seq(() => this.s.startsWith(']]', this.i));
     if (!this.s.startsWith(']]', this.i)) return null;
@@ -963,6 +1006,7 @@ class Reader {
   }
 
   cite(): Item[] | null {
+    if (this.lastOf(']') < this.i) return null;
     const got = readCitation(this.s, this.i, this.ctx.citeId);
     if (!got) return null;
     this.i = got.end;
@@ -972,7 +1016,7 @@ class Reader {
   note(): Item[] | null {
     const s = this.s;
     const head = /^\[fn:([^\s:\]]*):/.exec(s.slice(this.i, this.i + 80));
-    if (!head) return null;
+    if (!head || this.lastOf(']') < this.i + head[0].length) return null;
     this.i += head[0].length;
     let place: 'foot' | 'end' | null = null;
     const said = /^@(foot|end)(?=\s|\])/.exec(s.slice(this.i, this.i + 6));
@@ -995,6 +1039,7 @@ class Reader {
 
   span(): Item[] | null {
     const s = this.s;
+    if (this.lastOf(']{') <= this.i) return null;
     this.i++;
     const kids = this.seq(() => this.s[this.i] === ']' && this.s[this.i + 1] === '{');
     if (!(s[this.i] === ']' && s[this.i + 1] === '{')) return null;

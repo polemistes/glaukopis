@@ -10,6 +10,7 @@ import type {
   Run,
 } from '$lib/history/types';
 import { group, likeness, type Change } from './grouping';
+import { growth } from '$lib/util/growth';
 
 // ---- passages made by hand ----
 
@@ -539,26 +540,27 @@ describe('likeness', () => {
 
 describe('a text much written anew', () => {
   it('is grouped in little time', () => {
-    const passages: Passage[] = [];
     const sentence = (n: number) =>
       `Sentence ${n} of the passage says something about wrath and song. `;
-    for (let i = 0; i < 2000; i++) passages.push(written('a', [i], sentence(i).repeat(6)));
-    for (let i = 0; i < 2000; i++) passages.push(deleted('b', [i], sentence(i + 5000).repeat(6)));
-    for (let i = 0; i < 1000; i++)
-      passages.push(
-        passage(
-          'c',
-          [i],
-          [same(sentence(i).repeat(3)), added('New words here. '), same(sentence(i).repeat(3))],
-        ),
-      );
-    const started = performance.now();
-    const found = group(changes(passages), { language: 'en', sequence: ['a', 'b', 'c'] });
-    const took = performance.now() - started;
-    expect(found.length).toBeGreaterThan(1000);
-    expect(took).toBeLessThan(2000);
-    console.log(
-      `grouped ${passages.length} passages into ${found.length} changes in ${Math.round(took)} ms`,
-    );
+    /** A text of `n` passages written, `n` deleted, and `n / 2` with new words in them. */
+    const text = (n: number) => {
+      const passages: Passage[] = [];
+      for (let i = 0; i < n; i++) passages.push(written('a', [i], sentence(i).repeat(6)));
+      for (let i = 0; i < n; i++) passages.push(deleted('b', [i], sentence(i + 5000).repeat(6)));
+      for (let i = 0; i < n / 2; i++)
+        passages.push(
+          passage(
+            'c',
+            [i],
+            [same(sentence(i).repeat(3)), added('New words here. '), same(sentence(i).repeat(3))],
+          ),
+        );
+      return passages;
+    };
+    const grouped = (passages: Passage[]) =>
+      group(changes(passages), { language: 'en', sequence: ['a', 'b', 'c'] });
+    expect(grouped(text(2000)).length).toBeGreaterThan(1000);
+    // Four times as many passages take about four times as long, not sixteen.
+    expect(growth((n) => grouped(text(n)), 250, { times: 3 })).toBeLessThan(8);
   });
 });

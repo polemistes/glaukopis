@@ -4,6 +4,7 @@ import { Project } from '$lib/project/model/project.svelte';
 import { PROJECT } from '$lib/project/model/types';
 import { apply, dedent, fault, indent, overOwn, readFile } from './fluent';
 import { changesIn, elementText, fillWords, projectWords, wordsIn, written } from './project';
+import { growth } from '$lib/util/growth';
 
 const sources = import.meta.glob('/locales/*/*.ftl', {
   query: '?raw',
@@ -147,14 +148,29 @@ describe('a project of the words of a language', () => {
     p.begin('Bokmål');
     const english = filesOf('en');
     const own = filesOf('nb');
-    const started = performance.now();
     const count = fillWords(p, 'nb', english, own);
-    const took = performance.now() - started;
     expect(count).toBeGreaterThan(3000);
     expect(changesIn(p)).toEqual([]);
-    expect(took).toBeLessThan(60000);
-    console.log(`${count} parts in ${Math.round(took)} ms`);
-  }, 120000);
+  });
+
+  it('is made in time that grows with the number of words, not with its square', () => {
+    const file = (n: number, words: string) =>
+      Array.from({ length: n }, (_, i) => `m-${i} = ${words} ${i}\n`).join('');
+    const fill = (n: number) => {
+      const p = new Project(null);
+      p.begin('Words');
+      fillWords(
+        p,
+        'nb',
+        new Map([
+          ['a.ftl', file(n, 'Message')],
+          ['b.ftl', file(n, 'Another')],
+        ]),
+        new Map([['a.ftl', file(n, 'Melding')]]),
+      );
+    };
+    expect(growth(fill, 200, { times: 3 })).toBeLessThan(8);
+  });
 });
 
 describe('own words', () => {
