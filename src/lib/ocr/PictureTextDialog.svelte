@@ -22,7 +22,7 @@
   import Button from '$lib/ui/Button.svelte';
   import Dialog from '$lib/ui/Dialog.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
-  import { describeError, notifyOk } from '$lib/ui/toast.svelte';
+  import { describeError, notifyError, notifyOk } from '$lib/ui/toast.svelte';
   import { newId } from '$lib/util/id';
   import { howFromSettings } from './how';
   import LanguagePicker from './LanguagePicker.svelte';
@@ -63,7 +63,8 @@
     });
     return () => {
       gone = true;
-      if (phase === 'reading') ocrStop(ticket).catch(() => {});
+      if (phase === 'reading')
+        ocrStop(ticket).catch((error) => console.error('the reading could not be stopped', error));
     };
   });
 
@@ -103,20 +104,31 @@
   }
 
   async function copy() {
-    await navigator.clipboard.writeText(text);
-    notifyOk(t('ocr-picture-copied'));
+    // The clipboard may refuse, as WebKitGTK's can: then it is said, not
+    // left for the writer to paste what was there before.
+    try {
+      await navigator.clipboard.writeText(text);
+      notifyOk(t('ocr-picture-copied'));
+    } catch (error) {
+      notifyError(t('ocr-picture-copy-failed'), error);
+    }
   }
 
   function elementOf() {
     if (!project || !read) return;
-    const made = makeImported(project, at ?? PROJECT, read, name);
-    if (!made) return;
-    onclose();
-    onenter?.(made.top);
+    try {
+      const made = makeImported(project, at ?? PROJECT, read, name);
+      if (!made) throw new Error(t('ocr-map-failed'));
+      onclose();
+      onenter?.(made.top);
+    } catch (error) {
+      notifyError(t('ocr-map-failed'), error);
+    }
   }
 
   function cancel() {
-    if (phase === 'reading') ocrStop(ticket).catch(() => {});
+    if (phase === 'reading')
+      ocrStop(ticket).catch((error) => console.error('the reading could not be stopped', error));
     onclose();
   }
 </script>

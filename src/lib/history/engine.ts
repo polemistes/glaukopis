@@ -143,8 +143,20 @@ export class Engine {
   #capture: Effect | null = null;
   /** Changes followed as they were made, until the batch they are in is written. */
   #following: { effect: Effect; here: boolean }[] = [];
-  /** Snapshots of moments, by the record they follow, once they have been made. */
+  /**
+   * Snapshots of moments, by the record they follow, once they have been
+   * made. Records are only ever added after the last, so a moment once made
+   * stands for as long as the engine does.
+   */
   #snapshots = new Map<number, Y.Snapshot>();
+  /**
+   * Why the history cannot be read, where a record of it could not be
+   * applied: every question is answered with it (ADR 0052). What came after
+   * that record would be played over a document that lacks it, and show text
+   * that never was; so the history is not shown at all rather than shown
+   * wrong, and the panel says why.
+   */
+  damaged: string | null = null;
 
   constructor() {
     this.#users = this.doc.getMap('users');
@@ -168,17 +180,21 @@ export class Engine {
     });
   }
 
+  /** Applies a change, and tells what it did; what cannot be applied throws. */
   #apply(update: Uint8Array): Effect {
     const effect: Effect = { made: new Map(), deleted: [] };
     this.#capture = effect;
     try {
       Y.applyUpdate(this.doc, update);
-    } catch (error) {
-      console.error('a change of the history could not be applied', error);
     } finally {
       this.#capture = null;
     }
     return effect;
+  }
+
+  /** Fails a question where the history could not be read. */
+  #sound() {
+    if (this.damaged) throw new Error(this.damaged);
   }
 
   #keep(effects: Effect[], record: Omit<Kept, 'made' | 'deleted' | 'added' | 'removed'>) {
@@ -202,10 +218,22 @@ export class Engine {
     return kept;
   }
 
-  /** Reads the history as it is on disk. */
+  /**
+   * Reads the history as it is on disk. A record that cannot be applied ends
+   * the reading, and the engine is `damaged`: see there.
+   */
   load(records: HistoryRecord[]) {
-    for (const r of records) {
-      const effect = this.#apply(r.update);
+    for (const [i, r] of records.entries()) {
+      let effect: Effect;
+      try {
+        effect = this.#apply(r.update);
+      } catch (error) {
+        const when = r.time > 0 ? `, written ${new Date(r.time).toISOString()},` : '';
+        const cause = error instanceof Error ? error.message : String(error);
+        this.damaged = `change ${i + 1} of ${records.length} of the history${when} could not be applied: ${cause}`;
+        console.error(this.damaged, error);
+        return;
+      }
       this.#keep([effect], {
         kind: r.kind,
         here: r.here,
@@ -219,8 +247,19 @@ export class Engine {
 
   /** A change made in the project since it was read, as it is made. */
   change(update: Uint8Array, here: boolean) {
-    this.#following.push({ effect: this.#apply(update), here });
-    this.#snapshots.clear();
+    // A change the project itself has applied is not refused here unless
+    // something is very wrong; if it is, the history is not to be trusted
+    // from then on, and says so.
+    let effect: Effect;
+    try {
+      effect = this.#apply(update);
+    } catch (error) {
+      const cause = error instanceof Error ? error.message : String(error);
+      this.damaged ??= `a change made while the history was followed could not be applied: ${cause}`;
+      console.error(this.damaged, error);
+      effect = { made: new Map(), deleted: [] };
+    }
+    this.#following.push({ effect, here });
   }
 
   /** A batch of the changes followed has been written: it is a record of the history. */
@@ -241,6 +280,7 @@ export class Engine {
   };
 
   people(): Person[] {
+    this.#sound();
     const out: Person[] = [];
     for (const [id, user] of this.#users) {
       const name = user instanceof Y.Map ? user.get('name') : null;
@@ -273,14 +313,24 @@ export class Engine {
   // Moments
   // =====================================================================
 
-  /** The snapshot of the moment after a record. */
+  /**
+   * The snapshot of the moment after a record: made from the nearest moment
+   * before it that is known, so that asking for the moments one after
+   * another (the sessions of the review, the versions of a stretch) costs
+   * each only the records between.
+   */
   snapshot(record: number): Y.Snapshot {
+    this.#sound();
+    if (!this.records.length) return Y.createSnapshot(Y.createDeleteSet(), new Map());
     const index = Math.max(0, Math.min(record, this.records.length - 1));
     const known = this.#snapshots.get(index);
     if (known) return known;
-    const sv = new Map<number, number>();
-    const deleted: DeleteSet[] = [];
-    for (let i = 0; i <= index; i++) {
+    let from = -1;
+    for (const i of this.#snapshots.keys()) if (i < index && i > from) from = i;
+    const base = this.#snapshots.get(from);
+    const sv = new Map<number, number>(base?.sv ?? []);
+    const deleted: DeleteSet[] = base ? [base.ds] : [];
+    for (let i = from + 1; i <= index; i++) {
       const r = this.records[i];
       for (const [client, [, to]] of r.made) sv.set(client, Math.max(sv.get(client) ?? 0, to));
       if (r.deleted.clients.size) deleted.push(r.deleted);
@@ -291,19 +341,23 @@ export class Engine {
   }
 
   moment(record: number): Moment {
+    this.#sound();
     const r = this.records[Math.max(0, Math.min(record, this.records.length - 1))];
     return { snapshot: Y.encodeSnapshot(this.snapshot(record)), time: r?.until ?? Date.now() };
   }
 
   now(): Moment {
+    this.#sound();
     return { snapshot: Y.encodeSnapshot(Y.snapshot(this.doc)), time: Date.now() };
   }
 
   begins(): Moment {
+    this.#sound();
     return this.moment(0);
   }
 
   sessions(): Session[] {
+    this.#sound();
     const out: Session[] = [];
     this.records.forEach((r, i) => {
       if (r.kind !== 'start' && !r.made.size && !r.deleted.clients.size) return;
@@ -338,6 +392,7 @@ export class Engine {
   }
 
   named(): Named[] {
+    this.#sound();
     const out: Named[] = [];
     for (const [id, value] of this.doc.getMap('moments')) {
       const v = value as { name?: unknown; time?: unknown; by?: unknown; snapshot?: unknown };
@@ -421,6 +476,7 @@ export class Engine {
 
   /** What changed within an element, in it and in all under it, since a moment. */
   compare(at: string, reference: Reference, elements?: string[]): BranchChanges {
+    this.#sound();
     const before = atSnapshot(Y.decodeSnapshot(reference.moment));
     let result!: BranchChanges;
     this.doc.transact((transaction) => {
@@ -451,6 +507,7 @@ export class Engine {
    * where the record is not yet in the store on disk.
    */
   cut(record: number, kept: Uint8Array[]) {
+    this.#sound();
     const r = this.records[record];
     if (!r || !r.stored || record < 1) return null;
     const sv = this.snapshot(record).sv;
@@ -467,6 +524,7 @@ export class Engine {
    * by then is not kept, as a project that is worked in does not keep it.
    */
   startAt(when: When): Uint8Array {
+    this.#sound();
     const lean = new Y.Doc();
     Y.applyUpdate(lean, this.stateAt(when));
     return Y.encodeStateAsUpdate(lean);
@@ -474,6 +532,7 @@ export class Engine {
 
   /** The whole project as it was at a moment, as one update: to be opened as a project of its own. */
   stateAt(when: When): Uint8Array {
+    this.#sound();
     const snapshot = typeof when === 'number' ? this.snapshot(when) : Y.decodeSnapshot(when);
     return Y.encodeStateAsUpdate(Y.createDocFromSnapshot(this.doc, snapshot));
   }
@@ -486,6 +545,7 @@ export class Engine {
    * project's own element is never taken away.
    */
   bringBack(at: string, element: string | null, when: When): Edit[] {
+    this.#sound();
     const then = this.#at(when);
     const edits: Edit[] = [];
     this.doc.transact((transaction) => {
@@ -550,6 +610,7 @@ export class Engine {
    * looking at the history.
    */
   branchAt(at: string, when: When, since: When | null) {
+    this.#sound();
     const after = this.#at(when);
     const before = since === null ? after : this.#at(since);
     let result!: ReturnType<typeof readBranch>;
@@ -562,6 +623,7 @@ export class Engine {
   }
 
   versions(place: Place, from: Uint8Array, to: Uint8Array, reference: Reference): Version[] {
+    this.#sound();
     const out: Version[] = [];
     this.doc.transact((transaction) => {
       const refAt = atSnapshot(Y.decodeSnapshot(reference.moment));
@@ -643,6 +705,7 @@ export class Engine {
 
   /** Takes back pieces of a passage: what was added goes, what was removed comes back. */
   revert(passage: Passage, pieces: Piece[]): Edit[] {
+    this.#sound();
     const given: { items: Items; piece: Piece }[] = pieces.map((piece) => {
       const items: Items = {};
       for (const [client, clock, length] of piece.runs) addItems(items, client, clock, length);
@@ -670,6 +733,7 @@ export class Engine {
 
   /** Makes a stretch as it was at a moment. */
   restore(place: Place, from: Uint8Array, to: Uint8Array, moment: Uint8Array): Edit[] {
+    this.#sound();
     let edits: Edit[] = [];
     this.doc.transact((transaction) => {
       const then = atSnapshot(Y.decodeSnapshot(moment));
@@ -756,6 +820,7 @@ export class Engine {
     kept: Uint8Array[],
     visible: Items[] = [],
   ): { first: number; count: number; time: number; until: number; record: HistoryRecord }[] {
+    this.#sound();
     const HOUR = 3_600_000;
     const DAY = 24 * HOUR;
     const hourBefore = now - hourly * 7 * DAY;

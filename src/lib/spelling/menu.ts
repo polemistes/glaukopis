@@ -19,7 +19,7 @@ import { pointRect, type RectLike } from '$lib/ui/floating';
 import { menuState, openMenu, type MenuItem } from '$lib/ui/menu.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
 import { wordAtPlace, type Misspelt, type SpellingOptions, type Why } from './plugin';
-import { spelling } from './spelling.svelte';
+import { languageKey, spelling } from './spelling.svelte';
 
 /** How long the menu waits for what a word may be before it opens without it, in milliseconds. */
 const WAIT = 80;
@@ -43,16 +43,22 @@ const nothing = () => {};
 /** Opens the menu of a misspelt word. */
 export async function openWordMenu(menu: WordMenu) {
   const suggestions = spelling.suggest(menu.language, menu.word);
+  // A failure to look is null in the list, and said as one: the store has logged it.
+  const settled = suggestions.catch(() => null);
   const early = await Promise.race([
-    suggestions.catch(() => []),
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), WAIT)),
+    settled,
+    new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), WAIT)),
   ]);
-  const found = (list: string[]): MenuItem[] =>
-    list.length
-      ? list.map((s) => ({ label: s, action: () => menu.replace(s) }))
-      : [{ label: t('spelling-no-suggestions'), disabled: true, action: nothing }];
+  const found = (list: string[] | null): MenuItem[] =>
+    list === null
+      ? [{ label: t('spelling-suggest-failed'), disabled: true, action: nothing }]
+      : list.length
+        ? list.map((s) => ({ label: s, action: () => menu.replace(s) }))
+        : [{ label: t('spelling-no-suggestions'), disabled: true, action: nothing }];
   const items: MenuItem[] = [
-    ...(early ? found(early) : [{ label: t('spelling-looking'), disabled: true, action: nothing }]),
+    ...(early !== undefined
+      ? found(early)
+      : [{ label: t('spelling-looking'), disabled: true, action: nothing }]),
     { kind: 'separator' },
     {
       label: t('spelling-add-word'),
@@ -72,9 +78,9 @@ export async function openWordMenu(menu: WordMenu) {
     });
   }
   openMenu(menu.anchor, items, { side: 'bottom', align: 'start', onclose: menu.back });
-  if (early) return;
+  if (early !== undefined) return;
   const shown = menuState.current;
-  const list = await suggestions.catch(() => []);
+  const list = await settled;
   // Put in where it said that it was looking, if the menu is still open.
   if (!shown || menuState.current !== shown) return;
   shown.items.splice(0, 1, ...found(list));
@@ -87,15 +93,22 @@ export function openWhyMenu(
   language: string | null | undefined,
   back?: () => void,
 ) {
+  const name = languageName(language || 'en');
   const said =
     why === 'off'
       ? t('spelling-off')
       : why === 'no-dictionary'
-        ? t('spelling-no-dictionary', { language: languageName(language || 'en') })
-        : why === 'reading'
-          ? t('spelling-not-ready')
-          : t('spelling-nothing');
-  openMenu(anchor, [{ label: said, disabled: true, action: nothing }], {
+        ? t('spelling-no-dictionary', { language: name })
+        : why === 'failed'
+          ? t('spelling-failed', { language: name })
+          : why === 'reading'
+            ? t('spelling-not-ready')
+            : t('spelling-nothing');
+  const items: MenuItem[] = [{ label: said, disabled: true, action: nothing }];
+  // Why it could not be read, as the log has it.
+  const reason = why === 'failed' ? spelling.failed.get(languageKey(language)) : undefined;
+  if (reason) items.push({ label: reason, disabled: true, action: nothing });
+  openMenu(anchor, items, {
     side: 'bottom',
     align: 'start',
     onclose: back,

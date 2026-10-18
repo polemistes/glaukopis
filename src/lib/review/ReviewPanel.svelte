@@ -180,6 +180,10 @@
     const list = current && review.versions?.key === current.key ? review.versions.list : null;
     return list ? list.slice(1) : list;
   });
+  // Why the history could not tell the versions, where it could not.
+  const versionsFailed = $derived(
+    current && review.versions?.key === current.key ? (review.versions.failed ?? null) : null,
+  );
   let showVersions = $state(false);
 
   // The one looked at is kept in view in the list.
@@ -466,7 +470,7 @@
                   >
                     <History size={13} />
                     <span>{t('review-versions')}</span>
-                    {#if versions}<span class="quiet"
+                    {#if versions && versionsFailed === null}<span class="quiet"
                         >{t('review-versions-count', { count: versions.length })}</span
                       >{/if}
                     <ChevronDown size={13} class={showVersions ? 'open' : ''} />
@@ -475,6 +479,11 @@
                     <ol class="versions">
                       {#if versions === null}
                         <li class="quiet">{t('review-versions-reading')}</li>
+                      {:else if versionsFailed !== null}
+                        <li class="quiet">
+                          {t('review-versions-failed')}
+                          {#if versionsFailed}<span class="reason">{versionsFailed}</span>{/if}
+                        </li>
                       {:else if !versions.length}
                         <li class="quiet">{t('review-versions-none')}</li>
                       {:else}
@@ -764,6 +773,10 @@
     padding: 0 0 0 10px;
     border-left: 2px solid var(--line);
     list-style: none;
+  }
+  .versions .reason {
+    display: block;
+    overflow-wrap: anywhere;
   }
   .version {
     display: flex;

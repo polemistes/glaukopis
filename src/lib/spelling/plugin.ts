@@ -24,7 +24,7 @@ import { Plugin, PluginKey, type EditorState, type Transaction } from 'prosemirr
 import { Mapping, StepMap, type Mappable } from 'prosemirror-transform';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import { ySyncPluginKey } from 'y-prosemirror';
-import { isIgnored, spelling } from './spelling.svelte';
+import { isIgnored, languageKey, spelling } from './spelling.svelte';
 import { findWords, NOT_TEXT, wordAt, type Word } from './words';
 import './spelling.css';
 
@@ -48,7 +48,7 @@ export interface Misspelt {
 }
 
 /** Why there is no misspelt word to show. */
-export type Why = 'off' | 'no-dictionary' | 'reading' | 'nothing';
+export type Why = 'off' | 'no-dictionary' | 'failed' | 'reading' | 'nothing';
 
 interface Range {
   from: number;
@@ -273,8 +273,11 @@ export function spellingPlugin(options: SpellingOptions): Plugin<State> {
   /** Why nothing is shown in this text. */
   function why(): Why {
     if (!spelling.on) return 'off';
-    const checking = spelling.checkingOf(options.language());
-    if (checking === null) return 'no-dictionary';
+    const language = options.language();
+    const checking = spelling.checkingOf(language);
+    // A dictionary that could not be read is not the same as none.
+    if (checking === null)
+      return spelling.failed.has(languageKey(language)) ? 'failed' : 'no-dictionary';
     if (checking === undefined) return 'reading';
     return 'nothing';
   }

@@ -92,6 +92,7 @@ ocr-picture-title = Teksten i bildet
 ocr-picture-empty = Ingen tekst ble funnet i bildet.
 ocr-picture-copy = Kopier
 ocr-picture-copied = Teksten er kopiert
+ocr-picture-copy-failed = Teksten kunne ikke kopieres
 ocr-picture-map = Lag et element av den
 
 ## Tesseract i innstillingene
@@ -154,6 +155,7 @@ ocr-text-translate-searchable-hint = PDF-ens egne tabeller rettes, så hver lese
 ocr-text-anew-no-tesseract = Tesseract, som leser tekst i bilder, er ikke installert.
 ocr-text-page = Side { $label }
 ocr-text-page-none = Ingen tekst på denne siden: den leses fra et bilde av den.
+ocr-text-rest-failed = Sidene etter disse kunne ikke leses.
 ocr-about-translate = { $without ->
     [0] Teksten PDF-en har, gjøres lesbar; ingen side leses fra et bilde.
     [one] Teksten PDF-en har, gjøres lesbar, og den ene siden uten tekst leses fra et bilde av den.

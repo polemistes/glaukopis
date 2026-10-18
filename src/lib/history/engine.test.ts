@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import { oldDocument, p, t } from '$lib/found/testing';
 import { Project, type Persistence } from '$lib/project/model/project.svelte';
@@ -535,5 +535,96 @@ describe('the history of a project that is open', () => {
     expect(textOf(a, root).toString()).toBe('Sing, goddess, the wrath.');
     expect((await history.people()).map((p) => p.name).sort()).toEqual(['Ann', 'Bo']);
     history.stop();
+  });
+});
+
+/** Records of a text written, partly deleted, and written to again: one record for each change. */
+function written(): HistoryRecord[] {
+  const doc = new Y.Doc();
+  const text = doc.getText('t');
+  const records: HistoryRecord[] = [];
+  let time = 1_000_000;
+  doc.on('update', (update: Uint8Array) => {
+    time += 1000;
+    records.push({ kind: 'change', here: true, time, until: time, update });
+  });
+  text.insert(0, 'Sing, goddess');
+  text.insert(text.length, ', the wrath');
+  text.delete(0, 6);
+  text.insert(text.length, ' of Achilles');
+  text.delete(text.length - 12, 4);
+  text.insert(0, 'O ');
+  return records;
+}
+
+describe('the moments of the history', () => {
+  it('are the same however they are asked, one after another or not, and after changes made', () => {
+    const records = written();
+    const alone = (i: number) => {
+      const engine = new Engine();
+      engine.load(records);
+      return engine.snapshot(i);
+    };
+    const engine = new Engine();
+    engine.load(records);
+    for (const i of [3, 1, 5, 0, 4, 2, 3])
+      expect(Y.equalSnapshots(engine.snapshot(i), alone(i))).toBe(true);
+    // A change made, and written as a record of its own, leaves the moments before it as they were.
+    const more = new Y.Doc();
+    for (const r of records) Y.applyUpdate(more, r.update);
+    let update: Uint8Array | null = null;
+    more.on('update', (u: Uint8Array) => (update = u));
+    more.getText('t').insert(0, 'Then ');
+    engine.change(update!, true);
+    engine.written(9_000_000, true, 1);
+    expect(engine.records).toHaveLength(records.length + 1);
+    for (const i of [2, 4, 5]) expect(Y.equalSnapshots(engine.snapshot(i), alone(i))).toBe(true);
+    expect(Y.equalSnapshots(engine.snapshot(6), Y.snapshot(engine.doc))).toBe(true);
+  });
+});
+
+describe('a history with a record that cannot be applied', () => {
+  const broken = (): HistoryRecord[] => {
+    const records = written();
+    records.splice(2, 0, {
+      kind: 'change',
+      here: true,
+      time: Date.UTC(2026, 9, 18, 12),
+      until: Date.UTC(2026, 9, 18, 12),
+      update: new Uint8Array([1, 2, 3]),
+    });
+    return records;
+  };
+
+  it('is not shown as if the record had been applied: every question fails with what went wrong', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const engine = new Engine();
+    engine.load(broken());
+    expect(engine.damaged).toMatch(
+      /^change 3 of 7 of the history, written 2026-10-18T12:00:00.000Z, could not be applied: /,
+    );
+    for (const ask of [
+      () => engine.sessions(),
+      () => engine.people(),
+      () => engine.moment(1),
+      () => engine.now(),
+      () => engine.stateAt(1),
+      () => engine.thin(Date.now(), 0, 0, []),
+    ])
+      expect(ask).toThrow(engine.damaged!);
+    error.mockRestore();
+  });
+
+  it('tells the window why, with the answer', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const project = new Project(null);
+    project.begin('Wrath');
+    const bytes = writeRecords(broken());
+    const history = new ProjectHistory(project, 'p', { archive: 'old', read: async () => bytes });
+    await expect(history.sessions()).rejects.toThrow(
+      /change 3 of 7 of the history.*could not be applied/,
+    );
+    history.stop();
+    error.mockRestore();
   });
 });

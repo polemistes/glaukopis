@@ -7,6 +7,7 @@ spelling-no-suggestions = Nothing like it in the dictionary
 spelling-add-word = Add to my words
 spelling-ignore = Ignore in this project
 spelling-add-failed = The word could not be added
+spelling-suggest-failed = What it may be could not be looked up
 
 ## What the menu says where there is no misspelt word (F7).
 
@@ -14,6 +15,8 @@ spelling-nothing = Nothing is misspelt here.
 # $language is the name of the language of the map: Latin.
 # $language is the name of the language of the map: Latin.
 spelling-no-dictionary = There is no dictionary for { $language }: its spelling is not checked. Dictionaries are imported under Settings › Language › Spelling.
+# $language is the name of the language of the map: Latin.
+spelling-failed = The dictionary for { $language } could not be read, so its spelling is not checked.
 spelling-not-ready = The dictionary is being read. Try again in a moment.
 spelling-off = Spelling is not checked. It is turned on in the settings.
 
@@ -41,3 +44,5 @@ spelling-add-word-here = Add
 spelling-remove-word = Take away “{ $word }”
 spelling-settings-failed = The dictionaries could not be listed
 spelling-remove-failed = The word could not be taken away
+# $language is the name of a language: German. $reason is why, as the log has it.
+spelling-dictionary-failed = The dictionary for { $language } could not be read: { $reason }

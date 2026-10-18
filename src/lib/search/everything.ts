@@ -81,6 +81,8 @@ export interface ProjectRead {
   refs: Map<string, RefRecord>;
   /** What is written about the works cited, for this project, by the reference. */
   notes: { ref: string; text: string }[];
+  /** How many of the changes on disk could not be applied: the project is read only in part. */
+  unapplied: number;
 }
 
 const str = (value: unknown, fallback = ''): string =>
@@ -99,11 +101,14 @@ export function readProject(
 ): ProjectRead {
   const doc = new Y.Doc();
   if (state) Y.applyUpdate(doc, state);
+  // A change that cannot be applied is left, as when the project is opened,
+  // and counted: what is found is then said to be of a project read in part.
+  let unapplied = 0;
   for (const update of updates) {
     try {
       Y.applyUpdate(doc, update);
     } catch {
-      // A change that cannot be applied is left, as when the project is opened.
+      unapplied++;
     }
   }
   if (needsMigration(doc)) migrate(doc, name);
@@ -165,7 +170,7 @@ export function readProject(
     if (said.trim()) notes.push({ ref, text: said });
   }
   doc.destroy();
-  return { id, name: str(name), tree, elements, byId, links, refs, notes };
+  return { id, name: str(name), tree, elements, byId, links, refs, notes, unapplied };
 }
 
 // ---- what stands outside the text, as the text in view shows it ----
@@ -292,6 +297,8 @@ export interface ProjectFound {
   name: string;
   count: number;
   found: Found[];
+  /** How many of the project's changes could not be applied when it was read (`ProjectRead`). */
+  unapplied: number;
 }
 
 /** The words around what was found, cut at the ends of words, and shown without what is no text. */
@@ -371,7 +378,13 @@ export function searchProject(
   if (!made) return null;
   if ('error' in made) return made;
   const matcher = made.matcher;
-  const out: ProjectFound = { project: project.id, name: project.name, count: 0, found: [] };
+  const out: ProjectFound = {
+    project: project.id,
+    name: project.name,
+    count: 0,
+    found: [],
+    unapplied: project.unapplied,
+  };
   /** Keeps what was found, with the words around it in a text, where it stands there. */
   const put = (
     found: Omit<Found, 'before' | 'text' | 'after'>,

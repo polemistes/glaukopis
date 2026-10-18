@@ -26,7 +26,14 @@ function checksum(bytes: Uint8Array): number {
   return hash >>> 0;
 }
 
-/** Reads records one after another; what is damaged, and all after it, is left out. */
+/**
+ * Reads records one after another, as the core gives them. The core has
+ * read them from disk, checked their sums and left out what was damaged
+ * (`decode` in `history.rs`), and written them anew for the window; so their
+ * sums are not checked again here, and a record that does not read is not
+ * damage on disk but the two readers disagreeing. That throws, with where
+ * and why: the history is not to be cut short without a word (ADR 0052).
+ */
 export function readRecords(bytes: Uint8Array): HistoryRecord[] {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const out: HistoryRecord[] = [];
@@ -36,9 +43,11 @@ export function readRecords(bytes: Uint8Array): HistoryRecord[] {
     const length = head & ~TIMED & 0x7fff_ffff;
     const start = at + 8;
     const end = start + length;
-    if (end > bytes.length) break;
-    at = end;
+    const unread = (why: string) =>
+      new Error(`record ${out.length + 1} of the history, at byte ${at}, does not read: ${why}`);
+    if (end > bytes.length) throw unread(`it ends after the ${bytes.length} bytes given`);
     if (!(head & TIMED)) {
+      at = end;
       out.push({
         kind: 'change',
         here: true,
@@ -49,13 +58,17 @@ export function readRecords(bytes: Uint8Array): HistoryRecord[] {
       continue;
     }
     const kind = KINDS[bytes[start]];
-    if (!kind || length < 10) break;
+    if (!kind) throw unread(`its kind, ${bytes[start]}, is not known`);
+    const merged = kind === 'merged';
+    if (length < (merged ? 18 : 10)) throw unread(`it is too short, ${length} bytes`);
+    at = end;
     const here = bytes[start + 1] !== 0;
     const time = Number(view.getBigInt64(start + 2, true));
-    const merged = kind === 'merged';
     const until = merged ? Number(view.getBigInt64(start + 10, true)) : time;
     out.push({ kind, here, time, until, update: bytes.subarray(start + (merged ? 18 : 10), end) });
   }
+  if (at < bytes.length)
+    throw new Error(`the history ends in ${bytes.length - at} bytes that are not a record`);
   return out;
 }
 

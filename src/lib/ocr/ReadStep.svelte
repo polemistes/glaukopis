@@ -77,7 +77,8 @@
     void look();
     return () => {
       gone = true;
-      if (phase === 'reading') ocrStop(ticket).catch(() => {});
+      if (phase === 'reading')
+        ocrStop(ticket).catch((error) => console.error('the reading could not be stopped', error));
     };
   });
 

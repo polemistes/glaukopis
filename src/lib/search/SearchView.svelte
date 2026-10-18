@@ -178,6 +178,9 @@
       {#each everything.unread as name (name)}
         <span class="unread">{t('search-could-not-read', { name })}</span>
       {/each}
+      {#each everything.partly as { project, name, count } (project)}
+        <span class="unread">{t('search-read-in-part', { name, count })}</span>
+      {/each}
     </div>
 
     {#each everything.found as project (project.project)}
