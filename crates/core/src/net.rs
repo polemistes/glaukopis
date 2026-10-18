@@ -1,6 +1,7 @@
 //! Fetching from the network. One client, which says who is asking.
 
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crate::error::{Error, Result};
@@ -45,6 +46,9 @@ pub struct Client {
     /// For files, which take the time they take.
     patient: ureq::Agent,
     user_agent: String,
+    /// Set when what is asked is no longer wanted: a page is not asked
+    /// again, nor at all once it is set. See `until`.
+    stop: Option<Arc<AtomicBool>>,
 }
 
 /// What came of asking for a file, or of sending one.
@@ -85,7 +89,18 @@ impl Client {
             .max_redirects(0)
             .build()
             .new_agent();
-        Client { agent, patient, user_agent: user_agent() }
+        Client { agent, patient, user_agent: user_agent(), stop: None }
+    }
+
+    /// The same client, which asks no more once `stop` is set: for a
+    /// question asked of several services, whose other answers are not
+    /// wanted once one has answered.
+    pub fn until(&self, stop: Arc<AtomicBool>) -> Client {
+        Client { stop: Some(stop), ..self.clone() }
+    }
+
+    fn stopped(&self) -> bool {
+        self.stop.as_ref().is_some_and(|s| s.load(Ordering::Relaxed))
     }
 
     /// Fetches a file from a server of our own. No more than `limit` is taken.
@@ -136,6 +151,10 @@ impl Client {
         let mut gate = gated.then(|| ONE_AT_A_TIME_GATE.lock().unwrap_or_else(|p| p.into_inner()));
         let mut attempt = 0;
         loop {
+            if self.stopped() {
+                // No one waits for the answer: it is not asked for.
+                return Err(Error::Network(tr!("network-failed", host = host(url))));
+            }
             if let Some(last) = gate.as_deref().copied().flatten() {
                 let since = last.elapsed();
                 if since < ONE_AT_A_TIME_GAP {
@@ -147,7 +166,7 @@ impl Client {
                 **g = Some(Instant::now());
             }
             let busy = matches!(&response, Ok(r) if r.status == 429 || r.status == 503);
-            if !busy || attempt >= RETRIES {
+            if !busy || attempt >= RETRIES || self.stopped() {
                 return response;
             }
             std::thread::sleep(wait_before(attempt, retry_after.as_deref()));
@@ -238,14 +257,31 @@ pub fn host(url: &str) -> String {
     url.split("://").nth(1).unwrap_or(url).split(['/', '?']).next().unwrap_or(url).to_owned()
 }
 
+/// What went wrong, in the words of the interface. What the library of the
+/// network says itself, in English, goes to the log; the user is told what
+/// it means for them.
 fn describe(url: &str, error: &ureq::Error) -> String {
     let host = host(url);
     match error {
-        ureq::Error::Timeout(_) => tr!("network-timeout", host = host),
-        ureq::Error::HostNotFound => tr!("network-host-not-found", host = host),
-        ureq::Error::ConnectionFailed => tr!("network-unreachable", host = host),
-        ureq::Error::Io(e) => tr!("network-unreachable-because", host = host, error = e.to_string()),
-        other => format!("{host}: {other}"),
+        ureq::Error::Timeout(_) => return tr!("network-timeout", host = host),
+        ureq::Error::HostNotFound => return tr!("network-host-not-found", host = host),
+        ureq::Error::ConnectionFailed => return tr!("network-unreachable", host = host),
+        ureq::Error::Io(e) => return tr!("network-unreachable-because", host = host, error = e.to_string()),
+        _ => {}
+    }
+    tracing::warn!(%host, %error, "a question over the network failed");
+    match error {
+        ureq::Error::BodyExceedsLimit(most) => tr!("network-too-large", host = host, most = most.div_ceil(1 << 20)),
+        ureq::Error::Tls(_) | ureq::Error::NativeTls(_) | ureq::Error::Der(_) | ureq::Error::TlsRequired => {
+            tr!("network-tls", host = host)
+        }
+        ureq::Error::TooManyRedirects | ureq::Error::RedirectFailed => tr!("network-redirects", host = host),
+        ureq::Error::BodyStalled => tr!("network-stalled", host = host),
+        ureq::Error::Protocol(_)
+        | ureq::Error::LargeResponseHeader(..)
+        | ureq::Error::Decompress(..)
+        | ureq::Error::Json(_) => tr!("network-not-understood", host = host),
+        _ => tr!("network-failed", host = host),
     }
 }
 
@@ -284,5 +320,21 @@ mod tests {
         assert_eq!(encode("Nagy, Best of the Achaeans"), "Nagy%2C%20Best%20of%20the%20Achaeans");
         assert_eq!(encode("μῆνις"), "%CE%BC%E1%BF%86%CE%BD%CE%B9%CF%82");
         assert_eq!(host("https://api.crossref.org/works?query=x"), "api.crossref.org");
+    }
+
+    #[test]
+    fn what_went_wrong_is_said_in_words_of_the_interface() {
+        let url = "https://api.crossref.org/works";
+        assert_eq!(
+            describe(url, &ureq::Error::BodyExceedsLimit(32 * 1024 * 1024)),
+            "api.crossref.org answered with more than Glaukopis takes (32 MB)"
+        );
+        assert!(
+            describe(url, &ureq::Error::Tls("bad certificate")).starts_with("a secure connection to api.crossref.org")
+        );
+        assert!(describe(url, &ureq::Error::TooManyRedirects).contains("too many times"));
+        // Nothing of what the library says in English reaches the user.
+        let other = describe(url, &ureq::Error::InvalidProxyUrl);
+        assert_eq!(other, "api.crossref.org could not be asked; the log of the run says why");
     }
 }

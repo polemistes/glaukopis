@@ -52,6 +52,14 @@ network-unreachable-because = { $host } could not be reached: { $error }
 network-nothing-there = { $host } has nothing at that address
 network-wait = { $host } asks us to wait before asking again
 network-status = { $host } answered with an error ({ $status })
+# $most is in megabytes.
+network-too-large = { $host } answered with more than Glaukopis takes ({ $most } MB)
+network-tls = a secure connection to { $host } could not be made: its certificate may not be trusted on this computer, or something between them, such as a proxy or a firewall, is in the way
+network-redirects = { $host } sent the question on from one address to another too many times
+network-stalled = the answer of { $host } stopped coming
+network-not-understood = { $host } answered in a way that could not be understood
+# What else went wrong; what was said of it is in the log of the run.
+network-failed = { $host } could not be asked; the log of the run says why
 # A way of asking, GET or POST, that the application does not use.
 network-method = { $method } is not a way of asking that is used here
 

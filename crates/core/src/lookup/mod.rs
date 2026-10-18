@@ -27,7 +27,8 @@ mod sru;
 mod text;
 
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
@@ -191,15 +192,30 @@ fn checked_isbn(isbn: &str) -> Result<String> {
 
 /// The catalogues are asked at once, and the first of them in the order they
 /// are given in that has the book answers: as soon as it and those before it
-/// have answered, whatever those after it are doing. They end by themselves.
+/// have answered, whatever those after it are doing. They end by themselves,
+/// and once there is an answer they ask no more: no service is asked again
+/// after a wait for an answer no one waits for. One that breaks on what it
+/// was given fails as one that could not be read, and does not keep those
+/// after it from answering.
 fn by_isbn(client: &Client, isbn: &str) -> Result<Outcome> {
     let isbn = checked_isbn(isbn)?;
     let catalogues = sru::for_isbn(&isbn);
+    let settled_for_all = Arc::new(AtomicBool::new(false));
+    // However this returns, those still asking are told they need not.
+    struct Settled(Arc<AtomicBool>);
+    impl Drop for Settled {
+        fn drop(&mut self) {
+            self.0.store(true, Ordering::Relaxed);
+        }
+    }
+    let _settled = Settled(settled_for_all.clone());
     let (tell, told) = std::sync::mpsc::channel();
     for (i, catalogue) in catalogues.iter().copied().enumerate() {
-        let (tell, client, isbn) = (tell.clone(), client.clone(), isbn.clone());
+        let (tell, client, isbn) = (tell.clone(), client.until(settled_for_all.clone()), isbn.clone());
         std::thread::spawn(move || {
-            let _ = tell.send((i, catalogue.by_isbn(&client, &isbn)));
+            let answer = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| catalogue.by_isbn(&client, &isbn)))
+                .unwrap_or_else(|panic| Err(broke((catalogue.name)(), panic.as_ref())));
+            let _ = tell.send((i, answer));
         });
     }
     drop(tell);
@@ -248,7 +264,12 @@ fn by_words(client: &Client, text: &str, scope: Scope) -> Result<Outcome> {
         let asking: Vec<_> =
             catalogues.iter().copied().map(|c| s.spawn(move || (c, c.by_words(client, asked_for, ROWS)))).collect();
         let crossref = (scope != Scope::Books).then(|| crossref::search(client, &text, ROWS));
-        let answers: Vec<_> = asking.into_iter().filter_map(|h| h.join().ok()).collect();
+        // One that broke on what it was given is a failure, said as one.
+        let answers: Vec<_> = catalogues
+            .iter()
+            .zip(asking)
+            .map(|(c, h)| h.join().unwrap_or_else(|panic| (*c, Err(broke((c.name)(), panic.as_ref())))))
+            .collect();
         (answers, crossref)
     });
     let mut hits: Vec<Hit> = Vec::new();
@@ -502,6 +523,18 @@ fn isbn(text: &str) -> Option<String> {
 }
 
 /// What went wrong at a service, in words for the user.
+/// What a service whose answer broke the reading of it failed with: said
+/// as an answer that could not be read, and with what broke in the log.
+fn broke(service: String, panic: &(dyn std::any::Any + Send)) -> Error {
+    let said = panic
+        .downcast_ref::<&str>()
+        .map(|s| (*s).to_owned())
+        .or_else(|| panic.downcast_ref::<String>().cloned())
+        .unwrap_or_default();
+    tracing::error!(%service, panic = said, "the reading of what a catalogue answered broke");
+    Error::Network(tr!("core-lookup-catalogue-unreadable"))
+}
+
 pub(crate) fn failure(service: &str, error: &Error) -> String {
     let what = match error {
         Error::Network(m) | Error::NotFound(m) | Error::Invalid(m) => m.clone(),

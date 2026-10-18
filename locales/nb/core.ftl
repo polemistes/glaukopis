@@ -48,6 +48,12 @@ network-unreachable-because = fikk ikke kontakt med { $host }: { $error }
 network-nothing-there = { $host } har ingenting på den adressen
 network-wait = { $host } ber oss vente før vi spør igjen
 network-status = { $host } svarte med en feil ({ $status })
+network-too-large = { $host } svarte med mer enn Glaukopis tar imot ({ $most } MB)
+network-tls = fikk ikke en sikker forbindelse til { $host }: datamaskinen stoler kanskje ikke på sertifikatet, eller noe imellom, som en proxy eller en brannmur, står i veien
+network-redirects = { $host } sendte spørsmålet videre fra én adresse til en annen for mange ganger
+network-stalled = svaret fra { $host } stoppet opp
+network-not-understood = { $host } svarte på en måte som ikke kunne forstås
+network-failed = { $host } kunne ikke spørres; loggen for kjøringen sier hvorfor
 network-method = { $method } er ikke en måte å spørre på som brukes her
 
 ## Når programmet åpnes en gang til.

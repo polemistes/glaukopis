@@ -48,25 +48,46 @@ fn is_block(name: &str) -> bool {
 /// the like are dropped and what they enclose is kept.
 ///
 /// A `<` that does not begin a tag ("p < 0.05") is text and stays.
+///
+/// The tags are taken out before the entities are read, so that what a
+/// service wrote as text, "&lt;html&gt; considered harmful", stays text.
+/// Only the markup of the letters, as a publisher may deposit it escaped
+/// ("&lt;i&gt;Drosophila&lt;/i&gt;"), is taken out of what the entities
+/// give.
 pub(crate) fn strip_markup(text: &str) -> String {
-    let text = entities::resolve(text);
+    let tags_out = strip_tags(text, |_| true);
+    let resolved = entities::resolve(&tags_out);
+    clean(&strip_tags(&resolved, is_of_letters))
+}
+
+/// The markup of letters, which says how they look and nothing else.
+fn is_of_letters(name: &str) -> bool {
+    let (space, local) = name.rsplit_once(':').map_or(("", name), |(s, l)| (s, l));
+    !space.is_empty()
+        || matches!(
+            local.to_ascii_lowercase().as_str(),
+            "i" | "b" | "em" | "strong" | "u" | "sub" | "sup" | "sc" | "scp" | "small" | "span" | "tt"
+        )
+}
+
+/// The text with the tags `which` names taken out, and a space for one
+/// that stands on a line of its own.
+fn strip_tags(text: &str, which: impl Fn(&str) -> bool) -> String {
     if !text.contains('<') {
-        return clean(&text);
+        return text.to_owned();
     }
     let mut out = String::with_capacity(text.len());
-    let mut rest = text.as_str();
+    let mut rest = text;
     while let Some(at) = rest.find('<') {
         out.push_str(&rest[..at]);
         let tail = &rest[at + 1..];
         let name_start = tail.strip_prefix('/').unwrap_or(tail);
         let is_tag = name_start.starts_with(|c: char| c.is_ascii_alphabetic());
         let end = tail.find(['<', '>']).filter(|&i| tail[i..].starts_with('>'));
-        match (is_tag, end) {
+        let name: String =
+            name_start.chars().take_while(|c| c.is_ascii_alphanumeric() || matches!(c, ':' | '-' | '_')).collect();
+        match (is_tag && which(&name), end) {
             (true, Some(end)) => {
-                let name: String = name_start
-                    .chars()
-                    .take_while(|c| c.is_ascii_alphanumeric() || matches!(c, ':' | '-' | '_'))
-                    .collect();
                 if is_block(&name) {
                     out.push(' ');
                 }
@@ -79,7 +100,7 @@ pub(crate) fn strip_markup(text: &str) -> String {
         }
     }
     out.push_str(rest);
-    clean(&out)
+    out
 }
 
 /// An abstract, without markup and without the heading "Abstract" that
@@ -566,6 +587,10 @@ mod tests {
         assert_eq!(strip_markup("x < y <i>z</i>"), "x < y z");
         assert_eq!(strip_markup("Fish & Chips; &unknown; &"), "Fish & Chips; &unknown; &");
         assert_eq!(strip_markup("<"), "<");
+        // What the service wrote as text stays text; escaped markup of letters goes.
+        assert_eq!(strip_markup("&lt;html&gt; considered harmful"), "<html> considered harmful");
+        assert_eq!(strip_markup("The &lt;title&gt; element"), "The <title> element");
+        assert_eq!(strip_markup("&lt;jats:italic&gt;Drosophila&lt;/jats:italic&gt;"), "Drosophila");
     }
 
     #[test]
