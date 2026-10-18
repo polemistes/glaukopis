@@ -243,16 +243,38 @@ pub fn encode_all(records: &[Record]) -> Vec<u8> {
     out
 }
 
-/// Whether a file ends in these bytes, read from its end alone.
-fn ends_with(path: &Path, tail: &[u8]) -> Result<bool> {
+/// The last `most` bytes of a file, or all of it where it is shorter, read
+/// from its end alone.
+fn read_tail(path: &Path, most: usize) -> Result<Vec<u8>> {
     use std::io::{Seek, SeekFrom};
     let mut file = File::open(path).context(|| tr!("io-opening", path = path))?;
     let len = file.metadata().context(|| tr!("io-reading", path = path))?.len();
-    let Some(from) = len.checked_sub(tail.len() as u64) else { return Ok(false) };
+    let from = len.saturating_sub(most as u64);
     file.seek(SeekFrom::Start(from)).context(|| tr!("io-reading", path = path))?;
-    let mut end = vec![0; tail.len()];
-    file.read_exact(&mut end).context(|| tr!("io-reading", path = path))?;
-    Ok(end == tail)
+    let mut end = Vec::with_capacity((len - from) as usize);
+    file.read_to_end(&mut end).context(|| tr!("io-reading", path = path))?;
+    Ok(end)
+}
+
+/// How many of the log's first records the history already ends with, by
+/// the bytes of the history's end. A save cut short after the history took
+/// the log in, and before the log was emptied, leaves them in both, and the
+/// changes made after the restart follow them in the log: only those are
+/// new. A record holds its time to the millisecond, so a change that is
+/// only like one already kept is not taken for it.
+fn taken_in(history_end: &[u8], log: &[Record]) -> usize {
+    let mut encoded = Vec::new();
+    let mut ends = Vec::with_capacity(log.len());
+    for r in log {
+        r.encode_into(&mut encoded);
+        ends.push(encoded.len());
+    }
+    ends.iter().rposition(|&end| history_end.ends_with(&encoded[..end])).map_or(0, |i| i + 1)
+}
+
+/// As `taken_in`, by the records of the history as they are read.
+fn taken_in_records(history: &[Record], log: &[Record]) -> usize {
+    (1..=log.len().min(history.len())).rev().find(|&k| history[history.len() - k..] == log[..k]).unwrap_or(0)
 }
 
 fn lock() -> std::sync::MutexGuard<'static, ()> {
@@ -293,16 +315,16 @@ impl Projects {
             return write_history(&path, &[Record::start(state.to_vec(), now_ms())]);
         }
         let records = read_records(log)?;
-        let Some(last) = records.last() else { return Ok(()) };
-        // A save that was cut short after the history had taken in the log,
-        // and before the log was emptied, has the same log again: it is in.
-        if ends_with(&path, &last.encode())? {
+        if records.is_empty() {
             return Ok(());
         }
-        let mut bytes = Vec::new();
-        for r in &records {
-            r.encode_into(&mut bytes);
+        // What a save cut short took in already is not taken in again.
+        let whole = encode_all(&records);
+        let skip = taken_in(&read_tail(&path, whole.len())?, &records);
+        if skip == records.len() {
+            return Ok(());
         }
+        let bytes = encode_all(&records[skip..]);
         let mut file = OpenOptions::new().append(true).open(&path).context(|| tr!("io-opening", path = &path))?;
         file.write_all(&bytes).context(|| tr!("io-writing", path = &path))?;
         file.sync_data().context(|| tr!("io-flushing", path = &path))?;
@@ -315,7 +337,9 @@ impl Projects {
         let dir = self.existing_dir(id)?;
         let _writing = lock();
         let Some(mut records) = read_history(&dir.join(CHANGES))? else { return Ok(Vec::new()) };
-        records.extend(read_records(&dir.join(crate::projects::LOG))?);
+        let log = read_records(&dir.join(crate::projects::LOG))?;
+        let skip = taken_in_records(&records, &log);
+        records.extend(log.into_iter().skip(skip));
         Ok(records)
     }
 
@@ -493,6 +517,30 @@ mod tests {
         assert!(p.has_changes(&a.id).unwrap());
         p.save_state_keeping(&a.id, b"STATE 6", None, false).unwrap();
         assert!(!p.has_changes(&a.id).unwrap());
+    }
+
+    #[test]
+    fn a_log_taken_in_by_a_save_cut_short_is_not_taken_in_again_with_what_came_after() {
+        let (_tmp, p) = projects();
+        let a = p.create("A").unwrap();
+        p.save_state_keeping(&a.id, b"STATE 1", None, true).unwrap();
+        p.append_change(&a.id, b"a", true, 10).unwrap();
+        p.append_change(&a.id, b"b", true, 20).unwrap();
+        // The save took the log into the history, and was cut short before
+        // the log was emptied.
+        let dir = p.dir(&a.id).unwrap();
+        p.keep_changes(&dir, &dir.join(LOG), b"STATE 2").unwrap();
+        // After the restart, one more change, and then the save.
+        p.append_change(&a.id, b"c", true, 30).unwrap();
+        assert_eq!(updates(&p.changes(&a.id).unwrap()), vec![&b"STATE 1"[..], b"a", b"b", b"c"]);
+        p.save_state_keeping(&a.id, b"STATE 2", None, true).unwrap();
+        assert_eq!(updates(&p.changes(&a.id).unwrap()), vec![&b"STATE 1"[..], b"a", b"b", b"c"]);
+
+        // A log of which nothing is in the history is taken in whole, even
+        // when its records are like the last ones there in all but time.
+        p.append_change(&a.id, b"c", true, 40).unwrap();
+        p.save_state_keeping(&a.id, b"STATE 3", None, true).unwrap();
+        assert_eq!(updates(&p.changes(&a.id).unwrap()), vec![&b"STATE 1"[..], b"a", b"b", b"c", b"c"]);
     }
 
     #[test]
