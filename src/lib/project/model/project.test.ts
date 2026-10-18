@@ -26,6 +26,21 @@ function two() {
   return { a, b, root: PROJECT, sync };
 }
 
+/** A template of the writer's own, as the project keeps a copy of it. */
+const own = (id: string, name = 'Letter'): Template => ({
+  id,
+  name,
+  group: 'own',
+  description: 'A letter.',
+  basedOn: 'plain',
+  layout: 'manuscript',
+  contents: [{ part: 'title-page' }, { part: 'body' }, { kind: 'appendix' }],
+  kinds: ['appendix'],
+  passageKinds: [],
+  requirements: { words: 2000, abstractWords: null, keywords: null, anonymous: false, note: '' },
+  outputs: [{ id: 'document', targets: ['pdf', 'docx'] }],
+});
+
 const titles = (p: Project, ids: string[]) => ids.map((id) => p.node(id)!.title);
 
 describe('the project and its elements', () => {
@@ -557,6 +572,91 @@ describe('undo', () => {
   });
 });
 
+describe('undo takes in the whole of a change', () => {
+  it('a kind deleted and undone is back, with its elements of it', () => {
+    const { p, root } = project();
+    const a = p.addChild(root, { title: 'A' })!;
+    const b = p.addChild(root, { title: 'B' })!;
+    const k = p.createKind({ name: 'Scene', colour: '#336699', template: '' })!;
+    p.setKind([a, b], k);
+    p.checkpoint();
+    p.deleteKind(k);
+    expect(p.kinds.find((x) => x.id === k)).toBeUndefined();
+    expect(p.node(a)!.kind ?? null).toBeNull();
+
+    p.undo();
+    expect(p.kinds.find((x) => x.id === k)).toMatchObject({ name: 'Scene', colour: '#336699' });
+    expect(p.node(a)!.kind).toBe(k);
+    expect(p.node(b)!.kind).toBe(k);
+    p.redo();
+    expect(p.kinds.find((x) => x.id === k)).toBeUndefined();
+    expect(p.node(a)!.kind ?? null).toBeNull();
+  });
+
+  it('a kind of passage and a template deleted and undone are back', () => {
+    const { p } = project();
+    const kind = p.createPassageKind({
+      name: 'Verse',
+      family: 'paragraph',
+      basedOn: '',
+      look: {},
+    })!;
+    expect(p.keepTemplate(own('mine'))).toBe(true);
+    p.checkpoint();
+    p.transact(() => {
+      p.deletePassageKind(kind);
+      p.dropTemplate('mine');
+    });
+    expect(p.passageKinds.find((x) => x.id === kind)).toBeUndefined();
+    expect(p.templateCopy('mine')).toBeFalsy();
+    p.undo();
+    expect(p.passageKinds.find((x) => x.id === kind)).toMatchObject({ name: 'Verse' });
+    expect(p.templateCopy('mine')).toBeTruthy();
+  });
+
+  it('an element removed and undone has its comments again', () => {
+    const { p, root } = project();
+    p.setMe({ id: 'robert', name: 'Robert' });
+    const a = p.addChild(root, { title: 'A' })!;
+    const under = p.addChild(a, { title: 'A.1' })!;
+    const one = p.comment(a, null, 'Is this right?')!;
+    p.reply(one, 'Yes.');
+    const two = p.comment(under, null, 'And this?')!;
+    p.setResolved(two, true);
+    p.checkpoint();
+    p.remove([a]);
+    expect(p.comments.size).toBe(0);
+
+    p.undo();
+    expect(p.node(a)).toBeDefined();
+    expect(p.comments.get(one)!.notes.map((n) => n.text)).toEqual(['Is this right?', 'Yes.']);
+    expect(p.comments.get(two)).toMatchObject({ element: under, resolved: true });
+    p.redo();
+    expect(p.comments.size).toBe(0);
+  });
+
+  it('what is written in the comments, and the copy of a template, are not undone', () => {
+    const { p, root } = project();
+    p.setMe({ id: 'robert', name: 'Robert' });
+    const a = p.addChild(root, { title: 'A' })!;
+    p.checkpoint();
+    p.setTitle(a, 'B');
+    p.checkpoint();
+    const steps = p.undoManager.undoStack.length;
+    const id = p.comment(a, null, 'Is this right?')!;
+    p.reply(id, 'Yes.');
+    p.setResolved(id, true);
+    p.setCard(id, { x: 10, y: 20 });
+    expect(p.keepTemplate(own('mine'))).toBe(true);
+    expect(p.undoManager.undoStack.length).toBe(steps);
+    p.undo();
+    expect(p.node(a)!.title).toBe('A');
+    expect(p.comments.get(id)).toMatchObject({ resolved: true, card: { x: 10, y: 20 } });
+    expect(p.comments.get(id)!.notes).toHaveLength(2);
+    expect(p.templateCopy('mine')).toBeTruthy();
+  });
+});
+
 describe('putting in order', () => {
   it('an element added under one another deleted meanwhile stands under the project', () => {
     const { a, b, root, sync } = two();
@@ -971,20 +1071,6 @@ describe('the language of the text', () => {
 });
 
 describe('the templates the project carries a copy of', () => {
-  const own = (id: string, name = 'Letter'): Template => ({
-    id,
-    name,
-    group: 'own',
-    description: 'A letter.',
-    basedOn: 'plain',
-    layout: 'manuscript',
-    contents: [{ part: 'title-page' }, { part: 'body' }, { kind: 'appendix' }],
-    kinds: ['appendix'],
-    passageKinds: [],
-    requirements: { words: 2000, abstractWords: null, keywords: null, anonymous: false, note: '' },
-    outputs: [{ id: 'document', targets: ['pdf', 'docx'] }],
-  });
-
   it('are kept, read, told by name, and let go', () => {
     const { p, root } = project();
     expect(p.templates).toEqual([]);

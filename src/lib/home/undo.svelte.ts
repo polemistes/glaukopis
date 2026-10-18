@@ -10,7 +10,14 @@
  */
 
 import { t } from '$lib/i18n';
-import { notifyError, toasts, type Toast } from '$lib/ui/toast.svelte';
+import { notify, notifyError, toasts, type Toast } from '$lib/ui/toast.svelte';
+
+/**
+ * Thrown by an undo or a redo that cannot be done now but may be later, as
+ * one that would take away a project open in the window: nothing is done,
+ * the change is kept to be undone again, and its message says why.
+ */
+export class NotNow extends Error {}
 
 export interface HomeChange {
   /** What was done, as the message says it: “Iliad” was moved to Greek. */
@@ -56,7 +63,10 @@ class HomeUndo {
       try {
         await change.undo();
       } catch (error) {
-        notifyError(t('home-undo-failed'), error);
+        if (error instanceof NotNow) {
+          this.done = [...this.done, change];
+          notify(error.message);
+        } else notifyError(t('home-undo-failed'), error);
         return;
       }
       this.undone = [...this.undone, change];
@@ -76,7 +86,10 @@ class HomeUndo {
       try {
         await change.redo();
       } catch (error) {
-        notifyError(t('home-undo-failed'), error);
+        if (error instanceof NotNow) {
+          this.undone = [...this.undone, change];
+          notify(error.message);
+        } else notifyError(t('home-undo-failed'), error);
         return;
       }
       this.done = [...this.done, change];

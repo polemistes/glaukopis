@@ -11,17 +11,24 @@ import type { Folder, Place, ProjectInfo } from '$lib/api/projects';
 import { projectTrash } from '$lib/api/projects';
 import { sharingRename } from '$lib/api/sharing';
 import { t } from '$lib/i18n';
-import { carryAcross, openElsewhere, writeElsewhere } from '$lib/project/elsewhere';
+import {
+  carryAcross,
+  goneHere,
+  openedHere,
+  openElsewhere,
+  writeElsewhere,
+} from '$lib/project/elsewhere';
 import type { Project } from '$lib/project/model/project.svelte';
 import type { Position } from '$lib/project/model/types';
 import { projects } from '$lib/state/projects.svelte';
+import { router } from '$lib/state/router.svelte';
 import { confirm } from '$lib/ui/confirm.svelte';
 import type { DragPayload } from '$lib/ui/drag.svelte';
 import { notifyError } from '$lib/ui/toast.svelte';
 import { closedTrees } from './closed.svelte';
 import { ancestors, descendants, folderOf, parentOf, topmost } from './folders';
 import { listUi } from './list.svelte';
-import { homeUndo } from './undo.svelte';
+import { homeUndo, NotNow } from './undo.svelte';
 
 const folderName = (id: string | null) => (id ? projects.folder(id)?.name : undefined);
 const projectNamed = (id: string) => projects.list.find((p) => p.id === id);
@@ -64,13 +71,29 @@ async function bringBack(id: string) {
   await projects.restore(entry.entry);
 }
 
+/**
+ * Puts a project in the trash, where what is undone or done again takes it
+ * away: a project open in the window is never taken away from under the
+ * writer (ADR 0053). Its view is left for the home, and it is put in the
+ * trash once it is closed and on disk; where it is still open after that,
+ * nothing is done, and the writer is told why.
+ */
+async function trash(id: string) {
+  if (openedHere(id)) {
+    router.go({ view: 'projects' });
+    if (!(await goneHere(id, 10_000))) throw new NotNow(t('home-open-now'));
+  }
+  await projects.closed(id);
+  await projects.remove(id);
+}
+
 /** Makes a project, in a folder or in none. */
 export async function makeProject(name: string, folder: string | null): Promise<ProjectInfo> {
   const made = await projects.create(name, folder);
   shown(folder);
   homeUndo.remember({
     message: t('home-project-made', { name: made.name }),
-    undo: () => projects.remove(made.id),
+    undo: () => trash(made.id),
     redo: () => bringBack(made.id),
   });
   return made;
@@ -81,7 +104,7 @@ export async function copyProject(p: ProjectInfo, name: string): Promise<Project
   const made = await projects.duplicate(p.id, name);
   homeUndo.remember({
     message: t('home-project-made', { name: made.name }),
-    undo: () => projects.remove(made.id),
+    undo: () => trash(made.id),
     redo: () => bringBack(made.id),
   });
   return made;
@@ -264,7 +287,7 @@ export async function deleteThings(things: Things): Promise<boolean> {
     },
     redo: async () => {
       for (const d of gone) await projects.deleteFolder(d.folder.id);
-      for (const p of trashed) await projects.remove(p.id);
+      for (const p of trashed) await trash(p.id);
     },
   });
   return true;
@@ -419,7 +442,11 @@ export async function carryElements(
     place: { parent: string; before: string | null },
   ) => {
     const from = await openElsewhere(a);
-    const to = await openElsewhere(b);
+    // The first is let go where the second cannot be opened.
+    const to = await openElsewhere(b).catch(async (error: unknown) => {
+      await from.close();
+      throw error;
+    });
     const done = (async () => {
       try {
         const list = to.project.tree().children.get(place.parent) ?? [];

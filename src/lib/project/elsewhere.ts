@@ -28,9 +28,37 @@ export function openHere(id: string, project: Project) {
   open.set(id, project);
 }
 
+/** Those who wait for a project open in the view to be closed: see `goneHere`. */
+const waiting = new Map<string, Set<() => void>>();
+
 /** A project open in the view is closed; another opened since under the same id is left. */
 export function closedHere(id: string, project?: Project) {
-  if (!project || open.get(id) === project) open.delete(id);
+  if (project && open.get(id) !== project) return;
+  open.delete(id);
+  for (const told of waiting.get(id) ?? []) told();
+  waiting.delete(id);
+}
+
+/**
+ * When the project of that id is no longer open in the view: at once where
+ * it is not. Whether it was let go within `ms`, so that what waits for it
+ * never waits for ever.
+ */
+export function goneHere(id: string, ms: number): Promise<boolean> {
+  if (!open.has(id)) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const told = () => {
+      clearTimeout(timer);
+      resolve(true);
+    };
+    const timer = setTimeout(() => {
+      waiting.get(id)?.delete(told);
+      resolve(!open.has(id));
+    }, ms);
+    let those = waiting.get(id);
+    if (!those) waiting.set(id, (those = new Set()));
+    those.add(told);
+  });
 }
 
 /** The project of that id, where it is open in the view. */
@@ -117,13 +145,33 @@ export function carryAcross(
     made = to.move(made, place.under, place.index, { pos: null, keepFolded: place.keepFolded });
   }
   to.checkpoint();
-  if (move && made.length) {
-    from.checkpoint();
-    from.remove(going);
-    from.checkpoint();
-    pair(to, from);
-  }
+  if (move && made.length) removeCarried(to, lastStep(to), from, going);
   return made;
+}
+
+/** A step of undo, as a project's undo keeps it. */
+type Step = NonNullable<ReturnType<typeof lastStep>>;
+
+/** The step last done in a project: to be paired with one done in another. */
+export function lastStep(p: Project) {
+  return p.undoManager.undoStack.at(-1);
+}
+
+/**
+ * Removes from a project open in the view the elements just made in
+ * another from them, in `made`, the step that made them there; the two
+ * steps are one, as for a drag from one pane onto the other (ADR 0053), so
+ * that undone in either project the elements are back in the other. For
+ * cut and paste, and for *Move to*, as for a drag. Where nothing was there
+ * to be removed, there is nothing to pair.
+ */
+export function removeCarried(to: Project, made: Step | undefined, from: Project, ids: string[]) {
+  from.checkpoint();
+  const before = lastStep(from);
+  from.remove(ids);
+  from.checkpoint();
+  const removed = lastStep(from);
+  if (made && removed && removed !== before && from !== to) pairSteps(to, made, from, removed);
 }
 
 /** Two steps, one in each of two projects, that are undone and done again together. */
@@ -135,12 +183,11 @@ interface Pair {
 const PAIRED = 'across';
 const linked = new WeakSet<Project>();
 
-/** The steps last done in two projects are one. */
-function pair(a: Project, b: Project) {
-  const steps = [a.undoManager.undoStack.at(-1), b.undoManager.undoStack.at(-1)];
-  if (!steps[0] || !steps[1]) return;
+/** Two steps, one done in each of two projects, are one. */
+function pairSteps(a: Project, stepA: Step, b: Project, stepB: Step) {
   const both: Pair = { a, b };
-  for (const step of steps) step!.meta.set(PAIRED, both);
+  stepA.meta.set(PAIRED, both);
+  stepB.meta.set(PAIRED, both);
   follow(a);
   follow(b);
 }

@@ -35,7 +35,7 @@ import { compareCopy } from './copies.svelte';
 import { canPaste } from './clipboard.svelte';
 import { notify, notifyError, toasts } from '$lib/ui/toast.svelte';
 import { openProject, projects } from '$lib/state/projects.svelte';
-import { idOf, openElsewhere, type Elsewhere } from './elsewhere';
+import { idOf, lastStep, openElsewhere, removeCarried, type Elsewhere } from './elsewhere';
 import { router } from '$lib/state/router.svelte';
 import type { ProjectInfo } from '$lib/api/projects';
 import { makePortable, portable } from './model/portable';
@@ -217,8 +217,9 @@ function otherProjects(project: Project): ProjectInfo[] {
 /**
  * Copies elements, each with all under it, to the end of an element of
  * another project, or of the project itself where none is named; that
- * project is not open: it is opened, written, saved and closed again. A
- * move then removes them here, in one step that undo takes back here.
+ * project, where it is not open, is opened, written, saved and closed
+ * again. A move then removes them here, in one step that undo takes back
+ * here; to a project open beside, that step and the one there are one.
  * Where writing there fails, nothing is removed here, and the failure is
  * thrown. Returns how many of the topmost went.
  */
@@ -239,15 +240,20 @@ export async function sendElements(
   if (!carried.elements.length) return 0;
 
   const there = await open(to.project);
+  /** The step that made them there, where that project is open beside. */
+  let step: ReturnType<typeof lastStep>;
   const written = (async () => {
     try {
       const under = to.at ?? PROJECT;
       if (!there.project.node(under)) throw new Error(t('project-send-no-element'));
-      // A project open beside keeps its undo: what was made there is a step of its own.
+      // A project open beside keeps its undo: what was made there is a step
+      // of its own, paired below with the step that removes it here.
       if (there.here) there.project.checkpoint();
       const made = makePortable(there.project, carried, { under });
-      if (there.here) there.project.checkpoint();
-      else there.project.undoManager.clear();
+      if (there.here) {
+        there.project.checkpoint();
+        step = made.length ? lastStep(there.project) : undefined;
+      } else there.project.undoManager.clear();
       await there.project.flush();
       if (there.project.status === 'error') throw new Error(there.project.saveError ?? '');
       return made.length;
@@ -260,9 +266,15 @@ export async function sendElements(
   const count = await written;
 
   if (move && count) {
-    project.checkpoint();
-    project.remove(movable);
-    project.checkpoint();
+    // To a project open beside, the two steps are one, as for a drag: undone
+    // in either, the elements are back in the other (ADR 0053).
+    if (there.here && there.project !== project)
+      removeCarried(there.project, step, project, movable);
+    else {
+      project.checkpoint();
+      project.remove(movable);
+      project.checkpoint();
+    }
   }
   return count;
 }

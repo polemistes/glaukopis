@@ -679,7 +679,9 @@
     void lastSide;
     void showOutline;
     void showPreview;
-    void cameras;
+    // Each camera, not the record of them: one is written by its entry,
+    // which reading the record alone would not see.
+    void Object.values(cameras);
     void sizes.split;
     void sizes.preview;
     void sizes.references;

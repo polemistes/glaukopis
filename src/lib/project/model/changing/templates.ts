@@ -9,6 +9,7 @@
  */
 
 import type { Template } from '$lib/api/templates';
+import { TEMPLATE_COPY } from '../origins';
 import type { Project } from '../project.svelte';
 
 const strings = (value: unknown): string[] =>
@@ -64,14 +65,16 @@ export const templateChanges = {
    * Keeps a copy of a template in the project, under its id, in place of
    * any copy there was. Only a template of the writer's own is kept: one
    * that came with the application is on every computer already. Returns
-   * whether it was kept.
+   * whether it was kept. Not part of undo: the copy is made afresh when the
+   * template is saved again, and undoing the choice of a template does not
+   * need it gone.
    */
   keepTemplate(this: Project, template: Template): boolean {
     const clean = cleanTemplate(template);
     if (!clean) return false;
     const before = this.yTemplates.get(clean.id);
     if (before && JSON.stringify(before) === JSON.stringify(clean)) return true;
-    this.transact(() => this.yTemplates.set(clean.id, clean));
+    this.doc.transact(() => this.yTemplates.set(clean.id, clean), TEMPLATE_COPY);
     return true;
   },
 

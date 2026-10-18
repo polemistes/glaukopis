@@ -5,14 +5,16 @@
  * takes them in (see there).
  *
  * A note is its author's: only they change or take it back, which the
- * interface sees to, as it does every other rule of a shared project. The
- * comments are outside undo: they are not the text, and Ctrl+Z while one
- * writes must not take a comment away.
+ * interface sees to, as it does every other rule of a shared project. What
+ * is done here is outside undo, by its own origin (`COMMENTS`): the comments
+ * are not the text, and Ctrl+Z while one writes must not take a comment
+ * away. The threads of an element removed go in the step that removes it,
+ * and come back with it on undo (ADR 0053).
  */
 
 import * as Y from 'yjs';
 import { newId } from '$lib/util/id';
-import { nowIso } from '../origins';
+import { COMMENTS, nowIso } from '../origins';
 import type { Project } from '../project.svelte';
 import type { Note, Position, Thread } from '../types';
 
@@ -38,7 +40,7 @@ export const commentChanges = {
     const clean = text.trim();
     if (!clean || !this.yNodes.has(element)) return null;
     const id = newId();
-    this.transact(() => {
+    this.doc.transact(() => {
       const thread = new Y.Map<unknown>();
       thread.set('element', element);
       if (passage)
@@ -47,7 +49,7 @@ export const commentChanges = {
       notes.push([{ id: newId(), author: author(this), created: nowIso(), text: clean }]);
       thread.set('notes', notes);
       this.yComments.set(id, thread);
-    });
+    }, COMMENTS);
     return id;
   },
 
@@ -57,7 +59,10 @@ export const commentChanges = {
     const notes = notesOf(this.yComments.get(thread));
     if (!clean || !notes) return null;
     const id = newId();
-    this.transact(() => notes.push([{ id, author: author(this), created: nowIso(), text: clean }]));
+    this.doc.transact(
+      () => notes.push([{ id, author: author(this), created: nowIso(), text: clean }]),
+      COMMENTS,
+    );
     return id;
   },
 
@@ -70,10 +75,10 @@ export const commentChanges = {
     if (i < 0) return;
     const before = notes.get(i);
     if (before.text === clean) return;
-    this.transact(() => {
+    this.doc.transact(() => {
       notes.delete(i, 1);
       notes.insert(i, [{ ...before, text: clean, edited: nowIso() }]);
-    });
+    }, COMMENTS);
   },
 
   /**
@@ -86,16 +91,16 @@ export const commentChanges = {
     const index = notes.toArray().findIndex((n) => n.id === note);
     if (index < 0) return null;
     const taken = notes.get(index);
-    this.transact(() => {
+    this.doc.transact(() => {
       if (notes.length === 1) this.yComments.delete(thread);
       else notes.delete(index, 1);
-    });
+    }, COMMENTS);
     return { index, note: taken };
   },
 
   /** Puts a note back where it was taken from; or the thread anew, where the note was its last. */
   restoreNote(this: Project, thread: string, taken: { index: number; note: Note }, as: Thread) {
-    this.transact(() => {
+    this.doc.transact(() => {
       let notes = notesOf(this.yComments.get(thread));
       if (!notes) {
         if (!this.yNodes.has(as.element)) return;
@@ -109,27 +114,27 @@ export const commentChanges = {
         this.yComments.set(thread, made);
       }
       notes.insert(Math.min(taken.index, notes.length), [taken.note]);
-    });
+    }, COMMENTS);
   },
 
   /** Settles a thread, or opens it again: anyone may. */
   setResolved(this: Project, thread: string, resolved: boolean) {
     const y = this.yComments.get(thread);
     if (!y || (y.get('resolved') === true) === resolved) return;
-    this.transact(() => {
+    this.doc.transact(() => {
       if (resolved) y.set('resolved', true);
       else y.delete('resolved');
-    });
+    }, COMMENTS);
   },
 
   /** Moves the card of a thread in the diagram, from its element; with nothing, puts it back. */
   setCard(this: Project, thread: string, card: Position | null) {
     const y = this.yComments.get(thread);
     if (!y) return;
-    this.transact(() => {
+    this.doc.transact(() => {
       if (card) y.set('card', { x: Math.round(card.x), y: Math.round(card.y) });
       else y.delete('card');
-    });
+    }, COMMENTS);
   },
 };
 
