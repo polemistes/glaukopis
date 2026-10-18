@@ -587,10 +587,12 @@ export function pasteText(text: string): Command {
 export function tablesOfHtml(html: string): string {
   if (!/<(table|tr)[\s>]/i.test(html)) return html;
   const read = new DOMParser().parseFromString(html, 'text/html');
+  const mended = saneSpans(read);
   const ours = read.querySelector('[data-pm-slice]');
   if (ours) {
     const rows = [...read.querySelectorAll('tr')];
-    if (!rows.length || read.querySelector('figure[data-table]')) return html;
+    if (!rows.length || read.querySelector('figure[data-table]'))
+      return mended ? read.body.innerHTML : html;
     const figure = wrap(read, rows);
     figure.setAttribute('data-pm-slice', '0 0 []');
     return figure.outerHTML;
@@ -605,6 +607,36 @@ export function tablesOfHtml(html: string): string {
     figure.append(table);
   }
   return read.body.innerHTML;
+}
+
+/** The most columns and rows a cell may span, as HTML has it. */
+const MOST_SPANNED_COLUMNS = 1000;
+const MOST_SPANNED_ROWS = 65534;
+
+/**
+ * Gives every cell a span of at least one column and one row, and no more
+ * than HTML allows. A page may say `rowspan="0"` (to the end of its part of
+ * the table), or 0, -1 or a word, and the tables of the editor take each as
+ * it is: a cell with no place in the table, in which every tool of the table
+ * throws while the cursor is there. Returns whether a span was changed.
+ */
+function saneSpans(doc: Document): boolean {
+  let changed = false;
+  for (const cell of doc.querySelectorAll('td, th')) {
+    for (const [name, most] of [
+      ['colspan', MOST_SPANNED_COLUMNS],
+      ['rowspan', MOST_SPANNED_ROWS],
+    ] as const) {
+      const said = cell.getAttribute(name);
+      if (said === null) continue;
+      const span = String(Math.min(most, Math.max(1, Math.floor(Number(said)) || 1)));
+      if (span !== said) {
+        cell.setAttribute(name, span);
+        changed = true;
+      }
+    }
+  }
+  return changed;
 }
 
 function wrap(doc: Document, rows: Element[] | null, said: Element | null = null): HTMLElement {
