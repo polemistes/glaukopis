@@ -35,18 +35,14 @@ import {
 } from '$lib/project/model/rewrite-refs';
 import { library } from '$lib/state/library.svelte';
 import { projects } from '$lib/state/projects.svelte';
+import { safeFileName } from '$lib/util/file-name';
 
 /** What the name of a project file ends in. */
 export const ENDING = 'glaukopis';
 
-/** A name a file may have on every system: what it may not hold becomes a space. */
+/** A name a file may have on every system, by the one rule the page has for it. */
 export function fileName(name: string): string {
-  // eslint-disable-next-line no-control-regex
-  const clean = name
-    .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return `${clean.replace(/^\.+/, '') || 'project'}.${ENDING}`;
+  return `${safeFileName(name, 'project')}.${ENDING}`;
 }
 
 /** A name no project has: the one given, or it with a number, " (2)" and on. */

@@ -137,6 +137,7 @@ describe('names', () => {
   it('a file is named after its project, as every system allows', () => {
     expect(fileName('Wrath: on Achilles / book 1')).toBe('Wrath on Achilles book 1.glaukopis');
     expect(fileName('...')).toBe('project.glaukopis');
+    expect(fileName('Aux')).toBe('Aux_.glaukopis');
   });
 
   it('what is chosen where nothing is said', () => {

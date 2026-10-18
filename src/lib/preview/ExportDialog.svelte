@@ -16,6 +16,7 @@
   import Dialog from '$lib/ui/Dialog.svelte';
   import Spinner from '$lib/ui/Spinner.svelte';
   import { describeError, notifyError } from '$lib/ui/toast.svelte';
+  import { safeFileName } from '$lib/util/file-name';
   import { newId } from '$lib/util/id';
   import { documents } from './documents.svelte';
 
@@ -127,7 +128,7 @@
     stopped = false;
     const path = await save({
       title: t('preview-export-as', { kind: kind.label }),
-      defaultPath: `${name}.${kind.extension}`,
+      defaultPath: `${safeFileName(name, t('preview-file-name'))}.${kind.extension}`,
       filters: [{ name: kind.label, extensions: [kind.extension] }],
     });
     if (!path) return;
