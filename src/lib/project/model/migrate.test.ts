@@ -204,6 +204,25 @@ describe('an abstract or a cover in the settings of an element', () => {
     expect(r.tree().children.get(book)).toHaveLength(3);
   });
 
+  it('made by two copies of a shared project, each by itself, is one element when they meet', () => {
+    const { p, book, chapter } = withParts();
+    const copies = [new Y.Doc(), new Y.Doc()];
+    for (const doc of copies) {
+      Y.applyUpdate(doc, Y.encodeStateAsUpdate(p.doc));
+      migrate(doc, 'Wrath', undefined, term);
+    }
+    Y.applyUpdate(copies[0], Y.encodeStateAsUpdate(copies[1]));
+    Y.applyUpdate(copies[1], Y.encodeStateAsUpdate(copies[0]));
+    for (const doc of copies) {
+      const q = new Project(null);
+      q.load(Y.encodeStateAsUpdate(doc), []);
+      const kinds = q.tree().children.get(book)!.map((id) => q.node(id)?.kind ?? null);
+      expect(kinds).toEqual(['cover', 'abstract', null]);
+      expect(q.tree().children.get(chapter)!.map((id) => q.node(id)?.kind)).toEqual(['cover']);
+      expect(q.blocksOf(q.tree().children.get(book)![1])).toHaveLength(2);
+    }
+  });
+
   it('an abstract of blank words, or a cover without a picture, only goes', () => {
     const p = new Project(null);
     p.begin('Wrath');
