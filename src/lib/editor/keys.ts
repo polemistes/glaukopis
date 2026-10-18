@@ -29,6 +29,7 @@ import {
 import { ySyncPluginKey } from 'y-prosemirror';
 import { type BasedKind } from '$lib/project/model/families';
 import { catalogueKindOf } from './kinds';
+import { changedRanges } from './changes';
 import { kindOfNode, linesOfNode, marksAnything, type LineAt } from './shape';
 
 /** The paragraph a place is in, with where it begins, its lines, and the line the place is in; nothing outside a paragraph. */
@@ -276,20 +277,32 @@ export function lineMarks(): Plugin {
       let tr: Transaction | null = null;
       const local = transactions.some((t) => t.docChanged && !t.getMeta(ySyncPluginKey));
       if (local) {
-        const stray: number[] = [];
-        state.doc.descendants((node, pos) => {
-          if (node.type.name === 'linemark') {
-            const $pos = state.doc.resolve(pos);
-            const after = $pos.nodeBefore;
-            const atStart = $pos.parentOffset === 0 || after?.type.name === 'hard_break';
-            if (!atStart || !marksAnything(node.attrs)) stray.push(pos);
+        // A mark becomes stray only by a change in its own paragraph: the
+        // paragraphs the changes touched are looked at, and not the whole
+        // text, which was gone through on every keystroke.
+        const stray = new Set<number>();
+        const seen = new Set<number>();
+        const size = state.doc.content.size;
+        for (const [from, to] of changedRanges(transactions)) {
+          state.doc.nodesBetween(Math.max(0, from - 1), Math.min(size, to + 1), (node, pos) => {
+            if (!node.isTextblock) return true;
+            if (node.type.name === 'paragraph' && !seen.has(pos)) {
+              seen.add(pos);
+              let before: Node | null = null;
+              node.forEach((child, offset) => {
+                if (child.type.name === 'linemark') {
+                  const atStart = offset === 0 || before?.type.name === 'hard_break';
+                  if (!atStart || !marksAnything(child.attrs)) stray.add(pos + 1 + offset);
+                }
+                before = child;
+              });
+            }
             return false;
-          }
-          return node.isTextblock ? node.type.name === 'paragraph' : true;
-        });
-        if (stray.length) {
+          });
+        }
+        if (stray.size) {
           tr = state.tr;
-          for (const pos of stray.reverse()) tr.delete(pos, pos + 1);
+          for (const pos of [...stray].sort((a, b) => b - a)) tr.delete(pos, pos + 1);
         }
       }
       const doc = tr ? tr.doc : state.doc;

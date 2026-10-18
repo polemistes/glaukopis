@@ -35,10 +35,11 @@ import { t } from '$lib/i18n';
 import type { BasedKind } from '$lib/project/model/families';
 import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
 import { languageItems } from './language-menu';
+import { withinLines } from './changes';
 import { eachHolder, kindOfNode, runsIn, type Run } from './shape';
 import { hooksOf } from './ui.svelte';
 
-export const bracketsKey = new PluginKey<DecorationSet>('run-brackets');
+export const bracketsKey = new PluginKey<Drawn>('run-brackets');
 
 /** Whether a run is drawn with a bracket: a run of a kind, or of text that is numbered. */
 export function bracketed(run: Run): boolean {
@@ -317,25 +318,35 @@ function line(
   };
 }
 
+/** The brackets as they are drawn: see `brackets`. */
+interface Drawn {
+  /** The lines and labels of the runs, and their kinds on their paragraphs. */
+  runs: DecorationSet;
+  /** Where the text of each run drawn with a bracket begins and ends. */
+  spans: { from: number; to: number }[];
+  /** Which of them the selection is in, or touches. */
+  current: string;
+  /** All that is drawn: the runs, and `data-current` on the paragraphs of the run the cursor is in. */
+  shown: DecorationSet;
+}
+
 /**
  * The brackets of every run: on each paragraph its run's kind, on the
  * first that it is the first, the line beside each with the label on the
- * first, and `data-current` on the paragraphs of the run the cursor is in. `name`
- * gives the words for a kind: of the catalogue, or a kind of the writer's
- * own.
+ * first; and where the text of each run begins and ends. `name` gives the
+ * words for a kind: of the catalogue, or a kind of the writer's own.
  */
 function brackets(
   state: EditorState,
   own: readonly BasedKind[],
   name: (kind: string) => string,
-): DecorationSet {
+): Pick<Drawn, 'runs' | 'spans'> {
   const list: Decoration[] = [];
-  const { from, to } = state.selection;
+  const spans: Drawn['spans'] = [];
   eachHolder(state.doc, (parent, start) => {
     for (const run of runsIn(parent, start, own)) {
       if (!bracketed(run)) continue;
-      const { from: first, to: last } = spanOf(run);
-      const current = from <= last + 1 && to >= first - 1;
+      spans.push(spanOf(run));
       const words = numbered(run)
         ? `${name(run.kind)} · ${t('editor-bracket-numbered')}`
         : name(run.kind);
@@ -344,7 +355,6 @@ function brackets(
           Decoration.node(pos, pos + node.nodeSize, {
             'data-run': run.kind,
             ...(i === 0 ? { 'data-run-first': '' } : {}),
-            ...(current ? { 'data-current': '' } : {}),
           }),
         );
         const head = i === 0 ? { words, kind: run.kind } : null;
@@ -359,29 +369,91 @@ function brackets(
       });
     }
   });
-  return DecorationSet.create(state.doc, list);
+  return { runs: DecorationSet.create(state.doc, list), spans };
+}
+
+/** The indices of the runs the selection is in, or touches. */
+function currentOf(state: EditorState, spans: Drawn['spans']): number[] {
+  const { from, to } = state.selection;
+  const out: number[] = [];
+  spans.forEach((span, i) => {
+    if (from <= span.to + 1 && to >= span.from - 1) out.push(i);
+  });
+  return out;
+}
+
+/**
+ * The brackets with `data-current` on the paragraphs of the runs the
+ * selection is in, or touches. `before`, what was drawn before, mapped
+ * through the change: where the same runs are current, it is kept.
+ */
+function withCurrent(
+  state: EditorState,
+  drawn: Pick<Drawn, 'runs' | 'spans'>,
+  before?: { current: string; shown: DecorationSet },
+): Drawn {
+  const indices = currentOf(state, drawn.spans);
+  const current = indices.join(' ');
+  if (before && before.current === current) return { ...drawn, current, shown: before.shown };
+  const marked: Decoration[] = [];
+  for (const i of indices) {
+    // The paragraphs of a run stand one after the other in what holds them.
+    state.doc.nodesBetween(drawn.spans[i].from, drawn.spans[i].to, (node, pos) => {
+      if (node.type.name !== 'paragraph') return true;
+      marked.push(Decoration.node(pos, pos + node.nodeSize, { 'data-current': '' }));
+      return false;
+    });
+  }
+  return {
+    ...drawn,
+    current,
+    shown: marked.length ? drawn.runs.add(state.doc, marked) : drawn.runs,
+  };
 }
 
 /**
  * Draws the brackets of the runs: their lines and labels, and which run the
  * cursor is in. `own` gives the kinds of the writer's own, and `name` the
- * words for a kind, which are read anew whenever the decorations are, so
- * that a kind of the writer's own that is renamed is seen under its new
- * name at the next change.
+ * words for a kind.
+ *
+ * A run is found from the kinds of paragraphs and from what stands between
+ * them, and from nothing within their lines: a change that only writes in
+ * lines (`withinLines`), as a keystroke does, moves the brackets with the
+ * text and finds no run anew; one that only moves the cursor changes only
+ * which run is current. Any other change, and the word that the kinds of
+ * the writer's own or their names have changed (a transaction with this
+ * plugin's key as its meta, which `redrawShape` sends), draws them anew
+ * from the whole text, which took some milliseconds on every keystroke and
+ * every arrow key in a text of 2000 paragraphs.
  */
 export function runBrackets(
   own: () => readonly BasedKind[] = () => [],
   name: (kind: string) => string = (kind) => kind,
-): Plugin<DecorationSet> {
-  return new Plugin<DecorationSet>({
+): Plugin<Drawn> {
+  return new Plugin<Drawn>({
     key: bracketsKey,
     state: {
-      init: (_config, state) => brackets(state, own(), name),
-      apply: (tr, set, _old, state) =>
-        tr.docChanged || tr.selectionSet || tr.getMeta(bracketsKey)
-          ? brackets(state, own(), name)
-          : set,
+      init: (_config, state) => withCurrent(state, brackets(state, own(), name)),
+      apply: (tr, drawn, _old, state) => {
+        if (tr.getMeta(bracketsKey) || (tr.docChanged && !withinLines(tr)))
+          return withCurrent(state, brackets(state, own(), name));
+        if (tr.docChanged)
+          return withCurrent(
+            state,
+            {
+              runs: drawn.runs.map(tr.mapping, tr.doc),
+              spans: drawn.spans.map(({ from, to }) => ({
+                from: tr.mapping.map(from, -1),
+                to: tr.mapping.map(to, 1),
+              })),
+            },
+            { current: drawn.current, shown: drawn.shown.map(tr.mapping, tr.doc) },
+          );
+        return tr.selectionSet
+          ? withCurrent(state, drawn, { current: drawn.current, shown: drawn.shown })
+          : drawn;
+      },
     },
-    props: { decorations: (state) => bracketsKey.getState(state) },
+    props: { decorations: (state) => bracketsKey.getState(state)?.shown },
   });
 }

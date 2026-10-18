@@ -24,8 +24,10 @@ import {
   type Numbering,
   type Side,
 } from '$lib/project/model/families';
-import { stretches, stretchNumbers, type Shown } from '$lib/project/model/lines';
+import { linesOf, stretches, stretchNumbers, type Shown } from '$lib/project/model/lines';
 import type { Block, ParagraphBlock } from '$lib/project/model/text';
+import { bracketsKey } from './brackets';
+import { withinLines } from './changes';
 import { paragraphsIn } from './commands';
 import { cursorLine, lineAtPos } from './keys';
 import {
@@ -53,18 +55,24 @@ export interface StretchAt extends StretchNumbering {
   paragraphs: Placed[];
 }
 
+/** Whether a paragraph is numbered: it is then of a stretch. */
+function isNumbered(node: Node): boolean {
+  return node.attrs.numbering === 'counted' || node.attrs.numbering === 'given';
+}
+
 /** The numbered stretches among the children of a node whose content begins at `start`. */
 export function stretchesIn(parent: Node, start: number): StretchAt[] {
   const placed: (Placed | null)[] = [];
   const blocks: Block[] = [];
   let pos = start;
   parent.forEach((node) => {
-    if (node.type.name === 'paragraph') {
+    // A paragraph that is not numbered ends a stretch as anything that is
+    // not a paragraph does; only those that are numbered are read.
+    if (node.type.name === 'paragraph' && isNumbered(node)) {
       placed.push({ node, pos });
       blocks.push(blockOf(node));
     } else {
       placed.push(null);
-      // Anything that is not a paragraph ends a stretch.
       blocks.push({ kind: 'break', what: 'page' });
     }
     pos += node.nodeSize;
@@ -479,7 +487,11 @@ function unheld(block: ParagraphBlock): ParagraphBlock {
 function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): DecorationSet {
   const list: Decoration[] = [];
   eachHolder(doc, (parent, start) => {
-    for (const s of stretchesIn(parent, start)) {
+    let anyNumbered = false;
+    parent.forEach((node) => {
+      if (node.type.name === 'paragraph' && isNumbered(node)) anyNumbered = true;
+    });
+    for (const s of anyNumbered ? stretchesIn(parent, start) : []) {
       const side = s.side ?? layout.side;
       const every = s.every ?? layout.every;
       const blocks = s.paragraphs.map((p) => blockOf(p.node));
@@ -515,7 +527,7 @@ function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): D
     parent.forEach((node) => {
       const here = pos;
       pos += node.nodeSize;
-      if (node.type.name !== 'paragraph') return;
+      if (node.type.name !== 'paragraph' || !holdsMargin(node)) return;
       let any = false;
       for (const line of linesOfNode(node, here)) {
         const words = line.mark?.attrs.margin;
@@ -536,10 +548,41 @@ function numbers(doc: Node, own: readonly BasedKind[], layout: NumbersLayout): D
 }
 
 /**
+ * Which lines of a paragraph are blank. Of what is within its lines, only
+ * this says anything of its numbers, where only text was written: the
+ * lines, their marks and the kind of the paragraph stay as they were.
+ */
+function blanks(node: Node): string {
+  return linesOf(blockOf(node).content)
+    .map((l) => (l.blank ? '-' : '+'))
+    .join('');
+}
+
+/** Whether a paragraph has a line mark that says words in the margin. */
+function holdsMargin(node: Node): boolean {
+  let holds = false;
+  node.forEach((child) => {
+    if (child.type.name === 'linemark' && typeof child.attrs.margin === 'string')
+      holds ||= !!child.attrs.margin.trim();
+  });
+  return holds;
+}
+
+/**
  * Draws the numbers of the lines of the numbered stretches, and the words
  * in the margin. `own` gives the kinds of the writer's own, for which lines
  * are counted; `layout` what the document's layout says of the numbers,
- * which the editor is told anew by `relayoutNumbers` when it changes.
+ * which the editor is told anew by `redrawShape` when it changes.
+ *
+ * The numbers depend on the paragraphs of the numbered stretches, their
+ * kinds, settings, lines, line marks and which lines are blank, and the
+ * words in the margin on line marks: a change that writes only text
+ * (`withinLines`), as a keystroke does, in paragraphs that are not
+ * numbered, or that are and have their blank lines where they were,
+ * changes none of them, and what was drawn is moved with the text. Any
+ * other change draws them anew, reading only the paragraphs that are
+ * numbered or hold words in the margin; before, every paragraph was read
+ * on every keystroke.
  */
 export function stretchNumbersPlugin(
   own: () => readonly BasedKind[] = () => [],
@@ -549,14 +592,28 @@ export function stretchNumbersPlugin(
     key,
     state: {
       init: (_config, state) => numbers(state.doc, own(), layout()),
-      apply: (tr, set) =>
-        tr.docChanged || tr.getMeta(key) ? numbers(tr.doc, own(), layout()) : set,
+      apply: (tr, set) => {
+        if (!tr.docChanged && !tr.getMeta(key)) return set;
+        const within = tr.getMeta(key) ? null : withinLines(tr);
+        const same =
+          within?.onlyText &&
+          within.written.every(
+            ({ before, after }) => !isNumbered(before) || (!!after && blanks(before) === blanks(after)),
+          );
+        return same ? set.map(tr.mapping, tr.doc) : numbers(tr.doc, own(), layout());
+      },
     },
     props: { decorations: (state) => key.getState(state) },
   });
 }
 
-/** Has the numbers drawn anew, as when the layout or the kinds of the writer's own have changed. */
-export function relayoutNumbers(view: { state: EditorState; dispatch: (tr: Transaction) => void }) {
-  view.dispatch(view.state.tr.setMeta(key, true).setMeta('addToHistory', false));
+/**
+ * Has the numbers of lines and the brackets of runs drawn anew, as when the
+ * layout or the kinds of the writer's own, or the language of the
+ * interface, have changed: they are not drawn anew on every keystroke.
+ */
+export function redrawShape(view: { state: EditorState; dispatch: (tr: Transaction) => void }) {
+  view.dispatch(
+    view.state.tr.setMeta(key, true).setMeta(bracketsKey, true).setMeta('addToHistory', false),
+  );
 }

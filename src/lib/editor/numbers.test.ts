@@ -8,7 +8,7 @@ import {
   numberFrom,
   numbersAsked,
   numberStretch,
-  relayoutNumbers,
+  redrawShape,
   stretchAt,
   stretchesIn,
   stretchToNumber,
@@ -217,7 +217,7 @@ describe('the numbers in the margin', () => {
     // The layout changed: drawn anew.
     const w = at(['line #counted: {n=1}a / b / c / d'], { layout: { every: 2, side: 'right' } });
     expect(margin(w)).toEqual(['1! 2 # 4']);
-    relayoutNumbers(w);
+    redrawShape(w);
     expect(w.dom.querySelector('p')!.getAttribute('data-numbers')).toBe('right');
   });
 
