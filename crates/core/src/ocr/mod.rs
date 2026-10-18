@@ -355,10 +355,27 @@ fn ready<'t>(tools: &'t Tools, asked: &Asked) -> Result<Reader<'t>> {
 }
 
 /// How many pages are read at once: one less than there are cores, so that
-/// the application is not kept waiting, and no more than eight, since each
-/// Tesseract takes a few hundred megabytes.
-fn workers() -> usize {
-    std::thread::available_parallelism().map_or(2, |n| n.get()).saturating_sub(1).clamp(1, 8)
+/// the application is not kept waiting, and no more than eight; and no more
+/// than the memory the machine has free will hold (`by_memory`).
+fn workers(dots: u64) -> usize {
+    let cores = std::thread::available_parallelism().map_or(2, |n| n.get()).saturating_sub(1).clamp(1, 8);
+    by_memory(cores, dots, crate::isolated::available_memory())
+}
+
+/// What one page being read takes, near enough: Tesseract itself, and for
+/// each dot of the page's picture the picture, its file, and what Tesseract
+/// makes of it. Measured with Tesseract 5 on pages of 8 to 35 million dots.
+const PAGE_BASE: u64 = 300 << 20;
+const PAGE_PER_DOT: u64 = 20;
+
+/// As many pages at once as `cores` allow and as fit, each of `dots`, in
+/// three fifths of the memory `free`; one at the least. All the cores where
+/// what is free cannot be told.
+fn by_memory(cores: usize, dots: u64, free: Option<u64>) -> usize {
+    let Some(free) = free else { return cores };
+    let each = PAGE_BASE.saturating_add(dots.saturating_mul(PAGE_PER_DOT));
+    let fit = (free / 5 * 3) / each.max(1);
+    usize::try_from(fit).unwrap_or(usize::MAX).clamp(1, cores.max(1))
 }
 
 /// Reads pages, several at a time, each by `one`, and tells how far it has
@@ -366,6 +383,7 @@ fn workers() -> usize {
 /// page that is given up (`one` panics) is an error of that page alone.
 fn several<T: Send>(
     pages: &[usize],
+    workers: usize,
     one: &(dyn Fn(usize) -> Result<T> + Sync),
     told: &mut dyn FnMut(Progress),
     stop: &AtomicBool,
@@ -374,7 +392,7 @@ fn several<T: Send>(
     let (send, receive) = mpsc::channel();
     let mut done = Vec::with_capacity(pages.len());
     std::thread::scope(|scope| {
-        for _ in 0..workers().min(pages.len()) {
+        for _ in 0..workers.max(1).min(pages.len()) {
             let send = send.clone();
             let next = &next;
             let work = move || {
@@ -426,7 +444,7 @@ fn layer_of(path: &Path, bytes: &Arc<Vec<u8>>) -> Arc<Layer> {
     {
         return layer.clone();
     }
-    let layer = Arc::new(layer::read(bytes.clone(), layer::patience(bytes.len())));
+    let layer = Arc::new(layer::read_path(path, bytes.clone()));
     *kept = Some((path.to_owned(), size, changed, layer.clone()));
     layer
 }
@@ -573,7 +591,9 @@ pub fn read_pdf(
                     }
                     Ok((groups, size))
                 };
-                for (index, result) in several(&wanted, &one, told, stop) {
+                let at_once = workers(pages.largest_dots(&wanted, reader.quality));
+                tracing::info!(pages = wanted.len(), at_once, "pages read by Tesseract");
+                for (index, result) in several(&wanted, at_once, &one, told, stop) {
                     match result {
                         Ok(page) => {
                             read.insert(index, page);
@@ -779,7 +799,8 @@ pub fn first_pages(path: &Path, tools: &Tools, work: &Path, count: usize, stop: 
             .collect::<Vec<_>>()
             .join("\n\n"))
     };
-    several(&wanted, &one, &mut |_| {}, stop).into_iter().map(|(_, read)| read.unwrap_or_default()).collect()
+    let at_once = workers(pages.largest_dots(&wanted, reader.quality));
+    several(&wanted, at_once, &one, &mut |_| {}, stop).into_iter().map(|(_, read)| read.unwrap_or_default()).collect()
 }
 
 /// Makes a PDF searchable: the pages that have no text are read, and what
@@ -836,7 +857,9 @@ pub fn make_searchable(
     };
     let mut layers = Vec::new();
     let mut failed = Vec::new();
-    for (index, result) in several(&wanted, &one, told, stop) {
+    let at_once = workers(pages.largest_dots(&wanted, reader.quality));
+    tracing::info!(pages = wanted.len(), at_once, "pages made searchable by Tesseract");
+    for (index, result) in several(&wanted, at_once, &one, told, stop) {
         match result {
             Ok(layer) => layers.push(layer),
             Err(e) => failed.push((index + 1, e.to_string())),

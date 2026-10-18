@@ -2214,12 +2214,14 @@ dependencies = [
  "calamine",
  "comemo",
  "encoding_rs",
+ "flate2",
  "fluent-bundle",
  "fluent-syntax",
  "hayro",
  "icu_properties",
  "image",
  "intl_pluralrules",
+ "libc",
  "lopdf",
  "pdf-text",
  "roxmltree 0.21.1",
@@ -2242,6 +2244,7 @@ dependencies = [
  "unicode-normalization",
  "ureq",
  "uuid",
+ "windows-sys 0.61.2",
  "zip",
 ]
 

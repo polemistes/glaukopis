@@ -885,3 +885,24 @@ fn the_structure_of_a_file_with_an_outline() {
         "page numbers left out"
     );
 }
+
+#[test]
+fn as_many_pages_at_once_as_the_memory_free_will_hold() {
+    use super::by_memory;
+    const GIB: u64 = 1 << 30;
+    // A page of A4 at 300 dots to the inch, and at 600.
+    let a4 = 2480 * 3508;
+    let a4_fine = 4960 * 7016;
+    // Enough of everything: as many as the cores.
+    assert_eq!(by_memory(7, a4, Some(64 * GIB)), 7);
+    // Four gigabytes free hold some pages of A4, and fewer drawn finer.
+    let coarse = by_memory(7, a4, Some(4 * GIB));
+    let fine = by_memory(7, a4_fine, Some(4 * GIB));
+    assert!((2..7).contains(&coarse), "{coarse}");
+    assert!(fine < coarse && fine >= 1, "{fine}");
+    // Little free: one at a time, never none.
+    assert_eq!(by_memory(7, a4_fine, Some(GIB / 2)), 1);
+    assert_eq!(by_memory(7, a4, Some(0)), 1);
+    // Not known: the cores decide.
+    assert_eq!(by_memory(5, a4_fine, None), 5);
+}

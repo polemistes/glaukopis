@@ -48,7 +48,7 @@ pub enum Piece {
 /// An entry of the outline a PDF carries of its own headings, its
 /// bookmarks: the heading's words, the page it points to, counted from one,
 /// where that could be read, and how deep it stands, 1 at the top.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct OutlineEntry {
     pub title: String,
     pub page: Option<usize>,

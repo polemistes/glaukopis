@@ -82,9 +82,10 @@ pub struct PdfFacts {
     pub first_page: String,
 }
 
-/// What was read out of the file, before anything is made of it.
-#[derive(Debug, Clone, Default)]
-struct Raw {
+/// What was read out of the file, before anything is made of it. It is
+/// carried as JSON from the process that reads it (`isolated.rs`).
+#[derive(Debug, Clone, Default, Serialize, serde::Deserialize)]
+pub(crate) struct Raw {
     pages: usize,
     /// The text of the first pages, in order. A page without text is empty.
     first: Vec<String>,
@@ -96,7 +97,7 @@ struct Raw {
 /// What the metadata say, the XMP packet before the information dictionary,
 /// which is the older of the two and the more often left as the typesetting
 /// program filled it in.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, serde::Deserialize)]
 struct Metadata {
     titles: Vec<String>,
     /// Each a name or a list of names, as it was written.
@@ -1158,16 +1159,7 @@ impl OutputDev for Lines {
 /// and encodings it does not know; what it had read by then is kept, since
 /// an identifier stands more often at the head of a page than at its foot.
 fn page_text(doc: &Document, number: u32) -> String {
-    let stored: usize = doc
-        .get_pages()
-        .get(&number)
-        .map(|page| doc.get_page_contents(*page))
-        .unwrap_or_default()
-        .into_iter()
-        .filter_map(|id| doc.get_object(id).and_then(Object::as_stream).ok())
-        .map(|stream| stream.content.len())
-        .sum();
-    if stored > LARGEST_PAGE {
+    if crate::ocr::layer::too_large(doc, number, LARGEST_PAGE) {
         return String::new();
     }
     let mut lines = Lines::default();
@@ -1306,7 +1298,38 @@ fn file_name(path: &Path) -> String {
 /// hand.
 pub fn identify(path: &Path) -> Result<PdfFacts> {
     let name = checked(path)?;
-    Ok(facts(&read(path), &name))
+    Ok(facts(&read_guarded(path), &name))
+}
+
+/// Reads the file in a process of its own where the application has one to
+/// give (`isolated.rs`), killed when its time is up or it takes more memory
+/// than it may; else on a thread ([`read`]). A file whose reading was given
+/// up is one that could not be read.
+fn read_guarded(path: &Path) -> Raw {
+    let size = std::fs::metadata(path).map_or(0, |m| m.len());
+    let limits = crate::isolated::Limits::for_file(size, PATIENCE);
+    match crate::isolated::run::<Raw>("pdf-facts", path, limits) {
+        None => read(path),
+        Some(Ok(raw)) => raw,
+        Some(Err(crate::isolated::Ended::NotStarted(why))) => {
+            tracing::warn!(%why, "no process could be started for reading the PDF; it is read here");
+            read(path)
+        }
+        Some(Err(ended)) => {
+            tracing::warn!(%ended, path = %path.display(), "reading the PDF was given up");
+            Raw::default()
+        }
+    }
+}
+
+/// Reads the file here and now, to its end: what the process that reads it
+/// for the application does.
+pub(crate) fn read_here(path: &Path) -> Raw {
+    let raw = Mutex::new(Raw::default());
+    if catch_unwind(AssertUnwindSafe(|| read_into(path, &raw))).is_err() {
+        tracing::warn!(path = %path.display(), "the PDF could not be read to its end");
+    }
+    raw.into_inner().unwrap_or_else(PoisonError::into_inner)
 }
 
 /// The name of a file that is a PDF, by its header; an error where it is
@@ -1333,7 +1356,7 @@ fn checked(path: &Path) -> Result<String> {
 /// how many pages to read. The file is still said to have no text.
 pub fn identify_scan(path: &Path, first: impl FnOnce(usize) -> Vec<String>) -> Result<PdfFacts> {
     let name = checked(path)?;
-    let mut raw = read(path);
+    let mut raw = read_guarded(path);
     let found = facts(&raw, &name);
     if found.has_text || raw.pages == 0 {
         return Ok(found);

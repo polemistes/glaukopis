@@ -125,6 +125,39 @@ pub fn right_map() -> Vec<(u32, String)> {
     out
 }
 
+/// A PDF of one page whose content, packed with Flate, unpacks to `unpacked`
+/// bytes: of a line drawn over and over, which reads as no text.
+pub fn inflating_pdf(unpacked: usize) -> Vec<u8> {
+    use std::io::Write;
+    let line = b"0 0 m 1 1 l S\n";
+    let mut packer = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::best());
+    let mut left = unpacked;
+    while left > 0 {
+        let n = left.min(line.len());
+        packer.write_all(&line[..n]).expect("packed in memory");
+        left -= n;
+    }
+    let packed = packer.finish().expect("packed in memory");
+    let mut doc = Document::with_version("1.5");
+    let pages_id = doc.new_object_id();
+    let content = doc.add_object(Stream::new(dictionary! { "Filter" => "FlateDecode" }, packed));
+    let page = doc.add_object(dictionary! {
+        "Type" => "Page",
+        "Parent" => pages_id,
+        "Contents" => content,
+        "MediaBox" => vec![0.into(), 0.into(), 400.into(), 360.into()],
+    });
+    doc.objects.insert(
+        pages_id,
+        Object::Dictionary(dictionary! { "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1 }),
+    );
+    let catalog = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
+    doc.trailer.set("Root", catalog);
+    let mut out = Vec::new();
+    doc.save_to(&mut out).expect("the fixture is written");
+    out
+}
+
 /// The PDF: one page with the four lines, in the font described above.
 pub fn porson_pdf() -> Vec<u8> {
     let mut codes: Vec<(&'static str, char)> = Vec::new();

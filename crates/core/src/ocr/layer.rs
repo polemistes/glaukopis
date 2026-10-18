@@ -182,8 +182,55 @@ pub fn sound(text: &str) -> bool {
 /// and reading it for the sake of its text takes long.
 const LARGEST_PAGE: usize = 4 << 20;
 
-/// What was read of the text of a PDF.
-#[derive(Debug, Clone, Default, PartialEq)]
+/// Nor is a page read whose content, unpacked, is larger than this: a page
+/// of text, even one whose every glyph is placed on its own, as old readings
+/// of scans place them, comes to a fraction of it, and a stream that packs
+/// small and unpacks without end is how a file makes a reader lose itself.
+pub(crate) const LARGEST_UNPACKED: u64 = 32 << 20;
+
+/// Whether a page's content, as stored or unpacked, is too large to be read
+/// for its text. A stream packed with Flate is unpacked as far as the limit
+/// and no further; one packed otherwise is counted as stored.
+pub(crate) fn too_large(doc: &Document, number: u32, stored_limit: usize) -> bool {
+    use std::io::Read;
+    let streams: Vec<&pdf_text::Stream> = doc
+        .get_pages()
+        .get(&number)
+        .map(|page| doc.get_page_contents(*page))
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|id| doc.get_object(id).and_then(Object::as_stream).ok())
+        .collect();
+    let stored: usize = streams.iter().map(|s| s.content.len()).sum();
+    if stored > stored_limit {
+        return true;
+    }
+    let mut unpacked: u64 = 0;
+    for stream in streams {
+        let filters: Vec<&[u8]> = match stream.dict.get(b"Filter") {
+            Ok(Object::Name(name)) => vec![name.as_slice()],
+            Ok(Object::Array(list)) => list.iter().filter_map(|f| f.as_name().ok()).collect(),
+            _ => Vec::new(),
+        };
+        let left = LARGEST_UNPACKED.saturating_sub(unpacked);
+        unpacked += match filters.as_slice() {
+            [] => stream.content.len() as u64,
+            [flate] if *flate == b"FlateDecode" => {
+                let mut counted = flate2::read::ZlibDecoder::new(stream.content.as_slice()).take(left + 1);
+                std::io::copy(&mut counted, &mut std::io::sink()).unwrap_or(0)
+            }
+            _ => stream.content.len() as u64,
+        };
+        if unpacked > LARGEST_UNPACKED {
+            return true;
+        }
+    }
+    false
+}
+
+/// What was read of the text of a PDF. It is carried as JSON from the
+/// process that reads it (`isolated.rs`).
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Layer {
     /// The pages, each with the lines of its text as the PDF's own map gives
     /// it; nothing where the page could not be read, or the time was up
@@ -206,6 +253,7 @@ pub struct Layer {
     /// The fonts whose glyphs were translated, each with every code seen of
     /// it and the text it stands for: the right map of the font, to be
     /// written into a PDF made readable.
+    #[serde(with = "pairs")]
     pub maps: HashMap<ObjectId, BTreeMap<u32, String>>,
     /// The fonts of the text, by their names without the prefix of a
     /// subset, with how many glyphs of each were read.
@@ -690,16 +738,7 @@ struct PageRead {
 /// as translated. The library panics on fonts and encodings it does not
 /// know; what it had read by then is kept.
 fn page_lines(doc: &Document, number: u32) -> Option<PageRead> {
-    let stored: usize = doc
-        .get_pages()
-        .get(&number)
-        .map(|page| doc.get_page_contents(*page))
-        .unwrap_or_default()
-        .into_iter()
-        .filter_map(|id| doc.get_object(id).and_then(Object::as_stream).ok())
-        .map(|stream| stream.content.len())
-        .sum();
-    if stored > LARGEST_PAGE {
+    if too_large(doc, number, LARGEST_PAGE) {
         return None;
     }
     let mut gatherer = Gatherer::default();
@@ -1052,6 +1091,60 @@ fn read_into(bytes: &[u8], layer: &Mutex<Layer>) {
     }
 }
 
+/// Reads the text of the PDF at `path`, whose `bytes` are given: in a
+/// process of its own where the application has one to give (`isolated.rs`),
+/// which is killed when its time is up or it takes more memory than it may;
+/// else on a thread ([`read`]). A file whose reading was given up has no text
+/// as far as is known, and is said to be so in the log.
+pub fn read_path(path: &Path, bytes: Arc<Vec<u8>>) -> Layer {
+    let wait = patience(bytes.len());
+    let limits = crate::isolated::Limits::for_file(bytes.len() as u64, wait);
+    match crate::isolated::run::<Layer>("pdf-layer", path, limits) {
+        None => read(bytes, wait),
+        Some(Ok(layer)) => layer,
+        Some(Err(crate::isolated::Ended::NotStarted(why))) => {
+            tracing::warn!(%why, "no process could be started for reading the PDF; it is read here");
+            read(bytes, wait)
+        }
+        Some(Err(ended)) => {
+            tracing::warn!(%ended, path = %path.display(), "reading the text of the PDF was given up");
+            Layer::default()
+        }
+    }
+}
+
+/// Reads the text of the PDF at `path` here and now, to its end: what the
+/// process that reads it for the application does.
+pub(crate) fn read_here(path: &Path) -> Result<Layer, String> {
+    let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
+    let layer = Mutex::new(Layer::default());
+    if catch_unwind(AssertUnwindSafe(|| read_into(&bytes, &layer))).is_err() {
+        tracing::warn!("the text of the PDF could not be read to its end");
+    }
+    Ok(layer.into_inner().unwrap_or_else(PoisonError::into_inner))
+}
+
+/// The fonts' maps, keyed by object, as a list of pairs: JSON keys only by strings.
+mod pairs {
+    use std::collections::{BTreeMap, HashMap};
+
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    use super::ObjectId;
+
+    type Maps = HashMap<ObjectId, BTreeMap<u32, String>>;
+
+    pub fn serialize<S: Serializer>(maps: &Maps, s: S) -> Result<S::Ok, S::Error> {
+        let mut list: Vec<(&ObjectId, &BTreeMap<u32, String>)> = maps.iter().collect();
+        list.sort_by_key(|(id, _)| **id);
+        list.serialize(s)
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Maps, D::Error> {
+        Ok(Vec::<(ObjectId, BTreeMap<u32, String>)>::deserialize(d)?.into_iter().collect())
+    }
+}
+
 /// Reads the text of a PDF, on a thread of its own, and waits for it no
 /// longer than `patience`: a library that has lost itself in a file cannot
 /// be stopped otherwise. What was read when the time was up is what is known;
@@ -1091,13 +1184,37 @@ pub fn patience(bytes: usize) -> Duration {
 pub fn read_file(path: &Path) -> crate::Result<Layer> {
     use crate::error::IoContext;
     let bytes = std::fs::read(path).context(|| tr!("io-reading", path = path))?;
-    let wait = patience(bytes.len());
-    Ok(read(Arc::new(bytes), wait))
+    Ok(read_path(path, Arc::new(bytes)))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_page_that_unpacks_too_large_is_not_read() {
+        let small = Document::load_mem(&crate::ocr::fixture::inflating_pdf(1 << 20)).unwrap();
+        assert!(!too_large(&small, 1, LARGEST_PAGE));
+        let large = crate::ocr::fixture::inflating_pdf(LARGEST_UNPACKED as usize + (8 << 20));
+        assert!(large.len() < LARGEST_PAGE, "it packs small: {}", large.len());
+        let doc = Document::load_mem(&large).unwrap();
+        assert!(too_large(&doc, 1, LARGEST_PAGE));
+        // Read, it is left as a page with no text, at once.
+        let started = std::time::Instant::now();
+        let layer = read(Arc::new(large), Duration::from_secs(60));
+        assert_eq!(layer.pages, vec![None]);
+        assert!(started.elapsed() < Duration::from_secs(10), "{:?}", started.elapsed());
+    }
+
+    #[test]
+    fn the_layer_is_carried_as_json_whole() {
+        let pdf = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../e2e/fixtures/porson.pdf");
+        let layer = read_here(&pdf).unwrap();
+        assert!(!layer.maps.is_empty(), "the fixture has a font's map to carry");
+        let json = serde_json::to_vec(&layer).unwrap();
+        let back: Layer = serde_json::from_slice(&json).unwrap();
+        assert_eq!(back, layer);
+    }
 
     #[test]
     fn the_outline_a_file_carries_of_its_headings() {

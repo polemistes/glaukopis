@@ -23,6 +23,9 @@ roxmltree = "0.21"
 rusqlite = { version = "0.40" }
 zip = { version = "8", default-features = false, features = ["deflate"] }
 pdf-text = { path = "../pdf-text" }
+# How far a page's content unpacks, counted without unpacking it all.
+flate2 = "1"
+
 # The same as pdf-text (pdf-extract) reads with, without what is not needed here.
 lopdf = { version = "0.42", default-features = false }
 hayro = "0.7.1"
@@ -46,6 +49,18 @@ typst-layout = "0.15.1"
 typst-pdf = "0.15.1"
 typst-kit = { version = "0.15.1", default-features = false, features = ["scan-fonts"] }
 comemo = "0.5"
+
+# Reading PDFs in a process of its own, within bounds (isolated.rs).
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_System_JobObjects",
+  "Win32_System_SystemInformation",
+] }
 
 [features]
 default = ["embedded-fonts"]

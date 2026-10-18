@@ -39,6 +39,12 @@ pub fn run() {
     #[cfg(target_os = "linux")]
     let compositor_asked = previous_compositor();
     log::start(&glaukopis_core::paths::default_root());
+    // PDFs are read in a process of their own, this program started anew, so
+    // that one a library loses itself in cannot take the machine's memory.
+    match std::env::current_exe() {
+        Ok(exe) => glaukopis_core::isolated::set_program(exe),
+        Err(error) => tracing::warn!(%error, "PDFs are read within the application"),
+    }
     #[cfg(target_os = "linux")]
     tracing::info!(
         asked_by_the_application = compositor_asked,

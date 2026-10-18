@@ -218,6 +218,28 @@ impl Pages {
         }
     }
 
+    /// The size of a page as it is shown, in points.
+    fn size(&self, index: usize) -> Option<(f32, f32)> {
+        match self {
+            Pages::Hayro(pdf) => pdf.pages().get(index).map(|page| page.render_dimensions()),
+            Pages::Poppler { sizes, .. } => sizes.get(index).copied(),
+        }
+    }
+
+    /// How many dots the largest of these pages comes to, drawn at `quality`:
+    /// what decides how much memory reading one of them takes.
+    pub fn largest_dots(&self, indices: &[usize], quality: Quality) -> u64 {
+        indices
+            .iter()
+            .filter_map(|&i| self.size(i))
+            .map(|(width, height)| {
+                let dpi = resolution(width, height, quality.dots()).floor();
+                ((width / 72.0 * dpi) as u64).saturating_mul((height / 72.0 * dpi) as u64)
+            })
+            .max()
+            .unwrap_or(0)
+    }
+
     /// Draws a page, counted from nought, into a file in `dir`, as `quality`
     /// asks, and gives the file and the dots to the inch it was drawn at.
     pub fn draw(&self, index: usize, dir: &Path, quality: Quality, stop: &AtomicBool) -> Result<(PathBuf, u32)> {

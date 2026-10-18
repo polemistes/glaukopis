@@ -17,7 +17,7 @@ pub type IsWord<'a> = dyn Fn(&str) -> bool + Sync + 'a;
 
 /// A line of a page, and where it stands: from the top left of the page,
 /// in points or in dots, as long as it is the same for all its lines.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Line {
     pub text: String,
     pub left: f32,
@@ -36,7 +36,7 @@ pub struct Line {
 
 /// A space between two words of a line: the byte of the text where the
 /// word after it begins, and where on the page the space runs from and to.
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Gap {
     pub at: usize,
     pub from: f32,
@@ -51,7 +51,7 @@ impl Line {
 
 /// The look of a line, as far as it can be told: from the font for the text
 /// a PDF has, from the size alone for what Tesseract reads.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Style {
     /// The font's family, without the prefix of a subset and without what
     /// says italic or bold: `Bembo`; empty where not known.
@@ -64,7 +64,7 @@ pub struct Style {
 
 /// A run of a line's text in one look: from the byte offset in the line's
 /// text, with the marks it has, to the next run or the end.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Run {
     pub from: usize,
     pub italic: bool,
