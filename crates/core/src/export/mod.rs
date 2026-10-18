@@ -1699,9 +1699,8 @@ pub fn count_words(document: &Document, with_notes: bool) -> usize {
         }
         blocks(&s.blocks, with_notes, &mut text);
     }
-    text.split(|c: char| !(c.is_alphanumeric() || c == '\'' || c == '’' || c == '-'))
-        .filter(|w| w.chars().any(char::is_alphanumeric))
-        .count()
+    // By the one rule of words the application has, which the page keeps too.
+    crate::import::document::count_words(&text)
 }
 
 #[cfg(test)]
