@@ -287,9 +287,13 @@ export class WorkerClient<Q, T = never> {
         } catch (error) {
           this.#settle(ask);
           reject(
-            new WorkerError('unsent', `${this.#options.name} could not be asked: ${message(error)}`, {
-              cause: error,
-            }),
+            new WorkerError(
+              'unsent',
+              `${this.#options.name} could not be asked: ${message(error)}`,
+              {
+                cause: error,
+              },
+            ),
           );
         }
         return;
@@ -331,9 +335,13 @@ export class WorkerClient<Q, T = never> {
       else this.#here!.tell?.(told);
     } catch (error) {
       this.#fault(
-        new WorkerError('fault', `${this.#options.name} could not take what it was told: ${message(error)}`, {
-          cause: error,
-        }),
+        new WorkerError(
+          'fault',
+          `${this.#options.name} could not take what it was told: ${message(error)}`,
+          {
+            cause: error,
+          },
+        ),
         false,
       );
     }

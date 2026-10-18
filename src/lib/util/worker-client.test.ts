@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeWorker } from './fake-worker';
 import { wasEnded, WorkerClient, WorkerError, type Answerer } from './worker-client';
 
-type Question = { op: 'echo'; value: number } | { op: 'later'; value: number } | { op: 'refuse' } | { op: 'stall' };
+type Question =
+  | { op: 'echo'; value: number }
+  | { op: 'later'; value: number }
+  | { op: 'refuse' }
+  | { op: 'stall' };
 type Told = { add: number } | { break: true };
 
 /** What the fake worker does: it adds what it is told, and answers as asked. */

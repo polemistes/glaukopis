@@ -14,10 +14,10 @@
 import type { Project } from '$lib/project/model/project.svelte';
 import { citedRecords } from '$lib/project/model/rewrite-refs';
 import type { RefRecord } from '$lib/project/model/types';
+import { WorkerClient, WorkerError } from '$lib/util/worker-client';
 import { orgOf } from './of-project';
 import type { OrgProject } from './types';
 import { writeProject } from './write';
-import type { Answer, Asked } from './write.worker';
 
 /** What is written beside the Org form: the pictures by their hash, and the works cited. */
 export interface Beside {
@@ -31,6 +31,12 @@ export type Send = (org: string, beside: Beside) => Promise<void>;
 /** How long, at least, from one copy to the next. */
 export const COPY_EVERY = 5000;
 
+/**
+ * How long a project that is closed waits for its copy to be written: the
+ * copy is a convenience, never read back, and a close must not hang on it.
+ */
+export const FINISH_WAIT = 5000;
+
 /** What a project's readable copy is made of, gathered from it as it is now. */
 export function gather(project: Project): { org: OrgProject; beside: Beside } {
   return {
@@ -42,42 +48,31 @@ export function gather(project: Project): { org: OrgProject; beside: Beside } {
   };
 }
 
-/** The Org writer's thread, made when it is first needed; nothing where there can be none. */
-let worker: Worker | null | undefined;
-const waiting = new Map<number, (answer: Answer) => void>();
-let asked = 0;
+/**
+ * The Org writer's thread, made when it is first needed, through the one
+ * client of the workers: a writer that dies or stalls fails the copy it was
+ * writing, which the log says, and the next is written by one begun anew;
+ * where there can be no thread, the window writes it.
+ */
+const writer = new WorkerClient<OrgProject>({
+  name: 'the writer of the readable copy',
+  make: () =>
+    typeof Worker === 'undefined'
+      ? null
+      : new Worker(new URL('./write.worker.ts', import.meta.url), { type: 'module' }),
+  here: () => ({ answer: (org) => writeProject(org) }),
+  timeout: 60_000,
+});
 
 /** The Org form of a project as text: in a thread of its own where there is one. */
-export function writeElsewhere(org: OrgProject): Promise<string> {
-  if (worker === undefined) {
-    worker = null;
-    if (typeof Worker !== 'undefined') {
-      try {
-        worker = new Worker(new URL('./write.worker.ts', import.meta.url), { type: 'module' });
-        worker.onmessage = (event: MessageEvent<Answer>) => {
-          const done = waiting.get(event.data.ask);
-          waiting.delete(event.data.ask);
-          done?.(event.data);
-        };
-      } catch {
-        worker = null;
-      }
-    }
+export async function writeElsewhere(org: OrgProject): Promise<string> {
+  try {
+    return await writer.ask<string>(org);
+  } catch (error) {
+    // What cannot be sent to the thread is written here.
+    if (error instanceof WorkerError && error.failure === 'unsent') return writeProject(org);
+    throw error;
   }
-  if (!worker) return Promise.resolve(writeProject(org));
-  const ask = ++asked;
-  return new Promise((resolve, reject) => {
-    waiting.set(ask, (answer) =>
-      'text' in answer ? resolve(answer.text) : reject(new Error(answer.error)),
-    );
-    try {
-      worker!.postMessage({ ask, org } satisfies Asked);
-    } catch {
-      // What cannot be sent to the thread is written here.
-      waiting.delete(ask);
-      resolve(writeProject(org));
-    }
-  });
 }
 
 /** Runs `fn` when the window is idle, or soon where it cannot say. */
@@ -142,10 +137,32 @@ export class ReadableCopy {
     return this.#writing;
   }
 
-  /** Writes at once what is due, and waits for what is being written. */
+  /**
+   * Writes at once what is due, and waits for what is being written, but
+   * no longer than `FINISH_WAIT`: a copy that takes longer goes on by
+   * itself, and what was due after it is left for the next opening.
+   */
   async finish(): Promise<void> {
     clearTimeout(this.#timer);
-    if (this.#writing) await this.#writing;
-    if (this.#due) await this.#write();
+    if (this.#writing && !(await within(this.#writing))) {
+      this.#due = false;
+      return;
+    }
+    if (this.#due && !(await within(this.#write()))) this.#due = false;
   }
+}
+
+/** Whether `writing` is done within `FINISH_WAIT`; said in the log where it is not. */
+async function within(writing: Promise<void>): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<boolean>((resolve) => {
+    timer = setTimeout(() => resolve(false), FINISH_WAIT);
+  });
+  const done = await Promise.race([writing.then(() => true), late]);
+  clearTimeout(timer);
+  if (!done)
+    console.warn(
+      `the readable copy of the project was not written within ${FINISH_WAIT / 1000} s of its closing; it is left to be written by itself`,
+    );
+  return done;
 }

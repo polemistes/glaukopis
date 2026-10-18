@@ -168,9 +168,17 @@ describe('a history opened', () => {
   });
 
   it('is read anew when older history was merged on disk', async () => {
-    const thin = vi.spyOn(Engine.prototype, 'thin').mockReturnValueOnce([
-      { first: 0, count: 2, time: 1, until: 2, record: { kind: 'change', here: true, time: 1, until: 2, update: new Uint8Array([0, 0]) } },
-    ] as ReturnType<Engine['thin']>);
+    const thin = vi
+      .spyOn(Engine.prototype, 'thin')
+      .mockReturnValueOnce([
+        {
+          first: 0,
+          count: 2,
+          time: 1,
+          until: 2,
+          record: { kind: 'change', here: true, time: 1, until: 2, update: new Uint8Array([0, 0]) },
+        },
+      ] as ReturnType<Engine['thin']>);
     const { history, read } = opened();
     expect(await history.people()).toEqual([]);
     expect(thin).toHaveBeenCalledOnce();
