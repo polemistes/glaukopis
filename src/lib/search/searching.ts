@@ -66,9 +66,36 @@ export interface Scope {
   to: Place;
 }
 
+/** What was asked of the labels while a text was read with them, and what they said. */
+interface Asked {
+  again(labels: Labels): string;
+  said: string;
+}
+
+/** Labels that keep what was asked of them, and what they said. */
+function recording(labels: Labels): { labels: Labels; asked: Asked[] } {
+  const asked: Asked[] = [];
+  return {
+    asked,
+    labels: {
+      citation: (items, mode) => {
+        const said = labels.citation(items, mode);
+        asked.push({ again: (l) => l.citation(items, mode), said });
+        return said;
+      },
+      crossref: (target, form) => {
+        const said = labels.crossref(target, form);
+        asked.push({ again: (l) => l.crossref(target, form), said });
+        return said;
+      },
+    },
+  };
+}
+
 export class Texts {
   readonly project: Project;
   #kept = new Map<string, { key: string; read: Read }>();
+  #labelled = new Map<string, { key: string; read: Read; asked: Asked[] }>();
   /** What was found in the passages of an element, and by what: while the element is as it was. */
   readonly found = new WeakMap<Read, { key: string; matches: Match[] }>();
 
@@ -78,8 +105,13 @@ export class Texts {
 
   /**
    * The passages of an element as it is now. With labels, what stands
-   * outside the text is read as it is shown; that is not kept, since what a
-   * citation shows changes with the library, and not with the element.
+   * outside the text is read as it is shown. What a citation shows changes
+   * with the library, and what words that point show with the numbers of
+   * the document, and not with the element: a text read with labels is kept
+   * with what each of its labels said, and is read again when one of them
+   * says something else now, or the element has changed. Asking the labels
+   * again is far less than reading the text again, which a search did for
+   * every element of the branch after each keystroke.
    */
   of(id: string, labels: Labels | null = null): Read | null {
     const node = this.project.node(id);
@@ -89,20 +121,27 @@ export class Texts {
     if (!labels) {
       const known = this.#kept.get(id);
       if (known?.key === key) return known.read;
+    } else {
+      const known = this.#labelled.get(id);
+      if (known?.key === key && known.asked.every((a) => a.again(labels) === a.said))
+        return known.read;
     }
     const title = readTitle(this.project.fragment(id, 'title') ?? undefined);
+    const recorded = labels ? recording(labels) : null;
     const read: Read = {
       title: titlePassage(title),
-      body: bodyPassages(this.project.blocksOf(id), labels),
+      body: bodyPassages(this.project.blocksOf(id), recorded?.labels ?? null),
     };
-    if (!labels) this.#kept.set(id, { key, read });
+    if (recorded) this.#labelled.set(id, { key, read, asked: recorded.asked });
+    else this.#kept.set(id, { key, read });
     return read;
   }
 
   /** Forgets what is kept of elements that are not among these. */
   keepOnly(ids: Iterable<string>) {
     const wanted = new Set(ids);
-    for (const id of this.#kept.keys()) if (!wanted.has(id)) this.#kept.delete(id);
+    for (const kept of [this.#kept, this.#labelled])
+      for (const id of kept.keys()) if (!wanted.has(id)) kept.delete(id);
   }
 }
 

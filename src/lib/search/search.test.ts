@@ -1,7 +1,7 @@
 import { EditorState } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { ySyncPlugin } from 'y-prosemirror';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import { bodySchema, titleSchema } from '$lib/editor/schema';
 import { HASH, cell, list, note, p, project, quote, t } from '$lib/found/testing';
@@ -399,6 +399,43 @@ describe('searching elements', () => {
     const accents = new Texts(other);
     expect(search(accents, those, matcher('pelee'))).toEqual([]);
     expect(search(accents, those, matcher('pelee', { accentsAlike: true })).length).toBe(1);
+  });
+
+  it('reads again with labels only what was changed, or what a label says otherwise now', () => {
+    const { pr, elements } = project(
+      ...Array.from({ length: 20 }, (_, i) => [p(t(`wrath ${i} `), cite('r1', `${i}`))]),
+      [p(t('wrath, as '), { kind: 'crossref', target: 'f1', form: 'full' })],
+    );
+    let year = '1979';
+    let figure = 'Figure 1';
+    const labels: Labels = {
+      citation: (items) => `(Nagy ${year}, ${items[0]?.locator ?? ''})`,
+      crossref: () => figure,
+    };
+    const texts = new Texts(pr);
+    const reads = (f: () => void) => {
+      const spy = vi.spyOn(pr, 'blocksOf');
+      f();
+      const n = spy.mock.calls.length;
+      spy.mockRestore();
+      return n;
+    };
+    const found = (words: string) => search(texts, elements, matcher(words), { labels });
+    expect(found('Nagy 1979').length).toBe(20);
+    expect(reads(() => found('Nagy 1979'))).toBe(0);
+    const paragraph = pr.fragment(elements[3], 'body')!.get(0) as Y.XmlElement;
+    pr.transact(() => (paragraph.get(0) as Y.XmlText).insert(0, 'The '));
+    expect(reads(() => expect(found('Nagy 1979').length).toBe(20))).toBe(1);
+    // The library has changed: every element whose citation says otherwise now is read again.
+    year = '1980';
+    expect(reads(() => expect(found('Nagy 1980').length).toBe(20))).toBe(20);
+    expect(found('Nagy 1979')).toEqual([]);
+    // The figure was numbered anew.
+    figure = 'Figure 2';
+    expect(reads(() => expect(found('Figure 2').length).toBe(1))).toBe(1);
+    // Without labels, the text is read as it is, and kept apart.
+    expect(search(texts, elements, matcher('Nagy'))).toEqual([]);
+    expect(found('Nagy 1980').length).toBe(20);
   });
 
   it('reads again only what was changed', () => {
