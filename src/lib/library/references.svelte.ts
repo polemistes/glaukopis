@@ -20,6 +20,7 @@ import {
 } from '$lib/api/library';
 import { isBackendError } from '$lib/api/backend';
 import { importPdfs, importPdfsStop, onPdfsProgress } from '$lib/api/sources';
+import { fileEnding } from '$lib/util/file-name';
 import { newId } from '$lib/util/id';
 import { t } from '$lib/i18n';
 import { library } from '$lib/state/library.svelte';
@@ -262,9 +263,8 @@ export async function importDropped(
   paths: string[],
   collection?: string | null,
 ): Promise<ImportOutcome | null> {
-  const kind = (path: string) => path.split('.').pop()?.toLowerCase() ?? '';
-  const pdfs = paths.filter((p) => kind(p) === 'pdf');
-  const bibs = paths.filter((p) => ['bib', 'bibtex', 'biblatex'].includes(kind(p)));
+  const pdfs = paths.filter((p) => fileEnding(p) === 'pdf');
+  const bibs = paths.filter((p) => ['bib', 'bibtex', 'biblatex'].includes(fileEnding(p)));
   if (!pdfs.length && !bibs.length) {
     notify(t('library-nothing-to-import'), t('library-import-kinds'));
     return null;

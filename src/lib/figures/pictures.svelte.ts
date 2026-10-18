@@ -27,6 +27,7 @@ import {
 } from '$lib/api/pictures';
 import { isBackendError } from '$lib/api/backend';
 import { t } from '$lib/i18n';
+import { fileEnding } from '$lib/util/file-name';
 import { describeError, notify, notifyError } from '$lib/ui/toast.svelte';
 
 export type { Picture, PictureChange, UsedPicture };
@@ -74,8 +75,7 @@ const TYPES: Record<string, string> = {
 export const PICTURE_ENDINGS = ['png', 'jpg', 'jpeg', 'svg', 'gif', 'webp', 'tif', 'tiff', 'bmp'];
 
 export function isPicturePath(path: string): boolean {
-  const ending = path.split('.').pop()?.toLowerCase() ?? '';
-  return PICTURE_ENDINGS.includes(ending);
+  return PICTURE_ENDINGS.includes(fileEnding(path));
 }
 
 export function isPictureName(hash: unknown, extension: unknown): boolean {

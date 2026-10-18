@@ -9,7 +9,10 @@ import { call } from './backend';
 /** What a language is for. */
 export type LanguageKind = 'spelling' | 'ocr';
 
-/** The server packages come from unless the settings say another. */
+/**
+ * The server packages come from unless the settings say another: the
+ * core's `DEFAULT_SERVER`, which a test holds this to.
+ */
 export const DEFAULT_LANGUAGES_SERVER = 'https://robertemilberge.no/glaukopis/';
 
 /** A language that is imported. */

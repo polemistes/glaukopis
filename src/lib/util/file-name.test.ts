@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { safeFileName } from './file-name';
+import { isDocumentPath, isPlainTextPath } from '$lib/api/imported';
+import { isReadPath } from '$lib/api/ocr';
+import { isPicturePath } from '$lib/figures/pictures.svelte';
+import { isTablePath } from '$lib/tables/ask';
+import { fileEnding, safeFileName } from './file-name';
 
 describe('a name a file may have on every system', () => {
   it('makes the signs no system takes spaces, as the core does', () => {
@@ -41,5 +45,34 @@ describe('a name a file may have on every system', () => {
     expect(safeFileName('a'.repeat(200), 'x')).toBe('a'.repeat(120));
     expect(Array.from(safeFileName('𝔄'.repeat(200), 'x'))).toHaveLength(120);
     expect(safeFileName(`${'a'.repeat(118)} .b`, 'x')).toBe('a'.repeat(118));
+  });
+});
+
+describe('the ending of a file', () => {
+  it('is what follows the last dot of its name, in small letters', () => {
+    expect(fileEnding('/home/a/Iliad.PDF')).toBe('pdf');
+    expect(fileEnding('C:\\Texts\\notes.tar.gz')).toBe('gz');
+    expect(fileEnding('plate.png')).toBe('png');
+  });
+
+  it('is none for a name without one, whatever the folders on the way are called', () => {
+    expect(fileEnding('/home/a/README')).toBe('');
+    expect(fileEnding('/home/a.b/txt')).toBe('');
+    expect(fileEnding('C:\\old.texts\\pdf')).toBe('');
+    expect(fileEnding('/home/a/.bashrc')).toBe('');
+    expect(fileEnding('')).toBe('');
+  });
+
+  it('is the one rule by which documents, tables, pictures and what is read are taken', () => {
+    expect(isDocumentPath('/x/Iliad.docx')).toBe(true);
+    expect(isPlainTextPath('/x/notes.TXT')).toBe(true);
+    expect(isReadPath('/x/scan.tiff')).toBe(true);
+    expect(isTablePath('/x/data.csv')).toBe(true);
+    expect(isPicturePath('/x/plate.svg')).toBe(true);
+    // A folder with a dot does not make a file without one a text, a PDF or a table.
+    expect(isPlainTextPath('/x/notes.d/txt')).toBe(false);
+    expect(isReadPath('/x/scans.d/pdf')).toBe(false);
+    expect(isTablePath('/x/data.v2/csv')).toBe(false);
+    expect(isPicturePath('/x/a.b/png')).toBe(false);
   });
 });

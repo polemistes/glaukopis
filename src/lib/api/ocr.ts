@@ -1,6 +1,7 @@
 /** Text read from PDFs and pictures. Mirrors `commands/ocr.rs`. */
 
 import { listen } from '@tauri-apps/api/event';
+import { fileEnding } from '$lib/util/file-name';
 import { call, inTauri } from './backend';
 import type { Imported } from './imported';
 import type { Reference, StoredFile } from './library';
@@ -127,12 +128,10 @@ export interface MadeSearchable {
 /** The endings of the names of the pictures whose text is read. */
 export const PICTURE_ENDINGS = ['png', 'jpg', 'jpeg', 'tif', 'tiff', 'webp', 'gif', 'bmp'];
 
-const ending = (path: string) => path.split(/[\\/]/).pop()?.split('.').pop()?.toLowerCase() ?? '';
-
 /** Whether a file is read by Tesseract when it is brought in: a PDF, or a picture. */
 export function isReadPath(path: string): boolean {
-  const e = ending(path);
-  return path.includes('.') && (e === 'pdf' || PICTURE_ENDINGS.includes(e));
+  const e = fileEnding(path);
+  return e === 'pdf' || PICTURE_ENDINGS.includes(e);
 }
 
 /** Looks at a file before it is read: with `stored`, one of the library, by its path in the store. */
