@@ -204,20 +204,26 @@
     },
   ];
 
-  // The sample follows the changes, a moment behind.
+  // The sample follows the changes, a moment behind. It depends on the
+  // style, the works it shows and the language, and on nothing else: the
+  // sample already shown only picks the delay, so it is read untracked, or
+  // every sample made would schedule the next one, as long as the editor is
+  // open.
   $effect(() => {
     const text = xml;
     const list = works;
+    const lang = language;
     if (!text || !list.length) return;
-    const timer = setTimeout(() => untrack(() => show(text, list)), sample ? 500 : 50);
+    const delay = untrack(() => sample) ? 500 : 50;
+    const timer = setTimeout(() => untrack(() => show(text, list, lang)), delay);
     return () => clearTimeout(timer);
   });
 
-  async function show(text: string, list: ExportReference[]) {
+  async function show(text: string, list: ExportReference[], lang: string | undefined) {
     const mine = ++round;
     sampling = true;
     try {
-      const html = await styleSample(text, list, language);
+      const html = await styleSample(text, list, lang);
       if (mine !== round) return;
       sample = { ...read(html), works: list.length };
       sampleError = null;
