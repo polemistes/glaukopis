@@ -4,10 +4,10 @@
 
 ## The panel.
 
-found-title = Gefundene Zitationen
+found-title = Lose Zitationen
 # On the tab of the panel, beside the other tabs: short.
-found-tab = Gefunden
-found-between = Zwischen der Karte und den gefundenen Zitationen
+found-tab = Lose Zitationen
+found-between = Zwischen der Karte und den losen Zitationen
 found-taken = Was für Zitationen genommen wird
 found-taken-always = Was ein Programm erzeugt hat, und Kürzel
 found-taken-years = Klammern mit einer Jahreszahl darin
@@ -25,9 +25,9 @@ found-made = { $count ->
 found-made-undo = Strg+Z nimmt sie zurück, als einen Schritt.
 found-library-failed = Die Bibliothek konnte nicht gefragt werden.
 found-nothing = Nichts durchzugehen
-found-nothing-looked = In dieser Karte ist keine gefundene Zitation mehr, und nichts darin sieht nach einer aus.
-found-nothing-looked-more = In dieser Karte ist keine gefundene Zitation mehr, und nichts darin sieht nach einer aus. Oben kann mehr für Zitationen genommen werden.
-found-nothing-not-looked = In dieser Karte ist keine gefundene Zitation mehr. Nach Text, der nur wie eine Zitation aussieht, wird gesucht, wenn Sie oben sagen, was dafür genommen werden soll: Klammern mit einer Jahreszahl darin, oder Anmerkungen.
+found-nothing-looked = Im angezeigten Text ist keine lose Zitation mehr, nicht einmal Text, der nur wie eine aussieht.
+found-nothing-looked-more = Im angezeigten Text ist keine lose Zitation mehr, nicht einmal Text, der nur wie eine aussieht. Oben kann mehr für Zitationen genommen werden.
+found-nothing-not-looked = Im angezeigten Text ist keine lose Zitation mehr, die ein Programm erzeugt hat, und kein Kürzel. Nach Text, der nur wie eine Zitation aussieht, wird gesucht, wenn Sie oben sagen, was dafür genommen werden soll: Klammern mit einer Jahreszahl darin oder Anmerkungen.
 found-list-label = Was durchzugehen ist
 found-untitled = Ohne Titel
 found-in-a-note = In einer Anmerkung
@@ -93,7 +93,7 @@ found-note-holds = Die Anmerkung enthält { $what ->
         [hard_break] eine zweite Zeile
        *[other] etwas, das kein Text ist
     }, was die Wörter vor und nach einem Werk nicht aufnehmen können.
-found-note-another = Die Anmerkung enthält eine weitere gefundene Zitation, die in den Wörtern nach dieser verloren ginge.
+found-note-another = Die Anmerkung enthält eine weitere lose Zitation, die in den Wörtern nach dieser verloren ginge.
 
 ## Why what was asked could not be done.
 

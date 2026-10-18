@@ -5,11 +5,12 @@ home-join = Rejoindre un projet partagé
 home-from-document = Un projet à partir d’un document…
 home-new = Nouveau projet
 
-## The two forms of the page: the last used projects as cards, all of them as a list
+## The three forms of the page: the last used projects as cards, all of them as a list, all of them as a map around the owl
 
 home-shown = Ce qui est affiché
 home-recent = Derniers utilisés
 home-all = Tous les projets
+home-owl = Carte
 # Under the cards, when there are more projects than they show.
 home-show-all = Afficher les { $count } projets
 # The button that opens the menu of the page.
@@ -21,6 +22,7 @@ home-list-none = Il n’y a pas de projets.
 ## Folders of projects
 
 home-new-folder = Nouveau dossier
+home-folder-new-project = Nouveau projet à l’intérieur…
 home-folder-new-inside = Nouveau dossier à l’intérieur…
 home-folder-rename-title = Renommer le dossier
 home-folder-name-placeholder = Ce que le dossier contient
@@ -40,17 +42,91 @@ home-moved-to = « { $name } » a été déplacé dans { $folder }
 home-moved-out = « { $name } » n’est plus dans aucun dossier
 home-move-failed = Le projet n’a pas pu être déplacé
 
+## The pane of projects, at the left of a project
+
+home-pane = La liste des projets
+home-pane-toggle = La liste des projets
+home-pane-close = Fermer la liste des projets
+home-pane-between = Entre la liste des projets et le projet
+# On the chevron before an element of the open project, in the pane: what is under it is shown, or hidden.
+home-tree-unfold = Afficher ce qui est dessous
+home-tree-fold = Cacher ce qui est dessous
+# Why the project that is open cannot be renamed or deleted from its menu.
+home-open-now = Il est ouvert en ce moment
+# On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
+home-open-beside = Ouvrir à côté
+# Under a project that is not open, in the pane, when what it holds could not be read.
+home-tree-unreadable = Il n’a pas pu être lu
+# Under a project that is not open, in the pane, when it holds no elements yet.
+home-tree-empty = Rien dedans pour l’instant
+
+## The owl map: the projects drawn around the owl, the folders as plain labels
+
+# The button that shows all of the map at once.
+home-owl-fit = Tout afficher
+# On a folder of the map: its projects are hidden, or shown.
+home-owl-fold = Cacher les projets qu’il contient
+home-owl-unfold = Afficher les projets qu’il contient
+# The map itself, as a list read aloud.
+home-owl-label = La carte des projets
+# The corner of a card that opens the project, and of a folder that shows it at the centre of the map.
+home-owl-open = Ouvrir le projet
+home-owl-enter = Ouvrir le dossier comme carte
+# The corner of the folder at the centre: up to what holds it.
+home-owl-leave = Remonter à « { $name } »
+# The menus of the map and of a folder on it: a new one made here, its name written in place.
+home-owl-new-project = Nouveau projet ici
+home-owl-new-folder = Nouveau dossier ici
+# What a new folder or project is called until its name is written.
+home-owl-name = Nom
+# Beside the pointer, while several folders and projects are dragged.
+home-owl-dragged = { $count ->
+    [one] { $count } dossier ou projet
+    [many] { $count } dossiers ou projets
+   *[other] { $count } dossiers ou projets
+}
+# On a card: the map of the project, shown under it on the map of the projects, or hidden.
+home-owl-map-show = Afficher sa carte ici
+home-owl-map-hide = Cacher sa carte
+home-owl-map-reading = Lecture de sa carte…
+# On an element of a project's map: the project opened there.
+home-owl-jump = Ouvrir le projet ici
+home-owl-fold-element = Cacher ce qui est dessous
+home-owl-unfold-element = Afficher ce qui est dessous
+# The menu of the map: what was put by hand is placed by itself again.
+home-owl-tidy = Tout replacer automatiquement
+home-owl-tidied = Tout sur la carte a repris sa place automatique
+# What a change of the map says, with a way back.
+home-owl-placed = « { $name } » a été placé là
+home-owl-placed-many = { $count ->
+    [one] { $count } dossier ou projet a été placé là
+    [many] { $count } dossiers ou projets ont été placés là
+   *[other] { $count } dossiers ou projets ont été placés là
+}
+home-owl-elements-moved = { $count ->
+    [one] Un élément de « { $project } » a été déplacé
+    [many] { $count } éléments de « { $project } » ont été déplacés
+   *[other] { $count } éléments de « { $project } » ont été déplacés
+}
+home-owl-elements-carried = { $count ->
+    [one] Un élément a été déplacé vers « { $to } »
+    [many] { $count } éléments ont été déplacés vers « { $to } »
+   *[other] { $count } éléments ont été déplacés vers « { $to } »
+}
+# The bar over the map, at a folder: what holds it.
+home-owl-in = Dans « { $name } »
+
 ## A map of the projects
 
 home-map-menu = Une carte des projets…
 home-map-title = Une carte des projets
-home-map-about = Un nouveau projet, avec une carte : les dossiers comme éléments, et sous chaque dossier les projets qu’il contient.
+home-map-about = Un nouveau projet : les dossiers comme éléments, et sous chaque dossier les projets qu’il contient.
 home-map-name-default = Projets
 home-map-what = Ce que la carte contient
 home-map-names = Seulement les noms
 home-map-names-hint = Un élément par projet, avec sa description comme texte.
 home-map-everything = Avec tout ce qu’ils contiennent
-home-map-everything-hint = Sous chaque projet ses cartes, et sous chaque carte tous ses éléments, avec leurs noms et leurs textes.
+home-map-everything-hint = Sous chaque projet tous ses éléments, avec leurs noms et leurs textes.
 home-map-note = Les citations gardent leurs références. Un renvoi à une figure ou à une partie ne désigne rien dans le nouveau projet, et les commentaires restent en arrière.
 home-map-reading = Lecture de « { $name } »…
 home-map-working = Création de la carte…
@@ -60,7 +136,7 @@ home-map-failed = La carte des projets n’a pas pu être créée
 ## When there are none yet
 
 home-welcome = Bienvenue dans Glaukopis
-home-welcome-text = Un projet contient le travail sur un livre ou un article : les cartes de vos idées, les textes que vous y écrivez, et les références sur lesquelles ils reposent.
+home-welcome-text = Un projet contient le travail sur un livre ou un article : la carte de vos idées, les textes que vous y écrivez, et les références sur lesquelles ils reposent.
 home-begin = Commencer un projet
 
 ## A project in the list
@@ -68,9 +144,9 @@ home-begin = Commencer un projet
 # Under the names of the first four maps.
 home-more-maps = et { $count } de plus
 home-maps = { $count ->
-    [one] { $count } carte
-    [many] { $count } cartes
-   *[other] { $count } cartes
+    [one] { $count } arbre
+    [many] { $count } arbres
+   *[other] { $count } arbres
 }
 home-elements = { $count ->
     [one] { $count } élément
@@ -104,6 +180,8 @@ home-deleted-projects = { $count ->
 home-menu-rename = Renommer…
 home-menu-duplicate = Dupliquer…
 home-menu-history = Versions antérieures…
+home-menu-save-file = Enregistrer comme fichier…
+home-menu-save-org = Enregistrer en Org…
 
 ## Naming a project
 
@@ -151,3 +229,102 @@ home-history-open = Ouvrir une copie
 home-history-copy-name = { $name }, au { $day }
 home-history-unread = Les versions antérieures n’ont pas pu être lues
 home-history-open-failed = Cette version n’a pas pu être ouverte
+
+## A project as one file
+
+home-file-open = Ouvrir un fichier de projet…
+home-file-open-title = Ouvrir un fichier de projet
+# The kind of file, in the dialog that asks for one.
+home-file-filter = Projet Glaukopis
+home-file-save-title = Enregistrer le projet comme fichier
+home-file-saved = « { $name } » a été enregistré comme fichier
+home-file-save-failed = Le projet n’a pas pu être enregistré comme fichier
+home-file-open-failed = Le fichier de projet n’a pas pu être ouvert
+home-file-opened = « { $name } » a été fait à partir du fichier
+home-file-opened-added = « { $name } » a été fait à partir du fichier. { $count ->
+    [one] Une œuvre a été ajoutée
+    [many] { $count } œuvres ont été ajoutées
+   *[other] { $count } œuvres ont été ajoutées
+} à votre bibliothèque.
+home-file-problems = { $count ->
+    [one] Une œuvre n’a pas pu être importée dans votre bibliothèque. Elle est citée telle qu’elle était dans le fichier.
+    [many] { $count } œuvres n’ont pas pu être importées dans votre bibliothèque. Elles sont citées telles qu’elles étaient dans le fichier.
+   *[other] { $count } œuvres n’ont pas pu être importées dans votre bibliothèque. Elles sont citées telles qu’elles étaient dans le fichier.
+}
+# The dialog that asks what is to be done with the works a project file cites.
+home-file-references-title = Les œuvres que le projet cite
+home-file-references-about = Avant que « { $name } » soit fait : ces œuvres sont dans votre bibliothèque, mais pas telles qu’elles sont dans le fichier.
+home-file-in-file = Dans le fichier
+home-file-same-id = Dans votre bibliothèque sous la même référence, écrite autrement
+home-file-merged = Dans votre bibliothèque, fusionnée dans celle-ci
+home-file-what-to-do = Ce qu’il faut en faire
+home-file-keep-library = Garder celle de votre bibliothèque
+home-file-take-file = Prendre celle du fichier dans votre bibliothèque
+home-file-keep-both = Garder les deux
+home-file-cite-library = Citer celle de votre bibliothèque
+home-file-add-another = Ajouter celle du fichier comme une autre œuvre
+home-file-same = { $count ->
+    [one] Une œuvre est dans votre bibliothèque telle qu’elle est dans le fichier.
+    [many] { $count } œuvres sont dans votre bibliothèque telles qu’elles sont dans le fichier.
+   *[other] { $count } œuvres sont dans votre bibliothèque telles qu’elles sont dans le fichier.
+}
+home-file-added = { $count ->
+    [one] Une œuvre n’est pas dans votre bibliothèque, et y est ajoutée.
+    [many] { $count } œuvres ne sont pas dans votre bibliothèque, et y sont ajoutées.
+   *[other] { $count } œuvres ne sont pas dans votre bibliothèque, et y sont ajoutées.
+}
+home-file-make = Créer le projet
+
+## A project as Org: its readable copy in a folder, and a new project made of an Org file
+
+home-org-open = Ouvrir un fichier Org…
+home-org-open-title = Ouvrir un fichier Org
+# The kind of file, in the dialog that asks for one.
+home-org-filter = Fichier Org
+home-org-open-failed = Le fichier Org n’a pas pu être ouvert
+home-org-save-title = Choisir le dossier où enregistrer le projet en Org
+home-org-saved = « { $name } » a été enregistré en Org
+home-org-save-failed = Le projet n’a pas pu être enregistré en Org
+
+## Changes of the home undone and done again
+home-redo = Rétablir
+# What was undone, as the message of the change said it.
+home-undone = Annulé : { $what }
+home-undo-failed = Cela n’a pas pu être annulé
+
+## What a change of the home says, with a way back
+home-renamed = « { $old } » s’appelle maintenant « { $name } »
+home-project-made = « { $name } » a été créé
+home-folder-made = Le dossier « { $name } » a été créé
+home-moved-many-to = { $count ->
+    [one] { $count } dossier ou projet a été déplacé dans { $folder }
+    [many] { $count } dossiers ou projets ont été déplacés dans { $folder }
+   *[other] { $count } dossiers ou projets ont été déplacés dans { $folder }
+}
+home-moved-many-out = { $count ->
+    [one] { $count } dossier ou projet n’est plus dans aucun dossier
+    [many] { $count } dossiers ou projets ne sont plus dans aucun dossier
+   *[other] { $count } dossiers ou projets ne sont plus dans aucun dossier
+}
+home-folder-deleted = Le dossier « { $name } » a été supprimé ; ce qu’il contenait est remonté
+home-deleted-many = { $count ->
+    [one] { $count } dossier ou projet a été supprimé
+    [many] { $count } dossiers ou projets ont été supprimés
+   *[other] { $count } dossiers ou projets ont été supprimés
+}
+home-not-in-trash = Le projet n’est plus dans la corbeille.
+home-folders-delete-title = { $count ->
+    [one] Supprimer { $count } dossier ?
+    [many] Supprimer { $count } dossiers ?
+   *[other] Supprimer { $count } dossiers ?
+}
+home-folders-delete-message = Les dossiers et les projets qu’ils contiennent sont gardés : ils remontent là où étaient les dossiers.
+home-folders-delete-confirm = Supprimer les dossiers
+home-delete-many-title = { $count ->
+    [one] Supprimer { $count } projet ?
+    [many] Supprimer { $count } projets ?
+   *[other] Supprimer { $count } projets ?
+}
+home-delete-many-message = Les projets sont mis à la corbeille de Glaukopis, d’où ils peuvent être ramenés. Vos références ne sont pas touchées.
+home-delete-many-shared = Les projets sont mis à la corbeille de Glaukopis, d’où ils peuvent être ramenés. Ceux que vous partagez restent sur le serveur et chez les autres.
+home-delete-many-confirm = Supprimer les projets

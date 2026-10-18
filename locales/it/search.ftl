@@ -34,7 +34,8 @@ search-case = Maiuscole come sono scritte
 search-whole-words = Solo parole intere
 search-accents = Lettere con e senza accento uguali
 search-accents-sign = é=e
-search-regex = Un'espressione regolare
+# The hint of the option: in a regular expression, \n and \p stand for the two breaks of a text.
+search-regex = Un'espressione regolare: \n è un a capo dentro un paragrafo, \p la fine di un paragrafo
 search-selection = Solo nel testo selezionato
 search-selection-none = Seleziona prima del testo, per cercare solo lì
 search-labels = Anche citazioni, formule e rimandi

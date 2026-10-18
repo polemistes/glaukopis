@@ -2,7 +2,7 @@
 
 Every word the application shows is in the Fluent files under `locales/`:
 a folder for each language, named by its tag (`de`, `pt-BR`, `sr-Cyrl`),
-and in it the same forty-four files as `locales/en/`. English is the
+and in it the same files as `locales/en/`. English is the
 source. Norwegian Bokmål (`nb`) is complete, and shows how a translation
 into a related language was done. `GLOSSARY.md` beside this file says what
 the application's own words mean; read it first.
@@ -113,8 +113,8 @@ field-editoratype-organizer = { field-editortype-organizer }
    files, not other languages, not the code. Do not run the test suites or
    build the application; that is done afterwards for all languages at
    once.
-5. **At the end** the check says `3062 of 3062 messages translated` and
-   `0 fault(s)`. Then say, briefly: the form of address you chose; the
+5. **At the end** the check says that all the messages are translated
+   (`3938 of 3938`, or however many English has) and `0 fault(s)`. Then say, briefly: the form of address you chose; the
    glossary words that were hard to choose and why; the messages whose
    English you found unclear, by name; and anything you left as it was.
 

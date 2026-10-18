@@ -10,17 +10,20 @@ language would use, not a transliteration of the English.
 
 ## The work
 
-- **project** — one piece of work: a book, an article, a thesis. It holds
-  maps, and is what is shared with others. *Projects* is the first view of
-  the rail.
-- **map** — a mind map: a tree of elements around a centre. A map is also
-  a document in the making; the text of a map, read in order, is the text
-  of the document. Each map has a language.
-- **element** — one node of a map: a name, a text, a kind, children. In the
-  text view an element is a heading with its text under it; in the diagram
-  it is a box.
-- **the centre** — the element a map grows from; its name is the name of
-  the map.
+- **project** — one piece of work: a book, an article, a thesis. It is one
+  tree of elements, whose top element bears the project's name, and is what
+  is shared with others. *Projects* is the first view of the rail.
+- **map** — a mind map: the elements under one element, drawn around it.
+  Any element of a project can be opened as a map, and one goes back up to
+  the one above it. A map is also a document in the making; the text of a
+  map, read in order, is the text of the document. Each has a language.
+  The home page can also show all the projects as a map around the owl,
+  their folders as labels: *the owl map*, *the map of the projects*.
+- **element** — one node of a project's tree: a name, a text, a kind,
+  children. In the text view an element is a heading with its text under
+  it; in the diagram it is a box. Any element can be printed as a document.
+- **the centre** — the element in view, which the map is drawn around; its
+  name is the name of the map.
 - **the diagram** — the view where the map is drawn as boxes and lines.
 - **the text** — the view where the map is read and written as a running
   text with headings; "text mode".
@@ -81,8 +84,10 @@ language would use, not a transliteration of the English.
   verse, line.
 - **lookup** — finding a reference's details on the net by DOI, ISBN or
   search.
-- **found citations** — citations in a text brought in from elsewhere,
-  recognised as such and offered to be matched with the library.
+- **loose citations** — citations in a text brought in from elsewhere,
+  recognised as such but not yet tied to a reference of the library, and
+  offered to be matched with it; *made into citations* when they are. Until
+  2026-10-12 the interface called them *found citations*.
 
 ## Words and marks
 

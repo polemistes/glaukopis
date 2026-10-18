@@ -104,25 +104,25 @@ core-import-document-notebook = Jupyter-Notebook
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] { $count } Zitation wurde gefunden, die noch mit keiner Quelle Ihrer Bibliothek verbunden ist, erzeugt von einem Literaturverwaltungsprogramm. Sie steht im Text so, wie sie geschrieben wurde, und kann durchgegangen werden, sobald die Karte gemacht ist, und auch später.
-       *[none] { $count } Zitation wurde gefunden, die noch mit keiner Quelle Ihrer Bibliothek verbunden ist. Sie steht im Text so, wie sie geschrieben wurde, und kann durchgegangen werden, sobald die Karte gemacht ist, und auch später.
+        [all] { $count } Zitation wurde gefunden, die noch mit keiner Quelle Ihrer Bibliothek verbunden ist, erzeugt von einem Literaturverwaltungsprogramm. Sie steht im Text so, wie sie geschrieben wurde, und kann durchgegangen werden, sobald das Dokument eingelesen ist, und auch später.
+       *[none] { $count } Zitation wurde gefunden, die noch mit keiner Quelle Ihrer Bibliothek verbunden ist. Sie steht im Text so, wie sie geschrieben wurde, und kann durchgegangen werden, sobald das Dokument eingelesen ist, und auch später.
     }
    *[other] { $made ->
-        [all] { $count } Zitationen wurden gefunden, die noch mit keinen Quellen Ihrer Bibliothek verbunden sind, alle erzeugt von einem Literaturverwaltungsprogramm. Sie stehen im Text so, wie sie geschrieben wurden, und können durchgegangen werden, sobald die Karte gemacht ist, und auch später.
-        [some] { $count } Zitationen wurden gefunden, die noch mit keinen Quellen Ihrer Bibliothek verbunden sind, { $some } davon erzeugt von einem Literaturverwaltungsprogramm. Sie stehen im Text so, wie sie geschrieben wurden, und können durchgegangen werden, sobald die Karte gemacht ist, und auch später.
-       *[none] { $count } Zitationen wurden gefunden, die noch mit keinen Quellen Ihrer Bibliothek verbunden sind. Sie stehen im Text so, wie sie geschrieben wurden, und können durchgegangen werden, sobald die Karte gemacht ist, und auch später.
+        [all] { $count } Zitationen wurden gefunden, die noch mit keinen Quellen Ihrer Bibliothek verbunden sind, alle erzeugt von einem Literaturverwaltungsprogramm. Sie stehen im Text so, wie sie geschrieben wurden, und können durchgegangen werden, sobald das Dokument eingelesen ist, und auch später.
+        [some] { $count } Zitationen wurden gefunden, die noch mit keinen Quellen Ihrer Bibliothek verbunden sind, { $some } davon erzeugt von einem Literaturverwaltungsprogramm. Sie stehen im Text so, wie sie geschrieben wurden, und können durchgegangen werden, sobald das Dokument eingelesen ist, und auch später.
+       *[none] { $count } Zitationen wurden gefunden, die noch mit keinen Quellen Ihrer Bibliothek verbunden sind. Sie stehen im Text so, wie sie geschrieben wurden, und können durchgegangen werden, sobald das Dokument eingelesen ist, und auch später.
     }
 }
 core-import-document-endnote = { $count ->
-    [one] { $count } von EndNote erzeugte Zitation wird als der Text eingelesen, den sie zeigt, und ist nicht unter den gefundenen: was EndNote über die Werke sagt, konnte nicht gelesen werden.
-   *[other] { $count } von EndNote erzeugte Zitationen werden als der Text eingelesen, den sie zeigen, und sind nicht unter den gefundenen: was EndNote über die Werke sagt, konnte nicht gelesen werden.
+    [one] { $count } von EndNote erzeugte Zitation wird als der Text eingelesen, den sie zeigt, und ist nicht unter den losen Zitationen: was EndNote über die Werke sagt, konnte nicht gelesen werden.
+   *[other] { $count } von EndNote erzeugte Zitationen werden als der Text eingelesen, den sie zeigen, und sind nicht unter den losen Zitationen: was EndNote über die Werke sagt, konnte nicht gelesen werden.
 }
 core-import-document-bookmarks = { $count ->
     [one] Das Dokument hält { $count } Zitation in einer Textmarke, und was sie zitiert, konnte nicht gelesen werden: sie ist Text, wie sie dasteht. Zotero legt sie so an, wo seine Dokumenteinstellungen es sagen.
    *[other] Das Dokument hält { $count } Zitationen in Textmarken, und was sie zitieren, konnte nicht gelesen werden: sie sind Text, wie sie dastehen. Zotero legt sie so an, wo seine Dokumenteinstellungen es sagen.
 }
-core-import-document-bibliography = Das Dokument hat eine Liste dessen, was es zitiert, unter „{ $heading }“. Sie wird als Text eingelesen wie alles andere. Die Karte macht aus dem, was in ihr zitiert wird, ein eigenes Literaturverzeichnis.
-core-import-document-bibliography-made = Das Dokument hat eine Liste dessen, was es zitiert, erzeugt von seinem Literaturverwaltungsprogramm. Sie wird als Text eingelesen wie alles andere. Die Karte macht aus dem, was in ihr zitiert wird, ein eigenes Literaturverzeichnis.
+core-import-document-bibliography = Das Dokument hat eine Liste dessen, was es zitiert, unter „{ $heading }“. Sie wird als Text eingelesen wie alles andere. Glaukopis erzeugt aus dem, was zitiert wird, ein eigenes Literaturverzeichnis.
+core-import-document-bibliography-made = Das Dokument hat eine Liste dessen, was es zitiert, erzeugt von seinem Literaturverwaltungsprogramm. Sie wird als Text eingelesen wie alles andere. Glaukopis erzeugt aus dem, was zitiert wird, ein eigenes Literaturverzeichnis.
 core-import-document-tracked = Das Dokument hat nachverfolgte Änderungen. Der Text wird so eingelesen, wie er steht, wenn alle angenommen sind.
 core-import-document-comments = Das Dokument hat Kommentare am Rand; sie werden weggelassen.
 core-import-document-heading-notes = { $count ->
@@ -131,8 +131,8 @@ core-import-document-heading-notes = { $count ->
 }
 # What a caption began with is shown as the document has it: “Figure 1:”.
 core-import-document-labels = { $count ->
-    [one] { $count } Beschriftung begann mit einem Wort und einer Zahl, etwa „{ $first }“. Das wird weggelassen: die Karte nummeriert ihre Abbildungen und Tabellen selbst. Wo der Text eine von ihnen mit ihrer Nummer nennt, ist das Text, wie er geschrieben wurde, und folgt nicht den Nummern der Karte.
-   *[other] { $count } Beschriftungen begannen mit einem Wort und einer Zahl, etwa „{ $first }“. Das wird weggelassen: die Karte nummeriert ihre Abbildungen und Tabellen selbst. Wo der Text eine von ihnen mit ihrer Nummer nennt, ist das Text, wie er geschrieben wurde, und folgt nicht den Nummern der Karte.
+    [one] { $count } Beschriftung begann mit einem Wort und einer Zahl, etwa „{ $first }“. Das wird weggelassen: Glaukopis nummeriert Abbildungen und Tabellen selbst. Wo der Text eine von ihnen mit ihrer Nummer nennt, ist das Text, wie er geschrieben wurde, und folgt nicht den Nummern, wie sie gedruckt werden.
+   *[other] { $count } Beschriftungen begannen mit einem Wort und einer Zahl, etwa „{ $first }“. Das wird weggelassen: Glaukopis nummeriert Abbildungen und Tabellen selbst. Wo der Text eine von ihnen mit ihrer Nummer nennt, ist das Text, wie er geschrieben wurde, und folgt nicht den Nummern, wie sie gedruckt werden.
 }
 core-import-document-label-example = Abbildung 1:
 core-import-document-caption-notes = { $count ->

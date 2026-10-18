@@ -24,22 +24,51 @@ settings-own-gold = Seconda voce
 settings-own-begin = Comincia da
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Difficile da leggere: l'inchiostro sta a { $ink } a 1 sulla carta e l'accento a { $accent } a 1; 4,5 e 3 o più si leggono bene.
-settings-text-size = Dimensione del tuo testo
-settings-text-size-hint = Nelle mappe e nella vista a testo. Ciò che si esporta segue il formato del documento.
+settings-text-size = Dimensione del tuo testo nell'editor
+settings-text-size-hint = Rispetto all'interfaccia. Non cambia le dimensioni dei font nell'anteprima e nell'esportazione del documento.
+settings-editor-font = Font dell'editor
+settings-editor-font-hint = Scegli il font per il tuo testo nell'editor.
+settings-editor-font-default = Come l'interfaccia (Literata)
+# How the text of a map shows how deep each element stands: on the screen only.
+# How the text editor shows how deep each element stands: on the screen only.
+settings-text-depth = Struttura del documento
+settings-text-depth-hint = Come l'editor mostra la struttura del tuo testo.
+settings-text-depth-numbers = Numeri
+settings-text-depth-dots = Punti
+settings-text-depth-indent = Rientri, con linee
 settings-interface-size = Dimensione dell'interfaccia
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
-settings-sample = Cantami, o Diva, del Pelide Achille l'ira funesta
+# A sentence with every letter of the language's alphabet (a pangram), set in
+# the size and the font chosen; where no good pangram is known, the alphabet.
+settings-sample = Ma la volpe, col suo balzo, ha raggiunto il quieto Fido.
+# The three levels of the sample of the document structure, the sample sentence under the third.
+settings-sample-heading = Titolo
+settings-sample-subheading = Sottotitolo
+settings-sample-third = Un terzo livello
 
 ## New documents
 
 settings-new-documents = Nuovi documenti
+# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
+settings-new-project-view = Vista dei nuovi progetti
+settings-new-project-view-hint = La vista in cui si apre un progetto appena creato.
+settings-template = Modello
+settings-document-format = Impaginazione
 settings-reference-style = Stile di citazione
-settings-document-format = Formato del documento
 
 ## You
 
-settings-you = Tu
+settings-you = I tuoi dati
+settings-first-name = Nome
+settings-last-name = Cognome
+settings-organization = Istituzione
+settings-position = Titolo/Qualifica
+settings-address = Indirizzo
+settings-phone = Telefono
+settings-email = E-mail
+settings-orcid = ORCID
+settings-orcid-problem = Un ORCID iD è fatto di quattro gruppi di quattro cifre: 0000-0002-1825-0097.
 settings-contact-problem = Questo non sembra un indirizzo.
 
 ## Programs: Pandoc and Typst
@@ -72,3 +101,12 @@ settings-language = Lingua
 settings-language-interface = L'interfaccia
 settings-language-system = Come il sistema ({ $language })
 settings-language-texts = Lingua dei nuovi testi
+
+## The log of the runs.
+
+settings-logs = Il registro
+settings-logs-hint = { $count ->
+    [one] Ciò che Glaukopis dice di sé nell'ultima sessione: che cosa ha fatto, che cosa è andato storto, e che cosa è stato della sua finestra. Utile quando qualcosa è andato storto e nessuno ha visto perché.
+    [many] Ciò che Glaukopis dice di sé in ogni sessione, delle ultime { $count } sessioni: che cosa ha fatto, che cosa è andato storto, e che cosa è stato della sua finestra. Utile quando qualcosa è andato storto e nessuno ha visto perché.
+   *[other] Ciò che Glaukopis dice di sé in ogni sessione, delle ultime { $count } sessioni: che cosa ha fatto, che cosa è andato storto, e che cosa è stato della sua finestra. Utile quando qualcosa è andato storto e nessuno ha visto perché.
+}

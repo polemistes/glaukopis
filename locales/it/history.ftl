@@ -40,7 +40,7 @@ history-removed = { $count ->
 history-back = Torna al presente
 history-as-it-was = Com'era { $when }
 history-marked = Ciò che è cambiato dal momento precedente è segnato nel colore di chi l'ha cambiato.
-history-map-not-there = Questa mappa allora non c'era.
+history-map-not-there = Questo elemento allora non c'era.
 history-added-by = Aggiunto da { $name }
 history-removed-by = Tolto da { $name }
 history-changed-by = Modificato da { $name }
@@ -50,7 +50,7 @@ history-name-moment = Dai un nome a questo momento
 history-name-placeholder = Come chiamarlo
 history-named = Il momento si chiama «{ $name }».
 history-bring-back-element = Riporta questo elemento com'era
-history-bring-back-map = Riporta la mappa com'era
+history-bring-back-map = Riporta tutto ciò che è in vista com'era
 history-brought-back = Riportato com'era. Annulla lo riprende.
 history-bring-back-failed = Non si è potuto riportare.
 history-open-copy = Apri come progetto a sé
@@ -105,3 +105,9 @@ history-cut-failed = La cronologia non si è potuta tagliare.
 history-archive-until = fino a { $when }
 history-archived = La cronologia prima di { $when } è archiviata.
 history-deleted = La cronologia prima di { $when } è eliminata.
+
+## The text as Org: as it was and as it is, as a difference of two Org texts
+
+history-show-org = Mostra come Org
+history-org-about = Il testo dell'elemento in vista e di tutto ciò che sta sotto, come Org: com'era allora, e com'è ora. Le righe tolte sono segnate con −, quelle aggiunte con +, e in una riga cambiata le parole che sono cambiate.
+history-org-same = Il testo ora è com'era allora.

@@ -82,3 +82,10 @@ pictures-this-project = Questo progetto
 pictures-untitled = Senza titolo
 pictures-unused = Nessun progetto usa l'immagine.
 pictures-remove = Togli dal deposito
+
+## A picture made a file of the library, and given to a reference.
+
+pictures-attach = Allega a un riferimento…
+pictures-attach-title = Allega «{ $name }» a un riferimento
+pictures-attached = L'immagine ora è tra i file di { $name }
+pictures-attach-failed = L'immagine non si è potuta allegare

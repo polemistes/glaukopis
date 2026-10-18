@@ -1,16 +1,18 @@
-# Documents that are brought in, each to become a map (ADR 0012), in
-# English. See locales/README.md.
+# Documents that are brought in, each to become a tree of elements under
+# the element in view (ADR 0012, 0037), in English. See locales/README.md.
 
 documents-choose = Ett dokument att hämta in
 documents-filter = Dokument
 documents-filter-all = Alla filer
+documents-title-element = Ett dokument in i elementet som visas
 documents-title-project = Ett projekt av ett dokument
 documents-reading = Läser { $file }…
 documents-reading-hint = Ett långt dokument tar en stund.
 documents-no-pandoc = Dokument av det här slaget läses av Pandoc, som inte är installerat eller inte kunde hittas. Var det finns kan anges i inställningarna.
 documents-unread = Filen kunde inte läsas.
 documents-title = Titel
-documents-title-hint-project = Namnet på projektet, på dess karta, och på elementet i kartans mitt.
+documents-title-hint-element = Namnet på elementet överst i dokumentet, under elementet som visas.
+documents-title-hint-project = Namnet på projektet, och på elementet överst i dokumentet inom det.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Utan titel
 
@@ -76,12 +78,20 @@ documents-found-made = { $count ->
 documents-found-some-made = { $count } källhänvisningar hittades, { $made } av dem gjorda av ett program som håller referenser.
 documents-at-once = Gör genast källhänvisningar av dem som Zotero gjort till verk som ditt bibliotek har
 # Under the choice: what becomes of a note that holds one of them.
-documents-at-once-notes = En not som inte är annat än en källhänvisning blir en källhänvisning i raden, som referensstilen sätter i en not eller i raden; en not som säger mer behåller sin källhänvisning. Det du har valt för noter i panelen med hittade källhänvisningar, för alla som följer, gäller här också.
+documents-at-once-notes = En not som inte är annat än en källhänvisning blir en källhänvisning i raden, som referensstilen sätter i en not eller i raden; en not som säger mer behåller sin källhänvisning. Det du har valt för noter i panelen med lösa källhänvisningar, för alla som följer, gäller här också.
+documents-go-through-element = Gå igenom källhänvisningarna när dokumentet hämtas in
 documents-go-through-project = Gå igenom källhänvisningarna när projektet görs
 
-## Making the map.
+## Making the elements.
 
 # Over what the one who brings the document in should know of it.
 documents-to-know = Att veta
-documents-making = Gör kartan…
+documents-making = Hämtar in dokumentet…
+documents-make-element = Hämta in det
 documents-make-project = Gör projektet
+documents-failed = Dokumentet kunde inte hämtas in.
+
+## What an element inherits as a document
+
+# Under a setting an element does not make, which it takes from the element named, over it.
+documents-inherited-from = Från { $name }

@@ -12,6 +12,7 @@ review-since-named = Sedan ”{ $name }”
 review-since-when = Från { $when }
 review-choose-since = Granska från ett annat ögonblick
 review-own = Dina egna ändringar också
+review-show-org = Visa som Org
 review-unit = Granska per
 review-by-sentence = Mening
 review-by-paragraph = Stycke

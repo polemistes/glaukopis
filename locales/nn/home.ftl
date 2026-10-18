@@ -5,11 +5,12 @@ home-join = Bli med i eit delt prosjekt
 home-from-document = Eit prosjekt av eit dokument …
 home-new = Nytt prosjekt
 
-## The two forms of the page: the last used projects as cards, all of them as a list
+## The three forms of the page: the last used projects as cards, all of them as a list, all of them as a map around the owl
 
 home-shown = Kva som blir vist
 home-recent = Sist brukte
 home-all = Alle prosjekt
+home-owl = Kart
 # Under the cards, when there are more projects than they show.
 home-show-all = Vis alle { $count } prosjekta
 # The button that opens the menu of the page.
@@ -21,6 +22,7 @@ home-list-none = Det er ingen prosjekt.
 ## Folders of projects
 
 home-new-folder = Ny mappe
+home-folder-new-project = Nytt prosjekt inni …
 home-folder-new-inside = Ny mappe inni …
 home-folder-rename-title = Gi mappa nytt namn
 home-folder-name-placeholder = Det mappa rommar
@@ -39,17 +41,87 @@ home-moved-to = «{ $name }» vart flytta til { $folder }
 home-moved-out = «{ $name }» ligg ikkje i noka mappe no
 home-move-failed = Prosjektet kunne ikkje flyttast
 
+## The pane of projects, at the left of a project
+
+home-pane = Prosjektlista
+home-pane-toggle = Prosjektlista
+home-pane-close = Lukk prosjektlista
+home-pane-between = Mellom prosjektlista og prosjektet
+# On the chevron before an element of the open project, in the pane: what is under it is shown, or hidden.
+home-tree-unfold = Vis det som står under
+home-tree-fold = Gøym det som står under
+# Why the project that is open cannot be renamed or deleted from its menu.
+home-open-now = Det er ope no
+# On the menu of a project, or of an element of one, in the pane: shows it in a second pane, beside the project that is open.
+home-open-beside = Opne ved sida av
+# Under a project that is not open, in the pane, when what it holds could not be read.
+home-tree-unreadable = Det kunne ikkje lesast
+# Under a project that is not open, in the pane, when it holds no elements yet.
+home-tree-empty = Ingenting i det enno
+
+## The owl map: the projects drawn around the owl, the folders as plain labels
+
+# The button that shows all of the map at once.
+home-owl-fit = Vis alt
+# On a folder of the map: its projects are hidden, or shown.
+home-owl-fold = Gøym prosjekta i den
+home-owl-unfold = Vis prosjekta i den
+# The map itself, as a list read aloud.
+home-owl-label = Kartet over prosjekta
+# The corner of a card that opens the project, and of a folder that shows it at the centre of the map.
+home-owl-open = Opne prosjektet
+home-owl-enter = Opne mappa som kart
+# The corner of the folder at the centre: up to what holds it.
+home-owl-leave = Opp til «{ $name }»
+# The menus of the map and of a folder on it: a new one made here, its name written in place.
+home-owl-new-project = Nytt prosjekt her
+home-owl-new-folder = Ny mappe her
+# What a new folder or project is called until its name is written.
+home-owl-name = Namn
+# Beside the pointer, while several folders and projects are dragged.
+home-owl-dragged = { $count ->
+    [one] { $count } ting
+   *[other] { $count } ting
+}
+# On a card: the map of the project, shown under it on the map of the projects, or hidden.
+home-owl-map-show = Vis kartet her
+home-owl-map-hide = Gøym kartet
+home-owl-map-reading = Les kartet …
+# On an element of a project's map: the project opened there.
+home-owl-jump = Opne prosjektet her
+home-owl-fold-element = Gøym det som står under
+home-owl-unfold-element = Vis det som står under
+# The menu of the map: what was put by hand is placed by itself again.
+home-owl-tidy = La alt bli plassert av seg sjølv
+home-owl-tidied = Alt på kartet blir plassert av seg sjølv att
+# What a change of the map says, with a way back.
+home-owl-placed = «{ $name }» vart plassert der
+home-owl-placed-many = { $count ->
+    [one] { $count } ting vart plassert der
+   *[other] { $count } ting vart plasserte der
+}
+home-owl-elements-moved = { $count ->
+    [one] Eit element i «{ $project }» vart flytta
+   *[other] { $count } element i «{ $project }» vart flytta
+}
+home-owl-elements-carried = { $count ->
+    [one] Eit element vart flytta til «{ $to }»
+   *[other] { $count } element vart flytta til «{ $to }»
+}
+# The bar over the map, at a folder: what holds it.
+home-owl-in = I «{ $name }»
+
 ## A map of the projects
 
 home-map-menu = Eit kart over prosjekta …
 home-map-title = Eit kart over prosjekta
-home-map-about = Eit nytt prosjekt med eitt kart: mappene som element, og under kvar mappe prosjekta i den.
+home-map-about = Eit nytt prosjekt: mappene som element, og under kvar mappe prosjekta i den.
 home-map-name-default = Prosjekt
 home-map-what = Kva kartet rommar
 home-map-names = Berre namna
 home-map-names-hint = Eitt element for kvart prosjekt, med beskrivinga som tekst.
 home-map-everything = Med alt dei rommar
-home-map-everything-hint = Under kvart prosjekt karta i det, og under kvart kart alle elementa, med namn og tekstar.
+home-map-everything-hint = Under kvart prosjekt alle elementa i det, med namn og tekstar.
 home-map-note = Kjeldetilvisingane held på referansane sine. Ein kryssreferanse til ein figur eller ein del peikar på ingenting i det nye prosjektet, og kommentarane blir att.
 home-map-reading = Les «{ $name }» …
 home-map-working = Lagar kartet …
@@ -59,7 +131,7 @@ home-map-failed = Kartet over prosjekta kunne ikkje lagast
 ## When there are none yet
 
 home-welcome = Velkomen til Glaukopis
-home-welcome-text = Eit prosjekt rommar arbeidet med éi bok eller ein artikkel: karta over ideane dine, tekstane du skriv inn i dei, og referansane dei byggjer på.
+home-welcome-text = Eit prosjekt rommar arbeidet med éi bok eller ein artikkel: kartet over ideane dine, tekstane du skriv inn i det, og referansane dei byggjer på.
 home-begin = Byrj på eit prosjekt
 
 ## A project in the list
@@ -67,8 +139,8 @@ home-begin = Byrj på eit prosjekt
 # Under the names of the first four maps.
 home-more-maps = og { $count } til
 home-maps = { $count ->
-    [one] { $count } kart
-   *[other] { $count } kart
+    [one] { $count } tre
+   *[other] { $count } tre
 }
 home-elements = { $count ->
     [one] { $count } element
@@ -98,6 +170,8 @@ home-deleted-projects = { $count ->
 home-menu-rename = Gi nytt namn …
 home-menu-duplicate = Dupliser …
 home-menu-history = Tidlegare versjonar …
+home-menu-save-file = Lagre som fil …
+home-menu-save-org = Lagre som Org …
 
 ## Naming a project
 
@@ -145,3 +219,93 @@ home-history-open = Opne ein kopi
 home-history-copy-name = { $name }, per { $day }
 home-history-unread = Dei tidlegare versjonane kunne ikkje lesast
 home-history-open-failed = Den versjonen kunne ikkje opnast
+
+## A project as one file
+
+home-file-open = Opne ei prosjektfil …
+home-file-open-title = Opne ei prosjektfil
+# The kind of file, in the dialog that asks for one.
+home-file-filter = Glaukopis-prosjekt
+home-file-save-title = Lagre prosjektet som ei fil
+home-file-saved = «{ $name }» vart lagra som ei fil
+home-file-save-failed = Prosjektet kunne ikkje lagrast som ei fil
+home-file-open-failed = Prosjektfila kunne ikkje opnast
+home-file-opened = «{ $name }» vart laga av fila
+home-file-opened-added = «{ $name }» vart laga av fila. { $count ->
+    [one] Eitt verk vart lagt
+   *[other] { $count } verk vart lagde
+} til i biblioteket ditt.
+home-file-problems = { $count ->
+    [one] Eitt verk kunne ikkje takast inn i biblioteket ditt. Kjeldetilvisingane viser til det slik det var i fila.
+   *[other] { $count } verk kunne ikkje takast inn i biblioteket ditt. Kjeldetilvisingane viser til dei slik dei var i fila.
+}
+# The dialog that asks what is to be done with the works a project file cites.
+home-file-references-title = Verka prosjektet viser til
+home-file-references-about = Før «{ $name }» blir laga: desse verka finst i biblioteket ditt, men ikkje slik dei er i fila.
+home-file-in-file = I fila
+home-file-same-id = I biblioteket ditt som same oppføring, men skriven annleis
+home-file-merged = I biblioteket ditt, slegen saman med denne
+home-file-what-to-do = Kva som skal gjerast med det
+home-file-keep-library = Hald på den i biblioteket ditt
+home-file-take-file = Ta den i fila inn i biblioteket ditt
+home-file-keep-both = Hald på begge
+home-file-cite-library = Vis til den i biblioteket ditt
+home-file-add-another = Legg til den i fila som eit anna verk
+home-file-same = { $count ->
+    [one] Eitt verk er i biblioteket ditt slik det er i fila.
+   *[other] { $count } verk er i biblioteket ditt slik dei er i fila.
+}
+home-file-added = { $count ->
+    [one] Eitt verk er ikkje i biblioteket ditt, og blir lagt til.
+   *[other] { $count } verk er ikkje i biblioteket ditt, og blir lagde til.
+}
+home-file-make = Lag prosjektet
+
+## A project as Org: its readable copy in a folder, and a new project made of an Org file
+
+home-org-open = Opne ei Org-fil …
+home-org-open-title = Opne ei Org-fil
+# The kind of file, in the dialog that asks for one.
+home-org-filter = Org-fil
+home-org-open-failed = Org-fila kunne ikkje opnast
+home-org-save-title = Vel mappa prosjektet skal lagrast som Org i
+home-org-saved = «{ $name }» vart lagra som Org
+home-org-save-failed = Prosjektet kunne ikkje lagrast som Org
+
+## Changes of the home undone and done again
+home-redo = Gjer om
+# What was undone, as the message of the change said it.
+home-undone = Angra: { $what }
+home-undo-failed = Det kunne ikkje angrast
+
+## What a change of the home says, with a way back
+home-renamed = «{ $old }» heiter no «{ $name }»
+home-project-made = «{ $name }» vart laga
+home-folder-made = Mappa «{ $name }» vart laga
+home-moved-many-to = { $count ->
+    [one] { $count } ting vart flytta til { $folder }
+   *[other] { $count } ting vart flytta til { $folder }
+}
+home-moved-many-out = { $count ->
+    [one] { $count } ting ligg ikkje i noka mappe no
+   *[other] { $count } ting ligg ikkje i noka mappe no
+}
+home-folder-deleted = Mappa «{ $name }» vart sletta; det som låg i den, vart flytta opp
+home-deleted-many = { $count ->
+    [one] { $count } ting vart sletta
+   *[other] { $count } ting vart sletta
+}
+home-not-in-trash = Prosjektet ligg ikkje lenger i papirkorga.
+home-folders-delete-title = { $count ->
+    [one] Slette { $count } mappe?
+   *[other] Slette { $count } mapper?
+}
+home-folders-delete-message = Mappene og prosjekta i dei blir tekne vare på: dei flyttar opp dit mappene var.
+home-folders-delete-confirm = Slett mappene
+home-delete-many-title = { $count ->
+    [one] Slette { $count } prosjekt?
+   *[other] Slette { $count } prosjekt?
+}
+home-delete-many-message = Prosjekta blir flytta til papirkorga i Glaukopis, og kan hentast tilbake derifrå. Referansane dine blir ikkje rørte.
+home-delete-many-shared = Prosjekta blir flytta til papirkorga i Glaukopis, og kan hentast tilbake derifrå. Dei du deler, blir liggjande på tenaren og hos dei andre.
+home-delete-many-confirm = Slett prosjekta

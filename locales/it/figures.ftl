@@ -45,13 +45,13 @@ figures-stands-where = Dove sta { $kind ->
         [table] la tabella
        *[equation] l'equazione
     }
-figures-side-format = Come il formato
+figures-side-format = Come l'impaginazione
 figures-side-left = A sinistra
 figures-side-middle = In mezzo
 figures-side-right = A destra
-# What the format of the document says of where things of a kind stand. The
+# What the layout of the document says of where things of a kind stand. The
 # flow is none for equations, and for what stands in the middle.
-figures-usual = Il formato mette { $kind ->
+figures-usual = L'impaginazione mette { $kind ->
         [figure] le figure
         [table] le tabelle
        *[equation] le equazioni
@@ -70,7 +70,7 @@ figures-flows-where = Se il testo scorre intorno { $kind ->
         [table] alla tabella
        *[equation] all'equazione
     }
-figures-flow-format = Come il formato
+figures-flow-format = Come l'impaginazione
 figures-flow-around = Scorre intorno
 figures-flow-apart = Sta staccato
 figures-flow-at-side = Il testo scorre intorno a ciò che sta a lato.
@@ -141,7 +141,7 @@ figures-targets-figure-unsaid = Una figura di cui non si dice nulla
 figures-targets-table-unsaid = Una tabella di cui non si dice nulla
 figures-targets-no-match = Nulla nel documento risponde a queste parole.
 figures-targets-none = Non c'è ancora nulla a cui rimandare: nessuna figura, nessuna tabella, nessuna equazione numerata, nessuna parte con un nome.
-figures-targets-hint = Un rimando segue ciò a cui rimanda: il suo numero, e come il formato lo chiama.
+figures-targets-hint = Un rimando segue ciò a cui rimanda: il suo numero, e come l'impaginazione lo chiama.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 

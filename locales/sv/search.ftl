@@ -32,7 +32,8 @@ search-case = Stora bokstäver som de är skrivna
 search-whole-words = Bara hela ord
 search-accents = Bokstäver med och utan accent lika
 search-accents-sign = é=e
-search-regex = Ett reguljärt uttryck
+# The hint of the option: in a regular expression, \n and \p stand for the two breaks of a text.
+search-regex = Ett reguljärt uttryck: \n är en radbrytning inom ett stycke, \p en styckebrytning
 search-selection = Bara i den markerade texten
 search-selection-none = Markera text först, för att söka bara i den
 search-labels = Källhänvisningar, formler och korshänvisningar också

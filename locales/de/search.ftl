@@ -32,7 +32,8 @@ search-case = Groß- und Kleinschreibung beachten
 search-whole-words = Nur ganze Wörter
 search-accents = Buchstaben mit und ohne Akzent gleich
 search-accents-sign = é=e
-search-regex = Ein regulärer Ausdruck
+# The hint of the option: in a regular expression, \n and \p stand for the two breaks of a text.
+search-regex = Ein regulärer Ausdruck: \n ist ein Zeilenumbruch im Absatz, \p ein Absatzumbruch
 search-selection = Nur im ausgewählten Text
 search-selection-none = Wählen Sie zuerst Text aus, um nur darin zu suchen
 search-labels = Auch Zitationen, Formeln und Verweise

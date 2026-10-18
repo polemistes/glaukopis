@@ -12,6 +12,7 @@ review-since-named = Sidan «{ $name }»
 review-since-when = Frå { $when }
 review-choose-since = Gå gjennom frå ein annan augneblink
 review-own = Dine eigne endringar òg
+review-show-org = Vis som Org
 review-unit = Gå gjennom etter
 review-by-sentence = Setning
 review-by-paragraph = Avsnitt

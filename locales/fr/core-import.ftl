@@ -109,32 +109,32 @@ core-import-document-notebook = carnet Jupyter
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] { $count } citation a été trouvée qui n’est pas encore liée à une référence de votre bibliothèque ; elle a été faite par un logiciel de gestion bibliographique. Elle reste le texte tel qu’il a été écrit, et peut être passée en revue quand la carte est faite, et plus tard.
-       *[none] { $count } citation a été trouvée qui n’est pas encore liée à une référence de votre bibliothèque. Elle reste le texte tel qu’il a été écrit, et peut être passée en revue quand la carte est faite, et plus tard.
+        [all] { $count } citation a été trouvée qui n’est pas encore liée à une référence de votre bibliothèque ; elle a été faite par un logiciel de gestion bibliographique. Elle reste le texte tel qu’il a été écrit, et peut être passée en revue une fois le document importé, et plus tard.
+       *[none] { $count } citation a été trouvée qui n’est pas encore liée à une référence de votre bibliothèque. Elle reste le texte tel qu’il a été écrit, et peut être passée en revue une fois le document importé, et plus tard.
     }
     [many] { $made ->
-        [all] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque, toutes faites par un logiciel de gestion bibliographique. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue quand la carte est faite, et plus tard.
-        [some] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque, dont { $some } faites par un logiciel de gestion bibliographique. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue quand la carte est faite, et plus tard.
-       *[none] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue quand la carte est faite, et plus tard.
+        [all] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque, toutes faites par un logiciel de gestion bibliographique. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue une fois le document importé, et plus tard.
+        [some] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque, dont { $some } faites par un logiciel de gestion bibliographique. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue une fois le document importé, et plus tard.
+       *[none] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue une fois le document importé, et plus tard.
     }
    *[other] { $made ->
-        [all] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque, toutes faites par un logiciel de gestion bibliographique. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue quand la carte est faite, et plus tard.
-        [some] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque, dont { $some } faites par un logiciel de gestion bibliographique. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue quand la carte est faite, et plus tard.
-       *[none] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue quand la carte est faite, et plus tard.
+        [all] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque, toutes faites par un logiciel de gestion bibliographique. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue une fois le document importé, et plus tard.
+        [some] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque, dont { $some } faites par un logiciel de gestion bibliographique. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue une fois le document importé, et plus tard.
+       *[none] { $count } citations ont été trouvées qui ne sont pas encore liées à des références de votre bibliothèque. Elles restent le texte tel qu’il a été écrit, et peuvent être passées en revue une fois le document importé, et plus tard.
     }
 }
 core-import-document-endnote = { $count ->
-    [one] { $count } citation faite par EndNote est importée comme le texte qu’elle montre, et n’est pas parmi celles qui ont été trouvées : ce qu’EndNote dit des œuvres n’a pas pu être lu.
-    [many] { $count } citations faites par EndNote sont importées comme le texte qu’elles montrent, et ne sont pas parmi celles qui ont été trouvées : ce qu’EndNote dit des œuvres n’a pas pu être lu.
-   *[other] { $count } citations faites par EndNote sont importées comme le texte qu’elles montrent, et ne sont pas parmi celles qui ont été trouvées : ce qu’EndNote dit des œuvres n’a pas pu être lu.
+    [one] { $count } citation faite par EndNote est importée comme le texte qu’elle montre, et n’est pas parmi les citations non liées : ce qu’EndNote dit des œuvres n’a pas pu être lu.
+    [many] { $count } citations faites par EndNote sont importées comme le texte qu’elles montrent, et ne sont pas parmi les citations non liées : ce qu’EndNote dit des œuvres n’a pas pu être lu.
+   *[other] { $count } citations faites par EndNote sont importées comme le texte qu’elles montrent, et ne sont pas parmi les citations non liées : ce qu’EndNote dit des œuvres n’a pas pu être lu.
 }
 core-import-document-bookmarks = { $count ->
     [one] Le document garde { $count } citation dans un signet, et ce qu’elle cite n’a pas pu être lu : c’est du texte tel quel. C’est ainsi que Zotero les garde quand les préférences du document le demandent.
     [many] Le document garde { $count } citations dans des signets, et ce qu’elles citent n’a pas pu être lu : c’est du texte tel quel. C’est ainsi que Zotero les garde quand les préférences du document le demandent.
    *[other] Le document garde { $count } citations dans des signets, et ce qu’elles citent n’a pas pu être lu : c’est du texte tel quel. C’est ainsi que Zotero les garde quand les préférences du document le demandent.
 }
-core-import-document-bibliography = Le document a une liste de ce qu’il cite, sous « { $heading } ». Elle est importée comme du texte, comme le reste. La carte fait sa propre bibliographie de ce qui y est cité.
-core-import-document-bibliography-made = Le document a une liste de ce qu’il cite, faite par le logiciel qui gère ses références. Elle est importée comme du texte, comme le reste. La carte fait sa propre bibliographie de ce qui y est cité.
+core-import-document-bibliography = Le document a une liste de ce qu’il cite, sous « { $heading } ». Elle est importée comme du texte, comme le reste. Glaukopis fait sa propre bibliographie de ce qui est cité.
+core-import-document-bibliography-made = Le document a une liste de ce qu’il cite, faite par le logiciel qui gère ses références. Elle est importée comme du texte, comme le reste. Glaukopis fait sa propre bibliographie de ce qui est cité.
 core-import-document-tracked = Le document a des modifications suivies. Le texte est importé tel qu’il est une fois toutes acceptées.
 core-import-document-comments = Le document a des commentaires en marge, qui sont laissés de côté.
 core-import-document-heading-notes = { $count ->
@@ -144,9 +144,9 @@ core-import-document-heading-notes = { $count ->
 }
 # What a caption began with is shown as the document has it: “Figure 1:”.
 core-import-document-labels = { $count ->
-    [one] { $count } légende commençait par un mot et un numéro, comme « { $first } ». Ils sont laissés de côté : la carte numérote elle-même ses figures et ses tableaux. Là où le texte en nomme un par son numéro, c’est du texte tel qu’il a été écrit, qui ne suit pas la numérotation de la carte.
-    [many] { $count } légendes commençaient par un mot et un numéro, comme « { $first } ». Ils sont laissés de côté : la carte numérote elle-même ses figures et ses tableaux. Là où le texte en nomme un par son numéro, c’est du texte tel qu’il a été écrit, qui ne suit pas la numérotation de la carte.
-   *[other] { $count } légendes commençaient par un mot et un numéro, comme « { $first } ». Ils sont laissés de côté : la carte numérote elle-même ses figures et ses tableaux. Là où le texte en nomme un par son numéro, c’est du texte tel qu’il a été écrit, qui ne suit pas la numérotation de la carte.
+    [one] { $count } légende commençait par un mot et un numéro, comme « { $first } ». Ils sont laissés de côté : Glaukopis numérote lui-même les figures et les tableaux. Là où le texte en nomme un par son numéro, c’est du texte tel qu’il a été écrit, qui ne suit pas les numéros tels qu’ils sont imprimés.
+    [many] { $count } légendes commençaient par un mot et un numéro, comme « { $first } ». Ils sont laissés de côté : Glaukopis numérote lui-même les figures et les tableaux. Là où le texte en nomme un par son numéro, c’est du texte tel qu’il a été écrit, qui ne suit pas les numéros tels qu’ils sont imprimés.
+   *[other] { $count } légendes commençaient par un mot et un numéro, comme « { $first } ». Ils sont laissés de côté : Glaukopis numérote lui-même les figures et les tableaux. Là où le texte en nomme un par son numéro, c’est du texte tel qu’il a été écrit, qui ne suit pas les numéros tels qu’ils sont imprimés.
 }
 core-import-document-label-example = Figure 1 :
 core-import-document-caption-notes = { $count ->

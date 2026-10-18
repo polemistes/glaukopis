@@ -57,3 +57,12 @@ core-export-format-own-only = Kun dine egne formater kan slettes.
 core-export-not-a-length = »{ $length }« er ikke en længde
 # Shown after "not found: ".
 core-export-the-format = formatet »{ $id }«
+
+## Templates.
+
+core-export-template-bad-id = »{ $id }« kan ikke være id for en skabelon
+core-export-template-needs-name = En skabelon skal have et navn.
+core-export-template-own-only = Kun dine egne skabeloner kan slettes.
+core-export-the-template = skabelonen »{ $id }«
+core-export-output-not-yet = Skabelonens fil »{ $id }« kan ikke laves endnu: det kan kun dokumentet.
+core-export-output-unknown = Skabelonen har ingen fil »{ $id }«.

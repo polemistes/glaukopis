@@ -45,13 +45,13 @@ figures-stands-where = Hvor { $kind ->
         [table] tabellen
        *[equation] ligningen
     } står
-figures-side-format = Som formatet
+figures-side-format = Som opsætningen
 figures-side-left = Venstre
 figures-side-middle = Midten
 figures-side-right = Højre
-# What the format of the document says of where things of a kind stand. The
+# What the layout of the document says of where things of a kind stand. The
 # flow is none for equations, and for what stands in the middle.
-figures-usual = Formatet har { $kind ->
+figures-usual = Opsætningen har { $kind ->
         [figure] figurer
         [table] tabeller
        *[equation] ligninger
@@ -70,7 +70,7 @@ figures-flows-where = Om teksten løber omkring { $kind ->
         [table] tabellen
        *[equation] ligningen
     }
-figures-flow-format = Som formatet
+figures-flow-format = Som opsætningen
 figures-flow-around = Løber omkring
 figures-flow-apart = Står for sig
 figures-flow-at-side = Teksten løber omkring det, der står i en side.
@@ -141,7 +141,7 @@ figures-targets-figure-unsaid = En figur, der intet er sagt om
 figures-targets-table-unsaid = En tabel, der intet er sagt om
 figures-targets-no-match = Intet i dokumentet svarer til disse ord.
 figures-targets-none = Der er intet at henvise til endnu: ingen figur, ingen tabel, ingen nummereret ligning, ingen del med et navn.
-figures-targets-hint = En krydshenvisning følger det, den henviser til: dets nummer, og hvad formatet kalder det.
+figures-targets-hint = En krydshenvisning følger det, den henviser til: dets nummer, og hvad opsætningen kalder det.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 

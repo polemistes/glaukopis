@@ -78,3 +78,10 @@ pictures-this-project = Dette projekt
 pictures-untitled = Uden titel
 pictures-unused = Intet projekt bruger billedet.
 pictures-remove = Fjern fra billedlageret
+
+## A picture made a file of the library, and given to a reference.
+
+pictures-attach = Vedhæft til en reference…
+pictures-attach-title = Vedhæft »{ $name }« til en reference
+pictures-attached = Billedet er nu blandt filerne til { $name }
+pictures-attach-failed = Billedet kunne ikke vedhæftes

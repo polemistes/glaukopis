@@ -1,16 +1,18 @@
-# Documents that are brought in, each to become a map (ADR 0012), in
-# English. See locales/README.md.
+# Documents that are brought in, each to become a tree of elements under
+# the element in view (ADR 0012, 0037), in English. See locales/README.md.
 
 documents-choose = Ein Dokument zum Einlesen
 documents-filter = Dokumente
 documents-filter-all = Alle Dateien
+documents-title-element = Ein Dokument in das angezeigte Element
 documents-title-project = Ein Projekt aus einem Dokument
 documents-reading = { $file } wird gelesen…
 documents-reading-hint = Ein langes Dokument braucht einen Moment.
 documents-no-pandoc = Dokumente dieser Art liest Pandoc, das nicht installiert ist oder nicht gefunden wurde. Wo es ist, kann in den Einstellungen angegeben werden.
 documents-unread = Die Datei konnte nicht gelesen werden.
 documents-title = Titel
-documents-title-hint-project = Der Name des Projekts, seiner Karte und des Elements in der Mitte der Karte.
+documents-title-hint-element = Der Name des obersten Elements des Dokuments, unter dem angezeigten Element.
+documents-title-hint-project = Der Name des Projekts und des obersten Elements des Dokuments darin.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Ohne Titel
 
@@ -76,12 +78,20 @@ documents-found-made = { $count ->
 documents-found-some-made = { $count } Zitationen wurden gefunden, { $made } davon erzeugt von einem Literaturverwaltungsprogramm.
 documents-at-once = Aus denen, die Zotero erzeugt hat und deren Werke Ihre Bibliothek hat, sofort Zitationen machen
 # Under the choice: what becomes of a note that holds one of them.
-documents-at-once-notes = Eine Anmerkung, die nichts als eine Zitation ist, wird zu einer Zitation in der Zeile, die der Zitierstil in eine Anmerkung oder in die Zeile setzt; eine Anmerkung, die mehr sagt, behält ihre Zitation. Was Sie in der Seitenleiste der gefundenen Zitationen für Anmerkungen gewählt haben, für alle folgenden, gilt auch hier.
+documents-at-once-notes = Eine Anmerkung, die nichts als eine Zitation ist, wird zu einer Zitation in der Zeile, die der Zitierstil in eine Anmerkung oder in die Zeile setzt; eine Anmerkung, die mehr sagt, behält ihre Zitation. Was Sie in der Seitenleiste der losen Zitationen für Anmerkungen gewählt haben, für alle folgenden, gilt auch hier.
+documents-go-through-element = Die Zitationen durchgehen, sobald das Dokument eingelesen ist
 documents-go-through-project = Die Zitationen durchgehen, sobald das Projekt angelegt ist
 
-## Making the map.
+## Making the elements.
 
 # Over what the one who brings the document in should know of it.
 documents-to-know = Zu wissen
-documents-making = Die Karte wird angelegt…
+documents-making = Das Dokument wird eingelesen…
+documents-make-element = Einlesen
 documents-make-project = Projekt anlegen
+documents-failed = Das Dokument konnte nicht eingelesen werden.
+
+## What an element inherits as a document
+
+# Under a setting an element does not make, which it takes from the element named, over it.
+documents-inherited-from = Von { $name }

@@ -105,32 +105,32 @@ core-import-document-notebook = notebook Jupyter
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] È stata trovata { $count } citazione non ancora legata a un riferimento della tua biblioteca, fatta da un programma che tiene i riferimenti. Resta come il testo in cui è stata scritta, e si può passare in rassegna quando la mappa è fatta, e più tardi.
-       *[none] È stata trovata { $count } citazione non ancora legata a un riferimento della tua biblioteca. Resta come il testo in cui è stata scritta, e si può passare in rassegna quando la mappa è fatta, e più tardi.
+        [all] È stata trovata { $count } citazione non ancora legata a un riferimento della tua biblioteca, fatta da un programma che tiene i riferimenti. Resta testo, così come è stata scritta, e si può passare in rassegna quando il documento è stato portato dentro, e più tardi.
+       *[none] È stata trovata { $count } citazione non ancora legata a un riferimento della tua biblioteca. Resta testo, così come è stata scritta, e si può passare in rassegna quando il documento è stato portato dentro, e più tardi.
     }
     [many] { $made ->
-        [all] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca, tutte fatte da un programma che tiene i riferimenti. Restano come il testo in cui sono state scritte, e si possono passare in rassegna quando la mappa è fatta, e più tardi.
-        [some] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca, { $some } delle quali fatte da un programma che tiene i riferimenti. Restano come il testo in cui sono state scritte, e si possono passare in rassegna quando la mappa è fatta, e più tardi.
-       *[none] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca. Restano come il testo in cui sono state scritte, e si possono passare in rassegna quando la mappa è fatta, e più tardi.
+        [all] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca, tutte fatte da un programma che tiene i riferimenti. Restano testo, così come sono state scritte, e si possono passare in rassegna quando il documento è stato portato dentro, e più tardi.
+        [some] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca, { $some } delle quali fatte da un programma che tiene i riferimenti. Restano testo, così come sono state scritte, e si possono passare in rassegna quando il documento è stato portato dentro, e più tardi.
+       *[none] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca. Restano testo, così come sono state scritte, e si possono passare in rassegna quando il documento è stato portato dentro, e più tardi.
     }
    *[other] { $made ->
-        [all] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca, tutte fatte da un programma che tiene i riferimenti. Restano come il testo in cui sono state scritte, e si possono passare in rassegna quando la mappa è fatta, e più tardi.
-        [some] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca, { $some } delle quali fatte da un programma che tiene i riferimenti. Restano come il testo in cui sono state scritte, e si possono passare in rassegna quando la mappa è fatta, e più tardi.
-       *[none] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca. Restano come il testo in cui sono state scritte, e si possono passare in rassegna quando la mappa è fatta, e più tardi.
+        [all] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca, tutte fatte da un programma che tiene i riferimenti. Restano testo, così come sono state scritte, e si possono passare in rassegna quando il documento è stato portato dentro, e più tardi.
+        [some] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca, { $some } delle quali fatte da un programma che tiene i riferimenti. Restano testo, così come sono state scritte, e si possono passare in rassegna quando il documento è stato portato dentro, e più tardi.
+       *[none] Sono state trovate { $count } citazioni non ancora legate a riferimenti della tua biblioteca. Restano testo, così come sono state scritte, e si possono passare in rassegna quando il documento è stato portato dentro, e più tardi.
     }
 }
 core-import-document-endnote = { $count ->
-    [one] { $count } citazione fatta da EndNote è portata dentro come il testo che mostra, e non è tra quelle trovate: ciò che EndNote dice delle opere non si è potuto leggere.
-    [many] { $count } citazioni fatte da EndNote sono portate dentro come il testo che mostrano, e non sono tra quelle trovate: ciò che EndNote dice delle opere non si è potuto leggere.
-   *[other] { $count } citazioni fatte da EndNote sono portate dentro come il testo che mostrano, e non sono tra quelle trovate: ciò che EndNote dice delle opere non si è potuto leggere.
+    [one] { $count } citazione fatta da EndNote è portata dentro come il testo che mostra, e non è tra le citazioni sciolte: ciò che EndNote dice delle opere non si è potuto leggere.
+    [many] { $count } citazioni fatte da EndNote sono portate dentro come il testo che mostrano, e non sono tra le citazioni sciolte: ciò che EndNote dice delle opere non si è potuto leggere.
+   *[other] { $count } citazioni fatte da EndNote sono portate dentro come il testo che mostrano, e non sono tra le citazioni sciolte: ciò che EndNote dice delle opere non si è potuto leggere.
 }
 core-import-document-bookmarks = { $count ->
     [one] Il documento tiene { $count } citazione in un segnalibro, e ciò che cita non si è potuto leggere: è testo così com'è. Zotero le tiene così dove le preferenze del documento lo dicono.
     [many] Il documento tiene { $count } citazioni in segnalibri, e ciò che citano non si è potuto leggere: sono testo così come stanno. Zotero le tiene così dove le preferenze del documento lo dicono.
    *[other] Il documento tiene { $count } citazioni in segnalibri, e ciò che citano non si è potuto leggere: sono testo così come stanno. Zotero le tiene così dove le preferenze del documento lo dicono.
 }
-core-import-document-bibliography = Il documento ha un elenco di ciò che cita, sotto «{ $heading }». È portato dentro come testo, come il resto. La mappa fa una bibliografia sua da ciò che vi è citato.
-core-import-document-bibliography-made = Il documento ha un elenco di ciò che cita, fatto dal programma che tiene i suoi riferimenti. È portato dentro come testo, come il resto. La mappa fa una bibliografia sua da ciò che vi è citato.
+core-import-document-bibliography = Il documento ha un elenco di ciò che cita, sotto «{ $heading }». È portato dentro come testo, come il resto. Glaukopis fa una bibliografia sua da ciò che è citato.
+core-import-document-bibliography-made = Il documento ha un elenco di ciò che cita, fatto dal programma che tiene i suoi riferimenti. È portato dentro come testo, come il resto. Glaukopis fa una bibliografia sua da ciò che è citato.
 core-import-document-tracked = Il documento ha modifiche tracciate. Il testo è portato dentro così come sta quando sono tutte accettate.
 core-import-document-comments = Il documento ha commenti a margine, che sono lasciati fuori.
 core-import-document-heading-notes = { $count ->
@@ -140,9 +140,9 @@ core-import-document-heading-notes = { $count ->
 }
 # What a caption began with is shown as the document has it: “Figure 1:”.
 core-import-document-labels = { $count ->
-    [one] { $count } didascalia cominciava con una parola e un numero, come «{ $first }». È lasciato fuori: la mappa numera da sé le sue figure e tabelle. Dove il testo ne nomina una con il suo numero, quello è testo come fu scritto, e non segue i numeri della mappa.
-    [many] { $count } didascalie cominciavano con una parola e un numero, come «{ $first }». Sono lasciati fuori: la mappa numera da sé le sue figure e tabelle. Dove il testo ne nomina una con il suo numero, quello è testo come fu scritto, e non segue i numeri della mappa.
-   *[other] { $count } didascalie cominciavano con una parola e un numero, come «{ $first }». Sono lasciati fuori: la mappa numera da sé le sue figure e tabelle. Dove il testo ne nomina una con il suo numero, quello è testo come fu scritto, e non segue i numeri della mappa.
+    [one] { $count } didascalia cominciava con una parola e un numero, come «{ $first }». La parola e il numero sono lasciati fuori: Glaukopis numera da sé figure e tabelle. Dove il testo ne nomina una con il suo numero, quello resta testo come fu scritto, e non segue i numeri come sono stampati.
+    [many] { $count } didascalie cominciavano con una parola e un numero, come «{ $first }». La parola e il numero sono lasciati fuori: Glaukopis numera da sé figure e tabelle. Dove il testo ne nomina una con il suo numero, quello resta testo come fu scritto, e non segue i numeri come sono stampati.
+   *[other] { $count } didascalie cominciavano con una parola e un numero, come «{ $first }». La parola e il numero sono lasciati fuori: Glaukopis numera da sé figure e tabelle. Dove il testo ne nomina una con il suo numero, quello resta testo come fu scritto, e non segue i numeri come sono stampati.
 }
 core-import-document-label-example = Figura 1:
 core-import-document-caption-notes = { $count ->

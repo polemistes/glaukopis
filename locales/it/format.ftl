@@ -1,6 +1,6 @@
-# Document formats: their kinds, and the editor of a format.
+# Layouts, which the files and the code call formats: their kinds, and the rows by which their looks are set in the look of a document.
 
-## The kinds of document format, as the formats are grouped by them.
+## The kinds of document layout, as the layouts are grouped by them.
 
 format-kind-own = I tuoi
 format-kind-general = Generali
@@ -11,20 +11,17 @@ format-kind-fiction = Narrativa
 format-kind-stage = Teatro e cinema
 format-kind-poetry = Poesia
 
-## The format editor.
+## Layouts of the writer's own, kept from the changes of a document.
 
-format-name = Nome del formato
-# The name a format of one's own is first given, made from that of the format it is made from.
+format-name = Nome dell'impaginazione
+# The name a layout of one's own is first given, made from that of the layout it is made from.
 format-name-changed = { $name }, modificato
-format-saved = «{ $name }» è salvato tra i tuoi formati
-format-save-failed = Il formato non si è potuto salvare.
-format-delete-failed = Il formato non si è potuto eliminare.
-format-delete-title = Eliminare il formato «{ $name }»?
-format-delete-message = Le mappe che lo usano useranno invece il formato generale da manoscritto.
-format-delete-confirm = Elimina il formato
-
-## The parts of a format, as they are chosen at the left.
-
+format-saved = «{ $name }» è salvata tra le tue impaginazioni
+format-save-failed = L'impaginazione non si è potuta salvare.
+format-delete-failed = L'impaginazione non si è potuta eliminare.
+format-delete-title = Eliminare l'impaginazione «{ $name }»?
+format-delete-message = Gli elementi che la usano useranno invece l'impaginazione generale da manoscritto.
+format-delete-confirm = Elimina l'impaginazione
 
 ## Words that stand in several parts.
 
@@ -67,7 +64,21 @@ format-margin-top = Sopra
 format-margin-bottom = Sotto
 format-margin-left = Sinistra
 format-margin-right = Destra
+format-columns-heading = Colonne
+format-columns = Colonne
+format-columns-hint = Il testo è composto in tante colonne sulla pagina; 1 per nessuna. Un'interruzione di colonna nel testo fa cominciare la successiva.
+format-column-gap = Spazio tra le colonne
 format-lengths-hint = Le lunghezze si scrivono con la loro unità: 2.5cm, 1in, 25mm, 12pt.
+## Numbers belong to what they number (ADR 0041): the lines one numbers
+## are shown as the layout says where they do not say otherwise; the lines
+## of the page are the layout's alone.
+format-numbers-hint = Come si mostrano i numeri delle righe che numeri, dove queste non dicono altro; e se le righe della pagina sono numerate.
+format-verse-every = Mostra un numero ogni
+format-verse-every-hint = Delle righe che numeri: 5 mostra 5, 10, 15
+format-verse-side = Lato dei numeri
+format-side-left = Sinistra
+format-side-right = Destra
+format-numbers-page = Le righe della pagina
 format-line-numbers = Numera le righe
 format-line-numbers-hint = Come alcune riviste chiedono per la revisione
 
@@ -86,6 +97,10 @@ format-space-between = Spazio tra i paragrafi
 format-italics = Il corsivo è reso
 format-italics-italic = Come corsivo
 format-italics-underline = Sottolineato, come nei dattiloscritti
+format-refmarks = I segni di riferimento sono resi
+format-refmarks-raised = Piccoli e rialzati nella riga
+format-refmarks-margin = Nel margine accanto alla loro riga
+format-refmarks-hint = Versi, pagine di Stephanus, numeri di Bekker. Word e Writer non hanno spazio nel margine: lì sono rialzati.
 
 ## Headings.
 
@@ -150,9 +165,17 @@ format-bibliography-entry-spacing = Spazio tra le voci
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Ogni tipo è reso come il tipo su cui è basato, con le differenze date qui. Ciò che non è detto è come lo ha la base.
+format-kinds-hint = Ogni tipo, con il suo aspetto come apparirà: l'aspetto di base del tipo, poi i tipi su cui è basato, poi ciò che ne dice questa impaginazione. Le righe cambiano solo ciò che dice questa impaginazione; ciò che non è detto è come lo ha la base.
 format-kind-based-on = basato su { $base }
+# Of the kind Text, which the parts for type and paragraphs set.
+format-kind-text-note = come stabiliscono i caratteri e i paragrafi dell'impaginazione
+# At the right of a kind's line where this layout says nothing of it.
+format-kind-as-base = come la base
+format-kind-resolved = Come apparirà: { $look }
+format-kind-resolved-nothing = Come apparirà: come il testo intorno
 format-as-the-base = Come la base
+# "As the base", with what the base comes to: "As the base (Yes)", "As the base (11 pt)".
+format-as-the-base-is = Come la base ({ $value })
 # In an empty field for a size, in the place of its number.
 format-as-the-base-blank = come la base
 format-yes = Sì
@@ -320,7 +343,7 @@ format-running-head-author-title = Autori e titolo
 format-running-head-text = Parole mie
 format-running-head-words = Le parole
 
-## About the format: where its requirements are from.
+## About the layout: where its requirements are from.
 
 format-description = Descrizione
 format-source = Da dove vengono i requisiti
@@ -329,5 +352,5 @@ format-source-read = Letta il { $date }.
 format-source-high = I valori sono quelli della fonte.
 format-source-medium = La fonte si è potuta leggere solo in parte o in uno stato precedente: controlla ciò che ti importa.
 format-source-low = Poco si è potuto verificare: prendi i valori come un inizio.
-format-source-changed = Hai modificato questo formato; la fonte descrive ciò da cui è stato fatto.
-format-source-none = Questo formato non segue i requisiti di nessun editore in particolare.
+format-source-changed = Hai modificato questa impaginazione; la fonte descrive ciò da cui è stata fatta.
+format-source-none = Questa impaginazione non segue i requisiti di nessun editore in particolare.

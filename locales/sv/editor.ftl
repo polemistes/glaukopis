@@ -17,29 +17,82 @@ editor-block-quotation = Blockcitat
 editor-list = Lista
 editor-text = Text
 editor-text-hint = Ett stycke
-editor-quotation-hint = Avskilt från texten
-editor-list-hint = Med ett tecken före varje punkt
+editor-quotation-hint = Någon annans ord, avskilda från texten
+editor-list-hint = En punkt i en lista; ett indrag gör en lista i listan
 editor-numbered-list = Numrerad lista
-editor-numbered-list-hint = Med ett nummer före varje punkt
+editor-numbered-list-hint = En numrerad punkt i en lista; ett indrag gör en lista i listan
 editor-verse = Vers
-editor-verse-hint = Rader av poesi eller drama, var och en bevarad som rad
+editor-verse-hint = En rad ur poesi, drama eller en utskrift, bevarad som rad
 editor-speaker = Talare
-editor-speaker-hint = Vem som talar, på en egen rad
+editor-speaker-hint = Vem som talar: på en egen rad, eller som ord inne i en rad
 editor-direction = Scenanvisning
-editor-direction-hint = Vad som görs, i kursiv
-editor-line-numbers = Radnummer
-editor-line-numbers-hint = Numrera raderna i den här versen: från vilken rad, och var hur mångte
-editor-line-numbers-from = Numrera raderna från
+editor-direction-hint = Vad som görs på scenen: på en egen rad, eller som ord inne i en rad
+editor-line-numbers = Nummer
+editor-line-numbers-hint = Numrera de här raderna: hur de räknas, från vilket nummer, var hur mångte och på vilken sida; och säg vad som gäller raden där markören står. Rader som numreras tillsammans med samma inställningar räknas i en följd, vilka slag de än har.
+editor-line-numbers-from = Numrera från
+editor-line-numbers-from-hint = Den första raden som räknas får det här numret, och räkningen fortsätter därifrån.
 editor-line-numbers-every = Visa ett nummer var
 editor-line-numbers-number = Ett helt tal behövs.
+editor-line-this = Den här raden
+editor-line-number = Dess nummer eller beteckning
+editor-line-number-placeholder = Räknas som de andra
+editor-line-number-hint = 1234, 567a: visas alltid; raderna efter den räknas vidare från den.
+editor-line-uncounted = Räknas inte
+editor-line-uncounted-hint = Som andra halvan av en rad som delas mellan talare: räkningen hoppar över den.
+editor-line-hidden = Räknas, utan att numret visas
+editor-line-hidden-hint = Räkningen går igenom den som genom vilken rad som helst, men inget nummer står bredvid den i dokumentet, inte ens där ett skulle infalla. Där du skriver står numret inom parentes.
+editor-line-number-held = Räknas, och visas inte i dokumentet. Tryck för att ge den ett eget nummer.
+editor-line-margin = Ord i marginalen
+editor-line-margin-placeholder = Ett versmått, en annan utgåvas nummer
+editor-line-margin-hint = Visas i marginalen bredvid den, mitt emot numren; räknas inte.
+# How the lines of a stretch are numbered: see ADR 0041.
+editor-numbering = Numrering
+editor-numbering-none = Inte numrerade
+editor-numbering-counted = Räknade från det första nummer som anges
+editor-numbering-given = Bara de nummer som anges
+editor-line-numbers-every-layout = Som layouten: var { $every }:e
+editor-line-numbers-side = Numren till
+editor-side-layout = Den sida layouten anger ({ $side })
+editor-side-left = Vänster
+editor-side-right = Höger
+# The first counted line of the stretch is the one the cursor is in: its number is where the count begins.
+editor-line-number-first-hint = Räkningen börjar här.
+# Over a number in the margin of the text, which opens a field for it when pressed.
+editor-line-number-press = Den här radens nummer: tryck för att ändra det
+
+## Numbers belong to what they number (ADR 0041): the Numbers menu offers
+## the three, each saying what it numbers.
+editor-numbers = Nummer
+editor-numbers-hint = Numrera raderna du skriver, märk ut ett ställe i prosa, eller numrera sidans rader
+editor-numbers-lines = Numrera de här raderna…
+editor-numbers-lines-hint = Raderna i styckena där markören står, eller i de markerade: från vilket nummer, var hur mångte, på vilken sida
+editor-numbers-refmark-hint = Ett ställe i prosa, efter en vers, en sida eller en utgåvas nummer: 3:16, 327a
+editor-numbers-page = Numrera sidans rader
+editor-numbers-page-hint = Varje rad på den tryckta sidan, numrerad i marginalen, i det här dokumentet och dem under det
+
+## The bracket at the left of paragraphs of one kind standing together (a
+## run), named by the kind; its menu says what is said of them.
+# After the name of the kind, where the lines of the run are numbered: "Verse · numbered".
+editor-bracket-numbered = numrerad
+editor-run-label-hint = { $kind } · tryck för det som sägs om de här styckena
+editor-run-numbers = Nummer…
+editor-run-numbers-hint = Hur raderna här räknas, från vilket nummer, var hur mångte och på vilken sida
+editor-run-select = Markera de här styckena
+editor-run-to-text = Gör det till text
+editor-run-to-text-hint = Styckena av det här slaget blir text; deras rader, och allt annat, förblir som de är
+editor-run-begin = Börja en ny följd här
+editor-run-begin-hint = Stycket där markören står börjar en egen klammer, fast det före är av samma slag
+editor-run-join = Foga ihop med följden före
+editor-run-join-hint = De här styckena blir ett igen med dem av samma slag före dem
 editor-kinds-text = Text
 editor-kinds-quotation = Citat
 editor-kinds-verse = Vers
 editor-kinds-script = Manus
+editor-kinds-list = Lista
 editor-kinds-more = Mer
 editor-kinds-words = Ord
 editor-attribution = Källa
-editor-attribution-hint = Vems ord det är, under ett citat, till höger
+editor-attribution-hint = Vems ord ett citat är
 editor-epigraph = Motto
 editor-epigraph-hint = Ett citat i början av en del
 editor-headword = Uppslagsord
@@ -47,9 +100,9 @@ editor-headword-hint = Ordet som en ordlista förklarar
 editor-gloss = Förklaring
 editor-gloss-hint = Vad uppslagsordet betyder
 editor-code = Kod
-editor-code-hint = Bevarad bokstav för bokstav, med lika breda tecken
+editor-code-hint = En rad kod, eller av något som bevaras bokstav för bokstav
 editor-break = Avdelare
-editor-break-hint = En paus mellan delar, med det tecken formatet ger den
+editor-break-hint = En paus mellan delar, med det tecken layouten ger den
 editor-draft = Arbetsanteckning
 editor-draft-hint = För dina ögon: den hamnar inte i något dokument
 editor-foreign = Främmande ord
@@ -66,41 +119,60 @@ editor-underline = Understruken
 editor-code-words = Kod i raden
 editor-code-words-hint = Lika breda tecken, inne i raden
 editor-scene = Scenrubrik
-editor-scene-hint = INT. HUS – NATT
+editor-scene-hint = Var och när en scen utspelar sig: INT. HUS – NATT
 editor-action = Handling
 editor-action-hint = Vad som syns och görs
 editor-character = Rollfigur
-editor-character-hint = Vem som talar, över repliken
+editor-character-hint = Vem som säger repliken som följer
 editor-dialogue = Dialog
 editor-dialogue-hint = Vad som sägs
 editor-parenthetical = Parentes
-editor-parenthetical-hint = Hur det sägs, inom parentes
+editor-parenthetical-hint = Hur en replik sägs
 editor-transition = Övergång
-editor-transition-hint = KLIPP TILL:, till höger
+editor-transition-hint = Hur en scen går över i nästa: KLIPP TILL:
 editor-comment = Kommentar
 editor-comment-hint = En kommentar till det markerade
 editor-comment-element-hint = En kommentar till det här elementet; markera ord för att kommentera dem
 editor-parallel = Två texter sida vid sida
 editor-parallel-hint = Ett original och dess översättning, var och en som egen text
+editor-page-break = Sidbrytning
+editor-page-break-hint = Det som följer börjar på en ny sida
+editor-column-break = Spaltbrytning
+editor-column-break-hint = Det som följer börjar överst i nästa spalt, där layouten sätter texten i spalter
 editor-paragraph-kind = Slag av stycke
 # Said of the button that shows the kind of paragraph the cursor is in.
 editor-paragraph-kind-now = Slag av stycke: { $kind }
 
-## The kind menu: the kinds in hand, the whole catalogue under "More…", and
-## the format that sets them at its foot. The words menu, with the kinds of
-## words. And a kind of the writer's own, in its dialog.
+## The kind menu: the kinds written with those where the cursor is, the kinds at hand,
+## the whole catalogue under "More…", and the layout that sets them at its foot.
+## The words menu, with the kinds of words. And a kind of the writer's own, in its dialog.
 
 editor-kinds-menu-more = Mer…
+editor-kinds-mixed = Blandat
 editor-kinds-own = Dina egna
 editor-kinds-make = Skapa ett slag…
 editor-kinds-change-own = Ändra ett eget slag…
-# Over the item that opens the format editor: the format sets how each kind looks.
+# Over the item that opens the look of the document at the kind the cursor is in.
 editor-kinds-set-by = Satta som ”{ $format }” har dem
+editor-kinds-change-look = Hur ”{ $kind }” ser ut…
+editor-kinds-change-look-hint = Dess utseende i det här dokumentet, och resten av sidan
 editor-words = Ord
-editor-words-hint = Understrykning, upphöjt, kod; främmande ord, verktitel, term
+editor-words-hint = Understrykning, upphöjt, kod; en passages språk, främmande ord, verktitel, term, talare inne i en rad
 editor-words-make = Skapa ett slag av ord…
+# Beside the language of the map, first among the languages foreign words may be in.
+editor-foreign-of-text = Textens språk
 # What a kind of words is based on when it is based on no kind in particular.
 editor-plain-words = Vanliga ord
+# The language of a passage, from a word to many paragraphs: it has no look of its own.
+editor-language = Språk
+editor-language-of-text = Textens eget språk
+editor-language-other = Ett annat språk…
+editor-language-other-title = Passagens språk
+editor-language-tag = Språkkod
+editor-language-no-tag = Det är ingen språkkod: en kod är till exempel ”grc”, ”la” eller ”de-CH”.
+editor-language-unnamed = Ett språk som systemet inte har något namn för: koden behålls som den är skriven.
+editor-language-suggested = Språk som ofta citeras
+editor-language-other-hint = Passagen kontrolleras med ordlistan för sitt språk, där en är importerad, och lämnas i fred där ingen finns; ett dokument som görs anger språket för Word, OpenDocument, Typst och LaTeX.
 editor-own-kind-new = Ett eget slag
 editor-own-kind-change = Ändra slaget
 editor-own-kind-name = Namn
@@ -136,6 +208,9 @@ editor-new-split = Dela här
 editor-new-split-hint = Det som följer efter markören blir ett nytt element
 editor-spelling-on = Stavningen kontrolleras medan du skriver · tryck för att sluta
 editor-spelling-off = Stavningen kontrolleras inte · tryck för att kontrollera den
+editor-break-signs = Tecknet för en radbrytning inne i ett stycke
+editor-break-signs-on = En radbrytning inne i ett stycke visas med ↵ · tryck för att dölja tecknet
+editor-break-signs-off = En radbrytning inne i ett stycke visas inte · tryck för att visa den med ↵
 editor-picture-file = Bild från en fil…
 editor-picture-file-hint = En figur, med det som sägs om den
 editor-picture-store = Bild från förrådet…
@@ -150,12 +225,18 @@ editor-formula = Formel
 editor-formula-hint = Matematik i raden
 editor-pointer = Korshänvisning…
 editor-pointer-hint = Till en figur, en tabell, en ekvation eller en del: ”se figur 2”
+editor-refmark = Referensmärke…
+editor-refmark-hint = En vers, en sida eller en utgåvas nummer: 3:16, 327a
+editor-refmark-title = Referensmärke
+editor-refmark-label = Beteckning
+editor-refmark-placeholder = 3:16, 327a, 1094a1
+editor-refmark-dialog-hint = Märket är ingen del av orden: stavningen, sökningen och ordräkningen går förbi det. Layouten avgör om det sätts upphöjt i raden eller i marginalen.
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = bild
 
 ## More.
 
-editor-found = Hittade källhänvisningar…
+editor-found = Lösa källhänvisningar…
 editor-found-count = { $count } att gå igenom och göra till källhänvisningar
 editor-found-none = Och text som ser ut som källhänvisningar, i den här kartan
 
@@ -220,7 +301,7 @@ editor-locator-sub-verbo = Sub verbo
 # The number is that of the note, or a letter for a note that stands in a place of its own.
 editor-note-numbered = Not { $number }
 editor-note-place = Var noten står
-editor-note-place-format = Där formatet har sina noter
+editor-note-place-format = Där layouten har sina noter
 editor-note-place-foot = Längst ner på sidan
 editor-note-place-end = I slutet av texten
 editor-note-placeholder = Notens text

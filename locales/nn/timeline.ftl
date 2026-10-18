@@ -11,15 +11,15 @@ timeline-unit = Kva ei eining heiter
 timeline-unit-placeholder = år, dag, syklus …
 timeline-units-hint = Tider er tal av eininga: År 12, Dag 3, eller berre 12. Dei kan vere negative.
 timeline-lanes = Baner
-timeline-lanes-given = Kvart barn av midten er ei bane, til du vel. Ei bane rommar det som er plassert i greina; plasseringa til bana sjølv, om den har ei, er spennet til bana.
+timeline-lanes-given = Kvart barn av elementet du står i, er ei bane, til du vel. Ei bane rommar det som er plassert i greina; plasseringa til bana sjølv, om den har ei, er spennet til bana.
 timeline-lanes-chosen = Banene du valde, i rekkjefølgja til teksten.
-timeline-lanes-reset = Kvart barn av midten igjen
+timeline-lanes-reset = Kvart barn av elementet du står i, på nytt
 timeline-one-lane = Éi bane
 timeline-each-child = { $count ->
     [one] Barnet ei bane
    *[other] Kvart av { $count } barn ei bane
 }
-timeline-no-branches = Kartet har ingenting under midten enno.
+timeline-no-branches = Elementet du står i, har ingenting under seg enno.
 timeline-lanes-by-kind = Baner etter type
 timeline-lanes-by-kind-hint = Kvart element av ein type ei eiga bane: kvar person, kvar stad.
 timeline-each-of-kind = Kvart ei bane

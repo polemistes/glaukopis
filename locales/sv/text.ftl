@@ -1,13 +1,22 @@
-# A map as text: the elements one after another, each a heading and its text.
+# An element as text: its name the title, the elements under it one after
+# another, each a heading and its text.
 
 text-title = Titel
 text-name = Elementets namn
 text-not-printed = skrivs inte ut
 text-grip = Flytta eller ändra det här elementet
-text-include-open = Öppna den
+# The element an element stands for, whose name is shown in bold where the variable stands.
+text-include = I dokumentet står { $name } här, med allt under det.
+text-include-open = Öppna det
+# Where elements dragged in the text would go, said by the line drawn there.
+text-drop-under = Under ”{ $name }”
+text-drop-after = Efter ”{ $name }”
+text-drop-before = Före ”{ $name }”
 text-split = Dela här
 text-split-hint = Det som följer efter markören blir ett nytt element
 text-join = Foga till elementet ovanför
+text-open-as-map = Öppna som karta
+text-open-as-map-hint = Det visas ensamt, med det som står under det
 
 ## Folding away what is under an element, and its text
 

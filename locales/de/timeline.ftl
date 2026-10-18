@@ -11,15 +11,15 @@ timeline-unit = Wie eine Einheit heißt
 timeline-unit-placeholder = Jahr, Tag, Zyklus…
 timeline-units-hint = Zeiten sind Zahlen der Einheit: Jahr 12, Tag 3 oder einfach 12. Sie können negativ sein.
 timeline-lanes = Bahnen
-timeline-lanes-given = Jedes Kind der Mitte ist eine Bahn, bis Sie wählen. Eine Bahn enthält, was in ihrem Zweig platziert ist; ihre eigene Platzierung, wenn sie eine hat, ist die Spanne der Bahn.
+timeline-lanes-given = Jedes Kind des angezeigten Elements ist eine Bahn, bis Sie wählen. Eine Bahn enthält, was in ihrem Zweig platziert ist; ihre eigene Platzierung, wenn sie eine hat, ist die Spanne der Bahn.
 timeline-lanes-chosen = Die Bahnen, die Sie gewählt haben, in der Reihenfolge des Textes.
-timeline-lanes-reset = Wieder jedes Kind der Mitte
+timeline-lanes-reset = Wieder jedes Kind des angezeigten Elements
 timeline-one-lane = Eine Bahn
 timeline-each-child = { $count ->
     [one] Sein Kind eine Bahn
    *[other] Jedes der { $count } Kinder eine Bahn
 }
-timeline-no-branches = Die Karte hat noch nichts unter ihrer Mitte.
+timeline-no-branches = Das angezeigte Element hat noch nichts unter sich.
 timeline-lanes-by-kind = Bahnen nach Art
 timeline-lanes-by-kind-hint = Jedes Element einer Art eine eigene Bahn: jede Figur, jeder Ort.
 timeline-each-of-kind = Jedes eine Bahn

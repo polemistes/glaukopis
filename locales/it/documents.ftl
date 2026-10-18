@@ -1,16 +1,18 @@
-# Documents that are brought in, each to become a map (ADR 0012), in
-# English. See locales/README.md.
+# Documents that are brought in, each to become a tree of elements under
+# the element in view (ADR 0012, 0037), in English. See locales/README.md.
 
 documents-choose = Un documento da portare dentro
 documents-filter = Documenti
 documents-filter-all = Tutti i file
+documents-title-element = Un documento nell'elemento in vista
 documents-title-project = Un progetto da un documento
 documents-reading = Lettura di { $file }…
 documents-reading-hint = Un documento lungo richiede un momento.
 documents-no-pandoc = I documenti di questo tipo sono letti da Pandoc, che non è installato o non si trova. Dove si trova si può dire nelle impostazioni.
 documents-unread = Il file non si è potuto leggere.
 documents-title = Titolo
-documents-title-hint-project = Il nome del progetto, della sua mappa, e dell'elemento al centro della mappa.
+documents-title-hint-element = Il nome dell'elemento in cima al documento, sotto l'elemento in vista.
+documents-title-hint-project = Il nome del progetto, e dell'elemento in cima al documento al suo interno.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Senza titolo
 
@@ -84,12 +86,20 @@ documents-found-made = { $count ->
 documents-found-some-made = Sono state trovate { $count } citazioni, { $made } delle quali fatte da un programma che tiene i riferimenti.
 documents-at-once = Fai subito citazioni di quelle fatte da Zotero per opere che la tua biblioteca ha
 # Under the choice: what becomes of a note that holds one of them.
-documents-at-once-notes = Una nota che non è altro che una citazione diventa una citazione nel rigo, che lo stile mette in nota o nel rigo; una nota che dice di più tiene la sua citazione. Ciò che hai scelto per le note nel pannello delle citazioni trovate, per tutte quelle che seguono, vale anche qui.
+documents-at-once-notes = Una nota che non è altro che una citazione diventa una citazione nel rigo, che lo stile di citazione mette in nota o nel rigo; una nota che dice di più tiene la sua citazione. Ciò che hai scelto per le note nel pannello delle citazioni sciolte, per tutte quelle che seguono, vale anche qui.
+documents-go-through-element = Passa in rassegna le citazioni quando il documento è portato dentro
 documents-go-through-project = Passa in rassegna le citazioni quando il progetto è fatto
 
-## Making the map.
+## Making the elements.
 
 # Over what the one who brings the document in should know of it.
 documents-to-know = Da sapere
-documents-making = Creazione della mappa…
+documents-making = Si porta dentro il documento…
+documents-make-element = Portalo dentro
 documents-make-project = Fai il progetto
+documents-failed = Il documento non si è potuto portare dentro.
+
+## What an element inherits as a document
+
+# Under a setting an element does not make, which it takes from the element named, over it.
+documents-inherited-from = Da { $name }

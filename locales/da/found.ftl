@@ -4,10 +4,10 @@
 
 ## The panel.
 
-found-title = Fundne kildehenvisninger
+found-title = Løse kildehenvisninger
 # On the tab of the panel, beside the other tabs: short.
-found-tab = Fundne henvisninger
-found-between = Mellem kortet og de fundne kildehenvisninger
+found-tab = Løse henvisninger
+found-between = Mellem kortet og de løse kildehenvisninger
 found-taken = Det, der tages for kildehenvisninger
 found-taken-always = Det, et program har lavet, og tags
 found-taken-years = Parenteser med et årstal i
@@ -25,9 +25,9 @@ found-made = { $count ->
 found-made-undo = Ctrl+Z fortryder dem, i ét trin.
 found-library-failed = Biblioteket kunne ikke spørges.
 found-nothing = Intet at gennemgå
-found-nothing-looked = Der er ingen fundne kildehenvisninger tilbage i dette kort, og intet i det ligner en.
-found-nothing-looked-more = Der er ingen fundne kildehenvisninger tilbage i dette kort, og intet i det ligner en. Mere kan tages for kildehenvisninger, ovenfor.
-found-nothing-not-looked = Der er ingen fundne kildehenvisninger tilbage i dette kort. Tekst, der kun ligner en kildehenvisning, ledes der efter, når du ovenfor siger, hvad der skal tages for en: parenteser med et årstal i, eller noter.
+found-nothing-looked = Der er ingen løs kildehenvisning tilbage i den viste tekst, heller ikke tekst, der blot ligner en.
+found-nothing-looked-more = Der er ingen løs kildehenvisning tilbage i den viste tekst, heller ikke tekst, der blot ligner en. Mere kan tages for kildehenvisninger, ovenfor.
+found-nothing-not-looked = Der er ingen løs kildehenvisning lavet af et program, og intet tag, tilbage i den viste tekst. Tekst, der kun ligner en kildehenvisning, ledes der efter, når du ovenfor siger, hvad der skal tages for en: parenteser med et årstal i, eller noter.
 found-list-label = Det, der er at gennemgå
 found-untitled = Uden titel
 found-in-a-note = I en note
@@ -93,7 +93,7 @@ found-note-holds = Noten indeholder { $what ->
         [hard_break] endnu en linje
        *[other] noget, der ikke er tekst
     }, som ordene før og efter et værk ikke kan rumme.
-found-note-another = Noten indeholder en anden fundet kildehenvisning, som ville gå tabt i ordene efter denne.
+found-note-another = Noten indeholder en anden løs kildehenvisning, som ville gå tabt i ordene efter denne.
 
 ## Why what was asked could not be done.
 

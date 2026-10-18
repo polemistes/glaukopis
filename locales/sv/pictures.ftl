@@ -78,3 +78,10 @@ pictures-this-project = Det här projektet
 pictures-untitled = Utan titel
 pictures-unused = Inget projekt använder bilden.
 pictures-remove = Ta bort från förrådet
+
+## A picture made a file of the library, and given to a reference.
+
+pictures-attach = Bifoga till en referens…
+pictures-attach-title = Bifoga ”{ $name }” till en referens
+pictures-attached = Bilden finns nu bland filerna för { $name }
+pictures-attach-failed = Bilden kunde inte bifogas

@@ -45,13 +45,13 @@ figures-stands-where = Où { $kind ->
         [table] le tableau
        *[equation] l’équation
     } se place
-figures-side-format = Comme le format
+figures-side-format = Comme la mise en page
 figures-side-left = À gauche
 figures-side-middle = Au milieu
 figures-side-right = À droite
-# What the format of the document says of where things of a kind stand. The
+# What the layout of the document says of where things of a kind stand. The
 # flow is none for equations, and for what stands in the middle.
-figures-usual = Le format met { $kind ->
+figures-usual = La mise en page met { $kind ->
         [figure] les figures
         [table] les tableaux
        *[equation] les équations
@@ -70,7 +70,7 @@ figures-flows-where = Si le texte coule autour { $kind ->
         [table] du tableau
        *[equation] de l’équation
     }
-figures-flow-format = Comme le format
+figures-flow-format = Comme la mise en page
 figures-flow-around = Coule autour
 figures-flow-apart = Reste à l’écart
 figures-flow-at-side = Le texte coule autour de ce qui se place sur un côté.
@@ -141,7 +141,7 @@ figures-targets-figure-unsaid = Une figure dont rien n’est dit
 figures-targets-table-unsaid = Un tableau dont rien n’est dit
 figures-targets-no-match = Rien dans le document ne répond à ces mots.
 figures-targets-none = Il n’y a encore rien à quoi renvoyer : ni figure, ni tableau, ni équation numérotée, ni partie qui ait un nom.
-figures-targets-hint = Un renvoi suit ce qu’il désigne : son numéro, et le nom que le format lui donne.
+figures-targets-hint = Un renvoi suit ce qu’il désigne : son numéro, et le nom que la mise en page lui donne.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 

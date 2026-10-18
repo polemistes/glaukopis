@@ -1,6 +1,6 @@
-# Document formats: their kinds, and the editor of a format.
+# Layouts, which the files and the code call formats: their kinds, and the rows by which their looks are set in the look of a document.
 
-## The kinds of document format, as the formats are grouped by them.
+## The kinds of document layout, as the layouts are grouped by them.
 
 format-kind-own = Dine eigne
 format-kind-general = Generelle
@@ -11,20 +11,17 @@ format-kind-fiction = Skjønnlitteratur
 format-kind-stage = Scene og film
 format-kind-poetry = Lyrikk
 
-## The format editor.
+## Layouts of the writer's own, kept from the changes of a document.
 
-format-name = Namnet på formatet
-# The name a format of one's own is first given, made from that of the format it is made from.
+format-name = Namnet på oppsettet
+# The name a layout of one's own is first given, made from that of the layout it is made from.
 format-name-changed = { $name }, endra
-format-saved = «{ $name }» er lagra blant dine eigne format
-format-save-failed = Formatet kunne ikkje lagrast.
-format-delete-failed = Formatet kunne ikkje slettast.
-format-delete-title = Slette formatet «{ $name }»?
-format-delete-message = Kart som bruker det, vil bruke det generelle manusformatet i staden.
-format-delete-confirm = Slett formatet
-
-## The parts of a format, as they are chosen at the left.
-
+format-saved = «{ $name }» er lagra blant dine eigne oppsett
+format-save-failed = Oppsettet kunne ikkje lagrast.
+format-delete-failed = Oppsettet kunne ikkje slettast.
+format-delete-title = Slette oppsettet «{ $name }»?
+format-delete-message = Element som bruker det, vil bruke det generelle manusoppsettet i staden.
+format-delete-confirm = Slett oppsettet
 
 ## Words that stand in several parts.
 
@@ -67,7 +64,21 @@ format-margin-top = Øvst
 format-margin-bottom = Nedst
 format-margin-left = Venstre
 format-margin-right = Høgre
+format-columns-heading = Spalter
+format-columns = Spalter
+format-columns-hint = Teksten blir sett i så mange spalter på sida; 1 for ingen. Eit spalteskift i teksten byrjar den neste.
+format-column-gap = Avstand mellom spaltene
 format-lengths-hint = Lengder blir skrivne med eining: 2,5cm, 1in, 25mm, 12pt.
+## Numbers belong to what they number (ADR 0041): the lines one numbers
+## are shown as the layout says where they do not say otherwise; the lines
+## of the page are the layout's alone.
+format-numbers-hint = Korleis numra på linjer du nummererer blir viste, der dei ikkje seier noko anna; og om linjene på sida blir nummererte.
+format-verse-every = Vis eit nummer kvar
+format-verse-every-hint = Av linjene du nummererer: 5 viser 5, 10, 15
+format-verse-side = Numra på
+format-side-left = Venstre
+format-side-right = Høgre
+format-numbers-page = Linjene på sida
 format-line-numbers = Nummerer linjene
 format-line-numbers-hint = Som nokre tidsskrift ber om til fagfellevurdering
 
@@ -86,6 +97,10 @@ format-space-between = Luft mellom avsnitta
 format-italics = Kursiv blir sett
 format-italics-italic = Som kursiv
 format-italics-underline = Understreka, slik maskinskrivne manuskript hadde det
+format-refmarks = Referansemerke blir sette
+format-refmarks-raised = Små og heva i linja
+format-refmarks-margin = I margen ved sida av linja si
+format-refmarks-hint = Vers, Stephanus-sider, Bekker-nummer. Word og Writer har ikkje plass i margen: der blir dei heva.
 
 ## Headings.
 
@@ -150,9 +165,17 @@ format-bibliography-entry-spacing = Luft mellom oppføringane
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Kvart slag blir sett som slaget det byggjer på, med skilnadene som er oppgitt her. Det som ikkje blir sagt, er som grunnlaget har det.
+format-kinds-hint = Kvart slag, med utsjånaden slik den blir: grunnutsjånaden til slaget, så slaga det byggjer på, så det dette oppsettet seier om det. Radene endrar berre det dette oppsettet seier; det som ikkje blir sagt, er som grunnlaget har det.
 format-kind-based-on = byggjer på { $base }
+# Of the kind Text, which the parts for type and paragraphs set.
+format-kind-text-note = som skrifta og avsnitta i oppsettet har det
+# At the right of a kind's line where this layout says nothing of it.
+format-kind-as-base = som grunnlaget
+format-kind-resolved = Slik det blir: { $look }
+format-kind-resolved-nothing = Slik det blir: som teksten rundt
 format-as-the-base = Som grunnlaget
+# "As the base", with what the base comes to: "As the base (Yes)", "As the base (11 pt)".
+format-as-the-base-is = Som grunnlaget ({ $value })
 # In an empty field for a size, in the place of its number.
 format-as-the-base-blank = som grunnlaget
 format-yes = Ja
@@ -320,7 +343,7 @@ format-running-head-author-title = Forfattarar og tittel
 format-running-head-text = Eigne ord
 format-running-head-words = Orda
 
-## About the format: where its requirements are from.
+## About the layout: where its requirements are from.
 
 format-description = Beskriving
 format-source = Kvar krava kjem frå
@@ -329,5 +352,5 @@ format-source-read = Lesen { $date }.
 format-source-high = Verdiane er kjelda sine.
 format-source-medium = Kjelda kunne berre lesast delvis eller i ei tidlegare utgåve: sjekk det som tyder noko for deg.
 format-source-low = Lite kunne stadfestast: sjå verdiane som eit utgangspunkt.
-format-source-changed = Du har endra dette formatet; kjelda beskriv det det vart laga av.
-format-source-none = Dette formatet følgjer ikkje krava til noko bestemt forlag.
+format-source-changed = Du har endra dette oppsettet; kjelda beskriv det det vart laga av.
+format-source-none = Dette oppsettet følgjer ikkje krava til noko bestemt forlag.

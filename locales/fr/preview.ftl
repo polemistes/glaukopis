@@ -1,9 +1,11 @@
-# The preview, and the making of documents: the panel beside the map, the
-# details of a document, and the export.
+# The preview, and the making of documents: the panel beside the text, and
+# the export.
 
 ## The panel beside the map, and what is chosen over it.
 
 preview = Aperçu
+# Small, over the names of the template, the layout and the reference style in use, which open the document settings.
+preview-made-by = Modèle, mise en page, références
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Plus de styles…
 # Shows in the text the element whose place in the pages is looked at.
@@ -16,12 +18,12 @@ preview-program-missing = { $program } n’est pas installé
 preview-programs-needed = L’aperçu et l’exportation se font avec Pandoc et Typst. Installez-les avec le gestionnaire de paquets de votre système, ou indiquez dans les réglages où ils se trouvent.
 preview-look-again = Chercher de nouveau
 preview-looking-failed = Les programmes n’ont pas pu être cherchés
-preview-reading-failed = Les styles et les formats n’ont pas pu être lus
+preview-reading-failed = Les styles, les mises en page et les modèles n’ont pas pu être lus
 preview-failed = L’aperçu n’a pas pu être produit
 preview-failed-message = L’aperçu n’a pas pu être produit.
 # A page of the preview, as it is told to those who cannot see it.
 preview-page = Page { $number }
-# The name of an exported file, where the map has none.
+# The name of an exported file, where the element has no name.
 preview-file-name = document
 
 ## At the foot of the preview: how long the document is, and what there is to remark.
@@ -36,7 +38,7 @@ preview-words = { $count ->
     [many] { $count } mots
    *[other] { $count } mots
 }
-# The words of the text, and the most the format allows.
+# The words of the text, and the most the template allows.
 preview-words-of = { $count ->
     [one] { $count } mot sur { $limit }
     [many] { $count } mots sur { $limit }
@@ -52,8 +54,8 @@ preview-remarks-count = { $count ->
 preview-remarks = Remarques
 preview-remarks-font = Police
 preview-font-missing = { $font } n’est pas installée.
-# The first name is that of the font the format asks for; this is of the one used in its place.
-preview-font-substitute = { $font } la remplace, ici dans l’aperçu et dans un PDF produit. Dans un document exporté pour Word, LibreOffice ou LaTeX, la police est nommée comme le format le demande, et elle y est pour quiconque ouvre le document et l’a.
+# The first name is that of the font the layout asks for; this is of the one used in its place.
+preview-font-substitute = { $font } la remplace, ici dans l’aperçu et dans un PDF produit. Dans un document exporté pour Word, LibreOffice ou LaTeX, la police est nommée comme la mise en page le demande, et elle y est pour quiconque ouvre le document et l’a.
 preview-remarks-references = Références
 # In bold, and the next follows it in the same sentence.
 preview-works-missing = { $count ->

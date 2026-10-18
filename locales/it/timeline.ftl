@@ -11,16 +11,16 @@ timeline-unit = Come si chiama un'unità
 timeline-unit-placeholder = anno, giorno, ciclo…
 timeline-units-hint = I tempi sono numeri dell'unità: Anno 12, Giorno 3, o solo 12. Possono essere negativi.
 timeline-lanes = Corsie
-timeline-lanes-given = Ogni figlio del centro è una corsia, finché non scegli. Una corsia contiene ciò che è collocato nel suo ramo; la sua collocazione, se ne ha una, è l'estensione della corsia.
+timeline-lanes-given = Ogni figlio dell'elemento in vista è una corsia, finché non scegli. Una corsia contiene ciò che è collocato nel suo ramo; la sua collocazione, se ne ha una, è l'estensione della corsia.
 timeline-lanes-chosen = Le corsie che hai scelto, nell'ordine del testo.
-timeline-lanes-reset = Di nuovo ogni figlio del centro
+timeline-lanes-reset = Di nuovo ogni figlio dell'elemento in vista
 timeline-one-lane = Una corsia
 timeline-each-child = { $count ->
     [one] Il suo figlio una corsia
     [many] Ciascuno dei { $count } figli una corsia
    *[other] Ciascuno dei { $count } figli una corsia
 }
-timeline-no-branches = La mappa non ha ancora nulla sotto il centro.
+timeline-no-branches = L'elemento in vista non ha ancora nulla sotto.
 timeline-lanes-by-kind = Corsie per tipo
 timeline-lanes-by-kind-hint = Ogni elemento di un tipo una corsia a sé: ogni personaggio, ogni luogo.
 timeline-each-of-kind = Ciascuno una corsia

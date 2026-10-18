@@ -41,3 +41,6 @@ kinds-delete-message = { $count ->
     [one] Det ena elementet som är av det blir utan slag.
    *[other] De { $count } elementen som är av det blir utan slag.
 }
+kinds-based-on = I dokumentet
+kinds-based-on-none = Inget särskilt
+kinds-based-on-hint = Vad ett element av det här slaget är i dokumentet: en sammanfattning, ett appendix, en egen sida. Ett slag som inte är något särskilt är ett namn och en färg.

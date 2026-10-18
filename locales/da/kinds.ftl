@@ -41,3 +41,6 @@ kinds-delete-message = { $count ->
     [one] Det ene element, der er af den, bliver uden art.
    *[other] De { $count } elementer, der er af den, bliver uden art.
 }
+kinds-based-on = I dokumentet
+kinds-based-on-none = Intet bestemt
+kinds-based-on-hint = Hvad et element af denne art er i dokumentet: et resumé, et bilag, en side for sig. En art, der ikke er noget bestemt, er et navn og en farve.

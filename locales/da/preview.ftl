@@ -1,9 +1,11 @@
-# The preview, and the making of documents: the panel beside the map, the
-# details of a document, and the export.
+# The preview, and the making of documents: the panel beside the text, and
+# the export.
 
 ## The panel beside the map, and what is chosen over it.
 
 preview = Forhåndsvisning
+# Small, over the names of the template, the layout and the reference style in use, which open the document settings.
+preview-made-by = Skabelon, opsætning, referencer
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Flere stile…
 # Shows in the text the element whose place in the pages is looked at.
@@ -16,12 +18,12 @@ preview-program-missing = { $program } er ikke installeret
 preview-programs-needed = Forhåndsvisning og eksport laves med Pandoc og Typst. Installer dem med dit systems pakkehåndtering, eller sig i indstillingerne, hvor de er.
 preview-look-again = Se efter igen
 preview-looking-failed = Der kunne ikke ledes efter programmerne
-preview-reading-failed = Stilene og formaterne kunne ikke læses
+preview-reading-failed = Stilene, opsætningerne og skabelonerne kunne ikke læses
 preview-failed = Forhåndsvisningen kunne ikke laves
 preview-failed-message = Forhåndsvisningen kunne ikke laves.
 # A page of the preview, as it is told to those who cannot see it.
 preview-page = Side { $number }
-# The name of an exported file, where the map has none.
+# The name of an exported file, where the element has no name.
 preview-file-name = dokument
 
 ## At the foot of the preview: how long the document is, and what there is to remark.
@@ -34,7 +36,7 @@ preview-words = { $count ->
     [one] { $count } ord
    *[other] { $count } ord
 }
-# The words of the text, and the most the format allows.
+# The words of the text, and the most the template allows.
 preview-words-of = { $limit ->
     [one] { $count } af { $limit } ord
    *[other] { $count } af { $limit } ord
@@ -48,8 +50,8 @@ preview-remarks-count = { $count ->
 preview-remarks = Bemærkninger
 preview-remarks-font = Skrift
 preview-font-missing = { $font } er ikke installeret.
-# The first name is that of the font the format asks for; this is of the one used in its place.
-preview-font-substitute = { $font } bruges i stedet, her i forhåndsvisningen og i en PDF, der laves. I et dokument, der eksporteres til Word, LibreOffice eller LaTeX, nævnes skriften, som formatet beder om, og den er der for den, der åbner dokumentet og har den.
+# The first name is that of the font the layout asks for; this is of the one used in its place.
+preview-font-substitute = { $font } bruges i stedet, her i forhåndsvisningen og i en PDF, der laves. I et dokument, der eksporteres til Word, LibreOffice eller LaTeX, nævnes skriften, som opsætningen beder om, og den er der for den, der åbner dokumentet og har den.
 preview-remarks-references = Referencer
 # In bold, and the next follows it in the same sentence.
 preview-works-missing = { $count ->

@@ -24,22 +24,51 @@ settings-own-gold = Andre stemme
 settings-own-begin = Byrj frå
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Vanskeleg å lese: blekket står { $ink } til 1 mot papiret og aksenten { $accent } til 1; 4,5 og 3 eller meir les godt.
-settings-text-size = Storleiken på teksten din
-settings-text-size-hint = I karta og i tekstvisinga. Det som blir eksportert, følgjer dokumentformatet.
+settings-text-size = Storleiken på teksten din i tekstredigeringa
+settings-text-size-hint = I høve til grensesnittet. Skriftstorleikane i førehandsvisinga og eksporten av dokument blir ikkje påverka av dette.
+settings-editor-font = Skrift i tekstredigeringa
+settings-editor-font-hint = Vel skrifta for teksten din i tekstredigeringa.
+settings-editor-font-default = Som grensesnittet (Literata)
+# How the text of a map shows how deep each element stands: on the screen only.
+# How the text editor shows how deep each element stands: on the screen only.
+settings-text-depth = Dokumentstruktur
+settings-text-depth-hint = Korleis tekstredigeringa viser dokumentstrukturen i teksten din.
+settings-text-depth-numbers = Tal
+settings-text-depth-dots = Prikkar
+settings-text-depth-indent = Rykt inn, med strekar
 settings-interface-size = Storleiken på grensesnittet
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
-settings-sample = Syng, gudinne, om vreiden til Peleus-sonen Akillevs
+# A sentence with every letter of the language's alphabet (a pangram), set in
+# the size and the font chosen; where no good pangram is known, the alphabet.
+settings-sample = Eg byrja å fortære ein sandwich medan eg køyrde taxi på veg til quiz.
+# The three levels of the sample of the document structure, the sample sentence under the third.
+settings-sample-heading = Overskrift
+settings-sample-subheading = Underoverskrift
+settings-sample-third = Eit tredje nivå
 
 ## New documents
 
 settings-new-documents = Nye dokument
+# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
+settings-new-project-view = Nye prosjekt blir opna i
+settings-new-project-view-hint = Visinga eit prosjekt blir opna i når det nettopp er laga.
+settings-template = Mal
+settings-document-format = Oppsett
 settings-reference-style = Referansestil
-settings-document-format = Dokumentformat
 
 ## You
 
-settings-you = Om deg
+settings-you = Opplysningar om deg
+settings-first-name = Førenamn
+settings-last-name = Etternamn
+settings-organization = Organisasjon
+settings-position = Tittel/stilling
+settings-address = Adresse
+settings-phone = Telefon
+settings-email = E-post
+settings-orcid = ORCID
+settings-orcid-problem = Ein ORCID iD er fire grupper med fire siffer: 0000-0002-1825-0097.
 settings-contact-problem = Det ser ikkje ut som ei e-postadresse.
 
 ## Programs: Pandoc and Typst
@@ -72,3 +101,8 @@ settings-language = Språk
 settings-language-interface = Grensesnittet
 settings-language-system = Som systemet ({ $language })
 settings-language-texts = Språk for nye tekstar
+
+## The log of the runs.
+
+settings-logs = Loggen
+settings-logs-hint = Det Glaukopis fortel om seg sjølv i kvar køyring, for dei siste { $count } køyringane: kva det gjorde, kva som gjekk gale, og kva som vart av vindauget. Til nytte når noko har gått gale og ingen såg kvifor.

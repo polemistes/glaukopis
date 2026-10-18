@@ -2,6 +2,10 @@
 
 diagram-map = Kort
 diagram-idea = Navn
+diagram-new-here = Nyt element her
+diagram-new-here-hint = En tanke, der endnu ikke har nogen plads, under elementet i midten
+diagram-open-as-map = Åbn som kort
+diagram-open-as-map-hint = Elementet i midten, med det, der er under det
 diagram-show-all = Vis hele kortet
 diagram-tidy = Ryd op i hele kortet
 diagram-tidy-hint = Hvert element går tilbage til sin automatiske plads
@@ -27,5 +31,10 @@ diagram-copied = { $count ->
     [one] Ét element kopieret, med alt under det
    *[other] { $count } elementer kopieret, med alt under dem
 }
+diagram-cut = { $count ->
+    [one] Ét element er klippet ud: det flyttes derhen, hvor du sætter det ind
+   *[other] { $count } elementer er klippet ud: de flyttes derhen, hvor du sætter dem ind
+}
+diagram-paste-here = Sæt ind her
 diagram-nothing-copied = Intet er kopieret endnu
 diagram-pasted-elsewhere = Det, der blev kopieret, er fra et andet projekt og kan ikke sættes ind her

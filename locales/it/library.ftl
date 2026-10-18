@@ -83,6 +83,9 @@ library-reason-alike = { $title ->
     }
 }
 library-reason-file = lo stesso file
+library-reason-name = con un nome simile
+library-reason-first-page = la prima pagina concorda
+library-reason-folder = in una cartella con un nome simile
 # Several reasons: those before the last, set apart by commas, and the last.
 library-reasons = { $others } e { $last }
 
@@ -286,6 +289,26 @@ library-delete-many-title = { $count ->
     [many] Eliminare { $count } riferimenti?
    *[other] Eliminare { $count } riferimenti?
 }
+# $projects is the number of projects that cite what is deleted, which keep copies of their own.
+library-delete-one-message = Il riferimento viene tolto dalla tua biblioteca e da ogni raccolta.{ $projects ->
+        [0] {""}
+        [one] {" "}È citato in un progetto, che ne tiene una copia.
+        [many] {" "}È citato in { $projects } progetti, che ne tengono una copia.
+       *[other] {" "}È citato in { $projects } progetti, che ne tengono una copia.
+    }
+library-delete-many-message = I riferimenti vengono tolti dalla tua biblioteca e da ogni raccolta.{ $projects ->
+        [0] {""}
+        [one] {" "}Un progetto che ne cita alcuni ne tiene una copia.
+        [many] {" "}{ $projects } progetti che ne citano alcuni ne tengono una copia.
+       *[other] {" "}{ $projects } progetti che ne citano alcuni ne tengono una copia.
+    }
+# Said after the message above, where what is deleted has files.
+library-delete-files = { $files ->
+        [one] Un file appartiene a ciò che viene eliminato. Resta tra i file della biblioteca, a meno che non elimini anche quello.
+        [many] { $files } file appartengono a ciò che viene eliminato. Restano tra i file della biblioteca, a meno che non elimini anche quelli.
+       *[other] { $files } file appartengono a ciò che viene eliminato. Restano tra i file della biblioteca, a meno che non elimini anche quelli.
+    } Un file che appartiene anche a un altro riferimento resta in ogni caso.
+library-delete-keep-files = Elimina, tieni i file
 library-delete-failed = I riferimenti non si sono potuti eliminare
 library-not-done = Questo non si è potuto fare
 
@@ -327,20 +350,22 @@ library-collection-count = { $count ->
    *[other] { $count } raccolte
 }
 
-## A map of the library, or of a collection: a new project.
+## A map of the library, or of a collection: a tree of elements at the top of a project, new or chosen.
 
 library-map-title-library = Una mappa della biblioteca
 library-map-title-collection = Una mappa di una raccolta
 # The name a project made of the whole library is given.
 library-map-library-name = La biblioteca
 library-map-name = Nome
-library-map-name-hint = Il nome del progetto, della sua mappa, e dell'elemento al centro della mappa.
-library-map-what-library = Le raccolte diventano elementi, annidate come sono, e ogni riferimento un elemento sotto la sua raccolta, il cui testo è una citazione di esso. I riferimenti che non sono in nessuna raccolta stanno al centro.
+library-map-name-hint = Il nome dell'elemento in cima alla mappa, e di un nuovo progetto fatto per essa.
+library-map-into = Nel progetto
+library-map-new-project = Un nuovo progetto, con il suo nome
+library-map-what-library = Le raccolte diventano elementi, annidate come sono, e ogni riferimento un elemento sotto la sua raccolta, il cui testo è una citazione di esso. I riferimenti che non sono in nessuna raccolta stanno in cima.
 library-map-what-collection = Le raccolte al suo interno diventano elementi, annidate come sono, e ogni riferimento un elemento sotto la sua raccolta, il cui testo è una citazione di esso.
 library-map-nothing = Non ci sono riferimenti da mettere sulla mappa.
-library-map-make = Fai il progetto
-library-map-making = Creazione del progetto…
-library-map-failed = Il progetto non si è potuto fare.
+library-map-make = Fai la mappa
+library-map-making = Creazione della mappa…
+library-map-failed = La mappa non si è potuta fare.
 
 ## Bringing references in, from anywhere in the application.
 
@@ -450,12 +475,24 @@ library-pane-files = File
 library-pane-attach = Allega
 library-pane-attach-title = Allega file
 library-pane-attach-failed = Il file non si è potuto allegare
+library-pane-attach-many-title = Allegare { $count } file a «{ $title }»?
+library-pane-attach-many-message = Ciascuno diventa un file di questo riferimento. Per dare molti file ciascuno al suo riferimento, passali in rassegna tra i file della biblioteca.
+library-pane-attach-many = Allega { $count } file
+library-pane-add-files = Aggiungi file della biblioteca…
+library-pane-add-files-title = Aggiungi file della biblioteca a «{ $title }»
+library-pane-unassign-all = Togli tutti i { $count } da questo riferimento
+library-pane-unassign-all-title = Togliere tutti i { $count } file da «{ $title }»?
+library-pane-unassign-all-message = I file restano tra i file della biblioteca, dove si possono trovare e dare ad altri riferimenti. Si eliminano solo da lì.
+library-pane-unassign-all-confirm = Togli { $count } file
 # Of a file that is attached, and not where it should be.
 library-pane-missing = mancante
 library-pane-reveal = Mostra nel gestore dei file
 library-pane-reveal-failed = La cartella non si è potuta aprire
 library-pane-no-files = Nessun file. Allega un PDF, o lascialo cadere qui.
 library-pane-detach-failed = Il file non si è potuto togliere
+library-pane-unassign = Togli da questo riferimento
+library-pane-unassign-title = Togliere «{ $name }» da questo riferimento?
+library-pane-unassign-message = Il file resta tra i file della biblioteca, dove si può trovare e dare a un altro riferimento. Si elimina solo da lì.
 library-pane-leave-collection = Togli da { $name }
 library-pane-duplicate = Duplica
     .hint = Un nuovo riferimento che comincia con questi dati
@@ -509,3 +546,14 @@ library-notes-carried = Il riferimento è venuto con il progetto, e non è nella
 library-notes-kept = Tenuta con il riferimento nella tua biblioteca. Va con un progetto che cita l'opera.
 library-notes-unread = Le tue note non si sono potute leggere
 library-notes-unsaved = La tua nota non si è potuta conservare
+
+## The switch at the head of the library.
+
+library-switch = Riferimenti o file
+library-switch-references = Riferimenti
+library-switch-files = File
+
+## The columns of the library, which can be dragged wider or narrower.
+
+library-resize-side = Trascina per allargare o restringere le raccolte o le cartelle
+library-resize-detail = Trascina per allargare o restringere il riquadro a destra

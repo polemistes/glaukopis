@@ -1,9 +1,11 @@
-# The preview, and the making of documents: the panel beside the map, the
-# details of a document, and the export.
+# The preview, and the making of documents: the panel beside the text, and
+# the export.
 
 ## The panel beside the map, and what is chosen over it.
 
 preview = Vorschau
+# Small, over the names of the template, the layout and the reference style in use, which open the document settings.
+preview-made-by = Vorlage, Layout, Quellen
 # The last among the reference styles, which opens the search for more.
 preview-style-more = Mehr Stile…
 # Shows in the text the element whose place in the pages is looked at.
@@ -16,12 +18,12 @@ preview-program-missing = { $program } ist nicht installiert
 preview-programs-needed = Vorschau und Export werden mit Pandoc und Typst erzeugt. Installieren Sie sie mit der Paketverwaltung Ihres Systems, oder geben Sie in den Einstellungen an, wo sie sind.
 preview-look-again = Noch einmal nachsehen
 preview-looking-failed = Nach den Programmen konnte nicht gesucht werden
-preview-reading-failed = Die Stile und Formate konnten nicht gelesen werden
+preview-reading-failed = Die Zitierstile, Layouts und Vorlagen konnten nicht gelesen werden
 preview-failed = Die Vorschau konnte nicht erzeugt werden
 preview-failed-message = Die Vorschau konnte nicht erzeugt werden.
 # A page of the preview, as it is told to those who cannot see it.
 preview-page = Seite { $number }
-# The name of an exported file, where the map has none.
+# The name of an exported file, where the element has no name.
 preview-file-name = dokument
 
 ## At the foot of the preview: how long the document is, and what there is to remark.
@@ -34,7 +36,7 @@ preview-words = { $count ->
     [one] { $count } Wort
    *[other] { $count } Wörter
 }
-# The words of the text, and the most the format allows.
+# The words of the text, and the most the template allows.
 preview-words-of = { $limit ->
     [one] { $count } von { $limit } Wort
    *[other] { $count } von { $limit } Wörtern
@@ -48,8 +50,8 @@ preview-remarks-count = { $count ->
 preview-remarks = Hinweise
 preview-remarks-font = Schrift
 preview-font-missing = { $font } ist nicht installiert.
-# The first name is that of the font the format asks for; this is of the one used in its place.
-preview-font-substitute = An ihrer Stelle wird { $font } verwendet, hier in der Vorschau und in einem erzeugten PDF. In einem Dokument, das für Word, LibreOffice oder LaTeX exportiert wird, ist die Schrift genannt, wie das Format sie verlangt, und ist da für den, der das Dokument öffnet und sie hat.
+# The first name is that of the font the layout asks for; this is of the one used in its place.
+preview-font-substitute = An ihrer Stelle wird { $font } verwendet, hier in der Vorschau und in einem erzeugten PDF. In einem Dokument, das für Word, LibreOffice oder LaTeX exportiert wird, ist die Schrift genannt, wie das Layout sie verlangt, und ist da für den, der das Dokument öffnet und sie hat.
 preview-remarks-references = Quellen
 # In bold, and the next follows it in the same sentence.
 preview-works-missing = { $count ->

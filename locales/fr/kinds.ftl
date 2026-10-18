@@ -43,3 +43,6 @@ kinds-delete-message = { $count ->
     [many] Les { $count } éléments qui en sont n’auront plus de type.
    *[other] Les { $count } éléments qui en sont n’auront plus de type.
 }
+kinds-based-on = Dans le document
+kinds-based-on-none = Rien de particulier
+kinds-based-on-hint = Ce qu’est un élément de ce type dans le document : un résumé, une annexe, une page à part. Un type qui n’est rien de particulier est un nom et une couleur.

@@ -23,10 +23,10 @@ core-export-reading-made = lettura del documento prodotto
 
 ## The pattern document, from which Word and OpenDocument take their styles.
 
-core-export-pattern-unreadable = il documento modello non si è potuto leggere: { $error }
-core-export-pattern-lacks = al documento modello manca { $name }
-core-export-pattern-reading = lettura del documento modello
-core-export-pattern-writing = scrittura del documento modello
+core-export-pattern-unreadable = il documento campione non si è potuto leggere: { $error }
+core-export-pattern-lacks = al documento campione manca { $name }
+core-export-pattern-reading = lettura del documento campione
+core-export-pattern-writing = scrittura del documento campione
 
 ## Formulas, as they are shown where they are written.
 
@@ -53,9 +53,18 @@ core-export-the-style = lo stile «{ $id }»
 
 ## Document formats.
 
-core-export-format-bad-id = «{ $id }» non può essere l'identificativo di un formato
-core-export-format-needs-name = Un formato ha bisogno di un nome.
-core-export-format-own-only = Si possono eliminare solo i formati propri.
+core-export-format-bad-id = «{ $id }» non può essere l'identificativo di un'impaginazione
+core-export-format-needs-name = Un'impaginazione ha bisogno di un nome.
+core-export-format-own-only = Si possono eliminare solo le impaginazioni proprie.
 core-export-not-a-length = «{ $length }» non è una lunghezza
 # Shown after "not found: ".
-core-export-the-format = il formato «{ $id }»
+core-export-the-format = l'impaginazione «{ $id }»
+
+## Templates.
+
+core-export-template-bad-id = «{ $id }» non può essere l'identificativo di un modello
+core-export-template-needs-name = Un modello ha bisogno di un nome.
+core-export-template-own-only = Si possono eliminare solo i modelli propri.
+core-export-the-template = il modello «{ $id }»
+core-export-output-not-yet = Il file «{ $id }» del modello non si può ancora fare: per ora solo il documento.
+core-export-output-unknown = Il modello non ha nessun file «{ $id }».

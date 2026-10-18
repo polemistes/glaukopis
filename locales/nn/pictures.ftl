@@ -78,3 +78,10 @@ pictures-this-project = Dette prosjektet
 pictures-untitled = Utan namn
 pictures-unused = Ingen prosjekt bruker biletet.
 pictures-remove = Fjern frå biletlageret
+
+## A picture made a file of the library, and given to a reference.
+
+pictures-attach = Legg det ved ein referanse …
+pictures-attach-title = Legg «{ $name }» ved ein referanse
+pictures-attached = Biletet er no blant filene til { $name }
+pictures-attach-failed = Biletet kunne ikkje leggjast ved

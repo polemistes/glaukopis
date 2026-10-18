@@ -41,3 +41,6 @@ kinds-delete-message = { $count ->
     [one] Das eine Element, das sie hat, wird keine Art mehr haben.
    *[other] Die { $count } Elemente, die sie haben, werden keine Art mehr haben.
 }
+kinds-based-on = Im Dokument
+kinds-based-on-none = Nichts Bestimmtes
+kinds-based-on-hint = Was ein Element dieser Art im Dokument ist: eine Zusammenfassung, ein Anhang, eine eigene Seite. Eine Art, die nichts Bestimmtes ist, ist ein Name und eine Farbe.

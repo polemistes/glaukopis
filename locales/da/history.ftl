@@ -38,7 +38,7 @@ history-removed = { $count ->
 history-back = Tilbage til nu
 history-as-it-was = Som det var { $when }
 history-marked = Det, der er ændret siden øjeblikket før, er markeret i farven på den, der ændrede det.
-history-map-not-there = Dette kort fandtes ikke dengang.
+history-map-not-there = Dette element fandtes ikke dengang.
 history-added-by = Tilføjet af { $name }
 history-removed-by = Fjernet af { $name }
 history-changed-by = Ændret af { $name }
@@ -48,7 +48,7 @@ history-name-moment = Giv øjeblikket et navn
 history-name-placeholder = Hvad det skal hedde
 history-named = Øjeblikket hedder »{ $name }«.
 history-bring-back-element = Hent elementet tilbage, som det var
-history-bring-back-map = Hent kortet tilbage, som det var
+history-bring-back-map = Hent alt det viste tilbage, som det var
 history-brought-back = Hentet tilbage, som det var. Fortryd tager det tilbage.
 history-bring-back-failed = Det kunne ikke hentes tilbage.
 history-open-copy = Åbn som et projekt for sig
@@ -100,3 +100,9 @@ history-cut-failed = Historikken kunne ikke tages ud.
 history-archive-until = indtil { $when }
 history-archived = Historikken før { $when } er arkiveret.
 history-deleted = Historikken før { $when } er slettet.
+
+## The text as Org: as it was and as it is, as a difference of two Org texts
+
+history-show-org = Vis som Org
+history-org-about = Teksten i det viste element og alt under det, som Org: som den var dengang, og som den er nu. Linjer, der er taget ud, er mærket −, linjer, der er sat ind, +, og inden for en ændret linje de ord, der er ændret.
+history-org-same = Teksten er nu, som den var dengang.

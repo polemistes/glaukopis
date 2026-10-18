@@ -37,23 +37,48 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 
 | inglese | italiano | note |
 | --- | --- | --- |
-| project | progetto | |
+| project | progetto | un albero di elementi, il cui elemento in cima porta il nome del progetto |
+| tree | albero | l'albero degli elementi di un progetto |
 | map | mappa | |
+| open as a map | aprire come mappa | qualunque elemento: «Apri come mappa» |
+| go up, up to | risalire, risali a | all'elemento sopra: «Risali a «{ $name }»» |
+| the element over this one | l'elemento sopra questo | |
+| the owl map | la mappa della civetta, la mappa dei progetti | tutti i progetti intorno alla civetta, le cartelle come etichette; sull'interfaccia si dice per lo più «la mappa dei progetti» |
+| the owl | la civetta | la civetta di Atena, il segno di Glaukopis; non «gufo» |
 | element | elemento | |
 | the centre | il centro | |
 | the diagram | il diagramma | la vista a scatole e linee |
 | the text | il testo | la vista a testo corrente |
 | passage | passo | «il passo selezionato», come si dice di un testo |
 | kind | tipo | di elemento, di paragrafo, di parole: un significato, mai un aspetto |
-| look | aspetto | come un tipo è reso nel documento |
-| format | formato | del documento intero; «formato di file» per DOCX, PDF… |
-| style | stile | solo lo stile delle citazioni e della bibliografia |
+| look | aspetto | come un tipo è reso nel documento; gli aspetti stanno nell'impaginazione |
+| layout | impaginazione | come appare la pagina di un documento: margini, font, titoli, note, gli aspetti dei tipi. «Manoscritto» è un'impaginazione; «le tue impaginazioni». Il codice e i file la chiamano *format* |
+| format | formato | solo i formati di file: Word, PDF, LaTeX… («formato di file»). Mai più nel senso di impaginazione, anche dove l'inglese del core dice ancora *format* per un'impaginazione (`core-export.ftl`). «Formato» come nome del gruppo dei segni (`editor-format`) resta: è la formattazione delle lettere |
+| pattern document | documento campione | il documento da cui Word e OpenDocument prendono gli stili; non «documento modello», che ora si confonderebbe con il modello |
+| template | modello | ciò di cui un documento di un genere consiste: parti, tipi a portata di mano, impaginazione e stile, requisiti, file. «Articolo di rivista» è un modello; si eredita giù per l'albero |
+| document settings | impostazioni del documento | la finestra del documento di un elemento |
+| details | dettagli | titolo, autori, data, parole chiave, identificativi |
+| part | parte | un tipo di elemento che ha un posto nel documento: abstract, dedica, appendice, copertina |
+| front matter | parti iniziali | ciò che sta prima del testo |
+| back matter | parti finali | ciò che sta dopo il testo |
+| the cover | la copertina | |
+| foreword, preface, afterword | prefazione, premessa, postfazione | parti (`parts.ftl`) |
+| standfirst, blurb | sommario, quarta di copertina | parti (`parts.ftl`) |
+| half title, title page | occhietto, frontespizio | parti fatte dall'applicazione (`template.ftl`) |
+| requirement, requires | requisito, chiede | ciò che un modello chiede: parole, parole chiave, anonimato |
+| checklist | lista di controllo | ciò che il modello chiede, contro ciò che l'albero contiene |
+| in hand, puts in hand | a portata di mano | i tipi che un modello offre per primi |
+| the Look panel | il pannello Aspetto | accanto all'anteprima; il suo titolo è «Aspetto». «Apri Aspetto» |
+| Type (a part of the look) | Caratteri | la parte dell'aspetto e dell'impaginazione con font e dimensione; «Font» resta il nome del campo |
+| changes (of a document over its layout) | modifiche | «Manoscritto · 2 modifiche» |
+| style | stile | solo lo stile delle citazioni e della bibliografia; «stile di citazione» per *reference style*, come in `settings.ftl` e `style.ftl` |
 | document | documento | |
 | the manuscript | il manoscritto | come lo chiamano gli editori |
 | the preview | l'anteprima | |
 | export | esportare, esportazione | |
 | bring in | portare dentro | un documento si porta dentro e diventa una mappa; i riferimenti da Zotero si *importano* |
 | bring back | riportare, riportare indietro | dal cestino, dalla cronologia |
+| project file | file di progetto | un progetto salvato come un solo file |
 
 ## Riferimenti e citazioni
 
@@ -64,12 +89,18 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | work | opera | |
 | collection | raccolta | |
 | attachment | allegato | |
+| the files of the library | i file della biblioteca | una vista a sé, accanto ai riferimenti; «file» è invariabile |
+| the library's store | il deposito della biblioteca | dove stanno i file, come il deposito delle immagini |
+| assign, unassigned | assegnare, non assegnato | un file a un riferimento |
+| take in (files) | aggiungere, aggiunta | «Aggiunta di 3 file…», «Un file aggiunto» |
+| going-through, go through | rassegna, passare in rassegna | dei file, delle citazioni sciolte |
 | note | nota | la nota scritta su un riferimento |
 | citation | citazione | |
 | locator | luogo | «il luogo citato»: pagina, capitolo, verso |
 | lookup, look up | ricerca in rete, cercare in rete | DOI, ISBN o parole del titolo |
-| found citations | citazioni trovate | riconosciute in un testo portato dentro |
-| match | abbinare, abbinamento | una citazione trovata a un riferimento |
+| loose citations | citazioni sciolte | in un testo venuto da altrove, riconosciute ma non ancora legate a un riferimento della biblioteca; fino al 2026-10-12 «citazioni trovate» |
+| made into citations | farne citazioni | quando una citazione sciolta è legata al suo riferimento |
+| match | abbinare, abbinamento | una citazione sciolta a un riferimento |
 
 ## Parole e segni
 
@@ -135,6 +166,10 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | own words | parole proprie | aggiunte al dizionario |
 | reading text, OCR | lettura del testo, OCR | con Tesseract |
 | made searchable | reso ricercabile | un PDF |
+| language package | pacchetto linguistico | dizionari d'ortografia e dati di Tesseract, importati da un server |
+| import (a language) | importare | da un server o da una cartella |
+| script | alfabeto | greco, latino, cirillico: «l'alfabeto greco è letto insieme con quello latino» |
+| styles of text (of a PDF) | stili di testo | come appare il testo che ricorre accanto al corpo; da non confondere con lo stile di citazione |
 | search, replace | cerca, sostituisci | |
 | found, what is found | i risultati, le occorrenze | |
 
@@ -160,10 +195,15 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | clipboard | appunti | |
 | tab | scheda | |
 | undo, redo | annulla, ripeti | |
+| credits | riconoscimenti | «Riconoscimenti e licenze» |
+| thing (folders and projects together) | cosa | «3 cose sono state spostate» |
+| the log, a run | il registro, una sessione | ciò che Glaukopis dice di sé a ogni sessione |
+| the home page | la pagina dei progetti | |
+| the words of Glaukopis (words.ftl) | le parole di Glaukopis | un progetto di parole, per tradurle e correggerle; «file Fluent» |
 
 ## Nomi che non si traducono
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,
-Zotero, CSL, Markdown; i formati di file (DOCX, ODT, PDF, EPUB, RTF, HTML,
-SVG, PNG); i nomi dei font; gli stili (APA, Chicago, MLA); DOI, ISBN, ISSN,
-arXiv, URL.
+Zotero, CSL, Markdown, Org; i formati di file (DOCX, ODT, PDF, EPUB, RTF,
+HTML, SVG, PNG); i nomi dei font; gli stili (APA, Chicago, MLA); DOI, ISBN,
+ISSN, arXiv, URL, ORCID.

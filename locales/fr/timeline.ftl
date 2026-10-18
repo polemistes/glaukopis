@@ -11,16 +11,16 @@ timeline-unit = Comment l’unité s’appelle
 timeline-unit-placeholder = année, jour, cycle…
 timeline-units-hint = Les temps sont des nombres de l’unité : Année 12, Jour 3, ou simplement 12. Ils peuvent être négatifs.
 timeline-lanes = Couloirs
-timeline-lanes-given = Chaque enfant du centre est un couloir, jusqu’à ce que vous choisissiez. Un couloir contient ce qui est placé dans sa branche ; son propre placement, s’il en a un, est l’étendue du couloir.
+timeline-lanes-given = Chaque enfant de l’élément affiché est un couloir, jusqu’à ce que vous choisissiez. Un couloir contient ce qui est placé dans sa branche ; son propre placement, s’il en a un, est l’étendue du couloir.
 timeline-lanes-chosen = Les couloirs que vous avez choisis, dans l’ordre du texte.
-timeline-lanes-reset = De nouveau chaque enfant du centre
+timeline-lanes-reset = De nouveau chaque enfant de l’élément affiché
 timeline-one-lane = Un seul couloir
 timeline-each-child = { $count ->
     [one] Son enfant, un couloir
     [many] Chacun des { $count } enfants, un couloir
    *[other] Chacun des { $count } enfants, un couloir
 }
-timeline-no-branches = La carte n’a encore rien sous son centre.
+timeline-no-branches = L’élément affiché n’a encore rien dessous.
 timeline-lanes-by-kind = Couloirs par type
 timeline-lanes-by-kind-hint = Chaque élément d’un type a son couloir : chaque personnage, chaque lieu.
 timeline-each-of-kind = Chacun un couloir

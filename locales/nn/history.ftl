@@ -38,7 +38,7 @@ history-removed = { $count ->
 history-back = Tilbake til no
 history-as-it-was = Slik det var { $when }
 history-marked = Det som er endra sidan augneblinken før, er merkt i fargen til den som endra det.
-history-map-not-there = Dette kartet fanst ikkje då.
+history-map-not-there = Dette elementet fanst ikkje då.
 history-added-by = Lagt til av { $name }
 history-removed-by = Fjerna av { $name }
 history-changed-by = Endra av { $name }
@@ -48,7 +48,7 @@ history-name-moment = Gi augneblinken eit namn
 history-name-placeholder = Kva den skal heite
 history-named = Augneblinken heiter «{ $name }».
 history-bring-back-element = Hent tilbake elementet slik det var
-history-bring-back-map = Hent tilbake kartet slik det var
+history-bring-back-map = Hent tilbake alt som blir vist, slik det var
 history-brought-back = Henta tilbake slik det var. Angre tek det tilbake.
 history-bring-back-failed = Det kunne ikkje hentast tilbake.
 history-open-copy = Opne som eit eige prosjekt
@@ -100,3 +100,9 @@ history-cut-failed = Historikken kunne ikkje takast ut.
 history-archive-until = til { $when }
 history-archived = Historikken før { $when } er arkivert.
 history-deleted = Historikken før { $when } er sletta.
+
+## The text as Org: as it was and as it is, as a difference of two Org texts
+
+history-show-org = Vis som Org
+history-org-about = Teksten til elementet du står i og alt under det, som Org: slik den var då, og slik den er no. Linjer som er tekne ut, er merkte med −, linjer som er sette inn, med +, og i ei linje som er endra, orda som vart endra.
+history-org-same = Teksten er no slik den var då.

@@ -32,7 +32,8 @@ search-case = Store og små bogstaver, som de er skrevet
 search-whole-words = Kun hele ord
 search-accents = Bogstaver med og uden accenter regnes ens
 search-accents-sign = é=e
-search-regex = Et regulært udtryk
+# The hint of the option: in a regular expression, \n and \p stand for the two breaks of a text.
+search-regex = Et regulært udtryk: \n er et linjeskift i et afsnit, \p et afsnitsskift
 search-selection = Kun i den markerede tekst
 search-selection-none = Markér først tekst for kun at søge i den
 search-labels = Også kildehenvisninger, formler og krydshenvisninger

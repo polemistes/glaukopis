@@ -83,6 +83,9 @@ library-reason-alike = { $title ->
     }
 }
 library-reason-file = dieselbe Datei
+library-reason-name = ähnlich benannt
+library-reason-first-page = die erste Seite stimmt überein
+library-reason-folder = in einem ähnlich benannten Ordner
 # Several reasons: those before the last, set apart by commas, and the last.
 library-reasons = { $others } und { $last }
 
@@ -271,6 +274,23 @@ library-delete-many-title = { $count ->
     [one] { $count } Quelle löschen?
    *[other] { $count } Quellen löschen?
 }
+# $projects is the number of projects that cite what is deleted, which keep copies of their own.
+library-delete-one-message = Das entfernt die Quelle aus Ihrer Bibliothek und aus jeder Sammlung.{ $projects ->
+        [0] {""}
+        [one] {" "}Sie ist in einem Projekt zitiert, das eine Kopie davon behält.
+       *[other] {" "}Sie ist in { $projects } Projekten zitiert, die eine Kopie davon behalten.
+    }
+library-delete-many-message = Das entfernt sie aus Ihrer Bibliothek und aus jeder Sammlung.{ $projects ->
+        [0] {""}
+        [one] {" "}Ein Projekt, das einige davon zitiert, behält eine Kopie von diesen.
+       *[other] {" "}{ $projects } Projekte, die einige davon zitieren, behalten eine Kopie von diesen.
+    }
+# Said after the message above, where what is deleted has files.
+library-delete-files = { $files ->
+        [one] Eine Datei gehört zu dem, was gelöscht wird. Sie bleibt unter den Dateien der Bibliothek, wenn Sie sie nicht auch löschen.
+       *[other] { $files } Dateien gehören zu dem, was gelöscht wird. Sie bleiben unter den Dateien der Bibliothek, wenn Sie sie nicht auch löschen.
+    } Eine Datei, die eine andere Quelle hat, bleibt in jedem Fall.
+library-delete-keep-files = Löschen, die Dateien behalten
 library-delete-failed = Die Quellen konnten nicht gelöscht werden
 library-not-done = Das konnte nicht getan werden
 
@@ -310,20 +330,22 @@ library-collection-count = { $count ->
    *[other] { $count } Sammlungen
 }
 
-## A map of the library, or of a collection: a new project.
+## A map of the library, or of a collection: a tree of elements at the top of a project, new or chosen.
 
 library-map-title-library = Eine Karte der Bibliothek
 library-map-title-collection = Eine Karte einer Sammlung
 # The name a project made of the whole library is given.
 library-map-library-name = Die Bibliothek
 library-map-name = Name
-library-map-name-hint = Der Name des Projekts, seiner Karte und des Elements in der Mitte der Karte.
-library-map-what-library = Die Sammlungen werden Elemente, verschachtelt, wie sie sind, und jede Quelle ein Element unter ihrer Sammlung, dessen Text eine Zitation von ihr ist. Quellen in keiner Sammlung stehen in der Mitte.
+library-map-name-hint = Der Name des obersten Elements der Karte und eines neuen Projekts, das dafür angelegt wird.
+library-map-into = In das Projekt
+library-map-new-project = Ein neues Projekt, nach ihr benannt
+library-map-what-library = Die Sammlungen werden Elemente, verschachtelt, wie sie sind, und jede Quelle ein Element unter ihrer Sammlung, dessen Text eine Zitation von ihr ist. Quellen in keiner Sammlung stehen auf der obersten Ebene.
 library-map-what-collection = Die Sammlungen darin werden Elemente, verschachtelt, wie sie sind, und jede Quelle ein Element unter ihrer Sammlung, dessen Text eine Zitation von ihr ist.
 library-map-nothing = Es gibt keine Quellen, die auf die Karte könnten.
-library-map-make = Projekt anlegen
-library-map-making = Das Projekt wird angelegt…
-library-map-failed = Das Projekt konnte nicht angelegt werden.
+library-map-make = Karte anlegen
+library-map-making = Die Karte wird angelegt…
+library-map-failed = Die Karte konnte nicht angelegt werden.
 
 ## Bringing references in, from anywhere in the application.
 
@@ -422,12 +444,24 @@ library-pane-files = Dateien
 library-pane-attach = Anhängen
 library-pane-attach-title = Dateien anhängen
 library-pane-attach-failed = Die Datei konnte nicht angehängt werden
+library-pane-attach-many-title = { $count } Dateien an „{ $title }“ anhängen?
+library-pane-attach-many-message = Jede wird eine Datei dieser Quelle. Um viele Dateien jeweils ihrer eigenen Quelle zuzuordnen, gehen Sie sie bei den Dateien der Bibliothek durch.
+library-pane-attach-many = { $count } Dateien anhängen
+library-pane-add-files = Dateien der Bibliothek hinzufügen…
+library-pane-add-files-title = Dateien der Bibliothek zu „{ $title }“ hinzufügen
+library-pane-unassign-all = Alle { $count } von dieser Quelle entfernen
+library-pane-unassign-all-title = Alle { $count } Dateien von „{ $title }“ entfernen?
+library-pane-unassign-all-message = Die Dateien bleiben unter den Dateien der Bibliothek, wo sie gefunden und anderen Quellen zugeordnet werden können. Gelöscht werden sie nur dort.
+library-pane-unassign-all-confirm = { $count } Dateien entfernen
 # Of a file that is attached, and not where it should be.
 library-pane-missing = fehlt
 library-pane-reveal = Im Dateimanager zeigen
 library-pane-reveal-failed = Der Ordner konnte nicht geöffnet werden
 library-pane-no-files = Keine Dateien. Hängen Sie ein PDF an, oder lassen Sie eines hier fallen.
 library-pane-detach-failed = Die Datei konnte nicht entfernt werden
+library-pane-unassign = Von dieser Quelle entfernen
+library-pane-unassign-title = „{ $name }“ von dieser Quelle entfernen?
+library-pane-unassign-message = Die Datei bleibt unter den Dateien der Bibliothek, wo sie gefunden und einer anderen Quelle zugeordnet werden kann. Gelöscht wird sie nur dort.
 library-pane-leave-collection = Aus { $name } entfernen
 library-pane-duplicate = Duplizieren
     .hint = Eine neue Quelle, die mit diesen Angaben beginnt
@@ -480,3 +514,14 @@ library-notes-carried = Die Quelle kam mit dem Projekt und ist nicht in Ihrer Bi
 library-notes-kept = Bei der Quelle in Ihrer Bibliothek aufbewahrt. Es geht mit einem Projekt, das das Werk zitiert.
 library-notes-unread = Ihre Notizen konnten nicht gelesen werden
 library-notes-unsaved = Ihre Notiz konnte nicht gespeichert werden
+
+## The switch at the head of the library.
+
+library-switch = Quellen oder Dateien
+library-switch-references = Quellen
+library-switch-files = Dateien
+
+## The columns of the library, which can be dragged wider or narrower.
+
+library-resize-side = Ziehen, um die Sammlungen oder Ordner breiter oder schmaler zu machen
+library-resize-detail = Ziehen, um den Bereich rechts breiter oder schmaler zu machen

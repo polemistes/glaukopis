@@ -12,22 +12,32 @@ spelling-add-failed = Le mot n’a pas pu être ajouté
 
 spelling-nothing = Rien n’est mal orthographié ici.
 # $language is the name of the language of the map: Latin.
-spelling-no-dictionary = Il n’y a pas de dictionnaire pour « { $language } » : son orthographe n’est pas vérifiée.
+# $language is the name of the language of the map: Latin.
+spelling-no-dictionary = Il n’y a pas de dictionnaire pour « { $language } » : son orthographe n’est pas vérifiée. Les dictionnaires s’importent sous Réglages › Langue › Orthographe.
 spelling-not-ready = Le dictionnaire est en cours de lecture. Réessayez dans un instant.
 spelling-off = L’orthographe n’est pas vérifiée. Cela s’active dans les réglages.
 
 ## The settings.
 
 spelling-settings = Orthographe
-spelling-settings-about = Les mots que le dictionnaire de la langue d’une carte n’a pas sont soulignés pendant que vous écrivez. Faites un clic droit sur l’un d’eux, ou appuyez sur F7, pour voir ce que ce pourrait être.
+spelling-settings-about = L’orthographe s’appuie sur les dictionnaires Hunspell. Les dictionnaires que vous importez ici sont utilisés à la place de ceux que vous avez peut-être installés sur votre système.
 spelling-check = Vérifier l’orthographe pendant que vous écrivez
 spelling-on = Activée
 spelling-off-short = Désactivée
-spelling-dictionaries = Dictionnaires
+spelling-dictionaries = Langues des dictionnaires
+spelling-dictionaries-none = Aucun pour l’instant : importez-en un ci-dessous, ou installez-en un avec le gestionnaire de paquets de votre système.
 spelling-source-application = Fourni avec Glaukopis
-spelling-source-system = Installé sur l’ordinateur
+spelling-source-imported = Importé
+spelling-source-system = Système
 spelling-source-own = Mis là par vous
 spelling-own-words-none = Vous n’avez ajouté aucun mot.
+spelling-manage-words = Gérer les mots ajoutés aux dictionnaires
+spelling-manage-words-title = Mots ajoutés aux dictionnaires
+spelling-words-language-label = Langue
+# A language among those with words added, and how many: "English (12)".
+spelling-words-language = { $language } ({ $count })
+spelling-word-to-add = Un mot à ajouter
+spelling-add-word-here = Ajouter
 spelling-remove-word = Retirer « { $word } »
 spelling-settings-failed = Les dictionnaires n’ont pas pu être listés
 spelling-remove-failed = Le mot n’a pas pu être retiré

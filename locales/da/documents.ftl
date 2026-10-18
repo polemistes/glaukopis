@@ -1,16 +1,18 @@
-# Documents that are brought in, each to become a map (ADR 0012), in
-# English. See locales/README.md.
+# Documents that are brought in, each to become a tree of elements under
+# the element in view (ADR 0012, 0037), in English. See locales/README.md.
 
 documents-choose = Et dokument at hente ind
 documents-filter = Dokumenter
 documents-filter-all = Alle filer
+documents-title-element = Et dokument ind i elementet i midten
 documents-title-project = Et projekt af et dokument
 documents-reading = Læser { $file }…
 documents-reading-hint = Et langt dokument tager et øjeblik.
 documents-no-pandoc = Dokumenter af denne type læses af Pandoc, som ikke er installeret eller ikke blev fundet. Hvor det er, kan angives i indstillingerne.
 documents-unread = Filen kunne ikke læses.
 documents-title = Titel
-documents-title-hint-project = Navnet på projektet, på dets kort og på elementet i kortets midte.
+documents-title-hint-element = Navnet på det element, der står øverst i dokumentet, under elementet i midten.
+documents-title-hint-project = Navnet på projektet og på det element, der står øverst i dokumentet i det.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Uden titel
 
@@ -76,12 +78,20 @@ documents-found-made = { $count ->
 documents-found-some-made = Der blev fundet { $count } kildehenvisninger, { $made } af dem lavet af et referenceprogram.
 documents-at-once = Lav straks kildehenvisninger af dem, Zotero har lavet, hvor dit bibliotek har værket
 # Under the choice: what becomes of a note that holds one of them.
-documents-at-once-notes = En note, der ikke er andet end en kildehenvisning, bliver en kildehenvisning i linjen, som referencestilen sætter i en note eller i linjen; en note, der siger mere, beholder sin kildehenvisning. Det, du har valgt for noter i panelet med fundne kildehenvisninger, for alle der følger, gælder også her.
+documents-at-once-notes = En note, der ikke er andet end en kildehenvisning, bliver en kildehenvisning i linjen, som referencestilen sætter i en note eller i linjen; en note, der siger mere, beholder sin kildehenvisning. Det, du har valgt for noter i panelet med løse kildehenvisninger, for alle der følger, gælder også her.
+documents-go-through-element = Gennemgå kildehenvisningerne, når dokumentet er hentet ind
 documents-go-through-project = Gennemgå kildehenvisningerne, når projektet er lavet
 
-## Making the map.
+## Making the elements.
 
 # Over what the one who brings the document in should know of it.
 documents-to-know = Værd at vide
-documents-making = Laver kortet…
+documents-making = Henter dokumentet ind…
+documents-make-element = Hent det ind
 documents-make-project = Lav projektet
+documents-failed = Dokumentet kunne ikke hentes ind.
+
+## What an element inherits as a document
+
+# Under a setting an element does not make, which it takes from the element named, over it.
+documents-inherited-from = Fra { $name }

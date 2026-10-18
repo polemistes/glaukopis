@@ -24,22 +24,51 @@ settings-own-gold = Zweite Stimme
 settings-own-begin = Ausgehen von
 # The contrast of the ink and of the accent on the paper, as WCAG counts it; 4.5 and 3 are what reads well.
 settings-own-weak = Schwer zu lesen: die Tinte steht auf dem Papier bei { $ink } zu 1 und der Akzent bei { $accent } zu 1; 4,5 und 3 oder mehr lesen sich gut.
-settings-text-size = Größe Ihres Textes
-settings-text-size-hint = In den Karten und der Textansicht. Was exportiert wird, folgt dem Dokumentformat.
+settings-text-size = Größe Ihres Textes im Editor
+settings-text-size-hint = Im Verhältnis zur Oberfläche. Die Schriftgrößen der Vorschau und des Exports bleiben davon unberührt.
+settings-editor-font = Schrift des Editors
+settings-editor-font-hint = Wählen Sie die Schrift für Ihren Text im Editor.
+settings-editor-font-default = Wie die Oberfläche (Literata)
+# How the text of a map shows how deep each element stands: on the screen only.
+# How the text editor shows how deep each element stands: on the screen only.
+settings-text-depth = Aufbau des Dokuments
+settings-text-depth-hint = Wie der Editor den Aufbau Ihres Textes zeigt.
+settings-text-depth-numbers = Nummern
+settings-text-depth-dots = Punkte
+settings-text-depth-indent = Eingezogen, mit Linien
 settings-interface-size = Größe der Oberfläche
 # A line of text in the size chosen, which shows the face of the letters; a
 # line of Homer's Greek follows it.
-settings-sample = Singe den Zorn, o Göttin, des Peleiaden Achilleus
+# A sentence with every letter of the language's alphabet (a pangram), set in
+# the size and the font chosen; where no good pangram is known, the alphabet.
+settings-sample = Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich.
+# The three levels of the sample of the document structure, the sample sentence under the third.
+settings-sample-heading = Überschrift
+settings-sample-subheading = Unterüberschrift
+settings-sample-third = Eine dritte Ebene
 
 ## New documents
 
 settings-new-documents = Neue Dokumente
+# Whether a new project opens in its diagram or in its text; the choices are the names of the two views.
+settings-new-project-view = Ansicht neuer Projekte
+settings-new-project-view-hint = Die Ansicht, in der sich ein Projekt öffnet, das gerade angelegt wurde.
+settings-template = Vorlage
+settings-document-format = Layout
 settings-reference-style = Zitierstil
-settings-document-format = Dokumentformat
 
 ## You
 
-settings-you = Sie
+settings-you = Ihre Angaben
+settings-first-name = Vorname
+settings-last-name = Nachname
+settings-organization = Organisation
+settings-position = Titel/Position
+settings-address = Adresse
+settings-phone = Telefon
+settings-email = E-Mail
+settings-orcid = ORCID
+settings-orcid-problem = Eine ORCID iD besteht aus vier Gruppen von je vier Ziffern: 0000-0002-1825-0097.
 settings-contact-problem = Das sieht nicht wie eine Adresse aus.
 
 ## Programs: Pandoc and Typst
@@ -72,3 +101,8 @@ settings-language = Sprache
 settings-language-interface = Die Oberfläche
 settings-language-system = Wie das System ({ $language })
 settings-language-texts = Sprache neuer Texte
+
+## The log of the runs.
+
+settings-logs = Das Protokoll
+settings-logs-hint = Was Glaukopis in jeder Sitzung über sich selbst festhält, aus den letzten { $count } Sitzungen: was es getan hat, was schiefging und was aus seinem Fenster wurde. Nützlich, wenn etwas schiefgegangen ist und niemand sah, warum.

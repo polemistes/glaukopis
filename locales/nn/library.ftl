@@ -83,6 +83,9 @@ library-reason-alike = { $title ->
     }
 }
 library-reason-file = same fil
+library-reason-name = namnet stemmer
+library-reason-first-page = første sida stemmer
+library-reason-folder = namnet på mappa stemmer
 # Several reasons: those before the last, set apart by commas, and the last.
 library-reasons = { $others } og { $last }
 
@@ -271,6 +274,23 @@ library-delete-many-title = { $count ->
     [one] Slette { $count } referanse?
    *[other] Slette { $count } referansar?
 }
+# $projects is the number of projects that cite what is deleted, which keep copies of their own.
+library-delete-one-message = Referansen blir fjerna frå biblioteket ditt og frå alle samlingar.{ $projects ->
+        [0] {""}
+        [one] {" "}Eit prosjekt viser til den, og har sin eigen kopi av den.
+       *[other] {" "}{ $projects } prosjekt viser til den, og har kvar sin kopi av den.
+    }
+library-delete-many-message = Referansane blir fjerna frå biblioteket ditt og frå alle samlingar.{ $projects ->
+        [0] {""}
+        [one] {" "}Eit prosjekt som viser til nokre av dei, har sin eigen kopi av desse.
+       *[other] {" "}{ $projects } prosjekt som viser til nokre av dei, har kvar sin kopi av desse.
+    }
+# Said after the message above, where what is deleted has files.
+library-delete-files = { $files ->
+        [one] Éi fil høyrer til det som blir sletta. Den blir verande blant filene i biblioteket, med mindre du slettar den òg.
+       *[other] { $files } filer høyrer til det som blir sletta. Dei blir verande blant filene i biblioteket, med mindre du slettar dei òg.
+    } Ei fil som ein annan referanse òg har, blir verande likevel.
+library-delete-keep-files = Slett, men la filene stå
 library-delete-failed = Referansane kunne ikkje slettast
 library-not-done = Det lét seg ikkje gjere
 
@@ -310,20 +330,22 @@ library-collection-count = { $count ->
    *[other] { $count } samlingar
 }
 
-## A map of the library, or of a collection: a new project.
+## A map of the library, or of a collection: a tree of elements at the top of a project, new or chosen.
 
 library-map-title-library = Eit kart over biblioteket
 library-map-title-collection = Eit kart over ei samling
 # The name a project made of the whole library is given.
 library-map-library-name = Biblioteket
 library-map-name = Namn
-library-map-name-hint = Namnet på prosjektet, på kartet i det, og på elementet i midten av kartet.
-library-map-what-library = Samlingane blir element, ordna slik dei er, og kvar referanse eit element under samlinga si, med ei tilvising til den som tekst. Referansar som ikkje er i noka samling, står i midten.
+library-map-name-hint = Namnet på elementet øvst i kartet, og på eit nytt prosjekt som blir laga for det.
+library-map-into = Inn i prosjektet
+library-map-new-project = Eit nytt prosjekt, kalla opp etter det
+library-map-what-library = Samlingane blir element, ordna slik dei er, og kvar referanse eit element under samlinga si, med ei tilvising til den som tekst. Referansar som ikkje er i noka samling, står øvst.
 library-map-what-collection = Samlingane i den blir element, ordna slik dei er, og kvar referanse eit element under samlinga si, med ei tilvising til den som tekst.
 library-map-nothing = Det er ingen referansar å setje på kartet.
-library-map-make = Lag prosjektet
-library-map-making = Lagar prosjektet …
-library-map-failed = Prosjektet kunne ikkje lagast.
+library-map-make = Lag kartet
+library-map-making = Lagar kartet …
+library-map-failed = Kartet kunne ikkje lagast.
 
 ## Bringing references in, from anywhere in the application.
 
@@ -422,12 +444,24 @@ library-pane-files = Filer
 library-pane-attach = Legg ved
 library-pane-attach-title = Legg ved filer
 library-pane-attach-failed = Fila kunne ikkje leggjast ved
+library-pane-attach-many-title = Leggje ved { $count } filer til «{ $title }»?
+library-pane-attach-many-message = Kvar av dei blir ei fil til denne referansen. For å gi mange filer kvar til sin eigen referanse, gå gjennom dei blant filene i biblioteket.
+library-pane-attach-many = Legg ved { $count } filer
+library-pane-add-files = Legg til filer frå biblioteket …
+library-pane-add-files-title = Legg til filer frå biblioteket til «{ $title }»
+library-pane-unassign-all = Fjern alle { $count } frå denne referansen
+library-pane-unassign-all-title = Fjerne alle { $count } filene frå «{ $title }»?
+library-pane-unassign-all-message = Filene blir verande blant filene i biblioteket, der dei kan finnast og bli gitt til andre referansar. Dei blir berre sletta derifrå.
+library-pane-unassign-all-confirm = Fjern { $count } filer
 # Of a file that is attached, and not where it should be.
 library-pane-missing = manglar
 library-pane-reveal = Vis i filhandsamaren
 library-pane-reveal-failed = Mappa kunne ikkje opnast
 library-pane-no-files = Ingen filer. Legg ved ein PDF, eller slepp ein her.
 library-pane-detach-failed = Fila kunne ikkje fjernast
+library-pane-unassign = Fjern frå denne referansen
+library-pane-unassign-title = Fjerne «{ $name }» frå denne referansen?
+library-pane-unassign-message = Fila blir verande blant filene i biblioteket, der den kan finnast og bli gitt til ein annan referanse. Den blir berre sletta derifrå.
 library-pane-leave-collection = Fjern frå { $name }
 library-pane-duplicate = Dupliser
     .hint = Ein ny referanse som byrjar med desse opplysningane
@@ -480,3 +514,14 @@ library-notes-carried = Referansen følgde med prosjektet og er ikkje i bibliote
 library-notes-kept = Blir lagra med referansen i biblioteket ditt. Det følgjer med eit prosjekt som viser til verket.
 library-notes-unread = Notata dine kunne ikkje lesast
 library-notes-unsaved = Notatet ditt kunne ikkje lagrast
+
+## The switch at the head of the library.
+
+library-switch = Referansar eller filer
+library-switch-references = Referansar
+library-switch-files = Filer
+
+## The columns of the library, which can be dragged wider or narrower.
+
+library-resize-side = Dra for å gjere samlingane eller mappene breiare eller smalare
+library-resize-detail = Dra for å gjere ruta til høgre breiare eller smalare

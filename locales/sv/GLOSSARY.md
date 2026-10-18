@@ -19,18 +19,59 @@ Page Down, piltangenterna. Pluralformer: one, other.
 
 ## Arbetet
 
-- **project** — projekt (projektet, projekten)
-- **map** — karta (kartan); kartan är också dokumentet som växer fram
-- **element** — element (elementet, elementen)
+- **project** — projekt (projektet, projekten); ett projekt är ett enda
+  träd av element, och det översta elementet bär projektets namn
+- **tree** — träd (trädet): ett projekts element, det ena under det andra
+- **map** — karta (kartan); kartan är också dokumentet som växer fram.
+  Varje element kan *öppnas som karta* (*Öppna som karta*), och man *går
+  upp* till elementet ovanför (*Upp till ”…”*).
+- **the owl map**, **the map of the projects** — ugglekartan; kartan över
+  projekten (startsidan med alla projekt ritade runt ugglan, mapparna som
+  etiketter). Knappen heter *Karta*.
+- **element** — element (elementet, elementen); varje element kan skrivas
+  ut som ett dokument
 - **the centre** — mitten (kartans mitt)
 - **the diagram** — diagrammet
 - **the text** — texten; *text mode* = textläget
 - **passage** — passage (passagen); oftast ”det markerade”
 - **kind** — slag (slaget, slagen): ett slag av element, ett slags
   stycke, ett slag av ord. Aldrig ”typ”, aldrig ”stil”.
-- **look** — utseende (utseendet): hur ett slag sätts i dokumentet
-- **format** — format (formatet, formaten)
-- **style** — stil, bara om referensstilen (referensstil)
+- **look** — utseende (utseendet): hur ett slag sätts i dokumentet;
+  utseendena hör till layouten, inte till texten
+- **layout** — layout (layouten, layouter, layouterna): hur ett dokuments
+  sidor ser ut, med marginaler, typsnitt, rubriker, noter och slagens
+  utseenden. ”Manuskript” och ”En skönlitterär bok” är layouter; *dina
+  egna layouter*; *manuskriptlayouten*. Filerna och koden kallar den
+  *format*.
+- **format** — format, bara om filformat (Word, PDF, LaTeX): *filformat*.
+  Till 2026-10-18 stod ”format” här också för layouten; det är rättat
+  där engelskan har ändrats.
+- **template** — mall (mallen, mallar, mallarna): vad ett dokument av ett
+  slag består av, vilka delar det har och i vilken ordning, vilka slag
+  det har till hands, vilken layout och referensstil det har med sig,
+  vad det kräver och vilka filer det blir. ”Tidskriftsartikel” är en
+  mall. En mall väljs i ett elements dokumentinställningar och ärvs nedåt
+  i trädet. *To put in hand* = ha till hands, ta fram.
+- **document settings** — dokumentinställningar (fönstret
+  *Dokumentinställningar*; i elementets meny *Dokumentinställningar…*):
+  mallen, uppgifterna, delarna, utseendet, språket och checklistan
+- **details** — uppgifter (dokumentets uppgifter: titel, författare,
+  datum, nyckelord, identifierare)
+- **part** — del (delen, delar, delarna): ett slag av element som har en
+  plats i dokumentet, som sammanfattningen, en dedikation, ett appendix,
+  omslaget. Platserna: **front matter** — inledande delar; **back
+  matter** — avslutande delar; **the cover** — omslaget. *Appendix*
+  heter appendix, inte bilaga (som är det som bifogas en referens);
+  *glossary* heter ordförklaringar, inte ordlista (som är stavningens).
+  *Preface* (författarens eget) heter förord, *foreword* (av någon annan)
+  företal, så att de två slagen hålls isär.
+- **the Look panel** — Utseende: panelen bredvid förhandsvisningen där
+  dokumentets utseende ställs in (*Öppna Utseende*)
+- **checklist** — checklista (checklistan): vad mallen kräver, mot det
+  texten och trädet har
+- **style** — stil, bara om referensstilen (referensstil). De stilar som
+  hittas i en PDF:s text (ocr.ftl) heter *textstilar*, för att inte blandas
+  ihop med referensstilen.
 - **document** — dokument (dokumentet)
 - **the manuscript** — manuskriptet
 - **the preview** — förhandsvisningen
@@ -44,13 +85,22 @@ Page Down, piltangenterna. Pluralformer: one, other.
 - **reference** — referens (referensen); också *verk* (verket)
 - **collection** — samling (samlingen)
 - **attachment** — bilaga (bilagan); verbet: bifoga
+- **the files of the library** — bibliotekets filer (vyn *Bibliotekets
+  filer*): filer i bibliotekets eget förråd, i egna mappar; en fil hör
+  till ingen, en eller flera referenser. *Assign to a reference* = koppla
+  till en referens; *unassigned* = utan referens; *the going-through* =
+  genomgången (*gå igenom filerna*)
 - **note** (i biblioteket) — anteckning; **note** i en text (fotnot,
   slutnot) — not (noten, noterna)
 - **citation** — källhänvisning (källhänvisningen); kort: hänvisning,
   där det är tydligt; verbet *cite* = hänvisa
 - **locator** — ställe (stället i verket): sida, kapitel, vers, rad
 - **lookup** — slå upp; uppslagning
-- **found citations** — hittade källhänvisningar
+- **loose citations** — lösa källhänvisningar (fliken: *Lösa
+  hänvisningar*): källhänvisningar i en text som kommit in utifrån, som
+  ännu inte är knutna till en referens i biblioteket; de *görs till
+  källhänvisningar* när de knyts till en. Till 2026-10-12 hette de
+  hittade källhänvisningar.
 
 ## Ord och märkning
 
@@ -91,6 +141,9 @@ Page Down, piltangenterna. Pluralformer: one, other.
 - **dictionary** — ordlista (ordlistan); **own words** — egna ord
 - **reading text** / **OCR** — läsa texten; textigenkänning; en PDF
   *görs sökbar*
+- **language package** — språkpaket (språkpaketet): ordlistor för
+  stavning och språkfiler för textigenkänning, som importeras från en
+  server
 - **search** / **replace** — sök / ersätt; **found** — träffar (det en
   sökning hittar)
 

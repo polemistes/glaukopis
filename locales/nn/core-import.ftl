@@ -107,25 +107,25 @@ core-import-document-notebook = Jupyter-notatbok
 
 core-import-document-found = { $count ->
     [one] { $made ->
-        [all] Det vart funne éi kjeldetilvising som enno ikkje er knytt til ein referanse i biblioteket ditt, laga av eit referanseprogram. Den står slik den vart skriven, og kan gåast gjennom når kartet blir laga, og seinare.
-       *[none] Det vart funne éi kjeldetilvising som enno ikkje er knytt til ein referanse i biblioteket ditt. Den står slik den vart skriven, og kan gåast gjennom når kartet blir laga, og seinare.
+        [all] Det vart funne éi kjeldetilvising som enno ikkje er knytt til ein referanse i biblioteket ditt, laga av eit referanseprogram. Den står slik den vart skriven, og kan gåast gjennom når dokumentet er henta inn, og seinare.
+       *[none] Det vart funne éi kjeldetilvising som enno ikkje er knytt til ein referanse i biblioteket ditt. Den står slik den vart skriven, og kan gåast gjennom når dokumentet er henta inn, og seinare.
     }
    *[other] { $made ->
-        [all] Det vart funne { $count } kjeldetilvisingar som enno ikkje er knytte til referansar i biblioteket ditt, alle laga av eit referanseprogram. Dei står slik dei vart skrivne, og kan gåast gjennom når kartet blir laga, og seinare.
-        [some] Det vart funne { $count } kjeldetilvisingar som enno ikkje er knytte til referansar i biblioteket ditt, { $some } av dei laga av eit referanseprogram. Dei står slik dei vart skrivne, og kan gåast gjennom når kartet blir laga, og seinare.
-       *[none] Det vart funne { $count } kjeldetilvisingar som enno ikkje er knytte til referansar i biblioteket ditt. Dei står slik dei vart skrivne, og kan gåast gjennom når kartet blir laga, og seinare.
+        [all] Det vart funne { $count } kjeldetilvisingar som enno ikkje er knytte til referansar i biblioteket ditt, alle laga av eit referanseprogram. Dei står slik dei vart skrivne, og kan gåast gjennom når dokumentet er henta inn, og seinare.
+        [some] Det vart funne { $count } kjeldetilvisingar som enno ikkje er knytte til referansar i biblioteket ditt, { $some } av dei laga av eit referanseprogram. Dei står slik dei vart skrivne, og kan gåast gjennom når dokumentet er henta inn, og seinare.
+       *[none] Det vart funne { $count } kjeldetilvisingar som enno ikkje er knytte til referansar i biblioteket ditt. Dei står slik dei vart skrivne, og kan gåast gjennom når dokumentet er henta inn, og seinare.
     }
 }
 core-import-document-endnote = { $count ->
-    [one] Éi kjeldetilvising laga av EndNote er henta inn som teksten den viser, og er ikkje blant dei som vart funne: det EndNote seier om verka, kunne ikkje lesast.
-   *[other] { $count } kjeldetilvisingar laga av EndNote er henta inn som teksten dei viser, og er ikkje blant dei som vart funne: det EndNote seier om verka, kunne ikkje lesast.
+    [one] Éi kjeldetilvising laga av EndNote er henta inn som teksten den viser, og er ikkje blant dei lause kjeldetilvisingane: det EndNote seier om verka, kunne ikkje lesast.
+   *[other] { $count } kjeldetilvisingar laga av EndNote er henta inn som teksten dei viser, og er ikkje blant dei lause kjeldetilvisingane: det EndNote seier om verka, kunne ikkje lesast.
 }
 core-import-document-bookmarks = { $count ->
     [one] Dokumentet har éi kjeldetilvising i eit bokmerke, og det den viser til, kunne ikkje lesast: den står som tekst. Zotero lagrar dei på ein annan måte når dokumentinnstillingane seier det.
    *[other] Dokumentet har { $count } kjeldetilvisingar i bokmerke, og det dei viser til, kunne ikkje lesast: dei står som tekst. Zotero lagrar dei på ein annan måte når dokumentinnstillingane seier det.
 }
-core-import-document-bibliography = Dokumentet har ei liste over det det viser til, under «{ $heading }». Den blir henta inn som tekst, som resten. Kartet lagar si eiga litteraturliste av det som blir vist til i det.
-core-import-document-bibliography-made = Dokumentet har ei liste over det det viser til, laga av programmet som held orden på referansane. Den blir henta inn som tekst, som resten. Kartet lagar si eiga litteraturliste av det som blir vist til i det.
+core-import-document-bibliography = Dokumentet har ei liste over det det viser til, under «{ $heading }». Den blir henta inn som tekst, som resten. Glaukopis lagar si eiga litteraturliste av det som blir vist til.
+core-import-document-bibliography-made = Dokumentet har ei liste over det det viser til, laga av programmet som held orden på referansane. Den blir henta inn som tekst, som resten. Glaukopis lagar si eiga litteraturliste av det som blir vist til.
 core-import-document-tracked = Dokumentet har spora endringar. Teksten blir henta inn slik den står når alle er godtekne.
 core-import-document-comments = Dokumentet har kommentarar i margen, og dei blir utelatne.
 core-import-document-heading-notes = { $count ->
@@ -134,8 +134,8 @@ core-import-document-heading-notes = { $count ->
 }
 # What a caption began with is shown as the document has it: “Figure 1:”.
 core-import-document-labels = { $count ->
-    [one] Éin bilettekst byrja med eit ord og eit tal, som «{ $first }». Ordet og talet er utelatne: kartet nummererer figurane og tabellane sine sjølv. Der teksten viser til ein av dei med nummeret, er det tekst slik den vart skriven, og det følgjer ikkje numra i kartet.
-   *[other] { $count } bilettekstar byrja med eit ord og eit tal, som «{ $first }». Orda og tala er utelatne: kartet nummererer figurane og tabellane sine sjølv. Der teksten viser til ein av dei med nummeret, er det tekst slik den vart skriven, og det følgjer ikkje numra i kartet.
+    [one] Éin bilettekst byrja med eit ord og eit tal, som «{ $first }». Ordet og talet er utelatne: Glaukopis nummererer figurar og tabellar sjølv. Der teksten viser til ein av dei med nummeret, er det tekst slik den vart skriven, og det følgjer ikkje numra slik dei blir skrivne ut.
+   *[other] { $count } bilettekstar byrja med eit ord og eit tal, som «{ $first }». Orda og tala er utelatne: Glaukopis nummererer figurar og tabellar sjølv. Der teksten viser til ein av dei med nummeret, er det tekst slik den vart skriven, og det følgjer ikkje numra slik dei blir skrivne ut.
 }
 core-import-document-label-example = Figur 1:
 core-import-document-caption-notes = { $count ->

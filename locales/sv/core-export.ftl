@@ -51,9 +51,18 @@ core-export-the-style = stilen ”{ $id }”
 
 ## Document formats.
 
-core-export-format-bad-id = ”{ $id }” kan inte vara id för ett format
-core-export-format-needs-name = Ett format behöver ett namn.
-core-export-format-own-only = Bara dina egna format kan raderas.
+core-export-format-bad-id = ”{ $id }” kan inte vara id för en layout
+core-export-format-needs-name = En layout behöver ett namn.
+core-export-format-own-only = Bara dina egna layouter kan raderas.
 core-export-not-a-length = ”{ $length }” är inte en längd
 # Shown after "not found: ".
-core-export-the-format = formatet ”{ $id }”
+core-export-the-format = layouten ”{ $id }”
+
+## Templates.
+
+core-export-template-bad-id = ”{ $id }” kan inte vara id för en mall
+core-export-template-needs-name = En mall behöver ett namn.
+core-export-template-own-only = Bara dina egna mallar kan raderas.
+core-export-the-template = mallen ”{ $id }”
+core-export-output-not-yet = Filen ”{ $id }” i mallen kan inte göras än: bara dokumentet kan göras.
+core-export-output-unknown = Mallen har ingen fil ”{ $id }”.

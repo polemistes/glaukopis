@@ -48,9 +48,18 @@ core-export-the-style = der Stil „{ $id }“
 
 ## Document formats.
 
-core-export-format-bad-id = „{ $id }“ kann nicht die Kennung eines Formats sein
-core-export-format-needs-name = Ein Format braucht einen Namen.
-core-export-format-own-only = Nur eigene Formate können gelöscht werden.
+core-export-format-bad-id = „{ $id }“ kann nicht die Kennung eines Layouts sein
+core-export-format-needs-name = Ein Layout braucht einen Namen.
+core-export-format-own-only = Nur eigene Layouts können gelöscht werden.
 core-export-not-a-length = „{ $length }“ ist keine Länge
 # Shown after "not found: ".
-core-export-the-format = das Format „{ $id }“
+core-export-the-format = das Layout „{ $id }“
+
+## Templates.
+
+core-export-template-bad-id = „{ $id }“ kann nicht die Kennung einer Vorlage sein
+core-export-template-needs-name = Eine Vorlage braucht einen Namen.
+core-export-template-own-only = Nur eigene Vorlagen können gelöscht werden.
+core-export-the-template = die Vorlage „{ $id }“
+core-export-output-not-yet = Die Ausgabe „{ $id }“ der Vorlage kann noch nicht erzeugt werden, nur das Dokument.
+core-export-output-unknown = Die Vorlage hat keine Ausgabe „{ $id }“.

@@ -57,3 +57,12 @@ core-export-format-own-only = Berre dine eigne dokumentformat kan slettast.
 core-export-not-a-length = «{ $length }» er ikkje ei lengd
 # Shown after "not found: ".
 core-export-the-format = dokumentformatet «{ $id }»
+
+## Templates.
+
+core-export-template-bad-id = «{ $id }» kan ikkje vere id-en til ein mal
+core-export-template-needs-name = Ein mal må ha eit namn.
+core-export-template-own-only = Berre dine eigne malar kan slettast.
+core-export-the-template = malen «{ $id }»
+core-export-output-not-yet = Malen kan ikkje lage fila «{ $id }» enno: berre dokumentet.
+core-export-output-unknown = Malen har inga fil «{ $id }».

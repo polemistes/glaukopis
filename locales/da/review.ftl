@@ -12,6 +12,7 @@ review-since-named = Siden »{ $name }«
 review-since-when = Fra { $when }
 review-choose-since = Gennemgå fra et andet tidspunkt
 review-own = Også dine egne ændringer
+review-show-org = Vis som Org
 review-unit = Gennemgå efter
 review-by-sentence = Sætning
 review-by-paragraph = Afsnit

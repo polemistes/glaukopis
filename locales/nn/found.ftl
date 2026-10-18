@@ -4,10 +4,10 @@
 
 ## The panel.
 
-found-title = Funne kjeldetilvisingar
+found-title = Lause kjeldetilvisingar
 # On the tab of the panel, beside the other tabs: short.
-found-tab = Funne tilvisingar
-found-between = Mellom kartet og dei funne kjeldetilvisingane
+found-tab = Lause tilvisingar
+found-between = Mellom kartet og dei lause kjeldetilvisingane
 found-taken = Det som blir teke for kjeldetilvisingar
 found-taken-always = Det eit program har laga, og taggar
 found-taken-years = Parentesar med eit årstal i
@@ -25,9 +25,9 @@ found-made = { $count ->
 found-made-undo = Ctrl+Z angrar dei, i eitt steg.
 found-library-failed = Det gjekk ikkje å spørje biblioteket.
 found-nothing = Ingenting å gå gjennom
-found-nothing-looked = Inga funnen kjeldetilvising er att i dette kartet, og ingenting i det ser ut som ei.
-found-nothing-looked-more = Inga funnen kjeldetilvising er att i dette kartet, og ingenting i det ser ut som ei. Meir kan takast for kjeldetilvisingar ovanfor.
-found-nothing-not-looked = Inga funnen kjeldetilvising er att i dette kartet. Tekst som berre ser ut som ei kjeldetilvising, blir leita etter når du seier ovanfor kva som skal takast for ei: parentesar med eit årstal i, eller notar.
+found-nothing-looked = Inga laus kjeldetilvising er att i teksten som blir vist, heller ikkje tekst som berre ser ut som ei.
+found-nothing-looked-more = Inga laus kjeldetilvising er att i teksten som blir vist, heller ikkje tekst som berre ser ut som ei. Meir kan takast for kjeldetilvisingar ovanfor.
+found-nothing-not-looked = Inga laus kjeldetilvising laga av eit program, og ingen tagg, er att i teksten som blir vist. Tekst som berre ser ut som ei kjeldetilvising, blir leita etter når du seier ovanfor kva som skal takast for ei: parentesar med eit årstal i, eller notar.
 found-list-label = Det som skal gåast gjennom
 found-untitled = Utan namn
 found-in-a-note = I ein note
@@ -93,7 +93,7 @@ found-note-holds = Noten inneheld { $what ->
         [hard_break] eit linjeskift
        *[other] noko som ikkje er tekst
     }, som teksten framfor og etter eit verk ikkje kan innehalde.
-found-note-another = Noten inneheld ei anna funnen kjeldetilvising, som ville gått tapt i teksten etter denne.
+found-note-another = Noten inneheld ei anna laus kjeldetilvising, som ville gått tapt i teksten etter denne.
 
 ## Why what was asked could not be done.
 

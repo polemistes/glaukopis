@@ -78,3 +78,10 @@ pictures-this-project = Dieses Projekt
 pictures-untitled = Ohne Titel
 pictures-unused = Kein Projekt verwendet das Bild.
 pictures-remove = Aus dem Fundus entfernen
+
+## A picture made a file of the library, and given to a reference.
+
+pictures-attach = An eine Quelle anhängen…
+pictures-attach-title = „{ $name }“ an eine Quelle anhängen
+pictures-attached = Das Bild ist jetzt unter den Dateien von { $name }
+pictures-attach-failed = Das Bild konnte nicht angehängt werden

@@ -83,6 +83,9 @@ library-reason-alike = { $title ->
     }
 }
 library-reason-file = samma fil
+library-reason-name = med ett liknande namn
+library-reason-first-page = första sidan stämmer
+library-reason-folder = i en mapp med ett liknande namn
 # Several reasons: those before the last, set apart by commas, and the last.
 library-reasons = { $others } och { $last }
 
@@ -271,6 +274,23 @@ library-delete-many-title = { $count ->
     [one] Radera { $count } referens?
    *[other] Radera { $count } referenser?
 }
+# $projects is the number of projects that cite what is deleted, which keep copies of their own.
+library-delete-one-message = Detta tar bort referensen från ditt bibliotek och från alla samlingar.{ $projects ->
+        [0] {""}
+        [one] {" "}Ett projekt hänvisar till den, och behåller en kopia av den.
+       *[other] {" "}{ $projects } projekt hänvisar till den, och behåller en kopia av den.
+    }
+library-delete-many-message = Detta tar bort dem från ditt bibliotek och från alla samlingar.{ $projects ->
+        [0] {""}
+        [one] {" "}Ett projekt som hänvisar till några av dem behåller en kopia av dem.
+       *[other] {" "}{ $projects } projekt som hänvisar till några av dem behåller en kopia av dem.
+    }
+# Said after the message above, where what is deleted has files.
+library-delete-files = { $files ->
+        [one] En fil hör till det som raderas. Den blir kvar bland bibliotekets filer, om du inte raderar den också.
+       *[other] { $files } filer hör till det som raderas. De blir kvar bland bibliotekets filer, om du inte raderar dem också.
+    } En fil som en annan referens har blir kvar i alla fall.
+library-delete-keep-files = Radera, behåll filerna
 library-delete-failed = Referenserna kunde inte raderas
 library-not-done = Det kunde inte göras
 
@@ -310,20 +330,22 @@ library-collection-count = { $count ->
    *[other] { $count } samlingar
 }
 
-## A map of the library, or of a collection: a new project.
+## A map of the library, or of a collection: a tree of elements at the top of a project, new or chosen.
 
 library-map-title-library = En karta över biblioteket
 library-map-title-collection = En karta över en samling
 # The name a project made of the whole library is given.
 library-map-library-name = Biblioteket
 library-map-name = Namn
-library-map-name-hint = Namnet på projektet, på dess karta, och på elementet i kartans mitt.
-library-map-what-library = Samlingarna blir element, nästlade som de är, och varje referens ett element under sin samling, med en källhänvisning till den som text. Referenser utan samling står i mitten.
+library-map-name-hint = Namnet på elementet överst i kartan, och på ett nytt projekt som görs för den.
+library-map-into = In i projektet
+library-map-new-project = Ett nytt projekt, uppkallat efter den
+library-map-what-library = Samlingarna blir element, nästlade som de är, och varje referens ett element under sin samling, med en källhänvisning till den som text. Referenser utan samling står överst.
 library-map-what-collection = Samlingarna inuti den blir element, nästlade som de är, och varje referens ett element under sin samling, med en källhänvisning till den som text.
 library-map-nothing = Det finns inga referenser att sätta på kartan.
-library-map-make = Gör projektet
-library-map-making = Gör projektet…
-library-map-failed = Projektet kunde inte göras.
+library-map-make = Gör kartan
+library-map-making = Gör kartan…
+library-map-failed = Kartan kunde inte göras.
 
 ## Bringing references in, from anywhere in the application.
 
@@ -422,12 +444,24 @@ library-pane-files = Filer
 library-pane-attach = Bifoga
 library-pane-attach-title = Bifoga filer
 library-pane-attach-failed = Filen kunde inte bifogas
+library-pane-attach-many-title = Bifoga { $count } filer till ”{ $title }”?
+library-pane-attach-many-message = Var och en blir en fil till den här referensen. För att koppla många filer till var sin referens, gå igenom dem bland bibliotekets filer.
+library-pane-attach-many = Bifoga { $count } filer
+library-pane-add-files = Lägg till filer från biblioteket…
+library-pane-add-files-title = Lägg till filer från biblioteket i ”{ $title }”
+library-pane-unassign-all = Ta bort alla { $count } från den här referensen
+library-pane-unassign-all-title = Ta bort alla { $count } filer från ”{ $title }”?
+library-pane-unassign-all-message = Filerna blir kvar bland bibliotekets filer, där de kan hittas och kopplas till andra referenser. De raderas bara därifrån.
+library-pane-unassign-all-confirm = Ta bort { $count } filer
 # Of a file that is attached, and not where it should be.
 library-pane-missing = saknas
 library-pane-reveal = Visa i filhanteraren
 library-pane-reveal-failed = Mappen kunde inte öppnas
 library-pane-no-files = Inga filer. Bifoga en PDF, eller släpp en här.
 library-pane-detach-failed = Filen kunde inte tas bort
+library-pane-unassign = Ta bort från den här referensen
+library-pane-unassign-title = Ta bort ”{ $name }” från den här referensen?
+library-pane-unassign-message = Filen blir kvar bland bibliotekets filer, där den kan hittas och kopplas till en annan referens. Den raderas bara därifrån.
 library-pane-leave-collection = Ta bort från { $name }
 library-pane-duplicate = Kopiera
     .hint = En ny referens som börjar med de här uppgifterna
@@ -480,3 +514,14 @@ library-notes-carried = Referensen kom med projektet och finns inte i ditt bibli
 library-notes-kept = Sparad med referensen i ditt bibliotek. Den följer med ett projekt som hänvisar till verket.
 library-notes-unread = Dina anteckningar kunde inte läsas
 library-notes-unsaved = Din anteckning kunde inte sparas
+
+## The switch at the head of the library.
+
+library-switch = Referenser eller filer
+library-switch-references = Referenser
+library-switch-files = Filer
+
+## The columns of the library, which can be dragged wider or narrower.
+
+library-resize-side = Dra för att göra samlingarna eller mapparna bredare eller smalare
+library-resize-detail = Dra för att göra rutan till höger bredare eller smalare

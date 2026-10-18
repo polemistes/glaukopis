@@ -45,13 +45,13 @@ figures-stands-where = Wo die { $kind ->
         [table] Tabelle
        *[equation] Gleichung
     } steht
-figures-side-format = Wie das Format
+figures-side-format = Wie im Layout
 figures-side-left = Links
 figures-side-middle = Mitte
 figures-side-right = Rechts
-# What the format of the document says of where things of a kind stand. The
+# What the layout of the document says of where things of a kind stand. The
 # flow is none for equations, and for what stands in the middle.
-figures-usual = Das Format hat { $kind ->
+figures-usual = Das Layout hat { $kind ->
         [figure] Abbildungen
         [table] Tabellen
        *[equation] Gleichungen
@@ -70,7 +70,7 @@ figures-flows-where = Ob der Text die { $kind ->
         [table] Tabelle
        *[equation] Gleichung
     } umfließt
-figures-flow-format = Wie das Format
+figures-flow-format = Wie im Layout
 figures-flow-around = Umfließt sie
 figures-flow-apart = Steht abgesetzt
 figures-flow-at-side = Der Text umfließt, was an einer Seite steht.
@@ -141,7 +141,7 @@ figures-targets-figure-unsaid = Eine Abbildung, zu der nichts gesagt ist
 figures-targets-table-unsaid = Eine Tabelle, zu der nichts gesagt ist
 figures-targets-no-match = Nichts im Dokument entspricht diesen Wörtern.
 figures-targets-none = Es gibt noch nichts, worauf verwiesen werden könnte: keine Abbildung, keine Tabelle, keine nummerierte Gleichung, keinen Teil mit Namen.
-figures-targets-hint = Ein Verweis folgt dem, worauf er verweist: seiner Nummer und dem, wie das Format es nennt.
+figures-targets-hint = Ein Verweis folgt dem, worauf er verweist: seiner Nummer und dem, wie das Layout es nennt.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 

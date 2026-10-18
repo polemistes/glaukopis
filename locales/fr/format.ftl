@@ -1,6 +1,6 @@
-# Document formats: their kinds, and the editor of a format.
+# Layouts, which the files and the code call formats: their kinds, and the rows by which their looks are set in the look of a document.
 
-## The kinds of document format, as the formats are grouped by them.
+## The kinds of document layout, as the layouts are grouped by them.
 
 format-kind-own = Les vôtres
 format-kind-general = Généraux
@@ -11,20 +11,17 @@ format-kind-fiction = Fiction
 format-kind-stage = Scène et écran
 format-kind-poetry = Poésie
 
-## The format editor.
+## Layouts of the writer's own, kept from the changes of a document.
 
-format-name = Nom du format
-# The name a format of one's own is first given, made from that of the format it is made from.
+format-name = Nom de la mise en page
+# The name a layout of one's own is first given, made from that of the layout it is made from.
 format-name-changed = { $name }, modifié
-format-saved = « { $name } » est enregistré parmi vos formats
-format-save-failed = Le format n’a pas pu être enregistré.
-format-delete-failed = Le format n’a pas pu être supprimé.
-format-delete-title = Supprimer le format « { $name } » ?
-format-delete-message = Les cartes qui l’utilisent prendront le format général de manuscrit à la place.
-format-delete-confirm = Supprimer le format
-
-## The parts of a format, as they are chosen at the left.
-
+format-saved = La mise en page « { $name } » est enregistrée parmi les vôtres
+format-save-failed = La mise en page n’a pas pu être enregistrée.
+format-delete-failed = La mise en page n’a pas pu être supprimée.
+format-delete-title = Supprimer la mise en page « { $name } » ?
+format-delete-message = Les éléments qui l’utilisent prendront à la place la mise en page générale de manuscrit.
+format-delete-confirm = Supprimer la mise en page
 
 ## Words that stand in several parts.
 
@@ -67,7 +64,21 @@ format-margin-top = Haut
 format-margin-bottom = Bas
 format-margin-left = Gauche
 format-margin-right = Droite
+format-columns-heading = Colonnes
+format-columns = Colonnes
+format-columns-hint = Le texte est composé sur autant de colonnes par page ; 1 pour aucune. Un saut de colonne dans le texte passe à la suivante.
+format-column-gap = Espace entre les colonnes
 format-lengths-hint = Les longueurs s’écrivent avec leur unité : 2.5cm, 1in, 25mm, 12pt.
+## Numbers belong to what they number (ADR 0041): the lines one numbers
+## are shown as the layout says where they do not say otherwise; the lines
+## of the page are the layout's alone.
+format-numbers-hint = Comment apparaissent les numéros des lignes que vous numérotez, là où elles ne disent pas autre chose ; et si les lignes de la page sont numérotées.
+format-verse-every = Montrer le numéro d’une ligne sur
+format-verse-every-hint = Des lignes que vous numérotez : 5 montre 5, 10, 15
+format-verse-side = Les numéros se placent
+format-side-left = À gauche
+format-side-right = À droite
+format-numbers-page = Les lignes de la page
 format-line-numbers = Numéroter les lignes
 format-line-numbers-hint = Comme certaines revues le demandent pour l’évaluation
 
@@ -86,6 +97,10 @@ format-space-between = Espace entre les paragraphes
 format-italics = L’italique est rendu
 format-italics-italic = En italique
 format-italics-underline = Souligné, comme dans les manuscrits tapés à la machine
+format-refmarks = Les marques de référence sont rendues
+format-refmarks-raised = Petites et surélevées dans la ligne
+format-refmarks-margin = Dans la marge, à côté de leur ligne
+format-refmarks-hint = Versets, pages de Stephanus, numéros de Bekker. Word et Writer n’ont pas de place dans la marge : elles y sont surélevées.
 
 ## Headings.
 
@@ -150,9 +165,17 @@ format-bibliography-entry-spacing = Espace entre les notices
 ## is based on. The rows are those of the dialog for a kind of one's own
 ## too; what is not said is as the base has it.
 
-format-kinds-hint = Chaque type est composé comme le type sur lequel il est fondé, avec les différences données ici. Ce qui n’est pas dit est comme dans la base.
+format-kinds-hint = Chaque type, avec son aspect tel qu’il sera : l’aspect de base du type, puis les types sur lesquels il est fondé, puis ce qu’en dit cette mise en page. Les réglages ne changent que ce que dit cette mise en page ; ce qui n’est pas dit est comme dans la base.
 format-kind-based-on = fondé sur { $base }
+# Of the kind Text, which the parts for type and paragraphs set.
+format-kind-text-note = comme le veulent les caractères et les paragraphes de la mise en page
+# At the right of a kind's line where this layout says nothing of it.
+format-kind-as-base = comme la base
+format-kind-resolved = Tel que ce sera : { $look }
+format-kind-resolved-nothing = Tel que ce sera : comme le texte autour
 format-as-the-base = Comme la base
+# "As the base", with what the base comes to: "As the base (Yes)", "As the base (11 pt)".
+format-as-the-base-is = Comme la base ({ $value })
 # In an empty field for a size, in the place of its number.
 format-as-the-base-blank = comme la base
 format-yes = Oui
@@ -320,7 +343,7 @@ format-running-head-author-title = Auteurs et titre
 format-running-head-text = Des mots à moi
 format-running-head-words = Les mots
 
-## About the format: where its requirements are from.
+## About the layout: where its requirements are from.
 
 format-description = Description
 format-source = D’où viennent les exigences
@@ -329,5 +352,5 @@ format-source-read = Lu le { $date }.
 format-source-high = Les valeurs sont celles de la source.
 format-source-medium = La source n’a pu être lue qu’en partie ou dans un état antérieur : vérifiez ce qui compte pour vous.
 format-source-low = Peu a pu être vérifié : prenez les valeurs comme un point de départ.
-format-source-changed = Vous avez modifié ce format ; la source décrit ce dont il a été fait.
-format-source-none = Ce format ne suit les exigences d’aucun éditeur en particulier.
+format-source-changed = Vous avez modifié cette mise en page ; la source décrit ce dont elle a été faite.
+format-source-none = Cette mise en page ne suit les exigences d’aucun éditeur en particulier.

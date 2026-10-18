@@ -1,16 +1,18 @@
-# Documents that are brought in, each to become a map (ADR 0012), in
-# English. See locales/README.md.
+# Documents that are brought in, each to become a tree of elements under
+# the element in view (ADR 0012, 0037), in English. See locales/README.md.
 
 documents-choose = Un document à importer
 documents-filter = Documents
 documents-filter-all = Tous les fichiers
+documents-title-element = Un document dans l’élément affiché
 documents-title-project = Un projet à partir d’un document
 documents-reading = Lecture de { $file }…
 documents-reading-hint = Un long document prend un moment.
 documents-no-pandoc = Les documents de ce type sont lus par Pandoc, qui n’est pas installé ou n’a pas pu être trouvé. Où il se trouve peut être indiqué dans les réglages.
 documents-unread = Le fichier n’a pas pu être lu.
 documents-title = Titre
-documents-title-hint-project = Le nom du projet, de sa carte, et de l’élément au centre de la carte.
+documents-title-hint-element = Le nom de l’élément du haut du document, sous l’élément affiché.
+documents-title-hint-project = Le nom du projet, et de l’élément du haut du document, dans le projet.
 # What a project made of a document is called when the document has no title.
 documents-untitled = Sans titre
 
@@ -84,12 +86,20 @@ documents-found-made = { $count ->
 documents-found-some-made = { $count } citations ont été trouvées, dont { $made } faites par un logiciel de gestion bibliographique.
 documents-at-once = Faire tout de suite des citations de celles que Zotero a faites d’œuvres que votre bibliothèque a
 # Under the choice: what becomes of a note that holds one of them.
-documents-at-once-notes = Une note qui n’est qu’une citation devient une citation dans la ligne, que le style de référence met en note ou dans la ligne ; une note qui dit davantage garde sa citation. Ce que vous avez choisi pour les notes dans le volet des citations reconnues, pour toutes celles qui suivent, vaut ici aussi.
+documents-at-once-notes = Une note qui n’est qu’une citation devient une citation dans la ligne, que le style de référence met en note ou dans la ligne ; une note qui dit davantage garde sa citation. Ce que vous avez choisi pour les notes dans le volet des citations non liées, pour toutes celles qui suivent, vaut ici aussi.
+documents-go-through-element = Passer les citations en revue quand le document est importé
 documents-go-through-project = Passer les citations en revue quand le projet est fait
 
-## Making the map.
+## Making the elements.
 
 # Over what the one who brings the document in should know of it.
 documents-to-know = À savoir
-documents-making = Création de la carte…
+documents-making = Importation du document…
+documents-make-element = L’importer
 documents-make-project = Créer le projet
+documents-failed = Le document n’a pas pu être importé.
+
+## What an element inherits as a document
+
+# Under a setting an element does not make, which it takes from the element named, over it.
+documents-inherited-from = De « { $name } »

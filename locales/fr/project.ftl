@@ -1,4 +1,4 @@
-# A project: its view, the tabs of its maps, what is done to elements, and
+# A project: its view, the bar over the map, what is done to elements, and
 # the panels at the side with the references and the pictures.
 
 project-list-unreadable = Les projets n’ont pas pu être lus
@@ -64,21 +64,48 @@ project-cited-in-element = { $count ->
    *[other] { $count } références sont citées dans « l’élément »
 }
 
-## The tabs of the maps
+## The bar over the map: where one is, and what is done with the element in view
 
-# The name of a map, or of an element, that has none.
+# The name of an element that has none.
 project-untitled = Sans titre
+project-where = Où vous êtes
+# The small button before the name of the element in view: its parent's name.
+project-up = Remonter
+project-up-hint = Remonter à « { $name } » · Alt+Maj+↑
+# The small round button by the element in view, in the diagram and the text: up to the element over it.
+project-leave-map = Remonter à « { $name } »
+project-siblings-hint = Les éléments à côté de celui-ci : choisissez-en un pour l’afficher
+project-trees-hint = Les éléments sous le projet : choisissez-en un pour l’afficher
+project-shown-beside = affiché à côté
+# The owl before the name of the project itself, in the first pane: up to all the projects.
+project-up-home-hint = Remonter à tous les projets · Alt+Maj+↑
+# The sign of a project, read aloud, where it is shared.
+project-badge-shared = { $name }, partagé par vous
+project-badge-joined = { $name }, rejoint
+# Two projects side by side.
+project-beside-failed = Le projet n’a pas pu être ouvert à côté de celui-ci
+project-beside-no-comments = Les commentaires sont ceux du projet que vous avez ouvert : ouvrez l’autre seul pour y commenter
+# Said over the other pane while elements of one project are dragged over it.
+project-copy-to-project = Copier dans « { $name } »
+project-move-to-project = Déplacer dans « { $name } »
+project-element-name = Nom de l’élément
+project-this-element-actions = Cet élément
+project-new-element-under = Nouvel élément dessous
+project-document-into = Importer un document dedans…
 project-drop-on-map = Déposez sur une carte pour y déplacer · maintenez Ctrl pour copier
 project-open-beside = Ouvrir à côté
 project-open-beside-hint = Deux cartes côte à côte, pour déplacer des éléments de l’une à l’autre
 project-side-by-side-short = Côte à côte
 project-preview-short = Aperçu
-project-found = Citations reconnues…
-# The count is of those found in the map.
+project-found = Citations non liées…
+# The count is of those found in the element in view, and under it.
 project-found-hint = { $count } à passer en revue, pour en faire des citations
 project-found-none = Et du texte qui ressemble à des citations
 project-copied-to = Copié dans « { $name } »
 project-moved-to = Déplacé dans « { $name } »
+project-other-projects = Autres projets
+project-send-failed = Impossible d’écrire dans « { $project } ». Rien n’a été changé ici.
+project-send-no-element = L’élément n’est plus dans ce projet-là.
 
 ## What is done to elements, in the diagram and in the text
 
@@ -93,17 +120,50 @@ project-heading = Imprimer le nom comme titre
 project-heading-hint = Désactivé : le nom est une étiquette pour vous ; seul le texte est imprimé
 project-leave-out = Laisser hors du document
 project-leave-out-hint = Avec tout ce qui est dessous
-# An element that stands for another map: in the document, that map is in its place.
+# An element that stands for another element: in the document, that element is in its place.
 project-stands-for = Tient lieu de « { $name } »
-project-stand-for = Tenir lieu d’une autre carte
-project-stand-for-heading = Dans le document, cette carte prend sa place
-project-stand-for-none = Aucune
+project-stand-for = Tenir lieu d’un autre élément
+project-stand-for-heading = Dans le document, cet élément prend sa place
+project-stand-for-none = Aucun
+# Copying or moving elements to the project itself, to one of its trees, or to another project.
+project-copy-to = Copier dans
+project-cut = Couper
+project-cut-not-removed = Ce qui a été coupé a été collé, mais n’a pas pu être retiré du projet d’où il venait
 project-copy = Copier
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Coller dessous
+project-move-to = Déplacer dans
+# Opening a dialog with the tree of the project, to choose where the elements go: first in Copy to and Move to.
+project-choose-where = Choisir où…
+# Opening the same dialog, to choose the element this one stands for.
+project-choose-element = Choisir un élément…
+# The title of the dialog that chooses where elements are copied to: the name of the one copied, or how many.
+project-pick-copy-title = { $count ->
+    [one] Copier « { $name } » dans
+    [many] Copier { $count } éléments dans
+   *[other] Copier { $count } éléments dans
+}
+project-pick-move-title = { $count ->
+    [one] Déplacer « { $name } » dans
+    [many] Déplacer { $count } éléments dans
+   *[other] Déplacer { $count } éléments dans
+}
+project-pick-stand-title = Ce dont « { $name } » tient lieu
+# The buttons of the dialog, saying what will be done with the element chosen.
+project-pick-copy = Copier ici
+project-pick-move = Déplacer ici
+project-pick-stand = Tenir lieu de celui-ci
+project-pick-find = Trouver un élément par son nom
+project-pick-none = Aucun élément ne porte ce nom
+# Why an element cannot be chosen, when it is hovered.
+project-pick-itself = Un élément ne peut pas aller en lui-même, ni dans ce qui est dessous
+project-pick-self = Un élément ne peut pas tenir lieu de lui-même
+project-pick-loop = Le document se contiendrait lui-même
 project-tidy-branch = Ranger cette branche
 project-place-automatically = Placer automatiquement
 project-delete-keeping = Supprimer, en gardant ce qui est dessous
+project-itself-stays = Le projet lui-même reste
+project-itself-stays-detail = Supprimez le projet depuis la page d’accueil.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] « { $name } » a été supprimé
@@ -137,7 +197,7 @@ project-words = { $count ->
    *[other] { $count } mots
 }
 project-read-on = Double-cliquez pour lire la suite
-project-stands-for-map = Tient lieu de la carte « { $name } »
+project-stands-for-map = Tient lieu de « { $name } »
 project-name-not-printed = Le nom n’est pas imprimé
 project-left-out-of-document = Laissé hors du document
 
@@ -207,8 +267,9 @@ project-other-here = { $name } est ici
 project-link-placeholder = En quoi ils sont liés
 project-link-label = Étiquette de l’association
 
-## A copy and its original, in another map.
+## A copy and its original.
 copy-title = La copie et son original
+copy-from = Copié de « { $name } »
 copy-original-changed = L’original a changé depuis la copie, ou depuis la dernière fois que cela a été vu.
 copy-original-same = L’original est tel qu’il était lors de la copie.
 copy-original-unknown = On ne sait pas si l’original a changé depuis la copie : la copie a été faite avant que cela ne soit gardé.
@@ -222,6 +283,8 @@ copy-seen = Garder cette copie telle quelle
 copy-take = Prendre le nom et le texte de l’original
 copy-changed-mark = L’original a changé depuis la copie
 copy-compare = Comparer avec l’original…
+copy-copied-from = Copié de « { $name } »
+copy-copied-from-changed = Copié de « { $name } », qui a changé depuis
 
 ## How far the writing of an element has come, as its writer says.
 status = État

@@ -4,10 +4,10 @@
 
 ## The panel.
 
-found-title = Citazioni trovate
+found-title = Citazioni sciolte
 # On the tab of the panel, beside the other tabs: short.
-found-tab = Citazioni trovate
-found-between = Tra la mappa e le citazioni trovate
+found-tab = Citazioni sciolte
+found-between = Tra la mappa e le citazioni sciolte
 found-taken = Che cosa è preso per citazione
 found-taken-always = Ciò che ha fatto un programma, e le etichette
 found-taken-years = Parentesi con dentro un anno
@@ -27,9 +27,9 @@ found-made = { $count ->
 found-made-undo = Ctrl+Z le riprende, in un passo solo.
 found-library-failed = Non si è potuta interrogare la biblioteca.
 found-nothing = Nulla da passare in rassegna
-found-nothing-looked = In questa mappa non resta nessuna citazione trovata, e nulla vi somiglia a una citazione.
-found-nothing-looked-more = In questa mappa non resta nessuna citazione trovata, e nulla vi somiglia a una citazione. Si può prendere altro per citazione, qui sopra.
-found-nothing-not-looked = In questa mappa non resta nessuna citazione trovata. Il testo che somiglia soltanto a una citazione si cerca quando dici qui sopra che cosa prendere per citazione: parentesi con dentro un anno, o note.
+found-nothing-looked = Nel testo in vista non resta nessuna citazione sciolta, nemmeno un testo che somigli soltanto a una citazione.
+found-nothing-looked-more = Nel testo in vista non resta nessuna citazione sciolta, nemmeno un testo che somigli soltanto a una citazione. Si può prendere altro per citazione, qui sopra.
+found-nothing-not-looked = Nel testo in vista non resta nessuna citazione sciolta fatta da un programma, e nessuna etichetta. Il testo che somiglia soltanto a una citazione si cerca quando dici qui sopra che cosa prendere per citazione: parentesi con dentro un anno, o note.
 found-list-label = Ciò che c'è da passare in rassegna
 found-untitled = Senza titolo
 found-in-a-note = In una nota
@@ -95,7 +95,7 @@ found-note-holds = La nota contiene { $what ->
         [hard_break] una seconda riga
        *[other] qualcosa che non è testo
     }, che le parole prima e dopo un'opera non possono contenere.
-found-note-another = La nota contiene un'altra citazione trovata, che andrebbe perduta nelle parole dopo questa.
+found-note-another = La nota contiene un'altra citazione sciolta, che andrebbe perduta nelle parole dopo questa.
 
 ## Why what was asked could not be done.
 

@@ -82,14 +82,15 @@ ocr-searchable-failed = { $count ->
    *[other] { $count } pagine non si sono potute leggere.
 }
 
-## A map from a PDF of the library
+## A PDF of the library read into a project, as a tree of elements
 
-ocr-map-button = Una mappa del suo testo…
-ocr-map-title = Una mappa del testo
+ocr-map-button = Importa il suo testo come mappa…
+ocr-map-title = Importa il testo come mappa
 ocr-map-into = Nel progetto
 ocr-map-new-project = Un nuovo progetto, con il suo nome
-ocr-map-making = Creazione della mappa…
-ocr-map-failed = La mappa non si è potuta fare.
+ocr-map-make = Importa
+ocr-map-making = Importazione…
+ocr-map-failed = Gli elementi non si sono potuti fare.
 
 ## The text of a picture of the store
 
@@ -98,7 +99,7 @@ ocr-picture-title = Il testo nell'immagine
 ocr-picture-empty = Nell'immagine non è stato trovato testo.
 ocr-picture-copy = Copia
 ocr-picture-copied = Il testo è copiato
-ocr-picture-map = Fanne una mappa
+ocr-picture-map = Fanne un elemento
 
 ## Tesseract in the settings
 
@@ -107,6 +108,160 @@ ocr-settings-missing = Non trovato. Serve per leggere il testo da scansioni e im
 ocr-settings-by-itself = Trovato da sé
 ocr-settings-where = Dove si trova Tesseract
 ocr-settings-look-failed = Non si è potuto cercare Tesseract
-ocr-settings-has-none = Non ha i dati di nessuna lingua: installa quelli di una, come tesseract-data-ita.
-ocr-settings-first = Leggi all'inizio in
-ocr-settings-how = Come il testo è letto all'inizio
+ocr-settings-title = Riconoscimento ottico dei caratteri (OCR)
+ocr-settings-has-none = Non ha i dati di nessuna lingua: importane una qui sotto, o installane una con il gestore dei pacchetti del tuo sistema, come tesseract-data-ita.
+ocr-settings-first = Lingue predefinite per l'OCR
+ocr-settings-how = Impostazioni predefinite per l'OCR
+ocr-settings-languages = Lingue dell'OCR
+ocr-settings-languages-hint = Glaukopis usa Tesseract per l'OCR. I file delle lingue che importi qui si useranno al posto di quelli che hai forse installato sul tuo sistema.
+ocr-source-system = Sistema
+ocr-source-imported = Importato
+ocr-settings-not-found = Tesseract non è stato trovato. Di' dove si trova sotto Programmi, qui sotto.
+
+## What becomes of the text a PDF has (the same in every dialog that reads one).
+
+ocr-text-title = Il testo che il PDF contiene
+# Said where some pages have text that does not read as text.
+ocr-text-poor = { $poor ->
+    [one] Su una delle { $pages } pagine che hanno testo, questo non si legge come testo, come quando un font non dice quali lettere mostra, o una lettura è venuta male.
+    [many] Su { $poor } delle { $pages } pagine che hanno testo, questo non si legge come testo, come quando un font non dice quali lettere mostra, o una lettura è venuta male.
+   *[other] Su { $poor } delle { $pages } pagine che hanno testo, questo non si legge come testo, come quando un font non dice quali lettere mostra, o una lettura è venuta male.
+}
+# Said where every page that has text has text that does not read as text.
+ocr-text-poor-all = { $pages ->
+    [one] Il testo che il PDF contiene non si legge come testo, come quando un font non dice quali lettere mostra, o una lettura è venuta male.
+    [many] Su tutte le { $pages } pagine che hanno testo, questo non si legge come testo, come quando un font non dice quali lettere mostra, o una lettura è venuta male.
+   *[other] Su tutte le { $pages } pagine che hanno testo, questo non si legge come testo, come quando un font non dice quali lettere mostra, o una lettura è venuta male.
+}
+ocr-text-keep = Tieni il testo che il PDF contiene
+ocr-text-keep-hint = Si leggono solo le pagine senza testo; le altre si prendono come sono.
+ocr-text-keep-searchable-hint = Si leggono solo le pagine senza testo; le altre tengono il testo che hanno.
+ocr-text-anew = Leggi di nuovo ogni pagina con Tesseract
+ocr-text-anew-hint = Si tiene solo ciò che Tesseract legge dalle immagini delle pagine; il testo che il PDF contiene non si prende da nessuna pagina.
+ocr-text-anew-searchable-hint = Il testo invisibile che le pagine hanno viene tolto, e ciò che si legge è posato al suo posto. Le pagine hanno l'aspetto di prima.
+ocr-about-anew = { $pages ->
+    [one] La pagina si legge di nuovo, da un'immagine di essa.
+    [many] Tutte le { $pages } pagine si leggono di nuovo, da immagini di esse.
+   *[other] Tutte le { $pages } pagine si leggono di nuovo, da immagini di esse.
+}
+ocr-searchable-anew = { $pages ->
+    [one] La pagina si legge di nuovo, e il suo testo è posato invisibile sotto ciò che si vede, al posto di quello che aveva. Il PDF ha l'aspetto di prima.
+    [many] Tutte le { $pages } pagine si leggono di nuovo, e il loro testo è posato invisibile sotto ciò che si vede, al posto di quello che avevano. Il PDF ha l'aspetto di prima.
+   *[other] Tutte le { $pages } pagine si leggono di nuovo, e il loro testo è posato invisibile sotto ciò che si vede, al posto di quello che avevano. Il PDF ha l'aspetto di prima.
+}
+
+## What is found of the text a PDF has, and what can be done with it (ADR 0044).
+
+ocr-text-found = { $withText ->
+    [one] Testo in { $withText } pagina su { $pages }, in { $fonts }.
+    [many] Testo in { $withText } pagine su { $pages }, in { $fonts }.
+   *[other] Testo in { $withText } pagine su { $pages }, in { $fonts }.
+}
+ocr-text-found-no-fonts = { $withText ->
+    [one] Testo in { $withText } pagina su { $pages }.
+    [many] Testo in { $withText } pagine su { $pages }.
+   *[other] Testo in { $withText } pagine su { $pages }.
+}
+# The first fonts, and how many more there are.
+ocr-text-fonts-more = { $fonts } e { $count ->
+    [one] un altro
+    [many] altri { $count }
+   *[other] altri { $count }
+}
+ocr-text-scheme-greek-names = Il greco è conservato come nomi dei glifi di { $fonts }, e se ne possono fare lettere greche.
+ocr-text-scheme-expert-names = Il maiuscoletto e le cifre minuscole di { $fonts } sono conservati per nome, e se ne possono fare le loro lettere e cifre.
+ocr-text-scheme-beta-code = Il greco è scritto in Beta Code, e se ne possono fare lettere greche.
+ocr-text-translate = Traducilo in testo leggibile
+ocr-text-translate-hint = Il testo è reso leggibile da ciò che i font dicono delle loro lettere; per questo nessuna pagina si legge da un'immagine.
+ocr-text-translate-searchable-hint = Si correggono le tabelle del PDF stesso, perché ogni lettore di PDF ne copi e ne cerchi il testo come si deve; nulla di ciò che è disegnato cambia.
+ocr-text-anew-no-tesseract = Tesseract, che legge il testo nelle immagini, non è installato.
+ocr-text-page = Pagina { $label }
+ocr-text-page-none = Nessun testo su questa pagina: si legge da un'immagine di essa.
+ocr-about-translate = { $without ->
+    [0] Il testo che il PDF contiene è reso leggibile; nessuna pagina si legge da un'immagine.
+    [one] Il testo che il PDF contiene è reso leggibile, e l'unica pagina senza testo si legge da un'immagine di essa.
+    [many] Il testo che il PDF contiene è reso leggibile, e le { $without } pagine senza testo si leggono da immagini di esse.
+   *[other] Il testo che il PDF contiene è reso leggibile, e le { $without } pagine senza testo si leggono da immagini di esse.
+}
+ocr-searchable-translate = { $without ->
+    [0] Ai font del PDF si danno le loro lettere, perché il suo testo si possa copiare e cercare come si deve. Il PDF ha l'aspetto di prima.
+    [one] Ai font del PDF si danno le loro lettere, e l'unica pagina senza testo si legge e riceve un testo. Il PDF ha l'aspetto di prima.
+    [many] Ai font del PDF si danno le loro lettere, e le { $without } pagine senza testo si leggono e ricevono un testo. Il PDF ha l'aspetto di prima.
+   *[other] Ai font del PDF si danno le loro lettere, e le { $without } pagine senza testo si leggono e ricevono un testo. Il PDF ha l'aspetto di prima.
+}
+ocr-searchable-make-readable = Rendi leggibile
+ocr-searchable-readable-done = { $count ->
+    [one] Il testo del PDF ora è leggibile: a un font sono state date le sue lettere
+    [many] Il testo del PDF ora è leggibile: a { $count } font sono state date le loro lettere
+   *[other] Il testo del PDF ora è leggibile: a { $count } font sono state date le loro lettere
+}
+
+## The shape of the pages, and scripts whose letters look alike (ADR 0045).
+
+ocr-shape = Tieni la forma delle pagine
+ocr-shape-hint = Titoli, righe tenute come righe, numeri nel margine, e le testatine lasciate fuori. Senza, le pagine diventano semplici paragrafi.
+# How a PDF read with its shape kept becomes a map: the document's own tree, or an element for each page.
+ocr-structure = Elementi
+ocr-structure-headings = Secondo i suoi titoli
+ocr-structure-pages = Secondo le sue pagine
+ocr-page-marks = Segna dove comincia ogni pagina
+ocr-page-marks-hint = Un segno di riferimento con il numero della pagina, dove cominciava.
+# The outline shown before a PDF read by its headings is made into a map.
+ocr-outline-title = Che cosa si farà
+ocr-outline-all = Mostra tutti i { $count }
+
+# The styles of text that recur beside the body, shown after the reading, for the writer to say what each is.
+ocr-styles-title = Stili di testo trovati
+ocr-styles-about = { $count ->
+    [one] Uno stile di testo ricorre accanto al corpo del testo. Di' che cos'è, o lascialo come testo.
+    [many] { $count } stili di testo ricorrono accanto al corpo del testo. Di' che cos'è ciascuno, o lasciali come testo.
+   *[other] { $count } stili di testo ricorrono accanto al corpo del testo. Di' che cos'è ciascuno, o lasciali come testo.
+}
+# How often a style found occurs: "12 times on 9 pages".
+ocr-styles-often = { $count ->
+    [one] Una volta
+    [many] { $count } volte
+   *[other] { $count } volte
+} in { $pages ->
+    [one] una pagina
+    [many] { $pages } pagine
+   *[other] { $pages } pagine
+}
+ocr-styles-kind = Che cos'è
+ocr-styles-own = Un tipo tuo…
+ocr-styles-own-name = Nome del tipo
+ocr-styles-own-hint = Si crea quando il documento è portato dentro, senza un aspetto suo finché non gliene dai uno.
+# The first guess of the name of a kind of your own: the look of the style in words, put together as "{ $look } text", "Smaller italic text", "Indented text", or for lines kept as lines, "{ $look } lines kept", "Lines kept". $kept is yes for lines kept, where a language bends the words of the look by it.
+ocr-style-guess = { $kept ->
+    [yes] Righe tenute { $look }
+   *[other] Testo { $look }
+}
+ocr-style-indented = { $kept ->
+    [yes] rientrate
+   *[other] rientrato
+}
+ocr-style-smaller = { $kept ->
+    [yes] più piccole
+   *[other] più piccolo
+}
+ocr-style-larger = { $kept ->
+    [yes] più grandi
+   *[other] più grande
+}
+ocr-style-bold = { $kept ->
+   *[other] in grassetto
+}
+ocr-style-italic = { $kept ->
+   *[other] in corsivo
+}
+# A style that differs from the body only by its font.
+ocr-style-family = Testo in { $family }
+ocr-style-other = Altro testo
+# A script among the languages chosen, as it stands in the warning below: "the Greek script is read together with the Latin".
+ocr-script = { $script ->
+    [Greek] greco
+    [Cyrillic] cirillico
+   *[Latin] latino
+}
+# $alike: the letters that look alike, in pairs, the first script's first: "ϲ c, ο o, ν v".
+ocr-languages-scripts-alike = L'alfabeto { $a } è letto insieme con quello { $b }: lettere che si somigliano nei due ({ $alike }) sono spesso lette l'una per l'altra, e parole intere vengono fuori sbagliate. Per un alfabeto solo, togli gli altri.

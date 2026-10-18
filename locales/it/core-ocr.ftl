@@ -4,19 +4,22 @@
 ## What a file is.
 
 ocr-kind-pdf = PDF
+ocr-no-headings = Non è stato trovato nessun titolo: le pagine sono gli elementi.
 ocr-kind-picture = Immagine
 
 ## When text cannot be read.
 
 ocr-stopped = La lettura è stata fermata.
 ocr-no-language = Tesseract non ha i dati per la lingua «{ $language }».
-ocr-no-languages = Tesseract non ha i dati per nessuna lingua. Installa i dati di una, come tesseract-data-eng su Arch.
+ocr-no-languages = Tesseract non ha i dati di nessuna lingua. Importane una in Impostazioni › Programmi, o installala con il gestore dei pacchetti del tuo sistema, come tesseract-data-eng su Arch.
 ocr-not-pdf = «{ $file }» non è un PDF.
 ocr-no-pages = «{ $file }» non ha pagine.
 ocr-locked = «{ $file }» è protetto da una password, e le sue pagine non si possono disegnare.
 ocr-unreadable = «{ $file }» non si è potuto leggere come PDF. Può essere danneggiato.
 ocr-page-not-drawn = La pagina { $page } non si è potuta disegnare.
 ocr-picture-unreadable = L'immagine non si è potuta leggere: { $message }
+ocr-not-made = Tesseract non ha prodotto { $path }.
+ocr-not-made-said = Tesseract non ha prodotto { $path }. Ha detto: { $message }
 ocr-drawing = Un disegno (SVG) non ha dentro un'immagine da cui leggere testo.
 
 ## Making a PDF searchable.
@@ -34,3 +37,25 @@ ocr-remark-more-failed = { $count ->
    *[other] Altre { $count } pagine non si sono potute leggere.
 }
 ocr-remark-empty = Non è stato trovato testo.
+
+## What a reading of a PDF came to (ADR 0044).
+
+ocr-remark-counts = { $read ->
+    [0] Nessuna pagina letta da Tesseract
+    [one] Una pagina letta da Tesseract
+    [many] { $read } pagine lette da Tesseract
+   *[other] { $read } pagine lette da Tesseract
+}, { $taken ->
+    [0] nessuna presa dal testo che il PDF ha di suo
+    [one] una presa dal testo che il PDF ha di suo
+    [many] { $taken } prese dal testo che il PDF ha di suo
+   *[other] { $taken } prese dal testo che il PDF ha di suo
+}, { $failed ->
+    [0] nessuna che non si sia potuta leggere.
+    [one] una che non si è potuta leggere.
+    [many] { $failed } che non si sono potute leggere.
+   *[other] { $failed } che non si sono potute leggere.
+}
+# Stands in the element in the place of a page that could not be read.
+ocr-page-failed-line = [Questa pagina non si è potuta leggere: { $message }]
+ocr-why-no-tesseract = Tesseract, che legge il testo nelle immagini, non è installato.

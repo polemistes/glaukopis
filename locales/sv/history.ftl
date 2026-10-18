@@ -38,7 +38,7 @@ history-removed = { $count ->
 history-back = Tillbaka till nuet
 history-as-it-was = Som det var { $when }
 history-marked = Det som ändrats sedan ögonblicket före är märkt i färgen hos den som ändrade det.
-history-map-not-there = Den här kartan fanns inte då.
+history-map-not-there = Det här elementet fanns inte då.
 history-added-by = Tillagt av { $name }
 history-removed-by = Borttaget av { $name }
 history-changed-by = Ändrat av { $name }
@@ -48,7 +48,7 @@ history-name-moment = Namnge det här ögonblicket
 history-name-placeholder = Vad det ska heta
 history-named = Ögonblicket heter ”{ $name }”.
 history-bring-back-element = Återställ det här elementet som det var
-history-bring-back-map = Återställ kartan som den var
+history-bring-back-map = Återställ allt i vyn som det var
 history-brought-back = Återställt som det var. Ångra tar det tillbaka.
 history-bring-back-failed = Det kunde inte återställas.
 history-open-copy = Öppna som ett eget projekt
@@ -100,3 +100,9 @@ history-cut-failed = Historiken kunde inte tas ut.
 history-archive-until = till { $when }
 history-archived = Historiken före { $when } är arkiverad.
 history-deleted = Historiken före { $when } är raderad.
+
+## The text as Org: as it was and as it is, as a difference of two Org texts
+
+history-show-org = Visa som Org
+history-org-about = Texten i elementet som visas och allt under det, som Org: som den var då, och som den är nu. Rader som tagits bort är märkta −, rader som lagts till +, och inom en ändrad rad de ord som ändrades.
+history-org-same = Texten är nu som den var då.

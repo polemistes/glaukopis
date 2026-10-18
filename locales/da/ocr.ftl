@@ -75,14 +75,15 @@ ocr-searchable-failed = { $count ->
    *[other] { $count } sider kunne ikke læses.
 }
 
-## A map from a PDF of the library
+## A PDF of the library read into a project, as a tree of elements
 
-ocr-map-button = Et kort af dens tekst…
-ocr-map-title = Et kort af teksten
+ocr-map-button = Importer dens tekst som et kort…
+ocr-map-title = Importer teksten som et kort
 ocr-map-into = Ind i projektet
 ocr-map-new-project = Et nyt projekt, opkaldt efter den
-ocr-map-making = Laver kortet…
-ocr-map-failed = Kortet kunne ikke laves.
+ocr-map-make = Importer
+ocr-map-making = Importerer…
+ocr-map-failed = Elementerne kunne ikke laves.
 
 ## The text of a picture of the store
 
@@ -91,7 +92,7 @@ ocr-picture-title = Teksten i billedet
 ocr-picture-empty = Der blev ikke fundet nogen tekst i billedet.
 ocr-picture-copy = Kopiér
 ocr-picture-copied = Teksten er kopieret
-ocr-picture-map = Lav et kort af den
+ocr-picture-map = Lav et element af den
 
 ## Tesseract in the settings
 
@@ -100,6 +101,141 @@ ocr-settings-missing = Ikke fundet. Behøves for at læse tekst fra skanninger o
 ocr-settings-by-itself = Fundet af sig selv
 ocr-settings-where = Hvor Tesseract er
 ocr-settings-look-failed = Der kunne ikke ledes efter Tesseract
-ocr-settings-has-none = Det har ingen sprogs data: installer et sprogs, såsom tesseract-data-eng.
-ocr-settings-first = Sprog til at begynde med
-ocr-settings-how = Hvordan tekst læses til at begynde med
+ocr-settings-title = Tekstgenkendelse (OCR)
+ocr-settings-has-none = Det har ingen sprogs data: importer et nedenfor, eller installer et med dit systems pakkehåndtering, såsom tesseract-data-eng.
+ocr-settings-first = Standardsprog til OCR
+ocr-settings-how = Standardindstillinger til OCR
+ocr-settings-languages = Sprog til OCR
+ocr-settings-languages-hint = Glaukopis bruger Tesseract til OCR. De sprogfiler, du importerer her, bruges i stedet for dem, du måtte have installeret på dit system.
+ocr-source-system = System
+ocr-source-imported = Importeret
+ocr-settings-not-found = Tesseract blev ikke fundet. Angiv, hvor det er, under Programmer nedenfor.
+
+## What becomes of the text a PDF has (the same in every dialog that reads one).
+
+ocr-text-title = PDF'ens tekst
+# Said where some pages have text that does not read as text.
+ocr-text-poor = { $poor ->
+    [one] På én af de { $pages } sider, der har tekst, kan den ikke læses som tekst, som når en skrift ikke siger, hvilke bogstaver den viser, eller en læsning var dårlig.
+   *[other] På { $poor } af de { $pages } sider, der har tekst, kan den ikke læses som tekst, som når en skrift ikke siger, hvilke bogstaver den viser, eller en læsning var dårlig.
+}
+# Said where every page that has text has text that does not read as text.
+ocr-text-poor-all = { $pages ->
+    [one] PDF'ens tekst kan ikke læses som tekst, som når en skrift ikke siger, hvilke bogstaver den viser, eller en læsning var dårlig.
+   *[other] På alle { $pages } sider, der har tekst, kan den ikke læses som tekst, som når en skrift ikke siger, hvilke bogstaver den viser, eller en læsning var dårlig.
+}
+ocr-text-keep = Behold PDF'ens tekst
+ocr-text-keep-hint = Kun siderne uden tekst læses; de andre tages, som de er.
+ocr-text-keep-searchable-hint = Kun siderne uden tekst læses; de andre beholder den tekst, de har.
+ocr-text-anew = Læs hver side på ny med Tesseract
+ocr-text-anew-hint = Kun det, Tesseract læser fra billeder af siderne, beholdes; PDF'ens tekst tages ikke fra nogen side.
+ocr-text-anew-searchable-hint = Sidernes usynlige tekst tages væk, og det, der læses, lægges i stedet. Siderne ser ud, som de gjorde.
+ocr-about-anew = { $pages ->
+    [one] Siden læses på ny, fra et billede af den.
+   *[other] Alle { $pages } sider læses på ny, fra billeder af dem.
+}
+ocr-searchable-anew = { $pages ->
+    [one] Siden læses på ny, og dens tekst lægges usynligt under det, der vises, i stedet for den, den havde. PDF'en ser ud, som den gjorde.
+   *[other] Alle { $pages } sider læses på ny, og deres tekst lægges usynligt under det, der vises, i stedet for den, de havde. PDF'en ser ud, som den gjorde.
+}
+
+## What is found of the text a PDF has, and what can be done with it (ADR 0044).
+
+ocr-text-found = Tekst på { $withText } af { $pages } sider, i { $fonts }.
+ocr-text-found-no-fonts = Tekst på { $withText } af { $pages } sider.
+# The first fonts, and how many more there are.
+ocr-text-fonts-more = { $fonts } og { $count ->
+    [one] én til
+   *[other] { $count } til
+}
+ocr-text-scheme-greek-names = Den græske tekst er gemt som glyffernes navne i { $fonts } og kan gøres til græske bogstaver.
+ocr-text-scheme-expert-names = Kapitæler og minuskeltal i { $fonts } er gemt ved navn og kan gøres til deres bogstaver og cifre.
+ocr-text-scheme-beta-code = Græsk er skrevet i Beta Code og kan gøres til græske bogstaver.
+ocr-text-translate = Oversæt den til læsbar tekst
+ocr-text-translate-hint = Teksten gøres læsbar ud fra det, skrifterne siger om deres bogstaver; ingen side læses fra et billede for det.
+ocr-text-translate-searchable-hint = PDF'ens egne tabeller rettes, så enhver PDF-læser kopierer og søger rigtigt i teksten; intet af det tegnede ændres.
+ocr-text-anew-no-tesseract = Tesseract, som læser tekst i billeder, er ikke installeret.
+ocr-text-page = Side { $label }
+ocr-text-page-none = Ingen tekst på denne side: den læses fra et billede af den.
+ocr-about-translate = { $without ->
+    [0] PDF'ens tekst gøres læsbar; ingen side læses fra et billede.
+    [one] PDF'ens tekst gøres læsbar, og den ene side uden tekst læses fra et billede af den.
+   *[other] PDF'ens tekst gøres læsbar, og de { $without } sider uden tekst læses fra billeder af dem.
+}
+ocr-searchable-translate = { $without ->
+    [0] PDF'ens skrifter får deres bogstaver, så dens tekst kan kopieres og søges i rigtigt. PDF'en ser ud, som den gjorde.
+    [one] PDF'ens skrifter får deres bogstaver, og den ene side uden tekst læses og får tekst. PDF'en ser ud, som den gjorde.
+   *[other] PDF'ens skrifter får deres bogstaver, og de { $without } sider uden tekst læses og får tekst. PDF'en ser ud, som den gjorde.
+}
+ocr-searchable-make-readable = Gør læsbar
+ocr-searchable-readable-done = { $count ->
+    [one] PDF'ens tekst er læsbar nu: én skrift fik sine bogstaver
+   *[other] PDF'ens tekst er læsbar nu: { $count } skrifter fik deres bogstaver
+}
+
+## The shape of the pages, and scripts whose letters look alike (ADR 0045).
+
+ocr-shape = Bevar sidernes form
+ocr-shape-hint = Overskrifter, linjer bevaret som linjer, numre i margenen, og sidehovederne udeladt. Slået fra bliver siderne almindelige afsnit.
+# How a PDF read with its shape kept becomes a map: the document's own tree, or an element for each page.
+ocr-structure = Elementer
+ocr-structure-headings = Efter overskrifterne
+ocr-structure-pages = Efter siderne
+ocr-page-marks = Angiv, hvor hver side begynder
+ocr-page-marks-hint = Et stedmærke med sidens nummer, der hvor den begyndte.
+# The outline shown before a PDF read by its headings is made into a map.
+ocr-outline-title = Det, der bliver lavet
+ocr-outline-all = Vis alle { $count }
+
+# The styles of text that recur beside the body, shown after the reading, for the writer to say what each is.
+ocr-styles-title = Fundne typografier
+ocr-styles-about = { $count ->
+    [one] Én typografi går igen ved siden af brødteksten. Sig, hvad den er, eller lad den være tekst.
+   *[other] { $count } typografier går igen ved siden af brødteksten. Sig, hvad hver af dem er, eller lad dem være tekst.
+}
+# How often a style found occurs: "12 times on 9 pages".
+ocr-styles-often = { $count ->
+    [one] Én gang
+   *[other] { $count } gange
+} på { $pages ->
+    [one] én side
+   *[other] { $pages } sider
+}
+ocr-styles-kind = Hvad den er
+ocr-styles-own = En egen art…
+ocr-styles-own-name = Artens navn
+ocr-styles-own-hint = Laves, når dokumentet hentes ind, uden eget udseende, til du giver den et.
+# The first guess of the name of a kind of your own: the look of the style in words, put together as "{ $look } text", "Smaller italic text", "Indented text", or for lines kept as lines, "{ $look } lines kept", "Lines kept". $kept is yes for lines kept, where a language bends the words of the look by it.
+ocr-style-guess = { $kept ->
+    [yes] { $look } bevarede linjer
+   *[other] { $look } tekst
+}
+ocr-style-indented = { $kept ->
+    [yes] indrykkede
+   *[other] indrykket
+}
+ocr-style-smaller = { $kept ->
+   *[other] mindre
+}
+ocr-style-larger = { $kept ->
+   *[other] større
+}
+ocr-style-bold = { $kept ->
+    [yes] fede
+   *[other] fed
+}
+ocr-style-italic = { $kept ->
+    [yes] kursive
+   *[other] kursiv
+}
+# A style that differs from the body only by its font.
+ocr-style-family = Tekst i { $family }
+ocr-style-other = Anden tekst
+# A script among the languages chosen, as it stands in the warning below: "the Greek script is read together with the Latin".
+ocr-script = { $script ->
+    [Greek] græske
+    [Cyrillic] kyrilliske
+   *[Latin] latinske
+}
+# $alike: the letters that look alike, in pairs, the first script's first: "ϲ c, ο o, ν v".
+ocr-languages-scripts-alike = Det { $a } alfabet læses sammen med det { $b }: bogstaver, der ligner hinanden i de to ({ $alike }), læses ofte som hinanden, og hele ord bliver forkerte. Vil du kun have ét alfabet, så fjern de andre.

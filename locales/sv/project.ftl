@@ -1,4 +1,4 @@
-# A project: its view, the tabs of its maps, what is done to elements, and
+# A project: its view, the bar over the map, what is done to elements, and
 # the panels at the side with the references and the pictures.
 
 project-list-unreadable = Projekten kunde inte läsas
@@ -62,21 +62,48 @@ project-cited-in-element = { $count ->
    *[other] { $count } referenser hänvisas till i ”elementet”
 }
 
-## The tabs of the maps
+## The bar over the map: where one is, and what is done with the element in view
 
-# The name of a map, or of an element, that has none.
+# The name of an element that has none.
 project-untitled = Utan titel
+project-where = Var du är
+# The small button before the name of the element in view: its parent's name.
+project-up = Upp
+project-up-hint = Upp till ”{ $name }” · Alt+Skift+↑
+# The small round button by the element in view, in the diagram and the text: up to the element over it.
+project-leave-map = Upp till ”{ $name }”
+project-siblings-hint = Elementen bredvid det här: välj ett för att visa det
+project-trees-hint = Elementen under projektet: välj ett för att visa det
+project-shown-beside = bredvid det här
+# The owl before the name of the project itself, in the first pane: up to all the projects.
+project-up-home-hint = Upp till alla projekt · Alt+Skift+↑
+# The sign of a project, read aloud, where it is shared.
+project-badge-shared = { $name }, delat av dig
+project-badge-joined = { $name }, som du gått med i
+# Two projects side by side.
+project-beside-failed = Projektet kunde inte öppnas bredvid det här
+project-beside-no-comments = Kommentarerna är de i projektet du öppnade: öppna det andra för sig för att kommentera i det
+# Said over the other pane while elements of one project are dragged over it.
+project-copy-to-project = Kopiera till ”{ $name }”
+project-move-to-project = Flytta till ”{ $name }”
+project-element-name = Elementets namn
+project-this-element-actions = Det här elementet
+project-new-element-under = Nytt element under det
+project-document-into = Hämta in ett dokument i det…
 project-drop-on-map = Släpp på en karta för att flytta dit · håll Ctrl för att kopiera
 project-open-beside = Öppna bredvid
 project-open-beside-hint = Två kartor sida vid sida, för att flytta element mellan dem
 project-side-by-side-short = Sida vid sida
 project-preview-short = Förhandsvisning
-project-found = Hittade källhänvisningar…
-# The count is of those found in the map.
+project-found = Lösa källhänvisningar…
+# The count is of those found in the element in view, and under it.
 project-found-hint = { $count } att gå igenom och göra till källhänvisningar
 project-found-none = Och text som ser ut som källhänvisningar
 project-copied-to = Kopierat till ”{ $name }”
 project-moved-to = Flyttat till ”{ $name }”
+project-other-projects = Andra projekt
+project-send-failed = Det gick inte att skriva i ”{ $project }”. Inget ändrades här.
+project-send-no-element = Elementet finns inte längre i det projektet.
 
 ## What is done to elements, in the diagram and in the text
 
@@ -91,17 +118,48 @@ project-heading = Skriv ut namnet som rubrik
 project-heading-hint = Av: namnet är en etikett för dig; bara texten skrivs ut
 project-leave-out = Utelämna ur dokumentet
 project-leave-out-hint = Med allt under det
-# An element that stands for another map: in the document, that map is in its place.
+# An element that stands for another element: in the document, that element is in its place.
 project-stands-for = Står för ”{ $name }”
-project-stand-for = Stå för en annan karta
-project-stand-for-heading = I dokumentet tar den här kartan dess plats
-project-stand-for-none = Ingen
+project-stand-for = Stå för ett annat element
+project-stand-for-heading = I dokumentet tar det här elementet dess plats
+project-stand-for-none = Inget
+# Copying or moving elements to the project itself, to one of its trees, or to another project.
+project-copy-to = Kopiera till
+project-cut = Klipp ut
+project-cut-not-removed = Det som klipptes ut klistrades in, men kunde inte tas bort från projektet det kom från
 project-copy = Kopiera
 # Pasting what was copied under the element the menu is of.
 project-paste-under = Klistra in under det
+project-move-to = Flytta till
+# Opening a dialog with the tree of the project, to choose where the elements go: first in Copy to and Move to.
+project-choose-where = Välj var…
+# Opening the same dialog, to choose the element this one stands for.
+project-choose-element = Välj ett element…
+# The title of the dialog that chooses where elements are copied to: the name of the one copied, or how many.
+project-pick-copy-title = { $count ->
+    [one] Kopiera ”{ $name }” till
+   *[other] Kopiera { $count } element till
+}
+project-pick-move-title = { $count ->
+    [one] Flytta ”{ $name }” till
+   *[other] Flytta { $count } element till
+}
+project-pick-stand-title = Vad ”{ $name }” står för
+# The buttons of the dialog, saying what will be done with the element chosen.
+project-pick-copy = Kopiera hit
+project-pick-move = Flytta hit
+project-pick-stand = Stå för det här
+project-pick-find = Hitta ett element efter namn
+project-pick-none = Inget element heter så
+# Why an element cannot be chosen, when it is hovered.
+project-pick-itself = Ett element kan inte läggas i sig självt, eller i det som står under det
+project-pick-self = Ett element kan inte stå för sig självt
+project-pick-loop = Dokumentet skulle innehålla sig självt
 project-tidy-branch = Snygga till den här grenen
 project-place-automatically = Placera automatiskt
 project-delete-keeping = Radera, men behåll det som står under
+project-itself-stays = Själva projektet blir kvar
+project-itself-stays-detail = Radera projektet från startsidan.
 # One element was deleted, with the elements that were under it.
 project-deleted = { $under ->
     [0] ”{ $name }” raderades
@@ -131,7 +189,7 @@ project-words = { $count ->
    *[other] { $count } ord
 }
 project-read-on = Dubbelklicka för att läsa vidare
-project-stands-for-map = Står för kartan ”{ $name }”
+project-stands-for-map = Står för ”{ $name }”
 project-name-not-printed = Namnet skrivs inte ut
 project-left-out-of-document = Utelämnat ur dokumentet
 
@@ -197,8 +255,9 @@ project-other-here = { $name } är här
 project-link-placeholder = Hur de hänger ihop
 project-link-label = Associationens etikett
 
-## A copy and its original, in another map.
+## A copy and its original.
 copy-title = Kopian och dess original
+copy-from = Kopierat från ”{ $name }”
 copy-original-changed = Originalet har ändrats sedan det kopierades, eller sedan det senast sågs.
 copy-original-same = Originalet är som det var när det kopierades.
 copy-original-unknown = Om originalet har ändrats sedan det kopierades är inte känt: kopian gjordes innan sådant sparades.
@@ -212,6 +271,8 @@ copy-seen = Behåll den här kopian som den är
 copy-take = Ta originalets namn och text
 copy-changed-mark = Originalet har ändrats sedan det här kopierades
 copy-compare = Jämför med originalet…
+copy-copied-from = Kopierat från ”{ $name }”
+copy-copied-from-changed = Kopierat från ”{ $name }”, som har ändrats sedan dess
 
 ## How far the writing of an element has come, as its writer says.
 status = Status

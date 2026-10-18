@@ -11,15 +11,15 @@ timeline-unit = Vad en enhet kallas
 timeline-unit-placeholder = år, dag, cykel…
 timeline-units-hint = Tider är antal av enheten: År 12, Dag 3, eller bara 12. De kan vara negativa.
 timeline-lanes = Banor
-timeline-lanes-given = Varje barn till mitten är en bana, tills du väljer. En bana rymmer det som placeras i dess gren; dess egen placering, om den har någon, är banans spann.
+timeline-lanes-given = Varje barn till elementet i vyn är en bana, tills du väljer. En bana rymmer det som placeras i dess gren; dess egen placering, om den har någon, är banans spann.
 timeline-lanes-chosen = De banor du valde, i textens ordning.
-timeline-lanes-reset = Varje barn till mitten igen
+timeline-lanes-reset = Varje barn till elementet i vyn igen
 timeline-one-lane = En bana
 timeline-each-child = { $count ->
     [one] Dess barn en bana
    *[other] Vart och ett av { $count } barn en bana
 }
-timeline-no-branches = Kartan har inget under sin mitt än.
+timeline-no-branches = Elementet i vyn har inget under sig än.
 timeline-lanes-by-kind = Banor efter slag
 timeline-lanes-by-kind-hint = Varje element av ett slag en egen bana: varje person, varje plats.
 timeline-each-of-kind = Var och en en bana

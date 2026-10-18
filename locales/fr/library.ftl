@@ -83,6 +83,9 @@ library-reason-alike = { $title ->
     }
 }
 library-reason-file = le même fichier
+library-reason-name = un nom semblable
+library-reason-first-page = la première page concorde
+library-reason-folder = dans un dossier au nom semblable
 # Several reasons: those before the last, set apart by commas, and the last.
 library-reasons = { $others } et { $last }
 
@@ -286,6 +289,26 @@ library-delete-many-title = { $count ->
     [many] Supprimer { $count } références ?
    *[other] Supprimer { $count } références ?
 }
+# $projects is the number of projects that cite what is deleted, which keep copies of their own.
+library-delete-one-message = Cela retire la référence de votre bibliothèque et de toutes les collections.{ $projects ->
+        [0] {""}
+        [one] {" "}Elle est citée dans un projet, qui en garde une copie.
+        [many] {" "}Elle est citée dans { $projects } projets, qui en gardent chacun une copie.
+       *[other] {" "}Elle est citée dans { $projects } projets, qui en gardent chacun une copie.
+    }
+library-delete-many-message = Cela les retire de votre bibliothèque et de toutes les collections.{ $projects ->
+        [0] {""}
+        [one] {" "}Un projet qui cite certaines d’entre elles en garde une copie.
+        [many] {" "}{ $projects } projets qui citent certaines d’entre elles en gardent une copie.
+       *[other] {" "}{ $projects } projets qui citent certaines d’entre elles en gardent une copie.
+    }
+# Said after the message above, where what is deleted has files.
+library-delete-files = { $files ->
+        [one] Un fichier appartient à ce qui est supprimé. Il reste parmi les fichiers de la bibliothèque, à moins que vous ne le supprimiez aussi.
+        [many] { $files } fichiers appartiennent à ce qui est supprimé. Ils restent parmi les fichiers de la bibliothèque, à moins que vous ne les supprimiez aussi.
+       *[other] { $files } fichiers appartiennent à ce qui est supprimé. Ils restent parmi les fichiers de la bibliothèque, à moins que vous ne les supprimiez aussi.
+    } Un fichier qu’une autre référence a aussi reste de toute façon.
+library-delete-keep-files = Supprimer, garder les fichiers
 library-delete-failed = Les références n’ont pas pu être supprimées
 library-not-done = Cela n’a pas pu être fait
 
@@ -327,20 +350,22 @@ library-collection-count = { $count ->
    *[other] { $count } collections
 }
 
-## A map of the library, or of a collection: a new project.
+## A map of the library, or of a collection: a tree of elements at the top of a project, new or chosen.
 
 library-map-title-library = Une carte de la bibliothèque
 library-map-title-collection = Une carte d’une collection
 # The name a project made of the whole library is given.
 library-map-library-name = La bibliothèque
 library-map-name = Nom
-library-map-name-hint = Le nom du projet, de sa carte, et de l’élément au centre de la carte.
-library-map-what-library = Les collections deviennent des éléments, emboîtées comme elles le sont, et chaque référence un élément sous sa collection, dont le texte est une citation de celle-ci. Les références qui ne sont dans aucune collection se placent au centre.
+library-map-name-hint = Le nom de l’élément du haut de la carte, et d’un nouveau projet créé pour elle.
+library-map-into = Dans le projet
+library-map-new-project = Un nouveau projet, du même nom
+library-map-what-library = Les collections deviennent des éléments, emboîtées comme elles le sont, et chaque référence un élément sous sa collection, dont le texte est une citation de celle-ci. Les références qui ne sont dans aucune collection se placent juste sous l’élément du haut.
 library-map-what-collection = Les collections qu’elle contient deviennent des éléments, emboîtées comme elles le sont, et chaque référence un élément sous sa collection, dont le texte est une citation de celle-ci.
 library-map-nothing = Il n’y a pas de références à mettre sur la carte.
-library-map-make = Créer le projet
-library-map-making = Création du projet…
-library-map-failed = Le projet n’a pas pu être créé.
+library-map-make = Créer la carte
+library-map-making = Création de la carte…
+library-map-failed = La carte n’a pas pu être créée.
 
 ## Bringing references in, from anywhere in the application.
 
@@ -450,12 +475,24 @@ library-pane-files = Fichiers
 library-pane-attach = Joindre
 library-pane-attach-title = Joindre des fichiers
 library-pane-attach-failed = Le fichier n’a pas pu être joint
+library-pane-attach-many-title = Joindre { $count } fichiers à « { $title } » ?
+library-pane-attach-many-message = Chacun devient un fichier de cette référence. Pour donner de nombreux fichiers chacun à sa propre référence, passez-les en revue parmi les fichiers de la bibliothèque.
+library-pane-attach-many = Joindre { $count } fichiers
+library-pane-add-files = Ajouter des fichiers de la bibliothèque…
+library-pane-add-files-title = Ajouter des fichiers de la bibliothèque à « { $title } »
+library-pane-unassign-all = Retirer les { $count } de cette référence
+library-pane-unassign-all-title = Retirer les { $count } fichiers de « { $title } » ?
+library-pane-unassign-all-message = Les fichiers restent parmi les fichiers de la bibliothèque, où ils peuvent être trouvés et donnés à d’autres références. Ils ne peuvent être supprimés que là.
+library-pane-unassign-all-confirm = Retirer { $count } fichiers
 # Of a file that is attached, and not where it should be.
 library-pane-missing = manquant
 library-pane-reveal = Afficher dans le gestionnaire de fichiers
 library-pane-reveal-failed = Le dossier n’a pas pu être ouvert
 library-pane-no-files = Pas de fichiers. Joignez un PDF, ou déposez-en un ici.
 library-pane-detach-failed = Le fichier n’a pas pu être retiré
+library-pane-unassign = Retirer de cette référence
+library-pane-unassign-title = Retirer « { $name } » de cette référence ?
+library-pane-unassign-message = Le fichier reste parmi les fichiers de la bibliothèque, où il peut être trouvé et donné à une autre référence. Il ne peut être supprimé que là.
 library-pane-leave-collection = Retirer de { $name }
 library-pane-duplicate = Dupliquer
     .hint = Une nouvelle référence qui commence avec ces informations
@@ -509,3 +546,14 @@ library-notes-carried = La référence est venue avec le projet, et n’est pas 
 library-notes-kept = Gardée avec la référence dans votre bibliothèque. Elle accompagne un projet qui cite l’œuvre.
 library-notes-unread = Vos notes n’ont pas pu être lues
 library-notes-unsaved = Votre note n’a pas pu être gardée
+
+## The switch at the head of the library.
+
+library-switch = Références ou fichiers
+library-switch-references = Références
+library-switch-files = Fichiers
+
+## The columns of the library, which can be dragged wider or narrower.
+
+library-resize-side = Faire glisser pour élargir ou rétrécir les collections ou les dossiers
+library-resize-detail = Faire glisser pour élargir ou rétrécir le volet de droite

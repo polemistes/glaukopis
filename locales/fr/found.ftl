@@ -4,10 +4,10 @@
 
 ## The panel.
 
-found-title = Citations reconnues
+found-title = Citations non liées
 # On the tab of the panel, beside the other tabs: short.
-found-tab = Citations reconnues
-found-between = Entre la carte et les citations reconnues
+found-tab = Citations non liées
+found-between = Entre la carte et les citations non liées
 found-taken = Ce qui est pris pour des citations
 found-taken-always = Ce qu’un logiciel a fait, et les balises
 found-taken-years = Les parenthèses contenant une année
@@ -27,9 +27,9 @@ found-made = { $count ->
 found-made-undo = Ctrl+Z les reprend, en une seule étape.
 found-library-failed = La bibliothèque n’a pas pu être interrogée.
 found-nothing = Rien à passer en revue
-found-nothing-looked = Il ne reste dans cette carte aucune citation reconnue, et rien n’y ressemble à une citation.
-found-nothing-looked-more = Il ne reste dans cette carte aucune citation reconnue, et rien n’y ressemble à une citation. Davantage peut être pris pour des citations, ci-dessus.
-found-nothing-not-looked = Il ne reste dans cette carte aucune citation reconnue. Le texte qui ne fait que ressembler à une citation est cherché quand vous dites ci-dessus ce qui doit être pris pour une citation : les parenthèses contenant une année, ou les notes.
+found-nothing-looked = Il ne reste dans le texte affiché aucune citation non liée, pas même du texte qui ne fait qu’y ressembler.
+found-nothing-looked-more = Il ne reste dans le texte affiché aucune citation non liée, pas même du texte qui ne fait qu’y ressembler. Davantage peut être pris pour des citations, ci-dessus.
+found-nothing-not-looked = Il ne reste dans le texte affiché aucune citation non liée faite par un logiciel, ni aucune balise. Le texte qui ne fait que ressembler à une citation est cherché quand vous dites ci-dessus ce qui doit être pris pour une citation : les parenthèses contenant une année, ou les notes.
 found-list-label = Ce qu’il y a à passer en revue
 found-untitled = Sans titre
 found-in-a-note = Dans une note
@@ -95,7 +95,7 @@ found-note-holds = La note contient { $what ->
         [hard_break] une deuxième ligne
        *[other] quelque chose qui n’est pas du texte
     }, ce que les mots avant et après une œuvre ne peuvent pas contenir.
-found-note-another = La note contient une autre citation reconnue, qui serait perdue dans les mots après celle-ci.
+found-note-another = La note contient une autre citation non liée, qui serait perdue dans les mots après celle-ci.
 
 ## Why what was asked could not be done.
 

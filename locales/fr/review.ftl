@@ -12,6 +12,7 @@ review-since-named = Depuis « { $name } »
 review-since-when = À partir du { $when }
 review-choose-since = Réviser à partir d’un autre moment
 review-own = Vos propres modifications aussi
+review-show-org = Afficher en Org
 review-unit = Réviser par
 review-by-sentence = Phrase
 review-by-paragraph = Paragraphe
