@@ -106,9 +106,18 @@ impl Person {
     }
 }
 
-/// A family name containing ` and ` or a comma would be misread; braces prevent it.
+/// A family name containing ` and ` or a comma would be misread; braces
+/// prevent it. So would a family of more words than one with a small word
+/// among them ("Ortega y Gasset", "van Gogh" kept whole): BibTeX, biber and
+/// `parse_one` take every word up to the last small one for the prefix, and
+/// would read "Ortega y" and "Gasset". Braces, as BibTeX users write them,
+/// keep the family whole; what was written before without them reads as it
+/// always did.
 fn protect(family: &str) -> String {
-    let needs = split_top(family, " and ").len() > 1 || contains_top(family, ',');
+    let ws = words(family);
+    let needs = split_top(family, " and ").len() > 1
+        || contains_top(family, ',')
+        || (ws.len() > 1 && ws.iter().any(|w| is_lower_word(w)));
     if needs && !(family.starts_with('{') && family.ends_with('}')) {
         format!("{{{family}}}")
     } else {
@@ -469,12 +478,43 @@ mod tests {
         assert_eq!(p("Beethoven", "Ludwig", "van", "").to_bib(), "van Beethoven, Ludwig");
         assert_eq!(p("King", "Martin Luther", "", "Jr.").to_bib(), "King, Jr., Martin Luther");
         assert_eq!(p("Homer", "", "", "").to_bib(), "Homer");
-        assert_eq!(p("Ortega y Gasset", "José", "", "").to_bib(), "Ortega y Gasset, José");
+        assert_eq!(p("Ortega y Gasset", "José", "", "").to_bib(), "{Ortega y Gasset}, José");
         assert_eq!(p("Black and White", "A.", "", "").to_bib(), "{Black and White}, A.");
         assert_eq!(Person::literal("British Museum").to_bib(), "{British Museum}");
-        for s in ["van Beethoven, Ludwig", "King, Jr., Martin Luther", "{British Museum}", "Nagy, Gregory"] {
+        // A family of more than one word, none of them small, needs no braces.
+        assert_eq!(p("Lloyd Jones", "Hugh", "", "").to_bib(), "Lloyd Jones, Hugh");
+        for s in [
+            "van Beethoven, Ludwig",
+            "King, Jr., Martin Luther",
+            "{British Museum}",
+            "Nagy, Gregory",
+            "{Ortega y Gasset}, José",
+            "{van Gogh}, Vincent",
+            "Lloyd Jones, Hugh",
+        ] {
             assert_eq!(parse_one(s).to_bib(), s);
         }
+    }
+
+    #[test]
+    fn a_family_with_a_small_word_in_it_reads_back_as_it_was_written() {
+        for person in [
+            p("Ortega y Gasset", "José", "", ""),
+            p("van Gogh", "Vincent", "", ""),
+            p("de la Fontaine", "Jean", "", ""),
+            p("Gogh", "Vincent", "van", ""),
+            p("Ortega y Gasset", "José", "", "Jr."),
+        ] {
+            let written = person.to_bib();
+            assert_eq!(parse_one(&written), person, "{written}");
+        }
+        // And as a catalogue gives it: the family is what comes before the comma.
+        let read = parse_one("{Ortega y Gasset}, José");
+        assert_eq!(read.family_key(), "ortega y gasset");
+        assert_eq!(
+            format_list(&parse_list("{Ortega y Gasset}, José and Nagy, Gregory")),
+            "{Ortega y Gasset}, José and Nagy, Gregory"
+        );
     }
 
     #[test]
