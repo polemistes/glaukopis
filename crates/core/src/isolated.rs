@@ -94,8 +94,18 @@ pub fn run_with<T: DeserializeOwned>(program: &Path, task: &str, input: &Path, l
     c.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::piped());
     unix_child(&mut c);
     let mut child = c.spawn().map_err(|e| Ended::NotStarted(e.to_string()))?;
+    // Without its job the child has no bound on its memory, which the loop
+    // below cannot watch on Windows: it is said, and the time still holds.
     #[cfg(windows)]
-    let _job = windows::limit(&child, limits.memory);
+    let _job = windows::limit(&child, limits.memory)
+        .inspect_err(|code| {
+            tracing::warn!(
+                task,
+                code,
+                "the process could not be given a bound on its memory; only its time is bounded"
+            );
+        })
+        .ok();
     let mut stderr = child.stderr.take();
     let said = std::thread::spawn(move || {
         let mut all = String::new();
@@ -113,7 +123,10 @@ pub fn run_with<T: DeserializeOwned>(program: &Path, task: &str, input: &Path, l
             Ok(Some(status)) => break Some(status),
             Ok(None) => {}
             Err(e) => {
+                // It cannot be watched: it is ended, lest it go on without bounds.
                 ended = Some(failed(&e));
+                let _ = child.kill();
+                let _ = child.wait();
                 break None;
             }
         }
@@ -142,6 +155,13 @@ pub fn run_with<T: DeserializeOwned>(program: &Path, task: &str, input: &Path, l
         }
         let first = said.lines().find(|l| !l.trim().is_empty()).unwrap_or("").trim().to_owned();
         return Err(Ended::Failed(if first.is_empty() { status.to_string() } else { first }));
+    }
+    // What it said while it worked, which it writes where the log of the
+    // application cannot see: a page it could not read, a panic it caught.
+    let said = said.trim();
+    if !said.is_empty() {
+        let said: String = said.chars().take(4000).collect();
+        tracing::warn!(task, said, "the process said this while it worked");
     }
     let bytes = std::fs::read(&output).map_err(|e| failed(&e))?;
     tracing::info!(task, ms = started.elapsed().as_millis() as u64, "done in a process of its own");
@@ -203,6 +223,7 @@ pub fn serve(args: &[OsString]) -> Option<i32> {
         return Some(2);
     };
     let input = PathBuf::from(input);
+    end_with_parent();
     let done = std::thread::Builder::new().stack_size(64 << 20).spawn(move || work(&input));
     let result = match done.map(|handle| handle.join()) {
         Ok(Ok(result)) => result,
@@ -216,6 +237,44 @@ pub fn serve(args: &[OsString]) -> Option<i32> {
             1
         }
     })
+}
+
+/// Where the system does not end the child with its parent (on Linux the
+/// child is given a signal for it, `unix_child`; on Windows its job ends it),
+/// the child ends itself once the parent is gone. It looks on Linux too,
+/// where the signal makes it needless, so that what macOS relies on is run
+/// and tested here, where it can be. The parent is what keeps
+/// its time and its memory within bounds, and an application that was
+/// killed or forced to quit must not leave a reader of PDFs eating the
+/// machine's memory. The child looks about once a second; a parent that is
+/// gone has given it to another (launchd, on macOS), and the parent's
+/// number it is told is no longer the one it was.
+fn end_with_parent() {
+    #[cfg(unix)]
+    {
+        // SAFETY: getppid has no preconditions and cannot fail.
+        let parent = unsafe { libc::getppid() };
+        let gone = move || {
+            // SAFETY: as above.
+            let now = unsafe { libc::getppid() };
+            now != parent || now == 1
+        };
+        if gone() {
+            eprintln!("the application that asked for this is gone");
+            std::process::exit(3);
+        }
+        let watching = std::thread::Builder::new().name("parent".into()).spawn(move || {
+            loop {
+                std::thread::sleep(Duration::from_secs(1));
+                if gone() {
+                    std::process::exit(3);
+                }
+            }
+        });
+        if let Err(e) = watching {
+            eprintln!("the application cannot be watched, and this may outlive it: {e}");
+        }
+    }
 }
 
 /// The memory the machine has free, in bytes, where that can be told.
@@ -296,7 +355,7 @@ fn unix_child(c: &mut std::process::Command) {
 mod windows {
     use std::os::windows::io::AsRawHandle;
 
-    use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
+    use windows_sys::Win32::Foundation::{CloseHandle, GetLastError, HANDLE};
     use windows_sys::Win32::System::JobObjects::{
         AssignProcessToJobObject, CreateJobObjectW, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
         JOB_OBJECT_LIMIT_PROCESS_MEMORY, JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JobObjectExtendedLimitInformation,
@@ -315,13 +374,16 @@ mod windows {
         }
     }
 
-    pub fn limit(child: &std::process::Child, memory: u64) -> Option<Job> {
+    /// The job, or the code of the error of the system that kept it from
+    /// being made or the child from being put in it.
+    pub fn limit(child: &std::process::Child, memory: u64) -> Result<Job, u32> {
         // SAFETY: the calls are given valid handles and a limit structure of
         // the size they are told; the job handle is closed by Job's drop.
+        // GetLastError has no preconditions.
         unsafe {
             let job = CreateJobObjectW(std::ptr::null(), std::ptr::null());
             if job.is_null() {
-                return None;
+                return Err(GetLastError());
             }
             let job = Job(job);
             let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
@@ -335,9 +397,9 @@ mod windows {
                 std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
             );
             if set == 0 || AssignProcessToJobObject(job.0, child.as_raw_handle() as HANDLE) == 0 {
-                return None;
+                return Err(GetLastError());
             }
-            Some(job)
+            Ok(job)
         }
     }
 
