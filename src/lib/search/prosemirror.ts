@@ -7,8 +7,7 @@
  */
 
 import type { Node } from 'prosemirror-model';
-import { refForm } from '$lib/project/model/text';
-import { NO_TEXT, PassageMaker, pieceAt, type Labels, type Passage } from './passages';
+import { PassageMaker, pieceAt, type Labels, type Passage } from './passages';
 
 /** Where a piece is in the document: before its first sign, or before the node that is no text. */
 export interface Placed {
@@ -48,30 +47,9 @@ class Reader {
         maker.put(passage, 'text', child.text ?? '', at);
         return;
       }
-      switch (child.type.name) {
-        case 'hard_break':
-          maker.put(passage, 'break', '\n', at);
-          break;
-        case 'citation':
-          maker.put(passage, 'citation', maker.citation(child.attrs.items, child.attrs.mode), at);
-          break;
-        case 'math': {
-          const tex = String(child.attrs.tex ?? '').trim();
-          if (tex) maker.put(passage, 'math', maker.math(tex), at);
-          break;
-        }
-        case 'crossref': {
-          const target = String(child.attrs.target ?? '');
-          if (target)
-            maker.put(passage, 'crossref', maker.crossref(target, refForm(child.attrs.form)), at);
-          break;
-        }
-        case 'footnote':
-          if (said) break;
-          maker.put(passage, 'note', NO_TEXT, at);
-          if (kind === 'line') notes.push({ node: child, pos, at: passage.text.length - 1 });
-          break;
-      }
+      const sign = maker.sign(passage, child.type.name, (key) => child.attrs[key], at, said);
+      if (sign?.kind === 'note' && kind === 'line')
+        notes.push({ node: child, pos, at: passage.text.length - 1 });
     });
     for (const n of notes)
       this.line(n.node, n.pos + 1, 'note', { passage: passage.index, at: n.at });

@@ -25,7 +25,6 @@ import { bodySchema } from '$lib/editor/schema';
 import { nodeOf } from '$lib/found/change';
 import { markName } from '$lib/found/gather';
 import type { Project } from '$lib/project/model/project.svelte';
-import { refForm } from '$lib/project/model/text';
 import { NO_TEXT, PARAGRAPH, PassageMaker, pieceAt, type Labels, type Passage } from './passages';
 import { positionOf, readBodyDoc, readLine } from './prosemirror';
 
@@ -91,43 +90,17 @@ class Reader {
           }
         } else if (child instanceof Y.XmlElement) {
           const at: Kept = { element: child };
-          switch (child.nodeName) {
-            case 'citation':
-              maker.put(
-                passage,
-                'citation',
-                maker.citation(child.getAttribute('items'), child.getAttribute('mode')),
-                at,
-              );
-              break;
-            case 'footnote':
-              if (said) break;
-              maker.put(passage, 'note', NO_TEXT, at);
-              if (kind === 'line') notes.push({ holder: child, at: passage.text.length - 1 });
-              break;
-            case 'hard_break':
-              maker.put(passage, 'break', '\n', at);
-              break;
-            case 'math': {
-              const tex = str(child.getAttribute('tex') as unknown).trim();
-              if (tex) maker.put(passage, 'math', maker.math(tex), at);
-              break;
-            }
-            case 'crossref': {
-              const target = str(child.getAttribute('target') as unknown);
-              if (target)
-                maker.put(
-                  passage,
-                  'crossref',
-                  maker.crossref(target, refForm(child.getAttribute('form'))),
-                  at,
-                );
-              break;
-            }
-            default:
-              // Something a later version added: its text is read where it stands.
-              visit(child);
-          }
+          const sign = maker.sign(
+            passage,
+            child.nodeName,
+            (key) => child.getAttribute(key) as unknown,
+            at,
+            said,
+          );
+          if (sign?.kind === 'note' && kind === 'line')
+            notes.push({ holder: child, at: passage.text.length - 1 });
+          // Something a later version added: its text is read where it stands.
+          else if (sign === undefined) visit(child);
         }
       }
     };

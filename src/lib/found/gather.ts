@@ -13,9 +13,30 @@ import * as Y from 'yjs';
 import type { Found, Passage } from '$lib/api/found';
 import { bodySchema, foundAttrs } from '$lib/editor/schema';
 import type { Project } from '$lib/project/model/project.svelte';
+import { NO_TEXT, signOf } from '$lib/search/passages';
 
-/** What stands in the text of a passage for what is no text. */
-export const NO_TEXT = '￼';
+export { NO_TEXT };
+
+/** Whether what holds a passage is what is said of a figure or a table, which holds no note. */
+export function isSaid(holder: string): boolean {
+  return holder === 'figure' || holder === 'table_caption';
+}
+
+/**
+ * What a thing in the line that is no text stands as in the text of a
+ * passage, by the rules the search reads an editor with (`signOf`), so that
+ * a passage read here is found again in an editor: one sign for a citation,
+ * a note, a formula and words that point; a new line for a break of the
+ * line; nothing for a reference mark or a line mark, or for a note in what
+ * is said of a figure or a table. What this version does not know is one
+ * sign: it is no text, and a text that holds it is not changed.
+ */
+export function signIn(holder: string, name: string, attr: (key: string) => unknown): string {
+  const sign = signOf(name, attr);
+  if (sign === undefined) return NO_TEXT;
+  if (!sign || (sign.kind === 'note' && isSaid(holder))) return '';
+  return sign.text;
+}
 
 /** A passage, with where it is in the project. */
 export interface Place extends Passage {
@@ -144,10 +165,13 @@ function read(
         }
       }
     } else if (child instanceof Y.XmlElement) {
+      // Whatever stands between, a citation that was found is not one run across it.
       run = null;
       const at = place.text.length;
       // A break of the line is room between words, as it is where the text is read.
-      place.text += child.nodeName === 'hard_break' ? '\n' : NO_TEXT;
+      const sign = signIn(holder.nodeName, child.nodeName, (key) => child.getAttribute(key));
+      place.text += sign;
+      if (!sign) continue;
       if (child.nodeName === 'citation') take(place.taken, at, at + 1);
       // A note within a note is not a thing.
       else if (child.nodeName === 'footnote' && !stands) notes.push({ holder: child, at });
