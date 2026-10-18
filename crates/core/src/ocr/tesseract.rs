@@ -45,7 +45,7 @@ pub fn psm_of(layout: &str) -> Option<u32> {
 
 /// With what Tesseract reads a picture: its languages, the likeliest first,
 /// and how it takes the page apart (`psm_of`).
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct With {
     pub languages: Vec<String>,
     pub psm: Option<u32>,

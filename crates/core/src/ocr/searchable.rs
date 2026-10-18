@@ -654,7 +654,7 @@ pub fn has_laid(doc: &Document, page: &Dictionary) -> bool {
 }
 
 /// The right map of one font of a PDF, from code to text (ADR 0044).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct FontMap {
     /// The font's object.
     pub font: ObjectId,

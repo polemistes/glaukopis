@@ -114,8 +114,9 @@ pub fn ocr_read(
     let words = words_of(&state, &asked);
     let is_word = words.as_ref().map(|w| w as &IsWord);
     let read = ocr::read_pdf(&path, &tools, &work, &asked, is_word, &mut teller(&reading, &app), &reading.stop)?;
-    let title = glaukopis_core::import::pdf::identify(&path).ok().and_then(|facts| facts.title);
-    Ok(ocr::imported_pdf(&file, &title.unwrap_or_else(|| stem(&file)), read))
+    // The title the file gives itself, as the look at it found.
+    let title = read.named.clone().unwrap_or_else(|| stem(&file));
+    Ok(ocr::imported_pdf(&file, &title, read))
 }
 
 /// Stops a reading that goes on.

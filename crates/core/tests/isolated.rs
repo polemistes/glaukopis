@@ -2,9 +2,10 @@
 //! killed when its time is up or it takes more memory than it may.
 
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use glaukopis_core::isolated::{Ended, Limits, run_with};
+use glaukopis_core::isolated::{Ended, Limits, run_watched_with, run_with};
 use glaukopis_core::ocr::layer::{Layer, read_file};
 
 fn program() -> &'static Path {
@@ -79,4 +80,76 @@ fn the_text_of_a_pdf_read_in_a_child_is_as_read_here() {
     let child: Layer = run_with(program(), "pdf-layer", &pdf, limits(60, 2048)).unwrap();
     assert_eq!(child, read_file(&pdf).unwrap());
     assert!(!child.maps.is_empty());
+}
+
+#[test]
+fn what_the_child_tells_comes_as_it_works_and_before_what_it_gives() {
+    let dir = tempfile::tempdir().unwrap();
+    let input = dir.path().join("in.txt");
+    std::fs::write(&input, "given").unwrap();
+    let mut lines = Vec::new();
+    let got: String = run_watched_with(
+        program(),
+        "test-tell-and-give",
+        &input,
+        limits(30, 1024),
+        &mut |line| lines.push(line.to_owned()),
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    assert_eq!(got, "given");
+    assert_eq!(lines, ["line 1", "line 2", "line 3"]);
+}
+
+#[test]
+fn a_child_that_is_stopped_is_killed() {
+    let stop = AtomicBool::new(false);
+    let mut lines = 0;
+    let started = Instant::now();
+    let got = run_watched_with::<String>(
+        program(),
+        "test-tell",
+        Path::new("."),
+        limits(60, 1024),
+        &mut |_| {
+            lines += 1;
+            if lines == 3 {
+                stop.store(true, Ordering::Relaxed);
+            }
+        },
+        &stop,
+    );
+    assert_eq!(got, Err(Ended::Stopped));
+    assert!(lines >= 3, "{lines}");
+    assert!(started.elapsed() < Duration::from_secs(10), "{:?}", started.elapsed());
+    // Stopped before it starts, it is not started.
+    let got = run_watched_with::<String>(program(), "test-sleep", Path::new("."), limits(60, 1024), &mut |_| {}, &stop);
+    assert_eq!(got, Err(Ended::Stopped));
+}
+
+/// What a child starts, as Tesseract, is killed with it.
+#[cfg(unix)]
+#[test]
+fn what_a_killed_child_started_is_killed_with_it() {
+    let mut sleeper = String::new();
+    let got = run_watched_with::<String>(
+        program(),
+        "test-family",
+        Path::new("."),
+        limits(2, 1024),
+        &mut |line| sleeper = line.to_owned(),
+        &AtomicBool::new(false),
+    );
+    assert_eq!(got, Err(Ended::Time));
+    assert!(sleeper.parse::<u32>().is_ok(), "{sleeper:?}");
+    let started = Instant::now();
+    let alive = || {
+        let state = std::process::Command::new("ps").args(["-o", "stat=", "-p", &sleeper]).output().unwrap();
+        let state = String::from_utf8_lossy(&state.stdout).trim().to_owned();
+        !state.is_empty() && !state.starts_with('Z')
+    };
+    while alive() {
+        assert!(started.elapsed() < Duration::from_secs(5), "the program {sleeper} the child started lives on");
+        std::thread::sleep(Duration::from_millis(50));
+    }
 }

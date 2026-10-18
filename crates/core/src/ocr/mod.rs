@@ -11,7 +11,13 @@
 //! ([`imported_pdf`]); or is laid unseen over the pages of the PDF, so that
 //! it can be searched and its text copied ([`make_searchable`],
 //! `searchable.rs`). A picture is read as one page ([`read_picture`]).
+//!
+//! The PDF itself is taken apart only in a process of its own (`child.rs`):
+//! looked at, drawn, read and written there, within limits of time and
+//! memory. What comes back here is data: its text, its pages, what
+//! Tesseract read.
 
+pub(crate) mod child;
 pub mod drawing;
 #[doc(hidden)]
 pub mod fixture;
@@ -44,6 +50,7 @@ use crate::export::tools::{self, Tool};
 use crate::import::document::{Counts, Imported, Section, count_words};
 use crate::tr;
 
+use child::Seen;
 use drawing::{Drawn, Pages, Quality};
 use layer::Layer;
 use text::{IsWord, Line};
@@ -131,7 +138,7 @@ impl Asked {
 }
 
 /// How far a reading has come.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Progress {
     /// The pages that are read, of those that are to be.
@@ -240,6 +247,8 @@ pub struct ReadPdf {
     pub styles: Vec<shape::StyleFound>,
     /// The title found on the pages, where the shape was kept and one was.
     pub title: Option<Vec<Inline>>,
+    /// The title the file gives itself, where it looks like one.
+    pub named: Option<String>,
     /// How it is to become a map, and whether the pages are marked, as asked.
     pub structure: Structure,
     pub page_marks: bool,
@@ -427,39 +436,58 @@ fn several<T: Send>(
 // The text a file has, as it was looked at
 // ---------------------------------------------------------------------------
 
-/// The text of the file that was read last, by the file, its size and when
-/// it was changed: what was read when a file was looked at is not read
-/// again when it is read.
-type Kept = (PathBuf, u64, Option<SystemTime>, Arc<Layer>);
+/// What was seen of the file that was looked at last, by the file, its size
+/// and when it was changed, and the Poppler it was looked at with: what was
+/// read when a file was looked at is not read again when it is read.
+struct Kept {
+    path: PathBuf,
+    size: u64,
+    changed: Option<SystemTime>,
+    pdftoppm: Option<PathBuf>,
+    seen: Arc<Seen>,
+}
 static KEPT: Mutex<Option<Kept>> = Mutex::new(None);
 
-fn layer_of(path: &Path, bytes: &Arc<Vec<u8>>) -> Arc<Layer> {
-    let meta = std::fs::metadata(path).ok();
-    let size = meta.as_ref().map_or(0, std::fs::Metadata::len);
-    let changed = meta.and_then(|m| m.modified().ok());
-    let mut kept = KEPT.lock().unwrap_or_else(PoisonError::into_inner);
-    if let Some((p, s, c, layer)) = kept.as_ref()
-        && p == path
-        && *s == size
-        && *c == changed
+/// What a look at the PDF at `path`, of `size`, finds: kept from the last
+/// look where it was at this file as it is, else looked at in the child.
+/// The lock is not held while the child works, so that a second file is not
+/// kept waiting for the first.
+fn seen_of(path: &Path, size: u64, pdftoppm: Option<&Tool>) -> Result<Arc<Seen>> {
+    let changed = std::fs::metadata(path).ok().and_then(|m| m.modified().ok());
+    let poppler = pdftoppm.map(|t| t.path.clone());
     {
-        return layer.clone();
+        let kept = KEPT.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(kept) = kept.as_ref()
+            && kept.path == path
+            && kept.size == size
+            && kept.changed == changed
+            // Poppler counts only what hayro cannot open: asked without it,
+            // or where hayro opened the file, either look will do.
+            && (poppler.is_none()
+                || kept.pdftoppm == poppler
+                || matches!(kept.seen.opened, child::Opened::Pages(_) | child::Opened::NoPages))
+        {
+            return Ok(kept.seen.clone());
+        }
     }
-    let layer = Arc::new(layer::read_path(path, bytes.clone()));
-    *kept = Some((path.to_owned(), size, changed, layer.clone()));
-    layer
+    let seen = Arc::new(child::look(path, size, pdftoppm)?);
+    *KEPT.lock().unwrap_or_else(PoisonError::into_inner) =
+        Some(Kept { path: path.to_owned(), size, changed, pdftoppm: poppler, seen: seen.clone() });
+    Ok(seen)
 }
 
-fn read_pdf_file(path: &Path) -> Result<Arc<Vec<u8>>> {
+/// The size of a PDF, which is known to be one by what it begins with: the
+/// file itself is read only in the child.
+fn checked_pdf(path: &Path) -> Result<u64> {
     let file = file_name(path);
     let mut head = Vec::new();
-    std::fs::File::open(path)
-        .and_then(|f| f.take(1024).read_to_end(&mut head))
-        .context(|| tr!("io-reading", path = path))?;
+    let opened = std::fs::File::open(path).context(|| tr!("io-reading", path = path))?;
+    let size = opened.metadata().context(|| tr!("io-reading", path = path))?.len();
+    opened.take(1024).read_to_end(&mut head).context(|| tr!("io-reading", path = path))?;
     if !head.windows(5).any(|w| w == b"%PDF-") {
         return Err(Error::invalid(tr!("ocr-not-pdf", file = &file)));
     }
-    Ok(Arc::new(std::fs::read(path).context(|| tr!("io-reading", path = path))?))
+    Ok(size)
 }
 
 /// Looks at a PDF or a picture before it is read: how many pages it has,
@@ -469,10 +497,11 @@ pub fn look(path: &Path, tools: &Tools) -> Result<Looked> {
     if is_picture(path) {
         return Ok(Looked { file, picture: true, pages: 1, ..Default::default() });
     }
-    let bytes = read_pdf_file(path)?;
-    let layer = layer_of(path, &bytes);
+    let size = checked_pdf(path)?;
+    let seen = seen_of(path, size, tools.pdftoppm.as_ref())?;
+    let layer = &seen.layer;
     let pages = match layer.pages.len() {
-        0 => Pages::open(path, bytes.clone(), tools.pdftoppm.as_ref())?.count(),
+        0 => seen.drawable(&file)?,
         n => n,
     };
     let with_text = (0..pages).filter(|i| layer.has_text(*i)).count();
@@ -484,7 +513,7 @@ pub fn look(path: &Path, tools: &Tools) -> Result<Looked> {
     let fonts = fonts.into_iter().map(|(f, _)| f.clone()).collect();
     let schemes =
         layer.schemes_found().into_iter().map(|(scheme, fonts, pages)| SchemeFound { scheme, fonts, pages }).collect();
-    let title = crate::import::pdf::identify(path).ok().and_then(|facts| facts.title);
+    let title = seen.title.clone();
     let searchable = !layer.locked && !layer.pages.is_empty();
     Ok(Looked {
         file,
@@ -540,10 +569,11 @@ pub fn read_pdf(
     told: &mut dyn FnMut(Progress),
     stop: &AtomicBool,
 ) -> Result<ReadPdf> {
-    let bytes = read_pdf_file(path)?;
-    let layer = layer_of(path, &bytes);
-    let drawing = Pages::open(path, bytes.clone(), tools.pdftoppm.as_ref());
-    let count = layer.pages.len().max(drawing.as_ref().map_or(0, Pages::count));
+    let size = checked_pdf(path)?;
+    let seen = seen_of(path, size, tools.pdftoppm.as_ref())?;
+    let layer = &seen.layer;
+    let drawing = seen.drawable(&file_name(path));
+    let count = layer.pages.len().max(*drawing.as_ref().unwrap_or(&0));
     if count == 0 {
         return Err(drawing.err().unwrap_or_else(|| Error::invalid(tr!("ocr-no-pages", file = &file_name(path)))));
     }
@@ -556,51 +586,32 @@ pub fn read_pdf(
     let mut read: BTreeMap<usize, ReadPage> = BTreeMap::new();
     let mut failed: Vec<(usize, String)> = Vec::new();
     if !wanted.is_empty() {
-        let can = ready(tools, asked).and_then(|ready| drawing.map(|pages| (ready, pages)));
+        let can = ready(tools, asked).and_then(|ready| drawing.map(|_| ready));
         match can {
-            Ok((reader, pages)) => {
+            Ok(reader) => {
                 let place = place_in(work)?;
-                let one = |index: usize| {
-                    let read = reader.draw_and_read(&pages, index, place.path(), (true, false), stop)?;
-                    let tsv = read.tsv.as_deref().unwrap_or_default();
-                    // In points, as the text a PDF has is: its pages and Tesseract's are shaped together.
-                    let scale = if read.dpi > 0 { 72.0 / read.dpi as f32 } else { 1.0 };
-                    let size = text::tsv_page_size(tsv).map_or((0.0, 0.0), |(w, h)| (w * scale, h * scale));
-                    let mut groups = text::tsv_paragraphs(tsv);
-                    for group in &mut groups {
-                        // The lines of one of Tesseract's paragraphs are one size of type,
-                        // whatever their letters reach above and below: their height is the
-                        // group's middle one, so that the shape does not part them by size.
-                        let mut heights: Vec<f32> = group.iter().map(Line::height).collect();
-                        heights.sort_by(f32::total_cmp);
-                        let middle = heights.get(heights.len() / 2).copied().unwrap_or_default();
-                        for line in group.iter_mut() {
-                            if middle > 0.0 {
-                                line.top = line.bottom - middle;
-                                line.style.size = middle;
-                            }
-                            for v in
-                                [&mut line.left, &mut line.right, &mut line.top, &mut line.bottom, &mut line.style.size]
-                            {
-                                *v *= scale;
-                            }
-                            for gap in line.gaps.iter_mut().flatten() {
-                                gap.from *= scale;
-                                gap.to *= scale;
+                let job = child::Job::new(
+                    path,
+                    Some(&reader),
+                    tools.pdftoppm.as_ref(),
+                    place.path(),
+                    child::Task::Read { pages: wanted.clone() },
+                );
+                match child::work(job, size, place.path(), told, stop) {
+                    Ok(child::Done::Pages(pages)) => {
+                        for (index, result) in pages {
+                            match result {
+                                Ok((tsv, dpi)) => {
+                                    read.insert(index, read_page(&tsv, dpi));
+                                }
+                                Err(why) => failed.push((index + 1, why)),
                             }
                         }
                     }
-                    Ok((groups, size))
-                };
-                let at_once = workers(pages.largest_dots(&wanted, reader.quality));
-                tracing::info!(pages = wanted.len(), at_once, "pages read by Tesseract");
-                for (index, result) in several(&wanted, at_once, &one, told, stop) {
-                    match result {
-                        Ok(page) => {
-                            read.insert(index, page);
-                        }
-                        Err(e) => failed.push((index + 1, e.to_string())),
-                    }
+                    Ok(child::Done::Made(_)) => return Err(Error::invalid("the pages were not read")),
+                    Err(e) if e.kind() == tools::STOPPED || anew || to_take == 0 => return Err(e),
+                    // The pages that have text are taken all the same.
+                    Err(e) => failed.extend(wanted.iter().map(|i| (i + 1, e.to_string()))),
                 }
                 if stop.load(Ordering::Relaxed) {
                     return Err(stopped());
@@ -643,7 +654,7 @@ pub fn read_pdf(
             (Got::Failed(why.clone()), Vec::new(), (0.0, 0.0))
         } else {
             taken += 1;
-            let lines = taken_lines(&layer, index, asked.text);
+            let lines = taken_lines(layer, index, asked.text);
             (Got::Taken(lines.clone()), lines, layer.sizes.get(index).copied().unwrap_or_default())
         };
         got.push(page);
@@ -713,6 +724,7 @@ pub fn read_pdf(
         remarks,
         styles,
         title,
+        named: seen.title.clone(),
         structure: asked.structure,
         page_marks: asked.page_marks,
         read: done,
@@ -723,6 +735,37 @@ pub fn read_pdf(
 
 /// What Tesseract read of a page, in groups of lines, and the page's size in points.
 type ReadPage = (Vec<Vec<Line>>, (f32, f32));
+
+/// What Tesseract read of a page drawn at `dpi`, as its TSV says it: in
+/// points, as the text a PDF has is, so that its pages and Tesseract's are
+/// shaped together.
+fn read_page(tsv: &str, dpi: u32) -> ReadPage {
+    let scale = if dpi > 0 { 72.0 / dpi as f32 } else { 1.0 };
+    let size = text::tsv_page_size(tsv).map_or((0.0, 0.0), |(w, h)| (w * scale, h * scale));
+    let mut groups = text::tsv_paragraphs(tsv);
+    for group in &mut groups {
+        // The lines of one of Tesseract's paragraphs are one size of type,
+        // whatever their letters reach above and below: their height is the
+        // group's middle one, so that the shape does not part them by size.
+        let mut heights: Vec<f32> = group.iter().map(Line::height).collect();
+        heights.sort_by(f32::total_cmp);
+        let middle = heights.get(heights.len() / 2).copied().unwrap_or_default();
+        for line in group.iter_mut() {
+            if middle > 0.0 {
+                line.top = line.bottom - middle;
+                line.style.size = middle;
+            }
+            for v in [&mut line.left, &mut line.right, &mut line.top, &mut line.bottom, &mut line.style.size] {
+                *v *= scale;
+            }
+            for gap in line.gaps.iter_mut().flatten() {
+                gap.from *= scale;
+                gap.to *= scale;
+            }
+        }
+    }
+    (groups, size)
+}
 
 /// The lines of a page that are taken from the PDF, not read by Tesseract:
 /// as the PDF has them, or as translated where that is asked and there is a
@@ -739,8 +782,9 @@ fn taken_lines(layer: &Layer, index: usize, text: TextChoice) -> Vec<Line> {
 /// it is and as translated, for the preview: each page's lines in the order
 /// they stand. The file's text is read once and kept while it is looked at.
 pub fn text_of_pages(path: &Path, from: usize, count: usize) -> Result<Vec<PageTextView>> {
-    let bytes = read_pdf_file(path)?;
-    let layer = layer_of(path, &bytes);
+    let size = checked_pdf(path)?;
+    let seen = seen_of(path, size, None)?;
+    let layer = &seen.layer;
     let order = |lines: &Vec<Line>| -> Vec<String> {
         text::by_place(lines.clone()).into_iter().flatten().map(|l| text::composed(&l.text)).collect()
     };
@@ -787,21 +831,28 @@ pub fn read_picture(
 /// Nothing, where Tesseract is not there or the pages cannot be drawn.
 pub fn first_pages(path: &Path, tools: &Tools, work: &Path, count: usize, stop: &AtomicBool) -> Vec<String> {
     let Ok(reader) = ready(tools, &Asked::default()) else { return Vec::new() };
-    let Ok(bytes) = read_pdf_file(path) else { return Vec::new() };
-    let Ok(pages) = Pages::open(path, bytes, tools.pdftoppm.as_ref()) else { return Vec::new() };
+    let Ok(size) = checked_pdf(path) else { return Vec::new() };
     let Ok(place) = place_in(work) else { return Vec::new() };
-    let wanted: Vec<usize> = (0..count.min(pages.count())).collect();
-    let one = |index: usize| {
-        let read = reader.draw_and_read(&pages, index, place.path(), (true, false), stop)?;
-        let paragraphs = text::tsv_paragraphs(read.tsv.as_deref().unwrap_or_default());
-        Ok(paragraphs
-            .iter()
-            .map(|lines| lines.iter().map(|l| l.text.as_str()).collect::<Vec<_>>().join("\n"))
-            .collect::<Vec<_>>()
-            .join("\n\n"))
+    let job = child::Job::new(path, Some(&reader), tools.pdftoppm.as_ref(), place.path(), child::Task::First { count });
+    let pages = match child::work(job, size, place.path(), &mut |_| {}, stop) {
+        Ok(child::Done::Pages(pages)) => pages,
+        Ok(child::Done::Made(_)) => Vec::new(),
+        Err(e) => {
+            tracing::warn!(%e, "the first pages of the PDF could not be read");
+            Vec::new()
+        }
     };
-    let at_once = workers(pages.largest_dots(&wanted, reader.quality));
-    several(&wanted, at_once, &one, &mut |_| {}, stop).into_iter().map(|(_, read)| read.unwrap_or_default()).collect()
+    pages
+        .into_iter()
+        .map(|(_, read)| {
+            let tsv = read.unwrap_or_default().0;
+            text::tsv_paragraphs(&tsv)
+                .iter()
+                .map(|lines| lines.iter().map(|l| l.text.as_str()).collect::<Vec<_>>().join("\n"))
+                .collect::<Vec<_>>()
+                .join("\n\n")
+        })
+        .collect()
 }
 
 /// Makes a PDF searchable: the pages that have no text are read, and what
@@ -818,76 +869,56 @@ pub fn make_searchable(
     told: &mut dyn FnMut(Progress),
     stop: &AtomicBool,
 ) -> Result<Searchable> {
-    let bytes = read_pdf_file(path)?;
-    let doc = searchable::open(&bytes)?;
-    let count = doc.get_pages().len();
-    let layer = layer_of(path, &bytes);
+    let size = checked_pdf(path)?;
+    let seen = seen_of(path, size, tools.pdftoppm.as_ref())?;
+    let layer = &seen.layer;
+    // What is added to a locked file would have to be locked in the same way.
+    if layer.locked {
+        return Err(Error::Refused { kind: "locked", message: tr!("ocr-searchable-locked") });
+    }
+    if layer.pages.is_empty() {
+        let why = tr!("ocr-unreadable", file = &file_name(path));
+        return Err(Error::invalid(tr!("ocr-searchable-unreadable", message = why)));
+    }
+    let count = layer.pages.len();
     let with_text = (0..count).filter(|i| layer.has_text(*i)).count();
     // Translated: the fonts whose glyphs were translated are given their
     // letters first; the pages without text are then read, as when kept.
-    let mut remapped = 0;
-    let (bytes, doc) = if asked.text == TextChoice::Translate && !layer.maps.is_empty() {
-        let maps: Vec<searchable::FontMap> = layer
+    let maps: Vec<searchable::FontMap> = if asked.text == TextChoice::Translate {
+        layer
             .maps
             .iter()
             .map(|(font, codes)| searchable::FontMap {
                 font: *font,
                 entries: codes.iter().map(|(code, text)| (*code, text.clone())).collect(),
             })
-            .collect();
-        let (out, given) = searchable::remap(bytes.as_ref().clone(), doc, &maps)?;
-        remapped = given;
-        tracing::info!(fonts = given, "the fonts of a PDF were given their letters");
-        let doc = searchable::open(&out)?;
-        (Arc::new(out), doc)
+            .collect()
     } else {
-        (bytes, doc)
+        Vec::new()
     };
     let wanted: Vec<usize> = (0..count).filter(|i| asked.text == TextChoice::Anew || !layer.has_text(*i)).collect();
-    if wanted.is_empty() {
-        let pdf = (remapped > 0).then(|| bytes.as_ref().clone());
-        return Ok(Searchable { pdf, read: 0, with_text, failed: Vec::new(), remapped });
+    if wanted.is_empty() && maps.is_empty() {
+        return Ok(Searchable { pdf: None, read: 0, with_text, failed: Vec::new(), remapped: 0 });
     }
-    let reader = ready(tools, asked)?;
-    let pages = Pages::open(path, bytes.clone(), tools.pdftoppm.as_ref())?;
-    let drawn_by_hayro = matches!(pages, Pages::Hayro(_));
+    let reader = if wanted.is_empty() { None } else { Some(ready(tools, asked)?) };
     let place = place_in(work)?;
-    let one = |index: usize| {
-        let read = reader.draw_and_read(&pages, index, place.path(), (false, true), stop)?;
-        Ok(searchable::Layer { page: index, pdf: read.layer.unwrap_or_default() })
+    let output = place.path().join("searchable.pdf");
+    let task =
+        child::Task::Searchable { pages: wanted, strip: asked.text == TextChoice::Anew, maps, output: output.clone() };
+    let job = child::Job::new(path, reader.as_ref(), tools.pdftoppm.as_ref(), place.path(), task);
+    let made = match child::work(job, size, place.path(), told, stop)? {
+        child::Done::Made(made) => made,
+        child::Done::Pages(_) => return Err(Error::invalid("the file was not made searchable")),
     };
-    let mut layers = Vec::new();
-    let mut failed = Vec::new();
-    let at_once = workers(pages.largest_dots(&wanted, reader.quality));
-    tracing::info!(pages = wanted.len(), at_once, "pages made searchable by Tesseract");
-    for (index, result) in several(&wanted, at_once, &one, told, stop) {
-        match result {
-            Ok(layer) => layers.push(layer),
-            Err(e) => failed.push((index + 1, e.to_string())),
-        }
+    if made.remapped > 0 {
+        tracing::info!(fonts = made.remapped, "the fonts of a PDF were given their letters");
     }
-    if stop.load(Ordering::Relaxed) {
-        return Err(stopped());
+    let pdf =
+        if made.written { Some(std::fs::read(&output).context(|| tr!("io-reading", path = &output))?) } else { None };
+    if made.read > 0 {
+        tracing::info!(pages = count, read = made.read, failed = made.failed.len(), text = ?asked.text, "a PDF was made searchable");
     }
-    if layers.is_empty() {
-        let (_, why) = failed.first().cloned().unwrap_or_default();
-        return Err(Error::invalid(why));
-    }
-    drop(pages);
-    let bytes = Arc::try_unwrap(bytes).unwrap_or_else(|shared| shared.as_ref().clone());
-    let pdf = searchable::lay_over(bytes, doc, &layers, asked.text == TextChoice::Anew)?;
-    // Read again as it is drawn, where it was drawn so before.
-    if drawn_by_hayro {
-        let pages = catch_unwind(AssertUnwindSafe(|| {
-            hayro::hayro_syntax::Pdf::new(pdf.clone()).map(|read| read.pages().len()).unwrap_or(0)
-        }))
-        .unwrap_or(0);
-        if pages != count {
-            return Err(Error::invalid(tr!("ocr-searchable-unreadable", message = tr!("ocr-not-whole"))));
-        }
-    }
-    tracing::info!(pages = count, read = layers.len(), failed = failed.len(), text = ?asked.text, "a PDF was made searchable");
-    Ok(Searchable { pdf: Some(pdf), read: layers.len(), with_text, failed, remapped })
+    Ok(Searchable { pdf, read: made.read, with_text, failed: made.failed, remapped: made.remapped })
 }
 
 // ---------------------------------------------------------------------------
