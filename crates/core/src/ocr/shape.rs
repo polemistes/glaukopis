@@ -524,6 +524,15 @@ fn edges(pages: &mut [PageLines]) {
         }
     }
 
+    // The candidates stand in the order of their pages, and each is compared
+    // only with those of the pages near it, found by halving: compared with
+    // every candidate of the file, with a distance of their texts worked out
+    // before the pages were looked at, a book of 2 000 pages took seconds.
+    let around = |page: usize, reach: usize| -> &[Candidate] {
+        let from = candidates.partition_point(|c| c.page + reach < page);
+        let to = candidates.partition_point(|c| c.page <= page + reach);
+        &candidates[from..to]
+    };
     let near = |a: &Candidate, b: &Candidate| a.page != b.page && a.page.abs_diff(b.page) <= NEAR_PAGES;
     // The same text at the same edge in the same size: a title with the
     // words of the running head is not one.
@@ -534,9 +543,9 @@ fn edges(pages: &mut [PageLines]) {
     };
     // Whether a running head's text stands again two pages on or back.
     let again = |c: &Candidate| {
-        candidates
+        around(c.page, 2)
             .iter()
-            .filter(|o| same_head(c, o) && o.page.abs_diff(c.page) == 2)
+            .filter(|o| o.page.abs_diff(c.page) == 2 && same_head(c, o))
             .map(|o| o.page)
             .collect::<Vec<_>>()
     };
@@ -544,12 +553,12 @@ fn edges(pages: &mut [PageLines]) {
     for c in &candidates {
         if c.text.is_some() {
             let pages_near: BTreeSet<usize> =
-                candidates.iter().filter(|o| near(c, o) && same_head(c, o)).map(|o| o.page).collect();
+                around(c.page, NEAR_PAGES).iter().filter(|o| near(c, o) && same_head(c, o)).map(|o| o.page).collect();
             // Or two texts alternating: this one two pages away, and on the
             // page between, at the same edge, another that also does.
             let alternates = again(c).into_iter().any(|other| {
                 let between = (c.page + other) / 2;
-                candidates.iter().any(|b| {
+                around(between, 0).iter().any(|b| {
                     b.page == between
                         && b.edge == c.edge
                         && b.text.is_some()
@@ -562,7 +571,7 @@ fn edges(pages: &mut [PageLines]) {
             }
         }
         if let Some((form, value)) = &c.number {
-            let steps = candidates.iter().any(|o| {
+            let steps = around(c.page, NEAR_PAGES).iter().any(|o| {
                 near(c, o)
                     && o.number.as_ref().is_some_and(|(f, v)| f == form && v - value == o.page as i64 - c.page as i64)
             });
@@ -2557,5 +2566,34 @@ mod tests {
         assert_eq!(styles.len(), 1);
         let (pieces, _) = shape(vec![page(Vec::new())]);
         assert_eq!(pieces, [Vec::new()]);
+    }
+
+    /// The edges of a book of many pages, with two running heads that alternate and are
+    /// alike enough in length to be measured against each other, a chapter's title at the
+    /// head of some pages, and a number at every foot.
+    #[test]
+    #[ignore = "a measure, to be run in release: cargo test --release -p glaukopis-core -- --ignored many_pages_edged"]
+    fn many_pages_edged() {
+        for count in [600, 2_000] {
+            let mut pages: Vec<PageLines> = (0..count)
+                .map(|p| {
+                    let head = if p % 2 == 0 { "STUDIES IN THE HOMERIC POEMS" } else { "THE WRATH OF ACHILLES AGAIN" };
+                    let mut lines = vec![at(head, LEFT, 40.0, 9.0)];
+                    if p % 20 == 0 {
+                        lines.push(at(&format!("Chapter {} of the poems", p / 20), LEFT, 70.0, 9.0));
+                    }
+                    lines.push(at("A line of the body of the page, as any other.", LEFT, 400.0, 11.0));
+                    lines.push(at(&format!("{}", p + 1), 290.0, 800.0, 9.0));
+                    page(lines)
+                })
+                .collect();
+            let began = std::time::Instant::now();
+            edges(&mut pages);
+            eprintln!("{count} pages edged in {:?}", began.elapsed());
+            assert!(
+                pages.iter().all(|p| p.lines.iter().all(|l| !l.text.contains("HOMERIC") && !l.text.contains("WRATH")))
+            );
+            assert!(pages.iter().all(|p| p.lines.iter().any(|l| l.text.starts_with("A line"))));
+        }
     }
 }
