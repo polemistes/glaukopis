@@ -28,16 +28,12 @@ pub fn gather(document: &Document, library: Option<&Library>) -> Bibliography {
 
     let mut entries: Vec<(String, Entry)> = Vec::new();
     let mut missing = Vec::new();
-    let mut seen: HashSet<String> = HashSet::new();
 
     for id in document.cited() {
         if let Some(entry) = library.and_then(|l| l.resolve(&id)) {
-            if seen.insert(entry.id.clone()) {
-                entries.push((id.clone(), entry.clone()));
-            } else {
-                // Two ids that are one entry, after a merge.
-                entries.push((id.clone(), entry.clone()));
-            }
+            // Two ids may resolve to one entry, after a merge: each is kept
+            // here with its own id, and the keys below give them one.
+            entries.push((id.clone(), entry.clone()));
         } else if let Some(r) = carried.get(id.as_str()) {
             let draft = Draft {
                 key: r.key.clone(),
