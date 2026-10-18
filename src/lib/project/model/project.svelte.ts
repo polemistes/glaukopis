@@ -16,6 +16,7 @@ import type { Template } from '$lib/api/templates';
 import { newTextLanguage, t, term } from '$lib/i18n';
 import type { Bound, When } from '$lib/timeline/solve';
 import { SvelteMap } from 'svelte/reactivity';
+import { ThreadMap } from '$lib/comments/threads';
 import * as Y from 'yjs';
 import { ySyncPluginKey } from 'y-prosemirror';
 import type { Awareness } from 'y-protocols/awareness';
@@ -200,7 +201,7 @@ export class Project {
   /** The words ignored in this project by spelling. A new set whenever they change. */
   ignored = $state.raw<ReadonlySet<string>>(new Set());
   /** The comments, by the id of the thread. A thread is made anew whenever it changes. */
-  readonly comments = new SvelteMap<string, Thread>();
+  readonly comments = new ThreadMap();
   /** The kinds of elements, in their order. */
   kinds = $state.raw<KindRecord[]>([]);
   /** The kinds of paragraph and of words of the writer's own, in their order. */
@@ -608,11 +609,13 @@ export class Project {
     });
   }
 
-  /** The threads on an element, the oldest first. */
-  threadsOf(element: string): Thread[] {
-    const out: Thread[] = [];
-    for (const thread of this.comments.values()) if (thread.element === element) out.push(thread);
-    return out.sort((a, b) => (a.notes[0]?.created ?? '').localeCompare(b.notes[0]?.created ?? ''));
+  /**
+   * The threads on an element, the oldest first: kept by element, so that
+   * what reads them depends on that element's threads alone, and the same
+   * array until one of them changes.
+   */
+  threadsOf(element: string): readonly Thread[] {
+    return this.comments.on(element);
   }
 
   #readHistory() {
